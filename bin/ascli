@@ -1,2 +1,2 @@
 #!/bin/bash
-exec ruby -rasperalm -e 'Asperalm.cli' -- "${@}"
+exec ruby -rasperalm/cli/main -e 'Asperalm.cli' -- "${@}"
