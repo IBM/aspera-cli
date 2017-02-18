@@ -8,7 +8,6 @@ require "asperalm/version"
 module Asperalm
   module Cli
     class Main
-      @@PROGRAM_NAME='ascli'
       def opt_names
         [:logtype,:loglevel,:config_name,:config_file]
       end
@@ -71,18 +70,18 @@ module Asperalm
         # parse script arguments
         @opt_parser = OptParser.new(self)
         @opt_parser.set_defaults(defaults)
-        @opt_parser.banner = "NAME\n\t#{@@PROGRAM_NAME} -- a command line tool for Aspera Applications\n\n"
+        @opt_parser.banner = "NAME\n\t#{$PROGRAM_NAME} -- a command line tool for Aspera Applications\n\n"
         @opt_parser.separator "SYNOPSIS"
-        @opt_parser.separator "\t#{@@PROGRAM_NAME} [OPTIONS] COMMAND [ARGS]..."
+        @opt_parser.separator "\t#{$PROGRAM_NAME} [OPTIONS] COMMAND [ARGS]..."
         @opt_parser.separator ""
         @opt_parser.separator "DESCRIPTION"
         @opt_parser.separator "\tUse Aspera application to perform operations on command line."
         @opt_parser.separator "\tOAuth 2.0 is used for authentication in Files, Several authentication methods are provided."
         @opt_parser.separator ""
         @opt_parser.separator "EXAMPLES"
-        @opt_parser.separator "\t#{@@PROGRAM_NAME} --log-level=debug --param-file=data/conf_testeng.qa.jwt.json send 200KB.1"
-        @opt_parser.separator "\t#{@@PROGRAM_NAME} --log-level=debug files events"
-        @opt_parser.separator "\t#{@@PROGRAM_NAME} -ntj files set_client_key LA-8RrEjw @file:data/myid"
+        @opt_parser.separator "\t#{$PROGRAM_NAME} --log-level=debug --param-file=data/conf_testeng.qa.jwt.json send 200KB.1"
+        @opt_parser.separator "\t#{$PROGRAM_NAME} --log-level=debug files events"
+        @opt_parser.separator "\t#{$PROGRAM_NAME} -ntj files set_client_key LA-8RrEjw @file:data/myid"
         @opt_parser.separator "\nSPECIAL OPTION VALUES\n\tif an option begins with @env: or @file:, value is taken from env var or file"
         @opt_parser.separator ""
         @opt_parser.separator "COMMANDS"
@@ -116,6 +115,7 @@ module Asperalm
   end
 
   def Asperalm.cli
+    $PROGRAM_NAME = 'ascli'
     Asperalm::Cli::Main.new().go(ARGV)
   end
 end
