@@ -5,7 +5,6 @@ module Asperalm
     def self.get_extended_value(pname,value)
       if m=value.match(/^@file:(.*)/) then
         value=m[1]
-        puts "XX#{value}"
         if m=value.match(/^~\/(.*)/) then
           value=m[1]
           value=File.join(Dir.home,value)

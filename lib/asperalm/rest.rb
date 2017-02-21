@@ -35,13 +35,15 @@ module Asperalm
     end
 
     # basic HTTP call
+    # call_data has keys:
+    # :subpath, :headers, :oauth, :scope, :operation, :json_params, :www_body_params, :basic_auth
     def call(call_data)
       @logger.debug "accessing #{call_data[:subpath]}".red.bold.bg_green
-      if !@opt_call_data.nil? then
-        call_data.merge!(@opt_call_data)
-      end
       if !call_data.has_key?(:headers) then
         call_data[:headers]={}
+      end
+      if !@opt_call_data.nil? then
+        call_data.merge!(@opt_call_data) { |key, v1, v2| next v1.merge(v2) if v1.is_a?(Hash) and v2.is_a?(Hash); v1 }
       end
       #if (! call_data[:headers].has_key?('Content-Type')) then
       #  call_data[:headers]['Content-Type']='application/json'
@@ -52,6 +54,7 @@ module Asperalm
       uri=get_uri(call_data)
       #@logger.debug "URI=#{PP.pp(uri,'').chomp}"
       @logger.debug "URI=#{uri}"
+      #@logger.debug "calldata=#{call_data}"
       http=Net::HTTP.new(uri.host, uri.port)
       if @@debug then
         http.set_debug_output($stdout)

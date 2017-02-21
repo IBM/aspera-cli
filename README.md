@@ -6,18 +6,18 @@ Laurent/Aspera/2016
 This is a sample ruby application that uses Aspera Web Applications APIs:
 - it can send packages with Faspex or Files
 - it can retrieve the last package received
-- supports Shares or Node
+- supports Files, Shares, Node, Faspex, limited set of commands
 
-It's best to use Ruby version 2+
+For Files: :send, :recv, :upload, :download, :events, :set_client_key, :faspexgw, :admin
 
 ## Setup
-* extract the zip file
-* create a softlink "ascli" that points to as_cli.rb
-* copy the file: ascli.yaml to $HOME/.ascli.yaml
-* execute command ascli -h
-
+build the gem and install it, or simply with the makefile: make
 gem install asperalm-0.1.0.gem
-alias ascli=$(cd $(dirname $(gem which asperalm/cli/main))/../../../bin&&pwd -P)/ascli
+
+then use one of the following (first is better):
+
+* add the path (in .profile): `export PATH="$PATH:$(cd $(dirname $(gem which asperalm/cli/main))/../../../bin&&pwd -P)"`
+* create an alias (in .bashrc): `alias ascli=$(cd $(dirname $(gem which asperalm/cli/main))/../../../bin&&pwd -P)/ascli`
 
 ## Configuration
 All parameters can be provided on command line, but it is more convenient to place applications access data in the configuration file.
@@ -146,5 +146,5 @@ To release a new version, update the version number in `version.rb`, and then ru
 
 ## Contributing
 
-Bug reports and pull requests are welcome on GitHub at https://github.com/Laurent Martin/asperalm.
+TODO
 

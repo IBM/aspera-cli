@@ -37,7 +37,7 @@ module Asperalm
       if data['Type'].eql?('STATS') and !@progress.nil? then
         @progress.progress=data['TransferBytes'].to_i
       end
-      if data['Type'].eql?('DONE') then
+      if data['Type'].eql?('DONE') and ! @progress.nil? then
         @progress.progress=@progress.total
         @progress=nil
       end
