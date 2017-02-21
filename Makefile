@@ -15,10 +15,14 @@ test:
 	bundle exec rake spec
 
 clean:
-	rm -f $(GEMNAME)-*.gem $(SRCZIPBASE)*.zip *.log token.*
+	rm -f $(GEMNAME)-*.gem $(SRCZIPBASE)*.zip *.log token.* README.pdf README.html
 	gem uninstall $(GEMNAME)
 
 pack: $(ZIPFILE)
+
+README.pdf: README.md
+	pandoc -o README.html README.md
+	wkhtmltopdf README.html README.pdf
 
 $(ZIPFILE):
 	rm -f $(SRCZIPBASE)_*.zip
