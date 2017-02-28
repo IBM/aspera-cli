@@ -2,7 +2,7 @@ require "thor"
 
 module Asperalm
   module Cli
-    class Files < Thor
+    class FilesThor < Thor
       desc "add <name> <url>", "Adds a remote named <name> for the repository at <url>"
       long_desc <<-LONGDESC
       Adds a remote named <name> for the repository at <url>. The command git fetch <name> can then be used to create and update

@@ -52,7 +52,7 @@ module Asperalm
       def find_nodeinfo_and_fileid ( file_info, init_node_id, path_array )
         @logger.debug "file_info: #{file_info}"
         # at least retrieve node info
-        file_info[:node_info]=@api_files_user.read("nodes",init_node_id)[:data]
+        file_info[:node_info]=@api_files_user.read("nodes/#{init_node_id}")[:data]
         # if / , we are done !
         return if path_array.empty?
         # first element is empty when not only "/"
@@ -87,7 +87,7 @@ module Asperalm
               raise OptionParser::InvalidArgument, "#{this_folder_name} is a file, expecting folder to find: #{path_array}"
             end
           when 'link'
-            file_info[:node_info]=@api_files_user.read("nodes",new_file_info['target_node_id'])[:data]
+            file_info[:node_info]=@api_files_user.read("nodes/#{new_file_info['target_node_id']}")[:data]
             file_info[:file_id]=new_file_info["target_id"]
             current_node_api=nil
           when 'folder'
@@ -162,7 +162,7 @@ module Asperalm
           if ws_name.nil?
             # get default workspace
             workspace_id=self_data['default_workspace_id']
-            workspace_data=@api_files_user.read("workspaces",workspace_id)[:data]
+            workspace_data=@api_files_user.read("workspaces/#{workspace_id}")[:data]
           else
             # lookup another workspace
             wss=@api_files_user.list("workspaces",{'q'=>ws_name})[:data]
@@ -274,10 +274,10 @@ module Asperalm
             the_package=@api_files_user.create("packages",{"workspace_id"=>workspace_id,"name"=>"sent from script","file_names"=>filelist,"note"=>"trid=#{xfer_id}","recipients"=>[{"id"=>recipient_user_id['source_id'],"type"=>recipient_user_id['source_type']}]})[:data]
 
             #  get node information for the node on which package must be created
-            node_info=@api_files_user.read("nodes",the_package['node_id'])[:data]
+            node_info=@api_files_user.read("nodes/#{the_package['node_id']}")[:data]
 
             # tell Files what to expect in package: 1 transfer (can also be done after transfer)
-            resp=@api_files_user.update("packages",the_package['id'],{"sent"=>true,"transfers_expected"=>1})[:data]
+            resp=@api_files_user.update("packages/#{the_package['id']}",{"sent"=>true,"transfers_expected"=>1})[:data]
 
             #  get transfer token (for node)
             node_bearer_token_xfer=@api_files_oauth.get_authorization(self.class.node_scope(node_info['access_key'],@@SCOPE_NODE_USER))
@@ -298,7 +298,7 @@ module Asperalm
             # simulate call later, to check status
             sleep 2
             # (sample) get package status
-            allpkg=@api_files_user.read("packages",the_package['id'])[:data]
+            allpkg=@api_files_user.read("packages/#{the_package['id']}")[:data]
           when :recv
             loop do
               # list all packages ('page'=>1,'per_page'=>10,)'sort'=>'-sent_at',
@@ -306,7 +306,7 @@ module Asperalm
               # take the last one
               the_package=packages.first
               #  get node info
-              node_info=@api_files_user.read("nodes",the_package['node_id'])[:data]
+              node_info=@api_files_user.read("nodes/#{the_package['node_id']}")[:data]
               # get transfer auth
               node_bearer_token_xfer=@api_files_oauth.get_authorization(self.class.node_scope(node_info['access_key'],@@SCOPE_NODE_USER))
               # download files
@@ -329,7 +329,7 @@ module Asperalm
             # page=1&per_page=10&q=type:(file_upload+OR+file_delete+OR+file_download+OR+file_rename+OR+folder_create+OR+folder_delete+OR+folder_share+OR+folder_share_via_public_link)&sort=-date
             events=api_files_admin.list('events',{'q'=>'type:(file_upload OR file_download)'})[:data]
             #@logger.info "events=#{JSON.generate(events)}"
-            node_info=@api_files_user.read("nodes",workspace_data['home_node_id'])[:data]
+            node_info=@api_files_user.read("nodes/#{workspace_data['home_node_id']}")[:data]
             # get access to node API, note the additional header
             api_node_admin=get_node_api(node_info,@@SCOPE_NODE_ADMIN)
             # can add filters: tag=aspera.files.package_id%3DLA8OU3p8w
@@ -346,7 +346,7 @@ module Asperalm
             the_client_id=OptParser.get_next_arg_value(argv,'client_id')
             the_private_key=OptParser.get_next_arg_value(argv,'private_key')
             api_files_admin=Rest.new(@logger,files_api_base_url,{:oauth=>@api_files_oauth,:scope=>@@SCOPE_FILES_ADMIN})
-            api_files_admin.update('clients',the_client_id,{:jwt_grant_enabled=>true, :public_key=>OpenSSL::PKey::RSA.new(the_private_key).public_key.to_s})
+            api_files_admin.update("clients/#{the_client_id}",{:jwt_grant_enabled=>true, :public_key=>OpenSSL::PKey::RSA.new(the_private_key).public_key.to_s})
           when :faspexgw
             require 'asperalm/faspex_gw'
             FaspexGW.set_vars(@logger,@api_files_user,@api_files_oauth)

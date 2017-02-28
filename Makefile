@@ -28,14 +28,14 @@ $(ZIPFILE):
 	rm -f $(SRCZIPBASE)_*.zip
 	zip -r $(ZIPFILE) `git ls-files`
 
-asperalm-0.1.0.gem:
+$(GEMFILE):
 	gem build asperalm.gemspec
 
-gem: asperalm-0.1.0.gem
+gem: $(GEMFILE)
 	gem install $(GEMFILE)
 
-togarage: $(ZIPFILE) README.pdf asperalm-0.1.0.gem
-	ascli files --workspace='Sales Engineering' upload '/Laurent Garage SE/RubyCLI' $(ZIPFILE) README.pdf asperalm-0.1.0.gem
+togarage: $(ZIPFILE) README.pdf $(GEMFILE)
+	ascli files --workspace='Sales Engineering' upload '/Laurent Garage SE/RubyCLI' $(ZIPFILE) README.pdf $(GEMFILE)
 
 # create a private/public key pair
 # note that the key can also be generated with: ssh-keygen -t rsa -f data/myid -N ''
@@ -57,3 +57,6 @@ test_jwt_send:
 gw:
 	$(ASCLI) --log-level=debug files faspexgw
 
+repush:
+	gem yank asperalm -v $(GEMVERSION)
+	gem push $(GEMFILE)

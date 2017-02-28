@@ -105,13 +105,13 @@ class FaspexGW < Sinatra::Base
     the_package=@@api_files_user.create("packages",{"file_names"=>filelist,"name"=>"sent from script","note"=>"trid=#{xfer_id}","recipients"=>[{"id"=>recipient_user_id['source_id'],"type"=>recipient_user_id['source_type']}],"workspace_id"=>the_workspaceid})
 
     #  get node information for the node on which package must be created
-    node_info=@@api_files_user.read("nodes",the_package['node_id'])
+    node_info=@@api_files_user.read("nodes/#{the_package['node_id']}")
 
     #  get transfer token (for node)
     node_auth_bearer_token=@@oauthapi.get_authorization('node.'+node_info['access_key']+':user:all')
 
     # tell Files what to expect in package: 1 transfer (can also be done after transfer)
-    resp=@@api_files_user.update("packages",the_package['id'],{"sent"=>true,"transfers_expected"=>1})
+    resp=@@api_files_user.update("packages/#{the_package['id']}",{"sent"=>true,"transfers_expected"=>1})
 
     if false
       status 400

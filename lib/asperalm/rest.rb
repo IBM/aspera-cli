@@ -14,9 +14,11 @@ require 'asperalm/colors'
 module Asperalm
   # a simple class to make HTTP calls
   class Rest
+    # set to true enables debug in HTTP class
     @@debug=false
     def initialize(logger,baseurl,opt_call_data=nil)
       @logger=logger
+      # base url without trailing slashes
       @api_base=baseurl.gsub(/\/+$/,'')
       @opt_call_data=opt_call_data
     end
@@ -26,6 +28,7 @@ module Asperalm
       @@debug=flag
     end
 
+    # build URI from URL and parameters
     def get_uri(call_data)
       uri=URI.parse(@api_base+"/"+call_data[:subpath])
       if call_data.has_key?(:url_params) and !call_data[:url_params].nil? then
@@ -108,28 +111,24 @@ module Asperalm
       return result
     end
 
-    def list(resource_type,args=nil)
-      return call({:operation=>'GET',:subpath=>resource_type,:url_params=>args,:headers=>{'Accept'=>'application/json'}})
+    def list(subpath,args=nil)
+      return call({:operation=>'GET',:subpath=>subpath,:headers=>{'Accept'=>'application/json'},:url_params=>args})
     end
 
-    def create(resource_type,params)
-      return call({:operation=>'POST',:subpath=>resource_type,:json_params=>params,:headers=>{'Accept'=>'application/json'}})
+    def create(subpath,params)
+      return call({:operation=>'POST',:subpath=>subpath,:headers=>{'Accept'=>'application/json'},:json_params=>params})
     end
 
-    def read(resource_type,resource_id=nil)
-      subpath=resource_type
-      if !resource_id.nil? then
-        subpath=subpath+'/'+resource_id
-      end
+    def read(subpath)
       return call({:operation=>'GET',:subpath=>subpath,:headers=>{'Accept'=>'application/json'}})
     end
 
-    def update(resource_type,resource_id,params)
-      return call({:operation=>'PUT',:subpath=>resource_type+'/'+resource_id,:json_params=>params,:headers=>{'Accept'=>'application/json'}})
+    def update(subpath,params)
+      return call({:operation=>'PUT',:subpath=>subpath,:headers=>{'Accept'=>'application/json'},:json_params=>params})
     end
 
-    def delete(resource_type,resource_id)
-      return call({:operation=>'DELETE',:subpath=>resource_type+'/'+resource_id,:headers=>{'Accept'=>'application/json'}})
+    def delete(subpath)
+      return call({:operation=>'DELETE',:subpath=>subpath,:headers=>{'Accept'=>'application/json'}})
     end
   end
 end #module Asperalm

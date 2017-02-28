@@ -59,7 +59,7 @@ module Asperalm
     end
   end
 
-  # main class
+  # Manages FASP based transfers
   class FaspManager
     def initialize(logger)
       @logger=logger
@@ -73,8 +73,8 @@ module Asperalm
     end
 
     # from https://support.asperasoft.com/entries/22895528
-    # code name descr msg retryable
-    @@fasp_error_codes = [
+    # columns: code name descr msg retryable
+    @@FASP_ERROR_CODES = [
       [],
       [ 1,  'ERR_FASP_PROTO',         "Generic fasp(tm) protocol error",                "fasp(tm) error",                                                    false ],
       [ 2,  'ERR_ASCP',               "Generic SCP error",                              "ASCP error",                                                        false ],
@@ -131,7 +131,7 @@ module Asperalm
 
     # arg: FASP errcode
     def self.retryable?(err_code)
-      return @@fasp_error_codes[err_code][4] ;
+      return @@FASP_ERROR_CODES[err_code][4] ;
     end
 
     # start ascp
