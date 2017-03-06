@@ -60,3 +60,6 @@ gw:
 repush:
 	gem yank asperalm -v $(GEMVERSION)
 	gem push $(GEMFILE)
+
+commit:
+	git commit -a -m 'all, from Makefile'

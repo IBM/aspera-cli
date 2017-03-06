@@ -3,23 +3,29 @@
 Laurent/Aspera/2016
 
 ## Overview
-This is a sample ruby application that uses Aspera Web Applications APIs:
-- it can send packages with Faspex or Files
-- it can retrieve the last package received
-- supports Files, Shares, Node, Faspex, limited set of commands
+This is a sample ruby application that uses Aspera REST APIs, as well as uses FASP for transfers.
 
-For Files: :send, :recv, :upload, :download, :events, :set_client_key, :faspexgw, :admin
+Purpose:
+- show use of (REST) APIs: Node, Files, Shares, Faspex
+- provide a command line for some tasks
+- cross-platform
 
-The gem can also be used on other ruby applications, it provides easy access to Files API, and provides a FaspManager API in Ruby.
+Ruby has been chosen as language as it is used in most Aspera products, and the interpret can be found for most platforms.
+
+Example of tasks:
+- send packages with Faspex or Files
+- retrieve the last package received
+- retrieve a package from a passcode based link in Faspex
+- supports , limited set of commands
 
 ## Installation
-The simplest way is to install the gem with:
+A version is avaiulable on rubygems.org, so the simplest way is to install the gem is:
 
 ```bash
 $ gem install asperalm
 ```
 
-Add the path (in .profile): 
+To use the CLI, add the path (in .profile): 
 ```bash
 $ export PATH="$PATH:$(cd $(dirname $(gem which asperalm/cli/main))/../../../bin&&pwd -P)"
 ```
@@ -37,13 +43,13 @@ The file is organized by application types.
 
 For each application type, there is a list of named configurations. The configuration named "default" is taken if no "-n" option is provided.
 
-Options needs to be provided at their right level, i.e. global parameters before first command, and option of first command after first command, etc...
+Command line options needs to be provided at their right level, i.e. global parameters before first command, and option of first command after first command, etc...
 
-values of arguments can be retrieve from files with format: @file: , or env var with: @env:, the prefix @val: is optional.
+Values of arguments can be retrieve from files with format: @file: , or env var with: @env:, the prefix @val: is optional.
 
 A default configuration file can be created: $HOME/.aspera/ascli/config.yaml
 
-here is an example:
+Here is an example:
 
 ```yaml
 ---
@@ -126,5 +132,5 @@ https://quickleft.com/blog/engineering-lunch-series-step-by-step-guide-to-buildi
 
 ## Contributing
 
-TODO
+Please contibute: add new functions that use the APIs!
 
