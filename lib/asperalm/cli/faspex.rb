@@ -39,7 +39,7 @@ module Asperalm
         transfer_uri=URI.parse(fasplink)
         transfer_data=URI::decode_www_form(transfer_uri.query).to_h
         transfer_params={}
-        transfer_data.each { |i| transfer_params[i[0]] = i[1]}
+        transfer_data.each { |i| transfer_params[i[0]] = i[1] }
         transfer_params['remote_host']=transfer_uri.host
         transfer_params['remote_user']=transfer_uri.user
         transfer_params['srcList']=[URI.decode_www_form_component(transfer_uri.path)]
@@ -58,12 +58,13 @@ module Asperalm
           @opt_parser.add_opt_simple(:url,"-wURI", "--url=URI","URL of application, e.g. http://org.asperafiles.com")
           @opt_parser.add_opt_simple(:username,"-uSTRING", "--username=STRING","username to log in")
           @opt_parser.add_opt_simple(:password,"-pSTRING", "--password=STRING","password")
+          @opt_parser.on("--raw","display raw result") { @raw_result=true }
           @opt_parser.on_tail("-h", "--help", "Show this message") { @opt_parser.exit_with_usage }
           @opt_parser.parse_ex!(argv)
 
           results=''
 
-          command=OptParser.get_next_arg_from_list(argv,'command',[ :send, :recv_publink ])
+          command=OptParser.get_next_arg_from_list(argv,'command',[ :send, :recv_publink, :packages ])
 
           case command
           when :send
@@ -110,7 +111,19 @@ module Asperalm
             :rawArgs => [ '-P', '33001', '-d', '-q', '--ignore-host-key', '-k', '2', '--save-before-overwrite','--partial-file-suffix=.partial' ],
             :retries => 10,
             :use_aspera_key => true)
-          end
+          when :packages
+            require 'xmlsimple'
+            require 'formatador'
+            default_fields=['title','id']
+            api_faspex=Rest.new(@logger,@opt_parser.get_option_mandatory(:url)+'/aspera/faspex',{:basic_auth=>{:user=>@opt_parser.get_option_mandatory(:username), :password=>@opt_parser.get_option_mandatory(:password)}})
+            all_inbox_xml=api_faspex.call({:operation=>'GET',:subpath=>"inbox.atom"})[:http].body
+            results=XmlSimple.xml_in(all_inbox_xml, {"ForceArray" => true})
+            if @raw_result.nil? then
+              results=results['entry'].map { |e| default_fields.inject({}) { |m,v| m[v.to_sym] = e[v][0]; m } }
+              Formatador.display_table(results)
+              results=nil
+            end
+          end # command
 
           if ! results.nil? then
             puts PP.pp(results,'')

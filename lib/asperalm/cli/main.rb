@@ -79,10 +79,10 @@ module Asperalm
         @opt_parser.separator "\tOAuth 2.0 is used for authentication in Files, Several authentication methods are provided."
         @opt_parser.separator ""
         @opt_parser.separator "EXAMPLES"
-        @opt_parser.separator "\t#{$PROGRAM_NAME} --log-level=debug --param-file=data/conf_testeng.qa.jwt.json send 200KB.1"
-        @opt_parser.separator "\t#{$PROGRAM_NAME} --log-level=debug files events"
+        @opt_parser.separator "\t#{$PROGRAM_NAME} files events"
+        @opt_parser.separator "\t#{$PROGRAM_NAME} --log-level=debug --config-name=myfaspex send 200KB.1"
         @opt_parser.separator "\t#{$PROGRAM_NAME} -ntj files set_client_key LA-8RrEjw @file:data/myid"
-        @opt_parser.separator "\nSPECIAL OPTION VALUES\n\tif an option begins with @env: or @file:, value is taken from env var or file"
+        @opt_parser.separator "\nSPECIAL OPTION VALUES\n\tif an option value begins with @env: or @file:, value is taken from env var or file"
         @opt_parser.separator ""
         @opt_parser.separator "COMMANDS"
         @opt_parser.separator "\tSupported commands: #{@@COMANDS.join(', ')}"
@@ -90,7 +90,7 @@ module Asperalm
         @opt_parser.separator "OPTIONS"
         @opt_parser.add_opt_list(:loglevel,"Log level",'-lTYPE','--log-level=TYPE')
         @opt_parser.add_opt_list(:logtype,"log method",'-qTYPE','--logger=TYPE')
-        @opt_parser.add_opt_simple(:config_file,"-cSTRING", "--config-file=STRING","read parameters from file in JSON format")
+        @opt_parser.add_opt_simple(:config_file,"-fSTRING", "--config-file=STRING","read parameters from file in JSON format")
         @opt_parser.add_opt_simple(:config_name,"-nSTRING", "--config-name=STRING","name of configuration in config file")
         @opt_parser.on("-r", "--rest-debug","more debug for HTTP calls") { Rest.set_debug(true,@logger) }
         @opt_parser.on_tail("-h", "--help", "Show this message") { @opt_parser.exit_with_usage }

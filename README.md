@@ -124,6 +124,9 @@ This is a sample code only, dont expect full capabilities.
   * oauth
   * https://github.com/rest-client/rest-client
 
+use tools from:
+http://blog.excelwithcode.com/build-commandline-apps.html
+
 follow:
 https://quickleft.com/blog/engineering-lunch-series-step-by-step-guide-to-building-your-first-ruby-gem/
 

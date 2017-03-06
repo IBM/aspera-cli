@@ -16,7 +16,7 @@ test:
 
 clean:
 	rm -f $(GEMNAME)-*.gem $(SRCZIPBASE)*.zip *.log token.* README.pdf README.html
-	gem uninstall $(GEMNAME)
+	gem uninstall -a -x $(GEMNAME)
 
 pack: $(ZIPFILE)
 
@@ -57,8 +57,11 @@ test_jwt_send:
 gw:
 	$(ASCLI) --log-level=debug files faspexgw
 
-repush:
-	gem yank asperalm -v $(GEMVERSION)
+OLDVERSION=0.1.1
+deleteold:
+	gem yank asperalm -v $(OLDVERSION)
+
+gempush:
 	gem push $(GEMFILE)
 
 commit:

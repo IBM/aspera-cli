@@ -48,7 +48,10 @@ module Asperalm
             destination=filelist.pop
 
             send_result=api_node.call({:operation=>'POST',:subpath=>'files/upload_setup',:json_params=>{ :transfer_requests => [ { :transfer_request => { :paths => [ { :destination => destination } ] } } ] }})
-            send_result['transfer_specs'].each{ |s|
+            if send_result[:data]['transfer_specs'][0].has_key?('error')
+              raise send_result[:data]['transfer_specs'][0]['error']['user_message']
+            end
+            send_result[:data]['transfer_specs'].each{ |s|
               session=s['transfer_spec']
               results=@faspmanager.do_transfer(
               :mode    => :send,
@@ -73,8 +76,11 @@ module Asperalm
             destination=filelist.pop
 
             send_result=api_node.call({:operation=>'POST',:subpath=>'files/download_setup',:json_params=>{ :transfer_requests => [ { :transfer_request => { :paths => filelist.map {|i| {:source=>i}; } } } ] }})
+            if send_result[:data]['transfer_specs'][0].has_key?('error')
+              raise send_result[:data]['transfer_specs'][0]['error']['user_message']
+            end
 
-            send_result['transfer_specs'].each{ |s|
+            send_result[:data]['transfer_specs'].each{ |s|
               session=s['transfer_spec']
               srcList = session['paths'].map { |i| i['source']}
               results=@faspmanager.do_transfer(
