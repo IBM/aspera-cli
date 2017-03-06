@@ -47,8 +47,8 @@ module Asperalm
         # implement git fetch here
       end
 
-      desc "remote SUBCOMMAND ...ARGS", "manage set of tracked repositories"
-      subcommand "files", Files
+      #desc "remote SUBCOMMAND ...ARGS", "manage set of tracked repositories"
+      #subcommand "files", Files
     end
   end
 end

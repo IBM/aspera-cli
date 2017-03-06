@@ -1,2 +1,8 @@
-#!/bin/bash
-exec ruby -rasperalm/cli/main -e 'Asperalm.cli' -- "${@}"
+#!/usr/bin/env ruby
+
+$LOAD_PATH.unshift File.dirname(__FILE__) + "/../lib"
+
+require 'rubygems'
+require 'asperalm/cli/main'
+
+Asperalm.cli

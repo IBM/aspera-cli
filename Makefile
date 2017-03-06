@@ -63,3 +63,6 @@ repush:
 
 commit:
 	git commit -a -m 'all, from Makefile'
+# eq to: git push origin master
+push:
+	git push

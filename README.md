@@ -19,16 +19,13 @@ Example of tasks:
 - supports , limited set of commands
 
 ## Installation
-A version is avaiulable on rubygems.org, so the simplest way is to install the gem is:
+A version is available on rubygems.org, so the simplest way is to install the gem is:
 
 ```bash
 $ gem install asperalm
 ```
 
-To use the CLI, add the path (in .profile): 
-```bash
-$ export PATH="$PATH:$(cd $(dirname $(gem which asperalm/cli/main))/../../../bin&&pwd -P)"
-```
+This install the "ascli" executable.
 
 ## Usage
 
