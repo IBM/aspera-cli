@@ -90,12 +90,12 @@ class FaspexGW < Sinatra::Base
 
     @@logger.info "files=#{filelist}"
 
-    recipient='laurent@asperasoft.com'
+    recipient_email='laurent@asperasoft.com'
 
     self_data=@@api_files_user.read("self")
     the_workspaceid=self_data['default_workspace_id']
-    user_lookup=@@api_files_user.list("contacts",{'current_workspace_id'=>the_workspaceid,'q'=>recipient})
-    raise "no such unique user: #{recipient}" unless !user_lookup.nil? and user_lookup.length == 1
+    user_lookup=@@api_files_user.list("contacts",{'current_workspace_id'=>the_workspaceid,'q'=>recipient_email})
+    raise "no such unique user: #{recipient_email}" unless !user_lookup.nil? and user_lookup.length == 1
     recipient_user_id=user_lookup.first
 
     # NOTE: important: transfer id must be unique: generate random id (using a non unique id results in discard of tags)

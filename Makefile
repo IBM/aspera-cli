@@ -16,6 +16,7 @@ test:
 
 clean:
 	rm -f $(GEMNAME)-*.gem $(SRCZIPBASE)*.zip *.log token.* README.pdf README.html
+	rm -fr doc
 	gem uninstall -a -x $(GEMNAME)
 
 pack: $(ZIPFILE)

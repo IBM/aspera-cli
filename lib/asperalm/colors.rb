@@ -1,50 +1,38 @@
 # simple vt100 colors
 class String
-  def vtcmd(code); "\e[#{code}m";end
+  private
+  def self.vtcmd(code); "\e[#{code}m";end
 
-  def colstr(code); "#{vtcmd(code)}#{self}#{vtcmd(0)}" end
+  # see https://en.wikipedia.org/wiki/ANSI_escape_code
+  VTSTYLES = {
+    :bold=>1,
+    :italic=>3,
+    :underline=>4,
+    :blink=>5,
+    :reverse_color=>7,
+    :black=>30,
+    :red=>31,
+    :green=>32,
+    :brown=>33,
+    :blue=>34,
+    :magenta=>35,
+    :cyan=>36,
+    :gray=>37,
+    :bg_black=>40,
+    :bg_red=>41,
+    :bg_green=>42,
+    :bg_brown=>43,
+    :bg_blue=>44,
+    :bg_magenta=>45,
+    :bg_cyan=>46,
+    :bg_gray=>47,
+  }
+  public
+  # defines methods to String, one per entry in VTSTYLES
+  VTSTYLES.each do |name,code|
+    # the end code depends on value
+    endcode = (code >= 10) ? 0 : code+20+(code.eql?(1)?1:0)
+    eval "def #{name}; \"#{vtcmd(code)}\#{self}#{vtcmd(endcode)}\"; end"
+  end
 
-  def stystr(code); "#{vtcmd(code)}#{self}#{vtcmd(code+(code.eql?(1)?21:20))}" end
-
-  def black;          colstr(30) end
-
-  def red;            colstr(31) end
-
-  def green;          colstr(32) end
-
-  def brown;          colstr(33) end
-
-  def blue;           colstr(34) end
-
-  def magenta;        colstr(35) end
-
-  def cyan;           colstr(36) end
-
-  def gray;           colstr(37) end
-
-  def bg_black;       colstr(40) end
-
-  def bg_red;         colstr(41) end
-
-  def bg_green;       colstr(42) end
-
-  def bg_brown;       colstr(43) end
-
-  def bg_blue;        colstr(44) end
-
-  def bg_magenta;     colstr(45) end
-
-  def bg_cyan;        colstr(46) end
-
-  def bg_gray;        colstr(47) end
-
-  def bold;           stystr(1) end
-
-  def italic;         stystr(3) end
-
-  def underline;      stystr(4) end
-
-  def blink;          stystr(5) end
-
-  def reverse_color;  stystr(7) end
 end

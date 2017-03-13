@@ -6,6 +6,7 @@ require 'asperalm/oauth'
 require 'asperalm/rest'
 require 'asperalm/colors'
 require 'asperalm/opt_parser'
+require 'asperalm/files_api'
 
 module Asperalm
   module Cli
@@ -16,22 +17,6 @@ module Asperalm
 
       def get_code_getters; BrowserInteraction.getter_types; end
 
-      # get API base URL based on instance domain
-      def self.baseurl(instance_domain)
-        return 'https://api.'+instance_domain+'/api/v1'
-      end
-
-      # node API scopes
-      def self.node_scope(access_key,scope)
-        return 'node.'+access_key+':'+scope
-      end
-
-      # various API scopes supported
-      @@SCOPE_FILES_SELF='self'
-      @@SCOPE_FILES_USER='user:all'
-      @@SCOPE_FILES_ADMIN='admin:all'
-      @@SCOPE_NODE_USER='user:all'
-      @@SCOPE_NODE_ADMIN='admin:all'
 
       attr_accessor :logger
       attr_accessor :faspmanager
@@ -42,7 +27,7 @@ module Asperalm
       end
 
       def get_node_api(node_info,scope)
-        return Rest.new(@logger,node_info['url'],{:oauth=>@api_files_oauth,:scope=>self.class.node_scope(node_info['access_key'],scope),:headers=>{'X-Aspera-AccessKey'=>node_info['access_key']}})
+        return Rest.new(@logger,node_info['url'],{:oauth=>@api_files_oauth,:scope=>FilesApi.node_scope(node_info['access_key'],scope),:headers=>{'X-Aspera-AccessKey'=>node_info['access_key']}})
       end
 
       # returns node information (returned by API) and file id, from a "/" based path
@@ -63,7 +48,7 @@ module Asperalm
           @logger.debug "this_folder_name: #{this_folder_name}"
 
           # get API if changed
-          current_node_api=get_node_api(file_info[:node_info],@@SCOPE_NODE_USER) if current_node_api.nil?
+          current_node_api=get_node_api(file_info[:node_info],FilesApi::SCOPE_NODE_USER) if current_node_api.nil?
 
           # get folder content
           folder_contents = current_node_api.list("files/#{file_info[:file_id]}/files")
@@ -147,13 +132,13 @@ module Asperalm
             raise "unknown auth type: #{auth_data[:type]}"
           end
 
-          files_api_base_url=self.class.baseurl(instance_domain)
+          files_api_base_url=FilesApi.baseurl(instance_domain)
 
           # auth API
           @api_files_oauth=Oauth.new(@logger,files_api_base_url,organization,opt_parser.get_option_mandatory(:client_id),opt_parser.get_option_mandatory(:client_secret),auth_data)
 
           # create object for REST calls to Files with scope "user:all"
-          @api_files_user=Rest.new(@logger,files_api_base_url,{:oauth=>@api_files_oauth,:scope=>@@SCOPE_FILES_USER})
+          @api_files_user=Rest.new(@logger,files_api_base_url,{:oauth=>@api_files_oauth,:scope=>FilesApi::SCOPE_FILES_USER})
 
           # get our user's default information
           self_data=@api_files_user.read("self")[:data]
@@ -206,7 +191,7 @@ module Asperalm
             @logger.info("file_info=#{file_info}")
 
             #  get transfer token (for node)
-            node_bearer_token_xfer=@api_files_oauth.get_authorization(self.class.node_scope(file_info[:node_info]['access_key'],@@SCOPE_NODE_USER))
+            node_bearer_token_xfer=@api_files_oauth.get_authorization(FilesApi.node_scope(file_info[:node_info]['access_key'],FilesApi::SCOPE_NODE_USER))
 
             # transfer files
             @logger.info "starting transfer"
@@ -235,7 +220,7 @@ module Asperalm
             @logger.info("file_info=#{file_info}")
 
             #  get transfer token (for node)
-            node_bearer_token_xfer=@api_files_oauth.get_authorization(self.class.node_scope(file_info[:node_info]['access_key'],@@SCOPE_NODE_USER))
+            node_bearer_token_xfer=@api_files_oauth.get_authorization(FilesApi.node_scope(file_info[:node_info]['access_key'],FilesApi::SCOPE_NODE_USER))
 
             # transfer files
             @logger.info "starting transfer"
@@ -280,7 +265,7 @@ module Asperalm
             resp=@api_files_user.update("packages/#{the_package['id']}",{"sent"=>true,"transfers_expected"=>1})[:data]
 
             #  get transfer token (for node)
-            node_bearer_token_xfer=@api_files_oauth.get_authorization(self.class.node_scope(node_info['access_key'],@@SCOPE_NODE_USER))
+            node_bearer_token_xfer=@api_files_oauth.get_authorization(FilesApi.node_scope(node_info['access_key'],FilesApi::SCOPE_NODE_USER))
 
             # transfer files
             @logger.info "starting transfer"
@@ -308,7 +293,7 @@ module Asperalm
               #  get node info
               node_info=@api_files_user.read("nodes/#{the_package['node_id']}")[:data]
               # get transfer auth
-              node_bearer_token_xfer=@api_files_oauth.get_authorization(self.class.node_scope(node_info['access_key'],@@SCOPE_NODE_USER))
+              node_bearer_token_xfer=@api_files_oauth.get_authorization(FilesApi.node_scope(node_info['access_key'],FilesApi::SCOPE_NODE_USER))
               # download files
               @logger.info "starting transfer"
               @faspmanager.do_transfer(
@@ -325,13 +310,13 @@ module Asperalm
               break if @loop.nil?
             end
           when :events
-            api_files_admin=Rest.new(@logger,files_api_base_url,{:oauth=>@api_files_oauth,:scope=>@@SCOPE_FILES_ADMIN})
+            api_files_admin=Rest.new(@logger,files_api_base_url,{:oauth=>@api_files_oauth,:scope=>FilesApi::SCOPE_FILES_ADMIN})
             # page=1&per_page=10&q=type:(file_upload+OR+file_delete+OR+file_download+OR+file_rename+OR+folder_create+OR+folder_delete+OR+folder_share+OR+folder_share_via_public_link)&sort=-date
             events=api_files_admin.list('events',{'q'=>'type:(file_upload OR file_download)'})[:data]
             #@logger.info "events=#{JSON.generate(events)}"
             node_info=@api_files_user.read("nodes/#{workspace_data['home_node_id']}")[:data]
             # get access to node API, note the additional header
-            api_node_admin=get_node_api(node_info,@@SCOPE_NODE_ADMIN)
+            api_node_admin=get_node_api(node_info,FilesApi::SCOPE_NODE_ADMIN)
             # can add filters: tag=aspera.files.package_id%3DLA8OU3p8w
             #'tag'=>'aspera.files.package_id%3DJvbl0w-5A'
             # filter= 'id', 'short_summary', or 'summary'
@@ -345,14 +330,14 @@ module Asperalm
           when :set_client_key
             the_client_id=OptParser.get_next_arg_value(argv,'client_id')
             the_private_key=OptParser.get_next_arg_value(argv,'private_key')
-            api_files_admin=Rest.new(@logger,files_api_base_url,{:oauth=>@api_files_oauth,:scope=>@@SCOPE_FILES_ADMIN})
+            api_files_admin=Rest.new(@logger,files_api_base_url,{:oauth=>@api_files_oauth,:scope=>FilesApi::SCOPE_FILES_ADMIN})
             api_files_admin.update("clients/#{the_client_id}",{:jwt_grant_enabled=>true, :public_key=>OpenSSL::PKey::RSA.new(the_private_key).public_key.to_s})
           when :faspexgw
             require 'asperalm/faspex_gw'
             FaspexGW.set_vars(@logger,@api_files_user,@api_files_oauth)
             FaspexGW.go()
           when :admin
-            api_files_admin=Rest.new(@logger,files_api_base_url,{:oauth=>@api_files_oauth,:scope=>@@SCOPE_FILES_ADMIN})
+            api_files_admin=Rest.new(@logger,files_api_base_url,{:oauth=>@api_files_oauth,:scope=>FilesApi::SCOPE_FILES_ADMIN})
             resource=OptParser.get_next_arg_from_list(argv,'resource',[:clients,:contacts,:dropboxes,:nodes,:operations,:packages,:saml_configurations])
             #:messages:organizations:url_tokens,:usage_reports:workspaces
             operation=OptParser.get_next_arg_from_list(argv,'operation',[:list])
