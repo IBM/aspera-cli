@@ -8,17 +8,11 @@ require "asperalm/version"
 module Asperalm
   module Cli
     class Main
-      def opt_names
-        [:logtype,:loglevel,:config_name,:config_file]
-      end
+      def opt_names; [:logtype,:loglevel,:config_name,:config_file]; end
 
-      def get_logtypes
-        [:syslog,:stdout]
-      end
+      def get_logtypes; [:syslog,:stdout]; end
 
-      def get_loglevels
-        [:debug,:info,:warn,:error,:fatal,:unknown]
-      end
+      def get_loglevels; [:debug,:info,:warn,:error,:fatal,:unknown]; end
 
       def set_logtype(logtype)
         case logtype

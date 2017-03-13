@@ -3,12 +3,17 @@ require 'pp'
 require 'asperalm/rest'
 require 'asperalm/colors'
 require 'asperalm/opt_parser'
+require 'xmlsimple'
+require 'formatador'
 
 module Asperalm
   module Cli
     class Faspex
       def opt_names; [:url,:username,:password]; end
 
+      def get_pkgboxs; [:inbox,:sent,:archive]; end
+
+      @pkgbox=:inbox
       attr_accessor :logger
       attr_accessor :faspmanager
 
@@ -33,9 +38,7 @@ module Asperalm
       end
 
       # extract transfer information from xml returned by faspex
-      def xml_to_transferspec(xml)
-        xmldata=XmlSimple.xml_in(xml, {"ForceArray" => false})
-        fasplink=(xmldata['link'].select{|e| e["rel"].eql?("package")}).first["href"]
+      def uri_to_transferspec(fasplink)
         transfer_uri=URI.parse(fasplink)
         transfer_data=URI::decode_www_form(transfer_uri.query).to_h
         transfer_params={}
@@ -46,8 +49,18 @@ module Asperalm
         return transfer_params
       end
 
+      def xmlentry_to_transferspec(entry)
+        fasplink=(entry['link'].select{|e| e["rel"].eql?("package")}).first["href"]
+        return uri_to_transferspec(fasplink)
+      end
+      
+      def get_faspex_authenticated_api
+        return Rest.new(@logger,@opt_parser.get_option_mandatory(:url)+'/aspera/faspex',{:basic_auth=>{:user=>@opt_parser.get_option_mandatory(:username), :password=>@opt_parser.get_option_mandatory(:password)}})
+      end
+
       def go(argv,defaults)
         begin
+          @pkgbox=:inbox
           @opt_parser = OptParser.new(self)
           @opt_parser.set_defaults(defaults)
           @opt_parser.banner = "NAME\n\tascli -- a command line tool for Aspera Applications\n\n"
@@ -58,17 +71,18 @@ module Asperalm
           @opt_parser.add_opt_simple(:url,"-wURI", "--url=URI","URL of application, e.g. http://org.asperafiles.com")
           @opt_parser.add_opt_simple(:username,"-uSTRING", "--username=STRING","username to log in")
           @opt_parser.add_opt_simple(:password,"-pSTRING", "--password=STRING","password")
-          @opt_parser.on("--raw","display raw result") { @raw_result=true }
+          @opt_parser.add_opt_list(:pkgbox,"package box",'--box=TYPE')
+          @opt_parser.on("--raw","display raw result") { @option_raw_result=true }
           @opt_parser.on_tail("-h", "--help", "Show this message") { @opt_parser.exit_with_usage }
           @opt_parser.parse_ex!(argv)
 
           results=''
 
-          command=OptParser.get_next_arg_from_list(argv,'command',[ :send, :recv_publink, :packages ])
+          command=OptParser.get_next_arg_from_list(argv,'command',[ :send, :recv, :recv_publink, :packages ])
 
           case command
           when :send
-            api_faspex=Rest.new(@logger,@opt_parser.get_option_mandatory(:url)+'/aspera/faspex',{:basic_auth=>{:user=>@opt_parser.get_option_mandatory(:username), :password=>@opt_parser.get_option_mandatory(:password)}})
+            api_faspex=get_faspex_authenticated_api
 
             filelist = argv
             @logger.info("file list=#{filelist}")
@@ -91,13 +105,42 @@ module Asperalm
               :retries => 10,
               :use_aspera_key => true)
             }
+          when :recv
+            api_faspex=get_faspex_authenticated_api
+            if true
+              pkguuid=OptParser.get_next_arg_value(argv,"Package sequence ID")
+              all_inbox_xml=api_faspex.call({:operation=>'GET',:subpath=>"#{@pkgbox.to_s}.atom",:headers=>{'Accept'=>'application/xml'}})[:http].body
+              allinbox=XmlSimple.xml_in(all_inbox_xml, {"ForceArray" => true})
+              results=allinbox['entry'].select { |e| pkguuid.eql?(e['id'].first)}
+              if results.length != 1
+                raise "no such uuid"
+              end
+              results=results.first
+            else
+              delivid=OptParser.get_next_arg_value(argv,"Package delivery ID")
+              entry_xml=api_faspex.call({:operation=>'GET',:subpath=>"received/#{delivid}",:headers=>{'Accept'=>'application/xml'}})[:http].body
+              results=XmlSimple.xml_in(entry_xml, {"ForceArray" => true})
+            end
+            transfer_params=xmlentry_to_transferspec(results)
+            @faspmanager.do_transfer(
+            :mode    => :recv,
+            :dest    => '.',
+            :user    => transfer_params['remote_user'],
+            :host    => transfer_params['remote_host'],
+            :token   => transfer_params['token'],
+            :cookie  => transfer_params['cookie'],
+            :tags64  => transfer_params['tags64'],
+            :srcList => transfer_params['srcList'],
+            :rawArgs => [ '-P', '33001', '-d', '-q', '--ignore-host-key', '-k', '2', '--save-before-overwrite','--partial-file-suffix=.partial' ],
+            :retries => 10,
+            :use_aspera_key => true)
           when :recv_publink
-            require 'xmlsimple'
             thelink=OptParser.get_next_arg_value(argv,"Faspex public URL for a package")
             link_data=get_link_data(thelink)
+            # unauthenticated API
             api_faspex=Rest.new(@logger,link_data[:faspex_base_url],{})
             pkgdatares=api_faspex.call({:operation=>'GET',:subpath=>link_data[:subpath],:url_params=>{:passcode=>link_data[:passcode]},:headers=>{'Accept'=>'application/xml'}})
-            transfer_params=xml_to_transferspec(pkgdatares[:http].body)
+            transfer_params=xmlentry_to_transferspec(XmlSimple.xml_in(pkgdatares[:http].body, {"ForceArray" => false}))
             results=transfer_params
             @faspmanager.do_transfer(
             :mode    => :recv,
@@ -112,15 +155,21 @@ module Asperalm
             :retries => 10,
             :use_aspera_key => true)
           when :packages
-            require 'xmlsimple'
-            require 'formatador'
-            default_fields=['title','id']
-            api_faspex=Rest.new(@logger,@opt_parser.get_option_mandatory(:url)+'/aspera/faspex',{:basic_auth=>{:user=>@opt_parser.get_option_mandatory(:username), :password=>@opt_parser.get_option_mandatory(:password)}})
-            all_inbox_xml=api_faspex.call({:operation=>'GET',:subpath=>"inbox.atom"})[:http].body
-            results=XmlSimple.xml_in(all_inbox_xml, {"ForceArray" => true})
-            if @raw_result.nil? then
-              results=results['entry'].map { |e| default_fields.inject({}) { |m,v| m[v.to_sym] = e[v][0]; m } }
-              Formatador.display_table(results)
+            default_fields=['recipient_delivery_id','title','id']
+            api_faspex=get_faspex_authenticated_api
+            all_inbox_xml=api_faspex.call({:operation=>'GET',:subpath=>"#{@pkgbox.to_s}.atom",:headers=>{'Accept'=>'application/xml'}})[:http].body
+            all_inbox_data=XmlSimple.xml_in(all_inbox_xml, {"ForceArray" => true})
+            if @option_raw_result.nil? then
+              if all_inbox_data.has_key?('entry')
+                results=all_inbox_data['entry'].map { |e| default_fields.inject({}) { |m,v|
+                    if "recipient_delivery_id".eql?(v) then
+                      m[v.to_sym] = e['to'][0][v][0]
+                    else
+                      m[v.to_sym] = e[v][0];
+                    end
+                    m } }
+                Formatador.display_table(results)
+              end
               results=nil
             end
           end # command

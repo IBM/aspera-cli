@@ -2,6 +2,7 @@ require 'optparse'
 
 module Asperalm
   class OptParser < OptionParser
+    # parse an option value, special behavior for file:, env:, val:
     def self.get_extended_value(pname,value)
       if m=value.match(/^@file:(.*)/) then
         value=m[1]
