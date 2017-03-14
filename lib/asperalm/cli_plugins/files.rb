@@ -9,7 +9,7 @@ require 'asperalm/opt_parser'
 require 'asperalm/files_api'
 
 module Asperalm
-  module Cli
+  module CliPlugins
     class Files
       def opt_names; [:private_key,:username,:url,:auth,:code_getter,:client_id,:client_secret,:redirect_uri,:subject]; end
 

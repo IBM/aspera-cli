@@ -1,7 +1,7 @@
 require "thor"
 
 module Asperalm
-  module Cli
+  module CliPlugins
     class FilesThor < Thor
       desc "add <name> <url>", "Adds a remote named <name> for the repository at <url>"
       long_desc <<-LONGDESC

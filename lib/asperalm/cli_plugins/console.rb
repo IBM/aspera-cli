@@ -5,8 +5,8 @@ require 'asperalm/colors'
 require 'asperalm/opt_parser'
 
 module Asperalm
-  module Cli
-    class Node
+  module CliPlugins
+    class Console
       def opt_names; [:url,:username,:password]; end
 
       attr_accessor :logger

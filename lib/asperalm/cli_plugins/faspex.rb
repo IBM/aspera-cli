@@ -7,7 +7,7 @@ require 'xmlsimple'
 require 'formatador'
 
 module Asperalm
-  module Cli
+  module CliPlugins
     class Faspex
       def opt_names; [:url,:username,:password]; end
 

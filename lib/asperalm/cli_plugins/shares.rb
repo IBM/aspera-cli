@@ -5,7 +5,7 @@ require 'asperalm/colors'
 require 'asperalm/opt_parser'
 
 module Asperalm
-  module Cli
+  module CliPlugins
     class Shares
       def opt_names; [:url,:username,:password]; end
 
