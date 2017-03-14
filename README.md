@@ -50,7 +50,8 @@ Here is an example:
 
 ```yaml
 ---
-:loglevel: :warn
+:global:
+  :loglevel: :warn
 :files:
   default:
     :auth: :jwt

@@ -4,6 +4,6 @@
 $LOAD_PATH.unshift File.dirname(__FILE__) + "/../lib"
 
 require 'rubygems'
-require 'asperalm/cli'
+require 'asperalm/cli/main'
 
-Asperalm::Cli.new().go(ARGV)
+Asperalm::Cli::Main.new().go(ARGV)

@@ -58,9 +58,8 @@ test_jwt_send:
 gw:
 	$(ASCLI) --log-level=debug files faspexgw
 
-OLDVERSION=0.1.1
-deleteold:
-	gem yank asperalm -v $(OLDVERSION)
+deletecurrent:
+	gem yank asperalm -v $(GEMVERSION)
 
 gempush:
 	gem push $(GEMFILE)
