@@ -5,8 +5,8 @@
 # Laurent Martin
 #
 ##############################################################################
+require 'asperalm/log'
 require 'socket'
-require 'logger'
 require 'rbconfig'
 require 'tempfile'
 require 'timeout'
@@ -23,13 +23,12 @@ module Asperalm
 
   # listener for FASP transfers (debug)
   class FaspListenerLogger < FileTransferListener
-    def initialize(logger)
-      @logger=logger
+    def initialize
       @progress=nil
     end
 
     def event(data)
-      @logger.debug "#{data}"
+      Log.log.debug "#{data}"
       if data['Type'].eql?('NOTIFICATION') and data.has_key?('PreTransferBytes') then
         require 'ruby-progressbar'
         @progress=ProgressBar.create(:title => 'progress', :total => data['PreTransferBytes'].to_i)
@@ -61,8 +60,7 @@ module Asperalm
 
   # Manages FASP based transfers
   class FaspManager
-    def initialize(logger)
-      @logger=logger
+    def initialize
       @mgt_sock=nil
       @ascp_pid=nil
     end
@@ -156,17 +154,17 @@ module Asperalm
       # open random local TCP port listening
       @mgt_sock = TCPServer.new('127.0.0.1', 0)
       port = @mgt_sock.addr[1]
-      @logger.debug "Port=#{port}"
+      Log.log.debug "Port=#{port}"
       # add management port
       arguments.unshift '-M', port.to_s
-      @logger.info "execute #{env_vars.map{|k,v| "#{k}=\"#{v}\""}.join(' ')} \"#{command}\" \"#{arguments.join('" "')}\""
+      Log.log.info "execute #{env_vars.map{|k,v| "#{k}=\"#{v}\""}.join(' ')} \"#{command}\" \"#{arguments.join('" "')}\""
       begin
         @ascp_pid = Process.spawn(env_vars,[command,command],*arguments)
       rescue SystemCallError=> e
         raise TransferError.new(-1),e.to_s
       end
       # in parent, wait for connection, max 3 seconds
-      @logger.debug "before accept for pid (#{@ascp_pid})"
+      Log.log.debug "before accept for pid (#{@ascp_pid})"
       client=nil
       begin
         Timeout.timeout( 3 ) do
@@ -175,7 +173,7 @@ module Asperalm
       rescue Timeout::Error => e
         Process.kill 'INT',@ascp_pid
       end
-      @logger.debug "after accept (#{client})"
+      Log.log.debug "after accept (#{client})"
 
       if client.nil? then
         # avoid zombie
@@ -203,7 +201,7 @@ module Asperalm
           break
         end
         line.chomp!
-        @logger.debug "line=[#{line}]"
+        Log.log.debug "line=[#{line}]"
         if  line.empty? then
           # end frame
           if !current.nil? then
@@ -214,7 +212,7 @@ module Asperalm
               lastStatus = current
             end
           else
-            @logger.error "unexpected empty line";
+            Log.log.error "unexpected empty line";
           end
         elsif 'FASPMGR 2'.eql? line then
           # begin frame
@@ -222,7 +220,7 @@ module Asperalm
         elsif m=line.match('^([^:]+): (.*)$') then
           current[m[1]] = m[2]
         else
-          @logger.error "error parsing[#{line}]"
+          Log.log.error "error parsing[#{line}]"
         end
       end
 
@@ -233,7 +231,7 @@ module Asperalm
         if 'DONE'.eql?(lastStatus['Type']) then
           return
         end
-        @logger.error "last status is [#{lastStatus}]";
+        Log.log.error "last status is [#{lastStatus}]";
       end
 
       raise TransferError.new(lastStatus['Code'].to_i),lastStatus['Description']
@@ -267,10 +265,10 @@ module Asperalm
         lConnectAscpCmd = pluginLocation + '/bin/ascp';
         lConnectAscpId  = pluginLocation + '/etc/asperaweb_id_dsa.openssh';
       end
-      @logger.debug "cmd= #{lConnectAscpCmd}"
-      @logger.debug "key= #{lConnectAscpId}"
+      Log.log.debug "cmd= #{lConnectAscpCmd}"
+      Log.log.debug "key= #{lConnectAscpId}"
       if File.file?(lConnectAscpCmd) and File.file?(lConnectAscpId ) then
-        @logger.debug "Using plugin: [#{lConnectAscpId}]"
+        Log.log.debug "Using plugin: [#{lConnectAscpId}]"
         return {
           :cmd       => lConnectAscpCmd,
           :key       => lConnectAscpId,
@@ -279,9 +277,9 @@ module Asperalm
       end
 
       lESAscpCmd = '/usr/bin/ascp'
-      @logger.debug "Using system ascp if available"
+      Log.log.debug "Using system ascp if available"
       if ! File.executable(lESAscpCmd ) then
-        @logger.error "no such cmd: [#{lESAscpCmd}]"
+        Log.log.error "no such cmd: [#{lESAscpCmd}]"
         raise "cannot find ascp"
       end
 
@@ -325,7 +323,7 @@ module Asperalm
           delete_key = locations[:deletekey]
           locations = nil
         rescue Exception  => e
-          @logger.error "Exception: #{e}"
+          Log.log.error "Exception: #{e}"
           raise TransferError.new(-1),'cannot find ascp'
         end
       end
@@ -394,26 +392,26 @@ module Asperalm
       env_vars['ASPERA_SCP_FILEPASS'] = transfer_params[:file_pass] if transfer_params.has_key? :file_pass
       env_vars['ASPERA_PROXY_PASS'] = transfer_params[:proxy_pass] if transfer_params.has_key? :proxy_pass
 
-      @logger.debug("retries=#{lRetryLeft}")
+      Log.log.debug("retries=#{lRetryLeft}")
 
       # try to send the file until ascp is succesful
       loop do
-        @logger.debug('transfer starting');
+        Log.log.debug('transfer starting');
         begin
           execute_ascp(ascp_path,ascp_args,env_vars)
-          @logger.debug( 'transfer ok' );
+          Log.log.debug( 'transfer ok' );
           break
         rescue TransferError => e
           # failure in ascp
           if e.retryable? then
             # exit if we exceed the max number of retry
             if lRetryLeft <= 0 then
-              @logger.error "Maximum number of retry reached."
+              Log.log.error "Maximum number of retry reached."
               raise TransferError.new(-1),"max retry after: [#{status[:message]}]"
               break;
             end
           else
-            @logger.error('non-retryable error');
+            Log.log.error('non-retryable error');
             raise e
             break;
           end
@@ -421,7 +419,7 @@ module Asperalm
 
         # take this retry in account
         --lRetryLeft
-        @logger.debug( "resuming in  #{sleep_seconds} seconds (retry left:#{lRetryLeft})" );
+        Log.log.debug( "resuming in  #{sleep_seconds} seconds (retry left:#{lRetryLeft})" );
 
         # wait a bit before retrying, maybe network condition will be better
         sleep sleep_seconds

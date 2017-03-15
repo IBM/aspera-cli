@@ -6,8 +6,8 @@
 # brew install chromedriver
 # gem install watir-webdriver
 
+require 'asperalm/log'
 require 'socket'
-require 'logger'
 require 'pp'
 
 module Asperalm
@@ -17,8 +17,7 @@ module Asperalm
     end
 
     # uitype: :watir, or :tty, or :osbrowser
-    def initialize(logger,redirect_uri,uitype)
-      @logger=logger
+    def initialize(redirect_uri,uitype)
       @redirect_uri=redirect_uri
       @login_type=uitype
       @browser=nil
@@ -46,20 +45,20 @@ module Asperalm
       Thread.new {
         @mutex.synchronize {
           port=URI.parse(redirect_uri).port
-          @logger.info "listening on port #{port}"
+          Log.log.info "listening on port #{port}"
           TCPServer.open('127.0.0.1', port) { |webserver|
-            @logger.info "server=#{webserver}"
+            Log.log.info "server=#{webserver}"
             websession = webserver.accept
             line = websession.gets.chomp
-            @logger.info "line=#{line}"
+            Log.log.info "line=#{line}"
             if ! line.start_with?('GET /?') then
               raise "unexpected request"
             end
             request = line.partition('?').last.partition(' ').first
             data=URI.decode_www_form(request)
-            @logger.info "data=#{PP.pp(data,'').chomp}"
+            Log.log.info "data=#{PP.pp(data,'').chomp}"
             code=data[0][1]
-            @logger.info "code=#{PP.pp(code,'').chomp}"
+            Log.log.info "code=#{PP.pp(code,'').chomp}"
             websession.print "HTTP/1.1 200/OK\r\nContent-type:text/html\r\n\r\n<html><body><h1>received answer (code)</h1><code>#{code}</code></body></html>"
             websession.close
             @code=code
@@ -75,7 +74,7 @@ module Asperalm
     end
 
     def goto_page_and_get_code(the_url)
-      @logger.info "the_url=#{the_url}".bg_red().gray()
+      Log.log.info "the_url=#{the_url}".bg_red().gray()
       start_listener()
       case @login_type
       when :watir
@@ -96,7 +95,7 @@ module Asperalm
             @browser.link(:text =>"Allow").when_present.click
             @browser.link(:text =>"Continue").when_present.click
           rescue => e
-            @logger.info "ignoring browser error: "+e.message
+            Log.log.info "ignoring browser error: "+e.message
           end
         end
       when :osbrowser

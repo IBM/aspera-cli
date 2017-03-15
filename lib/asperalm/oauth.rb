@@ -20,9 +20,8 @@ module Asperalm
       [ :basic, :web, :jwt ]
     end
 
-    def initialize(logger,baseurl,organization,client_id,client_secret,auth_data)
-      @logger=logger
-      @rest=Rest.new(@logger,baseurl)
+    def initialize(baseurl,organization,client_id,client_secret,auth_data)
+      @rest=Rest.new(baseurl)
       @organization=organization
       @client_id=client_id
       @client_secret=client_secret
@@ -30,7 +29,7 @@ module Asperalm
       # subkeys = :data (token value ruby structure), :expiration
       @accesskey_cache={}
       @auth_data=auth_data
-      @logger.debug "auth=#{auth_data}"
+      Log.log.debug "auth=#{auth_data}"
     end
 
     # set token data
@@ -40,16 +39,16 @@ module Asperalm
       token_hash=JSON.parse(token_json)
       @accesskey_cache[api_scope][:data] = token_hash
       decoded_token_info = self.class.decode_access_token(@accesskey_cache[api_scope][:data]['access_token'])
-      @logger.info "decoded_token_info=#{PP.pp(decoded_token_info,'').chomp}"
+      Log.log.info "decoded_token_info=#{PP.pp(decoded_token_info,'').chomp}"
       @accesskey_cache[api_scope][:expiration]=DateTime.parse(decoded_token_info['expires_at'])
-      @logger.info "token expires at #{@accesskey_cache[api_scope][:expiration]}"
+      Log.log.info "token expires at #{@accesskey_cache[api_scope][:expiration]}"
     end
 
     def save_set_token_data(api_scope,token_json,token_state_file)
-      @logger.info "token_json=#{token_json}"
+      Log.log.info "token_json=#{token_json}"
       File.write(token_state_file,token_json)
       set_token_data(api_scope,token_json)
-      @logger.info "new token is #{@accesskey_cache[api_scope][:data]['access_token']}"
+      Log.log.info "new token is #{@accesskey_cache[api_scope][:data]['access_token']}"
       set_token_data(api_scope,token_json)
     end
 
@@ -65,7 +64,7 @@ module Asperalm
       # if first time, try to read from file
       if ! @accesskey_cache.has_key?(api_scope) then
         if File.exist?(token_state_file) then
-          @logger.info "reading token from file cache: #{token_state_file}"
+          Log.log.info "reading token from file cache: #{token_state_file}"
           set_token_data(api_scope,File.read(token_state_file))
         end
       end
@@ -73,20 +72,20 @@ module Asperalm
       # check if access token is in cache and not expired, if expired: empty cache and try to refresh
       # note: we could also try to use then current token, and , if expired: get a new one
       if @accesskey_cache.has_key?(api_scope) then
-        @logger.info "date=#{PP.pp(@accesskey_cache[api_scope][:expiration],'').chomp}"
+        Log.log.info "date=#{PP.pp(@accesskey_cache[api_scope][:expiration],'').chomp}"
         remaining_minutes=((@accesskey_cache[api_scope][:expiration]-DateTime.now)*24*60).round
-        @logger.info "minutes remain=#{remaining_minutes}"
+        Log.log.info "minutes remain=#{remaining_minutes}"
         # TODO: enhance expiration policy ?
         is_expired = remaining_minutes < 10
         if is_expired  then
           if @accesskey_cache[api_scope][:data].has_key?('refresh_token') then
-            @logger.info "token expired"
+            Log.log.info "token expired"
             # try to refresh
             # note: admin token has no refresh, and lives by default 1800secs
             refresh_token = @accesskey_cache[api_scope][:data]['refresh_token']
             @accesskey_cache.delete(api_scope)
             #Note: we keep the file cache, as refresh_token may be valid
-            @logger.info "refresh=[#{refresh_token}]".bg_green()
+            Log.log.info "refresh=[#{refresh_token}]".bg_green()
             # Note: scope is mandatory in Files, and we can either provide basic auth, or client_Secret in data
             resp=@rest.call({
               :operation=>'POST',
@@ -103,12 +102,12 @@ module Asperalm
               }})
             save_set_token_data(api_scope,resp[:http].body,token_state_file)
           else
-            @logger.info "token expired, no refresh token, deleting cache and cache file".bg_red()
+            Log.log.info "token expired, no refresh token, deleting cache and cache file".bg_red()
             @accesskey_cache.delete(api_scope)
             begin
               File.unlink(token_state_file)
             rescue => e
-              @logger.info "error: #{e}"
+              Log.log.info "error: #{e}"
             end
           end # has refresh
         end # is expired
@@ -165,7 +164,7 @@ module Asperalm
           require 'jwt'
 
           seconds_since_epoch=Time.new.to_i
-          @logger.info("seconds=#{seconds_since_epoch}")
+          Log.log.info("seconds=#{seconds_since_epoch}")
 
           payload = {
             :iss => @client_id,
@@ -178,12 +177,12 @@ module Asperalm
           rsa_private =@auth_data[:private_key]
           rsa_public = rsa_private.public_key
 
-          @logger.debug("private=[#{rsa_private}]")
-          @logger.debug("public=[#{rsa_public}]")
+          Log.log.debug("private=[#{rsa_private}]")
+          Log.log.debug("public=[#{rsa_public}]")
 
           assertion = JWT.encode payload, rsa_private, 'RS256'
 
-          @logger.debug("assertion=[#{assertion}]")
+          Log.log.debug("assertion=[#{assertion}]")
 
           resp=@rest.call({
             :operation=>'POST',

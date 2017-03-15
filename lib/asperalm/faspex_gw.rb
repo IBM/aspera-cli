@@ -1,8 +1,8 @@
+require 'asperalm/log'
 require 'sinatra/base'
 require 'webrick'
 require 'webrick/https'
 require 'openssl'
-require 'logger'
 require 'json'
 
 # from connect client
@@ -60,9 +60,8 @@ c4g/VhsxOBi0cQ+azcgOno4uG+GMmIPLHzHxREzGBHNJdmAPx/i9F4BrLunMTA5a
 mnkPIAou1Z5jJh5VkpTYghdae9C8x49OhgQ=
 -----END CERTIFICATE-----"
 class FaspexGW < Sinatra::Base
-  def self.set_vars(logger,api_files_user,oauthapi)
+  def self.set_vars(api_files_user,oauthapi)
     @@api_files_user=api_files_user
-    @@logger=logger
     @@oauthapi=oauthapi
   end
 
@@ -82,13 +81,13 @@ class FaspexGW < Sinatra::Base
 
   post '/aspera/faspex/send' do
     calldata=JSON.parse(request.body.read)
-    #@logger.info "body=#{request.body.read}"
-    #@logger.info "params1=#{request.params}"
-    #@logger.info "params=#{params}"
+    #Log.log.info "body=#{request.body.read}"
+    #Log.log.info "params1=#{request.params}"
+    #Log.log.info "params=#{params}"
 
     filelist = calldata['delivery']['sources'][0]['paths']
 
-    @@logger.info "files=#{filelist}"
+    @Log.log.info "files=#{filelist}"
 
     recipient_email='laurent@asperasoft.com'
 
@@ -160,7 +159,7 @@ class FaspexGW < Sinatra::Base
       "status" => "unused"
       }
     }
-    @@logger.info "result=#{result}"
+    @Log.log.info "result=#{result}"
     return JSON.generate(result)
   end
 end
