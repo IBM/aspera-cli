@@ -8,7 +8,7 @@ module Asperalm
 
         attr_accessor :faspmanager
 
-        def command_list;[ :put, :get ];end
+        def command_list;[ :put, :get, :ls ];end
 
         def init_defaults
         end
@@ -20,10 +20,7 @@ module Asperalm
         end
 
         def dojob(command,argv)
-          results=''
-
           api_shares=Rest.new(self.get_option_mandatory(:url)+'/node_api',{:basic_auth=>{:user=>self.get_option_mandatory(:username), :password=>self.get_option_mandatory(:password)}})
-
           case command
           when :put
             filelist = argv
@@ -37,7 +34,7 @@ module Asperalm
             send_result=api_shares.call({:operation=>'POST',:subpath=>'files/upload_setup',:json_params=>{ :transfer_requests => [ { :transfer_request => { :paths => [ { :destination => destination } ] } } ] }})
             send_result[:data]['transfer_specs'].each{ |s|
               session=s['transfer_spec']
-              results=@faspmanager.do_transfer(
+              @faspmanager.do_transfer(
               :mode    => :send,
               :dest    => session['destination_root'],
               :user    => session['remote_user'],
@@ -64,7 +61,7 @@ module Asperalm
             send_result[:data]['transfer_specs'].each{ |s|
               session=s['transfer_spec']
               srcList = session['paths'].map { |i| i['source']}
-              results=@faspmanager.do_transfer(
+              @faspmanager.do_transfer(
               :mode    => :recv,
               :dest    => destination,
               :user    => session['remote_user'],
@@ -77,8 +74,11 @@ module Asperalm
               :retries => 10,
               :use_aspera_key => true)
             }
+          when :ls
+            thepath=self.class.get_next_arg_value(argv,"path")
+            send_result=api_shares.call({:operation=>'POST',:subpath=>'files/browse',:json_params=>{ :path => thepath} } )
+            return {:fields=>send_result[:data]['items'].first.keys,:values=>send_result[:data]['items']}
           end
-          return results
         end
       end
     end

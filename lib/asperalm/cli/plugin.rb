@@ -154,44 +154,45 @@ module Asperalm
         return self.class.to_s.downcase.gsub(%r{.*::},'')
       end
 
-      def go(argv,defaults)
-        begin
-          @format=:text
-          init_defaults
-          self.set_defaults(defaults)
-          self.banner = "NAME\n\t#{$PROGRAM_NAME} -- a command line tool for Aspera Applications\n\n"
-          self.separator "SYNOPSIS"
-          self.separator "\t#{$PROGRAM_NAME} #{command_name} [OPTIONS] COMMAND [ARGS]..."
-          self.separator ""
-          self.separator "COMMANDS"
-          self.separator "\tSupported commands: #{command_list.map {|x| x.to_s}.join(', ')}"
-          self.separator ""
-          self.separator "OPTIONS"
-          self.on_tail("-h", "--help", "Show this message") { self.exit_with_usage }
-          self.add_opt_list(:format,"output format",'--format=TYPE')
-          set_options
-          options=[]
-          while !argv.empty? and argv.first =~ /^-/
-            options.push argv.shift
-          end
-          Log.log.info("split -#{options}-#{argv}-")
-          self.parse!(options)
-          command=self.class.get_next_arg_from_list(argv,'command',command_list)
-          results=dojob(command,argv)
-          if ! results.nil? then
-            case @format
-            when :ruby
-              puts PP.pp(results[:values],'')
-            when :text
-              #results[:values].each { |i| i.select! { |k| results[:fields].include?(k) } }
-              Formatador.display_table(results[:values],results[:fields])
-            end
-          end
-        rescue OptionParser::InvalidArgument => e
-          STDERR.puts "ERROR:".bg_red().gray()+" #{e}\n\n"
-          self.exit_with_usage
+      def parse_options!(argv)
+        options=[]
+        while !argv.empty? and argv.first =~ /^-/
+          options.push argv.shift
         end
-        return
+        Log.log.info("split -#{options}-#{argv}-")
+        self.parse!(options)
+      end
+
+      def go(argv,defaults)
+        @format=:text
+        init_defaults
+        self.set_defaults(defaults)
+        self.banner = "NAME\n\t#{$PROGRAM_NAME} -- a command line tool for Aspera Applications\n\n"
+        self.separator "SYNOPSIS"
+        self.separator "\t#{$PROGRAM_NAME} #{command_name} [OPTIONS] COMMAND [ARGS]..."
+        self.separator ""
+        self.separator "COMMANDS"
+        self.separator "\tSupported commands: #{command_list.map {|x| x.to_s}.join(', ')}"
+        self.separator ""
+        self.separator "OPTIONS"
+        self.on_tail("-h", "--help", "Show this message") { self.exit_with_usage }
+        self.add_opt_list(:format,"output format",'--format=TYPE')
+        set_options
+        parse_options!(argv)
+        command=self.class.get_next_arg_from_list(argv,'command',command_list)
+        results=dojob(command,argv)
+        if !argv.empty?
+          raise OptionParser::InvalidArgument,"unprocessed values: #{argv}"
+        end
+        if ! results.nil? then
+          case @format
+          when :ruby
+            puts PP.pp(results[:values],'')
+          when :text
+            #results[:values].each { |i| i.select! { |k| results[:fields].include?(k) } }
+            Formatador.display_table(results[:values],results[:fields])
+          end
+        end
       end
     end
   end

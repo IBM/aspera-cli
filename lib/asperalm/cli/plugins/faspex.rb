@@ -142,14 +142,18 @@ module Asperalm
             all_inbox_xml=api_faspex.call({:operation=>'GET',:subpath=>"#{@pkgbox.to_s}.atom",:headers=>{'Accept'=>'application/xml'}})[:http].body
             all_inbox_data=XmlSimple.xml_in(all_inbox_xml, {"ForceArray" => true})
             if all_inbox_data.has_key?('entry')
-              results=all_inbox_data['entry'].map { |e| default_fields.inject({}) { |m,v|
+              values=all_inbox_data['entry'].map { |e| default_fields.inject({}) { |m,v|
                   if "recipient_delivery_id".eql?(v) then
-                    m[v] = e['to'][0][v][0]
+                    if e['to'][0].has_key?(v)
+                      m[v] = e['to'][0][v][0]
+                    else
+                      m[v] = 'unknown'
+                    end
                   else
                     m[v] = e[v][0];
                   end
                   m } }
-              return {:fields=>default_fields,:values=>results}
+              return {:fields=>default_fields,:values=>values}
             end
           end # command
         end
