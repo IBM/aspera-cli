@@ -34,9 +34,6 @@ module Asperalm
         Plugin.get_plugin_list
       end
 
-      def init_defaults
-      end
-
       def set_options
         self.separator ""
         self.separator "DESCRIPTION"

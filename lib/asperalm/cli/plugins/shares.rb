@@ -10,9 +10,6 @@ module Asperalm
 
         def command_list;[ :put, :get, :ls ];end
 
-        def init_defaults
-        end
-
         def set_options
           self.add_opt_simple(:url,"-wURI", "--url=URI","URL of application, e.g. http://org.asperafiles.com")
           self.add_opt_simple(:username,"-uSTRING", "--username=STRING","username to log in")

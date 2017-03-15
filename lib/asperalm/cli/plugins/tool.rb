@@ -6,9 +6,6 @@ module Asperalm
       class Tool < Plugin
         def command_list; [:test];end
 
-        def init_defaults
-        end
-
         def set_options
         end
 

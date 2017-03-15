@@ -50,11 +50,8 @@ module Asperalm
           return Rest.new(self.get_option_mandatory(:url),{:basic_auth=>{:user=>self.get_option_mandatory(:username), :password=>self.get_option_mandatory(:password)}})
         end
 
-        def init_defaults
-          @pkgbox=:inbox
-        end
-
         def set_options
+          @pkgbox=:inbox
           self.add_opt_simple(:url,"-wURI", "--url=URI","URL of application, e.g. http://org.asperafiles.com")
           self.add_opt_simple(:username,"-uSTRING", "--username=STRING","username to log in")
           self.add_opt_simple(:password,"-pSTRING", "--password=STRING","password")

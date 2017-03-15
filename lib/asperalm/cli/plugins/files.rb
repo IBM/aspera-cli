@@ -76,11 +76,8 @@ module Asperalm
 
         def command_list; [ :send, :recv, :upload, :download, :events, :set_client_key, :faspexgw, :admin ];end
 
-        def init_defaults
-          @code_getter=:tty
-        end
-
         def set_options
+          @code_getter=:tty
           self.add_opt_list(:auth,"type of authentication",'-tTYPE','--auth=TYPE')
           self.add_opt_list(:code_getter,"method to start browser",'-gTYPE','--code-get=TYPE')
           self.add_opt_simple(:url,"-wURI", "--url=URI","URL of application, e.g. http://org.asperafiles.com")
@@ -154,8 +151,6 @@ module Asperalm
 
           # display name of default workspace
           Log.log.info("current workspace is "+workspace_data['name'].red)
-
-          results=''
 
           # NOTE: important: transfer id must be unique: generate random id (using a non unique id results in discard of tags, and package is not finalized)
           xfer_id=SecureRandom.uuid
@@ -311,7 +306,8 @@ module Asperalm
             # tag=x.y.z%3Dvalue
             # iteration_token=nnn
             # active_only=true|false
-            results=api_node_admin.list("ops/transfers",{'count'=>100,'filter'=>'summary','active_only'=>'true'}) #
+            res=api_node_admin.list("ops/transfers",{'count'=>100,'filter'=>'summary','active_only'=>'true'}) #
+            return {:values=>res}
             #transfers=api_node_admin.make_request_ex({:operation=>'GET',:subpath=>'ops/transfers',:args=>{'count'=>25,'filter'=>'id'}})
             #transfers=api_node_admin.list("events") # after_time=2016-05-01T23:53:09Z
           when :set_client_key
@@ -330,14 +326,15 @@ module Asperalm
             operation=self.class.get_next_arg_from_list(argv,'operation',[:list])
             case operation
             when :list
-              results=api_files_admin.list(resource.to_s)[:data]
+              default_fields=['id','name']
+              res=api_files_admin.list(resource.to_s)[:data]
+              return {:fields=>default_fields,:values=>res }
             else
               raise RuntimeError, "unexpected value: #{resource}"
             end
           else
             raise RuntimeError, "unexpected value: #{command}"
           end # action
-          return results
         end
       end
     end

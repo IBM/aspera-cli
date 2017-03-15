@@ -138,10 +138,6 @@ module Asperalm
         throw "virtual method"
       end
 
-      def init_defaults
-        throw "virtual method"
-      end
-
       def set_options
         throw "virtual method"
       end
@@ -164,8 +160,6 @@ module Asperalm
       end
 
       def go(argv,defaults)
-        @format=:text
-        init_defaults
         self.set_defaults(defaults)
         self.banner = "NAME\n\t#{$PROGRAM_NAME} -- a command line tool for Aspera Applications\n\n"
         self.separator "SYNOPSIS"
@@ -176,6 +170,7 @@ module Asperalm
         self.separator ""
         self.separator "OPTIONS"
         self.on_tail("-h", "--help", "Show this message") { self.exit_with_usage }
+        @format=:text
         self.add_opt_list(:format,"output format",'--format=TYPE')
         set_options
         parse_options!(argv)
