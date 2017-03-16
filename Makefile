@@ -33,7 +33,7 @@ $(GEMFILE):
 	gem build asperalm.gemspec
 
 gem: $(GEMFILE)
-	gem install $(GEMFILE)
+	gem install -l $(GEMFILE)
 
 togarage: $(ZIPFILE) README.pdf $(GEMFILE)
 	ascli files --workspace='Sales Engineering' upload '/Laurent Garage SE/RubyCLI' $(ZIPFILE) README.pdf $(GEMFILE)

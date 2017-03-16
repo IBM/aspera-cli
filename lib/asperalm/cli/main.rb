@@ -31,7 +31,7 @@ module Asperalm
       end
 
       def command_list
-        Plugin.get_plugin_list
+        Plugin.get_plugin_list.push(:config)
       end
 
       def set_options
@@ -53,10 +53,35 @@ module Asperalm
         self.on("-r", "--rest-debug","more debug for HTTP calls") { Rest.set_debug(true) }
       end
 
-      def dojob(app_name,argv)
-        default_config=@loaded_config[app_name][self.get_option_mandatory(:config_name)] if !@loaded_config.nil? and @loaded_config.has_key?(app_name)
-        application=Plugin.new_plugin(app_name)
-        application.go(argv,default_config)
+      def dojob(command,argv)
+        case command
+        when :config
+          subcommand=self.class.get_next_arg_from_list(argv,'action',[:ls])
+          case subcommand
+          when :ls
+            sections=Plugin.get_plugin_list.unshift(:global)
+            if argv.empty?
+              # just list plugins
+              return { :fields => ['plugin'], :values=>sections.map { |i| { 'plugin' => i.to_s } } }
+            else
+              plugin=self.class.get_next_arg_from_list(argv,'plugin',sections)
+              names=@loaded_config[plugin].keys.map { |i| i.to_sym }
+              if argv.empty?
+                # list names for tool
+                return { :fields => ['name'], :values=>names.map { |i| { 'name' => i.to_s } } }
+              else
+                # list parameters
+                configname=self.class.get_next_arg_from_list(argv,'config',names)
+                return { :fields => ['param','value'], :values=>@loaded_config[plugin][configname.to_s].keys.map { |i| { 'param' => i.to_s, 'value' => @loaded_config[plugin][configname.to_s][i] } } }
+              end
+            end
+          end
+        else
+          # execute plugin
+          default_config=@loaded_config[command][self.get_option_mandatory(:config_name)] if !@loaded_config.nil? and @loaded_config.has_key?(command)
+          application=Plugin.new_plugin(command)
+          application.go(argv,default_config)
+        end
       end
 
       #################################
