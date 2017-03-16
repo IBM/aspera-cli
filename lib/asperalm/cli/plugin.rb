@@ -47,7 +47,13 @@ module Asperalm
         end
         return get_extended_value(descr,argv.shift)
       end
-
+      def self.get_remaining_arguments(argv,descr)
+        filelist = argv.pop(argv.length)
+        Log.log.debug("#{descr}=#{filelist}")
+        if filelist.empty? then
+          raise OptionParser::InvalidArgument,"missing #{descr}"
+        end
+      end
       def get_formats; [:ruby,:text]; end
 
       def exit_with_usage

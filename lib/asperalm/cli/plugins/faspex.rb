@@ -14,7 +14,7 @@ module Asperalm
         attr_accessor :faspmanager
 
         # extract elements from anonymous faspex link
-        def get_link_data(email)
+        def self.get_link_data(email)
           package_match = email.match(/((http[^"]+)\/(external_deliveries\/([^?]+)))\?passcode=([^"]+)/)
           if package_match.nil? then
             raise OptionParser::InvalidArgument, "string does not match Faspex url"
@@ -30,7 +30,7 @@ module Asperalm
         end
 
         # extract transfer information from xml returned by faspex
-        def uri_to_transferspec(fasplink)
+        def self.uri_to_transferspec(fasplink)
           transfer_uri=URI.parse(fasplink)
           transfer_data=URI::decode_www_form(transfer_uri.query).to_h
           transfer_params={}
@@ -41,7 +41,7 @@ module Asperalm
           return transfer_params
         end
 
-        def xmlentry_to_transferspec(entry)
+        def self.xmlentry_to_transferspec(entry)
           fasplink=(entry['link'].select{|e| e["rel"].eql?("package")}).first["href"]
           return uri_to_transferspec(fasplink)
         end
@@ -51,24 +51,18 @@ module Asperalm
         end
 
         def set_options
-          @pkgbox=:inbox
           self.add_opt_simple(:url,"-wURI", "--url=URI","URL of application, e.g. http://org.asperafiles.com")
           self.add_opt_simple(:username,"-uSTRING", "--username=STRING","username to log in")
           self.add_opt_simple(:password,"-pSTRING", "--password=STRING","password")
+          @pkgbox=:inbox
           self.add_opt_list(:pkgbox,"package box",'--box=TYPE')
         end
 
         def dojob(command,argv)
           case command
           when :send
+            filelist = self.class.get_remaining_arguments(argv,"file list")
             api_faspex=get_faspex_authenticated_api
-
-            filelist = argv
-            Log.log.info("file list=#{filelist}")
-            if filelist.empty? then
-              raise OptionParser::InvalidArgument,"missing file list"
-            end
-
             send_result=api_faspex.call({:operation=>'POST',:subpath=>'send',:json_params=>{"delivery"=>{"use_encryption_at_rest"=>false,"note"=>"this file was sent by a script","sources"=>[{"paths"=>filelist}],"title"=>"File sent by script","recipients"=>["aspera.user1@gmail.com"],"send_upload_result"=>true}},:headers=>{'Accept'=>'application/json'}})
             send_result[:data]['xfer_sessions'].each { |session|
               @faspmanager.do_transfer(

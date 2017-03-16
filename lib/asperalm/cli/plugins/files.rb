@@ -159,7 +159,7 @@ module Asperalm
           when :upload
             destination_folder=self.class.get_next_arg_value(argv,'destination')
             # list of files to include in package
-            filelist = argv
+            filelist = argv.pop(argv.length)
             Log.log.info("file list=#{filelist}")
             if filelist.empty? then
               raise OptionParser::InvalidArgument,"missing file list"
@@ -220,11 +220,7 @@ module Asperalm
           when :send
 
             # list of files to include in package
-            filelist = argv
-            Log.log.info("file list=#{filelist}")
-            if filelist.empty? then
-              raise OptionParser::InvalidArgument,"missing file list"
-            end
+            filelist = self.class.get_remaining_arguments(argv,"file list")
 
             # lookup a user: myself, I could directly use self_data['id'], but that's to show lookup
             # TODO: add param
@@ -306,8 +302,8 @@ module Asperalm
             # tag=x.y.z%3Dvalue
             # iteration_token=nnn
             # active_only=true|false
-            res=api_node_admin.list("ops/transfers",{'count'=>100,'filter'=>'summary','active_only'=>'true'}) #
-            return {:values=>res}
+            res=api_node_admin.list("ops/transfers",{'count'=>100,'filter'=>'summary','active_only'=>'true'})
+            return {:values=>res[:data]}
             #transfers=api_node_admin.make_request_ex({:operation=>'GET',:subpath=>'ops/transfers',:args=>{'count'=>25,'filter'=>'id'}})
             #transfers=api_node_admin.list("events") # after_time=2016-05-01T23:53:09Z
           when :set_client_key
