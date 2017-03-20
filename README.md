@@ -51,7 +51,8 @@ Here is an example:
 ```yaml
 ---
 :global:
-  :loglevel: :warn
+  default:
+    :loglevel: :warn
 :files:
   default:
     :auth: :jwt
@@ -68,7 +69,7 @@ Here is an example:
     :redirect_uri: http://local.connectme.us:12345
 :faspex:
   default:
-    :url: https://10.25.0.3
+    :url: https://10.25.0.3/aspera/faspex
     :username: admin
     :password: MyPassword
 :shares:
@@ -81,6 +82,11 @@ Here is an example:
     :url: https://10.25.0.8:9092
     :username: node_root
     :password: MyPassword
+:console:
+  default:
+    :url: https://console.asperademo.com/aspera/console/api
+    :username: nyapiuset
+    :password: "mypassword"
 ```
 
 ## Authentication to applications

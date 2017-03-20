@@ -84,6 +84,10 @@ module Asperalm
         Log.log.debug "body www data=#{req.body.chomp}"
         req['Content-Type'] = 'application/x-www-form-urlencoded'
       end
+      if call_data.has_key?(:text_body_params) then
+        req.body=call_data[:text_body_params]
+        Log.log.debug "body data=#{req.body.chomp}"
+      end
       if call_data.has_key?(:headers) then
         call_data[:headers].keys.each do |key|
           req[key] = call_data[:headers][key]

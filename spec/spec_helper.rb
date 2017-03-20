@@ -1,5 +1,5 @@
 require "bundler/setup"
-require "asperalm"
+require "asperalm/main"
 
 RSpec.configure do |config|
   # Enable flags like --only-failures and --next-failure

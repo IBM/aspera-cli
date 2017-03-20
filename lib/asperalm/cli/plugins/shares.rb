@@ -8,7 +8,7 @@ module Asperalm
 
         attr_accessor :faspmanager
 
-        def command_list;[ :put, :get, :ls ];end
+        def command_list;[ :upload, :download, :browse ];end
 
         def set_options
           self.add_opt_simple(:url,"-wURI", "--url=URI","URL of application, e.g. http://org.asperafiles.com")
@@ -19,7 +19,7 @@ module Asperalm
         def dojob(command,argv)
           api_shares=Rest.new(self.get_option_mandatory(:url)+'/node_api',{:basic_auth=>{:user=>self.get_option_mandatory(:username), :password=>self.get_option_mandatory(:password)}})
           case command
-          when :put
+          when :upload
             filelist = argv
             Log.log.debug("file list=#{filelist}")
             if filelist.length < 2 then
@@ -44,7 +44,7 @@ module Asperalm
               :retries => 10,
               :use_aspera_key => true)
             }
-          when :get
+          when :download
             filelist = argv
             Log.log.debug("file list=#{filelist}")
             if filelist.length < 2 then
@@ -71,7 +71,7 @@ module Asperalm
               :retries => 10,
               :use_aspera_key => true)
             }
-          when :ls
+          when :browse
             thepath=self.class.get_next_arg_value(argv,"path")
             send_result=api_shares.call({:operation=>'POST',:subpath=>'files/browse',:json_params=>{ :path => thepath} } )
             return {:fields=>send_result[:data]['items'].first.keys,:values=>send_result[:data]['items']}

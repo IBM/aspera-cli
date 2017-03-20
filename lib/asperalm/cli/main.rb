@@ -87,17 +87,16 @@ module Asperalm
       #################################
       # MAIN
       #--------------------------------
-      @@CONFIG_FILE_HOME='.aspera/ascli/config.yaml'
+      @@CONFIG_FILE_DEFAULT=File.join(home,'config.yaml')
 
       def self.start
         $PROGRAM_NAME = 'ascli'
-        $DEFAULT_CONFIG_FILE=File.join(Dir.home,@@CONFIG_FILE_HOME)
         defaults={
           :logtype => :stdout,
           :loglevel => :warn,
           :config_name => 'default'
         }
-        defaults[:config_file]=$DEFAULT_CONFIG_FILE if File.exist?($DEFAULT_CONFIG_FILE)
+        defaults[:config_file]=@@CONFIG_FILE_DEFAULT if File.exist?(@@CONFIG_FILE_DEFAULT)
         tool=self.new
         begin
           tool.go(ARGV,defaults)

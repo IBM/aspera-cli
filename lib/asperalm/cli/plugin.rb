@@ -11,6 +11,11 @@ module Asperalm
   module Cli
     # base class for plugins modules
     class Plugin < OptionParser
+      @@TOOL_HOME=File.join(Dir.home,'.aspera/ascli')
+      def self.home
+        return @@TOOL_HOME
+      end
+      
       # parse an option value, special behavior for file:, env:, val:
       def self.get_extended_value(pname,value)
         if m=value.match(/^@file:(.*)/) then
@@ -53,6 +58,7 @@ module Asperalm
         if filelist.empty? then
           raise OptionParser::InvalidArgument,"missing #{descr}"
         end
+        return filelist
       end
       def get_formats; [:ruby,:text]; end
 
@@ -185,7 +191,7 @@ module Asperalm
         if !argv.empty?
           raise OptionParser::InvalidArgument,"unprocessed values: #{argv}"
         end
-        if ! results.nil? then
+        if results.is_a?(Hash) and results.has_key?(:values) and results.has_key?(:fields) then
           case @format
           when :ruby
             puts PP.pp(results[:values],'')
@@ -193,6 +199,8 @@ module Asperalm
             #results[:values].each { |i| i.select! { |k| results[:fields].include?(k) } }
             Formatador.display_table(results[:values],results[:fields])
           end
+        else
+          puts ">>#{PP.pp(results,'')}"
         end
       end
     end

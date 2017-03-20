@@ -30,6 +30,7 @@ module Asperalm
         end
 
         # extract transfer information from xml returned by faspex
+        # only external users get token in link (see: <faspex>/app/views/delivery/_content.xml.builder)
         def self.uri_to_transferspec(fasplink)
           transfer_uri=URI.parse(fasplink)
           transfer_data=URI::decode_www_form(transfer_uri.query).to_h
@@ -41,9 +42,8 @@ module Asperalm
           return transfer_params
         end
 
-        def self.xmlentry_to_transferspec(entry)
-          fasplink=(entry['link'].select{|e| e["rel"].eql?("package")}).first["href"]
-          return uri_to_transferspec(fasplink)
+        def self.get_fasp_uri_from_entry(entry)
+          return (entry['link'].select{|e| e["rel"].eql?("package")}).first["href"]
         end
 
         def get_faspex_authenticated_api
@@ -63,8 +63,11 @@ module Asperalm
           when :send
             filelist = self.class.get_remaining_arguments(argv,"file list")
             api_faspex=get_faspex_authenticated_api
-            send_result=api_faspex.call({:operation=>'POST',:subpath=>'send',:json_params=>{"delivery"=>{"use_encryption_at_rest"=>false,"note"=>"this file was sent by a script","sources"=>[{"paths"=>filelist}],"title"=>"File sent by script","recipients"=>["aspera.user1@gmail.com"],"send_upload_result"=>true}},:headers=>{'Accept'=>'application/json'}})
-            send_result[:data]['xfer_sessions'].each { |session|
+            send_result=api_faspex.call({:operation=>'POST',:subpath=>'send',:json_params=>{"delivery"=>{"use_encryption_at_rest"=>false,"note"=>"this file was sent by a script","sources"=>[{"paths"=>filelist}],"title"=>"File sent by script","recipients"=>["aspera.user1@gmail.com"],"send_upload_result"=>true}},:headers=>{'Accept'=>'application/json'}})[:data]
+            if send_result.has_key?('error')
+              raise OptionParser::InvalidArgument,"#{send_result['error']['user_message']} / #{send_result['error']['internal_message']}"
+            end
+            send_result['xfer_sessions'].each { |session|
               @faspmanager.do_transfer(
               :mode    => :send,
               :dest    => session['destination_root'],
@@ -84,17 +87,26 @@ module Asperalm
               pkguuid=self.class.get_next_arg_value(argv,"Package UUID")
               all_inbox_xml=api_faspex.call({:operation=>'GET',:subpath=>"#{@pkgbox.to_s}.atom",:headers=>{'Accept'=>'application/xml'}})[:http].body
               allinbox=XmlSimple.xml_in(all_inbox_xml, {"ForceArray" => true})
-              results=allinbox['entry'].select { |e| pkguuid.eql?(e['id'].first)}
-              if results.length != 1
-                raise "no such uuid"
+              package_entries=[]
+              if allinbox.has_key?('entry')
+                package_entries=allinbox['entry'].select { |e| pkguuid.eql?(e['id'].first) }
               end
-              results=results.first
+              if package_entries.length != 1
+                raise OptionParser::InvalidArgument,"no such uuid"
+              end
+              package_entry=package_entries.first
             else
               delivid=self.class.get_next_arg_value(argv,"Package delivery ID")
               entry_xml=api_faspex.call({:operation=>'GET',:subpath=>"received/#{delivid}",:headers=>{'Accept'=>'application/xml'}})[:http].body
-              results=XmlSimple.xml_in(entry_xml, {"ForceArray" => true})
+              package_entry=XmlSimple.xml_in(entry_xml, {"ForceArray" => true})
             end
-            transfer_params=xmlentry_to_transferspec(results)
+            # NOTE: only external users have token in faspe: link !
+            transfer_uri=self.class.get_fasp_uri_from_entry(package_entry)
+            transfer_params=self.class.uri_to_transferspec(transfer_uri)
+            if !transfer_params.has_key?('token')
+              xmlpayload='<?xml version="1.0" encoding="UTF-8"?><url-list xmlns="http://schemas.asperasoft.com/xml/url-list"><url href="'+transfer_uri+'"/></url-list>'
+              transfer_params['token']=api_faspex.call({:operation=>'POST',:subpath=>"issue-token?direction=down",:headers=>{'Accept'=>'text/plain','Content-Type'=>'application/vnd.aspera.url-list+xml'},:text_body_params=>xmlpayload})[:http].body
+            end
             @faspmanager.do_transfer(
             :mode    => :recv,
             :dest    => '.',
@@ -113,8 +125,7 @@ module Asperalm
             # unauthenticated API
             api_faspex=Rest.new(link_data[:faspex_base_url],{})
             pkgdatares=api_faspex.call({:operation=>'GET',:subpath=>link_data[:subpath],:url_params=>{:passcode=>link_data[:passcode]},:headers=>{'Accept'=>'application/xml'}})
-            transfer_params=xmlentry_to_transferspec(XmlSimple.xml_in(pkgdatares[:http].body, {"ForceArray" => false}))
-            results=transfer_params
+            transfer_params=self.class.uri_to_transferspec(self.class.get_fasp_uri_from_entry(XmlSimple.xml_in(pkgdatares[:http].body, {"ForceArray" => false})))
             @faspmanager.do_transfer(
             :mode    => :recv,
             :dest    => '.',

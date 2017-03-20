@@ -74,7 +74,7 @@ module Asperalm
           return
         end
 
-        def command_list; [ :send, :recv, :upload, :download, :events, :set_client_key, :faspexgw, :admin ];end
+        def command_list; [ :send, :recv, :packages, :upload, :download, :events, :set_client_key, :faspexgw, :admin ];end
 
         def set_options
           @code_getter=:tty
@@ -287,6 +287,10 @@ module Asperalm
               :use_aspera_key => true)
               break if @loop.nil?
             end
+          when :packages
+            default_fields=['id','name','bytes_transferred']
+            packages=@api_files_user.list("packages",{'archived'=>false,'exclude_dropbox_packages'=>true,'has_content'=>true,'received'=>true,'workspace_id'=>workspace_id})[:data]
+            return {:fields=>default_fields,:values=>packages.map { |p| default_fields.inject({}) { |m,v| m[v] = p[v]; m } } }
           when :events
             api_files_admin=Rest.new(files_api_base_url,{:oauth=>@api_files_oauth,:scope=>FilesApi::SCOPE_FILES_ADMIN})
             # page=1&per_page=10&q=type:(file_upload+OR+file_delete+OR+file_download+OR+file_rename+OR+folder_create+OR+folder_delete+OR+folder_share+OR+folder_share_via_public_link)&sort=-date
