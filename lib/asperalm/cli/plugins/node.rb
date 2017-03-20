@@ -4,7 +4,7 @@ module Asperalm
   module Cli
     module Plugins
       class Node < Plugin
-        def opt_names; [:url,:username,:password,:persistency]; end
+        def opt_names; [:url,:username,:password,:persistency,:transfer_filter,:file_filter]; end
 
         attr_accessor :faspmanager
 
@@ -14,10 +14,8 @@ module Asperalm
           self.add_opt_simple(:url,"-wURI", "--url=URI","URL of application, e.g. http://org.asperafiles.com")
           self.add_opt_simple(:username,"-uSTRING", "--username=STRING","username to log in")
           self.add_opt_simple(:password,"-pSTRING", "--password=STRING","password")
-          @persistency=File.join(home,"persistency_cleanup.txt")
+          self.set_option(:persistency,File.join(self.class.home,"persistency_cleanup.txt"))
           self.add_opt_simple(:persistency,"--persistency=FILEPATH","persistency file")
-          @transfer_filter="t['status'].eql?('completed') and t['start_spec']['remote_user'].eql?(@config[:filter_transfer_user])"
-          @file_filter="f['status'].eql?('completed') and 0 != f['size'] and t['start_spec']['direction'].eql?(@config[:filter_direction])"
           self.add_opt_simple(:transfer_filter,"--transfer-filter=EXPRESSION","Ruby expression for filter at transfer level")
           self.add_opt_simple(:file_filter,"--file-filter=EXPRESSION","Ruby expression for filter at file level")
         end
@@ -95,6 +93,10 @@ module Asperalm
             return resp[:data] # TODO
           when :cleanup
             persistencyfile=self.get_option_mandatory(:persistency)
+            transfer_filter=self.get_option_mandatory(:transfer_filter)
+            file_filter=self.get_option_mandatory(:file_filter)
+            Log.log.debug("transfer_filter: #{transfer_filter}")
+            Log.log.debug("file_filter: #{file_filter}")
             # first time run ? or subsequent run ?
             iteration_token=nil
             if File.exist?(persistencyfile)
@@ -115,36 +117,38 @@ module Asperalm
             File.write(persistencyfile,iteration_token)
             # build list of files to delete: non zero files, downloads, for specified user
             paths_to_delete=[]
-            transfer_filter=self.get_option_mandatory(:transfer_filter)
-            file_filter=self.get_option_mandatory(:file_filter)
             transfers.each do |t|
               if eval(transfer_filter)
                 t['files'].each do |f|
                   if eval(file_filter)
                     paths_to_delete.push({'path'=>'/'+f['path']})
-                    @logger.info("to delete: #{f['path']}")
+                    Log.log.info("to delete: #{f['path']}")
                   end
                 end
               end
             end
             # delete files, if any
             if paths_to_delete.length != 0
-              @logger.info("deletion")
+              Log.log.info("deletion")
               resp=api_node.call({:operation=>'POST',:subpath=>'files/delete',:json_params=>{:paths=>paths_to_delete}})
               #resp=api_node.create('files/delete',{:paths=>paths_to_delete})
+              resres={:fields=>['file','result'],:values=>[]}
               JSON.parse(resp[:http].body)['paths'].each do |p|
+                result='deleted'
                 if p.has_key?('error')
-                  @logger.error("#{p['error']['user_message']} : #{p['path']}")
+                  Log.log.error("#{p['error']['user_message']} : #{p['path']}")
+                  result=p['error']['user_message']
                 end
+                resres[:values].push({'file'=>p['path'],'result'=>result})
               end
+              return resres
             else
-              @logger.info("no new package")
+              Log.log.info("no new package")
             end
           end
-
-          return results
-        end
-      end
-    end
+          return nil
+        end # dojob
+      end # Main
+    end # Plugin
   end # Cli
 end # Asperalm

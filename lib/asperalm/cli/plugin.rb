@@ -15,7 +15,7 @@ module Asperalm
       def self.home
         return @@TOOL_HOME
       end
-      
+
       # parse an option value, special behavior for file:, env:, val:
       def self.get_extended_value(pname,value)
         if m=value.match(/^@file:(.*)/) then
@@ -52,6 +52,7 @@ module Asperalm
         end
         return get_extended_value(descr,argv.shift)
       end
+
       def self.get_remaining_arguments(argv,descr)
         filelist = argv.pop(argv.length)
         Log.log.debug("#{descr}=#{filelist}")
@@ -60,6 +61,7 @@ module Asperalm
         end
         return filelist
       end
+
       def get_formats; [:ruby,:text]; end
 
       def exit_with_usage
@@ -114,6 +116,10 @@ module Asperalm
 
       def get_option_optional(pname)
         return self.instance_variable_get('@'+pname.to_s)
+      end
+
+      def set_option(pname,value)
+        return self.instance_variable_set('@'+pname.to_s,value)
       end
 
       def get_option_mandatory(pname)
@@ -200,7 +206,7 @@ module Asperalm
             Formatador.display_table(results[:values],results[:fields])
           end
         else
-          puts ">>#{PP.pp(results,'')}"
+          puts ">result>#{PP.pp(results,'')}"
         end
       end
     end
