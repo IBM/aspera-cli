@@ -50,7 +50,7 @@ module Asperalm
         self.add_opt_list(:logtype,"log method",'-qTYPE','--logger=TYPE')
         self.add_opt_simple(:config_file,"-fSTRING", "--config-file=STRING","read parameters from file in JSON format")
         self.add_opt_simple(:config_name,"-nSTRING", "--config-name=STRING","name of configuration in config file")
-        self.on("-r", "--rest-debug","more debug for HTTP calls") { Rest.set_debug(true) }
+        self.add_opt_on(:rest_debug,"-r", "--rest-debug","more debug for HTTP calls") { Rest.set_debug(true) }
       end
 
       def dojob(command,argv)
@@ -82,6 +82,7 @@ module Asperalm
           application=Plugin.new_plugin(command)
           application.go(argv,default_config)
         end
+        return ""
       end
 
       #################################

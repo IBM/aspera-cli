@@ -338,12 +338,11 @@ module Asperalm
         raise TransferError.new(-1),'required: ssh key or password'
       end
 
-      do_encrypt = transfer_params.has_key?(:encrypt)?transfer_params[:encrypt]:true
-
       # base args
       ascp_args = Array.new
 
-      ascp_args.push '-T' if !do_encrypt
+      # no encryption only if specified
+      ascp_args.push '-T' if transfer_params.has_key?(:encrypt) and !transfer_params[:encrypt]
       ascp_args.push '--mode', transfer_params[:mode].to_s if transfer_params.has_key? :mode
       ascp_args.push '--user', transfer_params[:user] if transfer_params.has_key? :user
       ascp_args.push '--host', transfer_params[:host] if transfer_params.has_key? :host
@@ -373,7 +372,7 @@ module Asperalm
       lMaxRetry = transfer_params.has_key?(:retries) ? transfer_params[:retries] : 7;
 
       # initial wait time between two retry
-      sleep_seconds  = transfer_params.has_key?(:sleeptime )   ? transfer_params[:sleeptime]   : 2;
+      sleep_seconds   = transfer_params.has_key?(:sleeptime )   ? transfer_params[:sleeptime]   : 2;
       sleep_factor    = transfer_params.has_key?(:sleepfactor ) ? transfer_params[:sleepfactor] : 2;
       sleep_max       = transfer_params.has_key?(:sleepmax )    ? transfer_params[:sleepmax]    : 60;
 

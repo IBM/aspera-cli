@@ -8,7 +8,7 @@ module Asperalm
 
         def get_pkgboxs; [:inbox,:sent,:archive]; end
 
-        def command_list; [ :send, :recv, :recv_publink, :packages ]; end
+        def command_list; [ :send, :recv, :recv_publink, :list ]; end
 
         @pkgbox=:inbox
         attr_accessor :faspmanager
@@ -43,6 +43,7 @@ module Asperalm
         end
 
         def self.get_fasp_uri_from_entry(entry)
+          raise OptionParser::InvalidArgument, "package is empty" if !entry.has_key?('link')
           return (entry['link'].select{|e| e["rel"].eql?("package")}).first["href"]
         end
 
@@ -100,9 +101,9 @@ module Asperalm
               entry_xml=api_faspex.call({:operation=>'GET',:subpath=>"received/#{delivid}",:headers=>{'Accept'=>'application/xml'}})[:http].body
               package_entry=XmlSimple.xml_in(entry_xml, {"ForceArray" => true})
             end
-            # NOTE: only external users have token in faspe: link !
             transfer_uri=self.class.get_fasp_uri_from_entry(package_entry)
             transfer_params=self.class.uri_to_transferspec(transfer_uri)
+            # NOTE: only external users have token in faspe: link !
             if !transfer_params.has_key?('token')
               xmlpayload='<?xml version="1.0" encoding="UTF-8"?><url-list xmlns="http://schemas.asperasoft.com/xml/url-list"><url href="'+transfer_uri+'"/></url-list>'
               transfer_params['token']=api_faspex.call({:operation=>'POST',:subpath=>"issue-token?direction=down",:headers=>{'Accept'=>'text/plain','Content-Type'=>'application/vnd.aspera.url-list+xml'},:text_body_params=>xmlpayload})[:http].body
@@ -122,10 +123,12 @@ module Asperalm
           when :recv_publink
             thelink=self.class.get_next_arg_value(argv,"Faspex public URL for a package")
             link_data=get_link_data(thelink)
-            # unauthenticated API
+            # Note: unauthenticated API
             api_faspex=Rest.new(link_data[:faspex_base_url],{})
             pkgdatares=api_faspex.call({:operation=>'GET',:subpath=>link_data[:subpath],:url_params=>{:passcode=>link_data[:passcode]},:headers=>{'Accept'=>'application/xml'}})
-            transfer_params=self.class.uri_to_transferspec(self.class.get_fasp_uri_from_entry(XmlSimple.xml_in(pkgdatares[:http].body, {"ForceArray" => false})))
+            package_entry=XmlSimple.xml_in(pkgdatares[:http].body, {"ForceArray" => false})
+            transfer_uri=self.class.get_fasp_uri_from_entry(package_entry)
+            transfer_params=self.class.uri_to_transferspec(transfer_uri)
             @faspmanager.do_transfer(
             :mode    => :recv,
             :dest    => '.',
@@ -138,19 +141,22 @@ module Asperalm
             :rawArgs => [ '-P', '33001', '-d', '-q', '--ignore-host-key', '-k', '2', '--save-before-overwrite','--partial-file-suffix=.partial' ],
             :retries => 10,
             :use_aspera_key => true)
-          when :packages
-            default_fields=['recipient_delivery_id','title','id']
+          when :list
+            default_fields=['recipient_delivery_id','title','id',"items"]
             api_faspex=get_faspex_authenticated_api
             all_inbox_xml=api_faspex.call({:operation=>'GET',:subpath=>"#{@pkgbox.to_s}.atom",:headers=>{'Accept'=>'application/xml'}})[:http].body
             all_inbox_data=XmlSimple.xml_in(all_inbox_xml, {"ForceArray" => true})
             if all_inbox_data.has_key?('entry')
               values=all_inbox_data['entry'].map { |e| default_fields.inject({}) { |m,v|
-                  if "recipient_delivery_id".eql?(v) then
+                  case v
+                  when 'recipient_delivery_id'
                     if e['to'][0].has_key?(v)
                       m[v] = e['to'][0][v][0]
                     else
                       m[v] = 'unknown'
                     end
+                  when 'items'
+                    m[v] = e.has_key?('link') ? e['link'].length : 0
                   else
                     m[v] = e[v][0];
                   end

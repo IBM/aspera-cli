@@ -8,7 +8,7 @@ module Asperalm
 
         attr_accessor :faspmanager
 
-        def command_list;[ :put, :get, :transfers, :info, :cleanup ];end
+        def command_list;[ :upload, :download, :transfers, :info, :cleanup ];end
 
         def set_options
           self.add_opt_simple(:url,"-wURI", "--url=URI","URL of application, e.g. http://org.asperafiles.com")
@@ -23,8 +23,8 @@ module Asperalm
         def dojob(command,argv)
           api_node=Rest.new(self.get_option_mandatory(:url),{:basic_auth=>{:user=>self.get_option_mandatory(:username), :password=>self.get_option_mandatory(:password)}})
           case command
-          when :put
-            filelist = argv
+          when :upload
+            filelist = self.class.get_remaining_arguments(argv,"file list")
             Log.log.debug("file list=#{filelist}")
             if filelist.length < 2 then
               raise OptionParser::InvalidArgument,"Missing source(s) and destination"
@@ -52,8 +52,8 @@ module Asperalm
               :use_aspera_key => true)
             }
             return
-          when :get
-            filelist = argv
+          when :download
+            filelist = self.class.get_remaining_arguments(argv,"file list")
             Log.log.debug("file list=#{filelist}")
             if filelist.length < 2 then
               raise OptionParser::InvalidArgument,"Missing source(s) and destination"

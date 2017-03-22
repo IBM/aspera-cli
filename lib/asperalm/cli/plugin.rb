@@ -113,7 +113,12 @@ module Asperalm
         Log.log.info("add_opt_simple #{pname}->#{args}")
         self.on(*args) { |v| set_obj_val(pname,v) }
       end
-
+      
+      def add_opt_on(pname,*args,&block)
+        Log.log.info("add_opt_on #{pname}->#{args}")
+        self.on(*args,&block)
+      end
+      
       def get_option_optional(pname)
         return self.instance_variable_get('@'+pname.to_s)
       end
@@ -206,7 +211,13 @@ module Asperalm
             Formatador.display_table(results[:values],results[:fields])
           end
         else
+          if results.is_a?(String)
+            $stdout.write(results)
+          elsif results.nil?
+            puts "no result"
+          else
           puts ">result>#{PP.pp(results,'')}"
+          end
         end
       end
     end
