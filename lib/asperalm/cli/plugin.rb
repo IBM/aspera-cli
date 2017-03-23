@@ -2,8 +2,6 @@ require 'asperalm/rest'
 require 'asperalm/colors'
 require 'asperalm/fasp_manager'
 require 'asperalm/log'
-require 'formatador'
-require 'pp'
 require 'xmlsimple'
 require 'optparse'
 
@@ -11,7 +9,7 @@ module Asperalm
   module Cli
     # base class for plugins modules
     class Plugin < OptionParser
-      @@TOOL_HOME=File.join(Dir.home,'.aspera/ascli')
+      @@TOOL_HOME=File.join(Dir.home,'.aspera/aslm')
       def self.home
         return @@TOOL_HOME
       end
@@ -61,8 +59,6 @@ module Asperalm
         end
         return filelist
       end
-
-      def get_formats; [:ruby,:text]; end
 
       def exit_with_usage
         STDERR.puts self
@@ -165,6 +161,7 @@ module Asperalm
         throw "virtual method"
       end
 
+      # implement to do the job, returns a result to be displayed
       def dojob(command,argv)
         throw "virtual method"
       end
@@ -178,7 +175,7 @@ module Asperalm
         while !argv.empty? and argv.first =~ /^-/
           options.push argv.shift
         end
-        Log.log.info("split -#{options}-#{argv}-")
+        Log.log.debug("split options=#{options},args=#{argv}")
         self.parse!(options)
       end
 
@@ -193,32 +190,10 @@ module Asperalm
         self.separator ""
         self.separator "OPTIONS"
         self.on_tail("-h", "--help", "Show this message") { self.exit_with_usage }
-        @format=:text
-        self.add_opt_list(:format,"output format",'--format=TYPE')
         set_options
         parse_options!(argv)
         command=self.class.get_next_arg_from_list(argv,'command',command_list)
-        results=dojob(command,argv)
-        if !argv.empty?
-          raise OptionParser::InvalidArgument,"unprocessed values: #{argv}"
-        end
-        if results.is_a?(Hash) and results.has_key?(:values) and results.has_key?(:fields) then
-          case @format
-          when :ruby
-            puts PP.pp(results[:values],'')
-          when :text
-            #results[:values].each { |i| i.select! { |k| results[:fields].include?(k) } }
-            Formatador.display_table(results[:values],results[:fields])
-          end
-        else
-          if results.is_a?(String)
-            $stdout.write(results)
-          elsif results.nil?
-            puts "no result"
-          else
-          puts ">result>#{PP.pp(results,'')}"
-          end
-        end
+        return dojob(command,argv)
       end
     end
   end

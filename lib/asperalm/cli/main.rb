@@ -2,6 +2,8 @@ require "asperalm/cli/plugin"
 require "asperalm/version"
 require "asperalm/log"
 require 'yaml'
+require 'formatador'
+require 'pp'
 
 module Asperalm
   module Cli
@@ -11,6 +13,8 @@ module Asperalm
       def get_logtypes; [:syslog,:stdout]; end
 
       def get_loglevels; Log.levels; end
+
+      def get_formats; [:ruby,:text]; end
 
       def set_logtype(logtype)
         set_loglevel :warn
@@ -51,6 +55,8 @@ module Asperalm
         self.add_opt_simple(:config_file,"-fSTRING", "--config-file=STRING","read parameters from file in JSON format")
         self.add_opt_simple(:config_name,"-nSTRING", "--config-name=STRING","name of configuration in config file")
         self.add_opt_on(:rest_debug,"-r", "--rest-debug","more debug for HTTP calls") { Rest.set_debug(true) }
+        self.set_option(:format,:text)
+        self.add_opt_list(:format,"output format",'--format=TYPE')
       end
 
       def dojob(command,argv)
@@ -62,17 +68,17 @@ module Asperalm
             sections=Plugin.get_plugin_list.unshift(:global)
             if argv.empty?
               # just list plugins
-              return { :fields => ['plugin'], :values=>sections.map { |i| { 'plugin' => i.to_s } } }
+              results={ :fields => ['plugin'], :values=>sections.map { |i| { 'plugin' => i.to_s } } }
             else
               plugin=self.class.get_next_arg_from_list(argv,'plugin',sections)
               names=@loaded_config[plugin].keys.map { |i| i.to_sym }
               if argv.empty?
                 # list names for tool
-                return { :fields => ['name'], :values=>names.map { |i| { 'name' => i.to_s } } }
+                results={ :fields => ['name'], :values=>names.map { |i| { 'name' => i.to_s } } }
               else
                 # list parameters
                 configname=self.class.get_next_arg_from_list(argv,'config',names)
-                return { :fields => ['param','value'], :values=>@loaded_config[plugin][configname.to_s].keys.map { |i| { 'param' => i.to_s, 'value' => @loaded_config[plugin][configname.to_s][i] } } }
+                results={ :fields => ['param','value'], :values=>@loaded_config[plugin][configname.to_s].keys.map { |i| { 'param' => i.to_s, 'value' => @loaded_config[plugin][configname.to_s][i] } } }
               end
             end
           end
@@ -80,7 +86,27 @@ module Asperalm
           # execute plugin
           default_config=@loaded_config[command][self.get_option_mandatory(:config_name)] if !@loaded_config.nil? and @loaded_config.has_key?(command)
           application=Plugin.new_plugin(command)
-          application.go(argv,default_config)
+          results=application.go(argv,default_config)
+        end
+        if results.is_a?(Hash) and results.has_key?(:values) and results.has_key?(:fields) then
+          case self.get_option_mandatory(:format)
+          when :ruby
+            puts PP.pp(results[:values],'')
+          when :text
+            #results[:values].each { |i| i.select! { |k| results[:fields].include?(k) } }
+            Formatador.display_table(results[:values],results[:fields])
+          end
+        else
+          if results.is_a?(String)
+            $stdout.write(results)
+          elsif results.nil?
+            puts "no result"
+          else
+            puts ">result>#{PP.pp(results,'')}"
+          end
+        end
+        if !argv.empty?
+          raise OptionParser::InvalidArgument,"unprocessed values: #{argv}"
         end
         return ""
       end
@@ -91,7 +117,7 @@ module Asperalm
       @@CONFIG_FILE_DEFAULT=File.join(home,'config.yaml')
 
       def self.start
-        $PROGRAM_NAME = 'ascli'
+        $PROGRAM_NAME = 'aslm'
         defaults={
           :logtype => :stdout,
           :loglevel => :warn,

@@ -25,12 +25,12 @@ A version is available on rubygems.org, so the simplest way is to install the ge
 $ gem install asperalm
 ```
 
-This install the "ascli" executable.
+This install the "aslm" executable.
 
 ## Usage
 
 ```bash
-$ ascli -h
+$ aslm -h
 ```
 
 ## Configuration
@@ -44,7 +44,7 @@ Command line options needs to be provided at their right level, i.e. global para
 
 Values of arguments can be retrieve from files with format: @file: , or env var with: @env:, the prefix @val: is optional.
 
-A default configuration file can be created: $HOME/.aspera/ascli/config.yaml
+A default configuration file can be created: $HOME/.aspera/aslm/config.yaml
 
 Here is an example:
 
@@ -59,7 +59,7 @@ Here is an example:
     :url: https://mycompany.asperafiles.com
     :client_id: <insert client id here>
     :client_secret: <insert client secret here>
-    :private_key: "@file:~/.aspera/ascli/filesapikey"
+    :private_key: "@file:~/.aspera/aslm/filesapikey"
     :subject: laurent@asperasoft.com
   p:
     :auth: :web

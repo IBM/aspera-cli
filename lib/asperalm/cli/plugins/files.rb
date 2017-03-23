@@ -25,17 +25,17 @@ module Asperalm
         # input keys:file_id
         # output keys: file_id and node_info
         def find_nodeinfo_and_fileid ( file_info, init_node_id, path_array )
-          Log.log.debug "file_info: #{file_info}"
+          Log.log.debug "file_info(start): #{file_info}, nodeid=#{init_node_id}, array=#{path_array}"
           # at least retrieve node info
           file_info[:node_info]=@api_files_user.read("nodes/#{init_node_id}")[:data]
           # if / , we are done !
           return if path_array.empty?
           # first element is empty when not only "/"
-          path_array.shift
+          path_array.shift if path_array.first.eql?("")
 
           while !path_array.empty? do
             this_folder_name = path_array.shift
-            Log.log.debug "this_folder_name: #{this_folder_name}"
+            Log.log.debug "in file_info #{file_info}, searching #{this_folder_name}"
 
             # get API if changed
             current_node_api=get_node_api(file_info[:node_info],FilesApi::SCOPE_NODE_USER) if current_node_api.nil?
@@ -48,7 +48,7 @@ module Asperalm
             # there shall be one folder , or none that match the name
             case matching_folders.length
             when 0
-              raise OptionParser::InvalidArgument, "no such folder: #{this_folder_name}"
+              raise OptionParser::InvalidArgument, "no such folder: #{this_folder_name} in #{folder_contents[:data].map { |i| i['name']}}"
             when 1
               new_file_info = matching_folders[0]
             else
@@ -170,12 +170,12 @@ module Asperalm
 
             find_nodeinfo_and_fileid(file_info,workspace_data['home_node_id'],destination_folder.split('/'))
 
-            Log.log.info("file_info=#{file_info}")
+            Log.log.info("file_info(result)=#{file_info}")
 
             #  get transfer token (for node)
             node_bearer_token_xfer=@api_files_oauth.get_authorization(FilesApi.node_scope(file_info[:node_info]['access_key'],FilesApi::SCOPE_NODE_USER))
 
-            # transfer files
+              # transfer files
             Log.log.info "starting transfer"
             @faspmanager.do_transfer(
             :retries   => 10,
@@ -327,6 +327,9 @@ module Asperalm
             case operation
             when :list
               default_fields=['id','name']
+              case resource
+              when :nodes; default_fields.push('host','access_key')
+              end
               res=api_files_admin.list(resource.to_s)[:data]
               return {:fields=>default_fields,:values=>res }
             else

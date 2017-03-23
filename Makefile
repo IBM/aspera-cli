@@ -1,9 +1,9 @@
 GEMNAME=asperalm
 GEMVERSION=$(shell ruby -e 'require "./lib/asperalm/version.rb";puts Asperalm::VERSION')
 GEMFILE=$(GEMNAME)-$(GEMVERSION).gem
-TOOLCONFIGDIR=$(HOME)/.aspera/ascli
+TOOLCONFIGDIR=$(HOME)/.aspera/aslm
 APIKEY=$(TOOLCONFIGDIR)/filesapikey
-ASCLI=./bin/ascli
+ASCLI=./bin/aslm
 
 SRCZIPBASE=$(GEMNAME)_src
 TODAY=$(shell date +%Y%m%d)
@@ -36,7 +36,7 @@ gem: $(GEMFILE)
 	gem install -l $(GEMFILE)
 
 togarage: $(ZIPFILE) README.pdf $(GEMFILE)
-	ascli files --workspace='Sales Engineering' upload '/Laurent Garage SE/RubyCLI' $(ZIPFILE) README.pdf $(GEMFILE)
+	$(ASCLI) files --workspace='Sales Engineering' upload '/Laurent Garage SE/RubyCLI' $(ZIPFILE) README.pdf $(GEMFILE)
 
 # create a private/public key pair
 # note that the key can also be generated with: ssh-keygen -t rsa -f data/myid -N ''
