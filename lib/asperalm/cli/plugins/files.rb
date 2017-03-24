@@ -30,7 +30,7 @@ module Asperalm
           file_info[:node_info]=@api_files_user.read("nodes/#{init_node_id}")[:data]
           # if / , we are done !
           return if path_array.empty?
-          # first element is empty when not only "/"
+          # first element is empty if path was starting with /
           path_array.shift if path_array.first.eql?("")
 
           while !path_array.empty? do
@@ -175,7 +175,7 @@ module Asperalm
             #  get transfer token (for node)
             node_bearer_token_xfer=@api_files_oauth.get_authorization(FilesApi.node_scope(file_info[:node_info]['access_key'],FilesApi::SCOPE_NODE_USER))
 
-              # transfer files
+            # transfer files
             Log.log.info "starting transfer"
             @faspmanager.do_transfer(
             :retries   => 10,

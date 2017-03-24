@@ -4,7 +4,7 @@ module Asperalm
   module Cli
     module Plugins
       class Faspex < Plugin
-        def opt_names; [:url,:username,:password]; end
+        def opt_names; [:url,:username,:password,:recipient,:title]; end
 
         def get_pkgboxs; [:inbox,:sent,:archive]; end
 
@@ -55,6 +55,9 @@ module Asperalm
           self.add_opt_simple(:url,"-wURI", "--url=URI","URL of application, e.g. http://org.asperafiles.com")
           self.add_opt_simple(:username,"-uSTRING", "--username=STRING","username to log in")
           self.add_opt_simple(:password,"-pSTRING", "--password=STRING","password")
+          self.add_opt_simple(:recipient,"--recipient=STRING","package recipient")
+          self.add_opt_simple(:title,"--title=STRING","package title")
+          self.add_opt_simple(:note,"--note=STRING","package note")
           @pkgbox=:inbox
           self.add_opt_list(:pkgbox,"package box",'--box=TYPE')
         end
@@ -64,7 +67,7 @@ module Asperalm
           when :send
             filelist = self.class.get_remaining_arguments(argv,"file list")
             api_faspex=get_faspex_authenticated_api
-            send_result=api_faspex.call({:operation=>'POST',:subpath=>'send',:json_params=>{"delivery"=>{"use_encryption_at_rest"=>false,"note"=>"this file was sent by a script","sources"=>[{"paths"=>filelist}],"title"=>"File sent by script","recipients"=>["aspera.user1@gmail.com"],"send_upload_result"=>true}},:headers=>{'Accept'=>'application/json'}})[:data]
+            send_result=api_faspex.call({:operation=>'POST',:subpath=>'send',:json_params=>{"delivery"=>{"use_encryption_at_rest"=>false,"note"=>self.get_option_mandatory(:note),"sources"=>[{"paths"=>filelist}],"title"=>self.get_option_mandatory(:title),"recipients"=>[self.get_option_mandatory(:recipient)],"send_upload_result"=>true}},:headers=>{'Accept'=>'application/json'}})[:data]
             if send_result.has_key?('error')
               raise OptionParser::InvalidArgument,"#{send_result['error']['user_message']} / #{send_result['error']['internal_message']}"
             end
@@ -82,6 +85,7 @@ module Asperalm
               :retries => 10,
               :use_aspera_key => true)
             }
+            return nil
           when :recv
             api_faspex=get_faspex_authenticated_api
             if true

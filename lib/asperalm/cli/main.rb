@@ -17,7 +17,8 @@ module Asperalm
       def get_formats; [:ruby,:text]; end
 
       def set_logtype(logtype)
-        set_loglevel :warn
+        Log.setlogger(logtype)
+        set_loglevel(:warn)
       end
 
       def set_loglevel(loglevel)
@@ -128,6 +129,9 @@ module Asperalm
         begin
           tool.go(ARGV,defaults)
         rescue OptionParser::InvalidArgument => e
+          STDERR.puts "ERROR:".bg_red().gray()+" #{e}\n\n"
+          tool.exit_with_usage
+        rescue OptionParser::InvalidOption => e
           STDERR.puts "ERROR:".bg_red().gray()+" #{e}\n\n"
           tool.exit_with_usage
         end

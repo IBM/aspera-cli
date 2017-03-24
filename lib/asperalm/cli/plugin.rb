@@ -97,11 +97,8 @@ module Asperalm
         end
         self.on( *args , values, "#{help}. Values=(#{values.join(',')}), current=#{value}") do |v|
           theval = v.to_sym
-          if values.include?(theval) then
-            set_obj_val(pname,theval)
-          else
-            raise OptionParser::InvalidArgument,"unknown value for #{pname}: #{v}"
-          end
+          raise OptionParser::InvalidArgument,"unknown value for #{pname}: #{v}" unless values.include?(theval)
+          set_obj_val(pname,theval)
         end
       end
 
