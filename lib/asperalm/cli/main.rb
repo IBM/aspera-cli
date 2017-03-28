@@ -134,6 +134,9 @@ module Asperalm
         rescue OptionParser::InvalidOption => e
           STDERR.puts "ERROR:".bg_red().gray()+" #{e}\n\n"
           tool.exit_with_usage
+        rescue Asperalm::TransferError => e
+          STDERR.puts "ERROR:".bg_red().gray()+" #{e}\n\n"
+          tool.exit_with_usage
         end
       end
     end

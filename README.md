@@ -137,6 +137,28 @@ http://blog.excelwithcode.com/build-commandline-apps.html
 follow:
 https://quickleft.com/blog/engineering-lunch-series-step-by-step-guide-to-building-your-first-ruby-gem/
 
+## Examples
+```bash
+	aslm shares browse /
+	aslm shares upload ~/200KB.1 /projectx
+	aslm shares download /projectx/200KB.1 .
+	aslm faspex recv_publink https://myfaspex.myorg.com/aspera/faspex/external_deliveries/78780?passcode=a003aaf2f53e3123456b908525084db6bebc7031
+	aslm -nibm faspex list
+	aslm -nibm faspex recv 05b92393-02b7-4900-ab69-fd56721e896c
+	aslm -nibm faspex --note="my note" --title="my title" --recipient="laurent@asperasoft.com" send ~/200KB.1 
+	aslm console transfers list
+	aslm node browse /
+	aslm node upload ~/200KB.1 /tmp
+	aslm node download /tmp/200KB.1 .
+	aslm files browse /
+	aslm files upload ~/200KB.1 /
+	aslm files download /200KB.1 .
+	aslm files send ~/200KB.1
+	aslm files packages
+	aslm files recv VleoMSrlA
+	aslm files events
+```
+
 ## Contributing
 
 Please contibute: add new functions that use the APIs!

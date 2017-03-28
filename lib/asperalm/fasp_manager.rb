@@ -34,7 +34,7 @@ module Asperalm
         @progress=ProgressBar.create(:title => 'progress', :total => data['PreTransferBytes'].to_i)
       end
       if data['Type'].eql?('STATS') and !@progress.nil? then
-        @progress.progress=data['TransferBytes'].to_i
+        #@progress.progress=data['TransferBytes'].to_i
       end
       if data['Type'].eql?('DONE') and ! @progress.nil? then
         @progress.progress=@progress.total
@@ -63,6 +63,8 @@ module Asperalm
     def initialize
       @mgt_sock=nil
       @ascp_pid=nil
+      set_ascp_location
+      @transfer_retries=7
     end
 
     def set_listener(listener)
@@ -72,7 +74,7 @@ module Asperalm
 
     # from https://support.asperasoft.com/entries/22895528
     # columns: code name descr msg retryable
-    @@FASP_ERROR_CODES = [
+    FASP_ERROR_CODES = [
       [],
       [ 1,  'ERR_FASP_PROTO',         "Generic fasp(tm) protocol error",                "fasp(tm) error",                                                    false ],
       [ 2,  'ERR_ASCP',               "Generic SCP error",                              "ASCP error",                                                        false ],
@@ -128,23 +130,66 @@ module Asperalm
     ];
 
     @@ASPERA_SSH_BYPASS_DSA="-----BEGIN DSA PRIVATE KEY-----
-    MIIBuwIBAAKBgQDkKQHD6m4yIxgjsey6Pny46acZXERsJHy54p/BqXIyYkVOAkEp
-    KgvT3qTTNmykWWw4ovOP1+Di1c/2FpYcllcTphkWcS8lA7j012mUEecXavXjPPG0
-    i3t5vtB8xLy33kQ3e9v9/Lwh0xcRfua0d5UfFwopBIAXvJAr3B6raps8+QIVALws
-    yeqsx3EolCaCVXJf+61ceJppAoGAPoPtEP4yzHG2XtcxCfXab4u9zE6wPz4ePJt0
-    UTn3fUvnQmJT7i0KVCRr3g2H2OZMWF12y0jUq8QBuZ2so3CHee7W1VmAdbN7Fxc+
-    cyV9nE6zURqAaPyt2bE+rgM1pP6LQUYxgD3xKdv1ZG+kDIDEf6U3onjcKbmA6ckx
-    T6GavoACgYEAobapDv5p2foH+cG5K07sIFD9r0RD7uKJnlqjYAXzFc8U76wXKgu6
-    WXup2ac0Co+RnZp7Hsa9G+E+iJ6poI9pOR08XTdPly4yDULNST4PwlfrbSFT9FVh
-    zkWfpOvAUc8fkQAhZqv/PE6VhFQ8w03Z8GpqXx7b3NvBR+EfIx368KoCFEyfl0vH
-    Ta7g6mGwIMXrdTQQ8fZs
-    -----END DSA PRIVATE KEY-----
-    "
+MIIBuwIBAAKBgQDkKQHD6m4yIxgjsey6Pny46acZXERsJHy54p/BqXIyYkVOAkEp
+KgvT3qTTNmykWWw4ovOP1+Di1c/2FpYcllcTphkWcS8lA7j012mUEecXavXjPPG0
+i3t5vtB8xLy33kQ3e9v9/Lwh0xcRfua0d5UfFwopBIAXvJAr3B6raps8+QIVALws
+yeqsx3EolCaCVXJf+61ceJppAoGAPoPtEP4yzHG2XtcxCfXab4u9zE6wPz4ePJt0
+UTn3fUvnQmJT7i0KVCRr3g2H2OZMWF12y0jUq8QBuZ2so3CHee7W1VmAdbN7Fxc+
+cyV9nE6zURqAaPyt2bE+rgM1pP6LQUYxgD3xKdv1ZG+kDIDEf6U3onjcKbmA6ckx
+T6GavoACgYEAobapDv5p2foH+cG5K07sIFD9r0RD7uKJnlqjYAXzFc8U76wXKgu6
+WXup2ac0Co+RnZp7Hsa9G+E+iJ6poI9pOR08XTdPly4yDULNST4PwlfrbSFT9FVh
+zkWfpOvAUc8fkQAhZqv/PE6VhFQ8w03Z8GpqXx7b3NvBR+EfIx368KoCFEyfl0vH
+Ta7g6mGwIMXrdTQQ8fZs
+-----END DSA PRIVATE KEY-----"
 
-    
     # arg: FASP errcode
     def self.retryable?(err_code)
-      return @@FASP_ERROR_CODES[err_code][4] ;
+      return FASP_ERROR_CODES[err_code][4] ;
+    end
+
+    def yes_to_true(value)
+      case value
+      when 'yes'; return true
+      when 'no'; return false
+      end
+      raise "unsupported value: #{value}"
+    end
+
+    # extract transfer information from xml returned by faspex
+    # only external users get token in link (see: <faspex>/app/views/delivery/_content.xml.builder)
+    def fasp_uri_to_transferspec(fasplink)
+      transfer_uri=URI.parse(fasplink)
+      transfer_spec={}
+      transfer_spec['remote_host']=transfer_uri.host
+      transfer_spec['remote_user']=transfer_uri.user
+      transfer_spec['ssh_port']=transfer_uri.port
+      transfer_spec['paths']=[{"source"=>URI.decode_www_form_component(transfer_uri.path)}]
+
+      URI::decode_www_form(transfer_uri.query).each do |i|
+        name=i[0]
+        value=i[1]
+        case name
+        when 'port'; transfer_spec['ssh_port']=value
+        when 'cookie'; transfer_spec['cookie']=value
+        when 'token'; transfer_spec['token']=value
+        when 'policy'; transfer_spec['rate_policy']=value
+        when 'httpport'; transfer_spec['http_fallback_port']=value
+        when 'targetrate'; transfer_spec['target_rate_kbps']=value
+        when 'minrate'; transfer_spec['min_rate_kbps']=value
+        when 'port'; transfer_spec['fasp_port']=value
+        when 'enc'; transfer_spec['cipher']=value
+        when 'tags64'; transfer_spec['tags64']=value
+        when 'bwcap'; transfer_spec['target_rate_cap_kbps']=value
+        when 'createpath'; transfer_spec['create_dir']=yes_to_true(value)
+        when 'fallback'; transfer_spec['http_fallback']=yes_to_true(value)
+        when 'auth'; # TODO: why ignore ?
+        when 'lockpolicy'; # TODO: why ignore ?
+        when 'lockminrate'; # TODO: why ignore ?
+        when 'v'; # TODO: why ignore ?
+        else Log.log.error("non managed URI value: #{name} = #{value}".red)
+        end
+      end
+      return transfer_spec
     end
 
     # start ascp
@@ -243,7 +288,7 @@ module Asperalm
     #		key       => path,
     #		deletekey => bool,
     # };
-    def get_ascp_location
+    def set_ascp_location
 
       # ascp command and key file
       lConnectAscpCmd = nil
@@ -269,135 +314,169 @@ module Asperalm
       Log.log.debug "key= #{lConnectAscpId}"
       if File.file?(lConnectAscpCmd) and File.file?(lConnectAscpId ) then
         Log.log.debug "Using plugin: [#{lConnectAscpId}]"
-        return {
-          :cmd       => lConnectAscpCmd,
-          :key       => lConnectAscpId,
-          :deletekey => false,
-        }
+        @ascp_path= lConnectAscpCmd
+        @connect_private_key_path= lConnectAscpId
+        return
       end
 
       lESAscpCmd = '/usr/bin/ascp'
       Log.log.debug "Using system ascp if available"
       if ! File.executable(lESAscpCmd ) then
         Log.log.error "no such cmd: [#{lESAscpCmd}]"
-        raise "cannot find ascp"
+        raise "cannot find ascp on system"
       end
 
-      # private key not found ?
-      keyfile=Tempfile.new('aspera_private_key')
-      keyfile.puts(@@ASPERA_SSH_BYPASS_DSA)
-      keyfile.close
-      lConnectAscpId = keyfile.path
-
-      return {
-        :cmd       => lESAscpCmd,
-        :key       => lConnectAscpId,
-        :deletekey => true,
-      }
+      @ascp_path= lESAscpCmd
     end
 
-    # executes a FASP transfer
-    # call is blocking
-    # returns nil
-    # raises TransferError
-    # user may start in separate thread if needed
-    # TODO: check mandatory params
-    # does the following:
-    # 1- locate ascp and web ssh key
-    # 2- build ascp argument list from Ruby arguments hash
-    # 3- restart ascp a number of time upon success
-    def do_transfer(transfer_params)
+    # replaces do_transfer
 
-      # prepare location of ascp and key
-      use_aspera_key = transfer_params[:use_aspera_key] if transfer_params.has_key?(:use_aspera_key)
-      aspera_key = nil
-      ascp_path = nil
-      delete_key=false
+    def ts2env(used_names,transfer_spec,env_vars,ts_name,env_name)
+      if transfer_spec.has_key?(ts_name)
+        env_vars[env_name] = transfer_spec[ts_name]
+        used_names.push(ts_name)
+      end
+    end
 
-      if (!transfer_params.has_key?(:ssh_key)) or use_aspera_key or (!transfer_params.has_key?(:ascp_path)) then
-        # we need to find on system
-        begin
-          locations = get_ascp_location
-          aspera_key = locations[:key]
-          ascp_path = locations[:cmd]
-          delete_key = locations[:deletekey]
-          locations = nil
-        rescue Exception  => e
-          Log.log.error "Exception: #{e}"
-          raise TransferError.new(-1),'cannot find ascp'
+    def ts2args_value(used_names,transfer_spec,ascp_args,ts_name,arg_name,&transform)
+      if transfer_spec.has_key?(ts_name)
+        if !transfer_spec[ts_name].nil?
+          value=transfer_spec[ts_name]
+          value=transform.call(value) if transform
+          ascp_args.push(arg_name,value)
         end
+        used_names.push(ts_name)
       end
+    end
 
-      # do we use a key ?
-      ssh_key = nil
-      if use_aspera_key then
-        ssh_key = aspera_key
-      elsif transfer_params.has_key?(:ssh_key) then
-        ssh_key = transfer_params[:ssh_key]
-      elsif !transfer_params.has_key?(:password) then
-        raise TransferError.new(-1),'required: ssh key or password'
+    def ts_bool_param(used_names,transfer_spec,ascp_args,ts_name,&get_arg_list)
+      if transfer_spec.has_key?(ts_name)
+        ascp_args.push(*get_arg_list.call(transfer_spec[ts_name]))
+        used_names.push(ts_name)
       end
+    end
+
+    def ts_ignore_param(used_names,ts_name)
+      used_names.push(ts_name)
+    end
+
+    def transfer_spec_to_args_and_env(transfer_spec)
+      used_names=[]
+      # parameters with env vars
+      env_vars = Hash.new
+      ts2env(used_names,transfer_spec,env_vars,'password','ASPERA_SCP_PASS')
+      ts2env(used_names,transfer_spec,env_vars,'EX_ssh_key_value','ASPERA_SCP_KEY')
+      ts2env(used_names,transfer_spec,env_vars,'token','ASPERA_SCP_TOKEN')
+      ts2env(used_names,transfer_spec,env_vars,'cookie','ASPERA_SCP_COOKIE')
+      ts2env(used_names,transfer_spec,env_vars,'EX_at_rest_password','ASPERA_SCP_FILEPASS')
+      ts2env(used_names,transfer_spec,env_vars,'EX_proxy_password','ASPERA_PROXY_PASS')
 
       # base args
       ascp_args = Array.new
 
-      # no encryption only if specified
-      ascp_args.push '-T' if transfer_params.has_key?(:encrypt) and !transfer_params[:encrypt]
-      ascp_args.push '--mode', transfer_params[:mode].to_s if transfer_params.has_key? :mode
-      ascp_args.push '--user', transfer_params[:user] if transfer_params.has_key? :user
-      ascp_args.push '--host', transfer_params[:host] if transfer_params.has_key? :host
+      if !transfer_spec.has_key?('password') and !transfer_spec.has_key?('EX_ssh_key_value') and !transfer_spec.has_key?('EX_ssh_key_path') then
+        raise TransferError.new(-1),'required: ssh key (value or path) or password'
+      end
 
-      # optional key
-      ascp_args.unshift '-i', ssh_key if !ssh_key.nil?
+      case transfer_spec['cipher']
+      when nil; # nothing to put on command line, encryption by default
+      when 'aes-128'; used_names.push('cipher') # nothing to put on command line, encryption by default
+      when 'aes128'; used_names.push('cipher') # nothing to put on command line, encryption by default (from faspe link)
+      else raise TransferError.new(-1),"unsupported cipher: #{transfer_spec['cipher']}"
+      end
 
-      # optional token: in env var (see below), more secure than arg
-      #ascp_args.push '-W', transfer_params[:token] if transfer_params.has_key? :token
+      case transfer_spec['direction']
+      when nil; raise TransferError.new(-1),"direction is required"
+      when 'receive'; ascp_args.push('--mode','recv'); used_names.push('direction')
+      when 'send'; ascp_args.push('--mode','send'); used_names.push('direction')
+      else raise TransferError.new(-1),"unsupported direction: #{transfer_spec['direction']}"
+      end
 
-      # optional tags
-      ascp_args.push '--tags64', Base64.strict_encode64(JSON.generate(transfer_params[:tags])) if transfer_params.has_key? :tags
-      #ascp_args.push '--tags64', Base64.strict_encode64(JSON.generate(transfer_params[:tags],{:space=>' ',:object_nl=>' '})) if transfer_params.has_key? :tags
-      #ascp_args.push '--tags64', Base64.strict_encode64(JSON.generate(transfer_params[:tags],{:space=>' ',:object_nl=>' ',:space_before=>'+',:array_nl=>'1'})) if transfer_params.has_key? :tags
-      ascp_args.push '--tags64', transfer_params[:tags64] if transfer_params.has_key? :tags64
+      ts2args_value(used_names,transfer_spec,ascp_args,'remote_user','--user')
+      ts2args_value(used_names,transfer_spec,ascp_args,'remote_host','--host')
+      ts2args_value(used_names,transfer_spec,ascp_args,'EX_ssh_key_path','-i')
+      ts2args_value(used_names,transfer_spec,ascp_args,'target_rate_kbps','-l') { |rate| rate.to_s }
+      ts2args_value(used_names,transfer_spec,ascp_args,'min_rate_kbps','-m') { |rate| rate.to_s }
+      ts2args_value(used_names,transfer_spec,ascp_args,'ssh_port','-P') { |port| port.to_s }
+      ts2args_value(used_names,transfer_spec,ascp_args,'fasp_port','-O') { |port| port.to_s }
+      ts2args_value(used_names,transfer_spec,ascp_args,'http_fallback','-y') { |enable| enable ? '1' : '0' }
+      ts2args_value(used_names,transfer_spec,ascp_args,'http_fallback_port','-t') { |port| port.to_s }
+      ts2args_value(used_names,transfer_spec,ascp_args,'rate_policy','--policy')
+      ts2args_value(used_names,transfer_spec,ascp_args,'source_root','--source-prefix')
+
+      ts_bool_param(used_names,transfer_spec,ascp_args,'create_dir') { |create_dir| create_dir ? ['-d'] : [] }
+
+      ts_ignore_param(used_names,'target_rate_cap_kbps')
+      ts_ignore_param(used_names,'rate_policy_allowed')
+      ts_ignore_param(used_names,'fasp_url')
+      ts_ignore_param(used_names,'sshfp') # ???
+      ts_ignore_param(used_names,'lock_rate_policy')
+      ts_ignore_param(used_names,'lock_min_rate')
+
+      # optional tags (  additional option to generate: {:space=>' ',:object_nl=>' ',:space_before=>'+',:array_nl=>'1'}  )
+      ts2args_value(used_names,transfer_spec,ascp_args,'tags','--tags64') { |tags| Base64.strict_encode64(JSON.generate(tags)) }
+      ts2args_value(used_names,transfer_spec,ascp_args,'tags64','--tags64') # from faspe link
+      #ascp_args.push('--tags64', Base64.strict_encode64(JSON.generate(transfer_spec['tags']))) if transfer_spec.has_key?('tags')
 
       # optional args
-      ascp_args.push *transfer_params[:rawArgs] if transfer_params.has_key? :rawArgs
+      ascp_args.push(*transfer_spec['EX_ascp_args']) if transfer_spec.has_key?('EX_ascp_args')
 
-      # source list
-      ascp_args.push *transfer_params[:srcList] if transfer_params.has_key? :srcList
+      # source list: TODO : check presence, and if pairs
+      raise TransferError.new(-1),"missing source paths" if !transfer_spec.has_key?('paths')
+      ascp_args.push(*transfer_spec['paths'].map { |i| i['source']})
+      used_names.push('paths')
 
       # destination
-      ascp_args.push transfer_params[:dest] if transfer_params.has_key? :dest
+      raise TransferError.new(-1),"missing destination" if !transfer_spec.has_key?('destination_root')
+      ascp_args.push(transfer_spec['destination_root'])
+      used_names.push('destination_root')
 
-      # optional parameter: max retry
-      lMaxRetry = transfer_params.has_key?(:retries) ? transfer_params[:retries] : 7;
+      transfer_spec.keys.each { |key|
+        if !used_names.include?(key)
+          Log.log.error("did not manage: #{key} = #{transfer_spec[key]}".red)
+        end
+      }
 
-      # initial wait time between two retry
-      sleep_seconds   = transfer_params.has_key?(:sleeptime )   ? transfer_params[:sleeptime]   : 2;
-      sleep_factor    = transfer_params.has_key?(:sleepfactor ) ? transfer_params[:sleepfactor] : 2;
-      sleep_max       = transfer_params.has_key?(:sleepmax )    ? transfer_params[:sleepmax]    : 60;
+      return ascp_args,env_vars
+    end
+
+    # transforms transper_spec into command line arguments and env var, then calls execute_ascp
+    def transfer_with_spec(transfer_spec)
+      # if not provided, use standard key
+      if !transfer_spec.has_key?('EX_ssh_key_value') and
+      !transfer_spec.has_key?('EX_ssh_key_path') and
+      transfer_spec.has_key?('token')
+        if !@connect_private_key_path.nil?
+          transfer_spec['EX_ssh_key_path'] = @connect_private_key_path
+        else
+          transfer_spec['EX_ssh_key_value'] = @@ASPERA_SSH_BYPASS_DSA
+        end
+      end
+
+      execute_ascp(@ascp_path,*transfer_spec_to_args_and_env(transfer_spec))
+
+      return nil
+    end
+  end # FaspManager
+
+  # implements a resumable policy
+  class FaspManagerResume < FaspManager
+    alias_method :transfer_with_spec_super, :transfer_with_spec
+    def transfer_with_spec(transfer_spec)
+      max_retry = 7
+      sleep_seconds   = 2
+      sleep_factor    = 2
+      sleep_max       = 60
 
       # maximum of retry
-      lRetryLeft = lMaxRetry;
-
-      # return code
-      retstatus=nil
-
-      # parameters with env vars
-      env_vars=Hash.new
-      env_vars['ASPERA_SCP_PASS'] = transfer_params[:password] if transfer_params.has_key? :password
-      env_vars['ASPERA_SCP_KEY'] = transfer_params[:sshKey] if transfer_params.has_key? :sshKey
-      env_vars['ASPERA_SCP_TOKEN'] = transfer_params[:token] if transfer_params.has_key? :token
-      env_vars['ASPERA_SCP_COOKIE'] = transfer_params[:cookie] if transfer_params.has_key? :cookie
-      env_vars['ASPERA_SCP_FILEPASS'] = transfer_params[:file_pass] if transfer_params.has_key? :file_pass
-      env_vars['ASPERA_PROXY_PASS'] = transfer_params[:proxy_pass] if transfer_params.has_key? :proxy_pass
-
+      lRetryLeft = max_retry
       Log.log.debug("retries=#{lRetryLeft}")
 
       # try to send the file until ascp is succesful
       loop do
         Log.log.debug('transfer starting');
         begin
-          execute_ascp(ascp_path,ascp_args,env_vars)
+          transfer_with_spec_super(transfer_spec)
           Log.log.debug( 'transfer ok' );
           break
         rescue TransferError => e
@@ -429,9 +508,7 @@ module Asperalm
           sleep_seconds = sleep_max
         end
       end # loop
-      # cleanup if necessary
-      File.delete aspera_key if delete_key
-      return
     end
   end
-end
+
+end # AsperaLm

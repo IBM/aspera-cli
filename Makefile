@@ -33,7 +33,7 @@ $(GEMFILE):
 	gem build asperalm.gemspec
 
 gem: $(GEMFILE)
-	gem install -l $(GEMFILE)
+	gem install $(GEMFILE)
 
 togarage: $(ZIPFILE) README.pdf $(GEMFILE)
 	$(ASCLI) files --workspace='Sales Engineering' upload '/Laurent Garage SE/RubyCLI' $(ZIPFILE) README.pdf $(GEMFILE)
@@ -69,3 +69,43 @@ commit:
 # eq to: git push origin master
 push:
 	git push
+
+installdeps:
+	gem install jwt formatador ruby-progressbar
+
+t1:
+	aslm shares browse /
+t2:
+	aslm shares upload ~/200KB.1 /projectx
+t3:
+	aslm shares download /projectx/200KB.1 .
+t4:
+	aslm faspex recv_publink https://ibmfaspex.asperasoft.com/aspera/faspex/external_deliveries/78780?passcode=a003aaf2f53e3869126b908525084db6bebc7031
+t5:
+	aslm -nibm faspex list
+t6:
+	aslm -nibm faspex recv 05b92393-02b7-4900-ab69-fd56721e896c
+t7:
+	aslm -nibm faspex --note="my note" --title="my title" --recipient="laurent@asperasoft.com" send ~/200KB.1 
+t8:
+	aslm console transfers list
+t9:
+	aslm node browse /
+t10:
+	aslm node upload ~/200KB.1 /tmp
+t11:
+	aslm node download /tmp/200KB.1 .
+t12:
+	aslm files browse /
+t13:
+	aslm files upload ~/200KB.1 /
+t14:
+	aslm files download /200KB.1 .
+t15:
+	aslm files send ~/200KB.1
+t16:
+	aslm files packages
+t17:
+	aslm files recv VleoMSrlA
+t18:
+	aslm files events

@@ -143,7 +143,7 @@ module Asperalm
         application=Object::const_get(@@PLUGINS_MODULE+'::'+app_name.to_s.capitalize).new
         if application.respond_to?(:faspmanager=) then
           # create the FASP manager for transfers
-          faspmanager=FaspManager.new
+          faspmanager=FaspManagerResume.new
           faspmanager.set_listener(FaspListenerLogger.new)
           application.faspmanager=faspmanager
         end

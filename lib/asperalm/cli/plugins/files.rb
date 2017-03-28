@@ -24,24 +24,22 @@ module Asperalm
         # supports links to secondary nodes
         # input keys:file_id
         # output keys: file_id and node_info
-        def find_nodeinfo_and_fileid ( file_info, init_node_id, path_array )
-          Log.log.debug "file_info(start): #{file_info}, nodeid=#{init_node_id}, array=#{path_array}"
+        def find_nodeinfo_and_fileid ( init_node_id, file_id, path_array )
+          Log.log.debug "find_nodeinfo_and_fileid: nodeid=#{init_node_id}, #{file_id}, array=#{path_array}"
           # at least retrieve node info
-          file_info[:node_info]=@api_files_user.read("nodes/#{init_node_id}")[:data]
-          # if / , we are done !
-          return if path_array.empty?
+          node_info=@api_files_user.read("nodes/#{init_node_id}")[:data]
           # first element is empty if path was starting with /
-          path_array.shift if path_array.first.eql?("")
+          path_array.shift if !path_array.empty? and path_array.first.eql?("")
 
           while !path_array.empty? do
             this_folder_name = path_array.shift
-            Log.log.debug "in file_info #{file_info}, searching #{this_folder_name}"
+            Log.log.debug "searching #{this_folder_name}"
 
             # get API if changed
-            current_node_api=get_node_api(file_info[:node_info],FilesApi::SCOPE_NODE_USER) if current_node_api.nil?
+            current_node_api=get_node_api(node_info,FilesApi::SCOPE_NODE_USER) if current_node_api.nil?
 
             # get folder content
-            folder_contents = current_node_api.list("files/#{file_info[:file_id]}/files")
+            folder_contents = current_node_api.list("files/#{file_id}/files")
             Log.log.debug "folder_contents: #{folder_contents}"
             matching_folders = folder_contents[:data].select { |i| i['name'].eql?(this_folder_name)}
             Log.log.debug "matching_folders: #{matching_folders}"
@@ -50,31 +48,56 @@ module Asperalm
             when 0
               raise OptionParser::InvalidArgument, "no such folder: #{this_folder_name} in #{folder_contents[:data].map { |i| i['name']}}"
             when 1
-              new_file_info = matching_folders[0]
+              file_info = matching_folders[0]
             else
               raise "fund more than one folder matching a name, should not happen"
             end
             # process type of file
-            case new_file_info['type']
+            case file_info['type']
             when 'file'
               # a file shall be terminal
               if !path_array.empty? then
                 raise OptionParser::InvalidArgument, "#{this_folder_name} is a file, expecting folder to find: #{path_array}"
               end
             when 'link'
-              file_info[:node_info]=@api_files_user.read("nodes/#{new_file_info['target_node_id']}")[:data]
-              file_info[:file_id]=new_file_info["target_id"]
+              node_info=@api_files_user.read("nodes/#{file_info['target_node_id']}")[:data]
+              file_id=file_info["target_id"]
               current_node_api=nil
             when 'folder'
-              file_info[:file_id]=new_file_info["id"]
+              file_id=file_info["id"]
             else
-              Log.log.warn "unknown element type: #{new_file_info['type']}"
+              Log.log.warn "unknown element type: #{file_info['type']}"
             end
           end
-          return
+          Log.log.info("node_info,file_id=#{node_info},#{file_id}")
+          return node_info,file_id
         end
 
-        def command_list; [ :send, :recv, :packages, :upload, :download, :events, :set_client_key, :faspexgw, :admin ];end
+        def generate_result(default_fields,items)
+          return {
+            :fields=>default_fields,
+            :values=>items.map { |i|
+            default_fields.inject({}) { |m,v|
+            m[v] = i[v]
+            m
+            }
+            }
+          }
+        end
+
+        def info_to_tspec(direction,node_info,file_id,files_tags)
+          return {
+            'direction'        => direction,
+            'remote_user'      => 'xfer',
+            'remote_host'      => node_info['host'],
+            "fasp_port"        => 33001,
+            "ssh_port"         => 33001,
+            #"target_rate_kbps" => 10000,
+            'token'            => @api_files_oauth.get_authorization(FilesApi.node_scope(node_info['access_key'],FilesApi::SCOPE_NODE_USER)),
+            'tags'             => { "aspera" => { "files" => files_tags, "node" => { "access_key" => node_info['access_key'], "file_id" => file_id }, "xfer_id" => SecureRandom.uuid, "xfer_retry" => 3600 } } }
+        end
+
+        def command_list; [ :browse, :send, :recv, :packages, :upload, :download, :events, :set_client_key, :faspexgw, :admin ];end
 
         def set_options
           @code_getter=:tty
@@ -156,67 +179,33 @@ module Asperalm
           xfer_id=SecureRandom.uuid
 
           case command
+          when :browse
+            default_fields=['name','type','access_level']
+            thepath=self.class.get_next_arg_value(argv,"path")
+            node_info,file_id = find_nodeinfo_and_fileid(workspace_data['home_node_id'],workspace_data['home_file_id'],thepath.split('/'))
+            node_api=get_node_api(node_info,FilesApi::SCOPE_NODE_USER)
+            items=node_api.list("files/#{file_id}/files")[:data]
+            return generate_result(default_fields,items)
           when :upload
-            destination_folder=self.class.get_next_arg_value(argv,'destination')
-            # list of files to include in package
-            filelist = argv.pop(argv.length)
-            Log.log.info("file list=#{filelist}")
-            if filelist.empty? then
-              raise OptionParser::InvalidArgument,"missing file list"
-            end
-            file_info = {
-              :file_id => workspace_data['home_file_id']
-            }
-
-            find_nodeinfo_and_fileid(file_info,workspace_data['home_node_id'],destination_folder.split('/'))
-
-            Log.log.info("file_info(result)=#{file_info}")
-
-            #  get transfer token (for node)
-            node_bearer_token_xfer=@api_files_oauth.get_authorization(FilesApi.node_scope(file_info[:node_info]['access_key'],FilesApi::SCOPE_NODE_USER))
-
-            # transfer files
-            Log.log.info "starting transfer"
-            @faspmanager.do_transfer(
-            :retries   => 10,
-            :mode      => :send,
-            :user      => 'xfer',
-            :host      => file_info[:node_info]['host'],
-            :token     => node_bearer_token_xfer,
-            :tags      => { "aspera" => { "files" => {  }, "node" => { "access_key" => file_info[:node_info]['access_key'], "file_id" => file_info[:file_id] }, "xfer_id" => xfer_id, "xfer_retry" => 3600 } },
-            :srcList   => filelist,
-            :dest      => '/',
-            :rawArgs => [ '-P', '33001', '-q', '--ignore-host-key', '-k', '2', '--save-before-overwrite','--partial-file-suffix=.partial' ],
-            :use_aspera_key => true)
+            filelist = self.class.get_remaining_arguments(argv,"file list,destination")
+            Log.log.debug("file list=#{filelist}")
+            raise OptionParser::InvalidArgument,"Missing source(s) and destination" if filelist.length < 2
+            destination_folder=filelist.pop
+            node_info,file_id = find_nodeinfo_and_fileid(workspace_data['home_node_id'],workspace_data['home_file_id'],destination_folder.split('/'))
+            tspec=info_to_tspec("send",node_info,file_id,{})
+            tspec['paths']=filelist.map { |i| {'source'=>i} }
+            tspec['destination_root']="/"
+            @faspmanager.transfer_with_spec(tspec)
           when :download
-            destination_folder=self.class.get_next_arg_value(argv,'destination')
             source_file=self.class.get_next_arg_value(argv,'source')
-            file_info = {
-              :file_id => workspace_data['home_file_id']
-            }
+            destination_folder=self.class.get_next_arg_value(argv,'destination')
             file_path = source_file.split('/')
             file_name = file_path.pop
-
-            find_nodeinfo_and_fileid(file_info,workspace_data['home_node_id'],file_path)
-
-            Log.log.info("file_info=#{file_info}")
-
-            #  get transfer token (for node)
-            node_bearer_token_xfer=@api_files_oauth.get_authorization(FilesApi.node_scope(file_info[:node_info]['access_key'],FilesApi::SCOPE_NODE_USER))
-
-            # transfer files
-            Log.log.info "starting transfer"
-            @faspmanager.do_transfer(
-            :retries   => 10,
-            :mode      => :recv,
-            :user      => 'xfer',
-            :host      => file_info[:node_info]['host'],
-            :token     => node_bearer_token_xfer,
-            :tags      => { "aspera" => { "files" => {  }, "node" => { "access_key" => file_info[:node_info]['access_key'], "file_id" => file_info[:file_id] }, "xfer_id" => xfer_id, "xfer_retry" => 3600 } },
-            :srcList   => [file_name],
-            :dest      => destination_folder,
-            :rawArgs => [ '-P', '33001', '-q', '--ignore-host-key', '-k', '2', '--save-before-overwrite','--partial-file-suffix=.partial' ],
-            :use_aspera_key => true)
+            node_info,file_id = find_nodeinfo_and_fileid(workspace_data['home_node_id'],workspace_data['home_file_id'],file_path)
+            tspec=info_to_tspec('receive',node_info,file_id,{})
+            tspec['paths']=[{'source'=>file_name}]
+            tspec['destination_root']=destination_folder
+            @faspmanager.transfer_with_spec(tspec)
           when :send
 
             # list of files to include in package
@@ -242,55 +231,31 @@ module Asperalm
             # tell Files what to expect in package: 1 transfer (can also be done after transfer)
             resp=@api_files_user.update("packages/#{the_package['id']}",{"sent"=>true,"transfers_expected"=>1})[:data]
 
-            #  get transfer token (for node)
-            node_bearer_token_xfer=@api_files_oauth.get_authorization(FilesApi.node_scope(node_info['access_key'],FilesApi::SCOPE_NODE_USER))
-
-            # transfer files
-            Log.log.info "starting transfer"
-            @faspmanager.do_transfer(
-            :retries   => 10,
-            :mode      => :send,
-            :user      => 'xfer',
-            :host      => node_info['host'],
-            :token     => node_bearer_token_xfer,
-            :tags      => { "aspera" => { "files" => { "package_id" => the_package['id'], "package_operation" => "upload" }, "node" => { "access_key" => node_info['access_key'], "file_id" => the_package['contents_file_id'] }, "xfer_id" => xfer_id, "xfer_retry" => 3600 } },
-            :srcList   => filelist,
-            :dest      => '/',
-            :rawArgs => [ '-P', '33001', '-q', '--ignore-host-key', '-k', '2', '--save-before-overwrite','--partial-file-suffix=.partial' ],
-            :use_aspera_key => true)
-            # simulate call later, to check status
+            tspec=info_to_tspec("send",node_info,the_package['contents_file_id'],{"package_id" => the_package['id'], "package_operation" => "upload"})
+            tspec['paths']=filelist.map { |i| {'source'=>i} }
+            tspec['destination_root']="/"
+            @faspmanager.transfer_with_spec(tspec)
+            # simulate call later, to check status (this is just demo api call, not needed)
             sleep 2
             # (sample) get package status
             allpkg=@api_files_user.read("packages/#{the_package['id']}")[:data]
           when :recv
-            loop do
-              # list all packages ('page'=>1,'per_page'=>10,)'sort'=>'-sent_at',
-              packages=@api_files_user.list("packages",{'archived'=>false,'exclude_dropbox_packages'=>true,'has_content'=>true,'received'=>true,'workspace_id'=>workspace_id})[:data]
-              # take the last one
-              the_package=packages.first
-              #  get node info
-              node_info=@api_files_user.read("nodes/#{the_package['node_id']}")[:data]
-              # get transfer auth
-              node_bearer_token_xfer=@api_files_oauth.get_authorization(FilesApi.node_scope(node_info['access_key'],FilesApi::SCOPE_NODE_USER))
-              # download files
-              Log.log.info "starting transfer"
-              @faspmanager.do_transfer(
-              :retries   => 10,
-              :mode      => :recv,
-              :user      => 'xfer',
-              :host      => node_info['host'],
-              :token     => node_bearer_token_xfer,
-              :tags      => { "aspera" => { "files" => { "package_id" => the_package['id'], "package_operation" => "download" }, "node" => { "access_key" => node_info['access_key'], "file_id" => the_package['contents_file_id'] }, "xfer_id" => xfer_id, "xfer_retry" => 3600 } },
-              :srcList   => ['.'],
-              :dest      => '.',#TODO:param?
-              :rawArgs => [ '-P', '33001', '-q', '--ignore-host-key', '-k', '2', '--save-before-overwrite','--partial-file-suffix=.partial' ],
-              :use_aspera_key => true)
-              break if @loop.nil?
-            end
+            package_id=self.class.get_next_arg_value(argv,'package ID')
+            the_package=@api_files_user.read("packages/#{package_id}")[:data]
+            #packages=@api_files_user.list("packages",{'archived'=>false,'exclude_dropbox_packages'=>true,'has_content'=>true,'received'=>true,'workspace_id'=>workspace_id})[:data]
+            # take the last one
+            #the_package=packages.first
+            #  get node info
+            node_info=@api_files_user.read("nodes/#{the_package['node_id']}")[:data]
+            tspec=info_to_tspec("receive",node_info,the_package['contents_file_id'],{"package_id" => the_package['id'], "package_operation" => "download"})
+            tspec['paths']=[{'source'=>'.'}]
+            tspec['destination_root']='.' # TODO:param?
+            @faspmanager.transfer_with_spec(tspec)
           when :packages
             default_fields=['id','name','bytes_transferred']
+            # list all packages ('page'=>1,'per_page'=>10,)'sort'=>'-sent_at',
             packages=@api_files_user.list("packages",{'archived'=>false,'exclude_dropbox_packages'=>true,'has_content'=>true,'received'=>true,'workspace_id'=>workspace_id})[:data]
-            return {:fields=>default_fields,:values=>packages.map { |p| default_fields.inject({}) { |m,v| m[v] = p[v]; m } } }
+            return generate_result(default_fields,packages)
           when :events
             api_files_admin=Rest.new(files_api_base_url,{:oauth=>@api_files_oauth,:scope=>FilesApi::SCOPE_FILES_ADMIN})
             # page=1&per_page=10&q=type:(file_upload+OR+file_delete+OR+file_download+OR+file_rename+OR+folder_create+OR+folder_delete+OR+folder_share+OR+folder_share_via_public_link)&sort=-date
@@ -306,8 +271,9 @@ module Asperalm
             # tag=x.y.z%3Dvalue
             # iteration_token=nnn
             # active_only=true|false
-            res=api_node_admin.list("ops/transfers",{'count'=>100,'filter'=>'summary','active_only'=>'true'})
-            return {:values=>res[:data]}
+            events=api_node_admin.list("ops/transfers",{'count'=>100,'filter'=>'summary','active_only'=>'true'})[:data]
+            return generate_result(['id','status'],events)
+            return {:values=>res}
             #transfers=api_node_admin.make_request_ex({:operation=>'GET',:subpath=>'ops/transfers',:args=>{'count'=>25,'filter'=>'id'}})
             #transfers=api_node_admin.list("events") # after_time=2016-05-01T23:53:09Z
           when :set_client_key
@@ -315,6 +281,7 @@ module Asperalm
             the_private_key=self.class.get_next_arg_value(argv,'private_key')
             api_files_admin=Rest.new(files_api_base_url,{:oauth=>@api_files_oauth,:scope=>FilesApi::SCOPE_FILES_ADMIN})
             api_files_admin.update("clients/#{the_client_id}",{:jwt_grant_enabled=>true, :public_key=>OpenSSL::PKey::RSA.new(the_private_key).public_key.to_s})
+            return nil
           when :faspexgw
             require 'asperalm/faspex_gw'
             FaspexGW.set_vars(@api_files_user,@api_files_oauth)

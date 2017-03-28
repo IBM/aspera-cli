@@ -8,7 +8,7 @@ module Asperalm
 
         attr_accessor :faspmanager
 
-        def command_list;[ :upload, :download, :transfers, :info, :cleanup ];end
+        def command_list;[ :browse, :upload, :download, :transfers, :info, :cleanup ];end
 
         def set_options
           self.add_opt_simple(:url,"-wURI", "--url=URI","URL of application, e.g. http://org.asperafiles.com")
@@ -23,66 +23,34 @@ module Asperalm
         def dojob(command,argv)
           api_node=Rest.new(self.get_option_mandatory(:url),{:basic_auth=>{:user=>self.get_option_mandatory(:username), :password=>self.get_option_mandatory(:password)}})
           case command
+          when :browse
+            thepath=self.class.get_next_arg_value(argv,"path")
+            send_result=api_node.call({:operation=>'POST',:subpath=>'files/browse',:json_params=>{ :path => thepath} } )
+            return nil if !send_result[:data].has_key?('items')
+            return {:fields=>send_result[:data]['items'].first.keys,:values=>send_result[:data]['items']}
           when :upload
             filelist = self.class.get_remaining_arguments(argv,"file list")
             Log.log.debug("file list=#{filelist}")
-            if filelist.length < 2 then
-              raise OptionParser::InvalidArgument,"Missing source(s) and destination"
-            end
-
+            raise OptionParser::InvalidArgument,"Missing source(s) and destination" if filelist.length < 2
             destination=filelist.pop
-
             send_result=api_node.call({:operation=>'POST',:subpath=>'files/upload_setup',:json_params=>{ :transfer_requests => [ { :transfer_request => { :paths => [ { :destination => destination } ] } } ] }})
-            if send_result[:data]['transfer_specs'][0].has_key?('error')
-              raise send_result[:data]['transfer_specs'][0]['error']['user_message']
-            end
-            send_result[:data]['transfer_specs'].each{ |s|
-              session=s['transfer_spec']
-              @faspmanager.do_transfer(
-              :mode    => :send,
-              :dest    => session['destination_root'],
-              :user    => session['remote_user'],
-              :host    => session['remote_host'],
-              :token   => session['token'],
-              #:cookie  => session['cookie'],
-              #:tags    => session['tags'],
-              :srcList => filelist,
-              :rawArgs => [ '-P', '33001', '-d', '-q', '--ignore-host-key', '-k', '2', '--save-before-overwrite','--partial-file-suffix=.partial' ],
-              :retries => 10,
-              :use_aspera_key => true)
-            }
-            return
+            raise send_result[:data]['transfer_specs'][0]['error']['user_message'] if send_result[:data]['transfer_specs'][0].has_key?('error')
+            raise "expecting one session exactly" if send_result[:data]['transfer_specs'].length != 1
+            transfer_spec=send_result[:data]['transfer_specs'].first['transfer_spec']
+            transfer_spec['paths']=filelist.map { |i| {'source'=>i} }
+            @faspmanager.transfer_with_spec(transfer_spec)
+            return nil
           when :download
             filelist = self.class.get_remaining_arguments(argv,"file list")
             Log.log.debug("file list=#{filelist}")
-            if filelist.length < 2 then
-              raise OptionParser::InvalidArgument,"Missing source(s) and destination"
-            end
-
+            raise OptionParser::InvalidArgument,"Missing source(s) and destination" if filelist.length < 2
             destination=filelist.pop
-
             send_result=api_node.call({:operation=>'POST',:subpath=>'files/download_setup',:json_params=>{ :transfer_requests => [ { :transfer_request => { :paths => filelist.map {|i| {:source=>i}; } } } ] }})
-            if send_result[:data]['transfer_specs'][0].has_key?('error')
-              raise send_result[:data]['transfer_specs'][0]['error']['user_message']
-            end
-
-            send_result[:data]['transfer_specs'].each{ |s|
-              session=s['transfer_spec']
-              srcList = session['paths'].map { |i| i['source']}
-              @faspmanager.do_transfer(
-              :mode    => :recv,
-              :dest    => destination,
-              :user    => session['remote_user'],
-              :host    => session['remote_host'],
-              :token   => session['token'],
-              :cookie  => session['cookie'],
-              :tags    => session['tags'],
-              :srcList => srcList,
-              :rawArgs => [ '-P', '33001', '-d', '-q', '--ignore-host-key', '-k', '2', '--save-before-overwrite','--partial-file-suffix=.partial' ],
-              :retries => 10,
-              :use_aspera_key => true)
-              return
-            }
+            raise send_result[:data]['transfer_specs'][0]['error']['user_message'] if send_result[:data]['transfer_specs'][0].has_key?('error')
+            raise "expecting one session exactly" if send_result[:data]['transfer_specs'].length != 1
+            transfer_spec=send_result[:data]['transfer_specs'].first['transfer_spec']
+            @faspmanager.transfer_with_spec(transfer_spec)
+            return nil
           when :transfers
             command=self.class.get_next_arg_from_list(argv,'command',[ :list ])
             # ,:url_params=>{:active_only=>true}
@@ -137,7 +105,7 @@ module Asperalm
                 result='deleted'
                 if p.has_key?('error')
                   Log.log.error("#{p['error']['user_message']} : #{p['path']}")
-                  result=p['error']['user_message']
+                  result="ERR:"+p['error']['user_message']
                 end
                 resres[:values].push({'file'=>p['path'],'result'=>result})
               end
