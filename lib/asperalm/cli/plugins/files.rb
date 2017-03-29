@@ -4,6 +4,8 @@ require 'asperalm/oauth'
 require 'asperalm/files_api'
 require 'SecureRandom'
 
+# get end points here:
+
 module Asperalm
   module Cli
     module Plugins
@@ -97,7 +99,7 @@ module Asperalm
             'tags'             => { "aspera" => { "files" => files_tags, "node" => { "access_key" => node_info['access_key'], "file_id" => file_id }, "xfer_id" => SecureRandom.uuid, "xfer_retry" => 3600 } } }
         end
 
-        def command_list; [ :browse, :send, :recv, :packages, :upload, :download, :events, :set_client_key, :faspexgw, :admin ];end
+        def command_list; [ :browse, :send, :recv, :packages, :upload, :download, :events, :set_client_key, :faspexgw, :admin,:usage_reports ];end
 
         def set_options
           @code_getter=:tty
@@ -301,7 +303,11 @@ module Asperalm
               return {:fields=>default_fields,:values=>res }
             else
               raise RuntimeError, "unexpected value: #{resource}"
-            end
+            end#operation
+            when :usage_reports
+            api_files_admin=Rest.new(files_api_base_url,{:oauth=>@api_files_oauth,:scope=>FilesApi::SCOPE_FILES_ADMIN})
+              res=api_files_admin.read("usage_reports")[:data]
+              return {:fields=>default_fields,:values=>res }
           else
             raise RuntimeError, "unexpected value: #{command}"
           end # action
