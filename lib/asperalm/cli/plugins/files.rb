@@ -170,7 +170,7 @@ module Asperalm
 
           case command
           when :browse
-            default_fields=['name','type','access_level']
+            default_fields=['name','type','recursive_size','size','modified_time','access_level']
             thepath=self.class.get_next_arg_value(argv,"path")
             node_info,file_id = find_nodeinfo_and_fileid(workspace_data['home_node_id'],workspace_data['home_file_id'],thepath.split('/'))
             node_api=get_node_api(node_info,FilesApi::SCOPE_NODE_USER)

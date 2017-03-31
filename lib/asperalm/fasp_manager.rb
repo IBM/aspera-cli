@@ -27,7 +27,6 @@ WXup2ac0Co+RnZp7Hsa9G+E+iJ6poI9pOR08XTdPly4yDULNST4PwlfrbSFT9FVh
 zkWfpOvAUc8fkQAhZqv/PE6VhFQ8w03Z8GpqXx7b3NvBR+EfIx368KoCFEyfl0vH
 Ta7g6mGwIMXrdTQQ8fZs
 -----END DSA PRIVATE KEY-----"
-
   # imlement this class to get transfer events
   class FileTransferListener
     def event(data)
@@ -37,18 +36,24 @@ Ta7g6mGwIMXrdTQQ8fZs
 
   # listener for FASP transfers (debug)
   class FaspListenerLogger < FileTransferListener
+    def event(data)
+      Log.log.debug "#{data}"
+    end
+  end
+
+  # listener for FASP transfers (debug)
+  class FaspListenerProgress < FileTransferListener
     def initialize
       @progress=nil
     end
 
     def event(data)
-      Log.log.debug "#{data}"
       if data['Type'].eql?('NOTIFICATION') and data.has_key?('PreTransferBytes') then
         require 'ruby-progressbar'
         @progress=ProgressBar.create(:title => 'progress', :total => data['PreTransferBytes'].to_i)
       end
       if data['Type'].eql?('STATS') and !@progress.nil? then
-        #@progress.progress=data['TransferBytes'].to_i
+        @progress.progress=data['TransferBytes'].to_i
       end
       if data['Type'].eql?('DONE') and ! @progress.nil? then
         @progress.progress=@progress.total
@@ -73,6 +78,7 @@ Ta7g6mGwIMXrdTQQ8fZs
       set_ascp_location
     end
 
+    # todo: support multiple listeners
     def set_listener(listener)
       @listener=listener
       self
@@ -383,9 +389,7 @@ Ta7g6mGwIMXrdTQQ8fZs
           transfer_spec['EX_ssh_key_value'] = ASPERA_SSH_BYPASS_DSA_KEY_VALUE
         end
       end
-
       execute_ascp(@ascp_path,*transfer_spec_to_args_and_env(transfer_spec))
-
       return nil
     end
   end # FaspManager
