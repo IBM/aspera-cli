@@ -2,7 +2,7 @@ require "asperalm/cli/plugin"
 require "asperalm/version"
 require "asperalm/log"
 require 'yaml'
-require 'formatador'
+require 'text-table'
 require 'pp'
 
 module Asperalm
@@ -95,7 +95,9 @@ module Asperalm
             puts PP.pp(results[:values],'')
           when :text
             #results[:values].each { |i| i.select! { |k| results[:fields].include?(k) } }
-            Formatador.display_table(results[:values],results[:fields])
+            rows=results[:values].map{ |r| results[:fields].map { |c| r[c] } }
+            puts Text::Table.new(:head => results[:fields], :rows => rows, :vertical_boundary  => '.', :horizontal_boundary => ':', :boundary_intersection => ':')
+            #Formatador.display_compact_table(results[:values],results[:fields])
           end
         else
           if results.is_a?(String)

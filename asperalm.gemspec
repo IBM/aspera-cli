@@ -8,7 +8,7 @@ Gem::Specification.new do |spec|
   spec.version       = Asperalm::VERSION
   spec.authors       = ["Laurent Martin"]
   spec.email         = ["laurent@asperasoft.com"]
-  spec.summary       = "Sample command line for Aspera servers"
+  spec.summary       = "Sample command line for Aspera Server products: Aspera Files, Faspex, Shares, Node, Console"
   spec.description   = "A sample CLI for Aspera products."
   spec.homepage      = "http://www.asperasoft.com"
   spec.license       = 'IPL-1.0'
@@ -18,8 +18,7 @@ Gem::Specification.new do |spec|
   if spec.respond_to?(:metadata)
     spec.metadata['allowed_push_host'] = "https://rubygems.org"
   else
-    raise "RubyGems 2.0 or newer is required to protect against " \
-      "public gem pushes."
+    raise "RubyGems 2.0 or newer is required to protect against public gem pushes."
   end
 
   spec.files         = `git ls-files -z`.split("\x0").reject { |f| f.match(%r{^(test|spec|features)/}) }
@@ -29,7 +28,7 @@ Gem::Specification.new do |spec|
   spec.add_runtime_dependency 'xml-simple', '~> 1.1', '>= 1.1.5'
   spec.add_runtime_dependency 'jwt', '~> 1.5', '>= 1.5.6'
   spec.add_runtime_dependency 'ruby-progressbar', '~> 1.0', '>= 1.0.0'
-  spec.add_dependency('formatador', '~> 0.2.5')
+  spec.add_dependency('text-table', '~> 1.2.4')
   spec.add_development_dependency "bundler", "~> 1.14"
   spec.add_development_dependency "rake", "~> 10.0"
   spec.add_development_dependency "rspec", "~> 3.0"

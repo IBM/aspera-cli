@@ -14,6 +14,20 @@ require "base64"
 require "json"
 
 module Asperalm
+
+  ASPERA_SSH_BYPASS_DSA_KEY_VALUE="-----BEGIN DSA PRIVATE KEY-----
+MIIBuwIBAAKBgQDkKQHD6m4yIxgjsey6Pny46acZXERsJHy54p/BqXIyYkVOAkEp
+KgvT3qTTNmykWWw4ovOP1+Di1c/2FpYcllcTphkWcS8lA7j012mUEecXavXjPPG0
+i3t5vtB8xLy33kQ3e9v9/Lwh0xcRfua0d5UfFwopBIAXvJAr3B6raps8+QIVALws
+yeqsx3EolCaCVXJf+61ceJppAoGAPoPtEP4yzHG2XtcxCfXab4u9zE6wPz4ePJt0
+UTn3fUvnQmJT7i0KVCRr3g2H2OZMWF12y0jUq8QBuZ2so3CHee7W1VmAdbN7Fxc+
+cyV9nE6zURqAaPyt2bE+rgM1pP6LQUYxgD3xKdv1ZG+kDIDEf6U3onjcKbmA6ckx
+T6GavoACgYEAobapDv5p2foH+cG5K07sIFD9r0RD7uKJnlqjYAXzFc8U76wXKgu6
+WXup2ac0Co+RnZp7Hsa9G+E+iJ6poI9pOR08XTdPly4yDULNST4PwlfrbSFT9FVh
+zkWfpOvAUc8fkQAhZqv/PE6VhFQ8w03Z8GpqXx7b3NvBR+EfIx368KoCFEyfl0vH
+Ta7g6mGwIMXrdTQQ8fZs
+-----END DSA PRIVATE KEY-----"
+
   # imlement this class to get transfer events
   class FileTransferListener
     def event(data)
@@ -49,13 +63,6 @@ module Asperalm
     def initialize(err_code)
       @err_code = err_code
     end
-
-    def retryable?
-      if -1.eql?(@err_code) then
-        return false
-      end
-      return FaspManager.retryable?(@err_code)
-    end
   end
 
   # Manages FASP based transfers
@@ -64,87 +71,11 @@ module Asperalm
       @mgt_sock=nil
       @ascp_pid=nil
       set_ascp_location
-      @transfer_retries=7
     end
 
     def set_listener(listener)
       @listener=listener
       self
-    end
-
-    # from https://support.asperasoft.com/entries/22895528
-    # columns: code name descr msg retryable
-    FASP_ERROR_CODES = [
-      [],
-      [ 1,  'ERR_FASP_PROTO',         "Generic fasp(tm) protocol error",                "fasp(tm) error",                                                    false ],
-      [ 2,  'ERR_ASCP',               "Generic SCP error",                              "ASCP error",                                                        false ],
-      [ 3,  'ERR_AMBIGUOUS_TARGET',   "Target incorrectly specified",                   "Ambiguous target",                                                  false ],
-      [ 4,  'ERR_NO_SUCH_FILE',       "No such file or directory",                      "No such file or directory",                                         false ],
-      [ 5,  'ERR_NO_PERMS',           "Insufficient permission to read or write",       "Insufficient permissions",                                          false ],
-      [ 6,  'ERR_NOT_DIR',            "Target is not a directory",                      "Target must be a directory",                                        false ],
-      [ 7,  'ERR_IS_DIR',             "File is a directory - expected regular file",    "Expected regular file",                                             false ],
-      [ 8,  'ERR_USAGE',              "Incorrect usage of scp command",                 "Incorrect usage of Aspera scp command",                             false ],
-      [ 9,  'ERR_LIC_DUP',            "Duplicate license",                              "Duplicate license",                                                 false ],
-      [ 10, 'ERR_LIC_RATE_EXCEEDED',  "Rate exceeds the cap imposed by license",        "Rate exceeds cap imposed by license",                               false ],
-      [ 11, 'ERR_INTERNAL_ERROR',     "Internal error (unexpected error)",              "Internal error",                                                    false ],
-      [ 12, 'ERR_TRANSFER_ERROR',     "Error establishing control connection",          "Error establishing SSH connection (check SSH port and firewall)",   true ],
-      [ 13, 'ERR_TRANSFER_TIMEOUT',   "Timeout establishing control connection",        "Timeout establishing SSH connection (check SSH port and firewall)", true ],
-      [ 14, 'ERR_CONNECTION_ERROR',   "Error establishing data connection",             "Error establishing UDP connection (check UDP port and firewall)",   true ],
-      [ 15, 'ERR_CONNECTION_TIMEOUT', "Timeout establishing data connection",           "Timeout establishing UDP connection (check UDP port and firewall)", true ],
-      [ 16, 'ERR_CONNECTION_LOST',    "Connection lost",                                "Connection lost",                                                   true ],
-      [ 17, 'ERR_RCVR_SEND_ERROR',    "Receiver fails to send feedback",                "Network failure (receiver can't send feedback)",                    true ],
-      [ 18, 'ERR_RCVR_RECV_ERROR',    "Receiver fails to receive data packets",         "Network failure (receiver can't receive UDP data)",                 true ],
-      [ 19, 'ERR_AUTH',               "Authentication failure",                         "Authentication failure",                                            false ],
-      [ 20, 'ERR_NOTHING',            "Nothing to transfer",                            "Nothing to transfer",                                               false ],
-      [ 21, 'ERR_NOT_REGULAR',        "Not a regular file (special file)",              "Not a regular file",                                                false ],
-      [ 22, 'ERR_FILE_TABLE_OVR',     "File table overflow",                            "File table overflow",                                               false ],
-      [ 23, 'ERR_TOO_MANY_FILES',     "Too many files open",                            "Too many files open",                                               true ],
-      [ 24, 'ERR_FILE_TOO_BIG',       "File too big for file system",                   "File too big for filesystem",                                       false ],
-      [ 25, 'ERR_NO_SPACE_LEFT',      "No space left on disk",                          "No space left on disk",                                             false ],
-      [ 26, 'ERR_READ_ONLY_FS',       "Read only file system",                          "Read only filesystem",                                              false ],
-      [ 27, 'ERR_SOME_FILE_ERRS',     "Some individual files failed",                   "One or more files failed",                                          false ],
-      [ 28, 'ERR_USER_CANCEL',        "Cancelled by user",                              "Cancelled by user",                                                 false ],
-      [ 29, 'ERR_LIC_NOLIC',          "License not found or unable to access",          "Unable to access license info",                                     false ],
-      [ 30, 'ERR_LIC_EXPIRED',        "License expired",                                "License expired",                                                   false ],
-      [ 31, 'ERR_SOCK_SETUP',         "Unable to setup socket (create, bind, etc ...)", "Unable to set up socket",                                           false ],
-      [ 32, 'ERR_OUT_OF_MEMORY',      "Out of memory, unable to allocate",              "Out of memory",                                                     true ],
-      [ 33, 'ERR_THREAD_SPAWN',       "Can't spawn thread",                             "Unable to spawn thread",                                            true ],
-      [ 34, 'ERR_UNAUTHORIZED',       "Unauthorized by external auth server",           "Unauthorized",                                                      false ],
-      [ 35, 'ERR_DISK_READ',          "Error reading source file from disk",            "Disk read error",                                                   true ],
-      [ 36, 'ERR_DISK_WRITE',         "Error writing to disk",                          "Disk write error",                                                  true ],
-      [ 37, 'ERR_AUTHORIZATION',         "Used interchangeably with <strong>ERR_UNAUTHORIZED</strong>", "Authorization failure",                          true ],
-      [ 38, 'ERR_LIC_ILLEGAL',           "Operation not permitted by license",                          "Operation not permitted by license",             false ],
-      [ 39, 'ERR_PEER_ABORTED_SESSION',  "Remote peer terminated session",                              "Peer aborted session",                           true ],
-      [ 40, 'ERR_DATA_TRANSFER_TIMEOUT', "Transfer stalled, timed out",                                 "Data transfer stalled, timed out",               true ],
-      [ 41, 'ERR_BAD_PATH',              "Path violates docroot containment",                           "File location is outside 'docroot' hierarchy",   false ],
-      [ 42, 'ERR_ALREADY_EXISTS',        "File or directory already exists",                            "File or directory already exists",               false ],
-      [ 43, 'ERR_STAT_FAILS',            "Cannot stat file",                                            "Cannot collect details about file or directory", false ],
-      [ 44, 'ERR_PMTU_BRTT_ERROR',       "UDP session initiation fatal error",                          "UDP session initiation fatal error",             true ],
-      [ 45, 'ERR_BWMEAS_ERROR',          "Bandwidth measurement fatal error",                           "Bandwidth measurement fatal error",              true ],
-      [ 46, 'ERR_VLINK_ERROR',           "Virtual link error",                                          "Virtual link error",                             false ],
-      [ 47, 'ERR_CONNECTION_ERROR_HTTP', "Error establishing HTTP connection",       "Error establishing HTTP connection (check HTTP port and firewall)", false ],
-      [ 48, 'ERR_FILE_ENCRYPTION_ERROR', "File encryption error, e.g. corrupt file", "File encryption/decryption error, e.g. corrupt file",               false ],
-      [ 49, 'ERR_FILE_DECRYPTION_PASS', "File encryption/decryption error, e.g. corrupt file", "File decryption error, bad passphrase", false ],
-      [ 50, 'ERR_BAD_CONFIGURATION',    "Aspera.conf contains invalid data and was rejected",  "Invalid configuration",                 false ],
-      [ 51, 'ERR_UNDEFINED',            "Should never happen, report to Aspera",               "Undefined error",                       false ],
-    ];
-
-    @@ASPERA_SSH_BYPASS_DSA="-----BEGIN DSA PRIVATE KEY-----
-MIIBuwIBAAKBgQDkKQHD6m4yIxgjsey6Pny46acZXERsJHy54p/BqXIyYkVOAkEp
-KgvT3qTTNmykWWw4ovOP1+Di1c/2FpYcllcTphkWcS8lA7j012mUEecXavXjPPG0
-i3t5vtB8xLy33kQ3e9v9/Lwh0xcRfua0d5UfFwopBIAXvJAr3B6raps8+QIVALws
-yeqsx3EolCaCVXJf+61ceJppAoGAPoPtEP4yzHG2XtcxCfXab4u9zE6wPz4ePJt0
-UTn3fUvnQmJT7i0KVCRr3g2H2OZMWF12y0jUq8QBuZ2so3CHee7W1VmAdbN7Fxc+
-cyV9nE6zURqAaPyt2bE+rgM1pP6LQUYxgD3xKdv1ZG+kDIDEf6U3onjcKbmA6ckx
-T6GavoACgYEAobapDv5p2foH+cG5K07sIFD9r0RD7uKJnlqjYAXzFc8U76wXKgu6
-WXup2ac0Co+RnZp7Hsa9G+E+iJ6poI9pOR08XTdPly4yDULNST4PwlfrbSFT9FVh
-zkWfpOvAUc8fkQAhZqv/PE6VhFQ8w03Z8GpqXx7b3NvBR+EfIx368KoCFEyfl0vH
-Ta7g6mGwIMXrdTQQ8fZs
------END DSA PRIVATE KEY-----"
-
-    # arg: FASP errcode
-    def self.retryable?(err_code)
-      return FASP_ERROR_CODES[err_code][4] ;
     end
 
     def yes_to_true(value)
@@ -257,7 +188,7 @@ Ta7g6mGwIMXrdTQQ8fZs
               lastStatus = current
             end
           else
-            Log.log.error "unexpected empty line";
+            Log.log.error "unexpected empty line"
           end
         elsif 'FASPMGR 2'.eql? line then
           # begin frame
@@ -276,18 +207,13 @@ Ta7g6mGwIMXrdTQQ8fZs
         if 'DONE'.eql?(lastStatus['Type']) then
           return
         end
-        Log.log.error "last status is [#{lastStatus}]";
+        Log.log.error "last status is [#{lastStatus}]"
       end
 
       raise TransferError.new(lastStatus['Code'].to_i),lastStatus['Description']
     end
 
-    # returns a location for ascp and private key, and if key needs deletion after use
-    # {
-    #		cmd       => path,
-    #		key       => path,
-    #		deletekey => bool,
-    # };
+    # set members: @ascp_path and optionally @connect_private_key_path
     def set_ascp_location
 
       # ascp command and key file
@@ -314,8 +240,8 @@ Ta7g6mGwIMXrdTQQ8fZs
       Log.log.debug "key= #{lConnectAscpId}"
       if File.file?(lConnectAscpCmd) and File.file?(lConnectAscpId ) then
         Log.log.debug "Using plugin: [#{lConnectAscpId}]"
-        @ascp_path= lConnectAscpCmd
-        @connect_private_key_path= lConnectAscpId
+        @ascp_path = lConnectAscpCmd
+        @connect_private_key_path = lConnectAscpId
         return
       end
 
@@ -329,8 +255,7 @@ Ta7g6mGwIMXrdTQQ8fZs
       @ascp_path= lESAscpCmd
     end
 
-    # replaces do_transfer
-
+    # copy and translate argument+value from transfer spec to env var for ascp
     def ts2env(used_names,transfer_spec,env_vars,ts_name,env_name)
       if transfer_spec.has_key?(ts_name)
         env_vars[env_name] = transfer_spec[ts_name]
@@ -338,6 +263,7 @@ Ta7g6mGwIMXrdTQQ8fZs
       end
     end
 
+    # copy and translate argument+value from transfer spec to arguments for ascp
     def ts2args_value(used_names,transfer_spec,ascp_args,ts_name,arg_name,&transform)
       if transfer_spec.has_key?(ts_name)
         if !transfer_spec[ts_name].nil?
@@ -349,6 +275,7 @@ Ta7g6mGwIMXrdTQQ8fZs
       end
     end
 
+    # translate boolean transfer spec argument to command line argument
     def ts_bool_param(used_names,transfer_spec,ascp_args,ts_name,&get_arg_list)
       if transfer_spec.has_key?(ts_name)
         ascp_args.push(*get_arg_list.call(transfer_spec[ts_name]))
@@ -356,10 +283,12 @@ Ta7g6mGwIMXrdTQQ8fZs
       end
     end
 
+    # ignore transfer spec argument
     def ts_ignore_param(used_names,ts_name)
       used_names.push(ts_name)
     end
 
+    # translate transfer spec to env vars and command line arguments to ascp
     def transfer_spec_to_args_and_env(transfer_spec)
       used_names=[]
       # parameters with env vars
@@ -431,6 +360,7 @@ Ta7g6mGwIMXrdTQQ8fZs
       ascp_args.push(transfer_spec['destination_root'])
       used_names.push('destination_root')
 
+      # warn about non translated arguments
       transfer_spec.keys.each { |key|
         if !used_names.include?(key)
           Log.log.error("did not manage: #{key} = #{transfer_spec[key]}".red)
@@ -440,6 +370,7 @@ Ta7g6mGwIMXrdTQQ8fZs
       return ascp_args,env_vars
     end
 
+    # replaces do_transfer
     # transforms transper_spec into command line arguments and env var, then calls execute_ascp
     def transfer_with_spec(transfer_spec)
       # if not provided, use standard key
@@ -449,7 +380,7 @@ Ta7g6mGwIMXrdTQQ8fZs
         if !@connect_private_key_path.nil?
           transfer_spec['EX_ssh_key_path'] = @connect_private_key_path
         else
-          transfer_spec['EX_ssh_key_value'] = @@ASPERA_SSH_BYPASS_DSA
+          transfer_spec['EX_ssh_key_value'] = ASPERA_SSH_BYPASS_DSA_KEY_VALUE
         end
       end
 
@@ -458,57 +389,4 @@ Ta7g6mGwIMXrdTQQ8fZs
       return nil
     end
   end # FaspManager
-
-  # implements a resumable policy
-  class FaspManagerResume < FaspManager
-    alias_method :transfer_with_spec_super, :transfer_with_spec
-    def transfer_with_spec(transfer_spec)
-      max_retry = 7
-      sleep_seconds   = 2
-      sleep_factor    = 2
-      sleep_max       = 60
-
-      # maximum of retry
-      lRetryLeft = max_retry
-      Log.log.debug("retries=#{lRetryLeft}")
-
-      # try to send the file until ascp is succesful
-      loop do
-        Log.log.debug('transfer starting');
-        begin
-          transfer_with_spec_super(transfer_spec)
-          Log.log.debug( 'transfer ok' );
-          break
-        rescue TransferError => e
-          # failure in ascp
-          if e.retryable? then
-            # exit if we exceed the max number of retry
-            if lRetryLeft <= 0 then
-              Log.log.error "Maximum number of retry reached."
-              raise TransferError.new(-1),"max retry after: [#{status[:message]}]"
-              break;
-            end
-          else
-            Log.log.error('non-retryable error');
-            raise e
-            break;
-          end
-        end
-
-        # take this retry in account
-        --lRetryLeft
-        Log.log.debug( "resuming in  #{sleep_seconds} seconds (retry left:#{lRetryLeft})" );
-
-        # wait a bit before retrying, maybe network condition will be better
-        sleep sleep_seconds
-
-        # increase retry period
-        sleep_seconds *= sleep_factor
-        if sleep_seconds > sleep_max then
-          sleep_seconds = sleep_max
-        end
-      end # loop
-    end
-  end
-
 end # AsperaLm

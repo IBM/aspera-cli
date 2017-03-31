@@ -75,18 +75,6 @@ module Asperalm
           return node_info,file_id
         end
 
-        def generate_result(default_fields,items)
-          return {
-            :fields=>default_fields,
-            :values=>items.map { |i|
-            default_fields.inject({}) { |m,v|
-            m[v] = i[v]
-            m
-            }
-            }
-          }
-        end
-
         def info_to_tspec(direction,node_info,file_id,files_tags)
           return {
             'direction'        => direction,
@@ -187,7 +175,7 @@ module Asperalm
             node_info,file_id = find_nodeinfo_and_fileid(workspace_data['home_node_id'],workspace_data['home_file_id'],thepath.split('/'))
             node_api=get_node_api(node_info,FilesApi::SCOPE_NODE_USER)
             items=node_api.list("files/#{file_id}/files")[:data]
-            return generate_result(default_fields,items)
+            return {:fields=>default_fields,:values=>items}
           when :upload
             filelist = self.class.get_remaining_arguments(argv,"file list,destination")
             Log.log.debug("file list=#{filelist}")
@@ -257,7 +245,7 @@ module Asperalm
             default_fields=['id','name','bytes_transferred']
             # list all packages ('page'=>1,'per_page'=>10,)'sort'=>'-sent_at',
             packages=@api_files_user.list("packages",{'archived'=>false,'exclude_dropbox_packages'=>true,'has_content'=>true,'received'=>true,'workspace_id'=>workspace_id})[:data]
-            return generate_result(default_fields,packages)
+            return {:fields=>default_fields,:values=>packages}
           when :events
             api_files_admin=Rest.new(files_api_base_url,{:oauth=>@api_files_oauth,:scope=>FilesApi::SCOPE_FILES_ADMIN})
             # page=1&per_page=10&q=type:(file_upload+OR+file_delete+OR+file_download+OR+file_rename+OR+folder_create+OR+folder_delete+OR+folder_share+OR+folder_share_via_public_link)&sort=-date
@@ -274,8 +262,7 @@ module Asperalm
             # iteration_token=nnn
             # active_only=true|false
             events=api_node_admin.list("ops/transfers",{'count'=>100,'filter'=>'summary','active_only'=>'true'})[:data]
-            return generate_result(['id','status'],events)
-            return {:values=>res}
+            return {:fields=>['id','status'],:values=>events}
             #transfers=api_node_admin.make_request_ex({:operation=>'GET',:subpath=>'ops/transfers',:args=>{'count'=>25,'filter'=>'id'}})
             #transfers=api_node_admin.list("events") # after_time=2016-05-01T23:53:09Z
           when :set_client_key
@@ -304,10 +291,10 @@ module Asperalm
             else
               raise RuntimeError, "unexpected value: #{resource}"
             end#operation
-            when :usage_reports
+          when :usage_reports
             api_files_admin=Rest.new(files_api_base_url,{:oauth=>@api_files_oauth,:scope=>FilesApi::SCOPE_FILES_ADMIN})
-              res=api_files_admin.read("usage_reports")[:data]
-              return {:fields=>default_fields,:values=>res }
+            res=api_files_admin.list("usage_reports",{:workspace_id=>workspace_id})[:data]
+            return {:fields=>default_fields,:values=>res }
           else
             raise RuntimeError, "unexpected value: #{command}"
           end # action
