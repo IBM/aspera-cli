@@ -26,13 +26,15 @@ In examples below, command line operations are shown using Bash.
 
 ## Quick Start
 For instance, to use the CLI on Aspera Files:
-<ol><li>Install the gem and its dependencies and initialize a configuration file:
+<ul><li>Install the gem and its dependencies and initialize a configuration file:
+</li></ul>
 
 ```bash
 $ gem install asperalm
 $ aslmcli config init
 ```
 
+<ul><li>
 This creates a dummy configuration file: `$HOME/.aspera/aslmcli/config.yaml`
 </li><li>Create a private/public key pair, as specified in section: Private/Public Keys
 </li><li>Register a new application in the Aspera Files Admin GUI (refer to section "Authentication"). Here, as public key, use the contents of a file (generated in step 2): `$HOME/.aspera/aslmcli/filesapikey.pub`
@@ -44,6 +46,7 @@ This creates a dummy configuration file: `$HOME/.aspera/aslmcli/config.yaml`
 </li>
 </ul>
 </li><li>CLI is ready to use:
+</li></ul>
 
 ```bash
 $ aslmcli files browse /
@@ -59,7 +62,6 @@ $ aslmcli files browse /
 
 ```
 
-</li></ol>
 For other applications (Shares, Faspex, ...), authentication is simpler and only require a username and password.
 
 
