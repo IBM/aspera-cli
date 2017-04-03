@@ -32,6 +32,7 @@ For instance, to use the CLI on Aspera Files:
 $ gem install asperalm
 $ aslmcli config init
 ```
+
 This creates a dummy configuration file: `$HOME/.aspera/aslmcli/config.yaml`
 </li><li>Create a private/public key pair, as specified in section: Private/Public Keys
 </li><li>Register a new application in the Aspera Files Admin GUI (refer to section "Authentication"). Here, as public key, use the contents of a file (generated in step 2): `$HOME/.aspera/aslmcli/filesapikey.pub`
