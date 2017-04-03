@@ -163,13 +163,13 @@ With OAuth, the application (aslmcli) must be identified, and a valid Aspera Fil
 
 First the application (aslmcli) must be declared in the Files GUI (see <a href="https://aspera.asperafiles.com/helpcenter/admin/organization/registering-an-api-client">here</a>). By declaring the application, a "client\_id" and "client\_secret" are generated:
 
-<img src="doc/Auth1.png"/>
+<img src="doc/Auth1.png" alt="Files-admin-organization-apiclient-clientdetails"/>
 
 It is possible to use the Aspera Files API, but a web browser is required to generate the token. `aslmcli` will either display the URL to be entered in a local browser, or open a browser directly (various options are proposed).
 
 It is also possible to enable browser-less authentication by using JWT, in this case a private/public key pair is required (see section: Generating a key pair), the public key is provided to Aspera Files:
 
-<img src="doc/Auth2.png"/>
+<img src="doc/Auth2.png" alt="Files-admin-organization-apiclient-authoptions"/>
 
 Upon successful authentication, auth token are saved (cache) in local files, and can be used subsequently.
 Expired token can be refreshed.
