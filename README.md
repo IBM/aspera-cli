@@ -29,10 +29,12 @@ For instance, to use the CLI on Aspera Files:
 <ul><li>Install the gem and its dependencies and initialize a configuration file:
 </li></ul>
 
+
 ```bash
 $ gem install asperalm
 $ aslmcli config init
 ```
+
 
 <ul><li>
 This creates a dummy configuration file: `$HOME/.aspera/aslmcli/config.yaml`
