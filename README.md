@@ -144,7 +144,7 @@ Here is an example:
     :password: MyPassword
 :console:
   default:
-    :url: https://console.asperademo.com/aspera/console/api
+    :url: https://console.asperademo.com/aspera/console
     :username: nyapiuset
     :password: "mypassword"
 ```

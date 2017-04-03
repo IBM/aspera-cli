@@ -99,6 +99,7 @@ module Asperalm
             # Note: unauthenticated API
             api_faspex=Rest.new(link_data[:faspex_base_url],{})
             pkgdatares=api_faspex.call({:operation=>'GET',:subpath=>link_data[:subpath],:url_params=>{:passcode=>link_data[:passcode]},:headers=>{'Accept'=>'application/xml'}})
+            raise StandardError, "no such package, please visit: #{thelink}" if !pkgdatares[:http].body.start_with?('<?xml ')
             package_entry=XmlSimple.xml_in(pkgdatares[:http].body, {"ForceArray" => false})
             transfer_uri=self.class.get_fasp_uri_from_entry(package_entry)
             transfer_spec=@faspmanager.fasp_uri_to_transferspec(transfer_uri)

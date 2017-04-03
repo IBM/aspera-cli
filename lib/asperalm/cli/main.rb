@@ -113,7 +113,7 @@ module Asperalm
             puts PP.pp(results[:values],'')
           when :text
             #results[:values].each { |i| i.select! { |k| results[:fields].include?(k) } }
-            rows=results[:values].map{ |r| results[:fields].map { |c| r[c] } }
+            rows=results[:values].map{ |r| results[:fields].map { |c| r[c].to_s } }
             puts Text::Table.new(:head => results[:fields], :rows => rows, :vertical_boundary  => '.', :horizontal_boundary => ':', :boundary_intersection => ':')
             #Formatador.display_compact_table(results[:values],results[:fields])
           end
@@ -153,8 +153,8 @@ module Asperalm
         tool=self.new
         begin
           tool.go(ARGV,defaults)
-        rescue StandardError => e
-          tool.exit_with_usage(e)
+          rescue StandardError => e
+            tool.exit_with_usage(e)
         end
       end
     end
