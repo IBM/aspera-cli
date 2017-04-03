@@ -56,8 +56,9 @@ module Asperalm
         return filelist
       end
 
-      def exit_with_usage
+      def exit_with_usage(error_text)
         STDERR.puts self
+        STDERR.puts "\n"+"ERROR:".bg_red().gray().blink()+" #{error_text}\n\n" if !error_text.nil?
         Process.exit 1
       end
 
@@ -182,7 +183,7 @@ module Asperalm
         self.separator "\tSupported commands: #{command_list.map {|x| x.to_s}.join(', ')}"
         self.separator ""
         self.separator "OPTIONS"
-        self.on_tail("-h", "--help", "Show this message") { self.exit_with_usage }
+        self.on_tail("-h", "--help", "Show this message") { self.exit_with_usage(nil) }
         set_options
         parse_options!(argv)
         command=self.class.get_next_arg_from_list(argv,'command',command_list)

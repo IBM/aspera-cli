@@ -15,7 +15,7 @@ module Asperalm
         end
 
         def dojob(command,argv)
-          api_console=Rest.new(self.get_option_mandatory(:url),{:basic_auth=>{:user=>self.get_option_mandatory(:username), :password=>self.get_option_mandatory(:password)}})
+          api_console=Rest.new(self.get_option_mandatory(:url)+'/api',{:basic_auth=>{:user=>self.get_option_mandatory(:username), :password=>self.get_option_mandatory(:password)}})
           case command
           when :transfers
             default_fields=['id','contact','name','status']

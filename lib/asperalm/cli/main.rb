@@ -4,6 +4,7 @@ require "asperalm/log"
 require 'yaml'
 require 'text-table'
 require 'pp'
+require 'fileutils'
 
 module Asperalm
   module Cli
@@ -63,8 +64,25 @@ module Asperalm
       def dojob(command,argv)
         case command
         when :config
-          subcommand=self.class.get_next_arg_from_list(argv,'action',[:ls])
+          subcommand=self.class.get_next_arg_from_list(argv,'action',[:ls,:init])
           case subcommand
+          when :init
+            raise StandardError,"Folder already exists: #{$PROGRAM_FOLDER}" if Dir.exist?($PROGRAM_FOLDER)
+            FileUtils::mkdir_p($PROGRAM_FOLDER)
+            sample_config={
+              :global=>{"default"=>{:loglevel=>:warn}},
+              :files=>{
+              "default"=>{:auth=>:jwt, :url=>"https://myorg.asperafiles.com", :client_id=>"MyClientId", :client_secret=>"MySecretMySecretMySecretMySecretMySecretMySecretMySecretMySecretMySecret", :private_key=>"@file:~/.aspera/aslmcli/filesapikey", :username=>"user@example.com"},
+              "web"=>{:auth=>:web, :url=>"https://myorg.asperafiles.com", :client_id=>"MyClientId", :client_secret=>"MySecretMySecretMySecretMySecretMySecretMySecretMySecretMySecretMySecret", :redirect_uri=>"http://local.connectme.us:12345"}
+              },:faspex=>{
+              "default"=>{:url=>"https://myfaspex.mycompany.com/aspera/faspex", :username=>"admin", :password=>"MyP@ssw0rd"},
+              "app2"=>{:url=>"https://faspex.other.com/aspera/faspex", :username=>"john@example", :password=>"yM7FmjfGN$J4"}
+              },:shares=>{"default"=>{:url=>"https://10.25.0.6", :username=>"admin", :password=>"MyP@ssw0rd"}
+              },:node=>{"default"=>{:url=>"https://10.25.0.8:9092", :username=>"node_user", :password=>"MyP@ssw0rd", :transfer_filter=>"t['status'].eql?('completed') and t['start_spec']['remote_user'].eql?('faspex')", :file_filter=>"f['status'].eql?('completed') and 0 != f['size'] and t['start_spec']['direction'].eql?('send')"}
+              }, :console=>{"default"=>{:url=>"https://console.myorg.com/aspera/console", :username=>"admin", :password=>"xxxxx"}}
+            }
+            File.write($DEFAULT_CONFIG_FILE,sample_config.to_yaml)
+            return "initialized: #{$PROGRAM_FOLDER}"
           when :ls
             sections=Plugin.get_plugin_list.unshift(:global)
             if argv.empty?
@@ -103,7 +121,7 @@ module Asperalm
           if results.is_a?(String)
             $stdout.write(results)
           elsif results.nil?
-            puts "no result"
+            Log.log.debug("result=nil")
           else
             puts ">result>#{PP.pp(results,'')}"
           end
@@ -121,6 +139,7 @@ module Asperalm
       $ASPERA_HOME_FOLDERNAME='.aspera'
       $ASPERA_HOME_FOLDERPATH=File.join(Dir.home,$ASPERA_HOME_FOLDERNAME)
       $PROGRAM_FOLDER=File.join($ASPERA_HOME_FOLDERPATH,$PROGRAM_NAME)
+      $DEFAULT_CONFIG_FILE=File.join($PROGRAM_FOLDER,'config.yaml')
 
       def self.start
         defaults={
@@ -128,21 +147,14 @@ module Asperalm
           :loglevel => :warn,
           :config_name => 'default'
         }
-        config_file=File.join($PROGRAM_FOLDER,'config.yaml')
+        config_file=$DEFAULT_CONFIG_FILE
         Log.log.debug("config file=#{config_file}")
         defaults[:config_file]=config_file if File.exist?(config_file)
         tool=self.new
         begin
           tool.go(ARGV,defaults)
-        rescue OptionParser::InvalidArgument => e
-          STDERR.puts "ERROR:".bg_red().gray()+" #{e}\n\n"
-          tool.exit_with_usage
-        rescue OptionParser::InvalidOption => e
-          STDERR.puts "ERROR:".bg_red().gray()+" #{e}\n\n"
-          tool.exit_with_usage
-        rescue Asperalm::TransferError => e
-          STDERR.puts "ERROR:".bg_red().gray()+" #{e}\n\n"
-          tool.exit_with_usage
+        rescue StandardError => e
+          tool.exit_with_usage(e)
         end
       end
     end

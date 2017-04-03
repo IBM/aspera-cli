@@ -6,42 +6,92 @@ Laurent/Aspera/2016
 This is a Ruby Gem that provides the following features:
 
 * a command line tool: aslmcli
+* a FASPManager class for Ruby
+* REST and OAuth classes for use with Aspera products APIs
 
-
-application that uses Aspera REST APIs, as well as uses FASP for transfers.
-
-Purpose:
+This Gem was developed for the following Purposes:
 - show use of (REST) APIs: Node, Files, Shares, Faspex
 - provide a command line for some tasks
 - cross-platform
 
 Ruby has been chosen as language as it is used in most Aspera products, and the interpret can be found for most platforms.
 
-Example of tasks:
-- send packages with Faspex or Files
-- retrieve the last package received
-- retrieve a package from a passcode based link in Faspex
-- supports , limited set of commands
+This gem is provided as-is, and is not intended to be a complete CLI, or industry-grade product. This is a sample.
 
-## Installation
-A version is available on rubygems.org, so the simplest way is to install the gem is:
+The CLI's folder where configuration and cache files are kept is `$HOME/.aspera/aslmcli`
+
+Requires Ruby 2.0+
+
+In examples below, command line operations are shown using Bash.
+
+## Quick Start
+For instance, to use the CLI on Aspera Files:
+<ol><li>Install the gem and its dependencies and initialize a configuration file:
 
 ```bash
 $ gem install asperalm
+$ aslmcli config init
 ```
+This creates a dummy configuration file: `$HOME/.aspera/aslmcli/config.yaml`
+</li><li>Create a private/public key pair, as specified in section: Private/Public Keys
+</li><li>Register a new application in the Aspera Files Admin GUI (refer to section "Authentication"). Here, as public key, use the contents of a file (generated in step 2): `$HOME/.aspera/aslmcli/filesapikey.pub`
+</li><li>Edit the file: `$HOME/.aspera/aslmcli/config.yaml`, and set the values in section: files/default for items: <ul>
+<li>url : Your Aspera Files organization URL, e.g. `https://myorg.asperafiles.com`
+</li><li>client_id and client_secret : copy from the Application registration form (step 3)
+</li><li>username : your username in Aspera Files, e.g. `user@example.com`
+</li><li>private_key : location of private key file, leave as `@file:~/.aspera/aslmcli/filesapikey`
+</li>
+</ul>
+</li><li>CLI is ready to use:
 
-This install the "aslmcli" executable.
+```bash
+$ aslmcli files browse /
+:..............................:........:................:...........:......................:..............:
+:             name             :  type  : recursive_size :   size    :    modified_time     : access_level :
+:..............................:........:................:...........:......................:..............:
+: Summer 2016 Training         : link   :                :           : 2016-07-25T15:21:22Z : edit         :
+: Laurent Garage SE            : folder : 19316893       :           :                      : edit         :
+: Italy Training               : folder : 312068540      :           :                      : edit         :
+: Cheese pile.jpeg             : file   :                : 9824      : 2016-11-16T12:10:25Z : edit         :
+: Aspera Video                 : folder : 122237276      :           :                      : edit         :
+:..............................:........:................:...........:......................:..............:
+
+```
+</li></ol>
+For other applications (Shares, Faspex, ...), authentication is simpler and only require a username and password.
+
 
 ## Usage
 
 ```bash
 $ aslmcli -h
+NAME
+	aslmcli -- a command line tool for Aspera Applications
+
+SYNOPSIS
+	aslmcli main [OPTIONS] COMMAND [ARGS]...
+
+COMMANDS
+	Supported commands: console, faspex, files, node, shares, config
+
+OPTIONS
+...
 ```
 
-## Configuration and parameters
-All parameters can be provided on command line, but it is more convenient to place applications access data in the configuration file.
+Note that in this release, each command has specific options, but options for a sub command must be provided just after the subcommand, and before the next sub command. Example:
 
-The file is organized by application types.
+```bash
+aslmcli -nx --log-level=debug faspex --url=https://faspex.example.com/aspera/faspex --username=john --password=MyPass --box=archive list
+```
+
+Note the options between `aslmcli` and `faspex`, and then between `faspex` and `list`.
+
+This might change in the future.
+
+## Configuration and parameters
+All CLI parameters can be provided on command line, but it is more convenient to set common parameters (e.g. cedentials) in a configuration file.
+
+The configuration file is a YAML file organized by applications.
 
 For each application type, there is a list of named configurations. The configuration named "default" is taken if no "-n" option is provided (short for --config-name).
 
@@ -54,7 +104,7 @@ Arguments that require a value can be specified on command line or config file w
 * or with a value specified in a file: --key=@file:$HOME/.ssh/mykey
 * or with a value specified in an env var: --password=@env:MYPASSVAR
 
-A default configuration file can be created: $HOME/.aspera/aslmcli/config.yaml
+The default configuration file is: $HOME/.aspera/aslmcli/config.yaml
 
 Here is an example:
 
@@ -99,26 +149,76 @@ Here is an example:
     :password: "mypassword"
 ```
 
-## Authentication to applications
+## Authentication
 
-### Faspex / Shares / Console / Node
+### Aspera Faspex / Shares / Console / Node
 
 Only Basic authentication is supported. A "username" and "password" are provided, either on command line (--username, --password) or in the configuration file.
 
-### Files
-Files supports the following authentication types:
+### Aspera Files
 
-* Basic : limited to only some users, will be deprecated, dont use
-* OAuth (bearer token) with web authentication (requires a browser)
-* OAuth (bearer token) with JSON Web Token (JWT, requires registration of public key)
+Aspera Files supports a more powerful and secure authentication mechanism: Oauth. HTTP Basic authentication is not supported (deprecated).
 
-Web authentication is supported with various means:
-* either address is displayed on terminal and user needs to manually open a browser
-* or the CLI starts the browser with the "open" command (Mac)
-* or a web automation is used (watir, experimental, dont use) 
+With OAuth, the application (aslmcli) must be identified, and a valid Aspera Files user must be used to access Aspera Files. Then a "Bearer" token is used for HTTP authentication.
+
+First the application (aslmcli) must be declared in the Files GUI (see <a href="https://aspera.asperafiles.com/helpcenter/admin/organization/registering-an-api-client">here</a>). By declaring the application, a "client\_id" and "client\_secret" are generated:
+
+<img src="Auth1.png"/>
+
+It is possible to use the Aspera Files API, but a web browser is required to generate the token. `aslmcli` will either display the URL to be entered in a local browser, or open a browser directly (various options are proposed).
+
+It is also possible to enable browser-less authentication by using JWT, in this case a private/public key pair is required (see section: Generating a key pair), the public key is provided to Aspera Files:
+
+<img src="Auth2.png"/>
 
 Upon successful authentication, auth token are saved (cache) in local files, and can be used subsequently.
 Expired token can be refreshed.
+
+## Sample commands
+
+```bash
+aslmcli shares browse /
+aslmcli shares upload ~/200KB.1 /projectx
+aslmcli shares download /projectx/200KB.1 .
+aslmcli faspex recv_publink https://myfaspex.myorg.com/aspera/faspex/external_deliveries/78780?passcode=a003aaf2f53e3123456b908525084db6bebc7031
+aslmcli -nibm faspex list
+aslmcli -nibm faspex recv 05b92393-02b7-4900-ab69-fd56721e896c
+aslmcli -nibm faspex --note="my note" --title="my title" --recipient="laurent@asperasoft.com" send ~/200KB.1 
+aslmcli console transfers list
+aslmcli node browse /
+aslmcli node upload ~/200KB.1 /tmp
+aslmcli node download /tmp/200KB.1 .
+aslmcli files browse /
+aslmcli files upload ~/200KB.1 /
+aslmcli files download /200KB.1 .
+aslmcli files send ~/200KB.1
+aslmcli files packages
+aslmcli files recv VleoMSrlA
+aslmcli files events
+aslmcli files usage_reports
+```
+
+## Private/Public Keys
+
+In order to use JWT for Aspera Files API client authentication, a private/public key pair must be generated.
+
+
+For example, generate a passphrase-less keypair with `ssh-keygen`:
+
+```bash
+$ ssh-keygen -t rsa -f ~/.aspera/aslmcli/filesapikey -N ''
+```
+
+One can also use the "openssl" utility:
+
+```bash
+$ APIKEY=~/.aspera/aslmcli/filesapikey
+$ openssl genrsa -passout pass:dummypassword -out ${APIKEY}.protected 2048
+$ openssl rsa -passin pass:dummypassword -in ${APIKEY}.protected -out ${APIKEY}
+$ openssl rsa -pubout -in ${APIKEY} -out ${APIKEY}.pub
+$ rm -f ${APIKEY}.protected
+```
+
 
 ## Contents
 included files are:
@@ -146,39 +246,6 @@ http://blog.excelwithcode.com/build-commandline-apps.html
 
 follow:
 https://quickleft.com/blog/engineering-lunch-series-step-by-step-guide-to-building-your-first-ruby-gem/
-
-## Sample commands
-
-```bash
-aslmcli shares browse /
-aslmcli shares upload ~/200KB.1 /projectx
-aslmcli shares download /projectx/200KB.1 .
-aslmcli faspex recv_publink https://myfaspex.myorg.com/aspera/faspex/external_deliveries/78780?passcode=a003aaf2f53e3123456b908525084db6bebc7031
-aslmcli -nibm faspex list
-aslmcli -nibm faspex recv 05b92393-02b7-4900-ab69-fd56721e896c
-aslmcli -nibm faspex --note="my note" --title="my title" --recipient="laurent@asperasoft.com" send ~/200KB.1 
-aslmcli console transfers list
-aslmcli node browse /
-aslmcli node upload ~/200KB.1 /tmp
-aslmcli node download /tmp/200KB.1 .
-aslmcli files browse /
-aslmcli files upload ~/200KB.1 /
-aslmcli files download /200KB.1 .
-aslmcli files send ~/200KB.1
-aslmcli files packages
-aslmcli files recv VleoMSrlA
-aslmcli files events
-aslmcli files usage_reports
-```
-
-## Example: sending packages with Aspera Files
-1- In order to use Aspera Files API and not have to log-in using the web interface,
-one can register the tool using the Aspera Files GUI and JWT. see <a href="https://aspera.asperafiles.com/helpcenter/admin/organization/registering-an-api-client">here</a>.
-The private/(public) key pair can be generated with either ssh-keygen or openssl tools:
-
-```bash
-$ ssh-keygen -t rsa -f ~/.ssh/my_files_key -N ''
-```
 
 ## Contributing
 

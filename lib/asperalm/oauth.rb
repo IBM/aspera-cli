@@ -15,6 +15,8 @@ require 'rubygems'
 UNUSED_STATE='ABC'
 
 module Asperalm
+  TOKEN_FILE_PREFIX='token'
+  TOKEN_FILE_SEPARATOR='.'
   class Oauth
     def self.auth_types
       [ :basic, :web, :jwt ]
@@ -59,7 +61,7 @@ module Asperalm
 
     def get_authorization(api_scope)
       # file name for cache of token
-      token_state_file=['token',@auth_data[:type],@organization,@client_id,api_scope].join('.')
+      token_state_file=File.join($PROGRAM_FOLDER,[TOKEN_FILE_PREFIX,@auth_data[:type],@organization,@client_id,api_scope].join(TOKEN_FILE_SEPARATOR))
 
       # if first time, try to read from file
       if ! @accesskey_cache.has_key?(api_scope) then
