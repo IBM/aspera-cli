@@ -58,6 +58,7 @@ $ aslmcli files browse /
 :..............................:........:................:...........:......................:..............:
 
 ```
+
 </li></ol>
 For other applications (Shares, Faspex, ...), authentication is simpler and only require a username and password.
 
