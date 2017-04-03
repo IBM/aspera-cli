@@ -10,9 +10,10 @@ This is a Ruby Gem that provides the following features:
 * REST and OAuth classes for use with Aspera products APIs
 
 This Gem was developed for the following Purposes:
-- show use of (REST) APIs: Node, Files, Shares, Faspex
-- provide a command line for some tasks
-- cross-platform
+
+* show use of (REST) APIs: Node, Files, Shares, Faspex
+* provide a command line for some tasks
+* cross-platform
 
 Ruby has been chosen as language as it is used in most Aspera products, and the interpret can be found for most platforms.
 
@@ -26,9 +27,8 @@ In examples below, command line operations are shown using Bash.
 
 ## Quick Start
 For instance, to use the CLI on Aspera Files:
-<ul><li>Install the gem and its dependencies and initialize a configuration file:
-</li></ul>
 
+* Install the gem and its dependencies and initialize a configuration file:
 
 ```bash
 $ gem install asperalm
@@ -36,19 +36,20 @@ $ aslmcli config init
 ```
 
 
-<ul><li>
-This creates a dummy configuration file: `$HOME/.aspera/aslmcli/config.yaml`
-</li><li>Create a private/public key pair, as specified in section: Private/Public Keys
-</li><li>Register a new application in the Aspera Files Admin GUI (refer to section "Authentication"). Here, as public key, use the contents of a file (generated in step 2): `$HOME/.aspera/aslmcli/filesapikey.pub`
-</li><li>Edit the file: `$HOME/.aspera/aslmcli/config.yaml`, and set the values in section: files/default for items: <ul>
-<li>url : Your Aspera Files organization URL, e.g. `https://myorg.asperafiles.com`
-</li><li>client_id and client_secret : copy from the Application registration form (step 3)
-</li><li>username : your username in Aspera Files, e.g. `user@example.com`
-</li><li>private_key : location of private key file, leave as `@file:~/.aspera/aslmcli/filesapikey`
-</li>
-</ul>
-</li><li>CLI is ready to use:
-</li></ul>
+* This creates a dummy configuration file: `$HOME/.aspera/aslmcli/config.yaml`
+
+* Create a private/public key pair, as specified in section: Private/Public Keys
+
+* Register a new application in the Aspera Files Admin GUI (refer to section "Authentication"). Here, as public key, use the contents of a file (generated in step 2): `$HOME/.aspera/aslmcli/filesapikey.pub`
+
+* Edit the file: `$HOME/.aspera/aslmcli/config.yaml`, and set the values in section: files/default for items:
+   * url : Your Aspera Files organization URL, e.g. `https://myorg.asperafiles.com`
+   * client_id and client_secret : copy from the Application registration form (step 3)
+   * username : your username in Aspera Files, e.g. `user@example.com`
+   * private_key : location of private key file, leave as `@file:~/.aspera/aslmcli/filesapikey`
+
+* CLI is ready to use:
+
 
 ```bash
 $ aslmcli files browse /
