@@ -6,13 +6,9 @@ require 'xmlsimple'
 require 'optparse'
 
 module Asperalm
-  ASPERA_TOOLS_CONFIG_FOLDER='.aspera'
   module Cli
     # base class for plugins modules
     class Plugin < OptionParser
-      def self.home
-        return File.join(Dir.home,ASPERA_TOOLS_CONFIG_FOLDER,$PROGRAM_NAME)
-      end
 
       # parse an option value, special behavior for file:, env:, val:
       def self.get_extended_value(pname,value)

@@ -14,7 +14,7 @@ module Asperalm
           self.add_opt_simple(:url,"-wURI", "--url=URI","URL of application, e.g. http://org.asperafiles.com")
           self.add_opt_simple(:username,"-uSTRING", "--username=STRING","username to log in")
           self.add_opt_simple(:password,"-pSTRING", "--password=STRING","password")
-          self.set_option(:persistency,File.join(self.class.home,"persistency_cleanup.txt"))
+          self.set_option(:persistency,File.join($PROGRAM_FOLDER,"persistency_cleanup.txt"))
           self.add_opt_simple(:persistency,"--persistency=FILEPATH","persistency file")
           self.add_opt_simple(:transfer_filter,"--transfer-filter=EXPRESSION","Ruby expression for filter at transfer level")
           self.add_opt_simple(:file_filter,"--file-filter=EXPRESSION","Ruby expression for filter at file level")
