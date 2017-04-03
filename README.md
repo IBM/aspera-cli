@@ -3,7 +3,12 @@
 Laurent/Aspera/2016
 
 ## Overview
-This is a sample ruby application that uses Aspera REST APIs, as well as uses FASP for transfers.
+This is a Ruby Gem that provides the following features:
+
+* a command line tool: aslmcli
+
+
+application that uses Aspera REST APIs, as well as uses FASP for transfers.
 
 Purpose:
 - show use of (REST) APIs: Node, Files, Shares, Faspex
@@ -25,26 +30,31 @@ A version is available on rubygems.org, so the simplest way is to install the ge
 $ gem install asperalm
 ```
 
-This install the "aslm" executable.
+This install the "aslmcli" executable.
 
 ## Usage
 
 ```bash
-$ aslm -h
+$ aslmcli -h
 ```
 
-## Configuration
+## Configuration and parameters
 All parameters can be provided on command line, but it is more convenient to place applications access data in the configuration file.
 
 The file is organized by application types.
 
-For each application type, there is a list of named configurations. The configuration named "default" is taken if no "-n" option is provided.
+For each application type, there is a list of named configurations. The configuration named "default" is taken if no "-n" option is provided (short for --config-name).
 
 Command line options needs to be provided at their right level, i.e. global parameters before first command, and option of first command after first command, etc...
 
-Values of arguments can be retrieve from files with format: @file: , or env var with: @env:, the prefix @val: is optional.
+Arguments that require a value can be specified on command line or config file with the following specific rules:
 
-A default configuration file can be created: $HOME/.aspera/aslm/config.yaml
+* direct value, e.g. --username=foouser
+* or, similarly, with @val: --username=@val:foouser
+* or with a value specified in a file: --key=@file:$HOME/.ssh/mykey
+* or with a value specified in an env var: --password=@env:MYPASSVAR
+
+A default configuration file can be created: $HOME/.aspera/aslmcli/config.yaml
 
 Here is an example:
 
@@ -59,8 +69,8 @@ Here is an example:
     :url: https://mycompany.asperafiles.com
     :client_id: <insert client id here>
     :client_secret: <insert client secret here>
-    :private_key: "@file:~/.aspera/aslm/filesapikey"
-    :subject: laurent@asperasoft.com
+    :private_key: "@file:~/.aspera/aslmcli/filesapikey"
+    :username: laurent@asperasoft.com
   p:
     :auth: :web
     :url: https://aspera.asperafiles.com
@@ -93,7 +103,7 @@ Here is an example:
 
 ### Faspex / Shares / Console / Node
 
-Only Basic auth is supported. provide --username and --password
+Only Basic authentication is supported. A "username" and "password" are provided, either on command line (--username, --password) or in the configuration file.
 
 ### Files
 Files supports the following authentication types:
@@ -137,27 +147,37 @@ http://blog.excelwithcode.com/build-commandline-apps.html
 follow:
 https://quickleft.com/blog/engineering-lunch-series-step-by-step-guide-to-building-your-first-ruby-gem/
 
-## Examples
+## Sample commands
+
 ```bash
-aslm shares browse /
-aslm shares upload ~/200KB.1 /projectx
-aslm shares download /projectx/200KB.1 .
-aslm faspex recv_publink https://myfaspex.myorg.com/aspera/faspex/external_deliveries/78780?passcode=a003aaf2f53e3123456b908525084db6bebc7031
-aslm -nibm faspex list
-aslm -nibm faspex recv 05b92393-02b7-4900-ab69-fd56721e896c
-aslm -nibm faspex --note="my note" --title="my title" --recipient="laurent@asperasoft.com" send ~/200KB.1 
-aslm console transfers list
-aslm node browse /
-aslm node upload ~/200KB.1 /tmp
-aslm node download /tmp/200KB.1 .
-aslm files browse /
-aslm files upload ~/200KB.1 /
-aslm files download /200KB.1 .
-aslm files send ~/200KB.1
-aslm files packages
-aslm files recv VleoMSrlA
-aslm files events
-aslm files usage_reports
+aslmcli shares browse /
+aslmcli shares upload ~/200KB.1 /projectx
+aslmcli shares download /projectx/200KB.1 .
+aslmcli faspex recv_publink https://myfaspex.myorg.com/aspera/faspex/external_deliveries/78780?passcode=a003aaf2f53e3123456b908525084db6bebc7031
+aslmcli -nibm faspex list
+aslmcli -nibm faspex recv 05b92393-02b7-4900-ab69-fd56721e896c
+aslmcli -nibm faspex --note="my note" --title="my title" --recipient="laurent@asperasoft.com" send ~/200KB.1 
+aslmcli console transfers list
+aslmcli node browse /
+aslmcli node upload ~/200KB.1 /tmp
+aslmcli node download /tmp/200KB.1 .
+aslmcli files browse /
+aslmcli files upload ~/200KB.1 /
+aslmcli files download /200KB.1 .
+aslmcli files send ~/200KB.1
+aslmcli files packages
+aslmcli files recv VleoMSrlA
+aslmcli files events
+aslmcli files usage_reports
+```
+
+## Example: sending packages with Aspera Files
+1- In order to use Aspera Files API and not have to log-in using the web interface,
+one can register the tool using the Aspera Files GUI and JWT. see <a href="https://aspera.asperafiles.com/helpcenter/admin/organization/registering-an-api-client">here</a>.
+The private/(public) key pair can be generated with either ssh-keygen or openssl tools:
+
+```bash
+$ ssh-keygen -t rsa -f ~/.ssh/my_files_key -N ''
 ```
 
 ## Contributing

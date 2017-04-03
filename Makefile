@@ -1,9 +1,10 @@
 GEMNAME=asperalm
 GEMVERSION=$(shell ruby -e 'require "./lib/asperalm/version.rb";puts Asperalm::VERSION')
 GEMFILE=$(GEMNAME)-$(GEMVERSION).gem
-TOOLCONFIGDIR=$(HOME)/.aspera/aslm
+CLINAME=aslmcli
+TOOLCONFIGDIR=$(HOME)/.aspera/$(CLINAME)
 APIKEY=$(TOOLCONFIGDIR)/filesapikey
-ASCLI=./bin/aslm
+ASCLI=./bin/$(CLINAME)
 
 SRCZIPBASE=$(GEMNAME)_src
 TODAY=$(shell date +%Y%m%d)
@@ -74,38 +75,38 @@ installdeps:
 	gem install jwt formatador ruby-progressbar
 
 t1:
-	aslm shares browse /
+	$(ASCLI) shares browse /
 t2:
-	aslm shares upload ~/200KB.1 /projectx
+	$(ASCLI) shares upload ~/200KB.1 /projectx
 t3:
-	aslm shares download /projectx/200KB.1 .
+	$(ASCLI) shares download /projectx/200KB.1 .
 t4:
-	aslm faspex recv_publink https://ibmfaspex.asperasoft.com/aspera/faspex/external_deliveries/78780?passcode=a003aaf2f53e3869126b908525084db6bebc7031
+	$(ASCLI) faspex recv_publink https://ibmfaspex.asperasoft.com/aspera/faspex/external_deliveries/78780?passcode=a003aaf2f53e3869126b908525084db6bebc7031
 t5:
-	aslm -nibm faspex list
+	$(ASCLI) -nibm faspex list
 t6:
-	aslm -nibm faspex recv 05b92393-02b7-4900-ab69-fd56721e896c
+	$(ASCLI) -nibm faspex recv 05b92393-02b7-4900-ab69-fd56721e896c
 t7:
-	aslm -nibm faspex --note="my note" --title="my title" --recipient="laurent@asperasoft.com" send ~/200KB.1 
+	$(ASCLI) -nibm faspex --note="my note" --title="my title" --recipient="laurent@asperasoft.com" send ~/200KB.1 
 t8:
-	aslm console transfers list
+	$(ASCLI) console transfers list
 t9:
-	aslm node browse /
+	$(ASCLI) node browse /
 t10:
-	aslm node upload ~/200KB.1 /tmp
+	$(ASCLI) node upload ~/200KB.1 /tmp
 t11:
-	aslm node download /tmp/200KB.1 .
+	$(ASCLI) node download /tmp/200KB.1 .
 t12:
-	aslm files browse /
+	$(ASCLI) files browse /
 t13:
-	aslm files upload ~/200KB.1 /
+	$(ASCLI) files upload ~/200KB.1 /
 t14:
-	aslm files download /200KB.1 .
+	$(ASCLI) files download /200KB.1 .
 t15:
-	aslm files send ~/200KB.1
+	$(ASCLI) files send ~/200KB.1
 t16:
-	aslm files packages
+	$(ASCLI) files packages
 t17:
-	aslm files recv VleoMSrlA
+	$(ASCLI) files recv VleoMSrlA
 t18:
-	aslm files events
+	$(ASCLI) files events

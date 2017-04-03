@@ -10,7 +10,7 @@ module Asperalm
   module Cli
     module Plugins
       class Files < Plugin
-        def opt_names; [:private_key,:username,:url,:auth,:code_getter,:client_id,:client_secret,:redirect_uri,:subject]; end
+        def opt_names; [:private_key,:username,:url,:auth,:code_getter,:client_id,:client_secret,:redirect_uri]; end
 
         def get_auths; Oauth.auth_types; end
 
@@ -124,7 +124,7 @@ module Asperalm
             end
           when :jwt
             auth_data[:private_key]=OpenSSL::PKey::RSA.new(self.get_option_mandatory(:private_key))
-            auth_data[:subject]=self.get_option_mandatory(:subject)
+            auth_data[:subject]=self.get_option_mandatory(:username)
             Log.log.info("private_key=#{auth_data[:private_key]}")
             Log.log.info("subject=#{auth_data[:subject]}")
           else

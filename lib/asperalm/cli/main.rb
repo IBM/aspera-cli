@@ -120,7 +120,7 @@ module Asperalm
       @@CONFIG_FILE_DEFAULT=File.join(home,'config.yaml')
 
       def self.start
-        $PROGRAM_NAME = 'aslm'
+        $PROGRAM_NAME = 'aslmcli'
         defaults={
           :logtype => :stdout,
           :loglevel => :warn,

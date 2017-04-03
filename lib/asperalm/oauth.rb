@@ -171,14 +171,14 @@ module Asperalm
             :sub => @auth_data[:subject],
             :aud => "https://api.asperafiles.com/api/v1/oauth2/token",
             :nbf => seconds_since_epoch,
-            :exp => seconds_since_epoch+3600
+            :exp => seconds_since_epoch+3600 # TODO: configurable ?
           }
 
           rsa_private =@auth_data[:private_key]
-          rsa_public = rsa_private.public_key
+          #rsa_public = rsa_private.public_key
 
           Log.log.debug("private=[#{rsa_private}]")
-          Log.log.debug("public=[#{rsa_public}]")
+          #Log.log.debug("public=[#{rsa_public}]")
 
           assertion = JWT.encode payload, rsa_private, 'RS256'
 
