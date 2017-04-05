@@ -12,9 +12,9 @@ module Asperalm
 
       # parse an option value, special behavior for file:, env:, val:
       def self.get_extended_value(pname,value)
-        if m=value.match(/^@file:(.*)/) then
+        if m=value.match(%r{^@file:(.*)}) then
           value=m[1]
-          if m=value.match(/^~\/(.*)/) then
+        if m=value.match(%r{^~/(.*)}) then
             value=m[1]
             value=File.join(Dir.home,value)
           end
@@ -29,17 +29,19 @@ module Asperalm
         value
       end
 
-      def self.get_next_arg_from_list(argv,descr,action_list)
+      # get next argument, must be from the value list
+      def self.get_next_arg_from_list(argv,descr,allowed_values)
         if argv.empty? then
-          raise OptionParser::InvalidArgument,"missing action, one of: #{action_list.map {|x| x.to_s}.join(', ')}"
+          raise OptionParser::InvalidArgument,"missing action, one of: #{allowed_values.map {|x| x.to_s}.join(', ')}"
         end
         action=argv.shift.to_sym
-        if !action_list.include?(action) then
-          raise OptionParser::InvalidArgument,"unexpected value for #{descr}: #{action}, one of: #{action_list.map {|x| x.to_s}.join(', ')}"
+        if !allowed_values.include?(action) then
+          raise OptionParser::InvalidArgument,"unexpected value for #{descr}: #{action}, one of: #{allowed_values.map {|x| x.to_s}.join(', ')}"
         end
         return action
       end
 
+      # just get next value
       def self.get_next_arg_value(argv,descr)
         if argv.empty? then
           raise OptionParser::InvalidArgument,"expecting value: #{descr}"
@@ -167,7 +169,7 @@ module Asperalm
       def parse_options!(argv)
         options=[]
         while !argv.empty? and argv.first =~ /^-/
-          options.push argv.shift
+          options.push(argv.shift)
         end
         Log.log.debug("split options=#{options},args=#{argv}")
         self.parse!(options)
