@@ -214,8 +214,9 @@ module Asperalm
             # tell Files what to expect in package: 1 transfer (can also be done after transfer)
             resp=@api_files_user.update("packages/#{the_package['id']}",{"sent"=>true,"transfers_expected"=>1})[:data]
 
-            tspec=info_to_tspec("send",node_info,the_package['contents_file_id'],{"package_id" => the_package['id'], "package_operation" => "upload"})
-            tspec['paths']=filelist.map { |i| {'source'=>i} }
+            tspec=info_to_tspec("send",node_info,the_package['contents_file_id'])
+            tspec['tags']["aspera"]["files"]={"package_id" => the_package['id'], "package_operation" => "upload"}
+              tspec['paths']=filelist.map { |i| {'source'=>i} }
             tspec['destination_root']="/"
             @faspmanager.transfer_with_spec(tspec)
             # simulate call later, to check status (this is just demo api call, not needed)
@@ -230,8 +231,9 @@ module Asperalm
             #the_package=packages.first
             #  get node info
             node_info=@api_files_user.read("nodes/#{the_package['node_id']}")[:data]
-            tspec=info_to_tspec("receive",node_info,the_package['contents_file_id'],{"package_id" => the_package['id'], "package_operation" => "download"})
-            tspec['paths']=[{'source'=>'.'}]
+            tspec=info_to_tspec("receive",node_info,the_package['contents_file_id'],)
+            tspec['tags']["aspera"]["files"]={"package_id" => the_package['id'], "package_operation" => "download"}
+              tspec['paths']=[{'source'=>'.'}]
             tspec['destination_root']='.' # TODO:param?
             @faspmanager.transfer_with_spec(tspec)
           when :packages
