@@ -22,6 +22,8 @@ clean:
 
 pack: $(ZIPFILE)
 
+doc: README.pdf
+
 README.pdf: README.md
 	pandoc -o README.html README.md
 	wkhtmltopdf README.html README.pdf
@@ -48,16 +50,8 @@ $(APIKEY):
 	openssl rsa -passin pass:dummypassword -in $(APIKEY).protected -out $(APIKEY)
 	rm -f $(APIKEY).protected
 
-key: $(APIKEY)
+setkey: $(APIKEY)
 	$(ASCLI) --log-level=debug -np files --code-get=osbrowser set_client_key ERuzXGuPA @file:$(APIKEY)
-
-# send a package using JWT auth
-test_jwt_send:
-	$(ASCLI) --log-level=debug files send data/200KB.1
-
-# Faspex API gateway
-gw:
-	$(ASCLI) --log-level=debug files faspexgw
 
 yank:
 	gem yank asperalm -v $(GEMVERSION)
