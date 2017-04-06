@@ -75,7 +75,8 @@ Ta7g6mGwIMXrdTQQ8fZs
     def initialize
       @mgt_sock=nil
       @ascp_pid=nil
-      set_ascp_location
+      @resource_path={}
+      locate_resources
     end
 
     # todo: support multiple listeners
@@ -138,7 +139,13 @@ Ta7g6mGwIMXrdTQQ8fZs
       port = @mgt_sock.addr[1]
       Log.log.debug "Port=#{port}"
       # add management port
-      arguments.unshift '-M', port.to_s
+      arguments.unshift('-M', port.to_s)
+      http_fallback_index=arguments.index("-y")
+      if !http_fallback_index.nil?
+        if arguments[http_fallback_index+1].eql?('1') then
+          arguments.unshift('-Y', @resource_path[:fallback_key], '-I', @resource_path[:fallback_cert])
+        end
+      end
       Log.log.info "execute #{env_vars.map{|k,v| "#{k}=\"#{v}\""}.join(' ')} \"#{command}\" \"#{arguments.join('" "')}\""
       begin
         @ascp_pid = Process.spawn(env_vars,[command,command],*arguments)
@@ -175,6 +182,8 @@ Ta7g6mGwIMXrdTQQ8fZs
           # check process still present, else receive Errno::ESRCH
           Process.getpgid( @ascp_pid )
         rescue RangeError => e
+          break
+        rescue Errno::ESRCH => e
           break
         end
         # TODO: timeout here ?
@@ -219,46 +228,31 @@ Ta7g6mGwIMXrdTQQ8fZs
       raise TransferError.new(lastStatus['Code'].to_i),lastStatus['Description']
     end
 
-    # set members: @ascp_path and optionally @connect_private_key_path
-    def set_ascp_location
-
-      # ascp command and key file
-      lConnectAscpCmd = nil
-      lConnectAscpId  = nil
-
+    # locate connect plugin resources
+    def locate_resources
+      lBinFolder='bin'
+      lEtcFolder='etc'
       # TODO: detect Connect Client on all platforms
       case RbConfig::CONFIG['host_os']
+      when /darwin|mac os/
+        pluginLocation = Dir.home + '/Applications/Aspera Connect.app';
+        lBinFolder='Contents/Resources'
+        lEtcFolder='Contents/Resources'
       when /mswin|msys|mingw|cygwin|bccwin|wince|emc/
         # also: ENV{TEMP}/.. , or %USERPROFILE%\AppData\Local\
         pluginLocation = ENV['LOCALAPPDATA'] + '/Programs/Aspera/Aspera Connect'
-        lConnectAscpCmd = pluginLocation + '/bin/ascp';
-        lConnectAscpId  = pluginLocation + '/etc/asperaweb_id_dsa.openssh';
-      when /darwin|mac os/
-        pluginLocation = Dir.home + '/Applications/Aspera Connect.app/Contents/Resources';
-        lConnectAscpCmd = pluginLocation + '/ascp';
-        lConnectAscpId  = pluginLocation + '/asperaweb_id_dsa.openssh';
-      else     # unix family
+      else  # unix family
         pluginLocation = Dir.home + '/.aspera/connect';
-        lConnectAscpCmd = pluginLocation + '/bin/ascp';
-        lConnectAscpId  = pluginLocation + '/etc/asperaweb_id_dsa.openssh';
       end
-      Log.log.debug "cmd= #{lConnectAscpCmd}"
-      Log.log.debug "key= #{lConnectAscpId}"
-      if File.file?(lConnectAscpCmd) and File.file?(lConnectAscpId ) then
-        Log.log.debug "Using plugin: [#{lConnectAscpId}]"
-        @ascp_path = lConnectAscpCmd
-        @connect_private_key_path = lConnectAscpId
-        return
-      end
-
-      lESAscpCmd = '/usr/bin/ascp'
-      Log.log.debug "Using system ascp if available"
-      if ! File.executable(lESAscpCmd ) then
-        Log.log.error "no such cmd: [#{lESAscpCmd}]"
-        raise "cannot find ascp on system"
-      end
-
-      @ascp_path= lESAscpCmd
+      @resource_path[:ascp] = File.join(pluginLocation,lBinFolder,'ascp')
+      @resource_path[:ssh_bypass] = File.join(pluginLocation,lEtcFolder,'asperaweb_id_dsa.openssh')
+      @resource_path[:fallback_cert] = File.join(pluginLocation,lEtcFolder,'aspera_web_cert.pem')
+      @resource_path[:fallback_key] = File.join(pluginLocation,lEtcFolder,'aspera_web_key.pem')
+      Log.log.debug "resources=#{@resource_path}"
+      raise "error" if ! File.executable?(@resource_path[:ascp] )
+      raise "error" if ! File.file?(@resource_path[:ssh_bypass] )
+      raise "error" if ! File.file?(@resource_path[:fallback_cert] )
+      raise "error" if ! File.file?(@resource_path[:fallback_key] )
     end
 
     # copy and translate argument+value from transfer spec to env var for ascp
@@ -383,13 +377,13 @@ Ta7g6mGwIMXrdTQQ8fZs
       if !transfer_spec.has_key?('EX_ssh_key_value') and
       !transfer_spec.has_key?('EX_ssh_key_path') and
       transfer_spec.has_key?('token')
-        if !@connect_private_key_path.nil?
-          transfer_spec['EX_ssh_key_path'] = @connect_private_key_path
+        if !@resource_path[:ssh_bypass].nil?
+          transfer_spec['EX_ssh_key_path'] = @resource_path[:ssh_bypass]
         else
           transfer_spec['EX_ssh_key_value'] = ASPERA_SSH_BYPASS_DSA_KEY_VALUE
         end
       end
-      execute_ascp(@ascp_path,*transfer_spec_to_args_and_env(transfer_spec))
+      execute_ascp(@resource_path[:ascp],*transfer_spec_to_args_and_env(transfer_spec))
       return nil
     end
   end # FaspManager
