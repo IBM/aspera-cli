@@ -107,7 +107,6 @@ Ta7g6mGwIMXrdTQQ8fZs
         name=i[0]
         value=i[1]
         case name
-        when 'port'; transfer_spec['ssh_port']=value
         when 'cookie'; transfer_spec['cookie']=value
         when 'token'; transfer_spec['token']=value
         when 'policy'; transfer_spec['rate_policy']=value
