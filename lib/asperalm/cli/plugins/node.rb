@@ -24,7 +24,8 @@ module Asperalm
             thepath=@option_parser.get_next_arg_value("path")
             send_result=api_node.call({:operation=>'POST',:subpath=>'files/browse',:json_params=>{ :path => thepath} } )
             return nil if !send_result[:data].has_key?('items')
-            return {:fields=>send_result[:data]['items'].first.keys,:values=>send_result[:data]['items']}
+            return {:fields=>send_result[:data]['items'].first.keys,:values=>send_result[:data]['items'].map { |i| i['permissions']=i['permissions'].map { |x| x['name'] }.join(','); i } }
+            #return {:fields=>send_result[:data]['items'].first.keys,:values=>send_result[:data]['items']}
           when :upload
             filelist = @option_parser.get_remaining_arguments("file list")
             Log.log.debug("file list=#{filelist}")

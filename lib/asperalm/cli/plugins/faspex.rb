@@ -4,7 +4,6 @@ module Asperalm
   module Cli
     module Plugins
       class Faspex < Plugin
-        @pkgbox=:inbox
         attr_accessor :faspmanager
 
         # extract elements from anonymous faspex link
@@ -39,8 +38,8 @@ module Asperalm
           @option_parser.add_opt_simple(:recipient,"--recipient=STRING","package recipient")
           @option_parser.add_opt_simple(:title,"--title=STRING","package title")
           @option_parser.add_opt_simple(:note,"--note=STRING","package note")
-          @pkgbox=:inbox
           @option_parser.add_opt_list(:pkgbox,[:inbox,:sent,:archive],"package box",'--box=TYPE')
+          @option_parser.set_option(:pkgbox,:inbox)
         end
 
         def dojob
@@ -62,7 +61,7 @@ module Asperalm
             api_faspex=get_faspex_authenticated_api
             if true
               pkguuid=@option_parser.get_next_arg_value("Package UUID")
-              all_inbox_xml=api_faspex.call({:operation=>'GET',:subpath=>"#{@pkgbox.to_s}.atom",:headers=>{'Accept'=>'application/xml'}})[:http].body
+              all_inbox_xml=api_faspex.call({:operation=>'GET',:subpath=>"#{@option_parser.get_option(:pkgbox).to_s}.atom",:headers=>{'Accept'=>'application/xml'}})[:http].body
               allinbox=XmlSimple.xml_in(all_inbox_xml, {"ForceArray" => true})
               package_entries=[]
               if allinbox.has_key?('entry')
@@ -105,7 +104,7 @@ module Asperalm
           when :list
             default_fields=['recipient_delivery_id','title','id',"items"]
             api_faspex=get_faspex_authenticated_api
-            all_inbox_xml=api_faspex.call({:operation=>'GET',:subpath=>"#{@pkgbox.to_s}.atom",:headers=>{'Accept'=>'application/xml'}})[:http].body
+            all_inbox_xml=api_faspex.call({:operation=>'GET',:subpath=>"#{@option_parser.get_option(:pkgbox).to_s}.atom",:headers=>{'Accept'=>'application/xml'}})[:http].body
             all_inbox_data=XmlSimple.xml_in(all_inbox_xml, {"ForceArray" => true})
             if all_inbox_data.has_key?('entry')
               values=all_inbox_data['entry'].map { |e| default_fields.inject({}) { |m,v|

@@ -31,7 +31,7 @@ module Asperalm
         when :set
           Log.level = value
         else
-          return Log.log.level
+          return Log.level
         end
       end
 
@@ -83,20 +83,16 @@ module Asperalm
           faspmanager.set_listener(FaspListenerLogger.new)
           application.faspmanager=faspmanager
         end
-        application.set_options
         return application
       end
 
       def set_options
         @option_parser.banner = "NAME\n\t#{$PROGRAM_NAME} -- a command line tool for Aspera Applications\n\n"
         @option_parser.separator "SYNOPSIS"
-        @option_parser.separator "\t#{$PROGRAM_NAME} ... #{command_name} [OPTIONS] COMMAND [ARGS]..."
+        @option_parser.separator "\t#{$PROGRAM_NAME} COMMANDS [OPTIONS] [ARGS]"
         @option_parser.separator ""
         @option_parser.separator "COMMANDS"
         @option_parser.separator "\tSupported commands: #{plugin_list.map {|x| x.to_s}.join(', ')}"
-        @option_parser.separator ""
-        @option_parser.separator "OPTIONS"
-        @option_parser.on_tail("-h", "--help", "Show this message") { @option_parser.exit_with_usage(nil) }
         @option_parser.separator ""
         @option_parser.separator "DESCRIPTION"
         @option_parser.separator "\tUse Aspera application to perform operations on command line."
@@ -108,6 +104,8 @@ module Asperalm
         @option_parser.separator "\t#{$PROGRAM_NAME} -ntj files set_client_key LA-8RrEjw @file:data/myid"
         @option_parser.separator "\nSPECIAL OPTION VALUES\n\tif an option value begins with @env: or @file:, value is taken from env var or file"
         @option_parser.separator ""
+        @option_parser.separator "OPTIONS (global)"
+        @option_parser.on("-h", "--help", "Show this message") { @option_parser.exit_with_usage(nil) }
         @option_parser.add_opt_list(:loglevel,Log.levels,"Log level",'-lTYPE','--log-level=TYPE')
         @option_parser.add_opt_list(:logtype,[:syslog,:stdout],"log method",'-qTYPE','--logger=TYPE') { |op,val| attr_logtype(op,val) }
         @option_parser.add_opt_list(:format,[:ruby,:text],"output format",'--format=TYPE')
@@ -116,7 +114,8 @@ module Asperalm
         @option_parser.add_opt_on(:rest_debug,"-r", "--rest-debug","more debug for HTTP calls") { Rest.set_debug(true) }
       end
 
-      def dojob(subcommand)
+      def dojob
+        subcommand=@option_parser.get_next_arg_from_list('action',[:ls,:init])
         case subcommand
         when :init
           raise StandardError,"Folder already exists: #{$PROGRAM_FOLDER}" if Dir.exist?($PROGRAM_FOLDER)
@@ -160,25 +159,22 @@ module Asperalm
         command_sym=@option_parser.get_next_arg_from_list('command',plugin_list)
         case command_sym
         when :config
-          subcommand=@option_parser.get_next_arg_from_list('action',[:ls,:init])
           application=self
-          command_sym=subcommand
         else
           # execute plugin
           application=self.new_plugin(command_sym)
+          @option_parser.separator "OPTIONS (#{command_sym})"
+          application.set_options
         end
         @option_parser.parse_options!()
-        Log.log.debug("calling #{application} for #{command_sym}".bg_red)
         results=application.dojob
         if results.is_a?(Hash) and results.has_key?(:values) and results.has_key?(:fields) then
           case @option_parser.get_option_mandatory(:format)
           when :ruby
             puts PP.pp(results[:values],'')
           when :text
-            #results[:values].each { |i| i.select! { |k| results[:fields].include?(k) } }
             rows=results[:values].map{ |r| results[:fields].map { |c| r[c].to_s } }
             puts Text::Table.new(:head => results[:fields], :rows => rows, :vertical_boundary  => '.', :horizontal_boundary => ':', :boundary_intersection => ':')
-            #Formatador.display_compact_table(results[:values],results[:fields])
           end
         else
           if results.is_a?(String)
@@ -219,7 +215,7 @@ module Asperalm
         tool=self.new(@option_parser,defaults)
         begin
           tool.go()
-        rescue StandardError => e
+        rescue CliBadArgument => e
           @option_parser.exit_with_usage(e)
         end
       end

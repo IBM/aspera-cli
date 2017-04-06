@@ -11,7 +11,6 @@ module Asperalm
     module Plugins
       class Files < Plugin
         attr_accessor :faspmanager
-
         def get_node_api(node_info,scope)
           return Rest.new(node_info['url'],{:oauth=>@api_files_oauth,:scope=>FilesApi.node_scope(node_info['access_key'],scope),:headers=>{'X-Aspera-AccessKey'=>node_info['access_key']}})
         end
@@ -69,7 +68,7 @@ module Asperalm
           return node_info,file_id
         end
 
-        def info_to_tspec(direction,node_info,file_id,files_tags)
+        def info_to_tspec(direction,node_info,file_id)
           return {
             'direction'        => direction,
             'remote_user'      => 'xfer',
@@ -78,11 +77,11 @@ module Asperalm
             "ssh_port"         => 33001,
             #"target_rate_kbps" => 10000,
             'token'            => @api_files_oauth.get_authorization(FilesApi.node_scope(node_info['access_key'],FilesApi::SCOPE_NODE_USER)),
-            'tags'             => { "aspera" => { "files" => files_tags, "node" => { "access_key" => node_info['access_key'], "file_id" => file_id }, "xfer_id" => SecureRandom.uuid, "xfer_retry" => 3600 } } }
+            'tags'             => { "aspera" => { "node" => { "access_key" => node_info['access_key'], "file_id" => file_id }, "xfer_id" => SecureRandom.uuid, "xfer_retry" => 3600 } } }
         end
 
         def set_options
-          @code_getter=:tty
+          @option_parser.set_option(:code_getter,:tty)
           @option_parser.add_opt_list(:auth,Oauth.auth_types,"type of authentication",'-tTYPE','--auth=TYPE')
           @option_parser.add_opt_list(:code_getter,BrowserInteraction.getter_types,"method to start browser",'-gTYPE','--code-get=TYPE')
           @option_parser.add_opt_simple(:url,"-wURI", "--url=URI","URL of application, e.g. http://org.asperafiles.com")
@@ -175,7 +174,8 @@ module Asperalm
             raise CliBadArgument,"Missing source(s) and destination" if filelist.length < 2
             destination_folder=filelist.pop
             node_info,file_id = find_nodeinfo_and_fileid(workspace_data['home_node_id'],workspace_data['home_file_id'],destination_folder.split('/'))
-            tspec=info_to_tspec("send",node_info,file_id,{})
+            tspec=info_to_tspec("send",node_info,file_id)
+            tspec['tags']["aspera"]["files"]={}
             tspec['paths']=filelist.map { |i| {'source'=>i} }
             tspec['destination_root']="/"
             @faspmanager.transfer_with_spec(tspec)
@@ -185,7 +185,8 @@ module Asperalm
             file_path = source_file.split('/')
             file_name = file_path.pop
             node_info,file_id = find_nodeinfo_and_fileid(workspace_data['home_node_id'],workspace_data['home_file_id'],file_path)
-            tspec=info_to_tspec('receive',node_info,file_id,{})
+            tspec=info_to_tspec('receive',node_info,file_id)
+            tspec['tags']["aspera"]["files"]={}
             tspec['paths']=[{'source'=>file_name}]
             tspec['destination_root']=destination_folder
             @faspmanager.transfer_with_spec(tspec)
@@ -216,7 +217,7 @@ module Asperalm
 
             tspec=info_to_tspec("send",node_info,the_package['contents_file_id'])
             tspec['tags']["aspera"]["files"]={"package_id" => the_package['id'], "package_operation" => "upload"}
-              tspec['paths']=filelist.map { |i| {'source'=>i} }
+            tspec['paths']=filelist.map { |i| {'source'=>i} }
             tspec['destination_root']="/"
             @faspmanager.transfer_with_spec(tspec)
             # simulate call later, to check status (this is just demo api call, not needed)
@@ -231,9 +232,9 @@ module Asperalm
             #the_package=packages.first
             #  get node info
             node_info=@api_files_user.read("nodes/#{the_package['node_id']}")[:data]
-            tspec=info_to_tspec("receive",node_info,the_package['contents_file_id'],)
+            tspec=info_to_tspec("receive",node_info,the_package['contents_file_id'])
             tspec['tags']["aspera"]["files"]={"package_id" => the_package['id'], "package_operation" => "download"}
-              tspec['paths']=[{'source'=>'.'}]
+            tspec['paths']=[{'source'=>'.'}]
             tspec['destination_root']='.' # TODO:param?
             @faspmanager.transfer_with_spec(tspec)
           when :packages

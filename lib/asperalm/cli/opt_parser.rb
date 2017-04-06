@@ -9,7 +9,7 @@ module Asperalm
   module Cli
     class CliBadArgument < StandardError
     end
-    
+
     # base class for plugins modules
     class OptParser < OptionParser
       def initialize(argv)
@@ -27,12 +27,12 @@ module Asperalm
         @attr_values={}
         super
       end
-      
+
       # parse an option value, special behavior for file:, env:, val:
       def self.get_extended_value(name_or_descr,value)
         if m=value.match(%r{^@file:(.*)}) then
           value=m[1]
-        if m=value.match(%r{^~/(.*)}) then
+          if m=value.match(%r{^~/(.*)}) then
             value=m[1]
             value=File.join(Dir.home,value)
           end
@@ -50,7 +50,7 @@ module Asperalm
       def command_or_arg_empty?
         return @mycommand_and_args.empty?
       end
-      
+
       # get next argument, must be from the value list
       def get_next_arg_from_list(descr,allowed_values)
         if @mycommand_and_args.empty? then
@@ -90,30 +90,30 @@ module Asperalm
         Log.log.debug("set handler #{option_symbol} (#{block})")
         @attr_procs[option_symbol]=block
       end
-      
+
       def set_option(option_symbol,value)
         value=self.class.get_extended_value(option_symbol,value)
         if @attr_procs.has_key?(option_symbol)
-          Log.log.debug("set #{option_symbol} (method)")
-           @attr_procs[option_symbol].call(:set,value) # TODO ? check
-          else
-        Log.log.debug("set #{option_symbol} (value)")
-            @attr_values[option_symbol]=value
+          Log.log.debug("set #{option_symbol}=#{value} (method)")
+          @attr_procs[option_symbol].call(:set,value) # TODO ? check
+        else
+          Log.log.debug("set #{option_symbol}=#{value} (value)")
+          @attr_values[option_symbol]=value
         end
 
       end
 
-# can return nil
+      # can return nil
       def get_option(option_symbol)
         if @attr_procs.has_key?(option_symbol)
           Log.log.debug("get #{option_symbol} (method)")
-            return @attr_procs[option_symbol].call(:get,nil) # TODO ? check
-          else
-        Log.log.debug("get #{option_symbol} (value)")
-            return @attr_values[option_symbol]
+          return @attr_procs[option_symbol].call(:get,nil) # TODO ? check
+        else
+          Log.log.debug("get #{option_symbol} (value)")
+          return @attr_values[option_symbol]
         end
       end
-      
+
       def set_defaults(values)
         Log.log.info("set_defaults=#{values}")
         return if values.nil?
@@ -126,7 +126,7 @@ module Asperalm
 
       def add_opt_list(option_symbol,values,help,*args)
         Log.log.info("add_opt_list #{option_symbol}->#{args}")
-          value=get_option(option_symbol)
+        value=get_option(option_symbol)
         self.on( *args , values, "#{help}. Values=(#{values.join(',')}), current=#{value}") do |v|
           theval = v.to_sym
           raise CliBadArgument,"unknown value for #{option_symbol}: #{v}" unless values.include?(theval)
@@ -138,12 +138,12 @@ module Asperalm
         Log.log.info("add_opt_simple #{option_symbol}->#{args}")
         self.on(*args) { |v| set_option(option_symbol,v) }
       end
-      
+
       def add_opt_on(option_symbol,*args,&block)
         Log.log.info("add_opt_on #{option_symbol}->#{args}")
         self.on(*args,&block)
       end
-      
+
       def get_option_mandatory(option_symbol)
         value=get_option(option_symbol)
         if value.nil? then
