@@ -83,11 +83,11 @@ t3:
 t4:
 	$(ASCLI) faspex recv_publink https://ibmfaspex.asperasoft.com/aspera/faspex/external_deliveries/78780?passcode=a003aaf2f53e3869126b908525084db6bebc7031
 t5:
-	$(ASCLI) -nibm faspex list
+	$(ASCLI) faspex list
 t6:
-	$(ASCLI) -nibm faspex recv 05b92393-02b7-4900-ab69-fd56721e896c
+	$(ASCLI) faspex recv 05b92393-02b7-4900-ab69-fd56721e896c
 t7:
-	$(ASCLI) -nibm faspex --note="my note" --title="my title" --recipient="laurent@asperasoft.com" send ~/200KB.1 
+	$(ASCLI) faspex --note="my note" --title="my title" --recipient="laurent@asperasoft.com" send ~/200KB.1 
 t8:
 	$(ASCLI) console transfers list
 t9:
@@ -110,3 +110,5 @@ t17:
 	$(ASCLI) files recv VleoMSrlA
 t18:
 	$(ASCLI) files events
+
+tests: t1 t2 t3  t5 t7 t8 t9 t10 t11 t12 t13 t14 t15 t16 t17 t18 t4 t6

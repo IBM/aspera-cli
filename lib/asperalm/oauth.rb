@@ -165,7 +165,8 @@ module Asperalm
         when :jwt
           require 'jwt'
 
-          seconds_since_epoch=Time.new.to_i
+          # remove 5 minutes to account for time offset
+          seconds_since_epoch=Time.new.to_i-300
           Log.log.info("seconds=#{seconds_since_epoch}")
 
           payload = {

@@ -4,12 +4,6 @@ module Asperalm
   module Cli
     module Plugins
       class Faspex < Plugin
-        def opt_names; [:url,:username,:password,:recipient,:title]; end
-
-        def get_pkgboxs; [:inbox,:sent,:archive]; end
-
-        def command_list; [ :send, :recv, :recv_publink, :list ]; end
-
         @pkgbox=:inbox
         attr_accessor :faspmanager
 
@@ -17,7 +11,7 @@ module Asperalm
         def self.get_link_data(email)
           package_match = email.match(/((http[^"]+)\/(external_deliveries\/([^?]+)))\?passcode=([^"]+)/)
           if package_match.nil? then
-            raise OptionParser::InvalidArgument, "string does not match Faspex url"
+            raise CliBadArgument, "string does not match Faspex url"
           end
           return {
             :uri => package_match[0],
@@ -30,33 +24,34 @@ module Asperalm
         end
 
         def self.get_fasp_uri_from_entry(entry)
-          raise OptionParser::InvalidArgument, "package is empty" if !entry.has_key?('link')
+          raise CliBadArgument, "package is empty" if !entry.has_key?('link')
           return (entry['link'].select{|e| e["rel"].eql?("package")}).first["href"]
         end
 
         def get_faspex_authenticated_api
-          return Rest.new(self.get_option_mandatory(:url),{:basic_auth=>{:user=>self.get_option_mandatory(:username), :password=>self.get_option_mandatory(:password)}})
+          return Rest.new(@option_parser.get_option_mandatory(:url),{:basic_auth=>{:user=>@option_parser.get_option_mandatory(:username), :password=>@option_parser.get_option_mandatory(:password)}})
         end
 
         def set_options
-          self.add_opt_simple(:url,"-wURI", "--url=URI","URL of application, e.g. http://org.asperafiles.com")
-          self.add_opt_simple(:username,"-uSTRING", "--username=STRING","username to log in")
-          self.add_opt_simple(:password,"-pSTRING", "--password=STRING","password")
-          self.add_opt_simple(:recipient,"--recipient=STRING","package recipient")
-          self.add_opt_simple(:title,"--title=STRING","package title")
-          self.add_opt_simple(:note,"--note=STRING","package note")
+          @option_parser.add_opt_simple(:url,"-wURI", "--url=URI","URL of application, e.g. http://org.asperafiles.com")
+          @option_parser.add_opt_simple(:username,"-uSTRING", "--username=STRING","username to log in")
+          @option_parser.add_opt_simple(:password,"-pSTRING", "--password=STRING","password")
+          @option_parser.add_opt_simple(:recipient,"--recipient=STRING","package recipient")
+          @option_parser.add_opt_simple(:title,"--title=STRING","package title")
+          @option_parser.add_opt_simple(:note,"--note=STRING","package note")
           @pkgbox=:inbox
-          self.add_opt_list(:pkgbox,"package box",'--box=TYPE')
+          @option_parser.add_opt_list(:pkgbox,[:inbox,:sent,:archive],"package box",'--box=TYPE')
         end
 
-        def dojob(command,argv)
+        def dojob
+          command=@option_parser.get_next_arg_from_list('command',[ :send, :recv, :recv_publink, :list ])
           case command
           when :send
-            filelist = self.class.get_remaining_arguments(argv,"file list")
+            filelist = @option_parser.get_remaining_arguments("file list")
             api_faspex=get_faspex_authenticated_api
-            send_result=api_faspex.call({:operation=>'POST',:subpath=>'send',:json_params=>{"delivery"=>{"use_encryption_at_rest"=>false,"note"=>self.get_option_mandatory(:note),"sources"=>[{"paths"=>filelist}],"title"=>self.get_option_mandatory(:title),"recipients"=>self.get_option_mandatory(:recipient).split(','),"send_upload_result"=>true}},:headers=>{'Accept'=>'application/json'}})[:data]
+            send_result=api_faspex.call({:operation=>'POST',:subpath=>'send',:json_params=>{"delivery"=>{"use_encryption_at_rest"=>false,"note"=>@option_parser.get_option_mandatory(:note),"sources"=>[{"paths"=>filelist}],"title"=>@option_parser.get_option_mandatory(:title),"recipients"=>@option_parser.get_option_mandatory(:recipient).split(','),"send_upload_result"=>true}},:headers=>{'Accept'=>'application/json'}})[:data]
             if send_result.has_key?('error')
-              raise OptionParser::InvalidArgument,"#{send_result['error']['user_message']} / #{send_result['error']['internal_message']}"
+              raise CliBadArgument,"#{send_result['error']['user_message']} / #{send_result['error']['internal_message']}"
             end
             raise "expecting one session exactly" if send_result['xfer_sessions'].length != 1
             transfer_spec=send_result['xfer_sessions'].first
@@ -66,7 +61,7 @@ module Asperalm
           when :recv
             api_faspex=get_faspex_authenticated_api
             if true
-              pkguuid=self.class.get_next_arg_value(argv,"Package UUID")
+              pkguuid=@option_parser.get_next_arg_value("Package UUID")
               all_inbox_xml=api_faspex.call({:operation=>'GET',:subpath=>"#{@pkgbox.to_s}.atom",:headers=>{'Accept'=>'application/xml'}})[:http].body
               allinbox=XmlSimple.xml_in(all_inbox_xml, {"ForceArray" => true})
               package_entries=[]
@@ -74,11 +69,11 @@ module Asperalm
                 package_entries=allinbox['entry'].select { |e| pkguuid.eql?(e['id'].first) }
               end
               if package_entries.length != 1
-                raise OptionParser::InvalidArgument,"no such uuid"
+                raise CliBadArgument,"no such uuid"
               end
               package_entry=package_entries.first
             else
-              delivid=self.class.get_next_arg_value(argv,"Package delivery ID")
+              delivid=@option_parser.get_next_arg_value("Package delivery ID")
               entry_xml=api_faspex.call({:operation=>'GET',:subpath=>"received/#{delivid}",:headers=>{'Accept'=>'application/xml'}})[:http].body
               package_entry=XmlSimple.xml_in(entry_xml, {"ForceArray" => true})
             end
@@ -94,7 +89,7 @@ module Asperalm
             @faspmanager.transfer_with_spec(transfer_spec)
             return nil
           when :recv_publink
-            thelink=self.class.get_next_arg_value(argv,"Faspex public URL for a package")
+            thelink=@option_parser.get_next_arg_value("Faspex public URL for a package")
             link_data=self.class.get_link_data(thelink)
             # Note: unauthenticated API
             api_faspex=Rest.new(link_data[:faspex_base_url],{})

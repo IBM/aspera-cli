@@ -14,6 +14,8 @@ module Asperalm
     class ThorMain < Thor
       desc "shares SUBCOMMAND ... ARGS", "Aspera Shares application"
       option :url, required: true
+      option :username, required: true
+      option :password, required: true
       subcommand "shares", Shares
     end
   end
