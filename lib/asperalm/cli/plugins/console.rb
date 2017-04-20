@@ -10,7 +10,7 @@ module Asperalm
           @option_parser.add_opt_simple(:password,"-pSTRING", "--password=STRING","password")
         end
 
-        def dojob
+        def execute_action
           api_console=Rest.new(@option_parser.get_option_mandatory(:url)+'/api',{:basic_auth=>{:user=>@option_parser.get_option_mandatory(:username), :password=>@option_parser.get_option_mandatory(:password)}})
           command=@option_parser.get_next_arg_from_list('command',[:transfers])
           case command

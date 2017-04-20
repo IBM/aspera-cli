@@ -372,6 +372,18 @@ Ta7g6mGwIMXrdTQQ8fZs
     # replaces do_transfer
     # transforms transper_spec into command line arguments and env var, then calls execute_ascp
     def transfer_with_spec(transfer_spec)
+      if (false) # download using connect ...
+        connect_api=Rest.new('https://local.connectme.us:43003/v5/connect',{})
+        begin
+          connect_api.read('info/version')
+        rescue Errno::ECONNREFUSED
+          system("open 'fasp://initialize'")
+          sleep 2
+        end
+        transfer_spec['authentication']="token" if transfer_spec.has_key?('token')
+        transfer_specs={'transfer_specs'=>[{'transfer_spec'=>transfer_spec,'aspera_connect_settings'=>{'allow_dialogs'=>true,'app_id'=>"aslmcli"}}]}
+        connect_api.create('transfers/start',transfer_specs)
+      end
       # if not provided, use standard key
       if !transfer_spec.has_key?('EX_ssh_key_value') and
       !transfer_spec.has_key?('EX_ssh_key_path') and

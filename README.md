@@ -26,17 +26,21 @@ Requires Ruby 2.0+
 In examples below, command line operations are shown using Bash.
 
 ## Quick Start
-For instance, to use the CLI on Aspera Files:
 
-* Install the gem and its dependencies and initialize a configuration file:
+First, install the gem and its dependencies, this requires Ruby v2.0+, and initialize a configuration file:
 
 ```bash
 $ gem install asperalm
 $ aslmcli config init
 ```
 
+This creates a dummy configuration file: `$HOME/.aspera/aslmcli/config.yaml`
 
-* This creates a dummy configuration file: `$HOME/.aspera/aslmcli/config.yaml`
+The use of the configuration file is not mandatory, all parameters can be set on command line, 
+but the configuration file provides a way to define default values, especially
+for authentication parameters. For Faspex, Shares, Node, Console, only username/password and url is required.
+
+To use the CLI with Aspera Files, a possibility is to do the following (jwt auth):
 
 * Create a private/public key pair, as specified in section: Private/Public Keys
 
@@ -71,45 +75,54 @@ For other applications (Shares, Faspex, ...), authentication is simpler and only
 ## Usage
 
 ```bash
-$ aslmcli -h
 NAME
 	aslmcli -- a command line tool for Aspera Applications
 
 SYNOPSIS
-	aslmcli main [OPTIONS] COMMAND [ARGS]...
+	aslmcli COMMANDS [OPTIONS] [ARGS]
 
 COMMANDS
 	Supported commands: console, faspex, files, node, shares, config
 
-OPTIONS
-...
+DESCRIPTION
+	Use Aspera application to perform operations on command line.
+	OAuth 2.0 is used for authentication in Files, Several authentication methods are provided.
+
+EXAMPLES
+	aslmcli files events
+	aslmcli --log-level=debug --config-name=myfaspex send 200KB.1
+	aslmcli -ntj files set_client_key LA-8RrEjw @file:data/myid
+
+SPECIAL OPTION VALUES
+	if an option value begins with @env: or @file:, value is taken from env var or file
+
+OPTIONS (global)
+    -h, --help                       Show this message
+    -l, --log-level=TYPE             Log level. Values=(debug,info,warn,error,fatal,unknown), current=warn
+    -q, --logger=TYPE                log method. Values=(syslog,stdout), current=stdout
+        --format=TYPE                output format. Values=(ruby,text), current=text
+    -f, --config-file=STRING         read parameters from file in JSON format
+    -n, --config-name=STRING         name of configuration in config file
+    -r, --rest-debug                 more debug for HTTP calls
 ```
-
-Note that in this release, each command has specific options, but options for a sub command must be provided just after the subcommand, and before the next sub command. Example:
-
-```bash
-aslmcli -nx --log-level=debug faspex --url=https://faspex.example.com/aspera/faspex --username=john --password=MyPass --box=archive list
-```
-
-Note the options between `aslmcli` and `faspex`, and then between `faspex` and `list`.
-
-This might change in the future.
 
 ## Configuration and parameters
-All CLI parameters can be provided on command line, but it is more convenient to set common parameters (e.g. cedentials) in a configuration file.
+All CLI parameters can be provided on command line, but it is more convenient 
+to set common parameters (e.g. cedentials) in a configuration file.
 
 The configuration file is a YAML file organized by applications.
 
-For each application type, there is a list of named configurations. The configuration named "default" is taken if no "-n" option is provided (short for --config-name).
+For each application type, there is a list of named configurations. The 
+configuration named "default" is taken if no "-n" option is provided 
+(short for --config-name).
 
-Command line options needs to be provided at their right level, i.e. global parameters before first command, and option of first command after first command, etc...
-
-Arguments that require a value can be specified on command line or config file with the following specific rules:
+Arguments that require a value can be specified on command line or config file 
+with the following specific rules:
 
 * direct value, e.g. --username=foouser
 * or, similarly, with @val: --username=@val:foouser
-* or with a value specified in a file: --key=@file:$HOME/.ssh/mykey
-* or with a value specified in an env var: --password=@env:MYPASSVAR
+* or a value read from a file: --key=@file:$HOME/.ssh/mykey
+* or a value read from a named env var: --password=@env:MYPASSVAR
 
 The default configuration file is: $HOME/.aspera/aslmcli/config.yaml
 
@@ -155,20 +168,35 @@ Here is an example:
     :username: nyapiuset
     :password: "mypassword"
 ```
+The "default" configuration is taken, but can be overridden on comand line.
+Another configuration can be taken with option "-n".
+
+## Learning Aspera Product APIs (REST)
+
+This CLI uses REST APIs.
+To display HTTP calls, use argument `-r` or `--rest-debug`, this is useful to display 
+exact content or HTTP requests and responses.
+
+In order to get traces of execution, use argument : `--log-level=debug`
 
 ## Authentication
 
 ### Aspera Faspex / Shares / Console / Node
 
-Only Basic authentication is supported. A "username" and "password" are provided, either on command line (--username, --password) or in the configuration file.
+Only Basic authentication is supported. A "username" and "password" are provided, 
+either on command line (--username, --password) or in the configuration file.
 
 ### Aspera Files
 
-Aspera Files supports a more powerful and secure authentication mechanism: Oauth. HTTP Basic authentication is not supported (deprecated).
+Aspera Files supports a more powerful and secure authentication mechanism: Oauth. 
+HTTP Basic authentication is not supported (deprecated).
 
-With OAuth, the application (aslmcli) must be identified, and a valid Aspera Files user must be used to access Aspera Files. Then a "Bearer" token is used for HTTP authentication.
+With OAuth, the application (aslmcli) must be identified, and a valid Aspera Files 
+user must be used to access Aspera Files. Then a "Bearer" token is used for 
+HTTP authentication.
 
-First the application (aslmcli) must be declared in the Files GUI (see <a href="https://aspera.asperafiles.com/helpcenter/admin/organization/registering-an-api-client">here</a>). By declaring the application, a "client\_id" and "client\_secret" are generated:
+First the application (aslmcli) must be declared in the Files GUI 
+(see <a href="https://aspera.asperafiles.com/helpcenter/admin/organization/registering-an-api-client">here</a>). By declaring the application, a "client\_id" and "client\_secret" are generated:
 
 <img src="docs/Auth1.png" alt="Files-admin-organization-apiclient-clientdetails"/>
 
@@ -178,8 +206,8 @@ It is also possible to enable browser-less authentication by using JWT, in this 
 
 <img src="docs/Auth2.png" alt="Files-admin-organization-apiclient-authoptions"/>
 
-Upon successful authentication, auth token are saved (cache) in local files, and can be used subsequently.
-Expired token can be refreshed.
+Upon successful authentication, auth token are saved (cache) in local files, and 
+can be used subsequently. Expired token can be refreshed.
 
 ## Sample commands
 
@@ -207,8 +235,8 @@ aslmcli files usage_reports
 
 ## Private/Public Keys
 
-In order to use JWT for Aspera Files API client authentication, a private/public key pair must be generated.
-
+In order to use JWT for Aspera Files API client authentication, 
+a private/public key pair must be generated.
 
 For example, generate a passphrase-less keypair with `ssh-keygen`:
 
@@ -228,7 +256,7 @@ $ rm -f ${APIKEY}.protected
 
 
 ## Contents
-included files are:
+Included files are:
 
 <table>
 <tr><td><code>lib/asperalm/browser_interaction.rb</code></td><td>for user web login, supports watir or terminal</td></tr>
@@ -240,10 +268,11 @@ included files are:
 </table>
 
 ## BUGS
-This is a sample code only, dont expect full capabilities.
+This is a sample code only, dont expect full capabilities. This code is not
+supported by Aspera.
 
 ## TODO
-* remove rest and oauth and use ruby standard objects:
+* remove rest and oauth and use ruby standard gems:
 
   * oauth
   * https://github.com/rest-client/rest-client
@@ -257,4 +286,5 @@ https://quickleft.com/blog/engineering-lunch-series-step-by-step-guide-to-buildi
 ## Contributing
 
 Please contribute: add new functions that use the APIs!
+You may contact the author.
 

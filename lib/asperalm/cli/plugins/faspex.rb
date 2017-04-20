@@ -42,7 +42,7 @@ module Asperalm
           @option_parser.set_option(:pkgbox,:inbox)
         end
 
-        def dojob
+        def execute_action
           command=@option_parser.get_next_arg_from_list('command',[ :send, :recv, :recv_publink, :list ])
           case command
           when :send

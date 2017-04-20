@@ -11,14 +11,14 @@ module Asperalm
     module Plugins
       class Files < Plugin
         attr_accessor :faspmanager
-        def get_node_api(node_info,scope)
-          return Rest.new(node_info['url'],{:oauth=>@api_files_oauth,:scope=>FilesApi.node_scope(node_info['access_key'],scope),:headers=>{'X-Aspera-AccessKey'=>node_info['access_key']}})
+        def get_node_api(node_info,node_scope)
+          return Rest.new(node_info['url'],{:oauth=>@api_files_oauth,:scope=>FilesApi.node_scope(node_info['access_key'],node_scope),:headers=>{'X-Aspera-AccessKey'=>node_info['access_key']}})
         end
 
         # returns node information (returned by API) and file id, from a "/" based path
         # supports links to secondary nodes
-        # input keys:file_id
-        # output keys: file_id and node_info
+        # input: root node and file id, and array for path
+        # output: file_id and node_info  for the given path
         def find_nodeinfo_and_fileid ( init_node_id, file_id, path_array )
           Log.log.debug "find_nodeinfo_and_fileid: nodeid=#{init_node_id}, #{file_id}, array=#{path_array}"
           # at least retrieve node info
@@ -69,6 +69,7 @@ module Asperalm
         end
 
         def info_to_tspec(direction,node_info,file_id)
+          # NOTE: important: transfer id must be unique: generate random id (using a non unique id results in discard of tags, and package is not finalized)
           return {
             'direction'        => direction,
             'remote_user'      => 'xfer',
@@ -92,7 +93,7 @@ module Asperalm
           @option_parser.add_opt_simple(:loop,"--loop=true","keep processing")
         end
 
-        def dojob
+        def execute_action
           command=@option_parser.get_next_arg_from_list('command',[ :browse, :send, :recv, :packages, :upload, :download, :events, :set_client_key, :faspexgw, :admin,:usage_reports ])
 
           # get parameters
@@ -157,9 +158,6 @@ module Asperalm
           # display name of default workspace
           Log.log.info("current workspace is "+workspace_data['name'].red)
 
-          # NOTE: important: transfer id must be unique: generate random id (using a non unique id results in discard of tags, and package is not finalized)
-          xfer_id=SecureRandom.uuid
-
           case command
           when :browse
             default_fields=['name','type','recursive_size','size','modified_time','access_level']
@@ -207,7 +205,7 @@ module Asperalm
             #TODO: allow to set title, and add other users
 
             #  create a new package with one file
-            the_package=@api_files_user.create("packages",{"workspace_id"=>workspace_id,"name"=>"sent from script","file_names"=>filelist,"note"=>"trid=#{xfer_id}","recipients"=>[{"id"=>recipient_user_id['source_id'],"type"=>recipient_user_id['source_type']}]})[:data]
+            the_package=@api_files_user.create("packages",{"workspace_id"=>workspace_id,"name"=>"sent from script","file_names"=>filelist,"note"=>"my note","recipients"=>[{"id"=>recipient_user_id['source_id'],"type"=>recipient_user_id['source_type']}]})[:data]
 
             #  get node information for the node on which package must be created
             node_info=@api_files_user.read("nodes/#{the_package['node_id']}")[:data]

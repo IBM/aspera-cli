@@ -5,7 +5,6 @@ module Asperalm
     module Plugins
       class Node < Plugin
         attr_accessor :faspmanager
-
         def set_options
           @option_parser.add_opt_simple(:url,"-wURI", "--url=URI","URL of application, e.g. http://org.asperafiles.com")
           @option_parser.add_opt_simple(:username,"-uSTRING", "--username=STRING","username to log in")
@@ -16,16 +15,20 @@ module Asperalm
           @option_parser.add_opt_simple(:file_filter,"--file-filter=EXPRESSION","Ruby expression for filter at file level")
         end
 
-        def dojob
-          command=@option_parser.get_next_arg_from_list('command',[ :browse, :upload, :download, :transfers, :info, :cleanup ])
+        def self.format_browse(items)
+          items.map {|i| i['permissions']=i['permissions'].map { |x| x['name'] }.join(','); i }
+        end
+
+        def execute_action
+          command=@option_parser.get_next_arg_from_list('command',[ :browse, :upload, :download, :transfers, :info, :cleanup, :ak ])
           api_node=Rest.new(@option_parser.get_option_mandatory(:url),{:basic_auth=>{:user=>@option_parser.get_option_mandatory(:username), :password=>@option_parser.get_option_mandatory(:password)}})
           case command
           when :browse
             thepath=@option_parser.get_next_arg_value("path")
-            send_result=api_node.call({:operation=>'POST',:subpath=>'files/browse',:json_params=>{ :path => thepath} } )
+            #send_result=api_node.call({:operation=>'POST',:subpath=>'files/browse',:json_params=>{ :path => thepath} } )
+            send_result={:data=>{'items'=>[{'file'=>"filename1","permissions"=>[{'name'=>'read'},{'name'=>'write'}]}]}}
             return nil if !send_result[:data].has_key?('items')
-            return {:fields=>send_result[:data]['items'].first.keys,:values=>send_result[:data]['items'].map { |i| i['permissions']=i['permissions'].map { |x| x['name'] }.join(','); i } }
-            #return {:fields=>send_result[:data]['items'].first.keys,:values=>send_result[:data]['items']}
+            return { :values => send_result[:data]['items'] , :textify => proc { |items| Node.format_browse(items)} }
           when :upload
             filelist = @option_parser.get_remaining_arguments("file list")
             Log.log.debug("file list=#{filelist}")
@@ -53,10 +56,14 @@ module Asperalm
             command=@option_parser.get_next_arg_from_list('command',[ :list ])
             # ,:url_params=>{:active_only=>true}
             resp=api_node.call({:operation=>'GET',:subpath=>'ops/transfers',:headers=>{'Accept'=>'application/json'}})
-            return resp[:data] # TODO
+            return { :values => resp[:data] } # TODO
           when :info
             resp=api_node.call({:operation=>'GET',:subpath=>'info',:headers=>{'Accept'=>'application/json'}})
-            return resp[:data] # TODO
+            return { :values => resp[:data] }# TODO
+          when :ak
+            resp=api_node.call({:operation=>'GET',:subpath=>'access_keys',:headers=>{'Accept'=>'application/json'}})
+            return {:fields=>['id','root_file_id','storage'],:values=>resp[:data]}
+            return { :values => resp[:data] }# TODO
           when :cleanup
             persistencyfile=@option_parser.get_option_mandatory(:persistency)
             transfer_filter=@option_parser.get_option_mandatory(:transfer_filter)
@@ -87,8 +94,10 @@ module Asperalm
               if eval(transfer_filter)
                 t['files'].each do |f|
                   if eval(file_filter)
-                    paths_to_delete.push({'path'=>'/'+f['path']})
-                    Log.log.info("to delete: #{f['path']}")
+                    if !paths_to_delete.include?(f['path'])
+                      paths_to_delete.push(f['path'])
+                      Log.log.info("to delete: #{f['path']}")
+                    end
                   end
                 end
               end
@@ -96,8 +105,8 @@ module Asperalm
             # delete files, if any
             if paths_to_delete.length != 0
               Log.log.info("deletion")
-              resp=api_node.call({:operation=>'POST',:subpath=>'files/delete',:json_params=>{:paths=>paths_to_delete}})
-              #resp=api_node.create('files/delete',{:paths=>paths_to_delete})
+              resp=api_node.call({:operation=>'POST',:subpath=>'files/delete',:json_params=>{:paths=>paths_to_delete.map {|i| {'path'=>'/'+i}}}})
+              #resp=api_node.create('files/delete',{:paths=>...})
               resres={:fields=>['file','result'],:values=>[]}
               JSON.parse(resp[:http].body)['paths'].each do |p|
                 result='deleted'
@@ -113,7 +122,7 @@ module Asperalm
             end
           end
           return nil
-        end # dojob
+        end # execute_action
       end # Main
     end # Plugin
   end # Cli

@@ -76,15 +76,18 @@ module Asperalm
           Log.log.debug("no default config")
         end
         # TODO: check that ancestor is Plugin
-        application=Object::const_get(@@PLUGINS_MODULE+'::'+plugin_name_sym.to_s.capitalize).new(@option_parser,default_config)
-        if application.respond_to?(:faspmanager=) then
+        command_plugin=Object::const_get(@@PLUGINS_MODULE+'::'+plugin_name_sym.to_s.capitalize).new(@option_parser,default_config)
+        if command_plugin.respond_to?(:faspmanager=) then
           # create the FASP manager for transfers
           faspmanager=FaspManagerResume.new
           faspmanager.set_listener(FaspListenerLogger.new)
-          application.faspmanager=faspmanager
+          command_plugin.faspmanager=faspmanager
         end
-        return application
+        return command_plugin
       end
+
+      FIELDS_ALL='ALL'
+      FIELDS_DEFAULT='DEF'
 
       def set_options
         @option_parser.banner = "NAME\n\t#{$PROGRAM_NAME} -- a command line tool for Aspera Applications\n\n"
@@ -105,16 +108,22 @@ module Asperalm
         @option_parser.separator "\nSPECIAL OPTION VALUES\n\tif an option value begins with @env: or @file:, value is taken from env var or file"
         @option_parser.separator ""
         @option_parser.separator "OPTIONS (global)"
+        @option_parser.set_option(:fields,FIELDS_DEFAULT)
         @option_parser.on("-h", "--help", "Show this message") { @option_parser.exit_with_usage(nil) }
         @option_parser.add_opt_list(:loglevel,Log.levels,"Log level",'-lTYPE','--log-level=TYPE')
         @option_parser.add_opt_list(:logtype,[:syslog,:stdout],"log method",'-qTYPE','--logger=TYPE') { |op,val| attr_logtype(op,val) }
-        @option_parser.add_opt_list(:format,[:ruby,:text],"output format",'--format=TYPE')
+        @option_parser.add_opt_list(:format,[:ruby,:text_table],"output format",'--format=TYPE')
         @option_parser.add_opt_simple(:config_file,"-fSTRING", "--config-file=STRING","read parameters from file in JSON format")
         @option_parser.add_opt_simple(:config_name,"-nSTRING", "--config-name=STRING","name of configuration in config file")
+        @option_parser.add_opt_simple(:fields,"--fields=STRING","comma separated list of fields, or #{FIELDS_ALL}, or #{FIELDS_DEFAULT}")
         @option_parser.add_opt_on(:rest_debug,"-r", "--rest-debug","more debug for HTTP calls") { Rest.set_debug(true) }
       end
 
-      def dojob
+      def self.result_simple_table(name,list)
+        return {:values => list.map { |i| { name => i.to_s } }}
+      end
+
+      def execute_action
         subcommand=@option_parser.get_next_arg_from_list('action',[:ls,:init])
         case subcommand
         when :init
@@ -130,51 +139,75 @@ module Asperalm
             "app2"=>{:url=>"https://faspex.other.com/aspera/faspex", :username=>"john@example", :password=>"yM7FmjfGN$J4"}
             },:shares=>{"default"=>{:url=>"https://10.25.0.6", :username=>"admin", :password=>"MyP@ssw0rd"}
             },:node=>{"default"=>{:url=>"https://10.25.0.8:9092", :username=>"node_user", :password=>"MyP@ssw0rd", :transfer_filter=>"t['status'].eql?('completed') and t['start_spec']['remote_user'].eql?('faspex')", :file_filter=>"f['status'].eql?('completed') and 0 != f['size'] and t['start_spec']['direction'].eql?('send')"}
-            }, :console=>{"default"=>{:url=>"https://console.myorg.com/aspera/console", :username=>"admin", :password=>"xxxxx"}}
+            },:console=>{"default"=>{:url=>"https://console.myorg.com/aspera/console", :username=>"admin", :password=>"xxxxx"}}
           }
           File.write($DEFAULT_CONFIG_FILE,sample_config.to_yaml)
-          return "initialized: #{$PROGRAM_FOLDER}"
+          puts "initialized: #{$PROGRAM_FOLDER}"
+          return nil
         when :ls
           sections=self.class.get_plugin_list.unshift(:global)
           if @option_parser.command_or_arg_empty?
             # just list plugins
-            results={ :fields => ['plugin'], :values=>sections.map { |i| { 'plugin' => i.to_s } } }
+            return self.class.result_simple_table('plugin',sections)
           else
             plugin=@option_parser.get_next_arg_from_list('plugin',sections)
             names=@loaded_config[plugin].keys.map { |i| i.to_sym }
             if @option_parser.command_or_arg_empty?
               # list names for tool
-              results={ :fields => ['name'], :values=>names.map { |i| { 'name' => i.to_s } } }
+              return self.class.result_simple_table('name',names)
             else
               # list parameters
               configname=@option_parser.get_next_arg_from_list('config',names)
-              results={ :fields => ['param','value'], :values=>@loaded_config[plugin][configname.to_s].keys.map { |i| { 'param' => i.to_s, 'value' => @loaded_config[plugin][configname.to_s][i] } } }
+              return {:values => @loaded_config[plugin][configname.to_s].keys.map { |i| { 'param' => i.to_s, 'value' => @loaded_config[plugin][configname.to_s][i] } } , :fields => ['param','value'] }
             end
           end
         end
       end
 
-      def go()
+      def process_command()
         self.set_options
         command_sym=@option_parser.get_next_arg_from_list('command',plugin_list)
         case command_sym
         when :config
-          application=self
+          command_plugin=self
         else
           # execute plugin
-          application=self.new_plugin(command_sym)
+          command_plugin=self.new_plugin(command_sym)
           @option_parser.separator "OPTIONS (#{command_sym})"
-          application.set_options
+          command_plugin.set_options
         end
         @option_parser.parse_options!()
-        results=application.dojob
-        if results.is_a?(Hash) and results.has_key?(:values) and results.has_key?(:fields) then
+        results=command_plugin.execute_action
+        if results.has_key?(:values) then
+          if results[:values].empty?
+            $stdout.write("no result")
+          else
+            display_fields=nil
+            case @option_parser.get_option_mandatory(:fields)
+            when FIELDS_DEFAULT
+              if !results.has_key?(:fields)
+                raise "empty results" if results[:values].empty?
+                display_fields=results[:values].first.keys
+              else
+                display_fields=results[:fields]
+              end
+            when FIELDS_ALL
+              raise "empty results" if results[:values].empty?
+              display_fields=results[:values].first.keys
+            else
+              display_fields=@option_parser.get_option_mandatory(:fields).split(',')
+            end
+          end
           case @option_parser.get_option_mandatory(:format)
           when :ruby
             puts PP.pp(results[:values],'')
-          when :text
-            rows=results[:values].map{ |r| results[:fields].map { |c| r[c].to_s } }
-            puts Text::Table.new(:head => results[:fields], :rows => rows, :vertical_boundary  => '.', :horizontal_boundary => ':', :boundary_intersection => ':')
+          when :text_table
+            rows=results[:values]
+            if results.has_key?(:textify)
+              rows=results[:textify].call(rows)
+            end
+            rows=rows.map{ |r| display_fields.map { |c| r[c].to_s } }
+            puts Text::Table.new(:head => display_fields, :rows => rows, :vertical_boundary  => '.', :horizontal_boundary => ':', :boundary_intersection => ':')
           end
         else
           if results.is_a?(String)
@@ -182,7 +215,7 @@ module Asperalm
           elsif results.nil?
             Log.log.debug("result=nil")
           else
-            puts ">result>#{PP.pp(results,'')}"
+            puts ">other result>#{PP.pp(results,'')}".red
           end
         end
         if !@option_parser.command_or_arg_empty?
@@ -204,7 +237,7 @@ module Asperalm
         defaults={
           :logtype => :stdout,
           :loglevel => :warn,
-          :format => :text,
+          :format => :text_table,
           :config_name => 'default'
         }
         Log.level = defaults[:loglevel]
@@ -214,7 +247,7 @@ module Asperalm
         defaults[:config_file]=config_file if File.exist?(config_file)
         tool=self.new(@option_parser,defaults)
         begin
-          tool.go()
+          tool.process_command()
         rescue CliBadArgument => e
           @option_parser.exit_with_usage(e)
         end

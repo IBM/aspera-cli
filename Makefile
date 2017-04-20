@@ -105,4 +105,6 @@ t17:
 t18:
 	$(ASCLI) files events
 
-tests: t1 t2 t3  t5 t7 t8 t9 t10 t11 t12 t13 t14 t15 t16 t17 t18 t4 t6
+tests: t1 t2 t3  t5 t7 t8 t9 t10 t11 filestests
+
+filestests: t12 t13 t14 t15 t16 t17 t18 t4 t6
