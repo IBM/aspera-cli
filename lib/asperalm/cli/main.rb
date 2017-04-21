@@ -110,13 +110,15 @@ module Asperalm
         @option_parser.separator "OPTIONS (global)"
         @option_parser.set_option(:fields,FIELDS_DEFAULT)
         @option_parser.set_option(:transfer,:ascp)
+        @option_parser.set_option(:transfer_node_config,'default')
         @option_parser.on("-h", "--help", "Show this message") { @option_parser.exit_with_usage(nil) }
         @option_parser.add_opt_list(:loglevel,Log.levels,"Log level",'-lTYPE','--log-level=TYPE')
         @option_parser.add_opt_list(:logtype,[:syslog,:stdout],"log method",'-qTYPE','--logger=TYPE') { |op,val| attr_logtype(op,val) }
         @option_parser.add_opt_list(:format,[:ruby,:text_table],"output format",'--format=TYPE')
-        @option_parser.add_opt_list(:transfer,[:ascp,:connect],"type of transfer",'--transfer=TYPE')
+        @option_parser.add_opt_list(:transfer,[:ascp,:connect,:node],"type of transfer",'--transfer=TYPE')
         @option_parser.add_opt_simple(:config_file,"-fSTRING", "--config-file=STRING","read parameters from file in YAML format")
         @option_parser.add_opt_simple(:config_name,"-nSTRING", "--config-name=STRING","name of configuration in config file")
+        @option_parser.add_opt_simple(:transfer_node_config,"--node-config=STRING","name of configuration used to transfer when using --transfer=node")
         @option_parser.add_opt_simple(:fields,"--fields=STRING","comma separated list of fields, or #{FIELDS_ALL}, or #{FIELDS_DEFAULT}")
         @option_parser.add_opt_simple(:fasp_proxy,"--fasp-proxy=STRING","URL of FASP proxy (dnat / dnats)")
         @option_parser.add_opt_simple(:http_proxy,"--http-proxy=STRING","URL of HTTP proxy (for http fallback)")
@@ -182,8 +184,12 @@ module Asperalm
         end
         @option_parser.parse_options!()
         if command_plugin.respond_to?(:faspmanager)
-          if @option_parser.get_option_mandatory(:transfer).eql?(:connect)
+          case @option_parser.get_option_mandatory(:transfer)
+          when :connect
             command_plugin.faspmanager.use_connect_client=true
+          when :node
+            node_config=@loaded_config[:node][@option_parser.get_option_mandatory(:transfer_node_config)]
+            command_plugin.faspmanager.tr_node_api=Rest.new(node_config[:url],{:basic_auth=>{:user=>node_config[:username], :password=>node_config[:password]}})
           end
           # may be nil:
           command_plugin.faspmanager.fasp_proxy_url=@option_parser.get_option(:fasp_proxy)

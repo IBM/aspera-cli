@@ -75,6 +75,7 @@ Ta7g6mGwIMXrdTQQ8fZs
     attr_accessor :use_connect_client
     attr_accessor :fasp_proxy_url
     attr_accessor :http_proxy_url
+    attr_accessor :tr_node_api
     def initialize
       @mgt_sock=nil
       @ascp_pid=nil
@@ -82,6 +83,7 @@ Ta7g6mGwIMXrdTQQ8fZs
       @use_connect_client=false
       @fasp_proxy_url=nil
       @http_proxy_url=nil
+      @tr_node_api=nil
       locate_resources
     end
 
@@ -381,6 +383,7 @@ Ta7g6mGwIMXrdTQQ8fZs
     # replaces do_transfer
     # transforms transper_spec into command line arguments and env var, then calls execute_ascp
     def transfer_with_spec(transfer_spec)
+      Log.log.debug("ts=#{transfer_spec}")
       if (@use_connect_client) # download using connect ...
         Log.log.debug("using connect client")
         connect_api=Rest.new('https://local.connectme.us:43003/v5/connect',{})
@@ -393,6 +396,19 @@ Ta7g6mGwIMXrdTQQ8fZs
         transfer_spec['authentication']="token" if transfer_spec.has_key?('token')
         transfer_specs={'transfer_specs'=>[{'transfer_spec'=>transfer_spec,'aspera_connect_settings'=>{'allow_dialogs'=>true,'app_id'=>"aslmcli"}}]}
         connect_api.create('transfers/start',transfer_specs)
+      elsif ! @tr_node_api.nil?
+        #transfer_spec['destination_root']='/tmp'
+        resp=@tr_node_api.call({:operation=>'POST',:subpath=>'ops/transfers',:headers=>{'Accept'=>'application/json'},:json_params=>transfer_spec})
+        puts "id=#{resp[:data]['id']}"
+        trid=resp[:data]['id']
+        #Log.log.error resp.to_s
+        loop do
+          res=@tr_node_api.call({:operation=>'GET',:subpath=>'ops/transfers/'+trid,:headers=>{'Accept'=>'application/json'}})
+          break if res[:data]['status'].eql?('completed')
+          puts "transfer: #{res[:data]['status']}"
+          sleep 1
+        end
+        #raise "TODO: wait for transfer completion"
       else
         Log.log.debug("using ascp")
         # if not provided, use standard key

@@ -68,6 +68,7 @@ module Asperalm
             raise send_result[:data]['transfer_specs'][0]['error']['user_message'] if send_result[:data]['transfer_specs'][0].has_key?('error')
             raise "expecting one session exactly" if send_result[:data]['transfer_specs'].length != 1
             transfer_spec=send_result[:data]['transfer_specs'].first['transfer_spec']
+            transfer_spec['destination_root']=destination
             faspmanager.transfer_with_spec(transfer_spec)
             return nil
           end
