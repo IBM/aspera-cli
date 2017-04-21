@@ -102,20 +102,24 @@ module Asperalm
         @option_parser.separator "\tOAuth 2.0 is used for authentication in Files, Several authentication methods are provided."
         @option_parser.separator ""
         @option_parser.separator "EXAMPLES"
-        @option_parser.separator "\t#{$PROGRAM_NAME} files events"
-        @option_parser.separator "\t#{$PROGRAM_NAME} --log-level=debug --config-name=myfaspex send 200KB.1"
-        @option_parser.separator "\t#{$PROGRAM_NAME} -ntj files set_client_key LA-8RrEjw @file:data/myid"
+        @option_parser.separator "\t#{$PROGRAM_NAME} files browse /"
+        @option_parser.separator "\t#{$PROGRAM_NAME} faspex send ./myfile --log-level=debug"
+        @option_parser.separator "\t#{$PROGRAM_NAME} shares upload ~/myfile /myshare"
         @option_parser.separator "\nSPECIAL OPTION VALUES\n\tif an option value begins with @env: or @file:, value is taken from env var or file"
         @option_parser.separator ""
         @option_parser.separator "OPTIONS (global)"
         @option_parser.set_option(:fields,FIELDS_DEFAULT)
+        @option_parser.set_option(:transfer,:ascp)
         @option_parser.on("-h", "--help", "Show this message") { @option_parser.exit_with_usage(nil) }
         @option_parser.add_opt_list(:loglevel,Log.levels,"Log level",'-lTYPE','--log-level=TYPE')
         @option_parser.add_opt_list(:logtype,[:syslog,:stdout],"log method",'-qTYPE','--logger=TYPE') { |op,val| attr_logtype(op,val) }
         @option_parser.add_opt_list(:format,[:ruby,:text_table],"output format",'--format=TYPE')
-        @option_parser.add_opt_simple(:config_file,"-fSTRING", "--config-file=STRING","read parameters from file in JSON format")
+        @option_parser.add_opt_list(:transfer,[:ascp,:connect],"type of transfer",'--transfer=TYPE')
+        @option_parser.add_opt_simple(:config_file,"-fSTRING", "--config-file=STRING","read parameters from file in YAML format")
         @option_parser.add_opt_simple(:config_name,"-nSTRING", "--config-name=STRING","name of configuration in config file")
         @option_parser.add_opt_simple(:fields,"--fields=STRING","comma separated list of fields, or #{FIELDS_ALL}, or #{FIELDS_DEFAULT}")
+        @option_parser.add_opt_simple(:fasp_proxy,"--fasp-proxy=STRING","URL of FASP proxy (dnat / dnats)")
+        @option_parser.add_opt_simple(:http_proxy,"--http-proxy=STRING","URL of HTTP proxy (for http fallback)")
         @option_parser.add_opt_on(:rest_debug,"-r", "--rest-debug","more debug for HTTP calls") { Rest.set_debug(true) }
       end
 
@@ -177,6 +181,14 @@ module Asperalm
           command_plugin.set_options
         end
         @option_parser.parse_options!()
+        if command_plugin.respond_to?(:faspmanager)
+          if @option_parser.get_option_mandatory(:transfer).eql?(:connect)
+            command_plugin.faspmanager.use_connect_client=true
+          end
+          # may be nil:
+          command_plugin.faspmanager.fasp_proxy_url=@option_parser.get_option(:fasp_proxy)
+          command_plugin.faspmanager.http_proxy_url=@option_parser.get_option(:http_proxy)
+        end
         results=command_plugin.execute_action
         if results.nil?
           Log.log.debug("result=nil")

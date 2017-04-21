@@ -19,7 +19,7 @@ module Asperalm
           items.map {|i| i['permissions']=i['permissions'].map { |x| x['name'] }.join(','); i }
         end
 
-        def delete_files(api_node,paths_to_delete)
+        def self.delete_files(api_node,paths_to_delete)
           resp=api_node.call({:operation=>'POST',:subpath=>'files/delete',:json_params=>{:paths=>paths_to_delete.map {|i| {'path'=>i.start_with?('/') ? i : '/'+i}}}})
           #resp=api_node.create('files/delete',{:paths=>...})
           resres={:fields=>['file','result'],:values=>[]}
@@ -34,21 +34,21 @@ module Asperalm
           return resres
         end
 
-        def execute_action
-          command=@option_parser.get_next_arg_from_list('command',[ :browse, :delete, :upload, :download, :transfers, :info, :cleanup, :ak ])
-          api_node=Rest.new(@option_parser.get_option_mandatory(:url),{:basic_auth=>{:user=>@option_parser.get_option_mandatory(:username), :password=>@option_parser.get_option_mandatory(:password)}})
+        def self.common_actions; [:browse, :delete, :upload, :download];end
+
+        def self.execute_common(command,api_node,option_parser,faspmanager)
           case command
           when :browse
-            thepath=@option_parser.get_next_arg_value("path")
+            thepath=option_parser.get_next_arg_value("path")
             send_result=api_node.call({:operation=>'POST',:subpath=>'files/browse',:json_params=>{ :path => thepath} } )
             #send_result={:data=>{'items'=>[{'file'=>"filename1","permissions"=>[{'name'=>'read'},{'name'=>'write'}]}]}}
             return nil if !send_result[:data].has_key?('items')
             return { :values => send_result[:data]['items'] , :textify => proc { |items| Node.format_browse(items)} }
           when :delete
-            paths_to_delete = @option_parser.get_remaining_arguments("file list")
+            paths_to_delete = option_parser.get_remaining_arguments("file list")
             return delete_files(api_node,paths_to_delete)
           when :upload
-            filelist = @option_parser.get_remaining_arguments("file list")
+            filelist = option_parser.get_remaining_arguments("file list")
             Log.log.debug("file list=#{filelist}")
             raise CliBadArgument,"Missing source(s) and destination" if filelist.length < 2
             destination=filelist.pop
@@ -57,10 +57,10 @@ module Asperalm
             raise "expecting one session exactly" if send_result[:data]['transfer_specs'].length != 1
             transfer_spec=send_result[:data]['transfer_specs'].first['transfer_spec']
             transfer_spec['paths']=filelist.map { |i| {'source'=>i} }
-            @faspmanager.transfer_with_spec(transfer_spec)
+            faspmanager.transfer_with_spec(transfer_spec)
             return nil
           when :download
-            filelist = @option_parser.get_remaining_arguments("file list")
+            filelist = option_parser.get_remaining_arguments("file list")
             Log.log.debug("file list=#{filelist}")
             raise CliBadArgument,"Missing source(s) and destination" if filelist.length < 2
             destination=filelist.pop
@@ -68,8 +68,19 @@ module Asperalm
             raise send_result[:data]['transfer_specs'][0]['error']['user_message'] if send_result[:data]['transfer_specs'][0].has_key?('error')
             raise "expecting one session exactly" if send_result[:data]['transfer_specs'].length != 1
             transfer_spec=send_result[:data]['transfer_specs'].first['transfer_spec']
-            @faspmanager.transfer_with_spec(transfer_spec)
+            faspmanager.transfer_with_spec(transfer_spec)
             return nil
+          end
+        end
+
+        def execute_action
+          api_node=Rest.new(@option_parser.get_option_mandatory(:url),{:basic_auth=>{:user=>@option_parser.get_option_mandatory(:username), :password=>@option_parser.get_option_mandatory(:password)}})
+          command=@option_parser.get_next_arg_from_list('command',self.class.common_actions.clone.concat([ :transfers, :info, :cleanup, :ak ]))
+          case command
+          when :browse; return self.class.execute_common(command,api_node,@option_parser,@faspmanager)
+          when :delete; return self.class.execute_common(command,api_node,@option_parser,@faspmanager)
+          when :upload; return self.class.execute_common(command,api_node,@option_parser,@faspmanager)
+          when :download; return self.class.execute_common(command,api_node,@option_parser,@faspmanager)
           when :transfers
             command=@option_parser.get_next_arg_from_list('command',[ :list ])
             # ,:url_params=>{:active_only=>true}
@@ -80,8 +91,8 @@ module Asperalm
             return { :values => resp[:data] }# TODO
           when :ak
             resp=api_node.call({:operation=>'GET',:subpath=>'access_keys',:headers=>{'Accept'=>'application/json'}})
-            return {:fields=>['id','root_file_id','storage'],:values=>resp[:data]}
-            return { :values => resp[:data] }# TODO
+            return {:fields=>['id','root_file_id','storage','license'],:values=>resp[:data]}
+            #return { :values => resp[:data] }# TODO
           when :cleanup
             persistencyfile=@option_parser.get_option_mandatory(:persistency)
             transfer_filter=@option_parser.get_option_mandatory(:transfer_filter)
@@ -123,7 +134,7 @@ module Asperalm
             # delete files, if any
             if paths_to_delete.length != 0
               Log.log.info("deletion")
-              return delete_files(api_node,paths_to_delete)
+              return self.delete_files(api_node,paths_to_delete)
             else
               Log.log.info("no new package")
             end

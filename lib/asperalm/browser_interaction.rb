@@ -15,6 +15,17 @@ module Asperalm
     def self.getter_types
       [ :tty, :watir, :osbrowser ]
     end
+    
+    def self.open_system_uri(uri)
+      case RbConfig::CONFIG['host_os']
+      when /darwin|mac os/
+        system("open '#{uri.to_s}'")
+      when /mswin|msys|mingw|cygwin|bccwin|wince|emc/
+        raise "OS not supported, please open this URI: #{uri}"
+      else  # unix family
+        raise "OS not supported, please open this URI: #{uri}"
+      end
+    end
 
     # uitype: :watir, or :tty, or :osbrowser
     def initialize(redirect_uri,uitype)
@@ -99,8 +110,7 @@ module Asperalm
           end
         end
       when :osbrowser
-        #TODO: only on mac...
-        system("open '#{the_url.to_s}'")
+        self.class.open_system_uri(the_url)
       when :tty
         puts "USER ACTION: please enter this url in a browser:\n"+the_url.to_s.red()+"\n"
       else

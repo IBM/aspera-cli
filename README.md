@@ -1,6 +1,8 @@
 # Asperalm - Laurent's Aspera Ruby library, including a CLI
 
-Laurent/Aspera/2016
+Laurent/2016
+
+This GEM is not endorsed/supported by IBM/Aspera
 
 ## Overview
 This is a Ruby Gem that provides the following features:
@@ -11,13 +13,14 @@ This is a Ruby Gem that provides the following features:
 
 This Gem was developed for the following Purposes:
 
-* show use of (REST) APIs: Node, Files, Shares, Faspex
+* show use of Aspera (REST) APIs: Node, Files, Shares, Faspex, Console
 * provide a command line for some tasks
-* cross-platform
+* cross-platform (ruby)
 
 Ruby has been chosen as language as it is used in most Aspera products, and the interpret can be found for most platforms.
 
-This gem is provided as-is, and is not intended to be a complete CLI, or industry-grade product. This is a sample.
+This gem is provided as-is, and is not intended to be a complete CLI, or industry-grade product. This is a sample. 
+Aspera provides a CLI tool here: <a href="http://downloads.asperasoft.com/en/downloads/62">http://downloads.asperasoft.com/en/downloads/62</a>.
 
 The CLI's folder where configuration and cache files are kept is `$HOME/.aspera/aslmcli`
 

@@ -72,10 +72,16 @@ Ta7g6mGwIMXrdTQQ8fZs
 
   # Manages FASP based transfers
   class FaspManager
+    attr_accessor :use_connect_client
+    attr_accessor :fasp_proxy_url
+    attr_accessor :http_proxy_url
     def initialize
       @mgt_sock=nil
       @ascp_pid=nil
       @resource_path={}
+      @use_connect_client=false
+      @fasp_proxy_url=nil
+      @http_proxy_url=nil
       locate_resources
     end
 
@@ -145,6 +151,8 @@ Ta7g6mGwIMXrdTQQ8fZs
           arguments.unshift('-Y', @resource_path[:fallback_key], '-I', @resource_path[:fallback_cert])
         end
       end
+      arguments.unshift('--proxy', @fasp_proxy_url) if ! @fasp_proxy_url.nil?
+      arguments.unshift('-x', @http_proxy_url) if ! @http_proxy_url.nil?
       Log.log.info "execute #{env_vars.map{|k,v| "#{k}=\"#{v}\""}.join(' ')} \"#{command}\" \"#{arguments.join('" "')}\""
       begin
         @ascp_pid = Process.spawn(env_vars,[command,command],*arguments)
@@ -229,24 +237,24 @@ Ta7g6mGwIMXrdTQQ8fZs
 
     # locate connect plugin resources
     def locate_resources
-      lBinFolder='bin'
-      lEtcFolder='etc'
-      # TODO: detect Connect Client on all platforms
+      folder_bin='bin'
+      folder_etc='etc'
+      # detect Connect Client on all platforms
       case RbConfig::CONFIG['host_os']
       when /darwin|mac os/
-        pluginLocation = Dir.home + '/Applications/Aspera Connect.app';
-        lBinFolder='Contents/Resources'
-        lEtcFolder='Contents/Resources'
+        pluginLocation = File.join(Dir.home,'Applications','Aspera Connect.app')
+        folder_bin=File.join('Contents','Resources')
+        folder_etc=File.join('Contents','Resources')
       when /mswin|msys|mingw|cygwin|bccwin|wince|emc/
         # also: ENV{TEMP}/.. , or %USERPROFILE%\AppData\Local\
-        pluginLocation = ENV['LOCALAPPDATA'] + '/Programs/Aspera/Aspera Connect'
+        pluginLocation = File.join(ENV['LOCALAPPDATA'],'Programs','Aspera','Aspera Connect')
       else  # unix family
-        pluginLocation = Dir.home + '/.aspera/connect';
+        pluginLocation = File.join(Dir.home,'.aspera','connect')
       end
-      @resource_path[:ascp] = File.join(pluginLocation,lBinFolder,'ascp')
-      @resource_path[:ssh_bypass] = File.join(pluginLocation,lEtcFolder,'asperaweb_id_dsa.openssh')
-      @resource_path[:fallback_cert] = File.join(pluginLocation,lEtcFolder,'aspera_web_cert.pem')
-      @resource_path[:fallback_key] = File.join(pluginLocation,lEtcFolder,'aspera_web_key.pem')
+      @resource_path[:ascp] = File.join(pluginLocation,folder_bin,'ascp')
+      @resource_path[:ssh_bypass] = File.join(pluginLocation,folder_etc,'asperaweb_id_dsa.openssh')
+      @resource_path[:fallback_cert] = File.join(pluginLocation,folder_etc,'aspera_web_cert.pem')
+      @resource_path[:fallback_key] = File.join(pluginLocation,folder_etc,'aspera_web_key.pem')
       Log.log.debug "resources=#{@resource_path}"
       raise "error" if ! File.executable?(@resource_path[:ascp] )
       raise "error" if ! File.file?(@resource_path[:ssh_bypass] )
@@ -293,9 +301,9 @@ Ta7g6mGwIMXrdTQQ8fZs
       # parameters with env vars
       env_vars = Hash.new
       ts2env(used_names,transfer_spec,env_vars,'password','ASPERA_SCP_PASS')
-      ts2env(used_names,transfer_spec,env_vars,'EX_ssh_key_value','ASPERA_SCP_KEY')
       ts2env(used_names,transfer_spec,env_vars,'token','ASPERA_SCP_TOKEN')
       ts2env(used_names,transfer_spec,env_vars,'cookie','ASPERA_SCP_COOKIE')
+      ts2env(used_names,transfer_spec,env_vars,'EX_ssh_key_value','ASPERA_SCP_KEY')
       ts2env(used_names,transfer_spec,env_vars,'EX_at_rest_password','ASPERA_SCP_FILEPASS')
       ts2env(used_names,transfer_spec,env_vars,'EX_proxy_password','ASPERA_PROXY_PASS')
 
@@ -331,15 +339,16 @@ Ta7g6mGwIMXrdTQQ8fZs
       ts2args_value(used_names,transfer_spec,ascp_args,'http_fallback_port','-t') { |port| port.to_s }
       ts2args_value(used_names,transfer_spec,ascp_args,'rate_policy','--policy')
       ts2args_value(used_names,transfer_spec,ascp_args,'source_root','--source-prefix')
+      ts2args_value(used_names,transfer_spec,ascp_args,'sshfp','--check-sshfp')
 
       ts_bool_param(used_names,transfer_spec,ascp_args,'create_dir') { |create_dir| create_dir ? ['-d'] : [] }
 
       ts_ignore_param(used_names,'target_rate_cap_kbps')
       ts_ignore_param(used_names,'rate_policy_allowed')
       ts_ignore_param(used_names,'fasp_url')
-      ts_ignore_param(used_names,'sshfp') # ???
       ts_ignore_param(used_names,'lock_rate_policy')
       ts_ignore_param(used_names,'lock_min_rate')
+      ts_ignore_param(used_names,'authentication') # = token
 
       # optional tags (  additional option to generate: {:space=>' ',:object_nl=>' ',:space_before=>'+',:array_nl=>'1'}  )
       ts2args_value(used_names,transfer_spec,ascp_args,'tags','--tags64') { |tags| Base64.strict_encode64(JSON.generate(tags)) }
@@ -372,29 +381,32 @@ Ta7g6mGwIMXrdTQQ8fZs
     # replaces do_transfer
     # transforms transper_spec into command line arguments and env var, then calls execute_ascp
     def transfer_with_spec(transfer_spec)
-      if (false) # download using connect ...
+      if (@use_connect_client) # download using connect ...
+        Log.log.debug("using connect client")
         connect_api=Rest.new('https://local.connectme.us:43003/v5/connect',{})
         begin
           connect_api.read('info/version')
         rescue Errno::ECONNREFUSED
-          system("open 'fasp://initialize'")
+          BrowserInteraction.open_system_uri('fasp://initialize')
           sleep 2
         end
         transfer_spec['authentication']="token" if transfer_spec.has_key?('token')
         transfer_specs={'transfer_specs'=>[{'transfer_spec'=>transfer_spec,'aspera_connect_settings'=>{'allow_dialogs'=>true,'app_id'=>"aslmcli"}}]}
         connect_api.create('transfers/start',transfer_specs)
-      end
-      # if not provided, use standard key
-      if !transfer_spec.has_key?('EX_ssh_key_value') and
-      !transfer_spec.has_key?('EX_ssh_key_path') and
-      transfer_spec.has_key?('token')
-        if !@resource_path[:ssh_bypass].nil?
-          transfer_spec['EX_ssh_key_path'] = @resource_path[:ssh_bypass]
-        else
-          transfer_spec['EX_ssh_key_value'] = ASPERA_SSH_BYPASS_DSA_KEY_VALUE
+      else
+        Log.log.debug("using ascp")
+        # if not provided, use standard key
+        if !transfer_spec.has_key?('EX_ssh_key_value') and
+        !transfer_spec.has_key?('EX_ssh_key_path') and
+        transfer_spec.has_key?('token')
+          if !@resource_path[:ssh_bypass].nil?
+            transfer_spec['EX_ssh_key_path'] = @resource_path[:ssh_bypass]
+          else
+            transfer_spec['EX_ssh_key_value'] = ASPERA_SSH_BYPASS_DSA_KEY_VALUE
+          end
         end
+        execute_ascp(@resource_path[:ascp],*transfer_spec_to_args_and_env(transfer_spec))
       end
-      execute_ascp(@resource_path[:ascp],*transfer_spec_to_args_and_env(transfer_spec))
       return nil
     end
   end # FaspManager
