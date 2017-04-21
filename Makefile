@@ -71,9 +71,10 @@ installdeps:
 t1:
 	$(ASCLI) shares browse /
 t2:
-	$(ASCLI) shares upload ~/200KB.1 /projectx
+	$(ASCLI) shares upload ~/200KB.1 /n8-sh1
 t3:
-	$(ASCLI) shares download /projectx/200KB.1 .
+	$(ASCLI) shares download /n8-sh1/200KB.1 .
+	rm -f 200KB.1
 t4:
 	$(ASCLI) faspex recv_publink https://ibmfaspex.asperasoft.com/aspera/faspex/external_deliveries/78780?passcode=a003aaf2f53e3869126b908525084db6bebc7031
 t5:
@@ -87,15 +88,17 @@ t8:
 t9:
 	$(ASCLI) node browse /
 t10:
-	$(ASCLI) node upload ~/200KB.1 /tmp
+	$(ASCLI) node upload ~/200KB.1 /
 t11:
-	$(ASCLI) node download /tmp/200KB.1 .
+	$(ASCLI) node download /200KB.1 .
+	rm -f 200KB.1
 t12:
 	$(ASCLI) files browse /
 t13:
 	$(ASCLI) files upload ~/200KB.1 /
 t14:
 	$(ASCLI) files download /200KB.1 .
+	rm -f 200KB.1
 t15:
 	$(ASCLI) files send ~/200KB.1
 t16:

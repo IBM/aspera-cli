@@ -178,7 +178,11 @@ module Asperalm
         end
         @option_parser.parse_options!()
         results=command_plugin.execute_action
-        if results.has_key?(:values) then
+        if results.nil?
+          Log.log.debug("result=nil")
+        elsif results.is_a?(String)
+          $stdout.write(results)
+        elsif results.is_a?(Hash) and results.has_key?(:values) then
           if results[:values].empty?
             $stdout.write("no result")
           else
@@ -197,26 +201,20 @@ module Asperalm
             else
               display_fields=@option_parser.get_option_mandatory(:fields).split(',')
             end
-          end
-          case @option_parser.get_option_mandatory(:format)
-          when :ruby
-            puts PP.pp(results[:values],'')
-          when :text_table
-            rows=results[:values]
-            if results.has_key?(:textify)
-              rows=results[:textify].call(rows)
+            case @option_parser.get_option_mandatory(:format)
+            when :ruby
+              puts PP.pp(results[:values],'')
+            when :text_table
+              rows=results[:values]
+              if results.has_key?(:textify)
+                rows=results[:textify].call(rows)
+              end
+              rows=rows.map{ |r| display_fields.map { |c| r[c].to_s } }
+              puts Text::Table.new(:head => display_fields, :rows => rows, :vertical_boundary  => '.', :horizontal_boundary => ':', :boundary_intersection => ':')
             end
-            rows=rows.map{ |r| display_fields.map { |c| r[c].to_s } }
-            puts Text::Table.new(:head => display_fields, :rows => rows, :vertical_boundary  => '.', :horizontal_boundary => ':', :boundary_intersection => ':')
           end
         else
-          if results.is_a?(String)
-            $stdout.write(results)
-          elsif results.nil?
-            Log.log.debug("result=nil")
-          else
-            puts ">other result>#{PP.pp(results,'')}".red
-          end
+          puts ">other result>#{PP.pp(results,'')}".red
         end
         if !@option_parser.command_or_arg_empty?
           raise CliBadArgument,"unprocessed values: #{@option_parser.get_remaining_arguments(nil)}"
@@ -249,7 +247,9 @@ module Asperalm
         begin
           tool.process_command()
         rescue CliBadArgument => e
-          @option_parser.exit_with_usage(e)
+          @option_parser.exit_with_usage("CLI error: #{e}")
+        rescue Asperalm::TransferError => e
+          @option_parser.exit_with_usage("FASP error: #{e}",false)
         end
       end
     end

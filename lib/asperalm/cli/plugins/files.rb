@@ -218,10 +218,11 @@ module Asperalm
             tspec['paths']=filelist.map { |i| {'source'=>i} }
             tspec['destination_root']="/"
             @faspmanager.transfer_with_spec(tspec)
+            return nil
             # simulate call later, to check status (this is just demo api call, not needed)
-            sleep 2
+            #sleep 2
             # (sample) get package status
-            allpkg=@api_files_user.read("packages/#{the_package['id']}")[:data]
+            #allpkg=@api_files_user.read("packages/#{the_package['id']}")[:data]
           when :recv
             package_id=@option_parser.get_next_arg_value('package ID')
             the_package=@api_files_user.read("packages/#{package_id}")[:data]

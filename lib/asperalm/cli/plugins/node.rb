@@ -19,16 +19,34 @@ module Asperalm
           items.map {|i| i['permissions']=i['permissions'].map { |x| x['name'] }.join(','); i }
         end
 
+        def delete_files(api_node,paths_to_delete)
+          resp=api_node.call({:operation=>'POST',:subpath=>'files/delete',:json_params=>{:paths=>paths_to_delete.map {|i| {'path'=>i.start_with?('/') ? i : '/'+i}}}})
+          #resp=api_node.create('files/delete',{:paths=>...})
+          resres={:fields=>['file','result'],:values=>[]}
+          JSON.parse(resp[:http].body)['paths'].each do |p|
+            result='deleted'
+            if p.has_key?('error')
+              Log.log.error("#{p['error']['user_message']} : #{p['path']}")
+              result="ERROR: "+p['error']['user_message']
+            end
+            resres[:values].push({'file'=>p['path'],'result'=>result})
+          end
+          return resres
+        end
+
         def execute_action
-          command=@option_parser.get_next_arg_from_list('command',[ :browse, :upload, :download, :transfers, :info, :cleanup, :ak ])
+          command=@option_parser.get_next_arg_from_list('command',[ :browse, :delete, :upload, :download, :transfers, :info, :cleanup, :ak ])
           api_node=Rest.new(@option_parser.get_option_mandatory(:url),{:basic_auth=>{:user=>@option_parser.get_option_mandatory(:username), :password=>@option_parser.get_option_mandatory(:password)}})
           case command
           when :browse
             thepath=@option_parser.get_next_arg_value("path")
-            #send_result=api_node.call({:operation=>'POST',:subpath=>'files/browse',:json_params=>{ :path => thepath} } )
-            send_result={:data=>{'items'=>[{'file'=>"filename1","permissions"=>[{'name'=>'read'},{'name'=>'write'}]}]}}
+            send_result=api_node.call({:operation=>'POST',:subpath=>'files/browse',:json_params=>{ :path => thepath} } )
+            #send_result={:data=>{'items'=>[{'file'=>"filename1","permissions"=>[{'name'=>'read'},{'name'=>'write'}]}]}}
             return nil if !send_result[:data].has_key?('items')
             return { :values => send_result[:data]['items'] , :textify => proc { |items| Node.format_browse(items)} }
+          when :delete
+            paths_to_delete = @option_parser.get_remaining_arguments("file list")
+            return delete_files(api_node,paths_to_delete)
           when :upload
             filelist = @option_parser.get_remaining_arguments("file list")
             Log.log.debug("file list=#{filelist}")
@@ -105,18 +123,7 @@ module Asperalm
             # delete files, if any
             if paths_to_delete.length != 0
               Log.log.info("deletion")
-              resp=api_node.call({:operation=>'POST',:subpath=>'files/delete',:json_params=>{:paths=>paths_to_delete.map {|i| {'path'=>'/'+i}}}})
-              #resp=api_node.create('files/delete',{:paths=>...})
-              resres={:fields=>['file','result'],:values=>[]}
-              JSON.parse(resp[:http].body)['paths'].each do |p|
-                result='deleted'
-                if p.has_key?('error')
-                  Log.log.error("#{p['error']['user_message']} : #{p['path']}")
-                  result="ERR:"+p['error']['user_message']
-                end
-                resres[:values].push({'file'=>p['path'],'result'=>result})
-              end
-              return resres
+              return delete_files(api_node,paths_to_delete)
             else
               Log.log.info("no new package")
             end

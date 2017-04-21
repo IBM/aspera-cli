@@ -33,6 +33,7 @@ module Asperalm
             transfer_spec=send_result[:data]['transfer_specs'].first['transfer_spec']
             transfer_spec['paths']=filelist.map { |i| {'source'=>i} }
             @faspmanager.transfer_with_spec(transfer_spec)
+            return nil
           when :download
             filelist = @option_parser.get_remaining_arguments("source(s) and destination")
             Log.log.debug("file list=#{filelist}")

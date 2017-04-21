@@ -80,8 +80,8 @@ module Asperalm
         return filelist
       end
 
-      def exit_with_usage(error_text)
-        STDERR.puts self
+      def exit_with_usage(error_text,show_usage=true)
+        STDERR.puts self if show_usage
         STDERR.puts "\n"+"ERROR:".bg_red().gray().blink()+" #{error_text}\n\n" if !error_text.nil?
         Process.exit 1
       end
