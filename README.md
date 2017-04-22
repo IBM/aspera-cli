@@ -17,9 +17,11 @@ This Gem was developed for the following Purposes:
 * provide a command line for some tasks
 * cross-platform (ruby)
 
-Ruby has been chosen as language as it is used in most Aspera products, and the interpret can be found for most platforms.
+Ruby has been chosen as language as it is used in most Aspera products, and the 
+interpret can be found for most platforms.
 
-This gem is provided as-is, and is not intended to be a complete CLI, or industry-grade product. This is a sample. 
+This gem is provided as-is, and is not intended to be a complete CLI, or 
+industry-grade product. This is a sample. 
 Aspera provides a CLI tool here: <a href="http://downloads.asperasoft.com/en/downloads/62">http://downloads.asperasoft.com/en/downloads/62</a>.
 
 The CLI's folder where configuration and cache files are kept is `$HOME/.aspera/aslmcli`
@@ -30,33 +32,54 @@ In examples below, command line operations are shown using Bash.
 
 ## Quick Start
 
-First, install the gem and its dependencies, this requires Ruby v2.0+, and initialize a configuration file:
+### General setup
+First, install the gem and its dependencies, this requires Ruby v2.0+, and 
+initialize a configuration file:
 
 ```bash
 $ gem install asperalm
-$ aslmcli config init
 ```
+The tool can be used right away: `aslmcli`
 
-This creates a dummy configuration file: `$HOME/.aspera/aslmcli/config.yaml`
+### Configuration file setup
 
 The use of the configuration file is not mandatory, all parameters can be set on command line, 
 but the configuration file provides a way to define default values, especially
-for authentication parameters. For Faspex, Shares, Node, Console, only username/password and url is required.
+for authentication parameters. A sample configuration file can be created with:
+
+```bash
+$ aslmcli config init
+```
+
+This creates a sample configuration file: `$HOME/.aspera/aslmcli/config.yaml`
+
+For Faspex, Shares, Node (including ATS (Aspera Transfer Service)), Console, 
+only username/password 
+and url are required (either on command line, or from config file). Just fill-in url and
+credentials in the configuration file (section: default), and then you can start 
+using the CLI without having to specify those on command line. 
+Switch between servers with `-n` option.
+
+### Configuration for use with Aspera Files
+
+Aspera Files APIs do not support Basic HTTP authentication (see section "Authentication").
 
 To use the CLI with Aspera Files, a possibility is to do the following (jwt auth):
 
-* Create a private/public key pair, as specified in section: Private/Public Keys
+* Create a private/public key pair, as specified in section: "Private/Public Keys"
 
-* Register a new application in the Aspera Files Admin GUI (refer to section "Authentication"). Here, as public key, use the contents of a file (generated in step 2): `$HOME/.aspera/aslmcli/filesapikey.pub`
+* Register a new application in the Aspera Files Admin GUI (refer to section "Authentication"). 
+Here, as public key, use the contents of a file (generated in step 2):
+ `$HOME/.aspera/aslmcli/filesapikey.pub`
 
-* Edit the file: `$HOME/.aspera/aslmcli/config.yaml`, and set the values in section: files/default for items:
+* Edit the file: `$HOME/.aspera/aslmcli/config.yaml`, and set the values in section: 
+files/default for items:
    * url : Your Aspera Files organization URL, e.g. `https://myorg.asperafiles.com`
    * client_id and client_secret : copy from the Application registration form (step 3)
    * username : your username in Aspera Files, e.g. `user@example.com`
    * private_key : location of private key file, leave as `@file:~/.aspera/aslmcli/filesapikey`
 
 * CLI is ready to use:
-
 
 ```bash
 $ aslmcli files browse /
@@ -72,12 +95,10 @@ $ aslmcli files browse /
 
 ```
 
-For other applications (Shares, Faspex, ...), authentication is simpler and only require a username and password.
-
-
 ## Usage
 
 ```bash
+$ aslmcli -h
 NAME
 	aslmcli -- a command line tool for Aspera Applications
 
@@ -92,9 +113,9 @@ DESCRIPTION
 	OAuth 2.0 is used for authentication in Files, Several authentication methods are provided.
 
 EXAMPLES
-	aslmcli files events
-	aslmcli --log-level=debug --config-name=myfaspex send 200KB.1
-	aslmcli -ntj files set_client_key LA-8RrEjw @file:data/myid
+	aslmcli files browse /
+	aslmcli faspex send ./myfile --log-level=debug
+	aslmcli shares upload ~/myfile /myshare
 
 SPECIAL OPTION VALUES
 	if an option value begins with @env: or @file:, value is taken from env var or file
@@ -103,9 +124,14 @@ OPTIONS (global)
     -h, --help                       Show this message
     -l, --log-level=TYPE             Log level. Values=(debug,info,warn,error,fatal,unknown), current=warn
     -q, --logger=TYPE                log method. Values=(syslog,stdout), current=stdout
-        --format=TYPE                output format. Values=(ruby,text), current=text
-    -f, --config-file=STRING         read parameters from file in JSON format
+        --format=TYPE                output format. Values=(ruby,text_table), current=text_table
+        --transfer=TYPE              type of transfer. Values=(ascp,connect,node), current=ascp
+    -f, --config-file=STRING         read parameters from file in YAML format
     -n, --config-name=STRING         name of configuration in config file
+        --node-config=STRING         name of configuration used to transfer when using --transfer=node
+        --fields=STRING              comma separated list of fields, or ALL, or DEF
+        --fasp-proxy=STRING          URL of FASP proxy (dnat / dnats)
+        --http-proxy=STRING          URL of HTTP proxy (for http fallback)
     -r, --rest-debug                 more debug for HTTP calls
 ```
 
@@ -257,6 +283,45 @@ $ openssl rsa -pubout -in ${APIKEY} -out ${APIKEY}.pub
 $ rm -f ${APIKEY}.protected
 ```
 
+## FASP based transfer options
+
+The CLI provides access to Aspera Applications functions through REST APIs, it also
+allows FASP based transfers (upload and download).
+
+Three methods for starting transfers are currently supported:
+
+### FASPManager API based
+
+By default the CLI will use the Aspera Connect Client FASP part, in this case
+it requires the installation of the Aspera Connect Client to be 
+able to execute FASP based transfers. The CLI will try to automatically locate the 
+Aspera Protocol (`ascp`). this is option: `--transfer=ascp`
+
+### Aspera Connect Client GUI
+
+By specifying option: `--transfer=connect`, the CLI will start transfers in the Aspera
+Connect Client.
+
+### Aspera Node API
+
+By specifying option: `--transfer=node`, the CLI will start transfers in an Aspera
+Transfer Server using the Node API.
+
+### Example of use
+
+Access to a "Shares on Demand" (SHOD) server on AWS is provided by a partner. And we need to 
+transfer files from this third party SHOD instance into our Azure BLOB storage.
+Simply create an "Aspera Transfer Service" instance (https://ts.asperasoft.com), which
+provides access to the node API.
+Then create a configuration for the "SHOD" instance in the configuration file: in section 
+"shares", a configuration named: awsshod.
+Create another configuration for the Azure ATS instance: in section "node", named azureats.
+Then execute the following command:
+```bash
+aslmcli download /share/sourcefile /destinationfolder --config-name=awsshod --transfer=node --node-config=azureats
+```
+This will get transfer information from the SHOD instance and tell the Azure ATS instance 
+to download files.
 
 ## Contents
 Included files are:

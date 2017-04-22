@@ -3,8 +3,16 @@ require 'asperalm/cli/plugin'
 module Asperalm
   module Cli
     module Plugins
-      class Faspex < Plugin
+      class Faspex < BasicAuthPlugin
         attr_accessor :faspmanager
+        def set_options
+          super.set_options
+          @option_parser.add_opt_simple(:recipient,"--recipient=STRING","package recipient")
+          @option_parser.add_opt_simple(:title,"--title=STRING","package title")
+          @option_parser.add_opt_simple(:note,"--note=STRING","package note")
+          @option_parser.add_opt_list(:pkgbox,[:inbox,:sent,:archive],"package box",'--box=TYPE')
+          @option_parser.set_option(:pkgbox,:inbox)
+        end
 
         # extract elements from anonymous faspex link
         def self.get_link_data(email)
@@ -29,17 +37,6 @@ module Asperalm
 
         def get_faspex_authenticated_api
           return Rest.new(@option_parser.get_option_mandatory(:url),{:basic_auth=>{:user=>@option_parser.get_option_mandatory(:username), :password=>@option_parser.get_option_mandatory(:password)}})
-        end
-
-        def set_options
-          @option_parser.add_opt_simple(:url,"-wURI", "--url=URI","URL of application, e.g. http://org.asperafiles.com")
-          @option_parser.add_opt_simple(:username,"-uSTRING", "--username=STRING","username to log in")
-          @option_parser.add_opt_simple(:password,"-pSTRING", "--password=STRING","password")
-          @option_parser.add_opt_simple(:recipient,"--recipient=STRING","package recipient")
-          @option_parser.add_opt_simple(:title,"--title=STRING","package title")
-          @option_parser.add_opt_simple(:note,"--note=STRING","package note")
-          @option_parser.add_opt_list(:pkgbox,[:inbox,:sent,:archive],"package box",'--box=TYPE')
-          @option_parser.set_option(:pkgbox,:inbox)
         end
 
         def execute_action

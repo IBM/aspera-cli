@@ -1,15 +1,9 @@
-require 'asperalm/cli/plugin'
+require 'asperalm/cli/basic_auth_plugin'
 
 module Asperalm
   module Cli
     module Plugins
-      class Console < Plugin
-        def set_options
-          @option_parser.add_opt_simple(:url,"-wURI", "--url=URI","URL of application, e.g. http://org.asperafiles.com")
-          @option_parser.add_opt_simple(:username,"-uSTRING", "--username=STRING","username to log in")
-          @option_parser.add_opt_simple(:password,"-pSTRING", "--password=STRING","password")
-        end
-
+      class Console < BasicAuthPlugin
         def execute_action
           api_console=Rest.new(@option_parser.get_option_mandatory(:url)+'/api',{:basic_auth=>{:user=>@option_parser.get_option_mandatory(:username), :password=>@option_parser.get_option_mandatory(:password)}})
           command=@option_parser.get_next_arg_from_list('command',[:transfers])

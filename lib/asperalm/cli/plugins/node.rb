@@ -3,7 +3,7 @@ require 'asperalm/cli/plugin'
 module Asperalm
   module Cli
     module Plugins
-      class Node < Plugin
+      class Node < BasicAuthPlugin
         attr_accessor :faspmanager
         def set_options
           @option_parser.add_opt_simple(:url,"-wURI", "--url=URI","URL of application, e.g. http://org.asperafiles.com")

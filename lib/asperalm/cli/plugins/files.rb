@@ -4,8 +4,6 @@ require 'asperalm/oauth'
 require 'asperalm/files_api'
 require 'SecureRandom'
 
-# get end points here:
-
 module Asperalm
   module Cli
     module Plugins
@@ -88,9 +86,8 @@ module Asperalm
           @option_parser.add_opt_simple(:url,"-wURI", "--url=URI","URL of application, e.g. http://org.asperafiles.com")
           @option_parser.add_opt_simple(:username,"-uSTRING", "--username=STRING","username to log in")
           @option_parser.add_opt_simple(:password,"-pSTRING", "--password=STRING","password")
-          @option_parser.add_opt_simple(:private_key,"-kSTRING", "--private-key=STRING","RSA private key (@ for ext. file)")
+          @option_parser.add_opt_simple(:private_key,"-kSTRING", "--private-key=STRING","RSA private key for JWT (@ for ext. file)")
           @option_parser.add_opt_simple(:workspace,"--workspace=STRING","name of workspace")
-          @option_parser.add_opt_simple(:loop,"--loop=true","keep processing")
         end
 
         def execute_action
