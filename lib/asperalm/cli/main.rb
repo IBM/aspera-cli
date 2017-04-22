@@ -38,12 +38,14 @@ module Asperalm
       def attr_config_file(operation,value)
         case operation
         when :set
+          @config_file_path=value
           Log.log.debug "loading #{value}"
           @loaded_config=YAML.load_file(value)
           Log.log.debug "loaded: #{@loaded_config}"
           @option_parser.set_defaults(@loaded_config[:global][@option_parser.get_option(:config_name)])
         else
           Log.log.debug "TODO: get config_file ???"
+          return @config_file_path
         end
       end
 
@@ -116,7 +118,7 @@ module Asperalm
         @option_parser.add_opt_list(:logtype,[:syslog,:stdout],"log method",'-qTYPE','--logger=TYPE') { |op,val| attr_logtype(op,val) }
         @option_parser.add_opt_list(:format,[:ruby,:text_table],"output format",'--format=TYPE')
         @option_parser.add_opt_list(:transfer,[:ascp,:connect,:node],"type of transfer",'--transfer=TYPE')
-        @option_parser.add_opt_simple(:config_file,"-fSTRING", "--config-file=STRING","read parameters from file in YAML format")
+        @option_parser.add_opt_simple(:config_file,"-fSTRING", "--config-file=STRING","read parameters from file in YAML format, current=#{@option_parser.get_option(:config_file)}")
         @option_parser.add_opt_simple(:config_name,"-nSTRING", "--config-name=STRING","name of configuration in config file")
         @option_parser.add_opt_simple(:transfer_node_config,"--node-config=STRING","name of configuration used to transfer when using --transfer=node")
         @option_parser.add_opt_simple(:fields,"--fields=STRING","comma separated list of fields, or #{FIELDS_ALL}, or #{FIELDS_DEFAULT}")
@@ -245,14 +247,15 @@ module Asperalm
       #--------------------------------
       $PROGRAM_NAME = 'aslmcli'
       $ASPERA_HOME_FOLDERNAME='.aspera'
+      $DEFAULT_CONFIG_FILENAME = 'config.yaml'
       $ASPERA_HOME_FOLDERPATH=File.join(Dir.home,$ASPERA_HOME_FOLDERNAME)
       $PROGRAM_FOLDER=File.join($ASPERA_HOME_FOLDERPATH,$PROGRAM_NAME)
-      $DEFAULT_CONFIG_FILE=File.join($PROGRAM_FOLDER,'config.yaml')
+      $DEFAULT_CONFIG_FILE=File.join($PROGRAM_FOLDER,$DEFAULT_CONFIG_FILENAME)
 
       def self.start
         defaults={
           :logtype => :stdout,
-          :loglevel => :warn,
+          :loglevel => :debug,
           :format => :text_table,
           :config_name => 'default'
         }
