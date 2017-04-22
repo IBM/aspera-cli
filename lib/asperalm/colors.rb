@@ -32,7 +32,7 @@ class String
   VTSTYLES.each do |name,code|
     # the end code depends on value
     endcode = (code >= 10) ? 0 : code+20+(code.eql?(1)?1:0)
-    eval %q|def #{name}; "#{vtcmd(code)}\#{self}#{vtcmd(endcode)}"; end|
+    eval "def #{name}; \"#{vtcmd(code)}\#{self}#{vtcmd(endcode)}\"; end"
   end
 
 end
