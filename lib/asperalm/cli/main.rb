@@ -224,7 +224,7 @@ module Asperalm
           $stdout.write(results)
         elsif results.is_a?(Hash) and results.has_key?(:values) then
           @option_parser.set_option(:format,results[:format]) if results.has_key?(:format)
-          if results[:values].empty?
+          if results[:values].is_a?(Array) and results[:values].empty?
             $stdout.write("no result")
           else
             display_fields=nil
