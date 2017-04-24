@@ -166,8 +166,10 @@ module Asperalm
         return value
       end
 
+      # removes already known options from the list
       def parse_options!()
         self.parse!(@myoptions)
+        Log.log.debug("remaiming options: [#{@myoptions}]")
       end
 
     end

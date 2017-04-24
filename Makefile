@@ -87,7 +87,7 @@ tfx2:
 tfx3:
 	@echo $(ASCLI) faspex recv 05b92393-02b7-4900-ab69-fd56721e896c
 tfx4:
-	$(ASCLI) faspex --note="my note" --title="my title" --recipient="laurent@asperasoft.com" send $(SAMPLE_FILE) 
+	$(ASCLI) faspex send $(SAMPLE_FILE) --note="my note" --title="my title" --recipient="laurent@asperasoft.com"
 tfaspex:tfx1 tfx2 tfx3 tfx4 
 
 tconsole:

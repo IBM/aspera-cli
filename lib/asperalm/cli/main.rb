@@ -137,7 +137,7 @@ module Asperalm
         @option_parser.add_opt_list(:transfer,[:ascp,:connect,:node],"type of transfer",'--transfer=TYPE')
         @option_parser.add_opt_simple(:config_file,"-fSTRING", "--config-file=STRING","read parameters from file in YAML format, current=#{@option_parser.get_option(:config_file)}")
         @option_parser.add_opt_simple(:config_name,"-nSTRING", "--config-name=STRING","name of configuration in config file")
-        @option_parser.add_opt_simple(:transfer_node_config,"--node-config=STRING","name of configuration used to transfer when using --transfer=node")
+        @option_parser.add_opt_simple(:transfer_node_config,"--transfer-node=STRING","name of configuration used to transfer when using --transfer=node")
         @option_parser.add_opt_simple(:fields,"--fields=STRING","comma separated list of fields, or #{FIELDS_ALL}, or #{FIELDS_DEFAULT}")
         @option_parser.add_opt_simple(:fasp_proxy,"--fasp-proxy=STRING","URL of FASP proxy (dnat / dnats)")
         @option_parser.add_opt_simple(:http_proxy,"--http-proxy=STRING","URL of HTTP proxy (for http fallback)")
@@ -284,6 +284,7 @@ module Asperalm
           :config_name => 'default'
         }
         Log.level = defaults[:loglevel]
+        # this separates options (start with '-') from arguments
         @option_parser=OptParser.new(ARGV)
         config_file=$DEFAULT_CONFIG_FILE
         Log.log.debug("config file=#{config_file}")
