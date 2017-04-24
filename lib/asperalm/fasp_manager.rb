@@ -12,6 +12,7 @@ require 'tempfile'
 require 'timeout'
 require "base64"
 require "json"
+require 'SecureRandom'
 
 module Asperalm
 
@@ -84,7 +85,12 @@ Ta7g6mGwIMXrdTQQ8fZs
       @fasp_proxy_url=nil
       @http_proxy_url=nil
       @tr_node_api=nil
+      @ts_override={}
       locate_resources
+    end
+
+    def set_ts_override(value)
+      @ts_override.merge!(value)
     end
 
     # todo: support multiple listeners
@@ -383,6 +389,7 @@ Ta7g6mGwIMXrdTQQ8fZs
     # replaces do_transfer
     # transforms transper_spec into command line arguments and env var, then calls execute_ascp
     def transfer_with_spec(transfer_spec)
+      transfer_spec.merge!(@ts_override)
       Log.log.debug("ts=#{transfer_spec}")
       if (@use_connect_client) # download using connect ...
         Log.log.debug("using connect client")
@@ -393,8 +400,22 @@ Ta7g6mGwIMXrdTQQ8fZs
           BrowserInteraction.open_system_uri('fasp://initialize')
           sleep 2
         end
+        if transfer_spec["direction"] == "send"
+          Log.log.warn("Upload by connect must be selected using GUI, ignoring #{transfer_spec['paths']}".red)
+          transfer_spec.delete('paths')
+          res=connect_api.create('windows/select-open-file-dialog/',{"title"=>"Select Files","suggestedName"=>"","allowMultipleSelection"=>true,"allowedFileTypes"=>"","aspera_connect_settings"=>{"app_id"=>$PROGRAM_NAME}})
+          transfer_spec['paths']=res[:data]['dataTransfer']['files'].map { |i| {'source'=>i['name']}}
+        end
+        request_id=SecureRandom.uuid
         transfer_spec['authentication']="token" if transfer_spec.has_key?('token')
-        transfer_specs={'transfer_specs'=>[{'transfer_spec'=>transfer_spec,'aspera_connect_settings'=>{'allow_dialogs'=>true,'app_id'=>"aslmcli"}}]}
+        transfer_specs={
+          'transfer_specs'=>[{
+          'transfer_spec'=>transfer_spec,
+          'aspera_connect_settings'=>{
+          'allow_dialogs'=>true,
+          'app_id'=>$PROGRAM_NAME,
+          'request_id'=>request_id
+          }}]}
         connect_api.create('transfers/start',transfer_specs)
       elsif ! @tr_node_api.nil?
         #transfer_spec['destination_root']='/tmp'

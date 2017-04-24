@@ -245,7 +245,7 @@ module Asperalm
             #Log.log.info "events=#{JSON.generate(events)}"
             node_info=@api_files_user.read("nodes/#{workspace_data['home_node_id']}")[:data]
             # get access to node API, note the additional header
-            api_node_admin=get_node_api(node_info,FilesApi::SCOPE_NODE_ADMIN)
+            api_node_admin=get_node_api(node_info,FilesApi::SCOPE_NODE_USER)
             # can add filters: tag=aspera.files.package_id%3DLA8OU3p8w
             #'tag'=>'aspera.files.package_id%3DJvbl0w-5A'
             # filter= 'id', 'short_summary', or 'summary'

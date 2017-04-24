@@ -22,7 +22,7 @@ interpret can be found for most platforms.
 
 This gem is provided as-is, and is not intended to be a complete CLI, or 
 industry-grade product. This is a sample. 
-Aspera provides a CLI tool here: <a href="http://downloads.asperasoft.com/en/downloads/62">http://downloads.asperasoft.com/en/downloads/62</a>.
+Aspera provides a CLI tool here: http://downloads.asperasoft.com/en/downloads/62 .
 
 The CLI's folder where configuration and cache files are kept is `$HOME/.aspera/aslmcli`
 
@@ -225,7 +225,7 @@ user must be used to access Aspera Files. Then a "Bearer" token is used for
 HTTP authentication.
 
 First the application (aslmcli) must be declared in the Files GUI 
-(see <a href="https://aspera.asperafiles.com/helpcenter/admin/organization/registering-an-api-client">here</a>). By declaring the application, a "client\_id" and "client\_secret" are generated:
+(see https://aspera.asperafiles.com/helpcenter/admin/organization/registering-an-api-client ). By declaring the application, a "client\_id" and "client\_secret" are generated:
 
 <img src="docs/Auth1.png" alt="Files-admin-organization-apiclient-clientdetails"/>
 
@@ -245,9 +245,9 @@ aslmcli shares browse /
 aslmcli shares upload ~/200KB.1 /projectx
 aslmcli shares download /projectx/200KB.1 .
 aslmcli faspex recv_publink https://myfaspex.myorg.com/aspera/faspex/external_deliveries/78780?passcode=a003aaf2f53e3123456b908525084db6bebc7031
-aslmcli -nibm faspex list
-aslmcli -nibm faspex recv 05b92393-02b7-4900-ab69-fd56721e896c
-aslmcli -nibm faspex --note="my note" --title="my title" --recipient="laurent@asperasoft.com" send ~/200KB.1 
+aslmcli faspex list -nibm
+aslmcli faspex -nibm recv 05b92393-02b7-4900-ab69-fd56721e896c
+aslmcli faspex -nibm --note="my note" --title="my title" --recipient="laurent@asperasoft.com" send ~/200KB.1 
 aslmcli console transfers list
 aslmcli node browse /
 aslmcli node upload ~/200KB.1 /tmp
@@ -337,7 +337,7 @@ Included files are:
 
 ## BUGS
 This is a sample code only, dont expect full capabilities. This code is not
-supported by Aspera.
+supported by IBM/Aspera.
 
 ## TODO
 * remove rest and oauth and use ruby standard gems:

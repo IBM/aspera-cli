@@ -12,6 +12,10 @@ module Asperalm
 
     # base class for plugins modules
     class OptParser < OptionParser
+      def self.time_to_string(time)
+        time.strftime("%Y-%m-%d %H:%M:%S")
+      end
+      # consume elements of array, those starting with minus are options, others are commands
       def initialize(argv)
         @mycommand_and_args=[]
         @myoptions=[]
@@ -139,6 +143,16 @@ module Asperalm
         self.on(*args) { |v| set_option(option_symbol,v) }
       end
 
+      def add_opt_date(option_symbol,*args)
+        Log.log.info("add_opt_date #{option_symbol}->#{args}")
+        self.on(*args) { |v| 
+          case v
+          when 'now'; set_option(option_symbol,OptParser.time_to_string(Time.now))
+          else set_option(option_symbol,v)
+          end
+        }
+      end
+      
       def add_opt_on(option_symbol,*args,&block)
         Log.log.info("add_opt_on #{option_symbol}->#{args}")
         self.on(*args,&block)

@@ -44,15 +44,32 @@ module Asperalm
           Log.log.debug "loaded: #{@loaded_config}"
           @option_parser.set_defaults(@loaded_config[:global][@option_parser.get_option(:config_name)])
         else
-          Log.log.debug "TODO: get config_file ???"
           return @config_file_path
         end
       end
 
+      def attr_ts_override(operation,value)
+        case operation
+        when :set
+          k,v = value.split(':',2)
+          raise CliBadArgument,"format is --ts=key:value" if v.nil?
+          @ts_override[k]=v
+          case k
+          when 'multi_session', 'multi_session_threshold'
+            @ts_override[k]=@ts_override[k].to_i
+          end
+        else
+          return @ts_override.to_s
+        end
+      end
+
       def initialize(option_parser,defaults)
+        @ts_override={}
+        # handler must be set before setting defaults
         option_parser.set_handler(:loglevel) { |op,val| attr_loglevel(op,val) }
         option_parser.set_handler(:logtype) { |op,val| attr_logtype(op,val) }
         option_parser.set_handler(:config_file) { |op,val| attr_config_file(op,val) }
+        option_parser.set_handler(:ts_override) { |op,val| attr_ts_override(op,val) }
         super(option_parser,defaults)
       end
 
@@ -69,7 +86,7 @@ module Asperalm
       # plugin_name_sym is symbol
       def new_plugin(plugin_name_sym)
         require File.join(@@GEM_PLUGINS_FOLDER,plugin_name_sym.to_s)
-        Log.log.debug("#{@option_parser.get_option_mandatory(:config_name)} -> #{@loaded_config} ")
+        Log.log.debug("loaded config -> #{@loaded_config}")
         if !@loaded_config.nil? and @loaded_config.has_key?(plugin_name_sym)
           default_config=@loaded_config[plugin_name_sym][@option_parser.get_option_mandatory(:config_name)]
           Log.log.debug("#{plugin_name_sym} default config=#{default_config}")
@@ -115,7 +132,7 @@ module Asperalm
         @option_parser.set_option(:transfer_node_config,'default')
         @option_parser.on("-h", "--help", "Show this message") { @option_parser.exit_with_usage(nil) }
         @option_parser.add_opt_list(:loglevel,Log.levels,"Log level",'-lTYPE','--log-level=TYPE')
-        @option_parser.add_opt_list(:logtype,[:syslog,:stdout],"log method",'-qTYPE','--logger=TYPE') { |op,val| attr_logtype(op,val) }
+        @option_parser.add_opt_list(:logtype,[:syslog,:stdout],"log method",'-qTYPE','--logger=TYPE')
         @option_parser.add_opt_list(:format,[:ruby,:text_table],"output format",'--format=TYPE')
         @option_parser.add_opt_list(:transfer,[:ascp,:connect,:node],"type of transfer",'--transfer=TYPE')
         @option_parser.add_opt_simple(:config_file,"-fSTRING", "--config-file=STRING","read parameters from file in YAML format, current=#{@option_parser.get_option(:config_file)}")
@@ -125,6 +142,7 @@ module Asperalm
         @option_parser.add_opt_simple(:fasp_proxy,"--fasp-proxy=STRING","URL of FASP proxy (dnat / dnats)")
         @option_parser.add_opt_simple(:http_proxy,"--http-proxy=STRING","URL of HTTP proxy (for http fallback)")
         @option_parser.add_opt_on(:rest_debug,"-r", "--rest-debug","more debug for HTTP calls") { Rest.set_debug(true) }
+        @option_parser.add_opt_simple(:ts_override,"--ts=KEY:VALUE","override transfer spec values key:value, current=#{@option_parser.get_option(:ts_override)}")
       end
 
       def self.result_simple_table(name,list)
@@ -174,6 +192,7 @@ module Asperalm
 
       def process_command()
         self.set_options
+        @option_parser.parse_options!()
         command_sym=@option_parser.get_next_arg_from_list('command',plugin_list)
         case command_sym
         when :config
@@ -186,6 +205,7 @@ module Asperalm
         end
         @option_parser.parse_options!()
         if command_plugin.respond_to?(:faspmanager)
+          command_plugin.faspmanager.set_ts_override(@ts_override)
           case @option_parser.get_option_mandatory(:transfer)
           when :connect
             command_plugin.faspmanager.use_connect_client=true
@@ -203,23 +223,26 @@ module Asperalm
         elsif results.is_a?(String)
           $stdout.write(results)
         elsif results.is_a?(Hash) and results.has_key?(:values) then
+          @option_parser.set_option(:format,results[:format]) if results.has_key?(:format)
           if results[:values].empty?
             $stdout.write("no result")
           else
             display_fields=nil
-            case @option_parser.get_option_mandatory(:fields)
-            when FIELDS_DEFAULT
-              if !results.has_key?(:fields)
+            if @option_parser.get_option_mandatory(:format) != :ruby
+              case @option_parser.get_option_mandatory(:fields)
+              when FIELDS_DEFAULT
+                if !results.has_key?(:fields)
+                  raise "empty results" if results[:values].empty?
+                  display_fields=results[:values].first.keys
+                else
+                  display_fields=results[:fields]
+                end
+              when FIELDS_ALL
                 raise "empty results" if results[:values].empty?
-                display_fields=results[:values].first.keys
+                display_fields=results[:values].first.keys if results[:values].is_a?(Array)
               else
-                display_fields=results[:fields]
+                display_fields=@option_parser.get_option_mandatory(:fields).split(',')
               end
-            when FIELDS_ALL
-              raise "empty results" if results[:values].empty?
-              display_fields=results[:values].first.keys
-            else
-              display_fields=@option_parser.get_option_mandatory(:fields).split(',')
             end
             case @option_parser.get_option_mandatory(:format)
             when :ruby
@@ -254,8 +277,9 @@ module Asperalm
 
       def self.start
         defaults={
+          :transfer => :connect,
           :logtype => :stdout,
-          :loglevel => :debug,
+          :loglevel => :warn,
           :format => :text_table,
           :config_name => 'default'
         }
@@ -268,9 +292,12 @@ module Asperalm
         begin
           tool.process_command()
         rescue CliBadArgument => e
+          puts "EEE:#{$@}" #if Log.level == :debug
+          raise e if Log.level == :debug
           @option_parser.exit_with_usage("CLI error: #{e}")
         rescue Asperalm::TransferError => e
           @option_parser.exit_with_usage("FASP error: #{e}",false)
+          puts $@ if Log.level == :debug
         end
       end
     end

@@ -1,14 +1,13 @@
-require 'asperalm/cli/plugin'
+require 'asperalm/cli/basic_auth_plugin'
 
 module Asperalm
   module Cli
     module Plugins
       class Node < BasicAuthPlugin
         attr_accessor :faspmanager
+        alias super_set_options set_options
         def set_options
-          @option_parser.add_opt_simple(:url,"-wURI", "--url=URI","URL of application, e.g. http://org.asperafiles.com")
-          @option_parser.add_opt_simple(:username,"-uSTRING", "--username=STRING","username to log in")
-          @option_parser.add_opt_simple(:password,"-pSTRING", "--password=STRING","password")
+          super_set_options
           @option_parser.set_option(:persistency,File.join($PROGRAM_FOLDER,"persistency_cleanup.txt"))
           @option_parser.add_opt_simple(:persistency,"--persistency=FILEPATH","persistency file")
           @option_parser.add_opt_simple(:transfer_filter,"--transfer-filter=EXPRESSION","Ruby expression for filter at transfer level")
@@ -19,22 +18,26 @@ module Asperalm
           items.map {|i| i['permissions']=i['permissions'].map { |x| x['name'] }.join(','); i }
         end
 
-        def self.delete_files(api_node,paths_to_delete)
-          resp=api_node.call({:operation=>'POST',:subpath=>'files/delete',:json_params=>{:paths=>paths_to_delete.map {|i| {'path'=>i.start_with?('/') ? i : '/'+i}}}})
-          #resp=api_node.create('files/delete',{:paths=>...})
-          resres={:fields=>['file','result'],:values=>[]}
+        def self.result_translate(resp,type,default)
+          resres={:fields=>[type,'result'],:values=>[]}
           JSON.parse(resp[:http].body)['paths'].each do |p|
-            result='deleted'
+            result=default
             if p.has_key?('error')
               Log.log.error("#{p['error']['user_message']} : #{p['path']}")
               result="ERROR: "+p['error']['user_message']
             end
-            resres[:values].push({'file'=>p['path'],'result'=>result})
+            resres[:values].push({type=>p['path'],'result'=>result})
           end
           return resres
         end
 
-        def self.common_actions; [:browse, :delete, :upload, :download];end
+        def self.delete_files(api_node,paths_to_delete)
+          resp=api_node.call({:operation=>'POST',:subpath=>'files/delete',:json_params=>{:paths=>paths_to_delete.map {|i| {'path'=>i.start_with?('/') ? i : '/'+i}}}})
+          #resp=api_node.create('files/delete',{:paths=>...})
+          return result_translate(resp,'file','deleted')
+        end
+
+        def self.common_actions; [:browse, :mkdir, :delete, :upload, :download];end
 
         def self.execute_common(command,api_node,option_parser,faspmanager)
           case command
@@ -47,6 +50,11 @@ module Asperalm
           when :delete
             paths_to_delete = option_parser.get_remaining_arguments("file list")
             return delete_files(api_node,paths_to_delete)
+          when :mkdir
+            thepath=option_parser.get_next_arg_value("path")
+            resp=api_node.call({:operation=>'POST',:subpath=>'files/create',:json_params=>{ "paths" => [{ "path" => thepath, "type" => "directory" } ] } } )
+            return self.result_translate(resp,'folder','created')
+            return { :format=>:ruby, :values => resp[:data] }# TODO
           when :upload
             filelist = option_parser.get_remaining_arguments("file list")
             Log.log.debug("file list=#{filelist}")
@@ -76,20 +84,26 @@ module Asperalm
 
         def execute_action
           api_node=Rest.new(@option_parser.get_option_mandatory(:url),{:basic_auth=>{:user=>@option_parser.get_option_mandatory(:username), :password=>@option_parser.get_option_mandatory(:password)}})
-          command=@option_parser.get_next_arg_from_list('command',self.class.common_actions.clone.concat([ :transfers, :info, :cleanup, :ak ]))
+          command=@option_parser.get_next_arg_from_list('command',self.class.common_actions.clone.concat([ :transfer, :info, :cleanup, :ak ]))
           case command
-          when :browse; return self.class.execute_common(command,api_node,@option_parser,@faspmanager)
-          when :delete; return self.class.execute_common(command,api_node,@option_parser,@faspmanager)
-          when :upload; return self.class.execute_common(command,api_node,@option_parser,@faspmanager)
-          when :download; return self.class.execute_common(command,api_node,@option_parser,@faspmanager)
-          when :transfers
-            command=@option_parser.get_next_arg_from_list('command',[ :list ])
+          when *self.class.common_actions; return self.class.execute_common(command,api_node,@option_parser,@faspmanager)
+          when :transfer
+            command=@option_parser.get_next_arg_from_list('command',[ :list, :cancel ])
             # ,:url_params=>{:active_only=>true}
-            resp=api_node.call({:operation=>'GET',:subpath=>'ops/transfers',:headers=>{'Accept'=>'application/json'}})
-            return { :values => resp[:data] } # TODO
+            case command
+            when :list
+              resp=api_node.call({:operation=>'GET',:subpath=>'ops/transfers',:headers=>{'Accept'=>'application/json'},:url_params=>{'active_only'=>'true'}})
+              return { :fields=>['id','status'], :values => resp[:data] } # TODO
+            when :cancel
+              trid=option_parser.get_next_arg_value("transfer id")
+              resp=api_node.call({:operation=>'CANCEL',:subpath=>'ops/transfers/'+trid,:headers=>{'Accept'=>'application/json'}})
+              return { :format=>:ruby, :values => resp[:data] } # TODO
+            else
+              raise "error"
+            end
           when :info
             resp=api_node.call({:operation=>'GET',:subpath=>'info',:headers=>{'Accept'=>'application/json'}})
-            return { :values => resp[:data] }# TODO
+            return { :format=>:ruby, :values => resp[:data] }# TODO
           when :ak
             resp=api_node.call({:operation=>'GET',:subpath=>'access_keys',:headers=>{'Accept'=>'application/json'}})
             return {:fields=>['id','root_file_id','storage','license'],:values=>resp[:data]}

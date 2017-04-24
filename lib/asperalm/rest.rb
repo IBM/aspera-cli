@@ -10,6 +10,12 @@ require 'net/http'
 require 'net/https'
 require 'json'
 
+class Net::HTTP::Cancel < Net::HTTPRequest
+  METHOD = 'CANCEL'
+  REQUEST_HAS_BODY  = false
+  RESPONSE_HAS_BODY = false
+end
+
 module Asperalm
   # a simple class to make HTTP calls
   class Rest
@@ -69,6 +75,8 @@ module Asperalm
         req = Net::HTTP::Post.new(uri.request_uri)
       when 'PUT'
         req = Net::HTTP::Put.new(uri.request_uri)
+      when 'CANCEL'
+        req = Net::HTTP::Cancel.new(uri.request_uri)
       else
         raise "unknown op : #{operation}"
       end
@@ -103,7 +111,7 @@ module Asperalm
       Log.log.debug "result body=#{resp.body}"
 
       if ! resp.code.start_with?('2') then
-        raise "Error code "+resp.code+", body=["+resp.body+"]"
+        raise "Error code:#{resp.code}, body=[#{resp.body}]"
       end
       result={:http=>resp}
       if !call_data.nil? and call_data.has_key?(:headers) and call_data[:headers].has_key?('Accept') and call_data[:headers]['Accept'].eql?('application/json') then

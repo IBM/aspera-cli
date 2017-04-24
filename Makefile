@@ -68,46 +68,55 @@ push:
 installdeps:
 	gem install jwt formatador ruby-progressbar
 
-t1:
+SAMPLE_FILE=~/Documents/Samples/200KB.1
+
+tsh1:
 	$(ASCLI) shares browse /
-t2:
-	$(ASCLI) shares upload ~/200KB.1 /n8-sh1
-t3:
+tsh2:
+	$(ASCLI) shares upload $(SAMPLE_FILE) /n8-sh1
+tsh3:
 	$(ASCLI) shares download /n8-sh1/200KB.1 .
 	rm -f 200KB.1
-t4:
-	$(ASCLI) faspex recv_publink https://ibmfaspex.asperasoft.com/aspera/faspex/external_deliveries/78780?passcode=a003aaf2f53e3869126b908525084db6bebc7031
-t5:
+	$(ASCLI) shares delete /n8-sh1/200KB.1
+tshares: tsh1 tsh2 tsh3
+
+tfx1:
+	@echo $(ASCLI) faspex recv_publink https://ibmfaspex.asperasoft.com/aspera/faspex/external_deliveries/78780?passcode=a003aaf2f53e3869126b908525084db6bebc7031
+tfx2:
 	$(ASCLI) faspex list
-t6:
-	$(ASCLI) faspex recv 05b92393-02b7-4900-ab69-fd56721e896c
-t7:
-	$(ASCLI) faspex --note="my note" --title="my title" --recipient="laurent@asperasoft.com" send ~/200KB.1 
-t8:
+tfx3:
+	@echo $(ASCLI) faspex recv 05b92393-02b7-4900-ab69-fd56721e896c
+tfx4:
+	$(ASCLI) faspex --note="my note" --title="my title" --recipient="laurent@asperasoft.com" send $(SAMPLE_FILE) 
+tfaspex:tfx1 tfx2 tfx3 tfx4 
+
+tconsole:
 	$(ASCLI) console transfers list
-t9:
+tnd1:
 	$(ASCLI) node browse /
-t10:
-	$(ASCLI) node upload ~/200KB.1 /
-t11:
-	$(ASCLI) node download /200KB.1 .
+tnd2:
+	$(ASCLI) node upload $(SAMPLE_FILE) /home/faspex/docroot
+tnd3:
+	$(ASCLI) node download /home/faspex/docroot/200KB.1 .
 	rm -f 200KB.1
-t12:
+	$(ASCLI) node delete /home/faspex/docroot/200KB.1
+tnode: tnd1 tnd2 tnd3 
+
+tfs1:
 	$(ASCLI) files browse /
-t13:
-	$(ASCLI) files upload ~/200KB.1 /
-t14:
+tfs2:
+	$(ASCLI) files upload $(SAMPLE_FILE) /
+tfs3:
 	$(ASCLI) files download /200KB.1 .
 	rm -f 200KB.1
-t15:
-	$(ASCLI) files send ~/200KB.1
-t16:
+tfs4:
+	$(ASCLI) files send $(SAMPLE_FILE)
+tfs5:
 	$(ASCLI) files packages
-t17:
+tfs6:
 	$(ASCLI) files recv VleoMSrlA
-t18:
+tfs7:
 	$(ASCLI) files events
-
-tests: t1 t2 t3  t5 t7 t8 t9 t10 t11 filestests
-
-filestests: t12 t13 t14 t15 t16 t17 t18 t4 t6
+tfiles: tfs1 tfs2 tfs3 tfs4 tfs5 tfs6 tfs7
+ 
+tests: tshares tfaspex tconsole tnode tfiles
