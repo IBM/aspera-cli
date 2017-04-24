@@ -84,7 +84,7 @@ module Asperalm
 
         def execute_action
           api_node=Rest.new(@option_parser.get_option_mandatory(:url),{:basic_auth=>{:user=>@option_parser.get_option_mandatory(:username), :password=>@option_parser.get_option_mandatory(:password)}})
-          command=@option_parser.get_next_arg_from_list('command',self.class.common_actions.clone.concat([ :transfer, :info, :cleanup, :ak ]))
+          command=@option_parser.get_next_arg_from_list('command',self.class.common_actions.clone.concat([ :transfer, :info, :cleanup, :ak, :wf ]))
           case command
           when *self.class.common_actions; return self.class.execute_common(command,api_node,@option_parser,@faspmanager)
           when :transfer
@@ -104,10 +104,14 @@ module Asperalm
           when :info
             resp=api_node.call({:operation=>'GET',:subpath=>'info',:headers=>{'Accept'=>'application/json'}})
             return { :format=>:ruby, :values => resp[:data] }# TODO
-          when :ak
-            resp=api_node.call({:operation=>'GET',:subpath=>'access_keys',:headers=>{'Accept'=>'application/json'}})
-            return {:fields=>['id','root_file_id','storage','license'],:values=>resp[:data]}
-            #return { :values => resp[:data] }# TODO
+            when :ak
+              resp=api_node.call({:operation=>'GET',:subpath=>'access_keys',:headers=>{'Accept'=>'application/json'}})
+              return {:fields=>['id','root_file_id','storage','license'],:values=>resp[:data]}
+              #return { :values => resp[:data] }# TODO
+            when :wf
+              resp=api_node.call({:operation=>'GET',:subpath=>'/v3/watchfolders',:headers=>{'Accept'=>'application/json'}})
+              #return {:fields=>['id','root_file_id','storage','license'],:values=>resp[:data]}
+              return { :format=>:ruby, :values => resp[:data] }# TODO
           when :cleanup
             persistencyfile=@option_parser.get_option_mandatory(:persistency)
             transfer_filter=@option_parser.get_option_mandatory(:transfer_filter)
