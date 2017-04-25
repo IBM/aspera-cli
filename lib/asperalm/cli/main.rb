@@ -176,6 +176,7 @@ module Asperalm
 
       def process_command()
         self.set_options
+        # parse general options
         @option_parser.parse_options!()
         command_sym=@option_parser.get_next_arg_from_list('command',plugin_list)
         case command_sym
@@ -186,8 +187,9 @@ module Asperalm
           command_plugin=self.new_plugin(command_sym)
           @option_parser.separator "OPTIONS (#{command_sym})"
           command_plugin.set_options
+          # parse plugin options
+          @option_parser.parse_options!()
         end
-        @option_parser.parse_options!()
         if command_plugin.respond_to?(:faspmanager)
           ts_override=@option_parser.get_option(:ts_override)
           command_plugin.faspmanager.set_ts_override(JSON.parse(ts_override)) if !ts_override.nil?
@@ -244,13 +246,15 @@ module Asperalm
         else
           puts ">other result>#{PP.pp(results,'')}".red
         end
+        # parse for help
+        @option_parser.parse_options!()
         if !@option_parser.unprocessed_options.empty?
           raise CliBadArgument,"unprocessed options: #{@option_parser.unprocessed_options}"
         end
         if !@option_parser.command_or_arg_empty?
           raise CliBadArgument,"unprocessed values: #{@option_parser.get_remaining_arguments(nil)}"
         end
-        
+
         return ""
       end
 
@@ -283,7 +287,7 @@ module Asperalm
         begin
           tool.process_command()
         rescue CliBadArgument => e
-          puts "EEE:#{$@}" #if Log.level == :debug
+          #puts "EEE:#{$@}" #if Log.level == :debug
           raise e if Log.level == :debug
           @option_parser.exit_with_usage("CLI error: #{e}")
         rescue Asperalm::TransferError => e

@@ -91,7 +91,7 @@ module Asperalm
       end
 
       def exit_with_usage(error_text,show_usage=true)
-        if @postpone_help
+        if @postpone_help and error_text.nil?
           @help_requested=true
           return
         end
@@ -183,8 +183,7 @@ module Asperalm
       
       # removes already known options from the list
       def parse_options!()
-        @help_requested=false
-        @postpone_help=true if !@mycommand_and_args.empty?
+        @postpone_help=!@mycommand_and_args.empty? and !@postpone_help
         args=[]
         begin
           self.parse!(@myoptions)
@@ -193,7 +192,7 @@ module Asperalm
           retry
         end
         @myoptions=args
-        @myoptions.push('--help') if @help_requested
+        @myoptions.push('-h') if @help_requested
         @postpone_help=false
       end
 
