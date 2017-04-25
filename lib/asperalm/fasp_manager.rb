@@ -425,8 +425,8 @@ Ta7g6mGwIMXrdTQQ8fZs
         #Log.log.error resp.to_s
         loop do
           res=@tr_node_api.call({:operation=>'GET',:subpath=>'ops/transfers/'+trid,:headers=>{'Accept'=>'application/json'}})
+          puts "transfer: #{res[:data]['status']}, sessions:#{res[:data]["sessions"].length}, #{res[:data]["sessions"].map{|i| i['bytes_transferred']}.join(',')}"
           break if res[:data]['status'].eql?('completed')
-          puts "transfer: #{res[:data]['status']}"
           sleep 1
         end
         #raise "TODO: wait for transfer completion"

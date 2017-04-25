@@ -48,28 +48,12 @@ module Asperalm
         end
       end
 
-      def attr_ts_override(operation,value)
-        case operation
-        when :set
-          k,v = value.split(':',2)
-          raise CliBadArgument,"format is --ts=key:value" if v.nil?
-          @ts_override[k]=v
-          case k
-          when 'multi_session', 'multi_session_threshold'
-            @ts_override[k]=@ts_override[k].to_i
-          end
-        else
-          return @ts_override.to_s
-        end
-      end
-
       def initialize(option_parser,defaults)
         @ts_override={}
         # handler must be set before setting defaults
         option_parser.set_handler(:loglevel) { |op,val| attr_loglevel(op,val) }
         option_parser.set_handler(:logtype) { |op,val| attr_logtype(op,val) }
         option_parser.set_handler(:config_file) { |op,val| attr_config_file(op,val) }
-        option_parser.set_handler(:ts_override) { |op,val| attr_ts_override(op,val) }
         super(option_parser,defaults)
       end
 
@@ -142,7 +126,7 @@ module Asperalm
         @option_parser.add_opt_simple(:fasp_proxy,"--fasp-proxy=STRING","URL of FASP proxy (dnat / dnats)")
         @option_parser.add_opt_simple(:http_proxy,"--http-proxy=STRING","URL of HTTP proxy (for http fallback)")
         @option_parser.add_opt_on(:rest_debug,"-r", "--rest-debug","more debug for HTTP calls") { Rest.set_debug(true) }
-        @option_parser.add_opt_simple(:ts_override,"--ts=KEY:VALUE","override transfer spec values key:value, current=#{@option_parser.get_option(:ts_override)}")
+        @option_parser.add_opt_simple(:ts_override,"--ts=JSON","override transfer spec values, current=#{@option_parser.get_option(:ts_override)}")
       end
 
       def self.result_simple_table(name,list)
@@ -205,7 +189,8 @@ module Asperalm
         end
         @option_parser.parse_options!()
         if command_plugin.respond_to?(:faspmanager)
-          command_plugin.faspmanager.set_ts_override(@ts_override)
+          ts_override=@option_parser.get_option(:ts_override)
+          command_plugin.faspmanager.set_ts_override(JSON.parse(ts_override)) if !ts_override.nil?
           case @option_parser.get_option_mandatory(:transfer)
           when :connect
             command_plugin.faspmanager.use_connect_client=true
@@ -259,9 +244,13 @@ module Asperalm
         else
           puts ">other result>#{PP.pp(results,'')}".red
         end
+        if !@option_parser.unprocessed_options.empty?
+          raise CliBadArgument,"unprocessed options: #{@option_parser.unprocessed_options}"
+        end
         if !@option_parser.command_or_arg_empty?
           raise CliBadArgument,"unprocessed values: #{@option_parser.get_remaining_arguments(nil)}"
         end
+        
         return ""
       end
 
@@ -286,6 +275,7 @@ module Asperalm
         Log.level = defaults[:loglevel]
         # this separates options (start with '-') from arguments
         @option_parser=OptParser.new(ARGV)
+        @option_parser.program_name=$PROGRAM_NAME
         config_file=$DEFAULT_CONFIG_FILE
         Log.log.debug("config file=#{config_file}")
         defaults[:config_file]=config_file if File.exist?(config_file)

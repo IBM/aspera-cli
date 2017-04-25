@@ -318,10 +318,15 @@ Then create a configuration for the "SHOD" instance in the configuration file: i
 Create another configuration for the Azure ATS instance: in section "node", named azureats.
 Then execute the following command:
 ```bash
-aslmcli download /share/sourcefile /destinationfolder --config-name=awsshod --transfer=node --node-config=azureats
+aslmcli download /share/sourcefile /destinationfolder --config-name=awsshod --transfer=node --transfer-node=azureats
 ```
 This will get transfer information from the SHOD instance and tell the Azure ATS instance 
 to download files.
+
+Multi-session is also available, simply add `--ts='{...}'` like
+```bash
+--ts='{"multi_session":10,"multi_session_threshold":1,"target_rate_kbps":500000,"checksum_type":"none","cookie":"custom:aslmcli:Laurent:My Transfer"}'
+```
 
 ## Contents
 Included files are:

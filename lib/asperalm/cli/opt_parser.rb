@@ -4,6 +4,7 @@ require 'asperalm/fasp_manager_resume'
 require 'asperalm/log'
 require 'xmlsimple'
 require 'optparse'
+require 'json'
 
 module Asperalm
   module Cli
@@ -15,6 +16,7 @@ module Asperalm
       def self.time_to_string(time)
         time.strftime("%Y-%m-%d %H:%M:%S")
       end
+
       # consume elements of array, those starting with minus are options, others are commands
       def initialize(argv)
         @mycommand_and_args=[]
@@ -29,6 +31,8 @@ module Asperalm
         Log.log.debug("parse_commands->#{@mycommand_and_args},args=#{@myoptions}")
         @attr_procs={}
         @attr_values={}
+        @postpone_help=false
+        @help_requested=false
         super
       end
 
@@ -47,6 +51,8 @@ module Asperalm
           value=ENV[value]
         elsif m=value.match(/^@val:(.*)/) then
           value=m[1]
+        elsif m=value.match(/^@json:(.*)/) then
+          value=JSON.parse(m[1])
         end
         value
       end
@@ -85,6 +91,11 @@ module Asperalm
       end
 
       def exit_with_usage(error_text,show_usage=true)
+        if @postpone_help
+          @help_requested=true
+          return
+        end
+
         STDERR.puts self if show_usage
         STDERR.puts "\n"+"ERROR:".bg_red().gray().blink()+" #{error_text}\n\n" if !error_text.nil?
         Process.exit 1
@@ -98,10 +109,10 @@ module Asperalm
       def set_option(option_symbol,value)
         value=self.class.get_extended_value(option_symbol,value)
         if @attr_procs.has_key?(option_symbol)
-          Log.log.debug("set #{option_symbol}=#{value} (method)")
+          Log.log.debug("set #{option_symbol}=#{value} (method)".blue)
           @attr_procs[option_symbol].call(:set,value) # TODO ? check
         else
-          Log.log.debug("set #{option_symbol}=#{value} (value)")
+          Log.log.debug("set #{option_symbol}=#{value} (value)".blue)
           @attr_values[option_symbol]=value
         end
 
@@ -145,14 +156,14 @@ module Asperalm
 
       def add_opt_date(option_symbol,*args)
         Log.log.info("add_opt_date #{option_symbol}->#{args}")
-        self.on(*args) { |v| 
+        self.on(*args) { |v|
           case v
           when 'now'; set_option(option_symbol,OptParser.time_to_string(Time.now))
           else set_option(option_symbol,v)
           end
         }
       end
-      
+
       def add_opt_on(option_symbol,*args,&block)
         Log.log.info("add_opt_on #{option_symbol}->#{args}")
         self.on(*args,&block)
@@ -166,10 +177,24 @@ module Asperalm
         return value
       end
 
+      def unprocessed_options
+        return @myoptions
+      end
+      
       # removes already known options from the list
       def parse_options!()
-        self.parse!(@myoptions)
-        Log.log.debug("remaiming options: [#{@myoptions}]")
+        @help_requested=false
+        @postpone_help=true if !@mycommand_and_args.empty?
+        args=[]
+        begin
+          self.parse!(@myoptions)
+        rescue OptionParser::InvalidOption => e
+          args.push(e.args.first)
+          retry
+        end
+        @myoptions=args
+        @myoptions.push('--help') if @help_requested
+        @postpone_help=false
       end
 
     end

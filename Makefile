@@ -81,15 +81,15 @@ tsh3:
 tshares: tsh1 tsh2 tsh3
 
 tfx1:
-	@echo $(ASCLI) faspex recv_publink https://ibmfaspex.asperasoft.com/aspera/faspex/external_deliveries/78780?passcode=a003aaf2f53e3869126b908525084db6bebc7031
-tfx2:
 	$(ASCLI) faspex list
+tfx2:
+	$(ASCLI) faspex send $(SAMPLE_FILE) --note="my note" --title="my title" --recipient="laurent@asperasoft.com"
 tfx3:
 	@echo $(ASCLI) faspex recv 05b92393-02b7-4900-ab69-fd56721e896c
 tfx4:
-	$(ASCLI) faspex send $(SAMPLE_FILE) --note="my note" --title="my title" --recipient="laurent@asperasoft.com"
-tfaspex:tfx1 tfx2 tfx3 tfx4 
-
+	@echo $(ASCLI) faspex recv_publink https://ibmfaspex.asperasoft.com/aspera/faspex/external_deliveries/78780?passcode=a003aaf2f53e3869126b908525084db6bebc7031
+tfaspex: tfx1 tfx2  
+tfaspex2: tfx3 tfx4
 tconsole:
 	$(ASCLI) console transfers list
 tnd1:
@@ -119,4 +119,4 @@ tfs7:
 	$(ASCLI) files events
 tfiles: tfs1 tfs2 tfs3 tfs4 tfs5 tfs6 tfs7
  
-tests: tshares tfaspex tconsole tnode tfiles
+tests: tshares tfaspex tconsole tnode tfiles tfaspex2
