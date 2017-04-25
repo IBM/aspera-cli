@@ -108,7 +108,7 @@ module Asperalm
         @option_parser.separator "\t#{$PROGRAM_NAME} files browse /"
         @option_parser.separator "\t#{$PROGRAM_NAME} faspex send ./myfile --log-level=debug"
         @option_parser.separator "\t#{$PROGRAM_NAME} shares upload ~/myfile /myshare"
-        @option_parser.separator "\nSPECIAL OPTION VALUES\n\tif an option value begins with @env: or @file:, value is taken from env var or file"
+        @option_parser.separator "\nSPECIAL OPTION VALUES\n\tif an option value begins with @env: or @file:, value is taken from env var or file\n\tdates format is 'DD-MM-YY HH:MM:SS', or 'now' or '-<num>h'"
         @option_parser.separator ""
         @option_parser.separator "OPTIONS (global)"
         @option_parser.set_option(:fields,FIELDS_DEFAULT)

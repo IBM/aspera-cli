@@ -158,7 +158,8 @@ module Asperalm
         Log.log.info("add_opt_date #{option_symbol}->#{args}")
         self.on(*args) { |v|
           case v
-          when 'now'; set_option(option_symbol,OptParser.time_to_string(Time.now))
+            when 'now'; set_option(option_symbol,OptParser.time_to_string(Time.now))
+            when /^-([0-9]+)h/; set_option(option_symbol,OptParser.time_to_string(Time.now-$1.to_i*3600))
           else set_option(option_symbol,v)
           end
         }
