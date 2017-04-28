@@ -66,32 +66,35 @@ module Asperalm
           return node_info,file_id
         end
 
+        # generate a transfer spec from node information and file id
+        # NOTE: important: transfer id must be unique: generate random id (using a non unique id results in discard of tags, and package is not finalized)
         def info_to_tspec(direction,node_info,file_id)
-          # NOTE: important: transfer id must be unique: generate random id (using a non unique id results in discard of tags, and package is not finalized)
           return {
             'direction'        => direction,
             'remote_user'      => 'xfer',
             'remote_host'      => node_info['host'],
             "fasp_port"        => 33001,
             "ssh_port"         => 33001,
-            #"target_rate_kbps" => 10000,
             'token'            => @api_files_oauth.get_authorization(FilesApi.node_scope(node_info['access_key'],FilesApi::SCOPE_NODE_USER)),
             'tags'             => { "aspera" => { "node" => { "access_key" => node_info['access_key'], "file_id" => file_id }, "xfer_id" => SecureRandom.uuid, "xfer_retry" => 3600 } } }
         end
 
         def set_options
-          @option_parser.set_option(:code_getter,:tty)
+          @option_parser.set_option(:browser,:tty)
           @option_parser.add_opt_list(:auth,Oauth.auth_types,"type of authentication",'-tTYPE','--auth=TYPE')
-          @option_parser.add_opt_list(:code_getter,BrowserInteraction.getter_types,"method to start browser",'-gTYPE','--code-get=TYPE')
+          @option_parser.add_opt_list(:browser,BrowserInteraction.getter_types,"method to start browser",'-gTYPE','--browser=TYPE')
           @option_parser.add_opt_simple(:url,"-wURI", "--url=URI","URL of application, e.g. http://org.asperafiles.com")
           @option_parser.add_opt_simple(:username,"-uSTRING", "--username=STRING","username to log in")
           @option_parser.add_opt_simple(:password,"-pSTRING", "--password=STRING","password")
           @option_parser.add_opt_simple(:private_key,"-kSTRING", "--private-key=STRING","RSA private key for JWT (@ for ext. file)")
           @option_parser.add_opt_simple(:workspace,"--workspace=STRING","name of workspace")
+          @option_parser.add_opt_simple(:recipient,"--recipient=STRING","package recipient")
+          @option_parser.add_opt_simple(:title,"--title=STRING","package title")
+          @option_parser.add_opt_simple(:note,"--note=STRING","package note")
         end
 
         def execute_action
-          command=@option_parser.get_next_arg_from_list('command',[ :browse, :send, :recv, :packages, :upload, :download, :events, :set_client_key, :faspexgw, :admin,:usage_reports ])
+          command=@option_parser.get_next_arg_from_list('command',[ :package, :browse, :upload, :download, :faspexgw, :admin])
 
           # get parameters
           instance_fqdn=URI.parse(@option_parser.get_option_mandatory(:url)).host
@@ -108,7 +111,7 @@ module Asperalm
             auth_data[:password]=@option_parser.get_option_mandatory(:password)
           when :web
             Log.log.info("redirect_uri=#{@option_parser.get_option_mandatory(:redirect_uri)}")
-            auth_data[:bi]=BrowserInteraction.new(@option_parser.get_option_mandatory(:redirect_uri),@option_parser.get_option_mandatory(:code_getter))
+            auth_data[:bi]=BrowserInteraction.new(@option_parser.get_option_mandatory(:redirect_uri),@option_parser.get_option_mandatory(:browser))
             if !@username.nil? and !@password.nil? then
               auth_data[:bi].set_creds(@option_parser.get_option_mandatory(:username),@option_parser.get_option_mandatory(:password))
             end
@@ -152,17 +155,74 @@ module Asperalm
             end
           end
 
+          if @option_parser.get_option(:format).eql?(:text_table) and !command.eql?(:admin)
+            deflt=""
+            deflt=" (default)" if (workspace_id == self_data['default_workspace_id'])
+            puts "Current Workspace: #{workspace_data['name'].red}#{deflt}"
+          end
+
           # display name of default workspace
           Log.log.info("current workspace is "+workspace_data['name'].red)
 
           case command
+          when :package
+            command_pkg=@option_parser.get_next_arg_from_list('command',[ :send, :recv, :list ])
+            case command_pkg
+            when :send
+              # list of files to include in package
+              filelist = @option_parser.get_remaining_arguments("file list")
+
+              # lookup users
+              recipient_data=@option_parser.get_option_mandatory(:recipient).split(',').map { |recipient|
+                user_lookup=@api_files_user.list("contacts",{'current_workspace_id'=>workspace_id,'q'=>recipient})[:data]
+                raise CliBadArgument,"no such user: #{recipient}" unless !user_lookup.nil? and user_lookup.length == 1
+                recipient_user_id=user_lookup.first
+                {"id"=>recipient_user_id['source_id'],"type"=>recipient_user_id['source_type']}
+              }
+
+              #  create a new package with one file
+              the_package=@api_files_user.create("packages",{"workspace_id"=>workspace_id,"name"=>@option_parser.get_option_mandatory(:title),"file_names"=>filelist,"note"=>@option_parser.get_option_mandatory(:note),"recipients"=>recipient_data})[:data]
+
+              #  get node information for the node on which package must be created
+              node_info=@api_files_user.read("nodes/#{the_package['node_id']}")[:data]
+
+              # tell Files what to expect in package: 1 transfer (can also be done after transfer)
+              resp=@api_files_user.update("packages/#{the_package['id']}",{"sent"=>true,"transfers_expected"=>1})[:data]
+
+              tspec=info_to_tspec("send",node_info,the_package['contents_file_id'])
+              tspec['tags']["aspera"]["files"]={"package_id" => the_package['id'], "package_operation" => "upload"}
+              tspec['paths']=filelist.map { |i| {'source'=>i} }
+              tspec['destination_root']="/"
+              @faspmanager.transfer_with_spec(tspec)
+              return nil
+              # simulate call later, to check status (this is just demo api call, not needed)
+              #sleep 2
+              # (sample) get package status
+              #allpkg=@api_files_user.read("packages/#{the_package['id']}")[:data]
+            when :recv
+              package_id=@option_parser.get_next_arg_value('package ID')
+              the_package=@api_files_user.read("packages/#{package_id}")[:data]
+              #packages=@api_files_user.list("packages",{'archived'=>false,'exclude_dropbox_packages'=>true,'has_content'=>true,'received'=>true,'workspace_id'=>workspace_id})[:data]
+              # take the last one
+              #the_package=packages.first
+              #  get node info
+              node_info=@api_files_user.read("nodes/#{the_package['node_id']}")[:data]
+              tspec=info_to_tspec("receive",node_info,the_package['contents_file_id'])
+              tspec['tags']["aspera"]["files"]={"package_id" => the_package['id'], "package_operation" => "download"}
+              tspec['paths']=[{'source'=>'.'}]
+              tspec['destination_root']='.' # TODO:param?
+              @faspmanager.transfer_with_spec(tspec)
+            when :list
+              # list all packages ('page'=>1,'per_page'=>10,)'sort'=>'-sent_at',
+              packages=@api_files_user.list("packages",{'archived'=>false,'exclude_dropbox_packages'=>true,'has_content'=>true,'received'=>true,'workspace_id'=>workspace_id})[:data]
+              return {:values=>packages,:fields=>['id','name','bytes_transferred']}
+            end
           when :browse
-            default_fields=['name','type','recursive_size','size','modified_time','access_level']
             thepath=@option_parser.get_next_arg_value("path")
             node_info,file_id = find_nodeinfo_and_fileid(workspace_data['home_node_id'],workspace_data['home_file_id'],thepath.split('/'))
             node_api=get_node_api(node_info,FilesApi::SCOPE_NODE_USER)
             items=node_api.list("files/#{file_id}/files")[:data]
-            return {:fields=>default_fields,:values=>items}
+            return {:values=>items,:fields=>['name','type','recursive_size','size','modified_time','access_level']}
           when :upload
             filelist = @option_parser.get_remaining_arguments("file list,destination")
             Log.log.debug("file list=#{filelist}")
@@ -185,108 +245,55 @@ module Asperalm
             tspec['paths']=[{'source'=>file_name}]
             tspec['destination_root']=destination_folder
             @faspmanager.transfer_with_spec(tspec)
-          when :send
-
-            # list of files to include in package
-            filelist = @option_parser.get_remaining_arguments("file list")
-
-            # lookup a user: myself, I could directly use self_data['id'], but that's to show lookup
-            # TODO: add param
-            recipient=self_data['email']
-
-            # lookup exactly one user
-            user_lookup=@api_files_user.list("contacts",{'current_workspace_id'=>workspace_id,'q'=>recipient})[:data]
-            raise "no such unique user: #{recipient}" unless !user_lookup.nil? and user_lookup.length == 1
-            recipient_user_id=user_lookup.first
-
-            #TODO: allow to set title, and add other users
-
-            #  create a new package with one file
-            the_package=@api_files_user.create("packages",{"workspace_id"=>workspace_id,"name"=>"sent from script","file_names"=>filelist,"note"=>"my note","recipients"=>[{"id"=>recipient_user_id['source_id'],"type"=>recipient_user_id['source_type']}]})[:data]
-
-            #  get node information for the node on which package must be created
-            node_info=@api_files_user.read("nodes/#{the_package['node_id']}")[:data]
-
-            # tell Files what to expect in package: 1 transfer (can also be done after transfer)
-            resp=@api_files_user.update("packages/#{the_package['id']}",{"sent"=>true,"transfers_expected"=>1})[:data]
-
-            tspec=info_to_tspec("send",node_info,the_package['contents_file_id'])
-            tspec['tags']["aspera"]["files"]={"package_id" => the_package['id'], "package_operation" => "upload"}
-            tspec['paths']=filelist.map { |i| {'source'=>i} }
-            tspec['destination_root']="/"
-            @faspmanager.transfer_with_spec(tspec)
-            return nil
-            # simulate call later, to check status (this is just demo api call, not needed)
-            #sleep 2
-            # (sample) get package status
-            #allpkg=@api_files_user.read("packages/#{the_package['id']}")[:data]
-          when :recv
-            package_id=@option_parser.get_next_arg_value('package ID')
-            the_package=@api_files_user.read("packages/#{package_id}")[:data]
-            #packages=@api_files_user.list("packages",{'archived'=>false,'exclude_dropbox_packages'=>true,'has_content'=>true,'received'=>true,'workspace_id'=>workspace_id})[:data]
-            # take the last one
-            #the_package=packages.first
-            #  get node info
-            node_info=@api_files_user.read("nodes/#{the_package['node_id']}")[:data]
-            tspec=info_to_tspec("receive",node_info,the_package['contents_file_id'])
-            tspec['tags']["aspera"]["files"]={"package_id" => the_package['id'], "package_operation" => "download"}
-            tspec['paths']=[{'source'=>'.'}]
-            tspec['destination_root']='.' # TODO:param?
-            @faspmanager.transfer_with_spec(tspec)
-          when :packages
-            default_fields=['id','name','bytes_transferred']
-            # list all packages ('page'=>1,'per_page'=>10,)'sort'=>'-sent_at',
-            packages=@api_files_user.list("packages",{'archived'=>false,'exclude_dropbox_packages'=>true,'has_content'=>true,'received'=>true,'workspace_id'=>workspace_id})[:data]
-            return {:fields=>default_fields,:values=>packages}
-          when :events
-            api_files_admin=Rest.new(files_api_base_url,{:oauth=>@api_files_oauth,:scope=>FilesApi::SCOPE_FILES_ADMIN})
-            # page=1&per_page=10&q=type:(file_upload+OR+file_delete+OR+file_download+OR+file_rename+OR+folder_create+OR+folder_delete+OR+folder_share+OR+folder_share_via_public_link)&sort=-date
-            events=api_files_admin.list('events',{'q'=>'type:(file_upload OR file_download)'})[:data]
-            #Log.log.info "events=#{JSON.generate(events)}"
-            node_info=@api_files_user.read("nodes/#{workspace_data['home_node_id']}")[:data]
-            # get access to node API, note the additional header
-            api_node_admin=get_node_api(node_info,FilesApi::SCOPE_NODE_USER)
-            # can add filters: tag=aspera.files.package_id%3DLA8OU3p8w
-            #'tag'=>'aspera.files.package_id%3DJvbl0w-5A'
-            # filter= 'id', 'short_summary', or 'summary'
-            # count=nnn
-            # tag=x.y.z%3Dvalue
-            # iteration_token=nnn
-            # active_only=true|false
-            events=api_node_admin.list("ops/transfers",{'count'=>100,'filter'=>'summary','active_only'=>'true'})[:data]
-            return {:fields=>['id','status'],:values=>events}
-            #transfers=api_node_admin.make_request_ex({:operation=>'GET',:subpath=>'ops/transfers',:args=>{'count'=>25,'filter'=>'id'}})
-            #transfers=api_node_admin.list("events") # after_time=2016-05-01T23:53:09Z
-          when :set_client_key
-            the_client_id=@option_parser.get_next_arg_value('client_id')
-            the_private_key=@option_parser.get_next_arg_value('private_key')
-            api_files_admin=Rest.new(files_api_base_url,{:oauth=>@api_files_oauth,:scope=>FilesApi::SCOPE_FILES_ADMIN})
-            api_files_admin.update("clients/#{the_client_id}",{:jwt_grant_enabled=>true, :public_key=>OpenSSL::PKey::RSA.new(the_private_key).public_key.to_s})
-            return nil
           when :faspexgw
             require 'asperalm/faspex_gw'
             FaspexGW.set_vars(@api_files_user,@api_files_oauth)
             FaspexGW.go()
           when :admin
             api_files_admin=Rest.new(files_api_base_url,{:oauth=>@api_files_oauth,:scope=>FilesApi::SCOPE_FILES_ADMIN})
-            resource=@option_parser.get_next_arg_from_list('resource',[:clients,:contacts,:dropboxes,:nodes,:operations,:packages,:saml_configurations])
-            #:messages:organizations:url_tokens,:usage_reports:workspaces
-            operation=@option_parser.get_next_arg_from_list('operation',[:list])
-            case operation
-            when :list
-              default_fields=['id','name']
-              case resource
-              when :nodes; default_fields.push('host','access_key')
-              end
-              res=api_files_admin.list(resource.to_s)[:data]
-              return {:fields=>default_fields,:values=>res }
-            else
-              raise RuntimeError, "unexpected value: #{resource}"
-            end#operation
-          when :usage_reports
-            api_files_admin=Rest.new(files_api_base_url,{:oauth=>@api_files_oauth,:scope=>FilesApi::SCOPE_FILES_ADMIN})
-            res=api_files_admin.list("usage_reports",{:workspace_id=>workspace_id})[:data]
-            return {:fields=>default_fields,:values=>res }
+            command_admin=@option_parser.get_next_arg_from_list('command',[ :resource, :events, :set_client_key, :usage_reports  ])
+            case command_admin
+            when :events
+              # page=1&per_page=10&q=type:(file_upload+OR+file_delete+OR+file_download+OR+file_rename+OR+folder_create+OR+folder_delete+OR+folder_share+OR+folder_share_via_public_link)&sort=-date
+              events=api_files_admin.list('events',{'q'=>'type:(file_upload OR file_download)'})[:data]
+              #Log.log.info "events=#{JSON.generate(events)}"
+              node_info=@api_files_user.read("nodes/#{workspace_data['home_node_id']}")[:data]
+              # get access to node API, note the additional header
+              api_node_admin=get_node_api(node_info,FilesApi::SCOPE_NODE_USER)
+              # can add filters: tag=aspera.files.package_id%3DLA8OU3p8w
+              #'tag'=>'aspera.files.package_id%3DJvbl0w-5A'
+              # filter= 'id', 'short_summary', or 'summary'
+              # count=nnn
+              # tag=x.y.z%3Dvalue
+              # iteration_token=nnn
+              # active_only=true|false
+              events=api_node_admin.list("ops/transfers",{'count'=>100,'filter'=>'summary','active_only'=>'true'})[:data]
+              return {:fields=>['id','status'],:values=>events}
+              #transfers=api_node_admin.make_request_ex({:operation=>'GET',:subpath=>'ops/transfers',:args=>{'count'=>25,'filter'=>'id'}})
+              #transfers=api_node_admin.list("events") # after_time=2016-05-01T23:53:09Z
+            when :set_client_key
+              the_client_id=@option_parser.get_next_arg_value('client_id')
+              the_private_key=@option_parser.get_next_arg_value('private_key')
+              api_files_admin.update("clients/#{the_client_id}",{:jwt_grant_enabled=>true, :public_key=>OpenSSL::PKey::RSA.new(the_private_key).public_key.to_s})
+              return nil
+            when :resource
+              resource=@option_parser.get_next_arg_from_list('resource',[:clients,:contacts,:dropboxes,:nodes,:operations,:packages,:saml_configurations])
+              #:messages:organizations:url_tokens,:usage_reports:workspaces
+              operation=@option_parser.get_next_arg_from_list('operation',[:list])
+              case operation
+              when :list
+                default_fields=['id','name']
+                case resource
+                when :nodes; default_fields.push('host','access_key')
+                when :contacts; default_fields=["email","name","source_id","source_type"]
+                end
+                return {:values=>api_files_admin.list(resource.to_s)[:data],:fields=>default_fields}
+              else
+                raise RuntimeError, "unexpected value: #{resource}"
+              end #operation
+            when :usage_reports
+              return {:values=>api_files_admin.list("usage_reports",{:workspace_id=>workspace_id})[:data]}
+            end
           else
             raise RuntimeError, "unexpected value: #{command}"
           end # action

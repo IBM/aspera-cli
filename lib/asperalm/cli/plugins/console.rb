@@ -18,10 +18,9 @@ module Asperalm
           command=@option_parser.get_next_arg_from_list('command',[:transfers])
           case command
           when :transfers
-            default_fields=['id','contact','name','status']
             command=@option_parser.get_next_arg_from_list('command',[ :list ])
             resp=api_console.call({:operation=>'GET',:subpath=>'transfers',:headers=>{'Accept'=>'application/json'},:url_params=>{'from'=>@option_parser.get_option_mandatory(:filter_from),'to'=>@option_parser.get_option_mandatory(:filter_to)}})
-            return {:fields=>default_fields,:values=>resp[:data]}
+            return {:values=>resp[:data],:fields=>['id','contact','name','status']}
           end
         end
       end # Console

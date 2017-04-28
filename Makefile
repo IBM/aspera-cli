@@ -51,7 +51,7 @@ $(APIKEY):
 	rm -f $(APIKEY).protected
 
 setkey: $(APIKEY)
-	$(ASCLI) --log-level=debug -np files --code-get=osbrowser set_client_key ERuzXGuPA @file:$(APIKEY)
+	$(ASCLI) --log-level=debug -np files --browser=os set_client_key ERuzXGuPA @file:$(APIKEY)
 
 yank:
 	gem yank asperalm -v $(GEMVERSION)

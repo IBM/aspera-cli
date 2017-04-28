@@ -13,7 +13,7 @@ require 'pp'
 module Asperalm
   class BrowserInteraction
     def self.getter_types
-      [ :tty, :watir, :osbrowser ]
+      [ :tty, :watir, :os ]
     end
     
     def self.open_system_uri(uri)
@@ -21,13 +21,13 @@ module Asperalm
       when /darwin|mac os/
         system("open '#{uri.to_s}'")
       when /mswin|msys|mingw|cygwin|bccwin|wince|emc/
-        raise "OS not supported, please open this URI: #{uri}"
+        raise "OS not supported, please open this URI: #{uri} and use method: tty"
       else  # unix family
-        raise "OS not supported, please open this URI: #{uri}"
+        raise "OS not supported, please open this URI: #{uri} and use method: tty"
       end
     end
 
-    # uitype: :watir, or :tty, or :osbrowser
+    # uitype: :watir, or :tty, or :os
     def initialize(redirect_uri,uitype)
       @redirect_uri=redirect_uri
       @login_type=uitype
@@ -109,7 +109,7 @@ module Asperalm
             Log.log.info "ignoring browser error: "+e.message
           end
         end
-      when :osbrowser
+      when :os
         self.class.open_system_uri(the_url)
       when :tty
         puts "USER ACTION: please enter this url in a browser:\n"+the_url.to_s.red()+"\n"

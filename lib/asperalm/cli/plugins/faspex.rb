@@ -40,6 +40,19 @@ module Asperalm
           return Rest.new(@option_parser.get_option_mandatory(:url),{:basic_auth=>{:user=>@option_parser.get_option_mandatory(:username), :password=>@option_parser.get_option_mandatory(:password)}})
         end
 
+        def self.format_list(entries)
+          return entries.map { |e|
+            e.keys.each {|k| e[k]=e[k].first if e[k].is_a?(Array) and e[k].length == 1}
+            if e['to'].has_key?('recipient_delivery_id')
+              e['recipient_delivery_id'] = e['to']['recipient_delivery_id'].first
+            else
+              e['recipient_delivery_id'] = 'unknown'
+            end
+            e['items'] = e.has_key?('link') ? e['link'].length : 0
+            e
+          }
+        end
+
         def execute_action
           command=@option_parser.get_next_arg_from_list('command',[ :send, :recv, :recv_publink, :list ])
           case command
@@ -100,27 +113,13 @@ module Asperalm
             @faspmanager.transfer_with_spec(transfer_spec)
             return nil
           when :list
-            default_fields=['recipient_delivery_id','title','id',"items"]
             api_faspex=get_faspex_authenticated_api
             all_inbox_xml=api_faspex.call({:operation=>'GET',:subpath=>"#{@option_parser.get_option(:pkgbox).to_s}.atom",:headers=>{'Accept'=>'application/xml'}})[:http].body
             all_inbox_data=XmlSimple.xml_in(all_inbox_xml, {"ForceArray" => true})
             if all_inbox_data.has_key?('entry')
-              values=all_inbox_data['entry'].map { |e| default_fields.inject({}) { |m,v|
-                  case v
-                  when 'recipient_delivery_id'
-                    if e['to'][0].has_key?(v)
-                      m[v] = e['to'][0][v][0]
-                    else
-                      m[v] = 'unknown'
-                    end
-                  when 'items'
-                    m[v] = e.has_key?('link') ? e['link'].length : 0
-                  else
-                    m[v] = e[v][0];
-                  end
-                  m } }
-              return {:fields=>default_fields,:values=>values}
+              return {:values=>all_inbox_data['entry'],:fields=>['title','items','recipient_delivery_id','id'], :textify => lambda { |items| Faspex.format_list(items)} }
             end
+            return nil
           end # command
         end
       end

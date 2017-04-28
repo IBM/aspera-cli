@@ -46,7 +46,7 @@ module Asperalm
             send_result=api_node.call({:operation=>'POST',:subpath=>'files/browse',:json_params=>{ :path => thepath} } )
             #send_result={:data=>{'items'=>[{'file'=>"filename1","permissions"=>[{'name'=>'read'},{'name'=>'write'}]}]}}
             return nil if !send_result[:data].has_key?('items')
-            return { :values => send_result[:data]['items'] , :textify => proc { |items| Node.format_browse(items)} }
+            return { :values => send_result[:data]['items'] , :textify => lambda { |items| Node.format_browse(items)} }
           when :delete
             paths_to_delete = option_parser.get_remaining_arguments("file list")
             return delete_files(api_node,paths_to_delete)

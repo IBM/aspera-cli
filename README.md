@@ -255,9 +255,9 @@ aslmcli node download /tmp/200KB.1 .
 aslmcli files browse /
 aslmcli files upload ~/200KB.1 /
 aslmcli files download /200KB.1 .
-aslmcli files send ~/200KB.1
-aslmcli files packages
-aslmcli files recv VleoMSrlA
+aslmcli files package send ~/200KB.1
+aslmcli files package list
+aslmcli files package recv VleoMSrlA
 aslmcli files events
 aslmcli files usage_reports
 ```

@@ -103,6 +103,7 @@ module Asperalm
         @option_parser.separator "DESCRIPTION"
         @option_parser.separator "\tUse Aspera application to perform operations on command line."
         @option_parser.separator "\tOAuth 2.0 is used for authentication in Files, Several authentication methods are provided."
+        @option_parser.separator "\tAdditional documentation here: https://rubygems.org/gems/asperalm"
         @option_parser.separator ""
         @option_parser.separator "EXAMPLES"
         @option_parser.separator "\t#{$PROGRAM_NAME} files browse /"
@@ -117,7 +118,7 @@ module Asperalm
         @option_parser.on("-h", "--help", "Show this message") { @option_parser.exit_with_usage(nil) }
         @option_parser.add_opt_list(:loglevel,Log.levels,"Log level",'-lTYPE','--log-level=TYPE')
         @option_parser.add_opt_list(:logtype,[:syslog,:stdout],"log method",'-qTYPE','--logger=TYPE')
-        @option_parser.add_opt_list(:format,[:ruby,:text_table],"output format",'--format=TYPE')
+        @option_parser.add_opt_list(:format,[:ruby,:text_table,:json],"output format",'--format=TYPE')
         @option_parser.add_opt_list(:transfer,[:ascp,:connect,:node],"type of transfer",'--transfer=TYPE')
         @option_parser.add_opt_simple(:config_file,"-fSTRING", "--config-file=STRING","read parameters from file in YAML format, current=#{@option_parser.get_option(:config_file)}")
         @option_parser.add_opt_simple(:config_name,"-nSTRING", "--config-name=STRING","name of configuration in config file")
@@ -198,7 +199,8 @@ module Asperalm
             command_plugin.faspmanager.use_connect_client=true
           when :node
             node_config=@loaded_config[:node][@option_parser.get_option_mandatory(:transfer_node_config)]
-            command_plugin.faspmanager.tr_node_api=Rest.new(node_config[:url],{:basic_auth=>{:user=>node_config[:username], :password=>node_config[:password]}})
+            raise CliBadArgument,"no such node configuration: #{@option_parser.get_option_mandatory(:transfer_node_config)}" if node_config.nil?
+              command_plugin.faspmanager.tr_node_api=Rest.new(node_config[:url],{:basic_auth=>{:user=>node_config[:username], :password=>node_config[:password]}})
           end
           # may be nil:
           command_plugin.faspmanager.fasp_proxy_url=@option_parser.get_option(:fasp_proxy)
@@ -232,8 +234,10 @@ module Asperalm
               end
             end
             case @option_parser.get_option_mandatory(:format)
-            when :ruby
-              puts PP.pp(results[:values],'')
+              when :ruby
+                puts PP.pp(results[:values],'')
+              when :json
+                puts JSON.generate(results[:values])
             when :text_table
               rows=results[:values]
               if results.has_key?(:textify)
@@ -289,10 +293,10 @@ module Asperalm
         rescue CliBadArgument => e
           #puts "EEE:#{$@}" #if Log.level == :debug
           raise e if Log.level == :debug
-          @option_parser.exit_with_usage("CLI error: #{e}")
+          @option_parser.exit_with_usage("CLI error: #{e.message}")
         rescue Asperalm::TransferError => e
-          @option_parser.exit_with_usage("FASP error: #{e}",false)
           puts $@ if Log.level == :debug
+          @option_parser.exit_with_usage("FASP error: #{e.message}",false)
         end
       end
     end

@@ -65,8 +65,11 @@ Ta7g6mGwIMXrdTQQ8fZs
 
   # error raised if transfer fails
   class TransferError < StandardError
+  end
+  class FaspError < TransferError
     attr_reader :err_code
-    def initialize(err_code)
+    def initialize(message,err_code)
+      super(message)
       @err_code = err_code
     end
   end
@@ -144,7 +147,7 @@ Ta7g6mGwIMXrdTQQ8fZs
     end
 
     # start ascp
-    # raises TransferError
+    # raises FaspError
     # uses ascp management port.
     def execute_ascp(command,arguments,env_vars)
       # open random local TCP port listening
@@ -165,7 +168,7 @@ Ta7g6mGwIMXrdTQQ8fZs
       begin
         @ascp_pid = Process.spawn(env_vars,[command,command],*arguments)
       rescue SystemCallError=> e
-        raise TransferError.new(-1),e.to_s
+        raise TransferError.new(e.message)
       end
       # in parent, wait for connection, max 3 seconds
       Log.log.debug "before accept for pid (#{@ascp_pid})"
@@ -182,7 +185,7 @@ Ta7g6mGwIMXrdTQQ8fZs
       if client.nil? then
         # avoid zombie
         Process.wait @ascp_pid
-        raise TransferError.new(-1),'timeout waiting mgt port connect'
+        raise TransferError.new('timeout waiting mgt port connect')
       end
 
       # records for one message
@@ -240,7 +243,7 @@ Ta7g6mGwIMXrdTQQ8fZs
         Log.log.error "last status is [#{lastStatus}]"
       end
 
-      raise TransferError.new(lastStatus['Code'].to_i),lastStatus['Description']
+      raise FaspError.new(lastStatus['Code'].to_i,lastStatus['Description'])
     end
 
     # locate connect plugin resources
@@ -319,21 +322,21 @@ Ta7g6mGwIMXrdTQQ8fZs
       ascp_args = Array.new
 
       if !transfer_spec.has_key?('password') and !transfer_spec.has_key?('EX_ssh_key_value') and !transfer_spec.has_key?('EX_ssh_key_path') then
-        raise TransferError.new(-1),'required: ssh key (value or path) or password'
+        raise TransferError.new('required: ssh key (value or path) or password')
       end
 
       case transfer_spec['cipher']
       when nil; # nothing to put on command line, encryption by default
       when 'aes-128'; used_names.push('cipher') # nothing to put on command line, encryption by default
       when 'aes128'; used_names.push('cipher') # nothing to put on command line, encryption by default (from faspe link)
-      else raise TransferError.new(-1),"unsupported cipher: #{transfer_spec['cipher']}"
+      else raise TransferError.new("unsupported cipher: #{transfer_spec['cipher']}")
       end
 
       case transfer_spec['direction']
-      when nil; raise TransferError.new(-1),"direction is required"
+      when nil; raise TransferError.new("direction is required")
       when 'receive'; ascp_args.push('--mode','recv'); used_names.push('direction')
       when 'send'; ascp_args.push('--mode','send'); used_names.push('direction')
-      else raise TransferError.new(-1),"unsupported direction: #{transfer_spec['direction']}"
+      else raise TransferError.new("unsupported direction: #{transfer_spec['direction']}")
       end
 
       ts2args_value(used_names,transfer_spec,ascp_args,'remote_user','--user')
@@ -367,12 +370,12 @@ Ta7g6mGwIMXrdTQQ8fZs
       ascp_args.push(*transfer_spec['EX_ascp_args']) if transfer_spec.has_key?('EX_ascp_args')
 
       # source list: TODO : check presence, and if pairs
-      raise TransferError.new(-1),"missing source paths" if !transfer_spec.has_key?('paths')
+      raise TransferError.new("missing source paths") if !transfer_spec.has_key?('paths')
       ascp_args.push(*transfer_spec['paths'].map { |i| i['source']})
       used_names.push('paths')
 
       # destination
-      raise TransferError.new(-1),"missing destination" if !transfer_spec.has_key?('destination_root')
+      raise TransferError.new("missing destination") if !transfer_spec.has_key?('destination_root')
       ascp_args.push(transfer_spec['destination_root'])
       used_names.push('destination_root')
 
@@ -426,8 +429,11 @@ Ta7g6mGwIMXrdTQQ8fZs
         loop do
           res=@tr_node_api.call({:operation=>'GET',:subpath=>'ops/transfers/'+trid,:headers=>{'Accept'=>'application/json'}})
           puts "transfer: #{res[:data]['status']}, sessions:#{res[:data]["sessions"].length}, #{res[:data]["sessions"].map{|i| i['bytes_transferred']}.join(',')}"
-          break if res[:data]['status'].eql?('completed')
+          break if ! ( res[:data]['status'].eql?('waiting') or res[:data]['status'].eql?('running'))
           sleep 1
+        end
+        if ! res[:data]['status'].eql?('completed')
+          raise TransferError.new("#{res[:data]['status']}: #{res[:data]['error_desc']}")
         end
         #raise "TODO: wait for transfer completion"
       else

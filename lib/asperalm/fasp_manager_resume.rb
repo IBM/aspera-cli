@@ -57,13 +57,15 @@ module Asperalm
     [ 50, 'ERR_BAD_CONFIGURATION',    "Aspera.conf contains invalid data and was rejected",  "Invalid configuration",                 false ],
     [ 51, 'ERR_UNDEFINED',            "Should never happen, report to Aspera",               "Undefined error",                       false ],
   ]
+
   # implements a resumable policy
   class FaspManagerResume < FaspManager
     alias_method :transfer_with_spec_super, :transfer_with_spec
     def fasp_error_retryable?(err_code)
-      return false if err_code < 1 or err_code > FASP_ERROR_CODES.length
+      return false if !err_code.is_a?(Integer) or err_code < 1 or err_code > FASP_ERROR_CODES.length
       return FASP_ERROR_CODES[err_code][4]
     end
+
     def transfer_with_spec(transfer_spec)
       # resume parameters, could be modified by options (TODO)
       max_retry     = 7
@@ -82,13 +84,13 @@ module Asperalm
           transfer_with_spec_super(transfer_spec)
           Log.log.debug( 'transfer ok' );
           break
-        rescue TransferError => e
+        rescue FaspError => e
           # failure in ascp
           if fasp_error_retryable?(e.err_code) then
             # exit if we exceed the max number of retry
             if lRetryLeft <= 0 then
               Log.log.error "Maximum number of retry reached."
-              raise TransferError.new(-1),"max retry after: [#{status[:message]}]"
+              raise TransferError.new("max retry after: [#{status[:message]}]")
               break;
             end
           else
