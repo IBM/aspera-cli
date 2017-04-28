@@ -15,6 +15,7 @@ module Asperalm
           if node_scope.nil?
             return Rest.new(node_info['url'],{:basic_auth=>{:user=>node_info['access_key'], :password=>@option_parser.get_option_mandatory(:secret)},:headers=>{'X-Aspera-AccessKey'=>node_info['access_key']}})
           end
+          Log.log.warn("ignoring secret, using bearer token") if !@option_parser.get_option(:secret).nil?
           return Rest.new(node_info['url'],{:oauth=>@api_files_oauth,:scope=>FilesApi.node_scope(node_info['access_key'],node_scope),:headers=>{'X-Aspera-AccessKey'=>node_info['access_key']}})
         end
 
