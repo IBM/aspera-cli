@@ -61,19 +61,22 @@ module Asperalm
         return @mycommand_and_args.empty?
       end
 
+      def self.get_from_list(shortval,descr,allowed_values)
+        # we accept shortcuts
+        matching=allowed_values.select{|i| i.to_s.start_with?(shortval)}
+        case matching.length
+        when 1; return matching.first
+        when 0; raise CliBadArgument,"unexpected value for #{descr}: #{shortval}, one of: #{allowed_values.map {|x| x.to_s}.join(', ')}"
+        else; raise CliBadArgument,"ambigous value for #{descr}: #{shortval}, one of: #{matching.map {|x| x.to_s}.join(', ')}"
+        end
+      end
+      
       # get next argument, must be from the value list
       def get_next_arg_from_list(descr,allowed_values)
         if @mycommand_and_args.empty? then
           raise CliBadArgument,"missing action, one of: #{allowed_values.map {|x| x.to_s}.join(', ')}"
         end
-        action=@mycommand_and_args.shift.to_sym
-        # we accept shortcuts
-        matching=allowed_values.select{|i| i.to_s.start_with?(action.to_s)}
-        case matching.length
-        when 1; return matching.first
-        when 0; raise CliBadArgument,"unexpected value for #{descr}: #{action}, one of: #{allowed_values.map {|x| x.to_s}.join(', ')}"
-        else; raise CliBadArgument,"ambigous value for #{descr}: #{action}, one of: #{matching.map {|x| x.to_s}.join(', ')}"
-        end
+        return self.class.get_from_list(@mycommand_and_args.shift,descr,allowed_values)
         # this version accepts only precise values
         #        if !allowed_values.include?(action) then
         #          raise CliBadArgument,"unexpected value for #{descr}: #{action}, one of: #{allowed_values.map {|x| x.to_s}.join(', ')}"
@@ -151,9 +154,7 @@ module Asperalm
         Log.log.info("add_opt_list #{option_symbol}->#{args}")
         value=get_option(option_symbol)
         self.on( *args , values, "#{help}. Values=(#{values.join(',')}), current=#{value}") do |v|
-          theval = v.to_sym
-          raise CliBadArgument,"unknown value for #{option_symbol}: #{v}" unless values.include?(theval)
-          set_option(option_symbol,theval)
+          set_option(option_symbol,self.class.get_from_list(v.to_s,help,values))
         end
       end
 

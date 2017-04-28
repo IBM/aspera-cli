@@ -99,6 +99,7 @@ module Asperalm
         @option_parser.separator ""
         @option_parser.separator "COMMANDS"
         @option_parser.separator "\tSupported commands: #{plugin_list.map {|x| x.to_s}.join(', ')}"
+        @option_parser.separator "\tNote that commands can be written shortened."
         @option_parser.separator ""
         @option_parser.separator "DESCRIPTION"
         @option_parser.separator "\tUse Aspera application to perform operations on command line."
