@@ -84,10 +84,12 @@ module Asperalm
 
         def execute_action
           api_node=Rest.new(@option_parser.get_option_mandatory(:url),{:basic_auth=>{:user=>@option_parser.get_option_mandatory(:username), :password=>@option_parser.get_option_mandatory(:password)}})
-          command=@option_parser.get_next_arg_from_list('command',self.class.common_actions.clone.concat([ :transfer, :info, :cleanup, :ak, :wf ]))
+          command=@option_parser.get_next_arg_from_list('command',self.class.common_actions.clone.concat([ :stream, :transfer, :info, :cleanup, :ak, :wf ]))
           case command
           when *self.class.common_actions; return self.class.execute_common(command,api_node,@option_parser,@faspmanager)
-          when :transfer
+            when :stream
+              raise "not implemented"
+            when :transfer
             command=@option_parser.get_next_arg_from_list('command',[ :list, :cancel ])
             # ,:url_params=>{:active_only=>true}
             case command

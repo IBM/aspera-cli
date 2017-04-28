@@ -398,8 +398,7 @@ Ta7g6mGwIMXrdTQQ8fZs
       Log.log.debug("ts=#{transfer_spec}")
       if (@use_connect_client) # download using connect ...
         Log.log.debug("using connect client")
-        @resource_path[:plugin_https_port_file]
-        connect_url=File.open('https.uri') {|f| f.gets }.strip
+        connect_url=File.open(@resource_path[:plugin_https_port_file]) {|f| f.gets }.strip
         connect_api=Rest.new("#{connect_url}/v5/connect",{})
         begin
           connect_api.read('info/version')

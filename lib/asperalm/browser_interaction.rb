@@ -15,9 +15,9 @@ module Asperalm
       when /darwin|mac os/
         system("open '#{uri.to_s}'")
       when /mswin|msys|mingw|cygwin|bccwin|wince|emc/
-        raise "OS not supported, please open this URI: #{uri} and use method: tty"
+        system("start '#{uri.to_s}'")
       else  # unix family
-        raise "OS not supported, please open this URI: #{uri} and use method: tty"
+        system("xdg-open '#{uri.to_s}'")
       end
     end
 
