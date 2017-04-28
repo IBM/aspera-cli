@@ -12,11 +12,9 @@ module Asperalm
         attr_accessor :faspmanager
         # no scope: requires secret
         def get_node_api(node_info,node_scope=nil)
-          secret=@option_parser.get_option(:secret)
-          if !secret.nil?
-            return Rest.new(node_info['url'],{:basic_auth=>{:user=>node_info['access_key'], :password=>secret},:headers=>{'X-Aspera-AccessKey'=>node_info['access_key']}})
+          if node_scope.nil?
+            return Rest.new(node_info['url'],{:basic_auth=>{:user=>node_info['access_key'], :password=>@option_parser.get_option_mandatory(:secret)},:headers=>{'X-Aspera-AccessKey'=>node_info['access_key']}})
           end
-          raise CliBadArgument, "please provide node secret" if node_scope.nil?
           return Rest.new(node_info['url'],{:oauth=>@api_files_oauth,:scope=>FilesApi.node_scope(node_info['access_key'],node_scope),:headers=>{'X-Aspera-AccessKey'=>node_info['access_key']}})
         end
 
@@ -98,7 +96,7 @@ module Asperalm
           @option_parser.add_opt_simple(:recipient,"--recipient=STRING","package recipient")
           @option_parser.add_opt_simple(:title,"--title=STRING","package title")
           @option_parser.add_opt_simple(:note,"--note=STRING","package note")
-          @option_parser.add_opt_simple(:secret,"--secret=STRING","access key secret")
+          @option_parser.add_opt_simple(:secret,"--secret=STRING","access key secret for node")
         end
 
         def execute_node_action(home_node_id,home_file_id)
