@@ -71,35 +71,35 @@ installdeps:
 SAMPLE_FILE=~/Documents/Samples/200KB.1
 
 tsh1:
-	$(ASCLI) shares browse /
+	$(ASCLI) shares browse / --insecure
 tsh2:
-	$(ASCLI) shares upload $(SAMPLE_FILE) /n8-sh1
+	$(ASCLI) shares upload $(SAMPLE_FILE) /n8-sh1 --insecure
 tsh3:
-	$(ASCLI) shares download /n8-sh1/200KB.1 .
+	$(ASCLI) shares download /n8-sh1/200KB.1 . --insecure
 	rm -f 200KB.1
-	$(ASCLI) shares delete /n8-sh1/200KB.1
+	$(ASCLI) shares delete /n8-sh1/200KB.1 --insecure
 tshares: tsh1 tsh2 tsh3
 
 tfx1:
-	$(ASCLI) faspex list
+	$(ASCLI) faspex package list --insecure
 tfx2:
-	$(ASCLI) faspex send $(SAMPLE_FILE) --note="my note" --title="my title" --recipient="laurent@asperasoft.com"
+	$(ASCLI) faspex package send $(SAMPLE_FILE) --insecure --note="my note" --title="my title" --recipient="laurent@asperasoft.com"
 tfx3:
-	@echo $(ASCLI) faspex recv 05b92393-02b7-4900-ab69-fd56721e896c
+	@echo $(ASCLI) faspex package recv 05b92393-02b7-4900-ab69-fd56721e896c --insecure
 tfx4:
-	@echo $(ASCLI) faspex recv_publink https://ibmfaspex.asperasoft.com/aspera/faspex/external_deliveries/78780?passcode=a003aaf2f53e3869126b908525084db6bebc7031
+	@echo $(ASCLI) faspex recv_publink 'https://ibmfaspex.asperasoft.com/aspera/faspex/external_deliveries/78780?passcode=a003aaf2f53e3869126b908525084db6bebc7031' --insecure
 tfaspex: tfx1 tfx2  
 tfaspex2: tfx3 tfx4
 tconsole:
-	$(ASCLI) console transfers list
+	$(ASCLI) console transfers list  --insecure
 tnd1:
-	$(ASCLI) node browse /
+	$(ASCLI) node browse / --insecure
 tnd2:
-	$(ASCLI) node upload $(SAMPLE_FILE) /home/faspex/docroot
+	$(ASCLI) node upload $(SAMPLE_FILE) /home/faspex/docroot --insecure
 tnd3:
-	$(ASCLI) node download /home/faspex/docroot/200KB.1 .
+	$(ASCLI) node download /home/faspex/docroot/200KB.1 . --insecure
 	rm -f 200KB.1
-	$(ASCLI) node delete /home/faspex/docroot/200KB.1
+	$(ASCLI) node delete /home/faspex/docroot/200KB.1 --insecure
 tnode: tnd1 tnd2 tnd3 
 
 tfs1:

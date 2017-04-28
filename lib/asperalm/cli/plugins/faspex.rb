@@ -54,50 +54,76 @@ module Asperalm
         end
 
         def execute_action
-          command=@option_parser.get_next_arg_from_list('command',[ :send, :recv, :recv_publink, :list ])
+          command=@option_parser.get_next_arg_from_list('command',[ :package, :dropbox, :recv_publink, :list_shares, :me ])
           case command
-          when :send
-            filelist = @option_parser.get_remaining_arguments("file list")
+          when :package
+            command_pkg=@option_parser.get_next_arg_from_list('command',[ :send, :recv, :list ])
             api_faspex=get_faspex_authenticated_api
-            send_result=api_faspex.call({:operation=>'POST',:subpath=>'send',:json_params=>{"delivery"=>{"use_encryption_at_rest"=>false,"note"=>@option_parser.get_option_mandatory(:note),"sources"=>[{"paths"=>filelist}],"title"=>@option_parser.get_option_mandatory(:title),"recipients"=>@option_parser.get_option_mandatory(:recipient).split(','),"send_upload_result"=>true}},:headers=>{'Accept'=>'application/json'}})[:data]
-            if send_result.has_key?('error')
-              raise CliBadArgument,"#{send_result['error']['user_message']} / #{send_result['error']['internal_message']}"
-            end
-            raise "expecting one session exactly" if send_result['xfer_sessions'].length != 1
-            transfer_spec=send_result['xfer_sessions'].first
-            transfer_spec['paths']=filelist.map { |i| {'source'=>i} }
-            @faspmanager.transfer_with_spec(transfer_spec)
-            return nil
-          when :recv
-            api_faspex=get_faspex_authenticated_api
-            if true
-              pkguuid=@option_parser.get_next_arg_value("Package UUID")
+            case command_pkg
+            when :send
+              filelist = @option_parser.get_remaining_arguments("file list")
+              send_result=api_faspex.call({:operation=>'POST',:subpath=>'send',:json_params=>{"delivery"=>{"use_encryption_at_rest"=>false,"note"=>@option_parser.get_option_mandatory(:note),"sources"=>[{"paths"=>filelist}],"title"=>@option_parser.get_option_mandatory(:title),"recipients"=>@option_parser.get_option_mandatory(:recipient).split(','),"send_upload_result"=>true}},:headers=>{'Accept'=>'application/json'}})[:data]
+              if send_result.has_key?('error')
+                raise CliBadArgument,"#{send_result['error']['user_message']} / #{send_result['error']['internal_message']}"
+              end
+              raise "expecting one session exactly" if send_result['xfer_sessions'].length != 1
+              transfer_spec=send_result['xfer_sessions'].first
+              transfer_spec['paths']=filelist.map { |i| {'source'=>i} }
+              @faspmanager.transfer_with_spec(transfer_spec)
+              return nil
+            when :recv
+              if true
+                pkguuid=@option_parser.get_next_arg_value("Package UUID")
+                all_inbox_xml=api_faspex.call({:operation=>'GET',:subpath=>"#{@option_parser.get_option(:pkgbox).to_s}.atom",:headers=>{'Accept'=>'application/xml'}})[:http].body
+                allinbox=XmlSimple.xml_in(all_inbox_xml, {"ForceArray" => true})
+                package_entries=[]
+                if allinbox.has_key?('entry')
+                  package_entries=allinbox['entry'].select { |e| pkguuid.eql?(e['id'].first) }
+                end
+                if package_entries.length != 1
+                  raise CliBadArgument,"no such uuid"
+                end
+                package_entry=package_entries.first
+              else
+                delivid=@option_parser.get_next_arg_value("Package delivery ID")
+                entry_xml=api_faspex.call({:operation=>'GET',:subpath=>"received/#{delivid}",:headers=>{'Accept'=>'application/xml'}})[:http].body
+                package_entry=XmlSimple.xml_in(entry_xml, {"ForceArray" => true})
+              end
+              transfer_uri=self.class.get_fasp_uri_from_entry(package_entry)
+              transfer_spec=@faspmanager.fasp_uri_to_transferspec(transfer_uri)
+              # NOTE: only external users have token in faspe: link !
+              if !transfer_spec.has_key?('token')
+                xmlpayload='<?xml version="1.0" encoding="UTF-8"?><url-list xmlns="http://schemas.asperasoft.com/xml/url-list"><url href="'+transfer_uri+'"/></url-list>'
+                transfer_spec['token']=api_faspex.call({:operation=>'POST',:subpath=>"issue-token?direction=down",:headers=>{'Accept'=>'text/plain','Content-Type'=>'application/vnd.aspera.url-list+xml'},:text_body_params=>xmlpayload})[:http].body
+              end
+              transfer_spec['direction']='receive'
+              transfer_spec['destination_root']='.'
+              @faspmanager.transfer_with_spec(transfer_spec)
+              return nil
+            when :list
               all_inbox_xml=api_faspex.call({:operation=>'GET',:subpath=>"#{@option_parser.get_option(:pkgbox).to_s}.atom",:headers=>{'Accept'=>'application/xml'}})[:http].body
-              allinbox=XmlSimple.xml_in(all_inbox_xml, {"ForceArray" => true})
-              package_entries=[]
-              if allinbox.has_key?('entry')
-                package_entries=allinbox['entry'].select { |e| pkguuid.eql?(e['id'].first) }
+              all_inbox_data=XmlSimple.xml_in(all_inbox_xml, {"ForceArray" => true})
+              if all_inbox_data.has_key?('entry')
+                return {:values=>all_inbox_data['entry'],:fields=>['title','items','recipient_delivery_id','id'], :textify => lambda { |items| Faspex.format_list(items)} }
               end
-              if package_entries.length != 1
-                raise CliBadArgument,"no such uuid"
-              end
-              package_entry=package_entries.first
-            else
-              delivid=@option_parser.get_next_arg_value("Package delivery ID")
-              entry_xml=api_faspex.call({:operation=>'GET',:subpath=>"received/#{delivid}",:headers=>{'Accept'=>'application/xml'}})[:http].body
-              package_entry=XmlSimple.xml_in(entry_xml, {"ForceArray" => true})
+              return nil
             end
-            transfer_uri=self.class.get_fasp_uri_from_entry(package_entry)
-            transfer_spec=@faspmanager.fasp_uri_to_transferspec(transfer_uri)
-            # NOTE: only external users have token in faspe: link !
-            if !transfer_spec.has_key?('token')
-              xmlpayload='<?xml version="1.0" encoding="UTF-8"?><url-list xmlns="http://schemas.asperasoft.com/xml/url-list"><url href="'+transfer_uri+'"/></url-list>'
-              transfer_spec['token']=api_faspex.call({:operation=>'POST',:subpath=>"issue-token?direction=down",:headers=>{'Accept'=>'text/plain','Content-Type'=>'application/vnd.aspera.url-list+xml'},:text_body_params=>xmlpayload})[:http].body
+            when :list_shares
+            api_faspex=get_faspex_authenticated_api
+            shares_list=api_faspex.call({:operation=>'GET',:subpath=>"source_shares",:headers=>{'Accept'=>'application/json'}})[:data]
+            return {:values=>shares_list['items']}
+            when :me
+            api_faspex=get_faspex_authenticated_api
+            my_info=api_faspex.call({:operation=>'GET',:subpath=>"me",:headers=>{'Accept'=>'application/json'}})[:data]
+            return {:values=>[my_info]}
+            when :dropbox
+            api_faspex=get_faspex_authenticated_api
+            command_pkg=@option_parser.get_next_arg_from_list('command',[ :list ])
+            case command_pkg
+            when :list
+            dropbox_list=api_faspex.call({:operation=>'GET',:subpath=>"/aspera/faspex/dropboxes",:headers=>{'Accept'=>'application/json'}})[:data]
+            return {:values=>dropbox_list['items'], :fields=>['name','id','description','can_read','can_write']}
             end
-            transfer_spec['direction']='receive'
-            transfer_spec['destination_root']='.'
-            @faspmanager.transfer_with_spec(transfer_spec)
-            return nil
           when :recv_publink
             thelink=@option_parser.get_next_arg_value("Faspex public URL for a package")
             link_data=self.class.get_link_data(thelink)
@@ -111,14 +137,6 @@ module Asperalm
             transfer_spec['direction']='receive'
             transfer_spec['destination_root']='.'
             @faspmanager.transfer_with_spec(transfer_spec)
-            return nil
-          when :list
-            api_faspex=get_faspex_authenticated_api
-            all_inbox_xml=api_faspex.call({:operation=>'GET',:subpath=>"#{@option_parser.get_option(:pkgbox).to_s}.atom",:headers=>{'Accept'=>'application/xml'}})[:http].body
-            all_inbox_data=XmlSimple.xml_in(all_inbox_xml, {"ForceArray" => true})
-            if all_inbox_data.has_key?('entry')
-              return {:values=>all_inbox_data['entry'],:fields=>['title','items','recipient_delivery_id','id'], :textify => lambda { |items| Faspex.format_list(items)} }
-            end
             return nil
           end # command
         end

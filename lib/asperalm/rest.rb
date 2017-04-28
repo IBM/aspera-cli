@@ -21,6 +21,7 @@ module Asperalm
   class Rest
     # set to true enables debug in HTTP class
     @@debug=false
+    @@insecure=false
     def initialize(baseurl,opt_call_data=nil)
       # base url without trailing slashes
       @api_base=baseurl.gsub(/\/+$/,'')
@@ -31,7 +32,10 @@ module Asperalm
       Log.log.debug "debug http=#{flag}"
       @@debug=flag
     end
-
+    def self.set_insecure(flag)
+      Log.log.debug "insecure=#{flag}"
+      @@insecure=flag
+    end
     # build URI from URL and parameters
     def get_uri(call_data)
       uri=URI.parse(@api_base+"/"+call_data[:subpath])
@@ -67,7 +71,7 @@ module Asperalm
         http.set_debug_output($stdout)
       end
       http.use_ssl = true
-      http.verify_mode = OpenSSL::SSL::VERIFY_NONE
+      http.verify_mode = OpenSSL::SSL::VERIFY_NONE if @@insecure
       case call_data[:operation]
       when 'GET'
         req = Net::HTTP::Get.new(uri.request_uri)

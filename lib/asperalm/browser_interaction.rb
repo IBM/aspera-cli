@@ -2,19 +2,13 @@
 # a code listener will listen on a tcp port, redirect the user to a login page
 # and wait for the browser to send the request with code on local port
 
-# on mac
-# brew install chromedriver
-# gem install watir-webdriver
-
 require 'asperalm/log'
 require 'socket'
 require 'pp'
 
 module Asperalm
   class BrowserInteraction
-    def self.getter_types
-      [ :tty, :watir, :os ]
-    end
+    def self.getter_types; [ :tty, :os ]; end
     
     def self.open_system_uri(uri)
       case RbConfig::CONFIG['host_os']
@@ -27,7 +21,7 @@ module Asperalm
       end
     end
 
-    # uitype: :watir, or :tty, or :os
+    # uitype: :tty, or :os
     def initialize(redirect_uri,uitype)
       @redirect_uri=redirect_uri
       @login_type=uitype
@@ -88,27 +82,6 @@ module Asperalm
       Log.log.info "the_url=#{the_url}".bg_red().gray()
       start_listener()
       case @login_type
-      when :watir
-        if @browser.nil? then
-          require 'watir-webdriver'
-          @browser = Watir::Browser.new(:chrome)
-          #@browser.window.move_to(0,0)
-        end
-        @browser.goto the_url.to_s
-        if !@creds.nil? then
-          begin
-            if ! @is_logged_in then
-              @browser.text_field(name: 'login').set(@creds[:user])
-              @browser.text_field(name: 'password').set(@creds[:password])
-              @browser.button(name: 'commit').click
-              @is_logged_in=true
-            end
-            @browser.link(:text =>"Allow").when_present.click
-            @browser.link(:text =>"Continue").when_present.click
-          rescue => e
-            Log.log.info "ignoring browser error: "+e.message
-          end
-        end
       when :os
         self.class.open_system_uri(the_url)
       when :tty

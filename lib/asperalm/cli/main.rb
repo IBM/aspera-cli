@@ -107,7 +107,7 @@ module Asperalm
         @option_parser.separator "\tAdditional documentation here: https://rubygems.org/gems/asperalm"
         @option_parser.separator ""
         @option_parser.separator "EXAMPLES"
-        @option_parser.separator "\t#{$PROGRAM_NAME} files browse /"
+        @option_parser.separator "\t#{$PROGRAM_NAME} files repo browse /"
         @option_parser.separator "\t#{$PROGRAM_NAME} faspex send ./myfile --log-level=debug"
         @option_parser.separator "\t#{$PROGRAM_NAME} shares upload ~/myfile /myshare"
         @option_parser.separator "\nSPECIAL OPTION VALUES\n\tif an option value begins with @env: or @file:, value is taken from env var or file\n\tdates format is 'DD-MM-YY HH:MM:SS', or 'now' or '-<num>h'"
@@ -116,11 +116,12 @@ module Asperalm
         @option_parser.set_option(:fields,FIELDS_DEFAULT)
         @option_parser.set_option(:transfer,:ascp)
         @option_parser.set_option(:transfer_node_config,'default')
+        @option_parser.set_option(:insecure,'true')
         @option_parser.on("-h", "--help", "Show this message") { @option_parser.exit_with_usage(nil) }
-        @option_parser.add_opt_list(:loglevel,Log.levels,"Log level",'-lTYPE','--log-level=TYPE')
-        @option_parser.add_opt_list(:logtype,[:syslog,:stdout],"log method",'-qTYPE','--logger=TYPE')
-        @option_parser.add_opt_list(:format,[:ruby,:text_table,:json],"output format",'--format=TYPE')
-        @option_parser.add_opt_list(:transfer,[:ascp,:connect,:node],"type of transfer",'--transfer=TYPE')
+        @option_parser.add_opt_list(:loglevel,Log.levels,"Log level",'-lTYPE','--log-level=VALUE')
+        @option_parser.add_opt_list(:logtype,[:syslog,:stdout],"log method",'-qTYPE','--logger=VALUE')
+        @option_parser.add_opt_list(:format,[:ruby,:text_table,:json,:text],"output format",'--format=VALUE')
+        @option_parser.add_opt_list(:transfer,[:ascp,:connect,:node],"type of transfer",'--transfer=VALUE')
         @option_parser.add_opt_simple(:config_file,"-fSTRING", "--config-file=STRING","read parameters from file in YAML format, current=#{@option_parser.get_option(:config_file)}")
         @option_parser.add_opt_simple(:config_name,"-nSTRING", "--config-name=STRING","name of configuration in config file")
         @option_parser.add_opt_simple(:transfer_node_config,"--transfer-node=STRING","name of configuration used to transfer when using --transfer=node")
@@ -128,6 +129,7 @@ module Asperalm
         @option_parser.add_opt_simple(:fasp_proxy,"--fasp-proxy=STRING","URL of FASP proxy (dnat / dnats)")
         @option_parser.add_opt_simple(:http_proxy,"--http-proxy=STRING","URL of HTTP proxy (for http fallback)")
         @option_parser.add_opt_on(:rest_debug,"-r", "--rest-debug","more debug for HTTP calls") { Rest.set_debug(true) }
+        @option_parser.add_opt_on(:insecure,"-k", "--insecure","do not validate cert") { Rest.set_insecure(true) }
         @option_parser.add_opt_simple(:ts_override,"--ts=JSON","override transfer spec values, current=#{@option_parser.get_option(:ts_override)}")
       end
 
@@ -136,7 +138,7 @@ module Asperalm
       end
 
       def execute_action
-        subcommand=@option_parser.get_next_arg_from_list('action',[:ls,:init])
+        subcommand=@option_parser.get_next_arg_from_list('action',[:ls,:init,:cat])
         case subcommand
         when :init
           raise StandardError,"Folder already exists: #{$PROGRAM_FOLDER}" if Dir.exist?($PROGRAM_FOLDER)
@@ -156,6 +158,8 @@ module Asperalm
           File.write($DEFAULT_CONFIG_FILE,sample_config.to_yaml)
           puts "initialized: #{$PROGRAM_FOLDER}"
           return nil
+        when :cat
+          return {:values=>File.read($DEFAULT_CONFIG_FILE),:format=>:text}
         when :ls
           sections=self.class.get_plugin_list.unshift(:global)
           if @option_parser.command_or_arg_empty?
@@ -201,7 +205,7 @@ module Asperalm
           when :node
             node_config=@loaded_config[:node][@option_parser.get_option_mandatory(:transfer_node_config)]
             raise CliBadArgument,"no such node configuration: #{@option_parser.get_option_mandatory(:transfer_node_config)}" if node_config.nil?
-              command_plugin.faspmanager.tr_node_api=Rest.new(node_config[:url],{:basic_auth=>{:user=>node_config[:username], :password=>node_config[:password]}})
+            command_plugin.faspmanager.tr_node_api=Rest.new(node_config[:url],{:basic_auth=>{:user=>node_config[:username], :password=>node_config[:password]}})
           end
           # may be nil:
           command_plugin.faspmanager.fasp_proxy_url=@option_parser.get_option(:fasp_proxy)
@@ -218,7 +222,7 @@ module Asperalm
             $stdout.write("no result")
           else
             display_fields=nil
-            if @option_parser.get_option_mandatory(:format) != :ruby
+            if ![:ruby,:text].include?(@option_parser.get_option_mandatory(:format))
               case @option_parser.get_option_mandatory(:fields)
               when FIELDS_DEFAULT
                 if !results.has_key?(:fields) or results[:fields].nil?
@@ -235,10 +239,12 @@ module Asperalm
               end
             end
             case @option_parser.get_option_mandatory(:format)
-              when :ruby
-                puts PP.pp(results[:values],'')
-              when :json
-                puts JSON.generate(results[:values])
+            when :ruby
+              puts PP.pp(results[:values],'')
+            when :json
+              puts JSON.generate(results[:values])
+            when :text
+              puts results[:values]
             when :text_table
               rows=results[:values]
               if results.has_key?(:textify)

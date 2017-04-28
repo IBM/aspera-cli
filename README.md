@@ -43,7 +43,8 @@ The tool can be used right away: `aslmcli`
 
 ### Configuration file setup
 
-The use of the configuration file is not mandatory, all parameters can be set on command line, 
+The use of the configuration file is not mandatory, all parameters can be set on 
+command line, 
 but the configuration file provides a way to define default values, especially
 for authentication parameters. A sample configuration file can be created with:
 
@@ -82,7 +83,7 @@ files/default for items:
 * CLI is ready to use:
 
 ```bash
-$ aslmcli files browse /
+$ aslmcli files repo browse /
 :..............................:........:................:...........:......................:..............:
 :             name             :  type  : recursive_size :   size    :    modified_time     : access_level :
 :..............................:........:................:...........:......................:..............:
@@ -245,21 +246,22 @@ aslmcli shares browse /
 aslmcli shares upload ~/200KB.1 /projectx
 aslmcli shares download /projectx/200KB.1 .
 aslmcli faspex recv_publink https://myfaspex.myorg.com/aspera/faspex/external_deliveries/78780?passcode=a003aaf2f53e3123456b908525084db6bebc7031
-aslmcli faspex list -nibm
-aslmcli faspex -nibm recv 05b92393-02b7-4900-ab69-fd56721e896c
-aslmcli faspex -nibm --note="my note" --title="my title" --recipient="laurent@asperasoft.com" send ~/200KB.1 
+aslmcli faspex list
+aslmcli faspex recv 05b92393-02b7-4900-ab69-fd56721e896c
+aslmcli faspex send ~/200KB.1 --config-name=myfaspex --note="my note" --title="my title" --recipient="laurent@asperasoft.com"
 aslmcli console transfers list
 aslmcli node browse /
 aslmcli node upload ~/200KB.1 /tmp
 aslmcli node download /tmp/200KB.1 .
-aslmcli files browse /
-aslmcli files upload ~/200KB.1 /
-aslmcli files download /200KB.1 .
+aslmcli files repo browse /
+aslmcli files repo upload ~/200KB.1 /
+aslmcli files repo download /200KB.1 .
 aslmcli files package send ~/200KB.1
 aslmcli files package list
 aslmcli files package recv VleoMSrlA
-aslmcli files events
-aslmcli files usage_reports
+aslmcli files admin events
+aslmcli files admin usage_reports
+...and more
 ```
 
 ## Private/Public Keys
@@ -323,10 +325,13 @@ aslmcli download /share/sourcefile /destinationfolder --config-name=awsshod --tr
 This will get transfer information from the SHOD instance and tell the Azure ATS instance 
 to download files.
 
+### Multi session transfers
+
 Multi-session is also available, simply add `--ts='{...}'` like
 ```bash
 --ts='{"multi_session":10,"multi_session_threshold":1,"target_rate_kbps":500000,"checksum_type":"none","cookie":"custom:aslmcli:Laurent:My Transfer"}'
 ```
+This is supported only with node based transfers.
 
 ## Contents
 Included files are:
@@ -352,9 +357,6 @@ supported by IBM/Aspera.
 
 use tools from:
 http://blog.excelwithcode.com/build-commandline-apps.html
-
-follow:
-https://quickleft.com/blog/engineering-lunch-series-step-by-step-guide-to-building-your-first-ruby-gem/
 
 ## Contributing
 

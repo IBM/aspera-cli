@@ -136,10 +136,10 @@ Ta7g6mGwIMXrdTQQ8fZs
         when 'bwcap'; transfer_spec['target_rate_cap_kbps']=value
         when 'createpath'; transfer_spec['create_dir']=yes_to_true(value)
         when 'fallback'; transfer_spec['http_fallback']=yes_to_true(value)
-        when 'auth'; # TODO: why ignore ?
-        when 'lockpolicy'; # TODO: why ignore ?
-        when 'lockminrate'; # TODO: why ignore ?
-        when 'v'; # TODO: why ignore ?
+        when 'auth'; Log.log.warn("ignoring #{name}=#{value}") # TODO: why ignore ?
+        when 'lockpolicy'; transfer_spec['lock_rate_policy']=value
+        when 'lockminrate'; transfer_spec['lock_min_rate']=value
+        when 'v'; Log.log.warn("ignoring #{name}=#{value}")# TODO: why ignore ?
         else Log.log.error("non managed URI value: #{name} = #{value}".red)
         end
       end
@@ -256,6 +256,7 @@ Ta7g6mGwIMXrdTQQ8fZs
         pluginLocation = File.join(Dir.home,'Applications','Aspera Connect.app')
         folder_bin=File.join('Contents','Resources')
         folder_etc=File.join('Contents','Resources')
+        var_run_location = File.join(Dir.home,'Library','Application Support','Aspera/Aspera Connect','var','run')
       when /mswin|msys|mingw|cygwin|bccwin|wince|emc/
         # also: ENV{TEMP}/.. , or %USERPROFILE%\AppData\Local\
         pluginLocation = File.join(ENV['LOCALAPPDATA'],'Programs','Aspera','Aspera Connect')
@@ -266,6 +267,7 @@ Ta7g6mGwIMXrdTQQ8fZs
       @resource_path[:ssh_bypass] = File.join(pluginLocation,folder_etc,'asperaweb_id_dsa.openssh')
       @resource_path[:fallback_cert] = File.join(pluginLocation,folder_etc,'aspera_web_cert.pem')
       @resource_path[:fallback_key] = File.join(pluginLocation,folder_etc,'aspera_web_key.pem')
+      @resource_path[:plugin_https_port_file] = File.join(var_run_location,'https.uri')
       Log.log.debug "resources=#{@resource_path}"
       raise "error" if ! File.executable?(@resource_path[:ascp] )
       raise "error" if ! File.file?(@resource_path[:ssh_bypass] )
@@ -396,7 +398,9 @@ Ta7g6mGwIMXrdTQQ8fZs
       Log.log.debug("ts=#{transfer_spec}")
       if (@use_connect_client) # download using connect ...
         Log.log.debug("using connect client")
-        connect_api=Rest.new('https://local.connectme.us:43003/v5/connect',{})
+        @resource_path[:plugin_https_port_file]
+        connect_url=File.open('https.uri') {|f| f.gets }.strip
+        connect_api=Rest.new("#{connect_url}/v5/connect",{})
         begin
           connect_api.read('info/version')
         rescue Errno::ECONNREFUSED
