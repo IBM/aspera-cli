@@ -220,7 +220,7 @@ module Asperalm
             if @option_parser.get_option_mandatory(:format) != :ruby
               case @option_parser.get_option_mandatory(:fields)
               when FIELDS_DEFAULT
-                if !results.has_key?(:fields)
+                if !results.has_key?(:fields) or results[:fields].nil?
                   raise "empty results" if results[:values].empty?
                   display_fields=results[:values].first.keys
                 else
