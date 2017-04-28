@@ -67,10 +67,18 @@ module Asperalm
           raise CliBadArgument,"missing action, one of: #{allowed_values.map {|x| x.to_s}.join(', ')}"
         end
         action=@mycommand_and_args.shift.to_sym
-        if !allowed_values.include?(action) then
-          raise CliBadArgument,"unexpected value for #{descr}: #{action}, one of: #{allowed_values.map {|x| x.to_s}.join(', ')}"
+        # we accept shortcuts
+        matching=allowed_values.select{|i| i.to_s.start_with?(action.to_s)}
+        case matching.length
+        when 1; return matching.first
+        when 0; raise CliBadArgument,"unexpected value for #{descr}: #{action}, one of: #{allowed_values.map {|x| x.to_s}.join(', ')}"
+        else; raise CliBadArgument,"ambigous value for #{descr}: #{action}, one of: #{matching.map {|x| x.to_s}.join(', ')}"
         end
-        return action
+        # this version accepts only precise values
+        #        if !allowed_values.include?(action) then
+        #          raise CliBadArgument,"unexpected value for #{descr}: #{action}, one of: #{allowed_values.map {|x| x.to_s}.join(', ')}"
+        #        end
+        #        return action
       end
 
       # just get next value
@@ -158,8 +166,8 @@ module Asperalm
         Log.log.info("add_opt_date #{option_symbol}->#{args}")
         self.on(*args) { |v|
           case v
-            when 'now'; set_option(option_symbol,OptParser.time_to_string(Time.now))
-            when /^-([0-9]+)h/; set_option(option_symbol,OptParser.time_to_string(Time.now-$1.to_i*3600))
+          when 'now'; set_option(option_symbol,OptParser.time_to_string(Time.now))
+          when /^-([0-9]+)h/; set_option(option_symbol,OptParser.time_to_string(Time.now-$1.to_i*3600))
           else set_option(option_symbol,v)
           end
         }
@@ -181,7 +189,7 @@ module Asperalm
       def unprocessed_options
         return @myoptions
       end
-      
+
       # removes already known options from the list
       def parse_options!()
         @postpone_help=!@mycommand_and_args.empty? and !@postpone_help

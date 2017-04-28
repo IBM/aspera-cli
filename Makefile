@@ -103,20 +103,25 @@ tnd3:
 tnode: tnd1 tnd2 tnd3 
 
 tfs1:
-	$(ASCLI) files browse /
+	$(ASCLI) files repo browse /
 tfs2:
-	$(ASCLI) files upload $(SAMPLE_FILE) /
+	$(ASCLI) files repo upload $(SAMPLE_FILE) /
 tfs3:
-	$(ASCLI) files download /200KB.1 .
+	$(ASCLI) files repo download /200KB.1 .
 	rm -f 200KB.1
 tfs4:
-	$(ASCLI) files send $(SAMPLE_FILE)
+	$(ASCLI) files package send $(SAMPLE_FILE) --note="my note" --title="my title" --recipient="laurent@asperasoft.com"
 tfs5:
-	$(ASCLI) files packages
+	$(ASCLI) files package list
 tfs6:
-	$(ASCLI) files recv VleoMSrlA
+	$(ASCLI) files package recv VleoMSrlA
 tfs7:
-	$(ASCLI) files events
-tfiles: tfs1 tfs2 tfs3 tfs4 tfs5 tfs6 tfs7
- 
+	$(ASCLI) files admin events
+tfs8:
+	$(ASCLI) files admin resource workspace list
+tfs9:
+	$(ASCLI) files admin resource node 2374 browse / --secret=laurent
+
+tfiles: tfs1 tfs2 tfs3 tfs4 tfs5 tfs6 tfs7 tfs8 tfs9
+
 tests: tshares tfaspex tconsole tnode tfiles tfaspex2
