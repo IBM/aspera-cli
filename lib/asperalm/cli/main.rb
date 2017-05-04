@@ -35,6 +35,7 @@ module Asperalm
           return Log.level
         end
       end
+
       def attr_insecure(operation,value)
         case operation
         when :set
@@ -43,6 +44,7 @@ module Asperalm
           return Rest.insecure
         end
       end
+
       def attr_config_file(operation,value)
         case operation
         when :set
@@ -56,13 +58,24 @@ module Asperalm
         end
       end
 
+      def attr_transfer_spec(operation,value)
+        case operation
+        when :set
+          Log.log.debug "attr_transfer_spec: set: #{value}".red
+          @transfer_spec.merge!(JSON.parse(value))
+        else
+          return JSON.generate(@transfer_spec)
+        end
+      end
+
       def initialize(option_parser,defaults)
-        @ts_override={}
+        @transfer_spec={}
         # handler must be set before setting defaults
         option_parser.set_handler(:loglevel) { |op,val| attr_loglevel(op,val) }
         option_parser.set_handler(:logtype) { |op,val| attr_logtype(op,val) }
         option_parser.set_handler(:config_file) { |op,val| attr_config_file(op,val) }
         option_parser.set_handler(:insecure) { |op,val| attr_insecure(op,val) }
+        option_parser.set_handler(:transfer_spec) { |op,val| attr_transfer_spec(op,val) }
         super(option_parser,defaults)
       end
 
@@ -139,7 +152,7 @@ module Asperalm
         @option_parser.add_opt_simple(:fasp_proxy,"--fasp-proxy=STRING","URL of FASP proxy (dnat / dnats)")
         @option_parser.add_opt_simple(:http_proxy,"--http-proxy=STRING","URL of HTTP proxy (for http fallback)")
         @option_parser.add_opt_on(:rest_debug,"-r", "--rest-debug","more debug for HTTP calls") { Rest.set_debug(true) }
-        @option_parser.add_opt_simple(:ts_override,"--ts=JSON","override transfer spec values, current=#{@option_parser.get_option(:ts_override)}")
+        @option_parser.add_opt_simple(:transfer_spec,"--ts=JSON","override transfer spec values, current=#{@option_parser.get_option(:transfer_spec)}")
       end
 
       def self.result_simple_table(name,list)
@@ -209,8 +222,9 @@ module Asperalm
           @option_parser.parse_options!()
         end
         if command_plugin.respond_to?(:faspmanager)
-          ts_override=@option_parser.get_option(:ts_override)
-          command_plugin.faspmanager.set_ts_override(JSON.parse(ts_override)) if !ts_override.nil?
+          #ts_override=@option_parser.get_option(:transfer_spec)
+          #command_plugin.faspmanager.set_ts_override(JSON.parse(ts_override)) if !ts_override.nil?
+          command_plugin.faspmanager.set_ts_override(@transfer_spec)
           case @option_parser.get_option_mandatory(:transfer)
           when :connect
             command_plugin.faspmanager.use_connect_client=true

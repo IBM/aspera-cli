@@ -63,6 +63,8 @@ module Asperalm
 
       def self.get_from_list(shortval,descr,allowed_values)
         # we accept shortcuts
+        matching_exact=allowed_values.select{|i| i.to_s.eql?(shortval)}
+        return matching_exact.first if matching_exact.length == 1
         matching=allowed_values.select{|i| i.to_s.start_with?(shortval)}
         case matching.length
         when 1; return matching.first
