@@ -2,6 +2,7 @@ require "asperalm/cli/opt_parser"
 require "asperalm/cli/plugin"
 require "asperalm/version"
 require "asperalm/log"
+require 'asperalm/browser_interaction'
 require 'yaml'
 require 'text-table'
 require 'pp'
@@ -34,7 +35,14 @@ module Asperalm
           return Log.level
         end
       end
-
+      def attr_insecure(operation,value)
+        case operation
+        when :set
+          Rest.insecure=value
+        else
+          return Rest.insecure
+        end
+      end
       def attr_config_file(operation,value)
         case operation
         when :set
@@ -54,6 +62,7 @@ module Asperalm
         option_parser.set_handler(:loglevel) { |op,val| attr_loglevel(op,val) }
         option_parser.set_handler(:logtype) { |op,val| attr_logtype(op,val) }
         option_parser.set_handler(:config_file) { |op,val| attr_config_file(op,val) }
+        option_parser.set_handler(:insecure) { |op,val| attr_insecure(op,val) }
         super(option_parser,defaults)
       end
 
@@ -116,8 +125,9 @@ module Asperalm
         @option_parser.set_option(:fields,FIELDS_DEFAULT)
         @option_parser.set_option(:transfer,:ascp)
         @option_parser.set_option(:transfer_node_config,'default')
-        @option_parser.set_option(:insecure,'true')
+        @option_parser.set_option(:insecure,:no)
         @option_parser.on("-h", "--help", "Show this message") { @option_parser.exit_with_usage(nil) }
+        @option_parser.add_opt_list(:insecure,[:yes,:no],"do not validate cert",'--insecure=VALUE')
         @option_parser.add_opt_list(:loglevel,Log.levels,"Log level",'-lTYPE','--log-level=VALUE')
         @option_parser.add_opt_list(:logtype,[:syslog,:stdout],"log method",'-qTYPE','--logger=VALUE')
         @option_parser.add_opt_list(:format,[:ruby,:text_table,:json,:text],"output format",'--format=VALUE')
@@ -129,7 +139,6 @@ module Asperalm
         @option_parser.add_opt_simple(:fasp_proxy,"--fasp-proxy=STRING","URL of FASP proxy (dnat / dnats)")
         @option_parser.add_opt_simple(:http_proxy,"--http-proxy=STRING","URL of HTTP proxy (for http fallback)")
         @option_parser.add_opt_on(:rest_debug,"-r", "--rest-debug","more debug for HTTP calls") { Rest.set_debug(true) }
-        @option_parser.add_opt_on(:insecure,"-k", "--insecure","do not validate cert") { Rest.set_insecure(true) }
         @option_parser.add_opt_simple(:ts_override,"--ts=JSON","override transfer spec values, current=#{@option_parser.get_option(:ts_override)}")
       end
 
@@ -138,7 +147,7 @@ module Asperalm
       end
 
       def execute_action
-        subcommand=@option_parser.get_next_arg_from_list('action',[:ls,:init,:cat])
+        subcommand=@option_parser.get_next_arg_from_list('action',[:ls,:init,:cat,:open])
         case subcommand
         when :init
           raise StandardError,"Folder already exists: #{$PROGRAM_FOLDER}" if Dir.exist?($PROGRAM_FOLDER)
@@ -160,6 +169,9 @@ module Asperalm
           return nil
         when :cat
           return {:values=>File.read($DEFAULT_CONFIG_FILE),:format=>:text}
+        when :open
+          BrowserInteraction.open_system_uri($DEFAULT_CONFIG_FILE)
+          return nil
         when :ls
           sections=self.class.get_plugin_list.unshift(:global)
           if @option_parser.command_or_arg_empty?

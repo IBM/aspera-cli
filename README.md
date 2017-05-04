@@ -108,32 +108,37 @@ SYNOPSIS
 
 COMMANDS
 	Supported commands: console, faspex, files, node, shares, config
+	Note that commands can be written shortened.
 
 DESCRIPTION
 	Use Aspera application to perform operations on command line.
 	OAuth 2.0 is used for authentication in Files, Several authentication methods are provided.
+	Additional documentation here: https://rubygems.org/gems/asperalm
 
 EXAMPLES
-	aslmcli files browse /
+	aslmcli files repo browse /
 	aslmcli faspex send ./myfile --log-level=debug
 	aslmcli shares upload ~/myfile /myshare
 
 SPECIAL OPTION VALUES
 	if an option value begins with @env: or @file:, value is taken from env var or file
+	dates format is 'DD-MM-YY HH:MM:SS', or 'now' or '-<num>h'
 
 OPTIONS (global)
     -h, --help                       Show this message
-    -l, --log-level=TYPE             Log level. Values=(debug,info,warn,error,fatal,unknown), current=warn
-    -q, --logger=TYPE                log method. Values=(syslog,stdout), current=stdout
-        --format=TYPE                output format. Values=(ruby,text_table), current=text_table
-        --transfer=TYPE              type of transfer. Values=(ascp,connect,node), current=ascp
-    -f, --config-file=STRING         read parameters from file in YAML format
+    -l, --log-level=VALUE            Log level. Values=(debug,info,warn,error,fatal,unknown), current=warn
+    -q, --logger=VALUE               log method. Values=(syslog,stdout), current=stdout
+        --format=VALUE               output format. Values=(ruby,text_table,json,text), current=text_table
+        --transfer=VALUE             type of transfer. Values=(ascp,connect,node), current=ascp
+    -f, --config-file=STRING         read parameters from file in YAML format, current=/Users/laurent/.aspera/aslmcli/config.yaml
     -n, --config-name=STRING         name of configuration in config file
-        --node-config=STRING         name of configuration used to transfer when using --transfer=node
+        --transfer-node=STRING       name of configuration used to transfer when using --transfer=node
         --fields=STRING              comma separated list of fields, or ALL, or DEF
         --fasp-proxy=STRING          URL of FASP proxy (dnat / dnats)
         --http-proxy=STRING          URL of HTTP proxy (for http fallback)
     -r, --rest-debug                 more debug for HTTP calls
+    -k, --insecure                   do not validate cert
+        --ts=JSON                    override transfer spec values, current=
 ```
 
 ## Configuration and parameters
@@ -246,9 +251,9 @@ aslmcli shares browse /
 aslmcli shares upload ~/200KB.1 /projectx
 aslmcli shares download /projectx/200KB.1 .
 aslmcli faspex recv_publink https://myfaspex.myorg.com/aspera/faspex/external_deliveries/78780?passcode=a003aaf2f53e3123456b908525084db6bebc7031
-aslmcli faspex list
-aslmcli faspex recv 05b92393-02b7-4900-ab69-fd56721e896c
-aslmcli faspex send ~/200KB.1 --config-name=myfaspex --note="my note" --title="my title" --recipient="laurent@asperasoft.com"
+aslmcli faspex package list
+aslmcli faspex package recv 05b92393-02b7-4900-ab69-fd56721e896c
+aslmcli faspex package send ~/200KB.1 --config-name=myfaspex --note="my note" --title="my title" --recipient="laurent@asperasoft.com"
 aslmcli console transfers list
 aslmcli node browse /
 aslmcli node upload ~/200KB.1 /tmp

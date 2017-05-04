@@ -22,6 +22,8 @@ module Asperalm
     # set to true enables debug in HTTP class
     @@debug=false
     @@insecure=false
+    def self.insecure=(v); @@insecure=v;end
+    def self.insecure; @@insecure;end
     def initialize(baseurl,opt_call_data=nil)
       # base url without trailing slashes
       @api_base=baseurl.gsub(/\/+$/,'')
@@ -31,10 +33,6 @@ module Asperalm
     def self.set_debug(flag)
       Log.log.debug "debug http=#{flag}"
       @@debug=flag
-    end
-    def self.set_insecure(flag)
-      Log.log.debug "insecure=#{flag}"
-      @@insecure=flag
     end
     # build URI from URL and parameters
     def get_uri(call_data)
