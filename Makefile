@@ -71,35 +71,35 @@ installdeps:
 SAMPLE_FILE=~/Documents/Samples/200KB.1
 
 tsh1:
-	$(ASCLI) shares browse / --insecure
+	$(ASCLI) shares browse / --insecure=yes
 tsh2:
-	$(ASCLI) shares upload $(SAMPLE_FILE) /n8-sh1 --insecure
+	$(ASCLI) shares upload $(SAMPLE_FILE) /n8-sh1 --insecure=yes
 tsh3:
-	$(ASCLI) shares download /n8-sh1/200KB.1 . --insecure
+	$(ASCLI) shares download /n8-sh1/200KB.1 . --insecure=yes
 	rm -f 200KB.1
-	$(ASCLI) shares delete /n8-sh1/200KB.1 --insecure
+	$(ASCLI) shares delete /n8-sh1/200KB.1 --insecure=yes
 tshares: tsh1 tsh2 tsh3
 
 tfx1:
-	$(ASCLI) faspex package list --insecure
+	$(ASCLI) faspex package list --insecure=yes
 tfx2:
-	$(ASCLI) faspex package send $(SAMPLE_FILE) --insecure --note="my note" --title="my title" --recipient="laurent@asperasoft.com"
+	$(ASCLI) faspex package send $(SAMPLE_FILE) --insecure=yes --note="my note" --title="my title" --recipient="laurent@asperasoft.com"
 tfx3:
-	@echo $(ASCLI) faspex package recv 05b92393-02b7-4900-ab69-fd56721e896c --insecure
+	@echo $(ASCLI) faspex package recv 05b92393-02b7-4900-ab69-fd56721e896c --insecure=yes
 tfx4:
-	@echo $(ASCLI) faspex recv_publink 'https://ibmfaspex.asperasoft.com/aspera/faspex/external_deliveries/78780?passcode=a003aaf2f53e3869126b908525084db6bebc7031' --insecure
+	@echo $(ASCLI) faspex recv_publink 'https://ibmfaspex.asperasoft.com/aspera/faspex/external_deliveries/78780?passcode=a003aaf2f53e3869126b908525084db6bebc7031' --insecure=yes
 tfaspex: tfx1 tfx2  
 tfaspex2: tfx3 tfx4
 tconsole:
-	$(ASCLI) console transfers list  --insecure
+	$(ASCLI) console transfers list  --insecure=yes
 tnd1:
-	$(ASCLI) node browse / --insecure
+	$(ASCLI) node browse / --insecure=yes
 tnd2:
-	$(ASCLI) node upload $(SAMPLE_FILE) /home/faspex/docroot --insecure
+	$(ASCLI) node upload $(SAMPLE_FILE) /home/faspex/docroot --insecure=yes
 tnd3:
-	$(ASCLI) node download /home/faspex/docroot/200KB.1 . --insecure
+	$(ASCLI) node download /home/faspex/docroot/200KB.1 . --insecure=yes
 	rm -f 200KB.1
-	$(ASCLI) node delete /home/faspex/docroot/200KB.1 --insecure
+	$(ASCLI) node delete /home/faspex/docroot/200KB.1 --insecure=yes
 tnode: tnd1 tnd2 tnd3 
 
 tfs1:

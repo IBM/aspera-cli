@@ -202,6 +202,9 @@ Here is an example:
     :url: https://console.asperademo.com/aspera/console
     :username: nyapiuset
     :password: "mypassword"
+:fasp:
+  default:
+    :transfer_spec: '{"remote_host":"demo.asperasoft.com","remote_user":"asperaweb","password":"xxxx"}'
 ```
 The "default" configuration is taken, but can be overridden on comand line.
 Another configuration can be taken with option "-n".
@@ -295,6 +298,11 @@ $ rm -f ${APIKEY}.protected
 The CLI provides access to Aspera Applications functions through REST APIs, it also
 allows FASP based transfers (upload and download).
 
+Any FASP parameter can be set by changing parameters in the associated "transfer spec".
+The CLI standadizes on the use of "transfer spec" and does not support directly ascp options.
+It is nevertheless possible to add ascp options (for fasp manager only, but not node api or connect)
+using the special transfer spec parameter: EX_ascp_args.
+
 Three methods for starting transfers are currently supported:
 
 ### FASPManager API based
@@ -302,7 +310,8 @@ Three methods for starting transfers are currently supported:
 By default the CLI will use the Aspera Connect Client FASP part, in this case
 it requires the installation of the Aspera Connect Client to be 
 able to execute FASP based transfers. The CLI will try to automatically locate the 
-Aspera Protocol (`ascp`). this is option: `--transfer=ascp`
+Aspera Protocol (`ascp`). This is option: `--transfer=ascp`. Note that parameters
+are always provided with a "transfer spec".
 
 ### Aspera Connect Client GUI
 

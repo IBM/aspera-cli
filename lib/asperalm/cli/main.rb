@@ -175,8 +175,9 @@ module Asperalm
             "app2"=>{:url=>"https://faspex.other.com/aspera/faspex", :username=>"john@example", :password=>"yM7FmjfGN$J4"}
             },:shares=>{"default"=>{:url=>"https://10.25.0.6", :username=>"admin", :password=>"MyP@ssw0rd"}
             },:node=>{"default"=>{:url=>"https://10.25.0.8:9092", :username=>"node_user", :password=>"MyP@ssw0rd", :transfer_filter=>"t['status'].eql?('completed') and t['start_spec']['remote_user'].eql?('faspex')", :file_filter=>"f['status'].eql?('completed') and 0 != f['size'] and t['start_spec']['direction'].eql?('send')"}
-            },:console=>{"default"=>{:url=>"https://console.myorg.com/aspera/console", :username=>"admin", :password=>"xxxxx"}}
-          }
+            },:console=>{"default"=>{:url=>"https://console.myorg.com/aspera/console", :username=>"admin", :password=>"xxxxx"}
+            },:fasp=>{"default"=>{:transfer_spec=>'{"remote_host":"demo.asperasoft.com","remote_user":"asperaweb","password":"xxxxx"}'}
+            }}
           File.write($DEFAULT_CONFIG_FILE,sample_config.to_yaml)
           puts "initialized: #{$PROGRAM_FOLDER}"
           return nil
