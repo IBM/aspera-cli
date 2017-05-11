@@ -66,6 +66,7 @@ Ta7g6mGwIMXrdTQQ8fZs
   # error raised if transfer fails
   class TransferError < StandardError
   end
+
   class FaspError < TransferError
     attr_reader :err_code
     def initialize(message,err_code)
@@ -76,6 +77,20 @@ Ta7g6mGwIMXrdTQQ8fZs
 
   # Manages FASP based transfers
   class FaspManager
+    # a global transfer spec that overrides values in transfer spec provided on start
+    @@ts_override={}
+    # add fields from JSON format
+    def self.ts_override=(value)
+      @@ts_override.merge!(JSON.parse(value))
+    end
+    # returns json format
+    def self.ts_override
+      return JSON.generate(@@ts_override)
+    end
+    def self.ts_override_data
+      return @@ts_override
+    end
+    
     attr_accessor :use_connect_client
     attr_accessor :fasp_proxy_url
     attr_accessor :http_proxy_url

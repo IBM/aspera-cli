@@ -18,6 +18,10 @@ module Asperalm
           items.map {|i| i['permissions']=i['permissions'].map { |x| x['name'] }.join(','); i }
         end
 
+        def self.format_transfer_list(items)
+          items.map {|i| ['remote_user','remote_host'].each { |field| i[field]=i['start_spec'][field] }; i }
+        end
+
         def self.result_translate(resp,type,default)
           resres={:fields=>[type,'result'],:values=>[]}
           JSON.parse(resp[:http].body)['paths'].each do |p|
@@ -39,6 +43,7 @@ module Asperalm
 
         def self.common_actions; [:browse, :mkdir, :delete, :upload, :download];end
 
+        # common API to node and Shares
         def self.execute_common(command,api_node,option_parser,faspmanager)
           case command
           when :browse
@@ -46,7 +51,7 @@ module Asperalm
             send_result=api_node.call({:operation=>'POST',:subpath=>'files/browse',:json_params=>{ :path => thepath} } )
             #send_result={:data=>{'items'=>[{'file'=>"filename1","permissions"=>[{'name'=>'read'},{'name'=>'write'}]}]}}
             return nil if !send_result[:data].has_key?('items')
-            return { :values => send_result[:data]['items'] , :textify => lambda { |items| Node.format_browse(items)} }
+            return { :values => send_result[:data]['items'] , :textify => lambda { |items| Node.format_browse(items) } }
           when :delete
             paths_to_delete = option_parser.get_remaining_arguments("file list")
             return delete_files(api_node,paths_to_delete)
@@ -84,21 +89,47 @@ module Asperalm
 
         def execute_action
           api_node=Rest.new(@option_parser.get_option_mandatory(:url),{:basic_auth=>{:user=>@option_parser.get_option_mandatory(:username), :password=>@option_parser.get_option_mandatory(:password)}})
-          command=@option_parser.get_next_arg_from_list('command',self.class.common_actions.clone.concat([ :stream, :transfer, :info, :cleanup, :ak, :wf ]))
+          command=@option_parser.get_next_arg_from_list('command',self.class.common_actions.clone.concat([ :stream, :transfer, :info, :cleanup, :access_key, :watch_folder ]))
           case command
           when *self.class.common_actions; return self.class.execute_common(command,api_node,@option_parser,@faspmanager)
           when :stream
-            raise "not implemented"
-          when :transfer
-            command=@option_parser.get_next_arg_from_list('command',[ :list, :cancel ])
-            # ,:url_params=>{:active_only=>true}
+            command=@option_parser.get_next_arg_from_list('command',[ :list, :create, :info, :modify, :cancel ])
             case command
             when :list
               resp=api_node.call({:operation=>'GET',:subpath=>'ops/transfers',:headers=>{'Accept'=>'application/json'},:url_params=>{'active_only'=>'true'}})
               return { :fields=>['id','status'], :values => resp[:data] } # TODO
+            when :create
+              resp=api_node.call({:operation=>'POST',:subpath=>'streams',:headers=>{'Accept'=>'application/json'},:json_params=>FaspManager.ts_override_data})
+              return { :values => resp[:data] }
+            when :info
+              trid=option_parser.get_next_arg_value("transfer id")
+              resp=api_node.call({:operation=>'GET',:subpath=>'ops/transfers/'+trid,:headers=>{'Accept'=>'application/json'}})
+              return { :format=>:ruby, :values => resp[:data] } # TODO
+            when :modify
+              trid=option_parser.get_next_arg_value("transfer id")
+              resp=api_node.call({:operation=>'PUT',:subpath=>'streams/'+trid,:headers=>{'Accept'=>'application/json'},:json_params=>FaspManager.ts_override_data})
+              return { :format=>:ruby, :values => resp[:data] } # TODO
+            when :cancel
+              trid=option_parser.get_next_arg_value("transfer id")
+              resp=api_node.call({:operation=>'CANCEL',:subpath=>'streams/'+trid,:headers=>{'Accept'=>'application/json'}})
+              return { :format=>:ruby, :values => resp[:data] } # TODO
+            else
+              raise "error"
+            end
+          when :transfer
+            command=@option_parser.get_next_arg_from_list('command',[ :list, :cancel, :info ])
+            # ,:url_params=>{:active_only=>true}
+            case command
+            when :list
+              resp=api_node.call({:operation=>'GET',:subpath=>'ops/transfers',:headers=>{'Accept'=>'application/json'},:url_params=>{'active_only'=>'true'}})
+              return { :fields=>['id','status','remote_user','remote_host'], :values => resp[:data], :textify => lambda { |items| Node.format_transfer_list(items) } } # TODO
             when :cancel
               trid=option_parser.get_next_arg_value("transfer id")
               resp=api_node.call({:operation=>'CANCEL',:subpath=>'ops/transfers/'+trid,:headers=>{'Accept'=>'application/json'}})
+              return { :format=>:ruby, :values => resp[:data] } # TODO
+            when :info
+              trid=option_parser.get_next_arg_value("transfer id")
+              resp=api_node.call({:operation=>'GET',:subpath=>'ops/transfers/'+trid,:headers=>{'Accept'=>'application/json'}})
               return { :format=>:ruby, :values => resp[:data] } # TODO
             else
               raise "error"
@@ -106,11 +137,11 @@ module Asperalm
           when :info
             resp=api_node.call({:operation=>'GET',:subpath=>'info',:headers=>{'Accept'=>'application/json'}})
             return { :format=>:ruby, :values => resp[:data] }# TODO
-          when :ak
+          when :access_key
             resp=api_node.call({:operation=>'GET',:subpath=>'access_keys',:headers=>{'Accept'=>'application/json'}})
             return {:fields=>['id','root_file_id','storage','license'],:values=>resp[:data]}
             #return { :values => resp[:data] }# TODO
-          when :wf
+          when :watch_folder
             resp=api_node.call({:operation=>'GET',:subpath=>'/v3/watchfolders',:headers=>{'Accept'=>'application/json'}})
             #return {:fields=>['id','root_file_id','storage','license'],:values=>resp[:data]}
             return { :format=>:ruby, :values => resp[:data] }# TODO

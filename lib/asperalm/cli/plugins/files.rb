@@ -324,7 +324,7 @@ module Asperalm
             raise RuntimeError, "unexpected value: #{command}"
           end # action
         end
-      end
-    end
+      end # Files
+    end # Plugins
   end # Cli
 end # Asperalm
