@@ -10,6 +10,8 @@ module Asperalm
   module Cli
     class CliBadArgument < StandardError
     end
+    class CliError < StandardError
+    end
 
     # base class for plugins modules
     class OptParser < OptionParser

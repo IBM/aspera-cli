@@ -8,10 +8,10 @@ module Asperalm
         alias super_set_options set_options
         def set_options
           super_set_options
-          @option_parser.set_option(:persistency,File.join($PROGRAM_FOLDER,"persistency_cleanup.txt"))
-          @option_parser.add_opt_simple(:persistency,"--persistency=FILEPATH","persistency file")
-          @option_parser.add_opt_simple(:transfer_filter,"--transfer-filter=EXPRESSION","Ruby expression for filter at transfer level")
-          @option_parser.add_opt_simple(:file_filter,"--file-filter=EXPRESSION","Ruby expression for filter at file level")
+          self.options.set_option(:persistency,File.join($PROGRAM_FOLDER,"persistency_cleanup.txt"))
+          self.options.add_opt_simple(:persistency,"--persistency=FILEPATH","persistency file")
+          self.options.add_opt_simple(:transfer_filter,"--transfer-filter=EXPRESSION","Ruby expression for filter at transfer level")
+          self.options.add_opt_simple(:file_filter,"--file-filter=EXPRESSION","Ruby expression for filter at file level")
         end
 
         def self.format_browse(items)
@@ -41,11 +41,14 @@ module Asperalm
           return result_translate(resp,'file','deleted')
         end
 
-        def self.common_actions; [:browse, :mkdir, :delete, :upload, :download];end
+        def self.common_actions; [:browse, :mkdir, :delete, :upload, :download, :info];end
 
         # common API to node and Shares
         def self.execute_common(command,api_node,option_parser,faspmanager)
           case command
+          when :info
+            resp=api_node.call({:operation=>'GET',:subpath=>'info',:headers=>{'Accept'=>'application/json'}})
+            return { :format=>:ruby, :values => resp[:data] }# TODO
           when :browse
             thepath=option_parser.get_next_arg_value("path")
             send_result=api_node.call({:operation=>'POST',:subpath=>'files/browse',:json_params=>{ :path => thepath} } )
@@ -88,12 +91,12 @@ module Asperalm
         end
 
         def execute_action
-          api_node=Rest.new(@option_parser.get_option_mandatory(:url),{:basic_auth=>{:user=>@option_parser.get_option_mandatory(:username), :password=>@option_parser.get_option_mandatory(:password)}})
-          command=@option_parser.get_next_arg_from_list('command',self.class.common_actions.clone.concat([ :stream, :transfer, :info, :cleanup, :access_key, :watch_folder ]))
+          api_node=Rest.new(self.options.get_option_mandatory(:url),{:basic_auth=>{:user=>self.options.get_option_mandatory(:username), :password=>self.options.get_option_mandatory(:password)}})
+          command=self.options.get_next_arg_from_list('command',self.class.common_actions.clone.concat([ :stream, :transfer, :info, :cleanup, :access_key, :watch_folder ]))
           case command
-          when *self.class.common_actions; return self.class.execute_common(command,api_node,@option_parser,@faspmanager)
+          when *self.class.common_actions; return self.class.execute_common(command,api_node,self.options,@faspmanager)
           when :stream
-            command=@option_parser.get_next_arg_from_list('command',[ :list, :create, :info, :modify, :cancel ])
+            command=self.options.get_next_arg_from_list('command',[ :list, :create, :info, :modify, :cancel ])
             case command
             when :list
               resp=api_node.call({:operation=>'GET',:subpath=>'ops/transfers',:headers=>{'Accept'=>'application/json'},:url_params=>{'active_only'=>'true'}})
@@ -117,7 +120,7 @@ module Asperalm
               raise "error"
             end
           when :transfer
-            command=@option_parser.get_next_arg_from_list('command',[ :list, :cancel, :info ])
+            command=self.options.get_next_arg_from_list('command',[ :list, :cancel, :info ])
             # ,:url_params=>{:active_only=>true}
             case command
             when :list
@@ -134,9 +137,6 @@ module Asperalm
             else
               raise "error"
             end
-          when :info
-            resp=api_node.call({:operation=>'GET',:subpath=>'info',:headers=>{'Accept'=>'application/json'}})
-            return { :format=>:ruby, :values => resp[:data] }# TODO
           when :access_key
             resp=api_node.call({:operation=>'GET',:subpath=>'access_keys',:headers=>{'Accept'=>'application/json'}})
             return {:fields=>['id','root_file_id','storage','license'],:values=>resp[:data]}
@@ -146,9 +146,9 @@ module Asperalm
             #return {:fields=>['id','root_file_id','storage','license'],:values=>resp[:data]}
             return { :format=>:ruby, :values => resp[:data] }# TODO
           when :cleanup
-            persistencyfile=@option_parser.get_option_mandatory(:persistency)
-            transfer_filter=@option_parser.get_option_mandatory(:transfer_filter)
-            file_filter=@option_parser.get_option_mandatory(:file_filter)
+            persistencyfile=self.options.get_option_mandatory(:persistency)
+            transfer_filter=self.options.get_option_mandatory(:transfer_filter)
+            file_filter=self.options.get_option_mandatory(:file_filter)
             Log.log.debug("transfer_filter: #{transfer_filter}")
             Log.log.debug("file_filter: #{file_filter}")
             # first time run ? or subsequent run ?

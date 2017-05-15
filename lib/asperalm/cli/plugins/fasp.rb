@@ -5,13 +5,10 @@ module Asperalm
     module Plugins
       class Fasp < Plugin
         attr_accessor :faspmanager
-        def set_options
-          @option_parser.separator "  no option"
-        end
 
         # todo: ascmd commands
         def execute_action
-          command=@option_parser.get_next_arg_from_list('command',[:download,:upload])
+          command=self.options.get_next_arg_from_list('command',[:download,:upload])
           case command
           when :upload
             filelist = option_parser.get_remaining_arguments("file list")

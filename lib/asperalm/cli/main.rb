@@ -12,13 +12,14 @@ module Asperalm
   module Cli
     module Plugins
     end
+
     class Main < Plugin
       @@MAIN_PLUGIN_NAME_SYM=:cli
       def attr_logtype(operation,value)
         case operation
         when :set
           Log.setlogger(value)
-          @option_parser.set_option(:loglevel,:warn)
+          self.options.set_option(:loglevel,:warn)
           @logtype_cache=value
         else
           return @logtype_cache
@@ -51,7 +52,7 @@ module Asperalm
           Log.log.debug "loading #{value}"
           @loaded_config=YAML.load_file(value)
           Log.log.debug "loaded: #{@loaded_config}"
-          @option_parser.set_defaults(get_defaults(@@MAIN_PLUGIN_NAME_SYM,@option_parser.get_option(:config_name)))
+          self.options.set_defaults(get_defaults(@@MAIN_PLUGIN_NAME_SYM,self.options.get_option(:config_name)))
         else
           return @config_file_path
         end
@@ -66,7 +67,15 @@ module Asperalm
           return FaspManager.ts_override
         end
       end
-
+      def attr_browser(operation,value)
+        case operation
+        when :set
+          Log.log.debug "attr_browser: set: #{value}".red
+          BrowserInteraction.browser_method=value
+        else
+          return BrowserInteraction.browser_method
+        end
+      end
       @@GEM_PLUGINS_FOLDER='asperalm/cli/plugins'
       @@CLI_MODULE=Module.nesting[1].to_s
       @@PLUGINS_MODULE=@@CLI_MODULE+"::Plugins"
@@ -85,7 +94,8 @@ module Asperalm
         end
       end
 
-      def initialize(option_parser,defaults)
+      def scan_all_plugins
+        # find plugins
         # value=path to class
         @plugins={@@MAIN_PLUGIN_NAME_SYM=>{:source=>__FILE__,:req=>nil}}
         gem_root=File.expand_path(@@CLI_MODULE.to_s.gsub('::','/').gsub(%r([^/]+),'..'), File.dirname(__FILE__))
@@ -94,29 +104,67 @@ module Asperalm
           $:.push(@@USER_PLUGINS_FOLDER)
           scan_plugins(@@USER_PLUGINS_FOLDER,nil)
         end
+      end
+
+      def initialize(option_parser)
+        super(option_parser)
+        scan_all_plugins
+        self.options.program_name=$PROGRAM_NAME
+        self.options.banner = "NAME\n\t#{$PROGRAM_NAME} -- a command line tool for Aspera Applications\n\n"
+        self.options.separator "SYNOPSIS"
+        self.options.separator "\t#{$PROGRAM_NAME} COMMANDS [OPTIONS] [ARGS]"
+        self.options.separator ""
+        self.options.separator "COMMANDS"
+        self.options.separator "\tSupported commands: #{plugin_sym_list.map {|x| x.to_s}.join(', ')}"
+        self.options.separator "\tNote that commands can be written shortened."
+        self.options.separator ""
+        self.options.separator "DESCRIPTION"
+        self.options.separator "\tUse Aspera application to perform operations on command line."
+        self.options.separator "\tOAuth 2.0 is used for authentication in Files, Several authentication methods are provided."
+        self.options.separator "\tAdditional documentation here: https://rubygems.org/gems/asperalm"
+        self.options.separator ""
+        self.options.separator "EXAMPLES"
+        self.options.separator "\t#{$PROGRAM_NAME} files repo browse /"
+        self.options.separator "\t#{$PROGRAM_NAME} faspex send ./myfile --log-level=debug"
+        self.options.separator "\t#{$PROGRAM_NAME} shares upload ~/myfile /myshare"
+        self.options.separator "\nSPECIAL OPTION VALUES\n\tif an option value begins with @env: or @file:, value is taken from env var or file\n\tdates format is 'DD-MM-YY HH:MM:SS', or 'now' or '-<num>h'"
+        self.options.separator ""
         # handler must be set before setting defaults
-        option_parser.set_handler(:loglevel) { |op,val| attr_loglevel(op,val) }
-        option_parser.set_handler(:logtype) { |op,val| attr_logtype(op,val) }
-        option_parser.set_handler(:config_file) { |op,val| attr_config_file(op,val) }
-        option_parser.set_handler(:insecure) { |op,val| attr_insecure(op,val) }
-        option_parser.set_handler(:transfer_spec) { |op,val| attr_transfer_spec(op,val) }
-        super(option_parser,defaults)
+        self.options.set_handler(:loglevel) { |op,val| attr_loglevel(op,val) }
+        self.options.set_handler(:logtype) { |op,val| attr_logtype(op,val) }
+        self.options.set_handler(:config_file) { |op,val| attr_config_file(op,val) }
+        self.options.set_handler(:insecure) { |op,val| attr_insecure(op,val) }
+        self.options.set_handler(:transfer_spec) { |op,val| attr_transfer_spec(op,val) }
+        self.options.set_handler(:browser) { |op,val| attr_browser(op,val) }
       end
 
       # plugin_name_sym is symbol
+      # initialize if necessary
       def get_plugin_instance(plugin_name_sym)
         require @plugins[plugin_name_sym][:req]
-        #File.join(@@GEM_PLUGINS_FOLDER,plugin_name_sym.to_s)
         Log.log.debug("loaded config -> #{@loaded_config}")
-        default_config=get_defaults(plugin_name_sym,@option_parser.get_option_mandatory(:config_name))
+        default_config=get_defaults(plugin_name_sym,self.options.get_option_mandatory(:config_name))
         # TODO: check that ancestor is Plugin
-        command_plugin=Object::const_get(@@PLUGINS_MODULE+'::'+plugin_name_sym.to_s.capitalize).new(@option_parser,default_config)
+        command_plugin=Object::const_get(@@PLUGINS_MODULE+'::'+plugin_name_sym.to_s.capitalize).new(self.options)
+        command_plugin.options.set_defaults(default_config)
         if command_plugin.respond_to?(:faspmanager=) then
           # create the FASP manager for transfers
-          faspmanager=FaspManagerResume.new
-          faspmanager.set_listener(FaspListenerLogger.new)
-          command_plugin.faspmanager=faspmanager
+          command_plugin.faspmanager=FaspManagerResume.new
+          command_plugin.faspmanager.set_listener(FaspListenerLogger.new)
+          case self.options.get_option_mandatory(:transfer)
+          when :connect
+            command_plugin.faspmanager.use_connect_client=true
+          when :node
+            node_config=get_defaults(:node,self.options.get_option_mandatory(:transfer_node_config))
+            raise CliBadArgument,"no such node configuration: #{self.options.get_option_mandatory(:transfer_node_config)}" if node_config.nil?
+            command_plugin.faspmanager.tr_node_api=Rest.new(node_config[:url],{:basic_auth=>{:user=>node_config[:username], :password=>node_config[:password]}})
+          end
+          # may be nil:
+          command_plugin.faspmanager.fasp_proxy_url=self.options.get_option(:fasp_proxy)
+          command_plugin.faspmanager.http_proxy_url=self.options.get_option(:http_proxy)
         end
+        self.options.separator "OPTIONS: #{plugin_name_sym}"
+        command_plugin.set_options
         return command_plugin
       end
 
@@ -124,63 +172,61 @@ module Asperalm
       FIELDS_DEFAULT='DEF'
 
       def set_options
-        @option_parser.banner = "NAME\n\t#{$PROGRAM_NAME} -- a command line tool for Aspera Applications\n\n"
-        @option_parser.separator "SYNOPSIS"
-        @option_parser.separator "\t#{$PROGRAM_NAME} COMMANDS [OPTIONS] [ARGS]"
-        @option_parser.separator ""
-        @option_parser.separator "COMMANDS"
-        @option_parser.separator "\tSupported commands: #{plugin_sym_list.map {|x| x.to_s}.join(', ')}"
-        @option_parser.separator "\tNote that commands can be written shortened."
-        @option_parser.separator ""
-        @option_parser.separator "DESCRIPTION"
-        @option_parser.separator "\tUse Aspera application to perform operations on command line."
-        @option_parser.separator "\tOAuth 2.0 is used for authentication in Files, Several authentication methods are provided."
-        @option_parser.separator "\tAdditional documentation here: https://rubygems.org/gems/asperalm"
-        @option_parser.separator ""
-        @option_parser.separator "EXAMPLES"
-        @option_parser.separator "\t#{$PROGRAM_NAME} files repo browse /"
-        @option_parser.separator "\t#{$PROGRAM_NAME} faspex send ./myfile --log-level=debug"
-        @option_parser.separator "\t#{$PROGRAM_NAME} shares upload ~/myfile /myshare"
-        @option_parser.separator "\nSPECIAL OPTION VALUES\n\tif an option value begins with @env: or @file:, value is taken from env var or file\n\tdates format is 'DD-MM-YY HH:MM:SS', or 'now' or '-<num>h'"
-        @option_parser.separator ""
-        @option_parser.separator "OPTIONS (global)"
-        @option_parser.set_option(:fields,FIELDS_DEFAULT)
-        @option_parser.set_option(:transfer,:ascp)
-        @option_parser.set_option(:transfer_node_config,'default')
-        @option_parser.set_option(:insecure,:no)
-        @option_parser.on("-h", "--help", "Show this message") { @option_parser.exit_with_usage(nil) }
-        @option_parser.add_opt_list(:insecure,[:yes,:no],"do not validate cert",'--insecure=VALUE')
-        @option_parser.add_opt_list(:loglevel,Log.levels,"Log level",'-lTYPE','--log-level=VALUE')
-        @option_parser.add_opt_list(:logtype,[:syslog,:stdout],"log method",'-qTYPE','--logger=VALUE')
-        @option_parser.add_opt_list(:format,[:ruby,:text_table,:json,:text],"output format",'--format=VALUE')
-        @option_parser.add_opt_list(:transfer,[:ascp,:connect,:node],"type of transfer",'--transfer=VALUE')
-        @option_parser.add_opt_simple(:config_file,"-fSTRING", "--config-file=STRING","read parameters from file in YAML format, current=#{@option_parser.get_option(:config_file)}")
-        @option_parser.add_opt_simple(:config_name,"-nSTRING", "--config-name=STRING","name of configuration in config file")
-        @option_parser.add_opt_simple(:transfer_node_config,"--transfer-node=STRING","name of configuration used to transfer when using --transfer=node")
-        @option_parser.add_opt_simple(:fields,"--fields=STRING","comma separated list of fields, or #{FIELDS_ALL}, or #{FIELDS_DEFAULT}")
-        @option_parser.add_opt_simple(:fasp_proxy,"--fasp-proxy=STRING","URL of FASP proxy (dnat / dnats)")
-        @option_parser.add_opt_simple(:http_proxy,"--http-proxy=STRING","URL of HTTP proxy (for http fallback)")
-        @option_parser.add_opt_on(:rest_debug,"-r", "--rest-debug","more debug for HTTP calls") { Rest.set_debug(true) }
-        @option_parser.add_opt_simple(:transfer_spec,"--ts=JSON","override transfer spec values, current=#{@option_parser.get_option(:transfer_spec)}")
+        self.options.separator "OPTIONS: global"
+        self.options.set_option(:browser,:tty)
+        self.options.set_option(:fields,FIELDS_DEFAULT)
+        self.options.set_option(:transfer,:ascp)
+        self.options.set_option(:transfer_node_config,'default')
+        self.options.set_option(:insecure,:no)
+        self.options.set_option(:format,:text_table)
+        self.options.set_option(:logtype,:stdout)
+        self.options.set_option(:config_file,@@DEFAULT_CONFIG_FILE) if File.exist?(@@DEFAULT_CONFIG_FILE)
+        self.options.on("-h", "--help", "Show this message") { self.options.exit_with_usage(nil) }
+        self.options.add_opt_list(:browser,BrowserInteraction.getter_types,"method to start browser",'-gTYPE','--browser=TYPE')
+        self.options.add_opt_list(:insecure,[:yes,:no],"do not validate cert",'--insecure=VALUE')
+        self.options.add_opt_list(:loglevel,Log.levels,"Log level",'-lTYPE','--log-level=VALUE')
+        self.options.add_opt_list(:logtype,[:syslog,:stdout],"log method",'-qTYPE','--logger=VALUE')
+        self.options.add_opt_list(:format,[:ruby,:text_table,:json,:text],"output format",'--format=VALUE')
+        self.options.add_opt_list(:transfer,[:ascp,:connect,:node],"type of transfer",'--transfer=VALUE')
+        self.options.add_opt_simple(:config_file,"-fSTRING", "--config-file=STRING","read parameters from file in YAML format, current=#{self.options.get_option(:config_file)}")
+        self.options.add_opt_simple(:config_name,"-nSTRING", "--config-name=STRING","name of configuration in config file")
+        self.options.add_opt_simple(:transfer_node_config,"--transfer-node=STRING","name of configuration used to transfer when using --transfer=node")
+        self.options.add_opt_simple(:fields,"--fields=STRING","comma separated list of fields, or #{FIELDS_ALL}, or #{FIELDS_DEFAULT}")
+        self.options.add_opt_simple(:fasp_proxy,"--fasp-proxy=STRING","URL of FASP proxy (dnat / dnats)")
+        self.options.add_opt_simple(:http_proxy,"--http-proxy=STRING","URL of HTTP proxy (for http fallback)")
+        self.options.add_opt_on(:rest_debug,"-r", "--rest-debug","more debug for HTTP calls") { Rest.set_debug(true) }
+        self.options.add_opt_simple(:transfer_spec,"--ts=JSON","override transfer spec values, current=#{self.options.get_option(:transfer_spec)}")
       end
 
       def self.result_simple_table(name,list)
         return {:values => list.map { |i| { name => i.to_s } }}
       end
 
+      # "cli" plugin
       def execute_action
-        command=@option_parser.get_next_arg_from_list('command',[:config,:plugins])
+        command=self.options.get_next_arg_from_list('command',[:help,:config,:plugins])
         case command
+        when :help
+          STDERR.puts self.options
+          plugin_sym_list.select { |s| !@plugins[s][:req].nil? }.each do |plugin_name_sym|
+            self.options=OptParser.new([])
+            self.options.banner = ""
+            self.options.program_name=$PROGRAM_NAME
+            self.options.set_defaults({:config_name => 'default',:transfer=>:ascp})
+            get_plugin_instance(plugin_name_sym)
+            STDERR.puts self.options
+          end
+          Process.exit 1
         when :plugins
           return {:values => plugin_sym_list.map { |i| { 'plugin' => i.to_s, 'path' => @plugins[i][:source] } } , :fields => ['plugin','path'] }
         when :config
-          action=@option_parser.get_next_arg_from_list('action',[:ls,:init,:cat,:open])
+          action=self.options.get_next_arg_from_list('action',[:ls,:init,:cat,:open])
           case action
           when :init
-            raise StandardError,"Folder already exists: #{$PROGRAM_FOLDER}" if Dir.exist?($PROGRAM_FOLDER)
+            raise CliError,"Folder already exists: #{$PROGRAM_FOLDER}" if Dir.exist?($PROGRAM_FOLDER)
             FileUtils::mkdir_p($PROGRAM_FOLDER)
             sample_config={
-              :global=>{"default"=>{:loglevel=>:warn}},
+              :cli=>{"default"=>{:loglevel=>:warn}},
               :files=>{
               "default"=>{:auth=>:jwt, :url=>"https://myorg.asperafiles.com", :client_id=>"MyClientId", :client_secret=>"MyAccessKeySecret", :private_key=>"@file:~/.aspera/aslmcli/filesapikey", :username=>"user@example.com"},
               "web"=>{:auth=>:web, :url=>"https://myorg.asperafiles.com", :client_id=>"MyClientId", :client_secret=>"MyAccessKeySecret", :redirect_uri=>"http://local.connectme.us:12345"}
@@ -202,18 +248,18 @@ module Asperalm
             return nil
           when :ls
             sections=plugin_sym_list
-            if @option_parser.command_or_arg_empty?
+            if self.options.command_or_arg_empty?
               # just list plugins
               return self.class.result_simple_table('plugin',sections)
             else
-              plugin=@option_parser.get_next_arg_from_list('plugin',sections)
+              plugin=self.options.get_next_arg_from_list('plugin',sections)
               names=@loaded_config[plugin].keys.map { |i| i.to_sym }
-              if @option_parser.command_or_arg_empty?
+              if self.options.command_or_arg_empty?
                 # list names for tool
                 return self.class.result_simple_table('name',names)
               else
                 # list parameters
-                configname=@option_parser.get_next_arg_from_list('config',names)
+                configname=self.options.get_next_arg_from_list('config',names)
                 defaults=get_defaults(plugin,configname.to_s)
                 return nil if defaults.nil?
                 return {:values => defaults.keys.map { |i| { 'param' => i.to_s, 'value' => defaults[i] } } , :fields => ['param','value'] }
@@ -237,48 +283,19 @@ module Asperalm
         return default_config
       end
 
-      def process_command()
-        self.set_options
-        # parse general options
-        @option_parser.parse_options!()
-        command_sym=@option_parser.get_next_arg_from_list('command',plugin_sym_list)
-        case command_sym
-        when @@MAIN_PLUGIN_NAME_SYM
-          command_plugin=self
-        else
-          # execute plugin
-          command_plugin=self.get_plugin_instance(command_sym)
-          @option_parser.separator "OPTIONS (#{command_sym})"
-          command_plugin.set_options
-          # parse plugin options
-          @option_parser.parse_options!()
-        end
-        if command_plugin.respond_to?(:faspmanager)
-          case @option_parser.get_option_mandatory(:transfer)
-          when :connect
-            command_plugin.faspmanager.use_connect_client=true
-          when :node
-            node_config=get_defaults(:node,@option_parser.get_option_mandatory(:transfer_node_config))
-            raise CliBadArgument,"no such node configuration: #{@option_parser.get_option_mandatory(:transfer_node_config)}" if node_config.nil?
-            command_plugin.faspmanager.tr_node_api=Rest.new(node_config[:url],{:basic_auth=>{:user=>node_config[:username], :password=>node_config[:password]}})
-          end
-          # may be nil:
-          command_plugin.faspmanager.fasp_proxy_url=@option_parser.get_option(:fasp_proxy)
-          command_plugin.faspmanager.http_proxy_url=@option_parser.get_option(:http_proxy)
-        end
-        results=command_plugin.execute_action
+      def display_results(results)
         if results.nil?
           Log.log.debug("result=nil")
         elsif results.is_a?(String)
           $stdout.write(results)
         elsif results.is_a?(Hash) and results.has_key?(:values) then
-          @option_parser.set_option(:format,results[:format]) if results.has_key?(:format)
+          self.options.set_option(:format,results[:format]) if results.has_key?(:format)
           if results[:values].is_a?(Array) and results[:values].empty?
             $stdout.write("no result")
           else
             display_fields=nil
-            if ![:ruby,:text].include?(@option_parser.get_option_mandatory(:format))
-              case @option_parser.get_option_mandatory(:fields)
+            if ![:ruby,:text].include?(self.options.get_option_mandatory(:format))
+              case self.options.get_option_mandatory(:fields)
               when FIELDS_DEFAULT
                 if !results.has_key?(:fields) or results[:fields].nil?
                   raise "empty results" if results[:values].empty?
@@ -290,10 +307,10 @@ module Asperalm
                 raise "empty results" if results[:values].empty?
                 display_fields=results[:values].first.keys if results[:values].is_a?(Array)
               else
-                display_fields=@option_parser.get_option_mandatory(:fields).split(',')
+                display_fields=self.options.get_option_mandatory(:fields).split(',')
               end
             end
-            case @option_parser.get_option_mandatory(:format)
+            case self.options.get_option_mandatory(:format)
             when :ruby
               puts PP.pp(results[:values],'')
             when :json
@@ -312,16 +329,34 @@ module Asperalm
         else
           puts ">other result>#{PP.pp(results,'')}".red
         end
-        # parse for help
-        @option_parser.parse_options!()
-        if !@option_parser.unprocessed_options.empty?
-          raise CliBadArgument,"unprocessed options: #{@option_parser.unprocessed_options}"
-        end
-        if !@option_parser.command_or_arg_empty?
-          raise CliBadArgument,"unprocessed values: #{@option_parser.get_remaining_arguments(nil)}"
-        end
+      end
 
-        return ""
+      def process_command_line()
+        self.set_options
+        # parse general options always, before finding plugin
+        self.options.parse_options!()
+        command_sym=self.options.get_next_arg_from_list('command',plugin_sym_list)
+        case command_sym
+        when @@MAIN_PLUGIN_NAME_SYM
+          command_plugin=self
+        else
+          # get plugin
+          command_plugin=self.get_plugin_instance(command_sym)
+          # parse plugin specific options
+          self.options.parse_options!()
+        end
+        results=command_plugin.execute_action
+        display_results(results)
+        # parse for help
+        self.options.parse_options!()
+        # unprocessed values ?
+        if !self.options.unprocessed_options.empty?
+          raise CliBadArgument,"unprocessed options: #{self.options.unprocessed_options}"
+        end
+        if !self.options.command_or_arg_empty?
+          raise CliBadArgument,"unprocessed values: #{self.options.get_remaining_arguments(nil)}"
+        end
+        return nil
       end
 
       #################################
@@ -337,30 +372,22 @@ module Asperalm
       @@USER_PLUGINS_FOLDER=File.join($PROGRAM_FOLDER,@@ASPERA_PLUGINS_FOLDERNAME)
 
       def self.start
-        defaults={
-          :transfer => :connect,
-          :logtype => :stdout,
-          :loglevel => :warn,
-          :format => :text_table,
-          :config_name => 'default'
-        }
-        Log.level = defaults[:loglevel]
-        # this separates options (start with '-') from arguments
-        @option_parser=OptParser.new(ARGV)
-        @option_parser.program_name=$PROGRAM_NAME
-        config_file=@@DEFAULT_CONFIG_FILE
-        Log.log.debug("config file=#{config_file}")
-        defaults[:config_file]=config_file if File.exist?(config_file)
-        tool=self.new(@option_parser,defaults)
+        # quick init of debug level
+        Log.level = ARGV.include?('--log-level=debug') ? :debug : :warn
+        tool=self.new(OptParser.new(ARGV))
         begin
-          tool.process_command()
+          # this separates options (start with '-') from arguments
+          tool.options.set_defaults({:config_name => 'default'})
+          tool.process_command_line()
         rescue CliBadArgument => e
-          #puts "EEE:#{$@}" #if Log.level == :debug
           raise e if Log.level == :debug
-          @option_parser.exit_with_usage("CLI error: #{e.message}")
+          tool.options.exit_with_usage("CLI error: #{e.message}")
+        rescue CliError => e
+          raise e if Log.level == :debug
+          tool.options.exit_with_usage("Processing error: #{e.message}")
         rescue Asperalm::TransferError => e
-          puts $@ if Log.level == :debug
-          @option_parser.exit_with_usage("FASP error: #{e.message}",false)
+          raise e if Log.level == :debug
+          tool.options.exit_with_usage("FASP error: #{e.message}",false)
         end
       end
     end

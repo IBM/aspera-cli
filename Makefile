@@ -107,7 +107,7 @@ tfs1:
 tfs2:
 	$(ASCLI) files repo upload $(SAMPLE_FILE) /
 tfs3:
-	$(ASCLI) files repo download /200KB.1 .
+	$(ASCLI) files repo download /200KB.1 . --transfer=connect
 	rm -f 200KB.1
 tfs4:
 	$(ASCLI) files package send $(SAMPLE_FILE) --note="my note" --title="my title" --recipient="laurent@asperasoft.com"

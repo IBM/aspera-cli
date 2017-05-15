@@ -1,9 +1,8 @@
+require 'asperalm/cli/plugins/node'
 require 'asperalm/cli/plugin'
-require 'asperalm/browser_interaction'
 require 'asperalm/oauth'
 require 'asperalm/files_api'
 require 'SecureRandom'
-require 'asperalm/cli/plugins/node'
 
 module Asperalm
   module Cli
@@ -13,10 +12,10 @@ module Asperalm
         # no scope: requires secret
         # if secret present: use it
         def get_node_api(node_info,node_scope=nil)
-          if node_scope.nil? or !@option_parser.get_option(:secret).nil?
-            return Rest.new(node_info['url'],{:basic_auth=>{:user=>node_info['access_key'], :password=>@option_parser.get_option_mandatory(:secret)},:headers=>{'X-Aspera-AccessKey'=>node_info['access_key']}})
+          if node_scope.nil? or !self.options.get_option(:secret).nil?
+            return Rest.new(node_info['url'],{:basic_auth=>{:user=>node_info['access_key'], :password=>self.options.get_option_mandatory(:secret)},:headers=>{'X-Aspera-AccessKey'=>node_info['access_key']}})
           end
-          Log.log.warn("ignoring secret, using bearer token") if !@option_parser.get_option(:secret).nil?
+          Log.log.warn("ignoring secret, using bearer token") if !self.options.get_option(:secret).nil?
           return Rest.new(node_info['url'],{:oauth=>@api_files_oauth,:scope=>FilesApi.node_scope(node_info['access_key'],node_scope),:headers=>{'X-Aspera-AccessKey'=>node_info['access_key']}})
         end
 
@@ -87,31 +86,33 @@ module Asperalm
         end
 
         def set_options
-          @option_parser.set_option(:browser,:tty)
-          @option_parser.add_opt_list(:auth,Oauth.auth_types,"type of authentication",'-tTYPE','--auth=TYPE')
-          @option_parser.add_opt_list(:browser,BrowserInteraction.getter_types,"method to start browser",'-gTYPE','--browser=TYPE')
-          @option_parser.add_opt_simple(:url,"-wURI", "--url=URI","URL of application, e.g. http://org.asperafiles.com")
-          @option_parser.add_opt_simple(:username,"-uSTRING", "--username=STRING","username to log in")
-          @option_parser.add_opt_simple(:password,"-pSTRING", "--password=STRING","password")
-          @option_parser.add_opt_simple(:private_key,"-kSTRING", "--private-key=STRING","RSA private key for JWT (@ for ext. file)")
-          @option_parser.add_opt_simple(:workspace,"--workspace=STRING","name of workspace")
-          @option_parser.add_opt_simple(:recipient,"--recipient=STRING","package recipient")
-          @option_parser.add_opt_simple(:title,"--title=STRING","package title")
-          @option_parser.add_opt_simple(:note,"--note=STRING","package note")
-          @option_parser.add_opt_simple(:secret,"--secret=STRING","access key secret for node")
+          self.options.add_opt_list(:auth,Oauth.auth_types,"type of authentication",'-tTYPE','--auth=TYPE')
+          self.options.add_opt_simple(:url,"-wURI", "--url=URI","URL of application, e.g. http://org.asperafiles.com")
+          self.options.add_opt_simple(:username,"-uSTRING", "--username=STRING","username to log in")
+          self.options.add_opt_simple(:password,"-pSTRING", "--password=STRING","password")
+          self.options.add_opt_simple(:private_key,"-kSTRING", "--private-key=STRING","RSA private key for JWT (@ for ext. file)")
+          self.options.add_opt_simple(:workspace,"--workspace=STRING","name of workspace")
+          self.options.add_opt_simple(:recipient,"--recipient=STRING","package recipient")
+          self.options.add_opt_simple(:title,"--title=STRING","package title")
+          self.options.add_opt_simple(:note,"--note=STRING","package note")
+          self.options.add_opt_simple(:secret,"--secret=STRING","access key secret for node")
         end
 
         def execute_node_action(home_node_id,home_file_id)
-          command_repo=@option_parser.get_next_arg_from_list('command',[ :browse, :upload, :download ])
+          command_repo=self.options.get_next_arg_from_list('command',[ :browse, :upload, :download, :info ])
           case command_repo
+          when :info
+            node_info=@api_files_user.read("nodes/#{home_node_id}")[:data]
+            node_api=get_node_api(node_info,FilesApi::SCOPE_NODE_USER)
+            return Node.execute_common(command_repo,node_api,self.options,@faspmanager)
           when :browse
-            thepath=@option_parser.get_next_arg_value("path")
+            thepath=self.options.get_next_arg_value("path")
             node_info,file_id = find_nodeinfo_and_fileid(home_node_id,home_file_id,thepath.split('/'))
             node_api=get_node_api(node_info,FilesApi::SCOPE_NODE_USER)
             items=node_api.list("files/#{file_id}/files")[:data]
             return {:values=>items,:fields=>['name','type','recursive_size','size','modified_time','access_level']}
           when :upload
-            filelist = @option_parser.get_remaining_arguments("file list,destination")
+            filelist = self.options.get_remaining_arguments("file list,destination")
             Log.log.debug("file list=#{filelist}")
             raise CliBadArgument,"Missing source(s) and destination" if filelist.length < 2
             destination_folder=filelist.pop
@@ -122,8 +123,8 @@ module Asperalm
             tspec['destination_root']="/"
             @faspmanager.transfer_with_spec(tspec)
           when :download
-            source_file=@option_parser.get_next_arg_value('source')
-            destination_folder=@option_parser.get_next_arg_value('destination')
+            source_file=self.options.get_next_arg_value('source')
+            destination_folder=self.options.get_next_arg_value('destination')
             file_path = source_file.split('/')
             file_name = file_path.pop
             node_info,file_id = find_nodeinfo_and_fileid(home_node_id,home_file_id,file_path)
@@ -136,30 +137,27 @@ module Asperalm
         end
 
         def execute_action
-          command=@option_parser.get_next_arg_from_list('command',[ :package, :repo, :faspexgw, :admin])
+          command=self.options.get_next_arg_from_list('command',[ :package, :repo, :faspexgw, :admin])
 
           # get parameters
-          instance_fqdn=URI.parse(@option_parser.get_option_mandatory(:url)).host
+          instance_fqdn=URI.parse(self.options.get_option_mandatory(:url)).host
           organization,instance_domain=instance_fqdn.split('.',2)
 
           Log.log.debug("instance_fqdn=#{instance_fqdn}")
           Log.log.debug("instance_domain=#{instance_domain}")
           Log.log.debug("organization=#{organization}")
 
-          auth_data={:type=>@option_parser.get_option_mandatory(:auth)}
+          auth_data={:type=>self.options.get_option_mandatory(:auth)}
           case auth_data[:type]
           when :basic
-            auth_data[:username]=@option_parser.get_option_mandatory(:username)
-            auth_data[:password]=@option_parser.get_option_mandatory(:password)
+            auth_data[:username]=self.options.get_option_mandatory(:username)
+            auth_data[:password]=self.options.get_option_mandatory(:password)
           when :web
-            Log.log.info("redirect_uri=#{@option_parser.get_option_mandatory(:redirect_uri)}")
-            auth_data[:bi]=BrowserInteraction.new(@option_parser.get_option_mandatory(:redirect_uri),@option_parser.get_option_mandatory(:browser))
-            if !@username.nil? and !@password.nil? then
-              auth_data[:bi].set_creds(@option_parser.get_option_mandatory(:username),@option_parser.get_option_mandatory(:password))
-            end
+            auth_data[:redirect_uri]=self.options.get_option_mandatory(:redirect_uri)
+            Log.log.info("redirect_uri=#{auth_data[:redirect_uri]}")
           when :jwt
-            auth_data[:private_key]=OpenSSL::PKey::RSA.new(@option_parser.get_option_mandatory(:private_key))
-            auth_data[:subject]=@option_parser.get_option_mandatory(:username)
+            auth_data[:private_key]=OpenSSL::PKey::RSA.new(self.options.get_option_mandatory(:private_key))
+            auth_data[:subject]=self.options.get_option_mandatory(:username)
             Log.log.info("private_key=#{auth_data[:private_key]}")
             Log.log.info("subject=#{auth_data[:subject]}")
           else
@@ -169,7 +167,7 @@ module Asperalm
           files_api_base_url=FilesApi.baseurl(instance_domain)
 
           # auth API
-          @api_files_oauth=Oauth.new(files_api_base_url,organization,@option_parser.get_option_mandatory(:client_id),@option_parser.get_option_mandatory(:client_secret),auth_data)
+          @api_files_oauth=Oauth.new(files_api_base_url,organization,self.options.get_option_mandatory(:client_id),self.options.get_option_mandatory(:client_secret),auth_data)
 
           # create object for REST calls to Files with scope "user:all"
           @api_files_user=Rest.new(files_api_base_url,{:oauth=>@api_files_oauth,:scope=>FilesApi::SCOPE_FILES_USER})
@@ -177,7 +175,7 @@ module Asperalm
           # get our user's default information
           self_data=@api_files_user.read("self")[:data]
 
-          ws_name=@option_parser.get_option(:workspace)
+          ws_name=self.options.get_option(:workspace)
           if ws_name.nil?
             # get default workspace
             workspace_id=self_data['default_workspace_id']
@@ -197,7 +195,7 @@ module Asperalm
             end
           end
 
-          if @option_parser.get_option(:format).eql?(:text_table) and !command.eql?(:admin)
+          if self.options.get_option(:format).eql?(:text_table) and !command.eql?(:admin)
             deflt=""
             deflt=" (default)" if (workspace_id == self_data['default_workspace_id'])
             puts "Current Workspace: #{workspace_data['name'].red}#{deflt}"
@@ -208,14 +206,14 @@ module Asperalm
 
           case command
           when :package
-            command_pkg=@option_parser.get_next_arg_from_list('command',[ :send, :recv, :list ])
+            command_pkg=self.options.get_next_arg_from_list('command',[ :send, :recv, :list ])
             case command_pkg
             when :send
               # list of files to include in package
-              filelist = @option_parser.get_remaining_arguments("file list")
+              filelist = self.options.get_remaining_arguments("file list")
 
               # lookup users
-              recipient_data=@option_parser.get_option_mandatory(:recipient).split(',').map { |recipient|
+              recipient_data=self.options.get_option_mandatory(:recipient).split(',').map { |recipient|
                 user_lookup=@api_files_user.list("contacts",{'current_workspace_id'=>workspace_id,'q'=>recipient})[:data]
                 raise CliBadArgument,"no such user: #{recipient}" unless !user_lookup.nil? and user_lookup.length == 1
                 recipient_user_id=user_lookup.first
@@ -223,7 +221,7 @@ module Asperalm
               }
 
               #  create a new package with one file
-              the_package=@api_files_user.create("packages",{"workspace_id"=>workspace_id,"name"=>@option_parser.get_option_mandatory(:title),"file_names"=>filelist,"note"=>@option_parser.get_option_mandatory(:note),"recipients"=>recipient_data})[:data]
+              the_package=@api_files_user.create("packages",{"workspace_id"=>workspace_id,"name"=>self.options.get_option_mandatory(:title),"file_names"=>filelist,"note"=>self.options.get_option_mandatory(:note),"recipients"=>recipient_data})[:data]
 
               #  get node information for the node on which package must be created
               node_info=@api_files_user.read("nodes/#{the_package['node_id']}")[:data]
@@ -242,7 +240,7 @@ module Asperalm
               # (sample) get package status
               #allpkg=@api_files_user.read("packages/#{the_package['id']}")[:data]
             when :recv
-              package_id=@option_parser.get_next_arg_value('package ID')
+              package_id=self.options.get_next_arg_value('package ID')
               the_package=@api_files_user.read("packages/#{package_id}")[:data]
               #packages=@api_files_user.list("packages",{'archived'=>false,'exclude_dropbox_packages'=>true,'has_content'=>true,'received'=>true,'workspace_id'=>workspace_id})[:data]
               # take the last one
@@ -269,7 +267,7 @@ module Asperalm
             FaspexGW.go()
           when :admin
             api_files_admin=Rest.new(files_api_base_url,{:oauth=>@api_files_oauth,:scope=>FilesApi::SCOPE_FILES_ADMIN})
-            command_admin=@option_parser.get_next_arg_from_list('command',[ :resource, :events, :set_client_key, :usage_reports  ])
+            command_admin=self.options.get_next_arg_from_list('command',[ :resource, :events, :set_client_key, :usage_reports  ])
             case command_admin
             when :events
               # page=1&per_page=10&q=type:(file_upload+OR+file_delete+OR+file_download+OR+file_rename+OR+folder_create+OR+folder_delete+OR+folder_share+OR+folder_share_via_public_link)&sort=-date
@@ -290,17 +288,17 @@ module Asperalm
               #transfers=api_node.make_request_ex({:operation=>'GET',:subpath=>'ops/transfers',:args=>{'count'=>25,'filter'=>'id'}})
               #transfers=api_node.list("events") # after_time=2016-05-01T23:53:09Z
             when :set_client_key
-              the_client_id=@option_parser.get_next_arg_value('client_id')
-              the_private_key=@option_parser.get_next_arg_value('private_key')
+              the_client_id=self.options.get_next_arg_value('client_id')
+              the_private_key=self.options.get_next_arg_value('private_key')
               res=api_files_admin.update("clients/#{the_client_id}",{:jwt_grant_enabled=>true, :public_key=>OpenSSL::PKey::RSA.new(the_private_key).public_key.to_s})
               return nil
             when :resource
-              resource=@option_parser.get_next_arg_from_list('resource',[:client,:contact,:dropbox,:node,:operation,:package,:saml_configuration, :workspace])
+              resource=self.options.get_next_arg_from_list('resource',[:client,:contact,:dropbox,:node,:operation,:package,:saml_configuration, :workspace])
               #:messages:organizations:url_tokens,:usage_reports:workspaces
-              operations=[:list]
-              op_or_id=@option_parser.get_next_arg_value('op_or_id')
-              #op_or_id=@option_parser.get_next_arg_from_list('op_or_id',operations)
-              case op_or_id.to_sym
+              operations=[:list,:action]
+              #command=self.options.get_next_arg_value('op_or_id')
+              command=self.options.get_next_arg_from_list('command',operations)
+              case command
               when :list
                 default_fields=['id','name']
                 case resource
@@ -310,12 +308,13 @@ module Asperalm
                 end
                 resources=resource.to_s+(resource.eql?(:dropbox) ? 'es' : 's')
                 return {:values=>api_files_admin.list(resources)[:data],:fields=>default_fields}
-              else
-                raise RuntimeError, "unexpected value: #{op_or_id}, shall be id of node or in #{operations}" if !resource.eql?(:node) and !operations.include?(op_or_id)
-                node_info=@api_files_user.read("nodes/#{op_or_id}")[:data]
+              when :action
+                raise RuntimeError, "unexpected resource type: #{resource}, only 'node' for actions" if !resource.eql?(:node)
+                node_id=self.options.get_next_arg_value('node id')
+                node_info=@api_files_user.read("nodes/#{node_id}")[:data]
                 api_node=get_node_api(node_info)
                 ak_data=api_node.call({:operation=>'GET',:subpath=>"access_keys/#{node_info['access_key']}",:headers=>{'Accept'=>'application/json'}})[:data]
-                return execute_node_action(op_or_id,ak_data['root_file_id'])
+                return execute_node_action(node_id,ak_data['root_file_id'])
               end #op_or_id
             when :usage_reports
               return {:values=>api_files_admin.list("usage_reports",{:workspace_id=>workspace_id})[:data]}

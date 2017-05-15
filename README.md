@@ -7,9 +7,10 @@ This GEM is not endorsed/supported by IBM/Aspera
 ## Overview
 This is a Ruby Gem that provides the following features:
 
-* a command line tool: aslmcli
 * a FASPManager class for Ruby
 * REST and OAuth classes for use with Aspera products APIs
+* a command line tool: aslmcli
+* CLI supports plugins written by user
 
 This Gem was developed for the following Purposes:
 
@@ -99,7 +100,7 @@ $ aslmcli files repo browse /
 ## Usage
 
 ```bash
-$ aslmcli -h
+$ aslmcli cli help 
 NAME
 	aslmcli -- a command line tool for Aspera Applications
 
@@ -107,7 +108,7 @@ SYNOPSIS
 	aslmcli COMMANDS [OPTIONS] [ARGS]
 
 COMMANDS
-	Supported commands: console, faspex, files, node, shares, config
+	Supported commands: cli, console, fasp, faspex, files, node, shares, test
 	Note that commands can be written shortened.
 
 DESCRIPTION
@@ -124,8 +125,10 @@ SPECIAL OPTION VALUES
 	if an option value begins with @env: or @file:, value is taken from env var or file
 	dates format is 'DD-MM-YY HH:MM:SS', or 'now' or '-<num>h'
 
-OPTIONS (global)
+OPTIONS: global
     -h, --help                       Show this message
+    -g, --browser=TYPE               method to start browser. Values=(tty,os), current=tty
+        --insecure=VALUE             do not validate cert. Values=(yes,no), current=no
     -l, --log-level=VALUE            Log level. Values=(debug,info,warn,error,fatal,unknown), current=warn
     -q, --logger=VALUE               log method. Values=(syslog,stdout), current=stdout
         --format=VALUE               output format. Values=(ruby,text_table,json,text), current=text_table
@@ -137,9 +140,55 @@ OPTIONS (global)
         --fasp-proxy=STRING          URL of FASP proxy (dnat / dnats)
         --http-proxy=STRING          URL of HTTP proxy (for http fallback)
     -r, --rest-debug                 more debug for HTTP calls
-    -k, --insecure                   do not validate cert
-        --ts=JSON                    override transfer spec values, current=
+        --ts=JSON                    override transfer spec values, current={}
+
+OPTIONS: console
+    -w, --url=URI                    URL of application, e.g. http://org.asperafiles.com
+    -u, --username=STRING            username to log in
+    -p, --password=STRING            password
+        --filter-from=DATE           only after date
+        --filter-to=DATE             only before date
+
+OPTIONS: fasp
+    no option
+
+OPTIONS: faspex
+    -w, --url=URI                    URL of application, e.g. http://org.asperafiles.com
+    -u, --username=STRING            username to log in
+    -p, --password=STRING            password
+        --recipient=STRING           package recipient
+        --title=STRING               package title
+        --note=STRING                package note
+        --box=TYPE                   package box. Values=(inbox,sent,archive), current=inbox
+
+OPTIONS: files
+    -t, --auth=TYPE                  type of authentication. Values=(basic,web,jwt), current=jwt
+    -w, --url=URI                    URL of application, e.g. http://org.asperafiles.com
+    -u, --username=STRING            username to log in
+    -p, --password=STRING            password
+    -k, --private-key=STRING         RSA private key for JWT (@ for ext. file)
+        --workspace=STRING           name of workspace
+        --recipient=STRING           package recipient
+        --title=STRING               package title
+        --note=STRING                package note
+        --secret=STRING              access key secret for node
+
+OPTIONS: node
+    -w, --url=URI                    URL of application, e.g. http://org.asperafiles.com
+    -u, --username=STRING            username to log in
+    -p, --password=STRING            password
+        --persistency=FILEPATH       persistency file
+        --transfer-filter=EXPRESSION Ruby expression for filter at transfer level
+        --file-filter=EXPRESSION     Ruby expression for filter at file level
+
+OPTIONS: shares
+    -w, --url=URI                    URL of application, e.g. http://org.asperafiles.com
+    -u, --username=STRING            username to log in
+    -p, --password=STRING            password
+
 ```
+
+Note that actions and parameter values can be written in short form.
 
 ## Configuration and parameters
 All CLI parameters can be provided on command line, but it is more convenient 
@@ -165,7 +214,7 @@ Here is an example:
 
 ```yaml
 ---
-:global:
+:cli:
   default:
     :loglevel: :warn
 :files:
@@ -234,18 +283,27 @@ user must be used to access Aspera Files. Then a "Bearer" token is used for
 HTTP authentication.
 
 First the application (aslmcli) must be declared in the Files GUI 
-(see https://aspera.asperafiles.com/helpcenter/admin/organization/registering-an-api-client ). By declaring the application, a "client\_id" and "client\_secret" are generated:
+(see https://aspera.asperafiles.com/helpcenter/admin/organization/registering-an-api-client ). 
+By declaring the application, a "client\_id" and "client\_secret" are generated:
 
 <img src="docs/Auth1.png" alt="Files-admin-organization-apiclient-clientdetails"/>
 
-It is possible to use the Aspera Files API, but a web browser is required to generate the token. `aslmcli` will either display the URL to be entered in a local browser, or open a browser directly (various options are proposed).
+It is possible to use the Aspera Files API, but a web browser is required to generate the token. 
+`aslmcli` will either display the URL to be entered in a local browser, or open 
+a browser directly (various options are proposed).
 
-It is also possible to enable browser-less authentication by using JWT, in this case a private/public key pair is required (see section: Generating a key pair), the public key is provided to Aspera Files:
+It is also possible to enable browser-less authentication by using JWT, in this 
+case a private/public key pair is required (see section: Generating a key pair), 
+the public key is provided to Aspera Files:
 
 <img src="docs/Auth2.png" alt="Files-admin-organization-apiclient-authoptions"/>
 
 Upon successful authentication, auth token are saved (cache) in local files, and 
 can be used subsequently. Expired token can be refreshed.
+
+## Browser interactions
+Some actions may require the use of a browser, e.g. Aspera Files authentication.
+In that case, a browser may be started, or the user may be asked to open a specific url.
 
 ## Sample commands
 
@@ -346,6 +404,15 @@ Multi-session is also available, simply add `--ts='{...}'` like
 --ts='{"multi_session":10,"multi_session_threshold":1,"target_rate_kbps":500000,"checksum_type":"none","cookie":"custom:aslmcli:Laurent:My Transfer"}'
 ```
 This is supported only with node based transfers.
+
+### FASP Stream
+It is possible to start a FASPStream session using the node API:
+
+Use the "node stream create" command, then arguments are provided as a "transfer spec".
+
+```bash
+./bin/aslmcli node stream create --ts='{"direction":"send","source":"udp://233.3.3.4:3000?loopback=1&ttl=2","destination":"udp://233.3.3.3:3001/","remote_host":"localhost","remote_user":"stream","password":"XXXX"}' --config-name=stream
+```
 
 ## Contents
 Included files are:
