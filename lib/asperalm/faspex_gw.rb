@@ -59,10 +59,13 @@ Nr4TDea9Y355e6cJDUCrat2PisP29owaQgVR1EX1n6diIWgVIEM8med8vSTYqZEX
 c4g/VhsxOBi0cQ+azcgOno4uG+GMmIPLHzHxREzGBHNJdmAPx/i9F4BrLunMTA5a
 mnkPIAou1Z5jJh5VkpTYghdae9C8x49OhgQ=
 -----END CERTIFICATE-----"
+
 class FaspexGW < Sinatra::Base
   def self.set_vars(api_files_user,oauthapi)
     @@api_files_user=api_files_user
     @@oauthapi=oauthapi
+    @@self_data=@@api_files_user.read("self")
+    @@the_workspaceid=@@self_data['default_workspace_id']
   end
 
   def self.go
@@ -80,34 +83,47 @@ class FaspexGW < Sinatra::Base
   end
 
   post '/aspera/faspex/send' do
-    calldata=JSON.parse(request.body.read)
-    #Log.log.info "body=#{request.body.read}"
-    #Log.log.info "params1=#{request.params}"
-    #Log.log.info "params=#{params}"
+    # parameters from user to Faspex API call
+    #    {
+    #      "delivery"=>{
+    #      "use_encryption_at_rest"=>false,
+    #      "note"=>"note",
+    #      "sources"=>[{"paths"=>["file1"]}],
+    #      "title"=>"my title",
+    #      "recipients"=>["email1"],
+    #      "send_upload_result"=>true
+    #      }
+    #    }
 
-    filelist = calldata['delivery']['sources'][0]['paths']
+    faspex_package_parameters=JSON.parse(request.body.read)
+    @Log.log.debug "faspex pkg create parameters=#{faspex_package_parameters}"
 
-    @Log.log.info "files=#{filelist}"
-
-    recipient_email='laurent@asperasoft.com'
-
-    self_data=@@api_files_user.read("self")
-    the_workspaceid=self_data['default_workspace_id']
-    user_lookup=@@api_files_user.list("contacts",{'current_workspace_id'=>the_workspaceid,'q'=>recipient_email})
-    raise "no such unique user: #{recipient_email}" unless !user_lookup.nil? and user_lookup.length == 1
-    recipient_user_id=user_lookup.first
+    # TODO: get from parameters
+    files_pkg_recipients=[]
+    faspex_package_parameters['delivery']['recipients'].each do |recipient_email|
+      user_lookup=@@api_files_user.list("contacts",{'current_workspace_id'=>@@the_workspaceid,'q'=>recipient_email})
+      raise StandardError,"no such unique user: #{recipient_email}" unless !user_lookup.nil? and user_lookup.length == 1
+      recipient_user_info=user_lookup.first
+      files_pkg_recipients.push({"id"=>recipient_user_info['source_id'],"type"=>recipient_user_info['source_type']})
+    end
 
     # NOTE: important: transfer id must be unique: generate random id (using a non unique id results in discard of tags)
     xfer_id=SecureRandom.uuid
+    @Log.log.debug "xfer id=#{xfer_id}"
 
     #  create a new package with one file
-    the_package=@@api_files_user.create("packages",{"file_names"=>filelist,"name"=>"sent from script","note"=>"trid=#{xfer_id}","recipients"=>[{"id"=>recipient_user_id['source_id'],"type"=>recipient_user_id['source_type']}],"workspace_id"=>the_workspaceid})
+    the_package=@@api_files_user.create("packages",{
+      "file_names"=>faspex_package_parameters['delivery']['sources'][0]['paths'],
+      "name"=>faspex_package_parameters['delivery']['title'],
+      "note"=>faspex_package_parameters['delivery']['note'],
+      "recipients"=>files_pkg_recipients,
+      "workspace_id"=>@@the_workspaceid})
 
     #  get node information for the node on which package must be created
     node_info=@@api_files_user.read("nodes/#{the_package['node_id']}")
 
     #  get transfer token (for node)
-    node_auth_bearer_token=@@oauthapi.get_authorization('node.'+node_info['access_key']+':user:all')
+    node_auth_bearer_token=@@oauthapi.get_authorization(FilesApi.node_scope(node_info['access_key'],FilesApi::SCOPE_NODE_USER))
 
     # tell Files what to expect in package: 1 transfer (can also be done after transfer)
     resp=@@api_files_user.update("packages/#{the_package['id']}",{"sent"=>true,"transfers_expected"=>1})
@@ -117,7 +133,7 @@ class FaspexGW < Sinatra::Base
       return "ERROR HERE"
     end
     status 200
-    result={
+    faspex_transfer_spec_result={
       "xfer_sessions" => [
       {
       "https_fallback_port" => nil,
@@ -159,7 +175,7 @@ class FaspexGW < Sinatra::Base
       "status" => "unused"
       }
     }
-    @Log.log.info "result=#{result}"
-    return JSON.generate(result)
+    @Log.log.info "faspex_transfer_spec_result=#{faspex_transfer_spec_result}"
+    return JSON.generate(faspex_transfer_spec_result)
   end
 end

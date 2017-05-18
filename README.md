@@ -108,7 +108,7 @@ SYNOPSIS
 	aslmcli COMMANDS [OPTIONS] [ARGS]
 
 COMMANDS
-	Supported commands: cli, console, fasp, faspex, files, node, shares, test
+	Supported commands: cli, console, fasp, faspex, files, node, shares
 	Note that commands can be written shortened.
 
 DESCRIPTION
@@ -207,6 +207,7 @@ with the following specific rules:
 * or, similarly, with @val: --username=@val:foouser
 * or a value read from a file: --key=@file:$HOME/.ssh/mykey
 * or a value read from a named env var: --password=@env:MYPASSVAR
+* or no value at all: --peristency=@none
 
 The default configuration file is: $HOME/.aspera/aslmcli/config.yaml
 
@@ -412,6 +413,24 @@ Use the "node stream create" command, then arguments are provided as a "transfer
 
 ```bash
 ./bin/aslmcli node stream create --ts='{"direction":"send","source":"udp://233.3.3.4:3000?loopback=1&ttl=2","destination":"udp://233.3.3.3:3001/","remote_host":"localhost","remote_user":"stream","password":"XXXX"}' --config-name=stream
+```
+## Create your own plugin
+```bash
+$ mkdir -p ~/.aspera/aslmcli/plugins
+$ cat<<EOF>~/.aspera/aslmcli/plugins/test.rb
+require 'asperalm/cli/plugin'
+module Asperalm
+  module Cli
+    module Plugins
+      class Test < Plugin
+        def execute_action
+          puts "Hello World!"
+        end
+      end # Test
+    end # Plugins
+  end # Cli
+end # Asperalm
+EOF
 ```
 
 ## Contents

@@ -379,6 +379,7 @@ Ta7g6mGwIMXrdTQQ8fZs
       ts_bool_param(used_names,transfer_spec,ascp_args,'create_dir') { |create_dir| create_dir ? ['-d'] : [] }
 
       ts_ignore_param(used_names,'target_rate_cap_kbps')
+      ts_ignore_param(used_names,'min_rate_cap_kbps')
       ts_ignore_param(used_names,'rate_policy_allowed')
       ts_ignore_param(used_names,'fasp_url')
       ts_ignore_param(used_names,'lock_rate_policy')

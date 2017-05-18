@@ -41,6 +41,27 @@ module Asperalm
           return result_translate(resp,'file','deleted')
         end
 
+        def self.get_transfers_iteration(api_node,persistencyfile,params)
+          # first time run ? or subsequent run ?
+          iteration_token=nil
+          if !persistencyfile.nil? and File.exist?(persistencyfile)
+            iteration_token=File.read(persistencyfile)
+          end
+          params[:iteration_token]=iteration_token unless iteration_token.nil?
+          resp=api_node.list('ops/transfers',params)
+          transfers=resp[:data]
+          if transfers.is_a?(Array) then
+            # 3.7.2, released API
+            iteration_token=URI.decode_www_form(URI.parse(resp[:http]['Link'].match(/<([^>]+)>/)[1]).query).to_h['iteration_token']
+          else
+            # 3.5.2, deprecated API
+            iteration_token=transfers['iteration_token']
+            transfers=transfers['transfers']
+          end
+          File.write(persistencyfile,iteration_token) if (!persistencyfile.nil?)
+          return transfers
+        end
+
         def self.common_actions; [:browse, :mkdir, :delete, :upload, :download, :info];end
 
         # common API to node and Shares
@@ -92,7 +113,7 @@ module Asperalm
 
         def execute_action
           api_node=Rest.new(self.options.get_option_mandatory(:url),{:basic_auth=>{:user=>self.options.get_option_mandatory(:username), :password=>self.options.get_option_mandatory(:password)}})
-          command=self.options.get_next_arg_from_list('command',self.class.common_actions.clone.concat([ :stream, :transfer, :info, :cleanup, :access_key, :watch_folder ]))
+          command=self.options.get_next_arg_from_list('command',self.class.common_actions.clone.concat([ :stream, :transfer, :info, :cleanup, :forward, :access_key, :watch_folder ]))
           case command
           when *self.class.common_actions; return self.class.execute_common(command,api_node,self.options,@faspmanager)
           when :stream
@@ -146,29 +167,12 @@ module Asperalm
             #return {:fields=>['id','root_file_id','storage','license'],:values=>resp[:data]}
             return { :format=>:ruby, :values => resp[:data] }# TODO
           when :cleanup
+            transfers=self.class.get_transfers_iteration(api_node,self.options.get_option(:persistency),{:active_only=>false})
             persistencyfile=self.options.get_option_mandatory(:persistency)
             transfer_filter=self.options.get_option_mandatory(:transfer_filter)
             file_filter=self.options.get_option_mandatory(:file_filter)
             Log.log.debug("transfer_filter: #{transfer_filter}")
             Log.log.debug("file_filter: #{file_filter}")
-            # first time run ? or subsequent run ?
-            iteration_token=nil
-            if File.exist?(persistencyfile)
-              iteration_token=File.read(persistencyfile)
-            end
-            params={:active_only=>false}
-            params[:iteration_token]=iteration_token unless iteration_token.nil?
-            resp=api_node.list('ops/transfers',params)
-            transfers=resp[:data]
-            if transfers.is_a?(Array) then
-              # 3.7.2, released API
-              iteration_token=URI.decode_www_form(URI.parse(resp[:http]['Link'].match(/<([^>]+)>/)[1]).query).to_h['iteration_token']
-            else
-              # 3.5.2, deprecated API
-              iteration_token=transfers['iteration_token']
-              transfers=transfers['transfers']
-            end
-            File.write(persistencyfile,iteration_token)
             # build list of files to delete: non zero files, downloads, for specified user
             paths_to_delete=[]
             transfers.each do |t|
@@ -188,8 +192,31 @@ module Asperalm
               Log.log.info("deletion")
               return self.delete_files(api_node,paths_to_delete)
             else
-              Log.log.info("no new package")
+              Log.log.info("nothing to delete")
             end
+          when :forward
+            transfers=self.class.get_transfers_iteration(api_node,self.options.get_option(:persistency),{:active_only=>false})
+            paths=[]
+            transfers.select { |t| t['status'].eql?('completed') and t['start_spec']['direction'].eql?('receive') }.each do |t|
+              Log.log.debug("ONE TRANSFER HERE")
+              t['files'].each do |f|
+                Log.log.debug("one file=#{f['path']}")
+                paths.push({'source'=>f['path']})
+              end
+            end
+            destination='/'
+            Log.log.debug("file list=#{paths}")
+            if paths.empty?
+              Log.log.debug("NO TRANSFER".red)
+              return nil
+            end
+            send_result=api_node.call({:operation=>'POST',:subpath=>'files/download_setup',:json_params=>{ :transfer_requests => [ { :transfer_request => { :paths => paths } } ] }})
+            raise send_result[:data]['transfer_specs'][0]['error']['user_message'] if send_result[:data]['transfer_specs'][0].has_key?('error')
+            raise "expecting one session exactly" if send_result[:data]['transfer_specs'].length != 1
+            transfer_spec=send_result[:data]['transfer_specs'].first['transfer_spec']
+            transfer_spec['destination_root']=destination
+            faspmanager.transfer_with_spec(transfer_spec)
+            return nil
           end
           return nil
         end # execute_action

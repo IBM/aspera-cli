@@ -55,6 +55,8 @@ module Asperalm
           value=m[1]
         elsif m=value.match(/^@json:(.*)/) then
           value=JSON.parse(m[1])
+        elsif value.eql?('@none') then
+          value=nil
         end
         value
       end

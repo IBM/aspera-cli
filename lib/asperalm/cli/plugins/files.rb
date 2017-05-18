@@ -142,12 +142,18 @@ module Asperalm
           # get parameters
           instance_fqdn=URI.parse(self.options.get_option_mandatory(:url)).host
           organization,instance_domain=instance_fqdn.split('.',2)
+          files_api_base_url=FilesApi.baseurl(instance_domain)
 
           Log.log.debug("instance_fqdn=#{instance_fqdn}")
           Log.log.debug("instance_domain=#{instance_domain}")
           Log.log.debug("organization=#{organization}")
 
-          auth_data={:type=>self.options.get_option_mandatory(:auth)}
+          auth_data={
+            :type=>self.options.get_option_mandatory(:auth),
+            :client_id =>self.options.get_option_mandatory(:client_id),
+            :client_secret=>self.options.get_option_mandatory(:client_secret)
+          }
+
           case auth_data[:type]
           when :basic
             auth_data[:username]=self.options.get_option_mandatory(:username)
@@ -164,10 +170,8 @@ module Asperalm
             raise "unknown auth type: #{auth_data[:type]}"
           end
 
-          files_api_base_url=FilesApi.baseurl(instance_domain)
-
           # auth API
-          @api_files_oauth=Oauth.new(files_api_base_url,organization,self.options.get_option_mandatory(:client_id),self.options.get_option_mandatory(:client_secret),auth_data)
+          @api_files_oauth=Oauth.new(files_api_base_url,organization,auth_data)
 
           # create object for REST calls to Files with scope "user:all"
           @api_files_user=Rest.new(files_api_base_url,{:oauth=>@api_files_oauth,:scope=>FilesApi::SCOPE_FILES_USER})

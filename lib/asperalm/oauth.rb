@@ -26,12 +26,10 @@ module Asperalm
       [ :basic, :web, :jwt ]
     end
 
-    def initialize(baseurl,organization,client_id,client_secret,auth_data)
+    def initialize(baseurl,organization,auth_data)
       Log.log.debug "auth=#{auth_data}"
       @rest=Rest.new(baseurl)
       @organization=organization
-      @client_id=client_id
-      @client_secret=client_secret
       @auth_data=auth_data
       # key = scope value, e.g. user:all, or node.*
       # subkeys = :data (token value ruby structure), :expiration
@@ -63,7 +61,7 @@ module Asperalm
 
     def get_authorization(api_scope)
       # file name for cache of token
-      token_state_file=File.join($PROGRAM_FOLDER,[TOKEN_FILE_PREFIX,@auth_data[:type],@organization,@client_id,api_scope].join(TOKEN_FILE_SEPARATOR))
+      token_state_file=File.join($PROGRAM_FOLDER,[TOKEN_FILE_PREFIX,@auth_data[:type],@organization,@auth_data[:client_id],api_scope].join(TOKEN_FILE_SEPARATOR))
 
       # if first time, try to read from file
       if ! @token_cache.has_key?(api_scope) then
@@ -95,13 +93,13 @@ module Asperalm
               :operation=>'POST',
               :subpath=>"oauth2/#{@organization}/token",
               :headers=>{'Accept'=>'application/json'},
-              :basic_auth => {:user=>@client_id,:password=>@client_secret}, # this is RFC
+              :basic_auth => {:user=>@auth_data[:client_id],:password=>@auth_data[:client_secret]}, # this is RFC
               :www_body_params=>{
               :grant_type=>'refresh_token',
               :refresh_token=>refresh_token,
               :scope=>api_scope,
-              :client_id=>@client_id,
-              #:client_secret=>@client_secret,  # also works, but not compliant to RFC
+              :client_id=>@auth_data[:client_id],
+              #:client_secret=>@auth_data[:client_secret],  # also works, but not compliant to RFC
               :state=>UNUSED_STATE # TODO: remove, not useful
               }})
             save_set_token_data(api_scope,resp[:http].body,token_state_file)
@@ -128,7 +126,7 @@ module Asperalm
             :subpath=>"oauth2/#{@organization}/token",
             :headers=>{'Accept'=>'application/json'},
             :www_body_params=>{
-            :client_id=>@client_id, # NOTE: not compliant to RFC
+            :client_id=>@auth_data[:client_id], # NOTE: not compliant to RFC
             :grant_type=>'password',
             :scope=>api_scope,
             :username=>@auth_data[:username],
@@ -141,10 +139,10 @@ module Asperalm
             :subpath=>"oauth2/#{@organization}/authorize",
             :url_params=>{
             :response_type=>'code',
-            :client_id=>@client_id,
+            :client_id=>@auth_data[:client_id],
             :redirect_uri=>@auth_data[:redirect_uri],
             :scope=>api_scope,
-            :client_secret=>@client_secret,
+            :client_secret=>@auth_data[:client_secret],
             :state=>check_code
             }})
 
@@ -156,13 +154,13 @@ module Asperalm
             :operation=>'POST',
             :subpath=>"oauth2/#{@organization}/token",
             :headers=>{'Accept'=>'application/json'},
-            :basic_auth => {:user=>@client_id,:password=>@client_secret},
+            :basic_auth => {:user=>@auth_data[:client_id],:password=>@auth_data[:client_secret]},
             :www_body_params=>{
             :grant_type=>'authorization_code',
             :code=>code,
             :scope=>api_scope,
             :redirect_uri=>@auth_data[:redirect_uri],
-            :client_id=>@client_id,
+            :client_id=>@auth_data[:client_id],
             :state=>UNUSED_STATE
             }})
         when :jwt
@@ -173,7 +171,7 @@ module Asperalm
           Log.log.info("seconds=#{seconds_since_epoch}")
 
           payload = {
-            :iss => @client_id,
+            :iss => @auth_data[:client_id],
             :sub => @auth_data[:subject],
             :aud => "https://api.asperafiles.com/api/v1/oauth2/token",
             :nbf => seconds_since_epoch,
@@ -192,7 +190,7 @@ module Asperalm
             :operation=>'POST',
             :subpath=>"oauth2/#{@organization}/token",
             :headers=>{'Accept'=>'application/json'},
-            :basic_auth => {:user=>@client_id,:password=>@client_secret},
+            :basic_auth => {:user=>@auth_data[:client_id],:password=>@auth_data[:client_secret]},
             :www_body_params=>{
             :assertion=>assertion,
             :grant_type=>'urn:ietf:params:oauth:grant-type:jwt-bearer',
