@@ -299,7 +299,7 @@ module Asperalm
             when :resource
               resource=self.options.get_next_arg_from_list('resource',[:client,:contact,:dropbox,:node,:operation,:package,:saml_configuration, :workspace])
               #:messages:organizations:url_tokens,:usage_reports:workspaces
-              operations=[:list,:action]
+              operations=[:list,:id]
               #command=self.options.get_next_arg_value('op_or_id')
               command=self.options.get_next_arg_from_list('command',operations)
               case command
@@ -312,7 +312,7 @@ module Asperalm
                 end
                 resources=resource.to_s+(resource.eql?(:dropbox) ? 'es' : 's')
                 return {:values=>api_files_admin.list(resources)[:data],:fields=>default_fields}
-              when :action
+              when :id
                 raise RuntimeError, "unexpected resource type: #{resource}, only 'node' for actions" if !resource.eql?(:node)
                 node_id=self.options.get_next_arg_value('node id')
                 node_info=@api_files_user.read("nodes/#{node_id}")[:data]

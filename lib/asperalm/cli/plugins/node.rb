@@ -41,6 +41,7 @@ module Asperalm
           return result_translate(resp,'file','deleted')
         end
 
+        # retrieve tranfer list using API and persistency file
         def self.get_transfers_iteration(api_node,persistencyfile,params)
           # first time run ? or subsequent run ?
           iteration_token=nil
@@ -195,26 +196,28 @@ module Asperalm
               Log.log.info("nothing to delete")
             end
           when :forward
+            destination=self.options.get_next_arg_value("destination folder")
+            # detect transfer sessions since last call
             transfers=self.class.get_transfers_iteration(api_node,self.options.get_option(:persistency),{:active_only=>false})
-            paths=[]
+            # build list of all files received in all sessions
+            filelist=[]
             transfers.select { |t| t['status'].eql?('completed') and t['start_spec']['direction'].eql?('receive') }.each do |t|
-              Log.log.debug("ONE TRANSFER HERE")
-              t['files'].each do |f|
-                Log.log.debug("one file=#{f['path']}")
-                paths.push({'source'=>f['path']})
-              end
+              t['files'].each { |f| filelist.push(f['path']) }
             end
-            destination='/'
-            Log.log.debug("file list=#{paths}")
-            if paths.empty?
+            if filelist.empty?
               Log.log.debug("NO TRANSFER".red)
               return nil
             end
-            send_result=api_node.call({:operation=>'POST',:subpath=>'files/download_setup',:json_params=>{ :transfer_requests => [ { :transfer_request => { :paths => paths } } ] }})
-            raise send_result[:data]['transfer_specs'][0]['error']['user_message'] if send_result[:data]['transfer_specs'][0].has_key?('error')
+            Log.log.debug("file list=#{filelist}")
+            # get download transfer spec on destination node
+            transfer_params={ :transfer_requests => [ { :transfer_request => { :paths => filelist.map {|i| {:source=>i} } } } ] }
+            send_result=api_node.call({:operation=>'POST',:subpath=>'files/download_setup',:json_params=>transfer_params})
             raise "expecting one session exactly" if send_result[:data]['transfer_specs'].length != 1
-            transfer_spec=send_result[:data]['transfer_specs'].first['transfer_spec']
+            transfer_data=send_result[:data]['transfer_specs'].first
+            raise TransferError,transfer_data['error']['user_message'] if transfer_data.has_key?('error')
+            transfer_spec=transfer_data['transfer_spec']
             transfer_spec['destination_root']=destination
+            #
             faspmanager.transfer_with_spec(transfer_spec)
             return nil
           end
