@@ -1,8 +1,8 @@
-# Asperalm - Laurent's Aspera Ruby library, including a CLI
+# Asperalm - Laurent's Aspera CLI and Ruby library
 
 Laurent/2016
 
-This GEM is not endorsed/supported by IBM/Aspera
+This GEM is not endorsed/supported by IBM/Aspera, use at your risk, and not in production environments.
 
 ## Overview
 This is a Ruby Gem that provides a command line with the following features:
@@ -16,8 +16,10 @@ This is a Ruby Gem that provides a command line with the following features:
 * additional command plugins can be written by the user
 * parameter values can be passed on command line, in configuration file, in env var, in files
 * parameter values and command can be provided in short format (must be unique)
+* supports download of faspex "external" links
 
 In addition, it provides:
+
 * a FASPManager class for Ruby
 * REST and OAuth classes for use with Aspera products APIs
 * a command line tool: aslmcli
@@ -66,7 +68,7 @@ $ aslmcli cli config init
 
 This creates a sample configuration file: `$HOME/.aspera/aslmcli/config.yaml`
 
-For Faspex, Shares, Node (including ATS (Aspera Transfer Service)), Console, 
+For Faspex, Shares, Node (including ATS, Aspera Transfer Service), Console, 
 only username/password 
 and url are required (either on command line, or from config file). Just fill-in url and
 credentials in the configuration file (section: default), and then you can start 
@@ -468,6 +470,10 @@ supported by IBM/Aspera.
 
 use tools from:
 http://blog.excelwithcode.com/build-commandline-apps.html
+
+* provide metadata in packages
+
+* deliveries to dropboxes
 
 ## Contributing
 
