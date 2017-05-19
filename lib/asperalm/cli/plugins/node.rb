@@ -217,7 +217,7 @@ module Asperalm
             raise TransferError,transfer_data['error']['user_message'] if transfer_data.has_key?('error')
             transfer_spec=transfer_data['transfer_spec']
             transfer_spec['destination_root']=destination
-            #
+            # execute transfer
             faspmanager.transfer_with_spec(transfer_spec)
             return nil
           end

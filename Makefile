@@ -10,7 +10,7 @@ SRCZIPBASE=$(GEMNAME)_src
 TODAY=$(shell date +%Y%m%d)
 ZIPFILE=$(SRCZIPBASE)_$(TODAY).zip
 
-all:: clean gem pack
+all:: clean pack install
 
 test:
 	bundle exec rake spec
@@ -19,7 +19,8 @@ clean:
 	rm -f $(GEMNAME)-*.gem $(SRCZIPBASE)*.zip *.log token.* README.pdf README.html
 	rm -fr doc
 	gem uninstall -a -x $(GEMNAME)
-
+cleanupgems:
+	gem uninstall -a -x $(gem list|cut -f 1 -d' '|egrep -v 'rdoc|psych|rake|openssl|json|io-console|bigdecimal')
 pack: $(ZIPFILE)
 
 doc: README.pdf
@@ -36,6 +37,8 @@ $(GEMFILE):
 	gem build asperalm.gemspec
 
 gem: $(GEMFILE)
+
+install: $(GEMFILE)
 	gem install $(GEMFILE)
 
 togarage: $(ZIPFILE) README.pdf $(GEMFILE)
