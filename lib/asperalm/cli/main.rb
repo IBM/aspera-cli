@@ -62,11 +62,12 @@ module Asperalm
         case operation
         when :set
           Log.log.debug "attr_transfer_spec: set: #{value}".red
-          FaspManager.ts_override=value
+          FaspManager.ts_override_json=value
         else
-          return FaspManager.ts_override
+          return FaspManager.ts_override_json
         end
       end
+      
       def attr_browser(operation,value)
         case operation
         when :set

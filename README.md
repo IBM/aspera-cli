@@ -5,18 +5,29 @@ Laurent/2016
 This GEM is not endorsed/supported by IBM/Aspera
 
 ## Overview
-This is a Ruby Gem that provides the following features:
+This is a Ruby Gem that provides a command line with the following features:
 
+* Supports all Aspera server products
+* configuration file for products URLs and credentials
+* FASP transfer agent can be: FaspManager (local ascp), or Connect Client, or a transfer node
+* transfer parameters can be altered by modification of transferspec, this includes requiring multi-session transfer on nodes
+* allows transfers from products to products, essentially at node level
+* supports FaspStream creation (using Node API)
+* additional command plugins can be written by the user
+* parameter values can be passed on command line, in configuration file, in env var, in files
+* parameter values and command can be provided in short format (must be unique)
+
+In addition, it provides:
 * a FASPManager class for Ruby
 * REST and OAuth classes for use with Aspera products APIs
 * a command line tool: aslmcli
-* CLI supports plugins written by user
 
 This Gem was developed for the following Purposes:
 
 * show use of Aspera (REST) APIs: Node, Files, Shares, Faspex, Console
 * provide a command line for some tasks
 * cross-platform (ruby)
+* shows example of use of Aspera products
 
 Ruby has been chosen as language as it is used in most Aspera products, and the 
 interpret can be found for most platforms.
@@ -29,7 +40,7 @@ The CLI's folder where configuration and cache files are kept is `$HOME/.aspera/
 
 Requires Ruby 2.0+
 
-In examples below, command line operations are shown using Bash.
+In examples below, command line operations are shown using `bash`.
 
 ## Quick Start
 
@@ -50,7 +61,7 @@ but the configuration file provides a way to define default values, especially
 for authentication parameters. A sample configuration file can be created with:
 
 ```bash
-$ aslmcli config init
+$ aslmcli cli config init
 ```
 
 This creates a sample configuration file: `$HOME/.aspera/aslmcli/config.yaml`

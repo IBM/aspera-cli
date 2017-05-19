@@ -15,7 +15,7 @@ all:: clean pack install
 test:
 	bundle exec rake spec
 
-clean:
+clean::
 	rm -f $(GEMNAME)-*.gem $(SRCZIPBASE)*.zip *.log token.* README.pdf README.html
 	rm -fr doc
 	gem uninstall -a -x $(GEMNAME)
@@ -72,13 +72,18 @@ installdeps:
 	gem install jwt formatador ruby-progressbar
 
 SAMPLE_FILE=~/Documents/Samples/200KB.1
+TEST_FOLDER=./test.dir
 
+$(TEST_FOLDER):
+	mkdir -p $(TEST_FOLDER)
+clean::
+	rm -fr $(TEST_FOLDER)
 tsh1:
 	$(ASCLI) shares browse / --insecure=yes
 tsh2:
 	$(ASCLI) shares upload $(SAMPLE_FILE) /n8-sh1 --insecure=yes
-tsh3:
-	$(ASCLI) shares download /n8-sh1/200KB.1 . --insecure=yes
+tsh3: $(TEST_FOLDER)
+	$(ASCLI) shares download /n8-sh1/200KB.1 $(TEST_FOLDER) --insecure=yes
 	rm -f 200KB.1
 	$(ASCLI) shares delete /n8-sh1/200KB.1 --insecure=yes
 tshares: tsh1 tsh2 tsh3
@@ -99,8 +104,8 @@ tnd1:
 	$(ASCLI) node browse / --insecure=yes
 tnd2:
 	$(ASCLI) node upload $(SAMPLE_FILE) /home/faspex/docroot --insecure=yes
-tnd3:
-	$(ASCLI) node download /home/faspex/docroot/200KB.1 . --insecure=yes
+tnd3: $(TEST_FOLDER)
+	$(ASCLI) node download /home/faspex/docroot/200KB.1 $(TEST_FOLDER) --insecure=yes
 	rm -f 200KB.1
 	$(ASCLI) node delete /home/faspex/docroot/200KB.1 --insecure=yes
 tnode: tnd1 tnd2 tnd3 
@@ -109,8 +114,8 @@ tfs1:
 	$(ASCLI) files repo browse /
 tfs2:
 	$(ASCLI) files repo upload $(SAMPLE_FILE) /
-tfs3:
-	$(ASCLI) files repo download /200KB.1 . --transfer=connect
+tfs3: $(TEST_FOLDER)
+	$(ASCLI) files repo download /200KB.1 $(TEST_FOLDER) --transfer=connect
 	rm -f 200KB.1
 tfs4:
 	$(ASCLI) files package send $(SAMPLE_FILE) --note="my note" --title="my title" --recipient="laurent@asperasoft.com"

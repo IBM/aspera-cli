@@ -78,20 +78,21 @@ Ta7g6mGwIMXrdTQQ8fZs
   # Manages FASP based transfers
   class FaspManager
     # a global transfer spec that overrides values in transfer spec provided on start
-    @@ts_override={}
+    @@ts_override_data={}
 
     # add fields from JSON format
-    def self.ts_override=(value)
-      @@ts_override.merge!(JSON.parse(value))
+    def self.ts_override_json=(value)
+      @@ts_override_data.merge!(JSON.parse(value))
     end
 
     # returns json format
-    def self.ts_override
-      return JSON.generate(@@ts_override)
+    def self.ts_override_json
+      return JSON.generate(@@ts_override_data)
     end
 
+    # returns ruby data
     def self.ts_override_data
-      return @@ts_override
+      return @@ts_override_data
     end
 
     attr_accessor :use_connect_client
@@ -107,12 +108,7 @@ Ta7g6mGwIMXrdTQQ8fZs
       @fasp_proxy_url=nil
       @http_proxy_url=nil
       @tr_node_api=nil
-      @ts_override={}
       locate_resources
-    end
-
-    def set_ts_override(value)
-      @ts_override.merge!(value)
     end
 
     # todo: support multiple listeners
@@ -417,9 +413,9 @@ Ta7g6mGwIMXrdTQQ8fZs
     # replaces do_transfer
     # transforms transper_spec into command line arguments and env var, then calls execute_ascp
     def transfer_with_spec(transfer_spec)
-      transfer_spec.merge!(@ts_override)
+      transfer_spec.merge!(self.class.ts_override_data)
       Log.log.debug("ts=#{transfer_spec}")
-      if (@use_connect_client) # download using connect ...
+      if (@use_connect_client) # transfer using connect ...
         Log.log.debug("using connect client")
         connect_url=File.open(@resource_path[:plugin_https_port_file]) {|f| f.gets }.strip
         connect_api=Rest.new("#{connect_url}/v5/connect",{})
