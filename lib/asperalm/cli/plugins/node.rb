@@ -63,14 +63,24 @@ module Asperalm
           return transfers
         end
 
-        def self.common_actions; [:browse, :mkdir, :delete, :upload, :download, :info];end
+        #TODO: use textify
+        def self.bool_param_to_string(hash,name)
+          #hash[name]=hash[name].map {|i| "#{i['name']}=#{i['value']}"}.join(', ')
+          hash[name].each {|i| hash[i['name']]=i['value']}
+          hash.delete(name)
+        end
+
+        def self.common_actions; [:info, :browse, :mkdir, :delete, :upload, :download ];end
 
         # common API to node and Shares
         def self.execute_common(command,api_node,option_parser,faspmanager)
           case command
           when :info
             resp=api_node.call({:operation=>'GET',:subpath=>'info',:headers=>{'Accept'=>'application/json'}})
-            return { :format=>:ruby, :values => resp[:data] }# TODO
+            bool_param_to_string(resp[:data],'capabilities')
+            bool_param_to_string(resp[:data],'settings')
+            return { :format=>:hash_table, :values => resp[:data] }# TODO
+            #return { :format=>:ruby, :values => resp[:data] }# TODO
           when :browse
             thepath=option_parser.get_next_arg_value("path")
             send_result=api_node.call({:operation=>'POST',:subpath=>'files/browse',:json_params=>{ :path => thepath} } )
@@ -84,7 +94,6 @@ module Asperalm
             thepath=option_parser.get_next_arg_value("path")
             resp=api_node.call({:operation=>'POST',:subpath=>'files/create',:json_params=>{ "paths" => [{ "path" => thepath, "type" => "directory" } ] } } )
             return self.result_translate(resp,'folder','created')
-            return { :format=>:ruby, :values => resp[:data] }# TODO
           when :upload
             filelist = option_parser.get_remaining_arguments("file list")
             Log.log.debug("file list=#{filelist}")
@@ -114,7 +123,7 @@ module Asperalm
 
         def execute_action
           api_node=Rest.new(self.options.get_option_mandatory(:url),{:basic_auth=>{:user=>self.options.get_option_mandatory(:username), :password=>self.options.get_option_mandatory(:password)}})
-          command=self.options.get_next_arg_from_list('command',self.class.common_actions.clone.concat([ :stream, :transfer, :info, :cleanup, :forward, :access_key, :watch_folder ]))
+          command=self.options.get_next_arg_from_list('command',self.class.common_actions.clone.concat([ :stream, :transfer, :cleanup, :forward, :access_key, :watch_folder ]))
           case command
           when *self.class.common_actions; return self.class.execute_common(command,api_node,self.options,@faspmanager)
           when :stream
@@ -127,15 +136,15 @@ module Asperalm
               resp=api_node.call({:operation=>'POST',:subpath=>'streams',:headers=>{'Accept'=>'application/json'},:json_params=>FaspManager.ts_override_data})
               return { :values => resp[:data] }
             when :info
-              trid=option_parser.get_next_arg_value("transfer id")
+              trid=self.options.get_next_arg_value("transfer id")
               resp=api_node.call({:operation=>'GET',:subpath=>'ops/transfers/'+trid,:headers=>{'Accept'=>'application/json'}})
               return { :format=>:ruby, :values => resp[:data] } # TODO
             when :modify
-              trid=option_parser.get_next_arg_value("transfer id")
+              trid=self.options.get_next_arg_value("transfer id")
               resp=api_node.call({:operation=>'PUT',:subpath=>'streams/'+trid,:headers=>{'Accept'=>'application/json'},:json_params=>FaspManager.ts_override_data})
               return { :format=>:ruby, :values => resp[:data] } # TODO
             when :cancel
-              trid=option_parser.get_next_arg_value("transfer id")
+              trid=self.options.get_next_arg_value("transfer id")
               resp=api_node.call({:operation=>'CANCEL',:subpath=>'streams/'+trid,:headers=>{'Accept'=>'application/json'}})
               return { :format=>:ruby, :values => resp[:data] } # TODO
             else
@@ -149,11 +158,11 @@ module Asperalm
               resp=api_node.call({:operation=>'GET',:subpath=>'ops/transfers',:headers=>{'Accept'=>'application/json'},:url_params=>{'active_only'=>'true'}})
               return { :fields=>['id','status','remote_user','remote_host'], :values => resp[:data], :textify => lambda { |items| Node.format_transfer_list(items) } } # TODO
             when :cancel
-              trid=option_parser.get_next_arg_value("transfer id")
+              trid=self.options.get_next_arg_value("transfer id")
               resp=api_node.call({:operation=>'CANCEL',:subpath=>'ops/transfers/'+trid,:headers=>{'Accept'=>'application/json'}})
               return { :format=>:ruby, :values => resp[:data] } # TODO
             when :info
-              trid=option_parser.get_next_arg_value("transfer id")
+              trid=self.options.get_next_arg_value("transfer id")
               resp=api_node.call({:operation=>'GET',:subpath=>'ops/transfers/'+trid,:headers=>{'Accept'=>'application/json'}})
               return { :format=>:ruby, :values => resp[:data] } # TODO
             else

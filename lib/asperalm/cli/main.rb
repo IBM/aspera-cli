@@ -67,14 +67,14 @@ module Asperalm
           return FaspManager.ts_override_json
         end
       end
-      
+
       def attr_browser(operation,value)
         case operation
         when :set
           Log.log.debug "attr_browser: set: #{value}".red
-          BrowserInteraction.browser_method=value
+          BrowserInteraction.open_url_method=value
         else
-          return BrowserInteraction.browser_method
+          return BrowserInteraction.open_url_method
         end
       end
       @@GEM_PLUGINS_FOLDER='asperalm/cli/plugins'
@@ -183,7 +183,7 @@ module Asperalm
         self.options.set_option(:logtype,:stdout)
         self.options.set_option(:config_file,@@DEFAULT_CONFIG_FILE) if File.exist?(@@DEFAULT_CONFIG_FILE)
         self.options.on("-h", "--help", "Show this message") { self.options.exit_with_usage(nil) }
-        self.options.add_opt_list(:browser,BrowserInteraction.getter_types,"method to start browser",'-gTYPE','--browser=TYPE')
+        self.options.add_opt_list(:browser,BrowserInteraction.open_url_methods,"method to start browser",'-gTYPE','--browser=TYPE')
         self.options.add_opt_list(:insecure,[:yes,:no],"do not validate cert",'--insecure=VALUE')
         self.options.add_opt_list(:loglevel,Log.levels,"Log level",'-lTYPE','--log-level=VALUE')
         self.options.add_opt_list(:logtype,[:syslog,:stdout],"log method",'-qTYPE','--logger=VALUE')
@@ -201,6 +201,10 @@ module Asperalm
 
       def self.result_simple_table(name,list)
         return {:values => list.map { |i| { name => i.to_s } }}
+      end
+
+      def self.result_hash_table(hash)
+        return {:values => hash.keys.map { |i| { 'key' => i, 'value' => hash[i] } }}
       end
 
       # "cli" plugin
@@ -290,7 +294,13 @@ module Asperalm
         elsif results.is_a?(String)
           $stdout.write(results)
         elsif results.is_a?(Hash) and results.has_key?(:values) then
-          self.options.set_option(:format,results[:format]) if results.has_key?(:format)
+          if results.has_key?(:format)
+            if results[:format].eql?(:hash_table)
+              results[:format]=:text_table
+              results[:values]=results[:values].keys.map { |i| { 'key' => i, 'value' => results[:values][i] } }
+            end
+            self.options.set_option(:format,results[:format])
+          end
           if results[:values].is_a?(Array) and results[:values].empty?
             $stdout.write("no result")
           else

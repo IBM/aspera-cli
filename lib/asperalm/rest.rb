@@ -113,7 +113,7 @@ module Asperalm
       Log.log.debug "result body=#{resp.body}"
 
       if ! resp.code.start_with?('2') then
-        raise "Error code:#{resp.code}, body=[#{resp.body}]"
+        raise "Error code:#{resp.code}, msg=#{resp.message.red}, body=[#{resp.body}]"
       end
       result={:http=>resp}
       if !call_data.nil? and call_data.has_key?(:headers) and call_data[:headers].has_key?('Accept') and call_data[:headers]['Accept'].eql?('application/json') then

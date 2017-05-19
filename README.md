@@ -4,7 +4,7 @@ Laurent/2016
 
 This GEM is not endorsed/supported by IBM/Aspera, use at your risk, and not in production environments.
 
-## Overview
+## Overview, Features
 This is a Ruby Gem that provides a command line with the following features:
 
 * Supports all Aspera server products
@@ -42,7 +42,7 @@ The CLI's folder where configuration and cache files are kept is `$HOME/.aspera/
 
 Requires Ruby 2.0+
 
-In examples below, command line operations are shown using `bash`.
+In examples below, command line operations (starting with "$") are shown using `bash`.
 
 ## Quick Start
 

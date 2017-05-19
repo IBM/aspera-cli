@@ -298,6 +298,7 @@ module Asperalm
               return nil
             when :resource
               resource=self.options.get_next_arg_from_list('resource',[:client,:contact,:dropbox,:node,:operation,:package,:saml_configuration, :workspace])
+              resources=resource.to_s+(resource.eql?(:dropbox) ? 'es' : 's')
               #:messages:organizations:url_tokens,:usage_reports:workspaces
               operations=[:list,:id]
               #command=self.options.get_next_arg_value('op_or_id')
@@ -310,15 +311,19 @@ module Asperalm
                 when :operation; default_fields=nil
                 when :contact; default_fields=["email","name","source_id","source_type"]
                 end
-                resources=resource.to_s+(resource.eql?(:dropbox) ? 'es' : 's')
                 return {:values=>api_files_admin.list(resources)[:data],:fields=>default_fields}
               when :id
-                raise RuntimeError, "unexpected resource type: #{resource}, only 'node' for actions" if !resource.eql?(:node)
-                node_id=self.options.get_next_arg_value('node id')
-                node_info=@api_files_user.read("nodes/#{node_id}")[:data]
-                api_node=get_node_api(node_info)
-                ak_data=api_node.call({:operation=>'GET',:subpath=>"access_keys/#{node_info['access_key']}",:headers=>{'Accept'=>'application/json'}})[:data]
-                return execute_node_action(node_id,ak_data['root_file_id'])
+                #raise RuntimeError, "unexpected resource type: #{resource}, only 'node' for actions" if !resource.eql?(:node)
+                res_id=self.options.get_next_arg_value('node id')
+                res_data=@api_files_user.read("#{resources}/#{res_id}")[:data]
+                case resource
+                when :node
+                  api_node=get_node_api(res_data)
+                  ak_data=api_node.call({:operation=>'GET',:subpath=>"access_keys/#{res_data['access_key']}",:headers=>{'Accept'=>'application/json'}})[:data]
+                  return execute_node_action(res_id,ak_data['root_file_id'])
+                else
+                  return { :format=>:hash_table, :values => res_data }# TODO
+                end
               end #op_or_id
             when :usage_reports
               return {:values=>api_files_admin.list("usage_reports",{:workspace_id=>workspace_id})[:data]}
