@@ -72,8 +72,15 @@ module Asperalm
 
         def self.common_actions; [:info, :browse, :mkdir, :delete, :upload, :download ];end
 
+        def self.get_prefix_path(theprefix,thepath)
+          return thepath if theprefix.nil?
+          return File.join(theprefix,thepath) if thepath.is_a?(String)
+          return thepath.map {|p| File.join(theprefix,p)} if thepath.is_a?(Array)
+          raise StandardError,"unexpected case"
+        end
+
         # common API to node and Shares
-        def self.execute_common(command,api_node,option_parser,faspmanager)
+        def self.execute_common(command,api_node,option_parser,faspmanager,prefix_path=nil)
           case command
           when :info
             resp=api_node.call({:operation=>'GET',:subpath=>'info',:headers=>{'Accept'=>'application/json'}})
@@ -82,23 +89,23 @@ module Asperalm
             return { :format=>:hash_table, :values => resp[:data] }# TODO
             #return { :format=>:ruby, :values => resp[:data] }# TODO
           when :browse
-            thepath=option_parser.get_next_arg_value("path")
+            thepath=get_prefix_path(prefix_path,option_parser.get_next_arg_value("path"))
             send_result=api_node.call({:operation=>'POST',:subpath=>'files/browse',:json_params=>{ :path => thepath} } )
             #send_result={:data=>{'items'=>[{'file'=>"filename1","permissions"=>[{'name'=>'read'},{'name'=>'write'}]}]}}
             return nil if !send_result[:data].has_key?('items')
             return { :values => send_result[:data]['items'] , :textify => lambda { |items| Node.format_browse(items) } }
           when :delete
-            paths_to_delete = option_parser.get_remaining_arguments("file list")
+            paths_to_delete = get_prefix_path(prefix_path,option_parser.get_remaining_arguments("file list"))
             return delete_files(api_node,paths_to_delete)
           when :mkdir
-            thepath=option_parser.get_next_arg_value("path")
+            thepath=get_prefix_path(prefix_path,option_parser.get_next_arg_value("path"))
             resp=api_node.call({:operation=>'POST',:subpath=>'files/create',:json_params=>{ "paths" => [{ "path" => thepath, "type" => "directory" } ] } } )
             return self.result_translate(resp,'folder','created')
           when :upload
             filelist = option_parser.get_remaining_arguments("file list")
             Log.log.debug("file list=#{filelist}")
             raise CliBadArgument,"Missing source(s) and destination" if filelist.length < 2
-            destination=filelist.pop
+            destination=get_prefix_path(prefix_path,filelist.pop)
             send_result=api_node.call({:operation=>'POST',:subpath=>'files/upload_setup',:json_params=>{ :transfer_requests => [ { :transfer_request => { :paths => [ { :destination => destination } ] } } ] }})
             raise send_result[:data]['transfer_specs'][0]['error']['user_message'] if send_result[:data]['transfer_specs'][0].has_key?('error')
             raise "expecting one session exactly" if send_result[:data]['transfer_specs'].length != 1
@@ -107,7 +114,7 @@ module Asperalm
             faspmanager.transfer_with_spec(transfer_spec)
             return nil
           when :download
-            filelist = option_parser.get_remaining_arguments("file list")
+            filelist = get_prefix_path(prefix_path,option_parser.get_remaining_arguments("file list"))
             Log.log.debug("file list=#{filelist}")
             raise CliBadArgument,"Missing source(s) and destination" if filelist.length < 2
             destination=filelist.pop

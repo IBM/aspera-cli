@@ -15,6 +15,22 @@ module Asperalm
 
     class Main < Plugin
       @@MAIN_PLUGIN_NAME_SYM=:cli
+      @@global_config=nil
+      # get default configuration for named application
+      def self.get_config_defaults(plugin_sym,config_name)
+        if @@global_config.nil?
+          Log.log.debug("no default config")
+          return nil
+        end
+        if !@@global_config.has_key?(plugin_sym)
+          Log.log.debug("no default config for #{plugin_sym}")
+          return nil
+        end
+        default_config=@@global_config[plugin_sym][config_name]
+        Log.log.debug("#{plugin_sym} default config=#{default_config}")
+        return default_config
+      end
+
       def attr_logtype(operation,value)
         case operation
         when :set
@@ -50,9 +66,9 @@ module Asperalm
         when :set
           @config_file_path=value
           Log.log.debug "loading #{value}"
-          @loaded_config=YAML.load_file(value)
-          Log.log.debug "loaded: #{@loaded_config}"
-          self.options.set_defaults(get_defaults(@@MAIN_PLUGIN_NAME_SYM,self.options.get_option(:config_name)))
+          @@global_config=YAML.load_file(value)
+          Log.log.debug "loaded: #{@@global_config}"
+          self.options.set_defaults(Main.get_config_defaults(@@MAIN_PLUGIN_NAME_SYM,self.options.get_option(:config_name)))
         else
           return @config_file_path
         end
@@ -143,8 +159,8 @@ module Asperalm
       # initialize if necessary
       def get_plugin_instance(plugin_name_sym)
         require @plugins[plugin_name_sym][:req]
-        Log.log.debug("loaded config -> #{@loaded_config}")
-        default_config=get_defaults(plugin_name_sym,self.options.get_option_mandatory(:config_name))
+        Log.log.debug("loaded config -> #{@@global_config}")
+        default_config=Main.get_config_defaults(plugin_name_sym,self.options.get_option_mandatory(:config_name))
         # TODO: check that ancestor is Plugin
         command_plugin=Object::const_get(@@PLUGINS_MODULE+'::'+plugin_name_sym.to_s.capitalize).new(self.options)
         command_plugin.options.set_defaults(default_config)
@@ -156,7 +172,7 @@ module Asperalm
           when :connect
             command_plugin.faspmanager.use_connect_client=true
           when :node
-            node_config=get_defaults(:node,self.options.get_option_mandatory(:transfer_node_config))
+            node_config=Main.get_config_defaults(:node,self.options.get_option_mandatory(:transfer_node_config))
             raise CliBadArgument,"no such node configuration: #{self.options.get_option_mandatory(:transfer_node_config)}" if node_config.nil?
             command_plugin.faspmanager.tr_node_api=Rest.new(node_config[:url],{:basic_auth=>{:user=>node_config[:username], :password=>node_config[:password]}})
           end
@@ -258,34 +274,20 @@ module Asperalm
               return self.class.result_simple_table('plugin',sections)
             else
               plugin=self.options.get_next_arg_from_list('plugin',sections)
-              names=@loaded_config[plugin].keys.map { |i| i.to_sym }
+              names=@@global_config[plugin].keys.map { |i| i.to_sym }
               if self.options.command_or_arg_empty?
                 # list names for tool
                 return self.class.result_simple_table('name',names)
               else
                 # list parameters
                 configname=self.options.get_next_arg_from_list('config',names)
-                defaults=get_defaults(plugin,configname.to_s)
+                defaults=Main.get_config_defaults(plugin,configname.to_s)
                 return nil if defaults.nil?
                 return {:values => defaults.keys.map { |i| { 'param' => i.to_s, 'value' => defaults[i] } } , :fields => ['param','value'] }
               end
             end
           end
         end
-      end
-
-      def get_defaults(plugin_sym,config_name)
-        if @loaded_config.nil?
-          Log.log.debug("no default config")
-          return nil
-        end
-        if !@loaded_config.has_key?(plugin_sym)
-          Log.log.debug("no default config for #{plugin_sym}")
-          return nil
-        end
-        default_config=@loaded_config[plugin_sym][config_name]
-        Log.log.debug("#{plugin_sym} default config=#{default_config}")
-        return default_config
       end
 
       def display_results(results)

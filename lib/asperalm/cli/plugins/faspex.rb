@@ -1,5 +1,6 @@
 require 'asperalm/cli/basic_auth_plugin'
 require 'asperalm/browser_interaction'
+require 'asperalm/cli/plugins/node'
 
 module Asperalm
   module Cli
@@ -55,7 +56,7 @@ module Asperalm
         end
 
         def execute_action
-          command=self.options.get_next_arg_from_list('command',[ :package, :dropbox, :recv_publink, :list_shares, :me ])
+          command=self.options.get_next_arg_from_list('command',[ :package, :dropbox, :recv_publink, :source, :me ])
           case command
           when :package
             command_pkg=self.options.get_next_arg_from_list('command',[ :send, :recv, :list ])
@@ -63,11 +64,11 @@ module Asperalm
             case command_pkg
             when :send
               filelist = self.options.get_remaining_arguments("file list")
-              send_result=api_faspex.call({:operation=>'POST',:subpath=>'send',:json_params=>{"delivery"=>{"use_encryption_at_rest"=>false,"note"=>self.options.get_option_mandatory(:note),"sources"=>[{"paths"=>filelist}],"title"=>self.options.get_option_mandatory(:title),"recipients"=>self.options.get_option_mandatory(:recipient).split(','),"send_upload_result"=>true}},:headers=>{'Accept'=>'application/json'}})[:data]
+              send_result=api_faspex.call({:operation=>'POST',:subpath=>'send',:json_params=>{"delivery"=>{"use_encryption_at_rest"=>false,"note"=>self.options.get_option_mandatory(:note),"source"=>[{"paths"=>filelist}],"title"=>self.options.get_option_mandatory(:title),"recipients"=>self.options.get_option_mandatory(:recipient).split(','),"send_upload_result"=>true}},:headers=>{'Accept'=>'application/json'}})[:data]
               if send_result.has_key?('error')
                 raise CliBadArgument,"#{send_result['error']['user_message']} / #{send_result['error']['internal_message']}"
               end
-              raise "expecting one session exactly" if send_result['xfer_sessions'].length != 1
+              raise CliBadArgument,"expecting one session exactly" if send_result['xfer_sessions'].length != 1
               transfer_spec=send_result['xfer_sessions'].first
               transfer_spec['paths']=filelist.map { |i| {'source'=>i} }
               @faspmanager.transfer_with_spec(transfer_spec)
@@ -109,10 +110,41 @@ module Asperalm
               end
               return nil
             end
-          when :list_shares
+          when :source
+            command_source=self.options.get_next_arg_from_list('command',[ :list, :id, :name ])
             api_faspex=get_faspex_authenticated_api
-            shares_list=api_faspex.call({:operation=>'GET',:subpath=>"source_shares",:headers=>{'Accept'=>'application/json'}})[:data]
-            return {:values=>shares_list['items']}
+            source_list=api_faspex.call({:operation=>'GET',:subpath=>"source_shares",:headers=>{'Accept'=>'application/json'}})[:data]['items']
+            case command_source
+            when :list
+              return {:values=>source_list}
+            else # :id or :name
+              source_match_val=self.options.get_next_arg_value('source id or name')
+              #source_match_val=source_match_val.to_i if command_source.eql?(:id)
+              source_ids=source_list.select { |i| i[command_source.to_s].to_s.eql?(source_match_val) }
+              if source_ids.empty?
+                raise CliError,"No such Faspex source #{command_source.to_s}: #{source_match_val} in [#{source_list.map{|i| i[command_source.to_s]}.join(', ')}]"
+              end
+              # get id and name
+              source_name=source_ids.first['name']
+              source_id=source_ids.first['id']
+              source_hash=options.get_option(:storage)
+              raise CliError,"No storage defined in aslmcli config" if source_hash.nil?
+              if !source_hash.has_key?(source_name)
+                raise CliError,"No such storage in aslmcli config: \"#{source_name}\" in [#{source_hash.keys.join(', ')}]"
+              end
+              source_info=source_hash[source_name]
+              command_node=self.options.get_next_arg_from_list('command',[ :info, :node ])
+              case command_node
+              when :info
+                return {:values=>source_info,:format=>:hash_table}
+              when :node
+                node_config=Main.get_config_defaults(:node,source_info[:node])
+                raise CliError,"No such node aslmcli config: \"#{source_info[:node]}\"" if node_config.nil?
+                api_node=Rest.new(node_config[:url],{:basic_auth=>{:user=>node_config[:username], :password=>node_config[:password]}})
+                command=self.options.get_next_arg_from_list('command',Node.common_actions)
+                return Node.execute_common(command,api_node,self.options,@faspmanager,source_info[:path])
+              end
+            end
           when :me
             api_faspex=get_faspex_authenticated_api
             my_info=api_faspex.call({:operation=>'GET',:subpath=>"me",:headers=>{'Accept'=>'application/json'}})[:data]

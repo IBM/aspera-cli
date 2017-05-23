@@ -10,6 +10,7 @@ module Asperalm
   module Cli
     class CliBadArgument < StandardError
     end
+
     class CliError < StandardError
     end
 
@@ -40,23 +41,25 @@ module Asperalm
 
       # parse an option value, special behavior for file:, env:, val:
       def self.get_extended_value(name_or_descr,value)
-        if m=value.match(%r{^@file:(.*)}) then
-          value=m[1]
-          if m=value.match(%r{^~/(.*)}) then
+        if value.is_a?(String)
+          if m=value.match(%r{^@file:(.*)}) then
             value=m[1]
-            value=File.join(Dir.home,value)
+            if m=value.match(%r{^~/(.*)}) then
+              value=m[1]
+              value=File.join(Dir.home,value)
+            end
+            raise CliBadArgument,"cannot open file \"#{value}\" for #{name_or_descr}" if ! File.exist?(value)
+            value=File.read(value)
+          elsif m=value.match(/^@env:(.*)/) then
+            value=m[1]
+            value=ENV[value]
+          elsif m=value.match(/^@val:(.*)/) then
+            value=m[1]
+          elsif m=value.match(/^@json:(.*)/) then
+            value=JSON.parse(m[1])
+          elsif value.eql?('@none') then
+            value=nil
           end
-          raise CliBadArgument,"cannot open file \"#{value}\" for #{name_or_descr}" if ! File.exist?(value)
-          value=File.read(value)
-        elsif m=value.match(/^@env:(.*)/) then
-          value=m[1]
-          value=ENV[value]
-        elsif m=value.match(/^@val:(.*)/) then
-          value=m[1]
-        elsif m=value.match(/^@json:(.*)/) then
-          value=JSON.parse(m[1])
-        elsif value.eql?('@none') then
-          value=nil
         end
         value
       end
@@ -76,7 +79,7 @@ module Asperalm
         else; raise CliBadArgument,"ambigous value for #{descr}: #{shortval}, one of: #{matching.map {|x| x.to_s}.join(', ')}"
         end
       end
-      
+
       # get next argument, must be from the value list
       def get_next_arg_from_list(descr,allowed_values)
         if @mycommand_and_args.empty? then
