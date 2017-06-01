@@ -9,9 +9,11 @@ module Asperalm
     module Plugins
       class Files < Plugin
         attr_accessor :faspmanager
+        # returns a node API for access key
         # no scope: requires secret
         # if secret present: use it
-        def get_node_api(node_info,node_scope=nil)
+        def get_ak_node_api(node_info,node_scope=nil)
+          # if no scope, or secret provided on command line ...
           if node_scope.nil? or !self.options.get_option(:secret).nil?
             return Rest.new(node_info['url'],{:basic_auth=>{:user=>node_info['access_key'], :password=>self.options.get_option_mandatory(:secret)},:headers=>{'X-Aspera-AccessKey'=>node_info['access_key']}})
           end
@@ -35,7 +37,7 @@ module Asperalm
             Log.log.debug "searching #{this_folder_name}"
 
             # get API if changed
-            current_node_api=get_node_api(node_info,FilesApi::SCOPE_NODE_USER) if current_node_api.nil?
+            current_node_api=get_ak_node_api(node_info,FilesApi::SCOPE_NODE_USER) if current_node_api.nil?
 
             # get folder content
             folder_contents = current_node_api.list("files/#{file_id}/files")
@@ -103,12 +105,12 @@ module Asperalm
           case command_repo
           when :info
             node_info=@api_files_user.read("nodes/#{home_node_id}")[:data]
-            node_api=get_node_api(node_info,FilesApi::SCOPE_NODE_USER)
+            node_api=get_ak_node_api(node_info,FilesApi::SCOPE_NODE_USER)
             return Node.execute_common(command_repo,node_api,self.options,@faspmanager)
           when :browse
             thepath=self.options.get_next_arg_value("path")
             node_info,file_id = find_nodeinfo_and_fileid(home_node_id,home_file_id,thepath.split('/'))
-            node_api=get_node_api(node_info,FilesApi::SCOPE_NODE_USER)
+            node_api=get_ak_node_api(node_info,FilesApi::SCOPE_NODE_USER)
             items=node_api.list("files/#{file_id}/files")[:data]
             return {:values=>items,:fields=>['name','type','recursive_size','size','modified_time','access_level']}
           when :upload
@@ -275,11 +277,11 @@ module Asperalm
             case command_admin
             when :events
               # page=1&per_page=10&q=type:(file_upload+OR+file_delete+OR+file_download+OR+file_rename+OR+folder_create+OR+folder_delete+OR+folder_share+OR+folder_share_via_public_link)&sort=-date
-              events=api_files_admin.list('events',{'q'=>'type:(file_upload OR file_download)'})[:data]
+              #events=api_files_admin.list('events',{'q'=>'type:(file_upload OR file_download)'})[:data]
               #Log.log.info "events=#{JSON.generate(events)}"
               node_info=@api_files_user.read("nodes/#{workspace_data['home_node_id']}")[:data]
               # get access to node API, note the additional header
-              api_node=get_node_api(node_info,FilesApi::SCOPE_NODE_USER)
+              api_node=get_ak_node_api(node_info,FilesApi::SCOPE_NODE_USER)
               # can add filters: tag=aspera.files.package_id%3DLA8OU3p8w
               #'tag'=>'aspera.files.package_id%3DJvbl0w-5A'
               # filter= 'id', 'short_summary', or 'summary'
@@ -297,7 +299,7 @@ module Asperalm
               res=api_files_admin.update("clients/#{the_client_id}",{:jwt_grant_enabled=>true, :public_key=>OpenSSL::PKey::RSA.new(the_private_key).public_key.to_s})
               return nil
             when :resource
-              resource=self.options.get_next_arg_from_list('resource',[:client,:contact,:dropbox,:node,:operation,:package,:saml_configuration, :workspace])
+              resource=self.options.get_next_arg_from_list('resource',[:user,:group,:client,:contact,:dropbox,:node,:operation,:package,:saml_configuration, :workspace])
               resources=resource.to_s+(resource.eql?(:dropbox) ? 'es' : 's')
               #:messages:organizations:url_tokens,:usage_reports:workspaces
               operations=[:list,:id]
@@ -318,7 +320,7 @@ module Asperalm
                 res_data=@api_files_user.read("#{resources}/#{res_id}")[:data]
                 case resource
                 when :node
-                  api_node=get_node_api(res_data)
+                  api_node=get_ak_node_api(res_data)
                   ak_data=api_node.call({:operation=>'GET',:subpath=>"access_keys/#{res_data['access_key']}",:headers=>{'Accept'=>'application/json'}})[:data]
                   return execute_node_action(res_id,ak_data['root_file_id'])
                 else

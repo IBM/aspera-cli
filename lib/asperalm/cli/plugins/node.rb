@@ -5,13 +5,19 @@ module Asperalm
     module Plugins
       class Node < BasicAuthPlugin
         attr_accessor :faspmanager
+        def initialize(option_parser)
+          super(option_parser)
+          # handler must be set before setting defaults
+          self.options.set_handler(:filter_config) { |op,val| attr_filter_config(op,val) }
+        end
         alias super_set_options set_options
         def set_options
           super_set_options
           self.options.set_option(:persistency,File.join($PROGRAM_FOLDER,"persistency_cleanup.txt"))
           self.options.add_opt_simple(:persistency,"--persistency=FILEPATH","persistency file")
-          self.options.add_opt_simple(:transfer_filter,"--transfer-filter=EXPRESSION","Ruby expression for filter at transfer level")
-          self.options.add_opt_simple(:file_filter,"--file-filter=EXPRESSION","Ruby expression for filter at file level")
+          self.options.add_opt_simple(:filter_config,"--filter-config=NAME","Ruby expression for filter at transfer level")
+          self.options.add_opt_simple(:filter_transfer,"--filter-transfer=EXPRESSION","Ruby expression for filter at transfer level")
+          self.options.add_opt_simple(:filter_file,"--filter-file=EXPRESSION","Ruby expression for filter at file level")
         end
 
         def self.format_browse(items)
@@ -79,6 +85,15 @@ module Asperalm
           raise StandardError,"unexpected case"
         end
 
+        def self.remove_result_prefix_path(theprefix,result,column)
+          if !theprefix.nil?
+            result[:values].each do |r|
+              r[column].gsub!(theprefix,'')
+            end
+          end
+          return result
+        end
+
         # common API to node and Shares
         def self.execute_common(command,api_node,option_parser,faspmanager,prefix_path=nil)
           case command
@@ -93,14 +108,15 @@ module Asperalm
             send_result=api_node.call({:operation=>'POST',:subpath=>'files/browse',:json_params=>{ :path => thepath} } )
             #send_result={:data=>{'items'=>[{'file'=>"filename1","permissions"=>[{'name'=>'read'},{'name'=>'write'}]}]}}
             return nil if !send_result[:data].has_key?('items')
-            return { :values => send_result[:data]['items'] , :textify => lambda { |items| Node.format_browse(items) } }
+            result={ :values => send_result[:data]['items'] , :textify => lambda { |items| Node.format_browse(items) } }
+            return remove_result_prefix_path(prefix_path,result,'path')
           when :delete
             paths_to_delete = get_prefix_path(prefix_path,option_parser.get_remaining_arguments("file list"))
-            return delete_files(api_node,paths_to_delete)
+            return remove_result_prefix_path(prefix_path,delete_files(api_node,paths_to_delete),'file')
           when :mkdir
             thepath=get_prefix_path(prefix_path,option_parser.get_next_arg_value("path"))
             resp=api_node.call({:operation=>'POST',:subpath=>'files/create',:json_params=>{ "paths" => [{ "path" => thepath, "type" => "directory" } ] } } )
-            return self.result_translate(resp,'folder','created')
+            return remove_result_prefix_path(prefix_path,result_translate(resp,'folder','created'),'folder')
           when :upload
             filelist = option_parser.get_remaining_arguments("file list")
             Log.log.debug("file list=#{filelist}")
@@ -186,16 +202,16 @@ module Asperalm
           when :cleanup
             transfers=self.class.get_transfers_iteration(api_node,self.options.get_option(:persistency),{:active_only=>false})
             persistencyfile=self.options.get_option_mandatory(:persistency)
-            transfer_filter=self.options.get_option_mandatory(:transfer_filter)
-            file_filter=self.options.get_option_mandatory(:file_filter)
-            Log.log.debug("transfer_filter: #{transfer_filter}")
-            Log.log.debug("file_filter: #{file_filter}")
+            filter_transfer=self.options.get_option_mandatory(:filter_transfer)
+            filter_file=self.options.get_option_mandatory(:filter_file)
+            Log.log.debug("filter_transfer: #{filter_transfer}")
+            Log.log.debug("filter_file: #{filter_file}")
             # build list of files to delete: non zero files, downloads, for specified user
             paths_to_delete=[]
             transfers.each do |t|
-              if eval(transfer_filter)
+              if eval(filter_transfer)
                 t['files'].each do |f|
-                  if eval(file_filter)
+                  if eval(filter_file)
                     if !paths_to_delete.include?(f['path'])
                       paths_to_delete.push(f['path'])
                       Log.log.info("to delete: #{f['path']}")

@@ -14,6 +14,7 @@ module Asperalm
           self.options.add_opt_simple(:recipient,"--recipient=STRING","package recipient")
           self.options.add_opt_simple(:title,"--title=STRING","package title")
           self.options.add_opt_simple(:note,"--note=STRING","package note")
+          self.options.add_opt_simple(:source_name,"--source-name=STRING","create package from remote source (by name)")
           self.options.add_opt_list(:pkgbox,[:inbox,:sent,:archive],"package box",'--box=TYPE')
         end
 
@@ -55,6 +56,15 @@ module Asperalm
           }
         end
 
+        # field_sym : :id or :name
+        def self.get_source_name_id(source_list,field_sym,field_value)
+          source_ids=source_list.select { |i| i[field_sym.to_s].to_s.eql?(field_value.to_s) }
+          if source_ids.empty?
+            raise CliError,"No such Faspex source #{field_sym.to_s}: #{field_value} in [#{source_list.map{|i| i[field_sym.to_s]}.join(', ')}]"
+          end
+          return source_ids.first['name'],source_ids.first['id']
+        end
+
         def execute_action
           command=self.options.get_next_arg_from_list('command',[ :package, :dropbox, :recv_publink, :source, :me ])
           case command
@@ -64,9 +74,29 @@ module Asperalm
             case command_pkg
             when :send
               filelist = self.options.get_remaining_arguments("file list")
-              send_result=api_faspex.call({:operation=>'POST',:subpath=>'send',:json_params=>{"delivery"=>{"use_encryption_at_rest"=>false,"note"=>self.options.get_option_mandatory(:note),"source"=>[{"paths"=>filelist}],"title"=>self.options.get_option_mandatory(:title),"recipients"=>self.options.get_option_mandatory(:recipient).split(','),"send_upload_result"=>true}},:headers=>{'Accept'=>'application/json'}})[:data]
+              package_create_params={
+                "delivery"=>{
+                "title"=>self.options.get_option_mandatory(:title),
+                "note"=>self.options.get_option_mandatory(:note),
+                "recipients"=>self.options.get_option_mandatory(:recipient).split(','),
+                "send_upload_result"=>true,
+                "use_encryption_at_rest"=>false,
+                "sources"=>[{"paths"=>filelist}]
+                }
+              }
+              source_name=self.options.get_option(:source_name)
+              if !source_name.nil?
+                source_list=api_faspex.call({:operation=>'GET',:subpath=>"source_shares",:headers=>{'Accept'=>'application/json'}})[:data]['items']
+                source_name,source_id=self.class.get_source_name_id(source_list,:name,source_name)
+                package_create_params['delivery']['sources'].first['id']=source_id
+              end
+              send_result=api_faspex.call({:operation=>'POST',:subpath=>'send',:json_params=>package_create_params,:headers=>{'Accept'=>'application/json'}})[:data]
               if send_result.has_key?('error')
-                raise CliBadArgument,"#{send_result['error']['user_message']} / #{send_result['error']['internal_message']}"
+                raise CliBadArgument,"#{send_result['error']['user_message']}: #{send_result['error']['internal_message']}"
+              end
+              if !source_name.nil?
+                # no transfer spec if remote source
+                return send_result
               end
               raise CliBadArgument,"expecting one session exactly" if send_result['xfer_sessions'].length != 1
               transfer_spec=send_result['xfer_sessions'].first
