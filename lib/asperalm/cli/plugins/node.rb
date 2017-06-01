@@ -11,6 +11,7 @@ module Asperalm
           self.options.set_handler(:filter_config) { |op,val| attr_filter_config(op,val) }
         end
         alias super_set_options set_options
+
         def set_options
           super_set_options
           self.options.set_option(:persistency,File.join($PROGRAM_FOLDER,"persistency_cleanup.txt"))
@@ -29,14 +30,14 @@ module Asperalm
         end
 
         def self.result_translate(resp,type,default)
-          resres={:fields=>[type,'result'],:values=>[]}
+          resres={:data=>[],:type=>:hash_array,:fields=>[type,'result'],}
           JSON.parse(resp[:http].body)['paths'].each do |p|
             result=default
             if p.has_key?('error')
               Log.log.error("#{p['error']['user_message']} : #{p['path']}")
               result="ERROR: "+p['error']['user_message']
             end
-            resres[:values].push({type=>p['path'],'result'=>result})
+            resres[:data].push({type=>p['path'],'result'=>result})
           end
           return resres
         end
@@ -87,7 +88,7 @@ module Asperalm
 
         def self.remove_result_prefix_path(theprefix,result,column)
           if !theprefix.nil?
-            result[:values].each do |r|
+            result[:data].each do |r|
               r[column].gsub!(theprefix,'')
             end
           end
@@ -98,17 +99,16 @@ module Asperalm
         def self.execute_common(command,api_node,option_parser,faspmanager,prefix_path=nil)
           case command
           when :info
-            resp=api_node.call({:operation=>'GET',:subpath=>'info',:headers=>{'Accept'=>'application/json'}})
-            bool_param_to_string(resp[:data],'capabilities')
-            bool_param_to_string(resp[:data],'settings')
-            return { :format=>:hash_table, :values => resp[:data] }# TODO
-            #return { :format=>:ruby, :values => resp[:data] }# TODO
+            node_info=api_node.call({:operation=>'GET',:subpath=>'info',:headers=>{'Accept'=>'application/json'}})[:data]
+            bool_param_to_string(node_info,'capabilities')
+            bool_param_to_string(node_info,'settings')
+            return { :data => node_info, :type=>:hash_table}
           when :browse
             thepath=get_prefix_path(prefix_path,option_parser.get_next_arg_value("path"))
             send_result=api_node.call({:operation=>'POST',:subpath=>'files/browse',:json_params=>{ :path => thepath} } )
             #send_result={:data=>{'items'=>[{'file'=>"filename1","permissions"=>[{'name'=>'read'},{'name'=>'write'}]}]}}
-            return nil if !send_result[:data].has_key?('items')
-            result={ :values => send_result[:data]['items'] , :textify => lambda { |items| Node.format_browse(items) } }
+            return Main.no_result if !send_result[:data].has_key?('items')
+            result={ :data => send_result[:data]['items'] , :type => :hash_array, :textify => lambda { |items| Node.format_browse(items) } }
             return remove_result_prefix_path(prefix_path,result,'path')
           when :delete
             paths_to_delete = get_prefix_path(prefix_path,option_parser.get_remaining_arguments("file list"))
@@ -128,7 +128,7 @@ module Asperalm
             transfer_spec=send_result[:data]['transfer_specs'].first['transfer_spec']
             transfer_spec['paths']=filelist.map { |i| {'source'=>i} }
             faspmanager.transfer_with_spec(transfer_spec)
-            return nil
+            return Main.no_result
           when :download
             filelist = get_prefix_path(prefix_path,option_parser.get_remaining_arguments("file list"))
             Log.log.debug("file list=#{filelist}")
@@ -140,7 +140,7 @@ module Asperalm
             transfer_spec=send_result[:data]['transfer_specs'].first['transfer_spec']
             transfer_spec['destination_root']=destination
             faspmanager.transfer_with_spec(transfer_spec)
-            return nil
+            return Main.no_result
           end
         end
 
@@ -154,22 +154,22 @@ module Asperalm
             case command
             when :list
               resp=api_node.call({:operation=>'GET',:subpath=>'ops/transfers',:headers=>{'Accept'=>'application/json'},:url_params=>{'active_only'=>'true'}})
-              return { :fields=>['id','status'], :values => resp[:data] } # TODO
+              return { :data => resp[:data], :type => :hash_array, :fields=>['id','status']  } # TODO
             when :create
               resp=api_node.call({:operation=>'POST',:subpath=>'streams',:headers=>{'Accept'=>'application/json'},:json_params=>FaspManager.ts_override_data})
-              return { :values => resp[:data] }
+              return { :data => resp[:data], :type => :hash_table }
             when :info
               trid=self.options.get_next_arg_value("transfer id")
               resp=api_node.call({:operation=>'GET',:subpath=>'ops/transfers/'+trid,:headers=>{'Accept'=>'application/json'}})
-              return { :format=>:ruby, :values => resp[:data] } # TODO
+              return { :data => resp[:data], :type=>:unknown  }
             when :modify
               trid=self.options.get_next_arg_value("transfer id")
               resp=api_node.call({:operation=>'PUT',:subpath=>'streams/'+trid,:headers=>{'Accept'=>'application/json'},:json_params=>FaspManager.ts_override_data})
-              return { :format=>:ruby, :values => resp[:data] } # TODO
+              return { :data => resp[:data], :type=>:unknown }
             when :cancel
               trid=self.options.get_next_arg_value("transfer id")
               resp=api_node.call({:operation=>'CANCEL',:subpath=>'streams/'+trid,:headers=>{'Accept'=>'application/json'}})
-              return { :format=>:ruby, :values => resp[:data] } # TODO
+              return { :data => resp[:data], :type=>:unknown }
             else
               raise "error"
             end
@@ -179,26 +179,25 @@ module Asperalm
             case command
             when :list
               resp=api_node.call({:operation=>'GET',:subpath=>'ops/transfers',:headers=>{'Accept'=>'application/json'},:url_params=>{'active_only'=>'true'}})
-              return { :fields=>['id','status','remote_user','remote_host'], :values => resp[:data], :textify => lambda { |items| Node.format_transfer_list(items) } } # TODO
+              return { :data => resp[:data], :type => :hash_array, :fields=>['id','status','remote_user','remote_host'], :textify => lambda { |items| Node.format_transfer_list(items) } } # TODO
             when :cancel
               trid=self.options.get_next_arg_value("transfer id")
               resp=api_node.call({:operation=>'CANCEL',:subpath=>'ops/transfers/'+trid,:headers=>{'Accept'=>'application/json'}})
-              return { :format=>:ruby, :values => resp[:data] } # TODO
+              return { :data => resp[:data], :type=>:unknown }
             when :info
               trid=self.options.get_next_arg_value("transfer id")
               resp=api_node.call({:operation=>'GET',:subpath=>'ops/transfers/'+trid,:headers=>{'Accept'=>'application/json'}})
-              return { :format=>:ruby, :values => resp[:data] } # TODO
+              return { :data => resp[:data], :type=>:unknown }
             else
               raise "error"
             end
           when :access_key
             resp=api_node.call({:operation=>'GET',:subpath=>'access_keys',:headers=>{'Accept'=>'application/json'}})
-            return {:fields=>['id','root_file_id','storage','license'],:values=>resp[:data]}
-            #return { :values => resp[:data] }# TODO
+            return {:data=>resp[:data], :type => :hash_array, :fields=>['id','root_file_id','storage','license']}
           when :watch_folder
             resp=api_node.call({:operation=>'GET',:subpath=>'/v3/watchfolders',:headers=>{'Accept'=>'application/json'}})
-            #return {:fields=>['id','root_file_id','storage','license'],:values=>resp[:data]}
-            return { :format=>:ruby, :values => resp[:data] }# TODO
+            #  :fields=>['id','root_file_id','storage','license']
+            return { :data => resp[:data], :type=>:unknown }
           when :cleanup
             transfers=self.class.get_transfers_iteration(api_node,self.options.get_option(:persistency),{:active_only=>false})
             persistencyfile=self.options.get_option_mandatory(:persistency)
@@ -227,6 +226,7 @@ module Asperalm
             else
               Log.log.info("nothing to delete")
             end
+            return Main.no_result
           when :forward
             destination=self.options.get_next_arg_value("destination folder")
             # detect transfer sessions since last call
@@ -238,7 +238,7 @@ module Asperalm
             end
             if filelist.empty?
               Log.log.debug("NO TRANSFER".red)
-              return nil
+              return Main.no_result
             end
             Log.log.debug("file list=#{filelist}")
             # get download transfer spec on destination node
@@ -251,9 +251,9 @@ module Asperalm
             transfer_spec['destination_root']=destination
             # execute transfer
             faspmanager.transfer_with_spec(transfer_spec)
-            return nil
+            return Main.no_result
           end
-          return nil
+          raise "error"
         end # execute_action
       end # Main
     end # Plugin

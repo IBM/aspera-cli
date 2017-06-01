@@ -144,7 +144,7 @@ OPTIONS: global
         --insecure=VALUE             do not validate cert. Values=(yes,no), current=no
     -l, --log-level=VALUE            Log level. Values=(debug,info,warn,error,fatal,unknown), current=warn
     -q, --logger=VALUE               log method. Values=(syslog,stdout), current=stdout
-        --format=VALUE               output format. Values=(ruby,text_table,json,text), current=text_table
+        --format=VALUE               output format. Values=(ruby,formatted,json,text), current=formatted
         --transfer=VALUE             type of transfer. Values=(ascp,connect,node), current=ascp
     -f, --config-file=STRING         read parameters from file in YAML format, current=/Users/laurent/.aspera/aslmcli/config.yaml
     -n, --config-name=STRING         name of configuration in config file

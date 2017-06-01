@@ -31,6 +31,10 @@ module Asperalm
         return default_config
       end
 
+      def self.no_result
+        return {:data => :nil, :type => :empty }
+      end
+
       def attr_logtype(operation,value)
         case operation
         when :set
@@ -195,7 +199,7 @@ module Asperalm
         self.options.set_option(:transfer,:ascp)
         self.options.set_option(:transfer_node_config,'default')
         self.options.set_option(:insecure,:no)
-        self.options.set_option(:format,:text_table)
+        self.options.set_option(:format,:formatted)
         self.options.set_option(:logtype,:stdout)
         self.options.set_option(:config_file,@@DEFAULT_CONFIG_FILE) if File.exist?(@@DEFAULT_CONFIG_FILE)
         self.options.on("-h", "--help", "Show this message") { self.options.exit_with_usage(nil) }
@@ -203,7 +207,7 @@ module Asperalm
         self.options.add_opt_list(:insecure,[:yes,:no],"do not validate cert",'--insecure=VALUE')
         self.options.add_opt_list(:loglevel,Log.levels,"Log level",'-lTYPE','--log-level=VALUE')
         self.options.add_opt_list(:logtype,[:syslog,:stdout],"log method",'-qTYPE','--logger=VALUE')
-        self.options.add_opt_list(:format,[:ruby,:text_table,:json,:text],"output format",'--format=VALUE')
+        self.options.add_opt_list(:format,[:ruby,:formatted,:json,:text],"output format",'--format=VALUE')
         self.options.add_opt_list(:transfer,[:ascp,:connect,:node],"type of transfer",'--transfer=VALUE')
         self.options.add_opt_simple(:config_file,"-fSTRING", "--config-file=STRING","read parameters from file in YAML format, current=#{self.options.get_option(:config_file)}")
         self.options.add_opt_simple(:config_name,"-nSTRING", "--config-name=STRING","name of configuration in config file")
@@ -213,14 +217,6 @@ module Asperalm
         self.options.add_opt_simple(:http_proxy,"--http-proxy=STRING","URL of HTTP proxy (for http fallback)")
         self.options.add_opt_on(:rest_debug,"-r", "--rest-debug","more debug for HTTP calls") { Rest.set_debug(true) }
         self.options.add_opt_simple(:transfer_spec,"--ts=JSON","override transfer spec values, current=#{self.options.get_option(:transfer_spec)}")
-      end
-
-      def self.result_simple_table(name,list)
-        return {:values => list.map { |i| { name => i.to_s } }}
-      end
-
-      def self.result_hash_table(hash)
-        return {:values => hash.keys.map { |i| { 'key' => i, 'value' => hash[i] } }}
       end
 
       # "cli" plugin
@@ -239,7 +235,7 @@ module Asperalm
           end
           Process.exit 1
         when :plugins
-          return {:values => plugin_sym_list.map { |i| { 'plugin' => i.to_s, 'path' => @plugins[i][:source] } } , :fields => ['plugin','path'] }
+          return {:data => plugin_sym_list.map { |i| { 'plugin' => i.to_s, 'path' => @plugins[i][:source] } } , :fields => ['plugin','path'], :type => :hash_array }
         when :config
           action=self.options.get_next_arg_from_list('action',[:ls,:init,:cat,:open])
           case action
@@ -252,7 +248,7 @@ module Asperalm
               "default"=>{:auth=>:jwt, :url=>"https://myorg.asperafiles.com", :client_id=>"MyClientId", :client_secret=>"MyAccessKeySecret", :private_key=>"@file:~/.aspera/aslmcli/filesapikey", :username=>"user@example.com"},
               "web"=>{:auth=>:web, :url=>"https://myorg.asperafiles.com", :client_id=>"MyClientId", :client_secret=>"MyAccessKeySecret", :redirect_uri=>"http://local.connectme.us:12345"}
               },:faspex=>{
-                "default"=>{:url=>"https://myfaspex.mycompany.com/aspera/faspex", :username=>"admin", :password=>"MyP@ssw0rd",:storage=>{'Local Storage'=>{:node=>'default',:path=>'/subpath'}}},
+              "default"=>{:url=>"https://myfaspex.mycompany.com/aspera/faspex", :username=>"admin", :password=>"MyP@ssw0rd",:storage=>{'Local Storage'=>{:node=>'default',:path=>'/subpath'}}},
               "app2"=>{:url=>"https://faspex.other.com/aspera/faspex", :username=>"john@example", :password=>"yM7FmjfGN$J4"}
               },:shares=>{"default"=>{:url=>"https://10.25.0.6", :username=>"admin", :password=>"MyP@ssw0rd"}
               },:node=>{"default"=>{:url=>"https://10.25.0.8:9092", :username=>"node_user", :password=>"MyP@ssw0rd", :transfer_filter=>"t['status'].eql?('completed') and t['start_spec']['remote_user'].eql?('faspex')", :file_filter=>"f['status'].eql?('completed') and 0 != f['size'] and t['start_spec']['direction'].eql?('send')"}
@@ -263,7 +259,7 @@ module Asperalm
             puts "initialized: #{$PROGRAM_FOLDER}"
             return nil
           when :cat
-            return {:values=>File.read(@@DEFAULT_CONFIG_FILE),:format=>:text}
+            return {:data=>File.read(@@DEFAULT_CONFIG_FILE),:format=>:text}
           when :open
             BrowserInteraction.open_system_uri(@@DEFAULT_CONFIG_FILE)
             return nil
@@ -271,19 +267,19 @@ module Asperalm
             sections=plugin_sym_list
             if self.options.command_or_arg_empty?
               # just list plugins
-              return self.class.result_simple_table('plugin',sections)
+              return {:data => sections, :type => :list, :name => 'plugin'}
             else
               plugin=self.options.get_next_arg_from_list('plugin',sections)
               names=@@global_config[plugin].keys.map { |i| i.to_sym }
               if self.options.command_or_arg_empty?
                 # list names for tool
-                return self.class.result_simple_table('name',names)
+                return {:data => names, :type => :list, :name => 'name'}
               else
                 # list parameters
                 configname=self.options.get_next_arg_from_list('config',names)
                 defaults=Main.get_config_defaults(plugin,configname.to_s)
                 return nil if defaults.nil?
-                return {:values => defaults.keys.map { |i| { 'param' => i.to_s, 'value' => defaults[i] } } , :fields => ['param','value'] }
+                return {:data => defaults.keys.map { |i| { 'param' => i.to_s, 'value' => defaults[i] } } , :fields => ['param','value'], :type => :hash_array }
               end
             end
           end
@@ -291,57 +287,77 @@ module Asperalm
       end
 
       def display_results(results)
-        if results.nil?
-          Log.log.debug("result=nil")
-        elsif results.is_a?(String)
-          $stdout.write(results)
-        elsif results.is_a?(Hash) and results.has_key?(:values) then
-          if results.has_key?(:format)
-            if results[:format].eql?(:hash_table)
-              results[:format]=:text_table
-              results[:values]=results[:values].keys.map { |i| { 'key' => i, 'value' => results[:values][i] } }
-            end
-            self.options.set_option(:format,results[:format])
-          end
-          if results[:values].is_a?(Array) and results[:values].empty?
-            $stdout.write("no result")
-          else
-            display_fields=nil
-            if ![:ruby,:text].include?(self.options.get_option_mandatory(:format))
-              case self.options.get_option_mandatory(:fields)
-              when FIELDS_DEFAULT
-                if !results.has_key?(:fields) or results[:fields].nil?
-                  raise "empty results" if results[:values].empty?
-                  display_fields=results[:values].first.keys
-                else
-                  display_fields=results[:fields]
-                end
-              when FIELDS_ALL
-                raise "empty results" if results[:values].empty?
-                display_fields=results[:values].first.keys if results[:values].is_a?(Array)
-              else
-                display_fields=self.options.get_option_mandatory(:fields).split(',')
-              end
-            end
-            case self.options.get_option_mandatory(:format)
-            when :ruby
-              puts PP.pp(results[:values],'')
-            when :json
-              puts JSON.generate(results[:values])
-            when :text
-              puts results[:values]
-            when :text_table
-              rows=results[:values]
-              if results.has_key?(:textify)
-                rows=results[:textify].call(rows)
-              end
-              rows=rows.map{ |r| display_fields.map { |c| r[c].to_s } }
-              puts Text::Table.new(:head => display_fields, :rows => rows, :vertical_boundary  => '.', :horizontal_boundary => ':', :boundary_intersection => ':')
-            end
-          end
-        else
-          puts ">other result>#{PP.pp(results,'')}".red
+        if !results.is_a?(Hash) or ! results.has_key?(:data) or ! results.has_key?(:type) then
+          raise "ERROR, missing result type in #{results}"
         end
+
+        case self.options.get_option_mandatory(:format)
+        when :ruby
+          puts PP.pp(results[:data],'')
+        when :json
+          puts JSON.generate(results[:data])
+        when :formatted
+          case results[:type]
+          when :hash_array
+            table_data = results[:data]
+            display_fields=nil
+            case self.options.get_option_mandatory(:fields)
+            when FIELDS_DEFAULT
+              if !results.has_key?(:fields) or results[:fields].nil?
+                raise "empty results" if table_data.empty?
+                display_fields=table_data.first.keys
+              else
+                display_fields=results[:fields]
+              end
+            when FIELDS_ALL
+              raise "empty results" if table_data.empty?
+              display_fields=table_data.first.keys if table_data.is_a?(Array)
+            else
+              display_fields=self.options.get_option_mandatory(:fields).split(',')
+            end
+          when :hash_table
+            display_fields = ['key','value']
+            table_data=results[:data].keys.map { |i| { 'key' => i, 'value' => results[:data][i] } }
+          when :list
+            display_fields = [results[:name]]
+            table_data=results[:data].map { |i| { results[:name] => i } }
+          when :empty
+            puts "empty"
+            return
+          when :unknown
+            puts PP.pp(results[:data],'')
+            return
+          else
+            raise "ERROR"
+          end
+          raise "ERROR" if display_fields.nil?
+          # convert to string with special function
+          table_data=results[:textify].call(table_data) if results.has_key?(:textify)
+          # convert data to string
+          table_data=table_data.map{ |r| display_fields.map { |c| r[c].to_s } }
+          # display the table !
+          puts Text::Table.new(
+          :head => display_fields,
+          :rows => table_data,
+          :vertical_boundary  => '.',
+          :horizontal_boundary => ':',
+          :boundary_intersection => ':')
+        end
+
+        #        if results.has_key?(:format)
+        #            if results[:format].eql?(:hash_table)
+        #              results[:format]=:formatted
+        #              results[:values]=results[:values].keys.map { |i| { 'key' => i, 'value' => results[:values][i] } }
+        #            end
+        #            self.options.set_option(:format,results[:format])
+        #          end
+        #          if results[:values].is_a?(Array) and results[:values].empty?
+        #            $stdout.write("no result")
+        #          else
+        #          end
+        #        else
+        #          puts ">other result>#{PP.pp(results,'')}".red
+        #        end
       end
 
       def process_command_line()

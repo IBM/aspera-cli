@@ -20,7 +20,7 @@ module Asperalm
           when :transfers
             command=self.options.get_next_arg_from_list('command',[ :list ])
             resp=api_console.call({:operation=>'GET',:subpath=>'transfers',:headers=>{'Accept'=>'application/json'},:url_params=>{'from'=>self.options.get_option_mandatory(:filter_from),'to'=>self.options.get_option_mandatory(:filter_to)}})
-            return {:values=>resp[:data],:fields=>['id','contact','name','status']}
+            return {:data=>resp[:data],:type=>:hash_array,:columns=>['id','contact','name','status']}
           end
         end
       end # Console

@@ -112,7 +112,7 @@ module Asperalm
             node_info,file_id = find_nodeinfo_and_fileid(home_node_id,home_file_id,thepath.split('/'))
             node_api=get_ak_node_api(node_info,FilesApi::SCOPE_NODE_USER)
             items=node_api.list("files/#{file_id}/files")[:data]
-            return {:values=>items,:fields=>['name','type','recursive_size','size','modified_time','access_level']}
+            return {:data=>items,:type=>:hash_array,:fields=>['name','type','recursive_size','size','modified_time','access_level']}
           when :upload
             filelist = self.options.get_remaining_arguments("file list,destination")
             Log.log.debug("file list=#{filelist}")
@@ -124,6 +124,7 @@ module Asperalm
             tspec['paths']=filelist.map { |i| {'source'=>i} }
             tspec['destination_root']="/"
             @faspmanager.transfer_with_spec(tspec)
+            return Main.no_result
           when :download
             source_file=self.options.get_next_arg_value('source')
             destination_folder=self.options.get_next_arg_value('destination')
@@ -135,6 +136,7 @@ module Asperalm
             tspec['paths']=[{'source'=>file_name}]
             tspec['destination_root']=destination_folder
             @faspmanager.transfer_with_spec(tspec)
+            return Main.no_result
           end
         end
 
@@ -201,7 +203,7 @@ module Asperalm
             end
           end
 
-          if self.options.get_option(:format).eql?(:text_table) and !command.eql?(:admin)
+          if self.options.get_option(:format).eql?(:formatted) and !command.eql?(:admin)
             deflt=""
             deflt=" (default)" if (workspace_id == self_data['default_workspace_id'])
             puts "Current Workspace: #{workspace_data['name'].red}#{deflt}"
@@ -240,7 +242,7 @@ module Asperalm
               tspec['paths']=filelist.map { |i| {'source'=>i} }
               tspec['destination_root']="/"
               @faspmanager.transfer_with_spec(tspec)
-              return nil
+              return Main.no_result
               # simulate call later, to check status (this is just demo api call, not needed)
               #sleep 2
               # (sample) get package status
@@ -248,20 +250,17 @@ module Asperalm
             when :recv
               package_id=self.options.get_next_arg_value('package ID')
               the_package=@api_files_user.read("packages/#{package_id}")[:data]
-              #packages=@api_files_user.list("packages",{'archived'=>false,'exclude_dropbox_packages'=>true,'has_content'=>true,'received'=>true,'workspace_id'=>workspace_id})[:data]
-              # take the last one
-              #the_package=packages.first
-              #  get node info
               node_info=@api_files_user.read("nodes/#{the_package['node_id']}")[:data]
               tspec=info_to_tspec("receive",node_info,the_package['contents_file_id'])
               tspec['tags']["aspera"]["files"]={"package_id" => the_package['id'], "package_operation" => "download"}
               tspec['paths']=[{'source'=>'.'}]
               tspec['destination_root']='.' # TODO:param?
               @faspmanager.transfer_with_spec(tspec)
+              return Main.no_result
             when :list
               # list all packages ('page'=>1,'per_page'=>10,)'sort'=>'-sent_at',
               packages=@api_files_user.list("packages",{'archived'=>false,'exclude_dropbox_packages'=>true,'has_content'=>true,'received'=>true,'workspace_id'=>workspace_id})[:data]
-              return {:values=>packages,:fields=>['id','name','bytes_transferred']}
+              return {:data=>packages,:fields=>['id','name','bytes_transferred'],:type=>:hash_array}
             end
           when :repo
             home_node_id=workspace_data['home_node_id']
@@ -290,14 +289,14 @@ module Asperalm
               # iteration_token=nnn
               # active_only=true|false
               events=api_node.list("ops/transfers",{'count'=>100,'filter'=>'summary','active_only'=>'true'})[:data]
-              return {:values=>events,:fields=>['id','status']}
+              return {:data=>events,:fields=>['id','status'],:type=>:hash_array}
               #transfers=api_node.make_request_ex({:operation=>'GET',:subpath=>'ops/transfers',:args=>{'count'=>25,'filter'=>'id'}})
               #transfers=api_node.list("events") # after_time=2016-05-01T23:53:09Z
             when :set_client_key
               the_client_id=self.options.get_next_arg_value('client_id')
               the_private_key=self.options.get_next_arg_value('private_key')
               res=api_files_admin.update("clients/#{the_client_id}",{:jwt_grant_enabled=>true, :public_key=>OpenSSL::PKey::RSA.new(the_private_key).public_key.to_s})
-              return nil
+              return Main.no_result
             when :resource
               resource=self.options.get_next_arg_from_list('resource',[:user,:group,:client,:contact,:dropbox,:node,:operation,:package,:saml_configuration, :workspace])
               resources=resource.to_s+(resource.eql?(:dropbox) ? 'es' : 's')
@@ -313,7 +312,7 @@ module Asperalm
                 when :operation; default_fields=nil
                 when :contact; default_fields=["email","name","source_id","source_type"]
                 end
-                return {:values=>api_files_admin.list(resources)[:data],:fields=>default_fields}
+                return {:data=>api_files_admin.list(resources)[:data],:fields=>default_fields,:type=>:hash_array}
               when :id
                 #raise RuntimeError, "unexpected resource type: #{resource}, only 'node' for actions" if !resource.eql?(:node)
                 res_id=self.options.get_next_arg_value('node id')
@@ -324,11 +323,11 @@ module Asperalm
                   ak_data=api_node.call({:operation=>'GET',:subpath=>"access_keys/#{res_data['access_key']}",:headers=>{'Accept'=>'application/json'}})[:data]
                   return execute_node_action(res_id,ak_data['root_file_id'])
                 else
-                  return { :format=>:hash_table, :values => res_data }# TODO
+                  return { :data => res_data, :type=>:hash_table }
                 end
               end #op_or_id
             when :usage_reports
-              return {:values=>api_files_admin.list("usage_reports",{:workspace_id=>workspace_id})[:data]}
+              return {:data=>api_files_admin.list("usage_reports",{:workspace_id=>workspace_id})[:data],:type=>:hash_array}
             end
           else
             raise RuntimeError, "unexpected value: #{command}"

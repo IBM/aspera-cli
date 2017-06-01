@@ -21,7 +21,7 @@ module Asperalm
               'paths'=>filelist.map { |f| {'source'=>f } }
             }
             faspmanager.transfer_with_spec(transfer_spec)
-            return nil
+            return Main.no_result
           when :download
             filelist = option_parser.get_remaining_arguments("file list")
             Log.log.debug("file list=#{filelist}")
@@ -33,6 +33,7 @@ module Asperalm
               'paths'=>filelist.map { |f| {'source'=>f } }
             }
             faspmanager.transfer_with_spec(transfer_spec)
+            return Main.no_result
           end
         end
       end # Fasp

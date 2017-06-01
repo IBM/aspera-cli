@@ -102,7 +102,7 @@ module Asperalm
               transfer_spec=send_result['xfer_sessions'].first
               transfer_spec['paths']=filelist.map { |i| {'source'=>i} }
               @faspmanager.transfer_with_spec(transfer_spec)
-              return nil
+              return Main.no_result
             when :recv
               if true
                 pkguuid=self.options.get_next_arg_value("Package UUID")
@@ -131,14 +131,14 @@ module Asperalm
               transfer_spec['direction']='receive'
               transfer_spec['destination_root']='.'
               @faspmanager.transfer_with_spec(transfer_spec)
-              return nil
+              return Main.no_result
             when :list
               all_inbox_xml=api_faspex.call({:operation=>'GET',:subpath=>"#{self.options.get_option(:pkgbox).to_s}.atom",:headers=>{'Accept'=>'application/xml'}})[:http].body
               all_inbox_data=XmlSimple.xml_in(all_inbox_xml, {"ForceArray" => true})
               if all_inbox_data.has_key?('entry')
-                return {:values=>all_inbox_data['entry'],:fields=>['title','items','recipient_delivery_id','id'], :textify => lambda { |items| Faspex.format_list(items)} }
+                return {:data=>all_inbox_data['entry'],:type=>:hash_array,:fields=>['title','items','recipient_delivery_id','id'], :textify => lambda { |items| Faspex.format_list(items)} }
               end
-              return nil
+              return Main.no_result
             end
           when :source
             command_source=self.options.get_next_arg_from_list('command',[ :list, :id, :name ])
@@ -146,7 +146,7 @@ module Asperalm
             source_list=api_faspex.call({:operation=>'GET',:subpath=>"source_shares",:headers=>{'Accept'=>'application/json'}})[:data]['items']
             case command_source
             when :list
-              return {:values=>source_list}
+              return {:data=>source_list,:type=>:hash_array}
             else # :id or :name
               source_match_val=self.options.get_next_arg_value('source id or name')
               #source_match_val=source_match_val.to_i if command_source.eql?(:id)
@@ -166,7 +166,7 @@ module Asperalm
               command_node=self.options.get_next_arg_from_list('command',[ :info, :node ])
               case command_node
               when :info
-                return {:values=>source_info,:format=>:hash_table}
+                return {:data=>source_info,:type=>:hash_table}
               when :node
                 node_config=Main.get_config_defaults(:node,source_info[:node])
                 raise CliError,"No such node aslmcli config: \"#{source_info[:node]}\"" if node_config.nil?
@@ -178,14 +178,14 @@ module Asperalm
           when :me
             api_faspex=get_faspex_authenticated_api
             my_info=api_faspex.call({:operation=>'GET',:subpath=>"me",:headers=>{'Accept'=>'application/json'}})[:data]
-            return {:values=>[my_info]}
+            return {:data=>my_info, :type=>:hash_table}
           when :dropbox
             api_faspex=get_faspex_authenticated_api
             command_pkg=self.options.get_next_arg_from_list('command',[ :list ])
             case command_pkg
             when :list
               dropbox_list=api_faspex.call({:operation=>'GET',:subpath=>"/aspera/faspex/dropboxes",:headers=>{'Accept'=>'application/json'}})[:data]
-              return {:values=>dropbox_list['items'], :fields=>['name','id','description','can_read','can_write']}
+              return {:data=>dropbox_list['items'], :type=>:hash_table, :fields=>['name','id','description','can_read','can_write']}
             end
           when :recv_publink
             thelink=self.options.get_next_arg_value("Faspex public URL for a package")
@@ -203,7 +203,7 @@ module Asperalm
             transfer_spec['direction']='receive'
             transfer_spec['destination_root']='.'
             @faspmanager.transfer_with_spec(transfer_spec)
-            return nil
+            return Main.no_result
           end # command
         end
       end
