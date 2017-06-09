@@ -148,19 +148,19 @@ module Asperalm
 
     def self.parse_res_du(res_list,unused_folder_name)
       du_fields = parse_bin_response(res_list.shift.string)
-      disk_usage = {}
+      result_hash = {}
       du_fields.each do |field|
         value = field.string.strip
         case field.command
-        when 1;  disk_usage[:size] = parse_bin_int(value)
-        when 2;  disk_usage[:file_count] = parse_bin_int(value)
-        when 3;  disk_usage[:directory_count] = parse_bin_int(value)
-        when 4;  disk_usage[:failed_file_count] = parse_bin_int(value)
-        when 5;  disk_usage[:failed_directory_count] = parse_bin_int(value)
-        else     raise "Unrecognized disk_usage field: #{field.command}\n#{field.string}"
+        when 1;  result_hash[:size] = parse_bin_int(value)
+        when 2;  result_hash[:file_count] = parse_bin_int(value)
+        when 3;  result_hash[:directory_count] = parse_bin_int(value)
+        when 4;  result_hash[:failed_file_count] = parse_bin_int(value)
+        when 5;  result_hash[:failed_directory_count] = parse_bin_int(value)
+        else     raise "Unrecognized result_hash field: #{field.command}\n#{field.string}"
         end
       end
-      disk_usage
+      result_hash
     end
 
     def self.parse_res_md5sum(res_list,unused_path)
