@@ -272,8 +272,12 @@ module Asperalm
             FaspexGW.go()
           when :admin
             api_files_admin=Rest.new(files_api_base_url,{:oauth=>@api_files_oauth,:scope=>FilesApi::SCOPE_FILES_ADMIN})
-            command_admin=self.options.get_next_arg_from_list('command',[ :resource, :events, :set_client_key, :usage_reports  ])
+            command_admin=self.options.get_next_arg_from_list('command',[ :resource, :events, :set_client_key, :usage_reports, :search_nodes  ])
             case command_admin
+            when :search_nodes
+              ak=self.options.get_next_arg_value('access_key')
+              nodes=api_files_admin.list("search_nodes",{'q'=>'access_key:"'+ak+'"'})[:data]
+              return {:data=>nodes,:type=>:unknown}
             when :events
               # page=1&per_page=10&q=type:(file_upload+OR+file_delete+OR+file_download+OR+file_rename+OR+folder_create+OR+folder_delete+OR+folder_share+OR+folder_share_via_public_link)&sort=-date
               #events=api_files_admin.list('events',{'q'=>'type:(file_upload OR file_download)'})[:data]

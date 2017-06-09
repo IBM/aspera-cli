@@ -15,10 +15,12 @@ module Asperalm
         def set_options
           super_set_options
           self.options.set_option(:persistency,File.join($PROGRAM_FOLDER,"persistency_cleanup.txt"))
+          self.options.set_option(:filter_req,'{"active_only":false}')
           self.options.add_opt_simple(:persistency,"--persistency=FILEPATH","persistency file")
           self.options.add_opt_simple(:filter_config,"--filter-config=NAME","Ruby expression for filter at transfer level")
           self.options.add_opt_simple(:filter_transfer,"--filter-transfer=EXPRESSION","Ruby expression for filter at transfer level")
           self.options.add_opt_simple(:filter_file,"--filter-file=EXPRESSION","Ruby expression for filter at file level")
+          self.options.add_opt_simple(:filter_req,"--filter-request=EXPRESSION","Ruby expression for filter at file level")
         end
 
         def self.format_browse(items)
@@ -77,8 +79,6 @@ module Asperalm
           hash.delete(name)
         end
 
-        def self.common_actions; [:info, :browse, :mkdir, :delete, :upload, :download ];end
-
         def self.get_prefix_path(theprefix,thepath)
           return thepath if theprefix.nil?
           return File.join(theprefix,thepath) if thepath.is_a?(String)
@@ -94,6 +94,8 @@ module Asperalm
           end
           return result
         end
+
+        def self.common_actions; [:info, :browse, :mkdir, :rename, :delete, :upload, :download ];end
 
         # common API to node and Shares
         def self.execute_common(command,api_node,option_parser,faspmanager,prefix_path=nil)
@@ -117,6 +119,12 @@ module Asperalm
             thepath=get_prefix_path(prefix_path,option_parser.get_next_arg_value("path"))
             resp=api_node.call({:operation=>'POST',:subpath=>'files/create',:json_params=>{ "paths" => [{ "path" => thepath, "type" => "directory" } ] } } )
             return remove_result_prefix_path(prefix_path,result_translate(resp,'folder','created'),'folder')
+          when :rename
+            path_base=get_prefix_path(prefix_path,option_parser.get_next_arg_value("path_base"))
+            path_src=get_prefix_path(prefix_path,option_parser.get_next_arg_value("path_src"))
+            path_dst=get_prefix_path(prefix_path,option_parser.get_next_arg_value("path_dst"))
+            resp=api_node.call({:operation=>'POST',:subpath=>'files/rename',:json_params=>{ "paths" => [{ "path" => path_base, "source" => path_src, "destination" => path_dst } ] } } )
+            return remove_result_prefix_path(prefix_path,result_translate(resp,'entry','moved'),'entry')
           when :upload
             filelist = option_parser.get_remaining_arguments("file list")
             Log.log.debug("file list=#{filelist}")
@@ -153,7 +161,8 @@ module Asperalm
             command=self.options.get_next_arg_from_list('command',[ :list, :create, :info, :modify, :cancel ])
             case command
             when :list
-              resp=api_node.call({:operation=>'GET',:subpath=>'ops/transfers',:headers=>{'Accept'=>'application/json'},:url_params=>{'active_only'=>'true'}})
+              filter_req=JSON.parse(self.options.get_option(:filter_req))
+              resp=api_node.call({:operation=>'GET',:subpath=>'ops/transfers',:headers=>{'Accept'=>'application/json'},:url_params=>filter_req})
               return { :data => resp[:data], :type => :hash_array, :fields=>['id','status']  } # TODO
             when :create
               resp=api_node.call({:operation=>'POST',:subpath=>'streams',:headers=>{'Accept'=>'application/json'},:json_params=>FaspManager.ts_override_data})
@@ -175,10 +184,10 @@ module Asperalm
             end
           when :transfer
             command=self.options.get_next_arg_from_list('command',[ :list, :cancel, :info ])
-            # ,:url_params=>{:active_only=>true}
             case command
             when :list
-              resp=api_node.call({:operation=>'GET',:subpath=>'ops/transfers',:headers=>{'Accept'=>'application/json'},:url_params=>{'active_only'=>'true'}})
+              filter_req=JSON.parse(self.options.get_option(:filter_req))
+              resp=api_node.call({:operation=>'GET',:subpath=>'ops/transfers',:headers=>{'Accept'=>'application/json'},:url_params=>filter_req})
               return { :data => resp[:data], :type => :hash_array, :fields=>['id','status','remote_user','remote_host'], :textify => lambda { |items| Node.format_transfer_list(items) } } # TODO
             when :cancel
               trid=self.options.get_next_arg_value("transfer id")
