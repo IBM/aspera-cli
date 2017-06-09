@@ -266,6 +266,8 @@ module Asperalm
       self.credentials = credentials
     end
 
+    def self.action_list; [:info,:ls,:mkdir,:mv,:rm,:du,:cp,:df,:md5sum]; end
+
     def cp(source, destination); ascmd_exec('cp',source, destination); end
 
     def df; ascmd_exec('df'); end
@@ -333,24 +335,23 @@ module Asperalm
 end
 
 if false
-ascmd=Asperalm::AsCmd.new({:host=>"10.25.0.8", :user=>"user1", :password => "Aspera123_"})
-[
-  ['info'],
-  ['ls','/'],
-  ['mkdir','/123'],
-  ['mv','/123','/234'],
-  ['rm','/234'],
-  ['du','/'],
-  ['cp','/tmp/123','/tmp/1234'],
-  ['mv','/tmp/123','/tmp/1234'],
-  ['df'],
-  ['md5sum','/f']
-].each do |t|
-  begin
-    puts "testing: #{t}"
-    puts ascmd.send(t.shift,*t)
-  rescue Asperalm::AsCmd::Error => e
-    puts e.extended_message
+  ascmd=Asperalm::AsCmd.new({:host=>"test", :user=>"test", :password => "test"})
+  [
+    ['info'],
+    ['ls','/'],
+    ['mkdir','/123'],
+    ['mv','/123','/234'],
+    ['rm','/234'],
+    ['du','/'],
+    ['cp','/tmp/123','/tmp/1234'],
+    ['df'],
+    ['md5sum','/f']
+  ].each do |t|
+    begin
+      puts "testing: #{t}"
+      puts ascmd.send(t.shift,*t)
+    rescue Asperalm::AsCmd::Error => e
+      puts e.extended_message
+    end
   end
-end
 end
