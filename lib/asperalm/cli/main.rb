@@ -257,12 +257,12 @@ module Asperalm
               }}
             File.write(@@DEFAULT_CONFIG_FILE,sample_config.to_yaml)
             puts "initialized: #{$PROGRAM_FOLDER}"
-            return nil
+            return Main.no_result
           when :cat
             return {:data=>File.read(@@DEFAULT_CONFIG_FILE),:format=>:text}
           when :open
             BrowserInteraction.open_system_uri(@@DEFAULT_CONFIG_FILE)
-            return nil
+            return Main.no_result
           when :ls
             sections=plugin_sym_list
             if self.options.command_or_arg_empty?
@@ -278,7 +278,7 @@ module Asperalm
                 # list parameters
                 configname=self.options.get_next_arg_from_list('config',names)
                 defaults=Main.get_config_defaults(plugin,configname.to_s)
-                return nil if defaults.nil?
+                return Main.no_result if defaults.nil?
                 return {:data => defaults.keys.map { |i| { 'param' => i.to_s, 'value' => defaults[i] } } , :fields => ['param','value'], :type => :hash_array }
               end
             end

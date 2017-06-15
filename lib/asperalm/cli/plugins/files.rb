@@ -268,8 +268,7 @@ module Asperalm
             return execute_node_action(home_node_id,home_file_id)
           when :faspexgw
             require 'asperalm/faspex_gw'
-            FaspexGW.set_vars(@api_files_user,@api_files_oauth)
-            FaspexGW.go()
+            FaspexGW.go(@api_files_user,workspace_id)
           when :admin
             api_files_admin=Rest.new(files_api_base_url,{:oauth=>@api_files_oauth,:scope=>FilesApi::SCOPE_FILES_ADMIN})
             command_admin=self.options.get_next_arg_from_list('command',[ :resource, :events, :set_client_key, :usage_reports, :search_nodes  ])

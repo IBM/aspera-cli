@@ -23,17 +23,23 @@ module Asperalm
     @@debug=false
     @@insecure=false
     def self.insecure=(v); @@insecure=v;end
+
     def self.insecure; @@insecure;end
+
+    # opt_call_data can contain default call data , as in "call"
     def initialize(baseurl,opt_call_data=nil)
       # base url without trailing slashes
       @api_base=baseurl.gsub(/\/+$/,'')
       @opt_call_data=opt_call_data
     end
 
+    def param_default; @opt_call_data; end
+    
     def self.set_debug(flag)
       Log.log.debug "debug http=#{flag}"
       @@debug=flag
     end
+
     # build URI from URL and parameters
     def get_uri(call_data)
       uri=URI.parse(@api_base+"/"+call_data[:subpath])
