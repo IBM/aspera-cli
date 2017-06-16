@@ -17,6 +17,7 @@ module Asperalm
         self.level=:warn
         @@logobj.debug("setting defaults")
       end
+      raise "error" if @@logobj.nil?
       return @@logobj
     end
 

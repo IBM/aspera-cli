@@ -16,19 +16,6 @@ require "json"
 require 'SecureRandom'
 
 module Asperalm
-
-  ASPERA_SSH_BYPASS_DSA_KEY_VALUE="-----BEGIN DSA PRIVATE KEY-----
-MIIBuwIBAAKBgQDkKQHD6m4yIxgjsey6Pny46acZXERsJHy54p/BqXIyYkVOAkEp
-KgvT3qTTNmykWWw4ovOP1+Di1c/2FpYcllcTphkWcS8lA7j012mUEecXavXjPPG0
-i3t5vtB8xLy33kQ3e9v9/Lwh0xcRfua0d5UfFwopBIAXvJAr3B6raps8+QIVALws
-yeqsx3EolCaCVXJf+61ceJppAoGAPoPtEP4yzHG2XtcxCfXab4u9zE6wPz4ePJt0
-UTn3fUvnQmJT7i0KVCRr3g2H2OZMWF12y0jUq8QBuZ2so3CHee7W1VmAdbN7Fxc+
-cyV9nE6zURqAaPyt2bE+rgM1pP6LQUYxgD3xKdv1ZG+kDIDEf6U3onjcKbmA6ckx
-T6GavoACgYEAobapDv5p2foH+cG5K07sIFD9r0RD7uKJnlqjYAXzFc8U76wXKgu6
-WXup2ac0Co+RnZp7Hsa9G+E+iJ6poI9pOR08XTdPly4yDULNST4PwlfrbSFT9FVh
-zkWfpOvAUc8fkQAhZqv/PE6VhFQ8w03Z8GpqXx7b3NvBR+EfIx368KoCFEyfl0vH
-Ta7g6mGwIMXrdTQQ8fZs
------END DSA PRIVATE KEY-----"
   # imlement this class to get transfer events
   class FileTransferListener
     def event(data)
@@ -174,7 +161,7 @@ Ta7g6mGwIMXrdTQQ8fZs
       http_fallback_index=arguments.index("-y")
       if !http_fallback_index.nil?
         if arguments[http_fallback_index+1].eql?('1') then
-          arguments.unshift('-Y', Connect.res[:fallback_key], '-I', Connect.res[:fallback_cert])
+          arguments.unshift('-Y', Connect.path(:fallback_key), '-I', Connect.path(:fallback_cert))
         end
       end
       arguments.unshift('--proxy', @fasp_proxy_url) if ! @fasp_proxy_url.nil?
@@ -261,7 +248,6 @@ Ta7g6mGwIMXrdTQQ8fZs
       raise FaspError.new(lastStatus['Description'],lastStatus['Code'].to_i)
     end
 
-
     # copy and translate argument+value from transfer spec to env var for ascp
     def ts2env(used_names,transfer_spec,env_vars,ts_name,env_name)
       if transfer_spec.has_key?(ts_name)
@@ -311,10 +297,12 @@ Ta7g6mGwIMXrdTQQ8fZs
       # base args
       ascp_args = Array.new
 
-      if !transfer_spec.has_key?('password') and !transfer_spec.has_key?('EX_ssh_key_value') and !transfer_spec.has_key?('EX_ssh_key_path') then
+      # some ssh credentials are required
+      if !transfer_spec.has_key?('password') and !transfer_spec.has_key?('EX_ssh_key_value') and !transfer_spec.has_key?('EX_ssh_key_paths') then
         raise TransferError.new('required: ssh key (value or path) or password')
       end
 
+      # TODO : -c argument ?, what about "none"
       case transfer_spec['cipher']
       when nil; # nothing to put on command line, encryption by default
       when 'aes-128'; used_names.push('cipher') # nothing to put on command line, encryption by default
@@ -329,8 +317,12 @@ Ta7g6mGwIMXrdTQQ8fZs
       else raise TransferError.new("unsupported direction: #{transfer_spec['direction']}")
       end
 
-      ts2args_value(used_names,transfer_spec,ascp_args,'EX_ssh_key_path','-i')
-      ts2args_value(used_names,transfer_spec,ascp_args,'EX_ssh_key_path2','-i')
+      if transfer_spec.has_key?('EX_ssh_key_paths')
+        transfer_spec['EX_ssh_key_paths'].each do |k|
+          ascp_args.push('-i',k); used_names.push('EX_ssh_key_paths')
+        end
+      end
+      
       ts2args_value(used_names,transfer_spec,ascp_args,'remote_user','--user')
       ts2args_value(used_names,transfer_spec,ascp_args,'remote_host','--host')
       ts2args_value(used_names,transfer_spec,ascp_args,'target_rate_kbps','-l') { |rate| rate.to_s }
@@ -346,12 +338,17 @@ Ta7g6mGwIMXrdTQQ8fZs
       ts_bool_param(used_names,transfer_spec,ascp_args,'create_dir') { |create_dir| create_dir ? ['-d'] : [] }
 
       ts_ignore_param(used_names,'target_rate_cap_kbps')
+      ts_ignore_param(used_names,'target_rate_percentage')
       ts_ignore_param(used_names,'min_rate_cap_kbps')
       ts_ignore_param(used_names,'rate_policy_allowed')
       ts_ignore_param(used_names,'fasp_url')
       ts_ignore_param(used_names,'lock_rate_policy')
       ts_ignore_param(used_names,'lock_min_rate')
       ts_ignore_param(used_names,'authentication') # = token
+      ts_ignore_param(used_names,'https_fallback_port')
+      ts_ignore_param(used_names,'lock_target_rate')
+      ts_ignore_param(used_names,'content_protection')
+      ts_ignore_param(used_names,'cipher_allowed')
 
       # optional tags (  additional option to generate: {:space=>' ',:object_nl=>' ',:space_before=>'+',:array_nl=>'1'}  )
       ts2args_value(used_names,transfer_spec,ascp_args,'tags','--tags64') { |tags| Base64.strict_encode64(JSON.generate(tags)) }
@@ -372,9 +369,9 @@ Ta7g6mGwIMXrdTQQ8fZs
       used_names.push('destination_root')
 
       # warn about non translated arguments
-      transfer_spec.keys.each { |key|
+      transfer_spec.each_pair { |key,value|
         if !used_names.include?(key)
-          Log.log.error("did not manage: #{key} = #{transfer_spec[key]}".red)
+          Log.log.error("ignored: #{key} = \"#{value}\"".red)
         end
       }
 
@@ -388,7 +385,7 @@ Ta7g6mGwIMXrdTQQ8fZs
       Log.log.debug("ts=#{transfer_spec}")
       if (@use_connect_client) # transfer using connect ...
         Log.log.debug("using connect client")
-        connect_url=File.open(Connect.res[:plugin_https_port_file]) {|f| f.gets }.strip
+        connect_url=File.open(Connect.path(:plugin_https_port_file)) {|f| f.gets }.strip
         connect_api=Rest.new("#{connect_url}/v5/connect",{})
         begin
           connect_api.read('info/version')
@@ -433,16 +430,11 @@ Ta7g6mGwIMXrdTQQ8fZs
         Log.log.debug("using ascp")
         # if not provided, use standard key
         if !transfer_spec.has_key?('EX_ssh_key_value') and
-        !transfer_spec.has_key?('EX_ssh_key_path') and
+        !transfer_spec.has_key?('EX_ssh_key_paths') and
         transfer_spec.has_key?('token')
-          if !Connect.res[:ssh_bypass_key_rsa].nil?
-            transfer_spec['EX_ssh_key_path'] = Connect.res[:ssh_bypass_key_dsa]
-            transfer_spec['EX_ssh_key_path2'] = Connect.res[:ssh_bypass_key_rsa]
-          else
-            transfer_spec['EX_ssh_key_value'] = ASPERA_SSH_BYPASS_DSA_KEY_VALUE
-          end
+          transfer_spec['EX_ssh_key_paths'] = [ Connect.path(:ssh_bypass_key_dsa), Connect.path(:ssh_bypass_key_rsa) ]
         end
-        execute_ascp(Connect.res[:ascp],*transfer_spec_to_args_and_env(transfer_spec))
+        execute_ascp(Connect.path(:ascp),*transfer_spec_to_args_and_env(transfer_spec))
       end
       return nil
     end
