@@ -9,7 +9,9 @@ module Asperalm
       def set_options
         self.options.separator "    no option"
       end
-
+      def action_list
+        ["list to be provided in plugin: #{self.class}"]
+      end
       def execute_action
         raise StandardError,"This method shall be redefined by subclass"
       end

@@ -34,10 +34,10 @@ module Asperalm
         Log.log.debug("parse_commands->#{@mycommand_and_args},args=#{@myoptions}")
         @attr_procs={}
         @attr_values={}
-        @postpone_help=false
-        @help_requested=false
         super
       end
+
+      def self.value_modifier; ['file','env', 'val', 'val64', 'json', 'none']; end
 
       # parse an option value, special behavior for file:, env:, val:
       def self.get_extended_value(name_or_descr,value)
@@ -110,14 +110,13 @@ module Asperalm
         return filelist
       end
 
-      def exit_with_usage(error_text,show_usage=true)
-        if @postpone_help and error_text.nil?
-          @help_requested=true
-          return
-        end
+      def exit_with_usage
+        STDERR.puts self
+        Process.exit 1
+      end
 
-        STDERR.puts self if show_usage
-        STDERR.puts "\n"+"ERROR:".bg_red().gray().blink()+" #{error_text}\n\n" if !error_text.nil?
+      def exit_with_error(error_text)
+        STDERR.puts "ERROR:".bg_red().gray().blink()+" #{error_text}\n\n" if !error_text.nil?
         Process.exit 1
       end
 
@@ -202,7 +201,6 @@ module Asperalm
 
       # removes already known options from the list
       def parse_options!()
-        @postpone_help=!@mycommand_and_args.empty? and !@postpone_help
         args=[]
         begin
           self.parse!(@myoptions)
@@ -210,9 +208,6 @@ module Asperalm
           args.push(e.args.first)
           retry
         end
-        @myoptions=args
-        @myoptions.push('-h') if @help_requested
-        @postpone_help=false
       end
 
     end

@@ -65,8 +65,10 @@ module Asperalm
           return source_ids.first['name'],source_ids.first['id']
         end
 
+        def action_list; [ :package, :dropbox, :recv_publink, :source, :me ];end
+
         def execute_action
-          command=self.options.get_next_arg_from_list('command',[ :package, :dropbox, :recv_publink, :source, :me ])
+          command=self.options.get_next_arg_from_list('command',action_list)
           case command
           when :package
             command_pkg=self.options.get_next_arg_from_list('command',[ :send, :recv, :list ])

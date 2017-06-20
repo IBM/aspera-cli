@@ -113,30 +113,34 @@ $ aslmcli files repo browse /
 ## Usage
 
 ```bash
-$ aslmcli cli help 
+$ ./bin/aslmcli cli help
 NAME
 	aslmcli -- a command line tool for Aspera Applications
 
 SYNOPSIS
 	aslmcli COMMANDS [OPTIONS] [ARGS]
 
-COMMANDS
-	Supported commands: cli, console, fasp, faspex, files, node, shares
-	Note that commands can be written shortened.
-
 DESCRIPTION
 	Use Aspera application to perform operations on command line.
 	OAuth 2.0 is used for authentication in Files, Several authentication methods are provided.
 	Additional documentation here: https://rubygems.org/gems/asperalm
 
+COMMANDS
+	First level commands: cli, console, fasp, faspex, files, node, shares
+	Note that commands can be written shortened (provided it is unique).
+
+OPTIONS
+	Options begin with a '-' (minus), and value is provided on command line.
+	Special values are supported beginning with special prefix, like: @file: @env: @val: @val64: @json: @none:.
+	Dates format is 'DD-MM-YY HH:MM:SS', or 'now' or '-<num>h'
+
+ARGS
+	Some commands require mandatory arguments, e.g. a path.
+
 EXAMPLES
 	aslmcli files repo browse /
 	aslmcli faspex send ./myfile --log-level=debug
 	aslmcli shares upload ~/myfile /myshare
-
-SPECIAL OPTION VALUES
-	if an option value begins with @env: or @file:, value is taken from env var or file
-	dates format is 'DD-MM-YY HH:MM:SS', or 'now' or '-<num>h'
 
 OPTIONS: global
     -h, --help                       Show this message
@@ -155,26 +159,35 @@ OPTIONS: global
     -r, --rest-debug                 more debug for HTTP calls
         --ts=JSON                    override transfer spec values, current={}
 
-OPTIONS: console
+COMMAND: console
+SUBCOMMANDS: transfers
+OPTIONS:
     -w, --url=URI                    URL of application, e.g. http://org.asperafiles.com
     -u, --username=STRING            username to log in
     -p, --password=STRING            password
         --filter-from=DATE           only after date
         --filter-to=DATE             only before date
 
-OPTIONS: fasp
+COMMAND: fasp
+SUBCOMMANDS: download, upload, browse, info, ls, mkdir, mv, rm, du, cp, df, md5sum
+OPTIONS:
     no option
 
-OPTIONS: faspex
+COMMAND: faspex
+SUBCOMMANDS: package, dropbox, recv_publink, source, me
+OPTIONS:
     -w, --url=URI                    URL of application, e.g. http://org.asperafiles.com
     -u, --username=STRING            username to log in
     -p, --password=STRING            password
         --recipient=STRING           package recipient
         --title=STRING               package title
         --note=STRING                package note
+        --source-name=STRING         create package from remote source (by name)
         --box=TYPE                   package box. Values=(inbox,sent,archive), current=inbox
 
-OPTIONS: files
+COMMAND: files
+SUBCOMMANDS: package, repo, faspexgw, admin
+OPTIONS:
     -t, --auth=TYPE                  type of authentication. Values=(basic,web,jwt), current=jwt
     -w, --url=URI                    URL of application, e.g. http://org.asperafiles.com
     -u, --username=STRING            username to log in
@@ -186,15 +199,21 @@ OPTIONS: files
         --note=STRING                package note
         --secret=STRING              access key secret for node
 
-OPTIONS: node
+COMMAND: node
+SUBCOMMANDS: info, browse, mkdir, mklink, mkfile, rename, delete, upload, download, stream, transfer, cleanup, forward, access_key, watch_folder
+OPTIONS:
     -w, --url=URI                    URL of application, e.g. http://org.asperafiles.com
     -u, --username=STRING            username to log in
     -p, --password=STRING            password
         --persistency=FILEPATH       persistency file
-        --transfer-filter=EXPRESSION Ruby expression for filter at transfer level
-        --file-filter=EXPRESSION     Ruby expression for filter at file level
+        --filter-config=NAME         Ruby expression for filter at transfer level
+        --filter-transfer=EXPRESSION Ruby expression for filter at transfer level
+        --filter-file=EXPRESSION     Ruby expression for filter at file level
+        --filter-request=EXPRESSION  Ruby expression for filter at file level
 
-OPTIONS: shares
+COMMAND: shares
+SUBCOMMANDS: info, browse, mkdir, mklink, mkfile, rename, delete, upload, download
+OPTIONS:
     -w, --url=URI                    URL of application, e.g. http://org.asperafiles.com
     -u, --username=STRING            username to log in
     -p, --password=STRING            password

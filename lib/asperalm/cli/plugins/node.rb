@@ -1,4 +1,5 @@
 require 'asperalm/cli/basic_auth_plugin'
+require "base64"
 
 module Asperalm
   module Cli
@@ -95,7 +96,7 @@ module Asperalm
           return result
         end
 
-        def self.common_actions; [:info, :browse, :mkdir, :rename, :delete, :upload, :download ];end
+        def self.common_actions; [:info, :browse, :mkdir, :mklink, :mkfile, :rename, :delete, :upload, :download ];end
 
         # common API to node and Shares
         def self.execute_common(command,api_node,option_parser,faspmanager,prefix_path=nil)
@@ -116,8 +117,18 @@ module Asperalm
             paths_to_delete = get_prefix_path(prefix_path,option_parser.get_remaining_arguments("file list"))
             return remove_result_prefix_path(prefix_path,delete_files(api_node,paths_to_delete),'file')
           when :mkdir
-            thepath=get_prefix_path(prefix_path,option_parser.get_next_arg_value("path"))
-            resp=api_node.call({:operation=>'POST',:subpath=>'files/create',:json_params=>{ "paths" => [{ "path" => thepath, "type" => "directory" } ] } } )
+            thepath=get_prefix_path(prefix_path,option_parser.get_next_arg_value("folder path"))
+            resp=api_node.call({:operation=>'POST',:subpath=>'files/create',:json_params=>{ "paths" => [{ :type => :directory, :path => thepath } ] } } )
+            return remove_result_prefix_path(prefix_path,result_translate(resp,'folder','created'),'folder')
+          when :mklink
+            target=get_prefix_path(prefix_path,option_parser.get_next_arg_value("target"))
+            thepath=get_prefix_path(prefix_path,option_parser.get_next_arg_value("link path"))
+            resp=api_node.call({:operation=>'POST',:subpath=>'files/create',:json_params=>{ "paths" => [{ :type => :symbolic_link, :path => thepath, :target => {:path => target} } ] } } )
+            return remove_result_prefix_path(prefix_path,result_translate(resp,'folder','created'),'folder')
+          when :mkfile
+            thepath=get_prefix_path(prefix_path,option_parser.get_next_arg_value("file path"))
+            contents64=Base64.strict_encode64(option_parser.get_next_arg_value("contents"))
+            resp=api_node.call({:operation=>'POST',:subpath=>'files/create',:json_params=>{ "paths" => [{ :type => :file, :path => thepath, :contents => contents64 } ] } } )
             return remove_result_prefix_path(prefix_path,result_translate(resp,'folder','created'),'folder')
           when :rename
             path_base=get_prefix_path(prefix_path,option_parser.get_next_arg_value("path_base"))
@@ -152,9 +163,11 @@ module Asperalm
           end
         end
 
+        def action_list; self.class.common_actions.clone.concat([ :stream, :transfer, :cleanup, :forward, :access_key, :watch_folder ]);end
+
         def execute_action
           api_node=Rest.new(self.options.get_option_mandatory(:url),{:basic_auth=>{:user=>self.options.get_option_mandatory(:username), :password=>self.options.get_option_mandatory(:password)}})
-          command=self.options.get_next_arg_from_list('command',self.class.common_actions.clone.concat([ :stream, :transfer, :cleanup, :forward, :access_key, :watch_folder ]))
+          command=self.options.get_next_arg_from_list('command',action_list)
           case command
           when *self.class.common_actions; return self.class.execute_common(command,api_node,self.options,@faspmanager)
           when :stream

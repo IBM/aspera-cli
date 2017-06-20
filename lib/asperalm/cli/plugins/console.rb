@@ -13,9 +13,11 @@ module Asperalm
           self.options.add_opt_date(:filter_to,"--filter-to=DATE","only before date")
         end
 
+        def action_list; [:transfers];end
+
         def execute_action
           api_console=Rest.new(self.options.get_option_mandatory(:url)+'/api',{:basic_auth=>{:user=>self.options.get_option_mandatory(:username), :password=>self.options.get_option_mandatory(:password)}})
-          command=self.options.get_next_arg_from_list('command',[:transfers])
+          command=self.options.get_next_arg_from_list('command',action_list)
           case command
           when :transfers
             command=self.options.get_next_arg_from_list('command',[ :list ])

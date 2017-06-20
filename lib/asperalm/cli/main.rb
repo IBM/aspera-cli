@@ -106,6 +106,8 @@ module Asperalm
         return @plugins.keys
       end
 
+      def action_list; plugin_sym_list; end
+
       # returns the list of plugins from plugin folder
       def scan_plugins(plugin_folder,plugin_subfolder)
         plugin_folder=File.join(plugin_folder,plugin_subfolder) if !plugin_subfolder.nil?
@@ -128,6 +130,7 @@ module Asperalm
       end
 
       def initialize(option_parser)
+        @help_requested=false
         super(option_parser)
         scan_all_plugins
         self.options.program_name=$PROGRAM_NAME
@@ -135,20 +138,27 @@ module Asperalm
         self.options.separator "SYNOPSIS"
         self.options.separator "\t#{$PROGRAM_NAME} COMMANDS [OPTIONS] [ARGS]"
         self.options.separator ""
-        self.options.separator "COMMANDS"
-        self.options.separator "\tSupported commands: #{plugin_sym_list.map {|x| x.to_s}.join(', ')}"
-        self.options.separator "\tNote that commands can be written shortened."
-        self.options.separator ""
         self.options.separator "DESCRIPTION"
         self.options.separator "\tUse Aspera application to perform operations on command line."
         self.options.separator "\tOAuth 2.0 is used for authentication in Files, Several authentication methods are provided."
         self.options.separator "\tAdditional documentation here: https://rubygems.org/gems/asperalm"
         self.options.separator ""
+        self.options.separator "COMMANDS"
+        self.options.separator "\tFirst level commands: #{action_list.map {|x| x.to_s}.join(', ')}"
+        self.options.separator "\tNote that commands can be written shortened (provided it is unique)."
+        self.options.separator ""
+        self.options.separator "OPTIONS"
+        self.options.separator "\tOptions begin with a '-' (minus), and value is provided on command line.\n"
+        self.options.separator "\tSpecial values are supported beginning with special prefix, like: #{OptParser.value_modifier.map {|m| "@#{m}:"}.join(' ')}.\n"
+        self.options.separator "\tDates format is 'DD-MM-YY HH:MM:SS', or 'now' or '-<num>h'"
+        self.options.separator ""
+        self.options.separator "ARGS"
+        self.options.separator "\tSome commands require mandatory arguments, e.g. a path.\n"
+        self.options.separator ""
         self.options.separator "EXAMPLES"
         self.options.separator "\t#{$PROGRAM_NAME} files repo browse /"
         self.options.separator "\t#{$PROGRAM_NAME} faspex send ./myfile --log-level=debug"
         self.options.separator "\t#{$PROGRAM_NAME} shares upload ~/myfile /myshare"
-        self.options.separator "\nSPECIAL OPTION VALUES\n\tif an option value begins with @env: or @file:, value is taken from env var or file\n\tdates format is 'DD-MM-YY HH:MM:SS', or 'now' or '-<num>h'"
         self.options.separator ""
         # handler must be set before setting defaults
         self.options.set_handler(:loglevel) { |op,val| attr_loglevel(op,val) }
@@ -184,7 +194,9 @@ module Asperalm
           command_plugin.faspmanager.fasp_proxy_url=self.options.get_option(:fasp_proxy)
           command_plugin.faspmanager.http_proxy_url=self.options.get_option(:http_proxy)
         end
-        self.options.separator "OPTIONS: #{plugin_name_sym}"
+        self.options.separator "COMMAND: #{plugin_name_sym}"
+        self.options.separator "SUBCOMMANDS: #{command_plugin.action_list.map{ |p| p.to_s}.join(', ')}"
+        self.options.separator "OPTIONS:"
         command_plugin.set_options
         return command_plugin
       end
@@ -202,12 +214,12 @@ module Asperalm
         self.options.set_option(:format,:formatted)
         self.options.set_option(:logtype,:stdout)
         self.options.set_option(:config_file,@@DEFAULT_CONFIG_FILE) if File.exist?(@@DEFAULT_CONFIG_FILE)
-        self.options.on("-h", "--help", "Show this message") { self.options.exit_with_usage(nil) }
+        self.options.on("-h", "--help", "Show this message") { @help_requested=true }
         self.options.add_opt_list(:browser,BrowserInteraction.open_url_methods,"method to start browser",'-gTYPE','--browser=TYPE')
         self.options.add_opt_list(:insecure,[:yes,:no],"do not validate cert",'--insecure=VALUE')
         self.options.add_opt_list(:loglevel,Log.levels,"Log level",'-lTYPE','--log-level=VALUE')
         self.options.add_opt_list(:logtype,[:syslog,:stdout],"log method",'-qTYPE','--logger=VALUE')
-        self.options.add_opt_list(:format,[:ruby,:formatted,:json,:text],"output format",'--format=VALUE')
+        self.options.add_opt_list(:format,self.class.result_formats,"output format",'--format=VALUE')
         self.options.add_opt_list(:transfer,[:ascp,:connect,:node],"type of transfer",'--transfer=VALUE')
         self.options.add_opt_simple(:config_file,"-fSTRING", "--config-file=STRING","read parameters from file in YAML format, current=#{self.options.get_option(:config_file)}")
         self.options.add_opt_simple(:config_name,"-nSTRING", "--config-name=STRING","name of configuration in config file")
@@ -224,8 +236,11 @@ module Asperalm
         command=self.options.get_next_arg_from_list('command',[:help,:config,:plugins])
         case command
         when :help
+          # display main plugin options
           STDERR.puts self.options
+          # list plugins that have a "require" field, i.e. all but main plugin
           plugin_sym_list.select { |s| !@plugins[s][:req].nil? }.each do |plugin_name_sym|
+            # override main option parser...
             self.options=OptParser.new([])
             self.options.banner = ""
             self.options.program_name=$PROGRAM_NAME
@@ -259,7 +274,7 @@ module Asperalm
             puts "initialized: #{$PROGRAM_FOLDER}"
             return Main.no_result
           when :cat
-            return {:data=>File.read(@@DEFAULT_CONFIG_FILE),:format=>:text}
+            return {:data=>File.read(@@DEFAULT_CONFIG_FILE),:type=>:unknown}
           when :open
             BrowserInteraction.open_system_uri(@@DEFAULT_CONFIG_FILE)
             return Main.no_result
@@ -286,6 +301,8 @@ module Asperalm
         end
       end
 
+      def self.result_formats; [:ruby,:formatted,:json,:text]; end
+
       def display_results(results)
         if !results.is_a?(Hash) or ! results.has_key?(:data) or ! results.has_key?(:type) then
           raise "ERROR, missing result type in #{results}"
@@ -296,6 +313,8 @@ module Asperalm
           puts PP.pp(results[:data],'')
         when :json
           puts JSON.generate(results[:data])
+        when :yaml
+          puts YAML.generate(results[:data])
         when :formatted
           case results[:type]
           when :hash_array
@@ -364,6 +383,7 @@ module Asperalm
         self.set_options
         # parse general options always, before finding plugin
         self.options.parse_options!()
+        self.options.exit_with_usage if @help_requested and self.options.command_or_arg_empty?
         command_sym=self.options.get_next_arg_from_list('command',plugin_sym_list)
         case command_sym
         when @@MAIN_PLUGIN_NAME_SYM
@@ -374,6 +394,7 @@ module Asperalm
           # parse plugin specific options
           self.options.parse_options!()
         end
+        self.options.exit_with_usage if @help_requested
         results=command_plugin.execute_action
         display_results(results)
         # parse for help
@@ -400,6 +421,11 @@ module Asperalm
       @@DEFAULT_CONFIG_FILE=File.join($PROGRAM_FOLDER,@@DEFAULT_CONFIG_FILENAME)
       @@USER_PLUGINS_FOLDER=File.join($PROGRAM_FOLDER,@@ASPERA_PLUGINS_FOLDERNAME)
 
+      def self.process_exception(tool,e,reason)
+        raise e if Log.level == :debug
+        tool.options.exit_with_error("#{reason}: #{e.message}\nUse '-h' option, or 'cli help' command to get help.")
+      end
+
       def self.start
         # quick init of debug level
         Log.level = ARGV.include?('--log-level=debug') ? :debug : :warn
@@ -408,15 +434,9 @@ module Asperalm
           # this separates options (start with '-') from arguments
           tool.options.set_defaults({:config_name => 'default'})
           tool.process_command_line()
-        rescue CliBadArgument => e
-          raise e if Log.level == :debug
-          tool.options.exit_with_usage("CLI error: #{e.message}")
-        rescue CliError => e
-          raise e if Log.level == :debug
-          tool.options.exit_with_usage("Processing error: #{e.message}")
-        rescue Asperalm::TransferError => e
-          raise e if Log.level == :debug
-          tool.options.exit_with_usage("FASP error: #{e.message}",false)
+        rescue CliBadArgument => e; process_exception(tool,e,'Argument')
+        rescue CliError => e; process_exception(tool,e,'Tool')
+        rescue Asperalm::TransferError => e; process_exception(tool,e,"Transfer")
         end
       end
     end

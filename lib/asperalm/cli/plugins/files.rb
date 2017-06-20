@@ -140,8 +140,10 @@ module Asperalm
           end
         end
 
+        def action_list; [ :package, :repo, :faspexgw, :admin];end
+
         def execute_action
-          command=self.options.get_next_arg_from_list('command',[ :package, :repo, :faspexgw, :admin])
+          command=self.options.get_next_arg_from_list('command',action_list)
 
           # get parameters
           instance_fqdn=URI.parse(self.options.get_option_mandatory(:url)).host
