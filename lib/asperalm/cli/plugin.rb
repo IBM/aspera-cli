@@ -2,15 +2,11 @@ module Asperalm
   module Cli
     # base class for plugins modules
     class Plugin
-      attr_accessor :options
-      def initialize(a_option_parser)
-        self.options=a_option_parser
-      end
-      def set_options
-        self.options.separator "    no option"
+      def declare_options
+        raise StandardError,"This method shall be redefined by subclass"
       end
       def action_list
-        ["list to be provided in plugin: #{self.class}"]
+        raise StandardError,"This method shall be redefined by subclass"
       end
       def execute_action
         raise StandardError,"This method shall be redefined by subclass"

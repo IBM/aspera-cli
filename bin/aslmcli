@@ -1,9 +1,9 @@
 #!/usr/bin/env ruby
 # Laurent Martin/2017
 
-$LOAD_PATH.unshift File.dirname(__FILE__) + "/../lib"
+$LOAD_PATH.unshift(File.dirname(__FILE__) + "/../lib")
 
 require 'rubygems'
 require 'asperalm/cli/main'
 
-Asperalm::Cli::Main.start
+Asperalm::Cli::Main.tool.process_command_line(ARGV)

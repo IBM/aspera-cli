@@ -1,3 +1,4 @@
+require 'asperalm/cli/main'
 require 'asperalm/cli/plugins/node'
 require 'asperalm/cli/plugin'
 require 'asperalm/oauth'
@@ -8,16 +9,15 @@ module Asperalm
   module Cli
     module Plugins
       class Files < Plugin
-        attr_accessor :faspmanager
         # returns a node API for access key
         # no scope: requires secret
         # if secret present: use it
         def get_ak_node_api(node_info,node_scope=nil)
           # if no scope, or secret provided on command line ...
-          if node_scope.nil? or !self.options.get_option(:secret).nil?
-            return Rest.new(node_info['url'],{:basic_auth=>{:user=>node_info['access_key'], :password=>self.options.get_option_mandatory(:secret)},:headers=>{'X-Aspera-AccessKey'=>node_info['access_key']}})
+          if node_scope.nil? or !Main.tool.options.get_option(:secret).nil?
+            return Rest.new(node_info['url'],{:basic_auth=>{:user=>node_info['access_key'], :password=>Main.tool.options.get_option_mandatory(:secret)},:headers=>{'X-Aspera-AccessKey'=>node_info['access_key']}})
           end
-          Log.log.warn("ignoring secret, using bearer token") if !self.options.get_option(:secret).nil?
+          Log.log.warn("ignoring secret, using bearer token") if !Main.tool.options.get_option(:secret).nil?
           return Rest.new(node_info['url'],{:oauth=>@api_files_oauth,:scope=>FilesApi.node_scope(node_info['access_key'],node_scope),:headers=>{'X-Aspera-AccessKey'=>node_info['access_key']}})
         end
 
@@ -87,34 +87,34 @@ module Asperalm
             'tags'             => { "aspera" => { "node" => { "access_key" => node_info['access_key'], "file_id" => file_id }, "xfer_id" => SecureRandom.uuid, "xfer_retry" => 3600 } } }
         end
 
-        def set_options
-          self.options.add_opt_list(:auth,Oauth.auth_types,"type of authentication",'-tTYPE','--auth=TYPE')
-          self.options.add_opt_simple(:url,"-wURI", "--url=URI","URL of application, e.g. http://org.asperafiles.com")
-          self.options.add_opt_simple(:username,"-uSTRING", "--username=STRING","username to log in")
-          self.options.add_opt_simple(:password,"-pSTRING", "--password=STRING","password")
-          self.options.add_opt_simple(:private_key,"-kSTRING", "--private-key=STRING","RSA private key for JWT (@ for ext. file)")
-          self.options.add_opt_simple(:workspace,"--workspace=STRING","name of workspace")
-          self.options.add_opt_simple(:recipient,"--recipient=STRING","package recipient")
-          self.options.add_opt_simple(:title,"--title=STRING","package title")
-          self.options.add_opt_simple(:note,"--note=STRING","package note")
-          self.options.add_opt_simple(:secret,"--secret=STRING","access key secret for node")
+        def declare_options
+          Main.tool.options.add_opt_list(:auth,Oauth.auth_types,"type of authentication",'-tTYPE','--auth=TYPE')
+          Main.tool.options.add_opt_simple(:url,"-wURI", "--url=URI","URL of application, e.g. http://org.asperafiles.com")
+          Main.tool.options.add_opt_simple(:username,"-uSTRING", "--username=STRING","username to log in")
+          Main.tool.options.add_opt_simple(:password,"-pSTRING", "--password=STRING","password")
+          Main.tool.options.add_opt_simple(:private_key,"-kSTRING", "--private-key=STRING","RSA private key for JWT (@ for ext. file)")
+          Main.tool.options.add_opt_simple(:workspace,"--workspace=STRING","name of workspace")
+          Main.tool.options.add_opt_simple(:recipient,"--recipient=STRING","package recipient")
+          Main.tool.options.add_opt_simple(:title,"--title=STRING","package title")
+          Main.tool.options.add_opt_simple(:note,"--note=STRING","package note")
+          Main.tool.options.add_opt_simple(:secret,"--secret=STRING","access key secret for node")
         end
 
         def execute_node_action(home_node_id,home_file_id)
-          command_repo=self.options.get_next_arg_from_list('command',[ :browse, :upload, :download, :info ])
+          command_repo=Main.tool.options.get_next_arg_from_list('command',[ :browse, :upload, :download, :info ])
           case command_repo
           when :info
             node_info=@api_files_user.read("nodes/#{home_node_id}")[:data]
             node_api=get_ak_node_api(node_info,FilesApi::SCOPE_NODE_USER)
-            return Node.execute_common(command_repo,node_api,self.options,@faspmanager)
+            return Node.execute_common(command_repo,node_api)
           when :browse
-            thepath=self.options.get_next_arg_value("path")
+            thepath=Main.tool.options.get_next_arg_value("path")
             node_info,file_id = find_nodeinfo_and_fileid(home_node_id,home_file_id,thepath.split('/'))
             node_api=get_ak_node_api(node_info,FilesApi::SCOPE_NODE_USER)
             items=node_api.list("files/#{file_id}/files")[:data]
             return {:data=>items,:type=>:hash_array,:fields=>['name','type','recursive_size','size','modified_time','access_level']}
           when :upload
-            filelist = self.options.get_remaining_arguments("file list,destination")
+            filelist = Main.tool.options.get_remaining_arguments("file list,destination")
             Log.log.debug("file list=#{filelist}")
             raise CliBadArgument,"Missing source(s) and destination" if filelist.length < 2
             destination_folder=filelist.pop
@@ -123,11 +123,11 @@ module Asperalm
             tspec['tags']["aspera"]["files"]={}
             tspec['paths']=filelist.map { |i| {'source'=>i} }
             tspec['destination_root']="/"
-            @faspmanager.transfer_with_spec(tspec)
+            Main.tool.faspmanager.transfer_with_spec(tspec)
             return Main.no_result
           when :download
-            source_file=self.options.get_next_arg_value('source')
-            destination_folder=self.options.get_next_arg_value('destination')
+            source_file=Main.tool.options.get_next_arg_value('source')
+            destination_folder=Main.tool.options.get_next_arg_value('destination')
             file_path = source_file.split('/')
             file_name = file_path.pop
             node_info,file_id = find_nodeinfo_and_fileid(home_node_id,home_file_id,file_path)
@@ -135,7 +135,7 @@ module Asperalm
             tspec['tags']["aspera"]["files"]={}
             tspec['paths']=[{'source'=>file_name}]
             tspec['destination_root']=destination_folder
-            @faspmanager.transfer_with_spec(tspec)
+            Main.tool.faspmanager.transfer_with_spec(tspec)
             return Main.no_result
           end
         end
@@ -143,10 +143,10 @@ module Asperalm
         def action_list; [ :package, :repo, :faspexgw, :admin];end
 
         def execute_action
-          command=self.options.get_next_arg_from_list('command',action_list)
+          command=Main.tool.options.get_next_arg_from_list('command',action_list)
 
           # get parameters
-          instance_fqdn=URI.parse(self.options.get_option_mandatory(:url)).host
+          instance_fqdn=URI.parse(Main.tool.options.get_option_mandatory(:url)).host
           organization,instance_domain=instance_fqdn.split('.',2)
           files_api_base_url=FilesApi.baseurl(instance_domain)
 
@@ -155,21 +155,21 @@ module Asperalm
           Log.log.debug("organization=#{organization}")
 
           auth_data={
-            :type=>self.options.get_option_mandatory(:auth),
-            :client_id =>self.options.get_option_mandatory(:client_id),
-            :client_secret=>self.options.get_option_mandatory(:client_secret)
+            :type=>Main.tool.options.get_option_mandatory(:auth),
+            :client_id =>Main.tool.options.get_option_mandatory(:client_id),
+            :client_secret=>Main.tool.options.get_option_mandatory(:client_secret)
           }
 
           case auth_data[:type]
           when :basic
-            auth_data[:username]=self.options.get_option_mandatory(:username)
-            auth_data[:password]=self.options.get_option_mandatory(:password)
+            auth_data[:username]=Main.tool.options.get_option_mandatory(:username)
+            auth_data[:password]=Main.tool.options.get_option_mandatory(:password)
           when :web
-            auth_data[:redirect_uri]=self.options.get_option_mandatory(:redirect_uri)
+            auth_data[:redirect_uri]=Main.tool.options.get_option_mandatory(:redirect_uri)
             Log.log.info("redirect_uri=#{auth_data[:redirect_uri]}")
           when :jwt
-            auth_data[:private_key]=OpenSSL::PKey::RSA.new(self.options.get_option_mandatory(:private_key))
-            auth_data[:subject]=self.options.get_option_mandatory(:username)
+            auth_data[:private_key]=OpenSSL::PKey::RSA.new(Main.tool.options.get_option_mandatory(:private_key))
+            auth_data[:subject]=Main.tool.options.get_option_mandatory(:username)
             Log.log.info("private_key=#{auth_data[:private_key]}")
             Log.log.info("subject=#{auth_data[:subject]}")
           else
@@ -185,7 +185,7 @@ module Asperalm
           # get our user's default information
           self_data=@api_files_user.read("self")[:data]
 
-          ws_name=self.options.get_option(:workspace)
+          ws_name=Main.tool.options.get_option(:workspace)
           if ws_name.nil?
             # get default workspace
             workspace_id=self_data['default_workspace_id']
@@ -205,7 +205,7 @@ module Asperalm
             end
           end
 
-          if self.options.get_option(:format).eql?(:formatted) and !command.eql?(:admin)
+          if Main.tool.options.get_option(:format).eql?(:formatted) and !command.eql?(:admin)
             deflt=""
             deflt=" (default)" if (workspace_id == self_data['default_workspace_id'])
             puts "Current Workspace: #{workspace_data['name'].red}#{deflt}"
@@ -216,14 +216,14 @@ module Asperalm
 
           case command
           when :package
-            command_pkg=self.options.get_next_arg_from_list('command',[ :send, :recv, :list ])
+            command_pkg=Main.tool.options.get_next_arg_from_list('command',[ :send, :recv, :list ])
             case command_pkg
             when :send
               # list of files to include in package
-              filelist = self.options.get_remaining_arguments("file list")
+              filelist = Main.tool.options.get_remaining_arguments("file list")
 
               # lookup users
-              recipient_data=self.options.get_option_mandatory(:recipient).split(',').map { |recipient|
+              recipient_data=Main.tool.options.get_option_mandatory(:recipient).split(',').map { |recipient|
                 user_lookup=@api_files_user.list("contacts",{'current_workspace_id'=>workspace_id,'q'=>recipient})[:data]
                 raise CliBadArgument,"no such user: #{recipient}" unless !user_lookup.nil? and user_lookup.length == 1
                 recipient_user_id=user_lookup.first
@@ -231,7 +231,7 @@ module Asperalm
               }
 
               #  create a new package with one file
-              the_package=@api_files_user.create("packages",{"workspace_id"=>workspace_id,"name"=>self.options.get_option_mandatory(:title),"file_names"=>filelist,"note"=>self.options.get_option_mandatory(:note),"recipients"=>recipient_data})[:data]
+              the_package=@api_files_user.create("packages",{"workspace_id"=>workspace_id,"name"=>Main.tool.options.get_option_mandatory(:title),"file_names"=>filelist,"note"=>Main.tool.options.get_option_mandatory(:note),"recipients"=>recipient_data})[:data]
 
               #  get node information for the node on which package must be created
               node_info=@api_files_user.read("nodes/#{the_package['node_id']}")[:data]
@@ -243,21 +243,21 @@ module Asperalm
               tspec['tags']["aspera"]["files"]={"package_id" => the_package['id'], "package_operation" => "upload"}
               tspec['paths']=filelist.map { |i| {'source'=>i} }
               tspec['destination_root']="/"
-              @faspmanager.transfer_with_spec(tspec)
+              Main.tool.faspmanager.transfer_with_spec(tspec)
               return Main.no_result
               # simulate call later, to check status (this is just demo api call, not needed)
               #sleep 2
               # (sample) get package status
               #allpkg=@api_files_user.read("packages/#{the_package['id']}")[:data]
             when :recv
-              package_id=self.options.get_next_arg_value('package ID')
+              package_id=Main.tool.options.get_next_arg_value('package ID')
               the_package=@api_files_user.read("packages/#{package_id}")[:data]
               node_info=@api_files_user.read("nodes/#{the_package['node_id']}")[:data]
               tspec=info_to_tspec("receive",node_info,the_package['contents_file_id'])
               tspec['tags']["aspera"]["files"]={"package_id" => the_package['id'], "package_operation" => "download"}
               tspec['paths']=[{'source'=>'.'}]
               tspec['destination_root']='.' # TODO:param?
-              @faspmanager.transfer_with_spec(tspec)
+              Main.tool.faspmanager.transfer_with_spec(tspec)
               return Main.no_result
             when :list
               # list all packages ('page'=>1,'per_page'=>10,)'sort'=>'-sent_at',
@@ -273,10 +273,10 @@ module Asperalm
             FaspexGW.go(@api_files_user,workspace_id)
           when :admin
             api_files_admin=Rest.new(files_api_base_url,{:oauth=>@api_files_oauth,:scope=>FilesApi::SCOPE_FILES_ADMIN})
-            command_admin=self.options.get_next_arg_from_list('command',[ :resource, :events, :set_client_key, :usage_reports, :search_nodes  ])
+            command_admin=Main.tool.options.get_next_arg_from_list('command',[ :resource, :events, :set_client_key, :usage_reports, :search_nodes  ])
             case command_admin
             when :search_nodes
-              ak=self.options.get_next_arg_value('access_key')
+              ak=Main.tool.options.get_next_arg_value('access_key')
               nodes=api_files_admin.list("search_nodes",{'q'=>'access_key:"'+ak+'"'})[:data]
               return {:data=>nodes,:type=>:unknown}
             when :events
@@ -298,17 +298,17 @@ module Asperalm
               #transfers=api_node.make_request_ex({:operation=>'GET',:subpath=>'ops/transfers',:args=>{'count'=>25,'filter'=>'id'}})
               #transfers=api_node.list("events") # after_time=2016-05-01T23:53:09Z
             when :set_client_key
-              the_client_id=self.options.get_next_arg_value('client_id')
-              the_private_key=self.options.get_next_arg_value('private_key')
+              the_client_id=Main.tool.options.get_next_arg_value('client_id')
+              the_private_key=Main.tool.options.get_next_arg_value('private_key')
               res=api_files_admin.update("clients/#{the_client_id}",{:jwt_grant_enabled=>true, :public_key=>OpenSSL::PKey::RSA.new(the_private_key).public_key.to_s})
               return Main.no_result
             when :resource
-              resource=self.options.get_next_arg_from_list('resource',[:user,:group,:client,:contact,:dropbox,:node,:operation,:package,:saml_configuration, :workspace])
+              resource=Main.tool.options.get_next_arg_from_list('resource',[:user,:group,:client,:contact,:dropbox,:node,:operation,:package,:saml_configuration, :workspace])
               resources=resource.to_s+(resource.eql?(:dropbox) ? 'es' : 's')
               #:messages:organizations:url_tokens,:usage_reports:workspaces
               operations=[:list,:id]
-              #command=self.options.get_next_arg_value('op_or_id')
-              command=self.options.get_next_arg_from_list('command',operations)
+              #command=Main.tool.options.get_next_arg_value('op_or_id')
+              command=Main.tool.options.get_next_arg_from_list('command',operations)
               case command
               when :list
                 default_fields=['id','name']
@@ -320,7 +320,7 @@ module Asperalm
                 return {:data=>api_files_admin.list(resources)[:data],:fields=>default_fields,:type=>:hash_array}
               when :id
                 #raise RuntimeError, "unexpected resource type: #{resource}, only 'node' for actions" if !resource.eql?(:node)
-                res_id=self.options.get_next_arg_value('node id')
+                res_id=Main.tool.options.get_next_arg_value('node id')
                 res_data=@api_files_user.read("#{resources}/#{res_id}")[:data]
                 case resource
                 when :node

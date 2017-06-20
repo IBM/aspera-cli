@@ -129,9 +129,31 @@ module Asperalm
         end
       end
 
+      def faspmanager
+        if @faspmanager.nil?
+          # create the FASP manager for transfers
+          @faspmanager=FaspManagerResume.new
+          @faspmanager.set_listener(FaspListenerLogger.new)
+          case self.options.get_option_mandatory(:transfer)
+          when :connect
+            @faspmanager.use_connect_client=true
+          when :node
+            node_config=Main.get_config_defaults(:node,self.options.get_option_mandatory(:transfer_node_config))
+            raise CliBadArgument,"no such node configuration: #{self.options.get_option_mandatory(:transfer_node_config)}" if node_config.nil?
+            @faspmanager.tr_node_api=Rest.new(node_config[:url],{:basic_auth=>{:user=>node_config[:username], :password=>node_config[:password]}})
+          end
+          # may be nil:
+          @faspmanager.fasp_proxy_url=self.options.get_option(:fasp_proxy)
+          @faspmanager.http_proxy_url=self.options.get_option(:http_proxy)
+        end
+        return @faspmanager
+      end
+
+      def options; @options;end
+
       def initialize(option_parser)
         @help_requested=false
-        super(option_parser)
+        @options=option_parser
         scan_all_plugins
         self.options.program_name=$PROGRAM_NAME
         self.options.banner = "NAME\n\t#{$PROGRAM_NAME} -- a command line tool for Aspera Applications\n\n"
@@ -176,45 +198,29 @@ module Asperalm
         Log.log.debug("loaded config -> #{@@global_config}")
         default_config=Main.get_config_defaults(plugin_name_sym,self.options.get_option_mandatory(:config_name))
         # TODO: check that ancestor is Plugin
-        command_plugin=Object::const_get(@@PLUGINS_MODULE+'::'+plugin_name_sym.to_s.capitalize).new(self.options)
-        command_plugin.options.set_defaults(default_config)
-        if command_plugin.respond_to?(:faspmanager=) then
-          # create the FASP manager for transfers
-          command_plugin.faspmanager=FaspManagerResume.new
-          command_plugin.faspmanager.set_listener(FaspListenerLogger.new)
-          case self.options.get_option_mandatory(:transfer)
-          when :connect
-            command_plugin.faspmanager.use_connect_client=true
-          when :node
-            node_config=Main.get_config_defaults(:node,self.options.get_option_mandatory(:transfer_node_config))
-            raise CliBadArgument,"no such node configuration: #{self.options.get_option_mandatory(:transfer_node_config)}" if node_config.nil?
-            command_plugin.faspmanager.tr_node_api=Rest.new(node_config[:url],{:basic_auth=>{:user=>node_config[:username], :password=>node_config[:password]}})
-          end
-          # may be nil:
-          command_plugin.faspmanager.fasp_proxy_url=self.options.get_option(:fasp_proxy)
-          command_plugin.faspmanager.http_proxy_url=self.options.get_option(:http_proxy)
-        end
+        command_plugin=Object::const_get(@@PLUGINS_MODULE+'::'+plugin_name_sym.to_s.capitalize).new
+        self.options.set_defaults(default_config)
         self.options.separator "COMMAND: #{plugin_name_sym}"
         self.options.separator "SUBCOMMANDS: #{command_plugin.action_list.map{ |p| p.to_s}.join(', ')}"
         self.options.separator "OPTIONS:"
-        command_plugin.set_options
+        command_plugin.declare_options
         return command_plugin
       end
 
       FIELDS_ALL='ALL'
       FIELDS_DEFAULT='DEF'
 
-      def set_options
+      def declare_options
         self.options.separator "OPTIONS: global"
         self.options.set_option(:browser,:tty)
         self.options.set_option(:fields,FIELDS_DEFAULT)
         self.options.set_option(:transfer,:ascp)
         self.options.set_option(:transfer_node_config,'default')
         self.options.set_option(:insecure,:no)
-        self.options.set_option(:format,:formatted)
+        self.options.set_option(:format,:table)
         self.options.set_option(:logtype,:stdout)
         self.options.set_option(:config_file,@@DEFAULT_CONFIG_FILE) if File.exist?(@@DEFAULT_CONFIG_FILE)
-        self.options.on("-h", "--help", "Show this message") { @help_requested=true }
+        self.options.on("-h", "--help", "Show this message. Try: cli help") { @help_requested=true }
         self.options.add_opt_list(:browser,BrowserInteraction.open_url_methods,"method to start browser",'-gTYPE','--browser=TYPE')
         self.options.add_opt_list(:insecure,[:yes,:no],"do not validate cert",'--insecure=VALUE')
         self.options.add_opt_list(:loglevel,Log.levels,"Log level",'-lTYPE','--log-level=VALUE')
@@ -241,12 +247,12 @@ module Asperalm
           # list plugins that have a "require" field, i.e. all but main plugin
           plugin_sym_list.select { |s| !@plugins[s][:req].nil? }.each do |plugin_name_sym|
             # override main option parser...
-            self.options=OptParser.new([])
+            @options=OptParser.new
             self.options.banner = ""
             self.options.program_name=$PROGRAM_NAME
             self.options.set_defaults({:config_name => 'default',:transfer=>:ascp})
             get_plugin_instance(plugin_name_sym)
-            STDERR.puts self.options
+            STDERR.puts(self.options)
           end
           Process.exit 1
         when :plugins
@@ -301,7 +307,8 @@ module Asperalm
         end
       end
 
-      def self.result_formats; [:ruby,:formatted,:json,:text]; end
+      # TODO: csv
+      def self.result_formats; [:table,:ruby,:json,:yaml]; end
 
       def display_results(results)
         if !results.is_a?(Hash) or ! results.has_key?(:data) or ! results.has_key?(:type) then
@@ -314,8 +321,8 @@ module Asperalm
         when :json
           puts JSON.generate(results[:data])
         when :yaml
-          puts YAML.generate(results[:data])
-        when :formatted
+          puts results[:data].to_yaml
+        when :table
           case results[:type]
           when :hash_array
             table_data = results[:data]
@@ -362,51 +369,72 @@ module Asperalm
           :horizontal_boundary => ':',
           :boundary_intersection => ':')
         end
-
-        #        if results.has_key?(:format)
-        #            if results[:format].eql?(:hash_table)
-        #              results[:format]=:formatted
-        #              results[:values]=results[:values].keys.map { |i| { 'key' => i, 'value' => results[:values][i] } }
-        #            end
-        #            self.options.set_option(:format,results[:format])
-        #          end
-        #          if results[:values].is_a?(Array) and results[:values].empty?
-        #            $stdout.write("no result")
-        #          else
-        #          end
-        #        else
-        #          puts ">other result>#{PP.pp(results,'')}".red
-        #        end
       end
 
-      def process_command_line()
-        self.set_options
-        # parse general options always, before finding plugin
-        self.options.parse_options!()
-        self.options.exit_with_usage if @help_requested and self.options.command_or_arg_empty?
-        command_sym=self.options.get_next_arg_from_list('command',plugin_sym_list)
-        case command_sym
-        when @@MAIN_PLUGIN_NAME_SYM
-          command_plugin=self
+      def exit_with_usage
+        STDERR.puts self.options
+        Process.exit 1
+      end
+
+      def process_exception_exit(e,reason,propose_help=:none)
+        STDERR.puts "ERROR:".bg_red().gray().blink()+" "+reason+": "+e.message
+        STDERR.puts "Use '-h' option, or 'cli help' command to get help." if propose_help.eql?(:usage)
+        if Log.level == :debug
+          raise e
         else
-          # get plugin
-          command_plugin=self.get_plugin_instance(command_sym)
-          # parse plugin specific options
-          self.options.parse_options!()
+          STDERR.puts "Use '--log-level=debug' to get more details." if propose_help.eql?(:debug)
+          Process.exit 1
         end
-        self.options.exit_with_usage if @help_requested
-        results=command_plugin.execute_action
-        display_results(results)
-        # parse for help
-        self.options.parse_options!()
-        # unprocessed values ?
-        if !self.options.unprocessed_options.empty?
-          raise CliBadArgument,"unprocessed options: #{self.options.unprocessed_options}"
-        end
-        if !self.options.command_or_arg_empty?
-          raise CliBadArgument,"unprocessed values: #{self.options.get_remaining_arguments(nil)}"
+      end
+
+      def process_command_line(argv)
+        begin
+          # init options
+          self.options.set_argv(argv)
+          self.options.set_defaults({:config_name => 'default'})
+          # declare global options
+          self.declare_options
+          # parse general options always, before finding plugin
+          self.options.parse_options!
+          # help requested without command ?
+          self.exit_with_usage if @help_requested and self.options.command_or_arg_empty?
+          command_sym=self.options.get_next_arg_from_list('command',plugin_sym_list)
+          case command_sym
+          when @@MAIN_PLUGIN_NAME_SYM
+            command_plugin=self
+          else
+            # get plugin, set options, etc
+            command_plugin=self.get_plugin_instance(command_sym)
+            # parse plugin specific options
+            self.options.parse_options!
+          end
+          # help requested ?
+          self.exit_with_usage if @help_requested
+          display_results(command_plugin.execute_action)
+          # unprocessed values ?
+          if !self.options.unprocessed_options.empty?
+            raise CliBadArgument,"unprocessed options: #{self.options.unprocessed_options}"
+          end
+          if !self.options.command_or_arg_empty?
+            raise CliBadArgument,"unprocessed values: #{self.options.get_remaining_arguments(nil)}"
+          end
+        rescue CliBadArgument => e;          process_exception_exit(e,'Argument',:usage)
+        rescue CliError => e;                process_exception_exit(e,'Tool',:usage)
+        rescue Asperalm::TransferError => e; process_exception_exit(e,"Transfer")
+        rescue SocketError => e;             process_exception_exit(e,"Network")
+        rescue StandardError => e;           process_exception_exit(e,"Other",:debug)
         end
         return nil
+      end
+
+      def self.tool
+        if @@singleton.nil?
+          # quick init of debug level
+          Log.level = ARGV.include?('--log-level=debug') ? :debug : :warn
+          # opt parser separates options (start with '-') from arguments
+          @@singleton = self.new(OptParser.new)
+        end
+        return @@singleton
       end
 
       #################################
@@ -420,25 +448,7 @@ module Asperalm
       $PROGRAM_FOLDER=File.join(@@ASPERA_HOME_FOLDERPATH,$PROGRAM_NAME)
       @@DEFAULT_CONFIG_FILE=File.join($PROGRAM_FOLDER,@@DEFAULT_CONFIG_FILENAME)
       @@USER_PLUGINS_FOLDER=File.join($PROGRAM_FOLDER,@@ASPERA_PLUGINS_FOLDERNAME)
-
-      def self.process_exception(tool,e,reason)
-        raise e if Log.level == :debug
-        tool.options.exit_with_error("#{reason}: #{e.message}\nUse '-h' option, or 'cli help' command to get help.")
-      end
-
-      def self.start
-        # quick init of debug level
-        Log.level = ARGV.include?('--log-level=debug') ? :debug : :warn
-        tool=self.new(OptParser.new(ARGV))
-        begin
-          # this separates options (start with '-') from arguments
-          tool.options.set_defaults({:config_name => 'default'})
-          tool.process_command_line()
-        rescue CliBadArgument => e; process_exception(tool,e,'Argument')
-        rescue CliError => e; process_exception(tool,e,'Tool')
-        rescue Asperalm::TransferError => e; process_exception(tool,e,"Transfer")
-        end
-      end
+      @@singleton=nil
     end
   end
 end

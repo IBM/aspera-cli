@@ -21,9 +21,17 @@ module Asperalm
       end
 
       # consume elements of array, those starting with minus are options, others are commands
-      def initialize(argv)
+      def initialize
         @mycommand_and_args=[]
         @myoptions=[]
+        @attr_procs={}
+        @attr_values={}
+        super
+      end
+
+      def set_argv(argv)
+        @myoptions=[]
+        @mycommand_and_args=[]
         while !argv.empty?
           if argv.first =~ /^-/
             @myoptions.push(argv.shift)
@@ -31,10 +39,7 @@ module Asperalm
             @mycommand_and_args.push(argv.shift)
           end
         end
-        Log.log.debug("parse_commands->#{@mycommand_and_args},args=#{@myoptions}")
-        @attr_procs={}
-        @attr_values={}
-        super
+        Log.log.debug("set_argv:commands=#{@mycommand_and_args},args=#{@myoptions}".red)
       end
 
       def self.value_modifier; ['file','env', 'val', 'val64', 'json', 'none']; end
@@ -108,16 +113,6 @@ module Asperalm
           raise CliBadArgument,"missing #{descr}"
         end
         return filelist
-      end
-
-      def exit_with_usage
-        STDERR.puts self
-        Process.exit 1
-      end
-
-      def exit_with_error(error_text)
-        STDERR.puts "ERROR:".bg_red().gray().blink()+" #{error_text}\n\n" if !error_text.nil?
-        Process.exit 1
       end
 
       def set_handler(option_symbol,&block)
@@ -200,7 +195,8 @@ module Asperalm
       end
 
       # removes already known options from the list
-      def parse_options!()
+      def parse_options!
+        Log.log.debug("parse_options!")
         args=[]
         begin
           self.parse!(@myoptions)
@@ -208,8 +204,10 @@ module Asperalm
           args.push(e.args.first)
           retry
         end
+        Log.log.debug("remains: #{args}")
+        # set unprocessed options for next time
+        @myoptions=args
       end
-
     end
   end
 end
