@@ -57,12 +57,12 @@ module Asperalm
         end
 
         # field_sym : :id or :name
-        def self.get_source_name_id(source_list,field_sym,field_value)
-          source_ids=source_list.select { |i| i[field_sym.to_s].to_s.eql?(field_value.to_s) }
+        def self.get_source_id(source_list,source_name)
+          source_ids=source_list.select { |i| i['name'].eql?(source_name) }
           if source_ids.empty?
             raise CliError,"No such Faspex source #{field_sym.to_s}: #{field_value} in [#{source_list.map{|i| i[field_sym.to_s]}.join(', ')}]"
           end
-          return source_ids.first['name'],source_ids.first['id']
+          return source_ids.first['id']
         end
 
         def action_list; [ :package, :dropbox, :recv_publink, :source, :me ];end
@@ -89,7 +89,7 @@ module Asperalm
               source_name=Main.tool.options.get_option(:source_name)
               if !source_name.nil?
                 source_list=api_faspex.call({:operation=>'GET',:subpath=>"source_shares",:headers=>{'Accept'=>'application/json'}})[:data]['items']
-                source_name,source_id=self.class.get_source_name_id(source_list,:name,source_name)
+                source_id=self.class.get_source_id(source_list,source_name)
                 package_create_params['delivery']['sources'].first['id']=source_id
               end
               send_result=api_faspex.call({:operation=>'POST',:subpath=>'send',:json_params=>package_create_params,:headers=>{'Accept'=>'application/json'}})[:data]
@@ -98,7 +98,7 @@ module Asperalm
               end
               if !source_name.nil?
                 # no transfer spec if remote source
-                return send_result
+                return {:data=>[send_result['links']['status']],:type=>:list,:name=>'link'}
               end
               raise CliBadArgument,"expecting one session exactly" if send_result['xfer_sessions'].length != 1
               transfer_spec=send_result['xfer_sessions'].first
@@ -159,7 +159,7 @@ module Asperalm
               # get id and name
               source_name=source_ids.first['name']
               source_id=source_ids.first['id']
-              source_hash=options.get_option(:storage)
+              source_hash=Main.tool.options.get_option(:storage)
               raise CliError,"No storage defined in aslmcli config" if source_hash.nil?
               if !source_hash.has_key?(source_name)
                 raise CliError,"No such storage in aslmcli config: \"#{source_name}\" in [#{source_hash.keys.join(', ')}]"

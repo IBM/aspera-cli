@@ -14,7 +14,7 @@ module Asperalm
     class CliError < StandardError
     end
 
-    # base class for plugins modules
+    # parse options in command line
     class OptParser < OptionParser
       def self.time_to_string(time)
         time.strftime("%Y-%m-%d %H:%M:%S")
@@ -22,24 +22,24 @@ module Asperalm
 
       # consume elements of array, those starting with minus are options, others are commands
       def initialize
-        @mycommand_and_args=[]
-        @myoptions=[]
+        @command_and_args=[]
+        @options=[]
         @attr_procs={}
         @attr_values={}
         super
       end
 
       def set_argv(argv)
-        @myoptions=[]
-        @mycommand_and_args=[]
+        @options=[]
+        @command_and_args=[]
         while !argv.empty?
           if argv.first =~ /^-/
-            @myoptions.push(argv.shift)
+            @options.push(argv.shift)
           else
-            @mycommand_and_args.push(argv.shift)
+            @command_and_args.push(argv.shift)
           end
         end
-        Log.log.debug("set_argv:commands=#{@mycommand_and_args},args=#{@myoptions}".red)
+        Log.log.debug("set_argv:commands=#{@command_and_args},args=#{@options}".red)
       end
 
       def self.value_modifier; ['file','env', 'val', 'val64', 'json', 'none']; end
@@ -70,7 +70,7 @@ module Asperalm
       end
 
       def command_or_arg_empty?
-        return @mycommand_and_args.empty?
+        return @command_and_args.empty?
       end
 
       def self.get_from_list(shortval,descr,allowed_values)
@@ -87,31 +87,25 @@ module Asperalm
 
       # get next argument, must be from the value list
       def get_next_arg_from_list(descr,allowed_values)
-        if @mycommand_and_args.empty? then
+        if @command_and_args.empty? then
           raise CliBadArgument,"missing action, one of: #{allowed_values.map {|x| x.to_s}.join(', ')}"
         end
-        return self.class.get_from_list(@mycommand_and_args.shift,descr,allowed_values)
-        # this version accepts only precise values
-        #        if !allowed_values.include?(action) then
-        #          raise CliBadArgument,"unexpected value for #{descr}: #{action}, one of: #{allowed_values.map {|x| x.to_s}.join(', ')}"
-        #        end
-        #        return action
+        return self.class.get_from_list(@command_and_args.shift,descr,allowed_values)
       end
 
       # just get next value
       def get_next_arg_value(descr)
-        if @mycommand_and_args.empty? then
+        if @command_and_args.empty? then
           raise CliBadArgument,"expecting value: #{descr}"
         end
-        return self.class.get_extended_value(descr,@mycommand_and_args.shift)
+        return self.class.get_extended_value(descr,@command_and_args.shift)
       end
 
-      def get_remaining_arguments(descr)
-        filelist = @mycommand_and_args.pop(@mycommand_and_args.length)
+      def get_remaining_arguments(descr,minus=0)
+        raise CliBadArgument,"missing: #{descr}" if @command_and_args.empty?
+        raise CliBadArgument,"missing args after: #{descr}" if @command_and_args.length <= minus
+        filelist = @command_and_args.pop(@command_and_args.length-minus)
         Log.log.debug("#{descr}=#{filelist}")
-        if filelist.empty? then
-          raise CliBadArgument,"missing #{descr}"
-        end
         return filelist
       end
 
@@ -191,22 +185,22 @@ module Asperalm
       end
 
       def unprocessed_options
-        return @myoptions
+        return @options
       end
 
       # removes already known options from the list
       def parse_options!
         Log.log.debug("parse_options!")
-        args=[]
+        unknown_options=[]
         begin
-          self.parse!(@myoptions)
+          self.parse!(@options)
         rescue OptionParser::InvalidOption => e
-          args.push(e.args.first)
+          unknown_options.push(e.args.first)
           retry
         end
-        Log.log.debug("remains: #{args}")
+        Log.log.debug("remains: #{unknown_options}")
         # set unprocessed options for next time
-        @myoptions=args
+        @options=unknown_options
       end
     end
   end

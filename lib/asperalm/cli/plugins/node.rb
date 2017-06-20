@@ -79,7 +79,13 @@ module Asperalm
           hash.delete(name)
         end
 
-        def self.get_prefix_path(theprefix,thepath)
+        def self.get_next_arg_prefix(theprefix,name,number=:one)
+          case number
+          when :one; thepath=Main.tool.options.get_next_arg_value(name)
+          when :all; thepath=Main.tool.options.get_remaining_arguments(name)
+          when :all_but_one; thepath=Main.tool.options.get_remaining_arguments(name,1)
+          else raise "ERROR"
+          end
           return thepath if theprefix.nil?
           return File.join(theprefix,thepath) if thepath.is_a?(String)
           return thepath.map {|p| File.join(theprefix,p)} if thepath.is_a?(Array)
@@ -89,7 +95,7 @@ module Asperalm
         def self.remove_result_prefix_path(theprefix,result,column)
           if !theprefix.nil?
             result[:data].each do |r|
-              r[column].gsub!(theprefix,'')
+              r[column].replace(r[column][theprefix.length..-1]) if r[column].start_with?(theprefix)
             end
           end
           return result
@@ -98,6 +104,7 @@ module Asperalm
         def self.common_actions; [:info, :browse, :mkdir, :mklink, :mkfile, :rename, :delete, :upload, :download ];end
 
         # common API to node and Shares
+        # prefix_path is used to list remote sources in Faspex
         def self.execute_common(command,api_node,prefix_path=nil)
           case command
           when :info
@@ -106,40 +113,42 @@ module Asperalm
             bool_param_to_string(node_info,'settings')
             return { :data => node_info, :type=>:hash_table}
           when :browse
-            thepath=get_prefix_path(prefix_path,Main.tool.options.get_next_arg_value("path"))
+            thepath=get_next_arg_prefix(prefix_path,"path")
             send_result=api_node.call({:operation=>'POST',:subpath=>'files/browse',:json_params=>{ :path => thepath} } )
             #send_result={:data=>{'items'=>[{'file'=>"filename1","permissions"=>[{'name'=>'read'},{'name'=>'write'}]}]}}
             return Main.no_result if !send_result[:data].has_key?('items')
             result={ :data => send_result[:data]['items'] , :type => :hash_array, :textify => lambda { |items| Node.format_browse(items) } }
+            #display_prefix=thepath
+            #display_prefix=File.join(prefix_path,display_prefix) if !prefix_path.nil?
+            #puts display_prefix.red
             return remove_result_prefix_path(prefix_path,result,'path')
           when :delete
-            paths_to_delete = get_prefix_path(prefix_path,Main.tool.options.get_remaining_arguments("file list"))
+            paths_to_delete = get_next_arg_prefix(prefix_path,"file list",:all)
             return remove_result_prefix_path(prefix_path,delete_files(api_node,paths_to_delete),'file')
           when :mkdir
-            thepath=get_prefix_path(prefix_path,Main.tool.options.get_next_arg_value("folder path"))
+            thepath=get_next_arg_prefix(prefix_path,"folder path")
             resp=api_node.call({:operation=>'POST',:subpath=>'files/create',:json_params=>{ "paths" => [{ :type => :directory, :path => thepath } ] } } )
             return remove_result_prefix_path(prefix_path,result_translate(resp,'folder','created'),'folder')
           when :mklink
-            target=get_prefix_path(prefix_path,Main.tool.options.get_next_arg_value("target"))
-            thepath=get_prefix_path(prefix_path,Main.tool.options.get_next_arg_value("link path"))
+            target=get_next_arg_prefix(prefix_path,"target")
+            thepath=get_next_arg_prefix(prefix_path,"link path")
             resp=api_node.call({:operation=>'POST',:subpath=>'files/create',:json_params=>{ "paths" => [{ :type => :symbolic_link, :path => thepath, :target => {:path => target} } ] } } )
             return remove_result_prefix_path(prefix_path,result_translate(resp,'folder','created'),'folder')
           when :mkfile
-            thepath=get_prefix_path(prefix_path,Main.tool.options.get_next_arg_value("file path"))
+            thepath=get_next_arg_prefix(prefix_path,"file path")
             contents64=Base64.strict_encode64(Main.tool.options.get_next_arg_value("contents"))
             resp=api_node.call({:operation=>'POST',:subpath=>'files/create',:json_params=>{ "paths" => [{ :type => :file, :path => thepath, :contents => contents64 } ] } } )
             return remove_result_prefix_path(prefix_path,result_translate(resp,'folder','created'),'folder')
           when :rename
-            path_base=get_prefix_path(prefix_path,Main.tool.options.get_next_arg_value("path_base"))
-            path_src=get_prefix_path(prefix_path,Main.tool.options.get_next_arg_value("path_src"))
-            path_dst=get_prefix_path(prefix_path,Main.tool.options.get_next_arg_value("path_dst"))
+            path_base=get_next_arg_prefix(prefix_path,"path_base")
+            path_src=get_next_arg_prefix(prefix_path,"path_src")
+            path_dst=get_next_arg_prefix(prefix_path,"path_dst")
             resp=api_node.call({:operation=>'POST',:subpath=>'files/rename',:json_params=>{ "paths" => [{ "path" => path_base, "source" => path_src, "destination" => path_dst } ] } } )
             return remove_result_prefix_path(prefix_path,result_translate(resp,'entry','moved'),'entry')
           when :upload
-            filelist = Main.tool.options.get_remaining_arguments("file list")
+            filelist = Main.tool.options.get_remaining_arguments("source file list",1)
             Log.log.debug("file list=#{filelist}")
-            raise CliBadArgument,"Missing source(s) and destination" if filelist.length < 2
-            destination=get_prefix_path(prefix_path,filelist.pop)
+            destination=get_next_arg_prefix(prefix_path,"path_dst")
             send_result=api_node.call({:operation=>'POST',:subpath=>'files/upload_setup',:json_params=>{ :transfer_requests => [ { :transfer_request => { :paths => [ { :destination => destination } ] } } ] }})
             raise send_result[:data]['transfer_specs'][0]['error']['user_message'] if send_result[:data]['transfer_specs'][0].has_key?('error')
             raise "expecting one session exactly" if send_result[:data]['transfer_specs'].length != 1
@@ -148,10 +157,9 @@ module Asperalm
             Main.tool.faspmanager.transfer_with_spec(transfer_spec)
             return Main.no_result
           when :download
-            filelist = get_prefix_path(prefix_path,Main.tool.options.get_remaining_arguments("file list"))
+            filelist = get_next_arg_prefix(prefix_path,"source file list",:all_but_one)
             Log.log.debug("file list=#{filelist}")
-            raise CliBadArgument,"Missing source(s) and destination" if filelist.length < 2
-            destination=filelist.pop
+            destination=Main.tool.options.get_next_arg_value("path_dst")
             send_result=api_node.call({:operation=>'POST',:subpath=>'files/download_setup',:json_params=>{ :transfer_requests => [ { :transfer_request => { :paths => filelist.map {|i| {:source=>i}; } } } ] }})
             raise send_result[:data]['transfer_specs'][0]['error']['user_message'] if send_result[:data]['transfer_specs'][0].has_key?('error')
             raise "expecting one session exactly" if send_result[:data]['transfer_specs'].length != 1
