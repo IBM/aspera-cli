@@ -1,13 +1,17 @@
 require 'asperalm/log'
 
 module Asperalm
-# open a Url
+  # Allows a user to open a Url
+  # if method is "tty", then URL is displayed on terminal
+  # if method is "os", then the URL will be opened with the default browser.
   class BrowserInteraction
     def self.open_url_methods; [ :tty, :os ]; end
     @@open_url_method=:tty
+
     def self.open_url_method=(value)
       @@open_url_method=value
     end
+
     def self.open_url_method()
       @@open_url_method
     end

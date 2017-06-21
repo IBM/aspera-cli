@@ -322,7 +322,7 @@ module Asperalm
           ascp_args.push('-i',k); used_names.push('EX_ssh_key_paths')
         end
       end
-      
+
       ts2args_value(used_names,transfer_spec,ascp_args,'remote_user','--user')
       ts2args_value(used_names,transfer_spec,ascp_args,'remote_host','--host')
       ts2args_value(used_names,transfer_spec,ascp_args,'target_rate_kbps','-l') { |rate| rate.to_s }
@@ -337,6 +337,7 @@ module Asperalm
 
       ts_bool_param(used_names,transfer_spec,ascp_args,'create_dir') { |create_dir| create_dir ? ['-d'] : [] }
 
+      # TODO: manage those parameters
       ts_ignore_param(used_names,'target_rate_cap_kbps')
       ts_ignore_param(used_names,'target_rate_percentage')
       ts_ignore_param(used_names,'min_rate_cap_kbps')

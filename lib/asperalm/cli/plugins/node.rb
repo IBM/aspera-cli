@@ -7,8 +7,6 @@ module Asperalm
     module Plugins
       class Node < BasicAuthPlugin
         def initialize
-          # handler must be set before setting defaults
-          Main.tool.options.set_handler(:filter_config) { |op,val| attr_filter_config(op,val) }
         end
         alias super_declare_options declare_options
 
@@ -16,11 +14,10 @@ module Asperalm
           super_declare_options
           Main.tool.options.set_option(:persistency,File.join($PROGRAM_FOLDER,"persistency_cleanup.txt"))
           Main.tool.options.set_option(:filter_req,'{"active_only":false}')
-          Main.tool.options.add_opt_simple(:persistency,"--persistency=FILEPATH","persistency file")
-          Main.tool.options.add_opt_simple(:filter_config,"--filter-config=NAME","Ruby expression for filter at transfer level")
-          Main.tool.options.add_opt_simple(:filter_transfer,"--filter-transfer=EXPRESSION","Ruby expression for filter at transfer level")
-          Main.tool.options.add_opt_simple(:filter_file,"--filter-file=EXPRESSION","Ruby expression for filter at file level")
-          Main.tool.options.add_opt_simple(:filter_req,"--filter-request=EXPRESSION","Ruby expression for filter at file level")
+          Main.tool.options.add_opt_simple(:persistency,"--persistency=FILEPATH","persistency file (cleanup,forward)")
+          Main.tool.options.add_opt_simple(:filter_transfer,"--filter-transfer=EXPRESSION","Ruby expression for filter at transfer level (cleanup)")
+          Main.tool.options.add_opt_simple(:filter_file,"--filter-file=EXPRESSION","Ruby expression for filter at file level (cleanup)")
+          Main.tool.options.add_opt_simple(:filter_req,"--filter-request=EXPRESSION","JSON expression for filter on API request")
         end
 
         def self.format_browse(items)

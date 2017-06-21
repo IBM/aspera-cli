@@ -8,16 +8,17 @@ require 'openssl'
 require 'json'
 
 module Asperalm
+  # this class answers the Faspex /send API and creates a package on Files
   class FaspexGW < Sinatra::Base
-    def self.go(api_files_user,workspace_id)
+    def self.start_server(api_files_user,workspace_id)
       @@api_files_user=api_files_user
       @@the_workspaceid=workspace_id
       $CERTIFICATE=File.read(Connect.path(:localhost_cert))
       $PRIVATE_KEY=File.read(Connect.path(:localhost_key))
-      Rack::Server.start({
+      webrick_options = {
         :app                => FaspexGW,
         :Port               => 9443,
-#        :Logger             => WEBrick::Log::new($stderr, WEBrick::Log::ERROR),
+        #:Logger             => WEBrick::Log::new($stderr, WEBrick::Log::ERROR),
         :Logger             => Log.log,
         :DocumentRoot       => "/ruby/htdocs",
         :SSLEnable          => true,
@@ -25,9 +26,10 @@ module Asperalm
         :SSLCertificate     => OpenSSL::X509::Certificate.new($CERTIFICATE),
         :SSLPrivateKey      => OpenSSL::PKey::RSA.new($PRIVATE_KEY),
         :SSLCertName        => [ [ "CN",WEBrick::Utils::getservername ] ]
-      })
+      }
+      puts "Server started on port #{webrick_options[:Port]}"
+      Rack::Server.start(webrick_options)
     end
-
     post '/aspera/faspex/send' do
       # parameters from user to Faspex API call
       #    {
@@ -125,5 +127,5 @@ module Asperalm
       Log.log.info "faspex_transfer_spec_result=#{faspex_transfer_spec_result}"
       return JSON.generate(faspex_transfer_spec_result)
     end
-  end
-end
+  end # FaspexGW
+end # AsperaLm

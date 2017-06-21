@@ -165,12 +165,13 @@ module Asperalm
                 raise CliError,"No such storage in aslmcli config: \"#{source_name}\" in [#{source_hash.keys.join(', ')}]"
               end
               source_info=source_hash[source_name]
+              Log.log.debug("source_info: #{source_info}")
               command_node=Main.tool.options.get_next_arg_from_list('command',[ :info, :node ])
               case command_node
               when :info
                 return {:data=>source_info,:type=>:hash_table}
               when :node
-                node_config=Main.get_config_defaults(:node,source_info[:node])
+                node_config=Main.tool.get_plugin_default_config(:node,source_info[:node])
                 raise CliError,"No such node aslmcli config: \"#{source_info[:node]}\"" if node_config.nil?
                 api_node=Rest.new(node_config[:url],{:basic_auth=>{:user=>node_config[:username], :password=>node_config[:password]}})
                 command=Main.tool.options.get_next_arg_from_list('command',Node.common_actions)

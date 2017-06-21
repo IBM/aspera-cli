@@ -139,7 +139,7 @@ ARGS
 
 EXAMPLES
 	aslmcli files repo browse /
-	aslmcli faspex send ./myfile --log-level=debug
+	aslmcli faspex package send ./myfile --log-level=debug
 	aslmcli shares upload ~/myfile /myshare
 
 OPTIONS: global
@@ -226,11 +226,13 @@ Note that actions and parameter values can be written in short form.
 All CLI parameters can be provided on command line, but it is more convenient 
 to set common parameters (e.g. cedentials) in a configuration file.
 
-The configuration file is a YAML file organized by applications.
-
-For each application type, there is a list of named configurations. The 
-configuration named "default" is taken if no "-n" option is provided 
-(short for --config-name).
+The configuration file is a hash in a YAML file. The primary key is the "config id".
+A "config name" refers to a named configuration for a given plugin (application).
+The "config id" used for a given "config name" is "<plugin>_<config name>".
+The default config name is "default". For instance, for the "faspex" plugin,
+the default config id is "faspex_default". To change the config name, specify
+option "-n" or "--config-name". It is also possible to "load" a set of parameters
+with option "--load-params".
 
 Arguments that require a value can be specified on command line or config file 
 with the following specific rules:
@@ -247,46 +249,47 @@ Here is an example:
 
 ```yaml
 ---
-:cli:
-  default:
-    :loglevel: :warn
-:files:
-  default:
-    :auth: :jwt
-    :url: https://mycompany.asperafiles.com
-    :client_id: <insert client id here>
-    :client_secret: <insert client secret here>
-    :private_key: "@file:~/.aspera/aslmcli/filesapikey"
-    :username: laurent@asperasoft.com
-  p:
-    :auth: :web
-    :url: https://aspera.asperafiles.com
-    :client_id: <insert client id here>
-    :client_secret: <insert client secret here>
-    :redirect_uri: http://local.connectme.us:12345
-:faspex:
-  default:
-    :url: https://10.25.0.3/aspera/faspex
-    :username: admin
-    :password: MyPassword
-:shares:
-  default:
-    :url: https://10.25.0.6
-    :username: admin
-    :password: MyPassword
-:node:
-  default:
-    :url: https://10.25.0.8:9092
-    :username: node_root
-    :password: MyPassword
-:console:
-  default:
-    :url: https://console.asperademo.com/aspera/console
-    :username: nyapiuset
-    :password: "mypassword"
-:fasp:
-  default:
-    :transfer_spec: '{"remote_host":"demo.asperasoft.com","remote_user":"asperaweb","password":"xxxx"}'
+:cli_default:
+  :loglevel: :warn
+:files_default:
+  :auth: :jwt
+  :url: https://mycompany.asperafiles.com
+  :client_id: <insert client id here>
+  :client_secret: <insert client secret here>
+  :private_key: "@file:~/.aspera/aslmcli/filesapikey"
+  :username: laurent@asperasoft.com
+files_p:
+  :auth: :web
+  :url: https://aspera.asperafiles.com
+  :client_id: <insert client id here>
+  :client_secret: <insert client secret here>
+  :redirect_uri: http://local.connectme.us:12345
+faspex_default:
+  :url: https://10.25.0.3/aspera/faspex
+  :username: admin
+  :password: MyPassword
+  :storage:
+    testlaurent:
+      :node: faspex1
+      :path: /testlaurent
+shares_default:
+  :url: https://10.25.0.6
+  :username: admin
+  :password: MyPassword
+node_default:
+  :url: https://10.25.0.8:9092
+  :username: node_root
+  :password: MyPassword
+node_faspex1:
+  :url: https://10.25.0.8:9092
+  :username: node_root
+  :password: MyPassword
+console_default:
+  :url: https://console.asperademo.com/aspera/console
+  :username: nyapiuset
+  :password: "mypassword"
+fasp_default:
+  :transfer_spec: '{"remote_host":"demo.asperasoft.com","remote_user":"asperaweb","password":"xxxx"}'
 ```
 The "default" configuration is taken, but can be overridden on comand line.
 Another configuration can be taken with option "-n".
@@ -375,6 +378,7 @@ $ ssh-keygen -t rsa -f ~/.aspera/aslmcli/filesapikey -N ''
 ```
 
 One can also use the "openssl" utility:
+(on some openssl implementation there is option: -nodes (no DES))
 
 ```bash
 $ APIKEY=~/.aspera/aslmcli/filesapikey
@@ -409,10 +413,11 @@ are always provided with a "transfer spec".
 By specifying option: `--transfer=connect`, the CLI will start transfers in the Aspera
 Connect Client.
 
-### Aspera Node API
+### Aspera Node API : Node to node transfers
 
 By specifying option: `--transfer=node`, the CLI will start transfers in an Aspera
-Transfer Server using the Node API.
+Transfer Server using the Node API. The client node configuration shall be specified with:
+`--transfer-node=<node config name>`
 
 ### Example of use
 
@@ -465,21 +470,33 @@ end # Asperalm
 EOF
 ```
 
-## Contents
-Included files are:
+## Note on Faspex remote sources
 
-<table>
-<tr><td><code>lib/asperalm/browser_interaction.rb</code></td><td>for user web login, supports watir or terminal</td></tr>
-<tr><td><code>lib/asperalm/cli/*.rb</code></td><td>The CLI itself.</td></tr>
-<tr><td><code>lib/asperalm/colors.rb</code></td><td>VT100 colors</td></tr>
-<tr><td><code>lib/asperalm/fasp_manager.rb</code></td><td>Ruby FaspManager lib</td></tr>
-<tr><td><code>lib/asperalm/oauth.rb</code></td><td>sample oauth</td></tr>
-<tr><td><code>lib/asperalm/rest.rb</code></td><td>REST and CRUD support</td></tr>
-</table>
+Faspex lacks an API to list the contents of a remote source. To workaround this,
+the node API is used, for this it is required to add a section ":storage" that links
+a storage name to a node config and sub path. Example:
+```yaml
+faspex_default:
+  :url: https://10.25.0.3/aspera/faspex
+  :username: admin
+  :password: MyPassword
+  :storage:
+    testlaurent:
+      :node: faspex1
+      :path: /myfiles
+node_faspex1:
+  :url: https://10.25.0.3:9092
+  :username: node_faspex
+  :password: MyPassword
+```
+
+In this example, a faspex storage named "testlaurent" exists in Faspex, and is located
+under the docroot in "/myfiles" (this must be the same as configured in Faspex).
+The node configuration name is "faspex1" here.
 
 ## BUGS
 This is a sample code only, dont expect full capabilities. This code is not
-supported by IBM/Aspera.
+supported by IBM/Aspera. You can contact the author.
 
 ## TODO
 * remove rest and oauth and use ruby standard gems:
@@ -496,6 +513,5 @@ http://blog.excelwithcode.com/build-commandline-apps.html
 
 ## Contributing
 
-Please contribute: add new functions that use the APIs!
-You may contact the author.
+Create your own plugin !
 
