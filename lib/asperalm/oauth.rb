@@ -219,6 +219,7 @@ module Asperalm
     def goto_page_and_get_code(thelogin,check_code)
       code=nil
       Log.log.info "thelogin=#{thelogin}".bg_red().gray()
+      # browser start is not blocking
       BrowserInteraction.open_uri(thelogin)
       port=URI.parse(@auth_data[:redirect_uri]).port
       Log.log.info "listening on port #{port}"
