@@ -104,7 +104,7 @@ module Asperalm
       def get_remaining_arguments(descr,minus=0)
         raise CliBadArgument,"missing: #{descr}" if @command_and_args.empty?
         raise CliBadArgument,"missing args after: #{descr}" if @command_and_args.length <= minus
-        filelist = @command_and_args.pop(@command_and_args.length-minus)
+        filelist = @command_and_args.shift(@command_and_args.length-minus)
         Log.log.debug("#{descr}=#{filelist}")
         return filelist
       end

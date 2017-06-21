@@ -150,6 +150,7 @@ module Asperalm
             Log.log.debug("file list=#{filelist}")
             destination=get_next_arg_prefix(prefix_path,"path_dst")
             send_result=api_node.call({:operation=>'POST',:subpath=>'files/upload_setup',:json_params=>{ :transfer_requests => [ { :transfer_request => { :paths => [ { :destination => destination } ] } } ] }})
+            raise send_result[:data]['error']['user_message'] if send_result[:data].has_key?('error')
             raise send_result[:data]['transfer_specs'][0]['error']['user_message'] if send_result[:data]['transfer_specs'][0].has_key?('error')
             raise "expecting one session exactly" if send_result[:data]['transfer_specs'].length != 1
             transfer_spec=send_result[:data]['transfer_specs'].first['transfer_spec']
