@@ -74,7 +74,7 @@ module Asperalm
         "rc=#{rc} msg='#{ascmd_message}' command='#{command}' args=#{args.map { |e| %('#{e}') }.inspect}"
       end
 
-    end
+    end # Error
 
     def self.run(credentials, method, *args)
       self.new(credentials).send(method, *args)
@@ -105,7 +105,7 @@ module Asperalm
     end
 
     # Returns Hash of values derived from banner message that is returned
-    # from the invocation of as_cmd.
+    # from the invocation of as_<cmd>.
     def self.parse_res_info(res_list)
       banner_fields = parse_bin_response(res_list.shift.string)
       banner = {}
@@ -294,15 +294,11 @@ module Asperalm
     # @param [String] command the command to run, e.g. <tt>as_ls "/tmp"</tt>
     # @return [Array of Aspera::Ascmd] possibly empty array depending on which +ascmd+ command is run
     def ascmd_exec(cmd,*args)
-      args=[] if args.nil?
-      as_cmd='as_'+cmd
-      command=as_cmd
-      if !args.nil? and !args.empty?
-        command=args.map{|v| '"' + v.gsub(/["\\]/n) {|s| '\\' + s } + '"'}.unshift(as_cmd).join(' ')
-      end
+      ascmd_command='as_'+cmd
       response = ''
       Net::SSH.start(credentials[:host], credentials[:user], :password => credentials[:password]) do |ssh|
-        chacha=ssh.open_channel do |channel|
+        ssh_channel=ssh.open_channel do |channel|
+          # process stdout
           channel.on_data do |chan, data|
             response << data
           end
@@ -310,23 +306,27 @@ module Asperalm
           channel.on_extended_data do |chan, type, data|
             # Happens when windows user hasn't logged in and created home account.
             unless data.include?("Could not chdir to home directory")
-              raise "got error running ascmd: #{data}"
+              raise "got error running ascmd: #{data}\nHint: home not created in Windows?"
             end
           end
           channel.exec("ascmd") do |ch, success|
-            command_with_exit = [command,"as_exit\n"].compact.join("\n")
-            channel.send_data(command_with_exit)
+            # concatenate arguments, enclose in double quotes, protect backslash and double quotes
+            command_line=(args||[]).map{|v| '"' + v.gsub(/["\\]/n) {|s| '\\' + s } + '"'}.unshift(ascmd_command).join(' ')
+            channel.send_data("#{command_line}\nas_exit\n")
           end
         end
-        chacha.wait
+        # wait for channel to finish
+        ssh_channel.wait
         ssh.loop
       end
       commands = self.class.parse_bin_response(response)
       # first entry is as_info, ignore it
       self.class.parse_res_info(commands)
+      # error comes first
       if !commands.first.nil? and commands.first.error?
-        raise Error.new(commands.first,as_cmd,args)
+        raise Error.new(commands.first,ascmd_command,args)
       end
+      # return parsed result if there is a parser
       parse_method_sym=('parse_res_'+cmd).to_sym
       return nil if !self.class.respond_to?(parse_method_sym)
       return self.class.send(parse_method_sym,commands,*args)

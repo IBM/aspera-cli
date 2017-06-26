@@ -82,50 +82,45 @@ module Asperalm
         return "ERROR HERE"
       end
       status 200
-      faspex_transfer_spec_result={
-        "xfer_sessions" => [
-        {
-        "https_fallback_port" => nil,
-        "cookie" => "unused",
+      # this transfer spec is for transfer to Files
+      faspex_transfer_spec={
+        "direction" => "send",
+        "remote_user" => "xfer",
+        "remote_host" => node_info['host'],
+        "ssh_port" => 33001,
+        "fasp_port" => 33001,
         "tags" => { "aspera" => { "files" => { "package_id" => the_package['id'], "package_operation" => "upload" }, "node" => { "access_key" => node_info['access_key'], "file_id" => the_package['contents_file_id'] }, "xfer_id" => xfer_id, "xfer_retry" => 3600 } },
+        "token" => node_auth_bearer_token,
+        "paths" => [{"destination" => "/"}],
+        "cookie" => "unused",
+        "create_dir" => true,
         "rate_policy" => "fair",
         "rate_policy_allowed" => "fixed",
         "min_rate_cap_kbps" => nil,
         "min_rate_kbps" => 0,
-        "remote_user" => "xfer",
-        "remote_host" => node_info['host'],
         "target_rate_percentage" => nil,
         "lock_target_rate" => nil,
         "fasp_url" => "unused",
+        "lock_min_rate" => true,
         "lock_rate_policy" => true,
         "source_root" => "",
         "content_protection" => nil,
-        "target_rate_cap_kbps" => 20000,
-        "target_rate_kbps" => 10000,
+        "target_rate_cap_kbps" => 20000, # TODO
+        "target_rate_kbps" => 10000, # TODO
         "cipher" => "aes-128",
         "cipher_allowed" => nil,
         "http_fallback" => false,
-        "token" => node_auth_bearer_token,
-        "destination_root" => "/",
-        "paths" => [
-        {
-        "destination" => "/"
-        }
-        ],
         "http_fallback_port" => nil,
-        "lock_min_rate" => true,
-        "direction" => "send",
-        "fasp_port" => 33001,
-        "create_dir" => true,
-        "ssh_port" => 33001
-        }
-        ],
-        "links" => {
-        "status" => "unused"
-        }
+        "https_fallback_port" => nil,
+        "destination_root" => "/"
       }
-      Log.log.info "faspex_transfer_spec_result=#{faspex_transfer_spec_result}"
-      return JSON.generate(faspex_transfer_spec_result)
+      # but we place it in a Faspex package creation response
+      faspex_package_create_result={
+        "links" => {"status" => "unused"},
+        "xfer_sessions" => [faspex_transfer_spec]
+      }
+      Log.log.info "faspex_package_create_result=#{faspex_package_create_result}"
+      return JSON.generate(faspex_package_create_result)
     end
   end # FaspexGW
 end # AsperaLm

@@ -124,7 +124,7 @@ module Asperalm
             tspec['paths']=filelist.map { |i| {'source'=>i} }
             tspec['destination_root']="/"
             Main.tool.faspmanager.transfer_with_spec(tspec)
-            return Main.no_result
+            return Main.result_success
           when :download
             source_file=Main.tool.options.get_next_arg_value('source')
             destination_folder=Main.tool.options.get_next_arg_value('destination')
@@ -136,7 +136,7 @@ module Asperalm
             tspec['paths']=[{'source'=>file_name}]
             tspec['destination_root']=destination_folder
             Main.tool.faspmanager.transfer_with_spec(tspec)
-            return Main.no_result
+            return Main.result_success
           end
         end
 
@@ -244,7 +244,7 @@ module Asperalm
               tspec['paths']=filelist.map { |i| {'source'=>i} }
               tspec['destination_root']="/"
               Main.tool.faspmanager.transfer_with_spec(tspec)
-              return Main.no_result
+              return Main.result_success
               # simulate call later, to check status (this is just demo api call, not needed)
               #sleep 2
               # (sample) get package status
@@ -258,7 +258,7 @@ module Asperalm
               tspec['paths']=[{'source'=>'.'}]
               tspec['destination_root']='.' # TODO:param?
               Main.tool.faspmanager.transfer_with_spec(tspec)
-              return Main.no_result
+              return Main.result_success
             when :list
               # list all packages ('page'=>1,'per_page'=>10,)'sort'=>'-sent_at',
               packages=@api_files_user.list("packages",{'archived'=>false,'exclude_dropbox_packages'=>true,'has_content'=>true,'received'=>true,'workspace_id'=>workspace_id})[:data]
@@ -301,7 +301,7 @@ module Asperalm
               the_client_id=Main.tool.options.get_next_arg_value('client_id')
               the_private_key=Main.tool.options.get_next_arg_value('private_key')
               res=api_files_admin.update("clients/#{the_client_id}",{:jwt_grant_enabled=>true, :public_key=>OpenSSL::PKey::RSA.new(the_private_key).public_key.to_s})
-              return Main.no_result
+              return Main.result_success
             when :resource
               resource=Main.tool.options.get_next_arg_from_list('resource',[:user,:group,:client,:contact,:dropbox,:node,:operation,:package,:saml_configuration, :workspace])
               resources=resource.to_s+(resource.eql?(:dropbox) ? 'es' : 's')

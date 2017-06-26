@@ -46,9 +46,8 @@ In examples below, command line operations (starting with "$") are shown using `
 
 ## Quick Start
 
-### General setup
-First, install the gem and its dependencies, this requires Ruby v2.0+, and 
-initialize a configuration file:
+### Installation
+First, install the gem and its dependencies, this requires Ruby v2.0+:
 
 ```bash
 $ gem install asperalm
@@ -59,7 +58,7 @@ The tool can be used right away: `aslmcli`
 
 The use of the configuration file is not mandatory, all parameters can be set on 
 command line, 
-but the configuration file provides a way to define default values, especially
+but a configuration file provides a way to define default values, especially
 for authentication parameters. A sample configuration file can be created with:
 
 ```bash
@@ -73,7 +72,7 @@ only username/password
 and url are required (either on command line, or from config file). Just fill-in url and
 credentials in the configuration file (section: default), and then you can start 
 using the CLI without having to specify those on command line. 
-Switch between servers with `-n` option.
+Switch between server configurations with `-n` option.
 
 ### Configuration for use with Aspera Files
 
@@ -340,10 +339,15 @@ can be used subsequently. Expired token can be refreshed.
 ## Browser interactions
 Some actions may require the use of a browser, e.g. Aspera Files authentication.
 In that case, a browser may be started, or the user may be asked to open a specific url.
+Option --browser=<tty|os> controls if the URL is simply displayed on terminal
+or if the browser is started automatically to the URL.
 
 ## Sample commands
 
 ```bash
+aslmcli fasp browse /
+aslmcli fasp upload ~/200KB.1 /projectx
+aslmcli fasp download /projectx/200KB.1 .
 aslmcli shares browse /
 aslmcli shares upload ~/200KB.1 /projectx
 aslmcli shares download /projectx/200KB.1 .
@@ -460,9 +464,9 @@ module Asperalm
   module Cli
     module Plugins
       class Test < Plugin
-        def execute_action
-          puts "Hello World!"
-        end
+        def declare_options; end
+        def action_list; [];end
+        def execute_action; puts "Hello World!"; end
       end # Test
     end # Plugins
   end # Cli
@@ -472,7 +476,7 @@ EOF
 
 ## Note on Faspex remote sources
 
-Faspex lacks an API to list the contents of a remote source. To workaround this,
+Faspex lacks an API to list the contents of a remote source (available in web UI). To workaround this,
 the node API is used, for this it is required to add a section ":storage" that links
 a storage name to a node config and sub path. Example:
 ```yaml

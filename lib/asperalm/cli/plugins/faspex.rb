@@ -104,7 +104,7 @@ module Asperalm
               transfer_spec=send_result['xfer_sessions'].first
               transfer_spec['paths']=filelist.map { |i| {'source'=>i} }
               Main.tool.faspmanager.transfer_with_spec(transfer_spec)
-              return Main.no_result
+              return Main.result_success
             when :recv
               if true
                 pkguuid=Main.tool.options.get_next_arg_value("Package UUID")
@@ -133,7 +133,7 @@ module Asperalm
               transfer_spec['direction']='receive'
               transfer_spec['destination_root']='.'
               Main.tool.faspmanager.transfer_with_spec(transfer_spec)
-              return Main.no_result
+              return Main.result_success
             when :list
               all_inbox_xml=api_faspex.call({:operation=>'GET',:subpath=>"#{Main.tool.options.get_option(:pkgbox).to_s}.atom",:headers=>{'Accept'=>'application/xml'}})[:http].body
               all_inbox_data=XmlSimple.xml_in(all_inbox_xml, {"ForceArray" => true})
@@ -206,7 +206,7 @@ module Asperalm
             transfer_spec['direction']='receive'
             transfer_spec['destination_root']='.'
             Main.tool.faspmanager.transfer_with_spec(transfer_spec)
-            return Main.no_result
+            return Main.result_success
           end # command
         end
       end

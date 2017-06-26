@@ -6,10 +6,7 @@ module Asperalm
   module Cli
     module Plugins
       class Node < BasicAuthPlugin
-        def initialize
-        end
         alias super_declare_options declare_options
-
         def declare_options
           super_declare_options
           Main.tool.options.set_option(:persistency,File.join($PROGRAM_FOLDER,"persistency_cleanup.txt"))
@@ -20,31 +17,55 @@ module Asperalm
           Main.tool.options.add_opt_simple(:filter_req,"--filter-request=EXPRESSION","JSON expression for filter on API request")
         end
 
-        def self.format_browse(items)
+        def self.textify_browse(items)
           items.map {|i| i['permissions']=i['permissions'].map { |x| x['name'] }.join(','); i }
         end
 
-        def self.format_transfer_list(items)
+        def self.textify_transfer_list(items)
           items.map {|i| ['remote_user','remote_host'].each { |field| i[field]=i['start_spec'][field] }; i }
         end
 
-        def self.result_translate(resp,type,default)
+        # key/value is defined in main in hash_table
+        def self.textify_bool_list_result(list,name_list)
+          list.each_index do |i|
+            if name_list.include?(list[i]['key'])
+              list[i]['value'].each do |item|
+                list.push({'key'=>item['name'],'value'=>item['value']})
+              end
+              list.delete_at(i)
+              # continue at same index because we delete current one
+              redo
+            end
+          end
+        end
+
+        def self.result_remove_prefix_path(result,column,path_prefix)
+          if !path_prefix.nil?
+            result[:data].each do |r|
+              r[column].replace(r[column][path_prefix.length..-1]) if r[column].start_with?(path_prefix)
+            end
+          end
+          return result
+        end
+
+        # translates paths results into CLI result, and removes prefix
+        def self.result_translate_rem_prefix(resp,type,success_msg,path_prefix)
           resres={:data=>[],:type=>:hash_array,:fields=>[type,'result'],}
           JSON.parse(resp[:http].body)['paths'].each do |p|
-            result=default
+            result=success_msg
             if p.has_key?('error')
               Log.log.error("#{p['error']['user_message']} : #{p['path']}")
               result="ERROR: "+p['error']['user_message']
             end
             resres[:data].push({type=>p['path'],'result'=>result})
           end
-          return resres
+          return result_remove_prefix_path(resres,type,path_prefix)
         end
 
-        def self.delete_files(api_node,paths_to_delete)
-          resp=api_node.call({:operation=>'POST',:subpath=>'files/delete',:json_params=>{:paths=>paths_to_delete.map {|i| {'path'=>i.start_with?('/') ? i : '/'+i}}}})
+        def self.delete_files(api_node,paths_to_delete,prefix_path)
           #resp=api_node.create('files/delete',{:paths=>...})
-          return result_translate(resp,'file','deleted')
+          resp=api_node.call({:operation=>'POST',:subpath=>'files/delete',:json_params=>{:paths=>paths_to_delete.map {|i| {'path'=>i.start_with?('/') ? i : '/'+i}}}})
+          return result_translate_rem_prefix(resp,'file','deleted',prefix_path)
         end
 
         # retrieve tranfer list using API and persistency file
@@ -69,33 +90,18 @@ module Asperalm
           return transfers
         end
 
-        #TODO: use textify
-        def self.bool_param_to_string(hash,name)
-          #hash[name]=hash[name].map {|i| "#{i['name']}=#{i['value']}"}.join(', ')
-          hash[name].each {|i| hash[i['name']]=i['value']}
-          hash.delete(name)
-        end
-
-        def self.get_next_arg_prefix(theprefix,name,number=:one)
+        # get path arguments from command line, and add prefix
+        def self.get_next_arg_add_prefix(path_prefix,name,number=:one)
           case number
           when :one; thepath=Main.tool.options.get_next_arg_value(name)
           when :all; thepath=Main.tool.options.get_remaining_arguments(name)
           when :all_but_one; thepath=Main.tool.options.get_remaining_arguments(name,1)
           else raise "ERROR"
           end
-          return thepath if theprefix.nil?
-          return File.join(theprefix,thepath) if thepath.is_a?(String)
-          return thepath.map {|p| File.join(theprefix,p)} if thepath.is_a?(Array)
-          raise StandardError,"unexpected case"
-        end
-
-        def self.remove_result_prefix_path(theprefix,result,column)
-          if !theprefix.nil?
-            result[:data].each do |r|
-              r[column].replace(r[column][theprefix.length..-1]) if r[column].start_with?(theprefix)
-            end
-          end
-          return result
+          return thepath if path_prefix.nil?
+          return File.join(path_prefix,thepath) if thepath.is_a?(String)
+          return thepath.map {|p| File.join(path_prefix,p)} if thepath.is_a?(Array)
+          raise StandardError,"expect: nil, String or Array"
         end
 
         def self.common_actions; [:info, :browse, :mkdir, :mklink, :mkfile, :rename, :delete, :upload, :download ];end
@@ -106,46 +112,44 @@ module Asperalm
           case command
           when :info
             node_info=api_node.call({:operation=>'GET',:subpath=>'info',:headers=>{'Accept'=>'application/json'}})[:data]
-            bool_param_to_string(node_info,'capabilities')
-            bool_param_to_string(node_info,'settings')
-            return { :data => node_info, :type=>:hash_table}
+            return { :data => node_info, :type=>:hash_table, :textify => lambda { |items| textify_bool_list_result(items,['capabilities','settings'])}}
           when :browse
-            thepath=get_next_arg_prefix(prefix_path,"path")
+            thepath=get_next_arg_add_prefix(prefix_path,"path")
             send_result=api_node.call({:operation=>'POST',:subpath=>'files/browse',:json_params=>{ :path => thepath} } )
             #send_result={:data=>{'items'=>[{'file'=>"filename1","permissions"=>[{'name'=>'read'},{'name'=>'write'}]}]}}
             return Main.no_result if !send_result[:data].has_key?('items')
-            result={ :data => send_result[:data]['items'] , :type => :hash_array, :textify => lambda { |items| Node.format_browse(items) } }
+            result={ :data => send_result[:data]['items'] , :type => :hash_array, :textify => lambda { |items| Node.textify_browse(items) } }
             #display_prefix=thepath
             #display_prefix=File.join(prefix_path,display_prefix) if !prefix_path.nil?
             #puts display_prefix.red
-            return remove_result_prefix_path(prefix_path,result,'path')
+            return result_remove_prefix_path(result,'path',prefix_path)
           when :delete
-            paths_to_delete = get_next_arg_prefix(prefix_path,"file list",:all)
-            return remove_result_prefix_path(prefix_path,delete_files(api_node,paths_to_delete),'file')
+            paths_to_delete = get_next_arg_add_prefix(prefix_path,"file list",:all)
+            return delete_files(api_node,paths_to_delete,prefix_path)
           when :mkdir
-            thepath=get_next_arg_prefix(prefix_path,"folder path")
+            thepath=get_next_arg_add_prefix(prefix_path,"folder path")
             resp=api_node.call({:operation=>'POST',:subpath=>'files/create',:json_params=>{ "paths" => [{ :type => :directory, :path => thepath } ] } } )
-            return remove_result_prefix_path(prefix_path,result_translate(resp,'folder','created'),'folder')
+            return result_translate_rem_prefix(resp,'folder','created',prefix_path)
           when :mklink
-            target=get_next_arg_prefix(prefix_path,"target")
-            thepath=get_next_arg_prefix(prefix_path,"link path")
+            target=get_next_arg_add_prefix(prefix_path,"target")
+            thepath=get_next_arg_add_prefix(prefix_path,"link path")
             resp=api_node.call({:operation=>'POST',:subpath=>'files/create',:json_params=>{ "paths" => [{ :type => :symbolic_link, :path => thepath, :target => {:path => target} } ] } } )
-            return remove_result_prefix_path(prefix_path,result_translate(resp,'folder','created'),'folder')
+            return result_translate_rem_prefix(resp,'folder','created',prefix_path)
           when :mkfile
-            thepath=get_next_arg_prefix(prefix_path,"file path")
+            thepath=get_next_arg_add_prefix(prefix_path,"file path")
             contents64=Base64.strict_encode64(Main.tool.options.get_next_arg_value("contents"))
             resp=api_node.call({:operation=>'POST',:subpath=>'files/create',:json_params=>{ "paths" => [{ :type => :file, :path => thepath, :contents => contents64 } ] } } )
-            return remove_result_prefix_path(prefix_path,result_translate(resp,'folder','created'),'folder')
+            return result_translate_rem_prefix(resp,'folder','created',prefix_path)
           when :rename
-            path_base=get_next_arg_prefix(prefix_path,"path_base")
-            path_src=get_next_arg_prefix(prefix_path,"path_src")
-            path_dst=get_next_arg_prefix(prefix_path,"path_dst")
+            path_base=get_next_arg_add_prefix(prefix_path,"path_base")
+            path_src=get_next_arg_add_prefix(prefix_path,"path_src")
+            path_dst=get_next_arg_add_prefix(prefix_path,"path_dst")
             resp=api_node.call({:operation=>'POST',:subpath=>'files/rename',:json_params=>{ "paths" => [{ "path" => path_base, "source" => path_src, "destination" => path_dst } ] } } )
-            return remove_result_prefix_path(prefix_path,result_translate(resp,'entry','moved'),'entry')
+            return result_translate_rem_prefix(resp,'entry','moved',prefix_path)
           when :upload
             filelist = Main.tool.options.get_remaining_arguments("source file list",1)
             Log.log.debug("file list=#{filelist}")
-            destination=get_next_arg_prefix(prefix_path,"path_dst")
+            destination=get_next_arg_add_prefix(prefix_path,"path_dst")
             send_result=api_node.call({:operation=>'POST',:subpath=>'files/upload_setup',:json_params=>{ :transfer_requests => [ { :transfer_request => { :paths => [ { :destination => destination } ] } } ] }})
             raise send_result[:data]['error']['user_message'] if send_result[:data].has_key?('error')
             raise send_result[:data]['transfer_specs'][0]['error']['user_message'] if send_result[:data]['transfer_specs'][0].has_key?('error')
@@ -153,9 +157,9 @@ module Asperalm
             transfer_spec=send_result[:data]['transfer_specs'].first['transfer_spec']
             transfer_spec['paths']=filelist.map { |i| {'source'=>i} }
             Main.tool.faspmanager.transfer_with_spec(transfer_spec)
-            return Main.no_result
+            return Main.result_success
           when :download
-            filelist = get_next_arg_prefix(prefix_path,"source file list",:all_but_one)
+            filelist = get_next_arg_add_prefix(prefix_path,"source file list",:all_but_one)
             Log.log.debug("file list=#{filelist}")
             destination=Main.tool.options.get_next_arg_value("path_dst")
             send_result=api_node.call({:operation=>'POST',:subpath=>'files/download_setup',:json_params=>{ :transfer_requests => [ { :transfer_request => { :paths => filelist.map {|i| {:source=>i}; } } } ] }})
@@ -164,7 +168,7 @@ module Asperalm
             transfer_spec=send_result[:data]['transfer_specs'].first['transfer_spec']
             transfer_spec['destination_root']=destination
             Main.tool.faspmanager.transfer_with_spec(transfer_spec)
-            return Main.no_result
+            return Main.result_success
           end
         end
 
@@ -206,7 +210,7 @@ module Asperalm
             when :list
               filter_req=JSON.parse(Main.tool.options.get_option(:filter_req))
               resp=api_node.call({:operation=>'GET',:subpath=>'ops/transfers',:headers=>{'Accept'=>'application/json'},:url_params=>filter_req})
-              return { :data => resp[:data], :type => :hash_array, :fields=>['id','status','remote_user','remote_host'], :textify => lambda { |items| Node.format_transfer_list(items) } } # TODO
+              return { :data => resp[:data], :type => :hash_array, :fields=>['id','status','remote_user','remote_host'], :textify => lambda { |items| Node.textify_transfer_list(items) } } # TODO
               #resp=api_node.call({:operation=>'GET',:subpath=>'transfers',:headers=>{'Accept'=>'application/json'},:url_params=>filter_req})
               #return { :data => resp[:data], :type => :unknown}
             when :cancel
@@ -251,7 +255,7 @@ module Asperalm
             # delete files, if any
             if paths_to_delete.length != 0
               Log.log.info("deletion")
-              return self.delete_files(api_node,paths_to_delete)
+              return self.delete_files(api_node,paths_to_delete,nil)
             else
               Log.log.info("nothing to delete")
             end
@@ -280,7 +284,7 @@ module Asperalm
             transfer_spec['destination_root']=destination
             # execute transfer
             Main.tool.faspmanager.transfer_with_spec(transfer_spec)
-            return Main.no_result
+            return Main.result_success
           end
           raise "error"
         end # execute_action

@@ -5,6 +5,8 @@ module Asperalm
   module Cli
     module Plugins
       class Shares < BasicAuthPlugin
+        def declare_options; end
+
         def action_list; Node.common_actions.clone.concat([ ]);end
 
         def execute_action

@@ -339,7 +339,7 @@ module Asperalm
 
       # TODO: manage those parameters
       ts_ignore_param(used_names,'target_rate_cap_kbps')
-      ts_ignore_param(used_names,'target_rate_percentage')
+      ts_ignore_param(used_names,'target_rate_percentage') # -wf -l<rate>p
       ts_ignore_param(used_names,'min_rate_cap_kbps')
       ts_ignore_param(used_names,'rate_policy_allowed')
       ts_ignore_param(used_names,'fasp_url')

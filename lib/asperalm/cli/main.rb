@@ -35,6 +35,14 @@ module Asperalm
         return {:data => :nil, :type => :empty }
       end
 
+      def self.status_result(status)
+        return {:data => status, :type => :status }
+      end
+
+      def self.result_success
+        return status_result('complete')
+      end
+
       def attr_logtype(operation,value)
         case operation
         when :set
@@ -321,9 +329,9 @@ module Asperalm
       def self.result_formats; [:table,:ruby,:json,:yaml]; end
 
       def display_results(results)
-        if !results.is_a?(Hash) or ! results.has_key?(:data) or ! results.has_key?(:type) then
-          raise "ERROR, missing result type in #{results}"
-        end
+        raise "ERROR, result must be Hash" if !results.is_a?(Hash)
+        raise "ERROR, result must have data" if !results.has_key?(:data)
+        raise "ERROR, result must have type" if !results.has_key?(:type)
 
         case self.options.get_option_mandatory(:format)
         when :ruby
@@ -359,6 +367,9 @@ module Asperalm
             table_data=results[:data].map { |i| { results[:name] => i } }
           when :empty
             puts "empty"
+            return
+          when :status
+            puts results[:data]
             return
           when :unknown
             puts PP.pp(results[:data],'')

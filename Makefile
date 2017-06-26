@@ -88,6 +88,26 @@ tsh3: $(TEST_FOLDER)
 	$(ASCLI) shares delete /n8-sh1/200KB.1 --insecure=yes
 tshares: tsh1 tsh2 tsh3
 
+tfp1: $(TEST_FOLDER)
+	$(ASCLI) fasp browse /
+	$(ASCLI) fasp upload $(SAMPLE_FILE) /Upload
+	$(ASCLI) fasp download /Upload/200KB.1 $(TEST_FOLDER)
+	$(ASCLI) fasp cp /Upload/200KB.1 /Upload/200KB.2
+	$(ASCLI) fasp mv /Upload/200KB.2 /Upload/to.delete
+	$(ASCLI) fasp delete /Upload/to.delete
+	$(ASCLI) fasp md5sum /Upload/200KB.1
+	$(ASCLI) fasp delete /Upload/200KB.1
+tfp2:
+	$(ASCLI) fasp mkdir /Upload/123
+	$(ASCLI) fasp rm /Upload/123
+tfp3:
+	$(ASCLI) fasp info
+	$(ASCLI) fasp du /
+	$(ASCLI) fasp df
+	
+
+tfasp: tfp1 tfp2 tfp3
+
 tfx1:
 	$(ASCLI) faspex package list --insecure=yes
 tfx2:
@@ -98,16 +118,18 @@ tfx4:
 	@echo $(ASCLI) faspex recv_publink 'https://ibmfaspex.asperasoft.com/aspera/faspex/external_deliveries/78780?passcode=a003aaf2f53e3869126b908525084db6bebc7031' --insecure=yes
 tfaspex: tfx1 tfx2  
 tfaspex2: tfx3 tfx4
+
 tconsole:
 	$(ASCLI) console transfers list  --insecure=yes
+
 tnd1:
 	$(ASCLI) node browse / --insecure=yes
 tnd2:
 	$(ASCLI) node upload $(SAMPLE_FILE) /home/faspex/docroot --insecure=yes
 tnd3: $(TEST_FOLDER)
 	$(ASCLI) node download /home/faspex/docroot/200KB.1 $(TEST_FOLDER) --insecure=yes
-	rm -f 200KB.1
 	$(ASCLI) node delete /home/faspex/docroot/200KB.1 --insecure=yes
+	rm -f $(TEST_FOLDER)/200KB.1
 tnode: tnd1 tnd2 tnd3 
 
 tfs1:
@@ -132,4 +154,7 @@ tfs9:
 
 tfiles: tfs1 tfs2 tfs3 tfs4 tfs5 tfs6 tfs7 tfs8 tfs9
 
-tests: tshares tfaspex tconsole tnode tfiles tfaspex2
+tests: tshares tfaspex tconsole tnode tfiles tfaspex2 tfasp
+
+tfxgw:
+	$(ASCLI) --config-name=/NONE --url=https://localhost:9443/aspera/faspex --username=unused --password=unused faspex package send ~/200KB.1 --insecure=yes --note="my note" --title="my title" --recipient="laurent@asperasoft.com"
