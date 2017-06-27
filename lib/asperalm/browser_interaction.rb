@@ -22,7 +22,7 @@ module Asperalm
       when /darwin|mac os/
         system("open '#{uri.to_s}'")
       when /mswin|msys|mingw|cygwin|bccwin|wince|emc/
-        system("start '#{uri.to_s}'")
+        system('start explorer "'+uri.to_s+'"')
       else  # unix family
         system("xdg-open '#{uri.to_s}'")
       end

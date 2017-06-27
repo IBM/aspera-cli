@@ -43,8 +43,8 @@ module Asperalm
           return Rest.new(Main.tool.options.get_option_mandatory(:url),{:basic_auth=>{:user=>Main.tool.options.get_option_mandatory(:username), :password=>Main.tool.options.get_option_mandatory(:password)}})
         end
 
-        def self.format_list(entries)
-          return entries.map { |e|
+        def self.textify_package_list(table_data)
+          return table_data.map { |e|
             e.keys.each {|k| e[k]=e[k].first if e[k].is_a?(Array) and e[k].length == 1}
             if e['to'].has_key?('recipient_delivery_id')
               e['recipient_delivery_id'] = e['to']['recipient_delivery_id'].first
@@ -98,7 +98,7 @@ module Asperalm
               end
               if !source_name.nil?
                 # no transfer spec if remote source
-                return {:data=>[send_result['links']['status']],:type=>:list,:name=>'link'}
+                return {:data=>[send_result['links']['status']],:type=>:value_list,:name=>'link'}
               end
               raise CliBadArgument,"expecting one session exactly" if send_result['xfer_sessions'].length != 1
               transfer_spec=send_result['xfer_sessions'].first
@@ -138,7 +138,7 @@ module Asperalm
               all_inbox_xml=api_faspex.call({:operation=>'GET',:subpath=>"#{Main.tool.options.get_option(:pkgbox).to_s}.atom",:headers=>{'Accept'=>'application/xml'}})[:http].body
               all_inbox_data=XmlSimple.xml_in(all_inbox_xml, {"ForceArray" => true})
               if all_inbox_data.has_key?('entry')
-                return {:data=>all_inbox_data['entry'],:type=>:hash_array,:fields=>['title','items','recipient_delivery_id','id'], :textify => lambda { |items| Faspex.format_list(items)} }
+                return {:data=>all_inbox_data['entry'],:type=>:hash_array,:fields=>['title','items','recipient_delivery_id','id'], :textify => lambda { |table_data| Faspex.textify_package_list(table_data)} }
               end
               return Main.no_result
             end
@@ -169,7 +169,7 @@ module Asperalm
               command_node=Main.tool.options.get_next_arg_from_list('command',[ :info, :node ])
               case command_node
               when :info
-                return {:data=>source_info,:type=>:hash_table}
+                return {:data=>source_info,:type=>:key_val_list}
               when :node
                 node_config=Main.tool.get_plugin_default_config(:node,source_info[:node])
                 raise CliError,"No such node aslmcli config: \"#{source_info[:node]}\"" if node_config.nil?
@@ -181,14 +181,14 @@ module Asperalm
           when :me
             api_faspex=get_faspex_authenticated_api
             my_info=api_faspex.call({:operation=>'GET',:subpath=>"me",:headers=>{'Accept'=>'application/json'}})[:data]
-            return {:data=>my_info, :type=>:hash_table}
+            return {:data=>my_info, :type=>:key_val_list}
           when :dropbox
             api_faspex=get_faspex_authenticated_api
             command_pkg=Main.tool.options.get_next_arg_from_list('command',[ :list ])
             case command_pkg
             when :list
               dropbox_list=api_faspex.call({:operation=>'GET',:subpath=>"/aspera/faspex/dropboxes",:headers=>{'Accept'=>'application/json'}})[:data]
-              return {:data=>dropbox_list['items'], :type=>:hash_table, :fields=>['name','id','description','can_read','can_write']}
+              return {:data=>dropbox_list['items'], :type=>:key_val_list, :fields=>['name','id','description','can_read','can_write']}
             end
           when :recv_publink
             thelink=Main.tool.options.get_next_arg_value("Faspex public URL for a package")

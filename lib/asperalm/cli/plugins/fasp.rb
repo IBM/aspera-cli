@@ -10,6 +10,16 @@ module Asperalm
 
         def action_list; [:download,:upload,:browse,:delete,:rename].push(*Asperalm::AsCmd.action_list);end
 
+        def convert_hash_sym_key(hash);h={};hash.each { |k,v| h[k.to_s]=v};return h;end
+
+        def result_convert_hash_array(hash_array,fields)
+          return {:data=>hash_array.map {|i| convert_hash_sym_key(i)},:type=>:hash_array,:fields=>fields}
+        end
+
+        def result_convert_key_val_list(key_val_list)
+          return {:data=>convert_hash_sym_key(key_val_list),:type=>:key_val_list}
+        end
+
         # todo: ascmd commands
         def execute_action
           command=Main.tool.options.get_next_arg_from_list('command',action_list)
@@ -44,15 +54,15 @@ module Asperalm
               }
               Main.tool.faspmanager.transfer_with_spec(transfer_spec)
               return Main.result_success
-            when :ls; return {:data=>ascmd.ls(Main.tool.options.get_next_arg_value('path')),:type=>:hash_array,:fields=>[:name,:sgid,:suid,:size,:ctime,:mtime,:atime]}
             when :mkdir; ascmd.mkdir(Main.tool.options.get_next_arg_value('path'));return Main.result_success
             when :mv; ascmd.mv(Main.tool.options.get_next_arg_value('src'),Main.tool.options.get_next_arg_value('dst'));return Main.result_success
             when :cp; ascmd.cp(Main.tool.options.get_next_arg_value('src'),Main.tool.options.get_next_arg_value('dst'));return Main.result_success
-            when :info; return {:data=>ascmd.info(),:type=>:hash_table}
-            when :df; return {:data=>ascmd.df(),:type=>:hash_table}
-            when :du; return {:data=>ascmd.du(Main.tool.options.get_next_arg_value('path')),:type=>:hash_table}
-            when :md5sum; return {:data=>ascmd.md5sum(Main.tool.options.get_next_arg_value('path')),:type=>:hash_table}
             when :rm; ascmd.rm(Main.tool.options.get_next_arg_value('path'));return Main.result_success
+            when :ls; return result_convert_hash_array(ascmd.ls(Main.tool.options.get_next_arg_value('path')),[:name,:sgid,:suid,:size,:ctime,:mtime,:atime])
+            when :info; return result_convert_key_val_list(ascmd.info())
+            when :df; return {:data=>ascmd.df(),:type=>:key_val_list}
+            when :du; return {:data=>ascmd.du(Main.tool.options.get_next_arg_value('path')),:type=>:key_val_list}
+            when :md5sum; return {:data=>ascmd.md5sum(Main.tool.options.get_next_arg_value('path')),:type=>:key_val_list}
             end
           rescue Asperalm::AsCmd::Error => e
             raise CliBadArgument,e.extended_message

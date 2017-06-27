@@ -8,7 +8,7 @@ This GEM is not endorsed/supported by IBM/Aspera, use at your risk, and not in p
 This is a Ruby Gem that provides a command line with the following features:
 
 * Supports all Aspera server products
-* configuration file for products URLs and credentials
+* configuration file for products URLs and credentials (and any parameter)
 * FASP transfer agent can be: FaspManager (local ascp), or Connect Client, or a transfer node
 * transfer parameters can be altered by modification of transferspec, this includes requiring multi-session transfer on nodes
 * allows transfers from products to products, essentially at node level
@@ -17,6 +17,7 @@ This is a Ruby Gem that provides a command line with the following features:
 * parameter values can be passed on command line, in configuration file, in env var, in files
 * parameter values and command can be provided in short format (must be unique)
 * supports download of faspex "external" links
+* supports "legacy" ssh based FASP transfers and remote commands (ascmd)
 
 In addition, it provides:
 
@@ -47,7 +48,11 @@ In examples below, command line operations (starting with "$") are shown using `
 ## Quick Start
 
 ### Installation
-First, install the gem and its dependencies, this requires Ruby v2.0+:
+First make sure that you have Ruby v2.0+ installed on your system.
+Ruby comes pre-installed on MacOSx, and can be installed on Linux ("ruby" package).
+On windows you can get it from here: https://rubyinstaller.org/ .
+
+Then, install the gem and its dependencies, this requires :
 
 ```bash
 $ gem install asperalm
@@ -269,7 +274,7 @@ faspex_default:
   :password: MyPassword
   :storage:
     testlaurent:
-      :node: faspex1
+      :node: my_fpx_node
       :path: /testlaurent
 shares_default:
   :url: https://10.25.0.6
@@ -279,7 +284,7 @@ node_default:
   :url: https://10.25.0.8:9092
   :username: node_root
   :password: MyPassword
-node_faspex1:
+node_my_fpx_node:
   :url: https://10.25.0.8:9092
   :username: node_root
   :password: MyPassword
@@ -392,7 +397,7 @@ $ openssl rsa -pubout -in ${APIKEY} -out ${APIKEY}.pub
 $ rm -f ${APIKEY}.protected
 ```
 
-## FASP based transfer options
+## FASP agents and transfer options
 
 The CLI provides access to Aspera Applications functions through REST APIs, it also
 allows FASP based transfers (upload and download).
@@ -402,9 +407,9 @@ The CLI standadizes on the use of "transfer spec" and does not support directly 
 It is nevertheless possible to add ascp options (for fasp manager only, but not node api or connect)
 using the special transfer spec parameter: EX_ascp_args.
 
-Three methods for starting transfers are currently supported:
+Three Transfer agents are currently supported to start transfers :
 
-### FASPManager API based
+### FASPManager API based (command line)
 
 By default the CLI will use the Aspera Connect Client FASP part, in this case
 it requires the installation of the Aspera Connect Client to be 
@@ -486,9 +491,9 @@ faspex_default:
   :password: MyPassword
   :storage:
     testlaurent:
-      :node: faspex1
+      :node: my_fpx_node
       :path: /myfiles
-node_faspex1:
+node_my_fpx_node:
   :url: https://10.25.0.3:9092
   :username: node_faspex
   :password: MyPassword
@@ -496,7 +501,7 @@ node_faspex1:
 
 In this example, a faspex storage named "testlaurent" exists in Faspex, and is located
 under the docroot in "/myfiles" (this must be the same as configured in Faspex).
-The node configuration name is "faspex1" here.
+The node configuration name is "my_fpx_node" here.
 
 ## BUGS
 This is a sample code only, dont expect full capabilities. This code is not

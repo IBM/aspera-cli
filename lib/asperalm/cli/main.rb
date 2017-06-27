@@ -298,7 +298,7 @@ module Asperalm
             puts "initialized: #{$PROGRAM_FOLDER}"
             return Main.no_result
           when :cat
-            return {:data=>File.read(@@DEFAULT_CONFIG_FILE),:type=>:unknown}
+            return {:data=>File.read(@@DEFAULT_CONFIG_FILE),:type=>:other_struct}
           when :open
             BrowserInteraction.open_system_uri(@@DEFAULT_CONFIG_FILE)
             return Main.no_result
@@ -306,13 +306,13 @@ module Asperalm
             sections=plugin_sym_list
             if self.options.command_or_arg_empty?
               # just list plugins
-              return {:data => sections, :type => :list, :name => 'plugin'}
+              return {:data => sections, :type => :value_list, :name => 'plugin'}
             else
               plugin=self.options.get_next_arg_from_list('plugin',sections)
               names=@configs[plugin].keys.map { |i| i.to_sym }
               if self.options.command_or_arg_empty?
                 # list names for tool
-                return {:data => names, :type => :list, :name => 'name'}
+                return {:data => names, :type => :value_list, :name => 'name'}
               else
                 # list parameters
                 configname=self.options.get_next_arg_from_list('config',names)
@@ -333,6 +333,7 @@ module Asperalm
         raise "ERROR, result must have data" if !results.has_key?(:data)
         raise "ERROR, result must have type" if !results.has_key?(:type)
 
+        required_fields=self.options.get_option_mandatory(:fields)
         case self.options.get_option_mandatory(:format)
         when :ruby
           puts PP.pp(results[:data],'')
@@ -343,35 +344,43 @@ module Asperalm
         when :table
           case results[:type]
           when :hash_array
+            # :hash_array is an array of hash tables, where key=colum name
             table_data = results[:data]
             display_fields=nil
-            case self.options.get_option_mandatory(:fields)
+            case required_fields
             when FIELDS_DEFAULT
-              if !results.has_key?(:fields) or results[:fields].nil?
+              if results.has_key?(:fields) and !results[:fields].nil?
+                display_fields=results[:fields]
+              else
                 raise "empty results" if table_data.empty?
                 display_fields=table_data.first.keys
-              else
-                display_fields=results[:fields]
               end
             when FIELDS_ALL
               raise "empty results" if table_data.empty?
               display_fields=table_data.first.keys if table_data.is_a?(Array)
             else
-              display_fields=self.options.get_option_mandatory(:fields).split(',')
+              display_fields=required_fields.split(',')
             end
-          when :hash_table
-            display_fields = ['key','value']
+          when :key_val_list
+            # :key_val_list is a simple hash table
+            case required_fields
+            when FIELDS_DEFAULT,FIELDS_ALL; display_fields = ['key','value']
+            else display_fields=required_fields.split(',')
+            end
             table_data=results[:data].keys.map { |i| { 'key' => i, 'value' => results[:data][i] } }
-          when :list
+          when :value_list
+            # :value_list is a simple array of values, name of column provided in the :name
             display_fields = [results[:name]]
             table_data=results[:data].map { |i| { results[:name] => i } }
           when :empty
             puts "empty"
             return
           when :status
+            # :status displays a simple message
             puts results[:data]
             return
-          when :unknown
+          when :other_struct
+            # :other_struct is any other type of structure
             puts PP.pp(results[:data],'')
             return
           else
@@ -381,7 +390,7 @@ module Asperalm
           # convert to string with special function
           table_data=results[:textify].call(table_data) if results.has_key?(:textify)
           # convert data to string
-          table_data=table_data.map{ |r| display_fields.map { |c| r[c].to_s } }
+          table_data=table_data.map { |r| display_fields.map { |c| r[c].to_s } }
           # display the table !
           puts Text::Table.new(
           :head => display_fields,

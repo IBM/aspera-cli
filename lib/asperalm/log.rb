@@ -3,7 +3,7 @@ require 'asperalm/colors'
 
 module Asperalm
   class Log
-    @@LEVELS=[:debug,:info,:warn,:error,:fatal,:unknown]
+    @@LEVELS=[:debug,:info,:warn,:error,:fatal,:other_struct]
     @@LOGTYPES= [:syslog,:stdout]
     @@logobj=nil
 

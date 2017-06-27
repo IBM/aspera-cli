@@ -17,12 +17,12 @@ module Asperalm
           Main.tool.options.add_opt_simple(:filter_req,"--filter-request=EXPRESSION","JSON expression for filter on API request")
         end
 
-        def self.textify_browse(items)
-          items.map {|i| i['permissions']=i['permissions'].map { |x| x['name'] }.join(','); i }
+        def self.textify_browse(table_data)
+          return table_data.map {|i| i['permissions']=i['permissions'].map { |x| x['name'] }.join(','); i }
         end
 
-        def self.textify_transfer_list(items)
-          items.map {|i| ['remote_user','remote_host'].each { |field| i[field]=i['start_spec'][field] }; i }
+        def self.textify_transfer_list(table_data)
+          return table_data.map {|i| ['remote_user','remote_host'].each { |field| i[field]=i['start_spec'][field] }; i }
         end
 
         # key/value is defined in main in hash_table
@@ -112,13 +112,13 @@ module Asperalm
           case command
           when :info
             node_info=api_node.call({:operation=>'GET',:subpath=>'info',:headers=>{'Accept'=>'application/json'}})[:data]
-            return { :data => node_info, :type=>:hash_table, :textify => lambda { |items| textify_bool_list_result(items,['capabilities','settings'])}}
+            return { :data => node_info, :type=>:key_val_list, :textify => lambda { |table_data| textify_bool_list_result(table_data,['capabilities','settings'])}}
           when :browse
             thepath=get_next_arg_add_prefix(prefix_path,"path")
             send_result=api_node.call({:operation=>'POST',:subpath=>'files/browse',:json_params=>{ :path => thepath} } )
             #send_result={:data=>{'items'=>[{'file'=>"filename1","permissions"=>[{'name'=>'read'},{'name'=>'write'}]}]}}
             return Main.no_result if !send_result[:data].has_key?('items')
-            result={ :data => send_result[:data]['items'] , :type => :hash_array, :textify => lambda { |items| Node.textify_browse(items) } }
+            result={ :data => send_result[:data]['items'] , :type => :hash_array, :textify => lambda { |table_data| Node.textify_browse(table_data) } }
             #display_prefix=thepath
             #display_prefix=File.join(prefix_path,display_prefix) if !prefix_path.nil?
             #puts display_prefix.red
@@ -188,19 +188,19 @@ module Asperalm
               return { :data => resp[:data], :type => :hash_array, :fields=>['id','status']  } # TODO
             when :create
               resp=api_node.call({:operation=>'POST',:subpath=>'streams',:headers=>{'Accept'=>'application/json'},:json_params=>FaspManager.ts_override_data})
-              return { :data => resp[:data], :type => :hash_table }
+              return { :data => resp[:data], :type => :key_val_list }
             when :info
               trid=Main.tool.options.get_next_arg_value("transfer id")
               resp=api_node.call({:operation=>'GET',:subpath=>'ops/transfers/'+trid,:headers=>{'Accept'=>'application/json'}})
-              return { :data => resp[:data], :type=>:unknown  }
+              return { :data => resp[:data], :type=>:other_struct  }
             when :modify
               trid=Main.tool.options.get_next_arg_value("transfer id")
               resp=api_node.call({:operation=>'PUT',:subpath=>'streams/'+trid,:headers=>{'Accept'=>'application/json'},:json_params=>FaspManager.ts_override_data})
-              return { :data => resp[:data], :type=>:unknown }
+              return { :data => resp[:data], :type=>:other_struct }
             when :cancel
               trid=Main.tool.options.get_next_arg_value("transfer id")
               resp=api_node.call({:operation=>'CANCEL',:subpath=>'streams/'+trid,:headers=>{'Accept'=>'application/json'}})
-              return { :data => resp[:data], :type=>:unknown }
+              return { :data => resp[:data], :type=>:other_struct }
             else
               raise "error"
             end
@@ -210,17 +210,17 @@ module Asperalm
             when :list
               filter_req=JSON.parse(Main.tool.options.get_option(:filter_req))
               resp=api_node.call({:operation=>'GET',:subpath=>'ops/transfers',:headers=>{'Accept'=>'application/json'},:url_params=>filter_req})
-              return { :data => resp[:data], :type => :hash_array, :fields=>['id','status','remote_user','remote_host'], :textify => lambda { |items| Node.textify_transfer_list(items) } } # TODO
+              return { :data => resp[:data], :type => :hash_array, :fields=>['id','status','remote_user','remote_host'], :textify => lambda { |table_data| Node.textify_transfer_list(table_data) } } # TODO
               #resp=api_node.call({:operation=>'GET',:subpath=>'transfers',:headers=>{'Accept'=>'application/json'},:url_params=>filter_req})
-              #return { :data => resp[:data], :type => :unknown}
+              #return { :data => resp[:data], :type => :other_struct}
             when :cancel
               trid=Main.tool.options.get_next_arg_value("transfer id")
               resp=api_node.call({:operation=>'CANCEL',:subpath=>'ops/transfers/'+trid,:headers=>{'Accept'=>'application/json'}})
-              return { :data => resp[:data], :type=>:unknown }
+              return { :data => resp[:data], :type=>:other_struct }
             when :info
               trid=Main.tool.options.get_next_arg_value("transfer id")
               resp=api_node.call({:operation=>'GET',:subpath=>'ops/transfers/'+trid,:headers=>{'Accept'=>'application/json'}})
-              return { :data => resp[:data], :type=>:unknown }
+              return { :data => resp[:data], :type=>:other_struct }
             else
               raise "error"
             end
@@ -230,7 +230,7 @@ module Asperalm
           when :watch_folder
             resp=api_node.call({:operation=>'GET',:subpath=>'/v3/watchfolders',:headers=>{'Accept'=>'application/json'}})
             #  :fields=>['id','root_file_id','storage','license']
-            return { :data => resp[:data], :type=>:unknown }
+            return { :data => resp[:data], :type=>:other_struct }
           when :cleanup
             transfers=self.class.get_transfers_iteration(api_node,Main.tool.options.get_option(:persistency),{:active_only=>false})
             persistencyfile=Main.tool.options.get_option_mandatory(:persistency)

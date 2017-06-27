@@ -278,7 +278,7 @@ module Asperalm
             when :search_nodes
               ak=Main.tool.options.get_next_arg_value('access_key')
               nodes=api_files_admin.list("search_nodes",{'q'=>'access_key:"'+ak+'"'})[:data]
-              return {:data=>nodes,:type=>:unknown}
+              return {:data=>nodes,:type=>:other_struct}
             when :events
               # page=1&per_page=10&q=type:(file_upload+OR+file_delete+OR+file_download+OR+file_rename+OR+folder_create+OR+folder_delete+OR+folder_share+OR+folder_share_via_public_link)&sort=-date
               #events=api_files_admin.list('events',{'q'=>'type:(file_upload OR file_download)'})[:data]
@@ -328,7 +328,7 @@ module Asperalm
                   ak_data=api_node.call({:operation=>'GET',:subpath=>"access_keys/#{res_data['access_key']}",:headers=>{'Accept'=>'application/json'}})[:data]
                   return execute_node_action(res_id,ak_data['root_file_id'])
                 else
-                  return { :data => res_data, :type=>:hash_table }
+                  return { :data => res_data, :type=>:key_val_list }
                 end
               end #op_or_id
             when :usage_reports
