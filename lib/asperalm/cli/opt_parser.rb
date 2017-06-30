@@ -2,7 +2,6 @@ require 'asperalm/rest'
 require 'asperalm/colors'
 require 'asperalm/fasp_manager_resume'
 require 'asperalm/log'
-require 'xmlsimple'
 require 'optparse'
 require 'json'
 

@@ -1,5 +1,6 @@
 require 'asperalm/cli/main'
 require 'asperalm/cli/plugins/node'
+require 'xmlsimple'
 
 module Asperalm
   module Cli
@@ -20,7 +21,6 @@ module Asperalm
             when :list
               wf_list_resp=api_orch.call({:operation=>'GET',:subpath=>"workflow_reporter/workflows_list/0",:headers=>{'Accept'=>'application/xml'}})
               wf_list=XmlSimple.xml_in(wf_list_resp[:http].body, {"ForceArray" => true})
-              # TODO: parse xml
               return {:type=>:hash_array,:data=>wf_list['workflow'],:fields=>["id","name","published_status","published_revision_id","latest_revision_id","last_modification"]}
             end
           else
