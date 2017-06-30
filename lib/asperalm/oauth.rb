@@ -198,7 +198,7 @@ module Asperalm
           payload = {
             :iss => @auth_data[:client_id],
             :sub => @auth_data[:subject],
-            :aud => "#{@rest.base_url}/oauth2/token",
+            :aud => @rest.base_url+"/oauth2/token",
             :nbf => seconds_since_epoch,
             :exp => seconds_since_epoch+3600 # TODO: configurable ?
           }

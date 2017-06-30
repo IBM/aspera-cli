@@ -5,6 +5,7 @@ require 'asperalm/ascmd'
 module Asperalm
   module Cli
     module Plugins
+      # implement basic remote access with FASP/SSH
       class Fasp < Plugin
         def declare_options; end
 
@@ -21,7 +22,6 @@ module Asperalm
           return {:data=>convert_hash_sym_key(key_val_list),:type=>:key_val_list}
         end
 
-        # todo: ascmd commands
         def execute_action
           command=Main.tool.options.get_next_arg_from_list('command',action_list)
           # aliases
@@ -32,10 +32,8 @@ module Asperalm
           begin
             case command
             when :upload
-              filelist = Main.tool.options.get_remaining_arguments("file list")
-              Log.log.debug("file list=#{filelist}")
-              raise CliBadArgument,"Missing source(s) and destination" if filelist.length < 2
-              destination=filelist.pop
+              filelist = Main.tool.options.get_remaining_arguments("source list",1)
+              destination=Main.tool.options.get_next_arg_value("destination")
               transfer_spec={
                 'direction'=>'send',
                 'destination_root'=>destination,
@@ -44,10 +42,8 @@ module Asperalm
               Main.tool.faspmanager.transfer_with_spec(transfer_spec)
               return Main.result_success
             when :download
-              filelist = Main.tool.options.get_remaining_arguments("file list")
-              Log.log.debug("file list=#{filelist}")
-              raise CliBadArgument,"Missing source(s) and destination" if filelist.length < 2
-              destination=filelist.pop
+              filelist = Main.tool.options.get_remaining_arguments("source list",1)
+              destination=Main.tool.options.get_next_arg_value("destination")
               transfer_spec={
                 'direction'=>'receive',
                 'destination_root'=>destination,
