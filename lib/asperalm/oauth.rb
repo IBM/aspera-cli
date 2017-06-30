@@ -7,6 +7,7 @@
 ##############################################################################
 require 'asperalm/browser_interaction'
 require 'asperalm/rest'
+require 'asperalm/files_api'
 require "base64"
 require 'date'
 require 'rubygems'
@@ -21,11 +22,27 @@ module Asperalm
   TOKEN_FILE_PREFIX='token'
   TOKEN_FILE_SEPARATOR='.'
   # implement OAuth 2 for Aspera Files
+  # bearer tokens are kept in memory and also in a file cache for re-use
   class Oauth
+    # get location of cache for token
+    def self.token_filepath(parts)
+      File.join($PROGRAM_FOLDER,parts.dup.unshift(TOKEN_FILE_PREFIX).join(TOKEN_FILE_SEPARATOR))
+    end
+
+    # delete cached tokens
+    def self.flush_tokens
+      tokenfiles=Dir[token_filepath(['*'])]
+      tokenfiles.each do |filepath|
+        File.delete(filepath)
+      end
+      return tokenfiles
+    end
+
     def self.auth_types
       [ :basic, :web, :jwt ]
     end
 
+    # base_url comes from FilesApi.baseurl
     def initialize(baseurl,organization,auth_data)
       Log.log.debug "auth=#{auth_data}"
       @rest=Rest.new(baseurl)
@@ -51,7 +68,6 @@ module Asperalm
       File.write(token_state_file,token_json)
       set_token_data(api_scope,token_json)
       Log.log.info "new token is #{@token_cache[api_scope][:data]['access_token']}"
-      #set_token_data(api_scope,token_json)
     end
 
     # decode data inside token
@@ -59,10 +75,17 @@ module Asperalm
       return JSON.parse(Zlib::Inflate.inflate(Base64.decode64(token)).partition('==SIGNATURE==').first)
     end
 
-    def get_authorization(api_scope)
+    def get_authorization(api_scope,force_regenerate=false)
       # file name for cache of token
-      token_state_file=File.join($PROGRAM_FOLDER,[TOKEN_FILE_PREFIX,@auth_data[:type],@organization,@auth_data[:client_id],api_scope].join(TOKEN_FILE_SEPARATOR))
+      token_state_file=self.class.token_filepath([@auth_data[:type],@organization,@auth_data[:client_id],api_scope])
 
+      if force_regenerate
+        File.delete(token_state_file) if File.exist?(token_state_file)
+        @token_cache.delete(api_scope)
+        # force refresh if present
+        @token_cache[api_scope][:expiration]=DateTime.now if @token_cache.has_key?(api_scope)
+      end
+        
       # if first time, try to read from file
       if ! @token_cache.has_key?(api_scope) then
         if File.exist?(token_state_file) then
@@ -74,10 +97,11 @@ module Asperalm
       # check if access token is in cache and not expired, if expired: empty cache and try to refresh
       # note: we could also try to use then current token, and , if expired: get a new one
       if @token_cache.has_key?(api_scope) then
-        Log.log.info "date=#{PP.pp(@token_cache[api_scope][:expiration],'').chomp}"
+        Log.log.info "expiration date=#{PP.pp(@token_cache[api_scope][:expiration],'').chomp}"
         remaining_minutes=((@token_cache[api_scope][:expiration]-DateTime.now)*24*60).round
         Log.log.info "minutes remain=#{remaining_minutes}"
         # TODO: enhance expiration policy ?
+        # Token expiration date is probably only informational, do not rely on it
         is_expired = remaining_minutes < 10
         if is_expired  then
           if @token_cache[api_scope][:data].has_key?('refresh_token') then
@@ -93,7 +117,7 @@ module Asperalm
               :operation=>'POST',
               :subpath=>"oauth2/#{@organization}/token",
               :headers=>{'Accept'=>'application/json'},
-              :basic_auth => {:user=>@auth_data[:client_id],:password=>@auth_data[:client_secret]}, # this is RFC
+              :auth=>{:type=>:basic,:user=>@auth_data[:client_id],:password=>@auth_data[:client_secret]}, # this is RFC
               :www_body_params=>{
               :grant_type=>'refresh_token',
               :refresh_token=>refresh_token,
@@ -102,6 +126,7 @@ module Asperalm
               #:client_secret=>@auth_data[:client_secret],  # also works, but not compliant to RFC
               :state=>UNUSED_STATE # TODO: remove, not useful
               }})
+              # TODO: save only if success ?
             save_set_token_data(api_scope,resp[:http].body,token_state_file)
           else
             Log.log.info "token expired, no refresh token, deleting cache and cache file".bg_red()
@@ -154,7 +179,7 @@ module Asperalm
             :operation=>'POST',
             :subpath=>"oauth2/#{@organization}/token",
             :headers=>{'Accept'=>'application/json'},
-            :basic_auth => {:user=>@auth_data[:client_id],:password=>@auth_data[:client_secret]},
+            :auth=>{:type=>:basic,:user=>@auth_data[:client_id],:password=>@auth_data[:client_secret]},
             :www_body_params=>{
             :grant_type=>'authorization_code',
             :code=>code,
@@ -173,7 +198,7 @@ module Asperalm
           payload = {
             :iss => @auth_data[:client_id],
             :sub => @auth_data[:subject],
-            :aud => "https://api.asperafiles.com/api/v1/oauth2/token",
+            :aud => "#{@rest.base_url}/oauth2/token",
             :nbf => seconds_since_epoch,
             :exp => seconds_since_epoch+3600 # TODO: configurable ?
           }
@@ -190,7 +215,7 @@ module Asperalm
             :operation=>'POST',
             :subpath=>"oauth2/#{@organization}/token",
             :headers=>{'Accept'=>'application/json'},
-            :basic_auth => {:user=>@auth_data[:client_id],:password=>@auth_data[:client_secret]},
+            :auth=>{:type=>:basic,:user=>@auth_data[:client_id],:password=>@auth_data[:client_secret]},
             :www_body_params=>{
             :assertion=>assertion,
             :grant_type=>'urn:ietf:params:oauth:grant-type:jwt-bearer',

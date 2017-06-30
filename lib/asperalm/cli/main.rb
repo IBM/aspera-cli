@@ -3,6 +3,7 @@ require "asperalm/cli/plugin"
 require "asperalm/version"
 require "asperalm/log"
 require 'asperalm/browser_interaction'
+require 'asperalm/oauth'
 require 'yaml'
 require 'text-table'
 require 'pp'
@@ -158,7 +159,7 @@ module Asperalm
           when :node
             node_config=get_plugin_default_config(:node,self.options.get_option_mandatory(:transfer_node_config))
             raise CliBadArgument,"no such node configuration: #{self.options.get_option_mandatory(:transfer_node_config)}" if node_config.nil?
-            @faspmanager.tr_node_api=Rest.new(node_config[:url],{:basic_auth=>{:user=>node_config[:username], :password=>node_config[:password]}})
+            @faspmanager.tr_node_api=Rest.new(node_config[:url],{:auth=>{:type=>:basic,:user=>node_config[:username], :password=>node_config[:password]}})
           end
           # may be nil:
           @faspmanager.fasp_proxy_url=self.options.get_option(:fasp_proxy)
@@ -259,8 +260,12 @@ module Asperalm
 
       # "cli" plugin
       def execute_action
-        command=self.options.get_next_arg_from_list('command',[:help,:config,:plugins])
+        command=self.options.get_next_arg_from_list('command',[:help,:config,:plugins,:flush])
         case command
+        when :flush
+          deleted_files=Oauth.flush_tokens
+          return {:type=>:value_list, :name=>'file',:data=>deleted_files}
+          return Main.status_result('token cache flushed')
         when :help
           # display main plugin options
           STDERR.puts self.options

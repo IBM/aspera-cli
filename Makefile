@@ -150,7 +150,7 @@ tfs7:
 tfs8:
 	$(ASCLI) files admin resource workspace list
 tfs9:
-	$(ASCLI) files admin resource node id 2374 browse / --secret=laurent
+	$(ASCLI) files admin resource node id 4586 browse / --secret=Aspera123_
 
 tfiles: tfs1 tfs2 tfs3 tfs4 tfs5 tfs6 tfs7 tfs8 tfs9
 

@@ -40,7 +40,7 @@ module Asperalm
         end
 
         def get_faspex_authenticated_api
-          return Rest.new(Main.tool.options.get_option_mandatory(:url),{:basic_auth=>{:user=>Main.tool.options.get_option_mandatory(:username), :password=>Main.tool.options.get_option_mandatory(:password)}})
+          return Rest.new(Main.tool.options.get_option_mandatory(:url),{:auth=>{:type=>:basic,:user=>Main.tool.options.get_option_mandatory(:username), :password=>Main.tool.options.get_option_mandatory(:password)}})
         end
 
         def self.textify_package_list(table_data)
@@ -173,7 +173,7 @@ module Asperalm
               when :node
                 node_config=Main.tool.get_plugin_default_config(:node,source_info[:node])
                 raise CliError,"No such node aslmcli config: \"#{source_info[:node]}\"" if node_config.nil?
-                api_node=Rest.new(node_config[:url],{:basic_auth=>{:user=>node_config[:username], :password=>node_config[:password]}})
+                api_node=Rest.new(node_config[:url],{:auth=>{:type=>:basic,:user=>node_config[:username], :password=>node_config[:password]}})
                 command=Main.tool.options.get_next_arg_from_list('command',Node.common_actions)
                 return Node.execute_common(command,api_node,source_info[:path])
               end

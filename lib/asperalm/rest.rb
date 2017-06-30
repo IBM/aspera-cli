@@ -26,6 +26,8 @@ module Asperalm
 
     def self.insecure; @@insecure;end
 
+    def base_url;@api_base;end
+
     # opt_call_data can contain default call data , as in "call"
     def initialize(baseurl,opt_call_data=nil)
       # base url without trailing slashes
@@ -34,7 +36,7 @@ module Asperalm
     end
 
     def param_default; @opt_call_data; end
-    
+
     def self.set_debug(flag)
       Log.log.debug "debug http=#{flag}"
       @@debug=flag
@@ -49,44 +51,32 @@ module Asperalm
       return uri
     end
 
-    # basic HTTP call
+    # HTTPS call
     # call_data has keys:
-    # :subpath, :headers, :oauth, :scope, :operation, :json_params, :www_body_params, :basic_auth
+    # :auth, :operation, :subpath, :headers, :json_params, :www_body_params, :text_body_params
+    # :auth  = {:type=>:basic,:username,:password}
+    # :auth  = {:type=>:oauth2,:obj,:scope}
     def call(call_data)
       Log.log.debug "accessing #{call_data[:subpath]}".red.bold.bg_green
-      if !call_data.has_key?(:headers) then
-        call_data[:headers]={}
-      end
+      call_data[:headers]={} if !call_data.has_key?(:headers)
       if !@opt_call_data.nil? then
         call_data.merge!(@opt_call_data) { |key, v1, v2| next v1.merge(v2) if v1.is_a?(Hash) and v2.is_a?(Hash); v1 }
       end
-      #if (! call_data[:headers].has_key?('Content-Type')) then
-      #  call_data[:headers]['Content-Type']='application/json'
-      #end
-      if !call_data[:headers].has_key?('Authorization') and call_data.has_key?(:oauth) then
-        call_data[:headers]['Authorization']=call_data[:oauth].get_authorization(call_data[:scope])
+      if !call_data[:headers].has_key?('Authorization') and call_data.has_key?(:auth) and call_data[:auth].has_key?(:obj) then
+        call_data[:headers]['Authorization']=call_data[:auth][:obj].get_authorization(call_data[:auth][:scope])
       end
       uri=get_uri(call_data)
-      #Log.log.debug "URI=#{PP.pp(uri,'').chomp}"
       Log.log.debug "URI=#{uri}"
-      #Log.log.debug "calldata=#{call_data}"
       http=Net::HTTP.new(uri.host, uri.port)
-      if @@debug then
-        http.set_debug_output($stdout)
-      end
       http.use_ssl = true
       http.verify_mode = OpenSSL::SSL::VERIFY_NONE if @@insecure
+      http.set_debug_output($stdout) if @@debug
       case call_data[:operation]
-      when 'GET'
-        req = Net::HTTP::Get.new(uri.request_uri)
-      when 'POST'
-        req = Net::HTTP::Post.new(uri.request_uri)
-      when 'PUT'
-        req = Net::HTTP::Put.new(uri.request_uri)
-      when 'CANCEL'
-        req = Net::HTTP::Cancel.new(uri.request_uri)
-      else
-        raise "unknown op : #{operation}"
+      when 'GET'; req = Net::HTTP::Get.new(uri.request_uri)
+      when 'POST'; req = Net::HTTP::Post.new(uri.request_uri)
+      when 'PUT'; req = Net::HTTP::Put.new(uri.request_uri)
+      when 'CANCEL'; req = Net::HTTP::Cancel.new(uri.request_uri)
+      else raise "unknown op : #{operation}"
       end
       if call_data.has_key?(:json_params) then
         req.body=JSON.generate(call_data[:json_params])
@@ -109,14 +99,22 @@ module Asperalm
           req[key] = call_data[:headers][key]
         end
       end
-      if call_data.has_key?(:basic_auth) then
-        req.basic_auth(call_data[:basic_auth][:user],call_data[:basic_auth][:password])
+      if call_data.has_key?(:auth) and call_data[:auth][:type].eql?(:basic) then
+        req.basic_auth(call_data[:auth][:user],call_data[:auth][:password])
         Log.log.debug "using Basic auth"
       end
       resp = http.request(req)
 
       Log.log.debug "result code=#{resp.code}"
       Log.log.debug "result body=#{resp.body}"
+
+      # TODO: if error 400 unauthorized, and oauth, then refresh or regenerate token and call again http.request(req)
+      if false and resp.code.eql?('40X') and call_data.has_key?(:auth) and call_data[:auth].has_key?(:obj)
+        call_data[:headers]['Authorization']=call_data[:auth][:obj].get_authorization(call_data[:auth][:scope],true)
+        resp = http.request(req)
+        Log.log.debug "result(2) code=#{resp.code}"
+        Log.log.debug "result(2) body=#{resp.body}"
+      end
 
       if ! resp.code.start_with?('2') then
         raise "Error code:#{resp.code}, msg=#{resp.message.red}, body=[#{resp.body}]"

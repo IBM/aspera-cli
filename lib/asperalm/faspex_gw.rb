@@ -12,6 +12,7 @@ module Asperalm
   class FaspexGW < Sinatra::Base
     def self.start_server(api_files_user,workspace_id)
       @@api_files_user=api_files_user
+      @@api_files_oauth=@@api_files_user.param_default[:auth][:obj]
       @@the_workspaceid=workspace_id
       $CERTIFICATE=File.read(Connect.path(:localhost_cert))
       $PRIVATE_KEY=File.read(Connect.path(:localhost_key))
@@ -72,7 +73,7 @@ module Asperalm
       node_info=@@api_files_user.read("nodes/#{the_package['node_id']}")[:data]
 
       #  get transfer token (for node)
-      node_auth_bearer_token=@@api_files_user.param_default[:oauth].get_authorization(FilesApi.node_scope(node_info['access_key'],FilesApi::SCOPE_NODE_USER))
+      node_auth_bearer_token=@@api_files_oauth.get_authorization(FilesApi.node_scope(node_info['access_key'],FilesApi::SCOPE_NODE_USER))
 
       # tell Files what to expect in package: 1 transfer (can also be done after transfer)
       @@api_files_user.update("packages/#{the_package['id']}",{"sent"=>true,"transfers_expected"=>1})

@@ -15,10 +15,10 @@ module Asperalm
         def get_ak_node_api(node_info,node_scope=nil)
           # if no scope, or secret provided on command line ...
           if node_scope.nil? or !Main.tool.options.get_option(:secret).nil?
-            return Rest.new(node_info['url'],{:basic_auth=>{:user=>node_info['access_key'], :password=>Main.tool.options.get_option_mandatory(:secret)},:headers=>{'X-Aspera-AccessKey'=>node_info['access_key']}})
+            return Rest.new(node_info['url'],{:auth=>{:type=>:basic,:user=>node_info['access_key'], :password=>Main.tool.options.get_option_mandatory(:secret)},:headers=>{'X-Aspera-AccessKey'=>node_info['access_key']}})
           end
           Log.log.warn("ignoring secret, using bearer token") if !Main.tool.options.get_option(:secret).nil?
-          return Rest.new(node_info['url'],{:oauth=>@api_files_oauth,:scope=>FilesApi.node_scope(node_info['access_key'],node_scope),:headers=>{'X-Aspera-AccessKey'=>node_info['access_key']}})
+          return Rest.new(node_info['url'],{:auth=>{:type=>:oauth2,:obj=>@api_files_oauth,:scope=>FilesApi.node_scope(node_info['access_key'],node_scope)},:headers=>{'X-Aspera-AccessKey'=>node_info['access_key']}})
         end
 
         # returns node information (returned by API) and file id, from a "/" based path
@@ -180,7 +180,7 @@ module Asperalm
           @api_files_oauth=Oauth.new(files_api_base_url,organization,auth_data)
 
           # create object for REST calls to Files with scope "user:all"
-          @api_files_user=Rest.new(files_api_base_url,{:oauth=>@api_files_oauth,:scope=>FilesApi::SCOPE_FILES_USER})
+          @api_files_user=Rest.new(files_api_base_url,{:auth=>{:type=>:oauth2,:obj=>@api_files_oauth,:scope=>FilesApi::SCOPE_FILES_USER}})
 
           # get our user's default information
           self_data=@api_files_user.read("self")[:data]
@@ -272,7 +272,7 @@ module Asperalm
             require 'asperalm/faspex_gw'
             FaspexGW.start_server(@api_files_user,workspace_id)
           when :admin
-            api_files_admin=Rest.new(files_api_base_url,{:oauth=>@api_files_oauth,:scope=>FilesApi::SCOPE_FILES_ADMIN})
+            api_files_admin=Rest.new(files_api_base_url,{:auth=>{:type=>:oauth2,:obj=>@api_files_oauth,:scope=>FilesApi::SCOPE_FILES_ADMIN}})
             command_admin=Main.tool.options.get_next_arg_from_list('command',[ :resource, :events, :set_client_key, :usage_reports, :search_nodes  ])
             case command_admin
             when :search_nodes

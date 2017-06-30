@@ -10,10 +10,11 @@ module Asperalm
 
         def action_list; [:download,:upload,:browse,:delete,:rename].push(*Asperalm::AsCmd.action_list);end
 
+        # converts keys in hash table from symbol to string
         def convert_hash_sym_key(hash);h={};hash.each { |k,v| h[k.to_s]=v};return h;end
 
         def result_convert_hash_array(hash_array,fields)
-          return {:data=>hash_array.map {|i| convert_hash_sym_key(i)},:type=>:hash_array,:fields=>fields}
+          return {:data=>hash_array.map {|i| convert_hash_sym_key(i)},:type=>:hash_array,:fields=>fields.map {|f| f.to_s}}
         end
 
         def result_convert_key_val_list(key_val_list)

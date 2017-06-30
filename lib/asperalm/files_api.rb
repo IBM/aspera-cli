@@ -1,6 +1,7 @@
 module Asperalm
   class FilesApi
     # get API base URL based on instance domain
+    # instance domain is asperafiles.com or qa.asperafiles.com
     def self.baseurl(instance_domain)
       return 'https://api.'+instance_domain+'/api/v1'
     end
