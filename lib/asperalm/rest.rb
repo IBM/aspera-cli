@@ -53,9 +53,10 @@ module Asperalm
 
     # HTTPS call
     # call_data has keys:
-    # :auth, :operation, :subpath, :headers, :json_params, :www_body_params, :text_body_params
+    # :auth, :operation, :subpath, :headers, :json_params, :url_params, :www_body_params, :text_body_params
     # :auth  = {:type=>:basic,:username,:password}
     # :auth  = {:type=>:oauth2,:obj,:scope}
+    # :auth  = {:type=>:url,:url_creds}
     def call(call_data)
       Log.log.debug "accessing #{call_data[:subpath]}".red.bold.bg_green
       call_data[:headers]={} if !call_data.has_key?(:headers)
@@ -64,6 +65,12 @@ module Asperalm
       end
       if !call_data[:headers].has_key?('Authorization') and call_data.has_key?(:auth) and call_data[:auth].has_key?(:obj) then
         call_data[:headers]['Authorization']=call_data[:auth][:obj].get_authorization(call_data[:auth][:scope])
+      end
+      if call_data.has_key?(:auth) and call_data[:auth].has_key?(:url_creds) then
+        call_data[:url_params]={} if !call_data.has_key?(:url_params)
+        call_data[:auth][:url_creds].each do |key, value|
+          call_data[:url_params][key]=value
+        end
       end
       uri=get_uri(call_data)
       Log.log.debug "URI=#{uri}"

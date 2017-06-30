@@ -7,7 +7,7 @@ This GEM is not endorsed/supported by IBM/Aspera, use at your risk, and not in p
 ## Overview, Features
 This is a Ruby Gem that provides a command line with the following features:
 
-* Supports all Aspera server products
+* Supports most Aspera server products
 * configuration file for products URLs and credentials (and any parameter)
 * FASP transfer agent can be: FaspManager (local ascp), or Connect Client, or a transfer node
 * transfer parameters can be altered by modification of transferspec, this includes requiring multi-session transfer on nodes
