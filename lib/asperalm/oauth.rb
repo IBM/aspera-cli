@@ -26,7 +26,8 @@ module Asperalm
   class Oauth
     # get location of cache for token
     def self.token_filepath(parts)
-      File.join($PROGRAM_FOLDER,parts.dup.unshift(TOKEN_FILE_PREFIX).join(TOKEN_FILE_SEPARATOR))
+      # remove windows forbidden chars
+      File.join($PROGRAM_FOLDER,parts.dup.unshift(TOKEN_FILE_PREFIX).join(TOKEN_FILE_SEPARATOR).gsub(/[\\\/:\*\?"<>]/,TOKEN_FILE_SEPARATOR))
     end
 
     # delete cached tokens
@@ -251,6 +252,7 @@ module Asperalm
       TCPServer.open('127.0.0.1', port) { |webserver|
         Log.log.info "server=#{webserver}"
         websession = webserver.accept
+        sleep 1 # TODO: sometimes, returns nil ? use sinatra ?
         line = websession.gets.chomp
         Log.log.info "line=#{line}"
         if ! line.start_with?('GET /?') then
@@ -260,7 +262,7 @@ module Asperalm
         data=URI.decode_www_form(request)
         datah=data.to_h
         Log.log.debug "datah=#{PP.pp(datah,'').chomp}"
-        raise "wrong returned state" if !check_code.eql?(datah['state'])
+        Log.log.error("state does not match") if !check_code.eql?(datah['state'])
         code=datah['code']
         websession.print "HTTP/1.1 200/OK\r\nContent-type:text/html\r\n\r\n<html><body><h1>received answer (code)</h1><code>#{code}</code></body></html>"
         websession.close
