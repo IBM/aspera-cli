@@ -13,7 +13,7 @@ require 'date'
 require 'rubygems'
 require 'socket'
 require 'pp'
-require 'SecureRandom'
+require 'securerandom'
 
 # for future use
 UNUSED_STATE='ABC'

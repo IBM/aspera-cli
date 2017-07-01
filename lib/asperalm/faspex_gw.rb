@@ -6,6 +6,7 @@ require 'webrick/https'
 require 'webrick/log'
 require 'openssl'
 require 'json'
+require 'securerandom'
 
 module Asperalm
   # this class answers the Faspex /send API and creates a package on Files

@@ -13,7 +13,7 @@ require 'tempfile'
 require 'timeout'
 require "base64"
 require "json"
-require 'SecureRandom'
+require 'securerandom'
 
 module Asperalm
   # imlement this class to get transfer events
@@ -137,10 +137,11 @@ module Asperalm
         when 'bwcap'; transfer_spec['target_rate_cap_kbps']=value
         when 'createpath'; transfer_spec['create_dir']=yes_to_true(value)
         when 'fallback'; transfer_spec['http_fallback']=yes_to_true(value)
-        when 'auth'; Log.log.warn("ignoring #{name}=#{value}") # TODO: why ignore ?
+        when 'auth'; Log.log.debug("ignoring #{name}=#{value}") # TODO: why ignore ?
         when 'lockpolicy'; transfer_spec['lock_rate_policy']=value
         when 'lockminrate'; transfer_spec['lock_min_rate']=value
-        when 'v'; Log.log.warn("ignoring #{name}=#{value}")# TODO: why ignore ?
+        when 'v'; Log.log.debug("ignoring #{name}=#{value}")# TODO: why ignore ?
+        when 'protect'; Log.log.debug("ignoring #{name}=#{value}")# TODO: why ignore ?
         else Log.log.error("non managed URI value: #{name} = #{value}".red)
         end
       end
@@ -201,10 +202,9 @@ module Asperalm
         begin
           # check process still present, else receive Errno::ESRCH
           Process.getpgid( @ascp_pid )
-        rescue RangeError => e
-          break
-        rescue Errno::ESRCH => e
-          break
+        rescue RangeError => e; break
+        rescue Errno::ESRCH => e; break
+        rescue NotImplementedError; nil # TODO: can we do better on windows ?
         end
         # TODO: timeout here ?
         line = client.gets

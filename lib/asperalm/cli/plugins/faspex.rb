@@ -47,11 +47,16 @@ module Asperalm
         def self.textify_package_list(table_data)
           return table_data.map { |e|
             e.keys.each {|k| e[k]=e[k].first if e[k].is_a?(Array) and e[k].length == 1}
-            if e['to'].has_key?('recipient_delivery_id')
-              e['recipient_delivery_id'] = e['to']['recipient_delivery_id'].first
-            else
-              e['recipient_delivery_id'] = 'unknown'
-            end
+            #if e['to'].has_key?('recipient_delivery_id')
+            #  e['recipient_delivery_id'] = e['to']['recipient_delivery_id'].first
+            #else
+            #  e['recipient_delivery_id'] = 'unknown'
+            #end
+            #if e['to'].has_key?('name')
+            #  e['to'] = e['to']['name'].first
+            #else
+            #  e['to'] = 'unknown'
+            #end
             e['items'] = e.has_key?('link') ? e['link'].length : 0
             e
           }
@@ -67,6 +72,9 @@ module Asperalm
         end
 
         def action_list; [ :package, :dropbox, :recv_publink, :source, :me ];end
+
+        # we match recv command on atom feed on this field
+        PACKAGE_MATCH_FIELD='delivery_id'
 
         def execute_action
           command=Main.tool.options.get_next_arg_from_list('command',action_list)
@@ -107,19 +115,21 @@ module Asperalm
               Main.tool.faspmanager.transfer_with_spec(transfer_spec)
               return Main.result_success
             when :recv
+              # UUID is not reliable, it changes at every call
               if true
-                pkguuid=Main.tool.options.get_next_arg_value("Package UUID")
+                pkguuid=Main.tool.options.get_next_arg_value("Package ID")
                 all_inbox_xml=api_faspex.call({:operation=>'GET',:subpath=>"#{Main.tool.options.get_option(:pkgbox).to_s}.atom",:headers=>{'Accept'=>'application/xml'}})[:http].body
                 allinbox=XmlSimple.xml_in(all_inbox_xml, {"ForceArray" => true})
                 package_entries=[]
                 if allinbox.has_key?('entry')
-                  package_entries=allinbox['entry'].select { |e| pkguuid.eql?(e['id'].first) }
+                  package_entries=allinbox['entry'].select { |e| pkguuid.eql?(e[PACKAGE_MATCH_FIELD].first) }
                 end
                 if package_entries.length != 1
                   raise CliBadArgument,"no such uuid"
                 end
                 package_entry=package_entries.first
               else
+                # I dont know which delivery id is the right one if package was receive by group
                 delivid=Main.tool.options.get_next_arg_value("Package delivery ID")
                 entry_xml=api_faspex.call({:operation=>'GET',:subpath=>"received/#{delivid}",:headers=>{'Accept'=>'application/xml'}})[:http].body
                 package_entry=XmlSimple.xml_in(entry_xml, {"ForceArray" => true})
@@ -139,7 +149,7 @@ module Asperalm
               all_inbox_xml=api_faspex.call({:operation=>'GET',:subpath=>"#{Main.tool.options.get_option(:pkgbox).to_s}.atom",:headers=>{'Accept'=>'application/xml'}})[:http].body
               all_inbox_data=XmlSimple.xml_in(all_inbox_xml, {"ForceArray" => true})
               if all_inbox_data.has_key?('entry')
-                return {:data=>all_inbox_data['entry'],:type=>:hash_array,:fields=>['title','items','recipient_delivery_id','id'], :textify => lambda { |table_data| Faspex.textify_package_list(table_data)} }
+                return {:data=>all_inbox_data['entry'],:type=>:hash_array,:fields=>['title','items',PACKAGE_MATCH_FIELD], :textify => lambda { |table_data| Faspex.textify_package_list(table_data)} }
               end
               return Main.no_result
             end

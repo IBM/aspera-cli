@@ -3,7 +3,7 @@ require 'asperalm/cli/plugins/node'
 require 'asperalm/cli/plugin'
 require 'asperalm/oauth'
 require 'asperalm/files_api'
-require 'SecureRandom'
+require 'securerandom'
 
 module Asperalm
   module Cli
