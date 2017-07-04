@@ -391,7 +391,7 @@ module Asperalm
         begin
           connect_api.read('info/version')
         rescue Errno::ECONNREFUSED
-          BrowserInteraction.open_system_uri('fasp://initialize')
+          OperatingSystem.open_system_uri('fasp://initialize')
           sleep 2
         end
         if transfer_spec["direction"] == "send"

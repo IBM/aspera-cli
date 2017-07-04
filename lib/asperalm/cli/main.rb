@@ -128,9 +128,9 @@ module Asperalm
         case operation
         when :set
           Log.log.debug "attr_browser: set: #{value}".red
-          BrowserInteraction.open_url_method=value
+          OperatingSystem.open_url_method=value
         else
-          return BrowserInteraction.open_url_method
+          return OperatingSystem.open_url_method
         end
       end
 
@@ -278,7 +278,7 @@ module Asperalm
         self.options.set_option(:logtype,:stdout)
         self.options.set_option(:config_file,config_file) if File.exist?(config_file)
         self.options.on("-h", "--help", "Show this message. Try: #{@@MAIN_PLUGIN_NAME_SYM} help") { @help_requested=true }
-        self.options.add_opt_list(:browser,BrowserInteraction.open_url_methods,"method to start browser",'-gTYPE','--browser=TYPE')
+        self.options.add_opt_list(:browser,OperatingSystem.open_url_methods,"method to start browser",'-gTYPE','--browser=TYPE')
         self.options.add_opt_list(:insecure,[:yes,:no],"do not validate cert",'--insecure=VALUE')
         self.options.add_opt_list(:loglevel,Log.levels,"Log level",'-lTYPE','--log-level=VALUE')
         self.options.add_opt_list(:logtype,Log.logtypes,"log method",'-qTYPE','--logger=VALUE')
@@ -340,7 +340,7 @@ module Asperalm
         when :cat
           return {:data=>File.read(config_file),:type=>:other_struct}
         when :open
-          BrowserInteraction.open_system_uri(config_file)
+          OperatingSystem.open_system_uri(config_file)
           return Main.no_result
         when :ls
           sections=plugin_sym_list

@@ -4,7 +4,7 @@ module Asperalm
   # Allows a user to open a Url
   # if method is "tty", then URL is displayed on terminal
   # if method is "os", then the URL will be opened with the default browser.
-  class BrowserInteraction
+  class OperatingSystem
     def self.open_url_methods; [ :tty, :os ]; end
     @@open_url_method=:tty
 
@@ -39,5 +39,5 @@ module Asperalm
         raise StandardError,"unsupported url open method: #{@@open_url_method}"
       end
     end
-  end # BrowserInteraction
+  end # OperatingSystem
 end # Asperalm

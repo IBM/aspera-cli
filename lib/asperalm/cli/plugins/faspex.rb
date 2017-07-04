@@ -208,7 +208,7 @@ module Asperalm
             api_faspex=Rest.new(link_data[:faspex_base_url],{})
             pkgdatares=api_faspex.call({:operation=>'GET',:subpath=>link_data[:subpath],:url_params=>{:passcode=>link_data[:passcode]},:headers=>{'Accept'=>'application/xml'}})
             if !pkgdatares[:http].body.start_with?('<?xml ')
-              BrowserInteraction.open_uri(thelink)
+              OperatingSystem.open_uri(thelink)
               raise CliError, "no such package"
             end
             package_entry=XmlSimple.xml_in(pkgdatares[:http].body, {"ForceArray" => false})
