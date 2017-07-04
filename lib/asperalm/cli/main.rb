@@ -2,7 +2,7 @@ require "asperalm/cli/opt_parser"
 require "asperalm/cli/plugin"
 require "asperalm/version"
 require "asperalm/log"
-require 'asperalm/browser_interaction'
+require 'asperalm/operating_system'
 require 'asperalm/oauth'
 require 'yaml'
 require 'text-table'
@@ -281,12 +281,12 @@ module Asperalm
         self.options.add_opt_list(:browser,BrowserInteraction.open_url_methods,"method to start browser",'-gTYPE','--browser=TYPE')
         self.options.add_opt_list(:insecure,[:yes,:no],"do not validate cert",'--insecure=VALUE')
         self.options.add_opt_list(:loglevel,Log.levels,"Log level",'-lTYPE','--log-level=VALUE')
-        self.options.add_opt_list(:logtype,[:syslog,:stdout],"log method",'-qTYPE','--logger=VALUE')
+        self.options.add_opt_list(:logtype,Log.logtypes,"log method",'-qTYPE','--logger=VALUE')
         self.options.add_opt_list(:format,self.class.result_formats,"output format",'--format=VALUE')
         self.options.add_opt_list(:transfer,[:ascp,:connect,:node],"type of transfer",'--transfer=VALUE')
-        self.options.add_opt_simple(:config_file,"-fSTRING", "--config-file=STRING","read parameters from file in YAML format, current=#{self.options.get_option(:config_file)}")
-        self.options.add_opt_simple(:config_name,"-nSTRING", "--config-name=STRING","name of configuration in config file")
-        self.options.add_opt_simple(:load_params,"--load-params=NAME","load the named configuration from config file")
+        self.options.add_opt_simple(:config_file,"-CSTRING", "--config=STRING","read parameters from file in YAML format, current=#{self.options.get_option(:config_file)}")
+        self.options.add_opt_simple(:config_name,"-nSTRING", "--cname=STRING","name of configuration in config file")
+        self.options.add_opt_simple(:load_params,"--load-params=NAME","load the named configuration from current config file")
         self.options.add_opt_simple(:fasp_folder,"--fasp-folder=NAME","specify where to find FASP (main folder), current=#{self.options.get_option(:fasp_folder)}")
         self.options.add_opt_simple(:transfer_node_config,"--transfer-node=STRING","name of configuration used to transfer when using --transfer=node")
         self.options.add_opt_simple(:fields,"--fields=STRING","comma separated list of fields, or #{FIELDS_ALL}, or #{FIELDS_DEFAULT}")

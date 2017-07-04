@@ -5,7 +5,7 @@
 # Laurent Martin
 #
 ##############################################################################
-require 'asperalm/browser_interaction'
+require 'asperalm/operating_system'
 require 'asperalm/rest'
 require 'asperalm/files_api'
 require "base64"

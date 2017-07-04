@@ -1,6 +1,6 @@
 require 'asperalm/cli/main'
 require 'asperalm/cli/basic_auth_plugin'
-require 'asperalm/browser_interaction'
+require 'asperalm/operating_system'
 require 'asperalm/cli/plugins/node'
 require 'xmlsimple'
 
