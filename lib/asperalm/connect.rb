@@ -1,4 +1,5 @@
-require "asperalm/log"
+require 'asperalm/log'
+require 'asperalm/operating_system'
 
 module Asperalm
   # locate Connect client resources based on OS
@@ -27,8 +28,8 @@ module Asperalm
     def self.fasp_install_paths
       if @@fasp_install_paths.nil?
         common_places=[]
-        case RbConfig::CONFIG['host_os']
-        when /darwin|mac os/
+        case OperatingSystem.current_os_type
+        when :mac
           common_places.push({
             :ascp=>'ascp',
             :app_root=>File.join(Dir.home,'Applications','Aspera Connect.app'),
@@ -36,7 +37,7 @@ module Asperalm
             :sub_bin=>File.join('Contents','Resources'),
             :sub_keys=>File.join('Contents','Resources'),
             :dsa=>'asperaweb_id_dsa.openssh'})
-        when /mswin|msys|mingw|cygwin|bccwin|wince|emc/
+        when :windows
           common_places.push({
             :ascp=>'ascp.exe',
             :app_root=>File.join(ENV['LOCALAPPDATA'],'Programs','Aspera','Aspera Connect'),

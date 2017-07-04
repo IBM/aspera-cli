@@ -16,12 +16,23 @@ module Asperalm
       @@open_url_method
     end
 
-    # command must be non blocking
-    def self.open_system_uri(uri)
+    def self.current_os_type
       case RbConfig::CONFIG['host_os']
       when /darwin|mac os/
-        system("open '#{uri.to_s}'")
+        return :mac
       when /mswin|msys|mingw|cygwin|bccwin|wince|emc/
+        return :windows
+      else  # unix family
+        return :unix
+      end
+    end
+    
+    # command must be non blocking
+    def self.open_system_uri(uri)
+      case current_os_type
+      when :mac
+        system("open '#{uri.to_s}'")
+      when :windows
         system('start explorer "'+uri.to_s+'"')
       else  # unix family
         system("xdg-open '#{uri.to_s}'")
