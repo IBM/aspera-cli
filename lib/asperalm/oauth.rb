@@ -20,19 +20,24 @@ UNUSED_STATE='ABC'
 
 module Asperalm
   TOKEN_FILE_PREFIX='token'
-  TOKEN_FILE_SEPARATOR='.'
+  TOKEN_FILE_SEPARATOR='_'
+  TOKEN_FILE_SUFFIX='.txt'
   # implement OAuth 2 for Aspera Files
   # bearer tokens are kept in memory and also in a file cache for re-use
   class Oauth
     # get location of cache for token
     def self.token_filepath(parts)
+      basename=parts.dup.unshift(TOKEN_FILE_PREFIX).join(TOKEN_FILE_SEPARATOR)
       # remove windows forbidden chars
-      File.join($PROGRAM_FOLDER,parts.dup.unshift(TOKEN_FILE_PREFIX).join(TOKEN_FILE_SEPARATOR).gsub(/[\\\/:\*\?"<>]/,TOKEN_FILE_SEPARATOR))
+      basename.gsub!(/[\\\/:\*\?"<>]/,TOKEN_FILE_SEPARATOR)
+      # keep dot for extension (nicer)
+      basename.gsub!('.',TOKEN_FILE_SEPARATOR)
+      File.join(Main.tool.config_folder,basename+TOKEN_FILE_SUFFIX)
     end
 
     # delete cached tokens
     def self.flush_tokens
-      tokenfiles=Dir[token_filepath(['*'])]
+      tokenfiles=Dir[File.join(Main.tool.config_folder,TOKEN_FILE_PREFIX+'*')]
       tokenfiles.each do |filepath|
         File.delete(filepath)
       end

@@ -47,17 +47,27 @@ In examples below, command line operations (starting with "$") are shown using `
 
 ## Quick Start
 
-### Installation
 First make sure that you have Ruby v2.0+ installed on your system.
-Ruby comes pre-installed on MacOSx, and can be installed on Linux ("ruby" package).
+
+### Pre-requisite : MacOS X
+Ruby comes pre-installed on MacOSx. Nevertheless, installing new gems require admin privilege (sudo).
+You may also install "homebrew", from here: https://brew.sh/
+Then do:
+
+```bash
+$ brew install ruby
+```
+
+### Pre-requisite : Windows
 On windows you can get it from here: https://rubyinstaller.org/ .
-If you are installing the gem on the system's ruby installation, then admin right may be required
-for the installation (sudo).
-On Mac, you can use ruby from "brew".
 
-Once you have ruby and rights to install gems:
+### Pre-requisite : Linux
+```bash
+$ yum install ruby rubygems
+```
 
-Install the gem and its dependencies:
+### Installation
+Once you have ruby and rights to install gems: Install the gem and its dependencies:
 
 ```bash
 $ gem install asperalm

@@ -9,7 +9,7 @@ module Asperalm
         alias super_declare_options declare_options
         def declare_options
           super_declare_options
-          Main.tool.options.set_option(:persistency,File.join($PROGRAM_FOLDER,"persistency_cleanup.txt"))
+          Main.tool.options.set_option(:persistency,File.join(Main.tool.config_folder,"persistency_cleanup.txt"))
           Main.tool.options.set_option(:filter_req,'{"active_only":false}')
           Main.tool.options.add_opt_simple(:persistency,"--persistency=FILEPATH","persistency file (cleanup,forward)")
           Main.tool.options.add_opt_simple(:filter_transfer,"--filter-transfer=EXPRESSION","Ruby expression for filter at transfer level (cleanup)")

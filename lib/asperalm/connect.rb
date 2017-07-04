@@ -1,3 +1,5 @@
+require "asperalm/log"
+
 module Asperalm
   # locate Connect client resources based on OS
   class Connect
@@ -10,41 +12,80 @@ module Asperalm
     end
 
     def self.path(k)
-      return res[k][:path]
+      file=res[k][:path]
+      raise "no such file: #{file}" if !File.exist?(file)
+      return file
+    end
+    @@fasp_install_paths=nil
+
+    def self.fasp_install_paths=(path)
+      raise "must be a hash" if !path.is_a?(Hash)
+      @@fasp_install_paths=path
+    end
+
+    # try to find connect client or other Aspera product installed.
+    def self.fasp_install_paths
+      if @@fasp_install_paths.nil?
+        common_places=[]
+        case RbConfig::CONFIG['host_os']
+        when /darwin|mac os/
+          common_places.push({
+            :ascp=>'ascp',
+            :app_root=>File.join(Dir.home,'Applications','Aspera Connect.app'),
+            :run_root=>File.join(Dir.home,'Library','Application Support','Aspera','Aspera Connect'),
+            :sub_bin=>File.join('Contents','Resources'),
+            :sub_keys=>File.join('Contents','Resources'),
+            :dsa=>'asperaweb_id_dsa.openssh'})
+        when /mswin|msys|mingw|cygwin|bccwin|wince|emc/
+          common_places.push({
+            :ascp=>'ascp.exe',
+            :app_root=>File.join(ENV['LOCALAPPDATA'],'Programs','Aspera','Aspera Connect'),
+            :run_root=>File.join(ENV['LOCALAPPDATA'],'Aspera','Aspera Connect'),
+            :sub_bin=>'bin',
+            :sub_keys=>'etc',
+            :dsa=>'asperaweb_id_dsa.openssh'})
+        else  # unix family
+          common_places.push({
+            :ascp=>'ascp',
+            :app_root=>File.join(Dir.home,'.aspera','connect'),
+            :run_root=>File.join(Dir.home,'.aspera','connect'),
+            :sub_bin=>'bin',
+            :sub_keys=>'etc',
+            :dsa=>'asperaweb_id_dsa.openssh'})
+          common_places.push({
+            :ascp=>'ascp',
+            :app_root=>'/opt/aspera',
+            :run_root=>'/opt/aspera',
+            :sub_bin=>'bin',
+            :sub_keys=>'var',
+            :dsa=>'aspera_tokenauth_id_dsa'})
+        end
+        common_places.each do |one_place|
+          if Dir.exist?(one_place[:app_root])
+            Log.log.debug("found: #{one_place[:app_root]}")
+            @@fasp_install_paths=one_place
+            return @@fasp_install_paths
+          end
+        end
+        raise "no FASP installation found"
+      end
+      return @@fasp_install_paths
     end
 
     # locate connect plugin resources
     def self.locate_resources
-      res={}
-      folder_bin='bin'
-      folder_etc='etc'
       # this contains var/run, files generated on runtime
-      folder_varrun=File.join('var','run')
-      ascp_bin_file='ascp'
-      # detect Connect Client on all platforms
-      case RbConfig::CONFIG['host_os']
-      when /darwin|mac os/
-        connect_install_dir = File.join(Dir.home,'Applications','Aspera Connect.app')
-        connect_run_dir=File.join(Dir.home,'Library','Application Support','Aspera','Aspera Connect')
-        folder_bin=File.join('Contents','Resources')
-        folder_etc=folder_bin
-      when /mswin|msys|mingw|cygwin|bccwin|wince|emc/
-        # also: ENV{TEMP}/.. , or %USERPROFILE%\AppData\Local\
-        connect_install_dir = File.join(ENV['LOCALAPPDATA'],'Programs','Aspera','Aspera Connect')
-        connect_run_dir = File.join(ENV['LOCALAPPDATA'],'Aspera','Aspera Connect')
-        ascp_bin_file='ascp.exe'
-      else  # unix family
-        connect_install_dir = File.join(Dir.home,'.aspera','connect')
-        connect_run_dir = connect_install_dir # TODO: check
-      end
-      res[:ascp] = { :path =>File.join(connect_install_dir,folder_bin,ascp_bin_file), :type => :file, :required => true}
-      res[:ssh_bypass_key_dsa] = { :path =>File.join(connect_install_dir,folder_etc,'asperaweb_id_dsa.openssh'), :type => :file, :required => true}
-      res[:ssh_bypass_key_rsa] = { :path =>File.join(connect_install_dir,folder_etc,'aspera_tokenauth_id_rsa'), :type => :file, :required => true}
-      res[:fallback_cert] = { :path =>File.join(connect_install_dir,folder_etc,'aspera_web_cert.pem'), :type => :file, :required => true}
-      res[:fallback_key] = { :path =>File.join(connect_install_dir,folder_etc,'aspera_web_key.pem'), :type => :file, :required => true}
-      res[:localhost_cert] = { :path =>File.join(connect_install_dir,folder_etc,'localhost.crt'), :type => :file, :required => true}
-      res[:localhost_key] = { :path =>File.join(connect_install_dir,folder_etc,'localhost.key'), :type => :file, :required => true}
-      res[:plugin_https_port_file] = { :path =>File.join(connect_run_dir,folder_varrun,'https.uri'), :type => :file, :required => false}
+      sub_varrun='var/run'
+      p = fasp_install_paths
+      res={}
+      res[:ascp] = { :path =>File.join(p[:app_root],p[:sub_bin],p[:ascp]), :type => :file, :required => true}
+      res[:ssh_bypass_key_dsa] = { :path =>File.join(p[:app_root],p[:sub_keys],p[:dsa]), :type => :file, :required => true}
+      res[:ssh_bypass_key_rsa] = { :path =>File.join(p[:app_root],p[:sub_keys],'aspera_tokenauth_id_rsa'), :type => :file, :required => true}
+      res[:fallback_cert] = { :path =>File.join(p[:app_root],p[:sub_keys],'aspera_web_cert.pem'), :type => :file, :required => false}
+      res[:fallback_key] = { :path =>File.join(p[:app_root],p[:sub_keys],'aspera_web_key.pem'), :type => :file, :required => false}
+      res[:localhost_cert] = { :path =>File.join(p[:app_root],p[:sub_keys],'localhost.crt'), :type => :file, :required => false}
+      res[:localhost_key] = { :path =>File.join(p[:app_root],p[:sub_keys],'localhost.key'), :type => :file, :required => false}
+      res[:plugin_https_port_file] = { :path =>File.join(p[:run_root],sub_varrun,'https.uri'), :type => :file, :required => false}
       Log.log.debug "resources=#{res}"
       notfound=[]
       res.each_pair do |k,v|

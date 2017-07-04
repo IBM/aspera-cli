@@ -15,7 +15,34 @@ module Asperalm
     end
 
     class Main < Plugin
-      @@MAIN_PLUGIN_NAME_SYM=:cli
+      # first level command for the main tool
+      @@MAIN_PLUGIN_NAME_SYM=:config
+      # name of application, also foldername where config is stored
+      $PROGRAM_NAME = 'aslmcli'
+      # folder in $HOME for the application
+      @@ASPERA_HOME_FOLDERNAME='.aspera'
+      # folder containing custom plugins in `config_folder`
+      @@ASPERA_PLUGINS_FOLDERNAME='plugins'
+      # main config file
+      @@DEFAULT_CONFIG_FILENAME = 'config.yaml'
+      # the singleton of this tool
+      @@singleton=nil
+      # folder containing plugins in the gem's main folder
+      @@GEM_PLUGINS_FOLDER='asperalm/cli/plugins'
+      # Path to module Cli : Asperalm::Cli
+      @@CLI_MODULE=Module.nesting[1].to_s
+      # Path to Plugin classes: Asperalm::Cli::Plugins
+      @@PLUGINS_MODULE=@@CLI_MODULE+"::Plugins"
+      # $HOME/.aspera/aslmcli
+      def config_folder
+        return File.join(Dir.home,@@ASPERA_HOME_FOLDERNAME,$PROGRAM_NAME)
+      end
+
+      # $HOME/.aspera/aslmcli/config.yaml
+      def config_file
+        return File.join(config_folder,@@DEFAULT_CONFIG_FILENAME)
+      end
+
       # get default configuration for named application
       def get_plugin_default_config(plugin_sym,config_name)
         if @configs.nil?
@@ -116,9 +143,16 @@ module Asperalm
           return nil
         end
       end
-      @@GEM_PLUGINS_FOLDER='asperalm/cli/plugins'
-      @@CLI_MODULE=Module.nesting[1].to_s
-      @@PLUGINS_MODULE=@@CLI_MODULE+"::Plugins"
+
+      def attr_fasp_folder(operation,value)
+        case operation
+        when :set
+          Log.log.debug "attr_fasp_folder: set: #{value}".red
+          Connect.fasp_install_paths=value
+        else
+          return Connect.fasp_install_paths
+        end
+      end
 
       # returns the list of plugins from plugin folder
       def plugin_sym_list
@@ -142,9 +176,10 @@ module Asperalm
         @plugins={@@MAIN_PLUGIN_NAME_SYM=>{:source=>__FILE__,:req=>nil}}
         gem_root=File.expand_path(@@CLI_MODULE.to_s.gsub('::','/').gsub(%r([^/]+),'..'), File.dirname(__FILE__))
         scan_plugins(gem_root,@@GEM_PLUGINS_FOLDER)
-        if File.directory?(@@USER_PLUGINS_FOLDER)
-          $:.push(@@USER_PLUGINS_FOLDER)
-          scan_plugins(@@USER_PLUGINS_FOLDER,nil)
+        user_plugin_folder=File.join(config_folder,@@ASPERA_PLUGINS_FOLDERNAME)
+        if File.directory?(user_plugin_folder)
+          $:.push(user_plugin_folder)
+          scan_plugins(user_plugin_folder,nil)
         end
       end
 
@@ -174,9 +209,10 @@ module Asperalm
         @help_requested=false
         @options=option_parser
         @configs=nil
+        @faspmanager=nil
         scan_all_plugins
         self.options.program_name=$PROGRAM_NAME
-        self.options.banner = "NAME\n\t#{$PROGRAM_NAME} -- a command line tool for Aspera Applications\n\n"
+        self.options.banner = "NAME\n\t#{$PROGRAM_NAME} -- a command line tool for Aspera Applications (v#{VERSION})\n\n"
         self.options.separator "SYNOPSIS"
         self.options.separator "\t#{$PROGRAM_NAME} COMMANDS [OPTIONS] [ARGS]"
         self.options.separator ""
@@ -210,6 +246,7 @@ module Asperalm
         self.options.set_handler(:transfer_spec) { |op,val| attr_transfer_spec(op,val) }
         self.options.set_handler(:browser) { |op,val| attr_browser(op,val) }
         self.options.set_handler(:load_params) { |op,val| attr_load_params(op,val) }
+        self.options.set_handler(:fasp_folder) { |op,val| attr_fasp_folder(op,val) }
       end
 
       # plugin_name_sym is symbol
@@ -239,8 +276,8 @@ module Asperalm
         self.options.set_option(:insecure,:no)
         self.options.set_option(:format,:table)
         self.options.set_option(:logtype,:stdout)
-        self.options.set_option(:config_file,@@DEFAULT_CONFIG_FILE) if File.exist?(@@DEFAULT_CONFIG_FILE)
-        self.options.on("-h", "--help", "Show this message. Try: cli help") { @help_requested=true }
+        self.options.set_option(:config_file,config_file) if File.exist?(config_file)
+        self.options.on("-h", "--help", "Show this message. Try: #{@@MAIN_PLUGIN_NAME_SYM} help") { @help_requested=true }
         self.options.add_opt_list(:browser,BrowserInteraction.open_url_methods,"method to start browser",'-gTYPE','--browser=TYPE')
         self.options.add_opt_list(:insecure,[:yes,:no],"do not validate cert",'--insecure=VALUE')
         self.options.add_opt_list(:loglevel,Log.levels,"Log level",'-lTYPE','--log-level=VALUE')
@@ -249,7 +286,8 @@ module Asperalm
         self.options.add_opt_list(:transfer,[:ascp,:connect,:node],"type of transfer",'--transfer=VALUE')
         self.options.add_opt_simple(:config_file,"-fSTRING", "--config-file=STRING","read parameters from file in YAML format, current=#{self.options.get_option(:config_file)}")
         self.options.add_opt_simple(:config_name,"-nSTRING", "--config-name=STRING","name of configuration in config file")
-        self.options.add_opt_simple(:load_params,"-nSTRING", "--load-params=NAME","load the named configuration from config file")
+        self.options.add_opt_simple(:load_params,"--load-params=NAME","load the named configuration from config file")
+        self.options.add_opt_simple(:fasp_folder,"--fasp-folder=NAME","specify where to find FASP (main folder), current=#{self.options.get_option(:fasp_folder)}")
         self.options.add_opt_simple(:transfer_node_config,"--transfer-node=STRING","name of configuration used to transfer when using --transfer=node")
         self.options.add_opt_simple(:fields,"--fields=STRING","comma separated list of fields, or #{FIELDS_ALL}, or #{FIELDS_DEFAULT}")
         self.options.add_opt_simple(:fasp_proxy,"--fasp-proxy=STRING","URL of FASP proxy (dnat / dnats)")
@@ -260,8 +298,8 @@ module Asperalm
 
       # "cli" plugin
       def execute_action
-        command=self.options.get_next_arg_from_list('command',[:help,:config,:plugins,:flush])
-        case command
+        action=self.options.get_next_arg_from_list('action',[:help,:plugins,:flush,:ls,:init,:cat,:open])
+        case action
         when :flush
           deleted_files=Oauth.flush_tokens
           return {:type=>:value_list, :name=>'file',:data=>deleted_files}
@@ -282,49 +320,45 @@ module Asperalm
           Process.exit 1
         when :plugins
           return {:data => plugin_sym_list.map { |i| { 'plugin' => i.to_s, 'path' => @plugins[i][:source] } } , :fields => ['plugin','path'], :type => :hash_array }
-        when :config
-          action=self.options.get_next_arg_from_list('action',[:ls,:init,:cat,:open])
-          case action
-          when :init
-            raise CliError,"Folder already exists: #{$PROGRAM_FOLDER}" if Dir.exist?($PROGRAM_FOLDER)
-            FileUtils::mkdir_p($PROGRAM_FOLDER)
-            sample_config={
-              "cli_default"=>{:loglevel=>:warn},
-              "files_default"=>{:auth=>:jwt, :url=>"https://myorg.asperafiles.com", :client_id=>"MyClientId", :client_secret=>"MyAccessKeySecret", :private_key=>"@file:~/.aspera/aslmcli/filesapikey", :username=>"user@example.com"},
-              "files_web"=>{:auth=>:web, :url=>"https://myorg.asperafiles.com", :client_id=>"MyClientId", :client_secret=>"MyAccessKeySecret", :redirect_uri=>"http://local.connectme.us:12345"},
-              "faspex_default"=>{:url=>"https://myfaspex.mycompany.com/aspera/faspex", :username=>"admin", :password=>"MyP@ssw0rd",:storage=>{'Local Storage'=>{:node=>'default',:path=>'/subpath'}}},
-              "faspex_app2"=>{:url=>"https://faspex.other.com/aspera/faspex", :username=>"john@example", :password=>"yM7FmjfGN$J4"},
-              "shares_default"=>{:url=>"https://10.25.0.6", :username=>"admin", :password=>"MyP@ssw0rd"},
-              "node_default"=>{:url=>"https://10.25.0.8:9092", :username=>"node_user", :password=>"MyP@ssw0rd", :transfer_filter=>"t['status'].eql?('completed') and t['start_spec']['remote_user'].eql?('faspex')", :file_filter=>"f['status'].eql?('completed') and 0 != f['size'] and t['start_spec']['direction'].eql?('send')"},
-              "console_default"=>{:url=>"https://console.myorg.com/aspera/console", :username=>"admin", :password=>"xxxxx"},
-              "fasp_default"=>{:transfer_spec=>'{"remote_host":"demo.asperasoft.com","remote_user":"asperaweb","password":"xxxxx"}'}
-            }
-            File.write(@@DEFAULT_CONFIG_FILE,sample_config.to_yaml)
-            puts "initialized: #{$PROGRAM_FOLDER}"
-            return Main.no_result
-          when :cat
-            return {:data=>File.read(@@DEFAULT_CONFIG_FILE),:type=>:other_struct}
-          when :open
-            BrowserInteraction.open_system_uri(@@DEFAULT_CONFIG_FILE)
-            return Main.no_result
-          when :ls
-            sections=plugin_sym_list
+        when :init
+          raise CliError,"Folder already exists: #{config_folder}" if Dir.exist?(config_folder)
+          FileUtils::mkdir_p(config_folder)
+          sample_config={
+            "cli_default"=>{:loglevel=>:warn},
+            "files_default"=>{:auth=>:jwt, :url=>"https://myorg.asperafiles.com", :client_id=>"MyClientId", :client_secret=>"MyAccessKeySecret", :private_key=>"@file:~/.aspera/aslmcli/filesapikey", :username=>"user@example.com"},
+            "files_web"=>{:auth=>:web, :url=>"https://myorg.asperafiles.com", :client_id=>"MyClientId", :client_secret=>"MyAccessKeySecret", :redirect_uri=>"http://local.connectme.us:12345"},
+            "faspex_default"=>{:url=>"https://myfaspex.mycompany.com/aspera/faspex", :username=>"admin", :password=>"MyP@ssw0rd",:storage=>{'Local Storage'=>{:node=>'default',:path=>'/subpath'}}},
+            "faspex_app2"=>{:url=>"https://faspex.other.com/aspera/faspex", :username=>"john@example", :password=>"yM7FmjfGN$J4"},
+            "shares_default"=>{:url=>"https://10.25.0.6", :username=>"admin", :password=>"MyP@ssw0rd"},
+            "node_default"=>{:url=>"https://10.25.0.8:9092", :username=>"node_user", :password=>"MyP@ssw0rd", :transfer_filter=>"t['status'].eql?('completed') and t['start_spec']['remote_user'].eql?('faspex')", :file_filter=>"f['status'].eql?('completed') and 0 != f['size'] and t['start_spec']['direction'].eql?('send')"},
+            "console_default"=>{:url=>"https://console.myorg.com/aspera/console", :username=>"admin", :password=>"xxxxx"},
+            "fasp_default"=>{:transfer_spec=>'{"remote_host":"demo.asperasoft.com","remote_user":"asperaweb","password":"xxxxx"}'}
+          }
+          File.write(config_file,sample_config.to_yaml)
+          puts "initialized: #{config_folder}"
+          return Main.no_result
+        when :cat
+          return {:data=>File.read(config_file),:type=>:other_struct}
+        when :open
+          BrowserInteraction.open_system_uri(config_file)
+          return Main.no_result
+        when :ls
+          sections=plugin_sym_list
+          if self.options.command_or_arg_empty?
+            # just list plugins
+            return {:data => sections, :type => :value_list, :name => 'plugin'}
+          else
+            plugin=self.options.get_next_arg_from_list('plugin',sections)
+            names=@configs[plugin].keys.map { |i| i.to_sym }
             if self.options.command_or_arg_empty?
-              # just list plugins
-              return {:data => sections, :type => :value_list, :name => 'plugin'}
+              # list names for tool
+              return {:data => names, :type => :value_list, :name => 'name'}
             else
-              plugin=self.options.get_next_arg_from_list('plugin',sections)
-              names=@configs[plugin].keys.map { |i| i.to_sym }
-              if self.options.command_or_arg_empty?
-                # list names for tool
-                return {:data => names, :type => :value_list, :name => 'name'}
-              else
-                # list parameters
-                configname=self.options.get_next_arg_from_list('config',names)
-                defaults=get_plugin_default_config(plugin,configname.to_s)
-                return Main.no_result if defaults.nil?
-                return {:data => defaults.keys.map { |i| { 'param' => i.to_s, 'value' => defaults[i] } } , :fields => ['param','value'], :type => :hash_array }
-              end
+              # list parameters
+              configname=self.options.get_next_arg_from_list('config',names)
+              defaults=get_plugin_default_config(plugin,configname.to_s)
+              return Main.no_result if defaults.nil?
+              return {:data => defaults.keys.map { |i| { 'param' => i.to_s, 'value' => defaults[i] } } , :fields => ['param','value'], :type => :hash_array }
             end
           end
         end
@@ -413,7 +447,7 @@ module Asperalm
 
       def process_exception_exit(e,reason,propose_help=:none)
         STDERR.puts "ERROR:".bg_red().gray().blink()+" "+reason+": "+e.message
-        STDERR.puts "Use '-h' option, or 'cli help' command to get help." if propose_help.eql?(:usage)
+        STDERR.puts "Use '-h' option, or '#{@@MAIN_PLUGIN_NAME_SYM} help' command to get help." if propose_help.eql?(:usage)
         if Log.level == :debug
           raise e
         else
@@ -462,6 +496,7 @@ module Asperalm
         return nil
       end
 
+      # get the main tool singleton instance
       def self.tool
         if @@singleton.nil?
           # quick init of debug level
@@ -472,18 +507,6 @@ module Asperalm
         return @@singleton
       end
 
-      #################################
-      # MAIN
-      #--------------------------------
-      $PROGRAM_NAME = 'aslmcli'
-      @@ASPERA_HOME_FOLDERNAME='.aspera'
-      @@ASPERA_PLUGINS_FOLDERNAME='plugins'
-      @@DEFAULT_CONFIG_FILENAME = 'config.yaml'
-      @@ASPERA_HOME_FOLDERPATH=File.join(Dir.home,@@ASPERA_HOME_FOLDERNAME)
-      $PROGRAM_FOLDER=File.join(@@ASPERA_HOME_FOLDERPATH,$PROGRAM_NAME)
-      @@DEFAULT_CONFIG_FILE=File.join($PROGRAM_FOLDER,@@DEFAULT_CONFIG_FILENAME)
-      @@USER_PLUGINS_FOLDER=File.join($PROGRAM_FOLDER,@@ASPERA_PLUGINS_FOLDERNAME)
-      @@singleton=nil
     end
   end
 end

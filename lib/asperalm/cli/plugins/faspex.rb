@@ -83,6 +83,13 @@ module Asperalm
             command_pkg=Main.tool.options.get_next_arg_from_list('command',[ :send, :recv, :list ])
             api_faspex=get_faspex_authenticated_api
             case command_pkg
+            when :list
+              all_inbox_xml=api_faspex.call({:operation=>'GET',:subpath=>"#{Main.tool.options.get_option(:pkgbox).to_s}.atom",:headers=>{'Accept'=>'application/xml'}})[:http].body
+              all_inbox_data=XmlSimple.xml_in(all_inbox_xml, {"ForceArray" => true})
+              if all_inbox_data.has_key?('entry')
+                return {:data=>all_inbox_data['entry'],:type=>:hash_array,:fields=>['title','items',PACKAGE_MATCH_FIELD], :textify => lambda { |table_data| Faspex.textify_package_list(table_data)} }
+              end
+              return Main.no_result
             when :send
               filelist = Main.tool.options.get_remaining_arguments("file list")
               package_create_params={
@@ -124,8 +131,8 @@ module Asperalm
                 if allinbox.has_key?('entry')
                   package_entries=allinbox['entry'].select { |e| pkguuid.eql?(e[PACKAGE_MATCH_FIELD].first) }
                 end
-                if package_entries.length != 1
-                  raise CliBadArgument,"no such uuid"
+                if package_entries.length == 0
+                  raise CliBadArgument,"no such package: #{pkguuid}"
                 end
                 package_entry=package_entries.first
               else
@@ -145,13 +152,6 @@ module Asperalm
               transfer_spec['destination_root']='.'
               Main.tool.faspmanager.transfer_with_spec(transfer_spec)
               return Main.result_success
-            when :list
-              all_inbox_xml=api_faspex.call({:operation=>'GET',:subpath=>"#{Main.tool.options.get_option(:pkgbox).to_s}.atom",:headers=>{'Accept'=>'application/xml'}})[:http].body
-              all_inbox_data=XmlSimple.xml_in(all_inbox_xml, {"ForceArray" => true})
-              if all_inbox_data.has_key?('entry')
-                return {:data=>all_inbox_data['entry'],:type=>:hash_array,:fields=>['title','items',PACKAGE_MATCH_FIELD], :textify => lambda { |table_data| Faspex.textify_package_list(table_data)} }
-              end
-              return Main.no_result
             end
           when :source
             command_source=Main.tool.options.get_next_arg_from_list('command',[ :list, :id, :name ])

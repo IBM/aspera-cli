@@ -21,24 +21,26 @@ module Asperalm
 
       # consume elements of array, those starting with minus are options, others are commands
       def initialize
-        @command_and_args=[]
-        @options=[]
-        @attr_procs={}
-        @attr_values={}
+        # command line values not starting with '-'
+        @unprocessed_command_and_args=[]
+        # command line values starting with '-'
+        @unprocessed_options=[]
+          # key = name of option, either Proc or value
+        @available_option={}
         super
       end
 
       def set_argv(argv)
-        @options=[]
-        @command_and_args=[]
+        @unprocessed_options=[]
+        @unprocessed_command_and_args=[]
         while !argv.empty?
           if argv.first =~ /^-/
-            @options.push(argv.shift)
+            @unprocessed_options.push(argv.shift)
           else
-            @command_and_args.push(argv.shift)
+            @unprocessed_command_and_args.push(argv.shift)
           end
         end
-        Log.log.debug("set_argv:commands=#{@command_and_args},args=#{@options}".red)
+        Log.log.debug("set_argv:commands=#{@unprocessed_command_and_args},args=#{@unprocessed_options}".red)
       end
 
       def self.value_modifier; ['file','env', 'val', 'val64', 'json', 'none']; end
@@ -69,7 +71,7 @@ module Asperalm
       end
 
       def command_or_arg_empty?
-        return @command_and_args.empty?
+        return @unprocessed_command_and_args.empty?
       end
 
       def self.get_from_list(shortval,descr,allowed_values)
@@ -86,53 +88,54 @@ module Asperalm
 
       # get next argument, must be from the value list
       def get_next_arg_from_list(descr,allowed_values)
-        if @command_and_args.empty? then
+        if @unprocessed_command_and_args.empty? then
           raise CliBadArgument,"missing action, one of: #{allowed_values.map {|x| x.to_s}.join(', ')}"
         end
-        return self.class.get_from_list(@command_and_args.shift,descr,allowed_values)
+        return self.class.get_from_list(@unprocessed_command_and_args.shift,descr,allowed_values)
       end
 
       # just get next value
       def get_next_arg_value(descr)
-        if @command_and_args.empty? then
+        if @unprocessed_command_and_args.empty? then
           raise CliBadArgument,"expecting value: #{descr}"
         end
-        return self.class.get_extended_value(descr,@command_and_args.shift)
+        return self.class.get_extended_value(descr,@unprocessed_command_and_args.shift)
       end
 
       def get_remaining_arguments(descr,minus=0)
-        raise CliBadArgument,"missing: #{descr}" if @command_and_args.empty?
-        raise CliBadArgument,"missing args after: #{descr}" if @command_and_args.length <= minus
-        filelist = @command_and_args.shift(@command_and_args.length-minus)
+        raise CliBadArgument,"missing: #{descr}" if @unprocessed_command_and_args.empty?
+        raise CliBadArgument,"missing args after: #{descr}" if @unprocessed_command_and_args.length <= minus
+        filelist = @unprocessed_command_and_args.shift(@unprocessed_command_and_args.length-minus)
         Log.log.debug("#{descr}=#{filelist}")
         return filelist
       end
 
       def set_handler(option_symbol,&block)
         Log.log.debug("set handler #{option_symbol} (#{block})")
-        @attr_procs[option_symbol]=block
+        Log.log.error("handler already set for #{option_symbol}") if @available_option.has_key?(option_symbol)
+        @available_option[option_symbol]=block
       end
 
       def set_option(option_symbol,value)
         value=self.class.get_extended_value(option_symbol,value)
-        if @attr_procs.has_key?(option_symbol)
+        if @available_option.has_key?(option_symbol) and @available_option[option_symbol].is_a?(Proc)
           Log.log.debug("set #{option_symbol}=#{value} (method)".blue)
-          @attr_procs[option_symbol].call(:set,value) # TODO ? check
+          @available_option[option_symbol].call(:set,value) # TODO ? check
         else
           Log.log.debug("set #{option_symbol}=#{value} (value)".blue)
-          @attr_values[option_symbol]=value
+          @available_option[option_symbol]=value
         end
 
       end
 
       # can return nil
       def get_option(option_symbol)
-        if @attr_procs.has_key?(option_symbol)
+        if @available_option.has_key?(option_symbol) and @available_option[option_symbol].is_a?(Proc)
           Log.log.debug("get #{option_symbol} (method)")
-          return @attr_procs[option_symbol].call(:get,nil) # TODO ? check
+          return @available_option[option_symbol].call(:get,nil) # TODO ? check
         else
           Log.log.debug("get #{option_symbol} (value)")
-          return @attr_values[option_symbol]
+          return @available_option[option_symbol]
         end
       end
 
@@ -184,7 +187,7 @@ module Asperalm
       end
 
       def unprocessed_options
-        return @options
+        return @unprocessed_options
       end
 
       # removes already known options from the list
@@ -192,14 +195,14 @@ module Asperalm
         Log.log.debug("parse_options!")
         unknown_options=[]
         begin
-          self.parse!(@options)
+          self.parse!(@unprocessed_options)
         rescue OptionParser::InvalidOption => e
           unknown_options.push(e.args.first)
           retry
         end
         Log.log.debug("remains: #{unknown_options}")
         # set unprocessed options for next time
-        @options=unknown_options
+        @unprocessed_options=unknown_options
       end
     end
   end
