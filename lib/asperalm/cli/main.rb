@@ -8,25 +8,27 @@ require 'yaml'
 require 'text-table'
 require 'pp'
 require 'fileutils'
+require 'singleton'
 
 module Asperalm
   module Cli
-    module Plugins
-    end
+    module Plugins; end
 
+    # The main CI class, singleton
     class Main < Plugin
+      include Singleton
+      singleton_class.send(:alias_method, :tool, :instance)
+
       # first level command for the main tool
       @@MAIN_PLUGIN_NAME_SYM=:config
       # name of application, also foldername where config is stored
-      $PROGRAM_NAME = 'aslmcli'
+      @@PROGRAM_NAME = 'aslmcli'
       # folder in $HOME for the application
       @@ASPERA_HOME_FOLDERNAME='.aspera'
       # folder containing custom plugins in `config_folder`
       @@ASPERA_PLUGINS_FOLDERNAME='plugins'
       # main config file
       @@DEFAULT_CONFIG_FILENAME = 'config.yaml'
-      # the singleton of this tool
-      @@singleton=nil
       # folder containing plugins in the gem's main folder
       @@GEM_PLUGINS_FOLDER='asperalm/cli/plugins'
       # Path to module Cli : Asperalm::Cli
@@ -35,7 +37,7 @@ module Asperalm
       @@PLUGINS_MODULE=@@CLI_MODULE+"::Plugins"
       # $HOME/.aspera/aslmcli
       def config_folder
-        return File.join(Dir.home,@@ASPERA_HOME_FOLDERNAME,$PROGRAM_NAME)
+        return File.join(Dir.home,@@ASPERA_HOME_FOLDERNAME,@@PROGRAM_NAME)
       end
 
       # $HOME/.aspera/aslmcli/config.yaml
@@ -71,7 +73,10 @@ module Asperalm
         return status_result('complete')
       end
 
-      def attr_logtype(operation,value)
+      # =============================================================
+      # Parameter handlers
+      #
+      def handler_logtype(operation,value)
         case operation
         when :set
           Log.setlogger(value)
@@ -83,7 +88,7 @@ module Asperalm
         end
       end
 
-      def attr_loglevel(operation,value)
+      def handler_loglevel(operation,value)
         case operation
         when :set
           Log.level = value
@@ -92,7 +97,7 @@ module Asperalm
         end
       end
 
-      def attr_insecure(operation,value)
+      def handler_insecure(operation,value)
         case operation
         when :set
           Rest.insecure=value
@@ -101,7 +106,7 @@ module Asperalm
         end
       end
 
-      def attr_config_file(operation,value)
+      def handler_config_file(operation,value)
         case operation
         when :set
           @config_file_path=value
@@ -114,40 +119,40 @@ module Asperalm
         end
       end
 
-      def attr_transfer_spec(operation,value)
+      def handler_transfer_spec(operation,value)
         case operation
         when :set
-          Log.log.debug "attr_transfer_spec: set: #{value}".red
+          Log.log.debug "handler_transfer_spec: set: #{value}".red
           FaspManager.ts_override_json=value
         else
           return FaspManager.ts_override_json
         end
       end
 
-      def attr_browser(operation,value)
+      def handler_browser(operation,value)
         case operation
         when :set
-          Log.log.debug "attr_browser: set: #{value}".red
+          Log.log.debug "handler_browser: set: #{value}".red
           OperatingSystem.open_url_method=value
         else
           return OperatingSystem.open_url_method
         end
       end
 
-      def attr_load_params(operation,value)
+      def handler_load_params(operation,value)
         case operation
         when :set
-          Log.log.debug "attr_load_params: set: #{value} : #{@configs[value]}".red
+          Log.log.debug "handler_load_params: set: #{value} : #{@configs[value]}".red
           self.options.set_defaults(@configs[value])
         else
           return nil
         end
       end
 
-      def attr_fasp_folder(operation,value)
+      def handler_fasp_folder(operation,value)
         case operation
         when :set
-          Log.log.debug "attr_fasp_folder: set: #{value}".red
+          Log.log.debug "handler_fasp_folder: set: #{value}".red
           Connect.fasp_install_paths=value
         else
           return Connect.fasp_install_paths
@@ -161,7 +166,7 @@ module Asperalm
 
       def action_list; plugin_sym_list; end
 
-      # returns the list of plugins from plugin folder
+      # adds plugins from given plugin folder
       def scan_plugins(plugin_folder,plugin_subfolder)
         plugin_folder=File.join(plugin_folder,plugin_subfolder) if !plugin_subfolder.nil?
         Dir.entries(plugin_folder).select { |file| file.end_with?('.rb')}.each do |source|
@@ -170,6 +175,7 @@ module Asperalm
         end
       end
 
+      # adds plugins from system and user
       def scan_all_plugins
         # find plugins
         # value=path to class
@@ -188,6 +194,7 @@ module Asperalm
           # create the FASP manager for transfers
           @faspmanager=FaspManagerResume.new
           @faspmanager.set_listener(FaspListenerLogger.new)
+          @faspmanager.connect_app_id=@@PROGRAM_NAME
           case self.options.get_option_mandatory(:transfer)
           when :connect
             @faspmanager.use_connect_client=true
@@ -205,16 +212,16 @@ module Asperalm
 
       def options; @options;end
 
-      def initialize(option_parser)
+      def initialize
         @help_requested=false
-        @options=option_parser
+        @options=OptParser.new
         @configs=nil
         @faspmanager=nil
         scan_all_plugins
-        self.options.program_name=$PROGRAM_NAME
-        self.options.banner = "NAME\n\t#{$PROGRAM_NAME} -- a command line tool for Aspera Applications (v#{VERSION})\n\n"
+        self.options.program_name=@@PROGRAM_NAME
+        self.options.banner = "NAME\n\t#{@@PROGRAM_NAME} -- a command line tool for Aspera Applications (v#{VERSION})\n\n"
         self.options.separator "SYNOPSIS"
-        self.options.separator "\t#{$PROGRAM_NAME} COMMANDS [OPTIONS] [ARGS]"
+        self.options.separator "\t#{@@PROGRAM_NAME} COMMANDS [OPTIONS] [ARGS]"
         self.options.separator ""
         self.options.separator "DESCRIPTION"
         self.options.separator "\tUse Aspera application to perform operations on command line."
@@ -234,19 +241,19 @@ module Asperalm
         self.options.separator "\tSome commands require mandatory arguments, e.g. a path.\n"
         self.options.separator ""
         self.options.separator "EXAMPLES"
-        self.options.separator "\t#{$PROGRAM_NAME} files repo browse /"
-        self.options.separator "\t#{$PROGRAM_NAME} faspex send ./myfile --log-level=debug"
-        self.options.separator "\t#{$PROGRAM_NAME} shares upload ~/myfile /myshare"
+        self.options.separator "\t#{@@PROGRAM_NAME} files repo browse /"
+        self.options.separator "\t#{@@PROGRAM_NAME} faspex send ./myfile --log-level=debug"
+        self.options.separator "\t#{@@PROGRAM_NAME} shares upload ~/myfile /myshare"
         self.options.separator ""
         # handler must be set before setting defaults
-        self.options.set_handler(:loglevel) { |op,val| attr_loglevel(op,val) }
-        self.options.set_handler(:logtype) { |op,val| attr_logtype(op,val) }
-        self.options.set_handler(:config_file) { |op,val| attr_config_file(op,val) }
-        self.options.set_handler(:insecure) { |op,val| attr_insecure(op,val) }
-        self.options.set_handler(:transfer_spec) { |op,val| attr_transfer_spec(op,val) }
-        self.options.set_handler(:browser) { |op,val| attr_browser(op,val) }
-        self.options.set_handler(:load_params) { |op,val| attr_load_params(op,val) }
-        self.options.set_handler(:fasp_folder) { |op,val| attr_fasp_folder(op,val) }
+        self.options.set_handler(:loglevel) { |op,val| handler_loglevel(op,val) }
+        self.options.set_handler(:logtype) { |op,val| handler_logtype(op,val) }
+        self.options.set_handler(:config_file) { |op,val| handler_config_file(op,val) }
+        self.options.set_handler(:insecure) { |op,val| handler_insecure(op,val) }
+        self.options.set_handler(:transfer_spec) { |op,val| handler_transfer_spec(op,val) }
+        self.options.set_handler(:browser) { |op,val| handler_browser(op,val) }
+        self.options.set_handler(:load_params) { |op,val| handler_load_params(op,val) }
+        self.options.set_handler(:fasp_folder) { |op,val| handler_fasp_folder(op,val) }
       end
 
       # plugin_name_sym is symbol
@@ -296,7 +303,7 @@ module Asperalm
         self.options.add_opt_simple(:transfer_spec,"--ts=JSON","override transfer spec values, current=#{self.options.get_option(:transfer_spec)}")
       end
 
-      # "cli" plugin
+      # "config" plugin
       def execute_action
         action=self.options.get_next_arg_from_list('action',[:help,:plugins,:flush,:ls,:init,:cat,:open])
         case action
@@ -312,7 +319,7 @@ module Asperalm
             # override main option parser...
             @options=OptParser.new
             self.options.banner = ""
-            self.options.program_name=$PROGRAM_NAME
+            self.options.program_name=@@PROGRAM_NAME
             self.options.set_defaults({:config_name => 'default',:transfer=>:ascp})
             get_plugin_instance(plugin_name_sym)
             STDERR.puts(self.options)
@@ -423,7 +430,7 @@ module Asperalm
             puts PP.pp(results[:data],'')
             return
           else
-            raise "ERROR"
+            raise "unknown data type: #{results[:type]}"
           end
           raise "ERROR" if display_fields.nil?
           # convert to string with special function
@@ -459,6 +466,7 @@ module Asperalm
       def process_command_line(argv)
         begin
           # init options
+          # opt parser separates options (start with '-') from arguments
           self.options.set_argv(argv)
           self.options.set_defaults({:config_name => 'default'})
           # declare global options
@@ -493,20 +501,8 @@ module Asperalm
         rescue SocketError => e;             process_exception_exit(e,"Network")
         rescue StandardError => e;           process_exception_exit(e,"Other",:debug)
         end
-        return nil
+        return self
       end
-
-      # get the main tool singleton instance
-      def self.tool
-        if @@singleton.nil?
-          # quick init of debug level
-          Log.level = ARGV.include?('--log-level=debug') ? :debug : :warn
-          # opt parser separates options (start with '-') from arguments
-          @@singleton = self.new(OptParser.new)
-        end
-        return @@singleton
-      end
-
     end
   end
 end

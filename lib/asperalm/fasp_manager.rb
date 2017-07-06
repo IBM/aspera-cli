@@ -87,6 +87,7 @@ module Asperalm
     attr_accessor :fasp_proxy_url
     attr_accessor :http_proxy_url
     attr_accessor :tr_node_api
+    attr_accessor :connect_app_id
 
     def initialize
       @mgt_sock=nil
@@ -95,6 +96,7 @@ module Asperalm
       @fasp_proxy_url=nil
       @http_proxy_url=nil
       @tr_node_api=nil
+      @connect_app_id='localapp'
     end
 
     # todo: support multiple listeners
@@ -397,7 +399,7 @@ module Asperalm
         if transfer_spec["direction"] == "send"
           Log.log.warn("Upload by connect must be selected using GUI, ignoring #{transfer_spec['paths']}".red)
           transfer_spec.delete('paths')
-          res=connect_api.create('windows/select-open-file-dialog/',{"title"=>"Select Files","suggestedName"=>"","allowMultipleSelection"=>true,"allowedFileTypes"=>"","aspera_connect_settings"=>{"app_id"=>$PROGRAM_NAME}})
+          res=connect_api.create('windows/select-open-file-dialog/',{"title"=>"Select Files","suggestedName"=>"","allowMultipleSelection"=>true,"allowedFileTypes"=>"","aspera_connect_settings"=>{"app_id"=>@connect_app_id}})
           transfer_spec['paths']=res[:data]['dataTransfer']['files'].map { |i| {'source'=>i['name']}}
         end
         request_id=SecureRandom.uuid
@@ -407,7 +409,7 @@ module Asperalm
           'transfer_spec'=>transfer_spec,
           'aspera_connect_settings'=>{
           'allow_dialogs'=>true,
-          'app_id'=>$PROGRAM_NAME,
+          'app_id'=>@connect_app_id,
           'request_id'=>request_id
           }}]}
         connect_api.create('transfers/start',transfer_specs)

@@ -3,6 +3,8 @@ require 'net/ssh'
 module Asperalm
   # Methods for running +ascmd+ commands on a node.
   class AsCmd
+    # contains one result of command (binary string)
+    # commands return list of result
     class Result
       attr_accessor :command, :length, :string
       # Returns new instance of Reply.
@@ -54,9 +56,9 @@ module Asperalm
       def initialize(ascmd_error,method,the_args)
         self.command = method.to_s
         self.args = the_args.nil? ? [] : the_args
-        AsCmd.parse_bin_response(ascmd_error.string).each do |item|
+        Parser.parse_bin_response(ascmd_error.string).each do |item|
           case item.command
-          when 1; self.rc = AsCmd.parse_bin_int(item.string)
+          when 1; self.rc = Parser.parse_bin_int(item.string)
           when 2; self.ascmd_message = item.string
           end
         end
@@ -76,189 +78,185 @@ module Asperalm
 
     end # Error
 
-    def self.run(credentials, method, *args)
-      self.new(credentials).send(method, *args)
-    end
-
-    # Returns an Array of Reply instances built from an ascmd response.
-    # The response consists of 1 or more replies, concatenated together,
-    # of the form:
-    #
-    #   <cmd_1><length_1><data_1>...<cmd_n><length_n><data_n>
-    #
-    # where:
-    #
-    # * cmd - a hex number indicating the type of response
-    # * length - the length of the response
-    # * data - the content of the response.
-    #
-    def self.parse_bin_response(results_string)
-      res_list = []
-      while results_string && results_string.length > 5
-        command = results_string[0].ord
-        command_length = parse_bin_int(results_string[1, 4])
-        data = results_string[5, command_length]
-        res_list << Result.new(command, command_length, data)
-        results_string = results_string[(command_length + 5), results_string.length]
+    # binary answer parsing
+    # parse_res take a Result as parameter
+    # parse_bin take the binary string
+    class Parser
+      # Returns an Array of Reply instances built from an ascmd response.
+      # The response consists of 1 or more replies, concatenated together,
+      # of the form:
+      #
+      #   <cmd_1><length_1><data_1>...<cmd_n><length_n><data_n>
+      #
+      # where:
+      #
+      # * cmd - a hex number indicating the type of response
+      # * length - the length of the response
+      # * data - the content of the response.
+      #
+      def self.parse_bin_response(results_string)
+        res_list = []
+        while results_string && results_string.length > 5
+          command = results_string[0].ord
+          command_length = parse_bin_int(results_string[1, 4])
+          data = results_string[5, command_length]
+          res_list << Result.new(command, command_length, data)
+          results_string = results_string[(command_length + 5), results_string.length]
+        end
+        res_list
       end
-      res_list
-    end
 
-    # Returns Hash of values derived from banner message that is returned
-    # from the invocation of as_<cmd>.
-    def self.parse_res_info(res_list)
-      banner_fields = parse_bin_response(res_list.shift.string)
-      banner = {}
-      banner_fields.each do |field|
-        value = field.string.strip
-        case field.command
-        when 1;  banner[:platform] = value
-        when 2;  banner[:version] = value
-        when 3;  banner[:language] = value
-        when 4;  banner[:territory] = value
-        when 5;  banner[:codeset] = value
-        when 6;  banner[:lc_ctype] = value
-        when 7;  banner[:lc_numeric] = value
-        when 8;  banner[:lc_time] = value
-        when 9;  banner[:lc_all] = value
-        when 10; (banner[:devices] ||= []) << value
-        else     raise "Unrecognized banner field: n=[#{field.command}]\n#{field.string}"
+      # Parses a directory response from ascmd "as_ls <file_or_directory>".
+      def self.parse_bin_directory(string)
+        parse_bin_response(string).map { |r| parse_bin_directory_item(r.string) }
+      end
+
+      # Returns a DirectoryItem instance parsed from a file or directory response.
+      def self.parse_bin_directory_item(string)
+        hash = {}
+        parse_bin_response(string).each do |reply|
+          value = reply.string
+          case reply.command
+          when 1;  hash[:name]    = value[0..-2] #cuts the trailing \000
+          when 2;  hash[:size]    = parse_bin_int(value)
+          when 3;  hash[:mode]    = parse_bin_int(value)
+          when 4;  hash[:type]    = mode_to_type(value.strip)
+          when 5;  hash[:uid]     = parse_bin_int(value)
+          when 6;  hash[:suid]    = value.strip
+          when 7;  hash[:gid]     = parse_bin_int(value)
+          when 8;  hash[:sgid]    = value.strip
+          when 9;  hash[:ctime]   = parse_bin_time_epoch(value)
+          when 10; hash[:sctime]  = parse_bin_time_string(value)
+          when 11; hash[:mtime]   = parse_bin_time_epoch(value)
+          when 12; hash[:smtime]  = parse_bin_time_string(value)
+          when 13; hash[:atime]   = parse_bin_time_epoch(value)
+          when 14; hash[:satime]  = parse_bin_time_string(value)
+          when 15; hash[:symlink] = value.strip
+          when 16; hash[:error]   = parse_bin_int(value)
+          when 17; hash[:errstr]  = value.strip
+          end
+        end
+        hash
+      end
+
+      # Converts the first character of the file mode (see 'man ls') into
+      # a type.
+      def self.mode_to_type(mode)
+        case mode[0,1]
+        when 'd'; :directory
+        when '-'; :file
+        when 'l'; :link
+        else      :other
         end
       end
-      banner
-    end
 
-    def self.parse_res_df(res_list)
-      df_fields = parse_bin_response(res_list.shift.string)
-      devices = {}
-      df_fields.each do |field|
-        value = field.string.strip
-        case field.command
-        when 1;  devices[:size] = parse_bin_int(value)
-        when 2;  devices[:file_count] = parse_bin_int(value)
-        when 3;  devices[:directory_count] = parse_bin_int(value)
-        when 4;  devices[:failed_file_count] = parse_bin_int(value)
-        when 5;  devices[:failed_directory_count] = parse_bin_int(value)
-        when 6..9;  nil # TODO
-        else     raise "Unrecognized devices field: #{field.command}\n#{field.string}"
+      def self.parse_bin_int(buf)
+        val = 0
+        if (buf)
+          buf.each_byte do |f|
+            val = val * 256 + f
+          end
         end
+        return val
       end
-      devices
-    end
 
-    def self.parse_res_du(res_list,unused_folder_name)
-      du_fields = parse_bin_response(res_list.shift.string)
-      result_hash = {}
-      du_fields.each do |field|
-        value = field.string.strip
-        case field.command
-        when 1;  result_hash[:size] = parse_bin_int(value)
-        when 2;  result_hash[:file_count] = parse_bin_int(value)
-        when 3;  result_hash[:directory_count] = parse_bin_int(value)
-        when 4;  result_hash[:failed_file_count] = parse_bin_int(value)
-        when 5;  result_hash[:failed_directory_count] = parse_bin_int(value)
-        else     raise "Unrecognized result_hash field: #{field.command}\n#{field.string}"
+      def self.parse_bin_time_epoch(epoch)
+        Time.at(parse_bin_int(epoch)) rescue nil
+      end
+
+      def self.parse_bin_time_string(string)
+        Time.parse(string) rescue nil
+      end
+
+      # Returns Hash of values derived from banner message that is returned
+      # from the invocation of as_<cmd>.
+      def self.parse_res_info(res_list)
+        final_result = {}
+        parse_bin_response(res_list.shift.string).each do |field|
+          value = field.string.strip
+          case field.command
+          when 1;  final_result[:platform] = value
+          when 2;  final_result[:version] = value
+          when 3;  final_result[:language] = value
+          when 4;  final_result[:territory] = value
+          when 5;  final_result[:codeset] = value
+          when 6;  final_result[:lc_ctype] = value
+          when 7;  final_result[:lc_numeric] = value
+          when 8;  final_result[:lc_time] = value
+          when 9;  final_result[:lc_all] = value
+          when 10; (final_result[:devices] ||= []) << value
+          else     raise "Unrecognized banner field: n=[#{field.command}]\n#{field.string}"
+          end
         end
+        final_result
       end
-      result_hash
-    end
 
-    def self.parse_res_md5sum(res_list,unused_path)
-      du_fields = parse_bin_response(res_list.shift.string)
-      result_hash = {}
-      du_fields.each do |field|
-        value = field.string.strip
-        case field.command
-        when 1;  result_hash[:md5sum] = value
-        else     raise "Unrecognized field: #{field.command}\n#{field.string}"
+      def self.parse_res_df(res_list)
+        devices = {}
+        parse_bin_response(res_list.shift.string).each do |field|
+          value = field.string.strip
+          case field.command
+          when 1;  devices[:size] = parse_bin_int(value)
+          when 2;  devices[:file_count] = parse_bin_int(value)
+          when 3;  devices[:directory_count] = parse_bin_int(value)
+          when 4;  devices[:failed_file_count] = parse_bin_int(value)
+          when 5;  devices[:failed_directory_count] = parse_bin_int(value)
+          when 6..9;  nil # TODO
+          else     raise "Unrecognized devices field: #{field.command}\n#{field.string}"
+          end
         end
+        devices
       end
-      result_hash
-    end
 
-    #
-    # Parses the results of ascms "as_ls <file_or_directory>".  Returns an Array
-    # of AsperaRemote::DirectoryItem.
-    #
-    # Note: the response from an 'ascmd as_ls <file_or_directory>' is either a
-    # directory response or a file response depending on what 'file_or_directory' is.
-    def self.parse_res_ls(res_list, file_or_directory)
-      # Only ever one element in res_list?
-      results = res_list.map do |ascmd_result|
-        # puts "in parse_bin_ls() #{ascmd_result.string}"
-        case ascmd_result.command
-        when 1; parse_bin_directory_item(ascmd_result.string)
-        when 2; parse_bin_directory(ascmd_result.string)
-        when 4; parse_bin_error_and_raise(ascmd_result.string)
-        else raise "Error getting directory listing for: '#{file_or_directory}'"
+      def self.parse_res_du(res_list,unused_folder_name)
+        result_hash = {}
+        parse_bin_response(res_list.shift.string).each do |field|
+          value = field.string.strip
+          case field.command
+          when 1;  result_hash[:size] = parse_bin_int(value)
+          when 2;  result_hash[:file_count] = parse_bin_int(value)
+          when 3;  result_hash[:directory_count] = parse_bin_int(value)
+          when 4;  result_hash[:failed_file_count] = parse_bin_int(value)
+          when 5;  result_hash[:failed_directory_count] = parse_bin_int(value)
+          else     raise "Unrecognized result_hash field: #{field.command}\n#{field.string}"
+          end
         end
-      end.flatten
-      results
-    end
+        result_hash
+      end
 
-    # Parses a directory response from ascmd "as_ls <file_or_directory>".
-    def self.parse_bin_directory(string)
-      results = parse_bin_response(string)
-      results.map { |r| parse_bin_directory_item(r.string) }
-    end
-
-    # Returns a DirectoryItem instance parsed from a file or directory response.
-    def self.parse_bin_directory_item(string)
-      hash = {}
-      parse_bin_response(string).each do |reply|
-        value = reply.string
-        case reply.command
-        when 1;  hash[:name]    = value[0..-2] #cuts the trailing \000
-        when 2;  hash[:size]    = parse_bin_int(value)
-        when 3;  hash[:mode]    = parse_bin_int(value)
-        when 4;  hash[:type]    = mode_to_type(value.strip)
-        when 5;  hash[:uid]     = parse_bin_int(value)
-        when 6;  hash[:suid]    = value.strip
-        when 7;  hash[:gid]     = parse_bin_int(value)
-        when 8;  hash[:sgid]    = value.strip
-        when 9;  hash[:ctime]   = parse_bin_time_epoch(value)
-        when 10; hash[:sctime]  = parse_bin_time_string(value)
-        when 11; hash[:mtime]   = parse_bin_time_epoch(value)
-        when 12; hash[:smtime]  = parse_bin_time_string(value)
-        when 13; hash[:atime]   = parse_bin_time_epoch(value)
-        when 14; hash[:satime]  = parse_bin_time_string(value)
-        when 15; hash[:symlink] = value.strip
-        when 16; hash[:error]   = parse_bin_int(value)
-        when 17; hash[:errstr]  = value.strip
+      def self.parse_res_md5sum(res_list,unused_path)
+        result_hash = {}
+        parse_bin_response(res_list.shift.string).each do |field|
+          value = field.string.strip
+          case field.command
+          when 1;  result_hash[:md5sum] = value
+          else     raise "Unrecognized field: #{field.command}\n#{field.string}"
+          end
         end
+        result_hash
       end
-      # Aspera::Directory::Item.new(hash)
-      hash
-    end
 
-    # Converts the first character of the file mode (see 'man ls') into
-    # a type.
-    def self.mode_to_type(mode)
-      case mode[0,1]
-      when 'd'; :directory
-      when '-'; :file
-      when 'l'; :link
-      else      :other
+      #
+      # Parses the results of ascms "as_ls <file_or_directory>".  Returns an Array
+      # of AsperaRemote::DirectoryItem.
+      #
+      # Note: the response from an 'ascmd as_ls <file_or_directory>' is either a
+      # directory response or a file response depending on what 'file_or_directory' is.
+      def self.parse_res_ls(res_list, file_or_directory)
+        # Only ever one element in res_list?
+        results = res_list.map do |ascmd_result|
+          # puts "in parse_bin_ls() #{ascmd_result.string}"
+          case ascmd_result.command
+          when 1; parse_bin_directory_item(ascmd_result.string)
+          when 2; parse_bin_directory(ascmd_result.string)
+          when 4; parse_bin_error_and_raise(ascmd_result.string)
+          else raise "Error getting directory listing for: '#{file_or_directory}'"
+          end
+        end.flatten
+        results
       end
-    end
 
-    def self.parse_bin_int(buf)
-      val = 0
-      if (buf)
-        buf.each_byte do |f|
-          val = val * 256 + f
-        end
-      end
-      return val
-    end
-
-    def self.parse_bin_time_epoch(epoch)
-      Time.at(parse_bin_int(epoch)) rescue nil
-    end
-
-    def self.parse_bin_time_string(string)
-      Time.parse string rescue nil
-    end
+    end # Parser
 
     attr_accessor :credentials
 
@@ -319,23 +317,23 @@ module Asperalm
         ssh_channel.wait
         ssh.loop
       end
-      commands = self.class.parse_bin_response(response)
+      commands = Parser.parse_bin_response(response)
       # first entry is as_info, ignore it
-      self.class.parse_res_info(commands)
+      Parser.parse_res_info(commands)
       # error comes first
       if !commands.first.nil? and commands.first.error?
         raise Error.new(commands.first,ascmd_command,args)
       end
       # return parsed result if there is a parser
       parse_method_sym=('parse_res_'+cmd).to_sym
-      return nil if !self.class.respond_to?(parse_method_sym)
-      return self.class.send(parse_method_sym,commands,*args)
+      return nil if !Parser.respond_to?(parse_method_sym)
+      return Parser.send(parse_method_sym,commands,*args)
     end
   end
 end
 
 if false
-  ascmd=Asperalm::AsCmd.new({:host=>"test", :user=>"test", :password => "test"})
+  ascmd=Asperalm::AsCmd.new({:host=>ARGV[0], :user=>ARGV[1], :password => ARGV[2]})
   [
     ['info'],
     ['ls','/'],

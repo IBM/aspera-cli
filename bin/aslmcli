@@ -3,4 +3,7 @@
 $LOAD_PATH.unshift(File.dirname(__FILE__) + "/../lib")
 require 'rubygems'
 require 'asperalm/cli/main'
+require 'asperalm/log'
+# quick init of debug level
+Asperalm::Log.level = ARGV.include?('--log-level=debug') ? :debug : :warn
 Asperalm::Cli::Main.tool.process_command_line(ARGV)
