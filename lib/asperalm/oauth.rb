@@ -26,13 +26,13 @@ module Asperalm
   # bearer tokens are kept in memory and also in a file cache for re-use
   class Oauth
     # get location of cache for token
-    def self.token_filepath(parts)
+    def token_filepath(parts)
       basename=parts.dup.unshift(TOKEN_FILE_PREFIX).join(TOKEN_FILE_SEPARATOR)
       # remove windows forbidden chars
       basename.gsub!(/[\\\/:\*\?"<>]/,TOKEN_FILE_SEPARATOR)
       # keep dot for extension (nicer)
       basename.gsub!('.',TOKEN_FILE_SEPARATOR)
-      File.join(Main.tool.config_folder,basename+TOKEN_FILE_SUFFIX)
+      File.join(@auth_data[:persist_folder],basename+TOKEN_FILE_SUFFIX)
     end
 
     # delete cached tokens
@@ -54,6 +54,7 @@ module Asperalm
       @rest=Rest.new(baseurl)
       @organization=organization
       @auth_data=auth_data
+      @auth_data[:persist_folder]='.' if !auth_data.has_key?(:persist_folder)
       # key = scope value, e.g. user:all, or node.*
       # subkeys = :data (token value ruby structure), :expiration
       @token_cache={}
@@ -83,7 +84,7 @@ module Asperalm
 
     def get_authorization(api_scope,force_regenerate=false)
       # file name for cache of token
-      token_state_file=self.class.token_filepath([@auth_data[:type],@organization,@auth_data[:client_id],api_scope])
+      token_state_file=token_filepath([@auth_data[:type],@organization,@auth_data[:client_id],api_scope])
 
       if force_regenerate
         File.delete(token_state_file) if File.exist?(token_state_file)

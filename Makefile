@@ -121,14 +121,15 @@ tfaspex2: tfx3 tfx4
 
 tconsole:
 	$(ASCLI) console transfers list  --insecure=yes
-
+NODEDEST=/home/faspex/docroot
+NODEDEST=/
 tnd1:
 	$(ASCLI) node browse / --insecure=yes
 tnd2:
-	$(ASCLI) node upload $(SAMPLE_FILE) /home/faspex/docroot --insecure=yes
+	$(ASCLI) node upload $(SAMPLE_FILE) $(NODEDEST) --insecure=yes
 tnd3: $(TEST_FOLDER)
-	$(ASCLI) node download /home/faspex/docroot/200KB.1 $(TEST_FOLDER) --insecure=yes
-	$(ASCLI) node delete /home/faspex/docroot/200KB.1 --insecure=yes
+	$(ASCLI) node download $(NODEDEST)/200KB.1 $(TEST_FOLDER) --insecure=yes
+	$(ASCLI) node delete $(NODEDEST)/200KB.1 --insecure=yes
 	rm -f $(TEST_FOLDER)/200KB.1
 tnode: tnd1 tnd2 tnd3 
 

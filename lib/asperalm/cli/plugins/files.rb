@@ -155,6 +155,7 @@ module Asperalm
           Log.log.debug("organization=#{organization}")
 
           auth_data={
+            :persist_folder => Main.tool.config_folder,
             :type=>Main.tool.options.get_option_mandatory(:auth),
             :client_id =>Main.tool.options.get_option_mandatory(:client_id),
             :client_secret=>Main.tool.options.get_option_mandatory(:client_secret)
