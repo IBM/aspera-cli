@@ -4,6 +4,7 @@ require 'asperalm/fasp_manager_resume'
 require 'asperalm/log'
 require 'optparse'
 require 'json'
+require 'base64'
 
 module Asperalm
   module Cli
@@ -25,7 +26,7 @@ module Asperalm
         @unprocessed_command_and_args=[]
         # command line values starting with '-'
         @unprocessed_options=[]
-          # key = name of option, either Proc or value
+        # key = name of option, either Proc or value
         @available_option={}
         super
       end
@@ -43,11 +44,22 @@ module Asperalm
         Log.log.debug("set_argv:commands=#{@unprocessed_command_and_args},args=#{@unprocessed_options}".red)
       end
 
-      def self.value_modifier; ['file','env', 'val', 'val64', 'json', 'none']; end
+      # encoders can be pipelined
+      @@ENCODERS=['base64', 'json', 'zlib']
+
+      # read value is only one
+      def self.value_modifier; ['val', 'file', 'env'].push(@@ENCODERS); end
 
       # parse an option value, special behavior for file:, env:, val:
       def self.get_extended_value(name_or_descr,value)
         if value.is_a?(String)
+          # first determine decoding
+          decoding=[]
+          while (m=value.match(/^@([^:]+):(.*)/)) and @@ENCODERS.include?(m[1])
+            decoding.push(m[1])
+            value=m[2]
+          end
+          # then read value
           if m=value.match(%r{^@file:(.*)}) then
             value=m[1]
             if m=value.match(%r{^~/(.*)}) then
@@ -61,10 +73,13 @@ module Asperalm
             value=ENV[value]
           elsif m=value.match(/^@val:(.*)/) then
             value=m[1]
-          elsif m=value.match(/^@json:(.*)/) then
-            value=JSON.parse(m[1])
-          elsif value.eql?('@none') then
-            value=nil
+          end
+          decoding.reverse.each do |d|
+            case d
+            when 'json'; value=JSON.parse(value)
+            when 'base64'; value=Base64.decode64(value)
+            when 'zlib'; value=Zlib::Inflate.inflate(value)
+            end
           end
         end
         value
@@ -152,6 +167,7 @@ module Asperalm
       def add_opt_list(option_symbol,values,help,*args)
         Log.log.info("add_opt_list #{option_symbol}->#{args}")
         value=get_option(option_symbol)
+        # TODO: keep '*' before args
         self.on( *args , values, "#{help}. Values=(#{values.join(',')}), current=#{value}") do |v|
           set_option(option_symbol,self.class.get_from_list(v.to_s,help,values))
         end

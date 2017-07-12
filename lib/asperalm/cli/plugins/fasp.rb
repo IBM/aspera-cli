@@ -39,8 +39,7 @@ module Asperalm
                 'destination_root'=>destination,
                 'paths'=>filelist.map { |f| {'source'=>f } }
               }
-              Main.tool.faspmanager.transfer_with_spec(transfer_spec)
-              return Main.result_success
+              return Main.tool.start_transfer(transfer_spec)
             when :download
               filelist = Main.tool.options.get_remaining_arguments("source list",1)
               destination=Main.tool.options.get_next_arg_value("destination")
@@ -49,8 +48,7 @@ module Asperalm
                 'destination_root'=>destination,
                 'paths'=>filelist.map { |f| {'source'=>f } }
               }
-              Main.tool.faspmanager.transfer_with_spec(transfer_spec)
-              return Main.result_success
+              return Main.tool.start_transfer(transfer_spec)
             when :mkdir; ascmd.mkdir(Main.tool.options.get_next_arg_value('path'));return Main.result_success
             when :mv; ascmd.mv(Main.tool.options.get_next_arg_value('src'),Main.tool.options.get_next_arg_value('dst'));return Main.result_success
             when :cp; ascmd.cp(Main.tool.options.get_next_arg_value('src'),Main.tool.options.get_next_arg_value('dst'));return Main.result_success

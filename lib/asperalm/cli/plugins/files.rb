@@ -123,8 +123,7 @@ module Asperalm
             tspec['tags']["aspera"]["files"]={}
             tspec['paths']=filelist.map { |i| {'source'=>i} }
             tspec['destination_root']="/"
-            Main.tool.faspmanager.transfer_with_spec(tspec)
-            return Main.result_success
+            return Main.tool.start_transfer(tspec)
           when :download
             source_file=Main.tool.options.get_next_arg_value('source')
             destination_folder=Main.tool.options.get_next_arg_value('destination')
@@ -135,8 +134,7 @@ module Asperalm
             tspec['tags']["aspera"]["files"]={}
             tspec['paths']=[{'source'=>file_name}]
             tspec['destination_root']=destination_folder
-            Main.tool.faspmanager.transfer_with_spec(tspec)
-            return Main.result_success
+            return Main.tool.start_transfer(tspec)
           end
         end
 
@@ -244,12 +242,7 @@ module Asperalm
               tspec['tags']["aspera"]["files"]={"package_id" => the_package['id'], "package_operation" => "upload"}
               tspec['paths']=filelist.map { |i| {'source'=>i} }
               tspec['destination_root']="/"
-              Main.tool.faspmanager.transfer_with_spec(tspec)
-              return Main.result_success
-              # simulate call later, to check status (this is just demo api call, not needed)
-              #sleep 2
-              # (sample) get package status
-              #allpkg=@api_files_user.read("packages/#{the_package['id']}")[:data]
+              return Main.tool.start_transfer(tspec)
             when :recv
               package_id=Main.tool.options.get_next_arg_value('package ID')
               the_package=@api_files_user.read("packages/#{package_id}")[:data]
@@ -258,8 +251,7 @@ module Asperalm
               tspec['tags']["aspera"]["files"]={"package_id" => the_package['id'], "package_operation" => "download"}
               tspec['paths']=[{'source'=>'.'}]
               tspec['destination_root']='.' # TODO:param?
-              Main.tool.faspmanager.transfer_with_spec(tspec)
-              return Main.result_success
+              return Main.tool.start_transfer(tspec)
             when :list
               # list all packages ('page'=>1,'per_page'=>10,)'sort'=>'-sent_at',
               packages=@api_files_user.list("packages",{'archived'=>false,'exclude_dropbox_packages'=>true,'has_content'=>true,'received'=>true,'workspace_id'=>workspace_id})[:data]

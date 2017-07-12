@@ -15,6 +15,7 @@ module Asperalm
           Main.tool.options.add_opt_simple(:recipient,"--recipient=STRING","package recipient")
           Main.tool.options.add_opt_simple(:title,"--title=STRING","package title")
           Main.tool.options.add_opt_simple(:note,"--note=STRING","package note")
+          Main.tool.options.add_opt_simple(:metadata,"--metadata=@json:JSON_STRING","package metadata")
           Main.tool.options.add_opt_simple(:source_name,"--source-name=STRING","create package from remote source (by name)")
           Main.tool.options.add_opt_list(:pkgbox,[:inbox,:sent,:archive],"package box",'--box=TYPE')
         end
@@ -98,6 +99,10 @@ module Asperalm
                 "note"=>Main.tool.options.get_option_mandatory(:note),
                 "recipients"=>Main.tool.options.get_option_mandatory(:recipient).split(','),
                 "send_upload_result"=>true,
+                "notify_on_upload"=> false,
+                "notifiable_on_upload"=> "",
+                "notify_on_download"=> false,
+                "notifiable_on_download"=> "",
                 "use_encryption_at_rest"=>false,
                 "sources"=>[{"paths"=>filelist}]
                 }
@@ -107,6 +112,10 @@ module Asperalm
                 source_list=api_faspex.call({:operation=>'GET',:subpath=>"source_shares",:headers=>{'Accept'=>'application/json'}})[:data]['items']
                 source_id=self.class.get_source_id(source_list,source_name)
                 package_create_params['delivery']['sources'].first['id']=source_id
+              end
+              metadata=Main.tool.options.get_option(:metadata)
+              if !metadata.nil?
+                package_create_params['delivery']['metadata']=metadata
               end
               send_result=api_faspex.call({:operation=>'POST',:subpath=>'send',:json_params=>package_create_params,:headers=>{'Accept'=>'application/json'}})[:data]
               if send_result.has_key?('error')
@@ -119,8 +128,7 @@ module Asperalm
               raise CliBadArgument,"expecting one session exactly" if send_result['xfer_sessions'].length != 1
               transfer_spec=send_result['xfer_sessions'].first
               transfer_spec['paths']=filelist.map { |i| {'source'=>i} }
-              Main.tool.faspmanager.transfer_with_spec(transfer_spec)
-              return Main.result_success
+              return Main.tool.start_transfer(transfer_spec)
             when :recv
               # UUID is not reliable, it changes at every call
               if true
@@ -150,8 +158,7 @@ module Asperalm
               end
               transfer_spec['direction']='receive'
               transfer_spec['destination_root']='.'
-              Main.tool.faspmanager.transfer_with_spec(transfer_spec)
-              return Main.result_success
+              return Main.tool.start_transfer(transfer_spec)
             end
           when :source
             command_source=Main.tool.options.get_next_arg_from_list('command',[ :list, :id, :name ])
@@ -199,7 +206,7 @@ module Asperalm
             case command_pkg
             when :list
               dropbox_list=api_faspex.call({:operation=>'GET',:subpath=>"/aspera/faspex/dropboxes",:headers=>{'Accept'=>'application/json'}})[:data]
-              return {:data=>dropbox_list['items'], :type=>:key_val_list, :fields=>['name','id','description','can_read','can_write']}
+              return {:data=>dropbox_list['items'], :type=>:hash_array, :fields=>['name','id','description','can_read','can_write']}
             end
           when :recv_publink
             thelink=Main.tool.options.get_next_arg_value("Faspex public URL for a package")
@@ -216,8 +223,7 @@ module Asperalm
             transfer_spec=Main.tool.faspmanager.fasp_uri_to_transferspec(transfer_uri)
             transfer_spec['direction']='receive'
             transfer_spec['destination_root']='.'
-            Main.tool.faspmanager.transfer_with_spec(transfer_spec)
-            return Main.result_success
+            return Main.tool.start_transfer(transfer_spec)
           end # command
         end
       end

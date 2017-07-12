@@ -8,7 +8,7 @@
 require 'asperalm/operating_system'
 require 'asperalm/rest'
 require 'asperalm/files_api'
-require "base64"
+require 'base64'
 require 'date'
 require 'rubygems'
 require 'socket'
@@ -19,18 +19,19 @@ require 'securerandom'
 UNUSED_STATE='ABC'
 
 module Asperalm
-  TOKEN_FILE_PREFIX='token'
-  TOKEN_FILE_SEPARATOR='_'
-  TOKEN_FILE_SUFFIX='.txt'
   # implement OAuth 2 for Aspera Files
   # bearer tokens are kept in memory and also in a file cache for re-use
   class Oauth
+    TOKEN_FILE_PREFIX='token'
+    TOKEN_FILE_SEPARATOR='_'
+    TOKEN_FILE_SUFFIX='.txt'
+    WINDOWS_PROTECTED_CHAR=%r{[/:"<>\\\*\?]}
     # get location of cache for token
     def token_filepath(parts)
       basename=parts.dup.unshift(TOKEN_FILE_PREFIX).join(TOKEN_FILE_SEPARATOR)
       # remove windows forbidden chars
-      basename.gsub!(/[\\\/:\*\?"<>]/,TOKEN_FILE_SEPARATOR)
-      # keep dot for extension (nicer)
+      basename.gsub!(WINDOWS_PROTECTED_CHAR,TOKEN_FILE_SEPARATOR)
+      # keep dot for extension only (nicer)
       basename.gsub!('.',TOKEN_FILE_SEPARATOR)
       File.join(@auth_data[:persist_folder],basename+TOKEN_FILE_SUFFIX)
     end
@@ -92,7 +93,7 @@ module Asperalm
         # force refresh if present
         @token_cache[api_scope][:expiration]=DateTime.now if @token_cache.has_key?(api_scope)
       end
-        
+
       # if first time, try to read from file
       if ! @token_cache.has_key?(api_scope) then
         if File.exist?(token_state_file) then
@@ -133,7 +134,7 @@ module Asperalm
               #:client_secret=>@auth_data[:client_secret],  # also works, but not compliant to RFC
               :state=>UNUSED_STATE # TODO: remove, not useful
               }})
-              # TODO: save only if success ?
+            # TODO: save only if success ?
             save_set_token_data(api_scope,resp[:http].body,token_state_file)
           else
             Log.log.info "token expired, no refresh token, deleting cache and cache file".bg_red()

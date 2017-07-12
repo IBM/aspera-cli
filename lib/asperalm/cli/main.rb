@@ -4,11 +4,11 @@ require "asperalm/version"
 require "asperalm/log"
 require 'asperalm/operating_system'
 require 'asperalm/oauth'
-require 'yaml'
 require 'text-table'
-require 'pp'
 require 'fileutils'
 require 'singleton'
+require 'yaml'
+require 'pp'
 
 module Asperalm
   module Cli
@@ -17,6 +17,7 @@ module Asperalm
     # The main CI class, singleton
     class Main < Plugin
       include Singleton
+      # "tool" class method is an alias to "instance"
       singleton_class.send(:alias_method, :tool, :instance)
 
       # first level command for the main tool
@@ -35,6 +36,8 @@ module Asperalm
       @@CLI_MODULE=Module.nesting[1].to_s
       # Path to Plugin classes: Asperalm::Cli::Plugins
       @@PLUGINS_MODULE=@@CLI_MODULE+"::Plugins"
+      @@CONFIG_FILE_VERSION='1'
+      @@CONFIG_FILE_KEY_VERSION=:config_version
       # $HOME/.aspera/aslmcli
       def config_folder
         return File.join(Dir.home,@@ASPERA_HOME_FOLDERNAME,@@PROGRAM_NAME)
@@ -62,11 +65,11 @@ module Asperalm
       end
 
       def self.no_result
-        return {:data => :nil, :type => :empty }
+        return {:type => :empty, :data => :nil }
       end
 
       def self.status_result(status)
-        return {:data => status, :type => :status }
+        return {:type => :status, :data => status }
       end
 
       def self.result_success
@@ -113,6 +116,9 @@ module Asperalm
           Log.log.debug "loading #{value}"
           @configs=YAML.load_file(value)
           Log.log.debug "loaded: #{@configs}"
+          if !@configs.has_key?(@@CONFIG_FILE_KEY_VERSION) or ! @configs[@@CONFIG_FILE_KEY_VERSION].to_s.eql?(@@CONFIG_FILE_VERSION)
+            raise CliError,"Unrecognized config file version. Please check documentation. Expecting version #{@@CONFIG_FILE_VERSION}"
+          end
           self.options.set_defaults(get_plugin_default_config(@@MAIN_PLUGIN_NAME_SYM,self.options.get_option(:config_name)))
         else
           return @config_file_path
@@ -142,8 +148,10 @@ module Asperalm
       def handler_load_params(operation,value)
         case operation
         when :set
-          Log.log.debug "handler_load_params: set: #{value} : #{@configs[value]}".red
-          self.options.set_defaults(@configs[value])
+          value.split(/,/).each do |name|
+            Log.log.debug "handler_load_params: set: #{name} : #{@configs[name]}".red
+            self.options.set_defaults(@configs[name])
+          end
         else
           return nil
         end
@@ -208,6 +216,11 @@ module Asperalm
           @faspmanager.http_proxy_url=self.options.get_option(:http_proxy)
         end
         return @faspmanager
+      end
+
+      def start_transfer(transfer_spec)
+        faspmanager.transfer_with_spec(transfer_spec)
+        return self.class.result_success
       end
 
       def options; @options;end
@@ -305,32 +318,21 @@ module Asperalm
 
       # "config" plugin
       def execute_action
-        action=self.options.get_next_arg_from_list('action',[:help,:plugins,:flush,:ls,:init,:cat,:open])
+        action=self.options.get_next_arg_from_list('action',[:plugins,:flush,:ls,:init,:cat,:open,:show])
         case action
+        when :show
+          return {:type=>:other_struct, :data=>self.options.get_next_arg_value("value")}
         when :flush
           deleted_files=Oauth.flush_tokens
           return {:type=>:value_list, :name=>'file',:data=>deleted_files}
           return Main.status_result('token cache flushed')
-        when :help
-          # display main plugin options
-          STDERR.puts self.options
-          # list plugins that have a "require" field, i.e. all but main plugin
-          plugin_sym_list.select { |s| !@plugins[s][:req].nil? }.each do |plugin_name_sym|
-            # override main option parser...
-            @options=OptParser.new
-            self.options.banner = ""
-            self.options.program_name=@@PROGRAM_NAME
-            self.options.set_defaults({:config_name => 'default',:transfer=>:ascp})
-            get_plugin_instance(plugin_name_sym)
-            STDERR.puts(self.options)
-          end
-          Process.exit 1
         when :plugins
           return {:data => plugin_sym_list.map { |i| { 'plugin' => i.to_s, 'path' => @plugins[i][:source] } } , :fields => ['plugin','path'], :type => :hash_array }
         when :init
           raise CliError,"Folder already exists: #{config_folder}" if Dir.exist?(config_folder)
           FileUtils::mkdir_p(config_folder)
           sample_config={
+            @@CONFIG_FILE_KEY_VERSION=>@@CONFIG_FILE_VERSION,
             "cli_default"=>{:loglevel=>:warn},
             "files_default"=>{:auth=>:jwt, :url=>"https://myorg.asperafiles.com", :client_id=>"MyClientId", :client_secret=>"MyAccessKeySecret", :private_key=>"@file:~/.aspera/aslmcli/filesapikey", :username=>"user@example.com"},
             "files_web"=>{:auth=>:web, :url=>"https://myorg.asperafiles.com", :client_id=>"MyClientId", :client_secret=>"MyAccessKeySecret", :redirect_uri=>"http://local.connectme.us:12345"},
@@ -447,14 +449,27 @@ module Asperalm
         end
       end
 
-      def exit_with_usage
+      def exit_with_usage(all_plugins)
+        # display main plugin options
         STDERR.puts self.options
+        if all_plugins
+          # list plugins that have a "require" field, i.e. all but main plugin
+          plugin_sym_list.select { |s| !@plugins[s][:req].nil? }.each do |plugin_name_sym|
+            # override main option parser...
+            @options=OptParser.new
+            self.options.banner = ""
+            self.options.program_name=@@PROGRAM_NAME
+            self.options.set_defaults({:config_name => 'default',:transfer=>:ascp})
+            get_plugin_instance(plugin_name_sym)
+            STDERR.puts(self.options)
+          end
+        end
         Process.exit 1
       end
 
       def process_exception_exit(e,reason,propose_help=:none)
         STDERR.puts "ERROR:".bg_red().gray().blink()+" "+reason+": "+e.message
-        STDERR.puts "Use '-h' option, or '#{@@MAIN_PLUGIN_NAME_SYM} help' command to get help." if propose_help.eql?(:usage)
+        STDERR.puts "Use '-h' option to get help." if propose_help.eql?(:usage)
         if Log.level == :debug
           raise e
         else
@@ -474,7 +489,7 @@ module Asperalm
           # parse general options always, before finding plugin
           self.options.parse_options!
           # help requested without command ?
-          self.exit_with_usage if @help_requested and self.options.command_or_arg_empty?
+          self.exit_with_usage(true) if @help_requested and self.options.command_or_arg_empty?
           command_sym=self.options.get_next_arg_from_list('command',plugin_sym_list)
           case command_sym
           when @@MAIN_PLUGIN_NAME_SYM
@@ -486,7 +501,7 @@ module Asperalm
             self.options.parse_options!
           end
           # help requested ?
-          self.exit_with_usage if @help_requested
+          self.exit_with_usage(false) if @help_requested
           display_results(command_plugin.execute_action)
           # unprocessed values ?
           if !self.options.unprocessed_options.empty?

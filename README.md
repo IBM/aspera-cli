@@ -245,36 +245,91 @@ OPTIONS:
 
 Note that actions and parameter values can be written in short form.
 
-## Configuration and parameters
+## Option and Argument values
+
+The value for options (--option=VALUE) and command arguments are normally processed directly 
+from the command line. I.e. aslmcli command --option=VAL1 VAL2 takes "VAL1" as the value for
+option "option", and "VAL2" as the value for first argument.
+
+It is also possible to retrieve a value with the following special prefixes:
+
+* @val:VALUE , just take the specified value, e.g. --username=@val:laurent
+* @file:PATH , read value from a file (prefix "~/" is replaced with $HOME), e.g. --key=@file:$HOME/.ssh/mykey
+* @env: , read from a named env var, e.g.--password=@env:MYPASSVAR
+
+In addition it is possible to decode some values by prefixing :
+
+* @base64: to decode base64 encoded string
+* @json: to decode JSON values
+* @zlib: to uncompress data
+
+Example:
+
+```bash
+@zlib:@base64:@file:myfile.dat
+```
+This will read the content of the specified file, then, base64 decode, then unzip.
+
+## Configuration file
 All CLI parameters can be provided on command line, but it is more convenient 
-to set common parameters (e.g. cedentials) in a configuration file.
+to set some parameters (e.g. cedentials) in a configuration file.
 
-The configuration file is a hash in a YAML file. The primary key is the "config id".
-A "config name" refers to a named configuration for a given plugin (application).
-The "config id" used for a given "config name" is "<plugin>_<config name>".
-The default config name is "default". For instance, for the "faspex" plugin,
-the default config id is "faspex_default". To change the config name, specify
-option "-n" or "--config-name". It is also possible to "load" a set of parameters
-with option "--load-params".
+The configuration file is a hash in a YAML file. The primary key is the name
+of a parameter set. Sub keys are parameter values. Example:
 
-Arguments that require a value can be specified on command line or config file 
-with the following specific rules:
+```yaml
+myapp:
+  :url: https://10.25.0.25/aspera/orchestrator
+  :username: admin
+  :password: MyPassword
+```
 
-* direct value, e.g. --username=foouser
-* or, similarly, with @val: --username=@val:foouser
-* or a value read from a file: --key=@file:$HOME/.ssh/mykey
-* or a value read from a named env var: --password=@env:MYPASSVAR
-* or no value at all: --peristency=@none
+This specifies a parameter set called "myapp" and defines some default values for some
+parameters.
 
-The default configuration file is: $HOME/.aspera/aslmcli/config.yaml
+By default, the CLI will load the parameter set "config". This contains general parameters
+for the CLI. It contains a key: ':default', which contains the name of a default 
+parameter set for each plugin. Example:
+
+```yaml
+config:
+  :version: 0.3.7
+  :default:
+    :files: my_files_default_config_name
+```
+
+This overrides the default configuration loaded for the files plugin.
+
+Default parameters are loaded using this algorithm:
+
+* if a parameter --config is specified, this defines the configuration file to use
+* else the default file is used: $HOME/.aspera/aslmcli/config.yaml
+* this file is read, and the CLI tool reads the configuration specified in the section "config"
+    * this section may contain a sub section "default"
+* when the first level command is executed, it tries to load some default parameters:
+    * if option '--load' is specified, this reads the comma separated list of configurations
+    * else it looks for the name of the default configuration name in section config:default and loads it
+    * else it looks for a configuration named &lt;plugin&gt;_default and load it
+    * else there is no default parameter
+
+A parameter value can be specified with the same syntax as section "Option and Argument values"
+
+Parameters are evaluated in the order of command line.
 
 Here is an example:
 
 ```yaml
 ---
-:cli_default:
-  :loglevel: :warn
-:files_default:
+config:
+  :version: 0.3.7
+  :default:
+    :files: files_default
+    :faspex: faspex_default
+    :shares: shares_default
+    :node: node_default
+    :fasp: fasp_default
+    :orchestrator: orchestrator_default
+files_default:
   :auth: :jwt
   :url: https://mycompany.asperafiles.com
   :client_id: <insert client id here>
@@ -314,8 +369,6 @@ console_default:
 fasp_default:
   :transfer_spec: '{"remote_host":"demo.asperasoft.com","remote_user":"asperaweb","password":"xxxx"}'
 ```
-The "default" configuration is taken, but can be overridden on comand line.
-Another configuration can be taken with option "-n".
 
 ## Learning Aspera Product APIs (REST)
 
@@ -497,8 +550,7 @@ module Asperalm
 end # Asperalm
 EOF
 ```
-
-## Note on Faspex remote sources
+## Faspex remote sources
 
 Faspex lacks an API to list the contents of a remote source (available in web UI). To workaround this,
 the node API is used, for this it is required to add a section ":storage" that links

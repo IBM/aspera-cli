@@ -156,8 +156,7 @@ module Asperalm
             raise "expecting one session exactly" if send_result[:data]['transfer_specs'].length != 1
             transfer_spec=send_result[:data]['transfer_specs'].first['transfer_spec']
             transfer_spec['paths']=filelist.map { |i| {'source'=>i} }
-            Main.tool.faspmanager.transfer_with_spec(transfer_spec)
-            return Main.result_success
+            return Main.tool.start_transfer(transfer_spec)
           when :download
             filelist = get_next_arg_add_prefix(prefix_path,"source file list",:all_but_one)
             Log.log.debug("file list=#{filelist}")
@@ -167,8 +166,7 @@ module Asperalm
             raise "expecting one session exactly" if send_result[:data]['transfer_specs'].length != 1
             transfer_spec=send_result[:data]['transfer_specs'].first['transfer_spec']
             transfer_spec['destination_root']=destination
-            Main.tool.faspmanager.transfer_with_spec(transfer_spec)
-            return Main.result_success
+            return Main.tool.start_transfer(transfer_spec)
           end
         end
 
@@ -283,8 +281,7 @@ module Asperalm
             transfer_spec=transfer_data['transfer_spec']
             transfer_spec['destination_root']=destination
             # execute transfer
-            Main.tool.faspmanager.transfer_with_spec(transfer_spec)
-            return Main.result_success
+            return Main.tool.start_transfer(transfer_spec)
           end
           raise "error"
         end # execute_action
