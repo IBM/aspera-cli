@@ -36,32 +36,29 @@ module Asperalm
       @@CLI_MODULE=Module.nesting[1].to_s
       # Path to Plugin classes: Asperalm::Cli::Plugins
       @@PLUGINS_MODULE=@@CLI_MODULE+"::Plugins"
-      @@CONFIG_FILE_VERSION='1'
-      @@CONFIG_FILE_KEY_VERSION=:config_version
+      @@CONFIG_FILE_KEY_VERSION=:version
+      @@MIN_CONFIG_VERSION='0.3.7'
       # $HOME/.aspera/aslmcli
       def config_folder
         return File.join(Dir.home,@@ASPERA_HOME_FOLDERNAME,@@PROGRAM_NAME)
       end
 
       # $HOME/.aspera/aslmcli/config.yaml
-      def config_file
+      def default_config_file
         return File.join(config_folder,@@DEFAULT_CONFIG_FILENAME)
       end
 
-      # get default configuration for named application
-      def get_plugin_default_config(plugin_sym,config_name)
-        if @configs.nil?
-          Log.log.debug("no default config")
-          return nil
+      # returns default parameters for a plugin from loaded config file
+      def get_plugin_default_parameters(plugin_sym)
+        return nil if @loaded_configs.nil?
+        default_config_name=plugin_sym.to_s+'_default'
+        if @loaded_configs.has_key?(@@MAIN_PLUGIN_NAME_SYM.to_s) and
+        @loaded_configs[@@MAIN_PLUGIN_NAME_SYM.to_s].has_key?(:default) and
+        @loaded_configs[@@MAIN_PLUGIN_NAME_SYM.to_s][:default].has_key?(plugin_sym)
+          default_config_name=@loaded_configs[@@MAIN_PLUGIN_NAME_SYM.to_s][:default][plugin_sym]
         end
-        config_id=plugin_sym.to_s+'_'+config_name
-        if !@configs.has_key?(config_id)
-          Log.log.debug("no default config: #{config_id}")
-          return nil
-        end
-        default_config=@configs[config_id]
-        Log.log.debug("#{plugin_sym} default config=#{default_config}")
-        return default_config
+        # can be nil
+        return @loaded_configs[default_config_name]
       end
 
       def self.no_result
@@ -109,22 +106,6 @@ module Asperalm
         end
       end
 
-      def handler_config_file(operation,value)
-        case operation
-        when :set
-          @config_file_path=value
-          Log.log.debug "loading #{value}"
-          @configs=YAML.load_file(value)
-          Log.log.debug "loaded: #{@configs}"
-          if !@configs.has_key?(@@CONFIG_FILE_KEY_VERSION) or ! @configs[@@CONFIG_FILE_KEY_VERSION].to_s.eql?(@@CONFIG_FILE_VERSION)
-            raise CliError,"Unrecognized config file version. Please check documentation. Expecting version #{@@CONFIG_FILE_VERSION}"
-          end
-          self.options.set_defaults(get_plugin_default_config(@@MAIN_PLUGIN_NAME_SYM,self.options.get_option(:config_name)))
-        else
-          return @config_file_path
-        end
-      end
-
       def handler_transfer_spec(operation,value)
         case operation
         when :set
@@ -142,18 +123,6 @@ module Asperalm
           OperatingSystem.open_url_method=value
         else
           return OperatingSystem.open_url_method
-        end
-      end
-
-      def handler_load_params(operation,value)
-        case operation
-        when :set
-          value.split(/,/).each do |name|
-            Log.log.debug "handler_load_params: set: #{name} : #{@configs[name]}".red
-            self.options.set_defaults(@configs[name])
-          end
-        else
-          return nil
         end
       end
 
@@ -207,8 +176,14 @@ module Asperalm
           when :connect
             @faspmanager.use_connect_client=true
           when :node
-            node_config=get_plugin_default_config(:node,self.options.get_option_mandatory(:transfer_node_config))
-            raise CliBadArgument,"no such node configuration: #{self.options.get_option_mandatory(:transfer_node_config)}" if node_config.nil?
+            config_name=self.options.get_option(:transfer_node_config)
+            if config_name.nil?
+              node_config=get_plugin_default_parameters(:node)
+              raise CliBadArgument,"Please specify --transfer-node" if node_config.nil?
+            else
+              node_config=@loaded_configs[config_name]
+              raise CliBadArgument,"no such node configuration: #{config_name}" if node_config.nil?
+            end
             @faspmanager.tr_node_api=Rest.new(node_config[:url],{:auth=>{:type=>:basic,:user=>node_config[:username], :password=>node_config[:password]}})
           end
           # may be nil:
@@ -228,7 +203,7 @@ module Asperalm
       def initialize
         @help_requested=false
         @options=OptParser.new
-        @configs=nil
+        @loaded_configs=nil
         @faspmanager=nil
         scan_all_plugins
         self.options.program_name=@@PROGRAM_NAME
@@ -261,22 +236,24 @@ module Asperalm
         # handler must be set before setting defaults
         self.options.set_handler(:loglevel) { |op,val| handler_loglevel(op,val) }
         self.options.set_handler(:logtype) { |op,val| handler_logtype(op,val) }
-        self.options.set_handler(:config_file) { |op,val| handler_config_file(op,val) }
         self.options.set_handler(:insecure) { |op,val| handler_insecure(op,val) }
         self.options.set_handler(:transfer_spec) { |op,val| handler_transfer_spec(op,val) }
         self.options.set_handler(:browser) { |op,val| handler_browser(op,val) }
-        self.options.set_handler(:load_params) { |op,val| handler_load_params(op,val) }
+        #        self.options.set_handler(:load_params) { |op,val| handler_load_params(op,val) }
         self.options.set_handler(:fasp_folder) { |op,val| handler_fasp_folder(op,val) }
       end
 
       # plugin_name_sym is symbol
-      # initialize if necessary
+      # loads default parameters
       def get_plugin_instance(plugin_name_sym)
         require @plugins[plugin_name_sym][:req]
-        Log.log.debug("loaded config -> #{@configs}")
+        Log.log.debug("loaded config -> #{@loaded_configs}")
         # TODO: check that ancestor is Plugin?
         command_plugin=Object::const_get(@@PLUGINS_MODULE+'::'+plugin_name_sym.to_s.capitalize).new
-        self.options.set_defaults(get_plugin_default_config(plugin_name_sym,self.options.get_option_mandatory(:config_name)))
+        # load default params only if no param already loaded
+        if self.options.get_option(:load_params).nil?
+          self.options.set_defaults(get_plugin_default_parameters(plugin_name_sym))
+        end
         self.options.separator "COMMAND: #{plugin_name_sym}"
         self.options.separator "SUBCOMMANDS: #{command_plugin.action_list.map{ |p| p.to_s}.join(', ')}"
         self.options.separator "OPTIONS:"
@@ -292,11 +269,11 @@ module Asperalm
         self.options.set_option(:browser,:tty)
         self.options.set_option(:fields,FIELDS_DEFAULT)
         self.options.set_option(:transfer,:ascp)
-        self.options.set_option(:transfer_node_config,'default')
+        #self.options.set_option(:transfer_node_config,'default')
         self.options.set_option(:insecure,:no)
         self.options.set_option(:format,:table)
         self.options.set_option(:logtype,:stdout)
-        self.options.set_option(:config_file,config_file) if File.exist?(config_file)
+        self.options.set_option(:config_file,default_config_file) if File.exist?(default_config_file)
         self.options.on("-h", "--help", "Show this message. Try: #{@@MAIN_PLUGIN_NAME_SYM} help") { @help_requested=true }
         self.options.add_opt_list(:browser,OperatingSystem.open_url_methods,"method to start browser",'-gTYPE','--browser=TYPE')
         self.options.add_opt_list(:insecure,[:yes,:no],"do not validate cert",'--insecure=VALUE')
@@ -332,7 +309,7 @@ module Asperalm
           raise CliError,"Folder already exists: #{config_folder}" if Dir.exist?(config_folder)
           FileUtils::mkdir_p(config_folder)
           sample_config={
-            @@CONFIG_FILE_KEY_VERSION=>@@CONFIG_FILE_VERSION,
+            "config" =>{@@CONFIG_FILE_KEY_VERSION=>Asperalm::VERSION},
             "cli_default"=>{:loglevel=>:warn},
             "files_default"=>{:auth=>:jwt, :url=>"https://myorg.asperafiles.com", :client_id=>"MyClientId", :client_secret=>"MyAccessKeySecret", :private_key=>"@file:~/.aspera/aslmcli/filesapikey", :username=>"user@example.com"},
             "files_web"=>{:auth=>:web, :url=>"https://myorg.asperafiles.com", :client_id=>"MyClientId", :client_secret=>"MyAccessKeySecret", :redirect_uri=>"http://local.connectme.us:12345"},
@@ -343,31 +320,28 @@ module Asperalm
             "console_default"=>{:url=>"https://console.myorg.com/aspera/console", :username=>"admin", :password=>"xxxxx"},
             "fasp_default"=>{:transfer_spec=>'{"remote_host":"demo.asperasoft.com","remote_user":"asperaweb","password":"xxxxx"}'}
           }
-          File.write(config_file,sample_config.to_yaml)
+          File.write(default_config_file,sample_config.to_yaml)
           puts "initialized: #{config_folder}"
           return Main.no_result
         when :cat
-          return {:data=>File.read(config_file),:type=>:other_struct}
+          return {:data=>File.read(default_config_file),:type=>:other_struct}
         when :open
-          OperatingSystem.open_system_uri(config_file)
+          OperatingSystem.open_system_uri(default_config_file)
           return Main.no_result
         when :ls
-          sections=plugin_sym_list
+          config_names=@loaded_configs.keys
           if self.options.command_or_arg_empty?
-            # just list plugins
-            return {:data => sections, :type => :value_list, :name => 'plugin'}
+            # just list config names
+            return {:data => config_names, :type => :value_list, :name => 'name'}
           else
-            plugin=self.options.get_next_arg_from_list('plugin',sections)
-            names=@configs[plugin].keys.map { |i| i.to_sym }
+            config_name=self.options.get_next_arg_from_list('config name',config_names)
+            parameters=@loaded_configs[config_name].keys.map { |i| i.to_sym }
             if self.options.command_or_arg_empty?
-              # list names for tool
-              return {:data => names, :type => :value_list, :name => 'name'}
+              return {:data => @loaded_configs[config_name], :type => :key_val_list }
             else
               # list parameters
-              configname=self.options.get_next_arg_from_list('config',names)
-              defaults=get_plugin_default_config(plugin,configname.to_s)
-              return Main.no_result if defaults.nil?
-              return {:data => defaults.keys.map { |i| { 'param' => i.to_s, 'value' => defaults[i] } } , :fields => ['param','value'], :type => :hash_array }
+              param_symb=self.options.get_next_arg_from_list('parameter name',parameters)
+              return {:data => [ @loaded_configs[config_name][param_symb] ] , :type => :value_list, :name => param_symb.to_s  }
             end
           end
         end
@@ -478,16 +452,48 @@ module Asperalm
         end
       end
 
+      # load config file and optionally loads parameters in options
+      def load_config_file
+        file_path=self.options.get_option(:config_file)
+        if file_path.nil?
+          Log.log.debug "nil config file"
+          @loaded_configs={"config"=>{}}
+          return
+        end
+        Log.log.debug "loading #{file_path}"
+        @loaded_configs=YAML.load_file(file_path)
+        Log.log.debug "loaded: #{@loaded_configs}"
+        # check version
+        # TODO : improve
+        if !@loaded_configs.has_key?(@@MAIN_PLUGIN_NAME_SYM.to_s)
+          raise CliError,"Config File: Cannot find key #{@@MAIN_PLUGIN_NAME_SYM.to_s} in #{file_path}. Please check documentation."
+        end
+        version=@loaded_configs[@@MAIN_PLUGIN_NAME_SYM.to_s][@@CONFIG_FILE_KEY_VERSION]
+        raise CliError,"Config File: No version found. Please check documentation. Expecting min version #{@@MIN_CONFIG_VERSION}" if version.nil?
+        if !version.eql?(@@MIN_CONFIG_VERSION)
+          raise CliError,"Unsupported config file version #{version}. Please check documentation. Expecting min version #{@@MIN_CONFIG_VERSION}"
+        end
+        config_name_list=self.options.get_option(:load_params)
+        if !config_name_list.nil?
+          config_name_list.split(/,/).each do |name|
+            Log.log.debug "loading config: #{name} : #{@loaded_configs[name]}".red
+            self.options.set_defaults(@loaded_configs[name])
+          end
+        end
+      end
+
       def process_command_line(argv)
         begin
           # init options
           # opt parser separates options (start with '-') from arguments
           self.options.set_argv(argv)
-          self.options.set_defaults({:config_name => 'default'})
+          #TODO self.options.set_defaults({:config_name => 'default'})
           # declare global options
           self.declare_options
           # parse general options always, before finding plugin
           self.options.parse_options!
+          # load default config if it was not overriden on command line
+          load_config_file
           # help requested without command ?
           self.exit_with_usage(true) if @help_requested and self.options.command_or_arg_empty?
           command_sym=self.options.get_next_arg_from_list('command',plugin_sym_list)
