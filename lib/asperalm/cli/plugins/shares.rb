@@ -5,7 +5,10 @@ module Asperalm
   module Cli
     module Plugins
       class Shares < BasicAuthPlugin
-        def declare_options; end
+        alias super_declare_options declare_options
+        def declare_options
+          super_declare_options
+        end
 
         def action_list; Node.common_actions.clone.concat([ ]);end
 

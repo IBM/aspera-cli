@@ -155,7 +155,30 @@ tfs9:
 
 tfiles: tfs1 tfs2 tfs3 tfs4 tfs5 tfs6 tfs7 tfs8 tfs9
 
-tests: tshares tfaspex tconsole tnode tfiles tfaspex2 tfasp
+to2:
+	$(ASCLI) orchestrator workflow list
+
+to3:
+	$(ASCLI) orchestrator workflow status
+
+to4:
+	$(ASCLI) orchestrator workflow id 10 inputs
+
+to5:
+	$(ASCLI) orchestrator workflow id 10 status
+
+to6:
+	$(ASCLI) orchestrator workflow id 10 start --params=@json:'{"Param":"laurent"}'
+
+to7:
+	$(ASCLI) orchestrator workflow id 10 start --params=@json:'{"Param":"laurent"}' --result=ResultStep:Complete_status_message
+
+to8:
+	$(ASCLI) orchestrator plugins
+
+torc: to2 to3 to4 to5 to6 to7 to8
+
+tests: tshares tfaspex tconsole tnode tfiles tfaspex2 tfasp torc
 
 tfxgw:
 	$(ASCLI) --config-name=/NONE --url=https://localhost:9443/aspera/faspex --username=unused --password=unused faspex package send ~/200KB.1 --insecure=yes --note="my note" --title="my title" --recipient="laurent@asperasoft.com"

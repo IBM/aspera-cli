@@ -282,8 +282,7 @@ module Asperalm
         self.options.add_opt_list(:format,self.class.result_formats,"output format",'--format=VALUE')
         self.options.add_opt_list(:transfer,[:ascp,:connect,:node],"type of transfer",'--transfer=VALUE')
         self.options.add_opt_simple(:config_file,"-CSTRING", "--config=STRING","read parameters from file in YAML format, current=#{self.options.get_option(:config_file)}")
-        self.options.add_opt_simple(:config_name,"-nSTRING", "--cname=STRING","name of configuration in config file")
-        self.options.add_opt_simple(:load_params,"--load-params=NAME","load the named configuration from current config file")
+        self.options.add_opt_simple(:load_params,"--load-params=CONFIG_NAME_LIST","load the named configuration from current config file")
         self.options.add_opt_simple(:fasp_folder,"--fasp-folder=NAME","specify where to find FASP (main folder), current=#{self.options.get_option(:fasp_folder)}")
         self.options.add_opt_simple(:transfer_node_config,"--transfer-node=STRING","name of configuration used to transfer when using --transfer=node")
         self.options.add_opt_simple(:fields,"--fields=STRING","comma separated list of fields, or #{FIELDS_ALL}, or #{FIELDS_DEFAULT}")
@@ -433,7 +432,6 @@ module Asperalm
             @options=OptParser.new
             self.options.banner = ""
             self.options.program_name=@@PROGRAM_NAME
-            self.options.set_defaults({:config_name => 'default',:transfer=>:ascp})
             get_plugin_instance(plugin_name_sym)
             STDERR.puts(self.options)
           end
@@ -470,7 +468,7 @@ module Asperalm
         end
         version=@loaded_configs[@@MAIN_PLUGIN_NAME_SYM.to_s][@@CONFIG_FILE_KEY_VERSION]
         raise CliError,"Config File: No version found. Please check documentation. Expecting min version #{@@MIN_CONFIG_VERSION}" if version.nil?
-        if !version.eql?(@@MIN_CONFIG_VERSION)
+        if Gem::Version.new(version) < Gem::Version.new(@@MIN_CONFIG_VERSION)
           raise CliError,"Unsupported config file version #{version}. Please check documentation. Expecting min version #{@@MIN_CONFIG_VERSION}"
         end
         config_name_list=self.options.get_option(:load_params)
@@ -487,7 +485,6 @@ module Asperalm
           # init options
           # opt parser separates options (start with '-') from arguments
           self.options.set_argv(argv)
-          #TODO self.options.set_defaults({:config_name => 'default'})
           # declare global options
           self.declare_options
           # parse general options always, before finding plugin

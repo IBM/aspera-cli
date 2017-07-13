@@ -5,45 +5,102 @@ module Asperalm
   module Cli
     module Plugins
       class Orchestrator < BasicAuthPlugin
-        def declare_options; end
+        SYNCHRONOUS_VALUES=[:yes,:no]
+
+        alias super_declare_options declare_options
+
+        def declare_options
+          super_declare_options
+          Main.tool.options.set_option(:params,{})
+          Main.tool.options.set_option(:synchronous,:no)
+          Main.tool.options.add_opt_simple(:params,"--params=HASH_TABLE","parameters hash table, use @json:{\"param\":\"value\"}")
+          Main.tool.options.add_opt_simple(:result,"--result=step:name","work step:parameter expected as result")
+          Main.tool.options.add_opt_simple(:synchronous,"--synchronous=step:name","work step:parameter expected as result")
+        end
 
         def action_list; [:workflow,:plugins];end
 
+        # one can either add extnsion ".json" or add url parameter: format=json
+        # id can be a parameter id=x, or at the end of url, for workflows: work_order[workflow_id]=wf_id
+        def call_API(endpoint,id=nil,url_params=nil,format=:json)
+          # calls are GET
+          call_definition={:operation=>'GET',:subpath=>endpoint}
+          # specify id if necessary
+          call_definition[:subpath]=call_definition[:subpath]+'/'+id if !id.nil?
+          # add params if necessary
+          call_definition[:url_params]=url_params if !url_params.nil?
+          # set format if necessary
+          if !format.nil?
+            call_definition[:subpath]=call_definition[:subpath]+'.'+format.to_s
+            call_definition[:headers]={'Accept'=>'application/'+format.to_s}
+          end
+          return @api_orch.call(call_definition)
+        end
+
         def execute_action
-          inlinecreds={'login'=>Main.tool.options.get_option_mandatory(:username), 'password'=>Main.tool.options.get_option_mandatory(:password), 'format'=>'json'}
-          api_orch=Rest.new(Main.tool.options.get_option_mandatory(:url),{:auth=>{:type=>:url,:url_creds=>inlinecreds}})
-          command=Main.tool.options.get_next_arg_from_list('command',action_list)
-          case command
+          @api_orch=Rest.new(Main.tool.options.get_option_mandatory(:url),{:auth=>{:type=>:url,:url_creds=>{
+            'login'=>Main.tool.options.get_option_mandatory(:username),
+            'password'=>Main.tool.options.get_option_mandatory(:password) }}})
+
+          # auth can be in url or basic
+          #          @api_orch=Rest.new(Main.tool.options.get_option_mandatory(:url),{:auth=>{
+          #            :type=>:basic,
+          #            :username=>Main.tool.options.get_option_mandatory(:username),
+          #            :password=>Main.tool.options.get_option_mandatory(:password)}})
+
+          command1=Main.tool.options.get_next_arg_from_list('command',action_list)
+          case command1
           when :plugins
-            wf_list=api_orch.list("api/plugin_version")[:data]
-            return {:type=>:hash_array,:data=>wf_list['Plugin']}
+            result=call_API("api/plugin_version")[:data]
+            return {:type=>:hash_array,:data=>result['Plugin']}
           when :workflow
             command=Main.tool.options.get_next_arg_from_list('command',[:list, :status, :id])
-            puts "CCCC=#{command}"
             case command
             when :status
-              wf_list=api_orch.list("api/workflows_status")[:data]
-              return {:type=>:hash_array,:data=>wf_list['workflows']['workflow']}
+              result=call_API("api/workflows_status")[:data]
+              return {:type=>:hash_array,:data=>result['workflows']['workflow']}
             when :list
-              wf_list=api_orch.list("workflow_reporter/workflows_list/0")[:data]
-              return {:type=>:hash_array,:data=>wf_list['workflows']['workflow'],:fields=>["id","name","published_status","published_revision_id","latest_revision_id","last_modification"]}
+              result=call_API("workflow_reporter/workflows_list/0")[:data]
+              return {:type=>:hash_array,:data=>result['workflows']['workflow'],:fields=>["id","portable_id","name","published_status","published_revision_id","latest_revision_id","last_modification"]}
             when :id
               wf_id=Main.tool.options.get_next_arg_value('workflow id')
-              command=Main.tool.options.get_next_arg_from_list('command',[:inputs,:status])
+              command=Main.tool.options.get_next_arg_from_list('command',[:inputs,:status,:start])
               case command
               when :status
-                inputs=api_orch.list("api/workflow_details/#{wf_id}")[:data]
-                return {:type=>:hash_array,:data=>inputs['workflows']['workflow']['statuses']}
+                result=call_API("api/workflow_details",wf_id)[:data]
+                return {:type=>:hash_array,:data=>result['workflows']['workflow']['statuses']}
               when :inputs
-                inputs=api_orch.list("api/workflow_inputs_spec/#{wf_id}")[:data]
-                return {:type=>:key_val_list,:data=>inputs['workflow_inputs_spec']}
+                result=call_API("api/workflow_inputs_spec",wf_id)[:data]
+                return {:type=>:key_val_list,:data=>result['workflow_inputs_spec']}
+              when :start
+                call_params={}
+                # set external parameters if any
+                Main.tool.options.get_option_mandatory(:params).each do |name,value|
+                  call_params["external_parameters[#{name}]"] = value
+                end
+                # synchronous call ?
+                call_params["synchronous"]=true if Main.tool.options.get_option_mandatory(:synchronous).eql?(:yes)
+                result_type = :other_struct
+                # expected result for synchro call ?
+                expected=Main.tool.options.get_option(:result)
+                if !expected.nil?
+                  result_type = :status
+                  fields=expected.split(/:/)
+                  raise "Expects: work_step:result_name format, but got #{expected}" if fields.length != 2
+                  call_params["explicit_output_step"]=fields[0]
+                  call_params["explicit_output_variable"]=fields[1]
+                  # implicitely, call is synchronous
+                  call_params["synchronous"]=true
+                end
+                result=call_API("api/initiate",wf_id,call_params)
+                return {:type=>result_type,:data=>result[:data]}
               end
             else
               raise "ERROR, unknown command: [#{command}]"
             end
           end
-        end
-      end
-    end
+        end # execute_action
+      end # Orchestrator
+    end # Plugins
   end # Cli
 end # Asperalm
