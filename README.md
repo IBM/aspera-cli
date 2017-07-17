@@ -27,7 +27,7 @@ In addition, it provides:
 
 This Gem was developed for the following Purposes:
 
-* show use of Aspera (REST) APIs: Node, Files, Shares, Faspex, Console
+* show use of Aspera (REST) APIs: Node, Files, Shares, Faspex, Console, Orchestrator
 * provide a command line for some tasks
 * cross-platform (ruby)
 * shows example of use of Aspera products

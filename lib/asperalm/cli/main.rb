@@ -282,7 +282,7 @@ module Asperalm
         self.options.add_opt_list(:format,self.class.result_formats,"output format",'--format=VALUE')
         self.options.add_opt_list(:transfer,[:ascp,:connect,:node],"type of transfer",'--transfer=VALUE')
         self.options.add_opt_simple(:config_file,"-CSTRING", "--config=STRING","read parameters from file in YAML format, current=#{self.options.get_option(:config_file)}")
-        self.options.add_opt_simple(:load_params,"--load-params=CONFIG_NAME_LIST","load the named configuration from current config file")
+        self.options.add_opt_simple(:load_params,"-PNAME","--load-params=NAME","load the named configuration from current config file")
         self.options.add_opt_simple(:fasp_folder,"--fasp-folder=NAME","specify where to find FASP (main folder), current=#{self.options.get_option(:fasp_folder)}")
         self.options.add_opt_simple(:transfer_node_config,"--transfer-node=STRING","name of configuration used to transfer when using --transfer=node")
         self.options.add_opt_simple(:fields,"--fields=STRING","comma separated list of fields, or #{FIELDS_ALL}, or #{FIELDS_DEFAULT}")
@@ -408,9 +408,9 @@ module Asperalm
             raise "unknown data type: #{results[:type]}"
           end
           raise "ERROR" if display_fields.nil?
-          # convert to string with special function
+          # convert to string with special function. here table_data is an array of hash
           table_data=results[:textify].call(table_data) if results.has_key?(:textify)
-          # convert data to string
+          # convert data to string, and keep only display fields
           table_data=table_data.map { |r| display_fields.map { |c| r[c].to_s } }
           # display the table !
           puts Text::Table.new(

@@ -155,6 +155,9 @@ tfs9:
 
 tfiles: tfs1 tfs2 tfs3 tfs4 tfs5 tfs6 tfs7 tfs8 tfs9
 
+to1:
+	$(ASCLI) orchestrator info
+
 to2:
 	$(ASCLI) orchestrator workflow list
 
@@ -176,7 +179,7 @@ to7:
 to8:
 	$(ASCLI) orchestrator plugins
 
-torc: to2 to3 to4 to5 to6 to7 to8
+torc: to1 to2 to3 to4 to5 to6 to7 to8
 
 tests: tshares tfaspex tconsole tnode tfiles tfaspex2 tfasp torc
 

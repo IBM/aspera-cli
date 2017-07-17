@@ -15,10 +15,10 @@ module Asperalm
           Main.tool.options.set_option(:synchronous,:no)
           Main.tool.options.add_opt_simple(:params,"--params=HASH_TABLE","parameters hash table, use @json:{\"param\":\"value\"}")
           Main.tool.options.add_opt_simple(:result,"--result=step:name","work step:parameter expected as result")
-          Main.tool.options.add_opt_simple(:synchronous,"--synchronous=step:name","work step:parameter expected as result")
+          Main.tool.options.add_opt_list(:synchronous,SYNCHRONOUS_VALUES,"--synchronous=YES_NO","work step:parameter expected as result")
         end
 
-        def action_list; [:workflow,:plugins];end
+        def action_list; [:info, :workflow, :plugins];end
 
         # one can either add extnsion ".json" or add url parameter: format=json
         # id can be a parameter id=x, or at the end of url, for workflows: work_order[workflow_id]=wf_id
@@ -27,13 +27,16 @@ module Asperalm
           call_definition={:operation=>'GET',:subpath=>endpoint}
           # specify id if necessary
           call_definition[:subpath]=call_definition[:subpath]+'/'+id if !id.nil?
-          # add params if necessary
-          call_definition[:url_params]=url_params if !url_params.nil?
           # set format if necessary
           if !format.nil?
-            call_definition[:subpath]=call_definition[:subpath]+'.'+format.to_s
+            url_params={} if url_params.nil?
+            url_params['format']=format
+            # needs a patch to work ...
+            #call_definition[:subpath]=call_definition[:subpath]+'.'+format.to_s
             call_definition[:headers]={'Accept'=>'application/'+format.to_s}
           end
+          # add params if necessary
+          call_definition[:url_params]=url_params if !url_params.nil?
           return @api_orch.call(call_definition)
         end
 
@@ -50,6 +53,13 @@ module Asperalm
 
           command1=Main.tool.options.get_next_arg_from_list('command',action_list)
           case command1
+          when :info
+            result=call_API("logon",nil,nil,nil)
+            version='unknown'
+            if m=result[:http].body.match(/\(v([0-9.-]+)\)/)
+              version=m[1]
+            end
+            return {:type=>:key_val_list,:data=>{'version'=>version}}
           when :plugins
             result=call_API("api/plugin_version")[:data]
             return {:type=>:hash_array,:data=>result['Plugin']}
@@ -73,6 +83,12 @@ module Asperalm
                 result=call_API("api/workflow_inputs_spec",wf_id)[:data]
                 return {:type=>:key_val_list,:data=>result['workflow_inputs_spec']}
               when :start
+                result={
+                  :type=>:key_val_list,
+                  :data=>nil,
+                  # when called, hash has already been put in key/value table ... so extract and re-create
+                  :textify=>lambda { |r| r=r[0]["value"];r.keys.map { |i| { 'key' => i, 'value' => r[i] } } }
+                }
                 call_params={}
                 # set external parameters if any
                 Main.tool.options.get_option_mandatory(:params).each do |name,value|
@@ -80,11 +96,11 @@ module Asperalm
                 end
                 # synchronous call ?
                 call_params["synchronous"]=true if Main.tool.options.get_option_mandatory(:synchronous).eql?(:yes)
-                result_type = :other_struct
                 # expected result for synchro call ?
                 expected=Main.tool.options.get_option(:result)
                 if !expected.nil?
-                  result_type = :status
+                  result[:type] = :status
+                  result.delete(:textify)
                   fields=expected.split(/:/)
                   raise "Expects: work_step:result_name format, but got #{expected}" if fields.length != 2
                   call_params["explicit_output_step"]=fields[0]
@@ -92,8 +108,8 @@ module Asperalm
                   # implicitely, call is synchronous
                   call_params["synchronous"]=true
                 end
-                result=call_API("api/initiate",wf_id,call_params)
-                return {:type=>result_type,:data=>result[:data]}
+                result[:data]=call_API("api/initiate",wf_id,call_params)[:data]
+                return result
               end
             else
               raise "ERROR, unknown command: [#{command}]"
