@@ -1,5 +1,6 @@
 require 'asperalm/cli/main'
 require 'asperalm/cli/plugins/node'
+require 'xmlsimple'
 
 module Asperalm
   module Cli
@@ -18,7 +19,7 @@ module Asperalm
           Main.tool.options.add_opt_list(:synchronous,SYNCHRONOUS_VALUES,"--synchronous=YES_NO","work step:parameter expected as result")
         end
 
-        def action_list; [:info, :workflow, :plugins];end
+        def action_list; [:info, :workflow, :plugins, :processes];end
 
         # one can either add extnsion ".json" or add url parameter: format=json
         # id can be a parameter id=x, or at the end of url, for workflows: work_order[workflow_id]=wf_id
@@ -60,6 +61,11 @@ module Asperalm
               version=m[1]
             end
             return {:type=>:key_val_list,:data=>{'version'=>version}}
+          when :processes
+            # TODO: json format is not respected in AO
+            result=call_API("api/processes_status",nil,nil,:xml)
+            res_s=XmlSimple.xml_in(result[:http].body, {"ForceArray" => true})
+            return {:type=>:hash_array,:data=>res_s["process"]}
           when :plugins
             result=call_API("api/plugin_version")[:data]
             return {:type=>:hash_array,:data=>result['Plugin']}
