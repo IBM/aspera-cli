@@ -178,8 +178,10 @@ to7:
 
 to8:
 	$(ASCLI) orchestrator plugins
+to9:
+	$(ASCLI) orchestrator processes
 
-torc: to1 to2 to3 to4 to5 to6 to7 to8
+torc: to1 to2 to3 to4 to5 to6 to7 to8 to9
 
 tests: tshares tfaspex tconsole tnode tfiles tfaspex2 tfasp torc
 

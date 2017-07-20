@@ -93,7 +93,7 @@ only username/password
 and url are required (either on command line, or from config file). Just fill-in url and
 credentials in the configuration file (section: <app>_default), and then you can start 
 using the CLI without having to specify those on command line. 
-Switch between server configurations with `-n` option (or --config-name).
+Switch between server configurations with `-P` option (or --load-params).
 
 ### Configuration for use with Aspera Files
 
@@ -136,9 +136,9 @@ $ aslmcli files repo browse /
 ## Usage
 
 ```bash
-$ ./bin/aslmcli cli help
+$ ./bin/aslmcli -h
 NAME
-	aslmcli -- a command line tool for Aspera Applications
+	aslmcli -- a command line tool for Aspera Applications (v0.3.9)
 
 SYNOPSIS
 	aslmcli COMMANDS [OPTIONS] [ARGS]
@@ -149,12 +149,12 @@ DESCRIPTION
 	Additional documentation here: https://rubygems.org/gems/asperalm
 
 COMMANDS
-	First level commands: cli, console, fasp, faspex, files, node, shares
+	First level commands: config, console, fasp, faspex, files, node, orchestrator, shares
 	Note that commands can be written shortened (provided it is unique).
 
 OPTIONS
 	Options begin with a '-' (minus), and value is provided on command line.
-	Special values are supported beginning with special prefix, like: @file: @env: @val: @val64: @json: @none:.
+	Special values are supported beginning with special prefix, like: @val: @file: @env: @["base64", "json", "zlib"]:.
 	Dates format is 'DD-MM-YY HH:MM:SS', or 'now' or '-<num>h'
 
 ARGS
@@ -162,19 +162,20 @@ ARGS
 
 EXAMPLES
 	aslmcli files repo browse /
-	aslmcli faspex package send ./myfile --log-level=debug
+	aslmcli faspex send ./myfile --log-level=debug
 	aslmcli shares upload ~/myfile /myshare
 
 OPTIONS: global
-    -h, --help                       Show this message
+    -h, --help                       Show this message. Try: config help
     -g, --browser=TYPE               method to start browser. Values=(tty,os), current=tty
         --insecure=VALUE             do not validate cert. Values=(yes,no), current=no
     -l, --log-level=VALUE            Log level. Values=(debug,info,warn,error,fatal,unknown), current=warn
-    -q, --logger=VALUE               log method. Values=(syslog,stdout), current=stdout
-        --format=VALUE               output format. Values=(ruby,formatted,json,text), current=formatted
+    -q, --logger=VALUE               log method. Values=(stderr,stdout,syslog), current=stdout
+        --format=VALUE               output format. Values=(table,ruby,json,yaml), current=table
         --transfer=VALUE             type of transfer. Values=(ascp,connect,node), current=ascp
-    -f, --config-file=STRING         read parameters from file in YAML format, current=/Users/laurent/.aspera/aslmcli/config.yaml
-    -n, --config-name=STRING         name of configuration in config file
+    -C, --config=STRING              read parameters from file in YAML format, current=/Users/laurent/.aspera/aslmcli/config.yaml
+    -P, --load-params=NAME           load the named configuration from current config file
+        --fasp-folder=NAME           specify where to find FASP (main folder), current={:ascp=>"ascp", :app_root=>"/Users/laurent/Applications/Aspera Connect.app", :run_root=>"/Users/laurent/Library/Application Support/Aspera/Aspera Connect", :sub_bin=>"Contents/Resources", :sub_keys=>"Contents/Resources", :dsa=>"asperaweb_id_dsa.openssh"}
         --transfer-node=STRING       name of configuration used to transfer when using --transfer=node
         --fields=STRING              comma separated list of fields, or ALL, or DEF
         --fasp-proxy=STRING          URL of FASP proxy (dnat / dnats)
@@ -192,9 +193,8 @@ OPTIONS:
         --filter-to=DATE             only before date
 
 COMMAND: fasp
-SUBCOMMANDS: download, upload, browse, info, ls, mkdir, mv, rm, du, cp, df, md5sum
+SUBCOMMANDS: download, upload, browse, delete, rename, info, ls, mkdir, mv, rm, du, cp, df, md5sum
 OPTIONS:
-    no option
 
 COMMAND: faspex
 SUBCOMMANDS: package, dropbox, recv_publink, source, me
@@ -205,6 +205,7 @@ OPTIONS:
         --recipient=STRING           package recipient
         --title=STRING               package title
         --note=STRING                package note
+        --metadata=@json:JSON_STRING package metadata
         --source-name=STRING         create package from remote source (by name)
         --box=TYPE                   package box. Values=(inbox,sent,archive), current=inbox
 
@@ -228,11 +229,21 @@ OPTIONS:
     -w, --url=URI                    URL of application, e.g. http://org.asperafiles.com
     -u, --username=STRING            username to log in
     -p, --password=STRING            password
-        --persistency=FILEPATH       persistency file
-        --filter-config=NAME         Ruby expression for filter at transfer level
-        --filter-transfer=EXPRESSION Ruby expression for filter at transfer level
-        --filter-file=EXPRESSION     Ruby expression for filter at file level
-        --filter-request=EXPRESSION  Ruby expression for filter at file level
+        --persistency=FILEPATH       persistency file (cleanup,forward)
+        --filter-transfer=EXPRESSION Ruby expression for filter at transfer level (cleanup)
+        --filter-file=EXPRESSION     Ruby expression for filter at file level (cleanup)
+        --filter-request=EXPRESSION  JSON expression for filter on API request
+
+COMMAND: orchestrator
+SUBCOMMANDS: info, workflow, plugins, processes
+OPTIONS:
+    -w, --url=URI                    URL of application, e.g. http://org.asperafiles.com
+    -u, --username=STRING            username to log in
+    -p, --password=STRING            password
+        --params=HASH_TABLE          parameters hash table, use @json:{"param":"value"}
+        --result=step:name           work step:parameter expected as result
+        --synchronous=YES_NO. Values=(yes,no), current=no
+                                     work step:parameter expected as result
 
 COMMAND: shares
 SUBCOMMANDS: info, browse, mkdir, mklink, mkfile, rename, delete, upload, download
@@ -431,7 +442,7 @@ aslmcli shares download /projectx/200KB.1 .
 aslmcli faspex recv_publink https://myfaspex.myorg.com/aspera/faspex/external_deliveries/78780?passcode=a003aaf2f53e3123456b908525084db6bebc7031
 aslmcli faspex package list
 aslmcli faspex package recv 05b92393-02b7-4900-ab69-fd56721e896c
-aslmcli faspex package send ~/200KB.1 --config-name=myfaspex --note="my note" --title="my title" --recipient="laurent@asperasoft.com"
+aslmcli faspex package send ~/200KB.1 --load-params=myfaspex --note="my note" --title="my title" --recipient="laurent@asperasoft.com"
 aslmcli console transfers list
 aslmcli node browse /
 aslmcli node upload ~/200KB.1 /tmp
@@ -511,7 +522,7 @@ Then create a configuration for the "SHOD" instance in the configuration file: i
 Create another configuration for the Azure ATS instance: in section "node", named azureats.
 Then execute the following command:
 ```bash
-aslmcli download /share/sourcefile /destinationfolder --config-name=awsshod --transfer=node --transfer-node=azureats
+aslmcli download /share/sourcefile /destinationfolder --load-params=awsshod --transfer=node --transfer-node=azureats
 ```
 This will get transfer information from the SHOD instance and tell the Azure ATS instance 
 to download files.
@@ -530,7 +541,7 @@ It is possible to start a FASPStream session using the node API:
 Use the "node stream create" command, then arguments are provided as a "transfer spec".
 
 ```bash
-./bin/aslmcli node stream create --ts='{"direction":"send","source":"udp://233.3.3.4:3000?loopback=1&ttl=2","destination":"udp://233.3.3.3:3001/","remote_host":"localhost","remote_user":"stream","password":"XXXX"}' --config-name=stream
+./bin/aslmcli node stream create --ts='{"direction":"send","source":"udp://233.3.3.4:3000?loopback=1&ttl=2","destination":"udp://233.3.3.3:3001/","remote_host":"localhost","remote_user":"stream","password":"XXXX"}' --load-params=stream
 ```
 ## Create your own plugin
 ```bash
@@ -564,7 +575,7 @@ faspex_default:
     testlaurent:
       :node: my_fpx_node
       :path: /myfiles
-node_my_fpx_node:
+my_fpx_node:
   :url: https://10.25.0.3:9092
   :username: node_faspex
   :password: MyPassword

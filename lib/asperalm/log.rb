@@ -1,37 +1,35 @@
-require 'logger'
 require 'asperalm/colors'
+require 'logger'
 
 module Asperalm
   class Log
-    @@LEVELS=[:debug,:info,:warn,:error,:fatal,:other_struct]
-    @@LOGTYPES= [:syslog,:stdout]
     @@logobj=nil
+    # levels are :debug,:info,:warn,:error,fatal,:unknown
+    def self.levels; Logger::Severity.constants.map{|c| c.downcase.to_sym};end
 
-    def self.levels; @@LEVELS;end
-
-    def self.logtypes; @@LOGTYPES;end
+    def self.logtypes; [:stderr,:stdout,:syslog];end
 
     def self.log
-      if @@logobj.nil? then
-        @@logobj=Logger.new(STDERR)
-        self.level=:warn
-        @@logobj.debug("setting defaults")
-      end
-      raise "error" if @@logobj.nil?
+      self.setlogger(:stderr) if @@logobj.nil?
       return @@logobj
     end
 
     def self.level=(level)
-      log.level=@@LEVELS.index(level)
+      log.level=Logger::Severity.const_get(level.to_sym.upcase)
     end
 
     def self.level
-      @@LEVELS[log.level]
+      Logger::Severity.constants.each do |name|
+        return name.downcase.to_sym if log.level.eql?(Logger::Severity.const_get(name))
+      end
+      raise "error"
     end
 
     def self.setlogger(logtype)
       current_level_num=@@logobj.nil? ? :warn : @@logobj.level
       case logtype
+      when :stderr
+        @@logobj = Logger.new(STDERR)
       when :stdout
         @@logobj = Logger.new(STDOUT)
       when :syslog

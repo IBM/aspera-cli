@@ -64,6 +64,10 @@ module Asperalm
   end
 
   # Manages FASP based transfers
+  # supports 3 modes to start a transfer:
+  # - ascp : executes ascp process
+  # - node : use the node API
+  # - connect : use the connect client
   class FaspManager
     # a global transfer spec that overrides values in transfer spec provided on start
     @@ts_override_data={}
@@ -83,11 +87,15 @@ module Asperalm
       return @@ts_override_data
     end
 
+    # mode=connect : activate
     attr_accessor :use_connect_client
+    # mode=connect : application identifier used in connect API
+    attr_accessor :connect_app_id
+    # mode=node : activate, set to the REST api object for the node API
+    attr_accessor :tr_node_api
+    # mode=ascp : proxy configuration
     attr_accessor :fasp_proxy_url
     attr_accessor :http_proxy_url
-    attr_accessor :tr_node_api
-    attr_accessor :connect_app_id
 
     def initialize
       @mgt_sock=nil
@@ -139,9 +147,9 @@ module Asperalm
         when 'bwcap'; transfer_spec['target_rate_cap_kbps']=value
         when 'createpath'; transfer_spec['create_dir']=yes_to_true(value)
         when 'fallback'; transfer_spec['http_fallback']=yes_to_true(value)
-        when 'auth'; Log.log.debug("ignoring #{name}=#{value}") # TODO: why ignore ?
         when 'lockpolicy'; transfer_spec['lock_rate_policy']=value
         when 'lockminrate'; transfer_spec['lock_min_rate']=value
+        when 'auth'; Log.log.debug("ignoring #{name}=#{value}") # TODO: why ignore ?
         when 'v'; Log.log.debug("ignoring #{name}=#{value}")# TODO: why ignore ?
         when 'protect'; Log.log.debug("ignoring #{name}=#{value}")# TODO: why ignore ?
         else Log.log.error("non managed URI value: #{name} = #{value}".red)
