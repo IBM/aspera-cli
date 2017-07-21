@@ -76,7 +76,7 @@ module Asperalm
             iteration_token=File.read(persistencyfile)
           end
           params[:iteration_token]=iteration_token unless iteration_token.nil?
-          resp=api_node.list('ops/transfers',params)
+          resp=api_node.read('ops/transfers',params)
           transfers=resp[:data]
           if transfers.is_a?(Array) then
             # 3.7.2, released API

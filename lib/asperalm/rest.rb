@@ -10,6 +10,7 @@ require 'net/http'
 require 'net/https'
 require 'json'
 
+# add cancel method to http
 class Net::HTTP::Cancel < Net::HTTPRequest
   METHOD = 'CANCEL'
   REQUEST_HAS_BODY  = false
@@ -26,14 +27,14 @@ module Asperalm
 
     def self.insecure; @@insecure;end
 
-    def base_url;@api_base;end
-
     # opt_call_data can contain default call data , as in "call"
     def initialize(baseurl,opt_call_data=nil)
       # base url without trailing slashes
       @api_base=baseurl.gsub(/\/+$/,'')
       @opt_call_data=opt_call_data
     end
+
+    def base_url;@api_base;end
 
     def param_default; @opt_call_data; end
 
@@ -63,9 +64,11 @@ module Asperalm
       if !@opt_call_data.nil? then
         call_data.merge!(@opt_call_data) { |key, v1, v2| next v1.merge(v2) if v1.is_a?(Hash) and v2.is_a?(Hash); v1 }
       end
+      # OAuth
       if !call_data[:headers].has_key?('Authorization') and call_data.has_key?(:auth) and call_data[:auth].has_key?(:obj) then
         call_data[:headers]['Authorization']=call_data[:auth][:obj].get_authorization(call_data[:auth][:scope])
       end
+      # Url auth
       if call_data.has_key?(:auth) and call_data[:auth].has_key?(:url_creds) then
         call_data[:url_params]={} if call_data[:url_params].nil?
         call_data[:auth][:url_creds].each do |key, value|
@@ -87,7 +90,6 @@ module Asperalm
       end
       if call_data.has_key?(:json_params) then
         req.body=JSON.generate(call_data[:json_params])
-        #Log.log.debug "body JSON data=#{PP.pp(call_data[:json_params],'').chomp}"
         Log.log.debug "body JSON data=#{call_data[:json_params]}"
         req['Content-Type'] = 'application/json'
         call_data[:headers]['Accept']='application/json'
@@ -101,26 +103,33 @@ module Asperalm
         req.body=call_data[:text_body_params]
         Log.log.debug "body data=#{req.body.chomp}"
       end
+      # set headers
       if call_data.has_key?(:headers) then
         call_data[:headers].keys.each do |key|
           req[key] = call_data[:headers][key]
         end
       end
+      # basic auth
       if call_data.has_key?(:auth) and call_data[:auth][:type].eql?(:basic) then
         req.basic_auth(call_data[:auth][:user],call_data[:auth][:password])
         Log.log.debug "using Basic auth"
       end
-      resp = http.request(req)
 
-      Log.log.debug "result code=#{resp.code}"
-      Log.log.debug "result body=#{resp.body}"
-
-      # TODO: if error 400 unauthorized, and oauth, then refresh or regenerate token and call again http.request(req)
-      if false and resp.code.eql?('40X') and call_data.has_key?(:auth) and call_data[:auth].has_key?(:obj)
-        call_data[:headers]['Authorization']=call_data[:auth][:obj].get_authorization(call_data[:auth][:scope],true)
+      resp=nil
+      # we try the call, and will retry only if oauth, as we can
+      2.times do
         resp = http.request(req)
-        Log.log.debug "result(2) code=#{resp.code}"
-        Log.log.debug "result(2) body=#{resp.body}"
+        Log.log.debug "result: code=#{resp.code}, body=#{resp.body}"
+
+        # give a second try if token expired
+        if resp.code.start_with?('4') and call_data.has_key?(:auth) and call_data[:auth].has_key?(:obj)
+          # try a refresh and/or regeneration of token
+          req['Authorization']=call_data[:auth][:obj].get_authorization(call_data[:auth][:scope],true)
+          Log.log.debug "using new token=#{call_data[:headers]['Authorization']}"
+        else
+          # success, or other error, or not authorized and not oauth
+          break;
+        end
       end
 
       if ! resp.code.start_with?('2') then
@@ -134,16 +143,16 @@ module Asperalm
       return result
     end
 
-    def list(subpath,args=nil)
-      return call({:operation=>'GET',:subpath=>subpath,:headers=>{'Accept'=>'application/json'},:url_params=>args})
-    end
+    #
+    # CRUD methods here
+    #
 
     def create(subpath,params)
       return call({:operation=>'POST',:subpath=>subpath,:headers=>{'Accept'=>'application/json'},:json_params=>params})
     end
 
-    def read(subpath)
-      return call({:operation=>'GET',:subpath=>subpath,:headers=>{'Accept'=>'application/json'}})
+    def read(subpath,args=nil)
+      return call({:operation=>'GET',:subpath=>subpath,:headers=>{'Accept'=>'application/json'},:url_params=>args})
     end
 
     def update(subpath,params)

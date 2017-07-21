@@ -26,16 +26,6 @@ module Asperalm
     TOKEN_FILE_SEPARATOR='_'
     TOKEN_FILE_SUFFIX='.txt'
     WINDOWS_PROTECTED_CHAR=%r{[/:"<>\\\*\?]}
-    # get location of cache for token
-    def token_filepath(parts)
-      basename=parts.dup.unshift(TOKEN_FILE_PREFIX).join(TOKEN_FILE_SEPARATOR)
-      # remove windows forbidden chars
-      basename.gsub!(WINDOWS_PROTECTED_CHAR,TOKEN_FILE_SEPARATOR)
-      # keep dot for extension only (nicer)
-      basename.gsub!('.',TOKEN_FILE_SEPARATOR)
-      File.join(@auth_data[:persist_folder],basename+TOKEN_FILE_SUFFIX)
-    end
-
     # delete cached tokens
     def self.flush_tokens(persist_folder)
       tokenfiles=Dir[File.join(persist_folder,TOKEN_FILE_PREFIX+'*'+TOKEN_FILE_SUFFIX)]
@@ -57,98 +47,90 @@ module Asperalm
       @auth_data=auth_data
       @auth_data[:persist_folder]='.' if !auth_data.has_key?(:persist_folder)
       # key = scope value, e.g. user:all, or node.*
-      # subkeys = :data (token value ruby structure), :expiration
+      # value = ruby structure of data of returned value
       @token_cache={}
     end
 
-    # set token data
-    # extract validity date from token value
-    def set_token_data(api_scope,token_json)
-      @token_cache[api_scope]={:data => JSON.parse(token_json)}
-      decoded_token_info = self.class.decode_access_token(@token_cache[api_scope][:data]['access_token'])
-      Log.log.info "decoded_token_info=#{PP.pp(decoded_token_info,'').chomp}"
-      @token_cache[api_scope][:expiration]=DateTime.parse(decoded_token_info['expires_at'])
-      Log.log.info "token expires at #{@token_cache[api_scope][:expiration]}"
+    # save token data in memory cache
+    def set_token_cache(api_scope,token_json)
+      @token_cache[api_scope]=JSON.parse(token_json)
+      # for debug only, expiration info is not accurate
+      begin
+        decoded_token_info = JSON.parse(Zlib::Inflate.inflate(Base64.decode64(@token_cache[api_scope]['access_token'])).partition('==SIGNATURE==').first)
+        Log.log.info "decoded_token_info=#{PP.pp(decoded_token_info,'').chomp}"
+      rescue
+      end
     end
 
-    def save_set_token_data(api_scope,token_json,token_state_file)
+    # save token data in memory and disk cache
+    def save_and_set_token_cache(api_scope,token_json,token_state_file)
       Log.log.info "token_json=#{token_json}"
       File.write(token_state_file,token_json)
-      set_token_data(api_scope,token_json)
-      Log.log.info "new token is #{@token_cache[api_scope][:data]['access_token']}"
+      set_token_cache(api_scope,token_json)
+      Log.log.info "new saved token is #{@token_cache[api_scope]['access_token']}"
     end
 
-    # decode data inside token
-    def self.decode_access_token(token)
-      return JSON.parse(Zlib::Inflate.inflate(Base64.decode64(token)).partition('==SIGNATURE==').first)
+    # get location of cache for token
+    def token_filepath(parts)
+      basename=parts.dup.unshift(TOKEN_FILE_PREFIX).join(TOKEN_FILE_SEPARATOR)
+      # remove windows forbidden chars
+      basename.gsub!(WINDOWS_PROTECTED_CHAR,TOKEN_FILE_SEPARATOR)
+      # keep dot for extension only (nicer)
+      basename.gsub!('.',TOKEN_FILE_SEPARATOR)
+      File.join(@auth_data[:persist_folder],basename+TOKEN_FILE_SUFFIX)
     end
 
-    def get_authorization(api_scope,force_regenerate=false)
+    # last_use_not_authorized set to true if auth was just used and failed
+    def get_authorization(api_scope,last_use_not_authorized=false)
       # file name for cache of token
       token_state_file=token_filepath([@auth_data[:type],@organization,@auth_data[:client_id],api_scope])
-
-      if force_regenerate
-        File.delete(token_state_file) if File.exist?(token_state_file)
-        @token_cache.delete(api_scope)
-        # force refresh if present
-        @token_cache[api_scope][:expiration]=DateTime.now if @token_cache.has_key?(api_scope)
-      end
 
       # if first time, try to read from file
       if ! @token_cache.has_key?(api_scope) then
         if File.exist?(token_state_file) then
           Log.log.info "reading token from file cache: #{token_state_file}"
-          set_token_data(api_scope,File.read(token_state_file))
+          set_token_cache(api_scope,File.read(token_state_file))
         end
       end
 
-      # check if access token is in cache and not expired, if expired: empty cache and try to refresh
-      # note: we could also try to use then current token, and , if expired: get a new one
-      if @token_cache.has_key?(api_scope) then
-        Log.log.info "expiration date=#{PP.pp(@token_cache[api_scope][:expiration],'').chomp}"
-        remaining_minutes=((@token_cache[api_scope][:expiration]-DateTime.now)*24*60).round
-        Log.log.info "minutes remain=#{remaining_minutes}"
-        # TODO: enhance expiration policy ?
-        # Token expiration date is probably only informational, do not rely on it
-        is_expired = remaining_minutes < 10
-        if is_expired  then
-          if @token_cache[api_scope][:data].has_key?('refresh_token') then
-            Log.log.info "token expired"
-            # try to refresh
-            # note: admin token has no refresh, and lives by default 1800secs
-            refresh_token = @token_cache[api_scope][:data]['refresh_token']
-            @token_cache.delete(api_scope)
-            #Note: we keep the file cache, as refresh_token may be valid
-            Log.log.info "refresh=[#{refresh_token}]".bg_green()
-            # Note: scope is mandatory in Files, and we can either provide basic auth, or client_Secret in data
-            resp=@rest.call({
-              :operation=>'POST',
-              :subpath=>"oauth2/#{@organization}/token",
-              :headers=>{'Accept'=>'application/json'},
-              :auth=>{:type=>:basic,:user=>@auth_data[:client_id],:password=>@auth_data[:client_secret]}, # this is RFC
-              :www_body_params=>{
-              :grant_type=>'refresh_token',
-              :refresh_token=>refresh_token,
-              :scope=>api_scope,
-              :client_id=>@auth_data[:client_id],
-              #:client_secret=>@auth_data[:client_secret],  # also works, but not compliant to RFC
-              :state=>UNUSED_STATE # TODO: remove, not useful
-              }})
-            # TODO: save only if success ?
-            save_set_token_data(api_scope,resp[:http].body,token_state_file)
+      # an api was already called, but failed, we need to regenerate or refresh
+      if last_use_not_authorized
+        raise "ERROR: should never happen" if !@token_cache.has_key?(api_scope)
+        # save possible refresh token, before deleting the cache
+        refresh_token=@token_cache[api_scope]['refresh_token']
+        # delete caches
+        Log.log.info "deleting caches for token"
+        File.delete(token_state_file) if File.exist?(token_state_file)
+        @token_cache.delete(api_scope)
+        # this token failed, but it has a refresh token
+        if !refresh_token.nil?
+          Log.log.info "refresh=[#{refresh_token}]".bg_green()
+          # try to refresh
+          # note: admin token has no refresh, and lives by default 1800secs
+          # Note: scope is mandatory in Files, and we can either provide basic auth, or client_Secret in data
+          resp=@rest.call({
+            :operation=>'POST',
+            :subpath=>"oauth2/#{@organization}/token",
+            :headers=>{'Accept'=>'application/json'},
+            :auth=>{:type=>:basic,:user=>@auth_data[:client_id],:password=>@auth_data[:client_secret]}, # this is RFC
+            :www_body_params=>{
+            :grant_type=>'refresh_token',
+            :refresh_token=>refresh_token,
+            :scope=>api_scope,
+            :client_id=>@auth_data[:client_id],
+            #:client_secret=>@auth_data[:client_secret],  # also works, but not compliant to RFC
+            :state=>UNUSED_STATE # TODO: remove, not useful
+            }})
+          if resp[:http].code.start_with?('2') then
+            # save only if success ?
+            save_and_set_token_cache(api_scope,resp[:http].body,token_state_file)
           else
-            Log.log.info "token expired, no refresh token, deleting cache and cache file".bg_red()
-            @token_cache.delete(api_scope)
-            begin
-              File.unlink(token_state_file)
-            rescue => e
-              Log.log.info "error: #{e}"
-            end
-          end # has refresh
-        end # is expired
-      end # has cache
+            Log.log.debug "refresh failed: #{resp[:http].body}".bg_red()
+          end
+        end
+      end
 
-      # no cache , or expired, or no refresh
+      # no cache
       if !@token_cache.has_key?(api_scope) then
         resp=nil
         case @auth_data[:type]
@@ -167,7 +149,7 @@ module Asperalm
             }})
         when :web
           check_code=SecureRandom.uuid
-          thelogin=@rest.get_uri({
+          login_page_url=@rest.get_uri({
             :operation=>'GET',
             :subpath=>"oauth2/#{@organization}/authorize",
             :url_params=>{
@@ -180,7 +162,7 @@ module Asperalm
             }})
 
           # here, we need a human to authorize on a web page
-          code=goto_page_and_get_code(thelogin,check_code)
+          code=goto_page_and_get_code(login_page_url,check_code)
 
           # exchange code for token
           resp=@rest.call({
@@ -254,19 +236,19 @@ module Asperalm
           end
           raise "API returned: #{error_data['code']}: #{error_data['message']}"
         end
-        save_set_token_data(api_scope,resp[:http].body,token_state_file)
+        save_and_set_token_cache(api_scope,resp[:http].body,token_state_file)
       end # if !incache
 
       # ok we shall have a token here
-      return 'Bearer '+@token_cache[api_scope][:data]['access_token']
+      return 'Bearer '+@token_cache[api_scope]['access_token']
     end
 
     # open the login page, wait for code and check_code, then return code
-    def goto_page_and_get_code(thelogin,check_code)
+    def goto_page_and_get_code(login_page_url,check_code)
       code=nil
-      Log.log.info "thelogin=#{thelogin}".bg_red().gray()
+      Log.log.info "login_page_url=#{login_page_url}".bg_red().gray()
       # browser start is not blocking
-      OperatingSystem.open_uri(thelogin)
+      OperatingSystem.open_uri(login_page_url)
       port=URI.parse(@auth_data[:redirect_uri]).port
       Log.log.info "listening on port #{port}"
       TCPServer.open('127.0.0.1', port) { |webserver|
@@ -284,7 +266,8 @@ module Asperalm
         Log.log.debug "datah=#{PP.pp(datah,'').chomp}"
         Log.log.error("state does not match") if !check_code.eql?(datah['state'])
         code=datah['code']
-        websession.print "HTTP/1.1 200/OK\r\nContent-type:text/html\r\n\r\n<html><body><h1>received answer (code)</h1><code>#{code}</code></body></html>"
+          # <script>setTimeout(\"window.close()\",3000);</script>
+        websession.print "HTTP/1.1 200/OK\r\nContent-type:text/html\r\n\r\n<html><head></head><body onload=\"window.open('', '_self', '');\"><h1>received answer (code)</h1><code>#{code}</code></body></html>"
         websession.close
       }
       return code

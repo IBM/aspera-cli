@@ -52,7 +52,7 @@ module Asperalm
       # TODO: get from parameters
       files_pkg_recipients=[]
       faspex_pkg_delivery['recipients'].each do |recipient_email|
-        user_lookup=@@api_files_user.list("contacts",{'current_workspace_id'=>@@the_workspaceid,'q'=>recipient_email})[:data]
+        user_lookup=@@api_files_user.read("contacts",{'current_workspace_id'=>@@the_workspaceid,'q'=>recipient_email})[:data]
         raise StandardError,"no such unique user: #{recipient_email} / #{user_lookup}" unless !user_lookup.nil? and user_lookup.length == 1
         recipient_user_info=user_lookup.first
         files_pkg_recipients.push({"id"=>recipient_user_info['source_id'],"type"=>recipient_user_info['source_type']})

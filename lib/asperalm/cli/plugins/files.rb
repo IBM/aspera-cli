@@ -40,7 +40,7 @@ module Asperalm
             current_node_api=get_files_node_api(node_info,FilesApi::SCOPE_NODE_USER) if current_node_api.nil?
 
             # get folder content
-            folder_contents = current_node_api.list("files/#{file_id}/files")
+            folder_contents = current_node_api.read("files/#{file_id}/files")
             Log.log.debug "folder_contents: #{folder_contents}"
             matching_folders = folder_contents[:data].select { |i| i['name'].eql?(this_folder_name)}
             Log.log.debug "matching_folders: #{matching_folders}"
@@ -117,7 +117,7 @@ module Asperalm
             thepath=Main.tool.options.get_next_arg_value("path")
             node_info,file_id = find_nodeinfo_and_fileid(home_node_id,home_file_id,thepath.split('/'))
             node_api=get_files_node_api(node_info,FilesApi::SCOPE_NODE_USER)
-            items=node_api.list("files/#{file_id}/files")[:data]
+            items=node_api.read("files/#{file_id}/files")[:data]
             return {:data=>items,:type=>:hash_array,:fields=>['name','type','recursive_size','size','modified_time','access_level']}
           when :upload
             filelist = Main.tool.options.get_remaining_arguments("file list,destination")
@@ -199,7 +199,7 @@ module Asperalm
             workspace_data=@api_files_user.read("workspaces/#{workspace_id}")[:data]
           else
             # lookup another workspace
-            wss=@api_files_user.list("workspaces",{'q'=>ws_name})[:data]
+            wss=@api_files_user.read("workspaces",{'q'=>ws_name})[:data]
             wss=wss.select { |i| i['name'].eql?(ws_name) }
             case wss.length
             when 0
@@ -231,7 +231,7 @@ module Asperalm
 
               # lookup users
               recipient_data=Main.tool.options.get_option_mandatory(:recipient).split(',').map { |recipient|
-                user_lookup=@api_files_user.list("contacts",{'current_workspace_id'=>workspace_id,'q'=>recipient})[:data]
+                user_lookup=@api_files_user.read("contacts",{'current_workspace_id'=>workspace_id,'q'=>recipient})[:data]
                 raise CliBadArgument,"no such user: #{recipient}" unless !user_lookup.nil? and user_lookup.length == 1
                 recipient_user_id=user_lookup.first
                 {"id"=>recipient_user_id['source_id'],"type"=>recipient_user_id['source_type']}
@@ -262,7 +262,7 @@ module Asperalm
               return Main.tool.start_transfer(tspec)
             when :list
               # list all packages ('page'=>1,'per_page'=>10,)'sort'=>'-sent_at',
-              packages=@api_files_user.list("packages",{'archived'=>false,'exclude_dropbox_packages'=>true,'has_content'=>true,'received'=>true,'workspace_id'=>workspace_id})[:data]
+              packages=@api_files_user.read("packages",{'archived'=>false,'exclude_dropbox_packages'=>true,'has_content'=>true,'received'=>true,'workspace_id'=>workspace_id})[:data]
               return {:data=>packages,:fields=>['id','name','bytes_transferred'],:type=>:hash_array}
             end
           when :repo
@@ -278,11 +278,11 @@ module Asperalm
             case command_admin
             when :search_nodes
               ak=Main.tool.options.get_next_arg_value('access_key')
-              nodes=api_files_admin.list("search_nodes",{'q'=>'access_key:"'+ak+'"'})[:data]
+              nodes=api_files_admin.read("search_nodes",{'q'=>'access_key:"'+ak+'"'})[:data]
               return {:data=>nodes,:type=>:other_struct}
             when :events
               # page=1&per_page=10&q=type:(file_upload+OR+file_delete+OR+file_download+OR+file_rename+OR+folder_create+OR+folder_delete+OR+folder_share+OR+folder_share_via_public_link)&sort=-date
-              #events=api_files_admin.list('events',{'q'=>'type:(file_upload OR file_download)'})[:data]
+              #events=api_files_admin.read('events',{'q'=>'type:(file_upload OR file_download)'})[:data]
               #Log.log.info "events=#{JSON.generate(events)}"
               node_info=@api_files_user.read("nodes/#{workspace_data['home_node_id']}")[:data]
               # get access to node API, note the additional header
@@ -294,10 +294,10 @@ module Asperalm
               # tag=x.y.z%3Dvalue
               # iteration_token=nnn
               # active_only=true|false
-              events=api_node.list("ops/transfers",{'count'=>100,'filter'=>'summary','active_only'=>'true'})[:data]
+              events=api_node.read("ops/transfers",{'count'=>100,'filter'=>'summary','active_only'=>'true'})[:data]
               return {:data=>events,:fields=>['id','status'],:type=>:hash_array}
               #transfers=api_node.make_request_ex({:operation=>'GET',:subpath=>'ops/transfers',:args=>{'count'=>25,'filter'=>'id'}})
-              #transfers=api_node.list("events") # after_time=2016-05-01T23:53:09Z
+              #transfers=api_node.read("events") # after_time=2016-05-01T23:53:09Z
             when :set_client_key
               the_client_id=Main.tool.options.get_next_arg_value('client_id')
               the_private_key=Main.tool.options.get_next_arg_value('private_key')
@@ -318,7 +318,7 @@ module Asperalm
                 when :operation; default_fields=nil
                 when :contact; default_fields=["email","name","source_id","source_type"]
                 end
-                return {:data=>api_files_admin.list(resources)[:data],:fields=>default_fields,:type=>:hash_array}
+                return {:data=>api_files_admin.read(resources)[:data],:fields=>default_fields,:type=>:hash_array}
               when :id
                 #raise RuntimeError, "unexpected resource type: #{resource}, only 'node' for actions" if !resource.eql?(:node)
                 res_id=Main.tool.options.get_next_arg_value('node id')
@@ -333,7 +333,7 @@ module Asperalm
                 end
               end #op_or_id
             when :usage_reports
-              return {:data=>api_files_admin.list("usage_reports",{:workspace_id=>workspace_id})[:data],:type=>:hash_array}
+              return {:data=>api_files_admin.read("usage_reports",{:workspace_id=>workspace_id})[:data],:type=>:hash_array}
             end
           else
             raise RuntimeError, "unexpected value: #{command}"

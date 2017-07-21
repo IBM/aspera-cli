@@ -63,7 +63,7 @@ gempush:
 	gem push $(GEMFILE)
 
 commit:
-	git commit -a -m 'all, from Makefile'
+	git commit -a
 # eq to: git push origin master
 push:
 	git push
