@@ -239,12 +239,11 @@ module Asperalm
         self.options.set_handler(:insecure) { |op,val| handler_insecure(op,val) }
         self.options.set_handler(:transfer_spec) { |op,val| handler_transfer_spec(op,val) }
         self.options.set_handler(:browser) { |op,val| handler_browser(op,val) }
-        #        self.options.set_handler(:load_params) { |op,val| handler_load_params(op,val) }
         self.options.set_handler(:fasp_folder) { |op,val| handler_fasp_folder(op,val) }
       end
 
       # plugin_name_sym is symbol
-      # loads default parameters
+      # loads default parameters if no -P parameter
       def get_plugin_instance(plugin_name_sym)
         require @plugins[plugin_name_sym][:req]
         Log.log.debug("loaded config -> #{@loaded_configs}")
@@ -299,7 +298,7 @@ module Asperalm
         when :show
           return {:type=>:other_struct, :data=>self.options.get_next_arg_value("value")}
         when :flush
-          deleted_files=Oauth.flush_tokens
+          deleted_files=Oauth.flush_tokens(config_folder)
           return {:type=>:value_list, :name=>'file',:data=>deleted_files}
           return Main.status_result('token cache flushed')
         when :plugins
@@ -461,16 +460,17 @@ module Asperalm
         Log.log.debug "loading #{file_path}"
         @loaded_configs=YAML.load_file(file_path)
         Log.log.debug "loaded: #{@loaded_configs}"
-        # check version
-        # TODO : improve
+        # check there is at least the config section
         if !@loaded_configs.has_key?(@@MAIN_PLUGIN_NAME_SYM.to_s)
           raise CliError,"Config File: Cannot find key #{@@MAIN_PLUGIN_NAME_SYM.to_s} in #{file_path}. Please check documentation."
         end
+        # check version
         version=@loaded_configs[@@MAIN_PLUGIN_NAME_SYM.to_s][@@CONFIG_FILE_KEY_VERSION]
         raise CliError,"Config File: No version found. Please check documentation. Expecting min version #{@@MIN_CONFIG_VERSION}" if version.nil?
         if Gem::Version.new(version) < Gem::Version.new(@@MIN_CONFIG_VERSION)
           raise CliError,"Unsupported config file version #{version}. Please check documentation. Expecting min version #{@@MIN_CONFIG_VERSION}"
         end
+        # did the user specify parameters to load ?
         config_name_list=self.options.get_option(:load_params)
         if !config_name_list.nil?
           config_name_list.split(/,/).each do |name|
@@ -480,6 +480,7 @@ module Asperalm
         end
       end
 
+      # this is the main function called by initial script
       def process_command_line(argv)
         begin
           # init options
@@ -487,7 +488,7 @@ module Asperalm
           self.options.set_argv(argv)
           # declare global options
           self.declare_options
-          # parse general options always, before finding plugin
+          # parse general options
           self.options.parse_options!
           # load default config if it was not overriden on command line
           load_config_file

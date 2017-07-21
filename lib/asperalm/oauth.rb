@@ -37,8 +37,8 @@ module Asperalm
     end
 
     # delete cached tokens
-    def self.flush_tokens
-      tokenfiles=Dir[File.join(Main.tool.config_folder,TOKEN_FILE_PREFIX+'*')]
+    def self.flush_tokens(persist_folder)
+      tokenfiles=Dir[File.join(persist_folder,TOKEN_FILE_PREFIX+'*'+TOKEN_FILE_SUFFIX)]
       tokenfiles.each do |filepath|
         File.delete(filepath)
       end
@@ -46,7 +46,7 @@ module Asperalm
     end
 
     def self.auth_types
-      [ :basic, :web, :jwt ]
+      [ :basic, :web, :jwt, :url_token ]
     end
 
     # base_url comes from FilesApi.baseurl
@@ -229,8 +229,21 @@ module Asperalm
             :grant_type=>'urn:ietf:params:oauth:grant-type:jwt-bearer',
             :scope=>api_scope
             }})
+        when :url_token
+          # exchange code for token
+          resp=@rest.call({
+            :operation=>'POST',
+            :subpath=>"oauth2/#{@organization}/token",
+            :headers=>{'Accept'=>'application/json'},
+            :auth=>{:type=>:basic,:user=>@auth_data[:client_id],:password=>@auth_data[:client_secret]},
+            :url_params=>{
+            :grant_type=>'url_token',
+            :scope=>api_scope,
+            :state=>UNUSED_STATE
+            },
+            :json_params=>{:url_token=>@auth_data[:url_token]}})
         else
-          raise "type unknown: #{@auth_data[:type]}"
+          raise "auth type unknown: #{@auth_data[:type]}"
         end
 
         # Check result
