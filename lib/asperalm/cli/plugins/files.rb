@@ -101,9 +101,9 @@ module Asperalm
         end
 
         def execute_node_action(home_node_id,home_file_id)
-          command_repo=Main.tool.options.get_next_arg_from_list('command',[ :browse, :upload, :download, :info, :file ])
+          command_repo=Main.tool.options.get_next_arg_from_list('command',Node.simple_actions.clone.concat([ :browse, :upload, :download, :file ]))
           case command_repo
-          when :info
+          when *Node.simple_actions
             node_info=@api_files_user.read("nodes/#{home_node_id}")[:data]
             node_api=get_files_node_api(node_info,FilesApi::SCOPE_NODE_USER)
             return Node.execute_common(command_repo,node_api)

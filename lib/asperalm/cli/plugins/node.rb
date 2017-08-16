@@ -104,7 +104,9 @@ module Asperalm
           raise StandardError,"expect: nil, String or Array"
         end
 
-        def self.common_actions; [:info, :browse, :mkdir, :mklink, :mkfile, :rename, :delete, :upload, :download ];end
+        def self.simple_actions; [:info, :mkdir, :mklink, :mkfile, :rename, :delete ];end
+
+        def self.common_actions; simple_actions.clone.concat([:browse, :upload, :download ]);end
 
         # common API to node and Shares
         # prefix_path is used to list remote sources in Faspex
