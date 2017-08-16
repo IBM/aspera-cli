@@ -8,6 +8,7 @@
 require 'asperalm/log'
 require 'net/http'
 require 'net/https'
+
 require 'json'
 
 # add cancel method to http
@@ -32,6 +33,21 @@ module Asperalm
       # base url without trailing slashes
       @api_base=baseurl.gsub(/\/+$/,'')
       @opt_call_data=opt_call_data
+      @http_session=nil
+    end
+
+    # create and start keep alive connection on demand
+    def http_session
+      if @http_session.nil?
+        uri=get_uri({:subpath=>''})
+        @http_session=Net::HTTP.new(uri.host, uri.port)
+        @http_session.use_ssl = uri.scheme == 'https'
+        @http_session.verify_mode = OpenSSL::SSL::VERIFY_NONE if @@insecure
+        @http_session.set_debug_output($stdout) if @@debug
+        # manually start session for keep alive (if supported by server, else, session is closed every time)
+        @http_session.start
+      end
+      return @http_session
     end
 
     def base_url;@api_base;end
@@ -77,10 +93,6 @@ module Asperalm
       end
       uri=get_uri(call_data)
       Log.log.debug "URI=#{uri}"
-      http=Net::HTTP.new(uri.host, uri.port)
-      http.use_ssl = true
-      http.verify_mode = OpenSSL::SSL::VERIFY_NONE if @@insecure
-      http.set_debug_output($stdout) if @@debug
       case call_data[:operation]
       when 'GET'; req = Net::HTTP::Get.new(uri.request_uri)
       when 'POST'; req = Net::HTTP::Post.new(uri.request_uri)
@@ -118,7 +130,7 @@ module Asperalm
       resp=nil
       # we try the call, and will retry only if oauth, as we can
       2.times do
-        resp = http.request(req)
+        resp = http_session.request(req)
         Log.log.debug "result: code=#{resp.code}, body=#{resp.body}"
 
         # give a second try if token expired
