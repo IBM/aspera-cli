@@ -37,6 +37,7 @@ module Asperalm
       # Path to Plugin classes: Asperalm::Cli::Plugins
       @@PLUGINS_MODULE=@@CLI_MODULE+"::Plugins"
       @@CONFIG_FILE_KEY_VERSION=:version
+      # oldest compatible conf file format
       @@MIN_CONFIG_VERSION='0.3.7'
       # $HOME/.aspera/aslmcli
       def config_folder
