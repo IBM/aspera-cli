@@ -163,7 +163,7 @@ module Asperalm
     # uses ascp management port.
     def execute_ascp(command,arguments,env_vars)
       # open random local TCP port listening
-      @mgt_sock = TCPServer.new('127.0.0.1', 0)
+      @mgt_sock = TCPServer.new('127.0.0.1',0 )
       port = @mgt_sock.addr[1]
       Log.log.debug "Port=#{port}"
       # add management port
@@ -342,12 +342,12 @@ module Asperalm
       ts2args_value(used_names,transfer_spec,ascp_args,'http_fallback','-y') { |enable| enable ? '1' : '0' }
       ts2args_value(used_names,transfer_spec,ascp_args,'http_fallback_port','-t') { |port| port.to_s }
       ts2args_value(used_names,transfer_spec,ascp_args,'rate_policy','--policy')
-      ts2args_value(used_names,transfer_spec,ascp_args,'source_root','--source-prefix')
+      ts2args_value(used_names,transfer_spec,ascp_args,'source_root','--source-prefix64') { |prefix| Base64.strict_encode64(prefix) }
       ts2args_value(used_names,transfer_spec,ascp_args,'sshfp','--check-sshfp')
 
       ts_bool_param(used_names,transfer_spec,ascp_args,'create_dir') { |create_dir| create_dir ? ['-d'] : [] }
 
-      # TODO: manage those parameters
+      # TODO: manage those parameters, some are for connect only ? not node api ?
       ts_ignore_param(used_names,'target_rate_cap_kbps')
       ts_ignore_param(used_names,'target_rate_percentage') # -wf -l<rate>p
       ts_ignore_param(used_names,'min_rate_cap_kbps')
@@ -355,9 +355,9 @@ module Asperalm
       ts_ignore_param(used_names,'fasp_url')
       ts_ignore_param(used_names,'lock_rate_policy')
       ts_ignore_param(used_names,'lock_min_rate')
-      ts_ignore_param(used_names,'authentication') # = token
-      ts_ignore_param(used_names,'https_fallback_port')
       ts_ignore_param(used_names,'lock_target_rate')
+      ts_ignore_param(used_names,'authentication') # = token
+      ts_ignore_param(used_names,'https_fallback_port') # same as http fallback, option -t ?
       ts_ignore_param(used_names,'content_protection')
       ts_ignore_param(used_names,'cipher_allowed')
 
@@ -369,20 +369,24 @@ module Asperalm
       # optional args
       ascp_args.push(*transfer_spec['EX_ascp_args']) if transfer_spec.has_key?('EX_ascp_args')
 
-      # source list: TODO : check presence, and if pairs
+      # destination will be base64 encoded
+      ascp_args.push('--dest64')
+
+      # source list: TODO : use file list or file pair list, avoid command line lists
       raise TransferError.new("missing source paths") if !transfer_spec.has_key?('paths')
       ascp_args.push(*transfer_spec['paths'].map { |i| i['source']})
       used_names.push('paths')
 
       # destination
       raise TransferError.new("missing destination") if !transfer_spec.has_key?('destination_root')
-      ascp_args.push(transfer_spec['destination_root'])
+      # use base64 encoding
+      ascp_args.push(Base64.strict_encode64(transfer_spec['destination_root']))
       used_names.push('destination_root')
 
       # warn about non translated arguments
       transfer_spec.each_pair { |key,value|
         if !used_names.include?(key)
-          Log.log.error("ignored: #{key} = \"#{value}\"".red)
+          Log.log.error("unhandled parameter: #{key} = \"#{value}\"".red)
         end
       }
 

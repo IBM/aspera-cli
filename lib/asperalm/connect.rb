@@ -5,7 +5,7 @@ module Asperalm
   # locate Connect client resources based on OS
   class Connect
     @@res=nil
-    def self.res
+    def self.resource
       if @@res.nil?
         @@res=locate_resources
       end
@@ -13,7 +13,7 @@ module Asperalm
     end
 
     def self.path(k)
-      file=res[k][:path]
+      file=resource[k][:path]
       raise "no such file: #{file}" if !File.exist?(file)
       return file
     end
@@ -34,6 +34,7 @@ module Asperalm
             :ascp=>'ascp',
             :app_root=>File.join(Dir.home,'Applications','Aspera Connect.app'),
             :run_root=>File.join(Dir.home,'Library','Application Support','Aspera','Aspera Connect'),
+            :log_root=>File.join(Dir.home,'Library','Logs','Aspera'),
             :sub_bin=>File.join('Contents','Resources'),
             :sub_keys=>File.join('Contents','Resources'),
             :dsa=>'asperaweb_id_dsa.openssh'})
@@ -87,6 +88,7 @@ module Asperalm
       res[:localhost_cert] = { :path =>File.join(p[:app_root],p[:sub_keys],'localhost.crt'), :type => :file, :required => false}
       res[:localhost_key] = { :path =>File.join(p[:app_root],p[:sub_keys],'localhost.key'), :type => :file, :required => false}
       res[:plugin_https_port_file] = { :path =>File.join(p[:run_root],sub_varrun,'https.uri'), :type => :file, :required => false}
+      res[:log_folder] = { :path =>p[:log_root], :type => :folder, :required => false}
       Log.log.debug "resources=#{res}"
       notfound=[]
       res.each_pair do |k,v|

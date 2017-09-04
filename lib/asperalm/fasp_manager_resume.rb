@@ -82,7 +82,7 @@ module Asperalm
         Log.log.debug('transfer starting');
         begin
           transfer_with_spec_super(transfer_spec)
-          Log.log.debug( 'transfer ok' );
+          Log.log.debug( 'transfer ok'.bg_red );
           break
         rescue FaspError => e
           # failure in ascp
@@ -91,12 +91,10 @@ module Asperalm
             if lRetryLeft <= 0 then
               Log.log.error "Maximum number of retry reached."
               raise TransferError.new("max retry after: [#{status[:message]}]")
-              break;
             end
           else
             Log.log.error('non-retryable error')
             raise e
-            break
           end
         end
 
@@ -105,7 +103,7 @@ module Asperalm
         Log.log.debug( "resuming in  #{sleep_seconds} seconds (retry left:#{lRetryLeft})" );
 
         # wait a bit before retrying, maybe network condition will be better
-        sleep sleep_seconds
+        sleep(sleep_seconds)
 
         # increase retry period
         sleep_seconds *= sleep_factor

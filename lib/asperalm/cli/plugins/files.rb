@@ -81,8 +81,8 @@ module Asperalm
             'direction'        => direction,
             'remote_user'      => 'xfer',
             'remote_host'      => node_info['host'],
-            "fasp_port"        => 33001,
-            "ssh_port"         => 33001,
+            "fasp_port"        => 33001, # TODO: always the case ?
+            "ssh_port"         => 33001, # TODO: always the case ?
             'token'            => @api_files_oauth.get_authorization(FilesApi.node_scope(node_info['access_key'],FilesApi::SCOPE_NODE_USER)),
             'tags'             => { "aspera" => { "node" => { "access_key" => node_info['access_key'], "file_id" => file_id }, "xfer_id" => SecureRandom.uuid, "xfer_retry" => 3600 } } }
         end
@@ -99,11 +99,14 @@ module Asperalm
           Main.tool.options.add_opt_simple(:note,"--note=STRING","package note")
           Main.tool.options.add_opt_simple(:secret,"--secret=STRING","access key secret for node")
         end
+        
+        PATH_SEPARATOR='/'
 
         def execute_node_action(home_node_id,home_file_id)
           command_repo=Main.tool.options.get_next_arg_from_list('command',Node.simple_actions.clone.concat([ :browse, :upload, :download, :file ]))
           case command_repo
           when *Node.simple_actions
+            # TODO: shall we support all methods here ? what if there is a link ?
             node_info=@api_files_user.read("nodes/#{home_node_id}")[:data]
             node_api=get_files_node_api(node_info,FilesApi::SCOPE_NODE_USER)
             return Node.execute_common(command_repo,node_api)
@@ -115,7 +118,7 @@ module Asperalm
             return {:data=>items,:type=>:key_val_list}
           when :browse
             thepath=Main.tool.options.get_next_arg_value("path")
-            node_info,file_id = find_nodeinfo_and_fileid(home_node_id,home_file_id,thepath.split('/'))
+            node_info,file_id = find_nodeinfo_and_fileid(home_node_id,home_file_id,thepath.split(PATH_SEPARATOR))
             node_api=get_files_node_api(node_info,FilesApi::SCOPE_NODE_USER)
             items=node_api.read("files/#{file_id}/files")[:data]
             return {:data=>items,:type=>:hash_array,:fields=>['name','type','recursive_size','size','modified_time','access_level']}
@@ -124,7 +127,7 @@ module Asperalm
             Log.log.debug("file list=#{filelist}")
             raise CliBadArgument,"Missing source(s) and destination" if filelist.length < 2
             destination_folder=filelist.pop
-            node_info,file_id = find_nodeinfo_and_fileid(home_node_id,home_file_id,destination_folder.split('/'))
+            node_info,file_id = find_nodeinfo_and_fileid(home_node_id,home_file_id,destination_folder.split(PATH_SEPARATOR))
             tspec=info_to_tspec("send",node_info,file_id)
             tspec['tags']["aspera"]["files"]={}
             tspec['paths']=filelist.map { |i| {'source'=>i} }
@@ -133,7 +136,7 @@ module Asperalm
           when :download
             source_file=Main.tool.options.get_next_arg_value('source')
             destination_folder=Main.tool.options.get_next_arg_value('destination')
-            file_path = source_file.split('/')
+            file_path = source_file.split(PATH_SEPARATOR)
             file_name = file_path.pop
             node_info,file_id = find_nodeinfo_and_fileid(home_node_id,home_file_id,file_path)
             tspec=info_to_tspec('receive',node_info,file_id)

@@ -8,10 +8,12 @@ require 'base64'
 
 module Asperalm
   module Cli
-    class CliBadArgument < StandardError
+    # raised by cli on error conditions
+    class CliError < StandardError
     end
 
-    class CliError < StandardError
+    # raised when an unexpected argument is provided
+    class CliBadArgument < CliError
     end
 
     # parse options in command line
@@ -26,7 +28,7 @@ module Asperalm
         @unprocessed_command_and_args=[]
         # command line values starting with '-'
         @unprocessed_options=[]
-        # key = name of option, either Proc or value
+        # key = name of option, either Proc(set/get) or value
         @available_option={}
         super
       end
@@ -109,7 +111,7 @@ module Asperalm
         return self.class.get_from_list(@unprocessed_command_and_args.shift,descr,allowed_values)
       end
 
-      # just get next value
+      # just get next value (expanded)
       def get_next_arg_value(descr)
         if @unprocessed_command_and_args.empty? then
           raise CliBadArgument,"expecting value: #{descr}"
@@ -131,6 +133,7 @@ module Asperalm
         @available_option[option_symbol]=block
       end
 
+      # set an option value by name, either store value or call handler
       def set_option(option_symbol,value)
         value=self.class.get_extended_value(option_symbol,value)
         if @available_option.has_key?(option_symbol) and @available_option[option_symbol].is_a?(Proc)
@@ -143,7 +146,7 @@ module Asperalm
 
       end
 
-      # can return nil
+      # get an option value by name, either return value or call handler, can return nil
       def get_option(option_symbol)
         if @available_option.has_key?(option_symbol) and @available_option[option_symbol].is_a?(Proc)
           Log.log.debug("get #{option_symbol} (method)")
@@ -167,8 +170,9 @@ module Asperalm
       def add_opt_list(option_symbol,values,help,*args)
         Log.log.info("add_opt_list #{option_symbol}->#{args}")
         value=get_option(option_symbol)
-        # TODO: keep '*' before args
-        self.on( *args , values, "#{help}. Values=(#{values.join(',')}), current=#{value}") do |v|
+        args.push(values)
+        args.push("#{help}. Values=(#{values.join(',')}), current=#{value}")
+        self.on( *args ) do |v|
           set_option(option_symbol,self.class.get_from_list(v.to_s,help,values))
         end
       end

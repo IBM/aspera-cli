@@ -8,7 +8,6 @@
 require 'asperalm/log'
 require 'net/http'
 require 'net/https'
-
 require 'json'
 
 # add cancel method to http
@@ -17,6 +16,12 @@ class Net::HTTP::Cancel < Net::HTTPRequest
   REQUEST_HAS_BODY  = false
   RESPONSE_HAS_BODY = false
 end
+
+#class Net::HTTP::Delete < Net::HTTPRequest
+#  METHOD = 'DELETE'
+#  REQUEST_HAS_BODY  = false
+#  RESPONSE_HAS_BODY = false
+#end
 
 module Asperalm
   # a simple class to make HTTP calls
@@ -98,6 +103,7 @@ module Asperalm
       when 'POST'; req = Net::HTTP::Post.new(uri.request_uri)
       when 'PUT'; req = Net::HTTP::Put.new(uri.request_uri)
       when 'CANCEL'; req = Net::HTTP::Cancel.new(uri.request_uri)
+      when 'DELETE'; req = Net::HTTP::Delete.new(uri.request_uri)
       else raise "unknown op : #{operation}"
       end
       if call_data.has_key?(:json_params) then
