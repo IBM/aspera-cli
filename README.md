@@ -95,6 +95,15 @@ credentials in the configuration file (section: <app>_default), and then you can
 using the CLI without having to specify those on command line. 
 Switch between server configurations with `-P` option (or --load-params).
 
+### Installation of the FASP protocol
+
+For any download, the FASP protocol and a valid license id required. When the server side is
+"connect" enabled, one can the the connect client license. The connect client can be installed
+by visiting the page: http://downloads.asperasoft.com/connect2/
+
+Alternatively, the connect client can be downloaded using the aslmcli, see section: Download FASP.
+
+
 ### Configuration for use with Aspera Files
 
 Aspera Files APIs do not support Basic HTTP authentication (see section "Authentication").
@@ -543,6 +552,42 @@ Use the "node stream create" command, then arguments are provided as a "transfer
 ```bash
 ./bin/aslmcli node stream create --ts='{"direction":"send","source":"udp://233.3.3.4:3000?loopback=1&ttl=2","destination":"udp://233.3.3.3:3001/","remote_host":"localhost","remote_user":"stream","password":"XXXX"}' --load-params=stream
 ```
+
+### Download FASP
+The CLI allows download of the FASP protocol in connect client :
+
+```bash
+$ ./bin/aslmcli connect list
+:...............................................:......................................:..............:
+:                      id                       :                title                 :   version    :
+:...............................................:......................................:..............:
+: urn:uuid:589F9EE5-0489-4F73-9982-A612FAC70C4E : Aspera Connect for Windows           : 3.7.0.138427 :
+: urn:uuid:A3820D20-083E-11E2-892E-0800200C9A66 : Aspera Connect for Windows 64-bit    : 3.7.0.138427 :
+: urn:uuid:589F9EE5-0489-4F73-9982-A612FAC70C4E : Aspera Connect for Windows XP        : 3.7.0.138427 :
+: urn:uuid:55425020-083E-11E2-892E-0800200C9A66 : Aspera Connect for Windows XP 64-bit : 3.7.0.138427 :
+: urn:uuid:D8629AD2-6898-4811-A46F-2AF386531BFF : Aspera Connect for Mac Intel 10.6    : 3.6.1.111259 :
+: urn:uuid:D8629AD2-6898-4811-A46F-2AF386531BFF : Aspera Connect for Mac Intel         : 3.7.0.138427 :
+: urn:uuid:213C9370-22B1-11E2-81C1-0800200C9A66 : Aspera Connect for Linux 32          : 3.6.2.117442 :
+: urn:uuid:97F94DF0-22B1-11E2-81C1-0800200C9A66 : Aspera Connect for Linux 64          : 3.7.2.141527 :
+:...............................................:......................................:..............:
+$ aslmcli connect id 'Aspera Connect for Mac Intel 10.6' links list
+:.............................................:..........................:.......................................................................:..........:...............:
+:                    title                    :           type           :                                 href                                  : hreflang :      rel      :
+:.............................................:..........................:.......................................................................:..........:...............:
+: Mac Intel Installer                         : application/octet-stream : bin/AsperaConnect-3.6.1.111259-mac-intel-10.6.dmg                     : en       : enclosure     :
+: Aspera Connect for Mac HTML Documentation   : text/html                :                                                                       : en       : documentation :
+: Aspera Connect PDF Documentation for Mac OS : application/pdf          : docs/user/osx/ja-jp/pdf/Connect_User_3.7.0_OSX_ja-jp.pdf              : ja-jp    : documentation :
+: Aspera Connect PDF Documentation for Mac OS : application/pdf          : docs/user/osx/en/pdf/Connect_User_3.7.0_OSX.pdf                       : en       : documentation :
+: Aspera Connect PDF Documentation for Mac OS : application/pdf          : docs/user/osx/es-es/pdf/Connect_User_3.7.0_OSX_es-es.pdf              : es-es    : documentation :
+: Aspera Connect PDF Documentation for Mac OS : application/pdf          : docs/user/osx/fr-fr/pdf/Connect_User_3.7.0_OSX_fr-fr.pdf              : fr-fr    : documentation :
+: Aspera Connect PDF Documentation for Mac OS : application/pdf          : docs/user/osx/zh-cn/pdf/Connect_User_3.7.0_OSX_zh-cn.pdf              : zh-cn    : documentation :
+: Aspera Connect for Mac Release Notes        : text/html                : http://www.asperasoft.com/en/release_notes/default_1/release_notes_54 : en       : release-notes :
+:.............................................:..........................:.......................................................................:..........:...............:
+$ aslmcli connect id 'Aspera Connect for Mac Intel 10.6' links id 'Mac Intel Installer' download .
+downloaded: AsperaConnect-3.6.1.111259-mac-intel-10.6.dmg
+```
+
+
 ## Create your own plugin
 ```bash
 $ mkdir -p ~/.aspera/aslmcli/plugins

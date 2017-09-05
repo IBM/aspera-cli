@@ -294,10 +294,8 @@ module Asperalm
 
       # "config" plugin
       def execute_action
-        action=self.options.get_next_arg_from_list('action',[:fasp,:plugins,:flush,:ls,:init,:cat,:open,:show])
+        action=self.options.get_next_arg_from_list('action',[:plugins,:flush,:ls,:init,:cat,:open,:show])
         case action
-        when :fasp # shows files used
-          return {:type=>:hash_array, :data=>Connect.resource.map {|k,v| {'name'=>k,'path'=>v[:path]}}}
         when :show # display the content of a value given on command line
           return {:type=>:other_struct, :data=>self.options.get_next_arg_value("value")}
         when :flush
