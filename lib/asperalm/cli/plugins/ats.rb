@@ -11,7 +11,7 @@ module Asperalm
         def declare_options
         end
 
-        def action_list; [ :server ];end
+        def action_list; [ :server, :api_keys ];end
 
         def cloud_list; [ :aws,:azure,:google,:limelight,:rackspace,:softlayer ];end
 
@@ -37,9 +37,9 @@ module Asperalm
               server_id=Main.tool.options.get_next_arg_from_list('server id',all_servers.map{|i| i['id']})
               server_data=all_servers.select {|i| i['id'].eql?(server_id)}.first
               return {:type=>:key_val_list, :data=>server_data}
-            else
-              raise "ERROR, unknown command: [#{command}]"
             end
+          when :api_keys
+            raise "not implemented"
           end
         end
       end
