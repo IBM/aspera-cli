@@ -137,7 +137,7 @@ module Asperalm
       # we try the call, and will retry only if oauth, as we can
       2.times do
         resp = http_session.request(req)
-        Log.log.debug "result: code=#{resp.code}, body=#{resp.body}"
+        Log.log.debug "result: code=#{resp.code}"
 
         # give a second try if token expired
         if resp.code.start_with?('4') and call_data.has_key?(:auth) and call_data[:auth].has_key?(:obj)
@@ -155,6 +155,7 @@ module Asperalm
       end
       result={:http=>resp}
       if !call_data.nil? and call_data.has_key?(:headers) and call_data[:headers].has_key?('Accept') and call_data[:headers]['Accept'].eql?('application/json') then
+        Log.log.debug "result: body=#{resp.body}"
         result[:data]=JSON.parse(resp.body) if !resp.body.nil?
       end
       Log.log.debug "result=#{result}" # .pretty_inspect

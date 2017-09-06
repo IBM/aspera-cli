@@ -5,6 +5,7 @@ require 'asperalm/Connect'
 module Asperalm
   module Cli
     module Plugins
+      # list and download connect client versions
       class Connect < Plugin
         CONNECT_WEB_URL = 'http://d3gcli72yxqn2z.cloudfront.net/connect'
         CONNECT_VERSIONS = 'connectversions.js'
@@ -17,16 +18,14 @@ module Asperalm
           return table_data.select {|i| ! i['key'].eql?('links') }
         end
 
-        def self.get_data
+        # retrieve structure with all versions available
+        def self.connect_versions
           api_connect_cdn=Rest.new(CONNECT_WEB_URL)
-          data=api_connect_cdn.call({:operation=>'GET',:subpath=>CONNECT_VERSIONS})
-          data=data[:http].body
-          data.gsub!(/[\r\n]\s*/,'')
-          data.gsub!(/^.*AW.connectVersions = /,'')
-          data.gsub!(/;$/,'')
-          data=JSON.parse(data)
-          data=data['entries']
-          data
+          javascript=api_connect_cdn.call({:operation=>'GET',:subpath=>CONNECT_VERSIONS})
+          jsondata=javascript[:http].body.gsub(/\r\n\s*/,'').gsub(/^.*AW.connectVersions = /,'').gsub(/;$/,'')
+          alldata=JSON.parse(jsondata)
+          puts "<<<#{alldata}>>"
+          return alldata['entries']
         end
 
         def execute_action
@@ -35,9 +34,9 @@ module Asperalm
           when :status # shows files used
             return {:type=>:hash_array, :data=>Asperalm::Connect.resource.map {|k,v| {'name'=>k,'path'=>v[:path]}}}
           when :list #
-            return {:type=>:hash_array, :data=>self.class.get_data, :fields => ['id','title','version']}
+            return {:type=>:hash_array, :data=>self.class.connect_versions, :fields => ['id','title','version']}
           when :id #
-            all_resources=self.class.get_data
+            all_resources=self.class.connect_versions
             connect_id=Main.tool.options.get_next_arg_value('id or title')
             one_res = all_resources.select {|i| i['id'].eql?(connect_id) || i['title'].eql?(connect_id)}.first
             command=Main.tool.options.get_next_arg_from_list('command',[:info,:links])
