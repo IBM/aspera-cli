@@ -25,53 +25,47 @@ module Asperalm
         # supports links to secondary nodes
         # input: root node and file id, and array for path
         # output: file_id and node_info  for the given path
-        def find_nodeinfo_and_fileid ( init_node_id, file_id, path_array )
-          Log.log.debug "find_nodeinfo_and_fileid: nodeid=#{init_node_id}, #{file_id}, array=#{path_array}"
-          # at least retrieve node info
-          node_info=@api_files_user.read("nodes/#{init_node_id}")[:data]
-          # first element is empty if path was starting with /
-          path_array.shift if !path_array.empty? and path_array.first.eql?("")
-
-          while !path_array.empty? do
-            this_folder_name = path_array.shift
-            Log.log.debug "searching #{this_folder_name}"
-
+        def find_nodeinfo_and_fileid ( top_node_id, top_file_id, element_path_string )
+          Log.log.debug "find_nodeinfo_and_fileid: nodeid=#{top_node_id}, #{top_file_id}, path=#{element_path_string}"
+          
+          # initialize loop elements
+          current_path_elements=element_path_string.split(PATH_SEPARATOR).select{|i| !i.empty?}
+          current_node_info=@api_files_user.read("nodes/#{top_node_id}")[:data]
+          current_file_id = top_file_id
+          current_file_info = nil
+ 
+          while !current_path_elements.empty? do
+            current_element_name = current_path_elements.shift
+            Log.log.debug "searching #{current_element_name}".bg_green
             # get API if changed
-            current_node_api=get_files_node_api(node_info,FilesApi::SCOPE_NODE_USER) if current_node_api.nil?
-
+            current_node_api=get_files_node_api(current_node_info,FilesApi::SCOPE_NODE_USER) if current_node_api.nil?
             # get folder content
-            folder_contents = current_node_api.read("files/#{file_id}/files")
+            folder_contents = current_node_api.read("files/#{current_file_id}/files")
             Log.log.debug "folder_contents: #{folder_contents}"
-            matching_folders = folder_contents[:data].select { |i| i['name'].eql?(this_folder_name)}
-            Log.log.debug "matching_folders: #{matching_folders}"
-            # there shall be one folder , or none that match the name
-            case matching_folders.length
-            when 0
-              raise CliBadArgument, "no such folder: #{this_folder_name} in #{folder_contents[:data].map { |i| i['name']}}"
-            when 1
-              file_info = matching_folders[0]
-            else
-              raise "fund more than one folder matching a name, should not happen"
-            end
+            matching_folders = folder_contents[:data].select { |i| i['name'].eql?(current_element_name)}
+            #Log.log.debug "matching_folders: #{matching_folders}"
+            raise CliBadArgument, "no such folder: #{current_element_name} in #{folder_contents[:data].map { |i| i['name']}}" if matching_folders.empty?
+            current_file_info = matching_folders.first
             # process type of file
-            case file_info['type']
+            case current_file_info['type']
             when 'file'
+              current_file_id=current_file_info["id"]
               # a file shall be terminal
-              if !path_array.empty? then
-                raise CliBadArgument, "#{this_folder_name} is a file, expecting folder to find: #{path_array}"
+              if !current_path_elements.empty? then
+                raise CliBadArgument, "#{current_element_name} is a file, expecting folder to find: #{current_path_elements}"
               end
             when 'link'
-              node_info=@api_files_user.read("nodes/#{file_info['target_node_id']}")[:data]
-              file_id=file_info["target_id"]
+              current_node_info=@api_files_user.read("nodes/#{current_file_info['target_node_id']}")[:data]
+              current_file_id=current_file_info["target_id"]
               current_node_api=nil
             when 'folder'
-              file_id=file_info["id"]
+              current_file_id=current_file_info["id"]
             else
-              Log.log.warn "unknown element type: #{file_info['type']}"
+              Log.log.warn "unknown element type: #{current_file_info['type']}"
             end
           end
-          Log.log.info("node_info,file_id=#{node_info},#{file_id}")
-          return node_info,file_id
+          Log.log.info("node_info,file_id=#{current_node_info},#{current_file_id}")
+          return current_node_info,current_file_id
         end
 
         # generate a transfer spec from node information and file id
@@ -88,6 +82,8 @@ module Asperalm
         end
 
         def declare_options
+          Main.tool.options.set_option(:download_mode,:fasp)
+          Main.tool.options.add_opt_list(:download_mode,[:fasp, :node_http ],"download mode",'--download=TYPE')
           Main.tool.options.add_opt_list(:auth,Oauth.auth_types,"type of authentication",'-tTYPE','--auth=TYPE')
           Main.tool.options.add_opt_simple(:url,"-wURI", "--url=URI","URL of application, e.g. http://org.asperafiles.com")
           Main.tool.options.add_opt_simple(:username,"-uSTRING", "--username=STRING","username to log in")
@@ -99,7 +95,7 @@ module Asperalm
           Main.tool.options.add_opt_simple(:note,"--note=STRING","package note")
           Main.tool.options.add_opt_simple(:secret,"--secret=STRING","access key secret for node")
         end
-        
+
         PATH_SEPARATOR='/'
 
         def execute_node_action(home_node_id,home_file_id)
@@ -112,13 +108,13 @@ module Asperalm
             return Node.execute_common(command_repo,node_api)
           when :file
             fileid=Main.tool.options.get_next_arg_value("file id")
-            node_info,file_id = find_nodeinfo_and_fileid(home_node_id,fileid,[])
+            node_info,file_id = find_nodeinfo_and_fileid(home_node_id,fileid,"")
             node_api=get_files_node_api(node_info,FilesApi::SCOPE_NODE_USER)
             items=node_api.read("files/#{file_id}")[:data]
             return {:data=>items,:type=>:key_val_list}
           when :browse
             thepath=Main.tool.options.get_next_arg_value("path")
-            node_info,file_id = find_nodeinfo_and_fileid(home_node_id,home_file_id,thepath.split(PATH_SEPARATOR))
+            node_info,file_id = find_nodeinfo_and_fileid(home_node_id,home_file_id,thepath)
             node_api=get_files_node_api(node_info,FilesApi::SCOPE_NODE_USER)
             items=node_api.read("files/#{file_id}/files")[:data]
             return {:data=>items,:type=>:hash_array,:fields=>['name','type','recursive_size','size','modified_time','access_level']}
@@ -127,7 +123,7 @@ module Asperalm
             Log.log.debug("file list=#{filelist}")
             raise CliBadArgument,"Missing source(s) and destination" if filelist.length < 2
             destination_folder=filelist.pop
-            node_info,file_id = find_nodeinfo_and_fileid(home_node_id,home_file_id,destination_folder.split(PATH_SEPARATOR))
+            node_info,file_id = find_nodeinfo_and_fileid(home_node_id,home_file_id,destination_folder)
             tspec=info_to_tspec("send",node_info,file_id)
             tspec['tags']["aspera"]["files"]={}
             tspec['paths']=filelist.map { |i| {'source'=>i} }
@@ -136,14 +132,24 @@ module Asperalm
           when :download
             source_file=Main.tool.options.get_next_arg_value('source')
             destination_folder=Main.tool.options.get_next_arg_value('destination')
-            file_path = source_file.split(PATH_SEPARATOR)
-            file_name = file_path.pop
-            node_info,file_id = find_nodeinfo_and_fileid(home_node_id,home_file_id,file_path)
-            tspec=info_to_tspec('receive',node_info,file_id)
-            tspec['tags']["aspera"]["files"]={}
-            tspec['paths']=[{'source'=>file_name}]
-            tspec['destination_root']=destination_folder
-            return Main.tool.start_transfer(tspec)
+            case Main.tool.options.get_option_mandatory(:download_mode)
+            when :fasp
+              file_path = source_file.split(PATH_SEPARATOR)
+              file_name = file_path.pop
+              node_info,file_id = find_nodeinfo_and_fileid(home_node_id,home_file_id,file_path.join(PATH_SEPARATOR))
+              tspec=info_to_tspec('receive',node_info,file_id)
+              tspec['tags']["aspera"]["files"]={}
+              tspec['paths']=[{'source'=>file_name}]
+              tspec['destination_root']=destination_folder
+              return Main.tool.start_transfer(tspec)
+            when :node_http
+              file_path = source_file.split(PATH_SEPARATOR)
+              file_name = file_path.last
+              node_info,file_id = find_nodeinfo_and_fileid(home_node_id,home_file_id,source_file)
+              node_api=get_files_node_api(node_info,FilesApi::SCOPE_NODE_USER)
+              download_data=node_api.call({:operation=>'GET',:subpath=>"files/#{file_id}/content",:save_to_file=>File.join(destination_folder,file_name)})
+              return {:data=>"downloaded: #{file_name}",:type => :status}
+            end
           end
         end
 
@@ -182,7 +188,7 @@ module Asperalm
             Log.log.info("subject=#{auth_data[:subject]}")
           when :url_token
             auth_data[:url_token]=Main.tool.options.get_option_mandatory(:url_token)
-         else
+          else
             raise "unknown auth type: #{auth_data[:type]}"
           end
 

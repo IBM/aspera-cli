@@ -140,6 +140,9 @@ tfs2:
 tfs3: $(TEST_FOLDER)
 	$(ASCLI) files repo download /200KB.1 $(TEST_FOLDER) --transfer=connect
 	rm -f 200KB.1
+tfs3b: $(TEST_FOLDER)
+	$(ASCLI) files repo download /200KB.1 $(TEST_FOLDER) --download=node
+	rm -f 200KB.1
 tfs4:
 	$(ASCLI) files package send $(SAMPLE_FILE) --note="my note" --title="my title" --recipient="laurent@asperasoft.com"
 tfs5:
@@ -153,7 +156,7 @@ tfs8:
 tfs9:
 	$(ASCLI) files admin resource node id 4586 browse / --secret=Aspera123_
 
-tfiles: tfs1 tfs2 tfs3 tfs4 tfs5 tfs6 tfs7 tfs8 tfs9
+tfiles: tfs1 tfs2 tfs3 tfs3b tfs4 tfs5 tfs6 tfs7 tfs8 tfs9
 
 to1:
 	$(ASCLI) orchestrator info
@@ -212,7 +215,24 @@ tat9:
 
 tats: tat1 tat2 tat3 tat4 tat5 tat6 tat7 tat8 tat9
 
-tests: tshares tfaspex tconsole tnode tfiles tfaspex2 tfasp torc
+tco1:
+	$(ASCLI) connect status
+
+tco2:
+	$(ASCLI) connect list
+
+tco3:
+	$(ASCLI) connect id 'Aspera Connect for Windows' info
+
+tco4:
+	$(ASCLI) connect id 'Aspera Connect for Windows' links list
+
+tco5:
+	$(ASCLI) connect id 'Aspera Connect for Windows' links id 'Windows Installer' download .
+
+tcon: tco1 tco2 tco3 tco4 tco5
+
+tests: tshares tfaspex tconsole tnode tfiles tfaspex2 tfasp torc tats tcon
 
 tfxgw:
 	$(ASCLI) --config-name=/NONE --url=https://localhost:9443/aspera/faspex --username=unused --password=unused faspex package send ~/200KB.1 --insecure=yes --note="my note" --title="my title" --recipient="laurent@asperasoft.com"

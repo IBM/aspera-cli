@@ -24,7 +24,6 @@ end
 #end
 
 module Asperalm
-  
   class RestCallError < StandardError
     attr_accessor :response
     def initialize(response)
@@ -33,7 +32,7 @@ module Asperalm
       @response = response
     end
   end
-  
+
   # a simple class to make HTTP calls
   class Rest
     # set to true enables debug in HTTP class
@@ -85,7 +84,7 @@ module Asperalm
 
     # HTTPS call
     # call_data has keys:
-    # :auth, :operation, :subpath, :headers, :json_params, :url_params, :www_body_params, :text_body_params
+    # :auth, :operation, :subpath, :headers, :json_params, :url_params, :www_body_params, :text_body_params, :save_to_file
     # :auth  = {:type=>:basic,:username,:password}
     # :auth  = {:type=>:oauth2,:obj,:scope}
     # :auth  = {:type=>:url,:url_creds}
@@ -164,6 +163,12 @@ module Asperalm
         raise RestCallError.new(resp)
       end
       result={:http=>resp}
+      if call_data.has_key?(:save_to_file)
+        open(call_data[:save_to_file], "wb") do |file|
+          file.write(result[:http].body)
+        end
+      end
+
       if !call_data.nil? and call_data.has_key?(:headers) and call_data[:headers].has_key?('Accept') and call_data[:headers]['Accept'].eql?('application/json') then
         Log.log.debug "result: body=#{resp.body}"
         result[:data]=JSON.parse(resp.body) if !resp.body.nil?

@@ -24,7 +24,6 @@ module Asperalm
           javascript=api_connect_cdn.call({:operation=>'GET',:subpath=>CONNECT_VERSIONS})
           jsondata=javascript[:http].body.gsub(/\r\n\s*/,'').gsub(/^.*AW.connectVersions = /,'').gsub(/;$/,'')
           alldata=JSON.parse(jsondata)
-          puts "<<<#{alldata}>>"
           return alldata['entries']
         end
 
@@ -58,10 +57,7 @@ module Asperalm
                 fileurl = one_link['href']
                 filename=fileurl.dup
                 filename.gsub!(%r{.*/},'')
-                download_data=api_connect_cdn.call({:operation=>'GET',:subpath=>fileurl})
-                open(File.join(folder_dest,filename), "wb") do |file|
-                  file.write(download_data[:http].body)
-                end
+                download_data=api_connect_cdn.call({:operation=>'GET',:subpath=>fileurl,:save_to_file=>File.join(folder_dest,filename)})
                 return {:data=>"downloaded: #{filename}",:type => :status}
               end
             end

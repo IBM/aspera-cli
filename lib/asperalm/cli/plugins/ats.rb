@@ -112,11 +112,13 @@ module Asperalm
             when :create #
               params=Main.tool.options.get_option(:params)
               params={} if params.nil?
+              # if transfer_server_id not provided, get it from options
               if !params.has_key?('transfer_server_id')
                 params['transfer_server_id']=server_by_name['id']
               end
               if params.has_key?('storage')
                 case params['storage']['type']
+                # here we need somehow to map storage type to field to get for auth end point
                 when 'softlayer_swift'
                   if !params['storage'].has_key?('authentication_endpoint')
                     server_data=all_servers.select {|i| i['id'].eql?(params['transfer_server_id'])}.first
@@ -126,6 +128,7 @@ module Asperalm
               end
               res=api_auth.create("access_keys",params)
               return {:type=>:key_val_list, :data=>res[:data]}
+              # TODO : action : modify, with "PUT"
             when :list #
               res=api_auth.read("access_keys",{'offset'=>0,'max_results'=>1000})
               return {:type=>:hash_array, :data=>res[:data]['data'], :name => 'access_key'}
