@@ -24,6 +24,16 @@ end
 #end
 
 module Asperalm
+  
+  class RestCallError < StandardError
+    attr_accessor :response
+    def initialize(response)
+      super("Error, code:#{response.code}, msg=#{response.message}, body=[#{response.body}]")
+      Log.log.debug "Error code:#{response.code}, msg=#{response.message.red}, body=[#{response.body}]"
+      @response = response
+    end
+  end
+  
   # a simple class to make HTTP calls
   class Rest
     # set to true enables debug in HTTP class
@@ -129,7 +139,7 @@ module Asperalm
       end
       # basic auth
       if call_data.has_key?(:auth) and call_data[:auth][:type].eql?(:basic) then
-        req.basic_auth(call_data[:auth][:user],call_data[:auth][:password])
+        req.basic_auth(call_data[:auth][:username],call_data[:auth][:password])
         Log.log.debug "using Basic auth"
       end
 
@@ -151,7 +161,7 @@ module Asperalm
       end
 
       if ! resp.code.start_with?('2') then
-        raise "Error code:#{resp.code}, msg=#{resp.message.red}, body=[#{resp.body}]"
+        raise RestCallError.new(resp)
       end
       result={:http=>resp}
       if !call_data.nil? and call_data.has_key?(:headers) and call_data[:headers].has_key?('Accept') and call_data[:headers]['Accept'].eql?('application/json') then

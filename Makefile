@@ -183,6 +183,35 @@ to9:
 
 torc: to1 to2 to3 to4 to5 to6 to7 to8 to9
 
+tat1:
+	$(ASCLI) ats server list
+
+tat2:
+	$(ASCLI) ats server id gk7f5356-f4ea-kj83-ddfW-7da4ed99f8eb
+
+tat3:
+	$(ASCLI) ats server by_name --cloud=SOFTLAYER --region=ams
+
+tat4:
+	$(ASCLI) ats subscriptions
+
+tat5:
+	$(ASCLI) ats api_key repository list
+
+tat6:
+	$(ASCLI) ats api_key list
+
+tat7:
+	$(ASCLI) ats access_key create --cloud=SOFTLAYER --region=ams --params=@json:'{"id":"testkey","name":"laurent key","storage":{"type":"softlayer_swift","container":"laurent","credentials":{"api_key":"e5d032e026e0b0a16e890a3d44d11fd1471217b6262e83c7f60529f1ff4b27de","username":"IBMOS303446-9:laurentmartin"},"path":"/"}}'
+
+tat8:
+	$(ASCLI) ats access_key list --fields=name,id,secret
+
+tat9:
+	$(ASCLI) ats access_key id testkey delete
+
+tats: tat1 tat2 tat3 tat4 tat5 tat6 tat7 tat8 tat9
+
 tests: tshares tfaspex tconsole tnode tfiles tfaspex2 tfasp torc
 
 tfxgw:

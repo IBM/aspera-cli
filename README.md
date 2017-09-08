@@ -630,6 +630,17 @@ In this example, a faspex storage named "testlaurent" exists in Faspex, and is l
 under the docroot in "/myfiles" (this must be the same as configured in Faspex).
 The node configuration name is "my_fpx_node" here.
 
+## Aspera Transfer Service
+several operations available. example: create access key:
+
+```
+create an access key:
+aslmcli ats access_key create --cloud=SOFTLAYER --region=ams --params=@json:'{"storage":{"type":"softlayer_swift","container":"_container_name_","credentials":{"api_key":"value","username":"_name_:_usr_name_"},"path":"/"},"id":"_optional_id_","name":"_optional_name_"}'
+
+delete all my access keys:
+for k in $(aslmcli ats access_key list --field=id --format=csv);do aslmcli ats access_key id $k delete;done
+```
+
 ## BUGS
 This is a sample code only, dont expect full capabilities. This code is not
 supported by IBM/Aspera. You can contact the author.

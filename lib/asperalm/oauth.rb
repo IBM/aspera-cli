@@ -112,7 +112,7 @@ module Asperalm
             :operation=>'POST',
             :subpath=>"oauth2/#{@organization}/token",
             :headers=>{'Accept'=>'application/json'},
-            :auth=>{:type=>:basic,:user=>@auth_data[:client_id],:password=>@auth_data[:client_secret]}, # this is RFC
+            :auth=>{:type=>:basic,:username=>@auth_data[:client_id],:password=>@auth_data[:client_secret]}, # this is RFC
             :www_body_params=>{
             :grant_type=>'refresh_token',
             :refresh_token=>refresh_token,
@@ -169,7 +169,7 @@ module Asperalm
             :operation=>'POST',
             :subpath=>"oauth2/#{@organization}/token",
             :headers=>{'Accept'=>'application/json'},
-            :auth=>{:type=>:basic,:user=>@auth_data[:client_id],:password=>@auth_data[:client_secret]},
+            :auth=>{:type=>:basic,:username=>@auth_data[:client_id],:password=>@auth_data[:client_secret]},
             :www_body_params=>{
             :grant_type=>'authorization_code',
             :code=>code,
@@ -205,7 +205,7 @@ module Asperalm
             :operation=>'POST',
             :subpath=>"oauth2/#{@organization}/token",
             :headers=>{'Accept'=>'application/json'},
-            :auth=>{:type=>:basic,:user=>@auth_data[:client_id],:password=>@auth_data[:client_secret]},
+            :auth=>{:type=>:basic,:username=>@auth_data[:client_id],:password=>@auth_data[:client_secret]},
             :www_body_params=>{
             :assertion=>assertion,
             :grant_type=>'urn:ietf:params:oauth:grant-type:jwt-bearer',
@@ -217,7 +217,7 @@ module Asperalm
             :operation=>'POST',
             :subpath=>"oauth2/#{@organization}/token",
             :headers=>{'Accept'=>'application/json'},
-            :auth=>{:type=>:basic,:user=>@auth_data[:client_id],:password=>@auth_data[:client_secret]},
+            :auth=>{:type=>:basic,:username=>@auth_data[:client_id],:password=>@auth_data[:client_secret]},
             :url_params=>{
             :grant_type=>'url_token',
             :scope=>api_scope,
@@ -243,14 +243,16 @@ module Asperalm
       return 'Bearer '+@token_cache[api_scope]['access_token']
     end
 
+THANK_YOU_HTML = "<html><head><title>Ok</title></head><body><h1>Thank you !</h1><p>You can close this window.</p></body></html>"
+
     # open the login page, wait for code and check_code, then return code
-    def goto_page_and_get_code(login_page_url,check_code)
-      code=nil
+    def self.goto_page_and_get_request(redirect_uri,login_page_url,html_page=THANK_YOU_HTML)
       Log.log.info "login_page_url=#{login_page_url}".bg_red().gray()
       # browser start is not blocking
       OperatingSystem.open_uri(login_page_url)
-      port=URI.parse(@auth_data[:redirect_uri]).port
+      port=URI.parse(redirect_uri).port
       Log.log.info "listening on port #{port}"
+      request_params=nil
       TCPServer.open('127.0.0.1', port) { |webserver|
         Log.log.info "server=#{webserver}"
         websession = webserver.accept
@@ -262,14 +264,19 @@ module Asperalm
         end
         request = line.partition('?').last.partition(' ').first
         data=URI.decode_www_form(request)
-        datah=data.to_h
-        Log.log.debug "datah=#{PP.pp(datah,'').chomp}"
-        Log.log.error("state does not match") if !check_code.eql?(datah['state'])
-        code=datah['code']
-          # <script>setTimeout(\"window.close()\",3000);</script>
-        websession.print "HTTP/1.1 200/OK\r\nContent-type:text/html\r\n\r\n<html><head></head><body onload=\"window.open('', '_self', '');\"><h1>received answer (code)</h1><code>#{code}</code></body></html>"
+        request_params=data.to_h
+        Log.log.debug "request_params=#{PP.pp(request_params,'').chomp}"
+        websession.print "HTTP/1.1 200/OK\r\nContent-type:text/html\r\n\r\n#{html_page}"
         websession.close
       }
+      return request_params
+    end
+    
+    # open the login page, wait for code and check_code, then return code
+    def goto_page_and_get_code(login_page_url,check_code)
+      request_params=self.class.goto_page_and_get_request(@auth_data[:redirect_uri],login_page_url)
+      Log.log.error("state does not match") if !check_code.eql?(request_params['state'])
+      code=request_params['code']
       return code
     end
 

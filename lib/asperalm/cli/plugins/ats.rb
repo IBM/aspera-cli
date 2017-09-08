@@ -1,21 +1,32 @@
 require 'asperalm/cli/main'
 require 'asperalm/cli/plugins/node'
 require 'asperalm/Connect'
+require 'asperalm/oauth'
 
 module Asperalm
   module Cli
     module Plugins
       # list and download connect client versions
       class Ats < Plugin
-        ATS_WEB_URL = 'https://ats.aspera.io/pub/v1'
+        # main url for ATS API
+        ATS_API_URL = 'https://ats.aspera.io/pub/v1'
+        # local address to receive code on authentication
+        LOCAL_REDIRECT_URI="http://localhost:12345"
+        # cache file for CLI for API keys
+        API_KEY_REPOSITORY=File.join(Main.tool.config_folder,"ats_api_keys.json")
         def declare_options
+          Main.tool.options.add_opt_simple(:ats_id,"--ats-id=ATS_ID","ATS key identifier")
+          Main.tool.options.add_opt_simple(:params,"--params=JSON","parameters for access key")
+          Main.tool.options.add_opt_simple(:cloud,"--cloud=PROVIDER","cloud provider")
+          Main.tool.options.add_opt_simple(:region,"--region=REGION","parameters for access key")
         end
 
-        def action_list; [ :server, :api_keys ];end
+        def action_list; [ :server, :api_key, :subscriptions, :access_key ];end
 
+        # currently supported clouds
         def cloud_list; [ :aws,:azure,:google,:limelight,:rackspace,:softlayer ];end
 
-        # retrieve structure with all versions available
+        # all available ATS servers
         def all_servers
           if @all_servers.nil?
             @all_servers=[]
@@ -24,12 +35,123 @@ module Asperalm
           return @all_servers
         end
 
+        # all ATS API keys stored in cache file
+        def repo_api_keys
+          if @repo_api_keys.nil?
+            @repo_api_keys=[]
+            if File.exist?(API_KEY_REPOSITORY)
+              @repo_api_keys=JSON.parse(File.read(API_KEY_REPOSITORY))
+            end
+          end
+          @repo_api_keys
+        end
+
+        # write ATS API keys cache file after modification
+        def save_key_repo
+          File.write(API_KEY_REPOSITORY,JSON.generate(repo_api_keys))
+        end
+
+        # get an api key
+        # either first one stored in repository
+        # or the one specified on command line
+        # or creates a new one
+        def current_api_key
+          if @current_api_key.nil?
+            requested_id=Main.tool.options.get_option(:ats_id)
+            if !requested_id.nil?
+              selected=repo_api_keys.select{|i| i['ats_id'].eql?(requested_id)}
+              raise CliBadArgument,"no such id in repository" if selected.empty?
+              @current_api_key=selected.first
+            else
+              if repo_api_keys.empty?
+                create_new_api_key
+              end
+              @current_api_key=repo_api_keys.first
+            end
+          end
+          @current_api_key
+        end
+
+        # create a new API key , requires aspera id authentication
+        def create_new_api_key
+          location=nil
+          begin
+            @api_pub.call({:operation=>'POST',:subpath=>"api_keys",:headers=>{'Accept'=>'application/json'},:json_params=>nil,:url_params=>{:description => "created by aslmcli",:redirect_uri=>LOCAL_REDIRECT_URI}})
+          rescue RestCallError => e
+            location=e.response['Location']
+          end
+          new_key_data=Oauth.goto_page_and_get_request(LOCAL_REDIRECT_URI,location)
+          repo_api_keys.push(new_key_data)
+          save_key_repo
+          return new_key_data
+        end
+
+        # authenticated API
+        def api_auth
+          if @api_auth.nil?
+            api_key = current_api_key
+            @api_auth=Rest.new(ATS_API_URL,{:auth => {:type=>:basic,:username=>current_api_key['ats_id'],:password=>current_api_key['ats_secret']}})
+          end
+          @api_auth
+        end
+
+        def server_by_name
+          cloud=Main.tool.options.get_option_mandatory(:cloud)
+          region=Main.tool.options.get_option_mandatory(:region)
+          return @api_pub.read("servers/#{cloud}/#{region}")[:data]
+        end
+
         def execute_action
-          @api_pub=Rest.new(ATS_WEB_URL)
+          # API without authentication
+          @api_pub=Rest.new(ATS_API_URL)
           command=Main.tool.options.get_next_arg_from_list('command',action_list)
           case command
+          when :access_key  #
+            command=Main.tool.options.get_next_arg_from_list('command',[:list,:id,:create])
+            case command
+            when :create #
+              params=Main.tool.options.get_option(:params)
+              params={} if params.nil?
+              if !params.has_key?('transfer_server_id')
+                params['transfer_server_id']=server_by_name['id']
+              end
+              if params.has_key?('storage')
+                case params['storage']['type']
+                when 'softlayer_swift'
+                  if !params['storage'].has_key?('authentication_endpoint')
+                    server_data=all_servers.select {|i| i['id'].eql?(params['transfer_server_id'])}.first
+                    params['storage']['credentials']['authentication_endpoint'] = server_data['swift_authentication_endpoint']
+                  end
+                end
+              end
+              res=api_auth.create("access_keys",params)
+              return {:type=>:key_val_list, :data=>res[:data]}
+            when :list #
+              res=api_auth.read("access_keys",{'offset'=>0,'max_results'=>1000})
+              return {:type=>:hash_array, :data=>res[:data]['data'], :name => 'access_key'}
+            when :id #
+              access_key=Main.tool.options.get_next_arg_value("access_key")
+              command=Main.tool.options.get_next_arg_from_list('command',[:show,:delete,:node])
+              case command
+              when :show #
+                res=api_auth.read("access_keys/#{access_key}")
+                return {:type=>:key_val_list, :data=>res[:data]}
+              when :delete #
+                res=api_auth.delete("access_keys/#{access_key}")
+                return {:type=>:other_struct, :data=>res[:data]}
+              when :node
+                ak_data=api_auth.read("access_keys/#{access_key}")[:data]
+                server_data=all_servers.select {|i| i['id'].eql?(ak_data['transfer_server_id'])}.first
+                api_node=Rest.new(server_data['transfer_setup_url'],{:auth=>{:type=>:basic,:username=>ak_data['id'], :password=>ak_data['secret']}})
+                command=Main.tool.options.get_next_arg_from_list('command',Node.common_actions)
+                Node.execute_common(command,api_node)
+              end
+            end
+          when :subscriptions  #
+            res=api_auth.read("subscriptions")
+            return {:type=>:key_val_list, :data=>res[:data]}
           when :server #
-            command=Main.tool.options.get_next_arg_from_list('command',[:list,:id])
+            command=Main.tool.options.get_next_arg_from_list('command',[:list,:id,:by_name])
             case command
             when :list #
               return {:type=>:hash_array, :data=>all_servers, :fields=>['id','cloud','region']}
@@ -37,9 +159,43 @@ module Asperalm
               server_id=Main.tool.options.get_next_arg_from_list('server id',all_servers.map{|i| i['id']})
               server_data=all_servers.select {|i| i['id'].eql?(server_id)}.first
               return {:type=>:key_val_list, :data=>server_data}
+            when :by_name #
+              return {:type=>:key_val_list, :data=>server_by_name}
             end
-          when :api_keys
-            raise "not implemented"
+          when :api_key
+            command=Main.tool.options.get_next_arg_from_list('command',[:current,:create,:repository,:list,:id])
+            case command
+            when :current #
+              return {:type=>:key_val_list, :data=>current_api_key}
+            when :repository #
+              command=Main.tool.options.get_next_arg_from_list('command',[:list,:delete])
+              case command
+              when :list #
+                return {:type=>:hash_array, :data=>repo_api_keys, :fields =>['ats_id','ats_secret','ats_description']}
+              when :delete #
+                ats_id=Main.tool.options.get_next_arg_from_list('ats_id',repo_api_keys.map{|i| i['ats_id']})
+                #raise CliBadArgument,"no such id" if repo_api_keys.select{|i| i['ats_id'].eql?(ats_id)}.empty?
+                repo_api_keys.select!{|i| !i['ats_id'].eql?(ats_id)}
+                save_key_repo
+                return {:type=>:hash_array, :data=>[{'ats_id'=>ats_id,'status'=>'deleted'}]}
+              end
+            when :create #
+              return {:type=>:key_val_list, :data=>create_new_api_key}
+            when :list #
+              res=api_auth.read("api_keys",{'offset'=>0,'max_results'=>1000})
+              return {:type=>:value_list, :data=>res[:data]['data'], :name => 'ats_id'}
+            when :id #
+              ats_id=Main.tool.options.get_next_arg_value("ats_id")
+              command=Main.tool.options.get_next_arg_from_list('command',[:show,:delete])
+              case command
+              when :show #
+                res=api_auth.read("api_keys/#{ats_id}")
+                return {:type=>:key_val_list, :data=>res[:data]}
+              when :delete #
+                res=api_auth.delete("api_keys/#{ats_id}")
+                return {:type=>:other_struct, :data=>res[:data]}
+              end
+            end
           end
         end
       end

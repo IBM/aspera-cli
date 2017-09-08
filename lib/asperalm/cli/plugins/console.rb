@@ -17,7 +17,7 @@ module Asperalm
         def action_list; [:transfers];end
 
         def execute_action
-          api_console=Rest.new(Main.tool.options.get_option_mandatory(:url)+'/api',{:auth=>{:type=>:basic,:user=>Main.tool.options.get_option_mandatory(:username), :password=>Main.tool.options.get_option_mandatory(:password)}})
+          api_console=Rest.new(Main.tool.options.get_option_mandatory(:url)+'/api',{:auth=>{:type=>:basic,:username=>Main.tool.options.get_option_mandatory(:username), :password=>Main.tool.options.get_option_mandatory(:password)}})
           command=Main.tool.options.get_next_arg_from_list('command',action_list)
           case command
           when :transfers

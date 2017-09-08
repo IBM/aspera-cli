@@ -185,7 +185,7 @@ module Asperalm
               node_config=@loaded_configs[config_name]
               raise CliBadArgument,"no such node configuration: #{config_name}" if node_config.nil?
             end
-            @faspmanager.tr_node_api=Rest.new(node_config[:url],{:auth=>{:type=>:basic,:user=>node_config[:username], :password=>node_config[:password]}})
+            @faspmanager.tr_node_api=Rest.new(node_config[:url],{:auth=>{:type=>:basic,:username=>node_config[:username], :password=>node_config[:password]}})
           end
           # may be nil:
           @faspmanager.fasp_proxy_url=self.options.get_option(:fasp_proxy)
@@ -347,7 +347,10 @@ module Asperalm
       end
 
       # TODO: csv
-      def self.result_formats; [:table,:ruby,:json,:yaml]; end
+      def self.result_formats; [:table,:ruby,:json,:yaml,:csv]; end
+
+      RECORD_SEPARATOR="\n"
+      FIELD_SEPARATOR=","
 
       def display_results(results)
         raise "INTERNAL ERROR, result must be Hash" if !results.is_a?(Hash)
@@ -362,7 +365,7 @@ module Asperalm
           puts JSON.generate(results[:data])
         when :yaml
           puts results[:data].to_yaml
-        when :table
+        when :table,:csv
           case results[:type]
           when :hash_array
             # :hash_array is an array of hash tables, where key=colum name
@@ -412,13 +415,18 @@ module Asperalm
           table_data=results[:textify].call(table_data) if results.has_key?(:textify)
           # convert data to string, and keep only display fields
           table_data=table_data.map { |r| display_fields.map { |c| r[c].to_s } }
-          # display the table !
-          puts Text::Table.new(
-          :head => display_fields,
-          :rows => table_data,
-          :vertical_boundary  => '.',
-          :horizontal_boundary => ':',
-          :boundary_intersection => ':')
+          case self.options.get_option_mandatory(:format)
+          when :table
+            # display the table !
+            puts Text::Table.new(
+            :head => display_fields,
+            :rows => table_data,
+            :vertical_boundary  => '.',
+            :horizontal_boundary => ':',
+            :boundary_intersection => ':')
+          when :csv
+            puts table_data.map{|t| t.join(FIELD_SEPARATOR)}.join(RECORD_SEPARATOR)
+          end
         end
       end
 
@@ -495,6 +503,8 @@ module Asperalm
           load_config_file
           # help requested without command ?
           self.exit_with_usage(true) if @help_requested and self.options.command_or_arg_empty?
+          # load global default options, main plugin is not dynamically instanciated
+          self.options.set_defaults(get_plugin_default_parameters(@@MAIN_PLUGIN_NAME_SYM))
           command_sym=self.options.get_next_arg_from_list('command',plugin_sym_list)
           case command_sym
           when @@MAIN_PLUGIN_NAME_SYM
@@ -518,6 +528,7 @@ module Asperalm
         rescue CliBadArgument => e;          process_exception_exit(e,'Argument',:usage)
         rescue CliError => e;                process_exception_exit(e,'Tool',:usage)
         rescue Asperalm::TransferError => e; process_exception_exit(e,"Transfer")
+        rescue Asperalm::RestCallError => e; process_exception_exit(e,"Rest")
         rescue SocketError => e;             process_exception_exit(e,"Network")
         rescue StandardError => e;           process_exception_exit(e,"Other",:debug)
         end

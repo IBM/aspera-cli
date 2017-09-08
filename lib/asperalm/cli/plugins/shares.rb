@@ -13,7 +13,7 @@ module Asperalm
         def action_list; Node.common_actions.clone.concat([ ]);end
 
         def execute_action
-          api_shares=Rest.new(Main.tool.options.get_option_mandatory(:url)+'/node_api',{:auth=>{:type=>:basic,:user=>Main.tool.options.get_option_mandatory(:username), :password=>Main.tool.options.get_option_mandatory(:password)}})
+          api_shares=Rest.new(Main.tool.options.get_option_mandatory(:url)+'/node_api',{:auth=>{:type=>:basic,:username=>Main.tool.options.get_option_mandatory(:username), :password=>Main.tool.options.get_option_mandatory(:password)}})
           command=Main.tool.options.get_next_arg_from_list('command',action_list)
           case command
           when *Node.common_actions; return Node.execute_common(command,api_shares)

@@ -15,7 +15,7 @@ module Asperalm
         def get_files_node_api(node_info,node_scope=nil)
           # if no scope, or secret provided on command line ...
           if node_scope.nil? or !Main.tool.options.get_option(:secret).nil?
-            return Rest.new(node_info['url'],{:auth=>{:type=>:basic,:user=>node_info['access_key'], :password=>Main.tool.options.get_option_mandatory(:secret)},:headers=>{'X-Aspera-AccessKey'=>node_info['access_key']}})
+            return Rest.new(node_info['url'],{:auth=>{:type=>:basic,:username=>node_info['access_key'], :password=>Main.tool.options.get_option_mandatory(:secret)},:headers=>{'X-Aspera-AccessKey'=>node_info['access_key']}})
           end
           Log.log.warn("ignoring secret, using bearer token") if !Main.tool.options.get_option(:secret).nil?
           return Rest.new(node_info['url'],{:auth=>{:type=>:oauth2,:obj=>@api_files_oauth,:scope=>FilesApi.node_scope(node_info['access_key'],node_scope)},:headers=>{'X-Aspera-AccessKey'=>node_info['access_key']}})
