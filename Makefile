@@ -205,12 +205,15 @@ tat6:
 	$(ASCLI) ats api_key list
 
 tat7:
-	$(ASCLI) ats access_key create --cloud=SOFTLAYER --region=ams --params=@json:'{"id":"testkey","name":"laurent key","storage":{"type":"softlayer_swift","container":"laurent","credentials":{"api_key":"e5d032e026e0b0a16e890a3d44d11fd1471217b6262e83c7f60529f1ff4b27de","username":"IBMOS303446-9:laurentmartin"},"path":"/"}}'
+	$(ASCLI) ats access_key create --cloud=softlayer --region=ams --params=@json:'{"id":"testkey","name":"laurent key","storage":{"type":"softlayer_swift","container":"laurent","credentials":{"api_key":"e5d032e026e0b0a16e890a3d44d11fd1471217b6262e83c7f60529f1ff4b27de","username":"IBMOS303446-9:laurentmartin"},"path":"/"}}'
 
 tat8:
 	$(ASCLI) ats access_key list --fields=name,id,secret
 
 tat9:
+	$(ASCLI) ats access_key id testkey node browse /
+
+tat10:
 	$(ASCLI) ats access_key id testkey delete
 
 tats: tat1 tat2 tat3 tat4 tat5 tat6 tat7 tat8 tat9

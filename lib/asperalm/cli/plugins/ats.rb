@@ -96,7 +96,7 @@ module Asperalm
         end
 
         def server_by_name
-          cloud=Main.tool.options.get_option_mandatory(:cloud)
+          cloud=Main.tool.options.get_option_mandatory(:cloud).upcase
           region=Main.tool.options.get_option_mandatory(:region)
           return @api_pub.read("servers/#{cloud}/#{region}")[:data]
         end
@@ -141,7 +141,7 @@ module Asperalm
                 return {:type=>:key_val_list, :data=>res[:data]}
               when :delete #
                 res=api_auth.delete("access_keys/#{access_key}")
-                return {:type=>:other_struct, :data=>res[:data]}
+                return {:type=>:status, :data=>"deleted #{access_key}"}
               when :node
                 ak_data=api_auth.read("access_keys/#{access_key}")[:data]
                 server_data=all_servers.select {|i| i['id'].eql?(ak_data['transfer_server_id'])}.first
@@ -196,7 +196,7 @@ module Asperalm
                 return {:type=>:key_val_list, :data=>res[:data]}
               when :delete #
                 res=api_auth.delete("api_keys/#{ats_id}")
-                return {:type=>:other_struct, :data=>res[:data]}
+                return {:type=>:status, :data=>"deleted #{ats_id}"}
               end
             end
           end
