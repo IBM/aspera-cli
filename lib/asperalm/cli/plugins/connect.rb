@@ -1,6 +1,7 @@
 require 'asperalm/cli/main'
 require 'asperalm/cli/plugins/node'
 require 'asperalm/Connect'
+require 'asperalm/operating_system'
 
 module Asperalm
   module Cli
@@ -50,15 +51,20 @@ module Asperalm
                 return {:type=>:hash_array, :data=>all_links}
               when :id #
                 link_title=Main.tool.options.get_next_arg_value('title')
-                command=Main.tool.options.get_next_arg_from_list('command',[:download])
-                folder_dest=Main.tool.options.get_next_arg_value('destination folder')
                 one_link=all_links.select {|i| i['title'].eql?(link_title)}.first
-                api_connect_cdn=Rest.new(CONNECT_WEB_URL)
-                fileurl = one_link['href']
-                filename=fileurl.dup
-                filename.gsub!(%r{.*/},'')
-                download_data=api_connect_cdn.call({:operation=>'GET',:subpath=>fileurl,:save_to_file=>File.join(folder_dest,filename)})
-                return {:data=>"downloaded: #{filename}",:type => :status}
+                command=Main.tool.options.get_next_arg_from_list('command',[:download,:open])
+                case command
+                when :download #
+                  folder_dest=Main.tool.options.get_next_arg_value('destination folder')
+                  api_connect_cdn=Rest.new(CONNECT_WEB_URL)
+                  fileurl = one_link['href']
+                  filename=fileurl.gsub(%r{.*/},'')
+                  download_data=api_connect_cdn.call({:operation=>'GET',:subpath=>fileurl,:save_to_file=>File.join(folder_dest,filename)})
+                  return {:data=>"downloaded: #{filename}",:type => :status}
+                when :open #
+                  OperatingSystem.open_uri(one_link['href'])
+                  return {:data=>"opened: #{one_link['href']}",:type => :status}
+                end
               end
             end
           else

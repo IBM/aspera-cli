@@ -74,13 +74,11 @@ module Asperalm
 
         # create a new API key , requires aspera id authentication
         def create_new_api_key
-          location=nil
-          begin
-            @api_pub.call({:operation=>'POST',:subpath=>"api_keys",:headers=>{'Accept'=>'application/json'},:json_params=>nil,:url_params=>{:description => "created by aslmcli",:redirect_uri=>LOCAL_REDIRECT_URI}})
-          rescue RestCallError => e
-            location=e.response['Location']
-          end
-          new_key_data=Oauth.goto_page_and_get_request(LOCAL_REDIRECT_URI,location)
+          # get login page url in exception code 3xx
+          res=@api_pub.call({:operation=>'POST',:subpath=>"api_keys",:return_error=>true,:headers=>{'Accept'=>'application/json'},:json_params=>nil,:url_params=>{:description => "created by aslmcli",:redirect_uri=>LOCAL_REDIRECT_URI}})
+          # TODO: check code is 3xx ?
+          login_page_url=res[:http]['Location']
+          new_key_data=Oauth.goto_page_and_get_request(LOCAL_REDIRECT_URI,login_page_url)
           repo_api_keys.push(new_key_data)
           save_key_repo
           return new_key_data
@@ -89,13 +87,13 @@ module Asperalm
         # authenticated API
         def api_auth
           if @api_auth.nil?
-            api_key = current_api_key
             @api_auth=Rest.new(ATS_API_URL,{:auth => {:type=>:basic,:username=>current_api_key['ats_id'],:password=>current_api_key['ats_secret']}})
           end
           @api_auth
         end
 
-        def server_by_name
+        #
+        def server_by_cloud_region
           cloud=Main.tool.options.get_option_mandatory(:cloud).upcase
           region=Main.tool.options.get_option_mandatory(:region)
           return @api_pub.read("servers/#{cloud}/#{region}")[:data]
@@ -107,14 +105,17 @@ module Asperalm
           command=Main.tool.options.get_next_arg_from_list('command',action_list)
           case command
           when :access_key  #
-            command=Main.tool.options.get_next_arg_from_list('command',[:list,:id,:create])
+            command=Main.tool.options.get_next_arg_from_list('command',[:list,:id,:create,:server])
             case command
+            when :server
+              api_ak_auth=Rest.new(ATS_API_URL,{:auth => {:type=>:basic,:username=>Main.tool.options.get_next_arg_value("access key"),:password=>Main.tool.options.get_next_arg_value("secret")}})
+              return {:type=>:key_val_list, :data=>api_ak_auth.read("servers")[:data]}
             when :create #
               params=Main.tool.options.get_option(:params)
               params={} if params.nil?
               # if transfer_server_id not provided, get it from options
               if !params.has_key?('transfer_server_id')
-                params['transfer_server_id']=server_by_name['id']
+                params['transfer_server_id']=server_by_cloud_region['id']
               end
               if params.has_key?('storage')
                 case params['storage']['type']
@@ -134,7 +135,7 @@ module Asperalm
               return {:type=>:hash_array, :data=>res[:data]['data'], :name => 'access_key'}
             when :id #
               access_key=Main.tool.options.get_next_arg_value("access_key")
-              command=Main.tool.options.get_next_arg_from_list('command',[:show,:delete,:node])
+              command=Main.tool.options.get_next_arg_from_list('command',[:show,:delete,:node,:server])
               case command
               when :show #
                 res=api_auth.read("access_keys/#{access_key}")
@@ -148,6 +149,10 @@ module Asperalm
                 api_node=Rest.new(server_data['transfer_setup_url'],{:auth=>{:type=>:basic,:username=>ak_data['id'], :password=>ak_data['secret']}})
                 command=Main.tool.options.get_next_arg_from_list('command',Node.common_actions)
                 Node.execute_common(command,api_node)
+              when :server
+                ak_data=api_auth.read("access_keys/#{access_key}")[:data]
+                api_ak_auth=Rest.new(ATS_API_URL,{:auth => {:type=>:basic,:username=>ak_data['id'],:password=>ak_data['secret']}})
+                return {:type=>:key_val_list, :data=>api_ak_auth.read("servers")[:data]}
               end
             end
           when :subscriptions  #
@@ -163,7 +168,9 @@ module Asperalm
               server_data=all_servers.select {|i| i['id'].eql?(server_id)}.first
               return {:type=>:key_val_list, :data=>server_data}
             when :by_name #
-              return {:type=>:key_val_list, :data=>server_by_name}
+              return {:type=>:key_val_list, :data=>server_by_cloud_region}
+            when :x #
+              res=api_auth.read("servers")
             end
           when :api_key
             command=Main.tool.options.get_next_arg_from_list('command',[:current,:create,:repository,:list,:id])

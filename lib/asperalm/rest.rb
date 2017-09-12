@@ -27,7 +27,7 @@ module Asperalm
   class RestCallError < StandardError
     attr_accessor :response
     def initialize(response)
-      super("Error, code:#{response.code}, msg=#{response.message}, body=[#{response.body}]")
+      super(response.message)
       Log.log.debug "Error code:#{response.code}, msg=#{response.message.red}, body=[#{response.body}]"
       @response = response
     end
@@ -84,11 +84,12 @@ module Asperalm
 
     # HTTPS call
     # call_data has keys:
-    # :auth, :operation, :subpath, :headers, :json_params, :url_params, :www_body_params, :text_body_params, :save_to_file
+    # :auth, :operation, :subpath, :headers, :json_params, :url_params, :www_body_params, :text_body_params, :save_to_file (filepath), :return_error (bool)
     # :auth  = {:type=>:basic,:username,:password}
     # :auth  = {:type=>:oauth2,:obj,:scope}
     # :auth  = {:type=>:url,:url_creds}
     def call(call_data)
+      raise "call parameters are required" if !call_data.is_a?(Hash)
       Log.log.debug "accessing #{call_data[:subpath]}".red.bold.bg_green
       call_data[:headers]={} if !call_data.has_key?(:headers)
       if !@opt_call_data.nil? then
@@ -142,39 +143,54 @@ module Asperalm
         Log.log.debug "using Basic auth"
       end
 
-      resp=nil
-      # we try the call, and will retry only if oauth, as we can
-      2.times do
-        resp = http_session.request(req)
-        Log.log.debug "result: code=#{resp.code}"
+      result={:http=>nil}
+      begin
+        # we try the call, and will retry only if oauth, as we can
+        oauth_tries ||= 2
+        Log.log.debug "send request"
+        http_session.request(req) do |response|
+          result[:http] = response
+          if call_data.has_key?(:save_to_file)
+            require 'ruby-progressbar'
+            progress=ProgressBar.create(
+            :format     => '%a %B %p%% %r KB/sec %e',
+            :rate_scale => lambda{|rate|rate/1024},
+            :title      => 'progress',
+            :total      => result[:http]['Content-Length'].to_i)
+            Log.log.debug "before write file"
+            File.open(call_data[:save_to_file], "wb") do |file|
+              result[:http].read_body do |fragment|
+                file.write(fragment)
+                progress.progress+=fragment.length
+              end
+            end
+            progress=nil
+          end
+        end
 
-        # give a second try if token expired
-        if resp.code.start_with?('4') and call_data.has_key?(:auth) and call_data[:auth].has_key?(:obj)
+        Log.log.debug "result: code=#{result[:http].code}"
+        raise RestCallError.new(result[:http]) if !result[:http].code.start_with?('2')
+        if call_data.has_key?(:headers) and
+        call_data[:headers].has_key?('Accept') and
+        call_data[:headers]['Accept'].eql?('application/json') then
+          Log.log.debug "result: body=#{result[:http].body}"
+          result[:data]=JSON.parse(result[:http].body) if !result[:http].body.nil?
+        end
+      rescue RestCallError => e
+        # give a second try if oauth token expired
+        if result[:http].code.start_with?('4') and
+        call_data.has_key?(:auth) and
+        call_data[:auth][:type].eql?(:oauth2)
           # try a refresh and/or regeneration of token
           req['Authorization']=call_data[:auth][:obj].get_authorization(call_data[:auth][:scope],true)
           Log.log.debug "using new token=#{call_data[:headers]['Authorization']}"
-        else
-          # success, or other error, or not authorized and not oauth
-          break;
+          retry unless (oauth_tries -= 1).zero?
         end
-      end
-
-      if ! resp.code.start_with?('2') then
-        raise RestCallError.new(resp)
-      end
-      result={:http=>resp}
-      if call_data.has_key?(:save_to_file)
-        open(call_data[:save_to_file], "wb") do |file|
-          file.write(result[:http].body)
-        end
-      end
-
-      if !call_data.nil? and call_data.has_key?(:headers) and call_data[:headers].has_key?('Accept') and call_data[:headers]['Accept'].eql?('application/json') then
-        Log.log.debug "result: body=#{resp.body}"
-        result[:data]=JSON.parse(resp.body) if !resp.body.nil?
+        raise e if !call_data[:return_error]
       end
       Log.log.debug "result=#{result}" # .pretty_inspect
       return result
+
     end
 
     #

@@ -376,8 +376,11 @@ module Asperalm
               if results.has_key?(:fields) and !results[:fields].nil?
                 display_fields=results[:fields]
               else
-                raise "empty results" if table_data.empty?
-                display_fields=table_data.first.keys
+                if !table_data.empty?
+                  display_fields=table_data.first.keys
+                else
+                  display_fields=['empty']
+                end
               end
             when FIELDS_ALL
               raise "empty results" if table_data.empty?
@@ -410,7 +413,7 @@ module Asperalm
           else
             raise "unknown data type: #{results[:type]}"
           end
-          raise "ERROR" if display_fields.nil?
+          raise "no field specified" if display_fields.nil?
           # convert to string with special function. here table_data is an array of hash
           table_data=results[:textify].call(table_data) if results.has_key?(:textify)
           # convert data to string, and keep only display fields
