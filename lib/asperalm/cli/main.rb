@@ -50,6 +50,9 @@ module Asperalm
       end
 
       # returns default parameters for a plugin from loaded config file
+      # 1) it looks if there is a configuration key: configs["config"][:default][plugin_sym]
+      # if soo, it is the name of the config to load: configs[name]
+      # 2) if no such value, it takes the name plugin_name+"_default", and loads this config
       def get_plugin_default_parameters(plugin_sym)
         return nil if @loaded_configs.nil?
         default_config_name=plugin_sym.to_s+'_default'
@@ -309,7 +312,7 @@ module Asperalm
           FileUtils::mkdir_p(config_folder)
           sample_config={
             "config" =>{@@CONFIG_FILE_KEY_VERSION=>Asperalm::VERSION},
-            "cli_default"=>{:loglevel=>:warn},
+            "config_default"=>{:loglevel=>:warn,:browser=>:os},
             "files_default"=>{:auth=>:jwt, :url=>"https://myorg.asperafiles.com", :client_id=>"MyClientId", :client_secret=>"MyAccessKeySecret", :private_key=>"@file:~/.aspera/aslmcli/filesapikey", :username=>"user@example.com"},
             "files_web"=>{:auth=>:web, :url=>"https://myorg.asperafiles.com", :client_id=>"MyClientId", :client_secret=>"MyAccessKeySecret", :redirect_uri=>"http://local.connectme.us:12345"},
             "faspex_default"=>{:url=>"https://myfaspex.mycompany.com/aspera/faspex", :username=>"admin", :password=>"MyP@ssw0rd",:storage=>{'Local Storage'=>{:node=>'default',:path=>'/subpath'}}},
@@ -317,7 +320,7 @@ module Asperalm
             "shares_default"=>{:url=>"https://10.25.0.6", :username=>"admin", :password=>"MyP@ssw0rd"},
             "node_default"=>{:url=>"https://10.25.0.8:9092", :username=>"node_user", :password=>"MyP@ssw0rd", :transfer_filter=>"t['status'].eql?('completed') and t['start_spec']['remote_user'].eql?('faspex')", :file_filter=>"f['status'].eql?('completed') and 0 != f['size'] and t['start_spec']['direction'].eql?('send')"},
             "console_default"=>{:url=>"https://console.myorg.com/aspera/console", :username=>"admin", :password=>"xxxxx"},
-            "fasp_default"=>{:transfer_spec=>'{"remote_host":"demo.asperasoft.com","remote_user":"asperaweb","password":"xxxxx"}'}
+            "client_default"=>{:transfer_spec=>'{"remote_host":"demo.asperasoft.com","remote_user":"asperaweb","password":"xxxxx"}'}
           }
           File.write(default_config_file,sample_config.to_yaml)
           puts "initialized: #{config_folder}"

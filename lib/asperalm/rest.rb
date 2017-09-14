@@ -27,7 +27,16 @@ module Asperalm
   class RestCallError < StandardError
     attr_accessor :response
     def initialize(response)
-      super(response.message)
+      # default error message is response type
+      message=response.message
+      # see if there is a more precise message
+      if !response.body.nil?
+        data=JSON.parse(response.body) rescue nil
+        if data.is_a?(Hash) and data['error'].is_a?(Hash) and data['error']["user_message"].is_a?(String)
+          message=data['error']["user_message"]
+        end
+      end
+      super(message)
       Log.log.debug "Error code:#{response.code}, msg=#{response.message.red}, body=[#{response.body}]"
       @response = response
     end

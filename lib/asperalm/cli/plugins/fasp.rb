@@ -1,69 +1,78 @@
 require 'asperalm/cli/main'
-require 'asperalm/cli/plugin'
-require 'asperalm/ascmd'
+require 'asperalm/cli/plugins/node'
+require 'asperalm/Connect'
+require 'asperalm/operating_system'
 
 module Asperalm
   module Cli
     module Plugins
-      # implement basic remote access with FASP/SSH
+      # list and download connect client versions
       class Fasp < Plugin
+        CONNECT_WEB_URL = 'http://d3gcli72yxqn2z.cloudfront.net/connect'
+        CONNECT_VERSIONS = 'connectversions.js'
         def declare_options; end
 
-        def action_list; [:download,:upload,:browse,:delete,:rename].push(*Asperalm::AsCmd.action_list);end
+        def action_list; [ :location, :connect ];end
 
-        # converts keys in hash table from symbol to string
-        def convert_hash_sym_key(hash);h={};hash.each { |k,v| h[k.to_s]=v};return h;end
-
-        def result_convert_hash_array(hash_array,fields)
-          return {:data=>hash_array.map {|i| convert_hash_sym_key(i)},:type=>:hash_array,:fields=>fields.map {|f| f.to_s}}
+        def self.textify_list(table_data)
+          return table_data.select {|i| ! i['key'].eql?('links') }
         end
 
-        def result_convert_key_val_list(key_val_list)
-          return {:data=>convert_hash_sym_key(key_val_list),:type=>:key_val_list}
+        # retrieve structure with all versions available
+        def self.connect_versions
+          api_connect_cdn=Rest.new(CONNECT_WEB_URL)
+          javascript=api_connect_cdn.call({:operation=>'GET',:subpath=>CONNECT_VERSIONS})
+          jsondata=javascript[:http].body.gsub(/\r\n\s*/,'').gsub(/^.*AW.connectVersions = /,'').gsub(/;$/,'')
+          alldata=JSON.parse(jsondata)
+          return alldata['entries']
         end
 
         def execute_action
           command=Main.tool.options.get_next_arg_from_list('command',action_list)
-          # aliases
-          command=:ls if command.eql?(:browse)
-          command=:rm if command.eql?(:delete)
-          command=:mv if command.eql?(:rename)
-          ascmd=Asperalm::AsCmd.new({:host=>Main.tool.faspmanager.class.ts_override_data['remote_host'], :user=>Main.tool.faspmanager.class.ts_override_data["remote_user"], :password => Main.tool.faspmanager.class.ts_override_data["password"]})
-          begin
+          case command
+          when :location # shows files used
+            return {:type=>:hash_array, :data=>Asperalm::Connect.resource.map {|k,v| {'name'=>k,'path'=>v[:path]}}}
+          when :connect #
+            command=Main.tool.options.get_next_arg_from_list('command',[:list,:id])
             case command
-            when :upload
-              filelist = Main.tool.options.get_remaining_arguments("source list",1)
-              destination=Main.tool.options.get_next_arg_value("destination")
-              transfer_spec={
-                'direction'=>'send',
-                'destination_root'=>destination,
-                'paths'=>filelist.map { |f| {'source'=>f } }
-              }
-              return Main.tool.start_transfer(transfer_spec)
-            when :download
-              filelist = Main.tool.options.get_remaining_arguments("source list",1)
-              destination=Main.tool.options.get_next_arg_value("destination")
-              transfer_spec={
-                'direction'=>'receive',
-                'destination_root'=>destination,
-                'paths'=>filelist.map { |f| {'source'=>f } }
-              }
-              return Main.tool.start_transfer(transfer_spec)
-            when :mkdir; ascmd.mkdir(Main.tool.options.get_next_arg_value('path'));return Main.result_success
-            when :mv; ascmd.mv(Main.tool.options.get_next_arg_value('src'),Main.tool.options.get_next_arg_value('dst'));return Main.result_success
-            when :cp; ascmd.cp(Main.tool.options.get_next_arg_value('src'),Main.tool.options.get_next_arg_value('dst'));return Main.result_success
-            when :rm; ascmd.rm(Main.tool.options.get_next_arg_value('path'));return Main.result_success
-            when :ls; return result_convert_hash_array(ascmd.ls(Main.tool.options.get_next_arg_value('path')),[:name,:sgid,:suid,:size,:ctime,:mtime,:atime])
-            when :info; return result_convert_key_val_list(ascmd.info())
-            when :df; return {:data=>ascmd.df(),:type=>:key_val_list}
-            when :du; return {:data=>ascmd.du(Main.tool.options.get_next_arg_value('path')),:type=>:key_val_list}
-            when :md5sum; return {:data=>ascmd.md5sum(Main.tool.options.get_next_arg_value('path')),:type=>:key_val_list}
+            when :list #
+              return {:type=>:hash_array, :data=>self.class.connect_versions, :fields => ['id','title','version']}
+            when :id #
+              all_resources=self.class.connect_versions
+              connect_id=Main.tool.options.get_next_arg_value('id or title')
+              one_res = all_resources.select {|i| i['id'].eql?(connect_id) || i['title'].eql?(connect_id)}.first
+              command=Main.tool.options.get_next_arg_from_list('command',[:info,:links])
+              case command
+              when :info # shows files used
+                return {:type=>:key_val_list, :data=>one_res, :textify => lambda { |table_data| self.class.textify_list(table_data) }}
+              when :links # shows files used
+                command=Main.tool.options.get_next_arg_from_list('command',[:list,:id])
+                all_links=one_res['links']
+                case command
+                when :list # shows files used
+                  return {:type=>:hash_array, :data=>all_links}
+                when :id #
+                  link_title=Main.tool.options.get_next_arg_value('title')
+                  one_link=all_links.select {|i| i['title'].eql?(link_title)}.first
+                  command=Main.tool.options.get_next_arg_from_list('command',[:download,:open])
+                  case command
+                  when :download #
+                    folder_dest=Main.tool.options.get_next_arg_value('destination folder')
+                    api_connect_cdn=Rest.new(CONNECT_WEB_URL)
+                    fileurl = one_link['href']
+                    filename=fileurl.gsub(%r{.*/},'')
+                    download_data=api_connect_cdn.call({:operation=>'GET',:subpath=>fileurl,:save_to_file=>File.join(folder_dest,filename)})
+                    return {:data=>"downloaded: #{filename}",:type => :status}
+                  when :open #
+                    OperatingSystem.open_uri(one_link['href'])
+                    return {:data=>"opened: #{one_link['href']}",:type => :status}
+                  end
+                end
+              end
             end
-          rescue Asperalm::AsCmd::Error => e
-            raise CliBadArgument,e.extended_message
           end
         end
-      end # Fasp
-    end # Plugins
+      end
+    end
   end # Cli
 end # Asperalm

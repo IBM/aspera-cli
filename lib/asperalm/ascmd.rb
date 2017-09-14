@@ -296,7 +296,7 @@ module Asperalm
       response = ''
       Net::SSH.start(credentials[:host], credentials[:user], :password => credentials[:password]) do |ssh|
         ssh_channel=ssh.open_channel do |channel|
-          # process stdout
+          # prepare stdout processing
           channel.on_data do |chan, data|
             response << data
           end

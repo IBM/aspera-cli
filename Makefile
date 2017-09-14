@@ -89,21 +89,21 @@ tsh3: $(TEST_FOLDER)
 tshares: tsh1 tsh2 tsh3
 
 tfp1: $(TEST_FOLDER)
-	$(ASCLI) fasp browse /
-	$(ASCLI) fasp upload $(SAMPLE_FILE) /Upload
-	$(ASCLI) fasp download /Upload/200KB.1 $(TEST_FOLDER)
-	$(ASCLI) fasp cp /Upload/200KB.1 /Upload/200KB.2
-	$(ASCLI) fasp mv /Upload/200KB.2 /Upload/to.delete
-	$(ASCLI) fasp delete /Upload/to.delete
-	$(ASCLI) fasp md5sum /Upload/200KB.1
-	$(ASCLI) fasp delete /Upload/200KB.1
+	$(ASCLI) client browse /
+	$(ASCLI) client upload $(SAMPLE_FILE) /Upload
+	$(ASCLI) client download /Upload/200KB.1 $(TEST_FOLDER)
+	$(ASCLI) client cp /Upload/200KB.1 /Upload/200KB.2
+	$(ASCLI) client mv /Upload/200KB.2 /Upload/to.delete
+	$(ASCLI) client delete /Upload/to.delete
+	$(ASCLI) client md5sum /Upload/200KB.1
+	$(ASCLI) client delete /Upload/200KB.1
 tfp2:
-	$(ASCLI) fasp mkdir /Upload/123
-	$(ASCLI) fasp rm /Upload/123
+	$(ASCLI) client mkdir /Upload/123
+	$(ASCLI) client rm /Upload/123
 tfp3:
-	$(ASCLI) fasp info
-	$(ASCLI) fasp du /
-	$(ASCLI) fasp df
+	$(ASCLI) client info
+	$(ASCLI) client du /
+	$(ASCLI) client df
 	
 
 tfasp: tfp1 tfp2 tfp3
@@ -212,19 +212,19 @@ tat11:
 tats: tat1 tat2 tat3 tat4 tat5 tat6 tat7 tat8 tat9 tat10 tat11
 
 tco1:
-	$(ASCLI) connect status
+	$(ASCLI) fasp location
 
 tco2:
-	$(ASCLI) connect list
+	$(ASCLI) fasp connect list
 
 tco3:
-	$(ASCLI) connect id 'Aspera Connect for Windows' info
+	$(ASCLI) fasp connect id 'Aspera Connect for Windows' info
 
 tco4:
-	$(ASCLI) connect id 'Aspera Connect for Windows' links list
+	$(ASCLI) fasp connect id 'Aspera Connect for Windows' links list
 
 tco5:
-	$(ASCLI) connect id 'Aspera Connect for Windows' links id 'Windows Installer' download .
+	$(ASCLI) fasp connect id 'Aspera Connect for Windows' links id 'Windows Installer' download .
 
 tcon: tco1 tco2 tco3 tco4 tco5
 

@@ -70,7 +70,7 @@ module Asperalm
         end
 
         # retrieve tranfer list using API and persistency file
-        def self.get_transfers_iteration(api_node,persistencyfile,params)
+        def get_transfers_iteration(api_node,persistencyfile,params)
           # first time run ? or subsequent run ?
           iteration_token=nil
           if !persistencyfile.nil? and File.exist?(persistencyfile)
@@ -180,6 +180,30 @@ module Asperalm
           end
         end
 
+        # implement generec rest operations on given resource path
+        def generic_action(api_node,res_class_path,display_fields)
+          res_name=res_class_path.gsub(%r{.*/},'').gsub(%r{^s$},'').gsub('_',' ')
+          command=Main.tool.options.get_next_arg_from_list('command',[ :list, :create, :id ])
+          case command
+          when :create
+            parameters=Main.tool.options.get_next_arg_value('JSON creation parameters, use @json:')
+            return {:type => :other_struct, :data=>api_node.create(res_class_path,parameters)[:data], :fields=>['id','root_file_id','storage','license']}
+          when :list
+            return {:type => :hash_array, :data=>api_node.read(res_class_path)[:data], :fields=>['id','root_file_id','storage','license']}
+          when :id
+            one_res_id=Main.tool.options.get_next_arg_value("#{res_name} id")
+            one_res_path="#{res_class_path}/#{one_res_id}"
+            command=Main.tool.options.get_next_arg_from_list('command',[ :delete, :show ])
+            case command
+            when :delete
+              resp=api_node.delete(one_res_path)
+              return {:type => :empty}
+            when :show
+              return {:type => :key_val_list, :data=>api_node.read(one_res_path)[:data], :fields=>['id','root_file_id','storage','license']}
+            end
+          end
+        end
+
         def action_list; self.class.common_actions.clone.concat([ :stream, :transfer, :cleanup, :forward, :access_key, :watch_folder, :service ]);end
 
         def execute_action
@@ -233,8 +257,7 @@ module Asperalm
               raise "error"
             end
           when :access_key
-            resp=api_node.call({:operation=>'GET',:subpath=>'access_keys',:headers=>{'Accept'=>'application/json'}})
-            return {:data=>resp[:data], :type => :hash_array, :fields=>['id','root_file_id','storage','license']}
+            return generic_action(api_node,'access_keys',['id','root_file_id','storage','license'])
           when :service
             command=Main.tool.options.get_next_arg_from_list('command',[ :list, :create, :id])
             case command
@@ -268,7 +291,7 @@ module Asperalm
               #  :fields=>['id','root_file_id','storage','license']
               return { :data => resp[:data], :type=>:other_struct }
             when :create
-              # 
+              #
               params=Main.tool.options.get_next_arg_value("WF creation data (structure)")
               resp=api_node.call({:operation=>'POST',:subpath=>'v3/watchfolders',:headers=>{'Accept'=>'application/json'},:json_params=>params})
               return {:data=>resp[:data]['id'],:type => :status}

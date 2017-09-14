@@ -557,7 +557,7 @@ Use the "node stream create" command, then arguments are provided as a "transfer
 The CLI allows download of the FASP protocol in connect client :
 
 ```bash
-$ ./bin/aslmcli connect list
+$ ./bin/aslmcli fasp connect list
 :...............................................:......................................:..............:
 :                      id                       :                title                 :   version    :
 :...............................................:......................................:..............:
@@ -570,7 +570,7 @@ $ ./bin/aslmcli connect list
 : urn:uuid:213C9370-22B1-11E2-81C1-0800200C9A66 : Aspera Connect for Linux 32          : 3.6.2.117442 :
 : urn:uuid:97F94DF0-22B1-11E2-81C1-0800200C9A66 : Aspera Connect for Linux 64          : 3.7.2.141527 :
 :...............................................:......................................:..............:
-$ aslmcli connect id 'Aspera Connect for Mac Intel 10.6' links list
+$ aslmcli fasp connect id 'Aspera Connect for Mac Intel 10.6' links list
 :.............................................:..........................:.......................................................................:..........:...............:
 :                    title                    :           type           :                                 href                                  : hreflang :      rel      :
 :.............................................:..........................:.......................................................................:..........:...............:
@@ -583,7 +583,7 @@ $ aslmcli connect id 'Aspera Connect for Mac Intel 10.6' links list
 : Aspera Connect PDF Documentation for Mac OS : application/pdf          : docs/user/osx/zh-cn/pdf/Connect_User_3.7.0_OSX_zh-cn.pdf              : zh-cn    : documentation :
 : Aspera Connect for Mac Release Notes        : text/html                : http://www.asperasoft.com/en/release_notes/default_1/release_notes_54 : en       : release-notes :
 :.............................................:..........................:.......................................................................:..........:...............:
-$ aslmcli connect id 'Aspera Connect for Mac Intel 10.6' links id 'Mac Intel Installer' download .
+$ aslmcli fasp connect id 'Aspera Connect for Mac Intel 10.6' links id 'Mac Intel Installer' download .
 downloaded: AsperaConnect-3.6.1.111259-mac-intel-10.6.dmg
 ```
 
