@@ -392,6 +392,7 @@ module Asperalm
               display_fields=required_fields.split(',')
             end
           when :key_val_list
+            raise "internal error: unexpected type: #{results[:data].class}" if !results[:data].is_a?(Hash)
             # :key_val_list is a simple hash table
             case required_fields
             when FIELDS_DEFAULT,FIELDS_ALL; display_fields = ['key','value']

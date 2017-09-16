@@ -1,6 +1,7 @@
 require 'asperalm/cli/main'
 require 'asperalm/cli/plugin'
 require 'asperalm/ascmd'
+require 'asperalm/ssh'
 
 module Asperalm
   module Cli
@@ -9,7 +10,7 @@ module Asperalm
       class Server < Plugin
         def declare_options; end
 
-        def action_list; [:download,:upload,:browse,:delete,:rename].push(*Asperalm::AsCmd.action_list);end
+        def action_list; [:nodeadmin,:userdata,:configurator,:download,:upload,:browse,:delete,:rename].push(*Asperalm::AsCmd.action_list);end
 
         # converts keys in hash table from symbol to string
         def convert_hash_sym_key(hash);h={};hash.each { |k,v| h[k.to_s]=v};return h;end
@@ -28,9 +29,19 @@ module Asperalm
           command=:ls if command.eql?(:browse)
           command=:rm if command.eql?(:delete)
           command=:mv if command.eql?(:rename)
-          ascmd=Asperalm::AsCmd.new({:host=>Main.tool.faspmanager.class.ts_override_data['remote_host'], :user=>Main.tool.faspmanager.class.ts_override_data["remote_user"], :password => Main.tool.faspmanager.class.ts_override_data["password"]})
+          ssh_executor=Ssh.new(
+          Main.tool.faspmanager.class.ts_override_data['remote_host'],
+          Main.tool.faspmanager.class.ts_override_data["remote_user"],
+          {:password => Main.tool.faspmanager.class.ts_override_data["password"]})
+
+          ascmd=Asperalm::AsCmd.new(ssh_executor)
           begin
             case command
+            when :nodeadmin,:userdata,:configurator
+              realcmd="as"+command.to_s
+              args = Main.tool.options.get_remaining_arguments("#{realcmd} arguments")
+              command = args.unshift(realcmd).map{|v|'"'+v+'"'}.join(" ")
+              return {:data=>ssh_executor.exec_session(command),:type=>:status}
             when :upload
               filelist = Main.tool.options.get_remaining_arguments("source list",1)
               destination=Main.tool.options.get_next_arg_value("destination")

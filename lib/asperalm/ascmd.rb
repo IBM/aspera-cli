@@ -1,4 +1,3 @@
-require 'net/ssh'
 
 module Asperalm
   # Methods for running +ascmd+ commands on a node.
@@ -260,8 +259,8 @@ module Asperalm
 
     attr_accessor :credentials
 
-    def initialize(credentials)
-      self.credentials = credentials
+    def initialize(ssh_executor)
+      @ssh_executor = ssh_executor
     end
 
     def self.action_list; [:info,:ls,:mkdir,:mv,:rm,:du,:cp,:df,:md5sum]; end
@@ -292,31 +291,12 @@ module Asperalm
     # @param [String] command the command to run, e.g. <tt>as_ls "/tmp"</tt>
     # @return [Array of Aspera::Ascmd] possibly empty array depending on which +ascmd+ command is run
     def ascmd_exec(cmd,*args)
-      ascmd_command='as_'+cmd
-      response = ''
-      Net::SSH.start(credentials[:host], credentials[:user], :password => credentials[:password]) do |ssh|
-        ssh_channel=ssh.open_channel do |channel|
-          # prepare stdout processing
-          channel.on_data do |chan, data|
-            response << data
-          end
-          # stderr if type = 1
-          channel.on_extended_data do |chan, type, data|
-            # Happens when windows user hasn't logged in and created home account.
-            unless data.include?("Could not chdir to home directory")
-              raise "got error running ascmd: #{data}\nHint: home not created in Windows?"
-            end
-          end
-          channel.exec("ascmd") do |ch, success|
-            # concatenate arguments, enclose in double quotes, protect backslash and double quotes
-            command_line=(args||[]).map{|v| '"' + v.gsub(/["\\]/n) {|s| '\\' + s } + '"'}.unshift(ascmd_command).join(' ')
-            channel.send_data("#{command_line}\nas_exit\n")
-          end
-        end
-        # wait for channel to finish
-        ssh_channel.wait
-        ssh.loop
-      end
+      # concatenate arguments
+      # enclose in double quotes
+      # protect backslash and double quotes
+      # add "as" command and as_exit
+      command_line=(args||[]).map{|v| '"' + v.gsub(/["\\]/n) {|s| '\\' + s } + '"'}.unshift('as_'+cmd).join(' ')+"\nas_exit\n"
+      response=@ssh_executor.exec_session("ascmd",command_line)
       commands = Parser.parse_bin_response(response)
       # first entry is as_info, ignore it
       Parser.parse_res_info(commands)

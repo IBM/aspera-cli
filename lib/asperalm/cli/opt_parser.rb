@@ -36,14 +36,20 @@ module Asperalm
       def set_argv(argv)
         @unprocessed_options=[]
         @unprocessed_command_and_args=[]
+        process_options=true
         while !argv.empty?
-          if argv.first =~ /^-/
-            @unprocessed_options.push(argv.shift)
+          value=argv.shift
+          if process_options and value =~ /^-/
+            if value.eql?('--')
+              process_options=false
+            else
+              @unprocessed_options.push(value)
+            end
           else
-            @unprocessed_command_and_args.push(argv.shift)
+            @unprocessed_command_and_args.push(value)
           end
         end
-        Log.log.debug("set_argv:commands=#{@unprocessed_command_and_args},args=#{@unprocessed_options}".red)
+        Log.log.debug("set_argv:commands/args=#{@unprocessed_command_and_args},options=#{@unprocessed_options}".red)
       end
 
       # encoders can be pipelined
@@ -122,9 +128,10 @@ module Asperalm
       def get_remaining_arguments(descr,minus=0)
         raise CliBadArgument,"missing: #{descr}" if @unprocessed_command_and_args.empty?
         raise CliBadArgument,"missing args after: #{descr}" if @unprocessed_command_and_args.length <= minus
-        filelist = @unprocessed_command_and_args.shift(@unprocessed_command_and_args.length-minus)
-        Log.log.debug("#{descr}=#{filelist}")
-        return filelist
+        arguments = @unprocessed_command_and_args.shift(@unprocessed_command_and_args.length-minus)
+        arguments = arguments.map{|v|self.class.get_extended_value(descr,v)}
+        Log.log.debug("#{descr}=#{arguments}")
+        return arguments
       end
 
       def set_handler(option_symbol,&block)

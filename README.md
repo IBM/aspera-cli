@@ -158,7 +158,7 @@ DESCRIPTION
 	Additional documentation here: https://rubygems.org/gems/asperalm
 
 COMMANDS
-	First level commands: config, console, fasp, faspex, files, node, orchestrator, shares
+	First level commands: config, console, client, faspex, files, node, orchestrator, shares
 	Note that commands can be written shortened (provided it is unique).
 
 OPTIONS
@@ -201,7 +201,7 @@ OPTIONS:
         --filter-from=DATE           only after date
         --filter-to=DATE             only before date
 
-COMMAND: fasp
+COMMAND: server
 SUBCOMMANDS: download, upload, browse, delete, rename, info, ls, mkdir, mv, rm, du, cp, df, md5sum
 OPTIONS:
 
@@ -283,6 +283,8 @@ In addition it is possible to decode some values by prefixing :
 * @json: to decode JSON values
 * @zlib: to uncompress data
 
+The special option "--" stop option processing, so following values are taken as arguments.
+
 Example:
 
 ```bash
@@ -347,7 +349,7 @@ config:
     :faspex: faspex_default
     :shares: shares_default
     :node: node_default
-    :fasp: fasp_default
+    :server: server_default
     :orchestrator: orchestrator_default
 files_default:
   :auth: :jwt
@@ -386,7 +388,7 @@ console_default:
   :url: https://console.asperademo.com/aspera/console
   :username: nyapiuset
   :password: "mypassword"
-fasp_default:
+server_default:
   :transfer_spec: '{"remote_host":"demo.asperasoft.com","remote_user":"asperaweb","password":"xxxx"}'
 ```
 
@@ -442,9 +444,9 @@ or if the browser is started automatically to the URL.
 ## Sample commands
 
 ```bash
-aslmcli fasp browse /
-aslmcli fasp upload ~/200KB.1 /projectx
-aslmcli fasp download /projectx/200KB.1 .
+aslmcli server browse /
+aslmcli server upload ~/200KB.1 /projectx
+aslmcli server download /projectx/200KB.1 .
 aslmcli shares browse /
 aslmcli shares upload ~/200KB.1 /projectx
 aslmcli shares download /projectx/200KB.1 .
@@ -557,7 +559,7 @@ Use the "node stream create" command, then arguments are provided as a "transfer
 The CLI allows download of the FASP protocol in connect client :
 
 ```bash
-$ ./bin/aslmcli fasp connect list
+$ ./bin/aslmcli client connect list
 :...............................................:......................................:..............:
 :                      id                       :                title                 :   version    :
 :...............................................:......................................:..............:
@@ -570,7 +572,7 @@ $ ./bin/aslmcli fasp connect list
 : urn:uuid:213C9370-22B1-11E2-81C1-0800200C9A66 : Aspera Connect for Linux 32          : 3.6.2.117442 :
 : urn:uuid:97F94DF0-22B1-11E2-81C1-0800200C9A66 : Aspera Connect for Linux 64          : 3.7.2.141527 :
 :...............................................:......................................:..............:
-$ aslmcli fasp connect id 'Aspera Connect for Mac Intel 10.6' links list
+$ aslmcli client connect id 'Aspera Connect for Mac Intel 10.6' links list
 :.............................................:..........................:.......................................................................:..........:...............:
 :                    title                    :           type           :                                 href                                  : hreflang :      rel      :
 :.............................................:..........................:.......................................................................:..........:...............:
@@ -583,7 +585,7 @@ $ aslmcli fasp connect id 'Aspera Connect for Mac Intel 10.6' links list
 : Aspera Connect PDF Documentation for Mac OS : application/pdf          : docs/user/osx/zh-cn/pdf/Connect_User_3.7.0_OSX_zh-cn.pdf              : zh-cn    : documentation :
 : Aspera Connect for Mac Release Notes        : text/html                : http://www.asperasoft.com/en/release_notes/default_1/release_notes_54 : en       : release-notes :
 :.............................................:..........................:.......................................................................:..........:...............:
-$ aslmcli fasp connect id 'Aspera Connect for Mac Intel 10.6' links id 'Mac Intel Installer' download .
+$ aslmcli client connect id 'Aspera Connect for Mac Intel 10.6' links id 'Mac Intel Installer' download .
 downloaded: AsperaConnect-3.6.1.111259-mac-intel-10.6.dmg
 ```
 

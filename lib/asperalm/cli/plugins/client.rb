@@ -7,7 +7,7 @@ module Asperalm
   module Cli
     module Plugins
       # list and download connect client versions
-      class Fasp < Plugin
+      class Client < Plugin
         CONNECT_WEB_URL = 'http://d3gcli72yxqn2z.cloudfront.net/connect'
         CONNECT_VERSIONS = 'connectversions.js'
         def declare_options; end

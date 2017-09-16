@@ -28,12 +28,16 @@ module Asperalm
     attr_accessor :response
     def initialize(response)
       # default error message is response type
-      message=response.message
+      message=response.message+" (#{response.code})"
       # see if there is a more precise message
       if !response.body.nil?
         data=JSON.parse(response.body) rescue nil
-        if data.is_a?(Hash) and data['error'].is_a?(Hash) and data['error']["user_message"].is_a?(String)
-          message=data['error']["user_message"]
+        if data.is_a?(Hash) and data['error'].is_a?(Hash)
+          if data['error']["user_message"].is_a?(String)
+            message=data['error']["user_message"]
+          elsif data['error']["description"].is_a?(String)
+            message=data['error']["description"]
+          end
         end
       end
       super(message)
