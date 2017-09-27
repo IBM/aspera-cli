@@ -37,14 +37,14 @@ module Asperalm
     end
 
     def event(data)
-      if data['Type'].eql?('NOTIFICATION') and data.has_key?('PreTransferBytes') then
+      if data['type'].eql?('NOTIFICATION') and data.has_key?('pre_transfer_bytes') then
         require 'ruby-progressbar'
-        @progress=ProgressBar.create(:title => 'progress', :total => data['PreTransferBytes'].to_i)
+        @progress=ProgressBar.create(:title => 'progress', :total => data['pre_transfer_bytes'].to_i)
       end
-      if data['Type'].eql?('STATS') and !@progress.nil? then
+      if data['type'].eql?('STATS') and !@progress.nil? then
         @progress.progress=data['TransferBytes'].to_i
       end
-      if data['Type'].eql?('DONE') and ! @progress.nil? then
+      if data['type'].eql?('DONE') and ! @progress.nil? then
         @progress.progress=@progress.total
         @progress=nil
       end
@@ -70,21 +70,11 @@ module Asperalm
   # - connect : use the connect client
   class FaspManager
     # a global transfer spec that overrides values in transfer spec provided on start
-    @@ts_override_data={}
-
-    # add fields from JSON format
-    def self.ts_override_json=(value)
-      @@ts_override_data.merge!(JSON.parse(value))
-    end
-
-    # returns json format
-    def self.ts_override_json
-      return JSON.generate(@@ts_override_data)
-    end
+    @@ts_override={}
 
     # returns ruby data
-    def self.ts_override_data
-      return @@ts_override_data
+    def self.ts_override
+      return @@ts_override
     end
 
     # mode=connect : activate
@@ -158,6 +148,14 @@ module Asperalm
       return transfer_spec
     end
 
+  def snake_case(str)
+    str.
+    gsub(/([A-Z]+)([A-Z][a-z])/,'\1_\2').
+    gsub(/([a-z\d])([A-Z])/,'\1_\2').
+    gsub(/([a-z\d])(usec)$/,'\1_\2').
+    downcase
+  end
+
     # start ascp
     # raises FaspError
     # uses ascp management port.
@@ -171,7 +169,7 @@ module Asperalm
       # add fallback cert and key
       http_fallback_index=arguments.index("-y")
       if !http_fallback_index.nil?
-        if arguments[http_fallback_index+1].eql?('1') then
+        if arguments[http_fallback_index+1].eql?('1') or arguments[http_fallback_index+1].eql?('F') then
           arguments.unshift('-Y', Connect.path(:fallback_key), '-I', Connect.path(:fallback_cert))
         end
       end
@@ -227,9 +225,9 @@ module Asperalm
           # end frame
           if !current.nil? then
             if !@listener.nil? then
-              @listener.event current
+              @listener.event(current)
             end
-            if 'DONE'.eql?(current['Type']) or 'ERROR'.eql?(current['Type']) then
+            if 'DONE'.eql?(current['type']) or 'ERROR'.eql?(current['type']) then
               lastStatus = current
             end
           else
@@ -239,7 +237,7 @@ module Asperalm
           # begin frame
           current = Hash.new
         elsif m=line.match('^([^:]+): (.*)$') then
-          current[m[1]] = m[2]
+          current[snake_case(m[1])] = m[2]
         else
           Log.log.error "error parsing[#{line}]"
         end
@@ -248,14 +246,13 @@ module Asperalm
       # wait for sub process completion
       Process.wait(@ascp_pid)
 
-      if !lastStatus.nil? then
-        if 'DONE'.eql?(lastStatus['Type']) then
-          return
-        end
-        Log.log.error "last status is [#{lastStatus}]"
-      end
+      raise "nil last status" if lastStatus.nil?
 
-      raise FaspError.new(lastStatus['Description'],lastStatus['Code'].to_i)
+      if 'DONE'.eql?(lastStatus['type']) then
+        return
+      else
+        raise FaspError.new(lastStatus['description'],lastStatus['code'].to_i)
+      end
     end
 
     # copy and translate argument+value from transfer spec to env var for ascp
@@ -339,7 +336,7 @@ module Asperalm
       ts2args_value(used_names,transfer_spec,ascp_args,'min_rate_kbps','-m') { |rate| rate.to_s }
       ts2args_value(used_names,transfer_spec,ascp_args,'ssh_port','-P') { |port| port.to_s }
       ts2args_value(used_names,transfer_spec,ascp_args,'fasp_port','-O') { |port| port.to_s }
-      ts2args_value(used_names,transfer_spec,ascp_args,'http_fallback','-y') { |enable| enable ? '1' : '0' }
+      ts2args_value(used_names,transfer_spec,ascp_args,'http_fallback','-y') { |enable| enable.eql?("force") ? 'F' : enable ? '1' : '0' }
       ts2args_value(used_names,transfer_spec,ascp_args,'http_fallback_port','-t') { |port| port.to_s }
       ts2args_value(used_names,transfer_spec,ascp_args,'rate_policy','--policy')
       ts2args_value(used_names,transfer_spec,ascp_args,'source_root','--source-prefix64') { |prefix| Base64.strict_encode64(prefix) }
@@ -396,7 +393,7 @@ module Asperalm
     # replaces do_transfer
     # transforms transper_spec into command line arguments and env var, then calls execute_ascp
     def transfer_with_spec(transfer_spec)
-      transfer_spec.merge!(self.class.ts_override_data)
+      transfer_spec.merge!(self.class.ts_override)
       Log.log.debug("ts=#{transfer_spec}")
       if (@use_connect_client) # transfer using connect ...
         Log.log.debug("using connect client")

@@ -16,7 +16,7 @@ test:
 	bundle exec rake spec
 
 clean::
-	rm -f $(GEMNAME)-*.gem $(SRCZIPBASE)*.zip *.log token.* README.pdf README.html
+	rm -f $(GEMNAME)-*.gem $(SRCZIPBASE)*.zip *.log token.* README.pdf README.html README.md sample_commands
 	rm -fr doc
 	gem uninstall -a -x $(GEMNAME)
 cleanupgems:
@@ -29,7 +29,16 @@ README.pdf: README.md
 	pandoc -o README.html README.md
 	wkhtmltopdf README.html README.pdf
 
-$(ZIPFILE):
+README.md: README.erb.md sample_commands sample_usage
+	erb README.erb.md > README.md
+
+sample_commands: Makefile
+	sed -n -e 's/.*\$$(ASCLI)/aslmcli/p' Makefile|grep -v 'Sales Engineering'|sed -E -e 's/\$$\(SAMPLE_FILE\)/sample_file.bin/g;s/\$$\(NODEDEST\)/sample_dest_folder/g;s/\$$\(TEST_FOLDER\)/sample_dest_folder/g;s/ibmfaspex.asperasoft.com/faspex.mycompany.com/g;s/(")(api_key|username)(":")[^"]*(")/\1\2\3my_key_here\4/g;'|grep -v 'localhost:9443' > sample_commands
+.PHONY: sample_usage
+sample_usage:
+	$(ASCLI) -h 2> sample_usage || true
+
+$(ZIPFILE): README.md
 	rm -f $(SRCZIPBASE)_*.zip
 	zip -r $(ZIPFILE) `git ls-files`
 
@@ -54,7 +63,7 @@ $(APIKEY):
 	rm -f $(APIKEY).protected
 
 setkey: $(APIKEY)
-	$(ASCLI) --log-level=debug -np files --browser=os set_client_key ERuzXGuPA @file:$(APIKEY)
+	$(ASCLI) files admin set_client_key ERuzXGuPA @file:$(APIKEY)
 
 yank:
 	gem yank asperalm -v $(GEMVERSION)
@@ -154,7 +163,7 @@ tfs7:
 tfs8:
 	$(ASCLI) files admin resource workspace list
 tfs9:
-	$(ASCLI) files admin resource node id 4586 browse / --secret=Aspera123_
+	$(ASCLI) files admin resource node id 5560 browse / --secret=Aspera123_
 
 tfiles: tfs1 tfs2 tfs3 tfs3b tfs4 tfs5 tfs6 tfs7 tfs8 tfs9
 
@@ -186,12 +195,14 @@ to9:
 
 torc: to1 to2 to3 to4 to5 to6 to7 to8 to9
 
-tat1:
-	$(ASCLI) ats server list
+tat1a:
+	$(ASCLI) ats server list provisioned
+tat1b:
+	$(ASCLI) ats server list clouds
 tat2:
-	$(ASCLI) ats server id gk7f5356-f4ea-kj83-ddfW-7da4ed99f8eb
+	$(ASCLI) ats server list instance --cloud=aws --region=eu-west-1 
 tat3:
-	$(ASCLI) ats server by_name --cloud=SOFTLAYER --region=ams
+	$(ASCLI) ats server id gk7f5356-f4ea-kj83-ddfW-7da4ed99f8eb
 tat4:
 	$(ASCLI) ats subscriptions
 tat5:
@@ -209,7 +220,7 @@ tat10:
 tat11:
 	$(ASCLI) ats access_key id testkey delete
 
-tats: tat1 tat2 tat3 tat4 tat5 tat6 tat7 tat8 tat9 tat10 tat11
+tats: tat1a tat1b tat2 tat3 tat4 tat5 tat6 tat7 tat8 tat9 tat10 tat11
 
 tco1:
 	$(ASCLI) client location
@@ -228,7 +239,16 @@ tco5:
 
 tcon: tco1 tco2 tco3 tco4 tco5
 
-tests: tshares tfaspex tconsole tnode tfiles tfaspex2 tfasp torc tats tcon
+tsy1:
+	$(ASCLI) node async list
+tsy2:
+	$(ASCLI) node async id 1 summary 
+tsy3:
+	$(ASCLI) node async id 1 counters 
+tsync: tsy1 tsy2 tsy3
+
+tests: tshares tfaspex tconsole tnode tfiles tfaspex2 tfasp torc tats tcon tsync
 
 tfxgw:
-	$(ASCLI) --config-name=/NONE --url=https://localhost:9443/aspera/faspex --username=unused --password=unused faspex package send ~/200KB.1 --insecure=yes --note="my note" --title="my title" --recipient="laurent@asperasoft.com"
+	$(ASCLI) --load-params=reset --url=https://localhost:9443/aspera/faspex --username=unused --password=unused faspex package send ~/200KB.1 --insecure=yes --note="my note" --title="my title" --recipient="laurent@asperasoft.com"
+

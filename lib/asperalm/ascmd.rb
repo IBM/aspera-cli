@@ -1,6 +1,7 @@
 
 module Asperalm
   # Methods for running +ascmd+ commands on a node.
+  # equivalent of SDK "command client"
   class AsCmd
     # contains one result of command (binary string)
     # commands return list of result
@@ -66,13 +67,13 @@ module Asperalm
       # Message dispalyed when exception raised.
       # @return [String]
       def message
-        "(#{rc}) #{ascmd_message}"
+        "ascmd: (#{rc}) #{ascmd_message}"
       end
 
       # All attributes in one string.
       # @return [String]
       def extended_message
-        "rc=#{rc} msg='#{ascmd_message}' command='#{command}' args=#{args.map { |e| %('#{e}') }.inspect}"
+        "ascmd: rc=#{rc} msg='#{ascmd_message}' command='#{command}' args=#{args.map { |e| %('#{e}') }.inspect}"
       end
 
     end # Error
@@ -302,7 +303,7 @@ module Asperalm
       Parser.parse_res_info(commands)
       # error comes first
       if !commands.first.nil? and commands.first.error?
-        raise Error.new(commands.first,ascmd_command,args)
+        raise Error.new(commands.first,cmd,args)
       end
       # return parsed result if there is a parser
       parse_method_sym=('parse_res_'+cmd).to_sym

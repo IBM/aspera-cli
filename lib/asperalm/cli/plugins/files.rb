@@ -27,13 +27,13 @@ module Asperalm
         # output: file_id and node_info  for the given path
         def find_nodeinfo_and_fileid ( top_node_id, top_file_id, element_path_string )
           Log.log.debug "find_nodeinfo_and_fileid: nodeid=#{top_node_id}, #{top_file_id}, path=#{element_path_string}"
-          
+
           # initialize loop elements
           current_path_elements=element_path_string.split(PATH_SEPARATOR).select{|i| !i.empty?}
           current_node_info=@api_files_user.read("nodes/#{top_node_id}")[:data]
           current_file_id = top_file_id
           current_file_info = nil
- 
+
           while !current_path_elements.empty? do
             current_element_name = current_path_elements.shift
             Log.log.debug "searching #{current_element_name}".bg_green
@@ -316,10 +316,14 @@ module Asperalm
               resource=Main.tool.options.get_next_arg_from_list('resource',[:user,:group,:client,:contact,:dropbox,:node,:operation,:package,:saml_configuration, :workspace])
               resources=resource.to_s+(resource.eql?(:dropbox) ? 'es' : 's')
               #:messages:organizations:url_tokens,:usage_reports:workspaces
-              operations=[:list,:id]
+              operations=[:list,:id,:create]
               #command=Main.tool.options.get_next_arg_value('op_or_id')
               command=Main.tool.options.get_next_arg_from_list('command',operations)
               case command
+              when :create
+                params=Main.tool.options.get_next_arg_value("creation data (json structure)")
+                resp=api_files_admin.create(resources,params)
+                return {:data=>resp[:data],:type => :other_struct}
               when :list
                 default_fields=['id','name']
                 case resource

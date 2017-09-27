@@ -2,41 +2,36 @@
 
 Laurent/2016
 
-This GEM is not endorsed/supported by IBM/Aspera, use at your risk, and not in production environments.
+This Gem provides a cross platform (ruby based) command line tool (CLI) using (mostly REST) APIs of Aspera Products: Server, Node, Shares, Faspex, Console, Orchestrator, Files, ATS.
+
+Disclaimer: This GEM is not endorsed/supported by IBM/Aspera, use at your risk, and not in production environments.
+
+That being said, it is very powerful and gets things done, it's also a great tool to learn Aspera APIs.
 
 ## Overview, Features
-This is a Ruby Gem that provides a command line with the following features:
 
-* Supports most Aspera server products
-* configuration file for products URLs and credentials (and any parameter)
+This is a Ruby Gem that provides the following features:
+
+* Supports most Aspera server products (on-premise and SaaS)
+* Configuration file for products URLs and credentials (and any parameter)
 * FASP transfer agent can be: FaspManager (local ascp), or Connect Client, or a transfer node
-* transfer parameters can be altered by modification of transferspec, this includes requiring multi-session transfer on nodes
-* allows transfers from products to products, essentially at node level
-* supports FaspStream creation (using Node API)
-* additional command plugins can be written by the user
-* parameter values can be passed on command line, in configuration file, in env var, in files
-* parameter values and command can be provided in short format (must be unique)
-* supports download of faspex "external" links
-* supports "legacy" ssh based FASP transfers and remote commands (ascmd)
-
-In addition, it provides:
-
-* a FASPManager class for Ruby
+* Transfer parameters can be altered by modification of transferspec, this includes requiring multi-session transfer on nodes
+* Allows transfers from products to products, essentially at node level
+* Supports FaspStream creation (using Node API)
+* Additional command plugins can be written by the user
+* Parameter values can be passed on command line, in configuration file, in env var, in files
+* Parameter values and command can be provided in short format (must be unique)
+* Supports download of faspex "external" links
+* Supports "legacy" ssh based FASP transfers and remote commands (ascmd)
+* A FASPManager class for Ruby
 * REST and OAuth classes for use with Aspera products APIs
-* a command line tool: aslmcli
+* A command line tool: aslmcli
 
-This Gem was developed for the following Purposes:
-
-* show use of Aspera (REST) APIs: Node, Files, Shares, Faspex, Console, Orchestrator
-* provide a command line for some tasks
-* cross-platform (ruby)
-* shows example of use of Aspera products
-
-Ruby has been chosen as language as it is used in most Aspera products, and the 
-interpret can be found for most platforms.
+Ruby has been chosen as language as it is used in most Aspera products (consistency), and the 
+interpret can be found for most platforms (portability).
 
 This gem is provided as-is, and is not intended to be a complete CLI, or 
-industry-grade product. This is a sample. 
+industry-grade product. This is a sample.
 Aspera provides a CLI tool here: http://downloads.asperasoft.com/en/downloads/62 .
 
 The CLI's folder where configuration and cache files are kept is `$HOME/.aspera/aslmcli`
@@ -47,21 +42,22 @@ In examples below, command line operations (starting with "$") are shown using `
 
 ## Quick Start
 
+### Pre-requisite : Ruby
+
 First make sure that you have Ruby v2.0+ installed on your system.
 
-### Pre-requisite : MacOS X
+#### MacOS X
 Ruby comes pre-installed on MacOSx. Nevertheless, installing new gems require admin privilege (sudo).
-You may also install "homebrew", from here: https://brew.sh/
-Then do:
+You may also install "homebrew", from here: https://brew.sh/, then do:
 
 ```bash
 $ brew install ruby
 ```
 
-### Pre-requisite : Windows
+#### Windows
 On windows you can get it from here: https://rubyinstaller.org/ .
 
-### Pre-requisite : Linux
+#### Linux
 ```bash
 $ yum install ruby rubygems
 ```
@@ -77,23 +73,29 @@ The tool can be used right away: `aslmcli`
 
 ### Configuration file setup
 
-The use of the configuration file is not mandatory, all parameters can be set on 
-command line, 
-but a configuration file provides a way to define default values, especially
+The use of the configuration file is not mandatory. All parameters can be set on 
+command line. A configuration file provides a way to define default values, especially
 for authentication parameters. A sample configuration file can be created with:
 
 ```bash
-$ aslmcli cli config init
+$ aslmcli config init
 ```
 
-This creates a sample configuration file: `$HOME/.aspera/aslmcli/config.yaml`
+This creates a sample configuration file: `$HOME/.aspera/aslmcli/config.yaml`. This file can subsequently be edited by executing:
+
+```bash
+$ aslmcli config open
+```
+
 
 For Faspex, Shares, Node (including ATS, Aspera Transfer Service), Console, 
 only username/password 
 and url are required (either on command line, or from config file). Just fill-in url and
 credentials in the configuration file (section: <app>_default), and then you can start 
 using the CLI without having to specify those on command line. 
-Switch between server configurations with `-P` option (or --load-params).
+Switch between server configurations with `-Pxxxx` option (or --load-params=xxxx), 
+where xxxx is the identifier of the configuration section.
+
 
 ### Installation of the FASP protocol
 
@@ -101,15 +103,15 @@ For any download, the FASP protocol and a valid license id required. When the se
 "connect" enabled, one can the the connect client license. The connect client can be installed
 by visiting the page: http://downloads.asperasoft.com/connect2/
 
-Alternatively, the connect client can be downloaded using the aslmcli, see section: Download FASP.
+Alternatively, the connect client can be downloaded using the aslmcli, see section: [Download FASP](download-fasp).
 
 
 ### Configuration for use with Aspera Files
 
 Aspera Files APIs do not support Basic HTTP authentication (see section "Authentication").
-If JWT is not used (based on private key auth.), a web based authentication will be required,
-Note that by specifying the option: --browser=os, the CLI will try to start the default
-browser, else the URL is displayed on the terminal.
+If JWT is not used (based on private key auth.), a web based authentication will be required.
+Note that by specifying the option: `--browser=os`, the CLI will try to start the default
+browser, else the URL is displayed on the terminal (option `--browser=tty`).
 
 A more convenient way to use the CLI with Aspera Files, a possibility is to do the following (jwt auth):
 
@@ -145,121 +147,9 @@ $ aslmcli files repo browse /
 ## Usage
 
 ```bash
-$ ./bin/aslmcli -h
-NAME
-	aslmcli -- a command line tool for Aspera Applications (v0.3.9)
+$ aslmcli -h
+<%= File.read("sample_usage") %>
 
-SYNOPSIS
-	aslmcli COMMANDS [OPTIONS] [ARGS]
-
-DESCRIPTION
-	Use Aspera application to perform operations on command line.
-	OAuth 2.0 is used for authentication in Files, Several authentication methods are provided.
-	Additional documentation here: https://rubygems.org/gems/asperalm
-
-COMMANDS
-	First level commands: config, console, client, faspex, files, node, orchestrator, shares
-	Note that commands can be written shortened (provided it is unique).
-
-OPTIONS
-	Options begin with a '-' (minus), and value is provided on command line.
-	Special values are supported beginning with special prefix, like: @val: @file: @env: @["base64", "json", "zlib"]:.
-	Dates format is 'DD-MM-YY HH:MM:SS', or 'now' or '-<num>h'
-
-ARGS
-	Some commands require mandatory arguments, e.g. a path.
-
-EXAMPLES
-	aslmcli files repo browse /
-	aslmcli faspex send ./myfile --log-level=debug
-	aslmcli shares upload ~/myfile /myshare
-
-OPTIONS: global
-    -h, --help                       Show this message. Try: config help
-    -g, --browser=TYPE               method to start browser. Values=(tty,os), current=tty
-        --insecure=VALUE             do not validate cert. Values=(yes,no), current=no
-    -l, --log-level=VALUE            Log level. Values=(debug,info,warn,error,fatal,unknown), current=warn
-    -q, --logger=VALUE               log method. Values=(stderr,stdout,syslog), current=stdout
-        --format=VALUE               output format. Values=(table,ruby,json,yaml), current=table
-        --transfer=VALUE             type of transfer. Values=(ascp,connect,node), current=ascp
-    -C, --config=STRING              read parameters from file in YAML format, current=/Users/laurent/.aspera/aslmcli/config.yaml
-    -P, --load-params=NAME           load the named configuration from current config file
-        --fasp-folder=NAME           specify where to find FASP (main folder), current={:ascp=>"ascp", :app_root=>"/Users/laurent/Applications/Aspera Connect.app", :run_root=>"/Users/laurent/Library/Application Support/Aspera/Aspera Connect", :sub_bin=>"Contents/Resources", :sub_keys=>"Contents/Resources", :dsa=>"asperaweb_id_dsa.openssh"}
-        --transfer-node=STRING       name of configuration used to transfer when using --transfer=node
-        --fields=STRING              comma separated list of fields, or ALL, or DEF
-        --fasp-proxy=STRING          URL of FASP proxy (dnat / dnats)
-        --http-proxy=STRING          URL of HTTP proxy (for http fallback)
-    -r, --rest-debug                 more debug for HTTP calls
-        --ts=JSON                    override transfer spec values, current={}
-
-COMMAND: console
-SUBCOMMANDS: transfers
-OPTIONS:
-    -w, --url=URI                    URL of application, e.g. http://org.asperafiles.com
-    -u, --username=STRING            username to log in
-    -p, --password=STRING            password
-        --filter-from=DATE           only after date
-        --filter-to=DATE             only before date
-
-COMMAND: server
-SUBCOMMANDS: download, upload, browse, delete, rename, info, ls, mkdir, mv, rm, du, cp, df, md5sum
-OPTIONS:
-
-COMMAND: faspex
-SUBCOMMANDS: package, dropbox, recv_publink, source, me
-OPTIONS:
-    -w, --url=URI                    URL of application, e.g. http://org.asperafiles.com
-    -u, --username=STRING            username to log in
-    -p, --password=STRING            password
-        --recipient=STRING           package recipient
-        --title=STRING               package title
-        --note=STRING                package note
-        --metadata=@json:JSON_STRING package metadata
-        --source-name=STRING         create package from remote source (by name)
-        --box=TYPE                   package box. Values=(inbox,sent,archive), current=inbox
-
-COMMAND: files
-SUBCOMMANDS: package, repo, faspexgw, admin
-OPTIONS:
-    -t, --auth=TYPE                  type of authentication. Values=(basic,web,jwt), current=jwt
-    -w, --url=URI                    URL of application, e.g. http://org.asperafiles.com
-    -u, --username=STRING            username to log in
-    -p, --password=STRING            password
-    -k, --private-key=STRING         RSA private key for JWT (@ for ext. file)
-        --workspace=STRING           name of workspace
-        --recipient=STRING           package recipient
-        --title=STRING               package title
-        --note=STRING                package note
-        --secret=STRING              access key secret for node
-
-COMMAND: node
-SUBCOMMANDS: info, browse, mkdir, mklink, mkfile, rename, delete, upload, download, stream, transfer, cleanup, forward, access_key, watch_folder
-OPTIONS:
-    -w, --url=URI                    URL of application, e.g. http://org.asperafiles.com
-    -u, --username=STRING            username to log in
-    -p, --password=STRING            password
-        --persistency=FILEPATH       persistency file (cleanup,forward)
-        --filter-transfer=EXPRESSION Ruby expression for filter at transfer level (cleanup)
-        --filter-file=EXPRESSION     Ruby expression for filter at file level (cleanup)
-        --filter-request=EXPRESSION  JSON expression for filter on API request
-
-COMMAND: orchestrator
-SUBCOMMANDS: info, workflow, plugins, processes
-OPTIONS:
-    -w, --url=URI                    URL of application, e.g. http://org.asperafiles.com
-    -u, --username=STRING            username to log in
-    -p, --password=STRING            password
-        --params=HASH_TABLE          parameters hash table, use @json:{"param":"value"}
-        --result=step:name           work step:parameter expected as result
-        --synchronous=YES_NO. Values=(yes,no), current=no
-                                     work step:parameter expected as result
-
-COMMAND: shares
-SUBCOMMANDS: info, browse, mkdir, mklink, mkfile, rename, delete, upload, download
-OPTIONS:
-    -w, --url=URI                    URL of application, e.g. http://org.asperafiles.com
-    -u, --username=STRING            username to log in
-    -p, --password=STRING            password
 
 ```
 
@@ -268,7 +158,7 @@ Note that actions and parameter values can be written in short form.
 ## Option and Argument values
 
 The value for options (--option=VALUE) and command arguments are normally processed directly 
-from the command line. I.e. aslmcli command --option=VAL1 VAL2 takes "VAL1" as the value for
+from the command line. I.e. `aslmcli command --option=VAL1 VAL2` takes "VAL1" as the value for
 option "option", and "VAL2" as the value for first argument.
 
 It is also possible to retrieve a value with the following special prefixes:
@@ -301,9 +191,9 @@ of a parameter set. Sub keys are parameter values. Example:
 
 ```yaml
 myapp:
-  :url: https://10.25.0.25/aspera/orchestrator
-  :username: admin
-  :password: MyPassword
+  url: https://10.25.0.25/aspera/orchestrator
+  username: admin
+  password: MyPassword
 ```
 
 This specifies a parameter set called "myapp" and defines some default values for some
@@ -329,14 +219,16 @@ Default parameters are loaded using this algorithm:
 * this file is read, and the CLI tool reads the configuration specified in the section "config"
     * this section may contain a sub section "default"
 * when the first level command is executed, it tries to load some default parameters:
-    * if option '--load' is specified, this reads the comma separated list of configurations
+    * if option '--load-params=xxxx' is specified (or -Pxxxx), this reads the comma separated list of parameter sets
     * else it looks for the name of the default configuration name in section config:default and loads it
-    * else it looks for a configuration named &lt;plugin&gt;_default and load it
+    * else it looks for a configuration named &lt;plugin&gt;_default and loads it
     * else there is no default parameter
 
 A parameter value can be specified with the same syntax as section "Option and Argument values"
 
 Parameters are evaluated in the order of command line.
+
+To avoid loading the default parameter set for a plugin, just specify a non existing configuration: `-Px`
 
 Here is an example:
 
@@ -352,44 +244,46 @@ config:
     :server: server_default
     :orchestrator: orchestrator_default
 files_default:
-  :auth: :jwt
-  :url: https://mycompany.asperafiles.com
-  :client_id: <insert client id here>
-  :client_secret: <insert client secret here>
-  :private_key: "@file:~/.aspera/aslmcli/filesapikey"
-  :username: laurent@asperasoft.com
+  auth: :jwt
+  url: https://mycompany.asperafiles.com
+  client_id: <insert client id here>
+  client_secret: <insert client secret here>
+  private_key: "@file:~/.aspera/aslmcli/filesapikey"
+  username: laurent@asperasoft.com
 files_p:
-  :auth: :web
-  :url: https://aspera.asperafiles.com
-  :client_id: <insert client id here>
-  :client_secret: <insert client secret here>
-  :redirect_uri: http://local.connectme.us:12345
+  auth: :web
+  url: https://aspera.asperafiles.com
+  client_id: <insert client id here>
+  client_secret: <insert client secret here>
+  redirect_uri: http://local.connectme.us:12345
 faspex_default:
-  :url: https://10.25.0.3/aspera/faspex
-  :username: admin
-  :password: MyPassword
-  :storage:
+  url: https://10.25.0.3/aspera/faspex
+  username: admin
+  password: MyPassword
+  storage:
     testlaurent:
-      :node: my_fpx_node
-      :path: /testlaurent
+      node: my_fpx_node
+      path: /testlaurent
 shares_default:
-  :url: https://10.25.0.6
-  :username: admin
-  :password: MyPassword
+  url: https://10.25.0.6
+  username: admin
+  password: MyPassword
 node_default:
-  :url: https://10.25.0.8:9092
-  :username: node_root
-  :password: MyPassword
+  url: https://10.25.0.8:9092
+  username: node_root
+  password: MyPassword
 node_my_fpx_node:
-  :url: https://10.25.0.8:9092
-  :username: node_root
-  :password: MyPassword
+  url: https://10.25.0.8:9092
+  username: node_root
+  password: MyPassword
 console_default:
-  :url: https://console.asperademo.com/aspera/console
-  :username: nyapiuset
-  :password: "mypassword"
+  url: https://console.asperademo.com/aspera/console
+  username: nyapiuset
+  password: "mypassword"
 server_default:
-  :transfer_spec: '{"remote_host":"demo.asperasoft.com","remote_user":"asperaweb","password":"xxxx"}'
+  url: ssh://demo.asperasoft.com:33001
+  username: asperaweb
+  password: demoaspera
 ```
 
 ## Learning Aspera Product APIs (REST)
@@ -444,28 +338,7 @@ or if the browser is started automatically to the URL.
 ## Sample commands
 
 ```bash
-aslmcli server browse /
-aslmcli server upload ~/200KB.1 /projectx
-aslmcli server download /projectx/200KB.1 .
-aslmcli shares browse /
-aslmcli shares upload ~/200KB.1 /projectx
-aslmcli shares download /projectx/200KB.1 .
-aslmcli faspex recv_publink https://myfaspex.myorg.com/aspera/faspex/external_deliveries/78780?passcode=a003aaf2f53e3123456b908525084db6bebc7031
-aslmcli faspex package list
-aslmcli faspex package recv 05b92393-02b7-4900-ab69-fd56721e896c
-aslmcli faspex package send ~/200KB.1 --load-params=myfaspex --note="my note" --title="my title" --recipient="laurent@asperasoft.com"
-aslmcli console transfers list
-aslmcli node browse /
-aslmcli node upload ~/200KB.1 /tmp
-aslmcli node download /tmp/200KB.1 .
-aslmcli files repo browse /
-aslmcli files repo upload ~/200KB.1 /
-aslmcli files repo download /200KB.1 .
-aslmcli files package send ~/200KB.1
-aslmcli files package list
-aslmcli files package recv VleoMSrlA
-aslmcli files admin events
-aslmcli files admin usage_reports
+<%= File.read("sample_commands") %>
 ...and more
 ```
 
@@ -489,6 +362,12 @@ $ openssl genrsa -passout pass:dummypassword -out ${APIKEY}.protected 2048
 $ openssl rsa -passin pass:dummypassword -in ${APIKEY}.protected -out ${APIKEY}
 $ openssl rsa -pubout -in ${APIKEY} -out ${APIKEY}.pub
 $ rm -f ${APIKEY}.protected
+```
+
+Or simply use the CLI:
+
+```bash
+$ aslmcli config genkey ~/.aspera/aslmcli/filesapikey
 ```
 
 ## FASP agents and transfer options
@@ -533,16 +412,35 @@ Then create a configuration for the "SHOD" instance in the configuration file: i
 Create another configuration for the Azure ATS instance: in section "node", named azureats.
 Then execute the following command:
 ```bash
-aslmcli download /share/sourcefile /destinationfolder --load-params=awsshod --transfer=node --transfer-node=azureats
+aslmcli node download /share/sourcefile /destinationfolder --load-params=awsshod --transfer=node --transfer-node=azureats
 ```
 This will get transfer information from the SHOD instance and tell the Azure ATS instance 
 to download files.
 
+### changing transfer parameters : Transfer Spec
+
+Transfer parameters are contained in a "transfer spec". This is an associative array.
+Changing a transfer spec using JSON syntax is done like this, for instance to force 
+a specific TCP port:
+
+```
+--ts=@json:'{"ssh_port":12345}'
+```
+
+To force http fallback mode:
+
+```
+--ts=@json:'{"http_fallback":"force"}'
+```
+
+All standard transfer spec parameter can be overloaded. To display parameter,
+run in debug mode (--log-level=debug).
+
 ### Multi session transfers
 
-Multi-session is also available, simply add `--ts='{...}'` like
+Multi-session is also available, simply add `--ts=@json:'{...}'` like
 ```bash
---ts='{"multi_session":10,"multi_session_threshold":1,"target_rate_kbps":500000,"checksum_type":"none","cookie":"custom:aslmcli:Laurent:My Transfer"}'
+--ts=@json:'{"multi_session":10,"multi_session_threshold":1,"target_rate_kbps":500000,"checksum_type":"none","cookie":"custom:aslmcli:Laurent:My Transfer"}'
 ```
 This is supported only with node based transfers.
 
@@ -552,7 +450,7 @@ It is possible to start a FASPStream session using the node API:
 Use the "node stream create" command, then arguments are provided as a "transfer spec".
 
 ```bash
-./bin/aslmcli node stream create --ts='{"direction":"send","source":"udp://233.3.3.4:3000?loopback=1&ttl=2","destination":"udp://233.3.3.3:3001/","remote_host":"localhost","remote_user":"stream","password":"XXXX"}' --load-params=stream
+./bin/aslmcli node stream create --ts=@json:'{"direction":"send","source":"udp://233.3.3.4:3000?loopback=1&ttl=2","destination":"udp://233.3.3.3:3001/","remote_host":"localhost","remote_user":"stream","password":"XXXX"}' --load-params=stream
 ```
 
 ### Download FASP
@@ -589,6 +487,13 @@ $ aslmcli client connect id 'Aspera Connect for Mac Intel 10.6' links id 'Mac In
 downloaded: AsperaConnect-3.6.1.111259-mac-intel-10.6.dmg
 ```
 
+### Transfer filder
+
+special in node:
+
+```
+, "transfer_filter"=>"t['status'].eql?('completed') and t['start_spec']['remote_user'].eql?('faspex')", :file_filter=>"f['status'].eql?('completed') and 0 != f['size'] and t['start_spec']['direction'].eql?('send')"
+```
 
 ## Create your own plugin
 ```bash
@@ -615,17 +520,17 @@ the node API is used, for this it is required to add a section ":storage" that l
 a storage name to a node config and sub path. Example:
 ```yaml
 faspex_default:
-  :url: https://10.25.0.3/aspera/faspex
-  :username: admin
-  :password: MyPassword
+  url: https://10.25.0.3/aspera/faspex
+  username: admin
+  password: MyPassword
   :storage:
     testlaurent:
-      :node: my_fpx_node
+      node: my_fpx_node
       :path: /myfiles
 my_fpx_node:
-  :url: https://10.25.0.3:9092
-  :username: node_faspex
-  :password: MyPassword
+  url: https://10.25.0.3:9092
+  username: node_faspex
+  password: MyPassword
 ```
 
 In this example, a faspex storage named "testlaurent" exists in Faspex, and is located

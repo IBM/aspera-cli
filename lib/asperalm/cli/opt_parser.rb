@@ -166,11 +166,10 @@ module Asperalm
 
       def set_defaults(values)
         Log.log.info("set_defaults=#{values}")
-        return if values.nil?
-        params=values.keys
-        Log.log.info("params=#{params}")
-        params.each { |option_symbol|
-          set_option(option_symbol,values[option_symbol]) #if values.has_key?(option_symbol)
+        raise "internal error: setting default with no hash: #{values.class}" if !values.is_a?(Hash)
+        values.each { |k,v|
+          # in conf file, key is string, in config, key is symbol
+          set_option(k.to_sym,v)
         }
       end
 

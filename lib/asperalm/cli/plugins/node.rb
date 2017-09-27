@@ -25,6 +25,24 @@ module Asperalm
           return table_data.map {|i| ['remote_user','remote_host'].each { |field| i[field]=i['start_spec'][field] }; i }
         end
 
+        def self.hash_to_flat(result,name,value,prefix='')
+          if value.is_a?(Hash)
+            value.each do |k,v|
+              hash_to_flat(result,k,v,prefix+name+':')
+            end
+          else
+            result.push({'key'=>prefix+name,'value'=>value})
+          end
+        end
+
+        def self.textify_key_val_list(table_data)
+          result=[]
+          table_data.each do |i|
+            hash_to_flat(result,i['key'],i['value'])
+          end
+          return result
+        end
+
         # key/value is defined in main in hash_table
         def self.textify_bool_list_result(list,name_list)
           list.each_index do |i|
@@ -187,9 +205,9 @@ module Asperalm
           case command
           when :create
             parameters=Main.tool.options.get_next_arg_value('JSON creation parameters, use @json:')
-            return {:type => :other_struct, :data=>api_node.create(res_class_path,parameters)[:data], :fields=>['id','root_file_id','storage','license']}
+            return {:type => :other_struct, :data=>api_node.create(res_class_path,parameters)[:data], :fields=>display_fields}
           when :list
-            return {:type => :hash_array, :data=>api_node.read(res_class_path)[:data], :fields=>['id','root_file_id','storage','license']}
+            return {:type => :hash_array, :data=>api_node.read(res_class_path)[:data], :fields=>display_fields}
           when :id
             one_res_id=Main.tool.options.get_next_arg_value("#{res_name} id")
             one_res_path="#{res_class_path}/#{one_res_id}"
@@ -204,13 +222,36 @@ module Asperalm
           end
         end
 
-        def action_list; self.class.common_actions.clone.concat([ :stream, :transfer, :cleanup, :forward, :access_key, :watch_folder, :service ]);end
+        def action_list; self.class.common_actions.clone.concat([ :stream, :transfer, :cleanup, :forward, :access_key, :watch_folder, :service, :async, :central ]);end
 
         def execute_action
           api_node=Rest.new(Main.tool.options.get_option_mandatory(:url),{:auth=>{:type=>:basic,:username=>Main.tool.options.get_option_mandatory(:username), :password=>Main.tool.options.get_option_mandatory(:password)}})
           command=Main.tool.options.get_next_arg_from_list('command',action_list)
           case command
           when *self.class.common_actions; return self.class.execute_common(command,api_node)
+          when :async
+            command=Main.tool.options.get_next_arg_from_list('command',[ :list, :id ])
+            case command
+            when :list
+              resp=api_node.read('async/list')[:data]['sync_ids']
+              return { :data => resp, :type => :value_list, :name=>'id'  }
+            when :id
+              asyncid=Main.tool.options.get_next_arg_value("async id")
+              command=Main.tool.options.get_next_arg_from_list('command',[ :delete,:summary,:counters ])
+              case command
+              when :delete
+                # delete POST /async/delete '{"syncs":["4"]}'
+                raise "not implemented"
+              when :summary
+                resp=api_node.create('async/summary',{"syncs"=>[asyncid]})[:data]["sync_summaries"].first
+                return Main.no_result if resp.nil?
+                return { :data => resp, :type => :key_val_list }
+              when :counters
+                resp=api_node.create('async/counters',{"syncs"=>[asyncid]})[:data]["sync_counters"].first[asyncid].last
+                return Main.no_result if resp.nil?
+                return { :data => resp, :type => :key_val_list }
+              end
+            end
           when :stream
             command=Main.tool.options.get_next_arg_from_list('command',[ :list, :create, :info, :modify, :cancel ])
             case command
@@ -284,22 +325,41 @@ module Asperalm
               raise "error"
             end
           when :watch_folder
+            res_class_path='v3/watchfolders'
+            #return generic_action(api_node,'v3/watchfolders',nil)
             command=Main.tool.options.get_next_arg_from_list('command',[ :list, :create, :id])
             case command
             when :list
-              resp=api_node.call({:operation=>'GET',:subpath=>'v3/watchfolders',:headers=>{'Accept'=>'application/json'}})
+              resp=api_node.call({:operation=>'GET',:subpath=>res_class_path,:headers=>{'Accept'=>'application/json'}})
               #  :fields=>['id','root_file_id','storage','license']
-              return { :data => resp[:data], :type=>:other_struct }
+              return { :data => resp[:data]["ids"], :type=>:value_list, :name=>"id" }
             when :create
               #
               params=Main.tool.options.get_next_arg_value("WF creation data (structure)")
-              resp=api_node.call({:operation=>'POST',:subpath=>'v3/watchfolders',:headers=>{'Accept'=>'application/json'},:json_params=>params})
+              resp=api_node.call({:operation=>'POST',:subpath=>res_class_path,:headers=>{'Accept'=>'application/json'},:json_params=>params})
               return {:data=>resp[:data]['id'],:type => :status}
             when :id
-              wfid=Main.tool.options.get_next_arg_value("watch folder id")
-              raise "not impl"
-            else
-              raise "error"
+              one_res_id=Main.tool.options.get_next_arg_value("watch folder id")
+              one_res_path="#{res_class_path}/#{one_res_id}"
+              command=Main.tool.options.get_next_arg_from_list('command',[ :delete, :show, :update ])
+              case command
+              when :delete
+                resp=api_node.delete(one_res_path)
+                return {:type => :status,:data=>'done'}
+              when :update
+                modify_data=Main.tool.options.get_next_arg_value("JSON value to modify")
+                resp=api_node.update(one_res_path,modify_data)
+                return {:type => :status,:data=>'done'}
+              when :show
+                return {:type => :key_val_list, :data=>api_node.read(one_res_path)[:data], :textify => lambda { |table_data| Node.textify_key_val_list(table_data) } }
+              end
+            end
+          when :central
+            command=Main.tool.options.get_next_arg_from_list('command',[ :list])
+            case command
+            when :list
+              resp=api_node.create('services/rest/transfers/v1/sessions',{"session_filter"=>{"iteration_token"=>"CURRENT_POSITION"}})
+              return {:data=>resp[:data]["session_info_result"]["session_info"],:type=>:hash_array,:fields=>["session_uuid","status","transport","direction","bytes_transferred"]}
             end
           when :cleanup
             transfers=self.class.get_transfers_iteration(api_node,Main.tool.options.get_option(:persistency),{:active_only=>false})
@@ -355,7 +415,7 @@ module Asperalm
             # execute transfer
             return Main.tool.start_transfer(transfer_spec)
           end
-          raise "error"
+          raise "ERROR: shall not reach this line"
         end # execute_action
       end # Main
     end # Plugin

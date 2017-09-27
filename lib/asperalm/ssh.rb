@@ -3,6 +3,7 @@ require 'net/ssh'
 module Asperalm
   class Ssh
     def initialize(host,username,options)
+      Log.log.debug("ssh:#{username}@#{host}")
       @host=host
       @username=username
       @options=options

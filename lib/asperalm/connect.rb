@@ -38,6 +38,14 @@ module Asperalm
             :sub_bin=>File.join('Contents','Resources'),
             :sub_keys=>File.join('Contents','Resources'),
             :dsa=>'asperaweb_id_dsa.openssh'})
+          common_places.push({
+            :ascp=>'ascp',
+            :app_root=>'/Library/Aspera',
+            :run_root=>File.join(Dir.home,'Library','Application Support','Aspera','Enterprise Server'),
+            :log_root=>File.join(Dir.home,'Library','Logs','Aspera'),
+            :sub_bin=>'bin',
+            :sub_keys=>'var',
+            :dsa=>'aspera_tokenauth_id_dsa'})
         when :windows
           common_places.push({
             :ascp=>'ascp.exe',
@@ -69,7 +77,7 @@ module Asperalm
             return @@fasp_install_paths
           end
         end
-        raise "no FASP installation found"
+        Log.log.debug("no FASP found in common places".red)
       end
       return @@fasp_install_paths
     end
@@ -79,6 +87,7 @@ module Asperalm
       # this contains var/run, files generated on runtime
       sub_varrun='var/run'
       p = fasp_install_paths
+      raise "no FASP installation found\nPlease check manual on how to install FASP." if p.nil?
       res={}
       res[:ascp] = { :path =>File.join(p[:app_root],p[:sub_bin],p[:ascp]), :type => :file, :required => true}
       res[:ssh_bypass_key_dsa] = { :path =>File.join(p[:app_root],p[:sub_keys],p[:dsa]), :type => :file, :required => true}

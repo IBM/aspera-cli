@@ -1,5 +1,4 @@
 require "thor"
-require "asperalm/cli/plugin"
 
 module Asperalm
   module Cli

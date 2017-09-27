@@ -8,6 +8,8 @@ module Asperalm
   module Cli
     module Plugins
       class Faspex < BasicAuthPlugin
+        @@KEY_NODE='node'
+        @@KEY_PATH='path'
         alias super_declare_options declare_options
         def declare_options
           super_declare_options
@@ -131,7 +133,7 @@ module Asperalm
               return Main.tool.start_transfer(transfer_spec)
             when :recv
               # UUID is not reliable, it changes at every call
-              if true
+              if false
                 pkguuid=Main.tool.options.get_next_arg_value("Package ID")
                 all_inbox_xml=api_faspex.call({:operation=>'GET',:subpath=>"#{Main.tool.options.get_option(:pkgbox).to_s}.atom",:headers=>{'Accept'=>'application/xml'}})[:http].body
                 allinbox=XmlSimple.xml_in(all_inbox_xml, {"ForceArray" => true})
@@ -153,7 +155,9 @@ module Asperalm
               transfer_spec=Main.tool.faspmanager.fasp_uri_to_transferspec(transfer_uri)
               # NOTE: only external users have token in faspe: link !
               if !transfer_spec.has_key?('token')
-                xmlpayload='<?xml version="1.0" encoding="UTF-8"?><url-list xmlns="http://schemas.asperasoft.com/xml/url-list"><url href="'+transfer_uri+'"/></url-list>'
+                sanitized=transfer_uri.gsub('&','&amp;')
+                #sanitized=transfer_uri.gsub(/\?.*/,'')
+                xmlpayload='<?xml version="1.0" encoding="UTF-8"?><url-list xmlns="http://schemas.asperasoft.com/xml/url-list"><url href="'+sanitized+'"/></url-list>'
                 transfer_spec['token']=api_faspex.call({:operation=>'POST',:subpath=>"issue-token?direction=down",:headers=>{'Accept'=>'text/plain','Content-Type'=>'application/vnd.aspera.url-list+xml'},:text_body_params=>xmlpayload})[:http].body
               end
               transfer_spec['direction']='receive'
@@ -189,11 +193,11 @@ module Asperalm
               when :info
                 return {:data=>source_info,:type=>:key_val_list}
               when :node
-                node_config=Main.tool.get_plugin_default_config(:node,source_info[:node])
-                raise CliError,"No such node aslmcli config: \"#{source_info[:node]}\"" if node_config.nil?
+                node_config=Main.tool.get_plugin_default_config(:node,source_info[@@KEY_NODE])
+                raise CliError,"No such node aslmcli config: \"#{source_info[@@KEY_NODE]}\"" if node_config.nil?
                 api_node=Rest.new(node_config[:url],{:auth=>{:type=>:basic,:username=>node_config[:username], :password=>node_config[:password]}})
                 command=Main.tool.options.get_next_arg_from_list('command',Node.common_actions)
-                return Node.execute_common(command,api_node,source_info[:path])
+                return Node.execute_common(command,api_node,source_info[@@KEY_PATH])
               end
             end
           when :me

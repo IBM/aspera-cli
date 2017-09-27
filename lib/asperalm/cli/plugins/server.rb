@@ -1,5 +1,5 @@
 require 'asperalm/cli/main'
-require 'asperalm/cli/plugin'
+require 'asperalm/cli/basic_auth_plugin'
 require 'asperalm/ascmd'
 require 'asperalm/ssh'
 
@@ -7,9 +7,8 @@ module Asperalm
   module Cli
     module Plugins
       # implement basic remote access with FASP/SSH
-      class Server < Plugin
-        def declare_options; end
-
+      class Server < BasicAuthPlugin
+        #def declare_options; end
         def action_list; [:nodeadmin,:userdata,:configurator,:download,:upload,:browse,:delete,:rename].push(*Asperalm::AsCmd.action_list);end
 
         # converts keys in hash table from symbol to string
@@ -24,17 +23,28 @@ module Asperalm
         end
 
         def execute_action
+          server_uri=URI.parse(Main.tool.options.get_option_mandatory(:url))
+          Log.log.debug("URI : #{server_uri}, port=#{server_uri.port}, scheme:#{server_uri.scheme}")
+          raise CliError,"Only ssh scheme is supported in url" if !server_uri.scheme.eql?("ssh")
+          username=Main.tool.options.get_option_mandatory(:username)
+          ssh_options={}
+          # todo : support ssh key
+          ssh_options[:password]=Main.tool.options.get_option_mandatory(:password)
+          ssh_options[:port]=server_uri.port if !server_uri.port.nil?
+          ssh_executor=Ssh.new(server_uri.hostname,username,ssh_options)
+          ascmd=Asperalm::AsCmd.new(ssh_executor)
+
+          transfer_spec={
+            "remote_host"=>server_uri.hostname,
+            "remote_user"=>username,
+            "password"=>ssh_options[:password]
+          }
+
+          # get command and set aliases
           command=Main.tool.options.get_next_arg_from_list('command',action_list)
-          # aliases
           command=:ls if command.eql?(:browse)
           command=:rm if command.eql?(:delete)
           command=:mv if command.eql?(:rename)
-          ssh_executor=Ssh.new(
-          Main.tool.faspmanager.class.ts_override_data['remote_host'],
-          Main.tool.faspmanager.class.ts_override_data["remote_user"],
-          {:password => Main.tool.faspmanager.class.ts_override_data["password"]})
-
-          ascmd=Asperalm::AsCmd.new(ssh_executor)
           begin
             case command
             when :nodeadmin,:userdata,:configurator
@@ -45,20 +55,20 @@ module Asperalm
             when :upload
               filelist = Main.tool.options.get_remaining_arguments("source list",1)
               destination=Main.tool.options.get_next_arg_value("destination")
-              transfer_spec={
+              transfer_spec.merge!({
                 'direction'=>'send',
                 'destination_root'=>destination,
                 'paths'=>filelist.map { |f| {'source'=>f } }
-              }
+              })
               return Main.tool.start_transfer(transfer_spec)
             when :download
               filelist = Main.tool.options.get_remaining_arguments("source list",1)
               destination=Main.tool.options.get_next_arg_value("destination")
-              transfer_spec={
+              transfer_spec.merge!({
                 'direction'=>'receive',
                 'destination_root'=>destination,
                 'paths'=>filelist.map { |f| {'source'=>f } }
-              }
+              })
               return Main.tool.start_transfer(transfer_spec)
             when :mkdir; ascmd.mkdir(Main.tool.options.get_next_arg_value('path'));return Main.result_success
             when :mv; ascmd.mv(Main.tool.options.get_next_arg_value('src'),Main.tool.options.get_next_arg_value('dst'));return Main.result_success
