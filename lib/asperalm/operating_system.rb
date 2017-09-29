@@ -2,11 +2,23 @@ require 'asperalm/log'
 
 module Asperalm
   # Allows a user to open a Url
-  # if method is "tty", then URL is displayed on terminal
-  # if method is "os", then the URL will be opened with the default browser.
+  # if method is "text", then URL is displayed on terminal
+  # if method is "graphical", then the URL will be opened with the default browser.
   class OperatingSystem
-    def self.open_url_methods; [ :tty, :os ]; end
-    @@open_url_method=:tty
+    def self.gui_modes; [ :text, :graphical ]; end
+    @@open_url_method=:text
+
+    def self.default_gui_mode
+      case current_os_type
+      when :windows
+        return :graphical
+      else
+        if ENV.has_key?("DISPLAY") and !ENV["DISPLAY"].empty?
+          return :graphical
+        end
+        return :text
+      end
+    end
 
     def self.open_url_method=(value)
       @@open_url_method=value
@@ -26,9 +38,9 @@ module Asperalm
         return :unix
       end
     end
-    
+
     # command must be non blocking
-    def self.open_system_uri(uri)
+    def self.open_uri_graphical(uri)
       case current_os_type
       when :mac
         system("open '#{uri.to_s}'")
@@ -42,10 +54,15 @@ module Asperalm
     # this is non blocking
     def self.open_uri(the_url)
       case @@open_url_method
-      when :os
-        open_system_uri(the_url)
-      when :tty
-        puts "USER ACTION: please enter this url in a browser:\n"+the_url.to_s.red()+"\n"
+      when :graphical
+        open_uri_graphical(the_url)
+      when :text
+        case the_url.to_s
+        when /^http/
+          puts "USER ACTION: please enter this url in a browser:\n"+the_url.to_s.red()+"\n"
+        else
+          puts "USER ACTION: open this:\n"+the_url.to_s.red()+"\n"
+        end
       else
         raise StandardError,"unsupported url open method: #{@@open_url_method}"
       end

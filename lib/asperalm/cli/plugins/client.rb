@@ -1,6 +1,6 @@
 require 'asperalm/cli/main'
 require 'asperalm/cli/plugins/node'
-require 'asperalm/Connect'
+require 'asperalm/connect'
 require 'asperalm/operating_system'
 
 module Asperalm

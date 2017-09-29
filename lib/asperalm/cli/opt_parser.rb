@@ -30,7 +30,18 @@ module Asperalm
         @unprocessed_options=[]
         # key = name of option, either Proc(set/get) or value
         @available_option={}
+        @sym_options=[]
         super
+      end
+
+      def read_env_vars
+        Log.log.debug("read_env_vars")
+        # options can also be provided by env vars : --param-name -> ASLMCLI_PARAM_NAME
+        ENV.each do |k,v|
+          if k.start_with?('ASLMCLI_')
+            set_option(k.gsub(/^ASLMCLI_/,'').downcase.to_sym,v)
+          end
+        end
       end
 
       def set_argv(argv)
@@ -160,6 +171,8 @@ module Asperalm
           return @available_option[option_symbol].call(:get,nil) # TODO ? check
         else
           Log.log.debug("get #{option_symbol} (value)")
+          # convert option to symbol if it came from conf file...
+          @available_option[option_symbol]=@available_option[option_symbol].to_sym if @sym_options.include?(option_symbol) and !@available_option[option_symbol].nil? and !@available_option[option_symbol].is_a?(Symbol)
           return @available_option[option_symbol]
         end
       end
@@ -175,6 +188,7 @@ module Asperalm
 
       def add_opt_list(option_symbol,values,help,*args)
         Log.log.info("add_opt_list #{option_symbol}->#{args}")
+        @sym_options.push(option_symbol)
         value=get_option(option_symbol)
         args.push(values)
         args.push("#{help}. Values=(#{values.join(',')}), current=#{value}")

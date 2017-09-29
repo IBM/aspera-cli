@@ -16,7 +16,7 @@ test:
 	bundle exec rake spec
 
 clean::
-	rm -f $(GEMNAME)-*.gem $(SRCZIPBASE)*.zip *.log token.* README.pdf README.html README.md sample_commands
+	rm -f $(GEMNAME)-*.gem $(SRCZIPBASE)*.zip *.log token.* README.pdf README.html README.md sample_commands.txt sample_usage.txt $(TEST_CONFIG)
 	rm -fr doc
 	gem uninstall -a -x $(GEMNAME)
 cleanupgems:
@@ -29,14 +29,16 @@ README.pdf: README.md
 	pandoc -o README.html README.md
 	wkhtmltopdf README.html README.pdf
 
-README.md: README.erb.md sample_commands sample_usage
-	erb README.erb.md > README.md
+README.md: README.erb.md sample_commands.txt sample_usage.txt
+	COMMANDS=sample_commands.txt USAGE=sample_usage.txt erb README.erb.md > README.md
 
-sample_commands: Makefile
-	sed -n -e 's/.*\$$(ASCLI)/aslmcli/p' Makefile|grep -v 'Sales Engineering'|sed -E -e 's/\$$\(SAMPLE_FILE\)/sample_file.bin/g;s/\$$\(NODEDEST\)/sample_dest_folder/g;s/\$$\(TEST_FOLDER\)/sample_dest_folder/g;s/ibmfaspex.asperasoft.com/faspex.mycompany.com/g;s/(")(api_key|username)(":")[^"]*(")/\1\2\3my_key_here\4/g;'|grep -v 'localhost:9443' > sample_commands
-.PHONY: sample_usage
-sample_usage:
-	$(ASCLI) -h 2> sample_usage || true
+sample_commands.txt: Makefile
+	sed -n -e 's/.*\$$(ASCLI)/aslmcli/p' Makefile|grep -v 'Sales Engineering'|sed -E -e 's/\$$\(SAMPLE_FILE\)/sample_file.bin/g;s/\$$\(NODEDEST\)/sample_dest_folder/g;s/\$$\(TEST_FOLDER\)/sample_dest_folder/g;s/ibmfaspex.asperasoft.com/faspex.mycompany.com/g;s/(")(api_key|username)(":")[^"]*(")/\1\2\3my_key_here\4/g;'|grep -v 'localhost:9443' > sample_commands.txt
+
+# depends on all sources, so regenerate always
+.PHONY: sample_usage.txt
+sample_usage.txt:
+	$(ASCLI) -Cnone -h 2> sample_usage.txt || true
 
 $(ZIPFILE): README.md
 	rm -f $(SRCZIPBASE)_*.zip
@@ -247,7 +249,25 @@ tsy3:
 	$(ASCLI) node async id 1 counters 
 tsync: tsy1 tsy2 tsy3
 
-tests: tshares tfaspex tconsole tnode tfiles tfaspex2 tfasp torc tats tcon tsync
+TEST_CONFIG=sample.conf
+tconf1:
+	ASLMCLI_CONFIG_FILE=$(TEST_CONFIG) $(ASCLI) config id conf_name set param value
+tconf2:
+	ASLMCLI_CONFIG_FILE=$(TEST_CONFIG) $(ASCLI) config id conf_name show
+tconf3:
+	ASLMCLI_CONFIG_FILE=$(TEST_CONFIG) $(ASCLI) config list
+tconf4:
+	ASLMCLI_CONFIG_FILE=$(TEST_CONFIG) $(ASCLI) config overview
+tconf5:
+	ASLMCLI_CONFIG_FILE=$(TEST_CONFIG) $(ASCLI) config id default set shares conf_name
+tconf6:
+	ASLMCLI_CONFIG_FILE=$(TEST_CONFIG) $(ASCLI) config id conf_name delete
+tconf7:
+	ASLMCLI_CONFIG_FILE=$(TEST_CONFIG) $(ASCLI) config id conf_name initialize @json:'{"p1":"v1","p2":"v2"}'
+
+tconf: tconf1 tconf2 tconf3 tconf4 tconf5 tconf6 tconf7
+
+tests: tshares tfaspex tconsole tnode tfiles tfaspex2 tfasp torc tats tcon tsync tconf
 
 tfxgw:
 	$(ASCLI) --load-params=reset --url=https://localhost:9443/aspera/faspex --username=unused --password=unused faspex package send ~/200KB.1 --insecure=yes --note="my note" --title="my title" --recipient="laurent@asperasoft.com"

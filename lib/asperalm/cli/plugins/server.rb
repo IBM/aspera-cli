@@ -8,7 +8,18 @@ module Asperalm
     module Plugins
       # implement basic remote access with FASP/SSH
       class Server < BasicAuthPlugin
-        #def declare_options; end
+
+        def initialize
+        end
+
+        alias super_declare_options declare_options
+
+        def declare_options
+          super_declare_options
+          Main.tool.options.set_option(:ssh_keys,[])
+          Main.tool.options.add_opt_simple(:ssh_keys,"--ssh-key=PATH_ARRAY",Array, "PATH_ARRAY is @json:'[\"the/path\"]'")
+        end
+
         def action_list; [:nodeadmin,:userdata,:configurator,:download,:upload,:browse,:delete,:rename].push(*Asperalm::AsCmd.action_list);end
 
         # converts keys in hash table from symbol to string
@@ -26,19 +37,33 @@ module Asperalm
           server_uri=URI.parse(Main.tool.options.get_option_mandatory(:url))
           Log.log.debug("URI : #{server_uri}, port=#{server_uri.port}, scheme:#{server_uri.scheme}")
           raise CliError,"Only ssh scheme is supported in url" if !server_uri.scheme.eql?("ssh")
-          username=Main.tool.options.get_option_mandatory(:username)
-          ssh_options={}
-          # todo : support ssh key
-          ssh_options[:password]=Main.tool.options.get_option_mandatory(:password)
-          ssh_options[:port]=server_uri.port if !server_uri.port.nil?
-          ssh_executor=Ssh.new(server_uri.hostname,username,ssh_options)
-          ascmd=Asperalm::AsCmd.new(ssh_executor)
 
           transfer_spec={
             "remote_host"=>server_uri.hostname,
-            "remote_user"=>username,
-            "password"=>ssh_options[:password]
+            "remote_user"=>Main.tool.options.get_option_mandatory(:username),
           }
+          ssh_options={}
+          if !server_uri.port.nil?
+            ssh_options[:port]=server_uri.port
+            transfer_spec["ssh_port"]=server_uri.port
+          end
+          cred_set=false
+          password=Main.tool.options.get_option(:password)
+          if !password.nil?
+            ssh_options[:password]=password
+            transfer_spec["password"]=password
+            cred_set=true
+          end
+          ssh_keys=Main.tool.options.get_option(:ssh_keys)
+          raise "internal error, expecting array" if !ssh_keys.is_a?(Array)
+          if !ssh_keys.empty?
+            ssh_options[:keys]=ssh_keys
+            transfer_spec["EX_ssh_key_paths"]=ssh_keys
+            cred_set=true
+          end
+          raise "either password or key must be provided" if !cred_set
+          ssh_executor=Ssh.new(transfer_spec["remote_host"],transfer_spec["remote_user"],ssh_options)
+          ascmd=Asperalm::AsCmd.new(ssh_executor)
 
           # get command and set aliases
           command=Main.tool.options.get_next_arg_from_list('command',action_list)

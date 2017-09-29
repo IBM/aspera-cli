@@ -148,13 +148,13 @@ module Asperalm
       return transfer_spec
     end
 
-  def snake_case(str)
-    str.
-    gsub(/([A-Z]+)([A-Z][a-z])/,'\1_\2').
-    gsub(/([a-z\d])([A-Z])/,'\1_\2').
-    gsub(/([a-z\d])(usec)$/,'\1_\2').
-    downcase
-  end
+    def snake_case(str)
+      str.
+      gsub(/([A-Z]+)([A-Z][a-z])/,'\1_\2').
+      gsub(/([a-z\d])([A-Z])/,'\1_\2').
+      gsub(/([a-z\d])(usec)$/,'\1_\2').
+      downcase
+    end
 
     # start ascp
     # raises FaspError
@@ -364,7 +364,10 @@ module Asperalm
       #ascp_args.push('--tags64', Base64.strict_encode64(JSON.generate(transfer_spec['tags']))) if transfer_spec.has_key?('tags')
 
       # optional args
-      ascp_args.push(*transfer_spec['EX_ascp_args']) if transfer_spec.has_key?('EX_ascp_args')
+      if transfer_spec.has_key?('EX_ascp_args')
+        ascp_args.push(*transfer_spec['EX_ascp_args'])
+        used_names.push('EX_ascp_args')
+      end
 
       # destination will be base64 encoded
       ascp_args.push('--dest64')
@@ -397,12 +400,13 @@ module Asperalm
       Log.log.debug("ts=#{transfer_spec}")
       if (@use_connect_client) # transfer using connect ...
         Log.log.debug("using connect client")
+        raise "Using connect requires a graphical environment" if !OperatingSystem.default_gui_mode.eql?(:graphical)
         connect_url=File.open(Connect.path(:plugin_https_port_file)) {|f| f.gets }.strip
         connect_api=Rest.new("#{connect_url}/v5/connect",{})
         begin
           connect_api.read('info/version')
         rescue Errno::ECONNREFUSED
-          OperatingSystem.open_system_uri('fasp://initialize')
+          OperatingSystem.open_uri_graphical('fasp://initialize')
           sleep 2
         end
         if transfer_spec["direction"] == "send"

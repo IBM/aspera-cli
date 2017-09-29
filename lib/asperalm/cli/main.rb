@@ -21,7 +21,7 @@ module Asperalm
       singleton_class.send(:alias_method, :tool, :instance)
 
       # first level command for the main tool
-      @@MAIN_PLUGIN_NAME_SYM=:config
+      @@MAIN_PLUGIN_NAME_STR='config'
       # name of application, also foldername where config is stored
       @@PROGRAM_NAME = 'aslmcli'
       # folder in $HOME for the application
@@ -36,10 +36,10 @@ module Asperalm
       @@CLI_MODULE=Module.nesting[1].to_s
       # Path to Plugin classes: Asperalm::Cli::Plugins
       @@PLUGINS_MODULE=@@CLI_MODULE+"::Plugins"
-      @@CONFIG_FILE_KEY_VERSION=:version
-      @@CONFIG_FILE_KEY_DEFAULT=:default
+      @@CONFIG_FILE_KEY_VERSION='version'
+      @@CONFIG_FILE_KEY_DEFAULT='default'
       # oldest compatible conf file format
-      @@MIN_CONFIG_VERSION='0.3.7'
+      @@MIN_CONFIG_VERSION='0.4.5'
       @@NO_DEFAULT='none'
       # $HOME/.aspera/aslmcli
       def config_folder
@@ -57,14 +57,16 @@ module Asperalm
 
       def read_config_file(config_file_path=current_config_file)
         if !File.exist?(config_file_path)
-          Log.log.warn "no config file"
-          return {@@MAIN_PLUGIN_NAME_SYM.to_s=>{@@CONFIG_FILE_KEY_VERSION=>@@MIN_CONFIG_VERSION}}
+          Log.log.info("no config file, using empty configuration")
+          return {@@MAIN_PLUGIN_NAME_STR=>{@@CONFIG_FILE_KEY_VERSION=>@@MIN_CONFIG_VERSION}}
         end
         Log.log.debug "loading #{config_file_path}"
         return YAML.load_file(config_file_path)
       end
 
-      def write_config_file(config,config_file_path=current_config_file)
+      def write_config_file(config=@loaded_configs,config_file_path=current_config_file)
+        raise "no configuration loaded" if config.nil?
+        FileUtils::mkdir_p(config_folder) if !Dir.exist?(config_folder)
         Log.log.debug "writing #{config_file_path}"
         File.write(config_file_path,config.to_yaml)
       end
@@ -75,10 +77,9 @@ module Asperalm
       def get_plugin_default_parameters(plugin_sym)
         return nil if @loaded_configs.nil? or !@load_plugin_defaults
         default_config_name=plugin_sym.to_s+'_default'
-        if @loaded_configs.has_key?(@@MAIN_PLUGIN_NAME_SYM.to_s) and
-        @loaded_configs[@@MAIN_PLUGIN_NAME_SYM.to_s].has_key?(@@CONFIG_FILE_KEY_DEFAULT) and
-        @loaded_configs[@@MAIN_PLUGIN_NAME_SYM.to_s][@@CONFIG_FILE_KEY_DEFAULT].has_key?(plugin_sym)
-          default_config_name=@loaded_configs[@@MAIN_PLUGIN_NAME_SYM.to_s][@@CONFIG_FILE_KEY_DEFAULT][plugin_sym]
+        if @loaded_configs.has_key?(@@CONFIG_FILE_KEY_DEFAULT) and
+        @loaded_configs[@@CONFIG_FILE_KEY_DEFAULT].has_key?(plugin_sym.to_s)
+          default_config_name=@loaded_configs[@@CONFIG_FILE_KEY_DEFAULT][plugin_sym.to_s]
         end
         # can be nil
         return @loaded_configs[default_config_name]
@@ -104,7 +105,7 @@ module Asperalm
         when :set
           level=Log.level
           Log.setlogger(value)
-          self.options.set_option(:loglevel,level)
+          self.options.set_option(:log_level,level)
           @logtype_cache=value
         else
           return @logtype_cache
@@ -180,7 +181,7 @@ module Asperalm
       def scan_all_plugins
         # find plugins
         # value=path to class
-        @plugins={@@MAIN_PLUGIN_NAME_SYM=>{:source=>__FILE__,:req=>nil}}
+        @plugins={@@MAIN_PLUGIN_NAME_STR.to_sym=>{:source=>__FILE__,:req=>nil}}
         gem_root=File.expand_path(@@CLI_MODULE.to_s.gsub('::','/').gsub(%r([^/]+),'..'), File.dirname(__FILE__))
         scan_plugins(gem_root,@@GEM_PLUGINS_FOLDER)
         user_plugin_folder=File.join(config_folder,@@ASPERA_PLUGINS_FOLDERNAME)
@@ -200,7 +201,7 @@ module Asperalm
           when :connect
             @faspmanager.use_connect_client=true
           when :node
-            config_name=self.options.get_option(:transfer_node_config)
+            config_name=self.options.get_option(:transfer_node)
             if config_name.nil?
               node_config=get_plugin_default_parameters(:node)
               raise CliBadArgument,"Please specify --transfer-node" if node_config.nil?
@@ -259,11 +260,11 @@ module Asperalm
         self.options.separator "\t#{@@PROGRAM_NAME} shares upload ~/myfile /myshare"
         self.options.separator ""
         # handler must be set before setting defaults
-        self.options.set_handler(:loglevel) { |op,val| handler_loglevel(op,val) }
-        self.options.set_handler(:logtype) { |op,val| handler_logtype(op,val) }
+        self.options.set_handler(:log_level) { |op,val| handler_loglevel(op,val) }
+        self.options.set_handler(:logger) { |op,val| handler_logtype(op,val) }
         self.options.set_handler(:insecure) { |op,val| handler_insecure(op,val) }
-        self.options.set_handler(:transfer_spec) { |op,val| handler_transfer_spec(op,val) }
-        self.options.set_handler(:browser) { |op,val| handler_browser(op,val) }
+        self.options.set_handler(:ts) { |op,val| handler_transfer_spec(op,val) }
+        self.options.set_handler(:gui_mode) { |op,val| handler_browser(op,val) }
         self.options.set_handler(:fasp_folder) { |op,val| handler_fasp_folder(op,val) }
       end
 
@@ -291,36 +292,83 @@ module Asperalm
 
       def declare_options
         self.options.separator "OPTIONS: global"
-        self.options.set_option(:browser,:os)
+        self.options.set_option(:gui_mode,OperatingSystem.default_gui_mode)
         self.options.set_option(:fields,FIELDS_DEFAULT)
         self.options.set_option(:transfer,:ascp)
         self.options.set_option(:insecure,:no)
         self.options.set_option(:format,:table)
-        self.options.set_option(:logtype,:stdout)
-        self.options.set_option(:config_file,default_config_file) if File.exist?(default_config_file)
-        self.options.on("-h", "--help", "Show this message. Try: #{@@MAIN_PLUGIN_NAME_SYM} help") { @help_requested=true }
-        self.options.add_opt_list(:browser,OperatingSystem.open_url_methods,"method to start browser",'-gTYPE','--browser=TYPE')
+        self.options.set_option(:logger,:stdout)
+        self.options.set_option(:config_file,default_config_file)
+        self.options.on("-h", "--help", "Show this message.") { @help_requested=true }
+        self.options.add_opt_list(:gui_mode,OperatingSystem.gui_modes,"method to start browser",'-gTYPE','--gui-mode=TYPE')
         self.options.add_opt_list(:insecure,[:yes,:no],"do not validate cert",'--insecure=VALUE')
-        self.options.add_opt_list(:loglevel,Log.levels,"Log level",'-lTYPE','--log-level=VALUE')
-        self.options.add_opt_list(:logtype,Log.logtypes,"log method",'-qTYPE','--logger=VALUE')
+        self.options.add_opt_list(:log_level,Log.levels,"Log level",'-lTYPE','--log-level=VALUE')
+        self.options.add_opt_list(:logger,Log.logtypes,"log method",'-qTYPE','--logger=VALUE')
         self.options.add_opt_list(:format,self.class.display_formats,"output format",'--format=VALUE')
         self.options.add_opt_list(:transfer,[:ascp,:connect,:node],"type of transfer",'--transfer=VALUE')
-        self.options.add_opt_simple(:config_file,"-CSTRING", "--config=STRING","read parameters from file in YAML format, current=#{self.options.get_option(:config_file)}")
+        self.options.add_opt_simple(:config_file,"-CSTRING", "--config-file=STRING","read parameters from file in YAML format, current=#{self.options.get_option(:config_file)}")
         self.options.add_opt_simple(:load_params,"-PNAME","--load-params=NAME","load the named configuration from current config file, use \"#{@@NO_DEFAULT}\" to avoid loading the default configuration")
         self.options.add_opt_simple(:fasp_folder,"--fasp-folder=NAME","specify where to find FASP (main folder), current=#{self.options.get_option(:fasp_folder)}")
-        self.options.add_opt_simple(:transfer_node_config,"--transfer-node=STRING","name of configuration used to transfer when using --transfer=node")
+        self.options.add_opt_simple(:transfer_node,"--transfer-node=STRING","name of configuration used to transfer when using --transfer=node")
         self.options.add_opt_simple(:fields,"--fields=STRING","comma separated list of fields, or #{FIELDS_ALL}, or #{FIELDS_DEFAULT}")
         self.options.add_opt_simple(:fasp_proxy,"--fasp-proxy=STRING","URL of FASP proxy (dnat / dnats)")
         self.options.add_opt_simple(:http_proxy,"--http-proxy=STRING","URL of HTTP proxy (for http fallback)")
         self.options.add_opt_on(:rest_debug,"-r", "--rest-debug","more debug for HTTP calls") { Rest.set_debug(true) }
         self.options.add_opt_on(:no_default,"-N", "--no-default","dont load default configuration") { @load_plugin_defaults=false }
-        self.options.add_opt_simple(:transfer_spec,"--ts=JSON","override transfer spec values (hash, use @json), current=#{self.options.get_option(:transfer_spec)}")
+        self.options.add_opt_on(:version,"-v","--version","display version") { puts VERSION;Process.exit(0) }
+        self.options.add_opt_simple(:ts,"--ts=JSON","override transfer spec values (hash, use @json: prefix), current=#{self.options.get_option(:ts)}")
+      end
+
+      def self.flatten_config_show(t)
+        r=[]
+        t.each do |k,v|
+          v.each do |kk,vv|
+            r.push({"config"=>k,"parameter"=>kk,"value"=>vv})
+          end
+        end
+        return r
       end
 
       # "config" plugin
       def execute_action
-        action=self.options.get_next_arg_from_list('action',[:genkey,:plugins,:flush,:list,:init,:cat,:open,:show])
+        action=self.options.get_next_arg_from_list('action',[:genkey,:plugins,:flush_tokens,:list,:overview,:open,:echo,:id])
         case action
+        when :id
+          config_name=self.options.get_next_arg_value('config name')
+          action=self.options.get_next_arg_from_list('action',[:set,:delete,:initialize,:show])
+          case action
+          when :show
+            raise "no such config: #{config_name}" if !@loaded_configs.has_key?(config_name)
+            return {:type=>:key_val_list,:data=>@loaded_configs[config_name]}
+          when :delete
+            @loaded_configs.delete(config_name)
+            write_config_file
+            return Main.status_result("deleted: #{config_name}")
+          when :set
+            param_name=self.options.get_next_arg_value('parameter name')
+            param_value=self.options.get_next_arg_value('parameter value')
+            if !@loaded_configs.has_key?(config_name)
+              Log.log.debug("no such config name: #{config_name}, initializing")
+              @loaded_configs[config_name]=Hash.new
+            end
+            if @loaded_configs[config_name].has_key?(param_name)
+              Log.log.warn("overwriting value: #{@loaded_configs[config_name][param_name]}")
+            end
+            @loaded_configs[config_name][param_name]=param_value
+            write_config_file
+            return Main.status_result("updated: #{config_name}->#{param_name} to #{param_value}")
+          when :initialize
+            config_value=self.options.get_next_arg_value('config value')
+            if @loaded_configs.has_key?(config_name)
+              Log.log.warn("configuration already exists: #{config_name}, overwriting")
+            end
+            @loaded_configs[config_name]=config_value
+            write_config_file
+            return Main.status_result("modified: #{current_config_file}")
+          end
+        when :open
+          OperatingSystem.open_uri(current_config_file)
+          return Main.no_result
         when :genkey # generate new rsa key
           key_filepath=self.options.get_next_arg_value('private key file path')
           require 'net/ssh'
@@ -328,54 +376,18 @@ module Asperalm
           File.write(key_filepath,priv_key.to_s)
           File.write(key_filepath+".pub",priv_key.public_key.to_s)
           return Main.status_result('generated key: '+key_filepath)
-        when :show # display the content of a value given on command line
+        when :echo # display the content of a value given on command line
           return {:type=>:other_struct, :data=>self.options.get_next_arg_value("value")}
-        when :flush
+        when :flush_tokens
           deleted_files=Oauth.flush_tokens(config_folder)
           return {:type=>:value_list, :name=>'file',:data=>deleted_files}
           return Main.status_result('token cache flushed')
         when :plugins
           return {:data => plugin_sym_list.map { |i| { 'plugin' => i.to_s, 'path' => @plugins[i][:source] } } , :fields => ['plugin','path'], :type => :hash_array }
-        when :init
-          raise CliError,"Config file already exists: #{current_config_file}" if File.exist?(current_config_file)
-          #raise CliError,"Folder already exists: #{config_folder}"
-          FileUtils::mkdir_p(config_folder) if !Dir.exist?(config_folder)
-          sample_config={
-            "config" =>{@@CONFIG_FILE_KEY_VERSION=>Asperalm::VERSION,@@CONFIG_FILE_KEY_DEFAULT=>{:node=>"node_lolo"}},
-            "config_default"=>{"loglevel"=>:warn,"browser"=>:os},
-            "files_default"=>{"auth"=>:jwt, "url"=>"https://myorg.asperafiles.com", "client_id"=>"MyClientId", "client_secret"=>"MyAccessKeySecret", "private_key"=>"@file:~/.aspera/aslmcli/filesapikey", "username"=>"user@example.com"},
-            "files_web"=>{"auth"=>:web, "url"=>"https://myorg.asperafiles.com", "client_id"=>"MyClientId", "client_secret"=>"MyAccessKeySecret", "redirect_uri"=>"http://local.connectme.us:12345"},
-            "faspex_default"=>{"url"=>"https://myfaspex.mycompany.com/aspera/faspex", "username"=>"admin", "password"=>"MyP@ssw0rd","storage"=>{'Local Storage'=>{'node'=>'default','path'=>'/subpath'}}},
-            "faspex_app2"=>{"url"=>"https://faspex.other.com/aspera/faspex", "username"=>"john@example", "password"=>"yM7FmjfGN$J4"},
-            "shares_default"=>{"url"=>"https://10.25.0.6", "username"=>"admin", "password"=>"MyP@ssw0rd"},
-            "node_lolo"=>{"url"=>"https://10.25.0.8:9092", "username"=>"node_user", "password"=>"MyP@ssw0rd"},
-            "console_default"=>{"url"=>"https://console.myorg.com/aspera/console", "username"=>"admin", "password"=>"xxxxx"},
-            "server_default"=>{"url"=>"ssh://demo.asperasoft.com:33001","username"=>"asperaweb","password"=>"xxxxx"}
-          }
-          write_config_file(sample_config)
-          puts "initialized: #{current_config_file}"
-          return Main.no_result
-        when :cat
-          return {:data=>read_config_file,:type=>:other_struct}
-        when :open
-          OperatingSystem.open_system_uri(current_config_file)
-          return Main.no_result
         when :list
-          config_names=@loaded_configs.keys
-          if self.options.command_or_arg_empty?
-            # just list config names
-            return {:data => config_names, :type => :value_list, :name => 'name'}
-          else
-            config_name=self.options.get_next_arg_from_list('config name',config_names)
-            parameters=@loaded_configs[config_name].keys.map { |i| i.to_sym }
-            if self.options.command_or_arg_empty?
-              return {:data => @loaded_configs[config_name], :type => :key_val_list }
-            else
-              # list parameters
-              param_symb=self.options.get_next_arg_from_list('parameter name',parameters)
-              return {:data => [ @loaded_configs[config_name][param_symb] ] , :type => :value_list, :name => param_symb.to_s  }
-            end
-          end
+          return {:data => @loaded_configs.keys, :type => :value_list, :name => 'name'}
+        when :overview
+          return {:type=>:hash_array,:data=>self.class.flatten_config_show(@loaded_configs)}
         end
       end
 
@@ -403,6 +415,7 @@ module Asperalm
         when :table,:csv
           case results[:type]
           when :hash_array
+            raise "internal error: unexpected type: #{results[:data].class}, expecting Array" if !results[:data].is_a?(Array)
             # :hash_array is an array of hash tables, where key=colum name
             table_data = results[:data]
             display_fields=nil
@@ -424,7 +437,7 @@ module Asperalm
               display_fields=required_fields.split(',')
             end
           when :key_val_list
-            raise "internal error: unexpected type: #{results[:data].class}" if !results[:data].is_a?(Hash)
+            raise "internal error: unexpected type: #{results[:data].class}, expecting Hash" if !results[:data].is_a?(Hash)
             # :key_val_list is a simple hash table
             case required_fields
             when FIELDS_DEFAULT,FIELDS_ALL; display_fields = ['key','value']
@@ -502,11 +515,11 @@ module Asperalm
         @loaded_configs=read_config_file
         Log.log.debug "loaded: #{@loaded_configs}"
         # check there is at least the config section
-        if !@loaded_configs.has_key?(@@MAIN_PLUGIN_NAME_SYM.to_s)
-          raise CliError,"Config File: Cannot find key #{@@MAIN_PLUGIN_NAME_SYM.to_s} in #{current_config_file}. Please check documentation."
+        if !@loaded_configs.has_key?(@@MAIN_PLUGIN_NAME_STR)
+          raise CliError,"Config File: Cannot find key #{@@MAIN_PLUGIN_NAME_STR} in #{current_config_file}. Please check documentation."
         end
         # check version
-        version=@loaded_configs[@@MAIN_PLUGIN_NAME_SYM.to_s][@@CONFIG_FILE_KEY_VERSION]
+        version=@loaded_configs[@@MAIN_PLUGIN_NAME_STR][@@CONFIG_FILE_KEY_VERSION]
         raise CliError,"Config File: No version found. Please check documentation. Expecting min version #{@@MIN_CONFIG_VERSION}" if version.nil?
         if Gem::Version.new(version) < Gem::Version.new(@@MIN_CONFIG_VERSION)
           raise CliError,"Unsupported config file version #{version}. Please check documentation. Expecting min version #{@@MIN_CONFIG_VERSION}"
@@ -535,6 +548,8 @@ module Asperalm
           self.options.set_argv(argv)
           # declare global options and set defaults
           self.declare_options
+          # read options from env vars
+          self.options.read_env_vars
           # parse general options
           self.options.parse_options!
           # load default config if it was not overriden on command line
@@ -542,11 +557,11 @@ module Asperalm
           # help requested without command ?
           self.exit_with_usage(true) if @help_requested and self.options.command_or_arg_empty?
           # load global default options, main plugin is not dynamically instanciated
-          plugins_defaults=get_plugin_default_parameters(@@MAIN_PLUGIN_NAME_SYM)
+          plugins_defaults=get_plugin_default_parameters(@@MAIN_PLUGIN_NAME_STR.to_sym)
           self.options.set_defaults(plugins_defaults) if !plugins_defaults.nil?
           command_sym=self.options.get_next_arg_from_list('command',plugin_sym_list)
           case command_sym
-          when @@MAIN_PLUGIN_NAME_SYM
+          when @@MAIN_PLUGIN_NAME_STR.to_sym
             command_plugin=self
           else
             # get plugin, set options, etc
