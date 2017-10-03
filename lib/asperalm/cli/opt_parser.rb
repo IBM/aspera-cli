@@ -108,6 +108,10 @@ module Asperalm
         return @unprocessed_command_and_args.empty?
       end
 
+      def self.cli_bad_arg(error_msg,choices)
+        return CliBadArgument.new(error_msg+"\nUse:\n"+choices.map{|c| "- #{c.to_s}\n"}.join(''))
+      end
+
       def self.get_from_list(shortval,descr,allowed_values)
         # we accept shortcuts
         matching_exact=allowed_values.select{|i| i.to_s.eql?(shortval)}
@@ -115,15 +119,15 @@ module Asperalm
         matching=allowed_values.select{|i| i.to_s.start_with?(shortval)}
         case matching.length
         when 1; return matching.first
-        when 0; raise CliBadArgument,"unexpected value for #{descr}: #{shortval}, one of: #{allowed_values.map {|x| x.to_s}.join(', ')}"
-        else; raise CliBadArgument,"ambigous value for #{descr}: #{shortval}, one of: #{matching.map {|x| x.to_s}.join(', ')}"
+        when 0; raise cli_bad_arg("unknown value for #{descr}: #{shortval}",allowed_values)
+        else; raise cli_bad_arg("ambigous shortcut for #{descr}: #{shortval}",matching)
         end
       end
 
       # get next argument, must be from the value list
       def get_next_arg_from_list(descr,allowed_values)
         if @unprocessed_command_and_args.empty? then
-          raise CliBadArgument,"missing action, one of: #{allowed_values.map {|x| x.to_s}.join(', ')}"
+          raise self.class.cli_bad_arg("missing action",allowed_values)
         end
         return self.class.get_from_list(@unprocessed_command_and_args.shift,descr,allowed_values)
       end
@@ -131,7 +135,7 @@ module Asperalm
       # just get next value (expanded)
       def get_next_arg_value(descr)
         if @unprocessed_command_and_args.empty? then
-          raise CliBadArgument,"expecting value: #{descr}"
+          raise CliBadArgument,"missing argument: #{descr}"
         end
         return self.class.get_extended_value(descr,@unprocessed_command_and_args.shift)
       end

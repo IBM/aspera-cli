@@ -58,7 +58,7 @@ module Asperalm
       def read_config_file(config_file_path=current_config_file)
         if !File.exist?(config_file_path)
           Log.log.info("no config file, using empty configuration")
-          return {@@MAIN_PLUGIN_NAME_STR=>{@@CONFIG_FILE_KEY_VERSION=>@@MIN_CONFIG_VERSION}}
+          return {@@MAIN_PLUGIN_NAME_STR=>{@@CONFIG_FILE_KEY_VERSION=>Asperalm.VERSION}}
         end
         Log.log.debug "loading #{config_file_path}"
         return YAML.load_file(config_file_path)

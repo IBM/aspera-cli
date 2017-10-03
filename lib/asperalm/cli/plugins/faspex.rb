@@ -38,9 +38,14 @@ module Asperalm
           }
         end
 
+        # get faspe: URI from entry in xml, and fix problems..
         def self.get_fasp_uri_from_entry(entry)
           raise CliBadArgument, "package is empty" if !entry.has_key?('link')
-          return (entry['link'].select{|e| e["rel"].eql?("package")}).first["href"]
+          result=entry['link'].select{|e| e["rel"].eql?("package")}.first["href"]
+          # tags in the end of URL is not well % encoded... there are "=" that should be %3D
+          # TODO: enter ticket to Faspex ?
+          if m=result.match(/(=+)$/);result.gsub!(/=+$/,"#{"%3D"*m[1].length}");end
+          return result
         end
 
         def get_faspex_authenticated_api
@@ -148,7 +153,7 @@ module Asperalm
               else
                 # I dont know which delivery id is the right one if package was receive by group
                 delivid=Main.tool.options.get_next_arg_value("Package delivery ID")
-                entry_xml=api_faspex.call({:operation=>'GET',:subpath=>"received/#{delivid}",:headers=>{'Accept'=>'application/xml'}})[:http].body
+                entry_xml=api_faspex.call({:operation=>'GET',:subpath=>"#{Main.tool.options.get_option(:pkgbox).to_s}/#{delivid}",:headers=>{'Accept'=>'application/xml'}})[:http].body
                 package_entry=XmlSimple.xml_in(entry_xml, {"ForceArray" => true})
               end
               transfer_uri=self.class.get_fasp_uri_from_entry(package_entry)
@@ -156,7 +161,6 @@ module Asperalm
               # NOTE: only external users have token in faspe: link !
               if !transfer_spec.has_key?('token')
                 sanitized=transfer_uri.gsub('&','&amp;')
-                #sanitized=transfer_uri.gsub(/\?.*/,'')
                 xmlpayload='<?xml version="1.0" encoding="UTF-8"?><url-list xmlns="http://schemas.asperasoft.com/xml/url-list"><url href="'+sanitized+'"/></url-list>'
                 transfer_spec['token']=api_faspex.call({:operation=>'POST',:subpath=>"issue-token?direction=down",:headers=>{'Accept'=>'text/plain','Content-Type'=>'application/vnd.aspera.url-list+xml'},:text_body_params=>xmlpayload})[:http].body
               end

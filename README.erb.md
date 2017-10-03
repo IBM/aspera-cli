@@ -127,7 +127,7 @@ Here, use the contents of this file (generated in step 2) for public key:
 
 * set your Aspera Files default parameters:
 
-```
+```bash
 $ aslmcli config id files_default set url https://myorg.asperafiles.com
 $ aslmcli config id files_default set client_id MyClIeNtKeY
 $ aslmcli config id files_default set client_secret MyClIeNtSeCrEtMyClIeNtSeCrEt
@@ -161,7 +161,7 @@ It is also possible to retrieve a value with the following special prefixes:
 
 * @val:VALUE , just take the specified value, e.g. --username=@val:laurent, allows for meta characters
 * @file:PATH , read value from a file (prefix "~/" is replaced with $HOME), e.g. --key=@file:$HOME/.ssh/mykey
-* @env: , read from a named env var, e.g.--password=@env:MYPASSVAR
+* @env:ENVVAR , read from a named env var, e.g.--password=@env:MYPASSVAR
 
 In addition it is possible to decode some values by prefixing :
 
