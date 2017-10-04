@@ -492,7 +492,7 @@ faspex_default:
   url: https://10.25.0.3/aspera/faspex
   username: admin
   password: MyPassword
-  :storage:
+  storage:
     testlaurent:
       node: my_fpx_node
       :path: /myfiles
