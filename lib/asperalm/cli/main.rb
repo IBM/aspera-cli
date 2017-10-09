@@ -204,7 +204,7 @@ module Asperalm
         if @faspmanager_switch.nil?
           # create the FASP manager for transfers
           faspmanager_basic=FaspManager.new(Log.log)
-          faspmanager_basic.set_listener(FaspListenerLogger.new)
+          faspmanager_basic.add_listener(FaspListenerLogger.new)
           faspmanager_basic.ascp_path=Connect.path(:ascp)
           faspmanager_resume=FaspManagerResume.new(faspmanager_basic)
           @faspmanager_switch=FaspManagerSwitch.new(faspmanager_resume)

@@ -37,42 +37,44 @@ module Asperalm
   class FaspParamUtils
     # no logger available here, so use a generic one
     @@logger=Logger.new(STDERR)
-    # copy and translate argument+value from transfer spec to env var for ascp
-    def self.ts2env(state,ts_name,env_name)
-      if state[:transfer_spec].has_key?(ts_name)
-        state[:result][:env][env_name] = state[:transfer_spec][ts_name]
-        state[:used_names].push(ts_name)
-      end
-    end
-
-    # copy and translate argument+value from transfer spec to arguments for ascp
-    def self.ts2args_value(state,ts_name,arg_name,&transform)
-      if state[:transfer_spec].has_key?(ts_name)
-        if !state[:transfer_spec][ts_name].nil?
-          value=state[:transfer_spec][ts_name]
-          value=transform.call(value) if transform
-          state[:result][:args].push(arg_name,value)
-        end
-        state[:used_names].push(ts_name)
-      end
-    end
-
-    # translate boolean transfer spec argument to command line argument
-    def self.ts_bool_param(state,ts_name,&get_arg_list)
-      if state[:transfer_spec].has_key?(ts_name)
-        state[:result][:args].push(*get_arg_list.call(state[:transfer_spec][ts_name]))
-        state[:used_names].push(ts_name)
-      end
-    end
-
-    # ignore transfer spec argument
-    def self.ts_ignore_param(state,ts_name)
+    # returns the value from transfer spec and mark parameter as used
+    def self.use_parameter(state,ts_name,mandatory=false)
+      raise TransferError.new("mandatory parameter: #{ts_name}") if mandatory and !state[:transfer_spec].has_key?(ts_name)
       state[:used_names].push(ts_name)
+      return state[:transfer_spec][ts_name]
+    end
+
+    # define ascp parameter in env var from transfer spec
+    def self.set_param_env(state,ts_name,env_name)
+      value=use_parameter(state,ts_name)
+      state[:result][:env][env_name] = value if !value.nil?
+    end
+
+    # ts_name : key in transfer spec
+    # ascp_option : option on ascp command line
+    # transform : transformation function for transfer spec value to option value
+    # if transfer_spec value is an array, applies option many times
+    def self.set_param_arg(state,ts_name,ascp_option,&transform)
+      value=use_parameter(state,ts_name)
+      if !value.nil?
+        if transform
+          newvalue=transform.call(value)
+          if newvalue.nil?
+            TransferError.new("unsupported #{ts_name}: #{value}")
+          else
+            value=newvalue
+          end
+        end
+        value=value.to_s if value.is_a?(Integer)
+        value=[value] if value.is_a?(String)
+        value.each{|v|state[:result][:args].push(ascp_option,v)}
+      end
     end
 
     # translate transfer spec to env vars and command line arguments for ascp
     # NOTE: parameters starting with "EX_" (extended) are not standard
     def self.transfer_spec_to_args_env(transfer_spec)
+      # transformation state, input, output, validation
       state={
         :transfer_spec=>transfer_spec,
         :result => {
@@ -82,96 +84,94 @@ module Asperalm
         :used_names=>[]
       }
 
-      # parameters with env vars
-      ts2env(state,'password','ASPERA_SCP_PASS')
-      ts2env(state,'token','ASPERA_SCP_TOKEN')
-      ts2env(state,'cookie','ASPERA_SCP_COOKIE')
-      ts2env(state,'EX_ssh_key_value','ASPERA_SCP_KEY')
-      ts2env(state,'EX_at_rest_password','ASPERA_SCP_FILEPASS')
-      ts2env(state,'EX_proxy_password','ASPERA_PROXY_PASS')
-
-      # some ssh credentials are required
-      if !state[:transfer_spec].has_key?('password') and !state[:transfer_spec].has_key?('EX_ssh_key_value') and !state[:transfer_spec].has_key?('EX_ssh_key_paths') then
+      # some ssh credentials are required to avoid interactive password input
+      if !state[:transfer_spec].has_key?('password') and
+      !state[:transfer_spec].has_key?('EX_ssh_key_value') and
+      !state[:transfer_spec].has_key?('EX_ssh_key_paths') then
         raise TransferError.new('required: ssh key (value or path) or password')
       end
 
+      # parameters with env vars
+      set_param_env(state,'password','ASPERA_SCP_PASS')
+      set_param_env(state,'token','ASPERA_SCP_TOKEN')
+      set_param_env(state,'cookie','ASPERA_SCP_COOKIE')
+      set_param_env(state,'EX_ssh_key_value','ASPERA_SCP_KEY')
+      set_param_env(state,'EX_at_rest_password','ASPERA_SCP_FILEPASS')
+      set_param_env(state,'EX_proxy_password','ASPERA_PROXY_PASS')
+
       # TODO : -c argument ?, what about "none"
-      case state[:transfer_spec]['cipher']
-      when nil; # nothing to put on command line, encryption by default
-      when 'aes-128'; state[:used_names].push('cipher') # nothing to put on command line, encryption by default
-      when 'aes128'; state[:used_names].push('cipher') # nothing to put on command line, encryption by default (from faspe link)
-      else raise TransferError.new("unsupported cipher: #{state[:transfer_spec]['cipher']}")
+      value=use_parameter(state,'cipher')
+      case value
+      when nil;# nothing to put on command line, encryption by default
+      when 'aes-128','aes128';# nothing to put on command line (or faspe: link), encryption by default
+      else raise TransferError.new("unsupported cipher: #{value}")
       end
 
-      case state[:transfer_spec]['direction']
-      when nil; raise TransferError.new("direction is required")
-      when 'receive'; state[:result][:args].push('--mode','recv'); state[:used_names].push('direction')
-      when 'send'; state[:result][:args].push('--mode','send'); state[:used_names].push('direction')
-      else raise TransferError.new("unsupported direction: #{state[:transfer_spec]['direction']}")
+      value=use_parameter(state,'create_dir')
+      case value
+      when nil,false# nothing to put on command line, no creation by default
+      when true; state[:result][:args].push('-d')
+      else raise TransferError.new("unsupported create_dir: #{value}")
       end
 
-      if state[:transfer_spec].has_key?('EX_ssh_key_paths')
-        state[:transfer_spec]['EX_ssh_key_paths'].each do |k|
-          state[:result][:args].push('-i',k); state[:used_names].push('EX_ssh_key_paths')
-        end
+      value=use_parameter(state,'EX_quiet')
+      case value
+      when nil,false# nothing to put on command line, not quiet
+      when true; state[:result][:args].push('-q')
+      else raise TransferError.new("unsupported EX_quiet: #{value}")
       end
 
-      ts2args_value(state,'remote_user','--user')
-      ts2args_value(state,'remote_host','--host')
-      ts2args_value(state,'target_rate_kbps','-l') { |rate| rate.to_s }
-      ts2args_value(state,'min_rate_kbps','-m') { |rate| rate.to_s }
-      ts2args_value(state,'ssh_port','-P') { |port| port.to_s }
-      ts2args_value(state,'fasp_port','-O') { |port| port.to_s }
-      ts2args_value(state,'http_fallback','-y') { |enable| enable.eql?("force") ? 'F' : enable ? '1' : '0' }
-      ts2args_value(state,'http_fallback_port','-t') { |port| port.to_s }
-      ts2args_value(state,'rate_policy','--policy')
-      ts2args_value(state,'source_root','--source-prefix64') { |prefix| Base64.strict_encode64(prefix) }
-      ts2args_value(state,'sshfp','--check-sshfp')
+      set_param_arg(state,'direction','--mode'){|v|{'receive'=>'recv','send'=>'send'}[v]}
+      set_param_arg(state,'remote_user','--user')
+      set_param_arg(state,'remote_host','--host')
+      set_param_arg(state,'ssh_port','-P')
+      set_param_arg(state,'fasp_port','-O')
+      set_param_arg(state,'target_rate_kbps','-l')
+      set_param_arg(state,'min_rate_kbps','-m')
+      set_param_arg(state,'rate_policy','--policy')
+      set_param_arg(state,'http_fallback','-y'){|v|{'force'=>'F',true=>1,false=>0}[v]}
+      set_param_arg(state,'http_fallback_port','-t')
+      set_param_arg(state,'source_root','--source-prefix64'){|prefix|Base64.strict_encode64(prefix)}
+      set_param_arg(state,'sshfp','--check-sshfp')
 
-      ts2args_value(state,'EX_fallback_key','-Y')
-      ts2args_value(state,'EX_fallback_cert','-I')
-      ts2args_value(state,'EX_fasp_proxy_url','--proxy')
-      ts2args_value(state,'EX_http_proxy_url','-x')
+      set_param_arg(state,'EX_fallback_key','-Y')
+      set_param_arg(state,'EX_fallback_cert','-I')
+      set_param_arg(state,'EX_fasp_proxy_url','--proxy')
+      set_param_arg(state,'EX_http_proxy_url','-x')
+      set_param_arg(state,'EX_ssh_key_paths','-i')
 
-      ts_bool_param(state,'create_dir') { |create_dir| create_dir ? ['-d'] : [] }
-
-      # TODO: manage those parameters, some are for connect only ? not node api ?
-      ts_ignore_param(state,'target_rate_cap_kbps')
-      ts_ignore_param(state,'target_rate_percentage') # -wf -l<rate>p
-      ts_ignore_param(state,'min_rate_cap_kbps')
-      ts_ignore_param(state,'rate_policy_allowed')
-      ts_ignore_param(state,'fasp_url')
-      ts_ignore_param(state,'lock_rate_policy')
-      ts_ignore_param(state,'lock_min_rate')
-      ts_ignore_param(state,'lock_target_rate')
-      ts_ignore_param(state,'authentication') # = token
-      ts_ignore_param(state,'https_fallback_port') # same as http fallback, option -t ?
-      ts_ignore_param(state,'content_protection')
-      ts_ignore_param(state,'cipher_allowed')
+      # TODO: manage those parameters, some are for connect only ? node api ?
+      use_parameter(state,'target_rate_cap_kbps')
+      use_parameter(state,'target_rate_percentage') # -wf -l<rate>p
+      use_parameter(state,'min_rate_cap_kbps')
+      use_parameter(state,'rate_policy_allowed')
+      use_parameter(state,'fasp_url')
+      use_parameter(state,'lock_rate_policy')
+      use_parameter(state,'lock_min_rate')
+      use_parameter(state,'lock_target_rate')
+      use_parameter(state,'authentication') # = token
+      use_parameter(state,'https_fallback_port') # same as http fallback, option -t ?
+      use_parameter(state,'content_protection')
+      use_parameter(state,'cipher_allowed')
 
       # optional tags (  additional option to generate: {:space=>' ',:object_nl=>' ',:space_before=>'+',:array_nl=>'1'}  )
-      ts2args_value(state,'tags','--tags64') { |tags| Base64.strict_encode64(JSON.generate(tags)) }
-      ts2args_value(state,'tags64','--tags64') # from faspe link
+      set_param_arg(state,'tags','--tags64'){|tags| Base64.strict_encode64(JSON.generate(tags)) }
+      set_param_arg(state,'tags64','--tags64') # from faspe link
 
       # optional args
-      if state[:transfer_spec].has_key?('EX_ascp_args')
-        state[:result][:args].push(*state[:transfer_spec]['EX_ascp_args'])
-        state[:used_names].push('EX_ascp_args')
-      end
+      value=use_parameter(state,'EX_ascp_args')
+      state[:result][:args].push(*value) if !value.nil?
 
       # destination will be base64 encoded, put before path arguments
       state[:result][:args].push('--dest64')
 
       # source list: TODO : use file list or file pair list, avoid command line lists
-      raise TransferError.new("missing source paths") if !state[:transfer_spec].has_key?('paths')
-      state[:result][:args].push(*state[:transfer_spec]['paths'].map { |i| i['source']})
-      state[:used_names].push('paths')
+      value=use_parameter(state,'paths',true)
+      state[:result][:args].push(*value.map{|i|i['source']})
 
-      # destination
-      raise TransferError.new("missing destination") if !state[:transfer_spec].has_key?('destination_root')
-      # use base64 encoding
-      state[:result][:args].push(Base64.strict_encode64(state[:transfer_spec]['destination_root']))
-      state[:used_names].push('destination_root')
+      # destination, use base64 encoding, as defined previously
+      value=use_parameter(state,'destination_root',true)
+      state[:result][:args].push(Base64.strict_encode64(value))
 
       # warn about non translated arguments
       state[:transfer_spec].each_pair { |key,value|
@@ -244,26 +244,40 @@ module Asperalm
     def initialize(logger,ascp_path=nil)
       @logger=logger
       @ascp_path=ascp_path
+      @listeners=[]
     end
 
-    # todo: support multiple listeners
-    def set_listener(listener)
-      @listener=listener
+    #
+    def add_listener(listener,format=:original)
+      @listeners.push({:listener=>listener,:format=>format})
       self
     end
 
-    # start ascp
-    # raises FaspError
-    # uses ascp management port.
+    IntegerFields=['Rate','MinRate','Port','Priority','RateCap','MinRateCap','TCPPort','CreatePolicy','TimePolicy','DatagramSize','XoptFlags','VLinkVersion','PeerVLinkVersion','DSPipelineDepth','PeerDSPipelineDepth','ReadBlockSize','WriteBlockSize','ClusterNumNodes','ClusterNodeId','Size','Written','Loss','FileBytes','PreTransferBytes','TransferBytes','PMTU','Elapsedusec','ArgScansAttempted','ArgScansCompleted','PathScansAttempted','FileScansCompleted','TransfersAttempted','TransfersPassed','Delay']
+
+    def enhanced_event_format(event)
+      return event.keys.inject({}) do |h,e|
+        new_name=FaspParamUtils.snake_case(e)
+        value=event[e]
+        value=value.to_i if IntegerFields.include?(e)
+        h[new_name]=value
+        h
+      end
+    end
+
+    # This is the low level method to start FASP
+    # currently, relies on command line arguments
+    # start ascp with management port.
+    # raises FaspError on error
     def start_transfer_with_args_env(all_params)
       arguments=all_params[:args]
       raise "no ascp path defined" if @ascp_path.nil?
       # open random local TCP port listening
       mgt_sock = TCPServer.new('127.0.0.1',0 )
-      port = mgt_sock.addr[1]
-      @logger.debug "Port=#{port}"
+      mgt_port = mgt_sock.addr[1]
+      @logger.debug "Port=#{mgt_port}"
       # add management port
-      arguments.unshift('-M', port.to_s)
+      arguments.unshift('-M', mgt_port.to_s)
       @logger.info "execute #{all_params[:env].map{|k,v| "#{k}=\"#{v}\""}.join(' ')} \"#{@ascp_path}\" \"#{arguments.join('" "')}\""
       begin
         ascp_pid = Process.spawn(all_params[:env],[@ascp_path,@ascp_path],*arguments)
@@ -289,10 +303,10 @@ module Asperalm
       end
 
       # records for one message
-      current=nil
+      current_event=nil
 
       # this is the last full status
-      lastStatus=nil
+      last_event=nil
 
       # read management port
       loop do
@@ -312,21 +326,30 @@ module Asperalm
         @logger.debug "line=[#{line}]"
         if  line.empty? then
           # end frame
-          if !current.nil? then
-            if !@listener.nil? then
-              @listener.event(current)
+          if !current_event.nil? then
+            if !@listeners.nil? then
+              newformat=nil
+              @listeners.each do |listener|
+                case listener[:format]
+                when :original
+                  listener[:listener].event(current_event)
+                else
+                  newformat=enhanced_event_format(current_event) if newformat.nil?
+                  listener[:listener].event(newformat)
+                end
+              end
             end
-            if 'DONE'.eql?(current['type']) or 'ERROR'.eql?(current['type']) then
-              lastStatus = current
+            if ['DONE','ERROR'].include?(current_event['Type']) then
+              last_event = current_event
             end
           else
             @logger.error "unexpected empty line"
           end
         elsif 'FASPMGR 2'.eql? line then
           # begin frame
-          current = Hash.new
+          current_event = Hash.new
         elsif m=line.match('^([^:]+): (.*)$') then
-          current[FaspParamUtils.snake_case(m[1])] = m[2]
+          current_event[m[1]] = m[2]
         else
           @logger.error "error parsing[#{line}]"
         end
@@ -335,17 +358,16 @@ module Asperalm
       # wait for sub process completion
       Process.wait(ascp_pid)
 
-      raise "nil last status" if lastStatus.nil?
+      raise "nil last status" if last_event.nil?
 
-      if 'DONE'.eql?(lastStatus['type']) then
+      if 'DONE'.eql?(last_event['Type']) then
         return
       else
-        raise FaspError.new(lastStatus['description'],lastStatus['code'].to_i)
+        raise FaspError.new(last_event['Description'],last_event['Code'].to_i)
       end
     end
 
-    # replaces do_transfer
-    # transforms transper_spec into command line arguments and env var, then calls start_transfer_with_args_env
+    # start FASP transfer based on transfer spec (hash table)
     def start_transfer(transfer_spec)
       start_transfer_with_args_env(FaspParamUtils.transfer_spec_to_args_env(transfer_spec))
       return nil

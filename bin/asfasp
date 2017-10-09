@@ -1,0 +1,20 @@
+#!/usr/bin/env ruby
+# Laurent Martin/2017
+$LOAD_PATH.unshift(File.dirname(__FILE__) + "/../lib")
+require 'rubygems'
+require 'json'
+require 'base64'
+require 'asperalm/fasp_manager'
+require 'asperalm/connect'
+transferspec=JSON.parse(Base64.decode64(ARGV.first))
+puts transferspec
+logger=Logger.new(STDERR)
+logger.level=3
+class FaspListenerStdout < Asperalm::FileTransferListener
+  def event(data);puts JSON.generate(data);end
+end
+mgr=Asperalm::FaspManager.new(logger,Asperalm::Connect.path(:ascp))
+mgr.add_listener(FaspListenerStdout.new,:enhanced)
+transferspec['EX_quiet']=true
+mgr.start_transfer(transferspec)
+# ./bin/asfasp $(echo '{"remote_host":"demo.asperasoft.com","remote_user":"asperaweb","ssh_port":33001,"password":"demoaspera","direction":"receive","destination_root":"./test.dir","paths":[{"source":"/aspera-test-dir-tiny/200KB.1"}]}'|base64 )
