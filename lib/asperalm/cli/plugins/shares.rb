@@ -15,7 +15,7 @@ module Asperalm
         def execute_action
           command=Main.tool.options.get_next_arg_from_list('command',action_list)
           case command
-          when *Node.common_actions; return Node.execute_common(command,api_shares_node)
+          when :repository
             api_shares_node=Rest.new(Main.tool.options.get_option_mandatory(:url)+'/node_api',{:auth=>{:type=>:basic,:username=>Main.tool.options.get_option_mandatory(:username), :password=>Main.tool.options.get_option_mandatory(:password)}})
             command=Main.tool.options.get_next_arg_from_list('command',Node.common_actions)
             case command
@@ -57,8 +57,8 @@ module Asperalm
               end
             end
           end
-        end
-      end
-    end
+        end # execute action
+      end # Shares
+    end # Plugins
   end # Cli
 end # Asperalm

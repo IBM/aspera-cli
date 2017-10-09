@@ -40,11 +40,10 @@ module Asperalm
     end
 
     # base_url comes from FilesApi.baseurl
-    def initialize(baseurl,organization,auth_data)
+    def initialize(auth_data)
       Log.log.debug "auth=#{auth_data}"
-      @rest=Rest.new(baseurl)
-      @organization=organization
       @auth_data=auth_data
+      @rest=Rest.new(@auth_data[:baseurl])
       @auth_data[:persist_folder]='.' if !auth_data.has_key?(:persist_folder)
       # key = scope value, e.g. user:all, or node.*
       # value = ruby structure of data of returned value
@@ -83,7 +82,7 @@ module Asperalm
     # last_use_not_authorized set to true if auth was just used and failed
     def get_authorization(api_scope,last_use_not_authorized=false)
       # file name for cache of token
-      token_state_file=token_filepath([@auth_data[:type],@organization,@auth_data[:client_id],api_scope])
+      token_state_file=token_filepath([@auth_data[:type],@auth_data[:persist_identifier],@auth_data[:client_id],api_scope])
 
       # if first time, try to read from file
       if ! @token_cache.has_key?(api_scope) then
@@ -110,7 +109,7 @@ module Asperalm
           # Note: scope is mandatory in Files, and we can either provide basic auth, or client_Secret in data
           resp=@rest.call({
             :operation=>'POST',
-            :subpath=>"oauth2/#{@organization}/token",
+            :subpath=>@auth_data[:token_path],
             :headers=>{'Accept'=>'application/json'},
             :auth=>{:type=>:basic,:username=>@auth_data[:client_id],:password=>@auth_data[:client_secret]}, # this is RFC
             :www_body_params=>{
@@ -135,23 +134,31 @@ module Asperalm
         resp=nil
         case @auth_data[:type]
         when :basic
-          # basic password auth, works only for some users in aspera files, deprecated
-          resp=@rest.call({
+          call_data={
             :operation=>'POST',
-            :subpath=>"oauth2/#{@organization}/token",
+            :subpath=>@auth_data[:token_path],
             :headers=>{'Accept'=>'application/json'},
             :www_body_params=>{
             :client_id=>@auth_data[:client_id], # NOTE: not compliant to RFC
             :grant_type=>'password',
-            :scope=>api_scope,
-            :username=>@auth_data[:username],
-            :password=>@auth_data[:password]
-            }})
+            :scope=>api_scope
+            }}
+          case @auth_data[:basic_type]
+          when :header
+            call_data[:auth]={:type=>:basic}
+            call_data[:auth][:username]=@auth_data[:username]
+            call_data[:auth][:password]=@auth_data[:password]
+          else
+            call_data[:www_body_params][:username]=@auth_data[:username]
+            call_data[:www_body_params][:password]=@auth_data[:password]
+          end
+          # basic password auth, works only for some users in aspera files, deprecated
+          resp=@rest.call(call_data)
         when :web
           check_code=SecureRandom.uuid
           login_page_url=@rest.get_uri({
             :operation=>'GET',
-            :subpath=>"oauth2/#{@organization}/authorize",
+            :subpath=>@auth_data[:authorize_path],
             :url_params=>{
             :response_type=>'code',
             :client_id=>@auth_data[:client_id],
@@ -167,7 +174,7 @@ module Asperalm
           # exchange code for token
           resp=@rest.call({
             :operation=>'POST',
-            :subpath=>"oauth2/#{@organization}/token",
+            :subpath=>@auth_data[:token_path],
             :headers=>{'Accept'=>'application/json'},
             :auth=>{:type=>:basic,:username=>@auth_data[:client_id],:password=>@auth_data[:client_secret]},
             :www_body_params=>{
@@ -203,7 +210,7 @@ module Asperalm
 
           resp=@rest.call({
             :operation=>'POST',
-            :subpath=>"oauth2/#{@organization}/token",
+            :subpath=>@auth_data[:token_path],
             :headers=>{'Accept'=>'application/json'},
             :auth=>{:type=>:basic,:username=>@auth_data[:client_id],:password=>@auth_data[:client_secret]},
             :www_body_params=>{
@@ -215,7 +222,7 @@ module Asperalm
           # exchange code for token
           resp=@rest.call({
             :operation=>'POST',
-            :subpath=>"oauth2/#{@organization}/token",
+            :subpath=>@auth_data[:token_path],
             :headers=>{'Accept'=>'application/json'},
             :auth=>{:type=>:basic,:username=>@auth_data[:client_id],:password=>@auth_data[:client_secret]},
             :url_params=>{
@@ -243,7 +250,7 @@ module Asperalm
       return 'Bearer '+@token_cache[api_scope]['access_token']
     end
 
-THANK_YOU_HTML = "<html><head><title>Ok</title></head><body><h1>Thank you !</h1><p>You can close this window.</p></body></html>"
+    THANK_YOU_HTML = "<html><head><title>Ok</title></head><body><h1>Thank you !</h1><p>You can close this window.</p></body></html>"
 
     # open the login page, wait for code and check_code, then return code
     def self.goto_page_and_get_request(redirect_uri,login_page_url,html_page=THANK_YOU_HTML)
@@ -271,7 +278,7 @@ THANK_YOU_HTML = "<html><head><title>Ok</title></head><body><h1>Thank you !</h1>
       }
       return request_params
     end
-    
+
     # open the login page, wait for code and check_code, then return code
     def goto_page_and_get_code(login_page_url,check_code)
       request_params=self.class.goto_page_and_get_request(@auth_data[:redirect_uri],login_page_url)

@@ -168,6 +168,10 @@ module Asperalm
           Log.log.debug("organization=#{organization}")
 
           auth_data={
+            :baseurl =>files_api_base_url,
+            :authorize_path => "oauth2/#{organization}/authorize",
+            :token_path => "oauth2/#{organization}/token",
+            :persist_identifier => organization,
             :persist_folder => Main.tool.config_folder,
             :type=>Main.tool.options.get_option_mandatory(:auth),
             :client_id =>Main.tool.options.get_option_mandatory(:client_id),
@@ -193,7 +197,7 @@ module Asperalm
           end
 
           # auth API
-          @api_files_oauth=Oauth.new(files_api_base_url,organization,auth_data)
+          @api_files_oauth=Oauth.new(auth_data)
 
           # create object for REST calls to Files with scope "user:all"
           @api_files_user=Rest.new(files_api_base_url,{:auth=>{:type=>:oauth2,:obj=>@api_files_oauth,:scope=>FilesApi::SCOPE_FILES_USER}})

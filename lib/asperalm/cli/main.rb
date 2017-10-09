@@ -398,7 +398,7 @@ module Asperalm
       FIELD_SEPARATOR=","
 
       def display_results(results)
-        raise "INTERNAL ERROR, result must be Hash" if !results.is_a?(Hash)
+        raise "INTERNAL ERROR, result must be Hash (#{results.class}: #{results})" if !results.is_a?(Hash)
         raise "INTERNAL ERROR, result must have type" if !results.has_key?(:type)
         raise "INTERNAL ERROR, result must have data" if !results.has_key?(:data) and !results[:type].eql?(:empty)
 
