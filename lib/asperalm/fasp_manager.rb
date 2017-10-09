@@ -1,18 +1,16 @@
 #!/bin/echo this is a ruby class:
 #
-# FASP transfer request
+# FASP manager for Ruby
 # Aspera 2016
 # Laurent Martin
 #
 ##############################################################################
-require 'asperalm/log'
-require 'asperalm/connect'
 require 'socket'
 require 'rbconfig'
 require 'tempfile'
 require 'timeout'
-require "base64"
-require "json"
+require 'base64'
+require 'json'
 require 'securerandom'
 
 module Asperalm
@@ -20,34 +18,6 @@ module Asperalm
   class FileTransferListener
     def event(data)
       raise 'must be defined'
-    end
-  end
-
-  # listener for FASP transfers (debug)
-  class FaspListenerLogger < FileTransferListener
-    def event(data)
-      Log.log.debug "#{data}"
-    end
-  end
-
-  # listener for FASP transfers (debug)
-  class FaspListenerProgress < FileTransferListener
-    def initialize
-      @progress=nil
-    end
-
-    def event(data)
-      if data['type'].eql?('NOTIFICATION') and data.has_key?('pre_transfer_bytes') then
-        require 'ruby-progressbar'
-        @progress=ProgressBar.create(:title => 'progress', :total => data['pre_transfer_bytes'].to_i)
-      end
-      if data['type'].eql?('STATS') and !@progress.nil? then
-        @progress.progress=data['TransferBytes'].to_i
-      end
-      if data['type'].eql?('DONE') and ! @progress.nil? then
-        @progress.progress=@progress.total
-        @progress=nil
-      end
     end
   end
 
@@ -64,37 +34,19 @@ module Asperalm
   end
 
   # Manages FASP based transfers
-  # supports 3 modes to start a transfer:
-  # - ascp : executes ascp process
-  # - node : use the node API
-  # - connect : use the connect client
   class FaspManager
-    # a global transfer spec that overrides values in transfer spec provided on start
-    @@ts_override={}
 
-    # returns ruby data
-    def self.ts_override
-      return @@ts_override
-    end
-
-    # mode=connect : activate
-    attr_accessor :use_connect_client
-    # mode=connect : application identifier used in connect API
-    attr_accessor :connect_app_id
-    # mode=node : activate, set to the REST api object for the node API
-    attr_accessor :tr_node_api
     # mode=ascp : proxy configuration
     attr_accessor :fasp_proxy_url
     attr_accessor :http_proxy_url
-
-    def initialize
+    attr_accessor :ascp_path
+    def initialize(logger)
+      @logger=logger
+      @ascp_path=nil
       @mgt_sock=nil
       @ascp_pid=nil
-      @use_connect_client=false
       @fasp_proxy_url=nil
       @http_proxy_url=nil
-      @tr_node_api=nil
-      @connect_app_id='localapp'
     end
 
     # todo: support multiple listeners
@@ -139,15 +91,16 @@ module Asperalm
         when 'fallback'; transfer_spec['http_fallback']=yes_to_true(value)
         when 'lockpolicy'; transfer_spec['lock_rate_policy']=value
         when 'lockminrate'; transfer_spec['lock_min_rate']=value
-        when 'auth'; Log.log.debug("ignoring #{name}=#{value}") # TODO: why ignore ?
-        when 'v'; Log.log.debug("ignoring #{name}=#{value}")# TODO: why ignore ?
-        when 'protect'; Log.log.debug("ignoring #{name}=#{value}")# TODO: why ignore ?
-        else Log.log.error("non managed URI value: #{name} = #{value}".red)
+        when 'auth'; @logger.debug("ignoring #{name}=#{value}") # TODO: why ignore ?
+        when 'v'; @logger.debug("ignoring #{name}=#{value}")# TODO: why ignore ?
+        when 'protect'; @logger.debug("ignoring #{name}=#{value}")# TODO: why ignore ?
+        else @logger.error("non managed URI value: #{name} = #{value}".red)
         end
       end
       return transfer_spec
     end
 
+    # transforms ABigWord into a_big_word
     def snake_case(str)
       str.
       gsub(/([A-Z]+)([A-Z][a-z])/,'\1_\2').
@@ -159,30 +112,24 @@ module Asperalm
     # start ascp
     # raises FaspError
     # uses ascp management port.
-    def execute_ascp(command,arguments,env_vars)
+    def start_transfer_from_args_env(arguments,env_vars)
+      raise "no ascp path defined" if @ascp_path.nil?
       # open random local TCP port listening
       @mgt_sock = TCPServer.new('127.0.0.1',0 )
       port = @mgt_sock.addr[1]
-      Log.log.debug "Port=#{port}"
+      @logger.debug "Port=#{port}"
       # add management port
       arguments.unshift('-M', port.to_s)
-      # add fallback cert and key
-      http_fallback_index=arguments.index("-y")
-      if !http_fallback_index.nil?
-        if arguments[http_fallback_index+1].eql?('1') or arguments[http_fallback_index+1].eql?('F') then
-          arguments.unshift('-Y', Connect.path(:fallback_key), '-I', Connect.path(:fallback_cert))
-        end
-      end
       arguments.unshift('--proxy', @fasp_proxy_url) if ! @fasp_proxy_url.nil?
       arguments.unshift('-x', @http_proxy_url) if ! @http_proxy_url.nil?
-      Log.log.info "execute #{env_vars.map{|k,v| "#{k}=\"#{v}\""}.join(' ')} \"#{command}\" \"#{arguments.join('" "')}\""
+      @logger.info "execute #{env_vars.map{|k,v| "#{k}=\"#{v}\""}.join(' ')} \"#{@ascp_path}\" \"#{arguments.join('" "')}\""
       begin
-        @ascp_pid = Process.spawn(env_vars,[command,command],*arguments)
+        @ascp_pid = Process.spawn(env_vars,[@ascp_path,@ascp_path],*arguments)
       rescue SystemCallError=> e
         raise TransferError.new(e.message)
       end
       # in parent, wait for connection, max 3 seconds
-      Log.log.debug "before accept for pid (#{@ascp_pid})"
+      @logger.debug "before accept for pid (#{@ascp_pid})"
       client=nil
       begin
         Timeout.timeout( 3 ) do
@@ -191,7 +138,7 @@ module Asperalm
       rescue Timeout::Error => e
         Process.kill 'INT',@ascp_pid
       end
-      Log.log.debug "after accept (#{client})"
+      @logger.debug "after accept (#{client})"
 
       if client.nil? then
         # avoid zombie
@@ -220,7 +167,7 @@ module Asperalm
           break
         end
         line.chomp!
-        Log.log.debug "line=[#{line}]"
+        @logger.debug "line=[#{line}]"
         if  line.empty? then
           # end frame
           if !current.nil? then
@@ -231,7 +178,7 @@ module Asperalm
               lastStatus = current
             end
           else
-            Log.log.error "unexpected empty line"
+            @logger.error "unexpected empty line"
           end
         elsif 'FASPMGR 2'.eql? line then
           # begin frame
@@ -239,7 +186,7 @@ module Asperalm
         elsif m=line.match('^([^:]+): (.*)$') then
           current[snake_case(m[1])] = m[2]
         else
-          Log.log.error "error parsing[#{line}]"
+          @logger.error "error parsing[#{line}]"
         end
       end
 
@@ -342,6 +289,9 @@ module Asperalm
       ts2args_value(used_names,transfer_spec,ascp_args,'source_root','--source-prefix64') { |prefix| Base64.strict_encode64(prefix) }
       ts2args_value(used_names,transfer_spec,ascp_args,'sshfp','--check-sshfp')
 
+      ts2args_value(used_names,transfer_spec,ascp_args,'EX_fallback_key','-Y')
+      ts2args_value(used_names,transfer_spec,ascp_args,'EX_fallback_cert','-I')
+
       ts_bool_param(used_names,transfer_spec,ascp_args,'create_dir') { |create_dir| create_dir ? ['-d'] : [] }
 
       # TODO: manage those parameters, some are for connect only ? not node api ?
@@ -386,7 +336,7 @@ module Asperalm
       # warn about non translated arguments
       transfer_spec.each_pair { |key,value|
         if !used_names.include?(key)
-          Log.log.error("unhandled parameter: #{key} = \"#{value}\"".red)
+          @logger.error("unhandled parameter: #{key} = \"#{value}\"".red)
         end
       }
 
@@ -394,65 +344,10 @@ module Asperalm
     end
 
     # replaces do_transfer
-    # transforms transper_spec into command line arguments and env var, then calls execute_ascp
-    def transfer_with_spec(transfer_spec)
-      transfer_spec.merge!(self.class.ts_override)
-      Log.log.debug("ts=#{transfer_spec}")
-      if (@use_connect_client) # transfer using connect ...
-        Log.log.debug("using connect client")
-        raise "Using connect requires a graphical environment" if !OperatingSystem.default_gui_mode.eql?(:graphical)
-        connect_url=File.open(Connect.path(:plugin_https_port_file)) {|f| f.gets }.strip
-        connect_api=Rest.new("#{connect_url}/v5/connect",{})
-        begin
-          connect_api.read('info/version')
-        rescue Errno::ECONNREFUSED
-          OperatingSystem.open_uri_graphical('fasp://initialize')
-          sleep 2
-        end
-        if transfer_spec["direction"] == "send"
-          Log.log.warn("Upload by connect must be selected using GUI, ignoring #{transfer_spec['paths']}".red)
-          transfer_spec.delete('paths')
-          res=connect_api.create('windows/select-open-file-dialog/',{"title"=>"Select Files","suggestedName"=>"","allowMultipleSelection"=>true,"allowedFileTypes"=>"","aspera_connect_settings"=>{"app_id"=>@connect_app_id}})
-          transfer_spec['paths']=res[:data]['dataTransfer']['files'].map { |i| {'source'=>i['name']}}
-        end
-        request_id=SecureRandom.uuid
-        transfer_spec['authentication']="token" if transfer_spec.has_key?('token')
-        transfer_specs={
-          'transfer_specs'=>[{
-          'transfer_spec'=>transfer_spec,
-          'aspera_connect_settings'=>{
-          'allow_dialogs'=>true,
-          'app_id'=>@connect_app_id,
-          'request_id'=>request_id
-          }}]}
-        connect_api.create('transfers/start',transfer_specs)
-      elsif ! @tr_node_api.nil?
-        #transfer_spec['destination_root']='/tmp'
-        resp=@tr_node_api.call({:operation=>'POST',:subpath=>'ops/transfers',:headers=>{'Accept'=>'application/json'},:json_params=>transfer_spec})
-        puts "id=#{resp[:data]['id']}"
-        trid=resp[:data]['id']
-        #Log.log.error resp.to_s
-        loop do
-          res=@tr_node_api.call({:operation=>'GET',:subpath=>'ops/transfers/'+trid,:headers=>{'Accept'=>'application/json'}})
-          puts "transfer: #{res[:data]['status']}, sessions:#{res[:data]["sessions"].length}, #{res[:data]["sessions"].map{|i| i['bytes_transferred']}.join(',')}"
-          break if ! ( res[:data]['status'].eql?('waiting') or res[:data]['status'].eql?('running'))
-          sleep 1
-        end
-        if ! res[:data]['status'].eql?('completed')
-          raise TransferError.new("#{res[:data]['status']}: #{res[:data]['error_desc']}")
-        end
-        #raise "TODO: wait for transfer completion"
-      else
-        Log.log.debug("using ascp")
-        # if not provided, use standard key
-        if !transfer_spec.has_key?('EX_ssh_key_value') and
-        !transfer_spec.has_key?('EX_ssh_key_paths') and
-        transfer_spec.has_key?('token')
-          transfer_spec['EX_ssh_key_paths'] = [ Connect.path(:ssh_bypass_key_dsa), Connect.path(:ssh_bypass_key_rsa) ]
-        end
-        execute_ascp(Connect.path(:ascp),*transfer_spec_to_args_and_env(transfer_spec))
-      end
+    # transforms transper_spec into command line arguments and env var, then calls start_transfer_from_args_env
+    def start_transfer(transfer_spec)
+      start_transfer_from_args_env(*transfer_spec_to_args_and_env(transfer_spec))
       return nil
-    end
+    end # start_transfer
   end # FaspManager
 end # AsperaLm

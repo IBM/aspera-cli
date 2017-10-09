@@ -2,8 +2,10 @@ require "asperalm/cli/opt_parser"
 require "asperalm/cli/plugin"
 require "asperalm/version"
 require "asperalm/log"
+require "asperalm/connect"
 require 'asperalm/operating_system'
 require 'asperalm/oauth'
+require 'asperalm/fasp_manager_switch'
 require 'text-table'
 require 'fileutils'
 require 'singleton'
@@ -14,6 +16,12 @@ module Asperalm
   module Cli
     module Plugins; end
 
+    # listener for FASP transfers (debug)
+    class FaspListenerLogger < FileTransferListener
+      def event(data)
+        Log.log.debug "#{data}"
+      end
+    end
     # The main CI class, singleton
     class Main < Plugin
       include Singleton
@@ -58,7 +66,7 @@ module Asperalm
       def read_config_file(config_file_path=current_config_file)
         if !File.exist?(config_file_path)
           Log.log.info("no config file, using empty configuration")
-          return {@@MAIN_PLUGIN_NAME_STR=>{@@CONFIG_FILE_KEY_VERSION=>Asperalm.VERSION}}
+          return {@@MAIN_PLUGIN_NAME_STR=>{@@CONFIG_FILE_KEY_VERSION=>Asperalm::VERSION}}
         end
         Log.log.debug "loading #{config_file_path}"
         return YAML.load_file(config_file_path)
@@ -135,9 +143,9 @@ module Asperalm
         case operation
         when :set
           Log.log.debug "handler_transfer_spec: set: #{value}".red
-          FaspManager.ts_override.merge!(value)
+          FaspManagerSwitch.ts_override.merge!(value)
         else
-          return FaspManager.ts_override
+          return FaspManagerSwitch.ts_override
         end
       end
 
@@ -194,8 +202,14 @@ module Asperalm
       def faspmanager
         if @faspmanager.nil?
           # create the FASP manager for transfers
-          @faspmanager=FaspManagerResume.new
-          @faspmanager.set_listener(FaspListenerLogger.new)
+          faspmanager_basic=FaspManager.new(Log.log)
+          faspmanager_basic.set_listener(FaspListenerLogger.new)
+          # may be nil:
+          faspmanager_basic.fasp_proxy_url=self.options.get_option(:fasp_proxy)
+          faspmanager_basic.http_proxy_url=self.options.get_option(:http_proxy)
+          faspmanager_basic.ascp_path=Connect.path(:ascp)
+          faspmanager_resume=FaspManagerResume.new(faspmanager_basic)
+          @faspmanager=FaspManagerSwitch.new(faspmanager_resume)
           @faspmanager.connect_app_id=@@PROGRAM_NAME
           case self.options.get_option_mandatory(:transfer)
           when :connect
@@ -211,15 +225,12 @@ module Asperalm
             end
             @faspmanager.tr_node_api=Rest.new(node_config[:url],{:auth=>{:type=>:basic,:username=>node_config[:username], :password=>node_config[:password]}})
           end
-          # may be nil:
-          @faspmanager.fasp_proxy_url=self.options.get_option(:fasp_proxy)
-          @faspmanager.http_proxy_url=self.options.get_option(:http_proxy)
         end
         return @faspmanager
       end
 
       def start_transfer(transfer_spec)
-        faspmanager.transfer_with_spec(transfer_spec)
+        faspmanager.start_transfer(transfer_spec)
         return self.class.result_success
       end
 
@@ -233,7 +244,7 @@ module Asperalm
         @load_plugin_defaults=true
         scan_all_plugins
         self.options.program_name=@@PROGRAM_NAME
-        self.options.banner = "NAME\n\t#{@@PROGRAM_NAME} -- a command line tool for Aspera Applications (v#{VERSION})\n\n"
+        self.options.banner = "NAME\n\t#{@@PROGRAM_NAME} -- a command line tool for Aspera Applications (v#{Asperalm::VERSION})\n\n"
         self.options.separator "SYNOPSIS"
         self.options.separator "\t#{@@PROGRAM_NAME} COMMANDS [OPTIONS] [ARGS]"
         self.options.separator ""
@@ -315,7 +326,7 @@ module Asperalm
         self.options.add_opt_simple(:http_proxy,"--http-proxy=STRING","URL of HTTP proxy (for http fallback)")
         self.options.add_opt_on(:rest_debug,"-r", "--rest-debug","more debug for HTTP calls") { Rest.set_debug(true) }
         self.options.add_opt_on(:no_default,"-N", "--no-default","dont load default configuration") { @load_plugin_defaults=false }
-        self.options.add_opt_on(:version,"-v","--version","display version") { puts VERSION;Process.exit(0) }
+        self.options.add_opt_on(:version,"-v","--version","display version") { puts Asperalm::VERSION;Process.exit(0) }
         self.options.add_opt_simple(:ts,"--ts=JSON","override transfer spec values (hash, use @json: prefix), current=#{self.options.get_option(:ts)}")
       end
 

@@ -58,15 +58,18 @@ module Asperalm
     [ 51, 'ERR_UNDEFINED',            "Should never happen, report to Aspera",               "Undefined error",                       false ],
   ]
 
-  # implements a resumable policy
-  class FaspManagerResume < FaspManager
-    alias_method :transfer_with_spec_super, :transfer_with_spec
+  # implements a resumable policy on top of basic FaspManager
+  class FaspManagerResume
+    def initialize(real_fasp_manager)
+      @real_fasp_manager=real_fasp_manager
+    end
+
     def fasp_error_retryable?(err_code)
       return false if !err_code.is_a?(Integer) or err_code < 1 or err_code > FASP_ERROR_CODES.length
       return FASP_ERROR_CODES[err_code][4]
     end
 
-    def transfer_with_spec(transfer_spec)
+    def start_transfer(transfer_spec)
       # resume parameters, could be modified by options (TODO)
       max_retry     = 7
       sleep_seconds = 2
@@ -81,7 +84,7 @@ module Asperalm
       loop do
         Log.log.debug('transfer starting');
         begin
-          transfer_with_spec_super(transfer_spec)
+          @real_fasp_manager.start_transfer(transfer_spec)
           Log.log.debug( 'transfer ok'.bg_red );
           break
         rescue FaspError => e

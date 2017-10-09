@@ -90,13 +90,13 @@ $(TEST_FOLDER):
 clean::
 	rm -fr $(TEST_FOLDER)
 tsh1:
-	$(ASCLI) shares browse / --insecure=yes
+	$(ASCLI) shares repository browse / --insecure=yes
 tsh2:
-	$(ASCLI) shares upload $(SAMPLE_FILE) /n8-sh1 --insecure=yes
+	$(ASCLI) shares repository upload $(SAMPLE_FILE) /n8-sh1 --insecure=yes
 tsh3: $(TEST_FOLDER)
-	$(ASCLI) shares download /n8-sh1/200KB.1 $(TEST_FOLDER) --insecure=yes
+	$(ASCLI) shares repository download /n8-sh1/200KB.1 $(TEST_FOLDER) --insecure=yes
 	rm -f 200KB.1
-	$(ASCLI) shares delete /n8-sh1/200KB.1 --insecure=yes
+	$(ASCLI) shares repository delete /n8-sh1/200KB.1 --insecure=yes
 tshares: tsh1 tsh2 tsh3
 
 tfp1: $(TEST_FOLDER)
