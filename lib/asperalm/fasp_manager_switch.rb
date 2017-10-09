@@ -1,4 +1,6 @@
 require 'asperalm/connect'
+require 'asperalm/fasp_manager'
+require 'securerandom'
 
 module Asperalm
   # listener for FASP transfers (debug)

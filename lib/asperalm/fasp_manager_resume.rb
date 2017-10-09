@@ -1,8 +1,7 @@
-require 'asperalm/fasp_manager'
-
 module Asperalm
   # from https://support.asperasoft.com/entries/22895528
   # columns: code name descr msg retryable
+  # Note that the fact that an error is retryable is user defined
   FASP_ERROR_CODES = [
     [],
     [ 1,  'ERR_FASP_PROTO',         "Generic fasp(tm) protocol error",                "fasp(tm) error",                                                    false ],
