@@ -124,7 +124,7 @@ tfx1:
 tfx2:
 	$(ASCLI) faspex package send $(SAMPLE_FILE) --insecure=yes --note="my note" --title="my title" --recipient="laurent@asperasoft.com"
 tfx3:
-	@echo $(ASCLI) faspex package recv 05b92393-02b7-4900-ab69-fd56721e896c --insecure=yes
+	$(ASCLI) faspex package recv $$($(ASCLI) faspex package list --fields=delivery_id --format=csv --box=sent|tail -n 1) --box=sent
 tfx4:
 	@echo $(ASCLI) faspex recv_publink 'https://ibmfaspex.asperasoft.com/aspera/faspex/external_deliveries/78780?passcode=a003aaf2f53e3869126b908525084db6bebc7031' --insecure=yes
 tfaspex: tfx1 tfx2  

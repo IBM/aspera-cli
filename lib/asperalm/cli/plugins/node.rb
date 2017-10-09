@@ -15,6 +15,7 @@ module Asperalm
           Main.tool.options.add_opt_simple(:filter_transfer,"--filter-transfer=EXPRESSION","Ruby expression for filter at transfer level (cleanup)")
           Main.tool.options.add_opt_simple(:filter_file,"--filter-file=EXPRESSION","Ruby expression for filter at file level (cleanup)")
           Main.tool.options.add_opt_simple(:transfer_filter,"--transfer-filter=EXPRESSION","JSON expression for filter on API request")
+          Main.tool.options.add_opt_simple(:parameters,"--parameters=JSON","creation parameters (hash, use @json: prefix), current=#{Main.tool.options.get_option(:parameters)}")
         end
 
         def self.textify_browse(table_data)
@@ -260,7 +261,7 @@ module Asperalm
               resp=api_node.call({:operation=>'GET',:subpath=>'ops/transfers',:headers=>{'Accept'=>'application/json'},:url_params=>transfer_filter})
               return { :data => resp[:data], :type => :hash_array, :fields=>['id','status']  } # TODO
             when :create
-              resp=api_node.call({:operation=>'POST',:subpath=>'streams',:headers=>{'Accept'=>'application/json'},:json_params=>FaspManager.ts_override})
+              resp=api_node.call({:operation=>'POST',:subpath=>'streams',:headers=>{'Accept'=>'application/json'},:json_params=>Main.tool.options.get_option_mandatory(:parameters)})
               return { :data => resp[:data], :type => :key_val_list }
             when :info
               trid=Main.tool.options.get_next_arg_value("transfer id")
@@ -268,7 +269,7 @@ module Asperalm
               return { :data => resp[:data], :type=>:other_struct  }
             when :modify
               trid=Main.tool.options.get_next_arg_value("transfer id")
-              resp=api_node.call({:operation=>'PUT',:subpath=>'streams/'+trid,:headers=>{'Accept'=>'application/json'},:json_params=>FaspManager.ts_override})
+              resp=api_node.call({:operation=>'PUT',:subpath=>'streams/'+trid,:headers=>{'Accept'=>'application/json'},:json_params=>Main.tool.options.get_option_mandatory(:parameters)})
               return { :data => resp[:data], :type=>:other_struct }
             when :cancel
               trid=Main.tool.options.get_next_arg_value("transfer id")

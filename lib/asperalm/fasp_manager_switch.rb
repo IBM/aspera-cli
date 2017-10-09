@@ -28,21 +28,17 @@ module Asperalm
   # - node : use the node API
   # - connect : use the connect client
   class FaspManagerSwitch
-    # a global transfer spec that overrides values in transfer spec provided on start
-    @@ts_override={}
-
-    # returns ruby data
-    def self.ts_override
-      return @@ts_override
-    end
     # mode=connect : activate
     attr_accessor :use_connect_client
     # mode=connect : application identifier used in connect API
     attr_accessor :connect_app_id
     # mode=node : activate, set to the REST api object for the node API
     attr_accessor :tr_node_api
+    # used to define defaults that override parameters
+    attr_accessor :transfer_spec_default
 
     def initialize(real_fasp_manager)
+      @transfer_spec_default={}
       @use_connect_client=false
       @tr_node_api=nil
       @connect_app_id='localapp'
@@ -52,7 +48,7 @@ module Asperalm
     # calls sub transfer agent
     # fgaspmanager, or connect, or node
     def start_transfer(transfer_spec)
-      transfer_spec.merge!(self.class.ts_override)
+      transfer_spec.merge!(@transfer_spec_default)
       Log.log.debug("ts=#{transfer_spec}")
       if (@use_connect_client) # transfer using connect ...
         Log.log.debug("using connect client")

@@ -12,6 +12,7 @@ require 'timeout'
 require 'base64'
 require 'json'
 require 'securerandom'
+require 'logger'
 
 module Asperalm
   # imlement this class to get transfer events
@@ -33,177 +34,10 @@ module Asperalm
     end
   end
 
-  # Manages FASP based transfers
-  class FaspManager
-
-    # mode=ascp : proxy configuration
-    attr_accessor :fasp_proxy_url
-    attr_accessor :http_proxy_url
-    attr_accessor :ascp_path
-    def initialize(logger)
-      @logger=logger
-      @ascp_path=nil
-      @mgt_sock=nil
-      @ascp_pid=nil
-      @fasp_proxy_url=nil
-      @http_proxy_url=nil
-    end
-
-    # todo: support multiple listeners
-    def set_listener(listener)
-      @listener=listener
-      self
-    end
-
-    def yes_to_true(value)
-      case value
-      when 'yes'; return true
-      when 'no'; return false
-      end
-      raise "unsupported value: #{value}"
-    end
-
-    # extract transfer information from xml returned by faspex
-    # only external users get token in link (see: <faspex>/app/views/delivery/_content.xml.builder)
-    def fasp_uri_to_transferspec(fasplink)
-      transfer_uri=URI.parse(fasplink)
-      transfer_spec={}
-      transfer_spec['remote_host']=transfer_uri.host
-      transfer_spec['remote_user']=transfer_uri.user
-      transfer_spec['ssh_port']=transfer_uri.port
-      transfer_spec['paths']=[{"source"=>URI.decode_www_form_component(transfer_uri.path)}]
-
-      URI::decode_www_form(transfer_uri.query).each do |i|
-        name=i[0]
-        value=i[1]
-        case name
-        when 'cookie'; transfer_spec['cookie']=value
-        when 'token'; transfer_spec['token']=value
-        when 'policy'; transfer_spec['rate_policy']=value
-        when 'httpport'; transfer_spec['http_fallback_port']=value
-        when 'targetrate'; transfer_spec['target_rate_kbps']=value
-        when 'minrate'; transfer_spec['min_rate_kbps']=value
-        when 'port'; transfer_spec['fasp_port']=value
-        when 'enc'; transfer_spec['cipher']=value
-        when 'tags64'; transfer_spec['tags64']=value
-        when 'bwcap'; transfer_spec['target_rate_cap_kbps']=value
-        when 'createpath'; transfer_spec['create_dir']=yes_to_true(value)
-        when 'fallback'; transfer_spec['http_fallback']=yes_to_true(value)
-        when 'lockpolicy'; transfer_spec['lock_rate_policy']=value
-        when 'lockminrate'; transfer_spec['lock_min_rate']=value
-        when 'auth'; @logger.debug("ignoring #{name}=#{value}") # TODO: why ignore ?
-        when 'v'; @logger.debug("ignoring #{name}=#{value}")# TODO: why ignore ?
-        when 'protect'; @logger.debug("ignoring #{name}=#{value}")# TODO: why ignore ?
-        else @logger.error("non managed URI value: #{name} = #{value}".red)
-        end
-      end
-      return transfer_spec
-    end
-
-    # transforms ABigWord into a_big_word
-    def snake_case(str)
-      str.
-      gsub(/([A-Z]+)([A-Z][a-z])/,'\1_\2').
-      gsub(/([a-z\d])([A-Z])/,'\1_\2').
-      gsub(/([a-z\d])(usec)$/,'\1_\2').
-      downcase
-    end
-
-    # start ascp
-    # raises FaspError
-    # uses ascp management port.
-    def start_transfer_from_args_env(arguments,env_vars)
-      raise "no ascp path defined" if @ascp_path.nil?
-      # open random local TCP port listening
-      @mgt_sock = TCPServer.new('127.0.0.1',0 )
-      port = @mgt_sock.addr[1]
-      @logger.debug "Port=#{port}"
-      # add management port
-      arguments.unshift('-M', port.to_s)
-      arguments.unshift('--proxy', @fasp_proxy_url) if ! @fasp_proxy_url.nil?
-      arguments.unshift('-x', @http_proxy_url) if ! @http_proxy_url.nil?
-      @logger.info "execute #{env_vars.map{|k,v| "#{k}=\"#{v}\""}.join(' ')} \"#{@ascp_path}\" \"#{arguments.join('" "')}\""
-      begin
-        @ascp_pid = Process.spawn(env_vars,[@ascp_path,@ascp_path],*arguments)
-      rescue SystemCallError=> e
-        raise TransferError.new(e.message)
-      end
-      # in parent, wait for connection, max 3 seconds
-      @logger.debug "before accept for pid (#{@ascp_pid})"
-      client=nil
-      begin
-        Timeout.timeout( 3 ) do
-          client = @mgt_sock.accept
-        end
-      rescue Timeout::Error => e
-        Process.kill 'INT',@ascp_pid
-      end
-      @logger.debug "after accept (#{client})"
-
-      if client.nil? then
-        # avoid zombie
-        Process.wait @ascp_pid
-        raise TransferError.new('timeout waiting mgt port connect')
-      end
-
-      # records for one message
-      current=nil
-
-      # this is the last full status
-      lastStatus=nil
-
-      # read management port
-      loop do
-        begin
-          # check process still present, else receive Errno::ESRCH
-          Process.getpgid( @ascp_pid )
-        rescue RangeError => e; break
-        rescue Errno::ESRCH => e; break
-        rescue NotImplementedError; nil # TODO: can we do better on windows ?
-        end
-        # TODO: timeout here ?
-        line = client.gets
-        if line.nil? then
-          break
-        end
-        line.chomp!
-        @logger.debug "line=[#{line}]"
-        if  line.empty? then
-          # end frame
-          if !current.nil? then
-            if !@listener.nil? then
-              @listener.event(current)
-            end
-            if 'DONE'.eql?(current['type']) or 'ERROR'.eql?(current['type']) then
-              lastStatus = current
-            end
-          else
-            @logger.error "unexpected empty line"
-          end
-        elsif 'FASPMGR 2'.eql? line then
-          # begin frame
-          current = Hash.new
-        elsif m=line.match('^([^:]+): (.*)$') then
-          current[snake_case(m[1])] = m[2]
-        else
-          @logger.error "error parsing[#{line}]"
-        end
-      end
-
-      # wait for sub process completion
-      Process.wait(@ascp_pid)
-
-      raise "nil last status" if lastStatus.nil?
-
-      if 'DONE'.eql?(lastStatus['type']) then
-        return
-      else
-        raise FaspError.new(lastStatus['description'],lastStatus['code'].to_i)
-      end
-    end
-
+  class FaspParamUtils
+    @@logger=Logger.new(STDERR)
     # copy and translate argument+value from transfer spec to env var for ascp
-    def ts2env(used_names,transfer_spec,env_vars,ts_name,env_name)
+    def self.ts2env(used_names,transfer_spec,env_vars,ts_name,env_name)
       if transfer_spec.has_key?(ts_name)
         env_vars[env_name] = transfer_spec[ts_name]
         used_names.push(ts_name)
@@ -211,7 +45,7 @@ module Asperalm
     end
 
     # copy and translate argument+value from transfer spec to arguments for ascp
-    def ts2args_value(used_names,transfer_spec,ascp_args,ts_name,arg_name,&transform)
+    def self.ts2args_value(used_names,transfer_spec,ascp_args,ts_name,arg_name,&transform)
       if transfer_spec.has_key?(ts_name)
         if !transfer_spec[ts_name].nil?
           value=transfer_spec[ts_name]
@@ -223,7 +57,7 @@ module Asperalm
     end
 
     # translate boolean transfer spec argument to command line argument
-    def ts_bool_param(used_names,transfer_spec,ascp_args,ts_name,&get_arg_list)
+    def self.ts_bool_param(used_names,transfer_spec,ascp_args,ts_name,&get_arg_list)
       if transfer_spec.has_key?(ts_name)
         ascp_args.push(*get_arg_list.call(transfer_spec[ts_name]))
         used_names.push(ts_name)
@@ -231,13 +65,13 @@ module Asperalm
     end
 
     # ignore transfer spec argument
-    def ts_ignore_param(used_names,ts_name)
+    def self.ts_ignore_param(used_names,ts_name)
       used_names.push(ts_name)
     end
 
     # translate transfer spec to env vars and command line arguments to ascp
     # parameters starting with "EX_" (extended) are not standard
-    def transfer_spec_to_args_and_env(transfer_spec)
+    def self.transfer_spec_to_args_env(transfer_spec)
       used_names=[]
       # parameters with env vars
       env_vars = Hash.new
@@ -291,6 +125,8 @@ module Asperalm
 
       ts2args_value(used_names,transfer_spec,ascp_args,'EX_fallback_key','-Y')
       ts2args_value(used_names,transfer_spec,ascp_args,'EX_fallback_cert','-I')
+      ts2args_value(used_names,transfer_spec,ascp_args,'EX_fasp_proxy_url','--proxy')
+      ts2args_value(used_names,transfer_spec,ascp_args,'EX_http_proxy_url','-x')
 
       ts_bool_param(used_names,transfer_spec,ascp_args,'create_dir') { |create_dir| create_dir ? ['-d'] : [] }
 
@@ -336,17 +172,180 @@ module Asperalm
       # warn about non translated arguments
       transfer_spec.each_pair { |key,value|
         if !used_names.include?(key)
-          @logger.error("unhandled parameter: #{key} = \"#{value}\"".red)
+          @@logger.error("unhandled parameter: #{key} = \"#{value}\"")
         end
       }
 
-      return ascp_args,env_vars
+      return {:args=>ascp_args,:env=>env_vars}
+    end
+
+    def self.yes_to_true(value)
+      case value
+      when 'yes'; return true
+      when 'no'; return false
+      end
+      raise "unsupported value: #{value}"
+    end
+
+    # extract transfer information from xml returned by faspex
+    # only external users get token in link (see: <faspex>/app/views/delivery/_content.xml.builder)
+    def self.fasp_uri_to_transfer_spec(fasplink)
+      transfer_uri=URI.parse(fasplink)
+      transfer_spec={}
+      transfer_spec['remote_host']=transfer_uri.host
+      transfer_spec['remote_user']=transfer_uri.user
+      transfer_spec['ssh_port']=transfer_uri.port
+      transfer_spec['paths']=[{"source"=>URI.decode_www_form_component(transfer_uri.path)}]
+
+      URI::decode_www_form(transfer_uri.query).each do |i|
+        name=i[0]
+        value=i[1]
+        case name
+        when 'cookie'; transfer_spec['cookie']=value
+        when 'token'; transfer_spec['token']=value
+        when 'policy'; transfer_spec['rate_policy']=value
+        when 'httpport'; transfer_spec['http_fallback_port']=value
+        when 'targetrate'; transfer_spec['target_rate_kbps']=value
+        when 'minrate'; transfer_spec['min_rate_kbps']=value
+        when 'port'; transfer_spec['fasp_port']=value
+        when 'enc'; transfer_spec['cipher']=value
+        when 'tags64'; transfer_spec['tags64']=value
+        when 'bwcap'; transfer_spec['target_rate_cap_kbps']=value
+        when 'createpath'; transfer_spec['create_dir']=yes_to_true(value)
+        when 'fallback'; transfer_spec['http_fallback']=yes_to_true(value)
+        when 'lockpolicy'; transfer_spec['lock_rate_policy']=value
+        when 'lockminrate'; transfer_spec['lock_min_rate']=value
+        when 'auth'; @@logger.debug("ignoring #{name}=#{value}") # TODO: translate into transfer spec ?
+        when 'v'; @@logger.debug("ignoring #{name}=#{value}") # TODO: translate into transfer spec ?
+        when 'protect'; @@logger.debug("ignoring #{name}=#{value}") # TODO: translate into transfer spec ?
+        else @@logger.error("non managed URI value: #{name} = #{value}")
+        end
+      end
+      return transfer_spec
+    end
+
+    # transforms ABigWord into a_big_word
+    def self.snake_case(str)
+      str.
+      gsub(/([A-Z]+)([A-Z][a-z])/,'\1_\2').
+      gsub(/([a-z\d])([A-Z])/,'\1_\2').
+      gsub(/([a-z\d])(usec)$/,'\1_\2').
+      downcase
+    end
+  end # FaspParamUtils
+
+  # Manages FASP based transfers based on ascp command line
+  class FaspManager
+
+    attr_accessor :ascp_path
+    def initialize(logger,ascp_path=nil)
+      @logger=logger
+      @ascp_path=ascp_path
+    end
+
+    # todo: support multiple listeners
+    def set_listener(listener)
+      @listener=listener
+      self
+    end
+
+    # start ascp
+    # raises FaspError
+    # uses ascp management port.
+    def start_transfer_with_args_env(all_params)
+      arguments=all_params[:args]
+      env_vars=all_params[:env]
+      raise "no ascp path defined" if @ascp_path.nil?
+      # open random local TCP port listening
+      mgt_sock = TCPServer.new('127.0.0.1',0 )
+      port = mgt_sock.addr[1]
+      @logger.debug "Port=#{port}"
+      # add management port
+      arguments.unshift('-M', port.to_s)
+      @logger.info "execute #{env_vars.map{|k,v| "#{k}=\"#{v}\""}.join(' ')} \"#{@ascp_path}\" \"#{arguments.join('" "')}\""
+      begin
+        ascp_pid = Process.spawn(env_vars,[@ascp_path,@ascp_path],*arguments)
+      rescue SystemCallError=> e
+        raise TransferError.new(e.message)
+      end
+      # in parent, wait for connection, max 3 seconds
+      @logger.debug "before accept for pid (#{ascp_pid})"
+      client=nil
+      begin
+        Timeout.timeout( 3 ) do
+          client = mgt_sock.accept
+        end
+      rescue Timeout::Error => e
+        Process.kill 'INT',ascp_pid
+      end
+      @logger.debug "after accept (#{client})"
+
+      if client.nil? then
+        # avoid zombie
+        Process.wait ascp_pid
+        raise TransferError.new('timeout waiting mgt port connect')
+      end
+
+      # records for one message
+      current=nil
+
+      # this is the last full status
+      lastStatus=nil
+
+      # read management port
+      loop do
+        begin
+          # check process still present, else receive Errno::ESRCH
+          Process.getpgid( ascp_pid )
+        rescue RangeError => e; break
+        rescue Errno::ESRCH => e; break
+        rescue NotImplementedError; nil # TODO: can we do better on windows ?
+        end
+        # TODO: timeout here ?
+        line = client.gets
+        if line.nil? then
+          break
+        end
+        line.chomp!
+        @logger.debug "line=[#{line}]"
+        if  line.empty? then
+          # end frame
+          if !current.nil? then
+            if !@listener.nil? then
+              @listener.event(current)
+            end
+            if 'DONE'.eql?(current['type']) or 'ERROR'.eql?(current['type']) then
+              lastStatus = current
+            end
+          else
+            @logger.error "unexpected empty line"
+          end
+        elsif 'FASPMGR 2'.eql? line then
+          # begin frame
+          current = Hash.new
+        elsif m=line.match('^([^:]+): (.*)$') then
+          current[FaspParamUtils.snake_case(m[1])] = m[2]
+        else
+          @logger.error "error parsing[#{line}]"
+        end
+      end
+
+      # wait for sub process completion
+      Process.wait(ascp_pid)
+
+      raise "nil last status" if lastStatus.nil?
+
+      if 'DONE'.eql?(lastStatus['type']) then
+        return
+      else
+        raise FaspError.new(lastStatus['description'],lastStatus['code'].to_i)
+      end
     end
 
     # replaces do_transfer
-    # transforms transper_spec into command line arguments and env var, then calls start_transfer_from_args_env
+    # transforms transper_spec into command line arguments and env var, then calls start_transfer_with_args_env
     def start_transfer(transfer_spec)
-      start_transfer_from_args_env(*transfer_spec_to_args_and_env(transfer_spec))
+      start_transfer_with_args_env(FaspParamUtils.transfer_spec_to_args_env(transfer_spec))
       return nil
     end # start_transfer
   end # FaspManager

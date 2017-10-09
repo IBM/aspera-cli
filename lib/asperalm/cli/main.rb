@@ -22,6 +22,7 @@ module Asperalm
         Log.log.debug "#{data}"
       end
     end
+
     # The main CI class, singleton
     class Main < Plugin
       include Singleton
@@ -143,9 +144,9 @@ module Asperalm
         case operation
         when :set
           Log.log.debug "handler_transfer_spec: set: #{value}".red
-          FaspManagerSwitch.ts_override.merge!(value)
+          faspmanager.transfer_spec_default.merge!(value)
         else
-          return FaspManagerSwitch.ts_override
+          return faspmanager.transfer_spec_default
         end
       end
 
@@ -200,20 +201,23 @@ module Asperalm
       end
 
       def faspmanager
-        if @faspmanager.nil?
+        if @faspmanager_switch.nil?
           # create the FASP manager for transfers
           faspmanager_basic=FaspManager.new(Log.log)
           faspmanager_basic.set_listener(FaspListenerLogger.new)
-          # may be nil:
-          faspmanager_basic.fasp_proxy_url=self.options.get_option(:fasp_proxy)
-          faspmanager_basic.http_proxy_url=self.options.get_option(:http_proxy)
           faspmanager_basic.ascp_path=Connect.path(:ascp)
           faspmanager_resume=FaspManagerResume.new(faspmanager_basic)
-          @faspmanager=FaspManagerSwitch.new(faspmanager_resume)
-          @faspmanager.connect_app_id=@@PROGRAM_NAME
+          @faspmanager_switch=FaspManagerSwitch.new(faspmanager_resume)
+          @faspmanager_switch.connect_app_id=@@PROGRAM_NAME
+          if !self.options.get_option(:fasp_proxy).nil?
+            @faspmanager_switch.transfer_spec_default.merge!({'EX_fasp_proxy_url'=>self.options.get_option(:fasp_proxy)})
+          end
+          if !self.options.get_option(:http_proxy).nil?
+            @faspmanager_switch.transfer_spec_default.merge!({'EX_http_proxy_url'=>self.options.get_option(:http_proxy)})
+          end
           case self.options.get_option_mandatory(:transfer)
           when :connect
-            @faspmanager.use_connect_client=true
+            @faspmanager_switch.use_connect_client=true
           when :node
             config_name=self.options.get_option(:transfer_node)
             if config_name.nil?
@@ -223,10 +227,10 @@ module Asperalm
               node_config=@loaded_configs[config_name]
               raise CliBadArgument,"no such node configuration: #{config_name}" if node_config.nil?
             end
-            @faspmanager.tr_node_api=Rest.new(node_config[:url],{:auth=>{:type=>:basic,:username=>node_config[:username], :password=>node_config[:password]}})
+            @faspmanager_switch.tr_node_api=Rest.new(node_config[:url],{:auth=>{:type=>:basic,:username=>node_config[:username], :password=>node_config[:password]}})
           end
         end
-        return @faspmanager
+        return @faspmanager_switch
       end
 
       def start_transfer(transfer_spec)
@@ -240,7 +244,7 @@ module Asperalm
         @help_requested=false
         @options=OptParser.new
         @loaded_configs=nil
-        @faspmanager=nil
+        @faspmanager_switch=nil
         @load_plugin_defaults=true
         scan_all_plugins
         self.options.program_name=@@PROGRAM_NAME
@@ -327,7 +331,7 @@ module Asperalm
         self.options.add_opt_on(:rest_debug,"-r", "--rest-debug","more debug for HTTP calls") { Rest.set_debug(true) }
         self.options.add_opt_on(:no_default,"-N", "--no-default","dont load default configuration") { @load_plugin_defaults=false }
         self.options.add_opt_on(:version,"-v","--version","display version") { puts Asperalm::VERSION;Process.exit(0) }
-        self.options.add_opt_simple(:ts,"--ts=JSON","override transfer spec values (hash, use @json: prefix), current=#{self.options.get_option(:ts)}")
+        self.options.add_opt_simple(:ts,"--ts=JSON","override transfer spec values for transfers (hash, use @json: prefix), current=#{self.options.get_option(:ts)}")
       end
 
       def self.flatten_config_show(t)

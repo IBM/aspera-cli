@@ -1,7 +1,8 @@
 require 'asperalm/cli/main'
 require 'asperalm/cli/basic_auth_plugin'
-require 'asperalm/operating_system'
 require 'asperalm/cli/plugins/node'
+require 'asperalm/operating_system'
+require 'asperalm/fasp_manager'
 require 'xmlsimple'
 
 module Asperalm
@@ -157,7 +158,7 @@ module Asperalm
                 package_entry=XmlSimple.xml_in(entry_xml, {"ForceArray" => true})
               end
               transfer_uri=self.class.get_fasp_uri_from_entry(package_entry)
-              transfer_spec=Main.tool.faspmanager.fasp_uri_to_transferspec(transfer_uri)
+              transfer_spec=FaspParamUtils.fasp_uri_to_transfer_spec(transfer_uri)
               # NOTE: only external users have token in faspe: link !
               if !transfer_spec.has_key?('token')
                 sanitized=transfer_uri.gsub('&','&amp;')
@@ -228,7 +229,7 @@ module Asperalm
             end
             package_entry=XmlSimple.xml_in(pkgdatares[:http].body, {"ForceArray" => false})
             transfer_uri=self.class.get_fasp_uri_from_entry(package_entry)
-            transfer_spec=Main.tool.faspmanager.fasp_uri_to_transferspec(transfer_uri)
+            transfer_spec=FaspParamUtils.fasp_uri_to_transfer_spec(transfer_uri)
             transfer_spec['direction']='receive'
             transfer_spec['destination_root']='.'
             return Main.tool.start_transfer(transfer_spec)
