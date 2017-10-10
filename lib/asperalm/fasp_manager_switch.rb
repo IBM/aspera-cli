@@ -3,27 +3,6 @@ require 'asperalm/fasp_manager'
 require 'securerandom'
 
 module Asperalm
-  # listener for FASP transfers (debug)
-  class FaspListenerProgress < FileTransferListener
-    def initialize
-      @progress=nil
-    end
-
-    def event(data)
-      if data['type'].eql?('NOTIFICATION') and data.has_key?('pre_transfer_bytes') then
-        require 'ruby-progressbar'
-        @progress=ProgressBar.create(:title => 'progress', :total => data['pre_transfer_bytes'].to_i)
-      end
-      if data['type'].eql?('STATS') and !@progress.nil? then
-        @progress.progress=data['TransferBytes'].to_i
-      end
-      if data['type'].eql?('DONE') and ! @progress.nil? then
-        @progress.progress=@progress.total
-        @progress=nil
-      end
-    end
-  end
-
   # for CLI allows specification of different transfer agents
   # supports 3 modes to start a transfer:
   # - ascp : executes ascp process

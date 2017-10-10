@@ -247,8 +247,10 @@ module Asperalm
       @listeners=[]
     end
 
+      Formats=[:text,:struct,:enhanced]
     #
-    def add_listener(listener,format=:original)
+    def add_listener(listener,format=:struct)
+      raise "unsupported format: #{format}" if !Formats.include?(format)
       @listeners.push({:listener=>listener,:format=>format})
       self
     end
@@ -303,7 +305,8 @@ module Asperalm
       end
 
       # records for one message
-      current_event=nil
+current_event_data=nil
+current_event_text=''
 
       # this is the last full status
       last_event=nil
@@ -322,34 +325,40 @@ module Asperalm
         if line.nil? then
           break
         end
+        current_event_text=current_event_text+line
         line.chomp!
         @logger.debug "line=[#{line}]"
         if  line.empty? then
           # end frame
-          if !current_event.nil? then
+          if !current_event_data.nil? then
             if !@listeners.nil? then
               newformat=nil
               @listeners.each do |listener|
                 case listener[:format]
-                when :original
-                  listener[:listener].event(current_event)
-                else
-                  newformat=enhanced_event_format(current_event) if newformat.nil?
+                when :text
+                  listener[:listener].event(current_event_text)
+                when :struct
+                  listener[:listener].event(current_event_data)
+                when :enhanced
+                  newformat=enhanced_event_format(current_event_data) if newformat.nil?
                   listener[:listener].event(newformat)
+                else
+                  raise :ERROR
                 end
               end
             end
-            if ['DONE','ERROR'].include?(current_event['Type']) then
-              last_event = current_event
+            if ['DONE','ERROR'].include?(current_event_data['Type']) then
+              last_event = current_event_data
             end
           else
             @logger.error "unexpected empty line"
           end
         elsif 'FASPMGR 2'.eql? line then
           # begin frame
-          current_event = Hash.new
+          current_event_data = Hash.new
+          current_event_text = ''
         elsif m=line.match('^([^:]+): (.*)$') then
-          current_event[m[1]] = m[2]
+          current_event_data[m[1]] = m[2]
         else
           @logger.error "error parsing[#{line}]"
         end

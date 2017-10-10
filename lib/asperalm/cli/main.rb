@@ -16,6 +16,41 @@ module Asperalm
   module Cli
     module Plugins; end
 
+    #
+    class FaspListenerProgress < FileTransferListener
+      def initialize
+        @progress=nil
+      end
+
+      def event(data)
+        case data['Type']
+        when 'NOTIFICATION'
+          if data.has_key?('PreTransferBytes') then
+            require 'ruby-progressbar'
+            @progress=ProgressBar.create(
+            :format     => '%a %B %p%% %r KB/sec %e',
+            :rate_scale => lambda{|rate|rate/1024},
+            :title      => 'progress',
+            :total      => data['PreTransferBytes'].to_i)
+          end
+        when 'STATS'
+          if !@progress.nil? then
+            @progress.progress=data['TransferBytes'].to_i
+          else
+            puts "."
+          end
+        when 'DONE'
+          if !@progress.nil? then
+            @progress.progress=@progress.total
+            @progress=nil
+          else
+            # terminate progress by going to next line
+            puts "\n"
+          end
+        end
+      end
+    end
+
     # listener for FASP transfers (debug)
     class FaspListenerLogger < FileTransferListener
       def event(data)
@@ -205,6 +240,7 @@ module Asperalm
           # create the FASP manager for transfers
           faspmanager_basic=FaspManager.new(Log.log)
           faspmanager_basic.add_listener(FaspListenerLogger.new)
+          faspmanager_basic.add_listener(FaspListenerProgress.new)
           faspmanager_basic.ascp_path=Connect.path(:ascp)
           faspmanager_resume=FaspManagerResume.new(faspmanager_basic)
           @faspmanager_switch=FaspManagerSwitch.new(faspmanager_resume)
@@ -234,6 +270,8 @@ module Asperalm
       end
 
       def start_transfer(transfer_spec)
+        # TODO: option to choose progress format
+        transfer_spec['EX_quiet']=true
         faspmanager.start_transfer(transfer_spec)
         return self.class.result_success
       end

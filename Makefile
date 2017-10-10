@@ -4,7 +4,8 @@ GEMFILE=$(GEMNAME)-$(GEMVERSION).gem
 CLINAME=aslmcli
 TOOLCONFIGDIR=$(HOME)/.aspera/$(CLINAME)
 APIKEY=$(TOOLCONFIGDIR)/filesapikey
-ASCLI=./bin/$(CLINAME)
+BINDIR=./bin
+ASCLI=$(BINDIR)/$(CLINAME)
 
 SRCZIPBASE=$(GEMNAME)_src
 TODAY=$(shell date +%Y%m%d)
@@ -115,9 +116,10 @@ tfp3:
 	$(ASCLI) server info
 	$(ASCLI) server du /
 	$(ASCLI) server df
-	
+tfp4:
+	$(BINDIR)//asfasp $$(echo '{"remote_host":"demo.asperasoft.com","remote_user":"asperaweb","ssh_port":33001,"password":"demoaspera","direction":"receive","destination_root":"./test.dir","paths":[{"source":"/aspera-test-dir-tiny/200KB.1"}]}'|base64)
 
-tfasp: tfp1 tfp2 tfp3
+tfasp: tfp1 tfp2 tfp3 tfp4
 
 tfx1:
 	$(ASCLI) faspex package list --insecure=yes
@@ -212,15 +214,15 @@ tat5:
 tat6:
 	$(ASCLI) ats api_key list
 tat7:
-	$(ASCLI) ats access_key create --cloud=softlayer --region=ams --params=@json:'{"id":"testkey","name":"laurent key","storage":{"type":"softlayer_swift","container":"laurent","credentials":{"api_key":"e5d032e026e0b0a16e890a3d44d11fd1471217b6262e83c7f60529f1ff4b27de","username":"IBMOS303446-9:laurentmartin"},"path":"/"}}'
+	$(ASCLI) ats access_key create --cloud=softlayer --region=ams --params=@json:'{"id":"testkey2","name":"laurent key","storage":{"type":"softlayer_swift","container":"laurent","credentials":{"api_key":"e5d032e026e0b0a16e890a3d44d11fd1471217b6262e83c7f60529f1ff4b27de","username":"IBMOS303446-9:laurentmartin"},"path":"/"}}'
 tat8:
 	$(ASCLI) ats access_key list --fields=name,id,secret
 tat9:
-	$(ASCLI) ats access_key id testkey node browse /
+	$(ASCLI) ats access_key id testkey2 node browse /
 tat10:
-	$(ASCLI) ats access_key id testkey server
+	$(ASCLI) ats access_key id testkey2 server
 tat11:
-	$(ASCLI) ats access_key id testkey delete
+	$(ASCLI) ats access_key id testkey2 delete
 
 tats: tat1a tat1b tat2 tat3 tat4 tat5 tat6 tat7 tat8 tat9 tat10 tat11
 
