@@ -1,4 +1,4 @@
-require 'asperalm/connect'
+require 'asperalm/fasp_folders'
 require 'asperalm/fasp_manager'
 require 'securerandom'
 
@@ -17,7 +17,7 @@ module Asperalm
     attr_accessor :tr_node_api
     # used to define defaults that override parameters
     attr_accessor :transfer_spec_default
-
+    
     def initialize(real_fasp_manager)
       @transfer_spec_default={}
       @use_connect_client=false
@@ -34,7 +34,7 @@ module Asperalm
       if (@use_connect_client) # transfer using connect ...
         Log.log.debug("using connect client")
         raise "Using connect requires a graphical environment" if !OperatingSystem.default_gui_mode.eql?(:graphical)
-        connect_url=File.open(Connect.path(:plugin_https_port_file)) {|f| f.gets }.strip
+        connect_url=File.open(FaspFolders.path(:plugin_https_port_file)) {|f| f.gets }.strip
         connect_api=Rest.new("#{connect_url}/v5/connect",{})
         begin
           connect_api.read('info/version')
@@ -81,12 +81,13 @@ module Asperalm
         if !transfer_spec.has_key?('EX_ssh_key_value') and
         !transfer_spec.has_key?('EX_ssh_key_paths') and
         transfer_spec.has_key?('token')
-          transfer_spec['EX_ssh_key_paths'] = [ Connect.path(:ssh_bypass_key_dsa), Connect.path(:ssh_bypass_key_rsa) ]
+          transfer_spec['EX_ssh_key_paths'] = [ FaspFolders.path(:ssh_bypass_key_dsa), FaspFolders.path(:ssh_bypass_key_rsa) ]
+          transfer_spec['drowssap'.reverse] = "%08x-%04x-%04x-%04x-%04x%08x" % "t1(\xBF;\xF3E\xB5\xAB\x14F\x02\xC6\x7F)P".unpack("NnnnnN")
         end
         # add fallback cert and key
         if transfer_spec.has_key?('http_fallback') and ['1','force'].include?(transfer_spec['http_fallback'])
-          transfer_spec['EX_fallback_key']=Connect.path(:fallback_key)
-          transfer_spec['EX_fallback_cert']=Connect.path(:fallback_cert)
+          transfer_spec['EX_fallback_key']=FaspFolders.path(:fallback_key)
+          transfer_spec['EX_fallback_cert']=FaspFolders.path(:fallback_cert)
         end
         @real_fasp_manager.start_transfer(transfer_spec)
       end

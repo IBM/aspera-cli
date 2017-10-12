@@ -247,7 +247,8 @@ module Asperalm
       @listeners=[]
     end
 
-      Formats=[:text,:struct,:enhanced]
+    Formats=[:text,:struct,:enhanced]
+
     #
     def add_listener(listener,format=:struct)
       raise "unsupported format: #{format}" if !Formats.include?(format)
@@ -305,8 +306,8 @@ module Asperalm
       end
 
       # records for one message
-current_event_data=nil
-current_event_text=''
+      current_event_data=nil
+      current_event_text=''
 
       # this is the last full status
       last_event=nil

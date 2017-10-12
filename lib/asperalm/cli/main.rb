@@ -2,7 +2,7 @@ require "asperalm/cli/opt_parser"
 require "asperalm/cli/plugin"
 require "asperalm/version"
 require "asperalm/log"
-require "asperalm/connect"
+require 'asperalm/fasp_folders'
 require 'asperalm/operating_system'
 require 'asperalm/oauth'
 require 'asperalm/fasp_manager_switch'
@@ -85,6 +85,7 @@ module Asperalm
       # oldest compatible conf file format
       @@MIN_CONFIG_VERSION='0.4.5'
       @@NO_DEFAULT='none'
+      @@HELP_URL='http://www.rubydoc.info/gems/asperalm'
       # $HOME/.aspera/aslmcli
       def config_folder
         return File.join(Dir.home,@@ASPERA_HOME_FOLDERNAME,@@PROGRAM_NAME)
@@ -199,9 +200,9 @@ module Asperalm
         case operation
         when :set
           Log.log.debug "handler_fasp_folder: set: #{value}".red
-          Connect.fasp_install_paths=value
+          FaspFolders.fasp_install_paths=value
         else
-          return Connect.fasp_install_paths
+          return FaspFolders.fasp_install_paths
         end
       end
 
@@ -241,7 +242,7 @@ module Asperalm
           faspmanager_basic=FaspManager.new(Log.log)
           faspmanager_basic.add_listener(FaspListenerLogger.new)
           faspmanager_basic.add_listener(FaspListenerProgress.new)
-          faspmanager_basic.ascp_path=Connect.path(:ascp)
+          faspmanager_basic.ascp_path=FaspFolders.path(:ascp)
           faspmanager_resume=FaspManagerResume.new(faspmanager_basic)
           @faspmanager_switch=FaspManagerSwitch.new(faspmanager_resume)
           @faspmanager_switch.connect_app_id=@@PROGRAM_NAME
@@ -384,7 +385,7 @@ module Asperalm
 
       # "config" plugin
       def execute_action
-        action=self.options.get_next_arg_from_list('action',[:genkey,:plugins,:flush_tokens,:list,:overview,:open,:echo,:id])
+        action=self.options.get_next_arg_from_list('action',[:genkey,:plugins,:flush_tokens,:list,:overview,:open,:echo,:id,:documentation])
         case action
         when :id
           config_name=self.options.get_next_arg_value('config name')
@@ -419,6 +420,9 @@ module Asperalm
             write_config_file
             return Main.status_result("modified: #{current_config_file}")
           end
+        when :documentation
+          OperatingSystem.open_uri(@@HELP_URL)
+          return Main.no_result
         when :open
           OperatingSystem.open_uri(current_config_file)
           return Main.no_result
@@ -549,6 +553,8 @@ module Asperalm
             STDERR.puts(self.options)
           end
         end
+        STDERR.puts self.options
+        STDERR.puts "\nDocumentation : #{@@HELP_URL}"
         Process.exit 1
       end
 

@@ -5,15 +5,16 @@ require 'rubygems'
 require 'json'
 require 'base64'
 require 'asperalm/fasp_manager'
-require 'asperalm/connect'
+require 'asperalm/fasp_folders'
+if !ARBV.length.eql?(1)
+end
 transferspec=JSON.parse(Base64.decode64(ARGV.first))
-puts transferspec
 logger=Logger.new(STDERR)
 logger.level=3
 class FaspListenerStdout < Asperalm::FileTransferListener
   def event(data);puts JSON.generate(data);end
 end
-mgr=Asperalm::FaspManager.new(logger,Asperalm::Connect.path(:ascp))
+mgr=Asperalm::FaspManager.new(logger,Asperalm::FaspFolders.path(:ascp))
 mgr.add_listener(FaspListenerStdout.new,:enhanced)
 transferspec['EX_quiet']=true
 mgr.start_transfer(transferspec)

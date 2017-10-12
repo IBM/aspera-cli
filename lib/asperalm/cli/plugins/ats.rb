@@ -1,6 +1,5 @@
 require 'asperalm/cli/main'
 require 'asperalm/cli/plugins/node'
-require 'asperalm/connect'
 require 'asperalm/oauth'
 
 module Asperalm

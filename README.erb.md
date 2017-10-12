@@ -96,28 +96,34 @@ $ aslmcli shares browse / --url=https://10.25.0.6 --username=john --password=4sp
 This can also be provisioned in a config file:
 
 ```bash
-$ aslmcli config id shares06 set url https://10.25.0.6
-$ aslmcli config id shares06 set username john
-$ aslmcli config id shares06 set password 4sp3ra
-$ aslmcli config id default set shares shares06 
-$ aslmcli config show
+1$ aslmcli config id shares06 set url https://10.25.0.6
+2$ aslmcli config id shares06 set username john
+3$ aslmcli config id shares06 set password 4sp3ra
+4$ aslmcli config id default set shares shares06 
+5$ aslmcli config show
 ```
 
-The three first commands build a configuration profile. The fourth command defines this
-profile as the default profile for the specified application. The last command dumps
-the configuration file. Alternative profiles can be used with option "-P&lt;profile&gt;"
-(or --load-params)
+The three first commands build a configuration profile. 
+Note that this can also be done with one command:
+
+```bash
+$ aslmcli config id shares06 init @json:'{"url":"https://10.25.0.6","username":"john","password":"4sp3ra"}'
+```
+
+The fourth command defines this profile as the default profile for the 
+specified application. The last command dumps the configuration file. 
+Alternative profiles can be used with option "-P&lt;profile&gt;"
+(or --load-params=&lt;profile&gt;)
 
 
 ## Configuration for Aspera Files
 
 Aspera Files APIs does not support Basic HTTP authentication (see section "Authentication").
 Using the CLI with Aspera Files will require the generation of a "Bearer token", this is done
-by default by authentication with a web interface.
-Note that by specifying the option: `--gui-mode=graphical`, the CLI will try to start the default
-browser, else the URL is displayed on the terminal (option `--gui-mode=text`).
+by default by authentication with a web interface (see section "Graphical interactions").
 
-A more convenient way to use the CLI with Aspera Files, a possibility is to do the following (JWT auth):
+A more convenient way to use the CLI with Aspera Files, a possibility is to do the following 
+(JWT auth):
 
 * Create a private/public key pair, as specified in section: "Private/Public Keys"
 
@@ -189,9 +195,11 @@ For instance, the plugin "faspex" allows operations on the application "Aspera F
 
 The use of the configuration file is not mandatory. All parameters can be set on 
 command line. A configuration file provides a way to define default values, especially
-for authentication parameters, thus avoiding to always have to specify those parameters.
+for authentication parameters, thus avoiding to always have to specify those parameters
+on the command line.
 
-The default configuration file is: `$HOME/.aspera/aslmcli/config.yaml` (can be overriden with option --config-file).
+The default configuration file is: `$HOME/.aspera/aslmcli/config.yaml` 
+(can be overriden with option --config-file).
 It is composed with "profiles" containing "parameters".
 (The first level is an associative array whose values are associative arrays or parameters).
 
@@ -208,10 +216,12 @@ The configuration file can be modified using the commands:
 aslmcli config id <profile name> set|delete|show|initialize
 ```
 
-The profile "config" is reserved for the global parameters of the `aslmcli` tool.
-The profile "config" contains a special parameter: "version" showing the CLI version used to create
-this file. It is used to check for incompatibilities.
-The profile "default" is reserved to define the default profile name used for plugins.
+Two profiles are reserved:
+
+* "config" is reserved for the global parameters of the `aslmcli` tool.
+It contains a special parameter: "version" showing the CLI 
+version used to create this file. It is used to check compatibility.
+* "default" is reserved to define the default profile name used for plugins.
 
 Usually, a configuration "profile" corresponds to a set of parameters used for a specific plugin.
 
@@ -302,14 +312,21 @@ the public key is provided to Aspera Files:
 Upon successful authentication, auth token are saved (cache) in local files, and 
 can be used subsequently. Expired token can be refreshed.
 
-# Browser interactions
+# Graphical interactions: Browser and Text Editor
 
-Some actions may require the use of a browser, e.g. Aspera Files authentication.
-In that case, a browser may be started, or the user may be asked to open a specific url.
-Option --gui-mode=&lt;text|graphical&gt; controls if the URL is simply displayed on terminal
-or if the browser is started automatically to the URL.
-By default, on windows, a browser is opened, on Linux, the terminal is used if there is
-not environment variable DISPLAY.
+Some actions may require the use of a graphical tool:
+
+* a browser for Aspera Files authentication
+* a text editor for configuration file edition
+
+By default the CLI will assume that a graphical environment is available on windows,
+and on other systems, rely on the presence of the "DISPLAY" environment variable.
+It is also possible to force the graphical mode with option --gui-mode :
+
+* `--gui-mode=graphical` forces a graphical environment, a browser will be opened for URLs or
+a text editor for file edition.
+* `--gui-mode=text` forces a text environment, the URL or file path to open is displayed on
+terminal.
 
 # Private/Public Keys
 
@@ -537,6 +554,11 @@ Note that actions and parameter values can be written in short form.
 # BUGS
 This is a sample code only, dont expect full capabilities. This code is not
 supported by IBM/Aspera. You can contact the author.
+
+If you get message: "OpenSSH keys only supported if ED25519 is available"
+this means that you do not have ruby support for ED25519 SSH keys. You may either install the suggested
+Gems, or remove your ed25519 key to solve the issue.
+
 
 # TODO
 * remove rest and oauth and use ruby standard gems:

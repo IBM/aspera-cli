@@ -1,5 +1,5 @@
 require 'asperalm/log'
-require 'asperalm/connect'
+require 'asperalm/fasp_folders'
 require 'sinatra/base'
 require 'webrick'
 require 'webrick/https'
@@ -15,8 +15,8 @@ module Asperalm
       @@api_files_user=api_files_user
       @@api_files_oauth=@@api_files_user.param_default[:auth][:obj]
       @@the_workspaceid=workspace_id
-      $CERTIFICATE=File.read(Connect.path(:localhost_cert))
-      $PRIVATE_KEY=File.read(Connect.path(:localhost_key))
+      $CERTIFICATE=File.read(FaspFolders.path(:localhost_cert))
+      $PRIVATE_KEY=File.read(FaspFolders.path(:localhost_key))
       webrick_options = {
         :app                => FaspexGW,
         :Port               => 9443,
