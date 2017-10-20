@@ -2,7 +2,7 @@ require 'asperalm/cli/main'
 require 'asperalm/cli/basic_auth_plugin'
 require 'asperalm/cli/plugins/node'
 require 'asperalm/operating_system'
-require 'asperalm/fasp_manager'
+require 'asperalm/fasp/uri'
 require 'xmlsimple'
 
 module Asperalm
@@ -157,8 +157,9 @@ module Asperalm
                 entry_xml=api_faspex.call({:operation=>'GET',:subpath=>"#{Main.tool.options.get_option(:box).to_s}/#{delivid}",:headers=>{'Accept'=>'application/xml'}})[:http].body
                 package_entry=XmlSimple.xml_in(entry_xml, {"ForceArray" => true})
               end
+              destination_folder=Main.tool.options.get_next_arg_value('destination folder')
               transfer_uri=self.class.get_fasp_uri_from_entry(package_entry)
-              transfer_spec=FaspParamUtils.fasp_uri_to_transfer_spec(transfer_uri)
+              transfer_spec=Fasp::Uri.new(transfer_uri).transfer_spec
               # NOTE: only external users have token in faspe: link !
               if !transfer_spec.has_key?('token')
                 sanitized=transfer_uri.gsub('&','&amp;')
@@ -166,7 +167,7 @@ module Asperalm
                 transfer_spec['token']=api_faspex.call({:operation=>'POST',:subpath=>"issue-token?direction=down",:headers=>{'Accept'=>'text/plain','Content-Type'=>'application/vnd.aspera.url-list+xml'},:text_body_params=>xmlpayload})[:http].body
               end
               transfer_spec['direction']='receive'
-              transfer_spec['destination_root']='.'
+              transfer_spec['destination_root']=destination_folder
               return Main.tool.start_transfer(transfer_spec)
             end
           when :source
@@ -219,6 +220,7 @@ module Asperalm
             end
           when :recv_publink
             thelink=Main.tool.options.get_next_arg_value("Faspex public URL for a package")
+            destination_folder=Main.tool.options.get_next_arg_value('destination folder')
             link_data=self.class.get_link_data(thelink)
             # Note: unauthenticated API
             api_faspex=Rest.new(link_data[:faspex_base_url],{})
@@ -229,9 +231,9 @@ module Asperalm
             end
             package_entry=XmlSimple.xml_in(pkgdatares[:http].body, {"ForceArray" => false})
             transfer_uri=self.class.get_fasp_uri_from_entry(package_entry)
-            transfer_spec=FaspParamUtils.fasp_uri_to_transfer_spec(transfer_uri)
+            transfer_spec=Fasp::Uri.new(transfer_uri).transfer_spec
             transfer_spec['direction']='receive'
-            transfer_spec['destination_root']='.'
+            transfer_spec['destination_root']=destination_folder
             return Main.tool.start_transfer(transfer_spec)
           end # command
         end

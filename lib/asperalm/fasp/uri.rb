@@ -1,42 +1,45 @@
 require "asperalm/log"
+require "asperalm/fasp/parameters"
 
 module Asperalm
   module Fasp
     # translates a "faspe:" URI into transfer spec hash
     class Uri
-      def self.fasp_uri_to_transfer_spec(fasplink)
-        transfer_uri=URI.parse(fasplink)
-        transfer_spec={}
-        transfer_spec['remote_host']=transfer_uri.host
-        transfer_spec['remote_user']=transfer_uri.user
-        transfer_spec['ssh_port']=transfer_uri.port
-        transfer_spec['paths']=[{"source"=>URI.decode_www_form_component(transfer_uri.path)}]
+      def initialize(fasplink)
+        @fasp_uri=URI.parse(fasplink)
+      end
+      def transfer_spec
+        result_ts={}
+        result_ts['remote_host']=@fasp_uri.host
+        result_ts['remote_user']=@fasp_uri.user
+        result_ts['ssh_port']=@fasp_uri.port
+        result_ts['paths']=[{"source"=>URI.decode_www_form_component(@fasp_uri.path)}]
 
-        URI::decode_www_form(transfer_uri.query).each do |i|
+        URI::decode_www_form(@fasp_uri.query).each do |i|
           name=i[0]
           value=i[1]
           case name
-          when 'cookie'; transfer_spec['cookie']=value
-          when 'token'; transfer_spec['token']=value
-          when 'policy'; transfer_spec['rate_policy']=value
-          when 'httpport'; transfer_spec['http_fallback_port']=value
-          when 'targetrate'; transfer_spec['target_rate_kbps']=value
-          when 'minrate'; transfer_spec['min_rate_kbps']=value
-          when 'port'; transfer_spec['fasp_port']=value
-          when 'enc'; transfer_spec['cipher']=value
-          when 'tags64'; transfer_spec['tags64']=value
-          when 'bwcap'; transfer_spec['target_rate_cap_kbps']=value
-          when 'createpath'; transfer_spec['create_dir']=yes_to_true(value)
-          when 'fallback'; transfer_spec['http_fallback']=yes_to_true(value)
-          when 'lockpolicy'; transfer_spec['lock_rate_policy']=value
-          when 'lockminrate'; transfer_spec['lock_min_rate']=value
+          when 'cookie'; result_ts['cookie']=value
+          when 'token'; result_ts['token']=value
+          when 'policy'; result_ts['rate_policy']=value
+          when 'httpport'; result_ts['http_fallback_port']=value
+          when 'targetrate'; result_ts['target_rate_kbps']=value
+          when 'minrate'; result_ts['min_rate_kbps']=value
+          when 'port'; result_ts['fasp_port']=value
+          when 'enc'; result_ts['cipher']=value
+          when 'tags64'; result_ts['tags64']=value
+          when 'bwcap'; result_ts['target_rate_cap_kbps']=value
+          when 'createpath'; result_ts['create_dir']=Parameters.yes_to_true(value)
+          when 'fallback'; result_ts['http_fallback']=Parameters.yes_to_true(value)
+          when 'lockpolicy'; result_ts['lock_rate_policy']=value
+          when 'lockminrate'; result_ts['lock_min_rate']=value
           when 'auth'; Log.log.debug("ignoring #{name}=#{value}") # TODO: translate into transfer spec ?
           when 'v'; Log.log.debug("ignoring #{name}=#{value}") # TODO: translate into transfer spec ?
           when 'protect'; Log.log.debug("ignoring #{name}=#{value}") # TODO: translate into transfer spec ?
           else Log.log.error("non managed URI value: #{name} = #{value}")
           end
         end
-        return transfer_spec
+        return result_ts
       end
     end # Parameters
   end # Fasp

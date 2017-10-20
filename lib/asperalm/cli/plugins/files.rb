@@ -266,12 +266,13 @@ module Asperalm
               return Main.tool.start_transfer(tspec)
             when :recv
               package_id=Main.tool.options.get_next_arg_value('package ID')
+              destination_folder=Main.tool.options.get_next_arg_value('destination folder')
               the_package=@api_files_user.read("packages/#{package_id}")[:data]
               node_info=@api_files_user.read("nodes/#{the_package['node_id']}")[:data]
               tspec=info_to_tspec("receive",node_info,the_package['contents_file_id'])
               tspec['tags']["aspera"]["files"]={"package_id" => the_package['id'], "package_operation" => "download"}
               tspec['paths']=[{'source'=>'.'}]
-              tspec['destination_root']='.' # TODO:param?
+              tspec['destination_root']=destination_folder
               return Main.tool.start_transfer(tspec)
             when :list
               # list all packages ('page'=>1,'per_page'=>10,)'sort'=>'-sent_at',
