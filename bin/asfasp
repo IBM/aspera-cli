@@ -4,18 +4,38 @@ $LOAD_PATH.unshift(File.dirname(__FILE__) + "/../lib")
 require 'rubygems'
 require 'json'
 require 'base64'
+require "asperalm/cli/opt_parser"
 require 'asperalm/fasp_manager'
 require 'asperalm/fasp_folders'
-if !ARBV.length.eql?(1)
-end
-transferspec=JSON.parse(Base64.decode64(ARGV.first))
+
+# prepare logger
 logger=Logger.new(STDERR)
 logger.level=3
+transferspec=nil
+
+p=OptionParser.new
+p.banner = "Usage: asfasp [options]"
+p.on("-D", "debug mode"){logger.level=logger.level+1}
+p.on("--ts=VALUE", "transfer spec: prefix with combination of: @json:, @base64:, @stdin"){|v|transferspec=Asperalm::Cli::OptParser.get_extended_value("transfer spec",v)}
+p.on_tail("-h", "--help", "Show this message"){STDERR.puts(p);Process.exit(1)}
+p.separator("Examples:")
+p.separator("asfasp --ts=@json:'{"+'"remote_host":"demo.asperasoft.com","remote_user":"asperaweb","ssh_port":33001,"password":"demoaspera","direction":"receive","destination_root":"./test.dir","paths":[{"source":"/aspera-test-dir-tiny/200KB.1"}]}'+"'")
+p.separator("echo '..transferspec.spec..'|asfasp --ts=@json:@stdin")
+p.parse!
+if transferspec.nil?
+  STDERR.puts(p)
+  Process.exit(1)
+end
+
+# FASP event listener display management events as JSON
 class FaspListenerStdout < Asperalm::FileTransferListener
   def event(data);puts JSON.generate(data);end
 end
-mgr=Asperalm::FaspManager.new(logger,Asperalm::FaspFolders.path(:ascp))
+
+# create the underlying fasp manager (will run ascp)
+mgr=Asperalm::FaspManager.new(logger,Asperalm::ResourceFinder.path(:ascp))
 mgr.add_listener(FaspListenerStdout.new,:enhanced)
+# disable ascp output
 transferspec['EX_quiet']=true
+# go !
 mgr.start_transfer(transferspec)
-# ./bin/asfasp $(echo '{"remote_host":"demo.asperasoft.com","remote_user":"asperaweb","ssh_port":33001,"password":"demoaspera","direction":"receive","destination_root":"./test.dir","paths":[{"source":"/aspera-test-dir-tiny/200KB.1"}]}'|base64 )

@@ -14,9 +14,9 @@ module Asperalm
           super_declare_options
           Main.tool.options.set_option(:params,{})
           Main.tool.options.set_option(:synchronous,:no)
-          Main.tool.options.add_opt_simple(:params,"--params=HASH_TABLE","parameters hash table, use @json:{\"param\":\"value\"}")
-          Main.tool.options.add_opt_simple(:result,"--result=step:name","work step:parameter expected as result")
-          Main.tool.options.add_opt_list(:synchronous,SYNCHRONOUS_VALUES,"--synchronous=YES_NO","work step:parameter expected as result")
+          Main.tool.options.add_opt_simple(:params,"HASH_TABLE","parameters hash table, use @json:{\"param\":\"value\"}")
+          Main.tool.options.add_opt_simple(:result,"step:name","work step:parameter expected as result")
+          Main.tool.options.add_opt_list(:synchronous,"YES_NO",SYNCHRONOUS_VALUES,"work step:parameter expected as result")
         end
 
         def action_list; [:info, :workflow, :plugins, :processes];end

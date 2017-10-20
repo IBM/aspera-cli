@@ -1,4 +1,3 @@
-require 'asperalm/colors'
 require 'logger'
 
 module Asperalm

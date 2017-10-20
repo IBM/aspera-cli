@@ -9,6 +9,22 @@ module Asperalm
   module Cli
     module Plugins
       class Files < Plugin
+        def action_list; [ :package, :repo, :faspexgw, :admin];end
+       def declare_options
+          Main.tool.options.set_option(:download_mode,:fasp)
+          Main.tool.options.add_opt_list(:download_mode,'TYPE',[:fasp, :node_http ],"download mode")
+          Main.tool.options.add_opt_list(:auth,'TYPE',Oauth.auth_types,"type of authentication",'-tTYPE')
+          Main.tool.options.add_opt_simple(:url,"URI","-wURI","URL of application, e.g. http://org.asperafiles.com")
+          Main.tool.options.add_opt_simple(:username,"STRING","-uSTRING","username to log in")
+          Main.tool.options.add_opt_simple(:password,"STRING","-pSTRING","password")
+          Main.tool.options.add_opt_simple(:private_key,"STRING","-kSTRING","RSA private key for JWT (@ for ext. file)")
+          Main.tool.options.add_opt_simple(:workspace,"STRING","name of workspace")
+          Main.tool.options.add_opt_simple(:recipient,"STRING","package recipient")
+          Main.tool.options.add_opt_simple(:title,"STRING","package title")
+          Main.tool.options.add_opt_simple(:note,"STRING","package note")
+          Main.tool.options.add_opt_simple(:secret,"STRING","access key secret for node")
+        end
+
         # returns a node API for access key
         # no scope: requires secret
         # if secret present: use it
@@ -81,21 +97,6 @@ module Asperalm
             'tags'             => { "aspera" => { "node" => { "access_key" => node_info['access_key'], "file_id" => file_id }, "xfer_id" => SecureRandom.uuid, "xfer_retry" => 3600 } } }
         end
 
-        def declare_options
-          Main.tool.options.set_option(:download_mode,:fasp)
-          Main.tool.options.add_opt_list(:download_mode,[:fasp, :node_http ],"download mode",'--download=TYPE')
-          Main.tool.options.add_opt_list(:auth,Oauth.auth_types,"type of authentication",'-tTYPE','--auth=TYPE')
-          Main.tool.options.add_opt_simple(:url,"-wURI", "--url=URI","URL of application, e.g. http://org.asperafiles.com")
-          Main.tool.options.add_opt_simple(:username,"-uSTRING", "--username=STRING","username to log in")
-          Main.tool.options.add_opt_simple(:password,"-pSTRING", "--password=STRING","password")
-          Main.tool.options.add_opt_simple(:private_key,"-kSTRING", "--private-key=STRING","RSA private key for JWT (@ for ext. file)")
-          Main.tool.options.add_opt_simple(:workspace,"--workspace=STRING","name of workspace")
-          Main.tool.options.add_opt_simple(:recipient,"--recipient=STRING","package recipient")
-          Main.tool.options.add_opt_simple(:title,"--title=STRING","package title")
-          Main.tool.options.add_opt_simple(:note,"--note=STRING","package note")
-          Main.tool.options.add_opt_simple(:secret,"--secret=STRING","access key secret for node")
-        end
-
         PATH_SEPARATOR='/'
 
         def execute_node_action(home_node_id,home_file_id)
@@ -153,7 +154,6 @@ module Asperalm
           end
         end
 
-        def action_list; [ :package, :repo, :faspexgw, :admin];end
 
         def execute_action
           command=Main.tool.options.get_next_arg_from_list('command',action_list)

@@ -1,4 +1,5 @@
 require 'asperalm/log'
+require 'rbconfig'
 
 module Asperalm
   # Allows a user to open a Url

@@ -7,7 +7,7 @@ module Asperalm
     module Plugins
       class Shares2 < Plugin
         def declare_options
-          Main.tool.options.add_opt_list(:auth,Oauth.auth_types,"type of authentication",'-tTYPE','--auth=TYPE')
+          Main.tool.options.add_opt_list(:auth,'TYPE',Oauth.auth_types,"type of authentication",'-tTYPE')
         end
 
         def action_list; [ :repository];end

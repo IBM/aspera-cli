@@ -1,6 +1,4 @@
-require 'asperalm/rest'
 require 'asperalm/colors'
-require 'asperalm/fasp_manager_resume'
 require 'asperalm/log'
 require 'optparse'
 require 'json'
@@ -30,7 +28,8 @@ module Asperalm
         @unprocessed_options=[]
         # key = name of option, either Proc(set/get) or value
         @available_option={}
-        @sym_options=[]
+        # list of options whose value is a ruby symbol, not a string
+        @fixed_options={}
         super
       end
 
@@ -92,6 +91,8 @@ module Asperalm
             value=ENV[value]
           elsif m=value.match(/^@val:(.*)/) then
             value=m[1]
+          elsif value.eql?('@stdin') then
+            value=STDIN.gets
           end
           decoding.reverse.each do |d|
             case d
@@ -112,6 +113,7 @@ module Asperalm
         return CliBadArgument.new(error_msg+"\nUse:\n"+choices.map{|c| "- #{c.to_s}\n"}.join(''))
       end
 
+      # find shortened string value in allowed symbol list
       def self.get_from_list(shortval,descr,allowed_values)
         # we accept shortcuts
         matching_exact=allowed_values.select{|i| i.to_s.eql?(shortval)}
@@ -170,55 +172,76 @@ module Asperalm
 
       # get an option value by name, either return value or call handler, can return nil
       def get_option(option_symbol)
-        if @available_option.has_key?(option_symbol) and @available_option[option_symbol].is_a?(Proc)
-          Log.log.debug("get #{option_symbol} (method)")
-          return @available_option[option_symbol].call(:get,nil) # TODO ? check
+        result=nil
+        source=nil
+        if @available_option[option_symbol].is_a?(Proc)
+          source="method"
+          result=@available_option[option_symbol].call(:get,nil) # TODO ? check
         else
-          Log.log.debug("get #{option_symbol} (value)")
-          # convert option to symbol if it came from conf file...
-          @available_option[option_symbol]=@available_option[option_symbol].to_sym if @sym_options.include?(option_symbol) and !@available_option[option_symbol].nil? and !@available_option[option_symbol].is_a?(Symbol)
-          return @available_option[option_symbol]
+          # Note1: convert option to symbol if it came from conf file as string, but must be a symbol from list
+          if @fixed_options.has_key?(option_symbol) and
+          !@available_option[option_symbol].nil? and
+          !@available_option[option_symbol].is_a?(Symbol)
+            @available_option[option_symbol]=self.class.get_from_list(@available_option[option_symbol],option_symbol.to_s+" in conf file",@fixed_options[option_symbol])
+          end
+          source="value"
+          result=@available_option[option_symbol]
         end
+        Log.log.debug("get #{option_symbol} (#{source}) : #{result}")
+        return result
       end
 
       def set_defaults(values)
         Log.log.info("set_defaults=#{values}")
         raise "internal error: setting default with no hash: #{values.class}" if !values.is_a?(Hash)
-        values.each { |k,v|
-          # in conf file, key is string, in config, key is symbol
-          set_option(k.to_sym,v)
-        }
+        # 1- in conf file, key is string, in config, key is symbol
+        # 2- value may be string, but symbol expected for value lists, but options may not be already declared, see Note1
+        values.each{|k,v|set_option(k.to_sym,v)}
       end
 
-      def add_opt_list(option_symbol,values,help,*args)
+      # generate command line option from option symbol
+      def symbol_to_option(symbol,opt_val)
+        result='--'+symbol.to_s.gsub('_','-')
+        result=result+'='+opt_val if (!opt_val.nil?)
+        return result
+      end
+
+      # define an option with restricted values
+      def add_opt_list(option_symbol,opt_val,values,help,*args)
         Log.log.info("add_opt_list #{option_symbol}->#{args}")
-        @sym_options.push(option_symbol)
+        args.unshift(symbol_to_option(option_symbol,opt_val))
+        # this option value must be a symbol
+        @fixed_options[option_symbol]=values
         value=get_option(option_symbol)
         args.push(values)
         args.push("#{help}. Values=(#{values.join(',')}), current=#{value}")
-        self.on( *args ) do |v|
-          set_option(option_symbol,self.class.get_from_list(v.to_s,help,values))
-        end
+        self.on(*args){|v|set_option(option_symbol,self.class.get_from_list(v.to_s,help,values))}
       end
 
-      def add_opt_simple(option_symbol,*args)
+      # define an option with open values
+      def add_opt_simple(option_symbol,opt_val,*args)
         Log.log.info("add_opt_simple #{option_symbol}->#{args}")
+        args.unshift(symbol_to_option(option_symbol,opt_val))
         self.on(*args) { |v| set_option(option_symbol,v) }
       end
 
-      def add_opt_date(option_symbol,*args)
+      # define an option with date format
+      def add_opt_date(option_symbol,opt_val,*args)
         Log.log.info("add_opt_date #{option_symbol}->#{args}")
-        self.on(*args) { |v|
+        args.unshift(symbol_to_option(option_symbol,opt_val))
+        self.on(*args) do |v|
           case v
           when 'now'; set_option(option_symbol,OptParser.time_to_string(Time.now))
           when /^-([0-9]+)h/; set_option(option_symbol,OptParser.time_to_string(Time.now-$1.to_i*3600))
           else set_option(option_symbol,v)
           end
-        }
+        end
       end
 
-      def add_opt_on(option_symbol,*args,&block)
+      # define an option without value
+      def add_opt_switch(option_symbol,*args,&block)
         Log.log.info("add_opt_on #{option_symbol}->#{args}")
+        args.unshift(symbol_to_option(option_symbol,nil))
         self.on(*args,&block)
       end
 

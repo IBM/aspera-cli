@@ -6,6 +6,7 @@ module Asperalm
   module Cli
     module Plugins
       # list and download connect client versions
+      # https://52.44.83.163/docs/pub/
       class Ats < Plugin
         # main url for ATS API
         ATS_API_URL = 'https://ats.aspera.io/pub/v1'
@@ -14,10 +15,10 @@ module Asperalm
         # cache file for CLI for API keys
         API_KEY_REPOSITORY=File.join(Main.tool.config_folder,"ats_api_keys.json")
         def declare_options
-          Main.tool.options.add_opt_simple(:ats_id,"--ats-id=ATS_ID","ATS key identifier")
-          Main.tool.options.add_opt_simple(:params,"--params=JSON","parameters for access key")
-          Main.tool.options.add_opt_simple(:cloud,"--cloud=PROVIDER","cloud provider")
-          Main.tool.options.add_opt_simple(:region,"--region=REGION","parameters for access key")
+          Main.tool.options.add_opt_simple(:ats_id,"ATS_ID","ATS key identifier")
+          Main.tool.options.add_opt_simple(:params,"JSON","parameters for access key")
+          Main.tool.options.add_opt_simple(:cloud,"PROVIDER","cloud provider")
+          Main.tool.options.add_opt_simple(:region,"REGION","parameters for access key")
         end
 
         # currently supported clouds
@@ -55,18 +56,19 @@ module Asperalm
         def current_api_key
           if @current_api_key.nil?
             requested_id=Main.tool.options.get_option(:ats_id)
-            if !requested_id.nil?
+            if requested_id.nil?
+              # if no api key requested and no repo, create one
+              create_new_api_key if repo_api_keys.empty?
+              # else there must be only one
+              raise "please select one api key with --ats-id, list with: aslmcli ats api repo list" if repo_api_keys.length != 1
+              @current_api_key=repo_api_keys.first
+            else
               selected=repo_api_keys.select{|i| i['ats_id'].eql?(requested_id)}
               raise CliBadArgument,"no such id in repository" if selected.empty?
               @current_api_key=selected.first
-            else
-              if repo_api_keys.empty?
-                create_new_api_key
-              end
-              @current_api_key=repo_api_keys.first
             end
           end
-          @current_api_key
+          return @current_api_key
         end
 
         # create a new API key , requires aspera id authentication

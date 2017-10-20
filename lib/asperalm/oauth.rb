@@ -51,13 +51,16 @@ module Asperalm
     end
 
     # save token data in memory cache
+    # returns recoded token data
     def set_token_cache(api_scope,token_json)
       @token_cache[api_scope]=JSON.parse(token_json)
       # for debug only, expiration info is not accurate
       begin
         decoded_token_info = JSON.parse(Zlib::Inflate.inflate(Base64.decode64(@token_cache[api_scope]['access_token'])).partition('==SIGNATURE==').first)
         Log.log.info "decoded_token_info=#{PP.pp(decoded_token_info,'').chomp}"
+        return decoded_token_info
       rescue
+        return nil
       end
     end
 
@@ -88,13 +91,14 @@ module Asperalm
       if ! @token_cache.has_key?(api_scope) then
         if File.exist?(token_state_file) then
           Log.log.info "reading token from file cache: #{token_state_file}"
-          set_token_cache(api_scope,File.read(token_state_file))
+          token_data=set_token_cache(api_scope,File.read(token_state_file))
+          # TODO: check if node token is expired, then force refresh, mandatory as there is no API call, and ascp will complain
         end
       end
 
       # an api was already called, but failed, we need to regenerate or refresh
       if last_use_not_authorized
-        raise "ERROR: should never happen" if !@token_cache.has_key?(api_scope)
+        raise "ERROR: should never happen" unless @token_cache.has_key?(api_scope)
         # save possible refresh token, before deleting the cache
         refresh_token=@token_cache[api_scope]['refresh_token']
         # delete caches

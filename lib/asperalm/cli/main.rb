@@ -2,10 +2,10 @@ require "asperalm/cli/opt_parser"
 require "asperalm/cli/plugin"
 require "asperalm/version"
 require "asperalm/log"
-require 'asperalm/fasp_folders'
+require 'asperalm/fasp/transfer_agent'
+require 'asperalm/fasp/manager'
 require 'asperalm/operating_system'
 require 'asperalm/oauth'
-require 'asperalm/fasp_manager_switch'
 require 'text-table'
 require 'fileutils'
 require 'singleton'
@@ -16,8 +16,8 @@ module Asperalm
   module Cli
     module Plugins; end
 
-    #
-    class FaspListenerProgress < FileTransferListener
+    # a listener to FASP event that displays a progress bar
+    class FaspListenerProgress < Fasp::TransferListener
       def initialize
         @progress=nil
       end
@@ -52,16 +52,16 @@ module Asperalm
     end
 
     # listener for FASP transfers (debug)
-    class FaspListenerLogger < FileTransferListener
+    class FaspListenerLogger < Fasp::TransferListener
       def event(data)
-        Log.log.debug "#{data}"
+        Log.log.debug(data.to_s)
       end
     end
 
     # The main CI class, singleton
     class Main < Plugin
       include Singleton
-      # "tool" class method is an alias to "instance"
+      # "tool" class method is an alias to "instance" of singleton
       singleton_class.send(:alias_method, :tool, :instance)
 
       # first level command for the main tool
@@ -82,7 +82,7 @@ module Asperalm
       @@PLUGINS_MODULE=@@CLI_MODULE+"::Plugins"
       @@CONFIG_FILE_KEY_VERSION='version'
       @@CONFIG_FILE_KEY_DEFAULT='default'
-      # oldest compatible conf file format
+      # oldest compatible conf file format, update to latest version when an incompatible change is made
       @@MIN_CONFIG_VERSION='0.4.5'
       @@NO_DEFAULT='none'
       @@HELP_URL='http://www.rubydoc.info/gems/asperalm'
@@ -200,9 +200,9 @@ module Asperalm
         case operation
         when :set
           Log.log.debug "handler_fasp_folder: set: #{value}".red
-          FaspFolders.fasp_install_paths=value
+          Fasp::ResourceFinder.fasp_install_paths=value
         else
-          return FaspFolders.fasp_install_paths
+          return Fasp::ResourceFinder.fasp_install_paths
         end
       end
 
@@ -239,12 +239,11 @@ module Asperalm
       def faspmanager
         if @faspmanager_switch.nil?
           # create the FASP manager for transfers
-          faspmanager_basic=FaspManager.new(Log.log)
-          faspmanager_basic.add_listener(FaspListenerLogger.new)
-          faspmanager_basic.add_listener(FaspListenerProgress.new)
-          faspmanager_basic.ascp_path=FaspFolders.path(:ascp)
-          faspmanager_resume=FaspManagerResume.new(faspmanager_basic)
-          @faspmanager_switch=FaspManagerSwitch.new(faspmanager_resume)
+          Fasp::Manager.instance.logger=Log.log
+          Fasp::Manager.instance.add_listener(FaspListenerLogger.new)
+          Fasp::Manager.instance.add_listener(FaspListenerProgress.new)
+          Fasp::Manager.instance.ascp_path=Fasp::ResourceFinder.path(:ascp)
+          @faspmanager_switch=Fasp::TransferAgent.new
           @faspmanager_switch.connect_app_id=@@PROGRAM_NAME
           if !self.options.get_option(:fasp_proxy).nil?
             @faspmanager_switch.transfer_spec_default.merge!({'EX_fasp_proxy_url'=>self.options.get_option(:fasp_proxy)})
@@ -354,22 +353,22 @@ module Asperalm
         self.options.set_option(:logger,:stdout)
         self.options.set_option(:config_file,default_config_file)
         self.options.on("-h", "--help", "Show this message.") { @help_requested=true }
-        self.options.add_opt_list(:gui_mode,OperatingSystem.gui_modes,"method to start browser",'-gTYPE','--gui-mode=TYPE')
-        self.options.add_opt_list(:insecure,[:yes,:no],"do not validate cert",'--insecure=VALUE')
-        self.options.add_opt_list(:log_level,Log.levels,"Log level",'-lTYPE','--log-level=VALUE')
-        self.options.add_opt_list(:logger,Log.logtypes,"log method",'-qTYPE','--logger=VALUE')
-        self.options.add_opt_list(:format,self.class.display_formats,"output format",'--format=VALUE')
-        self.options.add_opt_list(:transfer,[:ascp,:connect,:node],"type of transfer",'--transfer=VALUE')
-        self.options.add_opt_simple(:config_file,"-CSTRING", "--config-file=STRING","read parameters from file in YAML format, current=#{self.options.get_option(:config_file)}")
-        self.options.add_opt_simple(:load_params,"-PNAME","--load-params=NAME","load the named configuration from current config file, use \"#{@@NO_DEFAULT}\" to avoid loading the default configuration")
-        self.options.add_opt_simple(:fasp_folder,"--fasp-folder=NAME","specify where to find FASP (main folder), current=#{self.options.get_option(:fasp_folder)}")
-        self.options.add_opt_simple(:transfer_node,"--transfer-node=STRING","name of configuration used to transfer when using --transfer=node")
-        self.options.add_opt_simple(:fields,"--fields=STRING","comma separated list of fields, or #{FIELDS_ALL}, or #{FIELDS_DEFAULT}")
-        self.options.add_opt_simple(:fasp_proxy,"--fasp-proxy=STRING","URL of FASP proxy (dnat / dnats)")
-        self.options.add_opt_simple(:http_proxy,"--http-proxy=STRING","URL of HTTP proxy (for http fallback)")
-        self.options.add_opt_on(:rest_debug,"-r", "--rest-debug","more debug for HTTP calls") { Rest.set_debug(true) }
-        self.options.add_opt_on(:no_default,"-N", "--no-default","dont load default configuration") { @load_plugin_defaults=false }
-        self.options.add_opt_on(:version,"-v","--version","display version") { puts Asperalm::VERSION;Process.exit(0) }
+        self.options.add_opt_list(:gui_mode,'TYPE',OperatingSystem.gui_modes,"method to start browser",'-gTYPE')
+        self.options.add_opt_list(:insecure,'VALUE',[:yes,:no],"do not validate cert")
+        self.options.add_opt_list(:log_level,'VALUE',Log.levels,"Log level",'-lTYPE')
+        self.options.add_opt_list(:logger,'VALUE',Log.logtypes,"log method",'-qTYPE')
+        self.options.add_opt_list(:format,'VALUE',self.class.display_formats,"output format")
+        self.options.add_opt_list(:transfer,'VALUE',[:ascp,:connect,:node],"type of transfer")
+        self.options.add_opt_simple(:config_file,"STRING","-CSTRING","read parameters from file in YAML format, current=#{self.options.get_option(:config_file)}")
+        self.options.add_opt_simple(:load_params,"NAME","-PNAME","load the named configuration from current config file, use \"#{@@NO_DEFAULT}\" to avoid loading the default configuration")
+        self.options.add_opt_simple(:fasp_folder,"NAME","specify where to find FASP (main folder), current=#{self.options.get_option(:fasp_folder)}")
+        self.options.add_opt_simple(:transfer_node,"STRING","name of configuration used to transfer when using --transfer=node")
+        self.options.add_opt_simple(:fields,"STRING","comma separated list of fields, or #{FIELDS_ALL}, or #{FIELDS_DEFAULT}")
+        self.options.add_opt_simple(:fasp_proxy,"STRING","URL of FASP proxy (dnat / dnats)")
+        self.options.add_opt_simple(:http_proxy,"STRING","URL of HTTP proxy (for http fallback)")
+        self.options.add_opt_switch(:rest_debug,"-r","more debug for HTTP calls") { Rest.set_debug(true) }
+        self.options.add_opt_switch(:no_default,"-N","dont load default configuration") { @load_plugin_defaults=false }
+        self.options.add_opt_switch(:version,"-v","display version") { puts Asperalm::VERSION;Process.exit(0) }
         self.options.add_opt_simple(:ts,"--ts=JSON","override transfer spec values for transfers (hash, use @json: prefix), current=#{self.options.get_option(:ts)}")
       end
 
@@ -577,9 +576,10 @@ module Asperalm
         if !@loaded_configs.has_key?(@@MAIN_PLUGIN_NAME_STR)
           raise CliError,"Config File: Cannot find key #{@@MAIN_PLUGIN_NAME_STR} in #{current_config_file}. Please check documentation."
         end
-        # check version
+        # check presence of version of conf file
         version=@loaded_configs[@@MAIN_PLUGIN_NAME_STR][@@CONFIG_FILE_KEY_VERSION]
         raise CliError,"Config File: No version found. Please check documentation. Expecting min version #{@@MIN_CONFIG_VERSION}" if version.nil?
+        # check compatibility of version of conf file
         if Gem::Version.new(version) < Gem::Version.new(@@MIN_CONFIG_VERSION)
           raise CliError,"Unsupported config file version #{version}. Please check documentation. Expecting min version #{@@MIN_CONFIG_VERSION}"
         end
@@ -640,7 +640,7 @@ module Asperalm
           end
         rescue CliBadArgument => e;          process_exception_exit(e,'Argument',:usage)
         rescue CliError => e;                process_exception_exit(e,'Tool',:usage)
-        rescue Asperalm::TransferError => e; process_exception_exit(e,"Transfer")
+        rescue Fasp::TransferError => e; process_exception_exit(e,"Transfer")
         rescue Asperalm::RestCallError => e; process_exception_exit(e,"Rest")
         rescue SocketError => e;             process_exception_exit(e,"Network")
         rescue StandardError => e;           process_exception_exit(e,"Other",:debug)

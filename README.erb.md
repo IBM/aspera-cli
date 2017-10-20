@@ -83,6 +83,15 @@ by visiting the page: http://downloads.asperasoft.com/connect2/
 Alternatively, the connect client can be downloaded using the aslmcli, 
 see section: [Download FASP](download-fasp).
 
+## Configuration for Aspera Demo Server
+
+```bash
+$ aslmcli config id server_default init @json:'{"url":"ssh://demo.asperasoft.com:33001","username":"asperaweb","password":"demoaspera"}'
+$ aslmcli server browse /aspera-test-dir-large
+$ aslmcli server download /aspera-test-dir-large/200MB .
+```
+
+
 ## Configuration for Applications
 
 For Faspex, Shares, Node (including ATS, Aspera Transfer Service), Console, 
@@ -266,6 +275,9 @@ Parameters are evaluated in the order of command line.
 
 To avoid loading the default parameter set for a plugin, just specify a non existing configuration: `-Pnone`
 
+On command line, words in parameter names are separated by a dash, in configuration file, separator
+is an underscore. E.g. --transfer-name  on command line gives transfer_node in configuration file.
+
 Note: before version 0.4.5, some keys could be ruby symbols, from 0.4.5 all keys are strings. To
 convert olver versions, remove the leading ":" in fronty of keys.
 
@@ -403,11 +415,11 @@ aslmcli node download /share/sourcefile /destinationfolder --load-params=awsshod
 This will get transfer information from the SHOD instance and tell the Azure ATS instance 
 to download files.
 
-## changing transfer parameters : Transfer Spec
+## Transfer Spec : parameters for FASP transfers
 
 Transfer parameters are contained in a "transfer spec". This is an associative array.
-Changing a transfer spec using JSON syntax is done like this, for instance to force 
-a specific TCP port:
+Changing a transfer spec using JSON syntax is done like this, for instance to override
+the FASP SSH port to a specific TCP port:
 
 ```
 --ts=@json:'{"ssh_port":12345}'
@@ -420,7 +432,77 @@ To force http fallback mode:
 ```
 
 All standard transfer spec parameter can be overloaded. To display parameter,
-run in debug mode (--log-level=debug).
+run in debug mode (--log-level=debug). Transfer spec can also be saved/overridden in
+the config file.
+
+(UNDER CONSTRUCTION <a href="https://developer.asperasoft.com/web/node/ops-transfers">ref</a>)
+
+* F=Fasp Manager, local FASP execution
+* N=remote node
+* C=Connect Client
+
+Req/Def : Required or default value (- means emty)
+
+Fields with EX_ prefix are specific to aslmcli in local mode.
+
+arg: related ascp argument or env var suffix
+
+<table>
+<tr><th>Field</th><th>Req/Def</th><th>Type</th><th>F</th><th>N</th><th>C</th><th>arg</th><th>Description</th></tr>
+<tr><td>title</td><td>-</td><td>string</td><td>NO</td><td>YES</td><td>YES</td><td>-</td><td>Title of the transfer</td></tr>
+<tr><td>tags</td><td>-</td><td>hash</td><td>YES</td><td>YES</td><td>YES</td><td>--tags<br>--tags64</td><td>Metadata for transfer</td></tr>
+<tr><td>token</td><td>-</td><td>string</td><td>YES</td><td>YES</td><td>YES</td><td>TOKEN<br/>-W</td><td>Authorization token: Bearer, Basic or ATM</td></tr>
+<tr><td>cookie</td><td>-</td><td>string</td><td>YES</td><td>YES</td><td>YES</td><td>COOKIE</td><td>Metadata for transfer (older,string)</td></tr>
+<tr><td>direction</td><td>Required</td><td>string</td><td>YES</td><td>YES</td><td>YES</td><td>--mode</td><td>Direction: "send" or "receive"</td></tr>
+<tr><td>remote_host</td><td>Required</td><td>string</td><td style="color:green;font-weight:bold">Y</td><td style="color:green;font-weight:bold">Y</td><td style="color:green;font-weight:bold">Y</td><td>--host</td><td>IP or fully qualified domain name of the remote server</td></tr>
+<tr><td>remote_user</td><td>Required</td><td>string</td></td><td style="color:green;font-weight:bold">Y</td><td style="color:green;font-weight:bold">Y</td><td style="color:green;font-weight:bold">Y</td><td>--user</td><td>Remote user. Default value is "xfer" on node or connect.</td></tr>
+<tr><td>remote_access_key</td><td>TODO</td><td>string</td><td></td><td></td><td></td><td>?</td><td>Node only?</td></tr>
+<tr><td>source_root</td><td>-</td><td>string</td><td></td><td></td><td></td><td>--source-prefix<br/>--source-prefix64</td><td>Source root directory.(TODO: verify option)</td></tr>
+<tr><td>destination_root</td><td>Required</td><td>string</td><td></td><td></td><td></td><td>last arg</td><td>Destination root directory.</td></tr>
+<tr><td>fasp_port</td><td></td><td>integer</td></td><td style="color:green;font-weight:bold">Y</td><td style="color:green;font-weight:bold">Y</td><td style="color:green;font-weight:bold">Y</td><td>-O</td><td>Specifies fasp (UDP) port.</td></tr>
+<tr><td>ssh_port</td><td></td><td>integer</td></td><td style="color:green;font-weight:bold">Y</td><td style="color:green;font-weight:bold">Y</td><td style="color:green;font-weight:bold">Y</td><td>-P</td><td>Specifies ssh (TCP) port.</td></tr>
+<tr><td>rate_policy</td><td></td><td>string</td><td></td><td></td><td></td><td>--policy</td><td>Valid literals include "low","fair","high" and "fixed".</td></tr>
+<tr><td>symlink_policy</td><td>follow</td><td>string</td><td></td><td></td><td></td><td>--symbolic-links</td><td>copy, follow, copy+force, skip.  Default is follow.  Handle source side symbolic links by following the link (follow), copying the link itself (copy),  skipping (skip), or forcibly copying the link itself (copy+force).</td></tr>
+<tr><td>target_rate_kbps</td><td>-</td><td>integer</td><td></td><td></td><td></td><td>-l</td><td>Specifies desired speed for the transfer.</td></tr>
+<tr><td>min_rate_kbps</td><td>0</td><td>integer</td><td></td><td></td><td></td><td>-m</td><td>Set the minimum transfer rate in kilobits per second.</td></tr>
+<tr><td>cipher</td><td>none</td><td>string</td><td></td><td></td><td></td><td>-c</td><td>in transit encryption type.<br/>none, aes-128, aes-256</td></tr>
+<tr><td>content_protection</td><td>-</td><td>string</td><td></td><td></td><td></td><td>--file-crypt</td><td>Valid literals include "encrypt" and "decrypt".</td></tr>
+<tr><td>content_protection_password</td><td>-</td><td>string</td><td></td><td></td><td></td><td>PASS</td><td>Specifies a string password.</td></tr>
+<tr><td>overwrite</td><td>diff</td><td></td><td></td><td></td><td></td><td>--overwrite</td><td>Overwrite destination files with the source files of the same name.<br/>never, always, diff, older, or diff+older</td></tr>
+<tr><td>retry_duration</td><td></td><td>string</td><td></td><td></td><td></td><td>TODO</td><td>Specifies how long to wait before retrying transfer. (e.g. "5min")</td></tr>
+<tr><td>http_fallback</td><td></td><td>integer</td><td></td><td></td><td></td><td>-y<br/>TODO</td><td>When true(1), attempts to perform an HTTP transfer if a fasp transfer cannot be performed.</td></tr>
+<tr><td>create_dir</td><td></td><td>boolean</td><td></td><td></td><td></td><td>-d</td><td>Specifies whether to create new directories.</td></tr>
+<tr><td>precalculate_job_size</td><td></td><td>boolean</td><td></td><td></td><td></td><td>Specifies whether to precalculate the job size.</td></tr>
+<tr><td>delete_source</td><td></td><td>boolean</td><td></td><td></td><td></td><td>-</td></tr>
+<tr><td>remove_after_transfer</td><td></td><td>boolean</td><td></td><td></td><td></td><td>Specifies whether to remove file after transfer.</td></tr>
+<tr><td>remove_empty_directories</td><td></td><td>boolean</td><td></td><td></td><td></td><td>Specifies whether to remove empty directories.</td></tr>
+<tr><td>multi_session</td><td></td><td>integer</td><td></td><td></td><td></td><td>Specifies how many parts the transfer is in.</td></tr>
+<tr><td>multi_session_threshold</td><td></td><td>integer</td><td></td><td></td><td></td><td>in bytes</td></tr>
+<tr><td>dgram_size</td><td></td><td>integer</td><td></td><td></td><td></td><td>in bytes</td></tr>
+<tr><td>compression</td><td></td><td>integer</td><td></td><td></td><td></td><td>0 / 1?</td></tr>
+<tr><td>read_threads</td><td></td><td>integer</td><td></td><td></td><td></td><td>-</td></tr>
+<tr><td>write_threads</td><td></td><td>integer</td><td></td><td></td><td></td><td>-</td></tr>
+<tr><td>use_ascp4</td><td></td><td>boolean</td><td></td><td></td><td></td><td>-</td></tr>
+<tr><td>paths</td><td></td><td>array</td><td></td><td></td><td></td><td>positional<br/>--file-list<br/>--file-pair-list</td><td>Contains a path to the source (required) and a path to the destination.</td></tr>
+<tr><td>http_fallback_port</td><td></td><td>integer</td><td></td><td></td><td></td><td>Specifies http port.</td></tr>
+<tr><td>https_fallback_port</td><td></td><td>integer</td><td></td><td></td><td></td><td>Specifies https port.</td></tr>
+<tr><td>cipher_allowed</td><td></td><td>string</td><td></td><td></td><td></td><td>Valid literals include "aes-128" and "none".</td></tr>
+<tr><td>target_rate_cap_kbps</td><td></td><td></td><td></td><td></td><td></td><td>TODO</td><td>Specifies rate restrictions for the transfer.</td></tr>
+<tr><td>rate_policy_allowed</td><td></td><td></td><td></td><td></td><td></td><td>Specifies most aggressive rate policy that is allowed. Valid literals include "low", "fair","high" and "fixed".</td></tr>
+<tr><td>ssh_private_key</td><td></td><td>string</td><td></td><td></td><td></td><td>-</td></tr>
+<tr><td>password</td><td></td><td>string</td><td>YES</td><td></td><td>YES</td><td>YES</td></tr>
+<tr><td>resume_policy</td><td>faspmgr:<br/>none<br/>other:<br/>sparse_csum</td><td>string</td><td></td><td></td><td></td><td>-k</td><td>none,attrs,sparse_csum,full_csum</td></tr>
+<tr><td>EX_ssh_key_value</td><td>-</td><td>string</td><td style="color:green;font-weight:bold">Y</td><td style="color:red;font-weight:bold">N</td><td style="color:red;font-weight:bold">N</td><td>KEY</td><td>Private key used for SSH authentication</td></tr>
+<tr><td>EX_ssh_key_paths</td><td>-</td><td>array</td><td style="color:green;font-weight:bold">Y</td><td style="color:red;font-weight:bold">N</td><td style="color:red;font-weight:bold">N</td><td>-i</td><td>Use public key authentication and specify the private key file</td></tr>
+<tr><td>EX_fallback_key</td><td>-</td><td>array</td><td style="color:green;font-weight:bold">Y</td><td style="color:red;font-weight:bold">N</td><td style="color:red;font-weight:bold">N</td><td>-Y</td><td>The HTTPS transfer's key file name</td></tr>
+<tr><td>EX_fallback_cert</td><td>-</td><td>array</td><td style="color:green;font-weight:bold">Y</td><td style="color:red;font-weight:bold">N</td><td style="color:red;font-weight:bold">N</td><td>-I</td><td>The HTTPS certificate's file name</td></tr>
+<tr><td>EX_at_rest_password</td><td>-</td><td>array</td><td style="color:green;font-weight:bold">Y</td><td style="color:red;font-weight:bold">N</td><td style="color:red;font-weight:bold">N</td><td>FILEPASS</td><td>Passphrase used for at rest encryption or decryption</td></tr>
+<tr><td>EX_proxy_password</td><td>-</td><td>array</td><td style="color:green;font-weight:bold">Y</td><td style="color:red;font-weight:bold">N</td><td style="color:red;font-weight:bold">N</td><td>PROXY_PASS</td><td>TODO</td></tr>
+<tr><td>EX_quiet</td><td>-</td><td>array</td><td style="color:green;font-weight:bold">Y</td><td style="color:red;font-weight:bold">N</td><td style="color:red;font-weight:bold">N</td><td>-q</td><td>Quiet flag, disable progress display</td></tr>
+<tr><td>EX_fasp_proxy_url</td><td>-</td><td>array</td><td style="color:green;font-weight:bold">Y</td><td style="color:red;font-weight:bold">N</td><td style="color:red;font-weight:bold">N</td><td>--proxy</td><td>Specify the address of the Aspera high-speed proxy server</td></tr>
+<tr><td>EX_http_proxy_url</td><td>-</td><td>array</td><td style="color:green;font-weight:bold">Y</td><td style="color:red;font-weight:bold">N</td><td style="color:red;font-weight:bold">N</td><td>-x</td><td>Specify the proxy server address used by HTTP Fallback</td></tr>
+<tr><td>EX_ascp_args</td><td>-</td><td>array</td><td style="color:green;font-weight:bold">Y</td><td style="color:red;font-weight:bold">N</td><td style="color:red;font-weight:bold">N</td><td>same</td><td>Add command line arguments to ascp</td></tr>
+</table>
 
 ## Multi session transfers
 
@@ -473,12 +555,12 @@ $ aslmcli client connect id 'Aspera Connect for Mac Intel 10.6' links id 'Mac In
 downloaded: AsperaConnect-3.6.1.111259-mac-intel-10.6.dmg
 ```
 
-## Transfer filder
+## Transfer filter
 
 special in node:
 
 ```
-, "transfer_filter"=>"t['status'].eql?('completed') and t['start_spec']['remote_user'].eql?('faspex')", :file_filter=>"f['status'].eql?('completed') and 0 != f['size'] and t['start_spec']['direction'].eql?('send')"
+"transfer_filter"=>"t['status'].eql?('completed') and t['start_spec']['remote_user'].eql?('faspex')", :file_filter=>"f['status'].eql?('completed') and 0 != f['size'] and t['start_spec']['direction'].eql?('send')"
 ```
 
 # Create your own plugin

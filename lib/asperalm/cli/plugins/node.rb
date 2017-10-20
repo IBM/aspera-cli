@@ -11,11 +11,11 @@ module Asperalm
           super_declare_options
           Main.tool.options.set_option(:persistency,File.join(Main.tool.config_folder,"persistency_cleanup.txt"))
           Main.tool.options.set_option(:transfer_filter,'{"active_only":false}')
-          Main.tool.options.add_opt_simple(:persistency,"--persistency=FILEPATH","persistency file (cleanup,forward)")
-          Main.tool.options.add_opt_simple(:filter_transfer,"--filter-transfer=EXPRESSION","Ruby expression for filter at transfer level (cleanup)")
-          Main.tool.options.add_opt_simple(:filter_file,"--filter-file=EXPRESSION","Ruby expression for filter at file level (cleanup)")
-          Main.tool.options.add_opt_simple(:transfer_filter,"--transfer-filter=EXPRESSION","JSON expression for filter on API request")
-          Main.tool.options.add_opt_simple(:parameters,"--parameters=JSON","creation parameters (hash, use @json: prefix), current=#{Main.tool.options.get_option(:parameters)}")
+          Main.tool.options.add_opt_simple(:persistency,"FILEPATH","persistency file (cleanup,forward)")
+          Main.tool.options.add_opt_simple(:filter_transfer,"EXPRESSION","Ruby expression for filter at transfer level (cleanup)")
+          Main.tool.options.add_opt_simple(:filter_file,"EXPRESSION","Ruby expression for filter at file level (cleanup)")
+          Main.tool.options.add_opt_simple(:transfer_filter,"EXPRESSION","JSON expression for filter on API request")
+          Main.tool.options.add_opt_simple(:parameters,"JSON","creation parameters (hash, use @json: prefix), current=#{Main.tool.options.get_option(:parameters)}")
         end
 
         def self.textify_browse(table_data)

@@ -14,13 +14,13 @@ module Asperalm
         alias super_declare_options declare_options
         def declare_options
           super_declare_options
-          Main.tool.options.set_option(:pkgbox,:inbox)
-          Main.tool.options.add_opt_simple(:recipient,"--recipient=STRING","package recipient")
-          Main.tool.options.add_opt_simple(:title,"--title=STRING","package title")
-          Main.tool.options.add_opt_simple(:note,"--note=STRING","package note")
-          Main.tool.options.add_opt_simple(:metadata,"--metadata=@json:JSON_STRING","package metadata")
-          Main.tool.options.add_opt_simple(:source_name,"--source-name=STRING","create package from remote source (by name)")
-          Main.tool.options.add_opt_list(:pkgbox,[:inbox,:sent,:archive],"package box",'--box=TYPE')
+          Main.tool.options.set_option(:box,:inbox)
+          Main.tool.options.add_opt_simple(:recipient,"STRING","package recipient")
+          Main.tool.options.add_opt_simple(:title,"STRING","package title")
+          Main.tool.options.add_opt_simple(:note,"STRING","package note")
+          Main.tool.options.add_opt_simple(:metadata,"@json:JSON_STRING","package metadata (hash, use @json:)")
+          Main.tool.options.add_opt_simple(:source_name,"STRING","create package from remote source (by name)")
+          Main.tool.options.add_opt_list(:box,'TYPE',[:inbox,:sent,:archive],"package box")
         end
 
         # extract elements from anonymous faspex link
@@ -93,7 +93,7 @@ module Asperalm
             api_faspex=get_faspex_authenticated_api
             case command_pkg
             when :list
-              all_inbox_xml=api_faspex.call({:operation=>'GET',:subpath=>"#{Main.tool.options.get_option(:pkgbox).to_s}.atom",:headers=>{'Accept'=>'application/xml'}})[:http].body
+              all_inbox_xml=api_faspex.call({:operation=>'GET',:subpath=>"#{Main.tool.options.get_option(:box).to_s}.atom",:headers=>{'Accept'=>'application/xml'}})[:http].body
               all_inbox_data=XmlSimple.xml_in(all_inbox_xml, {"ForceArray" => true})
               if all_inbox_data.has_key?('entry')
                 return {:data=>all_inbox_data['entry'],:type=>:hash_array,:fields=>['title','items',PACKAGE_MATCH_FIELD], :textify => lambda { |table_data| Faspex.textify_package_list(table_data)} }
@@ -141,7 +141,7 @@ module Asperalm
               # UUID is not reliable, it changes at every call
               if false
                 pkguuid=Main.tool.options.get_next_arg_value("Package ID")
-                all_inbox_xml=api_faspex.call({:operation=>'GET',:subpath=>"#{Main.tool.options.get_option(:pkgbox).to_s}.atom",:headers=>{'Accept'=>'application/xml'}})[:http].body
+                all_inbox_xml=api_faspex.call({:operation=>'GET',:subpath=>"#{Main.tool.options.get_option(:box).to_s}.atom",:headers=>{'Accept'=>'application/xml'}})[:http].body
                 allinbox=XmlSimple.xml_in(all_inbox_xml, {"ForceArray" => true})
                 package_entries=[]
                 if allinbox.has_key?('entry')
@@ -154,7 +154,7 @@ module Asperalm
               else
                 # I dont know which delivery id is the right one if package was receive by group
                 delivid=Main.tool.options.get_next_arg_value("Package delivery ID")
-                entry_xml=api_faspex.call({:operation=>'GET',:subpath=>"#{Main.tool.options.get_option(:pkgbox).to_s}/#{delivid}",:headers=>{'Accept'=>'application/xml'}})[:http].body
+                entry_xml=api_faspex.call({:operation=>'GET',:subpath=>"#{Main.tool.options.get_option(:box).to_s}/#{delivid}",:headers=>{'Accept'=>'application/xml'}})[:http].body
                 package_entry=XmlSimple.xml_in(entry_xml, {"ForceArray" => true})
               end
               transfer_uri=self.class.get_fasp_uri_from_entry(package_entry)
