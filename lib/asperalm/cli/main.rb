@@ -180,16 +180,24 @@ module Asperalm
         case operation
         when :set
           Log.log.debug "handler_transfer_spec: set: #{value}".red
-          faspmanager.transfer_spec_default.merge!(value)
+          transfer_agent.transfer_spec_default.merge!(value)
         else
-          return faspmanager.transfer_spec_default
+          return transfer_agent.transfer_spec_default
+        end
+      end
+
+      def handler_to_folder(operation,value)
+        case operation
+        when :set
+          transfer_agent.transfer_spec_default.merge!({'destination_root'=>value})
+        else
+          return transfer_agent.transfer_spec_default['destination_root']
         end
       end
 
       def handler_browser(operation,value)
         case operation
         when :set
-          Log.log.debug "handler_browser: set: #{value}".red
           OperatingSystem.open_url_method=value
         else
           return OperatingSystem.open_url_method
@@ -199,7 +207,6 @@ module Asperalm
       def handler_fasp_folder(operation,value)
         case operation
         when :set
-          Log.log.debug "handler_fasp_folder: set: #{value}".red
           Fasp::ResourceFinder.fasp_install_paths=value
         else
           return Fasp::ResourceFinder.fasp_install_paths
@@ -236,24 +243,24 @@ module Asperalm
         end
       end
 
-      def faspmanager
-        if @faspmanager_switch.nil?
+      def transfer_agent
+        if @transfer_agent_singleton.nil?
           # create the FASP manager for transfers
           Fasp::Manager.instance.logger=Log.log
           Fasp::Manager.instance.add_listener(FaspListenerLogger.new)
           Fasp::Manager.instance.add_listener(FaspListenerProgress.new)
           Fasp::Manager.instance.ascp_path=Fasp::ResourceFinder.path(:ascp)
-          @faspmanager_switch=Fasp::TransferAgent.new
-          @faspmanager_switch.connect_app_id=@@PROGRAM_NAME
+          @transfer_agent_singleton=Fasp::TransferAgent.new
+          @transfer_agent_singleton.connect_app_id=@@PROGRAM_NAME
           if !self.options.get_option(:fasp_proxy).nil?
-            @faspmanager_switch.transfer_spec_default.merge!({'EX_fasp_proxy_url'=>self.options.get_option(:fasp_proxy)})
+            @transfer_agent_singleton.transfer_spec_default.merge!({'EX_fasp_proxy_url'=>self.options.get_option(:fasp_proxy)})
           end
           if !self.options.get_option(:http_proxy).nil?
-            @faspmanager_switch.transfer_spec_default.merge!({'EX_http_proxy_url'=>self.options.get_option(:http_proxy)})
+            @transfer_agent_singleton.transfer_spec_default.merge!({'EX_http_proxy_url'=>self.options.get_option(:http_proxy)})
           end
           case self.options.get_option_mandatory(:transfer)
           when :connect
-            @faspmanager_switch.use_connect_client=true
+            @transfer_agent_singleton.use_connect_client=true
           when :node
             config_name=self.options.get_option(:transfer_node)
             if config_name.nil?
@@ -263,16 +270,16 @@ module Asperalm
               node_config=@loaded_configs[config_name]
               raise CliBadArgument,"no such node configuration: #{config_name}" if node_config.nil?
             end
-            @faspmanager_switch.tr_node_api=Rest.new(node_config[:url],{:auth=>{:type=>:basic,:username=>node_config[:username], :password=>node_config[:password]}})
+            @transfer_agent_singleton.tr_node_api=Rest.new(node_config[:url],{:auth=>{:type=>:basic,:username=>node_config[:username], :password=>node_config[:password]}})
           end
         end
-        return @faspmanager_switch
+        return @transfer_agent_singleton
       end
 
       def start_transfer(transfer_spec)
         # TODO: option to choose progress format
         transfer_spec['EX_quiet']=true
-        faspmanager.start_transfer(transfer_spec)
+        transfer_agent.start_transfer(transfer_spec)
         return self.class.result_success
       end
 
@@ -282,7 +289,7 @@ module Asperalm
         @help_requested=false
         @options=OptParser.new
         @loaded_configs=nil
-        @faspmanager_switch=nil
+        @transfer_agent_singleton=nil
         @load_plugin_defaults=true
         scan_all_plugins
         self.options.program_name=@@PROGRAM_NAME
@@ -317,6 +324,7 @@ module Asperalm
         self.options.set_handler(:logger) { |op,val| handler_logtype(op,val) }
         self.options.set_handler(:insecure) { |op,val| handler_insecure(op,val) }
         self.options.set_handler(:ts) { |op,val| handler_transfer_spec(op,val) }
+        self.options.set_handler(:to_folder) { |op,val| handler_to_folder(op,val) }
         self.options.set_handler(:gui_mode) { |op,val| handler_browser(op,val) }
         self.options.set_handler(:fasp_folder) { |op,val| handler_fasp_folder(op,val) }
       end
@@ -352,6 +360,7 @@ module Asperalm
         self.options.set_option(:format,:table)
         self.options.set_option(:logger,:stdout)
         self.options.set_option(:config_file,default_config_file)
+        self.options.set_option(:to_folder,'.')
         self.options.on("-h", "--help", "Show this message.") { @help_requested=true }
         self.options.add_opt_list(:gui_mode,'TYPE',OperatingSystem.gui_modes,"method to start browser",'-gTYPE')
         self.options.add_opt_list(:insecure,'VALUE',[:yes,:no],"do not validate cert")
@@ -369,7 +378,8 @@ module Asperalm
         self.options.add_opt_switch(:rest_debug,"-r","more debug for HTTP calls") { Rest.set_debug(true) }
         self.options.add_opt_switch(:no_default,"-N","dont load default configuration") { @load_plugin_defaults=false }
         self.options.add_opt_switch(:version,"-v","display version") { puts Asperalm::VERSION;Process.exit(0) }
-        self.options.add_opt_simple(:ts,"--ts=JSON","override transfer spec values for transfers (hash, use @json: prefix), current=#{self.options.get_option(:ts)}")
+        self.options.add_opt_simple(:ts,"JSON","override transfer spec values for transfers (hash, use @json: prefix), current=#{self.options.get_option(:ts)}")
+        self.options.add_opt_simple(:to_folder,"PATH","destination folder for downloaded files, current=#{self.options.get_option(:to_folder)}")
       end
 
       def self.flatten_config_show(t)

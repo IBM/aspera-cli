@@ -79,20 +79,16 @@ module Asperalm
               command = args.unshift(realcmd).map{|v|'"'+v+'"'}.join(" ")
               return {:data=>ssh_executor.exec_session(command),:type=>:status}
             when :upload
-              filelist = Main.tool.options.get_remaining_arguments("source list",1)
-              destination=Main.tool.options.get_next_arg_value("destination")
+              filelist = Main.tool.options.get_remaining_arguments("source list")
               transfer_spec.merge!({
                 'direction'=>'send',
-                'destination_root'=>destination,
                 'paths'=>filelist.map { |f| {'source'=>f } }
               })
               return Main.tool.start_transfer(transfer_spec)
             when :download
-              filelist = Main.tool.options.get_remaining_arguments("source list",1)
-              destination=Main.tool.options.get_next_arg_value("destination")
+              filelist = Main.tool.options.get_remaining_arguments("source list")
               transfer_spec.merge!({
                 'direction'=>'receive',
-                'destination_root'=>destination,
                 'paths'=>filelist.map { |f| {'source'=>f } }
               })
               return Main.tool.start_transfer(transfer_spec)

@@ -115,7 +115,6 @@ module Asperalm
           case number
           when :one; thepath=Main.tool.options.get_next_arg_value(name)
           when :all; thepath=Main.tool.options.get_remaining_arguments(name)
-          when :all_but_one; thepath=Main.tool.options.get_remaining_arguments(name,1)
           else raise "ERROR"
           end
           return thepath if path_prefix.nil?
@@ -176,9 +175,9 @@ module Asperalm
             resp=api_node.call({:operation=>'POST',:subpath=>'files/rename',:json_params=>{ "paths" => [{ "path" => path_base, "source" => path_src, "destination" => path_dst } ] } } )
             return result_translate_rem_prefix(resp,'entry','moved',prefix_path)
           when :upload
-            filelist = Main.tool.options.get_remaining_arguments("source file list",1)
+            filelist = Main.tool.options.get_remaining_arguments("source file list")
             Log.log.debug("file list=#{filelist}")
-            destination=get_next_arg_add_prefix(prefix_path,"path_dst")
+            destination=Main.tool.options.get_option_mandatory(:to_folder)
             send_result=api_node.call({:operation=>'POST',:subpath=>'files/upload_setup',:json_params=>{ :transfer_requests => [ { :transfer_request => { :paths => [ { :destination => destination } ] } } ] }})
             raise send_result[:data]['error']['user_message'] if send_result[:data].has_key?('error')
             raise send_result[:data]['transfer_specs'][0]['error']['user_message'] if send_result[:data]['transfer_specs'][0].has_key?('error')
@@ -187,14 +186,12 @@ module Asperalm
             transfer_spec['paths']=filelist.map { |i| {'source'=>i} }
             return Main.tool.start_transfer(transfer_spec)
           when :download
-            filelist = get_next_arg_add_prefix(prefix_path,"source file list",:all_but_one)
+            filelist = get_next_arg_add_prefix(prefix_path,"source file list",:all)
             Log.log.debug("file list=#{filelist}")
-            destination=Main.tool.options.get_next_arg_value("path_dst")
             send_result=api_node.call({:operation=>'POST',:subpath=>'files/download_setup',:json_params=>{ :transfer_requests => [ { :transfer_request => { :paths => filelist.map {|i| {:source=>i}; } } } ] }})
             raise send_result[:data]['transfer_specs'][0]['error']['user_message'] if send_result[:data]['transfer_specs'][0].has_key?('error')
             raise "expecting one session exactly" if send_result[:data]['transfer_specs'].length != 1
             transfer_spec=send_result[:data]['transfer_specs'].first['transfer_spec']
-            transfer_spec['destination_root']=destination
             return Main.tool.start_transfer(transfer_spec)
           end
         end
@@ -392,7 +389,6 @@ module Asperalm
             end
             return Main.no_result
           when :forward
-            destination=Main.tool.options.get_next_arg_value("destination folder")
             # detect transfer sessions since last call
             transfers=self.class.get_transfers_iteration(api_node,Main.tool.options.get_option(:persistency),{:active_only=>false})
             # build list of all files received in all sessions
@@ -412,7 +408,6 @@ module Asperalm
             transfer_data=send_result[:data]['transfer_specs'].first
             raise TransferError,transfer_data['error']['user_message'] if transfer_data.has_key?('error')
             transfer_spec=transfer_data['transfer_spec']
-            transfer_spec['destination_root']=destination
             # execute transfer
             return Main.tool.start_transfer(transfer_spec)
           end

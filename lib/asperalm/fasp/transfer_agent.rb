@@ -59,7 +59,6 @@ module Asperalm
             }}]}
           connect_api.create('transfers/start',transfer_specs)
         elsif ! @tr_node_api.nil?
-          #transfer_spec['destination_root']='/tmp'
           resp=@tr_node_api.call({:operation=>'POST',:subpath=>'ops/transfers',:headers=>{'Accept'=>'application/json'},:json_params=>transfer_spec})
           puts "id=#{resp[:data]['id']}"
           trid=resp[:data]['id']

@@ -368,7 +368,7 @@ Or simply use the CLI:
 $ aslmcli config genkey ~/.aspera/aslmcli/filesapikey
 ```
 
-# FASP agents and transfer options
+# FASP agents
 
 The CLI provides access to Aspera Applications functions through REST APIs, it also
 allows FASP based transfers (upload and download).
@@ -399,21 +399,13 @@ By specifying option: `--transfer=node`, the CLI will start transfers in an Aspe
 Transfer Server using the Node API. The client node configuration shall be specified with:
 `--transfer-node=<node config name>`
 
-## Example of use
+# FASP parameters
 
-Access to a "Shares on Demand" (SHOD) server on AWS is provided by a partner. And we need to 
-transfer files from this third party SHOD instance into our Azure BLOB storage.
-Simply create an "Aspera Transfer Service" instance (https://ts.asperasoft.com), which
-provides access to the node API.
-Then create a configuration for the "SHOD" instance in the configuration file: in section 
-"shares", a configuration named: awsshod.
-Create another configuration for the Azure ATS instance: in section "node", named azureats.
-Then execute the following command:
-```bash
-aslmcli node download /share/sourcefile /destinationfolder --load-params=awsshod --transfer=node --transfer-node=azureats
-```
-This will get transfer information from the SHOD instance and tell the Azure ATS instance 
-to download files.
+## Destination folder for transfers
+
+Use parameter --to-folder=_dst_path_ to set destination folder on download or upload.
+Note that it is equivalent to setting "destination_root" in transfer spec
+using option --ts=@json:'{"destination_root":"_dst_path_"}'
 
 ## Transfer Spec : parameters for FASP transfers
 
@@ -562,6 +554,23 @@ special in node:
 ```
 "transfer_filter"=>"t['status'].eql?('completed') and t['start_spec']['remote_user'].eql?('faspex')", :file_filter=>"f['status'].eql?('completed') and 0 != f['size'] and t['start_spec']['direction'].eql?('send')"
 ```
+
+## Example of use
+
+Access to a "Shares on Demand" (SHOD) server on AWS is provided by a partner. And we need to 
+transfer files from this third party SHOD instance into our Azure BLOB storage.
+Simply create an "Aspera Transfer Service" instance (https://ts.asperasoft.com), which
+provides access to the node API.
+Then create a configuration for the "SHOD" instance in the configuration file: in section 
+"shares", a configuration named: awsshod.
+Create another configuration for the Azure ATS instance: in section "node", named azureats.
+Then execute the following command:
+```bash
+aslmcli node download /share/sourcefile /destinationfolder --load-params=awsshod --transfer=node --transfer-node=azureats
+```
+This will get transfer information from the SHOD instance and tell the Azure ATS instance 
+to download files.
+
 
 # Create your own plugin
 ```bash

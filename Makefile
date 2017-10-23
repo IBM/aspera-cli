@@ -93,17 +93,17 @@ clean::
 tsh1:
 	$(ASCLI) shares repository browse / --insecure=yes
 tsh2:
-	$(ASCLI) shares repository upload $(SAMPLE_FILE) /n8-sh1 --insecure=yes
+	$(ASCLI) shares repository upload $(SAMPLE_FILE) --to-folder=/n8-sh1 --insecure=yes
 tsh3: $(TEST_FOLDER)
-	$(ASCLI) shares repository download /n8-sh1/200KB.1 $(TEST_FOLDER) --insecure=yes
+	$(ASCLI) shares repository download /n8-sh1/200KB.1 --to-folder=$(TEST_FOLDER) --insecure=yes
 	rm -f 200KB.1
 	$(ASCLI) shares repository delete /n8-sh1/200KB.1 --insecure=yes
 tshares: tsh1 tsh2 tsh3
 
 tfp1: $(TEST_FOLDER)
 	$(ASCLI) server browse /
-	$(ASCLI) server upload $(SAMPLE_FILE) /Upload
-	$(ASCLI) server download /Upload/200KB.1 $(TEST_FOLDER)
+	$(ASCLI) server upload $(SAMPLE_FILE) --to-folder=/Upload
+	$(ASCLI) server download /Upload/200KB.1 --to-folder=$(TEST_FOLDER)
 	$(ASCLI) server cp /Upload/200KB.1 /Upload/200KB.2
 	$(ASCLI) server mv /Upload/200KB.2 /Upload/to.delete
 	$(ASCLI) server delete /Upload/to.delete
@@ -139,9 +139,9 @@ NODEDEST=/
 tnd1:
 	$(ASCLI) node browse / --insecure=yes
 tnd2:
-	$(ASCLI) node upload $(SAMPLE_FILE) $(NODEDEST) --insecure=yes
+	$(ASCLI) node upload $(SAMPLE_FILE) --to-folder=$(NODEDEST) --insecure=yes
 tnd3: $(TEST_FOLDER)
-	$(ASCLI) node download $(NODEDEST)/200KB.1 $(TEST_FOLDER) --insecure=yes
+	$(ASCLI) node download $(NODEDEST)/200KB.1 --to-folder=$(TEST_FOLDER) --insecure=yes
 	$(ASCLI) node delete $(NODEDEST)/200KB.1 --insecure=yes
 	rm -f $(TEST_FOLDER)/200KB.1
 tnode: tnd1 tnd2 tnd3 
@@ -149,12 +149,12 @@ tnode: tnd1 tnd2 tnd3
 tfs1:
 	$(ASCLI) files repo browse /
 tfs2:
-	$(ASCLI) files repo upload $(SAMPLE_FILE) /
+	$(ASCLI) files repo upload $(SAMPLE_FILE) --to-folder=/
 tfs3: $(TEST_FOLDER)
-	$(ASCLI) files repo download /200KB.1 $(TEST_FOLDER) --transfer=connect
+	$(ASCLI) files repo download /200KB.1 --to-folder=$(TEST_FOLDER) --transfer=connect
 	rm -f 200KB.1
 tfs3b: $(TEST_FOLDER)
-	$(ASCLI) files repo download /200KB.1 $(TEST_FOLDER) --download=node
+	$(ASCLI) files repo download /200KB.1 --to-folder=$(TEST_FOLDER) --download=node
 	rm -f 200KB.1
 tfs4:
 	$(ASCLI) files package send $(SAMPLE_FILE) --note="my note" --title="my title" --recipient="laurent@asperasoft.com"

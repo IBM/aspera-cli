@@ -123,16 +123,14 @@ module Asperalm
             filelist = Main.tool.options.get_remaining_arguments("file list,destination")
             Log.log.debug("file list=#{filelist}")
             raise CliBadArgument,"Missing source(s) and destination" if filelist.length < 2
-            destination_folder=filelist.pop
-            node_info,file_id = find_nodeinfo_and_fileid(home_node_id,home_file_id,destination_folder)
+            node_info,file_id = find_nodeinfo_and_fileid(home_node_id,home_file_id,Main.tool.options.get_option_mandatory(:to_folder))
             tspec=info_to_tspec("send",node_info,file_id)
             tspec['tags']["aspera"]["files"]={}
             tspec['paths']=filelist.map { |i| {'source'=>i} }
-            tspec['destination_root']="/"
+            tspec['destination_root']="/" # not used
             return Main.tool.start_transfer(tspec)
           when :download
             source_file=Main.tool.options.get_next_arg_value('source')
-            destination_folder=Main.tool.options.get_next_arg_value('destination')
             case Main.tool.options.get_option_mandatory(:download_mode)
             when :fasp
               file_path = source_file.split(PATH_SEPARATOR)
@@ -141,14 +139,13 @@ module Asperalm
               tspec=info_to_tspec('receive',node_info,file_id)
               tspec['tags']["aspera"]["files"]={}
               tspec['paths']=[{'source'=>file_name}]
-              tspec['destination_root']=destination_folder
               return Main.tool.start_transfer(tspec)
             when :node_http
               file_path = source_file.split(PATH_SEPARATOR)
               file_name = file_path.last
               node_info,file_id = find_nodeinfo_and_fileid(home_node_id,home_file_id,source_file)
               node_api=get_files_node_api(node_info,FilesApi::SCOPE_NODE_USER)
-              download_data=node_api.call({:operation=>'GET',:subpath=>"files/#{file_id}/content",:save_to_file=>File.join(destination_folder,file_name)})
+              download_data=node_api.call({:operation=>'GET',:subpath=>"files/#{file_id}/content",:save_to_file=>File.join(Main.tool.options.get_option_mandatory(:to_folder),file_name)})
               return {:data=>"downloaded: #{file_name}",:type => :status}
             end
           end
@@ -266,13 +263,11 @@ module Asperalm
               return Main.tool.start_transfer(tspec)
             when :recv
               package_id=Main.tool.options.get_next_arg_value('package ID')
-              destination_folder=Main.tool.options.get_next_arg_value('destination folder')
               the_package=@api_files_user.read("packages/#{package_id}")[:data]
               node_info=@api_files_user.read("nodes/#{the_package['node_id']}")[:data]
               tspec=info_to_tspec("receive",node_info,the_package['contents_file_id'])
               tspec['tags']["aspera"]["files"]={"package_id" => the_package['id'], "package_operation" => "download"}
               tspec['paths']=[{'source'=>'.'}]
-              tspec['destination_root']=destination_folder
               return Main.tool.start_transfer(tspec)
             when :list
               # list all packages ('page'=>1,'per_page'=>10,)'sort'=>'-sent_at',
