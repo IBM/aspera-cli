@@ -20,6 +20,7 @@ module Asperalm
     class FaspListenerProgress < Fasp::TransferListener
       def initialize
         @progress=nil
+        @cumulative=0
       end
 
       def event(data)
@@ -33,9 +34,11 @@ module Asperalm
             :title      => 'progress',
             :total      => data['PreTransferBytes'].to_i)
           end
-        when 'STATS'
+          when 'STOP'
+          @cumulative=@cumulative+data['Size'].to_i
+          when 'STATS'
           if !@progress.nil? then
-            @progress.progress=data['TransferBytes'].to_i
+            @progress.progress=@cumulative+data['Bytescont'].to_i
           else
             puts "."
           end
@@ -245,11 +248,8 @@ module Asperalm
 
       def transfer_agent
         if @transfer_agent_singleton.nil?
-          # create the FASP manager for transfers
-          Fasp::Manager.instance.logger=Log.log
           Fasp::Manager.instance.add_listener(FaspListenerLogger.new)
           Fasp::Manager.instance.add_listener(FaspListenerProgress.new)
-          Fasp::Manager.instance.ascp_path=Fasp::ResourceFinder.path(:ascp)
           @transfer_agent_singleton=Fasp::TransferAgent.new
           @transfer_agent_singleton.connect_app_id=@@PROGRAM_NAME
           if !self.options.get_option(:fasp_proxy).nil?
@@ -650,10 +650,11 @@ module Asperalm
           end
         rescue CliBadArgument => e;          process_exception_exit(e,'Argument',:usage)
         rescue CliError => e;                process_exception_exit(e,'Tool',:usage)
-        rescue Fasp::TransferError => e; process_exception_exit(e,"Transfer")
+        rescue Fasp::TransferError => e;     process_exception_exit(e,"Transfer")
         rescue Asperalm::RestCallError => e; process_exception_exit(e,"Rest")
         rescue SocketError => e;             process_exception_exit(e,"Network")
         rescue StandardError => e;           process_exception_exit(e,"Other",:debug)
+        rescue Interrupt => e;               process_exception_exit(e,"Interruption",:debug)
         end
         return self
       end

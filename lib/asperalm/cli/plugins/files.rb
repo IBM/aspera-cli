@@ -120,9 +120,8 @@ module Asperalm
             items=node_api.read("files/#{file_id}/files")[:data]
             return {:data=>items,:type=>:hash_array,:fields=>['name','type','recursive_size','size','modified_time','access_level']}
           when :upload
-            filelist = Main.tool.options.get_remaining_arguments("file list,destination")
+            filelist = Main.tool.options.get_remaining_arguments("file list")
             Log.log.debug("file list=#{filelist}")
-            raise CliBadArgument,"Missing source(s) and destination" if filelist.length < 2
             node_info,file_id = find_nodeinfo_and_fileid(home_node_id,home_file_id,Main.tool.options.get_option_mandatory(:to_folder))
             tspec=info_to_tspec("send",node_info,file_id)
             tspec['tags']["aspera"]["files"]={}

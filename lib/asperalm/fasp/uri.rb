@@ -22,10 +22,10 @@ module Asperalm
           when 'cookie'; result_ts['cookie']=value
           when 'token'; result_ts['token']=value
           when 'policy'; result_ts['rate_policy']=value
-          when 'httpport'; result_ts['http_fallback_port']=value
-          when 'targetrate'; result_ts['target_rate_kbps']=value
-          when 'minrate'; result_ts['min_rate_kbps']=value
-          when 'port'; result_ts['fasp_port']=value
+          when 'httpport'; result_ts['http_fallback_port']=value.to_i
+          when 'targetrate'; result_ts['target_rate_kbps']=value.to_i
+          when 'minrate'; result_ts['min_rate_kbps']=value.to_i
+          when 'port'; result_ts['fasp_port']=value.to_i
           when 'enc'; result_ts['cipher']=value
           when 'tags64'; result_ts['tags64']=value
           when 'bwcap'; result_ts['target_rate_cap_kbps']=value

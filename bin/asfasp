@@ -1,18 +1,14 @@
 #!/usr/bin/env ruby
 # Laurent Martin/2017
-$LOAD_PATH.unshift(File.dirname(__FILE__) + "/../lib")
+$LOAD_PATH.unshift(File.dirname(__FILE__)+"/../lib")
 require 'rubygems'
 require 'json'
 require 'base64'
 require "asperalm/cli/opt_parser"
-require 'asperalm/fasp_manager'
-require 'asperalm/fasp_folders'
+require 'asperalm/fasp/manager'
+require 'asperalm/log'
 
-# prepare logger
-logger=Logger.new(STDERR)
-logger.level=3
 transferspec=nil
-
 p=OptionParser.new
 p.banner = "Usage: asfasp [options]"
 p.on("-D", "debug mode"){logger.level=logger.level+1}
@@ -26,16 +22,15 @@ if transferspec.nil?
   STDERR.puts(p)
   Process.exit(1)
 end
+# disable ascp output on stdout to not mix with progress json
+transferspec['EX_quiet']=true
 
 # FASP event listener display management events as JSON
-class FaspListenerStdout < Asperalm::FileTransferListener
-  def event(data);puts JSON.generate(data);end
+class FaspListenerStdout < Asperalm::Fasp::TransferListener
+  def event(data);STDOUT.puts(JSON.generate(data));end
 end
 
-# create the underlying fasp manager (will run ascp)
-mgr=Asperalm::FaspManager.new(logger,Asperalm::ResourceFinder.path(:ascp))
-mgr.add_listener(FaspListenerStdout.new,:enhanced)
-# disable ascp output
-transferspec['EX_quiet']=true
+# display JSON instead of legacy Lines
+Asperalm::Fasp::Manager.instance.add_listener(FaspListenerStdout.new,:enhanced)
 # go !
-mgr.start_transfer(transferspec)
+Asperalm::Fasp::Manager.instance.start_transfer(transferspec)

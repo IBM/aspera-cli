@@ -14,6 +14,8 @@ require 'singleton'
 require 'asperalm/fasp/transfer_listener'
 require 'asperalm/fasp/transfer_error'
 require 'asperalm/fasp/parameters'
+require 'asperalm/fasp/resource_finder'
+require 'asperalm/log'
 
 # for file lists
 #require 'tempfile'
@@ -33,11 +35,10 @@ module Asperalm
         gsub(/([a-z\d])(usec)$/,'\1_\2').
         downcase
       end
+      # user can also specify another location for ascp
       attr_accessor :ascp_path
-      attr_accessor :logger
       def initialize
-        @logger=Logger.new(STDERR)
-        @ascp_path=nil
+        @ascp_path=Fasp::ResourceFinder.path(:ascp)
         @listeners=[]
       end
 
@@ -73,17 +74,17 @@ module Asperalm
         # open random local TCP port listening
         mgt_sock = TCPServer.new('127.0.0.1',0 )
         mgt_port = mgt_sock.addr[1]
-        @logger.debug "Port=#{mgt_port}"
+        Log.log.debug "Port=#{mgt_port}"
         # add management port
         arguments.unshift('-M', mgt_port.to_s)
-        @logger.info "execute #{all_params[:env].map{|k,v| "#{k}=\"#{v}\""}.join(' ')} \"#{@ascp_path}\" \"#{arguments.join('" "')}\""
+        Log.log.info "execute #{all_params[:env].map{|k,v| "#{k}=\"#{v}\""}.join(' ')} \"#{@ascp_path}\" \"#{arguments.join('" "')}\""
         begin
           ascp_pid = Process.spawn(all_params[:env],[@ascp_path,@ascp_path],*arguments)
         rescue SystemCallError=> e
           raise TransferError.new(e.message)
         end
         # in parent, wait for connection, max 3 seconds
-        @logger.debug "before accept for pid (#{ascp_pid})"
+        Log.log.debug "before accept for pid (#{ascp_pid})"
         client=nil
         begin
           Timeout.timeout( 3 ) do
@@ -92,7 +93,7 @@ module Asperalm
         rescue Timeout::Error => e
           Process.kill 'INT',ascp_pid
         end
-        @logger.debug "after accept (#{client})"
+        Log.log.debug "after accept (#{client})"
 
         if client.nil? then
           # avoid zombie
@@ -123,7 +124,7 @@ module Asperalm
           end
           current_event_text=current_event_text+line
           line.chomp!
-          @logger.debug "line=[#{line}]"
+          Log.log.debug "line=[#{line}]"
           if  line.empty? then
             # end frame
             if !current_event_data.nil? then
@@ -147,7 +148,7 @@ module Asperalm
                 last_event = current_event_data
               end
             else
-              @logger.error "unexpected empty line"
+              Log.log.error "unexpected empty line"
             end
           elsif 'FASPMGR 2'.eql? line then
             # begin frame
@@ -156,7 +157,7 @@ module Asperalm
           elsif m=line.match('^([^:]+): (.*)$') then
             current_event_data[m[1]] = m[2]
           else
-            @logger.error "error parsing[#{line}]"
+            Log.log.error "error parsing[#{line}]"
           end
         end
 

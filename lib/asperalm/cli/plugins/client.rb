@@ -1,6 +1,6 @@
 require 'asperalm/cli/main'
 require 'asperalm/cli/plugins/node'
-require 'asperalm/fasp_folders'
+require 'asperalm/fasp/resource_finder'
 require 'asperalm/operating_system'
 
 module Asperalm
@@ -31,7 +31,7 @@ module Asperalm
           command=Main.tool.options.get_next_arg_from_list('command',action_list)
           case command
           when :location # shows files used
-            return {:type=>:hash_array, :data=>Asperalm::ResourceFinder.resource.map {|k,v| {'name'=>k,'path'=>v[:path]}}}
+            return {:type=>:hash_array, :data=>Fasp::ResourceFinder.resource.map {|k,v| {'name'=>k,'path'=>v[:path]}}}
           when :connect #
             command=Main.tool.options.get_next_arg_from_list('command',[:list,:id])
             case command

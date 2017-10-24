@@ -117,7 +117,7 @@ tfp3:
 	$(ASCLI) server du /
 	$(ASCLI) server df
 tfp4:
-	$(BINDIR)/asfasp $$(echo '{"remote_host":"demo.asperasoft.com","remote_user":"asperaweb","ssh_port":33001,"password":"demoaspera","direction":"receive","destination_root":"./test.dir","paths":[{"source":"/aspera-test-dir-tiny/200KB.1"}]}'|base64)
+	$(BINDIR)/asfasp --ts=@json:'{"remote_host":"demo.asperasoft.com","remote_user":"asperaweb","ssh_port":33001,"password":"demoaspera","direction":"receive","destination_root":"./test.dir","paths":[{"source":"/aspera-test-dir-tiny/200KB.1"}]}'
 
 tfasp: tfp1 tfp2 tfp3 tfp4
 
