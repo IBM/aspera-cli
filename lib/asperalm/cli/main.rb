@@ -110,7 +110,7 @@ module Asperalm
 
       def write_config_file(config=@loaded_configs,config_file_path=current_config_file)
         raise "no configuration loaded" if config.nil?
-        FileUtils::mkdir_p(config_folder) if !Dir.exist?(config_folder)
+        FileUtils::mkdir_p(config_folder) unless Dir.exist?(config_folder)
         Log.log.debug "writing #{config_file_path}"
         File.write(config_file_path,config.to_yaml)
       end
@@ -221,7 +221,7 @@ module Asperalm
 
       # adds plugins from given plugin folder
       def scan_plugins(plugin_folder,plugin_subfolder)
-        plugin_folder=File.join(plugin_folder,plugin_subfolder) if !plugin_subfolder.nil?
+        plugin_folder=File.join(plugin_folder,plugin_subfolder) unless plugin_subfolder.nil?
         Dir.entries(plugin_folder).select { |file| file.end_with?('.rb')}.each do |source|
           name=source.gsub(/\.rb$/,'')
           @plugins[name.to_sym]={:source=>File.join(plugin_folder,source),:req=>File.join(plugin_folder,name)}
@@ -326,7 +326,7 @@ module Asperalm
         # load default params only if no param already loaded
         if options.get_option(:load_params).nil?
           defaults_for_plugin=get_plugin_default_parameters(plugin_name_sym)
-          options.set_defaults(defaults_for_plugin) if !defaults_for_plugin.nil?
+          options.set_defaults(defaults_for_plugin) unless defaults_for_plugin.nil?
         end
         options.separator "COMMAND: #{plugin_name_sym}"
         options.separator "SUBCOMMANDS: #{command_plugin.action_list.map{ |p| p.to_s}.join(', ')}"
@@ -386,9 +386,9 @@ module Asperalm
       FIELD_SEPARATOR=","
 
       def display_results(results)
-        raise "INTERNAL ERROR, result must be Hash (#{results.class}: #{results})" if !results.is_a?(Hash)
-        raise "INTERNAL ERROR, result must have type" if !results.has_key?(:type)
-        raise "INTERNAL ERROR, result must have data" if !results.has_key?(:data) and !results[:type].eql?(:empty)
+        raise "INTERNAL ERROR, result must be Hash (#{results.class}: #{results})" unless results.is_a?(Hash)
+        raise "INTERNAL ERROR, result must have type" unless results.has_key?(:type)
+        raise "INTERNAL ERROR, result must have data" unless results.has_key?(:data) or results[:type].eql?(:empty)
 
         required_fields=options.get_option_mandatory(:fields)
         case options.get_option_mandatory(:format)
@@ -403,7 +403,7 @@ module Asperalm
         when :table,:csv
           case results[:type]
           when :hash_array
-            raise "internal error: unexpected type: #{results[:data].class}, expecting Array" if !results[:data].is_a?(Array)
+            raise "internal error: unexpected type: #{results[:data].class}, expecting Array" unless results[:data].is_a?(Array)
             # :hash_array is an array of hash tables, where key=colum name
             table_data = results[:data]
             display_fields=nil
@@ -425,7 +425,7 @@ module Asperalm
               display_fields=required_fields.split(',')
             end
           when :key_val_list
-            raise "internal error: unexpected type: #{results[:data].class}, expecting Hash" if !results[:data].is_a?(Hash)
+            raise "internal error: unexpected type: #{results[:data].class}, expecting Hash" unless results[:data].is_a?(Hash)
             # :key_val_list is a simple hash table
             case required_fields
             when FIELDS_DEFAULT,FIELDS_ALL; display_fields = ['key','value']
@@ -542,7 +542,7 @@ module Asperalm
           action=options.get_next_arg_from_list('action',[:set,:delete,:initialize,:show])
           case action
           when :show
-            raise "no such config: #{config_name}" if !@loaded_configs.has_key?(config_name)
+            raise "no such config: #{config_name}" unless @loaded_configs.has_key?(config_name)
             return {:type=>:key_val_list,:data=>@loaded_configs[config_name]}
           when :delete
             @loaded_configs.delete(config_name)
@@ -635,10 +635,11 @@ module Asperalm
           load_config_file
           # help requested without command ?
           exit_with_usage(true) if @help_requested and options.command_or_arg_empty?
-          # load global default options, main plugin is not dynamically instanciated
+          # load global default options
           plugins_defaults=get_plugin_default_parameters(@@MAIN_PLUGIN_NAME_STR.to_sym)
-          options.set_defaults(plugins_defaults) if !plugins_defaults.nil?
+          options.set_defaults(plugins_defaults) unless plugins_defaults.nil?
           command_sym=options.get_next_arg_from_list('command',plugin_sym_list)
+          # main plugin is not dynamically instanciated
           case command_sym
           when @@MAIN_PLUGIN_NAME_STR.to_sym
             command_plugin=self
@@ -652,12 +653,8 @@ module Asperalm
           exit_with_usage(false) if @help_requested
           display_results(command_plugin.execute_action)
           # unprocessed values ?
-          if !options.unprocessed_options.empty?
-            raise CliBadArgument,"unprocessed options: #{options.unprocessed_options}"
-          end
-          if !options.command_or_arg_empty?
-            raise CliBadArgument,"unprocessed values: #{options.get_remaining_arguments(nil)}"
-          end
+          raise CliBadArgument,"unprocessed options: #{options.unprocessed_options}" unless options.unprocessed_options.empty?
+          raise CliBadArgument,"unprocessed values: #{options.get_remaining_arguments(nil)}" unless options.command_or_arg_empty?
         rescue CliBadArgument => e;          process_exception_exit(e,'Argument',:usage)
         rescue CliError => e;                process_exception_exit(e,'Tool',:usage)
         rescue Fasp::TransferError => e;     process_exception_exit(e,"Transfer")
