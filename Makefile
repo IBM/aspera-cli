@@ -6,6 +6,8 @@ TOOLCONFIGDIR=$(HOME)/.aspera/$(CLINAME)
 APIKEY=$(TOOLCONFIGDIR)/filesapikey
 BINDIR=./bin
 ASCLI=$(BINDIR)/$(CLINAME)
+GIT_TAG_VERSION_PREFIX='v_'
+GIT_TAG_CURRENT=$(GIT_TAG_VERSION_PREFIX)$(GEMVERSION)
 
 SRCZIPBASE=$(GEMNAME)_src
 TODAY=$(shell date +%Y%m%d)
@@ -72,6 +74,7 @@ yank:
 	gem yank asperalm -v $(GEMVERSION)
 
 gempush:
+	git tag -a $(GIT_TAG_CURRENT) -m "gem version $(GEMVERSION) pushed"
 	gem push $(GEMFILE)
 
 commit:

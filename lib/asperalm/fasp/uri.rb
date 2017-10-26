@@ -28,13 +28,13 @@ module Asperalm
           when 'port'; result_ts['fasp_port']=value.to_i
           when 'enc'; result_ts['cipher']=value
           when 'tags64'; result_ts['tags64']=value
-          when 'bwcap'; result_ts['target_rate_cap_kbps']=value
+          when 'bwcap'; result_ts['target_rate_cap_kbps']=value.to_i
           when 'createpath'; result_ts['create_dir']=Parameters.yes_to_true(value)
           when 'fallback'; result_ts['http_fallback']=Parameters.yes_to_true(value)
-          when 'lockpolicy'; result_ts['lock_rate_policy']=value
-          when 'lockminrate'; result_ts['lock_min_rate']=value
-          when 'auth'; Log.log.debug("ignoring #{name}=#{value}") # TODO: translate into transfer spec ?
-          when 'v'; Log.log.debug("ignoring #{name}=#{value}") # TODO: translate into transfer spec ?
+          when 'lockpolicy'; result_ts['lock_rate_policy']=Parameters.yes_to_true(value)
+          when 'lockminrate'; result_ts['lock_min_rate']=Parameters.yes_to_true(value)
+          when 'auth'; Log.log.debug("ignoring #{name}=#{value}") # TODO: translate into transfer spec ? yes/no
+          when 'v'; Log.log.debug("ignoring #{name}=#{value}") # TODO: translate into transfer spec ? 2
           when 'protect'; Log.log.debug("ignoring #{name}=#{value}") # TODO: translate into transfer spec ?
           else Log.log.error("non managed URI value: #{name} = #{value}")
           end

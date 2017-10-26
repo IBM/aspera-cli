@@ -136,7 +136,7 @@ module Asperalm
               raise CliBadArgument,"expecting one session exactly" if send_result['xfer_sessions'].length != 1
               transfer_spec=send_result['xfer_sessions'].first
               transfer_spec['paths']=filelist.map { |i| {'source'=>i} }
-              return Main.tool.start_transfer(transfer_spec)
+              return Main.tool.start_transfer(transfer_spec,false)
             when :recv
               # UUID is not reliable, it changes at every call
               if false

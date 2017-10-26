@@ -86,7 +86,8 @@ see section: [Download FASP](download-fasp).
 ## Configuration for Aspera Demo Server
 
 ```bash
-$ aslmcli config id server_default init @json:'{"url":"ssh://demo.asperasoft.com:33001","username":"asperaweb","password":"demoaspera"}'
+$ aslmcli config id aspera_demo_server init @json:'{"url":"ssh://demo.asperasoft.com:33001","username":"asperaweb","password":"demoaspera"}'
+$ aslmcli config id default set server aspera_demo_server 
 $ aslmcli server browse /aspera-test-dir-large
 $ aslmcli server download /aspera-test-dir-large/200MB .
 ```
@@ -143,11 +144,12 @@ Here, use the contents of this file (generated in step 2) for public key:
 * set your Aspera Files default parameters:
 
 ```bash
-$ aslmcli config id files_default set url https://myorg.asperafiles.com
-$ aslmcli config id files_default set client_id MyClIeNtKeY
-$ aslmcli config id files_default set client_secret MyClIeNtSeCrEtMyClIeNtSeCrEt
-$ aslmcli config id files_default set username user@example.com
-$ aslmcli config id files_default set private_key @val:@file:~/.aspera/aslmcli/filesapikey
+$ aslmcli config id default set files files_myorg
+$ aslmcli config id files_myorg set url https://myorg.asperafiles.com
+$ aslmcli config id files_myorg set client_id MyClIeNtKeY
+$ aslmcli config id files_myorg set client_secret MyClIeNtSeCrEtMyClIeNtSeCrEt
+$ aslmcli config id files_myorg set username user@example.com
+$ aslmcli config id files_myorg set private_key @val:@file:~/.aspera/aslmcli/filesapikey
 ```
 
 * CLI is ready to use:
@@ -256,18 +258,18 @@ This specifies a profile called "myapp" and defines some default values for some
 parameters.
 
 
-Default parameters are loaded using this algorithm:
+A configuration file is located:
 
 * if a parameter --config-file is specified, this defines the configuration file to use
 * else the default file is used: $HOME/.aspera/aslmcli/config.yaml
-* when the first level command is executed (plugin), it tries to load some default parameters:
-    * if option '--load-params=xxxx' is specified (or -Pxxxx), this reads the profile specified
+
+Default parameters are loaded using this algorithm:
+
+* if option '--load-params=xxxx' is specified (or -Pxxxx), this reads the profile specified
     * else if option --no-default is specified, then dont load default
-    * else it looks for the name of the default profile name in section "default" and loads it
-    * else it looks for a profile named &lt;plugin&gt;_default and loads it
-    * else there is no default parameter
-* then environment variables are evaluated
-* then command line options are evaluated
+    * else it looks for the name of the default profile name in section "default" and loads all parameters in this section
+* environment variables are evaluated
+* command line options are evaluated
 
 A parameter value can be specified with the same syntax as section "Option and Argument values"
 
@@ -605,15 +607,15 @@ Faspex lacks an API to list the contents of a remote source (available in web UI
 the node API is used, for this it is required to add a section ":storage" that links
 a storage name to a node config and sub path. Example:
 ```yaml
-faspex_default:
+my_faspex_conf:
   url: https://10.25.0.3/aspera/faspex
   username: admin
   password: MyPassword
   storage:
     testlaurent:
-      node: my_fpx_node
+      node: my_faspex_node
       :path: /myfiles
-my_fpx_node:
+my_faspex_node:
   url: https://10.25.0.3:9092
   username: node_faspex
   password: MyPassword
@@ -621,9 +623,13 @@ my_fpx_node:
 
 In this example, a faspex storage named "testlaurent" exists in Faspex, and is located
 under the docroot in "/myfiles" (this must be the same as configured in Faspex).
-The node configuration name is "my_fpx_node" here.
+The node configuration name is "my_faspex_node" here.
 
 # Aspera Transfer Service
+
+The user shall have an Aspera ID, this allows the creation of an "ats id". To avoid having tho specify this id on each command, the user can define a configuration profile for this default parameter: --ats-id for plugin ats.
+
+
 several operations available. example: create access key:
 
 ```

@@ -22,11 +22,13 @@ module Asperalm
       private
 
       RESUME_POLICIES=['none','attrs','sparse_csum','full_csum']
+        
+      BOOLEAN_CLASSES=[TrueClass,FalseClass]
 
       # returns the value from transfer spec and mark parameter as used
       def use_parameter(ts_name,p_classes,mandatory=false)
         raise TransferError.new("mandatory parameter: #{ts_name}") if mandatory and !@state[:transfer_spec].has_key?(ts_name)
-        raise TransferError.new("#{ts_name} is : #{@state[:transfer_spec][ts_name].class}, shall be #{p_classes}, ") unless @state[:transfer_spec][ts_name].nil? or p_classes.include?(@state[:transfer_spec][ts_name].class)
+        raise TransferError.new("#{ts_name} is : #{@state[:transfer_spec][ts_name].class} (#{@state[:transfer_spec][ts_name]}), shall be #{p_classes}, ") unless @state[:transfer_spec][ts_name].nil? or p_classes.include?(@state[:transfer_spec][ts_name].class)
         @state[:used_names].push(ts_name)
         return @state[:transfer_spec][ts_name]
       end
@@ -45,7 +47,7 @@ module Asperalm
       # parameter is added only if value is true
       # if positive==false, param added if value is false
       def set_param_boolean(ts_name,ascp_option,positive=true)
-        value=use_parameter(ts_name,[TrueClass,FalseClass])
+        value=use_parameter(ts_name,[*BOOLEAN_CLASSES])
         add_param=false
         case value
         when nil,false# nothing to put on command line, no creation by default
@@ -80,7 +82,6 @@ module Asperalm
       end
 
       def set_param_list_num(ts_name,ascp_option,values,default)
-        Log.log.debug("HERE: #{ts_name}".bg_red)
         value=use_parameter(ts_name,[String])
         value=default if value.nil?
         if !value.nil?
@@ -138,7 +139,7 @@ module Asperalm
         set_param_value('target_rate_kbps','-l',[Integer])
         set_param_value('min_rate_kbps','-m',[Integer])
         set_param_value('rate_policy','--policy',[String])
-        set_param_value('http_fallback','-y',[String,TrueClass,FalseClass]){|v|{'force'=>'F',true=>1,false=>0}[v]}
+        set_param_value('http_fallback','-y',[String,*BOOLEAN_CLASSES]){|v|{'force'=>'F',true=>1,false=>0}[v]}
         set_param_value('http_fallback_port','-t',[Integer])
         set_param_value('source_root','--source-prefix64',[String]){|prefix|Base64.strict_encode64(prefix)}
         set_param_value('sshfp','--check-sshfp',[String])
@@ -152,16 +153,16 @@ module Asperalm
         set_param_value('EX_ssh_key_paths','-i',[Array])
 
         # TODO: manage those parameters, some are for connect only ? node api ?
-        ignore_parameter('target_rate_cap_kbps',[String])
+        ignore_parameter('target_rate_cap_kbps',[Integer])
         ignore_parameter('target_rate_percentage',[String]) # -wf -l<rate>p
-        ignore_parameter('min_rate_cap_kbps',[String])
+        ignore_parameter('min_rate_cap_kbps',[Integer])
         ignore_parameter('rate_policy_allowed',[String])
         ignore_parameter('fasp_url',[String])
-        ignore_parameter('lock_rate_policy',[String])
-        ignore_parameter('lock_min_rate',[String])
-        ignore_parameter('lock_target_rate',[String])
+        ignore_parameter('lock_rate_policy',[*BOOLEAN_CLASSES])
+        ignore_parameter('lock_min_rate',[*BOOLEAN_CLASSES])
+        ignore_parameter('lock_target_rate',[*BOOLEAN_CLASSES])
         ignore_parameter('authentication',[String]) # = token
-        ignore_parameter('https_fallback_port',[String]) # same as http fallback, option -t ?
+        ignore_parameter('https_fallback_port',[Integer]) # same as http fallback, option -t ?
         ignore_parameter('content_protection',[String])
         ignore_parameter('cipher_allowed',[String])
 

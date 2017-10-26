@@ -34,9 +34,10 @@ module Asperalm
             :title      => 'progress',
             :total      => data['PreTransferBytes'].to_i)
           end
-          when 'STOP'
+        when 'STOP'
+          # stop event when one file is completed
           @cumulative=@cumulative+data['Size'].to_i
-          when 'STATS'
+        when 'STATS'
           if !@progress.nil? then
             @progress.progress=@cumulative+data['Bytescont'].to_i
           else
@@ -66,7 +67,7 @@ module Asperalm
       include Singleton
       # "tool" class method is an alias to "instance" of singleton
       singleton_class.send(:alias_method, :tool, :instance)
-
+      private
       # first level command for the main tool
       @@MAIN_PLUGIN_NAME_STR='config'
       # name of application, also foldername where config is stored
@@ -89,18 +90,13 @@ module Asperalm
       @@MIN_CONFIG_VERSION='0.4.5'
       @@NO_DEFAULT='none'
       @@HELP_URL='http://www.rubydoc.info/gems/asperalm'
-      # $HOME/.aspera/aslmcli
-      def config_folder
-        return File.join(Dir.home,@@ASPERA_HOME_FOLDERNAME,@@PROGRAM_NAME)
-      end
-
       # $HOME/.aspera/aslmcli/config.yaml
       def default_config_file
         return File.join(config_folder,@@DEFAULT_CONFIG_FILENAME)
       end
 
       def current_config_file
-        return self.options.get_option_mandatory(:config_file)
+        return options.get_option_mandatory(:config_file)
       end
 
       def read_config_file(config_file_path=current_config_file)
@@ -124,7 +120,7 @@ module Asperalm
       # 2) if no such value, it takes the name plugin_name+"_default", and loads this config
       def get_plugin_default_parameters(plugin_sym)
         return nil if @loaded_configs.nil? or !@load_plugin_defaults
-        default_config_name=plugin_sym.to_s+'_default'
+        # simplify. default_config_name=plugin_sym.to_s+'_default'
         if @loaded_configs.has_key?(@@CONFIG_FILE_KEY_DEFAULT) and
         @loaded_configs[@@CONFIG_FILE_KEY_DEFAULT].has_key?(plugin_sym.to_s)
           default_config_name=@loaded_configs[@@CONFIG_FILE_KEY_DEFAULT][plugin_sym.to_s]
@@ -153,7 +149,7 @@ module Asperalm
         when :set
           level=Log.level
           Log.setlogger(value)
-          self.options.set_option(:log_level,level)
+          options.set_option(:log_level,level)
           @logtype_cache=value
         else
           return @logtype_cache
@@ -252,17 +248,17 @@ module Asperalm
           Fasp::Manager.instance.add_listener(FaspListenerProgress.new)
           @transfer_agent_singleton=Fasp::TransferAgent.new
           @transfer_agent_singleton.connect_app_id=@@PROGRAM_NAME
-          if !self.options.get_option(:fasp_proxy).nil?
-            @transfer_agent_singleton.transfer_spec_default.merge!({'EX_fasp_proxy_url'=>self.options.get_option(:fasp_proxy)})
+          if !options.get_option(:fasp_proxy).nil?
+            @transfer_agent_singleton.transfer_spec_default.merge!({'EX_fasp_proxy_url'=>options.get_option(:fasp_proxy)})
           end
-          if !self.options.get_option(:http_proxy).nil?
-            @transfer_agent_singleton.transfer_spec_default.merge!({'EX_http_proxy_url'=>self.options.get_option(:http_proxy)})
+          if !options.get_option(:http_proxy).nil?
+            @transfer_agent_singleton.transfer_spec_default.merge!({'EX_http_proxy_url'=>options.get_option(:http_proxy)})
           end
-          case self.options.get_option_mandatory(:transfer)
+          case options.get_option_mandatory(:transfer)
           when :connect
             @transfer_agent_singleton.use_connect_client=true
           when :node
-            config_name=self.options.get_option(:transfer_node)
+            config_name=options.get_option(:transfer_node)
             if config_name.nil?
               node_config=get_plugin_default_parameters(:node)
               raise CliBadArgument,"Please specify --transfer-node" if node_config.nil?
@@ -276,15 +272,6 @@ module Asperalm
         return @transfer_agent_singleton
       end
 
-      def start_transfer(transfer_spec)
-        # TODO: option to choose progress format
-        transfer_spec['EX_quiet']=true
-        transfer_agent.start_transfer(transfer_spec)
-        return self.class.result_success
-      end
-
-      def options; @options;end
-
       def initialize
         @help_requested=false
         @options=OptParser.new
@@ -292,41 +279,41 @@ module Asperalm
         @transfer_agent_singleton=nil
         @load_plugin_defaults=true
         scan_all_plugins
-        self.options.program_name=@@PROGRAM_NAME
-        self.options.banner = "NAME\n\t#{@@PROGRAM_NAME} -- a command line tool for Aspera Applications (v#{Asperalm::VERSION})\n\n"
-        self.options.separator "SYNOPSIS"
-        self.options.separator "\t#{@@PROGRAM_NAME} COMMANDS [OPTIONS] [ARGS]"
-        self.options.separator ""
-        self.options.separator "DESCRIPTION"
-        self.options.separator "\tUse Aspera application to perform operations on command line."
-        self.options.separator "\tOAuth 2.0 is used for authentication in Files, Several authentication methods are provided."
-        self.options.separator "\tAdditional documentation here: https://rubygems.org/gems/asperalm"
-        self.options.separator ""
-        self.options.separator "COMMANDS"
-        self.options.separator "\tFirst level commands: #{action_list.map {|x| x.to_s}.join(', ')}"
-        self.options.separator "\tNote that commands can be written shortened (provided it is unique)."
-        self.options.separator ""
-        self.options.separator "OPTIONS"
-        self.options.separator "\tOptions begin with a '-' (minus), and value is provided on command line.\n"
-        self.options.separator "\tSpecial values are supported beginning with special prefix, like: #{OptParser.value_modifier.map {|m| "@#{m}:"}.join(' ')}.\n"
-        self.options.separator "\tDates format is 'DD-MM-YY HH:MM:SS', or 'now' or '-<num>h'"
-        self.options.separator ""
-        self.options.separator "ARGS"
-        self.options.separator "\tSome commands require mandatory arguments, e.g. a path.\n"
-        self.options.separator ""
-        self.options.separator "EXAMPLES"
-        self.options.separator "\t#{@@PROGRAM_NAME} files repo browse /"
-        self.options.separator "\t#{@@PROGRAM_NAME} faspex send ./myfile --log-level=debug"
-        self.options.separator "\t#{@@PROGRAM_NAME} shares upload ~/myfile /myshare"
-        self.options.separator ""
+        options.program_name=@@PROGRAM_NAME
+        options.banner = "NAME\n\t#{@@PROGRAM_NAME} -- a command line tool for Aspera Applications (v#{Asperalm::VERSION})\n\n"
+        options.separator "SYNOPSIS"
+        options.separator "\t#{@@PROGRAM_NAME} COMMANDS [OPTIONS] [ARGS]"
+        options.separator ""
+        options.separator "DESCRIPTION"
+        options.separator "\tUse Aspera application to perform operations on command line."
+        options.separator "\tOAuth 2.0 is used for authentication in Files, Several authentication methods are provided."
+        options.separator "\tAdditional documentation here: https://rubygems.org/gems/asperalm"
+        options.separator ""
+        options.separator "COMMANDS"
+        options.separator "\tFirst level commands: #{action_list.map {|x| x.to_s}.join(', ')}"
+        options.separator "\tNote that commands can be written shortened (provided it is unique)."
+        options.separator ""
+        options.separator "OPTIONS"
+        options.separator "\tOptions begin with a '-' (minus), and value is provided on command line.\n"
+        options.separator "\tSpecial values are supported beginning with special prefix, like: #{OptParser.value_modifier.map {|m| "@#{m}:"}.join(' ')}.\n"
+        options.separator "\tDates format is 'DD-MM-YY HH:MM:SS', or 'now' or '-<num>h'"
+        options.separator ""
+        options.separator "ARGS"
+        options.separator "\tSome commands require mandatory arguments, e.g. a path.\n"
+        options.separator ""
+        options.separator "EXAMPLES"
+        options.separator "\t#{@@PROGRAM_NAME} files repo browse /"
+        options.separator "\t#{@@PROGRAM_NAME} faspex send ./myfile --log-level=debug"
+        options.separator "\t#{@@PROGRAM_NAME} shares upload ~/myfile /myshare"
+        options.separator ""
         # handler must be set before setting defaults
-        self.options.set_handler(:log_level) { |op,val| handler_loglevel(op,val) }
-        self.options.set_handler(:logger) { |op,val| handler_logtype(op,val) }
-        self.options.set_handler(:insecure) { |op,val| handler_insecure(op,val) }
-        self.options.set_handler(:ts) { |op,val| handler_transfer_spec(op,val) }
-        self.options.set_handler(:to_folder) { |op,val| handler_to_folder(op,val) }
-        self.options.set_handler(:gui_mode) { |op,val| handler_browser(op,val) }
-        self.options.set_handler(:fasp_folder) { |op,val| handler_fasp_folder(op,val) }
+        options.set_handler(:log_level) { |op,val| handler_loglevel(op,val) }
+        options.set_handler(:logger) { |op,val| handler_logtype(op,val) }
+        options.set_handler(:insecure) { |op,val| handler_insecure(op,val) }
+        options.set_handler(:ts) { |op,val| handler_transfer_spec(op,val) }
+        options.set_handler(:to_folder) { |op,val| handler_to_folder(op,val) }
+        options.set_handler(:gui_mode) { |op,val| handler_browser(op,val) }
+        options.set_handler(:fasp_folder) { |op,val| handler_fasp_folder(op,val) }
       end
 
       # plugin_name_sym is symbol
@@ -337,13 +324,13 @@ module Asperalm
         # TODO: check that ancestor is Plugin?
         command_plugin=Object::const_get(@@PLUGINS_MODULE+'::'+plugin_name_sym.to_s.capitalize).new
         # load default params only if no param already loaded
-        if self.options.get_option(:load_params).nil?
+        if options.get_option(:load_params).nil?
           defaults_for_plugin=get_plugin_default_parameters(plugin_name_sym)
-          self.options.set_defaults(defaults_for_plugin) if !defaults_for_plugin.nil?
+          options.set_defaults(defaults_for_plugin) if !defaults_for_plugin.nil?
         end
-        self.options.separator "COMMAND: #{plugin_name_sym}"
-        self.options.separator "SUBCOMMANDS: #{command_plugin.action_list.map{ |p| p.to_s}.join(', ')}"
-        self.options.separator "OPTIONS:"
+        options.separator "COMMAND: #{plugin_name_sym}"
+        options.separator "SUBCOMMANDS: #{command_plugin.action_list.map{ |p| p.to_s}.join(', ')}"
+        options.separator "OPTIONS:"
         command_plugin.declare_options
         return command_plugin
       end
@@ -352,34 +339,34 @@ module Asperalm
       FIELDS_DEFAULT='DEF'
 
       def declare_options
-        self.options.separator "OPTIONS: global"
-        self.options.set_option(:gui_mode,OperatingSystem.default_gui_mode)
-        self.options.set_option(:fields,FIELDS_DEFAULT)
-        self.options.set_option(:transfer,:ascp)
-        self.options.set_option(:insecure,:no)
-        self.options.set_option(:format,:table)
-        self.options.set_option(:logger,:stdout)
-        self.options.set_option(:config_file,default_config_file)
-        self.options.set_option(:to_folder,'.')
-        self.options.on("-h", "--help", "Show this message.") { @help_requested=true }
-        self.options.add_opt_list(:gui_mode,'TYPE',OperatingSystem.gui_modes,"method to start browser",'-gTYPE')
-        self.options.add_opt_list(:insecure,'VALUE',[:yes,:no],"do not validate cert")
-        self.options.add_opt_list(:log_level,'VALUE',Log.levels,"Log level",'-lTYPE')
-        self.options.add_opt_list(:logger,'VALUE',Log.logtypes,"log method",'-qTYPE')
-        self.options.add_opt_list(:format,'VALUE',self.class.display_formats,"output format")
-        self.options.add_opt_list(:transfer,'VALUE',[:ascp,:connect,:node],"type of transfer")
-        self.options.add_opt_simple(:config_file,"STRING","-CSTRING","read parameters from file in YAML format, current=#{self.options.get_option(:config_file)}")
-        self.options.add_opt_simple(:load_params,"NAME","-PNAME","load the named configuration from current config file, use \"#{@@NO_DEFAULT}\" to avoid loading the default configuration")
-        self.options.add_opt_simple(:fasp_folder,"NAME","specify where to find FASP (main folder), current=#{self.options.get_option(:fasp_folder)}")
-        self.options.add_opt_simple(:transfer_node,"STRING","name of configuration used to transfer when using --transfer=node")
-        self.options.add_opt_simple(:fields,"STRING","comma separated list of fields, or #{FIELDS_ALL}, or #{FIELDS_DEFAULT}")
-        self.options.add_opt_simple(:fasp_proxy,"STRING","URL of FASP proxy (dnat / dnats)")
-        self.options.add_opt_simple(:http_proxy,"STRING","URL of HTTP proxy (for http fallback)")
-        self.options.add_opt_switch(:rest_debug,"-r","more debug for HTTP calls") { Rest.set_debug(true) }
-        self.options.add_opt_switch(:no_default,"-N","dont load default configuration") { @load_plugin_defaults=false }
-        self.options.add_opt_switch(:version,"-v","display version") { puts Asperalm::VERSION;Process.exit(0) }
-        self.options.add_opt_simple(:ts,"JSON","override transfer spec values for transfers (hash, use @json: prefix), current=#{self.options.get_option(:ts)}")
-        self.options.add_opt_simple(:to_folder,"PATH","destination folder for downloaded files, current=#{self.options.get_option(:to_folder)}")
+        options.separator "OPTIONS: global"
+        options.set_option(:gui_mode,OperatingSystem.default_gui_mode)
+        options.set_option(:fields,FIELDS_DEFAULT)
+        options.set_option(:transfer,:ascp)
+        options.set_option(:insecure,:no)
+        options.set_option(:format,:table)
+        options.set_option(:logger,:stdout)
+        options.set_option(:config_file,default_config_file)
+        options.set_option(:to_folder,'.')
+        options.on("-h", "--help", "Show this message.") { @help_requested=true }
+        options.add_opt_list(:gui_mode,'TYPE',OperatingSystem.gui_modes,"method to start browser",'-gTYPE')
+        options.add_opt_list(:insecure,'VALUE',[:yes,:no],"do not validate cert")
+        options.add_opt_list(:log_level,'VALUE',Log.levels,"Log level",'-lTYPE')
+        options.add_opt_list(:logger,'VALUE',Log.logtypes,"log method",'-qTYPE')
+        options.add_opt_list(:format,'VALUE',self.class.display_formats,"output format")
+        options.add_opt_list(:transfer,'VALUE',[:ascp,:connect,:node],"type of transfer")
+        options.add_opt_simple(:config_file,"STRING","-CSTRING","read parameters from file in YAML format, current=#{options.get_option(:config_file)}")
+        options.add_opt_simple(:load_params,"NAME","-PNAME","load the named configuration from current config file, use \"#{@@NO_DEFAULT}\" to avoid loading the default configuration")
+        options.add_opt_simple(:fasp_folder,"NAME","specify where to find FASP (main folder), current=#{options.get_option(:fasp_folder)}")
+        options.add_opt_simple(:transfer_node,"STRING","name of configuration used to transfer when using --transfer=node")
+        options.add_opt_simple(:fields,"STRING","comma separated list of fields, or #{FIELDS_ALL}, or #{FIELDS_DEFAULT}")
+        options.add_opt_simple(:fasp_proxy,"STRING","URL of FASP proxy (dnat / dnats)")
+        options.add_opt_simple(:http_proxy,"STRING","URL of HTTP proxy (for http fallback)")
+        options.add_opt_switch(:rest_debug,"-r","more debug for HTTP calls") { Rest.set_debug(true) }
+        options.add_opt_switch(:no_default,"-N","dont load default configuration") { @load_plugin_defaults=false }
+        options.add_opt_switch(:version,"-v","display version") { puts Asperalm::VERSION;Process.exit(0) }
+        options.add_opt_simple(:ts,"JSON","override transfer spec values for transfers (hash, use @json: prefix), current=#{options.get_option(:ts)}")
+        options.add_opt_simple(:to_folder,"PATH","destination folder for downloaded files, current=#{options.get_option(:to_folder)}")
       end
 
       def self.flatten_config_show(t)
@@ -390,71 +377,6 @@ module Asperalm
           end
         end
         return r
-      end
-
-      # "config" plugin
-      def execute_action
-        action=self.options.get_next_arg_from_list('action',[:genkey,:plugins,:flush_tokens,:list,:overview,:open,:echo,:id,:documentation])
-        case action
-        when :id
-          config_name=self.options.get_next_arg_value('config name')
-          action=self.options.get_next_arg_from_list('action',[:set,:delete,:initialize,:show])
-          case action
-          when :show
-            raise "no such config: #{config_name}" if !@loaded_configs.has_key?(config_name)
-            return {:type=>:key_val_list,:data=>@loaded_configs[config_name]}
-          when :delete
-            @loaded_configs.delete(config_name)
-            write_config_file
-            return Main.status_result("deleted: #{config_name}")
-          when :set
-            param_name=self.options.get_next_arg_value('parameter name')
-            param_value=self.options.get_next_arg_value('parameter value')
-            if !@loaded_configs.has_key?(config_name)
-              Log.log.debug("no such config name: #{config_name}, initializing")
-              @loaded_configs[config_name]=Hash.new
-            end
-            if @loaded_configs[config_name].has_key?(param_name)
-              Log.log.warn("overwriting value: #{@loaded_configs[config_name][param_name]}")
-            end
-            @loaded_configs[config_name][param_name]=param_value
-            write_config_file
-            return Main.status_result("updated: #{config_name}->#{param_name} to #{param_value}")
-          when :initialize
-            config_value=self.options.get_next_arg_value('config value')
-            if @loaded_configs.has_key?(config_name)
-              Log.log.warn("configuration already exists: #{config_name}, overwriting")
-            end
-            @loaded_configs[config_name]=config_value
-            write_config_file
-            return Main.status_result("modified: #{current_config_file}")
-          end
-        when :documentation
-          OperatingSystem.open_uri(@@HELP_URL)
-          return Main.no_result
-        when :open
-          OperatingSystem.open_uri(current_config_file)
-          return Main.no_result
-        when :genkey # generate new rsa key
-          key_filepath=self.options.get_next_arg_value('private key file path')
-          require 'net/ssh'
-          priv_key = OpenSSL::PKey::RSA.new(2048)
-          File.write(key_filepath,priv_key.to_s)
-          File.write(key_filepath+".pub",priv_key.public_key.to_s)
-          return Main.status_result('generated key: '+key_filepath)
-        when :echo # display the content of a value given on command line
-          return {:type=>:other_struct, :data=>self.options.get_next_arg_value("value")}
-        when :flush_tokens
-          deleted_files=Oauth.flush_tokens(config_folder)
-          return {:type=>:value_list, :name=>'file',:data=>deleted_files}
-          return Main.status_result('token cache flushed')
-        when :plugins
-          return {:data => plugin_sym_list.map { |i| { 'plugin' => i.to_s, 'path' => @plugins[i][:source] } } , :fields => ['plugin','path'], :type => :hash_array }
-        when :list
-          return {:data => @loaded_configs.keys, :type => :value_list, :name => 'name'}
-        when :overview
-          return {:type=>:hash_array,:data=>self.class.flatten_config_show(@loaded_configs)}
-        end
       end
 
       # supported output formats
@@ -468,8 +390,8 @@ module Asperalm
         raise "INTERNAL ERROR, result must have type" if !results.has_key?(:type)
         raise "INTERNAL ERROR, result must have data" if !results.has_key?(:data) and !results[:type].eql?(:empty)
 
-        required_fields=self.options.get_option_mandatory(:fields)
-        case self.options.get_option_mandatory(:format)
+        required_fields=options.get_option_mandatory(:fields)
+        case options.get_option_mandatory(:format)
         when :ruby
           puts PP.pp(results[:data],'')
         when :json
@@ -533,7 +455,7 @@ module Asperalm
           table_data=results[:textify].call(table_data) if results.has_key?(:textify)
           # convert data to string, and keep only display fields
           table_data=table_data.map { |r| display_fields.map { |c| r[c].to_s } }
-          case self.options.get_option_mandatory(:format)
+          case options.get_option_mandatory(:format)
           when :table
             # display the table !
             puts Text::Table.new(
@@ -550,19 +472,19 @@ module Asperalm
 
       def exit_with_usage(all_plugins)
         # display main plugin options
-        STDERR.puts self.options
+        STDERR.puts options
         if all_plugins
           # list plugins that have a "require" field, i.e. all but main plugin
           plugin_sym_list.select { |s| !@plugins[s][:req].nil? }.each do |plugin_name_sym|
             # override main option parser...
             @options=OptParser.new
-            self.options.banner = ""
-            self.options.program_name=@@PROGRAM_NAME
+            options.banner = ""
+            options.program_name=@@PROGRAM_NAME
             get_plugin_instance(plugin_name_sym)
-            STDERR.puts(self.options)
+            STDERR.puts(options)
           end
         end
-        STDERR.puts self.options
+        STDERR.puts options
         STDERR.puts "\nDocumentation : #{@@HELP_URL}"
         Process.exit 1
       end
@@ -594,12 +516,12 @@ module Asperalm
           raise CliError,"Unsupported config file version #{version}. Please check documentation. Expecting min version #{@@MIN_CONFIG_VERSION}"
         end
         # did the user specify parameters to load ?
-        config_name_list=self.options.get_option(:load_params)
+        config_name_list=options.get_option(:load_params)
         if !config_name_list.nil?
           config_name_list.split(/,/).each do |name|
             Log.log.debug "loading config: #{name} : #{@loaded_configs[name]}".red
             if @loaded_configs.has_key?(name)
-              self.options.set_defaults(@loaded_configs[name])
+              options.set_defaults(@loaded_configs[name])
             elsif name.eql?(@@NO_DEFAULT)
               Log.log.debug("dont use generic default")
             else
@@ -609,44 +531,132 @@ module Asperalm
         end
       end
 
+      protected
+
+      # "config" plugin
+      def execute_action
+        action=options.get_next_arg_from_list('action',[:genkey,:plugins,:flush_tokens,:list,:overview,:open,:echo,:id,:documentation])
+        case action
+        when :id
+          config_name=options.get_next_arg_value('config name')
+          action=options.get_next_arg_from_list('action',[:set,:delete,:initialize,:show])
+          case action
+          when :show
+            raise "no such config: #{config_name}" if !@loaded_configs.has_key?(config_name)
+            return {:type=>:key_val_list,:data=>@loaded_configs[config_name]}
+          when :delete
+            @loaded_configs.delete(config_name)
+            write_config_file
+            return Main.status_result("deleted: #{config_name}")
+          when :set
+            param_name=options.get_next_arg_value('parameter name')
+            param_value=options.get_next_arg_value('parameter value')
+            if !@loaded_configs.has_key?(config_name)
+              Log.log.debug("no such config name: #{config_name}, initializing")
+              @loaded_configs[config_name]=Hash.new
+            end
+            if @loaded_configs[config_name].has_key?(param_name)
+              Log.log.warn("overwriting value: #{@loaded_configs[config_name][param_name]}")
+            end
+            @loaded_configs[config_name][param_name]=param_value
+            write_config_file
+            return Main.status_result("updated: #{config_name}->#{param_name} to #{param_value}")
+          when :initialize
+            config_value=options.get_next_arg_value('config value')
+            if @loaded_configs.has_key?(config_name)
+              Log.log.warn("configuration already exists: #{config_name}, overwriting")
+            end
+            @loaded_configs[config_name]=config_value
+            write_config_file
+            return Main.status_result("modified: #{current_config_file}")
+          end
+        when :documentation
+          OperatingSystem.open_uri(@@HELP_URL)
+          return Main.no_result
+        when :open
+          OperatingSystem.open_uri(current_config_file)
+          return Main.no_result
+        when :genkey # generate new rsa key
+          key_filepath=options.get_next_arg_value('private key file path')
+          require 'net/ssh'
+          priv_key = OpenSSL::PKey::RSA.new(2048)
+          File.write(key_filepath,priv_key.to_s)
+          File.write(key_filepath+".pub",priv_key.public_key.to_s)
+          return Main.status_result('generated key: '+key_filepath)
+        when :echo # display the content of a value given on command line
+          return {:type=>:other_struct, :data=>options.get_next_arg_value("value")}
+        when :flush_tokens
+          deleted_files=Oauth.flush_tokens(config_folder)
+          return {:type=>:value_list, :name=>'file',:data=>deleted_files}
+          return Main.status_result('token cache flushed')
+        when :plugins
+          return {:data => plugin_sym_list.map { |i| { 'plugin' => i.to_s, 'path' => @plugins[i][:source] } } , :fields => ['plugin','path'], :type => :hash_array }
+        when :list
+          return {:data => @loaded_configs.keys, :type => :value_list, :name => 'name'}
+        when :overview
+          return {:type=>:hash_array,:data=>self.class.flatten_config_show(@loaded_configs)}
+        end
+      end
+
+      public
+
+      attr_reader :options
+
+      # $HOME/.aspera/aslmcli
+      def config_folder
+        return File.join(Dir.home,@@ASPERA_HOME_FOLDERNAME,@@PROGRAM_NAME)
+      end
+
+      # plugins shall use this method to start a transfer
+      # keep_default_destination if destination_root shall be used from the provided transfer spec
+      # and not the default one
+      def start_transfer(transfer_spec,keep_default_destination=true)
+        transfer_agent.transfer_spec_default.delete('destination_root') unless keep_default_destination
+        # TODO: option to choose progress format
+        # here we disable native stdout progress
+        transfer_spec['EX_quiet']=true
+        transfer_agent.start_transfer(transfer_spec)
+        return self.class.result_success
+      end
+
       # this is the main function called by initial script
       def process_command_line(argv)
         begin
           # init options
           # opt parser separates options (start with '-') from arguments
-          self.options.set_argv(argv)
+          options.set_argv(argv)
           # declare global options and set defaults
-          self.declare_options
+          declare_options
           # read options from env vars
-          self.options.read_env_vars
+          options.read_env_vars
           # parse general options
-          self.options.parse_options!
+          options.parse_options!
           # load default config if it was not overriden on command line
           load_config_file
           # help requested without command ?
-          self.exit_with_usage(true) if @help_requested and self.options.command_or_arg_empty?
+          exit_with_usage(true) if @help_requested and options.command_or_arg_empty?
           # load global default options, main plugin is not dynamically instanciated
           plugins_defaults=get_plugin_default_parameters(@@MAIN_PLUGIN_NAME_STR.to_sym)
-          self.options.set_defaults(plugins_defaults) if !plugins_defaults.nil?
-          command_sym=self.options.get_next_arg_from_list('command',plugin_sym_list)
+          options.set_defaults(plugins_defaults) if !plugins_defaults.nil?
+          command_sym=options.get_next_arg_from_list('command',plugin_sym_list)
           case command_sym
           when @@MAIN_PLUGIN_NAME_STR.to_sym
             command_plugin=self
           else
             # get plugin, set options, etc
-            command_plugin=self.get_plugin_instance(command_sym)
+            command_plugin=get_plugin_instance(command_sym)
             # parse plugin specific options
-            self.options.parse_options!
+            options.parse_options!
           end
           # help requested ?
-          self.exit_with_usage(false) if @help_requested
+          exit_with_usage(false) if @help_requested
           display_results(command_plugin.execute_action)
           # unprocessed values ?
-          if !self.options.unprocessed_options.empty?
-            raise CliBadArgument,"unprocessed options: #{self.options.unprocessed_options}"
+          if !options.unprocessed_options.empty?
+            raise CliBadArgument,"unprocessed options: #{options.unprocessed_options}"
           end
-          if !self.options.command_or_arg_empty?
-            raise CliBadArgument,"unprocessed values: #{self.options.get_remaining_arguments(nil)}"
+          if !options.command_or_arg_empty?
+            raise CliBadArgument,"unprocessed values: #{options.get_remaining_arguments(nil)}"
           end
         rescue CliBadArgument => e;          process_exception_exit(e,'Argument',:usage)
         rescue CliError => e;                process_exception_exit(e,'Tool',:usage)
@@ -658,6 +668,6 @@ module Asperalm
         end
         return self
       end
-    end
-  end
-end
+    end # Main
+  end # Cli
+end # Asperalm

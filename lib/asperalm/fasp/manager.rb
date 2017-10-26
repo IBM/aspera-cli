@@ -26,7 +26,6 @@ module Asperalm
     class Manager
       # use "instance" class method
       include Singleton
-
       # transforms ABigWord into a_big_word
       def self.snake_case(str)
         str.
@@ -35,25 +34,29 @@ module Asperalm
         gsub(/([a-z\d])(usec)$/,'\1_\2').
         downcase
       end
+
       # user can also specify another location for ascp
       attr_accessor :ascp_path
+
       def initialize
         @ascp_path=Fasp::ResourceFinder.path(:ascp)
         @listeners=[]
       end
 
+      # fields that shall be integer in JSON
+      IntegerFields=['Rate','MinRate','Port','Priority','RateCap','MinRateCap','TCPPort','CreatePolicy','TimePolicy','DatagramSize','XoptFlags','VLinkVersion','PeerVLinkVersion','DSPipelineDepth','PeerDSPipelineDepth','ReadBlockSize','WriteBlockSize','ClusterNumNodes','ClusterNodeId','Size','Written','Loss','FileBytes','PreTransferBytes','TransferBytes','PMTU','Elapsedusec','ArgScansAttempted','ArgScansCompleted','PathScansAttempted','FileScansCompleted','TransfersAttempted','TransfersPassed','Delay']
+
+      # event format
       Formats=[:text,:struct,:enhanced]
 
-      #
+      # listener receives events
       def add_listener(listener,format=:struct)
         raise "unsupported format: #{format}" if !Formats.include?(format)
         @listeners.push({:listener=>listener,:format=>format})
         self
       end
 
-      # fields that shall be integer in JSON
-      IntegerFields=['Rate','MinRate','Port','Priority','RateCap','MinRateCap','TCPPort','CreatePolicy','TimePolicy','DatagramSize','XoptFlags','VLinkVersion','PeerVLinkVersion','DSPipelineDepth','PeerDSPipelineDepth','ReadBlockSize','WriteBlockSize','ClusterNumNodes','ClusterNodeId','Size','Written','Loss','FileBytes','PreTransferBytes','TransferBytes','PMTU','Elapsedusec','ArgScansAttempted','ArgScansCompleted','PathScansAttempted','FileScansCompleted','TransfersAttempted','TransfersPassed','Delay']
-
+      # translates legacy event into enhanced event
       def enhanced_event_format(event)
         return event.keys.inject({}) do |h,e|
           new_name=Manager.snake_case(e)
@@ -64,112 +67,112 @@ module Asperalm
         end
       end
 
+      def notify_listeners(current_event_text,current_event_data)
+        enhanced_event=nil
+        @listeners.each do |listener|
+          case listener[:format]
+          when :text
+            listener[:listener].event(current_event_text)
+          when :struct
+            listener[:listener].event(current_event_data)
+          when :enhanced
+            enhanced_event=enhanced_event_format(current_event_data) if enhanced_event.nil?
+            listener[:listener].event(enhanced_event)
+          else
+            raise "unexpected format: #{listener[:format]}"
+          end
+        end
+      end
+
       # This is the low level method to start FASP
       # currently, relies on command line arguments
       # start ascp with management port.
       # raises FaspError on error
-      def start_transfer_with_args_env(all_params)
-        arguments=all_params[:args]
-        raise "no ascp path defined" if @ascp_path.nil?
-        # open random local TCP port listening
-        mgt_sock = TCPServer.new('127.0.0.1',0 )
-        mgt_port = mgt_sock.addr[1]
-        Log.log.debug "Port=#{mgt_port}"
-        # add management port
-        arguments.unshift('-M', mgt_port.to_s)
-        Log.log.info "execute #{all_params[:env].map{|k,v| "#{k}=\"#{v}\""}.join(' ')} \"#{@ascp_path}\" \"#{arguments.join('" "')}\""
+      def start_transfer_with_args_env(ascp_params)
+        raise TransferError.new("no ascp path defined") if @ascp_path.nil?
         begin
-          ascp_pid = Process.spawn(all_params[:env],[@ascp_path,@ascp_path],*arguments)
-        rescue SystemCallError=> e
-          raise TransferError.new(e.message)
-        end
-        # in parent, wait for connection, max 3 seconds
-        Log.log.debug "before accept for pid (#{ascp_pid})"
-        client=nil
-        begin
+          ascp_pid=nil
+          ascp_arguments=ascp_params[:args].clone
+          # open random local TCP port listening
+          mgt_sock = TCPServer.new('127.0.0.1',0 )
+          # add management port
+          ascp_arguments.unshift('-M', mgt_sock.addr[1].to_s)
+          # start ascp in sub process
+          Log.log.info "execute: #{ascp_params[:env].map{|k,v| "#{k}=\"#{v}\""}.join(' ')} \"#{@ascp_path}\" \"#{ascp_arguments.join('" "')}\""
+          ascp_pid = Process.spawn(ascp_params[:env],[@ascp_path,@ascp_path],*ascp_arguments)
+          # in parent, wait for connection to socket max 3 seconds
+          Log.log.debug "before accept for pid (#{ascp_pid})"
+          ascp_mgt_io=nil
           Timeout.timeout( 3 ) do
-            client = mgt_sock.accept
+            ascp_mgt_io = mgt_sock.accept
           end
-        rescue Timeout::Error => e
-          Process.kill 'INT',ascp_pid
-        end
-        Log.log.debug "after accept (#{client})"
+          Log.log.debug "after accept (#{ascp_mgt_io})"
 
-        if client.nil? then
-          # avoid zombie
-          Process.wait ascp_pid
-          raise TransferError.new('timeout waiting mgt port connect')
-        end
+          # exact text for event, with \n
+          current_event_text=''
+          # parsed event (hash)
+          current_event_data=nil
 
-        # records for one message
-        current_event_data=nil
-        current_event_text=''
+          # this is the last full status
+          last_status_event=nil
 
-        # this is the last full status
-        last_event=nil
-
-        # read management port
-        loop do
-          begin
-            # check process still present, else receive Errno::ESRCH
-            Process.getpgid( ascp_pid )
-          rescue RangeError => e; break
-          rescue Errno::ESRCH => e; break
-          rescue NotImplementedError; nil # TODO: can we do better on windows ?
-          end
-          # TODO: timeout here ?
-          line = client.gets
-          if line.nil? then
-            break
-          end
-          current_event_text=current_event_text+line
-          line.chomp!
-          Log.log.debug "line=[#{line}]"
-          if  line.empty? then
-            # end frame
-            if !current_event_data.nil? then
-              if !@listeners.nil? then
-                newformat=nil
-                @listeners.each do |listener|
-                  case listener[:format]
-                  when :text
-                    listener[:listener].event(current_event_text)
-                  when :struct
-                    listener[:listener].event(current_event_data)
-                  when :enhanced
-                    newformat=enhanced_event_format(current_event_data) if newformat.nil?
-                    listener[:listener].event(newformat)
-                  else
-                    raise :ERROR
-                  end
-                end
-              end
+          # read management port
+          loop do
+            # TODO: timeout here ?
+            line = ascp_mgt_io.gets
+            # nil when ascp process exits
+            break if line.nil?
+            current_event_text=current_event_text+line
+            line.chomp!
+            Log.log.debug "line=[#{line}]"
+            case line
+            when 'FASPMGR 2'
+              # begin frame
+              current_event_data = Hash.new
+              current_event_text = ''
+            when /^([^:]+): (.*)$/
+              # payload
+              current_event_data[$1] = $2
+            when ''
+              # end frame
+              raise "unexpected empty line" if current_event_data.nil?
+              notify_listeners(current_event_text,current_event_data)
+              # TODO: check if this is always the last event
               if ['DONE','ERROR'].include?(current_event_data['Type']) then
-                last_event = current_event_data
+                last_status_event = current_event_data
               end
             else
-              Log.log.error "unexpected empty line"
-            end
-          elsif 'FASPMGR 2'.eql? line then
-            # begin frame
-            current_event_data = Hash.new
-            current_event_text = ''
-          elsif m=line.match('^([^:]+): (.*)$') then
-            current_event_data[m[1]] = m[2]
+              raise "unexpected line:[#{line}]"
+            end # case
+          end # loop
+          # check that last status was received before process exit
+          raise "INTERNAL: nil last status" if last_status_event.nil?
+          case last_status_event['Type']
+          when 'DONE'
+            return
+          when 'ERROR'
+            raise TransferError.new(last_status_event['Description'],last_status_event['Code'].to_i)
           else
-            Log.log.error "error parsing[#{line}]"
+            raise "INTERNAL ERROR: unexpected last event"
           end
-        end
-
-        # wait for sub process completion
-        Process.wait(ascp_pid)
-
-        raise "nil last status" if last_event.nil?
-
-        if 'DONE'.eql?(last_event['Type']) then
-          return
-        else
-          raise TransferError.new(last_event['Description'],last_event['Code'].to_i)
+        rescue SystemCallError=> e
+          # Process.spawn
+          raise TransferError.new(e.message)
+        rescue Timeout::Error => e
+          raise TransferError.new('timeout waiting mgt port connect')
+        rescue Interrupt => e
+          raise TransferError.new('transfer interrupted by user')
+        ensure
+          # ensure there is no ascp left running
+          unless ascp_pid.nil?
+            begin
+              Process.kill('INT',ascp_pid)
+            rescue
+            end
+            # avoid zombie
+            Process.wait(ascp_pid)
+            ascp_pid=nil
+          end
         end
       end
 
