@@ -406,6 +406,7 @@ Transfer Server using the Node API. The client node configuration shall be speci
 ## Destination folder for transfers
 
 Use parameter --to-folder=_dst_path_ to set destination folder on download or upload.
+By default destination is "." for downloads, and "/" for uploads.
 Note that it is equivalent to setting "destination_root" in transfer spec
 using option --ts=@json:'{"destination_root":"_dst_path_"}'
 

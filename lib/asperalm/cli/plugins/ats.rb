@@ -54,21 +54,21 @@ module Asperalm
         # or the one specified on command line
         # or creates a new one
         def current_api_key
-          if @current_api_key.nil?
+          if @current_api_key_info.nil?
             requested_id=Main.tool.options.get_option(:ats_id)
             if requested_id.nil?
               # if no api key requested and no repo, create one
               create_new_api_key if repo_api_keys.empty?
               # else there must be only one
               raise "please select one api key with --ats-id, list with: aslmcli ats api repo list" if repo_api_keys.length != 1
-              @current_api_key=repo_api_keys.first
+              @current_api_key_info=repo_api_keys.first
             else
               selected=repo_api_keys.select{|i| i['ats_id'].eql?(requested_id)}
-              raise CliBadArgument,"no such id in repository" if selected.empty?
-              @current_api_key=selected.first
+              raise CliBadArgument,"no such id in repository: #{requested_id}" if selected.empty?
+              @current_api_key_info=selected.first
             end
           end
-          return @current_api_key
+          return @current_api_key_info
         end
 
         # create a new API key , requires aspera id authentication
@@ -77,10 +77,14 @@ module Asperalm
           res=@api_pub.call({:operation=>'POST',:subpath=>"api_keys",:return_error=>true,:headers=>{'Accept'=>'application/json'},:json_params=>nil,:url_params=>{:description => "created by aslmcli",:redirect_uri=>LOCAL_REDIRECT_URI}})
           # TODO: check code is 3xx ?
           login_page_url=res[:http]['Location']
-          new_key_data=Oauth.goto_page_and_get_request(LOCAL_REDIRECT_URI,login_page_url)
-          repo_api_keys.push(new_key_data)
+          new_api_key_info=Oauth.goto_page_and_get_request(LOCAL_REDIRECT_URI,login_page_url)
+          @current_api_key_info=new_api_key_info
+          subscription=api_auth.read("subscriptions")[:data]
+          new_api_key_info['subscription_name']=subscription['name']
+          new_api_key_info['organization_name']=subscription['aspera_id_user']['organization']['name']
+          repo_api_keys.push(new_api_key_info)
           save_key_repo
-          return new_key_data
+          return new_api_key_info
         end
 
         # authenticated API
@@ -180,7 +184,7 @@ module Asperalm
             command=Main.tool.options.get_next_arg_from_list('command',[:list,:delete])
             case command
             when :list #
-              return {:type=>:hash_array, :data=>repo_api_keys, :fields =>['ats_id','ats_secret','ats_description']}
+              return {:type=>:hash_array, :data=>repo_api_keys, :fields =>['ats_id','ats_secret','ats_description','subscription_name','organization_name']}
             when :delete #
               ats_id=Main.tool.options.get_next_arg_from_list('ats_id',repo_api_keys.map{|i| i['ats_id']})
               #raise CliBadArgument,"no such id" if repo_api_keys.select{|i| i['ats_id'].eql?(ats_id)}.empty?

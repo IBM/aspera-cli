@@ -61,7 +61,7 @@ module Asperalm
     ]
 
     # implements a resumable policy on top of basic FaspManager
-    class TransferResumer
+    class Fasp::Resumer
       # use "instance" class method
       include Singleton
 
@@ -88,13 +88,13 @@ module Asperalm
             Manager.instance.start_transfer(transfer_spec)
             Log.log.debug( 'transfer ok'.bg_red );
             break
-          rescue TransferError => e
+          rescue Fasp::Error => e
             # failure in ascp
             if fasp_error_retryable?(e.err_code) then
               # exit if we exceed the max number of retry
               if lRetryLeft <= 0 then
                 Log.log.error "Maximum number of retry reached."
-                raise TransferError.new("max retry after: [#{status[:message]}]")
+                raise Fasp::Error.new("max retry after: [#{status[:message]}]")
               end
             else
               Log.log.error('non-retryable error')

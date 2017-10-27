@@ -11,8 +11,8 @@ require 'json'
 require 'logger'
 require 'base64'
 require 'singleton'
-require 'asperalm/fasp/transfer_listener'
-require 'asperalm/fasp/transfer_error'
+require 'asperalm/fasp/listener'
+require 'asperalm/fasp/error'
 require 'asperalm/fasp/parameters'
 require 'asperalm/fasp/resource_finder'
 require 'asperalm/log'
@@ -89,7 +89,7 @@ module Asperalm
       # start ascp with management port.
       # raises FaspError on error
       def start_transfer_with_args_env(ascp_params)
-        raise TransferError.new("no ascp path defined") if @ascp_path.nil?
+        raise Fasp::Error.new("no ascp path defined") if @ascp_path.nil?
         begin
           ascp_pid=nil
           ascp_arguments=ascp_params[:args].clone
@@ -151,17 +151,17 @@ module Asperalm
           when 'DONE'
             return
           when 'ERROR'
-            raise TransferError.new(last_status_event['Description'],last_status_event['Code'].to_i)
+            raise Fasp::Error.new(last_status_event['Description'],last_status_event['Code'].to_i)
           else
             raise "INTERNAL ERROR: unexpected last event"
           end
         rescue SystemCallError=> e
           # Process.spawn
-          raise TransferError.new(e.message)
+          raise Fasp::Error.new(e.message)
         rescue Timeout::Error => e
-          raise TransferError.new('timeout waiting mgt port connect')
+          raise Fasp::Error.new('timeout waiting mgt port connect')
         rescue Interrupt => e
-          raise TransferError.new('transfer interrupted by user')
+          raise Fasp::Error.new('transfer interrupted by user')
         ensure
           # ensure there is no ascp left running
           unless ascp_pid.nil?

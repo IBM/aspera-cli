@@ -1,5 +1,5 @@
 require 'asperalm/fasp/resource_finder'
-require 'asperalm/fasp/transfer_resumer'
+require 'asperalm/fasp/resumer'
 require 'securerandom'
 
 module Asperalm
@@ -9,26 +9,27 @@ module Asperalm
     # - ascp : executes ascp process
     # - node : use the node API
     # - connect : use the connect client
-    class TransferAgent
+    class Fasp::Agent
       # mode=connect : activate
       attr_accessor :use_connect_client
       # mode=connect : application identifier used in connect API
       attr_accessor :connect_app_id
       # mode=node : activate, set to the REST api object for the node API
       attr_accessor :tr_node_api
-      # used to define defaults that override parameters
-      attr_accessor :transfer_spec_default
       def initialize
-        @transfer_spec_default={}
         @use_connect_client=false
         @tr_node_api=nil
         @connect_app_id='localapp'
       end
 
+      # add some pepper for better taste
+      def add_pepper(ts)
+        ts['drowssap'.reverse] = "%08x-%04x-%04x-%04x-%04x%08x" % "t1(\xBF;\xF3E\xB5\xAB\x14F\x02\xC6\x7F)P".unpack("NnnnnN")
+      end
+
       # calls sub transfer agent
       # fgaspmanager, or connect, or node
       def start_transfer(transfer_spec)
-        transfer_spec.merge!(@transfer_spec_default)
         Log.log.debug("ts=#{transfer_spec}")
         if (@use_connect_client) # transfer using connect ...
           Log.log.debug("using connect client")
@@ -62,7 +63,6 @@ module Asperalm
           resp=@tr_node_api.call({:operation=>'POST',:subpath=>'ops/transfers',:headers=>{'Accept'=>'application/json'},:json_params=>transfer_spec})
           puts "id=#{resp[:data]['id']}"
           trid=resp[:data]['id']
-          #Log.log.error resp.to_s
           loop do
             res=@tr_node_api.call({:operation=>'GET',:subpath=>'ops/transfers/'+trid,:headers=>{'Accept'=>'application/json'}})
             puts "transfer: #{res[:data]['status']}, sessions:#{res[:data]["sessions"].length}, #{res[:data]["sessions"].map{|i| i['bytes_transferred']}.join(',')}"
@@ -70,9 +70,8 @@ module Asperalm
             sleep 1
           end
           if ! res[:data]['status'].eql?('completed')
-            raise TransferError.new("#{res[:data]['status']}: #{res[:data]['error_desc']}")
+            raise Fasp::Error.new("#{res[:data]['status']}: #{res[:data]['error_desc']}")
           end
-          #raise "TODO: wait for transfer completion"
         else
           Log.log.debug("using ascp")
           # if not provided, use standard key
@@ -80,17 +79,17 @@ module Asperalm
           !transfer_spec.has_key?('EX_ssh_key_paths') and
           transfer_spec.has_key?('token')
             transfer_spec['EX_ssh_key_paths'] = [ ResourceFinder.path(:ssh_bypass_key_dsa), ResourceFinder.path(:ssh_bypass_key_rsa) ]
-            transfer_spec['drowssap'.reverse] = "%08x-%04x-%04x-%04x-%04x%08x" % "t1(\xBF;\xF3E\xB5\xAB\x14F\x02\xC6\x7F)P".unpack("NnnnnN")
+            add_pepper(transfer_spec)
           end
           # add fallback cert and key
           if transfer_spec.has_key?('http_fallback') and ['1','force'].include?(transfer_spec['http_fallback'])
             transfer_spec['EX_fallback_key']=ResourceFinder.path(:fallback_key)
             transfer_spec['EX_fallback_cert']=ResourceFinder.path(:fallback_cert)
           end
-            TransferResumer.instance.start_transfer(transfer_spec)
+          Fasp::Resumer.instance.start_transfer(transfer_spec)
         end
         return nil
       end # start_transfer
-    end # TransferAgent
+    end # Fasp::Agent
   end # Fasp
 end # Asperalm

@@ -10,7 +10,8 @@ module Asperalm
     module Plugins
       class Files < Plugin
         def action_list; [ :package, :repo, :faspexgw, :admin];end
-       def declare_options
+
+        def declare_options
           Main.tool.options.set_option(:download_mode,:fasp)
           Main.tool.options.add_opt_list(:download_mode,'TYPE',[:fasp, :node_http ],"download mode")
           Main.tool.options.add_opt_list(:auth,'TYPE',Oauth.auth_types,"type of authentication",'-tTYPE')
@@ -150,18 +151,18 @@ module Asperalm
           end
         end
 
-
-        def execute_action
-          command=Main.tool.options.get_next_arg_from_list('command',action_list)
-
+        # initialize apis and authentication
+        # returns true if in default workspace
+        def init_apis_is_default_ws
           # get parameters
           instance_fqdn=URI.parse(Main.tool.options.get_option_mandatory(:url)).host
           organization,instance_domain=instance_fqdn.split('.',2)
-          files_api_base_url=FilesApi.baseurl(instance_domain)
 
           Log.log.debug("instance_fqdn=#{instance_fqdn}")
           Log.log.debug("instance_domain=#{instance_domain}")
           Log.log.debug("organization=#{organization}")
+
+          files_api_base_url=FilesApi.baseurl(instance_domain)
 
           auth_data={
             :baseurl =>files_api_base_url,
@@ -195,8 +196,9 @@ module Asperalm
           # auth API
           @api_files_oauth=Oauth.new(auth_data)
 
-          # create object for REST calls to Files with scope "user:all"
+          # create objects for REST calls to Files (user and admin scope)
           @api_files_user=Rest.new(files_api_base_url,{:auth=>{:type=>:oauth2,:obj=>@api_files_oauth,:scope=>FilesApi::SCOPE_FILES_USER}})
+          @api_files_admin=Rest.new(files_api_base_url,{:auth=>{:type=>:oauth2,:obj=>@api_files_oauth,:scope=>FilesApi::SCOPE_FILES_ADMIN}})
 
           # get our user's default information
           self_data=@api_files_user.read("self")[:data]
@@ -204,8 +206,8 @@ module Asperalm
           ws_name=Main.tool.options.get_option(:workspace)
           if ws_name.nil?
             # get default workspace
-            workspace_id=self_data['default_workspace_id']
-            workspace_data=@api_files_user.read("workspaces/#{workspace_id}")[:data]
+            @workspace_id=self_data['default_workspace_id']
+            @workspace_data=@api_files_user.read("workspaces/#{@workspace_id}")[:data]
           else
             # lookup another workspace
             wss=@api_files_user.read("workspaces",{'q'=>ws_name})[:data]
@@ -214,21 +216,25 @@ module Asperalm
             when 0
               raise CliBadArgument,"no such workspace: #{ws_name}"
             when 1
-              workspace_data=wss[0]
-              workspace_id=workspace_data['id']
+              @workspace_data=wss[0]
+              @workspace_id=@workspace_data['id']
             else
               raise "unexpected case"
             end
           end
 
-          if Main.tool.options.get_option(:format).eql?(:formatted) and !command.eql?(:admin)
-            deflt=""
-            deflt=" (default)" if (workspace_id == self_data['default_workspace_id'])
-            puts "Current Workspace: #{workspace_data['name'].red}#{deflt}"
+          return @workspace_id == self_data['default_workspace_id']
+        end
+
+        def execute_action
+          use_default_ws=init_apis_is_default_ws
+          command=Main.tool.options.get_next_arg_from_list('command',action_list)
+          if Main.tool.options.get_option(:format).eql?(:table) and !command.eql?(:admin)
+            puts "Current Workspace: #{@workspace_data['name'].red}#{" (default)" if use_default_ws}"
           end
 
           # display name of default workspace
-          Log.log.info("current workspace is "+workspace_data['name'].red)
+          Log.log.info("current workspace is "+@workspace_data['name'].red)
 
           case command
           when :package
@@ -240,14 +246,14 @@ module Asperalm
 
               # lookup users
               recipient_data=Main.tool.options.get_option_mandatory(:recipient).split(',').map { |recipient|
-                user_lookup=@api_files_user.read("contacts",{'current_workspace_id'=>workspace_id,'q'=>recipient})[:data]
+                user_lookup=@api_files_user.read("contacts",{'current_workspace_id'=>@workspace_id,'q'=>recipient})[:data]
                 raise CliBadArgument,"no such user: #{recipient}" unless !user_lookup.nil? and user_lookup.length == 1
                 recipient_user_id=user_lookup.first
                 {"id"=>recipient_user_id['source_id'],"type"=>recipient_user_id['source_type']}
               }
 
               #  create a new package with one file
-              the_package=@api_files_user.create("packages",{"workspace_id"=>workspace_id,"name"=>Main.tool.options.get_option_mandatory(:title),"file_names"=>filelist,"note"=>Main.tool.options.get_option_mandatory(:note),"recipients"=>recipient_data})[:data]
+              the_package=@api_files_user.create("packages",{"workspace_id"=>@workspace_id,"name"=>Main.tool.options.get_option_mandatory(:title),"file_names"=>filelist,"note"=>Main.tool.options.get_option_mandatory(:note),"recipients"=>recipient_data})[:data]
 
               #  get node information for the node on which package must be created
               node_info=@api_files_user.read("nodes/#{the_package['node_id']}")[:data]
@@ -270,29 +276,26 @@ module Asperalm
               return Main.tool.start_transfer(tspec)
             when :list
               # list all packages ('page'=>1,'per_page'=>10,)'sort'=>'-sent_at',
-              packages=@api_files_user.read("packages",{'archived'=>false,'exclude_dropbox_packages'=>true,'has_content'=>true,'received'=>true,'workspace_id'=>workspace_id})[:data]
+              packages=@api_files_user.read("packages",{'archived'=>false,'exclude_dropbox_packages'=>true,'has_content'=>true,'received'=>true,'workspace_id'=>@workspace_id})[:data]
               return {:data=>packages,:fields=>['id','name','bytes_transferred'],:type=>:hash_array}
             end
           when :repo
-            home_node_id=workspace_data['home_node_id']
-            home_file_id=workspace_data['home_file_id']
-            return execute_node_action(home_node_id,home_file_id)
+            return execute_node_action(@workspace_data['home_node_id'],@workspace_data['home_file_id'])
           when :faspexgw
             require 'asperalm/faspex_gw'
-            FaspexGW.start_server(@api_files_user,workspace_id)
+            FaspexGW.start_server(@api_files_user,@workspace_id)
           when :admin
-            api_files_admin=Rest.new(files_api_base_url,{:auth=>{:type=>:oauth2,:obj=>@api_files_oauth,:scope=>FilesApi::SCOPE_FILES_ADMIN}})
             command_admin=Main.tool.options.get_next_arg_from_list('command',[ :resource, :events, :set_client_key, :usage_reports, :search_nodes  ])
             case command_admin
             when :search_nodes
               ak=Main.tool.options.get_next_arg_value('access_key')
-              nodes=api_files_admin.read("search_nodes",{'q'=>'access_key:"'+ak+'"'})[:data]
+              nodes=@api_files_admin.read("search_nodes",{'q'=>'access_key:"'+ak+'"'})[:data]
               return {:data=>nodes,:type=>:other_struct}
             when :events
               # page=1&per_page=10&q=type:(file_upload+OR+file_delete+OR+file_download+OR+file_rename+OR+folder_create+OR+folder_delete+OR+folder_share+OR+folder_share_via_public_link)&sort=-date
-              #events=api_files_admin.read('events',{'q'=>'type:(file_upload OR file_download)'})[:data]
+              #events=@api_files_admin.read('events',{'q'=>'type:(file_upload OR file_download)'})[:data]
               #Log.log.info "events=#{JSON.generate(events)}"
-              node_info=@api_files_user.read("nodes/#{workspace_data['home_node_id']}")[:data]
+              node_info=@api_files_user.read("nodes/#{@workspace_data['home_node_id']}")[:data]
               # get access to node API, note the additional header
               api_node=get_files_node_api(node_info,FilesApi::SCOPE_NODE_USER)
               # can add filters: tag=aspera.files.package_id%3DLA8OU3p8w
@@ -309,7 +312,7 @@ module Asperalm
             when :set_client_key
               the_client_id=Main.tool.options.get_next_arg_value('client_id')
               the_private_key=Main.tool.options.get_next_arg_value('private_key')
-              res=api_files_admin.update("clients/#{the_client_id}",{:jwt_grant_enabled=>true, :public_key=>OpenSSL::PKey::RSA.new(the_private_key).public_key.to_s})
+              res=@api_files_admin.update("clients/#{the_client_id}",{:jwt_grant_enabled=>true, :public_key=>OpenSSL::PKey::RSA.new(the_private_key).public_key.to_s})
               return Main.result_success
             when :resource
               resource=Main.tool.options.get_next_arg_from_list('resource',[:user,:group,:client,:contact,:dropbox,:node,:operation,:package,:saml_configuration, :workspace])
@@ -321,7 +324,7 @@ module Asperalm
               case command
               when :create
                 params=Main.tool.options.get_next_arg_value("creation data (json structure)")
-                resp=api_files_admin.create(resources,params)
+                resp=@api_files_admin.create(resources,params)
                 return {:data=>resp[:data],:type => :other_struct}
               when :list
                 default_fields=['id','name']
@@ -330,7 +333,7 @@ module Asperalm
                 when :operation; default_fields=nil
                 when :contact; default_fields=["email","name","source_id","source_type"]
                 end
-                return {:data=>api_files_admin.read(resources)[:data],:fields=>default_fields,:type=>:hash_array}
+                return {:data=>@api_files_admin.read(resources)[:data],:fields=>default_fields,:type=>:hash_array}
               when :id
                 #raise RuntimeError, "unexpected resource type: #{resource}, only 'node' for actions" if !resource.eql?(:node)
                 res_id=Main.tool.options.get_next_arg_value('node id')
@@ -345,7 +348,7 @@ module Asperalm
                 end
               end #op_or_id
             when :usage_reports
-              return {:data=>api_files_admin.read("usage_reports",{:workspace_id=>workspace_id})[:data],:type=>:hash_array}
+              return {:data=>@api_files_admin.read("usage_reports",{:workspace_id=>@workspace_id})[:data],:type=>:hash_array}
             end
           else
             raise RuntimeError, "unexpected value: #{command}"

@@ -1,8 +1,8 @@
-require "asperalm/cli/opt_parser"
-require "asperalm/cli/plugin"
-require "asperalm/version"
-require "asperalm/log"
-require 'asperalm/fasp/transfer_agent'
+require 'asperalm/cli/opt_parser'
+require 'asperalm/cli/plugin'
+require 'asperalm/version'
+require 'asperalm/log'
+require 'asperalm/fasp/agent'
 require 'asperalm/fasp/manager'
 require 'asperalm/operating_system'
 require 'asperalm/oauth'
@@ -17,7 +17,7 @@ module Asperalm
     module Plugins; end
 
     # a listener to FASP event that displays a progress bar
-    class FaspListenerProgress < Fasp::TransferListener
+    class FaspListenerProgress < Fasp::Listener
       def initialize
         @progress=nil
         @cumulative=0
@@ -41,7 +41,7 @@ module Asperalm
           if !@progress.nil? then
             @progress.progress=@cumulative+data['Bytescont'].to_i
           else
-            puts "."
+            puts '.'
           end
         when 'DONE'
           if !@progress.nil? then
@@ -56,7 +56,7 @@ module Asperalm
     end
 
     # listener for FASP transfers (debug)
-    class FaspListenerLogger < Fasp::TransferListener
+    class FaspListenerLogger < Fasp::Listener
       def event(data)
         Log.log.debug(data.to_s)
       end
@@ -83,7 +83,7 @@ module Asperalm
       # Path to module Cli : Asperalm::Cli
       @@CLI_MODULE=Module.nesting[1].to_s
       # Path to Plugin classes: Asperalm::Cli::Plugins
-      @@PLUGINS_MODULE=@@CLI_MODULE+"::Plugins"
+      @@PLUGINS_MODULE=@@CLI_MODULE+'::Plugins'
       @@CONFIG_FILE_KEY_VERSION='version'
       @@CONFIG_FILE_KEY_DEFAULT='default'
       # oldest compatible conf file format, update to latest version when an incompatible change is made
@@ -179,18 +179,18 @@ module Asperalm
         case operation
         when :set
           Log.log.debug "handler_transfer_spec: set: #{value}".red
-          transfer_agent.transfer_spec_default.merge!(value)
+          @transfer_spec_default.merge!(value)
         else
-          return transfer_agent.transfer_spec_default
+          return @transfer_spec_default
         end
       end
 
       def handler_to_folder(operation,value)
         case operation
         when :set
-          transfer_agent.transfer_spec_default.merge!({'destination_root'=>value})
+          @transfer_spec_default.merge!({'destination_root'=>value})
         else
-          return transfer_agent.transfer_spec_default['destination_root']
+          return @transfer_spec_default['destination_root']
         end
       end
 
@@ -246,7 +246,7 @@ module Asperalm
         if @transfer_agent_singleton.nil?
           Fasp::Manager.instance.add_listener(FaspListenerLogger.new)
           Fasp::Manager.instance.add_listener(FaspListenerProgress.new)
-          @transfer_agent_singleton=Fasp::TransferAgent.new
+          @transfer_agent_singleton=Fasp::Agent.new
           @transfer_agent_singleton.connect_app_id=@@PROGRAM_NAME
           if !options.get_option(:fasp_proxy).nil?
             @transfer_agent_singleton.transfer_spec_default.merge!({'EX_fasp_proxy_url'=>options.get_option(:fasp_proxy)})
@@ -273,6 +273,8 @@ module Asperalm
       end
 
       def initialize
+        # overriding parameters on transfer spec
+        @transfer_spec_default={}
         @help_requested=false
         @options=OptParser.new
         @loaded_configs=nil
@@ -347,7 +349,7 @@ module Asperalm
         options.set_option(:format,:table)
         options.set_option(:logger,:stdout)
         options.set_option(:config_file,default_config_file)
-        options.set_option(:to_folder,'.')
+        #options.set_option(:to_folder,'.')
         options.on("-h", "--help", "Show this message.") { @help_requested=true }
         options.add_opt_list(:gui_mode,'TYPE',OperatingSystem.gui_modes,"method to start browser",'-gTYPE')
         options.add_opt_list(:insecure,'VALUE',[:yes,:no],"do not validate cert")
@@ -608,10 +610,29 @@ module Asperalm
       end
 
       # plugins shall use this method to start a transfer
-      # keep_default_destination if destination_root shall be used from the provided transfer spec
+      # set_default_destination if destination_root shall be used from the provided transfer spec
       # and not the default one
-      def start_transfer(transfer_spec,keep_default_destination=true)
-        transfer_agent.transfer_spec_default.delete('destination_root') unless keep_default_destination
+      def start_transfer(transfer_spec,set_default_destination=true)
+        if set_default_destination
+          # do not over-override
+          if @transfer_spec_default['destination_root'].nil?
+            # default: / on remote, . on local
+            case transfer_spec['direction']
+            when 'send'
+              @transfer_spec_default['destination_root']='/'
+            when 'receive'
+              @transfer_spec_default['destination_root']='.'
+            else
+              raise "wrong direction: #{transfer_spec['direction']}"
+            end
+          end
+        else
+          # in that case, destination is set in return by application (API/upload_setup)
+          # but to_folder was used in intial api call
+          @transfer_spec_default.delete('destination_root')
+        end
+
+        transfer_spec.merge!(@transfer_spec_default)
         # TODO: option to choose progress format
         # here we disable native stdout progress
         transfer_spec['EX_quiet']=true
@@ -657,7 +678,7 @@ module Asperalm
           raise CliBadArgument,"unprocessed values: #{options.get_remaining_arguments(nil)}" unless options.command_or_arg_empty?
         rescue CliBadArgument => e;          process_exception_exit(e,'Argument',:usage)
         rescue CliError => e;                process_exception_exit(e,'Tool',:usage)
-        rescue Fasp::TransferError => e;     process_exception_exit(e,"Transfer")
+        rescue Fasp::Error => e;             process_exception_exit(e,"Transfer")
         rescue Asperalm::RestCallError => e; process_exception_exit(e,"Rest")
         rescue SocketError => e;             process_exception_exit(e,"Network")
         rescue StandardError => e;           process_exception_exit(e,"Other",:debug)

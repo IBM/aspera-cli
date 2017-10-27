@@ -26,7 +26,7 @@ end
 transferspec['EX_quiet']=true
 
 # FASP event listener display management events as JSON
-class FaspListenerStdout < Asperalm::Fasp::TransferListener
+class FaspListenerStdout < Asperalm::Fasp::Listener
   def event(data);STDOUT.puts(JSON.generate(data));end
 end
 

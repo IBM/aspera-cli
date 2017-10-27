@@ -1,7 +1,7 @@
 module Asperalm
   module Fasp
     # imlement this class to get transfer events
-    class TransferListener
+    class Fasp::Listener
       def event(data)
         raise 'must be defined'
       end

@@ -407,7 +407,7 @@ module Asperalm
             send_result=api_node.call({:operation=>'POST',:subpath=>'files/download_setup',:json_params=>transfer_params})
             raise "expecting one session exactly" if send_result[:data]['transfer_specs'].length != 1
             transfer_data=send_result[:data]['transfer_specs'].first
-            raise TransferError,transfer_data['error']['user_message'] if transfer_data.has_key?('error')
+            raise Fasp::Error,transfer_data['error']['user_message'] if transfer_data.has_key?('error')
             transfer_spec=transfer_data['transfer_spec']
             # execute transfer
             return Main.tool.start_transfer(transfer_spec)

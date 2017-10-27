@@ -27,8 +27,8 @@ module Asperalm
 
       # returns the value from transfer spec and mark parameter as used
       def use_parameter(ts_name,p_classes,mandatory=false)
-        raise TransferError.new("mandatory parameter: #{ts_name}") if mandatory and !@state[:transfer_spec].has_key?(ts_name)
-        raise TransferError.new("#{ts_name} is : #{@state[:transfer_spec][ts_name].class} (#{@state[:transfer_spec][ts_name]}), shall be #{p_classes}, ") unless @state[:transfer_spec][ts_name].nil? or p_classes.include?(@state[:transfer_spec][ts_name].class)
+        raise Fasp::Error.new("mandatory parameter: #{ts_name}") if mandatory and !@state[:transfer_spec].has_key?(ts_name)
+        raise Fasp::Error.new("#{ts_name} is : #{@state[:transfer_spec][ts_name].class} (#{@state[:transfer_spec][ts_name]}), shall be #{p_classes}, ") unless @state[:transfer_spec][ts_name].nil? or p_classes.include?(@state[:transfer_spec][ts_name].class)
         @state[:used_names].push(ts_name)
         return @state[:transfer_spec][ts_name]
       end
@@ -52,7 +52,7 @@ module Asperalm
         case value
         when nil,false# nothing to put on command line, no creation by default
         when true; add_param=true
-        else raise TransferError.new("unsupported #{ts_name}: #{value}")
+        else raise Fasp::Error.new("unsupported #{ts_name}: #{value}")
         end
         add_param=!add_param if !positive
         if add_param
@@ -70,7 +70,7 @@ module Asperalm
           if transform
             newvalue=transform.call(value)
             if newvalue.nil?
-              raise TransferError.new("unsupported #{ts_name}: #{value}")
+              raise Fasp::Error.new("unsupported #{ts_name}: #{value}")
             else
               value=newvalue
             end
@@ -87,7 +87,7 @@ module Asperalm
         if !value.nil?
           numeric=values.find_index(value)
           if numeric.nil?
-            raise TransferError.new("unsupported value #{value} for #{ts_name}, expecting #{values}")
+            raise Fasp::Error.new("unsupported value #{value} for #{ts_name}, expecting #{values}")
           end
           add_ascp_options(ascp_option,numeric)
         end
@@ -106,7 +106,7 @@ module Asperalm
         if !@state[:transfer_spec].has_key?('password') and
         !@state[:transfer_spec].has_key?('EX_ssh_key_value') and
         !@state[:transfer_spec].has_key?('EX_ssh_key_paths') then
-          raise TransferError.new('required: ssh key (value or path) or password')
+          raise Fasp::Error.new('required: ssh key (value or path) or password')
         end
 
         # parameters with env vars
@@ -122,7 +122,7 @@ module Asperalm
         case value
         when nil;# nothing to put on command line, encryption by default
         when 'aes-128','aes128';# nothing to put on command line (or faspe: link), encryption by default
-        else raise TransferError.new("unsupported cipher: #{value}")
+        else raise Fasp::Error.new("unsupported cipher: #{value}")
         end
 
         set_param_boolean('create_dir','-d')
