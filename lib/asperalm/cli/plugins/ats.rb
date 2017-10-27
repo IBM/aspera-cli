@@ -79,6 +79,7 @@ module Asperalm
           login_page_url=res[:http]['Location']
           new_api_key_info=Oauth.goto_page_and_get_request(LOCAL_REDIRECT_URI,login_page_url)
           @current_api_key_info=new_api_key_info
+          # add extra information on api key to identify different subscriptions
           subscription=api_auth.read("subscriptions")[:data]
           new_api_key_info['subscription_name']=subscription['name']
           new_api_key_info['organization_name']=subscription['aspera_id_user']['organization']['name']
