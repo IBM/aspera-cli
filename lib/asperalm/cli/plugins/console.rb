@@ -17,12 +17,12 @@ module Asperalm
         def action_list; [:transfers];end
 
         def execute_action
-          api_console=Rest.new(Main.tool.options.get_option_mandatory(:url)+'/api',{:auth=>{:type=>:basic,:username=>Main.tool.options.get_option_mandatory(:username), :password=>Main.tool.options.get_option_mandatory(:password)}})
-          command=Main.tool.options.get_next_arg_from_list('command',action_list)
+          api_console=Rest.new(Main.tool.options.get_option(:url,:mandatory)+'/api',{:auth=>{:type=>:basic,:username=>Main.tool.options.get_option(:username,:mandatory), :password=>Main.tool.options.get_option(:password,:mandatory)}})
+          command=Main.tool.options.get_next_argument('command',action_list)
           case command
           when :transfers
-            command=Main.tool.options.get_next_arg_from_list('command',[ :list ])
-            resp=api_console.call({:operation=>'GET',:subpath=>'transfers',:headers=>{'Accept'=>'application/json'},:url_params=>{'from'=>Main.tool.options.get_option_mandatory(:filter_from),'to'=>Main.tool.options.get_option_mandatory(:filter_to)}})
+            command=Main.tool.options.get_next_argument('command',[ :list ])
+            resp=api_console.call({:operation=>'GET',:subpath=>'transfers',:headers=>{'Accept'=>'application/json'},:url_params=>{'from'=>Main.tool.options.get_option(:filter_from,:mandatory),'to'=>Main.tool.options.get_option(:filter_to,:mandatory)}})
             return {:data=>resp[:data],:type=>:hash_array,:columns=>['id','contact','name','status']}
           end
         end

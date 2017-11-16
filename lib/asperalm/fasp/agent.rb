@@ -59,6 +59,7 @@ module Asperalm
             'request_id'=>request_id
             }}]}
           connect_api.create('transfers/start',transfer_specs)
+          #TODO: monitor transfer
         elsif ! @tr_node_api.nil?
           resp=@tr_node_api.call({:operation=>'POST',:subpath=>'ops/transfers',:headers=>{'Accept'=>'application/json'},:json_params=>transfer_spec})
           puts "id=#{resp[:data]['id']}"
@@ -82,7 +83,7 @@ module Asperalm
             add_pepper(transfer_spec)
           end
           # add fallback cert and key
-          if transfer_spec.has_key?('http_fallback') and ['1','force'].include?(transfer_spec['http_fallback'])
+          if ['1','force'].include?(transfer_spec['http_fallback'])
             transfer_spec['EX_fallback_key']=ResourceFinder.path(:fallback_key)
             transfer_spec['EX_fallback_cert']=ResourceFinder.path(:fallback_cert)
           end

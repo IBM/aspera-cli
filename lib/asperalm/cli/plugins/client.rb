@@ -28,36 +28,37 @@ module Asperalm
         end
 
         def execute_action
-          command=Main.tool.options.get_next_arg_from_list('command',action_list)
+          command=Main.tool.options.get_next_argument('command',action_list)
           case command
           when :location # shows files used
             return {:type=>:hash_array, :data=>Fasp::ResourceFinder.resource.map {|k,v| {'name'=>k,'path'=>v[:path]}}}
           when :connect #
-            command=Main.tool.options.get_next_arg_from_list('command',[:list,:id])
+            command=Main.tool.options.get_next_argument('command',[:list,:id])
             case command
             when :list #
               return {:type=>:hash_array, :data=>self.class.connect_versions, :fields => ['id','title','version']}
             when :id #
               all_resources=self.class.connect_versions
-              connect_id=Main.tool.options.get_next_arg_value('id or title')
+              connect_id=Main.tool.options.get_next_argument('id or title')
               one_res = all_resources.select {|i| i['id'].eql?(connect_id) || i['title'].eql?(connect_id)}.first
-              command=Main.tool.options.get_next_arg_from_list('command',[:info,:links])
+              command=Main.tool.options.get_next_argument('command',[:info,:links])
               case command
               when :info # shows files used
                 return {:type=>:key_val_list, :data=>one_res, :textify => lambda { |table_data| self.class.textify_list(table_data) }}
               when :links # shows files used
-                command=Main.tool.options.get_next_arg_from_list('command',[:list,:id])
+                command=Main.tool.options.get_next_argument('command',[:list,:id])
                 all_links=one_res['links']
                 case command
                 when :list # shows files used
                   return {:type=>:hash_array, :data=>all_links}
                 when :id #
-                  link_title=Main.tool.options.get_next_arg_value('title')
+                  link_title=Main.tool.options.get_next_argument('title')
                   one_link=all_links.select {|i| i['title'].eql?(link_title)}.first
-                  command=Main.tool.options.get_next_arg_from_list('command',[:download,:open])
+                  command=Main.tool.options.get_next_argument('command',[:download,:open])
                   case command
                   when :download #
-                    folder_dest=Main.tool.options.get_next_arg_value('destination folder')
+                    folder_dest=Main.tool.destination_folder('receive')
+                    #folder_dest=Main.tool.options.get_next_argument('destination folder')
                     api_connect_cdn=Rest.new(CONNECT_WEB_URL)
                     fileurl = one_link['href']
                     filename=fileurl.gsub(%r{.*/},'')

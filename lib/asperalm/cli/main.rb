@@ -96,7 +96,7 @@ module Asperalm
       end
 
       def current_config_file
-        return options.get_option_mandatory(:config_file)
+        return options.get_option(:config_file,:mandatory)
       end
 
       def read_config_file(config_file_path=current_config_file)
@@ -248,17 +248,18 @@ module Asperalm
           Fasp::Manager.instance.add_listener(FaspListenerProgress.new)
           @transfer_agent_singleton=Fasp::Agent.new
           @transfer_agent_singleton.connect_app_id=@@PROGRAM_NAME
-          if !options.get_option(:fasp_proxy).nil?
-            @transfer_agent_singleton.transfer_spec_default.merge!({'EX_fasp_proxy_url'=>options.get_option(:fasp_proxy)})
+          if !options.get_option(:fasp_proxy,:optional).nil?
+            @transfer_agent_singleton.transfer_spec_default.merge!({'EX_fasp_proxy_url'=>options.get_option(:fasp_proxy,:optional)})
           end
-          if !options.get_option(:http_proxy).nil?
-            @transfer_agent_singleton.transfer_spec_default.merge!({'EX_http_proxy_url'=>options.get_option(:http_proxy)})
+          if !options.get_option(:http_proxy,:optional).nil?
+            @transfer_agent_singleton.transfer_spec_default.merge!({'EX_http_proxy_url'=>options.get_option(:http_proxy,:optional)})
           end
-          case options.get_option_mandatory(:transfer)
+          # by default use local ascp
+          case options.get_option(:transfer,:mandatory)
           when :connect
             @transfer_agent_singleton.use_connect_client=true
           when :node
-            config_name=options.get_option(:transfer_node)
+            config_name=options.get_option(:transfer_node,:optional)
             if config_name.nil?
               node_config=get_plugin_default_parameters(:node)
               raise CliBadArgument,"Please specify --transfer-node" if node_config.nil?
@@ -326,7 +327,7 @@ module Asperalm
         # TODO: check that ancestor is Plugin?
         command_plugin=Object::const_get(@@PLUGINS_MODULE+'::'+plugin_name_sym.to_s.capitalize).new
         # load default params only if no param already loaded
-        if options.get_option(:load_params).nil?
+        if options.get_option(:load_params,:optional).nil?
           defaults_for_plugin=get_plugin_default_parameters(plugin_name_sym)
           options.set_defaults(defaults_for_plugin) unless defaults_for_plugin.nil?
         end
@@ -357,9 +358,9 @@ module Asperalm
         options.add_opt_list(:logger,'VALUE',Log.logtypes,"log method",'-qTYPE')
         options.add_opt_list(:format,'VALUE',self.class.display_formats,"output format")
         options.add_opt_list(:transfer,'VALUE',[:ascp,:connect,:node],"type of transfer")
-        options.add_opt_simple(:config_file,"STRING","-CSTRING","read parameters from file in YAML format, current=#{options.get_option(:config_file)}")
+        options.add_opt_simple(:config_file,"STRING","-CSTRING","read parameters from file in YAML format, current=#{options.get_option(:config_file,:optional)}")
         options.add_opt_simple(:load_params,"NAME","-PNAME","load the named configuration from current config file, use \"#{@@NO_DEFAULT}\" to avoid loading the default configuration")
-        options.add_opt_simple(:fasp_folder,"NAME","specify where to find FASP (main folder), current=#{options.get_option(:fasp_folder)}")
+        options.add_opt_simple(:fasp_folder,"NAME","specify where to find FASP (main folder), current=#{options.get_option(:fasp_folder,:optional)}")
         options.add_opt_simple(:transfer_node,"STRING","name of configuration used to transfer when using --transfer=node")
         options.add_opt_simple(:fields,"STRING","comma separated list of fields, or #{FIELDS_ALL}, or #{FIELDS_DEFAULT}")
         options.add_opt_simple(:fasp_proxy,"STRING","URL of FASP proxy (dnat / dnats)")
@@ -367,8 +368,8 @@ module Asperalm
         options.add_opt_switch(:rest_debug,"-r","more debug for HTTP calls") { Rest.set_debug(true) }
         options.add_opt_switch(:no_default,"-N","dont load default configuration") { @load_plugin_defaults=false }
         options.add_opt_switch(:version,"-v","display version") { puts Asperalm::VERSION;Process.exit(0) }
-        options.add_opt_simple(:ts,"JSON","override transfer spec values for transfers (hash, use @json: prefix), current=#{options.get_option(:ts)}")
-        options.add_opt_simple(:to_folder,"PATH","destination folder for downloaded files, current=#{options.get_option(:to_folder)}")
+        options.add_opt_simple(:ts,"JSON","override transfer spec values for transfers (hash, use @json: prefix), current=#{options.get_option(:ts,:optional)}")
+        options.add_opt_simple(:to_folder,"PATH","destination folder for downloaded files, current=#{options.get_option(:to_folder,:optional)}")
       end
 
       def self.flatten_config_show(t)
@@ -392,8 +393,8 @@ module Asperalm
         raise "INTERNAL ERROR, result must have type" unless results.has_key?(:type)
         raise "INTERNAL ERROR, result must have data" unless results.has_key?(:data) or results[:type].eql?(:empty)
 
-        required_fields=options.get_option_mandatory(:fields)
-        case options.get_option_mandatory(:format)
+        required_fields=options.get_option(:fields,:mandatory)
+        case options.get_option(:format,:mandatory)
         when :ruby
           puts PP.pp(results[:data],'')
         when :json
@@ -457,7 +458,7 @@ module Asperalm
           table_data=results[:textify].call(table_data) if results.has_key?(:textify)
           # convert data to string, and keep only display fields
           table_data=table_data.map { |r| display_fields.map { |c| r[c].to_s } }
-          case options.get_option_mandatory(:format)
+          case options.get_option(:format,:mandatory)
           when :table
             # display the table !
             puts Text::Table.new(
@@ -518,7 +519,7 @@ module Asperalm
           raise CliError,"Unsupported config file version #{version}. Please check documentation. Expecting min version #{@@MIN_CONFIG_VERSION}"
         end
         # did the user specify parameters to load ?
-        config_name_list=options.get_option(:load_params)
+        config_name_list=options.get_option(:load_params,:optional)
         if !config_name_list.nil?
           config_name_list.split(/,/).each do |name|
             Log.log.debug "loading config: #{name} : #{@loaded_configs[name]}".red
@@ -537,11 +538,11 @@ module Asperalm
 
       # "config" plugin
       def execute_action
-        action=options.get_next_arg_from_list('action',[:genkey,:plugins,:flush_tokens,:list,:overview,:open,:echo,:id,:documentation])
+        action=options.get_next_argument('action',[:genkey,:plugins,:flush_tokens,:list,:overview,:open,:echo,:id,:documentation])
         case action
         when :id
-          config_name=options.get_next_arg_value('config name')
-          action=options.get_next_arg_from_list('action',[:set,:delete,:initialize,:show])
+          config_name=options.get_next_argument('config name')
+          action=options.get_next_argument('action',[:set,:delete,:initialize,:show])
           case action
           when :show
             raise "no such config: #{config_name}" unless @loaded_configs.has_key?(config_name)
@@ -551,8 +552,8 @@ module Asperalm
             write_config_file
             return Main.status_result("deleted: #{config_name}")
           when :set
-            param_name=options.get_next_arg_value('parameter name')
-            param_value=options.get_next_arg_value('parameter value')
+            param_name=options.get_next_argument('parameter name')
+            param_value=options.get_next_argument('parameter value')
             if !@loaded_configs.has_key?(config_name)
               Log.log.debug("no such config name: #{config_name}, initializing")
               @loaded_configs[config_name]=Hash.new
@@ -564,7 +565,7 @@ module Asperalm
             write_config_file
             return Main.status_result("updated: #{config_name}->#{param_name} to #{param_value}")
           when :initialize
-            config_value=options.get_next_arg_value('config value')
+            config_value=options.get_next_argument('config value')
             if @loaded_configs.has_key?(config_name)
               Log.log.warn("configuration already exists: #{config_name}, overwriting")
             end
@@ -579,14 +580,14 @@ module Asperalm
           OperatingSystem.open_uri(current_config_file)
           return Main.no_result
         when :genkey # generate new rsa key
-          key_filepath=options.get_next_arg_value('private key file path')
+          key_filepath=options.get_next_argument('private key file path')
           require 'net/ssh'
           priv_key = OpenSSL::PKey::RSA.new(2048)
           File.write(key_filepath,priv_key.to_s)
           File.write(key_filepath+".pub",priv_key.public_key.to_s)
           return Main.status_result('generated key: '+key_filepath)
         when :echo # display the content of a value given on command line
-          return {:type=>:other_struct, :data=>options.get_next_arg_value("value")}
+          return {:type=>:other_struct, :data=>options.get_next_argument("value")}
         when :flush_tokens
           deleted_files=Oauth.flush_tokens(config_folder)
           return {:type=>:value_list, :name=>'file',:data=>deleted_files}
@@ -609,23 +610,31 @@ module Asperalm
         return File.join(Dir.home,@@ASPERA_HOME_FOLDERNAME,@@PROGRAM_NAME)
       end
 
+      # return destination folder for transfers
+      # sets default if needed
+      # param: 'send' or 'receive'
+      def destination_folder(direction)
+        # set default if needed
+        if @transfer_spec_default['destination_root'].nil?
+          # default: / on remote, . on local
+          case direction
+          when 'send'
+            @transfer_spec_default['destination_root']='/'
+          when 'receive'
+            @transfer_spec_default['destination_root']='.'
+          else
+            raise "wrong direction: #{direction}"
+          end
+        end
+        return @transfer_spec_default['destination_root']
+      end
+
       # plugins shall use this method to start a transfer
       # set_default_destination if destination_root shall be used from the provided transfer spec
       # and not the default one
       def start_transfer(transfer_spec,set_default_destination=true)
         if set_default_destination
-          # do not over-override
-          if @transfer_spec_default['destination_root'].nil?
-            # default: / on remote, . on local
-            case transfer_spec['direction']
-            when 'send'
-              @transfer_spec_default['destination_root']='/'
-            when 'receive'
-              @transfer_spec_default['destination_root']='.'
-            else
-              raise "wrong direction: #{transfer_spec['direction']}"
-            end
-          end
+          destination_folder(transfer_spec['direction'])
         else
           # in that case, destination is set in return by application (API/upload_setup)
           # but to_folder was used in intial api call
@@ -659,9 +668,11 @@ module Asperalm
           # load global default options
           plugins_defaults=get_plugin_default_parameters(@@MAIN_PLUGIN_NAME_STR.to_sym)
           options.set_defaults(plugins_defaults) unless plugins_defaults.nil?
-          command_sym=options.get_next_arg_from_list('command',plugin_sym_list)
+          command_sym=options.get_next_argument('command',plugin_sym_list.dup.unshift(:help))
           # main plugin is not dynamically instanciated
           case command_sym
+          when :help
+            exit_with_usage(true)
           when @@MAIN_PLUGIN_NAME_STR.to_sym
             command_plugin=self
           else
@@ -673,9 +684,7 @@ module Asperalm
           # help requested ?
           exit_with_usage(false) if @help_requested
           display_results(command_plugin.execute_action)
-          # unprocessed values ?
-          raise CliBadArgument,"unprocessed options: #{options.unprocessed_options}" unless options.unprocessed_options.empty?
-          raise CliBadArgument,"unprocessed values: #{options.get_remaining_arguments(nil)}" unless options.command_or_arg_empty?
+          options.fail_if_unprocessed
         rescue CliBadArgument => e;          process_exception_exit(e,'Argument',:usage)
         rescue CliError => e;                process_exception_exit(e,'Tool',:usage)
         rescue Fasp::Error => e;             process_exception_exit(e,"Transfer")

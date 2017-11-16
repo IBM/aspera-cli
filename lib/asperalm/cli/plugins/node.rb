@@ -15,7 +15,7 @@ module Asperalm
           Main.tool.options.add_opt_simple(:filter_transfer,"EXPRESSION","Ruby expression for filter at transfer level (cleanup)")
           Main.tool.options.add_opt_simple(:filter_file,"EXPRESSION","Ruby expression for filter at file level (cleanup)")
           Main.tool.options.add_opt_simple(:transfer_filter,"EXPRESSION","JSON expression for filter on API request")
-          Main.tool.options.add_opt_simple(:parameters,"JSON","creation parameters (hash, use @json: prefix), current=#{Main.tool.options.get_option(:parameters)}")
+          Main.tool.options.add_opt_simple(:parameters,"JSON","creation parameters (hash, use @json: prefix), current=#{Main.tool.options.get_option(:parameters,:optional)}")
         end
 
         def self.textify_browse(table_data)
@@ -111,12 +111,8 @@ module Asperalm
         end
 
         # get path arguments from command line, and add prefix
-        def self.get_next_arg_add_prefix(path_prefix,name,number=:one)
-          case number
-          when :one; thepath=Main.tool.options.get_next_arg_value(name)
-          when :all; thepath=Main.tool.options.get_remaining_arguments(name)
-          else raise "ERROR"
-          end
+        def self.get_next_arg_add_prefix(path_prefix,name,number=:single)
+          thepath=Main.tool.options.get_next_argument(name,number)
           return thepath if path_prefix.nil?
           return File.join(path_prefix,thepath) if thepath.is_a?(String)
           return thepath.map {|p| File.join(path_prefix,p)} if thepath.is_a?(Array)
@@ -133,7 +129,7 @@ module Asperalm
           case command
           when :info
             node_info=api_node.call({:operation=>'GET',:subpath=>'info',:headers=>{'Accept'=>'application/json'}})[:data]
-            return { :data => node_info, :type=>:key_val_list, :textify => lambda { |table_data| textify_bool_list_result(table_data,['capabilities','settings'])}}
+            return { :type=>:key_val_list, :data => node_info, :textify => lambda { |table_data| textify_bool_list_result(table_data,['capabilities','settings'])}}
           when :browse
             thepath=get_next_arg_add_prefix(prefix_path,"path")
             send_result=api_node.call({:operation=>'POST',:subpath=>'files/browse',:json_params=>{ :path => thepath} } )
@@ -145,7 +141,7 @@ module Asperalm
             #puts display_prefix.red
             return result_remove_prefix_path(result,'path',prefix_path)
           when :delete
-            paths_to_delete = get_next_arg_add_prefix(prefix_path,"file list",:all)
+            paths_to_delete = get_next_arg_add_prefix(prefix_path,"file list",:multiple)
             return delete_files(api_node,paths_to_delete,prefix_path)
           when :space
             # TODO: could be a list of path
@@ -165,7 +161,7 @@ module Asperalm
             return result_translate_rem_prefix(resp,'folder','created',prefix_path)
           when :mkfile
             thepath=get_next_arg_add_prefix(prefix_path,"file path")
-            contents64=Base64.strict_encode64(Main.tool.options.get_next_arg_value("contents"))
+            contents64=Base64.strict_encode64(Main.tool.options.get_next_argument("contents"))
             resp=api_node.call({:operation=>'POST',:subpath=>'files/create',:json_params=>{ "paths" => [{ :type => :file, :path => thepath, :contents => contents64 } ] } } )
             return result_translate_rem_prefix(resp,'folder','created',prefix_path)
           when :rename
@@ -175,9 +171,9 @@ module Asperalm
             resp=api_node.call({:operation=>'POST',:subpath=>'files/rename',:json_params=>{ "paths" => [{ "path" => path_base, "source" => path_src, "destination" => path_dst } ] } } )
             return result_translate_rem_prefix(resp,'entry','moved',prefix_path)
           when :upload
-            filelist = Main.tool.options.get_remaining_arguments("source file list")
+            filelist = Main.tool.options.get_next_argument("source file list",:multiple)
             Log.log.debug("file list=#{filelist}")
-            destination=Main.tool.options.get_option_mandatory(:to_folder)
+            destination=Main.tool.destination_folder('send')
             send_result=api_node.call({:operation=>'POST',:subpath=>'files/upload_setup',:json_params=>{ :transfer_requests => [ { :transfer_request => { :paths => [ { :destination => destination } ] } } ] }})
             raise send_result[:data]['error']['user_message'] if send_result[:data].has_key?('error')
             raise send_result[:data]['transfer_specs'][0]['error']['user_message'] if send_result[:data]['transfer_specs'][0].has_key?('error')
@@ -187,7 +183,7 @@ module Asperalm
             # do not use default destination in transfer spec, because can be different on destination (e.g. shares)
             return Main.tool.start_transfer(transfer_spec,false)
           when :download
-            filelist = get_next_arg_add_prefix(prefix_path,"source file list",:all)
+            filelist = get_next_arg_add_prefix(prefix_path,"source file list",:multiple)
             Log.log.debug("file list=#{filelist}")
             send_result=api_node.call({:operation=>'POST',:subpath=>'files/download_setup',:json_params=>{ :transfer_requests => [ { :transfer_request => { :paths => filelist.map {|i| {:source=>i}; } } } ] }})
             raise send_result[:data]['transfer_specs'][0]['error']['user_message'] if send_result[:data]['transfer_specs'][0].has_key?('error')
@@ -200,17 +196,17 @@ module Asperalm
         # implement generec rest operations on given resource path
         def generic_action(api_node,res_class_path,display_fields)
           res_name=res_class_path.gsub(%r{.*/},'').gsub(%r{^s$},'').gsub('_',' ')
-          command=Main.tool.options.get_next_arg_from_list('command',[ :list, :create, :id ])
+          command=Main.tool.options.get_next_argument('command',[ :list, :create, :id ])
           case command
           when :create
-            parameters=Main.tool.options.get_next_arg_value('JSON creation parameters, use @json:')
+            parameters=Main.tool.options.get_next_argument('JSON creation parameters, use @json:')
             return {:type => :other_struct, :data=>api_node.create(res_class_path,parameters)[:data], :fields=>display_fields}
           when :list
             return {:type => :hash_array, :data=>api_node.read(res_class_path)[:data], :fields=>display_fields}
           when :id
-            one_res_id=Main.tool.options.get_next_arg_value("#{res_name} id")
+            one_res_id=Main.tool.options.get_next_argument("#{res_name} id")
             one_res_path="#{res_class_path}/#{one_res_id}"
-            command=Main.tool.options.get_next_arg_from_list('command',[ :delete, :show ])
+            command=Main.tool.options.get_next_argument('command',[ :delete, :show ])
             case command
             when :delete
               resp=api_node.delete(one_res_path)
@@ -224,19 +220,19 @@ module Asperalm
         def action_list; self.class.common_actions.clone.concat([ :stream, :transfer, :cleanup, :forward, :access_key, :watch_folder, :service, :async, :central ]);end
 
         def execute_action
-          api_node=Rest.new(Main.tool.options.get_option_mandatory(:url),{:auth=>{:type=>:basic,:username=>Main.tool.options.get_option_mandatory(:username), :password=>Main.tool.options.get_option_mandatory(:password)}})
-          command=Main.tool.options.get_next_arg_from_list('command',action_list)
+          api_node=Rest.new(Main.tool.options.get_option(:url,:mandatory),{:auth=>{:type=>:basic,:username=>Main.tool.options.get_option(:username,:mandatory), :password=>Main.tool.options.get_option(:password,:mandatory)}})
+          command=Main.tool.options.get_next_argument('command',action_list)
           case command
           when *self.class.common_actions; return self.class.execute_common(command,api_node)
           when :async
-            command=Main.tool.options.get_next_arg_from_list('command',[ :list, :id ])
+            command=Main.tool.options.get_next_argument('command',[ :list, :id ])
             case command
             when :list
               resp=api_node.read('async/list')[:data]['sync_ids']
               return { :data => resp, :type => :value_list, :name=>'id'  }
             when :id
-              asyncid=Main.tool.options.get_next_arg_value("async id")
-              command=Main.tool.options.get_next_arg_from_list('command',[ :delete,:summary,:counters ])
+              asyncid=Main.tool.options.get_next_argument("async id")
+              command=Main.tool.options.get_next_argument('command',[ :delete,:summary,:counters ])
               case command
               when :delete
                 # delete POST /async/delete '{"syncs":["4"]}'
@@ -252,45 +248,45 @@ module Asperalm
               end
             end
           when :stream
-            command=Main.tool.options.get_next_arg_from_list('command',[ :list, :create, :info, :modify, :cancel ])
+            command=Main.tool.options.get_next_argument('command',[ :list, :create, :info, :modify, :cancel ])
             case command
             when :list
-              transfer_filter=JSON.parse(Main.tool.options.get_option(:transfer_filter))
+              transfer_filter=JSON.parse(Main.tool.options.get_option(:transfer_filter,:optional))
               resp=api_node.call({:operation=>'GET',:subpath=>'ops/transfers',:headers=>{'Accept'=>'application/json'},:url_params=>transfer_filter})
               return { :data => resp[:data], :type => :hash_array, :fields=>['id','status']  } # TODO
             when :create
-              resp=api_node.call({:operation=>'POST',:subpath=>'streams',:headers=>{'Accept'=>'application/json'},:json_params=>Main.tool.options.get_option_mandatory(:parameters)})
+              resp=api_node.call({:operation=>'POST',:subpath=>'streams',:headers=>{'Accept'=>'application/json'},:json_params=>Main.tool.options.get_option(:parameters,:mandatory)})
               return { :data => resp[:data], :type => :key_val_list }
             when :info
-              trid=Main.tool.options.get_next_arg_value("transfer id")
+              trid=Main.tool.options.get_next_argument("transfer id")
               resp=api_node.call({:operation=>'GET',:subpath=>'ops/transfers/'+trid,:headers=>{'Accept'=>'application/json'}})
               return { :data => resp[:data], :type=>:other_struct  }
             when :modify
-              trid=Main.tool.options.get_next_arg_value("transfer id")
-              resp=api_node.call({:operation=>'PUT',:subpath=>'streams/'+trid,:headers=>{'Accept'=>'application/json'},:json_params=>Main.tool.options.get_option_mandatory(:parameters)})
+              trid=Main.tool.options.get_next_argument("transfer id")
+              resp=api_node.call({:operation=>'PUT',:subpath=>'streams/'+trid,:headers=>{'Accept'=>'application/json'},:json_params=>Main.tool.options.get_option(:parameters,:mandatory)})
               return { :data => resp[:data], :type=>:other_struct }
             when :cancel
-              trid=Main.tool.options.get_next_arg_value("transfer id")
+              trid=Main.tool.options.get_next_argument("transfer id")
               resp=api_node.call({:operation=>'CANCEL',:subpath=>'streams/'+trid,:headers=>{'Accept'=>'application/json'}})
               return { :data => resp[:data], :type=>:other_struct }
             else
               raise "error"
             end
           when :transfer
-            command=Main.tool.options.get_next_arg_from_list('command',[ :list, :cancel, :info ])
+            command=Main.tool.options.get_next_argument('command',[ :list, :cancel, :info ])
             case command
             when :list
-              transfer_filter=JSON.parse(Main.tool.options.get_option(:transfer_filter))
+              transfer_filter=JSON.parse(Main.tool.options.get_option(:transfer_filter,:optional))
               resp=api_node.call({:operation=>'GET',:subpath=>'ops/transfers',:headers=>{'Accept'=>'application/json'},:url_params=>transfer_filter})
               return { :data => resp[:data], :type => :hash_array, :fields=>['id','status','remote_user','remote_host'], :textify => lambda { |table_data| Node.textify_transfer_list(table_data) } } # TODO
               #resp=api_node.call({:operation=>'GET',:subpath=>'transfers',:headers=>{'Accept'=>'application/json'},:url_params=>transfer_filter})
               #return { :data => resp[:data], :type => :other_struct}
             when :cancel
-              trid=Main.tool.options.get_next_arg_value("transfer id")
+              trid=Main.tool.options.get_next_argument("transfer id")
               resp=api_node.call({:operation=>'CANCEL',:subpath=>'ops/transfers/'+trid,:headers=>{'Accept'=>'application/json'}})
               return { :data => resp[:data], :type=>:other_struct }
             when :info
-              trid=Main.tool.options.get_next_arg_value("transfer id")
+              trid=Main.tool.options.get_next_argument("transfer id")
               resp=api_node.call({:operation=>'GET',:subpath=>'ops/transfers/'+trid,:headers=>{'Accept'=>'application/json'}})
               return { :data => resp[:data], :type=>:other_struct }
             else
@@ -299,7 +295,7 @@ module Asperalm
           when :access_key
             return generic_action(api_node,'access_keys',['id','root_file_id','storage','license'])
           when :service
-            command=Main.tool.options.get_next_arg_from_list('command',[ :list, :create, :id])
+            command=Main.tool.options.get_next_argument('command',[ :list, :create, :id])
             case command
             when :list
               resp=api_node.call({:operation=>'GET',:subpath=>'rund/services',:headers=>{'Accept'=>'application/json'}})
@@ -307,12 +303,12 @@ module Asperalm
               return { :data => resp[:data]["services"], :type=>:hash_array }
             when :create
               # @json:'{"type":"WATCHFOLDERD","run_as":{"user":"user1"}}'
-              params=Main.tool.options.get_next_arg_value("Run creation data (structure)")
+              params=Main.tool.options.get_next_argument("Run creation data (structure)")
               resp=api_node.call({:operation=>'POST',:subpath=>'rund/services',:headers=>{'Accept'=>'application/json'},:json_params=>params})
               return {:data=>resp[:data]['id'],:type => :status}
             when :id
-              svcid=Main.tool.options.get_next_arg_value("service id")
-              command=Main.tool.options.get_next_arg_from_list('command',[ :delete ])
+              svcid=Main.tool.options.get_next_argument("service id")
+              command=Main.tool.options.get_next_argument('command',[ :delete ])
               case command
               when :delete
                 resp=api_node.call({:operation=>'DELETE',:subpath=>"rund/services/#{svcid}",:headers=>{'Accept'=>'application/json'}})
@@ -326,7 +322,7 @@ module Asperalm
           when :watch_folder
             res_class_path='v3/watchfolders'
             #return generic_action(api_node,'v3/watchfolders',nil)
-            command=Main.tool.options.get_next_arg_from_list('command',[ :list, :create, :id])
+            command=Main.tool.options.get_next_argument('command',[ :list, :create, :id])
             case command
             when :list
               resp=api_node.call({:operation=>'GET',:subpath=>res_class_path,:headers=>{'Accept'=>'application/json'}})
@@ -334,19 +330,19 @@ module Asperalm
               return { :data => resp[:data]["ids"], :type=>:value_list, :name=>"id" }
             when :create
               #
-              params=Main.tool.options.get_next_arg_value("WF creation data (structure)")
+              params=Main.tool.options.get_next_argument("WF creation data (structure)")
               resp=api_node.call({:operation=>'POST',:subpath=>res_class_path,:headers=>{'Accept'=>'application/json'},:json_params=>params})
               return {:data=>resp[:data]['id'],:type => :status}
             when :id
-              one_res_id=Main.tool.options.get_next_arg_value("watch folder id")
+              one_res_id=Main.tool.options.get_next_argument("watch folder id")
               one_res_path="#{res_class_path}/#{one_res_id}"
-              command=Main.tool.options.get_next_arg_from_list('command',[ :delete, :show, :update ])
+              command=Main.tool.options.get_next_argument('command',[ :delete, :show, :update ])
               case command
               when :delete
                 resp=api_node.delete(one_res_path)
                 return {:type => :status,:data=>'done'}
               when :update
-                modify_data=Main.tool.options.get_next_arg_value("JSON value to modify")
+                modify_data=Main.tool.options.get_next_argument("JSON value to modify")
                 resp=api_node.update(one_res_path,modify_data)
                 return {:type => :status,:data=>'done'}
               when :show
@@ -354,17 +350,17 @@ module Asperalm
               end
             end
           when :central
-            command=Main.tool.options.get_next_arg_from_list('command',[ :list])
+            command=Main.tool.options.get_next_argument('command',[ :list])
             case command
             when :list
               resp=api_node.create('services/rest/transfers/v1/sessions',{"session_filter"=>{"iteration_token"=>"CURRENT_POSITION"}})
               return {:data=>resp[:data]["session_info_result"]["session_info"],:type=>:hash_array,:fields=>["session_uuid","status","transport","direction","bytes_transferred"]}
             end
           when :cleanup
-            transfers=self.class.get_transfers_iteration(api_node,Main.tool.options.get_option(:persistency),{:active_only=>false})
-            persistencyfile=Main.tool.options.get_option_mandatory(:persistency)
-            filter_transfer=Main.tool.options.get_option_mandatory(:filter_transfer)
-            filter_file=Main.tool.options.get_option_mandatory(:filter_file)
+            transfers=self.class.get_transfers_iteration(api_node,Main.tool.options.get_option(:persistency,:optional),{:active_only=>false})
+            persistencyfile=Main.tool.options.get_option(:persistency,:mandatory)
+            filter_transfer=Main.tool.options.get_option(:filter_transfer,:mandatory)
+            filter_file=Main.tool.options.get_option(:filter_file,:mandatory)
             Log.log.debug("filter_transfer: #{filter_transfer}")
             Log.log.debug("filter_file: #{filter_file}")
             # build list of files to delete: non zero files, downloads, for specified user
@@ -391,7 +387,7 @@ module Asperalm
             return Main.no_result
           when :forward
             # detect transfer sessions since last call
-            transfers=self.class.get_transfers_iteration(api_node,Main.tool.options.get_option(:persistency),{:active_only=>false})
+            transfers=self.class.get_transfers_iteration(api_node,Main.tool.options.get_option(:persistency,:optional),{:active_only=>false})
             # build list of all files received in all sessions
             filelist=[]
             transfers.select { |t| t['status'].eql?('completed') and t['start_spec']['direction'].eql?('receive') }.each do |t|

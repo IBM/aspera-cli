@@ -15,51 +15,10 @@ module Asperalm
     end
 
     # parse options in command line
+    # arguments starting with minus are options, others are commands
     class OptParser < OptionParser
       def self.time_to_string(time)
         time.strftime("%Y-%m-%d %H:%M:%S")
-      end
-
-      # consume elements of array, those starting with minus are options, others are commands
-      def initialize
-        # command line values not starting with '-'
-        @unprocessed_command_and_args=[]
-        # command line values starting with '-'
-        @unprocessed_options=[]
-        # key = name of option, either Proc(set/get) or value
-        @available_option={}
-        # list of options whose value is a ruby symbol, not a string
-        @fixed_options={}
-        super
-      end
-
-      def read_env_vars
-        Log.log.debug("read_env_vars")
-        # options can also be provided by env vars : --param-name -> ASLMCLI_PARAM_NAME
-        ENV.each do |k,v|
-          if k.start_with?('ASLMCLI_')
-            set_option(k.gsub(/^ASLMCLI_/,'').downcase.to_sym,v)
-          end
-        end
-      end
-
-      def set_argv(argv)
-        @unprocessed_options=[]
-        @unprocessed_command_and_args=[]
-        process_options=true
-        while !argv.empty?
-          value=argv.shift
-          if process_options and value =~ /^-/
-            if value.eql?('--')
-              process_options=false
-            else
-              @unprocessed_options.push(value)
-            end
-          else
-            @unprocessed_command_and_args.push(value)
-          end
-        end
-        Log.log.debug("set_argv:commands/args=#{@unprocessed_command_and_args},options=#{@unprocessed_options}".red)
       end
 
       # encoders can be pipelined
@@ -105,14 +64,6 @@ module Asperalm
         value
       end
 
-      def command_or_arg_empty?
-        return @unprocessed_command_and_args.empty?
-      end
-
-      def self.cli_bad_arg(error_msg,choices)
-        return CliBadArgument.new(error_msg+"\nUse:\n"+choices.map{|c| "- #{c.to_s}\n"}.join(''))
-      end
-
       # find shortened string value in allowed symbol list
       def self.get_from_list(shortval,descr,allowed_values)
         # we accept shortcuts
@@ -126,29 +77,108 @@ module Asperalm
         end
       end
 
-      # get next argument, must be from the value list
-      def get_next_arg_from_list(descr,allowed_values)
-        if @unprocessed_command_and_args.empty? then
-          raise self.class.cli_bad_arg("missing action",allowed_values)
-        end
-        return self.class.get_from_list(@unprocessed_command_and_args.shift,descr,allowed_values)
+      def self.cli_bad_arg(error_msg,choices)
+        return CliBadArgument.new(error_msg+"\nUse:\n"+choices.map{|c| "- #{c.to_s}\n"}.join(''))
       end
 
-      # just get next value (expanded)
-      def get_next_arg_value(descr)
-        if @unprocessed_command_and_args.empty? then
-          raise CliBadArgument,"missing argument: #{descr}"
-        end
-        return self.class.get_extended_value(descr,@unprocessed_command_and_args.shift)
+      #
+      def initialize
+        # command line values not starting with '-'
+        @unprocessed_arguments=[]
+        # command line values starting with '-'
+        @unprocessed_options=[]
+        # key = name of option, either Proc(set/get) or value
+        @available_option={}
+        # list of options whose value is a ruby symbol, not a string
+        @fixed_options={}
+        # do we ask missing options and arguments to user ?
+        @use_interactive=STDIN.isatty
+        # ask optional options if not provided and in interactive
+        @ask_optionals=false
+        super
+        self.add_opt_switch(:no_tty,"-T","don't use interactive input") { dont_use_interactive }
+        self.add_opt_switch(:ask_options,"-A","ask even optional options") { @ask_optionals=true }
       end
 
-      def get_remaining_arguments(descr,minus=0)
-        raise CliBadArgument,"missing: #{descr}" if @unprocessed_command_and_args.empty?
-        raise CliBadArgument,"missing args after: #{descr}" if @unprocessed_command_and_args.length <= minus
-        arguments = @unprocessed_command_and_args.shift(@unprocessed_command_and_args.length-minus)
-        arguments = arguments.map{|v|self.class.get_extended_value(descr,v)}
-        Log.log.debug("#{descr}=#{arguments}")
-        return arguments
+      def dont_use_interactive
+        @use_interactive=false
+      end
+
+      # options can also be provided by env vars : --param-name -> ASLMCLI_PARAM_NAME
+      def read_env_vars
+        Log.log.debug("read_env_vars")
+        ENV.each do |k,v|
+          if k.start_with?('ASLMCLI_')
+            set_option(k.gsub(/^ASLMCLI_/,'').downcase.to_sym,v)
+          end
+        end
+      end
+
+      # parse arguments into options and arguments
+      def set_argv(argv)
+        @unprocessed_options=[]
+        @unprocessed_arguments=[]
+        process_options=true
+        while !argv.empty?
+          value=argv.shift
+          if process_options and value =~ /^-/
+            if value.eql?('--')
+              process_options=false
+            else
+              @unprocessed_options.push(value)
+            end
+          else
+            @unprocessed_arguments.push(value)
+          end
+        end
+        Log.log.debug("set_argv:commands/args=#{@unprocessed_arguments},options=#{@unprocessed_options}".red)
+      end
+
+      def get_interactive(descr,expected=:single)
+        if !@use_interactive
+          if expected.is_a?(Array)
+            raise self.class.cli_bad_arg("missing: #{descr}",expected)
+          end
+          raise CliBadArgument,"missing argument (#{expected}): #{descr}"
+        end
+        # ask interactively
+        print "please enter: #{descr}"
+        case expected
+        when :multiple
+          result=[]
+          puts " (one per line, end with empty line)"
+          loop do
+            entry=STDIN.gets.chomp
+            break if entry.empty?
+            result.push(self.class.get_extended_value(descr,entry))
+          end
+        when :single
+          puts ""
+          result=self.class.get_extended_value(descr,STDIN.gets.chomp)
+        else
+          puts ": #{expected.join(' ')}"
+          result=self.class.get_from_list(STDIN.gets.chomp,descr,expected)
+        end
+      end
+
+      # expected is array of allowed value (single value)
+      # or :multiple for remaining values
+      # or :single for a single unconstrained value
+      def get_next_argument(descr,expected=:single)
+        if @unprocessed_arguments.empty?
+          result=get_interactive(descr,expected)
+        else # there are values
+          case expected
+          when :single
+            result=self.class.get_extended_value(descr,@unprocessed_arguments.shift)
+          when :multiple
+            result = @unprocessed_arguments.shift(@unprocessed_arguments.length).map{|v|self.class.get_extended_value(descr,v)}
+          else
+            result=self.class.get_from_list(@unprocessed_arguments.shift,descr,expected)
+          end
+        end
+        Log.log.debug("#{descr}=#{result}")
+        return result
       end
 
       def set_handler(option_symbol,&block)
@@ -171,23 +201,44 @@ module Asperalm
       end
 
       # get an option value by name, either return value or call handler, can return nil
-      def get_option(option_symbol)
+      def get_option(option_symbol,is_type=:optional)
         result=nil
         source=nil
         if @available_option[option_symbol].is_a?(Proc)
           source="method"
           result=@available_option[option_symbol].call(:get,nil) # TODO ? check
         else
-          # Note1: convert option to symbol if it came from conf file as string, but must be a symbol from list
-          if @fixed_options.has_key?(option_symbol) and
-          !@available_option[option_symbol].nil? and
-          !@available_option[option_symbol].is_a?(Symbol)
+          # Note1: convert string option to symbol
+          if @fixed_options.has_key?(option_symbol) and # constrained by specific values
+          !@available_option[option_symbol].nil? and # option is defined
+          !@available_option[option_symbol].is_a?(Symbol) # but its a string (from conf file)
             @available_option[option_symbol]=self.class.get_from_list(@available_option[option_symbol],option_symbol.to_s+" in conf file",@fixed_options[option_symbol])
           end
           source="value"
           result=@available_option[option_symbol]
         end
         Log.log.debug("get #{option_symbol} (#{source}) : #{result}")
+        if result.nil?
+          if !@use_interactive
+            if is_type.eql?(:mandatory)
+              raise CliBadArgument,"Missing option in context: #{option_symbol}"
+            end
+          else # use_interactive
+            if @ask_optionals or is_type.eql?(:mandatory)
+              print "please enter: #{option_symbol.to_s}"
+              if @fixed_options.has_key?(option_symbol)
+                puts ": #{@fixed_options[option_symbol].join(' ')}"
+                result=self.class.get_from_list(STDIN.gets.chomp,option_symbol.to_s+" from stdin",@fixed_options[option_symbol])
+              else
+                puts ""
+                result=STDIN.gets.chomp
+              end
+            end
+            set_option(option_symbol,result)
+          end
+          # TODO: if interactive mode, ask question
+          # TODO: parameter for interactive mode
+        end
         return result
       end
 
@@ -245,16 +296,15 @@ module Asperalm
         self.on(*args,&block)
       end
 
-      def get_option_mandatory(option_symbol)
-        value=get_option(option_symbol)
-        if value.nil? then
-          raise CliBadArgument,"Missing option in context: #{option_symbol}"
-        end
-        return value
+      # check if there were unprocessed values to generate error
+      def command_or_arg_empty?
+        return @unprocessed_arguments.empty?
       end
 
-      def unprocessed_options
-        return @unprocessed_options
+      def fail_if_unprocessed
+        # unprocessed options or arguments ?
+        raise CliBadArgument,"unprocessed options: #{@unprocessed_options}" unless @unprocessed_options.empty?
+        raise CliBadArgument,"unprocessed values: #{@unprocessed_arguments}" unless @unprocessed_arguments.empty?
       end
 
       # removes already known options from the list

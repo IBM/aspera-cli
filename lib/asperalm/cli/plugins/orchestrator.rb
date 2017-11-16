@@ -42,17 +42,17 @@ module Asperalm
         end
 
         def execute_action
-          @api_orch=Rest.new(Main.tool.options.get_option_mandatory(:url),{:auth=>{:type=>:url,:url_creds=>{
-            'login'=>Main.tool.options.get_option_mandatory(:username),
-            'password'=>Main.tool.options.get_option_mandatory(:password) }}})
+          @api_orch=Rest.new(Main.tool.options.get_option(:url,:mandatory),{:auth=>{:type=>:url,:url_creds=>{
+            'login'=>Main.tool.options.get_option(:username,:mandatory),
+            'password'=>Main.tool.options.get_option(:password,:mandatory) }}})
 
           # auth can be in url or basic
-          #          @api_orch=Rest.new(Main.tool.options.get_option_mandatory(:url),{:auth=>{
+          #          @api_orch=Rest.new(Main.tool.options.get_option(:url,:mandatory),{:auth=>{
           #            :type=>:basic,
-          #            :username=>Main.tool.options.get_option_mandatory(:username),
-          #            :password=>Main.tool.options.get_option_mandatory(:password)}})
+          #            :username=>Main.tool.options.get_option(:username,:mandatory),
+          #            :password=>Main.tool.options.get_option(:password,:mandatory)}})
 
-          command1=Main.tool.options.get_next_arg_from_list('command',action_list)
+          command1=Main.tool.options.get_next_argument('command',action_list)
           case command1
           when :info
             result=call_API("logon",nil,nil,nil)
@@ -70,7 +70,7 @@ module Asperalm
             result=call_API("api/plugin_version")[:data]
             return {:type=>:hash_array,:data=>result['Plugin']}
           when :workflow
-            command=Main.tool.options.get_next_arg_from_list('command',[:list, :status, :id])
+            command=Main.tool.options.get_next_argument('command',[:list, :status, :id])
             case command
             when :status
               result=call_API("api/workflows_status")[:data]
@@ -79,8 +79,8 @@ module Asperalm
               result=call_API("workflow_reporter/workflows_list/0")[:data]
               return {:type=>:hash_array,:data=>result['workflows']['workflow'],:fields=>["id","portable_id","name","published_status","published_revision_id","latest_revision_id","last_modification"]}
             when :id
-              wf_id=Main.tool.options.get_next_arg_value('workflow id')
-              command=Main.tool.options.get_next_arg_from_list('command',[:inputs,:status,:start])
+              wf_id=Main.tool.options.get_next_argument('workflow id')
+              command=Main.tool.options.get_next_argument('command',[:inputs,:status,:start])
               case command
               when :status
                 result=call_API("api/workflow_details",wf_id)[:data]
@@ -97,13 +97,13 @@ module Asperalm
                 }
                 call_params={}
                 # set external parameters if any
-                Main.tool.options.get_option_mandatory(:params).each do |name,value|
+                Main.tool.options.get_option(:params,:mandatory).each do |name,value|
                   call_params["external_parameters[#{name}]"] = value
                 end
                 # synchronous call ?
-                call_params["synchronous"]=true if Main.tool.options.get_option_mandatory(:synchronous).eql?(:yes)
+                call_params["synchronous"]=true if Main.tool.options.get_option(:synchronous,:mandatory).eql?(:yes)
                 # expected result for synchro call ?
-                expected=Main.tool.options.get_option(:result)
+                expected=Main.tool.options.get_option(:result,:optional)
                 if !expected.nil?
                   result[:type] = :status
                   result.delete(:textify)

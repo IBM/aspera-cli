@@ -20,7 +20,8 @@ test:
 
 clean::
 	rm -f $(GEMNAME)-*.gem $(SRCZIPBASE)*.zip *.log token.* README.pdf README.html README.md sample_commands.txt sample_usage.txt $(TEST_CONFIG)
-	rm -fr doc
+	rm -fr doc "PKG - "*
+	rm -f 200KB* AsperaConnect-ML*
 	gem uninstall -a -x $(GEMNAME)
 cleanupgems:
 	gem uninstall -a -x $(gem list|cut -f 1 -d' '|egrep -v 'rdoc|psych|rake|openssl|json|io-console|bigdecimal')
@@ -219,15 +220,19 @@ tat6:
 tat7:
 	$(ASCLI) ats access_key create --cloud=softlayer --region=ams --params=@json:'{"id":"testkey2","name":"laurent key","storage":{"type":"softlayer_swift","container":"laurent","credentials":{"api_key":"e5d032e026e0b0a16e890a3d44d11fd1471217b6262e83c7f60529f1ff4b27de","username":"IBMOS303446-9:laurentmartin"},"path":"/"}}'
 tat8:
-	$(ASCLI) ats access_key list --fields=name,id,secret
+	$(ASCLI) ats access_key create --cloud=aws --region=eu-west-1 --params=@json:'{"id":"testkey3","name":"laurent key AWS","storage":{"type":"aws_s3","bucket":"sedemo-ireland","credentials":{"access_key_id":"AKIAIDSWKOSIM7XUVCJA","secret_access_key":"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"},"path":"/laurent"}}'
 tat9:
-	$(ASCLI) ats access_key id testkey2 node browse /
+	$(ASCLI) ats access_key list --fields=name,id,secret
 tat10:
-	$(ASCLI) ats access_key id testkey2 server
+	$(ASCLI) ats access_key id testkey2 node browse /
 tat11:
+	$(ASCLI) ats access_key id testkey2 server
+tat12:
 	$(ASCLI) ats access_key id testkey2 delete
+tat13:
+	$(ASCLI) ats access_key id testkey3 delete
 
-tats: tat1a tat1b tat2 tat3 tat4 tat5 tat6 tat7 tat8 tat9 tat10 tat11
+tats: tat1a tat1b tat2 tat3 tat4 tat5 tat6 tat7 tat8 tat9 tat10 tat11 tat12 tat13
 
 tco1:
 	$(ASCLI) client location
@@ -242,7 +247,7 @@ tco4:
 	$(ASCLI) client connect id 'Aspera Connect for Windows' links list
 
 tco5:
-	$(ASCLI) client connect id 'Aspera Connect for Windows' links id 'Windows Installer' download .
+	$(ASCLI) client connect id 'Aspera Connect for Windows' links id 'Windows Installer' download --to-folder=.
 
 tcon: tco1 tco2 tco3 tco4 tco5
 
@@ -272,8 +277,13 @@ tconf7:
 
 tconf: tconf1 tconf2 tconf3 tconf4 tconf5 tconf6 tconf7
 
-tests: tshares tfaspex tconsole tnode tfiles tfaspex2 tfasp torc tats tcon tsync tconf
+tshar2_1:
+	$(ASCLI) shares2 re br /
+
+tshares2: tshar2_1
+
+tests: tshares tfaspex tconsole tnode tfiles tfaspex2 tfasp torc tats tcon tsync tconf tshares2
 
 tfxgw:
-	$(ASCLI) --load-params=reset --url=https://localhost:9443/aspera/faspex --username=unused --password=unused faspex package send ~/200KB.1 --insecure=yes --note="my note" --title="my title" --recipient="laurent@asperasoft.com"
+	$(ASCLI) faspex package send --load-params=reset --url=https://localhost:9443/aspera/faspex --username=unused --password=unused --insecure=yes --note="my note" --title="my title" --recipient="laurent@asperasoft.com" ~/200KB.1
 

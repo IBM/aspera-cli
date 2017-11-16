@@ -46,11 +46,15 @@ In examples below, command line operations (starting with "$") are shown using `
 
 ## Pre-requisite : Ruby
 
-First make sure that you have Ruby v2.0+ installed on your system.
+### General
+
+aslmcli requires a ruby interpreter with priviledge to install gems. Refer to the following sections for specific
+operating systems.
 
 ### MacOS X
 Ruby comes pre-installed on MacOSx. Nevertheless, installing new gems require admin privilege (sudo).
-You may also install "homebrew", from here: https://brew.sh/, then do:
+
+You may also install "homebrew", from here: https://brew.sh/, and then install Ruby:
 
 ```bash
 $ brew install ruby
@@ -85,13 +89,16 @@ see section: [Download FASP](download-fasp).
 
 ## Configuration for Aspera Demo Server
 
+One can test the "server" application using the well known demo server:
+
 ```bash
 $ aslmcli config id aspera_demo_server init @json:'{"url":"ssh://demo.asperasoft.com:33001","username":"asperaweb","password":"demoaspera"}'
 $ aslmcli config id default set server aspera_demo_server 
 $ aslmcli server browse /aspera-test-dir-large
-$ aslmcli server download /aspera-test-dir-large/200MB .
+$ aslmcli server download /aspera-test-dir-large/200MB
 ```
 
+This creates a parameter set "aspera_demo_server" and set it as default for application "server"
 
 ## Configuration for Applications
 
@@ -100,7 +107,7 @@ only username/password and url are required (either on command line, or from con
 Those can usually be provided on the command line:
 
 ```bash
-$ aslmcli shares browse / --url=https://10.25.0.6 --username=john --password=4sp3ra 
+$ aslmcli shares repo browse / --url=https://10.25.0.6 --username=john --password=4sp3ra 
 ```
 
 This can also be provisioned in a config file:
@@ -111,26 +118,28 @@ This can also be provisioned in a config file:
 3$ aslmcli config id shares06 set password 4sp3ra
 4$ aslmcli config id default set shares shares06 
 5$ aslmcli config show
+6$ aslmcli config shares repo browse /
 ```
 
-The three first commands build a configuration profile. 
-Note that this can also be done with one command:
+The three first commands build a parameter set. 
+Note that this can also be done with one single command:
 
 ```bash
 $ aslmcli config id shares06 init @json:'{"url":"https://10.25.0.6","username":"john","password":"4sp3ra"}'
 ```
 
-The fourth command defines this profile as the default profile for the 
-specified application. The last command dumps the configuration file. 
-Alternative profiles can be used with option "-P&lt;profile&gt;"
-(or --load-params=&lt;profile&gt;)
+The fourth command defines this parameter set as the default parameter set for the 
+specified application ("shares"). The 5th command dumps the configuration file. 
+Alternative parameter sets can be used with option "-P&lt;parameter set&gt;"
+(or --load-params=&lt;parameter set&gt;)
 
+Eventually, the last command shows a call to the shares application using default parameters.
 
 ## Configuration for Aspera Files
 
 Aspera Files APIs does not support Basic HTTP authentication (see section "Authentication").
-Using the CLI with Aspera Files will require the generation of a "Bearer token", this is done
-by default by authentication with a web interface (see section "Graphical interactions").
+Using the CLI with Aspera Files will require the generation of a "Bearer token", this is can
+be done by authentication with a web interface (see section "Graphical interactions").
 
 A more convenient way to use the CLI with Aspera Files, a possibility is to do the following 
 (JWT auth):
@@ -211,7 +220,7 @@ on the command line.
 
 The default configuration file is: `$HOME/.aspera/aslmcli/config.yaml` 
 (can be overriden with option --config-file).
-It is composed with "profiles" containing "parameters".
+It is composed with "parameter sets" containing "parameters".
 (The first level is an associative array whose values are associative arrays or parameters).
 
 A good practice is to not manually edit this file and use modification commands.
@@ -224,17 +233,17 @@ $ aslmcli config open
 The configuration file can be modified using the commands:
 
 ```
-aslmcli config id <profile name> set|delete|show|initialize
+aslmcli config id <parameter set name> set|delete|show|initialize
 ```
 
-Two profiles are reserved:
+Two parameter sets are reserved:
 
 * "config" is reserved for the global parameters of the `aslmcli` tool.
 It contains a special parameter: "version" showing the CLI 
 version used to create this file. It is used to check compatibility.
-* "default" is reserved to define the default profile name used for plugins.
+* "default" is reserved to define the default parameter set name used for plugins.
 
-Usually, a configuration "profile" corresponds to a set of parameters used for a specific plugin.
+Usually, a configuration "parameter set" corresponds to a set of parameters used for a specific plugin.
 
 The configuration file is a hash in a YAML file. Example:
 
@@ -243,8 +252,8 @@ config:
   version: 0.3.7
   loglevel: debug
 default:
-  faspex: myfaspexprofile
-myfaspexprofile:
+  faspex: myfaspparams
+myfaspparams:
   url: https://faspex.my.org/aspera/faspex
   username: admin
   password: MyPassword
@@ -252,11 +261,8 @@ myfaspexprofile:
 
 * The configuration was created with CLI version 0.3.7
 * the log level is set to "debug"
-* the default profile to load for plugin "faspex" is : myfaspexprofile
-* the profile "myfaspexprofile" defines some parameters: the URL and credentials
-This specifies a profile called "myapp" and defines some default values for some
-parameters.
-
+* the default parameter set to load for plugin "faspex" is : myfaspparams
+* the parameter set "myfaspparams" defines some parameters: the URL and credentials
 
 A configuration file is located:
 
@@ -265,9 +271,9 @@ A configuration file is located:
 
 Default parameters are loaded using this algorithm:
 
-* if option '--load-params=xxxx' is specified (or -Pxxxx), this reads the profile specified
+* if option '--load-params=xxxx' is specified (or -Pxxxx), this reads the parameter set specified
     * else if option --no-default is specified, then dont load default
-    * else it looks for the name of the default profile name in section "default" and loads all parameters in this section
+    * else it looks for the name of the default parameter set in section "default" and loads it
 * environment variables are evaluated
 * command line options are evaluated
 
@@ -482,7 +488,7 @@ table, th, td {border: 1px solid black;}
 <tr><td>retry_duration</td><td></td><td>string</td><td></td><td></td><td></td><td>TODO</td><td>Specifies how long to wait before retrying transfer. (e.g. "5min")</td></tr>
 <tr><td>http_fallback</td><td></td><td>integer</td><td></td><td></td><td></td><td>-y<br/>TODO</td><td>When true(1), attempts to perform an HTTP transfer if a fasp transfer cannot be performed.</td></tr>
 <tr><td>create_dir</td><td></td><td>boolean</td><td></td><td></td><td></td><td>-d</td><td>Specifies whether to create new directories.</td></tr>
-<tr><td>precalculate_job_size</td><td></td><td>boolean</td><td></td><td></td><td></td><td>Specifies whether to precalculate the job size.</td></tr>
+<tr><td>precalculate_job_size</td><td>srv. def.</td><td>boolean</td><td>Y</td><td>?</td><td>?</td><td>--precalculate-job-size</td><td>Specifies whether to precalculate the job size.</td></tr>
 <tr><td>delete_source</td><td></td><td>boolean</td><td></td><td></td><td></td><td>-</td></tr>
 <tr><td>remove_after_transfer</td><td></td><td>boolean</td><td></td><td></td><td></td><td>Specifies whether to remove file after transfer.</td></tr>
 <tr><td>remove_empty_directories</td><td></td><td>boolean</td><td></td><td></td><td></td><td>Specifies whether to remove empty directories.</td></tr>
@@ -553,7 +559,7 @@ $ aslmcli client connect id 'Aspera Connect for Mac Intel 10.6' links list
 : Aspera Connect PDF Documentation for Mac OS : application/pdf          : docs/user/osx/zh-cn/pdf/Connect_User_3.7.0_OSX_zh-cn.pdf              : zh-cn    : documentation :
 : Aspera Connect for Mac Release Notes        : text/html                : http://www.asperasoft.com/en/release_notes/default_1/release_notes_54 : en       : release-notes :
 :.............................................:..........................:.......................................................................:..........:...............:
-$ aslmcli client connect id 'Aspera Connect for Mac Intel 10.6' links id 'Mac Intel Installer' download .
+$ aslmcli client connect id 'Aspera Connect for Mac Intel 10.6' links id 'Mac Intel Installer' download --to-folder=.
 downloaded: AsperaConnect-3.6.1.111259-mac-intel-10.6.dmg
 ```
 
@@ -578,7 +584,7 @@ Then create a configuration for the "SHOD" instance in the configuration file: i
 Create another configuration for the Azure ATS instance: in section "node", named azureats.
 Then execute the following command:
 ```bash
-aslmcli node download /share/sourcefile /destinationfolder --load-params=awsshod --transfer=node --transfer-node=azureats
+aslmcli node download /share/sourcefile --to-folder=/destinationfolder --load-params=awsshod --transfer=node --transfer-node=azureats
 ```
 This will get transfer information from the SHOD instance and tell the Azure ATS instance 
 to download files.
@@ -628,21 +634,45 @@ The node configuration name is "my_faspex_node" here.
 
 # Aspera Transfer Service
 
-The user shall have an Aspera ID, this allows the creation of an "ats id". To avoid having tho specify this id on each command, the user can define a configuration profile for this default parameter: --ats-id for plugin ats.
+## First time use
 
+Using the ATS requires an "Aspera ID" (https://id.asperasoft.com/) and have a subscription associated to it.
 
-several operations available. example: create access key:
+On first execution, the user is asked to login to Aspera ID using a web browser. This creates an "ats_id" identifier (stored in a cache file).
+
+When only one ats_id is created, it is taken by default. Else it shall be specified with --ats-id or using a parameter set.
+
+## Usage
+
+Example: create access key on softlayer:
 
 ```
-create an access key:
-aslmcli ats access_key create --cloud=SOFTLAYER --region=ams --params=@json:'{"storage":{"type":"softlayer_swift","container":"_container_name_","credentials":{"api_key":"value","username":"_name_:_usr_name_"},"path":"/"},"id":"_optional_id_","name":"_optional_name_"}'
+aslmcli ats access_key create --cloud=softlayer --region=ams --params=@json:'{"storage":{"type":"softlayer_swift","container":"_container_name_","credentials":{"api_key":"value","username":"_name_:_usr_name_"},"path":"/"},"id":"_optional_id_","name":"_optional_name_"}'
+```
+
+Example: create access key on AWS:
+
+```
+aslmcli ats access_key create --cloud=aws --region=eu-west-1 --params=@json:'{"id":"testkey3","name":"laurent key AWS","storage":{"type":"aws_s3","bucket":"my-bucket","credentials":{"access_key_id":"AKIA_MY_API_KEY","secret_access_key":"my/secret/here"},"path":"/laurent"}}'
+
+```
+
+Example: create access key on Azure SAS:
+
+```
+aslmcli ats access_key create --cloud=azure --region=eastus --params=@json:'{"id":"testkeyazure","name":"laurent key azure","storage":{"type":"azure_sas","credentials":{"shared_access_signature":"https://xxxx.blob.core.windows.net/..."},"path":"/"}}'
+
+```
 
 delete all my access keys:
+
+```
 for k in $(aslmcli ats access_key list --field=id --format=csv);do aslmcli ats access_key id $k delete;done
 ```
 
 # Sample commands
 Some commands used in unit testing:
+
 ```bash
 <%= File.read(ENV["COMMANDS"]) %>
 ...and more
