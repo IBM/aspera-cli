@@ -171,7 +171,7 @@ tfs7:
 tfs8:
 	$(ASCLI) files admin resource workspace list
 tfs9:
-	$(ASCLI) files admin resource node id 5560 browse / --secret=Aspera123_
+	$(ASCLI) files admin resource node id 5560 do browse / --secret=Aspera123_
 
 tfiles: tfs1 tfs2 tfs3 tfs3b tfs4 tfs5 tfs6 tfs7 tfs8 tfs9
 
@@ -278,9 +278,17 @@ tconf7:
 tconf: tconf1 tconf2 tconf3 tconf4 tconf5 tconf6 tconf7
 
 tshar2_1:
-	$(ASCLI) shares2 re br /
+	$(ASCLI) shares2 appinfo
+tshar2_2:
+	$(ASCLI) shares2 userinfo
+tshar2_3:
+	$(ASCLI) shares2 repository browse /
+tshar2_4:
+	$(ASCLI) shares2 organization list
+tshar2_5:
+	$(ASCLI) shares2 project list --organization=Sport
 
-tshares2: tshar2_1
+tshares2: tshar2_1 tshar2_2 tshar2_3 tshar2_4 tshar2_5
 
 tests: tshares tfaspex tconsole tnode tfiles tfaspex2 tfasp torc tats tcon tsync tconf tshares2
 

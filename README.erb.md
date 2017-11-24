@@ -289,6 +289,10 @@ is an underscore. E.g. --transfer-name  on command line gives transfer_node in c
 Note: before version 0.4.5, some keys could be ruby symbols, from 0.4.5 all keys are strings. To
 convert olver versions, remove the leading ":" in fronty of keys.
 
+# TODO: interactive input
+
+options -T -A
+
 # Learning Aspera Product APIs (REST)
 
 This CLI uses REST APIs.

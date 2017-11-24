@@ -195,7 +195,7 @@ module Asperalm
         end
       rescue RestCallError => e
         # give a second try if oauth token expired
-        if result[:http].code.start_with?('4') and
+        if ['401'].include?(result[:http].code.to_s) and
         call_data.has_key?(:auth) and
         call_data[:auth][:type].eql?(:oauth2)
           # try a refresh and/or regeneration of token

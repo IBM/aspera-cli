@@ -24,6 +24,7 @@ module Asperalm
           Main.tool.options.add_opt_simple(:title,"STRING","package title")
           Main.tool.options.add_opt_simple(:note,"STRING","package note")
           Main.tool.options.add_opt_simple(:secret,"STRING","access key secret for node")
+          Main.tool.options.add_opt_simple(:query,"STRING","for json query")
         end
 
         # returns a node API for access key
@@ -315,8 +316,8 @@ module Asperalm
               res=@api_files_admin.update("clients/#{the_client_id}",{:jwt_grant_enabled=>true, :public_key=>OpenSSL::PKey::RSA.new(the_private_key).public_key.to_s})
               return Main.result_success
             when :resource
-              resource=Main.tool.options.get_next_argument('resource',[:user,:group,:client,:contact,:dropbox,:node,:operation,:package,:saml_configuration, :workspace])
-              resources=resource.to_s+(resource.eql?(:dropbox) ? 'es' : 's')
+              resource=Main.tool.options.get_next_argument('resource',[:user,:group,:client,:contact,:dropbox,:node,:operation,:package,:saml_configuration, :workspace, :dropbox_membership,:short_link])
+              resource_path=resource.to_s+(resource.eql?(:dropbox) ? 'es' : 's')
               #:messages:organizations:url_tokens,:usage_reports:workspaces
               operations=[:list,:id,:create]
               #command=Main.tool.options.get_next_argument('op_or_id')
@@ -324,7 +325,7 @@ module Asperalm
               case command
               when :create
                 params=Main.tool.options.get_next_argument("creation data (json structure)")
-                resp=@api_files_admin.create(resources,params)
+                resp=@api_files_admin.create(resource_path,params)
                 return {:data=>resp[:data],:type => :other_struct}
               when :list
                 default_fields=['id','name']
@@ -333,18 +334,32 @@ module Asperalm
                 when :operation; default_fields=nil
                 when :contact; default_fields=["email","name","source_id","source_type"]
                 end
-                return {:data=>@api_files_admin.read(resources)[:data],:fields=>default_fields,:type=>:hash_array}
+                query=Main.tool.options.get_option(:query,:optional)
+                args=nil
+                if !query.nil?
+                  args={'json_query'=>query}
+                end
+                Log.log.debug("#{args}".bg_red)
+                return {:data=>@api_files_admin.read(resource_path,args)[:data],:fields=>default_fields,:type=>:hash_array}
               when :id
                 #raise RuntimeError, "unexpected resource type: #{resource}, only 'node' for actions" if !resource.eql?(:node)
-                res_id=Main.tool.options.get_next_argument('node id')
-                res_data=@api_files_user.read("#{resources}/#{res_id}")[:data]
-                case resource
-                when :node
+                res_id=Main.tool.options.get_next_argument('resource id')
+                operations=[:list,:delete]
+                operations.push(:do) if resource.eql?(:node)
+                operation=Main.tool.options.get_next_argument('operation',operations)
+                case operation
+                when :list
+                  # TODO: remove ?
+                  return { :type=>:key_val_list, :data => @api_files_user.read("#{resource_path}/#{res_id}")[:data] }
+                when :delete
+                  @api_files_admin.delete("#{resource_path}/#{res_id}")
+                  return { :type=>:status, :data => 'deleted' }
+                when :do
+                  res_data=@api_files_user.read("#{resource_path}/#{res_id}")[:data]
                   api_node=get_files_node_api(res_data)
                   ak_data=api_node.call({:operation=>'GET',:subpath=>"access_keys/#{res_data['access_key']}",:headers=>{'Accept'=>'application/json'}})[:data]
                   return execute_node_action(res_id,ak_data['root_file_id'])
-                else
-                  return { :data => res_data, :type=>:key_val_list }
+                else raise :ERROR
                 end
               end #op_or_id
             when :usage_reports

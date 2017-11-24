@@ -142,21 +142,21 @@ module Asperalm
           raise CliBadArgument,"missing argument (#{expected}): #{descr}"
         end
         # ask interactively
-        print "please enter: #{descr}"
         case expected
         when :multiple
           result=[]
           puts " (one per line, end with empty line)"
           loop do
+            print "#{descr}> "
             entry=STDIN.gets.chomp
             break if entry.empty?
             result.push(self.class.get_extended_value(descr,entry))
           end
         when :single
-          puts ""
+          print "#{descr}> "
           result=self.class.get_extended_value(descr,STDIN.gets.chomp)
-        else
-          puts ": #{expected.join(' ')}"
+        else # one fixed
+          print "#{expected.join(' ')}\n#{descr}> "
           result=self.class.get_from_list(STDIN.gets.chomp,descr,expected)
         end
       end
@@ -200,7 +200,9 @@ module Asperalm
 
       end
 
-      # get an option value by name, either return value or call handler, can return nil
+      # get an option value by name
+      # either return value or call handler, can return nil
+      # ask interactively if requested/required
       def get_option(option_symbol,is_type=:optional)
         result=nil
         source=nil
@@ -225,19 +227,15 @@ module Asperalm
             end
           else # use_interactive
             if @ask_optionals or is_type.eql?(:mandatory)
-              print "please enter: #{option_symbol.to_s}"
+              expected=:single
+              #print "please enter: #{option_symbol.to_s}"
               if @fixed_options.has_key?(option_symbol)
-                puts ": #{@fixed_options[option_symbol].join(' ')}"
-                result=self.class.get_from_list(STDIN.gets.chomp,option_symbol.to_s+" from stdin",@fixed_options[option_symbol])
-              else
-                puts ""
-                result=STDIN.gets.chomp
+                expected=@fixed_options[option_symbol]
               end
+              result=get_interactive(option_symbol.to_s,expected)
+              set_option(option_symbol,result)
             end
-            set_option(option_symbol,result)
           end
-          # TODO: if interactive mode, ask question
-          # TODO: parameter for interactive mode
         end
         return result
       end
