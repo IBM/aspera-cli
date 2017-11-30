@@ -133,7 +133,7 @@ module Asperalm
       when 'DELETE'; req = Net::HTTP::Delete.new(uri.request_uri)
       else raise "unknown op : #{operation}"
       end
-      if call_data.has_key?(:json_params) then
+      if call_data.has_key?(:json_params) and !call_data[:json_params].nil? then
         req.body=JSON.generate(call_data[:json_params])
         Log.log.debug "body JSON data=#{call_data[:json_params]}"
         req['Content-Type'] = 'application/json'

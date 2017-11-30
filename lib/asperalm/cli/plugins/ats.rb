@@ -15,10 +15,10 @@ module Asperalm
         # cache file for CLI for API keys
         API_KEY_REPOSITORY=File.join(Main.tool.config_folder,"ats_api_keys.json")
         def declare_options
-          Main.tool.options.add_opt_simple(:ats_id,"ATS_ID","ATS key identifier")
+          Main.tool.options.add_opt_simple(:ats_id,"ATS_ID","ATS key identifier (ats_xxx)")
           Main.tool.options.add_opt_simple(:params,"JSON","parameters for access key")
           Main.tool.options.add_opt_simple(:cloud,"PROVIDER","cloud provider")
-          Main.tool.options.add_opt_simple(:region,"REGION","parameters for access key")
+          Main.tool.options.add_opt_simple(:region,"REGION","cloud region")
         end
 
         # currently supported clouds
@@ -74,7 +74,7 @@ module Asperalm
         # create a new API key , requires aspera id authentication
         def create_new_api_key
           # get login page url in exception code 3xx
-          res=@api_pub.call({:operation=>'POST',:subpath=>"api_keys",:return_error=>true,:headers=>{'Accept'=>'application/json'},:json_params=>nil,:url_params=>{:description => "created by aslmcli",:redirect_uri=>LOCAL_REDIRECT_URI}})
+          res=@api_pub.call({:operation=>'POST',:subpath=>"api_keys",:return_error=>true,:headers=>{'Accept'=>'application/json'},:url_params=>{:description => "created by aslmcli",:redirect_uri=>LOCAL_REDIRECT_URI}})
           # TODO: check code is 3xx ?
           login_page_url=res[:http]['Location']
           new_api_key_info=Oauth.goto_page_and_get_request(LOCAL_REDIRECT_URI,login_page_url)

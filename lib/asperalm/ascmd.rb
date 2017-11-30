@@ -1,4 +1,3 @@
-
 module Asperalm
   # Methods for running +ascmd+ commands on a node.
   # equivalent of SDK "command client"
