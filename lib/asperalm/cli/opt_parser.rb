@@ -81,12 +81,18 @@ module Asperalm
         return CliBadArgument.new(error_msg+"\nUse:\n"+choices.map{|c| "- #{c.to_s}\n"}.join(''))
       end
 
+      # option name separator on command line
+      @@OPTION_SEP_LINE='-'
+      # option name separator in code (symbol)
+      @@OPTION_SEP_NAME='_'
+
       #
       def initialize
         # command line values not starting with '-'
         @unprocessed_arguments=[]
         # command line values starting with '-'
         @unprocessed_options=[]
+        @all_options=[]
         # key = name of option, either Proc(set/get) or value
         @available_option={}
         # list of options whose value is a ruby symbol, not a string
@@ -131,6 +137,7 @@ module Asperalm
             @unprocessed_arguments.push(value)
           end
         end
+        @all_options=@unprocessed_options.dup
         Log.log.debug("set_argv:commands/args=#{@unprocessed_arguments},options=#{@unprocessed_options}".red)
       end
 
@@ -240,6 +247,7 @@ module Asperalm
         return result
       end
 
+      # param must be hash
       def set_defaults(values)
         Log.log.info("set_defaults=#{values}")
         raise "internal error: setting default with no hash: #{values.class}" if !values.is_a?(Hash)
@@ -250,7 +258,7 @@ module Asperalm
 
       # generate command line option from option symbol
       def symbol_to_option(symbol,opt_val)
-        result='--'+symbol.to_s.gsub('_','-')
+        result='--'+symbol.to_s.gsub(@@OPTION_SEP_NAME,@@OPTION_SEP_LINE)
         result=result+'='+opt_val if (!opt_val.nil?)
         return result
       end
@@ -303,6 +311,25 @@ module Asperalm
         # unprocessed options or arguments ?
         raise CliBadArgument,"unprocessed options: #{@unprocessed_options}" unless @unprocessed_options.empty?
         raise CliBadArgument,"unprocessed values: #{@unprocessed_arguments}" unless @unprocessed_arguments.empty?
+      end
+
+      # get all original options, used to generate a config in config file
+      def get_options_table
+        result={}
+        @all_options.each do |optionval|
+          if optionval.match(/^--([a-z\-]+)=(.*)$/)
+            name=$1
+            value=$2
+            name.gsub!(@@OPTION_SEP_LINE,@@OPTION_SEP_NAME)
+            value=self.class.get_extended_value(name,value)
+            Log.log.debug(">>>#{name}=#{value}")
+            result[name]=value
+          else
+            raise CliBadArgument,"must be an option with value: #{optionval}"
+          end
+        end
+        @unprocessed_options=[]
+        return result
       end
 
       # removes already known options from the list

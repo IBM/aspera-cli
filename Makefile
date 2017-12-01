@@ -37,7 +37,7 @@ README.md: README.erb.md sample_commands.txt sample_usage.txt
 	COMMANDS=sample_commands.txt USAGE=sample_usage.txt erb README.erb.md > README.md
 
 sample_commands.txt: Makefile
-	sed -n -e 's/.*\$$(ASCLI)/aslmcli/p' Makefile|grep -v 'Sales Engineering'|sed -E -e 's/\$$\(SAMPLE_FILE\)/sample_file.bin/g;s/\$$\(NODEDEST\)/sample_dest_folder/g;s/\$$\(TEST_FOLDER\)/sample_dest_folder/g;s/ibmfaspex.asperasoft.com/faspex.mycompany.com/g;s/(")(api_key|username)(":")[^"]*(")/\1\2\3my_key_here\4/g;'|grep -v 'localhost:9443' > sample_commands.txt
+	sed -n -e 's/.*\$$(ASCLI)/aslmcli/p' Makefile|grep -v 'Sales Engineering'|sed -E -e 's/\$$\(SAMPLE_FILE\)/sample_file.bin/g;s/\$$\(NODEDEST\)/sample_dest_folder/g;s/\$$\(TEST_FOLDER\)/sample_dest_folder/g;s/ibmfaspex.asperasoft.com/faspex.mycompany.com/g;s/(")(url|api_key|username|password)(":")[^"]*(")/\1\2\3my_\2_here\4/g;s/--(secret|url|password|username)=[^ ]*/--\1=my_\1_here/g;'|grep -v 'localhost:9443' > sample_commands.txt
 
 # depends on all sources, so regenerate always
 .PHONY: sample_usage.txt
@@ -133,8 +133,7 @@ tfx3:
 	$(ASCLI) faspex package recv $$($(ASCLI) faspex package list --fields=delivery_id --format=csv --box=sent|tail -n 1) --box=sent
 tfx4:
 	@echo $(ASCLI) faspex recv_publink 'https://ibmfaspex.asperasoft.com/aspera/faspex/external_deliveries/78780?passcode=a003aaf2f53e3869126b908525084db6bebc7031' --insecure=yes
-tfaspex: tfx1 tfx2  
-tfaspex2: tfx3 tfx4
+tfaspex: tfx1 tfx2 tfx3 tfx4
 
 tconsole:
 	$(ASCLI) console transfers list  --insecure=yes
@@ -148,7 +147,10 @@ tnd3: $(TEST_FOLDER)
 	$(ASCLI) node download $(NODEDEST)/200KB.1 --to-folder=$(TEST_FOLDER) --insecure=yes
 	$(ASCLI) node delete $(NODEDEST)/200KB.1 --insecure=yes
 	rm -f $(TEST_FOLDER)/200KB.1
-tnode: tnd1 tnd2 tnd3 
+tnd4:
+	$(ASCLI) -N node --url=https://10.25.0.4:9092 --username=node_xferuser --password=Aspera123_ upload --to-folder=/ 500M.dat --ts=@json:'{"precalculate_job_size":true}' --transfer=node --transfer-node=@json:'{"url":"https://10.25.0.8:9092","username":"node_xferuser","password":"Aspera123_"}' 
+	$(ASCLI) -N node --url=https://10.25.0.4:9092 --username=node_xferuser --password=Aspera123_ delete /500M.dat
+tnode: tnd1 tnd2 tnd3 tnd4
 
 tfs1:
 	$(ASCLI) files repo browse /
@@ -290,7 +292,7 @@ tshar2_5:
 
 tshares2: tshar2_1 tshar2_2 tshar2_3 tshar2_4 tshar2_5
 
-tests: tshares tfaspex tconsole tnode tfiles tfaspex2 tfasp torc tats tcon tsync tconf tshares2
+tests: tshares tfaspex tconsole tnode tfiles tfasp torc tats tcon tsync tconf tshares2
 
 tfxgw:
 	$(ASCLI) faspex package send --load-params=reset --url=https://localhost:9443/aspera/faspex --username=unused --password=unused --insecure=yes --note="my note" --title="my title" --recipient="laurent@asperasoft.com" ~/200KB.1

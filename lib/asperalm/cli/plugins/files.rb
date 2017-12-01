@@ -344,13 +344,14 @@ module Asperalm
               when :id
                 #raise RuntimeError, "unexpected resource type: #{resource}, only 'node' for actions" if !resource.eql?(:node)
                 res_id=Main.tool.options.get_next_argument('resource id')
-                operations=[:list,:delete]
-                operations.push(:do) if resource.eql?(:node)
-                operation=Main.tool.options.get_next_argument('operation',operations)
+                operations2=[:show,:delete]
+                operations2.push(:do) if resource.eql?(:node)
+                operation=Main.tool.options.get_next_argument('operation',operations2)
                 case operation
-                when :list
-                  # TODO: remove ?
-                  return { :type=>:key_val_list, :data => @api_files_user.read("#{resource_path}/#{res_id}")[:data] }
+                when :show
+                  object=@api_files_admin.read("#{resource_path}/#{res_id}")[:data]
+                  fields=object.keys.select{|k|!k.eql?('certificate')}
+                  return { :type=>:key_val_list, :data =>object, :fields=>fields }
                 when :delete
                   @api_files_admin.delete("#{resource_path}/#{res_id}")
                   return { :type=>:status, :data => 'deleted' }

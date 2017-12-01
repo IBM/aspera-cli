@@ -1,5 +1,6 @@
 require 'asperalm/fasp/resource_finder'
 require 'asperalm/fasp/resumer'
+require 'asperalm/fasp/manager'
 require 'securerandom'
 
 module Asperalm
@@ -45,8 +46,8 @@ module Asperalm
           if transfer_spec["direction"] == "send"
             Log.log.warn("Upload by connect must be selected using GUI, ignoring #{transfer_spec['paths']}".red)
             transfer_spec.delete('paths')
-            res=connect_api.create('windows/select-open-file-dialog/',{"title"=>"Select Files","suggestedName"=>"","allowMultipleSelection"=>true,"allowedFileTypes"=>"","aspera_connect_settings"=>{"app_id"=>@connect_app_id}})
-            transfer_spec['paths']=res[:data]['dataTransfer']['files'].map { |i| {'source'=>i['name']}}
+            resdata=connect_api.create('windows/select-open-file-dialog/',{"title"=>"Select Files","suggestedName"=>"","allowMultipleSelection"=>true,"allowedFileTypes"=>"","aspera_connect_settings"=>{"app_id"=>@connect_app_id}})[:data]
+            transfer_spec['paths']=resdata['dataTransfer']['files'].map { |i| {'source'=>i['name']}}
           end
           request_id=SecureRandom.uuid
           transfer_spec['authentication']="token" if transfer_spec.has_key?('token')
@@ -64,14 +65,29 @@ module Asperalm
           resp=@tr_node_api.call({:operation=>'POST',:subpath=>'ops/transfers',:headers=>{'Accept'=>'application/json'},:json_params=>transfer_spec})
           puts "id=#{resp[:data]['id']}"
           trid=resp[:data]['id']
+          started=false
+          # lets emulate management events to display progress bar
           loop do
-            res=@tr_node_api.call({:operation=>'GET',:subpath=>'ops/transfers/'+trid,:headers=>{'Accept'=>'application/json'}})
-            puts "transfer: #{res[:data]['status']}, sessions:#{res[:data]["sessions"].length}, #{res[:data]["sessions"].map{|i| i['bytes_transferred']}.join(',')}"
-            break if ! ( res[:data]['status'].eql?('waiting') or res[:data]['status'].eql?('running'))
+            trdata=@tr_node_api.call({:operation=>'GET',:subpath=>'ops/transfers/'+trid,:headers=>{'Accept'=>'application/json'}})[:data]
+            case trdata['status']
+            when 'waiting'
+              puts 'starting'
+            when 'running'
+              #puts "running: sessions:#{trdata["sessions"].length}, #{trdata["sessions"].map{|i| i['bytes_transferred']}.join(',')}"
+              if !started and trdata["precalc"].is_a?(Hash) and
+              trdata["precalc"]["status"].eql?("ready")
+                Manager.instance.notify_listeners("emulated",{'Type'=>'NOTIFICATION','PreTransferBytes'=>trdata["precalc"]["bytes_expected"]})
+                started=true
+              else
+                Manager.instance.notify_listeners("emulated",{'Type'=>'STATS','Bytescont'=>trdata["bytes_transferred"]})
+              end
+            when 'completed'
+              Manager.instance.notify_listeners("emulated",{'Type'=>'DONE'})
+              break
+            else
+              raise Fasp::Error.new("#{trdata['status']}: #{trdata['error_desc']}")
+            end
             sleep 1
-          end
-          if ! res[:data]['status'].eql?('completed')
-            raise Fasp::Error.new("#{res[:data]['status']}: #{res[:data]['error_desc']}")
           end
         else
           Log.log.debug("using ascp")

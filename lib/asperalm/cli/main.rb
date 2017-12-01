@@ -99,13 +99,16 @@ module Asperalm
         return options.get_option(:config_file,:mandatory)
       end
 
+      # config file format: hash of hash, keys are string
       def read_config_file(config_file_path=current_config_file)
         if !File.exist?(config_file_path)
           Log.log.info("no config file, using empty configuration")
           return {@@MAIN_PLUGIN_NAME_STR=>{@@CONFIG_FILE_KEY_VERSION=>Asperalm::VERSION}}
         end
         Log.log.debug "loading #{config_file_path}"
-        return YAML.load_file(config_file_path)
+        config=YAML.load_file(config_file_path)
+
+        return config
       end
 
       def write_config_file(config=@loaded_configs,config_file_path=current_config_file)
@@ -115,18 +118,28 @@ module Asperalm
         File.write(config_file_path,config.to_yaml)
       end
 
-      # returns default parameters for a plugin from loaded config file
-      # 1) try to find: conffile[conffile["config"][:default][plugin_sym]]
-      # 2) if no such value, it takes the name plugin_name+"_default", and loads this config
-      def get_plugin_default_parameters(plugin_sym)
-        return nil if @loaded_configs.nil? or !@load_plugin_defaults
-        # simplify. default_config_name=plugin_sym.to_s+'_default'
+      # returns name if @loaded_configs has default
+      # returns nil if there is no config or bypass default params
+      def get_plugin_default_config_name(plugin_sym)
+        default_config_name=nil
+        return nil if @loaded_configs.nil? or !@use_plugin_defaults
         if @loaded_configs.has_key?(@@CONFIG_FILE_KEY_DEFAULT) and
         @loaded_configs[@@CONFIG_FILE_KEY_DEFAULT].has_key?(plugin_sym.to_s)
           default_config_name=@loaded_configs[@@CONFIG_FILE_KEY_DEFAULT][plugin_sym.to_s]
+          raise CliError,"Default config name [#{default_config_name}] specified for plugin [#{plugin_sym.to_s}], but it does not exist in config file." if !@loaded_configs.has_key?(default_config_name)
+          raise CliError,"Config name [#{default_config_name}] must be a hash, check config file." if !@loaded_configs[default_config_name].is_a?(Hash)
         end
-        # can be nil
-        return @loaded_configs[default_config_name]
+
+        return default_config_name
+      end
+
+      # returns default parameters for a plugin from loaded config file
+      # 1) try to find: conffile[conffile["config"][:default][plugin_sym]]
+      # 2) if no such value, it takes the name plugin_name+"_default", and loads this config
+      def load_plugin_default_parameters(plugin_sym)
+        default_config_name=get_plugin_default_config_name(plugin_sym)
+        return if default_config_name.nil?
+        options.set_defaults(@loaded_configs[default_config_name])
       end
 
       def self.no_result
@@ -259,15 +272,31 @@ module Asperalm
           when :connect
             @transfer_agent_singleton.use_connect_client=true
           when :node
-            config_name=options.get_option(:transfer_node,:optional)
-            if config_name.nil?
-              node_config=get_plugin_default_parameters(:node)
-              raise CliBadArgument,"Please specify --transfer-node" if node_config.nil?
-            else
+            # support: @param:<name>
+            # support extended values
+            transfer_node_spec=options.get_option(:transfer_node,:optional)
+            # of not specified, use default node
+            case transfer_node_spec
+            when nil
+              param_set_name=get_plugin_default_config_name(:node)
+              raise CliBadArgument,"No default node configured, Please specify --transfer-node" if node_config.nil?
               node_config=@loaded_configs[config_name]
-              raise CliBadArgument,"no such node configuration: #{config_name}" if node_config.nil?
+            when /^@param:/
+              param_set_name=transfer_node_spec.gsub!(/^@param:/,'')
+              Log.log.debug("param_set_name=#{param_set_name}")
+              raise CliBadArgument,"no such parameter set: [#{param_set_name}] in config file" if !@loaded_configs.has_key?(param_set_name)
+              node_config=@loaded_configs[param_set_name]
+            else
+              node_config=OptParser.get_extended_value(:transfer_node,transfer_node_spec)
             end
-            @transfer_agent_singleton.tr_node_api=Rest.new(node_config[:url],{:auth=>{:type=>:basic,:username=>node_config[:username], :password=>node_config[:password]}})
+            Log.log.debug("node=#{node_config}")
+            # now check there are required parameters
+            sym_config={}
+            [:url,:username,:password].each do |param|
+              raise CliBadArgument,"missing parameter [#{param}] in node specification: #{node_config}" if !node_config.has_key?(param.to_s)
+              sym_config[param]=node_config[param.to_s]
+            end
+            @transfer_agent_singleton.tr_node_api=Rest.new(sym_config[:url],{:auth=>{:type=>:basic,:username=>sym_config[:username], :password=>sym_config[:password]}})
           end
         end
         return @transfer_agent_singleton
@@ -280,7 +309,7 @@ module Asperalm
         @options=OptParser.new
         @loaded_configs=nil
         @transfer_agent_singleton=nil
-        @load_plugin_defaults=true
+        @use_plugin_defaults=true
         scan_all_plugins
         options.program_name=@@PROGRAM_NAME
         options.banner = "NAME\n\t#{@@PROGRAM_NAME} -- a command line tool for Aspera Applications (v#{Asperalm::VERSION})\n\n"
@@ -328,8 +357,7 @@ module Asperalm
         command_plugin=Object::const_get(@@PLUGINS_MODULE+'::'+plugin_name_sym.to_s.capitalize).new
         # load default params only if no param already loaded
         if options.get_option(:load_params,:optional).nil?
-          defaults_for_plugin=get_plugin_default_parameters(plugin_name_sym)
-          options.set_defaults(defaults_for_plugin) unless defaults_for_plugin.nil?
+          load_plugin_default_parameters(plugin_name_sym)
         end
         options.separator "COMMAND: #{plugin_name_sym}"
         options.separator "SUBCOMMANDS: #{command_plugin.action_list.map{ |p| p.to_s}.join(', ')}"
@@ -366,7 +394,7 @@ module Asperalm
         options.add_opt_simple(:fasp_proxy,"STRING","URL of FASP proxy (dnat / dnats)")
         options.add_opt_simple(:http_proxy,"STRING","URL of HTTP proxy (for http fallback)")
         options.add_opt_switch(:rest_debug,"-r","more debug for HTTP calls") { Rest.set_debug(true) }
-        options.add_opt_switch(:no_default,"-N","dont load default configuration") { @load_plugin_defaults=false }
+        options.add_opt_switch(:no_default,"-N","dont load default configuration") { @use_plugin_defaults=false }
         options.add_opt_switch(:version,"-v","display version") { puts Asperalm::VERSION;Process.exit(0) }
         options.add_opt_simple(:ts,"JSON","override transfer spec values for transfers (hash, use @json: prefix), current=#{options.get_option(:ts,:optional)}")
         options.add_opt_simple(:to_folder,"PATH","destination folder for downloaded files, current=#{options.get_option(:to_folder,:optional)}")
@@ -393,7 +421,8 @@ module Asperalm
         raise "INTERNAL ERROR, result must have type" unless results.has_key?(:type)
         raise "INTERNAL ERROR, result must have data" unless results.has_key?(:data) or results[:type].eql?(:empty)
 
-        required_fields=options.get_option(:fields,:mandatory)
+        # comma separated list in string format
+        user_asked_fields_list_str=options.get_option(:fields,:mandatory)
         case options.get_option(:format,:mandatory)
         when :ruby
           puts PP.pp(results[:data],'')
@@ -409,35 +438,38 @@ module Asperalm
             raise "internal error: unexpected type: #{results[:data].class}, expecting Array" unless results[:data].is_a?(Array)
             # :hash_array is an array of hash tables, where key=colum name
             table_data = results[:data]
-            display_fields=nil
-            case required_fields
+            out_table_columns=nil
+            case user_asked_fields_list_str
             when FIELDS_DEFAULT
               if results.has_key?(:fields) and !results[:fields].nil?
-                display_fields=results[:fields]
+                out_table_columns=results[:fields]
               else
                 if !table_data.empty?
-                  display_fields=table_data.first.keys
+                  out_table_columns=table_data.first.keys
                 else
-                  display_fields=['empty']
+                  out_table_columns=['empty']
                 end
               end
             when FIELDS_ALL
               raise "empty results" if table_data.empty?
-              display_fields=table_data.first.keys if table_data.is_a?(Array)
+              out_table_columns=table_data.first.keys if table_data.is_a?(Array)
             else
-              display_fields=required_fields.split(',')
+              out_table_columns=user_asked_fields_list_str.split(',')
             end
           when :key_val_list
-            raise "internal error: unexpected type: #{results[:data].class}, expecting Hash" unless results[:data].is_a?(Hash)
             # :key_val_list is a simple hash table
-            case required_fields
-            when FIELDS_DEFAULT,FIELDS_ALL; display_fields = ['key','value']
-            else display_fields=required_fields.split(',')
+            raise "internal error: unexpected type: #{results[:data].class}, expecting Hash" unless results[:data].is_a?(Hash)
+            out_table_columns = ['key','value']
+            asked_fields=results[:data].keys
+            case user_asked_fields_list_str
+            when FIELDS_DEFAULT;asked_fields=results[:fields] if results.has_key?(:fields)
+            when FIELDS_ALL;# keep all
+            else asked_fields=user_asked_fields_list_str.split(',')
             end
-            table_data=results[:data].keys.map { |i| { 'key' => i, 'value' => results[:data][i] } }
+            table_data=asked_fields.map { |i| { 'key' => i, 'value' => results[:data][i] } }
           when :value_list
             # :value_list is a simple array of values, name of column provided in the :name
-            display_fields = [results[:name]]
+            out_table_columns = [results[:name]]
             table_data=results[:data].map { |i| { results[:name] => i } }
           when :empty
             puts "empty"
@@ -453,16 +485,16 @@ module Asperalm
           else
             raise "unknown data type: #{results[:type]}"
           end
-          raise "no field specified" if display_fields.nil?
+          raise "no field specified" if out_table_columns.nil?
           # convert to string with special function. here table_data is an array of hash
           table_data=results[:textify].call(table_data) if results.has_key?(:textify)
           # convert data to string, and keep only display fields
-          table_data=table_data.map { |r| display_fields.map { |c| r[c].to_s } }
+          table_data=table_data.map { |r| out_table_columns.map { |c| r[c].to_s } }
           case options.get_option(:format,:mandatory)
           when :table
             # display the table !
             puts Text::Table.new(
-            :head => display_fields,
+            :head => out_table_columns,
             :rows => table_data,
             :vertical_boundary  => '.',
             :horizontal_boundary => ':',
@@ -509,7 +541,7 @@ module Asperalm
         Log.log.debug "loaded: #{@loaded_configs}"
         # check there is at least the config section
         if !@loaded_configs.has_key?(@@MAIN_PLUGIN_NAME_STR)
-          raise CliError,"Config File: Cannot find key #{@@MAIN_PLUGIN_NAME_STR} in #{current_config_file}. Please check documentation."
+          raise CliError,"Config File: Cannot find key [#{@@MAIN_PLUGIN_NAME_STR}] in #{current_config_file}. Please check documentation."
         end
         # check presence of version of conf file
         version=@loaded_configs[@@MAIN_PLUGIN_NAME_STR][@@CONFIG_FILE_KEY_VERSION]
@@ -542,7 +574,7 @@ module Asperalm
         case action
         when :id
           config_name=options.get_next_argument('config name')
-          action=options.get_next_argument('action',[:set,:delete,:initialize,:show])
+          action=options.get_next_argument('action',[:set,:delete,:initialize,:show,:update])
           case action
           when :show
             raise "no such config: #{config_name}" unless @loaded_configs.has_key?(config_name)
@@ -572,6 +604,14 @@ module Asperalm
             @loaded_configs[config_name]=config_value
             write_config_file
             return Main.status_result("modified: #{current_config_file}")
+          when :update
+            #  TODO: when arguments are provided: --option=value, this creates an entry in the named configuration
+            theopts=options.get_options_table
+            Log.log.debug("opts=#{theopts}")
+            @loaded_configs[config_name]={} if !@loaded_configs.has_key?(config_name)
+            @loaded_configs[config_name].merge!(theopts)
+            write_config_file
+            return Main.status_result("updated: #{config_name}")
           end
         when :documentation
           OperatingSystem.open_uri(@@HELP_URL)
@@ -666,8 +706,7 @@ module Asperalm
           # help requested without command ?
           exit_with_usage(true) if @help_requested and options.command_or_arg_empty?
           # load global default options
-          plugins_defaults=get_plugin_default_parameters(@@MAIN_PLUGIN_NAME_STR.to_sym)
-          options.set_defaults(plugins_defaults) unless plugins_defaults.nil?
+          load_plugin_default_parameters(@@MAIN_PLUGIN_NAME_STR.to_sym)
           command_sym=options.get_next_argument('command',plugin_sym_list.dup.unshift(:help))
           # main plugin is not dynamically instanciated
           case command_sym
@@ -687,7 +726,7 @@ module Asperalm
           options.fail_if_unprocessed
         rescue CliBadArgument => e;          process_exception_exit(e,'Argument',:usage)
         rescue CliError => e;                process_exception_exit(e,'Tool',:usage)
-        rescue Fasp::Error => e;             process_exception_exit(e,"Transfer")
+        rescue Fasp::Error => e;             process_exception_exit(e,"FASP(ascp)")
         rescue Asperalm::RestCallError => e; process_exception_exit(e,"Rest")
         rescue SocketError => e;             process_exception_exit(e,"Network")
         rescue StandardError => e;           process_exception_exit(e,"Other",:debug)
