@@ -82,8 +82,8 @@ module Asperalm
       File.join(@auth_data[:persist_folder],basename+TOKEN_FILE_SUFFIX)
     end
 
-    # last_use_not_authorized set to true if auth was just used and failed
-    def get_authorization(api_scope,last_use_not_authorized=false)
+    # use_refresh_token set to true if auth was just used and failed
+    def get_authorization(api_scope,use_refresh_token=false)
       # file name for cache of token
       token_state_file=token_filepath([@auth_data[:type],@auth_data[:persist_identifier],@auth_data[:client_id],api_scope])
 
@@ -97,12 +97,13 @@ module Asperalm
       end
 
       # an api was already called, but failed, we need to regenerate or refresh
-      if last_use_not_authorized
-        raise "ERROR: should never happen" unless @token_cache.has_key?(api_scope)
-        # save possible refresh token, before deleting the cache
-        refresh_token=@token_cache[api_scope]['refresh_token']
+      if use_refresh_token
+        if @token_cache[api_scope].is_a?(Hash) and @token_cache[api_scope].has_key?('refresh_token')
+          # save possible refresh token, before deleting the cache
+          refresh_token=@token_cache[api_scope]['refresh_token']
+        end
         # delete caches
-        Log.log.info "deleting caches for token"
+        Log.log.info "deleting cache file and memory for token"
         File.delete(token_state_file) if File.exist?(token_state_file)
         @token_cache.delete(api_scope)
         # this token failed, but it has a refresh token

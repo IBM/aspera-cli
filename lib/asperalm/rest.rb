@@ -162,7 +162,7 @@ module Asperalm
 
       result={:http=>nil}
       begin
-        # we try the call, and will retry only if oauth, as we can
+        # we try the call, and will retry only if oauth, as we can, first with refresh, and then re-auth if refresh is bad
         oauth_tries ||= 2
         Log.log.debug "send request"
         http_session.request(req) do |response|
@@ -199,11 +199,16 @@ module Asperalm
         call_data.has_key?(:auth) and
         call_data[:auth][:type].eql?(:oauth2)
           # try a refresh and/or regeneration of token
-          req['Authorization']=call_data[:auth][:obj].get_authorization(call_data[:auth][:scope],true)
+          begin
+            req['Authorization']=call_data[:auth][:obj].get_authorization(call_data[:auth][:scope],true)
+          rescue RestCallError => e
+            Log.log.error("refresh failed".bg_red)
+            req['Authorization']=call_data[:auth][:obj].get_authorization(call_data[:auth][:scope])
+          end
           Log.log.debug "using new token=#{call_data[:headers]['Authorization']}"
           retry unless (oauth_tries -= 1).zero?
-        end
-        raise e if !call_data[:return_error]
+        end # if
+        raise e unless call_data[:return_error]
       end
       Log.log.debug "result=#{result}" # .pretty_inspect
       return result

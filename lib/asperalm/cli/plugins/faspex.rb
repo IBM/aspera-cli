@@ -20,7 +20,7 @@ module Asperalm
           Main.tool.options.add_opt_simple(:note,"STRING","package note")
           Main.tool.options.add_opt_simple(:metadata,"@json:JSON_STRING","package metadata (hash, use @json:)")
           Main.tool.options.add_opt_simple(:source_name,"STRING","create package from remote source (by name)")
-          Main.tool.options.add_opt_list(:box,'TYPE',[:inbox,:sent,:archive],"package box")
+          Main.tool.options.add_opt_list(:box,[:inbox,:sent,:archive],"package box")
         end
 
         # extract elements from anonymous faspex link

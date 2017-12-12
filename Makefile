@@ -276,8 +276,10 @@ tconf6:
 	ASLMCLI_CONFIG_FILE=$(TEST_CONFIG) $(EXETEST) config id conf_name delete
 tconf7:
 	ASLMCLI_CONFIG_FILE=$(TEST_CONFIG) $(EXETEST) config id conf_name initialize @json:'{"p1":"v1","p2":"v2"}'
+tconf8:
+	ASLMCLI_CONFIG_FILE=$(TEST_CONFIG) $(EXETEST) config id conf_name update --p1=v1 --p2=v2
 
-tconf: tconf1 tconf2 tconf3 tconf4 tconf5 tconf6 tconf7
+tconf: tconf1 tconf2 tconf3 tconf4 tconf5 tconf6 tconf7 tconf8
 
 tshar2_1:
 	$(EXETEST) shares2 appinfo
@@ -292,14 +294,16 @@ tshar2_5:
 
 tshares2: tshar2_1 tshar2_2 tshar2_3 tshar2_4 tshar2_5
 
-tests: tshares tfaspex tconsole tnode tfiles tfasp torc tats tcon tsync tconf tshares2
+tprev1:
+	$(EXETEST) preview events
+tprev2:
+	$(EXETEST) preview scan
+tprev: tprev1 tprev2
 
+tests: tshares tfaspex tconsole tnode tfiles tfasp torc tats tcon tsync tconf tshares2 tprev
 tfxgw:
 	$(EXETEST) faspex package send --load-params=reset --url=https://localhost:9443/aspera/faspex --username=unused --password=unused --insecure=yes --note="my note" --title="my title" --recipient="laurent@asperasoft.com" ~/200KB.1
 
-
-tprev:
-	$(EXETEST) preview --url=https://localhost:9092 --username=testkey --password=secret
 NODE_USER=node_admin
 NODE_PASS=Aspera123_
 setupprev:
@@ -307,5 +311,4 @@ setupprev:
 	$(EXETEST) -N --url=https://localhost:9092 --username=node_xfer --password=Aspera123_ node access_key create @json:'{"id":"testkey","name":"the test key","secret":"secret","storage":{"type":"local", "path":"/Users/xfer/docroot"}}'
 	$(EXETEST) -N --url=https://localhost:9092 --username=testkey --password=secret config id test_preview update
 	$(EXETEST) config id default set preview test_preview
-	$(EXETEST) preview events
 

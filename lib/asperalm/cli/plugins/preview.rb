@@ -17,6 +17,20 @@ module Asperalm
         def initialize
           Main.tool.options.set_obj_attr(:overwrite,PreviewGenerator.instance,:option_overwrite)
           Main.tool.options.set_obj_attr(:video,PreviewGenerator.instance,:option_video_style)
+          Main.tool.options.set_obj_attr(:vid_offset_seconds,PreviewGenerator.instance,:option_vid_offset_seconds)
+          Main.tool.options.set_obj_attr(:vid_size,PreviewGenerator.instance,:option_vid_size)
+          Main.tool.options.set_obj_attr(:vid_framecount,PreviewGenerator.instance,:option_vid_framecount)
+          Main.tool.options.set_obj_attr(:vid_blendframes,PreviewGenerator.instance,:option_vid_blendframes)
+          Main.tool.options.set_obj_attr(:vid_framepause,PreviewGenerator.instance,:option_vid_framepause)
+          Main.tool.options.set_obj_attr(:vid_fps,PreviewGenerator.instance,:option_vid_fps)
+          Main.tool.options.set_obj_attr(:vid_mp4_size_reencode,PreviewGenerator.instance,:option_vid_mp4_size_reencode)
+          Main.tool.options.set_obj_attr(:clips_offset_seconds,PreviewGenerator.instance,:option_clips_offset_seconds)
+          Main.tool.options.set_obj_attr(:clips_size,PreviewGenerator.instance,:option_clips_size)
+          Main.tool.options.set_obj_attr(:clips_length,PreviewGenerator.instance,:option_clips_length)
+          Main.tool.options.set_obj_attr(:clips_count,PreviewGenerator.instance,:option_clips_count)
+          Main.tool.options.set_obj_attr(:thumb_mp4_size,PreviewGenerator.instance,:option_thumb_mp4_size)
+          Main.tool.options.set_obj_attr(:thumb_img_size,PreviewGenerator.instance,:option_thumb_img_size)
+          Main.tool.options.set_obj_attr(:thumb_offset_fraction,PreviewGenerator.instance,:option_thumb_offset_fraction)
         end
 
         alias super_declare_options declare_options
@@ -25,9 +39,25 @@ module Asperalm
           super_declare_options
           Main.tool.options.set_option(:file_access,:file_system)
           Main.tool.options.set_option(:overwrite,:always)
-          Main.tool.options.add_opt_list(:file_access,'VALUE',[:file_system,:fasp],"how to read and write files in repository")
-          Main.tool.options.add_opt_list(:overwrite,'VALUE',PreviewGenerator.overwrite_policies,"when to generate preview file")
-          Main.tool.options.add_opt_list(:video,'VALUE',PreviewGenerator.video_styles,"method to generate video")
+          Main.tool.options.set_option(:video,:reencode)
+          Main.tool.options.set_option(:vid_offset_seconds,10)
+          Main.tool.options.set_option(:vid_size,'320:-2')
+          Main.tool.options.set_option(:vid_framecount,30)
+          Main.tool.options.set_option(:vid_blendframes,2)
+          Main.tool.options.set_option(:vid_framepause,5)
+          Main.tool.options.set_option(:vid_fps,15)
+          Main.tool.options.set_option(:vid_mp4_size_reencode,"-2:'min(ih,360)'")
+          Main.tool.options.set_option(:clips_offset_seconds,10)
+          Main.tool.options.set_option(:clips_size,'320:-2')
+          Main.tool.options.set_option(:clips_length,5)
+          Main.tool.options.set_option(:clips_count,5)
+          Main.tool.options.set_option(:thumb_mp4_size,"-1:'min(ih,600)'")
+          Main.tool.options.set_option(:thumb_img_size,800)
+          Main.tool.options.set_option(:thumb_offset_fraction,0.1)
+
+          Main.tool.options.add_opt_list(:file_access,[:file_system,:fasp],"how to read and write files in repository")
+          Main.tool.options.add_opt_list(:overwrite,PreviewGenerator.overwrite_policies,"when to generate preview file")
+          Main.tool.options.add_opt_list(:video,PreviewGenerator.video_styles,"method to generate video")
         end
 
         def action_list; [:scan,:events,:id];end

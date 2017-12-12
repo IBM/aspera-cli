@@ -697,7 +697,55 @@ The `preview` plugin allows generation of preview files for Aspera Files for on-
 This version requires to run the command on a system that has direct
 access to storage.
 
-It supports 3 sub commands: scan, events and id (to generate a single file by id)
+It supports 3 sub commands to generate preview files:
+
+* `scan` all files in storage root (recursively browse)
+* `events` uploaded files and folders (since last time)
+* `id` for the selected file identifier
+
+The tool requires the following external tools:
+
+```
+yum install -y ImageMagick optipng which
+```
+b- a few ruby gems
+gem install logger syslog-logger json
+c- ffmpeg
+	push /tmp
+	wget http://johnvansickle.com/ffmpeg/releases/ffmpeg-release-64bit-static.tar.xz
+	mkdir -p /opt/
+	cd /opt/
+	tar xJvf /tmp/ffmpeg-release-64bit-static.tar.xz
+	ln -s ffmpeg-* ffmpeg
+	ln -s /opt/ffmpeg/{ffmpeg,ffprobe} /usr/bin
+	popd
+2- Optionally, install other tools to support additional office documents:
+a- install libreoffice and Xvfb
+	yum install libreoffice Xvfb
+b- start Xvfb :
+cat<<EOF>/etc/init.d/xvfb 
+#!/bin/bash
+#chkconfig: 345 95 50
+#description: Starts xvfb on display 42
+if [ -z "\$1" ]; then
+echo "\`basename \$0\` {start|stop}"
+    exit
+fi
+
+case "\$1" in
+start)
+    /usr/bin/Xvfb :42 -screen 0 1280x1024x8 -extension RANDR  &
+;;
+
+stop)
+    killall Xvfb
+;;
+esac
+EOF
+chkconfig xvfb on
+service xvfb start
+
+
 
 # Sample commands
 Some commands used in unit testing:

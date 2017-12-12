@@ -7,7 +7,7 @@ module Asperalm
     module Plugins
       class Shares2 < Plugin
         def declare_options
-          Main.tool.options.add_opt_list(:auth,'TYPE',Oauth.auth_types,"type of authentication",'-tTYPE')
+          Main.tool.options.add_opt_list(:auth,Oauth.auth_types,"type of authentication",'-tTYPE')
           Main.tool.options.add_opt_simple(:organization,"ID_OR_NAME","organization")
           Main.tool.options.add_opt_simple(:project,"ID_OR_NAME","project")
           Main.tool.options.add_opt_simple(:share,"ID_OR_NAME","share")

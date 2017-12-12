@@ -13,8 +13,8 @@ module Asperalm
 
         def declare_options
           Main.tool.options.set_option(:download_mode,:fasp)
-          Main.tool.options.add_opt_list(:download_mode,'TYPE',[:fasp, :node_http ],"download mode")
-          Main.tool.options.add_opt_list(:auth,'TYPE',Oauth.auth_types,"type of authentication",'-tTYPE')
+          Main.tool.options.add_opt_list(:download_mode,[:fasp, :node_http ],"download mode")
+          Main.tool.options.add_opt_list(:auth,Oauth.auth_types,"type of authentication",'-tTYPE')
           Main.tool.options.add_opt_simple(:url,"URI","-wURI","URL of application, e.g. http://org.asperafiles.com")
           Main.tool.options.add_opt_simple(:username,"STRING","-uSTRING","username to log in")
           Main.tool.options.add_opt_simple(:password,"STRING","-pSTRING","password")

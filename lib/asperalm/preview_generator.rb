@@ -13,23 +13,37 @@ module Asperalm
 
     attr_accessor :option_overwrite
     attr_accessor :option_video_style
+    attr_accessor :option_vid_offset_seconds
+    attr_accessor :option_vid_size
+    attr_accessor :option_vid_framecount
+    attr_accessor :option_vid_blendframes
+    attr_accessor :option_vid_framepause
+    attr_accessor :option_vid_fps
+    attr_accessor :option_vid_mp4_size_reencode
+    attr_accessor :option_clips_offset_seconds
+    attr_accessor :option_clips_size
+    attr_accessor :option_clips_length
+    attr_accessor :option_clips_count
+    attr_accessor :option_thumb_mp4_size
+    attr_accessor :option_thumb_img_size
+    attr_accessor :option_thumb_offset_fraction
 
     private
 
+    BASH_EXIT_NOT_FOUND=127
+
     def initialize
-      conf_folder=File.dirname(__FILE__)+'/../../etc'
-      @formats = YAML.load_file(conf_folder+'/file_formats.yml')
-      @config = YAML.load_file(conf_folder+'/asp_thumb.yml')
-      @option_overwrite=:always
-      @option_video_style=:reencode
+      @formats = YAML.load_file(__FILE__.gsub(/\.rb$/,'_formats.yml'))
       # Check for binaries
-      %w(ffmpeg ffprobe convert optipng composite).each do |bin|
-        fail "Error: #{bin} is not in the PATH" if `which #{bin}`.length == 0
+      %w(ffmpeg ffprobe2 convert optipng composite).each do |bin|
+        `#{bin} -h 2>&1`
+        fail "Error: #{bin} is not in the PATH" if $?.exitstatus.eql?(BASH_EXIT_NOT_FOUND)
       end
     end
 
     # run command
-    def rcmd(command_args)
+    # one could use "system", but we would need to redirect stdout/err
+    def exec_shell(command_args)
       # build commqnd line, and quote special characters
       command=command_args.map{|i| shell_quote(i.to_s)}.join(' ')
       Log.log.debug("cmd=#{command}".red)
@@ -49,7 +63,7 @@ module Asperalm
     end
 
     def ffmpeg(input_file,input_args,output_file,output_args)
-      rcmd(['ffmpeg','-y','-loglevel','error'].push(*input_args).push('-i',input_file).push(*output_args).push(output_file))
+      exec_shell(['ffmpeg','-y','-loglevel','error',input_args,'-i',input_file,output_args,output_file].flatten)
     end
 
     # from bash manual: metacharacter
@@ -71,7 +85,7 @@ module Asperalm
     end
 
     def mk_tmpdir(original_filepath)
-      maintmp=@config['tmpdir'] || Dir.tmpdir
+      maintmp=@option_tmpdir || Dir.tmpdir
       tmpdir=File.join(maintmp,original_filepath.split('/').last.gsub(/\s/, '_').gsub(/\W/, ''))
       FileUtils.mkdir_p(tmpdir)
       tmpdir
@@ -95,7 +109,7 @@ module Asperalm
       1.upto(blendframes) do |i|
         percent = 100 * i / (blendframes + 1)
         filename = get_tmp_num_filepath(tmpdir, img_number + i)
-        rcmd(['composite','-blend',percent,img2,img1,filename])
+        exec_shell(['composite','-blend',percent,img2,img1,filename])
       end
     end
 
@@ -109,23 +123,23 @@ module Asperalm
 
     def genx_mp4_video_preview(original_filepath, output_file)
       duration = get_video_duration(original_filepath)
-      offset_seconds = @config['vid_offset_seconds'].to_i
-      framecount = @config['vid_framecount'].to_i
+      offset_seconds = @option_vid_offset_seconds.to_i
+      framecount = @option_vid_framecount.to_i
       interval = calc_interval(duration,offset_seconds,framecount)
       tmpdir = mk_tmpdir(original_filepath)
       previous = ''
       file_number = 1
       1.upto(framecount) do |i|
         filename = get_tmp_num_filepath(tmpdir, file_number)
-        dump_frame(original_filepath, offset_seconds, @config['vid_size'], filename)
-        genx_mp4_video_preview_dupe_frame(filename, tmpdir, @config['vid_framepause'])
-        genx_mp4_video_preview_blend_frames(previous, filename, tmpdir,@config['vid_blendframes']) if i > 1
-        previous = get_tmp_num_filepath(tmpdir, file_number + @config['vid_framepause'])
-        file_number += @config['vid_framepause'] + @config['vid_blendframes'] + 1
+        dump_frame(original_filepath, offset_seconds, @option_vid_size, filename)
+        genx_mp4_video_preview_dupe_frame(filename, tmpdir, @option_vid_framepause)
+        genx_mp4_video_preview_blend_frames(previous, filename, tmpdir,@option_vid_blendframes) if i > 1
+        previous = get_tmp_num_filepath(tmpdir, file_number + @option_vid_framepause)
+        file_number += @option_vid_framepause + @option_vid_blendframes + 1
         offset_seconds+=interval
       end
       ffmpeg(tmpdir+'/img%04d.jpg',
-      ['-framerate',@config['vid_fps']],
+      ['-framerate',@option_vid_fps],
       output_file,
       ['-filter:v',"scale='trunc(iw/2)*2:trunc(ih/2)*2'",'-codec:v','libx264','-r',30,'-pix_fmt','yuv420p'])
       FileUtils.rm_rf(tmpdir)
@@ -134,12 +148,12 @@ module Asperalm
     def genx_mp4_video_clips(original_filepath, output_file)
       # dump clips
       duration = get_video_duration(original_filepath)
-      interval = calc_interval(duration,@config['clips_offset_seconds'],@config['clips_count'])
+      interval = calc_interval(duration,@option_clips_offset_seconds,@option_clips_count)
       tmpdir = mk_tmpdir(original_filepath)
-      offset_seconds = @config['clips_offset_seconds'].to_i
+      offset_seconds = @option_clips_offset_seconds.to_i
       filelist = File.join(tmpdir,'files.txt')
       File.open(filelist, 'w+') do |f|
-        1.upto(@config['clips_count']) do |i|
+        1.upto(@option_clips_count) do |i|
           file_number = i.to_s.rjust(4, '0')
           output_file="#{tmpdir}/img#{file_number}.mp4"
           # dump clip
@@ -147,7 +161,7 @@ module Asperalm
           ffmpeg(original_filepath,
           ['-ss',0.9*offset_seconds],
           output_file,
-          ['-ss',0.1*offset_seconds,'-t',@config['clips_length'],'-filter:v','scale='+@config['clips_size'],'-codec:a','copy'])
+          ['-ss',0.1*offset_seconds,'-t',@option_clips_length,'-filter:v','scale='+@option_clips_size,'-codec:a','copy'])
           f.puts("file 'img#{file_number}.mp4'")
           offset_seconds += interval
         end
@@ -168,7 +182,7 @@ module Asperalm
       ['-t','60','-codec:v','libx264','-profile:v','high',
         '-pix_fmt','yuv420p','-preset','slow','-b:v','500k',
         '-maxrate','500k','-bufsize','1000k',
-        '-filter:v','scale='+@config['vid_mp4_size_reencode'],
+        '-filter:v','scale='+@option_vid_mp4_size_reencode,
         '-threads','0','-codec:a','libmp3lame','-ac','2','-b:a','128k',
         '-movflags','faststart'])
     end
@@ -178,12 +192,12 @@ module Asperalm
     end
 
     def genx_png_pdf(original_filepath, out_filepath)
-      rcmd(['convert','-size','x'+@config['thumb_img_size'],'-background','white','-flatten',original_filepath+'[0]',out_filepath])
+      exec_shell(['convert','-size','x'+@option_thumb_img_size,'-background','white','-flatten',original_filepath+'[0]',out_filepath])
     end
 
     def genx_png_office(original_filepath, out_filepath)
       tmpdir=mk_tmpdir(original_filepath)
-      rcmd(['libreoffice','--display',':42','--headless','--invisible','--convert-to','pdf',
+      exec_shell(['libreoffice','--display',':42','--headless','--invisible','--convert-to','pdf',
         '--outdir',tmpdir,original_filepath])
       pdf_file=File.join(tmpdir,File.basename(original_filepath,File.extname(original_filepath))+'.pdf')
       genx_png_pdf(pdf_file,out_filepath)
@@ -192,19 +206,19 @@ module Asperalm
     end
 
     def genx_png_image(original_filepath, output_path)
-      rcmd(['convert',original_filepath+'[0]','-auto-orient',
-        '-thumbnail',@config['thumb_img_size']+'x'+@config['thumb_img_size']+'>',
+      exec_shell(['convert',original_filepath+'[0]','-auto-orient',
+        '-thumbnail',@option_thumb_img_size+'x'+@option_thumb_img_size+'>',
         '-quality',95,'+dither','-posterize',40,output_path])
-      rcmd(['optipng',output_path])
+      exec_shell(['optipng',output_path])
     end
 
     def genx_png_txt(original_filepath, output_path)
-      rcmd(['convert','-size','x'+@config['thumb_img_size']+'>',
+      exec_shell(['convert','-size','x'+@option_thumb_img_size+'>',
         '-background','white',original_filepath+'[0]',output_path])
     end
 
     def genx_png_video(original_filepath, output_path)
-      dump_frame(original_filepath,get_video_duration(original_filepath)*@config['thumb_offset_fraction'],@config['thumb_mp4_size'], output_path)
+      dump_frame(original_filepath,get_video_duration(original_filepath)*@option_thumb_offset_fraction,@option_thumb_mp4_size, output_path)
     end
 
     public

@@ -276,9 +276,9 @@ module Asperalm
       end
 
       # define an option with restricted values
-      def add_opt_list(option_symbol,opt_val,values,help,*on_args)
+      def add_opt_list(option_symbol,values,help,*on_args)
         Log.log.info("add_opt_list #{option_symbol}->#{on_args}")
-        on_args.unshift(symbol_to_option(option_symbol,opt_val))
+        on_args.unshift(symbol_to_option(option_symbol,'ENUM'))
         # this option value must be a symbol
         @options_symbol_list[option_symbol]=values
         value=get_option(option_symbol)
