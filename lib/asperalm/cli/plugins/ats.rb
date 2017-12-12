@@ -22,13 +22,21 @@ module Asperalm
         end
 
         # currently supported clouds
-        def cloud_list; [ :aws,:azure,:google,:limelight,:rackspace,:softlayer ];end
+        # note: shall be an API call
+        @@SUPPORTED_CLOUDS={
+          :aws =>'Amazon Web Services',
+          :azure =>'Microsoft Azure',
+          :google =>'Google Cloud',
+          :limelight =>'Limelight',
+          :rackspace =>'Rackspace',
+          :softlayer =>'IBM Cloud'
+        }
 
         # all available ATS servers
         def all_servers
           if @all_servers.nil?
             @all_servers=[]
-            self.cloud_list.each { |name| @api_pub.read("servers/#{name.to_s.upcase}")[:data].each {|i| @all_servers.push(i)}}
+            @@SUPPORTED_CLOUDS.keys.each { |name| @api_pub.read("servers/#{name.to_s.upcase}")[:data].each {|i| @all_servers.push(i)}}
           end
           return @all_servers
         end
@@ -165,7 +173,7 @@ module Asperalm
             when :provisioned #
               return {:type=>:hash_array, :data=>all_servers, :fields=>['id','cloud','region']}
             when :clouds #
-              return {:type=>:value_list, :data=>cloud_list, :name=>'cloud'}
+              return {:type=>:key_val_list, :data=>@@SUPPORTED_CLOUDS, :columns=>['id','name']}
             when :instance #
               return {:type=>:key_val_list, :data=>server_by_cloud_region}
             end

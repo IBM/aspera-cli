@@ -14,6 +14,15 @@ module Asperalm
     class CliBadArgument < CliError
     end
 
+    class AttrAccessor
+      attr_accessor :object
+      attr_accessor :attr_symb
+      def initialize(object,attr_symb)
+        @object=object
+        @attr_symb=attr_symb
+      end
+    end
+
     # parse options in command line
     # arguments starting with minus are options, others are commands
     class OptParser < OptionParser
@@ -96,7 +105,7 @@ module Asperalm
         # key = name of option, either Proc(set/get) or value
         @available_option={}
         # list of options whose value is a ruby symbol, not a string
-        @fixed_options={}
+        @options_symbol_list={}
         # do we ask missing options and arguments to user ?
         @use_interactive=STDIN.isatty
         # ask optional options if not provided and in interactive
@@ -188,22 +197,25 @@ module Asperalm
         return result
       end
 
-      def set_handler(option_symbol,&block)
-        Log.log.debug("set handler #{option_symbol} (#{block})")
+      def set_obj_attr(option_symbol,object,attr_symb)
+        Log.log.debug("set attr obj #{option_symbol} (#{object},#{attr_symb})")
         Log.log.error("handler already set for #{option_symbol}") if @available_option.has_key?(option_symbol)
-        @available_option[option_symbol]=block
+        @available_option[option_symbol]=AttrAccessor.new(object,attr_symb)
       end
 
       # set an option value by name, either store value or call handler
       def set_option(option_symbol,value)
+        source=nil
         value=self.class.get_extended_value(option_symbol,value)
-        if @available_option.has_key?(option_symbol) and @available_option[option_symbol].is_a?(Proc)
-          Log.log.debug("set #{option_symbol}=#{value} (method)".blue)
-          @available_option[option_symbol].call(:set,value) # TODO ? check
-        else
-          Log.log.debug("set #{option_symbol}=#{value} (value)".blue)
+        case @available_option[option_symbol]
+        when AttrAccessor
+          source="accessor"
+          @available_option[option_symbol].object.send(@available_option[option_symbol].attr_symb.to_s+'=',value)
+        else # nil or other
+          source="value"
           @available_option[option_symbol]=value
         end
+        Log.log.debug("set #{option_symbol}=#{value} (#{source})".blue)
 
       end
 
@@ -213,15 +225,15 @@ module Asperalm
       def get_option(option_symbol,is_type=:optional)
         result=nil
         source=nil
-        if @available_option[option_symbol].is_a?(Proc)
-          source="method"
-          result=@available_option[option_symbol].call(:get,nil) # TODO ? check
+        case @available_option[option_symbol]
+        when AttrAccessor
+          source="accessor"
+          result=@available_option[option_symbol].object.send(@available_option[option_symbol].attr_symb)
         else
           # Note1: convert string option to symbol
-          if @fixed_options.has_key?(option_symbol) and # constrained by specific values
-          !@available_option[option_symbol].nil? and # option is defined
-          !@available_option[option_symbol].is_a?(Symbol) # but its a string (from conf file)
-            @available_option[option_symbol]=self.class.get_from_list(@available_option[option_symbol],option_symbol.to_s+" in conf file",@fixed_options[option_symbol])
+          if @options_symbol_list.has_key?(option_symbol) and # constrained by specific values
+          @available_option[option_symbol].is_a?(String) # its a string (from conf file)
+            @available_option[option_symbol]=self.class.get_from_list(@available_option[option_symbol],option_symbol.to_s+" in conf file",@options_symbol_list[option_symbol])
           end
           source="value"
           result=@available_option[option_symbol]
@@ -236,8 +248,8 @@ module Asperalm
             if @ask_optionals or is_type.eql?(:mandatory)
               expected=:single
               #print "please enter: #{option_symbol.to_s}"
-              if @fixed_options.has_key?(option_symbol)
-                expected=@fixed_options[option_symbol]
+              if @options_symbol_list.has_key?(option_symbol)
+                expected=@options_symbol_list[option_symbol]
               end
               result=get_interactive(option_symbol.to_s,expected)
               set_option(option_symbol,result)
@@ -264,29 +276,29 @@ module Asperalm
       end
 
       # define an option with restricted values
-      def add_opt_list(option_symbol,opt_val,values,help,*args)
-        Log.log.info("add_opt_list #{option_symbol}->#{args}")
-        args.unshift(symbol_to_option(option_symbol,opt_val))
+      def add_opt_list(option_symbol,opt_val,values,help,*on_args)
+        Log.log.info("add_opt_list #{option_symbol}->#{on_args}")
+        on_args.unshift(symbol_to_option(option_symbol,opt_val))
         # this option value must be a symbol
-        @fixed_options[option_symbol]=values
+        @options_symbol_list[option_symbol]=values
         value=get_option(option_symbol)
-        args.push(values)
-        args.push("#{help}. Values=(#{values.join(',')}), current=#{value}")
-        self.on(*args){|v|set_option(option_symbol,self.class.get_from_list(v.to_s,help,values))}
+        on_args.push(values)
+        on_args.push("#{help}. Values=(#{values.join(',')}), current=#{value}")
+        self.on(*on_args){|v|set_option(option_symbol,self.class.get_from_list(v.to_s,help,values))}
       end
 
       # define an option with open values
-      def add_opt_simple(option_symbol,opt_val,*args)
-        Log.log.info("add_opt_simple #{option_symbol}->#{args}")
-        args.unshift(symbol_to_option(option_symbol,opt_val))
-        self.on(*args) { |v| set_option(option_symbol,v) }
+      def add_opt_simple(option_symbol,opt_val,*on_args)
+        Log.log.info("add_opt_simple #{option_symbol}->#{on_args}")
+        on_args.unshift(symbol_to_option(option_symbol,opt_val))
+        self.on(*on_args) { |v| set_option(option_symbol,v) }
       end
 
       # define an option with date format
-      def add_opt_date(option_symbol,opt_val,*args)
-        Log.log.info("add_opt_date #{option_symbol}->#{args}")
-        args.unshift(symbol_to_option(option_symbol,opt_val))
-        self.on(*args) do |v|
+      def add_opt_date(option_symbol,opt_val,*on_args)
+        Log.log.info("add_opt_date #{option_symbol}->#{on_args}")
+        on_args.unshift(symbol_to_option(option_symbol,opt_val))
+        self.on(*on_args) do |v|
           case v
           when 'now'; set_option(option_symbol,OptParser.time_to_string(Time.now))
           when /^-([0-9]+)h/; set_option(option_symbol,OptParser.time_to_string(Time.now-$1.to_i*3600))
@@ -296,10 +308,10 @@ module Asperalm
       end
 
       # define an option without value
-      def add_opt_switch(option_symbol,*args,&block)
-        Log.log.info("add_opt_on #{option_symbol}->#{args}")
-        args.unshift(symbol_to_option(option_symbol,nil))
-        self.on(*args,&block)
+      def add_opt_switch(option_symbol,*on_args,&block)
+        Log.log.info("add_opt_on #{option_symbol}->#{on_args}")
+        on_args.unshift(symbol_to_option(option_symbol,nil))
+        self.on(*on_args,&block)
       end
 
       # check if there were unprocessed values to generate error
@@ -317,7 +329,10 @@ module Asperalm
       def get_options_table
         result={}
         @all_options.each do |optionval|
-          if optionval.match(/^--([a-z\-]+)=(.*)$/)
+          case optionval
+          when /^--([a-z\-]+)$/,/^-([A-Z])$/
+            # ignore
+          when /^--([a-z\-]+)=(.*)$/
             name=$1
             value=$2
             name.gsub!(@@OPTION_SEP_LINE,@@OPTION_SEP_NAME)

@@ -1,9 +1,7 @@
 #!/usr/bin/env ruby
 # Laurent Martin/2017
-$LOAD_PATH.unshift(File.dirname(__FILE__) + "/../lib")
 require 'rubygems'
+$LOAD_PATH.unshift(File.dirname(__FILE__)+"/../lib")
 require 'asperalm/cli/main'
 require 'asperalm/log'
-# quick init of debug level
-Asperalm::Log.level = ARGV.include?('--log-level=debug') ? :debug : :warn
 Asperalm::Cli::Main.tool.process_command_line(ARGV)

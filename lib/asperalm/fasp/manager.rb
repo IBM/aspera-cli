@@ -177,6 +177,7 @@ module Asperalm
       end
 
       # start FASP transfer based on transfer spec (hash table)
+      # note it returns upon completion
       def start_transfer(transfer_spec)
         start_transfer_with_args_env(Parameters.new(transfer_spec).compute_args)
         return nil

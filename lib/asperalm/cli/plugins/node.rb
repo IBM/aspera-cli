@@ -119,7 +119,7 @@ module Asperalm
           raise StandardError,"expect: nil, String or Array"
         end
 
-        def self.simple_actions; [:space, :info, :mkdir, :mklink, :mkfile, :rename, :delete ];end
+        def self.simple_actions; [:events, :space, :info, :mkdir, :mklink, :mkfile, :rename, :delete ];end
 
         def self.common_actions; simple_actions.clone.concat([:browse, :upload, :download ]);end
 
@@ -127,6 +127,9 @@ module Asperalm
         # prefix_path is used to list remote sources in Faspex
         def self.execute_common(command,api_node,prefix_path=nil)
           case command
+          when :events
+            events=api_node.read('events')[:data]
+            return { :type=>:hash_array, :data => events}
           when :info
             node_info=api_node.call({:operation=>'GET',:subpath=>'info',:headers=>{'Accept'=>'application/json'}})[:data]
             return { :type=>:key_val_list, :data => node_info, :textify => lambda { |table_data| textify_bool_list_result(table_data,['capabilities','settings'])}}
@@ -192,6 +195,8 @@ module Asperalm
             return Main.tool.start_transfer(transfer_spec)
           end
         end
+
+        def generic_operations; [:create,:list,:id];end
 
         # implement generec rest operations on given resource path
         def generic_action(api_node,res_class_path,display_fields)

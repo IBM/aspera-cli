@@ -51,7 +51,7 @@ module Asperalm
           end
           request_id=SecureRandom.uuid
           transfer_spec['authentication']="token" if transfer_spec.has_key?('token')
-          transfer_specs={
+          connect_transfer_args={
             'transfer_specs'=>[{
             'transfer_spec'=>transfer_spec,
             'aspera_connect_settings'=>{
@@ -59,8 +59,31 @@ module Asperalm
             'app_id'=>@connect_app_id,
             'request_id'=>request_id
             }}]}
-          connect_api.create('transfers/start',transfer_specs)
-          #TODO: monitor transfer
+          connect_api.create('transfers/start',connect_transfer_args)
+          connect_activity_args={'aspera_connect_settings'=>{'app_id'=>@connect_app_id}}
+          started=false
+          loop do
+            result=connect_api.create('transfers/activity',connect_activity_args)[:data]
+            trdata=result['transfers'].select{|i|i['aspera_connect_settings']['request_id'].eql?(request_id)}.first
+            case trdata['status']
+            when 'completed'
+              Manager.instance.notify_listeners("emulated",{'Type'=>'DONE'})
+              break
+            when 'initiating'
+              puts 'starting'
+            when 'running'
+              #puts "running: sessions:#{trdata["sessions"].length}, #{trdata["sessions"].map{|i| i['bytes_transferred']}.join(',')}"
+              if !started and trdata["bytes_expected"] != 0
+                Manager.instance.notify_listeners("emulated",{'Type'=>'NOTIFICATION','PreTransferBytes'=>trdata["bytes_expected"]})
+                started=true
+              else
+                Manager.instance.notify_listeners("emulated",{'Type'=>'STATS','Bytescont'=>trdata["bytes_written"]})
+              end
+            else
+              raise Fasp::Error.new("#{trdata['status']}: #{trdata['error_desc']}")
+            end
+            sleep 1
+          end
         elsif ! @tr_node_api.nil?
           resp=@tr_node_api.call({:operation=>'POST',:subpath=>'ops/transfers',:headers=>{'Accept'=>'application/json'},:json_params=>transfer_spec})
           puts "id=#{resp[:data]['id']}"
@@ -70,6 +93,9 @@ module Asperalm
           loop do
             trdata=@tr_node_api.call({:operation=>'GET',:subpath=>'ops/transfers/'+trid,:headers=>{'Accept'=>'application/json'}})[:data]
             case trdata['status']
+            when 'completed'
+              Manager.instance.notify_listeners("emulated",{'Type'=>'DONE'})
+              break
             when 'waiting'
               puts 'starting'
             when 'running'
@@ -81,9 +107,6 @@ module Asperalm
               else
                 Manager.instance.notify_listeners("emulated",{'Type'=>'STATS','Bytescont'=>trdata["bytes_transferred"]})
               end
-            when 'completed'
-              Manager.instance.notify_listeners("emulated",{'Type'=>'DONE'})
-              break
             else
               raise Fasp::Error.new("#{trdata['status']}: #{trdata['error_desc']}")
             end

@@ -690,6 +690,15 @@ delete all my access keys:
 for k in $(aslmcli ats access_key list --field=id --format=csv);do aslmcli ats access_key id $k delete;done
 ```
 
+# Preview generation for Aspera Files
+
+The `preview` plugin allows generation of preview files for Aspera Files for on-premise nodes.
+
+This version requires to run the command on a system that has direct
+access to storage.
+
+It supports 3 sub commands: scan, events and id (to generate a single file by id)
+
 # Sample commands
 Some commands used in unit testing:
 

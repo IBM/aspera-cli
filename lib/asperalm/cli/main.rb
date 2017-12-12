@@ -90,6 +90,7 @@ module Asperalm
       @@MIN_CONFIG_VERSION='0.4.5'
       @@NO_DEFAULT='none'
       @@HELP_URL='http://www.rubydoc.info/gems/asperalm'
+      RUBY_FILE_EXT='.rb'
       # $HOME/.aspera/aslmcli/config.yaml
       def default_config_file
         return File.join(config_folder,@@DEFAULT_CONFIG_FILENAME)
@@ -157,73 +158,38 @@ module Asperalm
       # =============================================================
       # Parameter handlers
       #
-      def handler_logtype(operation,value)
-        case operation
-        when :set
-          level=Log.level
-          Log.setlogger(value)
-          options.set_option(:log_level,level)
-          @logtype_cache=value
-        else
-          return @logtype_cache
-          Log.log.debug "TODO: get logtype ??"
-        end
+      def option_log_level; Log.level; end
+
+      def option_log_level=(value); Log.level = value; end
+
+      def option_insecure; Rest.insecure; end
+
+      def option_insecure=(value); Rest.insecure = value; end
+
+      def option_transfer_spec; @transfer_spec_default; end
+
+      def option_transfer_spec=(value); @transfer_spec_default.merge!(value); end
+
+      def option_to_folder; @transfer_spec_default['destination_root']; end
+
+      def option_to_folder=(value); @transfer_spec_default.merge!({'destination_root'=>value}); end
+
+      def option_logtype; @logtype_cache; end
+
+      def option_logtype=(value)
+        level=Log.level
+        Log.setlogger(value)
+        options.set_option(:log_level,level)
+        @logtype_cache=value
       end
 
-      def handler_loglevel(operation,value)
-        case operation
-        when :set
-          Log.level = value
-        else
-          return Log.level
-        end
-      end
+      def option_browser; OperatingSystem.open_url_method; end
 
-      def handler_insecure(operation,value)
-        case operation
-        when :set
-          Rest.insecure=value
-        else
-          return Rest.insecure
-        end
-      end
+      def option_browser=(value); OperatingSystem.open_url_method=value; end
 
-      def handler_transfer_spec(operation,value)
-        case operation
-        when :set
-          Log.log.debug "handler_transfer_spec: set: #{value}".red
-          @transfer_spec_default.merge!(value)
-        else
-          return @transfer_spec_default
-        end
-      end
+      def option_fasp_folder; Fasp::ResourceFinder.fasp_install_paths; end
 
-      def handler_to_folder(operation,value)
-        case operation
-        when :set
-          @transfer_spec_default.merge!({'destination_root'=>value})
-        else
-          return @transfer_spec_default['destination_root']
-        end
-      end
-
-      def handler_browser(operation,value)
-        case operation
-        when :set
-          OperatingSystem.open_url_method=value
-        else
-          return OperatingSystem.open_url_method
-        end
-      end
-
-      def handler_fasp_folder(operation,value)
-        case operation
-        when :set
-          Fasp::ResourceFinder.fasp_install_paths=value
-        else
-          return Fasp::ResourceFinder.fasp_install_paths
-        end
-      end
+      def option_fasp_folder=(value); Fasp::ResourceFinder.fasp_install_paths=value; end
 
       # returns the list of plugins from plugin folder
       def plugin_sym_list
@@ -232,26 +198,16 @@ module Asperalm
 
       def action_list; plugin_sym_list; end
 
-      # adds plugins from given plugin folder
-      def scan_plugins(plugin_folder,plugin_subfolder)
-        plugin_folder=File.join(plugin_folder,plugin_subfolder) unless plugin_subfolder.nil?
-        Dir.entries(plugin_folder).select { |file| file.end_with?('.rb')}.each do |source|
-          name=source.gsub(/\.rb$/,'')
-          @plugins[name.to_sym]={:source=>File.join(plugin_folder,source),:req=>File.join(plugin_folder,name)}
-        end
-      end
-
-      # adds plugins from system and user
-      def scan_all_plugins
-        # find plugins
-        # value=path to class
-        @plugins={@@MAIN_PLUGIN_NAME_STR.to_sym=>{:source=>__FILE__,:req=>nil}}
-        gem_root=File.expand_path(@@CLI_MODULE.to_s.gsub('::','/').gsub(%r([^/]+),'..'), File.dirname(__FILE__))
-        scan_plugins(gem_root,@@GEM_PLUGINS_FOLDER)
-        user_plugin_folder=File.join(config_folder,@@ASPERA_PLUGINS_FOLDERNAME)
-        if File.directory?(user_plugin_folder)
-          $:.push(user_plugin_folder)
-          scan_plugins(user_plugin_folder,nil)
+      # find plugins in defined paths
+      def add_plugins_fom_lookup_folders
+        @plugin_lookup_folders.each do |folder|
+          if File.directory?(folder)
+            #TODO: add gem root to load path ? and require short folder ?
+            #$LOAD_PATH.push(folder) if i[:add_path]
+            Dir.entries(folder).select{|file|file.end_with?(RUBY_FILE_EXT)}.each do |source|
+              add_plugin(File.join(folder,source))
+            end
+          end
         end
       end
 
@@ -310,7 +266,12 @@ module Asperalm
         @loaded_configs=nil
         @transfer_agent_singleton=nil
         @use_plugin_defaults=true
-        scan_all_plugins
+        @plugins={@@MAIN_PLUGIN_NAME_STR.to_sym=>{:source=>__FILE__,:req=>nil}}
+        @plugin_lookup_folders=[]
+        # find the root folder of gem where this class is
+        gem_root=File.expand_path(@@CLI_MODULE.to_s.gsub('::','/').gsub(%r([^/]+),'..'), File.dirname(__FILE__))
+        add_plugin_lookup_folder(File.join(gem_root,@@GEM_PLUGINS_FOLDER))
+        add_plugin_lookup_folder(File.join(config_folder,@@ASPERA_PLUGINS_FOLDERNAME))
         options.program_name=@@PROGRAM_NAME
         options.banner = "NAME\n\t#{@@PROGRAM_NAME} -- a command line tool for Aspera Applications (v#{Asperalm::VERSION})\n\n"
         options.separator "SYNOPSIS"
@@ -339,13 +300,13 @@ module Asperalm
         options.separator "\t#{@@PROGRAM_NAME} shares upload ~/myfile /myshare"
         options.separator ""
         # handler must be set before setting defaults
-        options.set_handler(:log_level) { |op,val| handler_loglevel(op,val) }
-        options.set_handler(:logger) { |op,val| handler_logtype(op,val) }
-        options.set_handler(:insecure) { |op,val| handler_insecure(op,val) }
-        options.set_handler(:ts) { |op,val| handler_transfer_spec(op,val) }
-        options.set_handler(:to_folder) { |op,val| handler_to_folder(op,val) }
-        options.set_handler(:gui_mode) { |op,val| handler_browser(op,val) }
-        options.set_handler(:fasp_folder) { |op,val| handler_fasp_folder(op,val) }
+        options.set_obj_attr(:log_level,self,:option_log_level)
+        options.set_obj_attr(:insecure,self,:option_insecure)
+        options.set_obj_attr(:ts,self,:option_transfer_spec)
+        options.set_obj_attr(:to_folder,self,:option_to_folder)
+        options.set_obj_attr(:logger,self,:option_logtype)
+        options.set_obj_attr(:gui_mode,self,:option_browser)
+        options.set_obj_attr(:fasp_folder,self,:option_fasp_folder)
       end
 
       # plugin_name_sym is symbol
@@ -416,6 +377,7 @@ module Asperalm
       RECORD_SEPARATOR="\n"
       FIELD_SEPARATOR=","
 
+      # this method displays the results, especially the table format
       def display_results(results)
         raise "INTERNAL ERROR, result must be Hash (#{results.class}: #{results})" unless results.is_a?(Hash)
         raise "INTERNAL ERROR, result must have type" unless results.has_key?(:type)
@@ -459,14 +421,15 @@ module Asperalm
           when :key_val_list
             # :key_val_list is a simple hash table
             raise "internal error: unexpected type: #{results[:data].class}, expecting Hash" unless results[:data].is_a?(Hash)
-            out_table_columns = ['key','value']
+            out_table_columns = results[:columns]
+            out_table_columns = ['key','value'] if out_table_columns.nil?
             asked_fields=results[:data].keys
             case user_asked_fields_list_str
             when FIELDS_DEFAULT;asked_fields=results[:fields] if results.has_key?(:fields)
             when FIELDS_ALL;# keep all
             else asked_fields=user_asked_fields_list_str.split(',')
             end
-            table_data=asked_fields.map { |i| { 'key' => i, 'value' => results[:data][i] } }
+            table_data=asked_fields.map { |i| { out_table_columns.first => i, out_table_columns.last => results[:data][i] } }
           when :value_list
             # :value_list is a simple array of values, name of column provided in the :name
             out_table_columns = [results[:name]]
@@ -645,6 +608,17 @@ module Asperalm
 
       attr_reader :options
 
+      def add_plugin_lookup_folder(folder)
+        @plugin_lookup_folders.push(folder)
+      end
+
+      def add_plugin(path)
+        raise "ERROR: plugin path must end with #{RUBY_FILE_EXT}" if !path.end_with?(RUBY_FILE_EXT)
+        name=File.basename(path,RUBY_FILE_EXT)
+        req=path.gsub(/#{RUBY_FILE_EXT}$/,'')
+        @plugins[name.to_sym]={:source=>path,:req=>req}
+      end
+
       # $HOME/.aspera/aslmcli
       def config_folder
         return File.join(Dir.home,@@ASPERA_HOME_FOLDERNAME,@@PROGRAM_NAME)
@@ -692,6 +666,9 @@ module Asperalm
       # this is the main function called by initial script
       def process_command_line(argv)
         begin
+          # early debug for parser
+          Log.level = :debug if argv.include?('--log-level=debug')
+          add_plugins_fom_lookup_folders
           # init options
           # opt parser separates options (start with '-') from arguments
           options.set_argv(argv)
