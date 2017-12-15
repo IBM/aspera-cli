@@ -7,12 +7,10 @@ require 'base64'
 module Asperalm
   module Cli
     # raised by cli on error conditions
-    class CliError < StandardError
-    end
+    class CliError < StandardError; end
 
     # raised when an unexpected argument is provided
-    class CliBadArgument < CliError
-    end
+    class CliBadArgument < CliError; end
 
     class AttrAccessor
       attr_accessor :object
@@ -25,7 +23,7 @@ module Asperalm
 
     # parse options in command line
     # arguments starting with minus are options, others are commands
-    class OptParser < OptionParser
+    class Manager
       def self.time_to_string(time)
         time.strftime("%Y-%m-%d %H:%M:%S")
       end
@@ -95,12 +93,15 @@ module Asperalm
       # option name separator in code (symbol)
       @@OPTION_SEP_NAME='_'
 
+      attr_reader :option_parser
+
       #
       def initialize
         # command line values not starting with '-'
         @unprocessed_arguments=[]
         # command line values starting with '-'
         @unprocessed_options=[]
+        # a copy of all initial options
         @all_options=[]
         # key = name of option, either Proc(set/get) or value
         @available_option={}
@@ -110,7 +111,9 @@ module Asperalm
         @use_interactive=STDIN.isatty
         # ask optional options if not provided and in interactive
         @ask_optionals=false
-        super
+        # Note: was initially inherited, but goal is to have something different
+        @option_parser= OptionParser.new
+        #super
         self.add_opt_switch(:no_tty,"-T","don't use interactive input") { dont_use_interactive }
         self.add_opt_switch(:ask_options,"-A","ask even optional options") { @ask_optionals=true }
       end
@@ -197,10 +200,11 @@ module Asperalm
         return result
       end
 
-      def set_obj_attr(option_symbol,object,attr_symb)
+      def set_obj_attr(option_symbol,object,attr_symb,default_value=nil)
         Log.log.debug("set attr obj #{option_symbol} (#{object},#{attr_symb})")
         Log.log.error("handler already set for #{option_symbol}") if @available_option.has_key?(option_symbol)
         @available_option[option_symbol]=AttrAccessor.new(object,attr_symb)
+        set_option(option_symbol,default_value) if !default_value.nil?
       end
 
       # set an option value by name, either store value or call handler
@@ -284,24 +288,24 @@ module Asperalm
         value=get_option(option_symbol)
         on_args.push(values)
         on_args.push("#{help}. Values=(#{values.join(',')}), current=#{value}")
-        self.on(*on_args){|v|set_option(option_symbol,self.class.get_from_list(v.to_s,help,values))}
+        @option_parser.on(*on_args){|v|set_option(option_symbol,self.class.get_from_list(v.to_s,help,values))}
       end
 
       # define an option with open values
       def add_opt_simple(option_symbol,opt_val,*on_args)
         Log.log.info("add_opt_simple #{option_symbol}->#{on_args}")
         on_args.unshift(symbol_to_option(option_symbol,opt_val))
-        self.on(*on_args) { |v| set_option(option_symbol,v) }
+        @option_parser.on(*on_args) { |v| set_option(option_symbol,v) }
       end
 
       # define an option with date format
       def add_opt_date(option_symbol,opt_val,*on_args)
         Log.log.info("add_opt_date #{option_symbol}->#{on_args}")
         on_args.unshift(symbol_to_option(option_symbol,opt_val))
-        self.on(*on_args) do |v|
+        @option_parser.on(*on_args) do |v|
           case v
-          when 'now'; set_option(option_symbol,OptParser.time_to_string(Time.now))
-          when /^-([0-9]+)h/; set_option(option_symbol,OptParser.time_to_string(Time.now-$1.to_i*3600))
+          when 'now'; set_option(option_symbol,Manager.time_to_string(Time.now))
+          when /^-([0-9]+)h/; set_option(option_symbol,Manager.time_to_string(Time.now-$1.to_i*3600))
           else set_option(option_symbol,v)
           end
         end
@@ -311,7 +315,7 @@ module Asperalm
       def add_opt_switch(option_symbol,*on_args,&block)
         Log.log.info("add_opt_on #{option_symbol}->#{on_args}")
         on_args.unshift(symbol_to_option(option_symbol,nil))
-        self.on(*on_args,&block)
+        @option_parser.on(*on_args,&block)
       end
 
       # check if there were unprocessed values to generate error
@@ -326,24 +330,25 @@ module Asperalm
       end
 
       # get all original options, used to generate a config in config file
-      def get_options_table
+      def get_options_table(remove_from_remaining=true)
         result={}
         @all_options.each do |optionval|
           case optionval
-          when /^--([a-z\-]+)$/,/^-([A-Z])$/
+          when /^--([^=]+)$/
             # ignore
-          when /^--([a-z\-]+)=(.*)$/
+          when /^--([^=]+)=(.*)$/
             name=$1
             value=$2
             name.gsub!(@@OPTION_SEP_LINE,@@OPTION_SEP_NAME)
             value=self.class.get_extended_value(name,value)
             Log.log.debug(">>>#{name}=#{value}")
             result[name]=value
+            @unprocessed_options.delete(optionval) if remove_from_remaining
           else
-            raise CliBadArgument,"must be an option with value: #{optionval}"
+            raise CliBadArgument,"wrong option format: #{optionval}"
           end
         end
-        @unprocessed_options=[]
+        #@unprocessed_options=[]
         return result
       end
 
@@ -352,7 +357,7 @@ module Asperalm
         Log.log.debug("parse_options!")
         unknown_options=[]
         begin
-          self.parse!(@unprocessed_options)
+          @option_parser.parse!(@unprocessed_options)
         rescue OptionParser::InvalidOption => e
           unknown_options.push(e.args.first)
           retry

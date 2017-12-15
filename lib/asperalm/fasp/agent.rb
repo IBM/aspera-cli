@@ -35,16 +35,22 @@ module Asperalm
         if (@use_connect_client) # transfer using connect ...
           Log.log.debug("using connect client")
           raise "Using connect requires a graphical environment" if !OperatingSystem.default_gui_mode.eql?(:graphical)
-          connect_url=File.open(ResourceFinder.path(:plugin_https_port_file)) {|f| f.gets }.strip
-          connect_api=Rest.new("#{connect_url}/v5/connect",{})
+          trynumber=0
           begin
+            Log.log.debug("reading connect port file")
+            connect_url=File.open(ResourceFinder.path(:plugin_https_port_file)) {|f| f.gets }.strip
+            connect_api=Rest.new("#{connect_url}/v5/connect",{})
             connect_api.read('info/version')
-          rescue Errno::ECONNREFUSED
+          rescue => e # Errno::ECONNREFUSED
+            raise CliError,"Unable to start connect after #{trynumber} try" if trynumber > 3
+            Log.log.warn("connect is not started, trying to start (#{trynumber}) : #{e}")
+            ++trynumber
             OperatingSystem.open_uri_graphical('fasp://initialize')
             sleep 2
+            retry
           end
           if transfer_spec["direction"] == "send"
-            Log.log.warn("Upload by connect must be selected using GUI, ignoring #{transfer_spec['paths']}".red)
+            Log.log.warn("Connect requires upload selection using GUI, ignoring #{transfer_spec['paths']}".red)
             transfer_spec.delete('paths')
             resdata=connect_api.create('windows/select-open-file-dialog/',{"title"=>"Select Files","suggestedName"=>"","allowMultipleSelection"=>true,"allowedFileTypes"=>"","aspera_connect_settings"=>{"app_id"=>@connect_app_id}})[:data]
             transfer_spec['paths']=resdata['dataTransfer']['files'].map { |i| {'source'=>i['name']}}
@@ -64,23 +70,25 @@ module Asperalm
           started=false
           loop do
             result=connect_api.create('transfers/activity',connect_activity_args)[:data]
-            trdata=result['transfers'].select{|i|i['aspera_connect_settings']['request_id'].eql?(request_id)}.first
-            case trdata['status']
-            when 'completed'
-              Manager.instance.notify_listeners("emulated",{'Type'=>'DONE'})
-              break
-            when 'initiating'
-              puts 'starting'
-            when 'running'
-              #puts "running: sessions:#{trdata["sessions"].length}, #{trdata["sessions"].map{|i| i['bytes_transferred']}.join(',')}"
-              if !started and trdata["bytes_expected"] != 0
-                Manager.instance.notify_listeners("emulated",{'Type'=>'NOTIFICATION','PreTransferBytes'=>trdata["bytes_expected"]})
-                started=true
+            if result['transfers']
+              trdata=result['transfers'].select{|i| i['aspera_connect_settings'] and i['aspera_connect_settings']['request_id'].eql?(request_id)}.first
+              case trdata['status']
+              when 'completed'
+                Manager.instance.notify_listeners("emulated",{'Type'=>'DONE'})
+                break
+              when 'initiating'
+                puts 'starting'
+              when 'running'
+                #puts "running: sessions:#{trdata["sessions"].length}, #{trdata["sessions"].map{|i| i['bytes_transferred']}.join(',')}"
+                if !started and trdata["bytes_expected"] != 0
+                  Manager.instance.notify_listeners("emulated",{'Type'=>'NOTIFICATION','PreTransferBytes'=>trdata["bytes_expected"]})
+                  started=true
+                else
+                  Manager.instance.notify_listeners("emulated",{'Type'=>'STATS','Bytescont'=>trdata["bytes_written"]})
+                end
               else
-                Manager.instance.notify_listeners("emulated",{'Type'=>'STATS','Bytescont'=>trdata["bytes_written"]})
+                raise Fasp::Error.new("#{trdata['status']}: #{trdata['error_desc']}")
               end
-            else
-              raise Fasp::Error.new("#{trdata['status']}: #{trdata['error_desc']}")
             end
             sleep 1
           end

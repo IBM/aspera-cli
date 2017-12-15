@@ -2,9 +2,9 @@ require 'singleton'
 require 'asperalm/fasp/manager'
 module Asperalm
   module Fasp
-    # from https://support.asperasoft.com/entries/22895528
+    # from https://www.google.com/search?q=FASP+error+codes
     # columns: code name descr msg retryable
-    # Note that the fact that an error is retryable is user defined
+    # Note that the fact that an error is retryable is user defined, not by protocol
     FASP_ERROR_CODES = [
       [],
       [ 1,  'ERR_FASP_PROTO',         "Generic fasp(tm) protocol error",                "fasp(tm) error",                                                    false ],
@@ -94,7 +94,7 @@ module Asperalm
               # exit if we exceed the max number of retry
               if lRetryLeft <= 0 then
                 Log.log.error "Maximum number of retry reached."
-                raise Fasp::Error.new("max retry after: [#{status[:message]}]")
+                raise Fasp::Error,"max retry after: [#{status[:message]}]"
               end
             else
               Log.log.error('non-retryable error')

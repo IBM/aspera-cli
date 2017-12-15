@@ -692,6 +692,7 @@ for k in $(aslmcli ats access_key list --field=id --format=csv);do aslmcli ats a
 
 # Preview generation for Aspera Files
 
+## Preview Commands
 The `preview` plugin allows generation of preview files for Aspera Files for on-premise nodes.
 
 This version requires to run the command on a system that has direct
@@ -703,48 +704,65 @@ It supports 3 sub commands to generate preview files:
 * `events` uploaded files and folders (since last time)
 * `id` for the selected file identifier
 
+The preview generator does not implement loop and does only
+one scan or event analysis on purpose. Running preview generation
+on a regular basis shall be done using the operating system
+scheduler (e.g. cron on Linux, or Task Scheduler on Windows).
+To prevent parallel execution of the task, one can use either
+the protection offered by the scheduler, if there is one, or
+use the parameter: `--lock-port=12345` which will bind a TCP
+port, and fail if this port is already used.
+
 The tool requires the following external tools:
 
+* ImageMagick : convert composite
+* Optipng : optipng
+* FFmpeg : ffmpeg
+* Libreoffice : libreoffice
+
+## Linux
+
+###Imagemagick and optipng:
+
 ```
-yum install -y ImageMagick optipng which
+yum install -y ImageMagick optipng
 ```
-b- a few ruby gems
-gem install logger syslog-logger json
-c- ffmpeg
-	push /tmp
-	wget http://johnvansickle.com/ffmpeg/releases/ffmpeg-release-64bit-static.tar.xz
-	mkdir -p /opt/
-	cd /opt/
-	tar xJvf /tmp/ffmpeg-release-64bit-static.tar.xz
-	ln -s ffmpeg-* ffmpeg
-	ln -s /opt/ffmpeg/{ffmpeg,ffprobe} /usr/bin
-	popd
-2- Optionally, install other tools to support additional office documents:
-a- install libreoffice and Xvfb
-	yum install libreoffice Xvfb
-b- start Xvfb :
+
+###FFmpeg
+
+```
+push /tmp
+wget http://johnvansickle.com/ffmpeg/releases/ffmpeg-release-64bit-static.tar.xz
+mkdir -p /opt/
+cd /opt/
+tar xJvf /tmp/ffmpeg-release-64bit-static.tar.xz
+ln -s ffmpeg-* ffmpeg
+ln -s /opt/ffmpeg/{ffmpeg,ffprobe} /usr/bin
+popd
+```
+
+###Libreoffice
+
+Note: although libreoffice is run headless, it requires an X server.
+
+```
+yum install libreoffice Xvfb
 cat<<EOF>/etc/init.d/xvfb 
 #!/bin/bash
 #chkconfig: 345 95 50
-#description: Starts xvfb on display 42
+#description: Starts xvfb on display 42 for headless Libreoffice
 if [ -z "\$1" ]; then
-echo "\`basename \$0\` {start|stop}"
-    exit
+  echo "\`basename \$0\` {start|stop}"
+  exit
 fi
-
 case "\$1" in
-start)
-    /usr/bin/Xvfb :42 -screen 0 1280x1024x8 -extension RANDR  &
-;;
-
-stop)
-    killall Xvfb
-;;
+start) /usr/bin/Xvfb :42 -screen 0 1280x1024x8 -extension RANDR&;;
+stop) killall Xvfb;;
 esac
 EOF
 chkconfig xvfb on
 service xvfb start
-
+```
 
 
 # Sample commands
@@ -775,13 +793,12 @@ Gems, or remove your ed25519 key to solve the issue.
 
 
 # TODO
-* remove rest and oauth and use ruby standard gems:
+* remove rest and oauth classes and use ruby standard gems:
 
   * oauth
   * https://github.com/rest-client/rest-client
 
-use tools from:
-http://blog.excelwithcode.com/build-commandline-apps.html
+* use Thor or any standard Ruby CLI manager
 
 * provide metadata in packages
 

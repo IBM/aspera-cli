@@ -35,7 +35,7 @@ module Asperalm
     def initialize
       @formats = YAML.load_file(__FILE__.gsub(/\.rb$/,'_formats.yml'))
       # Check for binaries
-      %w(ffmpeg ffprobe2 convert optipng composite).each do |bin|
+      %w(ffmpeg ffprobe convert composite optipng).each do |bin|
         `#{bin} -h 2>&1`
         fail "Error: #{bin} is not in the PATH" if $?.exitstatus.eql?(BASH_EXIT_NOT_FOUND)
       end

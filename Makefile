@@ -1,11 +1,11 @@
-GEMNAME=asperalm
-GEMVERSION=$(shell ruby -e 'require "./lib/asperalm/version.rb";puts Asperalm::VERSION')
-GEMFILE=$(GEMNAME)-$(GEMVERSION).gem
 EXENAME=aslmcli
 TOOLCONFIGDIR=$(HOME)/.aspera/$(EXENAME)
 APIKEY=$(TOOLCONFIGDIR)/filesapikey
 BINDIR=./bin
 EXETEST=$(BINDIR)/$(EXENAME)
+GEMNAME=asperalm
+GEMVERSION=$(shell $(EXETEST) --version)
+GEMFILE=$(GEMNAME)-$(GEMVERSION).gem
 GIT_TAG_VERSION_PREFIX='v_'
 GIT_TAG_CURRENT=$(GIT_TAG_VERSION_PREFIX)$(GEMVERSION)
 
@@ -48,7 +48,7 @@ $(ZIPFILE): README.md
 	rm -f $(SRCZIPBASE)_*.zip
 	zip -r $(ZIPFILE) `git ls-files`
 
-$(GEMFILE):
+$(GEMFILE): README.md
 	gem build asperalm.gemspec
 
 gem: $(GEMFILE)

@@ -3,8 +3,7 @@ module Asperalm
     # error raised if transfer fails
     class Error < StandardError
       attr_reader :err_code
-      IS_MGR_ERROR=-1
-      def initialize(message,err_code=IS_MGR_ERROR)
+      def initialize(message,err_code=nil)
         super(message)
         @err_code = err_code
       end

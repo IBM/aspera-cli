@@ -1,6 +1,5 @@
-require 'asperalm/cli/opt_parser'
+require 'asperalm/cli/manager'
 require 'asperalm/cli/plugin'
-require 'asperalm/version'
 require 'asperalm/log'
 require 'asperalm/fasp/agent'
 require 'asperalm/fasp/manager'
@@ -67,7 +66,9 @@ module Asperalm
       include Singleton
       # "tool" class method is an alias to "instance" of singleton
       singleton_class.send(:alias_method, :tool, :instance)
+      def self.version;return @@TOOL_VERSION;end
       private
+      @@TOOL_VERSION='0.5.3'
       # first level command for the main tool
       @@MAIN_PLUGIN_NAME_STR='config'
       # name of application, also foldername where config is stored
@@ -104,7 +105,7 @@ module Asperalm
       def read_config_file(config_file_path=current_config_file)
         if !File.exist?(config_file_path)
           Log.log.info("no config file, using empty configuration")
-          return {@@MAIN_PLUGIN_NAME_STR=>{@@CONFIG_FILE_KEY_VERSION=>Asperalm::VERSION}}
+          return {@@MAIN_PLUGIN_NAME_STR=>{@@CONFIG_FILE_KEY_VERSION=>@@TOOL_VERSION}}
         end
         Log.log.debug "loading #{config_file_path}"
         config=YAML.load_file(config_file_path)
@@ -243,7 +244,7 @@ module Asperalm
               raise CliBadArgument,"no such parameter set: [#{param_set_name}] in config file" if !@loaded_configs.has_key?(param_set_name)
               node_config=@loaded_configs[param_set_name]
             else
-              node_config=OptParser.get_extended_value(:transfer_node,transfer_node_spec)
+              node_config=Manager.get_extended_value(:transfer_node,transfer_node_spec)
             end
             Log.log.debug("node=#{node_config}")
             # now check there are required parameters
@@ -262,7 +263,8 @@ module Asperalm
         # overriding parameters on transfer spec
         @transfer_spec_default={}
         @help_requested=false
-        @options=OptParser.new
+        @options=Manager.new
+        @parser=@options.option_parser
         @loaded_configs=nil
         @transfer_agent_singleton=nil
         @use_plugin_defaults=true
@@ -272,33 +274,33 @@ module Asperalm
         gem_root=File.expand_path(@@CLI_MODULE.to_s.gsub('::','/').gsub(%r([^/]+),'..'), File.dirname(__FILE__))
         add_plugin_lookup_folder(File.join(gem_root,@@GEM_PLUGINS_FOLDER))
         add_plugin_lookup_folder(File.join(config_folder,@@ASPERA_PLUGINS_FOLDERNAME))
-        options.program_name=@@PROGRAM_NAME
-        options.banner = "NAME\n\t#{@@PROGRAM_NAME} -- a command line tool for Aspera Applications (v#{Asperalm::VERSION})\n\n"
-        options.separator "SYNOPSIS"
-        options.separator "\t#{@@PROGRAM_NAME} COMMANDS [OPTIONS] [ARGS]"
-        options.separator ""
-        options.separator "DESCRIPTION"
-        options.separator "\tUse Aspera application to perform operations on command line."
-        options.separator "\tOAuth 2.0 is used for authentication in Files, Several authentication methods are provided."
-        options.separator "\tAdditional documentation here: https://rubygems.org/gems/asperalm"
-        options.separator ""
-        options.separator "COMMANDS"
-        options.separator "\tFirst level commands: #{action_list.map {|x| x.to_s}.join(', ')}"
-        options.separator "\tNote that commands can be written shortened (provided it is unique)."
-        options.separator ""
-        options.separator "OPTIONS"
-        options.separator "\tOptions begin with a '-' (minus), and value is provided on command line.\n"
-        options.separator "\tSpecial values are supported beginning with special prefix, like: #{OptParser.value_modifier.map {|m| "@#{m}:"}.join(' ')}.\n"
-        options.separator "\tDates format is 'DD-MM-YY HH:MM:SS', or 'now' or '-<num>h'"
-        options.separator ""
-        options.separator "ARGS"
-        options.separator "\tSome commands require mandatory arguments, e.g. a path.\n"
-        options.separator ""
-        options.separator "EXAMPLES"
-        options.separator "\t#{@@PROGRAM_NAME} files repo browse /"
-        options.separator "\t#{@@PROGRAM_NAME} faspex send ./myfile --log-level=debug"
-        options.separator "\t#{@@PROGRAM_NAME} shares upload ~/myfile /myshare"
-        options.separator ""
+        @parser.program_name=@@PROGRAM_NAME
+        @parser.banner = "NAME\n\t#{@@PROGRAM_NAME} -- a command line tool for Aspera Applications (v#{@@TOOL_VERSION})\n\n"
+        @parser.separator "SYNOPSIS"
+        @parser.separator "\t#{@@PROGRAM_NAME} COMMANDS [OPTIONS] [ARGS]"
+        @parser.separator ""
+        @parser.separator "DESCRIPTION"
+        @parser.separator "\tUse Aspera application to perform operations on command line."
+        @parser.separator "\tOAuth 2.0 is used for authentication in Files, Several authentication methods are provided."
+        @parser.separator "\tAdditional documentation here: https://rubygems.org/gems/asperalm"
+        @parser.separator ""
+        @parser.separator "COMMANDS"
+        @parser.separator "\tFirst level commands: #{action_list.map {|x| x.to_s}.join(', ')}"
+        @parser.separator "\tNote that commands can be written shortened (provided it is unique)."
+        @parser.separator ""
+        @parser.separator "OPTIONS"
+        @parser.separator "\tOptions begin with a '-' (minus), and value is provided on command line.\n"
+        @parser.separator "\tSpecial values are supported beginning with special prefix, like: #{Manager.value_modifier.map {|m| "@#{m}:"}.join(' ')}.\n"
+        @parser.separator "\tDates format is 'DD-MM-YY HH:MM:SS', or 'now' or '-<num>h'"
+        @parser.separator ""
+        @parser.separator "ARGS"
+        @parser.separator "\tSome commands require mandatory arguments, e.g. a path.\n"
+        @parser.separator ""
+        @parser.separator "EXAMPLES"
+        @parser.separator "\t#{@@PROGRAM_NAME} files repo browse /"
+        @parser.separator "\t#{@@PROGRAM_NAME} faspex send ./myfile --log-level=debug"
+        @parser.separator "\t#{@@PROGRAM_NAME} shares upload ~/myfile /myshare"
+        @parser.separator ""
         # handler must be set before setting defaults
         options.set_obj_attr(:log_level,self,:option_log_level)
         options.set_obj_attr(:insecure,self,:option_insecure)
@@ -320,9 +322,9 @@ module Asperalm
         if options.get_option(:load_params,:optional).nil?
           load_plugin_default_parameters(plugin_name_sym)
         end
-        options.separator "COMMAND: #{plugin_name_sym}"
-        options.separator "SUBCOMMANDS: #{command_plugin.action_list.map{ |p| p.to_s}.join(', ')}"
-        options.separator "OPTIONS:"
+        @parser.separator "COMMAND: #{plugin_name_sym}"
+        @parser.separator "SUBCOMMANDS: #{command_plugin.action_list.map{ |p| p.to_s}.join(', ')}"
+        @parser.separator "OPTIONS:"
         command_plugin.declare_options
         return command_plugin
       end
@@ -331,7 +333,7 @@ module Asperalm
       FIELDS_DEFAULT='DEF'
 
       def declare_options
-        options.separator "OPTIONS: global"
+        @parser.separator "OPTIONS: global"
         options.set_option(:gui_mode,OperatingSystem.default_gui_mode)
         options.set_option(:fields,FIELDS_DEFAULT)
         options.set_option(:transfer,:ascp)
@@ -340,7 +342,7 @@ module Asperalm
         options.set_option(:logger,:stdout)
         options.set_option(:config_file,default_config_file)
         #options.set_option(:to_folder,'.')
-        options.on("-h", "--help", "Show this message.") { @help_requested=true }
+        @parser.on("-h", "--help", "Show this message.") { @help_requested=true }
         options.add_opt_list(:gui_mode,OperatingSystem.gui_modes,"method to start browser",'-gTYPE')
         options.add_opt_list(:insecure,[:yes,:no],"do not validate cert")
         options.add_opt_list(:log_level,Log.levels,"Log level",'-lTYPE')
@@ -356,9 +358,10 @@ module Asperalm
         options.add_opt_simple(:http_proxy,"STRING","URL of HTTP proxy (for http fallback)")
         options.add_opt_switch(:rest_debug,"-r","more debug for HTTP calls") { Rest.set_debug(true) }
         options.add_opt_switch(:no_default,"-N","dont load default configuration") { @use_plugin_defaults=false }
-        options.add_opt_switch(:version,"-v","display version") { puts Asperalm::VERSION;Process.exit(0) }
+        options.add_opt_switch(:version,"-v","display version") { puts @@TOOL_VERSION;Process.exit(0) }
         options.add_opt_simple(:ts,"JSON","override transfer spec values for transfers (hash, use @json: prefix), current=#{options.get_option(:ts,:optional)}")
         options.add_opt_simple(:to_folder,"PATH","destination folder for downloaded files, current=#{options.get_option(:to_folder,:optional)}")
+        options.add_opt_simple(:lock_port,"NUMBER","prevent dual execution of a command, e.g. in cron")
       end
 
       def self.flatten_config_show(t)
@@ -475,7 +478,7 @@ module Asperalm
           # list plugins that have a "require" field, i.e. all but main plugin
           plugin_sym_list.select { |s| !@plugins[s][:req].nil? }.each do |plugin_name_sym|
             # override main option parser...
-            @options=OptParser.new
+            @options=Manager.new
             options.banner = ""
             options.program_name=@@PROGRAM_NAME
             get_plugin_instance(plugin_name_sym)
@@ -684,6 +687,16 @@ module Asperalm
           exit_with_usage(true) if @help_requested and options.command_or_arg_empty?
           # load global default options
           load_plugin_default_parameters(@@MAIN_PLUGIN_NAME_STR.to_sym)
+          # dual execution locking
+          lock_port=options.get_option(:lock_port,:optional)
+          if !lock_port.nil?
+            begin
+              # no need to close later, will be freed on process exit
+              lock_sock = TCPServer.new('127.0.0.1',lock_port.to_i)
+            rescue => e
+              raise CliError,"Another instance is already running (lock port=#{lock_port})."
+            end
+          end
           command_sym=options.get_next_argument('command',plugin_sym_list.dup.unshift(:help))
           # main plugin is not dynamically instanciated
           case command_sym

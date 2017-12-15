@@ -1,11 +1,11 @@
 # coding: utf-8
 lib = File.expand_path('../lib', __FILE__)
 $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
-require 'asperalm/version'
+require 'asperalm/cli/main'
 
 Gem::Specification.new do |spec|
   spec.name          = "asperalm"
-  spec.version       = Asperalm::VERSION
+  spec.version       = Asperalm::Cli::Main::version
   spec.authors       = ["Laurent Martin"]
   spec.email         = ["laurent@asperasoft.com"]
   spec.summary       = "Sample command line for Aspera Server products: Aspera Files, Faspex, Shares, Node, Console, Orchestrator, Server, ATS"
@@ -21,7 +21,6 @@ Gem::Specification.new do |spec|
     raise "RubyGems 2.0 or newer is required to protect against public gem pushes."
   end
 
-  #spec.files         = `git ls-files -z`.split("\x0").reject{|f| f.match(%r{^(test|spec|features|README.erb.md|Makefile)/}) }.push('README.md')
   spec.files         = `git ls-files -z lib docs bin`.split("\x0").push('README.md')
   spec.bindir        = "bin"
   spec.executables   = spec.files.grep(%r{^bin/}) { |f| File.basename(f) }

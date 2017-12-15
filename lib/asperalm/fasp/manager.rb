@@ -52,6 +52,7 @@ module Asperalm
       # listener receives events
       def add_listener(listener,format=:struct)
         raise "unsupported format: #{format}" if !Formats.include?(format)
+        # TODO: check that listener answers method "event" with one arg
         @listeners.push({:listener=>listener,:format=>format})
         self
       end
