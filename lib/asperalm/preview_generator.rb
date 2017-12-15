@@ -2,15 +2,23 @@ require 'fileutils'
 require 'open3'
 require 'singleton'
 require 'tmpdir'
+require 'yaml'
 
 module Asperalm
-  # generate preview and thumnail for one file only
+  # generate preview and thumbnail for one file only
   class PreviewGenerator
     include Singleton
     def self.video_styles; [:reencode,:clips,:preview];end
 
-    def self.overwrite_policies; [:always,:never,:attributes];end
+    def self.overwrite_policies; [:always,:never,:mtime];end
 
+    @@SUPPORTED_TYPES=[
+      :image,
+      :video,
+      :office,
+      :pdf,
+      :plaintext
+    ]
     attr_accessor :option_overwrite
     attr_accessor :option_video_style
     attr_accessor :option_vid_offset_seconds
@@ -28,14 +36,34 @@ module Asperalm
     attr_accessor :option_thumb_img_size
     attr_accessor :option_thumb_offset_fraction
 
+    def option_skip_types=(value)
+      @skip_types=[]
+      value.split(',').each do |v|
+        s=v.to_sym
+        raise "not supported: #{v}" unless @@SUPPORTED_TYPES.include?(s)
+        @skip_types.push(s)
+      end
+    end
+
+    def option_skip_types()
+      return @skip_types.map{|i|i.to_s}.join(',')
+    end
+
     private
 
     BASH_EXIT_NOT_FOUND=127
 
     def initialize
-      @formats = YAML.load_file(__FILE__.gsub(/\.rb$/,'_formats.yml'))
+      @skip_types=[]
+      @type_extension = YAML.load_file(__FILE__.gsub(/\.rb$/,'_formats.yml'))
+    end
+
+    def check_tools
+      required_tools=%w(ffmpeg ffprobe convert composite optipng libreoffice)
+      required_tools.delete('libreoffice') if @skip_types.include?(:office)
+      Log.log().warn("skip: #{@skip_types}")
       # Check for binaries
-      %w(ffmpeg ffprobe convert composite optipng).each do |bin|
+      required_tools.each do |bin|
         `#{bin} -h 2>&1`
         fail "Error: #{bin} is not in the PATH" if $?.exitstatus.eql?(BASH_EXIT_NOT_FOUND)
       end
@@ -54,6 +82,9 @@ module Asperalm
         stderr='<merged with stdout>'
         stdout=%x[#{command} 2>&1]
         exit_status=$?
+      end
+      if $?.exitstatus.eql?(BASH_EXIT_NOT_FOUND)
+        fail "Error: #{bin} is not in the PATH"
       end
       unless exit_status.success?
         Log.log.error "Got child status #{exit_status}\ncommandline: #{command}\nstdout: #{stdout}\nstderr: #{stderr}"
@@ -161,7 +192,7 @@ module Asperalm
           ffmpeg(original_filepath,
           ['-ss',0.9*offset_seconds],
           output_file,
-          ['-ss',0.1*offset_seconds,'-t',@option_clips_length,'-filter:v','scale='+@option_clips_size,'-codec:a','copy'])
+          ['-ss',0.1*offset_seconds,'-t',@option_clips_length,'-filter:v',"scale=#{@option_clips_size}",'-codec:a','copy'])
           f.puts("file 'img#{file_number}.mp4'")
           offset_seconds += interval
         end
@@ -182,17 +213,17 @@ module Asperalm
       ['-t','60','-codec:v','libx264','-profile:v','high',
         '-pix_fmt','yuv420p','-preset','slow','-b:v','500k',
         '-maxrate','500k','-bufsize','1000k',
-        '-filter:v','scale='+@option_vid_mp4_size_reencode,
+        '-filter:v',"scale=#{@option_vid_mp4_size_reencode}",
         '-threads','0','-codec:a','libmp3lame','-ac','2','-b:a','128k',
         '-movflags','faststart'])
     end
 
     def genx_mp4_video(original_filepath,output_file)
-      self.method('genx_mp4_video_'+@option_video_style.to_s).call(original_filepath,output_file)
+      self.method("genx_mp4_video_#{@option_video_style}").call(original_filepath,output_file)
     end
 
     def genx_png_pdf(original_filepath, out_filepath)
-      exec_shell(['convert','-size','x'+@option_thumb_img_size,'-background','white','-flatten',original_filepath+'[0]',out_filepath])
+      exec_shell(['convert','-size',"x#{@option_thumb_img_size}",'-background','white','-flatten',"#{original_filepath}[0]",out_filepath])
     end
 
     def genx_png_office(original_filepath, out_filepath)
@@ -207,13 +238,13 @@ module Asperalm
 
     def genx_png_image(original_filepath, output_path)
       exec_shell(['convert',original_filepath+'[0]','-auto-orient',
-        '-thumbnail',@option_thumb_img_size+'x'+@option_thumb_img_size+'>',
+        '-thumbnail',"#{@option_thumb_img_size}x#{@option_thumb_img_size}>",
         '-quality',95,'+dither','-posterize',40,output_path])
       exec_shell(['optipng',output_path])
     end
 
     def genx_png_txt(original_filepath, output_path)
-      exec_shell(['convert','-size','x'+@option_thumb_img_size+'>',
+      exec_shell(['convert','-size',"x#{@option_thumb_img_size}>",
         '-background','white',original_filepath+'[0]',output_path])
     end
 
@@ -225,14 +256,28 @@ module Asperalm
 
     # create preview from file, returning true
     # as long as at least one file is created
-    def preview_from_file(original_filepath, id, previews_folder)
+    def preview_from_file(original_filepath, id, previews_folder,modified_time=nil)
       preview_dir = File.join(previews_folder, "#{id}.asp-preview")
       FileUtils.mkdir_p(preview_dir)
       ['png','mp4'].each do |out_format|
         preview_file_path = File.join(preview_dir, 'preview.'+out_format)
-        if @option_overwrite.eql?(:always) or !File.exists?(preview_file_path)
-          @formats.each do |source_type,extensions|
-            if extensions.include?(File.extname(original_filepath).downcase)
+        @type_extension.each do |source_type,extensions|
+          if extensions.include?(File.extname(original_filepath).downcase) and
+          !@skip_types.include?(source_type.to_sym)
+            # this is a known extension, and we dont skip it, by default generate preview
+            generate=true
+            # but what to do if it already exists ?
+            if File.exists?(preview_file_path)
+              case @option_overwrite
+              when :always
+              when :never
+                generate=false
+              when :mtime
+                generate=modified_time > File.mtime(preview_file_path)
+              end
+            end
+            if generate
+              # TODO : check attributes: pass date as arg
               gen_method="genx_#{out_format}_#{source_type}"
               if !self.method(gen_method).nil?
                 self.method(gen_method).call(original_filepath,preview_file_path)

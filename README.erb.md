@@ -690,7 +690,20 @@ delete all my access keys:
 for k in $(aslmcli ats access_key list --field=id --format=csv);do aslmcli ats access_key id $k delete;done
 ```
 
+# Protection against parallel execution
+
+If it is required to run a command as a single instance, it is possible to protect with parameter: `--lock-port=nnnn`.
+
+This opens a local TCP server port, and fails if this port is already used, providing a local lock.
+
 # Preview generation for Aspera Files
+
+The tool requires the following external tools:
+
+* ImageMagick : convert composite
+* Optipng : optipng
+* FFmpeg : ffmpeg
+* Libreoffice : libreoffice
 
 ## Preview Commands
 The `preview` plugin allows generation of preview files for Aspera Files for on-premise nodes.
@@ -710,15 +723,7 @@ on a regular basis shall be done using the operating system
 scheduler (e.g. cron on Linux, or Task Scheduler on Windows).
 To prevent parallel execution of the task, one can use either
 the protection offered by the scheduler, if there is one, or
-use the parameter: `--lock-port=12345` which will bind a TCP
-port, and fail if this port is already used.
-
-The tool requires the following external tools:
-
-* ImageMagick : convert composite
-* Optipng : optipng
-* FFmpeg : ffmpeg
-* Libreoffice : libreoffice
+use the parameter: `--lock-port=12345`.
 
 ## Linux
 
@@ -763,7 +768,6 @@ EOF
 chkconfig xvfb on
 service xvfb start
 ```
-
 
 # Sample commands
 Some commands used in unit testing:

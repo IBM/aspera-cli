@@ -1,6 +1,7 @@
 require 'asperalm/cli/main'
 require 'asperalm/cli/basic_auth_plugin'
 require 'asperalm/preview_generator'
+require 'date'
 
 class Hash
   def dig(*path)
@@ -16,7 +17,7 @@ module Asperalm
       class Preview < BasicAuthPlugin
         def initialize
           # link CLI options to generator attributes
-          Main.tool.options.set_obj_attr(:overwrite,PreviewGenerator.instance,:option_overwrite,:always)
+          Main.tool.options.set_obj_attr(:overwrite,PreviewGenerator.instance,:option_overwrite,:mtime)
           Main.tool.options.set_obj_attr(:video,PreviewGenerator.instance,:option_video_style,:reencode)
           Main.tool.options.set_obj_attr(:vid_offset_seconds,PreviewGenerator.instance,:option_vid_offset_seconds,10)
           Main.tool.options.set_obj_attr(:vid_size,PreviewGenerator.instance,:option_vid_size,'320:-2')
@@ -32,6 +33,7 @@ module Asperalm
           Main.tool.options.set_obj_attr(:thumb_mp4_size,PreviewGenerator.instance,:option_thumb_mp4_size,"-1:'min(ih,600)'")
           Main.tool.options.set_obj_attr(:thumb_img_size,PreviewGenerator.instance,:option_thumb_img_size,800)
           Main.tool.options.set_obj_attr(:thumb_offset_fraction,PreviewGenerator.instance,:option_thumb_offset_fraction,0.1)
+          Main.tool.options.set_obj_attr(:skip_types,PreviewGenerator.instance,:option_skip_types)
         end
 
         alias super_declare_options declare_options
@@ -42,6 +44,8 @@ module Asperalm
           Main.tool.options.add_opt_list(:file_access,[:file_system,:fasp],"how to read and write files in repository")
           Main.tool.options.add_opt_list(:overwrite,PreviewGenerator.overwrite_policies,"when to generate preview file")
           Main.tool.options.add_opt_list(:video,PreviewGenerator.video_styles,"method to generate video")
+          Main.tool.options.add_opt_list(:video,PreviewGenerator.video_styles,"method to generate video")
+          Main.tool.options.add_opt_simple(:skip_types,"LIST","skip types in comma separated list")
         end
 
         def action_list; [:scan,:events,:id];end
@@ -102,12 +106,12 @@ module Asperalm
               raise "ERROR: #{@storage_root_real}" unless File.directory?(@storage_root_real)
               raise "ERROR: #{@preview_folder_real}" unless File.directory?(@preview_folder_real)
             end
-            #puts "#{entry}".green
-            #return
             # optimisation, work direct with files on filesystem
-            PreviewGenerator.instance.preview_from_file(File.join(@storage_root_real,entry['path']), entry['id'], @preview_folder_real)
-            #rescue => e
-            #  Log.log.error("exception: #{e.message} -> #{e.backtrace}")
+            begin
+              PreviewGenerator.instance.preview_from_file(File.join(@storage_root_real,entry['path']),entry['id'],@preview_folder_real,DateTime.parse(entry['modified_time']))
+            rescue => e
+              Log.log.error("exception: #{e.message}:\n#{e.backtrace.join("\n")}")
+            end
           else
             raise CliError,"only file_system access it currently supported"
           end

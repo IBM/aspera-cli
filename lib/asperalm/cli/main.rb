@@ -22,14 +22,16 @@ module Asperalm
         @cumulative=0
       end
 
+      MEGABIT=1024*1024/8
+      
       def event(data)
         case data['Type']
         when 'NOTIFICATION'
           if data.has_key?('PreTransferBytes') then
             require 'ruby-progressbar'
             @progress=ProgressBar.create(
-            :format     => '%a %B %p%% %r KB/sec %e',
-            :rate_scale => lambda{|rate|rate/1024},
+            :format     => '%a %B %p%% %r Mbps %e',
+            :rate_scale => lambda{|rate|rate/MEGABIT},
             :title      => 'progress',
             :total      => data['PreTransferBytes'].to_i)
           end
@@ -68,7 +70,7 @@ module Asperalm
       singleton_class.send(:alias_method, :tool, :instance)
       def self.version;return @@TOOL_VERSION;end
       private
-      @@TOOL_VERSION='0.5.3'
+      @@TOOL_VERSION='0.5.4'
       # first level command for the main tool
       @@MAIN_PLUGIN_NAME_STR='config'
       # name of application, also foldername where config is stored

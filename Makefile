@@ -13,19 +13,18 @@ SRCZIPBASE=$(GEMNAME)_src
 TODAY=$(shell date +%Y%m%d)
 ZIPFILE=$(SRCZIPBASE)_$(TODAY).zip
 
-all:: clean pack install
+all:: gem
 
 test:
 	bundle exec rake spec
 
 clean::
 	rm -f $(GEMNAME)-*.gem $(SRCZIPBASE)*.zip *.log token.* README.pdf README.html README.md sample_commands.txt sample_usage.txt $(TEST_CONFIG)
-	rm -fr doc "PKG - "*
+	rm -fr t doc "PKG - "*
 	rm -f 200KB* AsperaConnect-ML*
 	gem uninstall -a -x $(GEMNAME)
 cleanupgems:
 	gem uninstall -a -x $(gem list|cut -f 1 -d' '|egrep -v 'rdoc|psych|rake|openssl|json|io-console|bigdecimal')
-pack: $(ZIPFILE)
 
 doc: README.pdf
 
@@ -94,17 +93,18 @@ $(TEST_FOLDER):
 	mkdir -p $(TEST_FOLDER)
 clean::
 	rm -fr $(TEST_FOLDER)
-tsh1:
+t/sh1:
 	$(EXETEST) shares repository browse / --insecure=yes
-tsh2:
+	@touch $@
+t/sh2: $(TEST_FOLDER)
 	$(EXETEST) shares repository upload $(SAMPLE_FILE) --to-folder=/n8-sh1 --insecure=yes
-tsh3: $(TEST_FOLDER)
 	$(EXETEST) shares repository download /n8-sh1/200KB.1 --to-folder=$(TEST_FOLDER) --insecure=yes
-	rm -f 200KB.1
 	$(EXETEST) shares repository delete /n8-sh1/200KB.1 --insecure=yes
-tshares: tsh1 tsh2 tsh3
+	@rm -f 200KB.1
+	@touch $@
+tshares: t/sh1 t/sh2
 
-tfp1: $(TEST_FOLDER)
+t/fp1: $(TEST_FOLDER)
 	$(EXETEST) server browse /
 	$(EXETEST) server upload $(SAMPLE_FILE) --to-folder=/Upload
 	$(EXETEST) server download /Upload/200KB.1 --to-folder=$(TEST_FOLDER)
@@ -113,196 +113,255 @@ tfp1: $(TEST_FOLDER)
 	$(EXETEST) server delete /Upload/to.delete
 	$(EXETEST) server md5sum /Upload/200KB.1
 	$(EXETEST) server delete /Upload/200KB.1
-tfp2:
+	@touch $@
+t/fp2:
 	$(EXETEST) server mkdir /Upload/123
 	$(EXETEST) server rm /Upload/123
-tfp3:
+	@touch $@
+t/fp3:
 	$(EXETEST) server info
 	$(EXETEST) server du /
 	$(EXETEST) server df
-tfp4:
+	@touch $@
+t/fp4:
 	$(BINDIR)/asfasp --ts=@json:'{"remote_host":"demo.asperasoft.com","remote_user":"asperaweb","ssh_port":33001,"password":"demoaspera","direction":"receive","destination_root":"./test.dir","paths":[{"source":"/aspera-test-dir-tiny/200KB.1"}]}'
+	@touch $@
 
-tfasp: tfp1 tfp2 tfp3 tfp4
+tfasp: t/fp1 t/fp2 t/fp3 t/fp4
 
-tfx1:
+t/fx1:
 	$(EXETEST) faspex package list --insecure=yes
-tfx2:
+	@touch $@
+t/fx2:
 	$(EXETEST) faspex package send $(SAMPLE_FILE) --insecure=yes --note="my note" --title="my title" --recipient="laurent@asperasoft.com"
-tfx3:
+	@touch $@
+t/fx3:
 	$(EXETEST) faspex package recv $$($(EXETEST) faspex package list --fields=delivery_id --format=csv --box=sent|tail -n 1) --box=sent
-tfx4:
+	@touch $@
+t/fx4:
 	@echo $(EXETEST) faspex recv_publink 'https://ibmfaspex.asperasoft.com/aspera/faspex/external_deliveries/78780?passcode=a003aaf2f53e3869126b908525084db6bebc7031' --insecure=yes
-tfaspex: tfx1 tfx2 tfx3 tfx4
+	@touch $@
+tfaspex: t/fx1 t/fx2 t/fx3 t/fx4
 
 tconsole:
 	$(EXETEST) console transfers list  --insecure=yes
-NODEDEST=/home/faspex/docroot
+	@touch $@
+#NODEDEST=/home/faspex/docroot
 NODEDEST=/
-tnd1:
+t/nd1:
 	$(EXETEST) node browse / --insecure=yes
-tnd2:
+	@touch $@
+t/nd2: $(TEST_FOLDER)
 	$(EXETEST) node upload $(SAMPLE_FILE) --to-folder=$(NODEDEST) --insecure=yes
-tnd3: $(TEST_FOLDER)
-	$(EXETEST) node download $(NODEDEST)/200KB.1 --to-folder=$(TEST_FOLDER) --insecure=yes
-	$(EXETEST) node delete $(NODEDEST)/200KB.1 --insecure=yes
+	$(EXETEST) node download $(NODEDEST)200KB.1 --to-folder=$(TEST_FOLDER) --insecure=yes
+	$(EXETEST) node delete $(NODEDEST)200KB.1 --insecure=yes
 	rm -f $(TEST_FOLDER)/200KB.1
-tnd4:
+	@touch $@
+t/nd3:
 	$(EXETEST) -N node --url=https://10.25.0.4:9092 --username=node_xferuser --password=Aspera123_ upload --to-folder=/ 500M.dat --ts=@json:'{"precalculate_job_size":true}' --transfer=node --transfer-node=@json:'{"url":"https://10.25.0.8:9092","username":"node_xferuser","password":"Aspera123_"}' 
 	$(EXETEST) -N node --url=https://10.25.0.4:9092 --username=node_xferuser --password=Aspera123_ delete /500M.dat
-tnode: tnd1 tnd2 tnd3 tnd4
+	@touch $@
+tnode: t/nd1 t/nd2 t/nd3
 
-tfs1:
+t/fs1:
 	$(EXETEST) files repo browse /
-tfs2:
+	@touch $@
+t/fs2:
 	$(EXETEST) files repo upload $(SAMPLE_FILE) --to-folder=/
-tfs3: $(TEST_FOLDER)
+	@touch $@
+t/fs3: $(TEST_FOLDER)
 	$(EXETEST) files repo download /200KB.1 --to-folder=$(TEST_FOLDER) --transfer=connect
 	rm -f 200KB.1
-tfs3b: $(TEST_FOLDER)
+	@touch $@
+t/fs3b: $(TEST_FOLDER)
 	$(EXETEST) files repo download /200KB.1 --to-folder=$(TEST_FOLDER) --download=node
 	rm -f 200KB.1
-tfs4:
+	@touch $@
+t/fs4:
 	$(EXETEST) files package send $(SAMPLE_FILE) --note="my note" --title="my title" --recipient="laurent@asperasoft.com"
-tfs5:
+	@touch $@
+t/fs5:
 	$(EXETEST) files package list
-tfs6:
+	@touch $@
+t/fs6:
 	$(EXETEST) files package recv VleoMSrlA
-tfs7:
+	@touch $@
+t/fs7:
 	$(EXETEST) files admin events
-tfs8:
+	@touch $@
+t/fs8:
 	$(EXETEST) files admin resource workspace list
-tfs9:
+	@touch $@
+t/fs9:
 	$(EXETEST) files admin resource node id 5560 do browse / --secret=Aspera123_
+	@touch $@
 
-tfiles: tfs1 tfs2 tfs3 tfs3b tfs4 tfs5 tfs6 tfs7 tfs8 tfs9
+tfiles: t/fs1 t/fs2 t/fs3 t/fs3b t/fs4 t/fs5 t/fs6 t/fs7 t/fs8 t/fs9
 
-to1:
+t/o1:
 	$(EXETEST) orchestrator info
-
-to2:
+	@touch $@
+t/o2:
 	$(EXETEST) orchestrator workflow list
-
-to3:
+	@touch $@
+t/o3:
 	$(EXETEST) orchestrator workflow status
-
-to4:
+	@touch $@
+t/o4:
 	$(EXETEST) orchestrator workflow id 10 inputs
-
-to5:
+	@touch $@
+t/o5:
 	$(EXETEST) orchestrator workflow id 10 status
-
-to6:
+	@touch $@
+t/o6:
 	$(EXETEST) orchestrator workflow id 10 start --params=@json:'{"Param":"laurent"}'
-
-to7:
+	@touch $@
+t/o7:
 	$(EXETEST) orchestrator workflow id 10 start --params=@json:'{"Param":"laurent"}' --result=ResultStep:Complete_status_message
-
-to8:
+	@touch $@
+t/o8:
 	$(EXETEST) orchestrator plugins
-to9:
+	@touch $@
+t/o9:
 	$(EXETEST) orchestrator processes
+	@touch $@
 
-torc: to1 to2 to3 to4 to5 to6 to7 to8 to9
+torc: t/o1 t/o2 t/o3 t/o4 t/o5 t/o6 t/o7 t/o8 t/o9
 
-tat1a:
+t/at1a:
 	$(EXETEST) ats server list provisioned
-tat1b:
+	@touch $@
+t/at1b:
 	$(EXETEST) ats server list clouds
-tat2:
+	@touch $@
+t/at2:
 	$(EXETEST) ats server list instance --cloud=aws --region=eu-west-1 
-tat3:
+	@touch $@
+t/at3:
 	$(EXETEST) ats server id gk7f5356-f4ea-kj83-ddfW-7da4ed99f8eb
-tat4:
+	@touch $@
+t/at4:
 	$(EXETEST) ats subscriptions
-tat5:
+	@touch $@
+t/at5:
 	$(EXETEST) ats api_key repository list
-tat6:
+	@touch $@
+t/at6:
 	$(EXETEST) ats api_key list
-tat7:
+	@touch $@
+t/at7:
 	$(EXETEST) ats access_key create --cloud=softlayer --region=ams --params=@json:'{"id":"testkey2","name":"laurent key","storage":{"type":"softlayer_swift","container":"laurent","credentials":{"api_key":"e5d032e026e0b0a16e890a3d44d11fd1471217b6262e83c7f60529f1ff4b27de","username":"IBMOS303446-9:laurentmartin"},"path":"/"}}'
-tat8:
+	@touch $@
+t/at8:
 	$(EXETEST) ats access_key create --cloud=aws --region=eu-west-1 --params=@json:'{"id":"testkey3","name":"laurent key AWS","storage":{"type":"aws_s3","bucket":"sedemo-ireland","credentials":{"access_key_id":"AKIAIDSWKOSIM7XUVCJA","secret_access_key":"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"},"path":"/laurent"}}'
-tat9:
+	@touch $@
+t/at9:
 	$(EXETEST) ats access_key list --fields=name,id,secret
-tat10:
+	@touch $@
+t/at10:
 	$(EXETEST) ats access_key id testkey2 node browse /
-tat11:
+	@touch $@
+t/at11:
 	$(EXETEST) ats access_key id testkey2 server
-tat12:
+	@touch $@
+t/at12:
 	$(EXETEST) ats access_key id testkey2 delete
-tat13:
+	@touch $@
+t/at13:
 	$(EXETEST) ats access_key id testkey3 delete
+	@touch $@
 
-tats: tat1a tat1b tat2 tat3 tat4 tat5 tat6 tat7 tat8 tat9 tat10 tat11 tat12 tat13
+tats: t/at1a t/at1b t/at2 t/at3 t/at4 t/at5 t/at6 t/at7 t/at8 t/at9 t/at10 t/at11 t/at12 t/at13
 
-tco1:
+t/co1:
 	$(EXETEST) client location
-
-tco2:
+	@touch $@
+t/co2:
 	$(EXETEST) client connect list
-
-tco3:
+	@touch $@
+t/co3:
 	$(EXETEST) client connect id 'Aspera Connect for Windows' info
-
-tco4:
+	@touch $@
+t/co4:
 	$(EXETEST) client connect id 'Aspera Connect for Windows' links list
-
-tco5:
+	@touch $@
+t/co5:
 	$(EXETEST) client connect id 'Aspera Connect for Windows' links id 'Windows Installer' download --to-folder=.
+	@touch $@
+tcon: t/co1 t/co2 t/co3 t/co4 t/co5
 
-tcon: tco1 tco2 tco3 tco4 tco5
-
-tsy1:
+t/sy1:
 	$(EXETEST) node async list
-tsy2:
+	@touch $@
+t/sy2:
 	$(EXETEST) node async id 1 summary 
-tsy3:
+	@touch $@
+t/sy3:
 	$(EXETEST) node async id 1 counters 
-tsync: tsy1 tsy2 tsy3
+	@touch $@
+tsync: t/sy1 t/sy2 t/sy3
 
 TEST_CONFIG=sample.conf
-tconf1:
+t/conf1:
 	ASLMCLI_CONFIG_FILE=$(TEST_CONFIG) $(EXETEST) config id conf_name set param value
-tconf2:
+	@touch $@
+t/conf2:
 	ASLMCLI_CONFIG_FILE=$(TEST_CONFIG) $(EXETEST) config id conf_name show
-tconf3:
+	@touch $@
+t/conf3:
 	ASLMCLI_CONFIG_FILE=$(TEST_CONFIG) $(EXETEST) config list
-tconf4:
+	@touch $@
+t/conf4:
 	ASLMCLI_CONFIG_FILE=$(TEST_CONFIG) $(EXETEST) config overview
-tconf5:
+	@touch $@
+t/conf5:
 	ASLMCLI_CONFIG_FILE=$(TEST_CONFIG) $(EXETEST) config id default set shares conf_name
-tconf6:
+	@touch $@
+t/conf6:
 	ASLMCLI_CONFIG_FILE=$(TEST_CONFIG) $(EXETEST) config id conf_name delete
-tconf7:
+	@touch $@
+t/conf7:
 	ASLMCLI_CONFIG_FILE=$(TEST_CONFIG) $(EXETEST) config id conf_name initialize @json:'{"p1":"v1","p2":"v2"}'
-tconf8:
+	@touch $@
+t/conf8:
 	ASLMCLI_CONFIG_FILE=$(TEST_CONFIG) $(EXETEST) config id conf_name update --p1=v1 --p2=v2
+	@touch $@
 
-tconf: tconf1 tconf2 tconf3 tconf4 tconf5 tconf6 tconf7 tconf8
+tconf: t/conf1 t/conf2 t/conf3 t/conf4 t/conf5 t/conf6 t/conf7 t/conf8
 
-tshar2_1:
+t/shar2_1:
 	$(EXETEST) shares2 appinfo
-tshar2_2:
+	@touch $@
+t/shar2_2:
 	$(EXETEST) shares2 userinfo
-tshar2_3:
+	@touch $@
+t/shar2_3:
 	$(EXETEST) shares2 repository browse /
-tshar2_4:
+	@touch $@
+t/shar2_4:
 	$(EXETEST) shares2 organization list
-tshar2_5:
+	@touch $@
+t/shar2_5:
 	$(EXETEST) shares2 project list --organization=Sport
+	@touch $@
+tshares2: t/shar2_1 t/shar2_2 t/shar2_3 t/shar2_4 t/shar2_5
 
-tshares2: tshar2_1 tshar2_2 tshar2_3 tshar2_4 tshar2_5
-
-tprev1:
+t/prev1:
 	$(EXETEST) preview events
-tprev2:
+	@touch $@
+t/prev2:
 	$(EXETEST) preview scan
-tprev: tprev1 tprev2
+	@touch $@
+tprev: t/prev1 t/prev2
 
-tests: tshares tfaspex tconsole tnode tfiles tfasp torc tats tcon tsync tconf tshares2 tprev
-tfxgw:
+t:
+	mkdir t
+
+tests: t tshares tfaspex tconsole tnode tfiles tfasp torc tats tcon tsync tconf tshares2 tprev
+
+t/fxgw:
 	$(EXETEST) faspex package send --load-params=reset --url=https://localhost:9443/aspera/faspex --username=unused --password=unused --insecure=yes --note="my note" --title="my title" --recipient="laurent@asperasoft.com" ~/200KB.1
+	@touch $@
 
 NODE_USER=node_admin
 NODE_PASS=Aspera123_
@@ -312,3 +371,4 @@ setupprev:
 	$(EXETEST) -N --url=https://localhost:9092 --username=testkey --password=secret config id test_preview update
 	$(EXETEST) config id default set preview test_preview
 
+# ruby -e 'require "yaml";YAML.load_file("lib/asperalm/preview_generator_formats.yml").each {|k,v|puts v};'|while read x;do touch /Users/xfer/docroot/sample${x};done
