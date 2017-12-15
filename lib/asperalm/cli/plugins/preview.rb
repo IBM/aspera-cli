@@ -1,6 +1,7 @@
 require 'asperalm/cli/main'
 require 'asperalm/cli/basic_auth_plugin'
 require 'asperalm/preview_generator'
+require 'asperalm/fasp/resource_finder'
 require 'date'
 
 class Hash
@@ -93,27 +94,107 @@ module Asperalm
           scan_folder_files({ 'id' => @access_key_self['root_file_id'], 'name' => '/', 'type' => 'folder', 'path' => '/' })
         end
 
-        # generate preview for one folder entry (file)
+        # direction: send / receive
+        def do_transfer(direction,file_id,source_path_name,destination=nil)
+          #send_result=api_node.call({:operation=>'POST',:subpath=>'files/download_setup',:json_params=>{ :transfer_requests => [ { :transfer_request => { :paths => filelist.map {|i| {:source=>i}; } } } ] }})
+          # todo: create token based on acces key ?
+          #raise CliError,"not implemented"
+          tspec={
+            'direction'        => direction,
+            'paths'            => [{'source'=>source_path_name}],
+            'remote_user'      => 'xfer',
+            'remote_host'      => @transfer_address,
+            'EX_ssh_key_paths' => [ Fasp::ResourceFinder.path(:ssh_bypass_key_dsa)],
+            "fasp_port"        => 33001, # TODO: always the case ?
+            "ssh_port"         => 22,#33001, # TODO: always the case ?
+            'token'            => @basic_token,
+            'tags'             => { "aspera" => {
+            "files"            => {},
+            "node"             => { "access_key" => @access_key_self['id'], "file_id" => file_id },
+            "xfer_id"          => SecureRandom.uuid,
+            "xfer_retry"       => 3600 } } }
+          tspec['destination_root']='/' if direction.eql?("send")
+          tspec['destination_root']=destination unless destination.nil?
+
+          Fasp::Manager.instance.start_transfer(tspec)
+        end
+
+        # generate preview files for one folder entry (file) if necessary
         def generate_preview(entry)
-          case Main.tool.options.get_option(:file_access,:mandatory)
-          when :file_system
-            # first time, compute values
-            if @preview_folder_real.nil?
-              #TODO: option to override @storage_root_real='xxx'
-              @storage_root_real=@access_key_self['storage']['path']
-              @storage_root_real.gsub!(%r{^file:///},'')
-              @preview_folder_real=File.join(@storage_root_real,@option_preview_folder)
-              raise "ERROR: #{@storage_root_real}" unless File.directory?(@storage_root_real)
-              raise "ERROR: #{@preview_folder_real}" unless File.directory?(@preview_folder_real)
-            end
-            # optimisation, work direct with files on filesystem
-            begin
-              PreviewGenerator.instance.preview_from_file(File.join(@storage_root_real,entry['path']),entry['id'],@preview_folder_real,DateTime.parse(entry['modified_time']))
-            rescue => e
-              Log.log.error("exception: #{e.message}:\n#{e.backtrace.join("\n")}")
+          original_extension=File.extname(entry['name']).downcase
+          # file on local file system containing original file for transcoding
+          local_original_filepath=nil
+          # modification time of original file (actual, not local copy)
+          original_mtime=nil
+          # where previews will be generated for this particular entry
+          local_entry_preview_dir=nil
+          # does it need to be created?
+          need_create_local_folder=nil
+          # infos on current state on previews (actual)
+          preview_infos=nil
+          entry_preview_folder_name="#{entry['id']}.asp-preview"
+          # optimisation, work direct with files on filesystem
+          if @is_local
+            local_original_filepath=File.join(@local_storage_root,entry['path'])
+            original_mtime=File.mtime(local_original_filepath)
+            local_entry_preview_dir = File.join(@local_preview_folder, entry_preview_folder_name)
+            need_create_local_folder=!File.directory?(local_entry_preview_dir) # Hmmm
+            preview_infos=PreviewGenerator.preview_formats.map do |out_format|
+              local_preview_filepath=File.join(local_entry_preview_dir, 'preview.'+out_format)
+              local_preview_exists=File.exists?(local_preview_filepath)
+              {
+                :type => out_format,
+                :dest => local_preview_filepath,
+                :exist => local_preview_exists,
+                :preview_newer? => (local_preview_exists and (File.mtime(local_preview_filepath)>original_mtime))
+              }
             end
           else
-            raise CliError,"only file_system access it currently supported"
+            main_temp_folder="/tmp/toto" # TODO: mkdir
+            local_original_filepath=File.join(main_temp_folder,entry['name'])
+            original_mtime=DateTime.parse(entry['modified_time'])
+            local_entry_preview_dir=File.join(main_temp_folder,entry_preview_folder_name)
+            need_create_local_folder=true
+            #TODO: by api, read content of entry preview folder on storage
+            preview_folder_entry=@api_node.read("files/#{@previews_entry['id']}/files",{:name=>entry_preview_folder_name})[:data]
+
+            # and build preview_infos
+            preview_infos=PreviewGenerator.preview_formats.map do |out_format|
+              local_preview_filepath=File.join(local_entry_preview_dir, 'preview.'+out_format)
+              local_preview_exists=false
+              {
+                :type => out_format,
+                :dest => local_preview_filepath,
+                :exist => local_preview_exists,
+                :preview_newer? => false
+              }
+            end
+          end
+          # here we have the status on preview files, let's find if they need generation
+          to_generate=[]
+          preview_infos.each do |preview_info|
+            method=PreviewGenerator.instance.generation_method(original_extension,preview_info[:type],preview_info[:exist],preview_info[:preview_newer?])
+            to_generate.push({:method=>method,:dest=>preview_info[:dest]}) unless method.nil?
+          end
+          unless to_generate.empty?
+            FileUtils.mkdir_p(local_entry_preview_dir) if need_create_local_folder
+            if !@is_local
+              #TODO: transfer original file to folder main_temp_folder
+              do_transfer('receive',entry['id'],entry['name'],main_temp_folder)
+            end
+            to_generate.each do |info|
+              begin
+                PreviewGenerator.instance.generate(info[:method],local_original_filepath,info[:dest])
+              rescue => e
+                Log.log.error("exception: #{e.message}:\n#{e.backtrace.join("\n")}".red)
+              end
+            end
+            if !@is_local
+              # TODO: upload
+              do_transfer('send',"main_preview_folder_id",local_entry_preview_dir)
+              #TODO: delete main_temp_folder and below
+              FileUtils.rm_rf(main_temp_folder)
+            end
           end
         end
 
@@ -154,12 +235,24 @@ module Asperalm
         def execute_action
           # TODO: lock based on TCP to avoid running multiple instances
           @api_node=basic_auth_api
+          @transfer_address=URI.parse(@api_node.base_url).host
           @access_key_self = @api_node.read('access_keys/self')[:data] # same as with accesskey instead of /self
+          @is_local=Main.tool.options.get_option(:file_access,:mandatory).eql?(:file_system)
           Log.log.debug("access key info: #{@access_key_self}")
           #@api_node.read('files/1')[:data]
           # either allow setting parameter, or get from aspera.conf
           @option_preview_folder='previews'
           @skip_folders=['/'+@option_preview_folder]
+          if @is_local
+            #TODO: option to override @local_storage_root='xxx'
+            @local_storage_root=@access_key_self['storage']['path'].gsub(%r{^file:///},'')
+            raise "ERROR: #{@local_storage_root}" unless File.directory?(@local_storage_root)
+            @local_preview_folder=File.join(@local_storage_root,@option_preview_folder)
+            raise "ERROR: #{@local_preview_folder}" unless File.directory?(@local_preview_folder)
+          else
+            @previews_entry=@api_node.read("files/#{@access_key_self['root_file_id']}/files",{:name=>@option_preview_folder})[:data].first
+            @basic_token="Basic #{Base64.strict_encode64("#{@access_key_self['id']}:#{Main.tool.options.get_option(:password,:mandatory)}")}"
+          end
           command=Main.tool.options.get_next_argument('command',action_list)
           case command
           when :scan

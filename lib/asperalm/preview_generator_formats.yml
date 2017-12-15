@@ -20,7 +20,6 @@ video:
     - .h261
     - .h263
     - .h264
-    - .mxf
 image:
     - .aai
     - .art

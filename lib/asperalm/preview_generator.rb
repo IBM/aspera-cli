@@ -6,11 +6,19 @@ require 'yaml'
 
 module Asperalm
   # generate preview and thumbnail for one file only
+  # gen_combi_ methods are found by name gen_combi_<out format>_<source type>
+  # gen_video_ methods are found by name gen_video_<flavor>
+  # gen_vidutil_ methods are utility methods
   class PreviewGenerator
     include Singleton
+    # values for option_video_style
     def self.video_styles; [:reencode,:clips,:preview];end
 
+    # values for option_overwrite
     def self.overwrite_policies; [:always,:never,:mtime];end
+
+    # values for out_format
+    def self.preview_formats; ['png','mp4'];end
 
     @@SUPPORTED_TYPES=[
       :image,
@@ -55,7 +63,12 @@ module Asperalm
 
     def initialize
       @skip_types=[]
-      @type_extension = YAML.load_file(__FILE__.gsub(/\.rb$/,'_formats.yml'))
+      @extension_to_type={}
+      YAML.load_file(__FILE__.gsub(/\.rb$/,'_formats.yml')).each do |type,extensions|
+        extensions.each do |extension|
+          @extension_to_type[extension]=type
+        end
+      end
     end
 
     def check_tools
@@ -71,7 +84,7 @@ module Asperalm
 
     # run command
     # one could use "system", but we would need to redirect stdout/err
-    def exec_shell(command_args)
+    def external_command(command_args)
       # build commqnd line, and quote special characters
       command=command_args.map{|i| shell_quote(i.to_s)}.join(' ')
       Log.log.debug("cmd=#{command}".red)
@@ -94,7 +107,7 @@ module Asperalm
     end
 
     def ffmpeg(input_file,input_args,output_file,output_args)
-      exec_shell(['ffmpeg','-y','-loglevel','error',input_args,'-i',input_file,output_args,output_file].flatten)
+      external_command(['ffmpeg','-y','-loglevel','error',input_args,'-i',input_file,output_args,output_file].flatten)
     end
 
     # from bash manual: metacharacter
@@ -127,7 +140,7 @@ module Asperalm
       "#{tmpdir}/img#{file_number}.jpg"
     end
 
-    def genx_mp4_video_preview_dupe_frame(original_filepath, tmpdir, dupecount)
+    def gen_vidutil_dupe_frame(original_filepath, tmpdir, dupecount)
       img_number = /img([0-9]*)\.jpg/.match(original_filepath)[1].to_i
       1.upto(dupecount) do |i|
         dupename = get_tmp_num_filepath(tmpdir, (i + img_number))
@@ -135,16 +148,16 @@ module Asperalm
       end
     end
 
-    def genx_mp4_video_preview_blend_frames(img1, img2, tmpdir, blendframes)
+    def gen_vidutil_blend_frames(img1, img2, tmpdir, blendframes)
       img_number = /img([0-9]*)\.jpg/.match(img1)[1].to_i
       1.upto(blendframes) do |i|
         percent = 100 * i / (blendframes + 1)
         filename = get_tmp_num_filepath(tmpdir, img_number + i)
-        exec_shell(['composite','-blend',percent,img2,img1,filename])
+        external_command(['composite','-blend',percent,img2,img1,filename])
       end
     end
 
-    def dump_frame(original_filepath, offset_seconds, size, thumb_file_name)
+    def gen_vidutil_dump_frame(original_filepath, offset_seconds, size, thumb_file_name)
       #-loglevel panic -nostats -loglevel error
       ffmpeg(original_filepath,
       ['-ss',offset_seconds],
@@ -152,7 +165,7 @@ module Asperalm
       ['-frames:v',1,'-filter:v',"scale=#{size}"])
     end
 
-    def genx_mp4_video_preview(original_filepath, output_file)
+    def gen_video_preview(original_filepath, output_file)
       duration = get_video_duration(original_filepath)
       offset_seconds = @option_vid_offset_seconds.to_i
       framecount = @option_vid_framecount.to_i
@@ -162,9 +175,9 @@ module Asperalm
       file_number = 1
       1.upto(framecount) do |i|
         filename = get_tmp_num_filepath(tmpdir, file_number)
-        dump_frame(original_filepath, offset_seconds, @option_vid_size, filename)
-        genx_mp4_video_preview_dupe_frame(filename, tmpdir, @option_vid_framepause)
-        genx_mp4_video_preview_blend_frames(previous, filename, tmpdir,@option_vid_blendframes) if i > 1
+        gen_vidutil_dump_frame(original_filepath, offset_seconds, @option_vid_size, filename)
+        gen_vidutil_dupe_frame(filename, tmpdir, @option_vid_framepause)
+        gen_vidutil_blend_frames(previous, filename, tmpdir,@option_vid_blendframes) if i > 1
         previous = get_tmp_num_filepath(tmpdir, file_number + @option_vid_framepause)
         file_number += @option_vid_framepause + @option_vid_blendframes + 1
         offset_seconds+=interval
@@ -176,7 +189,7 @@ module Asperalm
       FileUtils.rm_rf(tmpdir)
     end
 
-    def genx_mp4_video_clips(original_filepath, output_file)
+    def gen_video_clips(original_filepath, output_file)
       # dump clips
       duration = get_video_duration(original_filepath)
       interval = calc_interval(duration,@option_clips_offset_seconds,@option_clips_count)
@@ -205,7 +218,7 @@ module Asperalm
       FileUtils.rm_rf(tmpdir)
     end
 
-    def genx_mp4_video_reencode(original_filepath, output_file)
+    def gen_video_reencode(original_filepath, output_file)
       # limit to 60 seconds and 360 px wide
       ffmpeg(original_filepath,
       [],
@@ -218,75 +231,64 @@ module Asperalm
         '-movflags','faststart'])
     end
 
-    def genx_mp4_video(original_filepath,output_file)
-      self.method("genx_mp4_video_#{@option_video_style}").call(original_filepath,output_file)
+    def gen_combi_mp4_video(original_filepath,output_file)
+      self.method("gen_video_#{@option_video_style}").call(original_filepath,output_file)
     end
 
-    def genx_png_pdf(original_filepath, out_filepath)
-      exec_shell(['convert','-size',"x#{@option_thumb_img_size}",'-background','white','-flatten',"#{original_filepath}[0]",out_filepath])
+    def gen_combi_png_pdf(original_filepath, out_filepath)
+      external_command(['convert','-size',"x#{@option_thumb_img_size}",'-background','white','-flatten',"#{original_filepath}[0]",out_filepath])
     end
 
-    def genx_png_office(original_filepath, out_filepath)
+    def gen_combi_png_office(original_filepath, out_filepath)
       tmpdir=mk_tmpdir(original_filepath)
-      exec_shell(['libreoffice','--display',':42','--headless','--invisible','--convert-to','pdf',
+      external_command(['libreoffice','--display',':42','--headless','--invisible','--convert-to','pdf',
         '--outdir',tmpdir,original_filepath])
       pdf_file=File.join(tmpdir,File.basename(original_filepath,File.extname(original_filepath))+'.pdf')
-      genx_png_pdf(pdf_file,out_filepath)
+      gen_combi_png_pdf(pdf_file,out_filepath)
       #File.delete(pdf_file)
       FileUtils.rm_rf(tmpdir)
     end
 
-    def genx_png_image(original_filepath, output_path)
-      exec_shell(['convert',original_filepath+'[0]','-auto-orient',
+    def gen_combi_png_image(original_filepath, output_path)
+      external_command(['convert',original_filepath+'[0]','-auto-orient',
         '-thumbnail',"#{@option_thumb_img_size}x#{@option_thumb_img_size}>",
         '-quality',95,'+dither','-posterize',40,output_path])
-      exec_shell(['optipng',output_path])
+      external_command(['optipng',output_path])
     end
 
-    def genx_png_txt(original_filepath, output_path)
-      exec_shell(['convert','-size',"x#{@option_thumb_img_size}>",
+    def gen_combi_png_txt(original_filepath, output_path)
+      external_command(['convert','-size',"x#{@option_thumb_img_size}>",
         '-background','white',original_filepath+'[0]',output_path])
     end
 
-    def genx_png_video(original_filepath, output_path)
-      dump_frame(original_filepath,get_video_duration(original_filepath)*@option_thumb_offset_fraction,@option_thumb_mp4_size, output_path)
+    def gen_combi_png_video(original_filepath, output_path)
+      gen_vidutil_dump_frame(original_filepath,get_video_duration(original_filepath)*@option_thumb_offset_fraction,@option_thumb_mp4_size, output_path)
     end
 
     public
 
-    # create preview from file, returning true
-    # as long as at least one file is created
-    def preview_from_file(original_filepath, id, previews_folder,modified_time=nil)
-      preview_dir = File.join(previews_folder, "#{id}.asp-preview")
-      FileUtils.mkdir_p(preview_dir)
-      ['png','mp4'].each do |out_format|
-        preview_file_path = File.join(preview_dir, 'preview.'+out_format)
-        @type_extension.each do |source_type,extensions|
-          if extensions.include?(File.extname(original_filepath).downcase) and
-          !@skip_types.include?(source_type.to_sym)
-            # this is a known extension, and we dont skip it, by default generate preview
-            generate=true
-            # but what to do if it already exists ?
-            if File.exists?(preview_file_path)
-              case @option_overwrite
-              when :always
-              when :never
-                generate=false
-              when :mtime
-                generate=modified_time > File.mtime(preview_file_path)
-              end
-            end
-            if generate
-              # TODO : check attributes: pass date as arg
-              gen_method="genx_#{out_format}_#{source_type}"
-              if !self.method(gen_method).nil?
-                self.method(gen_method).call(original_filepath,preview_file_path)
-              end
-            end
-          end
-        end
-      end
+    # returns processing method if file needs preview (re-)generation
+    # return nil if type is not known or if do not need generation based on overwrite policy
+    def generation_method(source_extension,out_format,preview_exists,preview_newer_than_original)
+      # get type
+      source_type=@extension_to_type[source_extension]
+      # is this a known file extension ?
+      return nil if source_type.nil?
+      # shall we skip it ?
+      return nil if @skip_types.include?(source_type.to_sym)
+      # what about overwrite policy ?
+      return nil if preview_exists and
+      (@option_overwrite.eql?(:never) or
+      (@option_overwrite.eql?(:mtime) and preview_newer_than_original))
+      method_name="gen_combi_#{out_format}_#{source_type}"
+      return nil unless self.class.method_defined?(method_name)
+      # might return nil if no such method
+      return self.method(method_name)
+    end
+    
+    # create preview from file
+    def generate(gene_method,original_filepath,preview_filepath)
+      gene_method.call(original_filepath,preview_filepath)
     end
   end
 end
-
