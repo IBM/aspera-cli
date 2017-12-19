@@ -14,20 +14,17 @@ module Asperalm
     # values for option_video_style
     def self.video_styles; [:reencode,:clips,:preview];end
 
-    # values for option_overwrite
-    def self.overwrite_policies; [:always,:never,:mtime];end
-
     # values for out_format
     def self.preview_formats; ['png','mp4'];end
 
-    @@SUPPORTED_TYPES=[
-      :image,
-      :video,
-      :office,
-      :pdf,
-      :plaintext
-    ]
-    attr_accessor :option_overwrite
+    # contained in yaml file
+    def self.supported_types;[
+        :image,
+        :video,
+        :office,
+        :pdf,
+        :plaintext
+      ];end
     attr_accessor :option_video_style
     attr_accessor :option_vid_offset_seconds
     attr_accessor :option_vid_size
@@ -44,25 +41,11 @@ module Asperalm
     attr_accessor :option_thumb_img_size
     attr_accessor :option_thumb_offset_fraction
 
-    def option_skip_types=(value)
-      @skip_types=[]
-      value.split(',').each do |v|
-        s=v.to_sym
-        raise "not supported: #{v}" unless @@SUPPORTED_TYPES.include?(s)
-        @skip_types.push(s)
-      end
-    end
-
-    def option_skip_types()
-      return @skip_types.map{|i|i.to_s}.join(',')
-    end
-
     private
 
     BASH_EXIT_NOT_FOUND=127
 
     def initialize
-      @skip_types=[]
       @extension_to_type={}
       YAML.load_file(__FILE__.gsub(/\.rb$/,'_formats.yml')).each do |type,extensions|
         extensions.each do |extension|
@@ -71,10 +54,10 @@ module Asperalm
       end
     end
 
-    def check_tools
+    def check_tools(skip_types=[])
       required_tools=%w(ffmpeg ffprobe convert composite optipng libreoffice)
-      required_tools.delete('libreoffice') if @skip_types.include?(:office)
-      Log.log().warn("skip: #{@skip_types}")
+      required_tools.delete('libreoffice') if skip_types.include?(:office)
+      Log.log().warn("skip: #{skip_types}")
       # Check for binaries
       required_tools.each do |bin|
         `#{bin} -h 2>&1`
@@ -267,25 +250,15 @@ module Asperalm
 
     public
 
-    # returns processing method if file needs preview (re-)generation
-    # return nil if type is not known or if do not need generation based on overwrite policy
-    def generation_method(source_extension,out_format,preview_exists,preview_newer_than_original)
+    # returns processing method and type
+    def set_type_method(preview_info)
       # get type
-      source_type=@extension_to_type[source_extension]
-      # is this a known file extension ?
-      return nil if source_type.nil?
-      # shall we skip it ?
-      return nil if @skip_types.include?(source_type.to_sym)
-      # what about overwrite policy ?
-      return nil if preview_exists and
-      (@option_overwrite.eql?(:never) or
-      (@option_overwrite.eql?(:mtime) and preview_newer_than_original))
-      method_name="gen_combi_#{out_format}_#{source_type}"
-      return nil unless self.class.method_defined?(method_name)
-      # might return nil if no such method
-      return self.method(method_name)
+      preview_info[:source_type]=@extension_to_type[preview_info[:extension]]
+      method_symb="gen_combi_#{preview_info[:out_format]}_#{preview_info[:source_type]}".to_sym
+      preview_info[:method]=nil
+      preview_info[:method]=self.method(method_symb) if respond_to?(method_symb,true)
     end
-    
+
     # create preview from file
     def generate(gene_method,original_filepath,preview_filepath)
       gene_method.call(original_filepath,preview_filepath)

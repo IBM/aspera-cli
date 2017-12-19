@@ -1,7 +1,7 @@
 require 'asperalm/cli/main'
 require 'asperalm/cli/basic_auth_plugin'
 require 'asperalm/preview_generator'
-require 'asperalm/fasp/resource_finder'
+require 'asperalm/fasp/agent'
 require 'date'
 
 class Hash
@@ -16,9 +16,28 @@ module Asperalm
   module Cli
     module Plugins
       class Preview < BasicAuthPlugin
+        attr_accessor :option_overwrite
+        # values for option_overwrite
+        def self.overwrite_policies; [:always,:never,:mtime];end
+
+        def option_skip_types=(value)
+          @skip_types=[]
+          value.split(',').each do |v|
+            s=v.to_sym
+            raise "not supported: #{v}" unless PreviewGenerator.supported_types.include?(s)
+            @skip_types.push(s)
+          end
+        end
+
+        def option_skip_types()
+          return @skip_types.map{|i|i.to_s}.join(',')
+        end
+
         def initialize
+          @skip_types=[]
           # link CLI options to generator attributes
-          Main.tool.options.set_obj_attr(:overwrite,PreviewGenerator.instance,:option_overwrite,:mtime)
+          Main.tool.options.set_obj_attr(:overwrite,self,:option_overwrite,:mtime)
+          Main.tool.options.set_obj_attr(:skip_types,self,:option_skip_types)
           Main.tool.options.set_obj_attr(:video,PreviewGenerator.instance,:option_video_style,:reencode)
           Main.tool.options.set_obj_attr(:vid_offset_seconds,PreviewGenerator.instance,:option_vid_offset_seconds,10)
           Main.tool.options.set_obj_attr(:vid_size,PreviewGenerator.instance,:option_vid_size,'320:-2')
@@ -34,7 +53,6 @@ module Asperalm
           Main.tool.options.set_obj_attr(:thumb_mp4_size,PreviewGenerator.instance,:option_thumb_mp4_size,"-1:'min(ih,600)'")
           Main.tool.options.set_obj_attr(:thumb_img_size,PreviewGenerator.instance,:option_thumb_img_size,800)
           Main.tool.options.set_obj_attr(:thumb_offset_fraction,PreviewGenerator.instance,:option_thumb_offset_fraction,0.1)
-          Main.tool.options.set_obj_attr(:skip_types,PreviewGenerator.instance,:option_skip_types)
         end
 
         alias super_declare_options declare_options
@@ -43,8 +61,7 @@ module Asperalm
           super_declare_options
           Main.tool.options.set_option(:file_access,:file_system)
           Main.tool.options.add_opt_list(:file_access,[:file_system,:fasp],"how to read and write files in repository")
-          Main.tool.options.add_opt_list(:overwrite,PreviewGenerator.overwrite_policies,"when to generate preview file")
-          Main.tool.options.add_opt_list(:video,PreviewGenerator.video_styles,"method to generate video")
+          Main.tool.options.add_opt_list(:overwrite,Preview.overwrite_policies,"when to generate preview file")
           Main.tool.options.add_opt_list(:video,PreviewGenerator.video_styles,"method to generate video")
           Main.tool.options.add_opt_simple(:skip_types,"LIST","skip types in comma separated list")
         end
@@ -115,7 +132,7 @@ module Asperalm
             "xfer_retry"       => 3600 } } }
           tspec['destination_root']='/' if direction.eql?("send")
           tspec['destination_root']=destination unless destination.nil?
-
+          Fasp::Agent.add_aspera_keys(tspec)
           Fasp::Manager.instance.start_transfer(tspec)
         end
 
@@ -143,7 +160,8 @@ module Asperalm
               local_preview_filepath=File.join(local_entry_preview_dir, 'preview.'+out_format)
               local_preview_exists=File.exists?(local_preview_filepath)
               {
-                :type => out_format,
+                :extension => original_extension,
+                :out_format => out_format,
                 :dest => local_preview_filepath,
                 :exist => local_preview_exists,
                 :preview_newer? => (local_preview_exists and (File.mtime(local_preview_filepath)>original_mtime))
@@ -163,18 +181,42 @@ module Asperalm
               local_preview_filepath=File.join(local_entry_preview_dir, 'preview.'+out_format)
               local_preview_exists=false
               {
-                :type => out_format,
+                :extension => original_extension,
+                :out_format => out_format,
                 :dest => local_preview_filepath,
                 :exist => local_preview_exists,
-                :preview_newer? => false
+                :preview_newer? => false,
+                :method => nil
               }
             end
           end
           # here we have the status on preview files, let's find if they need generation
           to_generate=[]
           preview_infos.each do |preview_info|
-            method=PreviewGenerator.instance.generation_method(original_extension,preview_info[:type],preview_info[:exist],preview_info[:preview_newer?])
-            to_generate.push({:method=>method,:dest=>preview_info[:dest]}) unless method.nil?
+            # if it exists, what about overwrite policy ?
+            if preview_info[:exist]
+              case @option_overwrite
+              when :always
+                # continue: generate
+              when :never
+                # never overwrite
+                next
+              when :mtime
+                # skip if preview is newer than original
+                next if preview_info[:preview_newer?]
+              end
+            end
+            # get type and method
+            PreviewGenerator.instance.set_type_method(preview_info)
+            Log.log.debug(">>>>>#{preview_info}".red)
+            # is this a known file extension ?
+            next if preview_info[:source_type].nil?
+            # shall we skip it ?
+            next if @skip_types.include?(preview_info[:source_type].to_sym)
+            # can we manage it ?
+            next if preview_info[:method].nil?
+            # ok, it's passed ! need generation
+            to_generate.push({:method=>preview_info[:method],:dest=>preview_info[:dest]})
           end
           unless to_generate.empty?
             FileUtils.mkdir_p(local_entry_preview_dir) if need_create_local_folder

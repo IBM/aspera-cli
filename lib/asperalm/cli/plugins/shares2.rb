@@ -23,7 +23,7 @@ module Asperalm
             :baseurl =>shares2_api_base_url,
             :authorize_path => "oauth2/authorize",
             :token_path => "oauth2/token",
-            :persist_identifier => 'the_url_host',
+            :persist_identifier => 'the_url_host', # TODO
             :persist_folder => Main.tool.config_folder,
             :type=>Main.tool.options.get_option(:auth,:mandatory)
           }

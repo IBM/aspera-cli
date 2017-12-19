@@ -23,8 +23,9 @@ module Asperalm
         @connect_app_id='localapp'
       end
 
-      # add some pepper for better taste
-      def add_pepper(ts)
+      # add Aspera private keys for web access, token based authorization
+      def self.add_aspera_keys(ts)
+        ts['EX_ssh_key_paths'] = [ ResourceFinder.path(:ssh_bypass_key_dsa), ResourceFinder.path(:ssh_bypass_key_rsa) ]
         ts['drowssap'.reverse] = "%08x-%04x-%04x-%04x-%04x%08x" % "t1(\xBF;\xF3E\xB5\xAB\x14F\x02\xC6\x7F)P".unpack("NnnnnN")
       end
 
@@ -126,8 +127,7 @@ module Asperalm
           if !transfer_spec.has_key?('EX_ssh_key_value') and
           !transfer_spec.has_key?('EX_ssh_key_paths') and
           transfer_spec.has_key?('token')
-            transfer_spec['EX_ssh_key_paths'] = [ ResourceFinder.path(:ssh_bypass_key_dsa), ResourceFinder.path(:ssh_bypass_key_rsa) ]
-            add_pepper(transfer_spec)
+            add_aspera_keys(transfer_spec)
           end
           # add fallback cert and key
           if ['1','force'].include?(transfer_spec['http_fallback'])
