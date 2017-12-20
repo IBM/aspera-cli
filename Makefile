@@ -89,14 +89,13 @@ installdeps:
 SAMPLE_FILE=~/Documents/Samples/200KB.1
 TEST_FOLDER=./test.dir
 
-$(TEST_FOLDER):
-	mkdir -p $(TEST_FOLDER)
 clean::
 	rm -fr $(TEST_FOLDER)
 t/sh1:
 	$(EXETEST) shares repository browse / --insecure=yes
 	@touch $@
-t/sh2: $(TEST_FOLDER)
+t/sh2:
+	mkdir -p $(TEST_FOLDER)
 	$(EXETEST) shares repository upload $(SAMPLE_FILE) --to-folder=/n8-sh1 --insecure=yes
 	$(EXETEST) shares repository download /n8-sh1/200KB.1 --to-folder=$(TEST_FOLDER) --insecure=yes
 	$(EXETEST) shares repository delete /n8-sh1/200KB.1 --insecure=yes
@@ -104,7 +103,8 @@ t/sh2: $(TEST_FOLDER)
 	@touch $@
 tshares: t/sh1 t/sh2
 
-t/fp1: $(TEST_FOLDER)
+t/fp1:
+	mkdir -p $(TEST_FOLDER)
 	$(EXETEST) server browse /
 	$(EXETEST) server upload $(SAMPLE_FILE) --to-folder=/Upload
 	$(EXETEST) server download /Upload/200KB.1 --to-folder=$(TEST_FOLDER)
@@ -151,7 +151,8 @@ NODEDEST=/
 t/nd1:
 	$(EXETEST) node browse / --insecure=yes
 	@touch $@
-t/nd2: $(TEST_FOLDER)
+t/nd2:
+	mkdir -p $(TEST_FOLDER)
 	$(EXETEST) node upload $(SAMPLE_FILE) --to-folder=$(NODEDEST) --insecure=yes
 	$(EXETEST) node download $(NODEDEST)200KB.1 --to-folder=$(TEST_FOLDER) --insecure=yes
 	$(EXETEST) node delete $(NODEDEST)200KB.1 --insecure=yes
@@ -169,11 +170,13 @@ t/fs1:
 t/fs2:
 	$(EXETEST) files repo upload $(SAMPLE_FILE) --to-folder=/
 	@touch $@
-t/fs3: $(TEST_FOLDER)
+t/fs3:
+	mkdir -p $(TEST_FOLDER)
 	$(EXETEST) files repo download /200KB.1 --to-folder=$(TEST_FOLDER) --transfer=connect
 	rm -f 200KB.1
 	@touch $@
-t/fs3b: $(TEST_FOLDER)
+t/fs3b:
+	mkdir -p $(TEST_FOLDER)
 	$(EXETEST) files repo download /200KB.1 --to-folder=$(TEST_FOLDER) --download=node
 	rm -f 200KB.1
 	@touch $@
@@ -347,10 +350,10 @@ t/shar2_5:
 tshares2: t/shar2_1 t/shar2_2 t/shar2_3 t/shar2_4 t/shar2_5
 
 t/prev1:
-	$(EXETEST) preview events
+	$(EXETEST) preview events --skip-types=office
 	@touch $@
 t/prev2:
-	$(EXETEST) preview scan
+	$(EXETEST) preview scan --skip-types=office
 	@touch $@
 tprev: t/prev1 t/prev2
 

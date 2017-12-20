@@ -90,7 +90,7 @@ module Asperalm
               when 'download.ended'
                 if event['data']['status'].eql?('completed') and
                 event['data']['error_code'].eql?(0) and
-                event.dig('data','tags','aspera','preview_generator').nil?
+                event.dig('data','tags','aspera','  ').nil?
                   #upload_folder=event.dig('data','tags','aspera','node','file_id')
                   #upload_folder=event.dig('data','file_id')
                   # validate created files
@@ -126,7 +126,8 @@ module Asperalm
             "ssh_port"         => 22,#33001, # TODO: always the case ?
             'token'            => @basic_token,
             'tags'             => { "aspera" => {
-            "files"            => {},
+            "preview_generator"=>'ok',
+            #"files"            => {},
             "node"             => { "access_key" => @access_key_self['id'], "file_id" => file_id },
             "xfer_id"          => SecureRandom.uuid,
             "xfer_retry"       => 3600 } } }
@@ -208,7 +209,6 @@ module Asperalm
             end
             # get type and method
             PreviewGenerator.instance.set_type_method(preview_info)
-            Log.log.debug(">>>>>#{preview_info}".red)
             # is this a known file extension ?
             next if preview_info[:source_type].nil?
             # shall we skip it ?

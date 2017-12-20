@@ -93,7 +93,7 @@ module Asperalm
       # option name separator in code (symbol)
       @@OPTION_SEP_NAME='_'
 
-      attr_reader :option_parser
+      attr_reader :parser
 
       #
       def initialize
@@ -112,7 +112,7 @@ module Asperalm
         # ask optional options if not provided and in interactive
         @ask_optionals=false
         # Note: was initially inherited, but goal is to have something different
-        @option_parser= OptionParser.new
+        @parser= OptionParser.new
         #super
         self.add_opt_switch(:no_tty,"-T","don't use interactive input") { dont_use_interactive }
         self.add_opt_switch(:ask_options,"-A","ask even optional options") { @ask_optionals=true }
@@ -289,7 +289,7 @@ module Asperalm
         on_args.push(values)
         on_args.push("#{help}. Values=(#{values.join(',')}), current=#{value}")
         Log.log.info("on_args=#{on_args}")
-        @option_parser.on(*on_args){|v|set_option(option_symbol,self.class.get_from_list(v.to_s,help,values))}
+        @parser.on(*on_args){|v|set_option(option_symbol,self.class.get_from_list(v.to_s,help,values))}
       end
 
       # define an option with open values
@@ -297,7 +297,7 @@ module Asperalm
         Log.log.info("add_opt_simple #{option_symbol}")
         on_args.unshift(symbol_to_option(option_symbol,opt_val))
         Log.log.info("on_args=#{on_args}")
-        @option_parser.on(*on_args) { |v| set_option(option_symbol,v) }
+        @parser.on(*on_args) { |v| set_option(option_symbol,v) }
       end
 
       # define an option with date format
@@ -305,7 +305,7 @@ module Asperalm
         Log.log.info("add_opt_date #{option_symbol}")
         on_args.unshift(symbol_to_option(option_symbol,opt_val))
         Log.log.info("on_args=#{on_args}")
-        @option_parser.on(*on_args) do |v|
+        @parser.on(*on_args) do |v|
           case v
           when 'now'; set_option(option_symbol,Manager.time_to_string(Time.now))
           when /^-([0-9]+)h/; set_option(option_symbol,Manager.time_to_string(Time.now-$1.to_i*3600))
@@ -319,7 +319,7 @@ module Asperalm
         Log.log.info("add_opt_on #{option_symbol}")
         on_args.unshift(symbol_to_option(option_symbol,nil))
         Log.log.info("on_args=#{on_args}")
-        @option_parser.on(*on_args,&block)
+        @parser.on(*on_args,&block)
       end
 
       # check if there were unprocessed values to generate error
@@ -361,7 +361,7 @@ module Asperalm
         Log.log.debug("parse_options!")
         unknown_options=[]
         begin
-          @option_parser.parse!(@unprocessed_options)
+          @parser.parse!(@unprocessed_options)
         rescue OptionParser::InvalidOption => e
           unknown_options.push(e.args.first)
           retry

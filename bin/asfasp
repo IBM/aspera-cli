@@ -5,12 +5,10 @@ require 'rubygems'
 require 'json'
 require 'base64'
 require 'optparse'
-require 'asperalm/cli/manager'
 require 'asperalm/fasp/manager'
+require 'asperalm/cli/manager'
 require 'asperalm/log'
 
-#m=Asperalm::Cli::Manager.new
-#p=m.option_parser
 transferspec=nil
 p=OptionParser.new
 p.banner = "Usage: asfasp [options]"

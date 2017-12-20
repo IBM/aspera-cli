@@ -127,7 +127,7 @@ module Asperalm
           if !transfer_spec.has_key?('EX_ssh_key_value') and
           !transfer_spec.has_key?('EX_ssh_key_paths') and
           transfer_spec.has_key?('token')
-            add_aspera_keys(transfer_spec)
+            self.class.add_aspera_keys(transfer_spec)
           end
           # add fallback cert and key
           if ['1','force'].include?(transfer_spec['http_fallback'])
