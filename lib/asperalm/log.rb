@@ -1,4 +1,5 @@
 require 'logger'
+require 'asperalm/colors'
 
 module Asperalm
   class Log

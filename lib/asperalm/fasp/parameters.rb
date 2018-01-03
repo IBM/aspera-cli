@@ -22,7 +22,7 @@ module Asperalm
       private
 
       RESUME_POLICIES=['none','attrs','sparse_csum','full_csum']
-        
+
       BOOLEAN_CLASSES=[TrueClass,FalseClass]
 
       # returns the value from transfer spec and mark parameter as used
@@ -92,7 +92,7 @@ module Asperalm
           add_ascp_options(ascp_option,numeric)
         end
       end
-      
+
       def add_ascp_options(*options)
         @state[:result][:args].push(*options.map{|v|v.to_s})
       end
@@ -136,6 +136,7 @@ module Asperalm
         set_param_value('remote_host','--host',[String])
         set_param_value('ssh_port','-P',[Integer])
         set_param_value('fasp_port','-O',[Integer])
+        set_param_value('dgram_size','-Z',[Integer])
         set_param_value('target_rate_kbps','-l',[Integer])
         set_param_value('min_rate_kbps','-m',[Integer])
         set_param_value('rate_policy','--policy',[String])

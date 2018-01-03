@@ -500,7 +500,7 @@ table, th, td {border: 1px solid black;}
 <tr><td>rate_policy</td><td>server config</td><td>string</td><td class="yes">Y</td><td class="yes">Y</td><td class="yes">Y</td><td>--policy</td><td>Valid literals include "low","fair","high" and "fixed".</td></tr>
 <tr><td>symlink_policy</td><td>follow</td><td>string</td><td class="yes">Y</td><td class="yes">Y</td><td class="yes">Y</td><td>--symbolic-links</td><td>copy, follow, copy+force, skip.  Default is follow.  Handle source side symbolic links by following the link (follow), copying the link itself (copy),  skipping (skip), or forcibly copying the link itself (copy+force).</td></tr>
 <tr><td>target_rate_kbps</td><td>-</td><td>integer</td><td class="yes">Y</td><td class="yes">Y</td><td class="yes">Y</td><td>-l</td><td>Specifies desired speed for the transfer.</td></tr>
-<tr><td>min_rate_kbps</td><td>0</td><td>integer</td><td></td><td></td><td></td><td>-m</td><td>Set the minimum transfer rate in kilobits per second.</td></tr>
+<tr><td>min_rate_kbps</td><td>0</td><td>integer</td><td class="yes">Y</td><td class="yes">Y</td><td class="yes">Y</td><td>-m</td><td>Set the minimum transfer rate in kilobits per second.</td></tr>
 <tr><td>cipher</td><td>none</td><td>string</td><td class="yes">Y</td><td class="yes">Y</td><td class="yes">Y</td><td>-c</td><td>in transit encryption type.<br/>none, aes-128, aes-256</td></tr>
 <tr><td>content_protection</td><td>-</td><td>string</td><td></td><td></td><td></td><td>--file-crypt</td><td>Valid literals include "encrypt" and "decrypt".</td></tr>
 <tr><td>content_protection_password</td><td>-</td><td>string</td><td></td><td></td><td></td><td>PASS</td><td>Specifies a string password.</td></tr>
@@ -509,25 +509,26 @@ table, th, td {border: 1px solid black;}
 <tr><td>http_fallback</td><td></td><td>bool (node), integer</td><td></td><td></td><td></td><td>-y<br/>TODO</td><td>When true(1), attempts to perform an HTTP transfer if a fasp transfer cannot be performed.</td></tr>
 <tr><td>create_dir</td><td></td><td>boolean</td><td class="yes">Y</td><td class="yes">Y</td><td class="yes">Y</td><td>-d</td><td>Specifies whether to create new directories.</td></tr>
 <tr><td>precalculate_job_size</td><td>srv. def.</td><td>boolean</td><td class="yes">Y</td><td class="yes">Y</td><td class="yes">Y</td><td>--precalculate-job-size</td><td>Specifies whether to precalculate the job size.</td></tr>
-<tr><td>delete_source</td><td></td><td>boolean</td><td></td><td class="yes">Y</td><td></td><td>-</td></tr>
-<tr><td>remove_after_transfer</td><td></td><td>boolean</td><td></td><td class="yes">Y</td><td></td><td>Specifies whether to remove file after transfer.</td></tr>
-<tr><td>remove_empty_directories</td><td></td><td>boolean</td><td></td><td class="yes">Y</td><td></td><td>Specifies whether to remove empty directories.</td></tr>
-<tr><td>multi_session</td><td>1</td><td>integer</td><td>N</td><td class="yes">Y</td><td>N</td><td>-C</td><td>Specifies how many parts the transfer is in.</td></tr>
-<tr><td>multi_session_threshold</td><td>null</td><td>integer</td><td></td><td></td><td></td><td>in bytes</td></tr>
-<tr><td>dgram_size</td><td></td><td>integer</td><td></td><td></td><td></td><td>-Z</td><td>in bytes</td></tr>
+<tr><td>delete_source</td><td></td><td>boolean</td><td></td><td class="yes">Y</td><td></td><td>?</td><td>?</td></tr>
+<tr><td>remove_after_transfer</td><td></td><td>boolean</td><td></td><td class="yes">Y</td><td></td><td>?</td><td>Specifies whether to remove file after transfer.</td></tr>
+<tr><td>remove_empty_directories</td><td></td><td>boolean</td><td></td><td class="yes">Y</td><td></td><td>?</td><td>Specifies whether to remove empty directories.</td></tr>
+<tr><td>multi_session</td><td>1</td><td>integer</td><td class="no">N</td><td class="yes">Y</td><td class="no">N</td><td>-C</td><td>Specifies how many parts the transfer is in.</td></tr>
+<tr><td>multi_session_threshold</td><td>null</td><td>integer</td><td class="no">N</td><td class="yes">Y</td><td class="no">N</td><td>-</td><td>in bytes</td></tr>
+<tr><td>dgram_size</td><td></td><td>integer</td><td class="yes">Y</td><td></td><td></td><td>-Z</td><td>in bytes</td></tr>
 <tr><td>compression</td><td></td><td>integer</td><td></td><td></td><td></td><td></td><td>ascp4 only, 0 / 1?</td></tr>
 <tr><td>read_threads</td><td></td><td>integer</td><td></td><td></td><td></td><td>-</td><td>ascp4 only</td></tr>
 <tr><td>write_threads</td><td></td><td>integer</td><td></td><td></td><td></td><td>-</td><td>ascp4 only</td></tr>
-<tr><td>use_ascp4</td><td>false</td><td>boolean</td><td></td><td class="yes">Y</td><td></td><td>-</td></tr>
+<tr><td>use_ascp4</td><td>false</td><td>boolean</td><td></td><td class="yes">Y</td><td></td><td>-</td><td>specify version of protocol</td></tr>
 <tr><td>paths</td><td></td><td>array</td><td></td><td></td><td></td><td>positional<br/>--file-list<br/>--file-pair-list</td><td>Contains a path to the source (required) and a path to the destination.</td></tr>
-<tr><td>http_fallback_port</td><td></td><td>integer</td><td></td><td></td><td></td><td>Specifies http port.</td></tr>
-<tr><td>https_fallback_port</td><td></td><td>integer</td><td></td><td></td><td></td><td>Specifies https port.</td></tr>
-<tr><td>cipher_allowed</td><td></td><td>string</td><td></td><td></td><td></td><td>Valid literals include "aes-128" and "none".</td></tr>
-<tr><td>target_rate_cap_kbps</td><td></td><td></td><td></td><td></td><td></td><td>TODO</td><td>Specifies rate restrictions for the transfer.</td></tr>
-<tr><td>rate_policy_allowed</td><td></td><td></td><td></td><td></td><td></td><td>Specifies most aggressive rate policy that is allowed. Valid literals include "low", "fair","high" and "fixed".</td></tr>
-<tr><td>ssh_private_key</td><td></td><td>string</td><td></td><td></td><td></td><td>-</td></tr>
+<tr><td>http_fallback_port</td><td></td><td>integer</td><td class="yes">Y</td><td></td><td></td><td>-t</td><td>Specifies http port.</td></tr>
+<tr><td>https_fallback_port</td><td></td><td>integer</td><td></td><td></td><td></td><td>todo</td><td>Specifies https port.</td></tr>
+<tr><td>cipher_allowed</td><td></td><td>string</td><td></td><td></td><td></td><td>-</td><td>returned by node API. Valid literals include "aes-128" and "none".</td></tr>
+<tr><td>target_rate_cap_kbps</td><td></td><td></td><td class="no">N</td><td class="no">?</td><td class="yes">?</td><td>-</td><td>Returned by upload/download_setup node api.</td></tr>
+<tr><td>rate_policy_allowed</td><td></td><td></td><td></td><td></td><td></td><td>-</td><td>returned by node API. Specifies most aggressive rate policy that is allowed. Valid literals include "low", "fair","high" and "fixed".</td></tr>
+<tr><td>ssh_private_key</td><td></td><td>string</td><td></td><td></td><td></td><td>-</td><td>todo</td></tr>
 <tr><td>password</td><td>-</td><td>string</td><td class="yes">Y</td><td class="yes">Y</td><td class="yes">Y</td><td>PASS</td><td>SSH session password</td></tr>
-<tr><td>resume_policy</td><td>faspmgr:<br/>none<br/>other:<br/>sparse_csum</td><td>string</td><td></td><td></td><td></td><td>-k</td><td>none,attrs,sparse_csum,full_csum</td></tr>
+<tr><td>resume_policy</td><td>faspmgr:<br/>none<br/>other:<br/>sparse_csum</td><td>string</td><td class="yes">Y</td><td class="yes">Y</td><td class="yes">Y</td><td>-k</td><td>none,attrs,sparse_csum,full_csum</td></tr>
+<tr><td>authentication</td><td>faspmgr:<br/>none<br/>other:<br/>sparse_csum</td><td>string</td><td class="yes">Y</td><td class="yes">Y</td><td class="no">N</td><td>-</td><td>token: Aspera web keys are provided to allow transparent web based session initiation. on connect: password is not asked. Else, password is asked, and keys are not provided.</td></tr>
 <tr><td>EX_ssh_key_value</td><td>-</td><td>string</td><td class="yes">Y</td><td class="no">N</td><td class="no">N</td><td>KEY</td><td>Private key used for SSH authentication</td></tr>
 <tr><td>EX_ssh_key_paths</td><td>-</td><td>array</td><td class="yes">Y</td><td class="no">N</td><td class="no">N</td><td>-i</td><td>Use public key authentication and specify the private key file</td></tr>
 <tr><td>EX_fallback_key</td><td>-</td><td>string</td><td class="yes">Y</td><td class="no">N</td><td class="no">N</td><td>-Y</td><td>The HTTPS transfer's key file name</td></tr>
@@ -684,6 +685,13 @@ aslmcli ats access_key create --cloud=azure --region=eastus --params=@json:'{"id
 
 ```
 
+Example: create access key on Azure:
+
+```
+aslmcli ats access_key create --cloud=azure --region=eastus --params=@json:'{"id":"testkeyazure","name":"laurent key azure","storage":{"type":"azure","credentials":{"account":"myaccount","key":"myaccesskey","storage_endpoint":"myblob"},"path":"/"}}'
+
+```
+
 delete all my access keys:
 
 ```
@@ -700,43 +708,94 @@ This opens a local TCP server port, and fails if this port is already used, prov
 
 The tool requires the following external tools:
 
-* ImageMagick : convert composite
-* Optipng : optipng
-* FFmpeg : ffmpeg
-* Libreoffice : libreoffice
+* ImageMagick : `convert` `composite`
+* OptiPNG : `optipng`
+* FFmpeg : `ffmpeg` `ffprobe`
+* Libreoffice : `libreoffice`
 
-## Preview Commands
-The `preview` plugin allows generation of preview files for Aspera Files for on-premise nodes.
+## Preview Command
+The `preview` plugin allows generation of preview files for Aspera Files for on-premise nodes. (thumbnails and video previews)
 
-This version requires to run the command on a system that has direct
-access to storage.
+The preview generator creates/updates a preview for files located on
+an access key main "storage root". Several candidate detection methods are supported.
 
-It supports 3 sub commands to generate preview files:
+This version requires ES 3.7.4+
 
-* `scan` all files in storage root (recursively browse)
-* `events` uploaded files and folders (since last time)
-* `id` for the selected file identifier
+This is related to:
 
-The preview generator does not implement loop and does only
-one scan or event analysis on purpose. Running preview generation
+<https://aspera.asperafiles.com/helpcenter/admin/organization/installing-files-preview-maker>
+
+### Configuration
+
+Like any commands, parameters can be passed on command line or using a configuration parameter set. Example using a parameter set:
+
+```
+$ aslmcli config id default set preview my_files_access_key
+$ aslmcli config id my_files_access_key update --url=https://localhost:9092 --username=my_access_key --password=my_secret
+```
+
+Once can check if the access key is wel configured using:
+```
+$ aslmcli -Pmy_files_access_key node br /
+```
+
+### Execution
+
+The tool intentionally supports only a "finite execution time" mode, i.e.
+it needs to be run regularly to create or update preview files.
+I.e. it does not implement a loop. Running preview generation
 on a regular basis shall be done using the operating system
-scheduler (e.g. cron on Linux, or Task Scheduler on Windows).
+scheduler (e.g. Cron on Linux, or Task Scheduler on Windows).
 To prevent parallel execution of the task, one can use either
 the protection offered by the scheduler, if there is one, or
 use the parameter: `--lock-port=12345`.
 
-## Linux
+### Candidate detection
 
-###Imagemagick and optipng:
+The tool will find candidates for preview generation using three commands:
+
+* `events` : only recently uploaded files will be tested
+* `scan` : deeply scan all files under the access key's "storage root"
+* `folder` : same as `scan `, but only on the specified folder's "file identifier"
+
+### Creation/Update
+
+Once candidate are selected, once candidates are selected, a preview is always generated if it does not exist already, else if a preview already exist, it will be generated
+using one of three overwrite method:
+
+* `always` : preview is always generated, even if it already exists and is newer than original
+* `never` : preview is generated only if it does not exist already
+* `mtime` : preview is generated only if the original file is newer than the existing
+
+### Access to original files and preview creation
+
+Standard open source tools are used to create thumnails and video previews. Those tools
+require that original files are accessible in the local file system and also write generated 
+files on the local file system. The tool provides 2 ways to read and write files with the parameter: `--file-access`
+
+If the preview generator is run on a system that has direct access to the file system, then the value `file_system` can be used.
+
+If the preview generator does not have access to files on the file system (it is remote, no mount, or is an object storage), then the original file is first downloaded, then the result is uploaded, use method `fasp`.
+
+### Example
+```
+aslmcli preview event --skip-types=office --file-access=fasp --overwrite=always --iteration-file=/tmp/restart.txt --lock-port=12345
+```
+
+### External tools: Linux
+
+Here shown on Redhat/CentOS
+
+* Imagemagick and optipng:
 
 ```
 yum install -y ImageMagick optipng
 ```
 
-###FFmpeg
+* FFmpeg
 
 ```
-push /tmp
+pushd /tmp
 wget http://johnvansickle.com/ffmpeg/releases/ffmpeg-release-64bit-static.tar.xz
 mkdir -p /opt/
 cd /opt/
@@ -746,7 +805,7 @@ ln -s /opt/ffmpeg/{ffmpeg,ffprobe} /usr/bin
 popd
 ```
 
-###Libreoffice
+* Libreoffice
 
 Note: although libreoffice is run headless, it requires an X server.
 

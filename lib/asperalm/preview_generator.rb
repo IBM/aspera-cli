@@ -4,11 +4,14 @@ require 'singleton'
 require 'tmpdir'
 require 'yaml'
 
+# gem mimemagic
+
 module Asperalm
   # generate preview and thumbnail for one file only
   # gen_combi_ methods are found by name gen_combi_<out format>_<source type>
   # gen_video_ methods are found by name gen_video_<flavor>
   # gen_vidutil_ methods are utility methods
+  # node api mime types are from: http://svn.apache.org/repos/asf/httpd/httpd/trunk/docs/conf/mime.types
   class PreviewGenerator
     include Singleton
     # values for option_video_style
@@ -46,12 +49,6 @@ module Asperalm
     BASH_EXIT_NOT_FOUND=127
 
     def initialize
-      @extension_to_type={}
-      YAML.load_file(__FILE__.gsub(/\.rb$/,'_formats.yml')).each do |type,extensions|
-        extensions.each do |extension|
-          @extension_to_type[extension]=type
-        end
-      end
     end
 
     def check_tools(skip_types=[])
@@ -79,7 +76,7 @@ module Asperalm
         stdout=%x[#{command} 2>&1]
         exit_status=$?
       end
-      if $?.exitstatus.eql?(BASH_EXIT_NOT_FOUND)
+      if BASH_EXIT_NOT_FOUND.eql?(exit_status)
         fail "Error: #{bin} is not in the PATH"
       end
       unless exit_status.success?
@@ -218,10 +215,6 @@ module Asperalm
       self.method("gen_video_#{@option_video_style}").call(original_filepath,output_file)
     end
 
-    def gen_combi_png_pdf(original_filepath, out_filepath)
-      external_command(['convert','-size',"x#{@option_thumb_img_size}",'-background','white','-flatten',"#{original_filepath}[0]",out_filepath])
-    end
-
     def gen_combi_png_office(original_filepath, out_filepath)
       tmpdir=mk_tmpdir(original_filepath)
       external_command(['libreoffice','--display',':42','--headless','--invisible','--convert-to','pdf',
@@ -232,16 +225,35 @@ module Asperalm
       FileUtils.rm_rf(tmpdir)
     end
 
+    def gen_combi_png_pdf(original_filepath, out_filepath)
+      external_command(['convert',
+        '-size',"x#{@option_thumb_img_size}",
+        '-background','white',
+        '-flatten',
+        "#{original_filepath}[0]",
+        out_filepath])
+    end
+
     def gen_combi_png_image(original_filepath, output_path)
-      external_command(['convert',original_filepath+'[0]','-auto-orient',
+      external_command(['convert',
+        '-auto-orient',
         '-thumbnail',"#{@option_thumb_img_size}x#{@option_thumb_img_size}>",
-        '-quality',95,'+dither','-posterize',40,output_path])
+        '-quality',95,
+        '+dither',
+        '-posterize',40,
+        "#{original_filepath}[0]",
+        output_path])
       external_command(['optipng',output_path])
     end
 
-    def gen_combi_png_txt(original_filepath, output_path)
-      external_command(['convert','-size',"x#{@option_thumb_img_size}>",
-        '-background','white',original_filepath+'[0]',output_path])
+    # text to png
+    # convert -size 100x100 xc:white -font Courier -pointsize 12 -fill black -annotate +15+15 "@hello.txt" -trim -bordercolor "#FFF" -border 10 +repage image.png
+    def gen_combi_png_plaintext(original_filepath, output_path)
+      external_command(['convert',
+        '-size',"x#{@option_thumb_img_size}>",
+        '-background','white',
+        "#{original_filepath}[0]",
+        output_path])
     end
 
     def gen_combi_png_video(original_filepath, output_path)
@@ -252,16 +264,287 @@ module Asperalm
 
     # returns processing method and type
     def set_type_method(preview_info)
-      # get type
-      preview_info[:source_type]=@extension_to_type[preview_info[:extension]]
+      # does it match a supported type ?
+      infos=PROCESSING.select do |p|
+        doselect=false
+        case p[:match]
+        when :mime_exact
+          doselect=preview_info[:mime].eql?(p[:value])
+        when :extension
+          doselect=preview_info[:extension].eql?(p[:value])
+        else raise "INTERNAL ERROR"
+        end
+        Log.log.debug("by #{p}".red) if doselect
+        doselect
+      end
+      if !infos.empty?
+        preview_info[:source_type]=infos.first[:preview_type]
+      end
       method_symb="gen_combi_#{preview_info[:out_format]}_#{preview_info[:source_type]}".to_sym
       preview_info[:method]=nil
       preview_info[:method]=self.method(method_symb) if respond_to?(method_symb,true)
+      Log.log.debug("type: #{preview_info[:source_type]}".red)
     end
 
     # create preview from file
     def generate(gene_method,original_filepath,preview_filepath)
       gene_method.call(original_filepath,preview_filepath)
     end
-  end
-end
+
+    private
+    # define how files are processed based on mime type or extension
+    PROCESSING=[
+      {:preview_type=>:video, :match=>:mime_exact, :value=>'video/x-msvideo'},
+      {:preview_type=>:video, :match=>:mime_exact, :value=>'video/x-ms-wmv'},
+      {:preview_type=>:video, :match=>:mime_exact, :value=>'video/x-matroska'},
+      {:preview_type=>:video, :match=>:mime_exact, :value=>'video/x-m4v'},
+      {:preview_type=>:video, :match=>:mime_exact, :value=>'video/x-flv'},
+      {:preview_type=>:video, :match=>:mime_exact, :value=>'video/quicktime'},
+      {:preview_type=>:video, :match=>:mime_exact, :value=>'video/mpeg'},
+      {:preview_type=>:video, :match=>:mime_exact, :value=>'video/mp4'},
+      {:preview_type=>:video, :match=>:mime_exact, :value=>'video/h264'},
+      {:preview_type=>:video, :match=>:mime_exact, :value=>'video/h263'},
+      {:preview_type=>:video, :match=>:mime_exact, :value=>'video/h261'},
+      {:preview_type=>:video, :match=>:mime_exact, :value=>'audio/ogg'},
+      {:preview_type=>:video, :match=>:extension, :value=>'divx'},
+      {:preview_type=>:plaintext, :match=>:mime_exact, :value=>'text/plain'},
+      {:preview_type=>:plaintext, :match=>:mime_exact, :value=>'application/json'},
+      {:preview_type=>:plaintext, :match=>:mime_exact, :value=>'application/xml'},
+      {:preview_type=>:pdf, :match=>:mime_exact, :value=>'application/pdf'},
+      {:preview_type=>:office, :match=>:mime_exact, :value=>'text/plain'},
+      {:preview_type=>:office, :match=>:mime_exact, :value=>'text/html'},
+      {:preview_type=>:office, :match=>:mime_exact, :value=>'text/csv'},
+      {:preview_type=>:office, :match=>:mime_exact, :value=>'image/x-pict'},
+      {:preview_type=>:office, :match=>:mime_exact, :value=>'image/x-freehand'},
+      {:preview_type=>:office, :match=>:mime_exact, :value=>'image/x-cmx'},
+      {:preview_type=>:office, :match=>:mime_exact, :value=>'image/vnd.dxf'},
+      {:preview_type=>:office, :match=>:mime_exact, :value=>'image/cgm'},
+      {:preview_type=>:office, :match=>:mime_exact, :value=>'application/x-mspublisher'},
+      {:preview_type=>:office, :match=>:mime_exact, :value=>'application/x-abiword'},
+      {:preview_type=>:office, :match=>:mime_exact, :value=>'application/vnd.wordperfect'},
+      {:preview_type=>:office, :match=>:mime_exact, :value=>'application/vnd.sun.xml.writer.template'},
+      {:preview_type=>:office, :match=>:mime_exact, :value=>'application/vnd.sun.xml.writer'},
+      {:preview_type=>:office, :match=>:mime_exact, :value=>'application/vnd.sun.xml.math'},
+      {:preview_type=>:office, :match=>:mime_exact, :value=>'application/vnd.sun.xml.impress.template'},
+      {:preview_type=>:office, :match=>:mime_exact, :value=>'application/vnd.sun.xml.impress'},
+      {:preview_type=>:office, :match=>:mime_exact, :value=>'application/vnd.sun.xml.draw.template'},
+      {:preview_type=>:office, :match=>:mime_exact, :value=>'application/vnd.sun.xml.draw'},
+      {:preview_type=>:office, :match=>:mime_exact, :value=>'application/vnd.sun.xml.calc.template'},
+      {:preview_type=>:office, :match=>:mime_exact, :value=>'application/vnd.sun.xml.calc'},
+      {:preview_type=>:office, :match=>:mime_exact, :value=>'application/vnd.palm'},
+      {:preview_type=>:office, :match=>:mime_exact, :value=>'application/vnd.openxmlformats-officedocument.wordprocessingml.template'},
+      {:preview_type=>:office, :match=>:mime_exact, :value=>'application/vnd.openxmlformats-officedocument.wordprocessingml.document'},
+      {:preview_type=>:office, :match=>:mime_exact, :value=>'application/vnd.openxmlformats-officedocument.spreadsheetml.template'},
+      {:preview_type=>:office, :match=>:mime_exact, :value=>'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'},
+      {:preview_type=>:office, :match=>:mime_exact, :value=>'application/vnd.openxmlformats-officedocument.presentationml.template'},
+      {:preview_type=>:office, :match=>:mime_exact, :value=>'application/vnd.openxmlformats-officedocument.presentationml.slideshow'},
+      {:preview_type=>:office, :match=>:mime_exact, :value=>'application/vnd.openxmlformats-officedocument.presentationml.presentation'},
+      {:preview_type=>:office, :match=>:mime_exact, :value=>'application/vnd.oasis.opendocument.text-template'},
+      {:preview_type=>:office, :match=>:mime_exact, :value=>'application/vnd.oasis.opendocument.text'},
+      {:preview_type=>:office, :match=>:mime_exact, :value=>'application/vnd.oasis.opendocument.spreadsheet-template'},
+      {:preview_type=>:office, :match=>:mime_exact, :value=>'application/vnd.oasis.opendocument.spreadsheet'},
+      {:preview_type=>:office, :match=>:mime_exact, :value=>'application/vnd.oasis.opendocument.presentation-template'},
+      {:preview_type=>:office, :match=>:mime_exact, :value=>'application/vnd.oasis.opendocument.presentation'},
+      {:preview_type=>:office, :match=>:mime_exact, :value=>'application/vnd.oasis.opendocument.graphics-template'},
+      {:preview_type=>:office, :match=>:mime_exact, :value=>'application/vnd.oasis.opendocument.graphics'},
+      {:preview_type=>:office, :match=>:mime_exact, :value=>'application/vnd.oasis.opendocument.formula'},
+      {:preview_type=>:office, :match=>:mime_exact, :value=>'application/vnd.oasis.opendocument.chart'},
+      {:preview_type=>:office, :match=>:mime_exact, :value=>'application/vnd.ms-works'},
+      {:preview_type=>:office, :match=>:mime_exact, :value=>'application/vnd.ms-word.template.macroenabled.12'},
+      {:preview_type=>:office, :match=>:mime_exact, :value=>'application/vnd.ms-word.document.macroenabled.12'},
+      {:preview_type=>:office, :match=>:mime_exact, :value=>'application/vnd.ms-powerpoint.template.macroenabled.12'},
+      {:preview_type=>:office, :match=>:mime_exact, :value=>'application/vnd.ms-powerpoint.presentation.macroenabled.12'},
+      {:preview_type=>:office, :match=>:mime_exact, :value=>'application/vnd.ms-powerpoint'},
+      {:preview_type=>:office, :match=>:mime_exact, :value=>'application/vnd.ms-excel.template.macroenabled.12'},
+      {:preview_type=>:office, :match=>:mime_exact, :value=>'application/vnd.ms-excel.sheet.macroenabled.12'},
+      {:preview_type=>:office, :match=>:mime_exact, :value=>'application/vnd.ms-excel.sheet.binary.macroenabled.12'},
+      {:preview_type=>:office, :match=>:mime_exact, :value=>'application/vnd.ms-excel'},
+      {:preview_type=>:office, :match=>:mime_exact, :value=>'application/vnd.lotus-wordpro'},
+      {:preview_type=>:office, :match=>:mime_exact, :value=>'application/rtf'},
+      {:preview_type=>:office, :match=>:mime_exact, :value=>'application/msword'},
+      {:preview_type=>:office, :match=>:mime_exact, :value=>'application/mac-binhex40'},
+      {:preview_type=>:office, :match=>:extension, :value=>'zabw'},
+      {:preview_type=>:office, :match=>:extension, :value=>'xlk'},
+      {:preview_type=>:office, :match=>:extension, :value=>'wq2'},
+      {:preview_type=>:office, :match=>:extension, :value=>'wq1'},
+      {:preview_type=>:office, :match=>:extension, :value=>'wpg'},
+      {:preview_type=>:office, :match=>:extension, :value=>'wn'},
+      {:preview_type=>:office, :match=>:extension, :value=>'wk3'},
+      {:preview_type=>:office, :match=>:extension, :value=>'wk1'},
+      {:preview_type=>:office, :match=>:extension, :value=>'wb2'},
+      {:preview_type=>:office, :match=>:extension, :value=>'vsdx'},
+      {:preview_type=>:office, :match=>:extension, :value=>'vdx'},
+      {:preview_type=>:office, :match=>:extension, :value=>'vds'},
+      {:preview_type=>:office, :match=>:extension, :value=>'uot'},
+      {:preview_type=>:office, :match=>:extension, :value=>'uos'},
+      {:preview_type=>:office, :match=>:extension, :value=>'uop'},
+      {:preview_type=>:office, :match=>:extension, :value=>'uof'},
+      {:preview_type=>:office, :match=>:extension, :value=>'sylk'},
+      {:preview_type=>:office, :match=>:extension, :value=>'svm'},
+      {:preview_type=>:office, :match=>:extension, :value=>'slk'},
+      {:preview_type=>:office, :match=>:extension, :value=>'sgv'},
+      {:preview_type=>:office, :match=>:extension, :value=>'sgf'},
+      {:preview_type=>:office, :match=>:extension, :value=>'pmd'},
+      {:preview_type=>:office, :match=>:extension, :value=>'pm6'},
+      {:preview_type=>:office, :match=>:extension, :value=>'pm'},
+      {:preview_type=>:office, :match=>:extension, :value=>'pages'},
+      {:preview_type=>:office, :match=>:extension, :value=>'numbers'},
+      {:preview_type=>:office, :match=>:extension, :value=>'mwd'},
+      {:preview_type=>:office, :match=>:extension, :value=>'mw'},
+      {:preview_type=>:office, :match=>:extension, :value=>'mml'},
+      {:preview_type=>:office, :match=>:extension, :value=>'met'},
+      {:preview_type=>:office, :match=>:extension, :value=>'mcw'},
+      {:preview_type=>:office, :match=>:extension, :value=>'key'},
+      {:preview_type=>:office, :match=>:extension, :value=>'hpw'},
+      {:preview_type=>:office, :match=>:extension, :value=>'fodt'},
+      {:preview_type=>:office, :match=>:extension, :value=>'fods'},
+      {:preview_type=>:office, :match=>:extension, :value=>'fodp'},
+      {:preview_type=>:office, :match=>:extension, :value=>'fodg'},
+      {:preview_type=>:office, :match=>:extension, :value=>'fb2'},
+      {:preview_type=>:office, :match=>:extension, :value=>'dummy'},
+      {:preview_type=>:office, :match=>:extension, :value=>'dif'},
+      {:preview_type=>:office, :match=>:extension, :value=>'dbf'},
+      {:preview_type=>:office, :match=>:extension, :value=>'cwk'},
+      {:preview_type=>:office, :match=>:extension, :value=>'cdr'},
+      {:preview_type=>:image, :match=>:mime_exact, :value=>'video/x-mng'},
+      {:preview_type=>:image, :match=>:mime_exact, :value=>'text/troff'},
+      {:preview_type=>:image, :match=>:mime_exact, :value=>'image/x-xwindowdump'},
+      {:preview_type=>:image, :match=>:mime_exact, :value=>'image/x-xpixmap'},
+      {:preview_type=>:image, :match=>:mime_exact, :value=>'image/x-xbitmap'},
+      {:preview_type=>:image, :match=>:mime_exact, :value=>'image/x-tga'},
+      {:preview_type=>:image, :match=>:mime_exact, :value=>'image/x-rgb'},
+      {:preview_type=>:image, :match=>:mime_exact, :value=>'image/x-portable-pixmap'},
+      {:preview_type=>:image, :match=>:mime_exact, :value=>'image/x-portable-graymap'},
+      {:preview_type=>:image, :match=>:mime_exact, :value=>'image/x-portable-bitmap'},
+      {:preview_type=>:image, :match=>:mime_exact, :value=>'image/x-portable-anymap'},
+      {:preview_type=>:image, :match=>:mime_exact, :value=>'image/x-pcx'},
+      {:preview_type=>:image, :match=>:mime_exact, :value=>'image/x-mrsid-image'},
+      {:preview_type=>:image, :match=>:mime_exact, :value=>'image/x-icon'},
+      {:preview_type=>:image, :match=>:mime_exact, :value=>'image/webp'},
+      {:preview_type=>:image, :match=>:mime_exact, :value=>'image/vnd.wap.wbmp'},
+      {:preview_type=>:image, :match=>:mime_exact, :value=>'image/vnd.ms-photo'},
+      {:preview_type=>:image, :match=>:mime_exact, :value=>'image/vnd.fpx'},
+      {:preview_type=>:image, :match=>:mime_exact, :value=>'image/vnd.djvu'},
+      {:preview_type=>:image, :match=>:mime_exact, :value=>'image/vnd.adobe.photoshop'},
+      {:preview_type=>:image, :match=>:mime_exact, :value=>'image/tiff'},
+      {:preview_type=>:image, :match=>:mime_exact, :value=>'image/svg+xml'},
+      {:preview_type=>:image, :match=>:mime_exact, :value=>'image/sgi'},
+      {:preview_type=>:image, :match=>:mime_exact, :value=>'image/png'},
+      {:preview_type=>:image, :match=>:mime_exact, :value=>'image/jpeg'},
+      {:preview_type=>:image, :match=>:mime_exact, :value=>'image/gif'},
+      {:preview_type=>:image, :match=>:mime_exact, :value=>'image/cgm'},
+      {:preview_type=>:image, :match=>:mime_exact, :value=>'image/bmp'},
+      {:preview_type=>:image, :match=>:mime_exact, :value=>'font/ttf'},
+      {:preview_type=>:image, :match=>:mime_exact, :value=>'application/x-xfig'},
+      {:preview_type=>:image, :match=>:mime_exact, :value=>'application/x-msmetafile'},
+      {:preview_type=>:image, :match=>:mime_exact, :value=>'application/x-font-type1'},
+      {:preview_type=>:image, :match=>:mime_exact, :value=>'application/x-director'},
+      {:preview_type=>:image, :match=>:mime_exact, :value=>'application/vnd.palm'},
+      {:preview_type=>:image, :match=>:mime_exact, :value=>'application/vnd.mophun.certificate'},
+      {:preview_type=>:image, :match=>:mime_exact, :value=>'application/vnd.mobius.msl'},
+      {:preview_type=>:image, :match=>:mime_exact, :value=>'application/vnd.hp-pcl'},
+      {:preview_type=>:image, :match=>:mime_exact, :value=>'application/vnd.hp-hpgl'},
+      {:preview_type=>:image, :match=>:mime_exact, :value=>'application/vnd.3gpp.pic-bw-small'},
+      {:preview_type=>:image, :match=>:mime_exact, :value=>'application/postscript'},
+      {:preview_type=>:image, :match=>:mime_exact, :value=>'application/pdf'},
+      {:preview_type=>:image, :match=>:mime_exact, :value=>'application/msword'},
+      {:preview_type=>:image, :match=>:extension, :value=>'yuv'},
+      {:preview_type=>:image, :match=>:extension, :value=>'ycbcra'},
+      {:preview_type=>:image, :match=>:extension, :value=>'ycbcr'},
+      {:preview_type=>:image, :match=>:extension, :value=>'xcf'},
+      {:preview_type=>:image, :match=>:extension, :value=>'x3f'},
+      {:preview_type=>:image, :match=>:extension, :value=>'x'},
+      {:preview_type=>:image, :match=>:extension, :value=>'wpg'},
+      {:preview_type=>:image, :match=>:extension, :value=>'viff'},
+      {:preview_type=>:image, :match=>:extension, :value=>'vicar'},
+      {:preview_type=>:image, :match=>:extension, :value=>'uyvy'},
+      {:preview_type=>:image, :match=>:extension, :value=>'uil'},
+      {:preview_type=>:image, :match=>:extension, :value=>'tim'},
+      {:preview_type=>:image, :match=>:extension, :value=>'sun'},
+      {:preview_type=>:image, :match=>:extension, :value=>'sparse-color'},
+      {:preview_type=>:image, :match=>:extension, :value=>'sfw'},
+      {:preview_type=>:image, :match=>:extension, :value=>'sct'},
+      {:preview_type=>:image, :match=>:extension, :value=>'rle'},
+      {:preview_type=>:image, :match=>:extension, :value=>'rla'},
+      {:preview_type=>:image, :match=>:extension, :value=>'rgba'},
+      {:preview_type=>:image, :match=>:extension, :value=>'rfg'},
+      {:preview_type=>:image, :match=>:extension, :value=>'raf'},
+      {:preview_type=>:image, :match=>:extension, :value=>'rad'},
+      {:preview_type=>:image, :match=>:extension, :value=>'pwp'},
+      {:preview_type=>:image, :match=>:extension, :value=>'ptif'},
+      {:preview_type=>:image, :match=>:extension, :value=>'ps3'},
+      {:preview_type=>:image, :match=>:extension, :value=>'ps2'},
+      {:preview_type=>:image, :match=>:extension, :value=>'png8'},
+      {:preview_type=>:image, :match=>:extension, :value=>'png64'},
+      {:preview_type=>:image, :match=>:extension, :value=>'png48'},
+      {:preview_type=>:image, :match=>:extension, :value=>'png32'},
+      {:preview_type=>:image, :match=>:extension, :value=>'png24'},
+      {:preview_type=>:image, :match=>:extension, :value=>'png00'},
+      {:preview_type=>:image, :match=>:extension, :value=>'pix'},
+      {:preview_type=>:image, :match=>:extension, :value=>'pict'},
+      {:preview_type=>:image, :match=>:extension, :value=>'picon'},
+      {:preview_type=>:image, :match=>:extension, :value=>'pef'},
+      {:preview_type=>:image, :match=>:extension, :value=>'pcds'},
+      {:preview_type=>:image, :match=>:extension, :value=>'pcd'},
+      {:preview_type=>:image, :match=>:extension, :value=>'pam'},
+      {:preview_type=>:image, :match=>:extension, :value=>'palm'},
+      {:preview_type=>:image, :match=>:extension, :value=>'p7'},
+      {:preview_type=>:image, :match=>:extension, :value=>'otb'},
+      {:preview_type=>:image, :match=>:extension, :value=>'orf'},
+      {:preview_type=>:image, :match=>:extension, :value=>'nef'},
+      {:preview_type=>:image, :match=>:extension, :value=>'mvg'},
+      {:preview_type=>:image, :match=>:extension, :value=>'mtv'},
+      {:preview_type=>:image, :match=>:extension, :value=>'mrw'},
+      {:preview_type=>:image, :match=>:extension, :value=>'mrsid'},
+      {:preview_type=>:image, :match=>:extension, :value=>'mpr'},
+      {:preview_type=>:image, :match=>:extension, :value=>'mono'},
+      {:preview_type=>:image, :match=>:extension, :value=>'miff'},
+      {:preview_type=>:image, :match=>:extension, :value=>'mat'},
+      {:preview_type=>:image, :match=>:extension, :value=>'jxr'},
+      {:preview_type=>:image, :match=>:extension, :value=>'jpt'},
+      {:preview_type=>:image, :match=>:extension, :value=>'jp2'},
+      {:preview_type=>:image, :match=>:extension, :value=>'jng'},
+      {:preview_type=>:image, :match=>:extension, :value=>'jbig'},
+      {:preview_type=>:image, :match=>:extension, :value=>'j2k'},
+      {:preview_type=>:image, :match=>:extension, :value=>'j2c'},
+      {:preview_type=>:image, :match=>:extension, :value=>'inline'},
+      {:preview_type=>:image, :match=>:extension, :value=>'info'},
+      {:preview_type=>:image, :match=>:extension, :value=>'hrz'},
+      {:preview_type=>:image, :match=>:extension, :value=>'hdr'},
+      {:preview_type=>:image, :match=>:extension, :value=>'gray'},
+      {:preview_type=>:image, :match=>:extension, :value=>'gplt'},
+      {:preview_type=>:image, :match=>:extension, :value=>'fits'},
+      {:preview_type=>:image, :match=>:extension, :value=>'fax'},
+      {:preview_type=>:image, :match=>:extension, :value=>'exr'},
+      {:preview_type=>:image, :match=>:extension, :value=>'ept'},
+      {:preview_type=>:image, :match=>:extension, :value=>'epsi'},
+      {:preview_type=>:image, :match=>:extension, :value=>'epsf'},
+      {:preview_type=>:image, :match=>:extension, :value=>'eps3'},
+      {:preview_type=>:image, :match=>:extension, :value=>'eps2'},
+      {:preview_type=>:image, :match=>:extension, :value=>'epi'},
+      {:preview_type=>:image, :match=>:extension, :value=>'epdf'},
+      {:preview_type=>:image, :match=>:extension, :value=>'dpx'},
+      {:preview_type=>:image, :match=>:extension, :value=>'dng'},
+      {:preview_type=>:image, :match=>:extension, :value=>'dib'},
+      {:preview_type=>:image, :match=>:extension, :value=>'dds'},
+      {:preview_type=>:image, :match=>:extension, :value=>'dcx'},
+      {:preview_type=>:image, :match=>:extension, :value=>'dcm'},
+      {:preview_type=>:image, :match=>:extension, :value=>'cut'},
+      {:preview_type=>:image, :match=>:extension, :value=>'cur'},
+      {:preview_type=>:image, :match=>:extension, :value=>'crw'},
+      {:preview_type=>:image, :match=>:extension, :value=>'cr2'},
+      {:preview_type=>:image, :match=>:extension, :value=>'cmyka'},
+      {:preview_type=>:image, :match=>:extension, :value=>'cmyk'},
+      {:preview_type=>:image, :match=>:extension, :value=>'clipboard'},
+      {:preview_type=>:image, :match=>:extension, :value=>'cin'},
+      {:preview_type=>:image, :match=>:extension, :value=>'cals'},
+      {:preview_type=>:image, :match=>:extension, :value=>'bpg'},
+      {:preview_type=>:image, :match=>:extension, :value=>'bmp3'},
+      {:preview_type=>:image, :match=>:extension, :value=>'bmp2'},
+      {:preview_type=>:image, :match=>:extension, :value=>'avs'},
+      {:preview_type=>:image, :match=>:extension, :value=>'arw'},
+      {:preview_type=>:image, :match=>:extension, :value=>'art'},
+      {:preview_type=>:image, :match=>:extension, :value=>'aai'}
+    ]
+  end # PreviewGenerator
+end # Asperalm

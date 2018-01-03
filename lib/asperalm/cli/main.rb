@@ -70,7 +70,7 @@ module Asperalm
       singleton_class.send(:alias_method, :tool, :instance)
       def self.version;return @@TOOL_VERSION;end
       private
-      @@TOOL_VERSION='0.5.5'
+      @@TOOL_VERSION='0.5.7'
       # first level command for the main tool
       @@MAIN_PLUGIN_NAME_STR='config'
       # name of application, also foldername where config is stored
@@ -664,6 +664,8 @@ module Asperalm
         # TODO: option to choose progress format
         # here we disable native stdout progress
         transfer_spec['EX_quiet']=true
+        # add bypass keys if there is a token
+        transfer_spec['authentication']="token" if transfer_spec.has_key?('token')
         transfer_agent.start_transfer(transfer_spec)
         return self.class.result_success
       end

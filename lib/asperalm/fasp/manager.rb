@@ -180,6 +180,18 @@ module Asperalm
       # start FASP transfer based on transfer spec (hash table)
       # note it returns upon completion
       def start_transfer(transfer_spec)
+        Log.log().debug("ts=#{transfer_spec}")
+        # shall we use bypass keys ?
+        if transfer_spec['authentication'].eql?("token")
+          # add Aspera private keys for web access, token based authorization
+          transfer_spec['EX_ssh_key_paths'] = [ ResourceFinder.path(:ssh_bypass_key_dsa), ResourceFinder.path(:ssh_bypass_key_rsa) ]
+          transfer_spec['drowssap'.reverse] = "%08x-%04x-%04x-%04x-%04x%08x" % "t1(\xBF;\xF3E\xB5\xAB\x14F\x02\xC6\x7F)P".unpack("NnnnnN")
+        end
+        # add fallback cert and key
+        if ['1','force'].include?(transfer_spec['http_fallback'])
+          transfer_spec['EX_fallback_key']=ResourceFinder.path(:fallback_key)
+          transfer_spec['EX_fallback_cert']=ResourceFinder.path(:fallback_cert)
+        end
         start_transfer_with_args_env(Parameters.new(transfer_spec).compute_args)
         return nil
       end # start_transfer

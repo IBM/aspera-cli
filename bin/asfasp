@@ -8,16 +8,18 @@ require 'optparse'
 require 'asperalm/fasp/manager'
 require 'asperalm/cli/manager'
 require 'asperalm/log'
-
 transferspec=nil
 p=OptionParser.new
 p.banner = "Usage: asfasp [options]"
+p.separator("EXAMPLES")
+p.separator(%q(    asfasp --ts=@json:'{"remote_host":"demo.asperasoft.com","remote_user":"asperaweb","ssh_port":33001,"password":"demoaspera","direction":"receive","destination_root":"./test.dir","paths":[{"source":"/aspera-test-dir-tiny/200KB.1"}]}'))
+p.separator(%q(    echo '{"remote_host":...}'|asfasp --ts=@json:@stdin))
+p.separator("OPTIONS")
 p.on("-D", "debug mode"){logger.level=logger.level+1}
-p.on("--ts=VALUE", "transfer spec: prefix with combination of: @json:, @base64:, @stdin"){|v|transferspec=Asperalm::Cli::Manager.get_extended_value("transfer spec",v)}
+p.on("--ts=VALUE", "transfer spec: prefix with combination of: @json:, @base64:, @stdin") do |v|
+  transferspec=Asperalm::Cli::Manager.get_extended_value("transfer spec",v)
+end
 p.on_tail("-h", "--help", "Show this message"){STDERR.puts(p);Process.exit(1)}
-p.separator("Examples:")
-p.separator("asfasp --ts=@json:'{"+'"remote_host":"demo.asperasoft.com","remote_user":"asperaweb","ssh_port":33001,"password":"demoaspera","direction":"receive","destination_root":"./test.dir","paths":[{"source":"/aspera-test-dir-tiny/200KB.1"}]}'+"'")
-p.separator("echo '..transferspec.spec..'|asfasp --ts=@json:@stdin")
 p.parse!
 if transferspec.nil?
   STDERR.puts(p)
@@ -25,12 +27,10 @@ if transferspec.nil?
 end
 # disable ascp output on stdout to not mix with progress json
 transferspec['EX_quiet']=true
-
 # FASP event listener display management events as JSON
 class FaspListenerStdout < Asperalm::Fasp::Listener
   def event(data);STDOUT.puts(JSON.generate(data));end
 end
-
 # display JSON instead of legacy Lines
 Asperalm::Fasp::Manager.instance.add_listener(FaspListenerStdout.new,:enhanced)
 # go !

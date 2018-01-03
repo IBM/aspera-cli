@@ -345,7 +345,7 @@ module Asperalm
             value=$2
             name.gsub!(@@OPTION_SEP_LINE,@@OPTION_SEP_NAME)
             value=self.class.get_extended_value(name,value)
-            Log.log.debug(">>>#{name}=#{value}")
+            Log.log.debug("option #{name}=#{value}")
             result[name]=value
             @unprocessed_options.delete(optionval) if remove_from_remaining
           else
