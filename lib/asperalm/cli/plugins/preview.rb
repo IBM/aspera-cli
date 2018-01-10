@@ -18,10 +18,14 @@ module Asperalm
       class Preview < BasicAuthPlugin
 
         attr_accessor :option_overwrite
+        attr_accessor :option_previews_folder
         attr_accessor :option_iteration_file_filepath
+        # main temp folder to download remote sources
+        def main_temp_folder;"/tmp/aspera.previews";end
 
         # special tag to identify transfers related to generator
         PREV_GEN_TAG='preview_generator'
+
         # values for option_overwrite
         def self.overwrite_policies; [:always,:never,:mtime];end
 
@@ -29,7 +33,7 @@ module Asperalm
           @skip_types=[]
           value.split(',').each do |v|
             s=v.to_sym
-            raise "not supported: #{v}" unless PreviewGenerator.supported_types.include?(s)
+            raise "not supported: #{v}" unless PreviewGenerator.source_types.include?(s)
             @skip_types.push(s)
           end
         end
@@ -44,6 +48,7 @@ module Asperalm
           Main.tool.options.set_option(:file_access,:file_system)
           Main.tool.options.set_obj_attr(:skip_types,self,:option_skip_types)
           Main.tool.options.set_obj_attr(:overwrite,self,:option_overwrite,:mtime)
+          Main.tool.options.set_obj_attr(:previews_folder,self,:option_previews_folder,'previews')
           Main.tool.options.set_obj_attr(:iteration_file,self,:option_iteration_file_filepath,nil)
           Main.tool.options.set_obj_attr(:video,PreviewGenerator.instance,:option_video_style,:reencode)
           Main.tool.options.set_obj_attr(:vid_offset_seconds,PreviewGenerator.instance,:option_vid_offset_seconds,10)
@@ -76,65 +81,61 @@ module Asperalm
         def action_list; [:scan,:events,:folder];end
 
         # requests recent events on node api and process newly modified folders
-        def process_file_events1
-          args={'access_key'=>@access_key_self['id']}
-          args['iteration_token']=File.read(@option_iteration_file_filepath) unless @option_iteration_file_filepath.nil?
+        def process_file_events_old
+          args={
+            'access_key'=>@access_key_self['id'],
+            'type'=>'download.ended'
+          }
+          # and optionally by iteration token
+          begin
+            events_filter['iteration_token']=File.read(@option_iteration_file_filepath) unless @option_iteration_file_filepath.nil?
+          rescue
+          end
           events=@api_node.read("events",args)[:data]
-          event_folder_ids=[]
-          # this will be new iteration token
-          last_processed_iteration=events.last['id'] unless events.empty?
+          return if events.empty?
           events.each do |event|
-            if event['types'].include?('download.ended') and
-            event['data']['direction'].eql?('receive') and
-            event['data']['status'].eql?('completed') and
-            event['data']['error_code'].eql?(0) and
-            #!event.dig('data','tags','aspera').nil? and
-            event.dig('data','tags','aspera',PREV_GEN_TAG).nil?
-              #upload_folder=event.dig('data','tags','aspera','node','file_id')
-              #upload_folder=event.dig('data','file_id')
-              folder_id=event.dig('data','file_id')
-              event_folder_ids.push(folder_id) unless folder_id.nil?
-              Log.log.debug(">>#{event['id']}: #{folder_id}".red)
-            end
+            next unless event['data']['direction'].eql?('receive')
+            next unless event['data']['status'].eql?('completed')
+            next unless event['data']['error_code'].eql?(0)
+            next unless event.dig('data','tags','aspera',PREV_GEN_TAG).nil?
+            #folder_id=event.dig('data','tags','aspera','node','file_id')
+            folder_id=event.dig('data','file_id')
+            next if folder_id.nil?
+            folder_entry=@api_node.read("files/#{folder_id}")[:data] rescue nil
+            next if folder_entry.nil?
+            scan_folder_files(folder_entry)
           end
-
-          # write new iteration file
-          event_folder_ids.each do |file_id|
-            folder_entry=@api_node.read("files/#{file_id}")[:data] rescue nil
-            scan_folder_files(folder_entry) unless folder_entry.nil?
+          # write next iteration value if needed/possible
+          unless @option_iteration_file_filepath.nil? or events.last['id'].nil?
+            File.write(@option_iteration_file_filepath,events.last['id'].to_s)
           end
-          File.write(@option_iteration_file_filepath,last_processed_iteration.to_s) unless @option_iteration_file_filepath.nil? or last_processed_iteration.nil?
         end
 
         def process_file_events
-          events_filter={'access_key'=>@access_key_self['id']}
+          # get new file creation by access key (TODO: what if file already existed?)
+          events_filter={
+            'access_key'=>@access_key_self['id'],
+            'type'=>'file.created'
+          }
+          # and optionally by iteration token
           begin
             events_filter['iteration_token']=File.read(@option_iteration_file_filepath) unless @option_iteration_file_filepath.nil?
           rescue
           end
           events=@api_node.read("events",events_filter)[:data]
           return if events.empty?
-          item_to_process=[]
-          last_processed_iteration=events.last['id']
-          Log.log.debug("old/new iteration: #{events_filter['iteration_token']} - #{last_processed_iteration}")
           events.each do |event|
-            if event['types'].include?('file.created') and
-            event.dig('data','type').eql?('file')
-              item_to_process.push(event)
-            end
-          end
-
-          item_to_process.each do |item|
-            folder_entry=@api_node.read("files/#{item['data']['id']}")[:data] rescue nil
-            next if folder_entry.nil?
-            next if folder_entry['path'].start_with?("/#{@option_preview_folder}/")
-            unless folder_entry.nil?
-              folder_entry['parent_file_id']=item['data']['parent_file_id']
-              generate_preview(folder_entry)
-            end
+            # process only files
+            next unless event.dig('data','type').eql?('file')
+            file_entry=@api_node.read("files/#{event['data']['id']}")[:data] rescue nil
+            next if file_entry.nil?
+            next if file_entry['path'].start_with?("/#{@option_preview_folder}/")
+            file_entry['parent_file_id']=event['data']['parent_file_id']
+            generate_preview(file_entry)
           end
           # write new iteration file
-          Log.log.debug("write #{@option_iteration_file_filepath} - #{last_processed_iteration}")
+          last_processed_iteration=events.last['id']
+          Log.log.debug("write #{@option_iteration_file_filepath} - #{last_processed_iteration} (previous: #{events_filter['iteration_token']})")
           File.write(@option_iteration_file_filepath,last_processed_iteration.to_s) unless @option_iteration_file_filepath.nil? or last_processed_iteration.nil?
         end
 
@@ -148,13 +149,13 @@ module Asperalm
             "fasp_port"        => 33001, # TODO: always the case ?
             "ssh_port"         => 33001, # TODO: always the case ?
             'token'            => @basic_token,
-            'authentication'   => "token", # bypass ssh # TODO: doc
+            'authentication'   => "token", # connect client: do not ask password
             'EX_quiet'         => true,
             'tags'             => { "aspera" => {
-            PREV_GEN_TAG  => true,
-            "node"        => { "access_key" => @access_key_self['id'], "file_id" => folder_id },
-            "xfer_id"     => SecureRandom.uuid,
-            "xfer_retry"  => 3600 } }
+            PREV_GEN_TAG         => true,
+            "node"               => { "access_key" => @access_key_self['id'], "file_id" => folder_id },
+            "xfer_id"            => SecureRandom.uuid,
+            "xfer_retry"         => 3600 } }
           }
           tspec['destination_root']='/' if direction.eql?("send")
           tspec['destination_root']=destination unless destination.nil?
@@ -177,54 +178,58 @@ module Asperalm
           preview_infos=nil
           entry_preview_folder_name="#{entry['id']}.asp-preview"
           # optimisation, work direct with files on filesystem
-          if @is_local
-            local_original_filepath=File.join(@local_storage_root,entry['path'])
-            original_mtime=File.mtime(local_original_filepath)
-            local_entry_preview_dir = File.join(@local_preview_folder, entry_preview_folder_name)
-            need_create_local_folder=!File.directory?(local_entry_preview_dir) # Hmmm
-            preview_infos=PreviewGenerator.preview_formats.map do |out_format|
-              local_preview_filepath=File.join(local_entry_preview_dir, 'preview.'+out_format)
-              local_preview_exists=File.exists?(local_preview_filepath)
-              {
-                :extension => original_extension,
-                :mime => entry['content_type'],
-                :out_format => out_format,
-                :dest => local_preview_filepath,
-                :exist => local_preview_exists,
-                :preview_newer? => (local_preview_exists and (File.mtime(local_preview_filepath)>original_mtime))
-              }
-            end
-          else
-            main_temp_folder="/tmp/toto" # TODO: mkdir
-            local_original_filepath=File.join(main_temp_folder,entry['name'])
+          if @access_remote
+            # folder where this entry is downloaded
+            remote_entry_temp_local_folder=main_temp_folder
+            # store source directly here
+            local_original_filepath=File.join(remote_entry_temp_local_folder,entry['name'])
             original_mtime=DateTime.parse(entry['modified_time'])
-            local_entry_preview_dir=File.join(main_temp_folder,entry_preview_folder_name)
+            # where previews are generated
+            local_entry_preview_dir=File.join(remote_entry_temp_local_folder,entry_preview_folder_name)
             need_create_local_folder=true
-            #TODO: by api, read content of entry preview folder on storage
+            # is there already a preview there
             preview_folder_entry=@api_node.read("files/#{@previews_entry['id']}/files",{:name=>entry_preview_folder_name})[:data]
-
-            # and build preview_infos
-            preview_infos=PreviewGenerator.preview_formats.map do |out_format|
-              local_preview_filepath=File.join(local_entry_preview_dir, 'preview.'+out_format)
+            # build preview_infos
+            preview_infos=PreviewGenerator.preview_formats.map do |preview_format|
+              local_preview_filepath=File.join(local_entry_preview_dir, 'preview.'+preview_format)
               local_preview_exists=false
               {
                 :extension => original_extension,
                 :mime => entry['content_type'],
-                :out_format => out_format,
+                :preview_format => preview_format,
                 :dest => local_preview_filepath,
                 :exist => local_preview_exists,
                 :preview_newer? => false,
                 :method => nil
               }
             end
+          else
+            local_original_filepath=File.join(@local_storage_root,entry['path'])
+            original_mtime=File.mtime(local_original_filepath)
+            local_entry_preview_dir = File.join(@local_preview_folder, entry_preview_folder_name)
+            need_create_local_folder=!File.directory?(local_entry_preview_dir) # Hmmm
+            preview_infos=PreviewGenerator.preview_formats.map do |preview_format|
+              local_preview_filepath=File.join(local_entry_preview_dir, 'preview.'+preview_format)
+              local_preview_exists=File.exists?(local_preview_filepath)
+              {
+                :extension => original_extension,
+                :mime => entry['content_type'],
+                :preview_format => preview_format,
+                :dest => local_preview_filepath,
+                :exist => local_preview_exists,
+                :preview_newer? => (local_preview_exists and (File.mtime(local_preview_filepath)>original_mtime))
+              }
+            end
           end
           # here we have the status on preview files, let's find if they need generation
           to_generate=[]
           preview_infos.each do |preview_info|
+            reason='unknown'
             # if it exists, what about overwrite policy ?
             if preview_info[:exist]
               case @option_overwrite
               when :always
+                reason='overwrite'
                 # continue: generate
               when :never
                 # never overwrite
@@ -232,6 +237,7 @@ module Asperalm
               when :mtime
                 # skip if preview is newer than original
                 next if preview_info[:preview_newer?]
+                reason='newer'
               end
             end
             # get type and method
@@ -240,42 +246,45 @@ module Asperalm
             next if preview_info[:source_type].nil?
             # shall we skip it ?
             next if @skip_types.include?(preview_info[:source_type].to_sym)
-            # can we manage it ?
+            # is there a generator ?
             next if preview_info[:method].nil?
             # ok, it's passed ! need generation
-            to_generate.push({:method=>preview_info[:method],:dest=>preview_info[:dest]})
+            to_generate.push({
+              :method=>preview_info[:method],
+              :dest  =>preview_info[:dest],
+              :reason=>reason})
           end
           unless to_generate.empty?
             FileUtils.mkdir_p(local_entry_preview_dir) if need_create_local_folder
-            if !@is_local
-              #transfer original file to folder main_temp_folder
+            if @access_remote
+              #transfer original file to folder remote_entry_temp_local_folder
               raise "parent not computed" if entry['parent_file_id'].nil?
-              do_transfer('receive',entry['parent_file_id'],entry['name'],main_temp_folder)
+              do_transfer('receive',entry['parent_file_id'],entry['name'],remote_entry_temp_local_folder)
             end
-            to_generate.each do |info|
+            to_generate.each do |gen_info|
               begin
-                puts(info[:dest])
-                PreviewGenerator.instance.generate(info[:method],local_original_filepath,info[:dest])
+                Log.log.info("gen #{gen_info[:dest]} : #{gen_info[:reason]}")
+                PreviewGenerator.instance.generate(gen_info[:method],local_original_filepath,gen_info[:dest])
               rescue => e
                 Log.log.error("exception: #{e.message}:\n#{e.backtrace.join("\n")}".red)
               end
             end
-            if !@is_local
-              # TODO: upload
+            if @access_remote
+              # upload
               do_transfer('send',@previews_entry['id'],local_entry_preview_dir)
-              #TODO: delete main_temp_folder and below
-              FileUtils.rm_rf(main_temp_folder)
+              # delete remote_entry_temp_local_folder and below
+              FileUtils.rm_rf(remote_entry_temp_local_folder)
             end
           end
         rescue => e
           Log.log.error("An error occured: #{e}")
         end
 
-        # scan all files in provided folder
-        def scan_folder_files(root_entry)
-          Log.log().debug("scan: #{root_entry}")
+        # scan all files in provided folder entry
+        def scan_folder_files(top_entry)
+          Log.log().debug("scan: #{top_entry}")
           # dont use recursive call, use list instead
-          items_to_process=[root_entry]
+          items_to_process=[top_entry]
           while !items_to_process.empty?
             entry=items_to_process.shift
             Log.log.debug("item:#{entry}")
@@ -308,26 +317,24 @@ module Asperalm
         end
 
         def execute_action
-          # TODO: lock based on TCP to avoid running multiple instances
           @api_node=basic_auth_api
           @transfer_address=URI.parse(@api_node.base_url).host
           @access_key_self = @api_node.read('access_keys/self')[:data] # same as with accesskey instead of /self
-          @is_local=Main.tool.options.get_option(:file_access,:mandatory).eql?(:file_system)
+          @access_remote=Main.tool.options.get_option(:file_access,:mandatory).eql?(:fasp)
           Log.log.debug("access key info: #{@access_key_self}")
-          #@api_node.read('files/1')[:data]
-          # either allow setting parameter, or get from aspera.conf
+          #TODO: either allow setting parameter, or get from aspera.conf
           @option_preview_folder='previews'
           @skip_folders=['/'+@option_preview_folder]
-          if @is_local
+          if @access_remote
+            # note the filter "name", it's why we take the first one
+            @previews_entry=@api_node.read("files/#{@access_key_self['root_file_id']}/files",{:name=>@option_preview_folder})[:data].first
+            @basic_token="Basic #{Base64.strict_encode64("#{@access_key_self['id']}:#{Main.tool.options.get_option(:password,:mandatory)}")}"
+          else
             #TODO: option to override @local_storage_root='xxx'
             @local_storage_root=@access_key_self['storage']['path'].gsub(%r{^file:///},'')
             raise "ERROR: no such folder: #{@local_storage_root}" unless File.directory?(@local_storage_root)
             @local_preview_folder=File.join(@local_storage_root,@option_preview_folder)
             raise "ERROR: no such folder: #{@local_preview_folder}" unless File.directory?(@local_preview_folder)
-          else
-            # note the filter "name", it's why we take the first one
-            @previews_entry=@api_node.read("files/#{@access_key_self['root_file_id']}/files",{:name=>@option_preview_folder})[:data].first
-            @basic_token="Basic #{Base64.strict_encode64("#{@access_key_self['id']}:#{Main.tool.options.get_option(:password,:mandatory)}")}"
           end
           command=Main.tool.options.get_next_argument('command',action_list)
           case command

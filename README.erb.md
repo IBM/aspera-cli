@@ -727,16 +727,16 @@ This is related to:
 
 ### Configuration
 
-Like any commands, parameters can be passed on command line or using a configuration parameter set. Example using a parameter set:
+Like any aslmcli commands, parameters can be passed on command line or using a configuration parameter set. Example using a parameter set:
 
 ```
 $ aslmcli config id default set preview my_files_access_key
 $ aslmcli config id my_files_access_key update --url=https://localhost:9092 --username=my_access_key --password=my_secret
 ```
 
-Once can check if the access key is wel configured using:
+Once can check if the access key is well configured using:
 ```
-$ aslmcli -Pmy_files_access_key node br /
+$ aslmcli -Pmy_files_access_key node browse /
 ```
 
 ### Execution
@@ -777,9 +777,18 @@ If the preview generator is run on a system that has direct access to the file s
 
 If the preview generator does not have access to files on the file system (it is remote, no mount, or is an object storage), then the original file is first downloaded, then the result is uploaded, use method `fasp`.
 
-### Example
-```
+### Examples of use
+on command line:
+
+```bash
 aslmcli preview event --skip-types=office --file-access=fasp --overwrite=always --iteration-file=/tmp/restart.txt --lock-port=12345
+```
+
+with crontab:
+
+```bash
+2-59 * * * * su -s /bin/bash - xfer -c 'timeout 10m aslmcli preview event --skip-types=office --lock-port=12345 --log-level=info --logger=syslog --iteration-file=/tmp/preview_restart.txt'
+0 * * * *    su -s /bin/bash - xfer -c 'timeout 30m aslmcli preview scan  --skip-types=office --lock-port=12345 --log-level=info --logger=syslog'
 ```
 
 ### External tools: Linux

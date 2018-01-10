@@ -139,8 +139,7 @@ module Asperalm
       end
 
       # returns default parameters for a plugin from loaded config file
-      # 1) try to find: conffile[conffile["config"][:default][plugin_sym]]
-      # 2) if no such value, it takes the name plugin_name+"_default", and loads this config
+      # try to find: conffile[conffile["config"][:default][plugin_sym]]
       def load_plugin_default_parameters(plugin_sym)
         default_config_name=get_plugin_default_config_name(plugin_sym)
         return if default_config_name.nil?
@@ -341,14 +340,14 @@ module Asperalm
         @options.set_option(:transfer,:ascp)
         @options.set_option(:insecure,:no)
         @options.set_option(:format,:table)
-        @options.set_option(:logger,:stdout)
+        #@options.set_option(:logger,:stdout)
         @options.set_option(:config_file,default_config_file)
         #options.set_option(:to_folder,'.')
         @options.parser.on("-h", "--help", "Show this message.") { @help_requested=true }
         @options.add_opt_list(:gui_mode,OperatingSystem.gui_modes,"method to start browser",'-gTYPE')
         @options.add_opt_list(:insecure,[:yes,:no],"do not validate cert")
-        @options.add_opt_list(:log_level,Log.levels,"Log level",'-lTYPE')
-        @options.add_opt_list(:logger,Log.logtypes,"log method",'-qTYPE')
+        @options.add_opt_list(:log_level,Log.levels,"Log level")
+        @options.add_opt_list(:logger,Log.logtypes,"log method")
         @options.add_opt_list(:format,self.class.display_formats,"output format")
         @options.add_opt_list(:transfer,[:ascp,:connect,:node],"type of transfer")
         @options.add_opt_simple(:config_file,"STRING","-CSTRING","read parameters from file in YAML format, current=#{@options.get_option(:config_file,:optional)}")
@@ -670,11 +669,22 @@ module Asperalm
         return self.class.result_success
       end
 
+      # early debug for parser
+      def early_debug_setup(argv)
+        argv.each do |arg|
+          case arg
+          when /^--log-level=(.*)/
+            Log.level = $1.to_sym
+          when /^--logger=(.*)/
+            Log.setlogger($1.to_sym)
+          end
+        end
+      end
+
       # this is the main function called by initial script
       def process_command_line(argv)
         begin
-          # early debug for parser
-          Log.level = :debug if argv.include?('--log-level=debug')
+          early_debug_setup(argv)
           add_plugins_fom_lookup_folders
           # init options
           # opt parser separates options (start with '-') from arguments

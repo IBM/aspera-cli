@@ -4,8 +4,11 @@ require 'singleton'
 require 'tmpdir'
 require 'yaml'
 
-# gem mimemagic
+# option: using gem mimemagic
 
+# option : do not match extensions
+# option : do not match mime type
+# option : use mimemagic gem to get mime type instead of node api
 module Asperalm
   # generate preview and thumbnail for one file only
   # gen_combi_ methods are found by name gen_combi_<out format>_<source type>
@@ -17,17 +20,19 @@ module Asperalm
     # values for option_video_style
     def self.video_styles; [:reencode,:clips,:preview];end
 
-    # values for out_format
+    # values for preview_format, those are the ones for which there is a transformation method:
+    # gen_combi_<preview_format>_<source_type>
     def self.preview_formats; ['png','mp4'];end
 
-    # contained in yaml file
-    def self.supported_types;[
+    # supported "source_type" to identify type of file
+    def self.source_types;[
         :image,
         :video,
         :office,
         :pdf,
         :plaintext
       ];end
+
     attr_accessor :option_video_style
     attr_accessor :option_vid_offset_seconds
     attr_accessor :option_vid_size
@@ -91,11 +96,11 @@ module Asperalm
     end
 
     # from bash manual: metacharacter
-    SHELL_META_CHARACTERS="|&;()<> \t"
+    SHELL_SPECIAL_CHARACTERS="|&;()<> \t#"
 
     # returns string with single quotes suitable for bash if there is any bash metacharacter
     def shell_quote(argument)
-      return argument unless argument.split('').any?{|c|SHELL_META_CHARACTERS.include?(c)}
+      return argument unless argument.split('').any?{|c|SHELL_SPECIAL_CHARACTERS.include?(c)}
       return "'"+argument.gsub(/'/){|s| "'\"'\"'"}+"'"
     end
 
@@ -247,12 +252,17 @@ module Asperalm
     end
 
     # text to png
-    # convert -size 100x100 xc:white -font Courier -pointsize 12 -fill black -annotate +15+15 "@hello.txt" -trim -bordercolor "#FFF" -border 10 +repage image.png
     def gen_combi_png_plaintext(original_filepath, output_path)
       external_command(['convert',
-        '-size',"x#{@option_thumb_img_size}>",
-        '-background','white',
-        "#{original_filepath}[0]",
+        '-size',"#{@option_thumb_img_size}x#{@option_thumb_img_size}",
+        'xc:white',
+        '-font','Courier',
+        '-pointsize',12,
+        '-fill','black',
+        '-annotate','+15+15',"@#{original_filepath}",
+        '-trim',
+        '-bordercolor','#FFF','-border',10,
+        '+repage',
         output_path])
     end
 
@@ -264,26 +274,26 @@ module Asperalm
 
     # returns processing method and type
     def set_type_method(preview_info)
+      mimetype=preview_info[:mime]
+      #TODO: if option , then use mimemagic gem
       # does it match a supported type ?
       infos=PROCESSING.select do |p|
         doselect=false
         case p[:match]
         when :mime_exact
-          doselect=preview_info[:mime].eql?(p[:value])
+          doselect=mimetype.eql?(p[:value])
         when :extension
           doselect=preview_info[:extension].eql?(p[:value])
         else raise "INTERNAL ERROR"
         end
-        Log.log.debug("by #{p}".red) if doselect
+        Log.log.debug("match #{p}") if doselect
         doselect
       end
       if !infos.empty?
         preview_info[:source_type]=infos.first[:preview_type]
       end
-      method_symb="gen_combi_#{preview_info[:out_format]}_#{preview_info[:source_type]}".to_sym
-      preview_info[:method]=nil
-      preview_info[:method]=self.method(method_symb) if respond_to?(method_symb,true)
-      Log.log.debug("type: #{preview_info[:source_type]}".red)
+      method_symb="gen_combi_#{preview_info[:preview_format]}_#{preview_info[:source_type]}".to_sym
+      preview_info[:method]=respond_to?(method_symb,true) ? self.method(method_symb) : nil
     end
 
     # create preview from file
@@ -293,7 +303,13 @@ module Asperalm
 
     private
     # define how files are processed based on mime type or extension
+    # :mime_exact : mime type must be exact value
+    # :extension : by file extension (in case mime type is not recognized)
     PROCESSING=[
+      {:preview_type=>:pdf, :match=>:mime_exact, :value=>'application/pdf'},
+      {:preview_type=>:plaintext, :match=>:mime_exact, :value=>'text/plain'},
+      {:preview_type=>:plaintext, :match=>:mime_exact, :value=>'application/json'},
+      {:preview_type=>:plaintext, :match=>:mime_exact, :value=>'application/xml'},
       {:preview_type=>:video, :match=>:mime_exact, :value=>'video/x-msvideo'},
       {:preview_type=>:video, :match=>:mime_exact, :value=>'video/x-ms-wmv'},
       {:preview_type=>:video, :match=>:mime_exact, :value=>'video/x-matroska'},
@@ -307,10 +323,6 @@ module Asperalm
       {:preview_type=>:video, :match=>:mime_exact, :value=>'video/h261'},
       {:preview_type=>:video, :match=>:mime_exact, :value=>'audio/ogg'},
       {:preview_type=>:video, :match=>:extension, :value=>'divx'},
-      {:preview_type=>:plaintext, :match=>:mime_exact, :value=>'text/plain'},
-      {:preview_type=>:plaintext, :match=>:mime_exact, :value=>'application/json'},
-      {:preview_type=>:plaintext, :match=>:mime_exact, :value=>'application/xml'},
-      {:preview_type=>:pdf, :match=>:mime_exact, :value=>'application/pdf'},
       {:preview_type=>:office, :match=>:mime_exact, :value=>'text/plain'},
       {:preview_type=>:office, :match=>:mime_exact, :value=>'text/html'},
       {:preview_type=>:office, :match=>:mime_exact, :value=>'text/csv'},

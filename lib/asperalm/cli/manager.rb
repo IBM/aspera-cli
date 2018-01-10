@@ -94,6 +94,8 @@ module Asperalm
       @@OPTION_SEP_NAME='_'
 
       attr_reader :parser
+      attr_accessor :use_interactive
+      attr_accessor :ask_optionals
 
       #
       def initialize
@@ -108,18 +110,16 @@ module Asperalm
         # list of options whose value is a ruby symbol, not a string
         @options_symbol_list={}
         # do we ask missing options and arguments to user ?
-        @use_interactive=STDIN.isatty
+        @use_interactive=STDIN.isatty ? :yes : :no
         # ask optional options if not provided and in interactive
-        @ask_optionals=false
+        @ask_optionals=:no
         # Note: was initially inherited, but goal is to have something different
         @parser= OptionParser.new
         #super
-        self.add_opt_switch(:no_tty,"-T","don't use interactive input") { dont_use_interactive }
-        self.add_opt_switch(:ask_options,"-A","ask even optional options") { @ask_optionals=true }
-      end
-
-      def dont_use_interactive
-        @use_interactive=false
+        self.set_obj_attr(:interactive,self,:use_interactive)
+        self.add_opt_list(:interactive,[:yes,:no],"use interactive input of missing params")
+        self.set_obj_attr(:ask_options,self,:ask_optionals)
+        self.add_opt_list(:ask_options,[:yes,:no],"ask even optional options")
       end
 
       # options can also be provided by env vars : --param-name -> ASLMCLI_PARAM_NAME
@@ -154,7 +154,7 @@ module Asperalm
       end
 
       def get_interactive(descr,expected=:single)
-        if !@use_interactive
+        if !@use_interactive.eql?(:yes)
           if expected.is_a?(Array)
             raise self.class.cli_bad_arg("missing: #{descr}",expected)
           end
@@ -220,7 +220,6 @@ module Asperalm
           @available_option[option_symbol]=value
         end
         Log.log.debug("set #{option_symbol}=#{value} (#{source})".blue)
-
       end
 
       # get an option value by name
@@ -244,12 +243,12 @@ module Asperalm
         end
         Log.log.debug("get #{option_symbol} (#{source}) : #{result}")
         if result.nil?
-          if !@use_interactive
+          if !@use_interactive.eql?(:yes)
             if is_type.eql?(:mandatory)
               raise CliBadArgument,"Missing option in context: #{option_symbol}"
             end
           else # use_interactive
-            if @ask_optionals or is_type.eql?(:mandatory)
+            if @ask_optionals.eql?(:yes) or is_type.eql?(:mandatory)
               expected=:single
               #print "please enter: #{option_symbol.to_s}"
               if @options_symbol_list.has_key?(option_symbol)

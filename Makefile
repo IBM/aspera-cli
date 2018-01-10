@@ -21,6 +21,7 @@ test:
 clean::
 	rm -f $(GEMNAME)-*.gem $(SRCZIPBASE)*.zip *.log token.* README.pdf README.html README.md sample_commands.txt sample_usage.txt $(TEST_CONFIG)
 	rm -fr t doc "PKG - "*
+	mkdir t
 	rm -f 200KB* AsperaConnect-ML*
 	gem uninstall -a -x $(GEMNAME)
 cleanupgems:

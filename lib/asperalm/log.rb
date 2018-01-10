@@ -34,7 +34,7 @@ module Asperalm
         @@logobj = Logger.new(STDOUT)
       when :syslog
         require 'syslog/logger'
-        @@logobj = Logger::Syslog.new("as_cli")
+        @@logobj = Syslog::Logger.new("aslmcli")
       else
         raise "unknown log type: #{logtype}"
       end
