@@ -264,7 +264,7 @@ module Asperalm
 
       # param must be hash
       def set_defaults(values)
-        Log.log.info("set_defaults=#{values}")
+        Log.log.debug("set_defaults=#{values}")
         raise "internal error: setting default with no hash: #{values.class}" if !values.is_a?(Hash)
         # 1- in conf file, key is string, in config, key is symbol
         # 2- value may be string, but symbol expected for value lists, but options may not be already declared, see Note1
@@ -280,30 +280,30 @@ module Asperalm
 
       # define an option with restricted values
       def add_opt_list(option_symbol,values,help,*on_args)
-        Log.log.info("add_opt_list #{option_symbol}")
+        Log.log.debug("add_opt_list #{option_symbol}")
         on_args.unshift(symbol_to_option(option_symbol,'ENUM'))
         # this option value must be a symbol
         @options_symbol_list[option_symbol]=values
         value=get_option(option_symbol)
         on_args.push(values)
         on_args.push("#{help}. Values=(#{values.join(',')}), current=#{value}")
-        Log.log.info("on_args=#{on_args}")
+        Log.log.debug("on_args=#{on_args}")
         @parser.on(*on_args){|v|set_option(option_symbol,self.class.get_from_list(v.to_s,help,values))}
       end
 
       # define an option with open values
       def add_opt_simple(option_symbol,opt_val,*on_args)
-        Log.log.info("add_opt_simple #{option_symbol}")
+        Log.log.debug("add_opt_simple #{option_symbol}")
         on_args.unshift(symbol_to_option(option_symbol,opt_val))
-        Log.log.info("on_args=#{on_args}")
+        Log.log.debug("on_args=#{on_args}")
         @parser.on(*on_args) { |v| set_option(option_symbol,v) }
       end
 
       # define an option with date format
       def add_opt_date(option_symbol,opt_val,*on_args)
-        Log.log.info("add_opt_date #{option_symbol}")
+        Log.log.debug("add_opt_date #{option_symbol}")
         on_args.unshift(symbol_to_option(option_symbol,opt_val))
-        Log.log.info("on_args=#{on_args}")
+        Log.log.debug("on_args=#{on_args}")
         @parser.on(*on_args) do |v|
           case v
           when 'now'; set_option(option_symbol,Manager.time_to_string(Time.now))
@@ -315,9 +315,9 @@ module Asperalm
 
       # define an option without value
       def add_opt_switch(option_symbol,*on_args,&block)
-        Log.log.info("add_opt_on #{option_symbol}")
+        Log.log.debug("add_opt_on #{option_symbol}")
         on_args.unshift(symbol_to_option(option_symbol,nil))
-        Log.log.info("on_args=#{on_args}")
+        Log.log.debug("on_args=#{on_args}")
         @parser.on(*on_args,&block)
       end
 

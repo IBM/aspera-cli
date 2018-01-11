@@ -34,7 +34,7 @@ module Asperalm
         rescue => e # Errno::ECONNREFUSED
           raise CliError,"Unable to start connect after #{trynumber} try" if trynumber > 3
           Log.log.warn("connect is not started, trying to start (#{trynumber}) : #{e}")
-          ++trynumber
+          trynumber+=1
           OperatingSystem.open_uri_graphical('fasp://initialize')
           sleep 2
           retry

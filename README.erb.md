@@ -773,9 +773,9 @@ Standard open source tools are used to create thumnails and video previews. Thos
 require that original files are accessible in the local file system and also write generated 
 files on the local file system. The tool provides 2 ways to read and write files with the parameter: `--file-access`
 
-If the preview generator is run on a system that has direct access to the file system, then the value `file_system` can be used.
+If the preview generator is run on a system that has direct access to the file system, then the value `local` can be used.
 
-If the preview generator does not have access to files on the file system (it is remote, no mount, or is an object storage), then the original file is first downloaded, then the result is uploaded, use method `fasp`.
+If the preview generator does not have access to files on the file system (it is remote, no mount, or is an object storage), then the original file is first downloaded, then the result is uploaded, use method `remote`.
 
 ### Examples of use
 on command line:

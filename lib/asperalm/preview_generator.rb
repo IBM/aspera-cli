@@ -48,6 +48,7 @@ module Asperalm
     attr_accessor :option_thumb_mp4_size
     attr_accessor :option_thumb_img_size
     attr_accessor :option_thumb_offset_fraction
+    attr_accessor :option_validate_mime
 
     private
 
@@ -270,42 +271,53 @@ module Asperalm
       gen_vidutil_dump_frame(original_filepath,get_video_duration(original_filepath)*@option_thumb_offset_fraction,@option_thumb_mp4_size, output_path)
     end
 
+    def processing_method_symb(preview_format,source_type)
+      "gen_combi_#{preview_format}_#{source_type}".to_sym
+    end
+
     public
 
-    # returns processing method and type
-    def set_type_method(preview_info)
-      mimetype=preview_info[:mime]
-      #TODO: if option , then use mimemagic gem
+    # 1- set the :source_type if recognized
+    # 2- returns true if there is a processing method
+    def is_supported?(preview_info)
       # does it match a supported type ?
-      infos=PROCESSING.select do |p|
-        doselect=false
+      infos=SUPPORTED_FILE_TYPES.select do |p|
         case p[:match]
         when :mime_exact
-          doselect=mimetype.eql?(p[:value])
+          next preview_info[:content_type].eql?(p[:value])
         when :extension
-          doselect=preview_info[:extension].eql?(p[:value])
+          next preview_info[:extension].eql?(p[:value])
         else raise "INTERNAL ERROR"
         end
-        Log.log.debug("match #{p}") if doselect
-        doselect
+        false
       end
-      if !infos.empty?
-        preview_info[:source_type]=infos.first[:preview_type]
-      end
-      method_symb="gen_combi_#{preview_info[:preview_format]}_#{preview_info[:source_type]}".to_sym
-      preview_info[:method]=respond_to?(method_symb,true) ? self.method(method_symb) : nil
+      return false if infos.empty?
+      preview_info[:source_type]=infos.first[:preview_type]
+      return respond_to?(processing_method_symb(preview_info[:preview_format],preview_info[:source_type]),true)
     end
 
     # create preview from file
-    def generate(gene_method,original_filepath,preview_filepath)
-      gene_method.call(original_filepath,preview_filepath)
+    def generate(preview_info)
+      Log.log.info("#{preview_info[:src]}->#{preview_info[:dest]}")
+      method_symb=processing_method_symb(preview_info[:preview_format],preview_info[:source_type])
+      # gene_method,preview_info[:src],preview_filepath
+      if @option_validate_mime.eql?(:yes)
+        require 'mimemagic'
+        require 'mimemagic/overlay'
+        magic_mime_type=MimeMagic.by_magic(File.open(preview_info[:src]))
+        if ! magic_mime_type.eql?(preview_info[:content_type])
+          Log.log.warn("non matching types: node=#{preview_info[:content_type]}, magic=#{magic_mime_type}")
+        end
+      end
+      self.send(method_symb,preview_info[:src],preview_info[:dest])
     end
 
     private
     # define how files are processed based on mime type or extension
+    # this is a way to add support for extensions that are otherwise not known by node api
     # :mime_exact : mime type must be exact value
     # :extension : by file extension (in case mime type is not recognized)
-    PROCESSING=[
+    SUPPORTED_FILE_TYPES=[
       {:preview_type=>:pdf, :match=>:mime_exact, :value=>'application/pdf'},
       {:preview_type=>:plaintext, :match=>:mime_exact, :value=>'text/plain'},
       {:preview_type=>:plaintext, :match=>:mime_exact, :value=>'application/json'},

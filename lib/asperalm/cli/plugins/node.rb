@@ -214,7 +214,7 @@ module Asperalm
             command=Main.tool.options.get_next_argument('command',[ :delete, :show ])
             case command
             when :delete
-              resp=api_node.delete(one_res_path)
+              api_node.delete(one_res_path)
               return {:type => :empty}
             when :show
               return {:type => :key_val_list, :data=>api_node.read(one_res_path)[:data], :fields=>['id','root_file_id','storage','license']}
@@ -362,8 +362,7 @@ module Asperalm
               return {:data=>resp[:data]["session_info_result"]["session_info"],:type=>:hash_array,:fields=>["session_uuid","status","transport","direction","bytes_transferred"]}
             end
           when :cleanup
-            transfers=self.class.get_transfers_iteration(api_node,Main.tool.options.get_option(:persistency,:optional),{:active_only=>false})
-            persistencyfile=Main.tool.options.get_option(:persistency,:mandatory)
+            transfers=self.class.get_transfers_iteration(api_node,Main.tool.options.get_option(:persistency,:mandatory),{:active_only=>false})
             filter_transfer=Main.tool.options.get_option(:filter_transfer,:mandatory)
             filter_file=Main.tool.options.get_option(:filter_file,:mandatory)
             Log.log.debug("filter_transfer: #{filter_transfer}")

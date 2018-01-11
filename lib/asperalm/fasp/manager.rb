@@ -22,6 +22,7 @@ require 'asperalm/log'
 
 module Asperalm
   module Fasp
+    ACCESS_KEY_TRANSFER_USER='xfer'
     # Manages FASP based transfers based on local ascp command line
     class Manager
       # use "instance" class method
@@ -99,7 +100,7 @@ module Asperalm
           # add management port
           ascp_arguments.unshift('-M', mgt_sock.addr[1].to_s)
           # start ascp in sub process
-          Log.log.info "execute: #{ascp_params[:env].map{|k,v| "#{k}=\"#{v}\""}.join(' ')} \"#{@ascp_path}\" \"#{ascp_arguments.join('" "')}\""
+          Log.log.debug "execute: #{ascp_params[:env].map{|k,v| "#{k}=\"#{v}\""}.join(' ')} \"#{@ascp_path}\" \"#{ascp_arguments.join('" "')}\""
           ascp_pid = Process.spawn(ascp_params[:env],[@ascp_path,@ascp_path],*ascp_arguments)
           # in parent, wait for connection to socket max 3 seconds
           Log.log.debug "before accept for pid (#{ascp_pid})"
@@ -178,7 +179,7 @@ module Asperalm
       end
 
       # start FASP transfer based on transfer spec (hash table)
-      # note it returns upon completion
+      # note that it returns upon completion only
       def start_transfer(transfer_spec)
         Log.log().debug("ts=#{transfer_spec}")
         # shall we use bypass keys ?

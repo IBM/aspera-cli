@@ -91,7 +91,8 @@ module Asperalm
       if ! @token_cache.has_key?(api_scope) then
         if File.exist?(token_state_file) then
           Log.log.info "reading token from file cache: #{token_state_file}"
-          token_data=set_token_cache(api_scope,File.read(token_state_file))
+          # returns decoded data
+          set_token_cache(api_scope,File.read(token_state_file))
           # TODO: check if node token is expired, then force refresh, mandatory as there is no API call, and ascp will complain
         end
       end

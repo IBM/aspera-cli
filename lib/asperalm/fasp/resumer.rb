@@ -103,7 +103,7 @@ module Asperalm
           end
 
           # take this retry in account
-          --lRetryLeft
+          lRetryLeft-=1
           Log.log.debug( "resuming in  #{sleep_seconds} seconds (retry left:#{lRetryLeft})" );
 
           # wait a bit before retrying, maybe network condition will be better

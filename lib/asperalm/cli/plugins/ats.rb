@@ -14,6 +14,14 @@ module Asperalm
         LOCAL_REDIRECT_URI="http://localhost:12345"
         # cache file for CLI for API keys
         API_KEY_REPOSITORY=File.join(Main.tool.config_folder,"ats_api_keys.json")
+        
+        def initialize
+          @api_auth=nil
+          @current_api_key_info=nil
+          @repo_api_keys=nil
+          @all_servers=nil
+        end
+        
         def declare_options
           Main.tool.options.add_opt_simple(:ats_id,"ATS_ID","ATS key identifier (ats_xxx)")
           Main.tool.options.add_opt_simple(:params,"JSON","parameters for access key")

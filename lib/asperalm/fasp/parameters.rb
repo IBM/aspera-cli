@@ -187,9 +187,9 @@ module Asperalm
         add_ascp_options(Base64.strict_encode64(value))
 
         # warn about non translated arguments
-        @state[:transfer_spec].each_pair { |key,value|
+        @state[:transfer_spec].each_pair { |key,val|
           if !@state[:used_names].include?(key)
-            Log.log.error("unhandled parameter: #{key} = \"#{value}\"")
+            Log.log.error("unhandled parameter: #{key} = \"#{val}\"")
           end
         }
 

@@ -62,7 +62,7 @@ module Asperalm
                     api_connect_cdn=Rest.new(CONNECT_WEB_URL)
                     fileurl = one_link['href']
                     filename=fileurl.gsub(%r{.*/},'')
-                    download_data=api_connect_cdn.call({:operation=>'GET',:subpath=>fileurl,:save_to_file=>File.join(folder_dest,filename)})
+                    api_connect_cdn.call({:operation=>'GET',:subpath=>fileurl,:save_to_file=>File.join(folder_dest,filename)})
                     return {:data=>"downloaded: #{filename}",:type => :status}
                   when :open #
                     OperatingSystem.open_uri(one_link['href'])

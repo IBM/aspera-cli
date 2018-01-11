@@ -43,7 +43,7 @@ module Asperalm
         # supports links to secondary nodes
         # input: root node and file id, and array for path
         # output: file_id and node_info  for the given path
-        def find_nodeinfo_and_fileid ( top_node_id, top_file_id, element_path_string )
+        def find_nodeinfo_and_fileid( top_node_id, top_file_id, element_path_string )
           Log.log.debug "find_nodeinfo_and_fileid: nodeid=#{top_node_id}, #{top_file_id}, path=#{element_path_string}"
 
           # initialize loop elements
@@ -146,7 +146,7 @@ module Asperalm
               file_name = file_path.last
               node_info,file_id = find_nodeinfo_and_fileid(home_node_id,home_file_id,source_file)
               node_api=get_files_node_api(node_info,FilesApi::SCOPE_NODE_USER)
-              download_data=node_api.call({:operation=>'GET',:subpath=>"files/#{file_id}/content",:save_to_file=>File.join(Main.tool.destination_folder('receive'),file_name)})
+              node_api.call({:operation=>'GET',:subpath=>"files/#{file_id}/content",:save_to_file=>File.join(Main.tool.destination_folder('receive'),file_name)})
               return {:data=>"downloaded: #{file_name}",:type => :status}
             end
           end
@@ -313,7 +313,7 @@ module Asperalm
             when :set_client_key
               the_client_id=Main.tool.options.get_next_argument('client_id')
               the_private_key=Main.tool.options.get_next_argument('private_key')
-              res=@api_files_admin.update("clients/#{the_client_id}",{:jwt_grant_enabled=>true, :public_key=>OpenSSL::PKey::RSA.new(the_private_key).public_key.to_s})
+              @api_files_admin.update("clients/#{the_client_id}",{:jwt_grant_enabled=>true, :public_key=>OpenSSL::PKey::RSA.new(the_private_key).public_key.to_s})
               return Main.result_success
             when :resource
               resource=Main.tool.options.get_next_argument('resource',[:user,:group,:client,:contact,:dropbox,:node,:operation,:package,:saml_configuration, :workspace, :dropbox_membership,:short_link])

@@ -70,7 +70,7 @@ module Asperalm
       singleton_class.send(:alias_method, :tool, :instance)
       def self.version;return @@TOOL_VERSION;end
       private
-      @@TOOL_VERSION='0.5.7'
+      @@TOOL_VERSION='0.5.8'
       # first level command for the main tool
       @@MAIN_PLUGIN_NAME_STR='config'
       # name of application, also foldername where config is stored
@@ -177,7 +177,7 @@ module Asperalm
 
       def option_to_folder=(value); @transfer_spec_default.merge!({'destination_root'=>value}); end
 
-      def option_logtype; @logtype_cache; end
+      def option_logtype; @logtype_cache||=nil; end
 
       def option_logtype=(value)
         level=Log.level
@@ -598,7 +598,6 @@ module Asperalm
         when :flush_tokens
           deleted_files=Oauth.flush_tokens(config_folder)
           return {:type=>:value_list, :name=>'file',:data=>deleted_files}
-          return Main.status_result('token cache flushed')
         when :plugins
           return {:data => plugin_sym_list.map { |i| { 'plugin' => i.to_s, 'path' => @plugins[i][:source] } } , :fields => ['plugin','path'], :type => :hash_array }
         when :list
@@ -706,7 +705,7 @@ module Asperalm
           if !lock_port.nil?
             begin
               # no need to close later, will be freed on process exit
-              lock_sock = TCPServer.new('127.0.0.1',lock_port.to_i)
+              TCPServer.new('127.0.0.1',lock_port.to_i)
             rescue => e
               raise CliError,"Another instance is already running (lock port=#{lock_port})."
             end
