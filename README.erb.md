@@ -67,6 +67,7 @@ On windows you can get it from here: https://rubyinstaller.org/ .
 ```bash
 $ yum install ruby rubygems
 ```
+Note that Ruby 2+ is required, if you have an older Linux (e.g. CentOS 6), you may want to install "rvm" https://rvm.io/ and install a newer Ruby.
 
 ## Installation
 Once you have ruby and rights to install gems: Install the gem and its dependencies:

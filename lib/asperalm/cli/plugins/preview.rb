@@ -1,6 +1,7 @@
 require 'asperalm/cli/main'
 require 'asperalm/cli/basic_auth_plugin'
-require 'asperalm/preview_generator'
+require 'asperalm/preview/generator'
+require 'asperalm/preview/options'
 require 'asperalm/fasp/agent'
 require 'date'
 
@@ -38,7 +39,7 @@ module Asperalm
           @skip_types=[]
           value.split(',').each do |v|
             s=v.to_sym
-            raise "not supported: #{v}" unless PreviewGenerator.source_types.include?(s)
+            raise "not supported: #{v}" unless Asperalm::Preview::Generator.conversion_types.include?(s)
             @skip_types.push(s)
           end
         end
@@ -51,29 +52,29 @@ module Asperalm
           @option_iteration_file_filepath=nil
           @skip_types=[]
           @default_transfer_spec=nil
-          # link CLI options to generator attributes
+          # link CLI options to gen_info attributes
           Main.tool.options.set_option(:file_access,:local)
           Main.tool.options.set_obj_attr(:skip_types,self,:option_skip_types)
           Main.tool.options.set_obj_attr(:overwrite,self,:option_overwrite,:mtime)
           Main.tool.options.set_obj_attr(:previews_folder,self,:option_previews_folder,'previews')
           Main.tool.options.set_obj_attr(:iteration_file,self,:option_iteration_file_filepath,nil)
           Main.tool.options.set_obj_attr(:folder_cache,self,:option_folder_cache,:yes)
-          Main.tool.options.set_obj_attr(:video,PreviewGenerator.instance,:option_video_style,:reencode)
-          Main.tool.options.set_obj_attr(:vid_offset_seconds,PreviewGenerator.instance,:option_vid_offset_seconds,10)
-          Main.tool.options.set_obj_attr(:vid_size,PreviewGenerator.instance,:option_vid_size,'320:-2')
-          Main.tool.options.set_obj_attr(:vid_framecount,PreviewGenerator.instance,:option_vid_framecount,30)
-          Main.tool.options.set_obj_attr(:vid_blendframes,PreviewGenerator.instance,:option_vid_blendframes,2)
-          Main.tool.options.set_obj_attr(:vid_framepause,PreviewGenerator.instance,:option_vid_framepause,5)
-          Main.tool.options.set_obj_attr(:vid_fps,PreviewGenerator.instance,:option_vid_fps,15)
-          Main.tool.options.set_obj_attr(:vid_mp4_size_reencode,PreviewGenerator.instance,:option_vid_mp4_size_reencode,"-2:'min(ih,360)'")
-          Main.tool.options.set_obj_attr(:clips_offset_seconds,PreviewGenerator.instance,:option_clips_offset_seconds,10)
-          Main.tool.options.set_obj_attr(:clips_size,PreviewGenerator.instance,:option_clips_size,'320:-2')
-          Main.tool.options.set_obj_attr(:clips_length,PreviewGenerator.instance,:option_clips_length,5)
-          Main.tool.options.set_obj_attr(:clips_count,PreviewGenerator.instance,:option_clips_count,5)
-          Main.tool.options.set_obj_attr(:thumb_mp4_size,PreviewGenerator.instance,:option_thumb_mp4_size,"-1:'min(ih,600)'")
-          Main.tool.options.set_obj_attr(:thumb_img_size,PreviewGenerator.instance,:option_thumb_img_size,800)
-          Main.tool.options.set_obj_attr(:thumb_offset_fraction,PreviewGenerator.instance,:option_thumb_offset_fraction,0.1)
-          Main.tool.options.set_obj_attr(:validate_mime,PreviewGenerator.instance,:option_validate_mime,:no)
+          Main.tool.options.set_obj_attr(:video,Asperalm::Preview::Options.instance,:vid_conv_method,:reencode)
+          Main.tool.options.set_obj_attr(:vid_offset_seconds,Asperalm::Preview::Options.instance,:vid_offset_seconds,10)
+          Main.tool.options.set_obj_attr(:vid_size,Asperalm::Preview::Options.instance,:vid_size,'320:-2')
+          Main.tool.options.set_obj_attr(:vid_framecount,Asperalm::Preview::Options.instance,:vid_framecount,30)
+          Main.tool.options.set_obj_attr(:vid_blendframes,Asperalm::Preview::Options.instance,:vid_blendframes,2)
+          Main.tool.options.set_obj_attr(:vid_framepause,Asperalm::Preview::Options.instance,:vid_framepause,5)
+          Main.tool.options.set_obj_attr(:vid_fps,Asperalm::Preview::Options.instance,:vid_fps,15)
+          Main.tool.options.set_obj_attr(:vid_mp4_size_reencode,Asperalm::Preview::Options.instance,:vid_mp4_size_reencode,"-2:'min(ih,360)'")
+          Main.tool.options.set_obj_attr(:clips_offset_seconds,Asperalm::Preview::Options.instance,:clips_offset_seconds,10)
+          Main.tool.options.set_obj_attr(:clips_size,Asperalm::Preview::Options.instance,:clips_size,'320:-2')
+          Main.tool.options.set_obj_attr(:clips_length,Asperalm::Preview::Options.instance,:clips_length,5)
+          Main.tool.options.set_obj_attr(:clips_count,Asperalm::Preview::Options.instance,:clips_count,5)
+          Main.tool.options.set_obj_attr(:thumb_mp4_size,Asperalm::Preview::Options.instance,:thumb_mp4_size,"-1:'min(ih,600)'")
+          Main.tool.options.set_obj_attr(:thumb_img_size,Asperalm::Preview::Options.instance,:thumb_img_size,800)
+          Main.tool.options.set_obj_attr(:thumb_offset_fraction,Asperalm::Preview::Options.instance,:thumb_offset_fraction,0.1)
+          Main.tool.options.set_obj_attr(:validate_mime,Asperalm::Preview::Options.instance,:validate_mime,:no)
         end
 
         alias super_declare_options declare_options
@@ -84,7 +85,7 @@ module Asperalm
           Main.tool.options.add_opt_simple(:skip_types,"LIST","skip types in comma separated list")
           Main.tool.options.add_opt_list(:overwrite,Preview.overwrite_policies,"when to generate preview file")
           Main.tool.options.add_opt_simple(:iteration_file,"PATH","path to iteration memory file")
-          Main.tool.options.add_opt_list(:video,PreviewGenerator.video_styles,"method to generate video")
+          Main.tool.options.add_opt_list(:video,Asperalm::Preview::Options.vid_conv_methods,"method to generate video")
           Main.tool.options.add_opt_list(:validate_mime,[:no,:yes],"extra mime type validation")
           Main.tool.options.add_opt_list(:folder_cache,[:no,:yes],"use node api folder cache")
           Main.tool.options.add_opt_list(:validate_mime,[:no,:yes],"use magic number validation")
@@ -204,14 +205,13 @@ module Asperalm
           # defined by node api
           entry_preview_folder_name="#{entry['id']}#{PREVIEW_FOLDER_SUFFIX}"
           # prepare preview file list and collect current state
-          preview_infos=PreviewGenerator.preview_formats.map do |preview_format|
-            {
-              :preview_format => preview_format,
-              :extension => original_extension,
-              :content_type => entry['content_type'],
-              :preview_exist? => nil,
-              :preview_newer_than_original? => nil
-            }
+          gen_infos=Asperalm::Preview::Generator.generators(original_extension,entry['content_type']).inject([]) do |a,g|
+            a.push({
+              :generator => g,
+              :preview_exist => nil,
+              :preview_newer_than_original => nil
+            })
+            a # give back memory for inject
           end
           # lets gather some infos on possibly existing previews, it depends if files access locally or remotely
           if @access_remote
@@ -225,29 +225,28 @@ module Asperalm
             need_create_local_folder=true # this will be temp folder
             #TODO: this does not work because previews is hidden
             #this_preview_folder_entries=get_folder_entries(@previews_folder_entry['id'],{:name=>entry_preview_folder_name})
-            # build preview_infos
-            preview_infos.each do |preview_info|
-              preview_info[:src]=local_original_filepath
-              preview_info[:dest]=File.join(local_entry_preview_dir, 'preview.'+preview_info[:preview_format])
-              preview_info[:preview_exist?]=false # TODO: use this_preview_folder_entries
-              preview_info[:preview_newer_than_original?] = false # TODO: get change time and compare, useful ?
+            gen_infos.each do |gen_info|
+              gen_info[:generator].source=local_original_filepath
+              gen_info[:generator].destination=File.join(local_entry_preview_dir, 'preview.'+gen_info[:generator].preview_format)
+              gen_info[:preview_exist]=false # TODO: use this_preview_folder_entries (but it's hidden)
+              gen_info[:preview_newer_than_original] = false # TODO: get change time and compare, useful ?
             end
           else # direct local file system access
             local_original_filepath=File.join(@local_storage_root,entry['path'])
             original_mtime=File.mtime(local_original_filepath)
             local_entry_preview_dir = File.join(@local_preview_folder, entry_preview_folder_name)
             need_create_local_folder=!File.directory?(local_entry_preview_dir)
-            preview_infos.each do |preview_info|
-              preview_info[:src]=local_original_filepath
-              preview_info[:dest]=File.join(local_entry_preview_dir, 'preview.'+preview_info[:preview_format])
-              preview_info[:preview_exist?]=File.exist?(preview_info[:dest])
-              preview_info[:preview_newer_than_original?] = (preview_info[:preview_exist?] and (File.mtime(preview_info[:dest])>original_mtime))
+            gen_infos.each do |gen_info|
+              gen_info[:generator].source=local_original_filepath
+              gen_info[:generator].destination=File.join(local_entry_preview_dir, 'preview.'+gen_info[:generator].preview_format)
+              gen_info[:preview_exist]=File.exist?(gen_info[:generator].destination)
+              gen_info[:preview_newer_than_original] = (gen_info[:preview_exist] and (File.mtime(gen_info[:generator].destination)>original_mtime))
             end
           end
           # here we have the status on preview files, let's find if they need generation
-          preview_infos.select! do |preview_info|
+          gen_infos.select! do |gen_info|
             # if it exists, what about overwrite policy ?
-            if preview_info[:preview_exist?]
+            if gen_info[:preview_exist]
               case @option_overwrite
               when :always
                 # continue: generate
@@ -256,28 +255,29 @@ module Asperalm
                 next false
               when :mtime
                 # skip if preview is newer than original
-                next false if preview_info[:preview_newer_than_original?]
+                next false if gen_info[:preview_newer_than_original]
               end
             end
-            # get source_type (if known) and check if supported
-            next false unless PreviewGenerator.instance.is_supported?(preview_info)
+            # get conversion_type (if known) and check if supported
+            next false unless gen_info[:generator].supported?
             # shall we skip it ?
-            next false if @skip_types.include?(preview_info[:source_type].to_sym)
+            next false if @skip_types.include?(gen_info[:generator].conversion_type)
             # ok we need to generate
             true
           end
-          return if preview_infos.empty?
+          return if gen_infos.empty?
           FileUtils.mkdir_p(local_entry_preview_dir) if need_create_local_folder
           if @access_remote
-            #transfer original file to folder remote_entry_temp_local_folder
             raise "parent not computed" if entry['parent_file_id'].nil?
+            #  download original file to temp folder remote_entry_temp_local_folder
             do_transfer('receive',entry['parent_file_id'],entry['name'],remote_entry_temp_local_folder)
           end
-          preview_infos.each do |preview_info|
+          gen_infos.each do |gen_info|
             begin
-              PreviewGenerator.instance.generate(preview_info)
+              gen_info[:generator].generate
             rescue => e
               Log.log.error("exception: #{e.message}:\n#{e.backtrace.join("\n")}".red)
+              raise e
             end
           end
           if @access_remote
@@ -286,8 +286,8 @@ module Asperalm
             # delete remote_entry_temp_local_folder and below
             FileUtils.rm_rf(remote_entry_temp_local_folder)
           end
-        rescue => e
-          Log.log.error("An error occured: #{e}")
+#        rescue => e
+#          Log.log.error("exception: #{e.message}:\n#{e.backtrace.join("\n")}".red)
         end # generate_preview
 
         # scan all files in provided folder entry
