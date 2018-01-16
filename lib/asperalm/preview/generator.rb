@@ -9,7 +9,7 @@ module Asperalm
     # generate preview files (png, mp4) for one file only
     # gen_combi_ methods are found by name gen_combi_<preview_format>_<conversion_type>
     # gen_video_ methods are found by name gen_video_<vid_conv_method>
-    # gen_vidutil_ methods are utility methods used for the video conversion
+    # video_ methods are utility methods used for the video conversion
     # node api mime types are from: http://svn.apache.org/repos/asf/httpd/httpd/trunk/docs/conf/mime.types
     class Generator
       # values for preview_format, those are the ones for which there is a transformation method:
@@ -36,10 +36,8 @@ module Asperalm
         @mime_type=mime_type
         @source=nil
         @destination=nil
-        @conversion_type=nil
-
         @conversion_type=SUPPORTED_MIME_TYPES[@mime_type]
-        if @conversion_type.nil?
+        if @conversion_type.nil? and Options.instance.check_extension
           @conversion_type=SUPPORTED_EXTENSIONS[@extension]
         end
       end
@@ -87,9 +85,9 @@ module Asperalm
         file_number = 1
         1.upto(framecount) do |i|
           filename = get_tmp_num_filepath(tmpdir, file_number)
-          gen_vidutil_dump_frame(@source, offset_seconds, Options.instance.vid_size, filename)
-          gen_vidutil_dupe_frame(filename, tmpdir, Options.instance.vid_framepause)
-          gen_vidutil_blend_frames(previous, filename, tmpdir,Options.instance.vid_blendframes) if i > 1
+          Utils.video_dump_frame(@source, offset_seconds, Options.instance.vid_size, filename)
+          Utils.video_dupe_frame(filename, tmpdir, Options.instance.vid_framepause)
+          Utils.video_blend_frames(previous, filename, tmpdir,Options.instance.vid_blendframes) if i > 1
           previous = get_tmp_num_filepath(tmpdir, file_number + Options.instance.vid_framepause)
           file_number += Options.instance.vid_framepause + Options.instance.vid_blendframes + 1
           offset_seconds+=interval
@@ -201,7 +199,7 @@ module Asperalm
       end
 
       def gen_combi_png_video()
-        Utils.gen_vidutil_dump_frame(@source,Utils.get_video_duration(@source)*Options.instance.thumb_offset_fraction,Options.instance.thumb_mp4_size, @destination)
+        Utils.video_dump_frame(@source,Utils.get_video_duration(@source)*Options.instance.thumb_offset_fraction,Options.instance.thumb_mp4_size, @destination)
       end
 
       # define how files are processed based on mime type

@@ -74,7 +74,7 @@ module Asperalm
         "#{tmpdir}/img#{file_number}.jpg"
       end
 
-      def self.gen_vidutil_dupe_frame(input_file, tmpdir, dupecount)
+      def self.video_dupe_frame(input_file, tmpdir, dupecount)
         img_number = /img([0-9]*)\.jpg/.match(input_file)[1].to_i
         1.upto(dupecount) do |i|
           dupename = get_tmp_num_filepath(tmpdir, (i + img_number))
@@ -82,7 +82,7 @@ module Asperalm
         end
       end
 
-      def self.gen_vidutil_blend_frames(img1, img2, tmpdir, blendframes)
+      def self.video_blend_frames(img1, img2, tmpdir, blendframes)
         img_number = /img([0-9]*)\.jpg/.match(img1)[1].to_i
         1.upto(blendframes) do |i|
           percent = 100 * i / (blendframes + 1)
@@ -91,7 +91,7 @@ module Asperalm
         end
       end
 
-      def self.gen_vidutil_dump_frame(input_file, offset_seconds, size, thumb_file_name)
+      def self.video_dump_frame(input_file, offset_seconds, size, thumb_file_name)
         #-loglevel panic -nostats -loglevel error
         ffmpeg(input_file,
         ['-ss',offset_seconds],
