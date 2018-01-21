@@ -158,6 +158,8 @@ module Asperalm
           # get parameters
           instance_fqdn=URI.parse(Main.tool.options.get_option(:url,:mandatory)).host
           organization,instance_domain=instance_fqdn.split('.',2)
+          
+          raise "expecting a public FQDN for Files" if instance_domain.nil?
 
           Log.log.debug("instance_fqdn=#{instance_fqdn}")
           Log.log.debug("instance_domain=#{instance_domain}")

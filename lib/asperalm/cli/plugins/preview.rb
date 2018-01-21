@@ -24,13 +24,15 @@ module Asperalm
         attr_accessor :option_overwrite
         attr_accessor :option_previews_folder
         attr_accessor :option_iteration_file_filepath
-        attr_accessor :option_folder_cache
+        attr_accessor :option_folder_reset_cache
         # main temp folder to download remote sources
         def main_temp_folder;"/tmp/aspera.previews";end
 
         # special tag to identify transfers related to generator
         PREV_GEN_TAG='preview_generator'
+        # defined by node API
         PREVIEW_FOLDER_SUFFIX='.asp-preview'
+        PREVIEW_FILE_PREFIX='preview.'
 
         # values for option_overwrite
         def self.overwrite_policies; [:always,:never,:mtime];end
@@ -58,7 +60,7 @@ module Asperalm
           Main.tool.options.set_obj_attr(:overwrite,self,:option_overwrite,:mtime)
           Main.tool.options.set_obj_attr(:previews_folder,self,:option_previews_folder,'previews')
           Main.tool.options.set_obj_attr(:iteration_file,self,:option_iteration_file_filepath,nil)
-          Main.tool.options.set_obj_attr(:folder_cache,self,:option_folder_cache,:yes)
+          Main.tool.options.set_obj_attr(:folder_reset_cache,self,:option_folder_reset_cache,:no)
           Main.tool.options.set_obj_attr(:video,Asperalm::Preview::Options.instance,:vid_conv_method,:reencode)
           Main.tool.options.set_obj_attr(:vid_offset_seconds,Asperalm::Preview::Options.instance,:vid_offset_seconds,10)
           Main.tool.options.set_obj_attr(:vid_size,Asperalm::Preview::Options.instance,:vid_size,'320:-2')
@@ -87,7 +89,7 @@ module Asperalm
           Main.tool.options.add_opt_simple(:iteration_file,"PATH","path to iteration memory file")
           Main.tool.options.add_opt_list(:video,Asperalm::Preview::Options.vid_conv_methods,"method to generate video")
           Main.tool.options.add_opt_list(:validate_mime,[:no,:yes],"extra mime type validation")
-          Main.tool.options.add_opt_list(:folder_cache,[:no,:yes],"use node api folder cache")
+          Main.tool.options.add_opt_list(:folder_reset_cache,[:no,:header,:read],"reset folder cache")
           Main.tool.options.add_opt_list(:validate_mime,[:no,:yes],"use magic number validation")
         end
 
@@ -97,12 +99,12 @@ module Asperalm
         # but /files/id is not cached
         def get_folder_entries(file_id,request_args=nil)
           headers={'Accept'=>'application/json'}
-          headers.merge!({'X-Aspera-Cache-Control'=>'no-cache'}) if @option_folder_cache.eql?(:no)
+          headers.merge!({'X-Aspera-Cache-Control'=>'no-cache'}) if @option_folder_reset_cache.eql?(:header)
           return @api_node.call({:operation=>'GET',:subpath=>"files/#{file_id}/files",:headers=>headers,:url_params=>request_args})[:data]
           #return @api_node.read("files/#{file_id}/files",request_args)[:data]
         end
 
-        # requests recent events on node api and process newly modified folders
+        # old version based on folders
         def process_file_events_old
           args={
             'access_key'=>@access_key_self['id'],
@@ -133,6 +135,7 @@ module Asperalm
           end
         end
 
+        # requests recent events on node api and process newly modified folders
         def process_file_events
           # get new file creation by access key (TODO: what if file already existed?)
           events_filter={
@@ -227,7 +230,7 @@ module Asperalm
             #this_preview_folder_entries=get_folder_entries(@previews_folder_entry['id'],{:name=>entry_preview_folder_name})
             gen_infos.each do |gen_info|
               gen_info[:generator].source=local_original_filepath
-              gen_info[:generator].destination=File.join(local_entry_preview_dir, 'preview.'+gen_info[:generator].preview_format)
+              gen_info[:generator].destination=File.join(local_entry_preview_dir, PREVIEW_FILE_PREFIX+gen_info[:generator].preview_format)
               gen_info[:preview_exist]=false # TODO: use this_preview_folder_entries (but it's hidden)
               gen_info[:preview_newer_than_original] = false # TODO: get change time and compare, useful ?
             end
@@ -238,7 +241,7 @@ module Asperalm
             need_create_local_folder=!File.directory?(local_entry_preview_dir)
             gen_infos.each do |gen_info|
               gen_info[:generator].source=local_original_filepath
-              gen_info[:generator].destination=File.join(local_entry_preview_dir, 'preview.'+gen_info[:generator].preview_format)
+              gen_info[:generator].destination=File.join(local_entry_preview_dir, PREVIEW_FILE_PREFIX+gen_info[:generator].preview_format)
               gen_info[:preview_exist]=File.exist?(gen_info[:generator].destination)
               gen_info[:preview_newer_than_original] = (gen_info[:preview_exist] and (File.mtime(gen_info[:generator].destination)>original_mtime))
             end
@@ -277,7 +280,6 @@ module Asperalm
               gen_info[:generator].generate
             rescue => e
               Log.log.error("exception: #{e.message}:\n#{e.backtrace.join("\n")}".red)
-              raise e
             end
           end
           if @access_remote
@@ -286,8 +288,9 @@ module Asperalm
             # delete remote_entry_temp_local_folder and below
             FileUtils.rm_rf(remote_entry_temp_local_folder)
           end
-#        rescue => e
-#          Log.log.error("exception: #{e.message}:\n#{e.backtrace.join("\n")}".red)
+          if @option_folder_reset_cache.eql?(:read)
+            @api_node.read("files/#{entry['id']}")
+          end
         end # generate_preview
 
         # scan all files in provided folder entry

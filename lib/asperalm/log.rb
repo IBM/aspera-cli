@@ -26,7 +26,7 @@ module Asperalm
     end
 
     def self.setlogger(logtype)
-      current_level_num=@@logobj.nil? ? :warn : @@logobj.level
+      current_severity_integer=@@logobj.nil? ? Logger::Severity::WARN : @@logobj.level
       case logtype
       when :stderr
         @@logobj = Logger.new(STDERR)
@@ -38,7 +38,7 @@ module Asperalm
       else
         raise "unknown log type: #{logtype}"
       end
-      @@logobj.level=current_level_num
+      @@logobj.level=current_severity_integer
     end
   end
 end

@@ -28,7 +28,8 @@ module Asperalm
       # returns the value from transfer spec and mark parameter as used
       def use_parameter(ts_name,p_classes,mandatory=false)
         raise Fasp::Error.new("mandatory parameter: #{ts_name}") if mandatory and !@state[:transfer_spec].has_key?(ts_name)
-        raise Fasp::Error.new("#{ts_name} is : #{@state[:transfer_spec][ts_name].class} (#{@state[:transfer_spec][ts_name]}), shall be #{p_classes}, ") unless @state[:transfer_spec][ts_name].nil? or p_classes.include?(@state[:transfer_spec][ts_name].class)
+        #raise Fasp::Error.new("#{ts_name} is : #{@state[:transfer_spec][ts_name].class} (#{@state[:transfer_spec][ts_name]}), shall be #{p_classes}, ") unless @state[:transfer_spec][ts_name].nil? or p_classes.include?(@state[:transfer_spec][ts_name].class)
+        raise Fasp::Error.new("#{ts_name} is : #{@state[:transfer_spec][ts_name].class} (#{@state[:transfer_spec][ts_name]}), shall be #{p_classes}, ") unless @state[:transfer_spec][ts_name].nil? or p_classes.inject(false){|m,v|m or @state[:transfer_spec][ts_name].is_a?(v)}
         @state[:used_names].push(ts_name)
         return @state[:transfer_spec][ts_name]
       end
@@ -152,6 +153,7 @@ module Asperalm
         set_param_value('EX_fasp_proxy_url','--proxy',[String])
         set_param_value('EX_http_proxy_url','-x',[String])
         set_param_value('EX_ssh_key_paths','-i',[Array])
+        set_param_value('EX_http_transfer_jpeg','-j',[Integer])
 
         # TODO: manage those parameters, some are for connect only ? node api ?
         ignore_parameter('target_rate_cap_kbps',[Integer])
