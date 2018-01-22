@@ -1,13 +1,13 @@
 #require 'asperalm/cli/basic_auth_plugin'
 require 'asperalm/cli/plugins/node'
 require 'asperalm/oauth'
+require 'uri'
 
 module Asperalm
   module Cli
     module Plugins
       class Shares2 < Plugin
         def declare_options
-          Main.tool.options.add_opt_list(:auth,Oauth.auth_types,"type of authentication",'-tTYPE')
           Main.tool.options.add_opt_simple(:organization,"ID_OR_NAME","organization")
           Main.tool.options.add_opt_simple(:project,"ID_OR_NAME","project")
           Main.tool.options.add_opt_simple(:share,"ID_OR_NAME","share")
@@ -18,31 +18,26 @@ module Asperalm
         def init_apis
           # get parameters
           shares2_api_base_url=Main.tool.options.get_option(:url,:mandatory)
-
-          oauth_params={
-            :baseurl =>shares2_api_base_url,
-            :authorize_path => "oauth2/authorize",
-            :token_path => "oauth2/token",
-            :persist_identifier => 'the_url_host', # TODO
-            :persist_folder => Main.tool.config_folder,
-            :type=>Main.tool.options.get_option(:auth,:mandatory)
-          }
-
-          case oauth_params[:type]
-          when :basic
-            oauth_params[:username]=Main.tool.options.get_option(:username,:mandatory)
-            oauth_params[:password]=Main.tool.options.get_option(:password,:mandatory)
-            oauth_params[:basic_type]=:header
-          else raise "not supported: #{oauth_params[:type]}"
-          end
-
+          shares2_username=Main.tool.options.get_option(:username,:mandatory)
+          shares2_password=Main.tool.options.get_option(:password,:mandatory)
+          persist_id=(URI.parse(shares2_api_base_url).host.downcase+':'+shares2_username).gsub(/[^a-z]+/,'_')
           # auth API
-          @api_shares2_oauth=Oauth.new(oauth_params)
+          @api_shares2_oauth=Oauth.new({
+            :baseurl            => shares2_api_base_url,
+            :authorize_path     => "oauth2/authorize",
+            :token_path         => "oauth2/token",
+            :persist_folder     => Main.tool.config_folder,
+            :persist_identifier => persist_id,
+            :type               => :basic,
+            :basic_type         => :header,
+            :username           => shares2_username,
+            :password           => shares2_password
+          })
 
-          # create object for REST calls to Files with scope "user:all"
+          # create object for REST calls to Shares2
           @api_shares2_admin=Rest.new(shares2_api_base_url,{:auth=>{:type=>:oauth2,:obj=>@api_shares2_oauth,:scope=>'admin'}})
 
-          @api_shares_node=Rest.new(Main.tool.options.get_option(:url,:mandatory)+'/node_api',{:auth=>{:type=>:basic,:username=>Main.tool.options.get_option(:username,:mandatory), :password=>Main.tool.options.get_option(:password,:mandatory)}})
+          @api_shares_node=Rest.new(shares2_api_base_url+'/node_api',{:auth=>{:type=>:basic,:username=>shares2_username, :password=>shares2_password}})
         end
 
         # path_prefix is either "" or "res/id/"

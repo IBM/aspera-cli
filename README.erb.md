@@ -783,7 +783,7 @@ If the preview generator does not have access to files on the file system (it is
 on command line:
 
 ```bash
-aslmcli preview event --skip-types=office --file-access=fasp --overwrite=always --iteration-file=/tmp/restart.txt --lock-port=12345
+aslmcli preview event --skip-types=office --file-access=remote --overwrite=always --iteration-file=/tmp/restart.txt --lock-port=12345
 ```
 
 with crontab:
@@ -818,7 +818,13 @@ popd
 
 * Libreoffice
 
-Note: although libreoffice is run headless, it requires an X server.
+```
+yum install libreoffice
+```
+
+* Xvfb
+
+Although libreoffice is run headless, older versions may require an X server. If you get error running libreoffice headless, then install Xvfb:
 
 ```
 yum install libreoffice Xvfb

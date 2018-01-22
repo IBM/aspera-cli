@@ -2,6 +2,7 @@ require 'asperalm/cli/main'
 require 'asperalm/cli/basic_auth_plugin'
 require 'asperalm/preview/generator'
 require 'asperalm/preview/options'
+require 'asperalm/preview/utils'
 require 'asperalm/fasp/agent'
 require 'date'
 
@@ -77,6 +78,7 @@ module Asperalm
           Main.tool.options.set_obj_attr(:thumb_img_size,Asperalm::Preview::Options.instance,:thumb_img_size,800)
           Main.tool.options.set_obj_attr(:thumb_offset_fraction,Asperalm::Preview::Options.instance,:thumb_offset_fraction,0.1)
           Main.tool.options.set_obj_attr(:validate_mime,Asperalm::Preview::Options.instance,:validate_mime,:no)
+          Main.tool.options.set_obj_attr(:check_extension,Asperalm::Preview::Options.instance,:check_extension,:yes)
         end
 
         alias super_declare_options declare_options
@@ -86,14 +88,29 @@ module Asperalm
           Main.tool.options.add_opt_list(:file_access,[:local,:remote],"how to read and write files in repository")
           Main.tool.options.add_opt_simple(:skip_types,"LIST","skip types in comma separated list")
           Main.tool.options.add_opt_list(:overwrite,Preview.overwrite_policies,"when to generate preview file")
+          Main.tool.options.add_opt_simple(:previews_folder,"FOLDER","preview folder in files")
           Main.tool.options.add_opt_simple(:iteration_file,"PATH","path to iteration memory file")
-          Main.tool.options.add_opt_list(:video,Asperalm::Preview::Options.vid_conv_methods,"method to generate video")
-          Main.tool.options.add_opt_list(:validate_mime,[:no,:yes],"extra mime type validation")
           Main.tool.options.add_opt_list(:folder_reset_cache,[:no,:header,:read],"reset folder cache")
+          Main.tool.options.add_opt_list(:video,Asperalm::Preview::Options.vid_conv_methods,"method to generate video")
+          Main.tool.options.add_opt_simple(:vid_offset_seconds,"VALUE","generation parameter")
+          Main.tool.options.add_opt_simple(:vid_size,"VALUE","generation parameter")
+          Main.tool.options.add_opt_simple(:vid_framecount,"VALUE","generation parameter")
+          Main.tool.options.add_opt_simple(:vid_blendframes,"VALUE","generation parameter")
+          Main.tool.options.add_opt_simple(:vid_framepause,"VALUE","generation parameter")
+          Main.tool.options.add_opt_simple(:vid_fps,"VALUE","generation parameter")
+          Main.tool.options.add_opt_simple(:vid_mp4_size_reencode,"VALUE","generation parameter")
+          Main.tool.options.add_opt_simple(:clips_offset_seconds,"VALUE","generation parameter")
+          Main.tool.options.add_opt_simple(:clips_size,"VALUE","generation parameter")
+          Main.tool.options.add_opt_simple(:clips_length,"VALUE","generation parameter")
+          Main.tool.options.add_opt_simple(:clips_count,"VALUE","generation parameter")
+          Main.tool.options.add_opt_simple(:thumb_mp4_size,"VALUE","generation parameter")
+          Main.tool.options.add_opt_simple(:thumb_img_size,"VALUE","generation parameter")
+          Main.tool.options.add_opt_simple(:thumb_offset_fraction,"VALUE","generation parameter")
           Main.tool.options.add_opt_list(:validate_mime,[:no,:yes],"use magic number validation")
+          Main.tool.options.add_opt_list(:check_extension,[:no,:yes],"check extra file extensions")
         end
 
-        def action_list; [:scan,:events,:folder];end
+        def action_list; [:scan,:events,:folder,:check,:test];end
 
         # /files/id/files is normally cached in redis, but we can discard the cache
         # but /files/id is not cached
@@ -176,7 +193,7 @@ module Asperalm
               'authentication'   => 'token', # connect client: do not ask password
               'remote_host'      => @transfer_server_address,
               'remote_user'      => Fasp::ACCESS_KEY_TRANSFER_USER,
-              'EX_quiet'         => true,
+              'EX_quiet'         => true
             })
           end
           tspec=@default_transfer_spec.merge({
@@ -193,60 +210,67 @@ module Asperalm
           Fasp::Manager.instance.start_transfer(tspec)
         end
 
+        def get_infos_local(gen_infos,entry,local_entry_preview_dir)
+          local_original_filepath=File.join(@local_storage_root,entry['path'])
+          original_mtime=File.mtime(local_original_filepath)
+          # out
+          local_entry_preview_dir.replace(File.join(@local_preview_folder, entry_preview_folder_name(entry)))
+          gen_infos.each do |gen_info|
+            gen_info[:src]=local_original_filepath
+            gen_info[:dst]=File.join(local_entry_preview_dir, gen_info[:base_dest])
+            gen_info[:preview_exist]=File.exist?(gen_info[:dst])
+            gen_info[:preview_newer_than_original] = (gen_info[:preview_exist] and (File.mtime(gen_info[:dst])>original_mtime))
+          end
+        end
+
+        def get_infos_remote(gen_infos,entry,local_entry_preview_dir)
+          # folder where this entry is downloaded
+          @remote_entry_temp_local_folder=main_temp_folder
+          # store source directly here
+          local_original_filepath=File.join(@remote_entry_temp_local_folder,entry['name'])
+          #original_mtime=DateTime.parse(entry['modified_time'])
+          # out: where previews are generated
+          local_entry_preview_dir.replace(File.join(@remote_entry_temp_local_folder,entry_preview_folder_name(entry)))
+          #TODO: this does not work because previews is hidden
+          #this_preview_folder_entries=get_folder_entries(@previews_folder_entry['id'],{:name=>@entry_preview_folder_name})
+          gen_infos.each do |gen_info|
+            gen_info[:src]=local_original_filepath
+            gen_info[:dst]=File.join(local_entry_preview_dir, gen_info[:base_dest])
+            gen_info[:preview_exist]=false # TODO: use this_preview_folder_entries (but it's hidden)
+            gen_info[:preview_newer_than_original] = false # TODO: get change time and compare, useful ?
+          end
+        end
+
+        # defined by node api
+        def entry_preview_folder_name(entry)
+          "#{entry['id']}#{PREVIEW_FOLDER_SUFFIX}"
+        end
+
+        def preview_filename(preview_format)
+          PREVIEW_FILE_PREFIX+preview_format.to_s
+        end
+
         # generate preview files for one folder entry (file) if necessary
         # entry must contain "parent_file_id" if remote.
         def generate_preview(entry)
-          original_extension=File.extname(entry['name']).downcase
-          # file on local file system containing original file for transcoding
-          local_original_filepath=nil
-          # modification time of original file (actual, not local copy)
-          original_mtime=nil
           # where previews will be generated for this particular entry
-          local_entry_preview_dir=nil
-          # does it need to be created?
-          need_create_local_folder=nil
-          # defined by node api
-          entry_preview_folder_name="#{entry['id']}#{PREVIEW_FOLDER_SUFFIX}"
-          # prepare preview file list and collect current state
-          gen_infos=Asperalm::Preview::Generator.generators(original_extension,entry['content_type']).inject([]) do |a,g|
-            a.push({
-              :generator => g,
-              :preview_exist => nil,
-              :preview_newer_than_original => nil
-            })
-            a # give back memory for inject
+          local_entry_preview_dir=String.new
+          # prepare generic information
+          gen_infos=Asperalm::Preview::Generator.preview_formats.map do |preview_format|
+            {
+              :preview_format => preview_format,
+              :base_dest      => preview_filename(preview_format)
+            }
           end
-          # lets gather some infos on possibly existing previews, it depends if files access locally or remotely
+          # lets gather some infos on possibly existing previews
+          # it depends if files access locally or remotely
           if @access_remote
-            # folder where this entry is downloaded
-            remote_entry_temp_local_folder=main_temp_folder
-            # store source directly here
-            local_original_filepath=File.join(remote_entry_temp_local_folder,entry['name'])
-            original_mtime=DateTime.parse(entry['modified_time'])
-            # where previews are generated
-            local_entry_preview_dir=File.join(remote_entry_temp_local_folder,entry_preview_folder_name)
-            need_create_local_folder=true # this will be temp folder
-            #TODO: this does not work because previews is hidden
-            #this_preview_folder_entries=get_folder_entries(@previews_folder_entry['id'],{:name=>entry_preview_folder_name})
-            gen_infos.each do |gen_info|
-              gen_info[:generator].source=local_original_filepath
-              gen_info[:generator].destination=File.join(local_entry_preview_dir, PREVIEW_FILE_PREFIX+gen_info[:generator].preview_format)
-              gen_info[:preview_exist]=false # TODO: use this_preview_folder_entries (but it's hidden)
-              gen_info[:preview_newer_than_original] = false # TODO: get change time and compare, useful ?
-            end
+            get_infos_remote(gen_infos,entry,local_entry_preview_dir)
           else # direct local file system access
-            local_original_filepath=File.join(@local_storage_root,entry['path'])
-            original_mtime=File.mtime(local_original_filepath)
-            local_entry_preview_dir = File.join(@local_preview_folder, entry_preview_folder_name)
-            need_create_local_folder=!File.directory?(local_entry_preview_dir)
-            gen_infos.each do |gen_info|
-              gen_info[:generator].source=local_original_filepath
-              gen_info[:generator].destination=File.join(local_entry_preview_dir, PREVIEW_FILE_PREFIX+gen_info[:generator].preview_format)
-              gen_info[:preview_exist]=File.exist?(gen_info[:generator].destination)
-              gen_info[:preview_newer_than_original] = (gen_info[:preview_exist] and (File.mtime(gen_info[:generator].destination)>original_mtime))
-            end
+            get_infos_local(gen_infos,entry,local_entry_preview_dir)
           end
-          # here we have the status on preview files, let's find if they need generation
+          # here we have the status on preview files
+          # let's find if they need generation
           gen_infos.select! do |gen_info|
             # if it exists, what about overwrite policy ?
             if gen_info[:preview_exist]
@@ -261,6 +285,8 @@ module Asperalm
                 next false if gen_info[:preview_newer_than_original]
               end
             end
+            # need generator for further checks
+            gen_info[:generator]=Asperalm::Preview::Generator.new(gen_info[:src],gen_info[:dst],entry['content_type'])
             # get conversion_type (if known) and check if supported
             next false unless gen_info[:generator].supported?
             # shall we skip it ?
@@ -269,11 +295,12 @@ module Asperalm
             true
           end
           return if gen_infos.empty?
-          FileUtils.mkdir_p(local_entry_preview_dir) if need_create_local_folder
+          # create folder if needed
+          FileUtils.mkdir_p(local_entry_preview_dir)
           if @access_remote
             raise "parent not computed" if entry['parent_file_id'].nil?
-            #  download original file to temp folder remote_entry_temp_local_folder
-            do_transfer('receive',entry['parent_file_id'],entry['name'],remote_entry_temp_local_folder)
+            #  download original file to temp folder @remote_entry_temp_local_folder
+            do_transfer('receive',entry['parent_file_id'],entry['name'],@remote_entry_temp_local_folder)
           end
           gen_infos.each do |gen_info|
             begin
@@ -285,9 +312,10 @@ module Asperalm
           if @access_remote
             # upload
             do_transfer('send',@previews_folder_entry['id'],local_entry_preview_dir)
-            # delete remote_entry_temp_local_folder and below
-            FileUtils.rm_rf(remote_entry_temp_local_folder)
+            # delete @remote_entry_temp_local_folder and below
+            FileUtils.rm_rf(@remote_entry_temp_local_folder)
           end
+          # force read file updated previews
           if @option_folder_reset_cache.eql?(:read)
             @api_node.read("files/#{entry['id']}")
           end
@@ -295,7 +323,7 @@ module Asperalm
 
         # scan all files in provided folder entry
         def scan_folder_files(top_entry)
-          Log.log().debug("scan: #{top_entry}")
+          Log.log.debug("scan: #{top_entry}")
           # dont use recursive call, use list instead
           items_to_process=[top_entry]
           while !items_to_process.empty?
@@ -362,6 +390,17 @@ module Asperalm
             file_info=@api_node.read("files/#{file_id}")[:data]
             scan_folder_files(file_info)
             return Main.status_result('file finished')
+          when :check
+            Asperalm::Preview::Utils.check_tools(@skip_types)
+            return Main.status_result('tools validated')
+          when :test
+            source = Main.tool.options.get_next_argument("source file")
+            format = Main.tool.options.get_next_argument("format",Asperalm::Preview::Generator.preview_formats)
+            dest=preview_filename(format)
+            g=Asperalm::Preview::Generator.new(source,dest)
+            return Main.status_result("format not supported") unless g.supported?
+            g.generate
+            return Main.status_result("generated: #{dest}")
           end
         end # execute_action
       end # Preview
