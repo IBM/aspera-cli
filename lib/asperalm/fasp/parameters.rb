@@ -104,14 +104,14 @@ module Asperalm
         # transformation  input, output, validation
 
         # some ssh credentials are required to avoid interactive password input
-        if !@state[:transfer_spec].has_key?('password') and
+        if !@state[:transfer_spec].has_key?('remote_password') and
         !@state[:transfer_spec].has_key?('EX_ssh_key_value') and
         !@state[:transfer_spec].has_key?('EX_ssh_key_paths') then
           raise Fasp::Error.new('required: ssh key (value or path) or password')
         end
 
         # parameters with env vars
-        param_string_env('password','ASPERA_SCP_PASS')
+        param_string_env('remote_password','ASPERA_SCP_PASS')
         param_string_env('token','ASPERA_SCP_TOKEN')
         param_string_env('cookie','ASPERA_SCP_COOKIE')
         param_string_env('EX_ssh_key_value','ASPERA_SCP_KEY')

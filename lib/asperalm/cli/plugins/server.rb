@@ -51,7 +51,7 @@ module Asperalm
           password=Main.tool.options.get_option(:password,:optional)
           if !password.nil?
             ssh_options[:password]=password
-            transfer_spec["password"]=password
+            transfer_spec['remote_password']=password
             cred_set=true
           end
           ssh_keys=Main.tool.options.get_option(:ssh_keys,:optional)

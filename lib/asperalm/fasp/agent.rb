@@ -1,4 +1,4 @@
-require 'asperalm/fasp/resource_finder'
+require 'asperalm/fasp/installation'
 require 'asperalm/fasp/resumer'
 require 'asperalm/fasp/manager'
 require 'securerandom'
@@ -28,7 +28,7 @@ module Asperalm
         trynumber=0
         begin
           Log.log.debug("reading connect port file")
-          connect_url=File.open(ResourceFinder.path(:plugin_https_port_file)) {|f| f.gets }.strip
+          connect_url=File.open(Installation.instance.path(:plugin_https_port_file)) {|f| f.gets }.strip
           connect_api=Rest.new("#{connect_url}/v5/connect",{})
           connect_api.read('info/version')
         rescue => e # Errno::ECONNREFUSED

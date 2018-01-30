@@ -93,6 +93,9 @@ module Asperalm
     # build URI from URL and parameters
     def get_uri(call_data)
       uri=URI.parse(@api_base+"/"+call_data[:subpath])
+      if ! ['http','https'].include?(uri.scheme)
+        raise "REST endpoint shall be http(s)"
+      end
       if call_data.has_key?(:url_params) and !call_data[:url_params].nil? then
         uri.query=URI.encode_www_form(call_data[:url_params])
       end

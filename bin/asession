@@ -12,7 +12,7 @@ transferspec=nil
 p=OptionParser.new
 p.banner = "Usage: asfasp [options]"
 p.separator("EXAMPLES")
-p.separator(%q(    asfasp --ts=@json:'{"remote_host":"demo.asperasoft.com","remote_user":"asperaweb","ssh_port":33001,"password":"demoaspera","direction":"receive","destination_root":"./test.dir","paths":[{"source":"/aspera-test-dir-tiny/200KB.1"}]}'))
+p.separator(%q(    asfasp --ts=@json:'{"remote_host":"demo.asperasoft.com","remote_user":"asperaweb","ssh_port":33001,"remote_password":"demoaspera","direction":"receive","destination_root":"./test.dir","paths":[{"source":"/aspera-test-dir-tiny/200KB.1"}]}'))
 p.separator(%q(    echo '{"remote_host":...}'|asfasp --ts=@json:@stdin))
 p.separator("OPTIONS")
 p.on("-D", "debug mode"){logger.level=logger.level+1}
@@ -25,11 +25,15 @@ if transferspec.nil?
   STDERR.puts(p)
   Process.exit(1)
 end
+if !transferspec.is_a?(Hash)
+  STDERR.puts("expecting a hash, did you specify: @json: ?")
+  Process.exit(1)
+end
 # disable ascp output on stdout to not mix with progress json
 transferspec['EX_quiet']=true
 # FASP event listener display management events as JSON
 class FaspListenerStdout < Asperalm::Fasp::Listener
-  def event(data);STDOUT.puts(JSON.generate(data));end
+  def event(data);STDOUT.puts(JSON.generate(data));STDOUT.flush;end
 end
 # display JSON instead of legacy Lines
 Asperalm::Fasp::Manager.instance.add_listener(FaspListenerStdout.new,:enhanced)

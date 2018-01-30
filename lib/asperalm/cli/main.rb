@@ -70,7 +70,7 @@ module Asperalm
       singleton_class.send(:alias_method, :tool, :instance)
       def self.version;return @@TOOL_VERSION;end
       private
-      @@TOOL_VERSION='0.5.12'
+      @@TOOL_VERSION='0.5.14'
       # first level command for the main tool
       @@MAIN_PLUGIN_NAME_STR='config'
       # name of application, also foldername where config is stored
@@ -190,9 +190,9 @@ module Asperalm
 
       def option_browser=(value); OperatingSystem.open_url_method=value; end
 
-      def option_fasp_folder; Fasp::ResourceFinder.fasp_install_paths; end
+      def option_fasp_folder; Fasp::Installation.instance.paths; end
 
-      def option_fasp_folder=(value); Fasp::ResourceFinder.fasp_install_paths=value; end
+      def option_fasp_folder=(value); Fasp::Installation.instance.paths=value; end
 
       # returns the list of plugins from plugin folder
       def plugin_sym_list
@@ -249,6 +249,7 @@ module Asperalm
               node_config=Manager.get_extended_value(:transfer_node,transfer_node_spec)
             end
             Log.log.debug("node=#{node_config}")
+            raise CliBadArgument,"the node configuration shall be a hash, use either @json:<json> or @param:<parameter set name>" if !node_config.is_a?(Hash)
             # now check there are required parameters
             sym_config={}
             [:url,:username,:password].each do |param|
@@ -310,6 +311,7 @@ module Asperalm
         @options.set_obj_attr(:logger,self,:option_logtype)
         @options.set_obj_attr(:gui_mode,self,:option_browser)
         @options.set_obj_attr(:fasp_folder,self,:option_fasp_folder)
+        @options.set_obj_attr(:use_product,Fasp::Installation.instance,:activated)
       end
 
       # plugin_name_sym is symbol
@@ -363,6 +365,7 @@ module Asperalm
         @options.add_opt_simple(:ts,"JSON","override transfer spec values for transfers (hash, use @json: prefix), current=#{@options.get_option(:ts,:optional)}")
         @options.add_opt_simple(:to_folder,"PATH","destination folder for downloaded files, current=#{@options.get_option(:to_folder,:optional)}")
         @options.add_opt_simple(:lock_port,"NUMBER","prevent dual execution of a command, e.g. in cron")
+        @options.add_opt_simple(:use_product,"NAME","which local product to use for ascp")
       end
 
       def self.flatten_config_show(t)

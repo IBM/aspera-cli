@@ -5,6 +5,9 @@ module Asperalm
     def self.baseurl(instance_domain)
       return 'https://api.'+instance_domain+'/api/v1'
     end
+    def self.apiurl
+      return 'https://api.asperafiles.com/api/v1'
+    end
 
     # node API scopes
     def self.node_scope(access_key,scope)

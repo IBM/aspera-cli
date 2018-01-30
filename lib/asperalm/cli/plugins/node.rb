@@ -89,7 +89,8 @@ module Asperalm
         end
 
         # retrieve tranfer list using API and persistency file
-        def get_transfers_iteration(api_node,persistencyfile,params)
+        def self.get_transfers_iteration(api_node,params)
+          persistencyfile=Main.tool.options.get_option(:persistency,:mandatory)
           # first time run ? or subsequent run ?
           iteration_token=nil
           if !persistencyfile.nil? and File.exist?(persistencyfile)
@@ -133,16 +134,6 @@ module Asperalm
           when :info
             node_info=api_node.call({:operation=>'GET',:subpath=>'info',:headers=>{'Accept'=>'application/json'}})[:data]
             return { :type=>:key_val_list, :data => node_info, :textify => lambda { |table_data| textify_bool_list_result(table_data,['capabilities','settings'])}}
-          when :browse
-            thepath=get_next_arg_add_prefix(prefix_path,"path")
-            send_result=api_node.call({:operation=>'POST',:subpath=>'files/browse',:json_params=>{ :path => thepath} } )
-            #send_result={:data=>{'items'=>[{'file'=>"filename1","permissions"=>[{'name'=>'read'},{'name'=>'write'}]}]}}
-            return Main.no_result if !send_result[:data].has_key?('items')
-            result={ :data => send_result[:data]['items'] , :type => :hash_array, :textify => lambda { |table_data| Node.textify_browse(table_data) } }
-            #display_prefix=thepath
-            #display_prefix=File.join(prefix_path,display_prefix) if !prefix_path.nil?
-            #puts display_prefix.red
-            return result_remove_prefix_path(result,'path',prefix_path)
           when :delete
             paths_to_delete = get_next_arg_add_prefix(prefix_path,"file list",:multiple)
             return delete_files(api_node,paths_to_delete,prefix_path)
@@ -173,6 +164,16 @@ module Asperalm
             path_dst=get_next_arg_add_prefix(prefix_path,"path_dst")
             resp=api_node.call({:operation=>'POST',:subpath=>'files/rename',:json_params=>{ "paths" => [{ "path" => path_base, "source" => path_src, "destination" => path_dst } ] } } )
             return result_translate_rem_prefix(resp,'entry','moved',prefix_path)
+          when :browse
+            thepath=get_next_arg_add_prefix(prefix_path,"path")
+            send_result=api_node.call({:operation=>'POST',:subpath=>'files/browse',:json_params=>{ :path => thepath} } )
+            #send_result={:data=>{'items'=>[{'file'=>"filename1","permissions"=>[{'name'=>'read'},{'name'=>'write'}]}]}}
+            return Main.no_result if !send_result[:data].has_key?('items')
+            result={ :data => send_result[:data]['items'] , :type => :hash_array, :textify => lambda { |table_data| Node.textify_browse(table_data) } }
+            #display_prefix=thepath
+            #display_prefix=File.join(prefix_path,display_prefix) if !prefix_path.nil?
+            #puts display_prefix.red
+            return result_remove_prefix_path(result,'path',prefix_path)
           when :upload
             filelist = Main.tool.options.get_next_argument("source file list",:multiple)
             Log.log.debug("file list=#{filelist}")
@@ -222,7 +223,7 @@ module Asperalm
           end
         end
 
-        def action_list; self.class.common_actions.clone.concat([ :stream, :transfer, :cleanup, :forward, :access_key, :watch_folder, :service, :async, :central ]);end
+        def action_list; self.class.common_actions.clone.concat([ :postprocess,:stream, :transfer, :cleanup, :forward, :access_key, :watch_folder, :service, :async, :central ]);end
 
         def execute_action
           api_node=Rest.new(Main.tool.options.get_option(:url,:mandatory),{:auth=>{:type=>:basic,:username=>Main.tool.options.get_option(:username,:mandatory), :password=>Main.tool.options.get_option(:password,:mandatory)}})
@@ -362,7 +363,7 @@ module Asperalm
               return {:data=>resp[:data]["session_info_result"]["session_info"],:type=>:hash_array,:fields=>["session_uuid","status","transport","direction","bytes_transferred"]}
             end
           when :cleanup
-            transfers=self.class.get_transfers_iteration(api_node,Main.tool.options.get_option(:persistency,:mandatory),{:active_only=>false})
+            transfers=self.class.get_transfers_iteration(api_node,{:active_only=>false})
             filter_transfer=Main.tool.options.get_option(:filter_transfer,:mandatory)
             filter_file=Main.tool.options.get_option(:filter_file,:mandatory)
             Log.log.debug("filter_transfer: #{filter_transfer}")
@@ -391,7 +392,7 @@ module Asperalm
             return Main.no_result
           when :forward
             # detect transfer sessions since last call
-            transfers=self.class.get_transfers_iteration(api_node,Main.tool.options.get_option(:persistency,:optional),{:active_only=>false})
+            transfers=self.class.get_transfers_iteration(api_node,{:active_only=>false})
             # build list of all files received in all sessions
             filelist=[]
             transfers.select { |t| t['status'].eql?('completed') and t['start_spec']['direction'].eql?('receive') }.each do |t|
@@ -411,7 +412,10 @@ module Asperalm
             transfer_spec=transfer_data['transfer_spec']
             # execute transfer
             return Main.tool.start_transfer(transfer_spec)
-          end
+          when :postprocess
+            transfers=self.class.get_transfers_iteration(api_node,{:view=>'summary',:direction=>'receive',:active_only=>false})
+            return { :type=>:hash_array,:data => transfers }
+          end # case command
           raise "ERROR: shall not reach this line"
         end # execute_action
       end # Main

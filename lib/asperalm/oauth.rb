@@ -26,6 +26,8 @@ module Asperalm
     TOKEN_FILE_SEPARATOR='_'
     TOKEN_FILE_SUFFIX='.txt'
     WINDOWS_PROTECTED_CHAR=%r{[/:"<>\\\*\?]}
+    OFFSET_ALLOWANCE_SEC=300
+    ASSERTION_VALIDITY_SEC=3600
     # delete cached tokens
     def self.flush_tokens(persist_folder)
       tokenfiles=Dir[File.join(persist_folder,TOKEN_FILE_PREFIX+'*'+TOKEN_FILE_SUFFIX)]
@@ -193,20 +195,19 @@ module Asperalm
             }})
         when :jwt
           require 'jwt'
-
           # remove 5 minutes to account for time offset
-          seconds_since_epoch=Time.new.to_i-300
+          seconds_since_epoch=Time.new.to_i-OFFSET_ALLOWANCE_SEC
           Log.log.info("seconds=#{seconds_since_epoch}")
 
           payload = {
             :iss => @auth_data[:client_id],
             :sub => @auth_data[:subject],
-            :aud => @rest.base_url+"/oauth2/token",
+            :aud => @auth_data[:audience],
             :nbf => seconds_since_epoch,
-            :exp => seconds_since_epoch+3600 # TODO: configurable ?
+            :exp => seconds_since_epoch+ASSERTION_VALIDITY_SEC # TODO: configurable ?
           }
 
-          rsa_private =@auth_data[:private_key]  # rsa_private.public_key
+          rsa_private=@auth_data[:private_key_obj]  # rsa_private.public_key
 
           Log.log.debug("private=[#{rsa_private}]")
 

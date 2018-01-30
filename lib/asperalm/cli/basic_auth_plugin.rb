@@ -13,7 +13,7 @@ module Asperalm
       def declare_options
         Main.tool.options.add_opt_simple(:url,"URI","-wURI","URL of application, e.g. https://org.asperafiles.com")
         Main.tool.options.add_opt_simple(:username,"STRING","-uSTRING","username to log in")
-        Main.tool.options.add_opt_simple(:password,"STRING","-pSTRING","password")
+        Main.tool.options.add_opt_simple(:password,"STRING","-pSTRING","user's password")
       end
     end # BasicAuthPlugin
   end # Cli

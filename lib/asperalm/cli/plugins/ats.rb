@@ -89,6 +89,7 @@ module Asperalm
 
         # create a new API key , requires aspera id authentication
         def create_new_api_key
+          # TODO: provide param username and password to avoid web auth
           # get login page url in exception code 3xx
           res=@api_pub.call({:operation=>'POST',:subpath=>"api_keys",:return_error=>true,:headers=>{'Accept'=>'application/json'},:url_params=>{:description => "created by aslmcli",:redirect_uri=>LOCAL_REDIRECT_URI}})
           # TODO: check code is 3xx ?

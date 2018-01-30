@@ -125,7 +125,7 @@ t/fp3:
 	$(EXETEST) server df
 	@touch $@
 t/fp4:
-	$(BINDIR)/asfasp --ts=@json:'{"remote_host":"demo.asperasoft.com","remote_user":"asperaweb","ssh_port":33001,"password":"demoaspera","direction":"receive","destination_root":"./test.dir","paths":[{"source":"/aspera-test-dir-tiny/200KB.1"}]}'
+	$(BINDIR)/asession --ts=@json:'{"remote_host":"demo.asperasoft.com","remote_user":"asperaweb","ssh_port":33001,"remote_password":"demoaspera","direction":"receive","destination_root":"./test.dir","paths":[{"source":"/aspera-test-dir-tiny/200KB.1"}]}'
 	@touch $@
 
 tfasp: t/fp1 t/fp2 t/fp3 t/fp4
@@ -242,7 +242,7 @@ t/at2:
 	$(EXETEST) ats server list instance --cloud=aws --region=eu-west-1 
 	@touch $@
 t/at3:
-	$(EXETEST) ats server id gk7f5356-f4ea-kj83-ddfW-7da4ed99f8eb
+	$(EXETEST) ats server id 1f412ae7-869a-445c-9c05-02ad16813be2
 	@touch $@
 t/at4:
 	$(EXETEST) ats subscriptions

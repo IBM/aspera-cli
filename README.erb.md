@@ -93,7 +93,7 @@ see section: [Download FASP](download-fasp).
 One can test the "server" application using the well known demo server:
 
 ```bash
-$ aslmcli config id aspera_demo_server init @json:'{"url":"ssh://demo.asperasoft.com:33001","username":"asperaweb","password":"demoaspera"}'
+$ aslmcli config id aspera_demo_server update --url=ssh://demo.asperasoft.com:33001 --username=asperaweb --password=demoaspera
 $ aslmcli config id default set server aspera_demo_server 
 $ aslmcli server browse /aspera-test-dir-large
 $ aslmcli server download /aspera-test-dir-large/200MB
@@ -119,7 +119,7 @@ This can also be provisioned in a config file:
 3$ aslmcli config id shares06 set password 4sp3ra
 4$ aslmcli config id default set shares shares06 
 5$ aslmcli config show
-6$ aslmcli config shares repo browse /
+6$ aslmcli shares repo browse /
 ```
 
 The three first commands build a parameter set. 
@@ -159,8 +159,10 @@ $ aslmcli config id files_myorg set url https://myorg.asperafiles.com
 $ aslmcli config id files_myorg set client_id MyClIeNtKeY
 $ aslmcli config id files_myorg set client_secret MyClIeNtSeCrEtMyClIeNtSeCrEt
 $ aslmcli config id files_myorg set username user@example.com
-$ aslmcli config id files_myorg set private_key @val:@file:~/.aspera/aslmcli/filesapikey
+$ aslmcli config id files_myorg set private_key @val:@file:"$HOME/.aspera/aslmcli/filesapikey"
 ```
+
+Note: the private key argument represents the actual PEM string. In order to read the content from a file, use the @file: prefix. But if the @file: argument is used as is, it will read the file and set in the config file. So to keep the "@file" tag in the configuration file, the @val: prefix is added.
 
 * CLI is ready to use:
 
@@ -527,7 +529,7 @@ table, th, td {border: 1px solid black;}
 <tr><td>target_rate_cap_kbps</td><td></td><td></td><td class="no">N</td><td class="no">?</td><td class="yes">?</td><td>-</td><td>Returned by upload/download_setup node api.</td></tr>
 <tr><td>rate_policy_allowed</td><td></td><td></td><td></td><td></td><td></td><td>-</td><td>returned by node API. Specifies most aggressive rate policy that is allowed. Valid literals include "low", "fair","high" and "fixed".</td></tr>
 <tr><td>ssh_private_key</td><td></td><td>string</td><td></td><td></td><td></td><td>-</td><td>todo</td></tr>
-<tr><td>password</td><td>-</td><td>string</td><td class="yes">Y</td><td class="yes">Y</td><td class="yes">Y</td><td>PASS</td><td>SSH session password</td></tr>
+<tr><td>remote_password</td><td>-</td><td>string</td><td class="yes">Y</td><td class="yes">Y</td><td class="yes">Y</td><td>PASS</td><td>SSH session password</td></tr>
 <tr><td>resume_policy</td><td>faspmgr:<br/>none<br/>other:<br/>sparse_csum</td><td>string</td><td class="yes">Y</td><td class="yes">Y</td><td class="yes">Y</td><td>-k</td><td>none,attrs,sparse_csum,full_csum</td></tr>
 <tr><td>authentication</td><td>faspmgr:<br/>none<br/>other:<br/>sparse_csum</td><td>string</td><td class="yes">Y</td><td class="yes">Y</td><td class="no">N</td><td>-</td><td>token: Aspera web keys are provided to allow transparent web based session initiation. on connect: password is not asked. Else, password is asked, and keys are not provided.</td></tr>
 <tr><td>EX_ssh_key_value</td><td>-</td><td>string</td><td class="yes">Y</td><td class="no">N</td><td class="no">N</td><td>KEY</td><td>Private key used for SSH authentication</td></tr>
@@ -549,7 +551,7 @@ It is possible to start a FASPStream session using the node API:
 Use the "node stream create" command, then arguments are provided as a "transfer spec".
 
 ```bash
-./bin/aslmcli node stream create --ts=@json:'{"direction":"send","source":"udp://233.3.3.4:3000?loopback=1&ttl=2","destination":"udp://233.3.3.3:3001/","remote_host":"localhost","remote_user":"stream","password":"XXXX"}' --load-params=stream
+./bin/aslmcli node stream create --ts=@json:'{"direction":"send","source":"udp://233.3.3.4:3000?loopback=1&ttl=2","destination":"udp://233.3.3.3:3001/","remote_host":"localhost","remote_user":"stream","remote_password":"XXXX"}' --load-params=stream
 ```
 
 # Download FASP
@@ -664,6 +666,8 @@ Using the ATS requires an "Aspera ID" (https://id.asperasoft.com/) and have a su
 On first execution, the user is asked to login to Aspera ID using a web browser. This creates an "ats_id" identifier (stored in a cache file).
 
 When only one ats_id is created, it is taken by default. Else it shall be specified with --ats-id or using a parameter set.
+
+Note: APIs are described here: [https://ts.asperasoft.com/ats-guide/getting-started-guide/#guide_transfers_create_ak](https://ts.asperasoft.com/ats-guide/getting-started-guide/#guide_transfers_create_ak)
 
 ## Usage
 

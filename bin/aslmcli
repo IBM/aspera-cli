@@ -1,7 +1,7 @@
-#!/usr/bin/env ruby -w
+#!/usr/bin/env ruby
+#-w -r tracer
 # Laurent Martin/2017
 require 'rubygems'
 $LOAD_PATH.unshift(File.dirname(__FILE__)+"/../lib")
 require 'asperalm/cli/main'
-require 'asperalm/log'
 Asperalm::Cli::Main.tool.process_command_line(ARGV)

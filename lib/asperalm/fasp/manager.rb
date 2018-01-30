@@ -14,7 +14,7 @@ require 'singleton'
 require 'asperalm/fasp/listener'
 require 'asperalm/fasp/error'
 require 'asperalm/fasp/parameters'
-require 'asperalm/fasp/resource_finder'
+require 'asperalm/fasp/installation'
 require 'asperalm/log'
 
 # for file lists
@@ -23,7 +23,7 @@ require 'asperalm/log'
 module Asperalm
   module Fasp
     ACCESS_KEY_TRANSFER_USER='xfer'
-    # Manages FASP based transfers based on local ascp command line
+    # Manages FASP based transfers based on local ascp process
     class Manager
       # use "instance" class method
       include Singleton
@@ -36,17 +36,13 @@ module Asperalm
         downcase
       end
 
-      # user can also specify another location for ascp
-      attr_accessor :ascp_path
-
       def initialize
-        @ascp_path=Fasp::ResourceFinder.path(:ascp)
         @listeners=[]
       end
 
       # fields that shall be integer in JSON
-      IntegerFields=['Rate','MinRate','Port','Priority','RateCap','MinRateCap','TCPPort','CreatePolicy','TimePolicy','DatagramSize','XoptFlags','VLinkVersion','PeerVLinkVersion','DSPipelineDepth','PeerDSPipelineDepth','ReadBlockSize','WriteBlockSize','ClusterNumNodes','ClusterNodeId','Size','Written','Loss','FileBytes','PreTransferBytes','TransferBytes','PMTU','Elapsedusec','ArgScansAttempted','ArgScansCompleted','PathScansAttempted','FileScansCompleted','TransfersAttempted','TransfersPassed','Delay']
-
+      IntegerFields=['Bytescont','FaspFileArgIndex','StartByte','Rate','MinRate','Port','Priority','RateCap','MinRateCap','TCPPort','CreatePolicy','TimePolicy','DatagramSize','XoptFlags','VLinkVersion','PeerVLinkVersion','DSPipelineDepth','PeerDSPipelineDepth','ReadBlockSize','WriteBlockSize','ClusterNumNodes','ClusterNodeId','Size','Written','Loss','FileBytes','PreTransferBytes','TransferBytes','PMTU','Elapsedusec','ArgScansAttempted','ArgScansCompleted','PathScansAttempted','FileScansCompleted','TransfersAttempted','TransfersPassed','Delay']
+      BooleanFields=['Encryption','Remote','RateLock','MinRateLock','PolicyLock','FilesEncrypt','FilesDecrypt','VLinkLocalEnabled','VLinkRemoteEnabled','MoveRange','Keepalive','TestLogin','UseProxy','Precalc','RTTAutocorrect']
       # event format
       Formats=[:text,:struct,:enhanced]
 
@@ -58,12 +54,13 @@ module Asperalm
         self
       end
 
-      # translates legacy event into enhanced event
+      # translates legacy event into enhanced (JSON) event
       def enhanced_event_format(event)
         return event.keys.inject({}) do |h,e|
           new_name=Manager.snake_case(e)
           value=event[e]
           value=value.to_i if IntegerFields.include?(e)
+          value=value.eql?('Yes') ? true : false if BooleanFields.include?(e)
           h[new_name]=value
           h
         end
@@ -90,8 +87,10 @@ module Asperalm
       # currently, relies on command line arguments
       # start ascp with management port.
       # raises FaspError on error
+      # @param a hash containing :args and :env
       def start_transfer_with_args_env(ascp_params)
-        raise Fasp::Error.new("no ascp path defined") if @ascp_path.nil?
+        ascp_path=Fasp::Installation.instance.path(:ascp)
+        raise Fasp::Error.new("no ascp path defined") if ascp_path.nil?
         begin
           ascp_pid=nil
           ascp_arguments=ascp_params[:args].clone
@@ -100,8 +99,8 @@ module Asperalm
           # add management port
           ascp_arguments.unshift('-M', mgt_sock.addr[1].to_s)
           # start ascp in sub process
-          Log.log.debug "execute: #{ascp_params[:env].map{|k,v| "#{k}=\"#{v}\""}.join(' ')} \"#{@ascp_path}\" \"#{ascp_arguments.join('" "')}\""
-          ascp_pid = Process.spawn(ascp_params[:env],[@ascp_path,@ascp_path],*ascp_arguments)
+          Log.log.debug "execute: #{ascp_params[:env].map{|k,v| "#{k}=\"#{v}\""}.join(' ')} \"#{ascp_path}\" \"#{ascp_arguments.join('" "')}\""
+          ascp_pid = Process.spawn(ascp_params[:env],[ascp_path,ascp_path],*ascp_arguments)
           # in parent, wait for connection to socket max 3 seconds
           Log.log.debug "before accept for pid (#{ascp_pid})"
           ascp_mgt_io=nil
@@ -180,18 +179,20 @@ module Asperalm
 
       # start FASP transfer based on transfer spec (hash table)
       # note that it returns upon completion only
+      # if the user wants to run in background, just spawn a thread
+      # listener methods are called in context of calling thread
       def start_transfer(transfer_spec)
         Log.log().debug("ts=#{transfer_spec}")
         # shall we use bypass keys ?
         if transfer_spec['authentication'].eql?("token")
           # add Aspera private keys for web access, token based authorization
-          transfer_spec['EX_ssh_key_paths'] = [ ResourceFinder.path(:ssh_bypass_key_dsa), ResourceFinder.path(:ssh_bypass_key_rsa) ]
-          transfer_spec['drowssap'.reverse] = "%08x-%04x-%04x-%04x-%04x%08x" % "t1(\xBF;\xF3E\xB5\xAB\x14F\x02\xC6\x7F)P".unpack("NnnnnN")
+          transfer_spec['EX_ssh_key_paths'] = [ Installation.instance.path(:ssh_bypass_key_dsa), Installation.instance.path(:ssh_bypass_key_rsa) ]
+          transfer_spec['drowssap_etomer'.reverse] = "%08x-%04x-%04x-%04x-%04x%08x" % "t1(\xBF;\xF3E\xB5\xAB\x14F\x02\xC6\x7F)P".unpack("NnnnnN")
         end
         # add fallback cert and key
         if ['1','force'].include?(transfer_spec['http_fallback'])
-          transfer_spec['EX_fallback_key']=ResourceFinder.path(:fallback_key)
-          transfer_spec['EX_fallback_cert']=ResourceFinder.path(:fallback_cert)
+          transfer_spec['EX_fallback_key']=Installation.instance.path(:fallback_key)
+          transfer_spec['EX_fallback_cert']=Installation.instance.path(:fallback_cert)
         end
         start_transfer_with_args_env(Parameters.new(transfer_spec).compute_args)
         return nil

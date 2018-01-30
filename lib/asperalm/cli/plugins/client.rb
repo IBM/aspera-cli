@@ -1,6 +1,6 @@
 require 'asperalm/cli/main'
 require 'asperalm/cli/plugins/node'
-require 'asperalm/fasp/resource_finder'
+require 'asperalm/fasp/installation'
 require 'asperalm/operating_system'
 
 module Asperalm
@@ -12,7 +12,7 @@ module Asperalm
         CONNECT_VERSIONS = 'connectversions.js'
         def declare_options; end
 
-        def action_list; [ :location, :connect ];end
+        def action_list; [ :installation, :monitor, :location, :connect ];end
 
         def self.textify_list(table_data)
           return table_data.select {|i| ! i['key'].eql?('links') }
@@ -31,7 +31,17 @@ module Asperalm
           command=Main.tool.options.get_next_argument('command',action_list)
           case command
           when :location # shows files used
-            return {:type=>:hash_array, :data=>Fasp::ResourceFinder.resource.map {|k,v| {'name'=>k,'path'=>v[:path]}}}
+            return {:type=>:hash_array, :data=>Fasp::Installation.instance.paths.map {|k,v| {'name'=>k,'path'=>v[:path]}}}
+          when :installation
+            subcmd=Main.tool.options.get_next_argument('command',[:list])
+            all=Fasp::Installation.instance.installed_products
+            case subcmd
+            when :list # shows files used
+              return {:type=>:hash_array, :data=>all, :fields=>[:name,:app_root]}
+            end
+          when :monitor # todo
+            raise "xx"
+            return {:type=>:hash_array, :data=>Fasp::Installation.instance.installed_products}
           when :connect #
             command=Main.tool.options.get_next_argument('command',[:list,:id])
             case command

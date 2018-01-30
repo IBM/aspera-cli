@@ -9,7 +9,7 @@ module Asperalm
   module Cli
     module Plugins
       class Files < Plugin
-        def action_list; [ :package, :repo, :faspexgw, :admin];end
+        def action_list; [ :package, :repository, :faspexgw, :admin];end
 
         def declare_options
           Main.tool.options.set_option(:download_mode,:fasp)
@@ -17,8 +17,8 @@ module Asperalm
           Main.tool.options.add_opt_list(:auth,Oauth.auth_types,"type of authentication",'-tTYPE')
           Main.tool.options.add_opt_simple(:url,"URI","-wURI","URL of application, e.g. http://org.asperafiles.com")
           Main.tool.options.add_opt_simple(:username,"STRING","-uSTRING","username to log in")
-          Main.tool.options.add_opt_simple(:password,"STRING","-pSTRING","password")
-          Main.tool.options.add_opt_simple(:private_key,"STRING","-kSTRING","RSA private key for JWT (@ for ext. file)")
+          Main.tool.options.add_opt_simple(:password,"STRING","-pSTRING","user's password")
+          Main.tool.options.add_opt_simple(:private_key,"STRING","-kSTRING","RSA private key PEM value for JWT (prefix file path with @val:@file:)")
           Main.tool.options.add_opt_simple(:workspace,"STRING","name of workspace")
           Main.tool.options.add_opt_simple(:recipient,"STRING","package recipient")
           Main.tool.options.add_opt_simple(:title,"STRING","package title")
@@ -102,13 +102,15 @@ module Asperalm
         PATH_SEPARATOR='/'
 
         def execute_node_action(home_node_id,home_file_id)
-          command_repo=Main.tool.options.get_next_argument('command',Node.simple_actions.clone.concat([ :browse, :upload, :download, :file ]))
+          command_repo=Main.tool.options.get_next_argument('command',[ :node, :file, :browse, :upload, :download ])
           case command_repo
-          when *Node.simple_actions
+          when :node
+            # Note: other "common" actions are unauthorized with user scope
+            command_legacy=Main.tool.options.get_next_argument('command',Node.simple_actions)
             # TODO: shall we support all methods here ? what if there is a link ?
             node_info=@api_files_user.read("nodes/#{home_node_id}")[:data]
             node_api=get_files_node_api(node_info,FilesApi::SCOPE_NODE_USER)
-            return Node.execute_common(command_repo,node_api)
+            return Node.execute_common(command_legacy,node_api)
           when :file
             fileid=Main.tool.options.get_next_argument("file id")
             node_info,file_id = find_nodeinfo_and_fileid(home_node_id,fileid,"")
@@ -158,7 +160,7 @@ module Asperalm
           # get parameters
           instance_fqdn=URI.parse(Main.tool.options.get_option(:url,:mandatory)).host
           organization,instance_domain=instance_fqdn.split('.',2)
-          
+
           raise "expecting a public FQDN for Files" if instance_domain.nil?
 
           Log.log.debug("instance_fqdn=#{instance_fqdn}")
@@ -186,9 +188,12 @@ module Asperalm
             auth_data[:redirect_uri]=Main.tool.options.get_option(:redirect_uri,:mandatory)
             Log.log.info("redirect_uri=#{auth_data[:redirect_uri]}")
           when :jwt
-            auth_data[:private_key]=OpenSSL::PKey::RSA.new(Main.tool.options.get_option(:private_key,:mandatory))
+            private_key_PEM_string=Main.tool.options.get_option(:private_key,:mandatory)
+            auth_data[:private_key_obj]=OpenSSL::PKey::RSA.new(private_key_PEM_string)
             auth_data[:subject]=Main.tool.options.get_option(:username,:mandatory)
-            Log.log.info("private_key=#{auth_data[:private_key]}")
+            auth_data[:audience]=FilesApi.apiurl+"/oauth2/token" # TODO: set by parameters
+
+              Log.log.info("private_key=#{auth_data[:private_key_obj]}")
             Log.log.info("subject=#{auth_data[:subject]}")
           when :url_token
             auth_data[:url_token]=Main.tool.options.get_option(:url_token,:mandatory)
@@ -282,7 +287,7 @@ module Asperalm
               packages=@api_files_user.read("packages",{'archived'=>false,'exclude_dropbox_packages'=>true,'has_content'=>true,'received'=>true,'workspace_id'=>@workspace_id})[:data]
               return {:data=>packages,:fields=>['id','name','bytes_transferred'],:type=>:hash_array}
             end
-          when :repo
+          when :repository
             return execute_node_action(@workspace_data['home_node_id'],@workspace_data['home_file_id'])
           when :faspexgw
             require 'asperalm/faspex_gw'
