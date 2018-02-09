@@ -14,14 +14,13 @@ module Asperalm
         LOCAL_REDIRECT_URI="http://localhost:12345"
         # cache file for CLI for API keys
         API_KEY_REPOSITORY=File.join(Main.tool.config_folder,"ats_api_keys.json")
-        
         def initialize
-          @api_auth=nil
+          @api_ats_secure=nil
           @current_api_key_info=nil
           @repo_api_keys=nil
           @all_servers=nil
         end
-        
+
         def declare_options
           Main.tool.options.add_opt_simple(:ats_id,"ATS_ID","ATS key identifier (ats_xxx)")
           Main.tool.options.add_opt_simple(:params,"JSON","parameters for access key")
@@ -44,7 +43,7 @@ module Asperalm
         def all_servers
           if @all_servers.nil?
             @all_servers=[]
-            @@SUPPORTED_CLOUDS.keys.each { |name| @api_pub.read("servers/#{name.to_s.upcase}")[:data].each {|i| @all_servers.push(i)}}
+            @@SUPPORTED_CLOUDS.keys.each { |name| @api_ats_public.read("servers/#{name.to_s.upcase}")[:data].each {|i| @all_servers.push(i)}}
           end
           return @all_servers
         end
@@ -91,13 +90,13 @@ module Asperalm
         def create_new_api_key
           # TODO: provide param username and password to avoid web auth
           # get login page url in exception code 3xx
-          res=@api_pub.call({:operation=>'POST',:subpath=>"api_keys",:return_error=>true,:headers=>{'Accept'=>'application/json'},:url_params=>{:description => "created by aslmcli",:redirect_uri=>LOCAL_REDIRECT_URI}})
+          res=@api_ats_public.call({:operation=>'POST',:subpath=>"api_keys",:return_error=>true,:headers=>{'Accept'=>'application/json'},:url_params=>{:description => "created by aslmcli",:redirect_uri=>LOCAL_REDIRECT_URI}})
           # TODO: check code is 3xx ?
           login_page_url=res[:http]['Location']
           new_api_key_info=Oauth.goto_page_and_get_request(LOCAL_REDIRECT_URI,login_page_url)
           @current_api_key_info=new_api_key_info
           # add extra information on api key to identify different subscriptions
-          subscription=api_auth.read("subscriptions")[:data]
+          subscription=api_ats_secure.read("subscriptions")[:data]
           new_api_key_info['subscription_name']=subscription['name']
           new_api_key_info['organization_name']=subscription['aspera_id_user']['organization']['name']
           repo_api_keys.push(new_api_key_info)
@@ -106,18 +105,18 @@ module Asperalm
         end
 
         # authenticated API
-        def api_auth
-          if @api_auth.nil?
-            @api_auth=Rest.new(ATS_API_URL,{:auth => {:type=>:basic,:username=>current_api_key['ats_id'],:password=>current_api_key['ats_secret']}})
+        def api_ats_secure
+          if @api_ats_secure.nil?
+            @api_ats_secure=Rest.new(ATS_API_URL,{:auth => {:type=>:basic,:username=>current_api_key['ats_id'],:password=>current_api_key['ats_secret']}})
           end
-          @api_auth
+          @api_ats_secure
         end
 
         #
         def server_by_cloud_region
           cloud=Main.tool.options.get_option(:cloud,:mandatory).upcase
           region=Main.tool.options.get_option(:region,:mandatory)
-          return @api_pub.read("servers/#{cloud}/#{region}")[:data]
+          return @api_ats_public.read("servers/#{cloud}/#{region}")[:data]
         end
 
         def execute_action_access_key
@@ -143,30 +142,31 @@ module Asperalm
                 end
               end
             end
-            res=api_auth.create("access_keys",params)
+            res=api_ats_secure.create("access_keys",params)
             return {:type=>:key_val_list, :data=>res[:data]}
             # TODO : action : modify, with "PUT"
           when :list #
-            res=api_auth.read("access_keys",{'offset'=>0,'max_results'=>1000})
+            res=api_ats_secure.read("access_keys",{'offset'=>0,'max_results'=>1000})
             return {:type=>:hash_array, :data=>res[:data]['data'], :name => 'access_key'}
           when :id #
             access_key=Main.tool.options.get_next_argument("access_key")
             command=Main.tool.options.get_next_argument('command',[:show,:delete,:node,:server])
             case command
             when :show #
-              res=api_auth.read("access_keys/#{access_key}")
+              res=api_ats_secure.read("access_keys/#{access_key}")
               return {:type=>:key_val_list, :data=>res[:data]}
             when :delete #
-              res=api_auth.delete("access_keys/#{access_key}")
+              res=api_ats_secure.delete("access_keys/#{access_key}")
               return {:type=>:status, :data=>"deleted #{access_key}"}
             when :node
-              ak_data=api_auth.read("access_keys/#{access_key}")[:data]
-              server_data=all_servers.select {|i| i['id'].eql?(ak_data['transfer_server_id'])}.first
+              ak_data=api_ats_secure.read("access_keys/#{access_key}")[:data]
+              server_data=all_servers.select {|i| i['id'].start_with?(ak_data['transfer_server_id'])}.first
+              raise CliError,"no such server found" if server_data.nil?
               api_node=Rest.new(server_data['transfer_setup_url'],{:auth=>{:type=>:basic,:username=>ak_data['id'], :password=>ak_data['secret']}})
               command=Main.tool.options.get_next_argument('command',Node.common_actions)
               Node.execute_common(command,api_node)
             when :server
-              ak_data=api_auth.read("access_keys/#{access_key}")[:data]
+              ak_data=api_ats_secure.read("access_keys/#{access_key}")[:data]
               api_ak_auth=Rest.new(ATS_API_URL,{:auth => {:type=>:basic,:username=>ak_data['id'],:password=>ak_data['secret']}})
               return {:type=>:key_val_list, :data=>api_ak_auth.read("servers")[:data]}
             end
@@ -213,17 +213,17 @@ module Asperalm
           when :create #
             return {:type=>:key_val_list, :data=>create_new_api_key}
           when :list #
-            res=api_auth.read("api_keys",{'offset'=>0,'max_results'=>1000})
+            res=api_ats_secure.read("api_keys",{'offset'=>0,'max_results'=>1000})
             return {:type=>:value_list, :data=>res[:data]['data'], :name => 'ats_id'}
           when :id #
             ats_id=Main.tool.options.get_next_argument("ats_id")
             command=Main.tool.options.get_next_argument('command',[:show,:delete])
             case command
             when :show #
-              res=api_auth.read("api_keys/#{ats_id}")
+              res=api_ats_secure.read("api_keys/#{ats_id}")
               return {:type=>:key_val_list, :data=>res[:data]}
             when :delete #
-              res=api_auth.delete("api_keys/#{ats_id}")
+              res=api_ats_secure.delete("api_keys/#{ats_id}")
               return {:type=>:status, :data=>"deleted #{ats_id}"}
             end
           end
@@ -233,13 +233,13 @@ module Asperalm
 
         def execute_action
           # API without authentication
-          @api_pub=Rest.new(ATS_API_URL)
+          @api_ats_public=Rest.new(ATS_API_URL)
           command=Main.tool.options.get_next_argument('command',action_list)
           case command
           when :access_key
             return execute_action_access_key
           when :subscriptions
-            return {:type=>:key_val_list, :data=>api_auth.read("subscriptions")[:data]}
+            return {:type=>:key_val_list, :data=>api_ats_secure.read("subscriptions")[:data]}
           when :server
             return execute_action_server
           when :api_key

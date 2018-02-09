@@ -125,7 +125,7 @@ t/fp3:
 	$(EXETEST) server df
 	@touch $@
 t/fp4:
-	$(BINDIR)/asession --ts=@json:'{"remote_host":"demo.asperasoft.com","remote_user":"asperaweb","ssh_port":33001,"remote_password":"demoaspera","direction":"receive","destination_root":"./test.dir","paths":[{"source":"/aspera-test-dir-tiny/200KB.1"}]}'
+	$(BINDIR)/asession @json:'{"remote_host":"demo.asperasoft.com","remote_user":"asperaweb","ssh_port":33001,"remote_password":"demoaspera","direction":"receive","destination_root":"./test.dir","paths":[{"source":"/aspera-test-dir-tiny/200KB.1"}]}'
 	@touch $@
 
 tfasp: t/fp1 t/fp2 t/fp3 t/fp4

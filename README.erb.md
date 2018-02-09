@@ -505,7 +505,7 @@ table, th, td {border: 1px solid black;}
 <tr><td>target_rate_kbps</td><td>-</td><td>integer</td><td class="yes">Y</td><td class="yes">Y</td><td class="yes">Y</td><td>-l</td><td>Specifies desired speed for the transfer.</td></tr>
 <tr><td>min_rate_kbps</td><td>0</td><td>integer</td><td class="yes">Y</td><td class="yes">Y</td><td class="yes">Y</td><td>-m</td><td>Set the minimum transfer rate in kilobits per second.</td></tr>
 <tr><td>cipher</td><td>none</td><td>string</td><td class="yes">Y</td><td class="yes">Y</td><td class="yes">Y</td><td>-c</td><td>in transit encryption type.<br/>none, aes-128, aes-256</td></tr>
-<tr><td>content_protection</td><td>-</td><td>string</td><td></td><td></td><td></td><td>--file-crypt</td><td>Valid literals include "encrypt" and "decrypt".</td></tr>
+<tr><td>content_protection</td><td>encrypt<br/>decrypt</td><td>string</td><td></td><td></td><td></td><td>--file-crypt=</td><td>encryption at rest</td></tr>
 <tr><td>content_protection_password</td><td>-</td><td>string</td><td></td><td></td><td></td><td>PASS</td><td>Specifies a string password.</td></tr>
 <tr><td>overwrite</td><td>diff</td><td>string</td><td class="yes">Y</td><td class="yes">Y</td><td class="yes">Y</td><td>--overwrite</td><td>Overwrite destination files with the source files of the same name.<br/>never, always, diff, older, or diff+older</td></tr>
 <tr><td>retry_duration</td><td></td><td>string</td><td></td><td></td><td></td><td>TODO</td><td>Specifies how long to wait before retrying transfer. (e.g. "5min")</td></tr>
@@ -522,7 +522,7 @@ table, th, td {border: 1px solid black;}
 <tr><td>read_threads</td><td></td><td>integer</td><td></td><td></td><td></td><td>-</td><td>ascp4 only</td></tr>
 <tr><td>write_threads</td><td></td><td>integer</td><td></td><td></td><td></td><td>-</td><td>ascp4 only</td></tr>
 <tr><td>use_ascp4</td><td>false</td><td>boolean</td><td></td><td class="yes">Y</td><td></td><td>-</td><td>specify version of protocol</td></tr>
-<tr><td>paths</td><td></td><td>array</td><td></td><td></td><td></td><td>positional<br/>--file-list<br/>--file-pair-list</td><td>Contains a path to the source (required) and a path to the destination.</td></tr>
+<tr><td>paths</td><td>source files (dest)</td><td>array</td><td></td><td></td><td></td><td>positional<br/>--file-list<br/>--file-pair-list</td><td>Contains a path to the source (required) and a path to the destination.</td></tr>
 <tr><td>http_fallback_port</td><td></td><td>integer</td><td class="yes">Y</td><td></td><td></td><td>-t</td><td>Specifies http port.</td></tr>
 <tr><td>https_fallback_port</td><td></td><td>integer</td><td></td><td></td><td></td><td>todo</td><td>Specifies https port.</td></tr>
 <tr><td>cipher_allowed</td><td></td><td>string</td><td></td><td></td><td></td><td>-</td><td>returned by node API. Valid literals include "aes-128" and "none".</td></tr>
@@ -866,6 +866,33 @@ $ aslmcli -h
 ```
 
 Note that actions and parameter values can be written in short form.
+
+# ```asession``` : a simpler FASP session initiation tool
+
+The gem comes with a simplified unifomized interface to start FASP
+session:
+
+```
+asession
+```
+
+Instead of providing command line arguments, the tool expect one single argument: a transfer spec (see section above).
+
+The argument supports extended argument syntax ( see section above).
+
+So, a typical use if:
+
+```
+MY_TSPEC='{"remote_host":"demo.asperasoft.com","remote_user":"asperaweb","ssh_port":33001,"remote_password":"demoaspera","direction":"receive","destination_root":"./test.dir","paths":[{"source":"/aspera-test-dir-tiny/200KB.1"}]}'
+
+echo "${MY_TSPEC}"|asession @json:@stdin
+```
+
+It will generate all low level event, one per line, in JSON format on stdout.
+
+This makes it easy to integrate with any language.
+
+example: [https://www.npmjs.com/package/asperalm](https://www.npmjs.com/package/asperalm)
 
 # BUGS
 This is a sample code only, dont expect full capabilities. This code is not

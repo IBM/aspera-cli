@@ -14,21 +14,35 @@ module Asperalm
           Main.tool.options.add_opt_date(:filter_to,"DATE","only before date")
         end
 
-        def action_list; [:transfers];end
+        def action_list; [:transfer];end
 
         def execute_action
           api_console=basic_auth_api('api')
           #api_console=Rest.new(Main.tool.options.get_option(:url,:mandatory)+'/api',{:auth=>{:type=>:basic,:username=>Main.tool.options.get_option(:username,:mandatory), :password=>Main.tool.options.get_option(:password,:mandatory)}})
           command=Main.tool.options.get_next_argument('command',action_list)
           case command
-          when :transfers
-            command=Main.tool.options.get_next_argument('command',[ :list ])
-            return {:type=>:hash_array,
-              :data=>api_console.read('transfers',{
+          when :transfer
+            command=Main.tool.options.get_next_argument('command',[ :current, :smart ])
+            case command
+            when :smart
+              command=Main.tool.options.get_next_argument('command',[:list,:submit])
+              case command
+              when :list
+                return {:type=>:hash_array,:data=>api_console.read('smart_transfers')[:data]}
+              when :submit
+                smart_id = Main.tool.options.get_next_argument("smart_id")
+                params = Main.tool.options.get_next_argument("transfer parameters")
+                return {:type=>:hash_array,:data=>api_console.create('smart_transfers/'+smart_id,params)[:data]}
+              end
+            when :current
+              command=Main.tool.options.get_next_argument('command',[ :list ])
+              return {:type=>:hash_array,
+                :data=>api_console.read('transfers',{
                 'from'=>Main.tool.options.get_option(:filter_from,:mandatory),
                 'to'=>Main.tool.options.get_option(:filter_to,:mandatory)
-              })[:data],
-              :fields=>['id','contact','name','status']}
+                })[:data],
+                :fields=>['id','contact','name','status']}
+            end
           end
         end
       end # Console

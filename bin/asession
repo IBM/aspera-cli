@@ -3,38 +3,42 @@
 $LOAD_PATH.unshift(File.dirname(__FILE__)+"/../lib")
 require 'rubygems'
 require 'json'
-require 'base64'
-require 'optparse'
 require 'asperalm/fasp/manager'
 require 'asperalm/cli/manager'
 require 'asperalm/log'
-transferspec=nil
-p=OptionParser.new
-p.banner = "Usage: asfasp [options]"
-p.separator("EXAMPLES")
-p.separator(%q(    asfasp --ts=@json:'{"remote_host":"demo.asperasoft.com","remote_user":"asperaweb","ssh_port":33001,"remote_password":"demoaspera","direction":"receive","destination_root":"./test.dir","paths":[{"source":"/aspera-test-dir-tiny/200KB.1"}]}'))
-p.separator(%q(    echo '{"remote_host":...}'|asfasp --ts=@json:@stdin))
-p.separator("OPTIONS")
-p.on("-D", "debug mode"){logger.level=logger.level+1}
-p.on("--ts=VALUE", "transfer spec: prefix with combination of: @json:, @base64:, @stdin") do |v|
-  transferspec=Asperalm::Cli::Manager.get_extended_value("transfer spec",v)
-end
-p.on_tail("-h", "--help", "Show this message"){STDERR.puts(p);Process.exit(1)}
-p.parse!
-if transferspec.nil?
-  STDERR.puts(p)
+
+def assert_usage(assertion,errmsg)
+  return if assertion
+  STDERR.puts('ERROR: '+errmsg)
+  STDERR.puts('USAGE')
+  STDERR.puts('    asession <session information>')
+  STDERR.puts('    <session information> is a JSON formatted transfer spec, starting with "@json:".')
+  STDERR.puts('    The value can be either:')
+  STDERR.puts('    o the JSON description itself')
+  STDERR.puts('    o @stdin, if the JSON is provided from stdin')
+  STDERR.puts('    o @file:<path>, if the JSON is provided from a file')
+  STDERR.puts('Note: debug information can be placed on STDERR, using the "loglevel" parameter in transfer spec (debug=0)')
+  STDERR.puts("EXAMPLES")
+  STDERR.puts(%q(    asession @json:'{"remote_host":"demo.asperasoft.com","remote_user":"asperaweb","ssh_port":33001,"remote_password":"demoaspera","direction":"receive","destination_root":"./test.dir","paths":[{"source":"/aspera-test-dir-tiny/200KB.1"}]}'))
+  STDERR.puts(%q(    echo '{"remote_host":...}'|asession @json:@stdin))
   Process.exit(1)
 end
-if !transferspec.is_a?(Hash)
-  STDERR.puts("expecting a hash, did you specify: @json: ?")
-  Process.exit(1)
-end
-# disable ascp output on stdout to not mix with progress json
+
+assert_usage(ARGV.length.eql?(1),'exactly one argument is expected')
+transferspec=Asperalm::Cli::Manager.get_extended_value("transfer spec",ARGV.first)
+assert_usage(transferspec.is_a?(Hash),'the value must be a hash table, did you specify: @json: ?')
+# disable ascp output on stdout to not mix with progress JSON
 transferspec['EX_quiet']=true
+if transferspec.has_key?("loglevel")
+  Asperalm::Log.log.level=transferspec["loglevel"]
+  transferspec.delete("loglevel")
+end
+
 # FASP event listener display management events as JSON
 class FaspListenerStdout < Asperalm::Fasp::Listener
   def event(data);STDOUT.puts(JSON.generate(data));STDOUT.flush;end
 end
+
 # display JSON instead of legacy Lines
 Asperalm::Fasp::Manager.instance.add_listener(FaspListenerStdout.new,:enhanced)
 # go !
