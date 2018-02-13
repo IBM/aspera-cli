@@ -332,7 +332,7 @@ module Asperalm
         raise CliBadArgument,"unprocessed values: #{@unprocessed_arguments}" unless @unprocessed_arguments.empty?
       end
 
-      # get all original options, used to generate a config in config file
+      # get all original options  on command line used to generate a config in config file
       def get_options_table(remove_from_remaining=true)
         result={}
         @all_options.each do |optionval|
@@ -353,6 +353,14 @@ module Asperalm
         end
         #@unprocessed_options=[]
         return result
+      end
+      
+      # return options as taken from config file and command line just before command execution
+      def get_current_options
+        return @available_option.keys.inject({}) do |h,option_symb|
+          h[option_symb.to_s]=get_option(option_symb)
+          h
+        end
       end
 
       # removes already known options from the list

@@ -262,10 +262,14 @@ module Asperalm
         return @transfer_agent_singleton
       end
 
+      attr_accessor :option_flat_hash
+      
       def initialize
         # overriding parameters on transfer spec
         @transfer_spec_default={}
-        @help_requested=false
+        @option_help=false
+        @option_show_config=false
+        @option_flat_hash=:yes
         @options=Manager.new
         @loaded_configs=nil
         @transfer_agent_singleton=nil
@@ -306,6 +310,7 @@ module Asperalm
         # handler must be set before setting defaults
         @options.set_obj_attr(:log_level,self,:option_log_level)
         @options.set_obj_attr(:insecure,self,:option_insecure)
+        @options.set_obj_attr(:flat_hash,self,:option_flat_hash)
         @options.set_obj_attr(:ts,self,:option_transfer_spec)
         @options.set_obj_attr(:to_folder,self,:option_to_folder)
         @options.set_obj_attr(:logger,self,:option_logtype)
@@ -341,13 +346,16 @@ module Asperalm
         @options.set_option(:fields,FIELDS_DEFAULT)
         @options.set_option(:transfer,:ascp)
         @options.set_option(:insecure,:no)
+        @options.set_option(:flat_hash,:yes)
         @options.set_option(:format,:table)
         #@options.set_option(:logger,:stdout)
         @options.set_option(:config_file,default_config_file)
         #options.set_option(:to_folder,'.')
-        @options.parser.on("-h", "--help", "Show this message.") { @help_requested=true }
+        @options.parser.on("-h", "--help", "Show this message.") { @option_help=true }
+        @options.parser.on("--show-config", "Display parameters used for the provided action.") { @option_show_config=true }
         @options.add_opt_list(:gui_mode,OperatingSystem.gui_modes,"method to start browser",'-gTYPE')
         @options.add_opt_list(:insecure,[:yes,:no],"do not validate cert")
+        @options.add_opt_list(:flat_hash,[:yes,:no],"display hash values as additional keys")
         @options.add_opt_list(:log_level,Log.levels,"Log level")
         @options.add_opt_list(:logger,Log.logtypes,"log method")
         @options.add_opt_list(:format,self.class.display_formats,"output format")
@@ -368,7 +376,7 @@ module Asperalm
         @options.add_opt_simple(:use_product,"NAME","which local product to use for ascp")
       end
 
-      def self.flatten_config_show(t)
+      def self.flatten_all_config(t)
         r=[]
         t.each do |k,v|
           v.each do |kk,vv|
@@ -376,6 +384,18 @@ module Asperalm
           end
         end
         return r
+      end
+
+      def self.flatten_one_config(source,prefix='',dest=nil)
+        dest={} if dest.nil?
+        source.each do |k,v|
+          unless v.is_a?(Hash)
+            dest[k]=v
+          else
+            flatten_one_config(v,prefix+k.to_s+'.',dest)
+          end
+        end
+        return dest
       end
 
       # supported output formats
@@ -435,6 +455,9 @@ module Asperalm
             when FIELDS_DEFAULT;asked_fields=results[:fields] if results.has_key?(:fields)
             when FIELDS_ALL;# keep all
             else asked_fields=user_asked_fields_list_str.split(',')
+            end
+            if @option_flat_hash.eql?(:yes)
+              results[:data]=self.class.flatten_one_config(results[:data])
             end
             table_data=asked_fields.map { |i| { out_table_columns.first => i, out_table_columns.last => results[:data][i] } }
           when :value_list
@@ -606,7 +629,7 @@ module Asperalm
         when :list
           return {:data => @loaded_configs.keys, :type => :value_list, :name => 'name'}
         when :overview
-          return {:type=>:hash_array,:data=>self.class.flatten_config_show(@loaded_configs)}
+          return {:type=>:hash_array,:data=>self.class.flatten_all_config(@loaded_configs)}
         end
       end
 
@@ -700,7 +723,7 @@ module Asperalm
           # load default config if it was not overriden on command line
           load_config_file
           # help requested without command ?
-          exit_with_usage(true) if @help_requested and @options.command_or_arg_empty?
+          exit_with_usage(true) if @option_help and @options.command_or_arg_empty?
           # load global default options
           load_plugin_default_parameters(@@MAIN_PLUGIN_NAME_STR.to_sym)
           # dual execution locking
@@ -727,7 +750,11 @@ module Asperalm
             @options.parse_options!
           end
           # help requested ?
-          exit_with_usage(false) if @help_requested
+          exit_with_usage(false) if @option_help
+          if @option_show_config
+            display_results({:type=>:key_val_list,:data=>@options.get_current_options})
+            Process.exit(0)
+          end
           display_results(command_plugin.execute_action)
           @options.fail_if_unprocessed
         rescue CliBadArgument => e;          process_exception_exit(e,'Argument',:usage)

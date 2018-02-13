@@ -160,9 +160,21 @@ t/nd2:
 	rm -f $(TEST_FOLDER)/200KB.1
 	@touch $@
 t/nd3:
-	$(EXETEST) -N node --url=https://10.25.0.4:9092 --username=node_xferuser --password=Aspera123_ upload --to-folder=/ 500M.dat --ts=@json:'{"precalculate_job_size":true}' --transfer=node --transfer-node=@json:'{"url":"https://10.25.0.8:9092","username":"node_xferuser","password":"Aspera123_"}' 
-	$(EXETEST) -N node --url=https://10.25.0.4:9092 --username=node_xferuser --password=Aspera123_ delete /500M.dat
+	$(EXETEST) --no-default node --url=https://10.25.0.4:9092 --username=node_xferuser --password=Aspera123_ upload --to-folder=/ 500M.dat --ts=@json:'{"precalculate_job_size":true}' --transfer=node --transfer-node=@json:'{"url":"https://10.25.0.8:9092","username":"node_xferuser","password":"Aspera123_"}' 
+	$(EXETEST) --no-default node --url=https://10.25.0.4:9092 --username=node_xferuser --password=Aspera123_ delete /500M.dat
 	@touch $@
+t/nd4:
+	$(EXETEST) node service create @json:'{"id":"service1","type":"WATCHD","run_as":{"user":"user1"}}'
+	$(EXETEST) node service list
+	@echo "waiting a little...";sleep 2
+	$(EXETEST) node service id service1 delete
+	$(EXETEST) node service list
+	@echo "waiting a little...";sleep 5
+	$(EXETEST) node service list
+	@echo "waiting a little...";sleep 5
+	$(EXETEST) node service list
+	@touch $@
+
 tnode: t/nd1 t/nd2 t/nd3
 
 t/fs1:
@@ -373,9 +385,9 @@ t/fxgw:
 NODE_USER=node_admin
 NODE_PASS=Aspera123_
 setupprev:
-	$(EXETEST) -N --url=https://localhost:9092 --username=node_xfer --password=Aspera123_ node access_key id testkey delete
-	$(EXETEST) -N --url=https://localhost:9092 --username=node_xfer --password=Aspera123_ node access_key create @json:'{"id":"testkey","name":"the test key","secret":"secret","storage":{"type":"local", "path":"/Users/xfer/docroot"}}'
-	$(EXETEST) -N --url=https://localhost:9092 --username=testkey --password=secret config id test_preview update
+	$(EXETEST) node access_key id testkey delete --no-default --url=https://localhost:9092 --username=node_xfer --password=Aspera123_
+	$(EXETEST) node access_key create @json:'{"id":"testkey","name":"the test key","secret":"secret","storage":{"type":"local", "path":"/Users/xfer/docroot"}}' --no-default --url=https://localhost:9092 --username=node_xfer --password=Aspera123_ 
+	$(EXETEST) config id test_preview update --url=https://localhost:9092 --username=testkey --password=secret
 	$(EXETEST) config id default set preview test_preview
 
 # ruby -e 'require "yaml";YAML.load_file("lib/asperalm/preview_generator_formats.yml").each {|k,v|puts v};'|while read x;do touch /Users/xfer/docroot/sample${x};done

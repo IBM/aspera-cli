@@ -18,20 +18,30 @@ def assert_usage(assertion,errmsg)
   STDERR.puts('    o @stdin, if the JSON is provided from stdin')
   STDERR.puts('    o @file:<path>, if the JSON is provided from a file')
   STDERR.puts('Note: debug information can be placed on STDERR, using the "loglevel" parameter in transfer spec (debug=0)')
-  STDERR.puts("EXAMPLES")
+  STDERR.puts('EXAMPLES')
   STDERR.puts(%q(    asession @json:'{"remote_host":"demo.asperasoft.com","remote_user":"asperaweb","ssh_port":33001,"remote_password":"demoaspera","direction":"receive","destination_root":"./test.dir","paths":[{"source":"/aspera-test-dir-tiny/200KB.1"}]}'))
   STDERR.puts(%q(    echo '{"remote_host":...}'|asession @json:@stdin))
   Process.exit(1)
 end
 
+parameter_source_err_msg=' (argument), did you specify: "@json:" ?'
+# by default assume JSON input on stdin if no argument
+if ARGV.empty?
+  ARGV.push('@json:@stdin')
+  parameter_source_err_msg=' (JSON on stdin)'
+end
+# anyway expect only one argument: session information
 assert_usage(ARGV.length.eql?(1),'exactly one argument is expected')
-transferspec=Asperalm::Cli::Manager.get_extended_value("transfer spec",ARGV.first)
-assert_usage(transferspec.is_a?(Hash),'the value must be a hash table, did you specify: @json: ?')
+# parse transfer spec
+transfer_spec=Asperalm::Cli::Manager.get_extended_value("transfer spec",ARGV.pop)
+# ensure right type
+assert_usage(transfer_spec.is_a?(Hash),"the value must be a hash table#{parameter_source_err_msg}")
 # disable ascp output on stdout to not mix with progress JSON
-transferspec['EX_quiet']=true
-if transferspec.has_key?("loglevel")
-  Asperalm::Log.log.level=transferspec["loglevel"]
-  transferspec.delete("loglevel")
+transfer_spec['EX_quiet']=true
+# additional debug capability
+if transfer_spec.has_key?('EX_loglevel')
+  Asperalm::Log.log.level=transfer_spec['EX_loglevel']
+  transfer_spec.delete('EX_loglevel')
 end
 
 # FASP event listener display management events as JSON
@@ -42,4 +52,5 @@ end
 # display JSON instead of legacy Lines
 Asperalm::Fasp::Manager.instance.add_listener(FaspListenerStdout.new,:enhanced)
 # go !
-Asperalm::Fasp::Manager.instance.start_transfer(transferspec)
+Asperalm::Fasp::Manager.instance.start_transfer(transfer_spec)
+# no exit code: status is success (0)

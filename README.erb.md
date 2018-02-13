@@ -1,16 +1,26 @@
-# Asperalm - Laurent's Aspera CLI and Ruby library
+# Asperalm - Laurent Aspera CLI and Ruby library
 
 Laurent/2016
 
-This Gem provides a cross platform (ruby based) command line tool (CLI) using (mostly REST) 
-APIs of Aspera Products: Server, Node, Shares, Faspex, Console, Orchestrator, Files, ATS.
+This Gem provides a Ruby language interface to FASP session start and a cross platform (ruby based) command line tool (CLI) using (mostly REST) 
+Aspera Products APIs for :
 
-Disclaimer: This GEM is not endorsed/supported by IBM/Aspera, use at your risk, and not in 
-production environments.
+* Server
+* Node
+* Shares
+* Faspex
+* Console
+* Orchestrator
+* Files
+* ATS
+* and more...
+
+Disclaimer: This GEM is not endorsed/supported by IBM/Aspera, 
+use at your risk, and not in production environments.
 
 That being said, it is very powerful and gets things done, it's also a great tool to learn Aspera APIs.
 
-# Overview, Features
+# Overview
 
 This is a Ruby Gem that provides the following features:
 
@@ -40,7 +50,7 @@ The CLI's folder where configuration and cache files are kept is `$HOME/.aspera/
 
 Requires Ruby 2.0+
 
-In examples below, command line operations (starting with "$") are shown using `bash`.
+In examples below, command line operations (starting with `$`) are shown using a standard shell: `bash`.
 
 # Quick Start
 
@@ -180,13 +190,17 @@ $ aslmcli files repo browse /
 
 ```
 
-# Option and Argument values
+# Plugins and applications
 
-The value for options (--option-name=VALUE) and command arguments are normally processed directly 
-from the command line, i.e. `aslmcli command --option-name=VAL1 VAL2` takes "VAL1" as the value for
-option "option_name", and "VAL2" as the value for first argument.
+The CLI tool uses a plugin mechanism. The first level command (just after `aslmcli` on the command line) is the name of the concerned plugin which will execute the command. Each plugin usually represent commands sent to a specific application.
+For instance, the plugin "faspex" allows operations on the application "Aspera Faspex".
 
-It is also possible to retrieve a value with the following special prefixes:
+# Options and Arguments
+
+Command options and arguments are normally provided on command line, i.e. `aslmcli command --option-name=VAL1 VAL2` takes "VAL1" as the value for
+option `option_name`, and "VAL2" as the value for first argument of command: `command`.
+
+It is also possible to retrieve a value (option and argument) with the following special prefixes:
 
 * @val:VALUE , just take the specified value, e.g. --username=@val:laurent, allows for meta characters
 * @file:PATH , read value from a file (prefix "~/" is replaced with $HOME), e.g. --key=@file:$HOME/.ssh/mykey
@@ -207,12 +221,12 @@ This will read the content of the specified file, then, base64 decode, then unzi
 
 The special option "--" stop option processing, so following values are taken as arguments.
 
-Environment variable starting with prefix: ASLMCLI_ are taken as option values, i.e. `ASLMCLI_OPTION_NAME` is for `--option-name`.
+Environment variable starting with prefix: ASLMCLI_ are taken as option values, 
+i.e. `ASLMCLI_OPTION_NAME` is for `--option-name`.
 
-# Plugins and applications
-
-The tools uses a plugin mechanism. Each plugin usually represent commands sent to a specific application.
-For instance, the plugin "faspex" allows operations on the application "Aspera Faspex".
+Some ptions have hardcoded default values. All options can be defined in a 
+configuration file (see [Configuration file](#configuration-file)). 
+Options values can be displays for a given command by providing the `--show-config` option.
 
 # Configuration file
 
@@ -430,7 +444,9 @@ The `--transfer-node` parameter can directly specify a pre-configured parameter 
 `--transfer-node=@param:<psetname>` or specified using the option syntax :
 `--transfer-node=@json:'{"url":"https://...","username":"theuser","password":"thepass"}'`
 
-# FASP transfer parameters : transfer spec
+# Transfer spec
+
+The "Transfer spec" specifies FASP protocol session startup parameters.
 
 ## Destination folder for transfers
 
@@ -667,7 +683,7 @@ On first execution, the user is asked to login to Aspera ID using a web browser.
 
 When only one ats_id is created, it is taken by default. Else it shall be specified with --ats-id or using a parameter set.
 
-Note: APIs are described here: [https://ts.asperasoft.com/ats-guide/getting-started-guide/#guide_transfers_create_ak](https://ts.asperasoft.com/ats-guide/getting-started-guide/#guide_transfers_create_ak)
+Note: APIs are described here: [https://ts.asperasoft.com/ats-guide/getting-started-guide/# guide_transfers_create_ak](https://ts.asperasoft.com/ats-guide/getting-started-guide/# guide_transfers_create_ak)
 
 ## Usage
 
@@ -833,9 +849,9 @@ Although libreoffice is run headless, older versions may require an X server. If
 ```
 yum install libreoffice Xvfb
 cat<<EOF>/etc/init.d/xvfb 
-#!/bin/bash
-#chkconfig: 345 95 50
-#description: Starts xvfb on display 42 for headless Libreoffice
+# !/bin/bash
+# chkconfig: 345 95 50
+# description: Starts xvfb on display 42 for headless Libreoffice
 if [ -z "\$1" ]; then
   echo "\`basename \$0\` {start|stop}"
   exit
@@ -867,41 +883,55 @@ $ aslmcli -h
 
 Note that actions and parameter values can be written in short form.
 
-# ```asession``` : a simpler FASP session initiation tool
+# asession
+This gem comes with a second executable tool providing a simplified standardized interface to start a FASP
+session: ```asession```.
 
-The gem comes with a simplified unifomized interface to start FASP
-session:
+It aims at simplifying the startup of a FASP session from a programmatic stand point as formating a transfer spec is:
 
-```
-asession
-```
+* common to Aspera Node API (HTTP POST /ops/transfer)
+* common to Aspera Connect API (browser javascript startTransfer)
+* easy to generate by using any third party language specific JSON library
 
-Instead of providing command line arguments, the tool expect one single argument: a transfer spec (see section above).
+This makes it easy to integrate with any language provided that one can spawn a sub process, write to its STDIN, read from STDOUT, generate and parse JSON.
 
-The argument supports extended argument syntax ( see section above).
+The tool expect one single argument: a transfer spec (see [Transfer spec](#transfer-spec)) hash value using the extended argument syntax ( see [Option and Argument values](#option-and-argument-values)).
 
-So, a typical use if:
+If not argument is provided, it assumes a value of: `@json:@stdin`, i.e. a JSON formated transfer spec on stdin.
+
+Note that if JSON is the format, one has to specify `@json:` to tell the tool to decode the hash using JSON.
+
+During execution, it generates all low level events, one per line, in JSON format on stdout.
+
+Comparison:
+
+<table>
+<tr><th>feature\tool</th><th>asession</th><th>ascp</th><th>FaspManager</th></tr>
+<tr><td>language integration</td><td>any</td><td>any</td><td>C/C++<br/>C#/.net<br/>Go<br/>Python<br/>java<br/></td></tr>
+<tr><td>overhead</td><td>ascp binary</br>+Ruby</td><td>ascp binary</td><td>ascp binary<br/>+library</td></tr>
+<tr><td>startup</td><td>JSON on stdin<br/>+standard APIs: JSON + Process.spawn</td><td>complex command line arguments</td><td>API</td></tr>
+<tr><td>events</td><td>JSON on stdout</td><td>none, or need to open management port and proprietary text syntax</td><td>callback</td></tr>
+</table>
+
+Examples of use:
+
+* Shell
 
 ```
 MY_TSPEC='{"remote_host":"demo.asperasoft.com","remote_user":"asperaweb","ssh_port":33001,"remote_password":"demoaspera","direction":"receive","destination_root":"./test.dir","paths":[{"source":"/aspera-test-dir-tiny/200KB.1"}]}'
 
-echo "${MY_TSPEC}"|asession @json:@stdin
+echo "${MY_TSPEC}"|asession
 ```
 
-It will generate all low level event, one per line, in JSON format on stdout.
-
-This makes it easy to integrate with any language.
-
-example: [https://www.npmjs.com/package/asperalm](https://www.npmjs.com/package/asperalm)
+* Nodejs: [https://www.npmjs.com/package/asperalm](https://www.npmjs.com/package/asperalm)
 
 # BUGS
-This is a sample code only, dont expect full capabilities. This code is not
-supported by IBM/Aspera. You can contact the author.
+This is best effort code without official support, dont expect full capabilities. This code is not
+supported by IBM/Aspera. You can contact the author for bugs or features.
 
 If you get message: "OpenSSH keys only supported if ED25519 is available"
 this means that you do not have ruby support for ED25519 SSH keys. You may either install the suggested
-Gems, or remove your ed25519 key to solve the issue.
-
+Gems, or remove your ed25519 key from your `.ssh` folder to solve the issue.
 
 # TODO
 * remove rest and oauth classes and use ruby standard gems:
