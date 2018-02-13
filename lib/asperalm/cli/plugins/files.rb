@@ -193,7 +193,7 @@ module Asperalm
             auth_data[:subject]=Main.tool.options.get_option(:username,:mandatory)
             auth_data[:audience]=FilesApi.apiurl+"/oauth2/token" # TODO: set by parameters
 
-              Log.log.info("private_key=#{auth_data[:private_key_obj]}")
+            Log.log.info("private_key=#{auth_data[:private_key_obj]}")
             Log.log.info("subject=#{auth_data[:subject]}")
           when :url_token
             auth_data[:url_token]=Main.tool.options.get_option(:url_token,:mandatory)
@@ -353,6 +353,7 @@ module Asperalm
                 res_id=Main.tool.options.get_next_argument('resource id')
                 operations2=[:show,:delete]
                 operations2.push(:do) if resource.eql?(:node)
+                operations2.push(:shared_folders) if resource.eql?(:workspace)
                 operation=Main.tool.options.get_next_argument('operation',operations2)
                 case operation
                 when :show
@@ -363,10 +364,13 @@ module Asperalm
                   @api_files_admin.delete("#{resource_path}/#{res_id}")
                   return { :type=>:status, :data => 'deleted' }
                 when :do
-                  res_data=@api_files_user.read("#{resource_path}/#{res_id}")[:data]
+                  res_data=@api_files_admin.read("#{resource_path}/#{res_id}")[:data]
                   api_node=get_files_node_api(res_data)
                   ak_data=api_node.call({:operation=>'GET',:subpath=>"access_keys/#{res_data['access_key']}",:headers=>{'Accept'=>'application/json'}})[:data]
                   return execute_node_action(res_id,ak_data['root_file_id'])
+                when :shared_folders
+                  res_data=@api_files_admin.read("#{resource_path}/#{res_id}/permissions")[:data]
+                  return { :type=>:hash_array, :data =>res_data , :fields=>['id','node_name','file_id']} #
                 else raise :ERROR
                 end
               end #op_or_id
