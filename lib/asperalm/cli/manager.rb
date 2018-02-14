@@ -274,7 +274,7 @@ module Asperalm
       # generate command line option from option symbol
       def symbol_to_option(symbol,opt_val)
         result='--'+symbol.to_s.gsub(@@OPTION_SEP_NAME,@@OPTION_SEP_LINE)
-        result=result+'='+opt_val if (!opt_val.nil?)
+        result=result+'='+opt_val unless opt_val.nil?
         return result
       end
 
@@ -292,17 +292,17 @@ module Asperalm
       end
 
       # define an option with open values
-      def add_opt_simple(option_symbol,opt_val,*on_args)
+      def add_opt_simple(option_symbol,*on_args)
         Log.log.debug("add_opt_simple #{option_symbol}")
-        on_args.unshift(symbol_to_option(option_symbol,opt_val))
+        on_args.unshift(symbol_to_option(option_symbol,"VALUE"))
         Log.log.debug("on_args=#{on_args}")
         @parser.on(*on_args) { |v| set_option(option_symbol,v) }
       end
 
       # define an option with date format
-      def add_opt_date(option_symbol,opt_val,*on_args)
+      def add_opt_date(option_symbol,*on_args)
         Log.log.debug("add_opt_date #{option_symbol}")
-        on_args.unshift(symbol_to_option(option_symbol,opt_val))
+        on_args.unshift(symbol_to_option(option_symbol,"DATE"))
         Log.log.debug("on_args=#{on_args}")
         @parser.on(*on_args) do |v|
           case v

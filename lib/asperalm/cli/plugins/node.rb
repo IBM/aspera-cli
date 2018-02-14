@@ -11,11 +11,11 @@ module Asperalm
           super_declare_options
           Main.tool.options.set_option(:persistency,File.join(Main.tool.config_folder,"persistency_cleanup.txt"))
           Main.tool.options.set_option(:transfer_filter,'{"active_only":false}')
-          Main.tool.options.add_opt_simple(:persistency,"FILEPATH","persistency file (cleanup,forward)")
-          Main.tool.options.add_opt_simple(:filter_transfer,"EXPRESSION","Ruby expression for filter at transfer level (cleanup)")
-          Main.tool.options.add_opt_simple(:filter_file,"EXPRESSION","Ruby expression for filter at file level (cleanup)")
-          Main.tool.options.add_opt_simple(:transfer_filter,"EXPRESSION","JSON expression for filter on API request")
-          Main.tool.options.add_opt_simple(:parameters,"JSON","creation parameters (hash, use @json: prefix), current=#{Main.tool.options.get_option(:parameters,:optional)}")
+          Main.tool.options.add_opt_simple(:persistency,"persistency file (cleanup,forward)")
+          Main.tool.options.add_opt_simple(:filter_transfer,"Ruby expression for filter at transfer level (cleanup)")
+          Main.tool.options.add_opt_simple(:filter_file,"Ruby expression for filter at file level (cleanup)")
+          Main.tool.options.add_opt_simple(:transfer_filter,"JSON expression for filter on API request")
+          Main.tool.options.add_opt_simple(:parameters,"creation parameters (hash, use @json: prefix), current=#{Main.tool.options.get_option(:parameters,:optional)}")
         end
 
         def self.textify_browse(table_data)
@@ -235,7 +235,7 @@ module Asperalm
             case command
             when :list
               resp=api_node.read('async/list')[:data]['sync_ids']
-              return { :data => resp, :type => :value_list, :name=>'id'  }
+              return { :type => :value_list, :data => resp, :name=>'id'  }
             when :id
               asyncid=Main.tool.options.get_next_argument("async id")
               command=Main.tool.options.get_next_argument('command',[ :delete,:summary,:counters ])
@@ -246,11 +246,11 @@ module Asperalm
               when :summary
                 resp=api_node.create('async/summary',{"syncs"=>[asyncid]})[:data]["sync_summaries"].first
                 return Main.no_result if resp.nil?
-                return { :data => resp, :type => :key_val_list }
+                return { :type => :key_val_list, :data => resp }
               when :counters
                 resp=api_node.create('async/counters',{"syncs"=>[asyncid]})[:data]["sync_counters"].first[asyncid].last
                 return Main.no_result if resp.nil?
-                return { :data => resp, :type => :key_val_list }
+                return { :type => :key_val_list, :data => resp }
               end
             end
           when :stream
@@ -259,22 +259,22 @@ module Asperalm
             when :list
               transfer_filter=JSON.parse(Main.tool.options.get_option(:transfer_filter,:optional))
               resp=api_node.call({:operation=>'GET',:subpath=>'ops/transfers',:headers=>{'Accept'=>'application/json'},:url_params=>transfer_filter})
-              return { :data => resp[:data], :type => :hash_array, :fields=>['id','status']  } # TODO
+              return { :type => :hash_array, :data => resp[:data], :fields=>['id','status']  } # TODO
             when :create
               resp=api_node.call({:operation=>'POST',:subpath=>'streams',:headers=>{'Accept'=>'application/json'},:json_params=>Main.tool.options.get_option(:parameters,:mandatory)})
-              return { :data => resp[:data], :type => :key_val_list }
+              return { :type => :key_val_list, :data => resp[:data] }
             when :info
               trid=Main.tool.options.get_next_argument("transfer id")
               resp=api_node.call({:operation=>'GET',:subpath=>'ops/transfers/'+trid,:headers=>{'Accept'=>'application/json'}})
-              return { :data => resp[:data], :type=>:other_struct  }
+              return { :type=>:other_struct, :data => resp[:data] }
             when :modify
               trid=Main.tool.options.get_next_argument("transfer id")
               resp=api_node.call({:operation=>'PUT',:subpath=>'streams/'+trid,:headers=>{'Accept'=>'application/json'},:json_params=>Main.tool.options.get_option(:parameters,:mandatory)})
-              return { :data => resp[:data], :type=>:other_struct }
+              return { :type=>:other_struct, :data => resp[:data] }
             when :cancel
               trid=Main.tool.options.get_next_argument("transfer id")
               resp=api_node.call({:operation=>'CANCEL',:subpath=>'streams/'+trid,:headers=>{'Accept'=>'application/json'}})
-              return { :data => resp[:data], :type=>:other_struct }
+              return { :type=>:other_struct, :data => resp[:data] }
             else
               raise "error"
             end
@@ -284,17 +284,17 @@ module Asperalm
             when :list
               transfer_filter=JSON.parse(Main.tool.options.get_option(:transfer_filter,:optional))
               resp=api_node.call({:operation=>'GET',:subpath=>'ops/transfers',:headers=>{'Accept'=>'application/json'},:url_params=>transfer_filter})
-              return { :data => resp[:data], :type => :hash_array, :fields=>['id','status','remote_user','remote_host'], :textify => lambda { |table_data| Node.textify_transfer_list(table_data) } } # TODO
+              return { :type => :hash_array, :data => resp[:data], :fields=>['id','status','remote_user','remote_host'], :textify => lambda { |table_data| Node.textify_transfer_list(table_data) } } # TODO
               #resp=api_node.call({:operation=>'GET',:subpath=>'transfers',:headers=>{'Accept'=>'application/json'},:url_params=>transfer_filter})
               #return { :data => resp[:data], :type => :other_struct}
             when :cancel
               trid=Main.tool.options.get_next_argument("transfer id")
               resp=api_node.call({:operation=>'CANCEL',:subpath=>'ops/transfers/'+trid,:headers=>{'Accept'=>'application/json'}})
-              return { :data => resp[:data], :type=>:other_struct }
+              return { :type=>:other_struct, :data => resp[:data] }
             when :info
               trid=Main.tool.options.get_next_argument("transfer id")
               resp=api_node.call({:operation=>'GET',:subpath=>'ops/transfers/'+trid,:headers=>{'Accept'=>'application/json'}})
-              return { :data => resp[:data], :type=>:other_struct }
+              return { :type=>:other_struct, :data => resp[:data] }
             else
               raise "error"
             end
@@ -306,19 +306,19 @@ module Asperalm
             when :list
               resp=api_node.call({:operation=>'GET',:subpath=>'rund/services',:headers=>{'Accept'=>'application/json'}})
               #  :fields=>['id','root_file_id','storage','license']
-              return { :data => resp[:data]["services"], :type=>:hash_array }
+              return { :type=>:hash_array, :data => resp[:data]["services"] }
             when :create
               # @json:'{"type":"WATCHFOLDERD","run_as":{"user":"user1"}}'
               params=Main.tool.options.get_next_argument("Run creation data (structure)")
               resp=api_node.call({:operation=>'POST',:subpath=>'rund/services',:headers=>{'Accept'=>'application/json'},:json_params=>params})
-              return {:data=>resp[:data]['id'],:type => :status}
+              return {:type => :status,:data=>"#{resp[:data]['id']} created"}
             when :id
               svcid=Main.tool.options.get_next_argument("service id")
               command=Main.tool.options.get_next_argument('command',[ :delete ])
               case command
               when :delete
                 resp=api_node.call({:operation=>'DELETE',:subpath=>"rund/services/#{svcid}",:headers=>{'Accept'=>'application/json'}})
-                return {:type => :empty}
+                return {:type => :status,:data=>"#{svcid} deleted"}
               else
                 raise "error"
               end
@@ -333,7 +333,7 @@ module Asperalm
             when :list
               resp=api_node.call({:operation=>'GET',:subpath=>res_class_path,:headers=>{'Accept'=>'application/json'}})
               #  :fields=>['id','root_file_id','storage','license']
-              return { :data => resp[:data]["ids"], :type=>:value_list, :name=>"id" }
+              return { :type=>:value_list, :data => resp[:data]["ids"], :name=>"id" }
             when :create
               #
               params=Main.tool.options.get_next_argument("WF creation data (structure)")
@@ -360,7 +360,7 @@ module Asperalm
             case command
             when :list
               resp=api_node.create('services/rest/transfers/v1/sessions',{"session_filter"=>{"iteration_token"=>"CURRENT_POSITION"}})
-              return {:data=>resp[:data]["session_info_result"]["session_info"],:type=>:hash_array,:fields=>["session_uuid","status","transport","direction","bytes_transferred"]}
+              return {:type=>:hash_array,:data=>resp[:data]["session_info_result"]["session_info"],:fields=>["session_uuid","status","transport","direction","bytes_transferred"]}
             end
           when :cleanup
             transfers=self.class.get_transfers_iteration(api_node,{:active_only=>false})

@@ -11,9 +11,9 @@ module Asperalm
         return Rest.new(api_url,{:auth=>{:type=>:basic,:username=>Main.tool.options.get_option(:username,:mandatory), :password=>Main.tool.options.get_option(:password,:mandatory)}})
       end
       def declare_options
-        Main.tool.options.add_opt_simple(:url,"URI","URL of application, e.g. https://org.asperafiles.com")
-        Main.tool.options.add_opt_simple(:username,"STRING","username to log in")
-        Main.tool.options.add_opt_simple(:password,"STRING","user's password")
+        Main.tool.options.add_opt_simple(:url,"URL of application, e.g. https://org.asperafiles.com")
+        Main.tool.options.add_opt_simple(:username,"username to log in")
+        Main.tool.options.add_opt_simple(:password,"user's password")
       end
     end # BasicAuthPlugin
   end # Cli

@@ -8,9 +8,9 @@ module Asperalm
     module Plugins
       class Shares2 < Plugin
         def declare_options
-          Main.tool.options.add_opt_simple(:organization,"ID_OR_NAME","organization")
-          Main.tool.options.add_opt_simple(:project,"ID_OR_NAME","project")
-          Main.tool.options.add_opt_simple(:share,"ID_OR_NAME","share")
+          Main.tool.options.add_opt_simple(:organization,"organization")
+          Main.tool.options.add_opt_simple(:project,"project")
+          Main.tool.options.add_opt_simple(:share,"share")
         end
 
         def action_list; [ :repository,:organization,:project,:team,:share,:appinfo,:userinfo];end

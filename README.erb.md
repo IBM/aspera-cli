@@ -570,6 +570,22 @@ Use the "node stream create" command, then arguments are provided as a "transfer
 ./bin/aslmcli node stream create --ts=@json:'{"direction":"send","source":"udp://233.3.3.4:3000?loopback=1&ttl=2","destination":"udp://233.3.3.3:3001/","remote_host":"localhost","remote_user":"stream","remote_password":"XXXX"}' --load-params=stream
 ```
 
+# Watchfolder
+
+Refer to [Aspera documentation](https://download.asperasoft.com/download/docs/entsrv/3.7.4/es_admin_linux/webhelp/index.html#watchfolder_external/dita/json_conf.html) for watch folder creation.
+
+`aslmcli` supports remote operations through the node API. Operations are:
+
+* Start watchd and watchfolderd services running as a system user having access to files
+* configure a watchfolder to define automated transfers
+
+
+```bash
+$ aslmcli node service create @json:'{"id":"mywatchd","type":"WATCHD","run_as":{"user":"user1"}}'
+$ aslmcli node service create @json:'{"id":"mywatchfolderd","type":"WATCHFOLDERD","run_as":{"user":"user1"}}'
+```
+
+
 # Download FASP
 The CLI allows download of the FASP protocol in connect client :
 

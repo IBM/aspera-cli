@@ -22,10 +22,10 @@ module Asperalm
         end
 
         def declare_options
-          Main.tool.options.add_opt_simple(:ats_id,"ATS_ID","ATS key identifier (ats_xxx)")
-          Main.tool.options.add_opt_simple(:params,"JSON","parameters for access key")
-          Main.tool.options.add_opt_simple(:cloud,"PROVIDER","cloud provider")
-          Main.tool.options.add_opt_simple(:region,"REGION","cloud region")
+          Main.tool.options.add_opt_simple(:ats_id,"ATS key identifier (ats_xxx)")
+          Main.tool.options.add_opt_simple(:params,"Parameters hash for access key (@json:)")
+          Main.tool.options.add_opt_simple(:cloud,"Cloud provider")
+          Main.tool.options.add_opt_simple(:region,"Cloud region")
         end
 
         # currently supported clouds

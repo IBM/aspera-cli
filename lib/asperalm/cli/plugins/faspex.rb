@@ -15,11 +15,11 @@ module Asperalm
         def declare_options
           super_declare_options
           Main.tool.options.set_option(:box,:inbox)
-          Main.tool.options.add_opt_simple(:recipient,"STRING","package recipient")
-          Main.tool.options.add_opt_simple(:title,"STRING","package title")
-          Main.tool.options.add_opt_simple(:note,"STRING","package note")
-          Main.tool.options.add_opt_simple(:metadata,"@json:JSON_STRING","package metadata (hash, use @json:)")
-          Main.tool.options.add_opt_simple(:source_name,"STRING","create package from remote source (by name)")
+          Main.tool.options.add_opt_simple(:recipient,"package recipient")
+          Main.tool.options.add_opt_simple(:title,"package title")
+          Main.tool.options.add_opt_simple(:note,"package note")
+          Main.tool.options.add_opt_simple(:metadata,"package metadata hash value (use @json:)")
+          Main.tool.options.add_opt_simple(:source_name,"create package from remote source (by name)")
           Main.tool.options.add_opt_list(:box,[:inbox,:sent,:archive],"package box")
         end
 

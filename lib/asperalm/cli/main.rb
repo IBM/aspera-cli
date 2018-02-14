@@ -360,20 +360,20 @@ module Asperalm
         @options.add_opt_list(:logger,Log.logtypes,"log method")
         @options.add_opt_list(:format,self.class.display_formats,"output format")
         @options.add_opt_list(:transfer,[:ascp,:connect,:node],"type of transfer")
-        @options.add_opt_simple(:config_file,"STRING","-CSTRING","read parameters from file in YAML format, current=#{@options.get_option(:config_file,:optional)}")
-        @options.add_opt_simple(:load_params,"NAME","-PNAME","load the named configuration from current config file, use \"#{@@NO_DEFAULT}\" to avoid loading the default configuration")
-        @options.add_opt_simple(:fasp_folder,"NAME","specify where to find FASP (main folder), current=#{@options.get_option(:fasp_folder,:optional)}")
-        @options.add_opt_simple(:transfer_node,"STRING","name of configuration used to transfer when using --transfer=node")
-        @options.add_opt_simple(:fields,"STRING","comma separated list of fields, or #{FIELDS_ALL}, or #{FIELDS_DEFAULT}")
-        @options.add_opt_simple(:fasp_proxy,"STRING","URL of FASP proxy (dnat / dnats)")
-        @options.add_opt_simple(:http_proxy,"STRING","URL of HTTP proxy (for http fallback)")
+        @options.add_opt_simple(:config_file,"read parameters from file in YAML format, current=#{@options.get_option(:config_file,:optional)}")
+        @options.add_opt_simple(:load_params,"-PNAME","load the named configuration from current config file, use \"#{@@NO_DEFAULT}\" to avoid loading the default configuration")
+        @options.add_opt_simple(:fasp_folder,"specify where to find FASP (main folder), current=#{@options.get_option(:fasp_folder,:optional)}")
+        @options.add_opt_simple(:transfer_node,"name of configuration used to transfer when using --transfer=node")
+        @options.add_opt_simple(:fields,"comma separated list of fields, or #{FIELDS_ALL}, or #{FIELDS_DEFAULT}")
+        @options.add_opt_simple(:fasp_proxy,"URL of FASP proxy (dnat / dnats)")
+        @options.add_opt_simple(:http_proxy,"URL of HTTP proxy (for http fallback)")
         @options.add_opt_switch(:rest_debug,"-r","more debug for HTTP calls") { Rest.set_debug(true) }
-        @options.add_opt_switch(:no_default,"-N","dont load default configuration") { @use_plugin_defaults=false }
+        @options.add_opt_switch(:no_default,"-N","do not load default configuration") { @use_plugin_defaults=false }
         @options.add_opt_switch(:version,"-v","display version") { puts @@TOOL_VERSION;Process.exit(0) }
-        @options.add_opt_simple(:ts,"JSON","override transfer spec values for transfers (hash, use @json: prefix), current=#{@options.get_option(:ts,:optional)}")
-        @options.add_opt_simple(:to_folder,"PATH","destination folder for downloaded files, current=#{@options.get_option(:to_folder,:optional)}")
-        @options.add_opt_simple(:lock_port,"NUMBER","prevent dual execution of a command, e.g. in cron")
-        @options.add_opt_simple(:use_product,"NAME","which local product to use for ascp")
+        @options.add_opt_simple(:ts,"override transfer spec values for transfers (hash, use @json: prefix), current=#{@options.get_option(:ts,:optional)}")
+        @options.add_opt_simple(:to_folder,"destination folder for downloaded files, current=#{@options.get_option(:to_folder,:optional)}")
+        @options.add_opt_simple(:lock_port,"prevent dual execution of a command, e.g. in cron")
+        @options.add_opt_simple(:use_product,"which local product to use for ascp")
       end
 
       def self.flatten_all_config(t)
