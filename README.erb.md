@@ -906,11 +906,11 @@ During execution, it generates all low level events, one per line, in JSON forma
 Comparison:
 
 <table>
-<tr><th>feature\tool</th><th>asession</th><th>ascp</th><th>FaspManager</th></tr>
+<tr><th>feature/tool</th><th>asession</th><th>ascp</th><th>FaspManager</th></tr>
 <tr><td>language integration</td><td>any</td><td>any</td><td>C/C++<br/>C#/.net<br/>Go<br/>Python<br/>java<br/></td></tr>
-<tr><td>overhead</td><td>ascp binary</br>+Ruby</td><td>ascp binary</td><td>ascp binary<br/>+library</td></tr>
-<tr><td>startup</td><td>JSON on stdin<br/>+standard APIs: JSON + Process.spawn</td><td>complex command line arguments</td><td>API</td></tr>
-<tr><td>events</td><td>JSON on stdout</td><td>none, or need to open management port and proprietary text syntax</td><td>callback</td></tr>
+<tr><td>components</td><td>ascp binary</br>+Ruby</td><td>ascp binary</td><td>ascp binary<br/>+library</td></tr>
+<tr><td>startup</td><td>JSON on stdin<br/>(standard APIs:<br/>JSON.generate<br/>Process.spawn)</td><td>complex command line arguments</td><td>API</td></tr>
+<tr><td>events</td><td>JSON on stdout</td><td>none by default<br/>or need to open management port<br/>and proprietary text syntax</td><td>callback</td></tr>
 </table>
 
 Examples of use:
@@ -924,6 +924,12 @@ echo "${MY_TSPEC}"|asession
 ```
 
 * Nodejs: [https://www.npmjs.com/package/asperalm](https://www.npmjs.com/package/asperalm)
+
+```bash
+$ asession -h
+<%= File.read(ENV["ASESSION"]) %>
+
+```
 
 # BUGS
 This is best effort code without official support, dont expect full capabilities. This code is not

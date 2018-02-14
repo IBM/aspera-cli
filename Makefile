@@ -13,13 +13,15 @@ SRCZIPBASE=$(GEMNAME)_src
 TODAY=$(shell date +%Y%m%d)
 ZIPFILE=$(SRCZIPBASE)_$(TODAY).zip
 
+EXE_NOMAN=$(EXETEST)
+
 all:: gem
 
 test:
 	bundle exec rake spec
 
 clean::
-	rm -f $(GEMNAME)-*.gem $(SRCZIPBASE)*.zip *.log token.* README.pdf README.html README.md sample_commands.txt sample_usage.txt $(TEST_CONFIG)
+	rm -f $(GEMNAME)-*.gem $(SRCZIPBASE)*.zip *.log token.* README.pdf README.html README.md aslmcli_commands.txt aslmcli_usage.txt $(TEST_CONFIG)
 	rm -fr t doc "PKG - "*
 	mkdir t
 	rm -f 200KB* AsperaConnect-ML*
@@ -30,19 +32,23 @@ cleanupgems:
 doc: README.pdf
 
 README.pdf: README.md
-	pandoc -o README.html README.md
+	pandoc --resource-path=. --toc -o README.html README.md
 	wkhtmltopdf README.html README.pdf
 
-README.md: README.erb.md sample_commands.txt sample_usage.txt
-	COMMANDS=sample_commands.txt USAGE=sample_usage.txt erb README.erb.md > README.md
+README.md: README.erb.md aslmcli_commands.txt aslmcli_usage.txt asession_usage.txt
+	COMMANDS=aslmcli_commands.txt USAGE=aslmcli_usage.txt ASESSION=asession_usage.txt erb README.erb.md > README.md
 
-sample_commands.txt: Makefile
-	sed -n -e 's/.*\$$(EXETEST)/aslmcli/p' Makefile|grep -v 'Sales Engineering'|sed -E -e 's/\$$\(SAMPLE_FILE\)/sample_file.bin/g;s/\$$\(NODEDEST\)/sample_dest_folder/g;s/\$$\(TEST_FOLDER\)/sample_dest_folder/g;s/ibmfaspex.asperasoft.com/faspex.mycompany.com/g;s/(")(url|api_key|username|password)(":")[^"]*(")/\1\2\3my_\2_here\4/g;s/--(secret|url|password|username)=[^ ]*/--\1=my_\1_here/g;'|grep -v 'localhost:9443' > sample_commands.txt
+aslmcli_commands.txt: Makefile
+	sed -n -e 's/.*\$$(EXETEST)/aslmcli/p' Makefile|grep -v 'Sales Engineering'|sed -E -e 's/\$$\(SAMPLE_FILE\)/sample_file.bin/g;s/\$$\(NODEDEST\)/sample_dest_folder/g;s/\$$\(TEST_FOLDER\)/sample_dest_folder/g;s/ibmfaspex.asperasoft.com/faspex.mycompany.com/g;s/(")(url|api_key|username|password)(":")[^"]*(")/\1\2\3my_\2_here\4/g;s/--(secret|url|password|username)=[^ ]*/--\1=my_\1_here/g;'|grep -v 'localhost:9443'|sort -u > aslmcli_commands.txt
 
 # depends on all sources, so regenerate always
-.PHONY: sample_usage.txt
-sample_usage.txt:
-	$(EXETEST) -Cnone -h 2> sample_usage.txt || true
+.PHONY: aslmcli_usage.txt
+aslmcli_usage.txt:
+	$(EXE_NOMAN) -Cnone -h 2> aslmcli_usage.txt || true
+
+.PHONY: asession_usage.txt
+asession_usage.txt:
+	$(BINDIR)/asession -h 2> asession_usage.txt || true
 
 $(ZIPFILE): README.md
 	rm -f $(SRCZIPBASE)_*.zip
@@ -57,7 +63,7 @@ install: $(GEMFILE)
 	gem install $(GEMFILE)
 
 togarage: $(ZIPFILE) README.pdf $(GEMFILE)
-	$(EXETEST) files --workspace='Sales Engineering' upload '/Laurent Garage SE/RubyCLI' $(ZIPFILE) README.pdf $(GEMFILE)
+	$(EXE_NOMAN) files --workspace='Sales Engineering' upload '/Laurent Garage SE/RubyCLI' $(ZIPFILE) README.pdf $(GEMFILE)
 
 # create a private/public key pair
 # note that the key can also be generated with: ssh-keygen -t rsa -f data/myid -N ''
@@ -385,9 +391,9 @@ t/fxgw:
 NODE_USER=node_admin
 NODE_PASS=Aspera123_
 setupprev:
-	$(EXETEST) node access_key id testkey delete --no-default --url=https://localhost:9092 --username=node_xfer --password=Aspera123_
-	$(EXETEST) node access_key create @json:'{"id":"testkey","name":"the test key","secret":"secret","storage":{"type":"local", "path":"/Users/xfer/docroot"}}' --no-default --url=https://localhost:9092 --username=node_xfer --password=Aspera123_ 
-	$(EXETEST) config id test_preview update --url=https://localhost:9092 --username=testkey --password=secret
-	$(EXETEST) config id default set preview test_preview
+	$(EXE_NOMAN) node access_key id testkey delete --no-default --url=https://localhost:9092 --username=node_xfer --password=Aspera123_
+	$(EXE_NOMAN) node access_key create @json:'{"id":"testkey","name":"the test key","secret":"secret","storage":{"type":"local", "path":"/Users/xfer/docroot"}}' --no-default --url=https://localhost:9092 --username=node_xfer --password=Aspera123_ 
+	$(EXE_NOMAN) config id test_preview update --url=https://localhost:9092 --username=testkey --password=secret
+	$(EXE_NOMAN) config id default set preview test_preview
 
 # ruby -e 'require "yaml";YAML.load_file("lib/asperalm/preview_generator_formats.yml").each {|k,v|puts v};'|while read x;do touch /Users/xfer/docroot/sample${x};done

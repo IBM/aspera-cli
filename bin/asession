@@ -7,9 +7,11 @@ require 'asperalm/fasp/manager'
 require 'asperalm/cli/manager'
 require 'asperalm/log'
 
+TS_LOGLEVEL='EX_loglevel'
+
 def assert_usage(assertion,errmsg)
   return if assertion
-  STDERR.puts('ERROR: '+errmsg)
+  STDERR.puts('ERROR: '+errmsg) if errmsg
   STDERR.puts('USAGE')
   STDERR.puts('    asession <session information>')
   STDERR.puts('    <session information> is a JSON formatted transfer spec, starting with "@json:".')
@@ -17,7 +19,7 @@ def assert_usage(assertion,errmsg)
   STDERR.puts('    o the JSON description itself')
   STDERR.puts('    o @stdin, if the JSON is provided from stdin')
   STDERR.puts('    o @file:<path>, if the JSON is provided from a file')
-  STDERR.puts('Note: debug information can be placed on STDERR, using the "loglevel" parameter in transfer spec (debug=0)')
+  STDERR.puts('Note: debug information can be placed on STDERR, using the "'+TS_LOGLEVEL+'" parameter in transfer spec (debug=0)')
   STDERR.puts('EXAMPLES')
   STDERR.puts(%q(    asession @json:'{"remote_host":"demo.asperasoft.com","remote_user":"asperaweb","ssh_port":33001,"remote_password":"demoaspera","direction":"receive","destination_root":"./test.dir","paths":[{"source":"/aspera-test-dir-tiny/200KB.1"}]}'))
   STDERR.puts(%q(    echo '{"remote_host":...}'|asession @json:@stdin))
@@ -32,6 +34,7 @@ if ARGV.empty?
 end
 # anyway expect only one argument: session information
 assert_usage(ARGV.length.eql?(1),'exactly one argument is expected')
+assert_usage(!['-h','--help'].include?(ARGV.first),nil)
 # parse transfer spec
 transfer_spec=Asperalm::Cli::Manager.get_extended_value("transfer spec",ARGV.pop)
 # ensure right type
@@ -39,9 +42,9 @@ assert_usage(transfer_spec.is_a?(Hash),"the value must be a hash table#{paramete
 # disable ascp output on stdout to not mix with progress JSON
 transfer_spec['EX_quiet']=true
 # additional debug capability
-if transfer_spec.has_key?('EX_loglevel')
-  Asperalm::Log.log.level=transfer_spec['EX_loglevel']
-  transfer_spec.delete('EX_loglevel')
+if transfer_spec.has_key?(TS_LOGLEVEL)
+  Asperalm::Log.log.level=transfer_spec[TS_LOGLEVEL]
+  transfer_spec.delete(TS_LOGLEVEL)
 end
 
 # FASP event listener display management events as JSON
