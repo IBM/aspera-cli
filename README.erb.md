@@ -48,7 +48,7 @@ Aspera provides a CLI tool here: http://downloads.asperasoft.com/en/downloads/62
 
 The CLI's folder where configuration and cache files are kept is `$HOME/.aspera/aslmcli`
 
-Requires Ruby 2.0+
+Requires Ruby 2.4+, should work with 2.0+.
 
 In examples below, command line operations (starting with `$`) are shown using a standard shell: `bash`.
 
@@ -62,22 +62,22 @@ aslmcli requires a ruby interpreter with priviledge to install gems. Refer to th
 operating systems.
 
 ### MacOS X
-Ruby comes pre-installed on MacOSx. Nevertheless, installing new gems require admin privilege (sudo).
+Ruby comes pre-installed on MacOSx. Nevertheless, installing new gems require admin privilege (sudo) and the version is not up to date.
 
-You may also install "homebrew", from here: https://brew.sh/, and then install Ruby:
+It is better to install "homebrew", from here: [https://brew.sh/](https://brew.sh/), and then install Ruby:
 
 ```bash
 $ brew install ruby
 ```
 
 ### Windows
-On windows you can get it from here: https://rubyinstaller.org/ .
+On windows you can get it from here: [https://rubyinstaller.org/](https://rubyinstaller.org/) .
 
 ### Linux
 ```bash
 $ yum install ruby rubygems
 ```
-Note that Ruby 2+ is required, if you have an older Linux (e.g. CentOS 6), you may want to install "rvm" https://rvm.io/ and install a newer Ruby.
+Note that Ruby 2+ is required, if you have an older Linux (e.g. CentOS 6), you should install "rvm" [https://rvm.io/](https://rvm.io/) and install a newer Ruby.
 
 ## Installation
 Once you have ruby and rights to install gems: Install the gem and its dependencies:
@@ -93,7 +93,7 @@ The tool can be used right away: `aslmcli`
 For any FASP based file transfer, the FASP protocol and a valid license id required. 
 When the server side is
 "connect" enabled, one can the the connect client license. The connect client can be installed
-by visiting the page: http://downloads.asperasoft.com/connect2/
+by visiting the page: [http://downloads.asperasoft.com/connect2/](http://downloads.asperasoft.com/connect2/)
 
 Alternatively, the connect client can be downloaded using the aslmcli, 
 see section: [Download FASP](download-fasp).
@@ -504,16 +504,16 @@ table, th, td {border: 1px solid black;}
 </style>
 <table>
 <tr><th>Field</th><th>Req/Def</th><th>Type</th><th>F</th><th>N</th><th>C</th><th>arg</th><th>Description</th></tr>
+<tr><td>direction</td><td>Required</td><td>string</td><td class="yes">Y</td><td class="yes">Y</td><td class="yes">Y</td><td>--mode</td><td>Direction: "send" or "receive"</td></tr>
+<tr><td>remote_host</td><td>Required</td><td>string</td><td class="yes">Y</td><td class="yes">Y</td><td class="yes">Y</td><td>--host</td><td>IP or fully qualified domain name of the remote server</td></tr>
+<tr><td>remote_user</td><td>Required</td><td>string</td></td><td class="yes">Y</td><td class="yes">Y</td><td class="yes">Y</td><td>--user</td><td>Remote user. Default value is "xfer" on node or connect.</td></tr>
+<tr><td>destination_root</td><td>Required</td><td>string</td><td class="yes">Y</td><td class="yes">Y</td><td class="yes">Y</td><td>last arg</td><td>Destination root directory.</td></tr>
 <tr><td>title</td><td>-</td><td>string</td><td class="no">N</td><td class="yes">Y</td><td class="yes">Y</td><td>-</td><td>Title of the transfer</td></tr>
 <tr><td>tags</td><td>-</td><td>hash</td><td class="yes">Y</td><td class="yes">Y</td><td class="yes">Y</td><td>--tags<br>--tags64</td><td>Metadata for transfer</td></tr>
 <tr><td>token</td><td>-</td><td>string</td><td class="yes">Y</td><td class="yes">Y</td><td class="yes">Y</td><td>TOKEN<br/>-W</td><td>Authorization token: Bearer, Basic or ATM</td></tr>
 <tr><td>cookie</td><td>-</td><td>string</td><td class="yes">Y</td><td class="yes">Y</td><td class="yes">Y</td><td>COOKIE</td><td>Metadata for transfer (older,string)</td></tr>
-<tr><td>direction</td><td>Required</td><td>string</td><td class="yes">Y</td><td class="yes">Y</td><td class="yes">Y</td><td>--mode</td><td>Direction: "send" or "receive"</td></tr>
-<tr><td>remote_host</td><td>Required</td><td>string</td><td class="yes">Y</td><td class="yes">Y</td><td class="yes">Y</td><td>--host</td><td>IP or fully qualified domain name of the remote server</td></tr>
-<tr><td>remote_user</td><td>Required</td><td>string</td></td><td class="yes">Y</td><td class="yes">Y</td><td class="yes">Y</td><td>--user</td><td>Remote user. Default value is "xfer" on node or connect.</td></tr>
 <tr><td>remote_access_key</td><td>TODO</td><td>string</td><td></td><td></td><td></td><td>?</td><td>Node only?</td></tr>
 <tr><td>source_root</td><td>-</td><td>string</td><td></td><td></td><td></td><td>--source-prefix<br/>--source-prefix64</td><td>Source root directory.(TODO: verify option)</td></tr>
-<tr><td>destination_root</td><td>Required</td><td>string</td><td class="yes">Y</td><td class="yes">Y</td><td class="yes">Y</td><td>last arg</td><td>Destination root directory.</td></tr>
 <tr><td>fasp_port</td><td>33001</td><td>integer</td></td><td class="yes">Y</td><td class="yes">Y</td><td class="yes">Y</td><td>-O</td><td>Specifies fasp (UDP) port.</td></tr>
 <tr><td>ssh_port</td><td>22 or 33001</td><td>integer</td></td><td class="yes">Y</td><td class="yes">Y</td><td class="yes">Y</td><td>-P</td><td>Specifies ssh (TCP) port.</td></tr>
 <tr><td>rate_policy</td><td>server config</td><td>string</td><td class="yes">Y</td><td class="yes">Y</td><td class="yes">Y</td><td>--policy</td><td>Valid literals include "low","fair","high" and "fixed".</td></tr>
@@ -583,8 +583,8 @@ Refer to [Aspera documentation](https://download.asperasoft.com/download/docs/en
 ```bash
 $ aslmcli node service create @json:'{"id":"mywatchd","type":"WATCHD","run_as":{"user":"user1"}}'
 $ aslmcli node service create @json:'{"id":"mywatchfolderd","type":"WATCHFOLDERD","run_as":{"user":"user1"}}'
+$ aslmcli node watch_folder create @json:'{"id":"mywfolder","source_dir":"/watch1","target_dir":"/","transport":{"host":"10.25.0.4","user":"user1","pass":"Aspera123_"}}'
 ```
-
 
 # Download FASP
 The CLI allows download of the FASP protocol in connect client :

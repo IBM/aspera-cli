@@ -333,26 +333,28 @@ module Asperalm
             when :list
               resp=api_node.call({:operation=>'GET',:subpath=>res_class_path,:headers=>{'Accept'=>'application/json'}})
               #  :fields=>['id','root_file_id','storage','license']
-              return { :type=>:value_list, :data => resp[:data]["ids"], :name=>"id" }
+              return { :type=>:value_list, :data => resp[:data]['ids'], :name=>'id' }
             when :create
               #
               params=Main.tool.options.get_next_argument("WF creation data (structure)")
               resp=api_node.call({:operation=>'POST',:subpath=>res_class_path,:headers=>{'Accept'=>'application/json'},:json_params=>params})
-              return {:data=>resp[:data]['id'],:type => :status}
+              return {:type=>:status,:data=>"#{resp[:data]['id']} created"}
             when :id
               one_res_id=Main.tool.options.get_next_argument("watch folder id")
               one_res_path="#{res_class_path}/#{one_res_id}"
-              command=Main.tool.options.get_next_argument('command',[ :delete, :show, :update ])
+              command=Main.tool.options.get_next_argument('command',[ :delete, :show, :update, :state ])
               case command
               when :delete
                 resp=api_node.delete(one_res_path)
-                return {:type => :status,:data=>'done'}
+                return {:type=>:status,:data=>"#{one_res_id} deleted"}
               when :update
                 modify_data=Main.tool.options.get_next_argument("JSON value to modify")
                 resp=api_node.update(one_res_path,modify_data)
-                return {:type => :status,:data=>'done'}
+                return {:type=>:status,:data=>"#{one_res_id} updated"}
+              when :state
+                return { :type=>:key_val_list, :data => api_node.read("#{one_res_path}/state")[:data] }
               when :show
-                return {:type => :key_val_list, :data=>api_node.read(one_res_path)[:data], :textify => lambda { |table_data| Node.textify_key_val_list(table_data) } }
+                return {:type=>:key_val_list, :data=>api_node.read(one_res_path)[:data], :textify => lambda { |table_data| Node.textify_key_val_list(table_data) } }
               end
             end
           when :central

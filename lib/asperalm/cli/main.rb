@@ -1,9 +1,11 @@
 require 'asperalm/cli/manager'
 require 'asperalm/cli/plugin'
-require 'asperalm/log'
 require 'asperalm/fasp/agent'
 require 'asperalm/fasp/manager'
+require 'asperalm/fasp/listener_logger'
+require 'asperalm/fasp/listener_progress'
 require 'asperalm/operating_system'
+require 'asperalm/log'
 require 'asperalm/oauth'
 require 'text-table'
 require 'fileutils'
@@ -13,57 +15,7 @@ require 'pp'
 
 module Asperalm
   module Cli
-    module Plugins; end
-
-    # a listener to FASP event that displays a progress bar
-    class FaspListenerProgress < Fasp::Listener
-      def initialize
-        @progress=nil
-        @cumulative=0
-      end
-
-      MEGABIT=1024*1024/8
-
-      def event(data)
-        case data['Type']
-        when 'NOTIFICATION'
-          if data.has_key?('PreTransferBytes') then
-            require 'ruby-progressbar'
-            @progress=ProgressBar.create(
-            :format     => '%a %B %p%% %r Mbps %e',
-            :rate_scale => lambda{|rate|rate/MEGABIT},
-            :title      => 'progress',
-            :total      => data['PreTransferBytes'].to_i)
-          end
-        when 'STOP'
-          # stop event when one file is completed
-          @cumulative=@cumulative+data['Size'].to_i
-        when 'STATS'
-          if !@progress.nil? then
-            @progress.progress=@cumulative+data['Bytescont'].to_i
-          else
-            puts '.'
-          end
-        when 'DONE'
-          if !@progress.nil? then
-            @progress.progress=@progress.total
-            @progress=nil
-          else
-            # terminate progress by going to next line
-            puts "\n"
-          end
-        end
-      end
-    end
-
-    # listener for FASP transfers (debug)
-    class FaspListenerLogger < Fasp::Listener
-      def event(data)
-        Log.log.debug(data.to_s)
-      end
-    end
-
-    # The main CI class, singleton
+    # The main CLI class
     class Main < Plugin
       include Singleton
       # "tool" class method is an alias to "instance" of singleton
@@ -83,7 +35,7 @@ module Asperalm
       @@DEFAULT_CONFIG_FILENAME = 'config.yaml'
       # folder containing plugins in the gem's main folder
       @@GEM_PLUGINS_FOLDER='asperalm/cli/plugins'
-      # Path to module Cli : Asperalm::Cli
+      # Container module of current class : Asperalm::Cli
       @@CLI_MODULE=Module.nesting[1].to_s
       # Path to Plugin classes: Asperalm::Cli::Plugins
       @@PLUGINS_MODULE=@@CLI_MODULE+'::Plugins'
@@ -190,9 +142,9 @@ module Asperalm
 
       def option_browser=(value); OperatingSystem.open_url_method=value; end
 
-      def option_fasp_folder; Fasp::Installation.instance.paths; end
-
-      def option_fasp_folder=(value); Fasp::Installation.instance.paths=value; end
+      #      def option_fasp_folder; Fasp::Installation.instance.paths; end
+      #
+      #      def option_fasp_folder=(value); Fasp::Installation.instance.paths=value; end
 
       # returns the list of plugins from plugin folder
       def plugin_sym_list
@@ -216,8 +168,8 @@ module Asperalm
 
       def transfer_agent
         if @transfer_agent_singleton.nil?
-          Fasp::Manager.instance.add_listener(FaspListenerLogger.new)
-          Fasp::Manager.instance.add_listener(FaspListenerProgress.new)
+          Fasp::Manager.instance.add_listener(Fasp::ListenerLogger.new)
+          Fasp::Manager.instance.add_listener(Fasp::ListenerProgress.new)
           @transfer_agent_singleton=Fasp::Agent.new
           @transfer_agent_singleton.connect_app_id=@@PROGRAM_NAME
           if !@options.get_option(:fasp_proxy,:optional).nil?
@@ -263,7 +215,7 @@ module Asperalm
       end
 
       attr_accessor :option_flat_hash
-      
+
       def initialize
         # overriding parameters on transfer spec
         @transfer_spec_default={}
@@ -288,7 +240,8 @@ module Asperalm
         @options.parser.separator "DESCRIPTION"
         @options.parser.separator "\tUse Aspera application to perform operations on command line."
         @options.parser.separator "\tOAuth 2.0 is used for authentication in Files, Several authentication methods are provided."
-        @options.parser.separator "\tAdditional documentation here: https://rubygems.org/gems/asperalm"
+        @options.parser.separator "\tDocumentation and examples: https://rubygems.org/gems/asperalm"
+        @options.parser.separator "\texecute: #{@@PROGRAM_NAME} conf doc"
         @options.parser.separator ""
         @options.parser.separator "COMMANDS"
         @options.parser.separator "\tFirst level commands: #{action_list.map {|x| x.to_s}.join(', ')}"
@@ -302,11 +255,6 @@ module Asperalm
         @options.parser.separator "ARGS"
         @options.parser.separator "\tSome commands require mandatory arguments, e.g. a path.\n"
         @options.parser.separator ""
-        @options.parser.separator "EXAMPLES"
-        @options.parser.separator "\t#{@@PROGRAM_NAME} files repo browse /"
-        @options.parser.separator "\t#{@@PROGRAM_NAME} faspex send ./myfile --log-level=debug"
-        @options.parser.separator "\t#{@@PROGRAM_NAME} shares upload ~/myfile /myshare"
-        @options.parser.separator ""
         # handler must be set before setting defaults
         @options.set_obj_attr(:log_level,self,:option_log_level)
         @options.set_obj_attr(:insecure,self,:option_insecure)
@@ -315,7 +263,7 @@ module Asperalm
         @options.set_obj_attr(:to_folder,self,:option_to_folder)
         @options.set_obj_attr(:logger,self,:option_logtype)
         @options.set_obj_attr(:gui_mode,self,:option_browser)
-        @options.set_obj_attr(:fasp_folder,self,:option_fasp_folder)
+        #@options.set_obj_attr(:fasp_folder,Fasp::Installation.instance,:paths)
         @options.set_obj_attr(:use_product,Fasp::Installation.instance,:activated)
       end
 
@@ -354,14 +302,14 @@ module Asperalm
         @options.parser.on("-h", "--help", "Show this message.") { @option_help=true }
         @options.parser.on("--show-config", "Display parameters used for the provided action.") { @option_show_config=true }
         @options.add_opt_list(:gui_mode,OperatingSystem.gui_modes,"method to start browser",'-gTYPE')
-        @options.add_opt_list(:insecure,[:yes,:no],"do not validate cert")
+        @options.add_opt_list(:insecure,[:yes,:no],"do not validate HTTPS certificate")
         @options.add_opt_list(:flat_hash,[:yes,:no],"display hash values as additional keys")
         @options.add_opt_list(:log_level,Log.levels,"Log level")
         @options.add_opt_list(:logger,Log.logtypes,"log method")
         @options.add_opt_list(:format,self.class.display_formats,"output format")
         @options.add_opt_list(:transfer,[:ascp,:connect,:node],"type of transfer")
         @options.add_opt_simple(:config_file,"read parameters from file in YAML format, current=#{@options.get_option(:config_file,:optional)}")
-        @options.add_opt_simple(:load_params,"-PNAME","load the named configuration from current config file, use \"#{@@NO_DEFAULT}\" to avoid loading the default configuration")
+        @options.add_opt_simple(:load_params,"-PVALUE","load the named configuration from current config file, use \"#{@@NO_DEFAULT}\" to avoid loading the default configuration")
         @options.add_opt_simple(:fasp_folder,"specify where to find FASP (main folder), current=#{@options.get_option(:fasp_folder,:optional)}")
         @options.add_opt_simple(:transfer_node,"name of configuration used to transfer when using --transfer=node")
         @options.add_opt_simple(:fields,"comma separated list of fields, or #{FIELDS_ALL}, or #{FIELDS_DEFAULT}")
@@ -370,7 +318,7 @@ module Asperalm
         @options.add_opt_switch(:rest_debug,"-r","more debug for HTTP calls") { Rest.set_debug(true) }
         @options.add_opt_switch(:no_default,"-N","do not load default configuration") { @use_plugin_defaults=false }
         @options.add_opt_switch(:version,"-v","display version") { puts @@TOOL_VERSION;Process.exit(0) }
-        @options.add_opt_simple(:ts,"override transfer spec values for transfers (hash, use @json: prefix), current=#{@options.get_option(:ts,:optional)}")
+        @options.add_opt_simple(:ts,"override transfer spec values (hash, use @json: prefix), current=#{@options.get_option(:ts,:optional)}")
         @options.add_opt_simple(:to_folder,"destination folder for downloaded files, current=#{@options.get_option(:to_folder,:optional)}")
         @options.add_opt_simple(:lock_port,"prevent dual execution of a command, e.g. in cron")
         @options.add_opt_simple(:use_product,"which local product to use for ascp")
@@ -390,7 +338,7 @@ module Asperalm
         dest={} if dest.nil?
         source.each do |k,v|
           unless v.is_a?(Hash)
-            dest[k]=v
+            dest[prefix+k.to_s]=v
           else
             flatten_one_config(v,prefix+k.to_s+'.',dest)
           end
@@ -440,7 +388,7 @@ module Asperalm
                 end
               end
             when FIELDS_ALL
-              raise "empty results" if table_data.empty?
+              raise "empty" if table_data.empty?
               out_table_columns=table_data.first.keys if table_data.is_a?(Array)
             else
               out_table_columns=user_asked_fields_list_str.split(',')
@@ -458,6 +406,7 @@ module Asperalm
             end
             if @option_flat_hash.eql?(:yes)
               results[:data]=self.class.flatten_one_config(results[:data])
+              asked_fields=results[:data].keys
             end
             table_data=asked_fields.map { |i| { out_table_columns.first => i, out_table_columns.last => results[:data][i] } }
           when :value_list
@@ -479,6 +428,10 @@ module Asperalm
             raise "unknown data type: #{results[:type]}"
           end
           raise "no field specified" if out_table_columns.nil?
+          if table_data.empty?
+            puts "empty".gray
+            return
+          end
           # convert to string with special function. here table_data is an array of hash
           table_data=results[:textify].call(table_data) if results.has_key?(:textify)
           # convert data to string, and keep only display fields
@@ -633,10 +586,6 @@ module Asperalm
         end
       end
 
-      public
-
-      attr_reader :options
-
       def add_plugin_lookup_folder(folder)
         @plugin_lookup_folders.push(folder)
       end
@@ -648,10 +597,27 @@ module Asperalm
         @plugins[name.to_sym]={:source=>path,:req=>req}
       end
 
+      # early debug for parser
+      def early_debug_setup(argv)
+        argv.each do |arg|
+          case arg
+          when /^--log-level=(.*)/
+            Log.level = $1.to_sym
+          when /^--logger=(.*)/
+            Log.setlogger($1.to_sym)
+          end
+        end
+      end
+
+      public
+
+      # public method
       # $HOME/.aspera/aslmcli
       def config_folder
         return File.join(Dir.home,@@ASPERA_HOME_FOLDERNAME,@@PROGRAM_NAME)
       end
+
+      attr_reader :options
 
       # return destination folder for transfers
       # sets default if needed
@@ -694,22 +660,11 @@ module Asperalm
         return self.class.result_success
       end
 
-      # early debug for parser
-      def early_debug_setup(argv)
-        argv.each do |arg|
-          case arg
-          when /^--log-level=(.*)/
-            Log.level = $1.to_sym
-          when /^--logger=(.*)/
-            Log.setlogger($1.to_sym)
-          end
-        end
-      end
-
       # this is the main function called by initial script
       def process_command_line(argv)
         begin
           early_debug_setup(argv)
+          # find plugins, shall be after parse! ?
           add_plugins_fom_lookup_folders
           # init options
           # opt parser separates options (start with '-') from arguments

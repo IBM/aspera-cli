@@ -36,12 +36,15 @@ module Asperalm
               end
             when :current
               command=Main.tool.options.get_next_argument('command',[ :list ])
-              return {:type=>:hash_array,
-                :data=>api_console.read('transfers',{
-                'from'=>Main.tool.options.get_option(:filter_from,:mandatory),
-                'to'=>Main.tool.options.get_option(:filter_to,:mandatory)
-                })[:data],
-                :fields=>['id','contact','name','status']}
+              case command
+              when :list
+                return {:type=>:hash_array,
+                  :data=>api_console.read('transfers',{
+                  'from'=>Main.tool.options.get_option(:filter_from,:mandatory),
+                  'to'=>Main.tool.options.get_option(:filter_to,:mandatory)
+                  })[:data],
+                  :fields=>['id','contact','name','status']}
+              end
             end
           end
         end

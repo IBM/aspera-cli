@@ -152,7 +152,7 @@ t/fx4:
 tfaspex: t/fx1 t/fx2 t/fx3 t/fx4
 
 tconsole:
-	$(EXETEST) console transfers list  --insecure=yes
+	$(EXETEST) console transfer current list  --insecure=yes
 	@touch $@
 #NODEDEST=/home/faspex/docroot
 NODEDEST=/
