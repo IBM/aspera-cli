@@ -91,9 +91,7 @@ module Asperalm
               when :start
                 result={
                   :type=>:key_val_list,
-                  :data=>nil,
-                  # when called, hash has already been put in key/value table ... so extract and re-create
-                  :textify=>lambda { |r| r=r[0]["value"];r.keys.map { |i| { 'key' => i, 'value' => r[i] } } }
+                  :data=>nil
                 }
                 call_params={}
                 # set external parameters if any
@@ -106,7 +104,6 @@ module Asperalm
                 expected=Main.tool.options.get_option(:result,:optional)
                 if !expected.nil?
                   result[:type] = :status
-                  result.delete(:textify)
                   fields=expected.split(/:/)
                   raise "Expects: work_step:result_name format, but got #{expected}" if fields.length != 2
                   call_params["explicit_output_step"]=fields[0]
