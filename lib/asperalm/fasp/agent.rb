@@ -20,7 +20,7 @@ module Asperalm
       def initialize
         @use_connect_client=false
         @tr_node_api=nil
-        @connect_app_id='localapp'
+        @connect_app_id='localapp' # append Process.pid ?
       end
 
       def start_transfer_connect(transfer_spec)
@@ -115,7 +115,7 @@ module Asperalm
       end
 
       # calls sub transfer agent
-      # fgaspmanager, or connect, or node
+      # faspmanager, or connect, or node
       def start_transfer(transfer_spec)
         Log.log.debug("ts=#{transfer_spec}")
         if (@use_connect_client) # transfer using connect ...

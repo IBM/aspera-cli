@@ -3,7 +3,7 @@ require "asperalm/fasp/parameters"
 
 module Asperalm
   module Fasp
-    # translates a "faspe:" URI into transfer spec hash
+    # translates a "faspe:" URI into transfer spec hash  (used in Faspex)
     class Uri
       def initialize(fasplink)
         @fasp_uri=URI.parse(fasplink)

@@ -1,6 +1,8 @@
 # Asperalm - Laurent Aspera CLI and Ruby library
 
-Laurent/2016
+Laurent/2016-2018
+
+Version : <%= `#{ENV["ASCLI"]} --version` %>
 
 This Gem provides a Ruby language interface to FASP session start and a cross platform (ruby based) command line tool (CLI) using (mostly REST) 
 Aspera Products APIs for :

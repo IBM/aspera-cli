@@ -11,6 +11,7 @@ module Asperalm
       include Singleton
       VARRUN_SUBFOLDER='var/run'
       FIRST_FOUND=:first
+      PRODUCT_INFO='product-info.mf'
 
       # name of Aspera application to be used
       attr_reader :activated
@@ -152,7 +153,7 @@ module Asperalm
         return @found_products unless @found_products.nil?
         @found_products=product_locations.select do |l|
           next false unless Dir.exist?(l[:app_root])
-          product_info_file="#{l[:app_root]}/product-info.mf"
+          product_info_file="#{l[:app_root]}/#{PRODUCT_INFO}"
           if File.exist?(product_info_file)
             res_s=XmlSimple.xml_in(File.read(product_info_file),{"ForceArray"=>false})
             l[:name]=res_s['name']

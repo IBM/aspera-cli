@@ -37,7 +37,7 @@ README.pdf: README.md
 	wkhtmltopdf README.html README.pdf
 
 README.md: README.erb.md aslmcli_commands.txt aslmcli_usage.txt asession_usage.txt
-	COMMANDS=aslmcli_commands.txt USAGE=aslmcli_usage.txt ASESSION=asession_usage.txt erb README.erb.md > README.md
+	COMMANDS=aslmcli_commands.txt USAGE=aslmcli_usage.txt ASESSION=asession_usage.txt ASCLI=$(EXETEST) erb README.erb.md > README.md
 
 aslmcli_commands.txt: Makefile
 	sed -n -e 's/.*\$$(EXETEST)/aslmcli/p' Makefile|grep -v 'Sales Engineering'|sed -E -e 's/\$$\(SAMPLE_FILE\)/sample_file.bin/g;s/\$$\(NODEDEST\)/sample_dest_folder/g;s/\$$\(TEST_FOLDER\)/sample_dest_folder/g;s/ibmfaspex.asperasoft.com/faspex.mycompany.com/g;s/(")(url|api_key|username|password)(":")[^"]*(")/\1\2\3my_\2_here\4/g;s/--(secret|url|password|username)=[^ ]*/--\1=my_\1_here/g;'|grep -v 'localhost:9443'|sort -u > aslmcli_commands.txt
@@ -151,9 +151,11 @@ t/fx4:
 	@touch $@
 tfaspex: t/fx1 t/fx2 t/fx3 t/fx4
 
-tconsole:
+t/cons1:
 	$(EXETEST) console transfer current list  --insecure=yes
 	@touch $@
+tconsole: t/cons1
+
 #NODEDEST=/home/faspex/docroot
 NODEDEST=/
 t/nd1:
