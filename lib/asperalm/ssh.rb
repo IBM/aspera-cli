@@ -1,13 +1,17 @@
 require 'net/ssh'
 
 module Asperalm
+  # A simple wrapper around Net::SSH
+  # executes one command and get its result from stdout
   class Ssh
-    
+    # options: same as Net::SSH.start
+    # see: https://net-ssh.github.io/net-ssh/classes/Net/SSH.html#method-c-start
     def initialize(host,username,options)
       Log.log.debug("ssh:#{username}@#{host}")
       @host=host
       @username=username
       @options=options
+      @options[:logger]=Log.log
     end
 
     def exec_session(cmd,input=nil)
