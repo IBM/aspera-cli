@@ -14,11 +14,11 @@ module Asperalm
       @options[:logger]=Log.log
     end
 
-    def exec_session(cmd,input=nil)
+    def execute(cmd,input=nil)
       Log.log.debug("cmd=#{cmd}")
       response = ''
-      Net::SSH.start(@host, @username, @options) do |ssh|
-        ssh_channel=ssh.open_channel do |channel|
+      Net::SSH.start(@host, @username, @options) do |session|
+        ssh_channel=session.open_channel do |channel|
           # prepare stdout processing
           channel.on_data{|chan,data|response << data}
           # prepare stderr processing, stderr if type = 1
@@ -30,13 +30,13 @@ module Asperalm
             end
             raise errormsg
           end
-          channel.exec(cmd){|ch,success|channel.send_data(input) if !input.nil?}
+          channel.exec(cmd){|ch,success|channel.send_data(input) unless input.nil?}
         end
         # wait for channel to finish (command exit)
         ssh_channel.wait
         # main ssh session loop
-        ssh.loop
-      end
+        session.loop
+      end # session
       return response
     end
   end

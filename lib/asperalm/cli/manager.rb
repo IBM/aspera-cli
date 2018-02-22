@@ -183,8 +183,8 @@ module Asperalm
       # expected is array of allowed value (single value)
       # or :multiple for remaining values
       # or :single for a single unconstrained value
-      def get_next_argument(descr,expected=:single)
-        if @unprocessed_arguments.empty?
+      def get_next_argument(descr,expected=:single,is_type=:mandatory)
+        if is_type.eql?(:mandatory) and @unprocessed_arguments.empty?
           result=get_interactive(descr,expected)
         else # there are values
           case expected

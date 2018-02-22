@@ -8,7 +8,6 @@ module Asperalm
     module Plugins
       # implement basic remote access with FASP/SSH
       class Server < BasicAuthPlugin
-
         def initialize
         end
 
@@ -21,17 +20,6 @@ module Asperalm
         end
 
         def action_list; [:nodeadmin,:userdata,:configurator,:download,:upload,:browse,:delete,:rename].push(*Asperalm::AsCmd.action_list);end
-
-        # converts keys in hash table from symbol to string
-        def convert_hash_sym_key(hash);h={};hash.each { |k,v| h[k.to_s]=v};return h;end
-
-        def result_convert_hash_array(hash_array,fields)
-          return {:data=>hash_array.map {|i| convert_hash_sym_key(i)},:type=>:hash_array,:fields=>fields.map {|f| f.to_s}}
-        end
-
-        def result_convert_key_val_list(key_val_list)
-          return {:data=>convert_hash_sym_key(key_val_list),:type=>:key_val_list}
-        end
 
         def execute_action
           server_uri=URI.parse(Main.tool.options.get_option(:url,:mandatory))
@@ -92,15 +80,20 @@ module Asperalm
                 'paths'=>filelist.map { |f| {'source'=>f } }
               })
               return Main.tool.start_transfer(transfer_spec)
-            when :mkdir; ascmd.mkdir(Main.tool.options.get_next_argument('path'));return Main.result_success
-            when :mv; ascmd.mv(Main.tool.options.get_next_argument('src'),Main.tool.options.get_next_argument('dst'));return Main.result_success
-            when :cp; ascmd.cp(Main.tool.options.get_next_argument('src'),Main.tool.options.get_next_argument('dst'));return Main.result_success
-            when :rm; ascmd.rm(Main.tool.options.get_next_argument('path'));return Main.result_success
-            when :ls; return result_convert_hash_array(ascmd.ls(Main.tool.options.get_next_argument('path')),[:name,:sgid,:suid,:size,:ctime,:mtime,:atime])
-            when :info; return result_convert_key_val_list(ascmd.info())
-            when :df; return {:data=>ascmd.df(),:type=>:key_val_list}
-            when :du; return {:data=>ascmd.du(Main.tool.options.get_next_argument('path')),:type=>:key_val_list}
-            when :md5sum; return {:data=>ascmd.md5sum(Main.tool.options.get_next_argument('path')),:type=>:key_val_list}
+            when *Asperalm::AsCmd.action_list
+              args=Main.tool.options.get_next_argument('ascmd command arguments',:multiple,:optional)
+              result=ascmd.send(:execute_single,command,args)
+              case command
+              when :mkdir; return Main.result_success
+              when :mv; return Main.result_success
+              when :cp; return Main.result_success
+              when :rm; return Main.result_success
+              when :ls; return {:type=>:hash_array,:data=>result,:fields=>[:zmode,:zuid,:zgid,:size,:mtime,:name],:symb_key=>true}
+              when :info; return {:type=>:key_val_list,:data=>result,:symb_key=>true}
+              when :df; return {:type=>:hash_array,:data=>result,:symb_key=>true}
+              when :du; return {:type=>:key_val_list,:data=>result,:symb_key=>true}
+              when :md5sum; return {:type=>:key_val_list,:data=>result,:symb_key=>true}
+              end
             end
           rescue Asperalm::AsCmd::Error => e
             raise CliBadArgument,e.extended_message

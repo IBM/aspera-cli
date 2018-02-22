@@ -354,7 +354,7 @@ module Asperalm
 
       # this method displays the results, especially the table format
       def display_results(results)
-        raise "INTERNAL ERROR, result must be Hash (#{results.class}: #{results})" unless results.is_a?(Hash)
+        raise "INTERNAL ERROR, result must be Hash (got: #{results.class}: #{results})" unless results.is_a?(Hash)
         raise "INTERNAL ERROR, result must have type" unless results.has_key?(:type)
         raise "INTERNAL ERROR, result must have data" unless results.has_key?(:data) or results[:type].eql?(:empty)
 
@@ -392,6 +392,7 @@ module Asperalm
               out_table_columns=table_data.first.keys if table_data.is_a?(Array)
             else
               out_table_columns=user_asked_fields_list_str.split(',')
+              out_table_columns=out_table_columns.map{|i|i.to_sym} if results[:symb_key]
             end
           when :key_val_list
             # :key_val_list is a simple hash table
@@ -402,7 +403,9 @@ module Asperalm
             case user_asked_fields_list_str
             when FIELDS_DEFAULT;asked_fields=results[:fields] if results.has_key?(:fields)
             when FIELDS_ALL;# keep all
-            else asked_fields=user_asked_fields_list_str.split(',')
+            else
+              asked_fields=user_asked_fields_list_str.split(',')
+              asked_fields=asked_fields.map{|i|i.to_sym} if results[:symb_key]
             end
             if @option_flat_hash.eql?(:yes)
               results[:data]=self.class.flatten_one_config(results[:data])
