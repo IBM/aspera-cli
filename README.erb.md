@@ -765,7 +765,7 @@ This is related to:
 
 <https://aspera.asperafiles.com/helpcenter/admin/organization/installing-files-preview-maker>
 
-### Configuration
+## Configuration
 
 Like any aslmcli commands, parameters can be passed on command line or using a configuration parameter set. Example using a parameter set:
 
@@ -779,7 +779,7 @@ Once can check if the access key is well configured using:
 $ aslmcli -Pmy_files_access_key node browse /
 ```
 
-### Execution
+## Execution
 
 The tool intentionally supports only a "finite execution time" mode, i.e.
 it needs to be run regularly to create or update preview files.
@@ -790,7 +790,7 @@ To prevent parallel execution of the task, one can use either
 the protection offered by the scheduler, if there is one, or
 use the parameter: `--lock-port=12345`.
 
-### Candidate detection
+## Candidate detection
 
 The tool will find candidates for preview generation using three commands:
 
@@ -798,7 +798,7 @@ The tool will find candidates for preview generation using three commands:
 * `scan` : deeply scan all files under the access key's "storage root"
 * `folder` : same as `scan `, but only on the specified folder's "file identifier"
 
-### Creation/Update
+## Creation/Update
 
 Once candidate are selected, once candidates are selected, a preview is always generated if it does not exist already, else if a preview already exist, it will be generated
 using one of three overwrite method:
@@ -807,7 +807,7 @@ using one of three overwrite method:
 * `never` : preview is generated only if it does not exist already
 * `mtime` : preview is generated only if the original file is newer than the existing
 
-### Access to original files and preview creation
+## Access to original files and preview creation
 
 Standard open source tools are used to create thumnails and video previews. Those tools
 require that original files are accessible in the local file system and also write generated 
@@ -817,7 +817,15 @@ If the preview generator is run on a system that has direct access to the file s
 
 If the preview generator does not have access to files on the file system (it is remote, no mount, or is an object storage), then the original file is first downloaded, then the result is uploaded, use method `remote`.
 
-### Examples of use
+## Options
+
+To skip some folders, use the option : `--skip-folders`, note that it expects a list of path starting with slash, use the `@json:` notation, example:
+
+```
+$ aslmcli preview scan --skip-folders=@json:'["/not_here"]'
+```
+
+## Examples of use
 on command line:
 
 ```bash
@@ -831,7 +839,7 @@ with crontab:
 0 * * * *    su -s /bin/bash - xfer -c 'timeout 30m aslmcli preview scan  --skip-types=office --lock-port=12345 --log-level=info --logger=syslog'
 ```
 
-### External tools: Linux
+## External tools: Linux
 
 Here shown on Redhat/CentOS
 

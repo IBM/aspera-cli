@@ -26,8 +26,8 @@ module Asperalm
         attr_accessor :option_previews_folder
         attr_accessor :option_iteration_file_filepath
         attr_accessor :option_folder_reset_cache
-        # main temp folder to download remote sources
-        def main_temp_folder;"/tmp/aspera.previews";end
+        attr_accessor :option_skip_folders
+        attr_accessor :option_temp_folder
 
         # special tag to identify transfers related to generator
         PREV_GEN_TAG='preview_generator'
@@ -47,7 +47,7 @@ module Asperalm
           end
         end
 
-        def option_skip_types()
+        def option_skip_types
           return @skip_types.map{|i|i.to_s}.join(',')
         end
 
@@ -62,6 +62,8 @@ module Asperalm
           Main.tool.options.set_obj_attr(:previews_folder,self,:option_previews_folder,'previews')
           Main.tool.options.set_obj_attr(:iteration_file,self,:option_iteration_file_filepath,nil)
           Main.tool.options.set_obj_attr(:folder_reset_cache,self,:option_folder_reset_cache,:no)
+          Main.tool.options.set_obj_attr(:temp_folder,self,:option_temp_folder,"/tmp/aspera.previews")
+          Main.tool.options.set_obj_attr(:skip_folders,self,:option_skip_folders,[])
           Main.tool.options.set_obj_attr(:video,Asperalm::Preview::Options.instance,:vid_conv_method,:reencode)
           Main.tool.options.set_obj_attr(:vid_offset_seconds,Asperalm::Preview::Options.instance,:vid_offset_seconds,10)
           Main.tool.options.set_obj_attr(:vid_size,Asperalm::Preview::Options.instance,:vid_size,'320:-2')
@@ -91,6 +93,8 @@ module Asperalm
           Main.tool.options.add_opt_simple(:previews_folder,"preview folder in files")
           Main.tool.options.add_opt_simple(:iteration_file,"path to iteration memory file")
           Main.tool.options.add_opt_list(:folder_reset_cache,[:no,:header,:read],"reset folder cache")
+          Main.tool.options.add_opt_simple(:temp_folder,"path to temp folder")
+          Main.tool.options.add_opt_simple(:skip_folders,"list of folder to skip")
           Main.tool.options.add_opt_list(:video,Asperalm::Preview::Options.vid_conv_methods,"method to generate video")
           Main.tool.options.add_opt_simple(:vid_offset_seconds,"generation parameter")
           Main.tool.options.add_opt_simple(:vid_size,"generation parameter")
@@ -171,7 +175,7 @@ module Asperalm
             next unless event.dig('data','type').eql?('file')
             file_entry=@api_node.read("files/#{event['data']['id']}")[:data] rescue nil
             next if file_entry.nil?
-            next if file_entry['path'].start_with?("/#{@option_preview_folder}/")
+            next unless @option_skip_folders.select{|d|file_entry['path'].start_with?(d)}.empty?
             file_entry['parent_file_id']=event['data']['parent_file_id']
             generate_preview(file_entry)
           end
@@ -225,7 +229,7 @@ module Asperalm
 
         def get_infos_remote(gen_infos,entry,local_entry_preview_dir)
           # folder where this entry is downloaded
-          @remote_entry_temp_local_folder=main_temp_folder
+          @remote_entry_temp_local_folder=@option_temp_folder
           # store source directly here
           local_original_filepath=File.join(@remote_entry_temp_local_folder,entry['name'])
           #original_mtime=DateTime.parse(entry['modified_time'])
@@ -335,7 +339,7 @@ module Asperalm
             when 'link'
               Log.log.debug("Ignoring link.")
             when 'folder'
-              if @skip_folders.include?(entry['path'])
+              if @option_skip_folders.include?(entry['path'])
                 Log.log.debug("#{entry['path']} folder (skip)".bg_red)
               else
                 Log.log.debug("#{entry['path']} folder")
@@ -363,18 +367,17 @@ module Asperalm
           @access_key_self = @api_node.read('access_keys/self')[:data] # same as with accesskey instead of /self
           @access_remote=Main.tool.options.get_option(:file_access,:mandatory).eql?(:remote)
           Log.log.debug("access key info: #{@access_key_self}")
-          #TODO: either allow setting parameter, or get from aspera.conf
-          @option_preview_folder='previews'
-          @skip_folders=['/'+@option_preview_folder]
+          #TODO: can the previews folder parameter be read from node api ?
+          @option_skip_folders.push('/'+@option_previews_folder)
           if @access_remote
             # note the filter "name", it's why we take the first one
-            @previews_folder_entry=get_folder_entries(@access_key_self['root_file_id'],{:name=>@option_preview_folder}).first
-            raise "ERROR: no such folder: #{@option_preview_folder}" if @previews_folder_entry.nil?
+            @previews_folder_entry=get_folder_entries(@access_key_self['root_file_id'],{:name=>@option_previews_folder}).first
+            raise "ERROR: no such folder: #{@option_previews_folder}" if @previews_folder_entry.nil?
           else
             #TODO: option to override @local_storage_root='xxx'
             @local_storage_root=@access_key_self['storage']['path'].gsub(%r{^file:///},'')
             raise "ERROR: no such folder: #{@local_storage_root}" unless File.directory?(@local_storage_root)
-            @local_preview_folder=File.join(@local_storage_root,@option_preview_folder)
+            @local_preview_folder=File.join(@local_storage_root,@option_previews_folder)
             raise "ERROR: no such folder: #{@local_preview_folder}" unless File.directory?(@local_preview_folder)
           end
           command=Main.tool.options.get_next_argument('command',action_list)
