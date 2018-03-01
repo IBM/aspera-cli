@@ -21,7 +21,7 @@ test:
 	bundle exec rake spec
 
 clean::
-	rm -f $(GEMNAME)-*.gem $(SRCZIPBASE)*.zip *.log token.* 
+	rm -f $(GEMNAME)-*.gem $(SRCZIPBASE)*.zip *.log token.* preview.png 
 	rm -f README.pdf README.html README.md aslmcli_commands.txt aslmcli_usage.txt asession_usage.txt $(TEST_CONFIG)
 	rm -fr t doc "PKG - "*
 	mkdir t

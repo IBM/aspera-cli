@@ -1,8 +1,10 @@
 require 'asperalm/log'
 
 module Asperalm
-  # Methods for running +ascmd+ commands on a node.
-  # equivalent of SDK "command client"
+  # Run +ascmd+ commands on a transfer node.
+  # Equivalent of SDK "command client"
+  # execute: "ascmd -h" to get syntax
+  # Note: "ls" can take filter: as_ls -f *.txt -f *.bin /
   class AsCmd
     # list of supported actions
     def self.action_list; [:ls,:rm,:mv,:du,:info,:mkdir,:cp,:df,:md5sum]; end
@@ -19,176 +21,125 @@ module Asperalm
     def execute_single(action_sym,args)
       # concatenate arguments, enclose in double quotes, protect backslash and double quotes, add "as_" command and as_exit
       stdin_input=(args||[]).map{|v| '"' + v.gsub(/["\\]/n) {|s| '\\' + s } + '"'}.unshift('as_'+action_sym.to_s).join(' ')+"\nas_exit\n"
-      # execute and get binary output
-      bin_response=@command_executor.execute('ascmd',stdin_input)
-      # get hash or table
-      result=self.class.parse_result(bin_response)
-      # raise error as exception
-      raise Error.new(result[:errno],result[:errstr],action_sym,args) if result.is_a?(Hash) and result.keys.sort == FIELDS[:error].map{|i|i[:name]}.sort
+      # execute, get binary output, get hash or table result
+      bytebuffer=@command_executor.execute('ascmd',stdin_input).unpack('C*')
+      result=self.class.parse(bytebuffer,:result)
+      raise "ERROR: unparsed bytes remaining" unless bytebuffer.empty?
+      # get and delete info,always present in results
+      system_info=result[:info]
+      result.delete(:info)
+      # make single file result like folder
+      if result.has_key?(:file);result[:dir]=[result[:file]];result.delete(:file);end
       # add type field for stats
-      if action_sym.eql?(:ls)
-        result.each do |file|
+      if result.has_key?(:dir)
+        result[:dir].each do |file|
           if file.has_key?(:smode)
             # Converts the first character of the file mode (see 'man ls') into a type.
-            file[:type] = case file[:smode][0,1]
-            when 'd'; :directory
-            when '-'; :file
-            when 'l'; :link
-            else      :other
-            end
+            file[:type]=case file[:smode][0,1];when'd';:directory;when'-';:file;when'l';:link;else:other;end
           end
         end
       end
+      # for info, second overrides first, so restore it
+      case result.keys.length;when 0;result=system_info;when 1;result=result[result.keys.first];else raise "error";end
+      # raise error as exception
+      raise Error.new(result[:errno],result[:errstr],action_sym,args) if result.is_a?(Hash) and result.keys.sort == @@TYPES[:error][:fields].map{|i|i[:name]}.sort
       return result
     end # execute_single
 
     # This exception is raised when +ascmd+ returns an error.
-    # @example
-    #     message         "(2) No such file or directory"
-    #     rc              2
-    #     ascmd_message   "No such file or directory"
-    #     command         :ls
-    #     args            ["/non_existent/directory"]
     class Error < StandardError
-      attr_reader :rc, :ascmd_message, :command, :args
-      # @param code(int), message(str), command(symbol), args(string array)
-      def initialize(rc,msg,cmd,args)
-        @rc=rc
-        @ascmd_message=msg
-        @command=cmd
-        @args=args
-      end
+      attr_reader :errno, :errstr, :command, :args
+      def initialize(errno,errstr,cmd,args);@errno=errno;@errstr=errstr;@command=cmd;@args=args;end
 
-      def message; "ascmd: (#{rc}) #{ascmd_message}"; end
+      def message; "ascmd: (#{errno}) #{errstr}"; end
 
-      def extended_message; "ascmd: rc=#{rc} msg=\"#{ascmd_message}\" command=\"#{command}\" args=#{args}"; end
+      def extended_message; "ascmd: errno=#{errno} errstr=\"#{errstr}\" command=\"#{command}\" args=#{args}"; end
     end # Error
 
     private
 
-    ENUM_START=1
-    # desription of result strutures
-    # from ascmdtypes.h, note that enum values start at ENUM_START, not zero (array index)
-    FIELDS={
-      :response=>[{:name=>:file,:type=>:stat},{:name=>:dir,:type=>:stat,:array=>true},{:name=>:size,:type=>:size},{:name=>:error,:type=>:error},{:name=>:info,:type=>:info},{:name=>:success,:type=>nil,:return_true=>true},{:name=>:exit,:type=>nil},{:name=>:df,:type=>:mnt,:concatlist=>true},{:name=>:md5sum,:type=>:md5sum}],
-      :stat=>[{:name=>:name,:type=>:zstr},{:name=>:size,:type=>:int64},{:name=>:mode,:type=>:int32,:check=>nil},{:name=>:zmode,:type=>:zstr},{:name=>:uid,:type=>:int32,:check=>nil},{:name=>:zuid,:type=>:zstr},{:name=>:gid,:type=>:int32,:check=>nil},{:name=>:zgid,:type=>:zstr},{:name=>:ctime,:type=>:epoch},{:name=>:zctime,:type=>:zstr},{:name=>:mtime,:type=>:epoch},{:name=>:zmtime,:type=>:zstr},{:name=>:atime,:type=>:epoch},{:name=>:zatime,:type=>:zstr},{:name=>:symlink,:type=>:zstr},{:name=>:errno,:type=>:int32},{:name=>:errstr,:type=>:zstr}],
-      :info=>[{:name=>:platform,:type=>:zstr},{:name=>:version,:type=>:zstr},{:name=>:lang,:type=>:zstr},{:name=>:territory,:type=>:zstr},{:name=>:codeset,:type=>:zstr},{:name=>:lc_ctype,:type=>:zstr},{:name=>:lc_numeric,:type=>:zstr},{:name=>:lc_time,:type=>:zstr},{:name=>:lc_all,:type=>:zstr},{:name=>:dev,:type=>:zstr,:array=>true},{:name=>:browse_caps,:type=>:zstr},{:name=>:protocol,:type=>:zstr}],
-      :size=>[{:name=>:size,:type=>:int64},{:name=>:fcount,:type=>:int32},{:name=>:dcount,:type=>:int32},{:name=>:failed_fcount,:type=>:int32},{:name=>:failed_dcount,:type=>:int32}],
-      :error=>[{:name=>:errno,:type=>:int32},{:name=>:errstr,:type=>:zstr}],
-      :mnt=>[{:name=>:fs,:type=>:zstr},{:name=>:dir,:type=>:zstr},{:name=>:type,:type=>:zstr},{:name=>:total,:type=>:int64},{:name=>:used,:type=>:int64},{:name=>:free,:type=>:int64},{:name=>:fcount,:type=>:int64},{:name=>:errno,:type=>:int32},{:name=>:errstr,:type=>:zstr}],
-      :md5sum=>[{:name=>:md5sum,:type=>:zstr}]
+    # description of result structures ( see ascmdtypes.h). Base types are big endian 
+    @@TYPES={
+      :result  =>{:decode=>:field_list,:fields=>[{:name=>:file,:is_a=>:stat},{:name=>:dir,:is_a=>:stat,:special=>:substruct},{:name=>:size,:is_a=>:size},{:name=>:error,:is_a=>:error},{:name=>:info,:is_a=>:info},{:name=>:success,:is_a=>nil,:special=>:return_true},{:name=>:exit,:is_a=>nil},{:name=>:df,:is_a=>:mnt,:special=>:restart_on_first},{:name=>:md5sum,:is_a=>:md5sum}]},
+      :stat    =>{:decode=>:field_list,:fields=>[{:name=>:name,:is_a=>:zstr},{:name=>:size,:is_a=>:int64},{:name=>:mode,:is_a=>:int32,:check=>nil},{:name=>:zmode,:is_a=>:zstr},{:name=>:uid,:is_a=>:int32,:check=>nil},{:name=>:zuid,:is_a=>:zstr},{:name=>:gid,:is_a=>:int32,:check=>nil},{:name=>:zgid,:is_a=>:zstr},{:name=>:ctime,:is_a=>:epoch},{:name=>:zctime,:is_a=>:zstr},{:name=>:mtime,:is_a=>:epoch},{:name=>:zmtime,:is_a=>:zstr},{:name=>:atime,:is_a=>:epoch},{:name=>:zatime,:is_a=>:zstr},{:name=>:symlink,:is_a=>:zstr},{:name=>:errno,:is_a=>:int32},{:name=>:errstr,:is_a=>:zstr}]},
+      :info    =>{:decode=>:field_list,:fields=>[{:name=>:platform,:is_a=>:zstr},{:name=>:version,:is_a=>:zstr},{:name=>:lang,:is_a=>:zstr},{:name=>:territory,:is_a=>:zstr},{:name=>:codeset,:is_a=>:zstr},{:name=>:lc_ctype,:is_a=>:zstr},{:name=>:lc_numeric,:is_a=>:zstr},{:name=>:lc_time,:is_a=>:zstr},{:name=>:lc_all,:is_a=>:zstr},{:name=>:dev,:is_a=>:zstr,:special=>:multiple},{:name=>:browse_caps,:is_a=>:zstr},{:name=>:protocol,:is_a=>:zstr}]},
+      :size    =>{:decode=>:field_list,:fields=>[{:name=>:size,:is_a=>:int64},{:name=>:fcount,:is_a=>:int32},{:name=>:dcount,:is_a=>:int32},{:name=>:failed_fcount,:is_a=>:int32},{:name=>:failed_dcount,:is_a=>:int32}]},
+      :error   =>{:decode=>:field_list,:fields=>[{:name=>:errno,:is_a=>:int32},{:name=>:errstr,:is_a=>:zstr}]},
+      :mnt     =>{:decode=>:field_list,:fields=>[{:name=>:fs,:is_a=>:zstr},{:name=>:dir,:is_a=>:zstr},{:name=>:is_a,:is_a=>:zstr},{:name=>:total,:is_a=>:int64},{:name=>:used,:is_a=>:int64},{:name=>:free,:is_a=>:int64},{:name=>:fcount,:is_a=>:int64},{:name=>:errno,:is_a=>:int32},{:name=>:errstr,:is_a=>:zstr}]},
+      :md5sum  =>{:decode=>:field_list,:fields=>[{:name=>:md5sum,:is_a=>:zstr}]},
+      :int8    =>{:decode=>:base,:unpack=>'C',:size=>1},
+      :int32   =>{:decode=>:base,:unpack=>'L>',:size=>4},
+      :int64   =>{:decode=>:base,:unpack=>'Q>',:size=>8},
+      :epoch   =>{:decode=>:base,:unpack=>'Q>',:size=>8},
+      :zstr    =>{:decode=>:base,:unpack=>'Z*'},
+      :blist   =>{:decode=>:buffer_list}
     }
 
-    # sizeof(int8)
-    TLV_SIZE_TYPE = 1
-    # sizeof(int32)
-    TLV_SIZE_LENGTH = 4
+    # protocol enum start at one, but array index start at zero
+    ENUM_START=1
 
-    def self.parse_result(bin_response)
-      result_fields = parse_list(bin_response)
-      raise "extecting 2 parts" unless result_fields.length.eql?(2)
-      # first entry is as_info, check, but ignore it
-      raise "expecting info at start" unless FIELDS[:response][result_fields.first[:type]-ENUM_START][:type].eql?(:info)
-      return parse_structure(FIELDS[:response][result_fields.last[:type]-ENUM_START],result_fields.last[:value])
+    def self.field_description(type_name,typed_buffer)
+      result=@@TYPES[type_name][:fields][typed_buffer[:btype]-ENUM_START]
+      raise "Unrecognized field for #{type_name}: #{typed_buffer[:btype]}\n#{typed_buffer[:buffer]}" if result.nil?
+      return result
     end
 
-    #
-    def self.parse_structure(field_descr,bin_value)
-      if field_descr[:array]
-        return parse_list(bin_value).map{|r|parse_structure({:name=>field_descr[:name],:type=>field_descr[:type]},r[:value])}
-      end
-      return true if field_descr[:return_true]
-      hash_response = {}
-      array_response = []
-      fields_info=FIELDS[field_descr[:type]]
-      parse_list(bin_value).each do |field|
-        field_info=fields_info[field[:type]-ENUM_START]
-        raise "Unrecognized field: #{field[:type]}\n#{field[:value]}" if fields_info.nil?
-        # if destination != hash_response, then field is a simple list of values
-        destination=hash_response
-        if field_info[:array]
-          # special case: field is a list of values
-          hash_response[field_info[:name]]||=[]
-          destination={}
+    # @return a decoded type. :base : value, :buffer_list : an array of {btype,buffer}, :field_list : a hash, or array
+    def self.parse(buffer,type_name,state=nil)
+      state=state.nil? ? 0 : state+1
+      type_descr=@@TYPES[type_name]
+      raise "Unexpected type #{type_name}" if type_descr.nil?
+      Log.log.debug("#{"   ."*state}parse:#{type_name}:#{type_descr[:decode]}:#{buffer[0,16]}...".red)
+      #return true if type_descr[:return_true]
+      result=nil
+      case type_descr[:decode]
+      when :base
+        num_bytes=type_name.eql?(:zstr) ? buffer.length : type_descr[:size]
+        raise "ERROR:not enough bytes" if buffer.length < num_bytes
+        byte_array=buffer.shift(num_bytes);byte_array=[byte_array] unless byte_array.is_a?(Array)
+        result=byte_array.pack('C*').unpack(type_descr[:unpack]).first
+        Log.log.debug("#{"   ."*state}-> base:#{byte_array} -> #{result}")
+        result=Time.at(result) if type_name.eql?(:epoch)
+      when :buffer_list
+        result = []
+        while !buffer.empty?
+          btype=parse(buffer,:int8,state)
+          length=parse(buffer,:int32,state)
+          raise "ERROR:not enough bytes" if buffer.length < length
+          value=buffer.shift(length)
+          result.push({:btype=>btype,:buffer=>value})
+          Log.log.debug("#{"   ."*state}:buffer_list[#{result.length-1}] #{result.last}")
         end
-        if field_descr[:concatlist] and 1.eql?(field[:type])
-          # special case: concatenated list
-          # restart a new element at index 1
-          hash_response={}
-          destination=hash_response
-          array_response.push(hash_response)
+      when :field_list
+        # by default the result is one struct
+        result = {}
+        # get individual binary fields
+        parse(buffer,:blist,state).each do |typed_buffer|
+          # what type of field is it ?
+          field_info=field_description(type_name,typed_buffer)
+          Log.log.debug("#{"   ."*state}+ field(special=#{field_info[:special]})=#{field_info[:name]}".green)
+          case field_info[:special]
+          when nil
+            result[field_info[:name]]=parse(typed_buffer[:buffer],field_info[:is_a],state)
+          when :return_true
+            result[field_info[:name]]=true
+          when :substruct
+            result[field_info[:name]]=parse(typed_buffer[:buffer],:blist,state).map{|r|parse(r[:buffer],field_info[:is_a],state)}
+          when :multiple
+            result[field_info[:name]]||=[]
+            result[field_info[:name]].push(parse(typed_buffer[:buffer],field_info[:is_a],state))
+          when :restart_on_first
+            fl=result[field_info[:name]]=[]
+            parse(typed_buffer[:buffer],:blist,state).map do |tb|
+              fl.push({}) if tb[:btype].eql?(ENUM_START)
+              fi=field_description(field_info[:is_a],tb)
+              fl.last[fi[:name]]=parse(tb[:buffer],fi[:is_a],state)
+            end
+          end
         end
-        # this level has only simple types
-        parse_simple(destination,field_info[:name],field_info[:type],field[:value])
-        # special case: field is a list of values
-        hash_response[field_info[:name]].push(destination[field_info[:name]]) unless destination.eql?(hash_response)
-      end
-      # special case: concatenated list
-      return array_response if field_descr[:concatlist]
-      hash_response
-    end
-
-    # parse a list of fields
-    def self.parse_list(bin_value)
-      result = []
-      offset = 0
-      while (offset+TLV_SIZE_TYPE+TLV_SIZE_LENGTH) <= bin_value.length
-        field={}
-        offset+=parse_simple(field,:type,:int8,bin_value[offset])
-        offset+=parse_simple(field,:length,:int32,bin_value[offset,TLV_SIZE_LENGTH])
-        field[:value] = bin_value[offset, field[:length]]
-        offset+=field[:length]
-        result.push(field)
-        Log.log.debug("[#{result.length-1}] #{result.last}")
-      end
-      raise "extra bytes found: offset=#{offset}, length=#{bin_value.length}" unless offset.eql?(bin_value.length)
-      result
-    end
-
-    # note we assume same endian as server (native)
-    def self.parse_simple(hash,key,type,bin_value)
-      size=nil
-      hash[key]=case type
-      when :int8; size=1;bin_value.unpack('C').first
-      when :int32; size=4;bin_value.unpack('L>').first
-      when :int64; size=8;bin_value.unpack('Q>').first
-      when :zstr; size=bin_value.length;bin_value.unpack('Z*').first
-      when :epoch; size=parse_simple(hash,key,:int64,bin_value);Time.at(hash[key]) rescue nil
-      else raise "Unexpected type #{type}"
-      end
-      return size
-    end
-  end
-end
-
-if ENV.has_key?('TESTIT')
-  class LocalExecutor
-    def execute(cmd,line)
-      Asperalm::Log.log.info("[#{line}]")
-      #`echo "#{line}"|ssh root@10.25.0.8 #{cmd}`
-      `echo "#{line}"|#{cmd}`
-    end
-  end
-  ascmd=Asperalm::AsCmd.new(LocalExecutor.new)
-  #Asperalm::Log.level=:debug
-  [
-    ['info'],
-    ['ls','/core.1127'],
-    ['ls','/'],
-    ['mkdir','/123'],
-    ['mv','/123','/234'],
-    ['rm','/234'],
-    ['du','/Users/xfer'],
-    ['cp','/tmp/123','/tmp/1234'],
-    ['df','/'],
-    ['df'],
-    ['md5sum','/dev/null']
-  ].each do |t|
-    begin
-      puts "testing: #{t}"
-      puts ascmd.send(:execute_single,t.shift,t)
-    rescue Asperalm::AsCmd::Error => e
-      puts e.extended_message
+      else raise "error: unknown decode:#{type_descr[:decode]}"
+      end # is_a
+      return result
     end
   end
 end

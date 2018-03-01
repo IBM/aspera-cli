@@ -36,7 +36,7 @@ module Asperalm
         require 'syslog/logger'
         @@logobj = Syslog::Logger.new("aslmcli")
       else
-        raise "unknown log type: #{logtype}"
+        raise "unknown log type: #{logtype.class} #{logtype}"
       end
       @@logobj.level=current_severity_integer
     end
