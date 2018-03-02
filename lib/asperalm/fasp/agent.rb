@@ -1,6 +1,7 @@
 require 'asperalm/fasp/installation'
 require 'asperalm/fasp/resumer'
 require 'asperalm/fasp/manager'
+require 'asperalm/open_application'
 require 'securerandom'
 
 module Asperalm
@@ -24,7 +25,7 @@ module Asperalm
       end
 
       def start_transfer_connect(transfer_spec)
-        raise "Using connect requires a graphical environment" if !OperatingSystem.default_gui_mode.eql?(:graphical)
+        raise "Using connect requires a graphical environment" if !OpenApplication.default_gui_mode.eql?(:graphical)
         trynumber=0
         begin
           Log.log.debug("reading connect port file")
@@ -35,7 +36,7 @@ module Asperalm
           raise CliError,"Unable to start connect after #{trynumber} try" if trynumber > 3
           Log.log.warn("connect is not started, trying to start (#{trynumber}) : #{e}")
           trynumber+=1
-          OperatingSystem.open_uri_graphical('fasp://initialize')
+          OpenApplication.uri_graphical('fasp://initialize')
           sleep 2
           retry
         end

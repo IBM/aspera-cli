@@ -3,20 +3,21 @@ require 'spec_helper'
 $LOAD_PATH.unshift(File.dirname(__FILE__)+"/../lib")
 require 'asperalm/cli/main'
 require 'asperalm/ascmd'
+require 'asperalm/ssh'
 
 #Asperalm::Log.level=:debug
 
-#PATH_FOLDER_MAIN='/workspace/Rubytools/asperalm/local/PATH_FOLDER_MAIN'
 PATH_FOLDER_MAIN='/'
+demo_executor=Asperalm::Ssh.new('eudemo.asperademo.com','asperaweb',{:password=>'demoaspera',:port=>33001})
 
 class LocalExecutor
   def execute(cmd,line)
-    Asperalm::Log.log.info("[#{line}]")
-    #`echo "#{line}"|ssh -p33001 root@eudemo.asperademo.com sudo -u asperaweb #{cmd}`
-    `echo "#{line}"|ssh -p33001 asperaweb@eudemo.asperademo.com #{cmd}`
-    #`echo "#{line}"|#{cmd}`
+    `echo "#{line}"|#{cmd}`
   end
 end
+
+#PATH_FOLDER_MAIN='/workspace/Rubytools/asperalm/local/PATH_FOLDER_MAIN'
+#demo_executor=LocalExecutor.new
 
 PATH_FOLDER_TINY=File.join(PATH_FOLDER_MAIN,'aspera-test-dir-tiny')
 PATH_FOLDER_DEST=File.join(PATH_FOLDER_MAIN,'Upload')
@@ -34,7 +35,7 @@ RSpec.describe Asperalm::Cli::Main do
 end
 
 RSpec.describe Asperalm::AsCmd do
-  ascmd=Asperalm::AsCmd.new(LocalExecutor.new)
+  ascmd=Asperalm::AsCmd.new(demo_executor)
   #    ['du','/Users/xfer'],
   #    ['df','/'],
   #    ['df'],

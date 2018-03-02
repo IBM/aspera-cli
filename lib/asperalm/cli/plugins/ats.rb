@@ -128,16 +128,19 @@ module Asperalm
           when :create #
             params=Main.tool.options.get_option(:params,:optional)
             params={} if params.nil?
-            # if transfer_server_id not provided, get it from options
+            server_data=nil
+            # if transfer_server_id not provided, get it from command line options
             if !params.has_key?('transfer_server_id')
-              params['transfer_server_id']=server_by_cloud_region['id']
+              server_data=server_by_cloud_region
+              params['transfer_server_id']=server_data['id']
             end
+            Log.log.debug("using params: #{params}".bg_red.gray)
             if params.has_key?('storage')
               case params['storage']['type']
               # here we need somehow to map storage type to field to get for auth end point
               when 'softlayer_swift'
                 if !params['storage'].has_key?('authentication_endpoint')
-                  server_data=all_servers.select {|i| i['id'].eql?(params['transfer_server_id'])}.first
+                  server_data||=all_servers.select{|i|i['id'].eql?(params['transfer_server_id'])}.first
                   params['storage']['credentials']['authentication_endpoint'] = server_data['swift_authentication_endpoint']
                 end
               end

@@ -1,7 +1,7 @@
 require 'asperalm/cli/main'
 require 'asperalm/cli/plugins/node'
 require 'asperalm/fasp/installation'
-require 'asperalm/operating_system'
+require 'asperalm/open_application'
 
 module Asperalm
   module Cli
@@ -75,7 +75,7 @@ module Asperalm
                     api_connect_cdn.call({:operation=>'GET',:subpath=>fileurl,:save_to_file=>File.join(folder_dest,filename)})
                     return {:data=>"downloaded: #{filename}",:type => :status}
                   when :open #
-                    OperatingSystem.open_uri(one_link['href'])
+                    OpenApplication.instance.uri(one_link['href'])
                     return {:data=>"opened: #{one_link['href']}",:type => :status}
                   end
                 end

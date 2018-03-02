@@ -5,7 +5,7 @@
 # Laurent Martin
 #
 ##############################################################################
-require 'asperalm/operating_system'
+require 'asperalm/open_application'
 require 'asperalm/rest'
 require 'asperalm/files_api'
 require 'base64'
@@ -263,7 +263,7 @@ module Asperalm
     def self.goto_page_and_get_request(redirect_uri,login_page_url,html_page=THANK_YOU_HTML)
       Log.log.info "login_page_url=#{login_page_url}".bg_red().gray()
       # browser start is not blocking
-      OperatingSystem.open_uri(login_page_url)
+      OpenApplication.instance.uri(login_page_url)
       port=URI.parse(redirect_uri).port
       Log.log.info "listening on port #{port}"
       request_params=nil

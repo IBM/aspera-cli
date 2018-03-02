@@ -1,5 +1,5 @@
 require 'asperalm/log'
-require 'asperalm/operating_system'
+require 'asperalm/open_application'
 require 'singleton'
 require 'xmlsimple'
 
@@ -89,7 +89,7 @@ module Asperalm
       # returns product folders depending on OS
       def product_locations
         common_places=[]
-        case OperatingSystem.current_os_type
+        case OpenApplication.current_os_type
         when :mac
           common_places.push({
             :expected=>'Connect Client',

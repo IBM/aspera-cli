@@ -375,7 +375,7 @@ t/prev1:
 	$(EXETEST) preview events --skip-types=office
 	@touch $@
 t/prev2:
-	$(EXETEST) preview scan --skip-types=office
+	$(EXETEST) preview scan --skip-types=office --log-level=info
 	@touch $@
 t/prev3:
 	$(EXETEST) preview test ~/Documents/Samples/anatomic-2k/TG18-CH/TG18-CH-2k-01.dcm --log-level=debug png --video=clips
@@ -394,6 +394,8 @@ t/fxgw:
 NODE_USER=node_admin
 NODE_PASS=Aspera123_
 setupprev:
+	asconfigurator -x "user;user_name,xfer;file_restriction,|*;token_encryption_key,1234"
+	asconfigurator -x "server;activity_logging,true;activity_event_logging,true"
 	$(EXE_NOMAN) node access_key id testkey delete --no-default --url=https://localhost:9092 --username=node_xfer --password=Aspera123_
 	$(EXE_NOMAN) node access_key create @json:'{"id":"testkey","name":"the test key","secret":"secret","storage":{"type":"local", "path":"/Users/xfer/docroot"}}' --no-default --url=https://localhost:9092 --username=node_xfer --password=Aspera123_ 
 	$(EXE_NOMAN) config id test_preview update --url=https://localhost:9092 --username=testkey --password=secret

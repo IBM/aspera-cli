@@ -4,7 +4,7 @@ require 'asperalm/fasp/agent'
 require 'asperalm/fasp/manager'
 require 'asperalm/fasp/listener_logger'
 require 'asperalm/fasp/listener_progress'
-require 'asperalm/operating_system'
+require 'asperalm/open_application'
 require 'asperalm/log'
 require 'asperalm/oauth'
 require 'text-table'
@@ -22,7 +22,7 @@ module Asperalm
       singleton_class.send(:alias_method, :tool, :instance)
       def self.version;return @@TOOL_VERSION;end
       private
-      @@TOOL_VERSION='0.6.4'
+      @@TOOL_VERSION='0.6.5'
       # first level command for the main tool
       @@MAIN_PLUGIN_NAME_STR='config'
       # name of application, also foldername where config is stored
@@ -138,9 +138,9 @@ module Asperalm
         @logtype_cache=value
       end
 
-      def option_browser; OperatingSystem.open_url_method; end
+      def option_browser; OpenApplication.instance.url_method; end
 
-      def option_browser=(value); OperatingSystem.open_url_method=value; end
+      def option_browser=(value); OpenApplication.instance.url_method=value; end
 
       #      def option_fasp_folder; Fasp::Installation.instance.paths; end
       #
@@ -290,7 +290,7 @@ module Asperalm
 
       def declare_options
         @options.parser.separator "OPTIONS: global"
-        @options.set_option(:gui_mode,OperatingSystem.default_gui_mode)
+        @options.set_option(:gui_mode,OpenApplication.default_gui_mode)
         @options.set_option(:fields,FIELDS_DEFAULT)
         @options.set_option(:transfer,:ascp)
         @options.set_option(:insecure,:no)
@@ -301,7 +301,7 @@ module Asperalm
         #options.set_option(:to_folder,'.')
         @options.parser.on("-h", "--help", "Show this message.") { @option_help=true }
         @options.parser.on("--show-config", "Display parameters used for the provided action.") { @option_show_config=true }
-        @options.add_opt_list(:gui_mode,OperatingSystem.gui_modes,"method to start browser",'-gTYPE')
+        @options.add_opt_list(:gui_mode,OpenApplication.gui_modes,"method to start browser",'-gTYPE')
         @options.add_opt_list(:insecure,[:yes,:no],"do not validate HTTPS certificate")
         @options.add_opt_list(:flat_hash,[:yes,:no],"display hash values as additional keys")
         @options.add_opt_list(:log_level,Log.levels,"Log level")
@@ -563,10 +563,10 @@ module Asperalm
             return Main.status_result("updated: #{config_name}")
           end
         when :documentation
-          OperatingSystem.open_uri(@@HELP_URL)
+          OpenApplication.instance.uri(@@HELP_URL)
           return Main.no_result
         when :open
-          OperatingSystem.open_uri(current_config_file)
+          OpenApplication.instance.uri(current_config_file)
           return Main.no_result
         when :genkey # generate new rsa key
           key_filepath=@options.get_next_argument('private key file path')

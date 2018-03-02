@@ -1,7 +1,7 @@
 require 'asperalm/cli/main'
 require 'asperalm/cli/basic_auth_plugin'
 require 'asperalm/cli/plugins/node'
-require 'asperalm/operating_system'
+require 'asperalm/open_application'
 require 'asperalm/fasp/uri'
 require 'xmlsimple'
 
@@ -223,7 +223,7 @@ module Asperalm
             api_faspex=Rest.new(link_data[:faspex_base_url],{})
             pkgdatares=api_faspex.call({:operation=>'GET',:subpath=>link_data[:subpath],:url_params=>{:passcode=>link_data[:passcode]},:headers=>{'Accept'=>'application/xml'}})
             if !pkgdatares[:http].body.start_with?('<?xml ')
-              OperatingSystem.open_uri(thelink)
+              OpenApplication.instance.uri(thelink)
               raise CliError, "no such package"
             end
             package_entry=XmlSimple.xml_in(pkgdatares[:http].body, {"ForceArray" => false})
