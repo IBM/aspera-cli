@@ -10,7 +10,7 @@ module Asperalm
     def self.logtypes; [:stderr,:stdout,:syslog];end
 
     def self.log
-      self.setlogger(:stderr) if @@logobj.nil?
+      self.logger_type=(:stderr) if @@logobj.nil?
       return @@logobj
     end
 
@@ -25,7 +25,9 @@ module Asperalm
       raise "error"
     end
 
-    def self.setlogger(logtype)
+    def self.logger_type; @@logger_type; end
+
+    def self.logger_type=(logtype)
       current_severity_integer=@@logobj.nil? ? Logger::Severity::WARN : @@logobj.level
       case logtype
       when :stderr
@@ -38,6 +40,7 @@ module Asperalm
       else
         raise "unknown log type: #{logtype.class} #{logtype}"
       end
+      @@logger_type=logtype
       @@logobj.level=current_severity_integer
     end
   end

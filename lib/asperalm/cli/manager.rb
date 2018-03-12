@@ -278,6 +278,10 @@ module Asperalm
         return result
       end
 
+      def highlight_current(value)
+        STDOUT.isatty ? value.to_s.red.bold : "[#{value}]"
+      end
+
       # define an option with restricted values
       def add_opt_list(option_symbol,values,help,*on_args)
         Log.log.debug("add_opt_list #{option_symbol}")
@@ -285,8 +289,9 @@ module Asperalm
         # this option value must be a symbol
         @options_symbol_list[option_symbol]=values
         value=get_option(option_symbol)
+        help_values=values.map{|i|i.eql?(value)?highlight_current(i):i}.join(', ')
         on_args.push(values)
-        on_args.push("#{help}. Values=(#{values.join(',')}), current=#{value}")
+        on_args.push("#{help}: #{help_values}")
         Log.log.debug("on_args=#{on_args}")
         @parser.on(*on_args){|v|set_option(option_symbol,self.class.get_from_list(v.to_s,help,values))}
       end
@@ -354,7 +359,7 @@ module Asperalm
         #@unprocessed_options=[]
         return result
       end
-      
+
       # return options as taken from config file and command line just before command execution
       def get_current_options
         return @available_option.keys.inject({}) do |h,option_symb|

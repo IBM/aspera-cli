@@ -46,7 +46,7 @@ module Asperalm
     end
 
     attr_accessor :url_method
-    
+
     def initialize
       @url_method=:text
     end

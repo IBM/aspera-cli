@@ -81,8 +81,10 @@ setkey: $(APIKEY)
 yank:
 	gem yank asperalm -v $(GEMVERSION)
 
-gempush:
+dotag:
 	git tag -a $(GIT_TAG_CURRENT) -m "gem version $(GEMVERSION) pushed"
+
+gempush: dotag
 	gem push $(GEMFILE)
 
 commit:

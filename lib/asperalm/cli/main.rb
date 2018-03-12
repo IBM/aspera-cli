@@ -129,14 +129,9 @@ module Asperalm
 
       def option_to_folder=(value); @transfer_spec_default.merge!({'destination_root'=>value}); end
 
-      def option_logtype; @logtype_cache||=nil; end
+      def option_logtype; Log.logger_type; end
 
-      def option_logtype=(value)
-        level=Log.level
-        Log.setlogger(value)
-        @options.set_option(:log_level,level)
-        @logtype_cache=value
-      end
+      def option_logtype=(value); Log.logger_type=(value); end
 
       def option_browser; OpenApplication.instance.url_method; end
 
@@ -607,7 +602,7 @@ module Asperalm
           when /^--log-level=(.*)/
             Log.level = $1.to_sym
           when /^--logger=(.*)/
-            Log.setlogger($1.to_sym)
+            Log.logger_type=($1.to_sym)
           end
         end
       end
