@@ -29,7 +29,7 @@ module Asperalm
       end
 
       # encoders can be pipelined
-      @@ENCODERS=['base64', 'json', 'zlib']
+      @@ENCODERS=['base64', 'json', 'zlib', 'ruby']
 
       # read value is only one
       def self.value_modifier; ['val', 'file', 'env'].push(@@ENCODERS); end
@@ -63,6 +63,7 @@ module Asperalm
           decoding.reverse.each do |d|
             case d
             when 'json'; value=JSON.parse(value)
+            when 'ruby'; value=eval(value)
             when 'base64'; value=Base64.decode64(value)
             when 'zlib'; value=Zlib::Inflate.inflate(value)
             end
@@ -139,7 +140,7 @@ module Asperalm
         process_options=true
         while !argv.empty?
           value=argv.shift
-          if process_options and value =~ /^-/
+          if process_options and value.start_with?('-')
             if value.eql?('--')
               process_options=false
             else

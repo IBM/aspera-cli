@@ -79,7 +79,7 @@ module Asperalm
             return {:data=>@api_shares2_admin.read(resource_path,args)[:data],:fields=>default_fields,:type=>:hash_array}
           when :delete
             @api_shares2_admin.delete(set_resource_path_by_id_or_name(path_prefix,resource_sym))
-            return { :type=>:status, :data => 'deleted' }
+            return Main.result_status('deleted')
           when :info
             return {:type=>:other_struct,:data=>@api_shares2_admin.read(set_resource_path_by_id_or_name(path_prefix,resource_sym),args)[:data]}
           else raise :ERROR

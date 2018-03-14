@@ -168,7 +168,7 @@ module Asperalm
             thepath=get_next_arg_add_prefix(prefix_path,"path")
             send_result=api_node.call({:operation=>'POST',:subpath=>'files/browse',:json_params=>{ :path => thepath} } )
             #send_result={:data=>{'items'=>[{'file'=>"filename1","permissions"=>[{'name'=>'read'},{'name'=>'write'}]}]}}
-            return Main.no_result if !send_result[:data].has_key?('items')
+            return Main.result_none if !send_result[:data].has_key?('items')
             result={ :data => send_result[:data]['items'] , :type => :hash_array, :textify => lambda { |table_data| Node.textify_browse(table_data) } }
             #display_prefix=thepath
             #display_prefix=File.join(prefix_path,display_prefix) if !prefix_path.nil?
@@ -200,7 +200,7 @@ module Asperalm
         def generic_operations; [:create,:list,:id];end
 
         # implement generec rest operations on given resource path
-        def generic_action(api_node,res_class_path,display_fields)
+        def resource_action(api_node,res_class_path,display_fields)
           res_name=res_class_path.gsub(%r{.*/},'').gsub(%r{^s$},'').gsub('_',' ')
           command=Main.tool.options.get_next_argument('command',[ :list, :create, :id ])
           case command
@@ -212,8 +212,12 @@ module Asperalm
           when :id
             one_res_id=Main.tool.options.get_next_argument("#{res_name} id")
             one_res_path="#{res_class_path}/#{one_res_id}"
-            command=Main.tool.options.get_next_argument('command',[ :delete, :show ])
+            command=Main.tool.options.get_next_argument('command',[ :delete, :show, :modify ])
             case command
+            when :modify
+              changes=Main.tool.options.get_next_argument('modified parameters (hash)')
+              api_node.update(one_res_path,changes)
+              return Main.result_status('modified')
             when :delete
               api_node.delete(one_res_path)
               return {:type => :empty}
@@ -245,11 +249,11 @@ module Asperalm
                 raise "not implemented"
               when :summary
                 resp=api_node.create('async/summary',{"syncs"=>[asyncid]})[:data]["sync_summaries"].first
-                return Main.no_result if resp.nil?
+                return Main.result_none if resp.nil?
                 return { :type => :key_val_list, :data => resp }
               when :counters
                 resp=api_node.create('async/counters',{"syncs"=>[asyncid]})[:data]["sync_counters"].first[asyncid].last
-                return Main.no_result if resp.nil?
+                return Main.result_none if resp.nil?
                 return { :type => :key_val_list, :data => resp }
               end
             end
@@ -299,7 +303,7 @@ module Asperalm
               raise "error"
             end
           when :access_key
-            return generic_action(api_node,'access_keys',['id','root_file_id','storage','license'])
+            return resource_action(api_node,'access_keys',['id','root_file_id','storage','license'])
           when :service
             command=Main.tool.options.get_next_argument('command',[ :list, :create, :id])
             case command
@@ -311,14 +315,14 @@ module Asperalm
               # @json:'{"type":"WATCHFOLDERD","run_as":{"user":"user1"}}'
               params=Main.tool.options.get_next_argument("Run creation data (structure)")
               resp=api_node.call({:operation=>'POST',:subpath=>'rund/services',:headers=>{'Accept'=>'application/json'},:json_params=>params})
-              return {:type => :status,:data=>"#{resp[:data]['id']} created"}
+              return Main.result_status("#{resp[:data]['id']} created")
             when :id
               svcid=Main.tool.options.get_next_argument("service id")
-              command=Main.tool.options.get_next_argument('command',[ :delete ])
+              command=Main.tool.options.get_next_argument('command',[ :delete, :modify ])
               case command
               when :delete
                 resp=api_node.call({:operation=>'DELETE',:subpath=>"rund/services/#{svcid}",:headers=>{'Accept'=>'application/json'}})
-                return {:type => :status,:data=>"#{svcid} deleted"}
+                return Main.result_status("#{svcid} deleted")
               else
                 raise "error"
               end
@@ -327,7 +331,7 @@ module Asperalm
             end
           when :watch_folder
             res_class_path='v3/watchfolders'
-            #return generic_action(api_node,'v3/watchfolders',nil)
+            #return resource_action(api_node,'v3/watchfolders',nil)
             command=Main.tool.options.get_next_argument('command',[ :list, :create, :id])
             case command
             when :list
@@ -338,7 +342,7 @@ module Asperalm
               #
               params=Main.tool.options.get_next_argument("WF creation data (structure)")
               resp=api_node.call({:operation=>'POST',:subpath=>res_class_path,:headers=>{'Accept'=>'application/json'},:json_params=>params})
-              return {:type=>:status,:data=>"#{resp[:data]['id']} created"}
+              return Main.result_status("#{resp[:data]['id']} created")
             when :id
               one_res_id=Main.tool.options.get_next_argument("watch folder id")
               one_res_path="#{res_class_path}/#{one_res_id}"
@@ -346,11 +350,11 @@ module Asperalm
               case command
               when :delete
                 resp=api_node.delete(one_res_path)
-                return {:type=>:status,:data=>"#{one_res_id} deleted"}
+                return Main.result_status("#{one_res_id} deleted")
               when :update
                 modify_data=Main.tool.options.get_next_argument("JSON value to modify")
                 resp=api_node.update(one_res_path,modify_data)
-                return {:type=>:status,:data=>"#{one_res_id} updated"}
+                return Main.result_status("#{one_res_id} updated")
               when :state
                 return { :type=>:key_val_list, :data => api_node.read("#{one_res_path}/state")[:data] }
               when :show
@@ -391,7 +395,7 @@ module Asperalm
             else
               Log.log.info("nothing to delete")
             end
-            return Main.no_result
+            return Main.result_none
           when :forward
             # detect transfer sessions since last call
             transfers=self.class.get_transfers_iteration(api_node,{:active_only=>false})
@@ -402,7 +406,7 @@ module Asperalm
             end
             if filelist.empty?
               Log.log.debug("NO TRANSFER".red)
-              return Main.no_result
+              return Main.result_none
             end
             Log.log.debug("file list=#{filelist}")
             # get download transfer spec on destination node

@@ -65,7 +65,7 @@ module Asperalm
               args = Main.tool.options.get_next_argument("#{realcmd} arguments",:multiple)
               # concatenate arguments, enclose in double quotes
               command = args.unshift(realcmd).map{|v|'"'+v+'"'}.join(" ")
-              return {:data=>ssh_executor.exec_session(command),:type=>:status}
+              return Main.result_status(ssh_executor.exec_session(command))
             when :upload
               filelist = Main.tool.options.get_next_argument("source list",:multiple)
               transfer_spec.merge!({

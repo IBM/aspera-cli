@@ -73,10 +73,10 @@ module Asperalm
                     fileurl = one_link['href']
                     filename=fileurl.gsub(%r{.*/},'')
                     api_connect_cdn.call({:operation=>'GET',:subpath=>fileurl,:save_to_file=>File.join(folder_dest,filename)})
-                    return {:data=>"downloaded: #{filename}",:type => :status}
+                    return Main.result_status("downloaded: #{filename}")
                   when :open #
                     OpenApplication.instance.uri(one_link['href'])
-                    return {:data=>"opened: #{one_link['href']}",:type => :status}
+                    return Main.result_status("opened: #{one_link['href']}")
                   end
                 end
               end

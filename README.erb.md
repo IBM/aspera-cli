@@ -213,6 +213,7 @@ In addition it is possible to decode some values by prefixing :
 * @base64: to decode base64 encoded string
 * @json: to decode JSON values
 * @zlib: to uncompress data
+* @ruby: to execute ruby code, for instance read values from files.
 
 Example:
 
@@ -220,6 +221,12 @@ Example:
 @zlib:@base64:@file:myfile.dat
 ```
 This will read the content of the specified file, then, base64 decode, then unzip.
+
+```bash
+@ruby:'{"token_verification_key"=>File.read("pubkey.txt")}' 
+```
+
+This creates a value as a hash, with one key and the value is read from a file.
 
 The special option "--" stop option processing, so following values are taken as arguments.
 

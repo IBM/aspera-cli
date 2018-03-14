@@ -98,7 +98,7 @@ module Asperalm
               if all_inbox_data.has_key?('entry')
                 return {:data=>all_inbox_data['entry'],:type=>:hash_array,:fields=>['title','items',PACKAGE_MATCH_FIELD], :textify => lambda { |table_data| Faspex.textify_package_list(table_data)} }
               end
-              return Main.no_result
+              return Main.result_none
             when :send
               filelist = Main.tool.options.get_next_argument("file list",:multiple)
               package_create_params={

@@ -22,7 +22,7 @@ module Asperalm
       singleton_class.send(:alias_method, :tool, :instance)
       def self.version;return @@TOOL_VERSION;end
       private
-      @@TOOL_VERSION='0.6.5'
+      @@TOOL_VERSION='0.6.6'
       # first level command for the main tool
       @@MAIN_PLUGIN_NAME_STR='config'
       # name of application, also foldername where config is stored
@@ -98,16 +98,16 @@ module Asperalm
         @options.set_defaults(@loaded_configs[default_config_name])
       end
 
-      def self.no_result
+      def self.result_none
         return {:type => :empty, :data => :nil }
       end
 
-      def self.status_result(status)
+      def self.result_status(status)
         return {:type => :status, :data => status }
       end
 
       def self.result_success
-        return status_result('complete')
+        return result_status('complete')
       end
 
       # =============================================================
@@ -133,9 +133,9 @@ module Asperalm
 
       def option_logtype=(value); Log.logger_type=(value); end
 
-      def option_browser; OpenApplication.instance.url_method; end
+      def option_ui; OpenApplication.instance.url_method; end
 
-      def option_browser=(value); OpenApplication.instance.url_method=value; end
+      def option_ui=(value); OpenApplication.instance.url_method=value; end
 
       #      def option_fasp_folder; Fasp::Installation.instance.paths; end
       #
@@ -257,7 +257,7 @@ module Asperalm
         @options.set_obj_attr(:ts,self,:option_transfer_spec)
         @options.set_obj_attr(:to_folder,self,:option_to_folder)
         @options.set_obj_attr(:logger,self,:option_logtype)
-        @options.set_obj_attr(:gui_mode,self,:option_browser)
+        @options.set_obj_attr(:ui,self,:option_ui)
         #@options.set_obj_attr(:fasp_folder,Fasp::Installation.instance,:paths)
         @options.set_obj_attr(:use_product,Fasp::Installation.instance,:activated)
       end
@@ -285,7 +285,7 @@ module Asperalm
 
       def declare_options
         @options.parser.separator "OPTIONS: global"
-        @options.set_option(:gui_mode,OpenApplication.default_gui_mode)
+        @options.set_option(:ui,OpenApplication.default_gui_mode)
         @options.set_option(:fields,FIELDS_DEFAULT)
         @options.set_option(:transfer,:ascp)
         @options.set_option(:insecure,:no)
@@ -296,7 +296,7 @@ module Asperalm
         #options.set_option(:to_folder,'.')
         @options.parser.on("-h", "--help", "Show this message.") { @option_help=true }
         @options.parser.on("--show-config", "Display parameters used for the provided action.") { @option_show_config=true }
-        @options.add_opt_list(:gui_mode,OpenApplication.gui_modes,"method to start browser",'-gTYPE')
+        @options.add_opt_list(:ui,OpenApplication.user_interfaces,"method to start browser",'-gTYPE')
         @options.add_opt_list(:insecure,[:yes,:no],"do not validate HTTPS certificate")
         @options.add_opt_list(:flat_hash,[:yes,:no],"display hash values as additional keys")
         @options.add_opt_list(:log_level,Log.levels,"Log level")
@@ -526,7 +526,7 @@ module Asperalm
           when :delete
             @loaded_configs.delete(config_name)
             write_config_file
-            return Main.status_result("deleted: #{config_name}")
+            return Main.result_status("deleted: #{config_name}")
           when :set
             param_name=@options.get_next_argument('parameter name')
             param_value=@options.get_next_argument('parameter value')
@@ -539,7 +539,7 @@ module Asperalm
             end
             @loaded_configs[config_name][param_name]=param_value
             write_config_file
-            return Main.status_result("updated: #{config_name}->#{param_name} to #{param_value}")
+            return Main.result_status("updated: #{config_name}->#{param_name} to #{param_value}")
           when :initialize
             config_value=@options.get_next_argument('config value')
             if @loaded_configs.has_key?(config_name)
@@ -547,7 +547,7 @@ module Asperalm
             end
             @loaded_configs[config_name]=config_value
             write_config_file
-            return Main.status_result("modified: #{current_config_file}")
+            return Main.result_status("modified: #{current_config_file}")
           when :update
             #  TODO: when arguments are provided: --option=value, this creates an entry in the named configuration
             theopts=@options.get_options_table
@@ -555,21 +555,21 @@ module Asperalm
             @loaded_configs[config_name]={} if !@loaded_configs.has_key?(config_name)
             @loaded_configs[config_name].merge!(theopts)
             write_config_file
-            return Main.status_result("updated: #{config_name}")
+            return Main.result_status("updated: #{config_name}")
           end
         when :documentation
           OpenApplication.instance.uri(@@HELP_URL)
-          return Main.no_result
+          return Main.result_none
         when :open
           OpenApplication.instance.uri(current_config_file)
-          return Main.no_result
+          return Main.result_none
         when :genkey # generate new rsa key
           key_filepath=@options.get_next_argument('private key file path')
           require 'net/ssh'
           priv_key = OpenSSL::PKey::RSA.new(2048)
           File.write(key_filepath,priv_key.to_s)
           File.write(key_filepath+".pub",priv_key.public_key.to_s)
-          return Main.status_result('generated key: '+key_filepath)
+          return Main.result_status('generated key: '+key_filepath)
         when :echo # display the content of a value given on command line
           return {:type=>:other_struct, :data=>@options.get_next_argument("value")}
         when :flush_tokens

@@ -4,7 +4,7 @@ module Asperalm
   # Run +ascmd+ commands on a transfer node.
   # Equivalent of SDK "command client"
   # execute: "ascmd -h" to get syntax
-  # Note: "ls" can take filter: as_ls -f *.txt -f *.bin /
+  # Note: "ls" can take filters: as_ls -f *.txt -f *.bin /
   class AsCmd
     # list of supported actions
     def self.action_list; [:ls,:rm,:mv,:du,:info,:mkdir,:cp,:df,:md5sum]; end
@@ -18,17 +18,18 @@ module Asperalm
     # @param [Symbol] one of [action_list]
     # @param [Array] parameters for "as" command
     # @return result of command, type depends on command (bool, array, hash)
-    def execute_single(action_sym,args)
+    def execute_single(action_sym,args=nil)
       # concatenate arguments, enclose in double quotes, protect backslash and double quotes, add "as_" command and as_exit
       stdin_input=(args||[]).map{|v| '"' + v.gsub(/["\\]/n) {|s| '\\' + s } + '"'}.unshift('as_'+action_sym.to_s).join(' ')+"\nas_exit\n"
-      # execute, get binary output, get hash or table result
+      # execute, get binary output
       bytebuffer=@command_executor.execute('ascmd',stdin_input).unpack('C*')
+      # get hash or table result
       result=self.class.parse(bytebuffer,:result)
       raise "ERROR: unparsed bytes remaining" unless bytebuffer.empty?
       # get and delete info,always present in results
       system_info=result[:info]
       result.delete(:info)
-      # make single file result like folder
+      # make single file result like a folder
       if result.has_key?(:file);result[:dir]=[result[:file]];result.delete(:file);end
       # add type field for stats
       if result.has_key?(:dir)
@@ -58,7 +59,7 @@ module Asperalm
 
     private
 
-    # description of result structures ( see ascmdtypes.h). Base types are big endian 
+    # description of result structures (see ascmdtypes.h). Base types are big endian 
     @@TYPES={
       :result  =>{:decode=>:field_list,:fields=>[{:name=>:file,:is_a=>:stat},{:name=>:dir,:is_a=>:stat,:special=>:substruct},{:name=>:size,:is_a=>:size},{:name=>:error,:is_a=>:error},{:name=>:info,:is_a=>:info},{:name=>:success,:is_a=>nil,:special=>:return_true},{:name=>:exit,:is_a=>nil},{:name=>:df,:is_a=>:mnt,:special=>:restart_on_first},{:name=>:md5sum,:is_a=>:md5sum}]},
       :stat    =>{:decode=>:field_list,:fields=>[{:name=>:name,:is_a=>:zstr},{:name=>:size,:is_a=>:int64},{:name=>:mode,:is_a=>:int32,:check=>nil},{:name=>:zmode,:is_a=>:zstr},{:name=>:uid,:is_a=>:int32,:check=>nil},{:name=>:zuid,:is_a=>:zstr},{:name=>:gid,:is_a=>:int32,:check=>nil},{:name=>:zgid,:is_a=>:zstr},{:name=>:ctime,:is_a=>:epoch},{:name=>:zctime,:is_a=>:zstr},{:name=>:mtime,:is_a=>:epoch},{:name=>:zmtime,:is_a=>:zstr},{:name=>:atime,:is_a=>:epoch},{:name=>:zatime,:is_a=>:zstr},{:name=>:symlink,:is_a=>:zstr},{:name=>:errno,:is_a=>:int32},{:name=>:errstr,:is_a=>:zstr}]},
@@ -85,12 +86,11 @@ module Asperalm
     end
 
     # @return a decoded type. :base : value, :buffer_list : an array of {btype,buffer}, :field_list : a hash, or array
-    def self.parse(buffer,type_name,state=nil)
-      state=state.nil? ? 0 : state+1
+    def self.parse(buffer,type_name,indent_level=nil)
+      indent_level=(indent_level||-1)+1
       type_descr=@@TYPES[type_name]
       raise "Unexpected type #{type_name}" if type_descr.nil?
-      Log.log.debug("#{"   ."*state}parse:#{type_name}:#{type_descr[:decode]}:#{buffer[0,16]}...".red)
-      #return true if type_descr[:return_true]
+      Log.log.debug("#{"   ."*indent_level}parse:#{type_name}:#{type_descr[:decode]}:#{buffer[0,16]}...".red)
       result=nil
       case type_descr[:decode]
       when :base
@@ -98,42 +98,42 @@ module Asperalm
         raise "ERROR:not enough bytes" if buffer.length < num_bytes
         byte_array=buffer.shift(num_bytes);byte_array=[byte_array] unless byte_array.is_a?(Array)
         result=byte_array.pack('C*').unpack(type_descr[:unpack]).first
-        Log.log.debug("#{"   ."*state}-> base:#{byte_array} -> #{result}")
+        Log.log.debug("#{"   ."*indent_level}-> base:#{byte_array} -> #{result}")
         result=Time.at(result) if type_name.eql?(:epoch)
       when :buffer_list
         result = []
         while !buffer.empty?
-          btype=parse(buffer,:int8,state)
-          length=parse(buffer,:int32,state)
+          btype=parse(buffer,:int8,indent_level)
+          length=parse(buffer,:int32,indent_level)
           raise "ERROR:not enough bytes" if buffer.length < length
           value=buffer.shift(length)
           result.push({:btype=>btype,:buffer=>value})
-          Log.log.debug("#{"   ."*state}:buffer_list[#{result.length-1}] #{result.last}")
+          Log.log.debug("#{"   ."*indent_level}:buffer_list[#{result.length-1}] #{result.last}")
         end
       when :field_list
         # by default the result is one struct
         result = {}
         # get individual binary fields
-        parse(buffer,:blist,state).each do |typed_buffer|
+        parse(buffer,:blist,indent_level).each do |typed_buffer|
           # what type of field is it ?
           field_info=field_description(type_name,typed_buffer)
-          Log.log.debug("#{"   ."*state}+ field(special=#{field_info[:special]})=#{field_info[:name]}".green)
+          Log.log.debug("#{"   ."*indent_level}+ field(special=#{field_info[:special]})=#{field_info[:name]}".green)
           case field_info[:special]
           when nil
-            result[field_info[:name]]=parse(typed_buffer[:buffer],field_info[:is_a],state)
+            result[field_info[:name]]=parse(typed_buffer[:buffer],field_info[:is_a],indent_level)
           when :return_true
             result[field_info[:name]]=true
           when :substruct
-            result[field_info[:name]]=parse(typed_buffer[:buffer],:blist,state).map{|r|parse(r[:buffer],field_info[:is_a],state)}
+            result[field_info[:name]]=parse(typed_buffer[:buffer],:blist,indent_level).map{|r|parse(r[:buffer],field_info[:is_a],indent_level)}
           when :multiple
             result[field_info[:name]]||=[]
-            result[field_info[:name]].push(parse(typed_buffer[:buffer],field_info[:is_a],state))
+            result[field_info[:name]].push(parse(typed_buffer[:buffer],field_info[:is_a],indent_level))
           when :restart_on_first
             fl=result[field_info[:name]]=[]
-            parse(typed_buffer[:buffer],:blist,state).map do |tb|
+            parse(typed_buffer[:buffer],:blist,indent_level).map do |tb|
               fl.push({}) if tb[:btype].eql?(ENUM_START)
               fi=field_description(field_info[:is_a],tb)
-              fl.last[fi[:name]]=parse(tb[:buffer],fi[:is_a],state)
+              fl.last[fi[:name]]=parse(tb[:buffer],fi[:is_a],indent_level)
             end
           end
         end

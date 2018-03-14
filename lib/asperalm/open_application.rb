@@ -8,7 +8,8 @@ module Asperalm
   # if method is "graphical", then the URL will be opened with the default browser.
   class OpenApplication
     include Singleton
-    def self.gui_modes; [ :text, :graphical ]; end
+    # User Interfaces
+    def self.user_interfaces; [ :text, :graphical ]; end
 
     def self.default_gui_mode
       case current_os_type
@@ -55,7 +56,7 @@ module Asperalm
     def uri(the_url)
       case @url_method
       when :graphical
-        open_uri_graphical(the_url)
+        self.class.uri_graphical(the_url)
       when :text
         case the_url.to_s
         when /^http/

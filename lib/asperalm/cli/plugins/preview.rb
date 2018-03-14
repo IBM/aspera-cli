@@ -384,26 +384,26 @@ module Asperalm
           case command
           when :scan
             scan_folder_files({ 'id' => @access_key_self['root_file_id'], 'name' => '/', 'type' => 'folder', 'path' => '/' })
-            return Main.status_result('scan finished')
+            return Main.result_status('scan finished')
           when :events
             process_file_events
-            return Main.status_result('events finished')
+            return Main.result_status('events finished')
           when :folder
             file_id=Main.tool.options.get_next_argument('file id')
             file_info=@api_node.read("files/#{file_id}")[:data]
             scan_folder_files(file_info)
-            return Main.status_result('file finished')
+            return Main.result_status('file finished')
           when :check
             Asperalm::Preview::Utils.check_tools(@skip_types)
-            return Main.status_result('tools validated')
+            return Main.result_status('tools validated')
           when :test
             source = Main.tool.options.get_next_argument("source file")
             format = Main.tool.options.get_next_argument("format",Asperalm::Preview::Generator.preview_formats)
             dest=preview_filename(format)
             g=Asperalm::Preview::Generator.new(source,dest)
-            return Main.status_result("format not supported") unless g.supported?
+            return Main.result_status("format not supported") unless g.supported?
             g.generate
-            return Main.status_result("generated: #{dest}")
+            return Main.result_status("generated: #{dest}")
           end
         end # execute_action
       end # Preview

@@ -160,7 +160,7 @@ module Asperalm
               return {:type=>:key_val_list, :data=>res[:data]}
             when :delete #
               res=api_ats_secure.delete("access_keys/#{access_key}")
-              return {:type=>:status, :data=>"deleted #{access_key}"}
+              return Main.result_status("deleted #{access_key}")
             when :node
               ak_data=api_ats_secure.read("access_keys/#{access_key}")[:data]
               server_data=all_servers.select {|i| i['id'].start_with?(ak_data['transfer_server_id'])}.first
@@ -227,7 +227,7 @@ module Asperalm
               return {:type=>:key_val_list, :data=>res[:data]}
             when :delete #
               res=api_ats_secure.delete("api_keys/#{ats_id}")
-              return {:type=>:status, :data=>"deleted #{ats_id}"}
+              return Main.result_status("deleted #{ats_id}")
             end
           end
         end

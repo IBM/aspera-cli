@@ -149,7 +149,7 @@ module Asperalm
               node_info,file_id = find_nodeinfo_and_fileid(home_node_id,home_file_id,source_file)
               node_api=get_files_node_api(node_info,FilesApi::SCOPE_NODE_USER)
               node_api.call({:operation=>'GET',:subpath=>"files/#{file_id}/content",:save_to_file=>File.join(Main.tool.destination_folder('receive'),file_name)})
-              return {:data=>"downloaded: #{file_name}",:type => :status}
+              return Main.result_status("downloaded: #{file_name}")
             end
           end
         end
@@ -324,7 +324,7 @@ module Asperalm
               return Main.result_success
             when :resource
               resource=Main.tool.options.get_next_argument('resource',[:user,:group,:client,:contact,:dropbox,:node,:operation,:package,:saml_configuration, :workspace, :dropbox_membership,:short_link])
-              resource_path=resource.to_s+(resource.eql?(:dropbox) ? 'es' : 's')
+              resource_class_path=resource.to_s+(resource.eql?(:dropbox) ? 'es' : 's')
               #:messages:organizations:url_tokens,:usage_reports:workspaces
               operations=[:list,:id,:create]
               #command=Main.tool.options.get_next_argument('op_or_id')
@@ -332,7 +332,7 @@ module Asperalm
               case command
               when :create
                 params=Main.tool.options.get_next_argument("creation data (json structure)")
-                resp=@api_files_admin.create(resource_path,params)
+                resp=@api_files_admin.create(resource_class_path,params)
                 return {:data=>resp[:data],:type => :other_struct}
               when :list
                 default_fields=['id','name']
@@ -347,29 +347,34 @@ module Asperalm
                   args={'json_query'=>query}
                 end
                 Log.log.debug("#{args}".bg_red)
-                return {:data=>@api_files_admin.read(resource_path,args)[:data],:fields=>default_fields,:type=>:hash_array}
+                return {:data=>@api_files_admin.read(resource_class_path,args)[:data],:fields=>default_fields,:type=>:hash_array}
               when :id
                 #raise RuntimeError, "unexpected resource type: #{resource}, only 'node' for actions" if !resource.eql?(:node)
                 res_id=Main.tool.options.get_next_argument('resource id')
-                operations2=[:show,:delete]
+                resource_id_path="#{resource_class_path}/#{res_id}"
+                operations2=[:show,:delete,:modify]
                 operations2.push(:do) if resource.eql?(:node)
                 operations2.push(:shared_folders) if resource.eql?(:workspace)
                 operation=Main.tool.options.get_next_argument('operation',operations2)
                 case operation
                 when :show
-                  object=@api_files_admin.read("#{resource_path}/#{res_id}")[:data]
+                  object=@api_files_admin.read(resource_id_path)[:data]
                   fields=object.keys.select{|k|!k.eql?('certificate')}
                   return { :type=>:key_val_list, :data =>object, :fields=>fields }
+                when :modify
+                  changes=Main.tool.options.get_next_argument('modified parameters (hash)')
+                  @api_files_admin.update(resource_id_path,changes)
+                  return Main.result_status('deleted')
                 when :delete
-                  @api_files_admin.delete("#{resource_path}/#{res_id}")
-                  return { :type=>:status, :data => 'deleted' }
+                  @api_files_admin.delete(resource_id_path)
+                  return Main.result_status('deleted')
                 when :do
-                  res_data=@api_files_admin.read("#{resource_path}/#{res_id}")[:data]
+                  res_data=@api_files_admin.read(resource_id_path)[:data]
                   api_node=get_files_node_api(res_data)
                   ak_data=api_node.call({:operation=>'GET',:subpath=>"access_keys/#{res_data['access_key']}",:headers=>{'Accept'=>'application/json'}})[:data]
                   return execute_node_action(res_id,ak_data['root_file_id'])
                 when :shared_folders
-                  res_data=@api_files_admin.read("#{resource_path}/#{res_id}/permissions")[:data]
+                  res_data=@api_files_admin.read("#{resource_class_path}/#{res_id}/permissions")[:data]
                   return { :type=>:hash_array, :data =>res_data , :fields=>['id','node_name','file_id']} #
                 else raise :ERROR
                 end
