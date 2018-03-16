@@ -652,7 +652,7 @@ module Asperalm
         # TODO: option to choose progress format
         # here we disable native stdout progress
         transfer_spec['EX_quiet']=true
-        # add bypass keys if there is a token
+        # add bypass keys if there is a token, also prevents connect plugin to ask password
         transfer_spec['authentication']="token" if transfer_spec.has_key?('token')
         transfer_agent.start_transfer(transfer_spec)
         return self.class.result_success
@@ -664,8 +664,7 @@ module Asperalm
           early_debug_setup(argv)
           # find plugins, shall be after parse! ?
           add_plugins_fom_lookup_folders
-          # init options
-          # opt parser separates options (start with '-') from arguments
+          # init options: opt parser separates options (start with '-') from arguments
           @options.set_argv(argv)
           # declare global options and set defaults
           declare_options

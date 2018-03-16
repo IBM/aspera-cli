@@ -388,15 +388,13 @@ terminal.
 # Private/Public Keys
 
 In order to use JWT for Aspera Files API client authentication, 
-a private/public key pair must be generated (without passphrase).
+a private/public key pair must be generated (without passphrase, TODO: add passphrase protection).
 
-Simply use the CLI:
+* using the CLI:
 
 ```bash
 $ aslmcli config genkey ~/.aspera/aslmcli/filesapikey
 ```
-
-Other methods:
 
 * `ssh-keygen`:
 
@@ -404,7 +402,9 @@ Other methods:
 $ ssh-keygen -t rsa -f ~/.aspera/aslmcli/filesapikey -N ''
 ```
 
-*`openssl` (on some openssl implementation (mac) there is option: -nodes (no DES))
+* `openssl`
+
+(on some openssl implementation (mac) there is option: -nodes (no DES))
 
 ```bash
 $ APIKEY=~/.aspera/aslmcli/filesapikey

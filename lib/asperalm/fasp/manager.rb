@@ -178,11 +178,11 @@ module Asperalm
       end
 
       # start FASP transfer based on transfer spec (hash table)
-      # note that it returns upon completion only
+      # note that it returns upon completion only (blocking)
       # if the user wants to run in background, just spawn a thread
       # listener methods are called in context of calling thread
       def start_transfer(transfer_spec)
-        Log.log().debug("ts=#{transfer_spec}")
+        Log.log.debug("ts=#{transfer_spec}")
         # shall we use bypass keys ?
         if transfer_spec['authentication'].eql?("token")
           # add Aspera private keys for web access, token based authorization
