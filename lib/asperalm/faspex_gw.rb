@@ -20,7 +20,6 @@ module Asperalm
       webrick_options = {
         :app                => FaspexGW,
         :Port               => 9443,
-        #:Logger             => WEBrick::Log::new($stderr, WEBrick::Log::ERROR),
         :Logger             => Log.log,
         :DocumentRoot       => "/ruby/htdocs",
         :SSLEnable          => true,
@@ -32,24 +31,23 @@ module Asperalm
       puts "Server started on port #{webrick_options[:Port]}"
       Rack::Server.start(webrick_options)
     end
+    # parameters from user to Faspex API call
+    #    {
+    #      "delivery"=>{
+    #      "use_encryption_at_rest"=>false,
+    #      "note"=>"note",
+    #      "sources"=>[{"paths"=>["file1"]}],
+    #      "title"=>"my title",
+    #      "recipients"=>["email1"],
+    #      "send_upload_result"=>true
+    #      }
+    #    }
     post '/aspera/faspex/send' do
-      # parameters from user to Faspex API call
-      #    {
-      #      "delivery"=>{
-      #      "use_encryption_at_rest"=>false,
-      #      "note"=>"note",
-      #      "sources"=>[{"paths"=>["file1"]}],
-      #      "title"=>"my title",
-      #      "recipients"=>["email1"],
-      #      "send_upload_result"=>true
-      #      }
-      #    }
-
       faspex_pkg_parameters=JSON.parse(request.body.read)
       faspex_pkg_delivery=faspex_pkg_parameters['delivery']
       Log.log.debug "faspex pkg create parameters=#{faspex_pkg_parameters}"
 
-      # TODO: get from parameters
+      # get recipient ids
       files_pkg_recipients=[]
       faspex_pkg_delivery['recipients'].each do |recipient_email|
         user_lookup=@@api_files_user.read("contacts",{'current_workspace_id'=>@@the_workspaceid,'q'=>recipient_email})[:data]

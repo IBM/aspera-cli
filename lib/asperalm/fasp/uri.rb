@@ -26,8 +26,8 @@ module Asperalm
           when 'targetrate'; result_ts['target_rate_kbps']=value.to_i
           when 'minrate'; result_ts['min_rate_kbps']=value.to_i
           when 'port'; result_ts['fasp_port']=value.to_i
-          when 'enc'; result_ts['cipher']=value
-          when 'tags64'; result_ts['tags64']=value
+          when 'enc'; result_ts['cipher']=value.gsub('-','') # aes-128 -> aes128
+          when 'tags64'; result_ts['tags']=JSON.parse(Base64.strict_decode64(value))
           when 'bwcap'; result_ts['target_rate_cap_kbps']=value.to_i
           when 'createpath'; result_ts['create_dir']=Parameters.yes_to_true(value)
           when 'fallback'; result_ts['http_fallback']=Parameters.yes_to_true(value)

@@ -1,201 +1,190 @@
 require "asperalm/log"
+require "asperalm/cli/main"
+require 'securerandom'
 
 module Asperalm
   module Fasp
-    # translate transfer spec to ascp parameter list
+    # translate transfer specification to ascp parameter list
     class Parameters
       def initialize(transfer_spec)
-        @state={
-          :transfer_spec=>transfer_spec,
-          :result => {
-          :args=>[],
-          :env=>{}
-          },
-          :used_names=>[]
-        }
+        @transfer_spec=transfer_spec.clone # shallow copy is sufficient
+        @result_env={}
+        @result_args=[]
+        @used_ts_keys=[]
+        @created_files=[]
       end
 
       def compute_args
         transfer_spec_to_args_env
       end
 
-      private
+      def cleanup_files
+        @created_files.each do |filepath|
+          File.delete(filepath)
+        end
+        @created_files=[]
+      end
 
-      RESUME_POLICIES=['none','attrs','sparse_csum','full_csum']
+      private
 
       BOOLEAN_CLASSES=[TrueClass,FalseClass]
 
-      # returns the value from transfer spec and mark parameter as used
-      def use_parameter(ts_name,p_classes,mandatory=false)
-        raise Fasp::Error.new("mandatory parameter: #{ts_name}") if mandatory and !@state[:transfer_spec].has_key?(ts_name)
-        #raise Fasp::Error.new("#{ts_name} is : #{@state[:transfer_spec][ts_name].class} (#{@state[:transfer_spec][ts_name]}), shall be #{p_classes}, ") unless @state[:transfer_spec][ts_name].nil? or p_classes.include?(@state[:transfer_spec][ts_name].class)
-        raise Fasp::Error.new("#{ts_name} is : #{@state[:transfer_spec][ts_name].class} (#{@state[:transfer_spec][ts_name]}), shall be #{p_classes}, ") unless @state[:transfer_spec][ts_name].nil? or p_classes.inject(false){|m,v|m or @state[:transfer_spec][ts_name].is_a?(v)}
-        @state[:used_names].push(ts_name)
-        return @state[:transfer_spec][ts_name]
+      def temp_filelist_path
+        file_list_folder=File.join(Main.tool.config_folder,'filelists')
+        FileUtils::mkdir_p(file_list_folder) unless Dir.exist?(file_list_folder)
+        new_file=File.join(file_list_folder,SecureRandom.uuid)
+        @created_files.push(new_file)
+        return new_file
       end
 
-      def ignore_parameter(ts_name,p_classes,mandatory=false)
-        use_parameter(ts_name,p_classes,mandatory)
-      end
-      #alias_method(:ignore_parameter,:use_parameter)
+      # Process a parameter from transfer specification
+      # @param ts_name : key in transfer spec
+      # @param option_type : type of processing
+      # @param options : options for type
+      def process_param(ts_name,option_type,options={})
+        options[:mandatory]||=false
+        options[:accepted_types]||=option_type.eql?(:opt_without_arg)?[*BOOLEAN_CLASSES]:[String]
 
-      # define ascp parameter in env var from transfer spec
-      def param_string_env(ts_name,env_name)
-        value=use_parameter(ts_name,[String])
-        @state[:result][:env][env_name] = value if !value.nil?
-      end
+        # check mandatory parameter (nil is valid value)
+        raise Fasp::Error.new("mandatory parameter: #{ts_name}") if options[:mandatory] and !@transfer_spec.has_key?(ts_name)
+        parameter_value=@transfer_spec[ts_name]
+        parameter_value=options[:default] if parameter_value.nil? and !options[:default].nil?
+        raise Fasp::Error.new("#{ts_name} is : #{parameter_value.class} (#{parameter_value}), shall be #{options[:accepted_types]}, ") unless parameter_value.nil? or options[:accepted_types].inject(false){|m,v|m or parameter_value.is_a?(v)}
+        @used_ts_keys.push(ts_name)
 
-      # parameter is added only if value is true
-      # if positive==false, param added if value is false
-      def set_param_boolean(ts_name,ascp_option,positive=true)
-        value=use_parameter(ts_name,[*BOOLEAN_CLASSES])
-        add_param=false
-        case value
-        when nil,false# nothing to put on command line, no creation by default
-        when true; add_param=true
-        else raise Fasp::Error.new("unsupported #{ts_name}: #{value}")
+        # process only non-nil values
+        return nil if parameter_value.nil?
+
+        if options.has_key?(:translate_values)
+          # translate using conversion table
+          new_value=options[:translate_values][parameter_value]
+          raise "unsupported value: #{parameter_value}" if new_value.nil?
+          parameter_value=new_value
         end
-        add_param=!add_param if !positive
-        if add_param
-          add_ascp_options(ascp_option)
+        raise "unsupported value: #{parameter_value}" unless options[:accepted_values].nil? or options[:accepted_values].include?(parameter_value)
+        if options[:encode]
+          newvalue=options[:encode].call(parameter_value)
+          raise Fasp::Error.new("unsupported #{ts_name}: #{parameter_value}") if newvalue.nil?
+          parameter_value=newvalue
         end
-      end
 
-      # ts_name : key in transfer spec
-      # ascp_option : option on ascp command line
-      # transform : transformation function for transfer spec value to option value
-      # if transfer_spec value is an array, applies option many times
-      def set_param_value(ts_name,ascp_option,p_classes,&transform)
-        value=use_parameter(ts_name,p_classes)
-        if !value.nil?
-          if transform
-            newvalue=transform.call(value)
-            if newvalue.nil?
-              raise Fasp::Error.new("unsupported #{ts_name}: #{value}")
-            else
-              value=newvalue
-            end
+        case option_type
+        when :ignore
+          return
+        when :get_value
+          return parameter_value
+        when :envvar
+          # define ascp parameter in env var from transfer spec
+          @result_env[options[:variable]] = parameter_value
+        when :opt_without_arg # if present and true : just add option without value
+          add_param=false
+          case parameter_value
+          when false# nothing to put on command line, no creation by default
+          when true; add_param=true
+          else raise Fasp::Error.new("unsupported #{ts_name}: #{parameter_value}")
           end
-          value=value.to_s if value.is_a?(Integer)
-          value=[value] if value.is_a?(String)
-          value.each{|v|add_ascp_options(ascp_option,v)}
+          add_param=!add_param if !options[:add_on_false]
+          add_ascp_options([options[:option_switch]]) if add_param
+        when :opt_with_arg
+          #parameter_value=parameter_value.to_s if parameter_value.is_a?(Integer)
+          parameter_value=[parameter_value] unless parameter_value.is_a?(Array)
+          # if transfer_spec value is an array, applies option many times
+          parameter_value.each{|v|add_ascp_options([options[:option_switch],v])}
+        else
+          raise "Error"
         end
       end
 
-      def set_param_list_num(ts_name,ascp_option,values,default)
-        value=use_parameter(ts_name,[String])
-        value=default if value.nil?
-        if !value.nil?
-          numeric=values.find_index(value)
-          if numeric.nil?
-            raise Fasp::Error.new("unsupported value #{value} for #{ts_name}, expecting #{values}")
-          end
-          add_ascp_options(ascp_option,numeric)
-        end
-      end
-
-      def add_ascp_options(*options)
-        @state[:result][:args].push(*options.map{|v|v.to_s})
+      # add options directly to ascp command line
+      def add_ascp_options(options)
+        return if options.nil?
+        options.each{|o|@result_args.push(o.to_s)}
       end
 
       # translate transfer spec to env vars and command line arguments for ascp
       # NOTE: parameters starting with "EX_" (extended) are not standard
       def transfer_spec_to_args_env
-        # transformation  input, output, validation
-
         # some ssh credentials are required to avoid interactive password input
-        if !@state[:transfer_spec].has_key?('remote_password') and
-        !@state[:transfer_spec].has_key?('EX_ssh_key_value') and
-        !@state[:transfer_spec].has_key?('EX_ssh_key_paths') then
+        if !@transfer_spec.has_key?('remote_password') and
+        !@transfer_spec.has_key?('EX_ssh_key_value') and
+        !@transfer_spec.has_key?('EX_ssh_key_paths') then
           raise Fasp::Error.new('required: ssh key (value or path) or password')
         end
 
         # parameters with env vars
-        param_string_env('remote_password','ASPERA_SCP_PASS')
-        param_string_env('token','ASPERA_SCP_TOKEN')
-        param_string_env('cookie','ASPERA_SCP_COOKIE')
-        param_string_env('EX_ssh_key_value','ASPERA_SCP_KEY')
-        param_string_env('EX_at_rest_password','ASPERA_SCP_FILEPASS')
-        param_string_env('EX_proxy_password','ASPERA_PROXY_PASS')
+        process_param('remote_password',:envvar,:variable=>'ASPERA_SCP_PASS')
+        process_param('token',:envvar,:variable=>'ASPERA_SCP_TOKEN')
+        process_param('cookie',:envvar,:variable=>'ASPERA_SCP_COOKIE')
+        process_param('EX_ssh_key_value',:envvar,:variable=>'ASPERA_SCP_KEY')
+        process_param('EX_at_rest_password',:envvar,:variable=>'ASPERA_SCP_FILEPASS')
+        process_param('EX_proxy_password',:envvar,:variable=>'ASPERA_PROXY_PASS')
 
-        # TODO : -c argument ?, what about "none"
-        value=use_parameter('cipher',[String])
-        case value
-        when nil;# nothing to put on command line, encryption by default
-        when 'aes-128','aes128';# nothing to put on command line (or faspe: link), encryption by default
-        else raise Fasp::Error.new("unsupported cipher: #{value}")
-        end
+        process_param('create_dir',:opt_without_arg,:option_switch=>'-d')
+        process_param('precalculate_job_size',:opt_without_arg,:option_switch=>'--precalculate-job-size')
+        process_param('EX_quiet',:opt_without_arg,:option_switch=>'-q')
 
-        set_param_boolean('create_dir','-d')
-        set_param_boolean('precalculate_job_size','--precalculate-job-size')
-        set_param_boolean('EX_quiet','-q')
+        process_param('cipher',:opt_with_arg,:option_switch=>'-c',:accepted_types=>[String],:translate_values=>{'aes128'=>'aes128','aes-128'=>'aes128','aes192'=>'aes192','aes-192'=>'aes192','aes256'=>'aes256','aes-256'=>'aes256','none'=>'none'})
+        process_param('resume_policy',:opt_with_arg,:option_switch=>'-k',:accepted_types=>[String],:default=>'sparse_csum',:translate_values=>{'none'=>0,'attrs'=>1,'sparse_csum'=>2,'full_csum'=>3})
+        process_param('direction',:opt_with_arg,:option_switch=>'--mode',:accepted_types=>[String],:translate_values=>{'receive'=>'recv','send'=>'send'})
+        process_param('remote_user',:opt_with_arg,:option_switch=>'--user',:accepted_types=>[String])
+        process_param('remote_host',:opt_with_arg,:option_switch=>'--host',:accepted_types=>[String])
+        process_param('ssh_port',:opt_with_arg,:option_switch=>'-P',:accepted_types=>[Integer])
+        process_param('fasp_port',:opt_with_arg,:option_switch=>'-O',:accepted_types=>[Integer])
+        process_param('dgram_size',:opt_with_arg,:option_switch=>'-Z',:accepted_types=>[Integer])
+        process_param('target_rate_kbps',:opt_with_arg,:option_switch=>'-l',:accepted_types=>[Integer])
+        process_param('min_rate_kbps',:opt_with_arg,:option_switch=>'-m',:accepted_types=>[Integer])
+        process_param('rate_policy',:opt_with_arg,:option_switch=>'--policy',:accepted_types=>[String])
+        process_param('http_fallback',:opt_with_arg,:option_switch=>'-y',:accepted_types=>[String,*BOOLEAN_CLASSES],:translate_values=>{'force'=>'F',true=>1,false=>0})
+        process_param('http_fallback_port',:opt_with_arg,:option_switch=>'-t',:accepted_types=>[Integer])
+        process_param('source_root',:opt_with_arg,:option_switch=>'--source-prefix64',:accepted_types=>[String],:encode=>lambda{|prefix|Base64.strict_encode64(prefix)})
+        process_param('sshfp',:opt_with_arg,:option_switch=>'--check-sshfp',:accepted_types=>[String])
+        process_param('symlink_policy',:opt_with_arg,:option_switch=>'--symbolic-links',:accepted_types=>[String])
+        process_param('overwrite',:opt_with_arg,:option_switch=>'--overwrite',:accepted_types=>[String])
 
-        set_param_list_num('resume_policy','-k',RESUME_POLICIES,'sparse_csum')
-
-        set_param_value('direction','--mode',[String]){|v|{'receive'=>'recv','send'=>'send'}[v]}
-        set_param_value('remote_user','--user',[String])
-        set_param_value('remote_host','--host',[String])
-        set_param_value('ssh_port','-P',[Integer])
-        set_param_value('fasp_port','-O',[Integer])
-        set_param_value('dgram_size','-Z',[Integer])
-        set_param_value('target_rate_kbps','-l',[Integer])
-        set_param_value('min_rate_kbps','-m',[Integer])
-        set_param_value('rate_policy','--policy',[String])
-        set_param_value('http_fallback','-y',[String,*BOOLEAN_CLASSES]){|v|{'force'=>'F',true=>1,false=>0}[v]}
-        set_param_value('http_fallback_port','-t',[Integer])
-        set_param_value('source_root','--source-prefix64',[String]){|prefix|Base64.strict_encode64(prefix)}
-        set_param_value('sshfp','--check-sshfp',[String])
-        set_param_value('symlink_policy','--symbolic-links',[String])
-        set_param_value('overwrite','--overwrite',[String])
-
-        set_param_value('EX_fallback_key','-Y',[String])
-        set_param_value('EX_fallback_cert','-I',[String])
-        set_param_value('EX_fasp_proxy_url','--proxy',[String])
-        set_param_value('EX_http_proxy_url','-x',[String])
-        set_param_value('EX_ssh_key_paths','-i',[Array])
-        set_param_value('EX_http_transfer_jpeg','-j',[Integer])
+        process_param('EX_fallback_key',:opt_with_arg,:option_switch=>'-Y',:accepted_types=>[String])
+        process_param('EX_fallback_cert',:opt_with_arg,:option_switch=>'-I',:accepted_types=>[String])
+        process_param('EX_fasp_proxy_url',:opt_with_arg,:option_switch=>'--proxy',:accepted_types=>[String])
+        process_param('EX_http_proxy_url',:opt_with_arg,:option_switch=>'-x',:accepted_types=>[String])
+        process_param('EX_ssh_key_paths',:opt_with_arg,:option_switch=>'-i',:accepted_types=>[Array])
+        process_param('EX_http_transfer_jpeg',:opt_with_arg,:option_switch=>'-j',:accepted_types=>[Integer])
 
         # TODO: manage those parameters, some are for connect only ? node api ?
-        ignore_parameter('target_rate_cap_kbps',[Integer])
-        ignore_parameter('target_rate_percentage',[String]) # -wf -l<rate>p
-        ignore_parameter('min_rate_cap_kbps',[Integer])
-        ignore_parameter('rate_policy_allowed',[String])
-        ignore_parameter('fasp_url',[String])
-        ignore_parameter('lock_rate_policy',[*BOOLEAN_CLASSES])
-        ignore_parameter('lock_min_rate',[*BOOLEAN_CLASSES])
-        ignore_parameter('lock_target_rate',[*BOOLEAN_CLASSES])
-        ignore_parameter('authentication',[String]) # = token
-        ignore_parameter('https_fallback_port',[Integer]) # same as http fallback, option -t ?
-        ignore_parameter('content_protection',[String])
-        ignore_parameter('cipher_allowed',[String])
+        process_param('target_rate_cap_kbps',:ignore,:accepted_types=>[Integer])
+        process_param('target_rate_percentage',:ignore,:accepted_types=>[String]) # -wf -l<rate>p
+        process_param('min_rate_cap_kbps',:ignore,:accepted_types=>[Integer])
+        process_param('rate_policy_allowed',:ignore,:accepted_types=>[String])
+        process_param('fasp_url',:ignore,:accepted_types=>[String])
+        process_param('lock_rate_policy',:ignore,:accepted_types=>[*BOOLEAN_CLASSES])
+        process_param('lock_min_rate',:ignore,:accepted_types=>[*BOOLEAN_CLASSES])
+        process_param('lock_target_rate',:ignore,:accepted_types=>[*BOOLEAN_CLASSES])
+        process_param('authentication',:ignore,:accepted_types=>[String]) # = token
+        process_param('https_fallback_port',:ignore,:accepted_types=>[Integer]) # same as http fallback, option -t ?
+        process_param('content_protection',:ignore,:accepted_types=>[String])
+        process_param('cipher_allowed',:ignore,:accepted_types=>[String])
+        process_param('multi_session',:ignore,:accepted_types=>[Integer])
+        process_param('multi_session_threshold',:ignore,:accepted_types=>[Integer])
 
         # optional tags (  additional option to generate: {:space=>' ',:object_nl=>' ',:space_before=>'+',:array_nl=>'1'}  )
-        set_param_value('tags','--tags64',[Hash]){|tags| Base64.strict_encode64(JSON.generate(tags)) }
-        set_param_value('tags64','--tags64',[String]) # from faspe link
+        process_param('tags',:opt_with_arg,:option_switch=>'--tags64',:accepted_types=>[Hash],:encode=>lambda{|tags|Base64.strict_encode64(JSON.generate(tags))})
 
-        # optional args, at the end to override previou ones
-        value=use_parameter('EX_ascp_args',[Array])
-        add_ascp_options(*value) if !value.nil?
+        # optional args, at the end to override previous ones (to allow override)
+        add_ascp_options(process_param('EX_ascp_args',:get_value,:accepted_types=>[Array]))
 
         # destination will be base64 encoded, put before path arguments
-        add_ascp_options('--dest64')
+        add_ascp_options(['--dest64'])
 
         # source list: TODO : use file list or file pair list, avoid command line lists
-        value=use_parameter('paths',[Array],true)
-        add_ascp_options(*value.map{|i|i['source']})
+        add_ascp_options(process_param('paths',:get_value,:accepted_types=>[Array],:mandatory=>true).map{|i|i['source']})
 
         # destination, use base64 encoding, as defined previously
-        value=use_parameter('destination_root',[String],true)
-        add_ascp_options(Base64.strict_encode64(value))
+        add_ascp_options([Base64.strict_encode64(process_param('destination_root',:get_value,:accepted_types=>[String],:mandatory=>true))])
+
+        ascp_bin=process_param('use_ascp4',:get_value)?'ascp4':'ascp'
 
         # warn about non translated arguments
-        @state[:transfer_spec].each_pair { |key,val|
-          if !@state[:used_names].include?(key)
-            Log.log.error("unhandled parameter: #{key} = \"#{val}\"")
-          end
-        }
+        @transfer_spec.each_pair{|key,val|Log.log.error("unhandled parameter: #{key} = \"#{val}\"") if !@used_ts_keys.include?(key)}
 
-        return @state[:result]
+        return {:args=>@result_args,:env=>@result_env,:ascp_bin=>ascp_bin}
       end
 
       def self.yes_to_true(value)

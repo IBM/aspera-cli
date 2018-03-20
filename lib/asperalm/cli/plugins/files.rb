@@ -170,14 +170,14 @@ module Asperalm
           files_api_base_url=FilesApi.baseurl(instance_domain)
 
           auth_data={
-            :baseurl =>files_api_base_url,
-            :authorize_path => "oauth2/#{organization}/authorize",
-            :token_path => "oauth2/#{organization}/token",
+            :baseurl            =>files_api_base_url,
+            :authorize_path     => "oauth2/#{organization}/authorize",
+            :token_path         => "oauth2/#{organization}/token",
             :persist_identifier => organization,
-            :persist_folder => Main.tool.config_folder,
-            :type=>Main.tool.options.get_option(:auth,:mandatory),
-            :client_id =>Main.tool.options.get_option(:client_id,:mandatory),
-            :client_secret=>Main.tool.options.get_option(:client_secret,:mandatory)
+            :persist_folder     => Main.tool.config_folder,
+            :type               => Main.tool.options.get_option(:auth,:mandatory),
+            :client_id          => Main.tool.options.get_option(:client_id,:mandatory),
+            :client_secret      => Main.tool.options.get_option(:client_secret,:mandatory)
           }
 
           case auth_data[:type]
@@ -326,14 +326,23 @@ module Asperalm
               resource=Main.tool.options.get_next_argument('resource',[:user,:group,:client,:contact,:dropbox,:node,:operation,:package,:saml_configuration, :workspace, :dropbox_membership,:short_link])
               resource_class_path=resource.to_s+(resource.eql?(:dropbox) ? 'es' : 's')
               #:messages:organizations:url_tokens,:usage_reports:workspaces
-              operations=[:list,:id,:create]
+              operations=[:list,:id,:create,:bulk_create]
               #command=Main.tool.options.get_next_argument('op_or_id')
               command=Main.tool.options.get_next_argument('command',operations)
               case command
               when :create
-                params=Main.tool.options.get_next_argument("creation data (json structure)")
+                params=Main.tool.options.get_next_argument("creation data (native hash)")
                 resp=@api_files_admin.create(resource_class_path,params)
                 return {:data=>resp[:data],:type => :other_struct}
+              when :bulk_create
+                bulk_file_path=Main.tool.options.get_next_argument("creation data in file (one native hash per line)")
+                result=[]
+                File.open(bulk_file_path, "r").each_line do |line|
+                  params=Cli::Manager.get_extended_value("creation data (native hash)",line.chomp)
+                  puts "[#{line}]"
+                  result.push(@api_files_admin.create(resource_class_path,params)[:data])
+                end
+                return {:type => :hash_array,:data=>result}
               when :list
                 default_fields=['id','name']
                 case resource

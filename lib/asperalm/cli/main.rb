@@ -22,7 +22,7 @@ module Asperalm
       singleton_class.send(:alias_method, :tool, :instance)
       def self.version;return @@TOOL_VERSION;end
       private
-      @@TOOL_VERSION='0.6.6'
+      @@TOOL_VERSION='0.6.7'
       # first level command for the main tool
       @@MAIN_PLUGIN_NAME_STR='config'
       # name of application, also foldername where config is stored
@@ -287,7 +287,7 @@ module Asperalm
         @options.parser.separator "OPTIONS: global"
         @options.set_option(:ui,OpenApplication.default_gui_mode)
         @options.set_option(:fields,FIELDS_DEFAULT)
-        @options.set_option(:transfer,:ascp)
+        @options.set_option(:transfer,:direct)
         @options.set_option(:insecure,:no)
         @options.set_option(:flat_hash,:yes)
         @options.set_option(:format,:table)
@@ -302,7 +302,7 @@ module Asperalm
         @options.add_opt_list(:log_level,Log.levels,"Log level")
         @options.add_opt_list(:logger,Log.logtypes,"log method")
         @options.add_opt_list(:format,self.class.display_formats,"output format")
-        @options.add_opt_list(:transfer,[:ascp,:connect,:node],"type of transfer")
+        @options.add_opt_list(:transfer,[:direct,:connect,:node],"type of transfer")
         @options.add_opt_simple(:config_file,"read parameters from file in YAML format, current=#{@options.get_option(:config_file,:optional)}")
         @options.add_opt_simple(:load_params,"-PVALUE","load the named configuration from current config file, use \"#{@@NO_DEFAULT}\" to avoid loading the default configuration")
         @options.add_opt_simple(:fasp_folder,"specify where to find FASP (main folder), current=#{@options.get_option(:fasp_folder,:optional)}")

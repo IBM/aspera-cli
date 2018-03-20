@@ -25,12 +25,21 @@ module Asperalm
 
     def self.current_os_type
       case RbConfig::CONFIG['host_os']
-      when /darwin|mac os/
-        return :mac
       when /mswin|msys|mingw|cygwin|bccwin|wince|emc/
         return :windows
+      when /darwin|mac os/
+        return :mac
       else  # unix family
         return :unix
+      end
+    end
+
+    def self.executable_extension
+      case current_os_type
+      when :windows
+        return '.exe'
+      else  # other
+        return ''
       end
     end
 

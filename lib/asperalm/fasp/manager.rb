@@ -16,9 +16,7 @@ require 'asperalm/fasp/error'
 require 'asperalm/fasp/parameters'
 require 'asperalm/fasp/installation'
 require 'asperalm/log'
-
-# for file lists
-#require 'tempfile'
+require 'asperalm/open_application'
 
 module Asperalm
   module Fasp
@@ -27,25 +25,6 @@ module Asperalm
     class Manager
       # use "instance" class method
       include Singleton
-      # transforms ABigWord into a_big_word
-      def self.snake_case(str)
-        str.
-        gsub(/([A-Z]+)([A-Z][a-z])/,'\1_\2').
-        gsub(/([a-z\d])([A-Z])/,'\1_\2').
-        gsub(/([a-z\d])(usec)$/,'\1_\2').
-        downcase
-      end
-
-      def initialize
-        @listeners=[]
-      end
-
-      # fields that shall be integer in JSON
-      IntegerFields=['Bytescont','FaspFileArgIndex','StartByte','Rate','MinRate','Port','Priority','RateCap','MinRateCap','TCPPort','CreatePolicy','TimePolicy','DatagramSize','XoptFlags','VLinkVersion','PeerVLinkVersion','DSPipelineDepth','PeerDSPipelineDepth','ReadBlockSize','WriteBlockSize','ClusterNumNodes','ClusterNodeId','Size','Written','Loss','FileBytes','PreTransferBytes','TransferBytes','PMTU','Elapsedusec','ArgScansAttempted','ArgScansCompleted','PathScansAttempted','FileScansCompleted','TransfersAttempted','TransfersPassed','Delay']
-      BooleanFields=['Encryption','Remote','RateLock','MinRateLock','PolicyLock','FilesEncrypt','FilesDecrypt','VLinkLocalEnabled','VLinkRemoteEnabled','MoveRange','Keepalive','TestLogin','UseProxy','Precalc','RTTAutocorrect']
-      # event format
-      Formats=[:text,:struct,:enhanced]
-
       # listener receives events
       def add_listener(listener,format=:struct)
         raise "unsupported format: #{format}" if !Formats.include?(format)
@@ -54,17 +33,26 @@ module Asperalm
         self
       end
 
-      # translates legacy event into enhanced (JSON) event
-      def enhanced_event_format(event)
-        return event.keys.inject({}) do |h,e|
-          new_name=Manager.snake_case(e)
-          value=event[e]
-          value=value.to_i if IntegerFields.include?(e)
-          value=value.eql?('Yes') ? true : false if BooleanFields.include?(e)
-          h[new_name]=value
-          h
+      # start FASP transfer based on transfer spec (hash table)
+      # note that it returns upon completion only (blocking)
+      # if the user wants to run in background, just spawn a thread
+      # listener methods are called in context of calling thread
+      def start_transfer(transfer_spec)
+        Log.log.debug("ts=#{transfer_spec}")
+        # suse bypass keys when authentication is token
+        if transfer_spec['authentication'].eql?("token")
+          # add Aspera private keys for web access, token based authorization
+          transfer_spec['EX_ssh_key_paths'] = [ Installation.instance.path(:ssh_bypass_key_dsa), Installation.instance.path(:ssh_bypass_key_rsa) ]
+          transfer_spec['drowssap_etomer'.reverse] = "%08x-%04x-%04x-%04x-%04x%08x" % "t1(\xBF;\xF3E\xB5\xAB\x14F\x02\xC6\x7F)P".unpack("NnnnnN")
         end
-      end
+        # add fallback cert and key
+        if ['1','force'].include?(transfer_spec['http_fallback'])
+          transfer_spec['EX_fallback_key']=Installation.instance.path(:fallback_key)
+          transfer_spec['EX_fallback_cert']=Installation.instance.path(:fallback_cert)
+        end
+        start_transfer_with_args_env(Parameters.new(transfer_spec).compute_args)
+        return nil
+      end # start_transfer
 
       def notify_listeners(current_event_text,current_event_data)
         enhanced_event=nil
@@ -83,14 +71,49 @@ module Asperalm
         end
       end
 
+      private
+
+      # transforms ABigWord into a_big_word
+      def self.snake_case(str)
+        str.
+        gsub(/([A-Z]+)([A-Z][a-z])/,'\1_\2').
+        gsub(/([a-z\d])([A-Z])/,'\1_\2').
+        gsub(/([a-z\d])(usec)$/,'\1_\2').
+        downcase
+      end
+
+      def initialize
+        @listeners=[]
+        @sessions={}
+      end
+
+      # fields that shall be integer in JSON
+      IntegerFields=['Bytescont','FaspFileArgIndex','StartByte','Rate','MinRate','Port','Priority','RateCap','MinRateCap','TCPPort','CreatePolicy','TimePolicy','DatagramSize','XoptFlags','VLinkVersion','PeerVLinkVersion','DSPipelineDepth','PeerDSPipelineDepth','ReadBlockSize','WriteBlockSize','ClusterNumNodes','ClusterNodeId','Size','Written','Loss','FileBytes','PreTransferBytes','TransferBytes','PMTU','Elapsedusec','ArgScansAttempted','ArgScansCompleted','PathScansAttempted','FileScansCompleted','TransfersAttempted','TransfersPassed','Delay']
+      BooleanFields=['Encryption','Remote','RateLock','MinRateLock','PolicyLock','FilesEncrypt','FilesDecrypt','VLinkLocalEnabled','VLinkRemoteEnabled','MoveRange','Keepalive','TestLogin','UseProxy','Precalc','RTTAutocorrect']
+      # event format
+      Formats=[:text,:struct,:enhanced]
+
+      # translates legacy event into enhanced (JSON) event
+      def enhanced_event_format(event)
+        return event.keys.inject({}) do |h,e|
+          new_name=Manager.snake_case(e)
+          value=event[e]
+          value=value.to_i if IntegerFields.include?(e)
+          value=value.eql?('Yes') ? true : false if BooleanFields.include?(e)
+          h[new_name]=value
+          h
+        end
+      end
+
       # This is the low level method to start FASP
       # currently, relies on command line arguments
       # start ascp with management port.
       # raises FaspError on error
       # @param a hash containing :args and :env
       def start_transfer_with_args_env(ascp_params)
-        ascp_path=Fasp::Installation.instance.path(:ascp)
-        raise Fasp::Error.new("no ascp path defined") if ascp_path.nil?
+        Log.log.debug("ascp_params=#{ascp_params.inspect}")
+        ascp_path=File.join(Fasp::Installation.instance.path(:bin_folder),ascp_params[:ascp_bin])+OpenApplication.executable_extension
+        raise Fasp::Error.new("no such file: #{ascp_path}") unless File.exist?(ascp_path)
         begin
           ascp_pid=nil
           ascp_arguments=ascp_params[:args].clone
@@ -177,26 +200,6 @@ module Asperalm
         end
       end
 
-      # start FASP transfer based on transfer spec (hash table)
-      # note that it returns upon completion only (blocking)
-      # if the user wants to run in background, just spawn a thread
-      # listener methods are called in context of calling thread
-      def start_transfer(transfer_spec)
-        Log.log.debug("ts=#{transfer_spec}")
-        # shall we use bypass keys ?
-        if transfer_spec['authentication'].eql?("token")
-          # add Aspera private keys for web access, token based authorization
-          transfer_spec['EX_ssh_key_paths'] = [ Installation.instance.path(:ssh_bypass_key_dsa), Installation.instance.path(:ssh_bypass_key_rsa) ]
-          transfer_spec['drowssap_etomer'.reverse] = "%08x-%04x-%04x-%04x-%04x%08x" % "t1(\xBF;\xF3E\xB5\xAB\x14F\x02\xC6\x7F)P".unpack("NnnnnN")
-        end
-        # add fallback cert and key
-        if ['1','force'].include?(transfer_spec['http_fallback'])
-          transfer_spec['EX_fallback_key']=Installation.instance.path(:fallback_key)
-          transfer_spec['EX_fallback_cert']=Installation.instance.path(:fallback_cert)
-        end
-        start_transfer_with_args_env(Parameters.new(transfer_spec).compute_args)
-        return nil
-      end # start_transfer
     end # Manager
   end # Fasp
 end # AsperaLm

@@ -34,7 +34,7 @@ doc: README.pdf
 
 README.pdf: README.md
 	pandoc --resource-path=. --toc -o README.html README.md
-	wkhtmltopdf README.html README.pdf
+	wkhtmltopdf toc README.html README.pdf
 
 README.md: README.erb.md aslmcli_commands.txt aslmcli_usage.txt asession_usage.txt
 	COMMANDS=aslmcli_commands.txt USAGE=aslmcli_usage.txt ASESSION=asession_usage.txt ASCLI=$(EXETEST) erb README.erb.md > README.md

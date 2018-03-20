@@ -29,7 +29,7 @@ module Asperalm
 
       # a user can set an alternate location, example:
       #      { :expected=>'Enterprise Server',
-      #        :ascp=>'ascp',
+      #        :exe_ext=>'',
       #        :app_root=>'/Library/Aspera',
       #        :run_root=>File.join(Dir.home,'Library','Application Support','Aspera','Enterprise Server'),
       #        :log_root=>File.join(Dir.home,'Library','Logs','Aspera'),
@@ -38,7 +38,7 @@ module Asperalm
       #        :dsa=>'aspera_tokenauth_id_dsa'}
       def set_location(p)
         @i_p={}
-        @i_p[:ascp] = { :path =>File.join(p[:app_root],p[:sub_bin],p[:ascp]), :type => :file, :required => true}
+        @i_p[:bin_folder] = { :path =>File.join(p[:app_root],p[:sub_bin]), :type => :folder, :required => true}
         @i_p[:ssh_bypass_key_dsa] = { :path =>File.join(p[:app_root],p[:sub_keys],p[:dsa]), :type => :file, :required => true}
         @i_p[:ssh_bypass_key_rsa] = { :path =>File.join(p[:app_root],p[:sub_keys],'aspera_tokenauth_id_rsa'), :type => :file, :required => true}
         @i_p[:fallback_cert] = { :path =>File.join(p[:app_root],p[:sub_keys],'aspera_web_cert.pem'), :type => :file, :required => false}
@@ -93,7 +93,7 @@ module Asperalm
         when :mac
           common_places.push({
             :expected=>'Connect Client',
-            :ascp=>'ascp',
+            :exe_ext=>'',
             :app_root=>File.join(Dir.home,'Applications','Aspera Connect.app'),
             :run_root=>File.join(Dir.home,'Library','Application Support','Aspera','Aspera Connect'),
             :log_root=>File.join(Dir.home,'Library','Logs','Aspera'),
@@ -102,7 +102,7 @@ module Asperalm
             :dsa=>'asperaweb_id_dsa.openssh'})
           common_places.push({
             :expected=>'Enterprise Server',
-            :ascp=>'ascp',
+            :exe_ext=>'',
             :app_root=>'/Library/Aspera',
             :run_root=>File.join(Dir.home,'Library','Application Support','Aspera','Enterprise Server'),
             :log_root=>File.join(Dir.home,'Library','Logs','Aspera'),
@@ -111,7 +111,7 @@ module Asperalm
             :dsa=>'aspera_tokenauth_id_dsa'})
           common_places.push({
             :expected=>'Aspera CLI',
-            :ascp=>'ascp',
+            :exe_ext=>'',
             :app_root=>File.join(Dir.home,'Applications','Aspera CLI'),
             :run_root=>File.join(Dir.home,'Library','Application Support','Aspera','Aspera Connect'),
             :log_root=>File.join(Dir.home,'Library','Logs','Aspera'),
@@ -121,7 +121,7 @@ module Asperalm
         when :windows
           common_places.push({
             :expected=>'Connect Client',
-            :ascp=>'ascp.exe',
+            :exe_ext=>'.exe',
             :app_root=>File.join(ENV['LOCALAPPDATA'],'Programs','Aspera','Aspera Connect'),
             :run_root=>File.join(ENV['LOCALAPPDATA'],'Aspera','Aspera Connect'),
             :sub_bin=>'bin',
@@ -130,7 +130,7 @@ module Asperalm
         else  # unix family
           common_places.push({
             :expected=>'Connect Client',
-            :ascp=>'ascp',
+            :exe_ext=>'',
             :app_root=>File.join(Dir.home,'.aspera','connect'),
             :run_root=>File.join(Dir.home,'.aspera','connect'),
             :sub_bin=>'bin',
@@ -138,7 +138,7 @@ module Asperalm
             :dsa=>'asperaweb_id_dsa.openssh'})
           common_places.push({
             :expected=>'Enterprise Server',
-            :ascp=>'ascp',
+            :exe_ext=>'',
             :app_root=>'/opt/aspera',
             :run_root=>'/opt/aspera',
             :sub_bin=>'bin',
