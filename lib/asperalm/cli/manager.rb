@@ -151,7 +151,7 @@ module Asperalm
         Log.log.debug("read_env_vars")
         ENV.each do |k,v|
           if k.start_with?('ASLMCLI_')
-            set_option(k.gsub(/^ASLMCLI_/,'').downcase.to_sym,v)
+            set_option(k.gsub(/^ASLMCLI_/,'').downcase.to_sym,v,"env var")
           end
         end
       end
@@ -241,14 +241,14 @@ module Asperalm
         Log.log.debug("set attr obj #{option_symbol} (#{object},#{attr_symb})")
         declare_option(option_symbol,:accessor)
         @declared_options[option_symbol][:accessor]=AttrAccessor.new(object,attr_symb)
-        set_option(option_symbol,default_value) if !default_value.nil?
+        set_option(option_symbol,default_value,"default obj attr") if !default_value.nil?
       end
 
       # set an option value by name, either store value or call handler
-      def set_option(option_symbol,value)
+      def set_option(option_symbol,value,where="default")
         if ! @declared_options.has_key?(option_symbol)
-          Log.log.debug("ignoring set option: #{option_symbol}")
-          return
+          Log.log.debug("set unknown option: #{option_symbol}")
+          declare_option(option_symbol)
         end
         value=self.class.get_extended_value(option_symbol,value)
         # constrained parameters as string are revert to symbol
@@ -271,23 +271,15 @@ module Asperalm
       # ask interactively if requested/required
       def get_option(option_symbol,is_type=:optional)
         result=nil
-        source=nil
         if @declared_options.has_key?(option_symbol)
-          source=@declared_options[option_symbol][:type]
           case @declared_options[option_symbol][:type]
           when :accessor
             result=@declared_options[option_symbol][:accessor].value
           else
-            # Note1: convert string option to symbol
-            #          if @options_symbol_list.has_key?(option_symbol) and # constrained by specific values
-            #          @declared_options[option_symbol].is_a?(String) # its a string (from conf file)
-            #            @declared_options[option_symbol]=self.class.get_from_list(@declared_options[option_symbol],option_symbol.to_s+" in conf file",@options_symbol_list[option_symbol])
-            #          end
-            source="value"
             result=@declared_options[option_symbol][:value]
           end
+          Log.log.debug("get #{option_symbol} (#{@declared_options[option_symbol][:type]}) : #{result}")
         end
-        Log.log.debug("get #{option_symbol} (#{source}) : #{result}")
         if result.nil?
           if !@use_interactive.eql?(:yes)
             if is_type.eql?(:mandatory)
@@ -301,7 +293,7 @@ module Asperalm
                 expected=@declared_options[option_symbol][:values]
               end
               result=get_interactive(:option,option_symbol.to_s,expected)
-              set_option(option_symbol,result)
+              set_option(option_symbol,result,"interactive")
             end
           end
         end
@@ -314,7 +306,7 @@ module Asperalm
         raise "internal error: setting default with no hash: #{preset_hash.class}" if !preset_hash.is_a?(Hash)
         # 1- in conf file, key is string, in config, key is symbol
         # 2- value may be string, but symbol expected for value lists, but options may not be already declared, see Note1
-        preset_hash.each{|k,v|set_option(k.to_sym,v)}
+        preset_hash.each{|k,v|set_option(k.to_sym,v,"conf file")}
       end
 
       # generate command line option from option symbol
@@ -340,7 +332,7 @@ module Asperalm
         on_args.push(values)
         on_args.push("#{help}: #{help_values}")
         Log.log.debug("on_args=#{on_args}")
-        @parser.on(*on_args){|v|set_option(option_symbol,self.class.get_from_list(v.to_s,help,values))}
+        @parser.on(*on_args){|v|set_option(option_symbol,self.class.get_from_list(v.to_s,help,values),"cmdline")}
       end
 
       # define an option with open values
@@ -349,7 +341,7 @@ module Asperalm
         Log.log.debug("add_opt_simple #{option_symbol}")
         on_args.unshift(symbol_to_option(option_symbol,"VALUE"))
         Log.log.debug("on_args=#{on_args}")
-        @parser.on(*on_args) { |v| set_option(option_symbol,v) }
+        @parser.on(*on_args) { |v| set_option(option_symbol,v,"cmdline") }
       end
 
       # define an option with date format
@@ -360,9 +352,9 @@ module Asperalm
         Log.log.debug("on_args=#{on_args}")
         @parser.on(*on_args) do |v|
           case v
-          when 'now'; set_option(option_symbol,Manager.time_to_string(Time.now))
-          when /^-([0-9]+)h/; set_option(option_symbol,Manager.time_to_string(Time.now-$1.to_i*3600))
-          else set_option(option_symbol,v)
+          when 'now'; set_option(option_symbol,Manager.time_to_string(Time.now),"cmdline")
+          when /^-([0-9]+)h/; set_option(option_symbol,Manager.time_to_string(Time.now-$1.to_i*3600),"cmdline")
+          else set_option(option_symbol,v,"cmdline")
           end
         end
       end
