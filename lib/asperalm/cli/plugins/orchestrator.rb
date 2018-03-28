@@ -12,11 +12,11 @@ module Asperalm
 
         def declare_options
           super_declare_options
-          Main.tool.options.set_option(:params,{})
-          Main.tool.options.set_option(:synchronous,:no)
           Main.tool.options.add_opt_simple(:params,"parameters hash table, use @json:{\"param\":\"value\"}")
           Main.tool.options.add_opt_simple(:result,"specify result value as: 'work step:parameter'")
           Main.tool.options.add_opt_list(:synchronous,SYNCHRONOUS_VALUES,"work step:parameter expected as result")
+          Main.tool.options.set_option(:params,{})
+          Main.tool.options.set_option(:synchronous,:no)
         end
 
         def action_list; [:info, :workflow, :plugins, :processes];end

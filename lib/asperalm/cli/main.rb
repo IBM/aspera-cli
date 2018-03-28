@@ -22,7 +22,7 @@ module Asperalm
       singleton_class.send(:alias_method, :tool, :instance)
       def self.version;return @@TOOL_VERSION;end
       private
-      @@TOOL_VERSION='0.6.7'
+      @@TOOL_VERSION='0.6.8'
       # first level command for the main tool
       @@MAIN_PLUGIN_NAME_STR='config'
       # name of application, also foldername where config is stored
@@ -149,7 +149,7 @@ module Asperalm
       def action_list; plugin_sym_list; end
 
       # find plugins in defined paths
-      def add_plugins_fom_lookup_folders
+      def add_plugins_from_lookup_folders
         @plugin_lookup_folders.each do |folder|
           if File.directory?(folder)
             #TODO: add gem root to load path ? and require short folder ?
@@ -244,22 +244,12 @@ module Asperalm
         @options.parser.separator ""
         @options.parser.separator "OPTIONS"
         @options.parser.separator "\tOptions begin with a '-' (minus), and value is provided on command line.\n"
-        @options.parser.separator "\tSpecial values are supported beginning with special prefix, like: #{Manager.value_modifier.map {|m| "@#{m}:"}.join(' ')}.\n"
+        @options.parser.separator "\tSpecial values are supported beginning with special prefix, like: #{Manager.value_reader.map {|m| "@#{m}:"}.join(' ')}.\n"
         @options.parser.separator "\tDates format is 'DD-MM-YY HH:MM:SS', or 'now' or '-<num>h'"
         @options.parser.separator ""
         @options.parser.separator "ARGS"
         @options.parser.separator "\tSome commands require mandatory arguments, e.g. a path.\n"
         @options.parser.separator ""
-        # handler must be set before setting defaults
-        @options.set_obj_attr(:log_level,self,:option_log_level)
-        @options.set_obj_attr(:insecure,self,:option_insecure)
-        @options.set_obj_attr(:flat_hash,self,:option_flat_hash)
-        @options.set_obj_attr(:ts,self,:option_transfer_spec)
-        @options.set_obj_attr(:to_folder,self,:option_to_folder)
-        @options.set_obj_attr(:logger,self,:option_logtype)
-        @options.set_obj_attr(:ui,self,:option_ui)
-        #@options.set_obj_attr(:fasp_folder,Fasp::Installation.instance,:paths)
-        @options.set_obj_attr(:use_product,Fasp::Installation.instance,:activated)
       end
 
       # plugin_name_sym is symbol
@@ -269,14 +259,14 @@ module Asperalm
         Log.log.debug("loaded config -> #{@loaded_configs}")
         # TODO: check that ancestor is Plugin?
         command_plugin=Object::const_get(@@PLUGINS_MODULE+'::'+plugin_name_sym.to_s.capitalize).new
-        # load default params only if no param already loaded
-        if @options.get_option(:load_params,:optional).nil?
-          load_plugin_default_parameters(plugin_name_sym)
-        end
         @options.parser.separator "COMMAND: #{plugin_name_sym}"
         @options.parser.separator "SUBCOMMANDS: #{command_plugin.action_list.map{ |p| p.to_s}.join(', ')}"
         @options.parser.separator "OPTIONS:"
         command_plugin.declare_options
+        # load default params only if no param already loaded
+        if @options.get_option(:load_params,:optional).nil?
+          load_plugin_default_parameters(plugin_name_sym)
+        end
         return command_plugin
       end
 
@@ -285,15 +275,6 @@ module Asperalm
 
       def declare_options
         @options.parser.separator "OPTIONS: global"
-        @options.set_option(:ui,OpenApplication.default_gui_mode)
-        @options.set_option(:fields,FIELDS_DEFAULT)
-        @options.set_option(:transfer,:direct)
-        @options.set_option(:insecure,:no)
-        @options.set_option(:flat_hash,:yes)
-        @options.set_option(:format,:table)
-        #@options.set_option(:logger,:stdout)
-        @options.set_option(:config_file,default_config_file)
-        #options.set_option(:to_folder,'.')
         @options.parser.on("-h", "--help", "Show this message.") { @option_help=true }
         @options.parser.on("--show-config", "Display parameters used for the provided action.") { @option_show_config=true }
         @options.add_opt_list(:ui,OpenApplication.user_interfaces,"method to start browser",'-gTYPE')
@@ -317,6 +298,27 @@ module Asperalm
         @options.add_opt_simple(:to_folder,"destination folder for downloaded files, current=#{@options.get_option(:to_folder,:optional)}")
         @options.add_opt_simple(:lock_port,"prevent dual execution of a command, e.g. in cron")
         @options.add_opt_simple(:use_product,"which local product to use for ascp")
+
+        # handler must be set before setting defaults
+        @options.set_obj_attr(:log_level,self,:option_log_level)
+        @options.set_obj_attr(:insecure,self,:option_insecure)
+        @options.set_obj_attr(:flat_hash,self,:option_flat_hash)
+        @options.set_obj_attr(:ts,self,:option_transfer_spec)
+        @options.set_obj_attr(:to_folder,self,:option_to_folder)
+        @options.set_obj_attr(:logger,self,:option_logtype)
+        @options.set_obj_attr(:ui,self,:option_ui)
+        #@options.set_obj_attr(:fasp_folder,Fasp::Installation.instance,:paths)
+        @options.set_obj_attr(:use_product,Fasp::Installation.instance,:activated)
+
+        @options.set_option(:ui,OpenApplication.default_gui_mode)
+        @options.set_option(:fields,FIELDS_DEFAULT)
+        @options.set_option(:transfer,:direct)
+        @options.set_option(:insecure,:no)
+        @options.set_option(:flat_hash,:yes)
+        @options.set_option(:format,:table)
+        #@options.set_option(:logger,:stdout)
+        @options.set_option(:config_file,default_config_file)
+        #options.set_option(:to_folder,'.')
       end
 
       def self.flatten_all_config(t)
@@ -518,7 +520,7 @@ module Asperalm
         case action
         when :id
           config_name=@options.get_next_argument('config name')
-          action=@options.get_next_argument('action',[:set,:delete,:initialize,:show,:update])
+          action=@options.get_next_argument('action',[:set,:delete,:initialize,:show,:update,:ask])
           case action
           when :show
             raise "no such config: #{config_name}" unless @loaded_configs.has_key?(config_name)
@@ -541,7 +543,7 @@ module Asperalm
             write_config_file
             return Main.result_status("updated: #{config_name}->#{param_name} to #{param_value}")
           when :initialize
-            config_value=@options.get_next_argument('config value')
+            config_value=@options.get_next_argument('extended value (Hash)')
             if @loaded_configs.has_key?(config_name)
               Log.log.warn("configuration already exists: #{config_name}, overwriting")
             end
@@ -554,6 +556,15 @@ module Asperalm
             Log.log.debug("opts=#{theopts}")
             @loaded_configs[config_name]={} if !@loaded_configs.has_key?(config_name)
             @loaded_configs[config_name].merge!(theopts)
+            write_config_file
+            return Main.result_status("updated: #{config_name}")
+          when :ask
+            @options.use_interactive=:yes
+            @loaded_configs[config_name]||={}
+            @options.get_next_argument('option names',:multiple).each do |optionname|
+              option_value=@options.get_interactive(:option,optionname)
+              @loaded_configs[config_name][optionname]=option_value
+            end
             write_config_file
             return Main.result_status("updated: #{config_name}")
           end
@@ -571,7 +582,10 @@ module Asperalm
           File.write(key_filepath+".pub",priv_key.public_key.to_s)
           return Main.result_status('generated key: '+key_filepath)
         when :echo # display the content of a value given on command line
-          return {:type=>:other_struct, :data=>@options.get_next_argument("value")}
+          result={:type=>:other_struct, :data=>@options.get_next_argument("value")}
+          # special for csv
+          result[:type]=:hash_array if result[:data].is_a?(Array) and result[:data].first.is_a?(Hash)
+          return result
         when :flush_tokens
           deleted_files=Oauth.flush_tokens(config_folder)
           return {:type=>:value_list, :name=>'file',:data=>deleted_files}
@@ -663,7 +677,7 @@ module Asperalm
         begin
           early_debug_setup(argv)
           # find plugins, shall be after parse! ?
-          add_plugins_fom_lookup_folders
+          add_plugins_from_lookup_folders
           # init options: opt parser separates options (start with '-') from arguments
           @options.set_argv(argv)
           # declare global options and set defaults

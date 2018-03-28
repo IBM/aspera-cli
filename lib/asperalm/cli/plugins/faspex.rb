@@ -14,13 +14,13 @@ module Asperalm
         alias super_declare_options declare_options
         def declare_options
           super_declare_options
-          Main.tool.options.set_option(:box,:inbox)
           Main.tool.options.add_opt_simple(:recipient,"package recipient")
           Main.tool.options.add_opt_simple(:title,"package title")
           Main.tool.options.add_opt_simple(:note,"package note")
           Main.tool.options.add_opt_simple(:metadata,"package metadata hash value (use @json:)")
           Main.tool.options.add_opt_simple(:source_name,"create package from remote source (by name)")
           Main.tool.options.add_opt_list(:box,[:inbox,:sent,:archive],"package box")
+          Main.tool.options.set_option(:box,:inbox)
         end
 
         # extract elements from anonymous faspex link
@@ -93,7 +93,7 @@ module Asperalm
             api_faspex=get_faspex_authenticated_api
             case command_pkg
             when :list
-              all_inbox_xml=api_faspex.call({:operation=>'GET',:subpath=>"#{Main.tool.options.get_option(:box,:optional).to_s}.atom",:headers=>{'Accept'=>'application/xml'}})[:http].body
+              all_inbox_xml=api_faspex.call({:operation=>'GET',:subpath=>"#{Main.tool.options.get_option(:box,:mandatory).to_s}.atom",:headers=>{'Accept'=>'application/xml'}})[:http].body
               all_inbox_data=XmlSimple.xml_in(all_inbox_xml, {"ForceArray" => true})
               if all_inbox_data.has_key?('entry')
                 return {:data=>all_inbox_data['entry'],:type=>:hash_array,:fields=>['title','items',PACKAGE_MATCH_FIELD], :textify => lambda { |table_data| Faspex.textify_package_list(table_data)} }

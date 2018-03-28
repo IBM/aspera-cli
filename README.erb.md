@@ -8,12 +8,12 @@ This gem provides a ruby API to Aspera transfers and a command line interface to
 
 Disclaimers:
 
+* Aspera, FASP are owned by IBM 
 * This GEM is not endorsed/supported by IBM/Aspera
 * Use at your risk (not in production environments)
-* This gem is provided as-is, and is not intended to be a complete CLI, or 
-industry-grade product. This is a sample.
+* This gem is provided as-is, and is not intended to be 
+a complete CLI, or industry-grade product.
 * IBM provides an officially supported Aspera CLI: [http://downloads.asperasoft.com/en/downloads/62](http://downloads.asperasoft.com/en/downloads/62) .
-* Aspera, FASP are owned by IBM 
 
 That being said, the aslmcli tool is very powerful and gets things done, it&apos;s also a great tool to learn Aspera APIs.
 
@@ -21,7 +21,7 @@ This manual addresses three parts:
 
 * `aslmcli` tool
 * `asession` tool
-* `Asperalm` ruby library
+* `Asperalm` ruby module
 
 In examples, command line operations (starting with `$`) are shown using a standard shell: `bash`.
 
@@ -29,29 +29,38 @@ In examples, command line operations (starting with `$`) are shown using a stand
 
 To quick start using the `aslmcli` tool, follow the section: [Installation](#installation) (Ruby, Gem, FASP).
 
-Once the gem is installed, the `aslmcli` tool can be used right away:
+Once the gem is installed, the `aslmcli` shall be accessible:
 
 ```bash
 $ aslmcli --version
 x.y.z
 ```
 
-Then, follow the section relative to the product you want to access (Files, Faspex, ...).
+Then, follow the section relative to the product you want to inbteract with: Files, Faspex, ...
 
-Detailed generic information on configuration can be found in section: [Tool: `aslmcli`](#aslmcli).
+Detailed generic information on configuration can be found in section: [aslmcli](#aslmcli).
 
 # <a name="installation"></a>Installation
 
-## Pre-requisite : Ruby
+In order to use the tool or the gem, it is necessary to install those components:
 
-As a ruby gem and ruby based tool, a ruby interpreter is required. It is also required to have privilege to install gems.
+* ruby
+* asperalm
+* fasp
 
-Requires Ruby 2.4+, should work with 2.0+.
+The following sections provide information on the installation.
+
+## Ruby
+
+A ruby interpreter is required to run the tool or to use the gem. It is also required to have privilege to install gems.
+
+Ruby 2.4+ is prefered, but it should also work with 2.0+.
 
 Refer to the following sections for specific operating systems.
 
-### MacOS X
-Ruby comes pre-installed on MacOSx. Nevertheless, installing new gems require admin privilege (sudo) and the version is not up to date.
+### macOS
+
+Ruby comes pre-installed on macOS, but the version is not the latest. Also, installion of new gems on pre-installed ruby requires admin privilege (sudo).
 
 It is better to install "homebrew", from here: [https://brew.sh/](https://brew.sh/), and then install Ruby:
 
@@ -60,41 +69,44 @@ $ brew install ruby
 ```
 
 ### Windows
-On windows you can get it from here: [https://rubyinstaller.org/](https://rubyinstaller.org/) .
+
+On windows you can get it from here: [https://rubyinstaller.org/](https://rubyinstaller.org/).
 
 ### Linux
+
 ```bash
 $ yum install ruby rubygems
 ```
+
 Note that Ruby 2+ is required, if you have an older Linux (e.g. CentOS 6), you should install "rvm" [https://rvm.io/](https://rvm.io/) and install and use a newer Ruby.
 
-## Gem Installation
+## `asperalm` gem
+
 Once you have ruby and rights to install gems: Install the gem and its dependencies:
 
 ```bash
 $ gem install asperalm
 ```
 
-## FASP Installation
+## FASP
 
-For any FASP based file transfer, the FASP protocol and a valid license 
-is required (e.g. if the server side is "connect" enabled, one can use 
-the connect client license).
+For FASP based file transfer, the FASP protocol and a valid license 
+is required. If the server side is "connect" enabled, one can use 
+the connect client license.
 
 `aslmcli` will detect most of Aspera transfer products in standard locations and use the first one found.
 
 Aspera Connect Client can be installed
 by visiting the page: [http://downloads.asperasoft.com/connect2/](http://downloads.asperasoft.com/connect2/)
 
-It is also possible to use the `ascp` binary from Aspera CLI, or any other transfer product.
+It is also possible to use the `ascp` binary from Aspera CLI, or any other transfer product (High Speed Transfer Server, etc...).
 
 The connect client can be downloaded on command line using `aslmcli`, 
 see section: [Client](client).
 
-
 # <a name="aslmcli"></a>Tool: `aslmcli`
 
-The `asperalm` Gem provides a Ruby language based command line interface (CLI) which interacts with (mostly APIs using REST calls) Aspera Products:
+The `asperalm` Gem provides a command line interface (CLI) which interacts with Aspera Products (mostly APIs using REST calls):
 
 * Server
 * Node
@@ -106,19 +118,19 @@ The `asperalm` Gem provides a Ruby language based command line interface (CLI) w
 * ATS
 * and more...
 
-The CLI tool that provides the following features:
+`aslmcli` provides the following features:
 
 * Supports most Aspera server products (on-premise and SaaS)
 * Command options can be provided on command line, in configuration file, in env var, in files (products URL, credentials or any option)
 * Commands, Option values and Parameters can be provided in short format (must be unique)
-* FASP transfer agent can be: FaspManager (local ascp), or Connect Client, or a transfer node
+* FASP [transfer agent](#agents) can be: FaspManager (local ascp), or Connect Client, or a transfer node
 * Transfer parameters can be altered by modification of transferspec, this includes requiring multi-session transfer on nodes
-* Allows transfers from products to products, essentially at node level
+* Allows transfers from products to products, essentially at node level (using the node transfer agent)
 * Supports FaspStream creation (using Node API)
+* Supports Watchfolder creation (using Node API)
 * Additional command plugins can be written by the user
-* Supports download of faspex "external" links
+* Supports download of faspex and Files "external" links
 * Supports "legacy" ssh based FASP transfers and remote commands (ascmd)
-* REST and OAuth classes for use with Aspera products APIs
 
 Basic usage is displayed by executing:
 
@@ -128,107 +140,136 @@ $ aslmcli -h
 
 Refer to sections: [Usage](#usage) and [Sample Commands](commands).
 
+Not all `aslmcli` features are fully documented here, the user may explore commands on the command line.
+
 ## Commands, Arguments and Options
 
-Commands, Options and Arguments are normally provided on command line, i.e. `aslmcli command --option-name=VAL1 VAL2` takes "VAL1" as the value for
+Commands, Options and Arguments are typically provided on command line, i.e. `aslmcli command --option-name=VAL1 VAL2` takes "VAL1" as the value for
 option `option_name`, and "VAL2" as the value for first argument of command: `command`.
 
-Options are command line arguments starting with a `-`, other arguments are considered as Commands and Arguments. (Note that some options are mandatory). Most options take a value, but a limited number of them are without values.
+Options are command line arguments starting with a `-` (Note that some options are mandatory). Other command line arguments are considered as Commands and Arguments. Most options take a value, but a limited number of them are without values (e.g. `-r`). Options can be placed anywhere on comand line.
 
-The special option "--" stops option processing, so following values are taken as arguments, even the ones starting with a `-`.
+The special option "--" stops option processing, subsequent values are taken as arguments, including the ones starting with a `-`.
 
-The value of options and arguments use the extended syntax, refer to: [Extended Value](#extended).
+The value of options and arguments can be either a plain text or be provided using the [Extended Value Syntax](#extended).
+
+When the value of a command, option or argument is constrained by a fixed list of values, it is possible to use the first letters of the value only, provided that it uniquely identifies a value. For example `aslmcli conf ov` is the same as `aslmcli config overview`.
+
+Environment variable starting with prefix: ASLMCLI_ are taken as option values, 
+i.e. `ASLMCLI_OPTION_NAME` is for `--option-name`.
+
+TODO: Precedence: conf file, command line, env var
+
+Some options have default values (hardcoded). All options can be defined in a [Configuration file](#configfile).
+
+Options values can be displayed for a given command by providing the `--show-config` option: `aslmcli node --show-config`
+
 
 ## Interactive Input
 
 Some options and parameters are mandatory and other optional. By default, the tool will ask for missing mandatory options or parameters for interactive execution.
 
-The behaviuor can be controlled with:
+The behaviour can be controlled with:
 
 * --interactive=&lt;yes|no&gt; (default=yes if STDIN is a terminal, else no)
-   * yes : missing parameters/options are asked to the user
-   * no : missing parameters/options raise an error message
+   * yes : missing mandatory parameters/options are asked to the user
+   * no : missing mandatory parameters/options raise an error message
 * --ask-options=&lt;yes|no&gt; (default=no)
    * optional parameters/options are asked to user
 
-## <a name="extended"></a>Extended Value
+## <a name="extended"></a>Extended Value Syntax
 
-The value of options and arguments can optionally use an extended syntax using the following special prefixes:
+Usually, values of options and arguments are specified by a simple string. But sometime it is convenient to read a value from a file, or decode it, or have a value more complex than a string (e.g. Hash table).
 
-* @val:VALUE , prevents further special prefix processing, e.g. `--username=@val:laurent`, here the same as `--username=laurent`.
-* @file:PATH , read value from a file (prefix "~/" is replaced with $HOME), e.g. --key=@file:$HOME/.ssh/mykey
+The value of options and arguments can optionally be retrieved using one of the following "readers":
+
+* @val:VALUE , prevent further special prefix processing, e.g. `--username=@val:laurent` sets the option `username` to value `laurent`.
+* @file:PATH , read value from a file (prefix "~/" is replaced with the users home folder), e.g. --key=@file:~/.ssh/mykey
 * @env:ENVVAR , read from a named env var, e.g.--password=@env:MYPASSVAR
 
-In addition it is possible to decode some values by prefixing :
+In addition it is possible to decode a value, using one or multiple decoders :
 
-* @base64: to decode base64 encoded string
-* @json: to decode JSON values
-* @zlib: to uncompress data
-* @ruby: to execute ruby code, for instance read values from files.
+* @base64: decode a base64 encoded string
+* @json: decode JSON values (convenient to provide complex structures)
+* @zlib: uncompress data
+* @ruby: execute ruby code
+* @csvt: decode a titled CSV value
+
+To display the result of an extended value, use the `config echo` command.
 
 Example: read the content of the specified file, then, base64 decode, then unzip:
 
 ```bash
-@zlib:@base64:@file:myfile.dat
+$ aslmcli config echo @zlib:@base64:@file:myfile.dat
 ```
 
-Example: create a value as a hash, with one key and the value is read from a file.
+Example: create a value as a hash, with one key and the value is read from a file:
 
 ```bash
-@ruby:'{"token_verification_key"=>File.read("pubkey.txt")}' 
+$ aslmcli config echo @ruby:'{"token_verification_key"=>File.read("pubkey.txt")}' 
 ```
 
-Environment variable starting with prefix: ASLMCLI_ are taken as option values, 
-i.e. `ASLMCLI_OPTION_NAME` is for `--option-name`.
+Example: read a csv file and create a list of hash for bulk provisioning:
 
-Precedence: (TODO) : conf file, command line, env var
+```bash
+$ cat test.csv 
+name,email
+lolo,laurent@example.com
+toto,titi@tutu.tata
+$ aslmcli config echo @csvt:@file:test.csv
+:......:.....................:
+: name :        email        :
+:......:.....................:
+: lolo : laurent@example.com :
+: toto : titi@tutu.tata      :
+:......:.....................:
+```
 
-Some options have default values (defined in the tool). All options can be defined in a 
-configuration file (see [Configuration file](#configfile)). 
-Options values can be displays for a given command by providing the `--show-config` option.
+## <a name="native"></a>Structured Value
 
-## <a name="native"></a>Native Value
+Some options and parameters expect a _Structured Value_, i.e. a value more complex than a simple string. This is usually a Hash table or an Array, which could also contain sub structures.
 
-A native value is a value whose type is differemt from "String". For instance, a hash table.
+For instance, a [_transfer-spec_](#_transferspec_) is expected to be a _Structured Value_.
 
-A few commands and options expect _native values_, for instance `transfer specifications` are expected to be a Hash table, so a _native value_.
+Structured values shall be described using the [Extended Value Syntax](#extended).
+A convenient way to specify a _Structured Value_ is to use the `@json:` decoder, and describe the value in JSON format. The `@ruby:` decoder can also be used. For an array of hash tables, the `@csvt:` decoder can be used.
 
-A convenient way to specify a _native value_ is to use the `@json:` modifier, and describe the value in JSON format. Note that the `@ruby:` modifier can also be used. 
+It is also possible to provide a _Structured Value_ in a file using `@json:@file:<path>`
 
 ## <a name="configfile"></a>Configuration file
 
-`aslmcli` keeps configuration and cache files in folder `$HOME/.aspera/aslmcli`.
+`aslmcli` configuration and cache files are stored in folder `$HOME/.aspera/aslmcli`.
 
-The use of the configuration file is not mandatory, but one is created by default on first use.
-All options can be set on command line, or in the configuratin file, or by env vars.
+A configuration file is created with configuration modification commands. There is no mandatory information required in this file. It is mainly used to define pre-sets of command options.
+
+All options can be set on command line, or by env vars, or in the configuratin file.
 A configuration file provides a way to define default values, especially
 for authentication parameters, thus avoiding to always have to specify those parameters on the command line.
 
 The default configuration file is: `$HOME/.aspera/aslmcli/config.yaml` 
 (this can be overriden with option `--config-file=path`).
 
-It is composed of "parameter groups" containing "parameters".
-(The first level is an associative array whose values are associative arrays or parameters).
+It is composed of _option presets_ containing pre-sets for options.
 
-### Creation and Modification of _parameter groups_
+### Creation and Modification of _option presets_
 
 The configuration file can be modified using the following commands:
 
 ```
-aslmcli config id <parameter group> set|delete|show|initialize|update
+aslmcli config id <option preset> set|delete|show|initialize|update
 ```
 
-The command `update` allows the easy creation of parameter group by simply providing the options in their command line format, e.g. :
+The command `update` allows the easy creation of option preset by simply providing the options in their command line format, e.g. :
 
 ```
 aslmcli config id node_to_node update --url=https://10.25.0.4:9092 --username=node_user --password=node_pass --ts=@json:'{"precalculate_job_size":true}' --transfer=node --transfer-node=@json:'{"url":"https://10.25.0.8:9092","username":"node_user2","password":"node_pass2"}'
 ```
 
-* This creates a _parameter group_ `node_to_node` with all provided options.
+* This creates a _option preset_ `node_to_node` with all provided options.
 
-The command `set` allows setting individual options in a _parameter group_.
+The command `set` allows setting individual options in a _option preset_.
 
-The command `initialize`, like `update` allows to set several parameters at once, but it deletes an existing configuration instead of updating it, and expects a _native value_.
+The command `initialize`, like `update` allows to set several parameters at once, but it deletes an existing configuration instead of updating it, and expects a _[Structured Value](#native)_.
 
 A good practice is to not manually edit this file and use modification commands.
 If necessary, the configuration file can be edited (or simply consulted) with:
@@ -246,17 +287,6 @@ $ aslmcli config over
 
 ### Format
 
-Configuation is organized in _parameter group_s, like in `.ini` files. Each group has a name contains option name-value pairs.
-
-Two _parameter groups_ are reserved:
-
-* `config` is reserved for the global parameters of the `aslmcli` tool.
-It contains a special parameter: "version" showing the CLI 
-version used to create this file. It is used to check compatibility.
-* `default` is reserved to define the default parameter group name used for plugins.
-
-The user may create as many _parameter groups_ as needed. For instance, a particular _parameter group_ can be created for a particular application instance and contain URL and credentials.
-
 The configuration file is a hash in a YAML file. Example:
 
 ```yaml
@@ -272,22 +302,34 @@ myfaspparams:
 ```
 * The configuration was created with CLI version 0.3.7
 * the log level is set to `debug`
-* the default parameter group to load for plugin "faspex" is : myfaspparams
-* the parameter group "myfaspparams" defines some parameters: the URL and credentials
+* the default option preset to load for plugin "faspex" is : myfaspparams
+* the option preset "myfaspparams" defines some parameters: the URL and credentials
 
-Values in the configuration also follow the extended syntax, refer to section: [Extended Value](#extended).
+Configuation is organized in _option presets_, like in `.ini` files. Each group has a name contains option name-value pairs.
 
-Note: if the user wants to specify an extended syntax in the configuration file, using the update command, the user shall use the `@val:` prefix. Example:
+Two _option presets_ are reserved:
+
+* `config` is reserved for the global parameters of the `aslmcli` tool.
+It contains a special parameter: "version" showing the CLI 
+version used to create this file. It is used to check compatibility.
+* `default` is reserved to define the default option preset name used for plugins.
+
+The user may create as many _option presets_ as needed. For instance, a particular _option preset_ can be created for a particular application instance and contain URL and credentials.
+
+
+Values in the configuration also follow the [Extended Value Syntax](#extended).
+
+Note: if the user wants to use the [Extended Value Syntax](#extended) inside the configuration file, using the `config id update` command, the user shall use the `@val:` prefix. Example:
 
 ```bash
-$ aslmcli config id files_myorg set private_key @val:@file:"$HOME/.aspera/aslmcli/filesapikey"
+$ aslmcli config id my_files_org set private_key @val:@file:"$HOME/.aspera/aslmcli/filesapikey"
 ```
 
-This creates the file:
+This creates the _option preset_:
 
 ```
 ...
-files_myorg:
+my_files_org:
   private_key: @file:"/Users/laurent/.aspera/aslmcli/filesapikey"
 ...
 ```
@@ -296,15 +338,15 @@ So, the key file will be read only at execution time, but not be embedded in the
 
 Options are loaded using this algorithm:
 
-* if option '--load-params=xxxx' is specified (or -Pxxxx), this reads the parameter group specified from the configuration file.
+* if option '--load-params=xxxx' is specified (or -Pxxxx), this reads the option preset specified from the configuration file.
     * else if option --no-default is specified, then dont load default
-    * else it looks for the name of the default parameter group in section "default" and loads it
+    * else it looks for the name of the default option preset in section "default" and loads it
 * environment variables are evaluated
 * command line options are evaluated
 
 Parameters are evaluated in the order of command line.
 
-To avoid loading the default parameter group for a plugin, just specify a non existing configuration: `-Pnone`
+To avoid loading the default option preset for a plugin, just specify a non existing configuration: `-Pnone`
 
 On command line, words in parameter names are separated by a dash, in configuration file, separator
 is an underscore. E.g. --transfer-name  on command line gives transfer_node in configuration file.
@@ -333,17 +375,17 @@ This can also be provisioned in a config file:
 6$ aslmcli shares repo browse /
 ```
 
-The three first commands build a parameter group. 
+The three first commands build a option preset. 
 Note that this can also be done with one single command:
 
 ```bash
 $ aslmcli config id shares06 init @json:'{"url":"https://10.25.0.6","username":"john","password":"4sp3ra"}'
 ```
 
-The fourth command defines this parameter group as the default parameter group for the 
+The fourth command defines this option preset as the default option preset for the 
 specified application ("shares"). The 5th command dumps the configuration file. 
-Alternative parameter groups can be used with option "-P&lt;parameter group&gt;"
-(or --load-params=&lt;parameter group&gt;)
+Alternative option presets can be used with option "-P&lt;option preset&gt;"
+(or --load-params=&lt;option preset&gt;)
 
 Eventually, the last command shows a call to the shares application using default parameters.
 
@@ -380,7 +422,7 @@ exact content or HTTP requests and responses.
 
 In order to get traces of execution, use argument : `--log-level=debug`
 
-## Graphical Interactions: Browser and Text Editor
+## <a name="graphical"></a>Graphical Interactions: Browser and Text Editor
 
 Some actions may require the use of a graphical tool:
 
@@ -396,46 +438,17 @@ a text editor for file edition.
 * `--gui-mode=text` forces a text environment, the URL or file path to open is displayed on
 terminal.
 
-## Key Pairs
+## <a name="agents"></a>Transfer Agents
 
-In order to use JWT for Aspera Files API client authentication, 
-a private/public key pair must be generated (without passphrase, TODO: add passphrase protection).
+Some of the actions on Aspera Applications lead to file transfers (upload and download) using the FASP protocol (`ascp`).
 
-* using the CLI:
+This transfer can be done using on of the 3 following methods:
 
-```bash
-$ aslmcli config genkey ~/.aspera/aslmcli/filesapikey
-```
+* `direct` for a local execution of `ascp`
+* `connect` to make use of a local Connect Client
+* `node` to make use of a _remote_ Aspera Transfer Node.
 
-* `ssh-keygen`:
-
-```bash
-$ ssh-keygen -t rsa -f ~/.aspera/aslmcli/filesapikey -N ''
-```
-
-* `openssl`
-
-(on some openssl implementation (mac) there is option: -nodes (no DES))
-
-```bash
-$ APIKEY=~/.aspera/aslmcli/filesapikey
-$ openssl genrsa -passout pass:dummypassword -out ${APIKEY}.protected 2048
-$ openssl rsa -passin pass:dummypassword -in ${APIKEY}.protected -out ${APIKEY}
-$ openssl rsa -pubout -in ${APIKEY} -out ${APIKEY}.pub
-$ rm -f ${APIKEY}.protected
-```
-
-## FASP Transfer Agents
-
-The CLI provides access to Aspera Applications functions through REST APIs, it also
-allows FASP based transfers (upload and download).
-
-Any FASP parameter can be set by changing parameters in the associated "transfer spec".
-The CLI standadizes on the use of "transfer spec" and does not support directly ascp options.
-It is nevertheless possible to add ascp options (for fasp manager only, but not node api or connect)
-using the special transfer spec parameter: `EX_ascp_args`.
-
-Three Transfer agents are currently supported to start transfers :
+`aslmcli` standadizes on the use of a [_transfer-spec_](#_transferspec_) instead of _raw_ ascp options to provide parameters for a transfer session, as a common method for those three Transfer Agents.
 
 ### FASPManager API based (command line)
 
@@ -443,7 +456,7 @@ By default the CLI will use the Aspera Connect Client FASP part, in this case
 it requires the installation of the Aspera Connect Client to be 
 able to execute FASP based transfers. The CLI will try to automatically locate the 
 Aspera Protocol (`ascp`). This is option: `--transfer=ascp`. Note that parameters
-are always provided with a "transfer spec".
+are always provided with a [_transfer-spec_](#_transferspec_).
 
 ### Aspera Connect Client GUI
 
@@ -461,48 +474,38 @@ in the configuration file, then this node is used by default else the parameter
 three keys: url, username and password, corresponding to the URL of the node API
 and associated credentials (node user or access key).
 
-The `--transfer-node` parameter can directly specify a pre-configured parameter group : 
+The `--transfer-node` parameter can directly specify a pre-configured option preset : 
 `--transfer-node=@param:<psetname>` or specified using the option syntax :
 `--transfer-node=@json:'{"url":"https://...","username":"theuser","password":"thepass"}'`
 
-## Transfer Specification
+## <a name="transferspec"></a>Transfer Specification
 
-The "Transfer spec" specifies FASP protocol session startup parameters.
+Some commands lead to file transfer (upload/download), all parameters necessary for this transfer
+is described in a _transfer-spec_ (Transfer Specification), such as:
 
-### Destination folder for transfers
+* server address
+* transfer user name
+* credentials
+* file list
+* etc...
 
-Use parameter --to-folder=_dst_path_ to set destination folder on download or upload.
-By default destination is "." for downloads, and "/" for uploads.
-Note that it is equivalent to setting "destination_root" in transfer spec
-using option --ts=@json:'{"destination_root":"_dst_path_"}'
+`aslmcli` builds a default _transfer-spec_ internally, so it is not necessary to provide additional parameters on the command line for this transfer.
 
-### Examples
+If needed, it is possible to modify or add any of the supported _transfer-spec_ parameter using the `ts` option. The `ts` option accepts a [Structured Value](#native) containing one or several _transfer-spec_ parameters.
 
-Transfer parameters are contained in a "transfer spec", an associative array.
-Changing a transfer spec is done by providing parameters in a JSON syntax.
-For instance to override the FASP SSH port to a specific TCP port:
+It is possible to specify ascp options when the `transfer` option is set to `direct` using the special [_transfer-spec_](#_transferspec_) parameter: `EX_ascp_args`. Example: `--ts=@json:'{"EX_ascp_args":["-l","100m"]}'`.
 
-```
---ts=@json:'{"ssh_port":12345}'
-```
+The use of a _transfer-spec_ instead of `ascp` parameters has the advantage of:
 
-To force http fallback mode:
+* common to all [Transfer Agent](#agents)
+* not dependant on command line limitations (special characters...)
 
-```
---ts=@json:'{"http_fallback":"force"}'
-```
+A [_transfer-spec_](#_transferspec_) is a Hash table, so it is described on the command line with the [Extended Value Syntax](#extended). Keys are described in section [Transfer Parameters](#transferparams).
 
-In Node based transfers, Multi-session is available, simply add `--ts=@json:'{...}'`:
+### <a name="transferparams">Transfer Parameters
 
-```bash
---ts=@json:'{"multi_session":10,"multi_session_threshold":1,"target_rate_kbps":500000,"checksum_type":"none","cookie":"custom:aslmcli:Laurent:My Transfer"}'
-```
-
-
-### Parameter list
-
-All standard transfer spec parameter can be overloaded. To display parameter,
-run in debug mode (--log-level=debug). Transfer spec can also be saved/overridden in
+All standard [_transfer-spec_](#_transferspec_) parameter can be overloaded. To display parameter,
+run in debug mode (--log-level=debug). [_transfer-spec_](#_transferspec_) can also be saved/overridden in
 the config file.
 
 (UNDER CONSTRUCTION <a href="https://developer.asperasoft.com/web/node/ops-transfers">ref</a>)
@@ -582,6 +585,42 @@ table, th, td {border: 1px solid black;}
 <tr><td>EX_http_transfer_jpeg</td><td>0</td><td>integer</td><td class="yes">Y</td><td class="no">N</td><td class="no">N</td><td>-j</td><td>HTTP transfers as JPEG file</td></tr>
 </table>
 
+### Destination folder for transfers
+
+The destination folder is set by `aslmcli` by default to:
+
+* `.` for downloads
+* `/` for uploads
+
+It is specified by the [_transfer-spec_](#_transferspec_) parameter `destination_root`. As such, it can be modified with option: `--ts=@json:'{"destination_root":"<path>"}'`.
+The option `to_folder` provides a convenient way to change this parameter:  `--to-folder=<path>` and is equivalent.
+
+### Examples
+
+* Change target rate
+
+```bash
+--ts=@json:'{"target_rate_kbps":500000}'
+```
+
+* Override the FASP SSH port to a specific TCP port:
+
+```bash
+--ts=@json:'{"ssh_port":12345}'
+```
+
+* Force http fallback mode:
+
+```bash
+--ts=@json:'{"http_fallback":"force"}'
+```
+
+* Use multi-session transfer (when agent=node)
+
+```bash
+--ts=@json:'{"multi_session":10,"multi_session_threshold":1}'
+```
+
 ## Exclusive execution
 
 If it is required to run a command as a single instance, it is possible to protect with parameter: `--lock-port=nnnn`.
@@ -614,7 +653,7 @@ Note that actions and parameter values can be written in short form.
 
 ## General: Application URL and Authentication
 
-Aspera legacy applications (Aspera Node, Faspex, Shares, Console, Orchestrator, Server) use simple username/password authentication, usually using HTTP Basic Authentication. 
+REST APIs of Aspera legacy applications (Aspera Node, Faspex, Shares, Console, Orchestrator, Server) use simple username/password authentication: HTTP Basic Authentication. 
 
 Those are using options:
 
@@ -624,66 +663,133 @@ Those are using options:
 
 Those can be provided using command line, parameter set, env var, see section above.
 
-Aspera Files relies on Oauth, refer to the `Files` section.
+Aspera Files relies on Oauth, refer to the [Aspera Files](#files) section.
 
-## Aspera Files
+## <a name="files"></a>Aspera Files
 
-Aspera Files supports a more powerful and secure authentication mechanism: Oauth. 
-HTTP Basic authentication is not supported (deprecated).
+### OAuth Authentication Preparation
 
-With OAuth, the application (aslmcli) must be identified, and a valid Aspera Files 
-user must be used to access Aspera Files. Then a "Bearer" token is used for 
-HTTP authentication.
+Aspera Files requires the use of Oauth authentication. HTTP Basic authentication is not supported, instead a "Bearer" token is used to authenticate REST calls.
 
-The application using the Files API (aslmcli) must be declared in the Files GUI 
-(see https://aspera.asperafiles.com/helpcenter/admin/organization/registering-an-api-client ). 
-By declaring the application, a `client_id` and `client_secret` are generated:
+Bearer token are valid for a period of time, so `aslmcli` saves generated tokens in its configuration folder, and regenrate them when they have expired.
 
-<img src="docs/Auth1.png" alt="Files-admin-organization-apiclient-clientdetails"/>
+Several types of OAuth authentication are supported:
 
-It is possible to use the Aspera Files API to register such application. Anyway the user will need web browser to authenticate (generate a bearer token): 
-`aslmcli` will either display the URL to be entered in a local browser, or open 
-a browser directly (various options are proposed).
+* JSON Web Token (JWT) : authentication is secured by a private key (recommended)
+* Web based authentication : authentication is made by user in a browser
+* URL Token : external users authentication with url tokens
 
-It is also possible to enable browser-less authentication by using JWT, in this 
-case a private/public key pair is required (see section: Generating a key pair), 
-the public key is provided to Aspera Files:
+The authentication method is controled by option `auth`.
 
-<img src="docs/Auth2.png" alt="Files-admin-organization-apiclient-authoptions"/>
+For all above methods, OAuth requires that the external client (`aslmcli`) is declared in Files using the admin interface.
+(see [https://aspera.asperafiles.com/helpcenter/admin/organization/registering-an-api-client](https://aspera.asperafiles.com/helpcenter/admin/organization/registering-an-api-client) ).
 
-Upon successful authentication, auth token are saved (cache) in local files, and 
-can be used subsequently. Expired token can be refreshed.
+Go to Admin View-Organization-API Clients-Create, and fill the API client creation form (here JWT):
 
-Aspera Files APIs does not support Basic HTTP authentication (see section "Authentication").
-Using the CLI with Aspera Files will require the generation of a "Bearer token", this is can
-be done by authentication with a web interface (see section "Graphical interactions").
+* Client Name: aslmcli
+* Redirect URIs: `http://local.connectme.us:12345`
+* Origins: localhost
+* Enable JWT Grant Type
+* Client can retrieve tokens for: All Users
+* Allowed keys: User and Global
+* Public Key: paste from the contents of the generated public key (PEM format, here file ~/.aspera/aslmcli/filesapikey.pub in next section)
+* Enable admin tokens
 
-A more convenient way to use the CLI with Aspera Files, a possibility is to do the following 
-(JWT auth):
+<img src="docs/Auth3.png" alt="Files-admin-organization-apiclient-create"/>
 
-* Create a private/public key pair, as specified in section: "Key Pairs"
+It is convenient to save several of those parameters in `aslmcli` configuration file, in order to not have to enter then for every command, so start with the creation of an option preset, lets call it: `my_files_org`. 
 
-* Register a new application in the Aspera Files Admin GUI (refer to section "Authentication"). 
-Here, use the contents of this file (generated in step 2) for public key:
- `$HOME/.aspera/aslmcli/filesapikey.pub`
+Option preset can be created:
 
-* set your Aspera Files default parameters:
+* interactively:
 
 ```bash
-$ aslmcli config id default set files files_myorg
-$ aslmcli config id files_myorg set url https://myorg.asperafiles.com
-$ aslmcli config id files_myorg set client_id MyClIeNtKeY
-$ aslmcli config id files_myorg set client_secret MyClIeNtSeCrEtMyClIeNtSeCrEt
-$ aslmcli config id files_myorg set username user@example.com
-$ aslmcli config id files_myorg set private_key @val:@file:"$HOME/.aspera/aslmcli/filesapikey"
+$ aslmcli config id my_files_org ask url client_id client_secret
+```
+* or one parameter at a time:
+
+```bash
+$ aslmcli config id my_files_org set url https://myorg.asperafiles.com
+$ aslmcli config id my_files_org set client_id MyClIeNtKeY
+$ aslmcli config id my_files_org set client_secret MyClIeNtSeCrEtMyClIeNtSeCrEt
+```
+
+To define this option preset as default for the Files application, execute:
+```bash
+$ aslmcli config id default set files my_files_org
+```
+
+### JWT
+
+If JWT is the chosen method, specify the authentication method:
+
+```bash
+$ aslmcli config id my_files_org set auth jwt
+```
+
+In order to use JWT for Aspera Files API client authentication, 
+a private/public key pair must be generated (without passphrase)
+(TODO: add passphrase protection as option).
+This can be done using any of the following method:
+
+* using the CLI:
+
+```bash
+$ aslmcli config genkey ~/.aspera/aslmcli/filesapikey
+```
+
+* `ssh-keygen`:
+
+```bash
+$ ssh-keygen -t rsa -f ~/.aspera/aslmcli/filesapikey -N ''
+```
+
+* `openssl`
+
+(on some openssl implementation (mac) there is option: -nodes (no DES))
+
+```bash
+$ APIKEY=~/.aspera/aslmcli/filesapikey
+$ openssl genrsa -passout pass:dummypassword -out ${APIKEY}.protected 2048
+$ openssl rsa -passin pass:dummypassword -in ${APIKEY}.protected -out ${APIKEY}
+$ openssl rsa -pubout -in ${APIKEY} -out ${APIKEY}.pub
+$ rm -f ${APIKEY}.protected
+```
+
+To save the location of the private key in the option preset, execute:
+
+```bash
+$ aslmcli config id my_files_org set private_key @val:@file:~/.aspera/aslmcli/filesapikey
 ```
 
 Note: the private key argument represents the actual PEM string. In order to read the content from a file, use the @file: prefix. But if the @file: argument is used as is, it will read the file and set in the config file. So to keep the "@file" tag in the configuration file, the @val: prefix is added.
 
-* CLI is ready to use:
+The JWT "subject", i.e. the Aspera Files user identifier (email) is provided with:
+
+```bash
+$ aslmcli config id my_files_org set username user@example.com
+```
+
+### Web
+
+(do not follow if JWT was selected). 
+It is also possible to use a web browser based method to generate Bearer token, like done
+when using a web browser to access the Aspera Files application. In that case, no private key is needed, but the user us required to login using a URL (refer to [this section](#graphical)) when Bearer token have expired, making this method not suitable for use in automated scripts.
+
+Upon successful authentication, auth token are saved (cache) in local files, and 
+can be used subsequently. Expired token are refreshed if possible (without user further authentication).
+
+The redirection URI shall be provided (keep this value):
+
+```bash
+$ aslmcli config id my_files_org set redirect_uri http://local.connectme.us:12345
+```
+
+### Example
 
 ```bash
 $ aslmcli files repo browse /
+Current Workspace: My Org (default)
 :..............................:........:................:...........:......................:..............:
 :             name             :  type  : recursive_size :   size    :    modified_time     : access_level :
 :..............................:........:................:...........:......................:..............:
@@ -698,14 +804,72 @@ $ aslmcli files repo browse /
 
 ### Administration
 
-It is possible to create, update, delete any entity of Files (users, group, nodes, workspace, etc...) using the `admin resource` command. Even Bulk creation is possible: `bulk_create` expects a file whose format is one extended value per line.
+The `admin` command allows several administrative tasks (and require admin privilege).
+
+It allows actions (create, update, delete) on "resources": users, group, nodes, workspace, etc... with the `admin resource` command.
+
+Bulk operations are possible using option `bulk` (yes,no(default)): currently: create only. In that case, the operation expects an Array of Hash instead of a simple Hash using the [Extended Value Syntax](#extended).
+
+#### Example
+
+* Bulk creation
+
+```bash
+$ aslmcli files admin res user create --bulk=yes @json:'[{"email":"dummyuser1@example.com"},{"email":"dummyuser2@example.com"}]'
+:.......:.........:
+:  id   : status  :
+:.......:.........:
+: 98398 : created :
+: 98399 : created :
+:.......:.........:
+```
+
+* Find with filter and delete
+
+```bash
+$ aslmcli files admin res user list --query='@json:{"q":"dummyuser"}' --fields=id,email
+:.......:........................:
+:  id   :         email          :
+:.......:........................:
+: 98398 : dummyuser1@example.com :
+: 98399 : dummyuser2@example.com :
+:.......:........................:
+$ thelist=$(echo $(aslmcli files admin res user list --query='@json:{"q":"dummyuser"}' --fields=id,email --field=id --format=csv)|tr ' ' ,)
+$ echo $thelist
+98398,98399
+$ aslmcli files admin res user id @json:[$thelist] delete --bulk=yes
+:.......:.........:
+:  id   : status  :
+:.......:.........:
+: 98398 : deleted :
+: 98399 : deleted :
+:.......:.........:
+```
 
 ## Aspera Node (Transfer Server)
+
+### Simple Operations
+
+It is possible to:
+* browse
+* transfer (upload / download)
+* ...
+
+### Central
+
+The central subcommand uses the "reliable query" API (session and file). It allows listing transfer sessions and transfered files.
+
+Filtering can be applied:
+```
+$ aslmcli node central file list
+```
+
+by providing the `validator` option, offline transfer validation can be done.
 
 ### FASP Stream
 It is possible to start a FASPStream session using the node API:
 
-Use the "node stream create" command, then arguments are provided as a "transfer spec".
+Use the "node stream create" command, then arguments are provided as a [_transfer-spec_](#_transferspec_).
 
 ```bash
 ./bin/aslmcli node stream create --ts=@json:'{"direction":"send","source":"udp://233.3.3.4:3000?loopback=1&ttl=2","destination":"udp://233.3.3.3:3001/","remote_host":"localhost","remote_user":"stream","remote_password":"XXXX"}' --load-params=stream
@@ -810,7 +974,7 @@ $ aslmcli server browse /aspera-test-dir-large
 $ aslmcli server download /aspera-test-dir-large/200MB
 ```
 
-This creates a parameter group "aspera_demo_server" and set it as default for application "server"
+This creates a option preset "aspera_demo_server" and set it as default for application "server"
 
 
 ## IBM Aspera Faspex
@@ -841,13 +1005,15 @@ The node configuration name is "my_faspex_node" here.
 
 ## Aspera Transfer Service
 
+Aka Aspera Files, Aspera on Cloud...
+
 ### First time use
 
 Using the ATS requires an "Aspera ID" (https://id.asperasoft.com/) and have a subscription associated to it.
 
 On first execution, the user is asked to login to Aspera ID using a web browser. This creates an "ats_id" identifier (stored in a cache file).
 
-When only one ats_id is created, it is taken by default. Else it shall be specified with --ats-id or using a parameter group.
+When only one ats_id is created, it is taken by default. Else it shall be specified with --ats-id or using a option preset.
 
 Note: APIs are described here: [https://ts.asperasoft.com/ats-guide/getting-started-guide/# guide_transfers_create_ak](https://ts.asperasoft.com/ats-guide/getting-started-guide/# guide_transfers_create_ak)
 
@@ -886,7 +1052,9 @@ delete all my access keys:
 for k in $(aslmcli ats access_key list --field=id --format=csv);do aslmcli ats access_key id $k delete;done
 ```
 
-## Preview: Generation of previews for Aspera Files
+## Preview
+
+The preview plugin provides generation of previews for Aspera Files.
 
 The tool requires the following external tools:
 
@@ -909,7 +1077,7 @@ This is related to:
 
 ### Configuration
 
-Like any aslmcli commands, parameters can be passed on command line or using a configuration parameter group. Example using a parameter group:
+Like any aslmcli commands, parameters can be passed on command line or using a configuration option preset. Example using a option preset:
 
 ```
 $ aslmcli config id default set preview my_files_access_key
@@ -1038,7 +1206,7 @@ service xvfb start
 This gem comes with a second executable tool providing a simplified standardized interface to start a FASP
 session: ```asession```.
 
-It aims at simplifying the startup of a FASP session from a programmatic stand point as formating a transfer spec is:
+It aims at simplifying the startup of a FASP session from a programmatic stand point as formating a [_transfer-spec_](#_transferspec_) is:
 
 * common to Aspera Node API (HTTP POST /ops/transfer)
 * common to Aspera Connect API (browser javascript startTransfer)
@@ -1046,9 +1214,9 @@ It aims at simplifying the startup of a FASP session from a programmatic stand p
 
 This makes it easy to integrate with any language provided that one can spawn a sub process, write to its STDIN, read from STDOUT, generate and parse JSON.
 
-The tool expect one single argument: a transfer spec (see [Transfer spec](#transfer-spec)) hash value using the extended argument syntax ( see [Option and Argument values](#option-and-argument-values)).
+The tool expect one single argument: a [_transfer-spec_](#_transferspec_).
 
-If not argument is provided, it assumes a value of: `@json:@stdin`, i.e. a JSON formated transfer spec on stdin.
+If not argument is provided, it assumes a value of: `@json:@stdin`, i.e. a JSON formated [_transfer-spec_](#_transferspec_) on stdin.
 
 Note that if JSON is the format, one has to specify `@json:` to tell the tool to decode the hash using JSON.
 
@@ -1084,7 +1252,11 @@ $ asession -h
 
 # Module: `Asperalm`
 
-The main classes are part of the module: `Asperalm::Fasp`. It allows starting and monitoring transfers. It can be considered as a FASPManager class for Ruby.
+Main components:
+
+* `Asperalm` generic classes for REST and OAuth
+* `Asperalm::Fasp`: starting and monitoring transfers. It can be considered as a FASPManager class for Ruby.
+* `Asperalm::Cli`: the `aslmcli` tool.
 
 
 # History
@@ -1100,7 +1272,7 @@ So, it evolved into `aslmcli`:
 
 * portable: works on platforms supporting `ruby` (and `ascp`)
 * easy to install with the `gem` utility
-* supports transfers with multiple agents, that&apos;s why transfer parameters moved from ascp command line to transfer specification (more reliable , more standard)
+* supports transfers with multiple [Transfer Agents](#agents), that&apos;s why transfer parameters moved from ascp command line to [_transfer-spec_](#_transferspec_) (more reliable , more standard)
 * `ruby` is consistent with other Aspera products
 
 

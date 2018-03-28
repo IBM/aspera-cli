@@ -9,22 +9,26 @@ module Asperalm
   module Cli
     module Plugins
       class Files < Plugin
-        def action_list; [ :package, :repository, :faspexgw, :admin];end
+        def action_list; [ :package, :repository, :faspexgw, :admin, :user];end
 
         def declare_options
-          Main.tool.options.set_option(:download_mode,:fasp)
           Main.tool.options.add_opt_list(:download_mode,[:fasp, :node_http ],"download mode")
           Main.tool.options.add_opt_list(:auth,Oauth.auth_types,"type of authentication",'-tTYPE')
+          Main.tool.options.add_opt_list(:bulk,[:no,:yes],"download mode")
           Main.tool.options.add_opt_simple(:url,"URL of application, e.g. http://org.asperafiles.com")
           Main.tool.options.add_opt_simple(:username,"username to log in")
           Main.tool.options.add_opt_simple(:password,"user's password")
+          Main.tool.options.add_opt_simple(:client_id,"API client identifier in application")
+          Main.tool.options.add_opt_simple(:client_secret,"API client passcode")
           Main.tool.options.add_opt_simple(:private_key,"RSA private key PEM value for JWT (prefix file path with @val:@file:)")
           Main.tool.options.add_opt_simple(:workspace,"name of workspace")
           Main.tool.options.add_opt_simple(:recipient,"package recipient")
           Main.tool.options.add_opt_simple(:title,"package title")
           Main.tool.options.add_opt_simple(:note,"package note")
           Main.tool.options.add_opt_simple(:secret,"access key secret for node")
-          Main.tool.options.add_opt_simple(:query,"for json query")
+          Main.tool.options.add_opt_simple(:query,"list filter (extended value: encode_www_form)")
+          Main.tool.options.set_option(:download_mode,:fasp)
+          Main.tool.options.set_option(:bulk,:no)
         end
 
         # returns a node API for access key
@@ -116,13 +120,13 @@ module Asperalm
             node_info,file_id = find_nodeinfo_and_fileid(home_node_id,fileid,"")
             node_api=get_files_node_api(node_info,FilesApi::SCOPE_NODE_USER)
             items=node_api.read("files/#{file_id}")[:data]
-            return {:data=>items,:type=>:key_val_list}
+            return {:type=>:key_val_list,:data=>items}
           when :browse
             thepath=Main.tool.options.get_next_argument("path")
             node_info,file_id = find_nodeinfo_and_fileid(home_node_id,home_file_id,thepath)
             node_api=get_files_node_api(node_info,FilesApi::SCOPE_NODE_USER)
             items=node_api.read("files/#{file_id}/files")[:data]
-            return {:data=>items,:type=>:hash_array,:fields=>['name','type','recursive_size','size','modified_time','access_level']}
+            return {:type=>:hash_array,:data=>items,:fields=>['name','type','recursive_size','size','modified_time','access_level']}
           when :upload
             filelist = Main.tool.options.get_next_argument("file list",:multiple)
             Log.log.debug("file list=#{filelist}")
@@ -170,10 +174,9 @@ module Asperalm
           files_api_base_url=FilesApi.baseurl(instance_domain)
 
           auth_data={
-            :baseurl            =>files_api_base_url,
+            :baseurl            => files_api_base_url,
             :authorize_path     => "oauth2/#{organization}/authorize",
             :token_path         => "oauth2/#{organization}/token",
-            :persist_identifier => organization,
             :persist_folder     => Main.tool.config_folder,
             :type               => Main.tool.options.get_option(:auth,:mandatory),
             :client_id          => Main.tool.options.get_option(:client_id,:mandatory),
@@ -190,11 +193,11 @@ module Asperalm
           when :jwt
             private_key_PEM_string=Main.tool.options.get_option(:private_key,:mandatory)
             auth_data[:private_key_obj]=OpenSSL::PKey::RSA.new(private_key_PEM_string)
-            auth_data[:subject]=Main.tool.options.get_option(:username,:mandatory)
+            auth_data[:username]=Main.tool.options.get_option(:username,:mandatory)
             auth_data[:audience]=FilesApi.apiurl+"/oauth2/token" # TODO: set by parameters
 
             Log.log.info("private_key=#{auth_data[:private_key_obj]}")
-            Log.log.info("subject=#{auth_data[:subject]}")
+            Log.log.info("subject=#{auth_data[:username]}")
           when :url_token
             auth_data[:url_token]=Main.tool.options.get_option(:url_token,:mandatory)
           else
@@ -234,6 +237,19 @@ module Asperalm
           return @workspace_id == self_data['default_workspace_id']
         end
 
+        def do_bulk_operation(params,success,&do_action)
+          params=[params] if Main.tool.options.get_option(:bulk).eql?(:no)
+          raise "expecting Array" unless params.is_a?(Array)
+          result=[]
+          params.each do |p|
+            # todo: manage exception and display status by default
+            one=do_action.call(p)
+            one['status']=success
+            result.push(one)
+          end
+          return {:type=>:hash_array,:data=>result,:fields=>['id','status']}
+        end
+
         def execute_action
           use_default_ws=init_apis_is_default_ws
           command=Main.tool.options.get_next_argument('command',action_list)
@@ -245,6 +261,14 @@ module Asperalm
           Log.log.info("current workspace is "+@workspace_data['name'].red)
 
           case command
+          when :user
+            command=Main.tool.options.get_next_argument('command',[ :workspaces ])
+            case command
+            when :workspaces
+              return {:type=>:hash_array,:data=>@api_files_user.read("workspaces")[:data],:fields=>['id','name']}
+              #              when :settings
+              #                return {:type=>:hash_array,:data=>@api_files_user.read("client_settings/")[:data]}
+            end
           when :package
             command_pkg=Main.tool.options.get_next_argument('command',[ :send, :recv, :list ])
             case command_pkg
@@ -285,7 +309,7 @@ module Asperalm
             when :list
               # list all packages ('page'=>1,'per_page'=>10,)'sort'=>'-sent_at',
               packages=@api_files_user.read("packages",{'archived'=>false,'exclude_dropbox_packages'=>true,'has_content'=>true,'received'=>true,'workspace_id'=>@workspace_id})[:data]
-              return {:data=>packages,:fields=>['id','name','bytes_transferred'],:type=>:hash_array}
+              return {:type=>:hash_array,:data=>packages,:fields=>['id','name','bytes_transferred']}
             end
           when :repository
             return execute_node_action(@workspace_data['home_node_id'],@workspace_data['home_file_id'])
@@ -298,7 +322,7 @@ module Asperalm
             when :search_nodes
               ak=Main.tool.options.get_next_argument('access_key')
               nodes=@api_files_admin.read("search_nodes",{'q'=>'access_key:"'+ak+'"'})[:data]
-              return {:data=>nodes,:type=>:other_struct}
+              return {:type=>:other_struct,:data=>nodes}
             when :events
               # page=1&per_page=10&q=type:(file_upload+OR+file_delete+OR+file_download+OR+file_rename+OR+folder_create+OR+folder_delete+OR+folder_share+OR+folder_share_via_public_link)&sort=-date
               #events=@api_files_admin.read('events',{'q'=>'type:(file_upload OR file_download)'})[:data]
@@ -314,7 +338,7 @@ module Asperalm
               # iteration_token=nnn
               # active_only=true|false
               events=api_node.read("ops/transfers",{'count'=>100,'filter'=>'summary','active_only'=>'true'})[:data]
-              return {:data=>events,:fields=>['id','status'],:type=>:hash_array}
+              return {:type=>:hash_array,:data=>events,:fields=>['id','status']}
               #transfers=api_node.make_request_ex({:operation=>'GET',:subpath=>'ops/transfers',:args=>{'count'=>25,'filter'=>'id'}})
               #transfers=api_node.read("events") # after_time=2016-05-01T23:53:09Z
             when :set_client_key
@@ -331,18 +355,11 @@ module Asperalm
               command=Main.tool.options.get_next_argument('command',operations)
               case command
               when :create
-                params=Main.tool.options.get_next_argument("creation data (native hash)")
-                resp=@api_files_admin.create(resource_class_path,params)
-                return {:data=>resp[:data],:type => :other_struct}
-              when :bulk_create
-                bulk_file_path=Main.tool.options.get_next_argument("creation data in file (one native hash per line)")
-                result=[]
-                File.open(bulk_file_path, "r").each_line do |line|
-                  params=Cli::Manager.get_extended_value("creation data (native hash)",line.chomp)
-                  puts "[#{line}]"
-                  result.push(@api_files_admin.create(resource_class_path,params)[:data])
+                list_or_one=Main.tool.options.get_next_argument("creation data (Hash)")
+                return do_bulk_operation(list_or_one,'created')do|params|
+                  raise "expecting Hash" unless params.is_a?(Hash)
+                  @api_files_admin.create(resource_class_path,params)[:data]
                 end
-                return {:type => :hash_array,:data=>result}
               when :list
                 default_fields=['id','name']
                 case resource
@@ -351,12 +368,8 @@ module Asperalm
                 when :contact; default_fields=["email","name","source_id","source_type"]
                 end
                 query=Main.tool.options.get_option(:query,:optional)
-                args=nil
-                if !query.nil?
-                  args={'json_query'=>query}
-                end
-                Log.log.debug("#{args}".bg_red)
-                return {:data=>@api_files_admin.read(resource_class_path,args)[:data],:fields=>default_fields,:type=>:hash_array}
+                Log.log.debug("#{query}".bg_red)
+                return {:type=>:hash_array,:data=>@api_files_admin.read(resource_class_path,query)[:data],:fields=>default_fields}
               when :id
                 #raise RuntimeError, "unexpected resource type: #{resource}, only 'node' for actions" if !resource.eql?(:node)
                 res_id=Main.tool.options.get_next_argument('resource id')
@@ -375,8 +388,10 @@ module Asperalm
                   @api_files_admin.update(resource_id_path,changes)
                   return Main.result_status('deleted')
                 when :delete
-                  @api_files_admin.delete(resource_id_path)
-                  return Main.result_status('deleted')
+                  return do_bulk_operation(res_id,'deleted')do|one_id|
+                    @api_files_admin.delete("#{resource_class_path}/#{one_id.to_s}")
+                    {'id'=>one_id}
+                  end
                 when :do
                   res_data=@api_files_admin.read(resource_id_path)[:data]
                   api_node=get_files_node_api(res_data)
@@ -389,11 +404,10 @@ module Asperalm
                 end
               end #op_or_id
             when :usage_reports
-              return {:data=>@api_files_admin.read("usage_reports",{:workspace_id=>@workspace_id})[:data],:type=>:hash_array}
+              return {:type=>:hash_array,:data=>@api_files_admin.read("usage_reports",{:workspace_id=>@workspace_id})[:data]}
             end
-          else
-            raise RuntimeError, "unexpected value: #{command}"
           end # action
+          raise RuntimeError, "internal error"
         end
       end # Files
     end # Plugins

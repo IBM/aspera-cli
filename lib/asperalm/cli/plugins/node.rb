@@ -9,13 +9,15 @@ module Asperalm
         alias super_declare_options declare_options
         def declare_options
           super_declare_options
-          Main.tool.options.set_option(:persistency,File.join(Main.tool.config_folder,"persistency_cleanup.txt"))
-          Main.tool.options.set_option(:transfer_filter,'{"active_only":false}')
           Main.tool.options.add_opt_simple(:persistency,"persistency file (cleanup,forward)")
           Main.tool.options.add_opt_simple(:filter_transfer,"Ruby expression for filter at transfer level (cleanup)")
           Main.tool.options.add_opt_simple(:filter_file,"Ruby expression for filter at file level (cleanup)")
           Main.tool.options.add_opt_simple(:transfer_filter,"JSON expression for filter on API request")
           Main.tool.options.add_opt_simple(:parameters,"creation parameters (hash, use @json: prefix), current=#{Main.tool.options.get_option(:parameters,:optional)}")
+          Main.tool.options.add_opt_simple(:validator,"identifier of validator")
+          #@options.set_option(:validator,Main.tool.options.parser.program_name)
+          Main.tool.options.set_option(:persistency,File.join(Main.tool.config_folder,"persistency_cleanup.txt"))
+          Main.tool.options.set_option(:transfer_filter,'{"active_only":false}')
         end
 
         def self.textify_browse(table_data)
@@ -362,11 +364,34 @@ module Asperalm
               end
             end
           when :central
-            command=Main.tool.options.get_next_argument('command',[ :list])
+            command=Main.tool.options.get_next_argument('command',[ :session,:file])
+            validator_id=Main.tool.options.get_option(:validator)
+            request_data={}
+            request_data["validation"]={"validator_id"=>validator_id} if !validator_id.nil?
+
             case command
-            when :list
-              resp=api_node.create('services/rest/transfers/v1/sessions',{"session_filter"=>{"iteration_token"=>"CURRENT_POSITION"}})
-              return {:type=>:hash_array,:data=>resp[:data]["session_info_result"]["session_info"],:fields=>["session_uuid","status","transport","direction","bytes_transferred"]}
+            when :session
+              #request_data||={"session_filter"=>{"iteration_token"=>"CURRENT_POSITION"}}
+              command=Main.tool.options.get_next_argument('command',[ :list])
+              case command
+              when :list
+                resp=api_node.create('services/rest/transfers/v1/sessions',request_data)
+                return {:type=>:hash_array,:data=>resp[:data]["session_info_result"]["session_info"],:fields=>["session_uuid","status","transport","direction","bytes_transferred"]}
+              end
+            when :file
+              #request_data||={"file_filter"=>{"iteration_token"=>"CURRENT_POSITION"}}
+              command=Main.tool.options.get_next_argument('command',[ :list, :update])
+              filter_data=Main.tool.options.get_next_argument('filter data')
+              request_data.merge!(filter_data)
+              case command
+              when :list
+                resp=api_node.create('services/rest/transfers/v1/files',request_data)
+                return {:type=>:hash_array,:data=>resp[:data]["file_transfer_info_result"]["file_transfer_info"],:fields=>["session_uuid","file_id","status","path"]}
+              when :update
+                update_data=Main.tool.options.get_next_argument('update data')
+                resp=api_node.update('services/rest/transfers/v1/files',{"validator_id"=>"aslmcli","files"=>update_data})
+                return {:type=>:other_struct,:data=>resp[:data]}
+              end
             end
           when :cleanup
             transfers=self.class.get_transfers_iteration(api_node,{:active_only=>false})

@@ -6,8 +6,10 @@ require 'uri'
 module Asperalm
   module Cli
     module Plugins
-      class Shares2 < Plugin
+      class Shares2 < BasicAuthPlugin
+        alias super_declare_options declare_options
         def declare_options
+          super_declare_options
           Main.tool.options.add_opt_simple(:organization,"organization")
           Main.tool.options.add_opt_simple(:project,"project")
           Main.tool.options.add_opt_simple(:share,"share")
@@ -20,14 +22,12 @@ module Asperalm
           shares2_api_base_url=Main.tool.options.get_option(:url,:mandatory)
           shares2_username=Main.tool.options.get_option(:username,:mandatory)
           shares2_password=Main.tool.options.get_option(:password,:mandatory)
-          persist_id=(URI.parse(shares2_api_base_url).host.downcase+':'+shares2_username).gsub(/[^a-z]+/,'_')
           # auth API
           @api_shares2_oauth=Oauth.new({
             :baseurl            => shares2_api_base_url,
             :authorize_path     => "oauth2/authorize",
             :token_path         => "oauth2/token",
             :persist_folder     => Main.tool.config_folder,
-            :persist_identifier => persist_id,
             :type               => :basic,
             :basic_type         => :header,
             :username           => shares2_username,

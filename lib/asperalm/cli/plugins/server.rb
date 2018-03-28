@@ -15,8 +15,8 @@ module Asperalm
 
         def declare_options
           super_declare_options
-          Main.tool.options.set_option(:ssh_keys,[])
           Main.tool.options.add_opt_simple(:ssh_keys,Array,"PATH_ARRAY is @json:'[\"path1\",\"path2\"]'")
+          Main.tool.options.set_option(:ssh_keys,[])
         end
 
         def action_list; [:nodeadmin,:userdata,:configurator,:download,:upload,:browse,:delete,:rename].push(*Asperalm::AsCmd.action_list);end

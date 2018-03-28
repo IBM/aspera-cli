@@ -211,7 +211,7 @@ t/fs5:
 	$(EXETEST) files package list
 	@touch $@
 t/fs6:
-	$(EXETEST) files package recv VleoMSrlA
+	$(EXETEST) files package recv BHQWk-uvPA
 	@touch $@
 t/fs7:
 	$(EXETEST) files admin events

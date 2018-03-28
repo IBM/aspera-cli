@@ -55,8 +55,13 @@ module Asperalm
           @option_iteration_file_filepath=nil
           @skip_types=[]
           @default_transfer_spec=nil
+        end
+
+        alias super_declare_options declare_options
+
+        def declare_options
+          super_declare_options
           # link CLI options to gen_info attributes
-          Main.tool.options.set_option(:file_access,:local)
           Main.tool.options.set_obj_attr(:skip_types,self,:option_skip_types)
           Main.tool.options.set_obj_attr(:overwrite,self,:option_overwrite,:mtime)
           Main.tool.options.set_obj_attr(:previews_folder,self,:option_previews_folder,'previews')
@@ -81,12 +86,6 @@ module Asperalm
           Main.tool.options.set_obj_attr(:thumb_offset_fraction,Asperalm::Preview::Options.instance,:thumb_offset_fraction,0.1)
           Main.tool.options.set_obj_attr(:validate_mime,Asperalm::Preview::Options.instance,:validate_mime,:no)
           Main.tool.options.set_obj_attr(:check_extension,Asperalm::Preview::Options.instance,:check_extension,:yes)
-        end
-
-        alias super_declare_options declare_options
-
-        def declare_options
-          super_declare_options
           Main.tool.options.add_opt_list(:file_access,[:local,:remote],"how to read and write files in repository")
           Main.tool.options.add_opt_simple(:skip_types,"skip types in comma separated list")
           Main.tool.options.add_opt_list(:overwrite,Preview.overwrite_policies,"when to generate preview file")
@@ -112,6 +111,7 @@ module Asperalm
           Main.tool.options.add_opt_simple(:thumb_offset_fraction,"generation parameter")
           Main.tool.options.add_opt_list(:validate_mime,[:no,:yes],"use magic number validation")
           Main.tool.options.add_opt_list(:check_extension,[:no,:yes],"check extra file extensions")
+          Main.tool.options.set_option(:file_access,:local)
         end
 
         def action_list; [:scan,:events,:folder,:check,:test];end

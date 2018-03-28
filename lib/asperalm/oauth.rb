@@ -75,7 +75,9 @@ module Asperalm
     end
 
     # get location of cache for token
-    def token_filepath(parts)
+    def token_filepath(api_scope)
+      parts=[@auth_data[:client_id],URI.parse(@auth_data[:baseurl]).host.downcase.gsub(/[^a-z]+/,'_'),@auth_data[:type],api_scope]
+      parts.push(@auth_data[:username]) if @auth_data.has_key?(:username)
       basename=parts.dup.unshift(TOKEN_FILE_PREFIX).join(TOKEN_FILE_SEPARATOR)
       # remove windows forbidden chars
       basename.gsub!(WINDOWS_PROTECTED_CHAR,TOKEN_FILE_SEPARATOR)
@@ -87,7 +89,7 @@ module Asperalm
     # use_refresh_token set to true if auth was just used and failed
     def get_authorization(api_scope,use_refresh_token=false)
       # file name for cache of token
-      token_state_file=token_filepath([@auth_data[:type],@auth_data[:persist_identifier],@auth_data[:client_id],api_scope])
+      token_state_file=token_filepath(api_scope)
 
       # if first time, try to read from file
       if ! @token_cache.has_key?(api_scope) then
@@ -201,7 +203,7 @@ module Asperalm
 
           payload = {
             :iss => @auth_data[:client_id],
-            :sub => @auth_data[:subject],
+            :sub => @auth_data[:username],
             :aud => @auth_data[:audience],
             :nbf => seconds_since_epoch,
             :exp => seconds_since_epoch+ASSERTION_VALIDITY_SEC # TODO: configurable ?
@@ -259,7 +261,7 @@ module Asperalm
 
     THANK_YOU_HTML = "<html><head><title>Ok</title></head><body><h1>Thank you !</h1><p>You can close this window.</p></body></html>"
 
-    # open the login page, wait for code and check_code, then return code
+    # open the login page, wait for code and return parameters
     def self.goto_page_and_get_request(redirect_uri,login_page_url,html_page=THANK_YOU_HTML)
       Log.log.info "login_page_url=#{login_page_url}".bg_red().gray()
       # browser start is not blocking

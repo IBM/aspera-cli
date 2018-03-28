@@ -8,10 +8,10 @@ module Asperalm
         alias super_declare_options declare_options
         def declare_options
           super_declare_options
-          Main.tool.options.set_option(:filter_from,Manager.time_to_string(Time.now - 3*3600))
-          Main.tool.options.set_option(:filter_to,Manager.time_to_string(Time.now))
           Main.tool.options.add_opt_date(:filter_from,"only after date")
           Main.tool.options.add_opt_date(:filter_to,"only before date")
+          Main.tool.options.set_option(:filter_from,Manager.time_to_string(Time.now - 3*3600))
+          Main.tool.options.set_option(:filter_to,Manager.time_to_string(Time.now))
         end
 
         def action_list; [:transfer];end
