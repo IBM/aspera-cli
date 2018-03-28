@@ -138,7 +138,7 @@ module Asperalm
         # ask optional options if not provided and in interactive
         @ask_optionals=:no
         # Note: was initially inherited, but goal is to have something different
-        @parser= OptionParser.new
+        @parser=OptionParser.new
         #super
         self.set_obj_attr(:interactive,self,:use_interactive)
         self.add_opt_list(:interactive,[:yes,:no],"use interactive input of missing params")
