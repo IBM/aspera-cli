@@ -1360,8 +1360,13 @@ So, it evolved into `aslmcli`:
 This is best effort code without official support, dont expect full capabilities. This code is not
 supported by IBM/Aspera. You can contact the author for bugs or features.
 
-If you get message: "OpenSSH keys only supported if ED25519 is available"
-this means that you do not have ruby support for ED25519 SSH keys. You may either install the suggested
+If you get message:
+
+```
+OpenSSH keys only supported if ED25519 is available
+```
+
+This means that you do not have ruby support for ED25519 SSH keys. You may either install the suggested
 Gems, or remove your ed25519 key from your `.ssh` folder to solve the issue.
 
 # TODO
