@@ -48,30 +48,24 @@ module Asperalm
       # parse an option value, special behavior for file:, env:, val:
       def self.get_extended_value(name_or_descr,value)
         if value.is_a?(String)
-          # first determine decoding
-          decoding=[]
+          # first determine decoders, in reversed order
+          decoders_reversed=[]
           while (m=value.match(/^@([^:]+):(.*)/)) and @@DECODERS.include?(m[1])
-            decoding.push(m[1])
+            decoders_reversed.unshift(m[1])
             value=m[2]
           end
           # then read value
           if m=value.match(%r{^@file:(.*)}) then
-            value=m[1]
-            if m=value.match(%r{^~/(.*)}) then
-              value=m[1]
-              value=File.join(Dir.home,value)
-            end
-            raise CliBadArgument,"cannot open file \"#{value}\" for #{name_or_descr}" if ! File.exist?(value)
-            value=File.read(value)
+            value=File.read(File.expand_path(m[1]))
+            #raise CliBadArgument,"cannot open file \"#{value}\" for #{name_or_descr}" if ! File.exist?(value)
           elsif m=value.match(/^@env:(.*)/) then
-            value=m[1]
-            value=ENV[value]
+            value=ENV[m[1]]
           elsif m=value.match(/^@val:(.*)/) then
             value=m[1]
           elsif value.eql?('@stdin') then
             value=STDIN.gets
           end
-          decoding.reverse.each do |d|
+          decoders_reversed.each do |d|
             case d
             when 'json'; value=JSON.parse(value)
             when 'ruby'; value=eval(value)

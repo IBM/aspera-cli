@@ -649,7 +649,9 @@ Note that actions and parameter values can be written in short form.
 
 
 
-# Applications
+# Application Plugins
+
+`aslmcli` comes with several Aspera application plugins.
 
 ## General: Application URL and Authentication
 
@@ -667,21 +669,21 @@ Aspera Files relies on Oauth, refer to the [Aspera Files](#files) section.
 
 ## <a name="files"></a>Aspera Files, Aspera on Cloud
 
-Aspera Files requires the use of Oauth for authentication (HTTP Basic authentication is not supported).
+Aspera Files uses the more advanced Oauth mechanism for authentication (HTTP Basic authentication is not supported).
 This requires additional setup.
 Several types of OAuth authentication are supported:
 
-* Web based authentication : authentication is made by user in a browser
+* Web based authentication : authentication is made by user using a browser (simpler)
 * JSON Web Token (JWT) : authentication is secured by a private key (recommended)
-* URL Token : external users authentication with url tokens
+* URL Token : external users authentication with url tokens (external links)
 
 The authentication method is controled by option `auth`.
 
-For a _quick start_, follow the mandatory and sufficient section: [API Client Registration](#clientreg) (auth=web).
+For a _quick start_, follow the mandatory and sufficient section: [API Client Registration](#clientreg) (auth=web) as well as [Option Preset for Files](#filespreset).
 
-Optionally, in addition to Client Registration and for a more convenient, browser-less, authorization follow the [JWT](#jwt) section (auth=jwt).
+For a more convenient, browser-less, experience follow the [JWT](#jwt) section (auth=jwt) in addition to Client Registration.
 
-In Oauth, a "Bearer" token is used to authenticate REST calls. Bearer tokens are valid for a period of time, so `aslmcli` saves generated tokens in its configuration folder, and regenrate them when they have expired.
+In Oauth, a "Bearer" token are generated to authenticate REST calls. Bearer tokens are valid for a period of time.`aslmcli` saves generated tokens in its configuration folder, tries to re-use them or regenerates them when they have expired.
 
 ### <a name="clientreg"></a>API Client Registration
 
@@ -691,25 +693,29 @@ The first step is to declare `aslmcli` in Files using the admin interface.
 
 Let's start by a registration with web based authentication (auth=web):
 
-* Open a web browser, log to your instance: e.g. https://laurent.ibmaspera.com/
-* Go to Admin View-Organization-API Clients-Create
-* Fill the API client creation form (here JWT):
-	* Client Name: aslmcli
-	* Redirect URIs: `http://local.connectme.us:12345`
-	* Origins: localhost
-	* uncheck "Prompt users to allow client to access Files"
-	* do not enable JWT for now
-* Submit
-
 <img src="docs/Auth-simple-web.png" alt="Screenshot: Web based auth API client registration form"/>
 
-Once the client is registered, a "Client ID" and "Secret" are created, these values will be used here below.
+* Open a web browser, log to your instance: e.g. `https://laurent.ibmaspera.com/`
+* Go to Admin View-Organization-API Clients-Create
+* Fill the API client creation form:
+	* Client Name: `aslmcli`
+	* Redirect URIs: `http://local.connectme.us:12345`
+	* Origins: `localhost`
+	* uncheck "Prompt users to allow client to access Files"
+	* leave JWT unchecked for now
+* Submit
+
+Note: for web based authentication, `aslmcli` listens on a local port (here 12345), and the browser will provide the OAuth code there.
 
 <img src="docs/Auth-registered-client.png" alt="Screenshot:Registered API Client"/>
 
-It is convenient to save several of those parameters in `aslmcli` configuration file, in order to not have to enter then for every command, so start with the creation of an option preset, lets call it: `my_files_org`. Create the option preset:
+Once the client is registered, a "Client ID" and "Secret" are created, these values will be used in the next step.
 
-```bash
+### <a name="filespreset"></a>Option Preset for Files
+
+It is convenient to save several of those parameters in an option preset for `aslmcli` in its configuration file. Lets create an option preset called: `my_files_org` using `ask` interactive input (client info from previous step):
+
+```
 $ aslmcli config id my_files_org ask url client_id client_secret auth redirect_uri
 option: url> https://laurent.ibmaspera.com/
 option: client_id> BJLPObQiFw
@@ -727,15 +733,19 @@ Define this preset as default configuration for the `files` plugin:
 $ aslmcli config id default set files my_files_org
 ```
 
-At this step, `aslmcli` can be used, but it will require a web based authentication. Refer to section [Graphical Interactions](#graphical) to customize the way browser is started. For direct browser-less authentication, follow the [JWT](#jwt) section.
+### <a name="filesfirst"></a>First Use
 
-First use:
+Once client has been registered and option preset created: `aslmcli` can be used:
 
 ```bash
 $ aslmcli files repo br /
 Current Workspace: Default Workspace (default)
 empty
 ```
+
+Note that it requires a web based authentication. Refer to section [Graphical Interactions](#graphical) to customize the way browser is started.
+
+For direct browser-less authentication, follow the [JWT](#jwt) section.
 
 ### <a name="jwt"></a>Activation of JSON Web Token (JWT) for direct authentication
 
@@ -745,8 +755,9 @@ In addition to basic API Client registration, the following steps are required f
 
 In order to use JWT for Aspera Files API client authentication, 
 a private/public key pair must be generated (without passphrase)
-(TODO: add passphrase protection as option).
 This can be done using any of the following method:
+
+(TODO: add passphrase protection as option).
 
 * using the CLI:
 
@@ -774,25 +785,25 @@ $ rm -f ${APIKEY}.protected
 
 #### API Client JWT activation
 
-The public key needs to be registered in Files, use one of these methods:
+JWT needs to be authorized in Files. This can be done in two manners:
 
-* Graphically
-
-	* Open a web browser, log to your instance: https://laurent.ibmaspera.com/
-	* Go to Admin View-Organization-API Clients
-	* Click on the previously created application
-	* select tab : "Authentication Options"
-	* Modify options:
-		* activate "Enable JWT Grant Type"
-		* Client can retrieve tokens for: All Users
-		* Allowed keys: keep "User-specific keys"
-		* Enable admin tokens
-
-Note: It is also possible to allow a "super key" to impersonate any user by registering a "super key" at this step. (Select USer and Global, and then set public key).
+##### Graphically
 
 <img src="docs/AuthJWT.png" alt="Files-admin-organization-apiclient-create"/>
 
-* Using command line
+* Open a web browser, log to your instance: https://laurent.ibmaspera.com/
+* Go to Admin View-Organization-API Clients
+* Click on the previously created application
+* select tab : "Authentication Options"
+* Modify options:
+	* activate "Enable JWT Grant Type"
+	* Client can retrieve tokens for: All Users
+	* Allowed keys: keep "User-specific keys"
+	* Enable admin tokens
+
+Note: It is also possible to allow a "super key" to impersonate any user by registering a "super key" at this step. (Select USer and Global, and then set public key).
+
+##### Using command line
 
 ```bash
 $ aslmcli files admin res client list
@@ -807,7 +818,19 @@ modified
 
 #### User key registration
 
-TODO: graphical way
+The public key must be assigned to your user. This can be done in two manners:
+
+##### Graphically
+
+<img src="docs/AuthUsersKey.png" alt="Screenshot: Users key registration"/>
+
+* Open a web browser, log to your instance: https://laurent.ibmaspera.com/
+* In User Admin View, click n the user's icon (top right)
+* Select "Account Settings"
+* Paste the _Public Key_ in the "Public Key" section
+* Click on "Update"
+
+##### Using command line
 
 ```bash
 $ aslmcli files admin res user list
@@ -823,7 +846,7 @@ modified
 
 Note: the `show` command can be used to verify modifications.
 
-#### Preset modification
+#### Preset modification for JWT
 
 To activate JWT authentication for `aslmcli` using the preset, do the folowing:
 
@@ -841,37 +864,6 @@ Note: the private key argument represents the actual PEM string. In order to rea
 
 After this last step, commands do not require web login anymore.
 
-### Web
-
-(do not follow if JWT was selected). 
-It is also possible to use a web browser based method to generate Bearer token, like done
-when using a web browser to access the Aspera Files application. In that case, no private key is needed, but the user us required to login using a URL (refer to [this section](#graphical)) when Bearer token have expired, making this method not suitable for use in automated scripts.
-
-Upon successful authentication, auth token are saved (cache) in local files, and 
-can be used subsequently. Expired token are refreshed if possible (without user further authentication).
-
-The redirection URI shall be provided (keep this value):
-
-```bash
-$ aslmcli config id my_files_org set redirect_uri http://local.connectme.us:12345
-```
-
-### Example
-
-```bash
-$ aslmcli files repo browse /
-Current Workspace: My Org (default)
-:..............................:........:................:...........:......................:..............:
-:             name             :  type  : recursive_size :   size    :    modified_time     : access_level :
-:..............................:........:................:...........:......................:..............:
-: Summer 2016 Training         : link   :                :           : 2016-07-25T15:21:22Z : edit         :
-: Laurent Garage SE            : folder : 19316893       :           :                      : edit         :
-: Italy Training               : folder : 312068540      :           :                      : edit         :
-: Cheese pile.jpeg             : file   :                : 9824      : 2016-11-16T12:10:25Z : edit         :
-: Aspera Video                 : folder : 122237276      :           :                      : edit         :
-:..............................:........:................:...........:......................:..............:
-
-```
 
 ### Administration
 
@@ -908,7 +900,7 @@ $ aslmcli files admin res user list --query='@json:{"q":"dummyuser"}' --fields=i
 $ thelist=$(echo $(aslmcli files admin res user list --query='@json:{"q":"dummyuser"}' --fields=id,email --field=id --format=csv)|tr ' ' ,)
 $ echo $thelist
 98398,98399
-$ aslmcli files admin res user id @json:[$thelist] delete --bulk=yes
+$ aslmcli files admin res user --bulk=yes --id=@json:[$thelist] delete
 :.......:.........:
 :  id   : status  :
 :.......:.........:
@@ -962,12 +954,19 @@ $ aslmcli node service create @json:'{"id":"mywatchfolderd","type":"WATCHFOLDERD
 $ aslmcli node watch_folder create @json:'{"id":"mywfolder","source_dir":"/watch1","target_dir":"/","transport":{"host":"10.25.0.4","user":"user1","pass":"Aspera123_"}}'
 ```
 
-### Transfer filter (deprecated)
+### Out of Transfer File Validation
 
-special in node:
+Follow the Aspera Transfer Server configuration to activate this feature.
 
 ```
-"transfer_filter"=>"t['status'].eql?('completed') and t['start_spec']['remote_user'].eql?('faspex')", :file_filter=>"f['status'].eql?('completed') and 0 != f['size'] and t['start_spec']['direction'].eql?('send')"
+$ aslmcli node central file list --validator=aslmcli --filter=@json:'{"file_transfer_filter":{"max_result":1}}'
+:..............:..............:............:......................................:
+: session_uuid :    file_id   :   status   :              path                    :
+:..............:..............:............:......................................:
+: 1a74444c-... : 084fb181-... : validating : /home/xfer.../PKG - my title/200KB.1 :
+:..............:..............:............:......................................:
+$ aslmcli node central file update --validator=aslmcli --filter=@json:'{"files":[{"session_uuid": "1a74444c-...","file_id": "084fb181-...","status": "completed"}]}'
+updated
 ```
 
 ### Example: SHOD to ATS
@@ -980,11 +979,20 @@ Then create a configuration for the "SHOD" instance in the configuration file: i
 "shares", a configuration named: awsshod.
 Create another configuration for the Azure ATS instance: in section "node", named azureats.
 Then execute the following command:
+
 ```bash
-aslmcli node download /share/sourcefile --to-folder=/destinationfolder --load-params=awsshod --transfer=node --transfer-node=@param:azureats
+$ aslmcli node download /share/sourcefile --to-folder=/destinationfolder --load-params=awsshod --transfer=node --transfer-node=@param:azureats
 ```
+
 This will get transfer information from the SHOD instance and tell the Azure ATS instance 
 to download files.
+
+## Xnode (experiments)
+
+
+```
+"transfer_filter"=>"t['status'].eql?('completed') and t['start_spec']['remote_user'].eql?('faspex')", :file_filter=>"f['status'].eql?('completed') and 0 != f['size'] and t['start_spec']['direction'].eql?('send')"
+```
 
 
 
@@ -1370,7 +1378,8 @@ Gems, or remove your ed25519 key from your `.ssh` folder to solve the issue.
 
 # Contribution
 
+Send comments !
+
 Create your own plugin !
 
-Send comments !
 

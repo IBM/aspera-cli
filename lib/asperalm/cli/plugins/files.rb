@@ -14,7 +14,7 @@ module Asperalm
         def declare_options
           Main.tool.options.add_opt_list(:download_mode,[:fasp, :node_http ],"download mode")
           Main.tool.options.add_opt_list(:auth,Oauth.auth_types,"type of authentication",'-tTYPE')
-          Main.tool.options.add_opt_list(:bulk,[:no,:yes],"download mode")
+          Main.tool.options.add_opt_list(:bulk,[:no,:yes],"bulk operation")
           Main.tool.options.add_opt_simple(:url,"URL of application, e.g. http://org.asperafiles.com")
           Main.tool.options.add_opt_simple(:username,"username to log in")
           Main.tool.options.add_opt_simple(:password,"user's password")
