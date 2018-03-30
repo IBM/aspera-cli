@@ -7,7 +7,6 @@
 ##############################################################################
 require 'asperalm/open_application'
 require 'asperalm/rest'
-require 'asperalm/files_api'
 require 'base64'
 require 'date'
 require 'rubygems'
@@ -41,7 +40,6 @@ module Asperalm
       [ :basic, :web, :jwt, :url_token ]
     end
 
-    # base_url comes from FilesApi.baseurl
     def initialize(auth_data)
       Log.log.debug "auth=#{auth_data}"
       @auth_data=auth_data
@@ -83,7 +81,9 @@ module Asperalm
       basename.gsub!(WINDOWS_PROTECTED_CHAR,TOKEN_FILE_SEPARATOR)
       # keep dot for extension only (nicer)
       basename.gsub!('.',TOKEN_FILE_SEPARATOR)
-      File.join(@auth_data[:persist_folder],basename+TOKEN_FILE_SUFFIX)
+      filepath=File.join(@auth_data[:persist_folder],basename+TOKEN_FILE_SUFFIX)
+      Log.log.debug("token path=#{filepath}")
+      return filepath
     end
 
     # use_refresh_token set to true if auth was just used and failed

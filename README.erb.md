@@ -665,67 +665,83 @@ Those can be provided using command line, parameter set, env var, see section ab
 
 Aspera Files relies on Oauth, refer to the [Aspera Files](#files) section.
 
-## <a name="files"></a>Aspera Files
+## <a name="files"></a>Aspera Files, Aspera on Cloud
 
-### OAuth Authentication Preparation
-
-Aspera Files requires the use of Oauth authentication. HTTP Basic authentication is not supported, instead a "Bearer" token is used to authenticate REST calls.
-
-Bearer token are valid for a period of time, so `aslmcli` saves generated tokens in its configuration folder, and regenrate them when they have expired.
-
+Aspera Files requires the use of Oauth for authentication (HTTP Basic authentication is not supported).
+This requires additional setup.
 Several types of OAuth authentication are supported:
 
-* JSON Web Token (JWT) : authentication is secured by a private key (recommended)
 * Web based authentication : authentication is made by user in a browser
+* JSON Web Token (JWT) : authentication is secured by a private key (recommended)
 * URL Token : external users authentication with url tokens
 
 The authentication method is controled by option `auth`.
 
-For all above methods, OAuth requires that the external client (`aslmcli`) is declared in Files using the admin interface.
-(see [https://aspera.asperafiles.com/helpcenter/admin/organization/registering-an-api-client](https://aspera.asperafiles.com/helpcenter/admin/organization/registering-an-api-client) ).
+For a _quick start_, follow the mandatory and sufficient section: [API Client Registration](#clientreg) (auth=web).
 
-Go to Admin View-Organization-API Clients-Create, and fill the API client creation form (here JWT):
+Optionally, in addition to Client Registration and for a more convenient, browser-less, authorization follow the [JWT](#jwt) section (auth=jwt).
 
-* Client Name: aslmcli
-* Redirect URIs: `http://local.connectme.us:12345`
-* Origins: localhost
-* Enable JWT Grant Type
-* Client can retrieve tokens for: All Users
-* Allowed keys: User and Global
-* Public Key: paste from the contents of the generated public key (PEM format, here file ~/.aspera/aslmcli/filesapikey.pub in next section)
-* Enable admin tokens
+In Oauth, a "Bearer" token is used to authenticate REST calls. Bearer tokens are valid for a period of time, so `aslmcli` saves generated tokens in its configuration folder, and regenrate them when they have expired.
 
-<img src="docs/Auth3.png" alt="Files-admin-organization-apiclient-create"/>
+### <a name="clientreg"></a>API Client Registration
 
-It is convenient to save several of those parameters in `aslmcli` configuration file, in order to not have to enter then for every command, so start with the creation of an option preset, lets call it: `my_files_org`. 
+The first step is to declare `aslmcli` in Files using the admin interface.
 
-Option preset can be created:
+(official documentation: [https://aspera.asperafiles.com/helpcenter/admin/organization/registering-an-api-client](https://aspera.asperafiles.com/helpcenter/admin/organization/registering-an-api-client) ).
 
-* interactively:
+Let's start by a registration with web based authentication (auth=web):
+
+* Open a web browser, log to your instance: e.g. https://laurent.ibmaspera.com/
+* Go to Admin View-Organization-API Clients-Create
+* Fill the API client creation form (here JWT):
+	* Client Name: aslmcli
+	* Redirect URIs: `http://local.connectme.us:12345`
+	* Origins: localhost
+	* uncheck "Prompt users to allow client to access Files"
+	* do not enable JWT for now
+* Submit
+
+<img src="docs/Auth-simple-web.png" alt="Screenshot: Web based auth API client registration form"/>
+
+Once the client is registered, a "Client ID" and "Secret" are created, these values will be used here below.
+
+<img src="docs/Auth-registered-client.png" alt="Screenshot:Registered API Client"/>
+
+It is convenient to save several of those parameters in `aslmcli` configuration file, in order to not have to enter then for every command, so start with the creation of an option preset, lets call it: `my_files_org`. Create the option preset:
 
 ```bash
-$ aslmcli config id my_files_org ask url client_id client_secret
+$ aslmcli config id my_files_org ask url client_id client_secret auth redirect_uri
+option: url> https://laurent.ibmaspera.com/
+option: client_id> BJLPObQiFw
+option: client_secret> yFS1mu-crbKuQhGFtfhYuoRW...
+option: auth> web
+option: redirect_uri> http://local.connectme.us:12345
+updated: my_files_org
 ```
-* or one parameter at a time:
 
-```bash
-$ aslmcli config id my_files_org set url https://myorg.asperafiles.com
-$ aslmcli config id my_files_org set client_id MyClIeNtKeY
-$ aslmcli config id my_files_org set client_secret MyClIeNtSeCrEtMyClIeNtSeCrEt
-```
+(This can also be done in one line using the command `config id my_files_org update --url=...`)
 
-To define this option preset as default for the Files application, execute:
+Define this preset as default configuration for the `files` plugin:
+
 ```bash
 $ aslmcli config id default set files my_files_org
 ```
 
-### JWT
+At this step, `aslmcli` can be used, but it will require a web based authentication. Refer to section [Graphical Interactions](#graphical) to customize the way browser is started. For direct browser-less authentication, follow the [JWT](#jwt) section.
 
-If JWT is the chosen method, specify the authentication method:
+First use:
 
 ```bash
-$ aslmcli config id my_files_org set auth jwt
+$ aslmcli files repo br /
+Current Workspace: Default Workspace (default)
+empty
 ```
+
+### <a name="jwt"></a>Activation of JSON Web Token (JWT) for direct authentication
+
+In addition to basic API Client registration, the following steps are required for a Browser-less, Key-based authentication.
+
+#### Key Pair Generation
 
 In order to use JWT for Aspera Files API client authentication, 
 a private/public key pair must be generated (without passphrase)
@@ -756,19 +772,74 @@ $ openssl rsa -pubout -in ${APIKEY} -out ${APIKEY}.pub
 $ rm -f ${APIKEY}.protected
 ```
 
-To save the location of the private key in the option preset, execute:
+#### API Client JWT activation
+
+The public key needs to be registered in Files, use one of these methods:
+
+* Graphically
+
+	* Open a web browser, log to your instance: https://laurent.ibmaspera.com/
+	* Go to Admin View-Organization-API Clients
+	* Click on the previously created application
+	* select tab : "Authentication Options"
+	* Modify options:
+		* activate "Enable JWT Grant Type"
+		* Client can retrieve tokens for: All Users
+		* Allowed keys: keep "User-specific keys"
+		* Enable admin tokens
+
+Note: It is also possible to allow a "super key" to impersonate any user by registering a "super key" at this step. (Select USer and Global, and then set public key).
+
+<img src="docs/AuthJWT.png" alt="Files-admin-organization-apiclient-create"/>
+
+* Using command line
 
 ```bash
-$ aslmcli config id my_files_org set private_key @val:@file:~/.aspera/aslmcli/filesapikey
+$ aslmcli files admin res client list
+:............:.........:
+:     id     :  name   :
+:............:.........:
+: BJLPObQiFw : aslmcli :
+:............:.........:
+$ aslmcli files admin res client --id=BJLPObQiFw modify @json:'{"jwt_grant_enabled":true,"explicit_authorization_required":false}'
+modified
+```
+
+#### User key registration
+
+TODO: graphical way
+
+```bash
+$ aslmcli files admin res user list
+:........:................:
+:   id   :      name      :
+:........:................:
+: 109952 : Tech Support   :
+: 109951 : LAURENT MARTIN :
+:........:................:
+$ aslmcli files admin res user --id=109951 modify @ruby:'{"public_key"=>File.read(File.expand_path("~/.aspera/aslmcli/filesapikey.pub"))}'   
+modified
+```
+
+Note: the `show` command can be used to verify modifications.
+
+#### Preset modification
+
+To activate JWT authentication for `aslmcli` using the preset, do the folowing:
+
+* change auth method to JWT
+* provide location of private key
+* provide username to login as (OAuthg "subject")
+
+Execute:
+
+```bash
+$ aslmcli config id my_files_org update --auth=jwt --private-key=@val:@file:~/.aspera/aslmcli/filesapikey --username=laurent.martin.aspera@fr.ibm.com
 ```
 
 Note: the private key argument represents the actual PEM string. In order to read the content from a file, use the @file: prefix. But if the @file: argument is used as is, it will read the file and set in the config file. So to keep the "@file" tag in the configuration file, the @val: prefix is added.
 
-The JWT "subject", i.e. the Aspera Files user identifier (email) is provided with:
-
-```bash
-$ aslmcli config id my_files_org set username user@example.com
-```
+After this last step, commands do not require web login anymore.
 
 ### Web
 

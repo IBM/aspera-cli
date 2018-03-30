@@ -33,7 +33,7 @@ cleanupgems:
 doc: README.pdf
 
 README.pdf: README.md
-	pandoc --resource-path=. --toc -o README.html README.md
+	pandoc --number-sections --resource-path=. --toc -o README.html README.md
 	wkhtmltopdf toc README.html README.pdf
 
 README.md: README.erb.md aslmcli_commands.txt aslmcli_usage.txt asession_usage.txt
@@ -143,7 +143,7 @@ t/fx1:
 	$(EXETEST) faspex package list --insecure=yes
 	@touch $@
 t/fx2:
-	$(EXETEST) faspex package send $(SAMPLE_FILE) --insecure=yes --note="my note" --title="my title" --recipient="laurent@asperasoft.com"
+	$(EXETEST) faspex package send $(SAMPLE_FILE) --insecure=yes --note="my note" --title="my title" --recipient="laurent.martin.aspera@fr.ibm.com"
 	@touch $@
 t/fx3:
 	$(EXETEST) faspex package recv $$($(EXETEST) faspex package list --fields=delivery_id --format=csv --box=sent|tail -n 1) --box=sent
@@ -205,13 +205,13 @@ t/fs3b:
 	rm -f 200KB.1
 	@touch $@
 t/fs4:
-	$(EXETEST) files package send $(SAMPLE_FILE) --note="my note" --title="my title" --recipient="laurent@asperasoft.com"
+	$(EXETEST) files package send $(SAMPLE_FILE) --note="my note" --title="my title" --recipient="laurent.martin.aspera@fr.ibm.com"
 	@touch $@
 t/fs5:
 	$(EXETEST) files package list
 	@touch $@
 t/fs6:
-	$(EXETEST) files package recv BHQWk-uvPA
+	$(EXETEST) files package recv BJKyUFHhew
 	@touch $@
 t/fs7:
 	$(EXETEST) files admin events
@@ -220,7 +220,7 @@ t/fs8:
 	$(EXETEST) files admin resource workspace list
 	@touch $@
 t/fs9:
-	$(EXETEST) files admin resource node id 5560 do browse / --secret=Aspera123_
+	$(EXETEST) files admin resource node --id=7897 do browse / --secret=I5DiMd6oOzMeWP2F2QlOl-VFpARPY8pEimE1xOEXQ7xP_1Gt1mKLeoQ93oEj-WoltJQBJpmfI2jroSCFqFQpdg
 	@touch $@
 
 tfiles: t/fs1 t/fs2 t/fs3 t/fs3b t/fs4 t/fs5 t/fs6 t/fs7 t/fs8 t/fs9
@@ -393,7 +393,7 @@ t:
 tests: t tshares tfaspex tconsole tnode tfiles tfasp torc tats tcon tsync tconf tshares2 tprev
 
 t/fxgw:
-	$(EXETEST) faspex package send --load-params=reset --url=https://localhost:9443/aspera/faspex --username=unused --password=unused --insecure=yes --note="my note" --title="my title" --recipient="laurent@asperasoft.com" ~/200KB.1
+	$(EXETEST) faspex package send --load-params=reset --url=https://localhost:9443/aspera/faspex --username=unused --password=unused --insecure=yes --note="my note" --title="my title" --recipient="laurent.martin.aspera@fr.ibm.com" ~/200KB.1
 	@touch $@
 
 NODE_USER=node_admin

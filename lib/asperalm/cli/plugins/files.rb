@@ -27,6 +27,8 @@ module Asperalm
           Main.tool.options.add_opt_simple(:note,"package note")
           Main.tool.options.add_opt_simple(:secret,"access key secret for node")
           Main.tool.options.add_opt_simple(:query,"list filter (extended value: encode_www_form)")
+          Main.tool.options.add_opt_simple(:id,"resource identifier")
+          Main.tool.options.add_opt_simple(:name,"resource name")
           Main.tool.options.set_option(:download_mode,:fasp)
           Main.tool.options.set_option(:bulk,:no)
         end
@@ -161,22 +163,13 @@ module Asperalm
         # initialize apis and authentication
         # returns true if in default workspace
         def init_apis_is_default_ws
-          # get parameters
-          instance_fqdn=URI.parse(Main.tool.options.get_option(:url,:mandatory)).host
-          organization,instance_domain=instance_fqdn.split('.',2)
 
-          raise "expecting a public FQDN for Files" if instance_domain.nil?
-
-          Log.log.debug("instance_fqdn=#{instance_fqdn}")
-          Log.log.debug("instance_domain=#{instance_domain}")
-          Log.log.debug("organization=#{organization}")
-
-          files_api_base_url=FilesApi.baseurl(instance_domain)
+          api_info=FilesApi.info(Main.tool.options.get_option(:url,:mandatory))
 
           auth_data={
-            :baseurl            => files_api_base_url,
-            :authorize_path     => "oauth2/#{organization}/authorize",
-            :token_path         => "oauth2/#{organization}/token",
+            :baseurl            => api_info[:api_url],
+            :authorize_path     => api_info[:oauth_authorize],
+            :token_path         => api_info[:oauth_token],
             :persist_folder     => Main.tool.config_folder,
             :type               => Main.tool.options.get_option(:auth,:mandatory),
             :client_id          => Main.tool.options.get_option(:client_id,:mandatory),
@@ -194,8 +187,7 @@ module Asperalm
             private_key_PEM_string=Main.tool.options.get_option(:private_key,:mandatory)
             auth_data[:private_key_obj]=OpenSSL::PKey::RSA.new(private_key_PEM_string)
             auth_data[:username]=Main.tool.options.get_option(:username,:mandatory)
-            auth_data[:audience]=FilesApi.apiurl+"/oauth2/token" # TODO: set by parameters
-
+            auth_data[:audience]=api_info[:jwt_audience]
             Log.log.info("private_key=#{auth_data[:private_key_obj]}")
             Log.log.info("subject=#{auth_data[:username]}")
           when :url_token
@@ -208,8 +200,8 @@ module Asperalm
           @api_files_oauth=Oauth.new(auth_data)
 
           # create objects for REST calls to Files (user and admin scope)
-          @api_files_user=Rest.new(files_api_base_url,{:auth=>{:type=>:oauth2,:obj=>@api_files_oauth,:scope=>FilesApi::SCOPE_FILES_USER}})
-          @api_files_admin=Rest.new(files_api_base_url,{:auth=>{:type=>:oauth2,:obj=>@api_files_oauth,:scope=>FilesApi::SCOPE_FILES_ADMIN}})
+          @api_files_user=Rest.new(api_info[:api_url],{:auth=>{:type=>:oauth2,:obj=>@api_files_oauth,:scope=>FilesApi::SCOPE_FILES_USER}})
+          @api_files_admin=Rest.new(api_info[:api_url],{:auth=>{:type=>:oauth2,:obj=>@api_files_oauth,:scope=>FilesApi::SCOPE_FILES_ADMIN}})
 
           # get our user's default information
           self_data=@api_files_user.read("self")[:data]
@@ -347,12 +339,31 @@ module Asperalm
               @api_files_admin.update("clients/#{the_client_id}",{:jwt_grant_enabled=>true, :public_key=>OpenSSL::PKey::RSA.new(the_private_key).public_key.to_s})
               return Main.result_success
             when :resource
-              resource=Main.tool.options.get_next_argument('resource',[:user,:group,:client,:contact,:dropbox,:node,:operation,:package,:saml_configuration, :workspace, :dropbox_membership,:short_link])
-              resource_class_path=resource.to_s+(resource.eql?(:dropbox) ? 'es' : 's')
-              #:messages:organizations:url_tokens,:usage_reports:workspaces
-              operations=[:list,:id,:create,:bulk_create]
-              #command=Main.tool.options.get_next_argument('op_or_id')
-              command=Main.tool.options.get_next_argument('command',operations)
+              resource_type=Main.tool.options.get_next_argument('resource',[:self,:user,:group,:client,:contact,:dropbox,:node,:operation,:package,:saml_configuration, :workspace, :dropbox_membership,:short_link])
+              resource_class_path=resource_type.to_s+case resource_type;when :dropbox;'es';when :self;'';else; 's';end
+              singleton_object=[:self].include?(resource_type)
+              global_operations=[:create,:list]
+              supported_operations=[:show]
+              supported_operations.push(:modify,:delete,*global_operations) unless singleton_object
+              supported_operations.push(:do) if resource_type.eql?(:node)
+              supported_operations.push(:shared_folders) if resource_type.eql?(:workspace)
+              command=Main.tool.options.get_next_argument('command',supported_operations)
+              # require identifier for non global commands
+              if !singleton_object and !global_operations.include?(command)
+                res_id=Main.tool.options.get_option(:id)
+                res_name=Main.tool.options.get_option(:name)
+                if res_id.nil?
+                  raise "Use either id or name" if res_name.nil?
+                  matching=@api_files_admin.read(resource_class_path,{:q=>res_name})[:data]
+                  raise CliError,"no resource match name" if matching.empty?
+                  raise CliError,"several resources match name" unless matching.length.eql?(1)
+                  res_id=matching.first['id']
+                else
+                  raise "Use either id or name" unless res_name.nil?
+                end
+                resource_instance_path="#{resource_class_path}/#{res_id}"
+              end
+              resource_instance_path=resource_class_path if singleton_object
               case command
               when :create
                 list_or_one=Main.tool.options.get_next_argument("creation data (Hash)")
@@ -362,7 +373,7 @@ module Asperalm
                 end
               when :list
                 default_fields=['id','name']
-                case resource
+                case resource_type
                 when :node; default_fields.push('host','access_key')
                 when :operation; default_fields=nil
                 when :contact; default_fields=["email","name","source_id","source_type"]
@@ -370,39 +381,29 @@ module Asperalm
                 query=Main.tool.options.get_option(:query,:optional)
                 Log.log.debug("#{query}".bg_red)
                 return {:type=>:hash_array,:data=>@api_files_admin.read(resource_class_path,query)[:data],:fields=>default_fields}
-              when :id
-                #raise RuntimeError, "unexpected resource type: #{resource}, only 'node' for actions" if !resource.eql?(:node)
-                res_id=Main.tool.options.get_next_argument('resource id')
-                resource_id_path="#{resource_class_path}/#{res_id}"
-                operations2=[:show,:delete,:modify]
-                operations2.push(:do) if resource.eql?(:node)
-                operations2.push(:shared_folders) if resource.eql?(:workspace)
-                operation=Main.tool.options.get_next_argument('operation',operations2)
-                case operation
-                when :show
-                  object=@api_files_admin.read(resource_id_path)[:data]
-                  fields=object.keys.select{|k|!k.eql?('certificate')}
-                  return { :type=>:key_val_list, :data =>object, :fields=>fields }
-                when :modify
-                  changes=Main.tool.options.get_next_argument('modified parameters (hash)')
-                  @api_files_admin.update(resource_id_path,changes)
-                  return Main.result_status('deleted')
-                when :delete
-                  return do_bulk_operation(res_id,'deleted')do|one_id|
-                    @api_files_admin.delete("#{resource_class_path}/#{one_id.to_s}")
-                    {'id'=>one_id}
-                  end
-                when :do
-                  res_data=@api_files_admin.read(resource_id_path)[:data]
-                  api_node=get_files_node_api(res_data)
-                  ak_data=api_node.call({:operation=>'GET',:subpath=>"access_keys/#{res_data['access_key']}",:headers=>{'Accept'=>'application/json'}})[:data]
-                  return execute_node_action(res_id,ak_data['root_file_id'])
-                when :shared_folders
-                  res_data=@api_files_admin.read("#{resource_class_path}/#{res_id}/permissions")[:data]
-                  return { :type=>:hash_array, :data =>res_data , :fields=>['id','node_name','file_id']} #
-                else raise :ERROR
+              when :show
+                object=@api_files_admin.read(resource_instance_path)[:data]
+                fields=object.keys.select{|k|!k.eql?('certificate')}
+                return { :type=>:key_val_list, :data =>object, :fields=>fields }
+              when :modify
+                changes=Main.tool.options.get_next_argument('modified parameters (hash)')
+                @api_files_admin.update(resource_instance_path,changes)
+                return Main.result_status('modified')
+              when :delete
+                return do_bulk_operation(res_id,'deleted')do|one_id|
+                  @api_files_admin.delete("#{resource_class_path}/#{one_id.to_s}")
+                  {'id'=>one_id}
                 end
-              end #op_or_id
+              when :do
+                res_data=@api_files_admin.read(resource_instance_path)[:data]
+                api_node=get_files_node_api(res_data)
+                ak_data=api_node.call({:operation=>'GET',:subpath=>"access_keys/#{res_data['access_key']}",:headers=>{'Accept'=>'application/json'}})[:data]
+                return execute_node_action(res_id,ak_data['root_file_id'])
+              when :shared_folders
+                res_data=@api_files_admin.read("#{resource_class_path}/#{res_id}/permissions")[:data]
+                return { :type=>:hash_array, :data =>res_data , :fields=>['id','node_name','file_id']} #
+              else raise :ERROR
+              end
             when :usage_reports
               return {:type=>:hash_array,:data=>@api_files_admin.read("usage_reports",{:workspace_id=>@workspace_id})[:data]}
             end

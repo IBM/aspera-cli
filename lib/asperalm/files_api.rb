@@ -1,12 +1,26 @@
+require 'asperalm/log'
+
 module Asperalm
   class FilesApi
     # get API base URL based on instance domain
     # instance domain is asperafiles.com or qa.asperafiles.com
-    def self.baseurl(instance_domain)
-      return 'https://api.'+instance_domain+'/api/v1'
-    end
-    def self.apiurl
-      return 'https://api.asperafiles.com/api/v1'
+    def self.info(web_url)
+      uri=URI.parse(web_url)
+      instance_fqdn=uri.host
+      organization,instance_domain=instance_fqdn.split('.',2)
+      raise "expecting a public FQDN for Files" if instance_domain.nil?
+      Log.log.debug("instance_fqdn=#{instance_fqdn}")
+      Log.log.debug("instance_domain=#{instance_domain}")
+      Log.log.debug("organization=#{organization}")
+      return {
+        :web_url         => web_url,
+        :organization    => organization,
+        :domain          => instance_domain,
+        :api_url         => 'https://api.'+instance_domain+'/api/v1',
+        :jwt_audience    => 'https://api.asperafiles.com/api/v1/oauth2/token',
+        :oauth_authorize => "oauth2/#{organization}/authorize",
+        :oauth_token     => "oauth2/#{organization}/token"
+      }
     end
 
     # node API scopes
