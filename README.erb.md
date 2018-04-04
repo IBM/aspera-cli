@@ -930,6 +930,7 @@ $ aslmcli node central file list
 by providing the `validator` option, offline transfer validation can be done.
 
 ### FASP Stream
+
 It is possible to start a FASPStream session using the node API:
 
 Use the "node stream create" command, then arguments are provided as a [_transfer-spec_](#_transferspec_).
@@ -959,13 +960,13 @@ $ aslmcli node watch_folder create @json:'{"id":"mywfolder","source_dir":"/watch
 Follow the Aspera Transfer Server configuration to activate this feature.
 
 ```
-$ aslmcli node central file list --validator=aslmcli --filter=@json:'{"file_transfer_filter":{"max_result":1}}'
+$ aslmcli node central file list --validator=aslmcli --data=@json:'{"file_transfer_filter":{"max_result":1}}'
 :..............:..............:............:......................................:
 : session_uuid :    file_id   :   status   :              path                    :
 :..............:..............:............:......................................:
 : 1a74444c-... : 084fb181-... : validating : /home/xfer.../PKG - my title/200KB.1 :
 :..............:..............:............:......................................:
-$ aslmcli node central file update --validator=aslmcli --filter=@json:'{"files":[{"session_uuid": "1a74444c-...","file_id": "084fb181-...","status": "completed"}]}'
+$ aslmcli node central file update --validator=aslmcli --data=@json:'{"files":[{"session_uuid": "1a74444c-...","file_id": "084fb181-...","status": "completed"}]}'
 updated
 ```
 
@@ -987,16 +988,8 @@ $ aslmcli node download /share/sourcefile --to-folder=/destinationfolder --load-
 This will get transfer information from the SHOD instance and tell the Azure ATS instance 
 to download files.
 
-## Xnode (experiments)
-
-
-```
-"transfer_filter"=>"t['status'].eql?('completed') and t['start_spec']['remote_user'].eql?('faspex')", :file_filter=>"f['status'].eql?('completed') and 0 != f['size'] and t['start_spec']['direction'].eql?('send')"
-```
-
-
-
 ## <a name="client"></a>Client
+
 The `client` plugin refers to the use of a local FASP client. It provides the following commands:
 
 * `connect list` : list connect client versions available on internet
@@ -1040,7 +1033,7 @@ downloaded: AsperaConnect-3.6.1.111259-mac-intel-10.6.dmg
 
 ## IBM Aspera High Speed Transfer Server
 
-Works at FASP level (SSH/ascp/ascmd).
+Works at FASP level (SSH/ascp/ascmd). (different from node api)
 
 ### Example
 
@@ -1057,6 +1050,8 @@ This creates a option preset "aspera_demo_server" and set it as default for appl
 
 
 ## IBM Aspera Faspex
+
+Send and receive packages.
 
 ### remote sources
 
@@ -1081,6 +1076,10 @@ my_faspex_node:
 In this example, a faspex storage named "testlaurent" exists in Faspex, and is located
 under the docroot in "/myfiles" (this must be the same as configured in Faspex).
 The node configuration name is "my_faspex_node" here.
+
+## IBM Aspera Shares
+
+Aspera Shares supports the "node API" for the file transfer part. (Shares 1 and 2)
 
 ## Aspera Transfer Service
 
@@ -1159,8 +1158,8 @@ This is related to:
 Like any aslmcli commands, parameters can be passed on command line or using a configuration option preset. Example using a option preset:
 
 ```
-$ aslmcli config id default set preview my_files_access_key
 $ aslmcli config id my_files_access_key update --url=https://localhost:9092 --username=my_access_key --password=my_secret
+$ aslmcli config id default set preview my_files_access_key
 ```
 
 Once can check if the access key is well configured using:
@@ -1170,9 +1169,9 @@ $ aslmcli -Pmy_files_access_key node browse /
 
 ### Execution
 
-The tool intentionally supports only a "finite execution time" mode, i.e.
-it needs to be run regularly to create or update preview files.
-I.e. it does not implement a loop. Running preview generation
+The tool intentionally supports only a "one shot" mode.
+It needs to be run regularly to create or update preview files.
+It does not implement a loop. Running preview generation
 on a regular basis shall be done using the operating system
 scheduler (e.g. Cron on Linux, or Task Scheduler on Windows).
 To prevent parallel execution of the task, one can use either
@@ -1185,11 +1184,13 @@ The tool will find candidates for preview generation using three commands:
 
 * `events` : only recently uploaded files will be tested
 * `scan` : deeply scan all files under the access key&apos;s "storage root"
-* `folder` : same as `scan `, but only on the specified folder&apos;s "file identifier"
+* `folder` : same as `scan`, but only on the specified folder&apos;s "file identifier"
 
 ### Creation/Update
 
-Once candidate are selected, once candidates are selected, a preview is always generated if it does not exist already, else if a preview already exist, it will be generated
+Once candidate are selected, once candidates are selected, 
+a preview is always generated if it does not exist already, 
+else if a preview already exist, it will be generated
 using one of three overwrite method:
 
 * `always` : preview is always generated, even if it already exists and is newer than original
@@ -1215,6 +1216,7 @@ $ aslmcli preview scan --skip-folders=@json:'["/not_here"]'
 ```
 
 ### Examples
+
 on command line:
 
 ```bash
@@ -1357,6 +1359,7 @@ So, it evolved into `aslmcli`:
 
 
 # BUGS
+
 This is best effort code without official support, dont expect full capabilities. This code is not
 supported by IBM/Aspera. You can contact the author for bugs or features.
 
@@ -1370,6 +1373,7 @@ This means that you do not have ruby support for ED25519 SSH keys. You may eithe
 Gems, or remove your ed25519 key from your `.ssh` folder to solve the issue.
 
 # TODO
+
 * remove rest and oauth classes and use ruby standard gems:
 
   * oauth

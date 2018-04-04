@@ -24,6 +24,7 @@ end
 #end
 
 module Asperalm
+  # builds a meaningful error message from known formats
   class RestCallError < StandardError
     attr_accessor :response
     def initialize(response)
@@ -33,6 +34,7 @@ module Asperalm
       if !response.body.nil?
         data=JSON.parse(response.body) rescue nil
         if data.is_a?(Hash)
+          # we have a payload
           if data['error'].is_a?(Hash)
             if data['error']["user_message"].is_a?(String)
               message=data['error']["user_message"]
@@ -41,6 +43,9 @@ module Asperalm
             end
           elsif data['error'].is_a?(String)
             message=data['error']
+          end
+          if data['error_description'].is_a?(String)
+            message=message+": "+data['error_description']
           end
         end
       end
@@ -115,7 +120,7 @@ module Asperalm
       if !@opt_call_data.nil? then
         call_data.merge!(@opt_call_data) { |key, v1, v2| next v1.merge(v2) if v1.is_a?(Hash) and v2.is_a?(Hash); v1 }
       end
-      # OAuth
+      # OAuth requires generation of token
       if !call_data[:headers].has_key?('Authorization') and call_data.has_key?(:auth) and call_data[:auth].has_key?(:obj) then
         call_data[:headers]['Authorization']=call_data[:auth][:obj].get_authorization(call_data[:auth][:scope])
       end
@@ -236,6 +241,10 @@ module Asperalm
 
     def delete(subpath)
       return call({:operation=>'DELETE',:subpath=>subpath,:headers=>{'Accept'=>'application/json'}})
+    end
+
+    def cancel(subpath)
+      return call({:operation=>'CANCEL',:subpath=>subpath,:headers=>{'Accept'=>'application/json'}})
     end
   end
 end #module Asperalm

@@ -4,20 +4,20 @@ module Asperalm
   # A simple wrapper around Net::SSH
   # executes one command and get its result from stdout
   class Ssh
-    # options: same as Net::SSH.start
+    # ssh_options: same as Net::SSH.start
     # see: https://net-ssh.github.io/net-ssh/classes/Net/SSH.html#method-c-start
-    def initialize(host,username,options)
+    def initialize(host,username,ssh_options)
       Log.log.debug("ssh:#{username}@#{host}")
       @host=host
       @username=username
-      @options=options
-      @options[:logger]=Log.log
+      @ssh_options=ssh_options
+      @ssh_options[:logger]=Log.log
     end
 
     def execute(cmd,input=nil)
       Log.log.debug("cmd=#{cmd}")
       response = ''
-      Net::SSH.start(@host, @username, @options) do |session|
+      Net::SSH.start(@host, @username, @ssh_options) do |session|
         ssh_channel=session.open_channel do |channel|
           # prepare stdout processing
           channel.on_data{|chan,data|response << data}

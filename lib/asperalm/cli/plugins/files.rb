@@ -13,13 +13,14 @@ module Asperalm
 
         def declare_options
           Main.tool.options.add_opt_list(:download_mode,[:fasp, :node_http ],"download mode")
-          Main.tool.options.add_opt_list(:auth,Oauth.auth_types,"type of authentication",'-tTYPE')
+          Main.tool.options.add_opt_list(:auth,Oauth.auth_types,"type of Oauth authentication")
           Main.tool.options.add_opt_list(:bulk,[:no,:yes],"bulk operation")
           Main.tool.options.add_opt_simple(:url,"URL of application, e.g. http://org.asperafiles.com")
           Main.tool.options.add_opt_simple(:username,"username to log in")
           Main.tool.options.add_opt_simple(:password,"user's password")
           Main.tool.options.add_opt_simple(:client_id,"API client identifier in application")
           Main.tool.options.add_opt_simple(:client_secret,"API client passcode")
+          Main.tool.options.add_opt_simple(:redirect_uri,"API client redirect URI")
           Main.tool.options.add_opt_simple(:private_key,"RSA private key PEM value for JWT (prefix file path with @val:@file:)")
           Main.tool.options.add_opt_simple(:workspace,"name of workspace")
           Main.tool.options.add_opt_simple(:recipient,"package recipient")
@@ -193,7 +194,7 @@ module Asperalm
           when :url_token
             auth_data[:url_token]=Main.tool.options.get_option(:url_token,:mandatory)
           else
-            raise "unknown auth type: #{auth_data[:type]}"
+            raise "unknown auth type: #{auth_data[:type].class}:#{auth_data[:type]}"
           end
 
           # auth API

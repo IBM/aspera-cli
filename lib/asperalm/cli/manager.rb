@@ -118,11 +118,11 @@ module Asperalm
       attr_accessor :ask_optionals
 
       #
-      def initialize
+      def initialize(toolname='aslmcli')
         # command line values not starting with '-'
-        @unprocessed_arguments=[]
+        @unprocessed_cmd_line_arguments=[]
         # command line values starting with '-'
-        @unprocessed_options=[]
+        @unprocessed_cmd_line_options=[]
         # a copy of all initial options
         @initial_cli_options=[]
         # option description: key = option symbol, value=hash, :type, :accessor, :value, :accepted
@@ -133,27 +133,27 @@ module Asperalm
         @ask_optionals=:no
         # Note: was initially inherited, but goal is to have something different
         @parser=OptionParser.new
-        #super
+        # those must be set before parse, parse consumes those defined only
+        @unprocessed_defaults={}
+        Log.log.debug("read_env_vars")
+        @unprocessed_env={}
+        # options can also be provided by env vars : --param-name -> ASLMCLI_PARAM_NAME
+        env_prefix=toolname.upcase+'_'
+        ENV.each do |k,v|
+          if k.start_with?(env_prefix)
+            @unprocessed_env[k[env_prefix.length..-1].downcase.to_sym]=v
+          end
+        end
         self.set_obj_attr(:interactive,self,:use_interactive)
         self.add_opt_list(:interactive,[:yes,:no],"use interactive input of missing params")
         self.set_obj_attr(:ask_options,self,:ask_optionals)
         self.add_opt_list(:ask_options,[:yes,:no],"ask even optional options")
       end
 
-      # options can also be provided by env vars : --param-name -> ASLMCLI_PARAM_NAME
-      def read_env_vars
-        Log.log.debug("read_env_vars")
-        ENV.each do |k,v|
-          if k.start_with?('ASLMCLI_')
-            set_option(k.gsub(/^ASLMCLI_/,'').downcase.to_sym,v,"env var")
-          end
-        end
-      end
-
       # parse arguments into options and arguments
-      def set_argv(argv)
-        @unprocessed_options=[]
-        @unprocessed_arguments=[]
+      def add_cmd_line_options(argv)
+        @unprocessed_cmd_line_options=[]
+        @unprocessed_cmd_line_arguments=[]
         process_options=true
         while !argv.empty?
           value=argv.shift
@@ -161,14 +161,14 @@ module Asperalm
             if value.eql?('--')
               process_options=false
             else
-              @unprocessed_options.push(value)
+              @unprocessed_cmd_line_options.push(value)
             end
           else
-            @unprocessed_arguments.push(value)
+            @unprocessed_cmd_line_arguments.push(value)
           end
         end
-        @initial_cli_options=@unprocessed_options.dup
-        Log.log.debug("set_argv:commands/args=#{@unprocessed_arguments},options=#{@unprocessed_options}".red)
+        @initial_cli_options=@unprocessed_cmd_line_options.dup
+        Log.log.debug("add_cmd_line_options:commands/args=#{@unprocessed_cmd_line_arguments},options=#{@unprocessed_cmd_line_options}".red)
       end
 
       def get_interactive(type,descr,expected=:single)
@@ -202,32 +202,27 @@ module Asperalm
       # or :multiple for remaining values
       # or :single for a single unconstrained value
       def get_next_argument(descr,expected=:single,is_type=:mandatory)
-        if is_type.eql?(:mandatory) and @unprocessed_arguments.empty?
+        if is_type.eql?(:mandatory) and @unprocessed_cmd_line_arguments.empty?
           result=get_interactive(:argument,descr,expected)
         else # there are values
           case expected
           when :single
-            result=self.class.get_extended_value(descr,@unprocessed_arguments.shift)
+            result=self.class.get_extended_value(descr,@unprocessed_cmd_line_arguments.shift)
           when :multiple
-            result = @unprocessed_arguments.shift(@unprocessed_arguments.length).map{|v|self.class.get_extended_value(descr,v)}
+            result = @unprocessed_cmd_line_arguments.shift(@unprocessed_cmd_line_arguments.length).map{|v|self.class.get_extended_value(descr,v)}
           else
-            result=self.class.get_from_list(@unprocessed_arguments.shift,descr,expected)
+            result=self.class.get_from_list(@unprocessed_cmd_line_arguments.shift,descr,expected)
           end
         end
         Log.log.debug("#{descr}=#{result}")
         return result
       end
 
-      def declare_option(option_symbol,type=:value)
-        Log.log.debug("declare_option: #{option_symbol}".bg_green)
-        if @declared_options.has_key?(option_symbol)
-          Log.log.debug("opt type: #{@declared_options[option_symbol][:type]} -> #{type}")
-          if @declared_options[option_symbol][:type].eql?(:value)
-            @declared_options[option_symbol][:type]=type
-          end
-        else
-          @declared_options[option_symbol]={:type=>type}
-        end
+      # declare option of type :accessor, or :value
+      def declare_option(option_symbol,type)
+        @declared_options[option_symbol]||={}
+        Log.log.debug("declare_option: #{option_symbol}: #{@declared_options[option_symbol][:type]} -> #{type}".bg_green)
+        @declared_options[option_symbol][:type]=type
       end
 
       # define option with handler
@@ -242,7 +237,8 @@ module Asperalm
       def set_option(option_symbol,value,where="default")
         if ! @declared_options.has_key?(option_symbol)
           Log.log.debug("set unknown option: #{option_symbol}")
-          declare_option(option_symbol)
+          raise "ERROR"
+          #declare_option(option_symbol)
         end
         value=self.class.get_extended_value(option_symbol,value)
         # constrained parameters as string are revert to symbol
@@ -269,8 +265,10 @@ module Asperalm
           case @declared_options[option_symbol][:type]
           when :accessor
             result=@declared_options[option_symbol][:accessor].value
-          else
+          when :value
             result=@declared_options[option_symbol][:value]
+          else
+            raise "unknown type"
           end
           Log.log.debug("get #{option_symbol} (#{@declared_options[option_symbol][:type]}) : #{result}")
         end
@@ -298,9 +296,8 @@ module Asperalm
       def set_defaults(preset_hash)
         Log.log.debug("set_defaults=#{preset_hash}")
         raise "internal error: setting default with no hash: #{preset_hash.class}" if !preset_hash.is_a?(Hash)
-        # 1- in conf file, key is string, in config, key is symbol
-        # 2- value may be string, but symbol expected for value lists, but options may not be already declared, see Note1
-        preset_hash.each{|k,v|set_option(k.to_sym,v,"conf file")}
+        # incremental override
+        preset_hash.each{|k,v|@unprocessed_defaults[k.to_sym]=v}
       end
 
       # generate command line option from option symbol
@@ -316,7 +313,7 @@ module Asperalm
 
       # define an option with restricted values
       def add_opt_list(option_symbol,values,help,*on_args)
-        declare_option(option_symbol)
+        declare_option(option_symbol,:value)
         Log.log.debug("add_opt_list #{option_symbol}")
         on_args.unshift(symbol_to_option(option_symbol,'ENUM'))
         # this option value must be a symbol
@@ -331,7 +328,7 @@ module Asperalm
 
       # define an option with open values
       def add_opt_simple(option_symbol,*on_args)
-        declare_option(option_symbol)
+        declare_option(option_symbol,:value)
         Log.log.debug("add_opt_simple #{option_symbol}")
         on_args.unshift(symbol_to_option(option_symbol,"VALUE"))
         Log.log.debug("on_args=#{on_args}")
@@ -340,7 +337,7 @@ module Asperalm
 
       # define an option with date format
       def add_opt_date(option_symbol,*on_args)
-        declare_option(option_symbol)
+        declare_option(option_symbol,:value)
         Log.log.debug("add_opt_date #{option_symbol}")
         on_args.unshift(symbol_to_option(option_symbol,"DATE"))
         Log.log.debug("on_args=#{on_args}")
@@ -363,13 +360,13 @@ module Asperalm
 
       # check if there were unprocessed values to generate error
       def command_or_arg_empty?
-        return @unprocessed_arguments.empty?
+        return @unprocessed_cmd_line_arguments.empty?
       end
 
       def fail_if_unprocessed
         # unprocessed options or arguments ?
-        raise CliBadArgument,"unprocessed options: #{@unprocessed_options}" unless @unprocessed_options.empty?
-        raise CliBadArgument,"unprocessed values: #{@unprocessed_arguments}" unless @unprocessed_arguments.empty?
+        raise CliBadArgument,"unprocessed options: #{@unprocessed_cmd_line_options}" unless @unprocessed_cmd_line_options.empty?
+        raise CliBadArgument,"unprocessed values: #{@unprocessed_cmd_line_arguments}" unless @unprocessed_cmd_line_arguments.empty?
       end
 
       # get all original options  on command line used to generate a config in config file
@@ -386,17 +383,16 @@ module Asperalm
             value=self.class.get_extended_value(name,value)
             Log.log.debug("option #{name}=#{value}")
             result[name]=value
-            @unprocessed_options.delete(optionval) if remove_from_remaining
+            @unprocessed_cmd_line_options.delete(optionval) if remove_from_remaining
           else
             raise CliBadArgument,"wrong option format: #{optionval}"
           end
         end
-        #@unprocessed_options=[]
         return result
       end
 
       # return options as taken from config file and command line just before command execution
-      def get_current_options
+      def declared_options
         return @declared_options.keys.inject({}) do |h,option_symb|
           h[option_symb.to_s]=get_option(option_symb)
           h
@@ -406,16 +402,28 @@ module Asperalm
       # removes already known options from the list
       def parse_options!
         Log.log.debug("parse_options!")
+        # first conf file, then env var
+        [[@unprocessed_defaults,"file"],[@unprocessed_env,"env"]].each do |x|
+          x.first.each do |k,v|
+            if @declared_options.has_key?(k)
+              set_option(k,v,x.last)
+              x.first.delete(k)
+            end
+          end
+        end
+        # command line override
         unknown_options=[]
         begin
-          @parser.parse!(@unprocessed_options)
+          # remove known options one by one, exception if unknown
+          @parser.parse!(@unprocessed_cmd_line_options)
         rescue OptionParser::InvalidOption => e
+          # save for later processing
           unknown_options.push(e.args.first)
           retry
         end
         Log.log.debug("remains: #{unknown_options}")
         # set unprocessed options for next time
-        @unprocessed_options=unknown_options
+        @unprocessed_cmd_line_options=unknown_options
       end
     end
   end

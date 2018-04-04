@@ -5,15 +5,42 @@ require "base64"
 module Asperalm
   module Cli
     module Plugins
+      # experiments
       class Xnode < BasicAuthPlugin
         alias super_declare_options declare_options
+        # "transfer_filter"=>"t['status'].eql?('completed') and t['start_spec']['remote_user'].eql?('faspex')", :file_filter=>"f['status'].eql?('completed') and 0 != f['size'] and t['start_spec']['direction'].eql?('send')"
         def declare_options
           super_declare_options
           Main.tool.options.add_opt_simple(:filter_transfer,"Ruby expression for filter at transfer level (cleanup)")
           Main.tool.options.add_opt_simple(:filter_file,"Ruby expression for filter at file level (cleanup)")
+          Main.tool.options.add_opt_simple(:persistency,"persistency file (cleanup,forward)")
+          Main.tool.options.set_option(:persistency,File.join(Main.tool.config_folder,"persistency_cleanup.txt"))
         end
 
         def action_list; [ :postprocess, :cleanup, :forward ];end
+
+        # retrieve tranfer list using API and persistency file
+        def self.get_transfers_iteration(api_node,params)
+          persistencyfile=Main.tool.options.get_option(:persistency,:mandatory)
+          # first time run ? or subsequent run ?
+          iteration_token=nil
+          if !persistencyfile.nil? and File.exist?(persistencyfile)
+            iteration_token=File.read(persistencyfile)
+          end
+          params[:iteration_token]=iteration_token unless iteration_token.nil?
+          resp=api_node.read('ops/transfers',params)
+          transfers=resp[:data]
+          if transfers.is_a?(Array) then
+            # 3.7.2, released API
+            iteration_token=URI.decode_www_form(URI.parse(resp[:http]['Link'].match(/<([^>]+)>/)[1]).query).to_h['iteration_token']
+          else
+            # 3.5.2, deprecated API
+            iteration_token=transfers['iteration_token']
+            transfers=transfers['transfers']
+          end
+          File.write(persistencyfile,iteration_token) if (!persistencyfile.nil?)
+          return transfers
+        end
 
         def execute_action
           api_node=Rest.new(Main.tool.options.get_option(:url,:mandatory),{:auth=>{:type=>:basic,:username=>Main.tool.options.get_option(:username,:mandatory), :password=>Main.tool.options.get_option(:password,:mandatory)}})
