@@ -118,7 +118,7 @@ module Asperalm
       attr_accessor :ask_optionals
 
       #
-      def initialize(toolname='aslmcli')
+      def initialize(program_name)
         # command line values not starting with '-'
         @unprocessed_cmd_line_arguments=[]
         # command line values starting with '-'
@@ -131,22 +131,27 @@ module Asperalm
         @use_interactive=STDIN.isatty ? :yes : :no
         # ask optional options if not provided and in interactive
         @ask_optionals=:no
-        # Note: was initially inherited, but goal is to have something different
-        @parser=OptionParser.new
         # those must be set before parse, parse consumes those defined only
         @unprocessed_defaults={}
-        Log.log.debug("read_env_vars")
         @unprocessed_env={}
+        # Note: was initially inherited but it is prefered to have specific methods
+        @parser=OptionParser.new
+        @parser.program_name=program_name
+      end
+      
+      def declare_options_scan_env
+        Log.log.debug("declare_options_scan_env")
         # options can also be provided by env vars : --param-name -> ASLMCLI_PARAM_NAME
-        env_prefix=toolname.upcase+'_'
+        env_prefix=@parser.program_name.upcase+'_'
         ENV.each do |k,v|
           if k.start_with?(env_prefix)
             @unprocessed_env[k[env_prefix.length..-1].downcase.to_sym]=v
           end
         end
+        Log.log.debug("env=#{@unprocessed_env}".red)
         self.set_obj_attr(:interactive,self,:use_interactive)
-        self.add_opt_list(:interactive,[:yes,:no],"use interactive input of missing params")
         self.set_obj_attr(:ask_options,self,:ask_optionals)
+        self.add_opt_list(:interactive,[:yes,:no],"use interactive input of missing params")
         self.add_opt_list(:ask_options,[:yes,:no],"ask even optional options")
       end
 
@@ -220,9 +225,12 @@ module Asperalm
 
       # declare option of type :accessor, or :value
       def declare_option(option_symbol,type)
-        @declared_options[option_symbol]||={}
-        Log.log.debug("declare_option: #{option_symbol}: #{@declared_options[option_symbol][:type]} -> #{type}".bg_green)
-        @declared_options[option_symbol][:type]=type
+        Log.log.debug("declare_option: #{option_symbol}: #{type}: skip=#{@declared_options.has_key?(option_symbol)}".green)
+        if @declared_options.has_key?(option_symbol)
+          raise "only accessor can be redeclared and ignored" unless @declared_options[option_symbol][:type].eql?(:accessor)
+          return
+        end
+        @declared_options[option_symbol]={:type=>type}
       end
 
       # define option with handler
@@ -245,7 +253,7 @@ module Asperalm
         if @declared_options[option_symbol].has_key?(:values) and value.is_a?(String)
           value=self.class.get_from_list(value,option_symbol.to_s+" in conf file",@declared_options[option_symbol][:values])
         end
-        Log.log.debug("set #{option_symbol}=#{value} (#{@declared_options[option_symbol][:type]})".blue)
+        Log.log.debug("set #{option_symbol}=#{value} (#{@declared_options[option_symbol][:type]}) : #{where}".blue)
         case @declared_options[option_symbol][:type]
         when :accessor
           @declared_options[option_symbol][:accessor].value=value
@@ -293,8 +301,8 @@ module Asperalm
       end
 
       # param must be hash
-      def set_defaults(preset_hash)
-        Log.log.debug("set_defaults=#{preset_hash}")
+      def add_option_preset(preset_hash)
+        Log.log.debug("add_option_preset=#{preset_hash}")
         raise "internal error: setting default with no hash: #{preset_hash.class}" if !preset_hash.is_a?(Hash)
         # incremental override
         preset_hash.each{|k,v|@unprocessed_defaults[k.to_sym]=v}
@@ -399,18 +407,21 @@ module Asperalm
         end
       end
 
-      # removes already known options from the list
-      def parse_options!
-        Log.log.debug("parse_options!")
-        # first conf file, then env var
-        [[@unprocessed_defaults,"file"],[@unprocessed_env,"env"]].each do |x|
-          x.first.each do |k,v|
-            if @declared_options.has_key?(k)
-              set_option(k,v,x.last)
-              x.first.delete(k)
-            end
+      def apply_options_preset(preset,where,force=false)
+        preset.each do |k,v|
+          if @declared_options.has_key?(k)
+            set_option(k,v,where)
+            preset.delete(k)
           end
         end
+      end
+
+      # removes already known options from the list
+      def parse_options!
+        Log.log.debug("parse_options!".red)
+        # first conf file, then env var
+        apply_options_preset(@unprocessed_defaults,"file")
+        apply_options_preset(@unprocessed_env,"env")
         # command line override
         unknown_options=[]
         begin

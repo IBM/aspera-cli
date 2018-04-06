@@ -29,6 +29,7 @@ module Asperalm
       @@PROGRAM_NAME = 'aslmcli'
       # folder in $HOME for the application
       @@ASPERA_HOME_FOLDERNAME='.aspera'
+      @@CONFIG_FOLDER=File.join(Dir.home,@@ASPERA_HOME_FOLDERNAME,@@PROGRAM_NAME)
       # folder containing custom plugins in `config_folder`
       @@ASPERA_PLUGINS_FOLDERNAME='plugins'
       # main config file
@@ -43,50 +44,28 @@ module Asperalm
       @@CONFIG_FILE_KEY_DEFAULT='default'
       # oldest compatible conf file format, update to latest version when an incompatible change is made
       @@MIN_CONFIG_VERSION='0.4.5'
-      @@NO_DEFAULT='none'
       @@HELP_URL='http://www.rubydoc.info/gems/asperalm'
       RUBY_FILE_EXT='.rb'
       FIELDS_ALL='ALL'
       FIELDS_DEFAULT='DEF'
 
-      # $HOME/.aspera/aslmcli/config.yaml
-      def default_config_file
-        return File.join(config_folder,@@DEFAULT_CONFIG_FILENAME)
-      end
-
-      def current_config_file
-        return @opt_mgr.get_option(:config_file,:mandatory)
-      end
-
-      # config file format: hash of hash, keys are string
-      def read_config_file(config_file_path=current_config_file)
-        if !File.exist?(config_file_path)
-          Log.log.info("no config file, using empty configuration")
-          return {@@MAIN_PLUGIN_NAME_STR=>{@@CONFIG_FILE_KEY_VERSION=>@@TOOL_VERSION}}
-        end
-        Log.log.debug "loading #{config_file_path}"
-        config=YAML.load_file(config_file_path)
-
-        return config
-      end
-
-      def write_config_file(config=@loaded_configs,config_file_path=current_config_file)
-        raise "no configuration loaded" if config.nil?
+      def write_config_file
+        raise "no configuration loaded" if @available_presets.nil?
         FileUtils::mkdir_p(config_folder) unless Dir.exist?(config_folder)
-        Log.log.debug "writing #{config_file_path}"
-        File.write(config_file_path,config.to_yaml)
+        Log.log.debug "writing #{@option_config_file}"
+        File.write(@option_config_file,@available_presets.to_yaml)
       end
 
-      # returns name if @loaded_configs has default
+      # returns name if @available_presets has default
       # returns nil if there is no config or bypass default params
       def get_plugin_default_config_name(plugin_sym)
         default_config_name=nil
-        return nil if @loaded_configs.nil? or !@use_plugin_defaults
-        if @loaded_configs.has_key?(@@CONFIG_FILE_KEY_DEFAULT) and
-        @loaded_configs[@@CONFIG_FILE_KEY_DEFAULT].has_key?(plugin_sym.to_s)
-          default_config_name=@loaded_configs[@@CONFIG_FILE_KEY_DEFAULT][plugin_sym.to_s]
-          raise CliError,"Default config name [#{default_config_name}] specified for plugin [#{plugin_sym.to_s}], but it does not exist in config file." if !@loaded_configs.has_key?(default_config_name)
-          raise CliError,"Config name [#{default_config_name}] must be a hash, check config file." if !@loaded_configs[default_config_name].is_a?(Hash)
+        return nil if @available_presets.nil? or !@use_plugin_defaults
+        if @available_presets.has_key?(@@CONFIG_FILE_KEY_DEFAULT) and
+        @available_presets[@@CONFIG_FILE_KEY_DEFAULT].has_key?(plugin_sym.to_s)
+          default_config_name=@available_presets[@@CONFIG_FILE_KEY_DEFAULT][plugin_sym.to_s]
+          raise CliError,"Default config name [#{default_config_name}] specified for plugin [#{plugin_sym.to_s}], but it does not exist in config file." if !@available_presets.has_key?(default_config_name)
+          raise CliError,"Config name [#{default_config_name}] must be a hash, check config file." if !@available_presets[default_config_name].is_a?(Hash)
         end
 
         return default_config_name
@@ -94,10 +73,11 @@ module Asperalm
 
       # returns default parameters for a plugin from loaded config file
       # try to find: conffile[conffile["config"][:default][plugin_sym]]
-      def load_plugin_default_parameters(plugin_sym)
+      def add_plugin_default_preset(plugin_sym)
         default_config_name=get_plugin_default_config_name(plugin_sym)
+        Log.log.debug("add_plugin_default_preset:#{plugin_sym}:#{default_config_name}")
         return if default_config_name.nil?
-        @opt_mgr.set_defaults(@loaded_configs[default_config_name])
+        @opt_mgr.add_option_preset(@available_presets[default_config_name])
       end
 
       def self.result_none
@@ -119,9 +99,9 @@ module Asperalm
 
       def option_log_level=(value); Log.level = value; end
 
-      def option_insecure; Rest.insecure; end
+      def option_insecure; Rest.insecure ? :yes : :no; end
 
-      def option_insecure=(value); Rest.insecure = value; end
+      def option_insecure=(value); Rest.insecure = value.eql?(:no) ? false : true; end
 
       def option_transfer_spec; @transfer_spec_default; end
 
@@ -139,9 +119,9 @@ module Asperalm
 
       def option_ui=(value); OpenApplication.instance.url_method=value; end
 
-      #      def option_fasp_folder; Fasp::Installation.instance.paths; end
-      #
-      #      def option_fasp_folder=(value); Fasp::Installation.instance.paths=value; end
+      def option_preset; raise "n/a"; end
+
+      def option_preset=(value); @opt_mgr.add_option_preset(@available_presets[value]); end
 
       # returns the list of plugins from plugin folder
       def plugin_sym_list
@@ -188,12 +168,12 @@ module Asperalm
             when nil
               param_set_name=get_plugin_default_config_name(:node)
               raise CliBadArgument,"No default node configured, Please specify --transfer-node" if node_config.nil?
-              node_config=@loaded_configs[config_name]
+              node_config=@available_presets[config_name]
             when /^@param:/
               param_set_name=transfer_node_spec.gsub!(/^@param:/,'')
               Log.log.debug("param_set_name=#{param_set_name}")
-              raise CliBadArgument,"no such parameter set: [#{param_set_name}] in config file" if !@loaded_configs.has_key?(param_set_name)
-              node_config=@loaded_configs[param_set_name]
+              raise CliBadArgument,"no such parameter set: [#{param_set_name}] in config file" if !@available_presets.has_key?(param_set_name)
+              node_config=@available_presets[param_set_name]
             else
               node_config=Manager.get_extended_value(:transfer_node,transfer_node_spec)
             end
@@ -212,27 +192,32 @@ module Asperalm
       end
 
       attr_accessor :option_flat_hash
+      attr_accessor :option_config_file
 
+      # minimum initialization
       def initialize
         # overriding parameters on transfer spec
         @transfer_spec_default={}
         @option_help=false
         @option_show_config=false
         @option_flat_hash=:yes
-        @loaded_configs=nil
+        @available_presets=nil
         @transfer_agent_singleton=nil
         @use_plugin_defaults=true
         @plugins={@@MAIN_PLUGIN_NAME_STR.to_sym=>{:source=>__FILE__,:require_stanza=>nil}}
         @plugin_lookup_folders=[]
+        @option_config_file=File.join(config_folder,@@DEFAULT_CONFIG_FILENAME)
+        # option manager is created later
+        @opt_mgr=nil
         # find the root folder of gem where this class is
         gem_root=File.expand_path(@@CLI_MODULE.to_s.gsub('::','/').gsub(%r([^/]+),'..'),File.dirname(__FILE__))
         add_plugin_lookup_folder(File.join(gem_root,@@GEM_PLUGINS_FOLDER))
         add_plugin_lookup_folder(File.join(config_folder,@@ASPERA_PLUGINS_FOLDERNAME))
-        @opt_mgr=Manager.new
-        @opt_mgr.parser.program_name=@@PROGRAM_NAME
       end
 
-      def declare_options
+      # local options
+      def create_opt_mgr
+        @opt_mgr=Manager.new(@@PROGRAM_NAME)
         @opt_mgr.parser.banner = "NAME\n\t#{@@PROGRAM_NAME} -- a command line tool for Aspera Applications (v#{@@TOOL_VERSION})\n\n"
         @opt_mgr.parser.separator "SYNOPSIS"
         @opt_mgr.parser.separator "\t#{@@PROGRAM_NAME} COMMANDS [OPTIONS] [ARGS]"
@@ -256,31 +241,18 @@ module Asperalm
         @opt_mgr.parser.separator "\tSome commands require mandatory arguments, e.g. a path.\n"
         @opt_mgr.parser.separator ""
         @opt_mgr.parser.separator "OPTIONS: global"
-        @opt_mgr.parser.on("-h", "--help", "Show this message.") { @option_help=true }
-        @opt_mgr.parser.on("--show-config", "Display parameters used for the provided action.") { @option_show_config=true }
-        @opt_mgr.add_opt_list(:ui,OpenApplication.user_interfaces,"method to start browser",'-gTYPE')
-        @opt_mgr.add_opt_list(:insecure,[:yes,:no],"do not validate HTTPS certificate")
-        @opt_mgr.add_opt_list(:flat_hash,[:yes,:no],"display hash values as additional keys")
-        @opt_mgr.add_opt_list(:log_level,Log.levels,"Log level")
-        @opt_mgr.add_opt_list(:logger,Log.logtypes,"log method")
-        @opt_mgr.add_opt_list(:format,self.class.display_formats,"output format")
-        @opt_mgr.add_opt_list(:transfer,[:direct,:connect,:node],"type of transfer")
-        @opt_mgr.add_opt_simple(:config_file,"read parameters from file in YAML format, current=#{@opt_mgr.get_option(:config_file,:optional)}")
-        @opt_mgr.add_opt_simple(:load_params,"-PVALUE","load the named configuration from current config file, use \"#{@@NO_DEFAULT}\" to avoid loading the default configuration")
-        @opt_mgr.add_opt_simple(:fasp_folder,"specify where to find FASP (main folder), current=#{@opt_mgr.get_option(:fasp_folder,:optional)}")
-        @opt_mgr.add_opt_simple(:transfer_node,"name of configuration used to transfer when using --transfer=node")
-        @opt_mgr.add_opt_simple(:fields,"comma separated list of fields, or #{FIELDS_ALL}, or #{FIELDS_DEFAULT}")
-        @opt_mgr.add_opt_simple(:fasp_proxy,"URL of FASP proxy (dnat / dnats)")
-        @opt_mgr.add_opt_simple(:http_proxy,"URL of HTTP proxy (for http fallback)")
+        @opt_mgr.declare_options_scan_env
+        @opt_mgr.set_obj_attr(:config_file,self,:option_config_file)
+        @opt_mgr.add_opt_simple(:config_file,"read parameters from file in YAML format, current=#{@option_config_file}")
+        @opt_mgr.add_opt_switch(:help,"Show this message.","-h") { @option_help=true }
+        @opt_mgr.add_opt_switch(:show_config, "Display parameters used for the provided action.") { @option_show_config=true }
         @opt_mgr.add_opt_switch(:rest_debug,"-r","more debug for HTTP calls") { Rest.set_debug(true) }
         @opt_mgr.add_opt_switch(:no_default,"-N","do not load default configuration") { @use_plugin_defaults=false }
         @opt_mgr.add_opt_switch(:version,"-v","display version") { puts @@TOOL_VERSION;Process.exit(0) }
-        @opt_mgr.add_opt_simple(:ts,"override transfer spec values (hash, use @json: prefix), current=#{@opt_mgr.get_option(:ts,:optional)}")
-        @opt_mgr.add_opt_simple(:to_folder,"destination folder for downloaded files, current=#{@opt_mgr.get_option(:to_folder,:optional)}")
-        @opt_mgr.add_opt_simple(:lock_port,"prevent dual execution of a command, e.g. in cron")
-        @opt_mgr.add_opt_simple(:use_product,"which local product to use for ascp")
+      end
 
-        # handler must be set before setting defaults
+      def declare_options
+        # handler must be set before declaration
         @opt_mgr.set_obj_attr(:log_level,self,:option_log_level)
         @opt_mgr.set_obj_attr(:insecure,self,:option_insecure)
         @opt_mgr.set_obj_attr(:flat_hash,self,:option_flat_hash)
@@ -288,8 +260,25 @@ module Asperalm
         @opt_mgr.set_obj_attr(:to_folder,self,:option_to_folder)
         @opt_mgr.set_obj_attr(:logger,self,:option_logtype)
         @opt_mgr.set_obj_attr(:ui,self,:option_ui)
+        @opt_mgr.set_obj_attr(:preset,self,:option_preset)
         @opt_mgr.set_obj_attr(:use_product,Fasp::Installation.instance,:activated)
-        #@opt_mgr.set_obj_attr(:fasp_folder,Fasp::Installation.instance,:paths)
+
+        @opt_mgr.add_opt_list(:ui,OpenApplication.user_interfaces,"method to start browser",'-gTYPE')
+        @opt_mgr.add_opt_list(:insecure,[:yes,:no],"do not validate HTTPS certificate")
+        @opt_mgr.add_opt_list(:flat_hash,[:yes,:no],"display hash values as additional keys")
+        @opt_mgr.add_opt_list(:log_level,Log.levels,"Log level")
+        @opt_mgr.add_opt_list(:logger,Log.logtypes,"log method")
+        @opt_mgr.add_opt_list(:format,self.class.display_formats,"output format")
+        @opt_mgr.add_opt_list(:transfer,[:direct,:connect,:node],"type of transfer")
+        @opt_mgr.add_opt_simple(:preset,"-PVALUE","load the named option preset from current config file")
+        @opt_mgr.add_opt_simple(:transfer_node,"name of configuration used to transfer when using --transfer=node")
+        @opt_mgr.add_opt_simple(:fields,"comma separated list of fields, or #{FIELDS_ALL}, or #{FIELDS_DEFAULT}")
+        @opt_mgr.add_opt_simple(:fasp_proxy,"URL of FASP proxy (dnat / dnats)")
+        @opt_mgr.add_opt_simple(:http_proxy,"URL of HTTP proxy (for http fallback)")
+        @opt_mgr.add_opt_simple(:ts,"override transfer spec values (hash, use @json: prefix), current=#{@opt_mgr.get_option(:ts,:optional)}")
+        @opt_mgr.add_opt_simple(:to_folder,"destination folder for downloaded files, current=#{@opt_mgr.get_option(:to_folder,:optional)}")
+        @opt_mgr.add_opt_simple(:lock_port,"prevent dual execution of a command, e.g. in cron")
+        @opt_mgr.add_opt_simple(:use_product,"which local product to use for ascp")
 
         @opt_mgr.set_option(:ui,OpenApplication.default_gui_mode)
         @opt_mgr.set_option(:fields,FIELDS_DEFAULT)
@@ -297,7 +286,6 @@ module Asperalm
         @opt_mgr.set_option(:insecure,:no)
         @opt_mgr.set_option(:flat_hash,:yes)
         @opt_mgr.set_option(:format,:table)
-        @opt_mgr.set_option(:config_file,default_config_file)
         #@opt_mgr.set_option(:to_folder,'.')
         #@opt_mgr.set_option(:logger,:stdout)
       end
@@ -305,18 +293,16 @@ module Asperalm
       # plugin_name_sym is symbol
       # loads default parameters if no -P parameter
       def get_plugin_instance(plugin_name_sym)
+        Log.log.debug("get_plugin_instance -> #{plugin_name_sym}")
         require @plugins[plugin_name_sym][:require_stanza]
-        Log.log.debug("loaded config -> #{@loaded_configs}")
-        # TODO: check that ancestor is Plugin?
         command_plugin=Object::const_get(@@PLUGINS_MODULE+'::'+plugin_name_sym.to_s.capitalize).new
+        # TODO: check that ancestor is Plugin?
         @opt_mgr.parser.separator "COMMAND: #{plugin_name_sym}"
         @opt_mgr.parser.separator "SUBCOMMANDS: #{command_plugin.action_list.map{ |p| p.to_s}.join(', ')}"
         @opt_mgr.parser.separator "OPTIONS:"
         command_plugin.declare_options
         # load default params only if no param already loaded
-        if @opt_mgr.get_option(:load_params,:optional).nil?
-          load_plugin_default_parameters(plugin_name_sym)
-        end
+        add_plugin_default_preset(plugin_name_sym)
         return command_plugin
       end
 
@@ -480,34 +466,26 @@ module Asperalm
         end
       end
 
-      # load config file and optionally loads parameters in options
-      def load_config_file
-        @loaded_configs=read_config_file
-        Log.log.debug "loaded: #{@loaded_configs}"
+      # read config file and validate format
+      def read_config_file
+        if !File.exist?(@option_config_file)
+          Log.log.info("no config file, using empty configuration")
+          @available_presets={@@MAIN_PLUGIN_NAME_STR=>{@@CONFIG_FILE_KEY_VERSION=>@@TOOL_VERSION}}
+        else
+          Log.log.debug "loading #{@option_config_file}"
+          @available_presets=YAML.load_file(@option_config_file)
+        end
+        Log.log.debug "available_presets: #{@available_presets}"
         # check there is at least the config section
-        if !@loaded_configs.has_key?(@@MAIN_PLUGIN_NAME_STR)
-          raise CliError,"Config File: Cannot find key [#{@@MAIN_PLUGIN_NAME_STR}] in #{current_config_file}. Please check documentation."
+        if !@available_presets.has_key?(@@MAIN_PLUGIN_NAME_STR)
+          raise CliError,"Config File: Cannot find key [#{@@MAIN_PLUGIN_NAME_STR}] in #{@option_config_file}. Please check documentation."
         end
         # check presence of version of conf file
-        version=@loaded_configs[@@MAIN_PLUGIN_NAME_STR][@@CONFIG_FILE_KEY_VERSION]
+        version=@available_presets[@@MAIN_PLUGIN_NAME_STR][@@CONFIG_FILE_KEY_VERSION]
         raise CliError,"Config File: No version found. Please check documentation. Expecting min version #{@@MIN_CONFIG_VERSION}" if version.nil?
         # check compatibility of version of conf file
         if Gem::Version.new(version) < Gem::Version.new(@@MIN_CONFIG_VERSION)
           raise CliError,"Unsupported config file version #{version}. Please check documentation. Expecting min version #{@@MIN_CONFIG_VERSION}"
-        end
-        # did the user specify parameters to load ?
-        config_name_list=@opt_mgr.get_option(:load_params,:optional)
-        if !config_name_list.nil?
-          config_name_list.split(/,/).each do |name|
-            Log.log.debug "loading config: #{name} : #{@loaded_configs[name]}".red
-            if @loaded_configs.has_key?(name)
-              @opt_mgr.set_defaults(@loaded_configs[name])
-            elsif name.eql?(@@NO_DEFAULT)
-              Log.log.debug("dont use generic default")
-            else
-              raise CliBadArgument,"no such config name: #{name}\nList configs with: aslmcli config list"
-            end
-          end
         end
       end
 
@@ -522,47 +500,47 @@ module Asperalm
           action=@opt_mgr.get_next_argument('action',[:set,:delete,:initialize,:show,:update,:ask])
           case action
           when :show
-            raise "no such config: #{config_name}" unless @loaded_configs.has_key?(config_name)
-            return {:type=>:key_val_list,:data=>@loaded_configs[config_name]}
+            raise "no such config: #{config_name}" unless @available_presets.has_key?(config_name)
+            return {:type=>:key_val_list,:data=>@available_presets[config_name]}
           when :delete
-            @loaded_configs.delete(config_name)
+            @available_presets.delete(config_name)
             write_config_file
             return Main.result_status("deleted: #{config_name}")
           when :set
             param_name=@opt_mgr.get_next_argument('parameter name')
             param_value=@opt_mgr.get_next_argument('parameter value')
-            if !@loaded_configs.has_key?(config_name)
+            if !@available_presets.has_key?(config_name)
               Log.log.debug("no such config name: #{config_name}, initializing")
-              @loaded_configs[config_name]=Hash.new
+              @available_presets[config_name]=Hash.new
             end
-            if @loaded_configs[config_name].has_key?(param_name)
-              Log.log.warn("overwriting value: #{@loaded_configs[config_name][param_name]}")
+            if @available_presets[config_name].has_key?(param_name)
+              Log.log.warn("overwriting value: #{@available_presets[config_name][param_name]}")
             end
-            @loaded_configs[config_name][param_name]=param_value
+            @available_presets[config_name][param_name]=param_value
             write_config_file
             return Main.result_status("updated: #{config_name}->#{param_name} to #{param_value}")
           when :initialize
             config_value=@opt_mgr.get_next_argument('extended value (Hash)')
-            if @loaded_configs.has_key?(config_name)
+            if @available_presets.has_key?(config_name)
               Log.log.warn("configuration already exists: #{config_name}, overwriting")
             end
-            @loaded_configs[config_name]=config_value
+            @available_presets[config_name]=config_value
             write_config_file
-            return Main.result_status("modified: #{current_config_file}")
+            return Main.result_status("modified: #{@option_config_file}")
           when :update
             #  TODO: when arguments are provided: --option=value, this creates an entry in the named configuration
             theopts=@opt_mgr.get_options_table
             Log.log.debug("opts=#{theopts}")
-            @loaded_configs[config_name]={} if !@loaded_configs.has_key?(config_name)
-            @loaded_configs[config_name].merge!(theopts)
+            @available_presets[config_name]={} if !@available_presets.has_key?(config_name)
+            @available_presets[config_name].merge!(theopts)
             write_config_file
             return Main.result_status("updated: #{config_name}")
           when :ask
             @opt_mgr.use_interactive=:yes
-            @loaded_configs[config_name]||={}
+            @available_presets[config_name]||={}
             @opt_mgr.get_next_argument('option names',:multiple).each do |optionname|
               option_value=@opt_mgr.get_interactive(:option,optionname)
-              @loaded_configs[config_name][optionname]=option_value
+              @available_presets[config_name][optionname]=option_value
             end
             write_config_file
             return Main.result_status("updated: #{config_name}")
@@ -571,7 +549,7 @@ module Asperalm
           OpenApplication.instance.uri(@@HELP_URL)
           return Main.result_none
         when :open
-          OpenApplication.instance.uri(current_config_file)
+          OpenApplication.instance.uri(@option_config_file)
           return Main.result_none
         when :genkey # generate new rsa key
           key_filepath=@opt_mgr.get_next_argument('private key file path')
@@ -591,9 +569,9 @@ module Asperalm
         when :plugins
           return {:data => plugin_sym_list.map { |i| { 'plugin' => i.to_s, 'path' => @plugins[i][:source] } } , :fields => ['plugin','path'], :type => :hash_array }
         when :list
-          return {:data => @loaded_configs.keys, :type => :value_list, :name => 'name'}
+          return {:data => @available_presets.keys, :type => :value_list, :name => 'name'}
         when :overview
-          return {:type=>:hash_array,:data=>self.class.flatten_all_config(@loaded_configs)}
+          return {:type=>:hash_array,:data=>self.class.flatten_all_config(@available_presets)}
         end
       end
 
@@ -624,9 +602,7 @@ module Asperalm
 
       # public method
       # $HOME/.aspera/aslmcli
-      def config_folder
-        return File.join(Dir.home,@@ASPERA_HOME_FOLDERNAME,@@PROGRAM_NAME)
-      end
+      def config_folder;@@CONFIG_FOLDER;end
 
       def options;@opt_mgr;end
 
@@ -671,25 +647,28 @@ module Asperalm
         return self.class.result_success
       end
 
-      # this is the main function called by initial script
+      # this is the main function called by initial script just after constructor
       def process_command_line(argv)
         begin
           # first thing : manage debug level (allows debugging or option parser)
           early_debug_setup(argv)
-          # init opt parser separates options (start with '-') from arguments
+          # declare and parse basic options (includes config file location)
+          create_opt_mgr
+          # give command line arguments to option manager
           @opt_mgr.add_cmd_line_options(argv)
-          # declare global options and set defaults
-          declare_options
-          # parse general options
+          # parse declared options
           @opt_mgr.parse_options!
           # load default config if it was not overriden on command line
-          load_config_file
+          read_config_file
+          # declare general options
+          declare_options
+          @opt_mgr.parse_options!
           # find plugins, shall be after parse! ?
           add_plugins_from_lookup_folders
           # help requested without command ? (plugins must be known here)
           exit_with_usage(true) if @option_help and @opt_mgr.command_or_arg_empty?
           # load global default options
-          load_plugin_default_parameters(@@MAIN_PLUGIN_NAME_STR.to_sym)
+          add_plugin_default_preset(@@MAIN_PLUGIN_NAME_STR.to_sym)
           # dual execution locking
           lock_port=@opt_mgr.get_option(:lock_port,:optional)
           if !lock_port.nil?

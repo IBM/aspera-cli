@@ -171,8 +171,8 @@ t/nd2:
 	rm -f $(TEST_FOLDER)/200KB.1
 	@touch $@
 t/nd3:
-	$(EXETEST) --no-default node --url=https://10.25.0.4:9092 --username=node_xferuser --password=Aspera123_ upload --to-folder=/ 500M.dat --ts=@json:'{"precalculate_job_size":true}' --transfer=node --transfer-node=@json:'{"url":"https://10.25.0.8:9092","username":"node_xferuser","password":"Aspera123_"}' 
-	$(EXETEST) --no-default node --url=https://10.25.0.4:9092 --username=node_xferuser --password=Aspera123_ delete /500M.dat
+	$(EXETEST) --no-default node --url=https://10.25.0.4:9092 --username=node_xferuser --password=Aspera123_ --insecure=yes upload --to-folder=/ 500M.dat --ts=@json:'{"precalculate_job_size":true}' --transfer=node --transfer-node=@json:'{"url":"https://10.25.0.8:9092","username":"node_xferuser","password":"Aspera123_"}' 
+	$(EXETEST) --no-default node --url=https://10.25.0.4:9092 --username=node_xferuser --password=Aspera123_ --insecure=yes delete /500M.dat
 	@touch $@
 t/nd4:
 	$(EXETEST) node service create @json:'{"id":"service1","type":"WATCHD","run_as":{"user":"user1"}}'

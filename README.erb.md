@@ -144,26 +144,49 @@ Not all `aslmcli` features are fully documented here, the user may explore comma
 
 ## Commands, Arguments and Options
 
-Commands, Options and Arguments are typically provided on command line, i.e. `aslmcli command --option-name=VAL1 VAL2` takes "VAL1" as the value for
-option `option_name`, and "VAL2" as the value for first argument of command: `command`.
+Commands, Options and Arguments are typically provided on command line, e.g. in:
 
-Options are command line arguments starting with a `-` (Note that some options are mandatory). Other command line arguments are considered as Commands and Arguments. Most options take a value, but a limited number of them are without values (e.g. `-r`). Options can be placed anywhere on comand line.
+```
+$ aslmcli command --option-name=VAL1 VAL2
+```
 
-The special option "--" stops option processing, subsequent values are taken as arguments, including the ones starting with a `-`.
-
-The value of options and arguments can be either a plain text or be provided using the [Extended Value Syntax](#extended).
+* executes action: `command`
+* with one option: `option_name`
+* this option has a value of: `VAL1`
+* the command has one argument: `VAL2`
 
 When the value of a command, option or argument is constrained by a fixed list of values, it is possible to use the first letters of the value only, provided that it uniquely identifies a value. For example `aslmcli conf ov` is the same as `aslmcli config overview`.
+
+The value of options and arguments is evaluated with the [Extended Value Syntax](#extended).
+
+### Options
+
+Options are command line arguments starting with a `-`. Options can be optional or mandatory, with or without (hardcoded) default value. Most options take a value, but a limited number of them are without values (e.g. `-r`). Options can be placed anywhere on comand line and evaluated in order.
+
+The special option "--" is ignored but stops option processing, subsequent values are taken as arguments, including the ones starting with a `-`.
+
+The value for _any_ options can come from the following locations:
+
+* Command line
+* [Configuration file](#configfile).
+* Environment variable
 
 Environment variable starting with prefix: ASLMCLI_ are taken as option values, 
 i.e. `ASLMCLI_OPTION_NAME` is for `--option-name`.
 
-TODO: Precedence: conf file, command line, env var
-
-Some options have default values (hardcoded). All options can be defined in a [Configuration file](#configfile).
-
 Options values can be displayed for a given command by providing the `--show-config` option: `aslmcli node --show-config`
 
+Evaluation of a parameter value follow this order:
+
+* configuration file
+* environment variable
+* command line
+
+The last value evaluated is the one taken.
+
+### Commands and Arguments
+
+Command line arguments not starting with `-` are either commands or arguments (as well as command line arguments following `--`).
 
 ## Interactive Input
 

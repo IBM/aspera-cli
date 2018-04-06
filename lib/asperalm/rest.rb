@@ -60,7 +60,7 @@ module Asperalm
     # set to true enables debug in HTTP class
     @@debug=false
     @@insecure=false
-    def self.insecure=(v); @@insecure=v;end
+    def self.insecure=(v); Log.log.debug("insecure  => #{@@insecure}".red);@@insecure=v;end
 
     def self.insecure; @@insecure;end
 
@@ -78,6 +78,7 @@ module Asperalm
         uri=get_uri({:subpath=>''})
         @http_session=Net::HTTP.new(uri.host, uri.port)
         @http_session.use_ssl = uri.scheme == 'https'
+        Log.log.debug("insecure=#{@@insecure}")
         @http_session.verify_mode = OpenSSL::SSL::VERIFY_NONE if @@insecure
         @http_session.set_debug_output($stdout) if @@debug
         # manually start session for keep alive (if supported by server, else, session is closed every time)
