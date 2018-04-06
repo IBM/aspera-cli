@@ -99,9 +99,9 @@ module Asperalm
 
       def option_log_level=(value); Log.level = value; end
 
-      def option_insecure; Rest.insecure ? :yes : :no; end
+      def option_insecure; Rest.insecure ; end
 
-      def option_insecure=(value); Rest.insecure = value.eql?(:no) ? false : true; end
+      def option_insecure=(value); Rest.insecure = value; end
 
       def option_transfer_spec; @transfer_spec_default; end
 
@@ -200,7 +200,7 @@ module Asperalm
         @transfer_spec_default={}
         @option_help=false
         @option_show_config=false
-        @option_flat_hash=:yes
+        @option_flat_hash=true
         @available_presets=nil
         @transfer_agent_singleton=nil
         @use_plugin_defaults=true
@@ -254,7 +254,7 @@ module Asperalm
       def declare_options
         # handler must be set before declaration
         @opt_mgr.set_obj_attr(:log_level,self,:option_log_level)
-        @opt_mgr.set_obj_attr(:insecure,self,:option_insecure)
+        @opt_mgr.set_obj_attr(:insecure,self,:option_insecure,:no)
         @opt_mgr.set_obj_attr(:flat_hash,self,:option_flat_hash)
         @opt_mgr.set_obj_attr(:ts,self,:option_transfer_spec)
         @opt_mgr.set_obj_attr(:to_folder,self,:option_to_folder)
@@ -264,8 +264,8 @@ module Asperalm
         @opt_mgr.set_obj_attr(:use_product,Fasp::Installation.instance,:activated)
 
         @opt_mgr.add_opt_list(:ui,OpenApplication.user_interfaces,"method to start browser",'-gTYPE')
-        @opt_mgr.add_opt_list(:insecure,[:yes,:no],"do not validate HTTPS certificate")
-        @opt_mgr.add_opt_list(:flat_hash,[:yes,:no],"display hash values as additional keys")
+        @opt_mgr.add_opt_boolean(:insecure,"do not validate HTTPS certificate")
+        @opt_mgr.add_opt_boolean(:flat_hash,"display hash values as additional keys")
         @opt_mgr.add_opt_list(:log_level,Log.levels,"Log level")
         @opt_mgr.add_opt_list(:logger,Log.logtypes,"log method")
         @opt_mgr.add_opt_list(:format,self.class.display_formats,"output format")
@@ -283,8 +283,6 @@ module Asperalm
         @opt_mgr.set_option(:ui,OpenApplication.default_gui_mode)
         @opt_mgr.set_option(:fields,FIELDS_DEFAULT)
         @opt_mgr.set_option(:transfer,:direct)
-        @opt_mgr.set_option(:insecure,:no)
-        @opt_mgr.set_option(:flat_hash,:yes)
         @opt_mgr.set_option(:format,:table)
         #@opt_mgr.set_option(:to_folder,'.')
         #@opt_mgr.set_option(:logger,:stdout)
@@ -389,7 +387,7 @@ module Asperalm
               asked_fields=user_asked_fields_list_str.split(',')
               asked_fields=asked_fields.map{|i|i.to_sym} if results[:symb_key]
             end
-            if @option_flat_hash.eql?(:yes)
+            if @option_flat_hash
               results[:data]=self.class.flatten_one_config(results[:data])
               asked_fields=results[:data].keys
             end

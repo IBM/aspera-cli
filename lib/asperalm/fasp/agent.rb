@@ -63,6 +63,7 @@ module Asperalm
           result=connect_api.create('transfers/activity',connect_activity_args)[:data]
           if result['transfers']
             trdata=result['transfers'].select{|i| i['aspera_connect_settings'] and i['aspera_connect_settings']['request_id'].eql?(request_id)}.first
+            raise "problem with connect, please kill it" unless trdata
             case trdata['status']
             when 'completed'
               Manager.instance.notify_listeners("emulated",{'Type'=>'DONE'})

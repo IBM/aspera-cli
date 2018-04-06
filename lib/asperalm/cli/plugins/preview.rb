@@ -109,8 +109,8 @@ module Asperalm
           Main.tool.options.add_opt_simple(:thumb_mp4_size,"generation parameter")
           Main.tool.options.add_opt_simple(:thumb_img_size,"generation parameter")
           Main.tool.options.add_opt_simple(:thumb_offset_fraction,"generation parameter")
-          Main.tool.options.add_opt_list(:validate_mime,[:no,:yes],"use magic number validation")
-          Main.tool.options.add_opt_list(:check_extension,[:no,:yes],"check extra file extensions")
+          Main.tool.options.add_opt_boolean(:validate_mime,"use magic number validation")
+          Main.tool.options.add_opt_boolean(:check_extension,"check extra file extensions")
           Main.tool.options.set_option(:file_access,:local)
         end
 

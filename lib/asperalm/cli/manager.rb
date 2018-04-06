@@ -39,6 +39,12 @@ module Asperalm
         time.strftime("%Y-%m-%d %H:%M:%S")
       end
 
+      # boolean options are set to true/false from the following values
+      @@TRUE_VALUES=[:yes]
+      @@BOOLEAN_VALUES=@@TRUE_VALUES.clone.push(:no)
+
+      def enum_to_bool(enum);@@TRUE_VALUES.include?(enum);end
+
       # decoders can be pipelined
       @@DECODERS=['base64', 'json', 'zlib', 'ruby', 'csvt']
 
@@ -97,11 +103,10 @@ module Asperalm
         matching_exact=allowed_values.select{|i| i.to_s.eql?(shortval)}
         return matching_exact.first if matching_exact.length == 1
         matching=allowed_values.select{|i| i.to_s.start_with?(shortval)}
-        case matching.length
-        when 1; return matching.first
-        when 0; raise cli_bad_arg("unknown value for #{descr}: #{shortval}",allowed_values)
-        else; raise cli_bad_arg("ambigous shortcut for #{descr}: #{shortval}",matching)
-        end
+        raise cli_bad_arg("unknown value for #{descr}: #{shortval}",allowed_values) if matching.empty?
+        raise cli_bad_arg("ambigous shortcut for #{descr}: #{shortval}",matching) unless matching.length.eql?(1)
+        return enum_to_bool(matching.first) if allowed_values.eql?(@@BOOLEAN_VALUES)
+        return matching.first
       end
 
       def self.cli_bad_arg(error_msg,choices)
@@ -128,9 +133,9 @@ module Asperalm
         # option description: key = option symbol, value=hash, :type, :accessor, :value, :accepted
         @declared_options={}
         # do we ask missing options and arguments to user ?
-        @use_interactive=STDIN.isatty ? :yes : :no
+        @use_interactive=STDIN.isatty
         # ask optional options if not provided and in interactive
-        @ask_optionals=:no
+        @ask_optionals=false
         # those must be set before parse, parse consumes those defined only
         @unprocessed_defaults={}
         @unprocessed_env={}
@@ -138,7 +143,7 @@ module Asperalm
         @parser=OptionParser.new
         @parser.program_name=program_name
       end
-      
+
       def declare_options_scan_env
         Log.log.debug("declare_options_scan_env")
         # options can also be provided by env vars : --param-name -> ASLMCLI_PARAM_NAME
@@ -151,8 +156,8 @@ module Asperalm
         Log.log.debug("env=#{@unprocessed_env}".red)
         self.set_obj_attr(:interactive,self,:use_interactive)
         self.set_obj_attr(:ask_options,self,:ask_optionals)
-        self.add_opt_list(:interactive,[:yes,:no],"use interactive input of missing params")
-        self.add_opt_list(:ask_options,[:yes,:no],"ask even optional options")
+        self.add_opt_boolean(:interactive,"use interactive input of missing params")
+        self.add_opt_boolean(:ask_options,"ask even optional options")
       end
 
       # parse arguments into options and arguments
@@ -177,7 +182,7 @@ module Asperalm
       end
 
       def get_interactive(type,descr,expected=:single)
-        if !@use_interactive.eql?(:yes)
+        if !@use_interactive
           if expected.is_a?(Array)
             raise self.class.cli_bad_arg("missing: #{descr}",expected)
           end
@@ -281,12 +286,12 @@ module Asperalm
           Log.log.debug("get #{option_symbol} (#{@declared_options[option_symbol][:type]}) : #{result}")
         end
         if result.nil?
-          if !@use_interactive.eql?(:yes)
+          if !@use_interactive
             if is_type.eql?(:mandatory)
               raise CliBadArgument,"Missing option in context: #{option_symbol}"
             end
           else # use_interactive
-            if @ask_optionals.eql?(:yes) or is_type.eql?(:mandatory)
+            if @ask_optionals or is_type.eql?(:mandatory)
               expected=:single
               #print "please enter: #{option_symbol.to_s}"
               if @declared_options[option_symbol].has_key?(:values)
@@ -328,10 +333,17 @@ module Asperalm
         @declared_options[option_symbol][:values]=values
         value=get_option(option_symbol)
         help_values=values.map{|i|i.eql?(value)?highlight_current(i):i}.join(', ')
+        if values.eql?(@@BOOLEAN_VALUES)
+          help_values=values.map{|i|((i.eql?(:yes) and value) or (i.eql?(:no) and not value))?highlight_current(i):i}.join(', ')
+        end
         on_args.push(values)
         on_args.push("#{help}: #{help_values}")
         Log.log.debug("on_args=#{on_args}")
         @parser.on(*on_args){|v|set_option(option_symbol,self.class.get_from_list(v.to_s,help,values),"cmdline")}
+      end
+
+      def add_opt_boolean(option_symbol,help,*on_args)
+        add_opt_list(option_symbol,@@BOOLEAN_VALUES,help,*on_args)
       end
 
       # define an option with open values

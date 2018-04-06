@@ -6,7 +6,6 @@ module Asperalm
   module Cli
     module Plugins
       class Orchestrator < BasicAuthPlugin
-        SYNCHRONOUS_VALUES=[:yes,:no]
 
         alias super_declare_options declare_options
 
@@ -14,7 +13,7 @@ module Asperalm
           super_declare_options
           Main.tool.options.add_opt_simple(:params,"parameters hash table, use @json:{\"param\":\"value\"}")
           Main.tool.options.add_opt_simple(:result,"specify result value as: 'work step:parameter'")
-          Main.tool.options.add_opt_list(:synchronous,SYNCHRONOUS_VALUES,"work step:parameter expected as result")
+          Main.tool.options.add_opt_boolean(:synchronous,"work step:parameter expected as result")
           Main.tool.options.set_option(:params,{})
           Main.tool.options.set_option(:synchronous,:no)
         end
@@ -99,7 +98,7 @@ module Asperalm
                   call_params["external_parameters[#{name}]"] = value
                 end
                 # synchronous call ?
-                call_params["synchronous"]=true if Main.tool.options.get_option(:synchronous,:mandatory).eql?(:yes)
+                call_params["synchronous"]=true if Main.tool.options.get_option(:synchronous,:mandatory)
                 # expected result for synchro call ?
                 expected=Main.tool.options.get_option(:result,:optional)
                 if !expected.nil?

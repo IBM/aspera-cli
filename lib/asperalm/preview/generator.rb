@@ -36,7 +36,7 @@ module Asperalm
           @mime_type=MimeMagic.by_magic(File.open(src)).to_s
         end
         @conversion_type=SUPPORTED_MIME_TYPES[@mime_type]
-        if @conversion_type.nil? and Options.instance.check_extension.eql?(:yes)
+        if @conversion_type.nil? and Options.instance.check_extension
           @conversion_type=SUPPORTED_EXTENSIONS[File.extname(@source).downcase.gsub(/^\./,'')]
         end
       end
@@ -57,7 +57,7 @@ module Asperalm
       def generate
         method_symb=processing_method_symb
         Log.log.info("#{@source}->#{@destination} (#{method_symb})")
-        if Options.instance.validate_mime.eql?(:yes)
+        if Options.instance.validate_mime
           require 'mimemagic'
           require 'mimemagic/overlay'
           magic_mime_type=MimeMagic.by_magic(File.open(@source)).to_s
