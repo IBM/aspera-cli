@@ -22,7 +22,7 @@ module Asperalm
       singleton_class.send(:alias_method, :tool, :instance)
       def self.version;return @@TOOL_VERSION;end
       private
-      @@TOOL_VERSION='0.6.11'
+      @@TOOL_VERSION='0.6.13'
       # first level command for the main tool
       @@MAIN_PLUGIN_NAME_STR='config'
       # name of application, also foldername where config is stored
@@ -263,9 +263,7 @@ module Asperalm
         @opt_mgr.set_obj_attr(:preset,self,:option_preset)
         @opt_mgr.set_obj_attr(:use_product,Fasp::Installation.instance,:activated)
 
-        @opt_mgr.add_opt_list(:ui,OpenApplication.user_interfaces,"method to start browser",'-gTYPE')
-        @opt_mgr.add_opt_boolean(:insecure,"do not validate HTTPS certificate")
-        @opt_mgr.add_opt_boolean(:flat_hash,"display hash values as additional keys")
+        @opt_mgr.add_opt_list(:ui,OpenApplication.user_interfaces,'method to start browser')
         @opt_mgr.add_opt_list(:log_level,Log.levels,"Log level")
         @opt_mgr.add_opt_list(:logger,Log.logtypes,"log method")
         @opt_mgr.add_opt_list(:format,self.class.display_formats,"output format")
@@ -275,17 +273,17 @@ module Asperalm
         @opt_mgr.add_opt_simple(:fields,"comma separated list of fields, or #{FIELDS_ALL}, or #{FIELDS_DEFAULT}")
         @opt_mgr.add_opt_simple(:fasp_proxy,"URL of FASP proxy (dnat / dnats)")
         @opt_mgr.add_opt_simple(:http_proxy,"URL of HTTP proxy (for http fallback)")
-        @opt_mgr.add_opt_simple(:ts,"override transfer spec values (hash, use @json: prefix), current=#{@opt_mgr.get_option(:ts,:optional)}")
-        @opt_mgr.add_opt_simple(:to_folder,"destination folder for downloaded files, current=#{@opt_mgr.get_option(:to_folder,:optional)}")
+        @opt_mgr.add_opt_simple(:ts,"override transfer spec values (Hash, use @json: prefix), current=#{@opt_mgr.get_option(:ts,:optional)}")
+        @opt_mgr.add_opt_simple(:to_folder,"destination folder for downloaded files")
         @opt_mgr.add_opt_simple(:lock_port,"prevent dual execution of a command, e.g. in cron")
         @opt_mgr.add_opt_simple(:use_product,"which local product to use for ascp")
+        @opt_mgr.add_opt_boolean(:insecure,"do not validate HTTPS certificate")
+        @opt_mgr.add_opt_boolean(:flat_hash,"display hash values as additional keys")
 
         @opt_mgr.set_option(:ui,OpenApplication.default_gui_mode)
         @opt_mgr.set_option(:fields,FIELDS_DEFAULT)
         @opt_mgr.set_option(:transfer,:direct)
         @opt_mgr.set_option(:format,:table)
-        #@opt_mgr.set_option(:to_folder,'.')
-        #@opt_mgr.set_option(:logger,:stdout)
       end
 
       # plugin_name_sym is symbol
@@ -441,9 +439,8 @@ module Asperalm
           # list plugins that have a "require" field, i.e. all but main plugin
           plugin_sym_list.select { |s| !@plugins[s][:require_stanza].nil? }.each do |plugin_name_sym|
             # override main option parser...
-            @opt_mgr=Manager.new
+            @opt_mgr=Manager.new(@@PROGRAM_NAME)
             @opt_mgr.parser.banner = ""
-            @opt_mgr.parser.program_name=@@PROGRAM_NAME
             get_plugin_instance(plugin_name_sym)
             STDERR.puts(@opt_mgr.parser)
           end

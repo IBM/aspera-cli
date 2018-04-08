@@ -76,6 +76,7 @@ module Asperalm
     def http_session
       if @http_session.nil?
         uri=get_uri({:subpath=>''})
+        # this honors http_proxy env var
         @http_session=Net::HTTP.new(uri.host, uri.port)
         @http_session.use_ssl = uri.scheme == 'https'
         Log.log.debug("insecure=#{@@insecure}")

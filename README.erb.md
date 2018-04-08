@@ -1408,6 +1408,8 @@ Gems, or remove your ed25519 key from your `.ssh` folder to solve the issue.
 
 * deliveries to dropboxes
 
+* Going through proxy: use env var http_proxy and https_proxy, no_proxy
+
 # Contribution
 
 Send comments !
