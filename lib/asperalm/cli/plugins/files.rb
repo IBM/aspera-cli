@@ -51,8 +51,9 @@ module Asperalm
         # input: root node and file id, and array for path
         # output: file_id and node_info  for the given path
         def find_nodeinfo_and_fileid( top_node_id, top_file_id, element_path_string )
-          Log.log.debug "find_nodeinfo_and_fileid: nodeid=#{top_node_id}, #{top_file_id}, path=#{element_path_string}"
-
+          Log.log.debug "find_nodeinfo_and_fileid: nodeid=#{top_node_id}, fileid=#{top_file_id}, path=#{element_path_string}"
+          raise "error" if top_node_id.to_s.empty?
+          raise "error" if top_file_id.to_s.empty?
           # initialize loop elements
           current_path_elements=element_path_string.split(PATH_SEPARATOR).select{|i| !i.empty?}
           current_node_info=@api_files_user.read("nodes/#{top_node_id}")[:data]
@@ -89,7 +90,7 @@ module Asperalm
               Log.log.warn "unknown element type: #{current_file_info['type']}"
             end
           end
-          Log.log.info("node_info,file_id=#{current_node_info},#{current_file_id}")
+          Log.log.info("file_id=#{current_file_id},node_info=#{current_node_info}")
           return current_node_info,current_file_id
         end
 
@@ -163,7 +164,7 @@ module Asperalm
 
         # initialize apis and authentication
         # returns true if in default workspace
-        def init_apis_is_default_ws
+        def init_apis
 
           api_info=FilesApi.info(Main.tool.options.get_option(:url,:mandatory))
 
@@ -205,12 +206,12 @@ module Asperalm
           @api_files_admin=Rest.new(api_info[:api_url],{:auth=>{:type=>:oauth2,:obj=>@api_files_oauth,:scope=>FilesApi::SCOPE_FILES_ADMIN}})
 
           # get our user's default information
-          self_data=@api_files_user.read("self")[:data]
+          @self_data=@api_files_user.read("self")[:data]
 
           ws_name=Main.tool.options.get_option(:workspace,:optional)
           if ws_name.nil?
             # get default workspace
-            @workspace_id=self_data['default_workspace_id']
+            @workspace_id=@self_data['default_workspace_id']
             @workspace_data=@api_files_user.read("workspaces/#{@workspace_id}")[:data]
           else
             # lookup another workspace
@@ -227,7 +228,14 @@ module Asperalm
             end
           end
 
-          return @workspace_id == self_data['default_workspace_id']
+          Log.log.debug("workspace_id=#{@workspace_id},workspace_data=#{@workspace_data}".red)
+
+          @home_node_id=@workspace_data['home_node_id']
+          @home_file_id=@workspace_data['home_file_id']
+          raise "error" if @home_node_id.to_s.empty?
+          raise "error" if @home_file_id.to_s.empty?
+
+          nil
         end
 
         def do_bulk_operation(params,success,&do_action)
@@ -244,10 +252,11 @@ module Asperalm
         end
 
         def execute_action
-          use_default_ws=init_apis_is_default_ws
+          init_apis
           command=Main.tool.options.get_next_argument('command',action_list)
           if Main.tool.options.get_option(:format,:optional).eql?(:table) and !command.eql?(:admin)
-            puts "Current Workspace: #{@workspace_data['name'].red}#{" (default)" if use_default_ws}"
+            default_ws=@workspace_id == @self_data['default_workspace_id'] ? ' (default)' : ''
+            puts "Current Workspace: #{@workspace_data['name'].red}#{default_ws}"
           end
 
           # display name of default workspace
@@ -255,12 +264,24 @@ module Asperalm
 
           case command
           when :user
-            command=Main.tool.options.get_next_argument('command',[ :workspaces ])
+            command=Main.tool.options.get_next_argument('command',[ :workspaces,:info ])
             case command
             when :workspaces
               return {:type=>:hash_array,:data=>@api_files_user.read("workspaces")[:data],:fields=>['id','name']}
               #              when :settings
               #                return {:type=>:hash_array,:data=>@api_files_user.read("client_settings/")[:data]}
+            when :info
+              resource_instance_path="users/#{@self_data['id']}"
+              command=Main.tool.options.get_next_argument('command',[ :show,:modify ])
+              case command
+              when :show
+                object=@api_files_admin.read(resource_instance_path)[:data]
+                return { :type=>:key_val_list, :data =>object }
+              when :modify
+                changes=Main.tool.options.get_next_argument('modified parameters (hash)')
+                @api_files_admin.update(resource_instance_path,changes)
+                return Main.result_status('modified')
+              end
             end
           when :package
             command_pkg=Main.tool.options.get_next_argument('command',[ :send, :recv, :list ])
@@ -305,7 +326,7 @@ module Asperalm
               return {:type=>:hash_array,:data=>packages,:fields=>['id','name','bytes_transferred']}
             end
           when :repository
-            return execute_node_action(@workspace_data['home_node_id'],@workspace_data['home_file_id'])
+            return execute_node_action(@home_node_id,@home_file_id)
           when :faspexgw
             require 'asperalm/faspex_gw'
             FaspexGW.start_server(@api_files_user,@workspace_id)
@@ -320,7 +341,7 @@ module Asperalm
               # page=1&per_page=10&q=type:(file_upload+OR+file_delete+OR+file_download+OR+file_rename+OR+folder_create+OR+folder_delete+OR+folder_share+OR+folder_share_via_public_link)&sort=-date
               #events=@api_files_admin.read('events',{'q'=>'type:(file_upload OR file_download)'})[:data]
               #Log.log.info "events=#{JSON.generate(events)}"
-              node_info=@api_files_user.read("nodes/#{@workspace_data['home_node_id']}")[:data]
+              node_info=@api_files_user.read("nodes/#{@home_node_id}")[:data]
               # get access to node API, note the additional header
               api_node=get_files_node_api(node_info,FilesApi::SCOPE_NODE_USER)
               # can add filters: tag=aspera.files.package_id%3DLA8OU3p8w

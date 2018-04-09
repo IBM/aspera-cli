@@ -896,7 +896,7 @@ It allows actions (create, update, delete) on "resources": users, group, nodes, 
 
 Bulk operations are possible using option `bulk` (yes,no(default)): currently: create only. In that case, the operation expects an Array of Hash instead of a simple Hash using the [Extended Value Syntax](#extended).
 
-#### Example
+#### Examples
 
 * Bulk creation
 
@@ -930,6 +930,19 @@ $ aslmcli files admin res user --bulk=yes --id=@json:[$thelist] delete
 : 98398 : deleted :
 : 98399 : deleted :
 :.......:.........:
+```
+
+* Display current users workspaces
+
+```
+$ aslmcli files user workspaces
+:......:............................:
+:  id  :            name            :
+:......:............................:
+: 16   : Engineering                :
+: 17   : Marketing                  :
+: 18   : Sales                      :
+:......:............................:
 ```
 
 ## Aspera Node (Transfer Server)

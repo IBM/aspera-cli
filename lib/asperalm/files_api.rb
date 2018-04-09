@@ -32,6 +32,7 @@ module Asperalm
     SCOPE_FILES_SELF='self'
     SCOPE_FILES_USER='user:all'
     SCOPE_FILES_ADMIN='admin:all'
+    SCOPE_FILES_ADMIN_USER='admin-user:all+user:all'
     SCOPE_NODE_USER='user:all'
     SCOPE_NODE_ADMIN='admin:all'
 
