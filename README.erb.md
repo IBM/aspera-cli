@@ -36,7 +36,7 @@ $ aslmcli --version
 x.y.z
 ```
 
-Then, follow the section relative to the product you want to inbteract with: Files, Faspex, ...
+Then, follow the section relative to the product you want to inbteract with: Aspera on Cloud, Faspex, ...
 
 Detailed generic information on configuration can be found in section: [aslmcli](#aslmcli).
 
@@ -114,14 +114,14 @@ The `asperalm` Gem provides a command line interface (CLI) which interacts with 
 * Faspex
 * Console
 * Orchestrator
-* Files
+* Aspera on Cloud
 * ATS
 * and more...
 
 `aslmcli` provides the following features:
 
 * Supports most Aspera server products (on-premise and SaaS)
-* Command options can be provided on command line, in configuration file, in env var, in files (products URL, credentials or any option)
+* Options can be provided on command line, in configuration file, in env var, in files (products URL, credentials or any option)
 * Commands, Option values and Parameters can be provided in short format (must be unique)
 * FASP [transfer agent](#agents) can be: FaspManager (local ascp), or Connect Client, or a transfer node
 * Transfer parameters can be altered by modification of transferspec, this includes requiring multi-session transfer on nodes
@@ -129,7 +129,7 @@ The `asperalm` Gem provides a command line interface (CLI) which interacts with 
 * Supports FaspStream creation (using Node API)
 * Supports Watchfolder creation (using Node API)
 * Additional command plugins can be written by the user
-* Supports download of faspex and Files "external" links
+* Supports download of faspex and Aspera on Cloud "external" links
 * Supports "legacy" ssh based FASP transfers and remote commands (ascmd)
 
 Basic usage is displayed by executing:
@@ -345,15 +345,15 @@ Values in the configuration also follow the [Extended Value Syntax](#extended).
 Note: if the user wants to use the [Extended Value Syntax](#extended) inside the configuration file, using the `config id update` command, the user shall use the `@val:` prefix. Example:
 
 ```bash
-$ aslmcli config id my_files_org set private_key @val:@file:"$HOME/.aspera/aslmcli/filesapikey"
+$ aslmcli config id my_aoc_org set private_key @val:@file:"$HOME/.aspera/aslmcli/aocapikey"
 ```
 
 This creates the _option preset_:
 
 ```
 ...
-my_files_org:
-  private_key: @file:"/Users/laurent/.aspera/aslmcli/filesapikey"
+my_aoc_org:
+  private_key: @file:"/Users/laurent/.aspera/aslmcli/aocapikey"
 ...
 ```
 
@@ -449,7 +449,7 @@ In order to get traces of execution, use argument : `--log-level=debug`
 
 Some actions may require the use of a graphical tool:
 
-* a browser for Aspera Files authentication
+* a browser for Aspera Aspera on Cloud authentication
 * a text editor for configuration file edition
 
 By default the CLI will assume that a graphical environment is available on windows,
@@ -687,11 +687,11 @@ Those are using options:
 
 Those can be provided using command line, parameter set, env var, see section above.
 
-Aspera Files relies on Oauth, refer to the [Aspera Files](#files) section.
+Aspera Aspera on Cloud relies on Oauth, refer to the [Aspera on Cloud](#aoc) section.
 
-## <a name="files"></a>Aspera Files, Aspera on Cloud
+## <a name="aoc"></a>Aspera Aspera on Cloud, Aspera on Cloud
 
-Aspera Files uses the more advanced Oauth mechanism for authentication (HTTP Basic authentication is not supported).
+Aspera Aspera on Cloud uses the more advanced Oauth mechanism for authentication (HTTP Basic authentication is not supported).
 This requires additional setup.
 Several types of OAuth authentication are supported:
 
@@ -701,7 +701,7 @@ Several types of OAuth authentication are supported:
 
 The authentication method is controled by option `auth`.
 
-For a _quick start_, follow the mandatory and sufficient section: [API Client Registration](#clientreg) (auth=web) as well as [Option Preset for Files](#filespreset).
+For a _quick start_, follow the mandatory and sufficient section: [API Client Registration](#clientreg) (auth=web) as well as [Option Preset for Aspera on Cloud](#aocpreset).
 
 For a more convenient, browser-less, experience follow the [JWT](#jwt) section (auth=jwt) in addition to Client Registration.
 
@@ -709,7 +709,7 @@ In Oauth, a "Bearer" token are generated to authenticate REST calls. Bearer toke
 
 ### <a name="clientreg"></a>API Client Registration
 
-The first step is to declare `aslmcli` in Files using the admin interface.
+The first step is to declare `aslmcli` in Aspera on Cloud using the admin interface.
 
 (official documentation: [https://aspera.asperafiles.com/helpcenter/admin/organization/registering-an-api-client](https://aspera.asperafiles.com/helpcenter/admin/organization/registering-an-api-client) ).
 
@@ -723,7 +723,7 @@ Let's start by a registration with web based authentication (auth=web):
 	* Client Name: `aslmcli`
 	* Redirect URIs: `http://localhost:12345`
 	* Origins: `localhost`
-	* uncheck "Prompt users to allow client to access Files"
+	* uncheck "Prompt users to allow client to access"
 	* leave JWT unchecked for now
 * Submit
 
@@ -733,34 +733,34 @@ Note: for web based authentication, `aslmcli` listens on a local port (e.g. by d
 
 Once the client is registered, a "Client ID" and "Secret" are created, these values will be used in the next step.
 
-### <a name="filespreset"></a>Option Preset for Files
+### <a name="aocpreset"></a>Option Preset for Aspera on Cloud
 
-It is convenient to save several of those parameters in an option preset for `aslmcli` in its configuration file. Lets create an option preset called: `my_files_org` using `ask` interactive input (client info from previous step):
+It is convenient to save several of those parameters in an option preset for `aslmcli` in its configuration file. Lets create an option preset called: `my_aoc_org` using `ask` interactive input (client info from previous step):
 
 ```
-$ aslmcli config id my_files_org ask url client_id client_secret
+$ aslmcli config id my_aoc_org ask url client_id client_secret
 option: url> https://laurent.ibmaspera.com/
 option: client_id> BJLPObQiFw
 option: client_secret> yFS1mu-crbKuQhGFtfhYuoRW...
-updated: my_files_org
+updated: my_aoc_org
 ```
 
-(This can also be done in one line using the command `config id my_files_org update --url=...`)
+(This can also be done in one line using the command `config id my_aoc_org update --url=...`)
 
-Define this preset as default configuration for the `files` plugin:
+Define this preset as default configuration for the `aspera` plugin:
 
 ```bash
-$ aslmcli config id default set files my_files_org
+$ aslmcli config id default set aspera my_aoc_org
 ```
 
 Note: Default `auth` method is `web` and default `redirect_uri` is `htt^://localhost:12345`.
 
-### <a name="filesfirst"></a>First Use
+### <a name="aocfirst"></a>First Use
 
 Once client has been registered and option preset created: `aslmcli` can be used:
 
 ```bash
-$ aslmcli files repo br /
+$ aslmcli aspera repo br /
 Current Workspace: Default Workspace (default)
 empty
 ```
@@ -775,7 +775,7 @@ In addition to basic API Client registration, the following steps are required f
 
 #### Key Pair Generation
 
-In order to use JWT for Aspera Files API client authentication, 
+In order to use JWT for Aspera Aspera on Cloud API client authentication, 
 a private/public key pair must be generated (without passphrase)
 This can be done using any of the following method:
 
@@ -784,13 +784,13 @@ This can be done using any of the following method:
 * using the CLI:
 
 ```bash
-$ aslmcli config genkey ~/.aspera/aslmcli/filesapikey
+$ aslmcli config genkey ~/.aspera/aslmcli/aocapikey
 ```
 
 * `ssh-keygen`:
 
 ```bash
-$ ssh-keygen -t rsa -f ~/.aspera/aslmcli/filesapikey -N ''
+$ ssh-keygen -t rsa -f ~/.aspera/aslmcli/aocapikey -N ''
 ```
 
 * `openssl`
@@ -798,7 +798,7 @@ $ ssh-keygen -t rsa -f ~/.aspera/aslmcli/filesapikey -N ''
 (on some openssl implementation (mac) there is option: -nodes (no DES))
 
 ```bash
-$ APIKEY=~/.aspera/aslmcli/filesapikey
+$ APIKEY=~/.aspera/aslmcli/aocapikey
 $ openssl genrsa -passout pass:dummypassword -out ${APIKEY}.protected 2048
 $ openssl rsa -passin pass:dummypassword -in ${APIKEY}.protected -out ${APIKEY}
 $ openssl rsa -pubout -in ${APIKEY} -out ${APIKEY}.pub
@@ -807,7 +807,7 @@ $ rm -f ${APIKEY}.protected
 
 #### API Client JWT activation
 
-JWT needs to be authorized in Files. This can be done in two manners:
+JWT needs to be authorized in Aspera on Cloud. This can be done in two manners:
 
 ##### Graphically
 
@@ -828,13 +828,13 @@ Note: It is also possible to allow a "super key" to impersonate any user by regi
 ##### Using command line
 
 ```bash
-$ aslmcli files admin res client list
+$ aslmcli aspera admin res client list
 :............:.........:
 :     id     :  name   :
 :............:.........:
 : BJLPObQiFw : aslmcli :
 :............:.........:
-$ aslmcli files admin res client --id=BJLPObQiFw modify @json:'{"jwt_grant_enabled":true,"explicit_authorization_required":false}'
+$ aslmcli aspera admin res client --id=BJLPObQiFw modify @json:'{"jwt_grant_enabled":true,"explicit_authorization_required":false}'
 modified
 ```
 
@@ -855,14 +855,14 @@ The public key must be assigned to your user. This can be done in two manners:
 ##### Using command line
 
 ```bash
-$ aslmcli files admin res user list
+$ aslmcli aspera admin res user list
 :........:................:
 :   id   :      name      :
 :........:................:
 : 109952 : Tech Support   :
 : 109951 : LAURENT MARTIN :
 :........:................:
-$ aslmcli files admin res user --id=109951 modify @ruby:'{"public_key"=>File.read(File.expand_path("~/.aspera/aslmcli/filesapikey.pub"))}'   
+$ aslmcli aspera admin res user --id=109951 modify @ruby:'{"public_key"=>File.read(File.expand_path("~/.aspera/aslmcli/aocapikey.pub"))}'   
 modified
 ```
 
@@ -879,7 +879,7 @@ To activate JWT authentication for `aslmcli` using the preset, do the folowing:
 Execute:
 
 ```bash
-$ aslmcli config id my_files_org update --auth=jwt --private-key=@val:@file:~/.aspera/aslmcli/filesapikey --username=laurent.martin.aspera@fr.ibm.com
+$ aslmcli config id my_aoc_org update --auth=jwt --private-key=@val:@file:~/.aspera/aslmcli/aocapikey --username=laurent.martin.aspera@fr.ibm.com
 ```
 
 Note: the private key argument represents the actual PEM string. In order to read the content from a file, use the @file: prefix. But if the @file: argument is used as is, it will read the file and set in the config file. So to keep the "@file" tag in the configuration file, the @val: prefix is added.
@@ -900,7 +900,7 @@ Bulk operations are possible using option `bulk` (yes,no(default)): currently: c
 * Bulk creation
 
 ```bash
-$ aslmcli files admin res user create --bulk=yes @json:'[{"email":"dummyuser1@example.com"},{"email":"dummyuser2@example.com"}]'
+$ aslmcli aspera admin res user create --bulk=yes @json:'[{"email":"dummyuser1@example.com"},{"email":"dummyuser2@example.com"}]'
 :.......:.........:
 :  id   : status  :
 :.......:.........:
@@ -912,17 +912,17 @@ $ aslmcli files admin res user create --bulk=yes @json:'[{"email":"dummyuser1@ex
 * Find with filter and delete
 
 ```bash
-$ aslmcli files admin res user list --query='@json:{"q":"dummyuser"}' --fields=id,email
+$ aslmcli aspera admin res user list --query='@json:{"q":"dummyuser"}' --fields=id,email
 :.......:........................:
 :  id   :         email          :
 :.......:........................:
 : 98398 : dummyuser1@example.com :
 : 98399 : dummyuser2@example.com :
 :.......:........................:
-$ thelist=$(echo $(aslmcli files admin res user list --query='@json:{"q":"dummyuser"}' --fields=id,email --field=id --format=csv)|tr ' ' ,)
+$ thelist=$(echo $(aslmcli aspera admin res user list --query='@json:{"q":"dummyuser"}' --fields=id,email --field=id --format=csv)|tr ' ' ,)
 $ echo $thelist
 98398,98399
-$ aslmcli files admin res user --bulk=yes --id=@json:[$thelist] delete
+$ aslmcli aspera admin res user --bulk=yes --id=@json:[$thelist] delete
 :.......:.........:
 :  id   : status  :
 :.......:.........:
@@ -934,7 +934,7 @@ $ aslmcli files admin res user --bulk=yes --id=@json:[$thelist] delete
 * Display current users workspaces
 
 ```
-$ aslmcli files user workspaces
+$ aslmcli aspera user workspaces
 :......:............................:
 :  id  :            name            :
 :......:............................:
@@ -1118,7 +1118,7 @@ Aspera Shares supports the "node API" for the file transfer part. (Shares 1 and 
 
 ## Aspera Transfer Service
 
-Aka Aspera Files, Aspera on Cloud...
+Aka Aspera Aspera on Cloud, Aspera on Cloud...
 
 ### First time use
 
@@ -1167,7 +1167,7 @@ for k in $(aslmcli ats access_key list --field=id --format=csv);do aslmcli ats a
 
 ## Preview
 
-The preview plugin provides generation of previews for Aspera Files.
+The preview plugin provides generation of previews for Aspera Aspera on Cloud.
 
 The tool requires the following external tools:
 
@@ -1177,7 +1177,7 @@ The tool requires the following external tools:
 * Libreoffice : `libreoffice`
 
 ### Preview Command
-The `preview` plugin allows generation of preview files for Aspera Files for on-premise nodes. (thumbnails and video previews)
+The `preview` plugin allows generation of preview files for Aspera Aspera on Cloud for on-premise nodes. (thumbnails and video previews)
 
 The preview generator creates/updates a preview for files located on
 an access key main "storage root". Several candidate detection methods are supported.
@@ -1193,13 +1193,13 @@ This is related to:
 Like any aslmcli commands, parameters can be passed on command line or using a configuration option preset. Example using a option preset:
 
 ```
-$ aslmcli config id my_files_access_key update --url=https://localhost:9092 --username=my_access_key --password=my_secret
-$ aslmcli config id default set preview my_files_access_key
+$ aslmcli config id my_aoc_access_key update --url=https://localhost:9092 --username=my_access_key --password=my_secret
+$ aslmcli config id default set preview my_aoc_access_key
 ```
 
 Once can check if the access key is well configured using:
 ```
-$ aslmcli -Pmy_files_access_key node browse /
+$ aslmcli -Pmy_aoc_access_key node browse /
 ```
 
 ### Execution
