@@ -9,9 +9,7 @@ require 'asperalm/open_application'
 require 'asperalm/rest'
 require 'base64'
 require 'date'
-require 'rubygems'
 require 'socket'
-require 'pp'
 require 'securerandom'
 
 # for future use
@@ -48,10 +46,16 @@ module Asperalm
       # key = scope value, e.g. user:all, or node.*
       # value = ruby structure of data of returned value
       @token_cache={}
+      if @auth_data.has_key?(:redirect_uri)
+        uri=URI.parse(@auth_data[:redirect_uri])
+        raise "redirect_uri scheme must be http" unless uri.scheme.eql?('http')
+        raise "redirect_uri must have a port" if uri.port.nil?
+        # we could check that host is localhost or local address
+      end
     end
 
     # save token data in memory cache
-    # returns recoded token data
+    # returns decoded token data (includes expiration date)
     def set_token_cache(api_scope,token_json)
       @token_cache[api_scope]=JSON.parse(token_json)
       # for debug only, expiration info is not accurate
@@ -96,8 +100,12 @@ module Asperalm
         if File.exist?(token_state_file) then
           Log.log.info "reading token from file cache: #{token_state_file}"
           # returns decoded data
-          set_token_cache(api_scope,File.read(token_state_file))
-          # TODO: check if node token is expired, then force refresh, mandatory as there is no API call, and ascp will complain
+          decoded=set_token_cache(api_scope,File.read(token_state_file))
+          # check if node token is expired, then force refresh, mandatory as there is no API call, and ascp will complain
+          if decoded.is_a?(Hash) and decoded['expires_at'].is_a?(String)
+            expires_at=DateTime.parse(decoded['expires_at'])
+            use_refresh_token=true if DateTime.now > (expires_at-Rational(3600,86400))
+          end
         end
       end
 
@@ -264,7 +272,7 @@ module Asperalm
     # open the login page, wait for code and return parameters
     def self.goto_page_and_get_request(redirect_uri,login_page_url,html_page=THANK_YOU_HTML)
       Log.log.info "login_page_url=#{login_page_url}".bg_red().gray()
-      # browser start is not blocking
+      # browser start is not blocking, we hope here that starting is slower than opening port
       OpenApplication.instance.uri(login_page_url)
       port=URI.parse(redirect_uri).port
       Log.log.info "listening on port #{port}"
@@ -281,7 +289,7 @@ module Asperalm
         request = line.partition('?').last.partition(' ').first
         data=URI.decode_www_form(request)
         request_params=data.to_h
-        Log.log.debug "request_params=#{PP.pp(request_params,'').chomp}"
+        Log.log.debug "request_params=#{request_params}"
         websession.print "HTTP/1.1 200/OK\r\nContent-type:text/html\r\n\r\n#{html_page}"
         websession.close
       }

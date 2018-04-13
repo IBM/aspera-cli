@@ -22,7 +22,7 @@ module Asperalm
       singleton_class.send(:alias_method, :tool, :instance)
       def self.version;return @@TOOL_VERSION;end
       private
-      @@TOOL_VERSION='0.6.13'
+      @@TOOL_VERSION='0.6.14'
       # first level command for the main tool
       @@MAIN_PLUGIN_NAME_STR='config'
       # name of application, also foldername where config is stored
@@ -49,7 +49,7 @@ module Asperalm
       FIELDS_ALL='ALL'
       FIELDS_DEFAULT='DEF'
 
-      def write_config_file
+      def save_presets_to_config_file
         raise "no configuration loaded" if @available_presets.nil?
         FileUtils::mkdir_p(config_folder) unless Dir.exist?(config_folder)
         Log.log.debug "writing #{@option_config_file}"
@@ -119,7 +119,7 @@ module Asperalm
 
       def option_ui=(value); OpenApplication.instance.url_method=value; end
 
-      def option_preset; raise "n/a"; end
+      def option_preset; nil; end
 
       def option_preset=(value); @opt_mgr.add_option_preset(@available_presets[value]); end
 
@@ -464,8 +464,9 @@ module Asperalm
       # read config file and validate format
       def read_config_file
         if !File.exist?(@option_config_file)
-          Log.log.info("no config file, using empty configuration")
+          Log.log.warn("no config file found, creating empty configuration file: #{@option_config_file}")
           @available_presets={@@MAIN_PLUGIN_NAME_STR=>{@@CONFIG_FILE_KEY_VERSION=>@@TOOL_VERSION}}
+          save_presets_to_config_file
         else
           Log.log.debug "loading #{@option_config_file}"
           @available_presets=YAML.load_file(@option_config_file)
@@ -499,7 +500,7 @@ module Asperalm
             return {:type=>:key_val_list,:data=>@available_presets[config_name]}
           when :delete
             @available_presets.delete(config_name)
-            write_config_file
+            save_presets_to_config_file
             return Main.result_status("deleted: #{config_name}")
           when :set
             param_name=@opt_mgr.get_next_argument('parameter name')
@@ -512,7 +513,7 @@ module Asperalm
               Log.log.warn("overwriting value: #{@available_presets[config_name][param_name]}")
             end
             @available_presets[config_name][param_name]=param_value
-            write_config_file
+            save_presets_to_config_file
             return Main.result_status("updated: #{config_name}->#{param_name} to #{param_value}")
           when :initialize
             config_value=@opt_mgr.get_next_argument('extended value (Hash)')
@@ -520,7 +521,7 @@ module Asperalm
               Log.log.warn("configuration already exists: #{config_name}, overwriting")
             end
             @available_presets[config_name]=config_value
-            write_config_file
+            save_presets_to_config_file
             return Main.result_status("modified: #{@option_config_file}")
           when :update
             #  TODO: when arguments are provided: --option=value, this creates an entry in the named configuration
@@ -528,23 +529,23 @@ module Asperalm
             Log.log.debug("opts=#{theopts}")
             @available_presets[config_name]={} if !@available_presets.has_key?(config_name)
             @available_presets[config_name].merge!(theopts)
-            write_config_file
+            save_presets_to_config_file
             return Main.result_status("updated: #{config_name}")
           when :ask
-            @opt_mgr.use_interactive=:yes
+            @opt_mgr.ask_missing_mandatory=:yes
             @available_presets[config_name]||={}
             @opt_mgr.get_next_argument('option names',:multiple).each do |optionname|
               option_value=@opt_mgr.get_interactive(:option,optionname)
               @available_presets[config_name][optionname]=option_value
             end
-            write_config_file
+            save_presets_to_config_file
             return Main.result_status("updated: #{config_name}")
           end
         when :documentation
           OpenApplication.instance.uri(@@HELP_URL)
           return Main.result_none
         when :open
-          OpenApplication.instance.uri(@option_config_file)
+          OpenApplication.instance.uri("#{@option_config_file}") #file://
           return Main.result_none
         when :genkey # generate new rsa key
           key_filepath=@opt_mgr.get_next_argument('private key file path')
@@ -662,8 +663,9 @@ module Asperalm
           add_plugins_from_lookup_folders
           # help requested without command ? (plugins must be known here)
           exit_with_usage(true) if @option_help and @opt_mgr.command_or_arg_empty?
-          # load global default options
+          # load global default options and process
           add_plugin_default_preset(@@MAIN_PLUGIN_NAME_STR.to_sym)
+          @opt_mgr.parse_options!
           # dual execution locking
           lock_port=@opt_mgr.get_option(:lock_port,:optional)
           if !lock_port.nil?
@@ -674,7 +676,11 @@ module Asperalm
               raise CliError,"Another instance is already running (lock port=#{lock_port})."
             end
           end
-          command_sym=@opt_mgr.get_next_argument('command',plugin_sym_list.dup.unshift(:help))
+          if @option_show_config and @opt_mgr.command_or_arg_empty?
+            command_sym=@@MAIN_PLUGIN_NAME_STR.to_sym
+          else
+            command_sym=@opt_mgr.get_next_argument('command',plugin_sym_list.dup.unshift(:help))
+          end
           # main plugin is not dynamically instanciated
           case command_sym
           when :help
@@ -690,7 +696,7 @@ module Asperalm
           # help requested ?
           exit_with_usage(false) if @option_help
           if @option_show_config
-            display_results({:type=>:key_val_list,:data=>@opt_mgr.declared_options})
+            display_results({:type=>:key_val_list,:data=>@opt_mgr.declared_options(false)})
             Process.exit(0)
           end
           display_results(command_plugin.execute_action)

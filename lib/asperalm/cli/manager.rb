@@ -110,7 +110,7 @@ module Asperalm
       end
 
       def self.cli_bad_arg(error_msg,choices)
-        return CliBadArgument.new(error_msg+"\nUse:\n"+choices.map{|c| "- #{c.to_s}\n"}.join(''))
+        return CliBadArgument.new(error_msg+"\nUse:\n"+choices.map{|c| "- #{c.to_s}\n"}.sort.join(''))
       end
 
       # option name separator on command line
@@ -119,8 +119,8 @@ module Asperalm
       @@OPTION_SEP_NAME='_'
 
       attr_reader :parser
-      attr_accessor :use_interactive
-      attr_accessor :ask_optionals
+      attr_accessor :ask_missing_mandatory
+      attr_accessor :ask_missing_optional
 
       #
       def initialize(program_name)
@@ -133,9 +133,9 @@ module Asperalm
         # option description: key = option symbol, value=hash, :type, :accessor, :value, :accepted
         @declared_options={}
         # do we ask missing options and arguments to user ?
-        @use_interactive=STDIN.isatty
+        @ask_missing_mandatory=STDIN.isatty
         # ask optional options if not provided and in interactive
-        @ask_optionals=false
+        @ask_missing_optional=false
         # those must be set before parse, parse consumes those defined only
         @unprocessed_defaults={}
         @unprocessed_env={}
@@ -154,8 +154,8 @@ module Asperalm
           end
         end
         Log.log.debug("env=#{@unprocessed_env}".red)
-        self.set_obj_attr(:interactive,self,:use_interactive)
-        self.set_obj_attr(:ask_options,self,:ask_optionals)
+        self.set_obj_attr(:interactive,self,:ask_missing_mandatory)
+        self.set_obj_attr(:ask_options,self,:ask_missing_optional)
         self.add_opt_boolean(:interactive,"use interactive input of missing params")
         self.add_opt_boolean(:ask_options,"ask even optional options")
       end
@@ -182,7 +182,7 @@ module Asperalm
       end
 
       def get_interactive(type,descr,expected=:single)
-        if !@use_interactive
+        if !@ask_missing_mandatory
           if expected.is_a?(Array)
             raise self.class.cli_bad_arg("missing: #{descr}",expected)
           end
@@ -254,9 +254,8 @@ module Asperalm
           #declare_option(option_symbol)
         end
         value=self.class.get_extended_value(option_symbol,value)
-        # constrained parameters as string are revert to symbol
-        if @declared_options[option_symbol].has_key?(:values) and value.is_a?(String)
-          value=self.class.get_from_list(value,option_symbol.to_s+" in conf file",@declared_options[option_symbol][:values])
+        if @declared_options[option_symbol][:values].eql?(@@BOOLEAN_VALUES)
+          value=enum_to_bool(value)
         end
         Log.log.debug("set #{option_symbol}=#{value} (#{@declared_options[option_symbol][:type]}) : #{where}".blue)
         case @declared_options[option_symbol][:type]
@@ -285,13 +284,14 @@ module Asperalm
           end
           Log.log.debug("get #{option_symbol} (#{@declared_options[option_symbol][:type]}) : #{result}")
         end
+        Log.log.debug("inter=#{@ask_missing_mandatory}")
         if result.nil?
-          if !@use_interactive
+          if !@ask_missing_mandatory
             if is_type.eql?(:mandatory)
               raise CliBadArgument,"Missing option in context: #{option_symbol}"
             end
-          else # use_interactive
-            if @ask_optionals or is_type.eql?(:mandatory)
+          else # ask_missing_mandatory
+            if @ask_missing_optional or is_type.eql?(:mandatory)
               expected=:single
               #print "please enter: #{option_symbol.to_s}"
               if @declared_options[option_symbol].has_key?(:values)
@@ -412,9 +412,10 @@ module Asperalm
       end
 
       # return options as taken from config file and command line just before command execution
-      def declared_options
+      def declared_options(all=true)
         return @declared_options.keys.inject({}) do |h,option_symb|
-          h[option_symb.to_s]=get_option(option_symb)
+          v=get_option(option_symb)
+          h[option_symb.to_s]=v if all or !v.nil?
           h
         end
       end
@@ -422,6 +423,10 @@ module Asperalm
       def apply_options_preset(preset,where,force=false)
         preset.each do |k,v|
           if @declared_options.has_key?(k)
+            # constrained parameters as string are revert to symbol
+            if @declared_options[k].has_key?(:values) and v.is_a?(String)
+              v=self.class.get_from_list(v,k.to_s+" in #{where}",@declared_options[k][:values])
+            end
             set_option(k,v,where)
             preset.delete(k)
           end

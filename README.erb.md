@@ -629,7 +629,7 @@ The option `to_folder` provides a convenient way to change this parameter:  `--t
 * Override the FASP SSH port to a specific TCP port:
 
 ```bash
---ts=@json:'{"ssh_port":12345}'
+--ts=@json:'{"ssh_port":33002}'
 ```
 
 * Force http fallback mode:
@@ -653,6 +653,7 @@ This opens a local TCP server port, and fails if this port is already used, prov
 This option is used when the tools is executed automatically, for instance with "preview" generatin.
 
 ## <a name="commands"></a>Sample Commands
+
 A non complete list of commands used in unit tests:
 
 ```bash
@@ -669,8 +670,6 @@ $ aslmcli -h
 ```
 
 Note that actions and parameter values can be written in short form.
-
-
 
 # Application Plugins
 
@@ -722,13 +721,13 @@ Let's start by a registration with web based authentication (auth=web):
 * Go to Admin View-Organization-API Clients-Create
 * Fill the API client creation form:
 	* Client Name: `aslmcli`
-	* Redirect URIs: `http://local.connectme.us:12345`
+	* Redirect URIs: `http://localhost:12345`
 	* Origins: `localhost`
 	* uncheck "Prompt users to allow client to access Files"
 	* leave JWT unchecked for now
 * Submit
 
-Note: for web based authentication, `aslmcli` listens on a local port (here 12345), and the browser will provide the OAuth code there.
+Note: for web based authentication, `aslmcli` listens on a local port (e.g. by default 12345), and the browser will provide the OAuth code there. For ``aslmcli` http is required, and 12345 is the default port.
 
 <img src="docs/Auth-registered-client.png" alt="Screenshot:Registered API Client"/>
 
@@ -739,12 +738,10 @@ Once the client is registered, a "Client ID" and "Secret" are created, these val
 It is convenient to save several of those parameters in an option preset for `aslmcli` in its configuration file. Lets create an option preset called: `my_files_org` using `ask` interactive input (client info from previous step):
 
 ```
-$ aslmcli config id my_files_org ask url client_id client_secret auth redirect_uri
+$ aslmcli config id my_files_org ask url client_id client_secret
 option: url> https://laurent.ibmaspera.com/
 option: client_id> BJLPObQiFw
 option: client_secret> yFS1mu-crbKuQhGFtfhYuoRW...
-option: auth> web
-option: redirect_uri> http://local.connectme.us:12345
 updated: my_files_org
 ```
 
@@ -755,6 +752,8 @@ Define this preset as default configuration for the `files` plugin:
 ```bash
 $ aslmcli config id default set files my_files_org
 ```
+
+Note: Default `auth` method is `web` and default `redirect_uri` is `htt^://localhost:12345`.
 
 ### <a name="filesfirst"></a>First Use
 
@@ -1212,7 +1211,7 @@ on a regular basis shall be done using the operating system
 scheduler (e.g. Cron on Linux, or Task Scheduler on Windows).
 To prevent parallel execution of the task, one can use either
 the protection offered by the scheduler, if there is one, or
-use the parameter: `--lock-port=12345`.
+use the parameter: `--lock-port=12346`.
 
 ### Candidate detection
 
@@ -1256,14 +1255,14 @@ $ aslmcli preview scan --skip-folders=@json:'["/not_here"]'
 on command line:
 
 ```bash
-aslmcli preview event --skip-types=office --file-access=remote --overwrite=always --iteration-file=/tmp/restart.txt --lock-port=12345
+aslmcli preview event --skip-types=office --file-access=remote --overwrite=always --iteration-file=/tmp/restart.txt --lock-port=12346
 ```
 
 with crontab:
 
 ```bash
-2-59 * * * * su -s /bin/bash - xfer -c 'timeout 10m aslmcli preview event --skip-types=office --lock-port=12345 --log-level=info --logger=syslog --iteration-file=/tmp/preview_restart.txt'
-0 * * * *    su -s /bin/bash - xfer -c 'timeout 30m aslmcli preview scan  --skip-types=office --lock-port=12345 --log-level=info --logger=syslog'
+2-59 * * * * su -s /bin/bash - xfer -c 'timeout 10m aslmcli preview event --skip-types=office --lock-port=12346 --log-level=info --logger=syslog --iteration-file=/tmp/preview_restart.txt'
+0 * * * *    su -s /bin/bash - xfer -c 'timeout 30m aslmcli preview scan  --skip-types=office --lock-port=12346 --log-level=info --logger=syslog'
 ```
 
 ### External tools: Linux
@@ -1407,6 +1406,11 @@ OpenSSH keys only supported if ED25519 is available
 
 This means that you do not have ruby support for ED25519 SSH keys. You may either install the suggested
 Gems, or remove your ed25519 key from your `.ssh` folder to solve the issue.
+
+# Release Notes
+
+Version 0.6.15
+Breaking change: "files" application renamed to "aspera". "repository" renamed to "files". Default must be reset, e.g. edit config files and change key "files" to "aspera" in preset "default".
 
 # TODO
 

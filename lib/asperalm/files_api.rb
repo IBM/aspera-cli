@@ -7,6 +7,7 @@ module Asperalm
     def self.info(web_url)
       uri=URI.parse(web_url)
       instance_fqdn=uri.host
+      raise "No host found in URL.Please check URL format: https://myorg.ibmaspera.com" if instance_fqdn.nil?
       organization,instance_domain=instance_fqdn.split('.',2)
       raise "expecting a public FQDN for Files" if instance_domain.nil?
       Log.log.debug("instance_fqdn=#{instance_fqdn}")

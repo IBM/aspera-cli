@@ -8,8 +8,8 @@ require 'securerandom'
 module Asperalm
   module Cli
     module Plugins
-      class Files < Plugin
-        def action_list; [ :package, :repository, :faspexgw, :admin, :user];end
+      class Aspera < Plugin
+        def action_list; [ :packages, :files, :faspexgw, :admin, :user];end
 
         def declare_options
           Main.tool.options.add_opt_list(:download_mode,[:fasp, :node_http ],"download mode")
@@ -32,6 +32,8 @@ module Asperalm
           Main.tool.options.add_opt_simple(:name,"resource name")
           Main.tool.options.set_option(:download_mode,:fasp)
           Main.tool.options.set_option(:bulk,:no)
+          Main.tool.options.set_option(:redirect_uri,'http://localhost:12345')
+          Main.tool.options.set_option(:auth,:web)
         end
 
         # returns a node API for access key
@@ -201,7 +203,7 @@ module Asperalm
           # auth API
           @api_files_oauth=Oauth.new(auth_data)
 
-          # create objects for REST calls to Files (user and admin scope)
+          # create objects for REST calls to Aspera (user and admin scope)
           @api_files_user=Rest.new(api_info[:api_url],{:auth=>{:type=>:oauth2,:obj=>@api_files_oauth,:scope=>FilesApi::SCOPE_FILES_USER}})
           @api_files_admin=Rest.new(api_info[:api_url],{:auth=>{:type=>:oauth2,:obj=>@api_files_oauth,:scope=>FilesApi::SCOPE_FILES_ADMIN}})
 
@@ -283,7 +285,7 @@ module Asperalm
                 return Main.result_status('modified')
               end
             end
-          when :package
+          when :packages
             command_pkg=Main.tool.options.get_next_argument('command',[ :send, :recv, :list ])
             case command_pkg
             when :send
@@ -304,7 +306,7 @@ module Asperalm
               #  get node information for the node on which package must be created
               node_info=@api_files_user.read("nodes/#{the_package['node_id']}")[:data]
 
-              # tell Files what to expect in package: 1 transfer (can also be done after transfer)
+              # tell Aspera what to expect in package: 1 transfer (can also be done after transfer)
               resp=@api_files_user.update("packages/#{the_package['id']}",{"sent"=>true,"transfers_expected"=>1})[:data]
 
               tspec=info_to_tspec("send",node_info,the_package['contents_file_id'])
@@ -325,7 +327,7 @@ module Asperalm
               packages=@api_files_user.read("packages",{'archived'=>false,'exclude_dropbox_packages'=>true,'has_content'=>true,'received'=>true,'workspace_id'=>@workspace_id})[:data]
               return {:type=>:hash_array,:data=>packages,:fields=>['id','name','bytes_transferred']}
             end
-          when :repository
+          when :files
             return execute_node_action(@home_node_id,@home_file_id)
           when :faspexgw
             require 'asperalm/faspex_gw'
@@ -432,7 +434,7 @@ module Asperalm
           end # action
           raise RuntimeError, "internal error"
         end
-      end # Files
+      end # Aspera
     end # Plugins
   end # Cli
 end # Asperalm
