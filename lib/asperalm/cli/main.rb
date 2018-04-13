@@ -24,7 +24,7 @@ module Asperalm
       private
       @@TOOL_VERSION='0.6.14'
       # first level command for the main tool
-      @@MAIN_PLUGIN_NAME_STR='config'
+      @@MAIN_PLUGIN_NAME_SYM=:config
       # name of application, also foldername where config is stored
       @@PROGRAM_NAME = 'aslmcli'
       # folder in $HOME for the application
@@ -42,8 +42,6 @@ module Asperalm
       @@PLUGINS_MODULE=@@CLI_MODULE+'::Plugins'
       @@CONFIG_FILE_KEY_VERSION='version'
       @@CONFIG_FILE_KEY_DEFAULT='default'
-      # oldest compatible conf file format, update to latest version when an incompatible change is made
-      @@MIN_CONFIG_VERSION='0.4.5'
       @@HELP_URL='http://www.rubydoc.info/gems/asperalm'
       RUBY_FILE_EXT='.rb'
       FIELDS_ALL='ALL'
@@ -204,7 +202,7 @@ module Asperalm
         @available_presets=nil
         @transfer_agent_singleton=nil
         @use_plugin_defaults=true
-        @plugins={@@MAIN_PLUGIN_NAME_STR.to_sym=>{:source=>__FILE__,:require_stanza=>nil}}
+        @plugins={@@MAIN_PLUGIN_NAME_SYM=>{:source=>__FILE__,:require_stanza=>nil}}
         @plugin_lookup_folders=[]
         @option_config_file=File.join(config_folder,@@DEFAULT_CONFIG_FILENAME)
         # option manager is created later
@@ -462,26 +460,55 @@ module Asperalm
       end
 
       # read config file and validate format
+      # tries to cnvert if possible and required
       def read_config_file
+        # oldest compatible conf file format, update to latest version when an incompatible change is made
         if !File.exist?(@option_config_file)
-          Log.log.warn("no config file found, creating empty configuration file: #{@option_config_file}")
-          @available_presets={@@MAIN_PLUGIN_NAME_STR=>{@@CONFIG_FILE_KEY_VERSION=>@@TOOL_VERSION}}
+          Log.log.warn("No config file found. Creating empty configuration file: #{@option_config_file}")
+          @available_presets={@@MAIN_PLUGIN_NAME_SYM.to_s=>{@@CONFIG_FILE_KEY_VERSION=>@@TOOL_VERSION}}
           save_presets_to_config_file
-        else
+          return nil
+        end
+        begin
           Log.log.debug "loading #{@option_config_file}"
           @available_presets=YAML.load_file(@option_config_file)
-        end
-        Log.log.debug "available_presets: #{@available_presets}"
-        # check there is at least the config section
-        if !@available_presets.has_key?(@@MAIN_PLUGIN_NAME_STR)
-          raise CliError,"Config File: Cannot find key [#{@@MAIN_PLUGIN_NAME_STR}] in #{@option_config_file}. Please check documentation."
-        end
-        # check presence of version of conf file
-        version=@available_presets[@@MAIN_PLUGIN_NAME_STR][@@CONFIG_FILE_KEY_VERSION]
-        raise CliError,"Config File: No version found. Please check documentation. Expecting min version #{@@MIN_CONFIG_VERSION}" if version.nil?
-        # check compatibility of version of conf file
-        if Gem::Version.new(version) < Gem::Version.new(@@MIN_CONFIG_VERSION)
-          raise CliError,"Unsupported config file version #{version}. Please check documentation. Expecting min version #{@@MIN_CONFIG_VERSION}"
+          Log.log.debug "Available_presets: #{@available_presets}"
+          raise "Expecting YAML Hash" unless @available_presets.is_a?(Hash)
+          # check there is at least the config section
+          if !@available_presets.has_key?(@@MAIN_PLUGIN_NAME_SYM.to_s)
+            raise "Cannot find key: #{@@MAIN_PLUGIN_NAME_SYM.to_s}"
+          end
+          version=@available_presets[@@MAIN_PLUGIN_NAME_SYM.to_s][@@CONFIG_FILE_KEY_VERSION]
+          if version.nil?
+            raise "No version found in config section."
+          end
+          # check compatibility of version of conf file
+          config_tested_version='0.4.5'
+          if Gem::Version.new(version) < Gem::Version.new(config_tested_version)
+            raise "Unsupported config file version #{version}. Expecting min version #{config_tested_version}"
+          end
+          save_required=false
+          config_tested_version='0.6.14'
+          if Gem::Version.new(version) <= Gem::Version.new(config_tested_version)
+            old_plugin_name='files'
+            new_plugin_name='aspera'
+            if @available_presets[@@CONFIG_FILE_KEY_DEFAULT].is_a?(Hash) and @available_presets[@@CONFIG_FILE_KEY_DEFAULT].has_key?(old_plugin_name)
+              @available_presets[@@CONFIG_FILE_KEY_DEFAULT][new_plugin_name]=@available_presets[@@CONFIG_FILE_KEY_DEFAULT][old_plugin_name]
+              @available_presets[@@CONFIG_FILE_KEY_DEFAULT].delete(old_plugin_name)
+              Log.log.warn("Converted plugin default: #{old_plugin_name} -> #{new_plugin_name}")
+              save_required=true
+            end
+          end
+          if save_required
+            save_presets_to_config_file
+            Log.log.warn("Saving automatic conversion.")
+         end
+        rescue => e
+          new_name=@option_config_file+".manual_conversion_needed"
+          #File.rename(@option_config_file,new_name)
+          Log.log.warn("Renamed config file to #{new_name}.")
+          Log.log.warn("Manual Conversion is required.")
+          raise CliError,e.to_s
         end
       end
 
@@ -664,7 +691,7 @@ module Asperalm
           # help requested without command ? (plugins must be known here)
           exit_with_usage(true) if @option_help and @opt_mgr.command_or_arg_empty?
           # load global default options and process
-          add_plugin_default_preset(@@MAIN_PLUGIN_NAME_STR.to_sym)
+          add_plugin_default_preset(@@MAIN_PLUGIN_NAME_SYM)
           @opt_mgr.parse_options!
           # dual execution locking
           lock_port=@opt_mgr.get_option(:lock_port,:optional)
@@ -677,7 +704,7 @@ module Asperalm
             end
           end
           if @option_show_config and @opt_mgr.command_or_arg_empty?
-            command_sym=@@MAIN_PLUGIN_NAME_STR.to_sym
+            command_sym=@@MAIN_PLUGIN_NAME_SYM
           else
             command_sym=@opt_mgr.get_next_argument('command',plugin_sym_list.dup.unshift(:help))
           end
@@ -685,7 +712,7 @@ module Asperalm
           case command_sym
           when :help
             exit_with_usage(true)
-          when @@MAIN_PLUGIN_NAME_STR.to_sym
+          when @@MAIN_PLUGIN_NAME_SYM
             command_plugin=self
           else
             # get plugin, set options, etc
