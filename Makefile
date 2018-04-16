@@ -64,7 +64,7 @@ install: $(GEMFILE)
 	gem install $(GEMFILE)
 
 togarage: $(ZIPFILE) README.pdf $(GEMFILE)
-	$(EXE_NOMAN) files --workspace='Sales Engineering' upload '/Laurent Garage SE/RubyCLI' $(ZIPFILE) README.pdf $(GEMFILE)
+	$(EXE_NOMAN) aspera --workspace='Sales Engineering' upload '/Laurent Garage SE/RubyCLI' $(ZIPFILE) README.pdf $(GEMFILE)
 
 # create a private/public key pair
 # note that the key can also be generated with: ssh-keygen -t rsa -f data/myid -N ''
@@ -76,7 +76,7 @@ $(APIKEY):
 	rm -f $(APIKEY).protected
 
 setkey: $(APIKEY)
-	$(EXETEST) files admin set_client_key ERuzXGuPA @file:$(APIKEY)
+	$(EXETEST) aspera admin set_client_key ERuzXGuPA @file:$(APIKEY)
 
 yank:
 	gem yank asperalm -v $(GEMVERSION)
@@ -102,13 +102,13 @@ TEST_FOLDER=./test.dir
 clean::
 	rm -fr $(TEST_FOLDER)
 t/sh1:
-	$(EXETEST) shares repository browse / --insecure=yes
+	$(EXETEST) shares repository browse /
 	@touch $@
 t/sh2:
 	mkdir -p $(TEST_FOLDER)
-	$(EXETEST) shares repository upload $(SAMPLE_FILE) --to-folder=/n8-sh1 --insecure=yes
-	$(EXETEST) shares repository download /n8-sh1/200KB.1 --to-folder=$(TEST_FOLDER) --insecure=yes
-	$(EXETEST) shares repository delete /n8-sh1/200KB.1 --insecure=yes
+	$(EXETEST) shares repository upload $(SAMPLE_FILE) --to-folder=/n8-sh1
+	$(EXETEST) shares repository download /n8-sh1/200KB.1 --to-folder=$(TEST_FOLDER)
+	$(EXETEST) shares repository delete /n8-sh1/200KB.1
 	@rm -f 200KB.1
 	@touch $@
 tshares: t/sh1 t/sh2
@@ -140,10 +140,10 @@ t/fp4:
 tfasp: t/fp1 t/fp2 t/fp3 t/fp4
 
 t/fx1:
-	$(EXETEST) faspex package list --insecure=yes
+	$(EXETEST) faspex package list
 	@touch $@
 t/fx2:
-	$(EXETEST) faspex package send $(SAMPLE_FILE) --insecure=yes --note="my note" --title="my title" --recipient="laurent.martin.aspera@fr.ibm.com"
+	$(EXETEST) faspex package send $(SAMPLE_FILE) --note="my note" --title="my title" --recipient="laurent.martin.aspera@fr.ibm.com"
 	@touch $@
 t/fx3:
 	$(EXETEST) faspex package recv $$($(EXETEST) faspex package list --fields=delivery_id --format=csv --box=sent|tail -n 1) --box=sent
@@ -154,20 +154,20 @@ t/fx4:
 tfaspex: t/fx1 t/fx2 t/fx3 t/fx4
 
 t/cons1:
-	$(EXETEST) console transfer current list  --insecure=yes
+	$(EXETEST) console transfer current list 
 	@touch $@
 tconsole: t/cons1
 
 #NODEDEST=/home/faspex/docroot
 NODEDEST=/
 t/nd1:
-	$(EXETEST) node browse / --insecure=yes
+	$(EXETEST) node browse /
 	@touch $@
 t/nd2:
 	mkdir -p $(TEST_FOLDER)
-	$(EXETEST) node upload $(SAMPLE_FILE) --to-folder=$(NODEDEST) --insecure=yes
-	$(EXETEST) node download $(NODEDEST)200KB.1 --to-folder=$(TEST_FOLDER) --insecure=yes
-	$(EXETEST) node delete $(NODEDEST)200KB.1 --insecure=yes
+	$(EXETEST) node upload $(SAMPLE_FILE) --to-folder=$(NODEDEST)
+	$(EXETEST) node download $(NODEDEST)200KB.1 --to-folder=$(TEST_FOLDER)
+	$(EXETEST) node delete $(NODEDEST)200KB.1
 	rm -f $(TEST_FOLDER)/200KB.1
 	@touch $@
 t/nd3:
@@ -189,38 +189,38 @@ t/nd4:
 tnode: t/nd1 t/nd2 t/nd3
 
 t/fs1:
-	$(EXETEST) files repo browse /
+	$(EXETEST) aspera files browse /
 	@touch $@
 t/fs2:
-	$(EXETEST) files repo upload $(SAMPLE_FILE) --to-folder=/
+	$(EXETEST) aspera files upload $(SAMPLE_FILE) --to-folder=/
 	@touch $@
 t/fs3:
 	mkdir -p $(TEST_FOLDER)
-	$(EXETEST) files repo download /200KB.1 --to-folder=$(TEST_FOLDER) --transfer=connect
+	$(EXETEST) aspera files download /200KB.1 --to-folder=$(TEST_FOLDER) --transfer=connect
 	rm -f 200KB.1
 	@touch $@
 t/fs3b:
 	mkdir -p $(TEST_FOLDER)
-	$(EXETEST) files repo download /200KB.1 --to-folder=$(TEST_FOLDER) --download=node
+	$(EXETEST) aspera files download /200KB.1 --to-folder=$(TEST_FOLDER) --download=node
 	rm -f 200KB.1
 	@touch $@
 t/fs4:
-	$(EXETEST) files package send $(SAMPLE_FILE) --note="my note" --title="my title" --recipient="laurent.martin.aspera@fr.ibm.com"
+	$(EXETEST) aspera packages send $(SAMPLE_FILE) --note="my note" --title="my title" --recipient="laurent.martin.aspera@fr.ibm.com"
 	@touch $@
 t/fs5:
-	$(EXETEST) files package list
+	$(EXETEST) aspera packages list
 	@touch $@
 t/fs6:
-	$(EXETEST) files package recv BJKyUFHhew
+	$(EXETEST) aspera packages recv BJKyUFHhew
 	@touch $@
 t/fs7:
-	$(EXETEST) files admin events
+	$(EXETEST) aspera admin events
 	@touch $@
 t/fs8:
-	$(EXETEST) files admin resource workspace list
+	$(EXETEST) aspera admin resource workspace list
 	@touch $@
 t/fs9:
-	$(EXETEST) files admin resource node --id=7897 do browse / --secret=I5DiMd6oOzMeWP2F2QlOl-VFpARPY8pEimE1xOEXQ7xP_1Gt1mKLeoQ93oEj-WoltJQBJpmfI2jroSCFqFQpdg
+	$(EXETEST) aspera admin resource node --id=7897 do browse / --secret=I5DiMd6oOzMeWP2F2QlOl-VFpARPY8pEimE1xOEXQ7xP_1Gt1mKLeoQ93oEj-WoltJQBJpmfI2jroSCFqFQpdg
 	@touch $@
 
 tfiles: t/fs1 t/fs2 t/fs3 t/fs3b t/fs4 t/fs5 t/fs6 t/fs7 t/fs8 t/fs9

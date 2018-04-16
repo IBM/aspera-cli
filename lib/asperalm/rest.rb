@@ -60,7 +60,7 @@ module Asperalm
     # set to true enables debug in HTTP class
     @@debug=false
     @@insecure=false
-    def self.insecure=(v); Log.log.debug("insecure  => #{@@insecure}".red);@@insecure=v;end
+    def self.insecure=(v); Log.log.debug("insecure => #{@@insecure}".red);@@insecure=v;end
 
     def self.insecure; @@insecure;end
 

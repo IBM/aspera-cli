@@ -40,8 +40,9 @@ module Asperalm
       end
 
       # boolean options are set to true/false from the following values
-      @@TRUE_VALUES=[:yes]
-      @@BOOLEAN_VALUES=@@TRUE_VALUES.clone.push(:no)
+      @@TRUE_VALUES=[:yes,true]
+      @@BOOLEAN_VALUES=@@TRUE_VALUES.clone.push(:no,false)
+      @@BOOLEAN_SIMPLE=[:yes,:no]
 
       def enum_to_bool(enum);@@TRUE_VALUES.include?(enum);end
 
@@ -284,7 +285,7 @@ module Asperalm
           end
           Log.log.debug("get #{option_symbol} (#{@declared_options[option_symbol][:type]}) : #{result}")
         end
-        Log.log.debug("inter=#{@ask_missing_mandatory}")
+        Log.log.debug("interactive=#{@ask_missing_mandatory}")
         if result.nil?
           if !@ask_missing_mandatory
             if is_type.eql?(:mandatory)
@@ -334,7 +335,7 @@ module Asperalm
         value=get_option(option_symbol)
         help_values=values.map{|i|i.eql?(value)?highlight_current(i):i}.join(', ')
         if values.eql?(@@BOOLEAN_VALUES)
-          help_values=values.map{|i|((i.eql?(:yes) and value) or (i.eql?(:no) and not value))?highlight_current(i):i}.join(', ')
+          help_values=@@BOOLEAN_SIMPLE.map{|i|((i.eql?(:yes) and value) or (i.eql?(:no) and not value))?highlight_current(i):i}.join(', ')
         end
         on_args.push(values)
         on_args.push("#{help}: #{help_values}")

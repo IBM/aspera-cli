@@ -22,7 +22,7 @@ module Asperalm
       singleton_class.send(:alias_method, :tool, :instance)
       def self.version;return @@TOOL_VERSION;end
       private
-      @@TOOL_VERSION='0.6.14'
+      @@TOOL_VERSION='0.6.15'
       # first level command for the main tool
       @@MAIN_PLUGIN_NAME_SYM=:config
       # name of application, also foldername where config is stored
@@ -499,13 +499,15 @@ module Asperalm
               save_required=true
             end
           end
+          # Place new compatibility code here
           if save_required
+            @available_presets[@@MAIN_PLUGIN_NAME_SYM.to_s][@@CONFIG_FILE_KEY_VERSION]=@@TOOL_VERSION
             save_presets_to_config_file
             Log.log.warn("Saving automatic conversion.")
          end
         rescue => e
-          new_name=@option_config_file+".manual_conversion_needed"
-          #File.rename(@option_config_file,new_name)
+          new_name="#{@option_config_file}.pre#{@@TOOL_VERSION}.manual_conversion_needed"
+          File.rename(@option_config_file,new_name)
           Log.log.warn("Renamed config file to #{new_name}.")
           Log.log.warn("Manual Conversion is required.")
           raise CliError,e.to_s

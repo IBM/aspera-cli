@@ -1410,7 +1410,7 @@ Gems, or remove your ed25519 key from your `.ssh` folder to solve the issue.
 # Release Notes
 
 Version 0.6.15
-Breaking change: "files" application renamed to "aspera". "repository" renamed to "files". Default must be reset, e.g. edit config files and change key "files" to "aspera" in preset "default".
+Breaking change: "files" application renamed to "aspera" (for "Aspera on Cloud"). "repository" renamed to "files". Default is automatically reset, e.g. in config files and change key "files" to "aspera" in preset "default".
 
 # TODO
 
