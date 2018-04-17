@@ -403,7 +403,7 @@ module Asperalm
                 when :contact; default_fields=["email","name","source_id","source_type"]
                 end
                 query=Main.tool.options.get_option(:query,:optional)
-                Log.log.debug("#{query}".bg_red)
+                Log.log.debug("Query=#{query}".bg_red)
                 return {:type=>:hash_array,:data=>@api_files_admin.read(resource_class_path,query)[:data],:fields=>default_fields}
               when :show
                 object=@api_files_admin.read(resource_instance_path)[:data]

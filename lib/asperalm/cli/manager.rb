@@ -138,8 +138,8 @@ module Asperalm
         # ask optional options if not provided and in interactive
         @ask_missing_optional=false
         # those must be set before parse, parse consumes those defined only
-        @unprocessed_defaults={}
-        @unprocessed_env={}
+        @unprocessed_defaults=[]
+        @unprocessed_env=[]
         # Note: was initially inherited but it is prefered to have specific methods
         @parser=OptionParser.new
         @parser.program_name=program_name
@@ -151,7 +151,7 @@ module Asperalm
         env_prefix=@parser.program_name.upcase+'_'
         ENV.each do |k,v|
           if k.start_with?(env_prefix)
-            @unprocessed_env[k[env_prefix.length..-1].downcase.to_sym]=v
+            @unprocessed_env.push([k[env_prefix.length..-1].downcase.to_sym,v])
           end
         end
         Log.log.debug("env=#{@unprocessed_env}".red)
@@ -289,13 +289,13 @@ module Asperalm
         if result.nil?
           if !@ask_missing_mandatory
             if is_type.eql?(:mandatory)
-              raise CliBadArgument,"Missing option in context: #{option_symbol}"
+              raise CliBadArgument,"Missing mandatory option: #{option_symbol}"
             end
           else # ask_missing_mandatory
             if @ask_missing_optional or is_type.eql?(:mandatory)
               expected=:single
               #print "please enter: #{option_symbol.to_s}"
-              if @declared_options[option_symbol].has_key?(:values)
+              if @declared_options.has_key?(option_symbol) and @declared_options[option_symbol].has_key?(:values)
                 expected=@declared_options[option_symbol][:values]
               end
               result=get_interactive(:option,option_symbol.to_s,expected)
@@ -307,11 +307,11 @@ module Asperalm
       end
 
       # param must be hash
-      def add_option_preset(preset_hash)
+      def add_option_preset(preset_hash,op=:push)
         Log.log.debug("add_option_preset=#{preset_hash}")
         raise "internal error: setting default with no hash: #{preset_hash.class}" if !preset_hash.is_a?(Hash)
         # incremental override
-        preset_hash.each{|k,v|@unprocessed_defaults[k.to_sym]=v}
+        preset_hash.each{|k,v|@unprocessed_defaults.send(op,[k.to_sym,v])}
       end
 
       # generate command line option from option symbol
@@ -422,7 +422,8 @@ module Asperalm
       end
 
       def apply_options_preset(preset,where,force=false)
-        preset.each do |k,v|
+        preset.each do |pair|
+          k,v=*pair
           if @declared_options.has_key?(k)
             # constrained parameters as string are revert to symbol
             if @declared_options[k].has_key?(:values) and v.is_a?(String)

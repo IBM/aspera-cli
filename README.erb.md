@@ -88,21 +88,22 @@ Once you have ruby and rights to install gems: Install the gem and its dependenc
 $ gem install asperalm
 ```
 
-## FASP
+## FASP Protocol
 
-For FASP based file transfer, the FASP protocol and a valid license 
-is required. If the server side is "connect" enabled, one can use 
-the connect client license.
+Most file transfers will be done using the FASP protocol. This requires one of IBM Asprea transfer server or client with its license file (some are free):
 
-`aslmcli` will detect most of Aspera transfer products in standard locations and use the first one found.
+* IBM Aspera Connect Client
+* IBM Aspera Desktop Client
+* IBM Aspera CLI
+* IBM Aspera High Speed Transfer Server
+* IBM Aspera High Speed Transfer EndPoint
 
-Aspera Connect Client can be installed
-by visiting the page: [http://downloads.asperasoft.com/connect2/](http://downloads.asperasoft.com/connect2/)
+For instance, Aspera Connect Client can be installed
+by visiting the page: [http://downloads.asperasoft.com/connect2/](http://downloads.asperasoft.com/connect2/). 
 
-It is also possible to use the `ascp` binary from Aspera CLI, or any other transfer product (High Speed Transfer Server, etc...).
+`aslmcli` will detect most of Aspera transfer products in standard locations and use the first one found. Refer to section [Client](#client) for details.
 
-The connect client can be downloaded on command line using `aslmcli`, 
-see section: [Client](client).
+Several methods are provided on how to effectively start a transfer, refer to section: [Transfer Agents](#agents)
 
 # <a name="aslmcli"></a>Tool: `aslmcli`
 
@@ -123,7 +124,7 @@ The `asperalm` Gem provides a command line interface (CLI) which interacts with 
 * Supports most Aspera server products (on-premise and SaaS)
 * Options can be provided on command line, in configuration file, in env var, in files (products URL, credentials or any option)
 * Commands, Option values and Parameters can be provided in short format (must be unique)
-* FASP [transfer agent](#agents) can be: FaspManager (local ascp), or Connect Client, or a transfer node
+* FASP [Transfer Agents](#agents) can be: FaspManager (local ascp), or Connect Client, or a transfer node
 * Transfer parameters can be altered by modification of transferspec, this includes requiring multi-session transfer on nodes
 * Allows transfers from products to products, essentially at node level (using the node transfer agent)
 * Supports FaspStream creation (using Node API)
@@ -449,16 +450,16 @@ In order to get traces of execution, use argument : `--log-level=debug`
 
 Some actions may require the use of a graphical tool:
 
-* a browser for Aspera Aspera on Cloud authentication
+* a browser for Aspera on Cloud authentication (web auth method)
 * a text editor for configuration file edition
 
 By default the CLI will assume that a graphical environment is available on windows,
 and on other systems, rely on the presence of the "DISPLAY" environment variable.
-It is also possible to force the graphical mode with option --gui-mode :
+It is also possible to force the graphical mode with option --ui :
 
-* `--gui-mode=graphical` forces a graphical environment, a browser will be opened for URLs or
+* `--ui=graphical` forces a graphical environment, a browser will be opened for URLs or
 a text editor for file edition.
-* `--gui-mode=text` forces a text environment, the URL or file path to open is displayed on
+* `--ui=text` forces a text environment, the URL or file path to open is displayed on
 terminal.
 
 ## <a name="agents"></a>Transfer Agents
@@ -473,18 +474,16 @@ This transfer can be done using on of the 3 following methods:
 
 `aslmcli` standadizes on the use of a [_transfer-spec_](#_transferspec_) instead of _raw_ ascp options to provide parameters for a transfer session, as a common method for those three Transfer Agents.
 
-### FASPManager API based (command line)
+### Direct (ascp/FASPManager API)
 
-By default the CLI will use the Aspera Connect Client FASP part, in this case
-it requires the installation of the Aspera Connect Client to be 
-able to execute FASP based transfers. The CLI will try to automatically locate the 
-Aspera Protocol (`ascp`). This is option: `--transfer=ascp`. Note that parameters
-are always provided with a [_transfer-spec_](#_transferspec_).
+By default the CLI will use a local FASP protocol.
+`aslmcli` will detect locally installed Aspera products.
+Refer to section [Client](#client). 
 
-### Aspera Connect Client GUI
+### IBM Aspera Connect Client GUI
 
-By specifying option: `--transfer=connect`, the CLI will start transfers in the Aspera
-Connect Client.
+By specifying option: `--transfer=connect`, `aslmcli` will start transfers in the Aspera
+Connect Client. This requires the IBM Aspera Connect Client to be installed.
 
 ### Aspera Node API : Node to node transfers
 
@@ -687,11 +686,11 @@ Those are using options:
 
 Those can be provided using command line, parameter set, env var, see section above.
 
-Aspera Aspera on Cloud relies on Oauth, refer to the [Aspera on Cloud](#aoc) section.
+Aspera on Cloud relies on Oauth, refer to the [Aspera on Cloud](#aoc) section.
 
-## <a name="aoc"></a>Aspera Aspera on Cloud, Aspera on Cloud
+## <a name="aoc"></a>Aspera on Cloud
 
-Aspera Aspera on Cloud uses the more advanced Oauth mechanism for authentication (HTTP Basic authentication is not supported).
+Aspera on Cloud uses the more advanced Oauth mechanism for authentication (HTTP Basic authentication is not supported).
 This requires additional setup.
 Several types of OAuth authentication are supported:
 
@@ -760,7 +759,7 @@ Note: Default `auth` method is `web` and default `redirect_uri` is `htt^://local
 Once client has been registered and option preset created: `aslmcli` can be used:
 
 ```bash
-$ aslmcli aspera repo br /
+$ aslmcli aspera files br /
 Current Workspace: Default Workspace (default)
 empty
 ```
@@ -775,7 +774,7 @@ In addition to basic API Client registration, the following steps are required f
 
 #### Key Pair Generation
 
-In order to use JWT for Aspera Aspera on Cloud API client authentication, 
+In order to use JWT for Aspera on Cloud API client authentication, 
 a private/public key pair must be generated (without passphrase)
 This can be done using any of the following method:
 
@@ -894,6 +893,19 @@ The `admin` command allows several administrative tasks (and require admin privi
 It allows actions (create, update, delete) on "resources": users, group, nodes, workspace, etc... with the `admin resource` command.
 
 Bulk operations are possible using option `bulk` (yes,no(default)): currently: create only. In that case, the operation expects an Array of Hash instead of a simple Hash using the [Extended Value Syntax](#extended).
+
+To get more resources when doing request add:
+
+```
+--query=@json:'{"per_page":10000}'
+```
+
+other query parameters can be used:
+```
+--query=@json:'{"member_of_any_workspace":true,}'
+--query=@json:'{"q":"laurent"}'
+```
+
 
 #### Examples
 
@@ -1023,6 +1035,12 @@ $ aslmcli node download /share/sourcefile --to-folder=/destinationfolder --load-
 This will get transfer information from the SHOD instance and tell the Azure ATS instance 
 to download files.
 
+### Create access key
+
+```
+$ aslmcli node access_key create --value=@json:'{"id":"eudemo-sedemo","secret":"mystrongsecret","storage":{"type":"local","path":"/data/asperafiles"}}'
+```
+
 ## <a name="client"></a>Client
 
 The `client` plugin refers to the use of a local FASP client. It provides the following commands:
@@ -1031,9 +1049,38 @@ The `client` plugin refers to the use of a local FASP client. It provides the fo
 * `installation list` : list Aspera transfer products found locally
 * `client location` : list resources used for transfers
 
-### Examples
+### List installed clients
 
-Download the installer for "Aspera Connect Client":
+```bash
+$ aslmcli client installation list
+:..........................:................................................:
+:           name           :                    app_root                    :
+:..........................:................................................:
+: Connect Client           : /Users/laurent/Applications/Aspera Connect.app :
+: Aspera Enterprise Server : /Library/Aspera                                :
+:..........................:................................................:
+```
+
+### List resources used
+
+```
+$ aslmcli client location
+:........................:............................................................................................:
+:          name          :                                            path                                            :
+:........................:............................................................................................:
+: bin_folder             : /Users/laurent/Applications/Aspera Connect.app/Contents/Resources                          :
+: ssh_bypass_key_dsa     : /Users/laurent/Applications/Aspera Connect.app/Contents/Resources/asperaweb_id_dsa.openssh :
+: ssh_bypass_key_rsa     : /Users/laurent/Applications/Aspera Connect.app/Contents/Resources/aspera_tokenauth_id_rsa  :
+: fallback_cert          : /Users/laurent/Applications/Aspera Connect.app/Contents/Resources/aspera_web_cert.pem      :
+: fallback_key           : /Users/laurent/Applications/Aspera Connect.app/Contents/Resources/aspera_web_key.pem       :
+: localhost_cert         : /Users/laurent/Applications/Aspera Connect.app/Contents/Resources/localhost.crt            :
+: localhost_key          : /Users/laurent/Applications/Aspera Connect.app/Contents/Resources/localhost.key            :
+: plugin_https_port_file : /Users/laurent/Library/Application Support/Aspera/Aspera Connect/var/run/https.uri         :
+: log_folder             : /Users/laurent/Library/Logs/Aspera                                                         :
+:........................:............................................................................................:
+```
+
+### Installation of Connect Client on command line
 
 ```bash
 $ ./bin/aslmcli client connect list
@@ -1118,7 +1165,7 @@ Aspera Shares supports the "node API" for the file transfer part. (Shares 1 and 
 
 ## Aspera Transfer Service
 
-Aka Aspera Aspera on Cloud, Aspera on Cloud...
+Aka Aspera on Cloud, Aspera on Cloud...
 
 ### First time use
 
@@ -1167,7 +1214,7 @@ for k in $(aslmcli ats access_key list --field=id --format=csv);do aslmcli ats a
 
 ## Preview
 
-The preview plugin provides generation of previews for Aspera Aspera on Cloud.
+The preview plugin provides generation of previews for Aspera on Cloud.
 
 The tool requires the following external tools:
 
@@ -1177,7 +1224,7 @@ The tool requires the following external tools:
 * Libreoffice : `libreoffice`
 
 ### Preview Command
-The `preview` plugin allows generation of preview files for Aspera Aspera on Cloud for on-premise nodes. (thumbnails and video previews)
+The `preview` plugin allows generation of preview files for Aspera on Cloud for on-premise nodes. (thumbnails and video previews)
 
 The preview generator creates/updates a preview for files located on
 an access key main "storage root". Several candidate detection methods are supported.

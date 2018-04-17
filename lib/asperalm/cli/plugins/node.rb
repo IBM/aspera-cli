@@ -1,4 +1,5 @@
 require 'asperalm/cli/main'
+require 'asperalm/cli/helper'
 require 'asperalm/cli/basic_auth_plugin'
 require "base64"
 
@@ -17,7 +18,8 @@ module Asperalm
         def declare_options
           super_declare_options
           Main.tool.options.add_opt_simple(:value,"extended value for create, update, list filter")
-          Main.tool.options.add_opt_simple(:validator,"identifier of validator")
+          Main.tool.options.add_opt_simple(:validator,"identifier of validator (optional for central)")
+          Main.tool.options.add_opt_simple(:id,"entity identifier for update, show, and modify")
           #Main.tool.options.set_option(:value,'@json:{"active_only":false}')
         end
 
@@ -172,34 +174,6 @@ module Asperalm
           end
         end
 
-        def generic_operations; [:create,:list,:id];end
-
-        # implement generic rest operations on given resource path
-        def resource_action(api_node,res_class_path,display_fields)
-          res_name=res_class_path.gsub(%r{.*/},'').gsub(%r{^s$},'').gsub('_',' ')
-          command=Main.tool.options.get_next_argument('command',[ :list, :create, :id ])
-          case command
-          when :create
-            return {:type => :other_struct, :data=>api_node.create(res_class_path,Main.tool.options.get_option(:value,:mandatory))[:data], :fields=>display_fields}
-          when :list
-            return {:type => :hash_array, :data=>api_node.read(res_class_path)[:data], :fields=>display_fields}
-          when :id
-            one_res_id=Main.tool.options.get_next_argument("#{res_name} id")
-            one_res_path="#{res_class_path}/#{one_res_id}"
-            command=Main.tool.options.get_next_argument('command',[ :delete, :show, :modify ])
-            case command
-            when :modify
-              api_node.update(one_res_path,Main.tool.options.get_option(:value,:mandatory))
-              return Main.result_status('modified')
-            when :delete
-              api_node.delete(one_res_path)
-              return {:type => :empty}
-            when :show
-              return {:type => :key_val_list, :data=>api_node.read(one_res_path)[:data], :fields=>display_fields}
-            end
-          end
-        end
-
         def action_list; self.class.common_actions.clone.concat([ :postprocess,:stream, :transfer, :cleanup, :forward, :access_key, :watch_folder, :service, :async, :central ]);end
 
         def execute_action
@@ -208,27 +182,22 @@ module Asperalm
           case command
           when *self.class.common_actions; return self.class.execute_common(command,api_node)
           when :async
-            command=Main.tool.options.get_next_argument('command',[ :list, :id ])
+            command=Main.tool.options.get_next_argument('command',[:list,:summary,:counters])
+            if [:summary,:counters].include?(command)
+              asyncid=Main.tool.options.get_option(:id,:mandatory)
+            end
             case command
             when :list
               resp=api_node.read('async/list')[:data]['sync_ids']
               return { :type => :value_list, :data => resp, :name=>'id'  }
-            when :id
-              asyncid=Main.tool.options.get_next_argument("async id")
-              command=Main.tool.options.get_next_argument('command',[ :delete,:summary,:counters ])
-              case command
-              when :summary
-                resp=api_node.create('async/summary',{"syncs"=>[asyncid]})[:data]["sync_summaries"].first
-                return Main.result_none if resp.nil?
-                return { :type => :key_val_list, :data => resp }
-              when :delete
-                # delete POST /async/delete '{"syncs":["4"]}'
-                raise "not implemented"
-              when :counters
-                resp=api_node.create('async/counters',{"syncs"=>[asyncid]})[:data]["sync_counters"].first[asyncid].last
-                return Main.result_none if resp.nil?
-                return { :type => :key_val_list, :data => resp }
-              end
+            when :summary
+              resp=api_node.create('async/summary',{"syncs"=>[asyncid]})[:data]["sync_summaries"].first
+              return Main.result_none if resp.nil?
+              return { :type => :key_val_list, :data => resp }
+            when :counters
+              resp=api_node.create('async/counters',{"syncs"=>[asyncid]})[:data]["sync_counters"].first[asyncid].last
+              return Main.result_none if resp.nil?
+              return { :type => :key_val_list, :data => resp }
             end
           when :stream
             command=Main.tool.options.get_next_argument('command',[ :list, :create, :show, :modify, :cancel ])
@@ -256,26 +225,32 @@ module Asperalm
             end
           when :transfer
             command=Main.tool.options.get_next_argument('command',[ :list, :cancel, :show ])
+            res_class_path='ops/transfers'
+            if [:cancel, :show].include?(command)
+              one_res_id=Main.tool.options.get_option(:id,:mandatory)
+              one_res_path="#{res_class_path}/#{one_res_id}"
+            end
             case command
             when :list
               # could use ? :subpath=>'transfers'
-              resp=api_node.read('ops/transfers',Main.tool.options.get_option(:value,:optional))
+              resp=api_node.read(res_class_path,Main.tool.options.get_option(:value,:optional))
               return { :type => :hash_array, :data => resp[:data], :fields=>['id','status','remote_user','remote_host'], :textify => lambda { |table_data| Node.textify_transfer_list(table_data) } } # TODO
             when :cancel
-              trid=Main.tool.options.get_next_argument("transfer id")
-              resp=api_node.cancel('ops/transfers/'+trid)
+              resp=api_node.cancel(one_res_path)
               return { :type=>:other_struct, :data => resp[:data] }
             when :show
-              trid=Main.tool.options.get_next_argument("transfer id")
-              resp=api_node.read('ops/transfers/'+trid)
+              resp=api_node.read(one_res_path)
               return { :type=>:other_struct, :data => resp[:data] }
             else
               raise "error"
             end
           when :access_key
-            return resource_action(api_node,'access_keys',['id','root_file_id','storage','license'])
+            return Helper.entity_action(api_node,'access_keys',['id','root_file_id','storage','license'])
           when :service
-            command=Main.tool.options.get_next_argument('command',[ :list, :create, :id])
+            command=Main.tool.options.get_next_argument('command',[ :list, :create, :delete])
+            if [:delete].include?(command)
+              svcid=Main.tool.options.get_option(:id,:mandatory)
+            end
             case command
             when :list
               resp=api_node.read('rund/services')
@@ -286,23 +261,18 @@ module Asperalm
               params=Main.tool.options.get_next_argument("Run creation data (structure)")
               resp=api_node.create('rund/services',params)
               return Main.result_status("#{resp[:data]['id']} created")
-            when :id
-              svcid=Main.tool.options.get_next_argument("service id")
-              command=Main.tool.options.get_next_argument('command',[ :delete, :modify ])
-              case command
-              when :delete
-                resp=api_node.delete("rund/services/#{svcid}")
-                return Main.result_status("#{svcid} deleted")
-              else
-                raise "error"
-              end
-            else
-              raise "error"
+            when :delete
+              resp=api_node.delete("rund/services/#{svcid}")
+              return Main.result_status("#{svcid} deleted")
             end
           when :watch_folder
             res_class_path='v3/watchfolders'
-            #return resource_action(api_node,'v3/watchfolders',nil)
-            command=Main.tool.options.get_next_argument('command',[ :list, :create, :id])
+            #return Helper.entity_action(api_node,'v3/watchfolders',nil)
+            command=Main.tool.options.get_next_argument('command',[ :create, :list, :show, :modify, :delete, :state])
+            if [:show,:modify,:delete,:state].include?(command)
+              one_res_id=Main.tool.options.get_option(:id,:mandatory)
+              one_res_path="#{res_class_path}/#{one_res_id}"
+            end
             case command
             when :create
               resp=api_node.create(res_class_path,Main.tool.options.get_option(:value,:mandatory))
@@ -311,22 +281,16 @@ module Asperalm
               resp=api_node.read(res_class_path,Main.tool.options.get_option(:value,:optional))
               #  :fields=>['id','root_file_id','storage','license']
               return { :type=>:value_list, :data => resp[:data]['ids'], :name=>'id' }
-            when :id
-              one_res_id=Main.tool.options.get_next_argument("watch folder id")
-              one_res_path="#{res_class_path}/#{one_res_id}"
-              command=Main.tool.options.get_next_argument('command',[ :delete, :show, :update, :state ])
-              case command
-              when :show
-                return {:type=>:key_val_list, :data=>api_node.read(one_res_path)[:data]}
-              when :update
-                api_node.update(one_res_path,Main.tool.options.get_option(:value,:mandatory))
-                return Main.result_status("#{one_res_id} updated")
-              when :delete
-                api_node.delete(one_res_path)
-                return Main.result_status("#{one_res_id} deleted")
-              when :state
-                return { :type=>:key_val_list, :data => api_node.read("#{one_res_path}/state")[:data] }
-              end
+            when :show
+              return {:type=>:key_val_list, :data=>api_node.read(one_res_path)[:data]}
+            when :modify
+              api_node.update(one_res_path,Main.tool.options.get_option(:value,:mandatory))
+              return Main.result_status("#{one_res_id} updated")
+            when :delete
+              api_node.delete(one_res_path)
+              return Main.result_status("#{one_res_id} deleted")
+            when :state
+              return { :type=>:key_val_list, :data => api_node.read("#{one_res_path}/state")[:data] }
             end
           when :central
             command=Main.tool.options.get_next_argument('command',[ :session,:file])
@@ -344,13 +308,13 @@ module Asperalm
                 return {:type=>:hash_array,:data=>resp[:data]["session_info_result"]["session_info"],:fields=>["session_uuid","status","transport","direction","bytes_transferred"]}
               end
             when :file
-              command=Main.tool.options.get_next_argument('command',[ :list, :update])
+              command=Main.tool.options.get_next_argument('command',[ :list, :modify])
               case command
               when :list
                 request_data.deep_merge!({"validation"=>validation}) unless validation.nil?
                 resp=api_node.create('services/rest/transfers/v1/files',request_data)
                 return {:type=>:hash_array,:data=>resp[:data]["file_transfer_info_result"]["file_transfer_info"],:fields=>["session_uuid","file_id","status","path"]}
-              when :update
+              when :modify
                 request_data.deep_merge!(validation) unless validation.nil?
                 api_node.update('services/rest/transfers/v1/files',request_data)
                 return Main.result_status('updated')

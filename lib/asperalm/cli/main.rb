@@ -22,7 +22,7 @@ module Asperalm
       singleton_class.send(:alias_method, :tool, :instance)
       def self.version;return @@TOOL_VERSION;end
       private
-      @@TOOL_VERSION='0.6.15'
+      @@TOOL_VERSION='0.6.16'
       # first level command for the main tool
       @@MAIN_PLUGIN_NAME_SYM=:config
       # name of application, also foldername where config is stored
@@ -46,6 +46,7 @@ module Asperalm
       RUBY_FILE_EXT='.rb'
       FIELDS_ALL='ALL'
       FIELDS_DEFAULT='DEF'
+      ASPERA_PLUGIN_S=:aspera.to_s
 
       def save_presets_to_config_file
         raise "no configuration loaded" if @available_presets.nil?
@@ -70,12 +71,12 @@ module Asperalm
       end
 
       # returns default parameters for a plugin from loaded config file
-      # try to find: conffile[conffile["config"][:default][plugin_sym]]
+      # try to find: conffile[conffile["default"][plugin_str]]
       def add_plugin_default_preset(plugin_sym)
         default_config_name=get_plugin_default_config_name(plugin_sym)
         Log.log.debug("add_plugin_default_preset:#{plugin_sym}:#{default_config_name}")
         return if default_config_name.nil?
-        @opt_mgr.add_option_preset(@available_presets[default_config_name])
+        @opt_mgr.add_option_preset(@available_presets[default_config_name],:unshift)
       end
 
       def self.result_none
@@ -491,7 +492,7 @@ module Asperalm
           config_tested_version='0.6.14'
           if Gem::Version.new(version) <= Gem::Version.new(config_tested_version)
             old_plugin_name='files'
-            new_plugin_name='aspera'
+            new_plugin_name=ASPERA_PLUGIN_S
             if @available_presets[@@CONFIG_FILE_KEY_DEFAULT].is_a?(Hash) and @available_presets[@@CONFIG_FILE_KEY_DEFAULT].has_key?(old_plugin_name)
               @available_presets[@@CONFIG_FILE_KEY_DEFAULT][new_plugin_name]=@available_presets[@@CONFIG_FILE_KEY_DEFAULT][old_plugin_name]
               @available_presets[@@CONFIG_FILE_KEY_DEFAULT].delete(old_plugin_name)
@@ -504,7 +505,7 @@ module Asperalm
             @available_presets[@@MAIN_PLUGIN_NAME_SYM.to_s][@@CONFIG_FILE_KEY_VERSION]=@@TOOL_VERSION
             save_presets_to_config_file
             Log.log.warn("Saving automatic conversion.")
-         end
+          end
         rescue => e
           new_name="#{@option_config_file}.pre#{@@TOOL_VERSION}.manual_conversion_needed"
           File.rename(@option_config_file,new_name)
@@ -515,6 +516,9 @@ module Asperalm
       end
 
       protected
+
+      DEFAULT_PRESET='aspera_default'
+      DEFAULT_REDIRECT='http://localhost:12345'
 
       # "config" plugin
       def execute_action
@@ -597,6 +601,20 @@ module Asperalm
           return {:data => @available_presets.keys, :type => :value_list, :name => 'name'}
         when :overview
           return {:type=>:hash_array,:data=>self.class.flatten_all_config(@available_presets)}
+        when :aspera_setup # TODO
+          @available_presets[@@CONFIG_FILE_KEY_DEFAULT]||=Hash.new
+          raise CliError,"a default configuration already exists" if @available_presets[@@CONFIG_FILE_KEY_DEFAULT].has_key?(ASPERA_PLUGIN_S)
+          raise CliError,"preset already exists: #{DEFAULT_PRESET}" if @available_presets.has_key?(DEFAULT_PRESET)
+          @available_presets[@@CONFIG_FILE_KEY_DEFAULT][ASPERA_PLUGIN_S]=DEFAULT_PRESET
+          @opt_mgr.set_option(:interactive,:yes)
+          @opt_mgr.add_opt_simple(:url,"URL of application, e.g. http://org.asperafiles.com")
+          @opt_mgr.parse_options!
+          @available_presets[DEFAULT_PRESET]={
+            :url.to_s=>@opt_mgr.get_option(:url,:mandatory),
+            :redirect_uri.to_s=>DEFAULT_REDIRECT,
+            :client_id.to_s=>@opt_mgr.get_option(:client_id,:mandatory),
+          }
+          raise "todo"
         end
       end
 
