@@ -1,4 +1,3 @@
-require 'asperalm/cli/main'
 require 'asperalm/cli/basic_auth_plugin'
 require "base64"
 
@@ -11,17 +10,17 @@ module Asperalm
         # "transfer_filter"=>"t['status'].eql?('completed') and t['start_spec']['remote_user'].eql?('faspex')", :file_filter=>"f['status'].eql?('completed') and 0 != f['size'] and t['start_spec']['direction'].eql?('send')"
         def declare_options
           super_declare_options
-          Main.tool.options.add_opt_simple(:filter_transfer,"Ruby expression for filter at transfer level (cleanup)")
-          Main.tool.options.add_opt_simple(:filter_file,"Ruby expression for filter at file level (cleanup)")
-          Main.tool.options.add_opt_simple(:persistency,"persistency file (cleanup,forward)")
-          Main.tool.options.set_option(:persistency,File.join(Main.tool.config_folder,"persistency_cleanup.txt"))
+          @optmgr.add_opt_simple(:filter_transfer,"Ruby expression for filter at transfer level (cleanup)")
+          @optmgr.add_opt_simple(:filter_file,"Ruby expression for filter at file level (cleanup)")
+          @optmgr.add_opt_simple(:persistency,"persistency file (cleanup,forward)")
+          @optmgr.set_option(:persistency,File.join(@main.config_folder,"persistency_cleanup.txt"))
         end
 
         def action_list; [ :postprocess, :cleanup, :forward ];end
 
         # retrieve tranfer list using API and persistency file
         def self.get_transfers_iteration(api_node,params)
-          persistencyfile=Main.tool.options.get_option(:persistency,:mandatory)
+          persistencyfile=@optmgr.get_option(:persistency,:mandatory)
           # first time run ? or subsequent run ?
           iteration_token=nil
           if !persistencyfile.nil? and File.exist?(persistencyfile)
@@ -43,13 +42,13 @@ module Asperalm
         end
 
         def execute_action
-          api_node=Rest.new(Main.tool.options.get_option(:url,:mandatory),{:auth=>{:type=>:basic,:username=>Main.tool.options.get_option(:username,:mandatory), :password=>Main.tool.options.get_option(:password,:mandatory)}})
-          command=Main.tool.options.get_next_argument('command',action_list)
+          api_node=Rest.new(@optmgr.get_option(:url,:mandatory),{:auth=>{:type=>:basic,:username=>@optmgr.get_option(:username,:mandatory), :password=>@optmgr.get_option(:password,:mandatory)}})
+          command=@optmgr.get_next_argument('command',action_list)
           case command
           when :cleanup
             transfers=self.class.get_transfers_iteration(api_node,{:active_only=>false})
-            filter_transfer=Main.tool.options.get_option(:filter_transfer,:mandatory)
-            filter_file=Main.tool.options.get_option(:filter_file,:mandatory)
+            filter_transfer=@optmgr.get_option(:filter_transfer,:mandatory)
+            filter_file=@optmgr.get_option(:filter_file,:mandatory)
             Log.log.debug("filter_transfer: #{filter_transfer}")
             Log.log.debug("filter_file: #{filter_file}")
             # build list of files to delete: non zero files, downloads, for specified user
@@ -73,7 +72,7 @@ module Asperalm
             else
               Log.log.info("nothing to delete")
             end
-            return Main.result_none
+            return Plugin.result_none
           when :forward
             # detect transfer sessions since last call
             transfers=self.class.get_transfers_iteration(api_node,{:active_only=>false})
@@ -84,7 +83,7 @@ module Asperalm
             end
             if filelist.empty?
               Log.log.debug("NO TRANSFER".red)
-              return Main.result_none
+              return Plugin.result_none
             end
             Log.log.debug("file list=#{filelist}")
             # get download transfer spec on destination node
@@ -95,7 +94,7 @@ module Asperalm
             raise Fasp::Error,transfer_data['error']['user_message'] if transfer_data.has_key?('error')
             transfer_spec=transfer_data['transfer_spec']
             # execute transfer
-            return Main.tool.start_transfer(transfer_spec)
+            return @main.start_transfer(transfer_spec)
           when :postprocess
             transfers=self.class.get_transfers_iteration(api_node,{:view=>'summary',:direction=>'receive',:active_only=>false})
             return { :type=>:hash_array,:data => transfers }

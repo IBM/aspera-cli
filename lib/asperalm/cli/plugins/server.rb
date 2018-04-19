@@ -1,4 +1,3 @@
-require 'asperalm/cli/main'
 require 'asperalm/cli/basic_auth_plugin'
 require 'asperalm/ascmd'
 require 'asperalm/ssh'
@@ -15,20 +14,20 @@ module Asperalm
 
         def declare_options
           super_declare_options
-          Main.tool.options.add_opt_simple(:ssh_keys,Array,"PATH_ARRAY is @json:'[\"path1\",\"path2\"]'")
-          Main.tool.options.set_option(:ssh_keys,[])
+          @optmgr.add_opt_simple(:ssh_keys,Array,"PATH_ARRAY is @json:'[\"path1\",\"path2\"]'")
+          @optmgr.set_option(:ssh_keys,[])
         end
 
         def action_list; [:nodeadmin,:userdata,:configurator,:download,:upload,:browse,:delete,:rename].push(*Asperalm::AsCmd.action_list);end
 
         def execute_action
-          server_uri=URI.parse(Main.tool.options.get_option(:url,:mandatory))
+          server_uri=URI.parse(@optmgr.get_option(:url,:mandatory))
           Log.log.debug("URI : #{server_uri}, port=#{server_uri.port}, scheme:#{server_uri.scheme}")
           raise CliError,"Only ssh scheme is supported in url" if !server_uri.scheme.eql?("ssh")
 
           transfer_spec={
             "remote_host"=>server_uri.hostname,
-            "remote_user"=>Main.tool.options.get_option(:username,:mandatory),
+            "remote_user"=>@optmgr.get_option(:username,:mandatory),
           }
           ssh_options={}
           if !server_uri.port.nil?
@@ -36,13 +35,13 @@ module Asperalm
             transfer_spec["ssh_port"]=server_uri.port
           end
           cred_set=false
-          password=Main.tool.options.get_option(:password,:optional)
+          password=@optmgr.get_option(:password,:optional)
           if !password.nil?
             ssh_options[:password]=password
             transfer_spec['remote_password']=password
             cred_set=true
           end
-          ssh_keys=Main.tool.options.get_option(:ssh_keys,:optional)
+          ssh_keys=@optmgr.get_option(:ssh_keys,:optional)
           raise "internal error, expecting array" if !ssh_keys.is_a?(Array)
           if !ssh_keys.empty?
             ssh_options[:keys]=ssh_keys
@@ -54,7 +53,7 @@ module Asperalm
           ascmd=Asperalm::AsCmd.new(ssh_executor)
 
           # get command and set aliases
-          command=Main.tool.options.get_next_argument('command',action_list)
+          command=@optmgr.get_next_argument('command',action_list)
           command=:ls if command.eql?(:browse)
           command=:rm if command.eql?(:delete)
           command=:mv if command.eql?(:rename)
@@ -62,32 +61,32 @@ module Asperalm
             case command
             when :nodeadmin,:userdata,:configurator
               realcmd="as"+command.to_s
-              args = Main.tool.options.get_next_argument("#{realcmd} arguments",:multiple)
+              args = @optmgr.get_next_argument("#{realcmd} arguments",:multiple)
               # concatenate arguments, enclose in double quotes
               command = args.unshift(realcmd).map{|v|'"'+v+'"'}.join(" ")
-              return Main.result_status(ssh_executor.execute(command))
+              return Plugin.result_status(ssh_executor.execute(command))
             when :upload
-              filelist = Main.tool.options.get_next_argument("source list",:multiple)
+              filelist = @optmgr.get_next_argument("source list",:multiple)
               transfer_spec.merge!({
                 'direction'=>'send',
                 'paths'=>filelist.map { |f| {'source'=>f } }
               })
-              return Main.tool.start_transfer(transfer_spec)
+              return @main.start_transfer(transfer_spec)
             when :download
-              filelist = Main.tool.options.get_next_argument("source list",:multiple)
+              filelist = @optmgr.get_next_argument("source list",:multiple)
               transfer_spec.merge!({
                 'direction'=>'receive',
                 'paths'=>filelist.map { |f| {'source'=>f } }
               })
-              return Main.tool.start_transfer(transfer_spec)
+              return @main.start_transfer(transfer_spec)
             when *Asperalm::AsCmd.action_list
-              args=Main.tool.options.get_next_argument('ascmd command arguments',:multiple,:optional)
+              args=@optmgr.get_next_argument('ascmd command arguments',:multiple,:optional)
               result=ascmd.send(:execute_single,command,args)
               case command
-              when :mkdir; return Main.result_success
-              when :mv; return Main.result_success
-              when :cp; return Main.result_success
-              when :rm; return Main.result_success
+              when :mkdir; return Plugin.result_success
+              when :mv; return Plugin.result_success
+              when :cp; return Plugin.result_success
+              when :rm; return Plugin.result_success
               when :ls; return {:type=>:hash_array,:data=>result,:fields=>[:zmode,:zuid,:zgid,:size,:mtime,:name],:symb_key=>true}
               when :info; return {:type=>:key_val_list,:data=>result,:symb_key=>true}
               when :df; return {:type=>:hash_array,:data=>result,:symb_key=>true}

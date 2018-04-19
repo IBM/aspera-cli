@@ -1,4 +1,3 @@
-#require 'asperalm/cli/basic_auth_plugin'
 require 'asperalm/cli/plugins/node'
 require 'asperalm/oauth'
 require 'uri'
@@ -10,24 +9,24 @@ module Asperalm
         alias super_declare_options declare_options
         def declare_options
           super_declare_options
-          Main.tool.options.add_opt_simple(:organization,"organization")
-          Main.tool.options.add_opt_simple(:project,"project")
-          Main.tool.options.add_opt_simple(:share,"share")
+          @optmgr.add_opt_simple(:organization,"organization")
+          @optmgr.add_opt_simple(:project,"project")
+          @optmgr.add_opt_simple(:share,"share")
         end
 
         def action_list; [ :repository,:organization,:project,:team,:share,:appinfo,:userinfo];end
 
         def init_apis
           # get parameters
-          shares2_api_base_url=Main.tool.options.get_option(:url,:mandatory)
-          shares2_username=Main.tool.options.get_option(:username,:mandatory)
-          shares2_password=Main.tool.options.get_option(:password,:mandatory)
+          shares2_api_base_url=@optmgr.get_option(:url,:mandatory)
+          shares2_username=@optmgr.get_option(:username,:mandatory)
+          shares2_password=@optmgr.get_option(:password,:mandatory)
           # auth API
           @api_shares2_oauth=Oauth.new({
             :baseurl            => shares2_api_base_url,
             :authorize_path     => "oauth2/authorize",
             :token_path         => "oauth2/token",
-            :persist_folder     => Main.tool.config_folder,
+            :persist_folder     => @main.config_folder,
             :type               => :basic,
             :basic_type         => :header,
             :username           => shares2_username,
@@ -44,7 +43,7 @@ module Asperalm
         # adds : prefix+"res/id/"
         # modify parameter string
         def set_resource_path_by_id_or_name(resource_path,resource_sym)
-          res_id=Main.tool.options.get_option(resource_sym,:mandatory)
+          res_id=@optmgr.get_option(resource_sym,:mandatory)
           # lets get the class path
           resource_path<<resource_sym.to_s+'s'
           # is this an integer ? or a name
@@ -65,21 +64,21 @@ module Asperalm
         def process_entity_action(resource_sym,path_prefix)
           resource_path=path_prefix+resource_sym.to_s+'s'
           operations=[:list,:create,:delete]
-          command=Main.tool.options.get_next_argument('command',operations)
+          command=@optmgr.get_next_argument('command',operations)
           case command
           when :create
-            params=Main.tool.options.get_next_argument("creation data (json structure)")
+            params=@optmgr.get_next_argument("creation data (json structure)")
             resp=@api_shares2_admin.create(resource_path,params)
             return {:data=>resp[:data],:type => :other_struct}
           when :list
             default_fields=['id','name']
-            query=Main.tool.options.get_option(:query,:optional)
+            query=@optmgr.get_option(:query,:optional)
             args=query.nil? ? nil : {'json_query'=>query}
             Log.log.debug("#{args}".bg_red)
             return {:data=>@api_shares2_admin.read(resource_path,args)[:data],:fields=>default_fields,:type=>:hash_array}
           when :delete
             @api_shares2_admin.delete(set_resource_path_by_id_or_name(path_prefix,resource_sym))
-            return Main.result_status('deleted')
+            return Plugin.result_status('deleted')
           when :info
             return {:type=>:other_struct,:data=>@api_shares2_admin.read(set_resource_path_by_id_or_name(path_prefix,resource_sym),args)[:data]}
           else raise :ERROR
@@ -89,11 +88,11 @@ module Asperalm
         def execute_action
           init_apis
 
-          command=Main.tool.options.get_next_argument('command',action_list)
+          command=@optmgr.get_next_argument('command',action_list)
           case command
           when :repository
-            command=Main.tool.options.get_next_argument('command',Node.common_actions)
-            return Node.execute_common(command,@api_shares_node)
+            command=@optmgr.get_next_argument('command',Node.common_actions)
+            return Node.new(self).execute_common(command,@api_shares_node)
           when :appinfo
             node_info=@api_shares_node.call({:operation=>'GET',:subpath=>'app',:headers=>{'Accept'=>'application/json','Content-Type'=>'application/json'}})[:data]
             return { :type=>:key_val_list ,:data => node_info }

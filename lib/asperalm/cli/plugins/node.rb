@@ -1,5 +1,3 @@
-require 'asperalm/cli/main'
-require 'asperalm/cli/helper'
 require 'asperalm/cli/basic_auth_plugin'
 require "base64"
 
@@ -17,32 +15,22 @@ module Asperalm
         alias super_declare_options declare_options
         def declare_options
           super_declare_options
-          Main.tool.options.add_opt_simple(:value,"extended value for create, update, list filter")
-          Main.tool.options.add_opt_simple(:validator,"identifier of validator (optional for central)")
-          Main.tool.options.add_opt_simple(:id,"entity identifier for update, show, and modify")
-          #Main.tool.options.set_option(:value,'@json:{"active_only":false}')
+          @optmgr.add_opt_simple(:value,"extended value for create, update, list filter")
+          @optmgr.add_opt_simple(:validator,"identifier of validator (optional for central)")
+          @optmgr.add_opt_simple(:id,"entity identifier for update, show, and modify")
+          #@optmgr.set_option(:value,'@json:{"active_only":false}')
         end
 
-        def self.textify_browse(table_data)
+        def self.c_textify_browse(table_data)
           return table_data.map {|i| i['permissions']=i['permissions'].map { |x| x['name'] }.join(','); i }
         end
 
-        def self.textify_transfer_list(table_data)
+        def self.c_textify_transfer_list(table_data)
           return table_data.map {|i| ['remote_user','remote_host'].each { |field| i[field]=i['start_spec'][field] }; i }
         end
 
-        def self.hash_to_flat(result,name,value,prefix='')
-          if value.is_a?(Hash)
-            value.each do |k,v|
-              hash_to_flat(result,k,v,prefix+name+':')
-            end
-          else
-            result.push({'key'=>prefix+name,'value'=>value})
-          end
-        end
-
         # key/value is defined in main in hash_table
-        def self.textify_bool_list_result(list,name_list)
+        def self.c_textify_bool_list_result(list,name_list)
           list.each_index do |i|
             if name_list.include?(list[i]['key'])
               list[i]['value'].each do |item|
@@ -56,7 +44,7 @@ module Asperalm
         end
 
         # reduce the path from a result on given named column
-        def self.result_remove_prefix_path(result,column,path_prefix)
+        def self.c_result_remove_prefix_path(result,column,path_prefix)
           if !path_prefix.nil?
             result[:data].each do |r|
               r[column].replace(r[column][path_prefix.length..-1]) if r[column].start_with?(path_prefix)
@@ -66,7 +54,7 @@ module Asperalm
         end
 
         # translates paths results into CLI result, and removes prefix
-        def self.result_translate_rem_prefix(resp,type,success_msg,path_prefix)
+        def self.c_result_translate_rem_prefix(resp,type,success_msg,path_prefix)
           resres={:data=>[],:type=>:hash_array,:fields=>[type,'result']}
           JSON.parse(resp[:http].body)['paths'].each do |p|
             result=success_msg
@@ -76,17 +64,17 @@ module Asperalm
             end
             resres[:data].push({type=>p['path'],'result'=>result})
           end
-          return result_remove_prefix_path(resres,type,path_prefix)
+          return c_result_remove_prefix_path(resres,type,path_prefix)
         end
 
-        def self.delete_files(api_node,paths_to_delete,prefix_path)
+        def self.c_delete_files(api_node,paths_to_delete,prefix_path)
           resp=api_node.create('files/delete',{:paths=>paths_to_delete.map{|i| {'path'=>i.start_with?('/') ? i : '/'+i} }})
-          return result_translate_rem_prefix(resp,'file','deleted',prefix_path)
+          return c_result_translate_rem_prefix(resp,'file','deleted',prefix_path)
         end
 
         # get path arguments from command line, and add prefix
-        def self.get_next_arg_add_prefix(path_prefix,name,number=:single)
-          thepath=Main.tool.options.get_next_argument(name,number)
+        def get_next_arg_add_prefix(path_prefix,name,number=:single)
+          thepath=@optmgr.get_next_argument(name,number)
           return thepath if path_prefix.nil?
           return File.join(path_prefix,thepath) if thepath.is_a?(String)
           return thepath.map {|p| File.join(path_prefix,p)} if thepath.is_a?(Array)
@@ -99,62 +87,62 @@ module Asperalm
 
         # common API to node and Shares
         # prefix_path is used to list remote sources in Faspex
-        def self.execute_common(command,api_node,prefix_path=nil)
+        def execute_common(command,api_node,prefix_path=nil)
           case command
           when :events
             events=api_node.read('events')[:data]
             return { :type=>:hash_array, :data => events}
           when :info
             node_info=api_node.read('info')[:data]
-            return { :type=>:key_val_list, :data => node_info, :textify => lambda { |table_data| textify_bool_list_result(table_data,['capabilities','settings'])}}
+            return { :type=>:key_val_list, :data => node_info, :textify => lambda { |table_data| self.class.c_textify_bool_list_result(table_data,['capabilities','settings'])}}
           when :delete
             paths_to_delete = get_next_arg_add_prefix(prefix_path,"file list",:multiple)
-            return delete_files(api_node,paths_to_delete,prefix_path)
+            return self.class.c_delete_files(api_node,paths_to_delete,prefix_path)
           when :space
             # TODO: could be a list of path
             path_list=get_next_arg_add_prefix(prefix_path,"folder path or ext.val. list")
             path_list=[path_list] unless path_list.is_a?(Array)
             resp=api_node.create('space',{ "paths" => path_list.map {|i| {:path=>i} } } )
             result={:data=>resp[:data]['paths'],:type=>:hash_array}
-            #return result_translate_rem_prefix(resp,'folder','created',prefix_path)
-            return result_remove_prefix_path(result,'path',prefix_path)
+            #return c_result_translate_rem_prefix(resp,'folder','created',prefix_path)
+            return self.class.c_result_remove_prefix_path(result,'path',prefix_path)
           when :mkdir
             path_list=get_next_arg_add_prefix(prefix_path,"folder path or ext.val. list")
             path_list=[path_list] unless path_list.is_a?(Array)
             #TODO
             #resp=api_node.create('space',{ "paths" => path_list.map {|i| {:type=>:directory,:path=>i} } } )
             resp=api_node.create('files/create',{ "paths" => [{ :type => :directory, :path => path_list } ] } )
-            return result_translate_rem_prefix(resp,'folder','created',prefix_path)
+            return self.class.c_result_translate_rem_prefix(resp,'folder','created',prefix_path)
           when :mklink
             target=get_next_arg_add_prefix(prefix_path,"target")
             path_list=get_next_arg_add_prefix(prefix_path,"link path")
             resp=api_node.create('files/create',{ "paths" => [{ :type => :symbolic_link, :path => path_list, :target => {:path => target} } ] } )
-            return result_translate_rem_prefix(resp,'folder','created',prefix_path)
+            return self.class.c_result_translate_rem_prefix(resp,'folder','created',prefix_path)
           when :mkfile
             path_list=get_next_arg_add_prefix(prefix_path,"file path")
-            contents64=Base64.strict_encode64(Main.tool.options.get_next_argument("contents"))
+            contents64=Base64.strict_encode64(@optmgr.get_next_argument("contents"))
             resp=api_node.create('files/create',{ "paths" => [{ :type => :file, :path => path_list, :contents => contents64 } ] } )
-            return result_translate_rem_prefix(resp,'folder','created',prefix_path)
+            return self.class.c_result_translate_rem_prefix(resp,'folder','created',prefix_path)
           when :rename
             path_base=get_next_arg_add_prefix(prefix_path,"path_base")
             path_src=get_next_arg_add_prefix(prefix_path,"path_src")
             path_dst=get_next_arg_add_prefix(prefix_path,"path_dst")
             resp=api_node.create('files/rename',{ "paths" => [{ "path" => path_base, "source" => path_src, "destination" => path_dst } ] } )
-            return result_translate_rem_prefix(resp,'entry','moved',prefix_path)
+            return self.class.c_result_translate_rem_prefix(resp,'entry','moved',prefix_path)
           when :browse
             thepath=get_next_arg_add_prefix(prefix_path,"path")
             send_result=api_node.create('files/browse',{ :path => thepath} )
             #send_result={:data=>{'items'=>[{'file'=>"filename1","permissions"=>[{'name'=>'read'},{'name'=>'write'}]}]}}
-            return Main.result_none if !send_result[:data].has_key?('items')
-            result={ :data => send_result[:data]['items'] , :type => :hash_array, :textify => lambda { |table_data| Node.textify_browse(table_data) } }
+            return Plugin.result_none if !send_result[:data].has_key?('items')
+            result={ :data => send_result[:data]['items'] , :type => :hash_array, :textify => lambda { |table_data| self.class.c_textify_browse(table_data) } }
             #display_prefix=thepath
             #display_prefix=File.join(prefix_path,display_prefix) if !prefix_path.nil?
             #puts display_prefix.red
-            return result_remove_prefix_path(result,'path',prefix_path)
+            return self.class.c_result_remove_prefix_path(result,'path',prefix_path)
           when :upload
-            filelist = Main.tool.options.get_next_argument("source file list",:multiple)
+            filelist = @optmgr.get_next_argument("source file list",:multiple)
             Log.log.debug("file list=#{filelist}")
-            destination=Main.tool.destination_folder('send')
+            destination=@main.destination_folder('send')
             send_result=api_node.create('files/upload_setup',{ :transfer_requests => [ { :transfer_request => { :paths => [ { :destination => destination } ] } } ] } )
             raise send_result[:data]['error']['user_message'] if send_result[:data].has_key?('error')
             raise send_result[:data]['transfer_specs'][0]['error']['user_message'] if send_result[:data]['transfer_specs'][0].has_key?('error')
@@ -162,7 +150,7 @@ module Asperalm
             transfer_spec=send_result[:data]['transfer_specs'].first['transfer_spec']
             transfer_spec['paths']=filelist.map { |i| {'source'=>i} }
             # do not use default destination in transfer spec, because can be different on destination (e.g. shares)
-            return Main.tool.start_transfer(transfer_spec,false)
+            return @main.start_transfer(transfer_spec,false)
           when :download
             filelist = get_next_arg_add_prefix(prefix_path,"source file list",:multiple)
             Log.log.debug("file list=#{filelist}")
@@ -170,21 +158,21 @@ module Asperalm
             raise send_result[:data]['transfer_specs'][0]['error']['user_message'] if send_result[:data]['transfer_specs'][0].has_key?('error')
             raise "expecting one session exactly" if send_result[:data]['transfer_specs'].length != 1
             transfer_spec=send_result[:data]['transfer_specs'].first['transfer_spec']
-            return Main.tool.start_transfer(transfer_spec)
+            return @main.start_transfer(transfer_spec)
           end
         end
 
         def action_list; self.class.common_actions.clone.concat([ :postprocess,:stream, :transfer, :cleanup, :forward, :access_key, :watch_folder, :service, :async, :central ]);end
 
         def execute_action
-          api_node=Rest.new(Main.tool.options.get_option(:url,:mandatory),{:auth=>{:type=>:basic,:username=>Main.tool.options.get_option(:username,:mandatory), :password=>Main.tool.options.get_option(:password,:mandatory)}})
-          command=Main.tool.options.get_next_argument('command',action_list)
+          api_node=Rest.new(@optmgr.get_option(:url,:mandatory),{:auth=>{:type=>:basic,:username=>@optmgr.get_option(:username,:mandatory), :password=>@optmgr.get_option(:password,:mandatory)}})
+          command=@optmgr.get_next_argument('command',action_list)
           case command
-          when *self.class.common_actions; return self.class.execute_common(command,api_node)
+          when *self.class.common_actions; return execute_common(command,api_node)
           when :async
-            command=Main.tool.options.get_next_argument('command',[:list,:summary,:counters])
+            command=@optmgr.get_next_argument('command',[:list,:summary,:counters])
             if [:summary,:counters].include?(command)
-              asyncid=Main.tool.options.get_option(:id,:mandatory)
+              asyncid=@optmgr.get_option(:id,:mandatory)
             end
             case command
             when :list
@@ -192,49 +180,49 @@ module Asperalm
               return { :type => :value_list, :data => resp, :name=>'id'  }
             when :summary
               resp=api_node.create('async/summary',{"syncs"=>[asyncid]})[:data]["sync_summaries"].first
-              return Main.result_none if resp.nil?
+              return Plugin.result_none if resp.nil?
               return { :type => :key_val_list, :data => resp }
             when :counters
               resp=api_node.create('async/counters',{"syncs"=>[asyncid]})[:data]["sync_counters"].first[asyncid].last
-              return Main.result_none if resp.nil?
+              return Plugin.result_none if resp.nil?
               return { :type => :key_val_list, :data => resp }
             end
           when :stream
-            command=Main.tool.options.get_next_argument('command',[ :list, :create, :show, :modify, :cancel ])
+            command=@optmgr.get_next_argument('command',[ :list, :create, :show, :modify, :cancel ])
             case command
             when :list
-              resp=api_node.read('ops/transfers',Main.tool.options.get_option(:value,:optional))
+              resp=api_node.read('ops/transfers',@optmgr.get_option(:value,:optional))
               return { :type => :hash_array, :data => resp[:data], :fields=>['id','status']  } # TODO
             when :create
-              resp=api_node.create('streams',Main.tool.options.get_option(:value,:mandatory))
+              resp=api_node.create('streams',@optmgr.get_option(:value,:mandatory))
               return { :type => :key_val_list, :data => resp[:data] }
             when :show
-              trid=Main.tool.options.get_next_argument("transfer id")
+              trid=@optmgr.get_next_argument("transfer id")
               resp=api_node.read('ops/transfers/'+trid)
               return { :type=>:other_struct, :data => resp[:data] }
             when :modify
-              trid=Main.tool.options.get_next_argument("transfer id")
-              resp=api_node.update('streams/'+trid,Main.tool.options.get_option(:value,:mandatory))
+              trid=@optmgr.get_next_argument("transfer id")
+              resp=api_node.update('streams/'+trid,@optmgr.get_option(:value,:mandatory))
               return { :type=>:other_struct, :data => resp[:data] }
             when :cancel
-              trid=Main.tool.options.get_next_argument("transfer id")
+              trid=@optmgr.get_next_argument("transfer id")
               resp=api_node.cancel('streams/'+trid)
               return { :type=>:other_struct, :data => resp[:data] }
             else
               raise "error"
             end
           when :transfer
-            command=Main.tool.options.get_next_argument('command',[ :list, :cancel, :show ])
+            command=@optmgr.get_next_argument('command',[ :list, :cancel, :show ])
             res_class_path='ops/transfers'
             if [:cancel, :show].include?(command)
-              one_res_id=Main.tool.options.get_option(:id,:mandatory)
+              one_res_id=@optmgr.get_option(:id,:mandatory)
               one_res_path="#{res_class_path}/#{one_res_id}"
             end
             case command
             when :list
               # could use ? :subpath=>'transfers'
-              resp=api_node.read(res_class_path,Main.tool.options.get_option(:value,:optional))
-              return { :type => :hash_array, :data => resp[:data], :fields=>['id','status','remote_user','remote_host'], :textify => lambda { |table_data| Node.textify_transfer_list(table_data) } } # TODO
+              resp=api_node.read(res_class_path,@optmgr.get_option(:value,:optional))
+              return { :type => :hash_array, :data => resp[:data], :fields=>['id','status','remote_user','remote_host'], :textify => lambda { |table_data| Node.c_textify_transfer_list(table_data) } } # TODO
             when :cancel
               resp=api_node.cancel(one_res_path)
               return { :type=>:other_struct, :data => resp[:data] }
@@ -245,11 +233,11 @@ module Asperalm
               raise "error"
             end
           when :access_key
-            return Helper.entity_action(api_node,'access_keys',['id','root_file_id','storage','license'])
+            return Plugin.entity_action(api_node,'access_keys',['id','root_file_id','storage','license'])
           when :service
-            command=Main.tool.options.get_next_argument('command',[ :list, :create, :delete])
+            command=@optmgr.get_next_argument('command',[ :list, :create, :delete])
             if [:delete].include?(command)
-              svcid=Main.tool.options.get_option(:id,:mandatory)
+              svcid=@optmgr.get_option(:id,:mandatory)
             end
             case command
             when :list
@@ -258,49 +246,49 @@ module Asperalm
               return { :type=>:hash_array, :data => resp[:data]["services"] }
             when :create
               # @json:'{"type":"WATCHFOLDERD","run_as":{"user":"user1"}}'
-              params=Main.tool.options.get_next_argument("Run creation data (structure)")
+              params=@optmgr.get_next_argument("Run creation data (structure)")
               resp=api_node.create('rund/services',params)
-              return Main.result_status("#{resp[:data]['id']} created")
+              return Plugin.result_status("#{resp[:data]['id']} created")
             when :delete
               resp=api_node.delete("rund/services/#{svcid}")
-              return Main.result_status("#{svcid} deleted")
+              return Plugin.result_status("#{svcid} deleted")
             end
           when :watch_folder
             res_class_path='v3/watchfolders'
-            #return Helper.entity_action(api_node,'v3/watchfolders',nil)
-            command=Main.tool.options.get_next_argument('command',[ :create, :list, :show, :modify, :delete, :state])
+            #return Plugin.entity_action(api_node,'v3/watchfolders',nil)
+            command=@optmgr.get_next_argument('command',[ :create, :list, :show, :modify, :delete, :state])
             if [:show,:modify,:delete,:state].include?(command)
-              one_res_id=Main.tool.options.get_option(:id,:mandatory)
+              one_res_id=@optmgr.get_option(:id,:mandatory)
               one_res_path="#{res_class_path}/#{one_res_id}"
             end
             case command
             when :create
-              resp=api_node.create(res_class_path,Main.tool.options.get_option(:value,:mandatory))
-              return Main.result_status("#{resp[:data]['id']} created")
+              resp=api_node.create(res_class_path,@optmgr.get_option(:value,:mandatory))
+              return Plugin.result_status("#{resp[:data]['id']} created")
             when :list
-              resp=api_node.read(res_class_path,Main.tool.options.get_option(:value,:optional))
+              resp=api_node.read(res_class_path,@optmgr.get_option(:value,:optional))
               #  :fields=>['id','root_file_id','storage','license']
               return { :type=>:value_list, :data => resp[:data]['ids'], :name=>'id' }
             when :show
               return {:type=>:key_val_list, :data=>api_node.read(one_res_path)[:data]}
             when :modify
-              api_node.update(one_res_path,Main.tool.options.get_option(:value,:mandatory))
-              return Main.result_status("#{one_res_id} updated")
+              api_node.update(one_res_path,@optmgr.get_option(:value,:mandatory))
+              return Plugin.result_status("#{one_res_id} updated")
             when :delete
               api_node.delete(one_res_path)
-              return Main.result_status("#{one_res_id} deleted")
+              return Plugin.result_status("#{one_res_id} deleted")
             when :state
               return { :type=>:key_val_list, :data => api_node.read("#{one_res_path}/state")[:data] }
             end
           when :central
-            command=Main.tool.options.get_next_argument('command',[ :session,:file])
-            validator_id=Main.tool.options.get_option(:validator)
+            command=@optmgr.get_next_argument('command',[ :session,:file])
+            validator_id=@optmgr.get_option(:validator)
             validation={"validator_id"=>validator_id} unless validator_id.nil?
-            request_data=Main.tool.options.get_option(:value,:optional)
+            request_data=@optmgr.get_option(:value,:optional)
             request_data||={}
             case command
             when :session
-              command=Main.tool.options.get_next_argument('command',[ :list])
+              command=@optmgr.get_next_argument('command',[ :list])
               case command
               when :list
                 request_data.deep_merge!({"validation"=>validation}) unless validation.nil?
@@ -308,7 +296,7 @@ module Asperalm
                 return {:type=>:hash_array,:data=>resp[:data]["session_info_result"]["session_info"],:fields=>["session_uuid","status","transport","direction","bytes_transferred"]}
               end
             when :file
-              command=Main.tool.options.get_next_argument('command',[ :list, :modify])
+              command=@optmgr.get_next_argument('command',[ :list, :modify])
               case command
               when :list
                 request_data.deep_merge!({"validation"=>validation}) unless validation.nil?
@@ -317,7 +305,7 @@ module Asperalm
               when :modify
                 request_data.deep_merge!(validation) unless validation.nil?
                 api_node.update('services/rest/transfers/v1/files',request_data)
-                return Main.result_status('updated')
+                return Plugin.result_status('updated')
               end
             end
           end # case command

@@ -1,8 +1,8 @@
 require 'asperalm/cli/manager'
 require 'asperalm/cli/plugin'
-require 'asperalm/fasp/agent/resumer'
-require 'asperalm/fasp/agent/connect'
-require 'asperalm/fasp/agent/node'
+require 'asperalm/fasp/client/resumer'
+require 'asperalm/fasp/client/connect'
+require 'asperalm/fasp/client/node'
 require 'asperalm/fasp/listener_logger'
 require 'asperalm/fasp/listener_progress'
 require 'asperalm/open_application'
@@ -79,18 +79,6 @@ module Asperalm
         @opt_mgr.add_option_preset(@available_presets[default_config_name],:unshift)
       end
 
-      def self.result_none
-        return {:type => :empty, :data => :nil }
-      end
-
-      def self.result_status(status)
-        return {:type => :status, :data => status }
-      end
-
-      def self.result_success
-        return result_status('complete')
-      end
-
       # =============================================================
       # Parameter handlers
       #
@@ -148,7 +136,7 @@ module Asperalm
           # by default use local ascp
           case @opt_mgr.get_option(:transfer,:mandatory)
           when :direct
-            @transfer_agent_singleton=Fasp::Agent::Resumer.new
+            @transfer_agent_singleton=Fasp::Client::Resumer.new
             if !@opt_mgr.get_option(:fasp_proxy,:optional).nil?
               @transfer_spec_default['EX_fasp_proxy_url']=@opt_mgr.get_option(:fasp_proxy,:optional)
             end
@@ -159,7 +147,7 @@ module Asperalm
             # here we disable native stdout progress
             @transfer_spec_default['EX_quiet']=true
           when :connect
-            @transfer_agent_singleton=Fasp::Agent::Connect.new
+            @transfer_agent_singleton=Fasp::Client::Connect.new
           when :node
             # support: @param:<name>
             # support extended values
@@ -186,7 +174,7 @@ module Asperalm
               raise CliBadArgument,"missing parameter [#{param}] in node specification: #{node_config}" if !node_config.has_key?(param.to_s)
               sym_config[param]=node_config[param.to_s]
             end
-            @transfer_agent_singleton=Fasp::Agent::Node.new(Rest.new(sym_config[:url],{:auth=>{:type=>:basic,:username=>sym_config[:username], :password=>sym_config[:password]}}))
+            @transfer_agent_singleton=Fasp::Client::Node.new(Rest.new(sym_config[:url],{:auth=>{:type=>:basic,:username=>sym_config[:username], :password=>sym_config[:password]}}))
           else raise "ERROR"
           end
           @transfer_agent_singleton.add_listener(Fasp::ListenerLogger.new)
@@ -212,6 +200,9 @@ module Asperalm
         @plugin_lookup_folders=[]
         @config_folder=File.join(Dir.home,@@ASPERA_HOME_FOLDER_NAME,@@PROGRAM_NAME)
         @option_config_file=File.join(@config_folder,@@DEFAULT_CONFIG_FILENAME)
+        # set folders for temp files
+        Fasp::Parameters.file_list_folder=File.join(@config_folder,'filelists')
+        Oauth.file_list_folder=@config_folder
         # option manager is created later
         @opt_mgr=nil
         # find the root folder of gem where this class is
@@ -297,6 +288,8 @@ module Asperalm
         Log.log.debug("get_plugin_instance -> #{plugin_name_sym}")
         require @plugins[plugin_name_sym][:require_stanza]
         command_plugin=Object::const_get(@@PLUGINS_MODULE+'::'+plugin_name_sym.to_s.capitalize).new
+        command_plugin.optmgr=@opt_mgr
+        command_plugin.main=self
         # TODO: check that ancestor is Plugin?
         @opt_mgr.parser.separator "COMMAND: #{plugin_name_sym}"
         @opt_mgr.parser.separator "SUBCOMMANDS: #{command_plugin.action_list.map{ |p| p.to_s}.join(', ')}"
@@ -599,7 +592,7 @@ module Asperalm
           result[:type]=:hash_array if result[:data].is_a?(Array) and result[:data].first.is_a?(Hash)
           return result
         when :flush_tokens
-          deleted_files=Oauth.flush_tokens(config_folder)
+          deleted_files=Oauth.flush_tokens
           return {:type=>:value_list, :name=>'file',:data=>deleted_files}
         when :plugins
           return {:data => plugin_sym_list.map { |i| { 'plugin' => i.to_s, 'path' => @plugins[i][:source] } } , :fields => ['plugin','path'], :type => :hash_array }
