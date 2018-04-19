@@ -1,5 +1,6 @@
 require 'asperalm/cli/manager'
 require 'asperalm/cli/plugin'
+require 'asperalm/cli/extended_value'
 require 'asperalm/fasp/client/resumer'
 require 'asperalm/fasp/client/connect'
 require 'asperalm/fasp/client/node'
@@ -164,7 +165,7 @@ module Asperalm
               raise CliBadArgument,"no such parameter set: [#{param_set_name}] in config file" if !@available_presets.has_key?(param_set_name)
               node_config=@available_presets[param_set_name]
             else
-              node_config=Manager.get_extended_value(:transfer_node,transfer_node_spec)
+              node_config=ExtendedValue.parse(:transfer_node,transfer_node_spec)
             end
             Log.log.debug("node=#{node_config}")
             raise CliBadArgument,"the node configuration shall be a hash, use either @json:<json> or @param:<parameter set name>" if !node_config.is_a?(Hash)
@@ -230,7 +231,7 @@ module Asperalm
         @opt_mgr.parser.separator ""
         @opt_mgr.parser.separator "OPTIONS"
         @opt_mgr.parser.separator "\tOptions begin with a '-' (minus), and value is provided on command line.\n"
-        @opt_mgr.parser.separator "\tSpecial values are supported beginning with special prefix, like: #{Manager.value_reader.map {|m| "@#{m}:"}.join(' ')}.\n"
+        @opt_mgr.parser.separator "\tSpecial values are supported beginning with special prefix, like: #{ExtendedValue.readers.map {|m| "@#{m}:"}.join(' ')}.\n"
         @opt_mgr.parser.separator "\tDates format is 'DD-MM-YY HH:MM:SS', or 'now' or '-<num>h'"
         @opt_mgr.parser.separator ""
         @opt_mgr.parser.separator "ARGS"
