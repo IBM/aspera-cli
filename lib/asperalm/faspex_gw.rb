@@ -21,12 +21,12 @@ module Asperalm
         :app                => FaspexGW,
         :Port               => 9443,
         :Logger             => Log.log,
-        :DocumentRoot       => "/ruby/htdocs",
+        :DocumentRoot       => '/ruby/htdocs',
         :SSLEnable          => true,
         :SSLVerifyClient    => OpenSSL::SSL::VERIFY_NONE,
         :SSLCertificate     => OpenSSL::X509::Certificate.new($CERTIFICATE),
         :SSLPrivateKey      => OpenSSL::PKey::RSA.new($PRIVATE_KEY),
-        :SSLCertName        => [ [ "CN",WEBrick::Utils::getservername ] ]
+        :SSLCertName        => [ [ 'CN',WEBrick::Utils::getservername ] ]
       }
       puts "Server started on port #{webrick_options[:Port]}"
       Rack::Server.start(webrick_options)
@@ -56,10 +56,6 @@ module Asperalm
         files_pkg_recipients.push({"id"=>recipient_user_info['source_id'],"type"=>recipient_user_info['source_type']})
       end
 
-      # NOTE: important: transfer id must be unique: generate random id (using a non unique id results in discard of tags)
-      xfer_id=SecureRandom.uuid
-      Log.log.debug "xfer id=#{xfer_id}"
-
       #  create a new package with one file
       the_package=@@api_files_user.create("packages",{
         "file_names"=>faspex_pkg_delivery['sources'][0]['paths'],
@@ -82,42 +78,49 @@ module Asperalm
         return "ERROR HERE"
       end
       status 200
+      # TODO: check about xfer_*
+      ts_tags={
+        "aspera" => {
+        "files"      => { "package_id" => the_package['id'], "package_operation" => "upload" },
+        "node"       => { "access_key" => node_info['access_key'], "file_id" => the_package['contents_file_id'] },
+        "xfer_id"    => SecureRandom.uuid,
+        "xfer_retry" => 3600 } }
       # this transfer spec is for transfer to Files
       faspex_transfer_spec={
-        "direction" => "send",
-        "remote_user" => "xfer",
-        "remote_host" => node_info['host'],
-        "ssh_port" => 33001,
-        "fasp_port" => 33001,
-        "tags" => { "aspera" => { "files" => { "package_id" => the_package['id'], "package_operation" => "upload" }, "node" => { "access_key" => node_info['access_key'], "file_id" => the_package['contents_file_id'] }, "xfer_id" => xfer_id, "xfer_retry" => 3600 } },
-        "token" => node_auth_bearer_token,
-        "paths" => [{"destination" => "/"}],
-        "cookie" => "unused",
-        "create_dir" => true,
-        "rate_policy" => "fair",
-        "rate_policy_allowed" => "fixed",
-        "min_rate_cap_kbps" => nil,
-        "min_rate_kbps" => 0,
-        "target_rate_percentage" => nil,
-        "lock_target_rate" => nil,
-        "fasp_url" => "unused",
-        "lock_min_rate" => true,
-        "lock_rate_policy" => true,
-        "source_root" => "",
-        "content_protection" => nil,
-        "target_rate_cap_kbps" => 20000, # TODO
-        "target_rate_kbps" => 10000, # TODO
-        "cipher" => "aes-128",
-        "cipher_allowed" => nil,
-        "http_fallback" => false,
-        "http_fallback_port" => nil,
-        "https_fallback_port" => nil,
-        "destination_root" => "/"
+        'direction' => 'send',
+        'remote_user' => 'xfer',
+        'remote_host' => node_info['host'],
+        'ssh_port' => 33001,
+        'fasp_port' => 33001,
+        'tags' => ts_tags,
+        'token' => node_auth_bearer_token,
+        'paths' => [{'destination' => '/'}],
+        'cookie' => 'unused',
+        'create_dir' => true,
+        'rate_policy' => 'fair',
+        'rate_policy_allowed' => 'fixed',
+        'min_rate_cap_kbps' => nil,
+        'min_rate_kbps' => 0,
+        'target_rate_percentage' => nil,
+        'lock_target_rate' => nil,
+        'fasp_url' => 'unused',
+        'lock_min_rate' => true,
+        'lock_rate_policy' => true,
+        'source_root' => '',
+        'content_protection' => nil,
+        'target_rate_cap_kbps' => 20000, # TODO
+        'target_rate_kbps' => 10000, # TODO
+        'cipher' => 'aes-128',
+        'cipher_allowed' => nil,
+        'http_fallback' => false,
+        'http_fallback_port' => nil,
+        'https_fallback_port' => nil,
+        'destination_root' => '/'
       }
       # but we place it in a Faspex package creation response
       faspex_package_create_result={
-        "links" => {"status" => "unused"},
-        "xfer_sessions" => [faspex_transfer_spec]
+        'links' => {'status' => 'unused'},
+        'xfer_sessions' => [faspex_transfer_spec]
       }
       Log.log.info "faspex_package_create_result=#{faspex_package_create_result}"
       return JSON.generate(faspex_package_create_result)
