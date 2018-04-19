@@ -5,18 +5,13 @@
 # Laurent Martin
 #
 ##############################################################################
-require 'socket'
-require 'timeout'
-require 'json'
-require 'logger'
-require 'base64'
-require 'asperalm/fasp/listener'
+require 'asperalm/fasp/client/base'
 require 'asperalm/fasp/error'
 require 'asperalm/fasp/parameters'
 require 'asperalm/fasp/installation'
-require 'asperalm/fasp/client/base'
-require 'asperalm/open_application'
 require 'asperalm/log'
+require 'socket'
+require 'timeout'
 
 module Asperalm
   module Fasp
@@ -66,7 +61,7 @@ module Asperalm
         # @param a hash containing :args and :env
         def start_transfer_with_args_env(ascp_params)
           Log.log.debug("ascp_params=#{ascp_params.inspect}")
-          ascp_path=File.join(Fasp::Installation.instance.path(:bin_folder),ascp_params[:ascp_bin])+OpenApplication.executable_extension
+          ascp_path=Fasp::Installation.instance.path(ascp_params[:ascp_version])
           raise Fasp::Error.new("no such file: #{ascp_path}") unless File.exist?(ascp_path)
           begin
             ascp_pid=nil
