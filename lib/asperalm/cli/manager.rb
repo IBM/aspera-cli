@@ -1,9 +1,7 @@
 require 'asperalm/colors'
 require 'asperalm/log'
+require 'asperalm/cli/extended_value'
 require 'optparse'
-require 'json'
-require 'base64'
-require 'csv'
 
 module Asperalm
   module Cli
@@ -45,58 +43,6 @@ module Asperalm
       @@BOOLEAN_SIMPLE=[:yes,:no]
 
       def enum_to_bool(enum);@@TRUE_VALUES.include?(enum);end
-
-      # decoders can be pipelined
-      @@DECODERS=['base64', 'json', 'zlib', 'ruby', 'csvt']
-
-      # there shall be zero or one reader only
-      def self.value_reader; ['val', 'file', 'env'].push(@@DECODERS); end
-
-      # parse an option value, special behavior for file:, env:, val:
-      def self.get_extended_value(name_or_descr,value)
-        if value.is_a?(String)
-          # first determine decoders, in reversed order
-          decoders_reversed=[]
-          while (m=value.match(/^@([^:]+):(.*)/)) and @@DECODERS.include?(m[1])
-            decoders_reversed.unshift(m[1])
-            value=m[2]
-          end
-          # then read value
-          if m=value.match(%r{^@file:(.*)}) then
-            value=File.read(File.expand_path(m[1]))
-            #raise CliBadArgument,"cannot open file \"#{value}\" for #{name_or_descr}" if ! File.exist?(value)
-          elsif m=value.match(/^@env:(.*)/) then
-            value=ENV[m[1]]
-          elsif m=value.match(/^@val:(.*)/) then
-            value=m[1]
-          elsif value.eql?('@stdin') then
-            value=STDIN.gets
-          end
-          decoders_reversed.each do |d|
-            case d
-            when 'json'; value=JSON.parse(value)
-            when 'ruby'; value=eval(value)
-            when 'base64'; value=Base64.decode64(value)
-            when 'zlib'; value=Zlib::Inflate.inflate(value)
-            when 'csvt'
-              col_titles=nil
-              hasharray=[]
-              CSV.parse(value).each do |values|
-                next if values.empty?
-                if col_titles.nil?
-                  col_titles=values
-                else
-                  entry={}
-                  col_titles.each{|title|entry[title]=values.shift}
-                  hasharray.push(entry)
-                end
-              end
-              value=hasharray
-            end
-          end
-        end
-        value
-      end
 
       # find shortened string value in allowed symbol list
       def self.get_from_list(shortval,descr,allowed_values)
@@ -198,11 +144,11 @@ module Asperalm
             print "#{type}: #{descr}> "
             entry=STDIN.gets.chomp
             break if entry.empty?
-            result.push(self.class.get_extended_value(descr,entry))
+            result.push(ExtendedValue.parse(descr,entry))
           end
         when :single
           print "#{type}: #{descr}> "
-          result=self.class.get_extended_value(descr,STDIN.gets.chomp)
+          result=ExtendedValue.parse(descr,STDIN.gets.chomp)
         else # one fixed
           print "#{expected.join(' ')}\n#{type}: #{descr}> "
           result=self.class.get_from_list(STDIN.gets.chomp,descr,expected)
@@ -218,9 +164,9 @@ module Asperalm
         else # there are values
           case expected
           when :single
-            result=self.class.get_extended_value(descr,@unprocessed_cmd_line_arguments.shift)
+            result=ExtendedValue.parse(descr,@unprocessed_cmd_line_arguments.shift)
           when :multiple
-            result = @unprocessed_cmd_line_arguments.shift(@unprocessed_cmd_line_arguments.length).map{|v|self.class.get_extended_value(descr,v)}
+            result = @unprocessed_cmd_line_arguments.shift(@unprocessed_cmd_line_arguments.length).map{|v|ExtendedValue.parse(descr,v)}
           else
             result=self.class.get_from_list(@unprocessed_cmd_line_arguments.shift,descr,expected)
           end
@@ -254,7 +200,7 @@ module Asperalm
           raise "ERROR"
           #declare_option(option_symbol)
         end
-        value=self.class.get_extended_value(option_symbol,value)
+        value=ExtendedValue.parse(option_symbol,value)
         if @declared_options[option_symbol][:values].eql?(@@BOOLEAN_VALUES)
           value=enum_to_bool(value)
         end
@@ -401,7 +347,7 @@ module Asperalm
             name=$1
             value=$2
             name.gsub!(@@OPTION_SEP_LINE,@@OPTION_SEP_NAME)
-            value=self.class.get_extended_value(name,value)
+            value=ExtendedValue.parse(name,value)
             Log.log.debug("option #{name}=#{value}")
             result[name]=value
             @unprocessed_cmd_line_options.delete(optionval) if remove_from_remaining
