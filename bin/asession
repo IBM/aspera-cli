@@ -1,11 +1,10 @@
 #!/usr/bin/env ruby
 # Laurent Martin/2017
 $LOAD_PATH.unshift(File.dirname(__FILE__)+"/../lib")
-require 'rubygems'
-require 'json'
-require 'asperalm/fasp/agent/local'
+require 'asperalm/fasp/client/local'
 require 'asperalm/cli/manager'
 require 'asperalm/log'
+require 'json'
 
 TS_LOGLEVEL='EX_loglevel'
 
@@ -48,12 +47,11 @@ if transfer_spec.has_key?(TS_LOGLEVEL)
 end
 
 # FASP event listener display management events as JSON
-class FaspListenerStdout < Asperalm::Fasp::Listener
-  def event(data);STDOUT.puts(JSON.generate(data));STDOUT.flush;end
-end
+class FaspListenerStdout < Asperalm::Fasp::Listener;def event(data);STDOUT.puts(JSON.generate(data));STDOUT.flush;end;end
 
+client=Asperalm::Fasp::Client::Local.new
 # display JSON instead of legacy Lines
-Asperalm::Fasp::Manager.instance.add_listener(FaspListenerStdout.new,:enhanced)
+client.add_listener(FaspListenerStdout.new,:enhanced)
 # go !
-Asperalm::Fasp::Manager.instance.start_transfer(transfer_spec)
+client.start_transfer(transfer_spec)
 # no exit code: status is success (0)
