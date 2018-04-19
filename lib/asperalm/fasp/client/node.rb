@@ -1,4 +1,5 @@
 require 'asperalm/fasp/client/base'
+require 'asperalm/log'
 module Asperalm
   module Fasp
     module Client
@@ -33,6 +34,7 @@ module Asperalm
                 notify_listeners("emulated",{'Type'=>'STATS','Bytescont'=>trdata["bytes_transferred"]})
               end
             else
+              Log.log.warn("trdata -> #{trdata}")
               raise Fasp::Error.new("#{trdata['status']}: #{trdata['error_desc']}")
             end
             sleep 1
