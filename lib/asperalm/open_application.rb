@@ -34,15 +34,6 @@ module Asperalm
       end
     end
 
-    def self.executable_extension
-      case current_os_type
-      when :windows
-        return '.exe'
-      else  # other
-        return ''
-      end
-    end
-
     # command must be non blocking
     def self.uri_graphical(uri)
       case current_os_type
