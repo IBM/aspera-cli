@@ -30,6 +30,9 @@ clean::
 cleanupgems:
 	gem uninstall -a -x $(gem list|cut -f 1 -d' '|egrep -v 'rdoc|psych|rake|openssl|json|io-console|bigdecimal')
 
+changes:
+	git log `git describe --tags --abbrev=0`..HEAD --oneline
+
 doc: README.pdf
 
 README.pdf: README.md
@@ -84,7 +87,7 @@ yank:
 dotag:
 	git tag -a $(GIT_TAG_CURRENT) -m "gem version $(GEMVERSION) pushed"
 
-gempush: dotag
+gempush: all dotag
 	gem push $(GEMFILE)
 
 commit:
