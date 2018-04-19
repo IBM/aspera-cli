@@ -311,16 +311,28 @@ module Asperalm
         return r
       end
 
-      def self.flatten_one_config(source,prefix='',dest=nil)
+      def self.flatten_sub_hash(source,prefix='',dest=nil)
         dest={} if dest.nil?
         source.each do |k,v|
           unless v.is_a?(Hash)
             dest[prefix+k.to_s]=v
           else
-            flatten_one_config(v,prefix+k.to_s+'.',dest)
+            flatten_sub_hash(v,prefix+k.to_s+'.',dest)
           end
         end
         return dest
+      end
+
+      def self.flatten_name_value_list(hash)
+        hash.keys.each do |k|
+          v=hash[k]
+          if v.is_a?(Array) and v.map{|i|i.class}.uniq.eql?([Hash]) and v.map{|i|i.keys}.flatten.sort.uniq.eql?(["name", "value"])
+            v.each do |pair|
+              hash["#{k}.#{pair["name"]}"]=pair["value"]
+            end
+            hash.delete(k)
+          end
+        end
       end
 
       # supported output formats
@@ -385,7 +397,8 @@ module Asperalm
               asked_fields=asked_fields.map{|i|i.to_sym} if results[:symb_key]
             end
             if @option_flat_hash
-              results[:data]=self.class.flatten_one_config(results[:data])
+              results[:data]=self.class.flatten_sub_hash(results[:data])
+              self.class.flatten_name_value_list(results[:data])
               asked_fields=results[:data].keys
             end
             table_data=asked_fields.map { |i| { out_table_columns.first => i, out_table_columns.last => results[:data][i] } }
