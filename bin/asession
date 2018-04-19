@@ -2,9 +2,9 @@
 # Laurent Martin/2017
 $LOAD_PATH.unshift(File.dirname(__FILE__)+"/../lib")
 require 'asperalm/fasp/client/local'
-require 'asperalm/cli/manager'
+require 'asperalm/fasp/listener_line_dump'
+require 'asperalm/cli/extended_value' # parse
 require 'asperalm/log'
-require 'json'
 
 TS_LOGLEVEL='EX_loglevel'
 
@@ -35,7 +35,7 @@ end
 assert_usage(ARGV.length.eql?(1),'exactly one argument is expected')
 assert_usage(!['-h','--help'].include?(ARGV.first),nil)
 # parse transfer spec
-transfer_spec=Asperalm::Cli::Manager.get_extended_value("transfer spec",ARGV.pop)
+transfer_spec=Asperalm::Cli::ExtendedValue.parse("transfer spec",ARGV.pop)
 # ensure right type
 assert_usage(transfer_spec.is_a?(Hash),"the value must be a hash table#{parameter_source_err_msg}")
 # disable ascp output on stdout to not mix with progress JSON
@@ -46,12 +46,9 @@ if transfer_spec.has_key?(TS_LOGLEVEL)
   transfer_spec.delete(TS_LOGLEVEL)
 end
 
-# FASP event listener display management events as JSON
-class FaspListenerStdout < Asperalm::Fasp::Listener;def event(data);STDOUT.puts(JSON.generate(data));STDOUT.flush;end;end
-
 client=Asperalm::Fasp::Client::Local.new
 # display JSON instead of legacy Lines
-client.add_listener(FaspListenerStdout.new,:enhanced)
+client.add_listener(Asperalm::Fasp::ListenerLineDump.new,:enhanced)
 # go !
 client.start_transfer(transfer_spec)
 # no exit code: status is success (0)
