@@ -25,9 +25,12 @@ module Asperalm
     WINDOWS_PROTECTED_CHAR=%r{[/:"<>\\\*\?]}
     OFFSET_ALLOWANCE_SEC=300
     ASSERTION_VALIDITY_SEC=3600
+    @@token_cache_folder='.'
+    def self.file_list_folder; @@token_cache_folder;end
+    def self.file_list_folder=(v); @@token_cache_folder=v;end
     # delete cached tokens
-    def self.flush_tokens(persist_folder)
-      tokenfiles=Dir[File.join(persist_folder,TOKEN_FILE_PREFIX+'*'+TOKEN_FILE_SUFFIX)]
+    def self.flush_tokens
+      tokenfiles=Dir[File.join(@@token_cache_folder,TOKEN_FILE_PREFIX+'*'+TOKEN_FILE_SUFFIX)]
       tokenfiles.each do |filepath|
         File.delete(filepath)
       end
@@ -42,7 +45,6 @@ module Asperalm
       Log.log.debug "auth=#{auth_data}"
       @auth_data=auth_data
       @rest=Rest.new(@auth_data[:baseurl])
-      @auth_data[:persist_folder]='.' if !auth_data.has_key?(:persist_folder)
       # key = scope value, e.g. user:all, or node.*
       # value = ruby structure of data of returned value
       @token_cache={}
@@ -85,7 +87,7 @@ module Asperalm
       basename.gsub!(WINDOWS_PROTECTED_CHAR,TOKEN_FILE_SEPARATOR)
       # keep dot for extension only (nicer)
       basename.gsub!('.',TOKEN_FILE_SEPARATOR)
-      filepath=File.join(@auth_data[:persist_folder],basename+TOKEN_FILE_SUFFIX)
+      filepath=File.join(@@token_cache_folder,basename+TOKEN_FILE_SUFFIX)
       Log.log.debug("token path=#{filepath}")
       return filepath
     end
