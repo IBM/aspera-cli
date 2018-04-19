@@ -185,8 +185,11 @@ t/nd4:
 	@echo "waiting a little...";sleep 5
 	$(EXETEST) node service list
 	@touch $@
-
-tnode: t/nd1 t/nd2 t/nd3
+t/nd5:
+	$(EXETEST) -Pnode_lmdk08 --url=https://localhost:9092 --username=node_xfer node acc create --value=@json:'{"id":"aoc_1","secret":"Aspera123_","storage":{"type":"local","path":"/"}}'
+	sleep 2&&$(EXETEST) -Pnode_lmdk08 --url=https://localhost:9092 --username=node_xfer node acc delete --id=aoc_1
+	@touch $@
+tnode: t/nd1 t/nd2 t/nd3 t/nd4 t/nd5
 
 t/fs1:
 	$(EXETEST) aspera files browse /

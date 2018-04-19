@@ -1,15 +1,15 @@
 module Asperalm
   module Cli
     class Helper
-      global_ops=[:create,:list]
-      individual_ops=[:modify,:delete,:show]
-      all_ops=[global_ops,individual_ops].flatten
+      GLOBAL_OPS=[:create,:list]
+      INSTANCE_OPS=[:modify,:delete,:show]
+      ALL_OPS=[GLOBAL_OPS,INSTANCE_OPS].flatten
 
       # implement generic rest operations on given resource path
       def self.entity_action(rest_api,res_class_path,display_fields)
         res_name=res_class_path.gsub(%r{.*/},'').gsub(%r{^s$},'').gsub('_',' ')
-        command=Main.tool.options.get_next_argument('command',all_ops)
-        if individual_ops.include?(command)
+        command=Main.tool.options.get_next_argument('command',ALL_OPS)
+        if INSTANCE_OPS.include?(command)
           one_res_id=Main.tool.options.get_option(:id,:mandatory)
           one_res_path="#{res_class_path}/#{one_res_id}"
         end
