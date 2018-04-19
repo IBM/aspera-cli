@@ -324,10 +324,10 @@ t/sy1:
 	$(EXETEST) node async list
 	@touch $@
 t/sy2:
-	$(EXETEST) node async id 1 summary 
+	$(EXETEST) node async --id=1 summary 
 	@touch $@
 t/sy3:
-	$(EXETEST) node async id 1 counters 
+	$(EXETEST) node async --id=1 counters 
 	@touch $@
 tsync: t/sy1 t/sy2 t/sy3
 
