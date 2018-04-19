@@ -98,15 +98,18 @@ module Asperalm
 
         # generate a transfer spec from node information and file id
         # NOTE: important: transfer id must be unique: generate random id (using a non unique id results in discard of tags, and package is not finalized)
-        def info_to_tspec(direction,node_info,file_id)
+        def info_to_tspec(app,direction,node_info,file_id)
           return {
             'direction'        => direction,
             'remote_user'      => 'xfer',
             'remote_host'      => node_info['host'],
-            "fasp_port"        => 33001, # TODO: always the case ?
-            "ssh_port"         => 33001, # TODO: always the case ?
+            'fasp_port'        => 33001, # TODO: always the case ?
+            'ssh_port'         => 33001, # TODO: always the case ?
             'token'            => @api_files_oauth.get_authorization(FilesApi.node_scope(node_info['access_key'],FilesApi::SCOPE_NODE_USER)),
-            'tags'             => { "aspera" => { "node" => { "access_key" => node_info['access_key'], "file_id" => file_id }, "xfer_id" => SecureRandom.uuid, "xfer_retry" => 3600 } } }
+            'tags'             => { "aspera" => {
+            'app'   => app,
+            'files' => { 'node_id' => node_info['id']},
+            'node'  => { 'access_key' => node_info['access_key'], "file_id" => file_id } } } }
         end
 
         PATH_SEPARATOR='/'
@@ -137,8 +140,7 @@ module Asperalm
             filelist = Main.tool.options.get_next_argument("file list",:multiple)
             Log.log.debug("file list=#{filelist}")
             node_info,file_id = find_nodeinfo_and_fileid(home_node_id,home_file_id,Main.tool.destination_folder('send'))
-            tspec=info_to_tspec("send",node_info,file_id)
-            tspec['tags']["aspera"]["files"]={}
+            tspec=info_to_tspec('files','send',node_info,file_id)
             tspec['paths']=filelist.map { |i| {'source'=>i} }
             tspec['destination_root']="/" # not used
             return Main.tool.start_transfer(tspec)
@@ -149,8 +151,7 @@ module Asperalm
               file_path = source_file.split(PATH_SEPARATOR)
               file_name = file_path.pop
               node_info,file_id = find_nodeinfo_and_fileid(home_node_id,home_file_id,file_path.join(PATH_SEPARATOR))
-              tspec=info_to_tspec('receive',node_info,file_id)
-              tspec['tags']["aspera"]["files"]={}
+              tspec=info_to_tspec('files','receive',node_info,file_id)
               tspec['paths']=[{'source'=>file_name}]
               return Main.tool.start_transfer(tspec)
             when :node_http
@@ -309,8 +310,8 @@ module Asperalm
               # tell Aspera what to expect in package: 1 transfer (can also be done after transfer)
               resp=@api_files_user.update("packages/#{the_package['id']}",{"sent"=>true,"transfers_expected"=>1})[:data]
 
-              tspec=info_to_tspec("send",node_info,the_package['contents_file_id'])
-              tspec['tags']["aspera"]["files"]={"package_id" => the_package['id'], "package_operation" => "upload"}
+              tspec=info_to_tspec('packages','send',node_info,the_package['contents_file_id'])
+              tspec['tags']['aspera']['files'].merge!({"package_id" => the_package['id'], "package_operation" => "upload"})
               tspec['paths']=filelist.map { |i| {'source'=>i} }
               tspec['destination_root']="/"
               return Main.tool.start_transfer(tspec)
@@ -318,8 +319,8 @@ module Asperalm
               package_id=Main.tool.options.get_next_argument('package ID')
               the_package=@api_files_user.read("packages/#{package_id}")[:data]
               node_info=@api_files_user.read("nodes/#{the_package['node_id']}")[:data]
-              tspec=info_to_tspec("receive",node_info,the_package['contents_file_id'])
-              tspec['tags']["aspera"]["files"]={"package_id" => the_package['id'], "package_operation" => "download"}
+              tspec=info_to_tspec('packages','receive',node_info,the_package['contents_file_id'])
+              tspec['tags']['aspera']['files'].merge!({"package_id" => the_package['id'], "package_operation" => "download"})
               tspec['paths']=[{'source'=>'.'}]
               return Main.tool.start_transfer(tspec)
             when :list

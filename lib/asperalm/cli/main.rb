@@ -1,7 +1,8 @@
 require 'asperalm/cli/manager'
 require 'asperalm/cli/plugin'
-require 'asperalm/fasp/agent'
-require 'asperalm/fasp/manager'
+require 'asperalm/fasp/agent/resumer'
+require 'asperalm/fasp/agent/connect'
+require 'asperalm/fasp/agent/node'
 require 'asperalm/fasp/listener_logger'
 require 'asperalm/fasp/listener_progress'
 require 'asperalm/open_application'
@@ -22,14 +23,13 @@ module Asperalm
       singleton_class.send(:alias_method, :tool, :instance)
       def self.version;return @@TOOL_VERSION;end
       private
-      @@TOOL_VERSION='0.6.16'
+      @@TOOL_VERSION='0.6.17'
       # first level command for the main tool
       @@MAIN_PLUGIN_NAME_SYM=:config
       # name of application, also foldername where config is stored
       @@PROGRAM_NAME = 'aslmcli'
       # folder in $HOME for the application
-      @@ASPERA_HOME_FOLDERNAME='.aspera'
-      @@CONFIG_FOLDER=File.join(Dir.home,@@ASPERA_HOME_FOLDERNAME,@@PROGRAM_NAME)
+      @@ASPERA_HOME_FOLDER_NAME='.aspera'
       # folder containing custom plugins in `config_folder`
       @@ASPERA_PLUGINS_FOLDERNAME='plugins'
       # main config file
@@ -142,22 +142,24 @@ module Asperalm
         end
       end
 
+      # transfer agent singleton
       def transfer_agent
         if @transfer_agent_singleton.nil?
-          Fasp::Manager.instance.add_listener(Fasp::ListenerLogger.new)
-          Fasp::Manager.instance.add_listener(Fasp::ListenerProgress.new)
-          @transfer_agent_singleton=Fasp::Agent.new
-          @transfer_agent_singleton.connect_app_id=@@PROGRAM_NAME
-          if !@opt_mgr.get_option(:fasp_proxy,:optional).nil?
-            @transfer_agent_singleton.transfer_spec_default.merge!({'EX_fasp_proxy_url'=>@opt_mgr.get_option(:fasp_proxy,:optional)})
-          end
-          if !@opt_mgr.get_option(:http_proxy,:optional).nil?
-            @transfer_agent_singleton.transfer_spec_default.merge!({'EX_http_proxy_url'=>@opt_mgr.get_option(:http_proxy,:optional)})
-          end
           # by default use local ascp
           case @opt_mgr.get_option(:transfer,:mandatory)
+          when :direct
+            @transfer_agent_singleton=Fasp::Agent::Resumer.new
+            if !@opt_mgr.get_option(:fasp_proxy,:optional).nil?
+              @transfer_spec_default['EX_fasp_proxy_url']=@opt_mgr.get_option(:fasp_proxy,:optional)
+            end
+            if !@opt_mgr.get_option(:http_proxy,:optional).nil?
+              @transfer_spec_default['EX_http_proxy_url']=@opt_mgr.get_option(:http_proxy,:optional)
+            end
+            # TODO: option to choose progress format
+            # here we disable native stdout progress
+            @transfer_spec_default['EX_quiet']=true
           when :connect
-            @transfer_agent_singleton.use_connect_client=true
+            @transfer_agent_singleton=Fasp::Agent::Connect.new
           when :node
             # support: @param:<name>
             # support extended values
@@ -166,8 +168,8 @@ module Asperalm
             case transfer_node_spec
             when nil
               param_set_name=get_plugin_default_config_name(:node)
-              raise CliBadArgument,"No default node configured, Please specify --transfer-node" if node_config.nil?
-              node_config=@available_presets[config_name]
+              raise CliBadArgument,"No default node configured, Please specify --transfer-node" if param_set_name.nil?
+              node_config=@available_presets[param_set_name]
             when /^@param:/
               param_set_name=transfer_node_spec.gsub!(/^@param:/,'')
               Log.log.debug("param_set_name=#{param_set_name}")
@@ -184,8 +186,11 @@ module Asperalm
               raise CliBadArgument,"missing parameter [#{param}] in node specification: #{node_config}" if !node_config.has_key?(param.to_s)
               sym_config[param]=node_config[param.to_s]
             end
-            @transfer_agent_singleton.tr_node_api=Rest.new(sym_config[:url],{:auth=>{:type=>:basic,:username=>sym_config[:username], :password=>sym_config[:password]}})
+            @transfer_agent_singleton=Fasp::Agent::Node.new(Rest.new(sym_config[:url],{:auth=>{:type=>:basic,:username=>sym_config[:username], :password=>sym_config[:password]}}))
+          else raise "ERROR"
           end
+          @transfer_agent_singleton.add_listener(Fasp::ListenerLogger.new)
+          @transfer_agent_singleton.add_listener(Fasp::ListenerProgress.new)
         end
         return @transfer_agent_singleton
       end
@@ -205,7 +210,8 @@ module Asperalm
         @use_plugin_defaults=true
         @plugins={@@MAIN_PLUGIN_NAME_SYM=>{:source=>__FILE__,:require_stanza=>nil}}
         @plugin_lookup_folders=[]
-        @option_config_file=File.join(config_folder,@@DEFAULT_CONFIG_FILENAME)
+        @config_folder=File.join(Dir.home,@@ASPERA_HOME_FOLDER_NAME,@@PROGRAM_NAME)
+        @option_config_file=File.join(@config_folder,@@DEFAULT_CONFIG_FILENAME)
         # option manager is created later
         @opt_mgr=nil
         # find the root folder of gem where this class is
@@ -645,7 +651,7 @@ module Asperalm
 
       # public method
       # $HOME/.aspera/aslmcli
-      def config_folder;@@CONFIG_FOLDER;end
+      attr_reader :config_folder
 
       def options;@opt_mgr;end
 
@@ -681,9 +687,6 @@ module Asperalm
         end
 
         transfer_spec.merge!(@transfer_spec_default)
-        # TODO: option to choose progress format
-        # here we disable native stdout progress
-        transfer_spec['EX_quiet']=true
         # add bypass keys if there is a token, also prevents connect plugin to ask password
         transfer_spec['authentication']="token" if transfer_spec.has_key?('token')
         transfer_agent.start_transfer(transfer_spec)

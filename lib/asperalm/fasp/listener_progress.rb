@@ -1,4 +1,5 @@
 require 'asperalm/fasp/listener'
+
 module Asperalm
   module Fasp
     # a listener to FASP event that displays a progress bar

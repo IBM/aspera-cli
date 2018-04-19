@@ -178,7 +178,7 @@ t/nd4:
 	$(EXETEST) node service create @json:'{"id":"service1","type":"WATCHD","run_as":{"user":"user1"}}'
 	$(EXETEST) node service list
 	@echo "waiting a little...";sleep 2
-	$(EXETEST) node service id service1 delete
+	$(EXETEST) node service --id=service1 delete
 	$(EXETEST) node service list
 	@echo "waiting a little...";sleep 5
 	$(EXETEST) node service list
@@ -238,16 +238,16 @@ t/o3:
 	$(EXETEST) orchestrator workflow status
 	@touch $@
 t/o4:
-	$(EXETEST) orchestrator workflow id 10 inputs
+	$(EXETEST) orchestrator workflow --id=10 inputs
 	@touch $@
 t/o5:
-	$(EXETEST) orchestrator workflow id 10 status
+	$(EXETEST) orchestrator workflow --id=10 status
 	@touch $@
 t/o6:
-	$(EXETEST) orchestrator workflow id 10 start --params=@json:'{"Param":"laurent"}'
+	$(EXETEST) orchestrator workflow --id=10 start --params=@json:'{"Param":"laurent"}'
 	@touch $@
 t/o7:
-	$(EXETEST) orchestrator workflow id 10 start --params=@json:'{"Param":"laurent"}' --result=ResultStep:Complete_status_message
+	$(EXETEST) orchestrator workflow --id=10 start --params=@json:'{"Param":"laurent"}' --result=ResultStep:Complete_status_message
 	@touch $@
 t/o8:
 	$(EXETEST) orchestrator plugins

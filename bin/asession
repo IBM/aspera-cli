@@ -3,7 +3,7 @@
 $LOAD_PATH.unshift(File.dirname(__FILE__)+"/../lib")
 require 'rubygems'
 require 'json'
-require 'asperalm/fasp/manager'
+require 'asperalm/fasp/agent/local'
 require 'asperalm/cli/manager'
 require 'asperalm/log'
 

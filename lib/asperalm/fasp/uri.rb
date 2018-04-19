@@ -8,6 +8,7 @@ module Asperalm
       def initialize(fasplink)
         @fasp_uri=URI.parse(fasplink)
       end
+
       def transfer_spec
         result_ts={}
         result_ts['remote_host']=@fasp_uri.host
