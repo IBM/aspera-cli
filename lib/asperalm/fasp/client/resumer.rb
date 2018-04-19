@@ -93,6 +93,7 @@ module Asperalm
               Log.log.debug( 'transfer ok'.bg_red );
               break
             rescue Fasp::Error => e
+              Log.log.warn( "An error occured: #{e.message}" );
               # failure in ascp
               if fasp_error_retryable?(e.err_code) then
                 # exit if we exceed the max number of retry
@@ -111,7 +112,7 @@ module Asperalm
 
             # take this retry in account
             lRetryLeft-=1
-            Log.log.debug( "resuming in  #{@sleep_seconds} seconds (retry left:#{lRetryLeft})" );
+            Log.log.warn( "resuming in  #{@sleep_seconds} seconds (retry left:#{lRetryLeft})" );
 
             # wait a bit before retrying, maybe network condition will be better
             sleep(@sleep_seconds)
