@@ -1,11 +1,15 @@
-require "asperalm/log"
-require "asperalm/cli/main"
 require 'securerandom'
+require "asperalm/log"
 
 module Asperalm
   module Fasp
     # translate transfer specification to ascp parameter list
     class Parameters
+      # temp files are created here, change to go elsewhere
+      @@file_list_folder='.'
+      def self.file_list_folder; @@file_list_folder;end
+      def self.file_list_folder=(v); @@file_list_folder=v;end
+      
       def initialize(transfer_spec)
         @transfer_spec=transfer_spec.clone # shallow copy is sufficient
         @result_env={}
@@ -30,9 +34,8 @@ module Asperalm
       BOOLEAN_CLASSES=[TrueClass,FalseClass]
 
       def temp_filelist_path
-        file_list_folder=File.join(Main.tool.config_folder,'filelists')
-        FileUtils::mkdir_p(file_list_folder) unless Dir.exist?(file_list_folder)
-        new_file=File.join(file_list_folder,SecureRandom.uuid)
+        FileUtils::mkdir_p(@@file_list_folder) unless Dir.exist?(@@file_list_folder)
+        new_file=File.join(@@file_list_folder,SecureRandom.uuid)
         @created_files.push(new_file)
         return new_file
       end
