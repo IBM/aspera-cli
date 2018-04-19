@@ -1,5 +1,7 @@
 require 'securerandom'
 require "asperalm/log"
+require "base64"
+require "json"
 
 module Asperalm
   module Fasp
@@ -182,12 +184,13 @@ module Asperalm
         # destination, use base64 encoding, as defined previously
         add_ascp_options([Base64.strict_encode64(process_param('destination_root',:get_value,:accepted_types=>[String],:mandatory=>true))])
 
-        ascp_bin=process_param('use_ascp4',:get_value)?'ascp4':'ascp'
+        # symbol must be index of Installation.paths
+        ascp_version=process_param('use_ascp4',:get_value) ? :ascp4 : :ascp
 
         # warn about non translated arguments
         @transfer_spec.each_pair{|key,val|Log.log.error("unhandled parameter: #{key} = \"#{val}\"") if !@used_ts_keys.include?(key)}
 
-        return {:args=>@result_args,:env=>@result_env,:ascp_bin=>ascp_bin}
+        return {:args=>@result_args,:env=>@result_env,:ascp_version=>ascp_version}
       end
 
       def self.yes_to_true(value)
