@@ -1,6 +1,6 @@
-require 'asperalm/log'
-require 'asperalm/open_application'
 require 'singleton'
+require 'asperalm/log'
+require 'asperalm/open_application' # current_os_type
 require 'xmlsimple'
 
 module Asperalm
@@ -20,6 +20,53 @@ module Asperalm
         # installed paths
         @i_p=nil
       end
+
+      # installation paths
+      # get fasp resource files paths
+      def paths
+        return @i_p unless @i_p.nil?
+        # this contains var/run, files generated on runtime
+        if @activated.eql?(FIRST_FOUND)
+          p = installed_products.first
+        else
+          p=installed_products.select{|p|p[:name].eql?(@activated)}.first
+        end
+        raise "no FASP installation found\nPlease check manual on how to install FASP." if p.nil?
+        set_location(p)
+        return @i_p
+      end
+
+      # user can set all path directly
+      def paths=(path_set)
+        raise "must be a hash" unless path_set.is_a?(Hash)
+        @i_p=path_set
+      end
+
+      # get path of one resource file
+      def path(k)
+        file=paths[k][:path]
+        raise "no such file: #{file}" if !File.exist?(file)
+        return file
+      end
+
+      # try to find connect client or other Aspera product installed.
+      def installed_products
+        return @found_products unless @found_products.nil?
+        @found_products=product_locations.select do |l|
+          next false unless Dir.exist?(l[:app_root])
+          product_info_file="#{l[:app_root]}/#{PRODUCT_INFO}"
+          if File.exist?(product_info_file)
+            res_s=XmlSimple.xml_in(File.read(product_info_file),{"ForceArray"=>false})
+            l[:name]=res_s['name']
+            l[:version]=res_s['version']
+          else
+            l[:name]=l[:expected]
+          end
+          true # select this version
+        end
+      end
+
+      private
 
       def initialize
         @i_p=nil
@@ -47,6 +94,8 @@ module Asperalm
         @i_p[:localhost_key] = { :path =>File.join(p[:app_root],p[:sub_keys],'localhost.key'), :type => :file, :required => false}
         @i_p[:plugin_https_port_file] = { :path =>File.join(p[:run_root],VARRUN_SUBFOLDER,'https.uri'), :type => :file, :required => false}
         @i_p[:log_folder] = { :path =>p[:log_root], :type => :folder, :required => false}
+        @i_p[:ascp] = { :path =>File.join(p[:app_root],p[:sub_bin],'ascp')+p[:exe_ext].to_s, :type => :file, :required => true}
+        @i_p[:ascp4] = { :path =>File.join(p[:app_root],p[:sub_bin],'ascp4')+p[:exe_ext].to_s, :type => :file, :required => false}
         Log.log.debug "resources=#{@i_p}"
         notfound=[]
         @i_p.each_pair do |k,v|
@@ -58,35 +107,8 @@ module Asperalm
         end
       end
 
-      # installation paths
-      # get fasp resource files paths
-      def paths
-        return @i_p unless @i_p.nil?
-        # this contains var/run, files generated on runtime
-        if @activated.eql?(FIRST_FOUND)
-          p = installed_products.first
-        else
-          p=installed_products.select{|p|p[:name].eql?(@activated)}.first
-        end
-        raise "no FASP installation found\nPlease check manual on how to install FASP." if p.nil?
-        set_location(p)
-        return @i_p
-      end
-
-      # user can set all path directly
-      def paths=(path_set)
-        raise "must be a hash" if !path_set.is_a?(Hash)
-        @i_p=path_set
-      end
-
-      # get path of one resource file
-      def path(k)
-        file=paths[k][:path]
-        raise "no such file: #{file}" if !File.exist?(file)
-        return file
-      end
-
       # returns product folders depending on OS
+      # field :exe_ext is nil if no ext, else it's the exe string (incl. dot).
       def product_locations
         common_places=[]
         case OpenApplication.current_os_type
@@ -148,22 +170,6 @@ module Asperalm
         return common_places
       end
 
-      # try to find connect client or other Aspera product installed.
-      def installed_products
-        return @found_products unless @found_products.nil?
-        @found_products=product_locations.select do |l|
-          next false unless Dir.exist?(l[:app_root])
-          product_info_file="#{l[:app_root]}/#{PRODUCT_INFO}"
-          if File.exist?(product_info_file)
-            res_s=XmlSimple.xml_in(File.read(product_info_file),{"ForceArray"=>false})
-            l[:name]=res_s['name']
-            l[:version]=res_s['version']
-          else
-            l[:name]=l[:expected]
-          end
-          true # select this version
-        end
-      end
     end # Installation
   end # Fasp
 end # Asperalm
