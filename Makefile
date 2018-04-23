@@ -262,46 +262,46 @@ t/o9:
 torc: t/o1 t/o2 t/o3 t/o4 t/o5 t/o6 t/o7 t/o8 t/o9
 
 t/at1a:
-	$(EXETEST) ats server list provisioned
+	$(EXETEST) ats cluster list
 	@touch $@
 t/at1b:
-	$(EXETEST) ats server list clouds
+	$(EXETEST) ats cluster clouds
 	@touch $@
 t/at2:
-	$(EXETEST) ats server list instance --cloud=aws --region=eu-west-1 
+	$(EXETEST) ats cluster show --cloud=aws --region=eu-west-1 
 	@touch $@
 t/at3:
-	$(EXETEST) ats server id 1f412ae7-869a-445c-9c05-02ad16813be2
+	$(EXETEST) ats cluster show --id=1f412ae7-869a-445c-9c05-02ad16813be2
 	@touch $@
 t/at4:
-	$(EXETEST) ats subscriptions
+	$(EXETEST) ats account subscriptions
 	@touch $@
 t/at5:
-	$(EXETEST) ats api_key repository list
+	$(EXETEST) ats account cache list
 	@touch $@
 t/at6:
-	$(EXETEST) ats api_key list
+	$(EXETEST) ats account list
 	@touch $@
 t/at7:
-	$(EXETEST) ats access_key create --cloud=softlayer --region=ams --params=@json:'{"id":"testkey2","name":"laurent key","storage":{"type":"softlayer_swift","container":"laurent","credentials":{"api_key":"e5d032e026e0b0a16e890a3d44d11fd1471217b6262e83c7f60529f1ff4b27de","username":"IBMOS303446-9:laurentmartin"},"path":"/"}}'
+	$(EXETEST) ats key create --cloud=softlayer --region=ams --params=@json:'{"id":"testkey2","name":"laurent key","storage":{"type":"softlayer_swift","container":"laurent","credentials":{"api_key":"e5d032e026e0b0a16e890a3d44d11fd1471217b6262e83c7f60529f1ff4b27de","username":"IBMOS303446-9:laurentmartin"},"path":"/"}}'
 	@touch $@
 t/at8:
-	$(EXETEST) ats access_key create --cloud=aws --region=eu-west-1 --params=@json:'{"id":"testkey3","name":"laurent key AWS","storage":{"type":"aws_s3","bucket":"sedemo-ireland","credentials":{"access_key_id":"AKIAIDSWKOSIM7XUVCJA","secret_access_key":"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"},"path":"/laurent"}}'
+	$(EXETEST) ats key create --cloud=aws --region=eu-west-1 --params=@json:'{"id":"testkey3","name":"laurent key AWS","storage":{"type":"aws_s3","bucket":"sedemo-ireland","credentials":{"access_key_id":"AKIAIDSWKOSIM7XUVCJA","secret_access_key":"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"},"path":"/laurent"}}'
 	@touch $@
 t/at9:
-	$(EXETEST) ats access_key list --fields=name,id,secret
+	$(EXETEST) ats key list --fields=name,id,secret
 	@touch $@
 t/at10:
-	$(EXETEST) ats access_key id testkey2 node browse /
+	$(EXETEST) ats key --id=testkey2 node browse /
 	@touch $@
 t/at11:
-	$(EXETEST) ats access_key id testkey2 server
+	$(EXETEST) ats key --id=testkey2 cluster
 	@touch $@
 t/at12:
-	$(EXETEST) ats access_key id testkey2 delete
+	$(EXETEST) ats key --id=testkey2 delete
 	@touch $@
 t/at13:
-	$(EXETEST) ats access_key id testkey3 delete
+	$(EXETEST) ats key --id=testkey3 delete
 	@touch $@
 
 tats: t/at1a t/at1b t/at2 t/at3 t/at4 t/at5 t/at6 t/at7 t/at8 t/at9 t/at10 t/at11 t/at12 t/at13
