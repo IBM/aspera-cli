@@ -186,6 +186,7 @@ module Asperalm
 
       attr_accessor :option_flat_hash
       attr_accessor :option_config_file
+      attr_accessor :option_table_style
 
       # minimum initialization
       def initialize
@@ -201,6 +202,7 @@ module Asperalm
         @plugin_lookup_folders=[]
         @config_folder=File.join(Dir.home,@@ASPERA_HOME_FOLDER_NAME,@@PROGRAM_NAME)
         @option_config_file=File.join(@config_folder,@@DEFAULT_CONFIG_FILENAME)
+        @option_table_style=':.:'
         # set folders for temp files
         Fasp::Parameters.file_list_folder=File.join(@config_folder,'filelists')
         Oauth.file_list_folder=@config_folder
@@ -240,7 +242,9 @@ module Asperalm
         @opt_mgr.parser.separator "OPTIONS: global"
         @opt_mgr.declare_options_scan_env
         @opt_mgr.set_obj_attr(:config_file,self,:option_config_file)
+        @opt_mgr.set_obj_attr(:table_style,self,:option_table_style)
         @opt_mgr.add_opt_simple(:config_file,"read parameters from file in YAML format, current=#{@option_config_file}")
+        @opt_mgr.add_opt_simple(:table_style,"table display style, current=#{@option_table_style}")
         @opt_mgr.add_opt_switch(:help,"Show this message.","-h") { @option_help=true }
         @opt_mgr.add_opt_switch(:show_config, "Display parameters used for the provided action.") { @option_show_config=true }
         @opt_mgr.add_opt_switch(:rest_debug,"-r","more debug for HTTP calls") { Rest.set_debug(true) }
@@ -311,18 +315,29 @@ module Asperalm
         return r
       end
 
-      def self.flatten_sub_hash(source,prefix='',dest=nil)
-        dest={} if dest.nil?
+      def self.flatten_sub_hash(source,keep_last)
+        newval=flatten_sub_hash_rec(source,keep_last,'',{})
+        source.clear
+        source.merge!(newval)
+      end
+
+      def self.flatten_sub_hash_rec(source,keep_last,prefix,dest)
+        is_simple_hash=source.is_a?(Hash) and source.values.inject(true){|m,v| xxx=!v.respond_to?(:each) and m;puts("->#{xxx}>#{v.respond_to?(:each)} #{v}-");xxx}
+        Log.log.debug("(#{keep_last})[#{is_simple_hash}] -#{source.values}- \n-#{source}-")
+        return dest if keep_last and is_simple_hash
         source.each do |k,v|
-          unless v.is_a?(Hash)
-            dest[prefix+k.to_s]=v
+          #Process.exit(1)
+          if v.is_a?(Hash) and ( !keep_last or !is_simple_hash )
+            flatten_sub_hash_rec(v,keep_last,prefix+k.to_s+'.',dest)
           else
-            flatten_sub_hash(v,prefix+k.to_s+'.',dest)
+            dest[prefix+k.to_s]=v
           end
         end
         return dest
       end
 
+      # special for Aspera on Cloud dis play node
+      # "param" => [{"name"=>"foo","value"=>"bar"}] will be expanded to param.foo : bar
       def self.flatten_name_value_list(hash)
         hash.keys.each do |k|
           v=hash[k]
@@ -349,7 +364,8 @@ module Asperalm
 
         # comma separated list in string format
         user_asked_fields_list_str=@opt_mgr.get_option(:fields,:mandatory)
-        case @opt_mgr.get_option(:format,:mandatory)
+        display_format=@opt_mgr.get_option(:format,:mandatory)
+        case display_format
         when :ruby
           puts PP.pp(results[:data],'')
         when :json
@@ -360,34 +376,33 @@ module Asperalm
           puts results[:data].to_yaml
         when :table,:csv
           case results[:type]
-          when :hash_array
+          when :hash_array # goes to table display
             raise "internal error: unexpected type: #{results[:data].class}, expecting Array" unless results[:data].is_a?(Array)
             # :hash_array is an array of hash tables, where key=colum name
-            table_data = results[:data]
-            out_table_columns=nil
+            table_rows_hash_val = results[:data]
+            final_table_columns=nil
             case user_asked_fields_list_str
             when FIELDS_DEFAULT
               if results.has_key?(:fields) and !results[:fields].nil?
-                out_table_columns=results[:fields]
+                final_table_columns=results[:fields]
               else
-                if !table_data.empty?
-                  out_table_columns=table_data.first.keys
+                if !table_rows_hash_val.empty?
+                  final_table_columns=table_rows_hash_val.first.keys
                 else
-                  out_table_columns=['empty']
+                  final_table_columns=['empty']
                 end
               end
             when FIELDS_ALL
-              raise "empty" if table_data.empty?
-              out_table_columns=table_data.first.keys if table_data.is_a?(Array)
+              raise "empty" if table_rows_hash_val.empty?
+              final_table_columns=table_rows_hash_val.first.keys if table_rows_hash_val.is_a?(Array)
             else
-              out_table_columns=user_asked_fields_list_str.split(',')
-              out_table_columns=out_table_columns.map{|i|i.to_sym} if results[:symb_key]
+              final_table_columns=user_asked_fields_list_str.split(',')
+              final_table_columns=final_table_columns.map{|i|i.to_sym} if results[:symb_key]
             end
-          when :key_val_list
-            # :key_val_list is a simple hash table
+          when :key_val_list # goes to table display
+            # :key_val_list is a simple hash table  (can be nested)
             raise "internal error: unexpected type: #{results[:data].class}, expecting Hash" unless results[:data].is_a?(Hash)
-            out_table_columns = results[:columns]
-            out_table_columns = ['key','value'] if out_table_columns.nil?
+            final_table_columns = results[:columns] || ['key','value']
             asked_fields=results[:data].keys
             case user_asked_fields_list_str
             when FIELDS_DEFAULT;asked_fields=results[:fields] if results.has_key?(:fields)
@@ -397,49 +412,54 @@ module Asperalm
               asked_fields=asked_fields.map{|i|i.to_sym} if results[:symb_key]
             end
             if @option_flat_hash
-              results[:data]=self.class.flatten_sub_hash(results[:data])
+              self.class.flatten_sub_hash(results[:data],results[:option_expand_last])
               self.class.flatten_name_value_list(results[:data])
+              # first level keys are potentially changed
               asked_fields=results[:data].keys
             end
-            table_data=asked_fields.map { |i| { out_table_columns.first => i, out_table_columns.last => results[:data][i] } }
-          when :value_list
+
+            table_rows_hash_val=asked_fields.map { |i| { final_table_columns.first => i, final_table_columns.last => results[:data][i] } }
+          when :value_list  # goes to table display
             # :value_list is a simple array of values, name of column provided in the :name
-            out_table_columns = [results[:name]]
-            table_data=results[:data].map { |i| { results[:name] => i } }
-          when :empty
+            final_table_columns = [results[:name]]
+            table_rows_hash_val=results[:data].map { |i| { results[:name] => i } }
+          when :empty # no table
             puts "empty"
             return
-          when :status
+          when :status # no table
             # :status displays a simple message
             puts results[:data]
             return
-          when :other_struct
+          when :other_struct # no table
             # :other_struct is any other type of structure
             puts PP.pp(results[:data],'')
             return
           else
             raise "unknown data type: #{results[:type]}"
           end
-          raise "no field specified" if out_table_columns.nil?
-          if table_data.empty?
-            puts "empty".gray
+          raise "no field specified" if final_table_columns.nil?
+          if table_rows_hash_val.empty?
+            puts "empty".gray unless display_format.eql?(:csv)
             return
           end
-          # convert to string with special function. here table_data is an array of hash
-          table_data=results[:textify].call(table_data) if results.has_key?(:textify)
+          # convert to string with special function. here table_rows_hash_val is an array of hash
+          table_rows_hash_val=results[:textify].call(table_rows_hash_val) if results.has_key?(:textify)
           # convert data to string, and keep only display fields
-          table_data=table_data.map { |r| out_table_columns.map { |c| r[c].to_s } }
-          case @opt_mgr.get_option(:format,:mandatory)
+          final_table_rows=table_rows_hash_val.map { |r| final_table_columns.map { |c| r[c].to_s } }
+          # here : final_table_columns : list of column names
+          # here: final_table_rows : array of list of value
+          case display_format
           when :table
+            style=@option_table_style.split('')
             # display the table !
             puts Text::Table.new(
-            :head => out_table_columns,
-            :rows => table_data,
-            :vertical_boundary  => '.',
-            :horizontal_boundary => ':',
-            :boundary_intersection => ':')
+            :head => final_table_columns,
+            :rows => final_table_rows,
+            :horizontal_boundary   => style[0],
+            :vertical_boundary     => style[1],
+            :boundary_intersection => style[2])
           when :csv
-            puts table_data.map{|t| t.join(FIELD_SEPARATOR)}.join(RECORD_SEPARATOR)
+            puts final_table_rows.map{|t| t.join(FIELD_SEPARATOR)}.join(RECORD_SEPARATOR)
           end
         end
       end
@@ -646,6 +666,8 @@ module Asperalm
       def early_debug_setup(argv)
         argv.each do |arg|
           case arg
+          when '--'
+            return
           when /^--log-level=(.*)/
             Log.level = $1.to_sym
           when /^--logger=(.*)/
