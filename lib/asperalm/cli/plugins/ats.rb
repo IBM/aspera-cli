@@ -21,7 +21,7 @@ module Asperalm
 
         def declare_options
           @optmgr.add_opt_simple(:ats_id,"ATS key identifier (ats_xxx)")
-          @optmgr.add_opt_simple(:id,"Access key identifier, or server id")
+          @optmgr.add_opt_simple(:id,"Access key identifier, or server id, or api key id")
           @optmgr.add_opt_simple(:secret,"Access key secret")
           @optmgr.add_opt_simple(:params,"Parameters access key creation (@json:)")
           @optmgr.add_opt_simple(:cloud,"Cloud provider")
@@ -201,56 +201,54 @@ module Asperalm
         end
 
         def execute_action_api_key
-          command=@optmgr.get_next_argument('command',[:info, :subscriptions, :cache, :create, :list, :id])
+          command=@optmgr.get_next_argument('command',[:info, :subscriptions, :cache, :create, :list, :atsid, :show, :delete])
+          if [:show,:delete].include?(command)
+            modified_ats_id=@optmgr.get_option(:id,:mandatory)
+          end
           case command
-          when :info
+          when :create
+            return {:type=>:key_val_list, :data=>create_new_api_key}
+          when :list # list known api keys in ATS (this require an api_key ...)
+            res=api_ats_secure.read("api_keys",{'offset'=>0,'max_results'=>1000})
+            return {:type=>:value_list, :data=>res[:data]['data'], :name => 'ats_id'}
+          when :show # show one of api_key in ATS
+            res=api_ats_secure.read("api_keys/#{modified_ats_id}")
+            return {:type=>:key_val_list, :data=>res[:data]}
+          when :delete #
+            res=api_ats_secure.delete("api_keys/#{modified_ats_id}")
+            return Plugin.result_status("deleted #{modified_ats_id}")
+          when :info # display current ATS credential information
             return {:type=>:key_val_list, :data=>current_api_key}
           when :subscriptions
             return {:type=>:key_val_list, :data=>api_ats_secure.read("subscriptions")[:data]}
-          when :cache
+          when :cache # list of delete entries in api_key cache
             command=@optmgr.get_next_argument('command',[:list, :delete])
             case command
             when :list
               return {:type=>:hash_array, :data=>repo_api_keys, :fields =>['ats_id','ats_secret','ats_description','subscription_name','organization_name']}
             when :delete
-              ats_id=@optmgr.get_next_argument('ats_id',repo_api_keys.map{|i| i['ats_id']})
+              deleted_ats_id=@optmgr.get_next_argument('ats_id',repo_api_keys.map{|i| i['ats_id']})
               #raise CliBadArgument,"no such id" if repo_api_keys.select{|i| i['ats_id'].eql?(ats_id)}.empty?
-              repo_api_keys.select!{|i| !i['ats_id'].eql?(ats_id)}
+              repo_api_keys.select!{|i| !i['ats_id'].eql?(deleted_ats_id)}
               save_key_repo
-              return {:type=>:hash_array, :data=>[{'ats_id'=>ats_id,'status'=>'deleted'}]}
-            end
-          when :create
-            return {:type=>:key_val_list, :data=>create_new_api_key}
-          when :list
-            res=api_ats_secure.read("api_keys",{'offset'=>0,'max_results'=>1000})
-            return {:type=>:value_list, :data=>res[:data]['data'], :name => 'ats_id'}
-          when :id
-            ats_id=@optmgr.get_next_argument("ats_id")
-            command=@optmgr.get_next_argument('command',[:show,:delete])
-            case command
-            when :show #
-              res=api_ats_secure.read("api_keys/#{ats_id}")
-              return {:type=>:key_val_list, :data=>res[:data]}
-            when :delete #
-              res=api_ats_secure.delete("api_keys/#{ats_id}")
-              return Plugin.result_status("deleted #{ats_id}")
+              return {:type=>:hash_array, :data=>[{'ats_id'=>deleted_ats_id,'status'=>'deleted'}]}
             end
           end
         end
 
-        def action_list; [ :cluster, :key, :account ];end
+        def action_list; [ :cluster, :access_key, :credential ];end
 
         def execute_action
           # API without authentication
           @api_ats_public=Rest.new(ATS_API_URL)
           command=@optmgr.get_next_argument('command',action_list)
           case command
-          when :cluster
-            return execute_action_cluster
-          when :key
-            return execute_action_access_key
-          when :account
+          when :credential # manage credential to access ATS API
             return execute_action_api_key
+          when :cluster # display general ATS cluster information
+            return execute_action_cluster
+          when :access_key
+            return execute_action_access_key
           end
         end
       end
