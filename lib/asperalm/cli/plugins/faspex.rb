@@ -94,10 +94,9 @@ module Asperalm
             when :list
               all_inbox_xml=api_faspex.call({:operation=>'GET',:subpath=>"#{@optmgr.get_option(:box,:mandatory).to_s}.atom",:headers=>{'Accept'=>'application/xml'}})[:http].body
               all_inbox_data=XmlSimple.xml_in(all_inbox_xml, {"ForceArray" => true})
-              if all_inbox_data.has_key?('entry')
-                return {:data=>all_inbox_data['entry'],:type=>:hash_array,:fields=>['title','items',PACKAGE_MATCH_FIELD], :textify => lambda { |table_data| Faspex.textify_package_list(table_data)} }
-              end
-              return Plugin.result_none
+              Log.dump(:all_inbox_data,all_inbox_data)
+              return Plugin.result_none unless all_inbox_data.has_key?('entry')
+              return {:data=>all_inbox_data['entry'],:type=>:hash_array,:fields=>[PACKAGE_MATCH_FIELD,'title','items'], :textify => lambda { |table_data| Faspex.textify_package_list(table_data)} }
             when :send
               filelist = @optmgr.get_next_argument("file list",:multiple)
               package_create_params={

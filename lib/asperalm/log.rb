@@ -1,5 +1,6 @@
-require 'logger'
 require 'asperalm/colors'
+require 'logger'
+require 'pp'
 
 module Asperalm
   class Log
@@ -12,6 +13,10 @@ module Asperalm
     def self.log
       self.logger_type=(:stderr) if @@logobj.nil?
       return @@logobj
+    end
+    
+    def self.dump(name,object)
+      log.debug("#{name}=\n#{PP.pp(object,'')}")
     end
 
     def self.level=(level)
