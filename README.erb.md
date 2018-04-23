@@ -1455,10 +1455,25 @@ This means that you do not have ruby support for ED25519 SSH keys. You may eithe
 Gems, or remove your ed25519 key from your `.ssh` folder to solve the issue.
 
 # Release Notes
-Version 0.6.18
+* Version 0.6.19
+
+Breaking change:
+
+  * ats server list provisioned -> ats cluster list
+  * ats server list clouds -> ats cluster clouds
+  * ats server list instance --cloud=x --region=y -> ats cluster show --cloud=x --region=y
+  * ats server id xxx -> aslmcli ats cluster show --id=xxx
+  * ats subscriptions -> ats credential subscriptions
+  * ats api_key repository list -> ats credential cache list
+  * ats api_key list -> ats credential list
+  * ats access_key id xxx -> ats access_key --id=xxx
+
+* Version 0.6.18
+
 some commands take now --id option instead of id command.
 
-Version 0.6.15
+* Version 0.6.15
+* 
 Breaking change: "files" application renamed to "aspera" (for "Aspera on Cloud"). "repository" renamed to "files". Default is automatically reset, e.g. in config files and change key "files" to "aspera" in preset "default".
 
 # TODO
