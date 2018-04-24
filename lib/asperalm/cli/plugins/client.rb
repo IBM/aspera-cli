@@ -11,7 +11,7 @@ module Asperalm
         CONNECT_VERSIONS = 'connectversions.js'
         def declare_options; end
 
-        def action_list; [ :installation, :monitor, :location, :connect ];end
+        def action_list; [ :current, :available, :connect ];end
 
         def self.textify_list(table_data)
           return table_data.select {|i| ! i['key'].eql?('links') }
@@ -29,18 +29,11 @@ module Asperalm
         def execute_action
           command=@optmgr.get_next_argument('command',action_list)
           case command
-          when :location # shows files used
+          when :current # shows files used
             return {:type=>:hash_array, :data=>Fasp::Installation.instance.paths.map {|k,v| {'name'=>k,'path'=>v[:path]}}}
-          when :installation
-            subcmd=@optmgr.get_next_argument('command',[:list])
+          when :available
             all=Fasp::Installation.instance.installed_products
-            case subcmd
-            when :list # shows files used
-              return {:type=>:hash_array, :data=>all, :fields=>[:name,:app_root]}
-            end
-          when :monitor # todo
-            raise "xx"
-            return {:type=>:hash_array, :data=>Fasp::Installation.instance.installed_products}
+            return {:type=>:hash_array, :data=>all, :fields=>[:name,:app_root]}
           when :connect #
             command=@optmgr.get_next_argument('command',[:list,:id])
             case command
