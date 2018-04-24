@@ -13,7 +13,8 @@ module Asperalm
         def declare_options
           @optmgr.add_opt_list(:download_mode,[:fasp, :node_http ],"download mode")
           @optmgr.add_opt_list(:auth,Oauth.auth_types,"type of Oauth authentication")
-          @optmgr.add_opt_list(:bulk,[:no,:yes],"bulk operation")
+          @optmgr.add_opt_boolean(:bulk,"bulk operation")
+#          @optmgr.add_opt_boolean(:long,"long display")
           @optmgr.add_opt_simple(:url,"URL of application, e.g. http://org.asperafiles.com")
           @optmgr.add_opt_simple(:username,"username to log in")
           @optmgr.add_opt_simple(:password,"user's password")
@@ -31,6 +32,7 @@ module Asperalm
           @optmgr.add_opt_simple(:name,"resource name")
           @optmgr.set_option(:download_mode,:fasp)
           @optmgr.set_option(:bulk,:no)
+#          @optmgr.set_option(:long,:no)
           @optmgr.set_option(:redirect_uri,'http://localhost:12345')
           @optmgr.set_option(:auth,:web)
         end
@@ -51,7 +53,7 @@ module Asperalm
         # supports links to secondary nodes
         # input: root node and file id, and array for path
         # output: file_id and node_info  for the given path
-        def find_nodeinfo_and_fileid( top_node_id, top_file_id, element_path_string )
+        def find_nodeinfo_and_fileid( top_node_id, top_file_id, element_path_string='' )
           Log.log.debug "find_nodeinfo_and_fileid: nodeid=#{top_node_id}, fileid=#{top_file_id}, path=#{element_path_string}"
           raise "error" if top_node_id.to_s.empty?
           raise "error" if top_file_id.to_s.empty?
@@ -125,7 +127,7 @@ module Asperalm
             return Node.new(self).execute_common(command_legacy,node_api)
           when :file
             fileid=@optmgr.get_next_argument("file id")
-            node_info,file_id = find_nodeinfo_and_fileid(home_node_id,fileid,"")
+            node_info,file_id = find_nodeinfo_and_fileid(home_node_id,fileid)
             node_api=get_files_node_api(node_info,FilesApi::SCOPE_NODE_USER)
             items=node_api.read("files/#{file_id}")[:data]
             return {:type=>:key_val_list,:data=>items}
@@ -241,7 +243,7 @@ module Asperalm
         end
 
         def do_bulk_operation(params,success,&do_action)
-          params=[params] if @optmgr.get_option(:bulk).eql?(:no)
+          params=[params] unless @optmgr.get_option(:bulk)
           raise "expecting Array" unless params.is_a?(Array)
           result=[]
           params.each do |p|
@@ -325,6 +327,13 @@ module Asperalm
             when :show
               package_id=@optmgr.get_next_argument('package ID')
               the_package=@api_files_user.read("packages/#{package_id}")[:data]
+#              if @optmgr.get_option(:long)
+#                node_info,file_id = find_nodeinfo_and_fileid(the_package['node_id'],the_package['contents_file_id'])
+#                node_api=get_files_node_api(node_info,FilesApi::SCOPE_NODE_USER)
+#                items=node_api.read("files/#{file_id}/files")[:data]
+#                file=node_api.read("files/#{items.first['id']}")[:data]
+#                the_package['X_contents_path']=file['path']
+#              end
               return { :type=>:key_val_list, :data =>the_package }
             when :list
               # list all packages ('page'=>1,'per_page'=>10,)'sort'=>'-sent_at',
@@ -335,7 +344,7 @@ module Asperalm
             return execute_node_action(@home_node_id,@home_file_id)
           when :faspexgw
             require 'asperalm/faspex_gw'
-            FaspexGW.start_server(@api_files_user,@workspace_id)
+            FaspexGW.instance.start_server(@api_files_user,@workspace_id)
           when :admin
             command_admin=@optmgr.get_next_argument('command',[ :resource, :events, :set_client_key, :usage_reports, :search_nodes  ])
             case command_admin
