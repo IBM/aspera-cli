@@ -286,7 +286,7 @@ module Asperalm
               end
             end
           when :packages
-            command_pkg=@optmgr.get_next_argument('command',[ :send, :recv, :list ])
+            command_pkg=@optmgr.get_next_argument('command',[ :send, :recv, :list, :show ])
             case command_pkg
             when :send
               # list of files to include in package
@@ -322,6 +322,10 @@ module Asperalm
               tspec['tags']['aspera']['files'].merge!({"package_id" => the_package['id'], "package_operation" => "download"})
               tspec['paths']=[{'source'=>'.'}]
               return @main.start_transfer(tspec)
+            when :show
+              package_id=@optmgr.get_next_argument('package ID')
+              the_package=@api_files_user.read("packages/#{package_id}")[:data]
+              return { :type=>:key_val_list, :data =>the_package }
             when :list
               # list all packages ('page'=>1,'per_page'=>10,)'sort'=>'-sent_at',
               packages=@api_files_user.read("packages",{'archived'=>false,'exclude_dropbox_packages'=>true,'has_content'=>true,'received'=>true,'workspace_id'=>@workspace_id})[:data]
