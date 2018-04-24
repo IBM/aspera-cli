@@ -24,7 +24,7 @@ module Asperalm
       singleton_class.send(:alias_method, :tool, :instance)
       def self.version;return @@TOOL_VERSION;end
       private
-      @@TOOL_VERSION='0.6.18'
+      @@TOOL_VERSION='0.6.19'
       # first level command for the main tool
       @@MAIN_PLUGIN_NAME_SYM=:config
       # name of application, also foldername where config is stored
@@ -315,7 +315,7 @@ module Asperalm
         return r
       end
 
-      def self.flatten_sub_hash(source,keep_last)
+      def self.keyval_list_flatten_sub_hash(source,keep_last)
         newval=flatten_sub_hash_rec(source,keep_last,'',{})
         source.clear
         source.merge!(newval)
@@ -324,7 +324,7 @@ module Asperalm
       def self.flatten_sub_hash_rec(source,keep_last,prefix,dest)
         is_simple_hash=source.is_a?(Hash) and source.values.inject(true){|m,v| xxx=!v.respond_to?(:each) and m;puts("->#{xxx}>#{v.respond_to?(:each)} #{v}-");xxx}
         Log.log.debug("(#{keep_last})[#{is_simple_hash}] -#{source.values}- \n-#{source}-")
-        return dest if keep_last and is_simple_hash
+        return source if keep_last and is_simple_hash
         source.each do |k,v|
           #Process.exit(1)
           if v.is_a?(Hash) and ( !keep_last or !is_simple_hash )
@@ -338,7 +338,7 @@ module Asperalm
 
       # special for Aspera on Cloud dis play node
       # "param" => [{"name"=>"foo","value"=>"bar"}] will be expanded to param.foo : bar
-      def self.flatten_name_value_list(hash)
+      def self.keyval_list_flatten_name_value_list(hash)
         hash.keys.each do |k|
           v=hash[k]
           if v.is_a?(Array) and v.map{|i|i.class}.uniq.eql?([Hash]) and v.map{|i|i.keys}.flatten.sort.uniq.eql?(["name", "value"])
@@ -412,12 +412,11 @@ module Asperalm
               asked_fields=asked_fields.map{|i|i.to_sym} if results[:symb_key]
             end
             if @option_flat_hash
-              self.class.flatten_sub_hash(results[:data],results[:option_expand_last])
-              self.class.flatten_name_value_list(results[:data])
+              self.class.keyval_list_flatten_sub_hash(results[:data],results[:option_expand_last])
+              self.class.keyval_list_flatten_name_value_list(results[:data])
               # first level keys are potentially changed
               asked_fields=results[:data].keys
             end
-
             table_rows_hash_val=asked_fields.map { |i| { final_table_columns.first => i, final_table_columns.last => results[:data][i] } }
           when :value_list  # goes to table display
             # :value_list is a simple array of values, name of column provided in the :name
