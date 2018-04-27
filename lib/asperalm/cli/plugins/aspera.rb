@@ -133,7 +133,12 @@ module Asperalm
             result=node_api.create("files/#{file_id}/files",{:name=>new_folder,:type=>:folder})[:data]
             return Plugin.result_status("created: #{result['name']} (id=#{result['id']})")
           when :rename
-            raise "not implemented yet"
+            thepath=@optmgr.get_next_argument("source path")
+            newname=@optmgr.get_next_argument("new name")
+            node_info,file_id = find_nodeinfo_and_fileid(home_node_id,home_file_id,thepath)
+            node_api=get_files_node_api(node_info,FilesApi::SCOPE_NODE_USER)
+            result=node_api.update("files/#{file_id}",{:name=>newname})[:data]
+            return Plugin.result_status("renamed #{thepath} to #{newname}")
           when :delete
             thepath=@optmgr.get_next_argument("path")
             node_info,file_id = find_nodeinfo_and_fileid(home_node_id,home_file_id,thepath)
