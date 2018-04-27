@@ -3,7 +3,7 @@ require 'asperalm/fasp/client/local'
 module Asperalm
   module Fasp
     module Client
-      # implements a resumable policy on top of basic FaspManager
+      # implements a resumable policy on top of basic Local FaspManager
       class Resumer < Local
         # from https://www.google.com/search?q=FASP+error+codes
         # columns: code name descr msg retryable

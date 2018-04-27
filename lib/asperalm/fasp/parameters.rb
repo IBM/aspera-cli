@@ -10,8 +10,9 @@ module Asperalm
       # temp files are created here, change to go elsewhere
       @@file_list_folder='.'
       def self.file_list_folder; @@file_list_folder;end
+
       def self.file_list_folder=(v); @@file_list_folder=v;end
-      
+
       def initialize(transfer_spec)
         @transfer_spec=transfer_spec.clone # shallow copy is sufficient
         @result_env={}
@@ -59,6 +60,7 @@ module Asperalm
 
         # process only non-nil values
         return nil if parameter_value.nil?
+        #Log.log.debug("process_param #{ts_name} #{parameter_value} #{options}")
 
         if options.has_key?(:translate_values)
           # translate using conversion table
@@ -88,7 +90,7 @@ module Asperalm
           when true; add_param=true
           else raise Fasp::Error.new("unsupported #{ts_name}: #{parameter_value}")
           end
-          add_param=!add_param if !options[:add_on_false]
+          add_param=!add_param if options[:add_on_false]
           add_ascp_options([options[:option_switch]]) if add_param
         when :opt_with_arg
           #parameter_value=parameter_value.to_s if parameter_value.is_a?(Integer)

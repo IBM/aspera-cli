@@ -27,7 +27,11 @@ module Asperalm
           @cumulative=@cumulative+data['Size'].to_i
         when 'STATS'
           if !@progress.nil? then
-            @progress.progress=@cumulative+data['Bytescont'].to_i
+            if data.has_key?('Bytescont')
+              @progress.progress=@cumulative+data['Bytescont'].to_i
+            else
+              @progress.progress=data['TransferBytes'].to_i
+            end
           else
             puts '.'
           end
