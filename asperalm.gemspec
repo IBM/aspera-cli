@@ -4,10 +4,10 @@ $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
 require 'asperalm/cli/main'
 
 Gem::Specification.new do |spec|
-  spec.name          = "asperalm"
+  spec.name          = 'asperalm'
   spec.version       = Asperalm::Cli::Main::version
   spec.authors       = ["Laurent Martin"]
-  spec.email         = ["laurent@asperasoft.com"]
+  spec.email         = ["laurent.martin.aspera@fr.ibm.com"]
   spec.summary       = "Sample command line for Aspera Server products: Aspera Files, Faspex, Shares, Node, Console, Orchestrator, Server, ATS"
   spec.description   = "A sample CLI for Aspera products."
   spec.homepage      = "http://www.asperasoft.com"
