@@ -147,6 +147,7 @@ module Asperalm
             # TODO: option to choose progress format
             # here we disable native stdout progress
             @transfer_spec_default['EX_quiet']=true
+            Log.log.debug(">>>>#{@transfer_spec_default}".red)
           when :connect
             @transfer_agent_singleton=Fasp::Client::Connect.new
           when :node
@@ -178,8 +179,8 @@ module Asperalm
             @transfer_agent_singleton=Fasp::Client::Node.new(Rest.new(sym_config[:url],{:auth=>{:type=>:basic,:username=>sym_config[:username], :password=>sym_config[:password]}}))
           else raise "ERROR"
           end
-          @transfer_agent_singleton.add_listener(Fasp::ListenerLogger.new)
-          @transfer_agent_singleton.add_listener(Fasp::ListenerProgress.new)
+          @transfer_agent_singleton.add_listener(Fasp::ListenerLogger.new,:struct)
+          @transfer_agent_singleton.add_listener(Fasp::ListenerProgress.new,:struct)
         end
         return @transfer_agent_singleton
       end
@@ -322,7 +323,8 @@ module Asperalm
       end
 
       def self.flatten_sub_hash_rec(source,keep_last,prefix,dest)
-        is_simple_hash=source.is_a?(Hash) and source.values.inject(true){|m,v| xxx=!v.respond_to?(:each) and m;puts("->#{xxx}>#{v.respond_to?(:each)} #{v}-");xxx}
+        #is_simple_hash=source.is_a?(Hash) and source.values.inject(true){|m,v| xxx=!v.respond_to?(:each) and m;puts("->#{xxx}>#{v.respond_to?(:each)} #{v}-");xxx}
+        is_simple_hash=false
         Log.log.debug("(#{keep_last})[#{is_simple_hash}] -#{source.values}- \n-#{source}-")
         return source if keep_last and is_simple_hash
         source.each do |k,v|
@@ -703,15 +705,29 @@ module Asperalm
       end
 
       # plugins shall use this method to start a transfer
-      # set_default_destination if destination_root shall be used from the provided transfer spec
+      # @param: ts_source specifies how destination_root is set
       # and not the default one
-      def start_transfer(transfer_spec,set_default_destination=true)
-        if set_default_destination
+      def start_transfer(transfer_spec,ts_source)
+        # initialize transfert agent, to set default transfer spec options before merge
+        transfer_agent
+        case transfer_spec['direction']
+        when 'receive'
+          # init default if required in any case
           destination_folder(transfer_spec['direction'])
-        else
-          # in that case, destination is set in return by application (API/upload_setup)
-          # but to_folder was used in intial api call
-          @transfer_spec_default.delete('destination_root')
+        when 'send'
+          case ts_source
+          when :direct
+            # init default if required
+            destination_folder(transfer_spec['direction'])
+          when :node_gen3
+            # in that case, destination is set in return by application (API/upload_setup)
+            # but to_folder was used in intial api call
+            @transfer_spec_default.delete('destination_root')
+          when :node_gen4
+            @transfer_spec_default['destination_root']='/'
+          else
+            raise StandardError,"InternalError: unsupported value: #{ts_source}"
+          end
         end
 
         transfer_spec.merge!(@transfer_spec_default)
