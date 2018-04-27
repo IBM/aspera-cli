@@ -162,32 +162,42 @@ The value of options and arguments is evaluated with the [Extended Value Syntax]
 
 ### Options
 
-Options are command line arguments starting with a `-`. Options can be optional or mandatory, with or without (hardcoded) default value. Most options take a value, but a limited number of them are without values (e.g. `-r`). Options can be placed anywhere on comand line and evaluated in order.
+All options, e.g. `--log-level=debug`, are command line arguments that:
 
-The special option "--" is ignored but stops option processing, subsequent values are taken as arguments, including the ones starting with a `-`.
+* start with `--`
+* have a name, in lowercase, using `-` as word separator in name  (e.g. `--log-level=debug`)
+* have a value, separated from name with a `=`
+* can be used by prefix, provided that it is unique. E.g. `--log-l=debug` is the same as `--log-level=debug`
 
-The value for _any_ options can come from the following locations:
+Exceptions:
 
-* Command line
+* some options accept a short form, e.g. `-Ptoto` is equivalent to `--preset=toto`, refer to the manual or `-h`.
+* some options (flags) don't take a value, e.g. `-r`
+* the special option `--` stops option processing and is ignored, following command line arguments are taken as arguments, including the ones starting with a `-`. Example:
+
+```
+$ aslmcli config echo -- --sample
+"--sample"
+```
+
+Note that `--sample` is taken as an argument, and not option.
+
+Options can be optional or mandatory, with or without (hardcoded) default value. Options can be placed anywhere on comand line and evaluated in order.
+
+The value for _any_ options can come from the following locations (in this order, last value evaluated overrides previous value):
+
 * [Configuration file](#configfile).
 * Environment variable
+* Command line
 
 Environment variable starting with prefix: ASLMCLI_ are taken as option values, 
-i.e. `ASLMCLI_OPTION_NAME` is for `--option-name`.
+e.g. `ASLMCLI_OPTION_NAME` is for `--option-name`.
 
 Options values can be displayed for a given command by providing the `--show-config` option: `aslmcli node --show-config`
 
-Evaluation of a parameter value follow this order:
-
-* configuration file
-* environment variable
-* command line
-
-The last value evaluated is the one taken.
-
 ### Commands and Arguments
 
-Command line arguments not starting with `-` are either commands or arguments (as well as command line arguments following `--`).
+Command line arguments that are not options are either commands or arguments. If an argument must begin with `-`, then either use the `@val:` syntax (see [Extended Values](#extended)), or use the `--` separator (see above).
 
 ## Interactive Input
 
@@ -752,7 +762,7 @@ Define this preset as default configuration for the `aspera` plugin:
 $ aslmcli config id default set aspera my_aoc_org
 ```
 
-Note: Default `auth` method is `web` and default `redirect_uri` is `htt^://localhost:12345`.
+Note: Default `auth` method is `web` and default `redirect_uri` is `http://localhost:12345`.
 
 ### <a name="aocfirst"></a>First Use
 
@@ -1045,14 +1055,14 @@ $ aslmcli node access_key create --value=@json:'{"id":"eudemo-sedemo","secret":"
 
 The `client` plugin refers to the use of a local FASP client. It provides the following commands:
 
-* `connect list` : list connect client versions available on internet
-* `installation list` : list Aspera transfer products found locally
-* `client location` : list resources used for transfers
+* `current` : list current resources used for transfers
+* `available` : list Aspera transfer products available locally
+* `connect` : list,download connect client versions available on internet
 
 ### List installed clients
 
 ```bash
-$ aslmcli client installation list
+$ aslmcli client available
 :..........................:................................................:
 :           name           :                    app_root                    :
 :..........................:................................................:
@@ -1061,10 +1071,10 @@ $ aslmcli client installation list
 :..........................:................................................:
 ```
 
-### List resources used
+### List current resources used
 
 ```
-$ aslmcli client location
+$ aslmcli current
 :........................:............................................................................................:
 :          name          :                                            path                                            :
 :........................:............................................................................................:
