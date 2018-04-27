@@ -307,21 +307,24 @@ t/at13:
 tats: t/at1a t/at1b t/at2 t/at3 t/at4 t/at5 t/at6 t/at7 t/at8 t/at9 t/at10 t/at11 t/at12 t/at13
 
 t/co1:
-	$(EXETEST) client location
+	$(EXETEST) client current
 	@touch $@
 t/co2:
-	$(EXETEST) client connect list
+	$(EXETEST) client available
 	@touch $@
 t/co3:
-	$(EXETEST) client connect id 'Aspera Connect for Windows' info
+	$(EXETEST) client connect list
 	@touch $@
 t/co4:
-	$(EXETEST) client connect id 'Aspera Connect for Windows' links list
+	$(EXETEST) client connect id 'Aspera Connect for Windows' info
 	@touch $@
 t/co5:
+	$(EXETEST) client connect id 'Aspera Connect for Windows' links list
+	@touch $@
+t/co6:
 	$(EXETEST) client connect id 'Aspera Connect for Windows' links id 'Windows Installer' download --to-folder=.
 	@touch $@
-tcon: t/co1 t/co2 t/co3 t/co4 t/co5
+tcon: t/co1 t/co2 t/co3 t/co4 t/co5 t/co6
 
 t/sy1:
 	$(EXETEST) node async list
