@@ -111,29 +111,30 @@ module Asperalm
       end
     end # Servlet
 
+    TEST_SUBJECT="/C=FR/O=Test/OU=Test/CN=Test"
+    
     def initialize
       @webrick_options = {
         :app                => FaspexGW,
         :Port               => 9443,
         :Logger             => Log.log,
-        :DocumentRoot       => '/ruby/htdocs',
+        #:DocumentRoot       => '/ruby/htdocs',
         :SSLEnable          => true,
         :SSLVerifyClient    => OpenSSL::SSL::VERIFY_NONE,
         :SSLCertName        => [ [ 'CN',WEBrick::Utils::getservername ] ],
         :SSLPrivateKey      => OpenSSL::PKey::RSA.new(4096),
         :SSLCertificate     => OpenSSL::X509::Certificate.new
       }
-      subject = "/C=FR/O=Test/OU=Test/CN=Test"
       cert = @webrick_options[:SSLCertificate]
-      cert.subject = cert.issuer = OpenSSL::X509::Name.parse(subject)
+      cert.subject = cert.issuer = OpenSSL::X509::Name.parse(TEST_SUBJECT)
       cert.not_before = Time.now
       cert.not_after = Time.now + 365 * 24 * 60 * 60
       cert.public_key = @webrick_options[:SSLPrivateKey].public_key
       cert.serial = 0x0
       cert.version = 2
       ef = OpenSSL::X509::ExtensionFactory.new
-      ef.subject_certificate = cert
       ef.issuer_certificate = cert
+      ef.subject_certificate = cert
       cert.extensions = [
         ef.create_extension("basicConstraints","CA:TRUE", true),
         ef.create_extension("subjectKeyIdentifier", "hash"),
@@ -149,7 +150,7 @@ module Asperalm
 
     def start_server(api_files_user,workspace_id)
       @api_files_user=api_files_user
-      @api_files_oauth=FaspexGW.instance.api_files_user.param_default[:auth][:obj]
+      @api_files_oauth=@api_files_user.param_default[:auth][:obj]
       @the_workspaceid=workspace_id
       Log.log.info("Server started on port #{@webrick_options[:Port]}")
       server = WEBrick::HTTPServer.new(@webrick_options)
