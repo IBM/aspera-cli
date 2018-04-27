@@ -4,6 +4,7 @@ class String
   def self.vtcmd(code); "\e[#{code}m";end
 
   # see https://en.wikipedia.org/wiki/ANSI_escape_code
+  # here the symbol is the method name added to String to add control chars to set color (and reset at the end).
   VTSTYLES = {
     :bold=>1,
     :italic=>3,
