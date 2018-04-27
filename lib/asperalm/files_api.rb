@@ -2,10 +2,18 @@ require 'asperalm/log'
 
 module Asperalm
   class FilesApi
-    # get API base URL based on instance domain
+    # various API scopes supported
+    SCOPE_FILES_SELF='self'
+    SCOPE_FILES_USER='user:all'
+    SCOPE_FILES_ADMIN='admin:all'
+    SCOPE_FILES_ADMIN_USER='admin-user:all+user:all'
+    SCOPE_NODE_USER='user:all'
+    SCOPE_NODE_ADMIN='admin:all'
+
+    # get necessary fixed information to create JWT or call API
     # instance domain is asperafiles.com or qa.asperafiles.com
     def self.info(web_url)
-      uri=URI.parse(web_url)
+      uri=URI.parse(web_url.gsub(/\/+$/,''))
       instance_fqdn=uri.host
       raise "No host found in URL.Please check URL format: https://myorg.ibmaspera.com" if instance_fqdn.nil?
       organization,instance_domain=instance_fqdn.split('.',2)
@@ -28,14 +36,6 @@ module Asperalm
     def self.node_scope(access_key,scope)
       return 'node.'+access_key+':'+scope
     end
-
-    # various API scopes supported
-    SCOPE_FILES_SELF='self'
-    SCOPE_FILES_USER='user:all'
-    SCOPE_FILES_ADMIN='admin:all'
-    SCOPE_FILES_ADMIN_USER='admin-user:all+user:all'
-    SCOPE_NODE_USER='user:all'
-    SCOPE_NODE_ADMIN='admin:all'
 
   end # FilesApi
 end # Asperalm
