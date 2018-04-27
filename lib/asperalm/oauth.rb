@@ -219,7 +219,7 @@ module Asperalm
             :exp => seconds_since_epoch+ASSERTION_VALIDITY_SEC # TODO: configurable ?
           }
 
-          rsa_private=@auth_data[:private_key_obj]  # rsa_private.public_key
+          rsa_private=@auth_data[:private_key_obj]  # type: OpenSSL::PKey::RSA
 
           Log.log.debug("private=[#{rsa_private}]")
 
