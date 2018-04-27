@@ -24,7 +24,7 @@ module Asperalm
       singleton_class.send(:alias_method, :tool, :instance)
       def self.version;return @@TOOL_VERSION;end
       private
-      @@TOOL_VERSION='0.6.19'
+      @@TOOL_VERSION='0.6.20'
       # first level command for the main tool
       @@MAIN_PLUGIN_NAME_SYM=:config
       # name of application, also foldername where config is stored
