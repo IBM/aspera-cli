@@ -11,7 +11,7 @@ module Asperalm
     # raised when an unexpected argument is provided
     class CliBadArgument < CliError; end
 
-    # option is retrieve from another object
+    # option is retrieved from another object using accessor
     class AttrAccessor
       #attr_accessor :object
       #attr_accessor :attr_symb
@@ -31,7 +31,7 @@ module Asperalm
 
     # parse command line options
     # arguments options start with '-', others are commands
-    # resolves on extendede value syntax
+    # resolves on extended value syntax
     class Manager
       def self.time_to_string(time)
         time.strftime("%Y-%m-%d %H:%M:%S")
@@ -94,7 +94,7 @@ module Asperalm
       def declare_options_scan_env
         Log.log.debug("declare_options_scan_env")
         # options can also be provided by env vars : --param-name -> ASLMCLI_PARAM_NAME
-        env_prefix=@parser.program_name.upcase+'_'
+        env_prefix=@parser.program_name.upcase+@@OPTION_SEP_NAME
         ENV.each do |k,v|
           if k.start_with?(env_prefix)
             @unprocessed_env.push([k[env_prefix.length..-1].downcase.to_sym,v])
