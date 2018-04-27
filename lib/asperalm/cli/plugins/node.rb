@@ -149,8 +149,7 @@ module Asperalm
             raise "expecting one session exactly" if send_result[:data]['transfer_specs'].length != 1
             transfer_spec=send_result[:data]['transfer_specs'].first['transfer_spec']
             transfer_spec['paths']=filelist.map { |i| {'source'=>i} }
-            # do not use default destination in transfer spec, because can be different on destination (e.g. shares)
-            return @main.start_transfer(transfer_spec,false)
+            return @main.start_transfer(transfer_spec,:node_gen3)
           when :download
             filelist = get_next_arg_add_prefix(prefix_path,"source file list",:multiple)
             Log.log.debug("file list=#{filelist}")
@@ -158,7 +157,7 @@ module Asperalm
             raise send_result[:data]['transfer_specs'][0]['error']['user_message'] if send_result[:data]['transfer_specs'][0].has_key?('error')
             raise "expecting one session exactly" if send_result[:data]['transfer_specs'].length != 1
             transfer_spec=send_result[:data]['transfer_specs'].first['transfer_spec']
-            return @main.start_transfer(transfer_spec)
+            return @main.start_transfer(transfer_spec,:node_gen3)
           end
         end
 

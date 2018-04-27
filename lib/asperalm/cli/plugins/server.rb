@@ -107,14 +107,14 @@ module Asperalm
                 'direction'=>'send',
                 'paths'=>filelist.map { |f| {'source'=>f } }
               })
-              return @main.start_transfer(transfer_spec)
+              return @main.start_transfer(transfer_spec,:direct)
             when :download
               filelist = @optmgr.get_next_argument("source list",:multiple)
               transfer_spec.merge!({
                 'direction'=>'receive',
                 'paths'=>filelist.map { |f| {'source'=>f } }
               })
-              return @main.start_transfer(transfer_spec)
+              return @main.start_transfer(transfer_spec,:direct)
             when *Asperalm::AsCmd.action_list
               args=@optmgr.get_next_argument('ascmd command arguments',:multiple,:optional)
               ascmd=Asperalm::AsCmd.new(shell_executor)

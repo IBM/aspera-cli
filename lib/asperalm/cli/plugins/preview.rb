@@ -205,9 +205,8 @@ module Asperalm
             PREV_GEN_TAG         => true,
             'node'               => { 'access_key' => @access_key_self['id'], 'file_id' => folder_id }}}
           })
-          tspec['destination_root']='/' if direction.eql?("send")
           tspec['destination_root']=destination unless destination.nil?
-          @main.start_transfer(tspec)
+          @main.start_transfer(tspec,:node_gen4)
         end
 
         def get_infos_local(gen_infos,entry,local_entry_preview_dir)
@@ -368,13 +367,13 @@ module Asperalm
           if @access_remote
             # note the filter "name", it's why we take the first one
             @previews_folder_entry=get_folder_entries(@access_key_self['root_file_id'],{:name=>@option_previews_folder}).first
-            raise "ERROR: no such folder: #{@option_previews_folder}" if @previews_folder_entry.nil?
+            raise CliError,"Folder #{@option_previews_folder} does not exist on node. Please create it in the storage root, or specify an alternate name." if @previews_folder_entry.nil?
           else
             #TODO: option to override @local_storage_root='xxx'
             @local_storage_root=@access_key_self['storage']['path'].gsub(%r{^file:///},'')
-            raise "ERROR: no such folder: #{@local_storage_root}" unless File.directory?(@local_storage_root)
+            raise CliError,"Local storage root folder #{@local_storage_root} does not exist." unless File.directory?(@local_storage_root)
             @local_preview_folder=File.join(@local_storage_root,@option_previews_folder)
-            raise "ERROR: no such folder: #{@local_preview_folder}" unless File.directory?(@local_preview_folder)
+            raise CliError,"Folder #{@local_preview_folder} does not exist locally. Please create it, or specify an alternate name." unless File.directory?(@local_preview_folder)
           end
           command=@optmgr.get_next_argument('command',action_list)
           case command

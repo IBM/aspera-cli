@@ -134,7 +134,7 @@ module Asperalm
               raise CliBadArgument,"expecting one session exactly" if send_result['xfer_sessions'].length != 1
               transfer_spec=send_result['xfer_sessions'].first
               transfer_spec['paths']=filelist.map { |i| {'source'=>i} }
-              return @main.start_transfer(transfer_spec,false)
+              return @main.start_transfer(transfer_spec,:node_gen3)
             when :recv
               # UUID is not reliable, it changes at every call
               if false
@@ -164,7 +164,7 @@ module Asperalm
                 transfer_spec['token']=api_faspex.call({:operation=>'POST',:subpath=>"issue-token?direction=down",:headers=>{'Accept'=>'text/plain','Content-Type'=>'application/vnd.aspera.url-list+xml'},:text_body_params=>xmlpayload})[:http].body
               end
               transfer_spec['direction']='receive'
-              return @main.start_transfer(transfer_spec)
+              return @main.start_transfer(transfer_spec,:node_gen3)
             end
           when :source
             command_source=@optmgr.get_next_argument('command',[ :list, :id, :name ])
@@ -228,7 +228,7 @@ module Asperalm
             transfer_uri=self.class.get_fasp_uri_from_entry(package_entry)
             transfer_spec=Fasp::Uri.new(transfer_uri).transfer_spec
             transfer_spec['direction']='receive'
-            return @main.start_transfer(transfer_spec)
+            return @main.start_transfer(transfer_spec,:node_gen3)
           end # command
         end
       end

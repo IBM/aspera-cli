@@ -94,7 +94,7 @@ module Asperalm
             raise Fasp::Error,transfer_data['error']['user_message'] if transfer_data.has_key?('error')
             transfer_spec=transfer_data['transfer_spec']
             # execute transfer
-            return @main.start_transfer(transfer_spec)
+            return @main.start_transfer(transfer_spec,:node_gen3)
           when :postprocess
             transfers=self.class.get_transfers_iteration(api_node,{:view=>'summary',:direction=>'receive',:active_only=>false})
             return { :type=>:hash_array,:data => transfers }

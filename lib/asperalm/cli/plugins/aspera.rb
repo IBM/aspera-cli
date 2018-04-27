@@ -14,7 +14,7 @@ module Asperalm
           @optmgr.add_opt_list(:download_mode,[:fasp, :node_http ],"download mode")
           @optmgr.add_opt_list(:auth,Oauth.auth_types,"type of Oauth authentication")
           @optmgr.add_opt_boolean(:bulk,"bulk operation")
-#          @optmgr.add_opt_boolean(:long,"long display")
+          #          @optmgr.add_opt_boolean(:long,"long display")
           @optmgr.add_opt_simple(:url,"URL of application, e.g. http://org.asperafiles.com")
           @optmgr.add_opt_simple(:username,"username to log in")
           @optmgr.add_opt_simple(:password,"user's password")
@@ -32,7 +32,7 @@ module Asperalm
           @optmgr.add_opt_simple(:name,"resource name")
           @optmgr.set_option(:download_mode,:fasp)
           @optmgr.set_option(:bulk,:no)
-#          @optmgr.set_option(:long,:no)
+          #          @optmgr.set_option(:long,:no)
           @optmgr.set_option(:redirect_uri,'http://localhost:12345')
           @optmgr.set_option(:auth,:web)
         end
@@ -116,8 +116,55 @@ module Asperalm
         PATH_SEPARATOR='/'
 
         def execute_node_action(home_node_id,home_file_id)
-          command_repo=@optmgr.get_next_argument('command',[ :node, :file, :browse, :upload, :download ])
+          command_repo=@optmgr.get_next_argument('command',[ :browse, :mkdir, :rename, :delete, :upload, :download, :node, :file  ])
           case command_repo
+          when :browse
+            thepath=@optmgr.get_next_argument("path")
+            node_info,file_id = find_nodeinfo_and_fileid(home_node_id,home_file_id,thepath)
+            node_api=get_files_node_api(node_info,FilesApi::SCOPE_NODE_USER)
+            items=node_api.read("files/#{file_id}/files")[:data]
+            return {:type=>:hash_array,:data=>items,:fields=>['name','type','recursive_size','size','modified_time','access_level']}
+          when :mkdir
+            thepath=@optmgr.get_next_argument("path")
+            containing_folder_path = thepath.split(PATH_SEPARATOR)
+            new_folder=containing_folder_path.pop
+            node_info,file_id = find_nodeinfo_and_fileid(home_node_id,home_file_id,containing_folder_path.join(PATH_SEPARATOR))
+            node_api=get_files_node_api(node_info,FilesApi::SCOPE_NODE_USER)
+            result=node_api.create("files/#{file_id}/files",{:name=>new_folder,:type=>:folder})[:data]
+            return Plugin.result_status("created: #{result['name']} (id=#{result['id']})")
+          when :rename
+            raise "not implemented yet"
+          when :delete
+            thepath=@optmgr.get_next_argument("path")
+            node_info,file_id = find_nodeinfo_and_fileid(home_node_id,home_file_id,thepath)
+            node_api=get_files_node_api(node_info,FilesApi::SCOPE_NODE_USER)
+            result=node_api.delete("files/#{file_id}")[:data]
+            return Plugin.result_status("deleted: #{thepath}")
+          when :upload
+            filelist = @optmgr.get_next_argument("file list",:multiple)
+            Log.log.debug("file list=#{filelist}")
+            node_info,file_id = find_nodeinfo_and_fileid(home_node_id,home_file_id,@main.destination_folder('send'))
+            tspec=info_to_tspec('files','send',node_info,file_id)
+            tspec['paths']=filelist.map { |i| {'source'=>i} }
+            return @main.start_transfer(tspec,:node_gen4)
+          when :download
+            source_file=@optmgr.get_next_argument('source')
+            case @optmgr.get_option(:download_mode,:mandatory)
+            when :fasp
+              file_path = source_file.split(PATH_SEPARATOR)
+              file_name = file_path.pop
+              node_info,file_id = find_nodeinfo_and_fileid(home_node_id,home_file_id,file_path.join(PATH_SEPARATOR))
+              tspec=info_to_tspec('files','receive',node_info,file_id)
+              tspec['paths']=[{'source'=>file_name}]
+              return @main.start_transfer(tspec,:node_gen4)
+            when :node_http
+              file_path = source_file.split(PATH_SEPARATOR)
+              file_name = file_path.last
+              node_info,file_id = find_nodeinfo_and_fileid(home_node_id,home_file_id,source_file)
+              node_api=get_files_node_api(node_info,FilesApi::SCOPE_NODE_USER)
+              node_api.call({:operation=>'GET',:subpath=>"files/#{file_id}/content",:save_to_file=>File.join(@main.destination_folder('receive'),file_name)})
+              return Plugin.result_status("downloaded: #{file_name}")
+            end # download_mode
           when :node
             # Note: other "common" actions are unauthorized with user scope
             command_legacy=@optmgr.get_next_argument('command',Node.simple_actions)
@@ -131,40 +178,8 @@ module Asperalm
             node_api=get_files_node_api(node_info,FilesApi::SCOPE_NODE_USER)
             items=node_api.read("files/#{file_id}")[:data]
             return {:type=>:key_val_list,:data=>items}
-          when :browse
-            thepath=@optmgr.get_next_argument("path")
-            node_info,file_id = find_nodeinfo_and_fileid(home_node_id,home_file_id,thepath)
-            node_api=get_files_node_api(node_info,FilesApi::SCOPE_NODE_USER)
-            items=node_api.read("files/#{file_id}/files")[:data]
-            return {:type=>:hash_array,:data=>items,:fields=>['name','type','recursive_size','size','modified_time','access_level']}
-          when :upload
-            filelist = @optmgr.get_next_argument("file list",:multiple)
-            Log.log.debug("file list=#{filelist}")
-            node_info,file_id = find_nodeinfo_and_fileid(home_node_id,home_file_id,@main.destination_folder('send'))
-            tspec=info_to_tspec('files','send',node_info,file_id)
-            tspec['paths']=filelist.map { |i| {'source'=>i} }
-            tspec['destination_root']="/" # not used
-            return @main.start_transfer(tspec)
-          when :download
-            source_file=@optmgr.get_next_argument('source')
-            case @optmgr.get_option(:download_mode,:mandatory)
-            when :fasp
-              file_path = source_file.split(PATH_SEPARATOR)
-              file_name = file_path.pop
-              node_info,file_id = find_nodeinfo_and_fileid(home_node_id,home_file_id,file_path.join(PATH_SEPARATOR))
-              tspec=info_to_tspec('files','receive',node_info,file_id)
-              tspec['paths']=[{'source'=>file_name}]
-              return @main.start_transfer(tspec)
-            when :node_http
-              file_path = source_file.split(PATH_SEPARATOR)
-              file_name = file_path.last
-              node_info,file_id = find_nodeinfo_and_fileid(home_node_id,home_file_id,source_file)
-              node_api=get_files_node_api(node_info,FilesApi::SCOPE_NODE_USER)
-              node_api.call({:operation=>'GET',:subpath=>"files/#{file_id}/content",:save_to_file=>File.join(@main.destination_folder('receive'),file_name)})
-              return Plugin.result_status("downloaded: #{file_name}")
-            end
-          end
-        end
+          end # command_repo
+        end # def
 
         # initialize apis and authentication
         # returns true if in default workspace
@@ -314,8 +329,7 @@ module Asperalm
               tspec=info_to_tspec('packages','send',node_info,the_package['contents_file_id'])
               tspec['tags']['aspera']['files'].merge!({"package_id" => the_package['id'], "package_operation" => "upload"})
               tspec['paths']=filelist.map { |i| {'source'=>i} }
-              tspec['destination_root']="/"
-              return @main.start_transfer(tspec)
+              return @main.start_transfer(tspec,:node_gen4)
             when :recv
               package_id=@optmgr.get_next_argument('package ID')
               the_package=@api_files_user.read("packages/#{package_id}")[:data]
@@ -323,17 +337,17 @@ module Asperalm
               tspec=info_to_tspec('packages','receive',node_info,the_package['contents_file_id'])
               tspec['tags']['aspera']['files'].merge!({"package_id" => the_package['id'], "package_operation" => "download"})
               tspec['paths']=[{'source'=>'.'}]
-              return @main.start_transfer(tspec)
+              return @main.start_transfer(tspec,:node_gen4)
             when :show
               package_id=@optmgr.get_next_argument('package ID')
               the_package=@api_files_user.read("packages/#{package_id}")[:data]
-#              if @optmgr.get_option(:long)
-#                node_info,file_id = find_nodeinfo_and_fileid(the_package['node_id'],the_package['contents_file_id'])
-#                node_api=get_files_node_api(node_info,FilesApi::SCOPE_NODE_USER)
-#                items=node_api.read("files/#{file_id}/files")[:data]
-#                file=node_api.read("files/#{items.first['id']}")[:data]
-#                the_package['X_contents_path']=file['path']
-#              end
+              #              if @optmgr.get_option(:long)
+              #                node_info,file_id = find_nodeinfo_and_fileid(the_package['node_id'],the_package['contents_file_id'])
+              #                node_api=get_files_node_api(node_info,FilesApi::SCOPE_NODE_USER)
+              #                items=node_api.read("files/#{file_id}/files")[:data]
+              #                file=node_api.read("files/#{items.first['id']}")[:data]
+              #                the_package['X_contents_path']=file['path']
+              #              end
               return { :type=>:key_val_list, :data =>the_package }
             when :list
               # list all packages ('page'=>1,'per_page'=>10,)'sort'=>'-sent_at',
