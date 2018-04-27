@@ -1,6 +1,7 @@
 require 'singleton'
 require 'asperalm/log'
 require 'asperalm/open_application' # current_os_type
+
 require 'xmlsimple'
 
 module Asperalm
@@ -84,18 +85,17 @@ module Asperalm
       #        :sub_keys=>'var',
       #        :dsa=>'aspera_tokenauth_id_dsa'}
       def set_location(p)
-        @i_p={}
-        @i_p[:bin_folder] = { :path =>File.join(p[:app_root],p[:sub_bin]), :type => :folder, :required => true}
-        @i_p[:ssh_bypass_key_dsa] = { :path =>File.join(p[:app_root],p[:sub_keys],p[:dsa]), :type => :file, :required => true}
-        @i_p[:ssh_bypass_key_rsa] = { :path =>File.join(p[:app_root],p[:sub_keys],'aspera_tokenauth_id_rsa'), :type => :file, :required => true}
-        @i_p[:fallback_cert] = { :path =>File.join(p[:app_root],p[:sub_keys],'aspera_web_cert.pem'), :type => :file, :required => false}
-        @i_p[:fallback_key] = { :path =>File.join(p[:app_root],p[:sub_keys],'aspera_web_key.pem'), :type => :file, :required => false}
-        @i_p[:localhost_cert] = { :path =>File.join(p[:app_root],p[:sub_keys],'localhost.crt'), :type => :file, :required => false}
-        @i_p[:localhost_key] = { :path =>File.join(p[:app_root],p[:sub_keys],'localhost.key'), :type => :file, :required => false}
-        @i_p[:plugin_https_port_file] = { :path =>File.join(p[:run_root],VARRUN_SUBFOLDER,'https.uri'), :type => :file, :required => false}
-        @i_p[:log_folder] = { :path =>p[:log_root], :type => :folder, :required => false}
-        @i_p[:ascp] = { :path =>File.join(p[:app_root],p[:sub_bin],'ascp')+p[:exe_ext].to_s, :type => :file, :required => true}
-        @i_p[:ascp4] = { :path =>File.join(p[:app_root],p[:sub_bin],'ascp4')+p[:exe_ext].to_s, :type => :file, :required => false}
+        @i_p={
+          :bin_folder             => { :type =>:folder,:required => true, :path =>File.join(p[:app_root],p[:sub_bin])},
+          :ascp                   => { :type => :file, :required => true, :path =>File.join(p[:app_root],p[:sub_bin],'ascp')+p[:exe_ext].to_s},
+          :ascp4                  => { :type => :file, :required => false,:path =>File.join(p[:app_root],p[:sub_bin],'ascp4')+p[:exe_ext].to_s},
+          :ssh_bypass_key_dsa     => { :type => :file, :required => true, :path =>File.join(p[:app_root],p[:sub_keys],p[:dsa])},
+          :ssh_bypass_key_rsa     => { :type => :file, :required => true, :path =>File.join(p[:app_root],p[:sub_keys],'aspera_tokenauth_id_rsa')},
+          :fallback_cert          => { :type => :file, :required => false,:path =>File.join(p[:app_root],p[:sub_keys],'aspera_web_cert.pem')},
+          :fallback_key           => { :type => :file, :required => false,:path =>File.join(p[:app_root],p[:sub_keys],'aspera_web_key.pem')},
+          :plugin_https_port_file => { :type => :file, :required => false,:path =>File.join(p[:run_root],VARRUN_SUBFOLDER,'https.uri')},
+          :log_folder             => { :type =>:folder,:required => false,:path =>p[:log_root]}
+        }
         Log.log.debug "resources=#{@i_p}"
         notfound=[]
         @i_p.each_pair do |k,v|
@@ -112,13 +112,22 @@ module Asperalm
       def product_locations
         common_places=[]
         case OpenApplication.current_os_type
+        when :windows
+          common_places.push({
+            :expected=>'Connect Client',
+            :exe_ext=>'.exe',
+            :app_root=>File.join(ENV['LOCALAPPDATA'],'Programs','Aspera','Aspera Connect'),
+            :run_root=>File.join(ENV['LOCALAPPDATA'],'Aspera','Aspera Connect'),
+            :sub_bin=>'bin',
+            :sub_keys=>'etc',
+            :dsa=>'asperaweb_id_dsa.openssh'})
         when :mac
           common_places.push({
             :expected=>'Connect Client',
             :exe_ext=>'',
             :app_root=>File.join(Dir.home,'Applications','Aspera Connect.app'),
             :run_root=>File.join(Dir.home,'Library','Application Support','Aspera','Aspera Connect'),
-            :log_root=>File.join(Dir.home,'Library','Logs','Aspera'),
+            :log_root=>File.join(Dir.home,'Library','Logs','Aspera_Connect'),
             :sub_bin=>File.join('Contents','Resources'),
             :sub_keys=>File.join('Contents','Resources'),
             :dsa=>'asperaweb_id_dsa.openssh'})
@@ -140,16 +149,7 @@ module Asperalm
             :sub_bin=>File.join('bin'),
             :sub_keys=>File.join('etc'),
             :dsa=>'asperaweb_id_dsa.openssh'})
-        when :windows
-          common_places.push({
-            :expected=>'Connect Client',
-            :exe_ext=>'.exe',
-            :app_root=>File.join(ENV['LOCALAPPDATA'],'Programs','Aspera','Aspera Connect'),
-            :run_root=>File.join(ENV['LOCALAPPDATA'],'Aspera','Aspera Connect'),
-            :sub_bin=>'bin',
-            :sub_keys=>'etc',
-            :dsa=>'asperaweb_id_dsa.openssh'})
-        else  # unix family
+        else  # other: unix family
           common_places.push({
             :expected=>'Connect Client',
             :exe_ext=>'',
