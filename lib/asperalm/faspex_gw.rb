@@ -150,7 +150,7 @@ module Asperalm
 
     def start_server(api_files_user,workspace_id)
       @api_files_user=api_files_user
-      @api_files_oauth=@api_files_user.param_default[:auth][:obj]
+      @api_files_oauth=@api_files_user.default_call_data[:auth][:obj]
       @the_workspaceid=workspace_id
       Log.log.info("Server started on port #{@webrick_options[:Port]}")
       server = WEBrick::HTTPServer.new(@webrick_options)

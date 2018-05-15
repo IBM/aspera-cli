@@ -24,7 +24,7 @@ end
 #end
 
 module Asperalm
-  # builds a meaningful error message from known formats
+  # builds a meaningful error message from known formats in Aspera products
   class RestCallError < StandardError
     attr_accessor :response
     def initialize(response)
@@ -55,23 +55,10 @@ module Asperalm
     end
   end
 
-  # a simple class to make HTTP calls
+  # a simple class to make HTTP calls, equivalent to rest-client
   class Rest
-    # set to true enables debug in HTTP class
-    @@debug=false
-    @@insecure=false
-    def self.insecure=(v); Log.log.debug("insecure => #{@@insecure}".red);@@insecure=v;end
 
-    def self.insecure; @@insecure;end
-
-    # opt_call_data can contain default call data , as in "call"
-    def initialize(baseurl,opt_call_data=nil)
-      # base url without trailing slashes
-      @api_base=baseurl.gsub(/\/+$/,'')
-      @opt_call_data=opt_call_data
-      @http_session=nil
-    end
-
+    private
     # create and start keep alive connection on demand
     def http_session
       if @http_session.nil?
@@ -88,18 +75,32 @@ module Asperalm
       return @http_session
     end
 
-    def base_url;@api_base;end
+    # set to true enables debug in HTTP class
+    @@debug=false
+    @@insecure=false
 
-    def param_default; @opt_call_data; end
+    public
 
-    def self.set_debug(flag)
-      Log.log.debug "debug http=#{flag}"
-      @@debug=flag
+    def self.insecure=(v); Log.log.debug("insecure => #{@@insecure}".red);@@insecure=v;end
+
+    def self.insecure; @@insecure;end
+
+    def self.set_debug(flag); Log.log.debug "debug http=#{flag}"; @@debug=flag; end
+
+    attr_reader :base_url
+    attr_reader :default_call_data
+
+    # opt_call_data can contain default call data , as in "call"
+    def initialize(baseurl,opt_call_data=nil)
+      # base url without trailing slashes
+      @base_url=baseurl.gsub(/\/+$/,'')
+      @default_call_data=opt_call_data
+      @http_session=nil
     end
 
     # build URI from URL and parameters
     def get_uri(call_data)
-      uri=URI.parse(@api_base+"/"+call_data[:subpath])
+      uri=URI.parse(@base_url+"/"+call_data[:subpath])
       if ! ['http','https'].include?(uri.scheme)
         raise "REST endpoint shall be http(s)"
       end
@@ -109,18 +110,18 @@ module Asperalm
       return uri
     end
 
-    # HTTPS call
+    # HTTP/S REST call
     # call_data has keys:
     # :auth, :operation, :subpath, :headers, :json_params, :url_params, :www_body_params, :text_body_params, :save_to_file (filepath), :return_error (bool)
     # :auth  = {:type=>:basic,:username,:password}
     # :auth  = {:type=>:oauth2,:obj,:scope}
     # :auth  = {:type=>:url,:url_creds}
     def call(call_data)
-      raise "call parameters are required" if !call_data.is_a?(Hash)
+      raise "Hash call parameter is required (#{call_data.class})" unless call_data.is_a?(Hash)
       Log.log.debug "accessing #{call_data[:subpath]}".red.bold.bg_green
-      call_data[:headers]={} if !call_data.has_key?(:headers)
-      if !@opt_call_data.nil? then
-        call_data.merge!(@opt_call_data) { |key, v1, v2| next v1.merge(v2) if v1.is_a?(Hash) and v2.is_a?(Hash); v1 }
+      call_data[:headers]||={}
+      if !@default_call_data.nil? then
+        call_data.merge!(@default_call_data) { |key, v1, v2| next v1.merge(v2) if v1.is_a?(Hash) and v2.is_a?(Hash); v1 }
       end
       # OAuth requires generation of token
       if !call_data[:headers].has_key?('Authorization') and call_data.has_key?(:auth) and call_data[:auth].has_key?(:obj) then
