@@ -42,7 +42,7 @@ assert_usage(transfer_spec.is_a?(Hash),"the value must be a hash table#{paramete
 transfer_spec['EX_quiet']=true
 # additional debug capability
 if transfer_spec.has_key?(TS_LOGLEVEL)
-  Asperalm::Log.log.level=transfer_spec[TS_LOGLEVEL]
+  Asperalm::Log.instance.level=transfer_spec[TS_LOGLEVEL]
   transfer_spec.delete(TS_LOGLEVEL)
 end
 

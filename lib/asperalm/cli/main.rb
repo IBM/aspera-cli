@@ -83,10 +83,6 @@ module Asperalm
       # =============================================================
       # Parameter handlers
       #
-      def option_log_level; Log.level; end
-
-      def option_log_level=(value); Log.level = value; end
-
       def option_insecure; Rest.insecure ; end
 
       def option_insecure=(value); Rest.insecure = value; end
@@ -99,17 +95,16 @@ module Asperalm
 
       def option_to_folder=(value); @transfer_spec_default.merge!({'destination_root'=>value}); end
 
-      def option_logtype; Log.logger_type; end
-
-      def option_logtype=(value); Log.logger_type=(value); end
-
       def option_ui; OpenApplication.instance.url_method; end
 
       def option_ui=(value); OpenApplication.instance.url_method=value; end
 
       def option_preset; nil; end
 
-      def option_preset=(value); @opt_mgr.add_option_preset(@available_presets[value]); end
+      def option_preset=(value)
+        raise CliError,"no such preset defined: #{value}" unless @available_presets.has_key?(value)
+        @opt_mgr.add_option_preset(@available_presets[value])
+      end
 
       # returns the list of plugins from plugin folder
       def plugin_sym_list
@@ -255,12 +250,12 @@ module Asperalm
 
       def declare_options
         # handler must be set before declaration
-        @opt_mgr.set_obj_attr(:log_level,self,:option_log_level)
+        @opt_mgr.set_obj_attr(:log_level,Log.instance,:level)
         @opt_mgr.set_obj_attr(:insecure,self,:option_insecure,:no)
         @opt_mgr.set_obj_attr(:flat_hash,self,:option_flat_hash)
         @opt_mgr.set_obj_attr(:ts,self,:option_transfer_spec)
         @opt_mgr.set_obj_attr(:to_folder,self,:option_to_folder)
-        @opt_mgr.set_obj_attr(:logger,self,:option_logtype)
+        @opt_mgr.set_obj_attr(:logger,Log.instance,:logger_type)
         @opt_mgr.set_obj_attr(:ui,self,:option_ui)
         @opt_mgr.set_obj_attr(:preset,self,:option_preset)
         @opt_mgr.set_obj_attr(:use_product,Fasp::Installation.instance,:activated)
@@ -486,7 +481,7 @@ module Asperalm
       def process_exception_exit(e,reason,propose_help=:none)
         STDERR.puts "ERROR:".bg_red().gray().blink()+" "+reason+": "+e.message
         STDERR.puts "Use '-h' option to get help." if propose_help.eql?(:usage)
-        if Log.level == :debug
+        if Log.instance.level.eql?(:debug)
           raise e
         else
           STDERR.puts "Use '--log-level=debug' to get more details." if propose_help.eql?(:debug)
@@ -664,15 +659,16 @@ module Asperalm
       end
 
       # early debug for parser
+      # Note: does not accept shortcuts
       def early_debug_setup(argv)
         argv.each do |arg|
           case arg
           when '--'
             return
           when /^--log-level=(.*)/
-            Log.level = $1.to_sym
+            Log.instance.level = $1.to_sym
           when /^--logger=(.*)/
-            Log.logger_type=$1.to_sym
+            Log.instance.logger_type=$1.to_sym
           end
         end
       end
