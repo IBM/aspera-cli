@@ -436,6 +436,11 @@ module Asperalm
                 end
                 query=@optmgr.get_option(:query,:optional)
                 Log.log.debug("Query=#{query}".bg_red)
+                begin
+                  URI.encode_www_form(query)
+                rescue => e
+                  raise CliBadArgument,"query must be an extended value which can be encoded with URI.encode_www_form. Refer to manual. (#{e.message})"
+                end
                 return {:type=>:hash_array,:data=>@api_files_admin.read(resource_class_path,query)[:data],:fields=>default_fields}
               when :show
                 object=@api_files_admin.read(resource_instance_path)[:data]
