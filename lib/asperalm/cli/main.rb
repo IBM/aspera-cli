@@ -268,6 +268,7 @@ module Asperalm
         @opt_mgr.add_opt_simple(:preset,"-PVALUE","load the named option preset from current config file")
         @opt_mgr.add_opt_simple(:transfer_node,"name of configuration used to transfer when using --transfer=node")
         @opt_mgr.add_opt_simple(:fields,"comma separated list of fields, or #{FIELDS_ALL}, or #{FIELDS_DEFAULT}")
+        @opt_mgr.add_opt_simple(:select,"select only some items in lists, extended value: hash (colum, value)")
         @opt_mgr.add_opt_simple(:fasp_proxy,"URL of FASP proxy (dnat / dnats)")
         @opt_mgr.add_opt_simple(:http_proxy,"URL of HTTP proxy (for http fallback)")
         @opt_mgr.add_opt_simple(:ts,"override transfer spec values (Hash, use @json: prefix), current=#{@opt_mgr.get_option(:ts,:optional)}")
@@ -440,6 +441,12 @@ module Asperalm
           end
           # convert to string with special function. here table_rows_hash_val is an array of hash
           table_rows_hash_val=results[:textify].call(table_rows_hash_val) if results.has_key?(:textify)
+          filter=@opt_mgr.get_option(:select,:optional)
+          unless filter.nil?
+            raise CliBadArgument,"expecting hash for select" unless filter.is_a?(Hash)
+            filter.each{|k,v|table_rows_hash_val.select!{|i|i[k].eql?(v)}}
+          end
+
           # convert data to string, and keep only display fields
           final_table_rows=table_rows_hash_val.map { |r| final_table_columns.map { |c| r[c].to_s } }
           # here : final_table_columns : list of column names
