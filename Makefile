@@ -128,7 +128,7 @@ t/fp1:
 	$(EXETEST) server delete /Upload/200KB.1
 	@touch $@
 t/fp2:
-	$(EXETEST) server mkdir /Upload/123
+	$(EXETEST) server mkdir /Upload/123 --logger=stdout
 	$(EXETEST) server rm /Upload/123
 	@touch $@
 t/fp3:
@@ -164,7 +164,7 @@ tconsole: t/cons1
 #NODEDEST=/home/faspex/docroot
 NODEDEST=/
 t/nd1:
-	$(EXETEST) node browse /
+	$(EXETEST) node browse / -r
 	@touch $@
 t/nd2:
 	mkdir -p $(TEST_FOLDER)
@@ -217,7 +217,7 @@ t/fs5:
 	$(EXETEST) aspera packages list
 	@touch $@
 t/fs6:
-	$(EXETEST) aspera packages recv BJKyUFHhew
+	$(EXETEST) aspera packages recv BTckDm-67Q
 	@touch $@
 t/fs7:
 	$(EXETEST) aspera admin events
@@ -226,7 +226,7 @@ t/fs8:
 	$(EXETEST) aspera admin resource workspace list
 	@touch $@
 t/fs9:
-	$(EXETEST) aspera admin resource node --id=7897 do browse / --secret=I5DiMd6oOzMeWP2F2QlOl-VFpARPY8pEimE1xOEXQ7xP_1Gt1mKLeoQ93oEj-WoltJQBJpmfI2jroSCFqFQpdg
+	$(EXETEST) aspera admin resource node --name=eudemo do browse / --secret=Aspera123_
 	@touch $@
 
 tfiles: t/fs1 t/fs2 t/fs3 t/fs3b t/fs4 t/fs5 t/fs6 t/fs7 t/fs8 t/fs9
