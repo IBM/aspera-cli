@@ -8,14 +8,14 @@ This gem provides a ruby API to Aspera transfers and a command line interface to
 
 Disclaimers:
 
-* Aspera, FASP are owned by IBM 
+* Aspera, FASP are owned by IBM
 * This GEM is not endorsed/supported by IBM/Aspera
 * Use at your risk (not in production environments)
 * This gem is provided as-is, and is not intended to be 
 a complete CLI, or industry-grade product.
 * IBM provides an officially supported Aspera CLI: [http://downloads.asperasoft.com/en/downloads/62](http://downloads.asperasoft.com/en/downloads/62) .
 
-That being said, the aslmcli tool is very powerful and gets things done, it&apos;s also a great tool to learn Aspera APIs.
+That being said, the `aslmcli` tool is very powerful and gets things done, it&apos;s also a great tool to learn Aspera APIs.
 
 This manual addresses three parts:
 
@@ -27,16 +27,72 @@ In examples, command line operations (starting with `$`) are shown using a stand
 
 # Quick Start
 
-To quick start using the `aslmcli` tool, follow the section: [Installation](#installation) (Ruby, Gem, FASP).
+To start using the `aslmcli` tool, follow the section: [Installation](#installation) (Ruby, Gem, FASP).
 
 Once the gem is installed, the `aslmcli` shall be accessible:
 
 ```bash
 $ aslmcli --version
-x.y.z
+<%= `#{ENV["ASCLI"]} --version` %>
 ```
 
-Then, follow the section relative to the product you want to inbteract with: Aspera on Cloud, Faspex, ...
+## First use
+
+Once installation is completed, you can proceed to the first sample use with a demo server:
+
+One liner:
+
+```
+$ aslmcli server browse / --url=ssh://demo.asperasoft.com:33001 --username=asperaweb --password=demoaspera
+:............:...........:......:........:...........................:.......................:
+:   zmode    :   zuid    : zgid :  size  :           mtime           :         name          :
+:............:...........:......:........:...........................:.......................:
+: dr-xr-xr-x : asperaweb : fasp : 4096   : 2014-04-10 19:44:05 +0200 : aspera-test-dir-tiny  :
+: drwxr-xr-x : asperaweb : fasp : 176128 : 2018-03-15 12:20:10 +0100 : Upload                :
+: dr-xr-xr-x : asperaweb : fasp : 4096   : 2015-04-01 00:37:22 +0200 : aspera-test-dir-small :
+: dr-xr-xr-x : asperaweb : fasp : 4096   : 2018-05-04 14:26:55 +0200 : aspera-test-dir-large :
+:............:...........:......:........:...........................:.......................:
+```
+
+It is nevertheless more convenient to define a "parameter preset" in order to avoid having to provide all parameters always, so we are going to:
+
+* set a configuration as default for "server" plugin
+* list files in a folder
+* download a file
+
+```
+$ aslmcli config id demoserver update --url=ssh://demo.asperasoft.com:33001 --username=asperaweb --password=demoaspera
+updated: demoserver
+$ aslmcli config id default set server demoserver
+updated: default->server to demoserver
+$ aslmcli server browse /aspera-test-dir-large
+:............:...........:......:..............:...........................:............................:
+:   zmode    :   zuid    : zgid :     size     :           mtime           :            name            :
+:............:...........:......:..............:...........................:............................:
+: -rw-rw-rw- : asperaweb : fasp : 10133504     : 2018-05-04 14:16:24 +0200 : ctl_female_2.fastq.partial :
+: -rw-r--r-- : asperaweb : fasp : 209715200    : 2014-04-10 19:49:27 +0200 : 200MB                      :
+: -rw-r--r-- : asperaweb : fasp : 524288000    : 2014-04-10 19:44:15 +0200 : 500MB                      :
+: -rw-r--r-- : asperaweb : fasp : 5368709120   : 2014-04-10 19:45:52 +0200 : 5GB                        :
+: -rw-r--r-- : asperaweb : fasp : 500000000000 : 2017-06-14 20:09:57 +0200 : 500GB                      :
+: -rw-rw-rw- : asperaweb : fasp : 13606912     : 2018-05-04 14:20:21 +0200 : ctl_male_2.fastq.partial   :
+: -rw-rw-rw- : asperaweb : fasp : 76           : 2018-05-04 14:13:18 +0200 : ctl_female_2.fastq.haspx   :
+: -rw-rw-rw- : asperaweb : fasp : 647348       : 2018-05-04 14:26:39 +0200 : ctl_female_2.gz            :
+: -rw-rw-rw- : asperaweb : fasp : 74           : 2018-05-04 14:16:00 +0200 : ctl_male_2.fastq.haspx     :
+: -rw-r--r-- : asperaweb : fasp : 1048576000   : 2014-04-10 19:49:23 +0200 : 1GB                        :
+: -rw-r--r-- : asperaweb : fasp : 104857600    : 2014-04-10 19:49:29 +0200 : 100MB                      :
+: -rw-r--r-- : asperaweb : fasp : 10737418240  : 2014-04-10 19:49:04 +0200 : 10GB                       :
+:............:...........:......:..............:...........................:............................:
+$ aslmcli server download /aspera-test-dir-large/200MB
+Time: 00:00:02 ========================================================================================================== 100% 100 Mbps Time: 00:00:00
+complete
+```
+
+Note that browse and download commans are shorter now.
+
+## Going further
+
+Get familiar with configuration, options, parameters and 
+follow the section relative to the product you want to interact with: Aspera on Cloud, Faspex, ...
 
 Detailed generic information on configuration can be found in section: [aslmcli](#aslmcli).
 
@@ -60,9 +116,11 @@ Refer to the following sections for specific operating systems.
 
 ### macOS
 
-Ruby comes pre-installed on macOS, but the version is not the latest. Also, installion of new gems on pre-installed ruby requires admin privilege (sudo).
+Ruby comes pre-installed on macOS. Starting with Macos Sierra, the
+version of Ruby is high enough. Nevertheless, installation of the gem
+requires: `sudo gem install asperalm`.
 
-It is better to install "homebrew", from here: [https://brew.sh/](https://brew.sh/), and then install Ruby:
+Alternatively, install "homebrew", from here: [https://brew.sh/](https://brew.sh/), and then install Ruby:
 
 ```bash
 $ brew install ruby
@@ -70,7 +128,7 @@ $ brew install ruby
 
 ### Windows
 
-On windows you can get it from here: [https://rubyinstaller.org/](https://rubyinstaller.org/).
+On windows download Ruby from [https://rubyinstaller.org/](https://rubyinstaller.org/).
 
 ### Linux
 
@@ -82,7 +140,7 @@ Note that Ruby 2+ is required, if you have an older Linux (e.g. CentOS 6), you s
 
 ## `asperalm` gem
 
-Once you have ruby and rights to install gems: Install the gem and its dependencies:
+Once you have Ruby and rights to install gems: Install the gem and its dependencies:
 
 ```bash
 $ gem install asperalm
@@ -92,11 +150,11 @@ $ gem install asperalm
 
 Most file transfers will be done using the FASP protocol. This requires one of IBM Asprea transfer server or client with its license file (some are free):
 
-* IBM Aspera Connect Client
-* IBM Aspera Desktop Client
-* IBM Aspera CLI
-* IBM Aspera High Speed Transfer Server
-* IBM Aspera High Speed Transfer EndPoint
+* IBM Aspera Connect Client (Free)
+* IBM Aspera Desktop Client (Free)
+* IBM Aspera CLI (Free)
+* IBM Aspera High Speed Transfer Server (Licensed)
+* IBM Aspera High Speed Transfer EndPoint (Licensed)
 
 For instance, Aspera Connect Client can be installed
 by visiting the page: [http://downloads.asperasoft.com/connect2/](http://downloads.asperasoft.com/connect2/). 
@@ -107,15 +165,15 @@ Several methods are provided on how to effectively start a transfer, refer to se
 
 # <a name="aslmcli"></a>Tool: `aslmcli`
 
-The `asperalm` Gem provides a command line interface (CLI) which interacts with Aspera Products (mostly APIs using REST calls):
+The `asperalm` Gem provides a command line interface (CLI) which interacts with Aspera Products (mostly REST APIs):
 
+* Aspera on Cloud
+* Faspex
 * Server
 * Node
 * Shares
-* Faspex
 * Console
 * Orchestrator
-* Aspera on Cloud
 * ATS
 * and more...
 
