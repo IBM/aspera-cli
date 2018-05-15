@@ -269,6 +269,42 @@ The behaviour can be controlled with:
 * --ask-options=&lt;yes|no&gt; (default=no)
    * optional parameters/options are asked to user
 
+## Output Format
+
+Command execution will result in output. The information displayed depends on the action. Types of result include:
+
+* `hash_array` : displayed as a 2 dimensional table: one line per item, one colum per attribute.
+* `key_val_list` : displayed as a 2 dimensional table: one line per attribute, first column is attribute name, and second is atteribute value. Nested hashes are collapsed.
+* `value_list` : a tbale with one column.
+* `empty` : nothing
+* `status` : a message
+* `other_struct` : a complex structure that cannot be displayed as an array
+
+The table style is `:.:` by default and can be customized with parameter: `table_style` (horizontal, vertical and intersection characters).
+
+The style of output can be set using the `format` parameter, supporting:
+
+* `table` : Text table
+* `ruby` : Ruby code
+* `json` : JSON code
+* `jsonpp` : JSON pretty printed
+* `yaml` : YAML
+* `csv` : Comma Separated Values
+
+Table output can be filtered using the `select` parameter. Example:
+
+```
+$ aslmcli aspera admin res user list --fields=name,email,ats_admin --query=@json:'{"per_page":1000}' --select=@json:'{"ats_admin":true}'
+:...............................:..................................:...........:
+:             name              :              email               : ats_admin :
+:...............................:..................................:...........:
+: John Custis                   : john@example.com                 : true      :
+: Laurent Martin                : laurent@example.com              : true      :
+:...............................:..................................:...........:
+```
+
+Note that `select` filters selected elements from the result of API calls, while the `query` parameters gives filtering parameters to the API when listing elements.
+
 ## <a name="extended"></a>Extended Value Syntax
 
 Usually, values of options and arguments are specified by a simple string. But sometime it is convenient to read a value from a file, or decode it, or have a value more complex than a string (e.g. Hash table).
@@ -974,6 +1010,7 @@ other query parameters can be used:
 --query=@json:'{"q":"laurent"}'
 ```
 
+Refer to the AoC API for full list of query parameters.
 
 #### Examples
 
