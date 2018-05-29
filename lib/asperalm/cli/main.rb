@@ -24,7 +24,7 @@ module Asperalm
       singleton_class.send(:alias_method, :tool, :instance)
       def self.version;return @@TOOL_VERSION;end
       private
-      @@TOOL_VERSION='0.6.20'
+      @@TOOL_VERSION='0.6.21'
       # first level command for the main tool
       @@MAIN_PLUGIN_NAME_SYM=:config
       # name of application, also foldername where config is stored
@@ -583,7 +583,7 @@ module Asperalm
             end
             @available_presets[config_name][param_name]=param_value
             save_presets_to_config_file
-            return Main.result_status("updated: #{config_name}->#{param_name} to #{param_value}")
+            return Main.result_status("updated: #{config_name}: #{param_name} <- #{param_value}")
           when :initialize
             config_value=@opt_mgr.get_next_argument('extended value (Hash)')
             if @available_presets.has_key?(config_name)

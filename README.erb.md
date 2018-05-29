@@ -54,9 +54,10 @@ $ aslmcli server browse / --url=ssh://demo.asperasoft.com:33001 --username=asper
 :............:...........:......:........:...........................:.......................:
 ```
 
-It is nevertheless more convenient to define a "parameter preset" in order to avoid having to provide all parameters always, so we are going to:
+In order to make further calls more convenient, it is advised to define a "parameter preset" for the servers identification options. The following example will:
 
-* set a configuration as default for "server" plugin
+* create a parameter preset
+* define it as default for "server" plugin
 * list files in a folder
 * download a file
 
@@ -541,6 +542,10 @@ module Asperalm
 end # Asperalm
 EOF
 ```
+
+## Debugging
+
+The gem is equipped with traces. By default logging level is "warn". To increase debug level, use parameter `log_level`, so either command line `--log-level=xx` or env var `ASLMCLI_LOG_LEVEL`.
 
 ## Learning Aspera Product APIs (REST)
 
@@ -1104,7 +1109,7 @@ Refer to [Aspera documentation](https://download.asperasoft.com/download/docs/en
 ```bash
 $ aslmcli node service create @json:'{"id":"mywatchd","type":"WATCHD","run_as":{"user":"user1"}}'
 $ aslmcli node service create @json:'{"id":"mywatchfolderd","type":"WATCHFOLDERD","run_as":{"user":"user1"}}'
-$ aslmcli node watch_folder create @json:'{"id":"mywfolder","source_dir":"/watch1","target_dir":"/","transport":{"host":"10.25.0.4","user":"user1","pass":"Aspera123_"}}'
+$ aslmcli node watch_folder create @json:'{"id":"mywfolder","source_dir":"/watch1","target_dir":"/","transport":{"host":"10.25.0.4","user":"user1","pass":"mypassword"}}'
 ```
 
 ### Out of Transfer File Validation

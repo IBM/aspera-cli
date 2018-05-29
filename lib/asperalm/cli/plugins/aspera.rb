@@ -1,4 +1,5 @@
 require 'asperalm/cli/plugins/node'
+require 'asperalm/cli/plugins/ats'
 require 'asperalm/cli/plugin'
 require 'asperalm/oauth'
 require 'asperalm/files_api'
@@ -11,6 +12,12 @@ module Asperalm
         def action_list; [ :packages, :files, :faspexgw, :admin, :user];end
 
         def declare_options
+          @ats=Ats.new
+          @ats.optmgr=self.optmgr
+          @ats.main=self.main
+          @ats.ats_api_provider=self
+          @ats.declare_options(true)
+          
           @optmgr.add_opt_list(:download_mode,[:fasp, :node_http ],"download mode")
           @optmgr.add_opt_list(:auth,Oauth.auth_types,"type of Oauth authentication")
           @optmgr.add_opt_boolean(:bulk,"bulk operation")
@@ -275,6 +282,26 @@ module Asperalm
           return {:type=>:hash_array,:data=>result,:fields=>['id','status']}
         end
 
+        # ATS api provider
+        def ats_api_base_url
+          return @api_files_admin.base_url+'/admin/ats/pub/v1'
+        end
+
+        # ATS api provider
+        def ats_api_public; ats_api_secure; end
+
+        # ATS api provider
+        def ats_api_secure
+          if @ats_api_secure.nil?
+            @ats_api_secure=Rest.new(ats_api_base_url,{:auth=>{:type=>:oauth2,:obj=>@api_files_admin.default_call_data[:auth][:obj],:scope=>FilesApi::SCOPE_FILES_ADMIN_USER}})
+          end
+          return @ats_api_secure
+        end
+
+        def exec_ats_ection
+          return @ats.execute_action_gen
+        end
+
         def execute_action
           init_apis
           command=@optmgr.get_next_argument('command',action_list)
@@ -365,8 +392,10 @@ module Asperalm
             require 'asperalm/faspex_gw'
             FaspexGW.instance.start_server(@api_files_user,@workspace_id)
           when :admin
-            command_admin=@optmgr.get_next_argument('command',[ :resource, :events, :set_client_key, :usage_reports, :search_nodes  ])
+            command_admin=@optmgr.get_next_argument('command',[ :ats, :resource, :events, :set_client_key, :usage_reports, :search_nodes  ])
             case command_admin
+            when :ats
+              return exec_ats_ection
             when :search_nodes
               ak=@optmgr.get_next_argument('access_key')
               nodes=@api_files_admin.read("search_nodes",{'q'=>'access_key:"'+ak+'"'})[:data]
@@ -437,7 +466,7 @@ module Asperalm
                 query=@optmgr.get_option(:query,:optional)
                 Log.log.debug("Query=#{query}".bg_red)
                 begin
-                  URI.encode_www_form(query)
+                  URI.encode_www_form(query) unless query.nil?
                 rescue => e
                   raise CliBadArgument,"query must be an extended value which can be encoded with URI.encode_www_form. Refer to manual. (#{e.message})"
                 end

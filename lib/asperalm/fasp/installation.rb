@@ -14,11 +14,11 @@ module Asperalm
       FIRST_FOUND=:first
       PRODUCT_INFO='product-info.mf'
 
-      # name of Aspera application to be used
+      # name of Aspera application to be usedm or :first
       attr_reader :activated
       def activated=(value)
         @activated=value
-        # installed paths
+        # reset installed paths
         @i_p=nil
       end
 
@@ -75,6 +75,8 @@ module Asperalm
         @activated=FIRST_FOUND
       end
 
+      # set ressources path from application information
+      # @param p application information
       # a user can set an alternate location, example:
       #      { :expected=>'Enterprise Server',
       #        :exe_ext=>'',
@@ -169,7 +171,6 @@ module Asperalm
         end
         return common_places
       end
-
     end # Installation
   end # Fasp
 end # Asperalm

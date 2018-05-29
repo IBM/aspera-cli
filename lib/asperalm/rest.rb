@@ -5,10 +5,10 @@
 # Laurent Martin
 #
 ##############################################################################
-require 'asperalm/log'
 require 'net/http'
 require 'net/https'
 require 'json'
+require 'asperalm/log'
 
 # add cancel method to http
 class Net::HTTP::Cancel < Net::HTTPRequest

@@ -43,7 +43,7 @@ README.md: README.erb.md aslmcli_commands.txt aslmcli_usage.txt asession_usage.t
 	COMMANDS=aslmcli_commands.txt USAGE=aslmcli_usage.txt ASESSION=asession_usage.txt ASCLI=$(EXETEST) erb README.erb.md > README.md
 
 aslmcli_commands.txt: Makefile
-	sed -n -e 's/.*\$$(EXETEST)/aslmcli/p' Makefile|grep -v 'Sales Engineering'|sed -E -e 's/\$$\(SAMPLE_FILE\)/sample_file.bin/g;s/\$$\(NODEDEST\)/sample_dest_folder/g;s/\$$\(TEST_FOLDER\)/sample_dest_folder/g;s/ibmfaspex.asperasoft.com/faspex.mycompany.com/g;s/(")(url|api_key|username|password)(":")[^"]*(")/\1\2\3my_\2_here\4/g;s/--(secret|url|password|username)=[^ ]*/--\1=my_\1_here/g;'|grep -v 'localhost:9443'|sort -u > aslmcli_commands.txt
+	sed -n -e 's/.*\$$(EXETEST)/aslmcli/p' Makefile|grep -v 'Sales Engineering'|sed -E -e 's/\$$\(SAMPLE_FILE\)/sample_file.bin/g;s/\$$\(NODEDEST\)/sample_dest_folder/g;s/\$$\(TEST_FOLDER\)/sample_dest_folder/g;s/ibmfaspex.asperasoft.com/faspex.mycompany.com/g;s/(")(url|api_key|username|password|access_key_id|secret_access_key|pass)(":")[^"]*(")/\1\2\3my_\2_here\4/g;s/--(secret|url|password|username)=[^ ]*/--\1=my_\1_here/g;s/Aspera123_/_my_pass_/g'|grep -v 'localhost:9443'|sort -u > aslmcli_commands.txt
 
 # depends on all sources, so regenerate always
 .PHONY: aslmcli_usage.txt
@@ -229,7 +229,39 @@ t/fs9:
 	$(EXETEST) aspera admin resource node --name=eudemo do browse / --secret=Aspera123_
 	@touch $@
 
-tfiles: t/fs1 t/fs2 t/fs3 t/fs3b t/fs4 t/fs5 t/fs6 t/fs7 t/fs8 t/fs9
+t/fsat4:
+	$(EXETEST) aspera admin ats cluster list
+	@touch $@
+t/fsat5:
+	$(EXETEST) aspera admin ats cluster clouds
+	@touch $@
+t/fsat6:
+	$(EXETEST) aspera admin ats cluster show --cloud=aws --region=eu-west-1 
+	@touch $@
+t/fsat7:
+	$(EXETEST) aspera admin ats cluster show --id=1f412ae7-869a-445c-9c05-02ad16813be2
+	@touch $@
+t/fsat8:
+	$(EXETEST) aspera admin ats access_key create --cloud=softlayer --region=ams --params=@json:'{"id":"testkey2","name":"laurent key","storage":{"type":"softlayer_swift","container":"laurent","credentials":{"api_key":"e5d032e026e0b0a16e890a3d44d11fd1471217b6262e83c7f60529f1ff4b27de","username":"IBMOS303446-9:laurentmartin"},"path":"/"}}'
+	@touch $@
+t/fsat9:
+	$(EXETEST) aspera admin ats access_key create --cloud=aws --region=eu-west-1 --params=@json:'{"id":"testkey3","name":"laurent key AWS","storage":{"type":"aws_s3","bucket":"sedemo-ireland","credentials":{"access_key_id":"AKIAIDSWKOSIM7XUVCJA","secret_access_key":"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"},"path":"/laurent"}}'
+	@touch $@
+t/fsat10:
+	$(EXETEST) aspera admin ats access_key list --fields=name,id,secret
+	@touch $@
+t/fsat11:
+	$(EXETEST) aspera admin ats access_key --id=testkey2 node browse /
+	@touch $@
+t/fsat13:
+	-$(EXETEST) aspera admin ats access_key --id=testkey2 delete
+	@touch $@
+t/fsat14:
+	-$(EXETEST) aspera admin ats access_key --id=testkey3 delete
+	@touch $@
+
+tfsat: t/fsat4 t/fsat5 t/fsat6 t/fsat7 t/fsat8 t/fsat9 t/fsat10 t/fsat11 t/fsat13 t/fsat14
+tfiles: t/fs1 t/fs2 t/fs3 t/fs3b t/fs4 t/fs5 t/fs6 t/fs7 t/fs8 t/fs9 tfsat
 
 t/o1:
 	$(EXETEST) orchestrator info
@@ -261,50 +293,50 @@ t/o9:
 
 torc: t/o1 t/o2 t/o3 t/o4 t/o5 t/o6 t/o7 t/o8 t/o9
 
-t/at1a:
-	$(EXETEST) ats cluster list
-	@touch $@
-t/at1b:
-	$(EXETEST) ats cluster clouds
-	@touch $@
-t/at2:
-	$(EXETEST) ats cluster show --cloud=aws --region=eu-west-1 
-	@touch $@
-t/at3:
-	$(EXETEST) ats cluster show --id=1f412ae7-869a-445c-9c05-02ad16813be2
-	@touch $@
-t/at4:
+t/at1:
 	$(EXETEST) ats credential subscriptions
 	@touch $@
-t/at5:
+t/at2:
 	$(EXETEST) ats credential cache list
 	@touch $@
-t/at6:
+t/at3:
 	$(EXETEST) ats credential list
 	@touch $@
+t/at4:
+	$(EXETEST) ats cluster list
+	@touch $@
+t/at5:
+	$(EXETEST) ats cluster clouds
+	@touch $@
+t/at6:
+	$(EXETEST) ats cluster show --cloud=aws --region=eu-west-1 
+	@touch $@
 t/at7:
-	$(EXETEST) ats access_key create --cloud=softlayer --region=ams --params=@json:'{"id":"testkey2","name":"laurent key","storage":{"type":"softlayer_swift","container":"laurent","credentials":{"api_key":"e5d032e026e0b0a16e890a3d44d11fd1471217b6262e83c7f60529f1ff4b27de","username":"IBMOS303446-9:laurentmartin"},"path":"/"}}'
+	$(EXETEST) ats cluster show --id=1f412ae7-869a-445c-9c05-02ad16813be2
 	@touch $@
 t/at8:
-	$(EXETEST) ats access_key create --cloud=aws --region=eu-west-1 --params=@json:'{"id":"testkey3","name":"laurent key AWS","storage":{"type":"aws_s3","bucket":"sedemo-ireland","credentials":{"access_key_id":"AKIAIDSWKOSIM7XUVCJA","secret_access_key":"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"},"path":"/laurent"}}'
+	$(EXETEST) ats access_key create --cloud=softlayer --region=ams --params=@json:'{"id":"testkey2","name":"laurent key","storage":{"type":"softlayer_swift","container":"laurent","credentials":{"api_key":"e5d032e026e0b0a16e890a3d44d11fd1471217b6262e83c7f60529f1ff4b27de","username":"IBMOS303446-9:laurentmartin"},"path":"/"}}'
 	@touch $@
 t/at9:
-	$(EXETEST) ats access_key list --fields=name,id,secret
+	$(EXETEST) ats access_key create --cloud=aws --region=eu-west-1 --params=@json:'{"id":"testkey3","name":"laurent key AWS","storage":{"type":"aws_s3","bucket":"sedemo-ireland","credentials":{"access_key_id":"AKIAIDSWKOSIM7XUVCJA","secret_access_key":"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"},"path":"/laurent"}}'
 	@touch $@
 t/at10:
-	$(EXETEST) ats access_key --id=testkey2 node browse /
+	$(EXETEST) ats access_key list --fields=name,id,secret
 	@touch $@
 t/at11:
-	$(EXETEST) ats access_key --id=testkey2 cluster
+	$(EXETEST) ats access_key --id=testkey2 node browse /
 	@touch $@
 t/at12:
-	$(EXETEST) ats access_key --id=testkey2 delete
+	$(EXETEST) ats access_key --id=testkey2 cluster
 	@touch $@
 t/at13:
+	$(EXETEST) ats access_key --id=testkey2 delete
+	@touch $@
+t/at14:
 	$(EXETEST) ats access_key --id=testkey3 delete
 	@touch $@
 
-tats: t/at1a t/at1b t/at2 t/at3 t/at4 t/at5 t/at6 t/at7 t/at8 t/at9 t/at10 t/at11 t/at12 t/at13
+tats: t/at1 t/at2 t/at3 t/at4 t/at5 t/at6 t/at7 t/at8 t/at9 t/at10 t/at11 t/at12 t/at13 t/at14
 
 t/co1:
 	$(EXETEST) client current
