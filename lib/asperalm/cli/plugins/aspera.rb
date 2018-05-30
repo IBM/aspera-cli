@@ -17,7 +17,7 @@ module Asperalm
           @ats.main=self.main
           @ats.ats_api_provider=self
           @ats.declare_options(true)
-          
+
           @optmgr.add_opt_list(:download_mode,[:fasp, :node_http ],"download mode")
           @optmgr.add_opt_list(:auth,Oauth.auth_types,"type of Oauth authentication")
           @optmgr.add_opt_boolean(:bulk,"bulk operation")
@@ -37,6 +37,8 @@ module Asperalm
           @optmgr.add_opt_simple(:query,"list filter (extended value: encode_www_form)")
           @optmgr.add_opt_simple(:id,"resource identifier")
           @optmgr.add_opt_simple(:name,"resource name")
+          @optmgr.add_opt_simple(:link,"link to shared resource")
+          @optmgr.add_opt_simple(:url_token,"shared resource security token")
           @optmgr.set_option(:download_mode,:fasp)
           @optmgr.set_option(:bulk,:no)
           #          @optmgr.set_option(:long,:no)
@@ -196,6 +198,24 @@ module Asperalm
         # initialize apis and authentication
         # returns true if in default workspace
         def init_apis
+          public_link=@optmgr.get_option(:link,:optional)
+
+          unless public_link.nil?
+            uri=URI.parse(public_link)
+            unless uri.path.eql?('/packages/public/receive')
+              raise CliArgument,"only public package link is supported: /packages/public/receive"
+            end
+            url_token_param=URI::decode_www_form(uri.query).select{|e|e.first.eql?('token')}.first
+            if url_token_param.nil?
+              raise CliArgument,"uri must have parameter token"
+            end
+            @optmgr.set_option(:url,'https://'+uri.host)
+            @optmgr.set_option(:auth,:url_token)
+            @optmgr.set_option(:url_token,url_token_param.last)
+            x=FilesApi.get_random
+            @optmgr.set_option(:client_id,x.first)
+            @optmgr.set_option(:client_secret,x.last)
+          end
 
           api_info=FilesApi.info(@optmgr.get_option(:url,:mandatory))
 
@@ -236,8 +256,16 @@ module Asperalm
           @api_files_user=Rest.new(api_info[:api_url],{:auth=>{:type=>:oauth2,:obj=>@api_files_oauth,:scope=>FilesApi::SCOPE_FILES_USER}})
           @api_files_admin=Rest.new(api_info[:api_url],{:auth=>{:type=>:oauth2,:obj=>@api_files_oauth,:scope=>FilesApi::SCOPE_FILES_ADMIN}})
 
-          # get our user's default information
-          @self_data=@api_files_user.read("self")[:data]
+          url_token_data=nil
+          if public_link.nil?
+            # get our user's default information
+            @self_data=@api_files_user.read("self")[:data]
+          else
+            org_data=@api_files_user.read("organization")[:data]
+            url_token_data=@api_files_user.read("url_tokens")[:data].first
+            @self_data={'default_workspace_id'=>url_token_data['data']['workspace_id']}
+              #raise "OK"
+          end
 
           ws_name=@optmgr.get_option(:workspace,:optional)
           if ws_name.nil?
@@ -258,15 +286,21 @@ module Asperalm
               raise "unexpected case"
             end
           end
+          
+          unless public_link.nil?
+            @workspace_data['home_node_id']=url_token_data['data']['node_id']
+            @workspace_data['home_file_id']=url_token_data['data']['file_id']
+            @optmgr.set_option(:id,url_token_data['data']['package_id'])
+          end
 
           Log.log.debug("workspace_id=#{@workspace_id},workspace_data=#{@workspace_data}".red)
 
           @home_node_id=@workspace_data['home_node_id']
           @home_file_id=@workspace_data['home_file_id']
-          raise "error" if @home_node_id.to_s.empty?
-          raise "error" if @home_file_id.to_s.empty?
+          raise "ERROR: assert" if @home_node_id.to_s.empty?
+          raise "ERROR: assert" if @home_file_id.to_s.empty?
 
-          nil
+          return nil
         end
 
         def do_bulk_operation(params,success,&do_action)
@@ -363,7 +397,7 @@ module Asperalm
               tspec['paths']=filelist.map { |i| {'source'=>i} }
               return @main.start_transfer(tspec,:node_gen4)
             when :recv
-              package_id=@optmgr.get_next_argument('package ID')
+              package_id=@optmgr.get_option(:id,:mandatory)
               the_package=@api_files_user.read("packages/#{package_id}")[:data]
               node_info=@api_files_user.read("nodes/#{the_package['node_id']}")[:data]
               tspec=info_to_tspec('packages','receive',node_info,the_package['contents_file_id'])

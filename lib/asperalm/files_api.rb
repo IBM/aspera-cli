@@ -1,4 +1,5 @@
 require 'asperalm/log'
+require 'base64'
 
 module Asperalm
   class FilesApi
@@ -10,6 +11,8 @@ module Asperalm
     SCOPE_FILES_ADMIN_USER_USER=SCOPE_FILES_ADMIN_USER+'+'+SCOPE_FILES_USER
     SCOPE_NODE_USER='user:all'
     SCOPE_NODE_ADMIN='admin:all'
+    
+    RANDOM='==QMGdXZsdkYMlDezZ3MNhDStYFWQNXNrZTOPRmYh10ZmJkN2EnZCFHbFxkRQtmNylTQOpHdtdUTPNFTxFGWFdFWFB1dr1iNK5WTadTLSFGWBlFTkVDdoxkYjx0MRp3ZlVlOlZXayRmLhJXZwNXY';
 
     # get necessary fixed information to create JWT or call API
     # instance domain is asperafiles.com or qa.asperafiles.com
@@ -36,6 +39,10 @@ module Asperalm
     # node API scopes
     def self.node_scope(access_key,scope)
       return 'node.'+access_key+':'+scope
+    end
+    
+    def self.get_random
+      Base64.strict_decode64(RANDOM.reverse).split(':')
     end
 
   end # FilesApi
