@@ -1565,6 +1565,14 @@ This means that you do not have ruby support for ED25519 SSH keys. You may eithe
 Gems, or remove your ed25519 key from your `.ssh` folder to solve the issue.
 
 # Release Notes
+* version 0.7
+
+  * Breaking change: AoC package recv take option if for package instead of argument.
+  * Breaking change: Rest class and Oauth class changed init parameters
+  * AoC: receive package from public link
+  * select by col value on output
+  * added rename (AoC, node)
+
 * Version 0.6.19
 
 Breaking change:

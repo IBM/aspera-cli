@@ -164,7 +164,7 @@ module Asperalm
         def action_list; self.class.common_actions.clone.concat([ :postprocess,:stream, :transfer, :cleanup, :forward, :access_key, :watch_folder, :service, :async, :central ]);end
 
         def execute_action
-          api_node=Rest.new(@optmgr.get_option(:url,:mandatory),{:auth=>{:type=>:basic,:username=>@optmgr.get_option(:username,:mandatory), :password=>@optmgr.get_option(:password,:mandatory)}})
+          api_node=basic_auth_api()
           command=@optmgr.get_next_argument('command',action_list)
           case command
           when *self.class.common_actions; return execute_common(command,api_node)

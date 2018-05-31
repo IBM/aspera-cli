@@ -15,14 +15,14 @@ module Asperalm
           command=@optmgr.get_next_argument('command',action_list)
           case command
           when :repository
-            api_shares_node=Rest.new(@optmgr.get_option(:url,:mandatory)+'/node_api',{:auth=>{:type=>:basic,:username=>@optmgr.get_option(:username,:mandatory), :password=>@optmgr.get_option(:password,:mandatory)}})
+            api_shares_node=basic_auth_api('node_api')
             command=@optmgr.get_next_argument('command',Node.common_actions)
             case command
             when *Node.common_actions; Node.new(self).execute_common(command,api_shares_node)
             else raise "INTERNAL ERROR, unknown command: [#{command}]"
             end
           when :admin
-            api_shares_admin=Rest.new(@optmgr.get_option(:url,:mandatory)+'/api/v1',{:auth=>{:type=>:basic,:username=>@optmgr.get_option(:username,:mandatory), :password=>@optmgr.get_option(:password,:mandatory)}})
+            api_shares_admin=basic_auth_api('api/v1')
             command=@optmgr.get_next_argument('command',[:user,:share])
             case command
             when :user

@@ -17,7 +17,6 @@ module Asperalm
 
         def execute_action
           api_console=basic_auth_api('api')
-          #api_console=Rest.new(@optmgr.get_option(:url,:mandatory)+'/api',{:auth=>{:type=>:basic,:username=>@optmgr.get_option(:username,:mandatory), :password=>@optmgr.get_option(:password,:mandatory)}})
           command=@optmgr.get_next_argument('command',action_list)
           case command
           when :transfer

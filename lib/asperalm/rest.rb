@@ -87,20 +87,36 @@ module Asperalm
 
     def self.set_debug(flag); Log.log.debug "debug http=#{flag}"; @@debug=flag; end
 
-    attr_reader :base_url
-    attr_reader :default_call_data
+    def params
+      return @rest_params
+    end
 
-    # opt_call_data can contain default call data , as in "call"
-    def initialize(baseurl,opt_call_data=nil)
+    # @param a_rest_params authentication and default call parameters
+    # :auth_type (:basic, :oauth2, :url)
+    # :basic_username   [:basic]
+    # :basic_password   [:basic]
+    # :auth_url_creds   [:url]
+    # :oauth_*          [:oauth2]
+    def initialize(a_rest_params)
+      raise "error" unless a_rest_params.is_a?(Hash) and a_rest_params[:base_url].is_a?(String)
+      @rest_params=a_rest_params.clone
       # base url without trailing slashes
-      @base_url=baseurl.gsub(/\/+$/,'')
-      @default_call_data=opt_call_data
+      @rest_params[:base_url].gsub!(/\/+$/,'')
       @http_session=nil
+      if @rest_params[:auth_type].eql?(:oauth2)
+        @oauth=Oauth.new(@rest_params)
+      end
+      Log.log.debug("Rest.new #{@rest_params}")
+    end
+
+    def oauth_token(api_scope=nil,use_refresh_token=false)
+      raise "ERROR" unless @oauth.is_a?(Oauth)
+      return @oauth.get_authorization(api_scope,use_refresh_token)
     end
 
     # build URI from URL and parameters
     def get_uri(call_data)
-      uri=URI.parse(@base_url+"/"+call_data[:subpath])
+      uri=URI.parse(@rest_params[:base_url]+"/"+call_data[:subpath])
       if ! ['http','https'].include?(uri.scheme)
         raise "REST endpoint shall be http(s)"
       end
@@ -112,25 +128,28 @@ module Asperalm
 
     # HTTP/S REST call
     # call_data has keys:
-    # :auth, :operation, :subpath, :headers, :json_params, :url_params, :www_body_params, :text_body_params, :save_to_file (filepath), :return_error (bool)
-    # :auth  = {:type=>:basic,:username,:password}
-    # :auth  = {:type=>:oauth2,:obj,:scope}
-    # :auth  = {:type=>:url,:url_creds}
+    # :operation
+    # :subpath
+    # :headers
+    # :json_params
+    # :url_params
+    # :www_body_params
+    # :text_body_params
+    # :save_to_file (filepath)
+    # :return_error (bool)
     def call(call_data)
       raise "Hash call parameter is required (#{call_data.class})" unless call_data.is_a?(Hash)
       Log.log.debug "accessing #{call_data[:subpath]}".red.bold.bg_green
       call_data[:headers]||={}
-      if !@default_call_data.nil? then
-        call_data.merge!(@default_call_data) { |key, v1, v2| next v1.merge(v2) if v1.is_a?(Hash) and v2.is_a?(Hash); v1 }
+      call_data.merge!(@rest_params) { |key, v1, v2| next v1.merge(v2) if v1.is_a?(Hash) and v2.is_a?(Hash); v1 }
+      # :auth_type = :oauth2 requires generation of token
+      if call_data[:auth_type].eql?(:oauth2) and !call_data[:headers].has_key?('Authorization') then
+        call_data[:headers]['Authorization']=oauth_token
       end
-      # OAuth requires generation of token
-      if !call_data[:headers].has_key?('Authorization') and call_data.has_key?(:auth) and call_data[:auth].has_key?(:obj) then
-        call_data[:headers]['Authorization']=call_data[:auth][:obj].get_authorization(call_data[:auth][:scope])
-      end
-      # Url auth
-      if call_data.has_key?(:auth) and call_data[:auth].has_key?(:url_creds) then
-        call_data[:url_params]={} if call_data[:url_params].nil?
-        call_data[:auth][:url_creds].each do |key, value|
+      # :auth_type = :url
+      if call_data[:auth_type].eql?(:url) then
+        call_data[:url_params]||={}
+        call_data[:auth_url_creds].each do |key, value|
           call_data[:url_params][key]=value
         end
       end
@@ -165,12 +184,13 @@ module Asperalm
           req[key] = call_data[:headers][key]
         end
       end
-      # basic auth
-      if call_data.has_key?(:auth) and call_data[:auth][:type].eql?(:basic) then
-        req.basic_auth(call_data[:auth][:username],call_data[:auth][:password])
+      # :auth_type = :basic
+      if call_data[:auth_type].eql?(:basic) then
+        req.basic_auth(call_data[:basic_username],call_data[:basic_password])
         Log.log.debug "using Basic auth"
       end
 
+      Log.log.debug "call_data = #{call_data}"
       result={:http=>nil}
       begin
         # we try the call, and will retry only if oauth, as we can, first with refresh, and then re-auth if refresh is bad
@@ -207,14 +227,13 @@ module Asperalm
       rescue RestCallError => e
         # give a second try if oauth token expired
         if ['401'].include?(result[:http].code.to_s) and
-        call_data.has_key?(:auth) and
-        call_data[:auth][:type].eql?(:oauth2)
+        call_data[:auth_type].eql?(:oauth2)
           # try a refresh and/or regeneration of token
           begin
-            req['Authorization']=call_data[:auth][:obj].get_authorization(call_data[:auth][:scope],true)
+            req['Authorization']=oauth_token(nil,true)
           rescue RestCallError => e
             Log.log.error("refresh failed".bg_red)
-            req['Authorization']=call_data[:auth][:obj].get_authorization(call_data[:auth][:scope])
+            req['Authorization']=oauth_token()
           end
           Log.log.debug "using new token=#{call_data[:headers]['Authorization']}"
           retry unless (oauth_tries -= 1).zero?

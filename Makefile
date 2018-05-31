@@ -217,7 +217,7 @@ t/fs5:
 	$(EXETEST) aspera packages list
 	@touch $@
 t/fs6:
-	$(EXETEST) aspera packages recv BTckDm-67Q
+	$(EXETEST) aspera packages recv --id=BTckDm-67Q
 	@touch $@
 t/fs7:
 	$(EXETEST) aspera admin events
@@ -302,6 +302,9 @@ t/at2:
 t/at3:
 	$(EXETEST) ats credential list
 	@touch $@
+t/at3b:
+	$(EXETEST) ats credential info
+	@touch $@
 t/at4:
 	$(EXETEST) ats cluster list
 	@touch $@
@@ -336,7 +339,7 @@ t/at14:
 	$(EXETEST) ats access_key --id=testkey3 delete
 	@touch $@
 
-tats: t/at1 t/at2 t/at3 t/at4 t/at5 t/at6 t/at7 t/at8 t/at9 t/at10 t/at11 t/at12 t/at13 t/at14
+tats: t/at1 t/at2 t/at3 t/at3b t/at4 t/at5 t/at6 t/at7 t/at8 t/at9 t/at10 t/at11 t/at12 t/at13 t/at14
 
 t/co1:
 	$(EXETEST) client current

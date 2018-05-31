@@ -9,6 +9,7 @@ module Asperalm
       class Ats < Plugin
         # manage access to legacy ATS
         class LegacyAts < Plugin
+          LEGACY_ATS_URI='https://ats.aspera.io/pub/v1'
           # local address to receive code on authentication
           LOCAL_REDIRECT_URI="http://localhost:12345"
           # cache located in aslmcli config folder
@@ -18,23 +19,19 @@ module Asperalm
             # special
             @current_api_key_info=nil
             @repo_api_keys=nil
-            @ats_api_public = Rest.new(ats_api_base_url)
+            @ats_api_public = Rest.new({:base_url=>LEGACY_ATS_URI})
             @ats_api_secure = nil
-          end
-
-          # main url for ATS API
-          def ats_api_base_url
-            return 'https://ats.aspera.io/pub/v1'
           end
 
           # authenticated API
           def ats_api_secure
             if @ats_api_secure.nil?
-              @ats_api_secure=Rest.new(ats_api_base_url,{:auth => {
-                :type=>:basic,
-                :username=>current_api_key['ats_id'],
-                :password=>current_api_key['ats_secret']
-                }})
+              @ats_api_secure=Rest.new({
+                :base_url       => LEGACY_ATS_URI,
+                :auth_type      => :basic,
+                :basic_username => current_api_key['ats_id'],
+                :basic_password => current_api_key['ats_secret']
+              })
             end
             return @ats_api_secure
           end
@@ -86,15 +83,14 @@ module Asperalm
             res=ats_api_public.call({:operation=>'POST',:subpath=>"api_keys",:return_error=>true,:headers=>{'Accept'=>'application/json'},:url_params=>{:description => "created by aslmcli",:redirect_uri=>LOCAL_REDIRECT_URI}})
             # TODO: check code is 3xx ?
             login_page_url=res[:http]['Location']
-            new_api_key_info=Oauth.goto_page_and_get_request(LOCAL_REDIRECT_URI,login_page_url)
-            @current_api_key_info=new_api_key_info
+            @current_api_key_info=Oauth.goto_page_and_get_request(LOCAL_REDIRECT_URI,login_page_url)
             # add extra information on api key to identify different subscriptions
             subscription=ats_api_secure.read("subscriptions")[:data]
-            new_api_key_info['subscription_name']=subscription['name']
-            new_api_key_info['organization_name']=subscription['aspera_id_user']['organization']['name']
-            repo_api_keys.push(new_api_key_info)
+            @current_api_key_info['subscription_name']=subscription['name']
+            @current_api_key_info['organization_name']=subscription['aspera_id_user']['organization']['name']
+            repo_api_keys.push(@current_api_key_info)
             save_key_repo
-            return new_api_key_info
+            return @current_api_key_info
           end
 
           def execute_action_api_key
@@ -135,23 +131,33 @@ module Asperalm
           end
         end # LegacyAts
 
-        attr_accessor :ats_api_provider
+        attr_writer :ats_legacy
+        attr_writer :ats_api_public
         attr_writer :ats_api_secure
 
         def initialize
+          @ats_legacy = nil
           # REST end points
+          @ats_api_public = nil
+          @ats_api_secure = nil
           # cache of server data
           @all_servers_cache=nil
-          #
-          @ats_api_provider=nil
         end
 
         def api_public
-          return ats_api_provider.ats_api_public
+          if @ats_api_public.nil?
+            raise "ERROR" if @ats_legacy.nil?
+            @ats_api_public = @ats_legacy.ats_api_public
+          end
+          return @ats_api_public
         end
 
         def api_secure
-          return ats_api_provider.ats_api_secure
+          if @ats_api_secure.nil?
+            raise "ERROR" if @ats_legacy.nil?
+            @ats_api_secure = @ats_legacy.ats_api_secure
+          end
+          return @ats_api_secure
         end
 
         def declare_options(skip_common=false)
@@ -202,9 +208,7 @@ module Asperalm
 
         def execute_action_access_key
           commands=[:create,:list,:show,:delete,:node]
-          if ats_api_provider.respond_to?(:execute_action_api_key)
-            commands.push(:cluster)
-          end
+          commands.push(:cluster) unless @ats_legacy.nil?
           command=@optmgr.get_next_argument('command',commands)
           # those dont require access key id
           unless [:create,:list].include?(command)
@@ -247,22 +251,23 @@ module Asperalm
             ak_data=api_secure.read("access_keys/#{access_key_id}")[:data]
             server_data=all_servers.select {|i| i['id'].start_with?(ak_data['transfer_server_id'])}.first
             raise CliError,"no such server found" if server_data.nil?
-            api_node=Rest.new(server_data['transfer_setup_url'],{:auth=>{:type=>:basic,:username=>ak_data['id'], :password=>ak_data['secret']}})
+            api_node=Rest.new({:base_url=>server_data['transfer_setup_url'],:auth_type=>:basic,:basic_username=>ak_data['id'], :basic_password=>ak_data['secret']})
             command=@optmgr.get_next_argument('command',Node.common_actions)
             Node.new(self).execute_common(command,api_node)
           when :cluster
-            api_auth={
-              :type=>:basic,
-              :username=>access_key_id,
-              :password=>@optmgr.get_option(:secret,:optional)
+            rest_params={
+              :base_url       => api_secure.params[:base_url],
+              :auth_type      => :basic,
+              :basic_username => access_key_id,
+              :basic_password => @optmgr.get_option(:secret,:optional)
             }
             # if no access key id provided, then we get from ATS API
-            if api_auth[:secret].nil?
+            if rest_params[:basic_password].nil?
               ak_data=api_secure.read("access_keys/#{access_key_id}")[:data]
-              #api_auth[:username]=ak_data['id']
-              api_auth[:password]=ak_data['secret']
+              #rest_params[:username]=ak_data['id']
+              rest_params[:basic_password]=ak_data['secret']
             end
-            api_ak_auth=Rest.new(ats_api_provider.ats_api_base_url,{:auth => api_auth})
+            api_ak_auth=Rest.new(rest_params)
             return {:type=>:key_val_list, :data=>api_ak_auth.read("servers")[:data]}
           else raise "INTERNAL ERROR"
           end
@@ -289,12 +294,11 @@ module Asperalm
 
         def action_list;
           res=[ :cluster, :access_key ]
-          if ats_api_provider.respond_to?(:execute_action_api_key)
-            res.push(:credential)
-          end
+          res.push(:credential) unless @ats_legacy.nil?
           return res
         end
 
+        # called for legacy and AoC
         def execute_action_gen
           command=@optmgr.get_next_argument('command',action_list)
           case command
@@ -303,15 +307,16 @@ module Asperalm
           when :access_key
             return execute_action_access_key
           when :credential # manage credential to access ATS API
-            return ats_api_provider.execute_action_api_key
+            return @ats_legacy.execute_action_api_key
           else raise "ERROR"
           end
         end
 
+        # called for legacy ATS only
         def execute_action
-          self.ats_api_provider=LegacyAts.new
-          ats_api_provider.optmgr=self.optmgr
-          ats_api_provider.main=self.main
+          @ats_legacy=LegacyAts.new
+          @ats_legacy.optmgr=self.optmgr
+          @ats_legacy.main=self.main
           execute_action_gen
         end
       end

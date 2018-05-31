@@ -48,10 +48,6 @@ module Asperalm
           return result
         end
 
-        def get_faspex_authenticated_api
-          return Rest.new(@optmgr.get_option(:url,:mandatory),{:auth=>{:type=>:basic,:username=>@optmgr.get_option(:username,:mandatory), :password=>@optmgr.get_option(:password,:mandatory)}})
-        end
-
         def self.textify_package_list(table_data)
           return table_data.map { |e|
             e.keys.each {|k| e[k]=e[k].first if e[k].is_a?(Array) and e[k].length == 1}
@@ -89,7 +85,7 @@ module Asperalm
           case command
           when :package
             command_pkg=@optmgr.get_next_argument('command',[ :send, :recv, :list ])
-            api_faspex=get_faspex_authenticated_api
+            api_faspex=basic_auth_api
             case command_pkg
             when :list
               all_inbox_xml=api_faspex.call({:operation=>'GET',:subpath=>"#{@optmgr.get_option(:box,:mandatory).to_s}.atom",:headers=>{'Accept'=>'application/xml'}})[:http].body
@@ -168,7 +164,7 @@ module Asperalm
             end
           when :source
             command_source=@optmgr.get_next_argument('command',[ :list, :id, :name ])
-            api_faspex=get_faspex_authenticated_api
+            api_faspex=basic_auth_api
             source_list=api_faspex.call({:operation=>'GET',:subpath=>"source_shares",:headers=>{'Accept'=>'application/json'}})[:data]['items']
             case command_source
             when :list
@@ -197,17 +193,21 @@ module Asperalm
               when :node
                 node_config=get_plugin_default_config(:node,source_info[@@KEY_NODE])
                 raise CliError,"No such node aslmcli config: \"#{source_info[@@KEY_NODE]}\"" if node_config.nil?
-                api_node=Rest.new(node_config[:url],{:auth=>{:type=>:basic,:username=>node_config[:username], :password=>node_config[:password]}})
+                api_node=Rest.new({
+                  :base_url => node_config[:url],
+                  :auth_type=>:basic,
+                  :basic_username=>node_config[:username],
+                  :basic_password=>node_config[:password]})
                 command=@optmgr.get_next_argument('command',Node.common_actions)
                 return Node.new(self).execute_common(command,api_node,source_info[@@KEY_PATH])
               end
             end
           when :me
-            api_faspex=get_faspex_authenticated_api
+            api_faspex=basic_auth_api
             my_info=api_faspex.call({:operation=>'GET',:subpath=>"me",:headers=>{'Accept'=>'application/json'}})[:data]
             return {:data=>my_info, :type=>:key_val_list}
           when :dropbox
-            api_faspex=get_faspex_authenticated_api
+            api_faspex=basic_auth_api
             command_pkg=@optmgr.get_next_argument('command',[ :list ])
             case command_pkg
             when :list
@@ -218,7 +218,7 @@ module Asperalm
             thelink=@optmgr.get_next_argument("Faspex public URL for a package")
             link_data=self.class.get_link_data(thelink)
             # Note: unauthenticated API
-            api_faspex=Rest.new(link_data[:faspex_base_url],{})
+            api_faspex=Rest.new({:base_url=>link_data[:faspex_base_url]})
             pkgdatares=api_faspex.call({:operation=>'GET',:subpath=>link_data[:subpath],:url_params=>{:passcode=>link_data[:passcode]},:headers=>{'Accept'=>'application/xml'}})
             if !pkgdatares[:http].body.start_with?('<?xml ')
               OpenApplication.instance.uri(thelink)

@@ -5,7 +5,7 @@ require 'asperalm/cli/main'
 
 Gem::Specification.new do |spec|
   spec.name          = 'asperalm'
-  spec.version       = Asperalm::Cli::Main::version
+  spec.version       = Asperalm::Cli::Main::gem_version
   spec.authors       = ["Laurent Martin"]
   spec.email         = ["laurent.martin.aspera@fr.ibm.com"]
   spec.summary       = "Sample command line for Aspera Server products: Aspera Files, Faspex, Shares, Node, Console, Orchestrator, Server, ATS"

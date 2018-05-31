@@ -33,28 +33,28 @@ module Asperalm
         # get recipient ids
         files_pkg_recipients=[]
         faspex_pkg_delivery['recipients'].each do |recipient_email|
-          user_lookup=FaspexGW.instance.api_files_user.read("contacts",{'current_workspace_id'=>FaspexGW.instance.the_workspaceid,'q'=>recipient_email})[:data]
+          user_lookup=FaspexGW.instance.aoc_api_user.read("contacts",{'current_workspace_id'=>FaspexGW.instance.aoc_workspace_id,'q'=>recipient_email})[:data]
           raise StandardError,"no such unique user: #{recipient_email} / #{user_lookup}" unless !user_lookup.nil? and user_lookup.length == 1
           recipient_user_info=user_lookup.first
           files_pkg_recipients.push({"id"=>recipient_user_info['source_id'],"type"=>recipient_user_info['source_type']})
         end
 
         #  create a new package with one file
-        the_package=FaspexGW.instance.api_files_user.create("packages",{
+        the_package=FaspexGW.instance.aoc_api_user.create("packages",{
           "file_names"=>faspex_pkg_delivery['sources'][0]['paths'],
           "name"=>faspex_pkg_delivery['title'],
           "note"=>faspex_pkg_delivery['note'],
           "recipients"=>files_pkg_recipients,
-          "workspace_id"=>FaspexGW.instance.the_workspaceid})[:data]
+          "workspace_id"=>FaspexGW.instance.aoc_workspace_id})[:data]
 
         #  get node information for the node on which package must be created
-        node_info=FaspexGW.instance.api_files_user.read("nodes/#{the_package['node_id']}")[:data]
+        node_info=FaspexGW.instance.aoc_api_user.read("nodes/#{the_package['node_id']}")[:data]
 
         #  get transfer token (for node)
-        node_auth_bearer_token=FaspexGW.instance.api_files_oauth.get_authorization(FilesApi.node_scope(node_info['access_key'],FilesApi::SCOPE_NODE_USER))
+        node_auth_bearer_token=FaspexGW.instance.aoc_api_user.oauth_token(FilesApi.node_scope(node_info['access_key'],FilesApi::SCOPE_NODE_USER))
 
         # tell Files what to expect in package: 1 transfer (can also be done after transfer)
-        FaspexGW.instance.api_files_user.update("packages/#{the_package['id']}",{"sent"=>true,"transfers_expected"=>1})
+        FaspexGW.instance.aoc_api_user.update("packages/#{the_package['id']}",{"sent"=>true,"transfers_expected"=>1})
 
         if false
           response.status=400
@@ -144,14 +144,12 @@ module Asperalm
       cert.sign(@webrick_options[:SSLPrivateKey], OpenSSL::Digest::SHA256.new)
     end
 
-    attr_accessor :api_files_user
-    attr_accessor :api_files_oauth
-    attr_accessor :the_workspaceid
+    attr_reader :aoc_api_user
+    attr_reader :aoc_workspace_id
 
-    def start_server(api_files_user,workspace_id)
-      @api_files_user=api_files_user
-      @api_files_oauth=@api_files_user.default_call_data[:auth][:obj]
-      @the_workspaceid=workspace_id
+    def start_server(a_aoc_api_user,a_workspace_id)
+      @aoc_api_user=a_aoc_api_user
+      @aoc_workspace_id=a_workspace_id
       Log.log.info("Server started on port #{@webrick_options[:Port]}")
       server = WEBrick::HTTPServer.new(@webrick_options)
       server.mount('/aspera/faspex', Servlet)

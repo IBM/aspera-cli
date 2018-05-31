@@ -19,6 +19,7 @@ module Asperalm
   # implement OAuth 2 for Aspera Files
   # bearer tokens are kept in memory and also in a file cache for re-use
   class Oauth
+    private
     TOKEN_FILE_PREFIX='token'
     TOKEN_FILE_SEPARATOR='_'
     TOKEN_FILE_SUFFIX='.txt'
@@ -26,8 +27,10 @@ module Asperalm
     OFFSET_ALLOWANCE_SEC=300
     ASSERTION_VALIDITY_SEC=3600
     @@token_cache_folder='.'
-    def self.file_list_folder; @@token_cache_folder;end
-    def self.file_list_folder=(v); @@token_cache_folder=v;end
+    def self.persistency_folder; @@token_cache_folder;end
+
+    def self.persistency_folder=(v); @@token_cache_folder=v;end
+
     # delete cached tokens
     def self.flush_tokens
       tokenfiles=Dir[File.join(@@token_cache_folder,TOKEN_FILE_PREFIX+'*'+TOKEN_FILE_SUFFIX)]
@@ -41,15 +44,15 @@ module Asperalm
       [ :basic, :web, :jwt, :url_token ]
     end
 
-    def initialize(auth_data)
-      Log.log.debug "auth=#{auth_data}"
-      @auth_data=auth_data
-      @rest=Rest.new(@auth_data[:baseurl])
+    def initialize(rest_params)
+      Log.log.debug "auth=#{rest_params}"
+      @rest_params=rest_params.clone
+      @rest=Rest.new({:base_url=>@rest_params[:oauth_base_url]})
       # key = scope value, e.g. user:all, or node.*
       # value = ruby structure of data of returned value
       @token_cache={}
-      if @auth_data.has_key?(:redirect_uri)
-        uri=URI.parse(@auth_data[:redirect_uri])
+      if @rest_params.has_key?(:oauth_redirect_uri)
+        uri=URI.parse(@rest_params[:oauth_redirect_uri])
         raise "redirect_uri scheme must be http" unless uri.scheme.eql?('http')
         raise "redirect_uri must have a port" if uri.port.nil?
         # we could check that host is localhost or local address
@@ -80,8 +83,8 @@ module Asperalm
 
     # get location of cache for token
     def token_filepath(api_scope)
-      parts=[@auth_data[:client_id],URI.parse(@auth_data[:baseurl]).host.downcase.gsub(/[^a-z]+/,'_'),@auth_data[:type],api_scope]
-      parts.push(@auth_data[:username]) if @auth_data.has_key?(:username)
+      parts=[@rest_params[:oauth_client_id],URI.parse(@rest_params[:oauth_base_url]).host.downcase.gsub(/[^a-z]+/,'_'),@rest_params[:oauth_type],api_scope]
+      parts.push(@rest_params[:oauth_basic_username]) if @rest_params.has_key?(:oauth_basic_username)
       basename=parts.dup.unshift(TOKEN_FILE_PREFIX).join(TOKEN_FILE_SEPARATOR)
       # remove windows forbidden chars
       basename.gsub!(WINDOWS_PROTECTED_CHAR,TOKEN_FILE_SEPARATOR)
@@ -92,8 +95,21 @@ module Asperalm
       return filepath
     end
 
+    THANK_YOU_HTML = "<html><head><title>Ok</title></head><body><h1>Thank you !</h1><p>You can close this window.</p></body></html>"
+
+    # open the login page, wait for code and check_code, then return code
+    def goto_page_and_get_code(login_page_url,check_code)
+      request_params=self.class.goto_page_and_get_request(@rest_params[:oauth_redirect_uri],login_page_url)
+      Log.log.error("state does not match") if !check_code.eql?(request_params['state'])
+      code=request_params['code']
+      return code
+    end
+
+    public
+
     # use_refresh_token set to true if auth was just used and failed
-    def get_authorization(api_scope,use_refresh_token=false)
+    def get_authorization(api_scope=nil,use_refresh_token=false)
+      api_scope||=@rest_params[:oauth_scope]
       # file name for cache of token
       token_state_file=token_filepath(api_scope)
 
@@ -128,17 +144,18 @@ module Asperalm
           # note: admin token has no refresh, and lives by default 1800secs
           # Note: scope is mandatory in Files, and we can either provide basic auth, or client_Secret in data
           resp=@rest.call({
-            :operation=>'POST',
-            :subpath=>@auth_data[:token_path],
-            :headers=>{'Accept'=>'application/json'},
-            :auth=>{:type=>:basic,:username=>@auth_data[:client_id],:password=>@auth_data[:client_secret]}, # this is RFC
-            :www_body_params=>{
-            :grant_type=>'refresh_token',
+            :operation      => 'POST',
+            :subpath        => @rest_params[:oauth_path_token],
+            :headers        => {'Accept'=>'application/json'},
+            :auth_type      => :basic,
+            :basic_username => @rest_params[:oauth_client_id],
+            :basic_password => @rest_params[:oauth_client_secret],
+            :www_body_params=> {
+            :grant_type   =>'refresh_token',
             :refresh_token=>refresh_token,
-            :scope=>api_scope,
-            :client_id=>@auth_data[:client_id],
-            #:client_secret=>@auth_data[:client_secret],  # also works, but not compliant to RFC
-            :state=>UNUSED_STATE # TODO: remove, not useful
+            :scope        =>api_scope,
+            :client_id    =>@rest_params[:oauth_client_id],
+            :state        =>UNUSED_STATE # TODO: remove, not useful
             }})
           if resp[:http].code.start_with?('2') then
             # save only if success ?
@@ -152,25 +169,25 @@ module Asperalm
       # no cache
       if !@token_cache.has_key?(api_scope) then
         resp=nil
-        case @auth_data[:type]
+        case @rest_params[:oauth_type]
         when :basic
           call_data={
             :operation=>'POST',
-            :subpath=>@auth_data[:token_path],
+            :subpath=>@rest_params[:oauth_path_token],
             :headers=>{'Accept'=>'application/json'},
             :www_body_params=>{
-            :client_id=>@auth_data[:client_id], # NOTE: not compliant to RFC
+            :client_id=>@rest_params[:oauth_client_id], # NOTE: not compliant to RFC
             :grant_type=>'password',
             :scope=>api_scope
             }}
-          case @auth_data[:basic_type]
+          case @rest_params[:oauth_basic_type]
           when :header
-            call_data[:auth]={:type=>:basic}
-            call_data[:auth][:username]=@auth_data[:username]
-            call_data[:auth][:password]=@auth_data[:password]
+            call_data[:auth_type]=:basic
+            call_data[:basic_username]=@rest_params[:oauth_basic_username]
+            call_data[:basic_password]=@rest_params[:oauth_basic_password]
           else
-            call_data[:www_body_params][:username]=@auth_data[:username]
-            call_data[:www_body_params][:password]=@auth_data[:password]
+            call_data[:www_body_params][:username]=@rest_params[:oauth_basic_username]
+            call_data[:www_body_params][:password]=@rest_params[:oauth_basic_password]
           end
           # basic password auth, works only for some users in aspera files, deprecated
           resp=@rest.call(call_data)
@@ -178,13 +195,13 @@ module Asperalm
           check_code=SecureRandom.uuid
           login_page_url=@rest.get_uri({
             :operation=>'GET',
-            :subpath=>@auth_data[:authorize_path],
+            :subpath=>@rest_params[:oauth_path_authorize],
             :url_params=>{
             :response_type=>'code',
-            :client_id=>@auth_data[:client_id],
-            :redirect_uri=>@auth_data[:redirect_uri],
+            :client_id=>@rest_params[:oauth_client_id],
+            :oauth_redirect_uri=>@rest_params[:oauth_redirect_uri],
             :scope=>api_scope,
-            :client_secret=>@auth_data[:client_secret],
+            :client_secret=>@rest_params[:oauth_client_secret],
             :state=>check_code
             }})
 
@@ -194,15 +211,17 @@ module Asperalm
           # exchange code for token
           resp=@rest.call({
             :operation=>'POST',
-            :subpath=>@auth_data[:token_path],
+            :subpath=>@rest_params[:oauth_path_token],
             :headers=>{'Accept'=>'application/json'},
-            :auth=>{:type=>:basic,:username=>@auth_data[:client_id],:password=>@auth_data[:client_secret]},
+            :auth_type=>:basic,
+            :basic_username=>@rest_params[:oauth_client_id],
+            :basic_password=>@rest_params[:oauth_client_secret],
             :www_body_params=>{
             :grant_type=>'authorization_code',
             :code=>code,
             :scope=>api_scope,
-            :redirect_uri=>@auth_data[:redirect_uri],
-            :client_id=>@auth_data[:client_id],
+            :oauth_redirect_uri=>@rest_params[:oauth_redirect_uri],
+            :client_id=>@rest_params[:oauth_client_id],
             :state=>UNUSED_STATE
             }})
         when :jwt
@@ -212,14 +231,14 @@ module Asperalm
           Log.log.info("seconds=#{seconds_since_epoch}")
 
           payload = {
-            :iss => @auth_data[:client_id],
-            :sub => @auth_data[:username],
-            :aud => @auth_data[:audience],
+            :iss => @rest_params[:oauth_client_id],
+            :sub => @rest_params[:oauth_jwt_subject],
+            :aud => @rest_params[:oauth_jwt_audience],
             :nbf => seconds_since_epoch,
             :exp => seconds_since_epoch+ASSERTION_VALIDITY_SEC # TODO: configurable ?
           }
 
-          rsa_private=@auth_data[:private_key_obj]  # type: OpenSSL::PKey::RSA
+          rsa_private=@rest_params[:oauth_jwt_private_key_obj]  # type: OpenSSL::PKey::RSA
 
           Log.log.debug("private=[#{rsa_private}]")
 
@@ -229,9 +248,11 @@ module Asperalm
 
           resp=@rest.call({
             :operation=>'POST',
-            :subpath=>@auth_data[:token_path],
+            :subpath=>@rest_params[:oauth_path_token],
             :headers=>{'Accept'=>'application/json'},
-            :auth=>{:type=>:basic,:username=>@auth_data[:client_id],:password=>@auth_data[:client_secret]},
+            :auth_type=>:basic,
+            :basic_username=>@rest_params[:oauth_client_id],
+            :basic_password=>@rest_params[:oauth_client_secret],
             :www_body_params=>{
             :assertion=>assertion,
             :grant_type=>'urn:ietf:params:oauth:grant-type:jwt-bearer',
@@ -241,17 +262,19 @@ module Asperalm
           # exchange code for token
           resp=@rest.call({
             :operation=>'POST',
-            :subpath=>@auth_data[:token_path],
+            :subpath=>@rest_params[:oauth_path_token],
             :headers=>{'Accept'=>'application/json'},
-            :auth=>{:type=>:basic,:username=>@auth_data[:client_id],:password=>@auth_data[:client_secret]},
+            :auth_type=>:basic,
+            :basic_username=>@rest_params[:oauth_client_id],
+            :basic_password=>@rest_params[:oauth_client_secret],
             :url_params=>{
             :grant_type=>'url_token',
             :scope=>api_scope,
             :state=>UNUSED_STATE
             },
-            :json_params=>{:url_token=>@auth_data[:url_token]}})
+            :json_params=>{:url_token=>@rest_params[:oauth_url_token]}})
         else
-          raise "auth type unknown: #{@auth_data[:type]}"
+          raise "auth type unknown: #{@rest_params[:oauth_type]}"
         end
 
         # Check result
@@ -269,8 +292,6 @@ module Asperalm
       return 'Bearer '+@token_cache[api_scope]['access_token']
     end
 
-    THANK_YOU_HTML = "<html><head><title>Ok</title></head><body><h1>Thank you !</h1><p>You can close this window.</p></body></html>"
-
     # open the login page, wait for code and return parameters
     def self.goto_page_and_get_request(redirect_uri,login_page_url,html_page=THANK_YOU_HTML)
       Log.log.info "login_page_url=#{login_page_url}".bg_red().gray()
@@ -282,7 +303,7 @@ module Asperalm
       TCPServer.open('127.0.0.1', port) { |webserver|
         Log.log.info "server=#{webserver}"
         websession = webserver.accept
-        sleep 1 # TODO: sometimes, returns nil ? use sinatra ?
+        sleep 1 # TODO: sometimes: returns nil ? use webrick ?
         line = websession.gets.chomp
         Log.log.info "line=#{line}"
         if ! line.start_with?('GET /?') then
@@ -296,14 +317,6 @@ module Asperalm
         websession.close
       }
       return request_params
-    end
-
-    # open the login page, wait for code and check_code, then return code
-    def goto_page_and_get_code(login_page_url,check_code)
-      request_params=self.class.goto_page_and_get_request(@auth_data[:redirect_uri],login_page_url)
-      Log.log.error("state does not match") if !check_code.eql?(request_params['state'])
-      code=request_params['code']
-      return code
     end
 
   end # OAuth

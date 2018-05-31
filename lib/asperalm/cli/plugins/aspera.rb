@@ -15,7 +15,6 @@ module Asperalm
           @ats=Ats.new
           @ats.optmgr=self.optmgr
           @ats.main=self.main
-          @ats.ats_api_provider=self
           @ats.declare_options(true)
 
           @optmgr.add_opt_list(:download_mode,[:fasp, :node_http ],"download mode")
@@ -38,7 +37,6 @@ module Asperalm
           @optmgr.add_opt_simple(:id,"resource identifier")
           @optmgr.add_opt_simple(:name,"resource name")
           @optmgr.add_opt_simple(:link,"link to shared resource")
-          @optmgr.add_opt_simple(:url_token,"shared resource security token")
           @optmgr.set_option(:download_mode,:fasp)
           @optmgr.set_option(:bulk,:no)
           #          @optmgr.set_option(:long,:no)
@@ -52,10 +50,13 @@ module Asperalm
         def get_files_node_api(node_info,node_scope=nil)
           # if no scope, or secret provided on command line ...
           if node_scope.nil? or !@optmgr.get_option(:secret,:optional).nil?
-            return Rest.new(node_info['url'],{:auth=>{:type=>:basic,:username=>node_info['access_key'], :password=>@optmgr.get_option(:secret,:mandatory)},:headers=>{'X-Aspera-AccessKey'=>node_info['access_key']}})
+            return Rest.new({:base_url=>node_info['url'],:auth_type=>:basic,:basic_username=>node_info['access_key'], :basic_password=>@optmgr.get_option(:secret,:mandatory),:headers=>{'X-Aspera-AccessKey'=>node_info['access_key']}})
           end
           Log.log.warn("ignoring secret, using bearer token") if !@optmgr.get_option(:secret,:optional).nil?
-          return Rest.new(node_info['url'],{:auth=>{:type=>:oauth2,:obj=>@api_files_oauth,:scope=>FilesApi.node_scope(node_info['access_key'],node_scope)},:headers=>{'X-Aspera-AccessKey'=>node_info['access_key']}})
+          return Rest.new(@api_files_user.params.merge!({
+            :base_url    => node_info['url'],
+            :oauth_scope => FilesApi.node_scope(node_info['access_key'],node_scope),
+            :headers     => {'X-Aspera-AccessKey'=>node_info['access_key']}}))
         end
 
         # returns node information (returned by API) and file id, from a "/" based path
@@ -115,7 +116,7 @@ module Asperalm
             'remote_host'      => node_info['host'],
             'fasp_port'        => 33001, # TODO: always the case ?
             'ssh_port'         => 33001, # TODO: always the case ?
-            'token'            => @api_files_oauth.get_authorization(FilesApi.node_scope(node_info['access_key'],FilesApi::SCOPE_NODE_USER)),
+            'token'            => @api_files_user.oauth_token(FilesApi.node_scope(node_info['access_key'],FilesApi::SCOPE_NODE_USER)),
             'tags'             => { "aspera" => {
             'app'   => app,
             'files' => { 'node_id' => node_info['id']},
@@ -200,61 +201,55 @@ module Asperalm
         def init_apis
           public_link=@optmgr.get_option(:link,:optional)
 
+          rest_params={}
+
+          # if auth is a public link
           unless public_link.nil?
             uri=URI.parse(public_link)
             unless uri.path.eql?('/packages/public/receive')
               raise CliArgument,"only public package link is supported: /packages/public/receive"
             end
-            url_token_param=URI::decode_www_form(uri.query).select{|e|e.first.eql?('token')}.first
-            if url_token_param.nil?
+            rest_params[:oauth_url_token]=URI::decode_www_form(uri.query).select{|e|e.first.eql?('token')}.first
+            if rest_params[:oauth_url_token].nil?
               raise CliArgument,"uri must have parameter token"
             end
+            random=FilesApi.random
             @optmgr.set_option(:url,'https://'+uri.host)
             @optmgr.set_option(:auth,:url_token)
-            @optmgr.set_option(:url_token,url_token_param.last)
-            x=FilesApi.get_random
-            @optmgr.set_option(:client_id,x.first)
-            @optmgr.set_option(:client_secret,x.last)
+            @optmgr.set_option(:client_id,random.first)
+            @optmgr.set_option(:client_secret,random.last)
           end
 
-          api_info=FilesApi.info(@optmgr.get_option(:url,:mandatory))
+          FilesApi.set_rest_params(@optmgr.get_option(:url,:mandatory),rest_params)
 
-          auth_data={
-            :baseurl            => api_info[:api_url],
-            :authorize_path     => api_info[:oauth_authorize],
-            :token_path         => api_info[:oauth_token],
-            :persist_folder     => @main.config_folder,
-            :type               => @optmgr.get_option(:auth,:mandatory),
-            :client_id          => @optmgr.get_option(:client_id,:mandatory),
-            :client_secret      => @optmgr.get_option(:client_secret,:mandatory)
-          }
+          rest_params[:auth_type] = :oauth2
+          rest_params[:oauth_type] = @optmgr.get_option(:auth,:mandatory)
+          rest_params[:oauth_client_id] = @optmgr.get_option(:client_id,:mandatory)
+          rest_params[:oauth_client_secret] = @optmgr.get_option(:client_secret,:mandatory)
 
-          case auth_data[:type]
+          case rest_params[:oauth_type]
           when :basic
-            auth_data[:username]=@optmgr.get_option(:username,:mandatory)
-            auth_data[:password]=@optmgr.get_option(:password,:mandatory)
+            rest_params.delete(:auth_type)
+            rest_params[:basic_username]=@optmgr.get_option(:username,:mandatory)
+            rest_params[:basic_password]=@optmgr.get_option(:password,:mandatory)
           when :web
-            auth_data[:redirect_uri]=@optmgr.get_option(:redirect_uri,:mandatory)
-            Log.log.info("redirect_uri=#{auth_data[:redirect_uri]}")
+            rest_params[:oauth_redirect_uri]=@optmgr.get_option(:redirect_uri,:mandatory)
+            Log.log.info("redirect_uri=#{rest_params[:oauth_redirect_uri]}")
           when :jwt
             private_key_PEM_string=@optmgr.get_option(:private_key,:mandatory)
-            auth_data[:private_key_obj]=OpenSSL::PKey::RSA.new(private_key_PEM_string)
-            auth_data[:username]=@optmgr.get_option(:username,:mandatory)
-            auth_data[:audience]=api_info[:jwt_audience]
-            Log.log.info("private_key=#{auth_data[:private_key_obj]}")
-            Log.log.info("subject=#{auth_data[:username]}")
+            rest_params[:oauth_jwt_private_key_obj]=OpenSSL::PKey::RSA.new(private_key_PEM_string)
+            rest_params[:oauth_jwt_subject]=@optmgr.get_option(:username,:mandatory)
+            Log.log.info("private_key=#{rest_params[:oauth_jwt_private_key_obj]}")
+            Log.log.info("subject=#{rest_params[:oauth_jwt_subject]}")
           when :url_token
-            auth_data[:url_token]=@optmgr.get_option(:url_token,:mandatory)
-          else
-            raise "unknown auth type: #{auth_data[:type].class}:#{auth_data[:type]}"
+          else raise "ERROR"
           end
 
-          # auth API
-          @api_files_oauth=Oauth.new(auth_data)
-
           # create objects for REST calls to Aspera (user and admin scope)
-          @api_files_user=Rest.new(api_info[:api_url],{:auth=>{:type=>:oauth2,:obj=>@api_files_oauth,:scope=>FilesApi::SCOPE_FILES_USER}})
-          @api_files_admin=Rest.new(api_info[:api_url],{:auth=>{:type=>:oauth2,:obj=>@api_files_oauth,:scope=>FilesApi::SCOPE_FILES_ADMIN}})
+          rest_params[:oauth_scope]=FilesApi::SCOPE_FILES_USER
+          @api_files_user=Rest.new(rest_params)
+          rest_params[:oauth_scope]=FilesApi::SCOPE_FILES_ADMIN
+          @api_files_admin=Rest.new(rest_params)
 
           url_token_data=nil
           if public_link.nil?
@@ -264,7 +259,7 @@ module Asperalm
             org_data=@api_files_user.read("organization")[:data]
             url_token_data=@api_files_user.read("url_tokens")[:data].first
             @self_data={'default_workspace_id'=>url_token_data['data']['workspace_id']}
-              #raise "OK"
+            #raise "OK"
           end
 
           ws_name=@optmgr.get_option(:workspace,:optional)
@@ -286,7 +281,7 @@ module Asperalm
               raise "unexpected case"
             end
           end
-          
+
           unless public_link.nil?
             @workspace_data['home_node_id']=url_token_data['data']['node_id']
             @workspace_data['home_file_id']=url_token_data['data']['file_id']
@@ -314,26 +309,6 @@ module Asperalm
             result.push(one)
           end
           return {:type=>:hash_array,:data=>result,:fields=>['id','status']}
-        end
-
-        # ATS api provider
-        def ats_api_base_url
-          return @api_files_admin.base_url+'/admin/ats/pub/v1'
-        end
-
-        # ATS api provider
-        def ats_api_public; ats_api_secure; end
-
-        # ATS api provider
-        def ats_api_secure
-          if @ats_api_secure.nil?
-            @ats_api_secure=Rest.new(ats_api_base_url,{:auth=>{:type=>:oauth2,:obj=>@api_files_admin.default_call_data[:auth][:obj],:scope=>FilesApi::SCOPE_FILES_ADMIN_USER}})
-          end
-          return @ats_api_secure
-        end
-
-        def exec_ats_ection
-          return @ats.execute_action_gen
         end
 
         def execute_action
@@ -429,7 +404,12 @@ module Asperalm
             command_admin=@optmgr.get_next_argument('command',[ :ats, :resource, :events, :set_client_key, :usage_reports, :search_nodes  ])
             case command_admin
             when :ats
-              return exec_ats_ection
+              @ats.ats_api_public = @ats.ats_api_secure = Rest.new(@api_files_admin.params.clone.merge!({
+                :base_url    => @api_files_admin.params[:base_url]+'/admin/ats/pub/v1',
+                :oauth_scope => FilesApi::SCOPE_FILES_ADMIN_USER
+              }))
+
+              return @ats.execute_action_gen
             when :search_nodes
               ak=@optmgr.get_next_argument('access_key')
               nodes=@api_files_admin.read("search_nodes",{'q'=>'access_key:"'+ak+'"'})[:data]

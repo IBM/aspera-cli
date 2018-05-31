@@ -19,7 +19,7 @@ module Asperalm
 
         # retrieve structure with all versions available
         def self.connect_versions
-          api_connect_cdn=Rest.new(CONNECT_WEB_URL)
+          api_connect_cdn=Rest.new({:base_url=>CONNECT_WEB_URL})
           javascript=api_connect_cdn.call({:operation=>'GET',:subpath=>CONNECT_VERSIONS})
           jsondata=javascript[:http].body.gsub(/\r\n\s*/,'').gsub(/^.*AW.connectVersions = /,'').gsub(/;$/,'')
           alldata=JSON.parse(jsondata)
@@ -61,7 +61,7 @@ module Asperalm
                   when :download #
                     folder_dest=@main.destination_folder('receive')
                     #folder_dest=@optmgr.get_next_argument('destination folder')
-                    api_connect_cdn=Rest.new(CONNECT_WEB_URL)
+                    api_connect_cdn=Rest.new({:base_url=>CONNECT_WEB_URL})
                     fileurl = one_link['href']
                     filename=fileurl.gsub(%r{.*/},'')
                     api_connect_cdn.call({:operation=>'GET',:subpath=>fileurl,:save_to_file=>File.join(folder_dest,filename)})

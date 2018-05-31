@@ -40,15 +40,19 @@ module Asperalm
         end
 
         def execute_action
-          @api_orch=Rest.new(@optmgr.get_option(:url,:mandatory),{:auth=>{:type=>:url,:url_creds=>{
-            'login'=>@optmgr.get_option(:username,:mandatory),
-            'password'=>@optmgr.get_option(:password,:mandatory) }}})
+          @api_orch=Rest.new({
+            :base_url       => @optmgr.get_option(:url,:mandatory),
+            :auth_type      => :url,
+            :auth_url_creds => {
+            'login'   =>@optmgr.get_option(:username,:mandatory),
+            'password'=>@optmgr.get_option(:password,:mandatory) }})
 
           # auth can be in url or basic
-          #          @api_orch=Rest.new(@optmgr.get_option(:url,:mandatory),{:auth=>{
-          #            :type=>:basic,
-          #            :username=>@optmgr.get_option(:username,:mandatory),
-          #            :password=>@optmgr.get_option(:password,:mandatory)}})
+          #          @api_orch=Rest.new({
+          #            :base_url=>@optmgr.get_option(:url,:mandatory),
+          #            :auth_type=>:basic,
+          #            :basic_username=>@optmgr.get_option(:username,:mandatory),
+          #            :basic_password=>@optmgr.get_option(:password,:mandatory)})
 
           command1=@optmgr.get_next_argument('command',action_list)
           case command1

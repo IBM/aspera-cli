@@ -1,5 +1,6 @@
 require 'json'
 require 'base64'
+require 'zlib'
 require 'csv'
 
 module Asperalm

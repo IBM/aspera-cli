@@ -23,7 +23,7 @@ module Asperalm
           begin
             Log.log.debug("reading connect port file")
             connect_url=File.open(Installation.instance.path(:plugin_https_port_file)) {|f| f.gets }.strip
-            connect_api=Rest.new("#{connect_url}/v5/connect",{})
+            connect_api=Rest.new({:base_url => "#{connect_url}/v5/connect"})
             connect_api.read('info/version')
           rescue => e # Errno::ECONNREFUSED
             raise CliError,"Unable to start connect after #{trynumber} try" if trynumber > 3

@@ -21,22 +21,26 @@ module Asperalm
           shares2_api_base_url=@optmgr.get_option(:url,:mandatory)
           shares2_username=@optmgr.get_option(:username,:mandatory)
           shares2_password=@optmgr.get_option(:password,:mandatory)
-          # auth API
-          @api_shares2_oauth=Oauth.new({
-            :baseurl            => shares2_api_base_url,
-            :authorize_path     => "oauth2/authorize",
-            :token_path         => "oauth2/token",
-            :persist_folder     => @main.config_folder,
-            :type               => :basic,
-            :basic_type         => :header,
-            :username           => shares2_username,
-            :password           => shares2_password
-          })
 
           # create object for REST calls to Shares2
-          @api_shares2_admin=Rest.new(shares2_api_base_url,{:auth=>{:type=>:oauth2,:obj=>@api_shares2_oauth,:scope=>'admin'}})
+          @api_shares2_admin=Rest.new({
+            :base_url             => shares2_api_base_url,
+            :auth_type            => :oauth2,
+            :oauth_base_url       => shares2_api_base_url+'/oauth2',
+            :oauth_path_authorize => "authorize",
+            :oauth_path_token     => "token",
+            :oauth_type           => :basic,
+            :oauth_basic_type     => :header,
+            :oauth_basic_username => shares2_username,
+            :oauth_basic_password => shares2_password,
+            :oauth_scope          => 'admin'
+          })
 
-          @api_shares_node=Rest.new(shares2_api_base_url+'/node_api',{:auth=>{:type=>:basic,:username=>shares2_username, :password=>shares2_password}})
+          @api_shares_node=Rest.new({
+            :base_url       => shares2_api_base_url+'/node_api',
+            :auth_type      => :basic,
+            :basic_username => shares2_username,
+            :basic_password => shares2_password})
         end
 
         # path_prefix is either "" or "res/id/"

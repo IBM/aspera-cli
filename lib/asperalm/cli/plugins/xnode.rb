@@ -42,7 +42,7 @@ module Asperalm
         end
 
         def execute_action
-          api_node=Rest.new(@optmgr.get_option(:url,:mandatory),{:auth=>{:type=>:basic,:username=>@optmgr.get_option(:username,:mandatory), :password=>@optmgr.get_option(:password,:mandatory)}})
+          api_node=Rest.new({:base_url=>@optmgr.get_option(:url,:mandatory),:auth_type=>:basic,:basic_username=>@optmgr.get_option(:username,:mandatory), :basic_password=>@optmgr.get_option(:password,:mandatory)})
           command=@optmgr.get_next_argument('command',action_list)
           case command
           when :cleanup

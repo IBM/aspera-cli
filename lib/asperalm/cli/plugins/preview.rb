@@ -358,7 +358,7 @@ module Asperalm
 
         def execute_action
           @api_node=basic_auth_api
-          @transfer_server_address=URI.parse(@api_node.base_url).host
+          @transfer_server_address=URI.parse(@api_node.params[:base_url]).host
           @access_key_self = @api_node.read('access_keys/self')[:data] # same as with accesskey instead of /self
           @access_remote=@optmgr.get_option(:file_access,:mandatory).eql?(:remote)
           Log.log.debug("access key info: #{@access_key_self}")

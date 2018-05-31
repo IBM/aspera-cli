@@ -22,13 +22,16 @@ module Asperalm
       include Singleton
       # "tool" class method is an alias to "instance" of singleton
       singleton_class.send(:alias_method, :tool, :instance)
-      def self.version;return @@TOOL_VERSION;end
+      def self.gem_version
+        File.read(File.join(gem_root,@@GEM_NAME,'VERSION')).chomp
+      end
+
       private
-      @@TOOL_VERSION='0.6.21'
       # first level command for the main tool
       @@MAIN_PLUGIN_NAME_SYM=:config
       # name of application, also foldername where config is stored
       @@PROGRAM_NAME = 'aslmcli'
+      @@GEM_NAME = 'asperalm'
       # folder in $HOME for the application
       @@ASPERA_HOME_FOLDER_NAME='.aspera'
       # folder containing custom plugins in `config_folder`
@@ -43,11 +46,17 @@ module Asperalm
       @@PLUGINS_MODULE=@@CLI_MODULE+'::Plugins'
       @@CONFIG_FILE_KEY_VERSION='version'
       @@CONFIG_FILE_KEY_DEFAULT='default'
-      @@HELP_URL='http://www.rubydoc.info/gems/asperalm'
+      @@HELP_URL='http://www.rubydoc.info/gems/'+@@GEM_NAME
+      @@GEM_URL='https://rubygems.org/gems/'+@@GEM_NAME
       RUBY_FILE_EXT='.rb'
       FIELDS_ALL='ALL'
       FIELDS_DEFAULT='DEF'
       ASPERA_PLUGIN_S=:aspera.to_s
+
+      # find the root folder of gem where this class is
+      def self.gem_root
+        File.expand_path(@@CLI_MODULE.to_s.gsub('::','/').gsub(%r([^/]+),'..'),File.dirname(__FILE__))
+      end
 
       def save_presets_to_config_file
         raise "no configuration loaded" if @available_presets.nil?
@@ -171,7 +180,7 @@ module Asperalm
               raise CliBadArgument,"missing parameter [#{param}] in node specification: #{node_config}" if !node_config.has_key?(param.to_s)
               sym_config[param]=node_config[param.to_s]
             end
-            @transfer_agent_singleton=Fasp::Client::Node.new(Rest.new(sym_config[:url],{:auth=>{:type=>:basic,:username=>sym_config[:username], :password=>sym_config[:password]}}))
+            @transfer_agent_singleton=Fasp::Client::Node.new(Rest.new({:base_url=>sym_config[:url],:auth_type=>:basic,:basic_username=>sym_config[:username], :basic_password=>sym_config[:password]}))
           else raise "ERROR"
           end
           @transfer_agent_singleton.add_listener(Fasp::ListenerLogger.new,:struct)
@@ -201,26 +210,24 @@ module Asperalm
         @option_table_style=':.:'
         # set folders for temp files
         Fasp::Parameters.file_list_folder=File.join(@config_folder,'filelists')
-        Oauth.file_list_folder=@config_folder
+        Oauth.persistency_folder=@config_folder
         # option manager is created later
         @opt_mgr=nil
-        # find the root folder of gem where this class is
-        gem_root=File.expand_path(@@CLI_MODULE.to_s.gsub('::','/').gsub(%r([^/]+),'..'),File.dirname(__FILE__))
-        add_plugin_lookup_folder(File.join(gem_root,@@GEM_PLUGINS_FOLDER))
+        add_plugin_lookup_folder(File.join(self.class.gem_root,@@GEM_PLUGINS_FOLDER))
         add_plugin_lookup_folder(File.join(config_folder,@@ASPERA_PLUGINS_FOLDERNAME))
       end
 
       # local options
       def create_opt_mgr
         @opt_mgr=Manager.new(@@PROGRAM_NAME)
-        @opt_mgr.parser.banner = "NAME\n\t#{@@PROGRAM_NAME} -- a command line tool for Aspera Applications (v#{@@TOOL_VERSION})\n\n"
+        @opt_mgr.parser.banner = "NAME\n\t#{@@PROGRAM_NAME} -- a command line tool for Aspera Applications (v#{self.class.gem_version})\n\n"
         @opt_mgr.parser.separator "SYNOPSIS"
         @opt_mgr.parser.separator "\t#{@@PROGRAM_NAME} COMMANDS [OPTIONS] [ARGS]"
         @opt_mgr.parser.separator ""
         @opt_mgr.parser.separator "DESCRIPTION"
         @opt_mgr.parser.separator "\tUse Aspera application to perform operations on command line."
         @opt_mgr.parser.separator "\tOAuth 2.0 is used for authentication in Files, Several authentication methods are provided."
-        @opt_mgr.parser.separator "\tDocumentation and examples: https://rubygems.org/gems/asperalm"
+        @opt_mgr.parser.separator "\tDocumentation and examples: #{@@GEM_URL}"
         @opt_mgr.parser.separator "\texecute: #{@@PROGRAM_NAME} conf doc"
         @opt_mgr.parser.separator ""
         @opt_mgr.parser.separator "COMMANDS"
@@ -245,7 +252,7 @@ module Asperalm
         @opt_mgr.add_opt_switch(:show_config, "Display parameters used for the provided action.") { @option_show_config=true }
         @opt_mgr.add_opt_switch(:rest_debug,"-r","more debug for HTTP calls") { Rest.set_debug(true) }
         @opt_mgr.add_opt_switch(:no_default,"-N","do not load default configuration") { @use_plugin_defaults=false }
-        @opt_mgr.add_opt_switch(:version,"-v","display version") { puts @@TOOL_VERSION;Process.exit(0) }
+        @opt_mgr.add_opt_switch(:version,"-v","display version") { puts self.class.gem_version;Process.exit(0) }
       end
 
       def declare_options
@@ -502,7 +509,7 @@ module Asperalm
         # oldest compatible conf file format, update to latest version when an incompatible change is made
         if !File.exist?(@option_config_file)
           Log.log.warn("No config file found. Creating empty configuration file: #{@option_config_file}")
-          @available_presets={@@MAIN_PLUGIN_NAME_SYM.to_s=>{@@CONFIG_FILE_KEY_VERSION=>@@TOOL_VERSION}}
+          @available_presets={@@MAIN_PLUGIN_NAME_SYM.to_s=>{@@CONFIG_FILE_KEY_VERSION=>self.class.gem_version}}
           save_presets_to_config_file
           return nil
         end
@@ -538,12 +545,12 @@ module Asperalm
           end
           # Place new compatibility code here
           if save_required
-            @available_presets[@@MAIN_PLUGIN_NAME_SYM.to_s][@@CONFIG_FILE_KEY_VERSION]=@@TOOL_VERSION
+            @available_presets[@@MAIN_PLUGIN_NAME_SYM.to_s][@@CONFIG_FILE_KEY_VERSION]=self.class.gem_version
             save_presets_to_config_file
             Log.log.warn("Saving automatic conversion.")
           end
         rescue => e
-          new_name="#{@option_config_file}.pre#{@@TOOL_VERSION}.manual_conversion_needed"
+          new_name="#{@option_config_file}.pre#{self.class.version}.manual_conversion_needed"
           File.rename(@option_config_file,new_name)
           Log.log.warn("Renamed config file to #{new_name}.")
           Log.log.warn("Manual Conversion is required.")
