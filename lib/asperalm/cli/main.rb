@@ -9,6 +9,7 @@ require 'asperalm/fasp/listener_progress'
 require 'asperalm/open_application'
 require 'asperalm/log'
 require 'asperalm/oauth'
+require 'asperalm/files_api'
 require 'text-table'
 require 'fileutils'
 require 'singleton'
@@ -92,6 +93,8 @@ module Asperalm
       # =============================================================
       # Parameter handlers
       #
+      attr_accessor :option_override
+
       def option_insecure; Rest.insecure ; end
 
       def option_insecure=(value); Rest.insecure = value; end
@@ -220,6 +223,7 @@ module Asperalm
       # local options
       def create_opt_mgr
         @opt_mgr=Manager.new(@@PROGRAM_NAME)
+        Plugin.set_refs(@opt_mgr,self)
         @opt_mgr.parser.banner = "NAME\n\t#{@@PROGRAM_NAME} -- a command line tool for Aspera Applications (v#{self.class.gem_version})\n\n"
         @opt_mgr.parser.separator "SYNOPSIS"
         @opt_mgr.parser.separator "\t#{@@PROGRAM_NAME} COMMANDS [OPTIONS] [ARGS]"
@@ -259,6 +263,7 @@ module Asperalm
         # handler must be set before declaration
         @opt_mgr.set_obj_attr(:log_level,Log.instance,:level)
         @opt_mgr.set_obj_attr(:insecure,self,:option_insecure,:no)
+        @opt_mgr.set_obj_attr(:override,self,:option_override,:no)
         @opt_mgr.set_obj_attr(:flat_hash,self,:option_flat_hash)
         @opt_mgr.set_obj_attr(:ts,self,:option_transfer_spec)
         @opt_mgr.set_obj_attr(:to_folder,self,:option_to_folder)
@@ -284,6 +289,7 @@ module Asperalm
         @opt_mgr.add_opt_simple(:use_product,"which local product to use for ascp")
         @opt_mgr.add_opt_boolean(:insecure,"do not validate HTTPS certificate")
         @opt_mgr.add_opt_boolean(:flat_hash,"display hash values as additional keys")
+        @opt_mgr.add_opt_boolean(:override,"override existing value")
 
         @opt_mgr.set_option(:ui,OpenApplication.default_gui_mode)
         @opt_mgr.set_option(:fields,FIELDS_DEFAULT)
@@ -296,9 +302,7 @@ module Asperalm
       def get_plugin_instance(plugin_name_sym)
         Log.log.debug("get_plugin_instance -> #{plugin_name_sym}")
         require @plugins[plugin_name_sym][:require_stanza]
-        command_plugin=Object::const_get(@@PLUGINS_MODULE+'::'+plugin_name_sym.to_s.capitalize).new
-        command_plugin.optmgr=@opt_mgr
-        command_plugin.main=self
+        command_plugin=Object::const_get(@@PLUGINS_MODULE+'::'+plugin_name_sym.to_s.capitalize).new()
         # TODO: check that ancestor is Plugin?
         @opt_mgr.parser.separator "COMMAND: #{plugin_name_sym}"
         @opt_mgr.parser.separator "SUBCOMMANDS: #{command_plugin.action_list.map{ |p| p.to_s}.join(', ')}"
@@ -560,12 +564,19 @@ module Asperalm
 
       protected
 
-      DEFAULT_PRESET='aspera_default'
+      def generate_new_key(key_filepath)
+        require 'net/ssh'
+        priv_key = OpenSSL::PKey::RSA.new(2048)
+        File.write(key_filepath,priv_key.to_s)
+        File.write(key_filepath+".pub",priv_key.public_key.to_s)
+        nil
+      end
+
       DEFAULT_REDIRECT='http://localhost:12345'
 
       # "config" plugin
       def execute_action
-        action=@opt_mgr.get_next_argument('action',[:genkey,:plugins,:flush_tokens,:list,:overview,:open,:echo,:id,:documentation])
+        action=@opt_mgr.get_next_argument('action',[:genkey,:plugins,:flush_tokens,:list,:overview,:open,:echo,:id,:documentation,:quickstart])
         case action
         when :id
           config_name=@opt_mgr.get_next_argument('config name')
@@ -625,10 +636,7 @@ module Asperalm
           return Main.result_none
         when :genkey # generate new rsa key
           key_filepath=@opt_mgr.get_next_argument('private key file path')
-          require 'net/ssh'
-          priv_key = OpenSSL::PKey::RSA.new(2048)
-          File.write(key_filepath,priv_key.to_s)
-          File.write(key_filepath+".pub",priv_key.public_key.to_s)
+          generate_new_key(key_filepath)
           return Main.result_status('generated key: '+key_filepath)
         when :echo # display the content of a value given on command line
           result={:type=>:other_struct, :data=>@opt_mgr.get_next_argument("value")}
@@ -644,20 +652,54 @@ module Asperalm
           return {:data => @available_presets.keys, :type => :value_list, :name => 'name'}
         when :overview
           return {:type=>:hash_array,:data=>self.class.flatten_all_config(@available_presets)}
-        when :aspera_setup # TODO
-          @available_presets[@@CONFIG_FILE_KEY_DEFAULT]||=Hash.new
-          raise CliError,"a default configuration already exists" if @available_presets[@@CONFIG_FILE_KEY_DEFAULT].has_key?(ASPERA_PLUGIN_S)
-          raise CliError,"preset already exists: #{DEFAULT_PRESET}" if @available_presets.has_key?(DEFAULT_PRESET)
-          @available_presets[@@CONFIG_FILE_KEY_DEFAULT][ASPERA_PLUGIN_S]=DEFAULT_PRESET
-          @opt_mgr.set_option(:interactive,:yes)
-          @opt_mgr.add_opt_simple(:url,"URL of application, e.g. http://org.asperafiles.com")
+        when :quickstart # TODO
+          # only one value, so no test, no switch for the time being
+          plugin_name=@opt_mgr.get_next_argument('plugin name',[:aspera])
+          require 'asperalm/cli/plugins/aspera'
+          files_plugin=Plugins::Aspera.new
+          files_plugin.declare_options
           @opt_mgr.parse_options!
-          @available_presets[DEFAULT_PRESET]={
-            :url.to_s=>@opt_mgr.get_option(:url,:mandatory),
-            :redirect_uri.to_s=>DEFAULT_REDIRECT,
-            :client_id.to_s=>@opt_mgr.get_option(:client_id,:mandatory),
+          @opt_mgr.set_option(:auth,:web)
+          #@opt_mgr.set_option(:client_id,FilesApi.random.first)
+          #@opt_mgr.set_option(:client_secret,FilesApi.random.last)
+          #@opt_mgr.set_option(:redirect_uri,'https://asperafiles.com/token')
+          @opt_mgr.set_option(:redirect_uri,DEFAULT_REDIRECT)
+          instance_url=@opt_mgr.get_option(:url,:mandatory)
+          organization,instance_domain=FilesApi.parse_url(instance_url)
+          aspera_preset_name='aoc_'+organization
+          @available_presets[@@CONFIG_FILE_KEY_DEFAULT]||=Hash.new
+          raise CliError,"a default configuration already exists (use --override=yes)" if @available_presets[@@CONFIG_FILE_KEY_DEFAULT].has_key?(ASPERA_PLUGIN_S) and !option_override
+          raise CliError,"preset already exists: #{aspera_preset_name}  (use --override=yes)" if @available_presets.has_key?(aspera_preset_name) and !option_override
+          files_plugin.init_apis
+          myself=files_plugin.api_files_user.read('self')[:data]
+          if !myself['public_key'].empty?
+            Log.log.warn("public key is already set, overriding")
+          end
+          key_filepath=File.join(@config_folder,'aspera_on_cloud_key')
+          if File.exist?(key_filepath)
+            puts "key file already exists: #{key_filepath}"
+          else
+            puts "generating: #{key_filepath}"
+            generate_new_key(key_filepath)
+          end
+          puts "updating profile with new key"
+          files_plugin.api_files_user.update("users/#{myself['id']}",{'public_key'=>File.read(key_filepath+'.pub')})
+          puts "creating new config preset: #{aspera_preset_name}"
+          @available_presets[aspera_preset_name]={
+            :url.to_s           =>@opt_mgr.get_option(:url),
+            :redirect_uri.to_s  =>@opt_mgr.get_option(:redirect_uri),
+            :client_id.to_s     =>@opt_mgr.get_option(:client_id),
+            :client_secret.to_s =>@opt_mgr.get_option(:client_secret),
+            :auth.to_s          =>:jwt.to_s,
+            :private_key.to_s   =>'@file:'+key_filepath,
+            :username.to_s      =>myself['email'],
           }
-          raise "todo"
+          puts "setting config preset as default for #{ASPERA_PLUGIN_S}"
+          @available_presets[@@CONFIG_FILE_KEY_DEFAULT][ASPERA_PLUGIN_S]=aspera_preset_name
+          puts "saving config file"
+          save_presets_to_config_file
+          return Main.result_status("Done. You can test with:\naslmcli aspera user info show")
+          # TODO: update documentation, enable JWT for the client_id
         end
       end
 

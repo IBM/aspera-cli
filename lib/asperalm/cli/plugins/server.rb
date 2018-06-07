@@ -13,9 +13,6 @@ module Asperalm
           end
         end
 
-        def initialize
-        end
-
         alias super_declare_options declare_options
 
         def declare_options

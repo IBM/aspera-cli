@@ -922,7 +922,7 @@ JWT needs to be authorized in Aspera on Cloud. This can be done in two manners:
 <img src="docs/AuthJWT.png" alt="Files-admin-organization-apiclient-create"/>
 
 * Open a web browser, log to your instance: https://laurent.ibmaspera.com/
-* Go to Admin View-Organization-API Clients
+* Go to Apps-Admin-Organization-Integrations
 * Click on the previously created application
 * select tab : "Authentication Options"
 * Modify options:
@@ -1064,6 +1064,14 @@ $ aslmcli aspera user workspaces
 : 17   : Marketing                  :
 : 18   : Sales                      :
 :......:............................:
+```
+
+* Create a sub access key in a "node"
+
+Creation of a sub-access key is like creation of access key with the following difference: authentication to node API is made with accesskey (master access key) and only the path parameter is provided: it is relative to the storage root of the master key. (id and secret are optional)
+
+```
+$ aslmcli aspera admin resource node --name=_node_name_ --secret=_secret_ do access_key create --value=@json:'{"storage":{"path":"/folder1"}}'
 ```
 
 ## Aspera Node (Transfer Server)

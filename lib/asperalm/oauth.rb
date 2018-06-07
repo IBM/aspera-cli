@@ -53,7 +53,7 @@ module Asperalm
       @token_cache={}
       if @rest_params.has_key?(:oauth_redirect_uri)
         uri=URI.parse(@rest_params[:oauth_redirect_uri])
-        raise "redirect_uri scheme must be http" unless uri.scheme.eql?('http')
+        raise "redirect_uri scheme must be http" unless uri.scheme.start_with?('http')
         raise "redirect_uri must have a port" if uri.port.nil?
         # we could check that host is localhost or local address
       end
@@ -185,9 +185,10 @@ module Asperalm
             call_data[:auth_type]=:basic
             call_data[:basic_username]=@rest_params[:oauth_basic_username]
             call_data[:basic_password]=@rest_params[:oauth_basic_password]
-          else
+          when :www_body
             call_data[:www_body_params][:username]=@rest_params[:oauth_basic_username]
             call_data[:www_body_params][:password]=@rest_params[:oauth_basic_password]
+          else raise "unsupported case"
           end
           # basic password auth, works only for some users in aspera files, deprecated
           resp=@rest.call(call_data)
@@ -199,7 +200,7 @@ module Asperalm
             :url_params=>{
             :response_type=>'code',
             :client_id=>@rest_params[:oauth_client_id],
-            :oauth_redirect_uri=>@rest_params[:oauth_redirect_uri],
+            :redirect_uri=>@rest_params[:oauth_redirect_uri],
             :scope=>api_scope,
             :client_secret=>@rest_params[:oauth_client_secret],
             :state=>check_code
@@ -220,7 +221,7 @@ module Asperalm
             :grant_type=>'authorization_code',
             :code=>code,
             :scope=>api_scope,
-            :oauth_redirect_uri=>@rest_params[:oauth_redirect_uri],
+            :redirect_uri=>@rest_params[:oauth_redirect_uri],
             :client_id=>@rest_params[:oauth_client_id],
             :state=>UNUSED_STATE
             }})

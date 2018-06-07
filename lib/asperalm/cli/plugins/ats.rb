@@ -16,6 +16,8 @@ module Asperalm
           ATS_KEYS_FILENAME="ats_api_keys.json"
           attr_reader :ats_api_public
           def initialize
+            super()
+            Log.log.debug("-> #{@optmgr}".red)
             # special
             @current_api_key_info=nil
             @repo_api_keys=nil
@@ -60,7 +62,7 @@ module Asperalm
           # or creates a new one
           def current_api_key
             if @current_api_key_info.nil?
-              requested_id=@optmgr.get_option(:ats_id,:optional)
+              requested_id=self.optmgr.get_option(:ats_id,:optional)
               if requested_id.nil?
                 # if no api key requested and no repo, create one
                 create_new_api_key if repo_api_keys.empty?
@@ -94,9 +96,9 @@ module Asperalm
           end
 
           def execute_action_api_key
-            command=@optmgr.get_next_argument('command',[:create, :list, :show, :delete, :info, :subscriptions, :cache])
+            command=self.optmgr.get_next_argument('command',[:create, :list, :show, :delete, :info, :subscriptions, :cache])
             if [:show,:delete].include?(command)
-              modified_ats_id=@optmgr.get_option(:id,:mandatory)
+              modified_ats_id=self.optmgr.get_option(:id,:mandatory)
             end
             case command
             when :create
@@ -115,12 +117,12 @@ module Asperalm
             when :subscriptions
               return {:type=>:key_val_list, :data=>ats_api_secure.read("subscriptions")[:data]}
             when :cache # list of delete entries in api_key cache
-              command=@optmgr.get_next_argument('command',[:list, :delete])
+              command=self.optmgr.get_next_argument('command',[:list, :delete])
               case command
               when :list
                 return {:type=>:hash_array, :data=>repo_api_keys, :fields =>['ats_id','ats_secret','ats_description','subscription_name','organization_name']}
               when :delete
-                deleted_ats_id=@optmgr.get_next_argument('ats_id',repo_api_keys.map{|i| i['ats_id']})
+                deleted_ats_id=self.optmgr.get_next_argument('ats_id',repo_api_keys.map{|i| i['ats_id']})
                 #raise CliBadArgument,"no such id" if repo_api_keys.select{|i| i['ats_id'].eql?(ats_id)}.empty?
                 repo_api_keys.select!{|i| !i['ats_id'].eql?(deleted_ats_id)}
                 save_key_repo
@@ -136,6 +138,7 @@ module Asperalm
         attr_writer :ats_api_secure
 
         def initialize
+          super()
           @ats_legacy = nil
           # REST end points
           @ats_api_public = nil
@@ -162,13 +165,13 @@ module Asperalm
 
         def declare_options(skip_common=false)
           unless skip_common
-            @optmgr.add_opt_simple(:id,"Access key identifier, or server id, or api key id")
-            @optmgr.add_opt_simple(:secret,"Access key secret")
+            self.optmgr.add_opt_simple(:id,"Access key identifier, or server id, or api key id")
+            self.optmgr.add_opt_simple(:secret,"Access key secret")
           end
-          @optmgr.add_opt_simple(:ats_id,"ATS key identifier (ats_xxx)")
-          @optmgr.add_opt_simple(:params,"Parameters access key creation (@json:)")
-          @optmgr.add_opt_simple(:cloud,"Cloud provider")
-          @optmgr.add_opt_simple(:region,"Cloud region")
+          self.optmgr.add_opt_simple(:ats_id,"ATS key identifier (ats_xxx)")
+          self.optmgr.add_opt_simple(:params,"Parameters access key creation (@json:)")
+          self.optmgr.add_opt_simple(:cloud,"Cloud provider")
+          self.optmgr.add_opt_simple(:region,"Cloud region")
         end
 
         # currently supported clouds
@@ -201,22 +204,22 @@ module Asperalm
         #
         def server_by_cloud_region
           # todo: provide list ?
-          cloud=@optmgr.get_option(:cloud,:mandatory).upcase
-          region=@optmgr.get_option(:region,:mandatory)
+          cloud=self.optmgr.get_option(:cloud,:mandatory).upcase
+          region=self.optmgr.get_option(:region,:mandatory)
           return api_public.read("servers/#{cloud}/#{region}")[:data]
         end
 
         def execute_action_access_key
           commands=[:create,:list,:show,:delete,:node]
           commands.push(:cluster) unless @ats_legacy.nil?
-          command=@optmgr.get_next_argument('command',commands)
+          command=self.optmgr.get_next_argument('command',commands)
           # those dont require access key id
           unless [:create,:list].include?(command)
-            access_key_id=@optmgr.get_option(:id,:mandatory)
+            access_key_id=self.optmgr.get_option(:id,:mandatory)
           end
           case command
           when :create
-            params=@optmgr.get_option(:params,:optional) || {}
+            params=self.optmgr.get_option(:params,:optional) || {}
             server_data=nil
             # if transfer_server_id not provided, get it from command line options
             if !params.has_key?('transfer_server_id')
@@ -238,7 +241,7 @@ module Asperalm
             return {:type=>:key_val_list, :data=>res[:data]}
             # TODO : action : modify, with "PUT"
           when :list
-            params=@optmgr.get_option(:params,:optional) || {'offset'=>0,'max_results'=>1000}
+            params=self.optmgr.get_option(:params,:optional) || {'offset'=>0,'max_results'=>1000}
             res=api_secure.read("access_keys",params)
             return {:type=>:hash_array, :data=>res[:data]['data'], :fields => ['name','id','secret','created','modified']}
           when :show
@@ -252,14 +255,14 @@ module Asperalm
             server_data=all_servers.select {|i| i['id'].start_with?(ak_data['transfer_server_id'])}.first
             raise CliError,"no such server found" if server_data.nil?
             api_node=Rest.new({:base_url=>server_data['transfer_setup_url'],:auth_type=>:basic,:basic_username=>ak_data['id'], :basic_password=>ak_data['secret']})
-            command=@optmgr.get_next_argument('command',Node.common_actions)
-            Node.new(self).execute_common(command,api_node)
+            command=self.optmgr.get_next_argument('command',Node.common_actions)
+            Node.new.execute_common(command,api_node)
           when :cluster
             rest_params={
               :base_url       => api_secure.params[:base_url],
               :auth_type      => :basic,
               :basic_username => access_key_id,
-              :basic_password => @optmgr.get_option(:secret,:optional)
+              :basic_password => self.optmgr.get_option(:secret,:optional)
             }
             # if no access key id provided, then we get from ATS API
             if rest_params[:basic_password].nil?
@@ -274,14 +277,14 @@ module Asperalm
         end
 
         def execute_action_cluster
-          command=@optmgr.get_next_argument('command',[ :clouds, :list, :show])
+          command=self.optmgr.get_next_argument('command',[ :clouds, :list, :show])
           case command
           when :clouds
             return {:type=>:key_val_list, :data=>all_clouds, :columns=>['id','name']}
           when :list
             return {:type=>:hash_array, :data=>all_servers, :fields=>['id','cloud','region']}
           when :show
-            server_id=@optmgr.get_option(:id,:optional)
+            server_id=self.optmgr.get_option(:id,:optional)
             if server_id.nil?
               server_data=server_by_cloud_region
             else
@@ -300,7 +303,7 @@ module Asperalm
 
         # called for legacy and AoC
         def execute_action_gen
-          command=@optmgr.get_next_argument('command',action_list)
+          command=self.optmgr.get_next_argument('command',action_list)
           case command
           when :cluster # display general ATS cluster information
             return execute_action_cluster
@@ -315,8 +318,6 @@ module Asperalm
         # called for legacy ATS only
         def execute_action
           @ats_legacy=LegacyAts.new
-          @ats_legacy.optmgr=self.optmgr
-          @ats_legacy.main=self.main
           execute_action_gen
         end
       end

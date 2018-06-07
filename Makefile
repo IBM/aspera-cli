@@ -194,74 +194,85 @@ t/nd5:
 	@touch $@
 tnode: t/nd1 t/nd2 t/nd3 t/nd4 t/nd5
 
-t/fs1:
+t/aoc1:
 	$(EXETEST) aspera files browse /
 	@touch $@
-t/fs2:
+t/aoc2:
 	$(EXETEST) aspera files upload $(SAMPLE_FILE) --to-folder=/
 	@touch $@
-t/fs3:
+t/aoc3:
 	mkdir -p $(TEST_FOLDER)
 	$(EXETEST) aspera files download /200KB.1 --to-folder=$(TEST_FOLDER) --transfer=connect
 	rm -f 200KB.1
 	@touch $@
-t/fs3b:
+t/aoc3b:
 	mkdir -p $(TEST_FOLDER)
 	$(EXETEST) aspera files download /200KB.1 --to-folder=$(TEST_FOLDER) --download=node
 	rm -f 200KB.1
 	@touch $@
-t/fs4:
+t/aoc4:
 	$(EXETEST) aspera packages send $(SAMPLE_FILE) --note="my note" --title="my title" --recipient="laurent.martin.aspera@fr.ibm.com"
 	@touch $@
-t/fs5:
+t/aoc5:
 	$(EXETEST) aspera packages list
 	@touch $@
-t/fs6:
+t/aoc6:
 	$(EXETEST) aspera packages recv --id=BTckDm-67Q
 	@touch $@
-t/fs7:
+t/aoc7:
 	$(EXETEST) aspera admin events
 	@touch $@
-t/fs8:
+t/aoc8:
 	$(EXETEST) aspera admin resource workspace list
 	@touch $@
-t/fs9:
+t/aoc9:
 	$(EXETEST) aspera admin resource node --name=eudemo do browse / --secret=Aspera123_
 	@touch $@
-
-t/fsat4:
+t/aoc10:
+	$(EXETEST) aspera admin resource node --name=eudemo --secret=Aspera123_ do mkdir /folder1
+	@touch $@
+t/aoc11:
+	$(EXETEST) aspera admin resource node --name=eudemo --secret=Aspera123_ do access_key create --value=@json:'{"id":"testsub1","storage":{"path":"/folder1"}}'
+	@touch $@
+t/aoc12:
+	$(EXETEST) aspera admin resource node --name=eudemo --secret=Aspera123_ do access_key delete --eid=testsub1
+	@touch $@
+t/aoc13:
+	$(EXETEST) aspera admin resource node --name=eudemo --secret=Aspera123_ do delete /folder1
+	@touch $@
+t/aocat4:
 	$(EXETEST) aspera admin ats cluster list
 	@touch $@
-t/fsat5:
+t/aocat5:
 	$(EXETEST) aspera admin ats cluster clouds
 	@touch $@
-t/fsat6:
+t/aocat6:
 	$(EXETEST) aspera admin ats cluster show --cloud=aws --region=eu-west-1 
 	@touch $@
-t/fsat7:
+t/aocat7:
 	$(EXETEST) aspera admin ats cluster show --id=1f412ae7-869a-445c-9c05-02ad16813be2
 	@touch $@
-t/fsat8:
+t/aocat8:
 	$(EXETEST) aspera admin ats access_key create --cloud=softlayer --region=ams --params=@json:'{"id":"testkey2","name":"laurent key","storage":{"type":"softlayer_swift","container":"laurent","credentials":{"api_key":"e5d032e026e0b0a16e890a3d44d11fd1471217b6262e83c7f60529f1ff4b27de","username":"IBMOS303446-9:laurentmartin"},"path":"/"}}'
 	@touch $@
-t/fsat9:
+t/aocat9:
 	$(EXETEST) aspera admin ats access_key create --cloud=aws --region=eu-west-1 --params=@json:'{"id":"testkey3","name":"laurent key AWS","storage":{"type":"aws_s3","bucket":"sedemo-ireland","credentials":{"access_key_id":"AKIAIDSWKOSIM7XUVCJA","secret_access_key":"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"},"path":"/laurent"}}'
 	@touch $@
-t/fsat10:
+t/aocat10:
 	$(EXETEST) aspera admin ats access_key list --fields=name,id,secret
 	@touch $@
-t/fsat11:
+t/aocat11:
 	$(EXETEST) aspera admin ats access_key --id=testkey2 node browse /
 	@touch $@
-t/fsat13:
+t/aocat13:
 	-$(EXETEST) aspera admin ats access_key --id=testkey2 delete
 	@touch $@
-t/fsat14:
+t/aocat14:
 	-$(EXETEST) aspera admin ats access_key --id=testkey3 delete
 	@touch $@
 
-tfsat: t/fsat4 t/fsat5 t/fsat6 t/fsat7 t/fsat8 t/fsat9 t/fsat10 t/fsat11 t/fsat13 t/fsat14
-tfiles: t/fs1 t/fs2 t/fs3 t/fs3b t/fs4 t/fs5 t/fs6 t/fs7 t/fs8 t/fs9 tfsat
+tfsat: t/aocat4 t/aocat5 t/aocat6 t/aocat7 t/aocat8 t/aocat9 t/aocat10 t/aocat11 t/aocat13 t/aocat14
+tfiles: t/aoc1 t/aoc2 t/aoc3 t/aoc3b t/aoc4 t/aoc5 t/aoc6 t/aoc7 t/aoc8 t/aoc9 t/aoc10 t/aoc11 t/aoc12 t/aoc13 tfsat
 
 t/o1:
 	$(EXETEST) orchestrator info

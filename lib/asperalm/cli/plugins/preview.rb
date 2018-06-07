@@ -50,6 +50,7 @@ module Asperalm
         end
 
         def initialize
+          super()
           @option_iteration_file_filepath=nil
           @skip_types=[]
           @default_transfer_spec=nil

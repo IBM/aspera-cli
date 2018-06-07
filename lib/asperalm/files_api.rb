@@ -1,7 +1,10 @@
 require 'asperalm/log'
+require 'base64'
 
 module Asperalm
   class FilesApi
+    PRODUCT_NAME='Aspera on Cloud'
+    PRODUCT_DOMAIN='ibmaspera.com'
     # various API scopes supported
     SCOPE_FILES_SELF='self'
     SCOPE_FILES_USER='user:all'
@@ -10,30 +13,41 @@ module Asperalm
     SCOPE_FILES_ADMIN_USER_USER=SCOPE_FILES_ADMIN_USER+'+'+SCOPE_FILES_USER
     SCOPE_NODE_USER='user:all'
     SCOPE_NODE_ADMIN='admin:all'
+    
+    PATH_PUBLIC_PACKAGE='/packages/public/receive'
 
-    # strings AsperaDrive|grep -E '.{100}==$'|base64 --decode|rev
-    RANDOM='1FwelGbL9xsv3M8H-VXPs5k69OdbaMgfB66qfBqlELFPk6r9ANztmGMOSLqaXEWXEPwk-6JnMZ7-RaXAYLd5thLbcL3QzgeU:evird.arepsa';
+    # some cool random string
+    # strings /Applications/Aspera\ Drive.app/Contents/MacOS/AsperaDrive|grep -E '.{100}==$'|rev
+    RANDOM_SEED='==QMGdXZsdkYMlDezZ3MNhDStYFWQNXNrZTOPRmYh10ZmJkN2EnZCFHbFxkRQtmNylTQOpHdtdUTPNFTxFGWFdFWFB1dr1iNK5WTadTLSFGWBlFTkVDdoxkYjx0MRp3ZlVlOlZXayRmLhJXZwNXY';
     def self.random
-      RANDOM.reverse.split(':')
+      Base64.strict_decode64(RANDOM_SEED.reverse).split(':')
+    end
+    
+    def self.parse_url(aoc_org_url)
+      uri=URI.parse(aoc_org_url.gsub(/\/+$/,''))
+      instance_fqdn=uri.host
+      Log.log.debug("instance_fqdn=#{instance_fqdn}")
+      raise "No host found in URL.Please check URL format: https://myorg.#{PRODUCT_DOMAIN}" if instance_fqdn.nil?
+      organization,instance_domain=instance_fqdn.split('.',2)
+      Log.log.debug("instance_domain=#{instance_domain}")
+      Log.log.debug("organization=#{organization}")
+      raise "expecting a public FQDN for #{PRODUCT_NAME}" if instance_domain.nil?
+      return organization,instance_domain
     end
 
     # get necessary fixed information to create JWT or call API
-    # instance domain is asperafiles.com or qa.asperafiles.com
-    def self.set_rest_params(aoc_org_url,rest_params)
-      uri=URI.parse(aoc_org_url.gsub(/\/+$/,''))
-      instance_fqdn=uri.host
-      raise "No host found in URL.Please check URL format: https://myorg.ibmaspera.com" if instance_fqdn.nil?
-      organization,instance_domain=instance_fqdn.split('.',2)
-      raise "expecting a public FQDN for Files" if instance_domain.nil?
-      Log.log.debug("instance_fqdn=#{instance_fqdn}")
-      Log.log.debug("instance_domain=#{instance_domain}")
-      Log.log.debug("organization=#{organization}")
-      rest_params[:base_url] = 'https://api.'+instance_domain+'/api/v1'
-      rest_params[:oauth_base_url] = rest_params[:base_url]+"/oauth2/#{organization}"
-      rest_params[:oauth_jwt_audience] = 'https://api.asperafiles.com/api/v1/oauth2/token'
-      rest_params[:oauth_path_authorize] = "authorize"
-      rest_params[:oauth_path_token] = "token"
-      return nil
+    # instance domain is: ibmaspera.com, asperafiles.com or qa.asperafiles.com, etc...
+    def self.base_rest_params(aoc_org_url)
+      organization,instance_domain=parse_url(aoc_org_url)
+      base_url='https://api.'+instance_domain+'/api/v1'
+      return {
+        :base_url             => base_url,
+        :auth_type            => :oauth2,
+        :oauth_base_url       => "#{base_url}/oauth2/#{organization}",
+        :oauth_path_authorize => 'authorize',
+        :oauth_path_token     => 'token',
+        :oauth_jwt_audience   => 'https://api.asperafiles.com/api/v1/oauth2/token'
+      }
     end
 
     # node API scopes

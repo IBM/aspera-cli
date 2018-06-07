@@ -232,7 +232,7 @@ module Asperalm
               raise "error"
             end
           when :access_key
-            return Plugin.entity_action(api_node,'access_keys',['id','root_file_id','storage','license'])
+            return Plugin.entity_action(api_node,'access_keys',['id','root_file_id','storage','license'],:id)
           when :service
             command=@optmgr.get_next_argument('command',[ :list, :create, :delete])
             if [:delete].include?(command)
@@ -254,7 +254,7 @@ module Asperalm
             end
           when :watch_folder
             res_class_path='v3/watchfolders'
-            #return Plugin.entity_action(api_node,'v3/watchfolders',nil)
+            #return Plugin.entity_action(api_node,'v3/watchfolders',nil,:id)
             command=@optmgr.get_next_argument('command',[ :create, :list, :show, :modify, :delete, :state])
             if [:show,:modify,:delete,:state].include?(command)
               one_res_id=@optmgr.get_option(:id,:mandatory)

@@ -96,7 +96,7 @@ module Asperalm
           case command
           when :repository
             command=@optmgr.get_next_argument('command',Node.common_actions)
-            return Node.new(self).execute_common(command,@api_shares_node)
+            return Node.new.execute_common(command,@api_shares_node)
           when :appinfo
             node_info=@api_shares_node.call({:operation=>'GET',:subpath=>'app',:headers=>{'Accept'=>'application/json','Content-Type'=>'application/json'}})[:data]
             return { :type=>:key_val_list ,:data => node_info }

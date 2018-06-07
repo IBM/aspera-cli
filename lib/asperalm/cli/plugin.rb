@@ -2,6 +2,11 @@ module Asperalm
   module Cli
     # base class for plugins modules
     class Plugin
+      def self.set_refs(optmgr,main)
+        @@optmgr=optmgr
+        @@main=main
+      end
+
       def self.result_none
         return {:type => :empty, :data => :nil }
       end
@@ -13,17 +18,16 @@ module Asperalm
       def self.result_success
         return result_status('complete')
       end
-
       GLOBAL_OPS=[:create,:list]
       INSTANCE_OPS=[:modify,:delete,:show]
       ALL_OPS=[GLOBAL_OPS,INSTANCE_OPS].flatten
 
       # implement generic rest operations on given resource path
-      def self.entity_action(rest_api,res_class_path,display_fields)
+      def self.entity_action(rest_api,res_class_path,display_fields,id_symb)
         res_name=res_class_path.gsub(%r{.*/},'').gsub(%r{^s$},'').gsub('_',' ')
         command=Main.tool.options.get_next_argument('command',ALL_OPS)
         if INSTANCE_OPS.include?(command)
-          one_res_id=Main.tool.options.get_option(:id,:mandatory)
+          one_res_id=Main.tool.options.get_option(id_symb,:mandatory)
           one_res_path="#{res_class_path}/#{one_res_id}"
         end
         if [:create,:modify].include?(command)
@@ -48,13 +52,13 @@ module Asperalm
         end
       end
 
-      attr_accessor :optmgr
-      attr_accessor :main
+      attr_reader :optmgr
+      attr_reader :main
 
-      def initialize(ref=nil)
+      def initialize
         # main is used for .options
-        @optmgr=ref.nil? ? nil : ref.optmgr
-        @main=ref.nil? ? nil : ref.main
+        @optmgr=@@optmgr
+        @main=@@main
       end
 
       def declare_options
