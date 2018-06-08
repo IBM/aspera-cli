@@ -731,6 +731,10 @@ module Asperalm
 
       public
 
+      def preset_by_name(config_name)
+        raise "no such config: #{config_name}" unless @available_presets.has_key?(config_name)
+        return @available_presets[config_name]
+      end
       # public method
       # $HOME/.aspera/aslmcli
       attr_reader :config_folder

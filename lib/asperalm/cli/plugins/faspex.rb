@@ -18,6 +18,7 @@ module Asperalm
           @optmgr.add_opt_simple(:note,"package note")
           @optmgr.add_opt_simple(:metadata,"package metadata hash value (use @json:)")
           @optmgr.add_opt_simple(:source_name,"create package from remote source (by name)")
+          @optmgr.add_opt_simple(:storage,"Faspex local storage definition")
           @optmgr.add_opt_list(:box,[:inbox,:sent,:archive],"package box")
           @optmgr.set_option(:box,:inbox)
         end
@@ -179,7 +180,7 @@ module Asperalm
               # get id and name
               source_name=source_ids.first['name']
               source_id=source_ids.first['id']
-              source_hash=@optmgr.get_option(:storage,:optional)
+              source_hash=@optmgr.get_option(:storage,:mandatory)
               raise CliError,"No storage defined in aslmcli config" if source_hash.nil?
               if !source_hash.has_key?(source_name)
                 raise CliError,"No such storage in aslmcli config: \"#{source_name}\" in [#{source_hash.keys.join(', ')}]"
@@ -191,15 +192,16 @@ module Asperalm
               when :info
                 return {:data=>source_info,:type=>:key_val_list}
               when :node
-                node_config=get_plugin_default_config(:node,source_info[@@KEY_NODE])
-                raise CliError,"No such node aslmcli config: \"#{source_info[@@KEY_NODE]}\"" if node_config.nil?
+                node_config=@main.preset_by_name(source_info[@@KEY_NODE])
+                raise CliError,"bad type for: \"#{source_info[@@KEY_NODE]}\"" unless node_config.is_a?(Hash)
+                Log.log.debug("node=#{node_config}")
                 api_node=Rest.new({
-                  :base_url => node_config[:url],
-                  :auth_type=>:basic,
-                  :basic_username=>node_config[:username],
-                  :basic_password=>node_config[:password]})
+                  :base_url      => node_config['url'],
+                  :auth_type     =>:basic,
+                  :basic_username=>node_config['username'],
+                  :basic_password=>node_config['password']})
                 command=@optmgr.get_next_argument('command',Node.common_actions)
-                return Node.new(self).execute_common(command,api_node,source_info[@@KEY_PATH])
+                return Node.new.execute_common(command,api_node,source_info[@@KEY_PATH])
               end
             end
           when :me

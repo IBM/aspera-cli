@@ -98,7 +98,8 @@ module Asperalm
     # :auth_url_creds   [:url]
     # :oauth_*          [:oauth2]
     def initialize(a_rest_params)
-      raise "error" unless a_rest_params.is_a?(Hash) and a_rest_params[:base_url].is_a?(String)
+      raise "ERROR: expecting Hash" unless a_rest_params.is_a?(Hash) 
+      raise "ERROR: expecting base_url" unless a_rest_params[:base_url].is_a?(String)
       @rest_params=a_rest_params.clone
       # base url without trailing slashes
       @rest_params[:base_url].gsub!(/\/+$/,'')

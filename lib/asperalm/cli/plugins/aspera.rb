@@ -198,7 +198,7 @@ module Asperalm
             # TODO: shall we support all methods here ? what if there is a link ?
             node_info=@api_files_user.read("nodes/#{home_node_id}")[:data]
             node_api=get_files_node_api(node_info,FilesApi::SCOPE_NODE_USER)
-            return Node.new(self).execute_common(command_legacy,node_api)
+            return Node.new.execute_common(command_legacy,node_api)
           when :file
             fileid=self.optmgr.get_next_argument("file id")
             node_info,file_id = find_nodeinfo_and_fileid(home_node_id,fileid)
