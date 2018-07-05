@@ -44,8 +44,21 @@ module Asperalm
           elsif data['error'].is_a?(String)
             message=data['error']
           end
+          # TODO: data['code'] and data['message'] ?
           if data['error_description'].is_a?(String)
             message=message+": "+data['error_description']
+          end
+          if data['message'].is_a?(String)
+            message=message+": "+data['message']
+            data.delete('message')
+            data.each do |k,v|
+              message=message+"\n#{k}: #{v}"
+            end
+          end
+          if data['errors'].is_a?(Hash)
+            data['errors'].each do |k,v|
+              message=message+"\n#{k}: #{v}"
+            end
           end
         end
       end
@@ -62,7 +75,7 @@ module Asperalm
     # create and start keep alive connection on demand
     def http_session
       if @http_session.nil?
-        uri=get_uri({:subpath=>''})
+        uri=self.class.build_uri(@params[:base_url])
         # this honors http_proxy env var
         @http_session=Net::HTTP.new(uri.host, uri.port)
         @http_session.use_ssl = uri.scheme == 'https'
@@ -85,11 +98,9 @@ module Asperalm
 
     def self.insecure; @@insecure;end
 
-    def self.set_debug(flag); Log.log.debug "debug http=#{flag}"; @@debug=flag; end
+    def self.debug=(flag); Log.log.debug "debug http=#{flag}"; @@debug=flag; end
 
-    def params
-      return @rest_params
-    end
+    attr_reader :params
 
     # @param a_rest_params authentication and default call parameters
     # :auth_type (:basic, :oauth2, :url)
@@ -98,16 +109,16 @@ module Asperalm
     # :auth_url_creds   [:url]
     # :oauth_*          [:oauth2]
     def initialize(a_rest_params)
-      raise "ERROR: expecting Hash" unless a_rest_params.is_a?(Hash) 
+      raise "ERROR: expecting Hash" unless a_rest_params.is_a?(Hash)
       raise "ERROR: expecting base_url" unless a_rest_params[:base_url].is_a?(String)
-      @rest_params=a_rest_params.clone
+      @params=a_rest_params.clone
       # base url without trailing slashes
-      @rest_params[:base_url].gsub!(/\/+$/,'')
+      @params[:base_url].gsub!(/\/+$/,'')
       @http_session=nil
-      if @rest_params[:auth_type].eql?(:oauth2)
-        @oauth=Oauth.new(@rest_params)
+      if @params[:auth_type].eql?(:oauth2)
+        @oauth=Oauth.new(@params)
       end
-      Log.log.debug("Rest.new #{@rest_params}")
+      Log.log.debug("Rest.new #{@params}")
     end
 
     def oauth_token(api_scope=nil,use_refresh_token=false)
@@ -115,15 +126,11 @@ module Asperalm
       return @oauth.get_authorization(api_scope,use_refresh_token)
     end
 
-    # build URI from URL and parameters
-    def get_uri(call_data)
-      uri=URI.parse(@rest_params[:base_url]+"/"+call_data[:subpath])
-      if ! ['http','https'].include?(uri.scheme)
-        raise "REST endpoint shall be http(s)"
-      end
-      if call_data.has_key?(:url_params) and !call_data[:url_params].nil? then
-        uri.query=URI.encode_www_form(call_data[:url_params])
-      end
+    # build URI from URL and parameters and check it is http or https
+    def self.build_uri(url,params=nil)
+      uri=URI.parse(url)
+      raise "REST endpoint shall be http(s)" unless ['http','https'].include?(uri.scheme)
+      uri.query=URI.encode_www_form(params) unless params.nil?
       return uri
     end
 
@@ -142,7 +149,7 @@ module Asperalm
       raise "Hash call parameter is required (#{call_data.class})" unless call_data.is_a?(Hash)
       Log.log.debug "accessing #{call_data[:subpath]}".red.bold.bg_green
       call_data[:headers]||={}
-      call_data.merge!(@rest_params) { |key, v1, v2| next v1.merge(v2) if v1.is_a?(Hash) and v2.is_a?(Hash); v1 }
+      call_data.merge!(@params) { |key, v1, v2| next v1.merge(v2) if v1.is_a?(Hash) and v2.is_a?(Hash); v1 }
       # :auth_type = :oauth2 requires generation of token
       if call_data[:auth_type].eql?(:oauth2) and !call_data[:headers].has_key?('Authorization') then
         call_data[:headers]['Authorization']=oauth_token
@@ -154,7 +161,7 @@ module Asperalm
           call_data[:url_params][key]=value
         end
       end
-      uri=get_uri(call_data)
+      uri=self.class.build_uri("#{@params[:base_url]}/#{call_data[:subpath]}",call_data[:url_params])
       Log.log.debug "URI=#{uri}"
       case call_data[:operation]
       when 'GET'; req = Net::HTTP::Get.new(uri.request_uri)
@@ -218,7 +225,7 @@ module Asperalm
         end
 
         Log.log.debug "result: code=#{result[:http].code}"
-        raise RestCallError.new(result[:http]) if !result[:http].code.start_with?('2')
+        raise RestCallError.new(result[:http]) unless result[:http].code.start_with?('2')
         if call_data.has_key?(:headers) and
         call_data[:headers].has_key?('Accept') and
         call_data[:headers]['Accept'].eql?('application/json') then
@@ -250,8 +257,8 @@ module Asperalm
     # CRUD methods here
     #
 
-    def create(subpath,params)
-      return call({:operation=>'POST',:subpath=>subpath,:headers=>{'Accept'=>'application/json'},:json_params=>params})
+    def create(subpath,params,encoding=:json_params)
+      return call({:operation=>'POST',:subpath=>subpath,:headers=>{'Accept'=>'application/json'},encoding=>params})
     end
 
     def read(subpath,args=nil)
