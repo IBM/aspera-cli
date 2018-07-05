@@ -27,12 +27,10 @@ module Asperalm
             :base_url             => shares2_api_base_url,
             :auth_type            => :oauth2,
             :oauth_base_url       => shares2_api_base_url+'/oauth2',
-            :oauth_path_authorize => "authorize",
-            :oauth_path_token     => "token",
-            :oauth_type           => :basic,
-            :oauth_basic_type     => :header,
-            :oauth_basic_username => shares2_username,
-            :oauth_basic_password => shares2_password,
+            :oauth_path_token     => 'token',
+            :oauth_type           => :header_userpass,
+            :oauth_user_name      => shares2_username,
+            :oauth_user_pass      => shares2_password,
             :oauth_scope          => 'admin'
           })
 
