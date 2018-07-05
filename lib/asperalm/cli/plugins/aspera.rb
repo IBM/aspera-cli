@@ -9,7 +9,7 @@ module Asperalm
   module Cli
     module Plugins
       class Aspera < Plugin
-        def action_list; [ :packages, :files, :faspexgw, :admin, :user];end
+        def action_list; [ :packages, :files, :faspexgw, :admin, :user, :organization];end
 
         def declare_options
           @ats=Ats.new
@@ -223,12 +223,12 @@ module Asperalm
         # @home_node_id
         # returns nil
         def init_apis
-          public_link=self.optmgr.get_option(:link,:optional)
+          public_link_url=self.optmgr.get_option(:link,:optional)
 
           # if auth is a public link, option "link" is a shortcut for options: url, auth, public_token
-          unless public_link.nil?
-            uri=URI.parse(public_link)
-            public_link=nil
+          unless public_link_url.nil?
+            uri=URI.parse(public_link_url)
+            public_link_url=nil #no more needed
             unless uri.path.eql?(FilesApi.PATH_PUBLIC_PACKAGE)
               raise CliArgument,"only public package link is supported: #{FilesApi.PATH_PUBLIC_PACKAGE}"
             end
@@ -246,7 +246,7 @@ module Asperalm
           # Connection paramaters (url and auth) to Aspera on Cloud
           # pre populate rest parameters based on URL
           aoc_rest_params=
-          FilesApi.base_rest_params(self.optmgr.get_option(:url,:mandatory)).merge!({
+          FilesApi.base_rest_params(self.optmgr.get_option(:url,:mandatory)).merge({
             :oauth_type          => self.optmgr.get_option(:auth,:mandatory),
             :oauth_client_id     => self.optmgr.get_option(:client_id,:mandatory),
             :oauth_client_secret => self.optmgr.get_option(:client_secret,:mandatory)
@@ -254,12 +254,6 @@ module Asperalm
 
           # fill other auth parameters based on Oauth method
           case aoc_rest_params[:oauth_type]
-          when :basic
-            aoc_rest_params.merge!({
-              :oauth_basic_type     => :www_body,
-              :oauth_basic_username => self.optmgr.get_option(:username,:mandatory),
-              :oauth_basic_password => self.optmgr.get_option(:password,:mandatory)
-            })
           when :web
             aoc_rest_params.merge!({
               :oauth_redirect_uri => self.optmgr.get_option(:redirect_uri,:mandatory)
@@ -274,7 +268,7 @@ module Asperalm
             aoc_rest_params.merge!({
               :oauth_url_token     => self.optmgr.get_option(:public_token,:mandatory),
             })
-          else raise "ERROR"
+          else raise "ERROR: unsupported auth method"
           end
           Log.log.debug("REST params=#{aoc_rest_params}")
 
@@ -282,12 +276,11 @@ module Asperalm
           @api_files_user=Rest.new(aoc_rest_params.merge!({:oauth_scope=>FilesApi::SCOPE_FILES_USER}))
           @api_files_admn=Rest.new(aoc_rest_params.merge!({:oauth_scope=>FilesApi::SCOPE_FILES_ADMIN}))
 
+          @org_data=@api_files_user.read("organization")[:data]
           if aoc_rest_params.has_key?(:oauth_url_token)
-            # "self" is not accessible for public links, so emulate it.
-            org_data=@api_files_user.read("organization")[:data]
             url_token_data=@api_files_user.read("url_tokens")[:data].first
             @default_workspace_id=url_token_data['data']['workspace_id']
-            @user_id='todo'
+            @user_id='todo' # TODO : @org_data ?
             self.optmgr.set_option(:id,url_token_data['data']['package_id'])
             @home_node_id=url_token_data['data']['node_id']
             @home_file_id=url_token_data['data']['file_id']
@@ -301,9 +294,12 @@ module Asperalm
 
           ws_name=self.optmgr.get_option(:workspace,:optional)
           if ws_name.nil?
+            Log.log.debug("using default workspace".green)
+            if @default_workspace_id.eql?(nil)
+              raise CliError,"no default workspace defined for user"
+            end
             # get default workspace
             @workspace_id=@default_workspace_id
-            workspace_data=@api_files_user.read("workspaces/#{@workspace_id}")[:data]
           else
             # lookup another workspace
             wss=@api_files_user.read("workspaces",{'q'=>ws_name})[:data]
@@ -312,20 +308,20 @@ module Asperalm
             when 0
               raise CliBadArgument,"no such workspace: #{ws_name}"
             when 1
-              workspace_data=wss.first
-              @workspace_id=workspace_data['id']
+              @workspace_id=wss.first['id']
             else
               raise "unexpected case"
             end
           end
+          workspace_data=@api_files_user.read("workspaces/#{@workspace_id}")[:data]
 
           Log.log.debug("workspace_id=#{@workspace_id},workspace_data=#{workspace_data}".red)
 
           @workspace_name||=workspace_data['name']
-          @home_node_id||=workspace_data['home_node_id']
+          @home_node_id||=workspace_data['home_node_id']||workspace_data['node_id']
           @home_file_id||=workspace_data['home_file_id']
-          raise "ERROR: assert" if @home_node_id.to_s.empty?
-          raise "ERROR: assert" if @home_file_id.to_s.empty?
+          raise "ERROR: assert: no home node id" if @home_node_id.to_s.empty?
+          raise "ERROR: assert: no home file id" if @home_file_id.to_s.empty?
 
           return nil
         end
@@ -348,13 +344,15 @@ module Asperalm
           command=self.optmgr.get_next_argument('command',action_list)
           if self.optmgr.get_option(:format,:optional).eql?(:table) and !command.eql?(:admin)
             default_ws=@workspace_id == @default_workspace_id ? ' (default)' : ''
-            puts "Current Workspace: #{@workspace_name.red}#{default_ws}"
+            @main.display_status "Current Workspace: #{@workspace_name.red}#{default_ws}"
           end
 
           # display name of default workspace
           Log.log.info("current workspace is "+@workspace_name.red)
 
           case command
+          when :organization
+            return { :type=>:key_val_list, :data =>@org_data }
           when :user
             command=self.optmgr.get_next_argument('command',[ :workspaces,:info ])
             case command
