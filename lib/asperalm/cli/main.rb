@@ -254,8 +254,8 @@ module Asperalm
         @opt_mgr.add_opt_simple(:table_style,"table display style, current=#{@option_table_style}")
         @opt_mgr.add_opt_switch(:help,"Show this message.","-h") { @option_help=true }
         @opt_mgr.add_opt_switch(:show_config, "Display parameters used for the provided action.") { @option_show_config=true }
-        @opt_mgr.add_opt_switch(:rest_debug,"-r","more debug for HTTP calls") { Rest.set_debug(true) }
-        @opt_mgr.add_opt_switch(:no_default,"-N","do not load default configuration") { @use_plugin_defaults=false }
+        @opt_mgr.add_opt_switch(:rest_debug,"-r","more debug for HTTP calls") { Rest.debug=true }
+        @opt_mgr.add_opt_switch(:no_default,"-N","do not load default configuration for plugin") { @use_plugin_defaults=false }
         @opt_mgr.add_opt_switch(:version,"-v","display version") { puts self.class.gem_version;Process.exit(0) }
       end
 
@@ -730,6 +730,10 @@ module Asperalm
       end
 
       public
+
+      def display_status(status)
+        STDOUT.puts(status)
+      end
 
       def preset_by_name(config_name)
         raise "no such config: #{config_name}" unless @available_presets.has_key?(config_name)
