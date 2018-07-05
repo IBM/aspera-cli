@@ -439,6 +439,7 @@ t/prev2:
 	@touch $@
 t/prev3:
 	$(EXETEST) preview test ~/Documents/Samples/anatomic-2k/TG18-CH/TG18-CH-2k-01.dcm --log-level=debug png --video=clips
+	@touch $@
 
 tprev: t/prev1 t/prev2 t/prev3
 
