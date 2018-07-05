@@ -135,9 +135,6 @@ module Asperalm
             #send_result={:data=>{'items'=>[{'file'=>"filename1","permissions"=>[{'name'=>'read'},{'name'=>'write'}]}]}}
             return Plugin.result_none if !send_result[:data].has_key?('items')
             result={ :data => send_result[:data]['items'] , :type => :hash_array, :textify => lambda { |table_data| self.class.c_textify_browse(table_data) } }
-            #display_prefix=thepath
-            #display_prefix=File.join(prefix_path,display_prefix) if !prefix_path.nil?
-            #puts display_prefix.red
             return self.class.c_result_remove_prefix_path(result,'path',prefix_path)
           when :upload
             filelist = @optmgr.get_next_argument("source file list",:multiple)
