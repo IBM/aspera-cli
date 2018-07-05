@@ -76,7 +76,31 @@ module Asperalm
           return source_ids.first['id']
         end
 
-        def action_list; [ :package, :dropbox, :recv_publink, :source, :me ];end
+        def api_v3
+          if @api_v3.nil?
+            @api_v3=basic_auth_api
+          end
+          return @api_v3
+        end
+
+        def api_v4
+          if @api_v4.nil?
+            faspex_api_base=Main.tool.options.get_option(:url,:mandatory)
+            @api_v4=Rest.new({
+              :base_url             => faspex_api_base+'/api',
+              :auth_type            => :oauth2,
+              :oauth_base_url       => faspex_api_base+'/auth/oauth2',
+              :oauth_path_token     => 'token',
+              :oauth_type           => :header_userpass,
+              :oauth_user_name      => Main.tool.options.get_option(:username,:mandatory),
+              :oauth_user_pass      => Main.tool.options.get_option(:password,:mandatory),
+              :oauth_scope          => 'admin'
+            })
+          end
+          return @api_v4
+        end
+
+        def action_list; [ :admin, :package, :dropbox, :recv_publink, :source, :me ];end
 
         # we match recv command on atom feed on this field
         PACKAGE_MATCH_FIELD='delivery_id'
@@ -86,10 +110,9 @@ module Asperalm
           case command
           when :package
             command_pkg=@optmgr.get_next_argument('command',[ :send, :recv, :list ])
-            api_faspex=basic_auth_api
             case command_pkg
             when :list
-              all_inbox_xml=api_faspex.call({:operation=>'GET',:subpath=>"#{@optmgr.get_option(:box,:mandatory).to_s}.atom",:headers=>{'Accept'=>'application/xml'}})[:http].body
+              all_inbox_xml=api_v3.call({:operation=>'GET',:subpath=>"#{@optmgr.get_option(:box,:mandatory).to_s}.atom",:headers=>{'Accept'=>'application/xml'}})[:http].body
               all_inbox_data=XmlSimple.xml_in(all_inbox_xml, {"ForceArray" => true})
               Log.dump(:all_inbox_data,all_inbox_data)
               return Plugin.result_none unless all_inbox_data.has_key?('entry')
@@ -98,21 +121,21 @@ module Asperalm
               filelist = @optmgr.get_next_argument("file list",:multiple)
               package_create_params={
                 "delivery"=>{
-                "title"=>@optmgr.get_option(:title,:mandatory),
-                "note"=>@optmgr.get_option(:note,:mandatory),
-                "recipients"=>@optmgr.get_option(:recipient,:mandatory).split(','),
-                "send_upload_result"=>true,
-                "notify_on_upload"=> false,
-                "notifiable_on_upload"=> "",
-                "notify_on_download"=> false,
+                "title"                 =>@optmgr.get_option(:title,:mandatory),
+                "note"                  =>@optmgr.get_option(:note,:mandatory),
+                "recipients"            =>@optmgr.get_option(:recipient,:mandatory).split(','),
+                "send_upload_result"    =>true,
+                "notify_on_upload"      => false,
+                "notifiable_on_upload"  => "",
+                "notify_on_download"    => false,
                 "notifiable_on_download"=> "",
                 "use_encryption_at_rest"=>false,
-                "sources"=>[{"paths"=>filelist}]
+                "sources"               =>[{"paths"=>filelist}]
                 }
               }
               source_name=@optmgr.get_option(:source_name,:optional)
               if !source_name.nil?
-                source_list=api_faspex.call({:operation=>'GET',:subpath=>"source_shares",:headers=>{'Accept'=>'application/json'}})[:data]['items']
+                source_list=api_v3.call({:operation=>'GET',:subpath=>"source_shares",:headers=>{'Accept'=>'application/json'}})[:data]['items']
                 source_id=self.class.get_source_id(source_list,source_name)
                 package_create_params['delivery']['sources'].first['id']=source_id
               end
@@ -120,7 +143,7 @@ module Asperalm
               if !metadata.nil?
                 package_create_params['delivery']['metadata']=metadata
               end
-              send_result=api_faspex.call({:operation=>'POST',:subpath=>'send',:json_params=>package_create_params,:headers=>{'Accept'=>'application/json'}})[:data]
+              send_result=api_v3.call({:operation=>'POST',:subpath=>'send',:json_params=>package_create_params,:headers=>{'Accept'=>'application/json'}})[:data]
               if send_result.has_key?('error')
                 raise CliBadArgument,"#{send_result['error']['user_message']}: #{send_result['error']['internal_message']}"
               end
@@ -136,7 +159,7 @@ module Asperalm
               # UUID is not reliable, it changes at every call
               if false
                 pkguuid=@optmgr.get_next_argument("Package ID")
-                all_inbox_xml=api_faspex.call({:operation=>'GET',:subpath=>"#{@optmgr.get_option(:box,:optional).to_s}.atom",:headers=>{'Accept'=>'application/xml'}})[:http].body
+                all_inbox_xml=api_v3.call({:operation=>'GET',:subpath=>"#{@optmgr.get_option(:box,:optional).to_s}.atom",:headers=>{'Accept'=>'application/xml'}})[:http].body
                 allinbox=XmlSimple.xml_in(all_inbox_xml, {"ForceArray" => true})
                 package_entries=[]
                 if allinbox.has_key?('entry')
@@ -149,7 +172,7 @@ module Asperalm
               else
                 # I dont know which delivery id is the right one if package was receive by group
                 delivid=@optmgr.get_next_argument("Package delivery ID")
-                entry_xml=api_faspex.call({:operation=>'GET',:subpath=>"#{@optmgr.get_option(:box,:optional).to_s}/#{delivid}",:headers=>{'Accept'=>'application/xml'}})[:http].body
+                entry_xml=api_v3.call({:operation=>'GET',:subpath=>"#{@optmgr.get_option(:box,:optional).to_s}/#{delivid}",:headers=>{'Accept'=>'application/xml'}})[:http].body
                 package_entry=XmlSimple.xml_in(entry_xml, {"ForceArray" => true})
               end
               transfer_uri=self.class.get_fasp_uri_from_entry(package_entry)
@@ -158,15 +181,14 @@ module Asperalm
               if !transfer_spec.has_key?('token')
                 sanitized=transfer_uri.gsub('&','&amp;')
                 xmlpayload='<?xml version="1.0" encoding="UTF-8"?><url-list xmlns="http://schemas.asperasoft.com/xml/url-list"><url href="'+sanitized+'"/></url-list>'
-                transfer_spec['token']=api_faspex.call({:operation=>'POST',:subpath=>"issue-token?direction=down",:headers=>{'Accept'=>'text/plain','Content-Type'=>'application/vnd.aspera.url-list+xml'},:text_body_params=>xmlpayload})[:http].body
+                transfer_spec['token']=api_v3.call({:operation=>'POST',:subpath=>"issue-token?direction=down",:headers=>{'Accept'=>'text/plain','Content-Type'=>'application/vnd.aspera.url-list+xml'},:text_body_params=>xmlpayload})[:http].body
               end
               transfer_spec['direction']='receive'
               return @main.start_transfer(transfer_spec,:node_gen3)
             end
           when :source
             command_source=@optmgr.get_next_argument('command',[ :list, :id, :name ])
-            api_faspex=basic_auth_api
-            source_list=api_faspex.call({:operation=>'GET',:subpath=>"source_shares",:headers=>{'Accept'=>'application/json'}})[:data]['items']
+            source_list=api_v3.call({:operation=>'GET',:subpath=>"source_shares",:headers=>{'Accept'=>'application/json'}})[:data]['items']
             case command_source
             when :list
               return {:data=>source_list,:type=>:hash_array}
@@ -205,23 +227,21 @@ module Asperalm
               end
             end
           when :me
-            api_faspex=basic_auth_api
-            my_info=api_faspex.call({:operation=>'GET',:subpath=>"me",:headers=>{'Accept'=>'application/json'}})[:data]
+            my_info=api_v3.call({:operation=>'GET',:subpath=>"me",:headers=>{'Accept'=>'application/json'}})[:data]
             return {:data=>my_info, :type=>:key_val_list}
           when :dropbox
-            api_faspex=basic_auth_api
             command_pkg=@optmgr.get_next_argument('command',[ :list ])
             case command_pkg
             when :list
-              dropbox_list=api_faspex.call({:operation=>'GET',:subpath=>"/aspera/faspex/dropboxes",:headers=>{'Accept'=>'application/json'}})[:data]
+              dropbox_list=api_v3.call({:operation=>'GET',:subpath=>"/aspera/faspex/dropboxes",:headers=>{'Accept'=>'application/json'}})[:data]
               return {:data=>dropbox_list['items'], :type=>:hash_array, :fields=>['name','id','description','can_read','can_write']}
             end
           when :recv_publink
             thelink=@optmgr.get_next_argument("Faspex public URL for a package")
             link_data=self.class.get_link_data(thelink)
             # Note: unauthenticated API
-            api_faspex=Rest.new({:base_url=>link_data[:faspex_base_url]})
-            pkgdatares=api_faspex.call({:operation=>'GET',:subpath=>link_data[:subpath],:url_params=>{:passcode=>link_data[:passcode]},:headers=>{'Accept'=>'application/xml'}})
+            api_public_link=Rest.new({:base_url=>link_data[:faspex_base_url]})
+            pkgdatares=api_public_link.call({:operation=>'GET',:subpath=>link_data[:subpath],:url_params=>{:passcode=>link_data[:passcode]},:headers=>{'Accept'=>'application/xml'}})
             if !pkgdatares[:http].body.start_with?('<?xml ')
               OpenApplication.instance.uri(thelink)
               raise CliError, "no such package"
@@ -231,6 +251,9 @@ module Asperalm
             transfer_spec=Fasp::Uri.new(transfer_uri).transfer_spec
             transfer_spec['direction']='receive'
             return @main.start_transfer(transfer_spec,:node_gen3)
+          when :admin
+            resource=@optmgr.get_next_argument('command',[ :user ])
+            return Plugin.entity_action(api_v4,resource.to_s+'s',['id','name','first_name','last_name'],:id)
           end # command
         end
       end
