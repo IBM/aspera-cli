@@ -41,12 +41,12 @@ module Asperalm
       organization,instance_domain=parse_url(aoc_org_url)
       base_url='https://api.'+instance_domain+'/api/v1'
       return {
-        :base_url             => base_url,
-        :auth_type            => :oauth2,
-        :oauth_base_url       => "#{base_url}/oauth2/#{organization}",
-        :oauth_path_authorize => 'authorize',
-        :oauth_path_token     => 'token',
-        :oauth_jwt_audience   => 'https://api.asperafiles.com/api/v1/oauth2/token'
+        :base_url           => base_url,
+        :auth_type          => :oauth2,
+        :oauth_base_url     => "#{base_url}/oauth2/#{organization}",
+        :oauth_path_login   => 'authorize',
+        :oauth_path_token   => 'token',
+        :oauth_jwt_audience => 'https://api.asperafiles.com/api/v1/oauth2/token'
       }
     end
 
