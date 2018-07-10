@@ -24,6 +24,7 @@ module Asperalm
           # get result on one line
           connect_versions_javascript=javascript[:http].body.gsub(/\r\n\s*/,'')
           Log.log.debug("javascript=#{connect_versions_javascript}")
+          # get javascript object only
           found=connect_versions_javascript.match(/AW.connectVersions = (.*);/)
           raise CliError,'Problen when getting connect versions from internet' if found.nil?
           alldata=JSON.parse(found[1])
