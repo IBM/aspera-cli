@@ -21,8 +21,12 @@ module Asperalm
         def self.connect_versions
           api_connect_cdn=Rest.new({:base_url=>CONNECT_WEB_URL})
           javascript=api_connect_cdn.call({:operation=>'GET',:subpath=>CONNECT_VERSIONS})
-          jsondata=javascript[:http].body.gsub(/\r\n\s*/,'').gsub(/^.*AW.connectVersions = /,'').gsub(/;$/,'')
-          alldata=JSON.parse(jsondata)
+          # get result on one line
+          connect_versions_javascript=javascript[:http].body.gsub(/\r\n\s*/,'')
+          Log.log.debug("javascript=#{connect_versions_javascript}")
+          found=connect_versions_javascript.match(/AW.connectVersions = (.*);/)
+          raise CliError,'Problen when getting connect versions from internet' if found.nil?
+          alldata=JSON.parse(found[1])
           return alldata['entries']
         end
 
