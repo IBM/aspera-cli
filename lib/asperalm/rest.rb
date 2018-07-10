@@ -1,4 +1,3 @@
-#!/bin/echo this is a ruby class:
 #
 # REST call helper
 # Aspera 2016
@@ -27,10 +26,12 @@ module Asperalm
   # builds a meaningful error message from known formats in Aspera products
   class RestCallError < StandardError
     attr_accessor :response
+    # @param http response
     def initialize(response)
       # default error message is response type
       message=response.message+" (#{response.code})"
       # see if there is a more precise message
+      # Hum, we would need some consistency here...
       if !response.body.nil?
         data=JSON.parse(response.body) rescue nil
         if data.is_a?(Hash)
@@ -163,19 +164,17 @@ module Asperalm
       end
       uri=self.class.build_uri("#{@params[:base_url]}/#{call_data[:subpath]}",call_data[:url_params])
       Log.log.debug "URI=#{uri}"
-      case call_data[:operation]
-      when 'GET'; req = Net::HTTP::Get.new(uri.request_uri)
-      when 'POST'; req = Net::HTTP::Post.new(uri.request_uri)
-      when 'PUT'; req = Net::HTTP::Put.new(uri.request_uri)
-      when 'CANCEL'; req = Net::HTTP::Cancel.new(uri.request_uri)
-      when 'DELETE'; req = Net::HTTP::Delete.new(uri.request_uri)
-      else raise "unknown op : #{operation}"
+      begin
+        # instanciate request object based on string name
+        req=Object::const_get('Net::HTTP::'+call_data[:operation].capitalize).new(uri.request_uri)
+      rescue NameError => e
+        raise "unknown op : #{call_data[:operation]}"
       end
       if call_data.has_key?(:json_params) and !call_data[:json_params].nil? then
         req.body=JSON.generate(call_data[:json_params])
         Log.log.debug "body JSON data=#{call_data[:json_params]}"
         req['Content-Type'] = 'application/json'
-        call_data[:headers]['Accept']='application/json'
+        #call_data[:headers]['Accept']='application/json'
       end
       if call_data.has_key?(:www_body_params) then
         req.body=URI.encode_www_form(call_data[:www_body_params])
@@ -233,22 +232,23 @@ module Asperalm
           result[:data]=JSON.parse(result[:http].body) if !result[:http].body.nil?
         end
       rescue RestCallError => e
-        # give a second try if oauth token expired
-        if ['401'].include?(result[:http].code.to_s) and
-        call_data[:auth_type].eql?(:oauth2)
-          # try a refresh and/or regeneration of token
+        # not authorized: oauth token expired
+        if ['401'].include?(result[:http].code.to_s) and call_data[:auth_type].eql?(:oauth2)
           begin
+            # try to use refresh token
             req['Authorization']=oauth_token(nil,true)
           rescue RestCallError => e
             Log.log.error("refresh failed".bg_red)
+            # regenerate a brand new token
             req['Authorization']=oauth_token()
           end
           Log.log.debug "using new token=#{call_data[:headers]['Authorization']}"
           retry unless (oauth_tries -= 1).zero?
         end # if
+        # raise exception if could not retry and not return error in result
         raise e unless call_data[:return_error]
       end
-      Log.log.debug "result=#{result}" # .pretty_inspect
+      Log.log.debug "result=#{result}"
       return result
 
     end
@@ -257,6 +257,7 @@ module Asperalm
     # CRUD methods here
     #
 
+    # @param encoding : one of: :json_params, :url_params
     def create(subpath,params,encoding=:json_params)
       return call({:operation=>'POST',:subpath=>subpath,:headers=>{'Accept'=>'application/json'},encoding=>params})
     end
