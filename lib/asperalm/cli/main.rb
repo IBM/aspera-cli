@@ -335,7 +335,6 @@ module Asperalm
         Log.log.debug("(#{keep_last})[#{is_simple_hash}] -#{source.values}- \n-#{source}-")
         return source if keep_last and is_simple_hash
         source.each do |k,v|
-          #Process.exit(1)
           if v.is_a?(Hash) and ( !keep_last or !is_simple_hash )
             flatten_sub_hash_rec(v,keep_last,prefix+k.to_s+'.',dest)
           else
@@ -493,7 +492,7 @@ module Asperalm
         end
         #STDERR.puts(@opt_mgr.parser)
         STDERR.puts "\nDocumentation : #{@@HELP_URL}"
-        Process.exit 1
+        Process.exit(0)
       end
 
       def process_exception_exit(e,reason,propose_help=:none)
@@ -503,7 +502,7 @@ module Asperalm
           raise e
         else
           STDERR.puts "Use '--log-level=debug' to get more details." if propose_help.eql?(:debug)
-          Process.exit 1
+          Process.exit(1)
         end
       end
 
