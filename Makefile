@@ -411,8 +411,11 @@ t/conf8:
 t/conf9:
 	ASLMCLI_CONFIG_FILE=$(TEST_CONFIG) $(EXETEST) config open
 	@touch $@
+t/conf10:
+	$(EXETEST) -h
+	@touch $@
 
-tconf: t/conf1 t/conf2 t/conf3 t/conf4 t/conf5 t/conf6 t/conf7 t/conf8 t/conf9
+tconf: t/conf1 t/conf2 t/conf3 t/conf4 t/conf5 t/conf6 t/conf7 t/conf8 t/conf9 t/conf10
 
 t/shar2_1:
 	$(EXETEST) shares2 appinfo
