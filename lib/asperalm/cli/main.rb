@@ -33,7 +33,7 @@ module Asperalm
       # name of application, also foldername where config is stored
       @@PROGRAM_NAME = 'aslmcli'
       @@GEM_NAME = 'asperalm'
-      # folder in $HOME for the application
+      # folder in $HOME for application files (config, cache)
       @@ASPERA_HOME_FOLDER_NAME='.aspera'
       # folder containing custom plugins in `config_folder`
       @@ASPERA_PLUGINS_FOLDERNAME='plugins'
@@ -223,7 +223,7 @@ module Asperalm
       # local options
       def create_opt_mgr
         @opt_mgr=Manager.new(@@PROGRAM_NAME)
-        Plugin.set_refs(@opt_mgr,self)
+        Plugin.manager=self
         @opt_mgr.parser.banner = "NAME\n\t#{@@PROGRAM_NAME} -- a command line tool for Aspera Applications (v#{self.class.gem_version})\n\n"
         @opt_mgr.parser.separator "SYNOPSIS"
         @opt_mgr.parser.separator "\t#{@@PROGRAM_NAME} COMMANDS [OPTIONS] [ARGS]"
@@ -484,7 +484,7 @@ module Asperalm
         if all_plugins
           # list plugins that have a "require" field, i.e. all but main plugin
           plugin_sym_list.select { |s| !@plugins[s][:require_stanza].nil? }.each do |plugin_name_sym|
-            # override main option parser...
+            # override main option parser with a brand new
             @opt_mgr=Manager.new(@@PROGRAM_NAME)
             @opt_mgr.parser.banner = ""
             get_plugin_instance(plugin_name_sym)

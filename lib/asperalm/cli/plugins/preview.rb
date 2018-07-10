@@ -61,56 +61,56 @@ module Asperalm
         def declare_options
           super_declare_options
           # link CLI options to gen_info attributes
-          @optmgr.set_obj_attr(:skip_types,self,:option_skip_types)
-          @optmgr.set_obj_attr(:overwrite,self,:option_overwrite,:mtime)
-          @optmgr.set_obj_attr(:previews_folder,self,:option_previews_folder,'previews')
-          @optmgr.set_obj_attr(:iteration_file,self,:option_iteration_file_filepath,nil)
-          @optmgr.set_obj_attr(:folder_reset_cache,self,:option_folder_reset_cache,:no)
-          @optmgr.set_obj_attr(:temp_folder,self,:option_temp_folder,"/tmp/aspera.previews")
-          @optmgr.set_obj_attr(:skip_folders,self,:option_skip_folders,[])
-          @optmgr.set_obj_attr(:video,Asperalm::Preview::Options.instance,:vid_conv_method,:reencode)
-          @optmgr.set_obj_attr(:vid_offset_seconds,Asperalm::Preview::Options.instance,:vid_offset_seconds,10)
-          @optmgr.set_obj_attr(:vid_size,Asperalm::Preview::Options.instance,:vid_size,'320:-2')
-          @optmgr.set_obj_attr(:vid_framecount,Asperalm::Preview::Options.instance,:vid_framecount,30)
-          @optmgr.set_obj_attr(:vid_blendframes,Asperalm::Preview::Options.instance,:vid_blendframes,2)
-          @optmgr.set_obj_attr(:vid_framepause,Asperalm::Preview::Options.instance,:vid_framepause,5)
-          @optmgr.set_obj_attr(:vid_fps,Asperalm::Preview::Options.instance,:vid_fps,15)
-          @optmgr.set_obj_attr(:vid_mp4_size_reencode,Asperalm::Preview::Options.instance,:vid_mp4_size_reencode,"-2:'min(ih,360)'")
-          @optmgr.set_obj_attr(:clips_offset_seconds,Asperalm::Preview::Options.instance,:clips_offset_seconds,10)
-          @optmgr.set_obj_attr(:clips_size,Asperalm::Preview::Options.instance,:clips_size,'320:-2')
-          @optmgr.set_obj_attr(:clips_length,Asperalm::Preview::Options.instance,:clips_length,5)
-          @optmgr.set_obj_attr(:clips_count,Asperalm::Preview::Options.instance,:clips_count,5)
-          @optmgr.set_obj_attr(:thumb_mp4_size,Asperalm::Preview::Options.instance,:thumb_mp4_size,"-1:'min(ih,600)'")
-          @optmgr.set_obj_attr(:thumb_img_size,Asperalm::Preview::Options.instance,:thumb_img_size,800)
-          @optmgr.set_obj_attr(:thumb_offset_fraction,Asperalm::Preview::Options.instance,:thumb_offset_fraction,0.1)
-          @optmgr.set_obj_attr(:validate_mime,Asperalm::Preview::Options.instance,:validate_mime,:no)
-          @optmgr.set_obj_attr(:check_extension,Asperalm::Preview::Options.instance,:check_extension,:yes)
-          @optmgr.add_opt_list(:file_access,[:local,:remote],"how to read and write files in repository")
-          @optmgr.add_opt_simple(:skip_types,"skip types in comma separated list")
-          @optmgr.add_opt_list(:overwrite,Preview.overwrite_policies,"when to generate preview file")
-          @optmgr.add_opt_simple(:previews_folder,"preview folder in files")
-          @optmgr.add_opt_simple(:iteration_file,"path to iteration memory file")
-          @optmgr.add_opt_list(:folder_reset_cache,[:no,:header,:read],"reset folder cache")
-          @optmgr.add_opt_simple(:temp_folder,"path to temp folder")
-          @optmgr.add_opt_simple(:skip_folders,"list of folder to skip")
-          @optmgr.add_opt_list(:video,Asperalm::Preview::Options.vid_conv_methods,"method to generate video")
-          @optmgr.add_opt_simple(:vid_offset_seconds,"generation parameter")
-          @optmgr.add_opt_simple(:vid_size,"generation parameter")
-          @optmgr.add_opt_simple(:vid_framecount,"generation parameter")
-          @optmgr.add_opt_simple(:vid_blendframes,"generation parameter")
-          @optmgr.add_opt_simple(:vid_framepause,"generation parameter")
-          @optmgr.add_opt_simple(:vid_fps,"generation parameter")
-          @optmgr.add_opt_simple(:vid_mp4_size_reencode,"generation parameter")
-          @optmgr.add_opt_simple(:clips_offset_seconds,"generation parameter")
-          @optmgr.add_opt_simple(:clips_size,"generation parameter")
-          @optmgr.add_opt_simple(:clips_length,"generation parameter")
-          @optmgr.add_opt_simple(:clips_count,"generation parameter")
-          @optmgr.add_opt_simple(:thumb_mp4_size,"generation parameter")
-          @optmgr.add_opt_simple(:thumb_img_size,"generation parameter")
-          @optmgr.add_opt_simple(:thumb_offset_fraction,"generation parameter")
-          @optmgr.add_opt_boolean(:validate_mime,"use magic number validation")
-          @optmgr.add_opt_boolean(:check_extension,"check extra file extensions")
-          @optmgr.set_option(:file_access,:local)
+          self.options.set_obj_attr(:skip_types,self,:option_skip_types)
+          self.options.set_obj_attr(:overwrite,self,:option_overwrite,:mtime)
+          self.options.set_obj_attr(:previews_folder,self,:option_previews_folder,'previews')
+          self.options.set_obj_attr(:iteration_file,self,:option_iteration_file_filepath,nil)
+          self.options.set_obj_attr(:folder_reset_cache,self,:option_folder_reset_cache,:no)
+          self.options.set_obj_attr(:temp_folder,self,:option_temp_folder,"/tmp/aspera.previews")
+          self.options.set_obj_attr(:skip_folders,self,:option_skip_folders,[])
+          self.options.set_obj_attr(:video,Asperalm::Preview::Options.instance,:vid_conv_method,:reencode)
+          self.options.set_obj_attr(:vid_offset_seconds,Asperalm::Preview::Options.instance,:vid_offset_seconds,10)
+          self.options.set_obj_attr(:vid_size,Asperalm::Preview::Options.instance,:vid_size,'320:-2')
+          self.options.set_obj_attr(:vid_framecount,Asperalm::Preview::Options.instance,:vid_framecount,30)
+          self.options.set_obj_attr(:vid_blendframes,Asperalm::Preview::Options.instance,:vid_blendframes,2)
+          self.options.set_obj_attr(:vid_framepause,Asperalm::Preview::Options.instance,:vid_framepause,5)
+          self.options.set_obj_attr(:vid_fps,Asperalm::Preview::Options.instance,:vid_fps,15)
+          self.options.set_obj_attr(:vid_mp4_size_reencode,Asperalm::Preview::Options.instance,:vid_mp4_size_reencode,"-2:'min(ih,360)'")
+          self.options.set_obj_attr(:clips_offset_seconds,Asperalm::Preview::Options.instance,:clips_offset_seconds,10)
+          self.options.set_obj_attr(:clips_size,Asperalm::Preview::Options.instance,:clips_size,'320:-2')
+          self.options.set_obj_attr(:clips_length,Asperalm::Preview::Options.instance,:clips_length,5)
+          self.options.set_obj_attr(:clips_count,Asperalm::Preview::Options.instance,:clips_count,5)
+          self.options.set_obj_attr(:thumb_mp4_size,Asperalm::Preview::Options.instance,:thumb_mp4_size,"-1:'min(ih,600)'")
+          self.options.set_obj_attr(:thumb_img_size,Asperalm::Preview::Options.instance,:thumb_img_size,800)
+          self.options.set_obj_attr(:thumb_offset_fraction,Asperalm::Preview::Options.instance,:thumb_offset_fraction,0.1)
+          self.options.set_obj_attr(:validate_mime,Asperalm::Preview::Options.instance,:validate_mime,:no)
+          self.options.set_obj_attr(:check_extension,Asperalm::Preview::Options.instance,:check_extension,:yes)
+          self.options.add_opt_list(:file_access,[:local,:remote],"how to read and write files in repository")
+          self.options.add_opt_simple(:skip_types,"skip types in comma separated list")
+          self.options.add_opt_list(:overwrite,Preview.overwrite_policies,"when to generate preview file")
+          self.options.add_opt_simple(:previews_folder,"preview folder in files")
+          self.options.add_opt_simple(:iteration_file,"path to iteration memory file")
+          self.options.add_opt_list(:folder_reset_cache,[:no,:header,:read],"reset folder cache")
+          self.options.add_opt_simple(:temp_folder,"path to temp folder")
+          self.options.add_opt_simple(:skip_folders,"list of folder to skip")
+          self.options.add_opt_list(:video,Asperalm::Preview::Options.vid_conv_methods,"method to generate video")
+          self.options.add_opt_simple(:vid_offset_seconds,"generation parameter")
+          self.options.add_opt_simple(:vid_size,"generation parameter")
+          self.options.add_opt_simple(:vid_framecount,"generation parameter")
+          self.options.add_opt_simple(:vid_blendframes,"generation parameter")
+          self.options.add_opt_simple(:vid_framepause,"generation parameter")
+          self.options.add_opt_simple(:vid_fps,"generation parameter")
+          self.options.add_opt_simple(:vid_mp4_size_reencode,"generation parameter")
+          self.options.add_opt_simple(:clips_offset_seconds,"generation parameter")
+          self.options.add_opt_simple(:clips_size,"generation parameter")
+          self.options.add_opt_simple(:clips_length,"generation parameter")
+          self.options.add_opt_simple(:clips_count,"generation parameter")
+          self.options.add_opt_simple(:thumb_mp4_size,"generation parameter")
+          self.options.add_opt_simple(:thumb_img_size,"generation parameter")
+          self.options.add_opt_simple(:thumb_offset_fraction,"generation parameter")
+          self.options.add_opt_boolean(:validate_mime,"use magic number validation")
+          self.options.add_opt_boolean(:check_extension,"check extra file extensions")
+          self.options.set_option(:file_access,:local)
         end
 
         def action_list; [:scan,:events,:folder,:check,:test];end
@@ -192,7 +192,7 @@ module Asperalm
             # add remote_user ?
             @default_transfer_spec=['ssh_port','fasp_port'].inject({}){|h,e|h[e]=sample_transfer_spec[e];h}
             @default_transfer_spec.merge!({
-              'token'            => "Basic #{Base64.strict_encode64("#{@access_key_self['id']}:#{@optmgr.get_option(:password,:mandatory)}")}",
+              'token'            => "Basic #{Base64.strict_encode64("#{@access_key_self['id']}:#{self.options.get_option(:password,:mandatory)}")}",
               'authentication'   => 'token', # connect client: do not ask password
               'remote_host'      => @transfer_server_address,
               'remote_user'      => Fasp::ACCESS_KEY_TRANSFER_USER,
@@ -207,7 +207,7 @@ module Asperalm
             'node'               => { 'access_key' => @access_key_self['id'], 'file_id' => folder_id }}}
           })
           tspec['destination_root']=destination unless destination.nil?
-          @main.start_transfer(tspec,:node_gen4)
+          self.manager.start_transfer(tspec,:node_gen4)
         end
 
         def get_infos_local(gen_infos,entry,local_entry_preview_dir)
@@ -361,7 +361,7 @@ module Asperalm
           @api_node=basic_auth_api
           @transfer_server_address=URI.parse(@api_node.params[:base_url]).host
           @access_key_self = @api_node.read('access_keys/self')[:data] # same as with accesskey instead of /self
-          @access_remote=@optmgr.get_option(:file_access,:mandatory).eql?(:remote)
+          @access_remote=self.options.get_option(:file_access,:mandatory).eql?(:remote)
           Log.log.debug("access key info: #{@access_key_self}")
           #TODO: can the previews folder parameter be read from node api ?
           @option_skip_folders.push('/'+@option_previews_folder)
@@ -376,7 +376,7 @@ module Asperalm
             @local_preview_folder=File.join(@local_storage_root,@option_previews_folder)
             raise CliError,"Folder #{@local_preview_folder} does not exist locally. Please create it, or specify an alternate name." unless File.directory?(@local_preview_folder)
           end
-          command=@optmgr.get_next_argument('command',action_list)
+          command=self.options.get_next_argument('command',action_list)
           case command
           when :scan
             scan_folder_files({ 'id' => @access_key_self['root_file_id'], 'name' => '/', 'type' => 'folder', 'path' => '/' })
@@ -385,7 +385,7 @@ module Asperalm
             process_file_events
             return Plugin.result_status('events finished')
           when :folder
-            file_id=@optmgr.get_next_argument('file id')
+            file_id=self.options.get_next_argument('file id')
             file_info=@api_node.read("files/#{file_id}")[:data]
             scan_folder_files(file_info)
             return Plugin.result_status('file finished')
@@ -393,8 +393,8 @@ module Asperalm
             Asperalm::Preview::Utils.check_tools(@skip_types)
             return Plugin.result_status('tools validated')
           when :test
-            source = @optmgr.get_next_argument("source file")
-            format = @optmgr.get_next_argument("format",Asperalm::Preview::Generator.preview_formats)
+            source = self.options.get_next_argument("source file")
+            format = self.options.get_next_argument("format",Asperalm::Preview::Generator.preview_formats)
             dest=preview_filename(format)
             g=Asperalm::Preview::Generator.new(source,dest)
             return Plugin.result_status("format not supported") unless g.supported?

@@ -27,7 +27,7 @@ module Asperalm
         end
 
         def execute_action
-          command=@optmgr.get_next_argument('command',action_list)
+          command=self.options.get_next_argument('command',action_list)
           case command
           when :current # shows files used
             return {:type=>:hash_array, :data=>Fasp::Installation.instance.paths.map {|k,v| {'name'=>k,'path'=>v[:path]}}}
@@ -35,32 +35,32 @@ module Asperalm
             all=Fasp::Installation.instance.installed_products
             return {:type=>:hash_array, :data=>all, :fields=>[:name,:app_root]}
           when :connect #
-            command=@optmgr.get_next_argument('command',[:list,:id])
+            command=self.options.get_next_argument('command',[:list,:id])
             case command
             when :list #
               return {:type=>:hash_array, :data=>self.class.connect_versions, :fields => ['id','title','version']}
             when :id #
               all_resources=self.class.connect_versions
-              connect_id=@optmgr.get_next_argument('id or title')
+              connect_id=self.options.get_next_argument('id or title')
               one_res = all_resources.select {|i| i['id'].eql?(connect_id) || i['title'].eql?(connect_id)}.first
-              command=@optmgr.get_next_argument('command',[:info,:links])
+              command=self.options.get_next_argument('command',[:info,:links])
               case command
               when :info # shows files used
                 return {:type=>:key_val_list, :data=>one_res, :textify => lambda { |table_data| self.class.textify_list(table_data) }}
               when :links # shows files used
-                command=@optmgr.get_next_argument('command',[:list,:id])
+                command=self.options.get_next_argument('command',[:list,:id])
                 all_links=one_res['links']
                 case command
                 when :list # shows files used
                   return {:type=>:hash_array, :data=>all_links}
                 when :id #
-                  link_title=@optmgr.get_next_argument('title')
+                  link_title=self.options.get_next_argument('title')
                   one_link=all_links.select {|i| i['title'].eql?(link_title)}.first
-                  command=@optmgr.get_next_argument('command',[:download,:open])
+                  command=self.options.get_next_argument('command',[:download,:open])
                   case command
                   when :download #
-                    folder_dest=@main.destination_folder('receive')
-                    #folder_dest=@optmgr.get_next_argument('destination folder')
+                    folder_dest=self.manager.destination_folder('receive')
+                    #folder_dest=self.options.get_next_argument('destination folder')
                     api_connect_cdn=Rest.new({:base_url=>CONNECT_WEB_URL})
                     fileurl = one_link['href']
                     filename=fileurl.gsub(%r{.*/},'')

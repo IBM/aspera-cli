@@ -9,12 +9,12 @@ module Asperalm
         alias super_declare_options declare_options
         def declare_options
           super_declare_options
-          @optmgr.add_opt_simple(:params,"parameters hash table, use @json:{\"param\":\"value\"}")
-          @optmgr.add_opt_simple(:result,"specify result value as: 'work step:parameter'")
-          @optmgr.add_opt_simple(:id,"workflow identifier")
-          @optmgr.add_opt_boolean(:synchronous,"work step:parameter expected as result")
-          @optmgr.set_option(:params,{})
-          @optmgr.set_option(:synchronous,:no)
+          self.options.add_opt_simple(:params,"parameters hash table, use @json:{\"param\":\"value\"}")
+          self.options.add_opt_simple(:result,"specify result value as: 'work step:parameter'")
+          self.options.add_opt_simple(:id,"workflow identifier")
+          self.options.add_opt_boolean(:synchronous,"work step:parameter expected as result")
+          self.options.set_option(:params,{})
+          self.options.set_option(:synchronous,:no)
         end
 
         def action_list; [:info, :workflow, :plugins, :processes];end
@@ -41,20 +41,20 @@ module Asperalm
 
         def execute_action
           @api_orch=Rest.new({
-            :base_url       => @optmgr.get_option(:url,:mandatory),
+            :base_url       => self.options.get_option(:url,:mandatory),
             :auth_type      => :url,
             :auth_url_creds => {
-            'login'   =>@optmgr.get_option(:username,:mandatory),
-            'password'=>@optmgr.get_option(:password,:mandatory) }})
+            'login'   =>self.options.get_option(:username,:mandatory),
+            'password'=>self.options.get_option(:password,:mandatory) }})
 
           # auth can be in url or basic
           #          @api_orch=Rest.new({
-          #            :base_url=>@optmgr.get_option(:url,:mandatory),
+          #            :base_url=>self.options.get_option(:url,:mandatory),
           #            :auth_type=>:basic,
-          #            :basic_username=>@optmgr.get_option(:username,:mandatory),
-          #            :basic_password=>@optmgr.get_option(:password,:mandatory)})
+          #            :basic_username=>self.options.get_option(:username,:mandatory),
+          #            :basic_password=>self.options.get_option(:password,:mandatory)})
 
-          command1=@optmgr.get_next_argument('command',action_list)
+          command1=self.options.get_next_argument('command',action_list)
           case command1
           when :info
             result=call_API("logon",nil,nil,nil)
@@ -72,9 +72,9 @@ module Asperalm
             result=call_API("api/plugin_version")[:data]
             return {:type=>:hash_array,:data=>result['Plugin']}
           when :workflow
-            command=@optmgr.get_next_argument('command',[:list, :status, :inputs, :details, :start])
+            command=self.options.get_next_argument('command',[:list, :status, :inputs, :details, :start])
             unless [:list, :status].include?(command)
-              wf_id=@optmgr.get_option(:id,:mandatory)
+              wf_id=self.options.get_option(:id,:mandatory)
             end
             case command
             when :status
@@ -96,13 +96,13 @@ module Asperalm
               }
               call_params={}
               # set external parameters if any
-              @optmgr.get_option(:params,:mandatory).each do |name,value|
+              self.options.get_option(:params,:mandatory).each do |name,value|
                 call_params["external_parameters[#{name}]"] = value
               end
               # synchronous call ?
-              call_params["synchronous"]=true if @optmgr.get_option(:synchronous,:mandatory)
+              call_params["synchronous"]=true if self.options.get_option(:synchronous,:mandatory)
               # expected result for synchro call ?
-              expected=@optmgr.get_option(:result,:optional)
+              expected=self.options.get_option(:result,:optional)
               if !expected.nil?
                 result[:type] = :status
                 fields=expected.split(/:/)

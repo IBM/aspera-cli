@@ -2,9 +2,9 @@ module Asperalm
   module Cli
     # base class for plugins modules
     class Plugin
-      def self.set_refs(optmgr,main)
-        @@optmgr=optmgr
-        @@main=main
+      # set reference to CLI manager
+      def self.manager=(manager)
+        @@manager=manager
       end
 
       def self.result_none
@@ -52,13 +52,18 @@ module Asperalm
         end
       end
 
-      attr_reader :optmgr
-      attr_reader :main
+      # helper : get CLI manager
+      def manager
+        @@manager
+      end
+
+      # helper : get CLI option parser
+      def options
+        @@manager.options
+      end
 
       def initialize
-        # main is used for .options
-        @optmgr=@@optmgr
-        @main=@@main
+        super()
       end
 
       def declare_options
