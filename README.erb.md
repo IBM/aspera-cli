@@ -500,7 +500,7 @@ This can also be provisioned in a config file:
 2$ aslmcli config id shares06 set username john
 3$ aslmcli config id shares06 set password 4sp3ra
 4$ aslmcli config id default set shares shares06 
-5$ aslmcli config show
+5$ aslmcli config overview
 6$ aslmcli shares repo browse /
 ```
 
@@ -512,7 +512,7 @@ $ aslmcli config id shares06 init @json:'{"url":"https://10.25.0.6","username":"
 ```
 
 The fourth command defines this option preset as the default option preset for the 
-specified application ("shares"). The 5th command dumps the configuration file. 
+specified application ("shares"). The 5th command displays the content of configuration file in table format. 
 Alternative option presets can be used with option "-P&lt;option preset&gt;"
 (or --load-params=&lt;option preset&gt;)
 
@@ -1182,7 +1182,7 @@ $ aslmcli client available
 ### List current resources used
 
 ```
-$ aslmcli current
+$ aslmcli client current
 :........................:............................................................................................:
 :          name          :                                            path                                            :
 :........................:............................................................................................:
