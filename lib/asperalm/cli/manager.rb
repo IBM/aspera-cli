@@ -11,6 +11,13 @@ module Asperalm
     # raised when an unexpected argument is provided
     class CliBadArgument < CliError; end
 
+    class CliNoSuchId < CliError
+      def initialize(res_type,res_id)
+        msg="No such #{res_type} identifier: #{res_id}"
+        super(msg)
+      end
+    end
+
     # option is retrieved from another object using accessor
     class AttrAccessor
       #attr_accessor :object
