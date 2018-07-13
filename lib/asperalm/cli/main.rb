@@ -74,7 +74,9 @@ module Asperalm
         if @available_presets.has_key?(@@CONFIG_FILE_KEY_DEFAULT) and
         @available_presets[@@CONFIG_FILE_KEY_DEFAULT].has_key?(plugin_sym.to_s)
           default_config_name=@available_presets[@@CONFIG_FILE_KEY_DEFAULT][plugin_sym.to_s]
-          raise CliError,"Default config name [#{default_config_name}] specified for plugin [#{plugin_sym.to_s}], but it does not exist in config file." if !@available_presets.has_key?(default_config_name)
+          if !@available_presets.has_key?(default_config_name)
+            Log.log.error("Default config name [#{default_config_name}] specified for plugin [#{plugin_sym.to_s}], but it does not exist in config file.\nPlease fix the issue: either create preset with one parameter (aslmcli config id #{default_config_name} init @json:'{}') or remove default (aslmcli config id default remove #{plugin_sym.to_s}).")
+          end
           raise CliError,"Config name [#{default_config_name}] must be a hash, check config file." if !@available_presets[default_config_name].is_a?(Hash)
         end
 
@@ -286,7 +288,7 @@ module Asperalm
         @opt_mgr.add_opt_simple(:ts,"override transfer spec values (Hash, use @json: prefix), current=#{@opt_mgr.get_option(:ts,:optional)}")
         @opt_mgr.add_opt_simple(:to_folder,"destination folder for downloaded files")
         @opt_mgr.add_opt_simple(:lock_port,"prevent dual execution of a command, e.g. in cron")
-        @opt_mgr.add_opt_simple(:use_product,"which local product to use for ascp")
+        @opt_mgr.add_opt_simple(:use_product,"which local product to use for ascp, current=#{Fasp::Installation.instance.activated}")
         @opt_mgr.add_opt_boolean(:insecure,"do not validate HTTPS certificate")
         @opt_mgr.add_opt_boolean(:flat_hash,"display hash values as additional keys")
         @opt_mgr.add_opt_boolean(:override,"override existing value")
@@ -579,7 +581,7 @@ module Asperalm
         case action
         when :id
           config_name=@opt_mgr.get_next_argument('config name')
-          action=@opt_mgr.get_next_argument('action',[:set,:delete,:initialize,:show,:update,:ask])
+          action=@opt_mgr.get_next_argument('action',[:show,:delete,:set,:unset,:initialize,:update,:ask])
           case action
           when :show
             raise "no such config: #{config_name}" unless @available_presets.has_key?(config_name)
@@ -601,6 +603,15 @@ module Asperalm
             @available_presets[config_name][param_name]=param_value
             save_presets_to_config_file
             return Main.result_status("updated: #{config_name}: #{param_name} <- #{param_value}")
+          when :unset
+            param_name=@opt_mgr.get_next_argument('parameter name')
+            if @available_presets.has_key?(config_name)
+              @available_presets[config_name].delete(param_name)
+              save_presets_to_config_file
+            else
+              Log.log.warn("no such parameter: #{param_name} (ignoring)")
+            end
+            return Main.result_status("removed: #{config_name}: #{param_name}")
           when :initialize
             config_value=@opt_mgr.get_next_argument('extended value (Hash)')
             if @available_presets.has_key?(config_name)
@@ -855,6 +866,7 @@ module Asperalm
           display_results(command_plugin.execute_action)
           @opt_mgr.fail_if_unprocessed
         rescue CliBadArgument => e;          process_exception_exit(e,'Argument',:usage)
+        rescue CliNoSuchId => e;             process_exception_exit(e,'Identifier')
         rescue CliError => e;                process_exception_exit(e,'Tool',:usage)
         rescue Fasp::Error => e;             process_exception_exit(e,"FASP(ascp)")
         rescue Asperalm::RestCallError => e; process_exception_exit(e,"Rest")
