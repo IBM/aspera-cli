@@ -18,17 +18,20 @@ module Asperalm
         end
 
         # retrieve structure with all versions available
-        def self.connect_versions
-          api_connect_cdn=Rest.new({:base_url=>CONNECT_WEB_URL})
-          javascript=api_connect_cdn.call({:operation=>'GET',:subpath=>CONNECT_VERSIONS})
-          # get result on one line
-          connect_versions_javascript=javascript[:http].body.gsub(/\r\n\s*/,'')
-          Log.log.debug("javascript=#{connect_versions_javascript}")
-          # get javascript object only
-          found=connect_versions_javascript.match(/AW.connectVersions = (.*);/)
-          raise CliError,'Problen when getting connect versions from internet' if found.nil?
-          alldata=JSON.parse(found[1])
-          return alldata['entries']
+        def connect_versions
+          if @connect_versions.nil?
+            api_connect_cdn=Rest.new({:base_url=>CONNECT_WEB_URL})
+            javascript=api_connect_cdn.call({:operation=>'GET',:subpath=>CONNECT_VERSIONS})
+            # get result on one line
+            connect_versions_javascript=javascript[:http].body.gsub(/\r\n\s*/,'')
+            Log.log.debug("javascript=#{connect_versions_javascript}")
+            # get javascript object only
+            found=connect_versions_javascript.match(/AW.connectVersions = (.*);/)
+            raise CliError,'Problen when getting connect versions from internet' if found.nil?
+            alldata=JSON.parse(found[1])
+            @connect_versions=alldata['entries']
+          end
+          return @connect_versions
         end
 
         def execute_action
@@ -39,15 +42,15 @@ module Asperalm
           when :available
             all=Fasp::Installation.instance.installed_products
             return {:type=>:hash_array, :data=>all, :fields=>[:name,:app_root]}
-          when :connect #
+          when :connect
             command=self.options.get_next_argument('command',[:list,:id])
             case command
-            when :list #
-              return {:type=>:hash_array, :data=>self.class.connect_versions, :fields => ['id','title','version']}
-            when :id #
-              all_resources=self.class.connect_versions
+            when :list
+              return {:type=>:hash_array, :data=>connect_versions, :fields => ['id','title','version']}
+            when :id
               connect_id=self.options.get_next_argument('id or title')
-              one_res = all_resources.select {|i| i['id'].eql?(connect_id) || i['title'].eql?(connect_id)}.first
+              one_res=connect_versions.select{|i|i['id'].eql?(connect_id) || i['title'].eql?(connect_id)}.first
+              raise CliNoSuchId.new(:connect,connect_id) if one_res.nil?
               command=self.options.get_next_argument('command',[:info,:links])
               case command
               when :info # shows files used
@@ -58,7 +61,7 @@ module Asperalm
                 case command
                 when :list # shows files used
                   return {:type=>:hash_array, :data=>all_links}
-                when :id #
+                when :id
                   link_title=self.options.get_next_argument('title')
                   one_link=all_links.select {|i| i['title'].eql?(link_title)}.first
                   command=self.options.get_next_argument('command',[:download,:open])
