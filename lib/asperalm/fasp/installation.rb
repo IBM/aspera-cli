@@ -11,10 +11,10 @@ module Asperalm
     class Installation
       include Singleton
       VARRUN_SUBFOLDER='var/run'
-      FIRST_FOUND=:first
+      FIRST_FOUND='FIRST'
       PRODUCT_INFO='product-info.mf'
 
-      # name of Aspera application to be usedm or :first
+      # name of Aspera application to be used or :first
       attr_reader :activated
       def activated=(value)
         @activated=value
@@ -29,10 +29,11 @@ module Asperalm
         # this contains var/run, files generated on runtime
         if @activated.eql?(FIRST_FOUND)
           p = installed_products.first
+          raise "no FASP installation found\nPlease check manual on how to install FASP." if p.nil?
         else
           p=installed_products.select{|p|p[:name].eql?(@activated)}.first
+          raise "no such product installed: #{@activated}" if p.nil?
         end
-        raise "no FASP installation found\nPlease check manual on how to install FASP." if p.nil?
         set_location(p)
         return @i_p
       end
