@@ -483,6 +483,21 @@ is an underscore. E.g. --transfer-name  on command line gives transfer_node in c
 Note: before version 0.4.5, some keys could be ruby symbols, from 0.4.5 all keys are strings. To
 convert olver versions, remove the leading ":" in fronty of keys.
 
+The main plugin name is *config*, so it is possible to define a default preset for
+the main plugin with:
+
+```
+$ aslmcli config id cli_default set interactive no
+$ aslmcli config id default set config cli_default
+```
+
+A preset value can be removed with `unset`:
+
+```
+$ aslmcli config id cli_default unset interactive
+```
+
+
 ### Examples
 
 For Faspex, Shares, Node (including ATS, Aspera Transfer Service), Console, 
@@ -583,7 +598,8 @@ This transfer can be done using on of the 3 following methods:
 
 `aslmcli` standadizes on the use of a [_transfer-spec_](#_transferspec_) instead of _raw_ ascp options to provide parameters for a transfer session, as a common method for those three Transfer Agents.
 
-### Direct (ascp/FASPManager API)
+
+### <a name="agents"></a>Direct (local ascp using FASPManager API)
 
 By default the CLI will use a local FASP protocol.
 `aslmcli` will detect locally installed Aspera products.
@@ -591,13 +607,13 @@ Refer to section [Client](#client).
 
 ### IBM Aspera Connect Client GUI
 
-By specifying option: `--transfer=connect`, `aslmcli` will start transfers in the Aspera
-Connect Client. This requires the IBM Aspera Connect Client to be installed.
+By specifying option: `--transfer=connect`, `aslmcli` will start transfers 
+using the locally installed Aspera Connect Client.
 
 ### Aspera Node API : Node to node transfers
 
 By specifying option: `--transfer=node`, the CLI will start transfers in an Aspera
-Transfer Server using the Node API.
+Transfer Server using the Node API, either on a local or remote node.
 
 If a default node has been configured
 in the configuration file, then this node is used by default else the parameter
@@ -1169,6 +1185,8 @@ The `client` plugin refers to the use of a local FASP client. It provides the fo
 
 ### List installed clients
 
+Locally installed Aspera products can be listed with:
+
 ```bash
 $ aslmcli client available
 :..........................:................................................:
@@ -1178,6 +1196,34 @@ $ aslmcli client available
 : Aspera Enterprise Server : /Library/Aspera                                :
 :..........................:................................................:
 ```
+
+### Selection of local client
+
+By default, the special value `FIRST` is used and will select the first product in list.
+To select another product use option: `use_product`, either on command line:
+`--use-product='Aspera Enterprise Server'`, or by setting as default:
+
+```
+$ aslmcli config id cli_default set use_product 'Aspera Enterprise Server'
+updated: cli_default: use_product <- Aspera Enterprise Server
+$ aslmcli config id default set config cli_default
+updated: default: config <- cli_default
+$ aslmcli client current
+:........................:.......................................................................................:
+:          name          :                                         path                                          :
+:........................:.......................................................................................:
+: bin_folder             : /Library/Aspera/bin                                                                   :
+: ascp                   : /Library/Aspera/bin/ascp                                                              :
+: ascp4                  : /Library/Aspera/bin/ascp4                                                             :
+: ssh_bypass_key_dsa     : /Library/Aspera/var/aspera_tokenauth_id_dsa                                           :
+: ssh_bypass_key_rsa     : /Library/Aspera/var/aspera_tokenauth_id_rsa                                           :
+: fallback_cert          : /Library/Aspera/var/aspera_web_cert.pem                                               :
+: fallback_key           : /Library/Aspera/var/aspera_web_key.pem                                                :
+: plugin_https_port_file : /Users/laurent/Library/Application Support/Aspera/Enterprise Server/var/run/https.uri :
+: log_folder             : /Users/laurent/Library/Logs/Aspera                                                    :
+:........................:.......................................................................................:
+```
+
 
 ### List current resources used
 
