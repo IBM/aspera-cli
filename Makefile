@@ -25,7 +25,7 @@ clean::
 	rm -f README.pdf README.html README.md aslmcli_commands.txt aslmcli_usage.txt asession_usage.txt $(TEST_CONFIG)
 	rm -fr t doc "PKG - "*
 	mkdir t
-	rm -f 200KB* AsperaConnect-ML*
+	rm -f 200KB* *AsperaConnect-ML*
 	gem uninstall -a -x $(GEMNAME)
 cleanupgems:
 	gem uninstall -a -x $(gem list|cut -f 1 -d' '|egrep -v 'rdoc|psych|rake|openssl|json|io-console|bigdecimal')
