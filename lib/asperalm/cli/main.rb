@@ -325,12 +325,17 @@ module Asperalm
         return r
       end
 
+      # @param source [Hash] hash to modify
+      # @param keep_last [bool] 
       def self.keyval_list_flatten_sub_hash(source,keep_last)
         newval=flatten_sub_hash_rec(source,keep_last,'',{})
         source.clear
         source.merge!(newval)
       end
 
+      # recursive function to modify a hash
+      # @param source [Hash] to be modified
+      # 
       def self.flatten_sub_hash_rec(source,keep_last,prefix,dest)
         #is_simple_hash=source.is_a?(Hash) and source.values.inject(true){|m,v| xxx=!v.respond_to?(:each) and m;puts("->#{xxx}>#{v.respond_to?(:each)} #{v}-");xxx}
         is_simple_hash=false
@@ -346,8 +351,8 @@ module Asperalm
         return dest
       end
 
-      # special for Aspera on Cloud dis play node
-      # "param" => [{"name"=>"foo","value"=>"bar"}] will be expanded to param.foo : bar
+      # special for Aspera on Cloud display node
+      # {"param" => [{"name"=>"foo","value"=>"bar"}]} will be expanded to {"param.foo" : "bar"}
       def self.keyval_list_flatten_name_value_list(hash)
         hash.keys.each do |k|
           v=hash[k]
@@ -363,8 +368,8 @@ module Asperalm
       # supported output formats
       def self.display_formats; [:table,:ruby,:json,:jsonpp,:yaml,:csv]; end
 
-      RECORD_SEPARATOR="\n"
-      FIELD_SEPARATOR=","
+      CSV_RECORD_SEPARATOR="\n"
+      CSV_FIELD_SEPARATOR=","
 
       # this method displays the results, especially the table format
       def display_results(results)
@@ -474,7 +479,7 @@ module Asperalm
             :vertical_boundary     => style[1],
             :boundary_intersection => style[2])
           when :csv
-            puts final_table_rows.map{|t| t.join(FIELD_SEPARATOR)}.join(RECORD_SEPARATOR)
+            puts final_table_rows.map{|t| t.join(CSV_FIELD_SEPARATOR)}.join(CSV_RECORD_SEPARATOR)
           end
         end
       end
@@ -775,7 +780,7 @@ module Asperalm
       end
 
       # plugins shall use this method to start a transfer
-      # @param: ts_source specifies how destination_root is set
+      # @param: ts_source specifies how destination_root is set (how transfer spec was generated)
       # and not the default one
       def start_transfer(transfer_spec,ts_source)
         # initialize transfert agent, to set default transfer spec options before merge
@@ -802,7 +807,7 @@ module Asperalm
 
         transfer_spec.merge!(@transfer_spec_default)
         # add bypass keys if there is a token, also prevents connect plugin to ask password
-        transfer_spec['authentication']="token" if transfer_spec.has_key?('token')
+        transfer_spec['authentication']='token' if transfer_spec.has_key?('token')
         transfer_agent.start_transfer(transfer_spec)
         return self.class.result_success
       end
