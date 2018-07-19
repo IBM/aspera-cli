@@ -11,7 +11,7 @@ Gem::Specification.new do |spec|
   spec.summary       = "Sample command line for Aspera Server products: Aspera Files, Faspex, Shares, Node, Console, Orchestrator, Server, ATS"
   spec.description   = "A sample CLI for Aspera products."
   spec.homepage      = "http://www.asperasoft.com"
-  spec.license       = 'IPL-1.0'
+  spec.license       = 'Apache-2.0'
 
   # Prevent pushing this gem to RubyGems.org. To allow pushes either set the 'allowed_push_host'
   # to allow pushing to a single host or delete this section to allow pushing to any host.
