@@ -77,7 +77,7 @@ module Asperalm
             query=self.options.get_option(:query,:optional)
             args=query.nil? ? nil : {'json_query'=>query}
             Log.log.debug("#{args}".bg_red)
-            return {:data=>@api_shares2_admin.read(resource_path,args)[:data],:fields=>default_fields,:type=>:hash_array}
+            return {:data=>@api_shares2_admin.read(resource_path,args)[:data],:fields=>default_fields,:type=>:object_list}
           when :delete
             @api_shares2_admin.delete(set_resource_path_by_id_or_name(path_prefix,resource_sym))
             return Plugin.result_status('deleted')
@@ -97,10 +97,10 @@ module Asperalm
             return Node.new.execute_common(command,@api_shares_node)
           when :appinfo
             node_info=@api_shares_node.call({:operation=>'GET',:subpath=>'app',:headers=>{'Accept'=>'application/json','Content-Type'=>'application/json'}})[:data]
-            return { :type=>:key_val_list ,:data => node_info }
+            return { :type=>:single_object ,:data => node_info }
           when :userinfo
             node_info=@api_shares_node.call({:operation=>'GET',:subpath=>'current_user',:headers=>{'Accept'=>'application/json','Content-Type'=>'application/json'}})[:data]
-            return { :type=>:key_val_list ,:data => node_info }
+            return { :type=>:single_object ,:data => node_info }
           when :organization,:project,:share,:team
             prefix=''
             set_resource_path_by_id_or_name(prefix,:organization) if [:project,:team,:share].include?(command)

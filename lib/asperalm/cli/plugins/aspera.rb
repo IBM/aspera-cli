@@ -145,7 +145,7 @@ module Asperalm
             node_info,file_id = find_nodeinfo_and_fileid(home_node_id,home_file_id,thepath)
             node_api=get_files_node_api(node_info,FilesApi::SCOPE_NODE_USER)
             items=node_api.read("files/#{file_id}/files")[:data]
-            return {:type=>:hash_array,:data=>items,:fields=>['name','type','recursive_size','size','modified_time','access_level']}
+            return {:type=>:object_list,:data=>items,:fields=>['name','type','recursive_size','size','modified_time','access_level']}
           when :mkdir
             thepath=self.options.get_next_argument("path")
             containing_folder_path = thepath.split(PATH_SEPARATOR)
@@ -204,7 +204,7 @@ module Asperalm
             node_info,file_id = find_nodeinfo_and_fileid(home_node_id,fileid)
             node_api=get_files_node_api(node_info,FilesApi::SCOPE_NODE_USER)
             items=node_api.read("files/#{file_id}")[:data]
-            return {:type=>:key_val_list,:data=>items}
+            return {:type=>:single_object,:data=>items}
           end # command_repo
         end # def
 
@@ -336,7 +336,7 @@ module Asperalm
             one['status']=success
             result.push(one)
           end
-          return {:type=>:hash_array,:data=>result,:fields=>['id','status']}
+          return {:type=>:object_list,:data=>result,:fields=>['id','status']}
         end
 
         def execute_action
@@ -352,21 +352,21 @@ module Asperalm
 
           case command
           when :organization
-            return { :type=>:key_val_list, :data =>@org_data }
+            return { :type=>:single_object, :data =>@org_data }
           when :user
             command=self.options.get_next_argument('command',[ :workspaces,:info ])
             case command
             when :workspaces
-              return {:type=>:hash_array,:data=>@api_files_user.read("workspaces")[:data],:fields=>['id','name']}
+              return {:type=>:object_list,:data=>@api_files_user.read("workspaces")[:data],:fields=>['id','name']}
               #              when :settings
-              #                return {:type=>:hash_array,:data=>@api_files_user.read("client_settings/")[:data]}
+              #                return {:type=>:object_list,:data=>@api_files_user.read("client_settings/")[:data]}
             when :info
               resource_instance_path="users/#{@user_id}"
               command=self.options.get_next_argument('command',[ :show,:modify ])
               case command
               when :show
                 object=@api_files_admn.read(resource_instance_path)[:data]
-                return { :type=>:key_val_list, :data =>object }
+                return { :type=>:single_object, :data =>object }
               when :modify
                 changes=self.options.get_next_argument('modified parameters (hash)')
                 @api_files_admn.update(resource_instance_path,changes)
@@ -419,11 +419,11 @@ module Asperalm
               #                file=node_api.read("files/#{items.first['id']}")[:data]
               #                the_package['X_contents_path']=file['path']
               #              end
-              return { :type=>:key_val_list, :data =>the_package }
+              return { :type=>:single_object, :data =>the_package }
             when :list
               # list all packages ('page'=>1,'per_page'=>10,)'sort'=>'-sent_at',
               packages=@api_files_user.read("packages",{'archived'=>false,'exclude_dropbox_packages'=>true,'has_content'=>true,'received'=>true,'workspace_id'=>@workspace_id})[:data]
-              return {:type=>:hash_array,:data=>packages,:fields=>['id','name','bytes_transferred']}
+              return {:type=>:object_list,:data=>packages,:fields=>['id','name','bytes_transferred']}
             end
           when :files
             return execute_node_action(@home_node_id,@home_file_id)
@@ -459,7 +459,7 @@ module Asperalm
               # iteration_token=nnn
               # active_only=true|false
               events=api_node.read("ops/transfers",{'count'=>100,'filter'=>'summary','active_only'=>'true'})[:data]
-              return {:type=>:hash_array,:data=>events,:fields=>['id','status']}
+              return {:type=>:object_list,:data=>events,:fields=>['id','status']}
               #transfers=api_node.make_request_ex({:operation=>'GET',:subpath=>'ops/transfers',:args=>{'count'=>25,'filter'=>'id'}})
               #transfers=api_node.read("events") # after_time=2016-05-01T23:53:09Z
             when :set_client_key
@@ -514,11 +514,11 @@ module Asperalm
                 rescue => e
                   raise CliBadArgument,"query must be an extended value which can be encoded with URI.encode_www_form. Refer to manual. (#{e.message})"
                 end
-                return {:type=>:hash_array,:data=>@api_files_admn.read(resource_class_path,query)[:data],:fields=>default_fields}
+                return {:type=>:object_list,:data=>@api_files_admn.read(resource_class_path,query)[:data],:fields=>default_fields}
               when :show
                 object=@api_files_admn.read(resource_instance_path)[:data]
                 fields=object.keys.select{|k|!k.eql?('certificate')}
-                return { :type=>:key_val_list, :data =>object, :fields=>fields }
+                return { :type=>:single_object, :data =>object, :fields=>fields }
               when :modify
                 changes=self.options.get_next_argument('modified parameters (hash)')
                 @api_files_admn.update(resource_instance_path,changes)
@@ -535,11 +535,11 @@ module Asperalm
                 return execute_node_action(res_id,ak_data['root_file_id'])
               when :shared_folders
                 res_data=@api_files_admn.read("#{resource_class_path}/#{res_id}/permissions")[:data]
-                return { :type=>:hash_array, :data =>res_data , :fields=>['id','node_name','file_id']} #
+                return { :type=>:object_list, :data =>res_data , :fields=>['id','node_name','file_id']} #
               else raise :ERROR
               end
             when :usage_reports
-              return {:type=>:hash_array,:data=>@api_files_admn.read("usage_reports",{:workspace_id=>@workspace_id})[:data]}
+              return {:type=>:object_list,:data=>@api_files_admn.read("usage_reports",{:workspace_id=>@workspace_id})[:data]}
             end
           end # action
           raise RuntimeError, "internal error"

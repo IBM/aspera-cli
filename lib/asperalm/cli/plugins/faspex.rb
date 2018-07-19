@@ -116,7 +116,7 @@ module Asperalm
               all_inbox_data=XmlSimple.xml_in(all_inbox_xml, {"ForceArray" => true})
               Log.dump(:all_inbox_data,all_inbox_data)
               return Plugin.result_none unless all_inbox_data.has_key?('entry')
-              return {:data=>all_inbox_data['entry'],:type=>:hash_array,:fields=>[PACKAGE_MATCH_FIELD,'title','items'], :textify => lambda { |table_data| Faspex.textify_package_list(table_data)} }
+              return {:data=>all_inbox_data['entry'],:type=>:object_list,:fields=>[PACKAGE_MATCH_FIELD,'title','items'], :textify => lambda { |table_data| Faspex.textify_package_list(table_data)} }
             when :send
               filelist = self.options.get_next_argument("file list",:multiple)
               package_create_params={
@@ -191,7 +191,7 @@ module Asperalm
             source_list=api_v3.call({:operation=>'GET',:subpath=>"source_shares",:headers=>{'Accept'=>'application/json'}})[:data]['items']
             case command_source
             when :list
-              return {:data=>source_list,:type=>:hash_array}
+              return {:data=>source_list,:type=>:object_list}
             else # :id or :name
               source_match_val=self.options.get_next_argument('source id or name')
               #source_match_val=source_match_val.to_i if command_source.eql?(:id)
@@ -212,7 +212,7 @@ module Asperalm
               command_node=self.options.get_next_argument('command',[ :info, :node ])
               case command_node
               when :info
-                return {:data=>source_info,:type=>:key_val_list}
+                return {:data=>source_info,:type=>:single_object}
               when :node
                 node_config=self.manager.preset_by_name(source_info[@@KEY_NODE])
                 raise CliError,"bad type for: \"#{source_info[@@KEY_NODE]}\"" unless node_config.is_a?(Hash)
@@ -228,13 +228,13 @@ module Asperalm
             end
           when :me
             my_info=api_v3.call({:operation=>'GET',:subpath=>"me",:headers=>{'Accept'=>'application/json'}})[:data]
-            return {:data=>my_info, :type=>:key_val_list}
+            return {:data=>my_info, :type=>:single_object}
           when :dropbox
             command_pkg=self.options.get_next_argument('command',[ :list ])
             case command_pkg
             when :list
               dropbox_list=api_v3.call({:operation=>'GET',:subpath=>"/aspera/faspex/dropboxes",:headers=>{'Accept'=>'application/json'}})[:data]
-              return {:data=>dropbox_list['items'], :type=>:hash_array, :fields=>['name','id','description','can_read','can_write']}
+              return {:data=>dropbox_list['items'], :type=>:object_list, :fields=>['name','id','description','can_read','can_write']}
             end
           when :recv_publink
             thelink=self.options.get_next_argument("Faspex public URL for a package")

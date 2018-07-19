@@ -274,8 +274,8 @@ The behaviour can be controlled with:
 
 Command execution will result in output. The information displayed depends on the action. Types of result include:
 
-* `hash_array` : displayed as a 2 dimensional table: one line per item, one colum per attribute.
-* `key_val_list` : displayed as a 2 dimensional table: one line per attribute, first column is attribute name, and second is atteribute value. Nested hashes are collapsed.
+* `object_list` : displayed as a 2 dimensional table: one line per item, one colum per attribute.
+* `single_object` : displayed as a 2 dimensional table: one line per attribute, first column is attribute name, and second is atteribute value. Nested hashes are collapsed.
 * `value_list` : a tbale with one column.
 * `empty` : nothing
 * `status` : a message

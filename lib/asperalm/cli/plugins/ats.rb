@@ -102,31 +102,31 @@ module Asperalm
             end
             case command
             when :create
-              return {:type=>:key_val_list, :data=>create_new_api_key}
+              return {:type=>:single_object, :data=>create_new_api_key}
             when :list # list known api keys in ATS (this require an api_key ...)
               res=ats_api_secure.read("api_keys",{'offset'=>0,'max_results'=>1000})
               return {:type=>:value_list, :data=>res[:data]['data'], :name => 'ats_id'}
             when :show # show one of api_key in ATS
               res=ats_api_secure.read("api_keys/#{modified_ats_id}")
-              return {:type=>:key_val_list, :data=>res[:data]}
+              return {:type=>:single_object, :data=>res[:data]}
             when :delete #
               res=ats_api_secure.delete("api_keys/#{modified_ats_id}")
               return Plugin.result_status("deleted #{modified_ats_id}")
             when :info # display current ATS credential information
-              return {:type=>:key_val_list, :data=>current_api_key}
+              return {:type=>:single_object, :data=>current_api_key}
             when :subscriptions
-              return {:type=>:key_val_list, :data=>ats_api_secure.read("subscriptions")[:data]}
+              return {:type=>:single_object, :data=>ats_api_secure.read("subscriptions")[:data]}
             when :cache # list of delete entries in api_key cache
               command=self.options.get_next_argument('command',[:list, :delete])
               case command
               when :list
-                return {:type=>:hash_array, :data=>repo_api_keys, :fields =>['ats_id','ats_secret','ats_description','subscription_name','organization_name']}
+                return {:type=>:object_list, :data=>repo_api_keys, :fields =>['ats_id','ats_secret','ats_description','subscription_name','organization_name']}
               when :delete
                 deleted_ats_id=self.options.get_next_argument('ats_id',repo_api_keys.map{|i| i['ats_id']})
                 #raise CliBadArgument,"no such id" if repo_api_keys.select{|i| i['ats_id'].eql?(ats_id)}.empty?
                 repo_api_keys.select!{|i| !i['ats_id'].eql?(deleted_ats_id)}
                 save_key_repo
-                return {:type=>:hash_array, :data=>[{'ats_id'=>deleted_ats_id,'status'=>'deleted'}]}
+                return {:type=>:object_list, :data=>[{'ats_id'=>deleted_ats_id,'status'=>'deleted'}]}
               end
             else raise "INTERNAL ERROR"
             end
@@ -238,15 +238,15 @@ module Asperalm
               end
             end
             res=api_secure.create("access_keys",params)
-            return {:type=>:key_val_list, :data=>res[:data]}
+            return {:type=>:single_object, :data=>res[:data]}
             # TODO : action : modify, with "PUT"
           when :list
             params=self.options.get_option(:params,:optional) || {'offset'=>0,'max_results'=>1000}
             res=api_secure.read("access_keys",params)
-            return {:type=>:hash_array, :data=>res[:data]['data'], :fields => ['name','id','secret','created','modified']}
+            return {:type=>:object_list, :data=>res[:data]['data'], :fields => ['name','id','secret','created','modified']}
           when :show
             res=api_secure.read("access_keys/#{access_key_id}")
-            return {:type=>:key_val_list, :data=>res[:data]}
+            return {:type=>:single_object, :data=>res[:data]}
           when :delete
             res=api_secure.delete("access_keys/#{access_key_id}")
             return Plugin.result_status("deleted #{access_key_id}")
@@ -271,7 +271,7 @@ module Asperalm
               rest_params[:basic_password]=ak_data['secret']
             end
             api_ak_auth=Rest.new(rest_params)
-            return {:type=>:key_val_list, :data=>api_ak_auth.read("servers")[:data]}
+            return {:type=>:single_object, :data=>api_ak_auth.read("servers")[:data]}
           else raise "INTERNAL ERROR"
           end
         end
@@ -280,9 +280,9 @@ module Asperalm
           command=self.options.get_next_argument('command',[ :clouds, :list, :show])
           case command
           when :clouds
-            return {:type=>:key_val_list, :data=>all_clouds, :columns=>['id','name']}
+            return {:type=>:single_object, :data=>all_clouds, :columns=>['id','name']}
           when :list
-            return {:type=>:hash_array, :data=>all_servers, :fields=>['id','cloud','region']}
+            return {:type=>:object_list, :data=>all_servers, :fields=>['id','cloud','region']}
           when :show
             server_id=self.options.get_option(:id,:optional)
             if server_id.nil?
@@ -291,7 +291,7 @@ module Asperalm
               server_data=all_servers.select {|i| i['id'].eql?(server_id)}.first
               raise "no such server id" if server_data.nil?
             end
-            return {:type=>:key_val_list, :data=>server_data}
+            return {:type=>:single_object, :data=>server_data}
           end
         end
 

@@ -94,7 +94,7 @@ module Asperalm
                     datapart['default']=data.pop
                     datapart['value']=data.pop
                   end
-                  return {:type=>:key_val_list,:data=>result,:fields=>['section','name','value','default'],:option_expand_last=>true}
+                  return {:type=>:single_object,:data=>result,:fields=>['section','name','value','default'],:option_expand_last=>true}
                 end
               end
               return Plugin.result_status(result)
@@ -121,11 +121,11 @@ module Asperalm
               when :mv; return Plugin.result_success
               when :cp; return Plugin.result_success
               when :rm; return Plugin.result_success
-              when :ls; return {:type=>:hash_array,:data=>result,:fields=>[:zmode,:zuid,:zgid,:size,:mtime,:name],:symb_key=>true}
-              when :info; return {:type=>:key_val_list,:data=>result,:symb_key=>true}
-              when :df; return {:type=>:hash_array,:data=>result,:symb_key=>true}
-              when :du; return {:type=>:key_val_list,:data=>result,:symb_key=>true}
-              when :md5sum; return {:type=>:key_val_list,:data=>result,:symb_key=>true}
+              when :ls; return {:type=>:object_list,:data=>result,:fields=>[:zmode,:zuid,:zgid,:size,:mtime,:name],:symb_key=>true}
+              when :info; return {:type=>:single_object,:data=>result,:symb_key=>true}
+              when :df; return {:type=>:object_list,:data=>result,:symb_key=>true}
+              when :du; return {:type=>:single_object,:data=>result,:symb_key=>true}
+              when :md5sum; return {:type=>:single_object,:data=>result,:symb_key=>true}
               end
             end
           rescue Asperalm::AsCmd::Error => e

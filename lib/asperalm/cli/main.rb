@@ -326,16 +326,19 @@ module Asperalm
       end
 
       # @param source [Hash] hash to modify
-      # @param keep_last [bool] 
+      # @param keep_last [bool]
       def self.keyval_list_flatten_sub_hash(source,keep_last)
-        newval=flatten_sub_hash_rec(source,keep_last,'',{})
+        newval={}
+        flatten_sub_hash_rec(source,keep_last,'',newval)
         source.clear
         source.merge!(newval)
       end
 
       # recursive function to modify a hash
       # @param source [Hash] to be modified
-      # 
+      # @param keep_last [bool] truer if last level is not
+      # @param prefix [String] true if last level is not
+      # @param dest [Hash] new hash flattened
       def self.flatten_sub_hash_rec(source,keep_last,prefix,dest)
         #is_simple_hash=source.is_a?(Hash) and source.values.inject(true){|m,v| xxx=!v.respond_to?(:each) and m;puts("->#{xxx}>#{v.respond_to?(:each)} #{v}-");xxx}
         is_simple_hash=false
@@ -348,12 +351,12 @@ module Asperalm
             dest[prefix+k.to_s]=v
           end
         end
-        return dest
+        return nil
       end
 
       # special for Aspera on Cloud display node
       # {"param" => [{"name"=>"foo","value"=>"bar"}]} will be expanded to {"param.foo" : "bar"}
-      def self.keyval_list_flatten_name_value_list(hash)
+      def self.flatten_name_value_list(hash)
         hash.keys.each do |k|
           v=hash[k]
           if v.is_a?(Array) and v.map{|i|i.class}.uniq.eql?([Hash]) and v.map{|i|i.keys}.flatten.sort.uniq.eql?(["name", "value"])
@@ -391,9 +394,9 @@ module Asperalm
           puts results[:data].to_yaml
         when :table,:csv
           case results[:type]
-          when :hash_array # goes to table display
+          when :object_list # goes to table display
             raise "internal error: unexpected type: #{results[:data].class}, expecting Array" unless results[:data].is_a?(Array)
-            # :hash_array is an array of hash tables, where key=colum name
+            # :object_list is an array of hash tables, where key=colum name
             table_rows_hash_val = results[:data]
             final_table_columns=nil
             case user_asked_fields_list_str
@@ -414,8 +417,8 @@ module Asperalm
               final_table_columns=user_asked_fields_list_str.split(',')
               final_table_columns=final_table_columns.map{|i|i.to_sym} if results[:symb_key]
             end
-          when :key_val_list # goes to table display
-            # :key_val_list is a simple hash table  (can be nested)
+          when :single_object # goes to table display
+            # :single_object is a simple hash table  (can be nested)
             raise "internal error: unexpected type: #{results[:data].class}, expecting Hash" unless results[:data].is_a?(Hash)
             final_table_columns = results[:columns] || ['key','value']
             asked_fields=results[:data].keys
@@ -428,7 +431,7 @@ module Asperalm
             end
             if @option_flat_hash
               self.class.keyval_list_flatten_sub_hash(results[:data],results[:option_expand_last])
-              self.class.keyval_list_flatten_name_value_list(results[:data])
+              self.class.flatten_name_value_list(results[:data])
               # first level keys are potentially changed
               asked_fields=results[:data].keys
             end
@@ -590,7 +593,7 @@ module Asperalm
           case action
           when :show
             raise "no such config: #{config_name}" unless @available_presets.has_key?(config_name)
-            return {:type=>:key_val_list,:data=>@available_presets[config_name]}
+            return {:type=>:single_object,:data=>@available_presets[config_name]}
           when :delete
             @available_presets.delete(config_name)
             save_presets_to_config_file
@@ -656,17 +659,17 @@ module Asperalm
         when :echo # display the content of a value given on command line
           result={:type=>:other_struct, :data=>@opt_mgr.get_next_argument("value")}
           # special for csv
-          result[:type]=:hash_array if result[:data].is_a?(Array) and result[:data].first.is_a?(Hash)
+          result[:type]=:object_list if result[:data].is_a?(Array) and result[:data].first.is_a?(Hash)
           return result
         when :flush_tokens
           deleted_files=Oauth.flush_tokens
           return {:type=>:value_list, :name=>'file',:data=>deleted_files}
         when :plugins
-          return {:data => plugin_sym_list.map { |i| { 'plugin' => i.to_s, 'path' => @plugins[i][:source] } } , :fields => ['plugin','path'], :type => :hash_array }
+          return {:data => plugin_sym_list.map { |i| { 'plugin' => i.to_s, 'path' => @plugins[i][:source] } } , :fields => ['plugin','path'], :type => :object_list }
         when :list
           return {:data => @available_presets.keys, :type => :value_list, :name => 'name'}
         when :overview
-          return {:type=>:hash_array,:data=>self.class.flatten_all_config(@available_presets)}
+          return {:type=>:object_list,:data=>self.class.flatten_all_config(@available_presets)}
         when :quickstart # TODO
           # only one value, so no test, no switch for the time being
           plugin_name=@opt_mgr.get_next_argument('plugin name',[:aspera])
@@ -865,7 +868,7 @@ module Asperalm
           # help requested ?
           exit_with_usage(false) if @option_help
           if @option_show_config
-            display_results({:type=>:key_val_list,:data=>@opt_mgr.declared_options(false)})
+            display_results({:type=>:single_object,:data=>@opt_mgr.declared_options(false)})
             Process.exit(0)
           end
           display_results(command_plugin.execute_action)

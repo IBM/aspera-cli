@@ -55,7 +55,7 @@ module Asperalm
 
         # translates paths results into CLI result, and removes prefix
         def self.c_result_translate_rem_prefix(resp,type,success_msg,path_prefix)
-          resres={:data=>[],:type=>:hash_array,:fields=>[type,'result']}
+          resres={:data=>[],:type=>:object_list,:fields=>[type,'result']}
           JSON.parse(resp[:http].body)['paths'].each do |p|
             result=success_msg
             if p.has_key?('error')
@@ -91,10 +91,10 @@ module Asperalm
           case command
           when :events
             events=api_node.read('events')[:data]
-            return { :type=>:hash_array, :data => events}
+            return { :type=>:object_list, :data => events}
           when :info
             node_info=api_node.read('info')[:data]
-            return { :type=>:key_val_list, :data => node_info, :textify => lambda { |table_data| self.class.c_textify_bool_list_result(table_data,['capabilities','settings'])}}
+            return { :type=>:single_object, :data => node_info, :textify => lambda { |table_data| self.class.c_textify_bool_list_result(table_data,['capabilities','settings'])}}
           when :delete
             paths_to_delete = get_next_arg_add_prefix(prefix_path,"file list",:multiple)
             return self.class.c_delete_files(api_node,paths_to_delete,prefix_path)
@@ -103,7 +103,7 @@ module Asperalm
             path_list=get_next_arg_add_prefix(prefix_path,"folder path or ext.val. list")
             path_list=[path_list] unless path_list.is_a?(Array)
             resp=api_node.create('space',{ "paths" => path_list.map {|i| {:path=>i} } } )
-            result={:data=>resp[:data]['paths'],:type=>:hash_array}
+            result={:data=>resp[:data]['paths'],:type=>:object_list}
             #return c_result_translate_rem_prefix(resp,'folder','created',prefix_path)
             return self.class.c_result_remove_prefix_path(result,'path',prefix_path)
           when :mkdir
@@ -134,7 +134,7 @@ module Asperalm
             send_result=api_node.create('files/browse',{ :path => thepath} )
             #send_result={:data=>{'items'=>[{'file'=>"filename1","permissions"=>[{'name'=>'read'},{'name'=>'write'}]}]}}
             return Plugin.result_none if !send_result[:data].has_key?('items')
-            result={ :data => send_result[:data]['items'] , :type => :hash_array, :textify => lambda { |table_data| self.class.c_textify_browse(table_data) } }
+            result={ :data => send_result[:data]['items'] , :type => :object_list, :textify => lambda { |table_data| self.class.c_textify_browse(table_data) } }
             return self.class.c_result_remove_prefix_path(result,'path',prefix_path)
           when :upload
             filelist = self.options.get_next_argument("source file list",:multiple)
@@ -177,21 +177,21 @@ module Asperalm
             when :summary
               resp=api_node.create('async/summary',{"syncs"=>[asyncid]})[:data]["sync_summaries"].first
               return Plugin.result_none if resp.nil?
-              return { :type => :key_val_list, :data => resp }
+              return { :type => :single_object, :data => resp }
             when :counters
               resp=api_node.create('async/counters',{"syncs"=>[asyncid]})[:data]["sync_counters"].first[asyncid].last
               return Plugin.result_none if resp.nil?
-              return { :type => :key_val_list, :data => resp }
+              return { :type => :single_object, :data => resp }
             end
           when :stream
             command=self.options.get_next_argument('command',[ :list, :create, :show, :modify, :cancel ])
             case command
             when :list
               resp=api_node.read('ops/transfers',self.options.get_option(:value,:optional))
-              return { :type => :hash_array, :data => resp[:data], :fields=>['id','status']  } # TODO
+              return { :type => :object_list, :data => resp[:data], :fields=>['id','status']  } # TODO
             when :create
               resp=api_node.create('streams',self.options.get_option(:value,:mandatory))
-              return { :type => :key_val_list, :data => resp[:data] }
+              return { :type => :single_object, :data => resp[:data] }
             when :show
               trid=self.options.get_next_argument("transfer id")
               resp=api_node.read('ops/transfers/'+trid)
@@ -218,7 +218,7 @@ module Asperalm
             when :list
               # could use ? :subpath=>'transfers'
               resp=api_node.read(res_class_path,self.options.get_option(:value,:optional))
-              return { :type => :hash_array, :data => resp[:data], :fields=>['id','status','remote_user','remote_host'], :textify => lambda { |table_data| Node.c_textify_transfer_list(table_data) } } # TODO
+              return { :type => :object_list, :data => resp[:data], :fields=>['id','status','remote_user','remote_host'], :textify => lambda { |table_data| Node.c_textify_transfer_list(table_data) } } # TODO
             when :cancel
               resp=api_node.cancel(one_res_path)
               return { :type=>:other_struct, :data => resp[:data] }
@@ -239,7 +239,7 @@ module Asperalm
             when :list
               resp=api_node.read('rund/services')
               #  :fields=>['id','root_file_id','storage','license']
-              return { :type=>:hash_array, :data => resp[:data]["services"] }
+              return { :type=>:object_list, :data => resp[:data]["services"] }
             when :create
               # @json:'{"type":"WATCHFOLDERD","run_as":{"user":"user1"}}'
               params=self.options.get_next_argument("Run creation data (structure)")
@@ -266,7 +266,7 @@ module Asperalm
               #  :fields=>['id','root_file_id','storage','license']
               return { :type=>:value_list, :data => resp[:data]['ids'], :name=>'id' }
             when :show
-              return {:type=>:key_val_list, :data=>api_node.read(one_res_path)[:data]}
+              return {:type=>:single_object, :data=>api_node.read(one_res_path)[:data]}
             when :modify
               api_node.update(one_res_path,self.options.get_option(:value,:mandatory))
               return Plugin.result_status("#{one_res_id} updated")
@@ -274,7 +274,7 @@ module Asperalm
               api_node.delete(one_res_path)
               return Plugin.result_status("#{one_res_id} deleted")
             when :state
-              return { :type=>:key_val_list, :data => api_node.read("#{one_res_path}/state")[:data] }
+              return { :type=>:single_object, :data => api_node.read("#{one_res_path}/state")[:data] }
             end
           when :central
             command=self.options.get_next_argument('command',[ :session,:file])
@@ -289,7 +289,7 @@ module Asperalm
               when :list
                 request_data.deep_merge!({"validation"=>validation}) unless validation.nil?
                 resp=api_node.create('services/rest/transfers/v1/sessions',request_data)
-                return {:type=>:hash_array,:data=>resp[:data]["session_info_result"]["session_info"],:fields=>["session_uuid","status","transport","direction","bytes_transferred"]}
+                return {:type=>:object_list,:data=>resp[:data]["session_info_result"]["session_info"],:fields=>["session_uuid","status","transport","direction","bytes_transferred"]}
               end
             when :file
               command=self.options.get_next_argument('command',[ :list, :modify])
@@ -297,7 +297,7 @@ module Asperalm
               when :list
                 request_data.deep_merge!({"validation"=>validation}) unless validation.nil?
                 resp=api_node.create('services/rest/transfers/v1/files',request_data)
-                return {:type=>:hash_array,:data=>resp[:data]["file_transfer_info_result"]["file_transfer_info"],:fields=>["session_uuid","file_id","status","path"]}
+                return {:type=>:object_list,:data=>resp[:data]["file_transfer_info_result"]["file_transfer_info"],:fields=>["session_uuid","file_id","status","path"]}
               when :modify
                 request_data.deep_merge!(validation) unless validation.nil?
                 api_node.update('services/rest/transfers/v1/files',request_data)

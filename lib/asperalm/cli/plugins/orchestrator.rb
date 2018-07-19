@@ -62,15 +62,15 @@ module Asperalm
             if m=result[:http].body.match(/\(v([0-9.-]+)\)/)
               version=m[1]
             end
-            return {:type=>:key_val_list,:data=>{'version'=>version}}
+            return {:type=>:single_object,:data=>{'version'=>version}}
           when :processes
             # TODO: json format is not respected in AO
             result=call_API("api/processes_status",nil,nil,:xml)
             res_s=XmlSimple.xml_in(result[:http].body, {"ForceArray" => true})
-            return {:type=>:hash_array,:data=>res_s["process"]}
+            return {:type=>:object_list,:data=>res_s["process"]}
           when :plugins
             result=call_API("api/plugin_version")[:data]
-            return {:type=>:hash_array,:data=>result['Plugin']}
+            return {:type=>:object_list,:data=>result['Plugin']}
           when :workflow
             command=self.options.get_next_argument('command',[:list, :status, :inputs, :details, :start])
             unless [:list, :status].include?(command)
@@ -79,19 +79,19 @@ module Asperalm
             case command
             when :status
               result=call_API("api/workflows_status")[:data]
-              return {:type=>:hash_array,:data=>result['workflows']['workflow']}
+              return {:type=>:object_list,:data=>result['workflows']['workflow']}
             when :list
               result=call_API("workflow_reporter/workflows_list/0")[:data]
-              return {:type=>:hash_array,:data=>result['workflows']['workflow'],:fields=>["id","portable_id","name","published_status","published_revision_id","latest_revision_id","last_modification"]}
+              return {:type=>:object_list,:data=>result['workflows']['workflow'],:fields=>["id","portable_id","name","published_status","published_revision_id","latest_revision_id","last_modification"]}
             when :details
               result=call_API("api/workflow_details",wf_id)[:data]
-              return {:type=>:hash_array,:data=>result['workflows']['workflow']['statuses']}
+              return {:type=>:object_list,:data=>result['workflows']['workflow']['statuses']}
             when :inputs
               result=call_API("api/workflow_inputs_spec",wf_id)[:data]
-              return {:type=>:key_val_list,:data=>result['workflow_inputs_spec']}
+              return {:type=>:single_object,:data=>result['workflow_inputs_spec']}
             when :start
               result={
-                :type=>:key_val_list,
+                :type=>:single_object,
                 :data=>nil
               }
               call_params={}

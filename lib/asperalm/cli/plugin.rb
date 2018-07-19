@@ -38,11 +38,11 @@ module Asperalm
         end
         case command
         when :create
-          return {:type => :key_val_list, :data=>rest_api.create(res_class_path,parameters)[:data], :fields=>display_fields}
+          return {:type => :single_object, :data=>rest_api.create(res_class_path,parameters)[:data], :fields=>display_fields}
         when :show
-          return {:type => :key_val_list, :data=>rest_api.read(one_res_path)[:data], :fields=>display_fields}
+          return {:type => :single_object, :data=>rest_api.read(one_res_path)[:data], :fields=>display_fields}
         when :list
-          return {:type => :hash_array, :data=>rest_api.read(res_class_path,parameters)[:data], :fields=>display_fields}
+          return {:type => :object_list, :data=>rest_api.read(res_class_path,parameters)[:data], :fields=>display_fields}
         when :modify
           rest_api.update(one_res_path,parameters)
           return Main.result_status('modified')

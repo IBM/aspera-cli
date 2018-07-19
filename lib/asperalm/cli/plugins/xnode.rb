@@ -97,7 +97,7 @@ module Asperalm
             return self.manager.start_transfer(transfer_spec,:node_gen3)
           when :postprocess
             transfers=self.class.get_transfers_iteration(api_node,{:view=>'summary',:direction=>'receive',:active_only=>false})
-            return { :type=>:hash_array,:data => transfers }
+            return { :type=>:object_list,:data => transfers }
           end # case command
           raise "ERROR: shall not reach this line"
         end # execute_action
