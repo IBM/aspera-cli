@@ -460,9 +460,15 @@ NODE_PASS=Aspera123_
 setupprev:
 	asconfigurator -x "user;user_name,xfer;file_restriction,|*;token_encryption_key,1234"
 	asconfigurator -x "server;activity_logging,true;activity_event_logging,true"
-	$(EXE_NOMAN) node access_key id testkey delete --no-default --url=https://localhost:9092 --username=node_xfer --password=Aspera123_
-	$(EXE_NOMAN) node access_key create @json:'{"id":"testkey","name":"the test key","secret":"secret","storage":{"type":"local", "path":"/Users/xfer/docroot"}}' --no-default --url=https://localhost:9092 --username=node_xfer --password=Aspera123_ 
+	sudo asnodeadmin --reload
+	-$(EXE_NOMAN) node access_key --id=testkey delete --no-default --url=https://localhost:9092 --username=node_xfer --password=Aspera123_
+	$(EXE_NOMAN) node access_key create --value=@json:'{"id":"testkey","name":"the test key","secret":"secret","storage":{"type":"local", "path":"/Users/xfer/docroot"}}' --no-default --url=https://localhost:9092 --username=node_xfer --password=Aspera123_ 
 	$(EXE_NOMAN) config id test_preview update --url=https://localhost:9092 --username=testkey --password=secret
 	$(EXE_NOMAN) config id default set preview test_preview
 
 # ruby -e 'require "yaml";YAML.load_file("lib/asperalm/preview_generator_formats.yml").each {|k,v|puts v};'|while read x;do touch /Users/xfer/docroot/sample${x};done
+
+preparelocal:
+	sudo asnodeadmin -a -u node_xfer -p Aspera123_ -x xfer
+	sudo asconfigurator -x "user;user_name,xfer;file_restriction,|*;absolute,"
+	sudo asnodeadmin --reload
