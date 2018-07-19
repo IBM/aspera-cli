@@ -421,7 +421,6 @@ module Asperalm
               final_table_columns=table_rows_hash_val.first.keys if table_rows_hash_val.is_a?(Array)
             else
               final_table_columns=user_asked_fields_list_str.split(',')
-              final_table_columns=final_table_columns.map{|i|i.to_sym} if results[:symb_key]
             end
           when :single_object # goes to table display
             # :single_object is a simple hash table  (can be nested)
@@ -433,7 +432,6 @@ module Asperalm
             when FIELDS_ALL;# keep all
             else
               asked_fields=user_asked_fields_list_str.split(',')
-              asked_fields=asked_fields.map{|i|i.to_sym} if results[:symb_key]
             end
             if @option_flat_hash
               self.class.flatten_object(results[:data],results[:option_expand_last])

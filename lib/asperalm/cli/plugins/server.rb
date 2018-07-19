@@ -23,6 +23,14 @@ module Asperalm
 
         def action_list; [:nodeadmin,:userdata,:configurator,:download,:upload,:browse,:delete,:rename].push(*Asperalm::AsCmd.action_list);end
 
+        def key_symb_to_str_single(source)
+          return source.inject({}){|memo,(k,v)| memo[k.to_s] = v; memo}
+        end
+
+        def key_symb_to_str_list(source)
+          return source.map{|o| key_symb_to_str_single(o)}
+        end
+
         def execute_action
           server_uri=URI.parse(self.options.get_option(:url,:mandatory))
           Log.log.debug("URI : #{server_uri}, port=#{server_uri.port}, scheme:#{server_uri.scheme}")
@@ -117,15 +125,15 @@ module Asperalm
               ascmd=Asperalm::AsCmd.new(shell_executor)
               result=ascmd.send(:execute_single,command,args)
               case command
-              when :mkdir; return Plugin.result_success
-              when :mv; return Plugin.result_success
-              when :cp; return Plugin.result_success
-              when :rm; return Plugin.result_success
-              when :ls; return {:type=>:object_list,:data=>result,:fields=>[:zmode,:zuid,:zgid,:size,:mtime,:name],:symb_key=>true}
-              when :info; return {:type=>:single_object,:data=>result,:symb_key=>true}
-              when :df; return {:type=>:object_list,:data=>result,:symb_key=>true}
-              when :du; return {:type=>:single_object,:data=>result,:symb_key=>true}
-              when :md5sum; return {:type=>:single_object,:data=>result,:symb_key=>true}
+              when :mkdir;  return Plugin.result_success
+              when :mv;     return Plugin.result_success
+              when :cp;     return Plugin.result_success
+              when :rm;     return Plugin.result_success
+              when :ls;     return {:type=>:object_list,:data=>key_symb_to_str_list(result),:fields=>['zmode','zuid','zgid','size','mtime','name']}
+              when :info;   return {:type=>:single_object,:data=>key_symb_to_str_single(result)}
+              when :df;     return {:type=>:object_list,:data=>key_symb_to_str_list(result)}
+              when :du;     return {:type=>:single_object,:data=>key_symb_to_str_single(result)}
+              when :md5sum; return {:type=>:single_object,:data=>key_symb_to_str_single(result)}
               end
             end
           rescue Asperalm::AsCmd::Error => e
