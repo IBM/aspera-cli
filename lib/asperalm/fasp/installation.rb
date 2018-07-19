@@ -25,16 +25,17 @@ module Asperalm
       # installation paths
       # get fasp resource files paths
       def paths
-        return @i_p unless @i_p.nil?
-        # this contains var/run, files generated on runtime
-        if @activated.eql?(FIRST_FOUND)
-          p = installed_products.first
-          raise "no FASP installation found\nPlease check manual on how to install FASP." if p.nil?
-        else
-          p=installed_products.select{|p|p[:name].eql?(@activated)}.first
-          raise "no such product installed: #{@activated}" if p.nil?
+        if @i_p.nil?
+          # this contains var/run, files generated on runtime
+          if @activated.eql?(FIRST_FOUND)
+            p = installed_products.first
+            raise "no FASP installation found\nPlease check manual on how to install FASP." if p.nil?
+          else
+            p=installed_products.select{|p|p[:name].eql?(@activated)}.first
+            raise "no such product installed: #{@activated}" if p.nil?
+          end
+          @i_p=self.class.get_product_paths(p)
         end
-        set_location(p)
         return @i_p
       end
 
@@ -51,21 +52,29 @@ module Asperalm
         return file
       end
 
-      # try to find connect client or other Aspera product installed.
+      # @return the list of installed products
       def installed_products
-        return @found_products unless @found_products.nil?
-        @found_products=product_locations.select do |l|
-          next false unless Dir.exist?(l[:app_root])
-          product_info_file="#{l[:app_root]}/#{PRODUCT_INFO}"
-          if File.exist?(product_info_file)
-            res_s=XmlSimple.xml_in(File.read(product_info_file),{"ForceArray"=>false})
-            l[:name]=res_s['name']
-            l[:version]=res_s['version']
-          else
-            l[:name]=l[:expected]
+        if @found_products.nil?
+          @found_products=product_locations.select do |l|
+            next false unless Dir.exist?(l[:app_root])
+            product_info_file="#{l[:app_root]}/#{PRODUCT_INFO}"
+            if File.exist?(product_info_file)
+              res_s=XmlSimple.xml_in(File.read(product_info_file),{"ForceArray"=>false})
+              l[:name]=res_s['name']
+              l[:version]=res_s['version']
+            else
+              l[:name]=l[:expected]
+            end
+            true # select this version
           end
-          true # select this version
         end
+        return @found_products
+      end
+
+      def get_product(name)
+        found=installed_products.select{|i|i[:name].eql?(name)}
+        raise "Product: #{name} not found, please install." if found.empty?
+        return found.first
       end
 
       private
@@ -87,8 +96,8 @@ module Asperalm
       #        :sub_bin=>'bin',
       #        :sub_keys=>'var',
       #        :dsa=>'aspera_tokenauth_id_dsa'}
-      def set_location(p)
-        @i_p={
+      def self.get_product_paths(p)
+        result={
           :bin_folder             => { :type =>:folder,:required => true, :path =>File.join(p[:app_root],p[:sub_bin])},
           :ascp                   => { :type => :file, :required => true, :path =>File.join(p[:app_root],p[:sub_bin],'ascp')+p[:exe_ext].to_s},
           :ascp4                  => { :type => :file, :required => false,:path =>File.join(p[:app_root],p[:sub_bin],'ascp4')+p[:exe_ext].to_s},
@@ -99,15 +108,16 @@ module Asperalm
           :plugin_https_port_file => { :type => :file, :required => false,:path =>File.join(p[:run_root],VARRUN_SUBFOLDER,'https.uri')},
           :log_folder             => { :type =>:folder,:required => false,:path =>p[:log_root]}
         }
-        Log.log.debug "resources=#{@i_p}"
+        Log.log.debug "resources=#{result}"
         notfound=[]
-        @i_p.each_pair do |k,v|
+        result.each_pair do |k,v|
           notfound.push(k) if v[:type].eql?(:file) and v[:required] and ! File.exist?(v[:path])
         end
         if !notfound.empty?
-          reslist=notfound.map { |k| "#{k.to_s}: #{@i_p[k][:path]}"}.join("\n")
+          reslist=notfound.map { |k| "#{k.to_s}: #{result[k][:path]}"}.join("\n")
           raise StandardError.new("Please check your connect client installation, Cannot locate resource(s):\n#{reslist}")
         end
+        return result
       end
 
       # returns product folders depending on OS
@@ -117,7 +127,7 @@ module Asperalm
         case OpenApplication.current_os_type
         when :windows
           common_places.push({
-            :expected=>'Connect Client',
+            :expected=>'Aspera Connect',
             :exe_ext=>'.exe',
             :app_root=>File.join(ENV['LOCALAPPDATA'],'Programs','Aspera','Aspera Connect'),
             :run_root=>File.join(ENV['LOCALAPPDATA'],'Aspera','Aspera Connect'),
@@ -126,7 +136,7 @@ module Asperalm
             :dsa=>'asperaweb_id_dsa.openssh'})
         when :mac
           common_places.push({
-            :expected=>'Connect Client',
+            :expected=>'Aspera Connect',
             :exe_ext=>'',
             :app_root=>File.join(Dir.home,'Applications','Aspera Connect.app'),
             :run_root=>File.join(Dir.home,'Library','Application Support','Aspera','Aspera Connect'),
@@ -154,7 +164,7 @@ module Asperalm
             :dsa=>'asperaweb_id_dsa.openssh'})
         else  # other: unix family
           common_places.push({
-            :expected=>'Connect Client',
+            :expected=>'Aspera Connect',
             :exe_ext=>'',
             :app_root=>File.join(Dir.home,'.aspera','connect'),
             :run_root=>File.join(Dir.home,'.aspera','connect'),
