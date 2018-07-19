@@ -22,11 +22,11 @@ module Asperalm
           trynumber=0
           begin
             Log.log.debug("reading connect port file")
-            connect_url=File.open(Installation.instance.path(:plugin_https_port_file)) {|f| f.gets }.strip
+            connect_url=File.open(Installation.get_product_paths(Installation.instance.get_product('Aspera Connect'))[:plugin_https_port_file][:path]) {|f| f.gets }.strip
             connect_api=Rest.new({:base_url => "#{connect_url}/v5/connect"})
             connect_api.read('info/version')
           rescue => e # Errno::ECONNREFUSED
-            raise CliError,"Unable to start connect after #{trynumber} try" if trynumber > 3
+            raise CliError,"Unable to start connect after #{trynumber} try" if trynumber >= 3
             Log.log.warn("connect is not started, trying to start (#{trynumber}) : #{e}")
             trynumber+=1
             OpenApplication.uri_graphical('fasp://initialize')
