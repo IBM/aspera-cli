@@ -276,7 +276,7 @@ Command execution will result in output. The information displayed depends on th
 
 * `object_list` : displayed as a 2 dimensional table: one line per item, one colum per attribute.
 * `single_object` : displayed as a 2 dimensional table: one line per attribute, first column is attribute name, and second is atteribute value. Nested hashes are collapsed.
-* `value_list` : a tbale with one column.
+* `value_list` : a table with one column.
 * `empty` : nothing
 * `status` : a message
 * `other_struct` : a complex structure that cannot be displayed as an array
@@ -305,6 +305,11 @@ $ aslmcli aspera admin res user list --fields=name,email,ats_admin --query=@json
 ```
 
 Note that `select` filters selected elements from the result of API calls, while the `query` parameters gives filtering parameters to the API when listing elements.
+
+In a table format, when displaying "objects" (single, or list), by default, sub object are
+flatten (option flat_hash). So, object {"user":{"id":1,"name":"toto"}} will have attributes: user.id and user.name. Setting flat_hash to "false" will only display one
+field: "user" and value is the sub hash table. When in flatten mode, it is possible to
+filter fields by "dotted" field name.
 
 ## <a name="extended"></a>Extended Value Syntax
 
@@ -1088,6 +1093,22 @@ Creation of a sub-access key is like creation of access key with the following d
 
 ```
 $ aslmcli aspera admin resource node --name=_node_name_ --secret=_secret_ do access_key create --value=@json:'{"storage":{"path":"/folder1"}}'
+```
+
+* display members of a workspace
+
+```
+$ aslmcli aspera admin res workspace_membership list --fields=member_type,manager,member.email --query=@json:'{"page":1,"per_page":50,"embed":"member","inherited":false,"workspace_id":11363,"sort":"name"}'
+:.............:.........:..................................:
+: member_type : manager :           member.email           :
+:.............:.........:..................................:
+: user        : true    : john.curtis@email.com            :
+: user        : false   : laurent.martin.aspera@fr.ibm.com :
+: user        : false   : jean.dupont@me.com               :
+: user        : false   : another.user@example.com         :
+: group       : false   :                                  :
+: user        : false   : aspera.user@gmail.com            :
+:.............:.........:..................................:
 ```
 
 ## Aspera Node (Transfer Server)

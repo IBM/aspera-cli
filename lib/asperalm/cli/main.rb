@@ -327,7 +327,7 @@ module Asperalm
 
       # @param source [Hash] hash to modify
       # @param keep_last [bool]
-      def self.keyval_list_flatten_sub_hash(source,keep_last)
+      def self.flatten_object(source,keep_last)
         newval={}
         flatten_sub_hash_rec(source,keep_last,'',newval)
         source.clear
@@ -399,6 +399,12 @@ module Asperalm
             # :object_list is an array of hash tables, where key=colum name
             table_rows_hash_val = results[:data]
             final_table_columns=nil
+            if @option_flat_hash
+              new_table_rows_hash_val=[]
+              table_rows_hash_val.each do |obj|
+                self.class.flatten_object(obj,results[:option_expand_last])
+              end
+            end
             case user_asked_fields_list_str
             when FIELDS_DEFAULT
               if results.has_key?(:fields) and !results[:fields].nil?
@@ -430,7 +436,7 @@ module Asperalm
               asked_fields=asked_fields.map{|i|i.to_sym} if results[:symb_key]
             end
             if @option_flat_hash
-              self.class.keyval_list_flatten_sub_hash(results[:data],results[:option_expand_last])
+              self.class.flatten_object(results[:data],results[:option_expand_last])
               self.class.flatten_name_value_list(results[:data])
               # first level keys are potentially changed
               asked_fields=results[:data].keys
@@ -454,6 +460,7 @@ module Asperalm
           else
             raise "unknown data type: #{results[:type]}"
           end
+          # here we expect: table_rows_hash_val and final_table_columns
           raise "no field specified" if final_table_columns.nil?
           if table_rows_hash_val.empty?
             puts "empty".gray unless display_format.eql?(:csv)
