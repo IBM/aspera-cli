@@ -7,6 +7,7 @@ require 'asperalm/fasp/client/node'
 require 'asperalm/fasp/listener_logger'
 require 'asperalm/fasp/listener_progress'
 require 'asperalm/open_application'
+require 'asperalm/temp_file_manager'
 require 'asperalm/log'
 require 'asperalm/oauth'
 require 'asperalm/files_api'
@@ -511,6 +512,7 @@ module Asperalm
       end
 
       def process_exception_exit(e,reason,propose_help=:none)
+        TempFileManager.instance.cleanup
         STDERR.puts "ERROR:".bg_red().gray().blink()+" "+reason+": "+e.message
         STDERR.puts "Use '-h' option to get help." if propose_help.eql?(:usage)
         if Log.instance.level.eql?(:debug)
@@ -887,7 +889,8 @@ module Asperalm
         rescue StandardError => e;           process_exception_exit(e,"Other",:debug)
         rescue Interrupt => e;               process_exception_exit(e,"Interruption",:debug)
         end
-        return self
+        TempFileManager.instance.cleanup
+        return nil
       end
     end # Main
   end # Cli

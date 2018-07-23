@@ -5,7 +5,7 @@ require 'asperalm/open_application'
 module Asperalm
   module Cli
     module Plugins
-      # list and download connect client versions
+      # list and download connect client versions, select FASP implementation
       class Client < Plugin
         CONNECT_WEB_URL = 'http://d3gcli72yxqn2z.cloudfront.net/connect'
         CONNECT_VERSIONS = 'connectversions.js'
@@ -17,7 +17,7 @@ module Asperalm
           return table_data.select {|i| ! i['key'].eql?('links') }
         end
 
-        # retrieve structure with all versions available
+        # retrieve structure from cloud (CDN) with all versions available
         def connect_versions
           if @connect_versions.nil?
             api_connect_cdn=Rest.new({:base_url=>CONNECT_WEB_URL})
@@ -38,10 +38,9 @@ module Asperalm
           command=self.options.get_next_argument('command',action_list)
           case command
           when :current # shows files used
-            return {:type=>:object_list, :data=>Fasp::Installation.instance.paths.map {|k,v| {'name'=>k,'path'=>v[:path]}}}
+            return {:type=>:object_list, :data=>Fasp::Installation.instance.paths.map{|k,v|{'name'=>k,'path'=>v[:path]}}}
           when :available
-            all=Fasp::Installation.instance.installed_products
-            return {:type=>:object_list, :data=>all, :fields=>[:name,:app_root]}
+            return {:type=>:object_list, :data=>Fasp::Installation.instance.installed_products, :fields=>['name','app_root']}
           when :connect
             command=self.options.get_next_argument('command',[:list,:id])
             case command

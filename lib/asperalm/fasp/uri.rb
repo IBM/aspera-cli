@@ -1,5 +1,5 @@
 require "asperalm/log"
-require "asperalm/fasp/parameters"
+require "asperalm/command_line_builder"
 
 module Asperalm
   module Fasp
@@ -31,10 +31,10 @@ module Asperalm
           when 'enc'; result_ts['cipher']=value.gsub('-','') # aes-128 -> aes128
           when 'tags64'; result_ts['tags']=JSON.parse(Base64.strict_decode64(value))
           when 'bwcap'; result_ts['target_rate_cap_kbps']=value.to_i
-          when 'createpath'; result_ts['create_dir']=Parameters.yes_to_true(value)
-          when 'fallback'; result_ts['http_fallback']=Parameters.yes_to_true(value)
-          when 'lockpolicy'; result_ts['lock_rate_policy']=Parameters.yes_to_true(value)
-          when 'lockminrate'; result_ts['lock_min_rate']=Parameters.yes_to_true(value)
+          when 'createpath'; result_ts['create_dir']=CommandLineBuilder.yes_to_true(value)
+          when 'fallback'; result_ts['http_fallback']=CommandLineBuilder.yes_to_true(value)
+          when 'lockpolicy'; result_ts['lock_rate_policy']=CommandLineBuilder.yes_to_true(value)
+          when 'lockminrate'; result_ts['lock_min_rate']=CommandLineBuilder.yes_to_true(value)
           when 'auth'; Log.log.debug("ignoring #{name}=#{value}") # TODO: translate into transfer spec ? yes/no
           when 'v'; Log.log.debug("ignoring #{name}=#{value}") # TODO: translate into transfer spec ? 2
           when 'protect'; Log.log.debug("ignoring #{name}=#{value}") # TODO: translate into transfer spec ?
@@ -43,6 +43,6 @@ module Asperalm
         end
         return result_ts
       end
-    end # Parameters
+    end # Uri
   end # Fasp
 end # Asperalm
