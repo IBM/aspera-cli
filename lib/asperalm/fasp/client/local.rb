@@ -73,6 +73,7 @@ module Asperalm
             ascp_arguments.unshift('-M', mgt_sock.addr[1].to_s)
             # start ascp in sub process
             Log.log.debug "execute: #{ascp_params[:env].map{|k,v| "#{k}=\"#{v}\""}.join(' ')} \"#{ascp_path}\" \"#{ascp_arguments.join('" "')}\""
+            # start process
             ascp_pid = Process.spawn(ascp_params[:env],[ascp_path,ascp_path],*ascp_arguments)
             # in parent, wait for connection to socket max 3 seconds
             Log.log.debug "before accept for pid (#{ascp_pid})"
