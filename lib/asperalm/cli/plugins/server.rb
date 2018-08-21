@@ -1,7 +1,6 @@
 require 'asperalm/cli/basic_auth_plugin'
 require 'asperalm/ascmd'
 require 'asperalm/ssh'
-require 'asperalm/sync'
 
 module Asperalm
   module Cli
@@ -22,7 +21,7 @@ module Asperalm
           self.options.set_option(:ssh_keys,[])
         end
 
-        def action_list; [:nodeadmin,:userdata,:configurator,:download,:upload,:browse,:delete,:rename,:sync].push(*Asperalm::AsCmd.action_list);end
+        def action_list; [:nodeadmin,:userdata,:configurator,:download,:upload,:browse,:delete,:rename].push(*Asperalm::AsCmd.action_list);end
 
         def key_symb_to_str_single(source)
           return source.inject({}){|memo,(k,v)| memo[k.to_s] = v; memo}
@@ -121,9 +120,6 @@ module Asperalm
                 'paths'=>filelist.map { |f| {'source'=>f } }
               })
               return self.manager.start_transfer(transfer_spec,:direct)
-            when :sync
-              args,env=Sync.new(self.options.get_next_argument("params",:single)).compute_args
-              return {:type=>:value_list,:name=>'param',:data=>args}
             when *Asperalm::AsCmd.action_list
               args=self.options.get_next_argument('ascmd command arguments',:multiple,:optional)
               ascmd=Asperalm::AsCmd.new(shell_executor)

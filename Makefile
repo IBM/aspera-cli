@@ -446,6 +446,9 @@ t/prev3:
 
 tprev: t/prev1 t/prev2 t/prev3
 
+t/sync1:
+	$(EXETEST) sync start --parameters=@json:'{"sessions":[{"name":"test","remote_dir":"/sync_test","local_dir":"contents","host":"10.25.0.8","user":"user1","private_key_path":"/Users/laurent/.ssh/id_rsa"}]}'
+
 t:
 	mkdir t
 
