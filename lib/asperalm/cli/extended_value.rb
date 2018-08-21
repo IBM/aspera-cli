@@ -11,7 +11,7 @@ module Asperalm
       @@DECODERS=['base64', 'json', 'zlib', 'ruby', 'csvt']
 
       # there shall be zero or one reader only
-      def self.readers; ['val', 'file', 'env'].push(@@DECODERS); end
+      def self.readers; ['val', 'file', 'path', 'env', 'stdin'].push(@@DECODERS); end
 
       # parse an option value, special behavior for file:, env:, val:
       def self.parse(name_or_descr,value)
@@ -23,13 +23,15 @@ module Asperalm
             value=m[2]
           end
           # then read value
-          if m=value.match(%r{^@file:(.*)}) then
+          if m=value.match(/^@val:(.*)/) then
+            value=m[1]
+          elsif m=value.match(%r{^@file:(.*)}) then
             value=File.read(File.expand_path(m[1]))
             #raise CliBadArgument,"cannot open file \"#{value}\" for #{name_or_descr}" if ! File.exist?(value)
+          elsif m=value.match(/^@path:(.*)/) then
+            value=File.expand_path(m[1])
           elsif m=value.match(/^@env:(.*)/) then
             value=ENV[m[1]]
-          elsif m=value.match(/^@val:(.*)/) then
-            value=m[1]
           elsif value.eql?('@stdin') then
             value=STDIN.gets
           end
