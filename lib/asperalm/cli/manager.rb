@@ -208,6 +208,7 @@ module Asperalm
           #declare_option(option_symbol)
         end
         value=ExtendedValue.parse(option_symbol,value)
+        Log.log.debug("set_option, extended=#{value}")
         if @declared_options[option_symbol][:values].eql?(@@BOOLEAN_VALUES)
           value=enum_to_bool(value)
         end
