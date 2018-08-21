@@ -319,7 +319,9 @@ The value of options and arguments can optionally be retrieved using one of the 
 
 * @val:VALUE , prevent further special prefix processing, e.g. `--username=@val:laurent` sets the option `username` to value `laurent`.
 * @file:PATH , read value from a file (prefix "~/" is replaced with the users home folder), e.g. --key=@file:~/.ssh/mykey
+* @path:PATH , performs path expansion (prefix "~/" is replaced with the users home folder), e.g. --config-file=@path:~/sample_config.yml
 * @env:ENVVAR , read from a named env var, e.g.--password=@env:MYPASSVAR
+* @stdin , read from stdin
 
 In addition it is possible to decode a value, using one or multiple decoders :
 
@@ -1397,6 +1399,11 @@ delete all my access keys:
 for k in $(aslmcli ats access_key list --field=id --format=csv);do aslmcli ats access_key id $k delete;done
 ```
 
+## IBM Aspera Sync
+
+A basic plugin to start an "async" using aslmcli. The main advantage is the possibility
+to start from ma configuration file, using aslmcli standard options.
+
 ## Preview
 
 The preview plugin provides generation of previews for Aspera on Cloud.
@@ -1640,6 +1647,10 @@ This means that you do not have ruby support for ED25519 SSH keys. You may eithe
 Gems, or remove your ed25519 key from your `.ssh` folder to solve the issue.
 
 # Release Notes
+* version 0.7.6
+
+  * add "sync" plugin
+
 * version 0.7
 
   * Breaking change: AoC package recv take option if for package instead of argument.
