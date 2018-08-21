@@ -15,16 +15,17 @@ module Asperalm
       def self.file_list_folder=(v); @@file_list_folder=v;end
 
       def initialize(job_spec)
-        @builder=CommandLineBuilder.new(job_spec)
+        @job_spec=job_spec
+        @builder=CommandLineBuilder.new(@job_spec)
       end
 
       # translate transfer spec to env vars and command line arguments for ascp
       # NOTE: parameters starting with "EX_" (extended) are not standard
       def compute_args
         # some ssh credentials are required to avoid interactive password input
-        if !@builder.job_spec.has_key?('remote_password') and
-        !@builder.job_spec.has_key?('EX_ssh_key_value') and
-        !@builder.job_spec.has_key?('EX_ssh_key_paths') then
+        if !@job_spec.has_key?('remote_password') and
+        !@job_spec.has_key?('EX_ssh_key_value') and
+        !@job_spec.has_key?('EX_ssh_key_paths') then
           raise Fasp::Error.new('required: ssh key (value or path) or password')
         end
 
@@ -103,7 +104,9 @@ module Asperalm
 
         @builder.check_all_used
 
-        return {:args=>@builder.result_args,:env=>@builder.result_env,:ascp_version=>ascp_version}
+        ascp_env,ascp_args=@builder.env_args
+
+        return {:args=>ascp_args,:env=>ascp_env,:ascp_version=>ascp_version}
       end
 
     end # Parameters
