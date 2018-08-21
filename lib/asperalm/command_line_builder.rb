@@ -1,19 +1,25 @@
 module Asperalm
   # helper to build command line from spec in hash
+  # constructor takes hash: { 'param1':'value1', ...}
+  # process_param is called repeatedly with all known parameters
+  # then resulting param list and env var are read from member values :result_*
   class CommandLineBuilder
     BOOLEAN_CLASSES=[TrueClass,FalseClass]
 
-    attr_reader :job_spec
-    attr_reader :result_env
-    attr_reader :result_args
-
-    def initialize(job_spec)
-      @job_spec=job_spec.clone # shallow copy is sufficient
+    # @param job_params
+    def initialize(job_params)
+      @job_params=job_params.clone # shallow copy is sufficient
       @result_env={}
       @result_args=[]
       @used_ts_keys=[]
     end
 
+    def env_args
+      Log.log.debug("ENV=#{@result_env}, ARGS=#{@result_args}")
+      return @result_env,@result_args
+    end
+
+    # transform yes/no to trye/false
     def self.yes_to_true(value)
       case value
       when 'yes'; return true
@@ -28,11 +34,22 @@ module Asperalm
       options.each{|o|@result_args.push(o.to_s)}
     end
 
+    # check that all provided parameters were used
     def check_all_used
       # warn about non translated arguments
-      @job_spec.each_pair{|key,val|Log.log.error("unhandled parameter: #{key} = \"#{val}\"") if !@used_ts_keys.include?(key)}
+      @job_params.each_pair{|key,val|Log.log.error("unrecognized parameter: #{key} = \"#{val}\"") if !@used_ts_keys.include?(key)}
     end
-    
+
+    # default value for command line based on option name
+    def switch_name(ts_name,options)
+      return options[:option_switch] if options.has_key?(:option_switch)
+      return '--'+ts_name.to_s.gsub('_','-')
+    end
+
+    def env_name(ts_name,options)
+      return options[:variable]
+    end
+
     # Process a parameter from transfer specification and generate command line param or env var
     # @param ts_name : key in transfer spec
     # @param option_type : type of processing
@@ -44,8 +61,8 @@ module Asperalm
       options[:accepted_types]||=option_type.eql?(:opt_without_arg) ? BOOLEAN_CLASSES : [String]
 
       # check mandatory parameter (nil is valid value)
-      raise Fasp::Error.new("mandatory parameter: #{ts_name}") if options[:mandatory] and !@job_spec.has_key?(ts_name)
-      parameter_value=@job_spec[ts_name]
+      raise Fasp::Error.new("mandatory parameter: #{ts_name}") if options[:mandatory] and !@job_params.has_key?(ts_name)
+      parameter_value=@job_params[ts_name]
       parameter_value=options[:default] if parameter_value.nil? and options.has_key?(:default)
       # check provided type
       raise Fasp::Error.new("#{ts_name} is : #{parameter_value.class} (#{parameter_value}), shall be #{options[:accepted_types]}, ") unless parameter_value.nil? or options[:accepted_types].inject(false){|m,v|m or parameter_value.is_a?(v)}
@@ -74,7 +91,7 @@ module Asperalm
         return parameter_value
       when :envvar # set in env var
         # define ascp parameter in env var from transfer spec
-        @result_env[options[:variable]] = parameter_value
+        @result_env[env_name(ts_name,options)] = parameter_value
       when :opt_without_arg # if present and true : just add option without value
         add_param=false
         case parameter_value
@@ -83,12 +100,12 @@ module Asperalm
         else raise Fasp::Error.new("unsupported #{ts_name}: #{parameter_value}")
         end
         add_param=!add_param if options[:add_on_false]
-        add_command_line_options([options[:option_switch]]) if add_param
+        add_command_line_options([switch_name(ts_name,options)]) if add_param
       when :opt_with_arg # transform into command line option with value
         #parameter_value=parameter_value.to_s if parameter_value.is_a?(Integer)
         parameter_value=[parameter_value] unless parameter_value.is_a?(Array)
         # if transfer_spec value is an array, applies option many times
-        parameter_value.each{|v|add_command_line_options([options[:option_switch],v])}
+        parameter_value.each{|v|add_command_line_options([switch_name(ts_name,options),v])}
       else
         raise "Error"
       end
