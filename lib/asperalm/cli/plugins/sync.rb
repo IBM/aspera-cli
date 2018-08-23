@@ -16,8 +16,8 @@ module Asperalm
           command=self.options.get_next_argument('command',action_list)
           case command
           when :start
-            args,env=Asperalm::Sync.new(self.options.get_option(:parameters,:mandatory)).compute_args
-            res=system(env,['async','async'],*args)
+            env_args=Asperalm::Sync.new(self.options.get_option(:parameters,:mandatory)).compute_args
+            res=system(env_args[:env],['async','async'],*env_args[:args])
             Log.log.debug("result=#{res}")
             case res
             when true; return Plugin.result_success

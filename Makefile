@@ -23,7 +23,7 @@ test:
 clean::
 	rm -f $(GEMNAME)-*.gem $(SRCZIPBASE)*.zip *.log token.* preview.png 
 	rm -f README.pdf README.html README.md aslmcli_commands.txt aslmcli_usage.txt asession_usage.txt $(TEST_CONFIG)
-	rm -fr t doc "PKG - "*
+	rm -fr contents t doc "PKG - "*
 	mkdir t
 	rm -f 200KB* *AsperaConnect-ML*
 	gem uninstall -a -x $(GEMNAME)
@@ -381,7 +381,7 @@ t/sy2:
 t/sy3:
 	$(EXETEST) node async --id=1 counters 
 	@touch $@
-tsync: t/sy1 t/sy2 t/sy3
+tnsync: t/sy1 t/sy2 t/sy3
 
 TEST_CONFIG=sample.conf
 t/conf1:
@@ -446,13 +446,15 @@ t/prev3:
 
 tprev: t/prev1 t/prev2 t/prev3
 
-t/sync1:
-	$(EXETEST) sync start --parameters=@json:'{"sessions":[{"name":"test","remote_dir":"/sync_test","local_dir":"contents","host":"10.25.0.8","user":"user1","private_key_path":"/Users/laurent/.ssh/id_rsa"}]}'
-
+contents:
+	mkdir -p contents
+t/sync1: contents
+	$(EXETEST) sync start --parameters=@json:'{"sessions":[{"name":"test","reset":true,"remote_dir":"/sync_test","local_dir":"contents","host":"10.25.0.8","user":"user1","private_key_path":"/Users/laurent/.ssh/id_rsa"}]}'
+tsync: t/sync1
 t:
 	mkdir t
 
-tests: t tshares tfaspex tconsole tnode tfiles tfasp torc tats tcon tsync tconf tshares2 tprev
+tests: t tshares tfaspex tconsole tnode tfiles tfasp tsync torc tats tcon tnsync tconf tshares2 tprev
 
 t/fxgw:
 	$(EXETEST) faspex package send --load-params=reset --url=https://localhost:9443/aspera/faspex --username=unused --password=unused --insecure=yes --note="my note" --title="my title" --recipient="laurent.martin.aspera@fr.ibm.com" ~/200KB.1

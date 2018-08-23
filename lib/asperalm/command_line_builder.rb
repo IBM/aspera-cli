@@ -1,22 +1,41 @@
 module Asperalm
-  # helper to build command line from spec in hash
+  # helper class to build command line from a parameter list (key-value hash)
   # constructor takes hash: { 'param1':'value1', ...}
   # process_param is called repeatedly with all known parameters
-  # then resulting param list and env var are read from member values :result_*
+  # add_env_args is called to get resulting param list and env var (also checks that all params were used)
   class CommandLineBuilder
+
+    private
+    # default value for command line based on option name
+    def switch_name(ts_name,options)
+      return options[:option_switch] if options.has_key?(:option_switch)
+      return '--'+ts_name.to_s.gsub('_','-')
+    end
+
+    def env_name(ts_name,options)
+      return options[:variable]
+    end
+
+    public
+
     BOOLEAN_CLASSES=[TrueClass,FalseClass]
 
     # @param job_params
-    def initialize(job_params)
+    def initialize(job_params,params_definition)
       @job_params=job_params.clone # shallow copy is sufficient
       @result_env={}
       @result_args=[]
       @used_ts_keys=[]
+      @params_definition=params_definition
     end
 
-    def env_args
+    def add_env_args(env_args)
+      # warn about non translated arguments
+      @job_params.each_pair{|key,val|Log.log.error("unrecognized parameter: #{key} = \"#{val}\"") if !@used_ts_keys.include?(key)}
       Log.log.debug("ENV=#{@result_env}, ARGS=#{@result_args}")
-      return @result_env,@result_args
+      env_args[:env].merge!(@result_env)
+      env_args[:args].push(*@result_args)
+      return nil
     end
 
     # transform yes/no to trye/false
@@ -33,21 +52,11 @@ module Asperalm
       return if options.nil?
       options.each{|o|@result_args.push(o.to_s)}
     end
-
-    # check that all provided parameters were used
-    def check_all_used
-      # warn about non translated arguments
-      @job_params.each_pair{|key,val|Log.log.error("unrecognized parameter: #{key} = \"#{val}\"") if !@used_ts_keys.include?(key)}
-    end
-
-    # default value for command line based on option name
-    def switch_name(ts_name,options)
-      return options[:option_switch] if options.has_key?(:option_switch)
-      return '--'+ts_name.to_s.gsub('_','-')
-    end
-
-    def env_name(ts_name,options)
-      return options[:variable]
+    
+    def process_params
+      @params_definition.each do |k,v|
+        process_param(k,v[:type],v)
+      end
     end
 
     # Process a parameter from transfer specification and generate command line param or env var
@@ -57,9 +66,13 @@ module Asperalm
     def process_param(ts_name,option_type,options={})
       # by default : not mandatory
       options[:mandatory]||=false
-      # by default : string, unless it's without arg
-      options[:accepted_types]||=option_type.eql?(:opt_without_arg) ? BOOLEAN_CLASSES : [String]
-
+      if options.has_key?(:accepted_types)
+        # single type is placed in array
+        options[:accepted_types]=[options[:accepted_types]] unless options[:accepted_types].is_a?(Array)
+      else
+        # by default : string, unless it's without arg
+        options[:accepted_types]=option_type.eql?(:opt_without_arg) ? BOOLEAN_CLASSES : [String]
+      end
       # check mandatory parameter (nil is valid value)
       raise Fasp::Error.new("mandatory parameter: #{ts_name}") if options[:mandatory] and !@job_params.has_key?(ts_name)
       parameter_value=@job_params[ts_name]

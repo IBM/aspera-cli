@@ -61,10 +61,10 @@ module Asperalm
         # raises FaspError on error
         # @param a hash containing :args and :env
         def start_transfer_with_args_env(ascp_params)
-          Log.log.debug("ascp_params=#{ascp_params.inspect}")
-          ascp_path=Fasp::Installation.instance.path(ascp_params[:ascp_version])
-          raise Fasp::Error.new("no such file: #{ascp_path}") unless File.exist?(ascp_path)
           begin
+            Log.log.debug("ascp_params=#{ascp_params.inspect}")
+            ascp_path=Fasp::Installation.instance.path(ascp_params[:ascp_version])
+            raise Fasp::Error.new("no such file: #{ascp_path}") unless File.exist?(ascp_path)
             ascp_pid=nil
             ascp_arguments=ascp_params[:args].clone
             # open random local TCP port listening
@@ -138,6 +138,8 @@ module Asperalm
           rescue Interrupt => e
             raise Fasp::Error.new('transfer interrupted by user')
           ensure
+            # delete file lists
+            ascp_params[:finalize].call()
             # ensure there is no ascp left running
             unless ascp_pid.nil?
               begin
@@ -148,9 +150,8 @@ module Asperalm
               Process.wait(ascp_pid)
               ascp_pid=nil
             end
-          end
-        end
-
+          end # begin
+        end # start_transfer_with_args_env
       end # Local
     end # Agent
   end # Fasp
