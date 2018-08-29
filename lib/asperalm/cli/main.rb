@@ -226,7 +226,6 @@ module Asperalm
       # local options
       def create_opt_mgr
         @opt_mgr=Manager.new(@@PROGRAM_NAME)
-        Plugin.manager=self
         @opt_mgr.parser.banner = "NAME\n\t#{@@PROGRAM_NAME} -- a command line tool for Aspera Applications (v#{self.class.gem_version})\n\n"
         @opt_mgr.parser.separator "SYNOPSIS"
         @opt_mgr.parser.separator "\t#{@@PROGRAM_NAME} COMMANDS [OPTIONS] [ARGS]"

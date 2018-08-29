@@ -1,12 +1,14 @@
+class ::Hash
+  def deep_merge!(second)
+    merger = proc { |key, v1, v2| v1.is_a?(Hash) and v2.is_a?(Hash) ? v1.merge!(v2, &merger) : v2 }
+    self.merge!(second, &merger)
+  end
+end
+
 module Asperalm
   module Cli
     # base class for plugins modules
     class Plugin
-      # set reference to CLI manager
-      def self.manager=(manager)
-        @@manager=manager
-      end
-
       def self.result_none
         return {:type => :empty, :data => :nil }
       end
@@ -18,6 +20,7 @@ module Asperalm
       def self.result_success
         return result_status('complete')
       end
+      
       GLOBAL_OPS=[:create,:list]
       INSTANCE_OPS=[:modify,:delete,:show]
       ALL_OPS=[GLOBAL_OPS,INSTANCE_OPS].flatten
@@ -52,18 +55,8 @@ module Asperalm
         end
       end
 
-      # helper : get CLI manager
-      def manager
-        @@manager
-      end
-
-      # helper : get CLI option parser
-      def options
-        @@manager.options
-      end
-
       def initialize
-        super()
+        super
       end
 
       def declare_options

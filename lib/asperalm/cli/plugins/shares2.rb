@@ -9,18 +9,18 @@ module Asperalm
         alias super_declare_options declare_options
         def declare_options
           super_declare_options
-          self.options.add_opt_simple(:organization,"organization")
-          self.options.add_opt_simple(:project,"project")
-          self.options.add_opt_simple(:share,"share")
+          Main.instance.options.add_opt_simple(:organization,"organization")
+          Main.instance.options.add_opt_simple(:project,"project")
+          Main.instance.options.add_opt_simple(:share,"share")
         end
 
         def action_list; [ :repository,:organization,:project,:team,:share,:appinfo,:userinfo];end
 
         def init_apis
           # get parameters
-          shares2_api_base_url=self.options.get_option(:url,:mandatory)
-          shares2_username=self.options.get_option(:username,:mandatory)
-          shares2_password=self.options.get_option(:password,:mandatory)
+          shares2_api_base_url=Main.instance.options.get_option(:url,:mandatory)
+          shares2_username=Main.instance.options.get_option(:username,:mandatory)
+          shares2_password=Main.instance.options.get_option(:password,:mandatory)
 
           # create object for REST calls to Shares2
           @api_shares2_admin=Rest.new({
@@ -45,7 +45,7 @@ module Asperalm
         # adds : prefix+"res/id/"
         # modify parameter string
         def set_resource_path_by_id_or_name(resource_path,resource_sym)
-          res_id=self.options.get_option(resource_sym,:mandatory)
+          res_id=Main.instance.options.get_option(resource_sym,:mandatory)
           # lets get the class path
           resource_path<<resource_sym.to_s+'s'
           # is this an integer ? or a name
@@ -66,15 +66,15 @@ module Asperalm
         def process_entity_action(resource_sym,path_prefix)
           resource_path=path_prefix+resource_sym.to_s+'s'
           operations=[:list,:create,:delete]
-          command=self.options.get_next_argument('command',operations)
+          command=Main.instance.options.get_next_argument('command',operations)
           case command
           when :create
-            params=self.options.get_next_argument("creation data (json structure)")
+            params=Main.instance.options.get_next_argument("creation data (json structure)")
             resp=@api_shares2_admin.create(resource_path,params)
             return {:data=>resp[:data],:type => :other_struct}
           when :list
             default_fields=['id','name']
-            query=self.options.get_option(:query,:optional)
+            query=Main.instance.options.get_option(:query,:optional)
             args=query.nil? ? nil : {'json_query'=>query}
             Log.log.debug("#{args}".bg_red)
             return {:data=>@api_shares2_admin.read(resource_path,args)[:data],:fields=>default_fields,:type=>:object_list}
@@ -90,10 +90,10 @@ module Asperalm
         def execute_action
           init_apis
 
-          command=self.options.get_next_argument('command',action_list)
+          command=Main.instance.options.get_next_argument('command',action_list)
           case command
           when :repository
-            command=self.options.get_next_argument('command',Node.common_actions)
+            command=Main.instance.options.get_next_argument('command',Node.common_actions)
             return Node.new.execute_common(command,@api_shares_node)
           when :appinfo
             node_info=@api_shares_node.call({:operation=>'GET',:subpath=>'app',:headers=>{'Accept'=>'application/json','Content-Type'=>'application/json'}})[:data]

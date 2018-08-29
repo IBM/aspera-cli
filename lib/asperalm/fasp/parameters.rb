@@ -69,24 +69,13 @@ module Asperalm
         # optional tags (  additional option to generate: {:space=>' ',:object_nl=>' ',:space_before=>'+',:array_nl=>'1'}  )
         'tags'                    => { :type => :opt_with_arg, :option_switch=>'--tags64',:accepted_types=>Hash,:encode=>lambda{|tags|Base64.strict_encode64(JSON.generate(tags))}},
       }
-      public
-
-      # temp files are created here, change to go elsewhere
-      def self.file_list_folder=(v)
-        @@file_list_folder=v
-        FileUtils.mkdir_p(@@file_list_folder)
-        Dir.entries(@@file_list_folder) do |name|
-          Log.log.error(">>#{name}")
-          @@FILE_LIST_AGE_MAX
-        end
-      end
-
-      def self.file_list_folder; @@file_list_folder;end
 
       def initialize(job_spec)
         @job_spec=job_spec
         @builder=CommandLineBuilder.new(@job_spec,PARAM_DEFINITION)
       end
+
+      public
 
       # translate transfer spec to env vars and command line arguments for ascp
       # NOTE: parameters starting with "EX_" (extended) are not standard
@@ -115,22 +104,53 @@ module Asperalm
         # destination will be base64 encoded, put before path arguments
         @builder.add_command_line_options(['--dest64'])
 
-        # source list: TODO : use file list or file pair list, avoid command line lists
+        # use file list if there is storage defined for it.
+        src_dst_list=@builder.process_param('paths',:get_value,:accepted_types=>Array,:mandatory=>true)
         if @@file_list_folder.nil?
+          # not safe for special characters ? (maybe not, depends on OS)
           Log.log.debug("placing source file list on command line (no file list file)")
-          @builder.add_command_line_options(@builder.process_param('paths',:get_value,:accepted_types=>Array,:mandatory=>true).map{|i|i['source']})
+          @builder.add_command_line_options(src_dst_list.map{|i|i['source']})
         else
+          # safer option: file list
+          # if there is destination in paths, then use filepairlist
+          if src_dst_list.first.has_key?('destination')
+            option='--file-pair-list'
+            lines=src_dst_list.inject([]){|m,e|m.push(e['source'],e['destination']);m}
+          else
+            option='--file-list'
+            lines=src_dst_list.map{|i|i['source']}
+          end
           file_list_file=File.join(@@file_list_folder,SecureRandom.uuid)
-          File.open(file_list_file, "w+"){|f|f.puts(@builder.process_param('paths',:get_value,:accepted_types=>Array,:mandatory=>true).map{|i|i['source']})}
-          @builder.add_command_line_options(["--file-list=#{file_list_file}"])
+          File.open(file_list_file, "w+"){|f|f.puts(lines)}
+          @builder.add_command_line_options(["#{option}=#{file_list_file}"])
+          # add finalization method to delete file after use
           env_args[:finalize]=lambda{FileUtils.rm_f(file_list_file)}
         end
-        # destination, use base64 encoding, as defined previously
+
+        # destination, use base64 encoding  (as defined previously: --dest64)
         @builder.add_command_line_options([Base64.strict_encode64(@builder.process_param('destination_root',:get_value,:accepted_types=>String,:mandatory=>true))])
 
         @builder.add_env_args(env_args)
 
         return env_args
+      end
+
+      # temp files are created here  (if value is not nil)
+      # garbage collect undeleted files
+      def self.file_list_folder=(v)
+        @@file_list_folder=v
+        FileUtils.mkdir_p(@@file_list_folder)
+        Dir.entries(@@file_list_folder) do |name|
+          # TODO: check age of file, delete if older
+          Log.log.error(">>#{name}")
+          @@FILE_LIST_AGE_MAX
+        end
+      end
+
+      def self.file_list_folder; @@file_list_folder;end
+
+      def self.ts_to_env_args(transfer_spec)
+        return Parameters.new(transfer_spec).compute_args
       end
 
     end # Parameters

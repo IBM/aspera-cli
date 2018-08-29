@@ -10,17 +10,17 @@ module Asperalm
         # "transfer_filter"=>"t['status'].eql?('completed') and t['start_spec']['remote_user'].eql?('faspex')", :file_filter=>"f['status'].eql?('completed') and 0 != f['size'] and t['start_spec']['direction'].eql?('send')"
         def declare_options
           super_declare_options
-          self.options.add_opt_simple(:filter_transfer,"Ruby expression for filter at transfer level (cleanup)")
-          self.options.add_opt_simple(:filter_file,"Ruby expression for filter at file level (cleanup)")
-          self.options.add_opt_simple(:persistency,"persistency file (cleanup,forward)")
-          self.options.set_option(:persistency,File.join(self.manager.config_folder,"persistency_cleanup.txt"))
+          Main.instance.options.add_opt_simple(:filter_transfer,"Ruby expression for filter at transfer level (cleanup)")
+          Main.instance.options.add_opt_simple(:filter_file,"Ruby expression for filter at file level (cleanup)")
+          Main.instance.options.add_opt_simple(:persistency,"persistency file (cleanup,forward)")
+          Main.instance.options.set_option(:persistency,File.join(Main.instance.config_folder,"persistency_cleanup.txt"))
         end
 
         def action_list; [ :postprocess, :cleanup, :forward ];end
 
         # retrieve tranfer list using API and persistency file
         def self.get_transfers_iteration(api_node,params)
-          persistencyfile=self.options.get_option(:persistency,:mandatory)
+          persistencyfile=Main.instance.options.get_option(:persistency,:mandatory)
           # first time run ? or subsequent run ?
           iteration_token=nil
           if !persistencyfile.nil? and File.exist?(persistencyfile)
@@ -42,13 +42,13 @@ module Asperalm
         end
 
         def execute_action
-          api_node=Rest.new({:base_url=>self.options.get_option(:url,:mandatory),:auth_type=>:basic,:basic_username=>self.options.get_option(:username,:mandatory), :basic_password=>self.options.get_option(:password,:mandatory)})
-          command=self.options.get_next_argument('command',action_list)
+          api_node=Rest.new({:base_url=>Main.instance.options.get_option(:url,:mandatory),:auth_type=>:basic,:basic_username=>Main.instance.options.get_option(:username,:mandatory), :basic_password=>Main.instance.options.get_option(:password,:mandatory)})
+          command=Main.instance.options.get_next_argument('command',action_list)
           case command
           when :cleanup
             transfers=self.class.get_transfers_iteration(api_node,{:active_only=>false})
-            filter_transfer=self.options.get_option(:filter_transfer,:mandatory)
-            filter_file=self.options.get_option(:filter_file,:mandatory)
+            filter_transfer=Main.instance.options.get_option(:filter_transfer,:mandatory)
+            filter_file=Main.instance.options.get_option(:filter_file,:mandatory)
             Log.log.debug("filter_transfer: #{filter_transfer}")
             Log.log.debug("filter_file: #{filter_file}")
             # build list of files to delete: non zero files, downloads, for specified user
@@ -94,7 +94,7 @@ module Asperalm
             raise Fasp::Error,transfer_data['error']['user_message'] if transfer_data.has_key?('error')
             transfer_spec=transfer_data['transfer_spec']
             # execute transfer
-            return self.manager.start_transfer(transfer_spec,:node_gen3)
+            return Main.instance.start_transfer(transfer_spec,:node_gen3)
           when :postprocess
             transfers=self.class.get_transfers_iteration(api_node,{:view=>'summary',:direction=>'receive',:active_only=>false})
             return { :type=>:object_list,:data => transfers }

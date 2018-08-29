@@ -7,16 +7,16 @@ module Asperalm
       # list and download connect client versions, select FASP implementation
       class Sync < Plugin
         def declare_options
-          self.options.add_opt_simple(:parameters,"extended value for session set definition")
+          Main.instance.options.add_opt_simple(:parameters,"extended value for session set definition")
         end
 
         def action_list; [ :start ];end
 
         def execute_action
-          command=self.options.get_next_argument('command',action_list)
+          command=Main.instance.options.get_next_argument('command',action_list)
           case command
           when :start
-            env_args=Asperalm::Sync.new(self.options.get_option(:parameters,:mandatory)).compute_args
+            env_args=Asperalm::Sync.new(Main.instance.options.get_option(:parameters,:mandatory)).compute_args
             res=system(env_args[:env],['async','async'],*env_args[:args])
             Log.log.debug("result=#{res}")
             case res
