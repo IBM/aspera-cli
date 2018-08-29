@@ -35,39 +35,39 @@ module Asperalm
         end
 
         def execute_action
-          command=self.options.get_next_argument('command',action_list)
+          command=Main.instance.options.get_next_argument('command',action_list)
           case command
           when :current # shows files used
             return {:type=>:object_list, :data=>Fasp::Installation.instance.paths.map{|k,v|{'name'=>k,'path'=>v[:path]}}}
           when :available
             return {:type=>:object_list, :data=>Fasp::Installation.instance.installed_products, :fields=>['name','app_root']}
           when :connect
-            command=self.options.get_next_argument('command',[:list,:id])
+            command=Main.instance.options.get_next_argument('command',[:list,:id])
             case command
             when :list
               return {:type=>:object_list, :data=>connect_versions, :fields => ['id','title','version']}
             when :id
-              connect_id=self.options.get_next_argument('id or title')
+              connect_id=Main.instance.options.get_next_argument('id or title')
               one_res=connect_versions.select{|i|i['id'].eql?(connect_id) || i['title'].eql?(connect_id)}.first
               raise CliNoSuchId.new(:connect,connect_id) if one_res.nil?
-              command=self.options.get_next_argument('command',[:info,:links])
+              command=Main.instance.options.get_next_argument('command',[:info,:links])
               case command
               when :info # shows files used
                 return {:type=>:single_object, :data=>one_res, :textify => lambda { |table_data| self.class.textify_list(table_data) }}
               when :links # shows files used
-                command=self.options.get_next_argument('command',[:list,:id])
+                command=Main.instance.options.get_next_argument('command',[:list,:id])
                 all_links=one_res['links']
                 case command
                 when :list # shows files used
                   return {:type=>:object_list, :data=>all_links}
                 when :id
-                  link_title=self.options.get_next_argument('title')
+                  link_title=Main.instance.options.get_next_argument('title')
                   one_link=all_links.select {|i| i['title'].eql?(link_title)}.first
-                  command=self.options.get_next_argument('command',[:download,:open])
+                  command=Main.instance.options.get_next_argument('command',[:download,:open])
                   case command
                   when :download #
-                    folder_dest=self.manager.destination_folder('receive')
-                    #folder_dest=self.options.get_next_argument('destination folder')
+                    folder_dest=Main.instance.destination_folder('receive')
+                    #folder_dest=Main.instance.options.get_next_argument('destination folder')
                     api_connect_cdn=Rest.new({:base_url=>CONNECT_WEB_URL})
                     fileurl = one_link['href']
                     filename=fileurl.gsub(%r{.*/},'')
