@@ -29,6 +29,7 @@ module Asperalm
           if transfer_spec['tags'].is_a?(Hash) and transfer_spec['tags']['aspera'].is_a?(Hash)
             transfer_spec['tags']['aspera']['xfer_id']=SecureRandom.uuid
             Log.log.debug "xfer id=#{transfer_spec['xfer_id']}"
+            # useful ? node only ?
             transfer_spec['tags']['aspera']['xfer_retry']=3600
           end
           Log.log.debug("ts=#{transfer_spec}")
@@ -44,7 +45,7 @@ module Asperalm
             transfer_spec['EX_fallback_key']=Installation.instance.path(:fallback_key)
             transfer_spec['EX_fallback_cert']=Installation.instance.path(:fallback_cert)
           end
-          start_transfer_with_args_env(Parameters.new(transfer_spec).compute_args)
+          start_transfer_with_args_env(Parameters.ts_to_env_args(transfer_spec))
           return nil
         end # start_transfer
 
@@ -60,21 +61,21 @@ module Asperalm
         # start ascp with management port.
         # raises FaspError on error
         # @param a hash containing :args and :env
-        def start_transfer_with_args_env(ascp_params)
+        def start_transfer_with_args_env(env_args)
           begin
-            Log.log.debug("ascp_params=#{ascp_params.inspect}")
-            ascp_path=Fasp::Installation.instance.path(ascp_params[:ascp_version])
+            Log.log.debug("env_args=#{env_args.inspect}")
+            ascp_path=Fasp::Installation.instance.path(env_args[:ascp_version])
             raise Fasp::Error.new("no such file: #{ascp_path}") unless File.exist?(ascp_path)
             ascp_pid=nil
-            ascp_arguments=ascp_params[:args].clone
+            ascp_arguments=env_args[:args].clone
             # open random local TCP port listening
             mgt_sock = TCPServer.new('127.0.0.1',0 )
             # add management port
             ascp_arguments.unshift('-M', mgt_sock.addr[1].to_s)
             # start ascp in sub process
-            Log.log.debug "execute: #{ascp_params[:env].map{|k,v| "#{k}=\"#{v}\""}.join(' ')} \"#{ascp_path}\" \"#{ascp_arguments.join('" "')}\""
+            Log.log.debug "execute: #{env_args[:env].map{|k,v| "#{k}=\"#{v}\""}.join(' ')} \"#{ascp_path}\" \"#{ascp_arguments.join('" "')}\""
             # start process
-            ascp_pid = Process.spawn(ascp_params[:env],[ascp_path,ascp_path],*ascp_arguments)
+            ascp_pid = Process.spawn(env_args[:env],[ascp_path,ascp_path],*ascp_arguments)
             # in parent, wait for connection to socket max 3 seconds
             Log.log.debug "before accept for pid (#{ascp_pid})"
             ascp_mgt_io=nil
@@ -139,7 +140,7 @@ module Asperalm
             raise Fasp::Error.new('transfer interrupted by user')
           ensure
             # delete file lists
-            ascp_params[:finalize].call()
+            env_args[:finalize].call()
             # ensure there is no ascp left running
             unless ascp_pid.nil?
               begin
