@@ -217,7 +217,7 @@ t/aoc5:
 	$(EXETEST) aspera packages list
 	@touch $@
 t/aoc6:
-	$(EXETEST) aspera packages recv --id=BTckDm-67Q
+	$(EXETEST) aspera packages recv --id=$$($(EXETEST) aspera packages list --format=csv --fields=id|head -n 1)
 	@touch $@
 t/aoc7:
 	$(EXETEST) aspera admin events
@@ -446,6 +446,19 @@ t/prev3:
 
 tprev: t/prev1 t/prev2 t/prev3
 
+thot:
+	rm -fr source_hot
+	mkdir source_hot
+	-$(EXETEST) server delete /Upload/target_hot
+	$(EXETEST) server mkdir /Upload/target_hot
+	echo hello > source_hot/newfile
+	$(EXETEST) server upload source_hot --to-folder=/Upload/target_hot --lock-port=12345 --ts=@json:'{"EX_ascp_args":["--remove-after-transfer","--remove-empty-directories","--exclude-newer-than=-8","--src-base","source_hot"]}'
+	$(EXETEST) server browse /Upload/target_hot
+	ls -al source_hot
+	sleep 10
+	$(EXETEST) server upload source_hot --to-folder=/Upload/target_hot --lock-port=12345 --ts=@json:'{"EX_ascp_args":["--remove-after-transfer","--remove-empty-directories","--exclude-newer-than=-8","--src-base","source_hot"]}'
+	$(EXETEST) server browse /Upload/target_hot
+	ls -al source_hot
 contents:
 	mkdir -p contents
 t/sync1: contents
