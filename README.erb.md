@@ -775,13 +775,15 @@ The option `to_folder` provides a convenient way to change this parameter:  `--t
 --ts=@json:'{"multi_session":10,"multi_session_threshold":1}'
 ```
 
-## Exclusive execution
+## <a name="scheduling"></a>Scheduling an exclusive execution
 
-If it is required to run a command as a single instance, it is possible to protect with parameter: `--lock-port=nnnn`.
+It is possible to ensure that a given command is only run once at a time with parameter: `--lock-port=nnnn`. This is especially usefull when scheduling a command on a regular basis, for instance involving transfers, and a transfer may last longer than the execution period.
 
 This opens a local TCP server port, and fails if this port is already used, providing a local lock.
 
-This option is used when the tools is executed automatically, for instance with "preview" generatin.
+This option is used when the tools is executed automatically, for instance with "preview" generation.
+
+Usually the OS native scheduler shall already provide some sort of such protection (windows scheduler has it natively, linux cron can leverage `flock`).
 
 ## <a name="commands"></a>Sample Commands
 
@@ -1447,10 +1449,7 @@ The tool intentionally supports only a "one shot" mode.
 It needs to be run regularly to create or update preview files.
 It does not implement a loop. Running preview generation
 on a regular basis shall be done using the operating system
-scheduler (e.g. Cron on Linux, or Task Scheduler on Windows).
-To prevent parallel execution of the task, one can use either
-the protection offered by the scheduler, if there is one, or
-use the parameter: `--lock-port=12346`.
+scheduler (e.g. Cron on Linux, or Task Scheduler on Windows). Refer to section [_Scheduling_](#_scheduling_).
 
 ### Candidate detection
 
@@ -1604,6 +1603,60 @@ $ asession -h
 <%= File.read(ENV["ASESSION"]) %>
 
 ```
+
+# Hot folder
+
+## Requirements
+`aslmcli` maybe used as a simple hot folder engine. A hot folder being defined as a tool that:
+
+* locally (or remotely) detects new files in a top folder
+* send detected files to a remote (respectively, local) repository
+* only sends new files, do not re-send already sent files
+* optionally: sends only files that are not still "growing"
+* optionally: after transfer of files, deletes or moves to an archive
+
+In addition: the detection should be made "continuously" or on specific time/date.
+
+## Setup procedure
+The general idea is to rely on :
+
+* existing `ascp` features for detection and transfer
+* take advantage of `aslmcli` configuration capabilities and server side knowledge
+* the OS scheduler for reliability and continuous operation
+
+### ascp features
+
+Interesting ascp features are found in its arguments: (see ascp manual):
+
+* `ascp` already takes care of sending only "new" files: option `-k 1,2,3`, or transfer_spec: `resume_policy`
+* `ascp` has some options to remove or move files after transfer: `--remove-after-transfer`, `--move-after-transfer`, `--remove-empty-directories`
+* `ascp` has an option to send only files not modified since the last X seconds: `--exclude-newer-than` (--exclude-older-than)
+* `--src-base` if top level folder name shall not be created on destination
+
+Note that:
+
+* aslmcli takes transfer parameters exclusively as a transfer_spec, with `--ts` parameter.
+* not all native ascp arguments are available as standard transfer_spec parameters
+* native ascp arguments can be provided with the transfer spec parameter: EX_ascp_args (array), only for the "local" transfer agent (not connect or node)
+
+### server side and configuration
+
+Virtually any transfer on a "repository" on a regular basis might emulate a hot folder. Note that file detection is not based on events (inotify, etc...), but on a stateless scan on source side.
+
+Note: parameters may be saved in a preset and used with `-P`.
+
+### Scheduling
+
+Once aslmcli parameters are defined, run the command using the OS native scheduler, e.g. every minutes, or 5 minutes, etc... Refer to section [_Scheduling_](#_scheduling_).
+
+## Example
+
+```
+aslmcli server upload source_hot --to-folder=/Upload/target_hot --lock-port=12345 --ts=@json:'{"EX_ascp_args":["--remove-after-transfer","--remove-empty-directories","--exclude-newer-than=-8","--src-base","source_hot"]}'
+
+```
+
+The local (here, relative path: source_hot) is sent (upload) to basic fasp server, source files are deleted after transfer. growing files will be sent only once they dont grow anymore (based ona 8 second cooloff period). If a transfer takes more than the execution period, then the subsequent execution is skipped (lock-port).
 
 # Module: `Asperalm`
 
