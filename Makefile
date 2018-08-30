@@ -273,7 +273,6 @@ t/aocat14:
 	-$(EXETEST) aspera admin ats access_key --id=testkey3 delete
 	@touch $@
 
-
 tfsat: t/aocat4 t/aocat5 t/aocat6 t/aocat7 t/aocat8 t/aocat9 t/aocat10 t/aocat11 t/aocat13 t/aocat14
 tfiles: t/aoc1 t/aoc2 t/aoc3 t/aoc3b t/aoc4 t/aoc5 t/aoc6 t/aoc7 t/aoc8 t/aoc9 t/aoc10 t/aoc11 t/aoc12 t/aoc13 t/aoc14 tfsat
 
