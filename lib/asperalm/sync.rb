@@ -50,7 +50,8 @@ module Asperalm
     def compute_args
       raise StandardError,"parameter must be Hash" unless @sync_params.is_a?(Hash)
       raise StandardError,"parameter hash must have at least 'sessions', and optionally 'instance' keys." unless @sync_params.keys.push('instance').uniq.sort.eql?(MANDATORY_KEYS)
-      raise StandardError,"sessions key must be hash" unless @sync_params['sessions'].is_a?(Array)
+      raise StandardError,"sessions key must be Array" unless @sync_params['sessions'].is_a?(Array)
+      raise StandardError,"sessions key must has at least one element (hash)" unless @sync_params['sessions'].first.is_a?(Hash)
 
       env_args={
         :args=>[],
@@ -66,6 +67,7 @@ module Asperalm
 
       @sync_params['sessions'].each do |session_params|
         raise StandardError,"sessions must contain hashes" unless session_params.is_a?(Hash)
+        raise StandardError,"session must contain at leat name" unless session_params.has_key?('name')
         session_builder=CommandLineBuilder.new(session_params,SESSION_PARAMS)
         session_builder.process_params
         session_builder.add_env_args(env_args)
