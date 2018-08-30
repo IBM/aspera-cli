@@ -45,17 +45,17 @@ module Asperalm
           Main.instance.options.set_option(:auth,:web)
         end
 
-        def self.execute_node_gen4_action(api_files,home_node_id,home_file_id,ak_secret)
+        def self.execute_node_gen4_action(api_files,home_node_id,home_file_id)
           command_repo=Main.instance.options.get_next_argument('command',[ :access_key, :browse, :mkdir, :rename, :delete, :upload, :download, :node, :file  ])
           case command_repo
           when :access_key
             node_info,file_id = api_files.find_nodeinfo_and_fileid(home_node_id,home_file_id)
-            node_api=api_files.get_files_node_api(node_info,FilesApi::SCOPE_NODE_USER,ak_secret)
+            node_api=api_files.get_files_node_api(node_info,FilesApi::SCOPE_NODE_USER)
             return Plugin.entity_action(node_api,'access_keys',['id','root_file_id','storage','license'],:eid)
           when :browse
             thepath=Main.instance.options.get_next_argument("path")
             node_info,file_id = api_files.find_nodeinfo_and_fileid(home_node_id,home_file_id,thepath)
-            node_api=api_files.get_files_node_api(node_info,FilesApi::SCOPE_NODE_USER,ak_secret)
+            node_api=api_files.get_files_node_api(node_info,FilesApi::SCOPE_NODE_USER)
             items=node_api.read("files/#{file_id}/files")[:data]
             return {:type=>:object_list,:data=>items,:fields=>['name','type','recursive_size','size','modified_time','access_level']}
           when :mkdir
@@ -63,20 +63,20 @@ module Asperalm
             containing_folder_path = thepath.split(FilesApi::PATH_SEPARATOR)
             new_folder=containing_folder_path.pop
             node_info,file_id = api_files.find_nodeinfo_and_fileid(home_node_id,home_file_id,containing_folder_path.join(FilesApi::PATH_SEPARATOR))
-            node_api=api_files.get_files_node_api(node_info,FilesApi::SCOPE_NODE_USER,ak_secret)
+            node_api=api_files.get_files_node_api(node_info,FilesApi::SCOPE_NODE_USER)
             result=node_api.create("files/#{file_id}/files",{:name=>new_folder,:type=>:folder})[:data]
             return Plugin.result_status("created: #{result['name']} (id=#{result['id']})")
           when :rename
             thepath=Main.instance.options.get_next_argument("source path")
             newname=Main.instance.options.get_next_argument("new name")
             node_info,file_id = api_files.find_nodeinfo_and_fileid(home_node_id,home_file_id,thepath)
-            node_api=api_files.get_files_node_api(node_info,FilesApi::SCOPE_NODE_USER,ak_secret)
+            node_api=api_files.get_files_node_api(node_info,FilesApi::SCOPE_NODE_USER)
             result=node_api.update("files/#{file_id}",{:name=>newname})[:data]
             return Plugin.result_status("renamed #{thepath} to #{newname}")
           when :delete
             thepath=Main.instance.options.get_next_argument("path")
             node_info,file_id = api_files.find_nodeinfo_and_fileid(home_node_id,home_file_id,thepath)
-            node_api=api_files.get_files_node_api(node_info,FilesApi::SCOPE_NODE_USER,ak_secret)
+            node_api=api_files.get_files_node_api(node_info,FilesApi::SCOPE_NODE_USER)
             result=node_api.delete("files/#{file_id}")[:data]
             return Plugin.result_status("deleted: #{thepath}")
           when :upload
@@ -96,7 +96,7 @@ module Asperalm
               file_path = source_file.split(FilesApi::PATH_SEPARATOR)
               file_name = file_path.last
               node_info,file_id = api_files.find_nodeinfo_and_fileid(home_node_id,home_file_id,source_file)
-              node_api=api_files.get_files_node_api(node_info,FilesApi::SCOPE_NODE_USER,ak_secret)
+              node_api=api_files.get_files_node_api(node_info,FilesApi::SCOPE_NODE_USER)
               node_api.call({:operation=>'GET',:subpath=>"files/#{file_id}/content",:save_to_file=>File.join(Main.instance.destination_folder('receive'),file_name)})
               return Plugin.result_status("downloaded: #{file_name}")
             end # download_mode
@@ -105,12 +105,12 @@ module Asperalm
             command_legacy=Main.instance.options.get_next_argument('command',Node.simple_actions)
             # TODO: shall we support all methods here ? what if there is a link ?
             node_info=api_files.read("nodes/#{home_node_id}")[:data]
-            node_api=api_files.get_files_node_api(node_info,FilesApi::SCOPE_NODE_USER,ak_secret)
+            node_api=api_files.get_files_node_api(node_info,FilesApi::SCOPE_NODE_USER)
             return Node.new.execute_common(command_legacy,node_api)
           when :file
             fileid=Main.instance.options.get_next_argument("file id")
             node_info,file_id = api_files.find_nodeinfo_and_fileid(home_node_id,fileid)
-            node_api=api_files.get_files_node_api(node_info,FilesApi::SCOPE_NODE_USER,ak_secret)
+            node_api=api_files.get_files_node_api(node_info,FilesApi::SCOPE_NODE_USER)
             items=node_api.read("files/#{file_id}")[:data]
             return {:type=>:single_object,:data=>items}
           end # command_repo
@@ -330,7 +330,7 @@ module Asperalm
               the_package=@api_files_user.read("packages/#{package_id}")[:data]
               #              if Main.instance.options.get_option(:long)
               #                node_info,file_id = @api_files_user.find_nodeinfo_and_fileid(the_package['node_id'],the_package['contents_file_id'])
-              #                node_api=@api_files_user.get_files_node_api(node_info,FilesApi::SCOPE_NODE_USER,@ak_secret)
+              #                node_api=@api_files_user.get_files_node_api(node_info,FilesApi::SCOPE_NODE_USER)
               #                items=node_api.read("files/#{file_id}/files")[:data]
               #                file=node_api.read("files/#{items.first['id']}")[:data]
               #                the_package['X_contents_path']=file['path']
@@ -342,7 +342,8 @@ module Asperalm
               return {:type=>:object_list,:data=>packages,:fields=>['id','name','bytes_transferred']}
             end
           when :files
-            return self.class.execute_node_gen4_action(@api_files_user,@home_node_id,@home_file_id,@ak_secret)
+            @api_files_user.secrets[@home_node_id]=@ak_secret
+            return self.class.execute_node_gen4_action(@api_files_user,@home_node_id,@home_file_id)
           when :faspexgw
             require 'asperalm/faspex_gw'
             FaspexGW.instance.start_server(@api_files_user,@workspace_id)
@@ -366,7 +367,8 @@ module Asperalm
               #Log.log.info "events=#{JSON.generate(events)}"
               node_info=@api_files_user.read("nodes/#{@home_node_id}")[:data]
               # get access to node API, note the additional header
-              api_node=@api_files_user.get_files_node_api(node_info,FilesApi::SCOPE_NODE_USER,@ak_secret)
+              @api_files_user.secrets[@home_node_id]=@ak_secret
+              api_node=@api_files_user.get_files_node_api(node_info,FilesApi::SCOPE_NODE_USER)
               # can add filters: tag=aspera.files.package_id%3DLA8OU3p8w
               #'tag'=>'aspera.files.package_id%3DJvbl0w-5A'
               # filter= 'id', 'short_summary', or 'summary'
@@ -446,9 +448,10 @@ module Asperalm
                 end
               when :do
                 res_data=@api_files_admn.read(resource_instance_path)[:data]
-                api_node=@api_files_admn.get_files_node_api(res_data,nil,@ak_secret)
+                @api_files_admn.secrets[res_data['id']]=@ak_secret
+                api_node=@api_files_admn.get_files_node_api(res_data,nil)
                 ak_data=api_node.call({:operation=>'GET',:subpath=>"access_keys/#{res_data['access_key']}",:headers=>{'Accept'=>'application/json'}})[:data]
-                return self.class.execute_node_gen4_action(@api_files_admn,res_id,ak_data['root_file_id'],@ak_secret)
+                return self.class.execute_node_gen4_action(@api_files_admn,res_id,ak_data['root_file_id'])
               when :shared_folders
                 res_data=@api_files_admn.read("#{resource_class_path}/#{res_id}/permissions")[:data]
                 return { :type=>:object_list, :data =>res_data , :fields=>['id','node_name','file_id']} #

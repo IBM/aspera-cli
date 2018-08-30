@@ -60,19 +60,16 @@ module Asperalm
 
     def initialize(rest_params)
       super(rest_params)
+      @secrets={}
     end
+    
+    attr_reader :secrets
 
     def start_transfer(manager,app,direction,node_info,file_id,ts_add)
-      tspec=info_to_tspec(app,direction,node_info,file_id)
-      tspec.deep_merge!(ts_add)
-      return manager.start_transfer(tspec,:node_gen4)
-    end
-
-    # generate a transfer spec from node information and file id
-    # NOTE: important: transfer id must be unique: generate random id
-    # (using a non unique id results in discard of tags, and package is not finalized)
-    def info_to_tspec(app,direction,node_info,file_id)
-      return {
+      # generate a transfer spec from node information and file id
+      # NOTE: important: transfer id must be unique: generate random id
+      # (using a non unique id results in discard of tags, and package is not finalized)
+      tspec={
         'direction'        => direction,
         'remote_user'      => 'xfer',
         'remote_host'      => node_info['host'],
@@ -83,12 +80,16 @@ module Asperalm
         'app'   => app,
         'files' => { 'node_id' => node_info['id']},
         'node'  => { 'access_key' => node_info['access_key'], 'file_id' => file_id } } } }
+
+      tspec.deep_merge!(ts_add)
+      return manager.start_transfer(tspec,:node_gen4)
     end
 
     # returns a node API for access key
     # no scope: requires secret
     # if secret present: use it
-    def get_files_node_api(node_info,node_scope=nil,ak_secret=nil)
+    def get_files_node_api(node_info,node_scope=nil)
+      ak_secret=@secrets[node_info['id']]
       # if no scope, or secret provided on command line ...
       if node_scope.nil? or !ak_secret.nil?
         return Rest.new({
