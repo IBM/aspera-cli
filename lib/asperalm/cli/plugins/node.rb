@@ -1,5 +1,5 @@
 require 'asperalm/cli/basic_auth_plugin'
-require "base64"
+require 'base64'
 
 module Asperalm
   module Cli
@@ -11,7 +11,9 @@ module Asperalm
           Main.instance.options.add_opt_simple(:value,"extended value for create, update, list filter")
           Main.instance.options.add_opt_simple(:validator,"identifier of validator (optional for central)")
           Main.instance.options.add_opt_simple(:id,"entity identifier for update, show, and modify")
+          Main.instance.options.add_opt_simple(:mhoffurl,"URL for simple aspera web ui")
           #Main.instance.options.set_option(:value,'@json:{"active_only":false}')
+          Main.instance.options.set_option(:mhoffurl,'https://asperabrowser.mybluemix.net')
         end
 
         def self.c_textify_browse(table_data)
@@ -151,7 +153,7 @@ module Asperalm
           end
         end
 
-        def action_list; self.class.common_actions.clone.concat([ :postprocess,:stream, :transfer, :cleanup, :forward, :access_key, :watch_folder, :service, :async, :central ]);end
+        def action_list; self.class.common_actions.clone.concat([ :postprocess,:stream, :transfer, :cleanup, :forward, :access_key, :watch_folder, :service, :async, :central, :mhoff ]);end
 
         def execute_action
           api_node=basic_auth_api()
@@ -297,6 +299,13 @@ module Asperalm
                 return Plugin.result_status('updated')
               end
             end
+          when :mhoff
+            data={
+              'nodeUser' => Main.instance.options.get_option(:username,:mandatory),
+              'nodePW'   => Base64.strict_encode64(Main.instance.options.get_option(:password,:mandatory)),
+              'nodeUrl'  => Main.instance.options.get_option(:url,:mandatory)}
+            OpenApplication.instance.uri(Main.instance.options.get_option(:mhoffurl)+'?goto='+Base64.strict_encode64(JSON.generate(data)))
+            return Plugin.result_status('done')
           end # case command
           raise "ERROR: shall not reach this line"
         end # execute_action
