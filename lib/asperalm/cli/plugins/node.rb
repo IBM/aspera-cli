@@ -20,10 +20,6 @@ module Asperalm
           return table_data.map {|i| i['permissions']=i['permissions'].map { |x| x['name'] }.join(','); i }
         end
 
-        def self.c_textify_transfer_list(table_data)
-          return table_data.map {|i| ['remote_user','remote_host'].each { |field| i[field]=i['start_spec'][field] }; i }
-        end
-
         # key/value is defined in main in hash_table
         def self.c_textify_bool_list_result(list,name_list)
           list.each_index do |i|
@@ -213,7 +209,7 @@ module Asperalm
             when :list
               # could use ? :subpath=>'transfers'
               resp=api_node.read(res_class_path,Main.instance.options.get_option(:value,:optional))
-              return { :type => :object_list, :data => resp[:data], :fields=>['id','status','remote_user','remote_host'], :textify => lambda { |table_data| Node.c_textify_transfer_list(table_data) } } # TODO
+              return { :type => :object_list, :data => resp[:data], :fields=>['id','status','start_spec.remote_user','start_spec.remote_host']}
             when :cancel
               resp=api_node.cancel(one_res_path)
               return { :type=>:other_struct, :data => resp[:data] }
