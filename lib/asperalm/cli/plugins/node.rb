@@ -209,7 +209,7 @@ module Asperalm
             when :list
               # could use ? :subpath=>'transfers'
               resp=api_node.read(res_class_path,Main.instance.options.get_option(:value,:optional))
-              return { :type => :object_list, :data => resp[:data], :fields=>['id','status','start_spec.remote_user','start_spec.remote_host']}
+              return { :type => :object_list, :data => resp[:data], :fields=>['id','status','start_spec.direction','start_spec.remote_user','start_spec.remote_host','start_spec.destination_path']}
             when :cancel
               resp=api_node.cancel(one_res_path)
               return { :type=>:other_struct, :data => resp[:data] }
