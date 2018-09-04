@@ -3,9 +3,8 @@ require 'logger'
 require 'pp'
 require 'singleton'
 
-# Singleton object for logging
 module Asperalm
-  # Singleton object for logging, should be Module ?
+  # Singleton object for logging
   class Log
 
     public
@@ -16,6 +15,7 @@ module Asperalm
     # levels are :debug,:info,:warn,:error,fatal,:unknown
     def self.levels; Logger::Severity.constants.map{|c| c.downcase.to_sym};end
 
+    # where logs are sent to
     def self.logtypes; [:stderr,:stdout,:syslog];end
 
     # get the logger object of singleton
@@ -56,12 +56,12 @@ module Asperalm
       @logger.level=current_severity_integer
       @logger_type=new_logtype
     end
-    
+
     private
 
     def initialize
       @logger=nil
-      # set @logger and @logger_type
+      # this sets @logger and @logger_type
       self.logger_type=:stderr
     end
 
