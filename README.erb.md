@@ -4,7 +4,8 @@ Version : <%= `#{ENV["ASCLI"]} --version` %>
 
 _Laurent/2016-2018_
 
-This gem provides a ruby API to Aspera transfers and a command line interface to Aspera Applications.
+This gem provides a ruby API to Aspera transfers and a command line interface to Aspera Applications. Location:
+[https://rubygems.org/gems/asperalm](https://rubygems.org/gems/asperalm)
 
 Disclaimers:
 
@@ -19,9 +20,9 @@ That being said, the `aslmcli` tool is very powerful and gets things done, it&ap
 
 This manual addresses three parts:
 
-* `aslmcli` tool
-* `asession` tool
-* `Asperalm` ruby module
+* `aslmcli` : command line interface to Aspera
+* `asession` : starting a FASP Session with JSON parameters
+* `Asperalm` : includes a Ruby "FASPManager"
 
 In examples, command line operations (starting with `$`) are shown using a standard shell: `bash`.
 
