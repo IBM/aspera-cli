@@ -18,6 +18,7 @@ UNUSED_STATE='ABC'
 module Asperalm
   # implement OAuth 2 for Aspera Files
   # bearer tokens are kept in memory and also in a file cache for re-use
+  # used by the RST object
   class Oauth
     private
     TOKEN_FILE_PREFIX='token'

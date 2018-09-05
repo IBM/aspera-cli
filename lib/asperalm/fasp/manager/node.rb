@@ -1,9 +1,9 @@
-require 'asperalm/fasp/client/base'
+require 'asperalm/fasp/manager/base'
 require 'asperalm/log'
 
 module Asperalm
   module Fasp
-    module Client
+    module Manager
       class Node < Base
         def initialize(node_api)
           super()

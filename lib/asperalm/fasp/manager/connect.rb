@@ -1,10 +1,10 @@
-require 'asperalm/fasp/client/base'
+require 'asperalm/fasp/manager/base'
 require 'asperalm/open_application'
 require 'securerandom'
 
 module Asperalm
   module Fasp
-    module Client
+    module Manager
       # for CLI allows specification of different transfer agents
       # supports 3 modes to start a transfer:
       # - ascp : executes ascp process

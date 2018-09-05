@@ -1,11 +1,11 @@
 require 'asperalm/cli/manager'
 require 'asperalm/cli/plugin'
 require 'asperalm/cli/extended_value'
-require 'asperalm/fasp/client/resumer'
-require 'asperalm/fasp/client/connect'
-require 'asperalm/fasp/client/node'
-require 'asperalm/fasp/listener_logger'
-require 'asperalm/fasp/listener_progress'
+require 'asperalm/fasp/manager/resumer'
+require 'asperalm/fasp/manager/connect'
+require 'asperalm/fasp/manager/node'
+require 'asperalm/fasp/listener/logger'
+require 'asperalm/fasp/listener/progress'
 require 'asperalm/open_application'
 require 'asperalm/temp_file_manager'
 require 'asperalm/log'
@@ -147,7 +147,7 @@ module Asperalm
           # by default use local ascp
           case @opt_mgr.get_option(:transfer,:mandatory)
           when :direct
-            @transfer_agent_singleton=Fasp::Client::Resumer.new
+            @transfer_agent_singleton=Fasp::Manager::Resumer.new
             if !@opt_mgr.get_option(:fasp_proxy,:optional).nil?
               @transfer_spec_default['EX_fasp_proxy_url']=@opt_mgr.get_option(:fasp_proxy,:optional)
             end
@@ -159,7 +159,7 @@ module Asperalm
             @transfer_spec_default['EX_quiet']=true
             Log.log.debug(">>>>#{@transfer_spec_default}".red)
           when :connect
-            @transfer_agent_singleton=Fasp::Client::Connect.new
+            @transfer_agent_singleton=Fasp::Manager::Connect.new
           when :node
             # support: @param:<name>
             # support extended values
@@ -186,11 +186,11 @@ module Asperalm
               raise CliBadArgument,"missing parameter [#{param}] in node specification: #{node_config}" if !node_config.has_key?(param.to_s)
               sym_config[param]=node_config[param.to_s]
             end
-            @transfer_agent_singleton=Fasp::Client::Node.new(Rest.new({:base_url=>sym_config[:url],:auth_type=>:basic,:basic_username=>sym_config[:username], :basic_password=>sym_config[:password]}))
+            @transfer_agent_singleton=Fasp::Manager::Node.new(Rest.new({:base_url=>sym_config[:url],:auth_type=>:basic,:basic_username=>sym_config[:username], :basic_password=>sym_config[:password]}))
           else raise "ERROR"
           end
-          @transfer_agent_singleton.add_listener(Fasp::ListenerLogger.new,:struct)
-          @transfer_agent_singleton.add_listener(Fasp::ListenerProgress.new,:struct)
+          @transfer_agent_singleton.add_listener(Fasp::Listener::Logger.new)
+          @transfer_agent_singleton.add_listener(Fasp::Listener::Progress.new)
         end
         return @transfer_agent_singleton
       end

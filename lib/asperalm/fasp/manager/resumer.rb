@@ -1,10 +1,11 @@
-require 'asperalm/fasp/client/local'
+require 'asperalm/fasp/manager/local'
 
 module Asperalm
   module Fasp
-    module Client
+    module Manager
       # implements a resumable policy on top of basic Local FaspManager
       class Resumer < Local
+        private
         # from https://www.google.com/search?q=FASP+error+codes
         # columns: code name descr msg retryable
         # Note that the fact that an error is retryable is user defined, not by protocol
@@ -63,6 +64,15 @@ module Asperalm
           [ 51, 'ERR_UNDEFINED',            "Should never happen, report to Aspera",               "Undefined error",                       false ],
         ]
 
+        def fasp_error_retryable?(err_code)
+          return false if !err_code.is_a?(Integer) or err_code < 1 or err_code > FASP_ERROR_CODES.length
+          return FASP_ERROR_CODES[err_code][4]
+        end
+
+        alias super_start_transfer start_transfer
+
+        public
+
         def initialize
           super
           # resume parameters, could be modified by options (TODO)
@@ -71,13 +81,6 @@ module Asperalm
           @sleep_factor  = 2
           @sleep_max     = 60
         end
-
-        def fasp_error_retryable?(err_code)
-          return false if !err_code.is_a?(Integer) or err_code < 1 or err_code > FASP_ERROR_CODES.length
-          return FASP_ERROR_CODES[err_code][4]
-        end
-
-        alias super_start_transfer start_transfer
 
         def start_transfer(transfer_spec)
 

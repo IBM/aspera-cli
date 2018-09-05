@@ -1,12 +1,14 @@
 require 'asperalm/log'
-require 'asperalm/fasp/listener'
+require 'asperalm/fasp/listener/base'
 
 module Asperalm
   module Fasp
-    # listener for FASP transfers (debug)
-    class ListenerLogger < Listener
-      def event(data)
-        Log.log.debug(data.to_s)
+    module Listener
+      # listener for FASP transfers (debug)
+      class Logger < Base
+        def event_struct(data)
+          Log.log.debug(data.to_s)
+        end
       end
     end
   end

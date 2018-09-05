@@ -5,7 +5,7 @@
 # Laurent Martin
 #
 ##############################################################################
-require 'asperalm/fasp/client/base'
+require 'asperalm/fasp/manager/base'
 require 'asperalm/fasp/error'
 require 'asperalm/fasp/parameters'
 require 'asperalm/fasp/installation'
@@ -15,7 +15,7 @@ require 'timeout'
 
 module Asperalm
   module Fasp
-    module Client
+    module Manager
       ACCESS_KEY_TRANSFER_USER='xfer'
       # executes a local "ascp", equivalent of "Fasp Manager"
       class Local < Base
