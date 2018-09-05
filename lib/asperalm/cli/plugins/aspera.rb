@@ -1,7 +1,6 @@
 require 'asperalm/cli/plugins/node'
 require 'asperalm/cli/plugins/ats'
 require 'asperalm/cli/plugin'
-require 'asperalm/oauth'
 require 'asperalm/files_api'
 require 'securerandom'
 

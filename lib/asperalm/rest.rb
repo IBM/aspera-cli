@@ -8,6 +8,7 @@ require 'net/http'
 require 'net/https'
 require 'json'
 require 'asperalm/log'
+require 'asperalm/oauth'
 
 # add cancel method to http
 class Net::HTTP::Cancel < Net::HTTPRequest
@@ -91,6 +92,7 @@ module Asperalm
 
     # set to true enables debug in HTTP class
     @@debug=false
+    # true if https ignore certificate
     @@insecure=false
 
     public

@@ -1,5 +1,4 @@
 require 'asperalm/cli/plugins/node'
-require 'asperalm/oauth'
 
 module Asperalm
   module Cli
