@@ -1,7 +1,7 @@
 require 'asperalm/cli/manager'
 require 'asperalm/cli/plugin'
 require 'asperalm/cli/extended_value'
-require 'asperalm/fasp/manager/resumer'
+require 'asperalm/fasp/manager/local'
 require 'asperalm/fasp/manager/connect'
 require 'asperalm/fasp/manager/node'
 require 'asperalm/fasp/listener/logger'
@@ -147,7 +147,7 @@ module Asperalm
           # by default use local ascp
           case @opt_mgr.get_option(:transfer,:mandatory)
           when :direct
-            @transfer_manager_singleton=Fasp::Manager::Resumer.new
+            @transfer_manager_singleton=Fasp::Manager::Local.new
             if !@opt_mgr.get_option(:fasp_proxy,:optional).nil?
               @transfer_spec_default['EX_fasp_proxy_url']=@opt_mgr.get_option(:fasp_proxy,:optional)
             end

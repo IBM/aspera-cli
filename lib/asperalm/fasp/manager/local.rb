@@ -19,11 +19,62 @@ module Asperalm
       ACCESS_KEY_TRANSFER_USER='xfer'
       # executes a local "ascp", equivalent of "Fasp Manager"
       class Local < Base
+        def start_transfer(transfer_spec)
+          # resume parameters, could be modified by options (TODO)
+          max_retry     = 7
+          sleep_seconds = 2
+          sleep_factor  = 2
+          sleep_max     = 60
+
+          # maximum of retry
+          lRetryLeft = max_retry
+          Log.log.debug("retries=#{lRetryLeft}")
+
+          # try to send the file until ascp is succesful
+          loop do
+            Log.log.debug('transfer starting');
+            begin
+              start_transfer_once(transfer_spec)
+              Log.log.debug( 'transfer ok'.bg_red );
+              break
+            rescue Fasp::Error => e
+              Log.log.warn( "An error occured: #{e.message}" );
+              # failure in ascp
+              if fasp_error_retryable?(e.err_code) then
+                # exit if we exceed the max number of retry
+                unless lRetryLeft > 0
+                  Log.log.error "Maximum number of retry reached"
+                  raise Fasp::Error,"max retry after: [#{status[:message]}]"
+                end
+              else
+                # give one chance only to non retryable errors
+                unless lRetryLeft.eql?(max_retry)
+                  Log.log.error('non-retryable error')
+                  raise e
+                end
+              end
+            end
+
+            # take this retry in account
+            lRetryLeft-=1
+            Log.log.warn( "resuming in  #{sleep_seconds} seconds (retry left:#{lRetryLeft})" );
+
+            # wait a bit before retrying, maybe network condition will be better
+            sleep(sleep_seconds)
+
+            # increase retry period
+            sleep_seconds *= sleep_factor
+            if sleep_seconds > sleep_max then
+              sleep_seconds = sleep_max
+            end
+          end # loop
+        end
+
         # start FASP transfer based on transfer spec (hash table)
         # note that it returns upon completion only (blocking)
         # if the user wants to run in background, just spawn a thread
         # listener methods are called in context of calling thread
-        def start_transfer(transfer_spec)
+        def start_transfer_once(transfer_spec)
           # TODO: what is this for ? only on local ascp ?
           # NOTE: important: transfer id must be unique: generate random id (using a non unique id results in discard of tags)
           if transfer_spec['tags'].is_a?(Hash) and transfer_spec['tags']['aspera'].is_a?(Hash)
