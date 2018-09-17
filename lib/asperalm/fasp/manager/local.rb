@@ -45,24 +45,116 @@ module Asperalm
             transfer_spec['EX_fallback_key']=Installation.instance.path(:fallback_key)
             transfer_spec['EX_fallback_cert']=Installation.instance.path(:fallback_cert)
           end
-          start_transfer_with_args_env(Parameters.ts_to_env_args(transfer_spec))
-          return nil
+          env_args=Parameters.ts_to_env_args(transfer_spec)
+
+          thread_info={:state=>:create,:ts=>transfer_spec}
+          thread_info[:thread] = Thread.new(thread_info) {|ti| Thread.current[:name]="transfer";Thread.current[:ti]=ti;start_transfer_with_args_env(env_args)  }
+          @sessions_mutex.synchronize do
+            # check failure here
+            until thread_info.has_key?(:id)
+              Log.log.debug("waiting for id..")
+              @sessions_cv.wait(@sessions_mutex)
+            end
+            raise "error" if thread_info[:id].nil?
+            Log.log.debug("id:#{thread_info[:id]}")
+            @sessions_info[thread_info[:id]]=thread_info
+          end
+          #return thread_info[:id]
+          #return nil
+          wait_for_all_completed(true)
         end # start_transfer
+
+        # call to terminate threads
+        def shutdown
+          @sessions_mutex.synchronize do
+            @monitor_run=false
+            @sessions_cv.broadcast
+          end
+          @monitor.join
+          @monitor=nil
+          Log.log.debug("joined monitor")
+        end
+
+        def wait_for_all_completed(do_finalize=false)
+          loop do
+            @sessions_mutex.synchronize do
+              return if @sessions_info.empty?
+              Log.log.debug("wait for completed: not empty: #{@sessions_info.keys}")
+              @sessions_cv.wait(@sessions_mutex)
+            end
+          end
+          shutdown if do_finalize
+        end
 
         private
 
         def initialize
           super
-          @sessions={}
+          # mutex and condition variable for inter thread communication
+          @sessions_mutex=Mutex.new
+          @sessions_cv=ConditionVariable.new
+          # shared data protected by mutex, CV on change
+          @sessions_info={}
+          # must be set before starting monitor, set to false to stop thread
+          @monitor_run=true
+          @monitor=Thread.new{Thread.current[:name]="monitor";thread_main_monitor}
+        end
+
+        # main thread method for monitor
+        def thread_main_monitor
+          @sessions_mutex.synchronize do
+            while @monitor_run
+              Log.log.debug("wait")
+              @sessions_cv.wait(@sessions_mutex)
+              Log.log.debug("waked")
+              @sessions_info.each do |k,v|
+                if v[:state].eql?(:finished)
+                  Log.log.debug("thread finished: #{k}")
+                  v[:thread].join
+                  Log.log.debug("joined")
+                  @sessions_info.delete(k)
+                  Log.log.debug("notify changed")
+                  @sessions_cv.broadcast
+                  Log.log.debug("deleted")
+                end
+              end
+            end  # while
+          end # sync
+          Log.log.debug("EXIT")
+        end
+
+        # main thread method for transfer
+        def thread_main_transfer(ti)
+
+          @sessions_mutex.synchronize do
+            # Thread 'a' now needs the resource
+            Log.log.debug("wait for id")
+            sleep 1
+            ti[:id]=123
+            ti[:state]=:started
+            @sessions_cv.broadcast
+          end
+          4.times do
+            Log.log.debug("working...")
+            sleep 1
+          end
+          @sessions_mutex.synchronize do
+            # Thread 'a' now needs the resource
+            ti[:state]=:finished
+            @sessions_cv.broadcast
+          end
+          Log.log.debug("EXIT")
         end
 
         # This is the low level method to start FASP
         # currently, relies on command line arguments
         # start ascp with management port.
         # raises FaspError on error
-        # @param a hash containing :args and :env
+        # @param env_args a hash containing :args :env :ascp_version :finalize
         def start_transfer_with_args_env(env_args)
           begin
+            thread_info=Thread.current[:ti]
+            raise "missing thread info" if thread_info.nil?
             Log.log.debug("env_args=#{env_args.inspect}")
             ascp_path=Fasp::Installation.instance.path(env_args[:ascp_version])
             raise Fasp::Error.new("no such file: #{ascp_path}") unless File.exist?(ascp_path)
@@ -114,8 +206,16 @@ module Asperalm
                 raise "unexpected empty line" if current_event_data.nil?
                 notify_listeners(current_event_text,current_event_data)
                 # TODO: check if this is always the last event
-                if ['DONE','ERROR'].include?(current_event_data['Type']) then
+                case current_event_data['Type']
+                when 'DONE','ERROR'
                   last_status_event = current_event_data
+                when 'INIT'
+                  @sessions_mutex.synchronize do
+                    thread_info[:id]=current_event_data['SessionId']
+                    Log.log.warn("session: #{thread_info[:id]}")
+                    thread_info[:state]=:started
+                    @sessions_cv.broadcast
+                  end
                 end
               else
                 raise "unexpected line:[#{line}]"
@@ -150,6 +250,12 @@ module Asperalm
               # avoid zombie
               Process.wait(ascp_pid)
               ascp_pid=nil
+            end
+            thread_info=Thread.current[:ti]
+            @sessions_mutex.synchronize do
+              # Thread 'a' now needs the resource
+              thread_info[:state]=:finished
+              @sessions_cv.broadcast
             end
           end # begin
         end # start_transfer_with_args_env
