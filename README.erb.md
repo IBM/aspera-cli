@@ -827,6 +827,21 @@ Aspera on Cloud relies on Oauth, refer to the [Aspera on Cloud](#aoc) section.
 
 Aspera on Cloud uses the more advanced Oauth mechanism for authentication (HTTP Basic authentication is not supported).
 This requires additional setup.
+
+### Configuration Wizard
+
+`aslmcli` provides a configuration wizard, to invoke it do:
+
+```
+$ aslmcli config wizard aspera --url=https://sedemo.ibmaspera.com
+```
+
+If the `url` parameter is not provided it will be asked on command line.
+
+Follow instructions on terminal and interact in browser.
+
+### Configuration details
+
 Several types of OAuth authentication are supported:
 
 * Web based authentication : authentication is made by user using a browser (simpler)
