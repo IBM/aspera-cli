@@ -49,7 +49,7 @@ module Asperalm
     attr_accessor :url_method
 
     def initialize
-      @url_method=:text
+      @url_method=self.class.default_gui_mode
     end
 
     # this is non blocking
