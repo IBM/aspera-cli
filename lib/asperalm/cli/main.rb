@@ -46,8 +46,8 @@ module Asperalm
       @@CLI_MODULE=Module.nesting[1].to_s
       # Path to Plugin classes: Asperalm::Cli::Plugins
       @@PLUGINS_MODULE=@@CLI_MODULE+'::Plugins'
-      @@CONFIG_FILE_KEY_VERSION='version'
-      @@CONFIG_FILE_KEY_DEFAULT='default'
+      @@CONFIG_PRESET_VERSION='version'
+      @@CONFIG_PRESET_DEFAULT='default'
       @@HELP_URL='http://www.rubydoc.info/gems/'+@@GEM_NAME
       @@GEM_URL='https://rubygems.org/gems/'+@@GEM_NAME
       RUBY_FILE_EXT='.rb'
@@ -72,9 +72,9 @@ module Asperalm
       def get_plugin_default_config_name(plugin_sym)
         default_config_name=nil
         return nil if @available_presets.nil? or !@use_plugin_defaults
-        if @available_presets.has_key?(@@CONFIG_FILE_KEY_DEFAULT) and
-        @available_presets[@@CONFIG_FILE_KEY_DEFAULT].has_key?(plugin_sym.to_s)
-          default_config_name=@available_presets[@@CONFIG_FILE_KEY_DEFAULT][plugin_sym.to_s]
+        if @available_presets.has_key?(@@CONFIG_PRESET_DEFAULT) and
+        @available_presets[@@CONFIG_PRESET_DEFAULT].has_key?(plugin_sym.to_s)
+          default_config_name=@available_presets[@@CONFIG_PRESET_DEFAULT][plugin_sym.to_s]
           if !@available_presets.has_key?(default_config_name)
             Log.log.error("Default config name [#{default_config_name}] specified for plugin [#{plugin_sym.to_s}], but it does not exist in config file.\nPlease fix the issue: either create preset with one parameter (aslmcli config id #{default_config_name} init @json:'{}') or remove default (aslmcli config id default remove #{plugin_sym.to_s}).")
           end
@@ -142,12 +142,12 @@ module Asperalm
       end
 
       # transfer agent singleton
-      def transfer_agent
-        if @transfer_agent_singleton.nil?
+      def transfer_manager
+        if @transfer_manager_singleton.nil?
           # by default use local ascp
           case @opt_mgr.get_option(:transfer,:mandatory)
           when :direct
-            @transfer_agent_singleton=Fasp::Manager::Resumer.new
+            @transfer_manager_singleton=Fasp::Manager::Resumer.new
             if !@opt_mgr.get_option(:fasp_proxy,:optional).nil?
               @transfer_spec_default['EX_fasp_proxy_url']=@opt_mgr.get_option(:fasp_proxy,:optional)
             end
@@ -159,7 +159,7 @@ module Asperalm
             @transfer_spec_default['EX_quiet']=true
             Log.log.debug(">>>>#{@transfer_spec_default}".red)
           when :connect
-            @transfer_agent_singleton=Fasp::Manager::Connect.new
+            @transfer_manager_singleton=Fasp::Manager::Connect.new
           when :node
             # support: @param:<name>
             # support extended values
@@ -186,13 +186,13 @@ module Asperalm
               raise CliBadArgument,"missing parameter [#{param}] in node specification: #{node_config}" if !node_config.has_key?(param.to_s)
               sym_config[param]=node_config[param.to_s]
             end
-            @transfer_agent_singleton=Fasp::Manager::Node.new(Rest.new({:base_url=>sym_config[:url],:auth_type=>:basic,:basic_username=>sym_config[:username], :basic_password=>sym_config[:password]}))
+            @transfer_manager_singleton=Fasp::Manager::Node.new(Rest.new({:base_url=>sym_config[:url],:auth_type=>:basic,:basic_username=>sym_config[:username], :basic_password=>sym_config[:password]}))
           else raise "ERROR"
           end
-          @transfer_agent_singleton.add_listener(Fasp::Listener::Logger.new)
-          @transfer_agent_singleton.add_listener(Fasp::Listener::Progress.new)
+          @transfer_manager_singleton.add_listener(Fasp::Listener::Logger.new)
+          @transfer_manager_singleton.add_listener(Fasp::Listener::Progress.new)
         end
-        return @transfer_agent_singleton
+        return @transfer_manager_singleton
       end
 
       attr_accessor :option_flat_hash
@@ -207,7 +207,7 @@ module Asperalm
         @option_show_config=false
         @option_flat_hash=true
         @available_presets=nil
-        @transfer_agent_singleton=nil
+        @transfer_manager_singleton=nil
         @use_plugin_defaults=true
         @plugins={@@MAIN_PLUGIN_NAME_SYM=>{:source=>__FILE__,:require_stanza=>nil}}
         @plugin_lookup_folders=[]
@@ -528,7 +528,7 @@ module Asperalm
         # oldest compatible conf file format, update to latest version when an incompatible change is made
         if !File.exist?(@option_config_file)
           Log.log.warn("No config file found. Creating empty configuration file: #{@option_config_file}")
-          @available_presets={@@MAIN_PLUGIN_NAME_SYM.to_s=>{@@CONFIG_FILE_KEY_VERSION=>self.class.gem_version}}
+          @available_presets={@@MAIN_PLUGIN_NAME_SYM.to_s=>{@@CONFIG_PRESET_VERSION=>self.class.gem_version}}
           save_presets_to_config_file
           return nil
         end
@@ -541,7 +541,7 @@ module Asperalm
           if !@available_presets.has_key?(@@MAIN_PLUGIN_NAME_SYM.to_s)
             raise "Cannot find key: #{@@MAIN_PLUGIN_NAME_SYM.to_s}"
           end
-          version=@available_presets[@@MAIN_PLUGIN_NAME_SYM.to_s][@@CONFIG_FILE_KEY_VERSION]
+          version=@available_presets[@@MAIN_PLUGIN_NAME_SYM.to_s][@@CONFIG_PRESET_VERSION]
           if version.nil?
             raise "No version found in config section."
           end
@@ -555,16 +555,16 @@ module Asperalm
           if Gem::Version.new(version) <= Gem::Version.new(config_tested_version)
             old_plugin_name='files'
             new_plugin_name=ASPERA_PLUGIN_S
-            if @available_presets[@@CONFIG_FILE_KEY_DEFAULT].is_a?(Hash) and @available_presets[@@CONFIG_FILE_KEY_DEFAULT].has_key?(old_plugin_name)
-              @available_presets[@@CONFIG_FILE_KEY_DEFAULT][new_plugin_name]=@available_presets[@@CONFIG_FILE_KEY_DEFAULT][old_plugin_name]
-              @available_presets[@@CONFIG_FILE_KEY_DEFAULT].delete(old_plugin_name)
+            if @available_presets[@@CONFIG_PRESET_DEFAULT].is_a?(Hash) and @available_presets[@@CONFIG_PRESET_DEFAULT].has_key?(old_plugin_name)
+              @available_presets[@@CONFIG_PRESET_DEFAULT][new_plugin_name]=@available_presets[@@CONFIG_PRESET_DEFAULT][old_plugin_name]
+              @available_presets[@@CONFIG_PRESET_DEFAULT].delete(old_plugin_name)
               Log.log.warn("Converted plugin default: #{old_plugin_name} -> #{new_plugin_name}")
               save_required=true
             end
           end
           # Place new compatibility code here
           if save_required
-            @available_presets[@@MAIN_PLUGIN_NAME_SYM.to_s][@@CONFIG_FILE_KEY_VERSION]=self.class.gem_version
+            @available_presets[@@MAIN_PLUGIN_NAME_SYM.to_s][@@CONFIG_PRESET_VERSION]=self.class.gem_version
             save_presets_to_config_file
             Log.log.warn("Saving automatic conversion.")
           end
@@ -591,7 +591,7 @@ module Asperalm
 
       # "config" plugin
       def execute_action
-        action=@opt_mgr.get_next_argument('action',[:genkey,:plugins,:flush_tokens,:list,:overview,:open,:echo,:id,:documentation,:quickstart])
+        action=@opt_mgr.get_next_argument('action',[:genkey,:plugins,:flush_tokens,:list,:overview,:open,:echo,:id,:documentation,:wizard])
         case action
         when :id
           config_name=@opt_mgr.get_next_argument('config name')
@@ -676,7 +676,7 @@ module Asperalm
           return {:data => @available_presets.keys, :type => :value_list, :name => 'name'}
         when :overview
           return {:type=>:object_list,:data=>self.class.flatten_all_config(@available_presets)}
-        when :quickstart # TODO
+        when :wizard # TODO
           # only one value, so no test, no switch for the time being
           plugin_name=@opt_mgr.get_next_argument('plugin name',[:aspera])
           require 'asperalm/cli/plugins/aspera'
@@ -684,21 +684,10 @@ module Asperalm
           files_plugin.declare_options
           @opt_mgr.parse_options!
           @opt_mgr.set_option(:auth,:web)
-          #@opt_mgr.set_option(:client_id,FilesApi.random.first)
-          #@opt_mgr.set_option(:client_secret,FilesApi.random.last)
-          #@opt_mgr.set_option(:redirect_uri,'https://asperafiles.com/token')
           @opt_mgr.set_option(:redirect_uri,DEFAULT_REDIRECT)
           instance_url=@opt_mgr.get_option(:url,:mandatory)
           organization,instance_domain=FilesApi.parse_url(instance_url)
           aspera_preset_name='aoc_'+organization
-          @available_presets[@@CONFIG_FILE_KEY_DEFAULT]||=Hash.new
-          raise CliError,"a default configuration already exists (use --override=yes)" if @available_presets[@@CONFIG_FILE_KEY_DEFAULT].has_key?(ASPERA_PLUGIN_S) and !option_override
-          raise CliError,"preset already exists: #{aspera_preset_name}  (use --override=yes)" if @available_presets.has_key?(aspera_preset_name) and !option_override
-          files_plugin.init_apis
-          myself=files_plugin.api_files_user.read('self')[:data]
-          if !myself['public_key'].empty?
-            Log.log.warn("public key is already set, overriding")
-          end
           key_filepath=File.join(@config_folder,'aspera_on_cloud_key')
           if File.exist?(key_filepath)
             puts "key file already exists: #{key_filepath}"
@@ -706,24 +695,43 @@ module Asperalm
             puts "generating: #{key_filepath}"
             generate_new_key(key_filepath)
           end
+          puts "Please login to your Aspera on Cloud instance as Administrator."
+          puts "Go to: Admin->Organization->Integrations"
+          puts "Create a new integration:"
+          puts "- name: aslmcli"
+          puts "- redirect uri: #{DEFAULT_REDIRECT}"
+          puts "- origin: localhost"
+          puts "Once created please enter the following any required parameter:"
+          OpenApplication.instance.uri(instance_url+"/admin/org/integrations")
+          client_id=@opt_mgr.get_option(:client_id)
+          client_secret=@opt_mgr.get_option(:client_secret)
+          @available_presets[@@CONFIG_PRESET_DEFAULT]||=Hash.new
+          raise CliError,"a default configuration already exists (use --override=yes)" if @available_presets[@@CONFIG_PRESET_DEFAULT].has_key?(ASPERA_PLUGIN_S) and !option_override
+          raise CliError,"preset already exists: #{aspera_preset_name}  (use --override=yes)" if @available_presets.has_key?(aspera_preset_name) and !option_override
+          # todo: check if key is identical
+          files_plugin.init_apis
+          myself=files_plugin.api_files_user.read('self')[:data]
+          raise CliError,"public key is already set (use --override=yes)"  unless myself['public_key'].empty? or option_override
           puts "updating profile with new key"
           files_plugin.api_files_user.update("users/#{myself['id']}",{'public_key'=>File.read(key_filepath+'.pub')})
+          puts "Enabling JWT"
+          files_plugin.api_files_admn.update("clients/#{client_id}",{"jwt_grant_enabled"=>true,"explicit_authorization_required"=>false})
           puts "creating new config preset: #{aspera_preset_name}"
           @available_presets[aspera_preset_name]={
             :url.to_s           =>@opt_mgr.get_option(:url),
             :redirect_uri.to_s  =>@opt_mgr.get_option(:redirect_uri),
-            :client_id.to_s     =>@opt_mgr.get_option(:client_id),
+            :client_id.to_s     =>client_id,
             :client_secret.to_s =>@opt_mgr.get_option(:client_secret),
             :auth.to_s          =>:jwt.to_s,
             :private_key.to_s   =>'@file:'+key_filepath,
             :username.to_s      =>myself['email'],
           }
           puts "setting config preset as default for #{ASPERA_PLUGIN_S}"
-          @available_presets[@@CONFIG_FILE_KEY_DEFAULT][ASPERA_PLUGIN_S]=aspera_preset_name
+          @available_presets[@@CONFIG_PRESET_DEFAULT][ASPERA_PLUGIN_S]=aspera_preset_name
           puts "saving config file"
           save_presets_to_config_file
           return Main.result_status("Done. You can test with:\naslmcli aspera user info show")
-          # TODO: update documentation, enable JWT for the client_id
+          # TODO: update documentation
         end
       end
 
@@ -791,9 +799,9 @@ module Asperalm
       # plugins shall use this method to start a transfer
       # @param: ts_source specifies how destination_root is set (how transfer spec was generated)
       # and not the default one
-      def start_transfer(transfer_spec,ts_source)
+      def start_transfer_wait_result(transfer_spec,ts_source)
         # initialize transfert agent, to set default transfer spec options before merge
-        transfer_agent
+        transfer_manager
         case transfer_spec['direction']
         when 'receive'
           # init default if required in any case
@@ -817,7 +825,7 @@ module Asperalm
         transfer_spec.merge!(@transfer_spec_default)
         # add bypass keys if there is a token, also prevents connect plugin to ask password
         transfer_spec['authentication']='token' if transfer_spec.has_key?('token')
-        transfer_agent.start_transfer(transfer_spec)
+        transfer_manager.start_transfer(transfer_spec)
         return self.class.result_success
       end
 
