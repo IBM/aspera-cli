@@ -49,6 +49,7 @@ module Asperalm
             'app_id'=>@connect_app_id,
             'request_id'=>request_id
             }}]}
+          # TODO: get session id
           connect_api.create('transfers/start',connect_transfer_args)
           connect_activity_args={'aspera_connect_settings'=>{'app_id'=>@connect_app_id}}
           started=false

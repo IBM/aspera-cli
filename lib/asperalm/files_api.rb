@@ -62,14 +62,15 @@ module Asperalm
       super(rest_params)
       @secrets={}
     end
-    
+
     attr_reader :secrets
 
-    def start_transfer(manager,app,direction,node_info,file_id,ts_add)
+    # build transfer spec for aspera on cloud
+    def ts(manager,app,direction,node_info,file_id,ts_add)
       # generate a transfer spec from node information and file id
       # NOTE: important: transfer id must be unique: generate random id
       # (using a non unique id results in discard of tags, and package is not finalized)
-      tspec={
+      return {
         'direction'        => direction,
         'remote_user'      => 'xfer',
         'remote_host'      => node_info['host'],
@@ -79,10 +80,8 @@ module Asperalm
         'tags'             => { 'aspera' => {
         'app'   => app,
         'files' => { 'node_id' => node_info['id']},
-        'node'  => { 'access_key' => node_info['access_key'], 'file_id' => file_id } } } }
-
-      tspec.deep_merge!(ts_add)
-      return manager.start_transfer(tspec,:node_gen4)
+        'node'  => { 'access_key' => node_info['access_key'], 'file_id' => file_id } } }
+      }.deep_merge!(ts_add)
     end
 
     # returns a node API for access key

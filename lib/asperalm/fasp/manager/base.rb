@@ -1,7 +1,7 @@
 module Asperalm
   module Fasp
     module Manager
-      # Base class for FASP transfer agents, provides api for listeners
+      # Base class for FASP transfer agents
       class Base
 
         private

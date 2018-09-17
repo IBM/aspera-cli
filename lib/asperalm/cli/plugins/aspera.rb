@@ -82,7 +82,7 @@ module Asperalm
             filelist = Main.instance.options.get_next_argument("file list",:multiple)
             Log.log.debug("file list=#{filelist}")
             node_info,file_id = api_files.find_nodeinfo_and_fileid(home_node_id,home_file_id,Main.instance.destination_folder('send'))
-            return api_files.start_transfer(Main.instance,'files','send',node_info,file_id,{'paths'=>filelist.map{|i|{'source'=>i}}})
+            return Main.instance.start_transfer_wait_result(api_files.ts('files','send',node_info,file_id,{'paths'=>filelist.map{|i|{'source'=>i}}}),:node_gen4)
           when :download
             source_file=Main.instance.options.get_next_argument('source')
             case Main.instance.options.get_option(:download_mode,:mandatory)
@@ -90,7 +90,7 @@ module Asperalm
               file_path = source_file.split(FilesApi::PATH_SEPARATOR)
               file_name = file_path.pop
               node_info,file_id = api_files.find_nodeinfo_and_fileid(home_node_id,home_file_id,file_path.join(FilesApi::PATH_SEPARATOR))
-              return api_files.start_transfer(Main.instance,'files','receive',node_info,file_id,{'paths'=>[{'source'=>file_name}]})
+              return Main.instance.start_transfer_wait_result(api_files.ts('files','receive',node_info,file_id,{'paths'=>[{'source'=>file_name}]}),:node_gen4)
             when :node_http
               file_path = source_file.split(FilesApi::PATH_SEPARATOR)
               file_name = file_path.last
@@ -312,7 +312,7 @@ module Asperalm
 
               # tell Aspera what to expect in package: 1 transfer (can also be done after transfer)
               resp=@api_files_user.update("packages/#{the_package['id']}",{"sent"=>true,"transfers_expected"=>1})[:data]
-              return @api_files_user.start_transfer(Main.instance,'packages','send',node_info,the_package['contents_file_id'],{
+              return @api_files_user.start_transfer_wait_result(Main.instance,'packages','send',node_info,the_package['contents_file_id'],{
                 'tags'=>{'aspera'=>{'files'=>{"package_id"=>the_package['id'],"package_operation"=>"upload"}}},
                 'paths'=>filelist.map{|i|{'source'=>i}}
               })
@@ -320,7 +320,7 @@ module Asperalm
               package_id=Main.instance.options.get_option(:id,:mandatory)
               the_package=@api_files_user.read("packages/#{package_id}")[:data]
               node_info=@api_files_user.read("nodes/#{the_package['node_id']}")[:data]
-              return @api_files_user.start_transfer(Main.instance,'packages','receive',node_info,the_package['contents_file_id'],{
+              return @api_files_user.start_transfer_wait_result(Main.instance,'packages','receive',node_info,the_package['contents_file_id'],{
                 'tags'  => {'aspera'=>{'files'=>{'package_id'=>the_package['id'],'package_operation'=>'download'}}},
                 'paths' => [{'source'=>'.'}]
               })
