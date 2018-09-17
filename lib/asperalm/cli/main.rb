@@ -676,7 +676,7 @@ module Asperalm
           return {:data => @available_presets.keys, :type => :value_list, :name => 'name'}
         when :overview
           return {:type=>:object_list,:data=>self.class.flatten_all_config(@available_presets)}
-        when :wizard # TODO
+        when :wizard
           # only one value, so no test, no switch for the time being
           plugin_name=@opt_mgr.get_next_argument('plugin name',[:aspera])
           require 'asperalm/cli/plugins/aspera'
@@ -703,8 +703,8 @@ module Asperalm
           puts "- origin: localhost"
           puts "Once created please enter the following any required parameter:"
           OpenApplication.instance.uri(instance_url+"/admin/org/integrations")
-          client_id=@opt_mgr.get_option(:client_id)
-          client_secret=@opt_mgr.get_option(:client_secret)
+          @opt_mgr.get_option(:client_id)
+          @opt_mgr.get_option(:client_secret)
           @available_presets[@@CONFIG_PRESET_DEFAULT]||=Hash.new
           raise CliError,"a default configuration already exists (use --override=yes)" if @available_presets[@@CONFIG_PRESET_DEFAULT].has_key?(ASPERA_PLUGIN_S) and !option_override
           raise CliError,"preset already exists: #{aspera_preset_name}  (use --override=yes)" if @available_presets.has_key?(aspera_preset_name) and !option_override
@@ -715,12 +715,12 @@ module Asperalm
           puts "updating profile with new key"
           files_plugin.api_files_user.update("users/#{myself['id']}",{'public_key'=>File.read(key_filepath+'.pub')})
           puts "Enabling JWT"
-          files_plugin.api_files_admn.update("clients/#{client_id}",{"jwt_grant_enabled"=>true,"explicit_authorization_required"=>false})
+          files_plugin.api_files_admn.update("clients/#{@opt_mgr.get_option(:client_id)}",{"jwt_grant_enabled"=>true,"explicit_authorization_required"=>false})
           puts "creating new config preset: #{aspera_preset_name}"
           @available_presets[aspera_preset_name]={
             :url.to_s           =>@opt_mgr.get_option(:url),
             :redirect_uri.to_s  =>@opt_mgr.get_option(:redirect_uri),
-            :client_id.to_s     =>client_id,
+            :client_id.to_s     =>@opt_mgr.get_option(:client_id),
             :client_secret.to_s =>@opt_mgr.get_option(:client_secret),
             :auth.to_s          =>:jwt.to_s,
             :private_key.to_s   =>'@file:'+key_filepath,
