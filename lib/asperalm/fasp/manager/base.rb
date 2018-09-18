@@ -58,6 +58,10 @@ module Asperalm
         def start_transfer(transfer_spec)
           raise "virtual method"
         end
+
+        def shutdown(wait_for_sessions=false)
+          raise "virtual method"
+        end
       end
     end
   end
