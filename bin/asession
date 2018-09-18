@@ -38,8 +38,6 @@ assert_usage(!['-h','--help'].include?(ARGV.first),nil)
 transfer_spec=Asperalm::Cli::ExtendedValue.parse("transfer spec",ARGV.pop)
 # ensure right type
 assert_usage(transfer_spec.is_a?(Hash),"the value must be a hash table#{parameter_source_err_msg}")
-# disable ascp output on stdout to not mix with progress JSON
-transfer_spec['EX_quiet']=true
 # additional debug capability
 if transfer_spec.has_key?(TS_LOGLEVEL)
   Asperalm::Log.instance.level=transfer_spec[TS_LOGLEVEL]
@@ -47,8 +45,11 @@ if transfer_spec.has_key?(TS_LOGLEVEL)
 end
 
 client=Asperalm::Fasp::Manager::Local.new
+# disable ascp output on stdout to not mix with progress JSON
+client.quiet=true
 # display JSON instead of legacy Lines
 client.add_listener(Asperalm::Fasp::Listener::LineDump.new)
 # go !
 client.start_transfer(transfer_spec)
 # no exit code: status is success (0)
+client.shutdown(true)
