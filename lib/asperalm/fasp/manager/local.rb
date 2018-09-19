@@ -19,62 +19,12 @@ module Asperalm
       ACCESS_KEY_TRANSFER_USER='xfer'
       # executes a local "ascp", equivalent of "Fasp Manager"
       class Local < Base
-        def start_transfer(transfer_spec)
-          # resume parameters, could be modified by options (TODO)
-          max_retry     = 7
-          sleep_seconds = 2
-          sleep_factor  = 2
-          sleep_max     = 60
-
-          # maximum of retry
-          lRetryLeft = max_retry
-          Log.log.debug("retries=#{lRetryLeft}")
-
-          # try to send the file until ascp is succesful
-          loop do
-            Log.log.debug('transfer starting');
-            begin
-              start_transfer_once(transfer_spec)
-              Log.log.debug( 'transfer ok'.bg_red );
-              break
-            rescue Fasp::Error => e
-              Log.log.warn( "An error occured: #{e.message}" );
-              # failure in ascp
-              if fasp_error_retryable?(e.err_code) then
-                # exit if we exceed the max number of retry
-                unless lRetryLeft > 0
-                  Log.log.error "Maximum number of retry reached"
-                  raise Fasp::Error,"max retry after: [#{status[:message]}]"
-                end
-              else
-                # give one chance only to non retryable errors
-                unless lRetryLeft.eql?(max_retry)
-                  Log.log.error('non-retryable error')
-                  raise e
-                end
-              end
-            end
-
-            # take this retry in account
-            lRetryLeft-=1
-            Log.log.warn( "resuming in  #{sleep_seconds} seconds (retry left:#{lRetryLeft})" );
-
-            # wait a bit before retrying, maybe network condition will be better
-            sleep(sleep_seconds)
-
-            # increase retry period
-            sleep_seconds *= sleep_factor
-            if sleep_seconds > sleep_max then
-              sleep_seconds = sleep_max
-            end
-          end # loop
-        end
-
+        attr_accessor :quiet
         # start FASP transfer based on transfer spec (hash table)
         # note that it returns upon completion only (blocking)
         # if the user wants to run in background, just spawn a thread
         # listener methods are called in context of calling thread
-        def start_transfer_once(transfer_spec)
+        def start_transfer(transfer_spec)
           # TODO: what is this for ? only on local ascp ?
           # NOTE: important: transfer id must be unique: generate random id (using a non unique id results in discard of tags)
           if transfer_spec['tags'].is_a?(Hash) and transfer_spec['tags']['aspera'].is_a?(Hash)
@@ -91,121 +41,92 @@ module Asperalm
             # mwouais...
             transfer_spec['drowssap_etomer'.reverse] = "%08x-%04x-%04x-%04x-%04x%08x" % "t1(\xBF;\xF3E\xB5\xAB\x14F\x02\xC6\x7F)P".unpack("NnnnnN")
           end
-          # add fallback cert and key
-          if ['1','force'].include?(transfer_spec['http_fallback'])
-            transfer_spec['EX_fallback_key']=Installation.instance.path(:fallback_key)
-            transfer_spec['EX_fallback_cert']=Installation.instance.path(:fallback_cert)
+          multi_session=0
+          if transfer_spec.has_key?('multi_session')
+            multi_session=transfer_spec['multi_session'].to_i
+            transfer_spec.delete('multi_session')
           end
+          # compute known args
           env_args=Parameters.ts_to_env_args(transfer_spec)
 
-          thread_info={:state=>:create,:ts=>transfer_spec}
-          thread_info[:thread] = Thread.new(thread_info) {|ti| Thread.current[:name]="transfer";Thread.current[:ti]=ti;start_transfer_with_args_env(env_args)  }
-          @sessions_mutex.synchronize do
-            # check failure here
-            until thread_info.has_key?(:id)
-              Log.log.debug("waiting for id..")
-              @sessions_cv.wait(@sessions_mutex)
-            end
-            raise "error" if thread_info[:id].nil?
-            Log.log.debug("id:#{thread_info[:id]}")
-            @sessions_info[thread_info[:id]]=thread_info
+          # add fallback cert and key as arguments if needed
+          if ['1','force'].include?(transfer_spec['http_fallback'])
+            env_args[:args].unshift('-Y',Installation.instance.path(:fallback_key))
+            env_args[:args].unshift('-I',Installation.instance.path(:fallback_cert))
           end
-          #return thread_info[:id]
-          #return nil
-          wait_for_all_completed(true)
+
+          env_args[:args].unshift('-q') if @quiet
+
+          # transfer job can be multi session
+          xfer_job={
+            :sessions      => []
+          }
+          # generic session information
+          session={
+            :state         => :initial,
+            :env_args      => env_args,
+            :max_retry     => 7,
+            :sleep_seconds => 2,
+            :sleep_factor  => 2,
+            :sleep_max     => 60
+          }
+          if multi_session.eql?(0)
+            session[:thread] = Thread.new(session) {|s|transfer_thread_entry(s)}
+            xfer_job[:sessions].push(session)
+          else
+            1.upto(multi_session) do |i|
+              # do deep copy
+              session_n=Marshal.load(Marshal.dump(session))
+              session_n[:env_args][:args].unshift("-C#{i}:#{multi_session}")
+              # check if this is necessary ? should be handled by server, this is in man page
+              session_n[:env_args][:args].unshift("-O","#{33000+i}")
+              session_n[:thread] = Thread.new(session_n) {|s|transfer_thread_entry(s)}
+              xfer_job[:sessions].push(session_n)
+            end
+          end
+          @jobs.push(xfer_job)
         end # start_transfer
 
-        # call to terminate threads
-        def shutdown
-          @sessions_mutex.synchronize do
-            @monitor_run=false
-            @sessions_cv.broadcast
+        # terminates monitor thread
+        def shutdown(wait_for_sessions=false)
+          if wait_for_sessions
+            @mutex.synchronize do
+              loop do
+                running=0
+                @jobs.each do |job|
+                  job[:sessions].each do |session|
+                    case session[:state]
+                    when :failed; raise StandardError,"at least one session failed"
+                    when :success # ignore
+                    else running+=1
+                    end
+                  end
+                end
+                break unless running > 0
+                Log.log.debug("wait for completed: running: #{running}")
+                @cond_var.wait(@mutex)
+              end # loop
+            end # mutex
           end
+          # tell monitor to stop
+          @mutex.synchronize do
+            @monitor_run=false
+          end
+          @cond_var.broadcast
+          # wait for thread termination
           @monitor.join
           @monitor=nil
           Log.log.debug("joined monitor")
-        end
-
-        def wait_for_all_completed(do_finalize=false)
-          loop do
-            @sessions_mutex.synchronize do
-              return if @sessions_info.empty?
-              Log.log.debug("wait for completed: not empty: #{@sessions_info.keys}")
-              @sessions_cv.wait(@sessions_mutex)
-            end
-          end
-          shutdown if do_finalize
-        end
-
-        private
-
-        def initialize
-          super
-          # mutex and condition variable for inter thread communication
-          @sessions_mutex=Mutex.new
-          @sessions_cv=ConditionVariable.new
-          # shared data protected by mutex, CV on change
-          @sessions_info={}
-          # must be set before starting monitor, set to false to stop thread
-          @monitor_run=true
-          @monitor=Thread.new{Thread.current[:name]="monitor";thread_main_monitor}
-        end
-
-        # main thread method for monitor
-        def thread_main_monitor
-          @sessions_mutex.synchronize do
-            while @monitor_run
-              Log.log.debug("wait")
-              @sessions_cv.wait(@sessions_mutex)
-              Log.log.debug("waked")
-              @sessions_info.each do |k,v|
-                if v[:state].eql?(:finished)
-                  Log.log.debug("thread finished: #{k}")
-                  v[:thread].join
-                  Log.log.debug("joined")
-                  @sessions_info.delete(k)
-                  Log.log.debug("notify changed")
-                  @sessions_cv.broadcast
-                  Log.log.debug("deleted")
-                end
-              end
-            end  # while
-          end # sync
-          Log.log.debug("EXIT")
-        end
-
-        # main thread method for transfer
-        def thread_main_transfer(ti)
-
-          @sessions_mutex.synchronize do
-            # Thread 'a' now needs the resource
-            Log.log.debug("wait for id")
-            sleep 1
-            ti[:id]=123
-            ti[:state]=:started
-            @sessions_cv.broadcast
-          end
-          4.times do
-            Log.log.debug("working...")
-            sleep 1
-          end
-          @sessions_mutex.synchronize do
-            # Thread 'a' now needs the resource
-            ti[:state]=:finished
-            @sessions_cv.broadcast
-          end
-          Log.log.debug("EXIT")
         end
 
         # This is the low level method to start FASP
         # currently, relies on command line arguments
         # start ascp with management port.
         # raises FaspError on error
-        # @param env_args a hash containing :args :env :ascp_version :finalize
-        def start_transfer_with_args_env(env_args)
+        # if there is a thread info: set and broadcast session id
+        # @param env_args a hash containing :args :env :ascp_version
+        def start_transfer_with_args_env(env_args,session=nil)
           begin
-            thread_info=Thread.current[:ti]
-            raise "missing thread info" if thread_info.nil?
             Log.log.debug("env_args=#{env_args.inspect}")
             ascp_path=Fasp::Installation.instance.path(env_args[:ascp_version])
             raise Fasp::Error.new("no such file: #{ascp_path}") unless File.exist?(ascp_path)
@@ -243,17 +164,17 @@ module Asperalm
               break if line.nil?
               current_event_text=current_event_text+line
               line.chomp!
-              Log.log.debug "line=[#{line}]"
+              Log.log.debug("line=[#{line}]")
               case line
               when 'FASPMGR 2'
-                # begin frame
+                # begin event
                 current_event_data = Hash.new
                 current_event_text = ''
               when /^([^:]+): (.*)$/
-                # payload
+                # event field
                 current_event_data[$1] = $2
               when ''
-                # end frame
+                # end event
                 raise "unexpected empty line" if current_event_data.nil?
                 notify_listeners(current_event_text,current_event_data)
                 # TODO: check if this is always the last event
@@ -261,13 +182,15 @@ module Asperalm
                 when 'DONE','ERROR'
                   last_status_event = current_event_data
                 when 'INIT'
-                  @sessions_mutex.synchronize do
-                    thread_info[:id]=current_event_data['SessionId']
-                    Log.log.warn("session: #{thread_info[:id]}")
-                    thread_info[:state]=:started
-                    @sessions_cv.broadcast
+                  unless session.nil?
+                    @mutex.synchronize do
+                      session[:state]=:started
+                      session[:id]=current_event_data['SessionId']
+                      Log.log.debug("session id: #{session[:id]}")
+                      @cond_var.broadcast
+                    end
                   end
-                end
+                end # event type
               else
                 raise "unexpected line:[#{line}]"
               end # case
@@ -282,7 +205,7 @@ module Asperalm
             else
               raise "INTERNAL ERROR: unexpected last event"
             end
-          rescue SystemCallError=> e
+          rescue SystemCallError => e
             # Process.spawn
             raise Fasp::Error.new(e.message)
           rescue Timeout::Error => e
@@ -290,8 +213,6 @@ module Asperalm
           rescue Interrupt => e
             raise Fasp::Error.new('transfer interrupted by user')
           ensure
-            # delete file lists
-            env_args[:finalize].call()
             # ensure there is no ascp left running
             unless ascp_pid.nil?
               begin
@@ -302,15 +223,108 @@ module Asperalm
               Process.wait(ascp_pid)
               ascp_pid=nil
             end
-            thread_info=Thread.current[:ti]
-            @sessions_mutex.synchronize do
-              # Thread 'a' now needs the resource
-              thread_info[:state]=:finished
-              @sessions_cv.broadcast
-            end
-          end # begin
+          end # begin-ensure
         end # start_transfer_with_args_env
+
+        private
+
+        def initialize
+          super
+          @quiet=false
+          # mutex protects manager data 
+          @mutex=Mutex.new
+          # cond var is waited or broadcast on manager data change
+          @cond_var=ConditionVariable.new
+          # shared data protected by mutex, CV on change
+          @jobs=[]
+          # must be set before starting monitor, set to false to stop thread
+          @monitor_run=true
+          @monitor=Thread.new{monitor_thread_entry}
+        end
+
+        # transfer thread entry
+        # implements resumable transfer
+        def transfer_thread_entry(session)
+          # set name for logging
+          Thread.current[:name]="transfer"
+          session[:state]=:started
+          env_args=session[:env_args]
+          # maximum of retry
+          remaining_tries = session[:max_retry]
+          Log.log.debug("retries=#{remaining_tries}")
+
+          begin
+            # try to send the file until ascp is succesful
+            loop do
+              Log.log.debug('transfer starting');
+              begin
+                start_transfer_with_args_env(env_args,session)
+                Log.log.debug( 'transfer ok'.bg_red );
+                session[:state]=:success
+                break
+              rescue Fasp::Error => e
+                Log.log.warn("An error occured: #{e.message}" );
+                # failure in ascp
+                if Error.fasp_error_retryable?(e.err_code) then
+                  # exit if we exceed the max number of retry
+                  unless remaining_tries > 0
+                    Log.log.error "Maximum number of retry reached"
+                    raise Fasp::Error,"max retry after: [#{status[:message]}]"
+                  end
+                else
+                  # give one chance only to non retryable errors
+                  unless remaining_tries.eql?(session[:max_retry])
+                    Log.log.error('non-retryable error')
+                    raise e
+                  end
+                end
+              end
+
+              # take this retry in account
+              remaining_tries-=1
+              Log.log.warn( "resuming in  #{session[:sleep_seconds]} seconds (retry left:#{remaining_tries})" );
+
+              # wait a bit before retrying, maybe network condition will be better
+              sleep(session[:sleep_seconds])
+
+              # increase retry period
+              session[:sleep_seconds] *= session[:sleep_factor]
+              if session[:sleep_seconds] > session[:sleep_max] then
+                session[:sleep_seconds] = session[:sleep_max]
+              end
+            end # loop
+          rescue => e
+            Log.log.error(e.message)
+          ensure
+            @mutex.synchronize do
+              session[:state]=:failed unless session[:state].eql?(:success)
+              @cond_var.broadcast
+            end
+          end
+          Log.log.debug("EXIT (#{Thread.current[:name]})")
+        end
+
+        # main thread method for monitor
+        def monitor_thread_entry
+          Thread.current[:name]="monitor"
+          @mutex.synchronize do
+            while @monitor_run
+              @cond_var.wait(@mutex)
+              @jobs.each do |job|
+                job[:sessions].each do |session|
+                  case session[:state]
+                  when :success,:failed
+                    session[:thread].join
+                    #@cond_var.broadcast
+                  when :failure
+                  end # state
+                end # sessions
+              end # jobs
+            end # monitor run
+          end # sync
+          Log.log.debug("EXIT (#{Thread.current[:name]})")
+        end # monitor_thread_entry
       end # Local
-    end # Agent
+    end # Manager
   end # Fasp
 end # AsperaLm
