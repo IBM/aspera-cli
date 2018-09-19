@@ -195,8 +195,7 @@ module Asperalm
               'token'            => "Basic #{Base64.strict_encode64("#{@access_key_self['id']}:#{Main.instance.options.get_option(:password,:mandatory)}")}",
               'authentication'   => 'token', # connect client: do not ask password
               'remote_host'      => @transfer_server_address,
-              'remote_user'      => Fasp::ACCESS_KEY_TRANSFER_USER,
-              'EX_quiet'         => true
+              'remote_user'      => Fasp::ACCESS_KEY_TRANSFER_USER
             })
           end
           tspec=@default_transfer_spec.merge({
