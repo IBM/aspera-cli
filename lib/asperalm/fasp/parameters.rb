@@ -23,7 +23,6 @@ module Asperalm
         # bool params
         'create_dir'              => { :type => :opt_without_arg, :option_switch=>'-d'},
         'precalculate_job_size'   => { :type => :opt_without_arg, :option_switch=>'--precalculate-job-size'},
-        'EX_quiet'                => { :type => :opt_without_arg, :option_switch=>'-q'},
         # value params
         'cipher'                  => { :type => :opt_with_arg, :option_switch=>'-c',:accepted_types=>String,:translate_values=>{'aes128'=>'aes128','aes-128'=>'aes128','aes192'=>'aes192','aes-192'=>'aes192','aes256'=>'aes256','aes-256'=>'aes256','none'=>'none'}},
         'resume_policy'           => { :type => :opt_with_arg, :option_switch=>'-k',:accepted_types=>String,:default=>'sparse_csum',:translate_values=>{'none'=>0,'attrs'=>1,'sparse_csum'=>2,'full_csum'=>3}},
@@ -42,14 +41,12 @@ module Asperalm
         'sshfp'                   => { :type => :opt_with_arg, :option_switch=>'--check-sshfp',:accepted_types=>String},
         'symlink_policy'          => { :type => :opt_with_arg, :option_switch=>'--symbolic-links',:accepted_types=>String},
         'overwrite'               => { :type => :opt_with_arg, :accepted_types=>String},
+        'multi_session_threshold' => { :type => :opt_with_arg, :accepted_types=>Integer},
         # non standard parameters
-        'EX_fallback_key'         => { :type => :opt_with_arg, :option_switch=>'-Y',:accepted_types=>String},
-        'EX_fallback_cert'        => { :type => :opt_with_arg, :option_switch=>'-I',:accepted_types=>String},
         'EX_fasp_proxy_url'       => { :type => :opt_with_arg, :option_switch=>'--proxy',:accepted_types=>String},
         'EX_http_proxy_url'       => { :type => :opt_with_arg, :option_switch=>'-x',:accepted_types=>String},
         'EX_ssh_key_paths'        => { :type => :opt_with_arg, :option_switch=>'-i',:accepted_types=>Array},
         'EX_http_transfer_jpeg'   => { :type => :opt_with_arg, :option_switch=>'-j',:accepted_types=>Integer},
-        'EX_multi_session_threshold' => { :type => :opt_with_arg, :option_switch=>'--multi-session-threshold',:accepted_types=>String},
         'EX_multi_session_part'   => { :type => :opt_with_arg, :option_switch=>'-C',:accepted_types=>String},
         # TODO: manage those parameters, some are for connect only ? node api ?
         'target_rate_cap_kbps'    => { :type => :ignore, :accepted_types=>Integer},
@@ -64,8 +61,7 @@ module Asperalm
         'https_fallback_port'     => { :type => :ignore, :accepted_types=>Integer}, # same as http fallback, option -t ?
         'content_protection'      => { :type => :ignore, :accepted_types=>String},
         'cipher_allowed'          => { :type => :ignore, :accepted_types=>String},
-        'multi_session'           => { :type => :ignore, :accepted_types=>Integer},
-        'multi_session_threshold' => { :type => :ignore, :accepted_types=>Integer},
+        #'multi_session'           => { :type => :ignore, :accepted_types=>Integer},
         # optional tags (  additional option to generate: {:space=>' ',:object_nl=>' ',:space_before=>'+',:array_nl=>'1'}  )
         'tags'                    => { :type => :opt_with_arg, :option_switch=>'--tags64',:accepted_types=>Hash,:encode=>lambda{|tags|Base64.strict_encode64(JSON.generate(tags))}},
       }
@@ -83,8 +79,7 @@ module Asperalm
         env_args={
           :args=>[],
           :env=>{},
-          :ascp_version=>:ascp,
-          :finalize=>lambda{nil}
+          :ascp_version=>:ascp
         }
         # some ssh credentials are required to avoid interactive password input
         if !@job_spec.has_key?('remote_password') and
@@ -120,11 +115,9 @@ module Asperalm
             option='--file-list'
             lines=src_dst_list.map{|i|i['source']}
           end
-          file_list_file=File.join(@@file_list_folder,SecureRandom.uuid)
+          file_list_file=TempFileManager.instance.temp_filelist_path(@@file_list_folder)
           File.open(file_list_file, "w+"){|f|f.puts(lines)}
           @builder.add_command_line_options(["#{option}=#{file_list_file}"])
-          # add finalization method to delete file after use
-          env_args[:finalize]=lambda{FileUtils.rm_f(file_list_file)}
         end
 
         # destination, use base64 encoding  (as defined previously: --dest64)
