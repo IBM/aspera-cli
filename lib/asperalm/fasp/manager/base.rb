@@ -2,11 +2,16 @@ module Asperalm
   module Fasp
     module Manager
       # Base class for FASP transfer agents
+      # for CLI allows specification of different transfer agents
+      # supports 3 modes to start a transfer:
+      # - ascp : executes ascp process
+      # - node : use the node API
+      # - connect : use the connect client
       class Base
 
         private
 
-        # fields that shall be integer in JSON
+        # fields decription for JSON generation
         IntegerFields=['Bytescont','FaspFileArgIndex','StartByte','Rate','MinRate','Port','Priority','RateCap','MinRateCap','TCPPort','CreatePolicy','TimePolicy','DatagramSize','XoptFlags','VLinkVersion','PeerVLinkVersion','DSPipelineDepth','PeerDSPipelineDepth','ReadBlockSize','WriteBlockSize','ClusterNumNodes','ClusterNodeId','Size','Written','Loss','FileBytes','PreTransferBytes','TransferBytes','PMTU','Elapsedusec','ArgScansAttempted','ArgScansCompleted','PathScansAttempted','FileScansCompleted','TransfersAttempted','TransfersPassed','Delay']
         BooleanFields=['Encryption','Remote','RateLock','MinRateLock','PolicyLock','FilesEncrypt','FilesDecrypt','VLinkLocalEnabled','VLinkRemoteEnabled','MoveRange','Keepalive','TestLogin','UseProxy','Precalc','RTTAutocorrect']
         ExpectedMethod=[:text,:struct,:enhanced]
