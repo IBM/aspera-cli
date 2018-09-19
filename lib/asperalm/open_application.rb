@@ -13,9 +13,9 @@ module Asperalm
 
     def self.default_gui_mode
       case current_os_type
-      when :windows
+      when :windows,:mac
         return :graphical
-      else
+      else # unix family
         if ENV.has_key?("DISPLAY") and !ENV["DISPLAY"].empty?
           return :graphical
         end
@@ -29,7 +29,7 @@ module Asperalm
         return :windows
       when /darwin|mac os/
         return :mac
-      else  # unix family
+      else # unix family
         return :unix
       end
     end
