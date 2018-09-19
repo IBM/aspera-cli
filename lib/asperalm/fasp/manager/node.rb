@@ -14,11 +14,14 @@ module Asperalm
           #transfer_spec.keys.select{|i|i.start_with?('EX_')}.each{|i|transfer_spec.delete(i)}
           resp=@tr_node_api.call({:operation=>'POST',:subpath=>'ops/transfers',:headers=>{'Accept'=>'application/json'},:json_params=>transfer_spec})
           puts "id=#{resp[:data]['id']}"
-          trid=resp[:data]['id']
+          @transfer_id=resp[:data]['id']
+        end
+
+        def shutdown(wait_for_sessions=false)
           started=false
           # lets emulate management events to display progress bar
           loop do
-            trdata=@tr_node_api.call({:operation=>'GET',:subpath=>'ops/transfers/'+trid,:headers=>{'Accept'=>'application/json'}})[:data]
+            trdata=@tr_node_api.call({:operation=>'GET',:subpath=>'ops/transfers/'+@transfer_id,:headers=>{'Accept'=>'application/json'}})[:data]
             case trdata['status']
             when 'completed'
               notify_listeners("emulated",{'Type'=>'DONE'})
