@@ -156,7 +156,7 @@ module Asperalm
             end
             # TODO: option to choose progress format
             # here we disable native stdout progress
-            @transfer_spec_default['EX_quiet']=true
+            @transfer_manager_singleton.quiet=true
             Log.log.debug(">>>>#{@transfer_spec_default}".red)
           when :connect
             @transfer_manager_singleton=Fasp::Manager::Connect.new
@@ -510,18 +510,6 @@ module Asperalm
         Process.exit(0)
       end
 
-      def process_exception_exit(e,reason,propose_help=:none)
-        TempFileManager.instance.cleanup
-        STDERR.puts "ERROR:".bg_red().gray().blink()+" "+reason+": "+e.message
-        STDERR.puts "Use '-h' option to get help." if propose_help.eql?(:usage)
-        if Log.instance.level.eql?(:debug)
-          raise e
-        else
-          STDERR.puts "Use '--log-level=debug' to get more details." if propose_help.eql?(:debug)
-          Process.exit(1)
-        end
-      end
-
       # read config file and validate format
       # tries to cnvert if possible and required
       def read_config_file
@@ -825,12 +813,14 @@ module Asperalm
         transfer_spec.merge!(@transfer_spec_default)
         # add bypass keys if there is a token, also prevents connect plugin to ask password
         transfer_spec['authentication']='token' if transfer_spec.has_key?('token')
+        Log.log.debug("mgr is a #{transfer_manager.class}")
         transfer_manager.start_transfer(transfer_spec)
-        return self.class.result_success
+        return self.class.result_none
       end
 
       # this is the main function called by initial script just after constructor
       def process_command_line(argv)
+        exception_info=nil
         begin
           # first thing : manage debug level (allows debugging or option parser)
           early_debug_setup(argv)
@@ -885,20 +875,36 @@ module Asperalm
             display_results({:type=>:single_object,:data=>@opt_mgr.declared_options(false)})
             Process.exit(0)
           end
+          # execute and display
           display_results(command_plugin.execute_action)
+          # wait for session termination
+          transfer_manager.shutdown(true)
           @opt_mgr.fail_if_unprocessed
-        rescue CliBadArgument => e;          process_exception_exit(e,'Argument',:usage)
-        rescue CliNoSuchId => e;             process_exception_exit(e,'Identifier')
-        rescue CliError => e;                process_exception_exit(e,'Tool',:usage)
-        rescue Fasp::Error => e;             process_exception_exit(e,"FASP(ascp)")
-        rescue Asperalm::RestCallError => e; process_exception_exit(e,"Rest")
-        rescue SocketError => e;             process_exception_exit(e,"Network")
-        rescue StandardError => e;           process_exception_exit(e,"Other",:debug)
-        rescue Interrupt => e;               process_exception_exit(e,"Interruption",:debug)
+        rescue CliBadArgument => e;          exception_info=[e,'Argument',:usage]
+        rescue CliNoSuchId => e;             exception_info=[e,'Identifier']
+        rescue CliError => e;                exception_info=[e,'Tool',:usage]
+        rescue Fasp::Error => e;             exception_info=[e,"FASP(ascp]"]
+        rescue Asperalm::RestCallError => e; exception_info=[e,"Rest"]
+        rescue SocketError => e;             exception_info=[e,"Network"]
+        rescue StandardError => e;           exception_info=[e,"Other",:debug]
+        rescue Interrupt => e;               exception_info=[e,"Interruption",:debug]
         end
+        # cleanup file list files
         TempFileManager.instance.cleanup
+        # processing of error condition
+        unless exception_info.nil?
+          STDERR.puts "ERROR:".bg_red().gray().blink()+" "+exception_info[1]+": "+exception_info[0].message
+          STDERR.puts "Use '-h' option to get help." if exception_info[2].eql?(:usage)
+          if Log.instance.level.eql?(:debug)
+            # will force to show stack trace
+            raise exception_info[0]
+          else
+            STDERR.puts "Use '--log-level=debug' to get more details." if exception_info[2].eql?(:debug)
+            Process.exit(1)
+          end
+        end
         return nil
-      end
+      end # process_command_line
     end # Main
   end # Cli
 end # Asperalm
