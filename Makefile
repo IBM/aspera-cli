@@ -245,6 +245,7 @@ t/aoc13:
 	@touch $@
 t/aoc14:
 	$(EXETEST) aspera admin resource workspace_membership list --fields=ALL --query=@json:'{"page":1,"per_page":50,"embed":"member","inherited":false,"workspace_id":11363,"sort":"name"}'
+	@touch $@
 t/aocat4:
 	$(EXETEST) aspera admin ats cluster list
 	@touch $@
@@ -464,15 +465,17 @@ thot:
 	$(EXETEST) server upload source_hot --to-folder=/Upload/target_hot --lock-port=12345 --ts=@json:'{"EX_ascp_args":["--remove-after-transfer","--remove-empty-directories","--exclude-newer-than=-8","--src-base","source_hot"]}'
 	$(EXETEST) server browse /Upload/target_hot
 	ls -al source_hot
+	@touch $@
 contents:
 	mkdir -p contents
 t/sync1: contents
 	$(EXETEST) sync start --parameters=@json:'{"sessions":[{"name":"test","reset":true,"remote_dir":"/sync_test","local_dir":"contents","host":"10.25.0.8","user":"user1","private_key_path":"/Users/laurent/.ssh/id_rsa"}]}'
+	@touch $@
 tsync: t/sync1
 t:
 	mkdir t
 
-tests: t tshares tfaspex tconsole tnode tfiles tfasp tsync torc tats tcon tnsync tconf tshares2 tprev
+tests: t tshares tfaspex tconsole tnode tfiles tfasp tsync torc tats tcon tnsync tconf tprev tshares2
 
 t/fxgw:
 	$(EXETEST) faspex package send --load-params=reset --url=https://localhost:9443/aspera/faspex --username=unused --password=unused --insecure=yes --note="my note" --title="my title" --recipient="laurent.martin.aspera@fr.ibm.com" ~/200KB.1
