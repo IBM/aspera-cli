@@ -1385,7 +1385,10 @@ On first execution, the user is asked to login to Aspera ID using a web browser.
 
 When only one ats_id is created, it is taken by default. Else it shall be specified with --ats-id or using a option preset.
 
-Note: APIs are described here: [https://ts.asperasoft.com/ats-guide/getting-started-guide/# guide_transfers_create_ak](https://ts.asperasoft.com/ats-guide/getting-started-guide/# guide_transfers_create_ak)
+Note: access key API is described here: [https://ibm.ibmaspera.com/helpcenter/transfer-service](https://ibm.ibmaspera.com/helpcenter/transfer-service)
+
+and here: [https://developer.asperasoft.com/web/node/access-keys](https://developer.asperasoft.com/web/node/access-keys)
+
 
 ### Examples
 
