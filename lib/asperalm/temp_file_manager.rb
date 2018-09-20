@@ -1,5 +1,6 @@
 require 'singleton'
 module Asperalm
+  # create a temp file name for a given folder, and files can be deleted on process exit
   class TempFileManager
     include Singleton
     def initialize
