@@ -194,6 +194,7 @@ t/nd5:
 	@touch $@
 t/nd6:
 	$(EXETEST) node transfer list
+	@touch $@
 tnode: t/nd1 t/nd2 t/nd3 t/nd4 t/nd5 t/nd6
 
 t/aoc1:
