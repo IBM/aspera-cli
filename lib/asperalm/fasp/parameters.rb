@@ -1,5 +1,6 @@
 require 'asperalm/log'
 require 'asperalm/command_line_builder'
+require 'asperalm/temp_file_manager'
 require 'securerandom'
 require 'base64'
 require 'json'
@@ -35,7 +36,7 @@ module Asperalm
         'target_rate_kbps'        => { :type => :opt_with_arg, :option_switch=>'-l',:accepted_types=>Integer},
         'min_rate_kbps'           => { :type => :opt_with_arg, :option_switch=>'-m',:accepted_types=>Integer},
         'rate_policy'             => { :type => :opt_with_arg, :option_switch=>'--policy',:accepted_types=>String},
-        'http_fallback'           => { :type => :opt_with_arg, :option_switch=>'-y',:accepted_types=>[String,*CommandLineBuilder::BOOLEAN_CLASSES],:translate_values=>{'force'=>'F',true=>1,false=>0}},
+        'http_fallback'           => { :type => :opt_with_arg, :option_switch=>'-y',:accepted_types=>[String,*Asperalm::CommandLineBuilder::BOOLEAN_CLASSES],:translate_values=>{'force'=>'F',true=>1,false=>0}},
         'http_fallback_port'      => { :type => :opt_with_arg, :option_switch=>'-t',:accepted_types=>Integer},
         'source_root'             => { :type => :opt_with_arg, :option_switch=>'--source-prefix64',:accepted_types=>String,:encode=>lambda{|prefix|Base64.strict_encode64(prefix)}},
         'sshfp'                   => { :type => :opt_with_arg, :option_switch=>'--check-sshfp',:accepted_types=>String},
@@ -54,9 +55,9 @@ module Asperalm
         'min_rate_cap_kbps'       => { :type => :ignore, :accepted_types=>Integer},
         'rate_policy_allowed'     => { :type => :ignore, :accepted_types=>String},
         'fasp_url'                => { :type => :ignore, :accepted_types=>String},
-        'lock_rate_policy'        => { :type => :ignore, :accepted_types=>CommandLineBuilder::BOOLEAN_CLASSES},
-        'lock_min_rate'           => { :type => :ignore, :accepted_types=>CommandLineBuilder::BOOLEAN_CLASSES},
-        'lock_target_rate'        => { :type => :ignore, :accepted_types=>CommandLineBuilder::BOOLEAN_CLASSES},
+        'lock_rate_policy'        => { :type => :ignore, :accepted_types=>Asperalm::CommandLineBuilder::BOOLEAN_CLASSES},
+        'lock_min_rate'           => { :type => :ignore, :accepted_types=>Asperalm::CommandLineBuilder::BOOLEAN_CLASSES},
+        'lock_target_rate'        => { :type => :ignore, :accepted_types=>Asperalm::CommandLineBuilder::BOOLEAN_CLASSES},
         'authentication'          => { :type => :ignore, :accepted_types=>String}, # = token
         'https_fallback_port'     => { :type => :ignore, :accepted_types=>Integer}, # same as http fallback, option -t ?
         'content_protection'      => { :type => :ignore, :accepted_types=>String},
@@ -68,7 +69,7 @@ module Asperalm
 
       def initialize(job_spec)
         @job_spec=job_spec
-        @builder=CommandLineBuilder.new(@job_spec,PARAM_DEFINITION)
+        @builder=Asperalm::CommandLineBuilder.new(@job_spec,PARAM_DEFINITION)
       end
 
       public
@@ -115,7 +116,7 @@ module Asperalm
             option='--file-list'
             lines=src_dst_list.map{|i|i['source']}
           end
-          file_list_file=TempFileManager.instance.temp_filelist_path(@@file_list_folder)
+          file_list_file=Asperalm::TempFileManager.instance.temp_filelist_path(@@file_list_folder)
           File.open(file_list_file, "w+"){|f|f.puts(lines)}
           @builder.add_command_line_options(["#{option}=#{file_list_file}"])
         end
@@ -147,5 +148,5 @@ module Asperalm
       end
 
     end # Parameters
-  end # Fasp
-end # Asperalm
+  end
+end
