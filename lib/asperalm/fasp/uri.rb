@@ -1,5 +1,5 @@
-require "asperalm/log"
-require "asperalm/command_line_builder"
+require 'asperalm/log'
+require 'asperalm/command_line_builder'
 
 module Asperalm
   module Fasp
