@@ -1,7 +1,7 @@
-require 'asperalm/fasp/listener/base'
+require 'asperalm/cli/listener/base'
 
 module Asperalm
-  module Fasp
+  module Cli
     module Listener
       # a listener to FASP event that displays a progress bar
       class Progress < Base

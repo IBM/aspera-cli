@@ -1,8 +1,8 @@
+require 'asperalm/cli/listener/base'
 require 'asperalm/log'
-require 'asperalm/fasp/listener/base'
 
 module Asperalm
-  module Fasp
+  module Cli
     module Listener
       # listener for FASP transfers (debug)
       class Logger < Base
