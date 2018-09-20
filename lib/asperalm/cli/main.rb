@@ -642,10 +642,10 @@ module Asperalm
           end
         when :documentation
           OpenApplication.instance.uri(@@HELP_URL)
-          return Main.result_none
+          return Main.result_nothing
         when :open
           OpenApplication.instance.uri("#{@option_config_file}") #file://
-          return Main.result_none
+          return Main.result_nothing
         when :genkey # generate new rsa key
           key_filepath=@opt_mgr.get_next_argument('private key file path')
           generate_new_key(key_filepath)
@@ -815,7 +815,7 @@ module Asperalm
         transfer_spec['authentication']='token' if transfer_spec.has_key?('token')
         Log.log.debug("mgr is a #{transfer_manager.class}")
         transfer_manager.start_transfer(transfer_spec)
-        return self.class.result_none
+        return self.class.result_nothing
       end
 
       # this is the main function called by initial script just after constructor

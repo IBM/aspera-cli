@@ -125,7 +125,7 @@ module Asperalm
             thepath=get_next_arg_add_prefix(prefix_path,"path")
             send_result=api_node.create('files/browse',{ :path => thepath} )
             #send_result={:data=>{'items'=>[{'file'=>"filename1","permissions"=>[{'name'=>'read'},{'name'=>'write'}]}]}}
-            return Plugin.result_none if !send_result[:data].has_key?('items')
+            return Plugin.result_empty if !send_result[:data].has_key?('items')
             result={ :data => send_result[:data]['items'] , :type => :object_list, :textify => lambda { |table_data| self.class.c_textify_browse(table_data) } }
             return self.class.c_result_remove_prefix_path(result,'path',prefix_path)
           when :upload
@@ -168,11 +168,11 @@ module Asperalm
               return { :type => :value_list, :data => resp, :name=>'id'  }
             when :summary
               resp=api_node.create('async/summary',{"syncs"=>[asyncid]})[:data]["sync_summaries"].first
-              return Plugin.result_none if resp.nil?
+              return Plugin.result_empty if resp.nil?
               return { :type => :single_object, :data => resp }
             when :counters
               resp=api_node.create('async/counters',{"syncs"=>[asyncid]})[:data]["sync_counters"].first[asyncid].last
-              return Plugin.result_none if resp.nil?
+              return Plugin.result_empty if resp.nil?
               return { :type => :single_object, :data => resp }
             end
           when :stream

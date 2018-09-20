@@ -72,7 +72,7 @@ module Asperalm
             else
               Log.log.info("nothing to delete")
             end
-            return Plugin.result_none
+            return Plugin.result_nothing
           when :forward
             # detect transfer sessions since last call
             transfers=self.class.get_transfers_iteration(api_node,{:active_only=>false})
@@ -83,7 +83,7 @@ module Asperalm
             end
             if filelist.empty?
               Log.log.debug("NO TRANSFER".red)
-              return Plugin.result_none
+              return Plugin.result_nothing
             end
             Log.log.debug("file list=#{filelist}")
             # get download transfer spec on destination node

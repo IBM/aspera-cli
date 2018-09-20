@@ -9,7 +9,13 @@ module Asperalm
   module Cli
     # base class for plugins modules
     class Plugin
-      def self.result_none
+      # expect some list, but nothing to display
+      def self.result_empty
+        return {:type => :empty, :data => :nil }
+      end
+
+      # nothing expected
+      def self.result_nothing
         return {:type => :empty, :data => :nil }
       end
 
@@ -20,7 +26,7 @@ module Asperalm
       def self.result_success
         return result_status('complete')
       end
-      
+
       GLOBAL_OPS=[:create,:list]
       INSTANCE_OPS=[:modify,:delete,:show]
       ALL_OPS=[GLOBAL_OPS,INSTANCE_OPS].flatten
