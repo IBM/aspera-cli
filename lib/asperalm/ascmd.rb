@@ -9,7 +9,7 @@ module Asperalm
     # list of supported actions
     def self.action_list; [:ls,:rm,:mv,:du,:info,:mkdir,:cp,:df,:md5sum]; end
 
-    #  @param command_executor [Object] provides the "execute" method, taking a command to execute, and stdin to feed to it
+    #  @param command_executor [Object] provides the "execute" method, taking a command to execute, and stdin to feed to it, typically: ssh or local
     def initialize(command_executor)
       @command_executor = command_executor
     end
