@@ -1,11 +1,11 @@
 require 'asperalm/cli/manager'
 require 'asperalm/cli/plugin'
 require 'asperalm/cli/extended_value'
-require 'asperalm/fasp/manager/local'
-require 'asperalm/fasp/manager/connect'
-require 'asperalm/fasp/manager/node'
-require 'asperalm/fasp/listener/logger'
-require 'asperalm/fasp/listener/progress'
+require 'asperalm/cli/listener/logger'
+require 'asperalm/cli/listener/progress'
+require 'asperalm/fasp/local'
+require 'asperalm/fasp/connect'
+require 'asperalm/fasp/node'
 require 'asperalm/open_application'
 require 'asperalm/temp_file_manager'
 require 'asperalm/log'
@@ -147,7 +147,7 @@ module Asperalm
           # by default use local ascp
           case @opt_mgr.get_option(:transfer,:mandatory)
           when :direct
-            @transfer_manager_singleton=Fasp::Manager::Local.new
+            @transfer_manager_singleton=Fasp::Local.new
             if !@opt_mgr.get_option(:fasp_proxy,:optional).nil?
               @transfer_spec_default['EX_fasp_proxy_url']=@opt_mgr.get_option(:fasp_proxy,:optional)
             end
@@ -159,7 +159,7 @@ module Asperalm
             @transfer_manager_singleton.quiet=true
             Log.log.debug(">>>>#{@transfer_spec_default}".red)
           when :connect
-            @transfer_manager_singleton=Fasp::Manager::Connect.new
+            @transfer_manager_singleton=Fasp::Connect.new
           when :node
             # support: @param:<name>
             # support extended values
@@ -189,8 +189,8 @@ module Asperalm
             @transfer_manager_singleton=Fasp::Manager::Node.new(Rest.new({:base_url=>sym_config[:url],:auth_type=>:basic,:basic_username=>sym_config[:username], :basic_password=>sym_config[:password]}))
           else raise "ERROR"
           end
-          @transfer_manager_singleton.add_listener(Fasp::Listener::Logger.new)
-          @transfer_manager_singleton.add_listener(Fasp::Listener::Progress.new)
+          @transfer_manager_singleton.add_listener(Listener::Logger.new)
+          @transfer_manager_singleton.add_listener(Listener::Progress.new)
         end
         return @transfer_manager_singleton
       end
