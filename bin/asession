@@ -1,8 +1,8 @@
 #!/usr/bin/env ruby
 # Laurent Martin/2017
 $LOAD_PATH.unshift(File.dirname(__FILE__)+"/../lib")
-require 'asperalm/fasp/manager/local'
-require 'asperalm/fasp/listener/line_dump'
+require 'asperalm/fasp/local'
+require 'asperalm/cli/listener/line_dump'
 require 'asperalm/cli/extended_value' # parse
 require 'asperalm/log'
 
@@ -44,11 +44,11 @@ if transfer_spec.has_key?(TS_LOGLEVEL)
   transfer_spec.delete(TS_LOGLEVEL)
 end
 
-client=Asperalm::Fasp::Manager::Local.new
+client=Asperalm::Fasp::Local.new
 # disable ascp output on stdout to not mix with progress JSON
 client.quiet=true
 # display JSON instead of legacy Lines
-client.add_listener(Asperalm::Fasp::Listener::LineDump.new)
+client.add_listener(Asperalm::Cli::Listener::LineDump.new)
 # go !
 client.start_transfer(transfer_spec)
 # no exit code: status is success (0)
