@@ -59,11 +59,13 @@ module Asperalm
         [ 50, 'ERR_BAD_CONFIGURATION',    "Aspera.conf contains invalid data and was rejected",  "Invalid configuration",                 false ],
         [ 51, 'ERR_UNDEFINED',            "Should never happen, report to Aspera",               "Undefined error",                       false ],
       ]
+
       def self.fasp_error_retryable?(err_code)
         return false if !err_code.is_a?(Integer) or err_code < 1 or err_code > FASP_ERROR_CODES.length
         return FASP_ERROR_CODES[err_code][4]
       end
       attr_reader :err_code
+
       def initialize(message,err_code=nil)
         super(message)
         @err_code = err_code
