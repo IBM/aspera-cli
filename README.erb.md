@@ -185,7 +185,7 @@ The `asperalm` Gem provides a command line interface (CLI) which interacts with 
 * Options can be provided on command line, in configuration file, in env var, in files (products URL, credentials or any option)
 * Commands, Option values and Parameters can be provided in short format (must be unique)
 * FASP [Transfer Agents](#agents) can be: FaspManager (local ascp), or Connect Client, or a transfer node
-* Transfer parameters can be altered by modification of transferspec, this includes requiring multi-session transfer on nodes
+* Transfer parameters can be altered by modification of transferspec, this includes requiring multi-session
 * Allows transfers from products to products, essentially at node level (using the node transfer agent)
 * Supports FaspStream creation (using Node API)
 * Supports Watchfolder creation (using Node API)
@@ -747,6 +747,30 @@ The destination folder is set by `aslmcli` by default to:
 It is specified by the [_transfer-spec_](#_transferspec_) parameter `destination_root`. As such, it can be modified with option: `--ts=@json:'{"destination_root":"<path>"}'`.
 The option `to_folder` provides a convenient way to change this parameter:  `--to-folder=<path>` and is equivalent.
 
+### <a name="multisession"></a>Support of multi-session
+
+Multi session, i.e. starting a transfer of a file set using multiple sessions is supported on "direct" and "node" agents, not yet on connect.
+
+* when agent=node :
+
+```bash
+--ts=@json:'{"multi_session":10,"multi_session_threshold":1}'
+```
+
+Multi-session is directly supported by the node daemon.
+
+* when agent=direct :
+
+```bash
+--ts=@json:'{"multi_session":5,"multi_session_threshold":1,"resume_policy":"none"}'
+```
+
+Note: resume policy of "attr" may cause problems. "none" or "sparse_csum"
+shall be preferred.
+
+Multi-session spawn is done by `aslmcli`.
+
+
 ### Examples
 
 * Change target rate
@@ -765,12 +789,6 @@ The option `to_folder` provides a convenient way to change this parameter:  `--t
 
 ```bash
 --ts=@json:'{"http_fallback":"force"}'
-```
-
-* Use multi-session transfer (when agent=node or direct)
-
-```bash
---ts=@json:'{"multi_session":10,"multi_session_threshold":1}'
 ```
 
 * Activate progress when not activated by default on server
