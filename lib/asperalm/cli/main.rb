@@ -2,7 +2,7 @@ require 'asperalm/cli/manager'
 require 'asperalm/cli/plugin'
 require 'asperalm/cli/extended_value'
 require 'asperalm/cli/listener/logger'
-require 'asperalm/cli/listener/progress'
+require 'asperalm/cli/listener/progress_multi'
 require 'asperalm/fasp/local'
 require 'asperalm/fasp/connect'
 require 'asperalm/fasp/node'
@@ -191,7 +191,7 @@ module Asperalm
           else raise "ERROR"
           end
           @transfer_manager_singleton.add_listener(Listener::Logger.new)
-          @transfer_manager_singleton.add_listener(Listener::Progress.new)
+          @transfer_manager_singleton.add_listener(Listener::ProgressMulti.new)
         end
         return @transfer_manager_singleton
       end
@@ -379,7 +379,7 @@ module Asperalm
       def display_results(results)
         raise "INTERNAL ERROR, result must be Hash (got: #{results.class}: #{results})" unless results.is_a?(Hash)
         raise "INTERNAL ERROR, result must have type" unless results.has_key?(:type)
-        raise "INTERNAL ERROR, result must have data" unless results.has_key?(:data) or results[:type].eql?(:empty)
+        raise "INTERNAL ERROR, result must have data" unless results.has_key?(:data) or [:empty,:nothing].include?(results[:type])
 
         # comma separated list in string format
         user_asked_fields_list_str=@opt_mgr.get_option(:fields,:mandatory)
@@ -447,6 +447,9 @@ module Asperalm
             table_rows_hash_val=results[:data].map { |i| { results[:name] => i } }
           when :empty # no table
             puts "empty"
+            return
+          when :nothing # no result expected
+            Log.log.debug("no result expected")
             return
           when :status # no table
             # :status displays a simple message
