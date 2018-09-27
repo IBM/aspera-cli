@@ -147,7 +147,7 @@ module Asperalm
           # by default use local ascp
           case @opt_mgr.get_option(:transfer,:mandatory)
           when :direct
-            @transfer_manager_singleton=Fasp::Local.new
+            @transfer_manager_singleton=Fasp::Local.instance
             if !@opt_mgr.get_option(:fasp_proxy,:optional).nil?
               @transfer_spec_default['EX_fasp_proxy_url']=@opt_mgr.get_option(:fasp_proxy,:optional)
             end
@@ -159,7 +159,7 @@ module Asperalm
             @transfer_manager_singleton.quiet=true
             Log.log.debug(">>>>#{@transfer_spec_default}".red)
           when :connect
-            @transfer_manager_singleton=Fasp::Connect.new
+            @transfer_manager_singleton=Fasp::Connect.instance
           when :node
             # support: @param:<name>
             # support extended values
@@ -186,7 +186,8 @@ module Asperalm
               raise CliBadArgument,"missing parameter [#{param}] in node specification: #{node_config}" if !node_config.has_key?(param.to_s)
               sym_config[param]=node_config[param.to_s]
             end
-            @transfer_manager_singleton=Fasp::Node.new(Rest.new({:base_url=>sym_config[:url],:auth_type=>:basic,:basic_username=>sym_config[:username], :basic_password=>sym_config[:password]}))
+            @transfer_manager_singleton=Fasp::Node.instance
+            Fasp::Node.instance.node_api=Rest.new({:base_url=>sym_config[:url],:auth_type=>:basic,:basic_username=>sym_config[:username], :basic_password=>sym_config[:password]})
           else raise "ERROR"
           end
           @transfer_manager_singleton.add_listener(Listener::Logger.new)
