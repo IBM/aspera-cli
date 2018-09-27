@@ -24,6 +24,7 @@ module Asperalm
         # bool params
         'create_dir'              => { :type => :opt_without_arg, :option_switch=>'-d'},
         'precalculate_job_size'   => { :type => :opt_without_arg, :option_switch=>'--precalculate-job-size'},
+        'keepalive'               => { :type => :opt_without_arg, :option_switch=>'--keepalive'},
         # value params
         'cipher'                  => { :type => :opt_with_arg, :option_switch=>'-c',:accepted_types=>String,:translate_values=>{'aes128'=>'aes128','aes-128'=>'aes128','aes192'=>'aes192','aes-192'=>'aes192','aes256'=>'aes256','aes-256'=>'aes256','none'=>'none'}},
         'resume_policy'           => { :type => :opt_with_arg, :option_switch=>'-k',:accepted_types=>String,:default=>'sparse_csum',:translate_values=>{'none'=>0,'attrs'=>1,'sparse_csum'=>2,'full_csum'=>3}},
@@ -101,26 +102,27 @@ module Asperalm
         @builder.add_command_line_options(['--dest64'])
 
         # use file list if there is storage defined for it.
-        src_dst_list=@builder.process_param('paths',:get_value,:accepted_types=>Array,:mandatory=>true)
-        if @@file_list_folder.nil?
-          # not safe for special characters ? (maybe not, depends on OS)
-          Log.log.debug("placing source file list on command line (no file list file)")
-          @builder.add_command_line_options(src_dst_list.map{|i|i['source']})
-        else
-          # safer option: file list
-          # if there is destination in paths, then use filepairlist
-          if src_dst_list.first.has_key?('destination')
-            option='--file-pair-list'
-            lines=src_dst_list.inject([]){|m,e|m.push(e['source'],e['destination']);m}
+        src_dst_list=@builder.process_param('paths',:get_value,:accepted_types=>Array,:mandatory=>!@job_spec.has_key?('keepalive'))
+        unless src_dst_list.nil?
+          if @@file_list_folder.nil?
+            # not safe for special characters ? (maybe not, depends on OS)
+            Log.log.debug("placing source file list on command line (no file list file)")
+            @builder.add_command_line_options(src_dst_list.map{|i|i['source']})
           else
-            option='--file-list'
-            lines=src_dst_list.map{|i|i['source']}
+            # safer option: file list
+            # if there is destination in paths, then use filepairlist
+            if src_dst_list.first.has_key?('destination')
+              option='--file-pair-list'
+              lines=src_dst_list.inject([]){|m,e|m.push(e['source'],e['destination']);m}
+            else
+              option='--file-list'
+              lines=src_dst_list.map{|i|i['source']}
+            end
+            file_list_file=Asperalm::TempFileManager.instance.temp_filelist_path(@@file_list_folder)
+            File.open(file_list_file, "w+"){|f|f.puts(lines)}
+            @builder.add_command_line_options(["#{option}=#{file_list_file}"])
           end
-          file_list_file=Asperalm::TempFileManager.instance.temp_filelist_path(@@file_list_folder)
-          File.open(file_list_file, "w+"){|f|f.puts(lines)}
-          @builder.add_command_line_options(["#{option}=#{file_list_file}"])
         end
-
         # destination, use base64 encoding  (as defined previously: --dest64)
         @builder.add_command_line_options([Base64.strict_encode64(@builder.process_param('destination_root',:get_value,:accepted_types=>String,:mandatory=>true))])
 
