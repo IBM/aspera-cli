@@ -4,7 +4,9 @@ $LOAD_PATH.unshift(File.dirname(__FILE__)+"/../lib")
 require 'asperalm/fasp/local'
 require 'asperalm/cli/listener/line_dump'
 require 'asperalm/cli/extended_value' # parse
+
 require 'asperalm/log'
+require 'json'
 
 TS_LOGLEVEL='EX_loglevel'
 
@@ -44,12 +46,24 @@ if transfer_spec.has_key?(TS_LOGLEVEL)
   transfer_spec.delete(TS_LOGLEVEL)
 end
 
-client=Asperalm::Fasp::Local.new
+client=Asperalm::Fasp::Local.instance
 # disable ascp output on stdout to not mix with progress JSON
 client.quiet=true
 # display JSON instead of legacy Lines
 client.add_listener(Asperalm::Cli::Listener::LineDump.new)
 # go !
-client.start_transfer(transfer_spec)
+job_id=client.start_transfer(transfer_spec)
+# async commands
+Thread.new do
+  begin
+    loop do
+      # {"type":"DONE"}
+      data=JSON.parse(STDIN.gets)
+      client.send_command(job_id,0,data)
+    end
+  rescue
+    Process.exit(1)
+  end
+end
 # no exit code: status is success (0)
 client.shutdown(true)
