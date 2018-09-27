@@ -16,7 +16,7 @@ module Asperalm
 
       # nothing expected
       def self.result_nothing
-        return {:type => :empty, :data => :nil }
+        return {:type => :nothing, :data => :nil }
       end
 
       def self.result_status(status)
