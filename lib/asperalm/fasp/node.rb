@@ -1,17 +1,21 @@
 require 'asperalm/fasp/manager'
 require 'asperalm/log'
+require 'singleton'
 
 module Asperalm
   module Fasp
     class Node < Manager
-      def initialize(node_api)
-        super()
-        @tr_node_api=node_api
+      include Singleton
+      private
+      def initialize
+        super
       end
+      public
+      attr_writer :node_api
 
       def start_transfer(transfer_spec)
         #transfer_spec.keys.select{|i|i.start_with?('EX_')}.each{|i|transfer_spec.delete(i)}
-        resp=@tr_node_api.call({:operation=>'POST',:subpath=>'ops/transfers',:headers=>{'Accept'=>'application/json'},:json_params=>transfer_spec})
+        resp=@node_api.call({:operation=>'POST',:subpath=>'ops/transfers',:headers=>{'Accept'=>'application/json'},:json_params=>transfer_spec})
         puts "id=#{resp[:data]['id']}"
         @transfer_id=resp[:data]['id']
       end
@@ -20,7 +24,7 @@ module Asperalm
         started=false
         # lets emulate management events to display progress bar
         loop do
-          trdata=@tr_node_api.call({:operation=>'GET',:subpath=>'ops/transfers/'+@transfer_id,:headers=>{'Accept'=>'application/json'}})[:data]
+          trdata=@node_api.call({:operation=>'GET',:subpath=>'ops/transfers/'+@transfer_id,:headers=>{'Accept'=>'application/json'}})[:data]
           case trdata['status']
           when 'completed'
             notify_listeners("emulated",{'Type'=>'DONE'})
