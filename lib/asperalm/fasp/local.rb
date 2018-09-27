@@ -9,9 +9,12 @@ require 'asperalm/fasp/manager'
 require 'asperalm/fasp/error'
 require 'asperalm/fasp/parameters'
 require 'asperalm/fasp/installation'
+require 'asperalm/fasp/resume_policy'
 require 'asperalm/log'
 require 'socket'
 require 'timeout'
+require 'singleton'
+require 'securerandom'
 
 module Asperalm
   module Fasp
@@ -19,18 +22,20 @@ module Asperalm
     ACCESS_KEY_TRANSFER_USER='xfer'
     # executes a local "ascp", equivalent of "Fasp Manager"
     class Local < Manager
+      include Singleton
       attr_accessor :quiet
       # start FASP transfer based on transfer spec (hash table)
       # note that it returns upon completion only (blocking)
       # if the user wants to run in background, just spawn a thread
       # listener methods are called in context of calling thread
-      def start_transfer(transfer_spec)
+      def start_transfer(transfer_spec,job_id=nil)
+        job_id||=SecureRandom.uuid
         # TODO: what is this for ? only on local ascp ?
         # NOTE: important: transfer id must be unique: generate random id (using a non unique id results in discard of tags)
         if transfer_spec['tags'].is_a?(Hash) and transfer_spec['tags']['aspera'].is_a?(Hash)
           transfer_spec['tags']['aspera']['xfer_id']=SecureRandom.uuid
           Log.log.debug "xfer id=#{transfer_spec['xfer_id']}"
-          # useful ? node only ?
+          # TODO: useful ? node only ?
           transfer_spec['tags']['aspera']['xfer_retry']=3600
         end
         Log.log.debug("ts=#{transfer_spec}")
@@ -41,14 +46,18 @@ module Asperalm
           # mwouais...
           transfer_spec['drowssap_etomer'.reverse] = "%08x-%04x-%04x-%04x-%04x%08x" % "t1(\xBF;\xF3E\xB5\xAB\x14F\x02\xC6\x7F)P".unpack("NnnnnN")
         end
+        # multi session is a node parameter, managed here in fasp manager
         multi_session=0
+        fasp_port_base=33001
         if transfer_spec.has_key?('multi_session')
           multi_session=transfer_spec['multi_session'].to_i
           transfer_spec.delete('multi_session')
+          # TODO: check if changing fasp port is really necessary
+          if transfer_spec.has_key?('fasp_port')
+            fasp_port_base=transfer_spec['fasp_port']
+            transfer_spec.delete('fasp_port')
+          end
         end
-
-        # TODO: if multisession: read and remove fasp_port
-        # TODO: check if above is necessary
 
         # compute known args
         env_args=Parameters.ts_to_env_args(transfer_spec)
@@ -61,17 +70,9 @@ module Asperalm
 
         env_args[:args].unshift('-q') if @quiet
 
-        # resume algorithm
-        # TODO: parameters ?
-        resume_params={
-          :iter_max      => 7,
-          :sleep_initial => 2,
-          :sleep_factor  => 2,
-          :sleep_max     => 60
-        }
-
         # transfer job can be multi session
         xfer_job={
+          :id            => job_id,
           :sessions      => []
         }
 
@@ -79,15 +80,14 @@ module Asperalm
         session={
           :state    => :initial, # :initial, :started, :success, :failed
           :env_args => env_args,
-          :resume   => resume_params
+          :resumer  => ResumePolicy.instance
         }
 
+        Log.log.debug("starting session thread(s)")
         if multi_session.eql?(0)
           session[:thread] = Thread.new(session) {|s|transfer_thread_entry(s)}
           xfer_job[:sessions].push(session)
         else
-          # TODO : check if port is specified in transfer spec
-          fasp_port_base=transfer_spec['fasp_port'] || 33001
           1.upto(multi_session) do |i|
             # do deep copy (each thread has its own copy because it is modified here below and in thread)
             session_n=Marshal.load(Marshal.dump(session))
@@ -98,18 +98,24 @@ module Asperalm
             xfer_job[:sessions].push(session_n)
           end
         end
-        @mutex.synchronize do
-          @jobs.push(xfer_job)
-        end
+        Log.log.debug("started session thread(s)")
+
+        # add job to list of jobs
+        @jobs[job_id]=xfer_job
+
+        Log.log.debug("jobs: #{@jobs.keys.count}")
+        return job_id
       end # start_transfer
 
       # terminates monitor thread
       def shutdown(wait_for_sessions=false)
+        Log.log.debug("fasp local shutdown")
         if wait_for_sessions
+          Log.log.debug("wait_for_sessions: #{@jobs.values.inject(0){|m,j|m+j[:sessions].count}}")
           @mutex.synchronize do
             loop do
               running=0
-              @jobs.each do |job|
+              @jobs.values.each do |job|
                 job[:sessions].each do |session|
                   case session[:state]
                   when :failed; raise StandardError,"at least one session failed"
@@ -118,12 +124,14 @@ module Asperalm
                   end
                 end
               end
-              break unless running > 0
+              break if running.eql?(0)
               Log.log.debug("wait for completed: running: #{running}")
+              # wait for session termination
               @cond_var.wait(@mutex)
             end # loop
           end # mutex
         end
+        Log.log.debug("send signal to monitor")
         # tell monitor to stop
         @mutex.synchronize do
           @monitor_stop=true
@@ -164,6 +172,13 @@ module Asperalm
           end
           Log.log.debug "after accept (#{ascp_mgt_io})"
 
+          unless session.nil?
+            @mutex.synchronize do
+              session[:io]=ascp_mgt_io
+              @cond_var.broadcast
+            end
+          end
+          Log.log.debug("->>#{}")
           # exact text for event, with \n
           current_event_text=''
           # parsed event (hash)
@@ -238,9 +253,30 @@ module Asperalm
             # avoid zombie
             Process.wait(ascp_pid)
             ascp_pid=nil
+            session.delete(:io)
           end
         end # begin-ensure
       end # start_transfer_with_args_env
+
+      # send command on mgt port, examples:
+      # {'type'=>'START','source'=>_path_,'destination'=>_path_}
+      # {'type'=>'DONE'}
+      def send_command(job_id,session_index,data)
+        @mutex.synchronize do
+          job=@jobs[job_id]
+          raise "no such job" if job.nil?
+          session=job[:sessions][session_index]
+          raise "no such session" if session.nil?
+          Log.log.debug("command: #{data}")
+          command=data.
+          keys.
+          map{|k|"#{k.capitalize}: #{data[k]}"}.
+          unshift('FASPMGR 2').
+          push('','').
+          join("\n")
+          session[:io].puts(command)
+        end
+      end
 
       private
 
@@ -249,7 +285,7 @@ module Asperalm
         # set to true to skip ascp progress bar display (basically: ascp's option -q)
         @quiet=false
         # shared data between transfer threads and others: protected by mutex, CV on change
-        @jobs=[]
+        @jobs={}
         # mutex protects jobs data
         @mutex=Mutex.new
         # cond var is waited or broadcast on jobs data change
@@ -263,62 +299,27 @@ module Asperalm
       # implements resumable transfer
       # TODO: extract resume algorithm in a specific object
       def transfer_thread_entry(session)
-        # set name for logging
-        Thread.current[:name]="transfer"
-        # update state once in thread
-        session[:state]=:started
-        # maximum of retry
-        remaining_resumes = session[:resume][:iter_max]
-        sleep_seconds = session[:resume][:sleep_initial]
-        Log.log.debug("retries=#{remaining_resumes}")
-
         begin
-          # try to send the file until ascp is succesful
-          loop do
-            Log.log.debug('transfer starting');
-            begin
-              start_transfer_with_args_env(session[:env_args],session)
-              Log.log.debug('transfer ok'.bg_red);
-              session[:state]=:success
-              break
-            rescue Fasp::Error => e
-              Log.log.warn("An error occured: #{e.message}" );
-              # failure in ascp
-              if Error.fasp_error_retryable?(e.err_code) then
-                # exit if we exceed the max number of retry
-                unless remaining_resumes > 0
-                  Log.log.error "Maximum number of retry reached"
-                  raise Fasp::Error,"max retry after: [#{status[:message]}]"
-                end
-              else
-                # give one chance only to non retryable errors
-                unless remaining_resumes.eql?(session[:resume][:iter_max])
-                  Log.log.error('non-retryable error')
-                  raise e
-                end
-              end
-            end
-
-            # take this retry in account
-            remaining_resumes-=1
-            Log.log.warn( "resuming in  #{sleep_seconds} seconds (retry left:#{remaining_resumes})" );
-
-            # wait a bit before retrying, maybe network condition will be better
-            sleep(sleep_seconds)
-
-            # increase retry period
-            sleep_seconds *= session[:resume][:sleep_factor]
-            # cap value
-            if sleep_seconds > session[:resume][:sleep_max] then
-              sleep_seconds = session[:resume][:sleep_max]
-            end
-          end # loop
+          # set name for logging
+          Thread.current[:name]="transfer"
+          # update state once in thread
+          session[:state]=:started
+          Log.log.debug("ENTER (#{Thread.current[:name]})")
+          # start transfer with selected resumer policy
+          session[:resumer].process do
+            start_transfer_with_args_env(session[:env_args],session)
+          end
+          Log.log.debug('transfer ok'.bg_red)
+          session[:state]=:success
         rescue => e
           # TODO: store exception message in session state for other threads
+          session[:state]=:failed
+          session[:error]=e
           Log.log.error(e.message)
         ensure
           @mutex.synchronize do
-            session[:state]=:failed unless session[:state].eql?(:success)
+            # ensure id is set to unblock start procedure
+            session[:id]||=nil
             @cond_var.broadcast
           end
         end
@@ -331,15 +332,11 @@ module Asperalm
         Thread.current[:name]="monitor"
         @mutex.synchronize do
           until @monitor_stop do
+            # wait for session termination
             @cond_var.wait(@mutex)
-            @jobs.each do |job|
+            @jobs.values do |job|
               job[:sessions].each do |session|
-                case session[:state]
-                when :success,:failed
-                  session[:thread].join
-                  #@cond_var.broadcast
-                when :failure
-                end # state
+                session[:thread].join if [:success,:failed].include?(session[:state])
               end # sessions
             end # jobs
           end # monitor run
