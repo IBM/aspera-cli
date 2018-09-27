@@ -1,16 +1,20 @@
 require 'asperalm/fasp/manager'
 require 'asperalm/open_application'
 require 'securerandom'
+require 'singleton'
 
 module Asperalm
   module Fasp
     class Connect < Manager
+      include Singleton
+      private
       # mode=node : activate, set to the REST api object for the node API
       def initialize
         super
         @connect_app_id=SecureRandom.uuid
         # TODO: start here and create monitor
       end
+      public
 
       def start_transfer(transfer_spec)
         raise "Using connect requires a graphical environment" if !OpenApplication.default_gui_mode.eql?(:graphical)
