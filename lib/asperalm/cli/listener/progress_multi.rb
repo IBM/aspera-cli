@@ -29,7 +29,7 @@ module Asperalm
               @progress.total=data['pre_transfer_bytes']
             end
           when 'STATS' # during transfer
-            if @progress.total.nil? then
+            if !@progress.total.nil? then
               if data.has_key?('bytescont')
                 @progress.progress=@cumulative+data['bytescont'].to_i
               else
