@@ -757,7 +757,7 @@ module Asperalm
       public
 
       def display_status(status)
-        STDOUT.puts(status)
+        STDOUT.puts(status) if @opt_mgr.get_option(:format,:mandatory).eql?(:table)
       end
 
       def preset_by_name(config_name)
