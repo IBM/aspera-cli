@@ -14,12 +14,19 @@ def assert_usage(assertion,errmsg)
   return if assertion
   STDERR.puts('ERROR: '+errmsg) if errmsg
   STDERR.puts('USAGE')
-  STDERR.puts('    asession <session information>')
-  STDERR.puts('    <session information> is a JSON formatted transfer spec, starting with "@json:".')
+  STDERR.puts('    asession <zero or one argument>')
+  STDERR.puts('    ')
+  STDERR.puts('    If no argument is provided, default will be used: @json:@stdin, else:')
+  STDERR.puts('       -h or --help to display this message')
+  STDERR.puts('       a JSON value for transfer_spec, using the prefix: @json:')
   STDERR.puts('    The value can be either:')
-  STDERR.puts('    o the JSON description itself')
-  STDERR.puts('    o @stdin, if the JSON is provided from stdin')
-  STDERR.puts('    o @file:<path>, if the JSON is provided from a file')
+  STDERR.puts("       the JSON description itself, e.g. @json:'{\"xx\":\"yy\",...}'")
+  STDERR.puts('       @json:@stdin, if the JSON is provided from stdin')
+  STDERR.puts('       @json:@file:<path>, if the JSON is provided from a file')
+  STDERR.puts('    Asynchronous commands can be provided on STDIN, examples:')
+  STDERR.puts('       {"type":"START","source":"/aspera-test-dir-tiny/200KB.2"}')
+  STDERR.puts('       {"type":"START","source":"xx","destination":"yy"}')
+  STDERR.puts('       {"type":"DONE"}')
   STDERR.puts('Note: debug information can be placed on STDERR, using the "'+TS_LOGLEVEL+'" parameter in transfer spec (debug=0)')
   STDERR.puts('EXAMPLES')
   STDERR.puts(%q(    asession @json:'{"remote_host":"demo.asperasoft.com","remote_user":"asperaweb","ssh_port":33001,"remote_password":"demoaspera","direction":"receive","destination_root":"./test.dir","paths":[{"source":"/aspera-test-dir-tiny/200KB.1"}]}'))
@@ -57,7 +64,6 @@ job_id=client.start_transfer(transfer_spec)
 Thread.new do
   begin
     loop do
-      # {"type":"DONE"}
       data=JSON.parse(STDIN.gets)
       client.send_command(job_id,0,data)
     end
