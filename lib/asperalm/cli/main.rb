@@ -290,6 +290,7 @@ module Asperalm
         @opt_mgr.add_opt_simple(:to_folder,"destination folder for downloaded files")
         @opt_mgr.add_opt_simple(:lock_port,"prevent dual execution of a command, e.g. in cron")
         @opt_mgr.add_opt_simple(:use_product,"which local product to use for ascp, current=#{Fasp::Installation.instance.activated}")
+        @opt_mgr.add_opt_simple(:query,"additional filter for API calls (extended value)")
         @opt_mgr.add_opt_boolean(:insecure,"do not validate HTTPS certificate")
         @opt_mgr.add_opt_boolean(:flat_hash,"display hash values as additional keys")
         @opt_mgr.add_opt_boolean(:override,"override existing value")

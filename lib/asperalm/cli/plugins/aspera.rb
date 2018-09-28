@@ -30,7 +30,6 @@ module Asperalm
           Main.instance.options.add_opt_simple(:title,"package title")
           Main.instance.options.add_opt_simple(:note,"package note")
           Main.instance.options.add_opt_simple(:secret,"access key secret for node")
-          Main.instance.options.add_opt_simple(:query,"list filter (extended value: encode_www_form)")
           Main.instance.options.add_opt_simple(:id,"resource identifier")
           Main.instance.options.add_opt_simple(:eid,"identifier")
           Main.instance.options.add_opt_simple(:name,"resource name")

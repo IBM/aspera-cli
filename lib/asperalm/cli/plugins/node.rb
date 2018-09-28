@@ -123,7 +123,10 @@ module Asperalm
             return self.class.c_result_translate_rem_prefix(resp,'entry','moved',prefix_path)
           when :browse
             thepath=get_next_arg_add_prefix(prefix_path,"path")
-            send_result=api_node.create('files/browse',{ :path => thepath} )
+            query={ :path => thepath}
+            additional_query=Main.instance.options.get_option(:query,:optional)
+            query.merge!(additional_query) unless additional_query.nil?
+            send_result=api_node.create('files/browse', query)
             #send_result={:data=>{'items'=>[{'file'=>"filename1","permissions"=>[{'name'=>'read'},{'name'=>'write'}]}]}}
             return Plugin.result_empty if !send_result[:data].has_key?('items')
             result={ :data => send_result[:data]['items'] , :type => :object_list, :textify => lambda { |table_data| self.class.c_textify_browse(table_data) } }
