@@ -1599,8 +1599,8 @@ service xvfb start
 
 # Tool: `asession`
 
-This gem comes with a second executable tool providing a simplified standardized interface to start a FASP
-session: ```asession```.
+This gem comes with a second executable tool providing a simplified standardized interface 
+to start a FASP session: ```asession```.
 
 It aims at simplifying the startup of a FASP session from a programmatic stand point as formating a [_transfer-spec_](#_transferspec_) is:
 
@@ -1618,7 +1618,7 @@ Note that if JSON is the format, one has to specify `@json:` to tell the tool to
 
 During execution, it generates all low level events, one per line, in JSON format on stdout.
 
-Comparison:
+## Comparison of interfaces
 
 <table>
 <tr><th>feature/tool</th><th>asession</th><th>ascp</th><th>FaspManager</th></tr>
@@ -1628,27 +1628,44 @@ Comparison:
 <tr><td>events</td><td>JSON on stdout</td><td>none by default<br/>or need to open management port<br/>and proprietary text syntax</td><td>callback</td></tr>
 </table>
 
-Examples of use:
-
-* Shell
+## Simple session
 
 ```
-MY_TSPEC='{"remote_host":"demo.asperasoft.com","remote_user":"asperaweb","ssh_port":33001,"remote_password":"demoaspera","direction":"receive","destination_root":"./test.dir","paths":[{"source":"/aspera-test-dir-tiny/200KB.1"}]}'
+MY_TSPEC='{"remote_host":"demo.asperasoft.com","remote_user":"asperaweb","ssh_port":33001,"remote_password":"demoaspera","direction":"receive","destination_root":"./test.dir","paths":[{"source":"/aspera-test-dir-tiny/200KB.1"}],"resume_level":"none"}'
 
 echo "${MY_TSPEC}"|asession
 ```
 
-* Nodejs: [https://www.npmjs.com/package/asperalm](https://www.npmjs.com/package/asperalm)
+## Asynchronous commands and Persistent session
+
+`asession` also supports asynchronous commands (on the management port). Instead of the traditional text protocol as described in ascp manual, the format for commands is: one single line per command, formatted in JSON, where parameters shall be "snake" style, for example: `LongParameter` -&gt; `long_parameter`
+
+This is particularly useful for a persistent session ( with the transfer spec parameter: `"keepalive":true` )
+
+```
+$ asession
+{"remote_host":"demo.asperasoft.com","ssh_port":33001,"remote_user":"asperaweb","remote_password":"demoaspera","direction":"receive","destination_root":".","keepalive":true,"resume_level":"none"}
+{"type":"START","source":"/aspera-test-dir-tiny/200KB.2"}
+{"type":"DONE"}
+```
+
+(events from FASP are not shown in above example. They would appear after each command)
+
+## Example of language wrapper
+
+Nodejs: [https://www.npmjs.com/package/asperalm](https://www.npmjs.com/package/asperalm)
+
+## Help
 
 ```bash
 $ asession -h
 <%= File.read(ENV["ASESSION"]) %>
-
 ```
 
 # Hot folder
 
 ## Requirements
+
 `aslmcli` maybe used as a simple hot folder engine. A hot folder being defined as a tool that:
 
 * locally (or remotely) detects new files in a top folder
@@ -1660,6 +1677,7 @@ $ asession -h
 In addition: the detection should be made "continuously" or on specific time/date.
 
 ## Setup procedure
+
 The general idea is to rely on :
 
 * existing `ascp` features for detection and transfer
