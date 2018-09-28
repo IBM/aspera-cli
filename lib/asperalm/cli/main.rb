@@ -561,10 +561,10 @@ module Asperalm
             Log.log.warn("Saving automatic conversion.")
           end
         rescue => e
-          new_name="#{@option_config_file}.pre#{self.class.version}.manual_conversion_needed"
+          new_name="#{@option_config_file}.pre#{self.class.gem_version}.manual_conversion_needed"
           File.rename(@option_config_file,new_name)
           Log.log.warn("Renamed config file to #{new_name}.")
-          Log.log.warn("Manual Conversion is required.")
+          Log.log.warn("Manual Conversion is required. Next time, a new empty file will be created.")
           raise CliError,e.to_s
         end
       end
