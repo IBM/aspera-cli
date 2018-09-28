@@ -25,7 +25,7 @@ clean::
 	rm -f README.pdf README.html README.md aslmcli_commands.txt aslmcli_usage.txt asession_usage.txt $(TEST_CONFIG)
 	rm -fr contents t doc "PKG - "*
 	mkdir t
-	rm -f 200KB* *AsperaConnect-ML*
+	rm -f 200KB* *AsperaConnect-ML* sample.conf*
 	gem uninstall -a -x $(GEMNAME)
 cleanupgems:
 	gem uninstall -a -x $(gem list|cut -f 1 -d' '|egrep -v 'rdoc|psych|rake|openssl|json|io-console|bigdecimal')
@@ -420,8 +420,12 @@ t/conf9:
 t/conf10:
 	$(EXETEST) -h
 	@touch $@
+t/conf11:
+	printf -- "---\nconfig:\n  version: 0" > $(TEST_CONFIG)
+	ASLMCLI_CONFIG_FILE=$(TEST_CONFIG) $(EXETEST) config open
+	@touch $@
 
-tconf: t/conf1 t/conf2 t/conf3 t/conf4 t/conf5 t/conf6 t/conf7 t/conf8 t/conf9 t/conf10
+tconf: t/conf1 t/conf2 t/conf3 t/conf4 t/conf5 t/conf6 t/conf7 t/conf8 t/conf9 t/conf10 t/conf11
 
 t/shar2_1:
 	$(EXETEST) shares2 appinfo
