@@ -1,10 +1,10 @@
-require 'asperalm/cli/listener/base'
+require 'asperalm/fasp/listener'
 
 module Asperalm
   module Cli
     module Listener
       # a listener to FASP event that displays a progress bar
-      class Progress < Base
+      class Progress < Fasp::Listener
         def initialize
           @progress=nil
           @cumulative=0

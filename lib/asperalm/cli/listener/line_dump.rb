@@ -1,4 +1,4 @@
-require 'asperalm/cli/listener/base'
+require 'asperalm/fasp/listener'
 require 'json'
 
 module Asperalm
@@ -6,7 +6,7 @@ module Asperalm
     module Listener
       # listener for FASP transfers (debug)
       # FASP event listener display management events as JSON
-      class LineDump < Base
+      class LineDump < Fasp::Listener
         def event_enhanced(data)
           STDOUT.puts(JSON.generate(data))
           STDOUT.flush
