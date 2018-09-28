@@ -9,6 +9,9 @@ module Asperalm
         def event_struct(data)
           Log.log.debug(data.to_s)
         end
+        def event_enhanced(data)
+          Log.log.debug(JSON.generate(data))
+        end
       end
     end
   end
