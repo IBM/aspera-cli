@@ -130,6 +130,7 @@ module Asperalm
             #send_result={:data=>{'items'=>[{'file'=>"filename1","permissions"=>[{'name'=>'read'},{'name'=>'write'}]}]}}
             return Plugin.result_empty if !send_result[:data].has_key?('items')
             result={ :data => send_result[:data]['items'] , :type => :object_list, :textify => lambda { |table_data| self.class.c_textify_browse(table_data) } }
+            Main.instance.display_status("Items: #{send_result[:data]['item_count']}/#{send_result[:data]['total_count']}")
             return self.class.c_result_remove_prefix_path(result,'path',prefix_path)
           when :upload
             filelist = Main.instance.options.get_next_argument("source file list",:multiple)
