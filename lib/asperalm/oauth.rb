@@ -197,7 +197,8 @@ module Asperalm
             :basic_username  => @params[:user_name],
             :basic_password  => @params[:user_pass],
             :headers         => {'Accept'=>'application/json'},
-            :www_body_params => client_id_and_scope.merge({
+            #:www_body_params => client_id_and_scope.merge({ # also works
+            :json_params => client_id_and_scope.merge({
             :grant_type => 'password',
             })})
         when :web
