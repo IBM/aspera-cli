@@ -13,7 +13,7 @@ module Asperalm
           Main.instance.options.add_opt_simple(:share,"share")
         end
 
-        def action_list; [ :repository,:organization,:project,:team,:share,:appinfo,:userinfo];end
+        def action_list; [ :repository,:organization,:project,:team,:share,:appinfo,:userinfo,:admin];end
 
         def init_apis
           # get parameters
@@ -104,6 +104,9 @@ module Asperalm
             set_resource_path_by_id_or_name(prefix,:organization) if [:project,:team,:share].include?(command)
             set_resource_path_by_id_or_name(prefix,:project) if [:share].include?(command)
             process_entity_action(command,prefix)
+          when :admin
+            command=Main.instance.options.get_next_argument('command',[:users,:groups])
+            return Plugin.entity_action(@api_shares2_oauth,"system/#{command}",nil,:id)
           end # command
         end # execute_action
       end # Files
