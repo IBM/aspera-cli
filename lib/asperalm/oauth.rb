@@ -132,9 +132,8 @@ module Asperalm
       api_scope||=NO_SCOPE
       # file name for cache of token
       token_state_file=token_filepath(api_scope)
-      client_id_and_scope={
-        :client_id    =>@params[:client_id]
-      }
+      client_id_and_scope={}
+      client_id_and_scope[:client_id] = @params[:client_id] if @params.has_key?(:client_id)
       client_id_and_scope[:scope] = api_scope unless api_scope.eql?(NO_SCOPE)
 
       # if first time, try to read from file
