@@ -11,6 +11,7 @@ module Asperalm
           Main.instance.options.add_opt_simple(:organization,"organization")
           Main.instance.options.add_opt_simple(:project,"project")
           Main.instance.options.add_opt_simple(:share,"share")
+          Main.instance.options.add_opt_simple(:id,"entity identifier")
         end
 
         def action_list; [ :repository,:organization,:project,:team,:share,:appinfo,:userinfo,:admin];end
