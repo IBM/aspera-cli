@@ -105,7 +105,7 @@ module Asperalm
             set_resource_path_by_id_or_name(prefix,:project) if [:share].include?(command)
             process_entity_action(command,prefix)
           when :admin
-            command=Main.instance.options.get_next_argument('command',[:users,:groups])
+            command=Main.instance.options.get_next_argument('command',[:users,:groups,:nodes])
             return Plugin.entity_action(@api_shares2_oauth,"system/#{command}",nil,:id)
           end # command
         end # execute_action
