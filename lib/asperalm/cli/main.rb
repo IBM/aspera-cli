@@ -1,12 +1,9 @@
 require 'asperalm/cli/manager'
-require 'asperalm/cli/plugin'
 require 'asperalm/cli/plugins/config'
 require 'asperalm/cli/extended_value'
 require 'asperalm/cli/listener/logger'
 require 'asperalm/cli/listener/progress_multi'
-require 'asperalm/fasp/local'
-require 'asperalm/fasp/connect'
-require 'asperalm/fasp/node'
+require 'asperalm/cli/transfer_agent'
 require 'asperalm/open_application'
 require 'asperalm/temp_file_manager'
 require 'asperalm/log'
@@ -60,14 +57,6 @@ module Asperalm
 
       def option_insecure=(value); Rest.insecure = value; end
 
-      def option_transfer_spec; @transfer_spec_default; end
-
-      def option_transfer_spec=(value); @transfer_spec_default.merge!(value); end
-
-      def option_to_folder; @transfer_spec_default['destination_root']; end
-
-      def option_to_folder=(value); @transfer_spec_default.merge!({'destination_root'=>value}); end
-
       def option_ui; OpenApplication.instance.url_method; end
 
       def option_ui=(value); OpenApplication.instance.url_method=value; end
@@ -79,16 +68,10 @@ module Asperalm
         @opt_mgr.add_option_preset(config_presets[value])
       end
 
-      # returns the list of plugins from plugin folder
-      #def plugin_sym_list
-      #  return @plugins.keys
-      #end
+      attr_accessor :option_flat_hash
+      attr_accessor :option_table_style
 
-      #delete : def action_list; @plugins.keys; end
-
-      def config_presets
-        Plugins::Config.instance.config_presets
-      end
+      def config_presets; Plugins::Config.instance.config_presets; end
 
       # find plugins in defined paths
       def add_plugins_from_lookup_folders
@@ -103,85 +86,23 @@ module Asperalm
         end
       end
 
-      # transfer agent singleton
-      def transfer_manager
-        if @transfer_manager_singleton.nil?
-          # by default use local ascp
-          case @opt_mgr.get_option(:transfer,:mandatory)
-          when :direct
-            @transfer_manager_singleton=Fasp::Local.instance
-            if !@opt_mgr.get_option(:fasp_proxy,:optional).nil?
-              @transfer_spec_default['EX_fasp_proxy_url']=@opt_mgr.get_option(:fasp_proxy,:optional)
-            end
-            if !@opt_mgr.get_option(:http_proxy,:optional).nil?
-              @transfer_spec_default['EX_http_proxy_url']=@opt_mgr.get_option(:http_proxy,:optional)
-            end
-            # TODO: option to choose progress format
-            # here we disable native stdout progress
-            @transfer_manager_singleton.quiet=true
-            Log.log.debug(">>>>#{@transfer_spec_default}".red)
-          when :connect
-            @transfer_manager_singleton=Fasp::Connect.instance
-          when :node
-            # support: @param:<name>
-            # support extended values
-            transfer_node_spec=@opt_mgr.get_option(:transfer_node,:optional)
-            # of not specified, use default node
-            case transfer_node_spec
-            when nil
-              param_set_name=Plugins::Config.instance.get_plugin_default_config_name(:node)
-              raise CliBadArgument,"No default node configured, Please specify --transfer-node" if param_set_name.nil?
-              node_config=config_presets[param_set_name]
-            when /^@param:/
-              param_set_name=transfer_node_spec.gsub!(/^@param:/,'')
-              Log.log.debug("param_set_name=#{param_set_name}")
-              raise CliBadArgument,"no such parameter set: [#{param_set_name}] in config file" if !config_presets.has_key?(param_set_name)
-              node_config=config_presets[param_set_name]
-            else
-              node_config=ExtendedValue.parse(:transfer_node,transfer_node_spec)
-            end
-            Log.log.debug("node=#{node_config}")
-            raise CliBadArgument,"the node configuration shall be a hash, use either @json:<json> or @param:<parameter set name>" if !node_config.is_a?(Hash)
-            # now check there are required parameters
-            sym_config={}
-            [:url,:username,:password].each do |param|
-              raise CliBadArgument,"missing parameter [#{param}] in node specification: #{node_config}" if !node_config.has_key?(param.to_s)
-              sym_config[param]=node_config[param.to_s]
-            end
-            @transfer_manager_singleton=Fasp::Node.instance
-            Fasp::Node.instance.node_api=Rest.new({:base_url=>sym_config[:url],:auth_type=>:basic,:basic_username=>sym_config[:username], :basic_password=>sym_config[:password]})
-          else raise "ERROR"
-          end
-          @transfer_manager_singleton.add_listener(Listener::Logger.new)
-          @transfer_manager_singleton.add_listener(Listener::ProgressMulti.new)
-        end
-        return @transfer_manager_singleton
-      end
-
-      attr_accessor :option_flat_hash
-      attr_accessor :option_table_style
-
       # minimum initialization
       def initialize
         # overriding parameters on transfer spec
-        @transfer_spec_default={}
         @option_help=false
         @option_show_config=false
         @option_flat_hash=true
-        config_presets=nil
-        @transfer_manager_singleton=nil
         @plugins={@@CONFIG_PLUGIN_NAME_SYM=>{:source=>__FILE__,:require_stanza=>nil}}
         @plugin_lookup_folders=[]
         @option_table_style=':.:'
-        # define program name, sets default config folder
+        @opt_mgr=Manager.new(@@PROGRAM_NAME)
+        # define program name, sets default config folder. Must be first call to "Config.instance"
         Plugins::Config.instance.set_program_info(@@PROGRAM_NAME,@@GEM_NAME,self.class.gem_version)
+        Oauth.persistency_folder=config_folder
         # set folders for temp files
         Fasp::Parameters.file_list_folder=File.join(config_folder,'filelists')
-        Oauth.persistency_folder=config_folder
-        #
-        @opt_mgr=Manager.new(@@PROGRAM_NAME)
-        add_plugin_lookup_folder(File.join(self.class.gem_root,@@GEM_PLUGINS_FOLDER))
         add_plugin_lookup_folder(File.join(config_folder,@@ASPERA_PLUGINS_FOLDERNAME))
+        add_plugin_lookup_folder(File.join(self.class.gem_root,@@GEM_PLUGINS_FOLDER))
       end
 
       # local options
@@ -223,8 +144,6 @@ module Asperalm
         @opt_mgr.set_obj_attr(:log_level,Log.instance,:level)
         @opt_mgr.set_obj_attr(:insecure,self,:option_insecure,:no)
         @opt_mgr.set_obj_attr(:flat_hash,self,:option_flat_hash)
-        @opt_mgr.set_obj_attr(:ts,self,:option_transfer_spec)
-        @opt_mgr.set_obj_attr(:to_folder,self,:option_to_folder)
         @opt_mgr.set_obj_attr(:logger,Log.instance,:logger_type)
         @opt_mgr.set_obj_attr(:ui,self,:option_ui)
         @opt_mgr.set_obj_attr(:preset,self,:option_preset)
@@ -234,15 +153,11 @@ module Asperalm
         @opt_mgr.add_opt_list(:log_level,Log.levels,"Log level")
         @opt_mgr.add_opt_list(:logger,Log.logtypes,"log method")
         @opt_mgr.add_opt_list(:format,self.class.display_formats,"output format")
-        @opt_mgr.add_opt_list(:transfer,[:direct,:connect,:node],"type of transfer")
         @opt_mgr.add_opt_simple(:preset,"-PVALUE","load the named option preset from current config file")
-        @opt_mgr.add_opt_simple(:transfer_node,"name of configuration used to transfer when using --transfer=node")
         @opt_mgr.add_opt_simple(:fields,"comma separated list of fields, or #{FIELDS_ALL}, or #{FIELDS_DEFAULT}")
         @opt_mgr.add_opt_simple(:select,"select only some items in lists, extended value: hash (colum, value)")
         @opt_mgr.add_opt_simple(:fasp_proxy,"URL of FASP proxy (dnat / dnats)")
         @opt_mgr.add_opt_simple(:http_proxy,"URL of HTTP proxy (for http fallback)")
-        @opt_mgr.add_opt_simple(:ts,"override transfer spec values (Hash, use @json: prefix), current=#{@opt_mgr.get_option(:ts,:optional)}")
-        @opt_mgr.add_opt_simple(:to_folder,"destination folder for downloaded files")
         @opt_mgr.add_opt_simple(:lock_port,"prevent dual execution of a command, e.g. in cron")
         @opt_mgr.add_opt_simple(:use_product,"which local product to use for ascp, current=#{Fasp::Installation.instance.activated}")
         @opt_mgr.add_opt_simple(:query,"additional filter for API calls (extended value)")
@@ -252,23 +167,25 @@ module Asperalm
 
         @opt_mgr.set_option(:ui,OpenApplication.default_gui_mode)
         @opt_mgr.set_option(:fields,FIELDS_DEFAULT)
-        @opt_mgr.set_option(:transfer,:direct)
         @opt_mgr.set_option(:format,:table)
       end
 
-      # returns default parameters for a plugin from loaded config file
+      # loads default parameters of plugin if no -P parameter
+      # and if there is a section defined for the plugin in the "default" section
       # try to find: conffile[conffile["default"][plugin_str]]
-      def add_plugin_default_preset(plugin_sym)
-        default_config_name=Plugins::Config.instance.get_plugin_default_config_name(plugin_sym)
-        Log.log.debug("add_plugin_default_preset:#{plugin_sym}:#{default_config_name}")
-        return if default_config_name.nil?
-        @opt_mgr.add_option_preset(config_presets[default_config_name],:unshift)
+      # @param plugin_name_sym : symbol for plugin name
+      def add_plugin_default_preset(plugin_name_sym)
+        default_config_name=Plugins::Config.instance.get_plugin_default_config_name(plugin_name_sym)
+        Log.log.debug("add_plugin_default_preset:#{plugin_name_sym}:#{default_config_name}")
+        @opt_mgr.add_option_preset(config_presets[default_config_name],:unshift) unless default_config_name.nil?
+        return nil
       end
 
-      # plugin_name_sym is symbol
-      # loads default parameters if no -P parameter
-      def get_plugin_instance(plugin_name_sym)
-        Log.log.debug("get_plugin_instance -> #{plugin_name_sym}")
+      # @return the plugin instance, based on name
+      # also loads the plugin options, and default values from conf file
+      # @param plugin_name_sym : symbol for plugin name
+      def get_plugin_instance_with_options(plugin_name_sym)
+        Log.log.debug("get_plugin_instance_with_options -> #{plugin_name_sym}")
         require @plugins[plugin_name_sym][:require_stanza]
         command_plugin=Object::const_get(@@PLUGINS_MODULE+'::'+plugin_name_sym.to_s.capitalize).instance
         # TODO: check that ancestor is Plugin?
@@ -488,7 +405,7 @@ module Asperalm
             # override main option parser with a brand new
             @opt_mgr=Manager.new(@@PROGRAM_NAME)
             @opt_mgr.parser.banner = ""
-            get_plugin_instance(plugin_name_sym)
+            get_plugin_instance_with_options(plugin_name_sym)
             STDERR.puts(@opt_mgr.parser)
           end
         end
@@ -537,6 +454,14 @@ module Asperalm
 
       public
 
+      def start_transfer_wait_result(transfer_spec,ts_source)
+        return TransferAgent.instance.start_transfer_wait_result(transfer_spec,ts_source)
+      end
+
+      def destination_folder(direction)
+        return TransferAgent.instance.destination_folder(direction)
+      end
+
       def display_status(status)
         STDOUT.puts(status) if @opt_mgr.get_option(:format,:mandatory).eql?(:table)
       end
@@ -548,64 +473,9 @@ module Asperalm
 
       # public method
       # $HOME/.aspera/aslmcli
-      def config_folder
-        Plugins::Config.instance.config_folder
-      end
+      def config_folder; Plugins::Config.instance.config_folder; end
 
       def options;@opt_mgr;end
-
-      # return destination folder for transfers
-      # sets default if needed
-      # param: 'send' or 'receive'
-      def destination_folder(direction)
-        # set default if needed
-        if @transfer_spec_default['destination_root'].nil?
-          # default: / on remote, . on local
-          case direction
-          when 'send'
-            @transfer_spec_default['destination_root']='/'
-          when 'receive'
-            @transfer_spec_default['destination_root']='.'
-          else
-            raise "wrong direction: #{direction}"
-          end
-        end
-        return @transfer_spec_default['destination_root']
-      end
-
-      # plugins shall use this method to start a transfer
-      # @param: ts_source specifies how destination_root is set (how transfer spec was generated)
-      # and not the default one
-      def start_transfer_wait_result(transfer_spec,ts_source)
-        # initialize transfert agent, to set default transfer spec options before merge
-        transfer_manager
-        case transfer_spec['direction']
-        when 'receive'
-          # init default if required in any case
-          destination_folder(transfer_spec['direction'])
-        when 'send'
-          case ts_source
-          when :direct
-            # init default if required
-            destination_folder(transfer_spec['direction'])
-          when :node_gen3
-            # in that case, destination is set in return by application (API/upload_setup)
-            # but to_folder was used in intial api call
-            @transfer_spec_default.delete('destination_root')
-          when :node_gen4
-            @transfer_spec_default['destination_root']='/'
-          else
-            raise StandardError,"InternalError: unsupported value: #{ts_source}"
-          end
-        end
-
-        transfer_spec.merge!(@transfer_spec_default)
-        # add bypass keys if there is a token, also prevents connect plugin to ask password
-        transfer_spec['authentication']='token' if transfer_spec.has_key?('token')
-        Log.log.debug("mgr is a #{transfer_manager.class}")
-        transfer_manager.start_transfer(transfer_spec)
-        return self.class.result_nothing
-      end
 
       # this is the main function called by initial script just after constructor
       def process_command_line(argv)
@@ -625,6 +495,7 @@ module Asperalm
           Plugins::Config.instance.read_config_file
           # declare general options
           declare_global_options
+          TransferAgent.instance.declare_transfer_options
           @opt_mgr.parse_options!
           # find plugins, shall be after parse! ?
           add_plugins_from_lookup_folders
@@ -653,10 +524,10 @@ module Asperalm
           when :help
             exit_with_usage(true)
           when @@CONFIG_PLUGIN_NAME_SYM
-            command_plugin=self
+            command_plugin=Plugins::Config.instance
           else
             # get plugin, set options, etc
-            command_plugin=get_plugin_instance(command_sym)
+            command_plugin=get_plugin_instance_with_options(command_sym)
             # parse plugin specific options
             @opt_mgr.parse_options!
           end
@@ -669,7 +540,7 @@ module Asperalm
           # execute and display
           display_results(command_plugin.execute_action)
           # wait for session termination
-          transfer_manager.shutdown(true)
+          TransferAgent.instance.shutdown(true)
           @opt_mgr.fail_if_unprocessed
         rescue CliBadArgument => e;          exception_info=[e,'Argument',:usage]
         rescue CliNoSuchId => e;             exception_info=[e,'Identifier']
@@ -684,7 +555,7 @@ module Asperalm
         TempFileManager.instance.cleanup
         # processing of error condition
         unless exception_info.nil?
-          STDERR.puts "ERROR:".bg_red().gray().blink()+" "+exception_info[1]+": "+exception_info[0].message
+          STDERR.puts "ERROR:".bg_red.gray.blink+" "+exception_info[1]+": "+exception_info[0].message
           STDERR.puts "Use '-h' option to get help." if exception_info[2].eql?(:usage)
           if Log.instance.level.eql?(:debug)
             # will force to show stack trace
