@@ -3,11 +3,13 @@ require 'asperalm/cli/plugins/node'
 require 'asperalm/open_application'
 require 'asperalm/fasp/uri'
 require 'xmlsimple'
+require 'singleton'
 
 module Asperalm
   module Cli
     module Plugins
       class Faspex < BasicAuthPlugin
+        include Singleton
         @@KEY_NODE='node'
         @@KEY_PATH='path'
         alias super_declare_options declare_options
@@ -115,7 +117,7 @@ module Asperalm
               all_inbox_xml=api_v3.call({:operation=>'GET',:subpath=>"#{Main.instance.options.get_option(:box,:mandatory).to_s}.atom",:headers=>{'Accept'=>'application/xml'}})[:http].body
               all_inbox_data=XmlSimple.xml_in(all_inbox_xml, {"ForceArray" => true})
               Log.dump(:all_inbox_data,all_inbox_data)
-              return Plugin.result_empty unless all_inbox_data.has_key?('entry')
+              return Main.result_empty unless all_inbox_data.has_key?('entry')
               return {:data=>all_inbox_data['entry'],:type=>:object_list,:fields=>[PACKAGE_MATCH_FIELD,'title','items'], :textify => lambda { |table_data| Faspex.textify_package_list(table_data)} }
             when :send
               filelist = Main.instance.options.get_next_argument("file list",:multiple)
@@ -223,7 +225,7 @@ module Asperalm
                   :basic_username=>node_config['username'],
                   :basic_password=>node_config['password']})
                 command=Main.instance.options.get_next_argument('command',Node.common_actions)
-                return Node.new.execute_common(command,api_node,source_info[@@KEY_PATH])
+                return Node.execute_common(command,api_node,source_info[@@KEY_PATH])
               end
             end
           when :me

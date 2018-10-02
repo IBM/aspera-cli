@@ -1,12 +1,14 @@
 require 'asperalm/cli/plugins/node'
 require 'asperalm/fasp/installation'
 require 'asperalm/open_application'
+require 'singleton'
 
 module Asperalm
   module Cli
     module Plugins
       # list and download connect client versions, select FASP implementation
       class Client < Plugin
+        include Singleton
         CONNECT_WEB_URL = 'http://d3gcli72yxqn2z.cloudfront.net/connect'
         CONNECT_VERSIONS = 'connectversions.js'
         def declare_options; end
@@ -72,10 +74,10 @@ module Asperalm
                     fileurl = one_link['href']
                     filename=fileurl.gsub(%r{.*/},'')
                     api_connect_cdn.call({:operation=>'GET',:subpath=>fileurl,:save_to_file=>File.join(folder_dest,filename)})
-                    return Plugin.result_status("downloaded: #{filename}")
+                    return Main.result_status("downloaded: #{filename}")
                   when :open #
                     OpenApplication.instance.uri(one_link['href'])
-                    return Plugin.result_status("opened: #{one_link['href']}")
+                    return Main.result_status("opened: #{one_link['href']}")
                   end
                 end
               end

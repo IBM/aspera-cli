@@ -1,12 +1,14 @@
 require 'asperalm/cli/basic_auth_plugin'
 require 'asperalm/ascmd'
 require 'asperalm/ssh'
+require 'singleton'
 
 module Asperalm
   module Cli
     module Plugins
       # implement basic remote access with FASP/SSH
       class Server < BasicAuthPlugin
+        include Singleton
         class LocalExecutor
           def execute(cmd,input=nil)
             `#{cmd}`
@@ -105,7 +107,7 @@ module Asperalm
                   return {:type=>:single_object,:data=>result,:fields=>['section','name','value','default'],:option_expand_last=>true}
                 end
               end
-              return Plugin.result_status(result)
+              return Main.result_status(result)
             when :upload
               filelist = Main.instance.options.get_next_argument("source list",:multiple)
               transfer_spec.merge!({
@@ -125,10 +127,10 @@ module Asperalm
               ascmd=Asperalm::AsCmd.new(shell_executor)
               result=ascmd.send(:execute_single,command,args)
               case command
-              when :mkdir;  return Plugin.result_success
-              when :mv;     return Plugin.result_success
-              when :cp;     return Plugin.result_success
-              when :rm;     return Plugin.result_success
+              when :mkdir;  return Main.result_success
+              when :mv;     return Main.result_success
+              when :cp;     return Main.result_success
+              when :rm;     return Main.result_success
               when :ls;     return {:type=>:object_list,:data=>key_symb_to_str_list(result),:fields=>['zmode','zuid','zgid','size','mtime','name']}
               when :info;   return {:type=>:single_object,:data=>key_symb_to_str_single(result)}
               when :df;     return {:type=>:object_list,:data=>key_symb_to_str_list(result)}

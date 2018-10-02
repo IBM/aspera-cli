@@ -1,4 +1,5 @@
 require 'asperalm/cli/plugins/node'
+require 'singleton'
 
 module Asperalm
   module Cli
@@ -8,6 +9,7 @@ module Asperalm
       class Ats < Plugin
         # manage access to legacy ATS
         class LegacyAts < Plugin
+          include Singleton
           LEGACY_ATS_URI='https://ats.aspera.io/pub/v1'
           # local address to receive code on authentication
           LOCAL_REDIRECT_URI="http://localhost:12345"
@@ -110,7 +112,7 @@ module Asperalm
               return {:type=>:single_object, :data=>res[:data]}
             when :delete #
               res=ats_api_secure.delete("api_keys/#{modified_ats_id}")
-              return Plugin.result_status("deleted #{modified_ats_id}")
+              return Main.result_status("deleted #{modified_ats_id}")
             when :info # display current ATS credential information
               return {:type=>:single_object, :data=>current_api_key}
             when :subscriptions
@@ -248,14 +250,14 @@ module Asperalm
             return {:type=>:single_object, :data=>res[:data]}
           when :delete
             res=api_secure.delete("access_keys/#{access_key_id}")
-            return Plugin.result_status("deleted #{access_key_id}")
+            return Main.result_status("deleted #{access_key_id}")
           when :node
             ak_data=api_secure.read("access_keys/#{access_key_id}")[:data]
             server_data=all_servers.select {|i| i['id'].start_with?(ak_data['transfer_server_id'])}.first
             raise CliError,"no such server found" if server_data.nil?
             api_node=Rest.new({:base_url=>server_data['transfer_setup_url'],:auth_type=>:basic,:basic_username=>ak_data['id'], :basic_password=>ak_data['secret']})
             command=Main.instance.options.get_next_argument('command',Node.common_actions)
-            Node.new.execute_common(command,api_node)
+            Node.execute_common(command,api_node)
           when :cluster
             rest_params={
               :base_url       => api_secure.params[:base_url],

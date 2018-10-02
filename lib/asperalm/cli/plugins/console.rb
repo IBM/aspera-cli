@@ -1,9 +1,11 @@
 require 'asperalm/cli/basic_auth_plugin'
+require 'singleton'
 
 module Asperalm
   module Cli
     module Plugins
       class Console < BasicAuthPlugin
+        include Singleton
         alias super_declare_options declare_options
         def declare_options
           super_declare_options

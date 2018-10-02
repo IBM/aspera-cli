@@ -1,11 +1,13 @@
 require 'asperalm/cli/basic_auth_plugin'
 require "base64"
+require 'singleton'
 
 module Asperalm
   module Cli
     module Plugins
       # experiments
       class Xnode < BasicAuthPlugin
+        include Singleton
         alias super_declare_options declare_options
         # "transfer_filter"=>"t['status'].eql?('completed') and t['start_spec']['remote_user'].eql?('faspex')", :file_filter=>"f['status'].eql?('completed') and 0 != f['size'] and t['start_spec']['direction'].eql?('send')"
         def declare_options
@@ -72,7 +74,7 @@ module Asperalm
             else
               Log.log.info("nothing to delete")
             end
-            return Plugin.result_nothing
+            return Main.result_nothing
           when :forward
             # detect transfer sessions since last call
             transfers=self.class.get_transfers_iteration(api_node,{:active_only=>false})
@@ -83,7 +85,7 @@ module Asperalm
             end
             if filelist.empty?
               Log.log.debug("NO TRANSFER".red)
-              return Plugin.result_nothing
+              return Main.result_nothing
             end
             Log.log.debug("file list=#{filelist}")
             # get download transfer spec on destination node

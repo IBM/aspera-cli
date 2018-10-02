@@ -3,6 +3,7 @@ require 'asperalm/preview/generator'
 require 'asperalm/preview/options'
 require 'asperalm/preview/utils'
 require 'date'
+require 'singleton'
 
 # for older rubies
 unless Hash.method_defined?(:dig)
@@ -19,6 +20,7 @@ module Asperalm
   module Cli
     module Plugins
       class Preview < BasicAuthPlugin
+        include Singleton
 
         attr_accessor :option_overwrite
         attr_accessor :option_previews_folder
@@ -379,26 +381,26 @@ module Asperalm
           case command
           when :scan
             scan_folder_files({ 'id' => @access_key_self['root_file_id'], 'name' => '/', 'type' => 'folder', 'path' => '/' })
-            return Plugin.result_status('scan finished')
+            return Main.result_status('scan finished')
           when :events
             process_file_events
-            return Plugin.result_status('events finished')
+            return Main.result_status('events finished')
           when :folder
             file_id=Main.instance.options.get_next_argument('file id')
             file_info=@api_node.read("files/#{file_id}")[:data]
             scan_folder_files(file_info)
-            return Plugin.result_status('file finished')
+            return Main.result_status('file finished')
           when :check
             Asperalm::Preview::Utils.check_tools(@skip_types)
-            return Plugin.result_status('tools validated')
+            return Main.result_status('tools validated')
           when :test
             source = Main.instance.options.get_next_argument("source file")
             format = Main.instance.options.get_next_argument("format",Asperalm::Preview::Generator.preview_formats)
             dest=preview_filename(format)
             g=Asperalm::Preview::Generator.new(source,dest)
-            return Plugin.result_status("format not supported") unless g.supported?
+            return Main.result_status("format not supported") unless g.supported?
             g.generate
-            return Plugin.result_status("generated: #{dest}")
+            return Main.result_status("generated: #{dest}")
           end
         end # execute_action
       end # Preview

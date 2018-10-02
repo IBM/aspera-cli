@@ -1,9 +1,11 @@
 require 'asperalm/cli/plugins/node'
+require 'singleton'
 
 module Asperalm
   module Cli
     module Plugins
       class Shares < BasicAuthPlugin
+        include Singleton
         alias super_declare_options declare_options
         def declare_options
           super_declare_options
@@ -18,7 +20,7 @@ module Asperalm
             api_shares_node=basic_auth_api('node_api')
             command=Main.instance.options.get_next_argument('command',Node.common_actions)
             case command
-            when *Node.common_actions; Node.new.execute_common(command,api_shares_node)
+            when *Node.common_actions; Node.execute_common(command,api_shares_node)
             else raise "INTERNAL ERROR, unknown command: [#{command}]"
             end
           when :admin

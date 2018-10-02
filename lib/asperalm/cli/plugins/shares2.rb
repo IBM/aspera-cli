@@ -1,10 +1,12 @@
 require 'asperalm/cli/plugins/node'
 require 'uri'
+require 'singleton'
 
 module Asperalm
   module Cli
     module Plugins
       class Shares2 < BasicAuthPlugin
+        include Singleton
         alias super_declare_options declare_options
         def declare_options
           super_declare_options
@@ -79,7 +81,7 @@ module Asperalm
             return {:data=>@api_shares2_oauth.read(resource_path,args)[:data],:fields=>default_fields,:type=>:object_list}
           when :delete
             @api_shares2_oauth.delete(set_resource_path_by_id_or_name(path_prefix,resource_sym))
-            return Plugin.result_status('deleted')
+            return Main.result_status('deleted')
           when :info
             return {:type=>:other_struct,:data=>@api_shares2_oauth.read(set_resource_path_by_id_or_name(path_prefix,resource_sym),args)[:data]}
           else raise :ERROR
@@ -93,7 +95,7 @@ module Asperalm
           case command
           when :repository
             command=Main.instance.options.get_next_argument('command',Node.common_actions)
-            return Node.new.execute_common(command,@api_node)
+            return Node.execute_common(command,@api_node)
           when :appinfo
             node_info=@api_node.call({:operation=>'GET',:subpath=>'app',:headers=>{'Accept'=>'application/json','Content-Type'=>'application/json'}})[:data]
             return { :type=>:single_object ,:data => node_info }

@@ -3,11 +3,13 @@ require 'asperalm/cli/plugins/ats'
 require 'asperalm/cli/plugin'
 require 'asperalm/files_api'
 require 'securerandom'
+require 'singleton'
 
 module Asperalm
   module Cli
     module Plugins
       class Aspera < Plugin
+        include Singleton
         def action_list; [ :packages, :files, :faspexgw, :admin, :user, :organization];end
 
         def declare_options
@@ -63,20 +65,20 @@ module Asperalm
             node_info,file_id = api_files.find_nodeinfo_and_fileid(home_node_id,home_file_id,containing_folder_path.join(FilesApi::PATH_SEPARATOR))
             node_api=api_files.get_files_node_api(node_info,FilesApi::SCOPE_NODE_USER)
             result=node_api.create("files/#{file_id}/files",{:name=>new_folder,:type=>:folder})[:data]
-            return Plugin.result_status("created: #{result['name']} (id=#{result['id']})")
+            return Main.result_status("created: #{result['name']} (id=#{result['id']})")
           when :rename
             thepath=Main.instance.options.get_next_argument("source path")
             newname=Main.instance.options.get_next_argument("new name")
             node_info,file_id = api_files.find_nodeinfo_and_fileid(home_node_id,home_file_id,thepath)
             node_api=api_files.get_files_node_api(node_info,FilesApi::SCOPE_NODE_USER)
             result=node_api.update("files/#{file_id}",{:name=>newname})[:data]
-            return Plugin.result_status("renamed #{thepath} to #{newname}")
+            return Main.result_status("renamed #{thepath} to #{newname}")
           when :delete
             thepath=Main.instance.options.get_next_argument("path")
             node_info,file_id = api_files.find_nodeinfo_and_fileid(home_node_id,home_file_id,thepath)
             node_api=api_files.get_files_node_api(node_info,FilesApi::SCOPE_NODE_USER)
             result=node_api.delete("files/#{file_id}")[:data]
-            return Plugin.result_status("deleted: #{thepath}")
+            return Main.result_status("deleted: #{thepath}")
           when :upload
             filelist = Main.instance.options.get_next_argument("file list",:multiple)
             Log.log.debug("file list=#{filelist}")
@@ -96,7 +98,7 @@ module Asperalm
               node_info,file_id = api_files.find_nodeinfo_and_fileid(home_node_id,home_file_id,source_file)
               node_api=api_files.get_files_node_api(node_info,FilesApi::SCOPE_NODE_USER)
               node_api.call({:operation=>'GET',:subpath=>"files/#{file_id}/content",:save_to_file=>File.join(Main.instance.destination_folder('receive'),file_name)})
-              return Plugin.result_status("downloaded: #{file_name}")
+              return Main.result_status("downloaded: #{file_name}")
             end # download_mode
           when :node
             # Note: other "common" actions are unauthorized with user scope
@@ -104,7 +106,7 @@ module Asperalm
             # TODO: shall we support all methods here ? what if there is a link ?
             node_info=api_files.read("nodes/#{home_node_id}")[:data]
             node_api=api_files.get_files_node_api(node_info,FilesApi::SCOPE_NODE_USER)
-            return Node.new.execute_common(command_legacy,node_api)
+            return Node.execute_common(command_legacy,node_api)
           when :file
             fileid=Main.instance.options.get_next_argument("file id")
             node_info,file_id = api_files.find_nodeinfo_and_fileid(home_node_id,fileid)
@@ -285,7 +287,7 @@ module Asperalm
               when :modify
                 changes=Main.instance.options.get_next_argument('modified parameters (hash)')
                 @api_files_user.update(resource_instance_path,changes)
-                return Plugin.result_status('modified')
+                return Main.result_status('modified')
               end
             end
           when :packages
@@ -382,7 +384,7 @@ module Asperalm
               the_client_id=Main.instance.options.get_next_argument('client_id')
               the_private_key=Main.instance.options.get_next_argument('private_key')
               @api_files_admn.update("clients/#{the_client_id}",{:jwt_grant_enabled=>true, :public_key=>OpenSSL::PKey::RSA.new(the_private_key).public_key.to_s})
-              return Plugin.result_success
+              return Main.result_success
             when :resource
               resource_type=Main.instance.options.get_next_argument('resource',[:self,:user,:group,:client,:contact,:dropbox,:node,:operation,:package,:saml_configuration, :workspace, :dropbox_membership,:short_link,:workspace_membership])
               resource_class_path=resource_type.to_s+case resource_type;when :dropbox;'es';when :self;'';else; 's';end
@@ -438,7 +440,7 @@ module Asperalm
               when :modify
                 changes=Main.instance.options.get_next_argument('modified parameters (hash)')
                 @api_files_admn.update(resource_instance_path,changes)
-                return Plugin.result_status('modified')
+                return Main.result_status('modified')
               when :delete
                 return do_bulk_operation(res_id,'deleted')do|one_id|
                   @api_files_admn.delete("#{resource_class_path}/#{one_id.to_s}")

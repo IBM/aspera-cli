@@ -1,10 +1,12 @@
 require 'asperalm/cli/plugins/node'
 require 'xmlsimple'
+require 'singleton'
 
 module Asperalm
   module Cli
     module Plugins
       class Orchestrator < BasicAuthPlugin
+        include Singleton
 
         alias super_declare_options declare_options
         def declare_options

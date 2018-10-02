@@ -1,11 +1,13 @@
 require 'asperalm/cli/basic_auth_plugin'
 require 'base64'
 require 'zlib'
+require 'singleton'
 
 module Asperalm
   module Cli
     module Plugins
       class Node < BasicAuthPlugin
+        include Singleton
         alias super_declare_options declare_options
         def declare_options
           super_declare_options
@@ -65,7 +67,7 @@ module Asperalm
         end
 
         # get path arguments from command line, and add prefix
-        def get_next_arg_add_prefix(path_prefix,name,number=:single)
+        def self.get_next_arg_add_prefix(path_prefix,name,number=:single)
           thepath=Main.instance.options.get_next_argument(name,number)
           return thepath if path_prefix.nil?
           return File.join(path_prefix,thepath) if thepath.is_a?(String)
@@ -79,17 +81,17 @@ module Asperalm
 
         # common API to node and Shares
         # prefix_path is used to list remote sources in Faspex
-        def execute_common(command,api_node,prefix_path=nil)
+        def self.execute_common(command,api_node,prefix_path=nil)
           case command
           when :events
             events=api_node.read('events')[:data]
             return { :type=>:object_list, :data => events}
           when :info
             node_info=api_node.read('info')[:data]
-            return { :type=>:single_object, :data => node_info, :textify => lambda { |table_data| self.class.c_textify_bool_list_result(table_data,['capabilities','settings'])}}
+            return { :type=>:single_object, :data => node_info, :textify => lambda { |table_data| c_textify_bool_list_result(table_data,['capabilities','settings'])}}
           when :delete
             paths_to_delete = get_next_arg_add_prefix(prefix_path,"file list",:multiple)
-            return self.class.c_delete_files(api_node,paths_to_delete,prefix_path)
+            return c_delete_files(api_node,paths_to_delete,prefix_path)
           when :space
             # TODO: could be a list of path
             path_list=get_next_arg_add_prefix(prefix_path,"folder path or ext.val. list")
@@ -97,30 +99,30 @@ module Asperalm
             resp=api_node.create('space',{ "paths" => path_list.map {|i| {:path=>i} } } )
             result={:data=>resp[:data]['paths'],:type=>:object_list}
             #return c_result_translate_rem_prefix(resp,'folder','created',prefix_path)
-            return self.class.c_result_remove_prefix_path(result,'path',prefix_path)
+            return c_result_remove_prefix_path(result,'path',prefix_path)
           when :mkdir
             path_list=get_next_arg_add_prefix(prefix_path,"folder path or ext.val. list")
             path_list=[path_list] unless path_list.is_a?(Array)
             #TODO
             #resp=api_node.create('space',{ "paths" => path_list.map {|i| {:type=>:directory,:path=>i} } } )
             resp=api_node.create('files/create',{ "paths" => [{ :type => :directory, :path => path_list } ] } )
-            return self.class.c_result_translate_rem_prefix(resp,'folder','created',prefix_path)
+            return c_result_translate_rem_prefix(resp,'folder','created',prefix_path)
           when :mklink
             target=get_next_arg_add_prefix(prefix_path,"target")
             path_list=get_next_arg_add_prefix(prefix_path,"link path")
             resp=api_node.create('files/create',{ "paths" => [{ :type => :symbolic_link, :path => path_list, :target => {:path => target} } ] } )
-            return self.class.c_result_translate_rem_prefix(resp,'folder','created',prefix_path)
+            return c_result_translate_rem_prefix(resp,'folder','created',prefix_path)
           when :mkfile
             path_list=get_next_arg_add_prefix(prefix_path,"file path")
             contents64=Base64.strict_encode64(Main.instance.options.get_next_argument("contents"))
             resp=api_node.create('files/create',{ "paths" => [{ :type => :file, :path => path_list, :contents => contents64 } ] } )
-            return self.class.c_result_translate_rem_prefix(resp,'folder','created',prefix_path)
+            return c_result_translate_rem_prefix(resp,'folder','created',prefix_path)
           when :rename
             path_base=get_next_arg_add_prefix(prefix_path,"path_base")
             path_src=get_next_arg_add_prefix(prefix_path,"path_src")
             path_dst=get_next_arg_add_prefix(prefix_path,"path_dst")
             resp=api_node.create('files/rename',{ "paths" => [{ "path" => path_base, "source" => path_src, "destination" => path_dst } ] } )
-            return self.class.c_result_translate_rem_prefix(resp,'entry','moved',prefix_path)
+            return c_result_translate_rem_prefix(resp,'entry','moved',prefix_path)
           when :browse
             thepath=get_next_arg_add_prefix(prefix_path,"path")
             query={ :path => thepath}
@@ -128,10 +130,10 @@ module Asperalm
             query.merge!(additional_query) unless additional_query.nil?
             send_result=api_node.create('files/browse', query)
             #send_result={:data=>{'items'=>[{'file'=>"filename1","permissions"=>[{'name'=>'read'},{'name'=>'write'}]}]}}
-            return Plugin.result_empty if !send_result[:data].has_key?('items')
-            result={ :data => send_result[:data]['items'] , :type => :object_list, :textify => lambda { |table_data| self.class.c_textify_browse(table_data) } }
+            return Main.result_empty if !send_result[:data].has_key?('items')
+            result={ :data => send_result[:data]['items'] , :type => :object_list, :textify => lambda { |table_data| c_textify_browse(table_data) } }
             Main.instance.display_status("Items: #{send_result[:data]['item_count']}/#{send_result[:data]['total_count']}")
-            return self.class.c_result_remove_prefix_path(result,'path',prefix_path)
+            return c_result_remove_prefix_path(result,'path',prefix_path)
           when :upload
             filelist = Main.instance.options.get_next_argument("source file list",:multiple)
             Log.log.debug("file list=#{filelist}")
@@ -172,11 +174,11 @@ module Asperalm
               return { :type => :value_list, :data => resp, :name=>'id'  }
             when :summary
               resp=api_node.create('async/summary',{"syncs"=>[asyncid]})[:data]["sync_summaries"].first
-              return Plugin.result_empty if resp.nil?
+              return Main.result_empty if resp.nil?
               return { :type => :single_object, :data => resp }
             when :counters
               resp=api_node.create('async/counters',{"syncs"=>[asyncid]})[:data]["sync_counters"].first[asyncid].last
-              return Plugin.result_empty if resp.nil?
+              return Main.result_empty if resp.nil?
               return { :type => :single_object, :data => resp }
             end
           when :stream
@@ -240,10 +242,10 @@ module Asperalm
               # @json:'{"type":"WATCHFOLDERD","run_as":{"user":"user1"}}'
               params=Main.instance.options.get_next_argument("Run creation data (structure)")
               resp=api_node.create('rund/services',params)
-              return Plugin.result_status("#{resp[:data]['id']} created")
+              return Main.result_status("#{resp[:data]['id']} created")
             when :delete
               resp=api_node.delete("rund/services/#{svcid}")
-              return Plugin.result_status("#{svcid} deleted")
+              return Main.result_status("#{svcid} deleted")
             end
           when :watch_folder
             res_class_path='v3/watchfolders'
@@ -256,7 +258,7 @@ module Asperalm
             case command
             when :create
               resp=api_node.create(res_class_path,Main.instance.options.get_option(:value,:mandatory))
-              return Plugin.result_status("#{resp[:data]['id']} created")
+              return Main.result_status("#{resp[:data]['id']} created")
             when :list
               resp=api_node.read(res_class_path,Main.instance.options.get_option(:value,:optional))
               #  :fields=>['id','root_file_id','storage','license']
@@ -265,10 +267,10 @@ module Asperalm
               return {:type=>:single_object, :data=>api_node.read(one_res_path)[:data]}
             when :modify
               api_node.update(one_res_path,Main.instance.options.get_option(:value,:mandatory))
-              return Plugin.result_status("#{one_res_id} updated")
+              return Main.result_status("#{one_res_id} updated")
             when :delete
               api_node.delete(one_res_path)
-              return Plugin.result_status("#{one_res_id} deleted")
+              return Main.result_status("#{one_res_id} deleted")
             when :state
               return { :type=>:single_object, :data => api_node.read("#{one_res_path}/state")[:data] }
             end
@@ -297,7 +299,7 @@ module Asperalm
               when :modify
                 request_data.deep_merge!(validation) unless validation.nil?
                 api_node.update('services/rest/transfers/v1/files',request_data)
-                return Plugin.result_status('updated')
+                return Main.result_status('updated')
               end
             end
           when :asperabrowser
@@ -309,7 +311,7 @@ module Asperalm
             # encode parameters so that it looks good in url
             encoded_params=Base64.strict_encode64(Zlib::Deflate.deflate(JSON.generate(browse_params))).gsub(/=+$/, '').tr('+/', '-_').reverse
             OpenApplication.instance.uri(Main.instance.options.get_option(:asperabrowserurl)+'?goto='+encoded_params)
-            return Plugin.result_status('done')
+            return Main.result_status('done')
           end # case command
           raise "ERROR: shall not reach this line"
         end # execute_action

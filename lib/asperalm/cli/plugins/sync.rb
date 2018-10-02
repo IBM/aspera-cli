@@ -1,11 +1,13 @@
 require 'asperalm/cli/plugin'
 require 'asperalm/sync'
+require 'singleton'
 
 module Asperalm
   module Cli
     module Plugins
       # list and download connect client versions, select FASP implementation
       class Sync < Plugin
+        include Singleton
         def declare_options
           Main.instance.options.add_opt_simple(:parameters,"extended value for session set definition")
         end
@@ -20,9 +22,9 @@ module Asperalm
             res=system(env_args[:env],['async','async'],*env_args[:args])
             Log.log.debug("result=#{res}")
             case res
-            when true; return Plugin.result_success
-            when false; return Plugin.result_status("failed: #{$?}")
-            when nil; return Plugin.result_status("not started: #{$?}")
+            when true; return Main.result_success
+            when false; return Main.result_status("failed: #{$?}")
+            when nil; return Main.result_status("not started: #{$?}")
             else raise "internal error: unspecified case"
             end
           end # command
