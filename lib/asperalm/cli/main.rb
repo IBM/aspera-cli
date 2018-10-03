@@ -198,16 +198,6 @@ module Asperalm
         return command_plugin
       end
 
-      def self.flatten_all_config(t)
-        r=[]
-        t.each do |k,v|
-          v.each do |kk,vv|
-            r.push({"config"=>k,"parameter"=>kk,"value"=>vv})
-          end
-        end
-        return r
-      end
-
       # @param source [Hash] hash to modify
       # @param keep_last [bool]
       def self.flatten_object(source,keep_last)
@@ -410,7 +400,7 @@ module Asperalm
           end
         end
         #STDERR.puts(@opt_mgr.parser)
-        STDERR.puts "\nDocumentation : #{@@HELP_URL}"
+        STDERR.puts "\nDocumentation : #{Plugins::Config.instance.help_url}"
         Process.exit(0)
       end
 

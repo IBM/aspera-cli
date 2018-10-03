@@ -24,6 +24,16 @@ module Asperalm
           @option_config_file=nil
           @use_plugin_defaults=true
         end
+        
+        def self.flatten_all_config(t)
+          r=[]
+          t.each do |k,v|
+            v.each do |kk,vv|
+              r.push({"config"=>k,"parameter"=>kk,"value"=>vv})
+            end
+          end
+          return r
+        end
 
         public
 
@@ -38,6 +48,7 @@ module Asperalm
 
         attr_reader :config_folder
         attr_reader :gem_url
+        attr_reader :help_url
         attr_reader :config_presets
         attr_accessor :option_override
         attr_accessor :option_config_file
