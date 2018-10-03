@@ -7,9 +7,9 @@ module Asperalm
       # list and download connect client versions
       # https://52.44.83.163/docs/pub/
       class Ats < Plugin
+        include Singleton
         # manage access to legacy ATS
         class LegacyAts < Plugin
-          include Singleton
           LEGACY_ATS_URI='https://ats.aspera.io/pub/v1'
           # local address to receive code on authentication
           LOCAL_REDIRECT_URI="http://localhost:12345"
