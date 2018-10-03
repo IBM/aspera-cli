@@ -162,7 +162,7 @@ module Asperalm
           api_node=basic_auth_api()
           command=Main.instance.options.get_next_argument('command',action_list)
           case command
-          when *self.class.common_actions; return execute_common(command,api_node)
+          when *self.class.common_actions; return self.class.execute_common(command,api_node)
           when :async
             command=Main.instance.options.get_next_argument('command',[:list,:summary,:counters])
             if [:summary,:counters].include?(command)
