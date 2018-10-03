@@ -102,6 +102,7 @@ installdeps:
 SAMPLE_FILE=~/Documents/Samples/200KB.1
 TEST_FOLDER=./test.dir
 
+TEST_SHARE=000_test1
 clean::
 	rm -fr $(TEST_FOLDER)
 t/sh1:
@@ -109,9 +110,9 @@ t/sh1:
 	@touch $@
 t/sh2:
 	mkdir -p $(TEST_FOLDER)
-	$(EXETEST) shares repository upload $(SAMPLE_FILE) --to-folder=/n8-sh1
-	$(EXETEST) shares repository download /n8-sh1/200KB.1 --to-folder=$(TEST_FOLDER)
-	$(EXETEST) shares repository delete /n8-sh1/200KB.1
+	$(EXETEST) shares repository upload $(SAMPLE_FILE) --to-folder=/$(TEST_SHARE)
+	$(EXETEST) shares repository download /$(TEST_SHARE)/200KB.1 --to-folder=$(TEST_FOLDER)
+	$(EXETEST) shares repository delete /$(TEST_SHARE)/200KB.1
 	@rm -f 200KB.1
 	@touch $@
 tshares: t/sh1 t/sh2
