@@ -21,7 +21,7 @@ module Asperalm
         trynumber=0
         begin
           Log.log.debug("reading connect port file")
-          connect_url=File.open(Installation.get_product_paths(Installation.instance.get_product('Aspera Connect'))[:plugin_https_port_file][:path]) {|f| f.gets }.strip
+          connect_url=File.open(Installation.instance.connect_uri_file){|f|f.gets}.strip
           @connect_api=Rest.new({:base_url => "#{connect_url}/v5/connect"})
           @connect_api.read('info/version')
         rescue => e # Errno::ECONNREFUSED
