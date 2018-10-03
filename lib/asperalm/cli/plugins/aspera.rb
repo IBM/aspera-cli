@@ -13,7 +13,7 @@ module Asperalm
         def action_list; [ :packages, :files, :faspexgw, :admin, :user, :organization];end
 
         def declare_options
-          @ats=Ats.new
+          @ats=Ats.instance
           @ats.declare_options(true)
 
           Main.instance.options.add_opt_list(:download_mode,[:fasp, :node_http ],"download mode")
