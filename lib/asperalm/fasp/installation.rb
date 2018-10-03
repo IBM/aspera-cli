@@ -10,22 +10,31 @@ module Asperalm
     # then identifies resources (binary, keys..)
     class Installation
       include Singleton
-      VARRUN_SUBFOLDER='var/run'
+      VARRUN_SUBFOLDER=File.join('var','run')
+      BIN_SUBFOLDER='bin'
+      ETC_SUBFOLDER='etc'
+      # policy for product selection
       FIRST_FOUND='FIRST'
+      # product information manifest: XML
       PRODUCT_INFO='product-info.mf'
+      RSA_FILE_NAME='aspera_tokenauth_id_rsa'
+      WEBCERT_FILE_NAME='aspera_web_cert.pem'
+      WEBKEY_FILE_NAME='aspera_web_key.pem'
+      CLIENT_DSA='asperaweb_id_dsa.openssh'
+      SERVER_DSA='aspera_tokenauth_id_dsa'
 
       # name of Aspera application to be used or :first
       attr_reader :activated
       def activated=(value)
         @activated=value
         # reset installed paths
-        @i_p=nil
+        @selected_product_paths=nil
       end
 
       # installation paths
       # get fasp resource files paths
       def paths
-        if @i_p.nil?
+        if @selected_product_paths.nil?
           # this contains var/run, files generated on runtime
           if @activated.eql?(FIRST_FOUND)
             p = installed_products.first
@@ -34,15 +43,15 @@ module Asperalm
             p=installed_products.select{|p|p[:name].eql?(@activated)}.first
             raise "no such product installed: #{@activated}" if p.nil?
           end
-          @i_p=self.class.get_product_paths(p)
+          @selected_product_paths=self.class.get_product_paths(p)
         end
-        return @i_p
+        return @selected_product_paths
       end
 
       # user can set all path directly
       def paths=(path_set)
         raise "must be a hash" unless path_set.is_a?(Hash)
-        @i_p=path_set
+        @selected_product_paths=path_set
       end
 
       # get path of one resource file
@@ -71,16 +80,22 @@ module Asperalm
         return @found_products
       end
 
+      # @returns the file path of local connect where API's URI can be read
+      def connect_uri_file
+        connect_structure=get_product('Aspera Connect')
+        return self.class.get_product_paths(connect_structure)[:plugin_https_port_file][:path]
+      end
+
+      private
+
       def get_product(name)
         found=installed_products.select{|i|i[:name].eql?(name)}
         raise "Product: #{name} not found, please install." if found.empty?
         return found.first
       end
-
-      private
-
+      
       def initialize
-        @i_p=nil
+        @selected_product_paths=nil
         @found_products=nil
         @activated=FIRST_FOUND
       end
@@ -89,7 +104,6 @@ module Asperalm
       # @param p application information
       # a user can set an alternate location, example:
       #      { :expected=>'Enterprise Server',
-      #        :exe_ext=>'',
       #        :app_root=>'/Library/Aspera',
       #        :run_root=>File.join(Dir.home,'Library','Application Support','Aspera','Enterprise Server'),
       #        :log_root=>File.join(Dir.home,'Library','Logs','Aspera'),
@@ -97,17 +111,25 @@ module Asperalm
       #        :sub_keys=>'var',
       #        :dsa=>'aspera_tokenauth_id_dsa'}
       def self.get_product_paths(p)
+        exec_ext = OpenApplication.current_os_type.eql?(:windows) ? '.exe' : ''
+        # default values
+        sub_bin = p[:sub_bin] || BIN_SUBFOLDER
+        sub_keys = p[:sub_keys] || ETC_SUBFOLDER
         result={
           :bin_folder             => { :type =>:folder,:required => true, :path =>File.join(p[:app_root],p[:sub_bin])},
-          :ascp                   => { :type => :file, :required => true, :path =>File.join(p[:app_root],p[:sub_bin],'ascp')+p[:exe_ext].to_s},
-          :ascp4                  => { :type => :file, :required => false,:path =>File.join(p[:app_root],p[:sub_bin],'ascp4')+p[:exe_ext].to_s},
-          :ssh_bypass_key_dsa     => { :type => :file, :required => true, :path =>File.join(p[:app_root],p[:sub_keys],p[:dsa])},
-          :ssh_bypass_key_rsa     => { :type => :file, :required => true, :path =>File.join(p[:app_root],p[:sub_keys],'aspera_tokenauth_id_rsa')},
-          :fallback_cert          => { :type => :file, :required => false,:path =>File.join(p[:app_root],p[:sub_keys],'aspera_web_cert.pem')},
-          :fallback_key           => { :type => :file, :required => false,:path =>File.join(p[:app_root],p[:sub_keys],'aspera_web_key.pem')},
+          :ascp                   => { :type => :file, :required => true, :path =>File.join(p[:app_root],p[:sub_bin],'ascp')+exec_ext},
+          :ascp4                  => { :type => :file, :required => false,:path =>File.join(p[:app_root],p[:sub_bin],'ascp4')+exec_ext},
+          :ssh_bypass_key_dsa     => { :type => :file, :required => true, :path =>File.join(p[:app_root],p[:sub_keys],CLIENT_DSA)},
+          :ssh_bypass_key_rsa     => { :type => :file, :required => true, :path =>File.join(p[:app_root],p[:sub_keys],RSA_FILE_NAME)},
+          :fallback_cert          => { :type => :file, :required => false,:path =>File.join(p[:app_root],p[:sub_keys],WEBCERT_FILE_NAME)},
+          :fallback_key           => { :type => :file, :required => false,:path =>File.join(p[:app_root],p[:sub_keys],WEBKEY_FILE_NAME)},
           :plugin_https_port_file => { :type => :file, :required => false,:path =>File.join(p[:run_root],VARRUN_SUBFOLDER,'https.uri')},
           :log_folder             => { :type =>:folder,:required => false,:path =>p[:log_root]}
         }
+        # server software (having asperanoded) has a different DSA filename
+        server_dsa=File.join(p[:app_root],p[:sub_keys],SERVER_DSA)
+        result[:ssh_bypass_key_dsa][:path]=server_dsa  if File.exist?(server_dsa)
+
         Log.log.debug "resources=#{result}"
         notfound=[]
         result.each_pair do |k,v|
@@ -121,64 +143,60 @@ module Asperalm
       end
 
       # returns product folders depending on OS
-      # field :exe_ext is nil if no ext, else it's the exe string (incl. dot).
+      # fields
+      # :expected  M app name is taken from the manifest if present, else defaults to this value
+      # :app_root  M main forlder for the application
+      # :sub_bin   O subfolder with executables, default : bin
+      # :sub_keys  O subfolder with keys, default : etc
+      # :log_root  O location of log files (Linux uses syslog)
+      # :run_root  O only for Connect Client, location of http port file
       def product_locations
-        common_places=[]
         case OpenApplication.current_os_type
-        when :windows
-          common_places.push({
-            :expected=>'Aspera Connect',
-            :exe_ext=>'.exe',
-            :app_root=>File.join(ENV['LOCALAPPDATA'],'Programs','Aspera','Aspera Connect'),
-            :run_root=>File.join(ENV['LOCALAPPDATA'],'Aspera','Aspera Connect'),
-            :sub_bin=>'bin',
-            :sub_keys=>'etc',
-            :dsa=>'asperaweb_id_dsa.openssh'})
-        when :mac
-          common_places.push({
-            :expected=>'Aspera Connect',
-            :exe_ext=>'',
-            :app_root=>File.join(Dir.home,'Applications','Aspera Connect.app'),
-            :run_root=>File.join(Dir.home,'Library','Application Support','Aspera','Aspera Connect'),
-            :log_root=>File.join(Dir.home,'Library','Logs','Aspera_Connect'),
-            :sub_bin=>File.join('Contents','Resources'),
-            :sub_keys=>File.join('Contents','Resources'),
-            :dsa=>'asperaweb_id_dsa.openssh'})
-          common_places.push({
-            :expected=>'Enterprise Server',
-            :exe_ext=>'',
-            :app_root=>'/Library/Aspera',
-            :run_root=>File.join(Dir.home,'Library','Application Support','Aspera','Enterprise Server'),
-            :log_root=>File.join(Dir.home,'Library','Logs','Aspera'),
-            :sub_bin=>'bin',
-            :sub_keys=>'var',
-            :dsa=>'aspera_tokenauth_id_dsa'})
-          common_places.push({
-            :expected=>'Aspera CLI',
-            :exe_ext=>'',
-            :app_root=>File.join(Dir.home,'Applications','Aspera CLI'),
-            :run_root=>File.join(Dir.home,'Library','Application Support','Aspera','Aspera Connect'),
-            :log_root=>File.join(Dir.home,'Library','Logs','Aspera'),
-            :sub_bin=>File.join('bin'),
-            :sub_keys=>File.join('etc'),
-            :dsa=>'asperaweb_id_dsa.openssh'})
-        else  # other: unix family
-          common_places.push({
-            :expected=>'Aspera Connect',
-            :exe_ext=>'',
-            :app_root=>File.join(Dir.home,'.aspera','connect'),
-            :run_root=>File.join(Dir.home,'.aspera','connect'),
-            :sub_bin=>'bin',
-            :sub_keys=>'etc',
-            :dsa=>'asperaweb_id_dsa.openssh'})
-          common_places.push({
-            :expected=>'Enterprise Server',
-            :exe_ext=>'',
-            :app_root=>'/opt/aspera',
-            :run_root=>'/opt/aspera',
-            :sub_bin=>'bin',
-            :sub_keys=>'var',
-            :dsa=>'aspera_tokenauth_id_dsa'})
+        when :windows; return [{
+            :expected =>'Aspera Connect',
+            :app_root =>File.join(ENV['LOCALAPPDATA'],'Programs','Aspera','Aspera Connect'),
+            :log_root =>File.join(ENV['LOCALAPPDATA'],'Aspera','Aspera Connect','var','log'),
+            :run_root =>File.join(ENV['LOCALAPPDATA'],'Aspera','Aspera Connect')
+            },{
+            :expected =>'Aspera CLI',
+            :app_root =>'C:\Program Files\Aspera\cli',
+            :sub_keys =>'var',
+            :log_root =>'C:\Program Files\Aspera\cli\var\log'
+            },{
+            :expected =>'Enterprise Server',
+            :app_root =>'C:\Program Files\Aspera\Enterprise Server',
+            :sub_keys =>'var',
+            :log_root =>'C:\Program Files\Aspera\Enterprise Server\var\log'
+            }]
+        when :mac; return [{
+            :expected =>'Aspera Connect',
+            :app_root =>File.join(Dir.home,'Applications','Aspera Connect.app'),
+            :sub_bin  =>File.join('Contents','Resources'),
+            :sub_keys =>File.join('Contents','Resources'),
+            :log_root =>File.join(Dir.home,'Library','Logs','Aspera_Connect'),
+            :run_root =>File.join(Dir.home,'Library','Application Support','Aspera','Aspera Connect')
+            },{
+            :expected =>'Aspera CLI',
+            :app_root =>File.join(Dir.home,'Applications','Aspera CLI'),
+            :log_root =>File.join(Dir.home,'Library','Logs','Aspera')
+            },{
+            :expected =>'Enterprise Server',
+            :app_root =>'/Library/Aspera',
+            :sub_keys =>'var',
+            :log_root =>File.join(Dir.home,'Library','Logs','Aspera')
+            }]
+        else; return [{  # other: unix family
+            :expected =>'Aspera Connect',
+            :app_root =>File.join(Dir.home,'.aspera','connect'),
+            :run_root =>File.join(Dir.home,'.aspera','connect')
+            },{
+            :expected =>'Aspera CLI',
+            :app_root =>File.join(Dir.home,'.aspera','cli'),
+            },{
+            :expected =>'Enterprise Server',
+            :app_root =>'/opt/aspera',
+            :sub_keys =>'var'
+            }]
         end
         return common_places
       end
