@@ -19,6 +19,11 @@ module Asperalm
 
       public
 
+      attr_accessor :iter_max
+      attr_accessor :sleep_initial
+      attr_accessor :sleep_factor
+      attr_accessor :sleep_max
+      
       # calls block a number of times (resumes) until success or limit reached
       def process(&block)
         # maximum of retry
