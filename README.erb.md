@@ -17,13 +17,14 @@ Disclaimers:
 * Use at your risk (not in production environments)
 * This gem is provided as-is, and is not intended to be 
 a complete CLI, or industry-grade product.
+* some features may not be fully validated
 * IBM provides an officially supported Aspera CLI: [http://downloads.asperasoft.com/en/downloads/62](http://downloads.asperasoft.com/en/downloads/62) .
 
 That being said, <%=tool%> is very powerful and gets things done, it&apos;s also a great tool to learn Aspera APIs.
 
 This manual addresses three parts:
 
-* <%=tool%> : command line interface to Aspera
+* <%=tool%> : ("Amelia") command line interface to Aspera
 * `asession` : starting a FASP Session with JSON parameters
 * `Asperalm` : includes a Ruby "FASPManager"
 
@@ -31,9 +32,9 @@ In examples, command line operations (starting with `$`) are shown using a stand
 
 # Quick Start
 
-To start using <%=tool%>, follow the section: [Installation](#installation) (Ruby, Gem, FASP).
+First, follow the section: [Installation](#installation) (Ruby, Gem, FASP) to start using <%=tool%>.
 
-Once the gem is installed, the <%=tool%> shall be accessible:
+Once the gem is installed, <%=tool%> shall be accessible:
 
 ```bash
 $ <%=cmd%> --version
@@ -42,7 +43,7 @@ $ <%=cmd%> --version
 
 ## First use
 
-Once installation is completed, you can proceed to the first sample use with a demo server:
+Once installation is completed, you can proceed to the first use with a demo server:
 
 One liner:
 
@@ -172,14 +173,12 @@ Several methods are provided on how to effectively start a transfer, refer to se
 
 The `asperalm` Gem provides a command line interface (CLI) which interacts with Aspera Products (mostly REST APIs):
 
-* Aspera on Cloud
-* Faspex
-* Server
-* Node
-* Shares
-* Console
-* Orchestrator
-* ATS
+* IBM Aspera High Speed Transfer Server (FASP and Node)
+* IBM Aspera on Cloud (including ATS)
+* IBM Aspera Faspex
+* IBM Aspera Shares
+* IBM Aspera Console
+* IBM Aspera Orchestrator
 * and more...
 
 <%=tool%> provides the following features:
@@ -202,7 +201,7 @@ Basic usage is displayed by executing:
 $ <%=cmd%> -h
 ```
 
-Refer to sections: [Usage](#usage) and [Sample Commands](commands).
+Refer to sections: [Usage](#usage) and [Sample Commands](#commands).
 
 Not all <%=tool%> features are fully documented here, the user may explore commands on the command line.
 
@@ -369,7 +368,7 @@ $ <%=cmd%> config echo @csvt:@file:test.csv
 
 Some options and parameters expect a _Structured Value_, i.e. a value more complex than a simple string. This is usually a Hash table or an Array, which could also contain sub structures.
 
-For instance, a [_transfer-spec_](#_transferspec_) is expected to be a _Structured Value_.
+For instance, a [_transfer-spec_](#transferspec) is expected to be a _Structured Value_.
 
 Structured values shall be described using the [Extended Value Syntax](#extended).
 A convenient way to specify a _Structured Value_ is to use the `@json:` decoder, and describe the value in JSON format. The `@ruby:` decoder can also be used. For an array of hash tables, the `@csvt:` decoder can be used.
@@ -607,7 +606,7 @@ This transfer can be done using on of the 3 following methods:
 * `connect` to make use of a local Connect Client
 * `node` to make use of a _remote_ Aspera Transfer Node.
 
-<%=tool%> standadizes on the use of a [_transfer-spec_](#_transferspec_) instead of _raw_ ascp options to provide parameters for a transfer session, as a common method for those three Transfer Agents.
+<%=tool%> standadizes on the use of a [_transfer-spec_](#transferspec) instead of _raw_ ascp options to provide parameters for a transfer session, as a common method for those three Transfer Agents.
 
 
 ### <a name="agents"></a>Direct (local ascp using FASPManager API)
@@ -651,19 +650,19 @@ is described in a _transfer-spec_ (Transfer Specification), such as:
 
 If needed, it is possible to modify or add any of the supported _transfer-spec_ parameter using the `ts` option. The `ts` option accepts a [Structured Value](#native) containing one or several _transfer-spec_ parameters.
 
-It is possible to specify ascp options when the `transfer` option is set to `direct` using the special [_transfer-spec_](#_transferspec_) parameter: `EX_ascp_args`. Example: `--ts=@json:'{"EX_ascp_args":["-l","100m"]}'`.
+It is possible to specify ascp options when the `transfer` option is set to `direct` using the special [_transfer-spec_](#transferspec) parameter: `EX_ascp_args`. Example: `--ts=@json:'{"EX_ascp_args":["-l","100m"]}'`.
 
 The use of a _transfer-spec_ instead of `ascp` parameters has the advantage of:
 
 * common to all [Transfer Agent](#agents)
 * not dependant on command line limitations (special characters...)
 
-A [_transfer-spec_](#_transferspec_) is a Hash table, so it is described on the command line with the [Extended Value Syntax](#extended). Keys are described in section [Transfer Parameters](#transferparams).
+A [_transfer-spec_](#transferspec) is a Hash table, so it is described on the command line with the [Extended Value Syntax](#extended). Keys are described in section [Transfer Parameters](#transferparams).
 
-### <a name="transferparams">Transfer Parameters
+### <a name="transferparams"></a>Transfer Parameters
 
-All standard [_transfer-spec_](#_transferspec_) parameter can be overloaded. To display parameter,
-run in debug mode (--log-level=debug). [_transfer-spec_](#_transferspec_) can also be saved/overridden in
+All standard [_transfer-spec_](#transferspec) parameter can be overloaded. To display parameter,
+run in debug mode (--log-level=debug). [_transfer-spec_](#transferspec) can also be saved/overridden in
 the config file.
 
 (UNDER CONSTRUCTION <a href="https://developer.asperasoft.com/web/node/ops-transfers">ref</a>)
@@ -677,6 +676,8 @@ Req/Def : Required or default value (- means emty)
 Fields with EX_ prefix are specific to $ <%=cmd%> in local mode.
 
 arg: related ascp argument or env var suffix (PASS for ASPERA_SCP_PASS)
+
+-> [Reference](transfer_spec.html)
 
 <style type="text/css">
 table {border-collapse: collapse;}
@@ -747,7 +748,7 @@ The destination folder is set by <%=tool%> by default to:
 * `.` for downloads
 * `/` for uploads
 
-It is specified by the [_transfer-spec_](#_transferspec_) parameter `destination_root`. As such, it can be modified with option: `--ts=@json:'{"destination_root":"<path>"}'`.
+It is specified by the [_transfer-spec_](#transferspec) parameter `destination_root`. As such, it can be modified with option: `--ts=@json:'{"destination_root":"<path>"}'`.
 The option `to_folder` provides a convenient way to change this parameter:  `--to-folder=<path>` and is equivalent.
 
 ### <a name="multisession"></a>Support of multi-session
@@ -1181,7 +1182,7 @@ by providing the `validator` option, offline transfer validation can be done.
 
 It is possible to start a FASPStream session using the node API:
 
-Use the "node stream create" command, then arguments are provided as a [_transfer-spec_](#_transferspec_).
+Use the "node stream create" command, then arguments are provided as a [_transfer-spec_](#transferspec).
 
 ```bash
 ./bin/$ <%=cmd%> node stream create --ts=@json:'{"direction":"send","source":"udp://233.3.3.4:3000?loopback=1&ttl=2","destination":"udp://233.3.3.3:3001/","remote_host":"localhost","remote_user":"stream","remote_password":"XXXX"}' --load-params=stream
@@ -1605,7 +1606,7 @@ service xvfb start
 This gem comes with a second executable tool providing a simplified standardized interface 
 to start a FASP session: ```asession```.
 
-It aims at simplifying the startup of a FASP session from a programmatic stand point as formating a [_transfer-spec_](#_transferspec_) is:
+It aims at simplifying the startup of a FASP session from a programmatic stand point as formating a [_transfer-spec_](#transferspec) is:
 
 * common to Aspera Node API (HTTP POST /ops/transfer)
 * common to Aspera Connect API (browser javascript startTransfer)
@@ -1613,9 +1614,9 @@ It aims at simplifying the startup of a FASP session from a programmatic stand p
 
 This makes it easy to integrate with any language provided that one can spawn a sub process, write to its STDIN, read from STDOUT, generate and parse JSON.
 
-The tool expect one single argument: a [_transfer-spec_](#_transferspec_).
+The tool expect one single argument: a [_transfer-spec_](#transferspec).
 
-If not argument is provided, it assumes a value of: `@json:@stdin`, i.e. a JSON formated [_transfer-spec_](#_transferspec_) on stdin.
+If not argument is provided, it assumes a value of: `@json:@stdin`, i.e. a JSON formated [_transfer-spec_](#transferspec) on stdin.
 
 Note that if JSON is the format, one has to specify `@json:` to tell the tool to decode the hash using JSON.
 
@@ -1743,7 +1744,7 @@ So, it evolved into <%=tool%>:
 
 * portable: works on platforms supporting `ruby` (and `ascp`)
 * easy to install with the `gem` utility
-* supports transfers with multiple [Transfer Agents](#agents), that&apos;s why transfer parameters moved from ascp command line to [_transfer-spec_](#_transferspec_) (more reliable , more standard)
+* supports transfers with multiple [Transfer Agents](#agents), that&apos;s why transfer parameters moved from ascp command line to [_transfer-spec_](#transferspec) (more reliable , more standard)
 * `ruby` is consistent with other Aspera products
 
 
