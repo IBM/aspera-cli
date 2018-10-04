@@ -470,6 +470,7 @@ thot:
 	$(EXETEST) server upload source_hot --to-folder=/Upload/target_hot --lock-port=12345 --ts=@json:'{"EX_ascp_args":["--remove-after-transfer","--remove-empty-directories","--exclude-newer-than=-8","--src-base","source_hot"]}'
 	$(EXETEST) server browse /Upload/target_hot
 	ls -al source_hot
+	rm -fr source_hot
 	@touch $@
 contents:
 	mkdir -p contents
