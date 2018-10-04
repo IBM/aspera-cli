@@ -677,7 +677,7 @@ Fields with EX_ prefix are specific to $ <%=cmd%> in local mode.
 
 arg: related ascp argument or env var suffix (PASS for ASPERA_SCP_PASS)
 
--> [Reference](transfer_spec.html)
+-> [Reference](docs/transfer_spec.html)
 
 <style type="text/css">
 table {border-collapse: collapse;}
