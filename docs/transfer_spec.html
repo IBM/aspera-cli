@@ -1,9 +1,35 @@
+<html>
+<head>
+<title>Transfer Specification</title>
 <style type="text/css">
 table {border-collapse: collapse;}
 table, th, td {border: 1px solid black;}
 .yes {color:white;background-color:green;font-weight:bold;}
 .no  {color:white;background-color:red;font-weight:bold;}
 </style>
+</head>
+<body>
+<p>
+Columns:
+<ul>
+<li>F=Fasp Manager(local FASP execution)</li>
+<li>N=remote node(node API)</li>
+<li>C=Connect Client(web plugin)</li>
+</ul>
+</p>
+<p>
+Req/Def : Required or default value (- means emty)
+</p>
+<p>
+Fields with EX_ prefix are specific to $ <%=cmd%> in local mode.
+</p>
+<p>
+arg: related ascp argument or env var suffix (PASS for ASPERA_SCP_PASS)
+</p>
+<p>
+(UNDER CONSTRUCTION <a href="https://developer.asperasoft.com/web/node/ops-transfers">ref</a>)
+</p>
+
 <table>
 <tr><th>Field</th><th>Req/Def</th><th>Type</th><th>F</th><th>N</th><th>C</th><th>arg</th><th>Description</th></tr>
 <tr><td>direction</td><td>Required</td><td>string</td><td class="yes">Y</td><td class="yes">Y</td><td class="yes">Y</td><td>--mode</td><td>Direction: "send" or "receive"</td></tr>
@@ -59,4 +85,6 @@ table, th, td {border: 1px solid black;}
 <tr><td>EX_ascp_args</td><td>-</td><td>array</td><td class="yes">Y</td><td class="no">N</td><td class="no">N</td><td>same</td><td>Add command line arguments to ascp</td></tr>
 <tr><td>EX_http_transfer_jpeg</td><td>0</td><td>integer</td><td class="yes">Y</td><td class="no">N</td><td class="no">N</td><td>-j</td><td>HTTP transfers as JPEG file</td></tr>
 </table>
+</body>
+</html>
 
