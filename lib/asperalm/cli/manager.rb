@@ -87,7 +87,7 @@ module Asperalm
         # option description: key = option symbol, value=hash, :type, :accessor, :value, :accepted
         @declared_options={}
         # do we ask missing options and arguments to user ?
-        @ask_missing_mandatory=STDIN.isatty
+        @ask_missing_mandatory=false # STDIN.isatty
         # ask optional options if not provided and in interactive
         @ask_missing_optional=false
         # those must be set before parse, parse consumes those defined only
