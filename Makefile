@@ -1,4 +1,4 @@
-EXENAME=aslmcli
+EXENAME=mlia
 TOOLCONFIGDIR=$(HOME)/.aspera/$(EXENAME)
 APIKEY=$(TOOLCONFIGDIR)/filesapikey
 BINDIR=./bin
@@ -22,7 +22,7 @@ test:
 
 clean::
 	rm -f $(GEMNAME)-*.gem $(SRCZIPBASE)*.zip *.log token.* preview.png 
-	rm -f README.pdf README.html README.md aslmcli_commands.txt aslmcli_usage.txt asession_usage.txt $(TEST_CONFIG)
+	rm -f README.pdf README.html README.md $(EXENAME)_commands.txt $(EXENAME)_usage.txt asession_usage.txt $(TEST_CONFIG)
 	rm -fr contents t doc "PKG - "*
 	mkdir t
 	rm -f 200KB* *AsperaConnect-ML* sample.conf*
@@ -39,16 +39,16 @@ README.pdf: README.md
 	pandoc --number-sections --resource-path=. --toc -o README.html README.md
 	wkhtmltopdf toc README.html README.pdf
 
-README.md: README.erb.md aslmcli_commands.txt aslmcli_usage.txt asession_usage.txt
-	COMMANDS=aslmcli_commands.txt USAGE=aslmcli_usage.txt ASESSION=asession_usage.txt ASCLI=$(EXETEST) erb README.erb.md > README.md
+README.md: README.erb.md $(EXENAME)_commands.txt $(EXENAME)_usage.txt asession_usage.txt
+	COMMANDS=$(EXENAME)_commands.txt USAGE=$(EXENAME)_usage.txt ASESSION=asession_usage.txt VERSION=`$(EXETEST) --version` TOOLNAME=$(EXENAME) erb README.erb.md > README.md
 
-aslmcli_commands.txt: Makefile
-	sed -n -e 's/.*\$$(EXETEST)/aslmcli/p' Makefile|grep -v 'Sales Engineering'|sed -E -e 's/\$$\(SAMPLE_FILE\)/sample_file.bin/g;s/\$$\(NODEDEST\)/sample_dest_folder/g;s/\$$\(TEST_FOLDER\)/sample_dest_folder/g;s/ibmfaspex.asperasoft.com/faspex.mycompany.com/g;s/(")(url|api_key|username|password|access_key_id|secret_access_key|pass)(":")[^"]*(")/\1\2\3my_\2_here\4/g;s/--(secret|url|password|username)=[^ ]*/--\1=my_\1_here/g;s/Aspera123_/_my_pass_/g'|grep -v 'localhost:9443'|sort -u > aslmcli_commands.txt
+$(EXENAME)_commands.txt: Makefile
+	sed -n -e 's/.*\$$(EXETEST)/$(EXENAME)/p' Makefile|grep -v 'Sales Engineering'|sed -E -e 's/\$$\(SAMPLE_FILE\)/sample_file.bin/g;s/\$$\(NODEDEST\)/sample_dest_folder/g;s/\$$\(TEST_FOLDER\)/sample_dest_folder/g;s/ibmfaspex.asperasoft.com/faspex.mycompany.com/g;s/(")(url|api_key|username|password|access_key_id|secret_access_key|pass)(":")[^"]*(")/\1\2\3my_\2_here\4/g;s/--(secret|url|password|username)=[^ ]*/--\1=my_\1_here/g;s/Aspera123_/_my_pass_/g'|grep -v 'localhost:9443'|sort -u > $(EXENAME)_commands.txt
 
 # depends on all sources, so regenerate always
-.PHONY: aslmcli_usage.txt
-aslmcli_usage.txt:
-	$(EXE_NOMAN) -Cnone -h 2> aslmcli_usage.txt || true
+.PHONY: $(EXENAME)_usage.txt
+$(EXENAME)_usage.txt:
+	$(EXE_NOMAN) -Cnone -h 2> $(EXENAME)_usage.txt || true
 
 .PHONY: asession_usage.txt
 asession_usage.txt:
@@ -392,38 +392,38 @@ tnsync: t/sy1 t/sy2 t/sy3
 
 TEST_CONFIG=sample.conf
 t/conf1:
-	ASLMCLI_CONFIG_FILE=$(TEST_CONFIG) $(EXETEST) config id conf_name set param value
+	MLIA_CONFIG_FILE=$(TEST_CONFIG) $(EXETEST) config id conf_name set param value
 	@touch $@
 t/conf2:
-	ASLMCLI_CONFIG_FILE=$(TEST_CONFIG) $(EXETEST) config id conf_name show
+	MLIA_CONFIG_FILE=$(TEST_CONFIG) $(EXETEST) config id conf_name show
 	@touch $@
 t/conf3:
-	ASLMCLI_CONFIG_FILE=$(TEST_CONFIG) $(EXETEST) config list
+	MLIA_CONFIG_FILE=$(TEST_CONFIG) $(EXETEST) config list
 	@touch $@
 t/conf4:
-	ASLMCLI_CONFIG_FILE=$(TEST_CONFIG) $(EXETEST) config overview
+	MLIA_CONFIG_FILE=$(TEST_CONFIG) $(EXETEST) config overview
 	@touch $@
 t/conf5:
-	ASLMCLI_CONFIG_FILE=$(TEST_CONFIG) $(EXETEST) config id default set shares conf_name
+	MLIA_CONFIG_FILE=$(TEST_CONFIG) $(EXETEST) config id default set shares conf_name
 	@touch $@
 t/conf6:
-	ASLMCLI_CONFIG_FILE=$(TEST_CONFIG) $(EXETEST) config id conf_name delete
+	MLIA_CONFIG_FILE=$(TEST_CONFIG) $(EXETEST) config id conf_name delete
 	@touch $@
 t/conf7:
-	ASLMCLI_CONFIG_FILE=$(TEST_CONFIG) $(EXETEST) config id conf_name initialize @json:'{"p1":"v1","p2":"v2"}'
+	MLIA_CONFIG_FILE=$(TEST_CONFIG) $(EXETEST) config id conf_name initialize @json:'{"p1":"v1","p2":"v2"}'
 	@touch $@
 t/conf8:
-	ASLMCLI_CONFIG_FILE=$(TEST_CONFIG) $(EXETEST) config id conf_name update --p1=v1 --p2=v2
+	MLIA_CONFIG_FILE=$(TEST_CONFIG) $(EXETEST) config id conf_name update --p1=v1 --p2=v2
 	@touch $@
 t/conf9:
-	ASLMCLI_CONFIG_FILE=$(TEST_CONFIG) $(EXETEST) config open
+	MLIA_CONFIG_FILE=$(TEST_CONFIG) $(EXETEST) config open
 	@touch $@
 t/conf10:
 	$(EXETEST) -h
 	@touch $@
 t/conf11:
 	printf -- "---\nconfig:\n  version: 0" > $(TEST_CONFIG)
-	-ASLMCLI_CONFIG_FILE=$(TEST_CONFIG) $(EXETEST) config open
+	-MLIA_CONFIG_FILE=$(TEST_CONFIG) $(EXETEST) config open
 	@touch $@
 
 tconf: t/conf1 t/conf2 t/conf3 t/conf4 t/conf5 t/conf6 t/conf7 t/conf8 t/conf9 t/conf10 t/conf11

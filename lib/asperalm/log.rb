@@ -49,18 +49,21 @@ module Asperalm
         @logger = Logger.new(STDOUT)
       when :syslog
         require 'syslog/logger'
-        @logger = Syslog::Logger.new('aslmcli')
+        @logger = Syslog::Logger.new(@program_name)
       else
         raise "unknown log type: #{new_logtype.class} #{new_logtype}"
       end
       @logger.level=current_severity_integer
       @logger_type=new_logtype
     end
+    
+    attr_writer :program_name
 
     private
 
     def initialize
       @logger=nil
+      @program_name='asperalm'
       # this sets @logger and @logger_type
       self.logger_type=:stderr
     end

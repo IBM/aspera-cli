@@ -30,7 +30,7 @@ module Asperalm
       # first level command for the main tool
       @@CONFIG_PLUGIN_NAME_SYM=:config
       # name of application, also foldername where config is stored
-      @@PROGRAM_NAME = 'aslmcli'
+      @@PROGRAM_NAME = 'mlia'
       @@GEM_NAME = 'asperalm'
       # folder containing custom plugins in `config_folder`
       @@ASPERA_PLUGINS_FOLDERNAME='plugins'
@@ -95,9 +95,9 @@ module Asperalm
         @plugins={@@CONFIG_PLUGIN_NAME_SYM=>{:source=>__FILE__,:require_stanza=>nil}}
         @plugin_lookup_folders=[]
         @option_table_style=':.:'
-        @opt_mgr=Manager.new(@@PROGRAM_NAME)
+        @opt_mgr=Manager.new(self.program_name)
         # define program name, sets default config folder. Must be first call to "Config.instance"
-        Plugins::Config.instance.set_program_info(@@PROGRAM_NAME,@@GEM_NAME,self.class.gem_version)
+        Plugins::Config.instance.set_program_info(self.program_name,@@GEM_NAME,self.class.gem_version)
         Oauth.persistency_folder=config_folder
         # set folders for temp files
         Fasp::Parameters.file_list_folder=File.join(config_folder,'filelists')
@@ -107,15 +107,15 @@ module Asperalm
 
       # local options
       def init_options
-        @opt_mgr.parser.banner = "NAME\n\t#{@@PROGRAM_NAME} -- a command line tool for Aspera Applications (v#{self.class.gem_version})\n\n"
+        @opt_mgr.parser.banner = "NAME\n\t#{self.program_name} -- a command line tool for Aspera Applications (v#{self.class.gem_version})\n\n"
         @opt_mgr.parser.separator "SYNOPSIS"
-        @opt_mgr.parser.separator "\t#{@@PROGRAM_NAME} COMMANDS [OPTIONS] [ARGS]"
+        @opt_mgr.parser.separator "\t#{self.program_name} COMMANDS [OPTIONS] [ARGS]"
         @opt_mgr.parser.separator ""
         @opt_mgr.parser.separator "DESCRIPTION"
         @opt_mgr.parser.separator "\tUse Aspera application to perform operations on command line."
         @opt_mgr.parser.separator "\tOAuth 2.0 is used for authentication in Files, Several authentication methods are provided."
         @opt_mgr.parser.separator "\tDocumentation and examples: #{Plugins::Config.instance.gem_url}"
-        @opt_mgr.parser.separator "\texecute: #{@@PROGRAM_NAME} conf doc"
+        @opt_mgr.parser.separator "\texecute: #{self.program_name} conf doc"
         @opt_mgr.parser.separator ""
         @opt_mgr.parser.separator "COMMANDS"
         @opt_mgr.parser.separator "\tFirst level commands: #{@plugins.keys.map {|x| x.to_s}.join(', ')}"
@@ -393,7 +393,7 @@ module Asperalm
           # list plugins that have a "require" field, i.e. all but main plugin
           @plugins.keys.select { |s| !@plugins[s][:require_stanza].nil? }.each do |plugin_name_sym|
             # override main option parser with a brand new
-            @opt_mgr=Manager.new(@@PROGRAM_NAME)
+            @opt_mgr=Manager.new(self.program_name)
             @opt_mgr.parser.banner = ""
             get_plugin_instance_with_options(plugin_name_sym)
             STDERR.puts(@opt_mgr.parser)
@@ -430,6 +430,7 @@ module Asperalm
       # early debug for parser
       # Note: does not accept shortcuts
       def early_debug_setup(argv)
+        Log.instance.program_name=self.program_name
         argv.each do |arg|
           case arg
           when '--'
@@ -462,10 +463,12 @@ module Asperalm
       end
 
       # public method
-      # $HOME/.aspera/aslmcli
+      # $HOME/.aspera/`program_name`
       def config_folder; Plugins::Config.instance.config_folder; end
 
       def options;@opt_mgr;end
+
+      def program_name;@@PROGRAM_NAME;end
 
       # this is the main function called by initial script just after constructor
       def process_command_line(argv)

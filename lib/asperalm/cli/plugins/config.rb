@@ -16,15 +16,16 @@ module Asperalm
         @@RESERVED_SECTION_TOOL=:config
         @@CONFIG_PRESET_VERSION='version'
         @@CONFIG_PRESET_DEFAULT='default'
+        @@OLD_PROGRAM_NAME = 'aslmcli'
         # new plugin name for AoC
-        ASPERA_PLUGIN_S=:aspera.to_s
+        @@ASPERA_PLUGIN_S=:aspera.to_s
         def initialize
           @program_version=nil
           @config_folder=nil
           @option_config_file=nil
           @use_plugin_defaults=true
         end
-        
+
         def self.flatten_all_config(t)
           r=[]
           t.each do |k,v|
@@ -56,7 +57,13 @@ module Asperalm
         def set_program_info(tool_name,gem_name,version)
           @program_version=version
           @gem_name=gem_name
+          @tool_name=tool_name
           @config_folder=File.join(Dir.home,@@ASPERA_HOME_FOLDER_NAME,tool_name)
+          @old_config_folder=File.join(Dir.home,@@ASPERA_HOME_FOLDER_NAME,@@OLD_PROGRAM_NAME)
+          if Dir.exist?(@old_config_folder) and ! Dir.exist?(@config_folder)
+            Log.log.warn("Detected former configuration folder, renaming: #{@old_config_folder} -> #{@config_folder}")
+            FileUtils.mv(@old_config_folder, @config_folder)
+          end
           @option_config_file=File.join(@config_folder,@@DEFAULT_CONFIG_FILENAME)
           @help_url='http://www.rubydoc.info/gems/'+@gem_name
           @gem_url='https://rubygems.org/gems/'+@gem_name
@@ -95,12 +102,26 @@ module Asperalm
             config_tested_version='0.6.14'
             if Gem::Version.new(version) <= Gem::Version.new(config_tested_version)
               old_plugin_name='files'
-              new_plugin_name=ASPERA_PLUGIN_S
+              new_plugin_name=@@ASPERA_PLUGIN_S
               if @config_presets[@@CONFIG_PRESET_DEFAULT].is_a?(Hash) and @config_presets[@@CONFIG_PRESET_DEFAULT].has_key?(old_plugin_name)
                 @config_presets[@@CONFIG_PRESET_DEFAULT][new_plugin_name]=@config_presets[@@CONFIG_PRESET_DEFAULT][old_plugin_name]
                 @config_presets[@@CONFIG_PRESET_DEFAULT].delete(old_plugin_name)
                 Log.log.warn("Converted plugin default: #{old_plugin_name} -> #{new_plugin_name}")
                 save_required=true
+              end
+            end
+            config_tested_version='0.8.10'
+            if Gem::Version.new(version) <= Gem::Version.new(config_tested_version)
+              old_subpath=File.join('',@@ASPERA_HOME_FOLDER_NAME,@@OLD_PROGRAM_NAME,'')
+              new_subpath=File.join('',@@ASPERA_HOME_FOLDER_NAME,@tool_name,'')
+              # convert possible keys located in config folder
+              @config_presets.values.select{|p|p.is_a?(Hash)}.each do |preset|
+                preset.values.select{|v|v.is_a?(String) and v.include?(old_subpath)}.each do |value|
+                    old_val=value.clone
+                    value.gsub!(old_subpath,new_subpath)
+                    Log.log.warn("Converted copnfig value: #{old_val} -> #{value}")
+                    save_required=true
+                end
               end
             end
             # Place new compatibility code here
@@ -228,7 +249,7 @@ module Asperalm
             puts "Please login to your Aspera on Cloud instance as Administrator."
             puts "Go to: Admin->Organization->Integrations"
             puts "Create a new integration:"
-            puts "- name: aslmcli"
+            puts "- name: #{Main.instance.program_name}"
             puts "- redirect uri: #{DEFAULT_REDIRECT}"
             puts "- origin: localhost"
             puts "Once created please enter the following any required parameter:"
@@ -236,7 +257,7 @@ module Asperalm
             Main.instance.options.get_option(:client_id)
             Main.instance.options.get_option(:client_secret)
             @config_presets[@@CONFIG_PRESET_DEFAULT]||=Hash.new
-            raise CliError,"a default configuration already exists (use --override=yes)" if @config_presets[@@CONFIG_PRESET_DEFAULT].has_key?(ASPERA_PLUGIN_S) and !option_override
+            raise CliError,"a default configuration already exists (use --override=yes)" if @config_presets[@@CONFIG_PRESET_DEFAULT].has_key?(@@ASPERA_PLUGIN_S) and !option_override
             raise CliError,"preset already exists: #{aspera_preset_name}  (use --override=yes)" if @config_presets.has_key?(aspera_preset_name) and !option_override
             # todo: check if key is identical
             files_plugin.init_apis
@@ -256,11 +277,11 @@ module Asperalm
               :private_key.to_s   =>'@file:'+key_filepath,
               :username.to_s      =>myself['email'],
             }
-            puts "setting config preset as default for #{ASPERA_PLUGIN_S}"
-            @config_presets[@@CONFIG_PRESET_DEFAULT][ASPERA_PLUGIN_S]=aspera_preset_name
+            puts "setting config preset as default for #{@@ASPERA_PLUGIN_S}"
+            @config_presets[@@CONFIG_PRESET_DEFAULT][@@ASPERA_PLUGIN_S]=aspera_preset_name
             puts "saving config file"
             save_presets_to_config_file
-            return Main.result_status("Done. You can test with:\naslmcli aspera user info show")
+            return Main.result_status("Done. You can test with:\n#{Main.instance.program_name} aspera user info show")
             # TODO: update documentation
           end
         end
@@ -284,7 +305,7 @@ module Asperalm
           @config_presets[@@CONFIG_PRESET_DEFAULT].has_key?(plugin_sym.to_s)
             default_config_name=@config_presets[@@CONFIG_PRESET_DEFAULT][plugin_sym.to_s]
             if !@config_presets.has_key?(default_config_name)
-              Log.log.error("Default config name [#{default_config_name}] specified for plugin [#{plugin_sym.to_s}], but it does not exist in config file.\nPlease fix the issue: either create preset with one parameter (aslmcli config id #{default_config_name} init @json:'{}') or remove default (aslmcli config id default remove #{plugin_sym.to_s}).")
+              Log.log.error("Default config name [#{default_config_name}] specified for plugin [#{plugin_sym.to_s}], but it does not exist in config file.\nPlease fix the issue: either create preset with one parameter (#{Main.instance.program_name} config id #{default_config_name} init @json:'{}') or remove default (#{Main.instance.program_name} config id default remove #{plugin_sym.to_s}).")
             end
             raise CliError,"Config name [#{default_config_name}] must be a hash, check config file." if !@config_presets[default_config_name].is_a?(Hash)
             return default_config_name

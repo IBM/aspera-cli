@@ -1,6 +1,9 @@
-# Asperalm - Laurent&apos;s Aspera Command Line Interface and Ruby Library
+# Asperalm - Laurent&apos;s IBM Aspera Command Line Interface and Ruby Library
 
-Version : <%= `#{ENV["ASCLI"]} --version` %>
+Version : <%= ENV["VERSION"] %>
+<%cmd=ENV["TOOLNAME"]%>
+<%tool='`'+cmd+'`'%>
+<%evp=cmd.upcase+'_'%>
 
 _Laurent/2016-2018_
 
@@ -16,11 +19,11 @@ Disclaimers:
 a complete CLI, or industry-grade product.
 * IBM provides an officially supported Aspera CLI: [http://downloads.asperasoft.com/en/downloads/62](http://downloads.asperasoft.com/en/downloads/62) .
 
-That being said, the `aslmcli` tool is very powerful and gets things done, it&apos;s also a great tool to learn Aspera APIs.
+That being said, <%=tool%> is very powerful and gets things done, it&apos;s also a great tool to learn Aspera APIs.
 
 This manual addresses three parts:
 
-* `aslmcli` : command line interface to Aspera
+* <%=tool%> : command line interface to Aspera
 * `asession` : starting a FASP Session with JSON parameters
 * `Asperalm` : includes a Ruby "FASPManager"
 
@@ -28,13 +31,13 @@ In examples, command line operations (starting with `$`) are shown using a stand
 
 # Quick Start
 
-To start using the `aslmcli` tool, follow the section: [Installation](#installation) (Ruby, Gem, FASP).
+To start using <%=tool%>, follow the section: [Installation](#installation) (Ruby, Gem, FASP).
 
-Once the gem is installed, the `aslmcli` shall be accessible:
+Once the gem is installed, the <%=tool%> shall be accessible:
 
 ```bash
-$ aslmcli --version
-<%= `#{ENV["ASCLI"]} --version` %>
+$ <%=cmd%> --version
+<%= ENV["VERSION"] %>
 ```
 
 ## First use
@@ -44,7 +47,7 @@ Once installation is completed, you can proceed to the first sample use with a d
 One liner:
 
 ```
-$ aslmcli server browse / --url=ssh://demo.asperasoft.com:33001 --username=asperaweb --password=demoaspera
+$ <%=cmd%> server browse / --url=ssh://demo.asperasoft.com:33001 --username=asperaweb --password=demoaspera
 :............:...........:......:........:...........................:.......................:
 :   zmode    :   zuid    : zgid :  size  :           mtime           :         name          :
 :............:...........:......:........:...........................:.......................:
@@ -63,11 +66,11 @@ In order to make further calls more convenient, it is advised to define a "param
 * download a file
 
 ```
-$ aslmcli config id demoserver update --url=ssh://demo.asperasoft.com:33001 --username=asperaweb --password=demoaspera
+$ <%=cmd%> config id demoserver update --url=ssh://demo.asperasoft.com:33001 --username=asperaweb --password=demoaspera
 updated: demoserver
-$ aslmcli config id default set server demoserver
+$ <%=cmd%> config id default set server demoserver
 updated: default->server to demoserver
-$ aslmcli server browse /aspera-test-dir-large
+$ <%=cmd%> server browse /aspera-test-dir-large
 :............:...........:......:..............:...........................:............................:
 :   zmode    :   zuid    : zgid :     size     :           mtime           :            name            :
 :............:...........:......:..............:...........................:............................:
@@ -84,7 +87,7 @@ $ aslmcli server browse /aspera-test-dir-large
 : -rw-r--r-- : asperaweb : fasp : 104857600    : 2014-04-10 19:49:29 +0200 : 100MB                      :
 : -rw-r--r-- : asperaweb : fasp : 10737418240  : 2014-04-10 19:49:04 +0200 : 10GB                       :
 :............:...........:......:..............:...........................:............................:
-$ aslmcli server download /aspera-test-dir-large/200MB
+$ <%=cmd%> server download /aspera-test-dir-large/200MB
 Time: 00:00:02 ========================================================================================================== 100% 100 Mbps Time: 00:00:00
 complete
 ```
@@ -96,7 +99,7 @@ Note that browse and download commans are shorter now.
 Get familiar with configuration, options, parameters and 
 follow the section relative to the product you want to interact with: Aspera on Cloud, Faspex, ...
 
-Detailed generic information on configuration can be found in section: [aslmcli](#aslmcli).
+Detailed generic information on configuration can be found in section: [Command Line Interface](#cli).
 
 # <a name="installation"></a>Installation
 
@@ -161,11 +164,11 @@ Most file transfers will be done using the FASP protocol. This requires one of I
 For instance, Aspera Connect Client can be installed
 by visiting the page: [http://downloads.asperasoft.com/connect2/](http://downloads.asperasoft.com/connect2/). 
 
-`aslmcli` will detect most of Aspera transfer products in standard locations and use the first one found. Refer to section [Client](#client) for details.
+<%=tool%> will detect most of Aspera transfer products in standard locations and use the first one found. Refer to section [Client](#client) for details.
 
 Several methods are provided on how to effectively start a transfer, refer to section: [Transfer Agents](#agents)
 
-# <a name="aslmcli"></a>Tool: `aslmcli`
+# <a name="cli"></a>Command Line Interface: <%=tool%>
 
 The `asperalm` Gem provides a command line interface (CLI) which interacts with Aspera Products (mostly REST APIs):
 
@@ -179,7 +182,7 @@ The `asperalm` Gem provides a command line interface (CLI) which interacts with 
 * ATS
 * and more...
 
-`aslmcli` provides the following features:
+<%=tool%> provides the following features:
 
 * Supports most Aspera server products (on-premise and SaaS)
 * Options can be provided on command line, in configuration file, in env var, in files (products URL, credentials or any option)
@@ -196,19 +199,19 @@ The `asperalm` Gem provides a command line interface (CLI) which interacts with 
 Basic usage is displayed by executing:
 
 ```bash
-$ aslmcli -h
+$ <%=cmd%> -h
 ```
 
 Refer to sections: [Usage](#usage) and [Sample Commands](commands).
 
-Not all `aslmcli` features are fully documented here, the user may explore commands on the command line.
+Not all <%=tool%> features are fully documented here, the user may explore commands on the command line.
 
 ## Commands, Arguments and Options
 
 Commands, Options and Arguments are typically provided on command line, e.g. in:
 
 ```
-$ aslmcli command --option-name=VAL1 VAL2
+$ <%=cmd%> command --option-name=VAL1 VAL2
 ```
 
 * executes action: `command`
@@ -216,7 +219,7 @@ $ aslmcli command --option-name=VAL1 VAL2
 * this option has a value of: `VAL1`
 * the command has one argument: `VAL2`
 
-When the value of a command, option or argument is constrained by a fixed list of values, it is possible to use the first letters of the value only, provided that it uniquely identifies a value. For example `aslmcli conf ov` is the same as `aslmcli config overview`.
+When the value of a command, option or argument is constrained by a fixed list of values, it is possible to use the first letters of the value only, provided that it uniquely identifies a value. For example `$ <%=cmd%> conf ov` is the same as `$ <%=cmd%> config overview`.
 
 The value of options and arguments is evaluated with the [Extended Value Syntax](#extended).
 
@@ -236,7 +239,7 @@ Exceptions:
 * the special option `--` stops option processing and is ignored, following command line arguments are taken as arguments, including the ones starting with a `-`. Example:
 
 ```
-$ aslmcli config echo -- --sample
+$ <%=cmd%> config echo -- --sample
 "--sample"
 ```
 
@@ -250,10 +253,10 @@ The value for _any_ options can come from the following locations (in this order
 * Environment variable
 * Command line
 
-Environment variable starting with prefix: ASLMCLI_ are taken as option values, 
-e.g. `ASLMCLI_OPTION_NAME` is for `--option-name`.
+Environment variable starting with prefix: <%=evp%> are taken as option values, 
+e.g. `<%=evp%>OPTION_NAME` is for `--option-name`.
 
-Options values can be displayed for a given command by providing the `--show-config` option: `aslmcli node --show-config`
+Options values can be displayed for a given command by providing the `--show-config` option: `$ <%=cmd%> node --show-config`
 
 ### Commands and Arguments
 
@@ -296,7 +299,7 @@ The style of output can be set using the `format` parameter, supporting:
 Table output can be filtered using the `select` parameter. Example:
 
 ```
-$ aslmcli aspera admin res user list --fields=name,email,ats_admin --query=@json:'{"per_page":1000}' --select=@json:'{"ats_admin":true}'
+$ <%=cmd%> aspera admin res user list --fields=name,email,ats_admin --query=@json:'{"per_page":1000}' --select=@json:'{"ats_admin":true}'
 :...............................:..................................:...........:
 :             name              :              email               : ats_admin :
 :...............................:..................................:...........:
@@ -337,13 +340,13 @@ To display the result of an extended value, use the `config echo` command.
 Example: read the content of the specified file, then, base64 decode, then unzip:
 
 ```bash
-$ aslmcli config echo @zlib:@base64:@file:myfile.dat
+$ <%=cmd%> config echo @zlib:@base64:@file:myfile.dat
 ```
 
 Example: create a value as a hash, with one key and the value is read from a file:
 
 ```bash
-$ aslmcli config echo @ruby:'{"token_verification_key"=>File.read("pubkey.txt")}' 
+$ <%=cmd%> config echo @ruby:'{"token_verification_key"=>File.read("pubkey.txt")}' 
 ```
 
 Example: read a csv file and create a list of hash for bulk provisioning:
@@ -353,7 +356,7 @@ $ cat test.csv
 name,email
 lolo,laurent@example.com
 toto,titi@tutu.tata
-$ aslmcli config echo @csvt:@file:test.csv
+$ <%=cmd%> config echo @csvt:@file:test.csv
 :......:.....................:
 : name :        email        :
 :......:.....................:
@@ -375,7 +378,7 @@ It is also possible to provide a _Structured Value_ in a file using `@json:@file
 
 ## <a name="configfile"></a>Configuration file
 
-`aslmcli` configuration and cache files are stored in folder `$HOME/.aspera/aslmcli`.
+<%=tool%> configuration and cache files are stored in folder `$HOME/.aspera/$ <%=cmd%>`.
 
 A configuration file is created with configuration modification commands. There is no mandatory information required in this file. It is mainly used to define pre-sets of command options.
 
@@ -383,7 +386,7 @@ All options can be set on command line, or by env vars, or in the configuratin f
 A configuration file provides a way to define default values, especially
 for authentication parameters, thus avoiding to always have to specify those parameters on the command line.
 
-The default configuration file is: `$HOME/.aspera/aslmcli/config.yaml` 
+The default configuration file is: `$HOME/.aspera/$ <%=cmd%>/config.yaml` 
 (this can be overriden with option `--config-file=path`).
 
 It is composed of _option presets_ containing pre-sets for options.
@@ -393,13 +396,13 @@ It is composed of _option presets_ containing pre-sets for options.
 The configuration file can be modified using the following commands:
 
 ```
-aslmcli config id <option preset> set|delete|show|initialize|update
+$ <%=cmd%> config id <option preset> set|delete|show|initialize|update
 ```
 
 The command `update` allows the easy creation of option preset by simply providing the options in their command line format, e.g. :
 
 ```
-aslmcli config id node_to_node update --url=https://10.25.0.4:9092 --username=node_user --password=node_pass --ts=@json:'{"precalculate_job_size":true}' --transfer=node --transfer-node=@json:'{"url":"https://10.25.0.8:9092","username":"node_user2","password":"node_pass2"}'
+$ <%=cmd%> config id node_to_node update --url=https://10.25.0.4:9092 --username=node_user --password=node_pass --ts=@json:'{"precalculate_job_size":true}' --transfer=node --transfer-node=@json:'{"url":"https://10.25.0.8:9092","username":"node_user2","password":"node_pass2"}'
 ```
 
 * This creates a _option preset_ `node_to_node` with all provided options.
@@ -412,13 +415,13 @@ A good practice is to not manually edit this file and use modification commands.
 If necessary, the configuration file can be edited (or simply consulted) with:
 
 ```bash
-$ aslmcli config open
+$ <%=cmd%> config open
 ```
 
 A full terminal based overview of the configuration can be displayed using:
 
 ```bash
-$ aslmcli config over
+$ <%=cmd%> config over
 ```
 
 
@@ -446,7 +449,7 @@ Configuation is organized in _option presets_, like in `.ini` files. Each group 
 
 Two _option presets_ are reserved:
 
-* `config` is reserved for the global parameters of the `aslmcli` tool.
+* `config` is reserved for the global parameters of <%=tool%>.
 It contains a special parameter: "version" showing the CLI 
 version used to create this file. It is used to check compatibility.
 * `default` is reserved to define the default option preset name used for plugins.
@@ -459,7 +462,7 @@ Values in the configuration also follow the [Extended Value Syntax](#extended).
 Note: if the user wants to use the [Extended Value Syntax](#extended) inside the configuration file, using the `config id update` command, the user shall use the `@val:` prefix. Example:
 
 ```bash
-$ aslmcli config id my_aoc_org set private_key @val:@file:"$HOME/.aspera/aslmcli/aocapikey"
+$ <%=cmd%> config id my_aoc_org set private_key @val:@file:"$HOME/.aspera/$ <%=cmd%>/aocapikey"
 ```
 
 This creates the _option preset_:
@@ -467,7 +470,7 @@ This creates the _option preset_:
 ```
 ...
 my_aoc_org:
-  private_key: @file:"/Users/laurent/.aspera/aslmcli/aocapikey"
+  private_key: @file:"/Users/laurent/.aspera/$ <%=cmd%>/aocapikey"
 ...
 ```
 
@@ -495,14 +498,14 @@ The main plugin name is *config*, so it is possible to define a default preset f
 the main plugin with:
 
 ```
-$ aslmcli config id cli_default set interactive no
-$ aslmcli config id default set config cli_default
+$ <%=cmd%> config id cli_default set interactive no
+$ <%=cmd%> config id default set config cli_default
 ```
 
 A preset value can be removed with `unset`:
 
 ```
-$ aslmcli config id cli_default unset interactive
+$ <%=cmd%> config id cli_default unset interactive
 ```
 
 
@@ -513,25 +516,25 @@ only username/password and url are required (either on command line, or from con
 Those can usually be provided on the command line:
 
 ```bash
-$ aslmcli shares repo browse / --url=https://10.25.0.6 --username=john --password=4sp3ra 
+$ <%=cmd%> shares repo browse / --url=https://10.25.0.6 --username=john --password=4sp3ra 
 ```
 
 This can also be provisioned in a config file:
 
 ```bash
-1$ aslmcli config id shares06 set url https://10.25.0.6
-2$ aslmcli config id shares06 set username john
-3$ aslmcli config id shares06 set password 4sp3ra
-4$ aslmcli config id default set shares shares06 
-5$ aslmcli config overview
-6$ aslmcli shares repo browse /
+1$ <%=cmd%> config id shares06 set url https://10.25.0.6
+2$ <%=cmd%> config id shares06 set username john
+3$ <%=cmd%> config id shares06 set password 4sp3ra
+4$ <%=cmd%> config id default set shares shares06 
+5$ <%=cmd%> config overview
+6$ <%=cmd%> shares repo browse /
 ```
 
 The three first commands build a option preset. 
 Note that this can also be done with one single command:
 
 ```bash
-$ aslmcli config id shares06 init @json:'{"url":"https://10.25.0.6","username":"john","password":"4sp3ra"}'
+$ <%=cmd%> config id shares06 init @json:'{"url":"https://10.25.0.6","username":"john","password":"4sp3ra"}'
 ```
 
 The fourth command defines this option preset as the default option preset for the 
@@ -544,13 +547,13 @@ Eventually, the last command shows a call to the shares application using defaul
 
 ## Plugins
 
-The CLI tool uses a plugin mechanism. The first level command (just after `aslmcli` on the command line) is the name of the concerned plugin which will execute the command. Each plugin usually represent commands sent to a specific application.
+The CLI tool uses a plugin mechanism. The first level command (just after <%=tool%> on the command line) is the name of the concerned plugin which will execute the command. Each plugin usually represent commands sent to a specific application.
 For instance, the plugin "faspex" allows operations on the application "Aspera Faspex".
 
 ### Create your own plugin
 ```bash
-$ mkdir -p ~/.aspera/aslmcli/plugins
-$ cat<<EOF>~/.aspera/aslmcli/plugins/test.rb
+$ mkdir -p ~/.aspera/$ <%=cmd%>/plugins
+$ cat<<EOF>~/.aspera/$ <%=cmd%>/plugins/test.rb
 require 'asperalm/cli/plugin'
 module Asperalm
   module Cli
@@ -568,7 +571,7 @@ EOF
 
 ## Debugging
 
-The gem is equipped with traces. By default logging level is "warn". To increase debug level, use parameter `log_level`, so either command line `--log-level=xx` or env var `ASLMCLI_LOG_LEVEL`.
+The gem is equipped with traces. By default logging level is "warn". To increase debug level, use parameter `log_level`, so either command line `--log-level=xx` or env var `<%=evp%>LOG_LEVEL`.
 
 ## Learning Aspera Product APIs (REST)
 
@@ -604,18 +607,18 @@ This transfer can be done using on of the 3 following methods:
 * `connect` to make use of a local Connect Client
 * `node` to make use of a _remote_ Aspera Transfer Node.
 
-`aslmcli` standadizes on the use of a [_transfer-spec_](#_transferspec_) instead of _raw_ ascp options to provide parameters for a transfer session, as a common method for those three Transfer Agents.
+<%=tool%> standadizes on the use of a [_transfer-spec_](#_transferspec_) instead of _raw_ ascp options to provide parameters for a transfer session, as a common method for those three Transfer Agents.
 
 
 ### <a name="agents"></a>Direct (local ascp using FASPManager API)
 
 By default the CLI will use a local FASP protocol.
-`aslmcli` will detect locally installed Aspera products.
+<%=tool%> will detect locally installed Aspera products.
 Refer to section [Client](#client). 
 
 ### IBM Aspera Connect Client GUI
 
-By specifying option: `--transfer=connect`, `aslmcli` will start transfers 
+By specifying option: `--transfer=connect`, <%=tool%> will start transfers 
 using the locally installed Aspera Connect Client.
 
 ### Aspera Node API : Node to node transfers
@@ -644,7 +647,7 @@ is described in a _transfer-spec_ (Transfer Specification), such as:
 * file list
 * etc...
 
-`aslmcli` builds a default _transfer-spec_ internally, so it is not necessary to provide additional parameters on the command line for this transfer.
+<%=tool%> builds a default _transfer-spec_ internally, so it is not necessary to provide additional parameters on the command line for this transfer.
 
 If needed, it is possible to modify or add any of the supported _transfer-spec_ parameter using the `ts` option. The `ts` option accepts a [Structured Value](#native) containing one or several _transfer-spec_ parameters.
 
@@ -671,7 +674,7 @@ the config file.
 
 Req/Def : Required or default value (- means emty)
 
-Fields with EX_ prefix are specific to aslmcli in local mode.
+Fields with EX_ prefix are specific to $ <%=cmd%> in local mode.
 
 arg: related ascp argument or env var suffix (PASS for ASPERA_SCP_PASS)
 
@@ -739,7 +742,7 @@ table, th, td {border: 1px solid black;}
 
 ### Destination folder for transfers
 
-The destination folder is set by `aslmcli` by default to:
+The destination folder is set by <%=tool%> by default to:
 
 * `.` for downloads
 * `/` for uploads
@@ -768,7 +771,7 @@ Multi-session is directly supported by the node daemon.
 Note: resume policy of "attr" may cause problems. "none" or "sparse_csum"
 shall be preferred.
 
-Multi-session spawn is done by `aslmcli`.
+Multi-session spawn is done by <%=tool%>.
 
 
 ### Examples
@@ -821,7 +824,7 @@ A non complete list of commands used in unit tests:
 ## <a name="usage"></a>Usage
 
 ```bash
-$ aslmcli -h
+$ <%=cmd%> -h
 <%= File.read(ENV["USAGE"]) %>
 
 ```
@@ -830,7 +833,7 @@ Note that actions and parameter values can be written in short form.
 
 # Application Plugins
 
-`aslmcli` comes with several Aspera application plugins.
+<%=tool%> comes with several Aspera application plugins.
 
 ## General: Application URL and Authentication
 
@@ -853,10 +856,10 @@ This requires additional setup.
 
 ### Configuration Wizard
 
-`aslmcli` provides a configuration wizard, to invoke it do:
+<%=tool%> provides a configuration wizard, to invoke it do:
 
 ```
-$ aslmcli config wizard aspera --url=https://sedemo.ibmaspera.com
+$ <%=cmd%> config wizard aspera --url=https://sedemo.ibmaspera.com
 ```
 
 If the `url` parameter is not provided it will be asked on command line.
@@ -877,11 +880,11 @@ For a _quick start_, follow the mandatory and sufficient section: [API Client Re
 
 For a more convenient, browser-less, experience follow the [JWT](#jwt) section (auth=jwt) in addition to Client Registration.
 
-In Oauth, a "Bearer" token are generated to authenticate REST calls. Bearer tokens are valid for a period of time.`aslmcli` saves generated tokens in its configuration folder, tries to re-use them or regenerates them when they have expired.
+In Oauth, a "Bearer" token are generated to authenticate REST calls. Bearer tokens are valid for a period of time.<%=tool%> saves generated tokens in its configuration folder, tries to re-use them or regenerates them when they have expired.
 
 ### <a name="clientreg"></a>API Client Registration
 
-The first step is to declare `aslmcli` in Aspera on Cloud using the admin interface.
+The first step is to declare <%=tool%> in Aspera on Cloud using the admin interface.
 
 (official documentation: [https://aspera.asperafiles.com/helpcenter/admin/organization/registering-an-api-client](https://aspera.asperafiles.com/helpcenter/admin/organization/registering-an-api-client) ).
 
@@ -892,14 +895,14 @@ Let's start by a registration with web based authentication (auth=web):
 * Open a web browser, log to your instance: e.g. `https://laurent.ibmaspera.com/`
 * Go to Admin View-Organization-API Clients-Create
 * Fill the API client creation form:
-	* Client Name: `aslmcli`
+	* Client Name: <%=tool%>
 	* Redirect URIs: `http://localhost:12345`
 	* Origins: `localhost`
 	* uncheck "Prompt users to allow client to access"
 	* leave JWT unchecked for now
 * Submit
 
-Note: for web based authentication, `aslmcli` listens on a local port (e.g. by default 12345), and the browser will provide the OAuth code there. For ``aslmcli` http is required, and 12345 is the default port.
+Note: for web based authentication, <%=tool%> listens on a local port (e.g. by default 12345), and the browser will provide the OAuth code there. For `<%=tool%> http is required, and 12345 is the default port.
 
 <img src="docs/Auth-registered-client.png" alt="Screenshot:Registered API Client"/>
 
@@ -907,10 +910,10 @@ Once the client is registered, a "Client ID" and "Secret" are created, these val
 
 ### <a name="aocpreset"></a>Option Preset for Aspera on Cloud
 
-It is convenient to save several of those parameters in an option preset for `aslmcli` in its configuration file. Lets create an option preset called: `my_aoc_org` using `ask` interactive input (client info from previous step):
+It is convenient to save several of those parameters in an option preset for <%=tool%> in its configuration file. Lets create an option preset called: `my_aoc_org` using `ask` interactive input (client info from previous step):
 
 ```
-$ aslmcli config id my_aoc_org ask url client_id client_secret
+$ <%=cmd%> config id my_aoc_org ask url client_id client_secret
 option: url> https://laurent.ibmaspera.com/
 option: client_id> BJLPObQiFw
 option: client_secret> yFS1mu-crbKuQhGFtfhYuoRW...
@@ -922,17 +925,17 @@ updated: my_aoc_org
 Define this preset as default configuration for the `aspera` plugin:
 
 ```bash
-$ aslmcli config id default set aspera my_aoc_org
+$ <%=cmd%> config id default set aspera my_aoc_org
 ```
 
 Note: Default `auth` method is `web` and default `redirect_uri` is `http://localhost:12345`.
 
 ### <a name="aocfirst"></a>First Use
 
-Once client has been registered and option preset created: `aslmcli` can be used:
+Once client has been registered and option preset created: <%=tool%> can be used:
 
 ```bash
-$ aslmcli aspera files br /
+$ <%=cmd%> aspera files br /
 Current Workspace: Default Workspace (default)
 empty
 ```
@@ -956,13 +959,13 @@ This can be done using any of the following method:
 * using the CLI:
 
 ```bash
-$ aslmcli config genkey ~/.aspera/aslmcli/aocapikey
+$ <%=cmd%> config genkey ~/.aspera/$ <%=cmd%>/aocapikey
 ```
 
 * `ssh-keygen`:
 
 ```bash
-$ ssh-keygen -t rsa -f ~/.aspera/aslmcli/aocapikey -N ''
+$ ssh-keygen -t rsa -f ~/.aspera/$ <%=cmd%>/aocapikey -N ''
 ```
 
 * `openssl`
@@ -970,7 +973,7 @@ $ ssh-keygen -t rsa -f ~/.aspera/aslmcli/aocapikey -N ''
 (on some openssl implementation (mac) there is option: -nodes (no DES))
 
 ```bash
-$ APIKEY=~/.aspera/aslmcli/aocapikey
+$ APIKEY=~/.aspera/$ <%=cmd%>/aocapikey
 $ openssl genrsa -passout pass:dummypassword -out ${APIKEY}.protected 2048
 $ openssl rsa -passin pass:dummypassword -in ${APIKEY}.protected -out ${APIKEY}
 $ openssl rsa -pubout -in ${APIKEY} -out ${APIKEY}.pub
@@ -1000,13 +1003,13 @@ Note: It is also possible to allow a "super key" to impersonate any user by regi
 ##### Using command line
 
 ```bash
-$ aslmcli aspera admin res client list
+$ <%=cmd%> aspera admin res client list
 :............:.........:
 :     id     :  name   :
 :............:.........:
-: BJLPObQiFw : aslmcli :
+: BJLPObQiFw : $ <%=cmd%> :
 :............:.........:
-$ aslmcli aspera admin res client --id=BJLPObQiFw modify @json:'{"jwt_grant_enabled":true,"explicit_authorization_required":false}'
+$ <%=cmd%> aspera admin res client --id=BJLPObQiFw modify @json:'{"jwt_grant_enabled":true,"explicit_authorization_required":false}'
 modified
 ```
 
@@ -1027,14 +1030,14 @@ The public key must be assigned to your user. This can be done in two manners:
 ##### Using command line
 
 ```bash
-$ aslmcli aspera admin res user list
+$ <%=cmd%> aspera admin res user list
 :........:................:
 :   id   :      name      :
 :........:................:
 : 109952 : Tech Support   :
 : 109951 : LAURENT MARTIN :
 :........:................:
-$ aslmcli aspera admin res user --id=109951 modify @ruby:'{"public_key"=>File.read(File.expand_path("~/.aspera/aslmcli/aocapikey.pub"))}'   
+$ <%=cmd%> aspera admin res user --id=109951 modify @ruby:'{"public_key"=>File.read(File.expand_path("~/.aspera/$ <%=cmd%>/aocapikey.pub"))}'   
 modified
 ```
 
@@ -1042,7 +1045,7 @@ Note: the `show` command can be used to verify modifications.
 
 #### Preset modification for JWT
 
-To activate JWT authentication for `aslmcli` using the preset, do the folowing:
+To activate JWT authentication for <%=tool%> using the preset, do the folowing:
 
 * change auth method to JWT
 * provide location of private key
@@ -1051,7 +1054,7 @@ To activate JWT authentication for `aslmcli` using the preset, do the folowing:
 Execute:
 
 ```bash
-$ aslmcli config id my_aoc_org update --auth=jwt --private-key=@val:@file:~/.aspera/aslmcli/aocapikey --username=laurent.martin.aspera@fr.ibm.com
+$ <%=cmd%> config id my_aoc_org update --auth=jwt --private-key=@val:@file:~/.aspera/$ <%=cmd%>/aocapikey --username=laurent.martin.aspera@fr.ibm.com
 ```
 
 Note: the private key argument represents the actual PEM string. In order to read the content from a file, use the @file: prefix. But if the @file: argument is used as is, it will read the file and set in the config file. So to keep the "@file" tag in the configuration file, the @val: prefix is added.
@@ -1086,7 +1089,7 @@ Refer to the AoC API for full list of query parameters.
 * Bulk creation
 
 ```bash
-$ aslmcli aspera admin res user create --bulk=yes @json:'[{"email":"dummyuser1@example.com"},{"email":"dummyuser2@example.com"}]'
+$ <%=cmd%> aspera admin res user create --bulk=yes @json:'[{"email":"dummyuser1@example.com"},{"email":"dummyuser2@example.com"}]'
 :.......:.........:
 :  id   : status  :
 :.......:.........:
@@ -1098,17 +1101,17 @@ $ aslmcli aspera admin res user create --bulk=yes @json:'[{"email":"dummyuser1@e
 * Find with filter and delete
 
 ```bash
-$ aslmcli aspera admin res user list --query='@json:{"q":"dummyuser"}' --fields=id,email
+$ <%=cmd%> aspera admin res user list --query='@json:{"q":"dummyuser"}' --fields=id,email
 :.......:........................:
 :  id   :         email          :
 :.......:........................:
 : 98398 : dummyuser1@example.com :
 : 98399 : dummyuser2@example.com :
 :.......:........................:
-$ thelist=$(echo $(aslmcli aspera admin res user list --query='@json:{"q":"dummyuser"}' --fields=id,email --field=id --format=csv)|tr ' ' ,)
+$ thelist=$(echo $($ <%=cmd%> aspera admin res user list --query='@json:{"q":"dummyuser"}' --fields=id,email --field=id --format=csv)|tr ' ' ,)
 $ echo $thelist
 98398,98399
-$ aslmcli aspera admin res user --bulk=yes --id=@json:[$thelist] delete
+$ <%=cmd%> aspera admin res user --bulk=yes --id=@json:[$thelist] delete
 :.......:.........:
 :  id   : status  :
 :.......:.........:
@@ -1120,7 +1123,7 @@ $ aslmcli aspera admin res user --bulk=yes --id=@json:[$thelist] delete
 * Display current users workspaces
 
 ```
-$ aslmcli aspera user workspaces
+$ <%=cmd%> aspera user workspaces
 :......:............................:
 :  id  :            name            :
 :......:............................:
@@ -1135,13 +1138,13 @@ $ aslmcli aspera user workspaces
 Creation of a sub-access key is like creation of access key with the following difference: authentication to node API is made with accesskey (master access key) and only the path parameter is provided: it is relative to the storage root of the master key. (id and secret are optional)
 
 ```
-$ aslmcli aspera admin resource node --name=_node_name_ --secret=_secret_ do access_key create --value=@json:'{"storage":{"path":"/folder1"}}'
+$ <%=cmd%> aspera admin resource node --name=_node_name_ --secret=_secret_ do access_key create --value=@json:'{"storage":{"path":"/folder1"}}'
 ```
 
 * display members of a workspace
 
 ```
-$ aslmcli aspera admin res workspace_membership list --fields=member_type,manager,member.email --query=@json:'{"page":1,"per_page":50,"embed":"member","inherited":false,"workspace_id":11363,"sort":"name"}'
+$ <%=cmd%> aspera admin res workspace_membership list --fields=member_type,manager,member.email --query=@json:'{"page":1,"per_page":50,"embed":"member","inherited":false,"workspace_id":11363,"sort":"name"}'
 :.............:.........:..................................:
 : member_type : manager :           member.email           :
 :.............:.........:..................................:
@@ -1169,7 +1172,7 @@ The central subcommand uses the "reliable query" API (session and file). It allo
 
 Filtering can be applied:
 ```
-$ aslmcli node central file list
+$ <%=cmd%> node central file list
 ```
 
 by providing the `validator` option, offline transfer validation can be done.
@@ -1181,23 +1184,23 @@ It is possible to start a FASPStream session using the node API:
 Use the "node stream create" command, then arguments are provided as a [_transfer-spec_](#_transferspec_).
 
 ```bash
-./bin/aslmcli node stream create --ts=@json:'{"direction":"send","source":"udp://233.3.3.4:3000?loopback=1&ttl=2","destination":"udp://233.3.3.3:3001/","remote_host":"localhost","remote_user":"stream","remote_password":"XXXX"}' --load-params=stream
+./bin/$ <%=cmd%> node stream create --ts=@json:'{"direction":"send","source":"udp://233.3.3.4:3000?loopback=1&ttl=2","destination":"udp://233.3.3.3:3001/","remote_host":"localhost","remote_user":"stream","remote_password":"XXXX"}' --load-params=stream
 ```
 
 ### Watchfolder
 
 Refer to [Aspera documentation](https://download.asperasoft.com/download/docs/entsrv/3.7.4/es_admin_linux/webhelp/index.html#watchfolder_external/dita/json_conf.html) for watch folder creation.
 
-`aslmcli` supports remote operations through the node API. Operations are:
+<%=tool%> supports remote operations through the node API. Operations are:
 
 * Start watchd and watchfolderd services running as a system user having access to files
 * configure a watchfolder to define automated transfers
 
 
 ```bash
-$ aslmcli node service create @json:'{"id":"mywatchd","type":"WATCHD","run_as":{"user":"user1"}}'
-$ aslmcli node service create @json:'{"id":"mywatchfolderd","type":"WATCHFOLDERD","run_as":{"user":"user1"}}'
-$ aslmcli node watch_folder create @json:'{"id":"mywfolder","source_dir":"/watch1","target_dir":"/","transport":{"host":"10.25.0.4","user":"user1","pass":"mypassword"}}'
+$ <%=cmd%> node service create @json:'{"id":"mywatchd","type":"WATCHD","run_as":{"user":"user1"}}'
+$ <%=cmd%> node service create @json:'{"id":"mywatchfolderd","type":"WATCHFOLDERD","run_as":{"user":"user1"}}'
+$ <%=cmd%> node watch_folder create @json:'{"id":"mywfolder","source_dir":"/watch1","target_dir":"/","transport":{"host":"10.25.0.4","user":"user1","pass":"mypassword"}}'
 ```
 
 ### Out of Transfer File Validation
@@ -1205,13 +1208,13 @@ $ aslmcli node watch_folder create @json:'{"id":"mywfolder","source_dir":"/watch
 Follow the Aspera Transfer Server configuration to activate this feature.
 
 ```
-$ aslmcli node central file list --validator=aslmcli --data=@json:'{"file_transfer_filter":{"max_result":1}}'
+$ <%=cmd%> node central file list --validator=$ <%=cmd%> --data=@json:'{"file_transfer_filter":{"max_result":1}}'
 :..............:..............:............:......................................:
 : session_uuid :    file_id   :   status   :              path                    :
 :..............:..............:............:......................................:
 : 1a74444c-... : 084fb181-... : validating : /home/xfer.../PKG - my title/200KB.1 :
 :..............:..............:............:......................................:
-$ aslmcli node central file update --validator=aslmcli --data=@json:'{"files":[{"session_uuid": "1a74444c-...","file_id": "084fb181-...","status": "completed"}]}'
+$ <%=cmd%> node central file update --validator=$ <%=cmd%> --data=@json:'{"files":[{"session_uuid": "1a74444c-...","file_id": "084fb181-...","status": "completed"}]}'
 updated
 ```
 
@@ -1227,7 +1230,7 @@ Create another configuration for the Azure ATS instance: in section "node", name
 Then execute the following command:
 
 ```bash
-$ aslmcli node download /share/sourcefile --to-folder=/destinationfolder --load-params=awsshod --transfer=node --transfer-node=@param:azureats
+$ <%=cmd%> node download /share/sourcefile --to-folder=/destinationfolder --load-params=awsshod --transfer=node --transfer-node=@param:azureats
 ```
 
 This will get transfer information from the SHOD instance and tell the Azure ATS instance 
@@ -1236,7 +1239,7 @@ to download files.
 ### Create access key
 
 ```
-$ aslmcli node access_key create --value=@json:'{"id":"eudemo-sedemo","secret":"mystrongsecret","storage":{"type":"local","path":"/data/asperafiles"}}'
+$ <%=cmd%> node access_key create --value=@json:'{"id":"eudemo-sedemo","secret":"mystrongsecret","storage":{"type":"local","path":"/data/asperafiles"}}'
 ```
 
 ## <a name="client"></a>Client
@@ -1252,7 +1255,7 @@ The `client` plugin refers to the use of a local FASP client. It provides the fo
 Locally installed Aspera products can be listed with:
 
 ```bash
-$ aslmcli client available
+$ <%=cmd%> client available
 :..........................:................................................:
 :           name           :                    app_root                    :
 :..........................:................................................:
@@ -1268,11 +1271,11 @@ To select another product use option: `use_product`, either on command line:
 `--use-product='Aspera Enterprise Server'`, or by setting as default:
 
 ```
-$ aslmcli config id cli_default set use_product 'Aspera Enterprise Server'
+$ <%=cmd%> config id cli_default set use_product 'Aspera Enterprise Server'
 updated: cli_default: use_product <- Aspera Enterprise Server
-$ aslmcli config id default set config cli_default
+$ <%=cmd%> config id default set config cli_default
 updated: default: config <- cli_default
-$ aslmcli client current
+$ <%=cmd%> client current
 :........................:.......................................................................................:
 :          name          :                                         path                                          :
 :........................:.......................................................................................:
@@ -1292,7 +1295,7 @@ $ aslmcli client current
 ### List current resources used
 
 ```
-$ aslmcli client current
+$ <%=cmd%> client current
 :........................:............................................................................................:
 :          name          :                                            path                                            :
 :........................:............................................................................................:
@@ -1311,7 +1314,7 @@ $ aslmcli client current
 ### Installation of Connect Client on command line
 
 ```bash
-$ ./bin/aslmcli client connect list
+$ ./bin/$ <%=cmd%> client connect list
 :...............................................:......................................:..............:
 :                      id                       :                title                 :   version    :
 :...............................................:......................................:..............:
@@ -1324,7 +1327,7 @@ $ ./bin/aslmcli client connect list
 : urn:uuid:213C9370-22B1-11E2-81C1-0800200C9A66 : Aspera Connect for Linux 32          : 3.6.2.117442 :
 : urn:uuid:97F94DF0-22B1-11E2-81C1-0800200C9A66 : Aspera Connect for Linux 64          : 3.7.2.141527 :
 :...............................................:......................................:..............:
-$ aslmcli client connect id 'Aspera Connect for Mac Intel 10.6' links list
+$ <%=cmd%> client connect id 'Aspera Connect for Mac Intel 10.6' links list
 :.............................................:..........................:.......................................................................:..........:...............:
 :                    title                    :           type           :                                 href                                  : hreflang :      rel      :
 :.............................................:..........................:.......................................................................:..........:...............:
@@ -1337,7 +1340,7 @@ $ aslmcli client connect id 'Aspera Connect for Mac Intel 10.6' links list
 : Aspera Connect PDF Documentation for Mac OS : application/pdf          : docs/user/osx/zh-cn/pdf/Connect_User_3.7.0_OSX_zh-cn.pdf              : zh-cn    : documentation :
 : Aspera Connect for Mac Release Notes        : text/html                : http://www.asperasoft.com/en/release_notes/default_1/release_notes_54 : en       : release-notes :
 :.............................................:..........................:.......................................................................:..........:...............:
-$ aslmcli client connect id 'Aspera Connect for Mac Intel 10.6' links id 'Mac Intel Installer' download --to-folder=.
+$ <%=cmd%> client connect id 'Aspera Connect for Mac Intel 10.6' links id 'Mac Intel Installer' download --to-folder=.
 downloaded: AsperaConnect-3.6.1.111259-mac-intel-10.6.dmg
 ```
 
@@ -1350,10 +1353,10 @@ Works at FASP level (SSH/ascp/ascmd). (different from node api)
 One can test the "server" application using the well known demo server:
 
 ```bash
-$ aslmcli config id aspera_demo_server update --url=ssh://demo.asperasoft.com:33001 --username=asperaweb --password=demoaspera
-$ aslmcli config id default set server aspera_demo_server 
-$ aslmcli server browse /aspera-test-dir-large
-$ aslmcli server download /aspera-test-dir-large/200MB
+$ <%=cmd%> config id aspera_demo_server update --url=ssh://demo.asperasoft.com:33001 --username=asperaweb --password=demoaspera
+$ <%=cmd%> config id default set server aspera_demo_server 
+$ <%=cmd%> server browse /aspera-test-dir-large
+$ <%=cmd%> server download /aspera-test-dir-large/200MB
 ```
 
 This creates a option preset "aspera_demo_server" and set it as default for application "server"
@@ -1413,40 +1416,40 @@ and here: [https://developer.asperasoft.com/web/node/access-keys](https://develo
 Example: create access key on softlayer:
 
 ```
-aslmcli ats access_key create --cloud=softlayer --region=ams --params=@json:'{"storage":{"type":"softlayer_swift","container":"_container_name_","credentials":{"api_key":"value","username":"_name_:_usr_name_"},"path":"/"},"id":"_optional_id_","name":"_optional_name_"}'
+$ <%=cmd%> ats access_key create --cloud=softlayer --region=ams --params=@json:'{"storage":{"type":"softlayer_swift","container":"_container_name_","credentials":{"api_key":"value","username":"_name_:_usr_name_"},"path":"/"},"id":"_optional_id_","name":"_optional_name_"}'
 ```
 
 Example: create access key on AWS:
 
 ```
-aslmcli ats access_key create --cloud=aws --region=eu-west-1 --params=@json:'{"id":"testkey3","name":"laurent key AWS","storage":{"type":"aws_s3","bucket":"my-bucket","credentials":{"access_key_id":"AKIA_MY_API_KEY","secret_access_key":"my/secret/here"},"path":"/laurent"}}'
+$ <%=cmd%> ats access_key create --cloud=aws --region=eu-west-1 --params=@json:'{"id":"testkey3","name":"laurent key AWS","storage":{"type":"aws_s3","bucket":"my-bucket","credentials":{"access_key_id":"AKIA_MY_API_KEY","secret_access_key":"my/secret/here"},"path":"/laurent"}}'
 
 ```
 
 Example: create access key on Azure SAS:
 
 ```
-aslmcli ats access_key create --cloud=azure --region=eastus --params=@json:'{"id":"testkeyazure","name":"laurent key azure","storage":{"type":"azure_sas","credentials":{"shared_access_signature":"https://xxxx.blob.core.windows.net/..."},"path":"/"}}'
+$ <%=cmd%> ats access_key create --cloud=azure --region=eastus --params=@json:'{"id":"testkeyazure","name":"laurent key azure","storage":{"type":"azure_sas","credentials":{"shared_access_signature":"https://xxxx.blob.core.windows.net/..."},"path":"/"}}'
 
 ```
 
 Example: create access key on Azure:
 
 ```
-aslmcli ats access_key create --cloud=azure --region=eastus --params=@json:'{"id":"testkeyazure","name":"laurent key azure","storage":{"type":"azure","credentials":{"account":"myaccount","key":"myaccesskey","storage_endpoint":"myblob"},"path":"/"}}'
+$ <%=cmd%> ats access_key create --cloud=azure --region=eastus --params=@json:'{"id":"testkeyazure","name":"laurent key azure","storage":{"type":"azure","credentials":{"account":"myaccount","key":"myaccesskey","storage_endpoint":"myblob"},"path":"/"}}'
 
 ```
 
 delete all my access keys:
 
 ```
-for k in $(aslmcli ats access_key list --field=id --format=csv);do aslmcli ats access_key id $k delete;done
+for k in $($ <%=cmd%> ats access_key list --field=id --format=csv);do $ <%=cmd%> ats access_key id $k delete;done
 ```
 
 ## IBM Aspera Sync
 
-A basic plugin to start an "async" using aslmcli. The main advantage is the possibility
-to start from ma configuration file, using aslmcli standard options.
+A basic plugin to start an "async" using $ <%=cmd%>. The main advantage is the possibility
+to start from ma configuration file, using $ <%=cmd%> standard options.
 
 ## Preview
 
@@ -1473,16 +1476,16 @@ This is related to:
 
 ### Configuration
 
-Like any aslmcli commands, parameters can be passed on command line or using a configuration option preset. Example using a option preset:
+Like any $ <%=cmd%> commands, parameters can be passed on command line or using a configuration option preset. Example using a option preset:
 
 ```
-$ aslmcli config id my_aoc_access_key update --url=https://localhost:9092 --username=my_access_key --password=my_secret
-$ aslmcli config id default set preview my_aoc_access_key
+$ <%=cmd%> config id my_aoc_access_key update --url=https://localhost:9092 --username=my_access_key --password=my_secret
+$ <%=cmd%> config id default set preview my_aoc_access_key
 ```
 
 Once can check if the access key is well configured using:
 ```
-$ aslmcli -Pmy_aoc_access_key node browse /
+$ <%=cmd%> -Pmy_aoc_access_key node browse /
 ```
 
 ### Execution
@@ -1527,7 +1530,7 @@ If the preview generator does not have access to files on the file system (it is
 To skip some folders, use the option : `--skip-folders`, note that it expects a list of path starting with slash, use the `@json:` notation, example:
 
 ```
-$ aslmcli preview scan --skip-folders=@json:'["/not_here"]'
+$ <%=cmd%> preview scan --skip-folders=@json:'["/not_here"]'
 ```
 
 ### Examples
@@ -1535,14 +1538,14 @@ $ aslmcli preview scan --skip-folders=@json:'["/not_here"]'
 on command line:
 
 ```bash
-aslmcli preview event --skip-types=office --file-access=remote --overwrite=always --iteration-file=/tmp/restart.txt --lock-port=12346
+$ <%=cmd%> preview event --skip-types=office --file-access=remote --overwrite=always --iteration-file=/tmp/restart.txt --lock-port=12346
 ```
 
 with crontab:
 
 ```bash
-2-59 * * * * su -s /bin/bash - xfer -c 'timeout 10m aslmcli preview event --skip-types=office --lock-port=12346 --log-level=info --logger=syslog --iteration-file=/tmp/preview_restart.txt'
-0 * * * *    su -s /bin/bash - xfer -c 'timeout 30m aslmcli preview scan  --skip-types=office --lock-port=12346 --log-level=info --logger=syslog'
+2-59 * * * * su -s /bin/bash - xfer -c 'timeout 10m $ <%=cmd%> preview event --skip-types=office --lock-port=12346 --log-level=info --logger=syslog --iteration-file=/tmp/preview_restart.txt'
+0 * * * *    su -s /bin/bash - xfer -c 'timeout 30m $ <%=cmd%> preview scan  --skip-types=office --lock-port=12346 --log-level=info --logger=syslog'
 ```
 
 ### External tools: Linux
@@ -1666,7 +1669,7 @@ $ asession -h
 
 ## Requirements
 
-`aslmcli` maybe used as a simple hot folder engine. A hot folder being defined as a tool that:
+<%=tool%> maybe used as a simple hot folder engine. A hot folder being defined as a tool that:
 
 * locally (or remotely) detects new files in a top folder
 * send detected files to a remote (respectively, local) repository
@@ -1681,7 +1684,7 @@ In addition: the detection should be made "continuously" or on specific time/dat
 The general idea is to rely on :
 
 * existing `ascp` features for detection and transfer
-* take advantage of `aslmcli` configuration capabilities and server side knowledge
+* take advantage of <%=tool%> configuration capabilities and server side knowledge
 * the OS scheduler for reliability and continuous operation
 
 ### ascp features
@@ -1695,7 +1698,7 @@ Interesting ascp features are found in its arguments: (see ascp manual):
 
 Note that:
 
-* aslmcli takes transfer parameters exclusively as a transfer_spec, with `--ts` parameter.
+* $ <%=cmd%> takes transfer parameters exclusively as a transfer_spec, with `--ts` parameter.
 * not all native ascp arguments are available as standard transfer_spec parameters
 * native ascp arguments can be provided with the transfer spec parameter: EX_ascp_args (array), only for the "local" transfer agent (not connect or node)
 
@@ -1707,12 +1710,12 @@ Note: parameters may be saved in a preset and used with `-P`.
 
 ### Scheduling
 
-Once aslmcli parameters are defined, run the command using the OS native scheduler, e.g. every minutes, or 5 minutes, etc... Refer to section [_Scheduling_](#_scheduling_).
+Once $ <%=cmd%> parameters are defined, run the command using the OS native scheduler, e.g. every minutes, or 5 minutes, etc... Refer to section [_Scheduling_](#_scheduling_).
 
 ## Example
 
 ```
-aslmcli server upload source_hot --to-folder=/Upload/target_hot --lock-port=12345 --ts=@json:'{"EX_ascp_args":["--remove-after-transfer","--remove-empty-directories","--exclude-newer-than=-8","--src-base","source_hot"]}'
+$ <%=cmd%> server upload source_hot --to-folder=/Upload/target_hot --lock-port=12345 --ts=@json:'{"EX_ascp_args":["--remove-after-transfer","--remove-empty-directories","--exclude-newer-than=-8","--src-base","source_hot"]}'
 
 ```
 
@@ -1724,7 +1727,7 @@ Main components:
 
 * `Asperalm` generic classes for REST and OAuth
 * `Asperalm::Fasp`: starting and monitoring transfers. It can be considered as a FASPManager class for Ruby.
-* `Asperalm::Cli`: the `aslmcli` tool.
+* `Asperalm::Cli`: <%=tool%>.
 
 
 # History
@@ -1736,7 +1739,7 @@ There were a few pitfalls:
 * The tool was written in the aging `perl` language while most Aspera application products (but the Transfer Server) are written in `ruby`.
 * The tool was only for transfers, but not able to call other products APIs
 
-So, it evolved into `aslmcli`:
+So, it evolved into <%=tool%>:
 
 * portable: works on platforms supporting `ruby` (and `ascp`)
 * easy to install with the `gem` utility
@@ -1760,6 +1763,11 @@ This means that you do not have ruby support for ED25519 SSH keys. You may eithe
 Gems, or remove your ed25519 key from your `.ssh` folder to solve the issue.
 
 # Release Notes
+* version 0.9
+
+  * Renamed the CLI from aslmcli to $ <%=cmd%> ("Amelia", Multi-Layer IBM Aspera command line interface)
+  * Automatic rename and conversion of former config folder from aslmcli to $ <%=cmd%>
+
 * version 0.7.6
 
   * add "sync" plugin
@@ -1779,7 +1787,7 @@ Breaking change:
   * ats server list provisioned -> ats cluster list
   * ats server list clouds -> ats cluster clouds
   * ats server list instance --cloud=x --region=y -> ats cluster show --cloud=x --region=y
-  * ats server id xxx -> aslmcli ats cluster show --id=xxx
+  * ats server id xxx -> $ <%=cmd%> ats cluster show --id=xxx
   * ats subscriptions -> ats credential subscriptions
   * ats api_key repository list -> ats credential cache list
   * ats api_key list -> ats credential list

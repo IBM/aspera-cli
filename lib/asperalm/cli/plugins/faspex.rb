@@ -205,9 +205,9 @@ module Asperalm
               source_name=source_ids.first['name']
               source_id=source_ids.first['id']
               source_hash=Main.instance.options.get_option(:storage,:mandatory)
-              raise CliError,"No storage defined in aslmcli config" if source_hash.nil?
+              raise CliError,"No storage defined in config file" if source_hash.nil?
               if !source_hash.has_key?(source_name)
-                raise CliError,"No such storage in aslmcli config: \"#{source_name}\" in [#{source_hash.keys.join(', ')}]"
+                raise CliError,"No such storage in config file: \"#{source_name}\" in [#{source_hash.keys.join(', ')}]"
               end
               source_info=source_hash[source_name]
               Log.log.debug("source_info: #{source_info}")

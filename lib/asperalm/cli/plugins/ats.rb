@@ -13,7 +13,7 @@ module Asperalm
           LEGACY_ATS_URI='https://ats.aspera.io/pub/v1'
           # local address to receive code on authentication
           LOCAL_REDIRECT_URI="http://localhost:12345"
-          # cache located in aslmcli config folder
+          # cache located in application's config folder
           ATS_KEYS_FILENAME="ats_api_keys.json"
           attr_reader :ats_api_public
           def initialize
@@ -68,7 +68,7 @@ module Asperalm
                 # if no api key requested and no repo, create one
                 create_new_api_key if repo_api_keys.empty?
                 # else there must be only one
-                raise "please select one api key with --ats-id, list with: aslmcli ats api repo list" if repo_api_keys.length != 1
+                raise "please select one api key with --ats-id, list with: #{Main.instance.program_name} ats api repo list" if repo_api_keys.length != 1
                 @current_api_key_info=repo_api_keys.first
               else
                 selected=repo_api_keys.select{|i| i['ats_id'].eql?(requested_id)}
@@ -83,7 +83,7 @@ module Asperalm
           def create_new_api_key
             # TODO: provide param username and password to avoid web auth
             # get login page url in exception code 3xx
-            res=ats_api_public.call({:operation=>'POST',:subpath=>"api_keys",:return_error=>true,:headers=>{'Accept'=>'application/json'},:url_params=>{:description => "created by aslmcli",:redirect_uri=>LOCAL_REDIRECT_URI}})
+            res=ats_api_public.call({:operation=>'POST',:subpath=>"api_keys",:return_error=>true,:headers=>{'Accept'=>'application/json'},:url_params=>{:description => "created by #{Main.instance.program_name}",:redirect_uri=>LOCAL_REDIRECT_URI}})
             # TODO: check code is 3xx ?
             login_page_url=res[:http]['Location']
             @current_api_key_info=Oauth.goto_page_and_get_request(LOCAL_REDIRECT_URI,login_page_url)
