@@ -472,6 +472,11 @@ module Asperalm
 
       # this is the main function called by initial script just after constructor
       def process_command_line(argv)
+        current_prog_name=File.basename($PROGRAM_NAME)
+        unless current_prog_name.eql?(@@PROGRAM_NAME)
+          STDERR.puts "#{"WARNING".bg_red.blink.gray} Please use '#{@@PROGRAM_NAME}' instead of '#{current_prog_name}'"
+          STDERR.puts "#{"WARNING".bg_red.blink.gray} '#{current_prog_name}' will be removed in a future version"
+        end
         exception_info=nil
         begin
           # first thing : manage debug level (allows debugging or option parser)
