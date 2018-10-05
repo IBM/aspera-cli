@@ -15,8 +15,7 @@ Disclaimers:
 * Aspera, FASP are owned by IBM
 * This GEM is not endorsed/supported by IBM/Aspera
 * Use at your risk (not in production environments)
-* This gem is provided as-is, and is not intended to be 
-a complete CLI, or industry-grade product.
+* This gem is provided as-is, and is not intended to be a complete CLI, or industry-grade product.
 * some features may not be fully validated
 * IBM provides an officially supported Aspera CLI: [http://downloads.asperasoft.com/en/downloads/62](http://downloads.asperasoft.com/en/downloads/62) .
 
@@ -184,10 +183,10 @@ The `asperalm` Gem provides a command line interface (CLI) which interacts with 
 <%=tool%> provides the following features:
 
 * Supports most Aspera server products (on-premise and SaaS)
-* Options can be provided on command line, in configuration file, in env var, in files (products URL, credentials or any option)
-* Commands, Option values and Parameters can be provided in short format (must be unique)
-* FASP [Transfer Agents](#agents) can be: FaspManager (local ascp), or Connect Client, or a transfer node
-* Transfer parameters can be altered by modification of transferspec, this includes requiring multi-session
+* Any command line options (products URL, credentials or any option) can be provided on command line, in configuration file, in env var, in files
+* Supports Commands, Option values and Parameters shortcuts
+* FASP [Transfer Agents](#agents) can be: FaspManager (local ascp), or Connect Client, or any transfer node
+* Transfer parameters can be altered by modification of _transfer-spec_, this includes requiring multi-session
 * Allows transfers from products to products, essentially at node level (using the node transfer agent)
 * Supports FaspStream creation (using Node API)
 * Supports Watchfolder creation (using Node API)
@@ -659,12 +658,13 @@ The use of a _transfer-spec_ instead of `ascp` parameters has the advantage of:
 
 A [_transfer-spec_](#transferspec) is a Hash table, so it is described on the command line with the [Extended Value Syntax](#extended).
 
-<a name="transferparams"></a>
-_transfer-spec_ parameters are described in this document: [Transfer Parameters](docs/transfer_spec.html).
+## <a name="transferparams"></a>Transfer Parameters
 
 All standard _transfer-spec_ parameters can be overloaded. To display parameters,
 run in debug mode (--log-level=debug). [_transfer-spec_](#transferspec) can 
 also be saved/overridden in the config file.
+
+<%= File.read('docs/transfer_spec.html').gsub(/.*<body>(.*)<\/body>.*/m,'\1') %>
 
 ### Destination folder for transfers
 
