@@ -15,10 +15,7 @@ module Asperalm
         alias super_declare_options declare_options
         def declare_options
           super_declare_options
-          Main.instance.options.add_opt_simple(:recipient,"package recipient")
-          Main.instance.options.add_opt_simple(:title,"package title")
-          Main.instance.options.add_opt_simple(:note,"package note")
-          Main.instance.options.add_opt_simple(:metadata,"package metadata hash value (use @json:)")
+          Main.instance.options.add_opt_simple(:delivery_info,"package delivery information (extended value)")
           Main.instance.options.add_opt_simple(:source_name,"create package from remote source (by name)")
           Main.instance.options.add_opt_simple(:storage,"Faspex local storage definition")
           Main.instance.options.add_opt_list(:box,[:inbox,:sent,:archive],"package box")
@@ -102,7 +99,7 @@ module Asperalm
           return @api_v4
         end
 
-        def action_list; [ :admin, :package, :dropbox, :recv_publink, :source, :me ];end
+        def action_list; [ :admin, :package, :dropbox, :recv_publink, :source, :me, :dbx4 ];end
 
         # we match recv command on atom feed on this field
         PACKAGE_MATCH_FIELD='delivery_id'
@@ -120,31 +117,19 @@ module Asperalm
               return Main.result_empty unless all_inbox_data.has_key?('entry')
               return {:data=>all_inbox_data['entry'],:type=>:object_list,:fields=>[PACKAGE_MATCH_FIELD,'title','items'], :textify => lambda { |table_data| Faspex.textify_package_list(table_data)} }
             when :send
-              filelist = Main.instance.options.get_next_argument("file list",:multiple)
-              package_create_params={
-                "delivery"=>{
-                "title"                 =>Main.instance.options.get_option(:title,:mandatory),
-                "note"                  =>Main.instance.options.get_option(:note,:mandatory),
-                "recipients"            =>Main.instance.options.get_option(:recipient,:mandatory).split(','),
-                "send_upload_result"    =>true,
-                "notify_on_upload"      => false,
-                "notifiable_on_upload"  => "",
-                "notify_on_download"    => false,
-                "notifiable_on_download"=> "",
-                "use_encryption_at_rest"=>false,
-                "sources"               =>[{"paths"=>filelist}]
-                }
-              }
+              delivery_info=Main.instance.options.get_option(:delivery_info,:mandatory)
+              raise CliBadArgument,"delivery_info must be hash, refer to doc" unless delivery_info.is_a?(Hash)
+              delivery_info['sources']||=[{'paths'=>[]}]
+              first_source=delivery_info['sources'].first
+              filelist = Main.instance.options.get_next_argument('file list',:multiple)
+              first_source['paths'].push(*filelist)
               source_name=Main.instance.options.get_option(:source_name,:optional)
               if !source_name.nil?
                 source_list=api_v3.call({:operation=>'GET',:subpath=>"source_shares",:headers=>{'Accept'=>'application/json'}})[:data]['items']
                 source_id=self.class.get_source_id(source_list,source_name)
-                package_create_params['delivery']['sources'].first['id']=source_id
+                first_source['id']=source_id
               end
-              metadata=Main.instance.options.get_option(:metadata,:optional)
-              if !metadata.nil?
-                package_create_params['delivery']['metadata']=metadata
-              end
+              package_create_params={'delivery'=>delivery_info}
               send_result=api_v3.call({:operation=>'POST',:subpath=>'send',:json_params=>package_create_params,:headers=>{'Accept'=>'application/json'}})[:data]
               if send_result.has_key?('error')
                 raise CliBadArgument,"#{send_result['error']['user_message']}: #{send_result['error']['internal_message']}"
@@ -232,12 +217,16 @@ module Asperalm
             my_info=api_v3.call({:operation=>'GET',:subpath=>"me",:headers=>{'Accept'=>'application/json'}})[:data]
             return {:data=>my_info, :type=>:single_object}
           when :dropbox
-            command_pkg=Main.instance.options.get_next_argument('command',[ :list ])
+            command_pkg=Main.instance.options.get_next_argument('command',[ :list, :create ])
             case command_pkg
             when :list
               dropbox_list=api_v3.call({:operation=>'GET',:subpath=>"/aspera/faspex/dropboxes",:headers=>{'Accept'=>'application/json'}})[:data]
               return {:data=>dropbox_list['items'], :type=>:object_list, :fields=>['name','id','description','can_read','can_write']}
+              #              when :create
+              #
             end
+          when :dbx4
+            return Plugin.entity_action(api_v4,'admin/dropboxes',['id','e_wg_name','e_wg_desc','created_at'],:id)
           when :recv_publink
             thelink=Main.instance.options.get_next_argument("Faspex public URL for a package")
             link_data=self.class.get_link_data(thelink)

@@ -23,7 +23,7 @@ That being said, <%=tool%> is very powerful and gets things done, it&apos;s also
 
 This manual addresses three parts:
 
-* <%=tool%> : ("Amelia") command line interface to Aspera
+* <%=tool%> : ("Amelia") The Multi Layer IBM Aspera tool
 * `asession` : starting a FASP Session with JSON parameters
 * `Asperalm` : includes a Ruby "FASPManager"
 
@@ -1290,7 +1290,33 @@ This creates a option preset "aspera_demo_server" and set it as default for appl
 
 ## IBM Aspera Faspex
 
-Send and receive packages.
+### Sending a Package
+
+Provide delivery info in JSON, example:
+
+```
+--delivery-info=@json:'{"title":"my title","recipients":["laurent.martin.aspera@fr.ibm.com"]}'
+```
+
+a note can be added: `"note":"Please ..."`
+
+metadata: `"metadata":{"Meta1":"Val1","Meta2":"Val2"}`
+
+
+Note for full details, refer to:
+[Reference on Developer Site](https://developer.asperasoft.com/web/faspex/sending)
+
+### operation on dropboxes
+
+Note: This requires the use of APIv4, refer to the Faspex Admin manual on how to activate.
+
+Example:
+
+```
+$ <%=cmd%> faspex dbx4 create --value=@json:'{"dropbox":{"e_wg_name":"test1","e_wg_desc":"test1"}}'
+$ <%=cmd%> faspex dbx4 list
+$ <%=cmd%> faspex dbx4 delete --id=36
+```
 
 ### remote sources
 
@@ -1689,9 +1715,14 @@ This means that you do not have ruby support for ED25519 SSH keys. You may eithe
 Gems, or remove your ed25519 key from your `.ssh` folder to solve the issue.
 
 # Release Notes
+
+* version 0.9.1
+
+  * Breaking change: changed faspex package creation to match API, see Faspex section
+
 * version 0.9
 
-  * Renamed the CLI from aslmcli to $ <%=cmd%> ("Amelia", Multi-Layer IBM Aspera command line interface)
+  * Renamed the CLI from aslmcli to $ <%=cmd%>
   * Automatic rename and conversion of former config folder from aslmcli to $ <%=cmd%>
 
 * version 0.7.6
