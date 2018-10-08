@@ -147,7 +147,7 @@ t/fx1:
 	$(EXETEST) faspex package list
 	@touch $@
 t/fx2:
-	$(EXETEST) faspex package send $(SAMPLE_FILE) --note="my note" --title="my title" --recipient="laurent.martin.aspera@fr.ibm.com"
+	$(EXETEST) faspex package send $(SAMPLE_FILE) --delivery-info=@json:'{"title":"my title","recipients":["laurent.martin.aspera@fr.ibm.com"]}'
 	@touch $@
 t/fx3:
 	$(EXETEST) faspex package recv $$($(EXETEST) faspex package list --fields=delivery_id --format=csv --box=sent|tail -n 1) --box=sent
