@@ -99,7 +99,7 @@ module Asperalm
           return @api_v4
         end
 
-        def action_list; [ :admin, :package, :dropbox, :recv_publink, :source, :me, :dbx4 ];end
+        def action_list; [ :package, :source, :me, :dropbox, :recv_publink, :v4 ];end
 
         # we match recv command on atom feed on this field
         PACKAGE_MATCH_FIELD='delivery_id'
@@ -225,8 +225,6 @@ module Asperalm
               #              when :create
               #
             end
-          when :dbx4
-            return Plugin.entity_action(api_v4,'admin/dropboxes',['id','e_wg_name','e_wg_desc','created_at'],:id)
           when :recv_publink
             thelink=Main.instance.options.get_next_argument("Faspex public URL for a package")
             link_data=self.class.get_link_data(thelink)
@@ -242,9 +240,22 @@ module Asperalm
             transfer_spec=Fasp::Uri.new(transfer_uri).transfer_spec
             transfer_spec['direction']='receive'
             return Main.instance.start_transfer_wait_result(transfer_spec,:node_gen3)
-          when :admin
-            resource=Main.instance.options.get_next_argument('command',[ :user ])
-            return Plugin.entity_action(api_v4,resource.to_s+'s',['id','name','first_name','last_name'],:id)
+          when :v4
+            command=Main.instance.options.get_next_argument('command',[:dropbox, :dmembership, :workgroup,:wmembership,:user,:metadata_profile])
+            case command
+            when :dropbox
+              return Plugin.entity_action(api_v4,'admin/dropboxes',['id','e_wg_name','e_wg_desc','created_at'],:id)
+            when :dmembership
+              return Plugin.entity_action(api_v4,'dropbox_memberships',nil,:id)
+            when :workgroup
+              return Plugin.entity_action(api_v4,'admin/workgroups',['id','e_wg_name','e_wg_desc','created_at'],:id)
+            when :wmembership
+              return Plugin.entity_action(api_v4,'workgroup_memberships',nil,:id)
+            when :user
+              return Plugin.entity_action(api_v4,'users',['id','name','first_name','last_name'],:id)
+            when :metadata_profile
+              return Plugin.entity_action(api_v4,'metadata_profiles',nil,:id)
+            end
           end # command
         end
       end

@@ -1290,6 +1290,8 @@ This creates a option preset "aspera_demo_server" and set it as default for appl
 
 ## IBM Aspera Faspex
 
+Note that the command "v4" requires the use of APIv4, refer to the Faspex Admin manual on how to activate.
+
 ### Sending a Package
 
 Provide delivery info in JSON, example:
@@ -1308,21 +1310,22 @@ Note for full details, refer to:
 
 ### operation on dropboxes
 
-Note: This requires the use of APIv4, refer to the Faspex Admin manual on how to activate.
-
 Example:
 
 ```
-$ <%=cmd%> faspex dbx4 create --value=@json:'{"dropbox":{"e_wg_name":"test1","e_wg_desc":"test1"}}'
-$ <%=cmd%> faspex dbx4 list
-$ <%=cmd%> faspex dbx4 delete --id=36
+$ <%=cmd%> faspex v4 dropbox create --value=@json:'{"dropbox":{"e_wg_name":"test1","e_wg_desc":"test1"}}'
+$ <%=cmd%> faspex v4 dropbox list
+$ <%=cmd%> faspex v4 dropbox delete --id=36
 ```
 
 ### remote sources
 
 Faspex lacks an API to list the contents of a remote source (available in web UI). To workaround this,
 the node API is used, for this it is required to add a section ":storage" that links
-a storage name to a node config and sub path. Example:
+a storage name to a node config and sub path.
+
+Example:
+
 ```yaml
 my_faspex_conf:
   url: https://10.25.0.3/aspera/faspex
@@ -1341,6 +1344,8 @@ my_faspex_node:
 In this example, a faspex storage named "testlaurent" exists in Faspex, and is located
 under the docroot in "/myfiles" (this must be the same as configured in Faspex).
 The node configuration name is "my_faspex_node" here.
+
+Note: the v4 API provide an API for nodes and shares.
 
 ## IBM Aspera Shares
 
