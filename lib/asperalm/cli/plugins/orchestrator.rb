@@ -13,7 +13,6 @@ module Asperalm
           super_declare_options
           Main.instance.options.add_opt_simple(:params,"parameters hash table, use @json:{\"param\":\"value\"}")
           Main.instance.options.add_opt_simple(:result,"specify result value as: 'work step:parameter'")
-          Main.instance.options.add_opt_simple(:id,"workflow identifier")
           Main.instance.options.add_opt_boolean(:synchronous,"work step:parameter expected as result")
           Main.instance.options.set_option(:params,{})
           Main.instance.options.set_option(:synchronous,:no)

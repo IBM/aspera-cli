@@ -11,9 +11,7 @@ module Asperalm
         alias super_declare_options declare_options
         def declare_options
           super_declare_options
-          Main.instance.options.add_opt_simple(:value,"extended value for create, update, list filter")
           Main.instance.options.add_opt_simple(:validator,"identifier of validator (optional for central)")
-          Main.instance.options.add_opt_simple(:id,"entity identifier for update, show, and modify")
           Main.instance.options.add_opt_simple(:asperabrowserurl,"URL for simple aspera web ui")
           #Main.instance.options.set_option(:value,'@json:{"active_only":false}')
           Main.instance.options.set_option(:asperabrowserurl,'https://asperabrowser.mybluemix.net')

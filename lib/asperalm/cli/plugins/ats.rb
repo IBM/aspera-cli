@@ -166,7 +166,6 @@ module Asperalm
 
         def declare_options(skip_common=false)
           unless skip_common
-            Main.instance.options.add_opt_simple(:id,"Access key identifier, or server id, or api key id")
             Main.instance.options.add_opt_simple(:secret,"Access key secret")
           end
           Main.instance.options.add_opt_simple(:ats_id,"ATS key identifier (ats_xxx)")
