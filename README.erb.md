@@ -1,9 +1,7 @@
-# Asperalm - Laurent&apos;s IBM Aspera Command Line Interface and Ruby Library
+# Asperalm - A Ruby library for Aspera transfers and "Amelia", the _Multi Layer IBM Aspera_ Command Line Tool 
 
 Version : <%= ENV["VERSION"] %>
-<%cmd=ENV["TOOLNAME"]%>
-<%tool='`'+cmd+'`'%>
-<%evp=cmd.upcase+'_'%>
+<%cmd=ENV["TOOLNAME"];tool='`'+cmd+'`';evp=cmd.upcase+'_';opprst='option preset';prst='['+opprst+'](#lprt)';prsts='['+opprst+'s](#lprt)';prstt=opprst.capitalize%>
 
 _Laurent/2016-2018_
 
@@ -58,9 +56,9 @@ $ <%=cmd%> server browse / --url=ssh://demo.asperasoft.com:33001 --username=aspe
 :............:...........:......:........:...........................:.......................:
 ```
 
-In order to make further calls more convenient, it is advised to define a "parameter preset" for the servers identification options. The following example will:
+In order to make further calls more convenient, it is advised to define a <%=prst%> for the servers identification options. The following example will:
 
-* create a parameter preset
+* create a <%=prst%>
 * define it as default for "server" plugin
 * list files in a folder
 * download a file
@@ -91,8 +89,6 @@ $ <%=cmd%> server download /aspera-test-dir-large/200MB
 Time: 00:00:02 ========================================================================================================== 100% 100 Mbps Time: 00:00:00
 complete
 ```
-
-Note that browse and download commans are shorter now.
 
 ## Going further
 
@@ -170,7 +166,7 @@ Several methods are provided on how to effectively start a transfer, refer to se
 
 # <a name="cli"></a>Command Line Interface: <%=tool%>
 
-The `asperalm` Gem provides a command line interface (CLI) which interacts with Aspera Products (mostly REST APIs):
+The `asperalm` Gem provides a command line interface (CLI) which interacts with Aspera Products (mostly using REST APIs):
 
 * IBM Aspera High Speed Transfer Server (FASP and Node)
 * IBM Aspera on Cloud (including ATS)
@@ -376,40 +372,57 @@ It is also possible to provide a _Structured Value_ in a file using `@json:@file
 
 ## <a name="configfile"></a>Configuration file
 
-<%=tool%> configuration and cache files are stored in folder `$HOME/.aspera/$ <%=cmd%>`.
+<%=tool%> configuration and other runtime files (token cache, file lists) 
+re stored in folder `$HOME/.aspera/<%=cmd%>`.
 
-A configuration file is created with configuration modification commands. There is no mandatory information required in this file. It is mainly used to define pre-sets of command options.
+An empty configuration file is created on the first execution of <%=tool%>.
+Nevertheless, there is no mandatory information required in this file, the use of it is optional.
 
-All options can be set on command line, or by env vars, or in the configuratin file.
+Although the file is a standard YAML file, <%=tool%> provides commands to read and nmodify it
+using the `config` command.
+
+All options for <%=tool%> commands can be set on command line, or by env vars, or using <%=prsts%> in the configuratin file.
+
 A configuration file provides a way to define default values, especially
-for authentication parameters, thus avoiding to always have to specify those parameters on the command line.
+for authentication parameters, thus avoiding to always having to specify those parameters on the command line.
 
 The default configuration file is: `$HOME/.aspera/$ <%=cmd%>/config.yaml` 
-(this can be overriden with option `--config-file=path`).
+(this can be overriden with option `--config-file=path` or equivalent env var).
 
-It is composed of _option presets_ containing pre-sets for options.
+So, finally, the configuration file is simply a catalog of pre-defined lists of options,
+called: <%=prsts%>. Then, instead of specifying some common options on the command line (e.g. address, credentials), it is possible to invoke the ones of a <%=prst%> (e.g. `mypreset`) using the option: `-Pmypreset` or `--preset=mypreset`. 
 
-### Creation and Modification of _option presets_
+### <a name="lprt"></a><%=prstt%>
 
-The configuration file can be modified using the following commands:
+A <%=prst%> is simply a collection of parameters and their associated values.
 
-```
-$ <%=cmd%> config id <option preset> set|delete|show|initialize|update
-```
-
-The command `update` allows the easy creation of option preset by simply providing the options in their command line format, e.g. :
+A named <%=prst%> can be modified directly using <%=tool%>, which will update the configuration file :
 
 ```
-$ <%=cmd%> config id node_to_node update --url=https://10.25.0.4:9092 --username=node_user --password=node_pass --ts=@json:'{"precalculate_job_size":true}' --transfer=node --transfer-node=@json:'{"url":"https://10.25.0.8:9092","username":"node_user2","password":"node_pass2"}'
+$ <%=cmd%> config id <<%=opprst%>> set|delete|show|initialize|update
 ```
 
-* This creates a _option preset_ `node_to_node` with all provided options.
+The command `update` allows the easy creation of <%=prst%> by simply providing the options in their command line format, e.g. :
 
-The command `set` allows setting individual options in a _option preset_.
+```
+$ <%=cmd%> config id demo_server update --url=ssh://demo.asperasoft.com:33001 --username=asperaweb --password=demoaspera --ts=@json:'{"precalculate_job_size":true}'
+```
+
+* This creates a <%=prst%> `demo_server` with all provided options.
+
+The command `set` allows setting individual options in a <%=prst%>.
+
+```
+$ <%=cmd%> config id demo_server set password demoaspera
+```
 
 The command `initialize`, like `update` allows to set several parameters at once, but it deletes an existing configuration instead of updating it, and expects a _[Structured Value](#native)_.
 
-A good practice is to not manually edit this file and use modification commands.
+```
+$ <%=cmd%> config id demo_server initialize @json:'{"url":"ssh://demo.asperasoft.com:33001","username":"asperaweb","password":"demoaspera","ts":{"precalculate_job_size":true}}'
+```
+
+A good practice is to not manually edit the configurqtion file and use modification commands instead.
 If necessary, the configuration file can be edited (or simply consulted) with:
 
 ```bash
@@ -422,6 +435,12 @@ A full terminal based overview of the configuration can be displayed using:
 $ <%=cmd%> config over
 ```
 
+A list of <%=prst%> can be displayed using:
+
+```bash
+$ <%=cmd%> config list
+```
+
 
 ### Format
 
@@ -430,30 +449,27 @@ The configuration file is a hash in a YAML file. Example:
 ```yaml
 config:
   version: 0.3.7
-  loglevel: debug
 default:
-  faspex: myfaspparams
-myfaspparams:
-  url: https://faspex.my.org/aspera/faspex
-  username: admin
-  password: MyPassword
+  server: demo_server
+demo_server:
+  url: ssh://demo.asperasoft.com:33001
+  username: asperaweb
+  password: demoaspera
 ```
+
+We can see here:
+
 * The configuration was created with CLI version 0.3.7
-* the log level is set to `debug`
-* the default option preset to load for plugin "faspex" is : myfaspparams
-* the option preset "myfaspparams" defines some parameters: the URL and credentials
+* the default <%=prst%> to load for plugin "server" is : `demo_server`
+* the <%=prst%> `demo_server` defines some parameters: the URL and credentials
 
-Configuation is organized in _option presets_, like in `.ini` files. Each group has a name contains option name-value pairs.
+Two <%=prsts%> are reserved:
 
-Two _option presets_ are reserved:
+* `config` contains a single value: `version` showing the CLI 
+version used to create the configuration file. It is used to check compatibility.
+* `default` is reserved to define the default <%=prst%> name used for known plugins.
 
-* `config` is reserved for the global parameters of <%=tool%>.
-It contains a special parameter: "version" showing the CLI 
-version used to create this file. It is used to check compatibility.
-* `default` is reserved to define the default option preset name used for plugins.
-
-The user may create as many _option presets_ as needed. For instance, a particular _option preset_ can be created for a particular application instance and contain URL and credentials.
-
+The user may create as many <%=prsts%> as needed. For instance, a particular <%=prst%> can be created for a particular application instance and contain URL and credentials.
 
 Values in the configuration also follow the [Extended Value Syntax](#extended).
 
@@ -463,7 +479,7 @@ Note: if the user wants to use the [Extended Value Syntax](#extended) inside the
 $ <%=cmd%> config id my_aoc_org set private_key @val:@file:"$HOME/.aspera/$ <%=cmd%>/aocapikey"
 ```
 
-This creates the _option preset_:
+This creates the <%=prst%>:
 
 ```
 ...
@@ -476,23 +492,23 @@ So, the key file will be read only at execution time, but not be embedded in the
 
 Options are loaded using this algorithm:
 
-* if option '--load-params=xxxx' is specified (or -Pxxxx), this reads the option preset specified from the configuration file.
+* if option '--preset=xxxx' is specified (or -Pxxxx), this reads the <%=prst%> specified from the configuration file.
     * else if option --no-default is specified, then dont load default
-    * else it looks for the name of the default option preset in section "default" and loads it
+    * else it looks for the name of the default <%=prst%> in section "default" and loads it
 * environment variables are evaluated
 * command line options are evaluated
 
 Parameters are evaluated in the order of command line.
 
-To avoid loading the default option preset for a plugin, just specify a non existing configuration: `-Pnone`
+To avoid loading the default <%=prst%> for a plugin, just specify a non existing configuration: `-Pnone`
 
 On command line, words in parameter names are separated by a dash, in configuration file, separator
 is an underscore. E.g. --transfer-name  on command line gives transfer_node in configuration file.
 
 Note: before version 0.4.5, some keys could be ruby symbols, from 0.4.5 all keys are strings. To
-convert olver versions, remove the leading ":" in fronty of keys.
+convert olver versions, remove the leading ":" in front of keys.
 
-The main plugin name is *config*, so it is possible to define a default preset for
+The main plugin name is *config*, so it is possible to define a default <%=prst%> for
 the main plugin with:
 
 ```
@@ -500,7 +516,7 @@ $ <%=cmd%> config id cli_default set interactive no
 $ <%=cmd%> config id default set config cli_default
 ```
 
-A preset value can be removed with `unset`:
+A <%=prst%> value can be removed with `unset`:
 
 ```
 $ <%=cmd%> config id cli_default unset interactive
@@ -528,17 +544,17 @@ This can also be provisioned in a config file:
 6$ <%=cmd%> shares repo browse /
 ```
 
-The three first commands build a option preset. 
+The three first commands build a <%=prst%>. 
 Note that this can also be done with one single command:
 
 ```bash
 $ <%=cmd%> config id shares06 init @json:'{"url":"https://10.25.0.6","username":"john","password":"4sp3ra"}'
 ```
 
-The fourth command defines this option preset as the default option preset for the 
+The fourth command defines this <%=prst%> as the default <%=prst%> for the 
 specified application ("shares"). The 5th command displays the content of configuration file in table format. 
-Alternative option presets can be used with option "-P&lt;option preset&gt;"
-(or --load-params=&lt;option preset&gt;)
+Alternative <%=prsts%> can be used with option "-P&lt;<%=prst%>&gt;"
+(or --preset=&lt;<%=prst%>&gt;)
 
 Eventually, the last command shows a call to the shares application using default parameters.
 
@@ -630,7 +646,7 @@ in the configuration file, then this node is used by default else the parameter
 three keys: url, username and password, corresponding to the URL of the node API
 and associated credentials (node user or access key).
 
-The `--transfer-node` parameter can directly specify a pre-configured option preset : 
+The `--transfer-node` parameter can directly specify a pre-configured <%=prst%> : 
 `--transfer-node=@param:<psetname>` or specified using the option syntax :
 `--transfer-node=@json:'{"url":"https://...","username":"theuser","password":"thepass"}'`
 
@@ -802,7 +818,7 @@ Several types of OAuth authentication are supported:
 
 The authentication method is controled by option `auth`.
 
-For a _quick start_, follow the mandatory and sufficient section: [API Client Registration](#clientreg) (auth=web) as well as [Option Preset for Aspera on Cloud](#aocpreset).
+For a _quick start_, follow the mandatory and sufficient section: [API Client Registration](#clientreg) (auth=web) as well as [<%=prst%> for Aspera on Cloud](#aocpreset).
 
 For a more convenient, browser-less, experience follow the [JWT](#jwt) section (auth=jwt) in addition to Client Registration.
 
@@ -834,9 +850,9 @@ Note: for web based authentication, <%=tool%> listens on a local port (e.g. by d
 
 Once the client is registered, a "Client ID" and "Secret" are created, these values will be used in the next step.
 
-### <a name="aocpreset"></a>Option Preset for Aspera on Cloud
+### <a name="aocpreset"></a><%=prst%> for Aspera on Cloud
 
-It is convenient to save several of those parameters in an option preset for <%=tool%> in its configuration file. Lets create an option preset called: `my_aoc_org` using `ask` interactive input (client info from previous step):
+It is convenient to save several of those parameters in an <%=prst%> for <%=tool%> in its configuration file. Lets create an <%=prst%> called: `my_aoc_org` using `ask` interactive input (client info from previous step):
 
 ```
 $ <%=cmd%> config id my_aoc_org ask url client_id client_secret
@@ -848,7 +864,7 @@ updated: my_aoc_org
 
 (This can also be done in one line using the command `config id my_aoc_org update --url=...`)
 
-Define this preset as default configuration for the `aspera` plugin:
+Define this <%=prst%> as default configuration for the `aspera` plugin:
 
 ```bash
 $ <%=cmd%> config id default set aspera my_aoc_org
@@ -858,7 +874,7 @@ Note: Default `auth` method is `web` and default `redirect_uri` is `http://local
 
 ### <a name="aocfirst"></a>First Use
 
-Once client has been registered and option preset created: <%=tool%> can be used:
+Once client has been registered and <%=prst%> created: <%=tool%> can be used:
 
 ```bash
 $ <%=cmd%> aspera files br /
@@ -969,9 +985,9 @@ modified
 
 Note: the `show` command can be used to verify modifications.
 
-#### Preset modification for JWT
+#### <%=prst%> modification for JWT
 
-To activate JWT authentication for <%=tool%> using the preset, do the folowing:
+To activate JWT authentication for <%=tool%> using the <%=prst%>, do the folowing:
 
 * change auth method to JWT
 * provide location of private key
@@ -1083,6 +1099,17 @@ $ <%=cmd%> aspera admin res workspace_membership list --fields=member_type,manag
 :.............:.........:..................................:
 ```
 
+### Package
+
+send a package:
+
+```
+$ <%=cmd%> aspera packages send --value=@json:'{"name":"my title","note":"my note"}' --recipient=laurent.martin.aspera@fr.ibm.com,other@example.com my_file.dat
+```
+
+Note that `value` parameter can contain any supported package creation parameter.
+Refer to the API, or display an existing package.
+
 ## Aspera Node (Transfer Server)
 
 ### Simple Operations
@@ -1110,7 +1137,7 @@ It is possible to start a FASPStream session using the node API:
 Use the "node stream create" command, then arguments are provided as a [_transfer-spec_](#transferspec).
 
 ```bash
-./bin/$ <%=cmd%> node stream create --ts=@json:'{"direction":"send","source":"udp://233.3.3.4:3000?loopback=1&ttl=2","destination":"udp://233.3.3.3:3001/","remote_host":"localhost","remote_user":"stream","remote_password":"XXXX"}' --load-params=stream
+./bin/$ <%=cmd%> node stream create --ts=@json:'{"direction":"send","source":"udp://233.3.3.4:3000?loopback=1&ttl=2","destination":"udp://233.3.3.3:3001/","remote_host":"localhost","remote_user":"stream","remote_password":"XXXX"}' --preset=stream
 ```
 
 ### Watchfolder
@@ -1156,7 +1183,7 @@ Create another configuration for the Azure ATS instance: in section "node", name
 Then execute the following command:
 
 ```bash
-$ <%=cmd%> node download /share/sourcefile --to-folder=/destinationfolder --load-params=awsshod --transfer=node --transfer-node=@param:azureats
+$ <%=cmd%> node download /share/sourcefile --to-folder=/destinationfolder --preset=awsshod --transfer=node --transfer-node=@param:azureats
 ```
 
 This will get transfer information from the SHOD instance and tell the Azure ATS instance 
@@ -1285,7 +1312,7 @@ $ <%=cmd%> server browse /aspera-test-dir-large
 $ <%=cmd%> server download /aspera-test-dir-large/200MB
 ```
 
-This creates a option preset "aspera_demo_server" and set it as default for application "server"
+This creates a <%=prst%> "aspera_demo_server" and set it as default for application "server"
 
 
 ## IBM Aspera Faspex
@@ -1361,7 +1388,7 @@ Using the ATS requires an "Aspera ID" (https://id.asperasoft.com/) and have a su
 
 On first execution, the user is asked to login to Aspera ID using a web browser. This creates an "ats_id" identifier (stored in a cache file).
 
-When only one ats_id is created, it is taken by default. Else it shall be specified with --ats-id or using a option preset.
+When only one ats_id is created, it is taken by default. Else it shall be specified with --ats-id or using a <%=prst%>.
 
 Note: access key API is described here: [https://ibm.ibmaspera.com/helpcenter/transfer-service](https://ibm.ibmaspera.com/helpcenter/transfer-service)
 
@@ -1433,7 +1460,7 @@ This is related to:
 
 ### Configuration
 
-Like any $ <%=cmd%> commands, parameters can be passed on command line or using a configuration option preset. Example using a option preset:
+Like any $ <%=cmd%> commands, parameters can be passed on command line or using a configuration <%=prst%>. Example using a <%=prst%>:
 
 ```
 $ <%=cmd%> config id my_aoc_access_key update --url=https://localhost:9092 --username=my_access_key --password=my_secret
@@ -1663,7 +1690,7 @@ Note that:
 
 Virtually any transfer on a "repository" on a regular basis might emulate a hot folder. Note that file detection is not based on events (inotify, etc...), but on a stateless scan on source side.
 
-Note: parameters may be saved in a preset and used with `-P`.
+Note: parameters may be saved in a <%=prst%> and used with `-P`.
 
 ### Scheduling
 
@@ -1721,6 +1748,10 @@ Gems, or remove your ed25519 key from your `.ssh` folder to solve the issue.
 
 # Release Notes
 
+* version 0.9.2
+
+  * Breaking change: changed AoC package creation to match API, see AoC section
+
 * version 0.9.1
 
   * Breaking change: changed faspex package creation to match API, see Faspex section
@@ -1761,7 +1792,7 @@ some commands take now --id option instead of id command.
 
 * Version 0.6.15
 * 
-Breaking change: "files" application renamed to "aspera" (for "Aspera on Cloud"). "repository" renamed to "files". Default is automatically reset, e.g. in config files and change key "files" to "aspera" in preset "default".
+Breaking change: "files" application renamed to "aspera" (for "Aspera on Cloud"). "repository" renamed to "files". Default is automatically reset, e.g. in config files and change key "files" to "aspera" in <%=prst%> "default".
 
 # TODO
 
