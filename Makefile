@@ -215,7 +215,7 @@ t/aoc3b:
 	rm -f 200KB.1
 	@touch $@
 t/aoc4:
-	$(EXETEST) aspera packages send $(SAMPLE_FILE) --note="my note" --title="my title" --recipient="laurent.martin.aspera@fr.ibm.com"
+	$(EXETEST) aspera packages send --value=@json:'{"name":"my title","note":"my note"}' --recipient=laurent.martin.aspera@fr.ibm.com  $(SAMPLE_FILE)
 	@touch $@
 t/aoc5:
 	$(EXETEST) aspera packages list
