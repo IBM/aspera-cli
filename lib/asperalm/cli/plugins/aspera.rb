@@ -29,8 +29,6 @@ module Asperalm
           Main.instance.options.add_opt_simple(:private_key,"RSA private key PEM value for JWT (prefix file path with @val:@file:)")
           Main.instance.options.add_opt_simple(:workspace,"name of workspace")
           Main.instance.options.add_opt_simple(:recipient,"package recipient")
-          Main.instance.options.add_opt_simple(:title,"package title")
-          Main.instance.options.add_opt_simple(:note,"package note")
           Main.instance.options.add_opt_simple(:secret,"access key secret for node")
           Main.instance.options.add_opt_simple(:eid,"identifier")
           Main.instance.options.add_opt_simple(:name,"resource name")
@@ -292,19 +290,24 @@ module Asperalm
             command_pkg=Main.instance.options.get_next_argument('command',[ :send, :recv, :list, :show ])
             case command_pkg
             when :send
+              package_creation=Main.instance.options.get_option(:value,:mandatory)
+              raise CliBadArgument,"value must be hash, refer to doc" unless package_creation.is_a?(Hash)
+              package_creation['workspace_id']=@workspace_id
+
               # list of files to include in package
-              filelist = Main.instance.options.get_next_argument("file list",:multiple)
+              filelist=Main.instance.options.get_next_argument('file list',:multiple)
+              package_creation['file_names']=filelist
 
               # lookup users
-              recipient_data=Main.instance.options.get_option(:recipient,:mandatory).split(',').map { |recipient|
-                user_lookup=@api_files_user.read("contacts",{'current_workspace_id'=>@workspace_id,'q'=>recipient})[:data]
+              package_creation['recipients']=Main.instance.options.get_option(:recipient,:mandatory).split(',').map do |recipient|
+                user_lookup=@api_files_user.read('contacts',{'current_workspace_id'=>@workspace_id,'q'=>recipient})[:data]
                 raise CliBadArgument,"no such user: #{recipient}" unless !user_lookup.nil? and user_lookup.length == 1
                 recipient_user_id=user_lookup.first
-                {"id"=>recipient_user_id['source_id'],"type"=>recipient_user_id['source_type']}
-              }
+                {'id'=>recipient_user_id['source_id'],'type'=>recipient_user_id['source_type']}
+              end
 
               #  create a new package with one file
-              the_package=@api_files_user.create("packages",{"workspace_id"=>@workspace_id,"name"=>Main.instance.options.get_option(:title,:mandatory),"file_names"=>filelist,"note"=>Main.instance.options.get_option(:note,:mandatory),"recipients"=>recipient_data})[:data]
+              the_package=@api_files_user.create('packages',package_creation)[:data]
 
               #  get node information for the node on which package must be created
               node_info=@api_files_user.read("nodes/#{the_package['node_id']}")[:data]
