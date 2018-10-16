@@ -28,8 +28,10 @@ module Asperalm
       # note that it returns upon completion only (blocking)
       # if the user wants to run in background, just spawn a thread
       # listener methods are called in context of calling thread
-      def start_transfer(transfer_spec,job_id=nil)
-        job_id||=SecureRandom.uuid
+      def start_transfer(transfer_spec,options=nil)
+        options||={}
+        raise "option: must be hash (or nil)" unless options.is_a?(Hash)
+        job_id=options[:job_id] || SecureRandom.uuid
         # TODO: what is this for ? only on local ascp ?
         # NOTE: important: transfer id must be unique: generate random id (using a non unique id results in discard of tags)
         if transfer_spec['tags'].is_a?(Hash) and transfer_spec['tags']['aspera'].is_a?(Hash)
@@ -80,7 +82,8 @@ module Asperalm
         session={
           :state    => :initial, # :initial, :started, :success, :failed
           :env_args => env_args,
-          :resumer  => ResumePolicy.instance
+          :resumer  => ResumePolicy.instance,
+          :options  => options
         }
 
         Log.log.debug("starting session thread(s)")
@@ -90,12 +93,12 @@ module Asperalm
         else
           1.upto(multi_session) do |i|
             # do deep copy (each thread has its own copy because it is modified here below and in thread)
-            session_n=Marshal.load(Marshal.dump(session))
-            session_n[:env_args][:args].unshift("-C#{i}:#{multi_session}")
+            this_session=Marshal.load(Marshal.dump(session))
+            this_session[:env_args][:args].unshift("-C#{i}:#{multi_session}")
             # check if this is necessary ? should be handled by server, this is in man page
-            session_n[:env_args][:args].unshift("-O","#{fasp_port_base+i-1}")
-            session_n[:thread] = Thread.new(session_n) {|s|transfer_thread_entry(s)}
-            xfer_job[:sessions].push(session_n)
+            this_session[:env_args][:args].unshift("-O","#{fasp_port_base+i-1}")
+            this_session[:thread] = Thread.new(this_session) {|s|transfer_thread_entry(s)}
+            xfer_job[:sessions].push(this_session)
           end
         end
         Log.log.debug("started session thread(s)")
@@ -118,7 +121,7 @@ module Asperalm
               @jobs.values.each do |job|
                 job[:sessions].each do |session|
                   case session[:state]
-                  when :failed; raise StandardError,"at least one session failed"
+                  when :failed; raise StandardError,"at least one session failed: #{session[:error]}"
                   when :success # ignore
                   else running+=1
                   end
@@ -232,7 +235,16 @@ module Asperalm
           when 'DONE'
             return
           when 'ERROR'
-            raise Fasp::Error.new(last_status_event['Description'],last_status_event['Code'].to_i)
+            e=Fasp::Error.new(last_status_event['Description'],last_status_event['Code'].to_i)
+            Log.log.error("code: #{e.err_code}") if e.respond_to?(:err_code)
+            if e.message  =~ /bearer token/i
+              Log.log.error("need to regenrate token".red)
+              if !session.nil? and session[:options].is_a?(Hash) and session[:options].has_key?(:regenerate_token)
+                # regenerate token here, expired, or error on it
+                env_args[:env]['ASPERA_SCP_TOKEN']=session[:options][:regenerate_token].call(true)
+              end
+            end
+            raise e
           else
             raise "INTERNAL ERROR: unexpected last event"
           end
@@ -312,7 +324,6 @@ module Asperalm
           Log.log.debug('transfer ok'.bg_red)
           session[:state]=:success
         rescue => e
-          # TODO: store exception message in session state for other threads
           session[:state]=:failed
           session[:error]=e
           Log.log.error(e.message)
