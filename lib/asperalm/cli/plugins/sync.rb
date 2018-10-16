@@ -1,6 +1,7 @@
 require 'asperalm/cli/plugin'
 require 'asperalm/sync'
 require 'singleton'
+require 'open3'
 
 module Asperalm
   module Cli
@@ -10,9 +11,10 @@ module Asperalm
         include Singleton
         def declare_options
           Main.instance.options.add_opt_simple(:parameters,"extended value for session set definition")
+          Main.instance.options.add_opt_simple(:session_name,"name of session to use for admin commands, by default first one")
         end
 
-        def action_list; [ :start ];end
+        def action_list; [ :start, :admin ];end
 
         def execute_action
           command=Main.instance.options.get_next_argument('command',action_list)
@@ -27,6 +29,30 @@ module Asperalm
             when nil; return Main.result_status("not started: #{$?}")
             else raise "internal error: unspecified case"
             end
+          when :admin
+            p=Main.instance.options.get_option(:parameters,:mandatory)
+            n=Main.instance.options.get_option(:session_name,:optional)
+            cmdline=['asyncadmin','--quiet']
+            if n.nil?
+              session=p['sessions'].first
+            else
+              session=p['sessions'].select{|s|s['name'].eql?(n)}.first
+            end
+            cmdline.push('--name='+session['name'])
+            if session.has_key?('local_db_dir')
+              cmdline.push('--local-db-dir='+session['local_db_dir'])
+            else
+              cmdline.push('--local-dir='+session['local_dir'])
+            end
+            command2=Main.instance.options.get_next_argument('command',[:status])
+            case command2
+            when :status
+              stdout, stderr, status = Open3.capture3(*cmdline)
+              items=stdout.split("\n").inject({}){|m,l|i=l.split(/:  */);m[i.first.lstrip]=i.last.lstrip;m}
+              return {:type=>:single_object,:data=>items}
+            else raise "error"
+            end # command
+          else raise "error"
           end # command
         end # execute_action
       end # Sync
