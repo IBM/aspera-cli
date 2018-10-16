@@ -15,6 +15,12 @@ ZIPFILE=$(SRCZIPBASE)_$(TODAY).zip
 
 EXE_NOMAN=$(EXETEST)
 
+OUT_FOLDER=out
+
+INCL_USAGE=out/$(EXENAME)_usage.txt
+INCL_COMMANDS=out/$(EXENAME)_commands.txt
+INCL_ASESSION=out/asession_usage.txt
+
 all:: gem
 
 test:
@@ -22,9 +28,9 @@ test:
 
 clean::
 	rm -f $(GEMNAME)-*.gem $(SRCZIPBASE)*.zip *.log token.* preview.png 
-	rm -f README.pdf README.html README.md $(EXENAME)_commands.txt $(EXENAME)_usage.txt asession_usage.txt $(TEST_CONFIG)
-	rm -fr contents t doc "PKG - "*
-	mkdir t
+	rm -f README.pdf README.html README.md $(INCL_COMMANDS) $(INCL_USAGE) $(INCL_ASESSION) $(TEST_CONFIG)
+	rm -fr contents t doc out "PKG - "*
+	mkdir t out
 	rm -f 200KB* *AsperaConnect-ML* sample.conf*
 	gem uninstall -a -x $(GEMNAME)
 cleanupgems:
@@ -39,20 +45,20 @@ README.pdf: README.md
 	pandoc --number-sections --resource-path=. --toc -o README.html README.md
 	wkhtmltopdf toc README.html README.pdf
 
-README.md: README.erb.md $(EXENAME)_commands.txt $(EXENAME)_usage.txt asession_usage.txt
-	COMMANDS=$(EXENAME)_commands.txt USAGE=$(EXENAME)_usage.txt ASESSION=asession_usage.txt VERSION=`$(EXETEST) --version` TOOLNAME=$(EXENAME) erb README.erb.md > README.md
+README.md: README.erb.md $(INCL_COMMANDS) $(INCL_USAGE) $(INCL_ASESSION)
+	COMMANDS=$(INCL_COMMANDS) USAGE=$(INCL_USAGE) ASESSION=$(INCL_ASESSION) VERSION=`$(EXETEST) --version` TOOLNAME=$(EXENAME) erb README.erb.md > README.md
 
-$(EXENAME)_commands.txt: Makefile
-	sed -n -e 's/.*\$$(EXETEST)/$(EXENAME)/p' Makefile|grep -v 'Sales Engineering'|sed -E -e 's/\$$\(SAMPLE_FILE\)/sample_file.bin/g;s/\$$\(NODEDEST\)/sample_dest_folder/g;s/\$$\(TEST_FOLDER\)/sample_dest_folder/g;s/ibmfaspex.asperasoft.com/faspex.mycompany.com/g;s/(")(url|api_key|username|password|access_key_id|secret_access_key|pass)(":")[^"]*(")/\1\2\3my_\2_here\4/g;s/--(secret|url|password|username)=[^ ]*/--\1=my_\1_here/g;s/Aspera123_/_my_pass_/g'|grep -v 'localhost:9443'|sort -u > $(EXENAME)_commands.txt
+$(INCL_COMMANDS): Makefile
+	sed -n -e 's/.*\$$(EXETEST)/$(EXENAME)/p' Makefile|grep -v 'Sales Engineering'|sed -E -e 's/\$$\(SAMPLE_FILE\)/sample_file.bin/g;s/\$$\(NODEDEST\)/sample_dest_folder/g;s/\$$\(TEST_FOLDER\)/sample_dest_folder/g;s/ibmfaspex.asperasoft.com/faspex.mycompany.com/g;s/(")(url|api_key|username|password|access_key_id|secret_access_key|pass)(":")[^"]*(")/\1\2\3my_\2_here\4/g;s/--(secret|url|password|username)=[^ ]*/--\1=my_\1_here/g;s/Aspera123_/_my_pass_/g'|grep -v 'localhost:9443'|sort -u > $(INCL_COMMANDS)
 
 # depends on all sources, so regenerate always
-.PHONY: $(EXENAME)_usage.txt
-$(EXENAME)_usage.txt:
-	$(EXE_NOMAN) -Cnone -h 2> $(EXENAME)_usage.txt || true
+.PHONY: $(INCL_USAGE)
+$(INCL_USAGE):
+	$(EXE_NOMAN) -Cnone -h 2> $(INCL_USAGE) || true
 
-.PHONY: asession_usage.txt
-asession_usage.txt:
-	$(BINDIR)/asession -h 2> asession_usage.txt || true
+.PHONY: $(INCL_ASESSION)
+$(INCL_ASESSION):
+	$(BINDIR)/asession -h 2> $(INCL_ASESSION) || true
 
 $(ZIPFILE): README.md
 	rm -f $(SRCZIPBASE)_*.zip
