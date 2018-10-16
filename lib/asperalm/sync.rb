@@ -13,6 +13,8 @@ module Asperalm
       'name'                 => { :type => :opt_with_arg, :accepted_types=>String},
       'local_dir'            => { :type => :opt_with_arg, :accepted_types=>String},
       'remote_dir'           => { :type => :opt_with_arg, :accepted_types=>String},
+      'local_db_dir'         => { :type => :opt_with_arg, :accepted_types=>String},
+      'remote_db_dir'        => { :type => :opt_with_arg, :accepted_types=>String},
       'host'                 => { :type => :opt_with_arg, :accepted_types=>String},
       'user'                 => { :type => :opt_with_arg, :accepted_types=>String},
       'private_key_path'     => { :type => :opt_with_arg, :accepted_types=>String},
