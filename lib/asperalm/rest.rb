@@ -26,47 +26,49 @@ end
 module Asperalm
   # builds a meaningful error message from known formats in Aspera products
   class RestCallError < StandardError
+    attr_accessor :request
     attr_accessor :response
     # @param http response
-    def initialize(response)
+    def initialize(req,resp)
+      @request = req
+      @response = resp
+      Log.log.debug "Error code:#{@response.code}, msg=#{@response.message.red}, body=[#{@response.body}, req.uri=#{@request['host']}]"
       # default error message is response type
-      message=response.message+" (#{response.code})"
+      msg=@response.message
       # see if there is a more precise message
       # Hum, we would need some consistency here...
-      if !response.body.nil?
-        data=JSON.parse(response.body) rescue nil
+      if !@response.body.nil?
+        data=JSON.parse(@response.body) rescue nil
         if data.is_a?(Hash)
           # we have a payload
           if data['error'].is_a?(Hash)
             if data['error']["user_message"].is_a?(String)
-              message=data['error']["user_message"]
+              msg=data['error']["user_message"]
             elsif data['error']["description"].is_a?(String)
-              message=data['error']["description"]
+              msg=data['error']["description"]
             end
           elsif data['error'].is_a?(String)
-            message=data['error']
+            msg=data['error']
           end
           # TODO: data['code'] and data['message'] ?
           if data['error_description'].is_a?(String)
-            message=message+": "+data['error_description']
+            msg=msg+": "+data['error_description']
           end
           if data['message'].is_a?(String)
-            message=message+": "+data['message']
+            msg=msg+": "+data['message']
             data.delete('message')
             data.each do |k,v|
-              message=message+"\n#{k}: #{v}"
+              msg=msg+"\n#{k}: #{v}"
             end
           end
           if data['errors'].is_a?(Hash)
             data['errors'].each do |k,v|
-              message=message+"\n#{k}: #{v}"
+              msg=msg+"\n#{k}: #{v}"
             end
           end
         end
       end
-      super(message)
-      Log.log.debug "Error code:#{response.code}, msg=#{response.message.red}, body=[#{response.body}]"
-      @response = response
+      super("#{@response.code} #{@request['host']}: "+msg)
     end
   end
 
@@ -228,7 +230,7 @@ module Asperalm
         end
 
         Log.log.debug "result: code=#{result[:http].code}"
-        raise RestCallError.new(result[:http]) unless result[:http].code.start_with?('2')
+        raise RestCallError.new(req,result[:http]) unless result[:http].code.start_with?('2')
         if call_data.has_key?(:headers) and
         call_data[:headers].has_key?('Accept') and
         call_data[:headers]['Accept'].eql?('application/json') then
