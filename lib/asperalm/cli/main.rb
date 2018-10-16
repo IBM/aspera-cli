@@ -138,6 +138,8 @@ module Asperalm
         @opt_mgr.add_opt_switch(:show_config, "Display parameters used for the provided action.") { @option_show_config=true }
         @opt_mgr.add_opt_switch(:rest_debug,"-r","more debug for HTTP calls") { Rest.debug=true }
         @opt_mgr.add_opt_switch(:version,"-v","display version") { display_message(:data,self.class.gem_version);Process.exit(0) }
+        @opt_mgr.add_opt_list(:display,self.class.display_levels,"output only some information")
+        @opt_mgr.set_option(:display,:info)
       end
 
       def declare_global_options
@@ -154,7 +156,6 @@ module Asperalm
         @opt_mgr.add_opt_list(:log_level,Log.levels,"Log level")
         @opt_mgr.add_opt_list(:logger,Log.logtypes,"log method")
         @opt_mgr.add_opt_list(:format,self.class.display_formats,"output format")
-        @opt_mgr.add_opt_list(:display,self.class.display_levels,"output format")
         @opt_mgr.add_opt_simple(:preset,"-PVALUE","load the named option preset from current config file")
         @opt_mgr.add_opt_simple(:fields,"comma separated list of fields, or #{FIELDS_ALL}, or #{FIELDS_DEFAULT}")
         @opt_mgr.add_opt_simple(:select,"select only some items in lists, extended value: hash (colum, value)")
@@ -170,7 +171,6 @@ module Asperalm
         @opt_mgr.set_option(:ui,OpenApplication.default_gui_mode)
         @opt_mgr.set_option(:fields,FIELDS_DEFAULT)
         @opt_mgr.set_option(:format,:table)
-        @opt_mgr.set_option(:display,:info)
       end
 
       # loads default parameters of plugin if no -P parameter
@@ -459,8 +459,8 @@ module Asperalm
 
       public
 
-      def start_transfer_wait_result(transfer_spec,ts_source)
-        return TransferAgent.instance.start_transfer_wait_result(transfer_spec,ts_source)
+      def start_transfer_wait_result(transfer_info)
+        return TransferAgent.instance.start_transfer_wait_result(transfer_info)
       end
 
       def destination_folder(direction)
