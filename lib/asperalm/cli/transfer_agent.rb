@@ -108,7 +108,13 @@ module Asperalm
       # plugins shall use this method to start a transfer
       # @param: ts_source specifies how destination_root is set (how transfer spec was generated)
       # and not the default one
-      def start_transfer_wait_result(transfer_spec,ts_source)
+      def start_transfer_wait_result(transfer_info)
+        raise "transfer_info must be hash" unless transfer_info.is_a?(Hash)
+        raise "transfer_info must have :ts" unless transfer_info.has_key?(:ts)
+        transfer_spec=transfer_info[:ts]
+        ts_source=transfer_info[:src]
+        options={}
+        options[:regenerate_token]=transfer_info[:regen] if transfer_info.has_key?(:regen)
         # initialize transfert agent
         self.agent
         case transfer_spec['direction']
@@ -135,7 +141,7 @@ module Asperalm
         # add bypass keys if there is a token, also prevents connect plugin to ask password
         transfer_spec['authentication']='token' if transfer_spec.has_key?('token')
         Log.log.debug("mgr is a #{@agent.class}")
-        @agent.start_transfer(transfer_spec)
+        @agent.start_transfer(transfer_spec,options)
         return Main.result_nothing
       end
 

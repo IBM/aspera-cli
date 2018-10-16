@@ -34,7 +34,6 @@ module Asperalm
         # defined by node API
         PREVIEW_FOLDER_SUFFIX='.asp-preview'
         PREVIEW_FILE_PREFIX='preview.'
-
         # values for option_overwrite
         def self.overwrite_policies; [:always,:never,:mtime];end
 
@@ -208,7 +207,7 @@ module Asperalm
             'node'               => { 'access_key' => @access_key_self['id'], 'file_id' => folder_id }}}
           })
           tspec['destination_root']=destination unless destination.nil?
-          Main.instance.start_transfer_wait_result(tspec,:node_gen4)
+          Main.instance.start_transfer_wait_result({:ts=>tspec,:src=>:node_gen4})
         end
 
         def get_infos_local(gen_infos,entry,local_entry_preview_dir)

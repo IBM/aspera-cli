@@ -16,7 +16,7 @@ module Asperalm
       end
       public
 
-      def start_transfer(transfer_spec)
+      def start_transfer(transfer_spec,options=nil)
         raise "Using connect requires a graphical environment" if !OpenApplication.default_gui_mode.eql?(:graphical)
         trynumber=0
         begin
