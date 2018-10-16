@@ -147,6 +147,13 @@ Once you have Ruby and rights to install gems: Install the gem and its dependenc
 $ gem install asperalm
 ```
 
+To upgrade to the latest version:
+
+```bash
+$ gem update asperalm
+```
+
+
 ## FASP Protocol
 
 Most file transfers will be done using the FASP protocol. This requires one of IBM Asprea transfer server or client with its license file (some are free):
@@ -270,10 +277,11 @@ The behaviour can be controlled with:
 
 ## Output Format
 
-Command execution will result in output. The information displayed depends on the action. Types of result include:
+Command execution will result in output (terminal, stdout/stderr).
+The information displayed depends on the action. Types of result include:
 
-* `object_list` : displayed as a 2 dimensional table: one line per item, one colum per attribute.
 * `single_object` : displayed as a 2 dimensional table: one line per attribute, first column is attribute name, and second is atteribute value. Nested hashes are collapsed.
+* `object_list` : displayed as a 2 dimensional table: one line per item, one colum per attribute.
 * `value_list` : a table with one column.
 * `empty` : nothing
 * `status` : a message
@@ -308,6 +316,8 @@ In a table format, when displaying "objects" (single, or list), by default, sub 
 flatten (option flat_hash). So, object {"user":{"id":1,"name":"toto"}} will have attributes: user.id and user.name. Setting flat_hash to "false" will only display one
 field: "user" and value is the sub hash table. When in flatten mode, it is possible to
 filter fields by "dotted" field name.
+
+Another option is `display`, which accepts values: info, data, error. Level `info` displays all messages (in table mode only). `data` do not display info messages, `error` display only error messages.
 
 ## <a name="extended"></a>Extended Value Syntax
 
@@ -949,7 +959,7 @@ $ <%=cmd%> aspera admin res client list
 :............:.........:
 :     id     :  name   :
 :............:.........:
-: BJLPObQiFw : $ <%=cmd%> :
+: BJLPObQiFw : <%=cmd%> :
 :............:.........:
 $ <%=cmd%> aspera admin res client --id=BJLPObQiFw modify @json:'{"jwt_grant_enabled":true,"explicit_authorization_required":false}'
 modified
@@ -1427,13 +1437,13 @@ $ <%=cmd%> ats access_key create --cloud=azure --region=eastus --params=@json:'{
 delete all my access keys:
 
 ```
-for k in $($ <%=cmd%> ats access_key list --field=id --format=csv);do $ <%=cmd%> ats access_key id $k delete;done
+for k in $($ <%=cmd%> ats access_key list --field=id --format=csv);do <%=cmd%> ats access_key id $k delete;done
 ```
 
 ## IBM Aspera Sync
 
-A basic plugin to start an "async" using $ <%=cmd%>. The main advantage is the possibility
-to start from ma configuration file, using $ <%=cmd%> standard options.
+A basic plugin to start an "async" using <%=tool%>. The main advantage is the possibility
+to start from ma configuration file, using <%=tool%> standard options.
 
 ## Preview
 
@@ -1460,7 +1470,7 @@ This is related to:
 
 ### Configuration
 
-Like any $ <%=cmd%> commands, parameters can be passed on command line or using a configuration <%=prst%>. Example using a <%=prst%>:
+Like any <%=tool%> commands, parameters can be passed on command line or using a configuration <%=prst%>. Example using a <%=prst%>:
 
 ```
 $ <%=cmd%> config id my_aoc_access_key update --url=https://localhost:9092 --username=my_access_key --password=my_secret
@@ -1528,8 +1538,8 @@ $ <%=cmd%> preview event --skip-types=office --file-access=remote --overwrite=al
 with crontab:
 
 ```bash
-2-59 * * * * su -s /bin/bash - xfer -c 'timeout 10m $ <%=cmd%> preview event --skip-types=office --lock-port=12346 --log-level=info --logger=syslog --iteration-file=/tmp/preview_restart.txt'
-0 * * * *    su -s /bin/bash - xfer -c 'timeout 30m $ <%=cmd%> preview scan  --skip-types=office --lock-port=12346 --log-level=info --logger=syslog'
+2-59 * * * * su -s /bin/bash - xfer -c 'timeout 10m <%=cmd%> preview event --skip-types=office --lock-port=12346 --log-level=info --logger=syslog --iteration-file=/tmp/preview_restart.txt'
+0 * * * *    su -s /bin/bash - xfer -c 'timeout 30m <%=cmd%> preview scan  --skip-types=office --lock-port=12346 --log-level=info --logger=syslog'
 ```
 
 ### External tools: Linux
@@ -1682,7 +1692,7 @@ Interesting ascp features are found in its arguments: (see ascp manual):
 
 Note that:
 
-* $ <%=cmd%> takes transfer parameters exclusively as a transfer_spec, with `--ts` parameter.
+* <%=tool%> takes transfer parameters exclusively as a transfer_spec, with `--ts` parameter.
 * not all native ascp arguments are available as standard transfer_spec parameters
 * native ascp arguments can be provided with the transfer spec parameter: EX_ascp_args (array), only for the "local" transfer agent (not connect or node)
 
@@ -1694,7 +1704,7 @@ Note: parameters may be saved in a <%=prst%> and used with `-P`.
 
 ### Scheduling
 
-Once $ <%=cmd%> parameters are defined, run the command using the OS native scheduler, e.g. every minutes, or 5 minutes, etc... Refer to section [_Scheduling_](#_scheduling_).
+Once <%=tool%> parameters are defined, run the command using the OS native scheduler, e.g. every minutes, or 5 minutes, etc... Refer to section [_Scheduling_](#_scheduling_).
 
 ## Example
 
@@ -1758,8 +1768,8 @@ Gems, or remove your ed25519 key from your `.ssh` folder to solve the issue.
 
 * version 0.9
 
-  * Renamed the CLI from aslmcli to $ <%=cmd%>
-  * Automatic rename and conversion of former config folder from aslmcli to $ <%=cmd%>
+  * Renamed the CLI from aslmcli to <%=tool%>
+  * Automatic rename and conversion of former config folder from aslmcli to <%=tool%>
 
 * version 0.7.6
 
@@ -1780,7 +1790,7 @@ Breaking change:
   * ats server list provisioned -> ats cluster list
   * ats server list clouds -> ats cluster clouds
   * ats server list instance --cloud=x --region=y -> ats cluster show --cloud=x --region=y
-  * ats server id xxx -> $ <%=cmd%> ats cluster show --id=xxx
+  * ats server id xxx -> ats cluster show --id=xxx
   * ats subscriptions -> ats credential subscriptions
   * ats api_key repository list -> ats credential cache list
   * ats api_key list -> ats credential list

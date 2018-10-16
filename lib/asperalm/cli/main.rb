@@ -43,6 +43,7 @@ module Asperalm
       RUBY_FILE_EXT='.rb'
       FIELDS_ALL='ALL'
       FIELDS_DEFAULT='DEF'
+      @@VERBOSE_LEVELS=[:normal,:minimal,:quiet]
 
       # find the root folder of gem where this class is
       def self.gem_root
@@ -136,7 +137,7 @@ module Asperalm
         @opt_mgr.add_opt_switch(:help,"Show this message.","-h") { @option_help=true }
         @opt_mgr.add_opt_switch(:show_config, "Display parameters used for the provided action.") { @option_show_config=true }
         @opt_mgr.add_opt_switch(:rest_debug,"-r","more debug for HTTP calls") { Rest.debug=true }
-        @opt_mgr.add_opt_switch(:version,"-v","display version") { puts self.class.gem_version;Process.exit(0) }
+        @opt_mgr.add_opt_switch(:version,"-v","display version") { display_message(:data,self.class.gem_version);Process.exit(0) }
       end
 
       def declare_global_options
@@ -153,6 +154,7 @@ module Asperalm
         @opt_mgr.add_opt_list(:log_level,Log.levels,"Log level")
         @opt_mgr.add_opt_list(:logger,Log.logtypes,"log method")
         @opt_mgr.add_opt_list(:format,self.class.display_formats,"output format")
+        @opt_mgr.add_opt_list(:display,self.class.display_levels,"output format")
         @opt_mgr.add_opt_simple(:preset,"-PVALUE","load the named option preset from current config file")
         @opt_mgr.add_opt_simple(:fields,"comma separated list of fields, or #{FIELDS_ALL}, or #{FIELDS_DEFAULT}")
         @opt_mgr.add_opt_simple(:select,"select only some items in lists, extended value: hash (colum, value)")
@@ -168,6 +170,7 @@ module Asperalm
         @opt_mgr.set_option(:ui,OpenApplication.default_gui_mode)
         @opt_mgr.set_option(:fields,FIELDS_DEFAULT)
         @opt_mgr.set_option(:format,:table)
+        @opt_mgr.set_option(:display,:info)
       end
 
       # loads default parameters of plugin if no -P parameter
@@ -242,25 +245,36 @@ module Asperalm
       end
 
       # expect some list, but nothing to display
-      def self.result_empty
-        return {:type => :empty, :data => :nil }
-      end
+      def self.result_empty; return {:type => :empty, :data => :nil }; end
 
       # nothing expected
-      def self.result_nothing
-        return {:type => :nothing, :data => :nil }
-      end
+      def self.result_nothing; return {:type => :nothing, :data => :nil }; end
 
-      def self.result_status(status)
-        return {:type => :status, :data => status }
-      end
+      def self.result_status(status); return {:type => :status, :data => status }; end
 
-      def self.result_success
-        return result_status('complete')
-      end
+      def self.result_success; return result_status('complete'); end
 
       # supported output formats
       def self.display_formats; [:table,:ruby,:json,:jsonpp,:yaml,:csv]; end
+
+      # user output levels
+      def self.display_levels; [:info,:data,:error]; end
+
+      # main output method
+      def display_message(level,message)
+        case level
+        when :info
+          if @opt_mgr.get_option(:format,:mandatory).eql?(:table) and
+          @opt_mgr.get_option(:display,:mandatory).eql?(:info)
+            STDOUT.puts(message)
+          end
+        when :data
+          STDOUT.puts(message) unless @opt_mgr.get_option(:display,:mandatory).eql?(:error)
+        when :error
+          STDERR.puts(message)
+        else raise "bad case"
+        end
+      end
 
       CSV_RECORD_SEPARATOR="\n"
       CSV_FIELD_SEPARATOR=","
@@ -276,13 +290,13 @@ module Asperalm
         display_format=@opt_mgr.get_option(:format,:mandatory)
         case display_format
         when :ruby
-          puts PP.pp(results[:data],'')
+          display_message(:data,PP.pp(results[:data],''))
         when :json
-          puts JSON.generate(results[:data])
+          display_message(:data,JSON.generate(results[:data]))
         when :jsonpp
-          puts JSON.pretty_generate(results[:data])
+          display_message(:data,JSON.pretty_generate(results[:data]))
         when :yaml
-          puts results[:data].to_yaml
+          display_message(:data,results[:data].to_yaml)
         when :table,:csv
           case results[:type]
           when :object_list # goes to table display
@@ -336,18 +350,18 @@ module Asperalm
             final_table_columns = [results[:name]]
             table_rows_hash_val=results[:data].map { |i| { results[:name] => i } }
           when :empty # no table
-            puts "empty"
+            display_message(:info,'empty')
             return
           when :nothing # no result expected
             Log.log.debug("no result expected")
             return
           when :status # no table
             # :status displays a simple message
-            puts results[:data]
+            display_message(:info,results[:data])
             return
           when :other_struct # no table
             # :other_struct is any other type of structure
-            puts PP.pp(results[:data],'')
+            display_message(:data,PP.pp(results[:data],''))
             return
           else
             raise "unknown data type: #{results[:type]}"
@@ -355,7 +369,7 @@ module Asperalm
           # here we expect: table_rows_hash_val and final_table_columns
           raise "no field specified" if final_table_columns.nil?
           if table_rows_hash_val.empty?
-            puts "empty".gray unless display_format.eql?(:csv)
+            display_message(:info,'empty'.gray) unless display_format.eql?(:csv)
             return
           end
           # convert to string with special function. here table_rows_hash_val is an array of hash
@@ -374,21 +388,21 @@ module Asperalm
           when :table
             style=@option_table_style.split('')
             # display the table !
-            puts Text::Table.new(
+            display_message(:data,Text::Table.new(
             :head => final_table_columns,
             :rows => final_table_rows,
             :horizontal_boundary   => style[0],
             :vertical_boundary     => style[1],
-            :boundary_intersection => style[2])
+            :boundary_intersection => style[2]))
           when :csv
-            puts final_table_rows.map{|t| t.join(CSV_FIELD_SEPARATOR)}.join(CSV_RECORD_SEPARATOR)
+            display_message(:data,final_table_rows.map{|t| t.join(CSV_FIELD_SEPARATOR)}.join(CSV_RECORD_SEPARATOR))
           end
         end
       end
 
       def exit_with_usage(all_plugins)
         # display main plugin options
-        STDERR.puts(@opt_mgr.parser)
+        display_message(:error,@opt_mgr.parser)
         if all_plugins
           # list plugins that have a "require" field, i.e. all but main plugin
           @plugins.keys.select { |s| !@plugins[s][:require_stanza].nil? }.each do |plugin_name_sym|
@@ -396,11 +410,11 @@ module Asperalm
             @opt_mgr=Manager.new(self.program_name)
             @opt_mgr.parser.banner = ""
             get_plugin_instance_with_options(plugin_name_sym)
-            STDERR.puts(@opt_mgr.parser)
+            display_message(:error,@opt_mgr.parser)
           end
         end
-        #STDERR.puts(@opt_mgr.parser)
-        STDERR.puts "\nDocumentation : #{Plugins::Config.instance.help_url}"
+        #display_message(:error,@opt_mgr.parser)
+        display_message(:error,"\nDocumentation : #{Plugins::Config.instance.help_url}")
         Process.exit(0)
       end
 
@@ -454,7 +468,7 @@ module Asperalm
       end
 
       def display_status(status)
-        STDOUT.puts(status) if @opt_mgr.get_option(:format,:mandatory).eql?(:table)
+        display_message(:info,status)
       end
 
       def preset_by_name(config_name)
@@ -474,8 +488,7 @@ module Asperalm
       def process_command_line(argv)
         current_prog_name=File.basename($PROGRAM_NAME)
         unless current_prog_name.eql?(@@PROGRAM_NAME)
-          STDERR.puts "#{"WARNING".bg_red.blink.gray} Please use '#{@@PROGRAM_NAME}' instead of '#{current_prog_name}'"
-          STDERR.puts "#{"WARNING".bg_red.blink.gray} '#{current_prog_name}' will be removed in a future version"
+          display_message(:error,"#{"WARNING".bg_red.blink.gray} Please use '#{@@PROGRAM_NAME}' instead of '#{current_prog_name}', '#{current_prog_name}' will be removed in a future version")
         end
         exception_info=nil
         begin
@@ -555,13 +568,13 @@ module Asperalm
         TempFileManager.instance.cleanup
         # processing of error condition
         unless exception_info.nil?
-          STDERR.puts "ERROR:".bg_red.gray.blink+" "+exception_info[1]+": "+exception_info[0].message
-          STDERR.puts "Use '-h' option to get help." if exception_info[2].eql?(:usage)
+          display_message(:error,"ERROR:".bg_red.gray.blink+" "+exception_info[1]+": "+exception_info[0].message)
+          display_message(:error,"Use '-h' option to get help.") if exception_info[2].eql?(:usage)
           if Log.instance.level.eql?(:debug)
             # will force to show stack trace
             raise exception_info[0]
           else
-            STDERR.puts "Use '--log-level=debug' to get more details." if exception_info[2].eql?(:debug)
+            display_message(:error,"Use '--log-level=debug' to get more details.") if exception_info[2].eql?(:debug)
             Process.exit(1)
           end
         end
