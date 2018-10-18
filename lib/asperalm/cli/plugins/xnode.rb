@@ -45,7 +45,7 @@ module Asperalm
 
         def execute_action
           api_node=Rest.new({:base_url=>Main.instance.options.get_option(:url,:mandatory),:auth_type=>:basic,:basic_username=>Main.instance.options.get_option(:username,:mandatory), :basic_password=>Main.instance.options.get_option(:password,:mandatory)})
-          command=Main.instance.options.get_next_argument('command',action_list)
+          command=Main.instance.options.get_next_command(action_list)
           case command
           when :cleanup
             transfers=self.class.get_transfers_iteration(api_node,{:active_only=>false})
@@ -96,7 +96,7 @@ module Asperalm
             raise Fasp::Error,transfer_data['error']['user_message'] if transfer_data.has_key?('error')
             transfer_spec=transfer_data['transfer_spec']
             # execute transfer
-            return Main.instance.start_transfer_wait_result({:ts=>transfer_spec,:src=>:node_gen3})
+            return Main.instance.start_transfer_wait_result(transfer_spec,{:src=>:node_gen3})
           when :postprocess
             transfers=self.class.get_transfers_iteration(api_node,{:view=>'summary',:direction=>'receive',:active_only=>false})
             return { :type=>:object_list,:data => transfers }

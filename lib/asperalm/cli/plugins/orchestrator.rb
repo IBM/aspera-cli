@@ -55,7 +55,7 @@ module Asperalm
           #            :basic_username=>Main.instance.options.get_option(:username,:mandatory),
           #            :basic_password=>Main.instance.options.get_option(:password,:mandatory)})
 
-          command1=Main.instance.options.get_next_argument('command',action_list)
+          command1=Main.instance.options.get_next_command(action_list)
           case command1
           when :info
             result=call_API("logon",nil,nil,nil)
@@ -73,7 +73,7 @@ module Asperalm
             result=call_API("api/plugin_version")[:data]
             return {:type=>:object_list,:data=>result['Plugin']}
           when :workflow
-            command=Main.instance.options.get_next_argument('command',[:list, :status, :inputs, :details, :start])
+            command=Main.instance.options.get_next_command([:list, :status, :inputs, :details, :start])
             unless [:list, :status].include?(command)
               wf_id=Main.instance.options.get_option(:id,:mandatory)
             end

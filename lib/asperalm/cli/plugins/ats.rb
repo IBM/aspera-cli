@@ -97,7 +97,7 @@ module Asperalm
           end
 
           def execute_action_api_key
-            command=Main.instance.options.get_next_argument('command',[:create, :list, :show, :delete, :info, :subscriptions, :cache])
+            command=Main.instance.options.get_next_command([:create, :list, :show, :delete, :info, :subscriptions, :cache])
             if [:show,:delete].include?(command)
               modified_ats_id=Main.instance.options.get_option(:id,:mandatory)
             end
@@ -118,7 +118,7 @@ module Asperalm
             when :subscriptions
               return {:type=>:single_object, :data=>ats_api_secure.read("subscriptions")[:data]}
             when :cache # list of delete entries in api_key cache
-              command=Main.instance.options.get_next_argument('command',[:list, :delete])
+              command=Main.instance.options.get_next_command([:list, :delete])
               case command
               when :list
                 return {:type=>:object_list, :data=>repo_api_keys, :fields =>['ats_id','ats_secret','ats_description','subscription_name','organization_name']}
@@ -212,7 +212,7 @@ module Asperalm
         def execute_action_access_key
           commands=[:create,:list,:show,:delete,:node]
           commands.push(:cluster) unless @ats_legacy.nil?
-          command=Main.instance.options.get_next_argument('command',commands)
+          command=Main.instance.options.get_next_command(commands)
           # those dont require access key id
           unless [:create,:list].include?(command)
             access_key_id=Main.instance.options.get_option(:id,:mandatory)
@@ -255,7 +255,7 @@ module Asperalm
             server_data=all_servers.select {|i| i['id'].start_with?(ak_data['transfer_server_id'])}.first
             raise CliError,"no such server found" if server_data.nil?
             api_node=Rest.new({:base_url=>server_data['transfer_setup_url'],:auth_type=>:basic,:basic_username=>ak_data['id'], :basic_password=>ak_data['secret']})
-            command=Main.instance.options.get_next_argument('command',Node.common_actions)
+            command=Main.instance.options.get_next_command(Node.common_actions)
             Node.execute_common(command,api_node)
           when :cluster
             rest_params={
@@ -277,7 +277,7 @@ module Asperalm
         end
 
         def execute_action_cluster
-          command=Main.instance.options.get_next_argument('command',[ :clouds, :list, :show])
+          command=Main.instance.options.get_next_command([ :clouds, :list, :show])
           case command
           when :clouds
             return {:type=>:single_object, :data=>all_clouds, :columns=>['id','name']}
@@ -303,7 +303,7 @@ module Asperalm
 
         # called for legacy and AoC
         def execute_action_gen
-          command=Main.instance.options.get_next_argument('command',action_list)
+          command=Main.instance.options.get_next_command(action_list)
           case command
           when :cluster # display general ATS cluster information
             return execute_action_cluster

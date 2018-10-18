@@ -133,24 +133,21 @@ module Asperalm
             Main.instance.display_status("Items: #{send_result[:data]['item_count']}/#{send_result[:data]['total_count']}")
             return c_result_remove_prefix_path(result,'path',prefix_path)
           when :upload
-            filelist = Main.instance.options.get_next_argument("source file list",:multiple)
-            Log.log.debug("file list=#{filelist}")
             destination=Main.instance.destination_folder('send')
             send_result=api_node.create('files/upload_setup',{ :transfer_requests => [ { :transfer_request => { :paths => [ { :destination => destination } ] } } ] } )
             raise send_result[:data]['error']['user_message'] if send_result[:data].has_key?('error')
             raise send_result[:data]['transfer_specs'][0]['error']['user_message'] if send_result[:data]['transfer_specs'][0].has_key?('error')
             raise "expecting one session exactly" if send_result[:data]['transfer_specs'].length != 1
             transfer_spec=send_result[:data]['transfer_specs'].first['transfer_spec']
-            transfer_spec['paths']=filelist.map { |i| {'source'=>i} }
-            return Main.instance.start_transfer_wait_result({:ts=>transfer_spec,:src=>:node_gen3})
+            # delete this part, as the returned value contains only destination, and note sources
+            transfer_spec.delete('paths')
+            return Main.instance.start_transfer_wait_result(transfer_spec,{:src=>:node_gen3})
           when :download
-            filelist = get_next_arg_add_prefix(prefix_path,"source file list",:multiple)
-            Log.log.debug("file list=#{filelist}")
-            send_result=api_node.create('files/download_setup',{ :transfer_requests => [ { :transfer_request => { :paths => filelist.map {|i| {:source=>i}; } } } ] } )
+            send_result=api_node.create('files/download_setup',{ :transfer_requests => [ { :transfer_request => { :paths => TransferAgent.instance.transfer_paths_from_options } } ] } )
             raise send_result[:data]['transfer_specs'][0]['error']['user_message'] if send_result[:data]['transfer_specs'][0].has_key?('error')
             raise "expecting one session exactly" if send_result[:data]['transfer_specs'].length != 1
             transfer_spec=send_result[:data]['transfer_specs'].first['transfer_spec']
-            return Main.instance.start_transfer_wait_result({:ts=>transfer_spec,:src=>:node_gen3})
+            return Main.instance.start_transfer_wait_result(transfer_spec,{:src=>:node_gen3})
           end
         end
 
@@ -158,11 +155,11 @@ module Asperalm
 
         def execute_action
           api_node=basic_auth_api()
-          command=Main.instance.options.get_next_argument('command',action_list)
+          command=Main.instance.options.get_next_command(action_list)
           case command
           when *self.class.common_actions; return self.class.execute_common(command,api_node)
           when :async
-            command=Main.instance.options.get_next_argument('command',[:list,:summary,:counters])
+            command=Main.instance.options.get_next_command([:list,:summary,:counters])
             if [:summary,:counters].include?(command)
               asyncid=Main.instance.options.get_option(:id,:mandatory)
             end
@@ -180,7 +177,7 @@ module Asperalm
               return { :type => :single_object, :data => resp }
             end
           when :stream
-            command=Main.instance.options.get_next_argument('command',[ :list, :create, :show, :modify, :cancel ])
+            command=Main.instance.options.get_next_command([ :list, :create, :show, :modify, :cancel ])
             case command
             when :list
               resp=api_node.read('ops/transfers',Main.instance.options.get_option(:value,:optional))
@@ -204,7 +201,7 @@ module Asperalm
               raise "error"
             end
           when :transfer
-            command=Main.instance.options.get_next_argument('command',[ :list, :cancel, :show ])
+            command=Main.instance.options.get_next_command([ :list, :cancel, :show ])
             res_class_path='ops/transfers'
             if [:cancel, :show].include?(command)
               one_res_id=Main.instance.options.get_option(:id,:mandatory)
@@ -227,7 +224,7 @@ module Asperalm
           when :access_key
             return Plugin.entity_action(api_node,'access_keys',['id','root_file_id','storage','license'],:id)
           when :service
-            command=Main.instance.options.get_next_argument('command',[ :list, :create, :delete])
+            command=Main.instance.options.get_next_command([ :list, :create, :delete])
             if [:delete].include?(command)
               svcid=Main.instance.options.get_option(:id,:mandatory)
             end
@@ -248,7 +245,7 @@ module Asperalm
           when :watch_folder
             res_class_path='v3/watchfolders'
             #return Plugin.entity_action(api_node,'v3/watchfolders',nil,:id)
-            command=Main.instance.options.get_next_argument('command',[ :create, :list, :show, :modify, :delete, :state])
+            command=Main.instance.options.get_next_command([ :create, :list, :show, :modify, :delete, :state])
             if [:show,:modify,:delete,:state].include?(command)
               one_res_id=Main.instance.options.get_option(:id,:mandatory)
               one_res_path="#{res_class_path}/#{one_res_id}"
@@ -273,14 +270,14 @@ module Asperalm
               return { :type=>:single_object, :data => api_node.read("#{one_res_path}/state")[:data] }
             end
           when :central
-            command=Main.instance.options.get_next_argument('command',[ :session,:file])
+            command=Main.instance.options.get_next_command([ :session,:file])
             validator_id=Main.instance.options.get_option(:validator)
             validation={"validator_id"=>validator_id} unless validator_id.nil?
             request_data=Main.instance.options.get_option(:value,:optional)
             request_data||={}
             case command
             when :session
-              command=Main.instance.options.get_next_argument('command',[ :list])
+              command=Main.instance.options.get_next_command([ :list])
               case command
               when :list
                 request_data.deep_merge!({"validation"=>validation}) unless validation.nil?
@@ -288,7 +285,7 @@ module Asperalm
                 return {:type=>:object_list,:data=>resp[:data]["session_info_result"]["session_info"],:fields=>["session_uuid","status","transport","direction","bytes_transferred"]}
               end
             when :file
-              command=Main.instance.options.get_next_argument('command',[ :list, :modify])
+              command=Main.instance.options.get_next_command([ :list, :modify])
               case command
               when :list
                 request_data.deep_merge!({"validation"=>validation}) unless validation.nil?

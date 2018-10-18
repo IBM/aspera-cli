@@ -459,8 +459,8 @@ module Asperalm
 
       public
 
-      def start_transfer_wait_result(transfer_info)
-        return TransferAgent.instance.start_transfer_wait_result(transfer_info)
+      def start_transfer_wait_result(transfer_spec,options)
+        return TransferAgent.instance.start_transfer_wait_result(transfer_spec,options)
       end
 
       def destination_folder(direction)
@@ -530,7 +530,7 @@ module Asperalm
           if @option_show_config and @opt_mgr.command_or_arg_empty?
             command_sym=@@CONFIG_PLUGIN_NAME_SYM
           else
-            command_sym=@opt_mgr.get_next_argument('command',@plugins.keys.dup.unshift(:help))
+            command_sym=@opt_mgr.get_next_command(@plugins.keys.dup.unshift(:help))
           end
           # main plugin is not dynamically instanciated
           case command_sym

@@ -19,13 +19,13 @@ module Asperalm
 
         def execute_action
           api_console=basic_auth_api('api')
-          command=Main.instance.options.get_next_argument('command',action_list)
+          command=Main.instance.options.get_next_command(action_list)
           case command
           when :transfer
-            command=Main.instance.options.get_next_argument('command',[ :current, :smart ])
+            command=Main.instance.options.get_next_command([ :current, :smart ])
             case command
             when :smart
-              command=Main.instance.options.get_next_argument('command',[:list,:submit])
+              command=Main.instance.options.get_next_command([:list,:submit])
               case command
               when :list
                 return {:type=>:object_list,:data=>api_console.read('smart_transfers')[:data]}
@@ -35,7 +35,7 @@ module Asperalm
                 return {:type=>:object_list,:data=>api_console.create('smart_transfers/'+smart_id,params)[:data]}
               end
             when :current
-              command=Main.instance.options.get_next_argument('command',[ :list ])
+              command=Main.instance.options.get_next_command([ :list ])
               case command
               when :list
                 return {:type=>:object_list,

@@ -19,7 +19,6 @@ module Asperalm
           Main.instance.options.add_opt_list(:download_mode,[:fasp, :node_http ],"download mode")
           Main.instance.options.add_opt_list(:auth,Oauth.auth_types,"type of Oauth authentication")
           Main.instance.options.add_opt_boolean(:bulk,"bulk operation")
-          #Main.instance.options.add_opt_boolean(:long,"long display")
           Main.instance.options.add_opt_simple(:url,"URL of application, e.g. http://org.asperafiles.com")
           Main.instance.options.add_opt_simple(:username,"username to log in")
           Main.instance.options.add_opt_simple(:password,"user's password")
@@ -36,13 +35,12 @@ module Asperalm
           Main.instance.options.add_opt_simple(:public_token,"token value of public link")
           Main.instance.options.set_option(:download_mode,:fasp)
           Main.instance.options.set_option(:bulk,:no)
-          #Main.instance.options.set_option(:long,:no)
           Main.instance.options.set_option(:redirect_uri,'http://localhost:12345')
           Main.instance.options.set_option(:auth,:web)
         end
 
         def self.execute_node_gen4_action(api_files,home_node_id,home_file_id)
-          command_repo=Main.instance.options.get_next_argument('command',[ :access_key, :browse, :mkdir, :rename, :delete, :upload, :download, :node, :file  ])
+          command_repo=Main.instance.options.get_next_command([ :access_key, :browse, :mkdir, :rename, :delete, :upload, :download, :node, :file  ])
           case command_repo
           when :access_key
             node_info,file_id = api_files.find_nodeinfo_and_fileid(home_node_id,home_file_id)
@@ -79,7 +77,7 @@ module Asperalm
             filelist = Main.instance.options.get_next_argument("file list",:multiple)
             Log.log.debug("file list=#{filelist}")
             node_info,file_id = api_files.find_nodeinfo_and_fileid(home_node_id,home_file_id,Main.instance.destination_folder('send'))
-            return Main.instance.start_transfer_wait_result(api_files.ti('files','send',node_info,file_id,{'paths'=>filelist.map{|i|{'source'=>i}}}))
+            return Main.instance.start_transfer_wait_result(*api_files.tr_spec('files','send',node_info,file_id,{'paths'=>filelist.map{|i|{'source'=>i}}}))
           when :download
             source_file=Main.instance.options.get_next_argument('source')
             case Main.instance.options.get_option(:download_mode,:mandatory)
@@ -87,7 +85,7 @@ module Asperalm
               file_path = source_file.split(FilesApi::PATH_SEPARATOR)
               file_name = file_path.pop
               node_info,file_id = api_files.find_nodeinfo_and_fileid(home_node_id,home_file_id,file_path.join(FilesApi::PATH_SEPARATOR))
-              return Main.instance.start_transfer_wait_result(api_files.ti('files','receive',node_info,file_id,{'paths'=>[{'source'=>file_name}]}))
+              return Main.instance.start_transfer_wait_result(*api_files.tr_spec('files','receive',node_info,file_id,{'paths'=>[{'source'=>file_name}]}))
             when :node_http
               file_path = source_file.split(FilesApi::PATH_SEPARATOR)
               file_name = file_path.last
@@ -98,7 +96,7 @@ module Asperalm
             end # download_mode
           when :node
             # Note: other "common" actions are unauthorized with user scope
-            command_legacy=Main.instance.options.get_next_argument('command',Node.simple_actions)
+            command_legacy=Main.instance.options.get_next_command(Node.simple_actions)
             # TODO: shall we support all methods here ? what if there is a link ?
             node_info=api_files.read("nodes/#{home_node_id}")[:data]
             node_api=api_files.get_files_node_api(node_info,FilesApi::SCOPE_NODE_USER)
@@ -254,7 +252,7 @@ module Asperalm
 
         def execute_action
           init_apis
-          command=Main.instance.options.get_next_argument('command',action_list)
+          command=Main.instance.options.get_next_command(action_list)
           if Main.instance.options.get_option(:format,:optional).eql?(:table) and !command.eql?(:admin)
             default_ws=@workspace_id == @default_workspace_id ? ' (default)' : ''
             Main.instance.display_status "Current Workspace: #{@workspace_name.red}#{default_ws}"
@@ -267,7 +265,7 @@ module Asperalm
           when :organization
             return { :type=>:single_object, :data =>@org_data }
           when :user
-            command=Main.instance.options.get_next_argument('command',[ :workspaces,:info ])
+            command=Main.instance.options.get_next_command([ :workspaces,:info ])
             case command
             when :workspaces
               return {:type=>:object_list,:data=>@api_files_user.read("workspaces")[:data],:fields=>['id','name']}
@@ -275,7 +273,7 @@ module Asperalm
               #                return {:type=>:object_list,:data=>@api_files_user.read("client_settings/")[:data]}
             when :info
               resource_instance_path="users/#{@user_id}"
-              command=Main.instance.options.get_next_argument('command',[ :show,:modify ])
+              command=Main.instance.options.get_next_command([ :show,:modify ])
               case command
               when :show
                 object=@api_files_user.read(resource_instance_path)[:data]
@@ -287,7 +285,7 @@ module Asperalm
               end
             end
           when :packages
-            command_pkg=Main.instance.options.get_next_argument('command',[ :send, :recv, :list, :show ])
+            command_pkg=Main.instance.options.get_next_command([ :send, :recv, :list, :show ])
             case command_pkg
             when :send
               package_creation=Main.instance.options.get_option(:value,:mandatory)
@@ -314,7 +312,7 @@ module Asperalm
 
               # tell Aspera what to expect in package: 1 transfer (can also be done after transfer)
               resp=@api_files_user.update("packages/#{the_package['id']}",{"sent"=>true,"transfers_expected"=>1})[:data]
-              return Main.instance.start_transfer_wait_result(@api_files_user.ti('packages','send',node_info,the_package['contents_file_id'],{
+              return Main.instance.start_transfer_wait_result(*@api_files_user.tr_spec('packages','send',node_info,the_package['contents_file_id'],{
                 'tags'=>{'aspera'=>{'files'=>{"package_id"=>the_package['id'],"package_operation"=>"upload"}}},
                 'paths'=>filelist.map{|i|{'source'=>i}}
               }))
@@ -322,20 +320,13 @@ module Asperalm
               package_id=Main.instance.options.get_option(:id,:mandatory)
               the_package=@api_files_user.read("packages/#{package_id}")[:data]
               node_info=@api_files_user.read("nodes/#{the_package['node_id']}")[:data]
-              return Main.instance.start_transfer_wait_result(@api_files_user.ti('packages','receive',node_info,the_package['contents_file_id'],{
+              return Main.instance.start_transfer_wait_result(*@api_files_user.tr_spec('packages','receive',node_info,the_package['contents_file_id'],{
                 'tags'  => {'aspera'=>{'files'=>{'package_id'=>the_package['id'],'package_operation'=>'download'}}},
                 'paths' => [{'source'=>'.'}]
               }))
             when :show
               package_id=Main.instance.options.get_next_argument('package ID')
               the_package=@api_files_user.read("packages/#{package_id}")[:data]
-              #              if Main.instance.options.get_option(:long)
-              #                node_info,file_id = @api_files_user.find_nodeinfo_and_fileid(the_package['node_id'],the_package['contents_file_id'])
-              #                node_api=@api_files_user.get_files_node_api(node_info,FilesApi::SCOPE_NODE_USER)
-              #                items=node_api.read("files/#{file_id}/files")[:data]
-              #                file=node_api.read("files/#{items.first['id']}")[:data]
-              #                the_package['X_contents_path']=file['path']
-              #              end
               return { :type=>:single_object, :data =>the_package }
             when :list
               # list all packages ('page'=>1,'per_page'=>10,)'sort'=>'-sent_at',
@@ -349,7 +340,7 @@ module Asperalm
             require 'asperalm/faspex_gw'
             FaspexGW.instance.start_server(@api_files_user,@workspace_id)
           when :admin
-            command_admin=Main.instance.options.get_next_argument('command',[ :ats, :resource, :events, :set_client_key, :usage_reports, :search_nodes  ])
+            command_admin=Main.instance.options.get_next_command([ :ats, :resource, :events, :set_client_key, :usage_reports, :search_nodes  ])
             case command_admin
             when :ats
               @ats.ats_api_public = @ats.ats_api_secure = Rest.new(@api_files_admn.params.clone.merge!({
@@ -395,7 +386,7 @@ module Asperalm
               supported_operations.push(:modify,:delete,*global_operations) unless singleton_object
               supported_operations.push(:do) if resource_type.eql?(:node)
               supported_operations.push(:shared_folders) if resource_type.eql?(:workspace)
-              command=Main.instance.options.get_next_argument('command',supported_operations)
+              command=Main.instance.options.get_next_command(supported_operations)
               # require identifier for non global commands
               if !singleton_object and !global_operations.include?(command)
                 res_id=Main.instance.options.get_option(:id)

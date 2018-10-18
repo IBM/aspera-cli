@@ -14,27 +14,27 @@ module Asperalm
         def action_list; [ :repository,:admin ];end
 
         def execute_action
-          command=Main.instance.options.get_next_argument('command',action_list)
+          command=Main.instance.options.get_next_command(action_list)
           case command
           when :repository
             api_shares_node=basic_auth_api('node_api')
-            command=Main.instance.options.get_next_argument('command',Node.common_actions)
+            command=Main.instance.options.get_next_command(Node.common_actions)
             case command
             when *Node.common_actions; Node.execute_common(command,api_shares_node)
             else raise "INTERNAL ERROR, unknown command: [#{command}]"
             end
           when :admin
             api_shares_admin=basic_auth_api('api/v1')
-            command=Main.instance.options.get_next_argument('command',[:user,:share])
+            command=Main.instance.options.get_next_command([:user,:share])
             case command
             when :user
-              command=Main.instance.options.get_next_argument('command',[:list,:id])
+              command=Main.instance.options.get_next_command([:list,:id])
               case command
               when :list
                 return {:type=>:object_list,:data=>api_shares_admin.read('data/users')[:data],:fields=>['username','email','directory_user','urn']}
               when :id
                 res_id=Main.instance.options.get_next_argument('user id')
-                command=Main.instance.options.get_next_argument('command',[:app_authorizations,:authorize_share])
+                command=Main.instance.options.get_next_command([:app_authorizations,:authorize_share])
                 case command
                 when :app_authorizations
                   return {:type=>:single_object,:data=>api_shares_admin.read("data/users/#{res_id}/app_authorizations")[:data]}
@@ -46,7 +46,7 @@ module Asperalm
                 end
               end
             when :share
-              command=Main.instance.options.get_next_argument('command',[:list,:name])
+              command=Main.instance.options.get_next_command([:list,:name])
               all_shares=api_shares_admin.read('data/shares')[:data]
               case command
               when :list

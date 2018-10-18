@@ -71,7 +71,7 @@ module Asperalm
           end
 
           # get command and set aliases
-          command=Main.instance.options.get_next_argument('command',action_list)
+          command=Main.instance.options.get_next_command(action_list)
           command=:ls if command.eql?(:browse)
           command=:rm if command.eql?(:delete)
           command=:mv if command.eql?(:rename)
@@ -109,19 +109,9 @@ module Asperalm
               end
               return Main.result_status(result)
             when :upload
-              filelist = Main.instance.options.get_next_argument("source list",:multiple)
-              transfer_spec.merge!({
-                'direction'=>'send',
-                'paths'=>filelist.map { |f| {'source'=>f } }
-              })
-              return Main.instance.start_transfer_wait_result({:ts=>transfer_spec,:src=>:direct})
+              return Main.instance.start_transfer_wait_result(transfer_spec.merge('direction'=>'send'),{:src=>:direct})
             when :download
-              filelist = Main.instance.options.get_next_argument("source list",:multiple)
-              transfer_spec.merge!({
-                'direction'=>'receive',
-                'paths'=>filelist.map { |f| {'source'=>f } }
-              })
-              return Main.instance.start_transfer_wait_result({:ts=>transfer_spec,:src=>:direct})
+              return Main.instance.start_transfer_wait_result(transfer_spec.merge('direction'=>'receive'),{:src=>:direct})
             when *Asperalm::AsCmd.action_list
               args=Main.instance.options.get_next_argument('ascmd command arguments',:multiple,:optional)
               ascmd=Asperalm::AsCmd.new(shell_executor)

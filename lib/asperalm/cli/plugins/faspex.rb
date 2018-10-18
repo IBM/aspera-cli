@@ -105,10 +105,10 @@ module Asperalm
         PACKAGE_MATCH_FIELD='delivery_id'
 
         def execute_action
-          command=Main.instance.options.get_next_argument('command',action_list)
+          command=Main.instance.options.get_next_command(action_list)
           case command
           when :package
-            command_pkg=Main.instance.options.get_next_argument('command',[ :send, :recv, :list ])
+            command_pkg=Main.instance.options.get_next_command([ :send, :recv, :list ])
             case command_pkg
             when :list
               all_inbox_xml=api_v3.call({:operation=>'GET',:subpath=>"#{Main.instance.options.get_option(:box,:mandatory).to_s}.atom",:headers=>{'Accept'=>'application/xml'}})[:http].body
@@ -121,8 +121,7 @@ module Asperalm
               raise CliBadArgument,"delivery_info must be hash, refer to doc" unless delivery_info.is_a?(Hash)
               delivery_info['sources']||=[{'paths'=>[]}]
               first_source=delivery_info['sources'].first
-              filelist = Main.instance.options.get_next_argument('file list',:multiple)
-              first_source['paths'].push(*filelist)
+              first_source['paths'].push(*TransferAgent.instance.transfer_paths_from_options.map{|i|i['source']})
               source_name=Main.instance.options.get_option(:source_name,:optional)
               if !source_name.nil?
                 source_list=api_v3.call({:operation=>'GET',:subpath=>"source_shares",:headers=>{'Accept'=>'application/json'}})[:data]['items']
@@ -140,28 +139,14 @@ module Asperalm
               end
               raise CliBadArgument,"expecting one session exactly" if send_result['xfer_sessions'].length != 1
               transfer_spec=send_result['xfer_sessions'].first
-              transfer_spec['paths']=filelist.map { |i| {'source'=>i} }
-              return Main.instance.start_transfer_wait_result({:ts=>transfer_spec,:src=>:node_gen3})
+              # use source from cmd line, this one nly contains destination (already in dest root)
+              transfer_spec.delete('paths')
+              return Main.instance.start_transfer_wait_result(transfer_spec,{:src=>:node_gen3})
             when :recv
-              # UUID is not reliable, it changes at every call
-              if false
-                pkguuid=Main.instance.options.get_next_argument("Package ID")
-                all_inbox_xml=api_v3.call({:operation=>'GET',:subpath=>"#{Main.instance.options.get_option(:box,:optional).to_s}.atom",:headers=>{'Accept'=>'application/xml'}})[:http].body
-                allinbox=XmlSimple.xml_in(all_inbox_xml, {"ForceArray" => true})
-                package_entries=[]
-                if allinbox.has_key?('entry')
-                  package_entries=allinbox['entry'].select { |e| pkguuid.eql?(e[PACKAGE_MATCH_FIELD].first) }
-                end
-                if package_entries.length == 0
-                  raise CliBadArgument,"no such package: #{pkguuid}"
-                end
-                package_entry=package_entries.first
-              else
-                # I dont know which delivery id is the right one if package was receive by group
-                delivid=Main.instance.options.get_next_argument("Package delivery ID")
-                entry_xml=api_v3.call({:operation=>'GET',:subpath=>"#{Main.instance.options.get_option(:box,:optional).to_s}/#{delivid}",:headers=>{'Accept'=>'application/xml'}})[:http].body
-                package_entry=XmlSimple.xml_in(entry_xml, {"ForceArray" => true})
-              end
+              delivid=Main.instance.options.get_option(:id,:mandatory)
+              # I dont know which delivery id is the right one if package was receive by group
+              entry_xml=api_v3.call({:operation=>'GET',:subpath=>"#{Main.instance.options.get_option(:box,:optional).to_s}/#{delivid}",:headers=>{'Accept'=>'application/xml'}})[:http].body
+              package_entry=XmlSimple.xml_in(entry_xml, {"ForceArray" => true})
               transfer_uri=self.class.get_fasp_uri_from_entry(package_entry)
               transfer_spec=Fasp::Uri.new(transfer_uri).transfer_spec
               # NOTE: only external users have token in faspe: link !
@@ -171,17 +156,16 @@ module Asperalm
                 transfer_spec['token']=api_v3.call({:operation=>'POST',:subpath=>"issue-token?direction=down",:headers=>{'Accept'=>'text/plain','Content-Type'=>'application/vnd.aspera.url-list+xml'},:text_body_params=>xmlpayload})[:http].body
               end
               transfer_spec['direction']='receive'
-              return Main.instance.start_transfer_wait_result({:ts=>transfer_spec,:src=>:node_gen3})
+              return Main.instance.start_transfer_wait_result(transfer_spec,{:src=>:node_gen3})
             end
           when :source
-            command_source=Main.instance.options.get_next_argument('command',[ :list, :id, :name ])
+            command_source=Main.instance.options.get_next_command([ :list, :id, :name ])
             source_list=api_v3.call({:operation=>'GET',:subpath=>"source_shares",:headers=>{'Accept'=>'application/json'}})[:data]['items']
             case command_source
             when :list
               return {:data=>source_list,:type=>:object_list}
             else # :id or :name
               source_match_val=Main.instance.options.get_next_argument('source id or name')
-              #source_match_val=source_match_val.to_i if command_source.eql?(:id)
               source_ids=source_list.select { |i| i[command_source.to_s].to_s.eql?(source_match_val) }
               if source_ids.empty?
                 raise CliError,"No such Faspex source #{command_source.to_s}: #{source_match_val} in [#{source_list.map{|i| i[command_source.to_s]}.join(', ')}]"
@@ -196,7 +180,7 @@ module Asperalm
               end
               source_info=source_hash[source_name]
               Log.log.debug("source_info: #{source_info}")
-              command_node=Main.instance.options.get_next_argument('command',[ :info, :node ])
+              command_node=Main.instance.options.get_next_command([ :info, :node ])
               case command_node
               when :info
                 return {:data=>source_info,:type=>:single_object}
@@ -209,7 +193,7 @@ module Asperalm
                   :auth_type     =>:basic,
                   :basic_username=>node_config['username'],
                   :basic_password=>node_config['password']})
-                command=Main.instance.options.get_next_argument('command',Node.common_actions)
+                command=Main.instance.options.get_next_command(Node.common_actions)
                 return Node.execute_common(command,api_node,source_info[@@KEY_PATH])
               end
             end
@@ -217,7 +201,7 @@ module Asperalm
             my_info=api_v3.call({:operation=>'GET',:subpath=>"me",:headers=>{'Accept'=>'application/json'}})[:data]
             return {:data=>my_info, :type=>:single_object}
           when :dropbox
-            command_pkg=Main.instance.options.get_next_argument('command',[ :list, :create ])
+            command_pkg=Main.instance.options.get_next_command([ :list, :create ])
             case command_pkg
             when :list
               dropbox_list=api_v3.call({:operation=>'GET',:subpath=>"/aspera/faspex/dropboxes",:headers=>{'Accept'=>'application/json'}})[:data]
@@ -239,9 +223,9 @@ module Asperalm
             transfer_uri=self.class.get_fasp_uri_from_entry(package_entry)
             transfer_spec=Fasp::Uri.new(transfer_uri).transfer_spec
             transfer_spec['direction']='receive'
-            return Main.instance.start_transfer_wait_result({:ts=>transfer_spec,:src=>:node_gen3})
+            return Main.instance.start_transfer_wait_result(transfer_spec,{:src=>:node_gen3})
           when :v4
-            command=Main.instance.options.get_next_argument('command',[:dropbox, :dmembership, :workgroup,:wmembership,:user,:metadata_profile])
+            command=Main.instance.options.get_next_command([:dropbox, :dmembership, :workgroup,:wmembership,:user,:metadata_profile])
             case command
             when :dropbox
               return Plugin.entity_action(api_v4,'admin/dropboxes',['id','e_wg_name','e_wg_desc','created_at'],:id)

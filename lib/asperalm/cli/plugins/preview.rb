@@ -207,7 +207,7 @@ module Asperalm
             'node'               => { 'access_key' => @access_key_self['id'], 'file_id' => folder_id }}}
           })
           tspec['destination_root']=destination unless destination.nil?
-          Main.instance.start_transfer_wait_result({:ts=>tspec,:src=>:node_gen4})
+          Main.instance.start_transfer_wait_result(tspec,{:src=>:node_gen4})
         end
 
         def get_infos_local(gen_infos,entry,local_entry_preview_dir)
@@ -376,7 +376,7 @@ module Asperalm
             @local_preview_folder=File.join(@local_storage_root,@option_previews_folder)
             raise CliError,"Folder #{@local_preview_folder} does not exist locally. Please create it, or specify an alternate name." unless File.directory?(@local_preview_folder)
           end
-          command=Main.instance.options.get_next_argument('command',action_list)
+          command=Main.instance.options.get_next_command(action_list)
           case command
           when :scan
             scan_folder_files({ 'id' => @access_key_self['root_file_id'], 'name' => '/', 'type' => 'folder', 'path' => '/' })

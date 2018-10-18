@@ -66,7 +66,7 @@ module Asperalm
         def process_entity_action(resource_sym,path_prefix)
           resource_path=path_prefix+resource_sym.to_s+'s'
           operations=[:list,:create,:delete]
-          command=Main.instance.options.get_next_argument('command',operations)
+          command=Main.instance.options.get_next_command(operations)
           case command
           when :create
             params=Main.instance.options.get_next_argument("creation data (json structure)")
@@ -90,10 +90,10 @@ module Asperalm
         def execute_action
           init_apis
 
-          command=Main.instance.options.get_next_argument('command',action_list)
+          command=Main.instance.options.get_next_command(action_list)
           case command
           when :repository
-            command=Main.instance.options.get_next_argument('command',Node.common_actions)
+            command=Main.instance.options.get_next_command(Node.common_actions)
             return Node.execute_common(command,@api_node)
           when :appinfo
             node_info=@api_node.call({:operation=>'GET',:subpath=>'app',:headers=>{'Accept'=>'application/json','Content-Type'=>'application/json'}})[:data]
@@ -107,7 +107,7 @@ module Asperalm
             set_resource_path_by_id_or_name(prefix,:project) if [:share].include?(command)
             process_entity_action(command,prefix)
           when :admin
-            command=Main.instance.options.get_next_argument('command',[:users,:groups,:nodes])
+            command=Main.instance.options.get_next_command([:users,:groups,:nodes])
             return Plugin.entity_action(@api_shares2_oauth,"system/#{command}",nil,:id)
           end # command
         end # execute_action

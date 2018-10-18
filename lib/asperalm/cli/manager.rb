@@ -162,6 +162,8 @@ module Asperalm
         end
       end
 
+      def get_next_command(action_list); return get_next_argument('command',action_list); end
+
       # expected is array of allowed value (single value)
       # or :multiple for remaining values
       # or :single for a single unconstrained value

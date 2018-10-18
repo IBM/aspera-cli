@@ -17,7 +17,7 @@ module Asperalm
         def action_list; [ :start, :admin ];end
 
         def execute_action
-          command=Main.instance.options.get_next_argument('command',action_list)
+          command=Main.instance.options.get_next_command(action_list)
           case command
           when :start
             env_args=Asperalm::Sync.new(Main.instance.options.get_option(:parameters,:mandatory)).compute_args
@@ -44,7 +44,7 @@ module Asperalm
             else
               cmdline.push('--local-dir='+session['local_dir'])
             end
-            command2=Main.instance.options.get_next_argument('command',[:status])
+            command2=Main.instance.options.get_next_command([:status])
             case command2
             when :status
               stdout, stderr, status = Open3.capture3(*cmdline)
