@@ -321,7 +321,7 @@ module Asperalm
           session[:resumer].process do
             start_transfer_with_args_env(session[:env_args],session)
           end
-          Log.log.debug('transfer ok'.bg_red)
+          Log.log.debug('transfer ok'.bg_green)
           session[:state]=:success
         rescue => e
           session[:state]=:failed
