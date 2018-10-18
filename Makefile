@@ -3,6 +3,7 @@ TOOLCONFIGDIR=$(HOME)/.aspera/$(EXENAME)
 APIKEY=$(TOOLCONFIGDIR)/filesapikey
 BINDIR=./bin
 OUT_FOLDER=out
+TEST_FOLDER=test.dir
 EXETEST=$(BINDIR)/$(EXENAME)
 GEMNAME=asperalm
 GEMVERSION=$(shell $(EXETEST) --version)
@@ -104,7 +105,6 @@ installdeps:
 	gem install jwt formatador ruby-progressbar
 
 SAMPLE_FILE=~/Documents/Samples/200KB.1
-TEST_FOLDER=./test.dir
 
 TEST_SHARE=000_test1
 clean::
@@ -154,7 +154,7 @@ t/fx2:
 	$(EXETEST) faspex package send --delivery-info=@json:'{"title":"my title","recipients":["laurent.martin.aspera@fr.ibm.com"]}' --sources=@args $(SAMPLE_FILE) 
 	@touch $@
 t/fx3:
-	$(EXETEST) faspex package recv --id=$$($(EXETEST) faspex package list --fields=delivery_id --format=csv --box=sent|tail -n 1) --box=sent
+	$(EXETEST) faspex package recv --to-folder=$(TEST_FOLDER) --id=$$($(EXETEST) faspex package list --fields=delivery_id --format=csv --box=sent|tail -n 1) --box=sent
 	@touch $@
 t/fx4:
 	@echo $(EXETEST) faspex recv_publink 'https://ibmfaspex.asperasoft.com/aspera/faspex/external_deliveries/78780?passcode=a003aaf2f53e3869126b908525084db6bebc7031' --insecure=yes
