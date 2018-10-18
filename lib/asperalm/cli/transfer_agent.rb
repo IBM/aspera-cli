@@ -10,24 +10,21 @@ module Asperalm
       include Singleton
       private
       def initialize
-        @transfer_spec_default={}
+        @transfer_spec_cmdline={}
         @agent=nil
+        @transfer_paths=nil
       end
       public
 
-      def option_transfer_spec; @transfer_spec_default; end
+      def option_transfer_spec; @transfer_spec_cmdline; end
 
-      def option_transfer_spec=(value); @transfer_spec_default.merge!(value); end
-
-      def option_to_folder; @transfer_spec_default['destination_root']; end
-
-      def option_to_folder=(value); @transfer_spec_default.merge!({'destination_root'=>value}); end
+      def option_transfer_spec=(value); @transfer_spec_cmdline.merge!(value); end
 
       def declare_transfer_options
         Main.instance.options.set_obj_attr(:ts,self,:option_transfer_spec)
-        Main.instance.options.set_obj_attr(:to_folder,self,:option_to_folder)
         Main.instance.options.add_opt_simple(:ts,"override transfer spec values (Hash, use @json: prefix), current=#{Main.instance.options.get_option(:ts,:optional)}")
         Main.instance.options.add_opt_simple(:to_folder,"destination folder for downloaded files")
+        Main.instance.options.add_opt_simple(:sources,"list of source files (see doc)")
         Main.instance.options.add_opt_list(:transfer,[:direct,:connect,:node],"type of transfer")
         Main.instance.options.add_opt_simple(:transfer_node,"name of configuration used to transfer when using --transfer=node")
         Main.instance.options.set_option(:transfer,:direct)
@@ -39,15 +36,15 @@ module Asperalm
           when :direct
             @agent=Fasp::Local.instance
             if !Main.instance.options.get_option(:fasp_proxy,:optional).nil?
-              @transfer_spec_default['EX_fasp_proxy_url']=Main.instance.options.get_option(:fasp_proxy,:optional)
+              @transfer_spec_cmdline['EX_fasp_proxy_url']=Main.instance.options.get_option(:fasp_proxy,:optional)
             end
             if !Main.instance.options.get_option(:http_proxy,:optional).nil?
-              @transfer_spec_default['EX_http_proxy_url']=Main.instance.options.get_option(:http_proxy,:optional)
+              @transfer_spec_cmdline['EX_http_proxy_url']=Main.instance.options.get_option(:http_proxy,:optional)
             end
             # TODO: option to choose progress format
             # here we disable native stdout progress
             @agent.quiet=true
-            Log.log.debug(">>>>#{@transfer_spec_default}".red)
+            Log.log.debug(">>>>#{@transfer_spec_cmdline}".red)
           when :connect
             @agent=Fasp::Connect.instance
           when :node
@@ -90,54 +87,71 @@ module Asperalm
       # sets default if needed
       # param: 'send' or 'receive'
       def destination_folder(direction)
-        # set default if needed
-        if @transfer_spec_default['destination_root'].nil?
-          # default: / on remote, . on local
-          case direction
-          when 'send'
-            @transfer_spec_default['destination_root']='/'
-          when 'receive'
-            @transfer_spec_default['destination_root']='.'
-          else
-            raise "wrong direction: #{direction}"
-          end
+        dest_folder=Main.instance.options.get_option(:to_folder,:optional)
+        return dest_folder unless dest_folder.nil?
+        dest_folder=@transfer_spec_cmdline['destination_root']
+        return dest_folder unless dest_folder.nil?
+        # default: / on remote, . on local
+        case direction
+        when 'send';dest_folder='/'
+        when 'receive';dest_folder='.'
+        else raise "wrong direction: #{direction}"
         end
-        return @transfer_spec_default['destination_root']
+        return dest_folder
+      end
+
+      # get list of {:source=>(mandatory), :destination=>(optional)}
+      def transfer_paths_from_options(override_with=nil)
+        return override_with unless override_with.nil?
+        return @transfer_paths unless @transfer_paths.nil?
+        # start with lower priority
+        @transfer_paths=@transfer_spec_cmdline['paths'] if @transfer_spec_cmdline.has_key?('paths')
+        sources=Main.instance.options.get_option(:sources,:optional)
+        if !sources.nil?
+          Log.log.warn("--sources overrides paths from --ts") unless @transfer_paths.nil?
+          sources=Main.instance.options.get_next_argument("source file list",:multiple) if sources.eql?('@args')
+          raise "sources must be a Array" unless sources.is_a?(Array)
+          @transfer_paths=sources.map{|i|{'source'=>i}}
+        end
+        raise CliBadArgument,"command line must have either --sources or --ts with paths" if @transfer_paths.nil?
+        return @transfer_paths
       end
 
       # plugins shall use this method to start a transfer
-      # @param: ts_source specifies how destination_root is set (how transfer spec was generated)
+      # @param: options[:src] specifies how destination_root is set (how transfer spec was generated)
       # and not the default one
-      def start_transfer_wait_result(transfer_info)
-        raise "transfer_info must be hash" unless transfer_info.is_a?(Hash)
-        raise "transfer_info must have :ts" unless transfer_info.has_key?(:ts)
-        transfer_spec=transfer_info[:ts]
-        ts_source=transfer_info[:src]
-        options={}
-        options[:regenerate_token]=transfer_info[:regen] if transfer_info.has_key?(:regen)
+      def start_transfer_wait_result(transfer_spec,options)
+        raise "transfer_spec must be hash" unless transfer_spec.is_a?(Hash)
+        raise "options must be hash" unless options.is_a?(Hash)
         # initialize transfert agent
         self.agent
         case transfer_spec['direction']
         when 'receive'
           # init default if required in any case
-          destination_folder(transfer_spec['direction'])
+          @transfer_spec_cmdline['destination_root']=destination_folder(transfer_spec['direction'])
         when 'send'
-          case ts_source
+          case options[:src]
           when :direct
             # init default if required
-            destination_folder(transfer_spec['direction'])
+            @transfer_spec_cmdline['destination_root']=destination_folder(transfer_spec['direction'])
           when :node_gen3
             # in that case, destination is set in return by application (API/upload_setup)
             # but to_folder was used in intial api call
-            @transfer_spec_default.delete('destination_root')
+            @transfer_spec_cmdline.delete('destination_root')
           when :node_gen4
-            @transfer_spec_default['destination_root']='/'
+            @transfer_spec_cmdline['destination_root']='/'
           else
-            raise StandardError,"InternalError: unsupported value: #{ts_source}"
+            raise StandardError,"InternalError: unsupported value: #{options[:src]}"
           end
         end
 
-        transfer_spec.merge!(@transfer_spec_default)
+        # only used here
+        options.delete(:src)
+
+        #  update command line paths, unless destination already has one
+        @transfer_spec_cmdline['paths']=transfer_paths_from_options(transfer_spec['paths'])
+
+        transfer_spec.merge!(@transfer_spec_cmdline)
         # add bypass keys if there is a token, also prevents connect plugin to ask password
         transfer_spec['authentication']='token' if transfer_spec.has_key?('token')
         Log.log.debug("mgr is a #{@agent.class}")
