@@ -2,10 +2,11 @@ EXENAME=mlia
 TOOLCONFIGDIR=$(HOME)/.aspera/$(EXENAME)
 APIKEY=$(TOOLCONFIGDIR)/filesapikey
 BINDIR=./bin
+OUT_FOLDER=out
 EXETEST=$(BINDIR)/$(EXENAME)
 GEMNAME=asperalm
 GEMVERSION=$(shell $(EXETEST) --version)
-GEMFILE=$(GEMNAME)-$(GEMVERSION).gem
+GEMFILE=$(OUT_FOLDER)/$(GEMNAME)-$(GEMVERSION).gem
 GIT_TAG_VERSION_PREFIX='v_'
 GIT_TAG_CURRENT=$(GIT_TAG_VERSION_PREFIX)$(GEMVERSION)
 
@@ -13,13 +14,12 @@ SRCZIPBASE=$(GEMNAME)_src
 TODAY=$(shell date +%Y%m%d)
 ZIPFILE=$(SRCZIPBASE)_$(TODAY).zip
 
+# these lines do not go to manual samples
 EXE_NOMAN=$(EXETEST)
 
-OUT_FOLDER=out
-
-INCL_USAGE=out/$(EXENAME)_usage.txt
-INCL_COMMANDS=out/$(EXENAME)_commands.txt
-INCL_ASESSION=out/asession_usage.txt
+INCL_USAGE=$(OUT_FOLDER)/$(EXENAME)_usage.txt
+INCL_COMMANDS=$(OUT_FOLDER)/$(EXENAME)_commands.txt
+INCL_ASESSION=$(OUT_FOLDER)/asession_usage.txt
 
 all:: gem
 
@@ -38,6 +38,7 @@ cleanupgems:
 
 changes:
 	git log `git describe --tags --abbrev=0`..HEAD --oneline
+diff: changes
 
 doc: README.pdf
 
@@ -71,9 +72,6 @@ gem: $(GEMFILE)
 
 install: $(GEMFILE)
 	gem install $(GEMFILE)
-
-togarage: $(ZIPFILE) README.pdf $(GEMFILE)
-	$(EXE_NOMAN) aspera --workspace='Sales Engineering' upload '/Laurent Garage SE/RubyCLI' $(ZIPFILE) README.pdf $(GEMFILE)
 
 # create a private/public key pair
 # note that the key can also be generated with: ssh-keygen -t rsa -f data/myid -N ''
@@ -116,8 +114,8 @@ t/sh1:
 	@touch $@
 t/sh2:
 	mkdir -p $(TEST_FOLDER)
-	$(EXETEST) shares repository upload $(SAMPLE_FILE) --to-folder=/$(TEST_SHARE)
-	$(EXETEST) shares repository download /$(TEST_SHARE)/200KB.1 --to-folder=$(TEST_FOLDER)
+	$(EXETEST) shares repository upload --to-folder=/$(TEST_SHARE) --sources=@args $(SAMPLE_FILE)
+	$(EXETEST) shares repository download --to-folder=$(TEST_FOLDER) --sources=@args /$(TEST_SHARE)/200KB.1
 	$(EXETEST) shares repository delete /$(TEST_SHARE)/200KB.1
 	@rm -f 200KB.1
 	@touch $@
@@ -126,8 +124,8 @@ tshares: t/sh1 t/sh2
 t/fp1:
 	mkdir -p $(TEST_FOLDER)
 	$(EXETEST) server browse /
-	$(EXETEST) server upload $(SAMPLE_FILE) --to-folder=/Upload
-	$(EXETEST) server download /Upload/200KB.1 --to-folder=$(TEST_FOLDER)
+	$(EXETEST) server upload --to-folder=/Upload --sources=@args $(SAMPLE_FILE)
+	$(EXETEST) server download --to-folder=$(TEST_FOLDER) --sources=@args /Upload/200KB.1
 	$(EXETEST) server cp /Upload/200KB.1 /Upload/200KB.2
 	$(EXETEST) server mv /Upload/200KB.2 /Upload/to.delete
 	$(EXETEST) server delete /Upload/to.delete
@@ -153,10 +151,10 @@ t/fx1:
 	$(EXETEST) faspex package list
 	@touch $@
 t/fx2:
-	$(EXETEST) faspex package send $(SAMPLE_FILE) --delivery-info=@json:'{"title":"my title","recipients":["laurent.martin.aspera@fr.ibm.com"]}'
+	$(EXETEST) faspex package send --delivery-info=@json:'{"title":"my title","recipients":["laurent.martin.aspera@fr.ibm.com"]}' --sources=@args $(SAMPLE_FILE) 
 	@touch $@
 t/fx3:
-	$(EXETEST) faspex package recv $$($(EXETEST) faspex package list --fields=delivery_id --format=csv --box=sent|tail -n 1) --box=sent
+	$(EXETEST) faspex package recv --id=$$($(EXETEST) faspex package list --fields=delivery_id --format=csv --box=sent|tail -n 1) --box=sent
 	@touch $@
 t/fx4:
 	@echo $(EXETEST) faspex recv_publink 'https://ibmfaspex.asperasoft.com/aspera/faspex/external_deliveries/78780?passcode=a003aaf2f53e3869126b908525084db6bebc7031' --insecure=yes
@@ -175,13 +173,13 @@ t/nd1:
 	@touch $@
 t/nd2:
 	mkdir -p $(TEST_FOLDER)
-	$(EXETEST) node upload $(SAMPLE_FILE) --to-folder=$(NODEDEST)
-	$(EXETEST) node download $(NODEDEST)200KB.1 --to-folder=$(TEST_FOLDER)
+	$(EXETEST) node upload --to-folder=$(NODEDEST) --sources=@args $(SAMPLE_FILE)
+	$(EXETEST) node download --to-folder=$(TEST_FOLDER) --sources=@args $(NODEDEST)200KB.1
 	$(EXETEST) node delete $(NODEDEST)200KB.1
 	rm -f $(TEST_FOLDER)/200KB.1
 	@touch $@
 t/nd3:
-	$(EXETEST) --no-default node --url=https://10.25.0.4:9092 --username=node_xferuser --password=Aspera123_ --insecure=yes upload --to-folder=/ 500M.dat --ts=@json:'{"precalculate_job_size":true}' --transfer=node --transfer-node=@json:'{"url":"https://10.25.0.8:9092","username":"node_xferuser","password":"Aspera123_"}' 
+	$(EXETEST) --no-default node --url=https://10.25.0.4:9092 --username=node_xferuser --password=Aspera123_ --insecure=yes upload --to-folder=/ --ts=@json:'{"paths":[{"source":"500M.dat"}],"precalculate_job_size":true}' --transfer=node --transfer-node=@json:'{"url":"https://10.25.0.8:9092","username":"node_xferuser","password":"Aspera123_"}' 
 	$(EXETEST) --no-default node --url=https://10.25.0.4:9092 --username=node_xferuser --password=Aspera123_ --insecure=yes delete /500M.dat
 	@touch $@
 t/nd4:
@@ -208,11 +206,11 @@ t/aoc1:
 	$(EXETEST) aspera files browse /
 	@touch $@
 t/aoc2:
-	$(EXETEST) aspera files upload $(SAMPLE_FILE) --to-folder=/
+	$(EXETEST) aspera files upload --to-folder=/ --sources=@args $(SAMPLE_FILE)
 	@touch $@
 t/aoc3:
 	mkdir -p $(TEST_FOLDER)
-	$(EXETEST) aspera files download /200KB.1 --to-folder=$(TEST_FOLDER) --transfer=connect
+	$(EXETEST) aspera files download --to-folder=$(TEST_FOLDER) --transfer=connect --sources=@args /200KB.1
 	rm -f 200KB.1
 	@touch $@
 t/aoc3b:
@@ -469,11 +467,11 @@ thot:
 	-$(EXETEST) server delete /Upload/target_hot
 	$(EXETEST) server mkdir /Upload/target_hot
 	echo hello > source_hot/newfile
-	$(EXETEST) server upload source_hot --to-folder=/Upload/target_hot --lock-port=12345 --ts=@json:'{"EX_ascp_args":["--remove-after-transfer","--remove-empty-directories","--exclude-newer-than=-8","--src-base","source_hot"]}'
+	$(EXETEST) server upload --to-folder=/Upload/target_hot --lock-port=12345 --ts=@json:'{"EX_ascp_args":["--remove-after-transfer","--remove-empty-directories","--exclude-newer-than=-8","--src-base","source_hot"]}' --sources=@args source_hot
 	$(EXETEST) server browse /Upload/target_hot
 	ls -al source_hot
 	sleep 10
-	$(EXETEST) server upload source_hot --to-folder=/Upload/target_hot --lock-port=12345 --ts=@json:'{"EX_ascp_args":["--remove-after-transfer","--remove-empty-directories","--exclude-newer-than=-8","--src-base","source_hot"]}'
+	$(EXETEST) server upload --to-folder=/Upload/target_hot --lock-port=12345 --ts=@json:'{"EX_ascp_args":["--remove-after-transfer","--remove-empty-directories","--exclude-newer-than=-8","--src-base","source_hot"]}' --sources=@args source_hot
 	$(EXETEST) server browse /Upload/target_hot
 	ls -al source_hot
 	rm -fr source_hot
