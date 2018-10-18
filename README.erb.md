@@ -1795,7 +1795,8 @@ Gems, or remove your ed25519 key from your `.ssh` folder to solve the issue.
   * option for quiet display
   * modified transfer interface and allow token re-generation on error
   * async add admin command
-   *async add db parameters
+  * async add db parameters
+  * Breaking change: new option "sources" to specify files to transfer
 
 * version 0.9.2
 
