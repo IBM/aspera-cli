@@ -10,6 +10,8 @@
 /out/
 /t/
 /test.dir/
+/README.md
+/asperalm-*.gem
 # rspec failure tracking
 .rspec_status
 /local/
