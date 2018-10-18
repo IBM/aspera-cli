@@ -67,25 +67,26 @@ module Asperalm
 
     # build transfer info, containing transfer spec for aspera on cloud
     # the rest end point is used to generate the bearer token
-    def ti(app,direction,node_info,file_id,ts_add)
+    def tr_spec(app,direction,node_info,file_id,ts_add)
       # generate a transfer spec from node information and file id
       # NOTE: important: transfer id must be unique: generate random id
       # (using a non unique id results in discard of tags, and package is not finalized)
       return {
-        :ts => {
-        'direction'        => direction,
-        'remote_user'      => 'xfer',
-        'remote_host'      => node_info['host'],
-        'fasp_port'        => 33001, # TODO: always the case ?
-        'ssh_port'         => 33001, # TODO: always the case ?
-        'token'            => self.oauth_token(FilesApi.node_scope(node_info['access_key'],FilesApi::SCOPE_NODE_USER)),
-        'tags'             => { 'aspera' => {
-        'app'   => app,
-        'files' => { 'node_id' => node_info['id']},
-        'node'  => { 'access_key' => node_info['access_key'], 'file_id' => file_id } } }
-        }.deep_merge!(ts_add),
-        :src => :node_gen4,
-        :regen => lambda {|r|self.oauth_token(FilesApi.node_scope(node_info['access_key'],FilesApi::SCOPE_NODE_USER),r)}
+        'direction'   => direction,
+        'remote_user' => 'xfer',
+        'remote_host' => node_info['host'],
+        'fasp_port'   => 33001, # TODO: always the case ?
+        'ssh_port'    => 33001, # TODO: always the case ?
+        'token'       => self.oauth_token(FilesApi.node_scope(node_info['access_key'],FilesApi::SCOPE_NODE_USER)),
+        'tags'        => {
+        'aspera'        => {
+        'app'             => app,
+        'files'           => { 'node_id' => node_info['id']},
+        'node'            => { 'access_key' => node_info['access_key'], 'file_id' => file_id }
+        }
+        }}.deep_merge!(ts_add),{
+        :src              => :node_gen4,
+        :regenerate_token => lambda {|r|self.oauth_token(FilesApi.node_scope(node_info['access_key'],FilesApi::SCOPE_NODE_USER),r)}
       }
     end
 
