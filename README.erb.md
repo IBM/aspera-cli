@@ -1,4 +1,4 @@
-# Asperalm - A Ruby library for Aspera transfers and "Amelia", the _Multi Layer IBM Aspera_ Command Line Tool 
+# Asperalm - A Ruby library for Aspera transfers and "Amelia", the _Multi Layer IBM Aspera_ Command Line Tool
 
 Version : <%= ENV["VERSION"] %>
 <%cmd=ENV["TOOLNAME"];tool='`'+cmd+'`';evp=cmd.upcase+'_';opprst='option preset';prst='['+opprst+'](#lprt)';prsts='['+opprst+'s](#lprt)';prstt=opprst.capitalize%>
@@ -28,6 +28,8 @@ This manual addresses three parts:
 In examples, command line operations (starting with `$`) are shown using a standard shell: `bash`.
 
 # Quick Start
+
+This section guides you from installation, first use and advanced used.
 
 First, follow the section: [Installation](#installation) (Ruby, Gem, FASP) to start using <%=tool%>.
 
@@ -92,10 +94,9 @@ complete
 
 ## Going further
 
-Get familiar with configuration, options, parameters and 
-follow the section relative to the product you want to interact with: Aspera on Cloud, Faspex, ...
+Get familiar with configuration, options, commands : [Command Line Interface](#cli).
 
-Detailed generic information on configuration can be found in section: [Command Line Interface](#cli).
+Then, follow the section relative to the product you want to interact with ( Aspera on Cloud, Faspex, ...) : [Application Plugins](plugins)
 
 # <a name="installation"></a>Installation
 
@@ -207,20 +208,22 @@ Refer to sections: [Usage](#usage) and [Sample Commands](#commands).
 
 Not all <%=tool%> features are fully documented here, the user may explore commands on the command line.
 
-## Commands, Arguments and Options
+## Arguments : Commands and options
 
-Commands, Options and Arguments are typically provided on command line, e.g. in:
+Arguments are the units of command line, as parsed by the shell, typically separated by spaces (and called "argv").
+
+There are two types of arguments: Commands and Options. Example :
 
 ```
 $ <%=cmd%> command --option-name=VAL1 VAL2
 ```
 
-* executes action: `command`
-* with one option: `option_name`
-* this option has a value of: `VAL1`
-* the command has one argument: `VAL2`
+* executes _command_: `command`
+* with one _option_: `option_name`
+* this option has a _value_ of: `VAL1`
+* the command has one additional _argument_: `VAL2`
 
-When the value of a command, option or argument is constrained by a fixed list of values, it is possible to use the first letters of the value only, provided that it uniquely identifies a value. For example `$ <%=cmd%> conf ov` is the same as `$ <%=cmd%> config overview`.
+When the value of a command, option or argument is constrained by a fixed list of values, it is possible to use the first letters of the value only, provided that it uniquely identifies a value. For example `<%=cmd%> conf ov` is the same as `<%=cmd%> config overview`.
 
 The value of options and arguments is evaluated with the [Extended Value Syntax](#extended).
 
@@ -257,7 +260,7 @@ The value for _any_ options can come from the following locations (in this order
 Environment variable starting with prefix: <%=evp%> are taken as option values, 
 e.g. `<%=evp%>OPTION_NAME` is for `--option-name`.
 
-Options values can be displayed for a given command by providing the `--show-config` option: `$ <%=cmd%> node --show-config`
+Options values can be displayed for a given command by providing the `--show-config` option: `<%=cmd%> node --show-config`
 
 ### Commands and Arguments
 
@@ -396,7 +399,7 @@ All options for <%=tool%> commands can be set on command line, or by env vars, o
 A configuration file provides a way to define default values, especially
 for authentication parameters, thus avoiding to always having to specify those parameters on the command line.
 
-The default configuration file is: `$HOME/.aspera/$ <%=cmd%>/config.yaml` 
+The default configuration file is: `$HOME/.aspera/<%=cmd%>/config.yaml` 
 (this can be overriden with option `--config-file=path` or equivalent env var).
 
 So, finally, the configuration file is simply a catalog of pre-defined lists of options,
@@ -486,7 +489,7 @@ Values in the configuration also follow the [Extended Value Syntax](#extended).
 Note: if the user wants to use the [Extended Value Syntax](#extended) inside the configuration file, using the `config id update` command, the user shall use the `@val:` prefix. Example:
 
 ```bash
-$ <%=cmd%> config id my_aoc_org set private_key @val:@file:"$HOME/.aspera/$ <%=cmd%>/aocapikey"
+$ <%=cmd%> config id my_aoc_org set private_key @val:@file:"$HOME/.aspera/<%=cmd%>/aocapikey"
 ```
 
 This creates the <%=prst%>:
@@ -494,7 +497,7 @@ This creates the <%=prst%>:
 ```
 ...
 my_aoc_org:
-  private_key: @file:"/Users/laurent/.aspera/$ <%=cmd%>/aocapikey"
+  private_key: @file:"/Users/laurent/.aspera/<%=cmd%>/aocapikey"
 ...
 ```
 
@@ -576,8 +579,8 @@ For instance, the plugin "faspex" allows operations on the application "Aspera F
 
 ### Create your own plugin
 ```bash
-$ mkdir -p ~/.aspera/$ <%=cmd%>/plugins
-$ cat<<EOF>~/.aspera/$ <%=cmd%>/plugins/test.rb
+$ mkdir -p ~/.aspera/<%=cmd%>/plugins
+$ cat<<EOF>~/.aspera/<%=cmd%>/plugins/test.rb
 require 'asperalm/cli/plugin'
 module Asperalm
   module Cli
@@ -702,6 +705,34 @@ The destination folder is set by <%=tool%> by default to:
 It is specified by the [_transfer-spec_](#transferspec) parameter `destination_root`. As such, it can be modified with option: `--ts=@json:'{"destination_root":"<path>"}'`.
 The option `to_folder` provides a convenient way to change this parameter:  `--to-folder=<path>` and is equivalent.
 
+### Source files for transfers
+
+When uploading, downloading or sending files, the user must specify
+the list of files to send. This is done by using the option:
+`sources`.
+
+The easiest way is to specify `--sources=@args` and then the list 
+of source files will be the remaining arguments on the command line. Example:
+
+```
+--sources=@args file1.ext file2.ext
+```
+
+A more complex way is to provide an Array of Hash, specified
+using the [Extended Value Syntax](#extended).
+Each Hash must contain one key: `source` and the value is the path of the file. 
+The equivalent of previous example:
+
+```
+--sources=@json:'[{"source"=>"file1.ext"},{"source"=>"file1.ext"}]'
+```
+
+Another possibility is to provide this same value as part of the transfer spec:
+
+```
+--ts=@json:'{"paths"=>[{"source"=>"file1.ext"},{"source"=>"file1.ext"}]}'
+```
+
 ### <a name="multisession"></a>Support of multi-session
 
 Multi session, i.e. starting a transfer of a file set using multiple sessions is supported on "direct" and "node" agents, not yet on connect.
@@ -783,7 +814,7 @@ $ <%=cmd%> -h
 
 Note that actions and parameter values can be written in short form.
 
-# Application Plugins
+# <a name="plugins"></a>Application Plugins
 
 <%=tool%> comes with several Aspera application plugins.
 
@@ -911,13 +942,13 @@ This can be done using any of the following method:
 * using the CLI:
 
 ```bash
-$ <%=cmd%> config genkey ~/.aspera/$ <%=cmd%>/aocapikey
+$ <%=cmd%> config genkey ~/.aspera/<%=cmd%>/aocapikey
 ```
 
 * `ssh-keygen`:
 
 ```bash
-$ ssh-keygen -t rsa -f ~/.aspera/$ <%=cmd%>/aocapikey -N ''
+$ ssh-keygen -t rsa -f ~/.aspera/<%=cmd%>/aocapikey -N ''
 ```
 
 * `openssl`
@@ -925,7 +956,7 @@ $ ssh-keygen -t rsa -f ~/.aspera/$ <%=cmd%>/aocapikey -N ''
 (on some openssl implementation (mac) there is option: -nodes (no DES))
 
 ```bash
-$ APIKEY=~/.aspera/$ <%=cmd%>/aocapikey
+$ APIKEY=~/.aspera/<%=cmd%>/aocapikey
 $ openssl genrsa -passout pass:dummypassword -out ${APIKEY}.protected 2048
 $ openssl rsa -passin pass:dummypassword -in ${APIKEY}.protected -out ${APIKEY}
 $ openssl rsa -pubout -in ${APIKEY} -out ${APIKEY}.pub
@@ -989,7 +1020,7 @@ $ <%=cmd%> aspera admin res user list
 : 109952 : Tech Support   :
 : 109951 : LAURENT MARTIN :
 :........:................:
-$ <%=cmd%> aspera admin res user --id=109951 modify @ruby:'{"public_key"=>File.read(File.expand_path("~/.aspera/$ <%=cmd%>/aocapikey.pub"))}'   
+$ <%=cmd%> aspera admin res user --id=109951 modify @ruby:'{"public_key"=>File.read(File.expand_path("~/.aspera/<%=cmd%>/aocapikey.pub"))}'   
 modified
 ```
 
@@ -1006,7 +1037,7 @@ To activate JWT authentication for <%=tool%> using the <%=prst%>, do the folowin
 Execute:
 
 ```bash
-$ <%=cmd%> config id my_aoc_org update --auth=jwt --private-key=@val:@file:~/.aspera/$ <%=cmd%>/aocapikey --username=laurent.martin.aspera@fr.ibm.com
+$ <%=cmd%> config id my_aoc_org update --auth=jwt --private-key=@val:@file:~/.aspera/<%=cmd%>/aocapikey --username=laurent.martin.aspera@fr.ibm.com
 ```
 
 Note: the private key argument represents the actual PEM string. In order to read the content from a file, use the @file: prefix. But if the @file: argument is used as is, it will read the file and set in the config file. So to keep the "@file" tag in the configuration file, the @val: prefix is added.
@@ -1060,7 +1091,7 @@ $ <%=cmd%> aspera admin res user list --query='@json:{"q":"dummyuser"}' --fields
 : 98398 : dummyuser1@example.com :
 : 98399 : dummyuser2@example.com :
 :.......:........................:
-$ thelist=$(echo $($ <%=cmd%> aspera admin res user list --query='@json:{"q":"dummyuser"}' --fields=id,email --field=id --format=csv)|tr ' ' ,)
+$ thelist=$(echo $(<%=cmd%> aspera admin res user list --query='@json:{"q":"dummyuser"}' --fields=id,email --field=id --format=csv)|tr ' ' ,)
 $ echo $thelist
 98398,98399
 $ <%=cmd%> aspera admin res user --bulk=yes --id=@json:[$thelist] delete
@@ -1147,7 +1178,7 @@ It is possible to start a FASPStream session using the node API:
 Use the "node stream create" command, then arguments are provided as a [_transfer-spec_](#transferspec).
 
 ```bash
-./bin/$ <%=cmd%> node stream create --ts=@json:'{"direction":"send","source":"udp://233.3.3.4:3000?loopback=1&ttl=2","destination":"udp://233.3.3.3:3001/","remote_host":"localhost","remote_user":"stream","remote_password":"XXXX"}' --preset=stream
+$ <%=cmd%> node stream create --ts=@json:'{"direction":"send","source":"udp://233.3.3.4:3000?loopback=1&ttl=2","destination":"udp://233.3.3.3:3001/","remote_host":"localhost","remote_user":"stream","remote_password":"XXXX"}' --preset=stream
 ```
 
 ### Watchfolder
@@ -1171,13 +1202,13 @@ $ <%=cmd%> node watch_folder create @json:'{"id":"mywfolder","source_dir":"/watc
 Follow the Aspera Transfer Server configuration to activate this feature.
 
 ```
-$ <%=cmd%> node central file list --validator=$ <%=cmd%> --data=@json:'{"file_transfer_filter":{"max_result":1}}'
+$ <%=cmd%> node central file list --validator=<%=cmd%> --data=@json:'{"file_transfer_filter":{"max_result":1}}'
 :..............:..............:............:......................................:
 : session_uuid :    file_id   :   status   :              path                    :
 :..............:..............:............:......................................:
 : 1a74444c-... : 084fb181-... : validating : /home/xfer.../PKG - my title/200KB.1 :
 :..............:..............:............:......................................:
-$ <%=cmd%> node central file update --validator=$ <%=cmd%> --data=@json:'{"files":[{"session_uuid": "1a74444c-...","file_id": "084fb181-...","status": "completed"}]}'
+$ <%=cmd%> node central file update --validator=<%=cmd%> --data=@json:'{"files":[{"session_uuid": "1a74444c-...","file_id": "084fb181-...","status": "completed"}]}'
 updated
 ```
 
@@ -1277,7 +1308,7 @@ $ <%=cmd%> client current
 ### Installation of Connect Client on command line
 
 ```bash
-$ ./bin/$ <%=cmd%> client connect list
+$ <%=cmd%> client connect list
 :...............................................:......................................:..............:
 :                      id                       :                title                 :   version    :
 :...............................................:......................................:..............:
@@ -1437,7 +1468,7 @@ $ <%=cmd%> ats access_key create --cloud=azure --region=eastus --params=@json:'{
 delete all my access keys:
 
 ```
-for k in $($ <%=cmd%> ats access_key list --field=id --format=csv);do <%=cmd%> ats access_key id $k delete;done
+for k in $(<%=cmd%> ats access_key list --field=id --format=csv);do <%=cmd%> ats access_key id $k delete;done
 ```
 
 ## IBM Aspera Sync
@@ -1757,6 +1788,14 @@ This means that you do not have ruby support for ED25519 SSH keys. You may eithe
 Gems, or remove your ed25519 key from your `.ssh` folder to solve the issue.
 
 # Release Notes
+
+* version 0.9.3
+
+  * REST error message show host and code
+  * option for quiet display
+  * modified transfer interface and allow token re-generation on error
+  * async add admin command
+   *async add db parameters
 
 * version 0.9.2
 
