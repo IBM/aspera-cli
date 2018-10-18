@@ -7,7 +7,8 @@ TEST_FOLDER=test.dir
 EXETEST=$(BINDIR)/$(EXENAME)
 GEMNAME=asperalm
 GEMVERSION=$(shell $(EXETEST) --version)
-GEMFILE=$(OUT_FOLDER)/$(GEMNAME)-$(GEMVERSION).gem
+GEM_FILENAME=$(GEMNAME)-$(GEMVERSION).gem
+GEMFILE=$(OUT_FOLDER)/$(GEM_FILENAME)
 GIT_TAG_VERSION_PREFIX='v_'
 GIT_TAG_CURRENT=$(GIT_TAG_VERSION_PREFIX)$(GEMVERSION)
 
@@ -68,6 +69,7 @@ $(ZIPFILE): README.md
 
 $(GEMFILE): README.md
 	gem build asperalm.gemspec
+	mv $(GEM_FILENAME) $(OUT_FOLDER)
 
 gem: $(GEMFILE)
 
@@ -91,6 +93,9 @@ yank:
 
 dotag:
 	git tag -a $(GIT_TAG_CURRENT) -m "gem version $(GEMVERSION) pushed"
+
+deltag:
+	git tag --delete $(GIT_TAG_CURRENT)
 
 gempush: all dotag
 	gem push $(GEMFILE)
