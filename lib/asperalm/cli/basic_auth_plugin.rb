@@ -1,4 +1,5 @@
 require 'asperalm/rest'
+require 'asperalm/cli/plugin'
 
 module Asperalm
   module Cli
