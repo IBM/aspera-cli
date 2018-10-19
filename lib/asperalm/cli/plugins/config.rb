@@ -1,4 +1,5 @@
 require 'asperalm/cli/plugin'
+require 'asperalm/fasp/installation'
 require 'singleton'
 
 module Asperalm
@@ -117,10 +118,10 @@ module Asperalm
               # convert possible keys located in config folder
               @config_presets.values.select{|p|p.is_a?(Hash)}.each do |preset|
                 preset.values.select{|v|v.is_a?(String) and v.include?(old_subpath)}.each do |value|
-                    old_val=value.clone
-                    value.gsub!(old_subpath,new_subpath)
-                    Log.log.warn("Converted copnfig value: #{old_val} -> #{value}")
-                    save_required=true
+                  old_val=value.clone
+                  value.gsub!(old_subpath,new_subpath)
+                  Log.log.warn("Converted copnfig value: #{old_val} -> #{value}")
+                  save_required=true
                 end
               end
             end
@@ -142,11 +143,11 @@ module Asperalm
 
         # "config" plugin
         def execute_action
-          action=Main.instance.options.get_next_argument('action',[:genkey,:plugins,:flush_tokens,:list,:overview,:open,:echo,:id,:documentation,:wizard])
+          action=Main.instance.options.get_next_command([:genkey,:plugins,:flush_tokens,:list,:overview,:open,:echo,:id,:documentation,:wizard,:export_to_cli])
           case action
           when :id
             config_name=Main.instance.options.get_next_argument('config name')
-            action=Main.instance.options.get_next_argument('action',[:show,:delete,:set,:unset,:initialize,:update,:ask])
+            action=Main.instance.options.get_next_command([:show,:delete,:set,:unset,:initialize,:update,:ask])
             case action
             when :show
               raise "no such config: #{config_name}" unless @config_presets.has_key?(config_name)
@@ -283,6 +284,38 @@ module Asperalm
             save_presets_to_config_file
             return Main.result_status("Done. You can test with:\n#{Main.instance.program_name} aspera user info show")
             # TODO: update documentation
+          when :export_to_cli
+            require 'asperalm/cli/plugins/aspera'
+            # need url / username
+            Plugins::Aspera.instance.declare_options
+            Main.instance.options.parse_options!
+            appli=Main.instance.options.get_next_command([:aoc])
+            cli_conf_file=Fasp::Installation.instance.cli_conf_file
+            data=JSON.parse(File.read(cli_conf_file))
+            url=Main.instance.options.get_option(:url,:mandatory)
+            organization,instance_domain=FilesApi.parse_url(url)
+            key_basename='org_'+organization+'.pem'
+            key_file=File.join(File.dirname(File.dirname(cli_conf_file)),'etc',key_basename)
+            File.write(key_file,Main.instance.options.get_option(:private_key,:mandatory))
+            new_conf={
+              'organization'       => organization,
+              'hostname'           => [organization,instance_domain].join('.'),
+              'clientId'           => Main.instance.options.get_option(:client_id,:mandatory),
+              'clientSecret'       => Main.instance.options.get_option(:client_secret,:mandatory),
+              'privateKeyFilename' => key_basename,
+              'username'           => Main.instance.options.get_option(:username,:mandatory)
+            }
+            entry=data['AoCAccounts'].select{|i|i['organization'].eql?(organization)}.first
+            if entry.nil?
+              data['AoCAccounts'].push(new_conf)
+              Main.instance.display_status("Creating new aoc entry: #{organization}")
+            else
+              Main.instance.display_status("Updating existing aoc entry: #{organization}")
+              entry.merge!(new_conf)
+            end
+            File.write(cli_conf_file,JSON.pretty_generate(data))
+            return Main.result_status("updated: #{cli_conf_file}")
+          else raise "error"
           end
         end
 
