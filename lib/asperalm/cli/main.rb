@@ -511,7 +511,7 @@ module Asperalm
           # find plugins, shall be after parse! ?
           add_plugins_from_lookup_folders
           # declare generic options
-          Plugin.declare_options
+          Plugin.declare_entity_options
           # help requested without command ? (plugins must be known here)
           exit_with_usage(true) if @option_help and @opt_mgr.command_or_arg_empty?
           # load global default options and process

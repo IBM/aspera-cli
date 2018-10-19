@@ -13,7 +13,7 @@ module Asperalm
       INSTANCE_OPS=[:modify,:delete,:show]
       ALL_OPS=[GLOBAL_OPS,INSTANCE_OPS].flatten
 
-      def self.declare_options
+      def self.declare_entity_options
         Main.instance.options.add_opt_simple(:value,"extended value for create, update, list filter")
         Main.instance.options.add_opt_simple(:id,"resource identifier (#{INSTANCE_OPS.join(",")})")
       end
