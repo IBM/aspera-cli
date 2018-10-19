@@ -74,22 +74,26 @@ module Asperalm
             result=node_api.delete("files/#{file_id}")[:data]
             return Main.result_status("deleted: #{thepath}")
           when :upload
-            filelist = Main.instance.options.get_next_argument("file list",:multiple)
-            Log.log.debug("file list=#{filelist}")
             node_info,file_id = api_files.find_nodeinfo_and_fileid(home_node_id,home_file_id,Main.instance.destination_folder('send'))
-            return Main.instance.start_transfer_wait_result(*api_files.tr_spec('files','send',node_info,file_id,{'paths'=>filelist.map{|i|{'source'=>i}}}))
+            return Main.instance.start_transfer_wait_result(*api_files.tr_spec('files','send',node_info,file_id,{}))
           when :download
-            source_file=Main.instance.options.get_next_argument('source')
+            source_paths=TransferAgent.instance.transfer_paths_from_options
+            source_folder=source_paths.shift['source']
+            if source_paths.empty?
+              source_folder=source_folder.split(FilesApi::PATH_SEPARATOR)
+              source_paths=[{'source'=>source_folder.pop}]
+              source_folder=source_folder.join(FilesApi::PATH_SEPARATOR)
+            end
             case Main.instance.options.get_option(:download_mode,:mandatory)
             when :fasp
-              file_path = source_file.split(FilesApi::PATH_SEPARATOR)
-              file_name = file_path.pop
-              node_info,file_id = api_files.find_nodeinfo_and_fileid(home_node_id,home_file_id,file_path.join(FilesApi::PATH_SEPARATOR))
-              return Main.instance.start_transfer_wait_result(*api_files.tr_spec('files','receive',node_info,file_id,{'paths'=>[{'source'=>file_name}]}))
+              node_info,file_id = api_files.find_nodeinfo_and_fileid(home_node_id,home_file_id,source_folder)
+              # override paths with just filename
+              return Main.instance.start_transfer_wait_result(
+              *api_files.tr_spec('files','receive',node_info,file_id,{'paths'=>source_paths}))
             when :node_http
-              file_path = source_file.split(FilesApi::PATH_SEPARATOR)
-              file_name = file_path.last
-              node_info,file_id = api_files.find_nodeinfo_and_fileid(home_node_id,home_file_id,source_file)
+              raise CliBadArgument,"one file at a time only in HTTP mode" if source_paths.length > 1
+              file_name = source_paths.first['source']
+              node_info,file_id = api_files.find_nodeinfo_and_fileid(home_node_id,home_file_id,File.join(source_folder,file_name))
               node_api=api_files.get_files_node_api(node_info,FilesApi::SCOPE_NODE_USER)
               node_api.call({:operation=>'GET',:subpath=>"files/#{file_id}/content",:save_to_file=>File.join(Main.instance.destination_folder('receive'),file_name)})
               return Main.result_status("downloaded: #{file_name}")
@@ -293,14 +297,16 @@ module Asperalm
               package_creation['workspace_id']=@workspace_id
 
               # list of files to include in package
-              filelist=Main.instance.options.get_next_argument('file list',:multiple)
-              package_creation['file_names']=filelist
+              package_creation['file_names']=TransferAgent.instance.transfer_paths_from_options.map{|i|File.basename(i['source'])}
 
               # lookup users
               package_creation['recipients']=Main.instance.options.get_option(:recipient,:mandatory).split(',').map do |recipient|
                 user_lookup=@api_files_user.read('contacts',{'current_workspace_id'=>@workspace_id,'q'=>recipient})[:data]
-                raise CliBadArgument,"no such user: #{recipient}" unless !user_lookup.nil? and user_lookup.length == 1
-                recipient_user_id=user_lookup.first
+                case user_lookup.length
+                when 1; recipient_user_id=user_lookup.first
+                when 0; recipient_user_id=@api_files_user.create('contacts',{'current_workspace_id'=>@workspace_id,'email'=>recipient,'package_contact'=>true})[:data]
+                else raise CliBadArgument,"multiple match for: #{recipient}"
+                end
                 {'id'=>recipient_user_id['source_id'],'type'=>recipient_user_id['source_type']}
               end
 
@@ -311,10 +317,9 @@ module Asperalm
               node_info=@api_files_user.read("nodes/#{the_package['node_id']}")[:data]
 
               # tell Aspera what to expect in package: 1 transfer (can also be done after transfer)
-              resp=@api_files_user.update("packages/#{the_package['id']}",{"sent"=>true,"transfers_expected"=>1})[:data]
+              resp=@api_files_user.update("packages/#{the_package['id']}",{'sent'=>true,'transfers_expected'=>1})[:data]
               return Main.instance.start_transfer_wait_result(*@api_files_user.tr_spec('packages','send',node_info,the_package['contents_file_id'],{
-                'tags'=>{'aspera'=>{'files'=>{"package_id"=>the_package['id'],"package_operation"=>"upload"}}},
-                'paths'=>filelist.map{|i|{'source'=>i}}
+                'tags'=>{'aspera'=>{'files'=>{'package_id'=>the_package['id'],'package_operation'=>'upload'}}},
               }))
             when :recv
               package_id=Main.instance.options.get_option(:id,:mandatory)
