@@ -1,6 +1,7 @@
-require 'asperalm/cli/plugin'
+require 'asperalm/cli/basic_auth_plugin'
 require 'asperalm/fasp/installation'
 require 'singleton'
+require 'xmlsimple'
 
 module Asperalm
   module Cli
@@ -143,7 +144,7 @@ module Asperalm
 
         # "config" plugin
         def execute_action
-          action=Main.instance.options.get_next_command([:genkey,:plugins,:flush_tokens,:list,:overview,:open,:echo,:id,:documentation,:wizard,:export_to_cli])
+          action=Main.instance.options.get_next_command([:genkey,:plugins,:flush_tokens,:list,:overview,:open,:echo,:id,:documentation,:wizard,:export_to_cli,:detect])
           case action
           when :id
             config_name=Main.instance.options.get_next_argument('config name')
@@ -315,6 +316,11 @@ module Asperalm
             end
             File.write(cli_conf_file,JSON.pretty_generate(data))
             return Main.result_status("updated: #{cli_conf_file}")
+          when :detect
+            # need url / username
+            BasicAuthPlugin.new.declare_options
+            Main.instance.options.parse_options!
+            return Main.result_status("found: #{discover_product(Main.instance.options.get_option(:url,:mandatory))}")
           else raise "error"
           end
         end
@@ -344,6 +350,31 @@ module Asperalm
             return default_config_name
           end
           return nil
+        end
+
+        def discover_product(url)
+          uri=URI.parse(url)
+          api=Rest.new({:base_url=>url})
+          begin
+            result=api.call({:operation=>'POST',:subpath=>'aspera/faspex',:headers=>{'Accept'=>'application/xrds+xml'},:text_body_params=>''})
+            res_s=XmlSimple.xml_in(result[:http].body, {"ForceArray" => false})
+            version=res_s['XRD']['application']['version']
+            #return JSON.pretty_generate(res_s)
+            return "Faspex #{version}"
+          rescue
+            Log.log.warn("not faspex")
+          end
+          begin
+            result=api.read('node_api/app')
+            return JSON.pretty_generate(result)
+            return "Faspex #{version}"
+          rescue RestCallError => e
+            if e.response.code.to_s.eql?('401') and e.response.body.eql?('{"error":{"user_message":"API user authentication failed"}}')
+              return "Shares"
+            end
+            Log.log.warn("not faspex: #{e.response.code} #{e.response.body}")
+          end
+          return "unknown"
         end
 
       end
