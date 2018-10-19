@@ -220,11 +220,12 @@ t/aoc3:
 	@touch $@
 t/aoc3b:
 	mkdir -p $(TEST_FOLDER)
-	$(EXETEST) aspera files download /200KB.1 --to-folder=$(TEST_FOLDER) --download=node
+	$(EXETEST) aspera files download --to-folder=$(TEST_FOLDER) --download=node --sources=@args /200KB.1
 	rm -f 200KB.1
 	@touch $@
 t/aoc4:
-	$(EXETEST) aspera packages send --value=@json:'{"name":"my title","note":"my note"}' --recipient=laurent.martin.aspera@fr.ibm.com  $(SAMPLE_FILE)
+	$(EXETEST) aspera packages send --value=@json:'{"name":"my title","note":"my note"}' --recipient=laurent.martin.aspera@fr.ibm.com --sources=@args $(SAMPLE_FILE)
+	$(EXETEST) aspera packages send --value=@json:'{"name":"my title"}' --recipient=laurent.martin.l+external@gmail.com --sources=@args $(SAMPLE_FILE)
 	@touch $@
 t/aoc5:
 	$(EXETEST) aspera packages list
