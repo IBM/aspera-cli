@@ -1140,16 +1140,27 @@ $ <%=cmd%> aspera admin res workspace_membership list --fields=member_type,manag
 :.............:.........:..................................:
 ```
 
-### Package
+### Send a Package
 
-send a package:
+Send a package:
 
 ```
-$ <%=cmd%> aspera packages send --value=@json:'{"name":"my title","note":"my note"}' --recipient=laurent.martin.aspera@fr.ibm.com,other@example.com my_file.dat
+$ <%=cmd%> aspera packages send --value=@json:'{"name":"my title","note":"my note"}' --recipient=laurent.martin.aspera@fr.ibm.com,other@example.com --sources=@args my_file.dat
 ```
 
-Note that `value` parameter can contain any supported package creation parameter.
-Refer to the API, or display an existing package.
+Notes:
+
+* the `value` parameter can contain any supported package creation parameter.
+* Refer to the API, or display an existing package.
+* if the recipient is not already registered and the workspace allows external users, then the package is sent to an external user. (with a link with passcode)
+
+### Download Files
+
+Download of files is straightforward with a specific syntax for the `aspera files download` action: Like other commands the source file list is provided as  a list with the `sources` option. Nevertheless, consider this:
+
+* if only one source is provided, it is downloaded
+* if multiple sources must be downloaded, then the first in list is the path of the source folder, and the remaining items are the file names in this folder (without path).
+
 
 ## Aspera Node (Transfer Server)
 
@@ -1788,6 +1799,12 @@ This means that you do not have ruby support for ED25519 SSH keys. You may eithe
 Gems, or remove your ed25519 key from your `.ssh` folder to solve the issue.
 
 # Release Notes
+
+* version 0.9.4
+
+  * Breaking change: onCloud file list follow --source convention as well (plus specific case for download when first path is source folder, and other are source file names).
+  * AoC Package send supports external users
+  * new command to export AoC config to Aspera CLI config
 
 * version 0.9.3
 
