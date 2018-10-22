@@ -33,10 +33,12 @@ module Asperalm
           Main.instance.options.add_opt_simple(:name,"resource name")
           Main.instance.options.add_opt_simple(:link,"link to shared resource")
           Main.instance.options.add_opt_simple(:public_token,"token value of public link")
+          Main.instance.options.add_opt_simple(:new_user_option,"new user creation option")
           Main.instance.options.set_option(:download_mode,:fasp)
           Main.instance.options.set_option(:bulk,:no)
           Main.instance.options.set_option(:redirect_uri,'http://localhost:12345')
           Main.instance.options.set_option(:auth,:web)
+          Main.instance.options.set_option(:new_user_option,{'package_contact'=>true})
         end
 
         def self.execute_node_gen4_action(api_files,home_node_id,home_file_id)
@@ -209,7 +211,7 @@ module Asperalm
           if ws_name.nil?
             Log.log.debug("using default workspace".green)
             if @default_workspace_id.eql?(nil)
-              raise CliError,"no default workspace defined for user"
+              raise CliError,"no default workspace defined for user, please specify workspace"
             end
             # get default workspace
             @workspace_id=@default_workspace_id
@@ -299,12 +301,14 @@ module Asperalm
               # list of files to include in package
               package_creation['file_names']=TransferAgent.instance.transfer_paths_from_options.map{|i|File.basename(i['source'])}
 
+              new_user_option=Main.instance.options.get_option(:new_user_option,:mandatory)
+                
               # lookup users
               package_creation['recipients']=Main.instance.options.get_option(:recipient,:mandatory).split(',').map do |recipient|
                 user_lookup=@api_files_user.read('contacts',{'current_workspace_id'=>@workspace_id,'q'=>recipient})[:data]
                 case user_lookup.length
                 when 1; recipient_user_id=user_lookup.first
-                when 0; recipient_user_id=@api_files_user.create('contacts',{'current_workspace_id'=>@workspace_id,'email'=>recipient,'package_contact'=>true})[:data]
+                when 0; recipient_user_id=@api_files_user.create('contacts',{'current_workspace_id'=>@workspace_id,'email'=>recipient}.merge(new_user_option))[:data]
                 else raise CliBadArgument,"multiple match for: #{recipient}"
                 end
                 {'id'=>recipient_user_id['source_id'],'type'=>recipient_user_id['source_type']}
