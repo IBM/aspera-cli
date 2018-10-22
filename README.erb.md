@@ -1152,7 +1152,10 @@ Notes:
 
 * the `value` parameter can contain any supported package creation parameter.
 * Refer to the API, or display an existing package.
-* if the recipient is not already registered and the workspace allows external users, then the package is sent to an external user. (with a link with passcode)
+* If the recipient is not already registered and the workspace allows external users, then the package is sent to an external user, and
+  * if the option `new_user_option` is `@json:{"package_contact":true}` (default), then a public link is sent and the external user does not need to create an account.
+  * if the option `new_user_option` is `@json:{}`, then external users are invited to join the workspace
+
 
 ### Download Files
 
@@ -1799,6 +1802,11 @@ This means that you do not have ruby support for ED25519 SSH keys. You may eithe
 Gems, or remove your ed25519 key from your `.ssh` folder to solve the issue.
 
 # Release Notes
+
+* version 0.9.5
+
+  * new parameter: new_user_option used to choose between public_link and invite of external users.
+  * fixed bug in wizard, and wizard uses now product detection
 
 * version 0.9.4
 
