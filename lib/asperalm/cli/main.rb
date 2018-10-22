@@ -428,8 +428,6 @@ module Asperalm
         nil
       end
 
-      DEFAULT_REDIRECT='http://localhost:12345'
-
       def add_plugin_lookup_folder(folder)
         @plugin_lookup_folders.push(folder)
       end

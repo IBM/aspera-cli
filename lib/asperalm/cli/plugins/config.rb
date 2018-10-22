@@ -21,6 +21,7 @@ module Asperalm
         @@OLD_PROGRAM_NAME = 'aslmcli'
         # new plugin name for AoC
         @@ASPERA_PLUGIN_S=:aspera.to_s
+        @@DEFAULT_REDIRECT='http://localhost:12345'
         def initialize
           @program_version=nil
           @config_folder=nil
@@ -230,70 +231,75 @@ module Asperalm
           when :overview
             return {:type=>:object_list,:data=>self.class.flatten_all_config(@config_presets)}
           when :wizard
-            # only one value, so no test, no switch for the time being
-            plugin_name=Main.instance.options.get_next_argument('plugin name',[:aspera])
-            require 'asperalm/cli/plugins/aspera'
-            files_plugin=Plugins::Aspera.new
-            files_plugin.declare_options
-            Main.instance.options.parse_options!
-            Main.instance.options.set_option(:auth,:web)
-            Main.instance.options.set_option(:redirect_uri,DEFAULT_REDIRECT)
             instance_url=Main.instance.options.get_option(:url,:mandatory)
-            organization,instance_domain=FilesApi.parse_url(instance_url)
-            aspera_preset_name='aoc_'+organization
-            key_filepath=File.join(@config_folder,'aspera_on_cloud_key')
-            if File.exist?(key_filepath)
-              puts "key file already exists: #{key_filepath}"
+            appli=discover_product(instance_url)
+            case appli[:product]
+            when :aoc
+              Main.instance.display_status("Detected: Aspera on Cloud")
+              require 'asperalm/cli/plugins/aspera'
+              files_plugin=Plugins::Aspera.instance
+              files_plugin.declare_options
+              Main.instance.options.parse_options!
+              Main.instance.options.set_option(:auth,:web)
+              Main.instance.options.set_option(:redirect_uri,@@DEFAULT_REDIRECT)
+              organization,instance_domain=FilesApi.parse_url(instance_url)
+              aspera_preset_name='aoc_'+organization
+              Main.instance.display_status("Creating preset: #{aspera_preset_name}")
+              key_filepath=File.join(@config_folder,'aspera_on_cloud_key')
+              if File.exist?(key_filepath)
+                puts "key file already exists: #{key_filepath}"
+              else
+                puts "generating: #{key_filepath}"
+                generate_new_key(key_filepath)
+              end
+              puts "Please login to your Aspera on Cloud instance as Administrator."
+              puts "Go to: Admin->Organization->Integrations"
+              puts "Create a new integration:"
+              puts "- name: #{Main.instance.program_name}"
+              puts "- redirect uri: #{@@DEFAULT_REDIRECT}"
+              puts "- origin: localhost"
+              puts "Once created please enter the following any required parameter:"
+              OpenApplication.instance.uri(instance_url+"/admin/org/integrations")
+              Main.instance.options.get_option(:client_id)
+              Main.instance.options.get_option(:client_secret)
+              @config_presets[@@CONFIG_PRESET_DEFAULT]||=Hash.new
+              raise CliError,"a default configuration already exists (use --override=yes)" if @config_presets[@@CONFIG_PRESET_DEFAULT].has_key?(@@ASPERA_PLUGIN_S) and !option_override
+              raise CliError,"preset already exists: #{aspera_preset_name}  (use --override=yes)" if @config_presets.has_key?(aspera_preset_name) and !option_override
+              # todo: check if key is identical
+              files_plugin.init_apis
+              myself=files_plugin.api_files_user.read('self')[:data]
+              raise CliError,"public key is already set (use --override=yes)"  unless myself['public_key'].empty? or option_override
+              puts "updating profile with new key"
+              files_plugin.api_files_user.update("users/#{myself['id']}",{'public_key'=>File.read(key_filepath+'.pub')})
+              puts "Enabling JWT"
+              files_plugin.api_files_admn.update("clients/#{Main.instance.options.get_option(:client_id)}",{"jwt_grant_enabled"=>true,"explicit_authorization_required"=>false})
+              puts "creating new config preset: #{aspera_preset_name}"
+              @config_presets[aspera_preset_name]={
+                :url.to_s           =>Main.instance.options.get_option(:url),
+                :redirect_uri.to_s  =>Main.instance.options.get_option(:redirect_uri),
+                :client_id.to_s     =>Main.instance.options.get_option(:client_id),
+                :client_secret.to_s =>Main.instance.options.get_option(:client_secret),
+                :auth.to_s          =>:jwt.to_s,
+                :private_key.to_s   =>'@file:'+key_filepath,
+                :username.to_s      =>myself['email'],
+              }
+              puts "setting config preset as default for #{@@ASPERA_PLUGIN_S}"
+              @config_presets[@@CONFIG_PRESET_DEFAULT][@@ASPERA_PLUGIN_S]=aspera_preset_name
+              puts "saving config file"
+              save_presets_to_config_file
+              return Main.result_status("Done. You can test with:\n#{Main.instance.program_name} aspera user info show")
             else
-              puts "generating: #{key_filepath}"
-              generate_new_key(key_filepath)
+              raise CliBadArgument,"supports only: aoc, detected: #{appli}"
             end
-            puts "Please login to your Aspera on Cloud instance as Administrator."
-            puts "Go to: Admin->Organization->Integrations"
-            puts "Create a new integration:"
-            puts "- name: #{Main.instance.program_name}"
-            puts "- redirect uri: #{DEFAULT_REDIRECT}"
-            puts "- origin: localhost"
-            puts "Once created please enter the following any required parameter:"
-            OpenApplication.instance.uri(instance_url+"/admin/org/integrations")
-            Main.instance.options.get_option(:client_id)
-            Main.instance.options.get_option(:client_secret)
-            @config_presets[@@CONFIG_PRESET_DEFAULT]||=Hash.new
-            raise CliError,"a default configuration already exists (use --override=yes)" if @config_presets[@@CONFIG_PRESET_DEFAULT].has_key?(@@ASPERA_PLUGIN_S) and !option_override
-            raise CliError,"preset already exists: #{aspera_preset_name}  (use --override=yes)" if @config_presets.has_key?(aspera_preset_name) and !option_override
-            # todo: check if key is identical
-            files_plugin.init_apis
-            myself=files_plugin.api_files_user.read('self')[:data]
-            raise CliError,"public key is already set (use --override=yes)"  unless myself['public_key'].empty? or option_override
-            puts "updating profile with new key"
-            files_plugin.api_files_user.update("users/#{myself['id']}",{'public_key'=>File.read(key_filepath+'.pub')})
-            puts "Enabling JWT"
-            files_plugin.api_files_admn.update("clients/#{Main.instance.options.get_option(:client_id)}",{"jwt_grant_enabled"=>true,"explicit_authorization_required"=>false})
-            puts "creating new config preset: #{aspera_preset_name}"
-            @config_presets[aspera_preset_name]={
-              :url.to_s           =>Main.instance.options.get_option(:url),
-              :redirect_uri.to_s  =>Main.instance.options.get_option(:redirect_uri),
-              :client_id.to_s     =>Main.instance.options.get_option(:client_id),
-              :client_secret.to_s =>Main.instance.options.get_option(:client_secret),
-              :auth.to_s          =>:jwt.to_s,
-              :private_key.to_s   =>'@file:'+key_filepath,
-              :username.to_s      =>myself['email'],
-            }
-            puts "setting config preset as default for #{@@ASPERA_PLUGIN_S}"
-            @config_presets[@@CONFIG_PRESET_DEFAULT][@@ASPERA_PLUGIN_S]=aspera_preset_name
-            puts "saving config file"
-            save_presets_to_config_file
-            return Main.result_status("Done. You can test with:\n#{Main.instance.program_name} aspera user info show")
-            # TODO: update documentation
           when :export_to_cli
+            Main.instance.display_status("Exporting: Aspera on Cloud")
             require 'asperalm/cli/plugins/aspera'
             # need url / username
             Plugins::Aspera.instance.declare_options
             Main.instance.options.parse_options!
-            appli=Main.instance.options.get_next_command([:aoc])
+            url=Main.instance.options.get_option(:url,:mandatory)
             cli_conf_file=Fasp::Installation.instance.cli_conf_file
             data=JSON.parse(File.read(cli_conf_file))
-            url=Main.instance.options.get_option(:url,:mandatory)
             organization,instance_domain=FilesApi.parse_url(url)
             key_basename='org_'+organization+'.pem'
             key_file=File.join(File.dirname(File.dirname(cli_conf_file)),'etc',key_basename)
@@ -356,25 +362,35 @@ module Asperalm
           uri=URI.parse(url)
           api=Rest.new({:base_url=>url})
           begin
+            result=api.call({:operation=>'GET',:subpath=>'',:headers=>{'Accept'=>'text/html'}})
+            if result[:http].body.include?('<meta name="apple-mobile-web-app-title" content="AoC">')
+              return {:product=>:aoc,:version=>'unknown'}
+            end
+          rescue e
+            Log.log.debug("not aoc")
+          end
+          begin
             result=api.call({:operation=>'POST',:subpath=>'aspera/faspex',:headers=>{'Accept'=>'application/xrds+xml'},:text_body_params=>''})
-            res_s=XmlSimple.xml_in(result[:http].body, {"ForceArray" => false})
-            version=res_s['XRD']['application']['version']
-            #return JSON.pretty_generate(res_s)
-            return "Faspex #{version}"
+            if result[:http].body.start_with?('<?xml')
+              res_s=XmlSimple.xml_in(result[:http].body, {"ForceArray" => false})
+              version=res_s['XRD']['application']['version']
+              #return JSON.pretty_generate(res_s)
+            end
+            return {:product=>:faspex,:version=>version}
           rescue
-            Log.log.warn("not faspex")
+            Log.log.debug("not faspex")
           end
           begin
             result=api.read('node_api/app')
-            return JSON.pretty_generate(result)
-            return "Faspex #{version}"
+            Log.log.warn("not supposed to work")
           rescue RestCallError => e
             if e.response.code.to_s.eql?('401') and e.response.body.eql?('{"error":{"user_message":"API user authentication failed"}}')
-              return "Shares"
+              return {:product=>:shares,:version=>'unknown'}
             end
-            Log.log.warn("not faspex: #{e.response.code} #{e.response.body}")
+            Log.log.warn("not shares: #{e.response.code} #{e.response.body}")
+          rescue
           end
-          return "unknown"
+          return {:product=>:unknown,:version=>'unknown'}
         end
 
       end
