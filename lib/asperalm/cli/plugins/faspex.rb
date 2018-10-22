@@ -99,7 +99,7 @@ module Asperalm
           return @api_v4
         end
 
-        def action_list; [ :package, :source, :me, :dropbox, :recv_publink, :v4 ];end
+        def action_list; [ :package, :source, :me, :dropbox, :recv_publink, :v4, :address_book ];end
 
         # we match recv command on atom feed on this field
         PACKAGE_MATCH_FIELD='delivery_id'
@@ -240,6 +240,24 @@ module Asperalm
             when :metadata_profile
               return Plugin.entity_action(api_v4,'metadata_profiles',nil,:id)
             end
+          when :address_book
+            result=api_v3.call({:operation=>'GET',:subpath=>"address-book",:headers=>{'Accept'=>'application/json'},:url_params=>{'format'=>'json','count'=>100000}})[:data]
+            Main.instance.display_status("users: #{result['itemsPerPage']}/#{result['totalResults']}, start:#{result['startIndex']}")
+            users=result['entry']
+            # add missing entries
+            users.each do |u|
+              unless u['emails'].nil?
+                email=u['emails'].find{|e|e['primary'].eql?('true')}
+                u['email'] = email['value'] unless email.nil?
+              end
+              if u['email'].nil?
+                Log.log.warn("Skip user without email: #{u}")
+                next
+              end
+              u['first_name'],u['last_name'] = u['displayName'].split(' ',2)
+                u['x']=true
+            end
+            return {:data=>users,:type=>:object_list}
           end # command
         end
       end
