@@ -10,7 +10,7 @@ module Asperalm
     module Plugins
       class Aspera < Plugin
         include Singleton
-        def action_list; [ :packages, :files, :faspexgw, :admin, :user, :organization];end
+        def action_list; [ :packages, :files, :faspexgw, :admin, :user, :organization, :workspace];end
 
         def declare_options
           @ats=Ats.instance
@@ -228,13 +228,13 @@ module Asperalm
               raise "unexpected case"
             end
           end
-          workspace_data=@api_files_user.read("workspaces/#{@workspace_id}")[:data]
+          @workspace_data=@api_files_user.read("workspaces/#{@workspace_id}")[:data]
 
-          Log.log.debug("workspace_id=#{@workspace_id},workspace_data=#{workspace_data}".red)
+          Log.log.debug("workspace_id=#{@workspace_id},@workspace_data=#{@workspace_data}".red)
 
-          @workspace_name||=workspace_data['name']
-          @home_node_id||=workspace_data['home_node_id']||workspace_data['node_id']
-          @home_file_id||=workspace_data['home_file_id']
+          @workspace_name||=@workspace_data['name']
+          @home_node_id||=@workspace_data['home_node_id']||@workspace_data['node_id']
+          @home_file_id||=@workspace_data['home_file_id']
           raise "ERROR: assert: no home node id" if @home_node_id.to_s.empty?
           raise "ERROR: assert: no home file id" if @home_file_id.to_s.empty?
 
@@ -268,6 +268,8 @@ module Asperalm
           Log.log.info("current workspace is "+@workspace_name.red)
 
           case command
+          when :workspace # show current workspace parameters
+            return { :type=>:single_object, :data =>@workspace_data }
           when :organization
             return { :type=>:single_object, :data =>@org_data }
           when :user
@@ -302,7 +304,7 @@ module Asperalm
               package_creation['file_names']=TransferAgent.instance.transfer_paths_from_options.map{|i|File.basename(i['source'])}
 
               new_user_option=Main.instance.options.get_option(:new_user_option,:mandatory)
-                
+
               # lookup users
               package_creation['recipients']=Main.instance.options.get_option(:recipient,:mandatory).split(',').map do |recipient|
                 user_lookup=@api_files_user.read('contacts',{'current_workspace_id'=>@workspace_id,'q'=>recipient})[:data]
