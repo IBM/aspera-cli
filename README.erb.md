@@ -333,6 +333,7 @@ The value of options and arguments can optionally be retrieved using one of the 
 * @path:PATH , performs path expansion (prefix "~/" is replaced with the users home folder), e.g. --config-file=@path:~/sample_config.yml
 * @env:ENVVAR , read from a named env var, e.g.--password=@env:MYPASSVAR
 * @stdin , read from stdin
+* @preset:NAME , get whole <%=opprst%> value by name
 
 In addition it is possible to decode a value, using one or multiple decoders :
 
@@ -412,7 +413,7 @@ A <%=prst%> is simply a collection of parameters and their associated values.
 A named <%=prst%> can be modified directly using <%=tool%>, which will update the configuration file :
 
 ```
-$ <%=cmd%> config id <<%=opprst%>> set|delete|show|initialize|update
+$ <%=cmd%> config id &lt;<%=opprst%>&gt; set|delete|show|initialize|update
 ```
 
 The command `update` allows the easy creation of <%=prst%> by simply providing the options in their command line format, e.g. :
@@ -660,7 +661,7 @@ three keys: url, username and password, corresponding to the URL of the node API
 and associated credentials (node user or access key).
 
 The `--transfer-node` parameter can directly specify a pre-configured <%=prst%> : 
-`--transfer-node=@param:<psetname>` or specified using the option syntax :
+`--transfer-node=@preset:<psetname>` or specified using the option syntax :
 `--transfer-node=@json:'{"url":"https://...","username":"theuser","password":"thepass"}'`
 
 ## <a name="transferspec"></a>Transfer Specification
@@ -1238,7 +1239,7 @@ Create another configuration for the Azure ATS instance: in section "node", name
 Then execute the following command:
 
 ```bash
-$ <%=cmd%> node download /share/sourcefile --to-folder=/destinationfolder --preset=awsshod --transfer=node --transfer-node=@param:azureats
+$ <%=cmd%> node download /share/sourcefile --to-folder=/destinationfolder --preset=awsshod --transfer=node --transfer-node=@preset:azureats
 ```
 
 This will get transfer information from the SHOD instance and tell the Azure ATS instance 
@@ -1415,7 +1416,7 @@ my_faspex_conf:
   password: MyPassword
   storage:
     testlaurent:
-      node: my_faspex_node
+      node: "@preset:my_faspex_node"
       path: /myfiles
 my_faspex_node:
   url: https://10.25.0.3:9092
@@ -1802,6 +1803,10 @@ This means that you do not have ruby support for ED25519 SSH keys. You may eithe
 Gems, or remove your ed25519 key from your `.ssh` folder to solve the issue.
 
 # Release Notes
+
+* version 0.9.6
+
+  *  Breaking change: `@param:`is now `@preset:` and is generic
 
 * version 0.9.5
 
