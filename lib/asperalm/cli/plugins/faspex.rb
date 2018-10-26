@@ -1,6 +1,7 @@
 require 'asperalm/cli/basic_auth_plugin'
 require 'asperalm/cli/plugins/node'
 require 'asperalm/cli/plugins/config'
+require 'asperalm/cli/extended_value'
 require 'asperalm/open_application'
 require 'asperalm/fasp/uri'
 require 'xmlsimple'
@@ -193,7 +194,7 @@ module Asperalm
               when :info
                 return {:data=>source_info,:type=>:single_object}
               when :node
-                node_config=Plugins::Config.instance.preset_by_name(source_info[@@KEY_NODE])
+                node_config=ExtendedValue.parse(:node,source_info[@@KEY_NODE])
                 raise CliError,"bad type for: \"#{source_info[@@KEY_NODE]}\"" unless node_config.is_a?(Hash)
                 Log.log.debug("node=#{node_config}")
                 api_node=Rest.new({
