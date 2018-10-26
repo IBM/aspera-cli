@@ -27,6 +27,7 @@ module Asperalm
           @config_folder=nil
           @option_config_file=nil
           @use_plugin_defaults=true
+          @config_presets=nil
         end
 
         def self.flatten_all_config(t)
@@ -53,10 +54,14 @@ module Asperalm
         attr_reader :config_folder
         attr_reader :gem_url
         attr_reader :help_url
-        attr_reader :config_presets
         attr_accessor :option_override
         attr_accessor :option_config_file
 
+        def preset_by_name(config_name)
+          raise CliError,"no such config preset: #{config_name}" unless @config_presets.has_key?(config_name)
+          return @config_presets[config_name]
+        end
+        
         def set_program_info(tool_name,gem_name,version)
           @program_version=version
           @gem_name=gem_name
