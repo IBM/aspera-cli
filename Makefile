@@ -165,7 +165,10 @@ t/fx3:
 t/fx4:
 	@echo $(EXETEST) faspex recv_publink 'https://ibmfaspex.asperasoft.com/aspera/faspex/external_deliveries/78780?passcode=a003aaf2f53e3869126b908525084db6bebc7031' --insecure=yes
 	@touch $@
-tfaspex: t/fx1 t/fx2 t/fx3 t/fx4
+t/fx5:
+	$(EXETEST) faspex source name "Server Files" node br /
+	@touch $@
+tfaspex: t/fx1 t/fx2 t/fx3 t/fx4 t/fx5
 
 t/cons1:
 	$(EXETEST) console transfer current list 
