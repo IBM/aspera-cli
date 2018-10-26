@@ -32,9 +32,10 @@ module Asperalm
         options||={}
         raise "option: must be hash (or nil)" unless options.is_a?(Hash)
         job_id=options[:job_id] || SecureRandom.uuid
-        # TODO: what is this for ? only on local ascp ?
-        # NOTE: important: transfer id must be unique: generate random id (using a non unique id results in discard of tags)
         if transfer_spec['tags'].is_a?(Hash) and transfer_spec['tags']['aspera'].is_a?(Hash)
+          # TODO: what is this for ? only on local ascp ?
+          # NOTE: important: transfer id must be unique: generate random id
+          # using a non unique id results in discard of tags in AoC, and a package is never finalized
           transfer_spec['tags']['aspera']['xfer_id']=SecureRandom.uuid
           Log.log.debug "xfer id=#{transfer_spec['xfer_id']}"
           # TODO: useful ? node only ?
