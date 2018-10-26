@@ -131,6 +131,7 @@ t/fp1:
 	$(EXETEST) server browse /
 	$(EXETEST) server upload --to-folder=/Upload --sources=@args $(SAMPLE_FILE)
 	$(EXETEST) server download --to-folder=$(TEST_FOLDER) --sources=@args /Upload/200KB.1
+	$(EXETEST) server download --sources=@args /Upload/200KB.1 --transfer=node
 	$(EXETEST) server cp /Upload/200KB.1 /Upload/200KB.2
 	$(EXETEST) server mv /Upload/200KB.2 /Upload/to.delete
 	$(EXETEST) server delete /Upload/to.delete
