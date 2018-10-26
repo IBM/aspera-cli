@@ -1,5 +1,6 @@
 require 'asperalm/cli/basic_auth_plugin'
 require 'asperalm/cli/plugins/node'
+require 'asperalm/cli/plugins/config'
 require 'asperalm/open_application'
 require 'asperalm/fasp/uri'
 require 'xmlsimple'
@@ -174,7 +175,14 @@ module Asperalm
               source_name=source_ids.first['name']
               source_id=source_ids.first['id']
               source_hash=Main.instance.options.get_option(:storage,:mandatory)
-              raise CliError,"No storage defined in config file" if source_hash.nil?
+              # check value of option
+              raise CliError,"storage option must be a Hash" unless source_hash.is_a?(Hash)
+              source_hash.each do |name,storage|
+                raise CliError,"storage '#{name}' must be a Hash" unless storage.is_a?(Hash)
+                [@@KEY_NODE,@@KEY_PATH].each do |key|
+                  raise CliError,"storage '#{name}' must have a '#{key}'" unless storage.has_key?(key)
+                end
+              end
               if !source_hash.has_key?(source_name)
                 raise CliError,"No such storage in config file: \"#{source_name}\" in [#{source_hash.keys.join(', ')}]"
               end
@@ -185,7 +193,7 @@ module Asperalm
               when :info
                 return {:data=>source_info,:type=>:single_object}
               when :node
-                node_config=Main.instance.preset_by_name(source_info[@@KEY_NODE])
+                node_config=Plugins::Config.instance.preset_by_name(source_info[@@KEY_NODE])
                 raise CliError,"bad type for: \"#{source_info[@@KEY_NODE]}\"" unless node_config.is_a?(Hash)
                 Log.log.debug("node=#{node_config}")
                 api_node=Rest.new({
@@ -255,7 +263,7 @@ module Asperalm
                 next
               end
               u['first_name'],u['last_name'] = u['displayName'].split(' ',2)
-                u['x']=true
+              u['x']=true
             end
             return {:data=>users,:type=>:object_list}
           end # command
