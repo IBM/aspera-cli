@@ -1,3 +1,4 @@
+require 'asperalm/cli/plugins/config'
 require 'json'
 require 'base64'
 require 'zlib'
@@ -7,11 +8,11 @@ module Asperalm
   module Cli
     # command line extended values
     class ExtendedValue
-      # decoders can be pipelined
+      # decoders can be pipelined, and at the beginning only to be processed
       @@DECODERS=['base64', 'json', 'zlib', 'ruby', 'csvt']
 
       # there shall be zero or one reader only
-      def self.readers; ['val', 'file', 'path', 'env', 'stdin'].push(@@DECODERS); end
+      def self.readers; ['val', 'file', 'path', 'env', 'stdin', 'preset'].push(@@DECODERS); end
 
       # parse an option value, special behavior for file:, env:, val:
       def self.parse(name_or_descr,value)
@@ -32,6 +33,8 @@ module Asperalm
             value=File.expand_path(m[1])
           elsif m=value.match(/^@env:(.*)/) then
             value=ENV[m[1]]
+          elsif m=value.match(/^@preset:(.*)/) then
+            value=Plugins::Config.instance.preset_by_name(m[1])
           elsif value.eql?('@stdin') then
             value=STDIN.gets
           end
