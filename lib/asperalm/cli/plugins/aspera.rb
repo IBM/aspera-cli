@@ -451,6 +451,8 @@ module Asperalm
                 end
               when :do
                 res_data=@api_files_admn.read(resource_instance_path)[:data]
+                  # mandatory secret
+                Main.instance.options.get_option(:secret,:mandatory)
                 @api_files_admn.secrets[res_data['id']]=@ak_secret
                 api_node=@api_files_admn.get_files_node_api(res_data,nil)
                 ak_data=api_node.call({:operation=>'GET',:subpath=>"access_keys/#{res_data['access_key']}",:headers=>{'Accept'=>'application/json'}})[:data]
