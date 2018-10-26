@@ -1,6 +1,9 @@
 require 'asperalm/fasp/local'
 require 'asperalm/fasp/connect'
 require 'asperalm/fasp/node'
+require 'asperalm/cli/listener/logger'
+require 'asperalm/cli/listener/progress_multi'
+require 'asperalm/cli/plugins/config'
 require 'singleton'
 
 module Asperalm
@@ -9,6 +12,7 @@ module Asperalm
     class TransferAgent
       include Singleton
       private
+      @@ARGS_PARAM='@args'
       def initialize
         @transfer_spec_cmdline={}
         @agent=nil
@@ -56,12 +60,11 @@ module Asperalm
             when nil
               param_set_name=Plugins::Config.instance.get_plugin_default_config_name(:node)
               raise CliBadArgument,"No default node configured, Please specify --transfer-node" if param_set_name.nil?
-              node_config=config_presets[param_set_name]
+              node_config=Plugins::Config.instance.preset_by_name(param_set_name)
             when /^@param:/
               param_set_name=transfer_node_spec.gsub!(/^@param:/,'')
               Log.log.debug("param_set_name=#{param_set_name}")
-              raise CliBadArgument,"no such parameter set: [#{param_set_name}] in config file" if !config_presets.has_key?(param_set_name)
-              node_config=config_presets[param_set_name]
+              node_config=Plugins::Config.instance.preset_by_name(param_set_name)
             else
               node_config=ExtendedValue.parse(:transfer_node,transfer_node_spec)
             end
@@ -109,11 +112,11 @@ module Asperalm
         sources=Main.instance.options.get_option(:sources,:optional)
         if !sources.nil?
           Log.log.warn("--sources overrides paths from --ts") unless @transfer_paths.nil?
-          sources=Main.instance.options.get_next_argument("source file list",:multiple) if sources.eql?('@args')
-          raise "sources must be a Array" unless sources.is_a?(Array)
+          sources=Main.instance.options.get_next_argument("source file list",:multiple) if sources.eql?(@@ARGS_PARAM)
+          raise "sources (#{sources.class}) must be a Array" unless sources.is_a?(Array)
           @transfer_paths=sources.map{|i|{'source'=>i}}
         end
-        raise CliBadArgument,"command line must have either --sources or --ts with paths" if @transfer_paths.nil?
+        raise CliBadArgument,"command line must have either --sources or --ts with paths, e.g. --sources=#{@@ARGS_PARAM}" if @transfer_paths.nil?
         return @transfer_paths
       end
 
