@@ -1416,7 +1416,7 @@ my_faspex_conf:
   storage:
     testlaurent:
       node: my_faspex_node
-      :path: /myfiles
+      path: /myfiles
 my_faspex_node:
   url: https://10.25.0.3:9092
   username: node_faspex
