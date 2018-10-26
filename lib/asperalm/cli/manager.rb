@@ -142,6 +142,7 @@ module Asperalm
           end
           raise CliBadArgument,"missing argument (#{expected}): #{descr}"
         end
+        result=nil
         # ask interactively
         case expected
         when :multiple
@@ -160,6 +161,7 @@ module Asperalm
           print "#{expected.join(' ')}\n#{type}: #{descr}> "
           result=self.class.get_from_list(STDIN.gets.chomp,descr,expected)
         end
+        return result
       end
 
       def get_next_command(action_list); return get_next_argument('command',action_list); end
