@@ -1,8 +1,6 @@
 require 'asperalm/cli/manager'
 require 'asperalm/cli/plugins/config'
 require 'asperalm/cli/extended_value'
-require 'asperalm/cli/listener/logger'
-require 'asperalm/cli/listener/progress_multi'
 require 'asperalm/cli/transfer_agent'
 require 'asperalm/open_application'
 require 'asperalm/temp_file_manager'
@@ -65,14 +63,11 @@ module Asperalm
       def option_preset; nil; end
 
       def option_preset=(value)
-        raise CliError,"no such preset defined: #{value}" unless config_presets.has_key?(value)
-        @opt_mgr.add_option_preset(config_presets[value])
+        @opt_mgr.add_option_preset(Plugins::Config.instance.preset_by_name(value))
       end
 
       attr_accessor :option_flat_hash
       attr_accessor :option_table_style
-
-      def config_presets; Plugins::Config.instance.config_presets; end
 
       # find plugins in defined paths
       def add_plugins_from_lookup_folders
@@ -180,7 +175,7 @@ module Asperalm
       def add_plugin_default_preset(plugin_name_sym)
         default_config_name=Plugins::Config.instance.get_plugin_default_config_name(plugin_name_sym)
         Log.log.debug("add_plugin_default_preset:#{plugin_name_sym}:#{default_config_name}")
-        @opt_mgr.add_option_preset(config_presets[default_config_name],:unshift) unless default_config_name.nil?
+        @opt_mgr.add_option_preset(Plugins::Config.instance.preset_by_name(default_config_name),:unshift) unless default_config_name.nil?
         return nil
       end
 
@@ -467,11 +462,6 @@ module Asperalm
 
       def display_status(status)
         display_message(:info,status)
-      end
-
-      def preset_by_name(config_name)
-        raise "no such config: #{config_name}" unless config_presets.has_key?(config_name)
-        return config_presets[config_name]
       end
 
       # public method
