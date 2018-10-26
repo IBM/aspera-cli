@@ -65,19 +65,21 @@ module Asperalm
 
     attr_reader :secrets
 
-    # build transfer info, containing transfer spec for aspera on cloud
-    # the rest end point is used to generate the bearer token
+    # build "transfer info"
+    # contains:
+    # - transfer spec for aspera on cloud, based on node information and file id
+    # - source and token regeneration method
     def tr_spec(app,direction,node_info,file_id,ts_add)
-      # generate a transfer spec from node information and file id
-      # NOTE: important: transfer id must be unique: generate random id
-      # (using a non unique id results in discard of tags, and package is not finalized)
+      # the rest end point is used to generate the bearer token
+      token_generation_method=lambda {|do_refresh|self.oauth_token(FilesApi.node_scope(node_info['access_key'],FilesApi::SCOPE_NODE_USER),do_refresh)}
+      # note xfer_id and xfer_retry are set by the transfer agent itself
       return {
         'direction'   => direction,
         'remote_user' => 'xfer',
         'remote_host' => node_info['host'],
         'fasp_port'   => 33001, # TODO: always the case ?
         'ssh_port'    => 33001, # TODO: always the case ?
-        'token'       => self.oauth_token(FilesApi.node_scope(node_info['access_key'],FilesApi::SCOPE_NODE_USER)),
+        'token'       => token_generation_method.call(false), # first time, use cache
         'tags'        => {
         'aspera'        => {
         'app'             => app,
@@ -86,7 +88,7 @@ module Asperalm
         }
         }}.deep_merge!(ts_add),{
         :src              => :node_gen4,
-        :regenerate_token => lambda {|r|self.oauth_token(FilesApi.node_scope(node_info['access_key'],FilesApi::SCOPE_NODE_USER),r)}
+        :regenerate_token => token_generation_method
       }
     end
 
