@@ -54,22 +54,15 @@ module Asperalm
           when :node
             # support: @param:<name>
             # support extended values
-            transfer_node_spec=Main.instance.options.get_option(:transfer_node,:optional)
+            node_config=Main.instance.options.get_option(:transfer_node,:optional)
             # of not specified, use default node
-            case transfer_node_spec
-            when nil
+            if transfer_node_spec.nil?
               param_set_name=Plugins::Config.instance.get_plugin_default_config_name(:node)
               raise CliBadArgument,"No default node configured, Please specify --transfer-node" if param_set_name.nil?
               node_config=Plugins::Config.instance.preset_by_name(param_set_name)
-            when /^@param:/
-              param_set_name=transfer_node_spec.gsub!(/^@param:/,'')
-              Log.log.debug("param_set_name=#{param_set_name}")
-              node_config=Plugins::Config.instance.preset_by_name(param_set_name)
-            else
-              node_config=ExtendedValue.parse(:transfer_node,transfer_node_spec)
             end
             Log.log.debug("node=#{node_config}")
-            raise CliBadArgument,"the node configuration shall be a hash, use either @json:<json> or @param:<parameter set name>" if !node_config.is_a?(Hash)
+            raise CliBadArgument,"the node configuration shall be a hash, use either @json:<json> or @preset:<parameter set name>" if !node_config.is_a?(Hash)
             # now check there are required parameters
             sym_config={}
             [:url,:username,:password].each do |param|
