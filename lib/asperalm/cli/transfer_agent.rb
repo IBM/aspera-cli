@@ -56,7 +56,7 @@ module Asperalm
             # support extended values
             node_config=Main.instance.options.get_option(:transfer_node,:optional)
             # of not specified, use default node
-            if transfer_node_spec.nil?
+            if node_config.nil?
               param_set_name=Plugins::Config.instance.get_plugin_default_config_name(:node)
               raise CliBadArgument,"No default node configured, Please specify --transfer-node" if param_set_name.nil?
               node_config=Plugins::Config.instance.preset_by_name(param_set_name)
