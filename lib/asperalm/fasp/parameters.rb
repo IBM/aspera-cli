@@ -18,7 +18,7 @@ module Asperalm
         'remote_password'         => { :type => :envvar, :variable=>'ASPERA_SCP_PASS'},
         'token'                   => { :type => :envvar, :variable=>'ASPERA_SCP_TOKEN'},
         'cookie'                  => { :type => :envvar, :variable=>'ASPERA_SCP_COOKIE'},
-        'EX_ssh_key_value'        => { :type => :envvar, :variable=>'ASPERA_SCP_KEY'},
+        'ssh_private_key'         => { :type => :envvar, :variable=>'ASPERA_SCP_KEY'},
         'EX_at_rest_password'     => { :type => :envvar, :variable=>'ASPERA_SCP_FILEPASS'},
         'EX_proxy_password'       => { :type => :envvar, :variable=>'ASPERA_PROXY_PASS'},
         # bool params
@@ -85,7 +85,7 @@ module Asperalm
         }
         # some ssh credentials are required to avoid interactive password input
         if !@job_spec.has_key?('remote_password') and
-        !@job_spec.has_key?('EX_ssh_key_value') and
+        !@job_spec.has_key?('ssh_private_key') and
         !@job_spec.has_key?('EX_ssh_key_paths') then
           raise Fasp::Error.new('required: ssh key (value or path) or password')
         end
