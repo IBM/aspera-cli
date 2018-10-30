@@ -1806,7 +1806,8 @@ Gems, or remove your ed25519 key from your `.ssh` folder to solve the issue.
 
 * version 0.9.6
 
-  *  Breaking change: `@param:`is now `@preset:` and is generic
+  * Breaking change: `@param:`is now `@preset:` and is generic
+  * AoC: added command to display current workspace information
 
 * version 0.9.5
 
