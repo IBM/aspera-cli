@@ -15,7 +15,7 @@ GIT_TAG_CURRENT=$(GIT_TAG_VERSION_PREFIX)$(GEMVERSION)
 SRCZIPBASE=$(GEMNAME)_src
 TODAY=$(shell date +%Y%m%d)
 ZIPFILE=$(SRCZIPBASE)_$(TODAY).zip
-
+LATEST_TAG=$(shell git describe --tags --abbrev=0)
 # these lines do not go to manual samples
 EXE_NOMAN=$(EXETEST)
 
@@ -39,7 +39,8 @@ cleanupgems:
 	gem uninstall -a -x $(gem list|cut -f 1 -d' '|egrep -v 'rdoc|psych|rake|openssl|json|io-console|bigdecimal')
 
 changes:
-	git log `git describe --tags --abbrev=0`..HEAD --oneline
+	@echo "Changes since $(LATEST_TAG)"
+	git log $(LATEST_TAG)..HEAD --oneline
 diff: changes
 
 doc: README.pdf
