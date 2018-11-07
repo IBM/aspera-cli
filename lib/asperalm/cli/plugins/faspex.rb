@@ -14,6 +14,8 @@ module Asperalm
         include Singleton
         @@KEY_NODE='node'
         @@KEY_PATH='path'
+        @@VAL_ALL='ALL'
+        @@VAL_NEW='NEW'
         alias super_declare_options declare_options
         def declare_options
           super_declare_options
@@ -53,16 +55,6 @@ module Asperalm
         def self.textify_package_list(table_data)
           return table_data.map { |e|
             e.keys.each {|k| e[k]=e[k].first if e[k].is_a?(Array) and e[k].length == 1}
-            #if e['to'].has_key?('recipient_delivery_id')
-            #  e['recipient_delivery_id'] = e['to']['recipient_delivery_id'].first
-            #else
-            #  e['recipient_delivery_id'] = 'unknown'
-            #end
-            #if e['to'].has_key?('name')
-            #  e['to'] = e['to']['name'].first
-            #else
-            #  e['to'] = 'unknown'
-            #end
             e['items'] = e.has_key?('link') ? e['link'].length : 0
             e
           }
@@ -104,7 +96,19 @@ module Asperalm
         def action_list; [ :package, :source, :me, :dropbox, :recv_publink, :v4, :address_book ];end
 
         # we match recv command on atom feed on this field
-        PACKAGE_MATCH_FIELD='delivery_id'
+        PACKAGE_MATCH_FIELD='package_id'
+
+        def mailbox_entries
+          mailbox=Main.instance.options.get_option(:box,:mandatory).to_s
+          all_inbox_xml=api_v3.call({:operation=>'GET',:subpath=>"#{mailbox}.atom",:headers=>{'Accept'=>'application/xml'}})[:http].body
+          all_inbox_data=XmlSimple.xml_in(all_inbox_xml, {"ForceArray" => true})
+          Log.dump(:all_inbox_data,all_inbox_data)
+          result=all_inbox_data.has_key?('entry') ? all_inbox_data['entry'] : []
+            result.each do |e|
+              e[PACKAGE_MATCH_FIELD]=e['to'].first['recipient_delivery_id'].first
+            end
+          return result
+        end
 
         def execute_action
           command=Main.instance.options.get_next_command(action_list)
@@ -113,11 +117,37 @@ module Asperalm
             command_pkg=Main.instance.options.get_next_command([ :send, :recv, :list ])
             case command_pkg
             when :list
-              all_inbox_xml=api_v3.call({:operation=>'GET',:subpath=>"#{Main.instance.options.get_option(:box,:mandatory).to_s}.atom",:headers=>{'Accept'=>'application/xml'}})[:http].body
-              all_inbox_data=XmlSimple.xml_in(all_inbox_xml, {"ForceArray" => true})
-              Log.dump(:all_inbox_data,all_inbox_data)
-              return Main.result_empty unless all_inbox_data.has_key?('entry')
-              return {:data=>all_inbox_data['entry'],:type=>:object_list,:fields=>[PACKAGE_MATCH_FIELD,'title','items'], :textify => lambda { |table_data| Faspex.textify_package_list(table_data)} }
+              return {:type=>:object_list,:data=>self.mailbox_entries,:fields=>[PACKAGE_MATCH_FIELD,'title','items'], :textify => lambda { |table_data| Faspex.textify_package_list(table_data)} }
+            when :recv
+              delivid=Main.instance.options.get_option(:id,:mandatory)
+              uris_to_download=nil
+              case delivid
+              when @@VAL_ALL
+                uris_to_download=self.mailbox_entries.map{|e|self.class.get_fasp_uri_from_entry(e)}
+              when @@VAL_NEW
+                raise "TODO"
+              else
+                # I dont know which delivery id is the right one if package was receive by group
+                entry_xml=api_v3.call({:operation=>'GET',:subpath=>"#{mailbox}/#{package_id}",:headers=>{'Accept'=>'application/xml'}})[:http].body
+                uris_to_download=[delivid]
+                package_entry=XmlSimple.xml_in(entry_xml, {"ForceArray" => true})
+                transfer_uri=self.class.get_fasp_uri_from_entry(package_entry)
+              end
+              Log.dump(:uris_to_download,uris_to_download)
+              mailbox=Main.instance.options.get_option(:box,:mandatory).to_s
+              last_status=Main.result_status('no package')
+              uris_to_download.each do |transfer_uri|
+                transfer_spec=Fasp::Uri.new(transfer_uri).transfer_spec
+                # NOTE: only external users have token in faspe: link !
+                if !transfer_spec.has_key?('token')
+                  sanitized=transfer_uri.gsub('&','&amp;')
+                  xmlpayload='<?xml version="1.0" encoding="UTF-8"?><url-list xmlns="http://schemas.asperasoft.com/xml/url-list"><url href="'+sanitized+'"/></url-list>'
+                  transfer_spec['token']=api_v3.call({:operation=>'POST',:subpath=>"issue-token?direction=down",:headers=>{'Accept'=>'text/plain','Content-Type'=>'application/vnd.aspera.url-list+xml'},:text_body_params=>xmlpayload})[:http].body
+                end
+                transfer_spec['direction']='receive'
+                last_status=Main.instance.start_transfer_wait_result(transfer_spec,{:src=>:node_gen3})
+              end
+              return last_status
             when :send
               delivery_info=Main.instance.options.get_option(:delivery_info,:mandatory)
               raise CliBadArgument,"delivery_info must be hash, refer to doc" unless delivery_info.is_a?(Hash)
@@ -143,21 +173,6 @@ module Asperalm
               transfer_spec=send_result['xfer_sessions'].first
               # use source from cmd line, this one nly contains destination (already in dest root)
               transfer_spec.delete('paths')
-              return Main.instance.start_transfer_wait_result(transfer_spec,{:src=>:node_gen3})
-            when :recv
-              delivid=Main.instance.options.get_option(:id,:mandatory)
-              # I dont know which delivery id is the right one if package was receive by group
-              entry_xml=api_v3.call({:operation=>'GET',:subpath=>"#{Main.instance.options.get_option(:box,:optional).to_s}/#{delivid}",:headers=>{'Accept'=>'application/xml'}})[:http].body
-              package_entry=XmlSimple.xml_in(entry_xml, {"ForceArray" => true})
-              transfer_uri=self.class.get_fasp_uri_from_entry(package_entry)
-              transfer_spec=Fasp::Uri.new(transfer_uri).transfer_spec
-              # NOTE: only external users have token in faspe: link !
-              if !transfer_spec.has_key?('token')
-                sanitized=transfer_uri.gsub('&','&amp;')
-                xmlpayload='<?xml version="1.0" encoding="UTF-8"?><url-list xmlns="http://schemas.asperasoft.com/xml/url-list"><url href="'+sanitized+'"/></url-list>'
-                transfer_spec['token']=api_v3.call({:operation=>'POST',:subpath=>"issue-token?direction=down",:headers=>{'Accept'=>'text/plain','Content-Type'=>'application/vnd.aspera.url-list+xml'},:text_body_params=>xmlpayload})[:http].body
-              end
-              transfer_spec['direction']='receive'
               return Main.instance.start_transfer_wait_result(transfer_spec,{:src=>:node_gen3})
             end
           when :source
