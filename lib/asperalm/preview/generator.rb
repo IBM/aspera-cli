@@ -385,6 +385,7 @@ module Asperalm
         'mvg' => :image,
         'mw' => :office,
         'mwd' => :office,
+        'mxf' => :video,
         'nef' => :image,
         'numbers' => :office,
         'orf' => :image,
