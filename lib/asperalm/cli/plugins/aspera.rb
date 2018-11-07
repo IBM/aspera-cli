@@ -4,13 +4,14 @@ require 'asperalm/cli/plugin'
 require 'asperalm/files_api'
 require 'securerandom'
 require 'singleton'
+require 'resolv'
 
 module Asperalm
   module Cli
     module Plugins
       class Aspera < Plugin
         include Singleton
-        def action_list; [ :packages, :files, :faspexgw, :admin, :user, :organization, :workspace];end
+        def action_list; [ :apiinfo, :packages, :files, :faspexgw, :admin, :user, :organization, :workspace];end
 
         def declare_options
           @ats=Ats.instance
@@ -268,6 +269,11 @@ module Asperalm
           Log.log.info("current workspace is "+@workspace_name.red)
 
           case command
+          when :apiinfo
+            api_info={}
+            num=1
+            Resolv::DNS.open{|dns|dns.each_address('api.ibmaspera.com'){|a| api_info["api.#{num}"]=a;num+=1}}
+            return {:type=>:single_object,:data=>api_info}
           when :workspace # show current workspace parameters
             return { :type=>:single_object, :data =>@workspace_data }
           when :organization
@@ -451,7 +457,7 @@ module Asperalm
                 end
               when :do
                 res_data=@api_files_admn.read(resource_instance_path)[:data]
-                  # mandatory secret
+                # mandatory secret
                 Main.instance.options.get_option(:secret,:mandatory)
                 @api_files_admn.secrets[res_data['id']]=@ak_secret
                 api_node=@api_files_admn.get_files_node_api(res_data,nil)
