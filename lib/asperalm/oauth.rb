@@ -48,15 +48,15 @@ module Asperalm
     end
 
     # prefix of REST parameters used for oauth
-    PARAM_PREFIX='oauth_'
+    @@PARAM_PREFIX='oauth_'
 
     def initialize(rest_params)
       Log.log.debug "auth=#{rest_params}"
       # just keep keys starting with :oauth_, and remove this prefix
       @params=rest_params.keys.
       map{|k|k.to_s}.
-      select{|k|k.start_with?(PARAM_PREFIX)}.
-      inject({}){|h,k|h[k[PARAM_PREFIX.length..-1].to_sym]=rest_params[k.to_sym];h}
+      select{|k|k.start_with?(@@PARAM_PREFIX)}.
+      inject({}){|h,k|h[k[@@PARAM_PREFIX.length..-1].to_sym]=rest_params[k.to_sym];h}
       @api=Rest.new({
         :base_url       => @params[:base_url],
         :auth_type      => :basic,
