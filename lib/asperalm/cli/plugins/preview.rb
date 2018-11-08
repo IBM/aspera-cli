@@ -2,6 +2,7 @@ require 'asperalm/cli/basic_auth_plugin'
 require 'asperalm/preview/generator'
 require 'asperalm/preview/options'
 require 'asperalm/preview/utils'
+require 'asperalm/persistency_file'
 require 'date'
 require 'singleton'
 
@@ -24,7 +25,6 @@ module Asperalm
 
         attr_accessor :option_overwrite
         attr_accessor :option_previews_folder
-        attr_accessor :option_iteration_file_filepath
         attr_accessor :option_folder_reset_cache
         attr_accessor :option_skip_folders
         attr_accessor :option_temp_folder
@@ -52,9 +52,9 @@ module Asperalm
 
         def initialize
           super()
-          @option_iteration_file_filepath=nil
           @skip_types=[]
           @default_transfer_spec=nil
+          @persistency_file=PersistencyFile.new('preview_iteration',Cli::Plugins::Config.instance.config_folder)
         end
 
         alias super_declare_options declare_options
@@ -65,7 +65,6 @@ module Asperalm
           Main.instance.options.set_obj_attr(:skip_types,self,:option_skip_types)
           Main.instance.options.set_obj_attr(:overwrite,self,:option_overwrite,:mtime)
           Main.instance.options.set_obj_attr(:previews_folder,self,:option_previews_folder,'previews')
-          Main.instance.options.set_obj_attr(:iteration_file,self,:option_iteration_file_filepath,nil)
           Main.instance.options.set_obj_attr(:folder_reset_cache,self,:option_folder_reset_cache,:no)
           Main.instance.options.set_obj_attr(:temp_folder,self,:option_temp_folder,"/tmp/aspera.previews")
           Main.instance.options.set_obj_attr(:skip_folders,self,:option_skip_folders,[])
@@ -133,7 +132,8 @@ module Asperalm
           }
           # and optionally by iteration token
           begin
-            events_filter['iteration_token']=File.read(@option_iteration_file_filepath) unless @option_iteration_file_filepath.nil?
+            events_filter['iteration_token']=@persistency_file.read_from_file
+            events_filter.delete('iteration_token') if events_filter['iteration_token'].nil?
           rescue
           end
           events=@api_node.read("events",args)[:data]
@@ -151,9 +151,7 @@ module Asperalm
             scan_folder_files(folder_entry)
           end
           # write next iteration value if needed/possible
-          unless @option_iteration_file_filepath.nil? or events.last['id'].nil?
-            File.write(@option_iteration_file_filepath,events.last['id'].to_s)
-          end
+          @persistency_file.write_to_file(events.last['id'].to_s)
         end
 
         # requests recent events on node api and process newly modified folders
@@ -165,7 +163,8 @@ module Asperalm
           }
           # and optionally by iteration token
           begin
-            events_filter['iteration_token']=File.read(@option_iteration_file_filepath) unless @option_iteration_file_filepath.nil?
+            events_filter['iteration_token']=@persistency_file.read_from_file
+            events_filter.delete('iteration_token') if events_filter['iteration_token'].nil?
           rescue
           end
           events=@api_node.read("events",events_filter)[:data]
@@ -180,9 +179,7 @@ module Asperalm
             generate_preview(file_entry)
           end
           # write new iteration file
-          last_processed_iteration=events.last['id']
-          Log.log.debug("write #{@option_iteration_file_filepath} - #{last_processed_iteration} (previous: #{events_filter['iteration_token']})")
-          File.write(@option_iteration_file_filepath,last_processed_iteration.to_s) unless @option_iteration_file_filepath.nil? or last_processed_iteration.nil?
+          @persistency_file.write_to_file(events.last['id'].to_s)
         end
 
         def do_transfer(direction,folder_id,source_filename,destination=nil)
@@ -382,6 +379,10 @@ module Asperalm
             scan_folder_files({ 'id' => @access_key_self['root_file_id'], 'name' => '/', 'type' => 'folder', 'path' => '/' })
             return Main.result_status('scan finished')
           when :events
+            @persistency_file.set_unique(
+            Main.instance.options.get_option(:iteration_file,:optional),
+            [Main.instance.options.get_option(:username,:mandatory)],
+            Main.instance.options.get_option(:url,:mandatory))
             process_file_events
             return Main.result_status('events finished')
           when :folder
