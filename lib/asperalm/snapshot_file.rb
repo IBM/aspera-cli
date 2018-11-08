@@ -1,13 +1,18 @@
 require 'asperalm/cli/plugins/config'
-require 'json'
 
 module Asperalm
   # maintain a list of file_name_parts for packages that have already been downloaded
-  class SnapshotFile
+  class PersistencyFile
     @@FILE_FIELD_SEPARATOR='_'
     @@FILE_SUFFIX='.txt'
     @@WINDOWS_PROTECTED_CHAR=%r{[/:"<>\\\*\?]}
-    def initialize(prefix,file_identifiers,url=nil)
+    attr_accessor :filepath
+    def initialize(type)
+      @filepath=nil
+    end
+
+    # define a filepath in config folder from unique identifiers
+    def set_unique(prefix,file_identifiers,url=nil)
       file_name_parts=identifiers.clone
       file_name_parts.unshift(URI.parse(url).host) unless url.nil?
       file_name_parts.unshift(prefix)
@@ -19,15 +24,18 @@ module Asperalm
       Log.log.debug("snapshot path=#{@filepath}")
     end
 
-    def read_persistency
+    def read_from_file
+      raise "no file defined" if @filepath.nil?
       if File.exist?(@filepath)
-        return JSON.parse(File.read(@filepath))
+        return File.read(@filepath)
       end
-      return []
+      Log.log.debug("no persistency exists: #{@filepath}")
+      return nil
     end
 
-    def write_persistency(ids)
-      File.write(@filepath,JSON.pretty_generate(ids))
+    def write_to_file(data)
+      raise "no file defined" if @filepath.nil?
+      File.write(@filepath,data)
     end
   end
 end
