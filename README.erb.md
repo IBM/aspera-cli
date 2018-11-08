@@ -1809,6 +1809,8 @@ Gems, or remove your ed25519 key from your `.ssh` folder to solve the issue.
   * homogeneous transfer spec for node and local
   * preview persistency goes to unique file by default
   * catch mxf extension in preview as video
+  * Faspex: possibility to download all paclages by specifying id=ALL
+  * Faspex: to come: cargo-like function to download only new packages with id=NEW
 
 * version 0.9.6
 
