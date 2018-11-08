@@ -120,6 +120,7 @@ module Asperalm
               return {:type=>:object_list,:data=>self.mailbox_entries,:fields=>[PACKAGE_MATCH_FIELD,'title','items'], :textify => lambda { |table_data| Faspex.textify_package_list(table_data)} }
             when :recv
               delivid=Main.instance.options.get_option(:id,:mandatory)
+              mailbox=Main.instance.options.get_option(:box,:mandatory).to_s
               uris_to_download=nil
               case delivid
               when @@VAL_ALL
@@ -128,13 +129,12 @@ module Asperalm
                 raise "TODO"
               else
                 # I dont know which delivery id is the right one if package was receive by group
-                entry_xml=api_v3.call({:operation=>'GET',:subpath=>"#{mailbox}/#{package_id}",:headers=>{'Accept'=>'application/xml'}})[:http].body
-                uris_to_download=[delivid]
+                entry_xml=api_v3.call({:operation=>'GET',:subpath=>"#{mailbox}/#{delivid}",:headers=>{'Accept'=>'application/xml'}})[:http].body
                 package_entry=XmlSimple.xml_in(entry_xml, {"ForceArray" => true})
                 transfer_uri=self.class.get_fasp_uri_from_entry(package_entry)
+                uris_to_download=[transfer_uri]
               end
               Log.dump(:uris_to_download,uris_to_download)
-              mailbox=Main.instance.options.get_option(:box,:mandatory).to_s
               last_status=Main.result_status('no package')
               uris_to_download.each do |transfer_uri|
                 transfer_spec=Fasp::Uri.new(transfer_uri).transfer_spec
