@@ -1804,6 +1804,12 @@ Gems, or remove your ed25519 key from your `.ssh` folder to solve the issue.
 
 # Release Notes
 
+* version 0.9.7
+
+  * homogeneous transfer spec for node and local
+  * preview persistency goes to unique file by default
+  * catch mxf extension in preview as video
+
 * version 0.9.6
 
   * Breaking change: `@param:`is now `@preset:` and is generic
