@@ -52,6 +52,9 @@ module Asperalm
           when :connect
             @agent=Fasp::Connect.instance
           when :node
+            @agent=Fasp::Node.instance
+            # way for code to setup alternate node api in avance
+            break unless @agent.node_api.nil?
             # support: @param:<name>
             # support extended values
             node_config=Main.instance.options.get_option(:transfer_node,:optional)
@@ -69,8 +72,7 @@ module Asperalm
               raise CliBadArgument,"missing parameter [#{param}] in node specification: #{node_config}" if !node_config.has_key?(param.to_s)
               sym_config[param]=node_config[param.to_s]
             end
-            @agent=Fasp::Node.instance
-            Fasp::Node.instance.node_api=Rest.new({:base_url=>sym_config[:url],:auth_type=>:basic,:basic_username=>sym_config[:username], :basic_password=>sym_config[:password]})
+            @agent.node_api=Rest.new({:base_url=>sym_config[:url],:auth_type=>:basic,:basic_username=>sym_config[:username], :basic_password=>sym_config[:password]})
           else raise "ERROR"
           end
           @agent.add_listener(Listener::Logger.new)
