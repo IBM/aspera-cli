@@ -1,6 +1,7 @@
 require 'asperalm/cli/basic_auth_plugin'
 require 'asperalm/cli/plugins/node'
 require 'asperalm/cli/plugins/config'
+require 'asperalm/persistency_file'
 require 'asperalm/cli/extended_value'
 require 'asperalm/open_application'
 require 'asperalm/fasp/uri'
@@ -15,7 +16,6 @@ module Asperalm
         @@KEY_NODE='node'
         @@KEY_PATH='path'
         @@VAL_ALL='ALL'
-        @@VAL_NEW='NEW'
         alias super_declare_options declare_options
         def declare_options
           super_declare_options
@@ -23,7 +23,9 @@ module Asperalm
           Main.instance.options.add_opt_simple(:source_name,"create package from remote source (by name)")
           Main.instance.options.add_opt_simple(:storage,"Faspex local storage definition")
           Main.instance.options.add_opt_list(:box,[:inbox,:sent,:archive],"package box")
+          Main.instance.options.add_opt_boolean(:once_only,"keep track of already downloaded packages")
           Main.instance.options.set_option(:box,:inbox)
+          Main.instance.options.set_option(:once_only,:false)
         end
 
         # extract elements from anonymous faspex link
@@ -83,7 +85,6 @@ module Asperalm
               :base_url             => faspex_api_base+'/api',
               :auth_type            => :oauth2,
               :oauth_base_url       => faspex_api_base+'/auth/oauth2',
-              :oauth_path_token     => 'token',
               :oauth_type           => :header_userpass,
               :oauth_user_name      => Main.instance.options.get_option(:username,:mandatory),
               :oauth_user_pass      => Main.instance.options.get_option(:password,:mandatory),
@@ -98,15 +99,15 @@ module Asperalm
         # we match recv command on atom feed on this field
         PACKAGE_MATCH_FIELD='package_id'
 
-        def mailbox_entries
+        def mailbox_all_entries
           mailbox=Main.instance.options.get_option(:box,:mandatory).to_s
           all_inbox_xml=api_v3.call({:operation=>'GET',:subpath=>"#{mailbox}.atom",:headers=>{'Accept'=>'application/xml'}})[:http].body
           all_inbox_data=XmlSimple.xml_in(all_inbox_xml, {"ForceArray" => true})
           Log.dump(:all_inbox_data,all_inbox_data)
           result=all_inbox_data.has_key?('entry') ? all_inbox_data['entry'] : []
-            result.each do |e|
-              e[PACKAGE_MATCH_FIELD]=e['to'].first['recipient_delivery_id'].first
-            end
+          result.each do |e|
+            e[PACKAGE_MATCH_FIELD]=e['to'].first['recipient_delivery_id'].first
+          end
           return result
         end
 
@@ -117,16 +118,29 @@ module Asperalm
             command_pkg=Main.instance.options.get_next_command([ :send, :recv, :list ])
             case command_pkg
             when :list
-              return {:type=>:object_list,:data=>self.mailbox_entries,:fields=>[PACKAGE_MATCH_FIELD,'title','items'], :textify => lambda { |table_data| Faspex.textify_package_list(table_data)} }
+              return {:type=>:object_list,:data=>self.mailbox_all_entries,:fields=>[PACKAGE_MATCH_FIELD,'title','items'], :textify => lambda { |table_data| Faspex.textify_package_list(table_data)} }
             when :recv
               delivid=Main.instance.options.get_option(:id,:mandatory)
               mailbox=Main.instance.options.get_option(:box,:mandatory).to_s
+              once_only=Main.instance.options.get_option(:once_only,:mandatory)
               uris_to_download=nil
+              skip_ids=[]
+              ids_to_download=[]
               case delivid
               when @@VAL_ALL
-                uris_to_download=self.mailbox_entries.map{|e|self.class.get_fasp_uri_from_entry(e)}
-              when @@VAL_NEW
-                raise "TODO"
+                if once_only
+                  persistency_file=PersistencyFile.new('faspex_recv',Cli::Plugins::Config.instance.config_folder)
+                  persistency_file.set_unique(
+                  nil,
+                  [Main.instance.options.get_option(:username,:mandatory),Main.instance.options.get_option(:box,:mandatory).to_s],
+                  Main.instance.options.get_option(:url,:mandatory))
+                  data=persistency_file.read_from_file
+                  unless data.nil?
+                    skip_ids=JSON.parse(data)
+                  end
+                end
+                # todo
+                uris_to_download=self.mailbox_all_entries.select{|e| !skip_ids.include?(e[PACKAGE_MATCH_FIELD])}.map{|e|ids_to_download.push(e[PACKAGE_MATCH_FIELD]);self.class.get_fasp_uri_from_entry(e)}
               else
                 # I dont know which delivery id is the right one if package was receive by group
                 entry_xml=api_v3.call({:operation=>'GET',:subpath=>"#{mailbox}/#{delivid}",:headers=>{'Accept'=>'application/xml'}})[:http].body
@@ -146,6 +160,11 @@ module Asperalm
                 end
                 transfer_spec['direction']='receive'
                 last_status=Main.instance.start_transfer_wait_result(transfer_spec,{:src=>:node_gen3})
+                # shall be same order
+                skip_ids.push(ids_to_download.shift)
+              end
+              if once_only and !skip_ids.empty?
+                persistency_file.write_to_file(JSON.generate(skip_ids))
               end
               return last_status
             when :send
