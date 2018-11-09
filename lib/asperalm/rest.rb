@@ -112,7 +112,7 @@ module Asperalm
     # :basic_username   [:basic]
     # :basic_password   [:basic]
     # :auth_url_creds   [:url]
-    # :oauth_*          [:oauth2]
+    # :oauth_*          [:oauth2] see Oauth class
     def initialize(a_rest_params)
       raise "ERROR: expecting Hash" unless a_rest_params.is_a?(Hash)
       raise "ERROR: expecting base_url" unless a_rest_params[:base_url].is_a?(String)

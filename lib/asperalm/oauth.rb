@@ -50,6 +50,22 @@ module Asperalm
     # prefix of REST parameters used for oauth
     @@PARAM_PREFIX='oauth_'
 
+    # for supported parameters, look in the code for @params
+    # parameters are provided all with oauth_ prefix :
+    # :base_url
+    # :client_id
+    # :client_secret
+    # :redirect_uri
+    # :jwt_audience
+    # :jwt_private_key_obj
+    # :jwt_subject
+    # :path_authorize
+    # :path_token (default: 'token')
+    # :scope
+    # :type
+    # :url_token
+    # :user_name
+    # :user_pass
     def initialize(rest_params)
       Log.log.debug "auth=#{rest_params}"
       # just keep keys starting with :oauth_, and remove this prefix
@@ -57,6 +73,9 @@ module Asperalm
       map{|k|k.to_s}.
       select{|k|k.start_with?(@@PARAM_PREFIX)}.
       inject({}){|h,k|h[k[@@PARAM_PREFIX.length..-1].to_sym]=rest_params[k.to_sym];h}
+      # default values
+      @params[:path_token]||='token'
+      @params[:path_authorize]||='authorize'
       @api=Rest.new({
         :base_url       => @params[:base_url],
         :auth_type      => :basic,
@@ -204,7 +223,7 @@ module Asperalm
         when :web
           check_code=SecureRandom.uuid
           login_page_url=Rest.build_uri(
-          "#{@params[:base_url]}/#{@params[:path_login]}",
+          "#{@params[:base_url]}/#{@params[:path_authorize]}",
           client_id_and_scope.merge({
             :response_type => 'code',
             :redirect_uri  => @params[:redirect_uri],
