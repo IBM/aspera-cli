@@ -54,25 +54,26 @@ module Asperalm
           when :node
             @agent=Fasp::Node.instance
             # way for code to setup alternate node api in avance
-            break unless @agent.node_api.nil?
-            # support: @param:<name>
-            # support extended values
-            node_config=Main.instance.options.get_option(:transfer_node,:optional)
-            # of not specified, use default node
-            if node_config.nil?
-              param_set_name=Plugins::Config.instance.get_plugin_default_config_name(:node)
-              raise CliBadArgument,"No default node configured, Please specify --transfer-node" if param_set_name.nil?
-              node_config=Plugins::Config.instance.preset_by_name(param_set_name)
+            if @agent.node_api.nil?
+              # support: @param:<name>
+              # support extended values
+              node_config=Main.instance.options.get_option(:transfer_node,:optional)
+              # of not specified, use default node
+              if node_config.nil?
+                param_set_name=Plugins::Config.instance.get_plugin_default_config_name(:node)
+                raise CliBadArgument,"No default node configured, Please specify --transfer-node" if param_set_name.nil?
+                node_config=Plugins::Config.instance.preset_by_name(param_set_name)
+              end
+              Log.log.debug("node=#{node_config}")
+              raise CliBadArgument,"the node configuration shall be a hash, use either @json:<json> or @preset:<parameter set name>" if !node_config.is_a?(Hash)
+              # now check there are required parameters
+              sym_config={}
+              [:url,:username,:password].each do |param|
+                raise CliBadArgument,"missing parameter [#{param}] in node specification: #{node_config}" if !node_config.has_key?(param.to_s)
+                sym_config[param]=node_config[param.to_s]
+              end
+              @agent.node_api=Rest.new({:base_url=>sym_config[:url],:auth_type=>:basic,:basic_username=>sym_config[:username], :basic_password=>sym_config[:password]})
             end
-            Log.log.debug("node=#{node_config}")
-            raise CliBadArgument,"the node configuration shall be a hash, use either @json:<json> or @preset:<parameter set name>" if !node_config.is_a?(Hash)
-            # now check there are required parameters
-            sym_config={}
-            [:url,:username,:password].each do |param|
-              raise CliBadArgument,"missing parameter [#{param}] in node specification: #{node_config}" if !node_config.has_key?(param.to_s)
-              sym_config[param]=node_config[param.to_s]
-            end
-            @agent.node_api=Rest.new({:base_url=>sym_config[:url],:auth_type=>:basic,:basic_username=>sym_config[:username], :basic_password=>sym_config[:password]})
           else raise "ERROR"
           end
           @agent.add_listener(Listener::Logger.new)
