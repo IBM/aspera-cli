@@ -11,7 +11,7 @@ module Asperalm
         super
       end
       public
-      attr_writer :node_api
+      attr_accessor :node_api
 
       def start_transfer(transfer_spec,options=nil)
         #transfer_spec.keys.select{|i|i.start_with?('EX_')}.each{|i|transfer_spec.delete(i)}
