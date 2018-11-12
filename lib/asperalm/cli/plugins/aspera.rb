@@ -35,6 +35,7 @@ module Asperalm
           Main.instance.options.add_opt_simple(:link,"link to shared resource")
           Main.instance.options.add_opt_simple(:public_token,"token value of public link")
           Main.instance.options.add_opt_simple(:new_user_option,"new user creation option")
+          Main.instance.options.add_opt_simple(:from_folder,"share to share source folder")
           Main.instance.options.set_option(:download_mode,:fasp)
           Main.instance.options.set_option(:bulk,:no)
           Main.instance.options.set_option(:redirect_uri,'http://localhost:12345')
@@ -43,7 +44,7 @@ module Asperalm
         end
 
         def self.execute_node_gen4_action(api_files,home_node_id,home_file_id)
-          command_repo=Main.instance.options.get_next_command([ :access_key, :browse, :mkdir, :rename, :delete, :upload, :download, :node, :file  ])
+          command_repo=Main.instance.options.get_next_command([ :access_key, :browse, :mkdir, :rename, :delete, :upload, :download, :transfer, :node, :file  ])
           case command_repo
           when :access_key
             node_info,file_id = api_files.find_nodeinfo_and_fileid(home_node_id,home_file_id)
@@ -76,6 +77,22 @@ module Asperalm
             node_api=api_files.get_files_node_api(node_info,FilesApi::SCOPE_NODE_USER)
             result=node_api.delete("files/#{file_id}")[:data]
             return Main.result_status("deleted: #{thepath}")
+          when :transfer
+            from_folder=Main.instance.options.get_option(:from_folder,:mandatory)
+            node_client_info,node_client_file_id = api_files.find_nodeinfo_and_fileid(home_node_id,home_file_id,from_folder)
+            node_client_api=api_files.get_files_node_api(node_client_info,FilesApi::SCOPE_NODE_USER)
+            node_server_info,node_server_file_id = api_files.find_nodeinfo_and_fileid(home_node_id,home_file_id,Main.instance.destination_folder('send'))
+            # force node as agent
+            Main.instance.options.set_option(:transfer,:node)
+            # force node api in agent
+            Fasp::Node.instance.node_api=node_client_api
+            # additional node to node TS info
+            add_ts={
+              'remote_access_key'   => node_server_info['access_key'],
+              'destination_root_id' => node_server_file_id,
+              'source_root_id'      => node_client_file_id
+            }
+            return Main.instance.start_transfer_wait_result(*api_files.tr_spec('files','send',node_client_info,node_client_file_id,add_ts))
           when :upload
             node_info,file_id = api_files.find_nodeinfo_and_fileid(home_node_id,home_file_id,Main.instance.destination_folder('send'))
             return Main.instance.start_transfer_wait_result(*api_files.tr_spec('files','send',node_info,file_id,{}))
