@@ -136,7 +136,7 @@ module Asperalm
         Log.log.debug "folder_contents: #{folder_contents}"
         matching_folders = folder_contents[:data].select { |i| i['name'].eql?(current_element_name)}
         #Log.log.debug "matching_folders: #{matching_folders}"
-        raise CliBadArgument, "no such folder: #{current_element_name} in #{folder_contents[:data].map { |i| i['name']}}" if matching_folders.empty?
+        raise "no such folder: #{current_element_name} in #{folder_contents[:data].map { |i| i['name']}}" if matching_folders.empty?
         current_file_info = matching_folders.first
         # process type of file
         case current_file_info['type']
@@ -144,7 +144,7 @@ module Asperalm
           current_file_id=current_file_info["id"]
           # a file shall be terminal
           if !current_path_elements.empty? then
-            raise CliBadArgument, "#{current_element_name} is a file, expecting folder to find: #{current_path_elements}"
+            raise "#{current_element_name} is a file, expecting folder to find: #{current_path_elements}"
           end
         when 'link'
           current_node_info=self.read("nodes/#{current_file_info['target_node_id']}")[:data]
