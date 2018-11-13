@@ -155,11 +155,20 @@ module Asperalm
         transfer_spec['authentication']='token' if transfer_spec.has_key?('token')
         Log.log.debug("mgr is a #{@agent.class}")
         @agent.start_transfer(transfer_spec,options)
-        return Main.result_nothing
+        return @agent.wait_for_transfers_completion
       end
 
-      def shutdown(p)
-        @agent.shutdown(p) unless @agent.nil?
+      def shutdown
+        @agent.shutdown unless @agent.nil?
+      end
+
+      def wait_for_transfers_completion
+        @agent.wait_for_transfers_completion unless @agent.nil?
+      end
+
+      def exception_on_error(list)
+        return if list.nil?
+        raise "at least one transfer failed" unless list.select{|i|!i.eql?(:success)}.empty?
       end
     end
   end
