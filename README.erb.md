@@ -1804,6 +1804,11 @@ Gems, or remove your ed25519 key from your `.ssh` folder to solve the issue.
 
 # Release Notes
 
+* version 0.9.8
+
+  * Faspex: use option once_only set to yes to enable cargo like function. id=NEW deprecated.
+  * AoC: share to share transfer with command "transfer"
+
 * version 0.9.7
 
   * homogeneous transfer spec for node and local
