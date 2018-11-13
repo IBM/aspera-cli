@@ -232,10 +232,14 @@ module Asperalm
         Log.log.debug "result: code=#{result[:http].code}"
         raise RestCallError.new(req,result[:http]) unless result[:http].code.start_with?('2')
         if call_data.has_key?(:headers) and
-        call_data[:headers].has_key?('Accept') and
-        call_data[:headers]['Accept'].eql?('application/json') then
+        call_data[:headers].has_key?('Accept') then
           Log.log.debug "result: body=#{result[:http].body}"
-          result[:data]=JSON.parse(result[:http].body) if !result[:http].body.nil?
+          case call_data[:headers]['Accept']
+          when 'application/json'
+            result[:data]=JSON.parse(result[:http].body) if !result[:http].body.nil?
+          when 'text/plain'
+            result[:data]=result[:http].body
+          end
         end
       rescue RestCallError => e
         # not authorized: oauth token expired
