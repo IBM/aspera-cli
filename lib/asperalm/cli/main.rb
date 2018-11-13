@@ -456,8 +456,17 @@ module Asperalm
 
       public
 
-      def start_transfer(transfer_spec,options)
-        return TransferAgent.instance.start(transfer_spec,options)
+      # if return_result, @return CLI result
+      # else, return list of statuses
+      # in any case, wait for completion of all jobs
+      def start_transfer(transfer_spec,options,return_result=true)
+        # TODO: if not one shot, then wait for status
+        statuses=TransferAgent.instance.start(transfer_spec,options)
+        if return_result
+          TransferAgent.instance.exception_on_error(statuses)
+          return self.class.result_nothing
+        end
+        return statuses
       end
 
       def destination_folder(direction)
@@ -548,8 +557,8 @@ module Asperalm
           end
           # execute and display
           display_results(command_plugin.execute_action)
-          # wait for session termination
-          TransferAgent.instance.shutdown(true)
+          # finish
+          TransferAgent.instance.shutdown
           @opt_mgr.fail_if_unprocessed
         rescue CliBadArgument => e;          exception_info=[e,'Argument',:usage]
         rescue CliNoSuchId => e;             exception_info=[e,'Identifier']
