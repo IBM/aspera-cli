@@ -22,21 +22,19 @@ module Asperalm
 
         # one can either add extnsion ".json" or add url parameter: format=json
         # id can be a parameter id=x, or at the end of url, for workflows: work_order[workflow_id]=wf_id
-        def call_API(endpoint,id=nil,url_params=nil,format=:json)
+        def call_API(endpoint,id=nil,url_params={:format=>:json},accept=nil)
           # calls are GET
           call_definition={:operation=>'GET',:subpath=>endpoint}
           # specify id if necessary
-          call_definition[:subpath]=call_definition[:subpath]+'/'+id if !id.nil?
-          # set format if necessary
-          if !format.nil?
-            url_params={} if url_params.nil?
-            url_params['format']=format
-            # needs a patch to work ...
-            #call_definition[:subpath]=call_definition[:subpath]+'.'+format.to_s
-            call_definition[:headers]={'Accept'=>'application/'+format.to_s}
+          call_definition[:subpath]=call_definition[:subpath]+'/'+id unless id.nil?
+          unless url_params.nil?
+            if url_params.has_key?(:format)
+              call_definition[:headers]={'Accept'=>'application/'+url_params[:format].to_s}
+            end
+            call_definition[:headers]={'Accept'=>accept} unless accept.nil?
+            # add params if necessary
+            call_definition[:url_params]=url_params
           end
-          # add params if necessary
-          call_definition[:url_params]=url_params if !url_params.nil?
           return @api_orch.call(call_definition)
         end
 
@@ -58,7 +56,7 @@ module Asperalm
           command1=Main.instance.options.get_next_command(action_list)
           case command1
           when :info
-            result=call_API("logon",nil,nil,nil)
+            result=call_API('logon',nil,nil)
             version='unknown'
             if m=result[:http].body.match(/\(v([0-9.-]+)\)/)
               version=m[1]
@@ -66,11 +64,11 @@ module Asperalm
             return {:type=>:single_object,:data=>{'version'=>version}}
           when :processes
             # TODO: json format is not respected in AO
-            result=call_API("api/processes_status",nil,nil,:xml)
+            result=call_API('api/processes_status',nil,{:format=>:xml})
             res_s=XmlSimple.xml_in(result[:http].body, {"ForceArray" => true})
             return {:type=>:object_list,:data=>res_s["process"]}
           when :plugins
-            result=call_API("api/plugin_version")[:data]
+            result=call_API('api/plugin_version')[:data]
             return {:type=>:object_list,:data=>result['Plugin']}
           when :workflow
             command=Main.instance.options.get_next_command([:list, :status, :inputs, :details, :start])
@@ -79,46 +77,50 @@ module Asperalm
             end
             case command
             when :status
-              result=call_API("api/workflows_status")[:data]
+              result=call_API('api/workflows_status')[:data]
               return {:type=>:object_list,:data=>result['workflows']['workflow']}
             when :list
-              result=call_API("workflow_reporter/workflows_list/0")[:data]
+              result=call_API('workflow_reporter/workflows_list/0')[:data]
               return {:type=>:object_list,:data=>result['workflows']['workflow'],:fields=>["id","portable_id","name","published_status","published_revision_id","latest_revision_id","last_modification"]}
             when :details
-              result=call_API("api/workflow_details",wf_id)[:data]
+              result=call_API('api/workflow_details',wf_id)[:data]
               return {:type=>:object_list,:data=>result['workflows']['workflow']['statuses']}
             when :inputs
-              result=call_API("api/workflow_inputs_spec",wf_id)[:data]
+              result=call_API('api/workflow_inputs_spec',wf_id)[:data]
               return {:type=>:single_object,:data=>result['workflow_inputs_spec']}
             when :start
               result={
                 :type=>:single_object,
                 :data=>nil
               }
-              call_params={}
+              call_params={:format=>:json}
+              override_accept=nil
               # set external parameters if any
               Main.instance.options.get_option(:params,:mandatory).each do |name,value|
                 call_params["external_parameters[#{name}]"] = value
               end
               # synchronous call ?
-              call_params["synchronous"]=true if Main.instance.options.get_option(:synchronous,:mandatory)
+              call_params['synchronous']=true if Main.instance.options.get_option(:synchronous,:mandatory)
               # expected result for synchro call ?
               expected=Main.instance.options.get_option(:result,:optional)
-              if !expected.nil?
+              unless expected.nil?
                 result[:type] = :status
                 fields=expected.split(/:/)
                 raise "Expects: work_step:result_name format, but got #{expected}" if fields.length != 2
-                call_params["explicit_output_step"]=fields[0]
-                call_params["explicit_output_variable"]=fields[1]
+                call_params['explicit_output_step']=fields[0]
+                call_params['explicit_output_variable']=fields[1]
                 # implicitely, call is synchronous
-                call_params["synchronous"]=true
+                call_params['synchronous']=true
               end
-              result[:data]=call_API("api/initiate",wf_id,call_params)[:data]
+              if call_params['synchronous']
+                result[:type]=:text
+                override_accept='text/plain'
+              end
+              result[:data]=call_API('api/initiate',wf_id,call_params,override_accept)[:data]
               return result
-            end
-          else
-            raise "ERROR, unknown command: [#{command}]"
-          end
+            end # wf command
+          else raise "ERROR, unknown command: [#{command}]"
+          end # case command
         end # execute_action
       end # Orchestrator
     end # Plugins
