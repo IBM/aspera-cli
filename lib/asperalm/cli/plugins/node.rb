@@ -141,13 +141,13 @@ module Asperalm
             transfer_spec=send_result[:data]['transfer_specs'].first['transfer_spec']
             # delete this part, as the returned value contains only destination, and note sources
             transfer_spec.delete('paths')
-            return Main.instance.start_transfer_wait_result(transfer_spec,{:src=>:node_gen3})
+            return Main.instance.start_transfer(transfer_spec,{:src=>:node_gen3})
           when :download
-            send_result=api_node.create('files/download_setup',{ :transfer_requests => [ { :transfer_request => { :paths => TransferAgent.instance.transfer_paths_from_options } } ] } )
+            send_result=api_node.create('files/download_setup',{ :transfer_requests => [ { :transfer_request => { :paths => Main.instance.ts_source_paths } } ] } )
             raise send_result[:data]['transfer_specs'][0]['error']['user_message'] if send_result[:data]['transfer_specs'][0].has_key?('error')
             raise "expecting one session exactly" if send_result[:data]['transfer_specs'].length != 1
             transfer_spec=send_result[:data]['transfer_specs'].first['transfer_spec']
-            return Main.instance.start_transfer_wait_result(transfer_spec,{:src=>:node_gen3})
+            return Main.instance.start_transfer(transfer_spec,{:src=>:node_gen3})
           end
         end
 

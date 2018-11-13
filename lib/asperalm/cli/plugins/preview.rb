@@ -204,7 +204,7 @@ module Asperalm
             'node'               => { 'access_key' => @access_key_self['id'], 'file_id' => folder_id }}}
           })
           tspec['destination_root']=destination unless destination.nil?
-          Main.instance.start_transfer_wait_result(tspec,{:src=>:node_gen4})
+          Main.instance.start_transfer(tspec,{:src=>:node_gen4})
         end
 
         def get_infos_local(gen_infos,entry,local_entry_preview_dir)

@@ -43,6 +43,10 @@ module Asperalm
           Main.instance.options.set_option(:new_user_option,{'package_contact'=>true})
         end
 
+        def self.start_transfer(api_files,app,direction,node_info,file_id,ts_add={})
+          return Main.instance.start_transfer(*api_files.tr_spec(app,direction,node_info,file_id,ts_add))
+        end
+
         def self.execute_node_gen4_action(api_files,home_node_id,home_file_id)
           command_repo=Main.instance.options.get_next_command([ :access_key, :browse, :mkdir, :rename, :delete, :upload, :download, :transfer, :node, :file  ])
           case command_repo
@@ -78,10 +82,11 @@ module Asperalm
             result=node_api.delete("files/#{file_id}")[:data]
             return Main.result_status("deleted: #{thepath}")
           when :transfer
+            client_action='send'
             from_folder=Main.instance.options.get_option(:from_folder,:mandatory)
+            node_server_info,node_server_file_id = api_files.find_nodeinfo_and_fileid(home_node_id,home_file_id,Main.instance.destination_folder(client_action))
             node_client_info,node_client_file_id = api_files.find_nodeinfo_and_fileid(home_node_id,home_file_id,from_folder)
             node_client_api=api_files.get_files_node_api(node_client_info,FilesApi::SCOPE_NODE_USER)
-            node_server_info,node_server_file_id = api_files.find_nodeinfo_and_fileid(home_node_id,home_file_id,Main.instance.destination_folder('send'))
             # force node as agent
             Main.instance.options.set_option(:transfer,:node)
             # force node api in agent
@@ -92,12 +97,12 @@ module Asperalm
               'destination_root_id' => node_server_file_id,
               'source_root_id'      => node_client_file_id
             }
-            return Main.instance.start_transfer_wait_result(*api_files.tr_spec('files','send',node_client_info,node_client_file_id,add_ts))
+            return start_transfer(api_files,'files',client_action,node_client_info,node_client_file_id,add_ts)
           when :upload
             node_info,file_id = api_files.find_nodeinfo_and_fileid(home_node_id,home_file_id,Main.instance.destination_folder('send'))
-            return Main.instance.start_transfer_wait_result(*api_files.tr_spec('files','send',node_info,file_id,{}))
+            return start_transfer(api_files,'files','send',node_info,file_id)
           when :download
-            source_paths=TransferAgent.instance.transfer_paths_from_options
+            source_paths=Main.instance.ts_source_paths
             source_folder=source_paths.shift['source']
             if source_paths.empty?
               source_folder=source_folder.split(FilesApi::PATH_SEPARATOR)
@@ -108,8 +113,8 @@ module Asperalm
             when :fasp
               node_info,file_id = api_files.find_nodeinfo_and_fileid(home_node_id,home_file_id,source_folder)
               # override paths with just filename
-              return Main.instance.start_transfer_wait_result(
-              *api_files.tr_spec('files','receive',node_info,file_id,{'paths'=>source_paths}))
+              add_ts={'paths'=>source_paths}
+              return start_transfer(api_files,'files','receive',node_info,file_id,add_ts)
             when :node_http
               raise CliBadArgument,"one file at a time only in HTTP mode" if source_paths.length > 1
               file_name = source_paths.first['source']
@@ -324,7 +329,7 @@ module Asperalm
               package_creation['workspace_id']=@workspace_id
 
               # list of files to include in package
-              package_creation['file_names']=TransferAgent.instance.transfer_paths_from_options.map{|i|File.basename(i['source'])}
+              package_creation['file_names']=Main.instance.ts_source_paths.map{|i|File.basename(i['source'])}
 
               new_user_option=Main.instance.options.get_option(:new_user_option,:mandatory)
 
@@ -347,17 +352,19 @@ module Asperalm
 
               # tell Aspera what to expect in package: 1 transfer (can also be done after transfer)
               resp=@api_files_user.update("packages/#{the_package['id']}",{'sent'=>true,'transfers_expected'=>1})[:data]
-              return Main.instance.start_transfer_wait_result(*@api_files_user.tr_spec('packages','send',node_info,the_package['contents_file_id'],{
-                'tags'=>{'aspera'=>{'files'=>{'package_id'=>the_package['id'],'package_operation'=>'upload'}}},
-              }))
+              add_ts={
+                'tags'=>{'aspera'=>{'files'=>{'package_id'=>the_package['id'],'package_operation'=>'upload'}}}
+              }
+              return self.start_transfer(@api_files_user,'packages','send',node_info,the_package['contents_file_id'],add_ts)
             when :recv
               package_id=Main.instance.options.get_option(:id,:mandatory)
               the_package=@api_files_user.read("packages/#{package_id}")[:data]
               node_info=@api_files_user.read("nodes/#{the_package['node_id']}")[:data]
-              return Main.instance.start_transfer_wait_result(*@api_files_user.tr_spec('packages','receive',node_info,the_package['contents_file_id'],{
+              add_ts={
                 'tags'  => {'aspera'=>{'files'=>{'package_id'=>the_package['id'],'package_operation'=>'download'}}},
                 'paths' => [{'source'=>'.'}]
-              }))
+              }
+              return self.start_transfer(@api_files_user,'packages','receive',node_info,the_package['contents_file_id'],add_ts)
             when :show
               package_id=Main.instance.options.get_next_argument('package ID')
               the_package=@api_files_user.read("packages/#{package_id}")[:data]

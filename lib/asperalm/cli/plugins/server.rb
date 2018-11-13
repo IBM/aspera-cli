@@ -109,9 +109,9 @@ module Asperalm
               end
               return Main.result_status(result)
             when :upload
-              return Main.instance.start_transfer_wait_result(transfer_spec.merge('direction'=>'send'),{:src=>:direct})
+              return Main.instance.start_transfer(transfer_spec.merge('direction'=>'send'),{:src=>:direct})
             when :download
-              return Main.instance.start_transfer_wait_result(transfer_spec.merge('direction'=>'receive'),{:src=>:direct})
+              return Main.instance.start_transfer(transfer_spec.merge('direction'=>'receive'),{:src=>:direct})
             when *Asperalm::AsCmd.action_list
               args=Main.instance.options.get_next_argument('ascmd command arguments',:multiple,:optional)
               ascmd=Asperalm::AsCmd.new(shell_executor)

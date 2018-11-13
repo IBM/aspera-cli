@@ -159,7 +159,7 @@ module Asperalm
                   transfer_spec['token']=api_v3.call({:operation=>'POST',:subpath=>"issue-token?direction=down",:headers=>{'Accept'=>'text/plain','Content-Type'=>'application/vnd.aspera.url-list+xml'},:text_body_params=>xmlpayload})[:http].body
                 end
                 transfer_spec['direction']='receive'
-                last_status=Main.instance.start_transfer_wait_result(transfer_spec,{:src=>:node_gen3})
+                last_status=Main.instance.start_transfer(transfer_spec,{:src=>:node_gen3})
                 # shall be same order
                 skip_ids.push(ids_to_download.shift)
               end
@@ -172,7 +172,7 @@ module Asperalm
               raise CliBadArgument,"delivery_info must be hash, refer to doc" unless delivery_info.is_a?(Hash)
               delivery_info['sources']||=[{'paths'=>[]}]
               first_source=delivery_info['sources'].first
-              first_source['paths'].push(*TransferAgent.instance.transfer_paths_from_options.map{|i|i['source']})
+              first_source['paths'].push(*Main.instance.ts_source_paths.map{|i|i['source']})
               source_name=Main.instance.options.get_option(:source_name,:optional)
               if !source_name.nil?
                 source_list=api_v3.call({:operation=>'GET',:subpath=>"source_shares",:headers=>{'Accept'=>'application/json'}})[:data]['items']
@@ -192,7 +192,7 @@ module Asperalm
               transfer_spec=send_result['xfer_sessions'].first
               # use source from cmd line, this one nly contains destination (already in dest root)
               transfer_spec.delete('paths')
-              return Main.instance.start_transfer_wait_result(transfer_spec,{:src=>:node_gen3})
+              return Main.instance.start_transfer(transfer_spec,{:src=>:node_gen3})
             end
           when :source
             command_source=Main.instance.options.get_next_command([ :list, :id, :name ])
@@ -266,7 +266,7 @@ module Asperalm
             transfer_uri=self.class.get_fasp_uri_from_entry(package_entry)
             transfer_spec=Fasp::Uri.new(transfer_uri).transfer_spec
             transfer_spec['direction']='receive'
-            return Main.instance.start_transfer_wait_result(transfer_spec,{:src=>:node_gen3})
+            return Main.instance.start_transfer(transfer_spec,{:src=>:node_gen3})
           when :v4
             command=Main.instance.options.get_next_command([:dropbox, :dmembership, :workgroup,:wmembership,:user,:metadata_profile])
             case command

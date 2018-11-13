@@ -452,12 +452,16 @@ module Asperalm
 
       public
 
-      def start_transfer_wait_result(transfer_spec,options)
-        return TransferAgent.instance.start_transfer_wait_result(transfer_spec,options)
+      def start_transfer(transfer_spec,options)
+        return TransferAgent.instance.start(transfer_spec,options)
       end
 
       def destination_folder(direction)
         return TransferAgent.instance.destination_folder(direction)
+      end
+
+      def ts_source_paths
+        return TransferAgent.instance.ts_source_paths
       end
 
       def display_status(status)

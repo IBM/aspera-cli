@@ -99,9 +99,9 @@ module Asperalm
         return dest_folder
       end
 
-      # get list of {:source=>(mandatory), :destination=>(optional)}
-      def transfer_paths_from_options(override_with=nil)
-        return override_with unless override_with.nil?
+      # get paths suitable for transfer spec from command line
+      # @return {:source=>(mandatory), :destination=>(optional)}
+      def ts_source_paths
         return @transfer_paths unless @transfer_paths.nil?
         # start with lower priority
         @transfer_paths=@transfer_spec_cmdline['paths'] if @transfer_spec_cmdline.has_key?('paths')
@@ -119,7 +119,7 @@ module Asperalm
       # plugins shall use this method to start a transfer
       # @param: options[:src] specifies how destination_root is set (how transfer spec was generated)
       # and not the default one
-      def start_transfer_wait_result(transfer_spec,options)
+      def start(transfer_spec,options)
         raise "transfer_spec must be hash" unless transfer_spec.is_a?(Hash)
         raise "options must be hash" unless options.is_a?(Hash)
         # initialize transfert agent
@@ -148,7 +148,7 @@ module Asperalm
         options.delete(:src)
 
         #  update command line paths, unless destination already has one
-        @transfer_spec_cmdline['paths']=transfer_paths_from_options(transfer_spec['paths'])
+        @transfer_spec_cmdline['paths']=transfer_spec['paths'] || ts_source_paths
 
         transfer_spec.merge!(@transfer_spec_cmdline)
         # add bypass keys if there is a token, also prevents connect plugin to ask password
