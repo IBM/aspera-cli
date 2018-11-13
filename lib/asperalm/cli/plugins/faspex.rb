@@ -149,8 +149,10 @@ module Asperalm
                 uris_to_download=[transfer_uri]
               end
               Log.dump(:uris_to_download,uris_to_download)
-              last_status=Main.result_status('no package')
+              return Main.result_status('no package') if uris_to_download.empty?
+              result_transfer=[]
               uris_to_download.each do |transfer_uri|
+                this_id=ids_to_download.shift
                 transfer_spec=Fasp::Uri.new(transfer_uri).transfer_spec
                 # NOTE: only external users have token in faspe: link !
                 if !transfer_spec.has_key?('token')
@@ -159,14 +161,19 @@ module Asperalm
                   transfer_spec['token']=api_v3.call({:operation=>'POST',:subpath=>"issue-token?direction=down",:headers=>{'Accept'=>'text/plain','Content-Type'=>'application/vnd.aspera.url-list+xml'},:text_body_params=>xmlpayload})[:http].body
                 end
                 transfer_spec['direction']='receive'
-                last_status=Main.instance.start_transfer(transfer_spec,{:src=>:node_gen3})
-                # shall be same order
-                skip_ids.push(ids_to_download.shift)
+                statuses=Main.instance.start_transfer(transfer_spec,{:src=>:node_gen3},false)
+                result_transfer.push({'package'=>this_id,'status'=>statuses.map{|i|i.to_s}.join(',')})
+                begin
+                  TransferAgent.instance.exception_on_error(statuses)
+                  # shall be same order
+                  skip_ids.push(this_id)
+                rescue
+                end
               end
               if once_only and !skip_ids.empty?
                 persistency_file.write_to_file(JSON.generate(skip_ids))
               end
-              return last_status
+              return {:type=>:object_list,:data=>result_transfer}
             when :send
               delivery_info=Main.instance.options.get_option(:delivery_info,:mandatory)
               raise CliBadArgument,"delivery_info must be hash, refer to doc" unless delivery_info.is_a?(Hash)
@@ -199,7 +206,7 @@ module Asperalm
             source_list=api_v3.call({:operation=>'GET',:subpath=>"source_shares",:headers=>{'Accept'=>'application/json'}})[:data]['items']
             case command_source
             when :list
-              return {:data=>source_list,:type=>:object_list}
+              return {:type=>:object_list,:data=>source_list}
             else # :id or :name
               source_match_val=Main.instance.options.get_next_argument('source id or name')
               source_ids=source_list.select { |i| i[command_source.to_s].to_s.eql?(source_match_val) }
@@ -248,7 +255,7 @@ module Asperalm
             case command_pkg
             when :list
               dropbox_list=api_v3.call({:operation=>'GET',:subpath=>"/aspera/faspex/dropboxes",:headers=>{'Accept'=>'application/json'}})[:data]
-              return {:data=>dropbox_list['items'], :type=>:object_list, :fields=>['name','id','description','can_read','can_write']}
+              return {:type=>:object_list, :data=>dropbox_list['items'], :fields=>['name','id','description','can_read','can_write']}
               #              when :create
               #
             end
@@ -300,7 +307,7 @@ module Asperalm
               u['first_name'],u['last_name'] = u['displayName'].split(' ',2)
               u['x']=true
             end
-            return {:data=>users,:type=>:object_list}
+            return {:type=>:object_list,:data=>users}
           end # command
         end
       end
