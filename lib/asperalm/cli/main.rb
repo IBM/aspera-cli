@@ -354,6 +354,10 @@ module Asperalm
             # :status displays a simple message
             display_message(:info,results[:data])
             return
+          when :text # no table
+            # :status displays a simple message
+            display_message(:data,results[:data])
+            return
           when :other_struct # no table
             # :other_struct is any other type of structure
             display_message(:data,PP.pp(results[:data],''))
