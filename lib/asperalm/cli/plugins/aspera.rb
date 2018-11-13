@@ -355,7 +355,7 @@ module Asperalm
               add_ts={
                 'tags'=>{'aspera'=>{'files'=>{'package_id'=>the_package['id'],'package_operation'=>'upload'}}}
               }
-              return self.start_transfer(@api_files_user,'packages','send',node_info,the_package['contents_file_id'],add_ts)
+              return self.class.start_transfer(@api_files_user,'packages','send',node_info,the_package['contents_file_id'],add_ts)
             when :recv
               package_id=Main.instance.options.get_option(:id,:mandatory)
               the_package=@api_files_user.read("packages/#{package_id}")[:data]
@@ -364,7 +364,7 @@ module Asperalm
                 'tags'  => {'aspera'=>{'files'=>{'package_id'=>the_package['id'],'package_operation'=>'download'}}},
                 'paths' => [{'source'=>'.'}]
               }
-              return self.start_transfer(@api_files_user,'packages','receive',node_info,the_package['contents_file_id'],add_ts)
+              return self.class.start_transfer(@api_files_user,'packages','receive',node_info,the_package['contents_file_id'],add_ts)
             when :show
               package_id=Main.instance.options.get_next_argument('package ID')
               the_package=@api_files_user.read("packages/#{package_id}")[:data]
