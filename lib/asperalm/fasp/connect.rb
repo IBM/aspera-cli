@@ -52,38 +52,41 @@ module Asperalm
         @connect_api.create('transfers/start',connect_transfer_args)
       end
 
-      def shutdown(wait_for_sessions=false)
-        if wait_for_sessions
-          connect_activity_args={'aspera_connect_settings'=>{'app_id'=>@connect_app_id}}
-          started=false
-          loop do
-            result=@connect_api.create('transfers/activity',connect_activity_args)[:data]
-            if result['transfers']
-              trdata=result['transfers'].select{|i| i['aspera_connect_settings'] and i['aspera_connect_settings']['request_id'].eql?(@request_id)}.first
-              raise "problem with connect, please kill it" unless trdata
-              # TODO: get session id
-              case trdata['status']
-              when 'completed'
-                notify_listeners("emulated",{'Type'=>'DONE'})
-                break
-              when 'initiating'
-                puts 'starting'
-              when 'running'
-                #puts "running: sessions:#{trdata["sessions"].length}, #{trdata["sessions"].map{|i| i['bytes_transferred']}.join(',')}"
-                if !started and trdata["bytes_expected"] != 0
-                  notify_listeners("emulated",{'Type'=>'NOTIFICATION','PreTransferBytes'=>trdata["bytes_expected"]})
-                  started=true
-                else
-                  notify_listeners("emulated",{'Type'=>'STATS','Bytescont'=>trdata["bytes_written"]})
-                end
-              else
-                raise Fasp::Error.new("#{trdata['status']}: #{trdata['error_desc']}")
-              end
-            end
-            sleep 1
-          end
-        end
+      def shutdown
+        Log.log.debug("no shutdown needed")
       end
+
+      def wait_for_transfers_completion
+        connect_activity_args={'aspera_connect_settings'=>{'app_id'=>@connect_app_id}}
+        started=false
+        loop do
+          result=@connect_api.create('transfers/activity',connect_activity_args)[:data]
+          if result['transfers']
+            trdata=result['transfers'].select{|i| i['aspera_connect_settings'] and i['aspera_connect_settings']['request_id'].eql?(@request_id)}.first
+            raise "problem with connect, please kill it" unless trdata
+            # TODO: get session id
+            case trdata['status']
+            when 'completed'
+              notify_listeners("emulated",{'Type'=>'DONE'})
+              break
+            when 'initiating'
+              puts 'starting'
+            when 'running'
+              #puts "running: sessions:#{trdata["sessions"].length}, #{trdata["sessions"].map{|i| i['bytes_transferred']}.join(',')}"
+              if !started and trdata["bytes_expected"] != 0
+                notify_listeners("emulated",{'Type'=>'NOTIFICATION','PreTransferBytes'=>trdata["bytes_expected"]})
+                started=true
+              else
+                notify_listeners("emulated",{'Type'=>'STATS','Bytescont'=>trdata["bytes_written"]})
+              end
+            else
+              raise Fasp::Error.new("#{trdata['status']}: #{trdata['error_desc']}")
+            end
+          end
+          sleep 1
+        end
+        return [] #TODO
+      end # wait
     end # Connect
   end
 end

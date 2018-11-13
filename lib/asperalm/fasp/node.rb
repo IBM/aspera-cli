@@ -20,7 +20,10 @@ module Asperalm
         @transfer_id=resp[:data]['id']
       end
 
-      def shutdown(wait_for_sessions=false)
+      def shutdown
+        Log.log.debug("no shutdown needed")
+      end
+      def wait_for_transfers_completion
         started=false
         # lets emulate management events to display progress bar
         loop do
@@ -48,6 +51,7 @@ module Asperalm
           end
           sleep 1
         end
+        return [] #TODO
       end
     end
   end

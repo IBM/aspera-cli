@@ -72,4 +72,6 @@ Thread.new do
   end
 end
 # no exit code: status is success (0)
-client.shutdown(true)
+client.wait_for_transfers_completion
+client.shutdown
+

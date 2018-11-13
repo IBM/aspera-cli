@@ -111,30 +111,32 @@ module Asperalm
         return job_id
       end # start_transfer
 
-      # terminates monitor thread
-      def shutdown(wait_for_sessions=false)
-        Log.log.debug("fasp local shutdown")
-        if wait_for_sessions
-          Log.log.debug("wait_for_sessions: #{@jobs.values.inject(0){|m,j|m+j[:sessions].count}}")
-          @mutex.synchronize do
-            loop do
-              running=0
-              @jobs.values.each do |job|
-                job[:sessions].each do |session|
-                  case session[:state]
-                  when :failed; raise StandardError,"at least one session failed: #{session[:error]}"
-                  when :success # ignore
-                  else running+=1
-                  end
+      def wait_for_transfers_completion
+        Log.log.debug("wait_for_sessions: #{@jobs.values.inject(0){|m,j|m+j[:sessions].count}}")
+        @mutex.synchronize do
+          loop do
+            running=0
+            result=[]
+            @jobs.each do |id,job|
+              job[:sessions].each do |session|
+                case session[:state]
+                when :failed; result.push(session[:error])
+                when :success; result.push(:success)
+                else running+=1
                 end
               end
-              break if running.eql?(0)
-              Log.log.debug("wait for completed: running: #{running}")
-              # wait for session termination
-              @cond_var.wait(@mutex)
-            end # loop
-          end # mutex
-        end
+            end
+            return result if running.eql?(0)
+            Log.log.debug("wait for completed: running: #{running}")
+            # wait for session termination
+            @cond_var.wait(@mutex)
+          end # loop
+        end # mutex
+      end
+
+      # terminates monitor thread
+      def shutdown
+        Log.log.debug("fasp local shutdown")
         Log.log.debug("send signal to monitor")
         # tell monitor to stop
         @mutex.synchronize do

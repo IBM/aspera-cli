@@ -58,10 +58,17 @@ module Asperalm
       def start_transfer(transfer_spec)
         raise "virtual method"
       end
-
-      def shutdown(wait_for_sessions=false)
+      
+      # wait for termination of all transfers
+      # @return list of : :success or error message
+      def wait_for_transfers_completion
         raise "virtual method"
       end
+
+      def shutdown
+        raise "virtual method"
+      end
+      
     end
   end
 end
