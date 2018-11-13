@@ -169,7 +169,10 @@ t/fx4:
 t/fx5:
 	$(EXETEST) faspex source name "Server Files" node br /
 	@touch $@
-tfaspex: t/fx1 t/fx2 t/fx3 t/fx4 t/fx5
+t/fx6:
+	$(EXETEST) faspex package recv --to-folder=$(TEST_FOLDER) --id=ALL --once-only=yes
+	@touch $@
+tfaspex: t/fx1 t/fx2 t/fx3 t/fx4 t/fx5 t/fx6
 
 t/cons1:
 	$(EXETEST) console transfer current list 
@@ -212,30 +215,33 @@ t/nd6:
 	@touch $@
 tnode: t/nd1 t/nd2 t/nd3 t/nd4 t/nd5 t/nd6
 
-t/aoc1:
+t/aocf1:
 	$(EXETEST) aspera files browse /
 	@touch $@
-t/aoc2:
+t/aocf2:
 	$(EXETEST) aspera files upload --to-folder=/ --sources=@args $(SAMPLE_FILE)
 	@touch $@
-t/aoc3:
+t/aocf3:
 	mkdir -p $(TEST_FOLDER)
 	$(EXETEST) aspera files download --to-folder=$(TEST_FOLDER) --transfer=connect --sources=@args /200KB.1
 	rm -f 200KB.1
 	@touch $@
-t/aoc3b:
+t/aocf4:
 	mkdir -p $(TEST_FOLDER)
 	$(EXETEST) aspera files download --to-folder=$(TEST_FOLDER) --download=node --sources=@args /200KB.1
 	rm -f 200KB.1
 	@touch $@
-t/aoc4:
+t/aocf5:
+	$(EXETEST) aspera files transfer --from-folder=/ --to-folder=xxx --sources=@args 200KB.1
+	@touch $@
+t/aocp1:
 	$(EXETEST) aspera packages send --value=@json:'{"name":"my title","note":"my note"}' --recipient=laurent.martin.aspera@fr.ibm.com --sources=@args $(SAMPLE_FILE)
 	$(EXETEST) aspera packages send --value=@json:'{"name":"my title"}' --recipient=laurent.martin.l+external@gmail.com --sources=@args $(SAMPLE_FILE)
 	@touch $@
-t/aoc5:
+t/aocp2:
 	$(EXETEST) aspera packages list
 	@touch $@
-t/aoc6:
+t/aocp3:
 	$(EXETEST) aspera packages recv --id=$$($(EXETEST) aspera packages list --format=csv --fields=id|head -n 1)
 	@touch $@
 t/aoc7:
@@ -294,7 +300,7 @@ t/aocat14:
 	@touch $@
 
 tfsat: t/aocat4 t/aocat5 t/aocat6 t/aocat7 t/aocat8 t/aocat9 t/aocat10 t/aocat11 t/aocat13 t/aocat14
-tfiles: t/aoc1 t/aoc2 t/aoc3 t/aoc3b t/aoc4 t/aoc5 t/aoc6 t/aoc7 t/aoc8 t/aoc9 t/aoc10 t/aoc11 t/aoc12 t/aoc13 t/aoc14 tfsat
+tfiles: t/aocf1 t/aocf2 t/aocf3 t/aocf4 t/aocf5 t/aocp1 t/aocp2 t/aocp3 t/aoc7 t/aoc8 t/aoc9 t/aoc10 t/aoc11 t/aoc12 t/aoc13 t/aoc14 tfsat
 
 t/o1:
 	$(EXETEST) orchestrator info
