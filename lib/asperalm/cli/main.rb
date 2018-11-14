@@ -456,17 +456,13 @@ module Asperalm
 
       public
 
-      # if return_result, @return CLI result
-      # else, return list of statuses
-      # in any case, wait for completion of all jobs
-      def start_transfer(transfer_spec,options,return_result=true)
+      # plugins shall use this method to start a transfer
+      # start transfer and wait for completion of all jobs
+      def self.result_transfer(transfer_spec,options)
         # TODO: if not one shot, then wait for status
         statuses=TransferAgent.instance.start(transfer_spec,options)
-        if return_result
-          TransferAgent.instance.exception_on_error(statuses)
-          return self.class.result_nothing
-        end
-        return statuses
+        raise "at least one transfer session failed" unless TransferAgent.all_session_success(statuses)
+        return result_nothing
       end
 
       def destination_folder(direction)
