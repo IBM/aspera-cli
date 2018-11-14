@@ -1,8 +1,9 @@
 require 'asperalm/cli/basic_auth_plugin'
 require 'asperalm/cli/plugins/node'
 require 'asperalm/cli/plugins/config'
-require 'asperalm/persistency_file'
 require 'asperalm/cli/extended_value'
+require 'asperalm/cli/transfer_agent'
+require 'asperalm/persistency_file'
 require 'asperalm/open_application'
 require 'asperalm/fasp/uri'
 require 'xmlsimple'
@@ -161,14 +162,10 @@ module Asperalm
                   transfer_spec['token']=api_v3.call({:operation=>'POST',:subpath=>"issue-token?direction=down",:headers=>{'Accept'=>'text/plain','Content-Type'=>'application/vnd.aspera.url-list+xml'},:text_body_params=>xmlpayload})[:http].body
                 end
                 transfer_spec['direction']='receive'
-                statuses=Main.instance.start_transfer(transfer_spec,{:src=>:node_gen3},false)
+                statuses=TransferAgent.instance.start(transfer_spec,{:src=>:node_gen3})
                 result_transfer.push({'package'=>this_id,'status'=>statuses.map{|i|i.to_s}.join(',')})
-                begin
-                  TransferAgent.instance.exception_on_error(statuses)
-                  # shall be same order
-                  skip_ids.push(this_id)
-                rescue
-                end
+                # skip only if all sessions completed
+                skip_ids.push(this_id) if TransferAgent.all_session_success(statuses)
               end
               if once_only and !skip_ids.empty?
                 persistency_file.write_to_file(JSON.generate(skip_ids))
@@ -199,7 +196,7 @@ module Asperalm
               transfer_spec=send_result['xfer_sessions'].first
               # use source from cmd line, this one nly contains destination (already in dest root)
               transfer_spec.delete('paths')
-              return Main.instance.start_transfer(transfer_spec,{:src=>:node_gen3})
+              return Main.result_transfer(transfer_spec,{:src=>:node_gen3})
             end
           when :source
             command_source=Main.instance.options.get_next_command([ :list, :id, :name ])
@@ -273,7 +270,7 @@ module Asperalm
             transfer_uri=self.class.get_fasp_uri_from_entry(package_entry)
             transfer_spec=Fasp::Uri.new(transfer_uri).transfer_spec
             transfer_spec['direction']='receive'
-            return Main.instance.start_transfer(transfer_spec,{:src=>:node_gen3})
+            return Main.result_transfer(transfer_spec,{:src=>:node_gen3})
           when :v4
             command=Main.instance.options.get_next_command([:dropbox, :dmembership, :workgroup,:wmembership,:user,:metadata_profile])
             case command
