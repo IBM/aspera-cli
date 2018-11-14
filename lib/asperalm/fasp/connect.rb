@@ -52,10 +52,6 @@ module Asperalm
         @connect_api.create('transfers/start',connect_transfer_args)
       end
 
-      def shutdown
-        Log.log.debug("no shutdown needed")
-      end
-
       def wait_for_transfers_completion
         connect_activity_args={'aspera_connect_settings'=>{'app_id'=>@connect_app_id}}
         started=false
