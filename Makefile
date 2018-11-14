@@ -235,14 +235,17 @@ t/aocf5:
 	$(EXETEST) aspera files transfer --from-folder=/ --to-folder=xxx --sources=@args 200KB.1
 	@touch $@
 t/aocp1:
-	$(EXETEST) aspera packages send --value=@json:'{"name":"my title","note":"my note"}' --recipient=laurent.martin.aspera@fr.ibm.com --sources=@args $(SAMPLE_FILE)
-	$(EXETEST) aspera packages send --value=@json:'{"name":"my title"}' --recipient=laurent.martin.l+external@gmail.com --sources=@args $(SAMPLE_FILE)
+	$(EXETEST) aspera packages send --value=@json:'{"name":"my title","note":"my note","recipients":["laurent.martin.aspera@fr.ibm.com"]}' --sources=@args $(SAMPLE_FILE)
+	$(EXETEST) aspera packages send --value=@json:'{"name":"my title","recipients":["laurent.martin.l+external@gmail.com"]}' --new-user-option=@json:'{"package_contact":true}' --sources=@args $(SAMPLE_FILE)
 	@touch $@
 t/aocp2:
 	$(EXETEST) aspera packages list
 	@touch $@
 t/aocp3:
 	$(EXETEST) aspera packages recv --id=$$($(EXETEST) aspera packages list --format=csv --fields=id|head -n 1)
+	@touch $@
+t/aocp4:
+	$(EXETEST) aspera packages recv --id=ALL --once-only=yes --lock-port=12345
 	@touch $@
 t/aoc7:
 	$(EXETEST) aspera admin events
@@ -300,7 +303,7 @@ t/aocat14:
 	@touch $@
 
 tfsat: t/aocat4 t/aocat5 t/aocat6 t/aocat7 t/aocat8 t/aocat9 t/aocat10 t/aocat11 t/aocat13 t/aocat14
-tfiles: t/aocf1 t/aocf2 t/aocf3 t/aocf4 t/aocf5 t/aocp1 t/aocp2 t/aocp3 t/aoc7 t/aoc8 t/aoc9 t/aoc10 t/aoc11 t/aoc12 t/aoc13 t/aoc14 tfsat
+tfiles: t/aocf1 t/aocf2 t/aocf3 t/aocf4 t/aocf5 t/aocp1 t/aocp2 t/aocp3 t/aocp4 t/aoc7 t/aoc8 t/aoc9 t/aoc10 t/aoc11 t/aoc12 t/aoc13 t/aoc14 tfsat
 
 t/o1:
 	$(EXETEST) orchestrator info
