@@ -54,21 +54,10 @@ module Asperalm
         self
       end
 
-      # synchronous
-      def start_transfer(transfer_spec)
-        raise "virtual method"
-      end
-      
-      # wait for termination of all transfers
-      # @return list of : :success or error message
-      def wait_for_transfers_completion
-        raise "virtual method"
-      end
-
-      def shutdown
-        raise "virtual method"
-      end
-      
+      # the following methods must be implemented by subclass:
+      # start_transfer(transfer_spec,options) : start and wait for completion
+      # wait_for_transfers_completion : wait for termination of all transfers, @return list of : :success or error message
+      # optional: shutdown
     end
   end
 end
