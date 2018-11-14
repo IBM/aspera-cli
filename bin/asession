@@ -58,7 +58,7 @@ client=Asperalm::Fasp::Local.instance
 client.quiet=true
 # display JSON instead of legacy Lines
 client.add_listener(Asperalm::Cli::Listener::LineDump.new)
-# go !
+# start transfer (asynchronous)
 job_id=client.start_transfer(transfer_spec)
 # async commands
 Thread.new do
