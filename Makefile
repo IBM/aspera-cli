@@ -508,7 +508,7 @@ t:
 tests: t tshares tfaspex tconsole tnode tfiles tfasp tsync torc tats tcon tnsync tconf tprev tshares2
 
 t/fxgw:
-	$(EXETEST) faspex package send --load-params=reset --url=https://localhost:9443/aspera/faspex --username=unused --password=unused --insecure=yes --note="my note" --title="my title" --recipient="laurent.martin.aspera@fr.ibm.com" ~/200KB.1
+	$(EXETEST) aspera faspex
 	@touch $@
 
 NODE_USER=node_admin
