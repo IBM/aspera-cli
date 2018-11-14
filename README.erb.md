@@ -1146,17 +1146,17 @@ $ <%=cmd%> aspera admin res workspace_membership list --fields=member_type,manag
 Send a package:
 
 ```
-$ <%=cmd%> aspera packages send --value=@json:'{"name":"my title","note":"my note"}' --recipient=laurent.martin.aspera@fr.ibm.com,other@example.com --sources=@args my_file.dat
+$ <%=cmd%> aspera packages send --value=@json:'{"name":"my title","note":"my note","recipients":["laurent.martin.aspera@fr.ibm.com","other@example.com"]}' --sources=@args my_file.dat
 ```
 
 Notes:
 
-* the `value` parameter can contain any supported package creation parameter.
-* Refer to the API, or display an existing package.
-* If the recipient is not already registered and the workspace allows external users, then the package is sent to an external user, and
+* the `value` parameter can contain any supported package creation parameter. Refer to the API, or display an existing package.
+* to list recipients use fields: "recipients" and/or "bcc_recipients". <%=cmd%> will resolve the list of email addresses to expected user ids. If a recipient is not already registered and the workspace allows external users, then the package is sent to an external user, and
   * if the option `new_user_option` is `@json:{"package_contact":true}` (default), then a public link is sent and the external user does not need to create an account.
   * if the option `new_user_option` is `@json:{}`, then external users are invited to join the workspace
 
+### Receive only new packages
 
 ### Download Files
 
@@ -1803,6 +1803,11 @@ This means that you do not have ruby support for ED25519 SSH keys. You may eithe
 Gems, or remove your ed25519 key from your `.ssh` folder to solve the issue.
 
 # Release Notes
+
+* version 0.9.9
+
+  * Breaking change: "aspera package send" parameter deprecated, use the --value option instead with "recipients" value. See example.
+  * Now supports "cargo" for Aspera on Cloud (automatic package download)
 
 * version 0.9.8
 
