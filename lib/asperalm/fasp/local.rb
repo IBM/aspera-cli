@@ -25,9 +25,7 @@ module Asperalm
       include Singleton
       attr_accessor :quiet
       # start FASP transfer based on transfer spec (hash table)
-      # note that it returns upon completion only (blocking)
-      # if the user wants to run in background, just spawn a thread
-      # listener methods are called in context of calling thread
+      # note that it is asynchronous
       def start_transfer(transfer_spec,options=nil)
         options||={}
         raise "option: must be hash (or nil)" unless options.is_a?(Hash)
@@ -126,7 +124,11 @@ module Asperalm
                 end
               end
             end
-            return result if running.eql?(0)
+            if running.eql?(0)
+              # since all are finished and we return the result, clear statuses
+              @jobs.clear
+              return result
+            end
             Log.log.debug("wait for completed: running: #{running}")
             # wait for session termination
             @cond_var.wait(@mutex)
