@@ -1,7 +1,9 @@
 require 'asperalm/cli/plugins/node'
 require 'asperalm/cli/plugins/ats'
 require 'asperalm/cli/plugin'
+require 'asperalm/cli/transfer_agent'
 require 'asperalm/files_api'
+require 'asperalm/persistency_file'
 require 'securerandom'
 require 'singleton'
 require 'resolv'
@@ -10,6 +12,7 @@ module Asperalm
   module Cli
     module Plugins
       class Aspera < Plugin
+        @@VAL_ALL='ALL'
         include Singleton
         def action_list; [ :apiinfo, :packages, :files, :faspexgw, :admin, :user, :organization, :workspace];end
 
@@ -19,7 +22,6 @@ module Asperalm
 
           Main.instance.options.add_opt_list(:download_mode,[:fasp, :node_http ],"download mode")
           Main.instance.options.add_opt_list(:auth,Oauth.auth_types,"type of Oauth authentication")
-          Main.instance.options.add_opt_boolean(:bulk,"bulk operation")
           Main.instance.options.add_opt_simple(:url,"URL of application, e.g. http://org.asperafiles.com")
           Main.instance.options.add_opt_simple(:username,"username to log in")
           Main.instance.options.add_opt_simple(:password,"user's password")
@@ -28,7 +30,6 @@ module Asperalm
           Main.instance.options.add_opt_simple(:redirect_uri,"API client redirect URI")
           Main.instance.options.add_opt_simple(:private_key,"RSA private key PEM value for JWT (prefix file path with @val:@file:)")
           Main.instance.options.add_opt_simple(:workspace,"name of workspace")
-          Main.instance.options.add_opt_simple(:recipient,"package recipient")
           Main.instance.options.add_opt_simple(:secret,"access key secret for node")
           Main.instance.options.add_opt_simple(:eid,"identifier")
           Main.instance.options.add_opt_simple(:name,"resource name")
@@ -36,15 +37,18 @@ module Asperalm
           Main.instance.options.add_opt_simple(:public_token,"token value of public link")
           Main.instance.options.add_opt_simple(:new_user_option,"new user creation option")
           Main.instance.options.add_opt_simple(:from_folder,"share to share source folder")
+          Main.instance.options.add_opt_boolean(:bulk,"bulk operation")
+          Main.instance.options.add_opt_boolean(:once_only,"keep track of already downloaded packages")
           Main.instance.options.set_option(:download_mode,:fasp)
           Main.instance.options.set_option(:bulk,:no)
           Main.instance.options.set_option(:redirect_uri,'http://localhost:12345')
           Main.instance.options.set_option(:auth,:web)
           Main.instance.options.set_option(:new_user_option,{'package_contact'=>true})
+          Main.instance.options.set_option(:once_only,:false)
         end
 
-        def self.start_transfer(api_files,app,direction,node_info,file_id,ts_add={})
-          return Main.instance.start_transfer(*api_files.tr_spec(app,direction,node_info,file_id,ts_add))
+        def self.xfer_result(api_files,app,direction,node_info,file_id,ts_add={})
+          return Main.result_transfer(*api_files.tr_spec(app,direction,node_info,file_id,ts_add))
         end
 
         def self.execute_node_gen4_action(api_files,home_node_id,home_file_id)
@@ -97,10 +101,10 @@ module Asperalm
               'destination_root_id' => node_server_file_id,
               'source_root_id'      => node_client_file_id
             }
-            return start_transfer(api_files,'files',client_action,node_client_info,node_client_file_id,add_ts)
+            return xfer_result(api_files,'files',client_action,node_client_info,node_client_file_id,add_ts)
           when :upload
             node_info,file_id = api_files.find_nodeinfo_and_fileid(home_node_id,home_file_id,Main.instance.destination_folder('send'))
-            return start_transfer(api_files,'files','send',node_info,file_id)
+            return xfer_result(api_files,'files','send',node_info,file_id)
           when :download
             source_paths=Main.instance.ts_source_paths
             source_folder=source_paths.shift['source']
@@ -114,7 +118,7 @@ module Asperalm
               node_info,file_id = api_files.find_nodeinfo_and_fileid(home_node_id,home_file_id,source_folder)
               # override paths with just filename
               add_ts={'paths'=>source_paths}
-              return start_transfer(api_files,'files','receive',node_info,file_id,add_ts)
+              return xfer_result(api_files,'files','receive',node_info,file_id,add_ts)
             when :node_http
               raise CliBadArgument,"one file at a time only in HTTP mode" if source_paths.length > 1
               file_name = source_paths.first['source']
@@ -279,6 +283,23 @@ module Asperalm
           return {:type=>:object_list,:data=>result,:fields=>['id','status']}
         end
 
+        def resolve_package_recipients(package_creation,recipient_list_field)
+          return unless package_creation.has_key?(recipient_list_field)
+          raise CliBadArgument,"#{recipient_list_field} must be an Array" unless package_creation[recipient_list_field].is_a?(Array)
+          new_user_option=Main.instance.options.get_option(:new_user_option,:mandatory)
+          resolved_list=[]
+          package_creation[recipient_list_field].each do |recipient_email|
+            user_lookup=@api_files_user.read('contacts',{'current_workspace_id'=>@workspace_id,'q'=>recipient_email})[:data]
+            case user_lookup.length
+            when 1; recipient_user_id=user_lookup.first
+            when 0; recipient_user_id=@api_files_user.create('contacts',{'current_workspace_id'=>@workspace_id,'email'=>recipient_email}.merge(new_user_option))[:data]
+            else raise CliBadArgument,"multiple match for: #{recipient}"
+            end
+            resolved_list.push({'id'=>recipient_user_id['source_id'],'type'=>recipient_user_id['source_type']})
+          end
+          package_creation[recipient_list_field]=resolved_list
+        end
+
         def execute_action
           init_apis
           command=Main.instance.options.get_next_command(action_list)
@@ -331,44 +352,69 @@ module Asperalm
               # list of files to include in package
               package_creation['file_names']=Main.instance.ts_source_paths.map{|i|File.basename(i['source'])}
 
-              new_user_option=Main.instance.options.get_option(:new_user_option,:mandatory)
-
               # lookup users
-              package_creation['recipients']=Main.instance.options.get_option(:recipient,:mandatory).split(',').map do |recipient|
-                user_lookup=@api_files_user.read('contacts',{'current_workspace_id'=>@workspace_id,'q'=>recipient})[:data]
-                case user_lookup.length
-                when 1; recipient_user_id=user_lookup.first
-                when 0; recipient_user_id=@api_files_user.create('contacts',{'current_workspace_id'=>@workspace_id,'email'=>recipient}.merge(new_user_option))[:data]
-                else raise CliBadArgument,"multiple match for: #{recipient}"
-                end
-                {'id'=>recipient_user_id['source_id'],'type'=>recipient_user_id['source_type']}
-              end
+              resolve_package_recipients(package_creation,'recipients')
+              resolve_package_recipients(package_creation,'bcc_recipients')
 
               #  create a new package with one file
-              the_package=@api_files_user.create('packages',package_creation)[:data]
+              package_info=@api_files_user.create('packages',package_creation)[:data]
 
               #  get node information for the node on which package must be created
-              node_info=@api_files_user.read("nodes/#{the_package['node_id']}")[:data]
+              node_info=@api_files_user.read("nodes/#{package_info['node_id']}")[:data]
 
               # tell Aspera what to expect in package: 1 transfer (can also be done after transfer)
-              resp=@api_files_user.update("packages/#{the_package['id']}",{'sent'=>true,'transfers_expected'=>1})[:data]
+              resp=@api_files_user.update("packages/#{package_info['id']}",{'sent'=>true,'transfers_expected'=>1})[:data]
               add_ts={
-                'tags'=>{'aspera'=>{'files'=>{'package_id'=>the_package['id'],'package_operation'=>'upload'}}}
+                'tags'=>{'aspera'=>{'files'=>{'package_id'=>package_info['id'],'package_operation'=>'upload'}}}
               }
-              return self.class.start_transfer(@api_files_user,'packages','send',node_info,the_package['contents_file_id'],add_ts)
+              return self.class.xfer_result(@api_files_user,'packages','send',node_info,package_info['contents_file_id'],add_ts)
             when :recv
-              package_id=Main.instance.options.get_option(:id,:mandatory)
-              the_package=@api_files_user.read("packages/#{package_id}")[:data]
-              node_info=@api_files_user.read("nodes/#{the_package['node_id']}")[:data]
-              add_ts={
-                'tags'  => {'aspera'=>{'files'=>{'package_id'=>the_package['id'],'package_operation'=>'download'}}},
-                'paths' => [{'source'=>'.'}]
-              }
-              return self.class.start_transfer(@api_files_user,'packages','receive',node_info,the_package['contents_file_id'],add_ts)
+              pack_id=Main.instance.options.get_option(:id,:mandatory)
+              once_only=Main.instance.options.get_option(:once_only,:mandatory)
+              skip_ids=[]
+              ids_to_download=[]
+              case pack_id
+              when @@VAL_ALL
+                if once_only
+                  persistency_file=PersistencyFile.new('aoc_recv',Cli::Plugins::Config.instance.config_folder)
+                  persistency_file.set_unique(
+                  nil,
+                  [@user_id,@workspace_name],
+                  Main.instance.options.get_option(:url,:mandatory))
+                  data=persistency_file.read_from_file
+                  unless data.nil?
+                    skip_ids=JSON.parse(data)
+                  end
+                end
+                # todo
+                ids_to_download=@api_files_user.read('packages',{'archived'=>false,'exclude_dropbox_packages'=>true,'has_content'=>true,'received'=>true,'workspace_id'=>@workspace_id})[:data].select{|e|!skip_ids.include?(e['id'])}.map{|e|e['id']}
+              else
+                ids_to_download=[pack_id]
+              end
+              result_transfer=[]
+            Main.instance.display_status("found #{ids_to_download.length} package(s).")
+              ids_to_download.each do |package_id|
+                package_info=@api_files_user.read("packages/#{package_id}")[:data]
+                node_info=@api_files_user.read("nodes/#{package_info['node_id']}")[:data]
+                add_ts={
+                  'tags'  => {'aspera'=>{'files'=>{'package_id'=>package_info['id'],'package_operation'=>'download'}}},
+                  'paths' => [{'source'=>'.'}]
+                }
+                transfer_spec,options=@api_files_user.tr_spec('packages','receive',node_info,package_info['contents_file_id'],add_ts)
+                Main.instance.display_status("downloading package: #{package_info['name']}")
+                  statuses=TransferAgent.instance.start(transfer_spec,options)
+                result_transfer.push({'package'=>package_id,'status'=>statuses.map{|i|i.to_s}.join(',')})
+                # skip only if all sessions completed
+                skip_ids.push(package_id) if TransferAgent.all_session_success(statuses)
+              end
+              if once_only and !skip_ids.empty?
+                persistency_file.write_to_file(JSON.generate(skip_ids))
+              end
+              return {:type=>:object_list,:data=>result_transfer}
             when :show
               package_id=Main.instance.options.get_next_argument('package ID')
-              the_package=@api_files_user.read("packages/#{package_id}")[:data]
-              return { :type=>:single_object, :data =>the_package }
+              package_info=@api_files_user.read("packages/#{package_id}")[:data]
+              return { :type=>:single_object, :data =>package_info }
             when :list
               # list all packages ('page'=>1,'per_page'=>10,)'sort'=>'-sent_at',
               packages=@api_files_user.read("packages",{'archived'=>false,'exclude_dropbox_packages'=>true,'has_content'=>true,'received'=>true,'workspace_id'=>@workspace_id})[:data]
