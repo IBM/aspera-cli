@@ -159,16 +159,17 @@ module Asperalm
       end
 
       def shutdown
-        @agent.shutdown unless @agent.nil?
+        @agent.shutdown if @agent.respond_to?(:shutdown)
       end
 
+      # @return list of status
       def wait_for_transfers_completion
         @agent.wait_for_transfers_completion unless @agent.nil?
       end
-
-      def exception_on_error(list)
-        return if list.nil?
-        raise "at least one transfer failed" unless list.select{|i|!i.eql?(:success)}.empty?
+      
+      # helper method for above method
+      def self.all_session_success(statuses)
+        return statuses.select{|i|!i.eql?(:success)}.empty?
       end
     end
   end
