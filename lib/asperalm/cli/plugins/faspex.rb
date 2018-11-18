@@ -121,9 +121,11 @@ module Asperalm
             when :list
               return {:type=>:object_list,:data=>self.mailbox_all_entries,:fields=>[PACKAGE_MATCH_FIELD,'title','items'], :textify => lambda { |table_data| Faspex.textify_package_list(table_data)} }
             when :recv
+              # get command line parameters
               delivid=Main.instance.options.get_option(:id,:mandatory)
               mailbox=Main.instance.options.get_option(:box,:mandatory).to_s
               once_only=Main.instance.options.get_option(:once_only,:mandatory)
+              # list of faspex URI to download
               uris_to_download=nil
               skip_ids=[]
               ids_to_download=[]
