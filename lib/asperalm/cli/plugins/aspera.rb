@@ -98,10 +98,10 @@ module Asperalm
             # additional node to node TS info
             add_ts={
               'remote_access_key'   => node_server_info['access_key'],
-              'destination_root_id' => node_server_file_id,
+              #'destination_root_id' => node_server_file_id,
               'source_root_id'      => node_client_file_id
             }
-            return xfer_result(api_files,'files',client_action,node_client_info,node_client_file_id,add_ts)
+            return xfer_result(api_files,'files',client_action,node_server_info,node_server_file_id,add_ts)
           when :upload
             node_info,file_id = api_files.find_nodeinfo_and_fileid(home_node_id,home_file_id,Main.instance.destination_folder('send'))
             return xfer_result(api_files,'files','send',node_info,file_id)
