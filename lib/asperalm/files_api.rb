@@ -117,7 +117,7 @@ module Asperalm
     # input: root node and file id, and array for path
     # output: file_id and node_info  for the given path
     def find_nodeinfo_and_fileid( top_node_id, top_file_id, element_path_string='' )
-      Log.log.debug "find_nodeinfo_and_fileid: nodeid=#{top_node_id}, fileid=#{top_file_id}, path=#{element_path_string}"
+      Log.log.debug("find_nodeinfo_and_fileid: nodeid=#{top_node_id}, fileid=#{top_file_id}, path=#{element_path_string}")
       raise "top_node_id is nil" if top_node_id.to_s.empty?
       raise "top_file_id is nil" if top_file_id.to_s.empty?
       # initialize loop elements
@@ -133,7 +133,7 @@ module Asperalm
         current_node_api=get_files_node_api(current_node_info,FilesApi::SCOPE_NODE_USER) if current_node_api.nil?
         # get folder content
         folder_contents = current_node_api.read("files/#{current_file_id}/files")
-        Log.log.debug "folder_contents: #{folder_contents}"
+        Log.log.debug("folder_contents: #{folder_contents}")
         matching_folders = folder_contents[:data].select { |i| i['name'].eql?(current_element_name)}
         #Log.log.debug "matching_folders: #{matching_folders}"
         raise "no such folder: #{current_element_name} in #{folder_contents[:data].map { |i| i['name']}}" if matching_folders.empty?
@@ -153,10 +153,10 @@ module Asperalm
         when 'folder'
           current_file_id=current_file_info["id"]
         else
-          Log.log.warn "unknown element type: #{current_file_info['type']}"
+          Log.log.warn("unknown element type: #{current_file_info['type']}")
         end
       end
-      Log.log.info("file_id=#{current_file_id},node_info=#{current_node_info}")
+      Log.log.info("find_nodeinfo_and_fileid(#{element_path_string}): file_id=#{current_file_id},node_info=#{current_node_info}")
       return current_node_info,current_file_id
     end
 
