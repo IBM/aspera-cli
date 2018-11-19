@@ -114,12 +114,16 @@ module Asperalm
 
     # returns node information (returned by API) and file id, from a "/" based path
     # supports links to secondary nodes
-    # input: root node and file id, and array for path
-    # output: file_id and node_info  for the given path
-    def find_nodeinfo_and_fileid( top_node_id, top_file_id, element_path_string='' )
-      Log.log.debug("find_nodeinfo_and_fileid: nodeid=#{top_node_id}, fileid=#{top_file_id}, path=#{element_path_string}")
+    # input: Array(root node,file id), String path
+    # output: Array(node_info,file_id)   for the given path
+    def resolve_node_file( top_node_file, element_path_string='' )
+      raise "top_node_file must be array" unless top_node_file.is_a?(Array)
+      raise "top_node_file must have 2 elements" unless top_node_file.length.eql?(2)
+      top_node_id=top_node_file.first
+      top_file_id=top_node_file.last
       raise "top_node_id is nil" if top_node_id.to_s.empty?
       raise "top_file_id is nil" if top_file_id.to_s.empty?
+      Log.log.debug("resolve_node_file: nodeid=#{top_node_id}, fileid=#{top_file_id}, path=#{element_path_string}")
       # initialize loop elements
       current_path_elements=element_path_string.split(PATH_SEPARATOR).select{|i| !i.empty?}
       current_node_info=self.read("nodes/#{top_node_id}")[:data]
@@ -156,7 +160,7 @@ module Asperalm
           Log.log.warn("unknown element type: #{current_file_info['type']}")
         end
       end
-      Log.log.info("find_nodeinfo_and_fileid(#{element_path_string}): file_id=#{current_file_id},node_info=#{current_node_info}")
+      Log.log.info("resolve_node_file(#{element_path_string}): file_id=#{current_file_id},node_info=#{current_node_info}")
       return current_node_info,current_file_id
     end
 
