@@ -20,7 +20,6 @@ module Asperalm
           @ats=Ats.instance
           @ats.declare_options(true)
 
-          Main.instance.options.add_opt_list(:download_mode,[:fasp, :node_http ],"download mode")
           Main.instance.options.add_opt_list(:auth,Oauth.auth_types,"type of Oauth authentication")
           Main.instance.options.add_opt_list(:operation,[:push,:pull],"client operation for transfers")
           Main.instance.options.add_opt_simple(:url,"URL of application, e.g. http://org.asperafiles.com")
@@ -40,7 +39,6 @@ module Asperalm
           Main.instance.options.add_opt_simple(:from_folder,"share to share source folder")
           Main.instance.options.add_opt_boolean(:bulk,"bulk operation")
           Main.instance.options.add_opt_boolean(:once_only,"keep track of already downloaded packages")
-          Main.instance.options.set_option(:download_mode,:fasp)
           Main.instance.options.set_option(:bulk,:no)
           Main.instance.options.set_option(:redirect_uri,'http://localhost:12345')
           Main.instance.options.set_option(:auth,:web)
@@ -54,7 +52,7 @@ module Asperalm
         end
 
         def self.execute_node_gen4_action(api_files,home_node_file)
-          command_repo=Main.instance.options.get_next_command([ :access_key, :browse, :mkdir, :rename, :delete, :upload, :download, :transfer, :node, :file  ])
+          command_repo=Main.instance.options.get_next_command([ :access_key, :browse, :mkdir, :rename, :delete, :upload, :download, :transfer, :http_node_download, :node, :file  ])
           case command_repo
           when :access_key
             node_info,file_id = api_files.resolve_node_file(home_node_file)
@@ -125,20 +123,24 @@ module Asperalm
               source_paths=[{'source'=>source_folder.pop}]
               source_folder=source_folder.join(FilesApi::PATH_SEPARATOR)
             end
-            case Main.instance.options.get_option(:download_mode,:mandatory)
-            when :fasp
-              node_info,file_id = api_files.resolve_node_file(home_node_file,source_folder)
-              # override paths with just filename
-              add_ts={'paths'=>source_paths}
-              return xfer_result(api_files,'files','receive',node_info,file_id,add_ts)
-            when :node_http
-              raise CliBadArgument,"one file at a time only in HTTP mode" if source_paths.length > 1
-              file_name = source_paths.first['source']
-              node_info,file_id = api_files.resolve_node_file(home_node_file,File.join(source_folder,file_name))
-              node_api=api_files.get_files_node_api(node_info,FilesApi::SCOPE_NODE_USER)
-              node_api.call({:operation=>'GET',:subpath=>"files/#{file_id}/content",:save_to_file=>File.join(Main.instance.destination_folder('receive'),file_name)})
-              return Main.result_status("downloaded: #{file_name}")
-            end # download_mode
+            node_info,file_id = api_files.resolve_node_file(home_node_file,source_folder)
+            # override paths with just filename
+            add_ts={'paths'=>source_paths}
+            return xfer_result(api_files,'files','receive',node_info,file_id,add_ts)
+          when :http_node_download
+            source_paths=Main.instance.ts_source_paths
+            source_folder=source_paths.shift['source']
+            if source_paths.empty?
+              source_folder=source_folder.split(FilesApi::PATH_SEPARATOR)
+              source_paths=[{'source'=>source_folder.pop}]
+              source_folder=source_folder.join(FilesApi::PATH_SEPARATOR)
+            end
+            raise CliBadArgument,"one file at a time only in HTTP mode" if source_paths.length > 1
+            file_name = source_paths.first['source']
+            node_info,file_id = api_files.resolve_node_file(home_node_file,File.join(source_folder,file_name))
+            node_api=api_files.get_files_node_api(node_info,FilesApi::SCOPE_NODE_USER)
+            node_api.call({:operation=>'GET',:subpath=>"files/#{file_id}/content",:save_to_file=>File.join(Main.instance.destination_folder('receive'),file_name)})
+            return Main.result_status("downloaded: #{file_name}")
           when :node
             # Note: other "common" actions are unauthorized with user scope
             command_legacy=Main.instance.options.get_next_command(Node.simple_actions)

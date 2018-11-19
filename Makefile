@@ -228,7 +228,7 @@ t/aocf3:
 	@touch $@
 t/aocf4:
 	mkdir -p $(TEST_FOLDER)
-	$(EXETEST) aspera files download --to-folder=$(TEST_FOLDER) --download=node --sources=@args /200KB.1
+	$(EXETEST) aspera files http_node_download --to-folder=$(TEST_FOLDER) --sources=@args /200KB.1
 	rm -f 200KB.1
 	@touch $@
 t/aocf5:
