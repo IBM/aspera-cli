@@ -29,8 +29,8 @@ module Asperalm
         Main.instance.options.add_opt_simple(:ts,"override transfer spec values (Hash, use @json: prefix), current=#{Main.instance.options.get_option(:ts,:optional)}")
         Main.instance.options.add_opt_simple(:to_folder,"destination folder for downloaded files")
         Main.instance.options.add_opt_simple(:sources,"list of source files (see doc)")
-        Main.instance.options.add_opt_list(:transfer,[:direct,:connect,:node],"type of transfer")
-        Main.instance.options.add_opt_simple(:transfer_node,"name of configuration used to transfer when using --transfer=node")
+        Main.instance.options.add_opt_list(:transfer,[:direct,:connect,:node,:files],"type of transfer")
+        Main.instance.options.add_opt_simple(:transfer_info,"additional information for transfer client")
         Main.instance.options.set_option(:transfer,:direct)
       end
 
@@ -57,7 +57,7 @@ module Asperalm
             if @agent.node_api.nil?
               # support: @param:<name>
               # support extended values
-              node_config=Main.instance.options.get_option(:transfer_node,:optional)
+              node_config=Main.instance.options.get_option(:transfer_info,:optional)
               # of not specified, use default node
               if node_config.nil?
                 param_set_name=Plugins::Config.instance.get_plugin_default_config_name(:node)
@@ -91,7 +91,7 @@ module Asperalm
         dest_folder=@transfer_spec_cmdline['destination_root']
         return dest_folder unless dest_folder.nil?
         # default: / on remote, . on local
-        case direction
+        case direction.to_s
         when 'send';dest_folder='/'
         when 'receive';dest_folder='.'
         else raise "wrong direction: #{direction}"
