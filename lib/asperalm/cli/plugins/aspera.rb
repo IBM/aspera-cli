@@ -117,7 +117,9 @@ module Asperalm
             return xfer_result(api_files,'files','send',node_info,file_id)
           when :download
             source_paths=Main.instance.ts_source_paths
+            # special case for AoC : all files must be in same folder
             source_folder=source_paths.shift['source']
+            # if a single file: split into folder and path
             if source_paths.empty?
               source_folder=source_folder.split(FilesApi::PATH_SEPARATOR)
               source_paths=[{'source'=>source_folder.pop}]
