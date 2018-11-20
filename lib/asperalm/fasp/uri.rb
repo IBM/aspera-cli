@@ -35,6 +35,7 @@ module Asperalm
           when 'fallback'; result_ts['http_fallback']=CommandLineBuilder.yes_to_true(value)
           when 'lockpolicy'; result_ts['lock_rate_policy']=CommandLineBuilder.yes_to_true(value)
           when 'lockminrate'; result_ts['lock_min_rate']=CommandLineBuilder.yes_to_true(value)
+          when 'sshfp'; result_ts['sshfp']=value
           when 'auth'; Log.log.debug("ignoring #{name}=#{value}") # TODO: translate into transfer spec ? yes/no
           when 'v'; Log.log.debug("ignoring #{name}=#{value}") # TODO: translate into transfer spec ? 2
           when 'protect'; Log.log.debug("ignoring #{name}=#{value}") # TODO: translate into transfer spec ?
