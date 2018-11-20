@@ -13,6 +13,7 @@ module Asperalm
       include Singleton
       private
       @@ARGS_PARAM='@args'
+      @@TS_PARAM='@ts'
       def initialize
         @transfer_spec_cmdline={}
         @agent=nil
@@ -99,20 +100,36 @@ module Asperalm
         return dest_folder
       end
 
+      # This is how the list of files to be transfered is specified
       # get paths suitable for transfer spec from command line
       # @return {:source=>(mandatory), :destination=>(optional)}
       def ts_source_paths
         return @transfer_paths unless @transfer_paths.nil?
-        # start with lower priority
+        # start with lower priority : get paths from transfer spec on command line
         @transfer_paths=@transfer_spec_cmdline['paths'] if @transfer_spec_cmdline.has_key?('paths')
-        sources=Main.instance.options.get_option(:sources,:optional)
-        if !sources.nil?
-          Log.log.warn("--sources overrides paths from --ts") unless @transfer_paths.nil?
-          sources=Main.instance.options.get_next_argument("source file list",:multiple) if sources.eql?(@@ARGS_PARAM)
-          raise "sources (#{sources.class}) must be a Array" unless sources.is_a?(Array)
-          @transfer_paths=sources.map{|i|{'source'=>i}}
+        # is there a source list option ?
+        file_list=Main.instance.options.get_option(:sources,:optional)
+        case file_list
+        when nil,@@ARGS_PARAM
+          Log.log.debug("getting file list as parameters")
+          file_list=Main.instance.options.get_next_argument("source file list",:multiple)
+          raise CliBadArgument,"specify at least one file on command line or use --sources=#{@@TS_PARAM} to use transfer spec" if !file_list.is_a?(Array) or file_list.empty?
+        when @@TS_PARAM
+          Log.log.debug("assume list provided in transfer spec")
+          raise CliBadArgument,"transfer spec on command line must have sources" if @transfer_paths.nil?
+          # here we assume check of sources is made in transfer agent
+          return @transfer_paths
+        when Array
+          Log.log.debug("getting file list as extended value")
+          raise CliBadArgument,"sources must be a Array of String" if !file_list.select{|f|!f.is_a?(String)}.empty?
+        else
+          raise CliBadArgument,"sources must be a Array, not #{file_list.class}"
         end
-        raise CliBadArgument,"command line must have either --sources or --ts with paths, e.g. --sources=#{@@ARGS_PARAM}" if @transfer_paths.nil?
+        # here, file_list is an Array or String
+        if !@transfer_paths.nil?
+          Log.log.warn("--sources overrides paths from --ts")
+        end
+        @transfer_paths=file_list.map{|i|{'source'=>i}}
         return @transfer_paths
       end
 
@@ -166,7 +183,7 @@ module Asperalm
       def wait_for_transfers_completion
         @agent.wait_for_transfers_completion unless @agent.nil?
       end
-      
+
       # helper method for above method
       def self.all_session_success(statuses)
         return statuses.select{|i|!i.eql?(:success)}.empty?
