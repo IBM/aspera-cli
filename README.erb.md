@@ -517,7 +517,7 @@ Parameters are evaluated in the order of command line.
 To avoid loading the default <%=prst%> for a plugin, just specify a non existing configuration: `-Pnone`
 
 On command line, words in parameter names are separated by a dash, in configuration file, separator
-is an underscore. E.g. --transfer-name  on command line gives transfer_node in configuration file.
+is an underscore. E.g. --xxx-yyy  on command line gives xxx_yyy in configuration file.
 
 Note: before version 0.4.5, some keys could be ruby symbols, from 0.4.5 all keys are strings. To
 convert olver versions, remove the leading ":" in front of keys.
@@ -656,13 +656,13 @@ Transfer Server using the Node API, either on a local or remote node.
 
 If a default node has been configured
 in the configuration file, then this node is used by default else the parameter
-`--transfer-node` is required. The node specification shall be a hash table with
+`--transfer-info` is required. The node specification shall be a hash table with
 three keys: url, username and password, corresponding to the URL of the node API
 and associated credentials (node user or access key).
 
-The `--transfer-node` parameter can directly specify a pre-configured <%=prst%> : 
-`--transfer-node=@preset:<psetname>` or specified using the option syntax :
-`--transfer-node=@json:'{"url":"https://...","username":"theuser","password":"thepass"}'`
+The `--transfer-info` parameter can directly specify a pre-configured <%=prst%> : 
+`--transfer-info=@preset:<psetname>` or specified using the option syntax :
+`--transfer-info=@json:'{"url":"https://...","username":"theuser","password":"thepass"}'`
 
 ## <a name="transferspec"></a>Transfer Specification
 
@@ -712,26 +712,40 @@ When uploading, downloading or sending files, the user must specify
 the list of files to send. This is done by using the option:
 `sources`.
 
-The easiest way is to specify `--sources=@args` and then the list 
-of source files will be the remaining arguments on the command line. Example:
+There are 3 ways to specify the list of files:
+
+* on the command line (default) : `--sources=@args`
+
+The list of file path is provided at the end of the command line.
+If the `sources` is not provided, this is the default.
+Example:
 
 ```
 --sources=@args file1.ext file2.ext
 ```
 
-A more complex way is to provide an Array of Hash, specified
+or more simply:
+
+```
+file1.ext file2.ext
+```
+
+* in the transfer spec : `--sources=@ts`
+
+The file list is part of the standard transfer spec. Example:
+
+```
+--sources=@ts --ts=@json:'{"paths"=>[{"source"=>"file1.ext"},{"source"=>"file1.ext"}]}'
+```
+
+* as an extended value : `--sources=@&lt;extended value syntax&gt;`
+
+The value must be an Array of String, specified
 using the [Extended Value Syntax](#extended).
-Each Hash must contain one key: `source` and the value is the path of the file. 
-The equivalent of previous example:
+Example:
 
 ```
 --sources=@json:'[{"source"=>"file1.ext"},{"source"=>"file1.ext"}]'
-```
-
-Another possibility is to provide this same value as part of the transfer spec:
-
-```
---ts=@json:'{"paths"=>[{"source"=>"file1.ext"},{"source"=>"file1.ext"}]}'
 ```
 
 ### <a name="multisession"></a>Support of multi-session
@@ -1239,7 +1253,7 @@ Create another configuration for the Azure ATS instance: in section "node", name
 Then execute the following command:
 
 ```bash
-$ <%=cmd%> node download /share/sourcefile --to-folder=/destinationfolder --preset=awsshod --transfer=node --transfer-node=@preset:azureats
+$ <%=cmd%> node download /share/sourcefile --to-folder=/destinationfolder --preset=awsshod --transfer=node --transfer-info=@preset:azureats
 ```
 
 This will get transfer information from the SHOD instance and tell the Azure ATS instance 
@@ -1803,6 +1817,10 @@ This means that you do not have ruby support for ED25519 SSH keys. You may eithe
 Gems, or remove your ed25519 key from your `.ssh` folder to solve the issue.
 
 # Release Notes
+
+* version 0.9.10
+
+  * Breaking change: parameter transfer-node becomes more generic: transfer-info
 
 * version 0.9.9
 
