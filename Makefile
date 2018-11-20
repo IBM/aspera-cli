@@ -192,7 +192,7 @@ t/nd2:
 	rm -f $(TEST_FOLDER)/200KB.1
 	@touch $@
 t/nd3:
-	$(EXETEST) --no-default node --url=https://10.25.0.4:9092 --username=node_xferuser --password=Aspera123_ --insecure=yes upload --to-folder=/ --ts=@json:'{"paths":[{"source":"500M.dat"}],"precalculate_job_size":true}' --transfer=node --transfer-info=@json:'{"url":"https://10.25.0.8:9092","username":"node_xferuser","password":"Aspera123_"}' 
+	$(EXETEST) --no-default node --url=https://10.25.0.4:9092 --username=node_xferuser --password=Aspera123_ --insecure=yes upload --to-folder=/ --sources=@ts --ts=@json:'{"paths":[{"source":"500M.dat"}],"precalculate_job_size":true}' --transfer=node --transfer-info=@json:'{"url":"https://10.25.0.8:9092","username":"node_xferuser","password":"Aspera123_"}' 
 	$(EXETEST) --no-default node --url=https://10.25.0.4:9092 --username=node_xferuser --password=Aspera123_ --insecure=yes delete /500M.dat
 	@touch $@
 t/nd4:
