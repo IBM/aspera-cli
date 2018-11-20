@@ -485,7 +485,7 @@ module Asperalm
               global_operations=[:create,:list]
               supported_operations=[:show]
               supported_operations.push(:modify,:delete,*global_operations) unless singleton_object
-              supported_operations.push(:do) if resource_type.eql?(:node)
+              supported_operations.push(:do,:info) if resource_type.eql?(:node)
               supported_operations.push(:shared_folders) if resource_type.eql?(:workspace)
               command=Main.instance.options.get_next_command(supported_operations)
               # require identifier for non global commands
@@ -547,6 +547,18 @@ module Asperalm
                 api_node=@api_files.get_files_node_api(res_data,nil)
                 ak_data=api_node.call({:operation=>'GET',:subpath=>"access_keys/#{res_data['access_key']}",:headers=>{'Accept'=>'application/json'}})[:data]
                 return self.class.execute_node_gen4_action(@api_files,[res_id,ak_data['root_file_id']])
+              when :info
+                object=@api_files.read(resource_instance_path)[:data]
+                access_key=object['access_key']
+                match_list=@api_files.read('admin/search_nodes',{:q=>"access_key:\"#{access_key}\""})[:data]
+                result=match_list.select{|i|i["_source"]["access_key_recursive_counts"].first["access_key"].eql?(access_key)}
+                return Main.result_status('Private node') if result.empty?
+                raise CliError,"more than one match" unless result.length.eql?(1)
+                result=result.first["_source"]
+                result.merge!(result['access_key_recursive_counts'].first)
+                result.delete('access_key_recursive_counts')
+                result.delete('token')
+                return { :type=>:single_object, :data =>result}
               when :shared_folders
                 res_data=@api_files.read("#{resource_class_path}/#{res_id}/permissions")[:data]
                 return { :type=>:object_list, :data =>res_data , :fields=>['id','node_name','file_id']} #
