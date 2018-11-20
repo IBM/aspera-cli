@@ -1821,6 +1821,9 @@ Gems, or remove your ed25519 key from your `.ssh` folder to solve the issue.
 * version 0.9.10
 
   * Breaking change: parameter transfer-node becomes more generic: transfer-info
+  * Display SaaS storage usage with command: aspera admin res node --id=nn info
+  * cleaner way of specifying source file list for transfers
+  * Breaking change: replaced download_mode option with http_download action
 
 * version 0.9.9
 
