@@ -166,13 +166,16 @@ module Asperalm
 
       def get_next_command(action_list); return get_next_argument('command',action_list); end
 
-      # expected is array of allowed value (single value)
-      # or :multiple for remaining values
-      # or :single for a single unconstrained value
+      # @param expected is 
+      #    - Array of allowed value (single value)
+      #    - :multiple for remaining values
+      #    - :single for a single unconstrained value
+      # @param is_type : :mandatory or :optional
+      # @return value, list or nil
       def get_next_argument(descr,expected=:single,is_type=:mandatory)
-        if is_type.eql?(:mandatory) and @unprocessed_cmd_line_arguments.empty?
-          result=get_interactive(:argument,descr,expected)
-        else # there are values
+        result=nil
+        if !@unprocessed_cmd_line_arguments.empty?
+          # there are values
           case expected
           when :single
             result=ExtendedValue.parse(descr,@unprocessed_cmd_line_arguments.shift)
@@ -180,6 +183,11 @@ module Asperalm
             result = @unprocessed_cmd_line_arguments.shift(@unprocessed_cmd_line_arguments.length).map{|v|ExtendedValue.parse(descr,v)}
           else
             result=self.class.get_from_list(@unprocessed_cmd_line_arguments.shift,descr,expected)
+          end
+        else
+          # no value provided
+          if is_type.eql?(:mandatory)
+            result=get_interactive(:argument,descr,expected)
           end
         end
         Log.log.debug("#{descr}=#{result}")
