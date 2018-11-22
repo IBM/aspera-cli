@@ -158,14 +158,16 @@ module Asperalm
         @opt_mgr.add_opt_simple(:http_proxy,"URL of HTTP proxy (for http fallback)")
         @opt_mgr.add_opt_simple(:lock_port,"prevent dual execution of a command, e.g. in cron")
         @opt_mgr.add_opt_simple(:use_product,"which local product to use for ascp, current=#{Fasp::Installation.instance.activated}")
-        @opt_mgr.add_opt_simple(:query,"additional filter for API calls (extended value)")
+        @opt_mgr.add_opt_simple(:query,"additional filter for API calls (extended value) (some commands)")
         @opt_mgr.add_opt_boolean(:insecure,"do not validate HTTPS certificate")
         @opt_mgr.add_opt_boolean(:flat_hash,"display hash values as additional keys")
         @opt_mgr.add_opt_boolean(:override,"override existing value")
+        @opt_mgr.add_opt_boolean(:once_only,"process only new items (some commands)")
 
         @opt_mgr.set_option(:ui,OpenApplication.default_gui_mode)
         @opt_mgr.set_option(:fields,FIELDS_DEFAULT)
         @opt_mgr.set_option(:format,:table)
+        @opt_mgr.set_option(:once_only,:false)
       end
 
       # loads default parameters of plugin if no -P parameter

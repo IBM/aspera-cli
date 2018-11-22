@@ -38,12 +38,10 @@ module Asperalm
           Main.instance.options.add_opt_simple(:new_user_option,"new user creation option")
           Main.instance.options.add_opt_simple(:from_folder,"share to share source folder")
           Main.instance.options.add_opt_boolean(:bulk,"bulk operation")
-          Main.instance.options.add_opt_boolean(:once_only,"keep track of already downloaded packages")
           Main.instance.options.set_option(:bulk,:no)
           Main.instance.options.set_option(:redirect_uri,'http://localhost:12345')
           Main.instance.options.set_option(:auth,:web)
           Main.instance.options.set_option(:new_user_option,{'package_contact'=>true})
-          Main.instance.options.set_option(:once_only,:false)
           Main.instance.options.set_option(:operation,:push)
         end
 
