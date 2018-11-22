@@ -443,7 +443,7 @@ module Asperalm
             require 'asperalm/faspex_gw'
             FaspexGW.instance.start_server(@api_files,@workspace_id)
           when :admin
-            command_admin=Main.instance.options.get_next_command([ :ats, :resource, :events, :set_client_key, :usage_reports, :search_nodes  ])
+            command_admin=Main.instance.options.get_next_command([ :ats, :resource, :set_client_key, :usage_reports, :search_nodes  ])
             case command_admin
             when :ats
               @ats.ats_api_public = @ats.ats_api_secure = Rest.new(@api_files.params.clone.merge!({
@@ -456,25 +456,6 @@ module Asperalm
               ak=Main.instance.options.get_next_argument('access_key')
               nodes=@api_files.read("search_nodes",{'q'=>'access_key:"'+ak+'"'})[:data]
               return {:type=>:other_struct,:data=>nodes}
-            when :events
-              # page=1&per_page=10&q=type:(file_upload+OR+file_delete+OR+file_download+OR+file_rename+OR+folder_create+OR+folder_delete+OR+folder_share+OR+folder_share_via_public_link)&sort=-date
-              #events=@api_files.read('events',{'q'=>'type:(file_upload OR file_download)'})[:data]
-              #Log.log.info "events=#{JSON.generate(events)}"
-              node_info=@api_files.read("nodes/#{@home_node_file.first}")[:data]
-              # get access to node API, note the additional header
-              @api_files.secrets[@home_node_file.first]=@ak_secret
-              api_node=@api_files.get_files_node_api(node_info,FilesApi::SCOPE_NODE_USER)
-              # can add filters: tag=aspera.files.package_id%3DLA8OU3p8w
-              #'tag'=>'aspera.files.package_id%3DJvbl0w-5A'
-              # filter= 'id', 'short_summary', or 'summary'
-              # count=nnn
-              # tag=x.y.z%3Dvalue
-              # iteration_token=nnn
-              # active_only=true|false
-              events=api_node.read("ops/transfers",{'count'=>100,'filter'=>'summary','active_only'=>'true'})[:data]
-              return {:type=>:object_list,:data=>events,:fields=>['id','status']}
-              #transfers=api_node.make_request_ex({:operation=>'GET',:subpath=>'ops/transfers',:args=>{'count'=>25,'filter'=>'id'}})
-              #transfers=api_node.read("events") # after_time=2016-05-01T23:53:09Z
             when :set_client_key
               the_client_id=Main.instance.options.get_next_argument('client_id')
               the_private_key=Main.instance.options.get_next_argument('private_key')
@@ -487,21 +468,25 @@ module Asperalm
               global_operations=[:create,:list]
               supported_operations=[:show]
               supported_operations.push(:modify,:delete,*global_operations) unless singleton_object
-              supported_operations.push(:do,:info) if resource_type.eql?(:node)
+              supported_operations.push(:v4,:v3,:info) if resource_type.eql?(:node)
               supported_operations.push(:shared_folders) if resource_type.eql?(:workspace)
               command=Main.instance.options.get_next_command(supported_operations)
               # require identifier for non global commands
               if !singleton_object and !global_operations.include?(command)
                 res_id=Main.instance.options.get_option(:id)
                 res_name=Main.instance.options.get_option(:name)
+                if resource_type.eql?(:node)
+                  #@api_files.secrets[@home_node_file.first]=@ak_secret unless @ak_secret.nil?
+                  res_id=@home_node_file.first if res_id.nil? and res_name.nil?
+                end
                 if res_id.nil?
-                  raise "Use either id or name" if res_name.nil?
+                  raise CliBadArgument,"Use one of id or name" if res_name.nil?
                   matching=@api_files.read(resource_class_path,{:q=>res_name})[:data]
                   raise CliError,"no resource match name" if matching.empty?
                   raise CliError,"several resources match name" unless matching.length.eql?(1)
                   res_id=matching.first['id']
                 else
-                  raise "Use either id or name" unless res_name.nil?
+                  raise CliBadArgument,"Use either id or name, not both" unless res_name.nil?
                 end
                 resource_instance_path="#{resource_class_path}/#{res_id}"
               end
@@ -541,14 +526,22 @@ module Asperalm
                   @api_files.delete("#{resource_class_path}/#{one_id.to_s}")
                   {'id'=>one_id}
                 end
-              when :do
+              when :v3,:v4
                 res_data=@api_files.read(resource_instance_path)[:data]
                 # mandatory secret
                 Main.instance.options.get_option(:secret,:mandatory)
                 @api_files.secrets[res_data['id']]=@ak_secret
                 api_node=@api_files.get_files_node_api(res_data,nil)
+                return Node.instance.execute_action(api_node) if command.eql?(:v3)
                 ak_data=api_node.call({:operation=>'GET',:subpath=>"access_keys/#{res_data['access_key']}",:headers=>{'Accept'=>'application/json'}})[:data]
                 return self.class.execute_node_gen4_action(@api_files,[res_id,ak_data['root_file_id']])
+              when :v3
+                res_data=@api_files.read(resource_instance_path)[:data]
+                # mandatory secret
+                Main.instance.options.get_option(:secret,:mandatory)
+                @api_files.secrets[res_data['id']]=@ak_secret
+                api_node=@api_files.get_files_node_api(res_data,nil)
+
               when :info
                 object=@api_files.read(resource_instance_path)[:data]
                 access_key=object['access_key']
