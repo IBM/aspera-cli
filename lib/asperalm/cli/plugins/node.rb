@@ -82,7 +82,7 @@ module Asperalm
         def self.execute_common(command,api_node,prefix_path=nil)
           case command
           when :events
-            events=api_node.read('events')[:data]
+            events=api_node.read('events',Main.instance.options.get_option(:value,:optional))[:data]
             return { :type=>:object_list, :data => events}
           when :info
             node_info=api_node.read('info')[:data]
@@ -153,8 +153,7 @@ module Asperalm
 
         def action_list; self.class.common_actions.clone.concat([ :postprocess,:stream, :transfer, :cleanup, :forward, :access_key, :watch_folder, :service, :async, :central, :asperabrowser ]);end
 
-        def execute_action
-          api_node=basic_auth_api()
+        def execute_action(api_node=basic_auth_api)
           command=Main.instance.options.get_next_command(action_list)
           case command
           when *self.class.common_actions; return self.class.execute_common(command,api_node)
