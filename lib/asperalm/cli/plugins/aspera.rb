@@ -383,28 +383,22 @@ module Asperalm
               }
               return self.class.xfer_result(@api_files,'packages','send',node_info,package_info['contents_file_id'],add_ts)
             when :recv
-              pack_id=Main.instance.options.get_option(:id,:mandatory)
-              once_only=Main.instance.options.get_option(:once_only,:mandatory)
-              skip_ids=[]
-              ids_to_download=[]
-              case pack_id
-              when @@VAL_ALL
-                if once_only
-                  persistency_file=PersistencyFile.new('aoc_recv',Cli::Plugins::Config.instance.config_folder)
-                  persistency_file.set_unique(
-                  nil,
-                  [@user_id,@workspace_name],
-                  Main.instance.options.get_option(:url,:mandatory))
-                  data=persistency_file.read_from_file
-                  unless data.nil?
-                    skip_ids=JSON.parse(data)
-                  end
-                end
-                # todo
-                ids_to_download=@api_files.read('packages',{'archived'=>false,'exclude_dropbox_packages'=>true,'has_content'=>true,'received'=>true,'workspace_id'=>@workspace_id})[:data].select{|e|!skip_ids.include?(e['id'])}.map{|e|e['id']}
-              else
-                ids_to_download=[pack_id]
-              end
+              ids_to_download=[Main.instance.options.get_option(:id,:mandatory)]
+              # non nil if persistence
+              skip_ids_persistency=PersistencyFile.new('aoc_recv',{
+                :folder   => Cli::Plugins::Config.instance.config_folder,
+                :url      => Main.instance.options.get_option(:url,:mandatory),
+                :ids      => [@user_id,@workspace_name],
+                :active   => Main.instance.options.get_option(:once_only,:mandatory),
+                :default  => [],
+                :delete   => lambda{|d|d.nil? or d.empty?}})
+              if ids_to_download.first.eql?(@@VAL_ALL)
+                # get list of packages in inbox
+                package_info=@api_files.read('packages',{'archived'=>false,'exclude_dropbox_packages'=>true,'has_content'=>true,'received'=>true,'workspace_id'=>@workspace_id})[:data]
+                # remove from list the ones already downloaded
+                ids_to_download=package_info.map{|e|e['id']}
+                ids_to_download.select!{|id|!skip_ids_persistency.data.include?(id)}
+              end # ALL
               result_transfer=[]
               Main.instance.display_status("found #{ids_to_download.length} package(s).")
               ids_to_download.each do |package_id|
@@ -418,12 +412,10 @@ module Asperalm
                 Main.instance.display_status("downloading package: #{package_info['name']}")
                 statuses=TransferAgent.instance.start(transfer_spec,options)
                 result_transfer.push({'package'=>package_id,'status'=>statuses.map{|i|i.to_s}.join(',')})
-                # skip only if all sessions completed
-                skip_ids.push(package_id) if TransferAgent.all_session_success(statuses)
+                # update skip list only if all sessions completed
+                skip_ids_persistency.data.push(package_id) if TransferAgent.all_session_success(statuses)
               end
-              if once_only and !skip_ids.empty?
-                persistency_file.write_to_file(JSON.generate(skip_ids))
-              end
+              skip_ids_persistency.save
               return {:type=>:object_list,:data=>result_transfer}
             when :show
               package_id=Main.instance.options.get_next_argument('package ID')

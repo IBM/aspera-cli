@@ -54,7 +54,6 @@ module Asperalm
           super()
           @skip_types=[]
           @default_transfer_spec=nil
-          @persistency_file=PersistencyFile.new('preview_iteration',Cli::Plugins::Config.instance.config_folder)
         end
 
         alias super_declare_options declare_options
@@ -125,17 +124,13 @@ module Asperalm
         end
 
         # old version based on folders
-        def process_file_events_old
+        def process_file_events_old(iteration_token)
           args={
             'access_key'=>@access_key_self['id'],
             'type'=>'download.ended'
           }
-          # and optionally by iteration token
-          begin
-            events_filter['iteration_token']=@persistency_file.read_from_file
-            events_filter.delete('iteration_token') if events_filter['iteration_token'].nil?
-          rescue
-          end
+          # optionally by iteration token
+          events_filter['iteration_token']=iteration_token unless iteration_token.nil?
           events=@api_node.read("events",args)[:data]
           return if events.empty?
           events.each do |event|
@@ -150,23 +145,18 @@ module Asperalm
             next if folder_entry.nil?
             scan_folder_files(folder_entry)
           end
-          # write next iteration value if needed/possible
-          @persistency_file.write_to_file(events.last['id'].to_s)
+          return events.last['id'].to_s
         end
 
         # requests recent events on node api and process newly modified folders
-        def process_file_events
+        def process_file_events(iteration_token)
           # get new file creation by access key (TODO: what if file already existed?)
           events_filter={
             'access_key'=>@access_key_self['id'],
             'type'=>'file.created'
           }
           # and optionally by iteration token
-          begin
-            events_filter['iteration_token']=@persistency_file.read_from_file
-            events_filter.delete('iteration_token') if events_filter['iteration_token'].nil?
-          rescue
-          end
+          events_filter['iteration_token']=iteration_token unless iteration_token.nil?
           events=@api_node.read("events",events_filter)[:data]
           return if events.empty?
           events.each do |event|
@@ -179,7 +169,7 @@ module Asperalm
             generate_preview(file_entry)
           end
           # write new iteration file
-          @persistency_file.write_to_file(events.last['id'].to_s)
+          return events.last['id'].to_s
         end
 
         def do_transfer(direction,folder_id,source_filename,destination=nil)
@@ -379,11 +369,13 @@ module Asperalm
             scan_folder_files({ 'id' => @access_key_self['root_file_id'], 'name' => '/', 'type' => 'folder', 'path' => '/' })
             return Main.result_status('scan finished')
           when :events
-            @persistency_file.set_unique(
-            Main.instance.options.get_option(:iteration_file,:optional),
-            [Main.instance.options.get_option(:username,:mandatory)],
-            Main.instance.options.get_option(:url,:mandatory))
-            process_file_events
+            @iteration_persistency=PersistencyFile.new('preview_iteration',{
+              :folder   => Cli::Plugins::Config.instance.config_folder,
+              :url      => Main.instance.options.get_option(:url,:mandatory),
+              :ids      => [Main.instance.options.get_option(:username,:mandatory)],
+              :active   => Main.instance.options.get_option(:once_only,:mandatory)})
+            @iteration_persistency.data=process_file_events(@iteration_persistency.data)
+            @iteration_persistency.save
             return Main.result_status('events finished')
           when :folder
             file_id=Main.instance.options.get_next_argument('file id')

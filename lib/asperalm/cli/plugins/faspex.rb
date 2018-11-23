@@ -24,9 +24,7 @@ module Asperalm
           Main.instance.options.add_opt_simple(:source_name,"create package from remote source (by name)")
           Main.instance.options.add_opt_simple(:storage,"Faspex local storage definition")
           Main.instance.options.add_opt_list(:box,[:inbox,:sent,:archive],"package box")
-          Main.instance.options.add_opt_boolean(:once_only,"keep track of already downloaded packages")
           Main.instance.options.set_option(:box,:inbox)
-          Main.instance.options.set_option(:once_only,:false)
         end
 
         # extract elements from anonymous faspex link
@@ -124,54 +122,45 @@ module Asperalm
               # get command line parameters
               delivid=Main.instance.options.get_option(:id,:mandatory)
               mailbox=Main.instance.options.get_option(:box,:mandatory).to_s
-              once_only=Main.instance.options.get_option(:once_only,:mandatory)
-              # list of faspex URI to download
-              uris_to_download=nil
-              skip_ids=[]
-              ids_to_download=[]
-              case delivid
-              when @@VAL_ALL
-                if once_only
-                  persistency_file=PersistencyFile.new('faspex_recv',Cli::Plugins::Config.instance.config_folder)
-                  persistency_file.set_unique(
-                  nil,
-                  [Main.instance.options.get_option(:username,:mandatory),Main.instance.options.get_option(:box,:mandatory).to_s],
-                  Main.instance.options.get_option(:url,:mandatory))
-                  data=persistency_file.read_from_file
-                  unless data.nil?
-                    skip_ids=JSON.parse(data)
-                  end
-                end
-                # todo
-                uris_to_download=self.mailbox_all_entries.select{|e| !skip_ids.include?(e[PACKAGE_MATCH_FIELD])}.map{|e|ids_to_download.push(e[PACKAGE_MATCH_FIELD]);self.class.get_fasp_uri_from_entry(e)}
+              # list of faspex ID/URI to download
+              pkg_id_uri=nil
+              skip_ids_persistency=PersistencyFile.new('faspex_recv',{
+                :folder   => Cli::Plugins::Config.instance.config_folder,
+                :url      => Main.instance.options.get_option(:url,:mandatory),
+                :ids      => [Main.instance.options.get_option(:username,:mandatory),Main.instance.options.get_option(:box,:mandatory).to_s],
+                :active   => Main.instance.options.get_option(:once_only,:mandatory),
+                :default  => [],
+                :delete   => lambda{|d|d.nil? or d.empty?}})
+              if delivid.eql?(@@VAL_ALL)
+                pkg_id_uri=mailbox_all_entries.map{|e|{:id=>e[PACKAGE_MATCH_FIELD],:uri=>self.class.get_fasp_uri_from_entry(e)}}
+                # todo : remove ids from skip not present in inbox
+                # skip_ids_persistency.data.select!{|id|pkg_id_uri.select{|p|p[:id].eql?(id)}}
+                pkg_id_uri.select!{|e|!skip_ids_persistency.data.include?(e[:id])}
               else
                 # I dont know which delivery id is the right one if package was receive by group
                 entry_xml=api_v3.call({:operation=>'GET',:subpath=>"#{mailbox}/#{delivid}",:headers=>{'Accept'=>'application/xml'}})[:http].body
                 package_entry=XmlSimple.xml_in(entry_xml, {"ForceArray" => true})
-                transfer_uri=self.class.get_fasp_uri_from_entry(package_entry)
-                uris_to_download=[transfer_uri]
+                pkg_id_uri=[{:id=>delivid,:uri=>self.class.get_fasp_uri_from_entry(package_entry)}]
               end
-              Log.dump(:uris_to_download,uris_to_download)
-              return Main.result_status('no package') if uris_to_download.empty?
+              Log.dump(:pkg_id_uri,pkg_id_uri)
+              return Main.result_status('no package') if pkg_id_uri.empty?
               result_transfer=[]
-              uris_to_download.each do |transfer_uri|
-                this_id=ids_to_download.shift
-                transfer_spec=Fasp::Uri.new(transfer_uri).transfer_spec
+              pkg_id_uri.each do |id_uri|
+                transfer_spec=Fasp::Uri.new(id_uri[:uri]).transfer_spec
                 # NOTE: only external users have token in faspe: link !
                 if !transfer_spec.has_key?('token')
-                  sanitized=transfer_uri.gsub('&','&amp;')
+                  sanitized=id_uri[:uri].gsub('&','&amp;')
                   xmlpayload='<?xml version="1.0" encoding="UTF-8"?><url-list xmlns="http://schemas.asperasoft.com/xml/url-list"><url href="'+sanitized+'"/></url-list>'
                   transfer_spec['token']=api_v3.call({:operation=>'POST',:subpath=>"issue-token?direction=down",:headers=>{'Accept'=>'text/plain','Content-Type'=>'application/vnd.aspera.url-list+xml'},:text_body_params=>xmlpayload})[:http].body
                 end
                 transfer_spec['direction']='receive'
                 statuses=TransferAgent.instance.start(transfer_spec,{:src=>:node_gen3})
-                result_transfer.push({'package'=>this_id,'status'=>statuses.map{|i|i.to_s}.join(',')})
+                result_transfer.push({'package'=>id_uri[:id],'status'=>statuses.map{|i|i.to_s}.join(',')})
                 # skip only if all sessions completed
-                skip_ids.push(this_id) if TransferAgent.all_session_success(statuses)
+                skip_ids_persistency.data.push(id_uri[:id]) if TransferAgent.all_session_success(statuses)
               end
-              if once_only and !skip_ids.empty?
-                persistency_file.write_to_file(JSON.generate(skip_ids))
-              end
+              skip_ids_persistency.data = nil if skip_ids_persistency.data.empty?
+              persistency_file.save
               return {:type=>:object_list,:data=>result_transfer}
             when :send
               delivery_info=Main.instance.options.get_option(:delivery_info,:mandatory)
