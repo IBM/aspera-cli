@@ -182,6 +182,7 @@ tconsole: t/cons1
 #NODEDEST=/home/faspex/docroot
 NODEDEST=/
 t/nd1:
+	$(EXETEST) node info
 	$(EXETEST) node browse / -r
 	@touch $@
 t/nd2:
@@ -248,25 +249,26 @@ t/aocp4:
 	$(EXETEST) aspera packages recv --id=ALL --once-only=yes --lock-port=12345
 	@touch $@
 t/aoc7:
-	$(EXETEST) aspera admin events
+	$(EXETEST) aspera admin res node v3 events --secret='AML3clHuHwDArShhcQNVvWGHgU9dtnpgLzRCPsBr7H5JdhrFU2oRs69_tJTEYE-hXDVSW-vQ3-klRnJvxrTkxQ'
 	@touch $@
 t/aoc8:
 	$(EXETEST) aspera admin resource workspace list
 	@touch $@
 t/aoc9:
-	$(EXETEST) aspera admin resource node --name=eudemo do browse / --secret=Aspera123_
+	$(EXETEST) aspera admin resource node --name=eudemo --secret=Aspera123_ v3 events
+	$(EXETEST) aspera admin resource node --name=eudemo --secret=Aspera123_ v4 browse /
 	@touch $@
 t/aoc10:
-	$(EXETEST) aspera admin resource node --name=eudemo --secret=Aspera123_ do mkdir /folder1
+	$(EXETEST) aspera admin resource node --name=eudemo --secret=Aspera123_ v4 mkdir /folder1
 	@touch $@
 t/aoc11:
-	$(EXETEST) aspera admin resource node --name=eudemo --secret=Aspera123_ do access_key create --value=@json:'{"id":"testsub1","storage":{"path":"/folder1"}}'
+	$(EXETEST) aspera admin resource node --name=eudemo --secret=Aspera123_ v4 access_key create --value=@json:'{"id":"testsub1","storage":{"path":"/folder1"}}'
 	@touch $@
 t/aoc12:
-	$(EXETEST) aspera admin resource node --name=eudemo --secret=Aspera123_ do access_key delete --eid=testsub1
+	$(EXETEST) aspera admin resource node --name=eudemo --secret=Aspera123_ v4 access_key delete --eid=testsub1
 	@touch $@
 t/aoc13:
-	$(EXETEST) aspera admin resource node --name=eudemo --secret=Aspera123_ do delete /folder1
+	$(EXETEST) aspera admin resource node --name=eudemo --secret=Aspera123_ v4 delete /folder1
 	@touch $@
 t/aoc14:
 	$(EXETEST) aspera admin resource workspace_membership list --fields=ALL --query=@json:'{"page":1,"per_page":50,"embed":"member","inherited":false,"workspace_id":11363,"sort":"name"}'

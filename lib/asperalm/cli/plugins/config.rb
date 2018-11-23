@@ -1,6 +1,5 @@
 require 'asperalm/cli/basic_auth_plugin'
 require 'asperalm/fasp/installation'
-require 'singleton'
 require 'xmlsimple'
 
 module Asperalm
@@ -8,7 +7,23 @@ module Asperalm
     module Plugins
       # manage the CLI config file
       class Config < Plugin
-        include Singleton
+        def initialize(env,tool_name,gem_name,version)
+          super(env)
+          @use_plugin_defaults=true
+          @config_presets=nil
+          @program_version=version
+          @gem_name=gem_name
+          @tool_name=tool_name
+          @main_folder=File.join(Dir.home,@@ASPERA_HOME_FOLDER_NAME,tool_name)
+          @old_main_folder=File.join(Dir.home,@@ASPERA_HOME_FOLDER_NAME,@@OLD_PROGRAM_NAME)
+          if Dir.exist?(@old_main_folder) and ! Dir.exist?(@main_folder)
+            Log.log.warn("Detected former configuration folder, renaming: #{@old_main_folder} -> #{@main_folder}")
+            FileUtils.mv(@old_main_folder, @main_folder)
+          end
+          @option_config_file=File.join(@main_folder,@@DEFAULT_CONFIG_FILENAME)
+          @help_url='http://www.rubydoc.info/gems/'+@gem_name
+          @gem_url='https://rubygems.org/gems/'+@gem_name
+        end
         private
 
         # folder in $HOME for application files (config, cache)
@@ -22,13 +37,6 @@ module Asperalm
         # new plugin name for AoC
         @@ASPERA_PLUGIN_S=:aspera.to_s
         @@DEFAULT_REDIRECT='http://localhost:12345'
-        def initialize
-          @program_version=nil
-          @config_folder=nil
-          @option_config_file=nil
-          @use_plugin_defaults=true
-          @config_presets=nil
-        end
 
         def self.flatten_all_config(t)
           r=[]
@@ -45,13 +53,14 @@ module Asperalm
         def action_list; [ :todo];end
 
         def declare_options
-          Main.instance.options.set_obj_attr(:override,self,:option_override,:no)
-          Main.instance.options.set_obj_attr(:config_file,self,:option_config_file)
-          Main.instance.options.add_opt_simple(:config_file,"read parameters from file in YAML format, current=#{@option_config_file}")
-          Main.instance.options.add_opt_switch(:no_default,"-N","do not load default configuration for plugin") { @use_plugin_defaults=false }
+          self.options.set_obj_attr(:override,self,:option_override,:no)
+          self.options.set_obj_attr(:config_file,self,:option_config_file)
+          self.options.add_opt_simple(:config_file,"read parameters from file in YAML format, current=#{@option_config_file}")
+          self.options.add_opt_switch(:no_default,"-N","do not load default configuration for plugin") { @use_plugin_defaults=false }
         end
 
-        attr_reader :config_folder
+        # $HOME/.aspera/`program_name`
+        attr_reader :main_folder
         attr_reader :gem_url
         attr_reader :help_url
         attr_accessor :option_override
@@ -60,21 +69,6 @@ module Asperalm
         def preset_by_name(config_name)
           raise CliError,"no such config preset: #{config_name}" unless @config_presets.has_key?(config_name)
           return @config_presets[config_name]
-        end
-        
-        def set_program_info(tool_name,gem_name,version)
-          @program_version=version
-          @gem_name=gem_name
-          @tool_name=tool_name
-          @config_folder=File.join(Dir.home,@@ASPERA_HOME_FOLDER_NAME,tool_name)
-          @old_config_folder=File.join(Dir.home,@@ASPERA_HOME_FOLDER_NAME,@@OLD_PROGRAM_NAME)
-          if Dir.exist?(@old_config_folder) and ! Dir.exist?(@config_folder)
-            Log.log.warn("Detected former configuration folder, renaming: #{@old_config_folder} -> #{@config_folder}")
-            FileUtils.mv(@old_config_folder, @config_folder)
-          end
-          @option_config_file=File.join(@config_folder,@@DEFAULT_CONFIG_FILENAME)
-          @help_url='http://www.rubydoc.info/gems/'+@gem_name
-          @gem_url='https://rubygems.org/gems/'+@gem_name
         end
 
         # read config file and validate format
@@ -150,11 +144,11 @@ module Asperalm
 
         # "config" plugin
         def execute_action
-          action=Main.instance.options.get_next_command([:genkey,:plugins,:flush_tokens,:list,:overview,:open,:echo,:id,:documentation,:wizard,:export_to_cli,:detect])
+          action=self.options.get_next_command([:genkey,:plugins,:flush_tokens,:list,:overview,:open,:echo,:id,:documentation,:wizard,:export_to_cli,:detect])
           case action
           when :id
-            config_name=Main.instance.options.get_next_argument('config name')
-            action=Main.instance.options.get_next_command([:show,:delete,:set,:unset,:initialize,:update,:ask])
+            config_name=self.options.get_next_argument('config name')
+            action=self.options.get_next_command([:show,:delete,:set,:unset,:initialize,:update,:ask])
             case action
             when :show
               raise "no such config: #{config_name}" unless @config_presets.has_key?(config_name)
@@ -164,8 +158,8 @@ module Asperalm
               save_presets_to_config_file
               return Main.result_status("deleted: #{config_name}")
             when :set
-              param_name=Main.instance.options.get_next_argument('parameter name')
-              param_value=Main.instance.options.get_next_argument('parameter value')
+              param_name=self.options.get_next_argument('parameter name')
+              param_value=self.options.get_next_argument('parameter value')
               if !@config_presets.has_key?(config_name)
                 Log.log.debug("no such config name: #{config_name}, initializing")
                 @config_presets[config_name]=Hash.new
@@ -177,7 +171,7 @@ module Asperalm
               save_presets_to_config_file
               return Main.result_status("updated: #{config_name}: #{param_name} <- #{param_value}")
             when :unset
-              param_name=Main.instance.options.get_next_argument('parameter name')
+              param_name=self.options.get_next_argument('parameter name')
               if @config_presets.has_key?(config_name)
                 @config_presets[config_name].delete(param_name)
                 save_presets_to_config_file
@@ -186,7 +180,7 @@ module Asperalm
               end
               return Main.result_status("removed: #{config_name}: #{param_name}")
             when :initialize
-              config_value=Main.instance.options.get_next_argument('extended value (Hash)')
+              config_value=self.options.get_next_argument('extended value (Hash)')
               if @config_presets.has_key?(config_name)
                 Log.log.warn("configuration already exists: #{config_name}, overwriting")
               end
@@ -195,17 +189,17 @@ module Asperalm
               return Main.result_status("modified: #{@option_config_file}")
             when :update
               #  TODO: when arguments are provided: --option=value, this creates an entry in the named configuration
-              theopts=Main.instance.options.get_options_table
+              theopts=self.options.get_options_table
               Log.log.debug("opts=#{theopts}")
               @config_presets[config_name]={} if !@config_presets.has_key?(config_name)
               @config_presets[config_name].merge!(theopts)
               save_presets_to_config_file
               return Main.result_status("updated: #{config_name}")
             when :ask
-              Main.instance.options.ask_missing_mandatory=:yes
+              self.options.ask_missing_mandatory=:yes
               @config_presets[config_name]||={}
-              Main.instance.options.get_next_argument('option names',:multiple).each do |optionname|
-                option_value=Main.instance.options.get_interactive(:option,optionname)
+              self.options.get_next_argument('option names',:multiple).each do |optionname|
+                option_value=self.options.get_interactive(:option,optionname)
                 @config_presets[config_name][optionname]=option_value
               end
               save_presets_to_config_file
@@ -218,11 +212,11 @@ module Asperalm
             OpenApplication.instance.uri("#{@option_config_file}") #file://
             return Main.result_nothing
           when :genkey # generate new rsa key
-            key_filepath=Main.instance.options.get_next_argument('private key file path')
+            key_filepath=self.options.get_next_argument('private key file path')
             generate_new_key(key_filepath)
             return Main.result_status('generated key: '+key_filepath)
           when :echo # display the content of a value given on command line
-            result={:type=>:other_struct, :data=>Main.instance.options.get_next_argument("value")}
+            result={:type=>:other_struct, :data=>self.options.get_next_argument("value")}
             # special for csv
             result[:type]=:object_list if result[:data].is_a?(Array) and result[:data].first.is_a?(Hash)
             return result
@@ -236,21 +230,21 @@ module Asperalm
           when :overview
             return {:type=>:object_list,:data=>self.class.flatten_all_config(@config_presets)}
           when :wizard
-            instance_url=Main.instance.options.get_option(:url,:mandatory)
+            instance_url=self.options.get_option(:url,:mandatory)
             appli=discover_product(instance_url)
             case appli[:product]
             when :aoc
               Main.instance.display_status("Detected: Aspera on Cloud")
               require 'asperalm/cli/plugins/aspera'
-              files_plugin=Plugins::Aspera.instance
+              files_plugin=Plugins::Aspera.new(@agents)
               files_plugin.declare_options
-              Main.instance.options.parse_options!
-              Main.instance.options.set_option(:auth,:web)
-              Main.instance.options.set_option(:redirect_uri,@@DEFAULT_REDIRECT)
+              self.options.parse_options!
+              self.options.set_option(:auth,:web)
+              self.options.set_option(:redirect_uri,@@DEFAULT_REDIRECT)
               organization,instance_domain=FilesApi.parse_url(instance_url)
               aspera_preset_name='aoc_'+organization
               Main.instance.display_status("Creating preset: #{aspera_preset_name}")
-              key_filepath=File.join(@config_folder,'aspera_on_cloud_key')
+              key_filepath=File.join(@main_folder,'aspera_on_cloud_key')
               if File.exist?(key_filepath)
                 puts "key file already exists: #{key_filepath}"
               else
@@ -265,25 +259,25 @@ module Asperalm
               puts "- origin: localhost"
               puts "Once created please enter the following any required parameter:"
               OpenApplication.instance.uri(instance_url+"/admin/org/integrations")
-              Main.instance.options.get_option(:client_id)
-              Main.instance.options.get_option(:client_secret)
+              self.options.get_option(:client_id)
+              self.options.get_option(:client_secret)
               @config_presets[@@CONFIG_PRESET_DEFAULT]||=Hash.new
               raise CliError,"a default configuration already exists (use --override=yes)" if @config_presets[@@CONFIG_PRESET_DEFAULT].has_key?(@@ASPERA_PLUGIN_S) and !option_override
               raise CliError,"preset already exists: #{aspera_preset_name}  (use --override=yes)" if @config_presets.has_key?(aspera_preset_name) and !option_override
               # todo: check if key is identical
-              files_plugin.init_apis
-              myself=files_plugin.api_files_user.read('self')[:data]
+              files_plugin.set_fields(true)
+              myself=files_plugin.api_files.read('self')[:data]
               raise CliError,"public key is already set (use --override=yes)"  unless myself['public_key'].empty? or option_override
               puts "updating profile with new key"
-              files_plugin.api_files_user.update("users/#{myself['id']}",{'public_key'=>File.read(key_filepath+'.pub')})
+              files_plugin.api_files.update("users/#{myself['id']}",{'public_key'=>File.read(key_filepath+'.pub')})
               puts "Enabling JWT"
-              files_plugin.api_files_admn.update("clients/#{Main.instance.options.get_option(:client_id)}",{"jwt_grant_enabled"=>true,"explicit_authorization_required"=>false})
+              files_plugin.api_files.update("clients/#{self.options.get_option(:client_id)}",{"jwt_grant_enabled"=>true,"explicit_authorization_required"=>false})
               puts "creating new config preset: #{aspera_preset_name}"
               @config_presets[aspera_preset_name]={
-                :url.to_s           =>Main.instance.options.get_option(:url),
-                :redirect_uri.to_s  =>Main.instance.options.get_option(:redirect_uri),
-                :client_id.to_s     =>Main.instance.options.get_option(:client_id),
-                :client_secret.to_s =>Main.instance.options.get_option(:client_secret),
+                :url.to_s           =>self.options.get_option(:url),
+                :redirect_uri.to_s  =>self.options.get_option(:redirect_uri),
+                :client_id.to_s     =>self.options.get_option(:client_id),
+                :client_secret.to_s =>self.options.get_option(:client_secret),
                 :auth.to_s          =>:jwt.to_s,
                 :private_key.to_s   =>'@file:'+key_filepath,
                 :username.to_s      =>myself['email'],
@@ -301,21 +295,21 @@ module Asperalm
             require 'asperalm/cli/plugins/aspera'
             # need url / username
             Plugins::Aspera.instance.declare_options
-            Main.instance.options.parse_options!
-            url=Main.instance.options.get_option(:url,:mandatory)
+            self.options.parse_options!
+            url=self.options.get_option(:url,:mandatory)
             cli_conf_file=Fasp::Installation.instance.cli_conf_file
             data=JSON.parse(File.read(cli_conf_file))
             organization,instance_domain=FilesApi.parse_url(url)
             key_basename='org_'+organization+'.pem'
             key_file=File.join(File.dirname(File.dirname(cli_conf_file)),'etc',key_basename)
-            File.write(key_file,Main.instance.options.get_option(:private_key,:mandatory))
+            File.write(key_file,self.options.get_option(:private_key,:mandatory))
             new_conf={
               'organization'       => organization,
               'hostname'           => [organization,instance_domain].join('.'),
-              'clientId'           => Main.instance.options.get_option(:client_id,:mandatory),
-              'clientSecret'       => Main.instance.options.get_option(:client_secret,:mandatory),
+              'clientId'           => self.options.get_option(:client_id,:mandatory),
+              'clientSecret'       => self.options.get_option(:client_secret,:mandatory),
               'privateKeyFilename' => key_basename,
-              'username'           => Main.instance.options.get_option(:username,:mandatory)
+              'username'           => self.options.get_option(:username,:mandatory)
             }
             entry=data['AoCAccounts'].select{|i|i['organization'].eql?(organization)}.first
             if entry.nil?
@@ -330,15 +324,15 @@ module Asperalm
           when :detect
             # need url / username
             BasicAuthPlugin.new.declare_options
-            Main.instance.options.parse_options!
-            return Main.result_status("found: #{discover_product(Main.instance.options.get_option(:url,:mandatory))}")
+            self.options.parse_options!
+            return Main.result_status("found: #{discover_product(self.options.get_option(:url,:mandatory))}")
           else raise "error"
           end
         end
 
         def save_presets_to_config_file
           raise "no configuration loaded" if @config_presets.nil?
-          FileUtils::mkdir_p(config_folder) unless Dir.exist?(config_folder)
+          FileUtils::mkdir_p(main_folder) unless Dir.exist?(main_folder)
           Log.log.debug "writing #{@option_config_file}"
           File.write(@option_config_file,@config_presets.to_yaml)
         end

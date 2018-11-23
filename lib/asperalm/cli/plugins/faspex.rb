@@ -7,24 +7,22 @@ require 'asperalm/persistency_file'
 require 'asperalm/open_application'
 require 'asperalm/fasp/uri'
 require 'xmlsimple'
-require 'singleton'
 
 module Asperalm
   module Cli
     module Plugins
       class Faspex < BasicAuthPlugin
-        include Singleton
         @@KEY_NODE='node'
         @@KEY_PATH='path'
         @@VAL_ALL='ALL'
         alias super_declare_options declare_options
         def declare_options
           super_declare_options
-          Main.instance.options.add_opt_simple(:delivery_info,"package delivery information (extended value)")
-          Main.instance.options.add_opt_simple(:source_name,"create package from remote source (by name)")
-          Main.instance.options.add_opt_simple(:storage,"Faspex local storage definition")
-          Main.instance.options.add_opt_list(:box,[:inbox,:sent,:archive],"package box")
-          Main.instance.options.set_option(:box,:inbox)
+          self.options.add_opt_simple(:delivery_info,"package delivery information (extended value)")
+          self.options.add_opt_simple(:source_name,"create package from remote source (by name)")
+          self.options.add_opt_simple(:storage,"Faspex local storage definition")
+          self.options.add_opt_list(:box,[:inbox,:sent,:archive],"package box")
+          self.options.set_option(:box,:inbox)
         end
 
         # extract elements from anonymous faspex link
@@ -79,14 +77,14 @@ module Asperalm
 
         def api_v4
           if @api_v4.nil?
-            faspex_api_base=Main.instance.options.get_option(:url,:mandatory)
+            faspex_api_base=self.options.get_option(:url,:mandatory)
             @api_v4=Rest.new({
               :base_url             => faspex_api_base+'/api',
               :auth_type            => :oauth2,
               :oauth_base_url       => faspex_api_base+'/auth/oauth2',
               :oauth_type           => :header_userpass,
-              :oauth_user_name      => Main.instance.options.get_option(:username,:mandatory),
-              :oauth_user_pass      => Main.instance.options.get_option(:password,:mandatory),
+              :oauth_user_name      => self.options.get_option(:username,:mandatory),
+              :oauth_user_pass      => self.options.get_option(:password,:mandatory),
               :oauth_scope          => 'admin'
             })
           end
@@ -99,7 +97,7 @@ module Asperalm
         PACKAGE_MATCH_FIELD='package_id'
 
         def mailbox_all_entries
-          mailbox=Main.instance.options.get_option(:box,:mandatory).to_s
+          mailbox=self.options.get_option(:box,:mandatory).to_s
           all_inbox_xml=api_v3.call({:operation=>'GET',:subpath=>"#{mailbox}.atom",:headers=>{'Accept'=>'application/xml'}})[:http].body
           all_inbox_data=XmlSimple.xml_in(all_inbox_xml, {"ForceArray" => true})
           Log.dump(:all_inbox_data,all_inbox_data)
@@ -111,24 +109,24 @@ module Asperalm
         end
 
         def execute_action
-          command=Main.instance.options.get_next_command(action_list)
+          command=self.options.get_next_command(action_list)
           case command
           when :package
-            command_pkg=Main.instance.options.get_next_command([ :send, :recv, :list ])
+            command_pkg=self.options.get_next_command([ :send, :recv, :list ])
             case command_pkg
             when :list
               return {:type=>:object_list,:data=>self.mailbox_all_entries,:fields=>[PACKAGE_MATCH_FIELD,'title','items'], :textify => lambda { |table_data| Faspex.textify_package_list(table_data)} }
             when :recv
               # get command line parameters
-              delivid=Main.instance.options.get_option(:id,:mandatory)
-              mailbox=Main.instance.options.get_option(:box,:mandatory).to_s
+              delivid=self.options.get_option(:id,:mandatory)
+              mailbox=self.options.get_option(:box,:mandatory).to_s
               # list of faspex ID/URI to download
               pkg_id_uri=nil
               skip_ids_persistency=PersistencyFile.new('faspex_recv',{
-                :folder   => Cli::Plugins::Config.instance.config_folder,
-                :url      => Main.instance.options.get_option(:url,:mandatory),
-                :ids      => [Main.instance.options.get_option(:username,:mandatory),Main.instance.options.get_option(:box,:mandatory).to_s],
-                :active   => Main.instance.options.get_option(:once_only,:mandatory),
+                :folder   => self.config.main_folder,
+                :url      => self.options.get_option(:url,:mandatory),
+                :ids      => [self.options.get_option(:username,:mandatory),self.options.get_option(:box,:mandatory).to_s],
+                :active   => self.options.get_option(:once_only,:mandatory),
                 :default  => [],
                 :delete   => lambda{|d|d.nil? or d.empty?}})
               if delivid.eql?(@@VAL_ALL)
@@ -154,21 +152,20 @@ module Asperalm
                   transfer_spec['token']=api_v3.call({:operation=>'POST',:subpath=>"issue-token?direction=down",:headers=>{'Accept'=>'text/plain','Content-Type'=>'application/vnd.aspera.url-list+xml'},:text_body_params=>xmlpayload})[:http].body
                 end
                 transfer_spec['direction']='receive'
-                statuses=TransferAgent.instance.start(transfer_spec,{:src=>:node_gen3})
+                statuses=self.transfer.start(transfer_spec,{:src=>:node_gen3})
                 result_transfer.push({'package'=>id_uri[:id],'status'=>statuses.map{|i|i.to_s}.join(',')})
                 # skip only if all sessions completed
                 skip_ids_persistency.data.push(id_uri[:id]) if TransferAgent.all_session_success(statuses)
               end
-              skip_ids_persistency.data = nil if skip_ids_persistency.data.empty?
-              persistency_file.save
+              skip_ids_persistency.save
               return {:type=>:object_list,:data=>result_transfer}
             when :send
-              delivery_info=Main.instance.options.get_option(:delivery_info,:mandatory)
+              delivery_info=self.options.get_option(:delivery_info,:mandatory)
               raise CliBadArgument,"delivery_info must be hash, refer to doc" unless delivery_info.is_a?(Hash)
               delivery_info['sources']||=[{'paths'=>[]}]
               first_source=delivery_info['sources'].first
-              first_source['paths'].push(*Main.instance.ts_source_paths.map{|i|i['source']})
-              source_name=Main.instance.options.get_option(:source_name,:optional)
+              first_source['paths'].push(*self.transfer.ts_source_paths.map{|i|i['source']})
+              source_name=self.options.get_option(:source_name,:optional)
               if !source_name.nil?
                 source_list=api_v3.call({:operation=>'GET',:subpath=>"source_shares",:headers=>{'Accept'=>'application/json'}})[:data]['items']
                 source_id=self.class.get_source_id(source_list,source_name)
@@ -190,13 +187,13 @@ module Asperalm
               return Main.result_transfer(transfer_spec,{:src=>:node_gen3})
             end
           when :source
-            command_source=Main.instance.options.get_next_command([ :list, :id, :name ])
+            command_source=self.options.get_next_command([ :list, :id, :name ])
             source_list=api_v3.call({:operation=>'GET',:subpath=>"source_shares",:headers=>{'Accept'=>'application/json'}})[:data]['items']
             case command_source
             when :list
               return {:type=>:object_list,:data=>source_list}
             else # :id or :name
-              source_match_val=Main.instance.options.get_next_argument('source id or name')
+              source_match_val=self.options.get_next_argument('source id or name')
               source_ids=source_list.select { |i| i[command_source.to_s].to_s.eql?(source_match_val) }
               if source_ids.empty?
                 raise CliError,"No such Faspex source #{command_source.to_s}: #{source_match_val} in [#{source_list.map{|i| i[command_source.to_s]}.join(', ')}]"
@@ -204,7 +201,7 @@ module Asperalm
               # get id and name
               source_name=source_ids.first['name']
               source_id=source_ids.first['id']
-              source_hash=Main.instance.options.get_option(:storage,:mandatory)
+              source_hash=self.options.get_option(:storage,:mandatory)
               # check value of option
               raise CliError,"storage option must be a Hash" unless source_hash.is_a?(Hash)
               source_hash.each do |name,storage|
@@ -218,12 +215,12 @@ module Asperalm
               end
               source_info=source_hash[source_name]
               Log.log.debug("source_info: #{source_info}")
-              command_node=Main.instance.options.get_next_command([ :info, :node ])
+              command_node=self.options.get_next_command([ :info, :node ])
               case command_node
               when :info
                 return {:data=>source_info,:type=>:single_object}
               when :node
-                node_config=ExtendedValue.parse(:node,source_info[@@KEY_NODE])
+                node_config=ExtendedValue.instance.parse(:node,source_info[@@KEY_NODE])
                 raise CliError,"bad type for: \"#{source_info[@@KEY_NODE]}\"" unless node_config.is_a?(Hash)
                 Log.log.debug("node=#{node_config}")
                 api_node=Rest.new({
@@ -231,15 +228,15 @@ module Asperalm
                   :auth_type     =>:basic,
                   :basic_username=>node_config['username'],
                   :basic_password=>node_config['password']})
-                command=Main.instance.options.get_next_command(Node.common_actions)
-                return Node.execute_common(command,api_node,source_info[@@KEY_PATH])
+                command=self.options.get_next_command(Node.common_actions)
+                return Node.new(@agents).set_api(api_node).execute_action(command,source_info[@@KEY_PATH])
               end
             end
           when :me
             my_info=api_v3.call({:operation=>'GET',:subpath=>"me",:headers=>{'Accept'=>'application/json'}})[:data]
             return {:data=>my_info, :type=>:single_object}
           when :dropbox
-            command_pkg=Main.instance.options.get_next_command([ :list, :create ])
+            command_pkg=self.options.get_next_command([ :list, :create ])
             case command_pkg
             when :list
               dropbox_list=api_v3.call({:operation=>'GET',:subpath=>"/aspera/faspex/dropboxes",:headers=>{'Accept'=>'application/json'}})[:data]
@@ -248,7 +245,7 @@ module Asperalm
               #
             end
           when :recv_publink
-            thelink=Main.instance.options.get_next_argument("Faspex public URL for a package")
+            thelink=self.options.get_next_argument("Faspex public URL for a package")
             link_data=self.class.get_link_data(thelink)
             # Note: unauthenticated API
             api_public_link=Rest.new({:base_url=>link_data[:faspex_base_url]})
@@ -263,7 +260,7 @@ module Asperalm
             transfer_spec['direction']='receive'
             return Main.result_transfer(transfer_spec,{:src=>:node_gen3})
           when :v4
-            command=Main.instance.options.get_next_command([:dropbox, :dmembership, :workgroup,:wmembership,:user,:metadata_profile])
+            command=self.options.get_next_command([:dropbox, :dmembership, :workgroup,:wmembership,:user,:metadata_profile])
             case command
             when :dropbox
               return Plugin.entity_action(api_v4,'admin/dropboxes',['id','e_wg_name','e_wg_desc','created_at'],:id)

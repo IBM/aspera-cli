@@ -13,11 +13,11 @@ module Asperalm
       INSTANCE_OPS=[:modify,:delete,:show]
       ALL_OPS=[GLOBAL_OPS,INSTANCE_OPS].flatten
 
-      def self.declare_entity_options
-        Main.instance.options.add_opt_simple(:value,"extended value for create, update, list filter")
-        Main.instance.options.add_opt_simple(:id,"resource identifier (#{INSTANCE_OPS.join(",")})")
+      def self.declare_entity_options(opt_mgr)
+        opt_mgr.add_opt_simple(:value,"extended value for create, update, list filter")
+        opt_mgr.add_opt_simple(:id,"resource identifier (#{INSTANCE_OPS.join(",")})")
       end
-      
+
       # implement generic rest operations on given resource path
       def self.entity_action(rest_api,res_class_path,display_fields,id_symb)
         res_name=res_class_path.gsub(%r{.*/},'').gsub(%r{^s$},'').gsub('_',' ')
@@ -48,9 +48,13 @@ module Asperalm
         end
       end
 
-      def initialize
-        super
-      end
+      def options;@agents[:options];end
+
+      def transfer;@agents[:transfer];end
+
+      def config;return @agents[:config];end
+
+      def initialize(env);@agents=env;end
 
       def declare_options
         raise StandardError,"declare_options shall be redefined by subclass"

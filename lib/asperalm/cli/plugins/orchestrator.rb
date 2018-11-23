@@ -1,21 +1,19 @@
 require 'asperalm/cli/plugins/node'
 require 'xmlsimple'
-require 'singleton'
 
 module Asperalm
   module Cli
     module Plugins
       class Orchestrator < BasicAuthPlugin
-        include Singleton
 
         alias super_declare_options declare_options
         def declare_options
           super_declare_options
-          Main.instance.options.add_opt_simple(:params,"parameters hash table, use @json:{\"param\":\"value\"}")
-          Main.instance.options.add_opt_simple(:result,"specify result value as: 'work step:parameter'")
-          Main.instance.options.add_opt_boolean(:synchronous,"work step:parameter expected as result")
-          Main.instance.options.set_option(:params,{})
-          Main.instance.options.set_option(:synchronous,:no)
+          self.options.add_opt_simple(:params,"parameters hash table, use @json:{\"param\":\"value\"}")
+          self.options.add_opt_simple(:result,"specify result value as: 'work step:parameter'")
+          self.options.add_opt_boolean(:synchronous,"work step:parameter expected as result")
+          self.options.set_option(:params,{})
+          self.options.set_option(:synchronous,:no)
         end
 
         def action_list; [:info, :workflow, :plugins, :processes];end
@@ -40,20 +38,20 @@ module Asperalm
 
         def execute_action
           @api_orch=Rest.new({
-            :base_url       => Main.instance.options.get_option(:url,:mandatory),
+            :base_url       => self.options.get_option(:url,:mandatory),
             :auth_type      => :url,
             :auth_url_creds => {
-            'login'   =>Main.instance.options.get_option(:username,:mandatory),
-            'password'=>Main.instance.options.get_option(:password,:mandatory) }})
+            'login'   =>self.options.get_option(:username,:mandatory),
+            'password'=>self.options.get_option(:password,:mandatory) }})
 
           # auth can be in url or basic
           #          @api_orch=Rest.new({
-          #            :base_url=>Main.instance.options.get_option(:url,:mandatory),
+          #            :base_url=>self.options.get_option(:url,:mandatory),
           #            :auth_type=>:basic,
-          #            :basic_username=>Main.instance.options.get_option(:username,:mandatory),
-          #            :basic_password=>Main.instance.options.get_option(:password,:mandatory)})
+          #            :basic_username=>self.options.get_option(:username,:mandatory),
+          #            :basic_password=>self.options.get_option(:password,:mandatory)})
 
-          command1=Main.instance.options.get_next_command(action_list)
+          command1=self.options.get_next_command(action_list)
           case command1
           when :info
             result=call_API('logon',nil,nil)
@@ -71,9 +69,9 @@ module Asperalm
             result=call_API('api/plugin_version')[:data]
             return {:type=>:object_list,:data=>result['Plugin']}
           when :workflow
-            command=Main.instance.options.get_next_command([:list, :status, :inputs, :details, :start])
+            command=self.options.get_next_command([:list, :status, :inputs, :details, :start])
             unless [:list, :status].include?(command)
-              wf_id=Main.instance.options.get_option(:id,:mandatory)
+              wf_id=self.options.get_option(:id,:mandatory)
             end
             case command
             when :status
@@ -96,13 +94,13 @@ module Asperalm
               call_params={:format=>:json}
               override_accept=nil
               # set external parameters if any
-              Main.instance.options.get_option(:params,:mandatory).each do |name,value|
+              self.options.get_option(:params,:mandatory).each do |name,value|
                 call_params["external_parameters[#{name}]"] = value
               end
               # synchronous call ?
-              call_params['synchronous']=true if Main.instance.options.get_option(:synchronous,:mandatory)
+              call_params['synchronous']=true if self.options.get_option(:synchronous,:mandatory)
               # expected result for synchro call ?
-              expected=Main.instance.options.get_option(:result,:optional)
+              expected=self.options.get_option(:result,:optional)
               unless expected.nil?
                 result[:type] = :status
                 fields=expected.split(/:/)

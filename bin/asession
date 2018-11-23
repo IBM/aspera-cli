@@ -44,7 +44,7 @@ end
 assert_usage(ARGV.length.eql?(1),'exactly one argument is expected')
 assert_usage(!['-h','--help'].include?(ARGV.first),nil)
 # parse transfer spec
-transfer_spec=Asperalm::Cli::ExtendedValue.parse("transfer spec",ARGV.pop)
+transfer_spec=Asperalm::Cli::ExtendedValue.instance.parse("transfer spec",ARGV.pop)
 # ensure right type
 assert_usage(transfer_spec.is_a?(Hash),"the value must be a hash table#{parameter_source_err_msg}")
 # additional debug capability

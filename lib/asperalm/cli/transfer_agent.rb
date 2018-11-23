@@ -4,17 +4,16 @@ require 'asperalm/fasp/node'
 require 'asperalm/cli/listener/logger'
 require 'asperalm/cli/listener/progress_multi'
 require 'asperalm/cli/plugins/config'
-require 'singleton'
 
 module Asperalm
   module Cli
-    # options to select one of the transfer agents
+    # options to select one of the transfer agents (fasp client)
     class TransferAgent
-      include Singleton
       private
       @@ARGS_PARAM='@args'
       @@TS_PARAM='@ts'
-      def initialize
+      def initialize(options)
+        @options=options
         @transfer_spec_cmdline={}
         @agent=nil
         @transfer_paths=nil
@@ -26,25 +25,26 @@ module Asperalm
       def option_transfer_spec=(value); @transfer_spec_cmdline.merge!(value); end
 
       def declare_transfer_options
-        Main.instance.options.set_obj_attr(:ts,self,:option_transfer_spec)
-        Main.instance.options.add_opt_simple(:ts,"override transfer spec values (Hash, use @json: prefix), current=#{Main.instance.options.get_option(:ts,:optional)}")
-        Main.instance.options.add_opt_simple(:to_folder,"destination folder for downloaded files")
-        Main.instance.options.add_opt_simple(:sources,"list of source files (see doc)")
-        Main.instance.options.add_opt_list(:transfer,[:direct,:connect,:node,:files],"type of transfer")
-        Main.instance.options.add_opt_simple(:transfer_info,"additional information for transfer client")
-        Main.instance.options.set_option(:transfer,:direct)
+        @options.set_obj_attr(:ts,self,:option_transfer_spec)
+        @options.add_opt_simple(:ts,"override transfer spec values (Hash, use @json: prefix), current=#{@options.get_option(:ts,:optional)}")
+        @options.add_opt_simple(:to_folder,"destination folder for downloaded files")
+        @options.add_opt_simple(:sources,"list of source files (see doc)")
+        @options.add_opt_list(:transfer,[:direct,:connect,:node,:files],"type of transfer")
+        @options.add_opt_simple(:transfer_info,"additional information for transfer client")
+        @options.set_option(:transfer,:direct)
       end
 
-      def agent
+      # @return one of the Fasp:: agents based on parameters
+      def set_agent_by_options
         if @agent.nil?
-          case Main.instance.options.get_option(:transfer,:mandatory)
+          case @options.get_option(:transfer,:mandatory)
           when :direct
             @agent=Fasp::Local.instance
-            if !Main.instance.options.get_option(:fasp_proxy,:optional).nil?
-              @transfer_spec_cmdline['EX_fasp_proxy_url']=Main.instance.options.get_option(:fasp_proxy,:optional)
+            if !@options.get_option(:fasp_proxy,:optional).nil?
+              @transfer_spec_cmdline['EX_fasp_proxy_url']=@options.get_option(:fasp_proxy,:optional)
             end
-            if !Main.instance.options.get_option(:http_proxy,:optional).nil?
-              @transfer_spec_cmdline['EX_http_proxy_url']=Main.instance.options.get_option(:http_proxy,:optional)
+            if !@options.get_option(:http_proxy,:optional).nil?
+              @transfer_spec_cmdline['EX_http_proxy_url']=@options.get_option(:http_proxy,:optional)
             end
             # TODO: option to choose progress format
             # here we disable native stdout progress
@@ -58,7 +58,7 @@ module Asperalm
             if @agent.node_api.nil?
               # support: @param:<name>
               # support extended values
-              node_config=Main.instance.options.get_option(:transfer_info,:optional)
+              node_config=@options.get_option(:transfer_info,:optional)
               # of not specified, use default node
               if node_config.nil?
                 param_set_name=Plugins::Config.instance.get_plugin_default_config_name(:node)
@@ -80,14 +80,14 @@ module Asperalm
           @agent.add_listener(Listener::Logger.new)
           @agent.add_listener(Listener::ProgressMulti.new)
         end
-        return @agent
+        return nil
       end
 
       # return destination folder for transfers
       # sets default if needed
       # param: 'send' or 'receive'
       def destination_folder(direction)
-        dest_folder=Main.instance.options.get_option(:to_folder,:optional)
+        dest_folder=@options.get_option(:to_folder,:optional)
         return dest_folder unless dest_folder.nil?
         dest_folder=@transfer_spec_cmdline['destination_root']
         return dest_folder unless dest_folder.nil?
@@ -108,11 +108,11 @@ module Asperalm
         # start with lower priority : get paths from transfer spec on command line
         @transfer_paths=@transfer_spec_cmdline['paths'] if @transfer_spec_cmdline.has_key?('paths')
         # is there a source list option ?
-        file_list=Main.instance.options.get_option(:sources,:optional)
+        file_list=@options.get_option(:sources,:optional)
         case file_list
         when nil,@@ARGS_PARAM
           Log.log.debug("getting file list as parameters")
-          file_list=Main.instance.options.get_next_argument("source file list",:multiple)
+          file_list=@options.get_next_argument("source file list",:multiple)
           raise CliBadArgument,"specify at least one file on command line or use --sources=#{@@TS_PARAM} to use transfer spec" if !file_list.is_a?(Array) or file_list.empty?
         when @@TS_PARAM
           Log.log.debug("assume list provided in transfer spec")
@@ -139,8 +139,6 @@ module Asperalm
       def start(transfer_spec,options)
         raise "transfer_spec must be hash" unless transfer_spec.is_a?(Hash)
         raise "options must be hash" unless options.is_a?(Hash)
-        # initialize transfert agent
-        self.agent
         case transfer_spec['direction']
         when 'receive'
           # init default if required in any case
@@ -170,6 +168,7 @@ module Asperalm
         transfer_spec.merge!(@transfer_spec_cmdline)
         # add bypass keys if there is a token, also prevents connect plugin to ask password
         transfer_spec['authentication']='token' if transfer_spec.has_key?('token')
+        self.set_agent_by_options
         Log.log.debug("mgr is a #{@agent.class}")
         @agent.start_transfer(transfer_spec,options)
         return @agent.wait_for_transfers_completion

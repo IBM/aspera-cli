@@ -332,7 +332,7 @@ The value of options and arguments can optionally be retrieved using one of the 
 * @file:PATH , read value from a file (prefix "~/" is replaced with the users home folder), e.g. --key=@file:~/.ssh/mykey
 * @path:PATH , performs path expansion (prefix "~/" is replaced with the users home folder), e.g. --config-file=@path:~/sample_config.yml
 * @env:ENVVAR , read from a named env var, e.g.--password=@env:MYPASSVAR
-* @stdin , read from stdin
+* @stdin: , read from stdin
 * @preset:NAME , get whole <%=opprst%> value by name
 
 In addition it is possible to decode a value, using one or multiple decoders :
@@ -1713,7 +1713,7 @@ This makes it easy to integrate with any language provided that one can spawn a 
 
 The tool expect one single argument: a [_transfer-spec_](#transferspec).
 
-If not argument is provided, it assumes a value of: `@json:@stdin`, i.e. a JSON formated [_transfer-spec_](#transferspec) on stdin.
+If not argument is provided, it assumes a value of: `@json:@stdin:`, i.e. a JSON formated [_transfer-spec_](#transferspec) on stdin.
 
 Note that if JSON is the format, one has to specify `@json:` to tell the tool to decode the hash using JSON.
 
@@ -1861,6 +1861,11 @@ This means that you do not have ruby support for ED25519 SSH keys. You may eithe
 Gems, or remove your ed25519 key from your `.ssh` folder to solve the issue.
 
 # Release Notes
+
+* version 0.9.11
+
+  * Breaking change: @stdin is now @stdin:
+
 
 * version 0.9.10
 

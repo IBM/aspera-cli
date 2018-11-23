@@ -1,14 +1,12 @@
 require 'asperalm/cli/basic_auth_plugin'
 require 'asperalm/ascmd'
 require 'asperalm/ssh'
-require 'singleton'
 
 module Asperalm
   module Cli
     module Plugins
       # implement basic remote access with FASP/SSH
       class Server < BasicAuthPlugin
-        include Singleton
         class LocalExecutor
           def execute(cmd,input=nil)
             `#{cmd}`
@@ -19,8 +17,8 @@ module Asperalm
 
         def declare_options
           super_declare_options
-          Main.instance.options.add_opt_simple(:ssh_keys,Array,"PATH_ARRAY is @json:'[\"path1\",\"path2\"]'")
-          Main.instance.options.set_option(:ssh_keys,[])
+          self.options.add_opt_simple(:ssh_keys,Array,"PATH_ARRAY is @json:'[\"path1\",\"path2\"]'")
+          self.options.set_option(:ssh_keys,[])
         end
 
         def action_list; [:nodeadmin,:userdata,:configurator,:download,:upload,:browse,:delete,:rename].push(*Asperalm::AsCmd.action_list);end
@@ -34,14 +32,14 @@ module Asperalm
         end
 
         def execute_action
-          server_uri=URI.parse(Main.instance.options.get_option(:url,:mandatory))
+          server_uri=URI.parse(self.options.get_option(:url,:mandatory))
           Log.log.debug("URI : #{server_uri}, port=#{server_uri.port}, scheme:#{server_uri.scheme}")
           shell_executor=nil
           case server_uri.scheme
           when 'ssh'
             transfer_spec={
               "remote_host"=>server_uri.hostname,
-              "remote_user"=>Main.instance.options.get_option(:username,:mandatory),
+              "remote_user"=>self.options.get_option(:username,:mandatory),
             }
             ssh_options={}
             if !server_uri.port.nil?
@@ -49,13 +47,13 @@ module Asperalm
               transfer_spec["ssh_port"]=server_uri.port
             end
             cred_set=false
-            password=Main.instance.options.get_option(:password,:optional)
+            password=self.options.get_option(:password,:optional)
             if !password.nil?
               ssh_options[:password]=password
               transfer_spec['remote_password']=password
               cred_set=true
             end
-            ssh_keys=Main.instance.options.get_option(:ssh_keys,:optional)
+            ssh_keys=self.options.get_option(:ssh_keys,:optional)
             raise "internal error, expecting array" if !ssh_keys.is_a?(Array)
             if !ssh_keys.empty?
               ssh_options[:keys]=ssh_keys
@@ -71,7 +69,7 @@ module Asperalm
           end
 
           # get command and set aliases
-          command=Main.instance.options.get_next_command(action_list)
+          command=self.options.get_next_command(action_list)
           command=:ls if command.eql?(:browse)
           command=:rm if command.eql?(:delete)
           command=:mv if command.eql?(:rename)
@@ -79,7 +77,7 @@ module Asperalm
             case command
             when :nodeadmin,:userdata,:configurator
               realcmd="as"+command.to_s
-              args = Main.instance.options.get_next_argument("#{realcmd} arguments",:multiple)
+              args = self.options.get_next_argument("#{realcmd} arguments",:multiple)
               # concatenate arguments, enclose in double quotes
               command_line = args.unshift(realcmd).map{|v|'"'+v+'"'}.join(" ")
               result=shell_executor.execute(command_line)
@@ -113,7 +111,7 @@ module Asperalm
             when :download
               return Main.result_transfer(transfer_spec.merge('direction'=>'receive'),{:src=>:direct})
             when *Asperalm::AsCmd.action_list
-              args=Main.instance.options.get_next_argument('ascmd command arguments',:multiple,:optional)
+              args=self.options.get_next_argument('ascmd command arguments',:multiple,:optional)
               ascmd=Asperalm::AsCmd.new(shell_executor)
               result=ascmd.send(:execute_single,command,args)
               case command

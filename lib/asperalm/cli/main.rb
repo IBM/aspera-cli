@@ -30,7 +30,7 @@ module Asperalm
       # name of application, also foldername where config is stored
       @@PROGRAM_NAME = 'mlia'
       @@GEM_NAME = 'asperalm'
-      # folder containing custom plugins in `config_folder`
+      # folder containing custom plugins in `main_folder`
       @@ASPERA_PLUGINS_FOLDERNAME='plugins'
       # folder containing plugins in the gem's main folder
       @@GEM_PLUGINS_FOLDER='asperalm/cli/plugins'
@@ -63,7 +63,7 @@ module Asperalm
       def option_preset; nil; end
 
       def option_preset=(value)
-        @opt_mgr.add_option_preset(Plugins::Config.instance.preset_by_name(value))
+        @opt_mgr.add_option_preset(@config_plugin.preset_by_name(value))
       end
 
       attr_accessor :option_flat_hash
@@ -92,12 +92,16 @@ module Asperalm
         @plugin_lookup_folders=[]
         @option_table_style=':.:'
         @opt_mgr=Manager.new(self.program_name)
-        # define program name, sets default config folder. Must be first call to "Config.instance"
-        Plugins::Config.instance.set_program_info(self.program_name,@@GEM_NAME,self.class.gem_version)
-        Oauth.persistency_folder=config_folder
+        @transfer_mgr=TransferAgent.new(options)
+        @plugin_env={:options=>@opt_mgr,:transfer=>@transfer_mgr}
+        @config_plugin=Plugins::Config.new(@plugin_env,self.program_name,@@GEM_NAME,self.class.gem_version)
+        @plugin_env[:config]=@config_plugin
+        Oauth.persistency_folder=@config_plugin.main_folder
+        ExtendedValue.instance.set_handler('preset',:reader,lambda{|v|@config_plugin.preset_by_name(v)})
+
         # set folders for temp files
-        Fasp::Parameters.file_list_folder=File.join(config_folder,'filelists')
-        add_plugin_lookup_folder(File.join(config_folder,@@ASPERA_PLUGINS_FOLDERNAME))
+        Fasp::Parameters.file_list_folder=File.join(@config_plugin.main_folder,'filelists')
+        add_plugin_lookup_folder(File.join(@config_plugin.main_folder,@@ASPERA_PLUGINS_FOLDERNAME))
         add_plugin_lookup_folder(File.join(self.class.gem_root,@@GEM_PLUGINS_FOLDER))
       end
 
@@ -110,7 +114,7 @@ module Asperalm
         @opt_mgr.parser.separator "DESCRIPTION"
         @opt_mgr.parser.separator "\tUse Aspera application to perform operations on command line."
         @opt_mgr.parser.separator "\tOAuth 2.0 is used for authentication in Files, Several authentication methods are provided."
-        @opt_mgr.parser.separator "\tDocumentation and examples: #{Plugins::Config.instance.gem_url}"
+        @opt_mgr.parser.separator "\tDocumentation and examples: #{@config_plugin.gem_url}"
         @opt_mgr.parser.separator "\texecute: #{self.program_name} conf doc"
         @opt_mgr.parser.separator ""
         @opt_mgr.parser.separator "COMMANDS"
@@ -119,7 +123,7 @@ module Asperalm
         @opt_mgr.parser.separator ""
         @opt_mgr.parser.separator "OPTIONS"
         @opt_mgr.parser.separator "\tOptions begin with a '-' (minus), and value is provided on command line.\n"
-        @opt_mgr.parser.separator "\tSpecial values are supported beginning with special prefix, like: #{ExtendedValue.readers.map {|m| "@#{m}:"}.join(' ')}.\n"
+        @opt_mgr.parser.separator "\tSpecial values are supported beginning with special prefix, like: #{ExtendedValue.instance.modifiers.map{|m|"@#{m}:"}.join(' ')}.\n"
         @opt_mgr.parser.separator "\tDates format is 'DD-MM-YY HH:MM:SS', or 'now' or '-<num>h'"
         @opt_mgr.parser.separator ""
         @opt_mgr.parser.separator "ARGS"
@@ -175,9 +179,9 @@ module Asperalm
       # try to find: conffile[conffile["default"][plugin_str]]
       # @param plugin_name_sym : symbol for plugin name
       def add_plugin_default_preset(plugin_name_sym)
-        default_config_name=Plugins::Config.instance.get_plugin_default_config_name(plugin_name_sym)
+        default_config_name=@config_plugin.get_plugin_default_config_name(plugin_name_sym)
         Log.log.debug("add_plugin_default_preset:#{plugin_name_sym}:#{default_config_name}")
-        @opt_mgr.add_option_preset(Plugins::Config.instance.preset_by_name(default_config_name),:unshift) unless default_config_name.nil?
+        @opt_mgr.add_option_preset(@config_plugin.preset_by_name(default_config_name),:unshift) unless default_config_name.nil?
         return nil
       end
 
@@ -187,7 +191,7 @@ module Asperalm
       def get_plugin_instance_with_options(plugin_name_sym)
         Log.log.debug("get_plugin_instance_with_options -> #{plugin_name_sym}")
         require @plugins[plugin_name_sym][:require_stanza]
-        command_plugin=Object::const_get(@@PLUGINS_MODULE+'::'+plugin_name_sym.to_s.capitalize).instance
+        command_plugin=Object::const_get(@@PLUGINS_MODULE+'::'+plugin_name_sym.to_s.capitalize).new(@plugin_env)
         # TODO: check that ancestor is Plugin?
         @opt_mgr.parser.separator "COMMAND: #{plugin_name_sym}"
         @opt_mgr.parser.separator "SUBCOMMANDS: #{command_plugin.action_list.map{ |p| p.to_s}.join(', ')}"
@@ -415,7 +419,7 @@ module Asperalm
           end
         end
         #display_message(:error,@opt_mgr.parser)
-        display_message(:error,"\nDocumentation : #{Plugins::Config.instance.help_url}")
+        display_message(:error,"\nDocumentation : #{@config_plugin.help_url}")
         Process.exit(0)
       end
 
@@ -457,31 +461,20 @@ module Asperalm
       end
 
       public
-
-      # plugins shall use this method to start a transfer
-      # start transfer and wait for completion of all jobs
-      def self.result_transfer(transfer_spec,options)
-        # TODO: if not one shot, then wait for status
-        statuses=TransferAgent.instance.start(transfer_spec,options)
-        raise "at least one transfer session failed" unless TransferAgent.all_session_success(statuses)
-        return result_nothing
-      end
-
-      def destination_folder(direction)
-        return TransferAgent.instance.destination_folder(direction)
-      end
-
-      def ts_source_paths
-        return TransferAgent.instance.ts_source_paths
-      end
+      attr_accessor :transfer_mgr
 
       def display_status(status)
         display_message(:info,status)
       end
 
-      # public method
-      # $HOME/.aspera/`program_name`
-      def config_folder; Plugins::Config.instance.config_folder; end
+      # plugins shall use this method to start a transfer
+      # start transfer and wait for completion of all jobs
+      def self.result_transfer(transfer_spec,options)
+        # TODO: if not one shot, then wait for status
+        statuses=self.instance.transfer_mgr.start(transfer_spec,options)
+        raise "at least one transfer session failed" unless TransferAgent.all_session_success(statuses)
+        return Main.result_nothing
+      end
 
       def options;@opt_mgr;end
 
@@ -502,19 +495,19 @@ module Asperalm
           # declare initial options
           init_options
           # declare options for config file location
-          Plugins::Config.instance.declare_options
+          @config_plugin.declare_options
           # parse declared options
           @opt_mgr.parse_options!
           # load default config if it was not overriden on command line
-          Plugins::Config.instance.read_config_file
+          @config_plugin.read_config_file
           # declare general options
           declare_global_options
-          TransferAgent.instance.declare_transfer_options
+          @transfer_mgr.declare_transfer_options
           @opt_mgr.parse_options!
           # find plugins, shall be after parse! ?
           add_plugins_from_lookup_folders
           # declare generic options
-          Plugin.declare_entity_options
+          Plugin.declare_entity_options(@opt_mgr)
           # help requested without command ? (plugins must be known here)
           exit_with_usage(true) if @option_help and @opt_mgr.command_or_arg_empty?
           # load global default options and process
@@ -540,7 +533,7 @@ module Asperalm
           when :help
             exit_with_usage(true)
           when @@CONFIG_PLUGIN_NAME_SYM
-            command_plugin=Plugins::Config.instance
+            command_plugin=@config_plugin
           else
             # get plugin, set options, etc
             command_plugin=get_plugin_instance_with_options(command_sym)
@@ -556,7 +549,7 @@ module Asperalm
           # execute and display
           display_results(command_plugin.execute_action)
           # finish
-          TransferAgent.instance.shutdown
+          @transfer_mgr.shutdown
           @opt_mgr.fail_if_unprocessed
         rescue CliBadArgument => e;          exception_info=[e,'Argument',:usage]
         rescue CliNoSuchId => e;             exception_info=[e,'Identifier']

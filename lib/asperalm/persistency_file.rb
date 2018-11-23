@@ -41,6 +41,7 @@ module Asperalm
         Log.log.debug("no persistency exists: #{@persist_filepath}")
         @data=nil
       end
+      @data||=options[:default]
     end
 
     def save

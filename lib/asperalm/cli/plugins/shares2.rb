@@ -1,27 +1,25 @@
 require 'asperalm/cli/plugins/node'
 require 'uri'
-require 'singleton'
 
 module Asperalm
   module Cli
     module Plugins
       class Shares2 < BasicAuthPlugin
-        include Singleton
         alias super_declare_options declare_options
         def declare_options
           super_declare_options
-          Main.instance.options.add_opt_simple(:organization,"organization")
-          Main.instance.options.add_opt_simple(:project,"project")
-          Main.instance.options.add_opt_simple(:share,"share")
+          self.options.add_opt_simple(:organization,"organization")
+          self.options.add_opt_simple(:project,"project")
+          self.options.add_opt_simple(:share,"share")
         end
 
         def action_list; [ :repository,:organization,:project,:team,:share,:appinfo,:userinfo,:admin];end
 
         def init_apis
           # get parameters
-          shares2_api_base_url=Main.instance.options.get_option(:url,:mandatory)
-          shares2_username=Main.instance.options.get_option(:username,:mandatory)
-          shares2_password=Main.instance.options.get_option(:password,:mandatory)
+          shares2_api_base_url=self.options.get_option(:url,:mandatory)
+          shares2_username=self.options.get_option(:username,:mandatory)
+          shares2_password=self.options.get_option(:password,:mandatory)
 
           # create object for REST calls to Shares2
           @api_shares2_oauth=Rest.new({
@@ -44,7 +42,7 @@ module Asperalm
         # adds : prefix+"res/id/"
         # modify parameter string
         def set_resource_path_by_id_or_name(resource_path,resource_sym)
-          res_id=Main.instance.options.get_option(resource_sym,:mandatory)
+          res_id=self.options.get_option(resource_sym,:mandatory)
           # lets get the class path
           resource_path<<resource_sym.to_s+'s'
           # is this an integer ? or a name
@@ -65,15 +63,15 @@ module Asperalm
         def process_entity_action(resource_sym,path_prefix)
           resource_path=path_prefix+resource_sym.to_s+'s'
           operations=[:list,:create,:delete]
-          command=Main.instance.options.get_next_command(operations)
+          command=self.options.get_next_command(operations)
           case command
           when :create
-            params=Main.instance.options.get_next_argument("creation data (json structure)")
+            params=self.options.get_next_argument("creation data (json structure)")
             resp=@api_shares2_oauth.create(resource_path,params)
             return {:data=>resp[:data],:type => :other_struct}
           when :list
             default_fields=['id','name']
-            query=Main.instance.options.get_option(:query,:optional)
+            query=self.options.get_option(:query,:optional)
             args=query.nil? ? nil : {'json_query'=>query}
             Log.log.debug("#{args}".bg_red)
             return {:data=>@api_shares2_oauth.read(resource_path,args)[:data],:fields=>default_fields,:type=>:object_list}
@@ -89,11 +87,11 @@ module Asperalm
         def execute_action
           init_apis
 
-          command=Main.instance.options.get_next_command(action_list)
+          command=self.options.get_next_command(action_list)
           case command
           when :repository
-            command=Main.instance.options.get_next_command(Node.common_actions)
-            return Node.execute_common(command,@api_node)
+            command=self.options.get_next_command(Node.common_actions)
+            return Node.new(@agents).set_api(@api_node).execute_action(command)
           when :appinfo
             node_info=@api_node.call({:operation=>'GET',:subpath=>'app',:headers=>{'Accept'=>'application/json','Content-Type'=>'application/json'}})[:data]
             return { :type=>:single_object ,:data => node_info }
@@ -106,7 +104,7 @@ module Asperalm
             set_resource_path_by_id_or_name(prefix,:project) if [:share].include?(command)
             process_entity_action(command,prefix)
           when :admin
-            command=Main.instance.options.get_next_command([:users,:groups,:nodes])
+            command=self.options.get_next_command([:users,:groups,:nodes])
             return Plugin.entity_action(@api_shares2_oauth,"system/#{command}",nil,:id)
           end # command
         end # execute_action
