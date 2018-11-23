@@ -629,11 +629,18 @@ terminal.
 
 Some of the actions on Aspera Applications lead to file transfers (upload and download) using the FASP protocol (`ascp`).
 
-This transfer can be done using on of the 3 following methods:
+When a transfer needs to be started, a [_transfer-spec_](#transferspec) has been internally prepared.
+This [_transfer-spec_](#transferspec) will be executed by a transfer client, here called "Transfer Agent".
 
-* `direct` for a local execution of `ascp`
-* `connect` to make use of a local Connect Client
-* `node` to make use of a _remote_ Aspera Transfer Node.
+There are currently 3 agents:
+
+* `direct` : a local execution of `ascp`
+* `connect` : use of a local Connect Client
+* `node` : use of a potentially _remote_ Aspera Transfer Node.
+
+Note that all transfer operation are seen from the point of view of the agent.
+For instance, a node agent making an "upload", or "package send" operation, will effectively push
+files to the related server from the agent node.
 
 <%=tool%> standadizes on the use of a [_transfer-spec_](#transferspec) instead of _raw_ ascp options to provide parameters for a transfer session, as a common method for those three Transfer Agents.
 
@@ -684,7 +691,7 @@ It is possible to specify ascp options when the `transfer` option is set to `dir
 The use of a _transfer-spec_ instead of `ascp` parameters has the advantage of:
 
 * common to all [Transfer Agent](#agents)
-* not dependant on command line limitations (special characters...)
+* not dependent on command line limitations (special characters...)
 
 A [_transfer-spec_](#transferspec) is a Hash table, so it is described on the command line with the [Extended Value Syntax](#extended).
 
@@ -703,14 +710,27 @@ The destination folder is set by <%=tool%> by default to:
 * `.` for downloads
 * `/` for uploads
 
-It is specified by the [_transfer-spec_](#transferspec) parameter `destination_root`. As such, it can be modified with option: `--ts=@json:'{"destination_root":"<path>"}'`.
-The option `to_folder` provides a convenient way to change this parameter:  `--to-folder=<path>` and is equivalent.
+It is specified by the [_transfer-spec_](#transferspec) parameter `destination_root`. 
+As such, it can be modified with option: `--ts=@json:'{"destination_root":"<path>"}'`.
+The option `to_folder` provides an equivalent and convenient way to change this parameter:
+`--to-folder=<path>` .
 
 ### Source files for transfers
 
 When uploading, downloading or sending files, the user must specify
-the list of files to send. This is done by using the option:
-`sources`.
+the list of files to transfer. This is done by using the option:
+`sources`. This is simply the list of paths of files.
+
+Note the special case when the source files are located on "Aspera on Cloud":
+
+* All files must be in the same source folder.
+* If there is a single file : specify the full path
+* For multiple files, specify the source folder as first item in the list followed by the list of file names.
+
+Source files are located on "Aspera on cloud", when :
+
+* the server is Aspera on Cloud, and making a download / recv
+* the agent is Aspera on Cloud, and making an upload / send
 
 There are 3 ways to specify the list of files:
 
@@ -1136,7 +1156,31 @@ $ <%=cmd%> aspera user workspaces
 Creation of a sub-access key is like creation of access key with the following difference: authentication to node API is made with accesskey (master access key) and only the path parameter is provided: it is relative to the storage root of the master key. (id and secret are optional)
 
 ```
-$ <%=cmd%> aspera admin resource node --name=_node_name_ --secret=_secret_ do access_key create --value=@json:'{"storage":{"path":"/folder1"}}'
+$ <%=cmd%> aspera admin resource node --name=_node_name_ --secret=_secret_ v4 access_key create --value=@json:'{"storage":{"path":"/folder1"}}'
+```
+
+* Display transfer events (ops/transfer)
+
+```
+$ <%=cmd%> aspera admin res node --secret=_secret_ v3 transfer list --value=@json:'[["q","*"],["count",5]]'
+```
+
+              # page=1&per_page=10&q=type:(file_upload+OR+file_delete+OR+file_download+OR+file_rename+OR+folder_create+OR+folder_delete+OR+folder_share+OR+folder_share_via_public_link)&sort=-date
+              #events=@api_files.read('events',{'q'=>'type:(file_upload OR file_download)'})[:data]
+              # can add filters: tag=aspera.files.package_id%3DLA8OU3p8w
+              #'tag'=>'aspera.files.package_id%3DJvbl0w-5A'
+              # filter= 'id', 'short_summary', or 'summary'
+              # count=nnn
+              # tag=x.y.z%3Dvalue
+              # iteration_token=nnn
+              # after_time=2016-05-01T23:53:09Z
+              # active_only=true|false
+
+
+* Display node events (events)
+
+```
+$ <%=cmd%> aspera admin res node --secret=_secret_ v3 events
 ```
 
 * display members of a workspace
