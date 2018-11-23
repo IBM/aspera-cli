@@ -3,7 +3,6 @@ require 'asperalm/fasp/connect'
 require 'asperalm/fasp/node'
 require 'asperalm/cli/listener/logger'
 require 'asperalm/cli/listener/progress_multi'
-require 'asperalm/cli/plugins/config'
 
 module Asperalm
   module Cli
@@ -12,8 +11,8 @@ module Asperalm
       private
       @@ARGS_PARAM='@args'
       @@TS_PARAM='@ts'
-      def initialize(options)
-        @options=options
+      def initialize(env)
+        @env=env
         @transfer_spec_cmdline={}
         @agent=nil
         @transfer_paths=nil
@@ -25,26 +24,26 @@ module Asperalm
       def option_transfer_spec=(value); @transfer_spec_cmdline.merge!(value); end
 
       def declare_transfer_options
-        @options.set_obj_attr(:ts,self,:option_transfer_spec)
-        @options.add_opt_simple(:ts,"override transfer spec values (Hash, use @json: prefix), current=#{@options.get_option(:ts,:optional)}")
-        @options.add_opt_simple(:to_folder,"destination folder for downloaded files")
-        @options.add_opt_simple(:sources,"list of source files (see doc)")
-        @options.add_opt_list(:transfer,[:direct,:connect,:node,:files],"type of transfer")
-        @options.add_opt_simple(:transfer_info,"additional information for transfer client")
-        @options.set_option(:transfer,:direct)
+        @env[:options].set_obj_attr(:ts,self,:option_transfer_spec)
+        @env[:options].add_opt_simple(:ts,"override transfer spec values (Hash, use @json: prefix), current=#{@env[:options].get_option(:ts,:optional)}")
+        @env[:options].add_opt_simple(:to_folder,"destination folder for downloaded files")
+        @env[:options].add_opt_simple(:sources,"list of source files (see doc)")
+        @env[:options].add_opt_list(:transfer,[:direct,:connect,:node,:files],"type of transfer")
+        @env[:options].add_opt_simple(:transfer_info,"additional information for transfer client")
+        @env[:options].set_option(:transfer,:direct)
       end
 
       # @return one of the Fasp:: agents based on parameters
       def set_agent_by_options
         if @agent.nil?
-          case @options.get_option(:transfer,:mandatory)
+          case @env[:options].get_option(:transfer,:mandatory)
           when :direct
             @agent=Fasp::Local.instance
-            if !@options.get_option(:fasp_proxy,:optional).nil?
-              @transfer_spec_cmdline['EX_fasp_proxy_url']=@options.get_option(:fasp_proxy,:optional)
+            if !@env[:options].get_option(:fasp_proxy,:optional).nil?
+              @transfer_spec_cmdline['EX_fasp_proxy_url']=@env[:options].get_option(:fasp_proxy,:optional)
             end
-            if !@options.get_option(:http_proxy,:optional).nil?
-              @transfer_spec_cmdline['EX_http_proxy_url']=@options.get_option(:http_proxy,:optional)
+            if !@env[:options].get_option(:http_proxy,:optional).nil?
+              @transfer_spec_cmdline['EX_http_proxy_url']=@env[:options].get_option(:http_proxy,:optional)
             end
             # TODO: option to choose progress format
             # here we disable native stdout progress
@@ -58,12 +57,12 @@ module Asperalm
             if @agent.node_api.nil?
               # support: @param:<name>
               # support extended values
-              node_config=@options.get_option(:transfer_info,:optional)
+              node_config=@env[:options].get_option(:transfer_info,:optional)
               # of not specified, use default node
               if node_config.nil?
-                param_set_name=Plugins::Config.instance.get_plugin_default_config_name(:node)
+                param_set_name=@env[:config].get_plugin_default_config_name(:node)
                 raise CliBadArgument,"No default node configured, Please specify --transfer-node" if param_set_name.nil?
-                node_config=Plugins::Config.instance.preset_by_name(param_set_name)
+                node_config=@env[:config].preset_by_name(param_set_name)
               end
               Log.log.debug("node=#{node_config}")
               raise CliBadArgument,"the node configuration shall be a hash, use either @json:<json> or @preset:<parameter set name>" if !node_config.is_a?(Hash)
@@ -87,7 +86,7 @@ module Asperalm
       # sets default if needed
       # param: 'send' or 'receive'
       def destination_folder(direction)
-        dest_folder=@options.get_option(:to_folder,:optional)
+        dest_folder=@env[:options].get_option(:to_folder,:optional)
         return dest_folder unless dest_folder.nil?
         dest_folder=@transfer_spec_cmdline['destination_root']
         return dest_folder unless dest_folder.nil?
@@ -108,11 +107,11 @@ module Asperalm
         # start with lower priority : get paths from transfer spec on command line
         @transfer_paths=@transfer_spec_cmdline['paths'] if @transfer_spec_cmdline.has_key?('paths')
         # is there a source list option ?
-        file_list=@options.get_option(:sources,:optional)
+        file_list=@env[:options].get_option(:sources,:optional)
         case file_list
         when nil,@@ARGS_PARAM
           Log.log.debug("getting file list as parameters")
-          file_list=@options.get_next_argument("source file list",:multiple)
+          file_list=@env[:options].get_next_argument("source file list",:multiple)
           raise CliBadArgument,"specify at least one file on command line or use --sources=#{@@TS_PARAM} to use transfer spec" if !file_list.is_a?(Array) or file_list.empty?
         when @@TS_PARAM
           Log.log.debug("assume list provided in transfer spec")

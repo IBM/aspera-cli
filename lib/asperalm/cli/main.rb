@@ -92,8 +92,9 @@ module Asperalm
         @plugin_lookup_folders=[]
         @option_table_style=':.:'
         @opt_mgr=Manager.new(self.program_name)
-        @transfer_mgr=TransferAgent.new(options)
-        @plugin_env={:options=>@opt_mgr,:transfer=>@transfer_mgr}
+        @plugin_env={:options=>@opt_mgr}
+        @transfer_mgr=TransferAgent.new(@plugin_env)
+        @plugin_env[:transfer]=@transfer_mgr
         @config_plugin=Plugins::Config.new(@plugin_env,self.program_name,@@GEM_NAME,self.class.gem_version)
         @plugin_env[:config]=@config_plugin
         Oauth.persistency_folder=@config_plugin.main_folder
