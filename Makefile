@@ -470,7 +470,7 @@ t/shar2_5:
 tshares2: t/shar2_1 t/shar2_2 t/shar2_3 t/shar2_4 t/shar2_5
 
 t/prev1:
-	$(EXETEST) preview events --skip-types=office
+	$(EXETEST) preview events --once-only=yes --skip-types=office
 	@touch $@
 t/prev2:
 	$(EXETEST) preview scan --skip-types=office --log-level=info
