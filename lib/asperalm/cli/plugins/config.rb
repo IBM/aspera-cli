@@ -238,7 +238,9 @@ module Asperalm
           when :overview
             return {:type=>:object_list,:data=>self.class.flatten_all_config(@config_presets)}
           when :wizard
-            instance_url=self.options.get_option(:url,:mandatory)
+            self.options.ask_missing_mandatory=true
+            #set_option(:interactive,:yes)
+            instance_url=self.options.get_next_argument('URL of server')
             appli=discover_product(instance_url)
             case appli[:product]
             when :aoc
@@ -247,6 +249,8 @@ module Asperalm
               files_plugin=Plugins::Aspera.new(@agents)
               files_plugin.declare_options
               self.options.parse_options!
+              self.options.ask_missing_mandatory=true
+              self.options.set_option(:url,instance_url)
               self.options.set_option(:auth,:web)
               self.options.set_option(:redirect_uri,@@DEFAULT_REDIRECT)
               organization,instance_domain=FilesApi.parse_url(instance_url)
@@ -267,8 +271,8 @@ module Asperalm
               puts "- origin: localhost"
               puts "Once created please enter the following any required parameter:"
               OpenApplication.instance.uri(instance_url+"/admin/org/integrations")
-              self.options.get_option(:client_id)
-              self.options.get_option(:client_secret)
+              self.options.get_option(:client_id,:mandatory)
+              self.options.get_option(:client_secret,:mandatory)
               @config_presets[@@CONFIG_PRESET_DEFAULT]||=Hash.new
               raise CliError,"a default configuration already exists (use --override=yes)" if @config_presets[@@CONFIG_PRESET_DEFAULT].has_key?(@@ASPERA_PLUGIN_S) and !option_override
               raise CliError,"preset already exists: #{aspera_preset_name}  (use --override=yes)" if @config_presets.has_key?(aspera_preset_name) and !option_override
