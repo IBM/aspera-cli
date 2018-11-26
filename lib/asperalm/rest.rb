@@ -118,7 +118,7 @@ module Asperalm
       raise "ERROR: expecting base_url" unless a_rest_params[:base_url].is_a?(String)
       @params=a_rest_params.clone
       # base url without trailing slashes
-      @params[:base_url].gsub!(/\/+$/,'')
+      @params[:base_url]=@params[:base_url].gsub(/\/+$/,'')
       @http_session=nil
       if @params[:auth_type].eql?(:oauth2)
         @oauth=Oauth.new(@params)
