@@ -426,14 +426,6 @@ module Asperalm
 
       protected
 
-      def generate_new_key(key_filepath)
-        require 'net/ssh'
-        priv_key = OpenSSL::PKey::RSA.new(2048)
-        File.write(key_filepath,priv_key.to_s)
-        File.write(key_filepath+".pub",priv_key.public_key.to_s)
-        nil
-      end
-
       def add_plugin_lookup_folder(folder)
         @plugin_lookup_folders.push(folder)
       end
