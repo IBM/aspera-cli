@@ -239,7 +239,6 @@ module Asperalm
             return {:type=>:object_list,:data=>self.class.flatten_all_config(@config_presets)}
           when :wizard
             self.options.ask_missing_mandatory=true
-            #set_option(:interactive,:yes)
             instance_url=self.options.get_next_argument('URL of server')
             appli=discover_product(instance_url)
             case appli[:product]
@@ -250,6 +249,7 @@ module Asperalm
               files_plugin.declare_options
               self.options.parse_options!
               self.options.ask_missing_mandatory=true
+              #self.options.set_option(:interactive,:yes)
               self.options.set_option(:url,instance_url)
               self.options.set_option(:auth,:web)
               self.options.set_option(:redirect_uri,@@DEFAULT_REDIRECT)
@@ -258,7 +258,7 @@ module Asperalm
               Main.instance.display_status("Creating preset: #{aspera_preset_name}")
               key_filepath=File.join(@main_folder,'aspera_on_cloud_key')
               if File.exist?(key_filepath)
-                puts "key file already exists: #{key_filepath}"
+                puts "key file already exists: #{key_filepath}, keeping it"
               else
                 puts "generating: #{key_filepath}"
                 generate_new_key(key_filepath)
