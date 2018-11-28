@@ -1138,7 +1138,7 @@ $ <%=cmd%> aspera admin res user --bulk=yes --id=@json:[$thelist] delete
 :.......:.........:
 ```
 
-* Display current users workspaces
+* Display current user's workspaces
 
 ```
 $ <%=cmd%> aspera user workspaces
@@ -1197,6 +1197,24 @@ $ <%=cmd%> aspera admin res workspace_membership list --fields=member_type,manag
 : group       : false   :                                  :
 : user        : false   : aspera.user@gmail.com            :
 :.............:.........:..................................:
+```
+
+* get users who did not log since a date
+
+```
+$ <%=cmd%> aspera admin res user list --fields=email --query=@json:'{"per_page":10000,"q":"last_login_at:<2018-05-28"}' 
+:...............................:
+:             email             :
+:...............................:
+: John.curtis@acme.com          :
+: Jean.Dupont@tropfort.com      :
+:...............................:
+```
+
+* list "Limited" users
+
+```
+$ <%=cmd%> aspera admin res user list --fields=email --query=@json:'{"per_page":10000}' --select=@json:'{"member_of_any_workspace":false}'
 ```
 
 ### Send a Package
@@ -1494,7 +1512,7 @@ Aspera Shares supports the "node API" for the file transfer part. (Shares 1 and 
 
 ## Aspera Transfer Service
 
-Aka Aspera on Cloud, Aspera on Cloud...
+Note that ATS is now part of Aspera on Cloud.
 
 ### First time use
 
@@ -1527,9 +1545,11 @@ $ <%=cmd%> ats access_key create --cloud=aws --region=eu-west-1 --params=@json:'
 Example: create access key on Azure SAS:
 
 ```
-$ <%=cmd%> ats access_key create --cloud=azure --region=eastus --params=@json:'{"id":"testkeyazure","name":"laurent key azure","storage":{"type":"azure_sas","credentials":{"shared_access_signature":"https://xxxx.blob.core.windows.net/..."},"path":"/"}}'
+$ <%=cmd%> ats access_key create --cloud=azure --region=eastus --params=@json:'{"id":"testkeyazure","name":"laurent key azure","storage":{"type":"azure_sas","credentials":{"shared_access_signature":"https://containername.blob.core.windows.net/blobname?sr=c&..."},"path":"/"}}'
 
 ```
+
+(Note that the blob name is mandatory after server address and before parameters. and that parameter sr=c is mandatory.)
 
 Example: create access key on Azure:
 
