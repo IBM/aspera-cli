@@ -138,6 +138,7 @@ module Asperalm
 
         def initialize(agents)
           super(agents)
+          @agents=agents
           @ats_legacy = nil
           # REST end points
           @ats_api_public = nil
@@ -315,7 +316,7 @@ module Asperalm
 
         # called for legacy ATS only
         def execute_action
-          @ats_legacy=LegacyAts.new
+          @ats_legacy=LegacyAts.new(@agents)
           execute_action_gen
         end
       end
