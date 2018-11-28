@@ -286,8 +286,10 @@ module Asperalm
           raise "expecting Array" unless params.is_a?(Array)
           result=[]
           params.each do |p|
+            one={'id'=>p}
             # todo: manage exception and display status by default
-            one=do_action.call(p)
+            res=do_action.call(p)
+            one=res if p.is_a?(Hash)
             one['status']=success
             result.push(one)
           end
@@ -353,7 +355,7 @@ module Asperalm
               end
             end
           when :packages
-            command_pkg=self.options.get_next_command([ :send, :recv, :list, :show ])
+            command_pkg=self.options.get_next_command([ :send, :recv, :list, :show, :delete ])
             case command_pkg
             when :send
               package_creation=self.options.get_option(:value,:mandatory)
@@ -380,7 +382,8 @@ module Asperalm
               }
               return self.class.xfer_result(@api_files,'packages','send',node_info,package_info['contents_file_id'],add_ts)
             when :recv
-              ids_to_download=[self.options.get_option(:id,:mandatory)]
+              # scalar here
+              ids_to_download=self.options.get_option(:id,:mandatory)
               # non nil if persistence
               skip_ids_persistency=PersistencyFile.new('aoc_recv',{
                 :folder   => self.config.main_folder,
@@ -389,13 +392,15 @@ module Asperalm
                 :active   => self.options.get_option(:once_only,:mandatory),
                 :default  => [],
                 :delete   => lambda{|d|d.nil? or d.empty?}})
-              if ids_to_download.first.eql?(@@VAL_ALL)
+              if ids_to_download.eql?(@@VAL_ALL)
                 # get list of packages in inbox
                 package_info=@api_files.read('packages',{'archived'=>false,'exclude_dropbox_packages'=>true,'has_content'=>true,'received'=>true,'workspace_id'=>@workspace_id})[:data]
                 # remove from list the ones already downloaded
                 ids_to_download=package_info.map{|e|e['id']}
+                # array here
                 ids_to_download.select!{|id|!skip_ids_persistency.data.include?(id)}
               end # ALL
+              ids_to_download = [ids_to_download] unless ids_to_download.is_a?(Array)
               result_transfer=[]
               Main.instance.display_status("found #{ids_to_download.length} package(s).")
               ids_to_download.each do |package_id|
@@ -422,6 +427,12 @@ module Asperalm
               # list all packages ('page'=>1,'per_page'=>10,)'sort'=>'-sent_at',
               packages=@api_files.read("packages",{'archived'=>false,'exclude_dropbox_packages'=>true,'has_content'=>true,'received'=>true,'workspace_id'=>@workspace_id})[:data]
               return {:type=>:object_list,:data=>packages,:fields=>['id','name','bytes_transferred']}
+            when :delete
+              list_or_one=self.options.get_option(:id,:mandatory)
+              return do_bulk_operation(list_or_one,'deleted')do|id|
+                raise "expecting String identifier" unless id.is_a?(String) or id.is_a?(Integer)
+                @api_files.delete("packages/#{id}")[:data]
+              end
             end
           when :files
             @api_files.secrets[@home_node_file.first]=@ak_secret
