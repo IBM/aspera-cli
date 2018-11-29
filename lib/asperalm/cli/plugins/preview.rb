@@ -48,8 +48,8 @@ module Asperalm
           return @skip_types.map{|i|i.to_s}.join(',')
         end
 
-        def initialize
-          super()
+        def initialize(env)
+          super(env)
           @skip_types=[]
           @default_transfer_spec=nil
         end
