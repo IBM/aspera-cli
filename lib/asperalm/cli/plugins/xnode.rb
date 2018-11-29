@@ -1,4 +1,5 @@
 require 'asperalm/cli/basic_auth_plugin'
+require 'asperalm/persistency_file'
 require "base64"
 
 module Asperalm
@@ -12,32 +13,30 @@ module Asperalm
           super_declare_options
           self.options.add_opt_simple(:filter_transfer,"Ruby expression for filter at transfer level (cleanup)")
           self.options.add_opt_simple(:filter_file,"Ruby expression for filter at file level (cleanup)")
-          self.options.add_opt_simple(:persistency,"persistency file (cleanup,forward)")
-          self.options.set_option(:persistency,File.join(self.config.main_folder,"persistency_cleanup.txt"))
         end
 
         def action_list; [ :postprocess, :cleanup, :forward ];end
 
         # retrieve tranfer list using API and persistency file
         def self.get_transfers_iteration(api_node,params)
-          persistencyfile=self.options.get_option(:persistency,:mandatory)
+          @iteration_persistency=PersistencyFile.new('xnode',{
+            :url      => self.options.get_option(:url,:mandatory),
+            :ids      => [self.options.get_option(:username,:mandatory)],
+            :active   => self.options.get_option(:once_only,:mandatory)})
+          @iteration_persistency.data=process_file_events(@iteration_persistency.data)
           # first time run ? or subsequent run ?
-          iteration_token=nil
-          if !persistencyfile.nil? and File.exist?(persistencyfile)
-            iteration_token=File.read(persistencyfile)
-          end
-          params[:iteration_token]=iteration_token unless iteration_token.nil?
+          params[:iteration_token]=@iteration_persistency.data unless @iteration_persistency.data.nil?
           resp=api_node.read('ops/transfers',params)
           transfers=resp[:data]
           if transfers.is_a?(Array) then
             # 3.7.2, released API
-            iteration_token=URI.decode_www_form(URI.parse(resp[:http]['Link'].match(/<([^>]+)>/)[1]).query).to_h['iteration_token']
+            @iteration_persistency.data=URI.decode_www_form(URI.parse(resp[:http]['Link'].match(/<([^>]+)>/)[1]).query).to_h['iteration_token']
           else
             # 3.5.2, deprecated API
-            iteration_token=transfers['iteration_token']
+            @iteration_persistency.data=transfers['iteration_token']
             transfers=transfers['transfers']
           end
-          File.write(persistencyfile,iteration_token) if (!persistencyfile.nil?)
+          @iteration_persistency.save
           return transfers
         end
 
