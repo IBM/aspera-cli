@@ -115,11 +115,12 @@ SAMPLE_FILE=~/Documents/Samples/200KB.1
 TEST_SHARE=000_test1
 clean::
 	rm -fr $(TEST_FOLDER)
+$(TEST_FOLDER):
+	mkdir -p $(TEST_FOLDER)
 t/sh1:
 	$(EXETEST) shares repository browse /
 	@touch $@
-t/sh2:
-	mkdir -p $(TEST_FOLDER)
+t/sh2: $(TEST_FOLDER)
 	$(EXETEST) shares repository upload --to-folder=/$(TEST_SHARE) --sources=@args $(SAMPLE_FILE)
 	$(EXETEST) shares repository download --to-folder=$(TEST_FOLDER) --sources=@args /$(TEST_SHARE)/200KB.1
 	$(EXETEST) shares repository delete /$(TEST_SHARE)/200KB.1
@@ -127,8 +128,7 @@ t/sh2:
 	@touch $@
 tshares: t/sh1 t/sh2
 
-t/fp1:
-	mkdir -p $(TEST_FOLDER)
+t/fp1: $(TEST_FOLDER)
 	$(EXETEST) server browse /
 	$(EXETEST) server upload --to-folder=/Upload --sources=@args $(SAMPLE_FILE)
 	$(EXETEST) server download --to-folder=$(TEST_FOLDER) --sources=@args /Upload/200KB.1
@@ -185,8 +185,7 @@ t/nd1:
 	$(EXETEST) node info
 	$(EXETEST) node browse / -r
 	@touch $@
-t/nd2:
-	mkdir -p $(TEST_FOLDER)
+t/nd2: $(TEST_FOLDER)
 	$(EXETEST) node upload --to-folder=$(NODEDEST) --sources=@args $(SAMPLE_FILE)
 	$(EXETEST) node download --to-folder=$(TEST_FOLDER) --sources=@args $(NODEDEST)200KB.1
 	$(EXETEST) node delete $(NODEDEST)200KB.1
@@ -216,19 +215,18 @@ t/nd6:
 	@touch $@
 tnode: t/nd1 t/nd2 t/nd3 t/nd4 t/nd5 t/nd6
 
-t/aocf1:
+t/aocf1: $(TEST_FOLDER)
+	$(EXETEST) config genkey $(TEST_FOLDER)/mykey
 	$(EXETEST) aspera files browse /
 	@touch $@
 t/aocf2:
 	$(EXETEST) aspera files upload --to-folder=/ $(SAMPLE_FILE)
 	@touch $@
-t/aocf3:
-	mkdir -p $(TEST_FOLDER)
+t/aocf3: $(TEST_FOLDER)
 	$(EXETEST) aspera files download --to-folder=$(TEST_FOLDER) --transfer=connect --sources=@args /200KB.1
 	rm -f 200KB.1
 	@touch $@
-t/aocf4:
-	mkdir -p $(TEST_FOLDER)
+t/aocf4: $(TEST_FOLDER)
 	$(EXETEST) aspera files http_node_download --to-folder=$(TEST_FOLDER) --sources=@args /200KB.1
 	rm -f 200KB.1
 	@touch $@
@@ -417,42 +415,49 @@ t/sy3:
 tnsync: t/sy1 t/sy2 t/sy3
 
 TEST_CONFIG=sample.conf
-t/conf1:
+t/conf_id_1:
 	MLIA_CONFIG_FILE=$(TEST_CONFIG) $(EXETEST) config id conf_name set param value
 	@touch $@
-t/conf2:
+t/conf_id_2:
 	MLIA_CONFIG_FILE=$(TEST_CONFIG) $(EXETEST) config id conf_name show
 	@touch $@
-t/conf3:
-	MLIA_CONFIG_FILE=$(TEST_CONFIG) $(EXETEST) config list
-	@touch $@
-t/conf4:
-	MLIA_CONFIG_FILE=$(TEST_CONFIG) $(EXETEST) config overview
-	@touch $@
-t/conf5:
+t/conf_id_3:
 	MLIA_CONFIG_FILE=$(TEST_CONFIG) $(EXETEST) config id default set shares conf_name
 	@touch $@
-t/conf6:
+t/conf_id_4:
 	MLIA_CONFIG_FILE=$(TEST_CONFIG) $(EXETEST) config id conf_name delete
 	@touch $@
-t/conf7:
+t/conf_id_5:
 	MLIA_CONFIG_FILE=$(TEST_CONFIG) $(EXETEST) config id conf_name initialize @json:'{"p1":"v1","p2":"v2"}'
 	@touch $@
-t/conf8:
+t/conf_id_6:
 	MLIA_CONFIG_FILE=$(TEST_CONFIG) $(EXETEST) config id conf_name update --p1=v1 --p2=v2
 	@touch $@
-t/conf9:
+t/conf_open:
 	MLIA_CONFIG_FILE=$(TEST_CONFIG) $(EXETEST) config open
 	@touch $@
-t/conf10:
+t/conf_list:
+	MLIA_CONFIG_FILE=$(TEST_CONFIG) $(EXETEST) config list
+	@touch $@
+t/conf_over:
+	MLIA_CONFIG_FILE=$(TEST_CONFIG) $(EXETEST) config overview
+	@touch $@
+t/conf_help:
 	$(EXETEST) -h
 	@touch $@
-t/conf11:
+t/conf_open_err:
 	printf -- "---\nconfig:\n  version: 0" > $(TEST_CONFIG)
 	-MLIA_CONFIG_FILE=$(TEST_CONFIG) $(EXETEST) config open
 	@touch $@
+t/conf_plugins:
+	$(EXETEST) config plugins
+	@touch $@
+HIDE_CLIENT_ID=BMDiAWLP6g
+HIDE_CLIENT_SECRET=opkZrJuN-J8anDxPcPA5CFLsY5CopRvLqBeDV24_8KJgarmuYGkI0ha5zNkBLpZ1-edRwzgHZfhisyQltG-xJ-kiZvvxf3Co
+t/conf_wizard:
+	$(EXETEST) conf wiz https://sedemo.ibmaspera.com --config-file=todelete.txt --client-id=$(HIDE_CLIENT_ID) --client-secret=$(HIDE_CLIENT_SECRET)
 
-tconf: t/conf1 t/conf2 t/conf3 t/conf4 t/conf5 t/conf6 t/conf7 t/conf8 t/conf9 t/conf10 t/conf11
+tconf: t/conf_id_1 t/conf_id_2 t/conf_id_3 t/conf_id_4 t/conf_id_5 t/conf_id_6 t/conf_open t/conf_list t/conf_over t/conf_help t/conf_open_err t/conf_plugins t/conf_wizard
 
 t/shar2_1:
 	$(EXETEST) shares2 appinfo
