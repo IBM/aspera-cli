@@ -6,6 +6,10 @@ module Asperalm
     @@FILE_FIELD_SEPARATOR='_'
     @@FILE_SUFFIX='.txt'
     @@WINDOWS_PROTECTED_CHAR=%r{[/:"<>\\\*\?]}
+    
+    @@default_folder='.'
+    
+    def self.default_folder=(val);@@default_folder=val;end
 
     attr_accessor :data
     # @param prefix
@@ -14,7 +18,7 @@ module Asperalm
     # @param options[:url]
     def initialize(prefix,options)
       @is_active = options[:active] || true
-      @persist_folder=options[:folder] || '.'
+      @persist_folder=options[:folder] || @@default_folder
       @persist_prefix=prefix
       @persist_filepath=nil
       # by default , at save time, file is deleted if data is nil
