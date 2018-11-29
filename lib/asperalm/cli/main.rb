@@ -4,6 +4,7 @@ require 'asperalm/cli/extended_value'
 require 'asperalm/cli/transfer_agent'
 require 'asperalm/open_application'
 require 'asperalm/temp_file_manager'
+require 'asperalm/persistency_file'
 require 'asperalm/log'
 require 'asperalm/rest'
 require 'asperalm/files_api'
@@ -25,20 +26,13 @@ module Asperalm
       end
 
       private
-      # first level command for the main tool
-      @@CONFIG_PLUGIN_NAME_SYM=:config
       # name of application, also foldername where config is stored
       @@PROGRAM_NAME = 'mlia'
       @@GEM_NAME = 'asperalm'
-      # folder containing custom plugins in `main_folder`
-      @@ASPERA_PLUGINS_FOLDERNAME='plugins'
-      # folder containing plugins in the gem's main folder
-      @@GEM_PLUGINS_FOLDER='asperalm/cli/plugins'
       # Container module of current class : Asperalm::Cli
       @@CLI_MODULE=Module.nesting[1].to_s
       # Path to Plugin classes: Asperalm::Cli::Plugins
       @@PLUGINS_MODULE=@@CLI_MODULE+'::Plugins'
-      RUBY_FILE_EXT='.rb'
       FIELDS_ALL='ALL'
       FIELDS_DEFAULT='DEF'
       @@VERBOSE_LEVELS=[:normal,:minimal,:quiet]
@@ -69,27 +63,12 @@ module Asperalm
       attr_accessor :option_flat_hash
       attr_accessor :option_table_style
 
-      # find plugins in defined paths
-      def add_plugins_from_lookup_folders
-        @plugin_lookup_folders.each do |folder|
-          if File.directory?(folder)
-            #TODO: add gem root to load path ? and require short folder ?
-            #$LOAD_PATH.push(folder) if i[:add_path]
-            Dir.entries(folder).select{|file|file.end_with?(RUBY_FILE_EXT)}.each do |source|
-              add_plugin_info(File.join(folder,source))
-            end
-          end
-        end
-      end
-
       # minimum initialization
       def initialize
         # overriding parameters on transfer spec
         @option_help=false
         @option_show_config=false
         @option_flat_hash=true
-        @plugins={@@CONFIG_PLUGIN_NAME_SYM=>{:source=>__FILE__,:require_stanza=>nil}}
-        @plugin_lookup_folders=[]
         @option_table_style=':.:'
         @opt_mgr=Manager.new(self.program_name)
         @plugin_env={:options=>@opt_mgr}
@@ -99,11 +78,9 @@ module Asperalm
         @plugin_env[:config]=@config_plugin
         Oauth.persistency_folder=@config_plugin.main_folder
         ExtendedValue.instance.set_handler('preset',:reader,lambda{|v|@config_plugin.preset_by_name(v)})
-
         # set folders for temp files
         Fasp::Parameters.file_list_folder=File.join(@config_plugin.main_folder,'filelists')
-        add_plugin_lookup_folder(File.join(@config_plugin.main_folder,@@ASPERA_PLUGINS_FOLDERNAME))
-        add_plugin_lookup_folder(File.join(self.class.gem_root,@@GEM_PLUGINS_FOLDER))
+        PersistencyFile.default_folder=@config_plugin.main_folder
       end
 
       # local options
@@ -119,7 +96,7 @@ module Asperalm
         @opt_mgr.parser.separator "\texecute: #{self.program_name} conf doc"
         @opt_mgr.parser.separator ""
         @opt_mgr.parser.separator "COMMANDS"
-        @opt_mgr.parser.separator "\tFirst level commands: #{@plugins.keys.map {|x| x.to_s}.join(', ')}"
+        @opt_mgr.parser.separator "\tFirst level commands: #{@config_plugin.plugins.keys.map {|x| x.to_s}.join(', ')}"
         @opt_mgr.parser.separator "\tNote that commands can be written shortened (provided it is unique)."
         @opt_mgr.parser.separator ""
         @opt_mgr.parser.separator "OPTIONS"
@@ -189,14 +166,14 @@ module Asperalm
       # @return the plugin instance, based on name
       # also loads the plugin options, and default values from conf file
       # @param plugin_name_sym : symbol for plugin name
-      def get_plugin_instance_with_options(plugin_name_sym)
+      def get_plugin_instance_with_options(plugin_name_sym,env=@plugin_env)
         Log.log.debug("get_plugin_instance_with_options -> #{plugin_name_sym}")
-        require @plugins[plugin_name_sym][:require_stanza]
-        command_plugin=Object::const_get(@@PLUGINS_MODULE+'::'+plugin_name_sym.to_s.capitalize).new(@plugin_env)
+        require @config_plugin.plugins[plugin_name_sym][:require_stanza]
+        command_plugin=Object::const_get(@@PLUGINS_MODULE+'::'+plugin_name_sym.to_s.capitalize).new(env)
         # TODO: check that ancestor is Plugin?
-        @opt_mgr.parser.separator "COMMAND: #{plugin_name_sym}"
-        @opt_mgr.parser.separator "SUBCOMMANDS: #{command_plugin.action_list.map{ |p| p.to_s}.join(', ')}"
-        @opt_mgr.parser.separator "OPTIONS:"
+        env[:options].parser.separator "COMMAND: #{plugin_name_sym}"
+        env[:options].parser.separator "SUBCOMMANDS: #{command_plugin.action_list.map{ |p| p.to_s}.join(', ')}"
+        env[:options].parser.separator "OPTIONS:"
         command_plugin.declare_options
         # load default params only if no param already loaded
         add_plugin_default_preset(plugin_name_sym)
@@ -411,12 +388,13 @@ module Asperalm
         display_message(:error,@opt_mgr.parser)
         if all_plugins
           # list plugins that have a "require" field, i.e. all but main plugin
-          @plugins.keys.select { |s| !@plugins[s][:require_stanza].nil? }.each do |plugin_name_sym|
+          @config_plugin.plugins.keys.each do |plugin_name_sym|
+            next if @config_plugin.plugins[plugin_name_sym][:require_stanza].nil?
             # override main option parser with a brand new
-            @opt_mgr=Manager.new(self.program_name)
-            @opt_mgr.parser.banner = ""
-            get_plugin_instance_with_options(plugin_name_sym)
-            display_message(:error,@opt_mgr.parser)
+            opt_mgr=Manager.new(self.program_name)
+            opt_mgr.parser.banner = ""
+            get_plugin_instance_with_options(plugin_name_sym,{:options=>opt_mgr})
+            display_message(:error,opt_mgr.parser)
           end
         end
         #display_message(:error,@opt_mgr.parser)
@@ -425,17 +403,6 @@ module Asperalm
       end
 
       protected
-
-      def add_plugin_lookup_folder(folder)
-        @plugin_lookup_folders.push(folder)
-      end
-
-      def add_plugin_info(path)
-        raise "ERROR: plugin path must end with #{RUBY_FILE_EXT}" if !path.end_with?(RUBY_FILE_EXT)
-        name=File.basename(path,RUBY_FILE_EXT)
-        req=path.gsub(/#{RUBY_FILE_EXT}$/,'')
-        @plugins[name.to_sym]={:source=>path,:require_stanza=>req}
-      end
 
       # early debug for parser
       # Note: does not accept shortcuts
@@ -498,13 +465,13 @@ module Asperalm
           @transfer_mgr.declare_transfer_options
           @opt_mgr.parse_options!
           # find plugins, shall be after parse! ?
-          add_plugins_from_lookup_folders
+          @config_plugin.add_plugins_from_lookup_folders
           # declare generic options
           Plugin.declare_entity_options(@opt_mgr)
           # help requested without command ? (plugins must be known here)
           exit_with_usage(true) if @option_help and @opt_mgr.command_or_arg_empty?
           # load global default options and process
-          add_plugin_default_preset(@@CONFIG_PLUGIN_NAME_SYM)
+          add_plugin_default_preset(Plugins::Config.name_sym)
           @opt_mgr.parse_options!
           # dual execution locking
           lock_port=@opt_mgr.get_option(:lock_port,:optional)
@@ -517,15 +484,15 @@ module Asperalm
             end
           end
           if @option_show_config and @opt_mgr.command_or_arg_empty?
-            command_sym=@@CONFIG_PLUGIN_NAME_SYM
+            command_sym=Plugins::Config.name_sym
           else
-            command_sym=@opt_mgr.get_next_command(@plugins.keys.dup.unshift(:help))
+            command_sym=@opt_mgr.get_next_command(@config_plugin.plugins.keys.dup.unshift(:help))
           end
           # main plugin is not dynamically instanciated
           case command_sym
           when :help
             exit_with_usage(true)
-          when @@CONFIG_PLUGIN_NAME_SYM
+          when Plugins::Config.name_sym
             command_plugin=@config_plugin
           else
             # get plugin, set options, etc

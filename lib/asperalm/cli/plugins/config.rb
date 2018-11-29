@@ -1,6 +1,7 @@
 require 'asperalm/cli/basic_auth_plugin'
 require 'asperalm/fasp/installation'
 require 'xmlsimple'
+require 'base64'
 
 module Asperalm
   module Cli
@@ -9,6 +10,8 @@ module Asperalm
       class Config < Plugin
         def initialize(env,tool_name,gem_name,version)
           super(env)
+          @plugins={self.class.name_sym=>{:source=>__FILE__,:require_stanza=>nil}}
+          @plugin_lookup_folders=[]
           @use_plugin_defaults=true
           @config_presets=nil
           @program_version=version
@@ -23,6 +26,8 @@ module Asperalm
           @option_config_file=File.join(@main_folder,@@DEFAULT_CONFIG_FILENAME)
           @help_url='http://www.rubydoc.info/gems/'+@gem_name
           @gem_url='https://rubygems.org/gems/'+@gem_name
+          add_plugin_lookup_folder(File.join(@main_folder,@@ASPERA_PLUGINS_FOLDERNAME))
+          add_plugin_lookup_folder(File.join(Main.gem_root,@@GEM_PLUGINS_FOLDER))
         end
         private
 
@@ -37,6 +42,15 @@ module Asperalm
         # new plugin name for AoC
         @@ASPERA_PLUGIN_S=:aspera.to_s
         @@DEFAULT_REDIRECT='http://localhost:12345'
+        # folder containing custom plugins in `main_folder`
+        @@ASPERA_PLUGINS_FOLDERNAME='plugins'
+        # folder containing plugins in the gem's main folder
+        @@GEM_PLUGINS_FOLDER='asperalm/cli/plugins'
+        @@RUBY_FILE_EXT='.rb'
+        @@RANDOM_CLIENT='YXNwZXJhLmdsb2JhbC1jbGktY2xpZW50OmZycG1zUnNHNG1qWjBQbHhDZ2RKbHZPTnFCZzRWbHB6X0lYN2dYbUJNQWZzZ01MeTJGTzZDWExvZEtmS0F1aHFuQ3FTcHRMYmVfd2Rtbm05SlJ1RVBPLVBwRnFwcV9LYgo='
+
+        # first level command for the main tool
+        def self.name_sym;:config;end
 
         def generate_new_key(key_filepath)
           require 'net/ssh'
@@ -71,6 +85,7 @@ module Asperalm
         attr_reader :main_folder
         attr_reader :gem_url
         attr_reader :help_url
+        attr_reader :plugins
         attr_accessor :option_override
         attr_accessor :option_config_file
 
@@ -150,9 +165,37 @@ module Asperalm
           end
         end
 
+        # find plugins in defined paths
+        def add_plugins_from_lookup_folders
+          @plugin_lookup_folders.each do |folder|
+            if File.directory?(folder)
+              #TODO: add gem root to load path ? and require short folder ?
+              #$LOAD_PATH.push(folder) if i[:add_path]
+              Dir.entries(folder).select{|file|file.end_with?(@@RUBY_FILE_EXT)}.each do |source|
+                add_plugin_info(File.join(folder,source))
+              end
+            end
+          end
+        end
+
+        def add_plugin_lookup_folder(folder)
+          @plugin_lookup_folders.push(folder)
+        end
+
+        def add_plugin_info(path)
+          raise "ERROR: plugin path must end with #{@@RUBY_FILE_EXT}" if !path.end_with?(@@RUBY_FILE_EXT)
+          name_sym=File.basename(path,@@RUBY_FILE_EXT).to_sym
+          req=path.gsub(/#{@@RUBY_FILE_EXT}$/,'')
+          if @plugins.has_key?(name_sym)
+            Log.log.debug("skiping plugin already registered: #{name_sym}")
+            return
+          end
+          @plugins[name_sym]={:source=>path,:require_stanza=>req}
+        end
+
         # "config" plugin
         def execute_action
-          action=self.options.get_next_command([:genkey,:plugins,:flush_tokens,:list,:overview,:open,:echo,:id,:documentation,:wizard,:export_to_cli,:detect])
+          action=self.options.get_next_command([:genkey,:plugins,:flush_tokens,:list,:overview,:open,:echo,:id,:documentation,:wizard,:export_to_cli,:detect,:coffee])
           case action
           when :id
             config_name=self.options.get_next_argument('config name')
@@ -232,7 +275,7 @@ module Asperalm
             deleted_files=Oauth.flush_tokens
             return {:type=>:value_list, :name=>'file',:data=>deleted_files}
           when :plugins
-            return {:data => plugin_sym_list.map { |i| { 'plugin' => i.to_s, 'path' => @plugins[i][:source] } } , :fields => ['plugin','path'], :type => :object_list }
+            return {:data => @plugins.keys.map { |i| { 'plugin' => i.to_s, 'path' => @plugins[i][:source] } } , :fields => ['plugin','path'], :type => :object_list }
           when :list
             return {:data => @config_presets.keys, :type => :value_list, :name => 'name'}
           when :overview
@@ -254,7 +297,7 @@ module Asperalm
               self.options.set_option(:auth,:web)
               self.options.set_option(:redirect_uri,@@DEFAULT_REDIRECT)
               organization,instance_domain=FilesApi.parse_url(instance_url)
-              aspera_preset_name='aoc_'+organization
+              aspera_preset_name=self.options.get_option(:client_secret,:optional) || 'aoc_'+organization
               Main.instance.display_status("Creating preset: #{aspera_preset_name}")
               key_filepath=File.join(@main_folder,'aspera_on_cloud_key')
               if File.exist?(key_filepath)
@@ -263,27 +306,36 @@ module Asperalm
                 puts "generating: #{key_filepath}"
                 generate_new_key(key_filepath)
               end
-              puts "Please login to your Aspera on Cloud instance as Administrator."
-              puts "Go to: Admin->Organization->Integrations"
-              puts "Create a new integration:"
-              puts "- name: #{Main.instance.program_name}"
-              puts "- redirect uri: #{@@DEFAULT_REDIRECT}"
-              puts "- origin: localhost"
-              puts "Once created please enter the following any required parameter:"
-              OpenApplication.instance.uri(instance_url+"/admin/org/integrations")
-              self.options.get_option(:client_id,:mandatory)
-              self.options.get_option(:client_secret,:mandatory)
+              # if no api client info on command line, ask to get it
+              if self.options.get_option(:client_id,:optional).nil? or self.options.get_option(:client_secret,:optional).nil?
+                #client_data=Base64.decode64(@@RANDOM_CLIENT).split(':')
+                #self.options.set_option(:client_id,client_data.first)
+                #self.options.set_option(:client_secret,client_data.last);
+                puts "Please login to your Aspera on Cloud instance as Administrator."
+                puts "Go to: Admin->Organization->Integrations"
+                puts "Create a new integration:"
+                puts "- name: #{Main.instance.program_name}"
+                puts "- redirect uri: #{@@DEFAULT_REDIRECT}"
+                puts "- origin: localhost"
+                puts "Once created please enter the following any required parameter:"
+                OpenApplication.instance.uri(instance_url+"/admin/org/integrations")
+                self.options.get_option(:client_id,:mandatory)
+                self.options.get_option(:client_secret,:mandatory)
+              end
+              # init defaults if necessary
               @config_presets[@@CONFIG_PRESET_DEFAULT]||=Hash.new
-              raise CliError,"a default configuration already exists (use --override=yes)" if @config_presets[@@CONFIG_PRESET_DEFAULT].has_key?(@@ASPERA_PLUGIN_S) and !option_override
-              raise CliError,"preset already exists: #{aspera_preset_name}  (use --override=yes)" if @config_presets.has_key?(aspera_preset_name) and !option_override
+              if !option_override
+                raise CliError,"a default configuration already exists (use --override=yes)" if @config_presets[@@CONFIG_PRESET_DEFAULT].has_key?(@@ASPERA_PLUGIN_S)
+                raise CliError,"preset already exists: #{aspera_preset_name}  (use --override=yes)" if @config_presets.has_key?(aspera_preset_name)
+              end
               # todo: check if key is identical
               files_plugin.set_fields(true)
               myself=files_plugin.api_files.read('self')[:data]
-              raise CliError,"public key is already set (use --override=yes)"  unless myself['public_key'].empty? or option_override
+              raise CliError,"public key is already set in profile (use --override=yes)"  unless myself['public_key'].empty? or option_override
               puts "updating profile with new key"
               files_plugin.api_files.update("users/#{myself['id']}",{'public_key'=>File.read(key_filepath+'.pub')})
-              puts "Enabling JWT"
-              files_plugin.api_files.update("clients/#{self.options.get_option(:client_id)}",{"jwt_grant_enabled"=>true,"explicit_authorization_required"=>false})
+              puts "Enabling JWT for client"
+              files_plugin.api_files.update("clients/#{self.options.get_option(:client_id)}",{'jwt_grant_enabled'=>true,'explicit_authorization_required'=>false})
               puts "creating new config preset: #{aspera_preset_name}"
               @config_presets[aspera_preset_name]={
                 :url.to_s           =>self.options.get_option(:url),
@@ -338,13 +390,16 @@ module Asperalm
             BasicAuthPlugin.new.declare_options
             self.options.parse_options!
             return Main.result_status("found: #{discover_product(self.options.get_option(:url,:mandatory))}")
+          when :coffee
+            OpenApplication.instance.uri('https://enjoyjava.com/wp-content/uploads/2018/01/How-to-make-strong-coffee.jpg')
+            return Main.result_nothing
           else raise "error"
           end
         end
 
         def save_presets_to_config_file
           raise "no configuration loaded" if @config_presets.nil?
-          FileUtils::mkdir_p(main_folder) unless Dir.exist?(main_folder)
+          FileUtils::mkdir_p(@main_folder) unless Dir.exist?(@main_folder)
           Log.log.debug "writing #{@option_config_file}"
           File.write(@option_config_file,@config_presets.to_yaml)
         end
@@ -374,11 +429,11 @@ module Asperalm
           api=Rest.new({:base_url=>url})
           begin
             result=api.call({:operation=>'GET',:subpath=>'',:headers=>{'Accept'=>'text/html'}})
-            if result[:http].body.include?('<meta name="apple-mobile-web-app-title" content="AoC">')
+            if result[:http].body.include?('content="AoC"')
               return {:product=>:aoc,:version=>'unknown'}
             end
-          rescue e
-            Log.log.debug("not aoc")
+          rescue => e
+            Log.log.debug("not aoc (#{e})")
           end
           begin
             result=api.call({:operation=>'POST',:subpath=>'aspera/faspex',:headers=>{'Accept'=>'application/xrds+xml'},:text_body_params=>''})
