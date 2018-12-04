@@ -239,7 +239,7 @@ module Asperalm
             command_pkg=self.options.get_next_command([ :list, :create ])
             case command_pkg
             when :list
-              dropbox_list=api_v3.call({:operation=>'GET',:subpath=>"/aspera/faspex/dropboxes",:headers=>{'Accept'=>'application/json'}})[:data]
+              dropbox_list=api_v3.call({:operation=>'GET',:subpath=>'dropboxes',:headers=>{'Accept'=>'application/json'}})[:data]
               return {:type=>:object_list, :data=>dropbox_list['items'], :fields=>['name','id','description','can_read','can_write']}
               #              when :create
               #
