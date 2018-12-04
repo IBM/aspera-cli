@@ -61,7 +61,7 @@ module Asperalm
               # of not specified, use default node
               if node_config.nil?
                 param_set_name=@env[:config].get_plugin_default_config_name(:node)
-                raise CliBadArgument,"No default node configured, Please specify --transfer-node" if param_set_name.nil?
+                raise CliBadArgument,"No default node configured, Please specify --#{:transfer_info.to_s.gsub('_','-')}" if param_set_name.nil?
                 node_config=@env[:config].preset_by_name(param_set_name)
               end
               Log.log.debug("node=#{node_config}")
