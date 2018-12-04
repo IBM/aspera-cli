@@ -386,7 +386,6 @@ module Asperalm
               ids_to_download=self.options.get_option(:id,:mandatory)
               # non nil if persistence
               skip_ids_persistency=PersistencyFile.new('aoc_recv',{
-                :folder   => self.config.main_folder,
                 :url      => self.options.get_option(:url,:mandatory),
                 :ids      => [@user_id,@workspace_name],
                 :active   => self.options.get_option(:once_only,:mandatory),

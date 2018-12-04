@@ -123,7 +123,6 @@ module Asperalm
               # list of faspex ID/URI to download
               pkg_id_uri=nil
               skip_ids_persistency=PersistencyFile.new('faspex_recv',{
-                :folder   => self.config.main_folder,
                 :url      => self.options.get_option(:url,:mandatory),
                 :ids      => [self.options.get_option(:username,:mandatory),self.options.get_option(:box,:mandatory).to_s],
                 :active   => self.options.get_option(:once_only,:mandatory),

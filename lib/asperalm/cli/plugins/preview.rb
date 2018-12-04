@@ -368,7 +368,6 @@ module Asperalm
             return Main.result_status('scan finished')
           when :events
             @iteration_persistency=PersistencyFile.new('preview_iteration',{
-              :folder   => self.config.main_folder,
               :url      => self.options.get_option(:url,:mandatory),
               :ids      => [self.options.get_option(:username,:mandatory)],
               :active   => self.options.get_option(:once_only,:mandatory)})
