@@ -24,13 +24,14 @@ module Asperalm
         started=false
         # lets emulate management events to display progress bar
         loop do
-          trdata=@node_api.call({:operation=>'GET',:subpath=>'ops/transfers/'+@transfer_id,:headers=>{'Accept'=>'application/json'}})[:data]
+          #trdata=@node_api.call({:operation=>'GET',:subpath=>'ops/transfers/'+@transfer_id,:headers=>{'Accept'=>'application/json'}})[:data]
+          trdata=@node_api.read("ops/transfers/#{@transfer_id}")[:data]
           case trdata['status']
           when 'completed'
             notify_listeners("emulated",{'Type'=>'DONE'})
             break
-          when 'waiting'
-            puts 'starting'
+          when 'waiting','partially_completed'
+            puts trdata['status']
           when 'running'
             #puts "running: sessions:#{trdata["sessions"].length}, #{trdata["sessions"].map{|i| i['bytes_transferred']}.join(',')}"
             if !started and trdata["precalc"].is_a?(Hash) and
@@ -40,8 +41,6 @@ module Asperalm
             else
               notify_listeners("emulated",{'Type'=>'STATS','Bytescont'=>trdata["bytes_transferred"]})
             end
-          when 'partially_completed'
-            puts 'partial'
           else
             Log.log.warn("trdata -> #{trdata}")
             raise Fasp::Error.new("#{trdata['status']}: #{trdata['error_desc']}")
@@ -53,4 +52,3 @@ module Asperalm
     end
   end
 end
-
