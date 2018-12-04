@@ -19,9 +19,11 @@ module Asperalm
             Log.log.debug("-> #{self.options}".red)
             # special
             @current_api_key_info=nil
-            @repo_api_keys=nil
             @ats_api_public = Rest.new({:base_url=>LEGACY_ATS_URI})
             @ats_api_secure = nil
+            @api_keys_persistency=PersistencyFile.new(ATS_KEYS_FILENAME,{
+              :default  => [],
+              :delete   => lambda{|d|d.nil? or d.empty?}})
           end
 
           # authenticated API
@@ -38,22 +40,10 @@ module Asperalm
           end
 
           # all ATS API keys stored in cache file
-          def repo_api_keys
-            if @repo_api_keys.nil?
-              @repo_api_keys=[]
-              # cache file for CLI for API keys
-              @api_key_repository_file=File.join(self.config.main_folder,ATS_KEYS_FILENAME)
-              if File.exist?(@api_key_repository_file)
-                @repo_api_keys=JSON.parse(File.read(@api_key_repository_file))
-              end
-            end
-            @repo_api_keys
-          end
+          def repo_api_keys; return @api_keys_persistency.data;end
 
           # write ATS API keys cache file after modification
-          def save_key_repo
-            File.write(@api_key_repository_file,JSON.generate(repo_api_keys))
-          end
+          def save_key_repo; @api_keys_persistency.save;end
 
           # get an api key
           # either first one stored in repository
