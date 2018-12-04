@@ -187,7 +187,7 @@ module Asperalm
           name_sym=File.basename(path,@@RUBY_FILE_EXT).to_sym
           req=path.gsub(/#{@@RUBY_FILE_EXT}$/,'')
           if @plugins.has_key?(name_sym)
-            Log.log.debug("skiping plugin already registered: #{name_sym}")
+            Log.log.warn("skipping plugin already registered: #{name_sym}")
             return
           end
           @plugins[name_sym]={:source=>path,:require_stanza=>req}
