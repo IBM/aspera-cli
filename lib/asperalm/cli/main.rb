@@ -76,11 +76,11 @@ module Asperalm
         @plugin_env[:transfer]=@transfer_mgr
         @config_plugin=Plugins::Config.new(@plugin_env,self.program_name,@@GEM_NAME,self.class.gem_version)
         @plugin_env[:config]=@config_plugin
+        # set application folder for modules
+        PersistencyFile.default_folder=@config_plugin.main_folder
         Oauth.persistency_folder=@config_plugin.main_folder
         ExtendedValue.instance.set_handler('preset',:reader,lambda{|v|@config_plugin.preset_by_name(v)})
-        # set folders for temp files
         Fasp::Parameters.file_list_folder=File.join(@config_plugin.main_folder,'filelists')
-        PersistencyFile.default_folder=@config_plugin.main_folder
       end
 
       # local options
@@ -167,7 +167,7 @@ module Asperalm
       # also loads the plugin options, and default values from conf file
       # @param plugin_name_sym : symbol for plugin name
       def get_plugin_instance_with_options(plugin_name_sym,env=@plugin_env)
-        Log.log.debug("get_plugin_instance_with_options -> #{plugin_name_sym}")
+        Log.log.debug("get_plugin_instance_with_options -> #{plugin_name_sym} (#{env})")
         require @config_plugin.plugins[plugin_name_sym][:require_stanza]
         command_plugin=Object::const_get(@@PLUGINS_MODULE+'::'+plugin_name_sym.to_s.capitalize).new(env)
         # TODO: check that ancestor is Plugin?
@@ -389,8 +389,8 @@ module Asperalm
         if all_plugins
           # list plugins that have a "require" field, i.e. all but main plugin
           @config_plugin.plugins.keys.each do |plugin_name_sym|
-            next if @config_plugin.plugins[plugin_name_sym][:require_stanza].nil?
-            # override main option parser with a brand new
+            next if plugin_name_sym.eql?(Plugins::Config.name_sym)
+            # override main option parser with a brand new, to avoid having global options
             opt_mgr=Manager.new(self.program_name)
             opt_mgr.parser.banner = ""
             get_plugin_instance_with_options(plugin_name_sym,{:options=>opt_mgr})
