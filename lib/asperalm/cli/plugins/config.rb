@@ -10,7 +10,7 @@ module Asperalm
       class Config < Plugin
         def initialize(env,tool_name,gem_name,version)
           super(env)
-          @plugins={self.class.name_sym=>{:source=>__FILE__,:require_stanza=>nil}}
+          @plugins={} #self.class.name_sym=>{:source=>__FILE__,:require_stanza=>nil}}
           @plugin_lookup_folders=[]
           @use_plugin_defaults=true
           @config_presets=nil
@@ -187,7 +187,7 @@ module Asperalm
           name_sym=File.basename(path,@@RUBY_FILE_EXT).to_sym
           req=path.gsub(/#{@@RUBY_FILE_EXT}$/,'')
           if @plugins.has_key?(name_sym)
-            Log.log.warn("skipping plugin already registered: #{name_sym}")
+            Log.log.warn("skipping plugin already registered: #{name_sym}") 
             return
           end
           @plugins[name_sym]={:source=>path,:require_stanza=>req}
