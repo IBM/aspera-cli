@@ -115,20 +115,20 @@ SAMPLE_FILE=~/Documents/Samples/200KB.1
 TEST_SHARE=000_test1
 clean::
 	rm -fr $(TEST_FOLDER)
-$(TEST_FOLDER):
+$(TEST_FOLDER)/.exists:
 	mkdir -p $(TEST_FOLDER)
+	@touch $(TEST_FOLDER)/.exists
 t/sh1:
 	$(EXETEST) shares repository browse /
 	@touch $@
-t/sh2: $(TEST_FOLDER)
+t/sh2: $(TEST_FOLDER)/.exists
 	$(EXETEST) shares repository upload --to-folder=/$(TEST_SHARE) --sources=@args $(SAMPLE_FILE)
 	$(EXETEST) shares repository download --to-folder=$(TEST_FOLDER) --sources=@args /$(TEST_SHARE)/200KB.1
 	$(EXETEST) shares repository delete /$(TEST_SHARE)/200KB.1
-	@rm -f 200KB.1
 	@touch $@
 tshares: t/sh1 t/sh2
 
-t/fp1: $(TEST_FOLDER)
+t/fp1: $(TEST_FOLDER)/.exists
 	$(EXETEST) server browse /
 	$(EXETEST) server upload --to-folder=/Upload --sources=@args $(SAMPLE_FILE)
 	$(EXETEST) server download --to-folder=$(TEST_FOLDER) --sources=@args /Upload/200KB.1
@@ -185,7 +185,7 @@ t/nd1:
 	$(EXETEST) node info
 	$(EXETEST) node browse / -r
 	@touch $@
-t/nd2: $(TEST_FOLDER)
+t/nd2: $(TEST_FOLDER)/.exists
 	$(EXETEST) node upload --to-folder=$(NODEDEST) --sources=@args $(SAMPLE_FILE)
 	$(EXETEST) node download --to-folder=$(TEST_FOLDER) --sources=@args $(NODEDEST)200KB.1
 	$(EXETEST) node delete $(NODEDEST)200KB.1
@@ -215,18 +215,18 @@ t/nd6:
 	@touch $@
 tnode: t/nd1 t/nd2 t/nd3 t/nd4 t/nd5 t/nd6
 
-t/aocf1: $(TEST_FOLDER)
+t/aocf1: $(TEST_FOLDER)/.exists
 	$(EXETEST) config genkey $(TEST_FOLDER)/mykey
 	$(EXETEST) aspera files browse /
 	@touch $@
 t/aocf2:
 	$(EXETEST) aspera files upload --to-folder=/ $(SAMPLE_FILE)
 	@touch $@
-t/aocf3: $(TEST_FOLDER)
+t/aocf3: $(TEST_FOLDER)/.exists
 	$(EXETEST) aspera files download --to-folder=$(TEST_FOLDER) --transfer=connect --sources=@args /200KB.1
 	rm -f 200KB.1
 	@touch $@
-t/aocf4: $(TEST_FOLDER)
+t/aocf4: $(TEST_FOLDER)/.exists
 	$(EXETEST) aspera files http_node_download --to-folder=$(TEST_FOLDER) --sources=@args /200KB.1
 	rm -f 200KB.1
 	@touch $@
@@ -246,8 +246,9 @@ t/aocp3:
 t/aocp4:
 	$(EXETEST) aspera packages recv --id=ALL --once-only=yes --lock-port=12345
 	@touch $@
+HIDE_SECRET1='AML3clHuHwDArShhcQNVvWGHgU9dtnpgLzRCPsBr7H5JdhrFU2oRs69_tJTEYE-hXDVSW-vQ3-klRnJvxrTkxQ'
 t/aoc7:
-	$(EXETEST) aspera admin res node v3 events --secret='AML3clHuHwDArShhcQNVvWGHgU9dtnpgLzRCPsBr7H5JdhrFU2oRs69_tJTEYE-hXDVSW-vQ3-klRnJvxrTkxQ'
+	$(EXETEST) aspera admin res node v3 events --secret=$(HIDE_SECRET1)
 	@touch $@
 t/aoc8:
 	$(EXETEST) aspera admin resource workspace list
