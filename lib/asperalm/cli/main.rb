@@ -82,16 +82,15 @@ module Asperalm
         ExtendedValue.instance.set_handler('preset',:reader,lambda{|v|@config_plugin.preset_by_name(v)})
         Fasp::Parameters.file_list_folder=File.join(@config_plugin.main_folder,'filelists')
       end
-
+      
       # local options
-      def init_options
+      def declare_options_initial
         @opt_mgr.parser.banner = "NAME\n\t#{self.program_name} -- a command line tool for Aspera Applications (v#{self.class.gem_version})\n\n"
         @opt_mgr.parser.separator "SYNOPSIS"
         @opt_mgr.parser.separator "\t#{self.program_name} COMMANDS [OPTIONS] [ARGS]"
         @opt_mgr.parser.separator ""
         @opt_mgr.parser.separator "DESCRIPTION"
         @opt_mgr.parser.separator "\tUse Aspera application to perform operations on command line."
-        @opt_mgr.parser.separator "\tOAuth 2.0 is used for authentication in Files, Several authentication methods are provided."
         @opt_mgr.parser.separator "\tDocumentation and examples: #{@config_plugin.gem_url}"
         @opt_mgr.parser.separator "\texecute: #{self.program_name} conf doc"
         @opt_mgr.parser.separator ""
@@ -108,7 +107,6 @@ module Asperalm
         @opt_mgr.parser.separator "\tSome commands require mandatory arguments, e.g. a path.\n"
         @opt_mgr.parser.separator ""
         @opt_mgr.parser.separator "OPTIONS: global"
-        @opt_mgr.declare_options_scan_env
         @opt_mgr.set_obj_attr(:table_style,self,:option_table_style)
         @opt_mgr.add_opt_simple(:table_style,"table display style, current=#{@option_table_style}")
         @opt_mgr.add_opt_switch(:help,"Show this message.","-h") { @option_help=true }
@@ -119,12 +117,12 @@ module Asperalm
         @opt_mgr.set_option(:display,:info)
       end
 
-      def declare_global_options
+      def declare_options_global
         # handler must be set before declaration
         @opt_mgr.set_obj_attr(:log_level,Log.instance,:level)
+        @opt_mgr.set_obj_attr(:logger,Log.instance,:logger_type)
         @opt_mgr.set_obj_attr(:insecure,self,:option_insecure,:no)
         @opt_mgr.set_obj_attr(:flat_hash,self,:option_flat_hash)
-        @opt_mgr.set_obj_attr(:logger,Log.instance,:logger_type)
         @opt_mgr.set_obj_attr(:ui,self,:option_ui)
         @opt_mgr.set_obj_attr(:preset,self,:option_preset)
         @opt_mgr.set_obj_attr(:use_product,Fasp::Installation.instance,:activated)
@@ -167,7 +165,7 @@ module Asperalm
       # also loads the plugin options, and default values from conf file
       # @param plugin_name_sym : symbol for plugin name
       def get_plugin_instance_with_options(plugin_name_sym,env=@plugin_env)
-        Log.log.debug("get_plugin_instance_with_options -> #{plugin_name_sym} (#{env})")
+        Log.log.debug("get_plugin_instance_with_options -> #{plugin_name_sym}")
         require @config_plugin.plugins[plugin_name_sym][:require_stanza]
         command_plugin=Object::const_get(@@PLUGINS_MODULE+'::'+plugin_name_sym.to_s.capitalize).new(env)
         # TODO: check that ancestor is Plugin?
@@ -453,7 +451,8 @@ module Asperalm
           # give command line arguments to option manager (no parsing)
           @opt_mgr.add_cmd_line_options(argv)
           # declare initial options
-          init_options
+          declare_options_initial
+          @opt_mgr.declare_options
           # declare options for config file location
           @config_plugin.declare_options
           # parse declared options
@@ -461,7 +460,7 @@ module Asperalm
           # load default config if it was not overriden on command line
           @config_plugin.read_config_file
           # declare general options
-          declare_global_options
+          declare_options_global
           @transfer_mgr.declare_transfer_options
           @opt_mgr.parse_options!
           # find plugins, shall be after parse! ?
@@ -500,7 +499,7 @@ module Asperalm
             # parse plugin specific options
             @opt_mgr.parse_options!
           end
-          # help requested ?
+          # help requested for current plugin
           exit_with_usage(false) if @option_help
           if @option_show_config
             display_results({:type=>:single_object,:data=>@opt_mgr.declared_options(false)})
