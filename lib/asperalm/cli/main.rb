@@ -8,6 +8,7 @@ require 'asperalm/persistency_file'
 require 'asperalm/log'
 require 'asperalm/rest'
 require 'asperalm/files_api'
+require 'asperalm/nagios'
 require 'text-table'
 require 'fileutils'
 require 'singleton'
@@ -82,7 +83,7 @@ module Asperalm
         ExtendedValue.instance.set_handler('preset',:reader,lambda{|v|@config_plugin.preset_by_name(v)})
         Fasp::Parameters.file_list_folder=File.join(@config_plugin.main_folder,'filelists')
       end
-      
+
       # local options
       def declare_options_initial
         @opt_mgr.parser.banner = "NAME\n\t#{self.program_name} -- a command line tool for Aspera Applications (v#{self.class.gem_version})\n\n"
@@ -232,7 +233,7 @@ module Asperalm
       def self.result_success; return result_status('complete'); end
 
       # supported output formats
-      def self.display_formats; [:table,:ruby,:json,:jsonpp,:yaml,:csv]; end
+      def self.display_formats; [:table,:ruby,:json,:jsonpp,:yaml,:csv,:nagios]; end
 
       # user output levels
       def self.display_levels; [:info,:data,:error]; end
@@ -261,25 +262,27 @@ module Asperalm
         raise "INTERNAL ERROR, result must be Hash (got: #{results.class}: #{results})" unless results.is_a?(Hash)
         raise "INTERNAL ERROR, result must have type" unless results.has_key?(:type)
         raise "INTERNAL ERROR, result must have data" unless results.has_key?(:data) or [:empty,:nothing].include?(results[:type])
-
+        res_data=results[:data]
         # comma separated list in string format
         user_asked_fields_list_str=@opt_mgr.get_option(:fields,:mandatory)
         display_format=@opt_mgr.get_option(:format,:mandatory)
         case display_format
+        when :nagios
+          Nagios.process(res_data)
         when :ruby
-          display_message(:data,PP.pp(results[:data],''))
+          display_message(:data,PP.pp(res_data,''))
         when :json
-          display_message(:data,JSON.generate(results[:data]))
+          display_message(:data,JSON.generate(res_data))
         when :jsonpp
-          display_message(:data,JSON.pretty_generate(results[:data]))
+          display_message(:data,JSON.pretty_generate(res_data))
         when :yaml
-          display_message(:data,results[:data].to_yaml)
+          display_message(:data,res_data.to_yaml)
         when :table,:csv
           case results[:type]
           when :object_list # goes to table display
-            raise "internal error: unexpected type: #{results[:data].class}, expecting Array" unless results[:data].is_a?(Array)
+            raise "internal error: unexpected type: #{res_data.class}, expecting Array" unless res_data.is_a?(Array)
             # :object_list is an array of hash tables, where key=colum name
-            table_rows_hash_val = results[:data]
+            table_rows_hash_val = res_data
             final_table_columns=nil
             if @option_flat_hash
               new_table_rows_hash_val=[]
@@ -306,9 +309,9 @@ module Asperalm
             end
           when :single_object # goes to table display
             # :single_object is a simple hash table  (can be nested)
-            raise "internal error: unexpected type: #{results[:data].class}, expecting Hash" unless results[:data].is_a?(Hash)
+            raise "internal error: unexpected type: #{res_data.class}, expecting Hash" unless res_data.is_a?(Hash)
             final_table_columns = results[:columns] || ['key','value']
-            asked_fields=results[:data].keys
+            asked_fields=res_data.keys
             case user_asked_fields_list_str
             when FIELDS_DEFAULT;asked_fields=results[:fields] if results.has_key?(:fields)
             when FIELDS_ALL;# keep all
@@ -316,16 +319,16 @@ module Asperalm
               asked_fields=user_asked_fields_list_str.split(',')
             end
             if @option_flat_hash
-              self.class.flatten_object(results[:data],results[:option_expand_last])
-              self.class.flatten_name_value_list(results[:data])
+              self.class.flatten_object(res_data,results[:option_expand_last])
+              self.class.flatten_name_value_list(res_data)
               # first level keys are potentially changed
-              asked_fields=results[:data].keys
+              asked_fields=res_data.keys
             end
-            table_rows_hash_val=asked_fields.map { |i| { final_table_columns.first => i, final_table_columns.last => results[:data][i] } }
+            table_rows_hash_val=asked_fields.map { |i| { final_table_columns.first => i, final_table_columns.last => res_data[i] } }
           when :value_list  # goes to table display
             # :value_list is a simple array of values, name of column provided in the :name
             final_table_columns = [results[:name]]
-            table_rows_hash_val=results[:data].map { |i| { results[:name] => i } }
+            table_rows_hash_val=res_data.map { |i| { results[:name] => i } }
           when :empty # no table
             display_message(:info,'empty')
             return
@@ -334,15 +337,15 @@ module Asperalm
             return
           when :status # no table
             # :status displays a simple message
-            display_message(:info,results[:data])
+            display_message(:info,res_data)
             return
           when :text # no table
             # :status displays a simple message
-            display_message(:data,results[:data])
+            display_message(:data,res_data)
             return
           when :other_struct # no table
             # :other_struct is any other type of structure
-            display_message(:data,PP.pp(results[:data],''))
+            display_message(:data,PP.pp(res_data,''))
             return
           else
             raise "unknown data type: #{results[:type]}"

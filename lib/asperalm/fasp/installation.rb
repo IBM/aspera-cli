@@ -121,14 +121,14 @@ module Asperalm
         sub_bin = p[:sub_bin] || BIN_SUBFOLDER
         sub_keys = p[:sub_keys] || ETC_SUBFOLDER
         result={
-          :bin_folder             => { :type =>:folder,:required => true, :path =>File.join(p[:app_root],sub_bin)},
+          #:bin_folder             => { :type =>:folder,:required => true, :path =>File.join(p[:app_root],sub_bin)},
+          #:log_folder             => { :type =>:folder,:required => false,:path =>p[:log_root]},
           :ascp                   => { :type => :file, :required => true, :path =>File.join(p[:app_root],sub_bin,'ascp')+exec_ext},
           :ascp4                  => { :type => :file, :required => false,:path =>File.join(p[:app_root],sub_bin,'ascp4')+exec_ext},
           :ssh_bypass_key_dsa     => { :type => :file, :required => true, :path =>File.join(p[:app_root],sub_keys,CLIENT_DSA)},
           :ssh_bypass_key_rsa     => { :type => :file, :required => true, :path =>File.join(p[:app_root],sub_keys,RSA_FILE_NAME)},
           :fallback_cert          => { :type => :file, :required => false,:path =>File.join(p[:app_root],sub_keys,WEBCERT_FILE_NAME)},
-          :fallback_key           => { :type => :file, :required => false,:path =>File.join(p[:app_root],sub_keys,WEBKEY_FILE_NAME)},
-          :log_folder             => { :type =>:folder,:required => false,:path =>p[:log_root]}
+          :fallback_key           => { :type => :file, :required => false,:path =>File.join(p[:app_root],sub_keys,WEBKEY_FILE_NAME)}
         }
         # server software (having asperanoded) has a different DSA filename
         server_dsa=File.join(p[:app_root],sub_keys,SERVER_DSA)

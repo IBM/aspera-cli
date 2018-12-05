@@ -6,6 +6,7 @@ require 'asperalm/cli/transfer_agent'
 require 'asperalm/persistency_file'
 require 'asperalm/open_application'
 require 'asperalm/fasp/uri'
+require 'asperalm/nagios'
 require 'xmlsimple'
 
 module Asperalm
@@ -91,7 +92,7 @@ module Asperalm
           return @api_v4
         end
 
-        def action_list; [ :package, :source, :me, :dropbox, :recv_publink, :v4, :address_book ];end
+        def action_list; [ :nagios_check,:package, :source, :me, :dropbox, :recv_publink, :v4, :address_book ];end
 
         # we match recv command on atom feed on this field
         PACKAGE_MATCH_FIELD='package_id'
@@ -111,6 +112,15 @@ module Asperalm
         def execute_action
           command=self.options.get_next_command(action_list)
           case command
+          when :nagios_check
+            nagios=Nagios.new
+            begin
+              api_v3.read('me')
+              nagios.add_ok('faspex api','accessible')
+            rescue => e
+              nagios.add_critical('faspex api',e.to_s)
+            end
+            return nagios.result
           when :package
             command_pkg=self.options.get_next_command([ :send, :recv, :list ])
             case command_pkg

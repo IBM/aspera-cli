@@ -1,4 +1,5 @@
 require 'asperalm/cli/basic_auth_plugin'
+require 'asperalm/nagios'
 require 'base64'
 require 'zlib'
 
@@ -71,7 +72,7 @@ module Asperalm
           raise StandardError,"expect: nil, String or Array"
         end
 
-        def self.simple_actions; [:events, :space, :info, :mkdir, :mklink, :mkfile, :rename, :delete ];end
+        def self.simple_actions; [:nagios_check,:events, :space, :info, :mkdir, :mklink, :mkfile, :rename, :delete ];end
 
         def self.common_actions; simple_actions.clone.concat([:browse, :upload, :download ]);end
 
@@ -81,6 +82,24 @@ module Asperalm
         # prefix_path is used to list remote sources in Faspex
         def execute_simple_common(command,prefix_path)
           case command
+          when :nagios_check
+            nagios=Nagios.new
+            begin
+              info=@api_node.read('info')[:data]
+              nagios.add_ok('node api','accessible')
+              nagios.check_time_offset(info['current_time'],'node api')
+              nagios.check_product_version( 'node api','entsrv', info['version'])
+              call_data='<?xml version="1.0" encoding="UTF-8"?><soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:typ="urn:Aspera:XML:FASPSessionNET:2009/11:Types"><soapenv:Header></soapenv:Header><soapenv:Body><typ:GetSessionInfoRequest><SessionFilter><SessionStatus>running</SessionStatus></SessionFilter></typ:GetSessionInfoRequest></soapenv:Body></soapenv:Envelope>'
+              begin
+                central=@api_node.call({:operation=>'POST',:subpath=>"services/soap/Transfer-201210",:headers=>{'Content-Type'=>'text/xml;charset=UTF-8','SOAPAction'=>'FASPSessionNET-200911#GetSessionInfo'},:text_body_params=>call_data})[:http].body
+                nagios.add_ok('central','accessible by node')
+              rescue => e
+                nagios.add_critical('central',e.to_s)
+              end
+            rescue => e
+              nagios.add_critical('node api',e.to_s)
+            end
+            return nagios.result
           when :events
             events=@api_node.read('events',self.options.get_option(:value,:optional))[:data]
             return { :type=>:object_list, :data => events}

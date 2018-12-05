@@ -1,4 +1,5 @@
 require 'asperalm/cli/basic_auth_plugin'
+require 'asperalm/nagios'
 
 module Asperalm
   module Cli
@@ -13,12 +14,21 @@ module Asperalm
           self.options.set_option(:filter_to,Manager.time_to_string(Time.now))
         end
 
-        def action_list; [:transfer];end
+        def action_list; [:transfer,:nagios_check];end
 
         def execute_action
           api_console=basic_auth_api('api')
           command=self.options.get_next_command(action_list)
           case command
+          when :nagios_check
+            nagios=Nagios.new
+            begin
+              api_console.read('ssh_keys')
+              nagios.add_ok('console api','accessible')
+            rescue => e
+              nagios.add_critical('console api',e.to_s)
+            end
+            return nagios.result
           when :transfer
             command=self.options.get_next_command([ :current, :smart ])
             case command
