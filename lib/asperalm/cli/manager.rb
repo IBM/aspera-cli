@@ -98,8 +98,8 @@ module Asperalm
         @parser.program_name=program_name
       end
 
-      def declare_options_scan_env
-        Log.log.debug("declare_options_scan_env")
+      def declare_options
+        Log.log.debug("declare_options")
         # options can also be provided by env vars : --param-name -> ASLMCLI_PARAM_NAME
         env_prefix=@parser.program_name.upcase+@@OPTION_SEP_NAME
         ENV.each do |k,v|
