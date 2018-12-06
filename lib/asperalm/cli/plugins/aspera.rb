@@ -55,13 +55,15 @@ module Asperalm
             node_api=api_files.get_files_node_api(node_info,FilesApi::SCOPE_NODE_USER)
             return Plugin.entity_action(node_api,'access_keys',['id','root_file_id','storage','license'],:eid)
           when :browse
-            thepath=opt_mgr.get_next_argument("path")
+            thepath=opt_mgr.get_next_argument('path')
             node_info,file_id = api_files.resolve_node_file(home_node_file,thepath)
             node_api=api_files.get_files_node_api(node_info,FilesApi::SCOPE_NODE_USER)
-            items=node_api.read("files/#{file_id}/files")[:data]
+            result=node_api.read("files/#{file_id}/files",Main.tool.options.get_option(:value,:optional))
+            items=result[:data]
+            Main.instance.display_status("Items: #{result[:data].length}/#{result[:http]['X-Total-Count']}")
             return {:type=>:object_list,:data=>items,:fields=>['name','type','recursive_size','size','modified_time','access_level']}
           when :mkdir
-            thepath=opt_mgr.get_next_argument("path")
+            thepath=opt_mgr.get_next_argument('path')
             containing_folder_path = thepath.split(FilesApi::PATH_SEPARATOR)
             new_folder=containing_folder_path.pop
             node_info,file_id = api_files.resolve_node_file(home_node_file,containing_folder_path.join(FilesApi::PATH_SEPARATOR))
@@ -69,14 +71,14 @@ module Asperalm
             result=node_api.create("files/#{file_id}/files",{:name=>new_folder,:type=>:folder})[:data]
             return Main.result_status("created: #{result['name']} (id=#{result['id']})")
           when :rename
-            thepath=opt_mgr.get_next_argument("source path")
-            newname=opt_mgr.get_next_argument("new name")
+            thepath=opt_mgr.get_next_argument('source path')
+            newname=opt_mgr.get_next_argument('new name')
             node_info,file_id = api_files.resolve_node_file(home_node_file,thepath)
             node_api=api_files.get_files_node_api(node_info,FilesApi::SCOPE_NODE_USER)
             result=node_api.update("files/#{file_id}",{:name=>newname})[:data]
             return Main.result_status("renamed #{thepath} to #{newname}")
           when :delete
-            thepath=opt_mgr.get_next_argument("path")
+            thepath=opt_mgr.get_next_argument('path')
             node_info,file_id = api_files.resolve_node_file(home_node_file,thepath)
             node_api=api_files.get_files_node_api(node_info,FilesApi::SCOPE_NODE_USER)
             result=node_api.delete("files/#{file_id}")[:data]
@@ -133,7 +135,7 @@ module Asperalm
               source_paths=[{'source'=>source_folder.pop}]
               source_folder=source_folder.join(FilesApi::PATH_SEPARATOR)
             end
-            raise CliBadArgument,"one file at a time only in HTTP mode" if source_paths.length > 1
+            raise CliBadArgument,'one file at a time only in HTTP mode' if source_paths.length > 1
             file_name = source_paths.first['source']
             node_info,file_id = api_files.resolve_node_file(home_node_file,File.join(source_folder,file_name))
             node_api=api_files.get_files_node_api(node_info,FilesApi::SCOPE_NODE_USER)
@@ -147,7 +149,7 @@ module Asperalm
             node_api=api_files.get_files_node_api(node_info,FilesApi::SCOPE_NODE_USER)
             return Node.new(@agents).set_api(node_api).execute_action(command_legacy)
           when :file
-            fileid=opt_mgr.get_next_argument("file id")
+            fileid=opt_mgr.get_next_argument('file id')
             node_info,file_id = api_files.resolve_node_file(home_node_id,fileid)
             node_api=api_files.get_files_node_api(node_info,FilesApi::SCOPE_NODE_USER)
             items=node_api.read("files/#{file_id}")[:data]
