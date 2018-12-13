@@ -13,6 +13,9 @@ module Asperalm
       INSTANCE_OPS=[:modify,:delete,:show]
       ALL_OPS=[GLOBAL_OPS,INSTANCE_OPS].flatten
 
+      # first level command for the main tool
+      def self.name_sym;self.name.split('::').last.downcase.to_sym;end
+
       def self.declare_entity_options(opt_mgr)
         opt_mgr.add_opt_simple(:value,"extended value for create, update, list filter")
         opt_mgr.add_opt_simple(:id,"resource identifier (#{INSTANCE_OPS.join(",")})")
