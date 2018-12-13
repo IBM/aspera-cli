@@ -1512,20 +1512,48 @@ Aspera Shares supports the "node API" for the file transfer part. (Shares 1 and 
 
 ## Aspera Transfer Service
 
-Note that ATS is now part of Aspera on Cloud.
+ATS is usable either :
 
-### First time use
+* from an AoC subscription : mlia aspera admin ats
 
-Using the ATS requires an "Aspera ID" (https://id.asperasoft.com/) and have a subscription associated to it.
+* or from an IBM Cloud (bluemix) subscription : mlia ats
 
-On first execution, the user is asked to login to Aspera ID using a web browser. This creates an "ats_id" identifier (stored in a cache file).
+### IBM Cloud ATS : creation of api key
 
-When only one ats_id is created, it is taken by default. Else it shall be specified with --ats-id or using a <%=prst%>.
+First get your IBM Cloud APIkey, as described here:
+[https://console.bluemix.net/docs/iam/userid_keys.html#userapikey](https://console.bluemix.net/docs/iam/userid_keys.html#userapikey)
+
+Execute:
+
+```
+$ <%=cmd%> config id my_ibm_ats update --ibm-api-key=XXXX
+$ <%=cmd%> config id default set ats my_ibm_ats
+$ <%=cmd%> ats api_key instances
+:......................................:
+:               instance               :
+:......................................:
+: aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee :
+:......................................:
+$ <%=cmd%> config id my_ibm_ats update --instance=aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee
+$ <%=cmd%> ats api_key create --ibm-api-key=XXXX --instance
+:......................................:
+:               instance               :
+:......................................:
+: aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee :
+:......................................:
+$ <%=cmd%> ats api_key create
+:........:..............................................:
+:  key   :                    value                     :
+:........:..............................................:
+: id     : ats_XXXXXXXXXXXXXXXXXXXXXXXX                 :
+: secret : YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY :
+:........:..............................................:
+$ <%=cmd%> config id my_ibm_ats update --ats-key=ats_XXXXXXXXXXXXXXXXXXXXXXXX --ats-secret=YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY
+```
 
 Note: access key API is described here: [https://ibm.ibmaspera.com/helpcenter/transfer-service](https://ibm.ibmaspera.com/helpcenter/transfer-service)
 
 and here: [https://developer.asperasoft.com/web/node/access-keys](https://developer.asperasoft.com/web/node/access-keys)
-
 
 ### Examples
 
@@ -1882,9 +1910,15 @@ Gems, or remove your ed25519 key from your `.ssh` folder to solve the issue.
 
 # Release Notes
 
+* version 0.9.12
+
+  * add nagios commands
+  * support of ATS for IBM Cloud, removed old version based on aspera id
+
 * version 0.9.11
 
   * Breaking change: @stdin is now @stdin:
+  * support of ATS for IBM Cloud, removed old version based on aspera id
 
 
 * version 0.9.10
