@@ -10,7 +10,7 @@ module Asperalm
       class Config < Plugin
         def initialize(env,tool_name,gem_name,version)
           super(env)
-          @plugins={} #self.class.name_sym=>{:source=>__FILE__,:require_stanza=>nil}}
+          @plugins={}
           @plugin_lookup_folders=[]
           @use_plugin_defaults=true
           @config_presets=nil
@@ -29,18 +29,28 @@ module Asperalm
           add_plugin_lookup_folder(File.join(@main_folder,@@ASPERA_PLUGINS_FOLDERNAME))
           add_plugin_lookup_folder(File.join(Main.gem_root,@@GEM_PLUGINS_FOLDER))
         end
+
+        # loads default parameters of plugin if no -P parameter
+        # and if there is a section defined for the plugin in the "default" section
+        # try to find: conffile[conffile["default"][plugin_str]]
+        # @param plugin_name_sym : symbol for plugin name
+        def add_plugin_default_preset(plugin_name_sym)
+          default_config_name=get_plugin_default_config_name(plugin_name_sym)
+          Log.log.debug("add_plugin_default_preset:#{plugin_name_sym}:#{default_config_name}")
+          self.options.add_option_preset(preset_by_name(default_config_name),:unshift) unless default_config_name.nil?
+          return nil
+        end
         private
 
         # folder in $HOME for application files (config, cache)
         @@ASPERA_HOME_FOLDER_NAME='.aspera'
         # main config file
         @@DEFAULT_CONFIG_FILENAME = 'config.yaml'
-        @@RESERVED_SECTION_TOOL=:config
-        @@CONFIG_PRESET_VERSION='version'
-        @@CONFIG_PRESET_DEFAULT='default'
+        @@CONF_PRESET_CONFIG='config'
+        @@CONF_PRESET_VERSION='version'
+        @@CONF_PRESET_DEFAULT='default'
         @@OLD_PROGRAM_NAME = 'aslmcli'
-        # new plugin name for AoC
-        @@ASPERA_PLUGIN_S=:aspera.to_s
+        # default redirect for AoC web auth
         @@DEFAULT_REDIRECT='http://localhost:12345'
         # folder containing custom plugins in `main_folder`
         @@ASPERA_PLUGINS_FOLDERNAME='plugins'
@@ -49,11 +59,8 @@ module Asperalm
         @@RUBY_FILE_EXT='.rb'
         @@RANDOM_CLIENT='YXNwZXJhLmdsb2JhbC1jbGktY2xpZW50OmZycG1zUnNHNG1qWjBQbHhDZ2RKbHZPTnFCZzRWbHB6X0lYN2dYbUJNQWZzZ01MeTJGTzZDWExvZEtmS0F1aHFuQ3FTcHRMYmVfd2Rtbm05SlJ1RVBPLVBwRnFwcV9LYgo='
 
-        # first level command for the main tool
-        def self.name_sym;:config;end
-
         def generate_new_key(key_filepath)
-          require 'net/ssh'
+          require 'openssl'
           priv_key = OpenSSL::PKey::RSA.new(2048)
           File.write(key_filepath,priv_key.to_s)
           File.write(key_filepath+".pub",priv_key.public_key.to_s)
@@ -101,7 +108,7 @@ module Asperalm
           # oldest compatible conf file format, update to latest version when an incompatible change is made
           if !File.exist?(@option_config_file)
             Log.log.warn("No config file found. Creating empty configuration file: #{@option_config_file}")
-            @config_presets={@@RESERVED_SECTION_TOOL.to_s=>{@@CONFIG_PRESET_VERSION=>@program_version}}
+            @config_presets={@@CONF_PRESET_CONFIG=>{@@CONF_PRESET_VERSION=>@program_version}}
             save_presets_to_config_file
             return nil
           end
@@ -111,10 +118,10 @@ module Asperalm
             Log.log.debug "Available_presets: #{@config_presets}"
             raise "Expecting YAML Hash" unless @config_presets.is_a?(Hash)
             # check there is at least the config section
-            if !@config_presets.has_key?(@@RESERVED_SECTION_TOOL.to_s)
-              raise "Cannot find key: #{@@RESERVED_SECTION_TOOL.to_s}"
+            if !@config_presets.has_key?(@@CONF_PRESET_CONFIG)
+              raise "Cannot find key: #{@@CONF_PRESET_CONFIG}"
             end
-            version=@config_presets[@@RESERVED_SECTION_TOOL.to_s][@@CONFIG_PRESET_VERSION]
+            version=@config_presets[@@CONF_PRESET_CONFIG][@@CONF_PRESET_VERSION]
             if version.nil?
               raise "No version found in config section."
             end
@@ -127,10 +134,10 @@ module Asperalm
             config_tested_version='0.6.14'
             if Gem::Version.new(version) <= Gem::Version.new(config_tested_version)
               old_plugin_name='files'
-              new_plugin_name=@@ASPERA_PLUGIN_S
-              if @config_presets[@@CONFIG_PRESET_DEFAULT].is_a?(Hash) and @config_presets[@@CONFIG_PRESET_DEFAULT].has_key?(old_plugin_name)
-                @config_presets[@@CONFIG_PRESET_DEFAULT][new_plugin_name]=@config_presets[@@CONFIG_PRESET_DEFAULT][old_plugin_name]
-                @config_presets[@@CONFIG_PRESET_DEFAULT].delete(old_plugin_name)
+              new_plugin_name=Plugins::Aspera.name_sym.to_s
+              if @config_presets[@@CONF_PRESET_DEFAULT].is_a?(Hash) and @config_presets[@@CONF_PRESET_DEFAULT].has_key?(old_plugin_name)
+                @config_presets[@@CONF_PRESET_DEFAULT][new_plugin_name]=@config_presets[@@CONF_PRESET_DEFAULT][old_plugin_name]
+                @config_presets[@@CONF_PRESET_DEFAULT].delete(old_plugin_name)
                 Log.log.warn("Converted plugin default: #{old_plugin_name} -> #{new_plugin_name}")
                 save_required=true
               end
@@ -151,7 +158,7 @@ module Asperalm
             end
             # Place new compatibility code here
             if save_required
-              @config_presets[@@RESERVED_SECTION_TOOL.to_s][@@CONFIG_PRESET_VERSION]=@program_version
+              @config_presets[@@CONF_PRESET_CONFIG][@@CONF_PRESET_VERSION]=@program_version
               save_presets_to_config_file
               Log.log.warn("Saving automatic conversion.")
             end
@@ -187,7 +194,7 @@ module Asperalm
           name_sym=File.basename(path,@@RUBY_FILE_EXT).to_sym
           req=path.gsub(/#{@@RUBY_FILE_EXT}$/,'')
           if @plugins.has_key?(name_sym)
-            Log.log.warn("skipping plugin already registered: #{name_sym}") 
+            Log.log.warn("skipping plugin already registered: #{name_sym}")
             return
           end
           @plugins[name_sym]={:source=>path,:require_stanza=>req}
@@ -288,7 +295,7 @@ module Asperalm
             when :aoc
               Main.instance.display_status("Detected: Aspera on Cloud")
               require 'asperalm/cli/plugins/aspera'
-              files_plugin=Plugins::Aspera.new(@agents)
+              files_plugin=Plugins::Aspera.new(Main.instance.plugin_env)
               files_plugin.declare_options
               self.options.parse_options!
               self.options.ask_missing_mandatory=true
@@ -323,9 +330,9 @@ module Asperalm
                 self.options.get_option(:client_secret,:mandatory)
               end
               # init defaults if necessary
-              @config_presets[@@CONFIG_PRESET_DEFAULT]||=Hash.new
+              @config_presets[@@CONF_PRESET_DEFAULT]||=Hash.new
               if !option_override
-                raise CliError,"a default configuration already exists (use --override=yes)" if @config_presets[@@CONFIG_PRESET_DEFAULT].has_key?(@@ASPERA_PLUGIN_S)
+                raise CliError,"a default configuration already exists (use --override=yes)" if @config_presets[@@CONF_PRESET_DEFAULT].has_key?(Plugins::Aspera.name_sym.to_s)
                 raise CliError,"preset already exists: #{aspera_preset_name}  (use --override=yes)" if @config_presets.has_key?(aspera_preset_name)
               end
               # todo: check if key is identical
@@ -346,8 +353,8 @@ module Asperalm
                 :private_key.to_s   =>'@file:'+key_filepath,
                 :username.to_s      =>myself['email'],
               }
-              puts "setting config preset as default for #{@@ASPERA_PLUGIN_S}"
-              @config_presets[@@CONFIG_PRESET_DEFAULT][@@ASPERA_PLUGIN_S]=aspera_preset_name
+              puts "setting config preset as default for #{Plugins::Aspera.name_sym.to_s}"
+              @config_presets[@@CONF_PRESET_DEFAULT][Plugins::Aspera.name_sym.to_s]=aspera_preset_name
               puts "saving config file"
               save_presets_to_config_file
               return Main.result_status("Done. You can test with:\n#{Main.instance.program_name} aspera user info show")
@@ -358,7 +365,9 @@ module Asperalm
             Main.instance.display_status("Exporting: Aspera on Cloud")
             require 'asperalm/cli/plugins/aspera'
             # need url / username
-            Plugins::Aspera.instance.declare_options
+            add_plugin_default_preset(Plugins::Aspera.name_sym)
+            files_plugin=Plugins::Aspera.new(Main.instance.plugin_env)
+            files_plugin.declare_options
             self.options.parse_options!
             url=self.options.get_option(:url,:mandatory)
             cli_conf_file=Fasp::Installation.instance.cli_conf_file
@@ -412,9 +421,9 @@ module Asperalm
             Log.log.debug("skip default config")
             return nil
           end
-          if @config_presets.has_key?(@@CONFIG_PRESET_DEFAULT) and
-          @config_presets[@@CONFIG_PRESET_DEFAULT].has_key?(plugin_sym.to_s)
-            default_config_name=@config_presets[@@CONFIG_PRESET_DEFAULT][plugin_sym.to_s]
+          if @config_presets.has_key?(@@CONF_PRESET_DEFAULT) and
+          @config_presets[@@CONF_PRESET_DEFAULT].has_key?(plugin_sym.to_s)
+            default_config_name=@config_presets[@@CONF_PRESET_DEFAULT][plugin_sym.to_s]
             if !@config_presets.has_key?(default_config_name)
               Log.log.error("Default config name [#{default_config_name}] specified for plugin [#{plugin_sym.to_s}], but it does not exist in config file.\nPlease fix the issue: either create preset with one parameter (#{Main.instance.program_name} config id #{default_config_name} init @json:'{}') or remove default (#{Main.instance.program_name} config id default remove #{plugin_sym.to_s}).")
             end
