@@ -15,9 +15,10 @@ module Asperalm
 
       def start_transfer(transfer_spec,options=nil)
         #transfer_spec.keys.select{|i|i.start_with?('EX_')}.each{|i|transfer_spec.delete(i)}
-        resp=@node_api.call({:operation=>'POST',:subpath=>'ops/transfers',:headers=>{'Accept'=>'application/json'},:json_params=>transfer_spec})
-        puts "id=#{resp[:data]['id']}"
+        #resp=@node_api.call({:operation=>'POST',:subpath=>'ops/transfers',:headers=>{'Accept'=>'application/json'},:json_params=>transfer_spec})
+        resp=@node_api.create('ops/transfers',transfer_spec)
         @transfer_id=resp[:data]['id']
+        Log.log.debug("tr_id=#{@transfer_id}")
       end
 
       def wait_for_transfers_completion
