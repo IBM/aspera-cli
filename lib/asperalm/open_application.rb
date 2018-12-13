@@ -38,11 +38,11 @@ module Asperalm
     def self.uri_graphical(uri)
       case current_os_type
       when :mac
-        system("open '#{uri.to_s}'")
+        return system('open',uri.to_s)
       when :windows
-        system('start explorer "'+uri.to_s+'"')
+        return system('start explorer "'+uri.to_s+'"')
       else  # unix family
-        system("xdg-open '#{uri.to_s}'")
+        return system("xdg-open '#{uri.to_s}'")
       end
     end
 
