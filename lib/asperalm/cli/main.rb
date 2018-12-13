@@ -26,6 +26,7 @@ module Asperalm
         File.read(File.join(gem_root,@@GEM_NAME,'VERSION')).chomp
       end
 
+      attr_reader :plugin_env
       private
       # name of application, also foldername where config is stored
       @@PROGRAM_NAME = 'mlia'
@@ -151,17 +152,6 @@ module Asperalm
         @opt_mgr.set_option(:once_only,:false)
       end
 
-      # loads default parameters of plugin if no -P parameter
-      # and if there is a section defined for the plugin in the "default" section
-      # try to find: conffile[conffile["default"][plugin_str]]
-      # @param plugin_name_sym : symbol for plugin name
-      def add_plugin_default_preset(plugin_name_sym)
-        default_config_name=@config_plugin.get_plugin_default_config_name(plugin_name_sym)
-        Log.log.debug("add_plugin_default_preset:#{plugin_name_sym}:#{default_config_name}")
-        @opt_mgr.add_option_preset(@config_plugin.preset_by_name(default_config_name),:unshift) unless default_config_name.nil?
-        return nil
-      end
-
       # @return the plugin instance, based on name
       # also loads the plugin options, and default values from conf file
       # @param plugin_name_sym : symbol for plugin name
@@ -175,7 +165,7 @@ module Asperalm
         env[:options].parser.separator "OPTIONS:"
         command_plugin.declare_options
         # load default params only if no param already loaded
-        add_plugin_default_preset(plugin_name_sym)
+        @config_plugin.add_plugin_default_preset(plugin_name_sym)
         return command_plugin
       end
 
@@ -433,7 +423,7 @@ module Asperalm
       def self.result_transfer(transfer_spec,options)
         # TODO: if not one shot, then wait for status
         statuses=self.instance.transfer_mgr.start(transfer_spec,options)
-        raise "at least one transfer session failed" unless TransferAgent.all_session_success(statuses)
+        raise "at least one transfer session failed" unless TransferAgent.session_status(statuses).eql?(:success)
         return Main.result_nothing
       end
 
@@ -473,7 +463,7 @@ module Asperalm
           # help requested without command ? (plugins must be known here)
           exit_with_usage(true) if @option_help and @opt_mgr.command_or_arg_empty?
           # load global default options and process
-          add_plugin_default_preset(Plugins::Config.name_sym)
+          @config_plugin.add_plugin_default_preset(Plugins::Config.name_sym)
           @opt_mgr.parse_options!
           # dual execution locking
           lock_port=@opt_mgr.get_option(:lock_port,:optional)
@@ -491,6 +481,7 @@ module Asperalm
             command_sym=@opt_mgr.get_next_command(@config_plugin.plugins.keys.dup.unshift(:help))
           end
           # main plugin is not dynamically instanciated
+          Log.log.debug(">>>#{Plugins::Config.name_sym.to_s}")
           case command_sym
           when :help
             exit_with_usage(true)
