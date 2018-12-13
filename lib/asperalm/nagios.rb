@@ -41,6 +41,7 @@ module Asperalm
 
     # translate for display
     def result
+      raise "missing result" if @data.empty?
       {:type=>:object_list,:data=>@data.map{|i|{'status'=>@@LEVELS[i[:code]].to_s,'component'=>i[:comp],'message'=>i[:msg]}}}
     end
 
