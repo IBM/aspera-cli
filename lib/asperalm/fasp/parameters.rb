@@ -50,6 +50,8 @@ module Asperalm
         'EX_ssh_key_paths'        => { :type => :opt_with_arg, :option_switch=>'-i',:accepted_types=>Array},
         'EX_http_transfer_jpeg'   => { :type => :opt_with_arg, :option_switch=>'-j',:accepted_types=>Integer},
         'EX_multi_session_part'   => { :type => :opt_with_arg, :option_switch=>'-C',:accepted_types=>String},
+        'EX_no_read'              => { :type => :opt_without_arg, :option_switch=>'--no-read'},
+        'EX_no_write'             => { :type => :opt_without_arg, :option_switch=>'--no-write'},
         # TODO: manage those parameters, some are for connect only ? node api ?
         'target_rate_cap_kbps'    => { :type => :ignore, :accepted_types=>Integer},
         'target_rate_percentage'  => { :type => :ignore, :accepted_types=>String}, # -wf -l<rate>p
