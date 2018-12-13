@@ -445,12 +445,11 @@ module Asperalm
             command_admin=self.options.get_next_command([ :ats, :resource, :set_client_key, :usage_reports, :search_nodes  ])
             case command_admin
             when :ats
-              @ats.ats_api_public = @ats.ats_api_secure = Rest.new(@api_files.params.clone.merge!({
+              ats_api = Rest.new(@api_files.params.clone.merge!({
                 :base_url    => @api_files.params[:base_url]+'/admin/ats/pub/v1',
                 :oauth_scope => FilesApi::SCOPE_FILES_ADMIN_USER
               }))
-
-              return @ats.execute_action_gen
+              return @ats.execute_action_gen(ats_api)
             when :search_nodes
               ak=self.options.get_next_argument('access_key')
               nodes=@api_files.read("search_nodes",{'q'=>'access_key:"'+ak+'"'})[:data]
