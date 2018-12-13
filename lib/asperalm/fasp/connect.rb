@@ -14,6 +14,7 @@ module Asperalm
         @connect_app_id=SecureRandom.uuid
         # TODO: start here and create monitor
       end
+      @@MAX_CONNECT_START_RETRY=3
       public
 
       def start_transfer(transfer_spec,options=nil)
@@ -25,10 +26,13 @@ module Asperalm
           @connect_api=Rest.new({:base_url => "#{connect_url}/v5/connect"})
           @connect_api.read('info/version')
         rescue => e # Errno::ECONNREFUSED
-          raise CliError,"Unable to start connect after #{trynumber} try" if trynumber >= 3
-          Log.log.warn("connect is not started, trying to start (#{trynumber}) : #{e}")
+          raise StandardError,"Unable to start connect after #{trynumber} try" if trynumber >= @@MAX_CONNECT_START_RETRY
+          Log.log.warn("connect is not started. Retry ##{trynumber}, err=#{e}")
           trynumber+=1
-          OpenApplication.uri_graphical('fasp://initialize')
+          if !OpenApplication.uri_graphical('fasp://initialize')
+            OpenApplication.uri_graphical('https://downloads.asperasoft.com/connect2/')
+            raise StandardError,"Connect is not installed"
+          end
           sleep 2
           retry
         end
