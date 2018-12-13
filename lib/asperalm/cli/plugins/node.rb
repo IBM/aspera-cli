@@ -7,6 +7,7 @@ module Asperalm
   module Cli
     module Plugins
       class Node < BasicAuthPlugin
+        @@SAMPLE_SOAP_CALL='<?xml version="1.0" encoding="UTF-8"?><soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:typ="urn:Aspera:XML:FASPSessionNET:2009/11:Types"><soapenv:Header></soapenv:Header><soapenv:Body><typ:GetSessionInfoRequest><SessionFilter><SessionStatus>running</SessionStatus></SessionFilter></typ:GetSessionInfoRequest></soapenv:Body></soapenv:Envelope>'
         alias super_declare_options declare_options
         def declare_options
           super_declare_options
@@ -89,15 +90,14 @@ module Asperalm
               nagios.add_ok('node api','accessible')
               nagios.check_time_offset(info['current_time'],'node api')
               nagios.check_product_version( 'node api','entsrv', info['version'])
-              call_data='<?xml version="1.0" encoding="UTF-8"?><soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:typ="urn:Aspera:XML:FASPSessionNET:2009/11:Types"><soapenv:Header></soapenv:Header><soapenv:Body><typ:GetSessionInfoRequest><SessionFilter><SessionStatus>running</SessionStatus></SessionFilter></typ:GetSessionInfoRequest></soapenv:Body></soapenv:Envelope>'
-              begin
-                central=@api_node.call({:operation=>'POST',:subpath=>"services/soap/Transfer-201210",:headers=>{'Content-Type'=>'text/xml;charset=UTF-8','SOAPAction'=>'FASPSessionNET-200911#GetSessionInfo'},:text_body_params=>call_data})[:http].body
-                nagios.add_ok('central','accessible by node')
-              rescue => e
-                nagios.add_critical('central',e.to_s)
-              end
             rescue => e
               nagios.add_critical('node api',e.to_s)
+            end
+            begin
+              central=@api_node.call({:operation=>'POST',:subpath=>'services/soap/Transfer-201210',:headers=>{'Content-Type'=>'text/xml;charset=UTF-8','SOAPAction'=>'FASPSessionNET-200911#GetSessionInfo'},:text_body_params=>@@SAMPLE_SOAP_CALL})[:http].body
+              nagios.add_ok('central','accessible by node')
+            rescue => e
+              nagios.add_critical('central',e.to_s)
             end
             return nagios.result
           when :events
