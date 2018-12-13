@@ -416,7 +416,7 @@ module Asperalm
                 statuses=self.transfer.start(transfer_spec,options)
                 result_transfer.push({'package'=>package_id,'status'=>statuses.map{|i|i.to_s}.join(',')})
                 # update skip list only if all sessions completed
-                skip_ids_persistency.data.push(package_id) if TransferAgent.all_session_success(statuses)
+                skip_ids_persistency.data.push(package_id) if TransferAgent.session_status(statuses).eql?(:success)
               end
               skip_ids_persistency.save
               return {:type=>:object_list,:data=>result_transfer}

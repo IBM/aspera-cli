@@ -164,7 +164,7 @@ module Asperalm
                 statuses=self.transfer.start(transfer_spec,{:src=>:node_gen3})
                 result_transfer.push({'package'=>id_uri[:id],'status'=>statuses.map{|i|i.to_s}.join(',')})
                 # skip only if all sessions completed
-                skip_ids_persistency.data.push(id_uri[:id]) if TransferAgent.all_session_success(statuses)
+                skip_ids_persistency.data.push(id_uri[:id]) if TransferAgent.session_status(statuses).eql?(:success)
               end
               skip_ids_persistency.save
               return {:type=>:object_list,:data=>result_transfer}

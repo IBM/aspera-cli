@@ -179,12 +179,15 @@ module Asperalm
 
       # @return list of status
       def wait_for_transfers_completion
-        @agent.wait_for_transfers_completion unless @agent.nil?
+        raise "no transfer agent" if @agent.nil?
+        return @agent.wait_for_transfers_completion
       end
 
       # helper method for above method
-      def self.all_session_success(statuses)
-        return statuses.select{|i|!i.eql?(:success)}.empty?
+      def self.session_status(statuses)
+        error_statuses=statuses.select{|i|!i.eql?(:success)}
+        return :success if error_statuses.empty?
+        return error_statuses.first
       end
     end
   end
