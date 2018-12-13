@@ -151,8 +151,19 @@ t/fp3:
 t/fp4:
 	$(BINDIR)/asession @json:'{"remote_host":"demo.asperasoft.com","remote_user":"asperaweb","ssh_port":33001,"remote_password":"demoaspera","direction":"receive","destination_root":"./test.dir","paths":[{"source":"/aspera-test-dir-tiny/200KB.1"}]}'
 	@touch $@
-
-tfasp: t/fp1 t/fp2 t/fp3 t/fp4
+t/serv1:
+	$(EXETEST) -N server --url=ssh://10.25.0.8:33001 --username=root --ssh-keys=~/.ssh/id_rsa nodeadmin -- -l
+	@touch $@
+t/serv_nagios_webapp:
+	$(EXETEST) -N server --url=ssh://10.25.0.3 --username=root --ssh-keys=~/.ssh/id_rsa --format=nagios nagios app_services
+	@touch $@
+t/serv_nagios_transfer:
+	$(EXETEST) -N server --url=ssh://eudemo.asperademo.com:33001 --username=asperaweb --password=demoaspera --format=nagios nagios transfer --to-folder=/Upload
+	@touch $@
+t/serv3:
+	$(EXETEST) -N server --url=ssh://10.25.0.3 --username=root --ssh-keys=~/.ssh/id_rsa ctl all:status
+	@touch $@
+tfasp: t/fp1 t/fp2 t/fp3 t/fp4 t/serv1 t/serv_nagios_webapp t/serv_nagios_transfer t/serv3
 
 t/fx1:
 	$(EXETEST) faspex package list
@@ -172,7 +183,10 @@ t/fx5:
 t/fx6:
 	$(EXETEST) faspex package recv --to-folder=$(TEST_FOLDER) --id=ALL --once-only=yes
 	@touch $@
-tfaspex: t/fx1 t/fx2 t/fx3 t/fx4 t/fx5 t/fx6
+t/fx_nagios:
+	$(EXETEST) faspex nagios_check
+	@touch $@
+tfaspex: t/fx1 t/fx2 t/fx3 t/fx4 t/fx5 t/fx6 t/fx_nagios
 
 t/cons1:
 	$(EXETEST) console transfer current list 
@@ -192,8 +206,8 @@ t/nd2: $(TEST_FOLDER)/.exists
 	rm -f $(TEST_FOLDER)/200KB.1
 	@touch $@
 t/nd3:
-	$(EXETEST) --no-default node --url=https://10.25.0.4:9092 --username=node_xferuser --password=Aspera123_ --insecure=yes upload --to-folder=/ --sources=@ts --ts=@json:'{"paths":[{"source":"500M.dat"}],"precalculate_job_size":true}' --transfer=node --transfer-info=@json:'{"url":"https://10.25.0.8:9092","username":"node_xferuser","password":"Aspera123_"}' 
-	$(EXETEST) --no-default node --url=https://10.25.0.4:9092 --username=node_xferuser --password=Aspera123_ --insecure=yes delete /500M.dat
+	$(EXETEST) --no-default node --url=https://eudemo.asperademo.com:9092 --username=node_aspera --password=aspera --insecure=yes upload --to-folder=/Upload --sources=@ts --ts=@json:'{"paths":[{"source":"500M.dat"}],"remote_password":"demoaspera","precalculate_job_size":true}' --transfer=node --transfer-info=@json:'{"url":"https://10.25.0.8:9092","username":"node_xferuser","password":"Aspera123_"}' 
+	$(EXETEST) --no-default node --url=https://eudemo.asperademo.com:9092 --username=node_aspera --password=aspera --insecure=yes delete /500M.dat
 	@touch $@
 t/nd4:
 	$(EXETEST) node service create @json:'{"id":"service1","type":"WATCHD","run_as":{"user":"user1"}}'
@@ -213,7 +227,10 @@ t/nd5:
 t/nd6:
 	$(EXETEST) node transfer list
 	@touch $@
-tnode: t/nd1 t/nd2 t/nd3 t/nd4 t/nd5 t/nd6
+t/nd_nagios:
+	$(EXETEST) node nagios_check
+	@touch $@
+tnode: t/nd1 t/nd2 t/nd3 t/nd4 t/nd5 t/nd6 t/nd_nagios
 
 t/aocf1: $(TEST_FOLDER)/.exists
 	$(EXETEST) config genkey $(TEST_FOLDER)/mykey
@@ -223,8 +240,9 @@ t/aocf2:
 	$(EXETEST) aspera files upload --to-folder=/ $(SAMPLE_FILE)
 	@touch $@
 t/aocf3: $(TEST_FOLDER)/.exists
+	@rm -f $(TEST_FOLDER)/200KB.1
 	$(EXETEST) aspera files download --to-folder=$(TEST_FOLDER) --transfer=connect --sources=@args /200KB.1
-	rm -f 200KB.1
+	@rm -f $(TEST_FOLDER)/200KB.1
 	@touch $@
 t/aocf4: $(TEST_FOLDER)/.exists
 	$(EXETEST) aspera files http_node_download --to-folder=$(TEST_FOLDER) --sources=@args /200KB.1
@@ -336,18 +354,6 @@ t/o9:
 
 torc: t/o1 t/o2 t/o3 t/o4 t/o5 t/o6 t/o7 t/o8 t/o9
 
-t/at1:
-	$(EXETEST) ats credential subscriptions
-	@touch $@
-t/at2:
-	$(EXETEST) ats credential cache list
-	@touch $@
-t/at3:
-	$(EXETEST) ats credential list
-	@touch $@
-t/at3b:
-	$(EXETEST) ats credential info
-	@touch $@
 t/at4:
 	$(EXETEST) ats cluster list
 	@touch $@
@@ -359,6 +365,15 @@ t/at6:
 	@touch $@
 t/at7:
 	$(EXETEST) ats cluster show --id=1f412ae7-869a-445c-9c05-02ad16813be2
+	@touch $@
+t/at2:
+	$(EXETEST) ats api_key instances
+	@touch $@
+t/at1:
+	$(EXETEST) ats api_key list
+	@touch $@
+t/at3:
+	$(EXETEST) ats api_key create
 	@touch $@
 t/at8:
 	$(EXETEST) ats access_key create --cloud=softlayer --region=ams --params=@json:'{"id":"testkey2","name":"laurent key","storage":{"type":"softlayer_swift","container":"laurent","credentials":{"api_key":"e5d032e026e0b0a16e890a3d44d11fd1471217b6262e83c7f60529f1ff4b27de","username":"IBMOS303446-9:laurentmartin"},"path":"/"}}'
@@ -382,7 +397,7 @@ t/at14:
 	$(EXETEST) ats access_key --id=testkey3 delete
 	@touch $@
 
-tats: t/at1 t/at2 t/at3 t/at3b t/at4 t/at5 t/at6 t/at7 t/at8 t/at9 t/at10 t/at11 t/at12 t/at13 t/at14
+tats: t/at4 t/at5 t/at6 t/at7 t/at2 t/at1 t/at3 t/at8 t/at9 t/at10 t/at11 t/at12 t/at13 t/at14
 
 t/co1:
 	$(EXETEST) client current
@@ -453,12 +468,15 @@ t/conf_open_err:
 t/conf_plugins:
 	$(EXETEST) config plugins
 	@touch $@
+t/conf_export:
+	$(EXETEST) config export
+	@touch $@
 HIDE_CLIENT_ID=BMDiAWLP6g
 HIDE_CLIENT_SECRET=opkZrJuN-J8anDxPcPA5CFLsY5CopRvLqBeDV24_8KJgarmuYGkI0ha5zNkBLpZ1-edRwzgHZfhisyQltG-xJ-kiZvvxf3Co
 t/conf_wizard:
 	$(EXETEST) conf wiz https://sedemo.ibmaspera.com --config-file=todelete.txt --client-id=$(HIDE_CLIENT_ID) --client-secret=$(HIDE_CLIENT_SECRET)
-
-tconf: t/conf_id_1 t/conf_id_2 t/conf_id_3 t/conf_id_4 t/conf_id_5 t/conf_id_6 t/conf_open t/conf_list t/conf_over t/conf_help t/conf_open_err t/conf_plugins t/conf_wizard
+	@touch $@
+tconf: t/conf_id_1 t/conf_id_2 t/conf_id_3 t/conf_id_4 t/conf_id_5 t/conf_id_6 t/conf_open t/conf_list t/conf_over t/conf_help t/conf_open_err t/conf_plugins t/conf_export t/conf_wizard
 
 t/shar2_1:
 	$(EXETEST) shares2 appinfo
@@ -513,7 +531,9 @@ tsync: t/sync1
 t:
 	mkdir t
 
-tests: t tshares tfaspex tconsole tnode tfiles tfasp tsync torc tats tcon tnsync tconf tprev tshares2
+tests: t tshares tfaspex tconsole tnode tfiles tfasp tsync torc tcon tnsync tconf tprev tshares2 tats
+
+tnagios: t/fx_nagios t/serv_nagios_webapp t/serv_nagios_transfer t/nd_nagios
 
 t/fxgw:
 	$(EXETEST) aspera faspex
