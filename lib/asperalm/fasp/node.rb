@@ -13,16 +13,17 @@ module Asperalm
         # TODO: currently only supports one transfer
         @transfer_id=nil
       end
-      public
-      attr_writer :node_api
 
-      def node_api
-        raise StandardError,"Before using this object, set the node_api attribute to a Asperalm::Rest object" unless @node_api.is_a?(Asperalm::Rest)
+      def node_api_
+        raise StandardError,"Before using this object, set the node_api attribute to a Asperalm::Rest object" if @node_api.nil?
         return @node_api
       end
 
+      public
+      attr_accessor :node_api
+
       def start_transfer(transfer_spec,options=nil)
-        resp=node_api.create('ops/transfers',transfer_spec)[:data]
+        resp=node_api_.create('ops/transfers',transfer_spec)[:data]
         @transfer_id=resp['id']
         Log.log.debug("tr_id=#{@transfer_id}")
       end
@@ -31,7 +32,7 @@ module Asperalm
         started=false
         # lets emulate management events to display progress bar
         loop do
-          trdata=node_api.read("ops/transfers/#{@transfer_id}")[:data]
+          trdata=node_api_.read("ops/transfers/#{@transfer_id}")[:data]
           case trdata['status']
           when 'completed'
             notify_listeners("emulated",{'Type'=>'DONE'})
