@@ -1,4 +1,5 @@
 require 'asperalm/fasp/manager'
+require 'asperalm/rest'
 require 'asperalm/open_application'
 require 'securerandom'
 require 'singleton'
@@ -21,8 +22,10 @@ module Asperalm
         raise "Using connect requires a graphical environment" if !OpenApplication.default_gui_mode.eql?(:graphical)
         trynumber=0
         begin
-          Log.log.debug("reading connect port file")
-          connect_url=File.open(Installation.instance.connect_uri_file){|f|f.gets}.strip
+          uri_file=Installation.instance.connect_uri_file
+          Log.log.debug("reading connect port file: #{uri_file}")
+          connect_url=File.open(uri_file){|f|f.gets}.strip
+          Log.log.debug("found: #{connect_url}")
           @connect_api=Rest.new({:base_url => "#{connect_url}/v5/connect"})
           @connect_api.read('info/version')
         rescue => e # Errno::ECONNREFUSED
