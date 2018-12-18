@@ -29,9 +29,8 @@ module Asperalm
         @selected_product_paths=path_set
       end
 
-      # installation paths
-      # get fasp resource files paths
-      private def paths
+      # get all fasp resource files paths of currently activated product
+      def paths
         if @selected_product_paths.nil?
           # this contains var/run, files generated on runtime
           if @activated.eql?(@@FIRST_FOUND)
@@ -45,8 +44,8 @@ module Asperalm
         end
         return @selected_product_paths
       end
-      public
-      # get path of one resource file
+      
+      # get path of one resource file of currently activated product
       def path(k)
         file=paths[k][:path]
         raise "no such file: #{file}" if !File.exist?(file)
