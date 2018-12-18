@@ -117,13 +117,13 @@ module Asperalm
       raise "ERROR: expecting Hash" unless a_rest_params.is_a?(Hash)
       raise "ERROR: expecting base_url" unless a_rest_params[:base_url].is_a?(String)
       @params=a_rest_params.clone
+      Log.dump('REST params',@params)
       # base url without trailing slashes
       @params[:base_url]=@params[:base_url].gsub(/\/+$/,'')
       @http_session=nil
       if @params[:auth_type].eql?(:oauth2)
         @oauth=Oauth.new(@params)
       end
-      Log.log.debug("Rest.new #{@params}")
     end
 
     def oauth_token(api_scope=nil,use_refresh_token=false)
