@@ -69,6 +69,7 @@ module Asperalm
       def initialize
         # overriding parameters on transfer spec
         @option_help=false
+        @bash_completion=false
         @option_show_config=false
         @option_flat_hash=true
         @option_table_style=':.:'
@@ -112,6 +113,7 @@ module Asperalm
         @opt_mgr.set_obj_attr(:table_style,self,:option_table_style)
         @opt_mgr.add_opt_simple(:table_style,"table display style, current=#{@option_table_style}")
         @opt_mgr.add_opt_switch(:help,"Show this message.","-h") { @option_help=true }
+        @opt_mgr.add_opt_switch(:bash_comp,"generate bash completion for command") { @bash_completion=true }
         @opt_mgr.add_opt_switch(:show_config, "Display parameters used for the provided action.") { @option_show_config=true }
         @opt_mgr.add_opt_switch(:rest_debug,"-r","more debug for HTTP calls") { Rest.debug=true }
         @opt_mgr.add_opt_switch(:version,"-v","display version") { display_message(:data,self.class.gem_version);Process.exit(0) }
@@ -167,6 +169,15 @@ module Asperalm
         # load default params only if no param already loaded
         @config_plugin.add_plugin_default_preset(plugin_name_sym)
         return command_plugin
+      end
+
+      def generate_bash_completion
+        if @opt_mgr.get_next_argument("",:multiple,:optional).nil?
+          @config_plugin.plugins.keys.each{|p|puts p.to_s}
+        else
+          Log.log.warn("only first level completion so far")
+        end
+        Process.exit(0)
       end
 
       # @param source [Hash] hash to modify
@@ -462,6 +473,7 @@ module Asperalm
           Plugin.declare_entity_options(@opt_mgr)
           # help requested without command ? (plugins must be known here)
           exit_with_usage(true) if @option_help and @opt_mgr.command_or_arg_empty?
+          generate_bash_completion if @bash_completion
           # load global default options and process
           @config_plugin.add_plugin_default_preset(Plugins::Config.name_sym)
           @opt_mgr.parse_options!
