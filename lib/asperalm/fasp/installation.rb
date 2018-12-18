@@ -6,54 +6,46 @@ require 'xmlsimple'
 
 module Asperalm
   module Fasp
-    # locate Aspera transfer products based on OS
-    # then identifies resources (binary, keys..)
+    # Singleton that tells where to find ascp and other local resources (binary, keys..)
+    # it is used by object : Fasp::Local to find necessary resouces
+    # by default it takes the first Aspera product found specified in product_locations
+    # but the user can for a product by name by calling: activated=(name)
+    # or call paths= and provide a hash with all resources , as specified in get_product_paths
     class Installation
       include Singleton
-      VARRUN_SUBFOLDER=File.join('var','run')
-      BIN_SUBFOLDER='bin'
-      ETC_SUBFOLDER='etc'
-      # policy for product selection
-      FIRST_FOUND='FIRST'
-      # product information manifest: XML
-      PRODUCT_INFO='product-info.mf'
-      RSA_FILE_NAME='aspera_tokenauth_id_rsa'
-      WEBCERT_FILE_NAME='aspera_web_cert.pem'
-      WEBKEY_FILE_NAME='aspera_web_key.pem'
-      CLIENT_DSA='asperaweb_id_dsa.openssh'
-      SERVER_DSA='aspera_tokenauth_id_dsa'
 
       # name of Aspera application to be used or :first
       attr_reader :activated
+      # set paths by product name
       def activated=(value)
         @activated=value
         # reset installed paths
         @selected_product_paths=nil
       end
 
+      # user can set all path directly, see get_product_paths for format
+      def paths=(path_set)
+        raise "must be a hash" unless path_set.is_a?(Hash)
+        @selected_product_paths=path_set
+      end
+
       # installation paths
       # get fasp resource files paths
-      def paths
+      private def paths
         if @selected_product_paths.nil?
           # this contains var/run, files generated on runtime
-          if @activated.eql?(FIRST_FOUND)
+          if @activated.eql?(@@FIRST_FOUND)
             p = installed_products.first
             raise "no FASP installation found\nPlease check manual on how to install FASP." if p.nil?
           else
             p=installed_products.select{|p|p[:name].eql?(@activated)}.first
             raise "no such product installed: #{@activated}" if p.nil?
           end
-          @selected_product_paths=self.class.get_product_paths(p)
+          @selected_product_paths=get_product_paths(p)
         end
         return @selected_product_paths
       end
-
-      # user can set all path directly
-      def paths=(path_set)
-        raise "must be a hash" unless path_set.is_a?(Hash)
-        @selected_product_paths=path_set
-      end
-
+      public
       # get path of one resource file
       def path(k)
         file=paths[k][:path]
@@ -61,13 +53,13 @@ module Asperalm
         return file
       end
 
-      # @return the list of installed products
+      # @return the list of installed products in format of product_locations
       def installed_products
         if @found_products.nil?
           @found_products=product_locations.select do |l|
             next false unless Dir.exist?(l[:app_root])
             Log.log.debug("found #{l[:app_root]}")
-            product_info_file="#{l[:app_root]}/#{PRODUCT_INFO}"
+            product_info_file="#{l[:app_root]}/#{@@PRODUCT_INFO}"
             if File.exist?(product_info_file)
               res_s=XmlSimple.xml_in(File.read(product_info_file),{"ForceArray"=>false})
               l[:name]=res_s['name']
@@ -84,14 +76,28 @@ module Asperalm
       # @returns the file path of local connect where API's URI can be read
       def connect_uri_file
         connect=get_product('Aspera Connect')
-        return File.join(connect[:run_root],VARRUN_SUBFOLDER,'https.uri')
+        return File.join(connect[:run_root],@@VARRUN_SUBFOLDER,'https.uri')
       end
 
+      # @ return path to configuration file of aspera CLI
       def cli_conf_file
         connect=get_product('Aspera CLI')
-        return File.join(connect[:app_root],BIN_SUBFOLDER,'.aspera_cli_conf')
+        return File.join(connect[:app_root],@@BIN_SUBFOLDER,'.aspera_cli_conf')
       end
       private
+
+      @@VARRUN_SUBFOLDER=File.join('var','run')
+      @@BIN_SUBFOLDER='bin'
+      @@ETC_SUBFOLDER='etc'
+      # policy for product selection
+      @@FIRST_FOUND='FIRST'
+      # product information manifest: XML
+      @@PRODUCT_INFO='product-info.mf'
+      @@RSA_FILE_NAME='aspera_tokenauth_id_rsa'
+      @@WEBCERT_FILE_NAME='aspera_web_cert.pem'
+      @@WEBKEY_FILE_NAME='aspera_web_key.pem'
+      @@CLIENT_DSA='asperaweb_id_dsa.openssh'
+      @@SERVER_DSA='aspera_tokenauth_id_dsa'
 
       def get_product(name)
         found=installed_products.select{|i|i[:expected].eql?(name) or i[:name].eql?(name)}
@@ -102,7 +108,7 @@ module Asperalm
       def initialize
         @selected_product_paths=nil
         @found_products=nil
-        @activated=FIRST_FOUND
+        @activated=@@FIRST_FOUND
       end
 
       # set ressources path from application information
@@ -115,23 +121,23 @@ module Asperalm
       #        :sub_bin=>'bin',
       #        :sub_keys=>'var',
       #        :dsa=>'aspera_tokenauth_id_dsa'}
-      def self.get_product_paths(p)
+      def get_product_paths(p)
         exec_ext = OpenApplication.current_os_type.eql?(:windows) ? '.exe' : ''
         # set default values if specific ones not specified
-        sub_bin = p[:sub_bin] || BIN_SUBFOLDER
-        sub_keys = p[:sub_keys] || ETC_SUBFOLDER
+        sub_bin = p[:sub_bin] || @@BIN_SUBFOLDER
+        sub_keys = p[:sub_keys] || @@ETC_SUBFOLDER
         result={
           #:bin_folder             => { :type =>:folder,:required => true, :path =>File.join(p[:app_root],sub_bin)},
           #:log_folder             => { :type =>:folder,:required => false,:path =>p[:log_root]},
           :ascp                   => { :type => :file, :required => true, :path =>File.join(p[:app_root],sub_bin,'ascp')+exec_ext},
           :ascp4                  => { :type => :file, :required => false,:path =>File.join(p[:app_root],sub_bin,'ascp4')+exec_ext},
-          :ssh_bypass_key_dsa     => { :type => :file, :required => true, :path =>File.join(p[:app_root],sub_keys,CLIENT_DSA)},
-          :ssh_bypass_key_rsa     => { :type => :file, :required => true, :path =>File.join(p[:app_root],sub_keys,RSA_FILE_NAME)},
-          :fallback_cert          => { :type => :file, :required => false,:path =>File.join(p[:app_root],sub_keys,WEBCERT_FILE_NAME)},
-          :fallback_key           => { :type => :file, :required => false,:path =>File.join(p[:app_root],sub_keys,WEBKEY_FILE_NAME)}
+          :ssh_bypass_key_dsa     => { :type => :file, :required => true, :path =>File.join(p[:app_root],sub_keys,@@CLIENT_DSA)},
+          :ssh_bypass_key_rsa     => { :type => :file, :required => true, :path =>File.join(p[:app_root],sub_keys,@@RSA_FILE_NAME)},
+          :fallback_cert          => { :type => :file, :required => false,:path =>File.join(p[:app_root],sub_keys,@@WEBCERT_FILE_NAME)},
+          :fallback_key           => { :type => :file, :required => false,:path =>File.join(p[:app_root],sub_keys,@@WEBKEY_FILE_NAME)}
         }
         # server software (having asperanoded) has a different DSA filename
-        server_dsa=File.join(p[:app_root],sub_keys,SERVER_DSA)
+        server_dsa=File.join(p[:app_root],sub_keys,@@SERVER_DSA)
         result[:ssh_bypass_key_dsa][:path]=server_dsa  if File.exist?(server_dsa)
         Log.log.debug "resources=#{result}"
         # check required files
@@ -208,7 +214,6 @@ module Asperalm
             :sub_keys =>'var'
             }]
         end
-        return common_places
       end
     end # Installation
   end
