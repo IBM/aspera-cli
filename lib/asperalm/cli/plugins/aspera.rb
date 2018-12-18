@@ -160,8 +160,8 @@ module Asperalm
         attr_accessor :api_files
 
         # build REST object parameters based on command line options
-        def get_aoc_rest_params
-          public_link_url=self.options.get_option(:link,:optional)
+        def get_aoc_api(cli_options,is_admin)
+          public_link_url=cli_options.get_option(:link,:optional)
 
           # if auth is a public link, option "link" is a shortcut for options: url, auth, public_token
           unless public_link_url.nil?
@@ -174,41 +174,41 @@ module Asperalm
             if url_token_value.nil?
               raise CliArgument,"link option must be url with 'token' parameter"
             end
-            self.options.set_option(:url,'https://'+uri.host)
-            self.options.set_option(:public_token,url_token_value)
-            self.options.set_option(:auth,:url_token)
-            self.options.set_option(:client_id,FilesApi.random.first)
-            self.options.set_option(:client_secret,FilesApi.random.last)
+            cli_options.set_option(:url,'https://'+uri.host)
+            cli_options.set_option(:public_token,url_token_value)
+            cli_options.set_option(:auth,:url_token)
+            cli_options.set_option(:client_id,FilesApi.random.first)
+            cli_options.set_option(:client_secret,FilesApi.random.last)
           end
           # Connection paramaters (url and auth) to Aspera on Cloud
           # pre populate rest parameters based on URL
           aoc_rest_params=
-          FilesApi.base_rest_params(self.options.get_option(:url,:mandatory)).merge({
-            :oauth_type          => self.options.get_option(:auth,:mandatory),
-            :oauth_client_id     => self.options.get_option(:client_id,:mandatory),
-            :oauth_client_secret => self.options.get_option(:client_secret,:mandatory)
+          FilesApi.base_rest_params(cli_options.get_option(:url,:mandatory)).merge({
+            :oauth_type          => cli_options.get_option(:auth,:mandatory),
+            :oauth_client_id     => cli_options.get_option(:client_id,:mandatory),
+            :oauth_client_secret => cli_options.get_option(:client_secret,:mandatory)
           })
 
           # fill other auth parameters based on Oauth method
           case aoc_rest_params[:oauth_type]
           when :web
             aoc_rest_params.merge!({
-              :oauth_redirect_uri => self.options.get_option(:redirect_uri,:mandatory)
+              :oauth_redirect_uri => cli_options.get_option(:redirect_uri,:mandatory)
             })
           when :jwt
             private_key_PEM_string=self.options.get_option(:private_key,:mandatory)
             aoc_rest_params.merge!({
-              :oauth_jwt_subject         => self.options.get_option(:username,:mandatory),
+              :oauth_jwt_subject         => cli_options.get_option(:username,:mandatory),
               :oauth_jwt_private_key_obj => OpenSSL::PKey::RSA.new(private_key_PEM_string)
             })
           when :url_token
             aoc_rest_params.merge!({
-              :oauth_url_token     => self.options.get_option(:public_token,:mandatory),
+              :oauth_url_token     => cli_options.get_option(:public_token,:mandatory),
             })
           else raise "ERROR: unsupported auth method"
           end
-          Log.log.debug("REST params=#{aoc_rest_params}")
-          return aoc_rest_params
+          aoc_rest_params.merge!({:oauth_scope=>is_admin ? FilesApi::SCOPE_FILES_ADMIN : FilesApi::SCOPE_FILES_USER})
+          return FilesApi.new(aoc_rest_params)
         end
 
         # initialize apis and authentication
@@ -222,16 +222,12 @@ module Asperalm
         # @ak_secret
         # returns nil
         def set_fields(is_admin)
-          aoc_rest_params=get_aoc_rest_params
-
-          aoc_rest_params.merge!({:oauth_scope=>is_admin ? FilesApi::SCOPE_FILES_ADMIN : FilesApi::SCOPE_FILES_USER})
-
           # create objects for REST calls to Aspera
           # Note: bearer token is created on first use, or taken from cache
-          @api_files=FilesApi.new(aoc_rest_params)
+          @api_files=get_aoc_api(self.options,is_admin)
 
           @org_data=@api_files.read('organization')[:data]
-          if aoc_rest_params.has_key?(:oauth_url_token)
+          if @api_files.params.has_key?(:oauth_url_token)
             url_token_data=@api_files.read("url_tokens")[:data].first
             @default_workspace_id=url_token_data['data']['workspace_id']
             @user_id='todo' # TODO : @org_data ?
