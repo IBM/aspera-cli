@@ -1,14 +1,9 @@
-#
-# REST call helper
-# Aspera 2016
-# Laurent Martin
-#
-##############################################################################
+require 'asperalm/log'
+require 'asperalm/oauth'
+require 'asperalm/rest_call_error'
 require 'net/http'
 require 'net/https'
 require 'json'
-require 'asperalm/log'
-require 'asperalm/oauth'
 
 # add cancel method to http
 class Net::HTTP::Cancel < Net::HTTPRequest
@@ -24,53 +19,6 @@ end
 #end
 
 module Asperalm
-  # builds a meaningful error message from known formats in Aspera products
-  class RestCallError < StandardError
-    attr_accessor :request
-    attr_accessor :response
-    # @param http response
-    def initialize(req,resp)
-      @request = req
-      @response = resp
-      Log.log.debug "Error code:#{@response.code}, msg=#{@response.message.red}, body=[#{@response.body}, req.uri=#{@request['host']}]"
-      # default error message is response type
-      msg=@response.message
-      # see if there is a more precise message
-      # Hum, we would need some consistency here...
-      if !@response.body.nil?
-        data=JSON.parse(@response.body) rescue nil
-        if data.is_a?(Hash)
-          # we have a payload
-          if data['error'].is_a?(Hash)
-            if data['error']["user_message"].is_a?(String)
-              msg=data['error']["user_message"]
-            elsif data['error']["description"].is_a?(String)
-              msg=data['error']["description"]
-            end
-          elsif data['error'].is_a?(String)
-            msg=data['error']
-          end
-          # TODO: data['code'] and data['message'] ?
-          if data['error_description'].is_a?(String)
-            msg=msg+": "+data['error_description']
-          end
-          if data['message'].is_a?(String)
-            msg=msg+": "+data['message']
-            data.delete('message')
-            data.each do |k,v|
-              msg=msg+"\n#{k}: #{v}"
-            end
-          end
-          if data['errors'].is_a?(Hash)
-            data['errors'].each do |k,v|
-              msg=msg+"\n#{k}: #{v}"
-            end
-          end
-        end
-      end
-      super("#{@response.code} #{@request['host']}: "+msg)
-    end
-  end
 
   # a simple class to make HTTP calls, equivalent to rest-client
   class Rest
@@ -103,7 +51,7 @@ module Asperalm
 
     def self.insecure; @@insecure;end
 
-    def self.debug=(flag); Log.log.debug "debug http=#{flag}"; @@debug=flag; end
+    def self.debug=(flag); Log.log.debug("debug http=#{flag}"); @@debug=flag; end
 
     attr_reader :params
 
@@ -174,7 +122,7 @@ module Asperalm
         # instanciate request object based on string name
         req=Object::const_get('Net::HTTP::'+call_data[:operation].capitalize).new(uri.request_uri)
       rescue NameError => e
-        raise "unknown op : #{call_data[:operation]}"
+        raise "unsupported operation : #{call_data[:operation]}"
       end
       if call_data.has_key?(:json_params) and !call_data[:json_params].nil? then
         req.body=JSON.generate(call_data[:json_params])
@@ -200,7 +148,7 @@ module Asperalm
       # :auth_type = :basic
       if call_data[:auth_type].eql?(:basic) then
         req.basic_auth(call_data[:basic_username],call_data[:basic_password])
-        Log.log.debug "using Basic auth"
+        Log.log.debug("using Basic auth")
       end
 
       Log.log.debug "call_data = #{call_data}"
