@@ -9,15 +9,21 @@ module Asperalm
       private
       def initialize
         super
+        @node_api=nil
+        # TODO: currently only supports one transfer
+        @transfer_id=nil
       end
       public
-      attr_accessor :node_api
+      attr_writer :node_api
+
+      def node_api
+        raise StandardError,"Before using this object, set the node_api attribute to a Asperalm::Rest object" unless @node_api.is_a?(Asperalm::Rest)
+        return @node_api
+      end
 
       def start_transfer(transfer_spec,options=nil)
-        #transfer_spec.keys.select{|i|i.start_with?('EX_')}.each{|i|transfer_spec.delete(i)}
-        #resp=@node_api.call({:operation=>'POST',:subpath=>'ops/transfers',:headers=>{'Accept'=>'application/json'},:json_params=>transfer_spec})
-        resp=@node_api.create('ops/transfers',transfer_spec)
-        @transfer_id=resp[:data]['id']
+        resp=node_api.create('ops/transfers',transfer_spec)[:data]
+        @transfer_id=resp['id']
         Log.log.debug("tr_id=#{@transfer_id}")
       end
 
@@ -25,8 +31,7 @@ module Asperalm
         started=false
         # lets emulate management events to display progress bar
         loop do
-          #trdata=@node_api.call({:operation=>'GET',:subpath=>'ops/transfers/'+@transfer_id,:headers=>{'Accept'=>'application/json'}})[:data]
-          trdata=@node_api.read("ops/transfers/#{@transfer_id}")[:data]
+          trdata=node_api.read("ops/transfers/#{@transfer_id}")[:data]
           case trdata['status']
           when 'completed'
             notify_listeners("emulated",{'Type'=>'DONE'})
