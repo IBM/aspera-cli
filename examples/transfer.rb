@@ -15,9 +15,9 @@ Asperalm::Log.instance.level=:debug
 Asperalm::Fasp::Installation.instance.installed_products.each{|p|puts("found: #{p[:name]}")}
 Asperalm::Fasp::Installation.instance.activated='Aspera Connect'
 fasp_manager=Asperalm::Fasp::Local.instance
-fasp_manager=Asperalm::Fasp::Connect.instance
-fasp_manager=Asperalm::Fasp::Node.instance
-Asperalm::Fasp::Node.instance.node_api=Asperalm::Rest.new()
+#fasp_manager=Asperalm::Fasp::Connect.instance
+#fasp_manager=Asperalm::Fasp::Node.instance
+#Asperalm::Fasp::Node.instance.node_api=Asperalm::Rest.new()
 fasp_manager.add_listener(MyListener.new)
 transfer_spec={
   'remote_host'     =>'demo.asperasoft.com',
