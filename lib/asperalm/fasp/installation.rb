@@ -24,9 +24,19 @@ module Asperalm
       end
 
       # user can set all path directly, see get_product_paths for format
-      def paths=(path_set)
-        raise "must be a hash" unless path_set.is_a?(Hash)
-        @selected_product_paths=path_set
+      def paths=(res_paths)
+        raise "must be a hash" unless res_paths.is_a?(Hash)
+        # check required files
+        missing_mandatory=res_paths.keys.select do |res_sym|
+          raise "hash values must be a String (path to resource)" unless res_paths[res_sym].is_a?(String)
+          Log.log.debug("#{res_sym}: #{res_paths[res_sym]}")
+          @@FASP_SDK[res_sym][:type].eql?(:file) and @@FASP_SDK[res_sym][:required] and ! File.exist?(res_paths[res_sym])
+        end
+        if !missing_mandatory.empty?
+          reslist=missing_mandatory.map{|res_sym|"#{res_sym.to_s}: #{res_paths[res_sym]}"}.join("\n")
+          raise StandardError.new("Please check your FASP installation.\nCannot locate:\n#{reslist}")
+        end
+        @selected_product_paths=res_paths
       end
 
       # get all fasp resource files paths of currently activated product
@@ -40,14 +50,14 @@ module Asperalm
             p=installed_products.select{|p|p[:name].eql?(@activated)}.first
             raise "no such product installed: #{@activated}" if p.nil?
           end
-          @selected_product_paths=get_product_paths(p)
+          self.paths=get_product_paths(p)
         end
         return @selected_product_paths
       end
-      
+
       # get path of one resource file of currently activated product
       def path(k)
-        file=paths[k][:path]
+        file=paths[k]
         raise "no such file: #{file}" if !File.exist?(file)
         return file
       end
@@ -110,6 +120,18 @@ module Asperalm
         @activated=@@FIRST_FOUND
       end
 
+      # necessary FASP SDK resource files
+      @@FASP_SDK={
+        #:bin_folder             => { :type =>:folder,:required => true},
+        #:log_folder             => { :type =>:folder,:required => false},
+        :ascp                   => { :type => :file, :required => true},
+        :ascp4                  => { :type => :file, :required => false},
+        :ssh_bypass_key_dsa     => { :type => :file, :required => true},
+        :ssh_bypass_key_rsa     => { :type => :file, :required => true},
+        :fallback_cert          => { :type => :file, :required => false},
+        :fallback_key           => { :type => :file, :required => false}
+      }
+
       # set ressources path from application information
       # @param p application information
       # a user can set an alternate location, example:
@@ -125,30 +147,21 @@ module Asperalm
         # set default values if specific ones not specified
         sub_bin = p[:sub_bin] || @@BIN_SUBFOLDER
         sub_keys = p[:sub_keys] || @@ETC_SUBFOLDER
-        result={
-          #:bin_folder             => { :type =>:folder,:required => true, :path =>File.join(p[:app_root],sub_bin)},
-          #:log_folder             => { :type =>:folder,:required => false,:path =>p[:log_root]},
-          :ascp                   => { :type => :file, :required => true, :path =>File.join(p[:app_root],sub_bin,'ascp')+exec_ext},
-          :ascp4                  => { :type => :file, :required => false,:path =>File.join(p[:app_root],sub_bin,'ascp4')+exec_ext},
-          :ssh_bypass_key_dsa     => { :type => :file, :required => true, :path =>File.join(p[:app_root],sub_keys,@@CLIENT_DSA)},
-          :ssh_bypass_key_rsa     => { :type => :file, :required => true, :path =>File.join(p[:app_root],sub_keys,@@RSA_FILE_NAME)},
-          :fallback_cert          => { :type => :file, :required => false,:path =>File.join(p[:app_root],sub_keys,@@WEBCERT_FILE_NAME)},
-          :fallback_key           => { :type => :file, :required => false,:path =>File.join(p[:app_root],sub_keys,@@WEBKEY_FILE_NAME)}
+        res_paths={
+          #:bin_folder             => File.join(p[:app_root],sub_bin),
+          #:log_folder             => p[:log_root]},
+          :ascp                   => File.join(p[:app_root],sub_bin,'ascp')+exec_ext,
+          :ascp4                  => File.join(p[:app_root],sub_bin,'ascp4')+exec_ext,
+          :ssh_bypass_key_dsa     => File.join(p[:app_root],sub_keys,@@CLIENT_DSA),
+          :ssh_bypass_key_rsa     => File.join(p[:app_root],sub_keys,@@RSA_FILE_NAME),
+          :fallback_cert          => File.join(p[:app_root],sub_keys,@@WEBCERT_FILE_NAME),
+          :fallback_key           => File.join(p[:app_root],sub_keys,@@WEBKEY_FILE_NAME)
         }
         # server software (having asperanoded) has a different DSA filename
         server_dsa=File.join(p[:app_root],sub_keys,@@SERVER_DSA)
-        result[:ssh_bypass_key_dsa][:path]=server_dsa  if File.exist?(server_dsa)
-        Log.log.debug "resources=#{result}"
-        # check required files
-        notfound=[]
-        result.each_pair do |k,v|
-          notfound.push(k) if v[:type].eql?(:file) and v[:required] and ! File.exist?(v[:path])
-        end
-        if !notfound.empty?
-          reslist=notfound.map { |k| "#{k.to_s}: #{result[k][:path]}"}.join("\n")
-          raise StandardError.new("Please check your connect client installation, Cannot locate resource(s):\n#{reslist}")
-        end
-        return result
+        res_paths[:ssh_bypass_key_dsa]=server_dsa if File.exist?(server_dsa)
+        Log.log.debug("resources=#{res_paths}")
+        return res_paths
       end
 
       # returns product folders depending on OS

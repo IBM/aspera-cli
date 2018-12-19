@@ -38,7 +38,7 @@ module Asperalm
           command=self.options.get_next_command(action_list)
           case command
           when :current # shows files used
-            return {:type=>:object_list, :data=>Fasp::Installation.instance.paths.map{|k,v|{'name'=>k,'path'=>v[:path]}}}
+            return {:type=>:object_list, :data=>Fasp::Installation.instance.paths.map{|k,v|{'name'=>k,'path'=>v}}}
           when :available
             return {:type=>:object_list, :data=>Fasp::Installation.instance.installed_products, :fields=>['name','app_root']}
           when :connect
