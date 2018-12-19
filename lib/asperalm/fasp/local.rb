@@ -81,7 +81,7 @@ module Asperalm
         session={
           :state    => :initial, # :initial, :started, :success, :failed
           :env_args => env_args,
-          :resumer  => ResumePolicy.instance,
+          :resumer  => options['resume_policy'] || ResumePolicy.instance,
           :options  => options
         }
 
