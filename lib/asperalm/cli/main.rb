@@ -434,7 +434,10 @@ module Asperalm
       def self.result_transfer(transfer_spec,options)
         # TODO: if not one shot, then wait for status
         statuses=self.instance.transfer_mgr.start(transfer_spec,options)
-        raise "at least one transfer session failed" unless TransferAgent.session_status(statuses).eql?(:success)
+        worst=TransferAgent.session_status(statuses)
+        if !worst.eql?(:success)
+          raise worst
+        end
         return Main.result_nothing
       end
 
