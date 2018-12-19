@@ -1875,6 +1875,12 @@ Main components:
 * `Asperalm::Fasp`: starting and monitoring transfers. It can be considered as a FASPManager class for Ruby.
 * `Asperalm::Cli`: <%=tool%>.
 
+A working example can be found in the gem, example:
+
+```
+$ <%=cmd%> config gem_path
+$ cat $(<%=cmd%> config gem_path)/../examples/transfer.rb
+```
 
 # History
 
