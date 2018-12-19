@@ -79,8 +79,6 @@ module Asperalm
 
         public
 
-        def action_list; [ :todo];end
-
         def declare_options
           self.options.set_obj_attr(:override,self,:option_override,:no)
           self.options.set_obj_attr(:config_file,self,:option_config_file)
@@ -200,9 +198,11 @@ module Asperalm
           @plugins[name_sym]={:source=>path,:require_stanza=>req}
         end
 
+        def action_list; [:gem_path, :genkey,:plugins,:flush_tokens,:list,:overview,:open,:echo,:id,:documentation,:wizard,:export_to_cli,:detect,:coffee];end
+
         # "config" plugin
         def execute_action
-          action=self.options.get_next_command([:genkey,:plugins,:flush_tokens,:list,:overview,:open,:echo,:id,:documentation,:wizard,:export_to_cli,:detect,:coffee])
+          action=self.options.get_next_command(action_list)
           case action
           when :id
             config_name=self.options.get_next_argument('config name')
@@ -402,6 +402,8 @@ module Asperalm
           when :coffee
             OpenApplication.instance.uri('https://enjoyjava.com/wp-content/uploads/2018/01/How-to-make-strong-coffee.jpg')
             return Main.result_nothing
+          when :gem_path
+            return Main.result_status(Main.gem_root)
           else raise "error"
           end
         end
