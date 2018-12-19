@@ -19,7 +19,6 @@ end
 #end
 
 module Asperalm
-
   # a simple class to make HTTP calls, equivalent to rest-client
   class Rest
 
@@ -103,16 +102,19 @@ module Asperalm
       Log.log.debug "accessing #{call_data[:subpath]}".red.bold.bg_green
       call_data[:headers]||={}
       call_data.merge!(@params) { |key, v1, v2| next v1.merge(v2) if v1.is_a?(Hash) and v2.is_a?(Hash); v1 }
-      # :auth_type = :oauth2 requires generation of token
-      if call_data[:auth_type].eql?(:oauth2) and !call_data[:headers].has_key?('Authorization') then
-        call_data[:headers]['Authorization']=oauth_token
-      end
-      # :auth_type = :url
-      if call_data[:auth_type].eql?(:url) then
+      case call_data[:auth_type]
+      when nil
+        # no auth
+      when :oauth2
+        call_data[:headers]['Authorization']=oauth_token unless call_data[:headers].has_key?('Authorization')
+      when :url
         call_data[:url_params]||={}
         call_data[:auth_url_creds].each do |key, value|
           call_data[:url_params][key]=value
         end
+      when :basic
+        Log.log.debug("using Basic auth")
+        basic_auth_data=[call_data[:basic_username],call_data[:basic_password]]
       end
       # TODO: shall we percent encode subpath (spaces) test with access key delete with space in id
       # URI.escape()
@@ -146,9 +148,8 @@ module Asperalm
         end
       end
       # :auth_type = :basic
-      if call_data[:auth_type].eql?(:basic) then
-        req.basic_auth(call_data[:basic_username],call_data[:basic_password])
-        Log.log.debug("using Basic auth")
+      if !basic_auth_data.nil? then
+        req.basic_auth(*basic_auth_data)
       end
 
       Log.log.debug "call_data = #{call_data}"
