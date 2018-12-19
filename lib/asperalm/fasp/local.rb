@@ -331,7 +331,7 @@ module Asperalm
         rescue => e
           session[:state]=:failed
           session[:error]=e
-          Log.log.error(e.message)
+          Log.log.error("#{e.message}:\n#{e..backtrace}".red)
         ensure
           @mutex.synchronize do
             # ensure id is set to unblock start procedure
