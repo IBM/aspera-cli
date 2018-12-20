@@ -186,7 +186,6 @@ module Asperalm
               @cond_var.broadcast
             end
           end
-          Log.log.debug("->>#{}")
           # exact text for event, with \n
           current_event_text=''
           # parsed event (hash)
