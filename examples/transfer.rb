@@ -57,8 +57,8 @@ fasp_manager.wait_for_transfers_completion
 node_api=Asperalm::Rest.new({
   :base_url       => 'https://eudemo.asperademo.com:9092',
   :auth_type      => :basic,
-  :basic_username => 'node_faspex',
-  :basic_password => '434e5c01-5b20-4884-bc6b-62370a371cf5'})
+  :basic_username => 'node_asperaxfer',
+  :basic_password => 'aspera'})
 destination='/'
 # request transfer authorization to node
 send_result=node_api.create('files/upload_setup',{ :transfer_requests => [ { :transfer_request => { :paths => [ { :destination => destination } ] } } ] } )[:data]
