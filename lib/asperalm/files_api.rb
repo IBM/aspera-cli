@@ -144,18 +144,22 @@ module Asperalm
         folder_contents.each do |current_file_info|
           item_path=File.join(current_item[:path],current_file_info['name'])
           Log.log.debug("looking #{item_path}".bg_green)
-          # process type of file
-          case current_file_info['type']
-          when 'file'
-            Log.log.debug("testing : #{current_file_info['name']}")
-            result.push(item_path) if test_block.call(current_file_info['name'])
-          when 'link'
-            new_node_api=get_files_node_api(self.read("nodes/#{current_file_info['target_node_id']}")[:data],FilesApi::SCOPE_NODE_USER)
-            items_to_explore.push({:node_api=>new_node_api,:folder_id=>current_file_info["target_id"],:path=>item_path})
-          when 'folder'
-            items_to_explore.push({:node_api=>current_item[:node_api],:folder_id=>current_file_info["id"],:path=>item_path})
-          else
-            Log.log.warn("unknown element type: #{current_file_info['type']}")
+          begin
+            # process type of file
+            case current_file_info['type']
+            when 'file'
+              Log.log.debug("testing : #{current_file_info['name']}")
+              result.push(item_path) if test_block.call(current_file_info['name'])
+            when 'link'
+              new_node_api=get_files_node_api(self.read("nodes/#{current_file_info['target_node_id']}")[:data],FilesApi::SCOPE_NODE_USER)
+              items_to_explore.push({:node_api=>new_node_api,:folder_id=>current_file_info["target_id"],:path=>item_path})
+            when 'folder'
+              items_to_explore.push({:node_api=>current_item[:node_api],:folder_id=>current_file_info["id"],:path=>item_path})
+            else
+              Log.log.warn("unknown element type: #{current_file_info['type']}")
+            end
+          rescue => e
+            Log.log.warn("#{item_path}: #{e.message}")
           end
         end
       end
