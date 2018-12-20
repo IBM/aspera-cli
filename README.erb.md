@@ -1882,6 +1882,10 @@ $ <%=cmd%> config gem_path
 $ cat $(<%=cmd%> config gem_path)/../examples/transfer.rb
 ```
 
+This sample code shows some example of use of the API as well as
+REST API.
+Note: although nice, it's probably a good idea to use RestClient for REST.
+
 # History
 
 When I joined Aspera, there was only one CLI: `ascp`, which is the implementation of the FASP protocol, but there was no CLI to access the various existing products (Server, Faspex, Shares). Once, Serban (founder) provided a shell script able to create a Faspex Package using Faspex REST API. Since all products relate to file transfers using FASP (ascp), I thought it would be interesting to have a unified CLI for transfers using FASP. Also, because there was already the `ascp` tool, I thought of an extended tool : `eascp.pl` which was accepting all `ascp` options for transfer but was also able to transfer to Faspex and Shares (destination was a kind of URI for the applications).
@@ -1915,6 +1919,10 @@ This means that you do not have ruby support for ED25519 SSH keys. You may eithe
 Gems, or remove your ed25519 key from your `.ssh` folder to solve the issue.
 
 # Release Notes
+
+* version 0.9.15
+
+  * new feature: "find" command in aspera files
 
 * version 0.9.12
 
