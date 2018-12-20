@@ -48,8 +48,12 @@ module Asperalm
         end
 
         def self.execute_node_gen4_action(opt_mgr,transfer_mgr,api_files,home_node_file)
-          command_repo=opt_mgr.get_next_command([ :access_key, :browse, :mkdir, :rename, :delete, :upload, :download, :transfer, :http_node_download, :node, :file  ])
+          command_repo=opt_mgr.get_next_command([ :find, :access_key, :browse, :mkdir, :rename, :delete, :upload, :download, :transfer, :http_node_download, :node, :file  ])
           case command_repo
+          when :find
+            regex=opt_mgr.get_option(:value,:mandatory)
+            find_in_node_file=api_files.resolve_node_file(home_node_file,opt_mgr.get_next_argument('path'))
+            return {:type=>:value_list,:data=>api_files.find_files(find_in_node_file,regex),:name=>'path'}
           when :access_key
             node_info,file_id = api_files.resolve_node_file(home_node_file)
             node_api=api_files.get_files_node_api(node_info,FilesApi::SCOPE_NODE_USER)

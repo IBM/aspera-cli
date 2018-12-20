@@ -112,7 +112,57 @@ module Asperalm
         :headers     => {'X-Aspera-AccessKey'=>node_info['access_key']}}))
     end
 
-    # returns node information (returned by API) and file id, from a "/" based path
+    # @returns liste of file paths that match given regex
+    def find_files( top_node_file, element_regex )
+      raise "top_node_file must be array" unless top_node_file.is_a?(Array)
+      raise "top_node_file must have 2 elements" unless top_node_file.length.eql?(2)
+      top_node_info=top_node_file.first
+      top_file_id=top_node_file.last
+      raise "top_node_info is nil" if top_node_info.to_s.empty?
+      raise "top_file_id is nil" if top_file_id.to_s.empty?
+      Log.log.debug("find_files: node_info=#{top_node_info}, fileid=#{top_file_id}, regex=#{element_regex}")
+      result=[]
+      top_node_api=get_files_node_api(top_node_info,FilesApi::SCOPE_NODE_USER)
+      # initialize loop elements : list of folders to scan
+      items_to_explore=[{:node_api=>top_node_api,:folder_id=>top_file_id,:path=>''}]
+      # Note: top file id is necessarily a folder
+      regex=/#{element_regex}/
+      test_block=lambda{|filename|filename.match(regex)}
+
+      while !items_to_explore.empty? do
+        current_item = items_to_explore.shift
+        Log.log.debug("searching #{current_item[:path]}".bg_green)
+        # get folder content
+        begin
+          folder_contents = current_item[:node_api].read("files/#{current_item[:folder_id]}/files")[:data]
+        rescue => e
+          Log.log.warn("#{current_item[:path]}: #{e.message}")
+          folder_contents=[]
+        end
+        # TODO: check iof this is a folder or file ?
+        Log.dump(:folder_contents,folder_contents)
+        folder_contents.each do |current_file_info|
+          item_path=File.join(current_item[:path],current_file_info['name'])
+          Log.log.debug("looking #{item_path}".bg_green)
+          # process type of file
+          case current_file_info['type']
+          when 'file'
+            Log.log.debug("testing : #{current_file_info['name']}")
+            result.push(item_path) if test_block.call(current_file_info['name'])
+          when 'link'
+            new_node_api=get_files_node_api(self.read("nodes/#{current_file_info['target_node_id']}")[:data],FilesApi::SCOPE_NODE_USER)
+            items_to_explore.push({:node_api=>new_node_api,:folder_id=>current_file_info["target_id"],:path=>item_path})
+          when 'folder'
+            items_to_explore.push({:node_api=>current_item[:node_api],:folder_id=>current_file_info["id"],:path=>item_path})
+          else
+            Log.log.warn("unknown element type: #{current_file_info['type']}")
+          end
+        end
+      end
+      return result
+    end
+
+    # @return node information (returned by API) and file id, from a "/" based path
     # supports links to secondary nodes
     # input: Array(root node,file id), String path
     # output: Array(node_info,file_id)   for the given path
@@ -125,34 +175,35 @@ module Asperalm
       raise "top_file_id is nil" if top_file_id.to_s.empty?
       Log.log.debug("resolve_node_file: nodeid=#{top_node_id}, fileid=#{top_file_id}, path=#{element_path_string}")
       # initialize loop elements
-      current_path_elements=element_path_string.split(PATH_SEPARATOR).select{|i| !i.empty?}
+      items_to_explore=element_path_string.split(PATH_SEPARATOR).select{|i| !i.empty?}
       current_node_info=self.read("nodes/#{top_node_id}")[:data]
       current_file_id = top_file_id
       current_file_info = nil
 
-      while !current_path_elements.empty? do
-        current_element_name = current_path_elements.shift
-        Log.log.debug "searching #{current_element_name}".bg_green
+      while !items_to_explore.empty? do
+        current_item = items_to_explore.shift
+        Log.log.debug "searching #{current_item}".bg_green
         # get API if changed
         current_node_api=get_files_node_api(current_node_info,FilesApi::SCOPE_NODE_USER) if current_node_api.nil?
         # get folder content
         folder_contents = current_node_api.read("files/#{current_file_id}/files")
-        Log.log.debug("folder_contents: #{folder_contents}")
-        matching_folders = folder_contents[:data].select { |i| i['name'].eql?(current_element_name)}
+        Log.dump(:folder_contents,folder_contents)
+        matching_folders = folder_contents[:data].select { |i| i['name'].eql?(current_item)}
         #Log.log.debug "matching_folders: #{matching_folders}"
-        raise "no such folder: #{current_element_name} in #{folder_contents[:data].map { |i| i['name']}}" if matching_folders.empty?
+        raise "no such folder: #{current_item} in #{folder_contents[:data].map { |i| i['name']}}" if matching_folders.empty?
         current_file_info = matching_folders.first
         # process type of file
         case current_file_info['type']
         when 'file'
           current_file_id=current_file_info["id"]
           # a file shall be terminal
-          if !current_path_elements.empty? then
-            raise "#{current_element_name} is a file, expecting folder to find: #{current_path_elements}"
+          if !items_to_explore.empty? then
+            raise "#{current_item} is a file, expecting folder to find: #{items_to_explore}"
           end
         when 'link'
           current_node_info=self.read("nodes/#{current_file_info['target_node_id']}")[:data]
           current_file_id=current_file_info["target_id"]
+          # need to switch node
           current_node_api=nil
         when 'folder'
           current_file_id=current_file_info["id"]
