@@ -1,7 +1,8 @@
 EXENAME=mlia
 TOOLCONFIGDIR=$(HOME)/.aspera/$(EXENAME)
 APIKEY=$(TOOLCONFIGDIR)/filesapikey
-BINDIR=./bin
+MAINDIR=.
+BINDIR=$(MAINDIR)/bin
 OUT_FOLDER=out
 TEST_FOLDER=test.dir
 EXETEST=$(BINDIR)/$(EXENAME)
@@ -251,6 +252,9 @@ t/aocf4: $(TEST_FOLDER)/.exists
 t/aocf5:
 	$(EXETEST) aspera files transfer --from-folder=/ --to-folder=xxx --sources=@args 200KB.1
 	@touch $@
+t/aocf6:
+	$(EXETEST) aspera files find / --value='\.partial$$'
+	@touch $@
 t/aocp1:
 	$(EXETEST) aspera packages send --value=@json:'{"name":"my title","note":"my note","recipients":["laurent.martin.aspera@fr.ibm.com"]}' --sources=@args $(SAMPLE_FILE)
 	$(EXETEST) aspera packages send --value=@json:'{"name":"my title","recipients":["laurent.martin.l+external@gmail.com"]}' --new-user-option=@json:'{"package_contact":true}' --sources=@args $(SAMPLE_FILE)
@@ -322,7 +326,7 @@ t/aocat14:
 	@touch $@
 
 tfsat: t/aocat4 t/aocat5 t/aocat6 t/aocat7 t/aocat8 t/aocat9 t/aocat10 t/aocat11 t/aocat13 t/aocat14
-tfiles: t/aocf1 t/aocf2 t/aocf3 t/aocf4 t/aocf5 t/aocp1 t/aocp2 t/aocp3 t/aocp4 t/aoc7 t/aoc8 t/aoc9 t/aoc10 t/aoc11 t/aoc12 t/aoc13 t/aoc14 tfsat
+tfiles: t/aocf1 t/aocf2 t/aocf3 t/aocf4 t/aocf5 t/aocf6 t/aocp1 t/aocp2 t/aocp3 t/aocp4 t/aoc7 t/aoc8 t/aoc9 t/aoc10 t/aoc11 t/aoc12 t/aoc13 t/aoc14 tfsat
 
 t/o1:
 	$(EXETEST) orchestrator info
@@ -530,8 +534,11 @@ t/sync1: contents
 tsync: t/sync1
 t:
 	mkdir t
-
-tests: t tshares tfaspex tconsole tnode tfiles tfasp tsync torc tcon tnsync tconf tprev tshares2 tats
+t/sdk1:
+	ruby $(MAINDIR)/examples/transfer.rb
+	@touch $@
+tsample: t/sdk1
+tests: t tshares tfaspex tconsole tnode tfiles tfasp tsync torc tcon tnsync tconf tprev tshares2 tats tsample
 
 tnagios: t/fx_nagios t/serv_nagios_webapp t/serv_nagios_transfer t/nd_nagios
 
