@@ -1923,6 +1923,7 @@ Gems, or remove your ed25519 key from your `.ssh` folder to solve the issue.
 * version 0.9.15
 
   * new feature: "find" command in aspera files
+  * sample code for transfer API
 
 * version 0.9.12
 
