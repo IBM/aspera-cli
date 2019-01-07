@@ -47,9 +47,6 @@ module Asperalm
       [ :body_userpass, :header_userpass, :web, :jwt, :url_token ]
     end
 
-    # prefix of REST parameters used for oauth
-    @@PARAM_PREFIX='oauth_'
-
     # for supported parameters, look in the code for @params
     # parameters are provided all with oauth_ prefix :
     # :base_url
@@ -59,20 +56,16 @@ module Asperalm
     # :jwt_audience
     # :jwt_private_key_obj
     # :jwt_subject
-    # :path_authorize
+    # :path_authorize (default: 'authorize')
     # :path_token (default: 'token')
     # :scope
-    # :type
+    # :grant (:body_userpass,:header_userpass,:web,:jwt,:url_token)
     # :url_token
     # :user_name
     # :user_pass
-    def initialize(rest_params)
-      Log.log.debug "auth=#{rest_params}"
-      # just keep keys starting with :oauth_, and remove this prefix
-      @params=rest_params.keys.
-      map{|k|k.to_s}.
-      select{|k|k.start_with?(@@PARAM_PREFIX)}.
-      inject({}){|h,k|h[k[@@PARAM_PREFIX.length..-1].to_sym]=rest_params[k.to_sym];h}
+    def initialize(auth_params)
+      Log.log.debug "auth=#{auth_params}"
+      @params=auth_params
       # default values
       @params[:path_token]||='token'
       @params[:path_authorize]||='authorize'
@@ -117,7 +110,7 @@ module Asperalm
 
     # get location of cache for token
     def token_filepath(api_scope)
-      parts=[@params[:client_id],URI.parse(@params[:base_url]).host.downcase.gsub(/[^a-z]+/,'_'),@params[:type],api_scope]
+      parts=[@params[:client_id],URI.parse(@params[:base_url]).host.downcase.gsub(/[^a-z]+/,'_'),@params[:grant],api_scope]
       parts.push(@params[:user_name]) if @params.has_key?(:user_name)
       basename=parts.dup.unshift(@@TOKEN_FILE_PREFIX).join(@@TOKEN_FILE_SEPARATOR)
       # remove windows forbidden chars
@@ -201,7 +194,7 @@ module Asperalm
       # no cache
       if !@token_cache.has_key?(api_scope) then
         resp=nil
-        case @params[:type]
+        case @params[:grant]
         when :body_userpass
           resp=create_token(client_id_and_scope.merge({
             :grant_type => 'password',
@@ -281,7 +274,7 @@ module Asperalm
             },
             :json_params=>{:url_token=>@params[:url_token]}})
         else
-          raise "auth type unknown: #{@params[:type]}"
+          raise "auth type unknown: #{@params[:grant]}"
         end
 
         save_and_set_token_cache(api_scope,resp[:http].body,token_state_file)

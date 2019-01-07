@@ -54,23 +54,34 @@ module Asperalm
 
     attr_reader :params
 
-    # @param a_rest_params authentication and default call parameters
-    # :auth_type (:basic, :oauth2, :url)
-    # :basic_username   [:basic]
-    # :basic_password   [:basic]
-    # :auth_url_creds   [:url]
-    # :oauth_*          [:oauth2] see Oauth class
+    # @param a_rest_params default call parameters and authentication (:auth) :
+    # :type (:basic, :oauth2, :url)
+    # :username   [:basic]
+    # :password   [:basic]
+    # :url_creds  [:url]
+    # :*          [:oauth2] see Oauth class
     def initialize(a_rest_params)
       raise "ERROR: expecting Hash" unless a_rest_params.is_a?(Hash)
       raise "ERROR: expecting base_url" unless a_rest_params[:base_url].is_a?(String)
       @params=a_rest_params.clone
       Log.dump('REST params',@params)
-      # base url without trailing slashes
+      # base url without trailing slashes (note: string may be frozen)
       @params[:base_url]=@params[:base_url].gsub(/\/+$/,'')
       @http_session=nil
-      if @params[:auth_type].eql?(:oauth2)
-        @oauth=Oauth.new(@params)
+      # default is no auth
+      @params[:auth]||={:type=>:none}
+      # translate old auth parameters, remove prefix, place in auth
+      [:auth,:basic,:oauth].each do |p_sym|
+        p_str=p_sym.to_s+'_'
+        @params.keys.select{|k|k.to_s.start_with?(p_str)}.each do |k_sym|
+          name=k_sym.to_s[p_str.length..-1]
+          name='grant' if k_sym.eql?(:oauth_type)
+          @params[:auth][name.to_sym]=@params[k_sym]
+          @params.delete(k_sym)
+        end
       end
+      @oauth=Oauth.new(@params[:auth]) if @params[:auth][:type].eql?(:oauth2)
+      Log.dump('REST params2',@params)
     end
 
     def oauth_token(api_scope=nil,use_refresh_token=false)
@@ -88,6 +99,7 @@ module Asperalm
 
     # HTTP/S REST call
     # call_data has keys:
+    # :auth
     # :operation
     # :subpath
     # :headers
@@ -102,19 +114,20 @@ module Asperalm
       Log.log.debug "accessing #{call_data[:subpath]}".red.bold.bg_green
       call_data[:headers]||={}
       call_data.merge!(@params) { |key, v1, v2| next v1.merge(v2) if v1.is_a?(Hash) and v2.is_a?(Hash); v1 }
-      case call_data[:auth_type]
-      when nil
+      case call_data[:auth][:type]
+      when :none
         # no auth
+      when :basic
+        Log.log.debug("using Basic auth")
+        basic_auth_data=[call_data[:auth][:username],call_data[:auth][:password]]
       when :oauth2
         call_data[:headers]['Authorization']=oauth_token unless call_data[:headers].has_key?('Authorization')
       when :url
         call_data[:url_params]||={}
-        call_data[:auth_url_creds].each do |key, value|
+        call_data[:auth][:url_creds].each do |key, value|
           call_data[:url_params][key]=value
         end
-      when :basic
-        Log.log.debug("using Basic auth")
-        basic_auth_data=[call_data[:basic_username],call_data[:basic_password]]
+      else raise "bad auth: #{call_data[:auth][:type]}"
       end
       # TODO: shall we percent encode subpath (spaces) test with access key delete with space in id
       # URI.escape()
@@ -192,7 +205,7 @@ module Asperalm
         end
       rescue RestCallError => e
         # not authorized: oauth token expired
-        if ['401'].include?(result[:http].code.to_s) and call_data[:auth_type].eql?(:oauth2)
+        if ['401'].include?(result[:http].code.to_s) and call_data[:auth][:type].eql?(:oauth2)
           begin
             # try to use refresh token
             req['Authorization']=oauth_token(nil,true)
