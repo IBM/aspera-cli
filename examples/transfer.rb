@@ -56,6 +56,7 @@ fasp_manager.start_transfer(transfer_spec)
 fasp_manager.wait_for_transfers_completion
 
 # second example: upload with node authorization
+# create rest client
 node_api=Asperalm::Rest.new({
   :base_url => 'https://eudemo.asperademo.com:9092',
   :auth     => {
