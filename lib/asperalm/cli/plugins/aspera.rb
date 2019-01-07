@@ -186,32 +186,33 @@ module Asperalm
           end
           # Connection paramaters (url and auth) to Aspera on Cloud
           # pre populate rest parameters based on URL
-          aoc_rest_params=
-          FilesApi.base_rest_params(cli_options.get_option(:url,:mandatory)).merge({
-            :oauth_type          => cli_options.get_option(:auth,:mandatory),
-            :oauth_client_id     => cli_options.get_option(:client_id,:mandatory),
-            :oauth_client_secret => cli_options.get_option(:client_secret,:mandatory)
+          aoc_rest_params=FilesApi.base_rest_params(cli_options.get_option(:url,:mandatory))
+          aoc_rest_auth=aoc_rest_params[:auth]
+          aoc_rest_auth.merge!({
+            :grant         => cli_options.get_option(:auth,:mandatory),
+            :client_id     => cli_options.get_option(:client_id,:mandatory),
+            :client_secret => cli_options.get_option(:client_secret,:mandatory)
           })
 
           # fill other auth parameters based on Oauth method
-          case aoc_rest_params[:oauth_type]
+          case aoc_rest_auth[:grant]
           when :web
-            aoc_rest_params.merge!({
-              :oauth_redirect_uri => cli_options.get_option(:redirect_uri,:mandatory)
+            aoc_rest_auth.merge!({
+              :redirect_uri => cli_options.get_option(:redirect_uri,:mandatory)
             })
           when :jwt
             private_key_PEM_string=self.options.get_option(:private_key,:mandatory)
-            aoc_rest_params.merge!({
-              :oauth_jwt_subject         => cli_options.get_option(:username,:mandatory),
-              :oauth_jwt_private_key_obj => OpenSSL::PKey::RSA.new(private_key_PEM_string)
+            aoc_rest_auth.merge!({
+              :jwt_subject         => cli_options.get_option(:username,:mandatory),
+              :jwt_private_key_obj => OpenSSL::PKey::RSA.new(private_key_PEM_string)
             })
           when :url_token
-            aoc_rest_params.merge!({
-              :oauth_url_token     => cli_options.get_option(:public_token,:mandatory),
+            aoc_rest_auth.merge!({
+              :url_token     => cli_options.get_option(:public_token,:mandatory),
             })
           else raise "ERROR: unsupported auth method"
           end
-          aoc_rest_params.merge!({:oauth_scope=>is_admin ? FilesApi::SCOPE_FILES_ADMIN : FilesApi::SCOPE_FILES_USER})
+          aoc_rest_auth.merge!({:scope=>is_admin ? FilesApi::SCOPE_FILES_ADMIN : FilesApi::SCOPE_FILES_USER})
           return FilesApi.new(aoc_rest_params)
         end
 
@@ -231,7 +232,7 @@ module Asperalm
           @api_files=get_aoc_api(self.options,is_admin)
 
           @org_data=@api_files.read('organization')[:data]
-          if @api_files.params.has_key?(:oauth_url_token)
+          if @api_files.params[:auth].has_key?(:url_token)
             url_token_data=@api_files.read("url_tokens")[:data].first
             @default_workspace_id=url_token_data['data']['workspace_id']
             @user_id='todo' # TODO : @org_data ?
@@ -445,9 +446,9 @@ module Asperalm
             command_admin=self.options.get_next_command([ :ats, :resource, :set_client_key, :usage_reports, :search_nodes  ])
             case command_admin
             when :ats
-              ats_api = Rest.new(@api_files.params.clone.merge!({
-                :base_url    => @api_files.params[:base_url]+'/admin/ats/pub/v1',
-                :oauth_scope => FilesApi::SCOPE_FILES_ADMIN_USER
+              ats_api = Rest.new(@api_files.params.deep_merge({
+                :base_url => @api_files.params[:base_url]+'/admin/ats/pub/v1',
+                :auth     => {:scope => FilesApi::SCOPE_FILES_ADMIN_USER}
               }))
               return @ats.execute_action_gen(ats_api)
             when :search_nodes

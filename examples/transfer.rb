@@ -57,10 +57,12 @@ fasp_manager.wait_for_transfers_completion
 
 # second example: upload with node authorization
 node_api=Asperalm::Rest.new({
-  :base_url       => 'https://eudemo.asperademo.com:9092',
-  :auth_type      => :basic,
-  :basic_username => 'node_aspera',
-  :basic_password => 'aspera'})
+  :base_url => 'https://eudemo.asperademo.com:9092',
+  :auth     => {
+  :type     => :basic,
+  :username => 'node_aspera',
+  :password => 'aspera'
+  }})
 # my sources (create sample file) and destination folder
 sources=['sample_file.txt']
 destination='/Upload'

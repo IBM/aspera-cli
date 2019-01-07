@@ -1,5 +1,6 @@
 require 'asperalm/log'
 require 'asperalm/rest'
+require 'asperalm/hash_ext'
 require 'base64'
 
 module Asperalm
@@ -44,11 +45,12 @@ module Asperalm
       organization,instance_domain=parse_url(aoc_org_url)
       base_url='https://api.'+instance_domain+'/api/v1'
       return {
-        :base_url             => base_url,
-        :auth_type            => :oauth2,
-        :oauth_base_url       => "#{base_url}/oauth2/#{organization}",
-        :oauth_jwt_audience   => 'https://api.asperafiles.com/api/v1/oauth2/token'
-      }
+        :base_url => base_url,
+        :auth     => {
+        :type         => :oauth2,
+        :base_url     => "#{base_url}/oauth2/#{organization}",
+        :jwt_audience => 'https://api.asperafiles.com/api/v1/oauth2/token'
+        }}
     end
 
     # node API scopes
@@ -98,18 +100,19 @@ module Asperalm
       # if no scope, or secret provided on command line ...
       if node_scope.nil? or !ak_secret.nil?
         return Rest.new({
-          :base_url       => node_info['url'],
-          :auth_type      => :basic,
-          :basic_username => node_info['access_key'],
-          :basic_password => ak_secret,
-          :headers        => {'X-Aspera-AccessKey'=>node_info['access_key']
+          :base_url => node_info['url'],
+          :auth     => {
+          :type     => :basic,
+          :username => node_info['access_key'],
+          :password => ak_secret},
+          :headers  => {'X-Aspera-AccessKey'=>node_info['access_key']
           }})
       end
       Log.log.warn("ignoring secret, using bearer token") if !ak_secret.nil?
-      return Rest.new(self.params.merge({
-        :base_url    => node_info['url'],
-        :oauth_scope => FilesApi.node_scope(node_info['access_key'],node_scope),
-        :headers     => {'X-Aspera-AccessKey'=>node_info['access_key']}}))
+      return Rest.new(self.params.deep_merge({
+        :base_url => node_info['url'],
+        :headers  => {'X-Aspera-AccessKey'=>node_info['access_key']},
+        :auth     => {:scope=>FilesApi.node_scope(node_info['access_key'],node_scope)}}))
     end
 
     # @returns liste of file paths that match given regex

@@ -23,19 +23,21 @@ module Asperalm
 
           # create object for REST calls to Shares2
           @api_shares2_oauth=Rest.new({
-            :base_url             => shares2_api_base_url,
-            :auth_type            => :oauth2,
-            :oauth_base_url       => shares2_api_base_url+'/oauth2',
-            :oauth_type           => :header_userpass,
-            :oauth_user_name      => shares2_username,
-            :oauth_user_pass      => shares2_password
-          })
+            :base_url => shares2_api_base_url,
+            :auth     => {
+            :type      => :oauth2,
+            :base_url  => shares2_api_base_url+'/oauth2',
+            :grant     => :header_userpass,
+            :user_name => shares2_username,
+            :user_pass => shares2_password
+            }})
 
           @api_node=Rest.new({
-            :base_url       => shares2_api_base_url+'/node_api',
-            :auth_type      => :basic,
-            :basic_username => shares2_username,
-            :basic_password => shares2_password})
+            :base_url => shares2_api_base_url+'/node_api',
+            :auth     => {
+            :type     => :basic,
+            :username => shares2_username,
+            :password => shares2_password}})
         end
 
         # path_prefix is either "" or "res/id/"

@@ -72,7 +72,13 @@ module Asperalm
                 raise CliBadArgument,"missing parameter [#{param}] in node specification: #{node_config}" if !node_config.has_key?(param.to_s)
                 sym_config[param]=node_config[param.to_s]
               end
-              @agent.node_api=Rest.new({:base_url=>sym_config[:url],:auth_type=>:basic,:basic_username=>sym_config[:username], :basic_password=>sym_config[:password]})
+              @agent.node_api=Rest.new({
+                :base_url => sym_config[:url],
+                :auth     => {
+                :type     =>:basic,
+                :username => sym_config[:username],
+                :password => sym_config[:password]
+                }})
             end
           else raise "ERROR"
           end

@@ -160,10 +160,8 @@ module Asperalm
           req[key] = call_data[:headers][key]
         end
       end
-      # :auth_type = :basic
-      if !basic_auth_data.nil? then
-        req.basic_auth(*basic_auth_data)
-      end
+      # :type = :basic
+      req.basic_auth(*basic_auth_data) unless basic_auth_data.nil?
 
       Log.log.debug "call_data = #{call_data}"
       result={:http=>nil}

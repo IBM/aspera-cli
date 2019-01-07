@@ -32,10 +32,11 @@ module Asperalm
         def ats_api_auth
           return @ats_api_auth_cache unless @ats_api_auth_cache.nil?
           @ats_api_auth_cache=Rest.new({
-            :base_url       => AtsApi.base_url+'/pub/v1',
-            :auth_type      => :basic,
-            :basic_username => self.options.get_option(:ats_key,:mandatory),
-            :basic_password => self.options.get_option(:ats_secret,:mandatory)
+            :base_url => AtsApi.base_url+'/pub/v1',
+            :auth     => {
+            :type     => :basic,
+            :username => self.options.get_option(:ats_key,:mandatory),
+            :password => self.options.get_option(:ats_secret,:mandatory)}
           })
         end
 
@@ -83,21 +84,27 @@ module Asperalm
             ak_data=ats_api_auth.read("access_keys/#{access_key_id}")[:data]
             server_data=@ats_api_pub.all_servers.select {|i| i['id'].start_with?(ak_data['transfer_server_id'])}.first
             raise CliError,"no such server found" if server_data.nil?
-            api_node=Rest.new({:base_url=>server_data['transfer_setup_url'],:auth_type=>:basic,:basic_username=>ak_data['id'], :basic_password=>ak_data['secret']})
+            api_node=Rest.new({
+              :base_url => server_data['transfer_setup_url'],
+              :auth     => {
+              :type     => :basic,
+              :username => ak_data['id'],
+              :password => ak_data['secret']}})
             command=self.options.get_next_command(Node.common_actions)
             return Node.new(@agents).set_api(api_node).execute_action(command)
           when :cluster
             rest_params={
-              :base_url       => ats_api_auth.params[:base_url],
-              :auth_type      => :basic,
-              :basic_username => access_key_id,
-              :basic_password => self.options.get_option(:secret,:optional)
-            }
+              :base_url => ats_api_auth.params[:base_url],
+              :auth     => {
+              :type     => :basic,
+              :username => access_key_id,
+              :password => self.options.get_option(:secret,:optional)
+            }}
             # if no access key id provided, then we get from ATS API
-            if rest_params[:basic_password].nil?
+            if rest_params[:auth][:password].nil?
               ak_data=ats_api_auth.read("access_keys/#{access_key_id}")[:data]
               #rest_params[:username]=ak_data['id']
-              rest_params[:basic_password]=ak_data['secret']
+              rest_params[:auth][:password]=ak_data['secret']
             end
             api_ak_auth=Rest.new(rest_params)
             return {:type=>:single_object, :data=>api_ak_auth.read("servers")[:data]}

@@ -80,14 +80,15 @@ module Asperalm
           if @api_v4.nil?
             faspex_api_base=self.options.get_option(:url,:mandatory)
             @api_v4=Rest.new({
-              :base_url             => faspex_api_base+'/api',
-              :auth_type            => :oauth2,
-              :oauth_base_url       => faspex_api_base+'/auth/oauth2',
-              :oauth_type           => :header_userpass,
-              :oauth_user_name      => self.options.get_option(:username,:mandatory),
-              :oauth_user_pass      => self.options.get_option(:password,:mandatory),
-              :oauth_scope          => 'admin'
-            })
+              :base_url  => faspex_api_base+'/api',
+              :auth      => {
+              :type      => :oauth2,
+              :base_url  => faspex_api_base+'/auth/oauth2',
+              :grant     => :header_userpass,
+              :user_name => self.options.get_option(:username,:mandatory),
+              :user_pass => self.options.get_option(:password,:mandatory),
+              :scope     => 'admin'
+              }})
           end
           return @api_v4
         end
@@ -233,10 +234,11 @@ module Asperalm
                 raise CliError,"bad type for: \"#{source_info[@@KEY_NODE]}\"" unless node_config.is_a?(Hash)
                 Log.log.debug("node=#{node_config}")
                 api_node=Rest.new({
-                  :base_url      => node_config['url'],
-                  :auth_type     =>:basic,
-                  :basic_username=>node_config['username'],
-                  :basic_password=>node_config['password']})
+                  :base_url => node_config['url'],
+                  :auth     => {
+                  :type     =>:basic,
+                  :username => node_config['username'],
+                  :password => node_config['password']}})
                 command=self.options.get_next_command(Node.common_actions)
                 return Node.new(@agents).set_api(api_node).execute_action(command,source_info[@@KEY_PATH])
               end

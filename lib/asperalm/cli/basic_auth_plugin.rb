@@ -10,10 +10,12 @@ module Asperalm
         api_url=self.options.get_option(:url,:mandatory)
         api_url=api_url+'/'+subpath unless subpath.nil?
         return Rest.new({
-          :base_url       => api_url,
-          :auth_type      => :basic,
-          :basic_username => self.options.get_option(:username,:mandatory),
-          :basic_password => self.options.get_option(:password,:mandatory)})
+          :base_url => api_url,
+          :auth     => {
+          :type     => :basic,
+          :username => self.options.get_option(:username,:mandatory),
+          :password => self.options.get_option(:password,:mandatory)
+          }})
       end
 
       def declare_options

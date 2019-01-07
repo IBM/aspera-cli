@@ -41,7 +41,13 @@ module Asperalm
         end
 
         def execute_action
-          api_node=Rest.new({:base_url=>self.options.get_option(:url,:mandatory),:auth_type=>:basic,:basic_username=>self.options.get_option(:username,:mandatory), :basic_password=>self.options.get_option(:password,:mandatory)})
+          api_node=Rest.new({
+            :base_url => self.options.get_option(:url,:mandatory),
+            :auth     => {
+            :type     => :basic,
+            :username => self.options.get_option(:username,:mandatory),
+            :password => self.options.get_option(:password,:mandatory)
+            }})
           command=self.options.get_next_command(action_list)
           case command
           when :cleanup

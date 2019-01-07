@@ -3,18 +3,8 @@ require 'asperalm/preview/generator'
 require 'asperalm/preview/options'
 require 'asperalm/preview/utils'
 require 'asperalm/persistency_file'
+require 'asperalm/hash_ext'
 require 'date'
-
-# for older rubies
-unless Hash.method_defined?(:dig)
-  class Hash
-    def dig(*path)
-      path.inject(self) do |location, key|
-        location.respond_to?(:keys) ? location[key] : nil
-      end
-    end
-  end
-end
 
 module Asperalm
   module Cli

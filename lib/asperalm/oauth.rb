@@ -70,11 +70,12 @@ module Asperalm
       @params[:path_token]||='token'
       @params[:path_authorize]||='authorize'
       @api=Rest.new({
-        :base_url       => @params[:base_url],
-        :auth_type      => :basic,
-        :basic_username => @params[:client_id],
-        :basic_password => @params[:client_secret]
-      })
+        :base_url => @params[:base_url],
+        :auth     => {
+        :type     => :basic,
+        :username => @params[:client_id],
+        :password => @params[:client_secret]
+        }})
       # key = scope value, e.g. user:all, or node.*
       # value = ruby structure of data of returned value
       @token_cache={}
@@ -203,12 +204,13 @@ module Asperalm
           }))
         when :header_userpass
           resp=@api.call({
-            :operation       => 'POST',
-            :subpath         => @params[:path_token],
-            :auth_type       => :basic,
-            :basic_username  => @params[:user_name],
-            :basic_password  => @params[:user_pass],
-            :headers         => {'Accept'=>'application/json'},
+            :operation  => 'POST',
+            :subpath    => @params[:path_token],
+            :auth       => {
+            :type      => :basic,
+            :username  => @params[:user_name],
+            :password  => @params[:user_pass]},
+            :headers     => {'Accept'=>'application/json'},
             #:www_body_params => client_id_and_scope.merge({ # also works
             :json_params => client_id_and_scope.merge({
             :grant_type => 'password',

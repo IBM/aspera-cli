@@ -39,17 +39,12 @@ module Asperalm
         def execute_action
           @api_orch=Rest.new({
             :base_url       => self.options.get_option(:url,:mandatory),
-            :auth_type      => :url,
-            :auth_url_creds => {
+            # auth can be :url or :basic
+            :auth => {
+            :type      => :url,
+            :url_creds => {
             'login'   =>self.options.get_option(:username,:mandatory),
-            'password'=>self.options.get_option(:password,:mandatory) }})
-
-          # auth can be in url or basic
-          #          @api_orch=Rest.new({
-          #            :base_url=>self.options.get_option(:url,:mandatory),
-          #            :auth_type=>:basic,
-          #            :basic_username=>self.options.get_option(:username,:mandatory),
-          #            :basic_password=>self.options.get_option(:password,:mandatory)})
+            'password'=>self.options.get_option(:password,:mandatory) }}})
 
           command1=self.options.get_next_command(action_list)
           case command1
