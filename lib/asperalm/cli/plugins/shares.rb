@@ -4,9 +4,9 @@ module Asperalm
   module Cli
     module Plugins
       class Shares < BasicAuthPlugin
-        alias super_declare_options declare_options
-        def declare_options
-          super_declare_options
+        def initialize(env)
+          super(env)
+          #self.options.parse_options!
         end
 
         def action_list; [ :repository,:admin ];end
@@ -18,7 +18,7 @@ module Asperalm
             api_shares_node=basic_auth_api('node_api')
             command=self.options.get_next_command(Node.common_actions)
             case command
-            when *Node.common_actions; Node.new(@agents).set_api(api_shares_node).execute_action(command)
+            when *Node.common_actions; Node.new(@agents.merge(skip_options: true,node_api: api_shares_node)).execute_action(command)
             else raise "INTERNAL ERROR, unknown command: [#{command}]"
             end
           when :admin

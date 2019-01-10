@@ -15,15 +15,12 @@ module Asperalm
           end
         end
 
-        alias super_declare_options declare_options
-
-        def declare_options
-          super_declare_options
+        def initialize(env)
+          super(env)
           self.options.add_opt_simple(:ssh_keys,Array,'one ssh key at a time')
           self.options.set_option(:ssh_keys,[])
+          self.options.parse_options!
         end
-
-        def action_list; [:nagios,:nodeadmin,:userdata,:configurator,:ctl,:download,:upload,:browse,:delete,:rename].push(*Asperalm::AsCmd.action_list);end
 
         def key_symb_to_str_single(source)
           return source.inject({}){|memo,(k,v)| memo[k.to_s] = v; memo}
@@ -61,6 +58,8 @@ module Asperalm
             y
           end.select{|i|!i.nil?}
         end
+
+        def action_list; [:nagios,:nodeadmin,:userdata,:configurator,:ctl,:download,:upload,:browse,:delete,:rename].push(*Asperalm::AsCmd.action_list);end
 
         def execute_action
           server_uri=URI.parse(self.options.get_option(:url,:mandatory))
@@ -178,9 +177,9 @@ module Asperalm
             end
             return Main.result_status(result)
           when :upload
-            return Main.result_transfer(server_transfer_spec.merge('direction'=>'send'),{:src=>:direct})
+            return Main.result_transfer(self.transfer.start(server_transfer_spec.merge('direction'=>'send'),{:src=>:direct}))
           when :download
-            return Main.result_transfer(server_transfer_spec.merge('direction'=>'receive'),{:src=>:direct})
+            return Main.result_transfer(self.transfer.start(server_transfer_spec.merge('direction'=>'receive'),{:src=>:direct}))
           when *Asperalm::AsCmd.action_list
             args=self.options.get_next_argument('ascmd command arguments',:multiple,:optional)
             ascmd=Asperalm::AsCmd.new(shell_executor)

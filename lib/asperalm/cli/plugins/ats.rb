@@ -7,10 +7,9 @@ module Asperalm
       # list and download connect client versions
       # https://52.44.83.163/docs/pub/
       class Ats < Plugin
-        def declare_options(skip_common=false)
-          unless skip_common
-            self.options.add_opt_simple(:secret,"Access key secret")
-          end
+        def initialize(env)
+          super(env)
+          self.options.add_opt_simple(:secret,"Access key secret") unless env[:skip_secret]
           self.options.add_opt_simple(:ibm_api_key,"IBM API key, see https://console.bluemix.net/iam/#/apikeys")
           self.options.add_opt_simple(:instance,"ATS instance in bluemix")
           self.options.add_opt_simple(:ats_key,"ATS key identifier (ats_xxx)")
@@ -18,6 +17,7 @@ module Asperalm
           self.options.add_opt_simple(:params,"Parameters access key creation (@json:)")
           self.options.add_opt_simple(:cloud,"Cloud provider")
           self.options.add_opt_simple(:region,"Cloud region")
+          self.options.parse_options!
         end
 
         #
@@ -91,7 +91,7 @@ module Asperalm
               :username => ak_data['id'],
               :password => ak_data['secret']}})
             command=self.options.get_next_command(Node.common_actions)
-            return Node.new(@agents).set_api(api_node).execute_action(command)
+            return Node.new(@agents.merge(skip_options: true, node_api: api_node)).execute_action(command)
           when :cluster
             rest_params={
               :base_url => ats_api_auth.params[:base_url],
@@ -99,7 +99,7 @@ module Asperalm
               :type     => :basic,
               :username => access_key_id,
               :password => self.options.get_option(:secret,:optional)
-            }}
+              }}
             # if no access key id provided, then we get from ATS API
             if rest_params[:auth][:password].nil?
               ak_data=ats_api_auth.read("access_keys/#{access_key_id}")[:data]

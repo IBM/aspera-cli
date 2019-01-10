@@ -7,9 +7,11 @@ module Asperalm
     module Plugins
       # list and download connect client versions, select FASP implementation
       class Sync < Plugin
-        def declare_options
+        def initialize(env)
+          super(env)
           self.options.add_opt_simple(:parameters,"extended value for session set definition")
           self.options.add_opt_simple(:session_name,"name of session to use for admin commands, by default first one")
+          self.options.parse_options!
         end
 
         def action_list; [ :start, :admin ];end

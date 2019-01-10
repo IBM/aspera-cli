@@ -207,7 +207,7 @@ t/nd2: $(TEST_FOLDER)/.exists
 	rm -f $(TEST_FOLDER)/200KB.1
 	@touch $@
 t/nd3:
-	$(EXETEST) --no-default node --url=https://eudemo.asperademo.com:9092 --username=node_aspera --password=aspera --insecure=yes upload --to-folder=/Upload --sources=@ts --ts=@json:'{"paths":[{"source":"500M.dat"}],"remote_password":"demoaspera","precalculate_job_size":true}' --transfer=node --transfer-info=@json:'{"url":"https://10.25.0.8:9092","username":"node_xferuser","password":"Aspera123_"}' 
+	$(EXETEST) --no-default node --url=https://eudemo.asperademo.com:9092 --username=node_aspera --password=aspera --insecure=yes upload --to-folder=/Upload --sources=@ts --ts=@json:'{"paths":[{"source":"500M.dat"}],"remote_password":"demoaspera","precalculate_job_size":true}' --transfer=node --transfer-info=@json:'{"url":"https://10.25.0.8:9092","username":"node_xferuser","password":"'$(NODE_PASS)'"}' 
 	$(EXETEST) --no-default node --url=https://eudemo.asperademo.com:9092 --username=node_aspera --password=aspera --insecure=yes delete /500M.dat
 	@touch $@
 t/nd4:
@@ -222,8 +222,8 @@ t/nd4:
 	$(EXETEST) node service list
 	@touch $@
 t/nd5:
-	$(EXETEST) -Pnode_lmdk08 --url=https://localhost:9092 --username=node_xfer node acc create --value=@json:'{"id":"aoc_1","secret":"Aspera123_","storage":{"type":"local","path":"/"}}'
-	sleep 2&&$(EXETEST) -Pnode_lmdk08 --url=https://localhost:9092 --username=node_xfer node acc delete --id=aoc_1
+	$(EXETEST) -Pnode_lmdk08 --url=https://localhost:9092 --username=node_xfer --password=$(NODE_PASS) node acc create --value=@json:'{"id":"aoc_1","secret":"'$(NODE_PASS)'","storage":{"type":"local","path":"/"}}'
+	sleep 2&&$(EXETEST) -Pnode_lmdk08 --url=https://localhost:9092 --username=node_xfer --password=$(NODE_PASS) node acc delete --id=aoc_1
 	@touch $@
 t/nd6:
 	$(EXETEST) node transfer list
@@ -276,20 +276,20 @@ t/aoc8:
 	$(EXETEST) aspera admin resource workspace list
 	@touch $@
 t/aoc9:
-	$(EXETEST) aspera admin resource node --name=eudemo --secret=Aspera123_ v3 events
-	$(EXETEST) aspera admin resource node --name=eudemo --secret=Aspera123_ v4 browse /
+	$(EXETEST) aspera admin resource node --name=eudemo --secret=$(NODE_PASS) v3 events
+	$(EXETEST) aspera admin resource node --name=eudemo --secret=$(NODE_PASS) v4 browse /
 	@touch $@
 t/aoc10:
-	$(EXETEST) aspera admin resource node --name=eudemo --secret=Aspera123_ v4 mkdir /folder1
+	$(EXETEST) aspera admin resource node --name=eudemo --secret=$(NODE_PASS) v4 mkdir /folder1
 	@touch $@
 t/aoc11:
-	$(EXETEST) aspera admin resource node --name=eudemo --secret=Aspera123_ v4 access_key create --value=@json:'{"id":"testsub1","storage":{"path":"/folder1"}}'
+	$(EXETEST) aspera admin resource node --name=eudemo --secret=$(NODE_PASS) v4 access_key create --value=@json:'{"id":"testsub1","storage":{"path":"/folder1"}}'
 	@touch $@
 t/aoc12:
-	$(EXETEST) aspera admin resource node --name=eudemo --secret=Aspera123_ v4 access_key delete --eid=testsub1
+	$(EXETEST) aspera admin resource node --name=eudemo --secret=$(NODE_PASS) v4 access_key delete --eid=testsub1
 	@touch $@
 t/aoc13:
-	$(EXETEST) aspera admin resource node --name=eudemo --secret=Aspera123_ v4 delete /folder1
+	$(EXETEST) aspera admin resource node --name=eudemo --secret=$(NODE_PASS) v4 delete /folder1
 	@touch $@
 t/aoc14:
 	$(EXETEST) aspera admin resource workspace_membership list --fields=ALL --query=@json:'{"page":1,"per_page":50,"embed":"member","inherited":false,"workspace_id":11363,"sort":"name"}'
@@ -552,14 +552,14 @@ setupprev:
 	asconfigurator -x "user;user_name,xfer;file_restriction,|*;token_encryption_key,1234"
 	asconfigurator -x "server;activity_logging,true;activity_event_logging,true"
 	sudo asnodeadmin --reload
-	-$(EXE_NOMAN) node access_key --id=testkey delete --no-default --url=https://localhost:9092 --username=node_xfer --password=Aspera123_
-	$(EXE_NOMAN) node access_key create --value=@json:'{"id":"testkey","name":"the test key","secret":"secret","storage":{"type":"local", "path":"/Users/xfer/docroot"}}' --no-default --url=https://localhost:9092 --username=node_xfer --password=Aspera123_ 
+	-$(EXE_NOMAN) node access_key --id=testkey delete --no-default --url=https://localhost:9092 --username=node_xfer --password=$(NODE_PASS)
+	$(EXE_NOMAN) node access_key create --value=@json:'{"id":"testkey","name":"the test key","secret":"secret","storage":{"type":"local", "path":"/Users/xfer/docroot"}}' --no-default --url=https://localhost:9092 --username=node_xfer --password=$(NODE_PASS) 
 	$(EXE_NOMAN) config id test_preview update --url=https://localhost:9092 --username=testkey --password=secret
 	$(EXE_NOMAN) config id default set preview test_preview
 
 # ruby -e 'require "yaml";YAML.load_file("lib/asperalm/preview_generator_formats.yml").each {|k,v|puts v};'|while read x;do touch /Users/xfer/docroot/sample${x};done
 
 preparelocal:
-	sudo asnodeadmin -a -u node_xfer -p Aspera123_ -x xfer
+	sudo asnodeadmin -a -u node_xfer -p $(NODE_PASS) -x xfer
 	sudo asconfigurator -x "user;user_name,xfer;file_restriction,|*;absolute,"
 	sudo asnodeadmin --reload

@@ -5,39 +5,36 @@ module Asperalm
   module Cli
     module Plugins
       class Shares2 < BasicAuthPlugin
-        alias super_declare_options declare_options
-        def declare_options
-          super_declare_options
+        def initialize(env)
+          super(env)
           self.options.add_opt_simple(:organization,"organization")
           self.options.add_opt_simple(:project,"project")
           self.options.add_opt_simple(:share,"share")
-        end
+          self.options.parse_options!
+          unless env[:man_only]
+            # get parameters
+            shares2_api_base_url=self.options.get_option(:url,:mandatory)
+            shares2_username=self.options.get_option(:username,:mandatory)
+            shares2_password=self.options.get_option(:password,:mandatory)
 
-        def action_list; [ :repository,:organization,:project,:team,:share,:appinfo,:userinfo,:admin];end
+            # create object for REST calls to Shares2
+            @api_shares2_oauth=Rest.new({
+              :base_url => shares2_api_base_url,
+              :auth     => {
+              :type      => :oauth2,
+              :base_url  => shares2_api_base_url+'/oauth2',
+              :grant     => :header_userpass,
+              :user_name => shares2_username,
+              :user_pass => shares2_password
+              }})
 
-        def init_apis
-          # get parameters
-          shares2_api_base_url=self.options.get_option(:url,:mandatory)
-          shares2_username=self.options.get_option(:username,:mandatory)
-          shares2_password=self.options.get_option(:password,:mandatory)
-
-          # create object for REST calls to Shares2
-          @api_shares2_oauth=Rest.new({
-            :base_url => shares2_api_base_url,
-            :auth     => {
-            :type      => :oauth2,
-            :base_url  => shares2_api_base_url+'/oauth2',
-            :grant     => :header_userpass,
-            :user_name => shares2_username,
-            :user_pass => shares2_password
-            }})
-
-          @api_node=Rest.new({
-            :base_url => shares2_api_base_url+'/node_api',
-            :auth     => {
-            :type     => :basic,
-            :username => shares2_username,
-            :password => shares2_password}})
+            @api_node=Rest.new({
+              :base_url => shares2_api_base_url+'/node_api',
+              :auth     => {
+              :type     => :basic,
+              :username => shares2_username,
+              :password => shares2_password}})
+          end
         end
 
         # path_prefix is either "" or "res/id/"
@@ -86,14 +83,14 @@ module Asperalm
           end
         end
 
-        def execute_action
-          init_apis
+        def action_list; [ :repository,:organization,:project,:team,:share,:appinfo,:userinfo,:admin];end
 
+        def execute_action
           command=self.options.get_next_command(action_list)
           case command
           when :repository
             command=self.options.get_next_command(Node.common_actions)
-            return Node.new(@agents).set_api(@api_node).execute_action(command)
+            return Node.new(@agents.merge(skip_options: true, node_api: @api_node)).execute_action(command)
           when :appinfo
             node_info=@api_node.call({:operation=>'GET',:subpath=>'app',:headers=>{'Accept'=>'application/json','Content-Type'=>'application/json'}})[:data]
             return { :type=>:single_object ,:data => node_info }
@@ -107,7 +104,7 @@ module Asperalm
             process_entity_action(command,prefix)
           when :admin
             command=self.options.get_next_command([:users,:groups,:nodes])
-            return Plugin.entity_action(@api_shares2_oauth,"system/#{command}",nil,:id)
+            return self.entity_action(@api_shares2_oauth,"system/#{command}",nil,:id)
           end # command
         end # execute_action
       end # Files

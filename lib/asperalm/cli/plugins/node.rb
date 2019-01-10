@@ -8,13 +8,20 @@ module Asperalm
     module Plugins
       class Node < BasicAuthPlugin
         @@SAMPLE_SOAP_CALL='<?xml version="1.0" encoding="UTF-8"?><soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:typ="urn:Aspera:XML:FASPSessionNET:2009/11:Types"><soapenv:Header></soapenv:Header><soapenv:Body><typ:GetSessionInfoRequest><SessionFilter><SessionStatus>running</SessionStatus></SessionFilter></typ:GetSessionInfoRequest></soapenv:Body></soapenv:Envelope>'
-        alias super_declare_options declare_options
-        def declare_options
-          super_declare_options
-          self.options.add_opt_simple(:validator,"identifier of validator (optional for central)")
-          self.options.add_opt_simple(:asperabrowserurl,"URL for simple aspera web ui")
-          #self.options.set_option(:value,'@json:{"active_only":false}')
-          self.options.set_option(:asperabrowserurl,'https://asperabrowser.mybluemix.net')
+        def initialize(env)
+          super(env)
+          unless env[:skip_options]
+            self.options.add_opt_simple(:validator,"identifier of validator (optional for central)")
+            self.options.add_opt_simple(:asperabrowserurl,"URL for simple aspera web ui")
+            #self.options.set_option(:value,'@json:{"active_only":false}')
+            self.options.set_option(:asperabrowserurl,'https://asperabrowser.mybluemix.net')
+            self.options.parse_options!
+          end
+          if env.has_key?(:node_api)
+            @api_node=env[:node_api]
+          else
+            @api_node=basic_auth_api unless env[:man_only]
+          end
         end
 
         def c_textify_browse(table_data)
@@ -76,8 +83,6 @@ module Asperalm
         def self.simple_actions; [:nagios_check,:events, :space, :info, :mkdir, :mklink, :mkfile, :rename, :delete ];end
 
         def self.common_actions; simple_actions.clone.concat([:browse, :upload, :download ]);end
-
-        def set_api(node_api);@api_node=node_api;self;end
 
         # common API to node and Shares
         # prefix_path is used to list remote sources in Faspex
@@ -149,7 +154,7 @@ module Asperalm
             #send_result={:data=>{'items'=>[{'file'=>"filename1","permissions"=>[{'name'=>'read'},{'name'=>'write'}]}]}}
             return Main.result_empty if !send_result[:data].has_key?('items')
             result={ :data => send_result[:data]['items'] , :type => :object_list, :textify => lambda { |table_data| c_textify_browse(table_data) } }
-            Main.instance.display_status("Items: #{send_result[:data]['item_count']}/#{send_result[:data]['total_count']}")
+            self.format.display_status("Items: #{send_result[:data]['item_count']}/#{send_result[:data]['total_count']}")
             return c_result_remove_prefix_path(result,'path',prefix_path)
           when :upload
             destination=self.transfer.destination_folder('send')
@@ -160,20 +165,19 @@ module Asperalm
             transfer_spec=send_result[:data]['transfer_specs'].first['transfer_spec']
             # delete this part, as the returned value contains only destination, and note sources
             transfer_spec.delete('paths')
-            return Main.result_transfer(transfer_spec,{:src=>:node_gen3})
+            return Main.result_transfer(self.transfer.start(transfer_spec,{:src=>:node_gen3}))
           when :download
             send_result=@api_node.create('files/download_setup',{ :transfer_requests => [ { :transfer_request => { :paths => self.transfer.ts_source_paths } } ] } )
             raise send_result[:data]['transfer_specs'][0]['error']['user_message'] if send_result[:data]['transfer_specs'][0].has_key?('error')
             raise "expecting one session exactly" if send_result[:data]['transfer_specs'].length != 1
             transfer_spec=send_result[:data]['transfer_specs'].first['transfer_spec']
-            return Main.result_transfer(transfer_spec,{:src=>:node_gen3})
+            return Main.result_transfer(self.transfer.start(transfer_spec,{:src=>:node_gen3}))
           end
         end
 
         def action_list; self.class.common_actions.clone.concat([ :postprocess,:stream, :transfer, :cleanup, :forward, :access_key, :watch_folder, :service, :async, :central, :asperabrowser ]);end
 
         def execute_action(command=nil,prefix_path=nil)
-          @api_node||=basic_auth_api
           command||=self.options.get_next_command(action_list)
           case command
           when *self.class.common_actions; return execute_simple_common(command,prefix_path)
@@ -241,7 +245,7 @@ module Asperalm
               raise "error"
             end
           when :access_key
-            return Plugin.entity_action(@api_node,'access_keys',['id','root_file_id','storage','license'],:id)
+            return self.entity_action(@api_node,'access_keys',['id','root_file_id','storage','license'],:id)
           when :service
             command=self.options.get_next_command([ :list, :create, :delete])
             if [:delete].include?(command)
@@ -263,7 +267,7 @@ module Asperalm
             end
           when :watch_folder
             res_class_path='v3/watchfolders'
-            #return Plugin.entity_action(@api_node,'v3/watchfolders',nil,:id)
+            #return entity_action(@api_node,'v3/watchfolders',nil,:id)
             command=self.options.get_next_command([ :create, :list, :show, :modify, :delete, :state])
             if [:show,:modify,:delete,:state].include?(command)
               one_res_id=self.options.get_option(:id,:mandatory)

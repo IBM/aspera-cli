@@ -13,27 +13,37 @@ module Asperalm
       INSTANCE_OPS=[:modify,:delete,:show]
       ALL_OPS=[GLOBAL_OPS,INSTANCE_OPS].flatten
 
+      @@done=false
+
+      def initialize(env)
+        @agents=env
+        self.options.parser.separator "COMMAND: #{self.class.name.split('::').last.downcase}"
+        self.options.parser.separator "SUBCOMMANDS: #{self.action_list.map{ |p| p.to_s}.join(', ')}"
+        self.options.parser.separator "OPTIONS:"
+        unless @@done
+          self.options.add_opt_simple(:value,"extended value for create, update, list filter")
+          self.options.add_opt_simple(:id,"resource identifier (#{INSTANCE_OPS.join(",")})")
+          self.options.parse_options!
+          @@done=true
+        end
+      end
+
       # first level command for the main tool
       def self.name_sym;self.name.split('::').last.downcase.to_sym;end
 
-      def self.declare_entity_options(opt_mgr)
-        opt_mgr.add_opt_simple(:value,"extended value for create, update, list filter")
-        opt_mgr.add_opt_simple(:id,"resource identifier (#{INSTANCE_OPS.join(",")})")
-      end
-
       # implement generic rest operations on given resource path
-      def self.entity_action(rest_api,res_class_path,display_fields,id_symb)
+      def entity_action(rest_api,res_class_path,display_fields,id_symb)
         res_name=res_class_path.gsub(%r{.*/},'').gsub(%r{^s$},'').gsub('_',' ')
-        command=Main.tool.options.get_next_command(ALL_OPS)
+        command=self.options.get_next_command(ALL_OPS)
         if INSTANCE_OPS.include?(command)
-          one_res_id=Main.tool.options.get_option(id_symb,:mandatory)
+          one_res_id=self.options.get_option(id_symb,:mandatory)
           one_res_path="#{res_class_path}/#{one_res_id}"
         end
         if [:create,:modify].include?(command)
-          parameters=Main.tool.options.get_option(:value,:mandatory)
+          parameters=self.options.get_option(:value,:mandatory)
         end
         if [:list].include?(command)
-          parameters=Main.tool.options.get_option(:value,:optional)
+          parameters=self.options.get_option(:value,:optional)
         end
         case command
         when :create
@@ -57,7 +67,7 @@ module Asperalm
 
       def config;return @agents[:config];end
 
-      def initialize(env);@agents=env;end
+      def format;return @agents[:formater];end
 
       def declare_options
         raise StandardError,"declare_options shall be redefined by subclass"

@@ -7,13 +7,13 @@ module Asperalm
     module Plugins
       # experiments
       class Xnode < BasicAuthPlugin
-        alias super_declare_options declare_options
-        # "transfer_filter"=>"t['status'].eql?('completed') and t['start_spec']['remote_user'].eql?('faspex')", :file_filter=>"f['status'].eql?('completed') and 0 != f['size'] and t['start_spec']['direction'].eql?('send')"
-        def declare_options
-          super_declare_options
+        def initialize(env)
+          super(env)
           self.options.add_opt_simple(:filter_transfer,"Ruby expression for filter at transfer level (cleanup)")
           self.options.add_opt_simple(:filter_file,"Ruby expression for filter at file level (cleanup)")
+          self.options.parse_options!
         end
+        # "transfer_filter"=>"t['status'].eql?('completed') and t['start_spec']['remote_user'].eql?('faspex')", :file_filter=>"f['status'].eql?('completed') and 0 != f['size'] and t['start_spec']['direction'].eql?('send')"
 
         def action_list; [ :postprocess, :cleanup, :forward ];end
 
@@ -99,7 +99,7 @@ module Asperalm
             raise Fasp::Error,transfer_data['error']['user_message'] if transfer_data.has_key?('error')
             transfer_spec=transfer_data['transfer_spec']
             # execute transfer
-            return Main.result_transfer(transfer_spec,{:src=>:node_gen3})
+            return Main.result_transfer(self.transfer.start(transfer_spec,{:src=>:node_gen3}))
           when :postprocess
             transfers=self.class.get_transfers_iteration(api_node,{:view=>'summary',:direction=>'receive',:active_only=>false})
             return { :type=>:object_list,:data => transfers }

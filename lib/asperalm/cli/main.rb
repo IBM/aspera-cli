@@ -1,4 +1,5 @@
 require 'asperalm/cli/manager'
+require 'asperalm/cli/formater'
 require 'asperalm/cli/plugins/config'
 require 'asperalm/cli/extended_value'
 require 'asperalm/cli/transfer_agent'
@@ -11,7 +12,6 @@ require 'asperalm/files_api'
 require 'asperalm/nagios'
 require 'text-table'
 require 'fileutils'
-require 'singleton'
 require 'yaml'
 require 'pp'
 
@@ -19,9 +19,6 @@ module Asperalm
   module Cli
     # The main CLI class
     class Main
-      include Singleton
-      # "tool" class method is an alias to "instance" of singleton
-      singleton_class.send(:alias_method, :tool, :instance)
       def self.gem_version
         File.read(File.join(gem_root,@@GEM_NAME,'VERSION')).chomp
       end
@@ -59,31 +56,39 @@ module Asperalm
       def option_preset; nil; end
 
       def option_preset=(value)
-        @opt_mgr.add_option_preset(@config_plugin.preset_by_name(value))
+        @opt_mgr.add_option_preset(@plugin_env[:config].preset_by_name(value))
       end
 
       attr_accessor :option_flat_hash
       attr_accessor :option_table_style
 
       # minimum initialization
-      def initialize
+      def initialize(argv)
+        # first thing : manage debug level (allows debugging or option parser)
+        early_debug_setup(argv)
+        current_prog_name=File.basename($PROGRAM_NAME)
+        unless current_prog_name.eql?(@@PROGRAM_NAME)
+          @plugin_env[:formater].display_message(:error,"#{"WARNING".bg_red.blink.gray} Please use '#{@@PROGRAM_NAME}' instead of '#{current_prog_name}', '#{current_prog_name}' will be removed in a future version")
+        end
         # overriding parameters on transfer spec
         @option_help=false
         @bash_completion=false
         @option_show_config=false
         @option_flat_hash=true
         @option_table_style=':.:'
-        @opt_mgr=Manager.new(self.program_name)
-        @plugin_env={:options=>@opt_mgr}
-        @transfer_mgr=TransferAgent.new(@plugin_env)
-        @plugin_env[:transfer]=@transfer_mgr
-        @config_plugin=Plugins::Config.new(@plugin_env,self.program_name,@@GEM_NAME,self.class.gem_version)
-        @plugin_env[:config]=@config_plugin
+        @plugin_env={}
+        @plugin_env[:options]=Manager.new(self.program_name)
+        @plugin_env[:formater]=Formater.new(@plugin_env[:options])
+        @plugin_env[:transfer]=TransferAgent.new(@plugin_env)
+        @plugin_env[:config]=Plugins::Config.new(@plugin_env,self.program_name,@@GEM_NAME,self.class.gem_version)
+        @opt_mgr=@plugin_env[:options]
+        # give command line arguments to option manager (no parsing)
+        @opt_mgr.add_cmd_line_options(argv)
         # set application folder for modules
-        PersistencyFile.default_folder=@config_plugin.main_folder
-        Oauth.persistency_folder=@config_plugin.main_folder
-        ExtendedValue.instance.set_handler('preset',:reader,lambda{|v|@config_plugin.preset_by_name(v)})
-        Fasp::Parameters.file_list_folder=File.join(@config_plugin.main_folder,'filelists')
+        PersistencyFile.default_folder=@plugin_env[:config].main_folder
+        Oauth.persistency_folder=@plugin_env[:config].main_folder
+        ExtendedValue.instance.set_handler('preset',:reader,lambda{|v|@plugin_env[:config].preset_by_name(v)})
+        Fasp::Parameters.file_list_folder=File.join(@plugin_env[:config].main_folder,'filelists')
       end
 
       # local options
@@ -94,11 +99,11 @@ module Asperalm
         @opt_mgr.parser.separator ""
         @opt_mgr.parser.separator "DESCRIPTION"
         @opt_mgr.parser.separator "\tUse Aspera application to perform operations on command line."
-        @opt_mgr.parser.separator "\tDocumentation and examples: #{@config_plugin.gem_url}"
+        @opt_mgr.parser.separator "\tDocumentation and examples: #{@plugin_env[:config].gem_url}"
         @opt_mgr.parser.separator "\texecute: #{self.program_name} conf doc"
         @opt_mgr.parser.separator ""
         @opt_mgr.parser.separator "COMMANDS"
-        @opt_mgr.parser.separator "\tFirst level commands: #{@config_plugin.plugins.keys.map {|x| x.to_s}.join(', ')}"
+        @opt_mgr.parser.separator "\tFirst level commands: #{@plugin_env[:config].plugins.keys.map {|x| x.to_s}.join(', ')}"
         @opt_mgr.parser.separator "\tNote that commands can be written shortened (provided it is unique)."
         @opt_mgr.parser.separator ""
         @opt_mgr.parser.separator "OPTIONS"
@@ -116,7 +121,7 @@ module Asperalm
         @opt_mgr.add_opt_switch(:bash_comp,"generate bash completion for command") { @bash_completion=true }
         @opt_mgr.add_opt_switch(:show_config, "Display parameters used for the provided action.") { @option_show_config=true }
         @opt_mgr.add_opt_switch(:rest_debug,"-r","more debug for HTTP calls") { Rest.debug=true }
-        @opt_mgr.add_opt_switch(:version,"-v","display version") { display_message(:data,self.class.gem_version);Process.exit(0) }
+        @opt_mgr.add_opt_switch(:version,"-v","display version") { @plugin_env[:formater].display_message(:data,self.class.gem_version);Process.exit(0) }
         @opt_mgr.add_opt_list(:display,self.class.display_levels,"output only some information")
         @opt_mgr.set_option(:display,:info)
       end
@@ -157,23 +162,21 @@ module Asperalm
       # @return the plugin instance, based on name
       # also loads the plugin options, and default values from conf file
       # @param plugin_name_sym : symbol for plugin name
-      def get_plugin_instance_with_options(plugin_name_sym,env=@plugin_env)
-        Log.log.debug("get_plugin_instance_with_options -> #{plugin_name_sym}")
-        require @config_plugin.plugins[plugin_name_sym][:require_stanza]
+      def get_plugin_instance_with_options(plugin_name_sym,env=nil)
+        env||=@plugin_env
+        Log.log.debug("get_plugin_instance_with_options(#{plugin_name_sym})")
+        require @plugin_env[:config].plugins[plugin_name_sym][:require_stanza]
+        # load default params only if no param already loaded before plugin instanciation
+        env[:config].add_plugin_default_preset(plugin_name_sym)
         command_plugin=Object::const_get(@@PLUGINS_MODULE+'::'+plugin_name_sym.to_s.capitalize).new(env)
+        Log.log.debug("got #{command_plugin.class}")
         # TODO: check that ancestor is Plugin?
-        env[:options].parser.separator "COMMAND: #{plugin_name_sym}"
-        env[:options].parser.separator "SUBCOMMANDS: #{command_plugin.action_list.map{ |p| p.to_s}.join(', ')}"
-        env[:options].parser.separator "OPTIONS:"
-        command_plugin.declare_options
-        # load default params only if no param already loaded
-        @config_plugin.add_plugin_default_preset(plugin_name_sym)
         return command_plugin
       end
 
       def generate_bash_completion
         if @opt_mgr.get_next_argument("",:multiple,:optional).nil?
-          @config_plugin.plugins.keys.each{|p|puts p.to_s}
+          @plugin_env[:config].plugins.keys.each{|p|puts p.to_s}
         else
           Log.log.warn("only first level completion so far")
         end
@@ -239,22 +242,6 @@ module Asperalm
       # user output levels
       def self.display_levels; [:info,:data,:error]; end
 
-      # main output method
-      def display_message(level,message)
-        case level
-        when :info
-          if @opt_mgr.get_option(:format,:mandatory).eql?(:table) and
-          @opt_mgr.get_option(:display,:mandatory).eql?(:info)
-            STDOUT.puts(message)
-          end
-        when :data
-          STDOUT.puts(message) unless @opt_mgr.get_option(:display,:mandatory).eql?(:error)
-        when :error
-          STDERR.puts(message)
-        else raise "bad case"
-        end
-      end
-
       CSV_RECORD_SEPARATOR="\n"
       CSV_FIELD_SEPARATOR=","
 
@@ -271,13 +258,13 @@ module Asperalm
         when :nagios
           Nagios.process(res_data)
         when :ruby
-          display_message(:data,PP.pp(res_data,''))
+          @plugin_env[:formater].display_message(:data,PP.pp(res_data,''))
         when :json
-          display_message(:data,JSON.generate(res_data))
+          @plugin_env[:formater].display_message(:data,JSON.generate(res_data))
         when :jsonpp
-          display_message(:data,JSON.pretty_generate(res_data))
+          @plugin_env[:formater].display_message(:data,JSON.pretty_generate(res_data))
         when :yaml
-          display_message(:data,res_data.to_yaml)
+          @plugin_env[:formater].display_message(:data,res_data.to_yaml)
         when :table,:csv
           case results[:type]
           when :object_list # goes to table display
@@ -331,22 +318,22 @@ module Asperalm
             final_table_columns = [results[:name]]
             table_rows_hash_val=res_data.map { |i| { results[:name] => i } }
           when :empty # no table
-            display_message(:info,'empty')
+            @plugin_env[:formater].display_message(:info,'empty')
             return
           when :nothing # no result expected
             Log.log.debug("no result expected")
             return
           when :status # no table
             # :status displays a simple message
-            display_message(:info,res_data)
+            @plugin_env[:formater].display_message(:info,res_data)
             return
           when :text # no table
             # :status displays a simple message
-            display_message(:data,res_data)
+            @plugin_env[:formater].display_message(:data,res_data)
             return
           when :other_struct # no table
             # :other_struct is any other type of structure
-            display_message(:data,PP.pp(res_data,''))
+            @plugin_env[:formater].display_message(:data,PP.pp(res_data,''))
             return
           else
             raise "unknown data type: #{results[:type]}"
@@ -354,7 +341,7 @@ module Asperalm
           # here we expect: table_rows_hash_val and final_table_columns
           raise "no field specified" if final_table_columns.nil?
           if table_rows_hash_val.empty?
-            display_message(:info,'empty'.gray) unless display_format.eql?(:csv)
+            @plugin_env[:formater].display_message(:info,'empty'.gray) unless display_format.eql?(:csv)
             return
           end
           # convert to string with special function. here table_rows_hash_val is an array of hash
@@ -373,34 +360,36 @@ module Asperalm
           when :table
             style=@option_table_style.split('')
             # display the table !
-            display_message(:data,Text::Table.new(
+            @plugin_env[:formater].display_message(:data,Text::Table.new(
             :head => final_table_columns,
             :rows => final_table_rows,
             :horizontal_boundary   => style[0],
             :vertical_boundary     => style[1],
             :boundary_intersection => style[2]))
           when :csv
-            display_message(:data,final_table_rows.map{|t| t.join(CSV_FIELD_SEPARATOR)}.join(CSV_RECORD_SEPARATOR))
+            @plugin_env[:formater].display_message(:data,final_table_rows.map{|t| t.join(CSV_FIELD_SEPARATOR)}.join(CSV_RECORD_SEPARATOR))
           end
         end
       end
 
       def exit_with_usage(all_plugins)
+        Log.log.debug("exit_with_usage".bg_red)
         # display main plugin options
-        display_message(:error,@opt_mgr.parser)
+        @plugin_env[:formater].display_message(:error,@opt_mgr.parser)
         if all_plugins
           # list plugins that have a "require" field, i.e. all but main plugin
-          @config_plugin.plugins.keys.each do |plugin_name_sym|
+          @plugin_env[:config].plugins.keys.each do |plugin_name_sym|
             next if plugin_name_sym.eql?(Plugins::Config.name_sym)
             # override main option parser with a brand new, to avoid having global options
-            opt_mgr=Manager.new(self.program_name)
-            opt_mgr.parser.banner = ""
-            get_plugin_instance_with_options(plugin_name_sym,{:options=>opt_mgr})
-            display_message(:error,opt_mgr.parser)
+            plugin_env=@plugin_env.clone
+            plugin_env[:man_only]=true
+            plugin_env[:options]=Manager.new(self.program_name)
+            plugin_env[:options].parser.banner = ""
+            get_plugin_instance_with_options(plugin_name_sym,plugin_env)
+            @plugin_env[:formater].display_message(:error,plugin_env[:options].parser.to_s)
           end
         end
-        #display_message(:error,@opt_mgr.parser)
-        display_message(:error,"\nDocumentation : #{@config_plugin.help_url}")
+        @plugin_env[:formater].display_message(:error,"\nDocumentation : #{@plugin_env[:config].help_url}")
         Process.exit(0)
       end
 
@@ -423,17 +412,12 @@ module Asperalm
       end
 
       public
-      attr_accessor :transfer_mgr
 
-      def display_status(status)
-        display_message(:info,status)
-      end
-
-      # plugins shall use this method to start a transfer
+      # plugins shall use this method to check a single transfer
       # start transfer and wait for completion of all jobs
-      def self.result_transfer(transfer_spec,options)
+      def self.result_transfer(statuses)
         # TODO: if not one shot, then wait for status
-        statuses=self.instance.transfer_mgr.start(transfer_spec,options)
+        #statuses=self.start(transfer_spec,options)
         worst=TransferAgent.session_status(statuses)
         if !worst.eql?(:success)
           raise worst
@@ -446,39 +430,27 @@ module Asperalm
       def program_name;@@PROGRAM_NAME;end
 
       # this is the main function called by initial script just after constructor
-      def process_command_line(argv)
-        current_prog_name=File.basename($PROGRAM_NAME)
-        unless current_prog_name.eql?(@@PROGRAM_NAME)
-          display_message(:error,"#{"WARNING".bg_red.blink.gray} Please use '#{@@PROGRAM_NAME}' instead of '#{current_prog_name}', '#{current_prog_name}' will be removed in a future version")
-        end
+      def process_command_line
         exception_info=nil
         begin
-          # first thing : manage debug level (allows debugging or option parser)
-          early_debug_setup(argv)
-          # give command line arguments to option manager (no parsing)
-          @opt_mgr.add_cmd_line_options(argv)
           # declare initial options
           declare_options_initial
           @opt_mgr.declare_options
-          # declare options for config file location
-          @config_plugin.declare_options
           # parse declared options
           @opt_mgr.parse_options!
           # load default config if it was not overriden on command line
-          @config_plugin.read_config_file
+          @plugin_env[:config].read_config_file
           # declare general options
           declare_options_global
-          @transfer_mgr.declare_transfer_options
+          @plugin_env[:transfer].declare_transfer_options
           @opt_mgr.parse_options!
           # find plugins, shall be after parse! ?
-          @config_plugin.add_plugins_from_lookup_folders
-          # declare generic options
-          Plugin.declare_entity_options(@opt_mgr)
+          @plugin_env[:config].add_plugins_from_lookup_folders
           # help requested without command ? (plugins must be known here)
           exit_with_usage(true) if @option_help and @opt_mgr.command_or_arg_empty?
           generate_bash_completion if @bash_completion
           # load global default options and process
-          @config_plugin.add_plugin_default_preset(Plugins::Config.name_sym)
+          @plugin_env[:config].add_plugin_default_preset(Plugins::Config.name_sym)
           @opt_mgr.parse_options!
           # dual execution locking
           lock_port=@opt_mgr.get_option(:lock_port,:optional)
@@ -493,7 +465,7 @@ module Asperalm
           if @option_show_config and @opt_mgr.command_or_arg_empty?
             command_sym=Plugins::Config.name_sym
           else
-            command_sym=@opt_mgr.get_next_command(@config_plugin.plugins.keys.dup.unshift(:help))
+            command_sym=@opt_mgr.get_next_command(@plugin_env[:config].plugins.keys.dup.unshift(:help))
           end
           # main plugin is not dynamically instanciated
           Log.log.debug(">>>#{Plugins::Config.name_sym.to_s}")
@@ -501,7 +473,7 @@ module Asperalm
           when :help
             exit_with_usage(true)
           when Plugins::Config.name_sym
-            command_plugin=@config_plugin
+            command_plugin=@plugin_env[:config]
           else
             # get plugin, set options, etc
             command_plugin=get_plugin_instance_with_options(command_sym)
@@ -517,7 +489,7 @@ module Asperalm
           # execute and display
           display_results(command_plugin.execute_action)
           # finish
-          @transfer_mgr.shutdown
+          @plugin_env[:transfer].shutdown
           @opt_mgr.fail_if_unprocessed
         rescue CliBadArgument => e;          exception_info=[e,'Argument',:usage]
         rescue CliNoSuchId => e;             exception_info=[e,'Identifier']
@@ -532,13 +504,13 @@ module Asperalm
         TempFileManager.instance.cleanup
         # processing of error condition
         unless exception_info.nil?
-          display_message(:error,"ERROR:".bg_red.gray.blink+" "+exception_info[1]+": "+exception_info[0].message)
-          display_message(:error,"Use '-h' option to get help.") if exception_info[2].eql?(:usage)
+          @plugin_env[:formater].display_message(:error,"ERROR:".bg_red.gray.blink+" "+exception_info[1]+": "+exception_info[0].message)
+          @plugin_env[:formater].display_message(:error,"Use '-h' option to get help.") if exception_info[2].eql?(:usage)
           if Log.instance.level.eql?(:debug)
             # will force to show stack trace
             raise exception_info[0]
           else
-            display_message(:error,"Use '--log-level=debug' to get more details.") if exception_info[2].eql?(:debug)
+            @plugin_env[:formater].display_message(:error,"Use '--log-level=debug' to get more details.") if exception_info[2].eql?(:debug)
             Process.exit(1)
           end
         end

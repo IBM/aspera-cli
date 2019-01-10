@@ -5,6 +5,16 @@ module Asperalm
   module Cli
     # base class for applications supporting basic authentication
     class BasicAuthPlugin < Plugin
+      def initialize(env)
+        super(env)
+        unless env[:skip_options]
+          self.options.add_opt_simple(:url,"URL of application, e.g. https://org.asperafiles.com")
+          self.options.add_opt_simple(:username,"username to log in")
+          self.options.add_opt_simple(:password,"user's password")
+          self.options.parse_options!
+        end
+      end
+
       # returns a Rest object with basic auth
       def basic_auth_api(subpath=nil)
         api_url=self.options.get_option(:url,:mandatory)
@@ -18,11 +28,6 @@ module Asperalm
           }})
       end
 
-      def declare_options
-        self.options.add_opt_simple(:url,"URL of application, e.g. https://org.asperafiles.com")
-        self.options.add_opt_simple(:username,"username to log in")
-        self.options.add_opt_simple(:password,"user's password")
-      end
     end # BasicAuthPlugin
   end # Cli
 end # Asperalm

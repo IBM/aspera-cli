@@ -5,15 +5,14 @@ module Asperalm
   module Cli
     module Plugins
       class Orchestrator < BasicAuthPlugin
-
-        alias super_declare_options declare_options
-        def declare_options
-          super_declare_options
+        def initialize(env)
+          super(env)
           self.options.add_opt_simple(:params,"parameters hash table, use @json:{\"param\":\"value\"}")
           self.options.add_opt_simple(:result,"specify result value as: 'work step:parameter'")
           self.options.add_opt_boolean(:synchronous,"work step:parameter expected as result")
           self.options.set_option(:params,{})
           self.options.set_option(:synchronous,:no)
+          self.options.parse_options!
         end
 
         def action_list; [:info, :workflow, :plugins, :processes];end

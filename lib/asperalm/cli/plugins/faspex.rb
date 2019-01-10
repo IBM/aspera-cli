@@ -16,14 +16,14 @@ module Asperalm
         @@KEY_NODE='node'
         @@KEY_PATH='path'
         @@VAL_ALL='ALL'
-        alias super_declare_options declare_options
-        def declare_options
-          super_declare_options
+        def initialize(env)
+          super(env)
           self.options.add_opt_simple(:delivery_info,"package delivery information (extended value)")
           self.options.add_opt_simple(:source_name,"create package from remote source (by name)")
           self.options.add_opt_simple(:storage,"Faspex local storage definition")
           self.options.add_opt_list(:box,[:inbox,:sent,:archive],"package box")
           self.options.set_option(:box,:inbox)
+          self.options.parse_options!
         end
 
         # extract elements from anonymous faspex link
@@ -194,7 +194,7 @@ module Asperalm
               transfer_spec=send_result['xfer_sessions'].first
               # use source from cmd line, this one only contains destination (already in dest root)
               transfer_spec.delete('paths')
-              return Main.result_transfer(transfer_spec,{:src=>:node_gen3})
+              return Main.result_transfer(self.transfer.start(transfer_spec,{:src=>:node_gen3}))
             end
           when :source
             command_source=self.options.get_next_command([ :list, :id, :name ])
@@ -240,7 +240,7 @@ module Asperalm
                   :username => node_config['username'],
                   :password => node_config['password']}})
                 command=self.options.get_next_command(Node.common_actions)
-                return Node.new(@agents).set_api(api_node).execute_action(command,source_info[@@KEY_PATH])
+                return Node.new(@agents.merge(skip_options: true, node_api: api_node)).execute_action(command,source_info[@@KEY_PATH])
               end
             end
           when :me
@@ -269,26 +269,26 @@ module Asperalm
             transfer_uri=self.class.get_fasp_uri_from_entry(package_entry)
             transfer_spec=Fasp::Uri.new(transfer_uri).transfer_spec
             transfer_spec['direction']='receive'
-            return Main.result_transfer(transfer_spec,{:src=>:node_gen3})
+            return Main.result_transfer(self.transfer.start(transfer_spec,{:src=>:node_gen3}))
           when :v4
             command=self.options.get_next_command([:dropbox, :dmembership, :workgroup,:wmembership,:user,:metadata_profile])
             case command
             when :dropbox
-              return Plugin.entity_action(api_v4,'admin/dropboxes',['id','e_wg_name','e_wg_desc','created_at'],:id)
+              return self.entity_action(api_v4,'admin/dropboxes',['id','e_wg_name','e_wg_desc','created_at'],:id)
             when :dmembership
-              return Plugin.entity_action(api_v4,'dropbox_memberships',nil,:id)
+              return self.entity_action(api_v4,'dropbox_memberships',nil,:id)
             when :workgroup
-              return Plugin.entity_action(api_v4,'admin/workgroups',['id','e_wg_name','e_wg_desc','created_at'],:id)
+              return self.entity_action(api_v4,'admin/workgroups',['id','e_wg_name','e_wg_desc','created_at'],:id)
             when :wmembership
-              return Plugin.entity_action(api_v4,'workgroup_memberships',nil,:id)
+              return self.entity_action(api_v4,'workgroup_memberships',nil,:id)
             when :user
-              return Plugin.entity_action(api_v4,'users',['id','name','first_name','last_name'],:id)
+              return self.entity_action(api_v4,'users',['id','name','first_name','last_name'],:id)
             when :metadata_profile
-              return Plugin.entity_action(api_v4,'metadata_profiles',nil,:id)
+              return self.entity_action(api_v4,'metadata_profiles',nil,:id)
             end
           when :address_book
             result=api_v3.call({:operation=>'GET',:subpath=>"address-book",:headers=>{'Accept'=>'application/json'},:url_params=>{'format'=>'json','count'=>100000}})[:data]
-            Main.instance.display_status("users: #{result['itemsPerPage']}/#{result['totalResults']}, start:#{result['startIndex']}")
+            self.format.display_status("users: #{result['itemsPerPage']}/#{result['totalResults']}, start:#{result['startIndex']}")
             users=result['entry']
             # add missing entries
             users.each do |u|

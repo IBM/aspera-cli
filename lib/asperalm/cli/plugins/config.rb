@@ -28,6 +28,11 @@ module Asperalm
           @gem_url='https://rubygems.org/gems/'+@gem_name
           add_plugin_lookup_folder(File.join(@main_folder,@@ASPERA_PLUGINS_FOLDERNAME))
           add_plugin_lookup_folder(File.join(Main.gem_root,@@GEM_PLUGINS_FOLDER))
+          self.options.set_obj_attr(:override,self,:option_override,:no)
+          self.options.set_obj_attr(:config_file,self,:option_config_file)
+          self.options.add_opt_simple(:config_file,"read parameters from file in YAML format, current=#{@option_config_file}")
+          self.options.add_opt_switch(:no_default,"-N","do not load default configuration for plugin") { @use_plugin_defaults=false }
+          self.options.parse_options!
         end
 
         # loads default parameters of plugin if no -P parameter
@@ -78,13 +83,6 @@ module Asperalm
         end
 
         public
-
-        def declare_options
-          self.options.set_obj_attr(:override,self,:option_override,:no)
-          self.options.set_obj_attr(:config_file,self,:option_config_file)
-          self.options.add_opt_simple(:config_file,"read parameters from file in YAML format, current=#{@option_config_file}")
-          self.options.add_opt_switch(:no_default,"-N","do not load default configuration for plugin") { @use_plugin_defaults=false }
-        end
 
         # $HOME/.aspera/`program_name`
         attr_reader :main_folder
@@ -293,11 +291,9 @@ module Asperalm
             appli=discover_product(instance_url)
             case appli[:product]
             when :aoc
-              Main.instance.display_status("Detected: Aspera on Cloud")
+              self.format.display_status("Detected: Aspera on Cloud")
               require 'asperalm/cli/plugins/aspera'
-              files_plugin=Plugins::Aspera.new(Main.instance.plugin_env)
-              files_plugin.declare_options
-              self.options.parse_options!
+              files_plugin=Plugins::Aspera.new(@agents)
               self.options.ask_missing_mandatory=true
               #self.options.set_option(:interactive,:yes)
               self.options.set_option(:url,instance_url)
@@ -305,7 +301,7 @@ module Asperalm
               self.options.set_option(:redirect_uri,@@DEFAULT_REDIRECT)
               organization,instance_domain=FilesApi.parse_url(instance_url)
               aspera_preset_name=self.options.get_option(:client_secret,:optional) || 'aoc_'+organization
-              Main.instance.display_status("Creating preset: #{aspera_preset_name}")
+              self.format.display_status("Creating preset: #{aspera_preset_name}")
               key_filepath=File.join(@main_folder,'aspera_on_cloud_key')
               if File.exist?(key_filepath)
                 puts "key file already exists: #{key_filepath}, keeping it"
@@ -321,7 +317,7 @@ module Asperalm
                 puts "Please login to your Aspera on Cloud instance as Administrator."
                 puts "Go to: Admin->Organization->Integrations"
                 puts "Create a new integration:"
-                puts "- name: #{Main.instance.program_name}"
+                puts "- name: #{@tool_name}"
                 puts "- redirect uri: #{@@DEFAULT_REDIRECT}"
                 puts "- origin: localhost"
                 puts "Once created please enter the following any required parameter:"
@@ -357,18 +353,16 @@ module Asperalm
               @config_presets[@@CONF_PRESET_DEFAULT][Plugins::Aspera.name_sym.to_s]=aspera_preset_name
               puts "saving config file"
               save_presets_to_config_file
-              return Main.result_status("Done. You can test with:\n#{Main.instance.program_name} aspera user info show")
+              return Main.result_status("Done. You can test with:\n#{@tool_name} aspera user info show")
             else
               raise CliBadArgument,"supports only: aoc, detected: #{appli}"
             end
           when :export_to_cli
-            Main.instance.display_status("Exporting: Aspera on Cloud")
+            self.format.display_status("Exporting: Aspera on Cloud")
             require 'asperalm/cli/plugins/aspera'
             # need url / username
             add_plugin_default_preset(Plugins::Aspera.name_sym)
-            files_plugin=Plugins::Aspera.new(Main.instance.plugin_env)
-            files_plugin.declare_options
-            self.options.parse_options!
+            files_plugin=Plugins::Aspera.new(@agents)
             url=self.options.get_option(:url,:mandatory)
             cli_conf_file=Fasp::Installation.instance.cli_conf_file
             data=JSON.parse(File.read(cli_conf_file))
@@ -387,17 +381,16 @@ module Asperalm
             entry=data['AoCAccounts'].select{|i|i['organization'].eql?(organization)}.first
             if entry.nil?
               data['AoCAccounts'].push(new_conf)
-              Main.instance.display_status("Creating new aoc entry: #{organization}")
+              self.format.display_status("Creating new aoc entry: #{organization}")
             else
-              Main.instance.display_status("Updating existing aoc entry: #{organization}")
+              self.format.display_status("Updating existing aoc entry: #{organization}")
               entry.merge!(new_conf)
             end
             File.write(cli_conf_file,JSON.pretty_generate(data))
             return Main.result_status("updated: #{cli_conf_file}")
           when :detect
             # need url / username
-            BasicAuthPlugin.new.declare_options
-            self.options.parse_options!
+            BasicAuthPlugin.new(@agents)
             return Main.result_status("found: #{discover_product(self.options.get_option(:url,:mandatory))}")
           when :coffee
             OpenApplication.instance.uri('https://enjoyjava.com/wp-content/uploads/2018/01/How-to-make-strong-coffee.jpg')
@@ -427,7 +420,7 @@ module Asperalm
           @config_presets[@@CONF_PRESET_DEFAULT].has_key?(plugin_sym.to_s)
             default_config_name=@config_presets[@@CONF_PRESET_DEFAULT][plugin_sym.to_s]
             if !@config_presets.has_key?(default_config_name)
-              Log.log.error("Default config name [#{default_config_name}] specified for plugin [#{plugin_sym.to_s}], but it does not exist in config file.\nPlease fix the issue: either create preset with one parameter (#{Main.instance.program_name} config id #{default_config_name} init @json:'{}') or remove default (#{Main.instance.program_name} config id default remove #{plugin_sym.to_s}).")
+              Log.log.error("Default config name [#{default_config_name}] specified for plugin [#{plugin_sym.to_s}], but it does not exist in config file.\nPlease fix the issue: either create preset with one parameter (#{@tool_name} config id #{default_config_name} init @json:'{}') or remove default (#{@tool_name} config id default remove #{plugin_sym.to_s}).")
             end
             raise CliError,"Config name [#{default_config_name}] must be a hash, check config file." if !@config_presets[default_config_name].is_a?(Hash)
             return default_config_name

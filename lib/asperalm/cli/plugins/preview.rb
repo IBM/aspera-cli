@@ -10,44 +10,8 @@ module Asperalm
   module Cli
     module Plugins
       class Preview < BasicAuthPlugin
-
-        attr_accessor :option_overwrite
-        attr_accessor :option_previews_folder
-        attr_accessor :option_folder_reset_cache
-        attr_accessor :option_skip_folders
-        attr_accessor :option_temp_folder
-
-        # special tag to identify transfers related to generator
-        PREV_GEN_TAG='preview_generator'
-        # defined by node API
-        PREVIEW_FOLDER_SUFFIX='.asp-preview'
-        PREVIEW_FILE_PREFIX='preview.'
-        # values for option_overwrite
-        def self.overwrite_policies; [:always,:never,:mtime];end
-
-        def option_skip_types=(value)
-          @skip_types=[]
-          value.split(',').each do |v|
-            s=v.to_sym
-            raise "not supported: #{v}" unless Asperalm::Preview::Generator.conversion_types.include?(s)
-            @skip_types.push(s)
-          end
-        end
-
-        def option_skip_types
-          return @skip_types.map{|i|i.to_s}.join(',')
-        end
-
         def initialize(env)
           super(env)
-          @skip_types=[]
-          @default_transfer_spec=nil
-        end
-
-        alias super_declare_options declare_options
-
-        def declare_options
-          super_declare_options
           # link CLI options to gen_info attributes
           self.options.set_obj_attr(:skip_types,self,:option_skip_types)
           self.options.set_obj_attr(:overwrite,self,:option_overwrite,:mtime)
@@ -98,6 +62,37 @@ module Asperalm
           self.options.add_opt_boolean(:validate_mime,"use magic number validation")
           self.options.add_opt_boolean(:check_extension,"check extra file extensions")
           self.options.set_option(:file_access,:local)
+          self.options.parse_options!
+          @skip_types=[]
+          @default_transfer_spec=nil
+        end
+
+        attr_accessor :option_overwrite
+        attr_accessor :option_previews_folder
+        attr_accessor :option_folder_reset_cache
+        attr_accessor :option_skip_folders
+        attr_accessor :option_temp_folder
+
+        # special tag to identify transfers related to generator
+        PREV_GEN_TAG='preview_generator'
+        # defined by node API
+        PREVIEW_FOLDER_SUFFIX='.asp-preview'
+        PREVIEW_FILE_PREFIX='preview.'
+
+        # values for option_overwrite
+        def self.overwrite_policies; [:always,:never,:mtime];end
+
+        def option_skip_types=(value)
+          @skip_types=[]
+          value.split(',').each do |v|
+            s=v.to_sym
+            raise "not supported: #{v}" unless Asperalm::Preview::Generator.conversion_types.include?(s)
+            @skip_types.push(s)
+          end
+        end
+
+        def option_skip_types
+          return @skip_types.map{|i|i.to_s}.join(',')
         end
 
         def action_list; [:scan,:events,:folder,:check,:test];end
@@ -182,7 +177,7 @@ module Asperalm
             'node'               => { 'access_key' => @access_key_self['id'], 'file_id' => folder_id }}}
           })
           tspec['destination_root']=destination unless destination.nil?
-          Main.result_transfer(tspec,{:src=>:node_gen4})
+          Main.result_transfer(self.transfer.start(tspec,{:src=>:node_gen4}))
         end
 
         def get_infos_local(gen_infos,entry,local_entry_preview_dir)

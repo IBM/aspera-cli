@@ -9,12 +9,13 @@ module Asperalm
       class Client < Plugin
         CONNECT_WEB_URL = 'http://d3gcli72yxqn2z.cloudfront.net/connect'
         CONNECT_VERSIONS = 'connectversions.js'
-        def declare_options; end
-
-        def action_list; [ :current, :available, :connect ];end
-
         def self.textify_list(table_data)
           return table_data.select {|i| ! i['key'].eql?('links') }
+        end
+
+        def initialize(env)
+          super(env)
+          #self.options.parse_options!
         end
 
         # retrieve structure from cloud (CDN) with all versions available
@@ -33,6 +34,8 @@ module Asperalm
           end
           return @connect_versions
         end
+
+        def action_list; [ :current, :available, :connect ];end
 
         def execute_action
           command=self.options.get_next_command(action_list)

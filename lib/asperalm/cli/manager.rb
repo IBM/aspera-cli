@@ -166,7 +166,7 @@ module Asperalm
 
       def get_next_command(action_list); return get_next_argument('command',action_list); end
 
-      # @param expected is 
+      # @param expected is
       #    - Array of allowed value (single value)
       #    - :multiple for remaining values
       #    - :single for a single unconstrained value
@@ -220,7 +220,7 @@ module Asperalm
           #declare_option(option_symbol)
         end
         value=ExtendedValue.instance.parse(option_symbol,value)
-        Log.log.debug("set_option extended #{option_symbol}=#{value}")
+        Log.log.debug("set_option(#{where}) #{option_symbol}=#{value}")
         if @declared_options[option_symbol][:values].eql?(@@BOOLEAN_VALUES)
           value=enum_to_bool(value)
         end
@@ -388,6 +388,7 @@ module Asperalm
       end
 
       def apply_options_preset(preset,where,force=false)
+        unprocessed=[]
         preset.each do |pair|
           k,v=*pair
           if @declared_options.has_key?(k)
@@ -396,9 +397,13 @@ module Asperalm
               v=self.class.get_from_list(v,k.to_s+" in #{where}",@declared_options[k][:values])
             end
             set_option(k,v,where)
-            preset.delete(k)
+          else
+            unprocessed.push(pair)
           end
         end
+        # keep only unprocessed values for next parse
+        preset.clear
+        preset.push(*unprocessed)
       end
 
       # removes already known options from the list
