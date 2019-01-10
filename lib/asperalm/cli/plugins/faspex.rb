@@ -192,7 +192,7 @@ module Asperalm
               end
               raise CliBadArgument,"expecting one session exactly" if send_result['xfer_sessions'].length != 1
               transfer_spec=send_result['xfer_sessions'].first
-              # use source from cmd line, this one nly contains destination (already in dest root)
+              # use source from cmd line, this one only contains destination (already in dest root)
               transfer_spec.delete('paths')
               return Main.result_transfer(transfer_spec,{:src=>:node_gen3})
             end
