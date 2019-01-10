@@ -1,10 +1,3 @@
-#!/bin/echo this is a ruby class:
-#
-# OAuth 2.0 simple authentication
-# Aspera 2016
-# Laurent Martin
-#
-##############################################################################
 require 'asperalm/open_application'
 require 'asperalm/rest'
 require 'base64'
@@ -16,9 +9,8 @@ require 'securerandom'
 UNUSED_STATE='ABC'
 
 module Asperalm
-  # implement OAuth 2 for Aspera Files
+  # implement OAuth 2 for the REST client
   # bearer tokens are kept in memory and also in a file cache for re-use
-  # used by the RST object
   class Oauth
     private
     @@TOKEN_FILE_PREFIX='token'
@@ -266,15 +258,15 @@ module Asperalm
         when :url_token
           # exchange url_token for bearer token
           resp=@api.call({
-            :operation => 'POST',
-            :subpath   => @params[:path_token],
-            :headers   => {'Accept'=>'application/json'},
-            :url_params=>{
-            :grant_type=>'url_token',
-            :scope     =>api_scope,
-            :state     =>UNUSED_STATE
-            },
-            :json_params=>{:url_token=>@params[:url_token]}})
+            :operation   => 'POST',
+            :subpath     => @params[:path_token],
+            :headers     => {'Accept'=>'application/json'},
+            :json_params => {:url_token=>@params[:url_token]},
+            :url_params  => {
+            :grant_type => 'url_token',
+            :scope      => api_scope,
+            :state      => UNUSED_STATE
+            }})
         else
           raise "auth type unknown: #{@params[:grant]}"
         end
