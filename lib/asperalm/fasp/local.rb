@@ -24,6 +24,9 @@ module Asperalm
     class Local < Manager
       include Singleton
       attr_accessor :quiet
+      @@DEFAULT_RESUMER=ResumePolicy.new
+      def self.default_resumer;@@DEFAULT_RESUMER;end
+
       # start FASP transfer based on transfer spec (hash table)
       # note that it is asynchronous
       def start_transfer(transfer_spec,options=nil)
@@ -49,13 +52,13 @@ module Asperalm
         end
         # multi session is a node parameter, managed here in fasp manager
         multi_session=0
-        fasp_port_base=33001
+        multi_session_udp_port_base=33001
         if transfer_spec.has_key?('multi_session')
           multi_session=transfer_spec['multi_session'].to_i
           transfer_spec.delete('multi_session')
           # TODO: check if changing fasp port is really necessary
           if transfer_spec.has_key?('fasp_port')
-            fasp_port_base=transfer_spec['fasp_port']
+            multi_session_udp_port_base=transfer_spec['fasp_port']
             transfer_spec.delete('fasp_port')
           end
         end
@@ -81,7 +84,7 @@ module Asperalm
         session={
           :state    => :initial, # :initial, :started, :success, :failed
           :env_args => env_args,
-          :resumer  => options['resume_policy'] || ResumePolicy.instance,
+          :resumer  => options['resume_policy'] || @@DEFAULT_RESUMER,
           :options  => options
         }
 
@@ -95,7 +98,7 @@ module Asperalm
             this_session=Marshal.load(Marshal.dump(session))
             this_session[:env_args][:args].unshift("-C#{i}:#{multi_session}")
             # check if this is necessary ? should be handled by server, this is in man page
-            this_session[:env_args][:args].unshift("-O","#{fasp_port_base+i-1}")
+            this_session[:env_args][:args].unshift("-O","#{multi_session_udp_port_base+i-1}")
             this_session[:thread] = Thread.new(this_session) {|s|transfer_thread_entry(s)}
             xfer_job[:sessions].push(this_session)
           end
