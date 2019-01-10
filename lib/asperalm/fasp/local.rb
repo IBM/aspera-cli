@@ -23,6 +23,7 @@ module Asperalm
     # executes a local "ascp", equivalent of "Fasp Manager"
     class Local < Manager
       include Singleton
+      # set to false to keep ascp progress bar display (basically: removes ascp's option -q)
       attr_accessor :quiet
       @@DEFAULT_RESUMER=ResumePolicy.new
       def self.default_resumer;@@DEFAULT_RESUMER;end
@@ -301,8 +302,8 @@ module Asperalm
 
       def initialize
         super
-        # set to true to skip ascp progress bar display (basically: ascp's option -q)
-        @quiet=false
+        # by default no interactive progress bar
+        @quiet=true
         # shared data between transfer threads and others: protected by mutex, CV on change
         @jobs={}
         # mutex protects jobs data

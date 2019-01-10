@@ -47,7 +47,7 @@ module Asperalm
             end
             # TODO: option to choose progress format
             # here we disable native stdout progress
-            @agent.quiet=true
+            #@agent.quiet=true
             Log.log.debug(">>>>#{@transfer_spec_cmdline}".red)
           when :connect
             @agent=Fasp::Connect.instance
