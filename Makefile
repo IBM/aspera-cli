@@ -538,7 +538,7 @@ t/sdk1:
 	ruby $(MAINDIR)/examples/transfer.rb
 	@touch $@
 tsample: t/sdk1
-tests: t tshares tfaspex tconsole tnode tfiles tfasp tsync torc tcon tnsync tconf tprev tshares2 tats tsample
+tests: t tshares tfaspex tconsole tnode tfiles tfasp tsync torc tcon tnsync tconf tprev tats tsample tshares2
 
 tnagios: t/fx_nagios t/serv_nagios_webapp t/serv_nagios_transfer t/nd_nagios
 
