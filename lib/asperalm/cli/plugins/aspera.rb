@@ -41,25 +41,26 @@ module Asperalm
           self.options.parse_options!
         end
 
-        def transfer_start(api_files,app,direction,node_info,file_id,ts_add={})
-          return self.transfer.start(*api_files.tr_spec(app,direction,node_info,file_id,ts_add))
+        def transfer_start(api_files,app,direction,node_info,file_id,ts_add)
+          ts_add.deep_merge!({'tags'=>{'aspera'=>{'files'=>{'workspace_name'=>@workspace_name}}}})
+          return self.transfer.start(*api_files.tr_spec(app,direction,node_info,file_id,@workspace_id,ts_add))
         end
 
-        def execute_node_gen4_action(api_files,home_node_file)
+        def execute_node_gen4_action(top_file_id)
           command_repo=self.options.get_next_command([ :find, :access_key, :browse, :mkdir, :rename, :delete, :upload, :download, :transfer, :http_node_download, :node, :file  ])
           case command_repo
           when :find
             regex=self.options.get_option(:value,:mandatory)
-            find_in_node_file=api_files.resolve_node_file(home_node_file,self.options.get_next_argument('path'))
-            return {:type=>:value_list,:data=>api_files.find_files(find_in_node_file,regex),:name=>'path'}
+            find_in_node_file=@api_files.resolve_node_file(top_file_id,self.options.get_next_argument('path'))
+            return {:type=>:value_list,:data=>@api_files.find_files(find_in_node_file,regex),:name=>'path'}
           when :access_key
-            node_info,file_id = api_files.resolve_node_file(home_node_file)
-            node_api=api_files.get_files_node_api(node_info,FilesApi::SCOPE_NODE_USER)
+            node_info,file_id = @api_files.resolve_node_file(top_file_id)
+            node_api=@api_files.get_files_node_api(node_info,FilesApi::SCOPE_NODE_USER)
             return self.entity_action(node_api,'access_keys',['id','root_file_id','storage','license'],:eid)
           when :browse
             thepath=self.options.get_next_argument('path')
-            node_info,file_id = api_files.resolve_node_file(home_node_file,thepath)
-            node_api=api_files.get_files_node_api(node_info,FilesApi::SCOPE_NODE_USER)
+            node_info,file_id = @api_files.resolve_node_file(top_file_id,thepath)
+            node_api=@api_files.get_files_node_api(node_info,FilesApi::SCOPE_NODE_USER)
             result=node_api.read("files/#{file_id}/files",self.options.get_option(:value,:optional))
             items=result[:data]
             self.format.display_status("Items: #{result[:data].length}/#{result[:http]['X-Total-Count']}")
@@ -68,25 +69,25 @@ module Asperalm
             thepath=self.options.get_next_argument('path')
             containing_folder_path = thepath.split(FilesApi::PATH_SEPARATOR)
             new_folder=containing_folder_path.pop
-            node_info,file_id = api_files.resolve_node_file(home_node_file,containing_folder_path.join(FilesApi::PATH_SEPARATOR))
-            node_api=api_files.get_files_node_api(node_info,FilesApi::SCOPE_NODE_USER)
+            node_info,file_id = @api_files.resolve_node_file(top_file_id,containing_folder_path.join(FilesApi::PATH_SEPARATOR))
+            node_api=@api_files.get_files_node_api(node_info,FilesApi::SCOPE_NODE_USER)
             result=node_api.create("files/#{file_id}/files",{:name=>new_folder,:type=>:folder})[:data]
             return Main.result_status("created: #{result['name']} (id=#{result['id']})")
           when :rename
             thepath=self.options.get_next_argument('source path')
             newname=self.options.get_next_argument('new name')
-            node_info,file_id = api_files.resolve_node_file(home_node_file,thepath)
-            node_api=api_files.get_files_node_api(node_info,FilesApi::SCOPE_NODE_USER)
+            node_info,file_id = @api_files.resolve_node_file(top_file_id,thepath)
+            node_api=@api_files.get_files_node_api(node_info,FilesApi::SCOPE_NODE_USER)
             result=node_api.update("files/#{file_id}",{:name=>newname})[:data]
             return Main.result_status("renamed #{thepath} to #{newname}")
           when :delete
             thepath=self.options.get_next_argument('path')
-            node_info,file_id = api_files.resolve_node_file(home_node_file,thepath)
-            node_api=api_files.get_files_node_api(node_info,FilesApi::SCOPE_NODE_USER)
+            node_info,file_id = @api_files.resolve_node_file(top_file_id,thepath)
+            node_api=@api_files.get_files_node_api(node_info,FilesApi::SCOPE_NODE_USER)
             result=node_api.delete("files/#{file_id}")[:data]
             return Main.result_status("deleted: #{thepath}")
           when :transfer
-            client_home_node_file=home_node_file
+            client_home_node_file=top_file_id
             server_home_node_file=client_home_node_file
             case self.options.get_option(:operation,:mandatory)
             when :push
@@ -98,9 +99,9 @@ module Asperalm
               client_folder=self.transfer.destination_folder(client_tr_oper)
               server_folder=self.options.get_option(:from_folder,:mandatory)
             end
-            node_server_info,node_server_file_id = api_files.resolve_node_file(server_home_node_file,server_folder)
-            node_client_info,node_client_file_id = api_files.resolve_node_file(client_home_node_file,client_folder)
-            node_client_api=api_files.get_files_node_api(node_client_info,FilesApi::SCOPE_NODE_USER)
+            node_server_info,node_server_file_id = @api_files.resolve_node_file(server_home_node_file,server_folder)
+            node_client_info,node_client_file_id = @api_files.resolve_node_file(client_home_node_file,client_folder)
+            node_client_api=@api_files.get_files_node_api(node_client_info,FilesApi::SCOPE_NODE_USER)
             # force node as agent
             self.options.set_option(:transfer,:node)
             # force node api in agent
@@ -111,10 +112,11 @@ module Asperalm
               #'destination_root_id' => node_server_file_id,
               'source_root_id'      => node_client_file_id
             }
-            return Main.result_transfer(transfer_start(api_files,'files',client_tr_oper,node_server_info,node_server_file_id,add_ts))
+            return Main.result_transfer(transfer_start(@api_files,'files',client_tr_oper,node_server_info,node_server_file_id,add_ts))
           when :upload
-            node_info,file_id = api_files.resolve_node_file(home_node_file,self.transfer.destination_folder('send'))
-            return Main.result_transfer(transfer_start(api_files,'files','send',node_info,file_id))
+            node_info,file_id = @api_files.resolve_node_file(top_file_id,self.transfer.destination_folder('send'))
+            add_ts={'tags'=>{'aspera'=>{'files'=>{'parentCwd'=>"#{node_info['id']}:#{file_id}"}}}}
+            return Main.result_transfer(transfer_start(@api_files,'files','send',node_info,file_id,add_ts))
           when :download
             source_paths=self.transfer.ts_source_paths
             # special case for AoC : all files must be in same folder
@@ -125,10 +127,11 @@ module Asperalm
               source_paths=[{'source'=>source_folder.pop}]
               source_folder=source_folder.join(FilesApi::PATH_SEPARATOR)
             end
-            node_info,file_id = api_files.resolve_node_file(home_node_file,source_folder)
+            node_info,file_id = @api_files.resolve_node_file(top_file_id,source_folder)
             # override paths with just filename
-            add_ts={'paths'=>source_paths}
-            return Main.result_transfer(transfer_start(api_files,'files','receive',node_info,file_id,add_ts))
+            add_ts={'tags'=>{'aspera'=>{'files'=>{'parentCwd'=>"#{node_info['id']}:#{file_id}"}}}}
+            add_ts.merge!({'paths'=>source_paths})
+            return Main.result_transfer(transfer_start(@api_files,'files','receive',node_info,file_id,add_ts))
           when :http_node_download
             source_paths=self.transfer.ts_source_paths
             source_folder=source_paths.shift['source']
@@ -139,21 +142,21 @@ module Asperalm
             end
             raise CliBadArgument,'one file at a time only in HTTP mode' if source_paths.length > 1
             file_name = source_paths.first['source']
-            node_info,file_id = api_files.resolve_node_file(home_node_file,File.join(source_folder,file_name))
-            node_api=api_files.get_files_node_api(node_info,FilesApi::SCOPE_NODE_USER)
+            node_info,file_id = @api_files.resolve_node_file(top_file_id,File.join(source_folder,file_name))
+            node_api=@api_files.get_files_node_api(node_info,FilesApi::SCOPE_NODE_USER)
             node_api.call({:operation=>'GET',:subpath=>"files/#{file_id}/content",:save_to_file=>File.join(self.transfer.destination_folder('receive'),file_name)})
             return Main.result_status("downloaded: #{file_name}")
           when :node
             # Note: other "common" actions are unauthorized with user scope
             command_legacy=self.options.get_next_command(Node.simple_actions)
             # TODO: shall we support all methods here ? what if there is a link ?
-            node_info=api_files.read("nodes/#{home_node_id}")[:data]
-            node_api=api_files.get_files_node_api(node_info,FilesApi::SCOPE_NODE_USER)
+            node_info=@api_files.read("nodes/#{home_node_id}")[:data]
+            node_api=@api_files.get_files_node_api(node_info,FilesApi::SCOPE_NODE_USER)
             return Node.new(@agents.merge(skip_options: true, node_api: node_api)).execute_action(command_legacy)
           when :file
             fileid=self.options.get_next_argument('file id')
-            node_info,file_id = api_files.resolve_node_file(home_node_id,fileid)
-            node_api=api_files.get_files_node_api(node_info,FilesApi::SCOPE_NODE_USER)
+            node_info,file_id = @api_files.resolve_node_file(home_node_id,fileid)
+            node_api=@api_files.get_files_node_api(node_info,FilesApi::SCOPE_NODE_USER)
             items=node_api.read("files/#{file_id}")[:data]
             return {:type=>:single_object,:data=>items}
           end # command_repo
@@ -316,6 +319,14 @@ module Asperalm
 
         def action_list; [ :apiinfo, :packages, :files, :faspexgw, :admin, :user, :organization, :workspace];end
 
+        def package_tags(package_info,operation)
+          return {'tags'=>{'aspera'=>{'files'=>{
+            'package_id'        => package_info['id'],
+            'package_name'      => package_info['name'],
+            'package_operation' => operation
+            }}}}
+        end
+
         def execute_action
           command=self.options.get_next_command(action_list)
           # set global fields, apis, etc...
@@ -380,10 +391,9 @@ module Asperalm
 
               # tell Aspera what to expect in package: 1 transfer (can also be done after transfer)
               resp=@api_files.update("packages/#{package_info['id']}",{'sent'=>true,'transfers_expected'=>1})[:data]
-              add_ts={
-                'tags'=>{'aspera'=>{'files'=>{'package_id'=>package_info['id'],'package_operation'=>'upload'}}}
-              }
-              return Main.result_transfer(transfer_start(@api_files,'packages','send',node_info,package_info['contents_file_id'],add_ts))
+
+              # execute transfer
+              return Main.result_transfer(transfer_start(@api_files,'packages','send',node_info,package_info['contents_file_id'],package_tags(package_info,'upload')))
             when :recv
               # scalar here
               ids_to_download=self.options.get_option(:id,:mandatory)
@@ -402,6 +412,7 @@ module Asperalm
                 # array here
                 ids_to_download.select!{|id|!skip_ids_persistency.data.include?(id)}
               end # ALL
+              # list here
               ids_to_download = [ids_to_download] unless ids_to_download.is_a?(Array)
               result_transfer=[]
               self.format.display_status("found #{ids_to_download.length} package(s).")
@@ -409,11 +420,8 @@ module Asperalm
                 package_info=@api_files.read("packages/#{package_id}")[:data]
                 node_info=@api_files.read("nodes/#{package_info['node_id']}")[:data]
                 self.format.display_status("downloading package: #{package_info['name']}")
-                add_ts={
-                  'tags'  => {'aspera'=>{'files'=>{'package_id'=>package_info['id'],'package_operation'=>'download'}}},
-                  'paths' => [{'source'=>'.'}]
-                }
-                statuses=transfer_start(@api_files,'packages','receive',node_info,package_info['contents_file_id'],add_ts)
+                add_ts={'paths'=>[{'source'=>'.'}]}
+                statuses=transfer_start(@api_files,'packages','receive',node_info,package_info['contents_file_id'],package_tags(package_info,'download').merge(add_ts))
                 result_transfer.push({'package'=>package_id,'status'=>statuses.map{|i|i.to_s}.join(',')})
                 # update skip list only if all sessions completed
                 skip_ids_persistency.data.push(package_id) if TransferAgent.session_status(statuses).eql?(:success)
@@ -437,7 +445,7 @@ module Asperalm
             end
           when :files
             @api_files.secrets[@home_node_file.first]=@ak_secret
-            return execute_node_gen4_action(@api_files,@home_node_file)
+            return execute_node_gen4_action(@home_node_file)
           when :faspexgw
             require 'asperalm/faspex_gw'
             FaspexGW.instance.start_server(@api_files,@workspace_id)
@@ -531,7 +539,7 @@ module Asperalm
                 api_node=@api_files.get_files_node_api(res_data,nil)
                 return Node.new(@agents.merge(skip_options: true, node_api: api_node)).execute_action if command.eql?(:v3)
                 ak_data=api_node.call({:operation=>'GET',:subpath=>"access_keys/#{res_data['access_key']}",:headers=>{'Accept'=>'application/json'}})[:data]
-                return execute_node_gen4_action(@api_files,[res_id,ak_data['root_file_id']])
+                return execute_node_gen4_action([res_id,ak_data['root_file_id']])
               when :info
                 object=@api_files.read(resource_instance_path)[:data]
                 access_key=object['access_key']

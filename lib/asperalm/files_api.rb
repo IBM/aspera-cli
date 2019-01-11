@@ -65,11 +65,19 @@ module Asperalm
 
     attr_reader :secrets
 
+    def direction_to_operation(direction)
+      case direction
+      when 'send';    return 'upload'
+      when 'receive'; return 'download'
+      else raise "ERROR: unexpected value: #{direction}"
+      end
+    end
+
     # build "transfer info"
     # contains:
     # - transfer spec for aspera on cloud, based on node information and file id
     # - source and token regeneration method
-    def tr_spec(app,direction,node_info,file_id,ts_add)
+    def tr_spec(app,direction,node_info,file_id,ws_id,ts_add)
       # the rest end point is used to generate the bearer token
       token_generation_method=lambda {|do_refresh|self.oauth_token(FilesApi.node_scope(node_info['access_key'],FilesApi::SCOPE_NODE_USER),do_refresh)}
       # note xfer_id and xfer_retry are set by the transfer agent itself
@@ -83,8 +91,15 @@ module Asperalm
         'tags'        => {
         'aspera'        => {
         'app'             => app,
-        'files'           => { 'node_id' => node_info['id']},
-        'node'            => { 'access_key' => node_info['access_key'], 'file_id' => file_id }
+        'usage_id'        => "aspera.files.workspace.#{ws_id}",
+        'files'           => {
+        'node_id'               => node_info['id'],
+        'files_transfer_action' => "#{direction_to_operation(direction)}_#{app.gsub(/s$/,'')}",
+        'workspace_id'          => ws_id,
+        },
+        'node'            => {
+        'access_key'        => node_info['access_key'],
+        'file_id'           => file_id }
         }
         }}.deep_merge!(ts_add),{
         :src              => :node_gen4,
