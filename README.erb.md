@@ -1920,6 +1920,11 @@ Gems, or remove your ed25519 key from your `.ssh` folder to solve the issue.
 
 # Release Notes
 
+* version 0.9.16
+
+  * AoC transfers are now reported in activity app
+  * new interface for Rest class authentication (keep backward compatibility)
+ 
 * version 0.9.15
 
   * new feature: "find" command in aspera files
