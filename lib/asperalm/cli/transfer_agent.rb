@@ -1,6 +1,7 @@
 require 'asperalm/fasp/local'
 require 'asperalm/fasp/connect'
 require 'asperalm/fasp/node'
+require 'asperalm/fasp/aoc'
 require 'asperalm/cli/listener/logger'
 require 'asperalm/cli/listener/progress_multi'
 
@@ -28,7 +29,7 @@ module Asperalm
         @env[:options].add_opt_simple(:ts,"override transfer spec values (Hash, use @json: prefix), current=#{@env[:options].get_option(:ts,:optional)}")
         @env[:options].add_opt_simple(:to_folder,"destination folder for downloaded files")
         @env[:options].add_opt_simple(:sources,"list of source files (see doc)")
-        @env[:options].add_opt_list(:transfer,[:direct,:connect,:node,:files],"type of transfer")
+        @env[:options].add_opt_list(:transfer,[:direct,:connect,:node,:aoc],"type of transfer")
         @env[:options].add_opt_simple(:transfer_info,"additional information for transfer client")
         @env[:options].set_option(:transfer,:direct)
       end
@@ -36,7 +37,8 @@ module Asperalm
       # @return one of the Fasp:: agents based on parameters
       def set_agent_by_options
         if @agent.nil?
-          case @env[:options].get_option(:transfer,:mandatory)
+          agent_type=@env[:options].get_option(:transfer,:mandatory)
+          case agent_type
           when :direct
             @agent=Fasp::Local.instance
             if !@env[:options].get_option(:fasp_proxy,:optional).nil?
@@ -80,7 +82,10 @@ module Asperalm
                 :password => sym_config[:password]
                 }})
             end
-          else raise "ERROR"
+          when :aoc
+            @agent=Fasp::Aoc.instance
+            node_config=@env[:options].get_option(:transfer_info,:optional)
+          else raise "INTERNAL ERROR"
           end
           @agent.add_listener(Listener::Logger.new)
           @agent.add_listener(Listener::ProgressMulti.new)
