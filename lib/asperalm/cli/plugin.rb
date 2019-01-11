@@ -1,10 +1,3 @@
-class ::Hash
-  def deep_merge!(second)
-    merger = proc { |key, v1, v2| v1.is_a?(Hash) and v2.is_a?(Hash) ? v1.merge!(v2, &merger) : v2 }
-    self.merge!(second, &merger)
-  end
-end
-
 module Asperalm
   module Cli
     # base class for plugins modules

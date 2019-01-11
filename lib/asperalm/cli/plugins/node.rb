@@ -1,5 +1,6 @@
 require 'asperalm/cli/basic_auth_plugin'
 require 'asperalm/nagios'
+require 'asperalm/hash_ext'
 require 'base64'
 require 'zlib'
 

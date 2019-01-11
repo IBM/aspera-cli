@@ -1,6 +1,7 @@
 require 'asperalm/log'
 require 'asperalm/oauth'
 require 'asperalm/rest_call_error'
+require 'asperalm/hash_ext'
 require 'net/http'
 require 'net/https'
 require 'json'
@@ -113,7 +114,7 @@ module Asperalm
       raise "Hash call parameter is required (#{call_data.class})" unless call_data.is_a?(Hash)
       Log.log.debug "accessing #{call_data[:subpath]}".red.bold.bg_green
       call_data[:headers]||={}
-      call_data.merge!(@params) { |key, v1, v2| next v1.merge(v2) if v1.is_a?(Hash) and v2.is_a?(Hash); v1 }
+      call_data=@params.deep_merge(call_data)
       case call_data[:auth][:type]
       when :none
         # no auth

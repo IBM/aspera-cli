@@ -9,8 +9,12 @@ unless Hash.method_defined?(:dig)
   end
 end
 
-class Hash
+class ::Hash
   def deep_merge(second)
     self.merge(second){|key,v1,v2|Hash===v1&&Hash===v2 ? v1.deep_merge(v2) : v2}
+  end
+
+  def deep_merge!(second)
+    self.merge!(second){|key,v1,v2|Hash===v1&&Hash===v2 ? v1.deep_merge!(v2) : v2}
   end
 end
