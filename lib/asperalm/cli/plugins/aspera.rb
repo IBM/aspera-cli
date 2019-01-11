@@ -327,6 +327,18 @@ module Asperalm
             }}}}
         end
 
+        def url_query(default=nil)
+          query=self.options.get_option(:query,:optional)||default
+          Log.log.debug("Query=#{query}".bg_red)
+          begin
+            # check it is suitable
+            URI.encode_www_form(query) unless query.nil?
+          rescue => e
+            raise CliBadArgument,"query must be an extended value which can be encoded with URI.encode_www_form. Refer to manual. (#{e.message})"
+          end
+          return query
+        end
+
         def execute_action
           command=self.options.get_next_command(action_list)
           # set global fields, apis, etc...
@@ -450,7 +462,7 @@ module Asperalm
             require 'asperalm/faspex_gw'
             FaspexGW.instance.start_server(@api_files,@workspace_id)
           when :admin
-            command_admin=self.options.get_next_command([ :ats, :resource, :set_client_key, :usage_reports, :search_nodes  ])
+            command_admin=self.options.get_next_command([ :ats, :resource, :set_client_key, :usage_reports, :search_nodes, :events ])
             case command_admin
             when :ats
               ats_api = Rest.new(@api_files.params.deep_merge({
@@ -462,6 +474,10 @@ module Asperalm
               ak=self.options.get_next_argument('access_key')
               nodes=@api_files.read("search_nodes",{'q'=>'access_key:"'+ak+'"'})[:data]
               return {:type=>:other_struct,:data=>nodes}
+            when :events
+              events=@api_files.read("admin/events",url_query({q: '*'}))[:data]
+              events.map!{|i|i['_source']['_score']=i['_score'];i['_source']}
+              return {:type=>:object_list,:data=>events,:fields=>['user.name','type','data.files_transfer_action','data.workspace_name','date']}
             when :set_client_key
               the_client_id=self.options.get_next_argument('client_id')
               the_private_key=self.options.get_next_argument('private_key')
