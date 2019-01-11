@@ -41,8 +41,8 @@ module Asperalm
           self.options.parse_options!
         end
 
-        def xfer_result(api_files,app,direction,node_info,file_id,ts_add={})
-          return Main.result_transfer(self.transfer.start(*api_files.tr_spec(app,direction,node_info,file_id,ts_add)))
+        def transfer_start(api_files,app,direction,node_info,file_id,ts_add={})
+          return self.transfer.start(*api_files.tr_spec(app,direction,node_info,file_id,ts_add))
         end
 
         def execute_node_gen4_action(api_files,home_node_file)
@@ -111,10 +111,10 @@ module Asperalm
               #'destination_root_id' => node_server_file_id,
               'source_root_id'      => node_client_file_id
             }
-            return xfer_result(api_files,'files',client_tr_oper,node_server_info,node_server_file_id,add_ts)
+            return Main.result_transfer(transfer_start(api_files,'files',client_tr_oper,node_server_info,node_server_file_id,add_ts))
           when :upload
             node_info,file_id = api_files.resolve_node_file(home_node_file,self.transfer.destination_folder('send'))
-            return xfer_result(api_files,'files','send',node_info,file_id)
+            return Main.result_transfer(transfer_start(api_files,'files','send',node_info,file_id))
           when :download
             source_paths=self.transfer.ts_source_paths
             # special case for AoC : all files must be in same folder
@@ -128,7 +128,7 @@ module Asperalm
             node_info,file_id = api_files.resolve_node_file(home_node_file,source_folder)
             # override paths with just filename
             add_ts={'paths'=>source_paths}
-            return xfer_result(api_files,'files','receive',node_info,file_id,add_ts)
+            return Main.result_transfer(transfer_start(api_files,'files','receive',node_info,file_id,add_ts))
           when :http_node_download
             source_paths=self.transfer.ts_source_paths
             source_folder=source_paths.shift['source']
@@ -383,7 +383,7 @@ module Asperalm
               add_ts={
                 'tags'=>{'aspera'=>{'files'=>{'package_id'=>package_info['id'],'package_operation'=>'upload'}}}
               }
-              return xfer_result(@api_files,'packages','send',node_info,package_info['contents_file_id'],add_ts)
+              return Main.result_transfer(transfer_start(@api_files,'packages','send',node_info,package_info['contents_file_id'],add_ts))
             when :recv
               # scalar here
               ids_to_download=self.options.get_option(:id,:mandatory)
@@ -408,13 +408,12 @@ module Asperalm
               ids_to_download.each do |package_id|
                 package_info=@api_files.read("packages/#{package_id}")[:data]
                 node_info=@api_files.read("nodes/#{package_info['node_id']}")[:data]
+                self.format.display_status("downloading package: #{package_info['name']}")
                 add_ts={
                   'tags'  => {'aspera'=>{'files'=>{'package_id'=>package_info['id'],'package_operation'=>'download'}}},
                   'paths' => [{'source'=>'.'}]
                 }
-                transfer_spec,options=@api_files.tr_spec('packages','receive',node_info,package_info['contents_file_id'],add_ts)
-                self.format.display_status("downloading package: #{package_info['name']}")
-                statuses=self.transfer.start(transfer_spec,options)
+                statuses=transfer_start(@api_files,'packages','receive',node_info,package_info['contents_file_id'],add_ts)
                 result_transfer.push({'package'=>package_id,'status'=>statuses.map{|i|i.to_s}.join(',')})
                 # update skip list only if all sessions completed
                 skip_ids_persistency.data.push(package_id) if TransferAgent.session_status(statuses).eql?(:success)
