@@ -294,6 +294,9 @@ t/aoc13:
 t/aoc14:
 	$(EXETEST) aspera admin resource workspace_membership list --fields=ALL --query=@json:'{"page":1,"per_page":50,"embed":"member","inherited":false,"workspace_id":11363,"sort":"name"}'
 	@touch $@
+t/aoc15:
+	$(EXETEST) aspera admin eve --query=@json:'{"page":1,"per_page":2,"q":"*","sort":"-date"}'
+	@touch $@
 t/aocat4:
 	$(EXETEST) aspera admin ats cluster list
 	@touch $@
@@ -326,7 +329,7 @@ t/aocat14:
 	@touch $@
 
 tfsat: t/aocat4 t/aocat5 t/aocat6 t/aocat7 t/aocat8 t/aocat9 t/aocat10 t/aocat11 t/aocat13 t/aocat14
-tfiles: t/aocf1 t/aocf2 t/aocf3 t/aocf4 t/aocf5 t/aocf6 t/aocp1 t/aocp2 t/aocp3 t/aocp4 t/aoc7 t/aoc8 t/aoc9 t/aoc10 t/aoc11 t/aoc12 t/aoc13 t/aoc14 tfsat
+tfiles: t/aocf1 t/aocf2 t/aocf3 t/aocf4 t/aocf5 t/aocf6 t/aocp1 t/aocp2 t/aocp3 t/aocp4 t/aoc7 t/aoc8 t/aoc9 t/aoc10 t/aoc11 t/aoc12 t/aoc13 t/aoc14 t/aoc15 tfsat
 
 t/o1:
 	$(EXETEST) orchestrator info

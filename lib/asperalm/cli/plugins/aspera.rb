@@ -327,7 +327,7 @@ module Asperalm
             }}}}
         end
 
-        def url_query(default=nil)
+        def url_query(default)
           query=self.options.get_option(:query,:optional)||default
           Log.log.debug("Query=#{query}".bg_red)
           begin
@@ -526,14 +526,7 @@ module Asperalm
                 when :operation; default_fields=nil
                 when :contact; default_fields=["email","name","source_id","source_type"]
                 end
-                query=self.options.get_option(:query,:optional)
-                Log.log.debug("Query=#{query}".bg_red)
-                begin
-                  URI.encode_www_form(query) unless query.nil?
-                rescue => e
-                  raise CliBadArgument,"query must be an extended value which can be encoded with URI.encode_www_form. Refer to manual. (#{e.message})"
-                end
-                return {:type=>:object_list,:data=>@api_files.read(resource_class_path,query)[:data],:fields=>default_fields}
+                return {:type=>:object_list,:data=>@api_files.read(resource_class_path,url_query(nil))[:data],:fields=>default_fields}
               when :show
                 object=@api_files.read(resource_instance_path)[:data]
                 fields=object.keys.select{|k|!k.eql?('certificate')}
