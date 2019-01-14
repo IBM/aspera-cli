@@ -1920,6 +1920,14 @@ Gems, or remove your ed25519 key from your `.ssh` folder to solve the issue.
 
 # Release Notes
 
+* version 0.9.19
+
+  * added command aspera bearer --scope=xx
+
+* version 0.9.18
+
+  * enhanced aspera admin events to support query
+
 * version 0.9.16
 
   * AoC transfers are now reported in activity app
