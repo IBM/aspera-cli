@@ -132,9 +132,9 @@ module Asperalm
     public
 
     # use_refresh_token set to true if auth was just used and failed
-    def get_authorization(api_scope=nil,use_refresh_token=false)
-      api_scope||=@params[:scope]
-      api_scope||=@@NO_SCOPE
+    def get_authorization(options)
+      api_scope=options[:scope] || @params[:scope] || @@NO_SCOPE
+      use_refresh_token=options[:refresh]
       # file name for cache of token
       token_state_file=token_filepath(api_scope)
       client_id_and_scope={}

@@ -85,9 +85,9 @@ module Asperalm
       Log.dump('REST params2',@params)
     end
 
-    def oauth_token(api_scope=nil,use_refresh_token=false)
+    def oauth_token(options={})
       raise "ERROR" unless @oauth.is_a?(Oauth)
-      return @oauth.get_authorization(api_scope,use_refresh_token)
+      return @oauth.get_authorization(options)
     end
 
     # build URI from URL and parameters and check it is http or https
@@ -207,11 +207,11 @@ module Asperalm
         if ['401'].include?(result[:http].code.to_s) and call_data[:auth][:type].eql?(:oauth2)
           begin
             # try to use refresh token
-            req['Authorization']=oauth_token(nil,true)
+            req['Authorization']=oauth_token(refresh: true)
           rescue RestCallError => e
             Log.log.error("refresh failed".bg_red)
             # regenerate a brand new token
-            req['Authorization']=oauth_token()
+            req['Authorization']=oauth_token
           end
           Log.log.debug "using new token=#{call_data[:headers]['Authorization']}"
           retry unless (oauth_tries -= 1).zero?

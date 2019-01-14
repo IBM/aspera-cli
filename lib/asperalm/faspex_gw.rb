@@ -51,7 +51,7 @@ module Asperalm
         node_info=FaspexGW.instance.aoc_api_user.read("nodes/#{the_package['node_id']}")[:data]
 
         #  get transfer token (for node)
-        node_auth_bearer_token=FaspexGW.instance.aoc_api_user.oauth_token(FilesApi.node_scope(node_info['access_key'],FilesApi::SCOPE_NODE_USER))
+        node_auth_bearer_token=FaspexGW.instance.aoc_api_user.oauth_token(scope: FilesApi.node_scope(node_info['access_key'],FilesApi::SCOPE_NODE_USER))
 
         # tell Files what to expect in package: 1 transfer (can also be done after transfer)
         FaspexGW.instance.aoc_api_user.update("packages/#{the_package['id']}",{"sent"=>true,"transfers_expected"=>1})

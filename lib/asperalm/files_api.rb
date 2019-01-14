@@ -5,6 +5,8 @@ require 'base64'
 
 module Asperalm
   class FilesApi < Rest
+
+    public
     PRODUCT_NAME='Aspera on Cloud'
     PRODUCT_DOMAIN='ibmaspera.com'
     # various API scopes supported
@@ -79,7 +81,7 @@ module Asperalm
     # - source and token regeneration method
     def tr_spec(app,direction,node_info,file_id,ws_id,ts_add)
       # the rest end point is used to generate the bearer token
-      token_generation_method=lambda {|do_refresh|self.oauth_token(FilesApi.node_scope(node_info['access_key'],FilesApi::SCOPE_NODE_USER),do_refresh)}
+      token_generation_method=lambda {|do_refresh|self.oauth_token(scope: FilesApi.node_scope(node_info['access_key'],FilesApi::SCOPE_NODE_USER), refresh: do_refresh)}
       # note xfer_id and xfer_retry are set by the transfer agent itself
       return {
         'direction'   => direction,
@@ -130,14 +132,21 @@ module Asperalm
         :auth     => {:scope=>FilesApi.node_scope(node_info['access_key'],node_scope)}}))
     end
 
-    # @returns liste of file paths that match given regex
+    # check type, but returns split values
+    def check_get_node_file(node_file)
+      raise "node_file must be Hash (got #{node_file.class})" unless node_file.is_a?(Hash)
+      raise "node_file must have 2 keys: :file_id and :node_info" unless node_file.keys.sort.eql?([:file_id,:node_info])
+      node_info=node_file[:node_info]
+      file_id=node_file[:file_id]
+      raise "node_info must be Hash  (got #{node_info.class}: #{node_info})" unless node_info.is_a?(Hash)
+      raise "node_info must have id" unless node_info.has_key?('id')
+      raise "file_id is empty" if file_id.to_s.empty?
+      return node_info,file_id
+    end
+
+    # @returns list of file paths that match given regex
     def find_files( top_node_file, element_regex )
-      raise "top_node_file must be array" unless top_node_file.is_a?(Array)
-      raise "top_node_file must have 2 elements" unless top_node_file.length.eql?(2)
-      top_node_info=top_node_file.first
-      top_file_id=top_node_file.last
-      raise "top_node_info is nil" if top_node_info.to_s.empty?
-      raise "top_file_id is nil" if top_file_id.to_s.empty?
+      top_node_info,top_file_id=check_get_node_file(top_node_file)
       Log.log.debug("find_files: node_info=#{top_node_info}, fileid=#{top_file_id}, regex=#{element_regex}")
       result=[]
       top_node_api=get_files_node_api(top_node_info,FilesApi::SCOPE_NODE_USER)
@@ -189,18 +198,10 @@ module Asperalm
     # input: Array(root node,file id), String path
     # output: Array(node_info,file_id)   for the given path
     def resolve_node_file( top_node_file, element_path_string='' )
-      raise "top_node_file must be array" unless top_node_file.is_a?(Array)
-      raise "top_node_file must have 2 elements" unless top_node_file.length.eql?(2)
-      top_node_id=top_node_file.first
-      top_file_id=top_node_file.last
-      raise "top_node_id is nil" if top_node_id.to_s.empty?
-      raise "top_file_id is nil" if top_file_id.to_s.empty?
-      Log.log.debug("resolve_node_file: nodeid=#{top_node_id}, fileid=#{top_file_id}, path=#{element_path_string}")
-      # initialize loop elements
+      Log.log.debug("resolve_node_file: top_node_file=#{top_node_file}, path=#{element_path_string}")
+      # initialize loop invariants
+      current_node_info,current_file_id=check_get_node_file(top_node_file)
       items_to_explore=element_path_string.split(PATH_SEPARATOR).select{|i| !i.empty?}
-      current_node_info=self.read("nodes/#{top_node_id}")[:data]
-      current_file_id = top_file_id
-      current_file_info = nil
 
       while !items_to_explore.empty? do
         current_item = items_to_explore.shift
@@ -234,7 +235,7 @@ module Asperalm
         end
       end
       Log.log.info("resolve_node_file(#{element_path_string}): file_id=#{current_file_id},node_info=#{current_node_info}")
-      return current_node_info,current_file_id
+      return {node_info: current_node_info, file_id: current_file_id}
     end
 
   end # FilesApi
