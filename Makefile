@@ -233,9 +233,36 @@ t/nd_nagios:
 	@touch $@
 tnode: t/nd1 t/nd2 t/nd3 t/nd4 t/nd5 t/nd6 t/nd_nagios
 
-t/aocf1: $(TEST_FOLDER)/.exists
-	$(EXETEST) config genkey $(TEST_FOLDER)/mykey
+t/aocg1:
+	$(EXETEST) aspera apiinfo
+	@touch $@
+t/aocg2:
+	$(EXETEST) aspera bearer_token --display=data --scope=user:all
+	@touch $@
+t/aocg3:
+	$(EXETEST) aspera organization
+	@touch $@
+t/aocg4:
+	$(EXETEST) aspera workspace
+	@touch $@
+taocgen: t/aocg1 t/aocg2 t/aocg3 t/aocg4
+t/aocf1:
 	$(EXETEST) aspera files browse /
+	@touch $@
+t/aocffin:
+	$(EXETEST) aspera files find / --value='\.partial$$'
+	@touch $@
+t/aocfmkd:
+	$(EXETEST) aspera files mkdir /testfolder
+	@touch $@
+t/aocfdel:
+	$(EXETEST) aspera files rename /testfolder newname
+	@touch $@
+t/aocf1d:
+	$(EXETEST) aspera files delete /newname
+	@touch $@
+t/aocf5:
+	$(EXETEST) aspera files transfer --from-folder=/ --to-folder=xxx --sources=@args 200KB.1
 	@touch $@
 t/aocf2:
 	$(EXETEST) aspera files upload --to-folder=/ $(SAMPLE_FILE)
@@ -249,12 +276,13 @@ t/aocf4: $(TEST_FOLDER)/.exists
 	$(EXETEST) aspera files http_node_download --to-folder=$(TEST_FOLDER) --sources=@args /200KB.1
 	rm -f 200KB.1
 	@touch $@
-t/aocf5:
-	$(EXETEST) aspera files transfer --from-folder=/ --to-folder=xxx --sources=@args 200KB.1
+t/aocf1e:
+	$(EXETEST) aspera files v3 info
 	@touch $@
-t/aocf6:
-	$(EXETEST) aspera files find / --value='\.partial$$'
+t/aocf1f:
+	$(EXETEST) aspera files file 18891
 	@touch $@
+taocf: t/aocf1 t/aocffin t/aocfmkd t/aocfdel t/aocf1d t/aocf5 t/aocf2 t/aocf3 t/aocf4 t/aocf1e t/aocf1f
 t/aocp1:
 	$(EXETEST) aspera packages send --value=@json:'{"name":"my title","note":"my note","recipients":["laurent.martin.aspera@fr.ibm.com"]}' --sources=@args $(SAMPLE_FILE)
 	$(EXETEST) aspera packages send --value=@json:'{"name":"my title","recipients":["laurent.martin.l+external@gmail.com"]}' --new-user-option=@json:'{"package_contact":true}' --sources=@args $(SAMPLE_FILE)
@@ -268,6 +296,7 @@ t/aocp3:
 t/aocp4:
 	$(EXETEST) aspera packages recv --id=ALL --once-only=yes --lock-port=12345
 	@touch $@
+taocp: t/aocp1 t/aocp2 t/aocp3 t/aocp4
 HIDE_SECRET1='AML3clHuHwDArShhcQNVvWGHgU9dtnpgLzRCPsBr7H5JdhrFU2oRs69_tJTEYE-hXDVSW-vQ3-klRnJvxrTkxQ'
 t/aoc7:
 	$(EXETEST) aspera admin res node v3 events --secret=$(HIDE_SECRET1)
@@ -277,6 +306,8 @@ t/aoc8:
 	@touch $@
 t/aoc9:
 	$(EXETEST) aspera admin resource node --name=eudemo --secret=$(NODE_PASS) v3 events
+	@touch $@
+t/aoc9b:
 	$(EXETEST) aspera admin resource node --name=eudemo --secret=$(NODE_PASS) v4 browse /
 	@touch $@
 t/aoc10:
@@ -297,6 +328,7 @@ t/aoc14:
 t/aoc15:
 	$(EXETEST) aspera admin eve --query=@json:'{"page":1,"per_page":2,"q":"*","sort":"-date"}'
 	@touch $@
+taocadm: t/aoc7 t/aoc8 t/aoc9 t/aoc9b t/aoc10 t/aoc11 t/aoc12 t/aoc13 t/aoc14 t/aoc15 
 t/aocat4:
 	$(EXETEST) aspera admin ats cluster list
 	@touch $@
@@ -327,9 +359,8 @@ t/aocat13:
 t/aocat14:
 	-$(EXETEST) aspera admin ats access_key --id=testkey3 delete
 	@touch $@
-
-tfsat: t/aocat4 t/aocat5 t/aocat6 t/aocat7 t/aocat8 t/aocat9 t/aocat10 t/aocat11 t/aocat13 t/aocat14
-tfiles: t/aocf1 t/aocf2 t/aocf3 t/aocf4 t/aocf5 t/aocf6 t/aocp1 t/aocp2 t/aocp3 t/aocp4 t/aoc7 t/aoc8 t/aoc9 t/aoc10 t/aoc11 t/aoc12 t/aoc13 t/aoc14 t/aoc15 tfsat
+taocts: t/aocat4 t/aocat5 t/aocat6 t/aocat7 t/aocat8 t/aocat9 t/aocat10 t/aocat11 t/aocat13 t/aocat14
+taoc: taocgen taocf taocp taocadm taocts
 
 t/o1:
 	$(EXETEST) orchestrator info
@@ -483,7 +514,10 @@ HIDE_CLIENT_SECRET=opkZrJuN-J8anDxPcPA5CFLsY5CopRvLqBeDV24_8KJgarmuYGkI0ha5zNkBL
 t/conf_wizard:
 	$(EXETEST) conf wiz https://sedemo.ibmaspera.com --config-file=todelete.txt --client-id=$(HIDE_CLIENT_ID) --client-secret=$(HIDE_CLIENT_SECRET)
 	@touch $@
-tconf: t/conf_id_1 t/conf_id_2 t/conf_id_3 t/conf_id_4 t/conf_id_5 t/conf_id_6 t/conf_open t/conf_list t/conf_over t/conf_help t/conf_open_err t/conf_plugins t/conf_export t/conf_wizard
+t/conf_genkey:
+	$(EXETEST) config genkey $(TEST_FOLDER)/mykey
+	@touch $@
+tconf: t/conf_id_1 t/conf_id_2 t/conf_id_3 t/conf_id_4 t/conf_id_5 t/conf_id_6 t/conf_open t/conf_list t/conf_over t/conf_help t/conf_open_err t/conf_plugins t/conf_export t/conf_wizard t/conf_genkey
 
 t/shar2_1:
 	$(EXETEST) shares2 appinfo
@@ -541,7 +575,7 @@ t/sdk1:
 	ruby $(MAINDIR)/examples/transfer.rb
 	@touch $@
 tsample: t/sdk1
-tests: t tshares tfaspex tconsole tnode tfiles tfasp tsync torc tcon tnsync tconf tprev tats tsample tshares2
+tests: t tshares tfaspex tconsole tnode taoc tfasp tsync torc tcon tnsync tconf tprev tats tsample tshares2
 
 tnagios: t/fx_nagios t/serv_nagios_webapp t/serv_nagios_transfer t/nd_nagios
 
