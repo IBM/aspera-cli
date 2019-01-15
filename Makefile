@@ -245,7 +245,13 @@ t/aocg3:
 t/aocg4:
 	$(EXETEST) aspera workspace
 	@touch $@
-taocgen: t/aocg1 t/aocg2 t/aocg3 t/aocg4
+t/aocg5:
+	$(EXETEST) aspera user info show
+	@touch $@
+t/aocg6:
+	$(EXETEST) aspera user info modify @json:'{"name":"dummy change"}'
+	@touch $@
+taocgen: t/aocg1 t/aocg2 t/aocg3 t/aocg4 t/aocg5 t/aocg6
 t/aocf1:
 	$(EXETEST) aspera files browse /
 	@touch $@
