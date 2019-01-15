@@ -297,7 +297,7 @@ module Asperalm
             end
           when :single_object # goes to table display
             # :single_object is a simple hash table  (can be nested)
-            raise "internal error: unexpected type: #{res_data.class}, expecting Hash" unless res_data.is_a?(Hash)
+            raise "internal error: expecting Hash: got #{res_data.class}: #{res_data}" unless res_data.is_a?(Hash)
             final_table_columns = results[:columns] || ['key','value']
             asked_fields=res_data.keys
             case user_asked_fields_list_str
