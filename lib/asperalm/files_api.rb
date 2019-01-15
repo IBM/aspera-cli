@@ -79,14 +79,14 @@ module Asperalm
     # contains:
     # - transfer spec for aspera on cloud, based on node information and file id
     # - source and token regeneration method
-    def tr_spec(app,direction,node_info,file_id,ws_id,ts_add)
+    def tr_spec(app,direction,node_file,ws_id,ts_add)
       # the rest end point is used to generate the bearer token
-      token_generation_method=lambda {|do_refresh|self.oauth_token(scope: FilesApi.node_scope(node_info['access_key'],FilesApi::SCOPE_NODE_USER), refresh: do_refresh)}
+      token_generation_method=lambda {|do_refresh|self.oauth_token(scope: FilesApi.node_scope(node_file[:node_info]['access_key'],FilesApi::SCOPE_NODE_USER), refresh: do_refresh)}
       # note xfer_id and xfer_retry are set by the transfer agent itself
       return {
         'direction'   => direction,
         'remote_user' => 'xfer',
-        'remote_host' => node_info['host'],
+        'remote_host' => node_file[:node_info]['host'],
         'fasp_port'   => 33001, # TODO: always the case ?
         'ssh_port'    => 33001, # TODO: always the case ?
         'token'       => token_generation_method.call(false), # first time, use cache
@@ -95,13 +95,13 @@ module Asperalm
         'app'             => app,
         'usage_id'        => "aspera.files.workspace.#{ws_id}",
         'files'           => {
-        'node_id'               => node_info['id'],
+        'node_id'               => node_file[:node_info]['id'],
         'files_transfer_action' => "#{direction_to_operation(direction)}_#{app.gsub(/s$/,'')}",
         'workspace_id'          => ws_id,
         },
         'node'            => {
-        'access_key'        => node_info['access_key'],
-        'file_id'           => file_id }
+        'access_key'        => node_file[:node_info]['access_key'],
+        'file_id'           => node_file[:file_id] }
         }
         }}.deep_merge!(ts_add),{
         :src              => :node_gen4,

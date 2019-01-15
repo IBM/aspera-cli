@@ -17,9 +17,6 @@ module Asperalm
           @ats=Ats.new(@agents.merge(skip_secret: true))
           self.options.add_opt_list(:auth,Oauth.auth_types,"type of Oauth authentication")
           self.options.add_opt_list(:operation,[:push,:pull],"client operation for transfers")
-          #self.options.add_opt_simple(:url,"URL of application, e.g. http://org.asperafiles.com")
-          #self.options.add_opt_simple(:username,"username to log in")
-          #self.options.add_opt_simple(:password,"user's password")
           self.options.add_opt_simple(:client_id,"API client identifier in application")
           self.options.add_opt_simple(:client_secret,"API client passcode")
           self.options.add_opt_simple(:redirect_uri,"API client redirect URI")
@@ -42,9 +39,10 @@ module Asperalm
           self.options.parse_options!
         end
 
-        def transfer_start(api_files,app,direction,node_info,file_id,ts_add)
+        def transfer_start(api_files,app,direction,node_file,ts_add)
+          # activity tracking
           ts_add.deep_merge!({'tags'=>{'aspera'=>{'files'=>{'workspace_name'=>@workspace_name}}}})
-          return self.transfer.start(*api_files.tr_spec(app,direction,node_info,file_id,@workspace_id,ts_add))
+          return self.transfer.start(*api_files.tr_spec(app,direction,node_file,@workspace_id,ts_add))
         end
 
         def execute_node_gen4_action(top_node_file)
@@ -85,8 +83,7 @@ module Asperalm
             result=node_api.delete("files/#{node_file[:file_id]}")[:data]
             return Main.result_status("deleted: #{thepath}")
           when :transfer
-            client_home_node_file=top_node_file
-            server_home_node_file=client_home_node_file
+            server_home_node_file=client_home_node_file=top_node_file
             case self.options.get_option(:operation,:mandatory)
             when :push
               client_tr_oper='send'
@@ -99,22 +96,21 @@ module Asperalm
             end
             node_file_server = @api_files.resolve_node_file(server_home_node_file,server_folder)
             node_file_client = @api_files.resolve_node_file(client_home_node_file,client_folder)
-            node_client_api=@api_files.get_files_node_api(node_file_client[:node_info],FilesApi::SCOPE_NODE_USER)
             # force node as agent
             self.options.set_option(:transfer,:node)
-            # force node api in agent
-            Fasp::Node.instance.node_api=node_client_api
+            # force node api in node agent
+            Fasp::Node.instance.node_api=@api_files.get_files_node_api(node_file_client[:node_info],FilesApi::SCOPE_NODE_USER)
             # additional node to node TS info
             add_ts={
               'remote_access_key'   => node_file_server[:node_info]['access_key'],
               #'destination_root_id' => node_file_server[:file_id],
               'source_root_id'      => node_file_client[:file_id]
             }
-            return Main.result_transfer(transfer_start(@api_files,'files',client_tr_oper,node_file_server[:node_info],node_file_server[:file_id],add_ts))
+            return Main.result_transfer(transfer_start(@api_files,'files',client_tr_oper,node_file_server,add_ts))
           when :upload
             node_file = @api_files.resolve_node_file(top_node_file,self.transfer.destination_folder('send'))
             add_ts={'tags'=>{'aspera'=>{'files'=>{'parentCwd'=>"#{node_file[:node_info]['id']}:#{node_file[:file_id]}"}}}}
-            return Main.result_transfer(transfer_start(@api_files,'files','send',node_file[:node_info],node_file[:file_id],add_ts))
+            return Main.result_transfer(transfer_start(@api_files,'files','send',node_file,add_ts))
           when :download
             source_paths=self.transfer.ts_source_paths
             # special case for AoC : all files must be in same folder
@@ -129,7 +125,7 @@ module Asperalm
             # override paths with just filename
             add_ts={'tags'=>{'aspera'=>{'files'=>{'parentCwd'=>"#{node_file[:node_info]['id']}:#{node_file[:file_id]}"}}}}
             add_ts.merge!({'paths'=>source_paths})
-            return Main.result_transfer(transfer_start(@api_files,'files','receive',node_file[:node_info],node_file[:file_id],add_ts))
+            return Main.result_transfer(transfer_start(@api_files,'files','receive',node_file,add_ts))
           when :http_node_download
             source_paths=self.transfer.ts_source_paths
             source_folder=source_paths.shift['source']
@@ -410,7 +406,8 @@ module Asperalm
               resp=@api_files.update("packages/#{package_info['id']}",{'sent'=>true,'transfers_expected'=>1})[:data]
 
               # execute transfer
-              return Main.result_transfer(transfer_start(@api_files,'packages','send',node_info,package_info['contents_file_id'],package_tags(package_info,'upload')))
+              node_file = {node_info: node_info, file_id: package_info['contents_file_id']}
+              return Main.result_transfer(transfer_start(@api_files,'packages','send',node_file,package_tags(package_info,'upload')))
             when :recv
               # scalar here
               ids_to_download=self.options.get_option(:id,:mandatory)
@@ -438,7 +435,8 @@ module Asperalm
                 node_info=@api_files.read("nodes/#{package_info['node_id']}")[:data]
                 self.format.display_status("downloading package: #{package_info['name']}")
                 add_ts={'paths'=>[{'source'=>'.'}]}
-                statuses=transfer_start(@api_files,'packages','receive',node_info,package_info['contents_file_id'],package_tags(package_info,'download').merge(add_ts))
+                node_file = {node_info: node_info, file_id: package_info['contents_file_id']}
+                statuses=transfer_start(@api_files,'packages','receive',node_file,package_tags(package_info,'download').merge(add_ts))
                 result_transfer.push({'package'=>package_id,'status'=>statuses.map{|i|i.to_s}.join(',')})
                 # update skip list only if all sessions completed
                 skip_ids_persistency.data.push(package_id) if TransferAgent.session_status(statuses).eql?(:success)
