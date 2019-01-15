@@ -274,6 +274,9 @@ module Asperalm
               one_res_id=self.options.get_option(:id,:mandatory)
               one_res_path="#{res_class_path}/#{one_res_id}"
             end
+            # hum, to avoid: Unable to convert 2016_09_14 configuration
+            @api_node.params[:headers]||={}
+            @api_node.params[:headers]['X-aspera-WF-version']='2017_10_23'
             case command
             when :create
               resp=@api_node.create(res_class_path,self.options.get_option(:value,:mandatory))
