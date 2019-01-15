@@ -307,17 +307,17 @@ t/aoc8:
 t/aoc9:
 	$(EXETEST) aspera admin resource node --name=eudemo --secret=$(NODE_PASS) v3 events
 	@touch $@
+t/aoc11:
+	$(EXETEST) aspera admin resource node --name=eudemo --secret=$(NODE_PASS) v3 access_key create --value=@json:'{"id":"testsub1","storage":{"path":"/folder1"}}'
+	@touch $@
+t/aoc12:
+	$(EXETEST) aspera admin resource node --name=eudemo --secret=$(NODE_PASS) v3 access_key delete --id=testsub1
+	@touch $@
 t/aoc9b:
 	$(EXETEST) aspera admin resource node --name=eudemo --secret=$(NODE_PASS) v4 browse /
 	@touch $@
 t/aoc10:
 	$(EXETEST) aspera admin resource node --name=eudemo --secret=$(NODE_PASS) v4 mkdir /folder1
-	@touch $@
-t/aoc11:
-	$(EXETEST) aspera admin resource node --name=eudemo --secret=$(NODE_PASS) v4 access_key create --value=@json:'{"id":"testsub1","storage":{"path":"/folder1"}}'
-	@touch $@
-t/aoc12:
-	$(EXETEST) aspera admin resource node --name=eudemo --secret=$(NODE_PASS) v4 access_key delete --eid=testsub1
 	@touch $@
 t/aoc13:
 	$(EXETEST) aspera admin resource node --name=eudemo --secret=$(NODE_PASS) v4 delete /folder1
