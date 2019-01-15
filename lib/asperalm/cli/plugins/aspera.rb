@@ -145,7 +145,7 @@ module Asperalm
             command_legacy=self.options.get_next_command(Node.simple_actions)
             # TODO: shall we support all methods here ? what if there is a link ?
             node_api=@api_files.get_files_node_api(top_node_file[:node_info],FilesApi::SCOPE_NODE_USER)
-            return Node.new(@agents.merge(skip_options: true, node_api: node_api)).execute_action(command_legacy)
+            return Node.new(@agents.merge(skip_basic_auth_options: true, node_api: node_api)).execute_action(command_legacy)
           when :file
             fileid=self.options.get_next_argument('file id')
             node_file = @api_files.resolve_node_file(top_node_file)
@@ -549,7 +549,7 @@ module Asperalm
                 self.options.get_option(:secret,:mandatory)
                 @api_files.secrets[res_data['id']]=@ak_secret unless @ak_secret.nil?
                 api_node=@api_files.get_files_node_api(res_data,nil)
-                return Node.new(@agents.merge(skip_options: true, node_api: api_node)).execute_action if command.eql?(:v3)
+                return Node.new(@agents.merge(skip_basic_auth_options: true, node_api: api_node)).execute_action if command.eql?(:v3)
                 ak_data=api_node.call({:operation=>'GET',:subpath=>"access_keys/#{res_data['access_key']}",:headers=>{'Accept'=>'application/json'}})[:data]
                 return execute_node_gen4_action({node_info: res_data, file_id: ak_data['root_file_id']})
               when :info

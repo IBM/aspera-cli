@@ -18,7 +18,7 @@ module Asperalm
             api_shares_node=basic_auth_api('node_api')
             command=self.options.get_next_command(Node.common_actions)
             case command
-            when *Node.common_actions; Node.new(@agents.merge(skip_options: true,node_api: api_shares_node)).execute_action(command)
+            when *Node.common_actions; Node.new(@agents.merge(skip_basic_auth_options: true,node_api: api_shares_node)).execute_action(command)
             else raise "INTERNAL ERROR, unknown command: [#{command}]"
             end
           when :admin

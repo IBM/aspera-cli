@@ -91,7 +91,7 @@ module Asperalm
               :username => ak_data['id'],
               :password => ak_data['secret']}})
             command=self.options.get_next_command(Node.common_actions)
-            return Node.new(@agents.merge(skip_options: true, node_api: api_node)).execute_action(command)
+            return Node.new(@agents.merge(skip_basic_auth_options: true, node_api: api_node)).execute_action(command)
           when :cluster
             rest_params={
               :base_url => ats_api_auth.params[:base_url],

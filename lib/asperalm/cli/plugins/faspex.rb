@@ -240,7 +240,7 @@ module Asperalm
                   :username => node_config['username'],
                   :password => node_config['password']}})
                 command=self.options.get_next_command(Node.common_actions)
-                return Node.new(@agents.merge(skip_options: true, node_api: api_node)).execute_action(command,source_info[@@KEY_PATH])
+                return Node.new(@agents.merge(skip_basic_auth_options: true, node_api: api_node)).execute_action(command,source_info[@@KEY_PATH])
               end
             end
           when :me

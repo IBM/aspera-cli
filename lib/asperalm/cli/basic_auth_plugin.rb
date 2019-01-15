@@ -7,7 +7,7 @@ module Asperalm
     class BasicAuthPlugin < Plugin
       def initialize(env)
         super(env)
-        unless env[:skip_options]
+        unless env[:skip_basic_auth_options]
           self.options.add_opt_simple(:url,"URL of application, e.g. https://org.asperafiles.com")
           self.options.add_opt_simple(:username,"username to log in")
           self.options.add_opt_simple(:password,"user's password")

@@ -90,7 +90,7 @@ module Asperalm
           case command
           when :repository
             command=self.options.get_next_command(Node.common_actions)
-            return Node.new(@agents.merge(skip_options: true, node_api: @api_node)).execute_action(command)
+            return Node.new(@agents.merge(skip_basic_auth_options: true, node_api: @api_node)).execute_action(command)
           when :appinfo
             node_info=@api_node.call({:operation=>'GET',:subpath=>'app',:headers=>{'Accept'=>'application/json','Content-Type'=>'application/json'}})[:data]
             return { :type=>:single_object ,:data => node_info }
