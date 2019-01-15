@@ -517,8 +517,11 @@ t/conf_export:
 	@touch $@
 HIDE_CLIENT_ID=BMDiAWLP6g
 HIDE_CLIENT_SECRET=opkZrJuN-J8anDxPcPA5CFLsY5CopRvLqBeDV24_8KJgarmuYGkI0ha5zNkBLpZ1-edRwzgHZfhisyQltG-xJ-kiZvvxf3Co
+SAMPLE_CONFIG_FILE=todelete.txt
 t/conf_wizard:
-	$(EXETEST) conf wiz https://sedemo.ibmaspera.com --config-file=todelete.txt --client-id=$(HIDE_CLIENT_ID) --client-secret=$(HIDE_CLIENT_SECRET)
+	$(EXETEST) conf wiz --url=https://sedemo.ibmaspera.com --config-file=$(SAMPLE_CONFIG_FILE) --client-id=$(HIDE_CLIENT_ID) --client-secret=$(HIDE_CLIENT_SECRET)
+	cat $(SAMPLE_CONFIG_FILE)
+	rm -f $(SAMPLE_CONFIG_FILE)
 	@touch $@
 t/conf_genkey:
 	$(EXETEST) config genkey $(TEST_FOLDER)/mykey
