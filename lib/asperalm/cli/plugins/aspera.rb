@@ -37,6 +37,12 @@ module Asperalm
           self.options.set_option(:new_user_option,{'package_contact'=>true})
           self.options.set_option(:operation,:push)
           self.options.parse_options!
+          @default_workspace_id=nil
+          @workspace_name=nil
+          @workspace_id=nil
+          @user_id=nil
+          @home_node_file=nil
+          @ak_secret=self.options.get_option(:secret,:optional)
         end
 
         def transfer_start(api_files,app,direction,node_file,ts_add)
@@ -158,8 +164,8 @@ module Asperalm
         attr_accessor :api_files
 
         # build REST object parameters based on command line options
-        def get_aoc_api(cli_options,is_admin)
-          public_link_url=cli_options.get_option(:link,:optional)
+        def get_aoc_api(is_admin)
+          public_link_url=self.options.get_option(:link,:optional)
 
           # if auth is a public link, option "link" is a shortcut for options: url, auth, public_token
           unless public_link_url.nil?
@@ -172,37 +178,37 @@ module Asperalm
             if url_token_value.nil?
               raise CliArgument,"link option must be url with 'token' parameter"
             end
-            cli_options.set_option(:url,'https://'+uri.host)
-            cli_options.set_option(:public_token,url_token_value)
-            cli_options.set_option(:auth,:url_token)
-            cli_options.set_option(:client_id,FilesApi.random.first)
-            cli_options.set_option(:client_secret,FilesApi.random.last)
+            self.options.set_option(:url,'https://'+uri.host)
+            self.options.set_option(:public_token,url_token_value)
+            self.options.set_option(:auth,:url_token)
+            self.options.set_option(:client_id,FilesApi.random.first)
+            self.options.set_option(:client_secret,FilesApi.random.last)
           end
           # Connection paramaters (url and auth) to Aspera on Cloud
           # pre populate rest parameters based on URL
-          aoc_rest_params=FilesApi.base_rest_params(cli_options.get_option(:url,:mandatory))
+          aoc_rest_params=FilesApi.base_rest_params(self.options.get_option(:url,:mandatory))
           aoc_rest_auth=aoc_rest_params[:auth]
           aoc_rest_auth.merge!({
-            :grant         => cli_options.get_option(:auth,:mandatory),
-            :client_id     => cli_options.get_option(:client_id,:mandatory),
-            :client_secret => cli_options.get_option(:client_secret,:mandatory)
+            :grant         => self.options.get_option(:auth,:mandatory),
+            :client_id     => self.options.get_option(:client_id,:mandatory),
+            :client_secret => self.options.get_option(:client_secret,:mandatory)
           })
 
           # fill other auth parameters based on Oauth method
           case aoc_rest_auth[:grant]
           when :web
             aoc_rest_auth.merge!({
-              :redirect_uri => cli_options.get_option(:redirect_uri,:mandatory)
+              :redirect_uri => self.options.get_option(:redirect_uri,:mandatory)
             })
           when :jwt
             private_key_PEM_string=self.options.get_option(:private_key,:mandatory)
             aoc_rest_auth.merge!({
-              :jwt_subject         => cli_options.get_option(:username,:mandatory),
+              :jwt_subject         => self.options.get_option(:username,:mandatory),
               :jwt_private_key_obj => OpenSSL::PKey::RSA.new(private_key_PEM_string)
             })
           when :url_token
             aoc_rest_auth.merge!({
-              :url_token     => cli_options.get_option(:public_token,:mandatory),
+              :url_token     => self.options.get_option(:public_token,:mandatory),
             })
           else raise "ERROR: unsupported auth method"
           end
@@ -214,24 +220,17 @@ module Asperalm
 
         # initialize apis and authentication
         # set:
-        # @api_files
         # @default_workspace_id
         # @workspace_name
         # @workspace_id
         # @user_id
         # @home_node_file  (hash with :node_info and :file_id)
-        # @ak_secret
         # returns nil
-        def set_fields(is_admin)
-          # create objects for REST calls to Aspera
-          # Note: bearer token is created on first use, or taken from cache
-          @api_files=get_aoc_api(self.options,is_admin)
-
-          @org_data=@api_files.read('organization')[:data]
+        def set_workspace_info
           if @api_files.params[:auth].has_key?(:url_token)
             url_token_data=@api_files.read("url_tokens")[:data].first
             @default_workspace_id=url_token_data['data']['workspace_id']
-            @user_id='todo' # TODO : @org_data ?
+            @user_id='todo' # TODO : @api_files.read('organization')[:data] ?
             self.options.set_option(:id,url_token_data['data']['package_id'])
             home_node_id=url_token_data['data']['node_id']
             home_file_id=url_token_data['data']['file_id']
@@ -279,8 +278,6 @@ module Asperalm
           }
           @api_files.check_get_node_file(@home_node_file)
 
-          @ak_secret=self.options.get_option(:secret,:optional)
-
           return nil
         end
 
@@ -316,8 +313,6 @@ module Asperalm
           package_creation[recipient_list_field]=resolved_list
         end
 
-        def action_list; [ :apiinfo, :bearer_token, :organization, :workspace, :packages, :files, :faspexgw, :admin, :user];end
-
         def package_tags(package_info,operation)
           return {'tags'=>{'aspera'=>{'files'=>{
             'package_id'        => package_info['id'],
@@ -338,15 +333,19 @@ module Asperalm
           return query
         end
 
+        def action_list; [ :apiinfo, :bearer_token, :organization, :user, :workspace, :packages, :files, :faspexgw, :admin];end
+
         def execute_action
           command=self.options.get_next_command(action_list)
-          # set global fields, apis, etc...
-          set_fields(command.eql?(:admin))
+          # create objects for REST calls to Aspera
+          # Note: bearer token is created on first use, or taken from cache
+          @api_files=get_aoc_api(command.eql?(:admin))
 
-          # display workspace
-          if self.options.get_option(:format,:optional).eql?(:table) and !command.eql?(:admin)
-            default_ws=@workspace_id == @default_workspace_id ? ' (default)' : ''
-            self.format.display_status "Current Workspace: #{@workspace_name.red}#{default_ws}"
+          if [:workspace, :packages, :files, :faspexgw].include?(command)
+            # populate workspace information for commands other than "admin"
+            set_workspace_info
+            # display workspace
+            self.format.display_status("Current Workspace: #{@workspace_name.red}#{@workspace_id == @default_workspace_id ? ' (default)' : ''}")
           end
 
           case command
@@ -358,9 +357,7 @@ module Asperalm
           when :bearer_token
             return {:type=>:text,:data=>@api_files.oauth_token}
           when :organization
-            return { :type=>:single_object, :data =>@org_data }
-          when :workspace # show current workspace parameters
-            return { :type=>:single_object, :data =>@workspace_data }
+            return { :type=>:single_object, :data =>@api_files.read('organization')[:data] }
           when :user
             command=self.options.get_next_command([ :workspaces,:info ])
             case command
@@ -369,18 +366,18 @@ module Asperalm
               #              when :settings
               #                return {:type=>:object_list,:data=>@api_files.read("client_settings/")[:data]}
             when :info
-              resource_instance_path="users/#{@user_id}"
               command=self.options.get_next_command([ :show,:modify ])
+              my_user=@api_files.read('self')[:data]
               case command
               when :show
-                object=@api_files.read(resource_instance_path)[:data]
-                return { :type=>:single_object, :data =>object }
+                return { :type=>:single_object, :data =>my_user }
               when :modify
-                changes=self.options.get_next_argument('modified parameters (hash)')
-                @api_files.update(resource_instance_path,changes)
+                @api_files.update("users/#{my_user['id']}",self.options.get_next_argument('modified parameters (hash)'))
                 return Main.result_status('modified')
               end
             end
+          when :workspace # show current workspace parameters
+            return { :type=>:single_object, :data =>@workspace_data }
           when :packages
             command_pkg=self.options.get_next_command([ :send, :recv, :list, :show, :delete ])
             case command_pkg
@@ -500,9 +497,9 @@ module Asperalm
               if !singleton_object and !global_operations.include?(command)
                 res_id=self.options.get_option(:id)
                 res_name=self.options.get_option(:name)
-                if resource_type.eql?(:node)
-                  #@api_files.secrets[@home_node_file[:node_info]['id']]=@ak_secret unless @ak_secret.nil?
-                  res_id=@home_node_file[:node_info]['id'] if res_id.nil? and res_name.nil?
+                if res_id.nil? and res_name.nil? and resource_type.eql?(:node)
+                  set_workspace_info
+                  res_id=@home_node_file[:node_info]['id']
                 end
                 if !res_name.nil?
                   Log.log.warn("name overrides id") unless res_id.nil?
