@@ -10,9 +10,11 @@ module Asperalm
 
       def initialize(env)
         @agents=env
-        self.options.parser.separator "COMMAND: #{self.class.name.split('::').last.downcase}"
-        self.options.parser.separator "SUBCOMMANDS: #{self.action_list.map{ |p| p.to_s}.join(', ')}"
-        self.options.parser.separator "OPTIONS:"
+        unless env[:skip_option_header]
+          self.options.parser.separator "COMMAND: #{self.class.name.split('::').last.downcase}"
+          self.options.parser.separator "SUBCOMMANDS: #{self.action_list.map{ |p| p.to_s}.join(', ')}"
+          self.options.parser.separator "OPTIONS:"
+        end
         unless @@done
           self.options.add_opt_simple(:value,"extended value for create, update, list filter")
           self.options.add_opt_simple(:id,"resource identifier (#{INSTANCE_OPS.join(",")})")
