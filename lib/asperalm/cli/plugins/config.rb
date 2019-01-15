@@ -287,20 +287,21 @@ module Asperalm
             return {:type=>:object_list,:data=>self.class.flatten_all_config(@config_presets)}
           when :wizard
             self.options.ask_missing_mandatory=true
-            instance_url=self.options.get_next_argument('URL of server')
+            # register url option
+            BasicAuthPlugin.new(@agents.merge(skip_option_header: true))
+            instance_url=self.options.get_option(:url,:mandatory)
             appli=discover_product(instance_url)
             case appli[:product]
             when :aoc
               self.format.display_status("Detected: Aspera on Cloud")
               require 'asperalm/cli/plugins/aspera'
-              files_plugin=Plugins::Aspera.new(@agents)
-              self.options.ask_missing_mandatory=true
+              files_plugin=Plugins::Aspera.new(@agents.merge({skip_basic_auth_options: true}))
               #self.options.set_option(:interactive,:yes)
-              self.options.set_option(:url,instance_url)
+              #self.options.set_option(:url,instance_url)
               self.options.set_option(:auth,:web)
               self.options.set_option(:redirect_uri,@@DEFAULT_REDIRECT)
               organization,instance_domain=FilesApi.parse_url(instance_url)
-              aspera_preset_name=self.options.get_option(:client_secret,:optional) || 'aoc_'+organization
+              aspera_preset_name='aoc_'+organization
               self.format.display_status("Creating preset: #{aspera_preset_name}")
               key_filepath=File.join(@main_folder,'aspera_on_cloud_key')
               if File.exist?(key_filepath)
@@ -332,13 +333,13 @@ module Asperalm
                 raise CliError,"preset already exists: #{aspera_preset_name}  (use --override=yes)" if @config_presets.has_key?(aspera_preset_name)
               end
               # todo: check if key is identical
-              files_plugin.set_fields(true)
-              myself=files_plugin.api_files.read('self')[:data]
+              api_aoc=files_plugin.get_aoc_api(true)
+              myself=api_aoc.read('self')[:data]
               raise CliError,"public key is already set in profile (use --override=yes)"  unless myself['public_key'].empty? or option_override
               puts "updating profile with new key"
-              files_plugin.api_files.update("users/#{myself['id']}",{'public_key'=>File.read(key_filepath+'.pub')})
+              api_aoc.update("users/#{myself['id']}",{'public_key'=>File.read(key_filepath+'.pub')})
               puts "Enabling JWT for client"
-              files_plugin.api_files.update("clients/#{self.options.get_option(:client_id)}",{'jwt_grant_enabled'=>true,'explicit_authorization_required'=>false})
+              api_aoc.update("clients/#{self.options.get_option(:client_id)}",{'jwt_grant_enabled'=>true,'explicit_authorization_required'=>false})
               puts "creating new config preset: #{aspera_preset_name}"
               @config_presets[aspera_preset_name]={
                 :url.to_s           =>self.options.get_option(:url),
