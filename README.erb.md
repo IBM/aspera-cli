@@ -877,7 +877,7 @@ This requires additional setup.
 <%=tool%> provides a configuration wizard, to invoke it do:
 
 ```
-$ <%=cmd%> config wizard aspera --url=https://sedemo.ibmaspera.com
+$ <%=cmd%> config wizard --url=https://sedemo.ibmaspera.com
 ```
 
 If the `url` parameter is not provided it will be asked on command line.
@@ -908,21 +908,17 @@ The first step is to declare <%=tool%> in Aspera on Cloud using the admin interf
 
 Let's start by a registration with web based authentication (auth=web):
 
-<img src="docs/Auth-simple-web.png" alt="Screenshot: Web based auth API client registration form"/>
-
-* Open a web browser, log to your instance: e.g. `https://laurent.ibmaspera.com/`
-* Go to Admin View-Organization-API Clients-Create
-* Fill the API client creation form:
+* Open a web browser, log to your instance: e.g. `https://myorg.ibmaspera.com/`
+* Go to Apps&rarr;Admin&rarr;Organization&rarr;Integrations
+* Click "Create New"
 	* Client Name: <%=tool%>
 	* Redirect URIs: `http://localhost:12345`
 	* Origins: `localhost`
 	* uncheck "Prompt users to allow client to access"
-	* leave JWT unchecked for now
-* Submit
+	* leave the JWT part for now
+* Save
 
-Note: for web based authentication, <%=tool%> listens on a local port (e.g. by default 12345), and the browser will provide the OAuth code there. For `<%=tool%> http is required, and 12345 is the default port.
-
-<img src="docs/Auth-registered-client.png" alt="Screenshot:Registered API Client"/>
+Note: for web based authentication, <%=tool%> listens on a local port (e.g. specified by the redirect_uri, in this example: 12345), and the browser will provide the OAuth code there. For `<%=tool%>, HTTP is required, and 12345 is the default port.
 
 Once the client is registered, a "Client ID" and "Secret" are created, these values will be used in the next step.
 
@@ -932,7 +928,7 @@ It is convenient to save several of those parameters in an <%=prst%> for <%=tool
 
 ```
 $ <%=cmd%> config id my_aoc_org ask url client_id client_secret
-option: url> https://laurent.ibmaspera.com/
+option: url> https://myorg.ibmaspera.com/
 option: client_id> BJLPObQiFw
 option: client_secret> yFS1mu-crbKuQhGFtfhYuoRW...
 updated: my_aoc_org
@@ -946,7 +942,7 @@ Define this <%=prst%> as default configuration for the `aspera` plugin:
 $ <%=cmd%> config id default set aspera my_aoc_org
 ```
 
-Note: Default `auth` method is `web` and default `redirect_uri` is `http://localhost:12345`.
+Note: Default `auth` method is `web` and default `redirect_uri` is `http://localhost:12345`. Leave those default values.
 
 ### <a name="aocfirst"></a>First Use
 
@@ -964,7 +960,7 @@ For direct browser-less authentication, follow the [JWT](#jwt) section.
 
 ### <a name="jwt"></a>Activation of JSON Web Token (JWT) for direct authentication
 
-In addition to basic API Client registration, the following steps are required for a Browser-less, Key-based authentication.
+In addition to basic API Client registration, the following steps are required for a Browser-less, Private Key-based authentication.
 
 #### Key Pair Generation
 
@@ -1004,19 +1000,12 @@ JWT needs to be authorized in Aspera on Cloud. This can be done in two manners:
 
 ##### Graphically
 
-<img src="docs/AuthJWT.png" alt="Files-admin-organization-apiclient-create"/>
-
-* Open a web browser, log to your instance: https://laurent.ibmaspera.com/
-* Go to Apps-Admin-Organization-Integrations
+* Open a web browser, log to your instance: https://myorg.ibmaspera.com/
+* Go to Apps&rarr;Admin&rarr;Organization&rarr;Integrations
 * Click on the previously created application
-* select tab : "Authentication Options"
-* Modify options:
-	* activate "Enable JWT Grant Type"
-	* Client can retrieve tokens for: All Users
-	* Allowed keys: keep "User-specific keys"
-	* Enable admin tokens
-
-Note: It is also possible to allow a "super key" to impersonate any user by registering a "super key" at this step. (Select USer and Global, and then set public key).
+* select tab : "JSON Web Token Auth"
+* Modify options if necessary, for instance: activate both options in section "Settings"
+* Click "Save"
 
 ##### Using command line
 
@@ -1037,13 +1026,13 @@ The public key must be assigned to your user. This can be done in two manners:
 
 ##### Graphically
 
-<img src="docs/AuthUsersKey.png" alt="Screenshot: Users key registration"/>
+open the previously generated public key located here: `$HOME/.aspera/<%=cmd%>/aocapikey.pub`
 
-* Open a web browser, log to your instance: https://laurent.ibmaspera.com/
-* In User Admin View, click n the user's icon (top right)
+* Open a web browser, log to your instance: https://myorg.ibmaspera.com/
+* Click on the user's icon (top right)
 * Select "Account Settings"
 * Paste the _Public Key_ in the "Public Key" section
-* Click on "Update"
+* Click on "Submit"
 
 ##### Using command line
 
@@ -1055,15 +1044,15 @@ $ <%=cmd%> aspera admin res user list
 : 109952 : Tech Support   :
 : 109951 : LAURENT MARTIN :
 :........:................:
-$ <%=cmd%> aspera admin res user --id=109951 modify @ruby:'{"public_key"=>File.read(File.expand_path("~/.aspera/<%=cmd%>/aocapikey.pub"))}'   
+$ <%=cmd%> aspera user info modify @ruby:'{"public_key"=>File.read(File.expand_path("~/.aspera/<%=cmd%>/aocapikey.pub"))}'   
 modified
 ```
 
-Note: the `show` command can be used to verify modifications.
+Note: the `aspera user info show` command can be used to verify modifications.
 
 #### <%=prst%> modification for JWT
 
-To activate JWT authentication for <%=tool%> using the <%=prst%>, do the folowing:
+To activate default use of JWT authentication for <%=tool%> using the <%=prst%>, do the folowing:
 
 * change auth method to JWT
 * provide location of private key
