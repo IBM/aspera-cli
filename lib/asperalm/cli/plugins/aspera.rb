@@ -181,8 +181,9 @@ module Asperalm
             self.options.set_option(:url,'https://'+uri.host)
             self.options.set_option(:public_token,url_token_value)
             self.options.set_option(:auth,:url_token)
-            self.options.set_option(:client_id,FilesApi.random.first)
-            self.options.set_option(:client_secret,FilesApi.random.last)
+            client_data=FilesApi.random_drive
+            self.options.set_option(:client_id,client_data.first)
+            self.options.set_option(:client_secret,client_data.last)
           end
           # Connection paramaters (url and auth) to Aspera on Cloud
           # pre populate rest parameters based on URL
@@ -193,6 +194,12 @@ module Asperalm
             :client_id     => self.options.get_option(:client_id,:mandatory),
             :client_secret => self.options.get_option(:client_secret,:mandatory)
           })
+
+          # add jwt payload for global ids
+          if FilesApi.is_global_client_id?(aoc_rest_auth[:client_id])
+            org=aoc_rest_auth[:base_url].gsub(/.*\//,'')
+            aoc_rest_auth.merge!({:jwt_add=>{org: org}})
+          end
 
           # fill other auth parameters based on Oauth method
           case aoc_rest_auth[:grant]

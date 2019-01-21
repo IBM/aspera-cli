@@ -30,8 +30,14 @@ module Asperalm
           add_plugin_lookup_folder(File.join(Main.gem_root,@@GEM_PLUGINS_FOLDER))
           self.options.set_obj_attr(:override,self,:option_override,:no)
           self.options.set_obj_attr(:config_file,self,:option_config_file)
+          self.options.add_opt_boolean(:override,"override existing value")
           self.options.add_opt_simple(:config_file,"read parameters from file in YAML format, current=#{@option_config_file}")
           self.options.add_opt_switch(:no_default,"-N","do not load default configuration for plugin") { @use_plugin_defaults=false }
+          self.options.add_opt_boolean(:global_client_id,'wizard: AoC: use global or org specific jwt client id')
+          self.options.add_opt_boolean(:web_bootstrap,'wizard: AoC: first login with web')
+          self.options.add_opt_simple(:pkeypath,"path to private key")
+          self.options.set_option(:global_client_id,false)
+          self.options.set_option(:web_bootstrap,true)
           self.options.parse_options!
         end
 
@@ -49,11 +55,13 @@ module Asperalm
 
         # folder in $HOME for application files (config, cache)
         @@ASPERA_HOME_FOLDER_NAME='.aspera'
-        # main config file
+        # default config file
         @@DEFAULT_CONFIG_FILENAME = 'config.yaml'
+        # reserved preset names
         @@CONF_PRESET_CONFIG='config'
         @@CONF_PRESET_VERSION='version'
         @@CONF_PRESET_DEFAULT='default'
+        # old tool name
         @@OLD_PROGRAM_NAME = 'aslmcli'
         # default redirect for AoC web auth
         @@DEFAULT_REDIRECT='http://localhost:12345'
@@ -62,13 +70,12 @@ module Asperalm
         # folder containing plugins in the gem's main folder
         @@GEM_PLUGINS_FOLDER='asperalm/cli/plugins'
         @@RUBY_FILE_EXT='.rb'
-        @@RANDOM_CLIENT='YXNwZXJhLmdsb2JhbC1jbGktY2xpZW50OmZycG1zUnNHNG1qWjBQbHhDZ2RKbHZPTnFCZzRWbHB6X0lYN2dYbUJNQWZzZ01MeTJGTzZDWExvZEtmS0F1aHFuQ3FTcHRMYmVfd2Rtbm05SlJ1RVBPLVBwRnFwcV9LYgo='
 
-        def generate_new_key(key_filepath)
+        def generate_new_key(private_key_path)
           require 'openssl'
           priv_key = OpenSSL::PKey::RSA.new(2048)
-          File.write(key_filepath,priv_key.to_s)
-          File.write(key_filepath+".pub",priv_key.public_key.to_s)
+          File.write(private_key_path,priv_key.to_s)
+          File.write(private_key_path+".pub",priv_key.public_key.to_s)
           nil
         end
 
@@ -268,9 +275,9 @@ module Asperalm
             OpenApplication.instance.uri("#{@option_config_file}") #file://
             return Main.result_nothing
           when :genkey # generate new rsa key
-            key_filepath=self.options.get_next_argument('private key file path')
-            generate_new_key(key_filepath)
-            return Main.result_status('generated key: '+key_filepath)
+            private_key_path=self.options.get_next_argument('private key file path')
+            generate_new_key(private_key_path)
+            return Main.result_status('generated key: '+private_key_path)
           when :echo # display the content of a value given on command line
             result={:type=>:other_struct, :data=>self.options.get_next_argument("value")}
             # special for csv
@@ -287,6 +294,7 @@ module Asperalm
             return {:type=>:object_list,:data=>self.class.flatten_all_config(@config_presets)}
           when :wizard
             self.options.ask_missing_mandatory=true
+            #self.options.set_option(:interactive,:yes)
             # register url option
             BasicAuthPlugin.new(@agents.merge(skip_option_header: true))
             instance_url=self.options.get_option(:url,:mandatory)
@@ -294,65 +302,92 @@ module Asperalm
             case appli[:product]
             when :aoc
               self.format.display_status("Detected: Aspera on Cloud")
-              require 'asperalm/cli/plugins/aspera'
-              files_plugin=Plugins::Aspera.new(@agents.merge({skip_basic_auth_options: true}))
-              #self.options.set_option(:interactive,:yes)
-              #self.options.set_option(:url,instance_url)
-              self.options.set_option(:auth,:web)
-              self.options.set_option(:redirect_uri,@@DEFAULT_REDIRECT)
               organization,instance_domain=FilesApi.parse_url(instance_url)
               aspera_preset_name='aoc_'+organization
-              self.format.display_status("Creating preset: #{aspera_preset_name}")
-              key_filepath=File.join(@main_folder,'aspera_on_cloud_key')
-              if File.exist?(key_filepath)
-                puts "key file already exists: #{key_filepath}, keeping it"
-              else
-                puts "generating: #{key_filepath}"
-                generate_new_key(key_filepath)
+              self.format.display_status("Preparing preset: #{aspera_preset_name}")
+              # init defaults if necessary
+              @config_presets[@@CONF_PRESET_DEFAULT]||=Hash.new
+              if !option_override
+                raise CliError,"a default configuration already exists for plugin 'aspera' (use --override=yes)" if @config_presets[@@CONF_PRESET_DEFAULT].has_key?(Plugins::Aspera.name_sym.to_s)
+                raise CliError,"preset already exists: #{aspera_preset_name}  (use --override=yes)" if @config_presets.has_key?(aspera_preset_name)
               end
-              # if no api client info on command line, ask to get it
-              if self.options.get_option(:client_id,:optional).nil? or self.options.get_option(:client_secret,:optional).nil?
-                #client_data=Base64.decode64(@@RANDOM_CLIENT).split(':')
-                #self.options.set_option(:client_id,client_data.first)
-                #self.options.set_option(:client_secret,client_data.last);
-                puts "Please login to your Aspera on Cloud instance as Administrator."
-                puts "Go to: Admin->Organization->Integrations"
-                puts "Create a new integration:"
-                puts "- name: #{@tool_name}"
-                puts "- redirect uri: #{@@DEFAULT_REDIRECT}"
-                puts "- origin: localhost"
-                puts "Once created please enter the following any required parameter:"
+              # lets see if path to priv key is provided
+              private_key_path=self.options.get_option(:pkeypath,:optional)
+              # give a chance to provide
+              if private_key_path.nil?
+                self.format.display_status("Please provide path to your private RSA key, or empty to generate one:")
+                private_key_path=self.options.get_option(:pkeypath,:mandatory).to_s
+              end
+              # else generate path
+              if private_key_path.empty?
+                private_key_path=File.join(@main_folder,'aspera_on_cloud_key')
+              end
+              if File.exist?(private_key_path)
+                self.format.display_status("using existing key:")
+              else
+                self.format.display_status("generating:")
+                generate_new_key(private_key_path)
+              end
+              self.format.display_status("#{private_key_path}")
+
+              # define options
+              require 'asperalm/cli/plugins/aspera'
+              files_plugin=Plugins::Aspera.new(@agents.merge({skip_basic_auth_options: true}))
+
+              if self.options.get_option(:global_client_id)
+                self.format.display_status("Using global client_id.")
+                client_data=FilesApi.random_cli
+                self.options.set_option(:auth,:jwt)
+                self.options.set_option(:client_id,client_data.first)
+                self.options.set_option(:client_secret,client_data.last)
+                #self.options.set_option(:redirect_uri,'https://asperafiles.com/token')
+                # not supported
+                if self.options.get_option(:web_bootstrap)
+                  self.format.display_status("web bootstrap not supported in global id")
+                  self.options.set_option(:web_bootstrap, false)
+                end
+              else
+                self.format.display_status("Using organization specific client_id.")
+                self.options.set_option(:auth,:web)
+                self.options.set_option(:redirect_uri,@@DEFAULT_REDIRECT)
+                self.format.display_status("Please login to your Aspera on Cloud instance as Administrator.".red)
+                self.format.display_status("Go to: Admin->Organization->Integrations")
+                self.format.display_status("Check if there is an integration named:")
+                self.format.display_status("- name: #{@tool_name}")
+                self.format.display_status("If not, create a new integration:")
+                self.format.display_status("- name: #{@tool_name}")
+                self.format.display_status("- redirect uri: #{@@DEFAULT_REDIRECT}")
+                self.format.display_status("- origin: localhost")
+                self.format.display_status("Once created or identified,")
+                self.format.display_status("Please enter the following any required parameter:".red)
                 OpenApplication.instance.uri(instance_url+"/admin/org/integrations")
                 self.options.get_option(:client_id,:mandatory)
                 self.options.get_option(:client_secret,:mandatory)
               end
-              # init defaults if necessary
-              @config_presets[@@CONF_PRESET_DEFAULT]||=Hash.new
-              if !option_override
-                raise CliError,"a default configuration already exists (use --override=yes)" if @config_presets[@@CONF_PRESET_DEFAULT].has_key?(Plugins::Aspera.name_sym.to_s)
-                raise CliError,"preset already exists: #{aspera_preset_name}  (use --override=yes)" if @config_presets.has_key?(aspera_preset_name)
-              end
+
+              self.options.set_option(:private_key,'@file:'+private_key_path)
               # todo: check if key is identical
               api_aoc=files_plugin.get_aoc_api(true)
+
               myself=api_aoc.read('self')[:data]
               raise CliError,"public key is already set in profile (use --override=yes)"  unless myself['public_key'].empty? or option_override
-              puts "updating profile with new key"
-              api_aoc.update("users/#{myself['id']}",{'public_key'=>File.read(key_filepath+'.pub')})
-              puts "Enabling JWT for client"
+              self.format.display_status("updating profile with new key")
+              api_aoc.update("users/#{myself['id']}",{'public_key'=>File.read(private_key_path+'.pub')})
+              self.format.display_status("Enabling JWT for client")
               api_aoc.update("clients/#{self.options.get_option(:client_id)}",{'jwt_grant_enabled'=>true,'explicit_authorization_required'=>false})
-              puts "creating new config preset: #{aspera_preset_name}"
+              self.format.display_status("creating new config preset: #{aspera_preset_name}")
               @config_presets[aspera_preset_name]={
                 :url.to_s           =>self.options.get_option(:url),
                 :redirect_uri.to_s  =>self.options.get_option(:redirect_uri),
                 :client_id.to_s     =>self.options.get_option(:client_id),
                 :client_secret.to_s =>self.options.get_option(:client_secret),
                 :auth.to_s          =>:jwt.to_s,
-                :private_key.to_s   =>'@file:'+key_filepath,
+                :private_key.to_s   =>'@file:'+private_key_path,
                 :username.to_s      =>myself['email'],
               }
-              puts "setting config preset as default for #{Plugins::Aspera.name_sym.to_s}"
+              self.format.display_status("setting config preset as default for #{Plugins::Aspera.name_sym.to_s}")
               @config_presets[@@CONF_PRESET_DEFAULT][Plugins::Aspera.name_sym.to_s]=aspera_preset_name
-              puts "saving config file"
+              self.format.display_status("saving config file")
               save_presets_to_config_file
               return Main.result_status("Done. You can test with:\n#{@tool_name} aspera user info show")
             else
@@ -437,8 +472,10 @@ module Asperalm
             if result[:http].body.include?('content="AoC"')
               return {:product=>:aoc,:version=>'unknown'}
             end
+          rescue SocketError => e
+            raise e
           rescue => e
-            Log.log.debug("not aoc (#{e})")
+            Log.log.debug("not aoc (#{e.class}: #{e})")
           end
           begin
             result=api.call({:operation=>'POST',:subpath=>'aspera/faspex',:headers=>{'Accept'=>'application/xrds+xml'},:text_body_params=>''})
