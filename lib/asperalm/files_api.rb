@@ -24,9 +24,14 @@ module Asperalm
 
     # some cool random string
     # strings /Applications/Aspera\ Drive.app/Contents/MacOS/AsperaDrive|grep -E '.{100}==$'|rev
-    RANDOM_SEED='==QMGdXZsdkYMlDezZ3MNhDStYFWQNXNrZTOPRmYh10ZmJkN2EnZCFHbFxkRQtmNylTQOpHdtdUTPNFTxFGWFdFWFB1dr1iNK5WTadTLSFGWBlFTkVDdoxkYjx0MRp3ZlVlOlZXayRmLhJXZwNXY';
-    def self.random
-      Base64.strict_decode64(RANDOM_SEED.reverse).split(':')
+    RANDOM_DRIVE='==QMGdXZsdkYMlDezZ3MNhDStYFWQNXNrZTOPRmYh10ZmJkN2EnZCFHbFxkRQtmNylTQOpHdtdUTPNFTxFGWFdFWFB1dr1iNK5WTadTLSFGWBlFTkVDdoxkYjx0MRp3ZlVlOlZXayRmLhJXZwNXY';
+    @@RANDOM_CLIENT='YXNwZXJhLmdsb2JhbC1jbGktY2xpZW50OmZycG1zUnNHNG1qWjBQbHhDZ2RKbHZPTnFCZzRWbHB6X0lYN2dYbUJNQWZzZ01MeTJGTzZDWExvZEtmS0F1aHFuQ3FTcHRMYmVfd2Rtbm05SlJ1RVBPLVBwRnFwcV9LYgo='
+    def self.random_drive
+      Base64.strict_decode64(RANDOM_DRIVE.reverse).split(':')
+    end
+
+    def self.random_cli
+      Base64.strict_decode64(@@RANDOM_CLIENT).split(':')
     end
 
     def self.parse_url(aoc_org_url)
@@ -58,6 +63,10 @@ module Asperalm
     # node API scopes
     def self.node_scope(access_key,scope)
       return 'node.'+access_key+':'+scope
+    end
+
+    def self.is_global_client_id?(client_id)
+      client_id.start_with?('aspera.global')
     end
 
     def initialize(rest_params)
