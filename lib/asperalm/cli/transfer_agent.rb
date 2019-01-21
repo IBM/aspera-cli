@@ -13,9 +13,13 @@ module Asperalm
       @@ARGS_PARAM='@args'
       @@TS_PARAM='@ts'
       def initialize(env)
+        # external objects: option manager, config file manager
         @env=env
+        # custom transfer spec provided on command line
         @transfer_spec_cmdline={}
+        # the actual selected transfer agent
         @agent=nil
+        # source/destination pair, like "paths" of transfer spec
         @transfer_paths=nil
       end
       public
@@ -143,7 +147,8 @@ module Asperalm
         return @transfer_paths
       end
 
-      # plugins shall use this method to start a transfer
+      # start a transfer
+      # plugins shall use this method
       # @param: options[:src] specifies how destination_root is set (how transfer spec was generated)
       # and not the default one
       def start(transfer_spec,options)
@@ -184,6 +189,7 @@ module Asperalm
         return @agent.wait_for_transfers_completion
       end
 
+      # shut down if agent requires it
       def shutdown
         @agent.shutdown if @agent.respond_to?(:shutdown)
       end
