@@ -229,23 +229,28 @@ module Asperalm
             :state        => UNUSED_STATE
           }))
         when :jwt
+          # https://tools.ietf.org/html/rfc7519
           require 'jwt'
           # remove 5 minutes to account for time offset
           seconds_since_epoch=Time.new.to_i-@@OFFSET_ALLOWANCE_SEC
           Log.log.info("seconds=#{seconds_since_epoch}")
 
           payload = {
-            :iss => @params[:client_id],
-            :sub => @params[:jwt_subject],
-            :aud => @params[:jwt_audience],
+            :iss => @params[:client_id],    # issuer
+            :sub => @params[:jwt_subject],  # subject
+            :aud => @params[:jwt_audience], # audience
             :nbf => seconds_since_epoch,
             :exp => seconds_since_epoch+@@ASSERTION_VALIDITY_SEC # TODO: configurable ?
           }
+
+          # non standard, only for global ids
+          payload.merge!(@params[:jwt_add]) if @params.has_key?(:jwt_add)
 
           rsa_private=@params[:jwt_private_key_obj]  # type: OpenSSL::PKey::RSA
 
           Log.log.debug("private=[#{rsa_private}]")
 
+          Log.log.debug("JWT assertion=[#{payload}]")
           assertion = JWT.encode(payload, rsa_private, 'RS256')
 
           Log.log.debug("assertion=[#{assertion}]")
