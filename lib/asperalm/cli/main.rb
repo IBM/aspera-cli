@@ -150,7 +150,6 @@ module Asperalm
         @opt_mgr.add_opt_simple(:query,"additional filter for API calls (extended value) (some commands)")
         @opt_mgr.add_opt_boolean(:insecure,"do not validate HTTPS certificate")
         @opt_mgr.add_opt_boolean(:flat_hash,"display hash values as additional keys")
-        @opt_mgr.add_opt_boolean(:override,"override existing value")
         @opt_mgr.add_opt_boolean(:once_only,"process only new items (some commands)")
 
         @opt_mgr.set_option(:ui,OpenApplication.default_gui_mode)
