@@ -518,15 +518,22 @@ t/conf_export:
 HIDE_CLIENT_ID=BMDiAWLP6g
 HIDE_CLIENT_SECRET=opkZrJuN-J8anDxPcPA5CFLsY5CopRvLqBeDV24_8KJgarmuYGkI0ha5zNkBLpZ1-edRwzgHZfhisyQltG-xJ-kiZvvxf3Co
 SAMPLE_CONFIG_FILE=todelete.txt
-t/conf_wizard:
-	$(EXETEST) conf wiz --url=https://sedemo.ibmaspera.com --config-file=$(SAMPLE_CONFIG_FILE) --client-id=$(HIDE_CLIENT_ID) --client-secret=$(HIDE_CLIENT_SECRET) --pkeypath=''
+t/conf_wizard_org:
+	$(EXETEST) conf flush
+	$(EXETEST) conf wiz --url=https://sedemo.ibmaspera.com --config-file=$(SAMPLE_CONFIG_FILE) --client-id=$(HIDE_CLIENT_ID) --client-secret=$(HIDE_CLIENT_SECRET) --pkeypath='' --use-generic-client=no
+	cat $(SAMPLE_CONFIG_FILE)
+	rm -f $(SAMPLE_CONFIG_FILE)
+	@touch $@
+t/conf_wizard_gen:
+	$(EXETEST) conf flush
+	$(EXETEST) conf wiz --url=https://sedemo.ibmaspera.com --config-file=$(SAMPLE_CONFIG_FILE) --pkeypath='' --username=laurent.martin.aspera@fr.ibm.com
 	cat $(SAMPLE_CONFIG_FILE)
 	rm -f $(SAMPLE_CONFIG_FILE)
 	@touch $@
 t/conf_genkey:
 	$(EXETEST) config genkey $(TEST_FOLDER)/mykey
 	@touch $@
-tconf: t/conf_id_1 t/conf_id_2 t/conf_id_3 t/conf_id_4 t/conf_id_5 t/conf_id_6 t/conf_open t/conf_list t/conf_over t/conf_help t/conf_open_err t/conf_plugins t/conf_export t/conf_wizard t/conf_genkey
+tconf: t/conf_id_1 t/conf_id_2 t/conf_id_3 t/conf_id_4 t/conf_id_5 t/conf_id_6 t/conf_open t/conf_list t/conf_over t/conf_help t/conf_open_err t/conf_plugins t/conf_export t/conf_wizard_org t/conf_wizard_gen t/conf_genkey
 
 t/shar2_1:
 	$(EXETEST) shares2 appinfo
