@@ -32,10 +32,12 @@ module Asperalm
           self.options.add_opt_simple(:scope,"scope for AoC API calls")
           self.options.add_opt_boolean(:bulk,"bulk operation")
           self.options.set_option(:bulk,:no)
-          self.options.set_option(:redirect_uri,'http://localhost:12345')
-          self.options.set_option(:auth,:web)
           self.options.set_option(:new_user_option,{'package_contact'=>true})
           self.options.set_option(:operation,:push)
+          client_data=FilesApi.random_cli
+          self.options.set_option(:auth,:jwt)
+          self.options.set_option(:client_id,client_data.first)
+          self.options.set_option(:client_secret,client_data.last)
           self.options.parse_options!
           @default_workspace_id=nil
           @workspace_name=nil
@@ -181,9 +183,9 @@ module Asperalm
             self.options.set_option(:url,'https://'+uri.host)
             self.options.set_option(:public_token,url_token_value)
             self.options.set_option(:auth,:url_token)
-            client_data=FilesApi.random_drive
-            self.options.set_option(:client_id,client_data.first)
-            self.options.set_option(:client_secret,client_data.last)
+            #client_data=FilesApi.random_drive
+            #self.options.set_option(:client_id,client_data.first)
+            #self.options.set_option(:client_secret,client_data.last)
           end
           # Connection paramaters (url and auth) to Aspera on Cloud
           # pre populate rest parameters based on URL
