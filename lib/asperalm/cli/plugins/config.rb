@@ -1,5 +1,6 @@
 require 'asperalm/cli/basic_auth_plugin'
 require 'asperalm/fasp/installation'
+require 'asperalm/api_detector'
 require 'xmlsimple'
 require 'base64'
 
@@ -70,6 +71,8 @@ module Asperalm
         # folder containing plugins in the gem's main folder
         @@GEM_PLUGINS_FOLDER='asperalm/cli/plugins'
         @@RUBY_FILE_EXT='.rb'
+        @@OLD_AOC_COMMAND='files'
+        @@NEW_AOC_COMMAND='aspera'
 
         def generate_new_key(private_key_path)
           require 'openssl'
@@ -136,12 +139,10 @@ module Asperalm
             save_required=false
             config_tested_version='0.6.14'
             if Gem::Version.new(version) <= Gem::Version.new(config_tested_version)
-              old_plugin_name='files'
-              new_plugin_name=Plugins::Aspera.name_sym.to_s
-              if @config_presets[@@CONF_PRESET_DEFAULT].is_a?(Hash) and @config_presets[@@CONF_PRESET_DEFAULT].has_key?(old_plugin_name)
-                @config_presets[@@CONF_PRESET_DEFAULT][new_plugin_name]=@config_presets[@@CONF_PRESET_DEFAULT][old_plugin_name]
-                @config_presets[@@CONF_PRESET_DEFAULT].delete(old_plugin_name)
-                Log.log.warn("Converted plugin default: #{old_plugin_name} -> #{new_plugin_name}")
+              if @config_presets[@@CONF_PRESET_DEFAULT].is_a?(Hash) and @config_presets[@@CONF_PRESET_DEFAULT].has_key?(@@OLD_AOC_COMMAND)
+                @config_presets[@@CONF_PRESET_DEFAULT][@@NEW_AOC_COMMAND]=@config_presets[@@CONF_PRESET_DEFAULT][@@OLD_AOC_COMMAND]
+                @config_presets[@@CONF_PRESET_DEFAULT].delete(@@OLD_AOC_COMMAND)
+                Log.log.warn("Converted plugin default: #{@@OLD_AOC_COMMAND} -> #{@@NEW_AOC_COMMAND}")
                 save_required=true
               end
             end
@@ -298,7 +299,7 @@ module Asperalm
             # register url option
             BasicAuthPlugin.new(@agents.merge(skip_option_header: true))
             instance_url=self.options.get_option(:url,:mandatory)
-            appli=discover_product(instance_url)
+            appli=ApiDetector.discover_product(instance_url)
             case appli[:product]
             when :aoc
               self.format.display_status("Detected: Aspera on Cloud")
@@ -308,7 +309,7 @@ module Asperalm
               # init defaults if necessary
               @config_presets[@@CONF_PRESET_DEFAULT]||=Hash.new
               if !option_override
-                raise CliError,"a default configuration already exists for plugin 'aspera' (use --override=yes)" if @config_presets[@@CONF_PRESET_DEFAULT].has_key?(Plugins::Aspera.name_sym.to_s)
+                raise CliError,"a default configuration already exists for plugin '#{@@NEW_AOC_COMMAND}' (use --override=yes)" if @config_presets[@@CONF_PRESET_DEFAULT].has_key?(@@NEW_AOC_COMMAND)
                 raise CliError,"preset already exists: #{aspera_preset_name}  (use --override=yes)" if @config_presets.has_key?(aspera_preset_name)
               end
               # lets see if path to priv key is provided
@@ -427,7 +428,7 @@ module Asperalm
           when :detect
             # need url / username
             BasicAuthPlugin.new(@agents)
-            return Main.result_status("found: #{discover_product(self.options.get_option(:url,:mandatory))}")
+            return Main.result_status("found: #{ApiDetector.discover_product(self.options.get_option(:url,:mandatory))}")
           when :coffee
             OpenApplication.instance.uri('https://enjoyjava.com/wp-content/uploads/2018/01/How-to-make-strong-coffee.jpg')
             return Main.result_nothing
@@ -464,42 +465,6 @@ module Asperalm
           return nil
         end
 
-        def discover_product(url)
-          uri=URI.parse(url)
-          api=Rest.new({:base_url=>url})
-          begin
-            result=api.call({:operation=>'GET',:subpath=>'',:headers=>{'Accept'=>'text/html'}})
-            if result[:http].body.include?('content="AoC"')
-              return {:product=>:aoc,:version=>'unknown'}
-            end
-          rescue SocketError => e
-            raise e
-          rescue => e
-            Log.log.debug("not aoc (#{e.class}: #{e})")
-          end
-          begin
-            result=api.call({:operation=>'POST',:subpath=>'aspera/faspex',:headers=>{'Accept'=>'application/xrds+xml'},:text_body_params=>''})
-            if result[:http].body.start_with?('<?xml')
-              res_s=XmlSimple.xml_in(result[:http].body, {"ForceArray" => false})
-              version=res_s['XRD']['application']['version']
-              #return JSON.pretty_generate(res_s)
-            end
-            return {:product=>:faspex,:version=>version}
-          rescue
-            Log.log.debug("not faspex")
-          end
-          begin
-            result=api.read('node_api/app')
-            Log.log.warn("not supposed to work")
-          rescue RestCallError => e
-            if e.response.code.to_s.eql?('401') and e.response.body.eql?('{"error":{"user_message":"API user authentication failed"}}')
-              return {:product=>:shares,:version=>'unknown'}
-            end
-            Log.log.warn("not shares: #{e.response.code} #{e.response.body}")
-          rescue
-          end
-          return {:product=>:unknown,:version=>'unknown'}
-        end
 
       end
     end
