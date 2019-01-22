@@ -10,10 +10,20 @@ module Asperalm
   module Cli
     module Plugins
       class Preview < BasicAuthPlugin
+        attr_accessor :option_overwrite
+        attr_accessor :option_previews_folder
+        attr_accessor :option_folder_reset_cache
+        attr_accessor :option_temp_folder
+        attr_accessor :option_skip_folders
         def initialize(env)
           super(env)
+          @skip_types=[]
+          @default_transfer_spec=nil
+          # by default generate all supported formats
+          @preview_formats=Asperalm::Preview::Generator.preview_formats
           # link CLI options to gen_info attributes
           self.options.set_obj_attr(:skip_types,self,:option_skip_types)
+          self.options.set_obj_attr(:skip_format,self,:option_skip_format,[])
           self.options.set_obj_attr(:overwrite,self,:option_overwrite,:mtime)
           self.options.set_obj_attr(:previews_folder,self,:option_previews_folder,'previews')
           self.options.set_obj_attr(:folder_reset_cache,self,:option_folder_reset_cache,:no)
@@ -38,6 +48,7 @@ module Asperalm
           self.options.set_obj_attr(:check_extension,Asperalm::Preview::Options.instance,:check_extension,:yes)
           self.options.add_opt_list(:file_access,[:local,:remote],"how to read and write files in repository")
           self.options.add_opt_simple(:skip_types,"skip types in comma separated list")
+          self.options.add_opt_list(:skip_format,Asperalm::Preview::Generator.preview_formats,"skip this preview format (multiple possible)")
           self.options.add_opt_list(:overwrite,Preview.overwrite_policies,"when to generate preview file")
           self.options.add_opt_simple(:previews_folder,"preview folder in files")
           self.options.add_opt_simple(:iteration_file,"path to iteration memory file")
@@ -63,15 +74,7 @@ module Asperalm
           self.options.add_opt_boolean(:check_extension,"check extra file extensions")
           self.options.set_option(:file_access,:local)
           self.options.parse_options!
-          @skip_types=[]
-          @default_transfer_spec=nil
         end
-
-        attr_accessor :option_overwrite
-        attr_accessor :option_previews_folder
-        attr_accessor :option_folder_reset_cache
-        attr_accessor :option_skip_folders
-        attr_accessor :option_temp_folder
 
         # special tag to identify transfers related to generator
         PREV_GEN_TAG='preview_generator'
@@ -93,6 +96,14 @@ module Asperalm
 
         def option_skip_types
           return @skip_types.map{|i|i.to_s}.join(',')
+        end
+
+        def option_skip_format=(value)
+          @preview_formats.delete(value)
+        end
+
+        def option_skip_format
+          return @preview_formats.map{|i|i.to_s}.join(',')
         end
 
         def action_list; [:scan,:events,:folder,:check,:test];end
@@ -226,7 +237,7 @@ module Asperalm
           # where previews will be generated for this particular entry
           local_entry_preview_dir=String.new
           # prepare generic information
-          gen_infos=Asperalm::Preview::Generator.preview_formats.map do |preview_format|
+          gen_infos=@preview_formats.map do |preview_format|
             {
               :preview_format => preview_format,
               :base_dest      => preview_filename(preview_format)
