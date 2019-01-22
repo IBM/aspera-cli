@@ -60,32 +60,30 @@ module Asperalm
           when :node
             @agent=Fasp::Node.instance
             # way for code to setup alternate node api in avance
-            if @agent.node_api.nil?
-              # support: @param:<name>
-              # support extended values
-              node_config=@env[:options].get_option(:transfer_info,:optional)
-              # of not specified, use default node
-              if node_config.nil?
-                param_set_name=@env[:config].get_plugin_default_config_name(:node)
-                raise CliBadArgument,"No default node configured, Please specify --#{:transfer_info.to_s.gsub('_','-')}" if param_set_name.nil?
-                node_config=@env[:config].preset_by_name(param_set_name)
-              end
-              Log.log.debug("node=#{node_config}")
-              raise CliBadArgument,"the node configuration shall be a hash, use either @json:<json> or @preset:<parameter set name>" if !node_config.is_a?(Hash)
-              # now check there are required parameters
-              sym_config={}
-              [:url,:username,:password].each do |param|
-                raise CliBadArgument,"missing parameter [#{param}] in node specification: #{node_config}" if !node_config.has_key?(param.to_s)
-                sym_config[param]=node_config[param.to_s]
-              end
-              @agent.node_api=Rest.new({
-                :base_url => sym_config[:url],
-                :auth     => {
-                :type     =>:basic,
-                :username => sym_config[:username],
-                :password => sym_config[:password]
-                }})
+            # support: @param:<name>
+            # support extended values
+            node_config=@env[:options].get_option(:transfer_info,:optional)
+            # if not specified: use default node
+            if node_config.nil?
+              param_set_name=@env[:config].get_plugin_default_config_name(:node)
+              raise CliBadArgument,"No default node configured, Please specify --#{:transfer_info.to_s.gsub('_','-')}" if param_set_name.nil?
+              node_config=@env[:config].preset_by_name(param_set_name)
             end
+            Log.log.debug("node=#{node_config}")
+            raise CliBadArgument,"the node configuration shall be a hash, use either @json:<json> or @preset:<parameter set name>" if !node_config.is_a?(Hash)
+            # now check there are required parameters
+            sym_config=[:url,:username,:password].inject({}) do |h,param|
+              raise CliBadArgument,"missing parameter [#{param}] in node specification: #{node_config}" if !node_config.has_key?(param.to_s)
+              h[param]=node_config[param.to_s]
+              h
+            end
+            @agent.node_api=Rest.new({
+              :base_url => sym_config[:url],
+              :auth     => {
+              :type     =>:basic,
+              :username => sym_config[:username],
+              :password => sym_config[:password]
+              }})
           when :aoc
             @agent=Fasp::Aoc.instance
             node_config=@env[:options].get_option(:transfer_info,:optional)
