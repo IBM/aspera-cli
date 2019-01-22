@@ -34,11 +34,9 @@ module Asperalm
           self.options.add_opt_boolean(:override,"override existing value")
           self.options.add_opt_simple(:config_file,"read parameters from file in YAML format, current=#{@option_config_file}")
           self.options.add_opt_switch(:no_default,"-N","do not load default configuration for plugin") { @use_plugin_defaults=false }
-          self.options.add_opt_boolean(:global_client_id,'wizard: AoC: use global or org specific jwt client id')
-          self.options.add_opt_boolean(:web_bootstrap,'wizard: AoC: first login with web')
+          self.options.add_opt_boolean(:use_generic_client,'wizard: AoC: use global or org specific jwt client id')
           self.options.add_opt_simple(:pkeypath,"path to private key")
-          self.options.set_option(:global_client_id,false)
-          self.options.set_option(:web_bootstrap,true)
+          self.options.set_option(:use_generic_client,true)
           self.options.parse_options!
         end
 
@@ -76,7 +74,7 @@ module Asperalm
 
         def generate_new_key(private_key_path)
           require 'openssl'
-          priv_key = OpenSSL::PKey::RSA.new(2048)
+          priv_key = OpenSSL::PKey::RSA.new(4096)
           File.write(private_key_path,priv_key.to_s)
           File.write(private_key_path+".pub",priv_key.public_key.to_s)
           nil
@@ -324,35 +322,44 @@ module Asperalm
                 private_key_path=File.join(@main_folder,'aspera_on_cloud_key')
               end
               if File.exist?(private_key_path)
-                self.format.display_status("using existing key:")
+                self.format.display_status("Using existing key:")
               else
-                self.format.display_status("generating:")
+                self.format.display_status("Generating key...")
                 generate_new_key(private_key_path)
+                self.format.display_status("Created:")
               end
               self.format.display_status("#{private_key_path}")
-
+              pub_key_pem=OpenSSL::PKey::RSA.new(File.read(private_key_path)).public_key.to_s
               # define options
               require 'asperalm/cli/plugins/aspera'
+
               files_plugin=Plugins::Aspera.new(@agents.merge({skip_basic_auth_options: true}))
 
-              if self.options.get_option(:global_client_id)
+              self.options.set_option(:private_key,'@file:'+private_key_path)
+
+              require_admin=false
+              auto_set_pub_key=false
+              auto_set_jwt=false
+              use_browser_authentication=false
+
+              if self.options.get_option(:use_generic_client)
                 self.format.display_status("Using global client_id.")
-                client_data=FilesApi.random_cli
-                self.options.set_option(:auth,:jwt)
-                self.options.set_option(:client_id,client_data.first)
-                self.options.set_option(:client_secret,client_data.last)
-                #self.options.set_option(:redirect_uri,'https://asperafiles.com/token')
-                # not supported
-                if self.options.get_option(:web_bootstrap)
-                  self.format.display_status("web bootstrap not supported in global id")
-                  self.options.set_option(:web_bootstrap, false)
-                end
+                self.format.display_status("Please Login to your Aspera on Cloud instance.".red)
+                self.format.display_status("Navigate to your \"Account Settings\"".red)
+                self.format.display_status("Check or update the value of \"Public Key\" to be:".red.blink)
+                self.format.display_status("#{pub_key_pem}")
+                self.format.display_status("Once updated or validated, press enter.")
+                OpenApplication.instance.uri(instance_url)
+                STDIN.gets
               else
                 self.format.display_status("Using organization specific client_id.")
-                self.options.set_option(:auth,:web)
-                self.options.set_option(:redirect_uri,@@DEFAULT_REDIRECT)
-                self.format.display_status("Please login to your Aspera on Cloud instance as Administrator.".red)
-                self.format.display_status("Go to: Admin->Organization->Integrations")
+                # clear only if user did not specify it already
+                if FilesApi.is_global_client_id?(self.options.get_option(:client_id,:optional))
+                  self.options.set_option(:client_id,nil)
+                  self.options.set_option(:client_secret,nil)
+                end
+                self.format.display_status("Please login to your Aspera on Cloud instance.".red)
+                self.format.display_status("Go to: Apps->Admin->Organization->Integrations")
                 self.format.display_status("Check if there is an integration named:")
                 self.format.display_status("- name: #{@tool_name}")
                 self.format.display_status("If not, create a new integration:")
@@ -364,18 +371,27 @@ module Asperalm
                 OpenApplication.instance.uri(instance_url+"/admin/org/integrations")
                 self.options.get_option(:client_id,:mandatory)
                 self.options.get_option(:client_secret,:mandatory)
+                use_browser_authentication=true
               end
-
-              self.options.set_option(:private_key,'@file:'+private_key_path)
-              # todo: check if key is identical
-              api_aoc=files_plugin.get_aoc_api(true)
-
+              if use_browser_authentication
+                self.format.display_status("We will use web authentication to bootstrap.")
+                self.options.set_option(:auth,:web)
+                self.options.set_option(:redirect_uri,@@DEFAULT_REDIRECT)
+                auto_set_pub_key=true
+                auto_set_jwt=true
+                require_admin=true
+              end
+              api_aoc=files_plugin.get_aoc_api(require_admin)
               myself=api_aoc.read('self')[:data]
-              raise CliError,"public key is already set in profile (use --override=yes)"  unless myself['public_key'].empty? or option_override
-              self.format.display_status("updating profile with new key")
-              api_aoc.update("users/#{myself['id']}",{'public_key'=>File.read(private_key_path+'.pub')})
-              self.format.display_status("Enabling JWT for client")
-              api_aoc.update("clients/#{self.options.get_option(:client_id)}",{'jwt_grant_enabled'=>true,'explicit_authorization_required'=>false})
+              if auto_set_pub_key
+                raise CliError,"public key is already set in profile (use --override=yes)"  unless myself['public_key'].empty? or option_override
+                self.format.display_status("Updating profile with new key")
+                api_aoc.update("users/#{myself['id']}",{'public_key'=>pub_key_pem})
+              end
+              if auto_set_jwt
+                self.format.display_status("Enabling JWT for client")
+                api_aoc.update("clients/#{self.options.get_option(:client_id)}",{'jwt_grant_enabled'=>true,'explicit_authorization_required'=>false})
+              end
               self.format.display_status("creating new config preset: #{aspera_preset_name}")
               @config_presets[aspera_preset_name]={
                 :url.to_s           =>self.options.get_option(:url),
@@ -386,13 +402,13 @@ module Asperalm
                 :private_key.to_s   =>'@file:'+private_key_path,
                 :username.to_s      =>myself['email'],
               }
-              self.format.display_status("setting config preset as default for #{Plugins::Aspera.name_sym.to_s}")
-              @config_presets[@@CONF_PRESET_DEFAULT][Plugins::Aspera.name_sym.to_s]=aspera_preset_name
+              self.format.display_status("Setting config preset as default for #{@@NEW_AOC_COMMAND}")
+              @config_presets[@@CONF_PRESET_DEFAULT][@@NEW_AOC_COMMAND]=aspera_preset_name
               self.format.display_status("saving config file")
               save_presets_to_config_file
-              return Main.result_status("Done. You can test with:\n#{@tool_name} aspera user info show")
+              return Main.result_status("Done.\nYou can test with:\n#{@tool_name} aspera user info show")
             else
-              raise CliBadArgument,"supports only: aoc, detected: #{appli}"
+              raise CliBadArgument,"Supports only: aoc. Detected: #{appli}"
             end
           when :export_to_cli
             self.format.display_status("Exporting: Aspera on Cloud")
@@ -464,7 +480,6 @@ module Asperalm
           end
           return nil
         end
-
 
       end
     end
