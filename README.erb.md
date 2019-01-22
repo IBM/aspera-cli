@@ -44,7 +44,9 @@ $ <%=cmd%> --version
 
 Once installation is completed, you can proceed to the first use with a demo server:
 
-One liner:
+If you want to test with Aspera on Cloud, jump to section: [Wizard](#wizard)
+
+If you want to test with Aspera demo transfer server:
 
 ```
 $ <%=cmd%> server browse / --url=ssh://demo.asperasoft.com:33001 --username=asperaweb --password=demoaspera
@@ -872,17 +874,34 @@ Aspera on Cloud relies on Oauth, refer to the [Aspera on Cloud](#aoc) section.
 Aspera on Cloud uses the more advanced Oauth mechanism for authentication (HTTP Basic authentication is not supported).
 This requires additional setup.
 
-### Configuration Wizard
+### <a name="wizard"></a>Configuration Wizard
 
-<%=tool%> provides a configuration wizard, to invoke it do:
+<%=tool%> provides a configuration wizard. Here is a sample invocation :
 
 ```
-$ <%=cmd%> config wizard --url=https://sedemo.ibmaspera.com
+$ <%=cmd%> config wizard
+option: url> https://myorg.ibmaspera.com
+Detected: Aspera on Cloud
+Preparing preset: aoc_myorg
+Please provide path to your private RSA key, or empty to generate one:
+option: pkeypath> 
+using existing key:
+/Users/myself/.aspera/mlia/aspera_on_cloud_key
+Using global client_id.
+option: username> john@example.com
+Updating profile with new key
+creating new config preset: aoc_myorg
+Setting config preset as default for aspera
+saving config file
+Done.
+You can test with:
+mlia aspera user info show
 ```
 
-If the `url` parameter is not provided it will be asked on command line.
+Optionally, it is possible to create a new organization-specific "integration".
+For this, specify the option: `--use-generic-client=no`.
 
-Follow instructions on terminal and interact in browser.
+This will guide you through the steps to create 
 
 ### Configuration details
 
@@ -1908,6 +1927,10 @@ This means that you do not have ruby support for ED25519 SSH keys. You may eithe
 Gems, or remove your ed25519 key from your `.ssh` folder to solve the issue.
 
 # Release Notes
+
+* version 0.9.21
+
+  * supports simplified wizard using global client
 
 * version 0.9.20
 
