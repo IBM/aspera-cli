@@ -1909,6 +1909,12 @@ Gems, or remove your ed25519 key from your `.ssh` folder to solve the issue.
 
 # Release Notes
 
+* version 0.9.20
+
+  * improved wizard (prepare for AoC global client id)
+  * preview generator: addedoption : --skip-format=<png,mp4>
+  * removed outdated pictures from this doc
+
 * version 0.9.19
 
   * added command aspera bearer --scope=xx
