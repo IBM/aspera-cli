@@ -165,7 +165,7 @@ module Asperalm
         return result
       end
 
-      def get_next_command(action_list); return get_next_argument('command',action_list); end
+      def get_next_command(command_list); return get_next_argument('command',command_list); end
 
       # @param expected is
       #    - Array of allowed value (single value)

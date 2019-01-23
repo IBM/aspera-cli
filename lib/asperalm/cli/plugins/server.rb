@@ -59,7 +59,7 @@ module Asperalm
           end.select{|i|!i.nil?}
         end
 
-        def action_list; [:nagios,:nodeadmin,:userdata,:configurator,:ctl,:download,:upload,:browse,:delete,:rename].push(*Asperalm::AsCmd.action_list);end
+        ACTIONS=[:nagios,:nodeadmin,:userdata,:configurator,:ctl,:download,:upload,:browse,:delete,:rename].concat(Asperalm::AsCmd::OPERATIONS)
 
         def execute_action
           server_uri=URI.parse(self.options.get_option(:url,:mandatory))
@@ -100,7 +100,7 @@ module Asperalm
           end
 
           # get command and set aliases
-          command=self.options.get_next_command(action_list)
+          command=self.options.get_next_command(ACTIONS)
           command=:ls if command.eql?(:browse)
           command=:rm if command.eql?(:delete)
           command=:mv if command.eql?(:rename)
@@ -180,7 +180,7 @@ module Asperalm
             return Main.result_transfer(self.transfer.start(server_transfer_spec.merge('direction'=>'send'),{:src=>:direct}))
           when :download
             return Main.result_transfer(self.transfer.start(server_transfer_spec.merge('direction'=>'receive'),{:src=>:direct}))
-          when *Asperalm::AsCmd.action_list
+          when *Asperalm::AsCmd::OPERATIONS
             args=self.options.get_next_argument('ascmd command arguments',:multiple,:optional)
             ascmd=Asperalm::AsCmd.new(shell_executor)
             begin

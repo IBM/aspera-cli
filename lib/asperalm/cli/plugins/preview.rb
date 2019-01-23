@@ -106,7 +106,7 @@ module Asperalm
           return @preview_formats.map{|i|i.to_s}.join(',')
         end
 
-        def action_list; [:scan,:events,:folder,:check,:test];end
+        ACTIONS=[:scan,:events,:folder,:check,:test]
 
         # /files/id/files is normally cached in redis, but we can discard the cache
         # but /files/id is not cached
@@ -357,7 +357,7 @@ module Asperalm
             @local_preview_folder=File.join(@local_storage_root,@option_previews_folder)
             raise CliError,"Folder #{@local_preview_folder} does not exist locally. Please create it, or specify an alternate name." unless File.directory?(@local_preview_folder)
           end
-          command=self.options.get_next_command(action_list)
+          command=self.options.get_next_command(ACTIONS)
           case command
           when :scan
             scan_folder_files({ 'id' => @access_key_self['root_file_id'], 'name' => '/', 'type' => 'folder', 'path' => '/' })

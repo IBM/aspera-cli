@@ -151,7 +151,7 @@ module Asperalm
             return Main.result_status("downloaded: #{file_name}")
           when :v3
             # Note: other "common" actions are unauthorized with user scope
-            command_legacy=self.options.get_next_command(Node.simple_actions)
+            command_legacy=self.options.get_next_command(Node::SIMPLE_ACTIONS)
             # TODO: shall we support all methods here ? what if there is a link ?
             node_api=@api_files.get_files_node_api(top_node_file[:node_info],FilesApi::SCOPE_NODE_USER)
             return Node.new(@agents.merge(skip_basic_auth_options: true, node_api: node_api)).execute_action(command_legacy)
@@ -343,10 +343,10 @@ module Asperalm
           return query
         end
 
-        def action_list; [ :apiinfo, :bearer_token, :organization, :user, :workspace, :packages, :files, :faspexgw, :admin];end
+        ACTIONS=[ :apiinfo, :bearer_token, :organization, :user, :workspace, :packages, :files, :faspexgw, :admin]
 
         def execute_action
-          command=self.options.get_next_command(action_list)
+          command=self.options.get_next_command(ACTIONS)
           # create objects for REST calls to Aspera
           # Note: bearer token is created on first use, or taken from cache
           @api_files=get_aoc_api(command.eql?(:admin))
@@ -377,7 +377,7 @@ module Asperalm
               #                return {:type=>:object_list,:data=>@api_files.read("client_settings/")[:data]}
             when :info
               command=self.options.get_next_command([ :show,:modify ])
-              my_user=@api_files.read('self')[:data]
+              my_user=@api_files.read('self')[:data] # self?embed[]=default_workspace&embed[]=organization
               case command
               when :show
                 return { :type=>:single_object, :data =>my_user }

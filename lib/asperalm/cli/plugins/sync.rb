@@ -15,10 +15,10 @@ module Asperalm
           self.options.parse_options!
         end
 
-        def action_list; [ :start, :admin ];end
+        ACTIONS=[ :start, :admin ]
 
         def execute_action
-          command=self.options.get_next_command(action_list)
+          command=self.options.get_next_command(ACTIONS)
           case command
           when :start
             env_args=Asperalm::Sync.new(self.options.get_option(:parameters,:mandatory)).compute_args

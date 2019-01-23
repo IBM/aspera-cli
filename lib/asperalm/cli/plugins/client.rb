@@ -36,10 +36,10 @@ module Asperalm
           return @connect_versions
         end
 
-        def action_list; [ :current, :available, :connect ];end
+        ACTIONS=[ :current, :available, :connect ]
 
         def execute_action
-          command=self.options.get_next_command(action_list)
+          command=self.options.get_next_command(ACTIONS)
           case command
           when :current # shows files used
             return {:type=>:object_list, :data=>Fasp::Installation.instance.paths.map{|k,v|{'name'=>k,'path'=>v}}}

@@ -90,7 +90,7 @@ module Asperalm
               :type     => :basic,
               :username => ak_data['id'],
               :password => ak_data['secret']}})
-            command=self.options.get_next_command(Node.common_actions)
+            command=self.options.get_next_command(Node::COMMON_ACTIONS)
             return Node.new(@agents.merge(skip_basic_auth_options: true, node_api: api_node)).execute_action(command)
           when :cluster
             rest_params={
@@ -174,11 +174,11 @@ module Asperalm
           end
         end
 
-        def action_list; [ :cluster, :access_key ,:api_key];end
+        ACTIONS=[ :cluster, :access_key ,:api_key]
 
         # called for legacy and AoC
         def execute_action_gen(ats_api_auth_arg)
-          actions=action_list
+          actions=ACTIONS
           actions.delete(:api_key) unless ats_api_auth_arg.nil?
           command=self.options.get_next_command(actions)
           @ats_api_auth_cache=ats_api_auth_arg

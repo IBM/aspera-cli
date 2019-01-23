@@ -15,7 +15,7 @@ module Asperalm
           self.options.parse_options!
         end
 
-        def action_list; [:info, :workflow, :plugins, :processes];end
+        ACTIONS=[:info, :workflow, :plugins, :processes]
 
         # one can either add extnsion ".json" or add url parameter: format=json
         # id can be a parameter id=x, or at the end of url, for workflows: work_order[workflow_id]=wf_id
@@ -45,7 +45,7 @@ module Asperalm
             'login'   =>self.options.get_option(:username,:mandatory),
             'password'=>self.options.get_option(:password,:mandatory) }}})
 
-          command1=self.options.get_next_command(action_list)
+          command1=self.options.get_next_command(ACTIONS)
           case command1
           when :info
             result=call_API('logon',nil,nil)

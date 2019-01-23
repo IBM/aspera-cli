@@ -5,14 +5,18 @@ module Asperalm
       GLOBAL_OPS=[:create,:list]
       INSTANCE_OPS=[:modify,:delete,:show]
       ALL_OPS=[GLOBAL_OPS,INSTANCE_OPS].flatten
+      private_constant :GLOBAL_OPS,:INSTANCE_OPS,:ALL_OPS
 
       @@done=false
 
       def initialize(env)
+        Log.log.debug("--|>>> #{self.class.constants}")
         @agents=env
+        raise StandardError,"execute_action shall be redefined by subclass" unless respond_to?(:execute_action)
+        raise StandardError,"ACTIONS shall be redefined by subclass" unless self.class.constants.include?(:ACTIONS)
         unless env[:skip_option_header]
           self.options.parser.separator "COMMAND: #{self.class.name.split('::').last.downcase}"
-          self.options.parser.separator "SUBCOMMANDS: #{self.action_list.map{ |p| p.to_s}.join(', ')}"
+          self.options.parser.separator "SUBCOMMANDS: #{self.actions.map{ |p| p.to_s}.join(', ')}"
           self.options.parser.separator "OPTIONS:"
         end
         unless @@done
@@ -22,9 +26,8 @@ module Asperalm
           @@done=true
         end
       end
-
-      # first level command for the main tool
-      def self.name_sym;self.name.split('::').last.downcase.to_sym;end
+      
+      def actions; self.class.const_get(:ACTIONS); end
 
       # implement generic rest operations on given resource path
       def entity_action(rest_api,res_class_path,display_fields,id_symb)
@@ -64,17 +67,6 @@ module Asperalm
 
       def format;return @agents[:formater];end
 
-      def declare_options
-        raise StandardError,"declare_options shall be redefined by subclass"
-      end
-
-      def action_list
-        raise StandardError,"action_list shall be redefined by subclass"
-      end
-
-      def execute_action
-        raise StandardError,"execute_action shall be redefined by subclass"
-      end
     end # Plugin
   end # Cli
 end # Asperalm

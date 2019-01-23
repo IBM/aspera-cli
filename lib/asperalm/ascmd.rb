@@ -7,7 +7,7 @@ module Asperalm
   # Note: "ls" can take filters: as_ls -f *.txt -f *.bin /
   class AsCmd
     # list of supported actions
-    def self.action_list; [:ls,:rm,:mv,:du,:info,:mkdir,:cp,:df,:md5sum]; end
+    OPERATIONS=[:ls,:rm,:mv,:du,:info,:mkdir,:cp,:df,:md5sum]
 
     #  @param command_executor [Object] provides the "execute" method, taking a command to execute, and stdin to feed to it, typically: ssh or local
     def initialize(command_executor)
@@ -15,7 +15,7 @@ module Asperalm
     end
 
     # execute an "as" command on a remote server
-    # @param [Symbol] one of [action_list]
+    # @param [Symbol] one of OPERATIONS
     # @param [Array] parameters for "as" command
     # @return result of command, type depends on command (bool, array, hash)
     def execute_single(action_sym,args=nil)

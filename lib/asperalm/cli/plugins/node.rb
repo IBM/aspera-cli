@@ -82,9 +82,9 @@ module Asperalm
           raise StandardError,"expect: nil, String or Array"
         end
 
-        def self.simple_actions; [:nagios_check,:events, :space, :info, :mkdir, :mklink, :mkfile, :rename, :delete ];end
+        SIMPLE_ACTIONS=[:nagios_check,:events, :space, :info, :mkdir, :mklink, :mkfile, :rename, :delete ]
 
-        def self.common_actions; simple_actions.clone.concat([:browse, :upload, :download ]);end
+        COMMON_ACTIONS=[:browse, :upload, :download ].concat(SIMPLE_ACTIONS)
 
         # common API to node and Shares
         # prefix_path is used to list remote sources in Faspex
@@ -177,12 +177,12 @@ module Asperalm
           end
         end
 
-        def action_list; self.class.common_actions.clone.concat([ :postprocess,:stream, :transfer, :cleanup, :forward, :access_key, :watch_folder, :service, :async, :central, :asperabrowser ]);end
+        ACTIONS=[ :postprocess,:stream, :transfer, :cleanup, :forward, :access_key, :watch_folder, :service, :async, :central, :asperabrowser ].concat(COMMON_ACTIONS)
 
         def execute_action(command=nil,prefix_path=nil)
-          command||=self.options.get_next_command(action_list)
+          command||=self.options.get_next_command(ACTIONS)
           case command
-          when *self.class.common_actions; return execute_simple_common(command,prefix_path)
+          when *COMMON_ACTIONS; return execute_simple_common(command,prefix_path)
           when :async
             command=self.options.get_next_command([:list,:summary,:counters])
             if [:summary,:counters].include?(command)

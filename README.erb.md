@@ -589,8 +589,7 @@ module Asperalm
   module Cli
     module Plugins
       class Test < Plugin
-        def declare_options; end
-        def action_list; [];end
+        ACTIONS=[]
         def execute_action; puts "Hello World!"; end
       end # Test
     end # Plugins

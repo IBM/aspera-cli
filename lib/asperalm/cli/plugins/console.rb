@@ -14,11 +14,11 @@ module Asperalm
           self.options.parse_options!
         end
 
-        def action_list; [:transfer,:nagios_check];end
+        ACTIONS=[:transfer,:nagios_check]
 
         def execute_action
           api_console=basic_auth_api('api')
-          command=self.options.get_next_command(action_list)
+          command=self.options.get_next_command(ACTIONS)
           case command
           when :nagios_check
             nagios=Nagios.new

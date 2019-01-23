@@ -83,13 +83,13 @@ module Asperalm
           end
         end
 
-        def action_list; [ :repository,:organization,:project,:team,:share,:appinfo,:userinfo,:admin];end
+        ACTIONS=[ :repository,:organization,:project,:team,:share,:appinfo,:userinfo,:admin]
 
         def execute_action
-          command=self.options.get_next_command(action_list)
+          command=self.options.get_next_command(ACTIONS)
           case command
           when :repository
-            command=self.options.get_next_command(Node.common_actions)
+            command=self.options.get_next_command(Node::COMMON_ACTIONS)
             return Node.new(@agents.merge(skip_basic_auth_options: true, node_api: @api_node)).execute_action(command)
           when :appinfo
             node_info=@api_node.call({:operation=>'GET',:subpath=>'app',:headers=>{'Accept'=>'application/json','Content-Type'=>'application/json'}})[:data]

@@ -96,7 +96,7 @@ module Asperalm
           return @api_v4
         end
 
-        def action_list; [ :nagios_check,:package, :source, :me, :dropbox, :recv_publink, :v4, :address_book, :login_methods ];end
+        ACTIONS=[ :nagios_check,:package, :source, :me, :dropbox, :recv_publink, :v4, :address_book, :login_methods ]
 
         # we match recv command on atom feed on this field
         PACKAGE_MATCH_FIELD='package_id'
@@ -114,7 +114,7 @@ module Asperalm
         end
 
         def execute_action
-          command=self.options.get_next_command(action_list)
+          command=self.options.get_next_command(ACTIONS)
           case command
           when :nagios_check
             nagios=Nagios.new
@@ -243,7 +243,7 @@ module Asperalm
                   :type     =>:basic,
                   :username => node_config['username'],
                   :password => node_config['password']}})
-                command=self.options.get_next_command(Node.common_actions)
+                command=self.options.get_next_command(Node::COMMON_ACTIONS)
                 return Node.new(@agents.merge(skip_basic_auth_options: true, node_api: api_node)).execute_action(command,source_info[KEY_PATH])
               end
             end

@@ -9,16 +9,16 @@ module Asperalm
           #self.options.parse_options!
         end
 
-        def action_list; [ :repository,:admin ];end
+        ACTIONS=[ :repository,:admin ]
 
         def execute_action
-          command=self.options.get_next_command(action_list)
+          command=self.options.get_next_command(ACTIONS)
           case command
           when :repository
             api_shares_node=basic_auth_api('node_api')
-            command=self.options.get_next_command(Node.common_actions)
+            command=self.options.get_next_command(Node::COMMON_ACTIONS)
             case command
-            when *Node.common_actions; Node.new(@agents.merge(skip_basic_auth_options: true,node_api: api_shares_node)).execute_action(command)
+            when *Node::COMMON_ACTIONS; Node.new(@agents.merge(skip_basic_auth_options: true,node_api: api_shares_node)).execute_action(command)
             else raise "INTERNAL ERROR, unknown command: [#{command}]"
             end
           when :admin

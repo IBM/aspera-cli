@@ -194,20 +194,20 @@ module Asperalm
 
         def add_plugin_info(path)
           raise "ERROR: plugin path must end with #{RUBY_FILE_EXT}" if !path.end_with?(RUBY_FILE_EXT)
-          name_sym=File.basename(path,RUBY_FILE_EXT).to_sym
+          plugin_symbol=File.basename(path,RUBY_FILE_EXT).to_sym
           req=path.gsub(/#{RUBY_FILE_EXT}$/,'')
-          if @plugins.has_key?(name_sym)
-            Log.log.warn("skipping plugin already registered: #{name_sym}")
+          if @plugins.has_key?(plugin_symbol)
+            Log.log.warn("skipping plugin already registered: #{plugin_symbol}")
             return
           end
-          @plugins[name_sym]={:source=>path,:require_stanza=>req}
+          @plugins[plugin_symbol]={:source=>path,:require_stanza=>req}
         end
 
-        def action_list; [:gem_path, :genkey,:plugins,:flush_tokens,:list,:overview,:open,:echo,:id,:documentation,:wizard,:export_to_cli,:detect,:coffee];end
+        ACTIONS=[:gem_path, :genkey,:plugins,:flush_tokens,:list,:overview,:open,:echo,:id,:documentation,:wizard,:export_to_cli,:detect,:coffee]
 
         # "config" plugin
         def execute_action
-          action=self.options.get_next_command(action_list)
+          action=self.options.get_next_command(ACTIONS)
           case action
           when :id
             config_name=self.options.get_next_argument('config name')
@@ -415,7 +415,7 @@ module Asperalm
             self.format.display_status("Exporting: Aspera on Cloud")
             require 'asperalm/cli/plugins/aspera'
             # need url / username
-            add_plugin_default_preset(Plugins::Aspera.name_sym)
+            add_plugin_default_preset(NEW_AOC_COMMAND.to_sym)
             files_plugin=Plugins::Aspera.new(@agents)
             url=self.options.get_option(:url,:mandatory)
             cli_conf_file=Fasp::Installation.instance.cli_conf_file

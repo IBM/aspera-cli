@@ -15,7 +15,7 @@ module Asperalm
         end
         # "transfer_filter"=>"t['status'].eql?('completed') and t['start_spec']['remote_user'].eql?('faspex')", :file_filter=>"f['status'].eql?('completed') and 0 != f['size'] and t['start_spec']['direction'].eql?('send')"
 
-        def action_list; [ :postprocess, :cleanup, :forward ];end
+        ACTIONS=[ :postprocess, :cleanup, :forward ]
 
         # retrieve tranfer list using API and persistency file
         def self.get_transfers_iteration(api_node,params)
@@ -52,7 +52,7 @@ module Asperalm
             :username => self.options.get_option(:username,:mandatory),
             :password => self.options.get_option(:password,:mandatory)
             }})
-          command=self.options.get_next_command(action_list)
+          command=self.options.get_next_command(ACTIONS)
           case command
           when :cleanup
             transfers=self.class.get_transfers_iteration(api_node,{:active_only=>false})

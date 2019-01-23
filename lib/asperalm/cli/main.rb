@@ -35,6 +35,7 @@ module Asperalm
       FIELDS_ALL='ALL'
       FIELDS_DEFAULT='DEF'
       VERBOSE_LEVELS=[:normal,:minimal,:quiet]
+      CONFIG_PLUGIN_SYM = Plugins::Config.name.split('::').last.downcase.to_sym
 
       private_constant :PROGRAM_NAME,:GEM_NAME,:CLI_MODULE,:PLUGINS_MODULE,:FIELDS_ALL,:FIELDS_DEFAULT,:VERBOSE_LEVELS
 
@@ -380,7 +381,7 @@ module Asperalm
         if all_plugins
           # list plugins that have a "require" field, i.e. all but main plugin
           @plugin_env[:config].plugins.keys.each do |plugin_name_sym|
-            next if plugin_name_sym.eql?(Plugins::Config.name_sym)
+            next if plugin_name_sym.eql?(CONFIG_PLUGIN_SYM)
             # override main option parser with a brand new, to avoid having global options
             plugin_env=@plugin_env.clone
             plugin_env[:man_only]=true
@@ -451,7 +452,7 @@ module Asperalm
           exit_with_usage(true) if @option_help and @opt_mgr.command_or_arg_empty?
           generate_bash_completion if @bash_completion
           # load global default options and process
-          @plugin_env[:config].add_plugin_default_preset(Plugins::Config.name_sym)
+          @plugin_env[:config].add_plugin_default_preset(CONFIG_PLUGIN_SYM)
           @opt_mgr.parse_options!
           # dual execution locking
           lock_port=@opt_mgr.get_option(:lock_port,:optional)
@@ -464,16 +465,16 @@ module Asperalm
             end
           end
           if @option_show_config and @opt_mgr.command_or_arg_empty?
-            command_sym=Plugins::Config.name_sym
+            command_sym=CONFIG_PLUGIN_SYM
           else
             command_sym=@opt_mgr.get_next_command(@plugin_env[:config].plugins.keys.dup.unshift(:help))
           end
           # main plugin is not dynamically instanciated
-          Log.log.debug(">>>#{Plugins::Config.name_sym.to_s}")
+          Log.log.debug(">>>#{CONFIG_PLUGIN_SYM.to_s}")
           case command_sym
           when :help
             exit_with_usage(true)
-          when Plugins::Config.name_sym
+          when CONFIG_PLUGIN_SYM
             command_plugin=@plugin_env[:config]
           else
             # get plugin, set options, etc
