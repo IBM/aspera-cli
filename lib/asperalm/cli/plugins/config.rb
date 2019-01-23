@@ -359,7 +359,7 @@ module Asperalm
                   self.options.set_option(:client_id,nil)
                   self.options.set_option(:client_secret,nil)
                 end
-                if self.options.get_option(:client_id,:optional).nil? or  self.options.get_option(:client_secret,:optional)
+                if self.options.get_option(:client_id,:optional).nil? or self.options.get_option(:client_secret,:optional).nil?
                   self.format.display_status("Please login to your Aspera on Cloud instance.".red)
                   self.format.display_status("Go to: Apps->Admin->Organization->Integrations")
                   self.format.display_status("Create or check if there is an existing integration named:")
