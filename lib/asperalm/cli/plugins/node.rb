@@ -8,7 +8,8 @@ module Asperalm
   module Cli
     module Plugins
       class Node < BasicAuthPlugin
-        @@SAMPLE_SOAP_CALL='<?xml version="1.0" encoding="UTF-8"?><soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:typ="urn:Aspera:XML:FASPSessionNET:2009/11:Types"><soapenv:Header></soapenv:Header><soapenv:Body><typ:GetSessionInfoRequest><SessionFilter><SessionStatus>running</SessionStatus></SessionFilter></typ:GetSessionInfoRequest></soapenv:Body></soapenv:Envelope>'
+        SAMPLE_SOAP_CALL='<?xml version="1.0" encoding="UTF-8"?><soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:typ="urn:Aspera:XML:FASPSessionNET:2009/11:Types"><soapenv:Header></soapenv:Header><soapenv:Body><typ:GetSessionInfoRequest><SessionFilter><SessionStatus>running</SessionStatus></SessionFilter></typ:GetSessionInfoRequest></soapenv:Body></soapenv:Envelope>'
+        private_constant :SAMPLE_SOAP_CALL
         def initialize(env)
           super(env)
           unless env[:skip_basic_auth_options]
@@ -100,7 +101,7 @@ module Asperalm
               nagios.add_critical('node api',e.to_s)
             end
             begin
-              central=@api_node.call({:operation=>'POST',:subpath=>'services/soap/Transfer-201210',:headers=>{'Content-Type'=>'text/xml;charset=UTF-8','SOAPAction'=>'FASPSessionNET-200911#GetSessionInfo'},:text_body_params=>@@SAMPLE_SOAP_CALL})[:http].body
+              central=@api_node.call({:operation=>'POST',:subpath=>'services/soap/Transfer-201210',:headers=>{'Content-Type'=>'text/xml;charset=UTF-8','SOAPAction'=>'FASPSessionNET-200911#GetSessionInfo'},:text_body_params=>SAMPLE_SOAP_CALL})[:http].body
               nagios.add_ok('central','accessible by node')
             rescue => e
               nagios.add_critical('central',e.to_s)

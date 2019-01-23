@@ -10,8 +10,9 @@ module Asperalm
     # options to select one of the transfer agents (fasp client)
     class TransferAgent
       private
-      @@ARGS_PARAM='@args'
-      @@TS_PARAM='@ts'
+      ARGS_PARAM='@args'
+      TS_PARAM='@ts'
+      private_constant :ARGS_PARAM,:TS_PARAM
       def initialize(env)
         # external objects: option manager, config file manager
         @env=env
@@ -122,11 +123,11 @@ module Asperalm
         # is there a source list option ?
         file_list=@env[:options].get_option(:sources,:optional)
         case file_list
-        when nil,@@ARGS_PARAM
+        when nil,ARGS_PARAM
           Log.log.debug("getting file list as parameters")
           file_list=@env[:options].get_next_argument("source file list",:multiple)
-          raise CliBadArgument,"specify at least one file on command line or use --sources=#{@@TS_PARAM} to use transfer spec" if !file_list.is_a?(Array) or file_list.empty?
-        when @@TS_PARAM
+          raise CliBadArgument,"specify at least one file on command line or use --sources=#{TS_PARAM} to use transfer spec" if !file_list.is_a?(Array) or file_list.empty?
+        when TS_PARAM
           Log.log.debug("assume list provided in transfer spec")
           raise CliBadArgument,"transfer spec on command line must have sources" if @transfer_paths.nil?
           # here we assume check of sources is made in transfer agent

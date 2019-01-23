@@ -7,17 +7,18 @@ module Asperalm
     class ResumePolicy
 
       # list of supported parameters and default values
-      @@DEFAULTS={
+      DEFAULTS={
         :iter_max      => 7,
         :sleep_initial => 2,
         :sleep_factor  => 2,
         :sleep_max     => 60
       }
+      private_constant :DEFAULTS
 
       def initialize(params={})
-        @parameters=@@DEFAULTS.clone
+        @parameters=DEFAULTS.clone
         params.each do |k,v|
-          if @@DEFAULTS.has_key?(k)
+          if DEFAULTS.has_key?(k)
             @parameters[k]=v
           else
             raise "unknown parameter: #{k}"

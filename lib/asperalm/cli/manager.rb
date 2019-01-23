@@ -45,11 +45,17 @@ module Asperalm
       end
 
       # boolean options are set to true/false from the following values
-      @@TRUE_VALUES=[:yes,true]
-      @@BOOLEAN_VALUES=@@TRUE_VALUES.clone.push(:no,false)
-      @@BOOLEAN_SIMPLE=[:yes,:no]
+      TRUE_VALUES=[:yes,true]
+      BOOLEAN_VALUES=TRUE_VALUES.clone.push(:no,false)
+      BOOLEAN_SIMPLE=[:yes,:no]
+      # option name separator on command line
+      OPTION_SEP_LINE='-'
+      # option name separator in code (symbol)
+      OPTION_SEP_NAME='_'
 
-      def enum_to_bool(enum);@@TRUE_VALUES.include?(enum);end
+      private_constant :TRUE_VALUES,:BOOLEAN_VALUES,:BOOLEAN_SIMPLE,:OPTION_SEP_LINE,:OPTION_SEP_NAME
+
+      def enum_to_bool(enum);TRUE_VALUES.include?(enum);end
 
       # find shortened string value in allowed symbol list
       def self.get_from_list(shortval,descr,allowed_values)
@@ -59,18 +65,13 @@ module Asperalm
         matching=allowed_values.select{|i| i.to_s.start_with?(shortval)}
         raise cli_bad_arg("unknown value for #{descr}: #{shortval}",allowed_values) if matching.empty?
         raise cli_bad_arg("ambigous shortcut for #{descr}: #{shortval}",matching) unless matching.length.eql?(1)
-        return enum_to_bool(matching.first) if allowed_values.eql?(@@BOOLEAN_VALUES)
+        return enum_to_bool(matching.first) if allowed_values.eql?(BOOLEAN_VALUES)
         return matching.first
       end
 
       def self.cli_bad_arg(error_msg,choices)
         return CliBadArgument.new(error_msg+"\nUse:\n"+choices.map{|c| "- #{c.to_s}\n"}.sort.join(''))
       end
-
-      # option name separator on command line
-      @@OPTION_SEP_LINE='-'
-      # option name separator in code (symbol)
-      @@OPTION_SEP_NAME='_'
 
       attr_reader :parser
       attr_accessor :ask_missing_mandatory
@@ -101,7 +102,7 @@ module Asperalm
       def declare_options
         Log.log.debug("declare_options")
         # options can also be provided by env vars : --param-name -> ASLMCLI_PARAM_NAME
-        env_prefix=@parser.program_name.upcase+@@OPTION_SEP_NAME
+        env_prefix=@parser.program_name.upcase+OPTION_SEP_NAME
         ENV.each do |k,v|
           if k.start_with?(env_prefix)
             @unprocessed_env.push([k[env_prefix.length..-1].downcase.to_sym,v])
@@ -221,7 +222,7 @@ module Asperalm
         end
         value=ExtendedValue.instance.parse(option_symbol,value)
         Log.log.debug("set_option(#{where}) #{option_symbol}=#{value}")
-        if @declared_options[option_symbol][:values].eql?(@@BOOLEAN_VALUES)
+        if @declared_options[option_symbol][:values].eql?(BOOLEAN_VALUES)
           value=enum_to_bool(value)
         end
         Log.log.debug("set #{option_symbol}=#{value} (#{@declared_options[option_symbol][:type]}) : #{where}".blue)
@@ -282,7 +283,7 @@ module Asperalm
 
       # generate command line option from option symbol
       def symbol_to_option(symbol,opt_val)
-        result='--'+symbol.to_s.gsub(@@OPTION_SEP_NAME,@@OPTION_SEP_LINE)
+        result='--'+symbol.to_s.gsub(OPTION_SEP_NAME,OPTION_SEP_LINE)
         result=result+'='+opt_val unless opt_val.nil?
         return result
       end
@@ -300,8 +301,8 @@ module Asperalm
         @declared_options[option_symbol][:values]=values
         value=get_option(option_symbol)
         help_values=values.map{|i|i.eql?(value)?highlight_current(i):i}.join(', ')
-        if values.eql?(@@BOOLEAN_VALUES)
-          help_values=@@BOOLEAN_SIMPLE.map{|i|((i.eql?(:yes) and value) or (i.eql?(:no) and not value))?highlight_current(i):i}.join(', ')
+        if values.eql?(BOOLEAN_VALUES)
+          help_values=BOOLEAN_SIMPLE.map{|i|((i.eql?(:yes) and value) or (i.eql?(:no) and not value))?highlight_current(i):i}.join(', ')
         end
         on_args.push(values)
         on_args.push("#{help}: #{help_values}")
@@ -310,7 +311,7 @@ module Asperalm
       end
 
       def add_opt_boolean(option_symbol,help,*on_args)
-        add_opt_list(option_symbol,@@BOOLEAN_VALUES,help,*on_args)
+        add_opt_list(option_symbol,BOOLEAN_VALUES,help,*on_args)
       end
 
       # define an option with open values
@@ -366,7 +367,7 @@ module Asperalm
           when /^--([^=]+)=(.*)$/
             name=$1
             value=$2
-            name.gsub!(@@OPTION_SEP_LINE,@@OPTION_SEP_NAME)
+            name.gsub!(OPTION_SEP_LINE,OPTION_SEP_NAME)
             value=ExtendedValue.instance.parse(name,value)
             Log.log.debug("option #{name}=#{value}")
             result[name]=value

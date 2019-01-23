@@ -13,21 +13,22 @@ module Asperalm
   # bearer tokens are kept in memory and also in a file cache for re-use
   class Oauth
     private
-    @@TOKEN_FILE_PREFIX='token'
-    @@TOKEN_FILE_SEPARATOR='_'
-    @@TOKEN_FILE_SUFFIX='.txt'
-    @@NO_SCOPE='noscope'
-    @@WINDOWS_PROTECTED_CHAR=%r{[/:"<>\\\*\?]}
-    @@OFFSET_ALLOWANCE_SEC=300
-    @@ASSERTION_VALIDITY_SEC=3600
+    TOKEN_FILE_PREFIX='token'
+    TOKEN_FILE_SEPARATOR='_'
+    TOKEN_FILE_SUFFIX='.txt'
+    NO_SCOPE='noscope'
+    WINDOWS_PROTECTED_CHAR=%r{[/:"<>\\\*\?]}
+    OFFSET_ALLOWANCE_SEC=300
+    ASSERTION_VALIDITY_SEC=3600
     @@token_cache_folder='.'
+    private_constant :TOKEN_FILE_PREFIX,:TOKEN_FILE_SEPARATOR,:TOKEN_FILE_SUFFIX,:NO_SCOPE,:WINDOWS_PROTECTED_CHAR,:OFFSET_ALLOWANCE_SEC,:ASSERTION_VALIDITY_SEC
     def self.persistency_folder; @@token_cache_folder;end
 
     def self.persistency_folder=(v); @@token_cache_folder=v;end
 
     # delete cached tokens
     def self.flush_tokens
-      tokenfiles=Dir[File.join(@@token_cache_folder,@@TOKEN_FILE_PREFIX+'*'+@@TOKEN_FILE_SUFFIX)]
+      tokenfiles=Dir[File.join(@@token_cache_folder,TOKEN_FILE_PREFIX+'*'+TOKEN_FILE_SUFFIX)]
       tokenfiles.each do |filepath|
         File.delete(filepath)
       end
@@ -105,12 +106,12 @@ module Asperalm
     def token_filepath(api_scope)
       parts=[@params[:client_id],URI.parse(@params[:base_url]).host.downcase.gsub(/[^a-z]+/,'_'),@params[:grant],api_scope]
       parts.push(@params[:user_name]) if @params.has_key?(:user_name)
-      basename=parts.dup.unshift(@@TOKEN_FILE_PREFIX).join(@@TOKEN_FILE_SEPARATOR)
+      basename=parts.dup.unshift(TOKEN_FILE_PREFIX).join(TOKEN_FILE_SEPARATOR)
       # remove windows forbidden chars
-      basename.gsub!(@@WINDOWS_PROTECTED_CHAR,@@TOKEN_FILE_SEPARATOR)
+      basename.gsub!(WINDOWS_PROTECTED_CHAR,TOKEN_FILE_SEPARATOR)
       # keep dot for extension only (nicer)
-      basename.gsub!('.',@@TOKEN_FILE_SEPARATOR)
-      filepath=File.join(@@token_cache_folder,basename+@@TOKEN_FILE_SUFFIX)
+      basename.gsub!('.',TOKEN_FILE_SEPARATOR)
+      filepath=File.join(@@token_cache_folder,basename+TOKEN_FILE_SUFFIX)
       Log.log.debug("token path=#{filepath}")
       return filepath
     end
@@ -133,13 +134,13 @@ module Asperalm
 
     # use_refresh_token set to true if auth was just used and failed
     def get_authorization(options)
-      api_scope=options[:scope] || @params[:scope] || @@NO_SCOPE
+      api_scope=options[:scope] || @params[:scope] || NO_SCOPE
       use_refresh_token=options[:refresh]
       # file name for cache of token
       token_state_file=token_filepath(api_scope)
       client_id_and_scope={}
       client_id_and_scope[:client_id] = @params[:client_id] if @params.has_key?(:client_id)
-      client_id_and_scope[:scope] = api_scope unless api_scope.eql?(@@NO_SCOPE)
+      client_id_and_scope[:scope] = api_scope unless api_scope.eql?(NO_SCOPE)
 
       # if first time, try to read from file
       if ! @token_cache.has_key?(api_scope) then
@@ -232,7 +233,7 @@ module Asperalm
           # https://tools.ietf.org/html/rfc7519
           require 'jwt'
           # remove 5 minutes to account for time offset
-          seconds_since_epoch=Time.new.to_i-@@OFFSET_ALLOWANCE_SEC
+          seconds_since_epoch=Time.new.to_i-OFFSET_ALLOWANCE_SEC
           Log.log.info("seconds=#{seconds_since_epoch}")
 
           payload = {
@@ -240,7 +241,7 @@ module Asperalm
             :sub => @params[:jwt_subject],  # subject
             :aud => @params[:jwt_audience], # audience
             :nbf => seconds_since_epoch,
-            :exp => seconds_since_epoch+@@ASSERTION_VALIDITY_SEC # TODO: configurable ?
+            :exp => seconds_since_epoch+ASSERTION_VALIDITY_SEC # TODO: configurable ?
           }
 
           # non standard, only for global ids

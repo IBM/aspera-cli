@@ -5,7 +5,7 @@ class String
   # see https://en.wikipedia.org/wiki/ANSI_escape_code
   # symbol is the method name added to String
   # it adds control chars to set color (and reset at the end).
-  @@VTSTYLES = {
+  VTSTYLES = {
     :bold=>1,
     :italic=>3,
     :underline=>4,
@@ -28,8 +28,9 @@ class String
     :bg_cyan=>46,
     :bg_gray=>47,
   }
-  # defines methods to String, one per entry in @@VTSTYLES
-  @@VTSTYLES.each do |name,code|
+  private_constant :VTSTYLES
+  # defines methods to String, one per entry in VTSTYLES
+  VTSTYLES.each do |name,code|
     begin_seq=vtcmd(code)
     end_seq=vtcmd((code >= 10) ? 0 : code+20+(code.eql?(1)?1:0))
     define_method(name){"#{begin_seq}#{self}#{end_seq}"}

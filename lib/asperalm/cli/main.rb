@@ -20,25 +20,27 @@ module Asperalm
     # The main CLI class
     class Main
       def self.gem_version
-        File.read(File.join(gem_root,@@GEM_NAME,'VERSION')).chomp
+        File.read(File.join(gem_root,GEM_NAME,'VERSION')).chomp
       end
 
       attr_reader :plugin_env
       private
       # name of application, also foldername where config is stored
-      @@PROGRAM_NAME = 'mlia'
-      @@GEM_NAME = 'asperalm'
+      PROGRAM_NAME = 'mlia'
+      GEM_NAME = 'asperalm'
       # Container module of current class : Asperalm::Cli
-      @@CLI_MODULE=Module.nesting[1].to_s
+      CLI_MODULE=Module.nesting[1].to_s
       # Path to Plugin classes: Asperalm::Cli::Plugins
-      @@PLUGINS_MODULE=@@CLI_MODULE+'::Plugins'
+      PLUGINS_MODULE=CLI_MODULE+'::Plugins'
       FIELDS_ALL='ALL'
       FIELDS_DEFAULT='DEF'
-      @@VERBOSE_LEVELS=[:normal,:minimal,:quiet]
+      VERBOSE_LEVELS=[:normal,:minimal,:quiet]
+
+      private_constant :PROGRAM_NAME,:GEM_NAME,:CLI_MODULE,:PLUGINS_MODULE,:FIELDS_ALL,:FIELDS_DEFAULT,:VERBOSE_LEVELS
 
       # find the root folder of gem where this class is
       def self.gem_root
-        File.expand_path(@@CLI_MODULE.to_s.gsub('::','/').gsub(%r([^/]+),'..'),File.dirname(__FILE__))
+        File.expand_path(CLI_MODULE.to_s.gsub('::','/').gsub(%r([^/]+),'..'),File.dirname(__FILE__))
       end
 
       # =============================================================
@@ -67,8 +69,8 @@ module Asperalm
         # first thing : manage debug level (allows debugging or option parser)
         early_debug_setup(argv)
         current_prog_name=File.basename($PROGRAM_NAME)
-        unless current_prog_name.eql?(@@PROGRAM_NAME)
-          @plugin_env[:formater].display_message(:error,"#{"WARNING".bg_red.blink.gray} Please use '#{@@PROGRAM_NAME}' instead of '#{current_prog_name}', '#{current_prog_name}' will be removed in a future version")
+        unless current_prog_name.eql?(PROGRAM_NAME)
+          @plugin_env[:formater].display_message(:error,"#{"WARNING".bg_red.blink.gray} Please use '#{PROGRAM_NAME}' instead of '#{current_prog_name}', '#{current_prog_name}' will be removed in a future version")
         end
         # overriding parameters on transfer spec
         @option_help=false
@@ -80,7 +82,7 @@ module Asperalm
         @plugin_env[:options]=Manager.new(self.program_name)
         @plugin_env[:formater]=Formater.new(@plugin_env[:options])
         @plugin_env[:transfer]=TransferAgent.new(@plugin_env)
-        @plugin_env[:config]=Plugins::Config.new(@plugin_env,self.program_name,@@GEM_NAME,self.class.gem_version)
+        @plugin_env[:config]=Plugins::Config.new(@plugin_env,self.program_name,GEM_NAME,self.class.gem_version)
         @opt_mgr=@plugin_env[:options]
         # give command line arguments to option manager (no parsing)
         @opt_mgr.add_cmd_line_options(argv)
@@ -167,7 +169,7 @@ module Asperalm
         require @plugin_env[:config].plugins[plugin_name_sym][:require_stanza]
         # load default params only if no param already loaded before plugin instanciation
         env[:config].add_plugin_default_preset(plugin_name_sym)
-        command_plugin=Object::const_get(@@PLUGINS_MODULE+'::'+plugin_name_sym.to_s.capitalize).new(env)
+        command_plugin=Object::const_get(PLUGINS_MODULE+'::'+plugin_name_sym.to_s.capitalize).new(env)
         Log.log.debug("got #{command_plugin.class}")
         # TODO: check that ancestor is Plugin?
         return command_plugin
@@ -426,7 +428,7 @@ module Asperalm
 
       def options;@opt_mgr;end
 
-      def program_name;@@PROGRAM_NAME;end
+      def program_name;PROGRAM_NAME;end
 
       # this is the main function called by initial script just after constructor
       def process_command_line

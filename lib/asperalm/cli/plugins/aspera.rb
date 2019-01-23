@@ -11,7 +11,8 @@ module Asperalm
   module Cli
     module Plugins
       class Aspera < BasicAuthPlugin
-        @@VAL_ALL='ALL'
+        VAL_ALL='ALL'
+        private_constant :VAL_ALL
         def initialize(env)
           super(env)
           @ats=Ats.new(@agents.merge(skip_secret: true))
@@ -424,7 +425,7 @@ module Asperalm
                 :active   => self.options.get_option(:once_only,:mandatory),
                 :default  => [],
                 :delete   => lambda{|d|d.nil? or d.empty?}})
-              if ids_to_download.eql?(@@VAL_ALL)
+              if ids_to_download.eql?(VAL_ALL)
                 # get list of packages in inbox
                 package_info=@api_files.read('packages',{'archived'=>false,'exclude_dropbox_packages'=>true,'has_content'=>true,'received'=>true,'workspace_id'=>@workspace_id})[:data]
                 # remove from list the ones already downloaded

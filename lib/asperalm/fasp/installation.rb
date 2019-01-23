@@ -30,7 +30,7 @@ module Asperalm
         missing_mandatory=res_paths.keys.select do |res_sym|
           raise "hash values must be a String (path to resource)" unless res_paths[res_sym].is_a?(String)
           Log.log.debug("#{res_sym}: #{res_paths[res_sym]}")
-          @@FASP_SDK[res_sym][:type].eql?(:file) and @@FASP_SDK[res_sym][:required] and ! File.exist?(res_paths[res_sym])
+          FASP_SDK[res_sym][:type].eql?(:file) and FASP_SDK[res_sym][:required] and ! File.exist?(res_paths[res_sym])
         end
         if !missing_mandatory.empty?
           reslist=missing_mandatory.map{|res_sym|"#{res_sym.to_s}: #{res_paths[res_sym]}"}.join("\n")
@@ -43,7 +43,7 @@ module Asperalm
       def paths
         if @selected_product_paths.nil?
           # this contains var/run, files generated on runtime
-          if @activated.eql?(@@FIRST_FOUND)
+          if @activated.eql?(FIRST_FOUND)
             p = installed_products.first
             raise "no FASP installation found\nPlease check manual on how to install FASP." if p.nil?
           else
@@ -68,7 +68,7 @@ module Asperalm
           @found_products=product_locations.select do |l|
             next false unless Dir.exist?(l[:app_root])
             Log.log.debug("found #{l[:app_root]}")
-            product_info_file="#{l[:app_root]}/#{@@PRODUCT_INFO}"
+            product_info_file="#{l[:app_root]}/#{PRODUCT_INFO}"
             if File.exist?(product_info_file)
               res_s=XmlSimple.xml_in(File.read(product_info_file),{"ForceArray"=>false})
               l[:name]=res_s['name']
@@ -85,28 +85,30 @@ module Asperalm
       # @returns the file path of local connect where API's URI can be read
       def connect_uri_file
         connect=get_product('Aspera Connect')
-        return File.join(connect[:run_root],@@VARRUN_SUBFOLDER,'https.uri')
+        return File.join(connect[:run_root],VARRUN_SUBFOLDER,'https.uri')
       end
 
       # @ return path to configuration file of aspera CLI
       def cli_conf_file
         connect=get_product('Aspera CLI')
-        return File.join(connect[:app_root],@@BIN_SUBFOLDER,'.aspera_cli_conf')
+        return File.join(connect[:app_root],BIN_SUBFOLDER,'.aspera_cli_conf')
       end
       private
 
-      @@VARRUN_SUBFOLDER=File.join('var','run')
-      @@BIN_SUBFOLDER='bin'
-      @@ETC_SUBFOLDER='etc'
+      VARRUN_SUBFOLDER=File.join('var','run')
+      BIN_SUBFOLDER='bin'
+      ETC_SUBFOLDER='etc'
       # policy for product selection
-      @@FIRST_FOUND='FIRST'
+      FIRST_FOUND='FIRST'
       # product information manifest: XML
-      @@PRODUCT_INFO='product-info.mf'
-      @@RSA_FILE_NAME='aspera_tokenauth_id_rsa'
-      @@WEBCERT_FILE_NAME='aspera_web_cert.pem'
-      @@WEBKEY_FILE_NAME='aspera_web_key.pem'
-      @@CLIENT_DSA='asperaweb_id_dsa.openssh'
-      @@SERVER_DSA='aspera_tokenauth_id_dsa'
+      PRODUCT_INFO='product-info.mf'
+      RSA_FILE_NAME='aspera_tokenauth_id_rsa'
+      WEBCERT_FILE_NAME='aspera_web_cert.pem'
+      WEBKEY_FILE_NAME='aspera_web_key.pem'
+      CLIENT_DSA='asperaweb_id_dsa.openssh'
+      SERVER_DSA='aspera_tokenauth_id_dsa'
+
+      private_constant :VARRUN_SUBFOLDER,:BIN_SUBFOLDER,:ETC_SUBFOLDER,:FIRST_FOUND,:PRODUCT_INFO,:RSA_FILE_NAME,:WEBCERT_FILE_NAME,:WEBKEY_FILE_NAME,:CLIENT_DSA,:SERVER_DSA
 
       def get_product(name)
         found=installed_products.select{|i|i[:expected].eql?(name) or i[:name].eql?(name)}
@@ -117,11 +119,11 @@ module Asperalm
       def initialize
         @selected_product_paths=nil
         @found_products=nil
-        @activated=@@FIRST_FOUND
+        @activated=FIRST_FOUND
       end
 
       # necessary FASP SDK resource files
-      @@FASP_SDK={
+      FASP_SDK={
         #:bin_folder             => { :type =>:folder,:required => true},
         #:log_folder             => { :type =>:folder,:required => false},
         :ascp                   => { :type => :file, :required => true},
@@ -145,20 +147,20 @@ module Asperalm
       def get_product_paths(p)
         exec_ext = OpenApplication.current_os_type.eql?(:windows) ? '.exe' : ''
         # set default values if specific ones not specified
-        sub_bin = p[:sub_bin] || @@BIN_SUBFOLDER
-        sub_keys = p[:sub_keys] || @@ETC_SUBFOLDER
+        sub_bin = p[:sub_bin] || BIN_SUBFOLDER
+        sub_keys = p[:sub_keys] || ETC_SUBFOLDER
         res_paths={
           #:bin_folder             => File.join(p[:app_root],sub_bin),
           #:log_folder             => p[:log_root]},
           :ascp                   => File.join(p[:app_root],sub_bin,'ascp')+exec_ext,
           :ascp4                  => File.join(p[:app_root],sub_bin,'ascp4')+exec_ext,
-          :ssh_bypass_key_dsa     => File.join(p[:app_root],sub_keys,@@CLIENT_DSA),
-          :ssh_bypass_key_rsa     => File.join(p[:app_root],sub_keys,@@RSA_FILE_NAME),
-          :fallback_cert          => File.join(p[:app_root],sub_keys,@@WEBCERT_FILE_NAME),
-          :fallback_key           => File.join(p[:app_root],sub_keys,@@WEBKEY_FILE_NAME)
+          :ssh_bypass_key_dsa     => File.join(p[:app_root],sub_keys,CLIENT_DSA),
+          :ssh_bypass_key_rsa     => File.join(p[:app_root],sub_keys,RSA_FILE_NAME),
+          :fallback_cert          => File.join(p[:app_root],sub_keys,WEBCERT_FILE_NAME),
+          :fallback_key           => File.join(p[:app_root],sub_keys,WEBKEY_FILE_NAME)
         }
         # server software (having asperanoded) has a different DSA filename
-        server_dsa=File.join(p[:app_root],sub_keys,@@SERVER_DSA)
+        server_dsa=File.join(p[:app_root],sub_keys,SERVER_DSA)
         res_paths[:ssh_bypass_key_dsa]=server_dsa if File.exist?(server_dsa)
         Log.log.debug("resources=#{res_paths}")
         return res_paths

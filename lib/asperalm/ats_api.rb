@@ -5,7 +5,7 @@ module Asperalm
   class AtsApi < Rest
     # currently supported clouds
     # Note to Aspera: shall be an API call
-    @@CLOUD_NAME={
+    CLOUD_NAME={
       :aws =>'Amazon Web Services',
       :azure =>'Microsoft Azure',
       :google =>'Google Cloud',
@@ -13,6 +13,8 @@ module Asperalm
       :rackspace =>'Rackspace',
       :softlayer =>'IBM Cloud'
     }
+    
+    private_constant :CLOUD_NAME
     
     def self.base_url;'https://ats.aspera.io';end
 
@@ -22,14 +24,14 @@ module Asperalm
       @all_servers_cache=nil
     end
     
-    def cloud_names;@@CLOUD_NAME;end
+    def cloud_names;CLOUD_NAME;end
 
     # all available ATS servers
     # NOTE to Aspera: an API shall be created to retrieve all servers at once
     def all_servers
       if @all_servers_cache.nil?
         @all_servers_cache=[]
-        @@CLOUD_NAME.keys.each do |name|
+        CLOUD_NAME.keys.each do |name|
           read("servers/#{name.to_s.upcase}")[:data].each do |i|
             @all_servers_cache.push(i)
           end

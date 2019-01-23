@@ -13,9 +13,10 @@ module Asperalm
   module Cli
     module Plugins
       class Faspex < BasicAuthPlugin
-        @@KEY_NODE='node'
-        @@KEY_PATH='path'
-        @@VAL_ALL='ALL'
+        KEY_NODE='node'
+        KEY_PATH='path'
+        VAL_ALL='ALL'
+        private_constant :KEY_NODE,:KEY_PATH,:VAL_ALL
         def initialize(env)
           super(env)
           self.options.add_opt_simple(:delivery_info,"package delivery information (extended value)")
@@ -139,7 +140,7 @@ module Asperalm
                 :active   => self.options.get_option(:once_only,:mandatory),
                 :default  => [],
                 :delete   => lambda{|d|d.nil? or d.empty?}})
-              if delivid.eql?(@@VAL_ALL)
+              if delivid.eql?(VAL_ALL)
                 pkg_id_uri=mailbox_all_entries.map{|e|{:id=>e[PACKAGE_MATCH_FIELD],:uri=>self.class.get_fasp_uri_from_entry(e)}}
                 # todo : remove ids from skip not present in inbox
                 # skip_ids_persistency.data.select!{|id|pkg_id_uri.select{|p|p[:id].eql?(id)}}
@@ -216,7 +217,7 @@ module Asperalm
               raise CliError,"storage option must be a Hash" unless source_hash.is_a?(Hash)
               source_hash.each do |name,storage|
                 raise CliError,"storage '#{name}' must be a Hash" unless storage.is_a?(Hash)
-                [@@KEY_NODE,@@KEY_PATH].each do |key|
+                [KEY_NODE,KEY_PATH].each do |key|
                   raise CliError,"storage '#{name}' must have a '#{key}'" unless storage.has_key?(key)
                 end
               end
@@ -230,8 +231,8 @@ module Asperalm
               when :info
                 return {:data=>source_info,:type=>:single_object}
               when :node
-                node_config=ExtendedValue.instance.parse(:node,source_info[@@KEY_NODE])
-                raise CliError,"bad type for: \"#{source_info[@@KEY_NODE]}\"" unless node_config.is_a?(Hash)
+                node_config=ExtendedValue.instance.parse(:node,source_info[KEY_NODE])
+                raise CliError,"bad type for: \"#{source_info[KEY_NODE]}\"" unless node_config.is_a?(Hash)
                 Log.log.debug("node=#{node_config}")
                 api_node=Rest.new({
                   :base_url => node_config['url'],
@@ -240,7 +241,7 @@ module Asperalm
                   :username => node_config['username'],
                   :password => node_config['password']}})
                 command=self.options.get_next_command(Node.common_actions)
-                return Node.new(@agents.merge(skip_basic_auth_options: true, node_api: api_node)).execute_action(command,source_info[@@KEY_PATH])
+                return Node.new(@agents.merge(skip_basic_auth_options: true, node_api: api_node)).execute_action(command,source_info[KEY_PATH])
               end
             end
           when :me

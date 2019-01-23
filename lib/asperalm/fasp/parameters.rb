@@ -12,7 +12,7 @@ module Asperalm
     class Parameters
       private
       @@file_list_folder=nil
-      @@FILE_LIST_AGE_MAX=2*86400
+      FILE_LIST_AGE_MAX=2*86400
       PARAM_DEFINITION={
         # parameters with env vars
         'remote_password'         => { :type => :envvar, :variable=>'ASPERA_SCP_PASS'},
@@ -69,6 +69,8 @@ module Asperalm
         # optional tags (  additional option to generate: {:space=>' ',:object_nl=>' ',:space_before=>'+',:array_nl=>'1'}  )
         'tags'                    => { :type => :opt_with_arg, :option_switch=>'--tags64',:accepted_types=>Hash,:encode=>lambda{|tags|Base64.strict_encode64(JSON.generate(tags))}},
       }
+
+      private_constant :FILE_LIST_AGE_MAX,:PARAM_DEFINITION
 
       def initialize(job_spec)
         @job_spec=job_spec
@@ -141,7 +143,7 @@ module Asperalm
         Dir.entries(@@file_list_folder) do |name|
           # TODO: check age of file, delete if older
           Log.log.error(">>#{name}")
-          @@FILE_LIST_AGE_MAX
+          FILE_LIST_AGE_MAX
         end
       end
 

@@ -43,7 +43,7 @@ module Asperalm
       # for info, second overrides first, so restore it
       case result.keys.length;when 0;result=system_info;when 1;result=result[result.keys.first];else raise "error";end
       # raise error as exception
-      raise Error.new(result[:errno],result[:errstr],action_sym,args) if result.is_a?(Hash) and result.keys.sort == @@TYPES_DESCR[:error][:fields].map{|i|i[:name]}.sort
+      raise Error.new(result[:errno],result[:errstr],action_sym,args) if result.is_a?(Hash) and result.keys.sort == TYPES_DESCR[:error][:fields].map{|i|i[:name]}.sort
       return result
     end # execute_single
 
@@ -61,7 +61,7 @@ module Asperalm
 
     # description of result structures (see ascmdtypes.h). Base types are big endian
     # key = name of type
-    @@TYPES_DESCR={
+    TYPES_DESCR={
       :result  =>{:decode=>:field_list,:fields=>[{:name=>:file,:is_a=>:stat},{:name=>:dir,:is_a=>:stat,:special=>:substruct},{:name=>:size,:is_a=>:size},{:name=>:error,:is_a=>:error},{:name=>:info,:is_a=>:info},{:name=>:success,:is_a=>nil,:special=>:return_true},{:name=>:exit,:is_a=>nil},{:name=>:df,:is_a=>:mnt,:special=>:restart_on_first},{:name=>:md5sum,:is_a=>:md5sum}]},
       :stat    =>{:decode=>:field_list,:fields=>[{:name=>:name,:is_a=>:zstr},{:name=>:size,:is_a=>:int64},{:name=>:mode,:is_a=>:int32,:check=>nil},{:name=>:zmode,:is_a=>:zstr},{:name=>:uid,:is_a=>:int32,:check=>nil},{:name=>:zuid,:is_a=>:zstr},{:name=>:gid,:is_a=>:int32,:check=>nil},{:name=>:zgid,:is_a=>:zstr},{:name=>:ctime,:is_a=>:epoch},{:name=>:zctime,:is_a=>:zstr},{:name=>:mtime,:is_a=>:epoch},{:name=>:zmtime,:is_a=>:zstr},{:name=>:atime,:is_a=>:epoch},{:name=>:zatime,:is_a=>:zstr},{:name=>:symlink,:is_a=>:zstr},{:name=>:errno,:is_a=>:int32},{:name=>:errstr,:is_a=>:zstr}]},
       :info    =>{:decode=>:field_list,:fields=>[{:name=>:platform,:is_a=>:zstr},{:name=>:version,:is_a=>:zstr},{:name=>:lang,:is_a=>:zstr},{:name=>:territory,:is_a=>:zstr},{:name=>:codeset,:is_a=>:zstr},{:name=>:lc_ctype,:is_a=>:zstr},{:name=>:lc_numeric,:is_a=>:zstr},{:name=>:lc_time,:is_a=>:zstr},{:name=>:lc_all,:is_a=>:zstr},{:name=>:dev,:is_a=>:zstr,:special=>:multiple},{:name=>:browse_caps,:is_a=>:zstr},{:name=>:protocol,:is_a=>:zstr}]},
@@ -80,9 +80,11 @@ module Asperalm
     # protocol enum start at one, but array index start at zero
     ENUM_START=1
 
+    private_constant :TYPES_DESCR,:ENUM_START
+
     # get description of structure's field, @param struct_name, @param typed_buffer provides field name
     def self.field_description(struct_name,typed_buffer)
-      result=@@TYPES_DESCR[struct_name][:fields][typed_buffer[:btype]-ENUM_START]
+      result=TYPES_DESCR[struct_name][:fields][typed_buffer[:btype]-ENUM_START]
       raise "Unrecognized field for #{struct_name}: #{typed_buffer[:btype]}\n#{typed_buffer[:buffer]}" if result.nil?
       return result
     end
@@ -92,7 +94,7 @@ module Asperalm
     # :base : value, :buffer_list : an array of {btype,buffer}, :field_list : a hash, or array
     def self.parse(buffer,type_name,indent_level=nil)
       indent_level=(indent_level||-1)+1
-      type_descr=@@TYPES_DESCR[type_name]
+      type_descr=TYPES_DESCR[type_name]
       raise "Unexpected type #{type_name}" if type_descr.nil?
       Log.log.debug("#{"   ."*indent_level}parse:#{type_name}:#{type_descr[:decode]}:#{buffer[0,16]}...".red)
       result=nil
