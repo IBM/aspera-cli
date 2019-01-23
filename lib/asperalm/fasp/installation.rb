@@ -44,10 +44,10 @@ module Asperalm
         if @selected_product_paths.nil?
           # this contains var/run, files generated on runtime
           if @activated.eql?(FIRST_FOUND)
-            p = installed_products.first
+            p=installed_products.first
             raise "no FASP installation found\nPlease check manual on how to install FASP." if p.nil?
           else
-            p=installed_products.select{|p|p[:name].eql?(@activated)}.first
+            p=installed_products.select{|i|i[:name].eql?(@activated)}.first
             raise "no such product installed: #{@activated}" if p.nil?
           end
           self.paths=get_product_paths(p)

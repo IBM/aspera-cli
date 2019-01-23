@@ -274,7 +274,6 @@ module Asperalm
             table_rows_hash_val = res_data
             final_table_columns=nil
             if @option_flat_hash
-              new_table_rows_hash_val=[]
               table_rows_hash_val.each do |obj|
                 self.class.flatten_object(obj,results[:option_expand_last])
               end

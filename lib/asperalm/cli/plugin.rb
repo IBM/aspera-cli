@@ -28,7 +28,7 @@ module Asperalm
 
       # implement generic rest operations on given resource path
       def entity_action(rest_api,res_class_path,display_fields,id_symb)
-        res_name=res_class_path.gsub(%r{.*/},'').gsub(%r{^s$},'').gsub('_',' ')
+        #res_name=res_class_path.gsub(%r{^.*/},'').gsub(%r{s$},'').gsub('_',' ')
         command=self.options.get_next_command(ALL_OPS)
         if INSTANCE_OPS.include?(command)
           one_res_id=self.options.get_option(id_symb,:mandatory)

@@ -18,6 +18,8 @@ module Asperalm
         VAL_ALL='ALL'
         private_constant :KEY_NODE,:KEY_PATH,:VAL_ALL
         def initialize(env)
+          @api_v3=nil
+          @api_v4=nil
           super(env)
           self.options.add_opt_simple(:delivery_info,"package delivery information (extended value)")
           self.options.add_opt_simple(:source_name,"create package from remote source (by name)")
@@ -141,10 +143,10 @@ module Asperalm
                 :default  => [],
                 :delete   => lambda{|d|d.nil? or d.empty?}})
               if delivid.eql?(VAL_ALL)
-                pkg_id_uri=mailbox_all_entries.map{|e|{:id=>e[PACKAGE_MATCH_FIELD],:uri=>self.class.get_fasp_uri_from_entry(e)}}
+                pkg_id_uri=mailbox_all_entries.map{|i|{:id=>i[PACKAGE_MATCH_FIELD],:uri=>self.class.get_fasp_uri_from_entry(i)}}
                 # todo : remove ids from skip not present in inbox
                 # skip_ids_persistency.data.select!{|id|pkg_id_uri.select{|p|p[:id].eql?(id)}}
-                pkg_id_uri.select!{|e|!skip_ids_persistency.data.include?(e[:id])}
+                pkg_id_uri.select!{|i|!skip_ids_persistency.data.include?(i[:id])}
               else
                 # I dont know which delivery id is the right one if package was receive by group
                 entry_xml=api_v3.call({:operation=>'GET',:subpath=>"#{mailbox}/#{delivid}",:headers=>{'Accept'=>'application/xml'}})[:http].body
@@ -294,7 +296,7 @@ module Asperalm
             # add missing entries
             users.each do |u|
               unless u['emails'].nil?
-                email=u['emails'].find{|e|e['primary'].eql?('true')}
+                email=u['emails'].find{|i|i['primary'].eql?('true')}
                 u['email'] = email['value'] unless email.nil?
               end
               if u['email'].nil?

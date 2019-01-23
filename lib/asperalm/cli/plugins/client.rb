@@ -14,6 +14,7 @@ module Asperalm
         end
 
         def initialize(env)
+          @connect_versions=nil
           super(env)
           #self.options.parse_options!
         end

@@ -410,7 +410,7 @@ module Asperalm
               node_info=@api_files.read("nodes/#{package_info['node_id']}")[:data]
 
               # tell Aspera what to expect in package: 1 transfer (can also be done after transfer)
-              resp=@api_files.update("packages/#{package_info['id']}",{'sent'=>true,'transfers_expected'=>1})[:data]
+              @api_files.update("packages/#{package_info['id']}",{'sent'=>true,'transfers_expected'=>1})[:data]
 
               # execute transfer
               node_file = {node_info: node_info, file_id: package_info['contents_file_id']}

@@ -4,7 +4,7 @@ require 'asperalm/rest'
 module Asperalm
   class ApiDetector
     def self.discover_product(url)
-      uri=URI.parse(url)
+      #uri=URI.parse(url)
       api=Rest.new({:base_url=>url})
       # Node
       begin

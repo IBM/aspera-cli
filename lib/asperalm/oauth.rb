@@ -1,5 +1,5 @@
 require 'asperalm/open_application'
-require 'asperalm/rest'
+#require 'asperalm/rest'
 require 'base64'
 require 'date'
 require 'socket'

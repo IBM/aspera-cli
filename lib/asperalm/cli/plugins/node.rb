@@ -101,7 +101,7 @@ module Asperalm
               nagios.add_critical('node api',e.to_s)
             end
             begin
-              central=@api_node.call({:operation=>'POST',:subpath=>'services/soap/Transfer-201210',:headers=>{'Content-Type'=>'text/xml;charset=UTF-8','SOAPAction'=>'FASPSessionNET-200911#GetSessionInfo'},:text_body_params=>SAMPLE_SOAP_CALL})[:http].body
+              @api_node.call({:operation=>'POST',:subpath=>'services/soap/Transfer-201210',:headers=>{'Content-Type'=>'text/xml;charset=UTF-8','SOAPAction'=>'FASPSessionNET-200911#GetSessionInfo'},:text_body_params=>SAMPLE_SOAP_CALL})[:http].body
               nagios.add_ok('central','accessible by node')
             rescue => e
               nagios.add_critical('central',e.to_s)
