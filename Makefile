@@ -1,3 +1,4 @@
+# just name of tool
 EXENAME=mlia
 TOOLCONFIGDIR=$(HOME)/.aspera/$(EXENAME)
 APIKEY=$(TOOLCONFIGDIR)/filesapikey
@@ -5,7 +6,8 @@ MAINDIR=.
 BINDIR=$(MAINDIR)/bin
 OUT_FOLDER=out
 TEST_FOLDER=test.dir
-EXETEST=$(BINDIR)/$(EXENAME)
+# tool invokation
+EXETEST=$(BINDIR)/$(EXENAME) -w
 GEMNAME=asperalm
 GEMVERSION=$(shell $(EXETEST) --version)
 GEM_FILENAME=$(GEMNAME)-$(GEMVERSION).gem

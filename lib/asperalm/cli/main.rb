@@ -124,6 +124,7 @@ module Asperalm
         @opt_mgr.add_opt_switch(:show_config, "Display parameters used for the provided action.") { @option_show_config=true }
         @opt_mgr.add_opt_switch(:rest_debug,"-r","more debug for HTTP calls") { Rest.debug=true }
         @opt_mgr.add_opt_switch(:version,"-v","display version") { @plugin_env[:formater].display_message(:data,self.class.gem_version);Process.exit(0) }
+        @opt_mgr.add_opt_switch(:warnings,"-w","check for language warnings") { $VERBOSE=true }
         @opt_mgr.add_opt_list(:display,self.class.display_levels,"output only some information")
         @opt_mgr.set_option(:display,:info)
       end
