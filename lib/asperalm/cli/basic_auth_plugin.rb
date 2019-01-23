@@ -14,6 +14,11 @@ module Asperalm
           self.options.parse_options!
         end
       end
+      ACTIONS=[]
+
+      def execute_action
+        raise "do not execute action on this generic plugin"
+      end
 
       # returns a Rest object with basic auth
       def basic_auth_api(subpath=nil)

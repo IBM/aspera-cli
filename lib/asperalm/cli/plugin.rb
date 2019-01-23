@@ -12,7 +12,7 @@ module Asperalm
       def initialize(env)
         Log.log.debug("--|>>> #{self.class.constants}")
         @agents=env
-        raise StandardError,"execute_action shall be redefined by subclass" unless respond_to?(:execute_action)
+        raise StandardError,"execute_action shall be redefined by subclass #{self.class}" unless respond_to?(:execute_action)
         raise StandardError,"ACTIONS shall be redefined by subclass" unless self.class.constants.include?(:ACTIONS)
         unless env[:skip_option_header]
           self.options.parser.separator "COMMAND: #{self.class.name.split('::').last.downcase}"
