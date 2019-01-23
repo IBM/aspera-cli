@@ -16,7 +16,7 @@ module Asperalm
         raise StandardError,"ACTIONS shall be redefined by subclass" unless self.class.constants.include?(:ACTIONS)
         unless env[:skip_option_header]
           self.options.parser.separator "COMMAND: #{self.class.name.split('::').last.downcase}"
-          self.options.parser.separator "SUBCOMMANDS: #{self.actions.map{ |p| p.to_s}.join(', ')}"
+          self.options.parser.separator "SUBCOMMANDS: #{self.class.const_get(:ACTIONS).map{ |p| p.to_s}.join(', ')}"
           self.options.parser.separator "OPTIONS:"
         end
         unless @@done
@@ -26,8 +26,6 @@ module Asperalm
           @@done=true
         end
       end
-      
-      def actions; self.class.const_get(:ACTIONS); end
 
       # implement generic rest operations on given resource path
       def entity_action(rest_api,res_class_path,display_fields,id_symb)
