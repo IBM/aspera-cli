@@ -136,17 +136,18 @@ module Asperalm
               mailbox=self.options.get_option(:box,:mandatory).to_s
               # list of faspex ID/URI to download
               pkg_id_uri=nil
-              skip_ids_persistency=PersistencyFile.new('faspex_recv',{
-                :url      => self.options.get_option(:url,:mandatory),
-                :ids      => [self.options.get_option(:username,:mandatory),self.options.get_option(:box,:mandatory).to_s],
-                :active   => self.options.get_option(:once_only,:mandatory),
-                :default  => [],
-                :delete   => lambda{|d|d.nil? or d.empty?}})
+              skip_ids_data=[]
+              skip_ids_persistency=nil
+              if self.options.get_option(:once_only,:mandatory)
+                skip_ids_persistency=PersistencyFile.new(
+                data: skip_ids_data,
+                ids:  ['faspex_recv',self.options.get_option(:url,:mandatory),self.options.get_option(:username,:mandatory),self.options.get_option(:box,:mandatory).to_s])
+              end
               if delivid.eql?(VAL_ALL)
                 pkg_id_uri=mailbox_all_entries.map{|i|{:id=>i[PACKAGE_MATCH_FIELD],:uri=>self.class.get_fasp_uri_from_entry(i)}}
                 # todo : remove ids from skip not present in inbox
-                # skip_ids_persistency.data.select!{|id|pkg_id_uri.select{|p|p[:id].eql?(id)}}
-                pkg_id_uri.select!{|i|!skip_ids_persistency.data.include?(i[:id])}
+                # skip_ids_data.select!{|id|pkg_id_uri.select{|p|p[:id].eql?(id)}}
+                pkg_id_uri.select!{|i|!skip_ids_data.include?(i[:id])}
               else
                 # I dont know which delivery id is the right one if package was receive by group
                 entry_xml=api_v3.call({:operation=>'GET',:subpath=>"#{mailbox}/#{delivid}",:headers=>{'Accept'=>'application/xml'}})[:http].body
@@ -168,9 +169,9 @@ module Asperalm
                 statuses=self.transfer.start(transfer_spec,{:src=>:node_gen3})
                 result_transfer.push({'package'=>id_uri[:id],'status'=>statuses.map{|i|i.to_s}.join(',')})
                 # skip only if all sessions completed
-                skip_ids_persistency.data.push(id_uri[:id]) if TransferAgent.session_status(statuses).eql?(:success)
+                skip_ids_data.push(id_uri[:id]) if TransferAgent.session_status(statuses).eql?(:success)
               end
-              skip_ids_persistency.save
+              skip_ids_persistency.save unless skip_ids_persistency.nil?
               return {:type=>:object_list,:data=>result_transfer}
             when :send
               delivery_info=self.options.get_option(:delivery_info,:mandatory)

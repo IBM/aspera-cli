@@ -418,20 +418,20 @@ module Asperalm
             when :recv
               # scalar here
               ids_to_download=self.options.get_option(:id,:mandatory)
-              # non nil if persistence
-              skip_ids_persistency=PersistencyFile.new('aoc_recv',{
-                :url      => self.options.get_option(:url,:mandatory),
-                :ids      => [@user_id,@workspace_name],
-                :active   => self.options.get_option(:once_only,:mandatory),
-                :default  => [],
-                :delete   => lambda{|d|d.nil? or d.empty?}})
+              skip_ids_data=[]
+              skip_ids_persistency=nil
+              if self.options.get_option(:once_only,:mandatory)
+                skip_ids_persistency=PersistencyFile.new(
+                data: skip_ids_data,
+                ids:  ['aoc_recv',self.options.get_option(:url,:mandatory),@user_id,@workspace_name])
+              end
               if ids_to_download.eql?(VAL_ALL)
                 # get list of packages in inbox
                 package_info=@api_files.read('packages',{'archived'=>false,'exclude_dropbox_packages'=>true,'has_content'=>true,'received'=>true,'workspace_id'=>@workspace_id})[:data]
                 # remove from list the ones already downloaded
                 ids_to_download=package_info.map{|e|e['id']}
                 # array here
-                ids_to_download.select!{|id|!skip_ids_persistency.data.include?(id)}
+                ids_to_download.select!{|id|!skip_ids_data.include?(id)}
               end # ALL
               # list here
               ids_to_download = [ids_to_download] unless ids_to_download.is_a?(Array)
@@ -446,9 +446,9 @@ module Asperalm
                 statuses=transfer_start(@api_files,'packages','receive',node_file,package_tags(package_info,'download').merge(add_ts))
                 result_transfer.push({'package'=>package_id,'status'=>statuses.map{|i|i.to_s}.join(',')})
                 # update skip list only if all sessions completed
-                skip_ids_persistency.data.push(package_id) if TransferAgent.session_status(statuses).eql?(:success)
+                skip_ids_data.push(package_id) if TransferAgent.session_status(statuses).eql?(:success)
               end
-              skip_ids_persistency.save
+              skip_ids_persistency.save unless skip_ids_persistency.nil?
               return {:type=>:object_list,:data=>result_transfer}
             when :show
               package_id=self.options.get_next_argument('package ID')

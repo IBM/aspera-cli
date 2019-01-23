@@ -19,24 +19,28 @@ module Asperalm
 
         # retrieve tranfer list using API and persistency file
         def self.get_transfers_iteration(api_node,params)
-          @iteration_persistency=PersistencyFile.new('xnode',{
-            :url      => self.options.get_option(:url,:mandatory),
-            :ids      => [self.options.get_option(:username,:mandatory)],
-            :active   => self.options.get_option(:once_only,:mandatory)})
-          @iteration_persistency.data=process_file_events(@iteration_persistency.data)
+          # array with one element max
+          iteration_data=[]
+          iteration_persistency=nil
+          if self.options.get_option(:once_only,:mandatory)
+            iteration_persistency=PersistencyFile.new(
+            data: iteration_data,
+            ids:  ['xnode',self.options.get_option(:url,:mandatory),self.options.get_option(:username,:mandatory)])
+          end
+          iteration_data[0]=process_file_events(iteration_data[0])
           # first time run ? or subsequent run ?
-          params[:iteration_token]=@iteration_persistency.data unless @iteration_persistency.data.nil?
+          params[:iteration_token]=iteration_data[0] unless iteration_data[0].nil?
           resp=api_node.read('ops/transfers',params)
           transfers=resp[:data]
           if transfers.is_a?(Array) then
             # 3.7.2, released API
-            @iteration_persistency.data=URI.decode_www_form(URI.parse(resp[:http]['Link'].match(/<([^>]+)>/)[1]).query).to_h['iteration_token']
+            iteration_data[0]=URI.decode_www_form(URI.parse(resp[:http]['Link'].match(/<([^>]+)>/)[1]).query).to_h['iteration_token']
           else
             # 3.5.2, deprecated API
-            @iteration_persistency.data=transfers['iteration_token']
+            iteration_data[0]=transfers['iteration_token']
             transfers=transfers['transfers']
           end
-          @iteration_persistency.save
+          iteration_persistency.save unless iteration_persistency.nil?
           return transfers
         end
 

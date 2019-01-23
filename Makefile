@@ -7,7 +7,8 @@ BINDIR=$(MAINDIR)/bin
 OUT_FOLDER=out
 TEST_FOLDER=test.dir
 # tool invokation
-EXETEST=$(BINDIR)/$(EXENAME) -w
+EXETEST1=$(BINDIR)/$(EXENAME)
+EXETEST=$(EXETEST1) -w
 GEMNAME=asperalm
 GEMVERSION=$(shell $(EXETEST) --version)
 GEM_FILENAME=$(GEMNAME)-$(GEMVERSION).gem
@@ -56,7 +57,7 @@ README.md: README.erb.md $(INCL_COMMANDS) $(INCL_USAGE) $(INCL_ASESSION)
 	COMMANDS=$(INCL_COMMANDS) USAGE=$(INCL_USAGE) ASESSION=$(INCL_ASESSION) VERSION=`$(EXETEST) --version` TOOLNAME=$(EXENAME) erb README.erb.md > README.md
 
 $(INCL_COMMANDS): Makefile
-	sed -n -e 's/.*\$$(EXETEST)/$(EXENAME)/p' Makefile|grep -v 'Sales Engineering'|sed -E -e 's/\$$\(SAMPLE_FILE\)/sample_file.bin/g;s/\$$\(NODEDEST\)/sample_dest_folder/g;s/\$$\(TEST_FOLDER\)/sample_dest_folder/g;s/ibmfaspex.asperasoft.com/faspex.mycompany.com/g;s/(")(url|api_key|username|password|access_key_id|secret_access_key|pass)(":")[^"]*(")/\1\2\3my_\2_here\4/g;s/--(secret|url|password|username)=[^ ]*/--\1=my_\1_here/g;s/Aspera123_/_my_pass_/g'|grep -v 'localhost:9443'|sort -u > $(INCL_COMMANDS)
+	sed -n -e 's/.*\$$(EXETEST.?)/$(EXENAME)/p' Makefile|grep -v 'Sales Engineering'|sed -E -e 's/\$$\(SAMPLE_FILE\)/sample_file.bin/g;s/\$$\(NODEDEST\)/sample_dest_folder/g;s/\$$\(TEST_FOLDER\)/sample_dest_folder/g;s/ibmfaspex.asperasoft.com/faspex.mycompany.com/g;s/(")(url|api_key|username|password|access_key_id|secret_access_key|pass)(":")[^"]*(")/\1\2\3my_\2_here\4/g;s/--(secret|url|password|username)=[^ ]*/--\1=my_\1_here/g;s/Aspera123_/_my_pass_/g'|grep -v 'localhost:9443'|sort -u > $(INCL_COMMANDS)
 
 # depends on all sources, so regenerate always
 .PHONY: $(INCL_USAGE)
@@ -493,7 +494,7 @@ t/conf_id_5:
 	MLIA_CONFIG_FILE=$(TEST_CONFIG) $(EXETEST) config id conf_name initialize @json:'{"p1":"v1","p2":"v2"}'
 	@touch $@
 t/conf_id_6:
-	MLIA_CONFIG_FILE=$(TEST_CONFIG) $(EXETEST) config id conf_name update --p1=v1 --p2=v2
+	MLIA_CONFIG_FILE=$(TEST_CONFIG) $(EXETEST1) config id conf_name update --p1=v1 --p2=v2
 	@touch $@
 t/conf_open:
 	MLIA_CONFIG_FILE=$(TEST_CONFIG) $(EXETEST) config open

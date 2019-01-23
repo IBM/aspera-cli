@@ -363,12 +363,15 @@ module Asperalm
             scan_folder_files({ 'id' => @access_key_self['root_file_id'], 'name' => '/', 'type' => 'folder', 'path' => '/' })
             return Main.result_status('scan finished')
           when :events
-            @iteration_persistency=PersistencyFile.new('preview_iteration',{
-              :url      => self.options.get_option(:url,:mandatory),
-              :ids      => [self.options.get_option(:username,:mandatory)],
-              :active   => self.options.get_option(:once_only,:mandatory)})
-            @iteration_persistency.data=process_file_events(@iteration_persistency.data)
-            @iteration_persistency.save
+            iteration_data=[]
+            iteration_persistency=nil
+            if self.options.get_option(:once_only,:mandatory)
+              iteration_persistency=PersistencyFile.new(
+              data: iteration_data,
+              ids:  ['preview_iteration',self.options.get_option(:url,:mandatory),self.options.get_option(:username,:mandatory)])
+            end
+            iteration_data[0]=process_file_events(iteration_data[0])
+            iteration_persistency.save unless iteration_persistency.nil?
             return Main.result_status('events finished')
           when :folder
             file_id=self.options.get_next_argument('file id')
