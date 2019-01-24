@@ -338,7 +338,6 @@ module Asperalm
 
               self.options.set_option(:private_key,'@file:'+private_key_path)
 
-              require_admin=false
               auto_set_pub_key=false
               auto_set_jwt=false
               use_browser_authentication=false
@@ -380,18 +379,18 @@ module Asperalm
                 self.options.set_option(:redirect_uri,DEFAULT_REDIRECT)
                 auto_set_pub_key=true
                 auto_set_jwt=true
-                require_admin=true
+                self.options.set_option(:scope,FilesApi::SCOPE_FILES_ADMIN)
               end
-              api_aoc=files_plugin.get_aoc_api(require_admin)
-              myself=api_aoc.read('self')[:data]
+              files_plugin.update_aoc_api
+              myself=files_plugin.api_aoc.read('self')[:data]
               if auto_set_pub_key
                 raise CliError,"public key is already set in profile (use --override=yes)"  unless myself['public_key'].empty? or option_override
                 self.format.display_status("Updating profile with new key")
-                api_aoc.update("users/#{myself['id']}",{'public_key'=>pub_key_pem})
+                files_plugin.api_aoc.update("users/#{myself['id']}",{'public_key'=>pub_key_pem})
               end
               if auto_set_jwt
                 self.format.display_status("Enabling JWT for client")
-                api_aoc.update("clients/#{self.options.get_option(:client_id)}",{'jwt_grant_enabled'=>true,'explicit_authorization_required'=>false})
+                files_plugin.api_aoc.update("clients/#{self.options.get_option(:client_id)}",{'jwt_grant_enabled'=>true,'explicit_authorization_required'=>false})
               end
               self.format.display_status("creating new config preset: #{aspera_preset_name}")
               @config_presets[aspera_preset_name]={
