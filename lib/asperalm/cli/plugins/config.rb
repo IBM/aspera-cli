@@ -1,6 +1,7 @@
 require 'asperalm/cli/basic_auth_plugin'
 require 'asperalm/fasp/installation'
 require 'asperalm/api_detector'
+require 'asperalm/open_application'
 require 'xmlsimple'
 require 'base64'
 
@@ -28,6 +29,8 @@ module Asperalm
         RUBY_FILE_EXT='.rb'
         OLD_AOC_COMMAND='files'
         NEW_AOC_COMMAND='aspera'
+        CONNECT_WEB_URL = 'http://d3gcli72yxqn2z.cloudfront.net/connect'
+        CONNECT_VERSIONS = 'connectversions.js'
 
         private_constant :ASPERA_HOME_FOLDER_NAME,:DEFAULT_CONFIG_FILENAME,:CONF_PRESET_CONFIG,:CONF_PRESET_VERSION,:CONF_PRESET_DEFAULT,:OLD_PROGRAM_NAME,:DEFAULT_REDIRECT,:ASPERA_PLUGINS_FOLDERNAME,:GEM_PLUGINS_FOLDER,:RUBY_FILE_EXT,:OLD_AOC_COMMAND,:NEW_AOC_COMMAND
         def initialize(env,tool_name,gem_name,version)
@@ -59,6 +62,23 @@ module Asperalm
           self.options.add_opt_simple(:pkeypath,"path to private key")
           self.options.set_option(:use_generic_client,true)
           self.options.parse_options!
+        end
+
+        # retrieve structure from cloud (CDN) with all versions available
+        def connect_versions
+          if @connect_versions.nil?
+            api_connect_cdn=Rest.new({:base_url=>CONNECT_WEB_URL})
+            javascript=api_connect_cdn.call({:operation=>'GET',:subpath=>CONNECT_VERSIONS})
+            # get result on one line
+            connect_versions_javascript=javascript[:http].body.gsub(/\r?\n\s*/,'')
+            Log.log.debug("javascript=[\n#{connect_versions_javascript}\n]")
+            # get javascript object only
+            found=connect_versions_javascript.match(/AW.connectVersions = (.*);/)
+            raise CliError,'Problen when getting connect versions from internet' if found.nil?
+            alldata=JSON.parse(found[1])
+            @connect_versions=alldata['entries']
+          end
+          return @connect_versions
         end
 
         # loads default parameters of plugin if no -P parameter
@@ -203,7 +223,49 @@ module Asperalm
           @plugins[plugin_symbol]={:source=>path,:require_stanza=>req}
         end
 
-        ACTIONS=[:gem_path, :genkey,:plugins,:flush_tokens,:list,:overview,:open,:echo,:id,:documentation,:wizard,:export_to_cli,:detect,:coffee]
+        def execute_connect_action
+          command=self.options.get_next_command([:list,:id])
+          case command
+          when :list
+            return {:type=>:object_list, :data=>connect_versions, :fields => ['id','title','version']}
+          when :id
+            connect_id=self.options.get_next_argument('id or title')
+            one_res=connect_versions.select{|i|i['id'].eql?(connect_id) || i['title'].eql?(connect_id)}.first
+            raise CliNoSuchId.new(:connect,connect_id) if one_res.nil?
+            command=self.options.get_next_command([:info,:links])
+            case command
+            when :info # shows files used
+              one_res.delete('links')
+              return {:type=>:single_object, :data=>one_res}
+            when :links # shows files used
+              command=self.options.get_next_command([:list,:id])
+              all_links=one_res['links']
+              case command
+              when :list # shows files used
+                return {:type=>:object_list, :data=>all_links}
+              when :id
+                link_title=self.options.get_next_argument('title')
+                one_link=all_links.select {|i| i['title'].eql?(link_title)}.first
+                command=self.options.get_next_command([:download,:open])
+                case command
+                when :download #
+                  folder_dest=self.transfer.destination_folder('receive')
+                  #folder_dest=self.options.get_next_argument('destination folder')
+                  api_connect_cdn=Rest.new({:base_url=>CONNECT_WEB_URL})
+                  fileurl = one_link['href']
+                  filename=fileurl.gsub(%r{.*/},'')
+                  api_connect_cdn.call({:operation=>'GET',:subpath=>fileurl,:save_to_file=>File.join(folder_dest,filename)})
+                  return Main.result_status("downloaded: #{filename}")
+                when :open #
+                  OpenApplication.instance.uri(one_link['href'])
+                  return Main.result_status("opened: #{one_link['href']}")
+                end
+              end
+            end
+          end
+        end
+
+        ACTIONS=[:gem_path, :genkey,:plugins,:flush_tokens,:list,:overview,:open,:echo,:id,:documentation,:wizard,:export_to_cli,:detect,:coffee,:connect,:fasp_files,:product_list]
 
         # "config" plugin
         def execute_action
@@ -448,6 +510,12 @@ module Asperalm
           when :coffee
             OpenApplication.instance.uri('https://enjoyjava.com/wp-content/uploads/2018/01/How-to-make-strong-coffee.jpg')
             return Main.result_nothing
+          when :connect
+            return execute_connect_action
+          when :fasp_files # shows files used
+            return {:type=>:object_list, :data=>Fasp::Installation.instance.paths.map{|k,v|{'name'=>k,'path'=>v}}}
+          when :product_list
+            return {:type=>:object_list, :data=>Fasp::Installation.instance.installed_products, :fields=>['name','app_root']}
           when :gem_path
             return Main.result_status(Main.gem_root)
           else raise "error"

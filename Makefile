@@ -305,7 +305,10 @@ t/aocp3:
 t/aocp4:
 	$(EXETEST) aspera packages recv --id=ALL --once-only=yes --lock-port=12345
 	@touch $@
-taocp: t/aocp1 t/aocp2 t/aocp3 t/aocp4
+t/aocp5:
+	$(EXETEST) -N aspera org --link=https://sedemo.ibmaspera.com/packages/public/receive?token=cpDktbNc8aHnyrbI_V49GzFwm5q3jxWnT_cDOjaewrc
+	@touch $@
+taocp: t/aocp1 t/aocp2 t/aocp3 t/aocp4 t/aocp5
 HIDE_SECRET1='AML3clHuHwDArShhcQNVvWGHgU9dtnpgLzRCPsBr7H5JdhrFU2oRs69_tJTEYE-hXDVSW-vQ3-klRnJvxrTkxQ'
 t/aoc7:
 	$(EXETEST) aspera admin res node v3 events --secret=$(HIDE_SECRET1)
@@ -447,22 +450,22 @@ t/at14:
 tats: t/at4 t/at5 t/at6 t/at7 t/at2 t/at1 t/at3 t/at8 t/at9 t/at10 t/at11 t/at12 t/at13 t/at14
 
 t/co1:
-	$(EXETEST) client current
+	$(EXETEST) config fasp_files
 	@touch $@
 t/co2:
-	$(EXETEST) client available
+	$(EXETEST) config product_list
 	@touch $@
 t/co3:
-	$(EXETEST) client connect list
+	$(EXETEST) config connect list
 	@touch $@
 t/co4:
-	$(EXETEST) client connect id 'Aspera Connect for Windows' info
+	$(EXETEST) config connect id 'Aspera Connect for Windows' info
 	@touch $@
 t/co5:
-	$(EXETEST) client connect id 'Aspera Connect for Windows' links list
+	$(EXETEST) config connect id 'Aspera Connect for Windows' links list
 	@touch $@
 t/co6:
-	$(EXETEST) client connect id 'Aspera Connect for Windows' links id 'Windows Installer' download --to-folder=.
+	$(EXETEST) config connect id 'Aspera Connect for Windows' links id 'Windows Installer' download --to-folder=.
 	@touch $@
 tcon: t/co1 t/co2 t/co3 t/co4 t/co5 t/co6
 

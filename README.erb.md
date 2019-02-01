@@ -29,7 +29,7 @@ In examples, command line operations (starting with `$`) are shown using a stand
 
 # Quick Start
 
-This section guides you from installation, first use and advanced used.
+This section guides you from installation, first use and advanced use.
 
 First, follow the section: [Installation](#installation) (Ruby, Gem, FASP) to start using <%=tool%>.
 
@@ -1334,12 +1334,12 @@ to download files.
 $ <%=cmd%> node access_key create --value=@json:'{"id":"eudemo-sedemo","secret":"mystrongsecret","storage":{"type":"local","path":"/data/asperafiles"}}'
 ```
 
-## <a name="client"></a>Client
+## <a name="client"></a>FASP configuration
 
-The `client` plugin refers to the use of a local FASP client. It provides the following commands:
+The `config` plugin also allows specification for the use of a local FASP client. It provides the following commands:
 
-* `current` : list current resources used for transfers
-* `available` : list Aspera transfer products available locally
+* `fasp_files` : list current resources used for transfers
+* `product_list` : list Aspera transfer products available locally
 * `connect` : list,download connect client versions available on internet
 
 ### List installed clients
@@ -1347,7 +1347,7 @@ The `client` plugin refers to the use of a local FASP client. It provides the fo
 Locally installed Aspera products can be listed with:
 
 ```bash
-$ <%=cmd%> client available
+$ <%=cmd%> config product_list
 :..........................:................................................:
 :           name           :                    app_root                    :
 :..........................:................................................:
@@ -1387,7 +1387,7 @@ $ <%=cmd%> client current
 ### List current resources used
 
 ```
-$ <%=cmd%> client current
+$ <%=cmd%> config fasp_files
 :........................:............................................................................................:
 :          name          :                                            path                                            :
 :........................:............................................................................................:
@@ -1406,7 +1406,7 @@ $ <%=cmd%> client current
 ### Installation of Connect Client on command line
 
 ```bash
-$ <%=cmd%> client connect list
+$ <%=cmd%> config connect list
 :...............................................:......................................:..............:
 :                      id                       :                title                 :   version    :
 :...............................................:......................................:..............:
@@ -1419,7 +1419,7 @@ $ <%=cmd%> client connect list
 : urn:uuid:213C9370-22B1-11E2-81C1-0800200C9A66 : Aspera Connect for Linux 32          : 3.6.2.117442 :
 : urn:uuid:97F94DF0-22B1-11E2-81C1-0800200C9A66 : Aspera Connect for Linux 64          : 3.7.2.141527 :
 :...............................................:......................................:..............:
-$ <%=cmd%> client connect id 'Aspera Connect for Mac Intel 10.6' links list
+$ <%=cmd%> config connect id 'Aspera Connect for Mac Intel 10.6' links list
 :.............................................:..........................:.......................................................................:..........:...............:
 :                    title                    :           type           :                                 href                                  : hreflang :      rel      :
 :.............................................:..........................:.......................................................................:..........:...............:
@@ -1432,7 +1432,7 @@ $ <%=cmd%> client connect id 'Aspera Connect for Mac Intel 10.6' links list
 : Aspera Connect PDF Documentation for Mac OS : application/pdf          : docs/user/osx/zh-cn/pdf/Connect_User_3.7.0_OSX_zh-cn.pdf              : zh-cn    : documentation :
 : Aspera Connect for Mac Release Notes        : text/html                : http://www.asperasoft.com/en/release_notes/default_1/release_notes_54 : en       : release-notes :
 :.............................................:..........................:.......................................................................:..........:...............:
-$ <%=cmd%> client connect id 'Aspera Connect for Mac Intel 10.6' links id 'Mac Intel Installer' download --to-folder=.
+$ <%=cmd%> config connect id 'Aspera Connect for Mac Intel 10.6' links id 'Mac Intel Installer' download --to-folder=.
 downloaded: AsperaConnect-3.6.1.111259-mac-intel-10.6.dmg
 ```
 
