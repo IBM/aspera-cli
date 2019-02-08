@@ -427,11 +427,7 @@ module Asperalm
               pub_key_pem=OpenSSL::PKey::RSA.new(File.read(private_key_path)).public_key.to_s
               # define options
               require 'asperalm/cli/plugins/aspera'
-
-              files_plugin=Plugins::Aspera.new(@agents.merge({skip_basic_auth_options: true}))
-
-              self.options.set_option(:private_key,'@file:'+private_key_path)
-
+              files_plugin=Plugins::Aspera.new(@agents.merge({skip_basic_auth_options: true, private_key_path: private_key_path}))
               auto_set_pub_key=false
               auto_set_jwt=false
               use_browser_authentication=false

@@ -41,6 +41,7 @@ module Asperalm
           self.options.set_option(:client_id,client_data.first)
           self.options.set_option(:client_secret,client_data.last)
           self.options.set_option(:scope,FilesApi::SCOPE_FILES_USER)
+          self.options.set_option(:private_key,'@file:'+env[:private_key_path]) if env[:private_key_path].is_a?(String)
           self.options.parse_options!
           return if env[:man_only]
           @default_workspace_id=nil
