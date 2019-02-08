@@ -278,18 +278,21 @@ module Asperalm
         end
 
         def execute_action_ascp
-          command=self.options.get_next_command([:products,:id])
+          command=self.options.get_next_command([:connect,:use,:show,:products])
           case command
-          when :use
           when :connect
             return execute_connect_action
-          when :fasp_files # shows files used
-            return {:type=>:object_list, :data=>Fasp::Installation.instance.paths.map{|k,v|{'name'=>k,'path'=>v}}}
+          when :use
+            raise "TODO: not implemented (set default ascp to use)"
+          when :show # shows files used
+            return {:type=>:status, :data=>Fasp::Installation.instance.path(:ascp)}
           when :products
-            command=self.options.get_next_command([:list])
+            command=self.options.get_next_command([:list,:use])
             case command
             when :list
               return {:type=>:object_list, :data=>Fasp::Installation.instance.installed_products, :fields=>['name','app_root']}
+            when :use
+              raise "TODO: not implemented (set default ascp to use from product)"
             end
           end
         end
