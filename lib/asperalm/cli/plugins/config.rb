@@ -51,15 +51,19 @@ module Asperalm
           @option_config_file=File.join(@main_folder,DEFAULT_CONFIG_FILENAME)
           @help_url='http://www.rubydoc.info/gems/'+@gem_name
           @gem_url='https://rubygems.org/gems/'+@gem_name
+          # set folder where generated FASP files are
+          Fasp::Installation.instance.config_folder=@main_folder
           add_plugin_lookup_folder(File.join(@main_folder,ASPERA_PLUGINS_FOLDERNAME))
           add_plugin_lookup_folder(File.join(Main.gem_root,GEM_PLUGINS_FOLDER))
           self.options.set_obj_attr(:override,self,:option_override,:no)
           self.options.set_obj_attr(:config_file,self,:option_config_file)
+          self.options.set_obj_attr(:ascp_path,self,:option_ascp_path)
           self.options.add_opt_boolean(:override,"override existing value")
           self.options.add_opt_simple(:config_file,"read parameters from file in YAML format, current=#{@option_config_file}")
           self.options.add_opt_switch(:no_default,"-N","do not load default configuration for plugin") { @use_plugin_defaults=false }
           self.options.add_opt_boolean(:use_generic_client,'wizard: AoC: use global or org specific jwt client id')
-          self.options.add_opt_simple(:pkeypath,"path to private key")
+          self.options.add_opt_simple(:pkeypath,"path to private key for JWT (wizard)")
+          self.options.add_opt_simple(:ascp_path,"path to ascp")
           self.options.set_option(:use_generic_client,true)
           self.options.parse_options!
         end
@@ -124,6 +128,14 @@ module Asperalm
         def preset_by_name(config_name)
           raise CliError,"no such config preset: #{config_name}" unless @config_presets.has_key?(config_name)
           return @config_presets[config_name]
+        end
+
+        def option_ascp_path=(new_value)
+          Fasp::Installation.instance.ascp_path=new_value
+        end
+
+        def option_ascp_path
+          Fasp::Installation.instance.ascp_path
         end
 
         # read config file and validate format
@@ -265,7 +277,24 @@ module Asperalm
           end
         end
 
-        ACTIONS=[:gem_path, :genkey,:plugins,:flush_tokens,:list,:overview,:open,:echo,:id,:documentation,:wizard,:export_to_cli,:detect,:coffee,:connect,:fasp_files,:product_list]
+        def execute_action_ascp
+          command=self.options.get_next_command([:products,:id])
+          case command
+          when :use
+          when :connect
+            return execute_connect_action
+          when :fasp_files # shows files used
+            return {:type=>:object_list, :data=>Fasp::Installation.instance.paths.map{|k,v|{'name'=>k,'path'=>v}}}
+          when :products
+            command=self.options.get_next_command([:list])
+            case command
+            when :list
+              return {:type=>:object_list, :data=>Fasp::Installation.instance.installed_products, :fields=>['name','app_root']}
+            end
+          end
+        end
+
+        ACTIONS=[:gem_path, :genkey,:plugins,:flush_tokens,:list,:overview,:open,:echo,:id,:documentation,:wizard,:export_to_cli,:detect,:coffee,:ascp]
 
         # "config" plugin
         def execute_action
@@ -510,12 +539,8 @@ module Asperalm
           when :coffee
             OpenApplication.instance.uri('https://enjoyjava.com/wp-content/uploads/2018/01/How-to-make-strong-coffee.jpg')
             return Main.result_nothing
-          when :connect
-            return execute_connect_action
-          when :fasp_files # shows files used
-            return {:type=>:object_list, :data=>Fasp::Installation.instance.paths.map{|k,v|{'name'=>k,'path'=>v}}}
-          when :product_list
-            return {:type=>:object_list, :data=>Fasp::Installation.instance.installed_products, :fields=>['name','app_root']}
+          when :ascp
+            execute_action_ascp
           when :gem_path
             return Main.result_status(Main.gem_root)
           else raise "error"
