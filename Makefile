@@ -450,22 +450,22 @@ t/at14:
 tats: t/at4 t/at5 t/at6 t/at7 t/at2 t/at1 t/at3 t/at8 t/at9 t/at10 t/at11 t/at12 t/at13 t/at14
 
 t/co1:
-	$(EXETEST) config fasp_files
+	$(EXETEST) config ascp show
 	@touch $@
 t/co2:
-	$(EXETEST) config product_list
+	$(EXETEST) config ascp products list
 	@touch $@
 t/co3:
-	$(EXETEST) config connect list
+	$(EXETEST) config ascp connect list
 	@touch $@
 t/co4:
-	$(EXETEST) config connect id 'Aspera Connect for Windows' info
+	$(EXETEST) config ascp connect id 'Aspera Connect for Windows' info
 	@touch $@
 t/co5:
-	$(EXETEST) config connect id 'Aspera Connect for Windows' links list
+	$(EXETEST) config ascp connect id 'Aspera Connect for Windows' links list
 	@touch $@
 t/co6:
-	$(EXETEST) config connect id 'Aspera Connect for Windows' links id 'Windows Installer' download --to-folder=.
+	$(EXETEST) config ascp connect id 'Aspera Connect for Windows' links id 'Windows Installer' download --to-folder=.
 	@touch $@
 tcon: t/co1 t/co2 t/co3 t/co4 t/co5 t/co6
 
