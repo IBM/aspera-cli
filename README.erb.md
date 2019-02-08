@@ -170,7 +170,7 @@ Most file transfers will be done using the FASP protocol. This requires one of I
 For instance, Aspera Connect Client can be installed
 by visiting the page: [http://downloads.asperasoft.com/connect2/](http://downloads.asperasoft.com/connect2/). 
 
-<%=tool%> will detect most of Aspera transfer products in standard locations and use the first one found. Refer to section [Client](#client) for details.
+<%=tool%> will detect most of Aspera transfer products in standard locations and use the first one found. Refer to section [FASP](#client) for details.
 
 Several methods are provided on how to effectively start a transfer, refer to section: [Transfer Agents](#agents)
 
@@ -650,7 +650,7 @@ files to the related server from the agent node.
 
 By default the CLI will use a local FASP protocol.
 <%=tool%> will detect locally installed Aspera products.
-Refer to section [Client](#client). 
+Refer to section [FASP](#client). 
 
 ### IBM Aspera Connect Client GUI
 
@@ -1336,10 +1336,10 @@ $ <%=cmd%> node access_key create --value=@json:'{"id":"eudemo-sedemo","secret":
 
 ## <a name="client"></a>FASP configuration
 
-The `config` plugin also allows specification for the use of a local FASP client. It provides the following commands:
+The `config` plugin also allows specification for the use of a local FASP client. It provides the following commands for `ascp` subcommand:
 
-* `fasp_files` : list current resources used for transfers
-* `product_list` : list Aspera transfer products available locally
+* `show` : shows the path of ascp used
+* `products` : list Aspera transfer products available locally
 * `connect` : list,download connect client versions available on internet
 
 ### List installed clients
@@ -1347,7 +1347,7 @@ The `config` plugin also allows specification for the use of a local FASP client
 Locally installed Aspera products can be listed with:
 
 ```bash
-$ <%=cmd%> config product_list
+$ <%=cmd%> config products list
 :..........................:................................................:
 :           name           :                    app_root                    :
 :..........................:................................................:
@@ -1363,50 +1363,20 @@ To select another product use option: `use_product`, either on command line:
 `--use-product='Aspera Enterprise Server'`, or by setting as default:
 
 ```
-$ <%=cmd%> config id cli_default set use_product 'Aspera Enterprise Server'
-updated: cli_default: use_product <- Aspera Enterprise Server
-$ <%=cmd%> config id default set config cli_default
-updated: default: config <- cli_default
-$ <%=cmd%> client current
-:........................:.......................................................................................:
-:          name          :                                         path                                          :
-:........................:.......................................................................................:
-: bin_folder             : /Library/Aspera/bin                                                                   :
-: ascp                   : /Library/Aspera/bin/ascp                                                              :
-: ascp4                  : /Library/Aspera/bin/ascp4                                                             :
-: ssh_bypass_key_dsa     : /Library/Aspera/var/aspera_tokenauth_id_dsa                                           :
-: ssh_bypass_key_rsa     : /Library/Aspera/var/aspera_tokenauth_id_rsa                                           :
-: fallback_cert          : /Library/Aspera/var/aspera_web_cert.pem                                               :
-: fallback_key           : /Library/Aspera/var/aspera_web_key.pem                                                :
-: plugin_https_port_file : /Users/laurent/Library/Application Support/Aspera/Enterprise Server/var/run/https.uri :
-: log_folder             : /Users/laurent/Library/Logs/Aspera                                                    :
-:........................:.......................................................................................:
+$ <%=cmd%> config ascp product use 'Aspera Enterprise Server'
 ```
-
 
 ### List current resources used
 
 ```
-$ <%=cmd%> config fasp_files
-:........................:............................................................................................:
-:          name          :                                            path                                            :
-:........................:............................................................................................:
-: bin_folder             : /Users/laurent/Applications/Aspera Connect.app/Contents/Resources                          :
-: ssh_bypass_key_dsa     : /Users/laurent/Applications/Aspera Connect.app/Contents/Resources/asperaweb_id_dsa.openssh :
-: ssh_bypass_key_rsa     : /Users/laurent/Applications/Aspera Connect.app/Contents/Resources/aspera_tokenauth_id_rsa  :
-: fallback_cert          : /Users/laurent/Applications/Aspera Connect.app/Contents/Resources/aspera_web_cert.pem      :
-: fallback_key           : /Users/laurent/Applications/Aspera Connect.app/Contents/Resources/aspera_web_key.pem       :
-: localhost_cert         : /Users/laurent/Applications/Aspera Connect.app/Contents/Resources/localhost.crt            :
-: localhost_key          : /Users/laurent/Applications/Aspera Connect.app/Contents/Resources/localhost.key            :
-: plugin_https_port_file : /Users/laurent/Library/Application Support/Aspera/Aspera Connect/var/run/https.uri         :
-: log_folder             : /Users/laurent/Library/Logs/Aspera                                                         :
-:........................:............................................................................................:
+$ <%=cmd%> config ascp show
+/Users/laurent/Applications/Aspera Connect.app/Contents/Resources/ascp
 ```
 
 ### Installation of Connect Client on command line
 
 ```bash
-$ <%=cmd%> config connect list
+$ <%=cmd%> config ascp connect list
 :...............................................:......................................:..............:
 :                      id                       :                title                 :   version    :
 :...............................................:......................................:..............:
@@ -1419,7 +1389,7 @@ $ <%=cmd%> config connect list
 : urn:uuid:213C9370-22B1-11E2-81C1-0800200C9A66 : Aspera Connect for Linux 32          : 3.6.2.117442 :
 : urn:uuid:97F94DF0-22B1-11E2-81C1-0800200C9A66 : Aspera Connect for Linux 64          : 3.7.2.141527 :
 :...............................................:......................................:..............:
-$ <%=cmd%> config connect id 'Aspera Connect for Mac Intel 10.6' links list
+$ <%=cmd%> config ascp connect id 'Aspera Connect for Mac Intel 10.6' links list
 :.............................................:..........................:.......................................................................:..........:...............:
 :                    title                    :           type           :                                 href                                  : hreflang :      rel      :
 :.............................................:..........................:.......................................................................:..........:...............:
@@ -1432,7 +1402,7 @@ $ <%=cmd%> config connect id 'Aspera Connect for Mac Intel 10.6' links list
 : Aspera Connect PDF Documentation for Mac OS : application/pdf          : docs/user/osx/zh-cn/pdf/Connect_User_3.7.0_OSX_zh-cn.pdf              : zh-cn    : documentation :
 : Aspera Connect for Mac Release Notes        : text/html                : http://www.asperasoft.com/en/release_notes/default_1/release_notes_54 : en       : release-notes :
 :.............................................:..........................:.......................................................................:..........:...............:
-$ <%=cmd%> config connect id 'Aspera Connect for Mac Intel 10.6' links id 'Mac Intel Installer' download --to-folder=.
+$ <%=cmd%> config ascp connect id 'Aspera Connect for Mac Intel 10.6' links id 'Mac Intel Installer' download --to-folder=.
 downloaded: AsperaConnect-3.6.1.111259-mac-intel-10.6.dmg
 ```
 
@@ -1930,6 +1900,7 @@ Gems, or remove your ed25519 key from your `.ssh` folder to solve the issue.
 * version 0.9.21
 
   * supports simplified wizard using global client
+  * only ascp binary is required, other SDK (keys) files are now generated
 
 * version 0.9.20
 
