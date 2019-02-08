@@ -138,7 +138,6 @@ module Asperalm
         @opt_mgr.set_obj_attr(:flat_hash,self,:option_flat_hash)
         @opt_mgr.set_obj_attr(:ui,self,:option_ui)
         @opt_mgr.set_obj_attr(:preset,self,:option_preset)
-        @opt_mgr.set_obj_attr(:use_product,Fasp::Installation.instance,:activated)
 
         @opt_mgr.add_opt_list(:ui,OpenApplication.user_interfaces,'method to start browser')
         @opt_mgr.add_opt_list(:log_level,Log.levels,"Log level")
@@ -150,7 +149,7 @@ module Asperalm
         @opt_mgr.add_opt_simple(:fasp_proxy,"URL of FASP proxy (dnat / dnats)")
         @opt_mgr.add_opt_simple(:http_proxy,"URL of HTTP proxy (for http fallback)")
         @opt_mgr.add_opt_simple(:lock_port,"prevent dual execution of a command, e.g. in cron")
-        @opt_mgr.add_opt_simple(:use_product,"which local product to use for ascp, current=#{Fasp::Installation.instance.activated}")
+        @opt_mgr.add_opt_simple(:use_product,"DEPRECATED")
         @opt_mgr.add_opt_simple(:query,"additional filter for API calls (extended value) (some commands)")
         @opt_mgr.add_opt_boolean(:insecure,"do not validate HTTPS certificate")
         @opt_mgr.add_opt_boolean(:flat_hash,"display hash values as additional keys")
