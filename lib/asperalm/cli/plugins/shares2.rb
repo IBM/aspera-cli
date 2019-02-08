@@ -11,6 +11,7 @@ module Asperalm
           self.options.add_opt_simple(:project,"project")
           self.options.add_opt_simple(:share,"share")
           self.options.parse_options!
+          return if env[:man_only]
           unless env[:man_only]
             # get parameters
             shares2_api_base_url=self.options.get_option(:url,:mandatory)

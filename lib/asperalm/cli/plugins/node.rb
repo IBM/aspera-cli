@@ -19,6 +19,7 @@ module Asperalm
             self.options.set_option(:asperabrowserurl,'https://asperabrowser.mybluemix.net')
             self.options.parse_options!
           end
+          return if env[:man_only]
           if env.has_key?(:node_api)
             @api_node=env[:node_api]
           else
