@@ -191,7 +191,7 @@ module Asperalm
         end
 
         Log.log.debug "result: code=#{result[:http].code}"
-        raise RestCallError.new(req,result[:http]) unless result[:http].code.start_with?('2')
+        RestCallError.raiseOnError(req,result[:http])
         if call_data.has_key?(:headers) and
         call_data[:headers].has_key?('Accept') then
           Log.log.debug "result: body=#{result[:http].body}"
