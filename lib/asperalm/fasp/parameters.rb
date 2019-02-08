@@ -124,6 +124,7 @@ module Asperalm
             end
             file_list_file=Asperalm::TempFileManager.instance.temp_filelist_path(@@file_list_folder)
             File.open(file_list_file, "w+"){|f|f.puts(lines)}
+            Log.log.debug("#{option}=\n#{File.read(file_list_file)}".red)
             @builder.add_command_line_options(["#{option}=#{file_list_file}"])
           end
         end
