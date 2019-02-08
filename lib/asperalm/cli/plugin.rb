@@ -21,6 +21,7 @@ module Asperalm
         end
         unless @@done
           self.options.add_opt_simple(:value,"extended value for create, update, list filter")
+          self.options.add_opt_simple(:property,"name of property to set")
           self.options.add_opt_simple(:id,"resource identifier (#{INSTANCE_OPS.join(",")})")
           self.options.parse_options!
           @@done=true
@@ -49,6 +50,8 @@ module Asperalm
         when :list
           return {:type => :object_list, :data=>rest_api.read(res_class_path,parameters)[:data], :fields=>display_fields}
         when :modify
+          property=self.options.get_option(:property,:optional)
+          parameters={property => parameters} unless property.nil?
           rest_api.update(one_res_path,parameters)
           return Main.result_status('modified')
         when :delete
