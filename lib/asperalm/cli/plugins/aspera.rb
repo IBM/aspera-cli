@@ -54,6 +54,7 @@ module Asperalm
           update_aoc_api
         end
 
+        # add some tags and then starts transfer using agent
         def transfer_start(api_aoc,app,direction,node_file,ts_add)
           # activity tracking
           ts_add.deep_merge!({'tags'=>{'aspera'=>{'files'=>{'workspace_name'=>@workspace_name}}}})
@@ -98,6 +99,7 @@ module Asperalm
             result=node_api.delete("files/#{node_file[:file_id]}")[:data]
             return Main.result_status("deleted: #{thepath}")
           when :transfer
+            # in same workspace
             server_home_node_file=client_home_node_file=top_node_file
             case self.options.get_option(:operation,:mandatory)
             when :push
@@ -109,8 +111,8 @@ module Asperalm
               client_folder=self.transfer.destination_folder(client_tr_oper)
               server_folder=self.options.get_option(:from_folder,:mandatory)
             end
-            node_file_server = @api_aoc.resolve_node_file(server_home_node_file,server_folder)
             node_file_client = @api_aoc.resolve_node_file(client_home_node_file,client_folder)
+            node_file_server = @api_aoc.resolve_node_file(server_home_node_file,server_folder)
             # force node as agent
             self.options.set_option(:transfer,:node)
             # force node api in node agent
