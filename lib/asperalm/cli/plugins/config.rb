@@ -29,7 +29,7 @@ module Asperalm
         RUBY_FILE_EXT='.rb'
         OLD_AOC_COMMAND='files'
         NEW_AOC_COMMAND='aspera'
-        CONNECT_WEB_URL = 'http://d3gcli72yxqn2z.cloudfront.net/connect'
+        CONNECT_WEB_URL = 'https://d3gcli72yxqn2z.cloudfront.net/connect'
         CONNECT_VERSIONS = 'connectversions.js'
 
         private_constant :ASPERA_HOME_FOLDER_NAME,:DEFAULT_CONFIG_FILENAME,:CONF_PRESET_CONFIG,:CONF_PRESET_VERSION,:CONF_PRESET_DEFAULT,:OLD_PROGRAM_NAME,:DEFAULT_REDIRECT,:ASPERA_PLUGINS_FOLDERNAME,:GEM_PLUGINS_FOLDER,:RUBY_FILE_EXT,:OLD_AOC_COMMAND,:NEW_AOC_COMMAND
@@ -51,6 +51,7 @@ module Asperalm
           @option_config_file=File.join(@main_folder,DEFAULT_CONFIG_FILENAME)
           @help_url='http://www.rubydoc.info/gems/'+@gem_name
           @gem_url='https://rubygems.org/gems/'+@gem_name
+          @connect_versions=nil
           # set folder where generated FASP files are
           Fasp::Installation.instance.config_folder=@main_folder
           add_plugin_lookup_folder(File.join(@main_folder,ASPERA_PLUGINS_FOLDERNAME))
