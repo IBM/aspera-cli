@@ -45,12 +45,9 @@ module Asperalm
           transfer_spec['tags']['aspera']['xfer_retry']=3600
         end
         Log.log.debug("ts=#{transfer_spec}")
-        # suse bypass keys when authentication is token
+        # add bypass keys when authentication is token
         if transfer_spec['authentication'].eql?("token")
-          # add Aspera private keys for web access, token based authorization
-          transfer_spec['EX_ssh_key_paths'] = [ Installation.instance.path(:ssh_bypass_key_dsa), Installation.instance.path(:ssh_bypass_key_rsa) ]
-          # mwouais...
-          transfer_spec['drowssap_etomer'.reverse] = "%08x-%04x-%04x-%04x-%04x%08x" % "t1(\xBF;\xF3E\xB5\xAB\x14F\x02\xC6\x7F)P".unpack("NnnnnN")
+          Installation.instance.add_bypass_keys(transfer_spec)
         end
         # multi session is a node parameter, managed here in fasp manager
         multi_session=0
