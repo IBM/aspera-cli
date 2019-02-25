@@ -1705,8 +1705,8 @@ yum install libreoffice
 Although libreoffice is run headless, older versions may require an X server. If you get error running libreoffice headless, then install Xvfb:
 
 ```
-yum install libreoffice Xvfb
-cat<<EOF>/etc/init.d/xvfb 
+yum install -y Xvfb
+cat<<EOF>/etc/init.d/xvfb
 # !/bin/bash
 # chkconfig: 345 95 50
 # description: Starts xvfb on display 42 for headless Libreoffice
@@ -1719,6 +1719,7 @@ start) /usr/bin/Xvfb :42 -screen 0 1280x1024x8 -extension RANDR&;;
 stop) killall Xvfb;;
 esac
 EOF
+chmod a+x /etc/init.d/xvfb
 chkconfig xvfb on
 service xvfb start
 ```
