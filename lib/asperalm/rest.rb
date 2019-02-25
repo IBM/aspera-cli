@@ -112,7 +112,7 @@ module Asperalm
     # :return_error (bool)
     def call(call_data)
       raise "Hash call parameter is required (#{call_data.class})" unless call_data.is_a?(Hash)
-      Log.log.debug "accessing #{call_data[:subpath]}".red.bold.bg_green
+      Log.log.debug("accessing #{call_data[:subpath]}".red.bold.bg_green)
       call_data[:headers]||={}
       call_data=@params.deep_merge(call_data)
       case call_data[:auth][:type]
@@ -133,7 +133,7 @@ module Asperalm
       # TODO: shall we percent encode subpath (spaces) test with access key delete with space in id
       # URI.escape()
       uri=self.class.build_uri("#{@params[:base_url]}/#{call_data[:subpath]}",call_data[:url_params])
-      Log.log.debug "URI=#{uri}"
+      Log.log.debug("URI=#{uri}")
       begin
         # instanciate request object based on string name
         req=Object::const_get('Net::HTTP::'+call_data[:operation].capitalize).new(uri.request_uri)
@@ -142,18 +142,19 @@ module Asperalm
       end
       if call_data.has_key?(:json_params) and !call_data[:json_params].nil? then
         req.body=JSON.generate(call_data[:json_params])
-        Log.log.debug "body JSON data=#{call_data[:json_params]}"
+        #Log.dump('body JSON data',call_data[:json_params])
+        Log.log.debug("body JSON data=#{JSON.pretty_generate(call_data[:json_params])}")
         req['Content-Type'] = 'application/json'
         #call_data[:headers]['Accept']='application/json'
       end
       if call_data.has_key?(:www_body_params) then
         req.body=URI.encode_www_form(call_data[:www_body_params])
-        Log.log.debug "body www data=#{req.body.chomp}"
+        Log.log.debug("body www data=#{req.body.chomp}")
         req['Content-Type'] = 'application/x-www-form-urlencoded'
       end
       if call_data.has_key?(:text_body_params) then
         req.body=call_data[:text_body_params]
-        Log.log.debug "body data=#{req.body.chomp}"
+        Log.log.debug("body data=#{req.body.chomp}")
       end
       # set headers
       if call_data.has_key?(:headers) then
@@ -164,12 +165,12 @@ module Asperalm
       # :type = :basic
       req.basic_auth(*basic_auth_data) unless basic_auth_data.nil?
 
-      Log.log.debug "call_data = #{call_data}"
+      Log.log.debug("call_data = #{call_data}")
       result={:http=>nil}
       begin
         # we try the call, and will retry only if oauth, as we can, first with refresh, and then re-auth if refresh is bad
         oauth_tries ||= 2
-        Log.log.debug "send request"
+        Log.log.debug("send request")
         http_session.request(req) do |response|
           result[:http] = response
           if call_data.has_key?(:save_to_file)
@@ -179,7 +180,7 @@ module Asperalm
             :rate_scale => lambda{|rate|rate/1024},
             :title      => 'progress',
             :total      => result[:http]['Content-Length'].to_i)
-            Log.log.debug "before write file"
+            Log.log.debug("before write file")
             File.open(call_data[:save_to_file], "wb") do |file|
               result[:http].read_body do |fragment|
                 file.write(fragment)
@@ -190,11 +191,11 @@ module Asperalm
           end
         end
 
-        Log.log.debug "result: code=#{result[:http].code}"
+        Log.log.debug("result: code=#{result[:http].code}")
         RestCallError.raiseOnError(req,result[:http])
         if call_data.has_key?(:headers) and
         call_data[:headers].has_key?('Accept') then
-          Log.log.debug "result: body=#{result[:http].body}"
+          Log.log.debug("result: body=#{result[:http].body}")
           case call_data[:headers]['Accept']
           when 'application/json'
             result[:data]=JSON.parse(result[:http].body) if !result[:http].body.nil?
@@ -213,13 +214,13 @@ module Asperalm
             # regenerate a brand new token
             req['Authorization']=oauth_token
           end
-          Log.log.debug "using new token=#{call_data[:headers]['Authorization']}"
+          Log.log.debug("using new token=#{call_data[:headers]['Authorization']}")
           retry unless (oauth_tries -= 1).zero?
         end # if
         # raise exception if could not retry and not return error in result
         raise e unless call_data[:return_error]
       end
-      Log.log.debug "result=#{result}"
+      Log.log.debug("result=#{result}")
       return result
 
     end
