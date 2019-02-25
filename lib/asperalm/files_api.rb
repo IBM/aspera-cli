@@ -84,8 +84,7 @@ module Asperalm
       end
     end
 
-    # build "transfer info"
-    # contains:
+    # build "transfer info", 2 elements array with:
     # - transfer spec for aspera on cloud, based on node information and file id
     # - source and token regeneration method
     def tr_spec(app,direction,node_file,ws_id,ts_add)
