@@ -270,7 +270,7 @@ t/aocfdel:
 t/aocf1d:
 	$(EXETEST) aspera files delete /newname
 	@touch $@
-t/aocf5:
+t/aocf5: # WS: Demo
 	$(EXETEST) aspera files transfer --from-folder=/ --to-folder=xxx --sources=@args 200KB.1
 	@touch $@
 t/aocf2:
