@@ -19,10 +19,10 @@ module Asperalm
 
       def activated=(product_name);Log.log.warn("deprecated, use method use_ascp_from_product");use_ascp_from_product(product_name);end
 
-      def paths;Log.log.warn("deprecated");raise "deprecated";end
+      def paths;Log.log.warn("deprecated, no replacement");raise "deprecated";end
 
+      # find ascp in named product
       def use_ascp_from_product(product_name)
-        # this contains var/run, files generated on runtime
         if product_name.eql?(FIRST_FOUND)
           p=installed_products.first
           raise "no FASP installation found\nPlease check manual on how to install FASP." if p.nil?
@@ -48,13 +48,15 @@ module Asperalm
         when :ascp,:ascp4
           use_ascp_from_product(FIRST_FOUND) if @ascp_path.nil?
           file=@ascp_path
-          file="#{file}4" if k.eql?(:ascp4)
+          file=file.gsub('ascp','ascp4') if k.eql?(:ascp4)
         when :ssh_bypass_key_dsa
           file=File.join(@config_folder,'aspera_bypass_dsa.pem')
           File.write(file,Zlib::Inflate.inflate(Base64.decode64(SSH_BYPASS_DSA))) unless File.exist?(file)
+          File.chmod(0400,file)
         when :ssh_bypass_key_rsa
           file=File.join(@config_folder,'aspera_bypass_rsa.pem')
           File.write(file,Zlib::Inflate.inflate(Base64.decode64(SSH_BYPASS_RSA))) unless File.exist?(file)
+          File.chmod(0400,file)
         when :fallback_cert,:fallback_key
           file_key=File.join(@config_folder,'aspera_fallback_key.pem')
           file_cert=File.join(@config_folder,'aspera_fallback_cert.pem')
@@ -72,6 +74,8 @@ module Asperalm
             cert.sign(private_key, OpenSSL::Digest::SHA1.new)
             File.write(file_key,private_key.to_pem)
             File.write(file_cert,cert.to_pem)
+            File.chmod(0400,file_key)
+            File.chmod(0400,file_cert)
           end
           file = k.eql?(:fallback_cert) ? file_cert : file_key
         else
@@ -114,22 +118,23 @@ module Asperalm
       end
       attr_accessor :ascp_path
       attr_accessor :config_folder
+
+      def add_bypass_keys(transfer_spec)
+        # add Aspera private keys for web access, token based authorization
+        transfer_spec['EX_ssh_key_paths'] = [ Installation.instance.path(:ssh_bypass_key_dsa), Installation.instance.path(:ssh_bypass_key_rsa) ]
+        transfer_spec['drowssap_etomer'.reverse] = "%08x-%04x-%04x-%04x-%04x%08x" % "t1(\xBF;\xF3E\xB5\xAB\x14F\x02\xC6\x7F)P".unpack("NnnnnN")
+      end
       private
 
-      VARRUN_SUBFOLDER=File.join('var','run')
       BIN_SUBFOLDER='bin'
       ETC_SUBFOLDER='etc'
+      VARRUN_SUBFOLDER=File.join('var','run')
       # policy for product selection
       FIRST_FOUND='FIRST'
       # product information manifest: XML
       PRODUCT_INFO='product-info.mf'
-      RSA_FILE_NAME='aspera_tokenauth_id_rsa'
-      WEBCERT_FILE_NAME='aspera_web_cert.pem'
-      WEBKEY_FILE_NAME='aspera_web_key.pem'
-      CLIENT_DSA='asperaweb_id_dsa.openssh'
-      SERVER_DSA='aspera_tokenauth_id_dsa'
 
-      private_constant :VARRUN_SUBFOLDER,:BIN_SUBFOLDER,:ETC_SUBFOLDER,:FIRST_FOUND,:PRODUCT_INFO,:RSA_FILE_NAME,:WEBCERT_FILE_NAME,:WEBKEY_FILE_NAME,:CLIENT_DSA,:SERVER_DSA
+      private_constant :BIN_SUBFOLDER,:ETC_SUBFOLDER,:VARRUN_SUBFOLDER,:FIRST_FOUND,:PRODUCT_INFO
 
       def get_product(name)
         found=installed_products.select{|i|i[:expected].eql?(name) or i[:name].eql?(name)}
@@ -163,14 +168,7 @@ module Asperalm
           #:log_folder             => p[:log_root]},
           :ascp                   => File.join(p[:app_root],sub_bin,'ascp')+exec_ext,
           #:ascp4                  => File.join(p[:app_root],sub_bin,'ascp4')+exec_ext,
-          #:ssh_bypass_key_dsa     => File.join(p[:app_root],sub_keys,CLIENT_DSA),
-          #:ssh_bypass_key_rsa     => File.join(p[:app_root],sub_keys,RSA_FILE_NAME),
-          #:fallback_cert          => File.join(p[:app_root],sub_keys,WEBCERT_FILE_NAME),
-          #:fallback_key           => File.join(p[:app_root],sub_keys,WEBKEY_FILE_NAME)
         }
-        # server software (having asperanoded) has a different DSA filename
-        #server_dsa=File.join(p[:app_root],sub_keys,SERVER_DSA)
-        #res_paths[:ssh_bypass_key_dsa]=server_dsa if File.exist?(server_dsa)
         Log.log.debug("resources=#{res_paths}")
         return res_paths
       end
@@ -239,7 +237,9 @@ module Asperalm
         end
       end
 
+      # not pass protected
       SSH_BYPASS_DSA='eJxtksuSojAAAO98xdypKYFggGOA8HQ0ICBywwiooARRIH79zu55+9qnrurv719M7PrbL3uPvkjsZyjBXyE+/hXfwo/vm+/ZNxEKzSay2zDybHhXub80t7HikDy4Ckta5DgeA4+vVbYyh9znxzbboRYzIWymBAxJsr3z9nCY1X7aEVm0rzJdKQ470q6jCbu0B7rXO6TdJFm5p7iieTnlN0JcSbiC13p6mfqy4QC0EaiMyVht5ou00Lh+l9J5ndbO3DPTR/kUoCcw4bNkoy5GvymbeRR4NYwLwH1nlVaWB7UIZVoFjKHeRaQnL0xU/vFcJX/Rxarz8qS+jQ+GM/moFQlekpAmD1Cn0yO6B4l2lcLMip+gUTxlV/wcHFnh0i0d9Mh8F8rYA8urKu0gZ3d0Pm01Z6GiQHlmPDD8pPGASsJfygmLz+ZHZgRuovS4NDZYwvMkF67Y2r6Na5iC/nGj4emOIG0XIYFuOfXIao4Y9aeS2dOaKXXvidRdh5I2+o5tPKXY1t5h8OiG2xHlH4fqqQbnPGzeUDjkb6aUVLJ6MX4UTPPG0nBFLF4DyHrfYLtY0vPkTDqucjvdbPeJSuaufp72TmI42UX4tIea7SaUUr1uI3QphmlFMMwuTqTPEih0lw35op3AdjJjEdf+AqAe9paDed1JkyckpdbAuzv7P/nznESRXhej8O8xvLX//94fHTzUbwo='
+      # pass protected random1
       SSH_BYPASS_RSA='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'
     end # Installation
   end
