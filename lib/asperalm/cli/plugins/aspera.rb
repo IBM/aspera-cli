@@ -190,9 +190,6 @@ module Asperalm
             self.options.set_option(:url,'https://'+uri.host)
             self.options.set_option(:public_token,url_token_value)
             self.options.set_option(:auth,:url_token)
-            #client_data=FilesApi.random_drive
-            #self.options.set_option(:client_id,client_data.first)
-            #self.options.set_option(:client_secret,client_data.last)
           end
           # Connection paramaters (url and auth) to Aspera on Cloud
           # pre populate rest parameters based on URL
