@@ -157,7 +157,7 @@ module Asperalm
         end
 
         def option_use_product
-          raise "option use_product is write-only"
+          "write-only value"
         end
 
         # read config file and validate format
