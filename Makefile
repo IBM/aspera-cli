@@ -33,7 +33,7 @@ test:
 	bundle exec rake spec
 
 clean::
-	rm -f $(GEMNAME)-*.gem $(SRCZIPBASE)*.zip *.log token.* preview.png 
+	rm -f $(GEMNAME)-*.gem $(SRCZIPBASE)*.zip *.log token.* preview.png aspera_bypass_*.pem
 	rm -f README.pdf README.html README.md $(INCL_COMMANDS) $(INCL_USAGE) $(INCL_ASESSION) $(TEST_CONFIG)
 	rm -fr contents t doc out "PKG - "*
 	mkdir t out
@@ -204,7 +204,7 @@ t/nd1:
 	$(EXETEST) node browse / -r
 	@touch $@
 t/nd2: $(TEST_FOLDER)/.exists
-	$(EXETEST) node upload --to-folder=$(NODEDEST) --sources=@args $(SAMPLE_FILE)
+	$(EXETEST) node upload --to-folder=$(NODEDEST) --ts=@json:'{"target_rate_cap_kbps":10000}' $(SAMPLE_FILE)
 	$(EXETEST) node download --to-folder=$(TEST_FOLDER) --sources=@args $(NODEDEST)200KB.1
 	$(EXETEST) node delete $(NODEDEST)200KB.1
 	rm -f $(TEST_FOLDER)/200KB.1
@@ -270,7 +270,7 @@ t/aocfdel:
 t/aocf1d:
 	$(EXETEST) aspera files delete /newname
 	@touch $@
-t/aocf5: # WS: Demo
+t/aocf5: t/aocf2 # WS: Demo
 	$(EXETEST) aspera files transfer --from-folder=/ --to-folder=xxx --sources=@args 200KB.1
 	@touch $@
 t/aocf2:
@@ -317,22 +317,22 @@ t/aoc8:
 	$(EXETEST) aspera admin resource workspace list
 	@touch $@
 t/aoc9:
-	$(EXETEST) aspera admin resource node --name=eudemo --secret=$(NODE_PASS) v3 events
+	$(EXETEST) aspera admin resource node --name=eudemo-sedemo --secret=$(NODE_PASS) v3 events
 	@touch $@
 t/aoc11:
-	$(EXETEST) aspera admin resource node --name=eudemo --secret=$(NODE_PASS) v3 access_key create --value=@json:'{"id":"testsub1","storage":{"path":"/folder1"}}'
+	$(EXETEST) aspera admin resource node --name=eudemo-sedemo --secret=$(NODE_PASS) v3 access_key create --value=@json:'{"id":"testsub1","storage":{"path":"/folder1"}}'
 	@touch $@
 t/aoc12:
-	$(EXETEST) aspera admin resource node --name=eudemo --secret=$(NODE_PASS) v3 access_key delete --id=testsub1
+	$(EXETEST) aspera admin resource node --name=eudemo-sedemo --secret=$(NODE_PASS) v3 access_key delete --id=testsub1
 	@touch $@
 t/aoc9b:
-	$(EXETEST) aspera admin resource node --name=eudemo --secret=$(NODE_PASS) v4 browse /
+	$(EXETEST) aspera admin resource node --name=eudemo-sedemo --secret=$(NODE_PASS) v4 browse /
 	@touch $@
 t/aoc10:
-	$(EXETEST) aspera admin resource node --name=eudemo --secret=$(NODE_PASS) v4 mkdir /folder1
+	$(EXETEST) aspera admin resource node --name=eudemo-sedemo --secret=$(NODE_PASS) v4 mkdir /folder1
 	@touch $@
 t/aoc13:
-	$(EXETEST) aspera admin resource node --name=eudemo --secret=$(NODE_PASS) v4 delete /folder1
+	$(EXETEST) aspera admin resource node --name=eudemo-sedemo --secret=$(NODE_PASS) v4 delete /folder1
 	@touch $@
 t/aoc14:
 	$(EXETEST) aspera admin resource workspace_membership list --fields=ALL --query=@json:'{"page":1,"per_page":50,"embed":"member","inherited":false,"workspace_id":11363,"sort":"name"}'
