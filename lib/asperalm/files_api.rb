@@ -7,8 +7,6 @@ module Asperalm
   class FilesApi < Rest
 
     public
-    PRODUCT_NAME='Aspera on Cloud'
-    PRODUCT_DOMAIN='ibmaspera.com'
     # various API scopes supported
     SCOPE_FILES_SELF='self'
     SCOPE_FILES_USER='user:all'
@@ -17,21 +15,25 @@ module Asperalm
     SCOPE_FILES_ADMIN_USER_USER=SCOPE_FILES_ADMIN_USER+'+'+SCOPE_FILES_USER
     SCOPE_NODE_USER='user:all'
     SCOPE_NODE_ADMIN='admin:all'
-
+    # path in URL of public package links
     PATH_PUBLIC_PACKAGE='/packages/public/receive'
-
     PATH_SEPARATOR='/'
 
-    # some cool random string
+    PRODUCT_NAME='Aspera on Cloud'
+    PRODUCT_DOMAIN='ibmaspera.com'
+    private_constant :PRODUCT_NAME,:PRODUCT_DOMAIN
+
     # strings /Applications/Aspera\ Drive.app/Contents/MacOS/AsperaDrive|grep -E '.{100}==$'|rev
-    RANDOM_DRIVE='==QMGdXZsdkYMlDezZ3MNhDStYFWQNXNrZTOPRmYh10ZmJkN2EnZCFHbFxkRQtmNylTQOpHdtdUTPNFTxFGWFdFWFB1dr1iNK5WTadTLSFGWBlFTkVDdoxkYjx0MRp3ZlVlOlZXayRmLhJXZwNXY';
-    RANDOM_CLIENT='YXNwZXJhLmdsb2JhbC1jbGktY2xpZW50OmZycG1zUnNHNG1qWjBQbHhDZ2RKbHZPTnFCZzRWbHB6X0lYN2dYbUJNQWZzZ01MeTJGTzZDWExvZEtmS0F1aHFuQ3FTcHRMYmVfd2Rtbm05SlJ1RVBPLVBwRnFwcV9LYg=='
+    RANDOM_DRIVE='==QMGdXZsdkYMlDezZ3MNhDStYFWQNXNrZTOPRmYh10ZmJkN2EnZCFHbFxkRQtmNylTQOpHdtdUTPNFTxFGWFdFWFB1dr1iNK5WTadTLSFGWBlFTkVDdoxkYjx0MRp3ZlVlOlZXayRmLhJXZwNXY'
+    # found in aspera CLI
+    RANDOM_CLIENT='==gYL9VcwFnRwBVLPBVR1JlS50mbtR2dfVmYMRHcTF3QuFHa1F0SmtEZvxEWDZzTGJTeM10ZzZWQNJUbYd2NYl0X6BHbWRzZCFnTPZHbKR2ZDhHbQBjWq1GNHNnUz1GcyZmO05WZpx2YtkGbj1CbhJ2bsdmLhJXZwNXY'
+    private_constant :RANDOM_DRIVE,:RANDOM_CLIENT
     def self.random_drive
       Base64.strict_decode64(RANDOM_DRIVE.reverse).split(':')
     end
 
     def self.random_cli
-      Base64.strict_decode64(RANDOM_CLIENT).split(':')
+      Base64.strict_decode64(RANDOM_CLIENT.reverse).split(':')
     end
 
     def self.parse_url(aoc_org_url)
@@ -121,23 +123,26 @@ module Asperalm
     # no scope: requires secret
     # if secret present: use it
     def get_files_node_api(node_info,node_scope=nil)
-      ak_secret=@secrets[node_info['id']]
-      # if no scope, or secret provided on command line ...
-      if node_scope.nil? or !ak_secret.nil?
-        return Rest.new({
-          :base_url => node_info['url'],
-          :auth     => {
-          :type     => :basic,
-          :username => node_info['access_key'],
-          :password => ak_secret},
-          :headers  => {'X-Aspera-AccessKey'=>node_info['access_key']
-          }})
-      end
-      Log.log.warn("ignoring secret, using bearer token") if !ak_secret.nil?
-      return Rest.new(self.params.deep_merge({
+      node_rest_params={
         :base_url => node_info['url'],
         :headers  => {'X-Aspera-AccessKey'=>node_info['access_key']},
-        :auth     => {:scope=>FilesApi.node_scope(node_info['access_key'],node_scope)}}))
+      }
+      ak_secret=@secrets[node_info['id']]
+      if ak_secret.nil? and node_scope.nil?
+        raise "There must be at least one of: secret, node scope"
+      end
+      # if secret provided on command line or if there is no scope
+      if !ak_secret.nil? or node_scope.nil?
+        node_rest_params[:auth]={
+          :type     => :basic,
+          :username => node_info['access_key'],
+          :password => ak_secret
+        }
+      else
+        node_rest_params[:auth]=self.params[:auth].clone
+        node_rest_params[:auth][:scope]=FilesApi.node_scope(node_info['access_key'],node_scope)
+      end
+      return Rest.new(node_rest_params)
     end
 
     # check type, but returns split values
