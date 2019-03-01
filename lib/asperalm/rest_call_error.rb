@@ -73,7 +73,7 @@ module Asperalm
         end
       end
       unless resp.code.start_with?('2') and msg.nil?
-        msg||=@response.message
+        msg||=resp.message
         raise RestCallError.new(req,resp,msg)
       end
     end
