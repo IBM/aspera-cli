@@ -14,9 +14,18 @@ module Asperalm
         VAL_ALL='ALL'
         private_constant :VAL_ALL
         attr_reader :api_aoc
+        attr_accessor :option_ak_secret
         def initialize(env)
           super(env)
+          @default_workspace_id=nil
+          @workspace_name=nil
+          @workspace_id=nil
+          @user_id=nil
+          @home_node_file=nil
+          @api_aoc=nil
+          @option_ak_secret=nil
           @ats=Ats.new(@agents.merge(skip_secret: true))
+          self.options.set_obj_attr(:secret,self,:option_ak_secret)
           self.options.add_opt_list(:auth,Oauth.auth_types,"type of Oauth authentication")
           self.options.add_opt_list(:operation,[:push,:pull],"client operation for transfers")
           self.options.add_opt_simple(:client_id,"API client identifier in application")
@@ -44,13 +53,6 @@ module Asperalm
           self.options.set_option(:private_key,'@file:'+env[:private_key_path]) if env[:private_key_path].is_a?(String)
           self.options.parse_options!
           return if env[:man_only]
-          @default_workspace_id=nil
-          @workspace_name=nil
-          @workspace_id=nil
-          @user_id=nil
-          @home_node_file=nil
-          @api_aoc=nil
-          @ak_secret=self.options.get_option(:secret,:optional)
           update_aoc_api
         end
 
@@ -172,7 +174,9 @@ module Asperalm
           end # command_repo
         end # execute_node_gen4_action
 
-        # @return REST object. parameters based on command line options
+        # Create a new AoC API REST object and set @api_aoc.
+        # Parameters based on command line options
+        # @return nil
         def update_aoc_api
           public_link_url=self.options.get_option(:link,:optional)
 
@@ -463,7 +467,7 @@ module Asperalm
             end
           when :files
             set_workspace_info
-            @api_aoc.secrets[@home_node_file[:node_info]['id']]=@ak_secret
+            @api_aoc.secrets[@home_node_file[:node_info]['id']]=@option_ak_secret
             return execute_node_gen4_action(@home_node_file)
           when :faspexgw
             set_workspace_info
@@ -515,7 +519,7 @@ module Asperalm
                   Log.log.warn("name overrides id") unless res_id.nil?
                   matching=@api_aoc.read(resource_class_path,{:q=>res_name})[:data]
                   raise CliError,"no resource match name" if matching.empty?
-                  raise CliError,"several resources match name" unless matching.length.eql?(1)
+                  raise CliError,"several resources match name (#{matching.join(',')})" unless matching.length.eql?(1)
                   res_id=matching.first['id']
                 end
                 raise CliBadArgument,"provide either id or name" if res_id.nil?
@@ -554,8 +558,8 @@ module Asperalm
                 res_data=@api_aoc.read(resource_instance_path)[:data]
                 # mandatory secret : we have only AK
                 self.options.get_option(:secret,:mandatory)
-                @api_aoc.secrets[res_data['id']]=@ak_secret unless @ak_secret.nil?
-                api_node=@api_aoc.get_files_node_api(res_data,nil)
+                @api_aoc.secrets[res_data['id']]=@option_ak_secret unless @option_ak_secret.nil?
+                api_node=@api_aoc.get_files_node_api(res_data)
                 return Node.new(@agents.merge(skip_basic_auth_options: true, node_api: api_node)).execute_action if command.eql?(:v3)
                 ak_data=api_node.call({:operation=>'GET',:subpath=>"access_keys/#{res_data['access_key']}",:headers=>{'Accept'=>'application/json'}})[:data]
                 return execute_node_gen4_action({node_info: res_data, file_id: ak_data['root_file_id']})
