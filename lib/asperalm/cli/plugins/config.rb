@@ -18,6 +18,8 @@ module Asperalm
         CONF_PRESET_CONFIG='config'
         CONF_PRESET_VERSION='version'
         CONF_PRESET_DEFAULT='default'
+        CONF_PLUGIN_SYM = :config # Plugins::Config.name.split('::').last.downcase.to_sym
+        CONF_GLOBAL_SYM = :config
         # old tool name
         OLD_PROGRAM_NAME = 'aslmcli'
         # default redirect for AoC web auth
@@ -59,12 +61,14 @@ module Asperalm
           self.options.set_obj_attr(:override,self,:option_override,:no)
           self.options.set_obj_attr(:config_file,self,:option_config_file)
           self.options.set_obj_attr(:ascp_path,self,:option_ascp_path)
+          self.options.set_obj_attr(:use_product,self,:option_use_product)
           self.options.add_opt_boolean(:override,"override existing value")
           self.options.add_opt_simple(:config_file,"read parameters from file in YAML format, current=#{@option_config_file}")
           self.options.add_opt_switch(:no_default,"-N","do not load default configuration for plugin") { @use_plugin_defaults=false }
           self.options.add_opt_boolean(:use_generic_client,'wizard: AoC: use global or org specific jwt client id')
           self.options.add_opt_simple(:pkeypath,"path to private key for JWT (wizard)")
           self.options.add_opt_simple(:ascp_path,"path to ascp")
+          self.options.add_opt_simple(:use_product,"use ascp from specified product")
           self.options.set_option(:use_generic_client,true)
           self.options.parse_options!
         end
@@ -116,6 +120,15 @@ module Asperalm
           return r
         end
 
+        def set_config_default(key,value)
+          global_default_preset=get_plugin_default_config_name(CONF_GLOBAL_SYM)
+          if global_default_preset.nil?
+            global_default_preset='global_common_defaults'
+            @config_presets[global_default_preset]={}
+          end
+          @config_presets[global_default_preset][key.to_s]=value
+        end
+
         public
 
         # $HOME/.aspera/`program_name`
@@ -137,6 +150,14 @@ module Asperalm
 
         def option_ascp_path
           Fasp::Installation.instance.ascp_path
+        end
+
+        def option_use_product=(value)
+          Fasp::Installation.instance.use_ascp_from_product(value)
+        end
+
+        def option_use_product
+          raise "option use_product is write-only"
         end
 
         # read config file and validate format
@@ -279,13 +300,21 @@ module Asperalm
         end
 
         def execute_action_ascp
-          command=self.options.get_next_command([:connect,:use,:show,:products])
+          command=self.options.get_next_command([:connect,:use,:show,:products,:info])
           case command
           when :connect
             return execute_connect_action
           when :use
-            raise "TODO: not implemented (set default ascp to use)"
+            default_ascp=self.options.get_next_argument('path to ascp')
+            raise "file name must be ascp" unless File.basename(default_ascp).eql?('ascp')
+            raise "no such file: #{default_ascp}" unless File.exist?(default_ascp)
+            raise "not executable: #{default_ascp}" unless File.executable?(default_ascp)
+            preset_name=set_config_default(:ascp_path,default_ascp)
+            save_presets_to_config_file
+            return {:type=>:status, :data=>"saved to default global preset #{preset_name}"}
           when :show # shows files used
+            return {:type=>:status, :data=>Fasp::Installation.instance.path(:ascp)}
+          when :info # shows files used
             return {:type=>:status, :data=>Fasp::Installation.instance.path(:ascp)}
           when :products
             command=self.options.get_next_command([:list,:use])
@@ -293,7 +322,11 @@ module Asperalm
             when :list
               return {:type=>:object_list, :data=>Fasp::Installation.instance.installed_products, :fields=>['name','app_root']}
             when :use
-              raise "TODO: not implemented (set default ascp to use from product)"
+              default_product=self.options.get_next_argument('product name')
+              Fasp::Installation.instance.use_ascp_from_product(default_product)
+              preset_name=set_config_default(:ascp_path,Fasp::Installation.instance.ascp_path)
+              save_presets_to_config_file
+              return {:type=>:status, :data=>"saved to default global preset #{preset_name}"}
             end
           end
         end
@@ -554,7 +587,7 @@ module Asperalm
           File.write(@option_config_file,@config_presets.to_yaml)
         end
 
-        # returns name if config_presets has default
+        # returns [String] name if config_presets has default
         # returns nil if there is no config or bypass default params
         def get_plugin_default_config_name(plugin_sym)
           raise "internal error: config_presets shall be defined" if @config_presets.nil?
@@ -572,7 +605,7 @@ module Asperalm
             return default_config_name
           end
           return nil
-        end
+        end # get_plugin_default_config_name
 
       end
     end
