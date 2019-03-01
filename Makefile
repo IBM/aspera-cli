@@ -27,6 +27,8 @@ INCL_USAGE=$(OUT_FOLDER)/$(EXENAME)_usage.txt
 INCL_COMMANDS=$(OUT_FOLDER)/$(EXENAME)_commands.txt
 INCL_ASESSION=$(OUT_FOLDER)/asession_usage.txt
 
+NODE_PASS=Aspera123_
+
 all:: gem
 
 test:
@@ -568,6 +570,9 @@ t/prev2:
 t/prev3:
 	$(EXETEST) preview test ~/Documents/Samples/anatomic-2k/TG18-CH/TG18-CH-2k-01.dcm --log-level=debug png --video=clips
 	@touch $@
+t/prev4:
+	$(EXETEST) preview test ~/'Documents/Samples/YıçşöğüİÇŞÖĞÜ.pdf' --log-level=debug png --video=clips
+	@touch $@
 
 tprev: t/prev1 t/prev2 t/prev3
 
@@ -606,8 +611,6 @@ t/fxgw:
 	$(EXETEST) aspera faspex
 	@touch $@
 
-NODE_USER=node_admin
-NODE_PASS=Aspera123_
 setupprev:
 	asconfigurator -x "user;user_name,xfer;file_restriction,|*;token_encryption_key,1234"
 	asconfigurator -x "server;activity_logging,true;activity_event_logging,true"
