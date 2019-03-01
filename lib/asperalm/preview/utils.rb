@@ -35,7 +35,7 @@ module Asperalm
           raise "Error: #{bin} is not in the PATH"
         end
         unless exit_status.success?
-          Log.log.error "Got child status #{exit_status}\ncommandline: #{command}\nstdout: #{stdout}\nstderr: #{stderr}"
+          Log.log.error("Got child status #{exit_status}\ncommandline: #{command}\nstdout: #{stdout}\nstderr: #{stderr}")
           raise "error"
         end
         stdout_return.replace(stdout) unless stdout_return.nil?
@@ -81,11 +81,11 @@ module Asperalm
       end
 
       TMPFMT='img%04d.jpg'
-      
+
       def self.ffmpeg_fmt(tmpdir)
         return File.join(tmpdir,TMPFMT)
       end
-      
+
       def self.get_tmp_num_filepath(tmpdir, file_number)
         return File.join(tmpdir,sprintf(TMPFMT,file_number))
       end
@@ -112,6 +112,12 @@ module Asperalm
         ['-ss',offset_seconds],
         thumb_file_name,
         ['-frames:v',1,'-filter:v',"scale=#{size}"])
+      end
+
+      def message_to_png(message)
+        # convert -size 400x  -background '#666666' -fill '#ffffff'  -interword-spacing 10 -kerning 4 -pointsize 10 -gravity West -size x22 label:"Lorem dolor sit amet" -flatten xxx.png
+        external_command(['convert',
+        ])
       end
     end # Options
   end # Preview
