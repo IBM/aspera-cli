@@ -160,20 +160,20 @@ module Asperalm
             self.format.display_status("Items: #{send_result[:data]['item_count']}/#{send_result[:data]['total_count']}")
             return c_result_remove_prefix_path(result,'path',prefix_path)
           when :upload
-            destination=self.transfer.destination_folder('send')
-            send_result=@api_node.create('files/upload_setup',{ :transfer_requests => [ { :transfer_request => { :paths => [ { :destination => destination } ] } } ] } )
-            raise send_result[:data]['error']['user_message'] if send_result[:data].has_key?('error')
-            raise send_result[:data]['transfer_specs'][0]['error']['user_message'] if send_result[:data]['transfer_specs'][0].has_key?('error')
-            raise "expecting one session exactly" if send_result[:data]['transfer_specs'].length != 1
-            transfer_spec=send_result[:data]['transfer_specs'].first['transfer_spec']
-            # delete this part, as the returned value contains only destination, and note sources
+            send_result=@api_node.create('files/upload_setup',{
+              :transfer_requests => [ { :transfer_request => { :paths => [ {
+              :destination => self.transfer.destination_folder('send') } ] } } ] } )[:data]
+            # only one request, so only one answer
+            transfer_spec=send_result['transfer_specs'].first['transfer_spec']
+            # delete this part, as the returned value contains only destination, and not sources
             transfer_spec.delete('paths')
             return Main.result_transfer(self.transfer.start(transfer_spec,{:src=>:node_gen3}))
           when :download
-            send_result=@api_node.create('files/download_setup',{ :transfer_requests => [ { :transfer_request => { :paths => self.transfer.ts_source_paths } } ] } )
-            raise send_result[:data]['transfer_specs'][0]['error']['user_message'] if send_result[:data]['transfer_specs'][0].has_key?('error')
-            raise "expecting one session exactly" if send_result[:data]['transfer_specs'].length != 1
-            transfer_spec=send_result[:data]['transfer_specs'].first['transfer_spec']
+            send_result=@api_node.create('files/download_setup',{
+              :transfer_requests => [ { :transfer_request => {
+              :paths => self.transfer.ts_source_paths } } ] } )[:data]
+            # only one request, so only one answer
+            transfer_spec=send_result['transfer_specs'].first['transfer_spec']
             return Main.result_transfer(self.transfer.start(transfer_spec,{:src=>:node_gen3}))
           end
         end
