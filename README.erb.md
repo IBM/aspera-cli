@@ -159,7 +159,13 @@ $ gem update asperalm
 
 ## FASP Protocol
 
-Most file transfers will be done using the FASP protocol. This requires one of IBM Asprea transfer server or client with its license file (some are free):
+Most file transfers will be done using the FASP protocol. Only two additional files are required to perform
+an Aspera Transfer:
+
+* ascp
+* aspera-license (in same folder, or ../etc)
+
+Those can be found in one of IBM Asprea transfer server or client with its license file (some are free):
 
 * IBM Aspera Connect Client (Free)
 * IBM Aspera Desktop Client (Free)
@@ -170,9 +176,11 @@ Most file transfers will be done using the FASP protocol. This requires one of I
 For instance, Aspera Connect Client can be installed
 by visiting the page: [http://downloads.asperasoft.com/connect2/](http://downloads.asperasoft.com/connect2/). 
 
-<%=tool%> will detect most of Aspera transfer products in standard locations and use the first one found. Refer to section [FASP](#client) for details.
+<%=tool%> will detect most of Aspera transfer products in standard locations and use the first one found.
+Refer to section [FASP](#client) for details on how to select a client or set path to the FASP protocol.
 
-Several methods are provided on how to effectively start a transfer, refer to section: [Transfer Agents](#agents)
+Several methods are provided on how to start a transfer. Use of a local client is one of them, but
+other methods are available. Refer to section: [Transfer Agents](#agents)
 
 # <a name="cli"></a>Command Line Interface: <%=tool%>
 
@@ -509,7 +517,7 @@ So, the key file will be read only at execution time, but not be embedded in the
 Options are loaded using this algorithm:
 
 * if option '--preset=xxxx' is specified (or -Pxxxx), this reads the <%=prst%> specified from the configuration file.
-    * else if option --no-default is specified, then dont load default
+    * else if option --no-default (or -N) is specified, then dont load default
     * else it looks for the name of the default <%=prst%> in section "default" and loads it
 * environment variables are evaluated
 * command line options are evaluated
@@ -1339,38 +1347,57 @@ $ <%=cmd%> node access_key create --value=@json:'{"id":"eudemo-sedemo","secret":
 The `config` plugin also allows specification for the use of a local FASP client. It provides the following commands for `ascp` subcommand:
 
 * `show` : shows the path of ascp used
+* `use` : list,download connect client versions available on internet
 * `products` : list Aspera transfer products available locally
 * `connect` : list,download connect client versions available on internet
 
-### List installed clients
-
-Locally installed Aspera products can be listed with:
-
-```bash
-$ <%=cmd%> config products list
-:..........................:................................................:
-:           name           :                    app_root                    :
-:..........................:................................................:
-: Connect Client           : /Users/laurent/Applications/Aspera Connect.app :
-: Aspera Enterprise Server : /Library/Aspera                                :
-:..........................:................................................:
-```
-
-### Selection of local client
-
-By default, the special value `FIRST` is used and will select the first product in list.
-To select another product use option: `use_product`, either on command line:
-`--use-product='Aspera Enterprise Server'`, or by setting as default:
-
-```
-$ <%=cmd%> config ascp product use 'Aspera Enterprise Server'
-```
-
-### List current resources used
+### Show path of currently used `ascp`
 
 ```
 $ <%=cmd%> config ascp show
 /Users/laurent/Applications/Aspera Connect.app/Contents/Resources/ascp
+```
+
+### Selection of local `ascp`
+
+To temporarily use an alternate ascp path use option `ascp_path` (`--ascp-path=`)
+
+To permanently use another ascp:
+
+```
+$ <%=cmd%> config ascp use '/Users/laurent/Applications/Aspera CLI/bin/ascp'
+saved to default global preset /Users/laurent/Applications/Aspera CLI/bin/ascp
+```
+
+This sets up a global default.
+
+### List locally installed Aspera Transfer products
+
+Locally installed Aspera products can be listed with:
+
+```bash
+$ <%=cmd%> config ascp products list
+:.........................................:................................................:
+:                  name                   :                    app_root                    :
+:.........................................:................................................:
+: Aspera Connect                          : /Users/laurent/Applications/Aspera Connect.app :
+: IBM Aspera CLI                          : /Users/laurent/Applications/Aspera CLI         :
+: IBM Aspera High-Speed Transfer Endpoint : /Library/Aspera                                :
+: Aspera Drive                            : /Applications/Aspera Drive.app                 :
+:.........................................:................................................:
+```
+
+### Selection of local client
+
+If no ascp is selected, this is equivalent to using option: `--use-product=FIRST`.
+
+Using the option use_product finds the ascp binary of the selected product.
+
+To permanently use the ascp of a product:
+
+```bash
+$ <%=cmd%> config ascp products use 'Aspera Connect'
+saved to default global preset /Users/laurent/Applications/Aspera Connect.app/Contents/Resources/ascp
 ```
 
 ### Installation of Connect Client on command line
@@ -1897,6 +1924,11 @@ This means that you do not have ruby support for ED25519 SSH keys. You may eithe
 Gems, or remove your ed25519 key from your `.ssh` folder to solve the issue.
 
 # Release Notes
+
+* version 0.9.22
+
+  * more error conditions detected
+  * commands to select specific ascp location
 
 * version 0.9.21
 
