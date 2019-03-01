@@ -2,4 +2,6 @@
 require 'rubygems'
 $LOAD_PATH.unshift(File.dirname(__FILE__)+"/../lib")
 require 'asperalm/cli/main'
+Encoding.default_internal = Encoding::UTF_8
+Encoding.default_external = Encoding::UTF_8
 Asperalm::Cli::Main.new(ARGV).process_command_line
