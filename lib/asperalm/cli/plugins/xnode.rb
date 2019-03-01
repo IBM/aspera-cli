@@ -98,10 +98,8 @@ module Asperalm
             # get download transfer spec on destination node
             transfer_params={ :transfer_requests => [ { :transfer_request => { :paths => filelist.map {|i| {:source=>i} } } } ] }
             send_result=api_node.call({:operation=>'POST',:subpath=>'files/download_setup',:json_params=>transfer_params})
-            raise "expecting one session exactly" if send_result[:data]['transfer_specs'].length != 1
-            transfer_data=send_result[:data]['transfer_specs'].first
-            raise Fasp::Error,transfer_data['error']['user_message'] if transfer_data.has_key?('error')
-            transfer_spec=transfer_data['transfer_spec']
+            # only one request, so only one answer
+            transfer_spec=send_result[:data]['transfer_specs'].first['transfer_spec']
             # execute transfer
             return Main.result_transfer(self.transfer.start(transfer_spec,{:src=>:node_gen3}))
           when :postprocess
