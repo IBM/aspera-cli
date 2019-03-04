@@ -1925,9 +1925,9 @@ Gems, or remove your ed25519 key from your `.ssh` folder to solve the issue.
 
 # Release Notes
 
-* version 0.9.22
+* version 0.9.23
 
-  * more error conditions detected
+  * defined REST error handlers, more error conditions detected
   * commands to select specific ascp location
 
 * version 0.9.21
