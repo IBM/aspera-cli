@@ -35,7 +35,7 @@ test:
 	bundle exec rake spec
 
 clean::
-	rm -f $(GEMNAME)-*.gem $(SRCZIPBASE)*.zip *.log token.* preview.png aspera_bypass_*.pem
+	rm -f $(GEMNAME)-*.gem $(SRCZIPBASE)*.zip *.log token.* preview.png aspera_bypass_*.pem sample_file.txt
 	rm -f README.pdf README.html README.md $(INCL_COMMANDS) $(INCL_USAGE) $(INCL_ASESSION) $(TEST_CONFIG)
 	rm -fr contents t doc out "PKG - "*
 	mkdir t out
