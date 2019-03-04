@@ -21,31 +21,31 @@ module Asperalm
     def self.add_handler(err_type,&block)
       ERROR_HANDLERS.push(block)
     end
-    add_handler("Type 1.1") do |msg_stack,json_response,req,resp|
+    add_handler("Type 1") do |msg_stack,json_response,req,resp|
       d_error=json_response['error']
       k='user_message'
       msg_stack.push(d_error[k]) if d_error.is_a?(Hash) and d_error[k].is_a?(String)
     end
-    add_handler("Type 1.2") do |msg_stack,json_response,req,resp|
+    add_handler("Type 2") do |msg_stack,json_response,req,resp|
       d_error=json_response['error']
       k='description'
       msg_stack.push(d_error[k]) if d_error.is_a?(Hash) and d_error[k].is_a?(String)
     end
-    add_handler("Type 1.3") do |msg_stack,json_response,req,resp|
+    add_handler("Type 3") do |msg_stack,json_response,req,resp|
       d_error=json_response['error']
       k='internal_message'
       msg_stack.push(d_error[k]) if d_error.is_a?(Hash) and d_error[k].is_a?(String)
     end
-    add_handler("Type 1.4") do |msg_stack,json_response,req,resp|
+    add_handler("Type 4") do |msg_stack,json_response,req,resp|
       d_error=json_response['error']
       msg_stack.push(d_error) if d_error.is_a?(String)
     end
-    add_handler("Type 2") do |msg_stack,json_response,req,resp|
+    add_handler("Type 5") do |msg_stack,json_response,req,resp|
       # Type 2
       # TODO: json_response['code'] and json_response['message'] ?
       msg_stack.push(json_response['error_description']) if json_response['error_description'].is_a?(String)
     end
-    add_handler("Type 3") do |msg_stack,json_response,req,resp|
+    add_handler("Type 6") do |msg_stack,json_response,req,resp|
       # Type 3
       if json_response['message'].is_a?(String)
         msg_stack.push(json_response['message'])
@@ -55,7 +55,7 @@ module Asperalm
         end
       end
     end
-    add_handler("Type 4") do |msg_stack,json_response,req,resp|
+    add_handler("Type 7") do |msg_stack,json_response,req,resp|
       if json_response['errors'].is_a?(Hash)
         json_response['errors'].each do |k,v|
           msg_stack.push("#{k}: #{v}")
@@ -63,7 +63,7 @@ module Asperalm
       end
     end
     # call to upload_setup and download_setup of node api
-    add_handler("Type 5") do |msg_stack,json_response,req,resp|
+    add_handler("Type 8") do |msg_stack,json_response,req,resp|
       d_t_s=json_response['transfer_specs']
       if d_t_s.is_a?(Array)
         d_t_s.each do |res|
