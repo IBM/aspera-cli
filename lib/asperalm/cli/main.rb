@@ -15,6 +15,9 @@ require 'fileutils'
 require 'yaml'
 require 'pp'
 
+# Hack: deactivate ed25519 and ecdsa private keys from ssh identities, as it usually hurts
+require 'net/ssh';module Net; module SSH; module Authentication; class Session; private def default_keys; %w(~/.ssh/id_dsa ~/.ssh/id_rsa ~/.ssh2/id_dsa ~/.ssh2/id_rsa);end;end;end;end;end
+
 module Asperalm
   module Cli
     # The main CLI class
