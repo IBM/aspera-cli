@@ -1921,9 +1921,14 @@ OpenSSH keys only supported if ED25519 is available
 ```
 
 This means that you do not have ruby support for ED25519 SSH keys. You may either install the suggested
-Gems, or remove your ed25519 key from your `.ssh` folder to solve the issue.
+Gems, or remove your ed25519 key from your `.ssh` folder to solve the issue. Note, this is temporarily fixed in version 0.9.24, but those type of key will just be ignored.
 
 # Release Notes
+
+* version 0.9.24
+
+  * fix bug where AoC node to node transfer did not work
+  * fix bug on error if ED25519 private key is defined in .ssh
 
 * version 0.9.23
 
