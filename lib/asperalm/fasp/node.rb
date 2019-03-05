@@ -20,7 +20,14 @@ module Asperalm
       end
 
       public
-      attr_accessor :node_api
+      attr_reader :node_api
+
+      def node_api=(new_value)
+        if !@node_api.nil? and !new_value.nil?
+          Log.log.warn("overriding existing node api value")
+        end
+        @node_api=new_value
+      end
 
       def start_transfer(transfer_spec,options=nil)
         resp=node_api_.create('ops/transfers',transfer_spec)[:data]
