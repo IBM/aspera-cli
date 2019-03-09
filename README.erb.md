@@ -1249,6 +1249,8 @@ Notes:
 
 ### Receive only new packages
 
+TODO
+
 ### Download Files
 
 Download of files is straightforward with a specific syntax for the `aspera files download` action: Like other commands the source file list is provided as  a list with the `sources` option. Nevertheless, consider this:
@@ -1256,6 +1258,16 @@ Download of files is straightforward with a specific syntax for the `aspera file
 * if only one source is provided, it is downloaded
 * if multiple sources must be downloaded, then the first in list is the path of the source folder, and the remaining items are the file names in this folder (without path).
 
+### Find Files
+
+Use the command `aspera files find [--value=regex]`.
+
+if no regex is provided, it will list all files recursively.
+
+if a regex is provided (using ruby regex syntax, very similar to standard syntax), it find files recursively whose
+filename matches the regex.
+
+For instance, to find files with a special extension, use `--value='\.myext$'`
 
 ## Aspera Node (Transfer Server)
 
