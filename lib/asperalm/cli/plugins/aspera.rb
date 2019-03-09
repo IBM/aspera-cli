@@ -76,7 +76,7 @@ module Asperalm
             return {:type=>:object_list,:data=>items,:fields=>['name','type','recursive_size','size','modified_time','access_level']}
           when :find
             thepath=self.options.get_next_argument('path')
-            regex=self.options.get_option(:value,:mandatory)
+            regex=self.options.get_option(:value,:optional)||''
             node_file=@api_aoc.resolve_node_file(top_node_file,thepath)
             return {:type=>:value_list,:data=>@api_aoc.find_files(node_file,regex),:name=>'path'}
           when :mkdir
