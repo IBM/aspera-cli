@@ -131,7 +131,7 @@ module Asperalm
         # destination, use base64 encoding  (as defined previously: --dest64)
         @builder.add_command_line_options([Base64.strict_encode64(@builder.process_param('destination_root',:get_value,:accepted_types=>String,:mandatory=>true))])
 
-        @builder.add_env_args(env_args)
+        @builder.add_env_args(env_args[:env],env_args[:args])
 
         return env_args
       end
