@@ -27,6 +27,8 @@ INCL_USAGE=$(OUT_FOLDER)/$(EXENAME)_usage.txt
 INCL_COMMANDS=$(OUT_FOLDER)/$(EXENAME)_commands.txt
 INCL_ASESSION=$(OUT_FOLDER)/asession_usage.txt
 
+PACKAGE_TITLE=$(shell date)
+
 NODE_PASS=Aspera123_
 
 all:: gem
@@ -175,7 +177,7 @@ t/fx1:
 	$(EXETEST) faspex package list
 	@touch $@
 t/fx2:
-	$(EXETEST) faspex package send --delivery-info=@json:'{"title":"my title","recipients":["laurent.martin.aspera@fr.ibm.com"]}' --sources=@args $(SAMPLE_FILE) 
+	$(EXETEST) faspex package send --delivery-info=@json:'{"title":"'"$(PACKAGE_TITLE)"'","recipients":["laurent.martin.aspera@fr.ibm.com"]}' --sources=@args $(SAMPLE_FILE) 
 	@touch $@
 t/fx3:
 	$(EXETEST) faspex package recv --to-folder=$(TEST_FOLDER) --id=$$($(EXETEST) faspex package list --fields=delivery_id --format=csv --box=sent|tail -n 1) --box=sent
@@ -295,8 +297,8 @@ t/aocf1f:
 	@touch $@
 taocf: t/aocf1 t/aocffin t/aocfmkd t/aocfdel t/aocf1d t/aocf5 t/aocf2 t/aocf3 t/aocf4 t/aocf1e t/aocf1f
 t/aocp1:
-	$(EXETEST) aspera packages send --value=@json:'{"name":"my title","note":"my note","recipients":["laurent.martin.aspera@fr.ibm.com"]}' --sources=@args $(SAMPLE_FILE)
-	$(EXETEST) aspera packages send --value=@json:'{"name":"my title","recipients":["laurent.martin.l+external@gmail.com"]}' --new-user-option=@json:'{"package_contact":true}' --sources=@args $(SAMPLE_FILE)
+	$(EXETEST) aspera packages send --value=@json:'{"name":"'"$(PACKAGE_TITLE)"'","note":"my note","recipients":["laurent.martin.aspera@fr.ibm.com"]}' --sources=@args $(SAMPLE_FILE)
+	$(EXETEST) aspera packages send --value=@json:'{"name":"'"$(PACKAGE_TITLE)"'","recipients":["laurent.martin.l+external@gmail.com"]}' --new-user-option=@json:'{"package_contact":true}' --sources=@args $(SAMPLE_FILE)
 	@touch $@
 t/aocp2:
 	$(EXETEST) aspera packages list
