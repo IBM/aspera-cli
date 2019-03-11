@@ -430,7 +430,7 @@ module Asperalm
             case appli[:product]
             when :aoc
               self.format.display_status("Detected: Aspera on Cloud")
-              organization,instance_domain=FilesApi.parse_url(instance_url)
+              organization,instance_domain=OnCloud.parse_url(instance_url)
               aspera_preset_name='aoc_'+organization
               self.format.display_status("Preparing preset: #{aspera_preset_name}")
               # init defaults if necessary
@@ -478,7 +478,7 @@ module Asperalm
               else
                 self.format.display_status("Using organization specific client_id.")
                 # clear only if user did not specify it already
-                if FilesApi.is_global_client_id?(self.options.get_option(:client_id,:optional))
+                if OnCloud.is_global_client_id?(self.options.get_option(:client_id,:optional))
                   self.options.set_option(:client_id,nil)
                   self.options.set_option(:client_secret,nil)
                 end
@@ -503,7 +503,7 @@ module Asperalm
                 self.options.set_option(:redirect_uri,DEFAULT_REDIRECT)
                 auto_set_pub_key=true
                 auto_set_jwt=true
-                self.options.set_option(:scope,FilesApi::SCOPE_FILES_ADMIN)
+                self.options.set_option(:scope,OnCloud::SCOPE_FILES_ADMIN)
               end
               files_plugin.update_aoc_api
               myself=files_plugin.api_aoc.read('self')[:data]
@@ -543,7 +543,7 @@ module Asperalm
             url=self.options.get_option(:url,:mandatory)
             cli_conf_file=Fasp::Installation.instance.cli_conf_file
             data=JSON.parse(File.read(cli_conf_file))
-            organization,instance_domain=FilesApi.parse_url(url)
+            organization,instance_domain=OnCloud.parse_url(url)
             key_basename='org_'+organization+'.pem'
             key_file=File.join(File.dirname(File.dirname(cli_conf_file)),'etc',key_basename)
             File.write(key_file,self.options.get_option(:private_key,:mandatory))

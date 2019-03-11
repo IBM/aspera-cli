@@ -4,7 +4,7 @@ require 'asperalm/hash_ext'
 require 'base64'
 
 module Asperalm
-  class FilesApi < Rest
+  class OnCloud < Rest
 
     public
     # various API scopes supported
@@ -91,7 +91,7 @@ module Asperalm
     # - source and token regeneration method
     def tr_spec(app,direction,node_file,ws_id,ts_add)
       # the rest end point is used to generate the bearer token
-      token_generation_method=lambda {|do_refresh|self.oauth_token(scope: FilesApi.node_scope(node_file[:node_info]['access_key'],FilesApi::SCOPE_NODE_USER), refresh: do_refresh)}
+      token_generation_method=lambda {|do_refresh|self.oauth_token(scope: self.class.node_scope(node_file[:node_info]['access_key'],SCOPE_NODE_USER), refresh: do_refresh)}
       # note xfer_id and xfer_retry are set by the transfer agent itself
       return {
         'direction'   => direction,
@@ -140,7 +140,7 @@ module Asperalm
         }
       else
         node_rest_params[:auth]=self.params[:auth].clone
-        node_rest_params[:auth][:scope]=FilesApi.node_scope(node_info['access_key'],node_scope)
+        node_rest_params[:auth][:scope]=self.class.node_scope(node_info['access_key'],node_scope)
       end
       return Rest.new(node_rest_params)
     end
@@ -162,7 +162,7 @@ module Asperalm
       top_node_info,top_file_id=check_get_node_file(top_node_file)
       Log.log.debug("find_files: node_info=#{top_node_info}, fileid=#{top_file_id}, regex=#{element_regex}")
       result=[]
-      top_node_api=get_files_node_api(top_node_info,FilesApi::SCOPE_NODE_USER)
+      top_node_api=get_files_node_api(top_node_info,SCOPE_NODE_USER)
       # initialize loop elements : list of folders to scan
       items_to_explore=[{:node_api=>top_node_api,:folder_id=>top_file_id,:path=>''}]
       # Note: top file id is necessarily a folder
@@ -191,7 +191,7 @@ module Asperalm
               Log.log.debug("testing : #{current_file_info['name']}")
               result.push(item_path) if test_block.call(current_file_info['name'])
             when 'link'
-              new_node_api=get_files_node_api(self.read("nodes/#{current_file_info['target_node_id']}")[:data],FilesApi::SCOPE_NODE_USER)
+              new_node_api=get_files_node_api(self.read("nodes/#{current_file_info['target_node_id']}")[:data],SCOPE_NODE_USER)
               items_to_explore.push({:node_api=>new_node_api,:folder_id=>current_file_info["target_id"],:path=>item_path})
             when 'folder'
               items_to_explore.push({:node_api=>current_item[:node_api],:folder_id=>current_file_info["id"],:path=>item_path})
@@ -220,7 +220,7 @@ module Asperalm
         current_item = items_to_explore.shift
         Log.log.debug "searching #{current_item}".bg_green
         # get API if changed
-        current_node_api=get_files_node_api(current_node_info,FilesApi::SCOPE_NODE_USER) if current_node_api.nil?
+        current_node_api=get_files_node_api(current_node_info,SCOPE_NODE_USER) if current_node_api.nil?
         # get folder content
         folder_contents = current_node_api.read("files/#{current_file_id}/files")
         Log.dump(:folder_contents,folder_contents)
@@ -251,5 +251,5 @@ module Asperalm
       return {node_info: current_node_info, file_id: current_file_id}
     end
 
-  end # FilesApi
+  end # OnCloud
 end # Asperalm

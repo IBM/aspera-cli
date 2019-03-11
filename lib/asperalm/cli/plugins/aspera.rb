@@ -45,11 +45,11 @@ module Asperalm
           self.options.set_option(:bulk,:no)
           self.options.set_option(:new_user_option,{'package_contact'=>true})
           self.options.set_option(:operation,:push)
-          client_data=FilesApi.random_cli
+          client_data=OnCloud.random_cli
           self.options.set_option(:auth,:jwt)
           self.options.set_option(:client_id,client_data.first)
           self.options.set_option(:client_secret,client_data.last)
-          self.options.set_option(:scope,FilesApi::SCOPE_FILES_USER)
+          self.options.set_option(:scope,OnCloud::SCOPE_FILES_USER)
           self.options.set_option(:private_key,'@file:'+env[:private_key_path]) if env[:private_key_path].is_a?(String)
           self.options.parse_options!
           return if env[:man_only]
@@ -69,7 +69,7 @@ module Asperalm
           when :browse
             thepath=self.options.get_next_argument('path')
             node_file = @api_aoc.resolve_node_file(top_node_file,thepath)
-            node_api=@api_aoc.get_files_node_api(node_file[:node_info],FilesApi::SCOPE_NODE_USER)
+            node_api=@api_aoc.get_files_node_api(node_file[:node_info],OnCloud::SCOPE_NODE_USER)
             result=node_api.read("files/#{node_file[:file_id]}/files",self.options.get_option(:value,:optional))
             items=result[:data]
             self.format.display_status("Items: #{result[:data].length}/#{result[:http]['X-Total-Count']}")
@@ -81,23 +81,23 @@ module Asperalm
             return {:type=>:value_list,:data=>@api_aoc.find_files(node_file,regex),:name=>'path'}
           when :mkdir
             thepath=self.options.get_next_argument('path')
-            containing_folder_path = thepath.split(FilesApi::PATH_SEPARATOR)
+            containing_folder_path = thepath.split(OnCloud::PATH_SEPARATOR)
             new_folder=containing_folder_path.pop
-            node_file = @api_aoc.resolve_node_file(top_node_file,containing_folder_path.join(FilesApi::PATH_SEPARATOR))
-            node_api=@api_aoc.get_files_node_api(node_file[:node_info],FilesApi::SCOPE_NODE_USER)
+            node_file = @api_aoc.resolve_node_file(top_node_file,containing_folder_path.join(OnCloud::PATH_SEPARATOR))
+            node_api=@api_aoc.get_files_node_api(node_file[:node_info],OnCloud::SCOPE_NODE_USER)
             result=node_api.create("files/#{node_file[:file_id]}/files",{:name=>new_folder,:type=>:folder})[:data]
             return Main.result_status("created: #{result['name']} (id=#{result['id']})")
           when :rename
             thepath=self.options.get_next_argument('source path')
             newname=self.options.get_next_argument('new name')
             node_file = @api_aoc.resolve_node_file(top_node_file,thepath)
-            node_api=@api_aoc.get_files_node_api(node_file[:node_info],FilesApi::SCOPE_NODE_USER)
+            node_api=@api_aoc.get_files_node_api(node_file[:node_info],OnCloud::SCOPE_NODE_USER)
             result=node_api.update("files/#{node_file[:file_id]}",{:name=>newname})[:data]
             return Main.result_status("renamed #{thepath} to #{newname}")
           when :delete
             thepath=self.options.get_next_argument('path')
             node_file = @api_aoc.resolve_node_file(top_node_file,thepath)
-            node_api=@api_aoc.get_files_node_api(node_file[:node_info],FilesApi::SCOPE_NODE_USER)
+            node_api=@api_aoc.get_files_node_api(node_file[:node_info],OnCloud::SCOPE_NODE_USER)
             result=node_api.delete("files/#{node_file[:file_id]}")[:data]
             return Main.result_status("deleted: #{thepath}")
           when :transfer
@@ -118,7 +118,7 @@ module Asperalm
             # force node as agent
             self.options.set_option(:transfer,:node)
             # force node api in node agent
-            Fasp::Node.instance.node_api=@api_aoc.get_files_node_api(node_file_client[:node_info],FilesApi::SCOPE_NODE_USER)
+            Fasp::Node.instance.node_api=@api_aoc.get_files_node_api(node_file_client[:node_info],OnCloud::SCOPE_NODE_USER)
             # additional node to node TS info
             add_ts={
               'remote_access_key'   => node_file_server[:node_info]['access_key'],
@@ -136,9 +136,9 @@ module Asperalm
             source_folder=source_paths.shift['source']
             # if a single file: split into folder and path
             if source_paths.empty?
-              source_folder=source_folder.split(FilesApi::PATH_SEPARATOR)
+              source_folder=source_folder.split(OnCloud::PATH_SEPARATOR)
               source_paths=[{'source'=>source_folder.pop}]
-              source_folder=source_folder.join(FilesApi::PATH_SEPARATOR)
+              source_folder=source_folder.join(OnCloud::PATH_SEPARATOR)
             end
             node_file = @api_aoc.resolve_node_file(top_node_file,source_folder)
             # override paths with just filename
@@ -149,26 +149,26 @@ module Asperalm
             source_paths=self.transfer.ts_source_paths
             source_folder=source_paths.shift['source']
             if source_paths.empty?
-              source_folder=source_folder.split(FilesApi::PATH_SEPARATOR)
+              source_folder=source_folder.split(OnCloud::PATH_SEPARATOR)
               source_paths=[{'source'=>source_folder.pop}]
-              source_folder=source_folder.join(FilesApi::PATH_SEPARATOR)
+              source_folder=source_folder.join(OnCloud::PATH_SEPARATOR)
             end
             raise CliBadArgument,'one file at a time only in HTTP mode' if source_paths.length > 1
             file_name = source_paths.first['source']
             node_file = @api_aoc.resolve_node_file(top_node_file,File.join(source_folder,file_name))
-            node_api=@api_aoc.get_files_node_api(node_file[:node_info],FilesApi::SCOPE_NODE_USER)
+            node_api=@api_aoc.get_files_node_api(node_file[:node_info],OnCloud::SCOPE_NODE_USER)
             node_api.call({:operation=>'GET',:subpath=>"files/#{node_file[:file_id]}/content",:save_to_file=>File.join(self.transfer.destination_folder('receive'),file_name)})
             return Main.result_status("downloaded: #{file_name}")
           when :v3
             # Note: other "common" actions are unauthorized with user scope
             command_legacy=self.options.get_next_command(Node::SIMPLE_ACTIONS)
             # TODO: shall we support all methods here ? what if there is a link ?
-            node_api=@api_aoc.get_files_node_api(top_node_file[:node_info],FilesApi::SCOPE_NODE_USER)
+            node_api=@api_aoc.get_files_node_api(top_node_file[:node_info],OnCloud::SCOPE_NODE_USER)
             return Node.new(@agents.merge(skip_basic_auth_options: true, node_api: node_api)).execute_action(command_legacy)
           when :file
             fileid=self.options.get_next_argument('file id')
             node_file = @api_aoc.resolve_node_file(top_node_file)
-            node_api=@api_aoc.get_files_node_api(node_file[:node_info],FilesApi::SCOPE_NODE_USER)
+            node_api=@api_aoc.get_files_node_api(node_file[:node_info],OnCloud::SCOPE_NODE_USER)
             items=node_api.read("files/#{fileid}")[:data]
             return {:type=>:single_object,:data=>items}
           end # command_repo
@@ -184,8 +184,8 @@ module Asperalm
           unless public_link_url.nil?
             uri=URI.parse(public_link_url)
             public_link_url=nil #no more needed
-            unless uri.path.eql?(FilesApi::PATH_PUBLIC_PACKAGE)
-              raise CliArgument,"only public package link is supported: #{FilesApi::PATH_PUBLIC_PACKAGE}"
+            unless uri.path.eql?(OnCloud::PATH_PUBLIC_PACKAGE)
+              raise CliArgument,"only public package link is supported: #{OnCloud::PATH_PUBLIC_PACKAGE}"
             end
             url_token_value=URI::decode_www_form(uri.query).select{|e|e.first.eql?('token')}.first
             if url_token_value.nil?
@@ -197,7 +197,7 @@ module Asperalm
           end
           # Connection paramaters (url and auth) to Aspera on Cloud
           # pre populate rest parameters based on URL
-          aoc_rest_params=FilesApi.base_rest_params(self.options.get_option(:url,:mandatory))
+          aoc_rest_params=OnCloud.base_rest_params(self.options.get_option(:url,:mandatory))
           aoc_rest_auth=aoc_rest_params[:auth]
           aoc_rest_auth.merge!({
             :grant         => self.options.get_option(:auth,:mandatory),
@@ -207,7 +207,7 @@ module Asperalm
           })
 
           # add jwt payload for global ids
-          if FilesApi.is_global_client_id?(aoc_rest_auth[:client_id])
+          if OnCloud.is_global_client_id?(aoc_rest_auth[:client_id])
             org=aoc_rest_auth[:base_url].gsub(/.*\//,'')
             aoc_rest_auth.merge!({:jwt_add=>{org: org}})
           end
@@ -230,7 +230,7 @@ module Asperalm
             })
           else raise "ERROR: unsupported auth method"
           end
-          @api_aoc=FilesApi.new(aoc_rest_params)
+          @api_aoc=OnCloud.new(aoc_rest_params)
           nil
         end
 
@@ -474,14 +474,14 @@ module Asperalm
             require 'asperalm/faspex_gw'
             FaspexGW.instance.start_server(@api_aoc,@workspace_id)
           when :admin
-            self.options.set_option(:scope,FilesApi::SCOPE_FILES_ADMIN)
+            self.options.set_option(:scope,OnCloud::SCOPE_FILES_ADMIN)
             update_aoc_api
             command_admin=self.options.get_next_command([ :ats, :resource, :set_client_key, :usage_reports, :search_nodes, :events ])
             case command_admin
             when :ats
               ats_api = Rest.new(@api_aoc.params.deep_merge({
                 :base_url => @api_aoc.params[:base_url]+'/admin/ats/pub/v1',
-                :auth     => {:scope => FilesApi::SCOPE_FILES_ADMIN_USER}
+                :auth     => {:scope => OnCloud::SCOPE_FILES_ADMIN_USER}
               }))
               return @ats.execute_action_gen(ats_api)
             when :search_nodes
