@@ -2,6 +2,7 @@ require 'asperalm/cli/basic_auth_plugin'
 require 'asperalm/fasp/installation'
 require 'asperalm/api_detector'
 require 'asperalm/open_application'
+require 'asperalm/on_cloud'
 require 'xmlsimple'
 require 'base64'
 
