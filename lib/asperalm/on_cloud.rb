@@ -189,7 +189,7 @@ module Asperalm
             case current_file_info['type']
             when 'file'
               Log.log.debug("testing : #{current_file_info['name']}")
-              result.push(item_path) if test_block.call(current_file_info['name'])
+              result.push(current_file_info.merge({'path'=>item_path})) if test_block.call(current_file_info['name'])
             when 'link'
               new_node_api=get_files_node_api(self.read("nodes/#{current_file_info['target_node_id']}")[:data],SCOPE_NODE_USER)
               items_to_explore.push({:node_api=>new_node_api,:folder_id=>current_file_info["target_id"],:path=>item_path})

@@ -78,7 +78,7 @@ module Asperalm
             thepath=self.options.get_next_argument('path')
             regex=self.options.get_option(:value,:optional)||''
             node_file=@api_aoc.resolve_node_file(top_node_file,thepath)
-            return {:type=>:value_list,:data=>@api_aoc.find_files(node_file,regex),:name=>'path'}
+            return {:type=>:object_list,:data=>@api_aoc.find_files(node_file,regex),:fields=>['path']}
           when :mkdir
             thepath=self.options.get_next_argument('path')
             containing_folder_path = thepath.split(OnCloud::PATH_SEPARATOR)
