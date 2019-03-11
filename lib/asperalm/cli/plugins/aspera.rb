@@ -56,11 +56,10 @@ module Asperalm
           update_aoc_api
         end
 
-        # add some tags and then starts transfer using agent
+        # starts transfer using agent
+        # adds workspace info for activity tracking
         def transfer_start(api_aoc,app,direction,node_file,ts_add)
-          # activity tracking
-          ts_add.deep_merge!({'tags'=>{'aspera'=>{'files'=>{'workspace_name'=>@workspace_name}}}})
-          return self.transfer.start(*api_aoc.tr_spec(app,direction,node_file,@workspace_id,ts_add))
+          return self.transfer.start(*api_aoc.tr_spec(app,direction,node_file,@workspace_id,@workspace_name,ts_add))
         end
 
         def execute_node_gen4_action(top_node_file)

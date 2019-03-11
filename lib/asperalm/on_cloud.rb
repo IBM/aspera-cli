@@ -89,7 +89,7 @@ module Asperalm
     # build "transfer info", 2 elements array with:
     # - transfer spec for aspera on cloud, based on node information and file id
     # - source and token regeneration method
-    def tr_spec(app,direction,node_file,ws_id,ts_add)
+    def tr_spec(app,direction,node_file,ws_id,ws_name,ts_add)
       # the rest end point is used to generate the bearer token
       token_generation_method=lambda {|do_refresh|self.oauth_token(scope: self.class.node_scope(node_file[:node_info]['access_key'],SCOPE_NODE_USER), refresh: do_refresh)}
       # note xfer_id and xfer_retry are set by the transfer agent itself
@@ -103,22 +103,25 @@ module Asperalm
         'tags'        => {
         'aspera'        => {
         'app'             => app,
-        'usage_id'        => "aspera.files.workspace.#{ws_id}",
+        'usage_id'        => "aspera.files.workspace.#{ws_id}", # activity tracking
         'files'           => {
         'node_id'               => node_file[:node_info]['id'],
         'files_transfer_action' => "#{direction_to_operation(direction)}_#{app.gsub(/s$/,'')}",
         'workspace_id'          => ws_id,
-        },
+        'workspace_name'        => ws_name  # activity tracking
+        }, # files
         'node'            => {
         'access_key'        => node_file[:node_info]['access_key'],
-        'file_id'           => node_file[:file_id] }
-        }
-        }}.deep_merge!(ts_add),{
+        'file_id'           => node_file[:file_id]
+        } # node
+        } # aspera
+        } # tags
+      }.deep_merge!(ts_add),{
         :src              => :node_gen4,
         :regenerate_token => token_generation_method
       }
     end
-
+    
     # returns a node API for access key
     # no scope: requires secret
     # if secret present: use it
