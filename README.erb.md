@@ -1937,6 +1937,12 @@ Gems, or remove your ed25519 key from your `.ssh` folder to solve the issue. Not
 
 # Release Notes
 
+* version 0.9.25
+
+	* the option `value` of command `find`, to filter on name, is not optional
+	* `find` now also reports all types (file, folder, link)
+	* `find` now is able to report all fields (type, size, etc...)
+
 * version 0.9.24
 
   * fix bug where AoC node to node transfer did not work
