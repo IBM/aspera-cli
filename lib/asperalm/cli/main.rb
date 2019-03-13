@@ -494,7 +494,6 @@ module Asperalm
           display_results(command_plugin.execute_action)
           # finish
           @plugin_env[:transfer].shutdown
-          @opt_mgr.fail_if_unprocessed
         rescue CliBadArgument => e;          exception_info=[e,'Argument',:usage]
         rescue CliNoSuchId => e;             exception_info=[e,'Identifier']
         rescue CliError => e;                exception_info=[e,'Tool',:usage]
@@ -506,6 +505,9 @@ module Asperalm
         end
         # cleanup file list files
         TempFileManager.instance.cleanup
+        @opt_mgr.final_errors.each do |msg|
+          @plugin_env[:formater].display_message(:error,"ERROR:".bg_red.gray.blink+" Argument: "+msg)
+        end
         # processing of error condition
         unless exception_info.nil?
           @plugin_env[:formater].display_message(:error,"ERROR:".bg_red.gray.blink+" "+exception_info[1]+": "+exception_info[0].message)
