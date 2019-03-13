@@ -293,13 +293,8 @@ module Asperalm
             when FIELDS_ALL
               raise "empty" if table_rows_hash_val.empty?
               if table_rows_hash_val.is_a?(Array)
-                final_table_columns=table_rows_hash_val.inject({}) do |m,v|
-                  v.keys.inject(m)  do |m2,v2|
-                    m2[v2]=true
-                    m2
-                  end
-                  m
-                end.keys
+                # get the list of all column names used in all lines, not just frst one, as all lines may have different columns
+                final_table_columns=table_rows_hash_val.inject({}){|m,v|v.keys.each{|c|m[c]=true};m}.keys
               end
             else
               final_table_columns=user_asked_fields_list_str.split(',')
