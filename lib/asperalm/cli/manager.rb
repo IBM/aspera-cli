@@ -351,10 +351,12 @@ module Asperalm
         return @unprocessed_cmd_line_arguments.empty?
       end
 
-      def fail_if_unprocessed
-        # unprocessed options or arguments ?
-        raise CliBadArgument,"unprocessed options: #{@unprocessed_cmd_line_options}" unless @unprocessed_cmd_line_options.empty?
-        raise CliBadArgument,"unprocessed values: #{@unprocessed_cmd_line_arguments}" unless @unprocessed_cmd_line_arguments.empty?
+      # unprocessed options or arguments ?
+      def final_errors
+        result=[]
+        result.push("unprocessed options: #{@unprocessed_cmd_line_options}") unless @unprocessed_cmd_line_options.empty?
+        result.push("unprocessed values: #{@unprocessed_cmd_line_arguments}") unless @unprocessed_cmd_line_arguments.empty?
+        return result
       end
 
       # get all original options  on command line used to generate a config in config file
