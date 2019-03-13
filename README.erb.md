@@ -1937,6 +1937,11 @@ Gems, or remove your ed25519 key from your `.ssh` folder to solve the issue. Not
 
 # Release Notes
 
+* version 0.9.26
+
+	* table display with --fields=ALL now includes all column names from all lines, not only first one
+	* unprocessed argument shows error even if there is an error beforehand
+
 * version 0.9.25
 
 	* the option `value` of command `find`, to filter on name, is not optional
