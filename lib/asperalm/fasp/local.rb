@@ -241,16 +241,15 @@ module Asperalm
           when 'DONE'
             return
           when 'ERROR'
-            e=Fasp::Error.new(last_status_event['Description'],last_status_event['Code'].to_i)
-            Log.log.error("code: #{e.err_code}") if e.respond_to?(:err_code)
-            if e.message  =~ /bearer token/i
+            Log.log.error("code: #{last_status_event['Code']}")
+            if last_status_event['Description']  =~ /bearer token/i
               Log.log.error("need to regenrate token".red)
               if !session.nil? and session[:options].is_a?(Hash) and session[:options].has_key?(:regenerate_token)
                 # regenerate token here, expired, or error on it
                 env_args[:env]['ASPERA_SCP_TOKEN']=session[:options][:regenerate_token].call(true)
               end
             end
-            raise e
+            raise Fasp::Error.new(last_status_event['Description'],last_status_event['Code'].to_i)
           else
             raise "INTERNAL ERROR: unexpected last event"
           end
@@ -332,7 +331,7 @@ module Asperalm
         rescue => e
           session[:state]=:failed
           session[:error]=e
-          Log.log.error("#{e.message}:\n#{e..backtrace}".red)
+          Log.log.error("#{e.class}:\n#{e.message}:\n#{e.backtrace.join("\n")}".red) if Log.instance.level.eql?(:debug)
         ensure
           @mutex.synchronize do
             # ensure id is set to unblock start procedure
