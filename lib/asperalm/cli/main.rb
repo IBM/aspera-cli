@@ -292,7 +292,15 @@ module Asperalm
               end
             when FIELDS_ALL
               raise "empty" if table_rows_hash_val.empty?
-              final_table_columns=table_rows_hash_val.first.keys if table_rows_hash_val.is_a?(Array)
+              if table_rows_hash_val.is_a?(Array)
+                final_table_columns=table_rows_hash_val.inject({}) do |m,v|
+                  v.keys.inject(m)  do |m2,v2|
+                    m2[v2]=true
+                    m2
+                  end
+                  m
+                end.keys
+              end
             else
               final_table_columns=user_asked_fields_list_str.split(',')
             end
