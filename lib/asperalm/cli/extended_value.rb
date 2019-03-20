@@ -47,6 +47,7 @@ module Asperalm
       def modifiers;@handlers.keys;end
 
       def set_handler(name,type,method)
+        Log.log.debug("setting #{type} handler for #{name}")
         @handlers[name]={:type=>type,:func=>method}
       end
 
