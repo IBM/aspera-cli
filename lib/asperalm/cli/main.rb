@@ -91,7 +91,6 @@ module Asperalm
         # set application folder for modules
         PersistencyFile.default_folder=@plugin_env[:config].main_folder
         Oauth.persistency_folder=@plugin_env[:config].main_folder
-        ExtendedValue.instance.set_handler('preset',:reader,lambda{|v|@plugin_env[:config].preset_by_name(v)})
         Fasp::Parameters.file_list_folder=File.join(@plugin_env[:config].main_folder,'filelists')
       end
 
@@ -442,8 +441,6 @@ module Asperalm
           @opt_mgr.declare_options
           # parse declared options
           @opt_mgr.parse_options!
-          # load default config if it was not overriden on command line
-          @plugin_env[:config].read_config_file
           # declare general options
           declare_options_global
           @plugin_env[:transfer].declare_transfer_options
