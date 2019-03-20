@@ -134,13 +134,19 @@ $ brew install ruby
 
 On windows download Ruby from [https://rubyinstaller.org/](https://rubyinstaller.org/).
 
+Go to "Downloads".
+
+Select the version "without devkit", x64 corresponding to the one recommended "with devkit".
+
+During installation, skip the installation of "MSys2".
+
 ### Linux
 
 ```bash
 $ yum install ruby rubygems
 ```
 
-Note that Ruby 2+ is required, if you have an older Linux (e.g. CentOS 6), you should install "rvm" [https://rvm.io/](https://rvm.io/) and install and use a newer Ruby.
+Note that Ruby 2+ is required, if you have an older Linux (e.g. CentOS 6) or want to use a separate version: you should install "rvm" [https://rvm.io/](https://rvm.io/) and install and use a newer Ruby.
 
 ## `asperalm` gem
 
@@ -1763,6 +1769,53 @@ chkconfig xvfb on
 service xvfb start
 ```
 
+# SMTP for email notifications
+
+Amelia can send email, for that setup SMTP configuration. This is done with option `smtp`.
+
+The `smtp` option is a hash table (extended value) with the following fields:
+<table>
+<tr><th>field</th><th>default</th><th>example</th><th>description</th></tr>
+<tr><td>server</td><td>-</td><td>smtp.gmail.com</td><td>SMTP server address</td></tr>
+<tr><td>tls</td><td>true</td><td>false</td><td>use of TLS</td></tr>
+<tr><td>port</td><td>587 for tls<br/>25 else</td><td>587</td><td>port for service</td></tr>
+<tr><td>domain</td><td>domain of server</td><td>gmail.com</td><td>email domain of user</td></tr>
+<tr><td>username</td><td>-</td><td>john@example.com</td><td>user to authenticate on SMTP server, leave empty for open auth.</td></tr>
+<tr><td>password</td><td>-</td><td>Aspera123_</td><td>password for above username</td></tr>
+<tr><td>from\_email</td><td>username if defined</td><td>laurent.martin.l@gmail.com</td><td>address used if received replies</td></tr>
+<tr><td>from\_name</td><td>same as email</td><td>John Wayne</td><td>display name of sender</td></tr>
+</table>
+
+## Example of configuration:
+
+```
+$ <%=cmd%> config id smtp_google set server smtp.google.com
+$ <%=cmd%> config id smtp_google set username john@gmail.com
+$ <%=cmd%> config id smtp_google set password P@ssw0rd
+```
+
+or
+
+```
+$ <%=cmd%> config id smtp_google init @json:'{"server":"smtp.google.com","username":"john@gmail.com","password":"P@ssw0rd"}'
+```
+
+Set this configation as global default, for instance:
+
+```
+$ <%=cmd%> config id cli_default set smtp @val:@preset:smtp_google
+$ <%=cmd%> config id default set config cli_default
+```
+
+## Test
+
+Check settings with `smtp_settings` command. Send test email with `email_test`.
+
+```
+$ <%=cmd%> config --smtp=@preset:smtp_google smtp
+$ <%=cmd%> config --smtp=@preset:smtp_google email sample.dest@example.com
+```
+
 # Tool: `asession`
 
 This gem comes with a second executable tool providing a simplified standardized interface 
@@ -1936,6 +1989,10 @@ This means that you do not have ruby support for ED25519 SSH keys. You may eithe
 Gems, or remove your ed25519 key from your `.ssh` folder to solve the issue. Note, this is temporarily fixed in version 0.9.24, but those type of key will just be ignored.
 
 # Release Notes
+
+* version 0.9.27
+
+	* can send email with SMTP
 
 * version 0.9.26
 
