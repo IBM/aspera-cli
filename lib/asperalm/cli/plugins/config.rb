@@ -5,6 +5,7 @@ require 'asperalm/open_application'
 require 'asperalm/on_cloud'
 require 'xmlsimple'
 require 'base64'
+require 'net/smtp'
 
 module Asperalm
   module Cli
@@ -59,17 +60,24 @@ module Asperalm
           Fasp::Installation.instance.config_folder=@main_folder
           add_plugin_lookup_folder(File.join(@main_folder,ASPERA_PLUGINS_FOLDERNAME))
           add_plugin_lookup_folder(File.join(Main.gem_root,GEM_PLUGINS_FOLDER))
-          self.options.set_obj_attr(:override,self,:option_override,:no)
+          # do file parameter first
           self.options.set_obj_attr(:config_file,self,:option_config_file)
+          self.options.add_opt_simple(:config_file,"read parameters from file in YAML format, current=#{@option_config_file}")
+          self.options.parse_options!
+          # read correct file
+          read_config_file
+          # add preset handler (needed for smtp)
+          ExtendedValue.instance.set_handler('preset',:reader,lambda{|v|preset_by_name(v)})
+          self.options.set_obj_attr(:override,self,:option_override,:no)
           self.options.set_obj_attr(:ascp_path,self,:option_ascp_path)
           self.options.set_obj_attr(:use_product,self,:option_use_product)
           self.options.add_opt_boolean(:override,"override existing value")
-          self.options.add_opt_simple(:config_file,"read parameters from file in YAML format, current=#{@option_config_file}")
           self.options.add_opt_switch(:no_default,"-N","do not load default configuration for plugin") { @use_plugin_defaults=false }
           self.options.add_opt_boolean(:use_generic_client,'wizard: AoC: use global or org specific jwt client id')
           self.options.add_opt_simple(:pkeypath,"path to private key for JWT (wizard)")
           self.options.add_opt_simple(:ascp_path,"path to ascp")
           self.options.add_opt_simple(:use_product,"use ascp from specified product")
+          self.options.add_opt_simple(:smtp,"smtp configuration (extended value: hash)")
           self.options.set_option(:use_generic_client,true)
           self.options.parse_options!
         end
@@ -170,63 +178,63 @@ module Asperalm
             Log.log.warn("No config file found. Creating empty configuration file: #{@option_config_file}")
             @config_presets={CONF_PRESET_CONFIG=>{CONF_PRESET_VERSION=>@program_version}}
             save_presets_to_config_file
-            return nil
-          end
-          begin
-            Log.log.debug "loading #{@option_config_file}"
-            @config_presets=YAML.load_file(@option_config_file)
-            Log.log.debug "Available_presets: #{@config_presets}"
-            raise "Expecting YAML Hash" unless @config_presets.is_a?(Hash)
-            # check there is at least the config section
-            if !@config_presets.has_key?(CONF_PRESET_CONFIG)
-              raise "Cannot find key: #{CONF_PRESET_CONFIG}"
-            end
-            version=@config_presets[CONF_PRESET_CONFIG][CONF_PRESET_VERSION]
-            if version.nil?
-              raise "No version found in config section."
-            end
-            # check compatibility of version of conf file
-            config_tested_version='0.4.5'
-            if Gem::Version.new(version) < Gem::Version.new(config_tested_version)
-              raise "Unsupported config file version #{version}. Expecting min version #{config_tested_version}"
-            end
-            save_required=false
-            config_tested_version='0.6.14'
-            if Gem::Version.new(version) <= Gem::Version.new(config_tested_version)
-              if @config_presets[CONF_PRESET_DEFAULT].is_a?(Hash) and @config_presets[CONF_PRESET_DEFAULT].has_key?(OLD_AOC_COMMAND)
-                @config_presets[CONF_PRESET_DEFAULT][NEW_AOC_COMMAND]=@config_presets[CONF_PRESET_DEFAULT][OLD_AOC_COMMAND]
-                @config_presets[CONF_PRESET_DEFAULT].delete(OLD_AOC_COMMAND)
-                Log.log.warn("Converted plugin default: #{OLD_AOC_COMMAND} -> #{NEW_AOC_COMMAND}")
-                save_required=true
+          else
+            begin
+              Log.log.debug "loading #{@option_config_file}"
+              @config_presets=YAML.load_file(@option_config_file)
+              Log.log.debug "Available_presets: #{@config_presets}"
+              raise "Expecting YAML Hash" unless @config_presets.is_a?(Hash)
+              # check there is at least the config section
+              if !@config_presets.has_key?(CONF_PRESET_CONFIG)
+                raise "Cannot find key: #{CONF_PRESET_CONFIG}"
               end
-            end
-            config_tested_version='0.8.10'
-            if Gem::Version.new(version) <= Gem::Version.new(config_tested_version)
-              old_subpath=File.join('',ASPERA_HOME_FOLDER_NAME,OLD_PROGRAM_NAME,'')
-              new_subpath=File.join('',ASPERA_HOME_FOLDER_NAME,@tool_name,'')
-              # convert possible keys located in config folder
-              @config_presets.values.select{|p|p.is_a?(Hash)}.each do |preset|
-                preset.values.select{|v|v.is_a?(String) and v.include?(old_subpath)}.each do |value|
-                  old_val=value.clone
-                  value.gsub!(old_subpath,new_subpath)
-                  Log.log.warn("Converted copnfig value: #{old_val} -> #{value}")
+              version=@config_presets[CONF_PRESET_CONFIG][CONF_PRESET_VERSION]
+              if version.nil?
+                raise "No version found in config section."
+              end
+              # check compatibility of version of conf file
+              config_tested_version='0.4.5'
+              if Gem::Version.new(version) < Gem::Version.new(config_tested_version)
+                raise "Unsupported config file version #{version}. Expecting min version #{config_tested_version}"
+              end
+              save_required=false
+              config_tested_version='0.6.14'
+              if Gem::Version.new(version) <= Gem::Version.new(config_tested_version)
+                if @config_presets[CONF_PRESET_DEFAULT].is_a?(Hash) and @config_presets[CONF_PRESET_DEFAULT].has_key?(OLD_AOC_COMMAND)
+                  @config_presets[CONF_PRESET_DEFAULT][NEW_AOC_COMMAND]=@config_presets[CONF_PRESET_DEFAULT][OLD_AOC_COMMAND]
+                  @config_presets[CONF_PRESET_DEFAULT].delete(OLD_AOC_COMMAND)
+                  Log.log.warn("Converted plugin default: #{OLD_AOC_COMMAND} -> #{NEW_AOC_COMMAND}")
                   save_required=true
                 end
               end
+              config_tested_version='0.8.10'
+              if Gem::Version.new(version) <= Gem::Version.new(config_tested_version)
+                old_subpath=File.join('',ASPERA_HOME_FOLDER_NAME,OLD_PROGRAM_NAME,'')
+                new_subpath=File.join('',ASPERA_HOME_FOLDER_NAME,@tool_name,'')
+                # convert possible keys located in config folder
+                @config_presets.values.select{|p|p.is_a?(Hash)}.each do |preset|
+                  preset.values.select{|v|v.is_a?(String) and v.include?(old_subpath)}.each do |value|
+                    old_val=value.clone
+                    value.gsub!(old_subpath,new_subpath)
+                    Log.log.warn("Converted copnfig value: #{old_val} -> #{value}")
+                    save_required=true
+                  end
+                end
+              end
+              # Place new compatibility code here
+              if save_required
+                @config_presets[CONF_PRESET_CONFIG][CONF_PRESET_VERSION]=@program_version
+                save_presets_to_config_file
+                Log.log.warn("Saving automatic conversion.")
+              end
+            rescue => e
+              Log.log.debug("-> #{e}")
+              new_name="#{@option_config_file}.pre#{@program_version}.manual_conversion_needed"
+              File.rename(@option_config_file,new_name)
+              Log.log.warn("Renamed config file to #{new_name}.")
+              Log.log.warn("Manual Conversion is required. Next time, a new empty file will be created.")
+              raise CliError,e.to_s
             end
-            # Place new compatibility code here
-            if save_required
-              @config_presets[CONF_PRESET_CONFIG][CONF_PRESET_VERSION]=@program_version
-              save_presets_to_config_file
-              Log.log.warn("Saving automatic conversion.")
-            end
-          rescue => e
-            Log.log.debug("-> #{e}")
-            new_name="#{@option_config_file}.pre#{@program_version}.manual_conversion_needed"
-            File.rename(@option_config_file,new_name)
-            Log.log.warn("Renamed config file to #{new_name}.")
-            Log.log.warn("Manual Conversion is required. Next time, a new empty file will be created.")
-            raise CliError,e.to_s
           end
         end
 
@@ -332,7 +340,7 @@ module Asperalm
           end
         end
 
-        ACTIONS=[:gem_path, :genkey,:plugins,:flush_tokens,:list,:overview,:open,:echo,:id,:documentation,:wizard,:export_to_cli,:detect,:coffee,:ascp]
+        ACTIONS=[:gem_path, :genkey,:plugins,:flush_tokens,:list,:overview,:open,:echo,:id,:documentation,:wizard,:export_to_cli,:detect,:coffee,:ascp,:email_test,:smtp_settings]
 
         # "config" plugin
         def execute_action
@@ -577,7 +585,60 @@ module Asperalm
             execute_action_ascp
           when :gem_path
             return Main.result_status(Main.gem_root)
+          when :email_test
+            dest_email=self.options.get_next_argument("destination email")
+            send_email({
+              to:         dest_email,
+              subject:    'Amelia email test',
+              body:       'It worked !',
+            })
+            return Main.result_nothing
+          when :smtp_settings
+            return {:type=>:single_object,:data=>email_settings}
           else raise "error"
+          end
+        end
+
+        def email_settings
+          smtp=self.options.get_option(:smtp,:mandatory)
+          # change string keys into symbols
+          smtp=smtp.keys.inject({}){|m,v|m[v.to_sym]=smtp[v];m}
+          # defaults
+          smtp[:tls]||=true
+          smtp[:port]||=smtp[:tls]?587:25
+          smtp[:from_email]||=smtp[:username] if smtp.has_key?(:username)
+          smtp[:from_name]||=smtp[:from_email].gsub(/@.*$/,'').gsub(/[^a-zA-Z]/,' ').capitalize if smtp.has_key?(:username)
+          smtp[:domain]||=smtp[:from_email].gsub(/^.*@/,'') if smtp.has_key?(:from_email)
+          # check minimum required
+          [:server,:port,:domain].each do |n|
+            raise "missing smtp parameter: #{n}" unless smtp.has_key?(n)
+          end
+          Log.log.debug("smtp=#{smtp}")
+          return smtp
+        end
+
+        def send_email(email={})
+          opts=email_settings
+          email[:from_name]||=opts[:from_name]
+          email[:from_email]||=opts[:from_email]
+          # check minimum required
+          [:from_name,:from_email,:to,:subject].each do |n|
+            raise "missing email parameter: #{n}" unless email.has_key?(n)
+          end
+          msg = <<END_OF_MESSAGE
+From: #{email[:from_name]} <#{email[:from_email]}>
+To: <#{email[:to]}>
+Subject: #{email[:subject]}
+
+#{email[:body]}
+END_OF_MESSAGE
+          start_options=[opts[:domain]]
+          start_options.push(opts[:username],opts[:password],:login) if opts.has_key?(:username) and opts.has_key?(:password)
+
+          smtp = Net::SMTP.new(opts[:server], opts[:port])
+          smtp.enable_starttls if opts[:tls]
+          smtp.start(*start_options) do |smtp|
+            smtp.send_message(msg, email[:from_email], email[:to])
           end
         end
 
