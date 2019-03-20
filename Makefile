@@ -4,6 +4,7 @@ TOOLCONFIGDIR=$(HOME)/.aspera/$(EXENAME)
 APIKEY=$(TOOLCONFIGDIR)/filesapikey
 MAINDIR=.
 BINDIR=$(MAINDIR)/bin
+LIBDIR=$(MAINDIR)/lib
 OUT_FOLDER=out
 TEST_FOLDER=test.dir
 # tool invokation
@@ -602,7 +603,7 @@ tsync: t/sync1
 t:
 	mkdir t
 t/sdk1:
-	ruby $(MAINDIR)/examples/transfer.rb
+	ruby -I $(LIBDIR) $(MAINDIR)/examples/transfer.rb
 	@touch $@
 tsample: t/sdk1
 tests: t tshares tfaspex tconsole tnode taoc tfasp tsync torc tcon tnsync tconf tprev tats tsample tshares2
@@ -629,4 +630,4 @@ preparelocal:
 	sudo asconfigurator -x "user;user_name,xfer;file_restriction,|*;absolute,"
 	sudo asnodeadmin --reload
 irb:
-	irb -I lib
+	irb -I $(LIBDIR)
