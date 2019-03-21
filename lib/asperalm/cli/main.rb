@@ -438,7 +438,6 @@ module Asperalm
         begin
           # declare initial options
           declare_options_initial
-          @opt_mgr.declare_options
           # parse declared options
           @opt_mgr.parse_options!
           # declare general options
@@ -469,7 +468,6 @@ module Asperalm
             command_sym=@opt_mgr.get_next_command(@plugin_env[:config].plugins.keys.dup.unshift(:help))
           end
           # main plugin is not dynamically instanciated
-          Log.log.debug(">>>#{Plugins::Config::CONF_PLUGIN_SYM.to_s}")
           case command_sym
           when :help
             exit_with_usage(true)

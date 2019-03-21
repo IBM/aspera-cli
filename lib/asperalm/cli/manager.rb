@@ -97,12 +97,8 @@ module Asperalm
         # Note: was initially inherited but it is prefered to have specific methods
         @parser=OptionParser.new
         @parser.program_name=program_name
-      end
-
-      def declare_options
-        Log.log.debug("declare_options")
         # options can also be provided by env vars : --param-name -> ASLMCLI_PARAM_NAME
-        env_prefix=@parser.program_name.upcase+OPTION_SEP_NAME
+        env_prefix=program_name.upcase+OPTION_SEP_NAME
         ENV.each do |k,v|
           if k.start_with?(env_prefix)
             @unprocessed_env.push([k[env_prefix.length..-1].downcase.to_sym,v])
