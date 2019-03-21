@@ -56,6 +56,8 @@ module Asperalm
         end
         return @found_products
       end
+      
+      FILES=[:ascp,:ascp4,:ssh_bypass_key_dsa,:ssh_bypass_key_rsa,:fallback_cert,:fallback_key]
 
       # get path of one resource file of currently activated product
       # keys and certs are generated locally... (they are well known values, arch. independant)
