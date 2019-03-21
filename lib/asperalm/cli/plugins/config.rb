@@ -6,6 +6,7 @@ require 'asperalm/on_cloud'
 require 'xmlsimple'
 require 'base64'
 require 'net/smtp'
+require 'open3'
 
 module Asperalm
   module Cli
@@ -324,7 +325,20 @@ module Asperalm
           when :show # shows files used
             return {:type=>:status, :data=>Fasp::Installation.instance.path(:ascp)}
           when :info # shows files used
-            return {:type=>:status, :data=>Fasp::Installation.instance.path(:ascp)}
+            data=Fasp::Installation::FILES.inject({}) do |m,v|
+              m[v.to_s]=Fasp::Installation.instance.path(v) rescue "Not Found"
+              m
+            end
+            Open3.popen3(Fasp::Installation.instance.path(:ascp),'-DDL-') do |stdin, stdout, stderr, thread|
+              while line=stderr.gets do
+                line.chomp!
+                case line
+                when /^DBG Path ([^ ]+) (dir|file) +: (.*)$/;data[$1]=$3
+                when /^DBG Added module group:"([^"]+)" name:"([^"]+)", version:"([^"]+)" interface:"([^"]+)"$/;data[$2]=$4
+                end
+              end
+            end
+            return {:type=>:single_object, :data=>data}
           when :products
             command=self.options.get_next_command([:list,:use])
             case command
