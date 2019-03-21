@@ -55,7 +55,7 @@ transfer_spec={
   'remote_password' =>'demoaspera',
   'direction'       =>'receive',
   'destination_root'=>'.',
-  'paths'           =>[{'source'=>'aspera-test-dir-tiny/1200KB.1'}]
+  'paths'           =>[{'source'=>'aspera-test-dir-tiny/200KB.1'}]
 }
 # start transfer in separate thread
 # method returns as soon as transfer thread is created
