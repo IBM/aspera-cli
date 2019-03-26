@@ -3,6 +3,8 @@ require 'asperalm/fasp/installation'
 require 'asperalm/api_detector'
 require 'asperalm/open_application'
 require 'asperalm/on_cloud'
+require 'asperalm/proxy_auto_config'
+require 'asperalm/uri_reader'
 require 'xmlsimple'
 require 'base64'
 require 'net/smtp'
@@ -79,6 +81,7 @@ module Asperalm
           self.options.add_opt_simple(:ascp_path,"path to ascp")
           self.options.add_opt_simple(:use_product,"use ascp from specified product")
           self.options.add_opt_simple(:smtp,"smtp configuration (extended value: hash)")
+          self.options.add_opt_simple(:pac,"proxy auto configuration URL")
           self.options.set_option(:use_generic_client,true)
           self.options.parse_options!
         end
@@ -354,7 +357,7 @@ module Asperalm
           end
         end
 
-        ACTIONS=[:gem_path, :genkey,:plugins,:flush_tokens,:list,:overview,:open,:echo,:id,:documentation,:wizard,:export_to_cli,:detect,:coffee,:ascp,:email_test,:smtp_settings]
+        ACTIONS=[:gem_path, :genkey,:plugins,:flush_tokens,:list,:overview,:open,:echo,:id,:documentation,:wizard,:export_to_cli,:detect,:coffee,:ascp,:email_test,:smtp_settings,:proxy_check]
 
         # "config" plugin
         def execute_action
@@ -609,6 +612,10 @@ module Asperalm
             return Main.result_nothing
           when :smtp_settings
             return {:type=>:single_object,:data=>email_settings}
+          when :proxy_check
+            pac_url=self.options.get_option(:pac,:mandatory)
+            server_url=self.options.get_next_argument("server url")
+            return Main.result_status(Asperalm::ProxyAutoConfig.new(UriReader.read(pac_url)).get_proxy(server_url))
           else raise "error"
           end
         end
