@@ -2,14 +2,13 @@ require 'execjs'
 require 'uri'
 require 'resolv'
 require 'erb'
-require 'asperalm/uri_reader'
 
 module Asperalm
   class ProxyAutoConfig
     PAC_FUNC_TEMPLATE=File.read(__FILE__.gsub(/\.rb$/,'.erb.js'))
     private_constant :PAC_FUNC_TEMPLATE
-    def initialize(proxy_pac_uri)
-      @proxy_auto_config=UriReader.read(proxy_pac_uri)
+    def initialize(proxy_auto_config)
+      @proxy_auto_config=proxy_auto_config
     end
 
     # get string representing proxy configuration
