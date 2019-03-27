@@ -78,7 +78,7 @@ module Asperalm
       attr_accessor :ask_missing_optional
 
       #
-      def initialize(program_name)
+      def initialize(program_name,argv,app_banner)
         # command line values not starting with '-'
         @unprocessed_cmd_line_arguments=[]
         # command line values starting with '-'
@@ -97,6 +97,7 @@ module Asperalm
         # Note: was initially inherited but it is prefered to have specific methods
         @parser=OptionParser.new
         @parser.program_name=program_name
+        @parser.banner=app_banner
         # options can also be provided by env vars : --param-name -> ASLMCLI_PARAM_NAME
         env_prefix=program_name.upcase+OPTION_SEP_NAME
         ENV.each do |k,v|
@@ -105,14 +106,16 @@ module Asperalm
           end
         end
         Log.log.debug("env=#{@unprocessed_env}".red)
-        self.set_obj_attr(:interactive,self,:ask_missing_mandatory)
-        self.set_obj_attr(:ask_options,self,:ask_missing_optional)
-        self.add_opt_boolean(:interactive,"use interactive input of missing params")
-        self.add_opt_boolean(:ask_options,"ask even optional options")
-      end
-
-      # parse arguments into options and arguments
-      def add_cmd_line_options(argv)
+        # banner is empty when help is generated for every plugin
+        unless app_banner.empty?
+          @parser.separator("")
+          @parser.separator("OPTIONS: global")
+          self.set_obj_attr(:interactive,self,:ask_missing_mandatory)
+          self.set_obj_attr(:ask_options,self,:ask_missing_optional)
+          self.add_opt_boolean(:interactive,"use interactive input of missing params")
+          self.add_opt_boolean(:ask_options,"ask even optional options")
+          self.parse_options!
+        end
         @unprocessed_cmd_line_options=[]
         @unprocessed_cmd_line_arguments=[]
         process_options=true
@@ -415,8 +418,11 @@ module Asperalm
         unknown_options=[]
         begin
           # remove known options one by one, exception if unknown
+          Log.log.debug("before parse".red)
           @parser.parse!(@unprocessed_cmd_line_options)
+          Log.log.debug("After parse".red)
         rescue OptionParser::InvalidOption => e
+          Log.log.debug("InvalidOption #{e}".red)
           # save for later processing
           unknown_options.push(e.args.first)
           retry
