@@ -18,7 +18,7 @@ function FindProxyForURL(url, host)
 	dnsDomainIs(host, ".example3.com") ||
 	(host == "example3.com"))
 	{
-	return 'DIRECT';
+		return 'DIRECT';
 	}
 	 
 	/* Don't proxy Windows Update */
@@ -32,27 +32,28 @@ function FindProxyForURL(url, host)
 	(dnsDomainIs(host, ".update.microsoft.com")) ||
 	(dnsDomainIs(host, ".windowsupdate.com")))
 	{
-	return 'DIRECT';
+		return 'DIRECT';
 	}
 	 
 	if (isResolvable(host))
 	{
-	var hostIP = dnsResolve(host);
-	 
-	/* Don't proxy non-routable addresses (RFC 3330) */
-	if (isInNet(hostIP, '0.0.0.0', '255.0.0.0') ||
-	isInNet(hostIP, '10.0.0.0', '255.0.0.0') ||
-	isInNet(hostIP, '127.0.0.0', '255.0.0.0') ||
-	isInNet(hostIP, '169.254.0.0', '255.255.0.0') ||
-	isInNet(hostIP, '172.16.0.0', '255.240.0.0') ||
-	isInNet(hostIP, '192.0.2.0', '255.255.255.0') ||
-	isInNet(hostIP, '192.88.99.0', '255.255.255.0') ||
-	isInNet(hostIP, '192.168.0.0', '255.255.0.0') ||
-	isInNet(hostIP, '198.18.0.0', '255.254.0.0') ||
-	isInNet(hostIP, '224.0.0.0', '240.0.0.0') ||
-	isInNet(hostIP, '240.0.0.0', '240.0.0.0'))
-	{
-	return 'DIRECT';
+		var hostIP = dnsResolve(host);
+		 
+		/* Don't proxy non-routable addresses (RFC 3330) */
+		if (isInNet(hostIP, '0.0.0.0', '255.0.0.0') ||
+		isInNet(hostIP, '10.0.0.0', '255.0.0.0') ||
+		isInNet(hostIP, '127.0.0.0', '255.0.0.0') ||
+		isInNet(hostIP, '169.254.0.0', '255.255.0.0') ||
+		isInNet(hostIP, '172.16.0.0', '255.240.0.0') ||
+		isInNet(hostIP, '192.0.2.0', '255.255.255.0') ||
+		isInNet(hostIP, '192.88.99.0', '255.255.255.0') ||
+		isInNet(hostIP, '192.168.0.0', '255.255.0.0') ||
+		isInNet(hostIP, '198.18.0.0', '255.254.0.0') ||
+		isInNet(hostIP, '224.0.0.0', '240.0.0.0') ||
+		isInNet(hostIP, '240.0.0.0', '240.0.0.0'))
+		{
+		return 'DIRECT';
+		}
 	}
 	 
 	if (url.substring(0, 5) == 'http:' ||
