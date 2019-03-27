@@ -7,14 +7,14 @@ require 'asperalm/ssh'
 
 #Asperalm::Log.level=:debug
 
-PATH_FOLDER_MAIN='/'
-demo_executor=Asperalm::Ssh.new('eudemo.asperademo.com','asperaweb',{:password=>'demoaspera',:port=>33001})
-
 class LocalExecutor
   def execute(cmd,line)
     `echo "#{line}"|#{cmd}`
   end
 end
+
+PATH_FOLDER_MAIN='/'
+demo_executor=Asperalm::Ssh.new('eudemo.asperademo.com','asperaweb',{:password=>'demoaspera',:port=>33001})
 
 #PATH_FOLDER_MAIN='/workspace/Rubytools/asperalm/local/PATH_FOLDER_MAIN'
 #demo_executor=LocalExecutor.new
@@ -30,7 +30,13 @@ PATH_FILE_RENAMED=File.join(PATH_FOLDER_DEST,NAME_FILE1+'.renamed')
 
 RSpec.describe Asperalm::Cli::Main do
   it "has a version number" do
-    expect(Asperalm::Cli::Main.version).not_to be(nil)
+    expect(Asperalm::Cli::Main.gem_version).not_to be(nil)
+  end
+end
+
+RSpec.describe Asperalm::ProxyAutoConfig do
+  it "works" do
+    expect(Asperalm::ProxyAutoConfig.new(Asperalm::UriReader.read('file:///./examples/proxy.pac')).get_proxy('http://eudemo.asperademo.com')).to eq("PROXY wcg1.example.com:8080")
   end
 end
 
