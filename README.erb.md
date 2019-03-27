@@ -640,6 +640,17 @@ a text editor for file edition.
 * `--ui=text` forces a text environment, the URL or file path to open is displayed on
 terminal.
 
+## Proxy Auto Configuration 
+
+The `pac` options allows specification of a "PAC" file, by its URL. Supported schemes are : http:, https: and file:.
+
+The PAC file can be tested with command: `config proxy_check` , example:
+
+```
+$ <%=cmd%> config proxy_check --pac=file:///./proxy.pac http://www.example.com
+PROXY proxy.example.com:8080
+```
+
 ## <a name="agents"></a>Transfer Agents
 
 Some of the actions on Aspera Applications lead to file transfers (upload and download) using the FASP protocol (`ascp`).
