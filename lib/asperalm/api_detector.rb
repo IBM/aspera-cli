@@ -2,6 +2,7 @@ require 'asperalm/log'
 require 'asperalm/rest'
 
 module Asperalm
+  # detect Aspera product by calling API
   class ApiDetector
     def self.discover_product(url)
       #uri=URI.parse(url)
