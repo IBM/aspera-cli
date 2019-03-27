@@ -2003,7 +2003,8 @@ Gems, or remove your ed25519 key from your `.ssh` folder to solve the issue. Not
 
 * version 0.9.27
 
-	* can send email with SMTP
+	* basic email support with SMTP
+	* basic proxy auto config support
 
 * version 0.9.26
 
