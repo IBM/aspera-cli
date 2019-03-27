@@ -81,56 +81,60 @@ module Asperalm
         @option_flat_hash=true
         @option_table_style=':.:'
         @plugin_env={}
-        @plugin_env[:options]=Manager.new(self.program_name)
+        @help_url='http://www.rubydoc.info/gems/'+GEM_NAME
+        @gem_url='https://rubygems.org/gems/'+GEM_NAME
+        @plugin_env[:options]=@opt_mgr=Manager.new(self.program_name,argv,app_banner())
         @plugin_env[:formater]=Formater.new(@plugin_env[:options])
+        # must override help methods before parser called (in other constructors)
+        init_global_options()
+        @opt_mgr.add_opt_switch(:help,"-h","Show this message.") { @option_help=true }
         @plugin_env[:transfer]=TransferAgent.new(@plugin_env)
-        @plugin_env[:config]=Plugins::Config.new(@plugin_env,self.program_name,GEM_NAME,self.class.gem_version)
-        @opt_mgr=@plugin_env[:options]
+        @plugin_env[:transfer].declare_transfer_options
+        @opt_mgr.parse_options!
+        @plugin_env[:config]=Plugins::Config.new(@plugin_env,self.program_name,@help_url,self.class.gem_version)
+        Log.log.debug('created plugin env'.red)
         # give command line arguments to option manager (no parsing)
-        @opt_mgr.add_cmd_line_options(argv)
         # set application folder for modules
         PersistencyFile.default_folder=@plugin_env[:config].main_folder
         Oauth.persistency_folder=@plugin_env[:config].main_folder
         Fasp::Parameters.file_list_folder=File.join(@plugin_env[:config].main_folder,'filelists')
       end
 
-      # local options
-      def declare_options_initial
-        @opt_mgr.parser.banner = "NAME\n\t#{self.program_name} -- a command line tool for Aspera Applications (v#{self.class.gem_version})\n\n"
-        @opt_mgr.parser.separator "SYNOPSIS"
-        @opt_mgr.parser.separator "\t#{self.program_name} COMMANDS [OPTIONS] [ARGS]"
-        @opt_mgr.parser.separator ""
-        @opt_mgr.parser.separator "DESCRIPTION"
-        @opt_mgr.parser.separator "\tUse Aspera application to perform operations on command line."
-        @opt_mgr.parser.separator "\tDocumentation and examples: #{@plugin_env[:config].gem_url}"
-        @opt_mgr.parser.separator "\texecute: #{self.program_name} conf doc"
-        @opt_mgr.parser.separator ""
-        @opt_mgr.parser.separator "COMMANDS"
-        @opt_mgr.parser.separator "\tFirst level commands: #{@plugin_env[:config].plugins.keys.map {|x| x.to_s}.join(', ')}"
-        @opt_mgr.parser.separator "\tNote that commands can be written shortened (provided it is unique)."
-        @opt_mgr.parser.separator ""
-        @opt_mgr.parser.separator "OPTIONS"
-        @opt_mgr.parser.separator "\tOptions begin with a '-' (minus), and value is provided on command line.\n"
-        @opt_mgr.parser.separator "\tSpecial values are supported beginning with special prefix, like: #{ExtendedValue.instance.modifiers.map{|m|"@#{m}:"}.join(' ')}.\n"
-        @opt_mgr.parser.separator "\tDates format is 'DD-MM-YY HH:MM:SS', or 'now' or '-<num>h'"
-        @opt_mgr.parser.separator ""
-        @opt_mgr.parser.separator "ARGS"
-        @opt_mgr.parser.separator "\tSome commands require mandatory arguments, e.g. a path.\n"
-        @opt_mgr.parser.separator ""
-        @opt_mgr.parser.separator "OPTIONS: global"
+      def app_banner
+        banner = "NAME\n\t#{self.program_name} -- a command line tool for Aspera Applications (v#{self.class.gem_version})\n\n"
+        banner << "SYNOPSIS\n"
+        banner << "\t#{self.program_name} COMMANDS [OPTIONS] [ARGS]\n"
+        banner << "\n"
+        banner << "DESCRIPTION\n"
+        banner << "\tUse Aspera application to perform operations on command line.\n"
+        banner << "\tDocumentation and examples: #{@gem_url}\n"
+        banner << "\texecute: #{self.program_name} conf doc\n"
+        banner << "\tor visit: #{@help_url}\n"
+        banner << "\n"
+        banner << "COMMANDS\n"
+        banner << "\tTo list first level commands, execute: #{self.program_name}\n"
+        banner << "\tNote that commands can be written shortened (provided it is unique).\n"
+        banner << "\n"
+        banner << "OPTIONS\n"
+        banner << "\tOptions begin with a '-' (minus), and value is provided on command line.\n"
+        banner << "\tSpecial values are supported beginning with special prefix, like: #{ExtendedValue.instance.modifiers.map{|m|"@#{m}:"}.join(' ')}.\n"
+        banner << "\tDates format is 'DD-MM-YY HH:MM:SS', or 'now' or '-<num>h'\n\n"
+        banner << "ARGS\n"
+        banner << "\tSome commands require mandatory arguments, e.g. a path.\n"
+      end
+      # define header for manual
+      def init_global_options
+        Log.log.debug("init_global_options")
         @opt_mgr.set_obj_attr(:table_style,self,:option_table_style)
         @opt_mgr.add_opt_simple(:table_style,"table display style, current=#{@option_table_style}")
-        @opt_mgr.add_opt_switch(:help,"Show this message.","-h") { @option_help=true }
+        @opt_mgr.add_opt_switch(:help,"-h","Show this message.") { @option_help=true }
         @opt_mgr.add_opt_switch(:bash_comp,"generate bash completion for command") { @bash_completion=true }
         @opt_mgr.add_opt_switch(:show_config, "Display parameters used for the provided action.") { @option_show_config=true }
         @opt_mgr.add_opt_switch(:rest_debug,"-r","more debug for HTTP calls") { Rest.debug=true }
-        @opt_mgr.add_opt_switch(:version,"-v","display version") { @plugin_env[:formater].display_message(:data,self.class.gem_version);Process.exit(0) }
+        @opt_mgr.add_opt_switch(:version,'-v','display version') { @plugin_env[:formater].display_message(:data,self.class.gem_version);Process.exit(0) }
         @opt_mgr.add_opt_switch(:warnings,"-w","check for language warnings") { $VERBOSE=true }
         @opt_mgr.add_opt_list(:display,self.class.display_levels,"output only some information")
         @opt_mgr.set_option(:display,:info)
-      end
-
-      def declare_options_global
         # handler must be set before declaration
         @opt_mgr.set_obj_attr(:log_level,Log.instance,:level)
         @opt_mgr.set_obj_attr(:logger,Log.instance,:logger_type)
@@ -138,7 +142,6 @@ module Asperalm
         @opt_mgr.set_obj_attr(:flat_hash,self,:option_flat_hash)
         @opt_mgr.set_obj_attr(:ui,self,:option_ui)
         @opt_mgr.set_obj_attr(:preset,self,:option_preset)
-
         @opt_mgr.add_opt_list(:ui,OpenApplication.user_interfaces,'method to start browser')
         @opt_mgr.add_opt_list(:log_level,Log.levels,"Log level")
         @opt_mgr.add_opt_list(:logger,Log.logtypes,"log method")
@@ -153,11 +156,12 @@ module Asperalm
         @opt_mgr.add_opt_boolean(:insecure,"do not validate HTTPS certificate")
         @opt_mgr.add_opt_boolean(:flat_hash,"display hash values as additional keys")
         @opt_mgr.add_opt_boolean(:once_only,"process only new items (some commands)")
-
         @opt_mgr.set_option(:ui,OpenApplication.default_gui_mode)
         @opt_mgr.set_option(:fields,FIELDS_DEFAULT)
         @opt_mgr.set_option(:format,:table)
         @opt_mgr.set_option(:once_only,:false)
+        # parse declared options
+        @opt_mgr.parse_options!
       end
 
       # @return the plugin instance, based on name
@@ -386,13 +390,12 @@ module Asperalm
             # override main option parser with a brand new, to avoid having global options
             plugin_env=@plugin_env.clone
             plugin_env[:man_only]=true
-            plugin_env[:options]=Manager.new(self.program_name)
-            plugin_env[:options].parser.banner = ""
+            plugin_env[:options]=Manager.new(self.program_name,[],'')
             get_plugin_instance_with_options(plugin_name_sym,plugin_env)
+            # display generated help for plugin options
             @plugin_env[:formater].display_message(:error,plugin_env[:options].parser.to_s)
           end
         end
-        @plugin_env[:formater].display_message(:error,"\nDocumentation : #{@plugin_env[:config].help_url}")
         Process.exit(0)
       end
 
@@ -434,16 +437,9 @@ module Asperalm
 
       # this is the main function called by initial script just after constructor
       def process_command_line
+        Log.log.debug('process_command_line')
         exception_info=nil
         begin
-          # declare initial options
-          declare_options_initial
-          # parse declared options
-          @opt_mgr.parse_options!
-          # declare general options
-          declare_options_global
-          @plugin_env[:transfer].declare_transfer_options
-          @opt_mgr.parse_options!
           # find plugins, shall be after parse! ?
           @plugin_env[:config].add_plugins_from_lookup_folders
           # help requested without command ? (plugins must be known here)
