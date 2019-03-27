@@ -22,14 +22,6 @@ module Asperalm
         @agent=nil
         # source/destination pair, like "paths" of transfer spec
         @transfer_paths=nil
-      end
-      public
-
-      def option_transfer_spec; @transfer_spec_cmdline; end
-
-      def option_transfer_spec=(value); @transfer_spec_cmdline.merge!(value); end
-
-      def declare_transfer_options
         @env[:options].set_obj_attr(:ts,self,:option_transfer_spec)
         @env[:options].add_opt_simple(:ts,"override transfer spec values (Hash, use @json: prefix), current=#{@env[:options].get_option(:ts,:optional)}")
         @env[:options].add_opt_simple(:to_folder,"destination folder for downloaded files")
@@ -37,7 +29,13 @@ module Asperalm
         @env[:options].add_opt_list(:transfer,[:direct,:connect,:node,:aoc],"type of transfer")
         @env[:options].add_opt_simple(:transfer_info,"additional information for transfer client")
         @env[:options].set_option(:transfer,:direct)
+        @env[:options].parse_options!
       end
+      public
+
+      def option_transfer_spec; @transfer_spec_cmdline; end
+
+      def option_transfer_spec=(value); @transfer_spec_cmdline.merge!(value); end
 
       # @return one of the Fasp:: agents based on parameters
       def set_agent_by_options

@@ -83,8 +83,6 @@ module Asperalm
         init_global_options()
         @opt_mgr.add_opt_switch(:help,"-h","Show this message.") { @option_help=true }
         @plugin_env[:transfer]=TransferAgent.new(@plugin_env)
-        @plugin_env[:transfer].declare_transfer_options
-        @opt_mgr.parse_options!
         @plugin_env[:config]=Plugins::Config.new(@plugin_env,self.program_name,@help_url,self.class.gem_version)
         Log.log.debug('created plugin env'.red)
         # give command line arguments to option manager (no parsing)
