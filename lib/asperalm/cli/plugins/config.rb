@@ -40,15 +40,15 @@ module Asperalm
         CONNECT_VERSIONS = 'connectversions.js'
 
         private_constant :ASPERA_HOME_FOLDER_NAME,:DEFAULT_CONFIG_FILENAME,:CONF_PRESET_CONFIG,:CONF_PRESET_VERSION,:CONF_PRESET_DEFAULT,:OLD_PROGRAM_NAME,:DEFAULT_REDIRECT,:ASPERA_PLUGINS_FOLDERNAME,:GEM_PLUGINS_FOLDER,:RUBY_FILE_EXT,:OLD_AOC_COMMAND,:NEW_AOC_COMMAND
-        def initialize(env,tool_name,gem_name,version)
+        def initialize(env,tool_name,help_url,version)
           super(env)
           @plugins={}
           @plugin_lookup_folders=[]
           @use_plugin_defaults=true
           @config_presets=nil
           @program_version=version
-          @gem_name=gem_name
           @tool_name=tool_name
+          @help_url=help_url
           @main_folder=File.join(Dir.home,ASPERA_HOME_FOLDER_NAME,tool_name)
           @old_main_folder=File.join(Dir.home,ASPERA_HOME_FOLDER_NAME,OLD_PROGRAM_NAME)
           if Dir.exist?(@old_main_folder) and ! Dir.exist?(@main_folder)
@@ -56,8 +56,6 @@ module Asperalm
             FileUtils.mv(@old_main_folder, @main_folder)
           end
           @option_config_file=File.join(@main_folder,DEFAULT_CONFIG_FILENAME)
-          @help_url='http://www.rubydoc.info/gems/'+@gem_name
-          @gem_url='https://rubygems.org/gems/'+@gem_name
           @connect_versions=nil
           # set folder where generated FASP files are
           Fasp::Installation.instance.config_folder=@main_folder
@@ -147,7 +145,6 @@ module Asperalm
         # $HOME/.aspera/`program_name`
         attr_reader :main_folder
         attr_reader :gem_url
-        attr_reader :help_url
         attr_reader :plugins
         attr_accessor :option_override
         attr_accessor :option_config_file
