@@ -57,12 +57,6 @@ module Asperalm
 
       def option_ui=(value); OpenApplication.instance.url_method=value; end
 
-      def option_preset; nil; end
-
-      def option_preset=(value)
-        @opt_mgr.add_option_preset(@plugin_env[:config].preset_by_name(value))
-      end
-
       attr_accessor :option_flat_hash
       attr_accessor :option_table_style
 
@@ -141,12 +135,10 @@ module Asperalm
         @opt_mgr.set_obj_attr(:insecure,self,:option_insecure,:no)
         @opt_mgr.set_obj_attr(:flat_hash,self,:option_flat_hash)
         @opt_mgr.set_obj_attr(:ui,self,:option_ui)
-        @opt_mgr.set_obj_attr(:preset,self,:option_preset)
         @opt_mgr.add_opt_list(:ui,OpenApplication.user_interfaces,'method to start browser')
         @opt_mgr.add_opt_list(:log_level,Log.levels,"Log level")
         @opt_mgr.add_opt_list(:logger,Log.logtypes,"log method")
         @opt_mgr.add_opt_list(:format,self.class.display_formats,"output format")
-        @opt_mgr.add_opt_simple(:preset,"-PVALUE","load the named option preset from current config file")
         @opt_mgr.add_opt_simple(:fields,"comma separated list of fields, or #{FIELDS_ALL}, or #{FIELDS_DEFAULT}")
         @opt_mgr.add_opt_simple(:select,"select only some items in lists, extended value: hash (colum, value)")
         @opt_mgr.add_opt_simple(:fasp_proxy,"URL of FASP proxy (dnat / dnats)")

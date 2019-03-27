@@ -39,6 +39,12 @@ module Asperalm
         CONNECT_WEB_URL = 'https://d3gcli72yxqn2z.cloudfront.net/connect'
         CONNECT_VERSIONS = 'connectversions.js'
 
+        def option_preset; nil; end
+  
+        def option_preset=(value)
+          self.options.add_option_preset(preset_by_name(value))
+        end
+
         private_constant :ASPERA_HOME_FOLDER_NAME,:DEFAULT_CONFIG_FILENAME,:CONF_PRESET_CONFIG,:CONF_PRESET_VERSION,:CONF_PRESET_DEFAULT,:OLD_PROGRAM_NAME,:DEFAULT_REDIRECT,:ASPERA_PLUGINS_FOLDERNAME,:GEM_PLUGINS_FOLDER,:RUBY_FILE_EXT,:OLD_AOC_COMMAND,:NEW_AOC_COMMAND
         def initialize(env,tool_name,help_url,version)
           super(env)
@@ -72,6 +78,7 @@ module Asperalm
           self.options.set_obj_attr(:override,self,:option_override,:no)
           self.options.set_obj_attr(:ascp_path,self,:option_ascp_path)
           self.options.set_obj_attr(:use_product,self,:option_use_product)
+          self.options.set_obj_attr(:preset,self,:option_preset)
           self.options.add_opt_boolean(:override,"override existing value")
           self.options.add_opt_switch(:no_default,"-N","do not load default configuration for plugin") { @use_plugin_defaults=false }
           self.options.add_opt_boolean(:use_generic_client,'wizard: AoC: use global or org specific jwt client id')
@@ -80,6 +87,7 @@ module Asperalm
           self.options.add_opt_simple(:use_product,"use ascp from specified product")
           self.options.add_opt_simple(:smtp,"smtp configuration (extended value: hash)")
           self.options.add_opt_simple(:pac,"proxy auto configuration URL")
+          self.options.add_opt_simple(:preset,"-PVALUE","load the named option preset from current config file")
           self.options.set_option(:use_generic_client,true)
           self.options.parse_options!
         end
