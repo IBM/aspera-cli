@@ -42,7 +42,7 @@ clean::
 	rm -f README.pdf README.html README.md $(INCL_COMMANDS) $(INCL_USAGE) $(INCL_ASESSION) $(TEST_CONFIG)
 	rm -fr contents t doc out "PKG - "*
 	mkdir t out
-	rm -f 200KB* *AsperaConnect-ML* sample.conf*
+	rm -f 200KB* *AsperaConnect-ML* sample.conf* .DS_Store 
 	gem uninstall -a -x $(GEMNAME)
 cleanupgems:
 	gem uninstall -a -x $(gem list|cut -f 1 -d' '|egrep -v 'rdoc|psych|rake|openssl|json|io-console|bigdecimal')
