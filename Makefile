@@ -34,9 +34,6 @@ NODE_PASS=Aspera123_
 
 all:: gem
 
-test:
-	bundle exec rake spec
-
 clean::
 	rm -f $(GEMNAME)-*.gem $(SRCZIPBASE)*.zip *.log token.* preview.png aspera_bypass_*.pem sample_file.txt
 	rm -f README.pdf README.html README.md $(INCL_COMMANDS) $(INCL_USAGE) $(INCL_ASESSION) $(TEST_CONFIG)
@@ -127,6 +124,9 @@ clean::
 $(TEST_FOLDER)/.exists:
 	mkdir -p $(TEST_FOLDER)
 	@touch $(TEST_FOLDER)/.exists
+t/unit:
+	bundle exec rake spec
+	@touch $@
 t/sh1:
 	$(EXETEST) shares repository browse /
 	@touch $@
@@ -135,7 +135,7 @@ t/sh2: $(TEST_FOLDER)/.exists
 	$(EXETEST) shares repository download --to-folder=$(TEST_FOLDER) --sources=@args /$(TEST_SHARE)/200KB.1
 	$(EXETEST) shares repository delete /$(TEST_SHARE)/200KB.1
 	@touch $@
-tshares: t/sh1 t/sh2
+tshares: t/sh1 t/sh2 t/unit
 
 t/fp1: $(TEST_FOLDER)/.exists
 	$(EXETEST) server browse /
