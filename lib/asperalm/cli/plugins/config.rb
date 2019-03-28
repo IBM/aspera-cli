@@ -460,7 +460,7 @@ module Asperalm
             appli=ApiDetector.discover_product(instance_url)
             case appli[:product]
             when :aoc
-              self.format.display_status("Detected: Aspera on Cloud")
+              self.format.display_status("Detected: Aspera on Cloud".bold)
               organization,instance_domain=OnCloud.parse_url(instance_url)
               aspera_preset_name='aoc_'+organization
               self.format.display_status("Preparing preset: #{aspera_preset_name}")
