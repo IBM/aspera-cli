@@ -36,6 +36,9 @@ module Asperalm
       Base64.strict_decode64(RANDOM_CLIENT.reverse).split(':')
     end
 
+    # @param url of AoC instance
+    # @return organization id and AoC domain
+    # AoC domain is: ibmaspera.com, asperafiles.com or qa.asperafiles.com, etc...
     def self.parse_url(aoc_org_url)
       uri=URI.parse(aoc_org_url.gsub(/\/+$/,''))
       instance_fqdn=uri.host
@@ -48,8 +51,8 @@ module Asperalm
       return organization,instance_domain
     end
 
-    # get necessary fixed information to create JWT or call API
-    # instance domain is: ibmaspera.com, asperafiles.com or qa.asperafiles.com, etc...
+    # @param url of AoC instance
+    # @return necessary fixed information to create JWT or call API
     def self.base_rest_params(aoc_org_url)
       organization,instance_domain=parse_url(aoc_org_url)
       base_url='https://api.'+instance_domain+'/api/v1'
@@ -78,6 +81,8 @@ module Asperalm
 
     attr_reader :secrets
 
+    # @param send or receive
+    # @return upload or download
     def direction_to_operation(direction)
       case direction
       when 'send';    return 'upload'
@@ -90,10 +95,11 @@ module Asperalm
     # - transfer spec for aspera on cloud, based on node information and file id
     # - source and token regeneration method
     def tr_spec(app,direction,node_file,ws_id,ws_name,ts_add)
-      # the rest end point is used to generate the bearer token
+      # prepare the rest end point is used to generate the bearer token
       token_generation_method=lambda {|do_refresh|self.oauth_token(scope: self.class.node_scope(node_file[:node_info]['access_key'],SCOPE_NODE_USER), refresh: do_refresh)}
+      # prepare transfer specification
       # note xfer_id and xfer_retry are set by the transfer agent itself
-      return {
+      transfer_spec={
         'direction'   => direction,
         'remote_user' => 'xfer',
         'remote_host' => node_file[:node_info]['host'],
@@ -116,15 +122,20 @@ module Asperalm
         } # node
         } # aspera
         } # tags
-      }.deep_merge!(ts_add),{
+      }
+      # add caller provided transfer spec
+      transfer_spec.deep_merge!(ts_add)
+      # additional information for transfer agent
+      source_and_token_generator={
         :src              => :node_gen4,
         :regenerate_token => token_generation_method
       }
+      return transfer_spec,source_and_token_generator
     end
-    
+
     # returns a node API for access key
     # no scope: requires secret
-    # if secret present: use it
+    # if secret provided beforehand: use it
     def get_files_node_api(node_info,node_scope=nil)
       node_rest_params={
         :base_url => node_info['url'],
@@ -148,7 +159,8 @@ module Asperalm
       return Rest.new(node_rest_params)
     end
 
-    # check type, but returns split values
+    # check that parameter has necessary types
+    # @return split values
     def check_get_node_file(node_file)
       raise "node_file must be Hash (got #{node_file.class})" unless node_file.is_a?(Hash)
       raise "node_file must have 2 keys: :file_id and :node_info" unless node_file.keys.sort.eql?([:file_id,:node_info])
@@ -161,16 +173,14 @@ module Asperalm
     end
 
     # @returns list of file paths that match given regex
-    def find_files( top_node_file, element_regex )
+    def find_files( top_node_file, test_block )
       top_node_info,top_file_id=check_get_node_file(top_node_file)
-      Log.log.debug("find_files: node_info=#{top_node_info}, fileid=#{top_file_id}, regex=#{element_regex}")
+      Log.log.debug("find_files: node_info=#{top_node_info}, fileid=#{top_file_id}")
       result=[]
       top_node_api=get_files_node_api(top_node_info,SCOPE_NODE_USER)
       # initialize loop elements : list of folders to scan
-      items_to_explore=[{:node_api=>top_node_api,:folder_id=>top_file_id,:path=>''}]
       # Note: top file id is necessarily a folder
-      regex=/#{element_regex}/
-      test_block=lambda{|filename|filename.match(regex)}
+      items_to_explore=[{:node_api=>top_node_api,:folder_id=>top_file_id,:path=>''}]
 
       while !items_to_explore.empty? do
         current_item = items_to_explore.shift
@@ -188,7 +198,7 @@ module Asperalm
           item_path=File.join(current_item[:path],current_file_info['name'])
           Log.log.debug("looking #{item_path}".bg_green)
           begin
-            result.push(current_file_info.merge({'path'=>item_path})) if test_block.call(current_file_info['name'])
+            result.push(current_file_info.merge({'path'=>item_path})) if test_block.call(current_file_info)
             # process type of file
             case current_file_info['type']
             when 'file'

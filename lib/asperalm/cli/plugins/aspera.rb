@@ -56,10 +56,9 @@ module Asperalm
           update_aoc_api
         end
 
-        # starts transfer using agent
-        # adds workspace info for activity tracking
-        def transfer_start(api_aoc,app,direction,node_file,ts_add)
-          return self.transfer.start(*api_aoc.tr_spec(app,direction,node_file,@workspace_id,@workspace_name,ts_add))
+        # starts transfer using transfer agent
+        def transfer_start(app,direction,node_file,ts_add)
+          return self.transfer.start(*@api_aoc.tr_spec(app,direction,node_file,@workspace_id,@workspace_name,ts_add))
         end
 
         def execute_node_gen4_action(top_node_file)
@@ -77,7 +76,9 @@ module Asperalm
             thepath=self.options.get_next_argument('path')
             regex=self.options.get_option(:value,:optional)||''
             node_file=@api_aoc.resolve_node_file(top_node_file,thepath)
-            return {:type=>:object_list,:data=>@api_aoc.find_files(node_file,regex),:fields=>['path']}
+            # currently: test filename only
+            test_block=lambda{|current_file_info|current_file_info['name'].match(/#{regex}/)}
+            return {:type=>:object_list,:data=>@api_aoc.find_files(node_file,test_block),:fields=>['path']}
           when :mkdir
             thepath=self.options.get_next_argument('path')
             containing_folder_path = thepath.split(OnCloud::PATH_SEPARATOR)
@@ -124,11 +125,11 @@ module Asperalm
               #'destination_root_id' => node_file_server[:file_id],
               'source_root_id'      => node_file_client[:file_id]
             }
-            return Main.result_transfer(transfer_start(@api_aoc,'files',client_tr_oper,node_file_server,add_ts))
+            return Main.result_transfer(transfer_start('files',client_tr_oper,node_file_server,add_ts))
           when :upload
             node_file = @api_aoc.resolve_node_file(top_node_file,self.transfer.destination_folder('send'))
             add_ts={'tags'=>{'aspera'=>{'files'=>{'parentCwd'=>"#{node_file[:node_info]['id']}:#{node_file[:file_id]}"}}}}
-            return Main.result_transfer(transfer_start(@api_aoc,'files','send',node_file,add_ts))
+            return Main.result_transfer(transfer_start('files','send',node_file,add_ts))
           when :download
             source_paths=self.transfer.ts_source_paths
             # special case for AoC : all files must be in same folder
@@ -143,7 +144,7 @@ module Asperalm
             # override paths with just filename
             add_ts={'tags'=>{'aspera'=>{'files'=>{'parentCwd'=>"#{node_file[:node_info]['id']}:#{node_file[:file_id]}"}}}}
             add_ts.merge!({'paths'=>source_paths})
-            return Main.result_transfer(transfer_start(@api_aoc,'files','receive',node_file,add_ts))
+            return Main.result_transfer(transfer_start('files','receive',node_file,add_ts))
           when :http_node_download
             source_paths=self.transfer.ts_source_paths
             source_folder=source_paths.shift['source']
@@ -413,7 +414,7 @@ module Asperalm
 
               # execute transfer
               node_file = {node_info: node_info, file_id: package_info['contents_file_id']}
-              return Main.result_transfer(transfer_start(@api_aoc,'packages','send',node_file,package_tags(package_info,'upload')))
+              return Main.result_transfer(transfer_start('packages','send',node_file,package_tags(package_info,'upload')))
             when :recv
               # scalar here
               ids_to_download=self.options.get_option(:id,:mandatory)
@@ -442,7 +443,7 @@ module Asperalm
                 self.format.display_status("downloading package: #{package_info['name']}")
                 add_ts={'paths'=>[{'source'=>'.'}]}
                 node_file = {node_info: node_info, file_id: package_info['contents_file_id']}
-                statuses=transfer_start(@api_aoc,'packages','receive',node_file,package_tags(package_info,'download').merge(add_ts))
+                statuses=transfer_start('packages','receive',node_file,package_tags(package_info,'download').merge(add_ts))
                 result_transfer.push({'package'=>package_id,'status'=>statuses.map{|i|i.to_s}.join(',')})
                 # update skip list only if all sessions completed
                 skip_ids_data.push(package_id) if TransferAgent.session_status(statuses).eql?(:success)
