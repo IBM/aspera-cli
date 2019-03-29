@@ -86,7 +86,7 @@ module Asperalm
           self.options.add_opt_simple(:ascp_path,"path to ascp")
           self.options.add_opt_simple(:use_product,"use ascp from specified product")
           self.options.add_opt_simple(:smtp,"smtp configuration (extended value: hash)")
-          self.options.add_opt_simple(:pac,"proxy auto configuration URL")
+          self.options.add_opt_simple(:fpac,"proxy auto configuration URL")
           self.options.add_opt_simple(:preset,"-PVALUE","load the named option preset from current config file")
           self.options.set_option(:use_generic_client,true)
           self.options.parse_options!
@@ -618,7 +618,7 @@ module Asperalm
           when :smtp_settings
             return {:type=>:single_object,:data=>email_settings}
           when :proxy_check
-            pac_url=self.options.get_option(:pac,:mandatory)
+            pac_url=self.options.get_option(:fpac,:mandatory)
             server_url=self.options.get_next_argument("server url")
             return Main.result_status(Asperalm::ProxyAutoConfig.new(UriReader.read(pac_url)).get_proxy(server_url))
           else raise "error"
