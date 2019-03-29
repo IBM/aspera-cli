@@ -549,7 +549,7 @@ t/conf_smtp:
 	$(EXETEST) config email_test aspera.user1@gmail.com
 	@touch $@
 t/conf_pac:
-	$(EXETEST) config proxy_check --pac=file:///./examples/proxy.pac https://eudemo.asperademo.com
+	$(EXETEST) config proxy_check --fpac=file:///./examples/proxy.pac https://eudemo.asperademo.com
 	@touch $@
 tconf: t/conf_id_1 t/conf_id_2 t/conf_id_3 t/conf_id_4 t/conf_id_5 t/conf_id_6 t/conf_open t/conf_list t/conf_over t/conf_help t/conf_open_err t/conf_plugins t/conf_export t/conf_wizard_org t/conf_wizard_gen t/conf_genkey t/conf_smtp t/conf_pac
 
