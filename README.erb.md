@@ -640,14 +640,23 @@ a text editor for file edition.
 * `--ui=text` forces a text environment, the URL or file path to open is displayed on
 terminal.
 
-## Proxy Auto Configuration 
+## Using HTTP and FASP Proxy
 
-The `pac` options allows specification of a "PAC" file, by its URL. Supported schemes are : http:, https: and file:.
+A (forward) proxy may be used for two reasons:
+
+* HTTP/S requests
+* FASP transfers
+
+To specify a HTTP proxy, set the HTTP_PROXY environment variable.
+
+To specify a FASP proxy with "local" agent, set the appropriate transfer spec parameter or ascp parameter in transfer spec. (not possible tih node agent or connect agent).
+
+The `fpac` option allows specification of a Proxy Auto Configuration (PAC) file, by its URL for local FASP agent. Supported schemes are : http:, https: and file:.
 
 The PAC file can be tested with command: `config proxy_check` , example:
 
 ```
-$ <%=cmd%> config proxy_check --pac=file:///./proxy.pac http://www.example.com
+$ <%=cmd%> config proxy_check --fpac=file:///./proxy.pac http://www.example.com
 PROXY proxy.example.com:8080
 ```
 
