@@ -74,6 +74,7 @@ module Asperalm
           self.options.add_opt_boolean(:check_extension,"check extra file extensions")
           self.options.set_option(:file_access,:local)
           self.options.parse_options!
+          raise "skip_folder shall be an Array, use @json:[...]" unless @option_skip_folders.is_a?(Array)
         end
 
         # special tag to identify transfers related to generator
