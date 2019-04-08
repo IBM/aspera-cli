@@ -131,10 +131,8 @@ module Asperalm
       end
 
       def gen_video_reencode()
-        Utils.ffmpeg(@source,
-        [],
-        @destination,
-        ['-t','60',
+        Utils.ffmpeg(@source,[],@destination,[
+          '-t','60',
           '-codec:v','libx264',
           '-profile:v','high',
           '-pix_fmt','yuv420p',
