@@ -1,4 +1,3 @@
-require 'execjs'
 require 'uri'
 require 'resolv'
 require 'erb'
@@ -13,6 +12,8 @@ module Asperalm
 
     # get string representing proxy configuration
     def get_proxy(service_url)
+      # require at runtime, in case there is no js engine
+      require 'execjs'
       # set context for template
       context_self='127.0.0.1'
       context_host=URI.parse(service_url).host
