@@ -235,6 +235,7 @@ module Asperalm
         'vicar' => :image,
         'viff' => :image,
         'vsdx' => :office,
+        'webm' => :video,
         'wb2' => :office,
         'wk1' => :office,
         'wk3' => :office,
