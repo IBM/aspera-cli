@@ -94,7 +94,9 @@ module Asperalm
         else
           1.upto(multi_session) do |i|
             # do deep copy (each thread has its own copy because it is modified here below and in thread)
-            this_session=Marshal.load(Marshal.dump(session))
+            this_session=session.clone()
+            this_session[:env_args]=this_session[:env_args].clone()
+            this_session[:env_args][:args]=this_session[:env_args][:args].clone()
             this_session[:env_args][:args].unshift("-C#{i}:#{multi_session}")
             # check if this is necessary ? should be handled by server, this is in man page
             this_session[:env_args][:args].unshift("-O","#{multi_session_udp_port_base+i-1}")
