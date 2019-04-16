@@ -15,7 +15,7 @@ module Asperalm
           unless env[:skip_basic_auth_options]
             self.options.add_opt_simple(:validator,"identifier of validator (optional for central)")
             self.options.add_opt_simple(:asperabrowserurl,"URL for simple aspera web ui")
-            #self.options.set_option(:value,'@json:{"active_only":false}')
+            self.options.add_opt_simple(:name,"sync name")
             self.options.set_option(:asperabrowserurl,'https://asperabrowser.mybluemix.net')
             self.options.parse_options!
           end
@@ -69,11 +69,6 @@ module Asperalm
           return c_result_remove_prefix_path(resres,type,path_prefix)
         end
 
-        def c_delete_files(paths_to_delete,prefix_path)
-          resp=@api_node.create('files/delete',{:paths=>paths_to_delete.map{|i| {'path'=>i.start_with?('/') ? i : '/'+i} }})
-          return c_result_translate_rem_prefix(resp,'file','deleted',prefix_path)
-        end
-
         # get path arguments from command line, and add prefix
         def get_next_arg_add_prefix(path_prefix,name,number=:single)
           thepath=self.options.get_next_argument(name,number)
@@ -116,7 +111,8 @@ module Asperalm
             return { :type=>:single_object, :data => node_info, :textify => lambda { |table_data| c_textify_bool_list_result(table_data,['capabilities','settings'])}}
           when :delete
             paths_to_delete = get_next_arg_add_prefix(prefix_path,"file list",:multiple)
-            return c_delete_files(paths_to_delete,prefix_path)
+            resp=@api_node.create('files/delete',{:paths=>paths_to_delete.map{|i| {'path'=>i.start_with?('/') ? i : '/'+i} }})
+            return c_result_translate_rem_prefix(resp,'file','deleted',prefix_path)
           when :space
             # TODO: could be a list of path
             path_list=get_next_arg_add_prefix(prefix_path,"folder path or ext.val. list")
@@ -178,30 +174,88 @@ module Asperalm
           end
         end
 
+        def execute_async
+          command=self.options.get_next_command([:list,:delete,:files,:show,:counters,:bandwidth])
+          unless command.eql?(:list)
+            asyncname=self.options.get_option(:name,:optional)
+            if asyncname.nil?
+              asyncid=self.options.get_option(:id,:mandatory)
+              if asyncid.eql?('ALL') and [:show,:delete].include?(command)
+                asyncids=@api_node.read('async/list')[:data]['sync_ids']
+              else
+                Integer(asyncid) # must be integer
+                asyncids=[asyncid]
+              end
+            else
+              asyncids=@api_node.read('async/list')[:data]['sync_ids']
+              summaries=@api_node.create('async/summary',{'syncs' => asyncids})[:data]['sync_summaries']
+              selected=summaries.select{|s|s['name'].eql?(asyncname)}.first
+              raise "no such sync: #{asyncname}" if selected.nil?
+              asyncid=selected['snid']
+              asyncids=[asyncid]
+            end
+            pdata={'syncs' => asyncids}
+          end
+          case command
+          when :list
+            resp=@api_node.read('async/list')[:data]['sync_ids']
+            return { :type => :value_list, :data => resp, :name=>'id'  }
+          when :show
+            resp=@api_node.create('async/summary',pdata)[:data]['sync_summaries']
+            return Main.result_empty if resp.empty?
+            if asyncid.eql?('ALL')
+              return { :type => :object_list, :data => resp, :fields => ['snid','name','local_dir','remote_dir'] }
+            else
+              return { :type => :single_object, :data => resp.first }
+            end
+          when :delete
+            resp=@api_node.create('async/delete',pdata)[:data]
+            return { :type => :single_object, :data => resp, :name=>'id'  }
+          when :bandwidth
+            pdata['seconds']=100  # TODO: as parameter with --value
+            resp=@api_node.create('async/bandwidth',pdata)[:data]
+            data=resp['bandwidth_data']
+            return Main.result_empty if data.empty?
+            data=data.first[asyncid]['data']
+            return { :type => :object_list, :data => data, :name=>'id'  }
+          when :files
+            # count int
+            # filename str
+            # skip int
+            # status int
+            filter=self.options.get_option(:value,:optional)
+            pdata.merge!(filter) unless filter.nil?
+            resp=@api_node.create('async/files',pdata)[:data]
+            data=resp['sync_files']
+            data=data.first[asyncid] unless data.empty?
+            iteration_data=[]
+            skip_ids_persistency=nil
+            if self.options.get_option(:once_only,:mandatory)
+              skip_ids_persistency=PersistencyFile.new(
+              data: iteration_data,
+              ids:  ['sync_files',self.options.get_option(:url,:mandatory),self.options.get_option(:username,:mandatory),asyncid])
+              unless iteration_data.first.nil?
+                data.select!{|l| l['fnid'].to_i>iteration_data.first}
+              end
+              iteration_data[0]=data.last['fnid'].to_i unless data.empty?
+            end
+            return Main.result_empty if data.empty?
+            skip_ids_persistency.save unless skip_ids_persistency.nil?
+            return { :type => :object_list, :data => data, :name=>'id'  }
+          when :counters
+            resp=@api_node.create('async/counters',pdata)[:data]["sync_counters"].first[asyncid].last
+            return Main.result_empty if resp.nil?
+            return { :type => :single_object, :data => resp }
+          end
+        end
+
         ACTIONS=[ :postprocess,:stream, :transfer, :cleanup, :forward, :access_key, :watch_folder, :service, :async, :central, :asperabrowser ].concat(COMMON_ACTIONS)
 
         def execute_action(command=nil,prefix_path=nil)
           command||=self.options.get_next_command(ACTIONS)
           case command
           when *COMMON_ACTIONS; return execute_simple_common(command,prefix_path)
-          when :async
-            command=self.options.get_next_command([:list,:summary,:counters])
-            if [:summary,:counters].include?(command)
-              asyncid=self.options.get_option(:id,:mandatory)
-            end
-            case command
-            when :list
-              resp=@api_node.read('async/list')[:data]['sync_ids']
-              return { :type => :value_list, :data => resp, :name=>'id'  }
-            when :summary
-              resp=@api_node.create('async/summary',{"syncs"=>[asyncid]})[:data]["sync_summaries"].first
-              return Main.result_empty if resp.nil?
-              return { :type => :single_object, :data => resp }
-            when :counters
-              resp=@api_node.create('async/counters',{"syncs"=>[asyncid]})[:data]["sync_counters"].first[asyncid].last
-              return Main.result_empty if resp.nil?
-              return { :type => :single_object, :data => resp }
-            end
+          when :async; return execute_async()
           when :stream
             command=self.options.get_next_command([ :list, :create, :show, :modify, :cancel ])
             case command
