@@ -7,6 +7,7 @@ module Asperalm
       'alt_logdir'           => { :type => :opt_with_arg, :accepted_types=>String},
       'watchd'               => { :type => :opt_with_arg, :accepted_types=>String},
       'apply_local_docroot'  => { :type => :opt_without_arg},
+      'quiet'                => { :type => :opt_without_arg},
     }
     SESSION_PARAMS=
     {
