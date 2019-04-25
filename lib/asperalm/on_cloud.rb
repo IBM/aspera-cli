@@ -81,8 +81,8 @@ module Asperalm
 
     attr_reader :secrets
 
-    # @param send or receive
-    # @return upload or download
+    # @param send or receive (FASP transfer direction)
+    # @return upload or download (tag for AoC)
     def direction_to_operation(direction)
       case direction
       when 'send';    return 'upload'
