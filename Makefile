@@ -478,12 +478,19 @@ t/sy1:
 	$(EXETEST) node async list
 	@touch $@
 t/sy2:
-	$(EXETEST) node async --id=1 summary 
+	$(EXETEST) node async show --id=1
+	$(EXETEST) node async show --id=ALL
 	@touch $@
 t/sy3:
 	$(EXETEST) node async --id=1 counters 
 	@touch $@
-tnsync: t/sy1 t/sy2 t/sy3
+t/sy4:
+	$(EXETEST) node async --id=1 bandwidth 
+	@touch $@
+t/sy5:
+	$(EXETEST) node async --id=1 files 
+	@touch $@
+tnsync: t/sy1 t/sy2 t/sy3 t/sy4 t/sy5
 
 TEST_CONFIG=sample.conf
 t/conf_id_1:
