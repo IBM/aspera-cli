@@ -102,9 +102,10 @@ module Asperalm
       Log.log.info "new saved token is #{@token_cache[api_scope]['access_token']}"
     end
 
-    # get location of cache for token
+    # get location of cache for token, using some unique filename
     def token_filepath(api_scope)
-      parts=[@params[:client_id],URI.parse(@params[:base_url]).host.downcase.gsub(/[^a-z]+/,'_'),@params[:grant],api_scope]
+      oauth_uri=URI.parse(@params[:base_url])
+      parts=[oauth_uri.host.downcase.gsub(/[^a-z]+/,'_'),oauth_uri.path.downcase.gsub(/[^a-z]+/,'_'),@params[:grant],api_scope]
       parts.push(@params[:user_name]) if @params.has_key?(:user_name)
       basename=parts.dup.unshift(TOKEN_FILE_PREFIX).join(TOKEN_FILE_SEPARATOR)
       # remove windows forbidden chars
