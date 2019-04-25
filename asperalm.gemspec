@@ -8,7 +8,7 @@ Gem::Specification.new do |spec|
   spec.version       = Asperalm::Cli::Main::gem_version
   spec.authors       = ['Laurent Martin']
   spec.email         = ['laurent.martin.aspera@fr.ibm.com']
-  spec.summary       = 'gem and command line tool for Aspera Server products: Aspera Files, Faspex, Shares, Node, Console, Orchestrator, Server, ATS'
+  spec.summary       = 'gem and command line tool for Aspera Server products: Aspera on Cloud, Faspex, Shares, Node, Console, Orchestrator, Transfer Server'
   spec.description   = 'A powerful transfer gem and CLI for IBM Aspera products.'
   spec.homepage      = 'http://www.asperasoft.com'
   spec.license       = 'Apache-2.0'
@@ -33,8 +33,8 @@ Gem::Specification.new do |spec|
   spec.add_runtime_dependency('mimemagic', '~> 0.3', '>= 0.3')
   spec.add_runtime_dependency('execjs', '~> 2.0', '>= 2.0')
   spec.add_runtime_dependency('text-table', '~> 1.2', '>= 1.2.4')
-  spec.add_development_dependency('bundler', '~> 1.0', '> 1.14')
-  spec.add_development_dependency('rake', '~> 10.0', '> 10.0')
+  spec.add_development_dependency('bundler', '> 1.14')
+  spec.add_development_dependency('rake', '> 10.0')
   spec.add_development_dependency('rspec', '~> 3.0', '> 3.0')
   spec.requirements << 'Aspera connect client installed for the user'
 end
