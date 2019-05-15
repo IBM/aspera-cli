@@ -1692,6 +1692,21 @@ The tool will find candidates for preview generation using three commands:
 * `scan` : deeply scan all files under the access key&apos;s "storage root"
 * `folder` : same as `scan`, but only on the specified folder&apos;s "file identifier"
 
+### File type detection
+
+Depending on file type, various generation method is used. The current file types are:
+
+* image
+* video
+* office
+* pdf
+* plaintext
+
+File type is primarily base on file extension (internal base).
+
+Optionally, the tool can detect the mime type using option: validate_mime=yes
+
+
 ### Creation/Update
 
 Once candidate are selected, once candidates are selected, 
