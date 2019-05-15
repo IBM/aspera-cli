@@ -78,7 +78,7 @@ module Asperalm
           raise StandardError,"expect: nil, String or Array"
         end
 
-        SIMPLE_ACTIONS=[:nagios_check,:events, :space, :info, :mkdir, :mklink, :mkfile, :rename, :delete ]
+        SIMPLE_ACTIONS=[:nagios_check,:events, :space, :info, :mkdir, :mklink, :mkfile, :rename, :delete, :search ]
 
         COMMON_ACTIONS=[:browse, :upload, :download ].concat(SIMPLE_ACTIONS)
 
@@ -113,6 +113,18 @@ module Asperalm
             paths_to_delete = get_next_arg_add_prefix(prefix_path,"file list",:multiple)
             resp=@api_node.create('files/delete',{:paths=>paths_to_delete.map{|i| {'path'=>i.start_with?('/') ? i : '/'+i} }})
             return c_result_translate_rem_prefix(resp,'file','deleted',prefix_path)
+          when :search
+            search_root = get_next_arg_add_prefix(prefix_path,"search root")
+            parameters={'path'=>search_root}
+            other_options=self.options.get_option(:value,:optional)
+            parameters.merge!(other_options) unless other_options.nil?
+            resp=@api_node.create('files/search',parameters)
+            result={ :type=>:object_list, :data => resp[:data]['items']}
+            return Main.result_empty if result[:data].empty?
+            result[:fields]=result[:data].first.keys.select{|i|!['basename','permissions'].include?(i)}
+            self.format.display_status("Items: #{resp[:data]['item_count']}/#{resp[:data]['total_count']}")
+            self.format.display_status("params: #{resp[:data]['parameters'].keys.map{|k|"#{k}:#{resp[:data]['parameters'][k]}"}.join(',')}")
+            return c_result_remove_prefix_path(result,'path',prefix_path)
           when :space
             # TODO: could be a list of path
             path_list=get_next_arg_add_prefix(prefix_path,"folder path or ext.val. list")
