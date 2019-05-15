@@ -12,7 +12,10 @@ module Asperalm
     class Parameters
       private
       @@file_list_folder=nil
-      FILE_LIST_AGE_MAX=2*86400
+      SEC_IN_DAY=86400
+      # assume no transfer last longer than this
+      # (garbage collect file list which were not deleted after transfer)
+      FILE_LIST_AGE_MAX_SEC=5*SEC_IN_DAY
       PARAM_DEFINITION={
         # parameters with env vars
         'remote_password'         => { :type => :envvar, :variable=>'ASPERA_SCP_PASS'},
@@ -70,7 +73,7 @@ module Asperalm
         'tags'                    => { :type => :opt_with_arg, :option_switch=>'--tags64',:accepted_types=>Hash,:encode=>lambda{|tags|Base64.strict_encode64(JSON.generate(tags))}},
       }
 
-      private_constant :FILE_LIST_AGE_MAX,:PARAM_DEFINITION
+      private_constant :SEC_IN_DAY,:FILE_LIST_AGE_MAX_SEC,:PARAM_DEFINITION
 
       def initialize(job_spec)
         @job_spec=job_spec
@@ -91,7 +94,7 @@ module Asperalm
         if !@job_spec.has_key?('remote_password') and
         !@job_spec.has_key?('ssh_private_key') and
         !@job_spec.has_key?('EX_ssh_key_paths') then
-          raise Fasp::Error.new('required: ssh key (value or path) or password')
+          raise Fasp::Error.new('required: password or ssh key (value or path)')
         end
 
         @builder.process_params
@@ -123,7 +126,7 @@ module Asperalm
               lines=src_dst_list.map{|i|i['source']}
             end
             file_list_file=Asperalm::TempFileManager.instance.temp_filelist_path(@@file_list_folder)
-            File.open(file_list_file, "w+"){|f|f.puts(lines)}
+            File.open(file_list_file, 'w+'){|f|f.puts(lines)}
             Log.log.debug("#{option}=\n#{File.read(file_list_file)}".red)
             @builder.add_command_line_options(["#{option}=#{file_list_file}"])
           end
@@ -141,10 +144,14 @@ module Asperalm
       def self.file_list_folder=(v)
         @@file_list_folder=v
         FileUtils.mkdir_p(@@file_list_folder)
-        Dir.entries(@@file_list_folder) do |name|
-          # TODO: check age of file, delete if older
-          Log.log.error(">>#{name}")
-          FILE_LIST_AGE_MAX
+        Dir.entries(@@file_list_folder).each do |name|
+          file_path=File.join(@@file_list_folder,name)
+          age_sec=(Time.now - File.stat(file_path).mtime).to_i
+          # check age of file, delete too old
+          if File.file?(file_path) and age_sec > FILE_LIST_AGE_MAX_SEC
+            Log.log.debug("garbage collecting #{name}")
+            File.delete(file_path)
+          end
         end
       end
 
