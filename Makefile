@@ -207,6 +207,7 @@ NODEDEST=/
 t/nd1:
 	$(EXETEST) node info
 	$(EXETEST) node browse / -r
+	$(EXETEST) node search / --value=@json:'{"sort":"mtime"}'
 	@touch $@
 t/nd2: $(TEST_FOLDER)/.exists
 	$(EXETEST) node upload --to-folder=$(NODEDEST) --ts=@json:'{"target_rate_cap_kbps":10000}' $(SAMPLE_FILE)
