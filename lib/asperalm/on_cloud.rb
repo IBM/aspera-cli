@@ -91,6 +91,17 @@ module Asperalm
       end
     end
 
+    # get transfer connection parameters
+    def tr_spec_remote_info(node_info)
+      #TODO: add option to request those parameters by calling /upload_setup on node api
+      return {
+        'remote_user' => 'xfer',
+        'remote_host' => node_info['host'],
+        'fasp_port'   => 33001, # TODO: always the case ? or use upload_setup get get info ?
+        'ssh_port'    => 33001, # TODO: always the case ?
+      }
+    end
+
     # build "transfer info", 2 elements array with:
     # - transfer spec for aspera on cloud, based on node information and file id
     # - source and token regeneration method
@@ -101,10 +112,6 @@ module Asperalm
       # note xfer_id and xfer_retry are set by the transfer agent itself
       transfer_spec={
         'direction'   => direction,
-        'remote_user' => 'xfer',
-        'remote_host' => node_file[:node_info]['host'],
-        'fasp_port'   => 33001, # TODO: always the case ?
-        'ssh_port'    => 33001, # TODO: always the case ?
         'token'       => token_generation_method.call(false), # first time, use cache
         'tags'        => {
         'aspera'        => {
@@ -123,6 +130,7 @@ module Asperalm
         } # aspera
         } # tags
       }
+      transfer_spec.merge!(tr_spec_remote_info(node_file[:node_info]))
       # add caller provided transfer spec
       transfer_spec.deep_merge!(ts_add)
       # additional information for transfer agent
