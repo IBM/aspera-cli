@@ -3,8 +3,7 @@
 $LOAD_PATH.unshift(File.dirname(__FILE__)+"/../lib")
 require 'asperalm/fasp/local'
 require 'asperalm/cli/listener/line_dump'
-require 'asperalm/cli/extended_value' # parse
-
+require 'asperalm/cli/extended_value'
 require 'asperalm/log'
 require 'json'
 
@@ -12,13 +11,15 @@ TS_LOGLEVEL='EX_loglevel'
 
 def assert_usage(assertion,errmsg)
   return if assertion
-  STDERR.puts('ERROR: '+errmsg) if errmsg
+  STDERR.puts('ERROR: '.red.blink+errmsg) if errmsg
   STDERR.puts('USAGE')
-  STDERR.puts('    asession <zero or one argument>')
+  STDERR.puts('    asession')
+  STDERR.puts('    asession -h|--help')
+  STDERR.puts('    asession <transfer spec extended value>')
   STDERR.puts('    ')
-  STDERR.puts('    If no argument is provided, default will be used: @json:@stdin, else:')
-  STDERR.puts('       -h or --help to display this message')
-  STDERR.puts('       a JSON value for transfer_spec, using the prefix: @json:')
+  STDERR.puts('    If no argument is provided, default will be used: @json:@stdin')
+  STDERR.puts('    -h, --help display this message')
+  STDERR.puts('    <transfer spec extended value> a JSON value for transfer_spec, using the prefix: @json:')
   STDERR.puts('    The value can be either:')
   STDERR.puts("       the JSON description itself, e.g. @json:'{\"xx\":\"yy\",...}'")
   STDERR.puts('       @json:@stdin, if the JSON is provided from stdin')
@@ -44,7 +45,12 @@ end
 assert_usage(ARGV.length.eql?(1),'exactly one argument is expected')
 assert_usage(!['-h','--help'].include?(ARGV.first),nil)
 # parse transfer spec
-transfer_spec=Asperalm::Cli::ExtendedValue.instance.parse("transfer spec",ARGV.pop)
+begin
+  transfer_spec_arg=ARGV.pop
+  transfer_spec=Asperalm::Cli::ExtendedValue.instance.parse("transfer spec",transfer_spec_arg)
+rescue => e
+  assert_usage(false,"Cannot extract transfer spec from: #{transfer_spec_arg}")
+end
 # ensure right type
 assert_usage(transfer_spec.is_a?(Hash),"the value must be a hash table#{parameter_source_err_msg}")
 # additional debug capability
@@ -52,9 +58,9 @@ if transfer_spec.has_key?(TS_LOGLEVEL)
   Asperalm::Log.instance.level=transfer_spec[TS_LOGLEVEL]
   transfer_spec.delete(TS_LOGLEVEL)
 end
-
+# get local agent (ascp)
 client=Asperalm::Fasp::Local.instance
-# disable ascp output on stdout to not mix with progress JSON
+# disable ascp output on stdout to not mix with JSON events
 client.quiet=true
 # display JSON instead of legacy Lines
 client.add_listener(Asperalm::Cli::Listener::LineDump.new)
@@ -74,4 +80,3 @@ end
 # no exit code: status is success (0)
 client.wait_for_transfers_completion
 client.shutdown
-
