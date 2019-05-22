@@ -1552,6 +1552,12 @@ Note: the v4 API provide an API for nodes and shares.
 
 Aspera Shares supports the "node API" for the file transfer part. (Shares 1 and 2)
 
+In Shares2, users, groups listing are paged, to display sequential pages:
+
+```
+$ for p in 1 2 3;do mlia shares2 admin users list --value=@json:'{"page":'$p'}';done
+```
+
 ## Aspera Transfer Service
 
 ATS is usable either :
