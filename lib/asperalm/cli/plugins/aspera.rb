@@ -498,8 +498,8 @@ module Asperalm
               @api_aoc.update("clients/#{the_client_id}",{:jwt_grant_enabled=>true, :public_key=>OpenSSL::PKey::RSA.new(the_private_key).public_key.to_s})
               return Main.result_success
             when :resource
-              resource_type=self.options.get_next_argument('resource',[:self,:user,:group,:client,:contact,:dropbox,:node,:operation,:package,:saml_configuration, :workspace, :dropbox_membership,:short_link,:workspace_membership])
-              resource_class_path=resource_type.to_s+case resource_type;when :dropbox;'es';when :self;'';else; 's';end
+              resource_type=self.options.get_next_argument('resource',[:self,:user,:group,:client,:contact,:dropbox,:node,:operation,:package,:saml_configuration, :workspace, :dropbox_membership,:short_link,:workspace_membership,'admin/apps_new'.to_sym])
+              resource_class_path=resource_type.to_s+case resource_type;when :dropbox;'es';when :self,'admin/apps_new'.to_sym;'';else; 's';end
               singleton_object=[:self].include?(resource_type)
               global_operations=[:create,:list]
               supported_operations=[:show]
@@ -507,6 +507,7 @@ module Asperalm
               supported_operations.push(:v4,:v3,:info) if resource_type.eql?(:node)
               supported_operations.push(:shared_folders) if resource_type.eql?(:workspace)
               command=self.options.get_next_command(supported_operations)
+
               # require identifier for non global commands
               if !singleton_object and !global_operations.include?(command)
                 res_id=self.options.get_option(:id)
@@ -535,12 +536,16 @@ module Asperalm
                 end
               when :list
                 default_fields=['id','name']
+                list_query=nil
                 case resource_type
                 when :node; default_fields.push('host','access_key')
                 when :operation; default_fields=nil
                 when :contact; default_fields=["email","name","source_id","source_type"]
+                when :contact; default_fields=["email","name","source_id","source_type"]
+                when 'admin/apps_new'.to_sym; list_query={:organization_apps=>true}
+                  default_fields=['app_type','available']
                 end
-                return {:type=>:object_list,:data=>@api_aoc.read(resource_class_path,url_query(nil))[:data],:fields=>default_fields}
+                return {:type=>:object_list,:data=>@api_aoc.read(resource_class_path,url_query(list_query))[:data],:fields=>default_fields}
               when :show
                 object=@api_aoc.read(resource_instance_path)[:data]
                 fields=object.keys.select{|k|!k.eql?('certificate')}
