@@ -151,7 +151,7 @@ module Asperalm
       }
       ak_secret=@secrets[node_info['id']]
       if ak_secret.nil? and node_scope.nil?
-        raise "There must be at least one of: secret, node scope"
+        raise 'There must be at least one of: secret, node scope'
       end
       # if secret provided on command line or if there is no scope
       if !ak_secret.nil? or node_scope.nil?
@@ -175,9 +175,15 @@ module Asperalm
       node_info=node_file[:node_info]
       file_id=node_file[:file_id]
       raise "node_info must be Hash  (got #{node_info.class}: #{node_info})" unless node_info.is_a?(Hash)
-      raise "node_info must have id" unless node_info.has_key?('id')
-      raise "file_id is empty" if file_id.to_s.empty?
+      raise 'node_info must have id' unless node_info.has_key?('id')
+      raise 'file_id is empty' if file_id.to_s.empty?
       return node_info,file_id
+    end
+
+    # returns node api and folder_id from soft link
+    def read_asplnk(current_file_info)
+      new_node_api=get_files_node_api(self.read("nodes/#{current_file_info['target_node_id']}")[:data],SCOPE_NODE_USER)
+      return {:node_api=>new_node_api,:folder_id=>current_file_info['target_id']}
     end
 
     # @returns list of file paths that match given regex
@@ -200,27 +206,27 @@ module Asperalm
           Log.log.warn("#{current_item[:path]}: #{e.message}")
           folder_contents=[]
         end
-        # TODO: check iof this is a folder or file ?
+        # TODO: check if this is a folder or file ?
         Log.dump(:folder_contents,folder_contents)
         folder_contents.each do |current_file_info|
           item_path=File.join(current_item[:path],current_file_info['name'])
           Log.log.debug("looking #{item_path}".bg_green)
           begin
+            # does item match ?
             result.push(current_file_info.merge({'path'=>item_path})) if test_block.call(current_file_info)
-            # process type of file
+            # does it need further processing ?
             case current_file_info['type']
             when 'file'
               Log.log.debug("testing : #{current_file_info['name']}")
-            when 'link'
-              new_node_api=get_files_node_api(self.read("nodes/#{current_file_info['target_node_id']}")[:data],SCOPE_NODE_USER)
-              items_to_explore.push({:node_api=>new_node_api,:folder_id=>current_file_info["target_id"],:path=>item_path})
             when 'folder'
-              items_to_explore.push({:node_api=>current_item[:node_api],:folder_id=>current_file_info["id"],:path=>item_path})
+              items_to_explore.push({:node_api=>current_item[:node_api],:folder_id=>current_file_info['id'],:path=>item_path})
+            when 'link' # .*.asp-lnk
+              items_to_explore.push(read_asplnk(current_file_info).merge({:path=>item_path}))
             else
-              Log.log.warn("unknown element type: #{current_file_info['type']}")
+              Log.log.error("unknown folder item type: #{current_file_info['type']}")
             end
           rescue => e
-            Log.log.warn("#{item_path}: #{e.message}")
+            Log.log.error("#{item_path}: #{e.message}")
           end
         end
       end
@@ -252,18 +258,18 @@ module Asperalm
         # process type of file
         case current_file_info['type']
         when 'file'
-          current_file_id=current_file_info["id"]
+          current_file_id=current_file_info['id']
           # a file shall be terminal
           if !items_to_explore.empty? then
             raise "#{current_item} is a file, expecting folder to find: #{items_to_explore}"
           end
         when 'link'
           current_node_info=self.read("nodes/#{current_file_info['target_node_id']}")[:data]
-          current_file_id=current_file_info["target_id"]
+          current_file_id=current_file_info['target_id']
           # need to switch node
           current_node_api=nil
         when 'folder'
-          current_file_id=current_file_info["id"]
+          current_file_id=current_file_info['id']
         else
           Log.log.warn("unknown element type: #{current_file_info['type']}")
         end
