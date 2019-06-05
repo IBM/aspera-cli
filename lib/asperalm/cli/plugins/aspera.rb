@@ -125,11 +125,11 @@ module Asperalm
               #'destination_root_id' => node_file_server[:file_id],
               'source_root_id'      => node_file_client[:file_id]
             }
-            return Main.result_transfer(transfer_start('files',client_tr_oper,node_file_server,add_ts))
+            return Main.result_transfer(transfer_start(OnCloud::FILES,client_tr_oper,node_file_server,add_ts))
           when :upload
             node_file = @api_aoc.resolve_node_file(top_node_file,self.transfer.destination_folder('send'))
             add_ts={'tags'=>{'aspera'=>{'files'=>{'parentCwd'=>"#{node_file[:node_info]['id']}:#{node_file[:file_id]}"}}}}
-            return Main.result_transfer(transfer_start('files','send',node_file,add_ts))
+            return Main.result_transfer(transfer_start(OnCloud::FILES,'send',node_file,add_ts))
           when :download
             source_paths=self.transfer.ts_source_paths
             # special case for AoC : all files must be in same folder
@@ -144,7 +144,7 @@ module Asperalm
             # override paths with just filename
             add_ts={'tags'=>{'aspera'=>{'files'=>{'parentCwd'=>"#{node_file[:node_info]['id']}:#{node_file[:file_id]}"}}}}
             add_ts.merge!({'paths'=>source_paths})
-            return Main.result_transfer(transfer_start('files','receive',node_file,add_ts))
+            return Main.result_transfer(transfer_start(OnCloud::FILES,'receive',node_file,add_ts))
           when :http_node_download
             source_paths=self.transfer.ts_source_paths
             source_folder=source_paths.shift['source']
@@ -332,14 +332,6 @@ module Asperalm
           package_creation[recipient_list_field]=resolved_list
         end
 
-        def package_tags(package_info,operation)
-          return {'tags'=>{'aspera'=>{'files'=>{
-            'package_id'        => package_info['id'],
-            'package_name'      => package_info['name'],
-            'package_operation' => operation
-            }}}}
-        end
-
         def url_query(default)
           query=self.options.get_option(:query,:optional)||default
           Log.log.debug("Query=#{query}".bg_red)
@@ -414,7 +406,7 @@ module Asperalm
 
               # execute transfer
               node_file = {node_info: node_info, file_id: package_info['contents_file_id']}
-              return Main.result_transfer(transfer_start('packages','send',node_file,package_tags(package_info,'upload')))
+              return Main.result_transfer(transfer_start(OnCloud::PACKAGES,'send',node_file,OnCloud.package_tags(package_info,'upload')))
             when :recv
               # scalar here
               ids_to_download=self.options.get_option(:id,:mandatory)
@@ -443,7 +435,7 @@ module Asperalm
                 self.format.display_status("downloading package: #{package_info['name']}")
                 add_ts={'paths'=>[{'source'=>'.'}]}
                 node_file = {node_info: node_info, file_id: package_info['contents_file_id']}
-                statuses=transfer_start('packages','receive',node_file,package_tags(package_info,'download').merge(add_ts))
+                statuses=transfer_start(OnCloud::PACKAGES,'receive',node_file,OnCloud.package_tags(package_info,'download').merge(add_ts))
                 result_transfer.push({'package'=>package_id,'status'=>statuses.map{|i|i.to_s}.join(',')})
                 # update skip list only if all sessions completed
                 skip_ids_data.push(package_id) if TransferAgent.session_status(statuses).eql?(:success)
@@ -476,7 +468,7 @@ module Asperalm
           when :admin
             self.options.set_option(:scope,OnCloud::SCOPE_FILES_ADMIN)
             update_aoc_api
-            command_admin=self.options.get_next_command([ :ats, :resource, :set_client_key, :usage_reports, :search_nodes, :events ])
+            command_admin=self.options.get_next_command([ :ats, :resource, :usage_reports, :search_nodes, :events ])
             case command_admin
             when :ats
               ats_api = Rest.new(@api_aoc.params.deep_merge({
@@ -492,11 +484,6 @@ module Asperalm
               events=@api_aoc.read("admin/events",url_query({q: '*'}))[:data]
               events.map!{|i|i['_source']['_score']=i['_score'];i['_source']}
               return {:type=>:object_list,:data=>events,:fields=>['user.name','type','data.files_transfer_action','data.workspace_name','date']}
-            when :set_client_key
-              the_client_id=self.options.get_next_argument('client_id')
-              the_private_key=self.options.get_next_argument('private_key')
-              @api_aoc.update("clients/#{the_client_id}",{:jwt_grant_enabled=>true, :public_key=>OpenSSL::PKey::RSA.new(the_private_key).public_key.to_s})
-              return Main.result_success
             when :resource
               resource_type=self.options.get_next_argument('resource',[:self,:user,:group,:client,:contact,:dropbox,:node,:operation,:package,:saml_configuration, :workspace, :dropbox_membership,:short_link,:workspace_membership,'admin/apps_new'.to_sym])
               resource_class_path=resource_type.to_s+case resource_type;when :dropbox;'es';when :self,'admin/apps_new'.to_sym;'';else; 's';end
@@ -505,6 +492,7 @@ module Asperalm
               supported_operations=[:show]
               supported_operations.push(:modify,:delete,*global_operations) unless singleton_object
               supported_operations.push(:v4,:v3,:info) if resource_type.eql?(:node)
+              supported_operations.push(:set_pub_key) if resource_type.eql?(:client)
               supported_operations.push(:shared_folders) if resource_type.eql?(:workspace)
               command=self.options.get_next_command(supported_operations)
 
@@ -541,7 +529,6 @@ module Asperalm
                 when :node; default_fields.push('host','access_key')
                 when :operation; default_fields=nil
                 when :contact; default_fields=["email","name","source_id","source_type"]
-                when :contact; default_fields=["email","name","source_id","source_type"]
                 when 'admin/apps_new'.to_sym; list_query={:organization_apps=>true}
                   default_fields=['app_type','available']
                 end
@@ -559,6 +546,12 @@ module Asperalm
                   @api_aoc.delete("#{resource_class_path}/#{one_id.to_s}")
                   {'id'=>one_id}
                 end
+              when :set_pub_key
+                # special : reads private and generate public
+                the_private_key=self.options.get_next_argument('private_key')
+                the_public_key=OpenSSL::PKey::RSA.new(the_private_key).public_key.to_s
+                @api_aoc.update(resource_instance_path,{:jwt_grant_enabled=>true, :public_key=>the_public_key})
+                return Main.result_success
               when :v3,:v4
                 res_data=@api_aoc.read(resource_instance_path)[:data]
                 # mandatory secret : we have only AK
