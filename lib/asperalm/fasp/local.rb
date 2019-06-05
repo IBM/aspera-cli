@@ -181,6 +181,10 @@ module Asperalm
           ascp_mgt_io=nil
           Timeout.timeout( 3 ) do
             ascp_mgt_io = mgt_sock.accept
+            # management messages include file names which may be utf8
+            # by default socket is US-ASCII
+            # TODO: use same value as Encoding.default_external
+            ascp_mgt_io.set_encoding(Encoding::UTF_8)
           end
           Log.log.debug "after accept (#{ascp_mgt_io})"
 
