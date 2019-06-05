@@ -9,7 +9,9 @@ require 'asperalm/persistency_file'
 require 'asperalm/log'
 require 'asperalm/rest'
 require 'asperalm/nagios'
-require 'text-table'
+
+#require 'text-table'
+require 'terminal-table'
 require 'fileutils'
 require 'yaml'
 require 'pp'
@@ -114,6 +116,7 @@ module Asperalm
         banner << "ARGS\n"
         banner << "\tSome commands require mandatory arguments, e.g. a path.\n"
       end
+
       # define header for manual
       def init_global_options
         Log.log.debug("init_global_options")
@@ -357,12 +360,18 @@ module Asperalm
           when :table
             style=@option_table_style.split('')
             # display the table !
-            @plugin_env[:formater].display_message(:data,Text::Table.new(
-            :head => final_table_columns,
-            :rows => final_table_rows,
-            :horizontal_boundary   => style[0],
-            :vertical_boundary     => style[1],
-            :boundary_intersection => style[2]))
+            #@plugin_env[:formater].display_message(:data,Text::Table.new(
+            #:head => final_table_columns,
+            #:rows => final_table_rows,
+            #:horizontal_boundary   => style[0],
+            #:vertical_boundary     => style[1],
+            #:boundary_intersection => style[2]))
+            @plugin_env[:formater].display_message(:data,Terminal::Table.new(
+            :headings => final_table_columns,
+            :rows     => final_table_rows,
+            :border_x => style[0],
+            :border_y => style[1],
+            :border_i => style[2]))
           when :csv
             @plugin_env[:formater].display_message(:data,final_table_rows.map{|t| t.join(CSV_FIELD_SEPARATOR)}.join(CSV_RECORD_SEPARATOR))
           end
