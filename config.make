@@ -1,0 +1,13 @@
+NODE_PASS=Aspera123_
+MY_CLIENT_ID=BMDiAWLP6g
+MY_PRIVATE_KEY_FILE=$(TOOLCONFIGDIR)/filesapikey
+#TEST_SERVER=10.25.0.8
+#TEST_FASPEX=10.25.0.3
+TEST_SERVER=eudemo.asperademo.com
+TEST_FASPEX=$(TEST_SERVER)
+TEST_FASP_URL=ssh://eudemo.asperademo.com:33001
+TEST_NODE_URL=https://eudemo.asperademo.com:9092
+
+TEST_SHARE=Upload
+TEST_NODE_USER=node_asperaweb
+TEST_NODE_PASS=Aspera123_

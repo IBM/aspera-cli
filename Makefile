@@ -1,10 +1,9 @@
 # just name of tool
 EXENAME=mlia
 TOOLCONFIGDIR=$(HOME)/.aspera/$(EXENAME)
-APIKEY=$(TOOLCONFIGDIR)/filesapikey
-MAINDIR=.
-BINDIR=$(MAINDIR)/bin
-LIBDIR=$(MAINDIR)/lib
+DEV_FOLDER=.
+BINDIR=$(DEV_FOLDER)/bin
+LIBDIR=$(DEV_FOLDER)/lib
 OUT_FOLDER=out
 TEST_FOLDER=test.dir
 # tool invokation
@@ -30,7 +29,10 @@ INCL_ASESSION=$(OUT_FOLDER)/asession_usage.txt
 
 PACKAGE_TITLE=$(shell date)
 
-NODE_PASS=Aspera123_
+
+MLIA_CONFIG_FILE=$(DEV_FOLDER)/test.mlia.conf
+
+include config.make
 
 all:: gem
 
@@ -60,7 +62,8 @@ README.md: README.erb.md $(INCL_COMMANDS) $(INCL_USAGE) $(INCL_ASESSION)
 
 $(INCL_COMMANDS): Makefile
 	sed -nEe 's/.*\$$\(EXETEST.?\)/$(EXENAME)/p' Makefile|grep -v 'Sales Engineering'|sed -E -e 's/\$$\(SAMPLE_FILE\)/sample_file.bin/g;s/\$$\(NODEDEST\)/sample_dest_folder/g;s/\$$\(TEST_FOLDER\)/sample_dest_folder/g;s/ibmfaspex.asperasoft.com/faspex.mycompany.com/g;s/(")(url|api_key|username|password|access_key_id|secret_access_key|pass)(":")[^"]*(")/\1\2\3my_\2_here\4/g;s/--(secret|url|password|username)=[^ ]*/--\1=my_\1_here/g;s/Aspera123_/_my_pass_/g'|grep -v 'localhost:9443'|sort -u > $(INCL_COMMANDS)
-
+incl: Makefile
+	sed -nEe 's/^	\$$\(EXETEST\)/$(EXENAME)/p' Makefile|sed -Ee 's/\$$\(([^)]+)\)/\&lt;\1\&gt;/g'
 # depends on all sources, so regenerate always
 .PHONY: $(INCL_USAGE)
 $(INCL_USAGE):
@@ -86,14 +89,14 @@ install: $(GEMFILE)
 # create a private/public key pair
 # note that the key can also be generated with: ssh-keygen -t rsa -f data/myid -N ''
 # amd the pub key can be extracted with: openssl rsa -in data/myid -pubout -out data/myid.pub.pem
-$(APIKEY):
+$(MY_PRIVATE_KEY_FILE):
 	mkdir -p $(TOOLCONFIGDIR)
-	openssl genrsa -passout pass:dummypassword -out $(APIKEY).protected 2048
-	openssl rsa -passin pass:dummypassword -in $(APIKEY).protected -out $(APIKEY)
-	rm -f $(APIKEY).protected
+	openssl genrsa -passout pass:dummypassword -out $(MY_PRIVATE_KEY_FILE).protected 2048
+	openssl rsa -passin pass:dummypassword -in $(MY_PRIVATE_KEY_FILE).protected -out $(MY_PRIVATE_KEY_FILE)
+	rm -f $(MY_PRIVATE_KEY_FILE).protected
 
-setkey: $(APIKEY)
-	$(EXETEST) aspera admin set_client_key ERuzXGuPA @file:$(APIKEY)
+setkey: $(MY_PRIVATE_KEY_FILE)
+	$(EXETEST) aspera admin res client --id=$(MY_CLIENT_ID) set_pub_key @file:$(MY_PRIVATE_KEY_FILE)
 
 yank:
 	gem yank asperalm -v $(GEMVERSION)
@@ -118,7 +121,6 @@ installdeps:
 
 SAMPLE_FILE=~/Documents/Samples/200KB.1
 
-TEST_SHARE=000_test1
 clean::
 	rm -fr $(TEST_FOLDER)
 $(TEST_FOLDER)/.exists:
@@ -161,16 +163,16 @@ t/fp4:
 	$(BINDIR)/asession @json:'{"remote_host":"demo.asperasoft.com","remote_user":"asperaweb","ssh_port":33001,"remote_password":"demoaspera","direction":"receive","destination_root":"./test.dir","paths":[{"source":"/aspera-test-dir-tiny/200KB.1"}]}'
 	@touch $@
 t/serv1:
-	$(EXETEST) -N server --url=ssh://10.25.0.8:33001 --username=root --ssh-keys=~/.ssh/id_rsa nodeadmin -- -l
+	$(EXETEST) -N server --url=ssh://$(TEST_SERVER):33001 --username=root --ssh-keys=~/.ssh/id_rsa nodeadmin -- -l
 	@touch $@
 t/serv_nagios_webapp:
-	$(EXETEST) -N server --url=ssh://10.25.0.3 --username=root --ssh-keys=~/.ssh/id_rsa --format=nagios nagios app_services
+	$(EXETEST) -N server --url=ssh://$(TEST_FASPEX) --username=root --ssh-keys=~/.ssh/id_rsa --format=nagios nagios app_services
 	@touch $@
 t/serv_nagios_transfer:
-	$(EXETEST) -N server --url=ssh://eudemo.asperademo.com:33001 --username=asperaweb --password=demoaspera --format=nagios nagios transfer --to-folder=/Upload
+	$(EXETEST) -N server --url=$(TEST_FASP_URL) --username=asperaweb --password=demoaspera --format=nagios nagios transfer --to-folder=/Upload
 	@touch $@
 t/serv3:
-	$(EXETEST) -N server --url=ssh://10.25.0.3 --username=root --ssh-keys=~/.ssh/id_rsa ctl all:status
+	$(EXETEST) -N server --url=ssh://$(TEST_FASPEX) --username=root --ssh-keys=~/.ssh/id_rsa ctl all:status
 	@touch $@
 tfasp: t/fp1 t/fp2 t/fp3 t/fp4 t/serv1 t/serv_nagios_webapp t/serv_nagios_transfer t/serv3
 
@@ -216,8 +218,8 @@ t/nd2: $(TEST_FOLDER)/.exists
 	rm -f $(TEST_FOLDER)/200KB.1
 	@touch $@
 t/nd3:
-	$(EXETEST) --no-default node --url=https://eudemo.asperademo.com:9092 --username=node_aspera --password=aspera --insecure=yes upload --to-folder=/Upload --sources=@ts --ts=@json:'{"paths":[{"source":"500M.dat"}],"remote_password":"demoaspera","precalculate_job_size":true}' --transfer=node --transfer-info=@json:'{"url":"https://10.25.0.8:9092","username":"node_xferuser","password":"'$(NODE_PASS)'"}' 
-	$(EXETEST) --no-default node --url=https://eudemo.asperademo.com:9092 --username=node_aspera --password=aspera --insecure=yes delete /500M.dat
+	$(EXETEST) --no-default node --url=$(TEST_NODE_URL) --username=$(TEST_NODE_USER) --password=$(TEST_NODE_PASS) --insecure=yes upload --to-folder=/Upload --sources=@ts --ts=@json:'{"paths":[{"source":"/aspera-test-dir-small/10MB.1"}],"remote_password":"demoaspera","precalculate_job_size":true}' --transfer=node --transfer-info=@json:'{"url":"https://$(TEST_SERVER):9092","username":"$(TEST_NODE_USER)","password":"'$(TEST_NODE_PASS)'"}' 
+	$(EXETEST) --no-default node --url=$(TEST_NODE_URL) --username=$(TEST_NODE_USER) --password=$(TEST_NODE_PASS) --insecure=yes delete /500M.dat
 	@touch $@
 t/nd4:
 	$(EXETEST) node service create @json:'{"id":"service1","type":"WATCHD","run_as":{"user":"user1"}}'
@@ -611,13 +613,13 @@ thot:
 contents:
 	mkdir -p contents
 t/sync1: contents
-	$(EXETEST) sync start --parameters=@json:'{"sessions":[{"name":"test","reset":true,"remote_dir":"/sync_test","local_dir":"contents","host":"10.25.0.8","user":"user1","private_key_path":"/Users/laurent/.ssh/id_rsa"}]}'
+	$(EXETEST) sync start --parameters=@json:'{"sessions":[{"name":"test","reset":true,"remote_dir":"/sync_test","local_dir":"contents","host":"$(TEST_SERVER)","user":"user1","private_key_path":"/Users/laurent/.ssh/id_rsa"}]}'
 	@touch $@
 tsync: t/sync1
 t:
 	mkdir t
 t/sdk1:
-	ruby -I $(LIBDIR) $(MAINDIR)/examples/transfer.rb
+	ruby -I $(LIBDIR) $(DEV_FOLDER)/examples/transfer.rb
 	@touch $@
 tsample: t/sdk1
 tests: t tshares tfaspex tconsole tnode taoc tfasp tsync torc tcon tnsync tconf tprev tats tsample tshares2
