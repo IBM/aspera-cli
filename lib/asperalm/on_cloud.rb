@@ -19,6 +19,9 @@ module Asperalm
     PATH_PUBLIC_PACKAGE='/packages/public/receive'
     PATH_SEPARATOR='/'
 
+    FILES='files'
+    PACKAGES='packages'
+
     PRODUCT_NAME='Aspera on Cloud'
     PRODUCT_DOMAIN='ibmaspera.com'
     private_constant :PRODUCT_NAME,:PRODUCT_DOMAIN
@@ -70,25 +73,26 @@ module Asperalm
       return 'node.'+access_key+':'+scope
     end
 
+    # @return true if the OAuth client_id is globally defined in AoC
     def self.is_global_client_id?(client_id)
       client_id.is_a?(String) and client_id.start_with?('aspera.global')
     end
 
     def initialize(rest_params)
       super(rest_params)
+      # access key secrets are provided out of band to get node api access
       @secrets={}
     end
 
     attr_reader :secrets
 
-    # @param send or receive (FASP transfer direction)
-    # @return upload or download (tag for AoC)
-    def direction_to_operation(direction)
-      case direction
-      when 'send';    return 'upload'
-      when 'receive'; return 'download'
-      else raise "ERROR: unexpected value: #{direction}"
-      end
+    # add package information
+    def package_tags(package_info,operation)
+      return {'tags'=>{'aspera'=>{'files'=>{
+        'package_id'        => package_info['id'],
+        'package_name'      => package_info['name'],
+        'package_operation' => operation
+        }}}}
     end
 
     # get transfer connection parameters
@@ -99,6 +103,29 @@ module Asperalm
         'remote_host' => node_info['host'],
         'fasp_port'   => 33001, # TODO: always the case ? or use upload_setup get get info ?
         'ssh_port'    => 33001, # TODO: always the case ?
+      }
+    end
+
+    # add details to show in analytics
+    def analytics_ts(app,direction,ws_id,ws_name)
+      # translate transfer to operation
+      operation=case direction
+      when 'send';    'upload'
+      when 'receive'; 'download'
+      else raise "ERROR: unexpected value: #{direction}"
+      end
+
+      return {
+        'tags'        => {
+        'aspera'        => {
+        'usage_id'        => "aspera.files.workspace.#{ws_id}", # activity tracking
+        'files'           => {
+        'files_transfer_action' => "#{operation}_#{app.gsub(/s$/,'')}",
+        'workspace_name'        => ws_name,  # activity tracking
+        'workspace_id'          => ws_id,
+        }
+        }
+        }
       }
     end
 
@@ -116,12 +143,8 @@ module Asperalm
         'tags'        => {
         'aspera'        => {
         'app'             => app,
-        'usage_id'        => "aspera.files.workspace.#{ws_id}", # activity tracking
         'files'           => {
         'node_id'               => node_file[:node_info]['id'],
-        'files_transfer_action' => "#{direction_to_operation(direction)}_#{app.gsub(/s$/,'')}",
-        'workspace_id'          => ws_id,
-        'workspace_name'        => ws_name  # activity tracking
         }, # files
         'node'            => {
         'access_key'        => node_file[:node_info]['access_key'],
@@ -133,6 +156,7 @@ module Asperalm
       transfer_spec.merge!(tr_spec_remote_info(node_file[:node_info]))
       # add caller provided transfer spec
       transfer_spec.deep_merge!(ts_add)
+      transfer_spec.deep_merge!(analytics_ts(app,direction,ws_id,ws_name))
       # additional information for transfer agent
       source_and_token_generator={
         :src              => :node_gen4,
