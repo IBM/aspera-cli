@@ -87,7 +87,7 @@ module Asperalm
     attr_reader :secrets
 
     # add package information
-    def package_tags(package_info,operation)
+    def self.package_tags(package_info,operation)
       return {'tags'=>{'aspera'=>{'files'=>{
         'package_id'        => package_info['id'],
         'package_name'      => package_info['name'],
