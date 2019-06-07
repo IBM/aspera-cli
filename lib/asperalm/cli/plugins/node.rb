@@ -314,7 +314,7 @@ module Asperalm
               raise "error"
             end
           when :access_key
-            return self.entity_action(@api_node,'access_keys',['id','root_file_id','storage','license'],:id)
+            return self.entity_action(@api_node,'access_keys',['id','root_file_id','storage','license'],:id,'self')
           when :service
             command=self.options.get_next_command([ :list, :create, :delete])
             if [:delete].include?(command)

@@ -29,11 +29,16 @@ module Asperalm
       end
 
       # implement generic rest operations on given resource path
-      def entity_action(rest_api,res_class_path,display_fields,id_symb)
+      def entity_action(rest_api,res_class_path,display_fields,id_symb,id_default=nil)
         #res_name=res_class_path.gsub(%r{^.*/},'').gsub(%r{s$},'').gsub('_',' ')
         command=self.options.get_next_command(ALL_OPS)
         if INSTANCE_OPS.include?(command)
+          begin
           one_res_id=self.options.get_option(id_symb,:mandatory)
+          rescue => e
+            raise e if id_default.nil?
+            one_res_id=id_default
+          end
           one_res_path="#{res_class_path}/#{one_res_id}"
         end
         if [:create,:modify].include?(command)
