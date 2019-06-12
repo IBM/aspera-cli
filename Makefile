@@ -7,9 +7,9 @@ LIBDIR=$(DEV_FOLDER)/lib
 OUT_FOLDER=out
 TEST_FOLDER=test.dir
 # tool invokation
-EXETEST1=$(BINDIR)/$(EXENAME)
+EXETESTB=$(BINDIR)/$(EXENAME)
 MLIA_CONFIG_FILE=$(DEV_FOLDER)/test.mlia.conf
-EXETEST=$(EXETEST1) -w --config-file=$(MLIA_CONFIG_FILE)
+EXETEST=$(EXETESTB) -w --config-file=$(MLIA_CONFIG_FILE)
 GEMNAME=asperalm
 GEMVERSION=$(shell $(EXETEST) --version)
 GEM_FILENAME=$(GEMNAME)-$(GEMVERSION).gem
@@ -60,9 +60,9 @@ README.md: README.erb.md $(INCL_COMMANDS) $(INCL_USAGE) $(INCL_ASESSION)
 	COMMANDS=$(INCL_COMMANDS) USAGE=$(INCL_USAGE) ASESSION=$(INCL_ASESSION) VERSION=`$(EXETEST) --version` TOOLNAME=$(EXENAME) erb README.erb.md > README.md
 
 $(INCL_COMMANDS): Makefile
-	sed -nEe 's/.*\$$\(EXETEST.?\)/$(EXENAME)/p' Makefile|grep -v 'Sales Engineering'|sed -E -e 's/\$$\(SAMPLE_FILE\)/sample_file.bin/g;s/\$$\(NODEDEST\)/sample_dest_folder/g;s/\$$\(TEST_FOLDER\)/sample_dest_folder/g;s/ibmfaspex.asperasoft.com/faspex.mycompany.com/g;s/(")(url|api_key|username|password|access_key_id|secret_access_key|pass)(":")[^"]*(")/\1\2\3my_\2_here\4/g;s/--(secret|url|password|username)=[^ ]*/--\1=my_\1_here/g;s/Aspera123_/_my_pass_/g'|grep -v 'localhost:9443'|sort -u > $(INCL_COMMANDS)
+	sed -nEe 's/.*\$$\(EXETEST.?\)/$(EXENAME)/p' Makefile|grep -v 'Sales Engineering'|sed -E -e 's/\$$\(SAMPLE_FILE\)/sample_file.bin/g;s/\$$\(NODEDEST\)/sample_dest_folder/g;s/\$$\(TEST_FOLDER\)/sample_dest_folder/g;s/ibmfaspex.asperasoft.com/faspex.mycompany.com/g;s/(")(url|api_key|username|password|access_key_id|secret_access_key|pass)(":")[^"]*(")/\1\2\3my_\2_here\4/g;s/--(secret|url|password|username)=[^ ]*/--\1=my_\1_here/g;s/Aspera123_/_my_pass_/g;s/\$$\(([^)]+)\)/\1/g'|grep -v 'localhost:9443'|sort -u > $(INCL_COMMANDS)
 incl: Makefile
-	sed -nEe 's/^	\$$\(EXETEST\)/$(EXENAME)/p' Makefile|sed -Ee 's/\$$\(([^)]+)\)/\&lt;\1\&gt;/g'
+	sed -nEe 's/^	\$$\(EXETEST.?\)/$(EXENAME)/p' Makefile|sed -Ee 's/\$$\(([^)]+)\)/\&lt;\1\&gt;/g'
 # depends on all sources, so regenerate always
 .PHONY: $(INCL_USAGE)
 $(INCL_USAGE):
@@ -497,31 +497,31 @@ tnsync: t/sy1 t/sy2 t/sy3 t/sy4 t/sy5
 
 TEST_CONFIG=sample.conf
 t/conf_id_1:
-	MLIA_CONFIG_FILE=$(TEST_CONFIG) $(EXETEST) config id conf_name set param value
+	MLIA_CONFIG_FILE=$(TEST_CONFIG) $(EXETESTB) config id conf_name set param value
 	@touch $@
 t/conf_id_2:
-	MLIA_CONFIG_FILE=$(TEST_CONFIG) $(EXETEST) config id conf_name show
+	MLIA_CONFIG_FILE=$(TEST_CONFIG) $(EXETESTB) config id conf_name show
 	@touch $@
 t/conf_id_3:
-	MLIA_CONFIG_FILE=$(TEST_CONFIG) $(EXETEST) config id default set shares conf_name
+	MLIA_CONFIG_FILE=$(TEST_CONFIG) $(EXETESTB) config id default set shares conf_name
 	@touch $@
 t/conf_id_4:
-	MLIA_CONFIG_FILE=$(TEST_CONFIG) $(EXETEST) config id conf_name delete
+	MLIA_CONFIG_FILE=$(TEST_CONFIG) $(EXETESTB) config id conf_name delete
 	@touch $@
 t/conf_id_5:
-	MLIA_CONFIG_FILE=$(TEST_CONFIG) $(EXETEST) config id conf_name initialize @json:'{"p1":"v1","p2":"v2"}'
+	MLIA_CONFIG_FILE=$(TEST_CONFIG) $(EXETESTB) config id conf_name initialize @json:'{"p1":"v1","p2":"v2"}'
 	@touch $@
 t/conf_id_6:
-	MLIA_CONFIG_FILE=$(TEST_CONFIG) $(EXETEST1) config id conf_name update --p1=v1 --p2=v2
+	MLIA_CONFIG_FILE=$(TEST_CONFIG) $(EXETESTB) config id conf_name update --p1=v1 --p2=v2
 	@touch $@
 t/conf_open:
-	MLIA_CONFIG_FILE=$(TEST_CONFIG) $(EXETEST) config open
+	MLIA_CONFIG_FILE=$(TEST_CONFIG) $(EXETESTB) config open
 	@touch $@
 t/conf_list:
-	MLIA_CONFIG_FILE=$(TEST_CONFIG) $(EXETEST) config list
+	MLIA_CONFIG_FILE=$(TEST_CONFIG) $(EXETESTB) config list
 	@touch $@
 t/conf_over:
-	MLIA_CONFIG_FILE=$(TEST_CONFIG) $(EXETEST) config overview
+	MLIA_CONFIG_FILE=$(TEST_CONFIG) $(EXETESTB) config overview
 	@touch $@
 t/conf_help:
 	$(EXETEST) -h
