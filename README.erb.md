@@ -2031,6 +2031,11 @@ Gems, or remove your ed25519 key from your `.ssh` folder to solve the issue. Not
 
 # Release Notes
 
+* version 0.9.31
+
+   * added more support for public link: receive and send package, to user or dropbox and files view.
+   * delete expired file lists
+
 * version 0.9.27
 
 	* basic email support with SMTP
