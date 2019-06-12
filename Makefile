@@ -8,7 +8,8 @@ OUT_FOLDER=out
 TEST_FOLDER=test.dir
 # tool invokation
 EXETEST1=$(BINDIR)/$(EXENAME)
-EXETEST=$(EXETEST1) -w
+MLIA_CONFIG_FILE=$(DEV_FOLDER)/test.mlia.conf
+EXETEST=$(EXETEST1) -w --config-file=$(MLIA_CONFIG_FILE)
 GEMNAME=asperalm
 GEMVERSION=$(shell $(EXETEST) --version)
 GEM_FILENAME=$(GEMNAME)-$(GEMVERSION).gem
@@ -29,8 +30,6 @@ INCL_ASESSION=$(OUT_FOLDER)/asession_usage.txt
 
 PACKAGE_TITLE=$(shell date)
 
-
-MLIA_CONFIG_FILE=$(DEV_FOLDER)/test.mlia.conf
 
 include config.make
 
@@ -163,16 +162,16 @@ t/fp4:
 	$(BINDIR)/asession @json:'{"remote_host":"demo.asperasoft.com","remote_user":"asperaweb","ssh_port":33001,"remote_password":"demoaspera","direction":"receive","destination_root":"./test.dir","paths":[{"source":"/aspera-test-dir-tiny/200KB.1"}]}'
 	@touch $@
 t/serv1:
-	$(EXETEST) -N server --url=ssh://$(TEST_SERVER):33001 --username=root --ssh-keys=~/.ssh/id_rsa nodeadmin -- -l
+	$(EXETEST) -N server --url=ssh://$(HSTS_ADDR):33001 --username=root --ssh-keys=~/.ssh/id_rsa nodeadmin -- -l
 	@touch $@
 t/serv_nagios_webapp:
-	$(EXETEST) -N server --url=ssh://$(TEST_FASPEX) --username=root --ssh-keys=~/.ssh/id_rsa --format=nagios nagios app_services
+	$(EXETEST) -N server --url=$(FASPEX_SSH_URL) --username=root --ssh-keys=~/.ssh/id_rsa --format=nagios nagios app_services
 	@touch $@
 t/serv_nagios_transfer:
-	$(EXETEST) -N server --url=$(TEST_FASP_URL) --username=asperaweb --password=demoaspera --format=nagios nagios transfer --to-folder=/Upload
+	$(EXETEST) -N server --url=$(HSTS_SSH_URL) --username=asperaweb --password=demoaspera --format=nagios nagios transfer --to-folder=/Upload
 	@touch $@
 t/serv3:
-	$(EXETEST) -N server --url=ssh://$(TEST_FASPEX) --username=root --ssh-keys=~/.ssh/id_rsa ctl all:status
+	$(EXETEST) -N server --url=$(FASPEX_SSH_URL) --username=root --ssh-keys=~/.ssh/id_rsa ctl all:status
 	@touch $@
 tfasp: t/fp1 t/fp2 t/fp3 t/fp4 t/serv1 t/serv_nagios_webapp t/serv_nagios_transfer t/serv3
 
@@ -218,8 +217,8 @@ t/nd2: $(TEST_FOLDER)/.exists
 	rm -f $(TEST_FOLDER)/200KB.1
 	@touch $@
 t/nd3:
-	$(EXETEST) --no-default node --url=$(TEST_NODE_URL) --username=$(TEST_NODE_USER) --password=$(TEST_NODE_PASS) --insecure=yes upload --to-folder=/Upload --sources=@ts --ts=@json:'{"paths":[{"source":"/aspera-test-dir-small/10MB.1"}],"remote_password":"demoaspera","precalculate_job_size":true}' --transfer=node --transfer-info=@json:'{"url":"https://$(TEST_SERVER):9092","username":"$(TEST_NODE_USER)","password":"'$(TEST_NODE_PASS)'"}' 
-	$(EXETEST) --no-default node --url=$(TEST_NODE_URL) --username=$(TEST_NODE_USER) --password=$(TEST_NODE_PASS) --insecure=yes delete /500M.dat
+	$(EXETEST) --no-default node --url=$(HSTS_NODE_URL) --username=$(TEST_NODE_USER) --password=$(TEST_NODE_PASS) --insecure=yes upload --to-folder=/Upload --sources=@ts --ts=@json:'{"paths":[{"source":"/aspera-test-dir-small/10MB.1"}],"remote_password":"demoaspera","precalculate_job_size":true}' --transfer=node --transfer-info=@json:'{"url":"https://$(HSTS_ADDR):9092","username":"$(TEST_NODE_USER)","password":"'$(TEST_NODE_PASS)'"}' 
+	$(EXETEST) --no-default node --url=$(HSTS_NODE_URL) --username=$(TEST_NODE_USER) --password=$(TEST_NODE_PASS) --insecure=yes delete /500M.dat
 	@touch $@
 t/nd4:
 	$(EXETEST) node service create @json:'{"id":"service1","type":"WATCHD","run_as":{"user":"user1"}}'
@@ -232,9 +231,10 @@ t/nd4:
 	@echo "waiting a little...";sleep 5
 	$(EXETEST) node service list
 	@touch $@
+# test creation of access key
 t/nd5:
-	$(EXETEST) -Pnode_lmdk08 --url=https://localhost:9092 --username=node_xfer --password=$(NODE_PASS) node acc create --value=@json:'{"id":"aoc_1","secret":"'$(NODE_PASS)'","storage":{"type":"local","path":"/"}}'
-	sleep 2&&$(EXETEST) -Pnode_lmdk08 --url=https://localhost:9092 --username=node_xfer --password=$(NODE_PASS) node acc delete --id=aoc_1
+	$(EXETEST) -N --url=https://localhost:9092 --username=node_xfer --password=$(NODE_PASS) node acc create --value=@json:'{"id":"aoc_1","secret":"'$(NODE_PASS)'","storage":{"type":"local","path":"/"}}'
+	sleep 2&&$(EXETEST) -N --url=https://localhost:9092 --username=node_xfer --password=$(NODE_PASS) node acc delete --id=aoc_1
 	@touch $@
 t/nd6:
 	$(EXETEST) node transfer list
@@ -392,16 +392,16 @@ t/o3:
 	$(EXETEST) orchestrator workflow status
 	@touch $@
 t/o4:
-	$(EXETEST) orchestrator workflow --id=10 inputs
+	$(EXETEST) orchestrator workflow --id=$(TEST_WORKFLOW_ID) inputs
 	@touch $@
 t/o5:
-	$(EXETEST) orchestrator workflow --id=10 status
+	$(EXETEST) orchestrator workflow --id=$(TEST_WORKFLOW_ID) status
 	@touch $@
 t/o6:
-	$(EXETEST) orchestrator workflow --id=10 start --params=@json:'{"Param":"laurent"}'
+	$(EXETEST) orchestrator workflow --id=$(TEST_WORKFLOW_ID) start --params=@json:'{"Param":"laurent"}'
 	@touch $@
 t/o7:
-	$(EXETEST) orchestrator workflow --id=10 start --params=@json:'{"Param":"laurent"}' --result=ResultStep:Complete_status_message
+	$(EXETEST) orchestrator workflow --id=$(TEST_WORKFLOW_ID) start --params=@json:'{"Param":"laurent"}' --result=ResultStep:Complete_status_message
 	@touch $@
 t/o8:
 	$(EXETEST) orchestrator plugins
@@ -613,7 +613,7 @@ thot:
 contents:
 	mkdir -p contents
 t/sync1: contents
-	$(EXETEST) sync start --parameters=@json:'{"sessions":[{"name":"test","reset":true,"remote_dir":"/sync_test","local_dir":"contents","host":"$(TEST_SERVER)","user":"user1","private_key_path":"/Users/laurent/.ssh/id_rsa"}]}'
+	$(EXETEST) sync start --parameters=@json:'{"sessions":[{"name":"test","reset":true,"remote_dir":"/sync_test","local_dir":"contents","host":"$(HSTS_ADDR)","user":"user1","private_key_path":"/Users/laurent/.ssh/id_rsa"}]}'
 	@touch $@
 tsync: t/sync1
 t:
