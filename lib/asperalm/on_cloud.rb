@@ -16,7 +16,7 @@ module Asperalm
     SCOPE_NODE_USER='user:all'
     SCOPE_NODE_ADMIN='admin:all'
     # path in URL of public package links
-    PATH_PUBLIC_PACKAGE='/packages/public/receive'
+    PATHS_PUBLIC_LINK=['/packages/public/receive','/packages/public/send','/files/public']
     PATH_SEPARATOR='/'
 
     FILES='files'

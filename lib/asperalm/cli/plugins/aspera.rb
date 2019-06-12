@@ -12,7 +12,8 @@ module Asperalm
     module Plugins
       class Aspera < BasicAuthPlugin
         VAL_ALL='ALL'
-        private_constant :VAL_ALL
+        MAX_REDIRECT=10
+        private_constant :VAL_ALL,:MAX_REDIRECT
         attr_reader :api_aoc
         attr_accessor :option_ak_secret
         def initialize(env)
@@ -20,10 +21,11 @@ module Asperalm
           @default_workspace_id=nil
           @workspace_name=nil
           @workspace_id=nil
-          @user_id=nil
+          @persist_ids=nil
           @home_node_file=nil
           @api_aoc=nil
           @option_ak_secret=nil
+          @url_token_data=nil
           @ats=Ats.new(@agents.merge(skip_secret: true))
           self.options.set_obj_attr(:secret,self,:option_ak_secret)
           self.options.add_opt_list(:auth,Oauth.auth_types,"type of Oauth authentication")
@@ -174,27 +176,53 @@ module Asperalm
           end # command_repo
         end # execute_node_gen4_action
 
+        # check option "link"
+        # if present try to get token value (resolve redirection if short links used)
+        # then set options url/token/auth
+        def pub_link_to_url_auth_token
+          public_link_url=self.options.get_option(:link,:optional)
+          return if public_link_url.nil?
+          # set to token if available after redirection
+          url_token_value=nil
+          redirect_count=0
+          loop do
+            uri=URI.parse(public_link_url)
+            if OnCloud::PATHS_PUBLIC_LINK.include?(uri.path)
+              url_token_value=URI::decode_www_form(uri.query).select{|e|e.first.eql?('token')}.first
+              if url_token_value.nil?
+                raise CliBadArgument,"link option must be URL with 'token' parameter"
+              end
+              # ok we get it !
+              self.options.set_option(:url,'https://'+uri.host)
+              self.options.set_option(:public_token,url_token_value)
+              self.options.set_option(:auth,:url_token)
+              return
+            end
+            Log.log.debug("no expected format: #{public_link_url}")
+            raise "exceeded max redirection: #{MAX_REDIRECT}" if redirect_count > MAX_REDIRECT
+            r = Net::HTTP.get_response(uri)
+            if r.code.start_with?("3")
+              public_link_url = r.header['location']
+              raise "no location in redirection" if public_link_url.nil?
+              Log.log.debug("redirect to: #{public_link_url}")
+            else
+              # not a redirection
+              raise CliBadArgument,'not redirection, so link not supported'
+            end
+          end # loop
+
+          raise CliBadArgument,'too many redirections'
+        end
+
         # Create a new AoC API REST object and set @api_aoc.
         # Parameters based on command line options
         # @return nil
         def update_aoc_api
-          public_link_url=self.options.get_option(:link,:optional)
 
-          # if auth is a public link, option "link" is a shortcut for options: url, auth, public_token
-          unless public_link_url.nil?
-            uri=URI.parse(public_link_url)
-            public_link_url=nil #no more needed
-            unless uri.path.eql?(OnCloud::PATH_PUBLIC_PACKAGE)
-              raise CliArgument,"only public package link is supported: #{OnCloud::PATH_PUBLIC_PACKAGE}"
-            end
-            url_token_value=URI::decode_www_form(uri.query).select{|e|e.first.eql?('token')}.first
-            if url_token_value.nil?
-              raise CliArgument,"link option must be url with 'token' parameter"
-            end
-            self.options.set_option(:url,'https://'+uri.host)
-            self.options.set_option(:public_token,url_token_value)
-            self.options.set_option(:auth,:url_token)
-          end
+          # if auth is a public link
+          # option "link" is a shortcut for options: url, auth, public_token
+          pub_link_to_url_auth_token
+
           # Connection paramaters (url and auth) to Aspera on Cloud
           # pre populate rest parameters based on URL
           aoc_rest_params=OnCloud.base_rest_params(self.options.get_option(:url,:mandatory))
@@ -231,7 +259,7 @@ module Asperalm
           else raise "ERROR: unsupported auth method"
           end
           @api_aoc=OnCloud.new(aoc_rest_params)
-          nil
+          return nil
         end
 
         # initialize apis and authentication
@@ -239,23 +267,19 @@ module Asperalm
         # @default_workspace_id
         # @workspace_name
         # @workspace_id
-        # @user_id
-        # @home_node_file  (hash with :node_info and :file_id)
+        # @persist_ids
         # returns nil
         def set_workspace_info
           if @api_aoc.params[:auth].has_key?(:url_token)
-            url_token_data=@api_aoc.read("url_tokens")[:data].first
-            @default_workspace_id=url_token_data['data']['workspace_id']
-            @user_id='todo' # TODO : @api_aoc.read('organization')[:data] ?
-            self.options.set_option(:id,url_token_data['data']['package_id'])
-            home_node_id=url_token_data['data']['node_id']
-            home_file_id=url_token_data['data']['file_id']
-            url_token_data=nil # no more needed
+            # TODO: can there be several in list ?
+            @url_token_data=@api_aoc.read('url_tokens')[:data].first
+            @default_workspace_id=@url_token_data['data']['workspace_id']
+            @persist_ids=[] # TODO : @url_token_data['id'] ?
           else
             # get our user's default information
-            self_data=@api_aoc.read("self")[:data]
+            self_data=@api_aoc.read('self')[:data]
             @default_workspace_id=self_data['default_workspace_id']
-            @user_id=self_data['id']
+            @persist_ids=[self_data['id']]
           end
 
           ws_name=self.options.get_option(:workspace,:optional)
@@ -285,6 +309,18 @@ module Asperalm
           @workspace_name||=@workspace_data['name']
           Log.log.info("current workspace is "+@workspace_name.red)
 
+          # display workspace
+          self.format.display_status("Current Workspace: #{@workspace_name.red}#{@workspace_id == @default_workspace_id ? ' (default)' : ''}")
+          return nil
+        end
+
+        # @home_node_file  (hash with :node_info and :file_id)
+        def set_home_node_file
+          if !@url_token_data.nil?
+            assert_public_link_types(['view_shared_file'])
+            home_node_id=@url_token_data['data']['node_id']
+            home_file_id=@url_token_data['data']['file_id']
+          end
           home_node_id||=@workspace_data['home_node_id']||@workspace_data['node_id']
           home_file_id||=@workspace_data['home_file_id']
           raise "node_id must be defined" if home_node_id.to_s.empty?
@@ -293,9 +329,6 @@ module Asperalm
             file_id: home_file_id
           }
           @api_aoc.check_get_node_file(@home_node_file)
-
-          # display workspace
-          self.format.display_status("Current Workspace: #{@workspace_name.red}#{@workspace_id == @default_workspace_id ? ' (default)' : ''}")
 
           return nil
         end
@@ -315,19 +348,26 @@ module Asperalm
           return {:type=>:object_list,:data=>result,:fields=>['id','status']}
         end
 
+        # package creation params can give just email, and full hash is created
         def resolve_package_recipients(package_creation,recipient_list_field)
           return unless package_creation.has_key?(recipient_list_field)
           raise CliBadArgument,"#{recipient_list_field} must be an Array" unless package_creation[recipient_list_field].is_a?(Array)
           new_user_option=self.options.get_option(:new_user_option,:mandatory)
           resolved_list=[]
           package_creation[recipient_list_field].each do |recipient_email|
-            user_lookup=@api_aoc.read('contacts',{'current_workspace_id'=>@workspace_id,'q'=>recipient_email})[:data]
-            case user_lookup.length
-            when 1; recipient_user_id=user_lookup.first
-            when 0; recipient_user_id=@api_aoc.create('contacts',{'current_workspace_id'=>@workspace_id,'email'=>recipient_email}.merge(new_user_option))[:data]
-            else raise CliBadArgument,"multiple match for: #{recipient}"
+            if recipient_email.is_a?(Hash) and recipient_email.has_key?('id') and recipient_email.has_key?('type')
+              # already provided all information ?
+              resolved_list.push(recipient_email)
+            else
+              # or need to resolve email
+              user_lookup=@api_aoc.read('contacts',{'current_workspace_id'=>@workspace_id,'q'=>recipient_email})[:data]
+              case user_lookup.length
+              when 1; recipient_user_id=user_lookup.first
+              when 0; recipient_user_id=@api_aoc.create('contacts',{'current_workspace_id'=>@workspace_id,'email'=>recipient_email}.merge(new_user_option))[:data]
+              else raise CliBadArgument,"multiple match for: #{recipient}"
+              end
+              resolved_list.push({'id'=>recipient_user_id['source_id'],'type'=>recipient_user_id['source_type']})
             end
-            resolved_list.push({'id'=>recipient_user_id['source_id'],'type'=>recipient_user_id['source_type']})
           end
           package_creation[recipient_list_field]=resolved_list
         end
@@ -342,6 +382,12 @@ module Asperalm
             raise CliBadArgument,"query must be an extended value which can be encoded with URI.encode_www_form. Refer to manual. (#{e.message})"
           end
           return query
+        end
+
+        def assert_public_link_types(expected)
+          if !expected.include?(@url_token_data['purpose'])
+            raise CliBadArgument,"public link type is #{@url_token_data['purpose']} but action requires one of #{expected.join(',')}"
+          end
         end
 
         ACTIONS=[ :apiinfo, :bearer_token, :organization, :user, :workspace, :packages, :files, :faspexgw, :admin]
@@ -380,12 +426,20 @@ module Asperalm
             set_workspace_info
             return { :type=>:single_object, :data =>@workspace_data }
           when :packages
-            set_workspace_info
+            set_workspace_info if @url_token_data.nil?
             command_pkg=self.options.get_next_command([ :send, :recv, :list, :show, :delete ])
             case command_pkg
             when :send
               package_creation=self.options.get_option(:value,:mandatory)
               raise CliBadArgument,"value must be hash, refer to doc" unless package_creation.is_a?(Hash)
+
+              if !@url_token_data.nil?
+                assert_public_link_types(['send_package_to_user','send_package_to_dropbox'])
+                box_type=@url_token_data['purpose'].split('_').last
+                package_creation['recipients']=[{'id'=>@url_token_data['data']["#{box_type}_id"],'type'=>box_type}]
+                @workspace_id=@url_token_data['data']['workspace_id']
+              end
+
               package_creation['workspace_id']=@workspace_id
 
               # list of files to include in package
@@ -408,6 +462,10 @@ module Asperalm
               node_file = {node_info: node_info, file_id: package_info['contents_file_id']}
               return Main.result_transfer(transfer_start(OnCloud::PACKAGES,'send',node_file,OnCloud.package_tags(package_info,'upload')))
             when :recv
+              if !@url_token_data.nil?
+                assert_public_link_types(['view_received_package'])
+                self.options.set_option(:id,@url_token_data['data']['package_id'])
+              end
               # scalar here
               ids_to_download=self.options.get_option(:id,:mandatory)
               skip_ids_data=[]
@@ -415,7 +473,7 @@ module Asperalm
               if self.options.get_option(:once_only,:mandatory)
                 skip_ids_persistency=PersistencyFile.new(
                 data: skip_ids_data,
-                ids:  ['aoc_recv',self.options.get_option(:url,:mandatory),@user_id,@workspace_name])
+                ids:  ['aoc_recv',self.options.get_option(:url,:mandatory),@workspace_name].push(*@persist_ids))
               end
               if ids_to_download.eql?(VAL_ALL)
                 # get list of packages in inbox
@@ -437,10 +495,12 @@ module Asperalm
                 node_file = {node_info: node_info, file_id: package_info['contents_file_id']}
                 statuses=transfer_start(OnCloud::PACKAGES,'receive',node_file,OnCloud.package_tags(package_info,'download').merge(add_ts))
                 result_transfer.push({'package'=>package_id,'status'=>statuses.map{|i|i.to_s}.join(',')})
-                # update skip list only if all sessions completed
-                skip_ids_data.push(package_id) if TransferAgent.session_status(statuses).eql?(:success)
+                # update skip list only if all transfer sessions completed
+                if TransferAgent.session_status(statuses).eql?(:success)
+                  skip_ids_data.push(package_id)
+                  skip_ids_persistency.save unless skip_ids_persistency.nil?
+                end
               end
-              skip_ids_persistency.save unless skip_ids_persistency.nil?
               return {:type=>:object_list,:data=>result_transfer}
             when :show
               package_id=self.options.get_next_argument('package ID')
@@ -459,6 +519,7 @@ module Asperalm
             end
           when :files
             set_workspace_info
+            set_home_node_file
             @api_aoc.secrets[@home_node_file[:node_info]['id']]=@option_ak_secret
             return execute_node_gen4_action(@home_node_file)
           when :faspexgw
@@ -502,6 +563,7 @@ module Asperalm
                 res_name=self.options.get_option(:name)
                 if res_id.nil? and res_name.nil? and resource_type.eql?(:node)
                   set_workspace_info
+                  set_home_node_file
                   res_id=@home_node_file[:node_info]['id']
                 end
                 if !res_name.nil?
