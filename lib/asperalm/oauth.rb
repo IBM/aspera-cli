@@ -1,4 +1,5 @@
 require 'asperalm/open_application'
+
 #require 'asperalm/rest'
 require 'base64'
 require 'date'
@@ -107,6 +108,7 @@ module Asperalm
       oauth_uri=URI.parse(@params[:base_url])
       parts=[oauth_uri.host.downcase.gsub(/[^a-z]+/,'_'),oauth_uri.path.downcase.gsub(/[^a-z]+/,'_'),@params[:grant],api_scope]
       parts.push(@params[:user_name]) if @params.has_key?(:user_name)
+      parts.push(@params[:url_token]) if @params.has_key?(:url_token)
       basename=parts.dup.unshift(TOKEN_FILE_PREFIX).join(TOKEN_FILE_SEPARATOR)
       # remove windows forbidden chars
       basename.gsub!(WINDOWS_PROTECTED_CHAR,TOKEN_FILE_SEPARATOR)
