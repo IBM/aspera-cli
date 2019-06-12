@@ -198,7 +198,10 @@ module Asperalm
           Log.log.debug("result: body=#{result[:http].body}")
           case call_data[:headers]['Accept']
           when 'application/json'
-            result[:data]=JSON.parse(result[:http].body) if !result[:http].body.nil?
+            if !result[:http].body.nil?
+              result[:data]=JSON.parse(result[:http].body)
+              Log.dump('result',result[:data])
+            end
           when 'text/plain'
             result[:data]=result[:http].body
           end
