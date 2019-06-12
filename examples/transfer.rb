@@ -82,7 +82,7 @@ node_api=Asperalm::Rest.new({
   :auth     => {
   :type     => :basic,
   :username => 'node_aspera',
-  :password => 'aspera'
+  :password => 'demoaspera'
   }})
 # define sample file(s) and destination folder
 sources=['sample_file.txt']
