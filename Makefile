@@ -362,7 +362,7 @@ t/aocat7:
 	$(EXETEST) aspera admin ats cluster show --id=1f412ae7-869a-445c-9c05-02ad16813be2
 	@touch $@
 t/aocat8:
-	$(EXETEST) aspera admin ats access_key create --cloud=softlayer --region=ams --params=@json:'{"id":"testkey2","name":"laurent key","storage":{"type":"softlayer_swift","container":"laurent","credentials":{"api_key":"e5d032e026e0b0a16e890a3d44d11fd1471217b6262e83c7f60529f1ff4b27de","username":"IBMOS303446-9:laurentmartin"},"path":"/"}}'
+#	$(EXETEST) aspera admin ats access_key create --cloud=softlayer --region=ams --params=@json:'{"id":"testkey2","name":"laurent key","storage":{"type":"softlayer_swift","container":"laurent","credentials":{"api_key":"e5d032e026e0b0a16e890a3d44d11fd1471217b6262e83c7f60529f1ff4b27de","username":"IBMOS303446-9:laurentmartin"},"path":"/"}}'
 	@touch $@
 t/aocat9:
 	$(EXETEST) aspera admin ats access_key create --cloud=aws --region=eu-west-1 --params=@json:'{"id":"testkey3","name":"laurent key AWS","storage":{"type":"aws_s3","bucket":"sedemo-ireland","credentials":{"access_key_id":"AKIAIDSWKOSIM7XUVCJA","secret_access_key":"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"},"path":"/laurent"}}'
@@ -371,10 +371,10 @@ t/aocat10:
 	$(EXETEST) aspera admin ats access_key list --fields=name,id,secret
 	@touch $@
 t/aocat11:
-	$(EXETEST) aspera admin ats access_key --id=testkey2 node browse /
+	$(EXETEST) aspera admin ats access_key --id=testkey3 node browse /
 	@touch $@
 t/aocat13:
-	-$(EXETEST) aspera admin ats access_key --id=testkey2 delete
+	-$(EXETEST) aspera admin ats access_key --id=testkey3 delete
 	@touch $@
 t/aocat14:
 	-$(EXETEST) aspera admin ats access_key --id=testkey3 delete
@@ -434,7 +434,7 @@ t/at3:
 	$(EXETEST) ats api_key create
 	@touch $@
 t/at8:
-	$(EXETEST) ats access_key create --cloud=softlayer --region=ams --params=@json:'{"id":"testkey2","name":"laurent key","storage":{"type":"softlayer_swift","container":"laurent","credentials":{"api_key":"e5d032e026e0b0a16e890a3d44d11fd1471217b6262e83c7f60529f1ff4b27de","username":"IBMOS303446-9:laurentmartin"},"path":"/"}}'
+#	$(EXETEST) ats access_key create --cloud=softlayer --region=ams --params=@json:'{"id":"testkey2","name":"laurent key","storage":{"type":"softlayer_swift","container":"laurent","credentials":{"api_key":"e5d032e026e0b0a16e890a3d44d11fd1471217b6262e83c7f60529f1ff4b27de","username":"IBMOS303446-9:laurentmartin"},"path":"/"}}'
 	@touch $@
 t/at9:
 	$(EXETEST) ats access_key create --cloud=aws --region=eu-west-1 --params=@json:'{"id":"testkey3","name":"laurent key AWS","storage":{"type":"aws_s3","bucket":"sedemo-ireland","credentials":{"access_key_id":"AKIAIDSWKOSIM7XUVCJA","secret_access_key":"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"},"path":"/laurent"}}'
@@ -443,13 +443,13 @@ t/at10:
 	$(EXETEST) ats access_key list --fields=name,id,secret
 	@touch $@
 t/at11:
-	$(EXETEST) ats access_key --id=testkey2 node browse /
+	$(EXETEST) ats access_key --id=testkey3 node browse /
 	@touch $@
 t/at12:
-	$(EXETEST) ats access_key --id=testkey2 cluster
+	$(EXETEST) ats access_key --id=testkey3 cluster
 	@touch $@
 t/at13:
-	$(EXETEST) ats access_key --id=testkey2 delete
+	-$(EXETEST) ats access_key --id=testkey2 delete
 	@touch $@
 t/at14:
 	$(EXETEST) ats access_key --id=testkey3 delete
