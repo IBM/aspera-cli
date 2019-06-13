@@ -2031,10 +2031,17 @@ Gems, or remove your ed25519 key from your `.ssh` folder to solve the issue. Not
 
 # Release Notes
 
+* version 0.9.32
+
+   * all Faspex public links are now supported
+   * removed faspex operation recv_publink
+   * replaced with option `link` (consistent with AoC)
+
 * version 0.9.31
 
    * added more support for public link: receive and send package, to user or dropbox and files view.
    * delete expired file lists
+   * changed text table gem from text-table to terminal-table because it supports multiline values
 
 * version 0.9.27
 
