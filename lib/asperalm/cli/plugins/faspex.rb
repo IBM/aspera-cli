@@ -8,6 +8,7 @@ require 'asperalm/open_application'
 require 'asperalm/fasp/uri'
 require 'asperalm/nagios'
 require 'xmlsimple'
+require 'json'
 
 module Asperalm
   module Cli
@@ -21,6 +22,7 @@ module Asperalm
           @api_v3=nil
           @api_v4=nil
           super(env)
+          self.options.add_opt_simple(:link,"public link for specific operation")
           self.options.add_opt_simple(:delivery_info,"package delivery information (extended value)")
           self.options.add_opt_simple(:source_name,"create package from remote source (by name)")
           self.options.add_opt_simple(:storage,"Faspex local storage definition")
@@ -30,19 +32,22 @@ module Asperalm
         end
 
         # extract elements from anonymous faspex link
-        def self.get_link_data(email)
-          package_match = email.match(/((http[^"]+)\/(external_deliveries\/([^?]+)))\?passcode=([^"]+)/)
-          if package_match.nil? then
-            raise CliBadArgument, "string does not match Faspex url"
+        def self.get_link_data(publink)
+          publink_uri=URI.parse(publink)
+          if m=publink_uri.path.match(/^(.*)\/(external.*)$/)
+            base=m[1]
+            subpath=m[2]
+          else
+            raise CliBadArgument, "public link does not match Faspex format"
           end
-          return {
-            :uri => package_match[0],
-            :url => package_match[1],
-            :faspex_base_url =>  package_match[2],
-            :subpath => package_match[3],
-            :delivery_id => package_match[4],
-            :passcode => package_match[5]
+          port_add=publink_uri.port.eql?(publink_uri.default_port)?'':":#{publink_uri.port}"
+          result={
+            :base_url => "#{publink_uri.scheme}://#{publink_uri.host}#{port_add}#{base}",
+            :subpath  => subpath,
+            :query    => URI::decode_www_form(publink_uri.query).inject({}){|m,v|m[v.first]=v.last;m}
           }
+          Log.dump('publink',result)
+          return result
         end
 
         # get faspe: URI from entry in xml, and fix problems..
@@ -96,7 +101,7 @@ module Asperalm
           return @api_v4
         end
 
-        ACTIONS=[ :nagios_check,:package, :source, :me, :dropbox, :recv_publink, :v4, :address_book, :login_methods ]
+        ACTIONS=[ :nagios_check,:package, :source, :me, :dropbox, :v4, :address_book, :login_methods ]
 
         # we match recv command on atom feed on this field
         PACKAGE_MATCH_FIELD='package_id'
@@ -130,7 +135,78 @@ module Asperalm
             case command_pkg
             when :list
               return {:type=>:object_list,:data=>self.mailbox_all_entries,:fields=>[PACKAGE_MATCH_FIELD,'title','items'], :textify => lambda { |table_data| Faspex.textify_package_list(table_data)} }
+            when :send
+              delivery_info=self.options.get_option(:delivery_info,:mandatory)
+              raise CliBadArgument,"delivery_info must be hash, refer to doc" unless delivery_info.is_a?(Hash)
+              package_create_params={'delivery'=>delivery_info}
+              public_link_url=self.options.get_option(:link,:optional)
+              if public_link_url.nil?
+                # authenticated user
+                delivery_info['sources']||=[{'paths'=>[]}]
+                first_source=delivery_info['sources'].first
+                first_source['paths'].push(*self.transfer.ts_source_paths.map{|i|i['source']})
+                source_name=self.options.get_option(:source_name,:optional)
+                if !source_name.nil?
+                  source_list=api_v3.call({:operation=>'GET',:subpath=>"source_shares",:headers=>{'Accept'=>'application/json'}})[:data]['items']
+                  source_id=self.class.get_source_id(source_list,source_name)
+                  first_source['id']=source_id
+                end
+                pkg_created=api_v3.call({:operation=>'POST',:subpath=>'send',:json_params=>package_create_params,:headers=>{'Accept'=>'application/json'}})[:data]
+                if !source_name.nil?
+                  # no transfer spec if remote source
+                  return {:data=>[pkg_created['links']['status']],:type=>:value_list,:name=>'link'}
+                end
+                raise CliBadArgument,"expecting one session exactly" if pkg_created['xfer_sessions'].length != 1
+                transfer_spec=pkg_created['xfer_sessions'].first
+                # use source from cmd line, this one only contains destination (already in dest root)
+                transfer_spec.delete('paths')
+              else
+                # pub link user
+                link_data=self.class.get_link_data(public_link_url)
+                if !['external/submissions/new','external/dropbox_submissions/new'].include?(link_data[:subpath])
+                  raise CliBadArgument,"pub link is #{link_data[:subpath]}, expecting external/submissions/new"
+                end
+                create_path=link_data[:subpath].split('/')[0..-2].join('/')
+                package_create_params.merge!({:passcode=>link_data[:query]['passcode']})
+                delivery_info.merge!({
+                  :transfer_type=>"connect",
+                  :source_paths_list=>self.transfer.ts_source_paths.map{|i|i['source']}.join("\r\n")})
+                api_public_link=Rest.new({:base_url=>link_data[:base_url]})
+                #pkg_created=api_public_link.create(create_path,package_create_params)[:data]
+                pkgdatares=api_public_link.call({:operation=>'POST',:subpath=>create_path,:json_params=>package_create_params,:headers=>{'Accept'=>'text/javascript'}})[:http].body
+                pkgdatares=pkgdatares.match(%r{\((.*?)\);})[1]
+                Log.log.debug("1>>>#{pkgdatares}")
+                pkgdatares.gsub!(/^"\{/,'{')
+                pkgdatares.gsub!(/\\"\}",/,'\\"},')
+                pkgdatares.gsub!('\\"','"')
+                pkgdatares.gsub!(/"(\{.*\})",/,"#{$1},")
+                pkgdatares=JSON.parse("[#{pkgdatares}]")
+                Log.log.debug("2>>>#{pkgdatares}")
+                transfer_spec=pkgdatares.first
+                transfer_spec['destination_root']='/'
+              end
+              #Log.dump('transfer_spec',transfer_spec)
+              return Main.result_transfer(self.transfer.start(transfer_spec,{:src=>:node_gen3}))
             when :recv
+              public_link_url=self.options.get_option(:link,:optional)
+              if !public_link_url.nil?
+                link_data=self.class.get_link_data(public_link_url)
+                if !link_data[:subpath].match(%r{external_deliveries/})
+                  raise CliBadArgument,"pub link is #{link_data[:subpath]}, expecting external_deliveries/"
+                end
+                # Note: unauthenticated API
+                api_public_link=Rest.new({:base_url=>link_data[:base_url]})
+                pkgdatares=api_public_link.call({:operation=>'GET',:subpath=>link_data[:subpath],:url_params=>{:passcode=>link_data[:query]['passcode']},:headers=>{'Accept'=>'application/xml'}})
+                if !pkgdatares[:http].body.start_with?('<?xml ')
+                  OpenApplication.instance.uri(public_link_url)
+                  raise CliError, "no such package"
+                end
+                package_entry=XmlSimple.xml_in(pkgdatares[:http].body, {"ForceArray" => false})
+                transfer_uri=self.class.get_fasp_uri_from_entry(package_entry)
+                transfer_spec=Fasp::Uri.new(transfer_uri).transfer_spec
+                transfer_spec['direction']='receive'
+                return Main.result_transfer(self.transfer.start(transfer_spec,{:src=>:node_gen3}))
+              end
               # get command line parameters
               delivid=self.options.get_option(:id,:mandatory)
               mailbox=self.options.get_option(:box,:mandatory).to_s
@@ -173,32 +249,6 @@ module Asperalm
               end
               skip_ids_persistency.save unless skip_ids_persistency.nil?
               return {:type=>:object_list,:data=>result_transfer}
-            when :send
-              delivery_info=self.options.get_option(:delivery_info,:mandatory)
-              raise CliBadArgument,"delivery_info must be hash, refer to doc" unless delivery_info.is_a?(Hash)
-              delivery_info['sources']||=[{'paths'=>[]}]
-              first_source=delivery_info['sources'].first
-              first_source['paths'].push(*self.transfer.ts_source_paths.map{|i|i['source']})
-              source_name=self.options.get_option(:source_name,:optional)
-              if !source_name.nil?
-                source_list=api_v3.call({:operation=>'GET',:subpath=>"source_shares",:headers=>{'Accept'=>'application/json'}})[:data]['items']
-                source_id=self.class.get_source_id(source_list,source_name)
-                first_source['id']=source_id
-              end
-              package_create_params={'delivery'=>delivery_info}
-              send_result=api_v3.call({:operation=>'POST',:subpath=>'send',:json_params=>package_create_params,:headers=>{'Accept'=>'application/json'}})[:data]
-              if send_result.has_key?('error')
-                raise CliBadArgument,"#{send_result['error']['user_message']}: #{send_result['error']['internal_message']}"
-              end
-              if !source_name.nil?
-                # no transfer spec if remote source
-                return {:data=>[send_result['links']['status']],:type=>:value_list,:name=>'link'}
-              end
-              raise CliBadArgument,"expecting one session exactly" if send_result['xfer_sessions'].length != 1
-              transfer_spec=send_result['xfer_sessions'].first
-              # use source from cmd line, this one only contains destination (already in dest root)
-              transfer_spec.delete('paths')
-              return Main.result_transfer(self.transfer.start(transfer_spec,{:src=>:node_gen3}))
             end
           when :source
             command_source=self.options.get_next_command([ :list, :id, :name ])
@@ -259,21 +309,6 @@ module Asperalm
               #              when :create
               #
             end
-          when :recv_publink
-            thelink=self.options.get_next_argument("Faspex public URL for a package")
-            link_data=self.class.get_link_data(thelink)
-            # Note: unauthenticated API
-            api_public_link=Rest.new({:base_url=>link_data[:faspex_base_url]})
-            pkgdatares=api_public_link.call({:operation=>'GET',:subpath=>link_data[:subpath],:url_params=>{:passcode=>link_data[:passcode]},:headers=>{'Accept'=>'application/xml'}})
-            if !pkgdatares[:http].body.start_with?('<?xml ')
-              OpenApplication.instance.uri(thelink)
-              raise CliError, "no such package"
-            end
-            package_entry=XmlSimple.xml_in(pkgdatares[:http].body, {"ForceArray" => false})
-            transfer_uri=self.class.get_fasp_uri_from_entry(package_entry)
-            transfer_spec=Fasp::Uri.new(transfer_uri).transfer_spec
-            transfer_spec['direction']='receive'
-            return Main.result_transfer(self.transfer.start(transfer_spec,{:src=>:node_gen3}))
           when :v4
             command=self.options.get_next_command([:dropbox, :dmembership, :workgroup,:wmembership,:user,:metadata_profile])
             case command
