@@ -60,7 +60,7 @@ README.md: README.erb.md $(INCL_COMMANDS) $(INCL_USAGE) $(INCL_ASESSION)
 	COMMANDS=$(INCL_COMMANDS) USAGE=$(INCL_USAGE) ASESSION=$(INCL_ASESSION) VERSION=`$(EXETEST) --version` TOOLNAME=$(EXENAME) erb README.erb.md > README.md
 
 $(INCL_COMMANDS): Makefile
-	sed -nEe 's/.*\$$\(EXETEST.?\)/$(EXENAME)/p' Makefile|grep -v 'Sales Engineering'|sed -E -e 's/\$$\(SAMPLE_FILE\)/sample_file.bin/g;s/\$$\(NODEDEST\)/sample_dest_folder/g;s/\$$\(TEST_FOLDER\)/sample_dest_folder/g;s/ibmfaspex.asperasoft.com/faspex.mycompany.com/g;s/(")(url|api_key|username|password|access_key_id|secret_access_key|pass)(":")[^"]*(")/\1\2\3my_\2_here\4/g;s/--(secret|url|password|username)=[^ ]*/--\1=my_\1_here/g;s/Aspera123_/_my_pass_/g;s/\$$\(([^)]+)\)/\1/g'|grep -v 'localhost:9443'|sort -u > $(INCL_COMMANDS)
+	sed -nEe 's/.*\$$\(EXETEST.?\)/$(EXENAME)/p' Makefile|grep -v 'Sales Engineering'|sed -E -e 's/ibmfaspex.asperasoft.com/faspex.mycompany.com/g;s/(")(url|api_key|username|password|access_key_id|secret_access_key|pass)(":")[^"]*(")/\1\2\3my_\2_here\4/g;s/--(secret|url|password|username)=[^ ]*/--\1=my_\1_here/g;s/Aspera123_/_my_pass_/g;s/\$$\(([^)]+)\)/\1/g'|grep -v 'localhost:9443'|sort -u > $(INCL_COMMANDS)
 incl: Makefile
 	sed -nEe 's/^	\$$\(EXETEST.?\)/$(EXENAME)/p' Makefile|sed -Ee 's/\$$\(([^)]+)\)/\&lt;\1\&gt;/g'
 # depends on all sources, so regenerate always
@@ -209,17 +209,15 @@ t/cons1:
 	@touch $@
 tconsole: t/cons1
 
-#NODEDEST=/home/faspex/docroot
-NODEDEST=/
 t/nd1:
 	$(EXETEST) node info
 	$(EXETEST) node browse / -r
 	$(EXETEST) node search / --value=@json:'{"sort":"mtime"}'
 	@touch $@
 t/nd2: $(TEST_FOLDER)/.exists
-	$(EXETEST) node upload --to-folder=$(NODEDEST) --ts=@json:'{"target_rate_cap_kbps":10000}' $(SAMPLE_FILE)
-	$(EXETEST) node download --to-folder=$(TEST_FOLDER) $(NODEDEST)200KB.1
-	$(EXETEST) node delete $(NODEDEST)200KB.1
+	$(EXETEST) node upload --to-folder=$(MY_UPLOAD_FOLDER) --ts=@json:'{"target_rate_cap_kbps":10000}' $(SAMPLE_FILE)
+	$(EXETEST) node download --to-folder=$(TEST_FOLDER) $(MY_UPLOAD_FOLDER)/200KB.1
+	$(EXETEST) node delete $(MY_UPLOAD_FOLDER)/200KB.1
 	rm -f $(TEST_FOLDER)/200KB.1
 	@touch $@
 t/nd3:
