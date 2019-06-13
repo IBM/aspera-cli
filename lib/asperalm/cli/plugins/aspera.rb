@@ -38,7 +38,7 @@ module Asperalm
           self.options.add_opt_simple(:secret,"access key secret for node")
           self.options.add_opt_simple(:eid,"identifier") # used ?
           self.options.add_opt_simple(:name,"resource name")
-          self.options.add_opt_simple(:link,"link to shared resource")
+          self.options.add_opt_simple(:link,"public link to shared resource")
           self.options.add_opt_simple(:public_token,"token value of public link")
           self.options.add_opt_simple(:new_user_option,"new user creation option")
           self.options.add_opt_simple(:from_folder,"share to share source folder")
