@@ -132,17 +132,17 @@ t/sh1:
 	$(EXETEST) shares repository browse /
 	@touch $@
 t/sh2: $(TEST_FOLDER)/.exists
-	$(EXETEST) shares repository upload --to-folder=/$(TEST_SHARE) --sources=@args $(SAMPLE_FILE)
-	$(EXETEST) shares repository download --to-folder=$(TEST_FOLDER) --sources=@args /$(TEST_SHARE)/200KB.1
+	$(EXETEST) shares repository upload --to-folder=/$(TEST_SHARE) $(SAMPLE_FILE)
+	$(EXETEST) shares repository download --to-folder=$(TEST_FOLDER) /$(TEST_SHARE)/200KB.1
 	$(EXETEST) shares repository delete /$(TEST_SHARE)/200KB.1
 	@touch $@
 tshares: t/sh1 t/sh2 t/unit
 
 t/fp1: $(TEST_FOLDER)/.exists
 	$(EXETEST) server browse /
-	$(EXETEST) server upload --to-folder=/Upload --sources=@args $(SAMPLE_FILE)
-	$(EXETEST) server download --to-folder=$(TEST_FOLDER) --sources=@args /Upload/200KB.1
-	$(EXETEST) server download --sources=@args /Upload/200KB.1 --transfer=node
+	$(EXETEST) server upload --to-folder=/Upload $(SAMPLE_FILE)
+	$(EXETEST) server download --to-folder=$(TEST_FOLDER) /Upload/200KB.1
+	$(EXETEST) server download /Upload/200KB.1 --transfer=node
 	$(EXETEST) server cp /Upload/200KB.1 /Upload/200KB.2
 	$(EXETEST) server mv /Upload/200KB.2 /Upload/to.delete
 	$(EXETEST) server delete /Upload/to.delete
@@ -179,13 +179,19 @@ t/fx1:
 	$(EXETEST) faspex package list
 	@touch $@
 t/fx2:
-	$(EXETEST) faspex package send --delivery-info=@json:'{"title":"'"$(PACKAGE_TITLE)"'","recipients":["laurent.martin.aspera@fr.ibm.com"]}' --sources=@args $(SAMPLE_FILE) 
+	$(EXETEST) faspex package send --delivery-info=@json:'{"title":"'"$(PACKAGE_TITLE)"'","recipients":["laurent.martin.aspera@fr.ibm.com"]}' $(SAMPLE_FILE)
 	@touch $@
 t/fx3:
 	$(EXETEST) faspex package recv --to-folder=$(TEST_FOLDER) --id=$$($(EXETEST) faspex package list --fields=delivery_id --format=csv --box=sent|tail -n 1) --box=sent
 	@touch $@
 t/fx4:
-	@echo $(EXETEST) faspex recv_publink 'https://ibmfaspex.asperasoft.com/aspera/faspex/external_deliveries/78780?passcode=a003aaf2f53e3869126b908525084db6bebc7031' --insecure=yes
+	$(EXETEST) faspex package recv --link='$(FASPEX_PUBLINK_RECV_PACKAGE)'
+	@touch $@
+t/fx4b:
+	$(EXETEST) faspex package send --link='$(FASPEX_PUBLINK_SEND_TO_USER)' --delivery-info=@json:'{"title":"'"$(PACKAGE_TITLE)"'"}' $(SAMPLE_FILE)
+	@touch $@
+t/fx4c:
+	$(EXETEST) faspex package send --link='$(FASPEX_PUBLINK_SEND_DROPBOX)' --delivery-info=@json:'{"title":"'"$(PACKAGE_TITLE)"'"}' $(SAMPLE_FILE)
 	@touch $@
 t/fx5:
 	$(EXETEST) faspex source name "Server Files" node br /
@@ -196,7 +202,7 @@ t/fx6:
 t/fx_nagios:
 	$(EXETEST) faspex nagios_check
 	@touch $@
-tfaspex: t/fx1 t/fx2 t/fx3 t/fx4 t/fx5 t/fx6 t/fx_nagios
+tfaspex: t/fx1 t/fx2 t/fx3 t/fx4 t/fx4b t/fx4c t/fx5 t/fx6 t/fx_nagios
 
 t/cons1:
 	$(EXETEST) console transfer current list 
@@ -212,7 +218,7 @@ t/nd1:
 	@touch $@
 t/nd2: $(TEST_FOLDER)/.exists
 	$(EXETEST) node upload --to-folder=$(NODEDEST) --ts=@json:'{"target_rate_cap_kbps":10000}' $(SAMPLE_FILE)
-	$(EXETEST) node download --to-folder=$(TEST_FOLDER) --sources=@args $(NODEDEST)200KB.1
+	$(EXETEST) node download --to-folder=$(TEST_FOLDER) $(NODEDEST)200KB.1
 	$(EXETEST) node delete $(NODEDEST)200KB.1
 	rm -f $(TEST_FOLDER)/200KB.1
 	@touch $@
@@ -279,18 +285,18 @@ t/aocf1d:
 	$(EXETEST) aspera files delete /newname
 	@touch $@
 t/aocf5: t/aocf2 # WS: Demo
-	$(EXETEST) aspera files transfer --from-folder=/ --to-folder=xxx --sources=@args 200KB.1
+	$(EXETEST) aspera files transfer --from-folder=/ --to-folder=xxx 200KB.1
 	@touch $@
 t/aocf2:
 	$(EXETEST) aspera files upload --to-folder=/ $(SAMPLE_FILE)
 	@touch $@
 t/aocf3: $(TEST_FOLDER)/.exists
 	@rm -f $(TEST_FOLDER)/200KB.1
-	$(EXETEST) aspera files download --to-folder=$(TEST_FOLDER) --transfer=connect --sources=@args /200KB.1
+	$(EXETEST) aspera files download --to-folder=$(TEST_FOLDER) --transfer=connect /200KB.1
 	@rm -f $(TEST_FOLDER)/200KB.1
 	@touch $@
 t/aocf4: $(TEST_FOLDER)/.exists
-	$(EXETEST) aspera files http_node_download --to-folder=$(TEST_FOLDER) --sources=@args /200KB.1
+	$(EXETEST) aspera files http_node_download --to-folder=$(TEST_FOLDER) /200KB.1
 	rm -f 200KB.1
 	@touch $@
 t/aocf1e:
@@ -301,8 +307,8 @@ t/aocf1f:
 	@touch $@
 taocf: t/aocf1 t/aocffin t/aocfmkd t/aocfdel t/aocf1d t/aocf5 t/aocf2 t/aocf3 t/aocf4 t/aocf1e t/aocf1f
 t/aocp1:
-	$(EXETEST) aspera packages send --value=@json:'{"name":"'"$(PACKAGE_TITLE)"'","note":"my note","recipients":["laurent.martin.aspera@fr.ibm.com"]}' --sources=@args $(SAMPLE_FILE)
-	$(EXETEST) aspera packages send --value=@json:'{"name":"'"$(PACKAGE_TITLE)"'","recipients":["laurent.martin.l+external@gmail.com"]}' --new-user-option=@json:'{"package_contact":true}' --sources=@args $(SAMPLE_FILE)
+	$(EXETEST) aspera packages send --value=@json:'{"name":"'"$(PACKAGE_TITLE)"'","note":"my note","recipients":["laurent.martin.aspera@fr.ibm.com"]}' $(SAMPLE_FILE)
+	$(EXETEST) aspera packages send --value=@json:'{"name":"'"$(PACKAGE_TITLE)"'","recipients":["laurent.martin.l+external@gmail.com"]}' --new-user-option=@json:'{"package_contact":true}' $(SAMPLE_FILE)
 	@touch $@
 t/aocp2:
 	$(EXETEST) aspera packages list
@@ -601,11 +607,11 @@ thot:
 	-$(EXETEST) server delete /Upload/target_hot
 	$(EXETEST) server mkdir /Upload/target_hot
 	echo hello > source_hot/newfile
-	$(EXETEST) server upload --to-folder=/Upload/target_hot --lock-port=12345 --ts=@json:'{"EX_ascp_args":["--remove-after-transfer","--remove-empty-directories","--exclude-newer-than=-8","--src-base","source_hot"]}' --sources=@args source_hot
+	$(EXETEST) server upload --to-folder=/Upload/target_hot --lock-port=12345 --ts=@json:'{"EX_ascp_args":["--remove-after-transfer","--remove-empty-directories","--exclude-newer-than=-8","--src-base","source_hot"]}' source_hot
 	$(EXETEST) server browse /Upload/target_hot
 	ls -al source_hot
 	sleep 10
-	$(EXETEST) server upload --to-folder=/Upload/target_hot --lock-port=12345 --ts=@json:'{"EX_ascp_args":["--remove-after-transfer","--remove-empty-directories","--exclude-newer-than=-8","--src-base","source_hot"]}' --sources=@args source_hot
+	$(EXETEST) server upload --to-folder=/Upload/target_hot --lock-port=12345 --ts=@json:'{"EX_ascp_args":["--remove-after-transfer","--remove-empty-directories","--exclude-newer-than=-8","--src-base","source_hot"]}' source_hot
 	$(EXETEST) server browse /Upload/target_hot
 	ls -al source_hot
 	rm -fr source_hot
