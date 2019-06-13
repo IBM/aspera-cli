@@ -24,3 +24,6 @@ AOC_PUBLINK_RECV_PACKAGE=https://sedemo.ibmaspera.com/packages/public/receive?to
 AOC_PUBLINK_SEND_DROPBOX=https://aspera.pub/xxktoFw/Team_Inbox
 AOC_PUBLINK_SEND_USER=https://aspera.pub/xxktoFw/Team_Inbox
 AOC_PUBLINK_FOLDER=
+
+SAMPLE_FILENAME=200KB.1
+SAMPLE_FILEPATH=~/Documents/Samples/$(SAMPLE_FILENAME)
