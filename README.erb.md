@@ -338,6 +338,14 @@ filter fields by "dotted" field name.
 
 Another option is `display`, which accepts values: info, data, error. Level `info` displays all messages (in table mode only). `data` do not display info messages, `error` display only error messages.
 
+By default, a table output will display one line per entry, and columns. Depending on the command, columns may include by default all properties, or only some selected properties. It is possible to define specific colums to be displayed, by setting the `fields` option to one of the following value:
+
+* DEF : default display of columns (that's the default, when not set)
+* ALL : all columns available
+* a,b,c : the list of attributes specified by the comma separated list
+* Array extended value: for instance, @json:'["a","b","c"]' same as above
+* +a,b,c : add selected properties to the default selection.
+
 ## <a name="extended"></a>Extended Value Syntax
 
 Usually, values of options and arguments are specified by a simple string. But sometime it is convenient to read a value from a file, or decode it, or have a value more complex than a string (e.g. Hash table).
@@ -1822,7 +1830,7 @@ The `smtp` option is a hash table (extended value) with the following fields:
 <tr><td>port</td><td>587 for tls<br/>25 else</td><td>587</td><td>port for service</td></tr>
 <tr><td>domain</td><td>domain of server</td><td>gmail.com</td><td>email domain of user</td></tr>
 <tr><td>username</td><td>-</td><td>john@example.com</td><td>user to authenticate on SMTP server, leave empty for open auth.</td></tr>
-<tr><td>password</td><td>-</td><td>Aspera123_</td><td>password for above username</td></tr>
+<tr><td>password</td><td>-</td><td>MyP@ssword</td><td>password for above username</td></tr>
 <tr><td>from\_email</td><td>username if defined</td><td>laurent.martin.l@gmail.com</td><td>address used if received replies</td></tr>
 <tr><td>from\_name</td><td>same as email</td><td>John Wayne</td><td>display name of sender</td></tr>
 </table>
