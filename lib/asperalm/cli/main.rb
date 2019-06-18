@@ -240,6 +240,26 @@ module Asperalm
       CSV_RECORD_SEPARATOR="\n"
       CSV_FIELD_SEPARATOR=","
 
+      def result_default_fields(results)
+        if results.has_key?(:fields) and !results[:fields].nil?
+          final_table_columns=results[:fields]
+        else
+          if !table_rows_hash_val.empty?
+            final_table_columns=table_rows_hash_val.first.keys
+          else
+            final_table_columns=['empty']
+          end
+        end
+      end
+
+      def result_all_fields(results)
+        raise "empty" if table_rows_hash_val.empty?
+        if table_rows_hash_val.is_a?(Array)
+          # get the list of all column names used in all lines, not just frst one, as all lines may have different columns
+          final_table_columns=table_rows_hash_val.inject({}){|m,v|v.keys.each{|c|m[c]=true};m}.keys
+        end
+      end
+
       # this method displays the results, especially the table format
       def display_results(results)
         raise "INTERNAL ERROR, result must be Hash (got: #{results.class}: #{results})" unless results.is_a?(Hash)
@@ -272,25 +292,15 @@ module Asperalm
                 self.class.flatten_object(obj,results[:option_expand_last])
               end
             end
-            case user_asked_fields_list_str
-            when FIELDS_DEFAULT
-              if results.has_key?(:fields) and !results[:fields].nil?
-                final_table_columns=results[:fields]
-              else
-                if !table_rows_hash_val.empty?
-                  final_table_columns=table_rows_hash_val.first.keys
-                else
-                  final_table_columns=['empty']
-                end
-              end
-            when FIELDS_ALL
-              raise "empty" if table_rows_hash_val.empty?
-              if table_rows_hash_val.is_a?(Array)
-                # get the list of all column names used in all lines, not just frst one, as all lines may have different columns
-                final_table_columns=table_rows_hash_val.inject({}){|m,v|v.keys.each{|c|m[c]=true};m}.keys
-              end
+            final_table_columns=case user_asked_fields_list_str
+            when FIELDS_DEFAULT; result_default_fields(results)
+            when FIELDS_ALL;     result_all_fields(results)
             else
-              final_table_columns=user_asked_fields_list_str.split(',')
+              if user_asked_fields_list_str.start_with?('+')
+                result_default_fields(results).push(*user_asked_fields_list_str.gsub(/^\+/,'').split(','))
+              else
+                user_asked_fields_list_str.split(',')
+              end
             end
           when :single_object # goes to table display
             # :single_object is a simple hash table  (can be nested)
