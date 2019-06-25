@@ -5,13 +5,14 @@ module Asperalm
   module Cli
     module Plugins
       # list and download connect client versions
-      # https://52.44.83.163/docs/pub/
+      # https://52.44.83.163/docs/
+      # https://developer.ibm.com/aspera/docs/ats-api-reference/creating-ats-api-keys/
       class Ats < Plugin
         def initialize(env)
           super(env)
           self.options.add_opt_simple(:secret,"Access key secret") unless env[:skip_secret]
-          self.options.add_opt_simple(:ibm_api_key,"IBM API key, see https://console.bluemix.net/iam/#/apikeys")
-          self.options.add_opt_simple(:instance,"ATS instance in bluemix")
+          self.options.add_opt_simple(:ibm_api_key,"IBM API key, see https://cloud.ibm.com/iam/apikeys")
+          self.options.add_opt_simple(:instance,"ATS instance in ibm cloud")
           self.options.add_opt_simple(:ats_key,"ATS key identifier (ats_xxx)")
           self.options.add_opt_simple(:ats_secret,"ATS key secret")
           self.options.add_opt_simple(:params,"Parameters access key creation (@json:)")
@@ -29,9 +30,9 @@ module Asperalm
         end
 
         # require api key only if needed
-        def ats_api_auth
-          return @ats_api_auth_cache unless @ats_api_auth_cache.nil?
-          @ats_api_auth_cache=Rest.new({
+        def ats_api_pub_v1
+          return @ats_api_pub_v1_cache unless @ats_api_pub_v1_cache.nil?
+          @ats_api_pub_v1_cache=Rest.new({
             :base_url => AtsApi.base_url+'/pub/v1',
             :auth     => {
             :type     => :basic,
@@ -67,21 +68,21 @@ module Asperalm
                 end
               end
             end
-            res=ats_api_auth.create("access_keys",params)
+            res=ats_api_pub_v1.create("access_keys",params)
             return {:type=>:single_object, :data=>res[:data]}
             # TODO : action : modify, with "PUT"
           when :list
             params=self.options.get_option(:params,:optional) || {'offset'=>0,'max_results'=>1000}
-            res=ats_api_auth.read("access_keys",params)
+            res=ats_api_pub_v1.read("access_keys",params)
             return {:type=>:object_list, :data=>res[:data]['data'], :fields => ['name','id','secret','created','modified']}
           when :show
-            res=ats_api_auth.read("access_keys/#{access_key_id}")
+            res=ats_api_pub_v1.read("access_keys/#{access_key_id}")
             return {:type=>:single_object, :data=>res[:data]}
           when :delete
-            res=ats_api_auth.delete("access_keys/#{access_key_id}")
+            res=ats_api_pub_v1.delete("access_keys/#{access_key_id}")
             return Main.result_status("deleted #{access_key_id}")
           when :node
-            ak_data=ats_api_auth.read("access_keys/#{access_key_id}")[:data]
+            ak_data=ats_api_pub_v1.read("access_keys/#{access_key_id}")[:data]
             server_data=@ats_api_pub.all_servers.select {|i| i['id'].start_with?(ak_data['transfer_server_id'])}.first
             raise CliError,"no such server found" if server_data.nil?
             api_node=Rest.new({
@@ -94,7 +95,7 @@ module Asperalm
             return Node.new(@agents.merge(skip_basic_auth_options: true, node_api: api_node)).execute_action(command)
           when :cluster
             rest_params={
-              :base_url => ats_api_auth.params[:base_url],
+              :base_url => ats_api_pub_v1.params[:base_url],
               :auth     => {
               :type     => :basic,
               :username => access_key_id,
@@ -102,7 +103,7 @@ module Asperalm
               }}
             # if no access key id provided, then we get from ATS API
             if rest_params[:auth][:password].nil?
-              ak_data=ats_api_auth.read("access_keys/#{access_key_id}")[:data]
+              ak_data=ats_api_pub_v1.read("access_keys/#{access_key_id}")[:data]
               #rest_params[:username]=ak_data['id']
               rest_params[:auth][:password]=ak_data['secret']
             end
@@ -131,27 +132,41 @@ module Asperalm
           end
         end
 
-        def ats_api_auth_ibm(add_headers={})
-          bluemix=Rest.new({:base_url=>'https://iam.bluemix.net'})
-          data={
-            'grant_type'    => 'urn:ibm:params:oauth:grant-type:apikey',
-            'response_type' => 'cloud_iam',
-            'apikey'        => self.options.get_option(:ibm_api_key,:mandatory)}
-          xx=bluemix.create('identity/token',data,:www_body_params)[:data]
+        def ats_api_v2_auth_ibm(rest_add_headers={})
+          #          ibm_cloud_api=Rest.new({:base_url=>'https://iam.bluemix.net/identity'})
+          #          ic_oauth_data={
+          #            'grant_type'    => 'urn:ibm:params:oauth:grant-type:apikey',
+          #            'response_type' => 'cloud_iam',
+          #            'apikey'        => self.options.get_option(:ibm_api_key,:mandatory)}
+          #token_data=ibm_cloud_api.create('token',ic_oauth_data,:www_body_params)[:data]
           return Rest.new({
             :base_url => AtsApi.base_url+'/v2',
-            :headers  => {'Authorization'=>"#{xx['token_type']} #{xx['access_token']}"}.merge(add_headers)
+            :auth     => {
+            :type       => :oauth2,
+            :base_url   => 'https://iam.bluemix.net/identity',
+            :grant      => :ibm_apikey,
+            :api_key    => self.options.get_option(:ibm_api_key,:mandatory)
+            }
+            #:headers  => {'Authorization'=>"#{token_data['token_type']} #{token_data['access_token']}"}.merge(rest_add_headers)
           })
         end
 
         def execute_action_api_key
           command=self.options.get_next_command([:instances, :create, :list, :show, :delete])
           if [:show,:delete].include?(command)
-            modified_ats_id=self.options.get_option(:id,:mandatory)
+            concerned_id=self.options.get_option(:id,:mandatory)
           end
-          add_header={}
-          add_header={'X-ATS-Service-Instance-Id'=>self.options.get_option(:instance,:mandatory)} unless command.eql?(:instances)
-          ats_ibm_api=ats_api_auth_ibm(add_header)
+          rest_add_header={}
+          if !command.eql?(:instances)
+            instance=self.options.get_option(:instance,:optional)
+            #Log.log.error("1>>#{instance}".red)
+            if instance.nil?
+              instance=ats_api_v2_auth_ibm.read('instances')[:data]['data'].first
+            end
+            #Log.log.error("2>>#{instance}".red)
+            rest_add_header={'X-ATS-Service-Instance-Id'=>instance}
+          end
+          ats_ibm_api=ats_api_v2_auth_ibm(rest_add_header)
           case command
           when :instances
             instances=ats_ibm_api.read('instances')[:data]
@@ -165,23 +180,23 @@ module Asperalm
             res=ats_ibm_api.read('api_keys',{'offset'=>0,'max_results'=>1000})
             return {:type=>:value_list, :data=>res[:data]['data'], :name => 'ats_id'}
           when :show # show one of api_key in ATS
-            res=ats_ibm_api.read("api_keys/#{modified_ats_id}")
+            res=ats_ibm_api.read("api_keys/#{concerned_id}")
             return {:type=>:single_object, :data=>res[:data]}
           when :delete #
-            res=ats_ibm_api.delete("api_keys/#{modified_ats_id}")
-            return Main.result_status("deleted #{modified_ats_id}")
+            res=ats_ibm_api.delete("api_keys/#{concerned_id}")
+            return Main.result_status("deleted #{concerned_id}")
           else raise "INTERNAL ERROR"
           end
         end
 
-        ACTIONS=[ :cluster, :access_key ,:api_key]
+        ACTIONS=[ :cluster, :access_key ,:api_key, :aws_trust_policy]
 
         # called for legacy and AoC
-        def execute_action_gen(ats_api_auth_arg)
+        def execute_action_gen(ats_api_arg)
           actions=ACTIONS
-          actions.delete(:api_key) unless ats_api_auth_arg.nil?
+          actions.delete(:api_key) unless ats_api_arg.nil?
           command=self.options.get_next_command(actions)
-          @ats_api_auth_cache=ats_api_auth_arg
+          @ats_api_pub_v1_cache=ats_api_arg
           # keep as member variable as we may want to use the api in AoC name space
           @ats_api_pub = AtsApi.new
           case command
@@ -191,6 +206,9 @@ module Asperalm
             return execute_action_access_key
           when :api_key # manage credential to access ATS API
             return execute_action_api_key
+          when :aws_trust_policy
+            res=ats_api_pub_v1.read('aws/trustpolicy',{:region=>self.options.get_option(:region,:mandatory)})[:data]
+            return {:type=>:single_object, :data=>res}
           else raise "ERROR"
           end
         end
