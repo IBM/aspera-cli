@@ -240,7 +240,7 @@ module Asperalm
       CSV_RECORD_SEPARATOR="\n"
       CSV_FIELD_SEPARATOR=","
 
-      def result_default_fields(results)
+      def result_default_fields(results,table_rows_hash_val)
         if results.has_key?(:fields) and !results[:fields].nil?
           final_table_columns=results[:fields]
         else
@@ -252,7 +252,7 @@ module Asperalm
         end
       end
 
-      def result_all_fields(results)
+      def result_all_fields(results,table_rows_hash_val)
         raise "empty" if table_rows_hash_val.empty?
         if table_rows_hash_val.is_a?(Array)
           # get the list of all column names used in all lines, not just frst one, as all lines may have different columns
@@ -293,11 +293,11 @@ module Asperalm
               end
             end
             final_table_columns=case user_asked_fields_list_str
-            when FIELDS_DEFAULT; result_default_fields(results)
-            when FIELDS_ALL;     result_all_fields(results)
+            when FIELDS_DEFAULT; result_default_fields(results,table_rows_hash_val)
+            when FIELDS_ALL;     result_all_fields(results,table_rows_hash_val)
             else
               if user_asked_fields_list_str.start_with?('+')
-                result_default_fields(results).push(*user_asked_fields_list_str.gsub(/^\+/,'').split(','))
+                result_default_fields(results,table_rows_hash_val).push(*user_asked_fields_list_str.gsub(/^\+/,'').split(','))
               else
                 user_asked_fields_list_str.split(',')
               end
