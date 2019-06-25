@@ -192,7 +192,7 @@ module Asperalm
       # text to png
       def gen_combi_plaintext_png()
         # get 100 first lines of text file
-        first_lines=File.open(@source){|f|100.times.map{f.readline}}.join
+        first_lines=File.open(@source){|f|100.times.map{f.readline rescue ''}}.join
         Utils.external_command(['convert',
           '-size',"#{Options.instance.thumb_img_size}x#{Options.instance.thumb_img_size}",
           'xc:white',
