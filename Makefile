@@ -19,7 +19,7 @@ GIT_TAG_CURRENT=$(GIT_TAG_VERSION_PREFIX)$(GEMVERSION)
 
 SRCZIPBASE=$(GEMNAME)_src
 TODAY=$(shell date +%Y%m%d)
-ZIPFILE=$(SRCZIPBASE)_$(TODAY).zip
+RELEASE_ZIP_FILE=$(SRCZIPBASE)_$(TODAY).zip
 LATEST_TAG=$(shell git describe --tags --abbrev=0)
 # these lines do not go to manual samples
 EXE_NOMAN=$(EXETEST)
@@ -28,7 +28,7 @@ INCL_USAGE=$(OUT_FOLDER)/$(EXENAME)_usage.txt
 INCL_COMMANDS=$(OUT_FOLDER)/$(EXENAME)_commands.txt
 INCL_ASESSION=$(OUT_FOLDER)/asession_usage.txt
 
-PACKAGE_TITLE=$(shell date)
+CURRENT_DATE=$(shell date)
 
 
 include config.make
@@ -72,9 +72,9 @@ $(INCL_USAGE):
 $(INCL_ASESSION):
 	$(BINDIR)/asession -h 2> $(INCL_ASESSION) || true
 
-$(ZIPFILE): README.md
+$(RELEASE_ZIP_FILE): README.md
 	rm -f $(SRCZIPBASE)_*.zip
-	zip -r $(ZIPFILE) `git ls-files`
+	zip -r $(RELEASE_ZIP_FILE) `git ls-files`
 
 $(GEMFILE): README.md
 	gem build asperalm.gemspec
@@ -131,13 +131,13 @@ t/sh1:
 	$(EXETEST) shares repository browse /
 	@touch $@
 t/sh2: $(LOCAL_FOLDER)/.exists
-	$(EXETEST) shares repository upload --to-folder=/$(TEST_SHARE) $(SAMPLE_FILEPATH)
+	$(EXETEST) shares repository upload --to-folder=/$(TEST_SHARE) $(CLIENT_DEMOFILE_PATH)
 	$(EXETEST) shares repository download --to-folder=$(LOCAL_FOLDER) /$(TEST_SHARE)/$(SAMPLE_FILENAME)
 	$(EXETEST) shares repository delete /$(TEST_SHARE)/$(SAMPLE_FILENAME)
 	@touch $@
 tshares: t/sh1 t/sh2 t/unit
 
-NEW_SERVER_FOLDER=$(MY_UPLOAD_FOLDER)/server_folder
+NEW_SERVER_FOLDER=$(SERVER_FOLDER_UPLOAD)/server_folder
 t/serv_browse:
 	$(EXETEST) server browse /
 	@touch $@
@@ -145,7 +145,7 @@ t/serv_mkdir:
 	$(EXETEST) server mkdir $(NEW_SERVER_FOLDER) --logger=stdout
 	@touch $@
 t/serv_upload: t/serv_mkdir
-	$(EXETEST) server upload $(SAMPLE_FILEPATH) --to-folder=$(NEW_SERVER_FOLDER)
+	$(EXETEST) server upload $(CLIENT_DEMOFILE_PATH) --to-folder=$(NEW_SERVER_FOLDER)
 	@touch $@
 t/serv_md5: t/serv_upload
 	$(EXETEST) server md5sum $(NEW_SERVER_FOLDER)/$(SAMPLE_FILENAME)
@@ -154,16 +154,16 @@ t/serv_down_lcl: t/serv_upload $(LOCAL_FOLDER)/.exists
 	$(EXETEST) server download $(NEW_SERVER_FOLDER)/$(SAMPLE_FILENAME) --to-folder=$(LOCAL_FOLDER)
 	@touch $@
 t/serv_down_from_node: t/serv_upload
-	$(EXETEST) server download $(NEW_SERVER_FOLDER)/$(SAMPLE_FILENAME) --to-folder=$(MY_UPLOAD_FOLDER) --transfer=node
+	$(EXETEST) server download $(NEW_SERVER_FOLDER)/$(SAMPLE_FILENAME) --to-folder=$(SERVER_FOLDER_UPLOAD) --transfer=node
 	@touch $@
 t/serv_cp: t/serv_upload
-	$(EXETEST) server cp $(NEW_SERVER_FOLDER)/$(SAMPLE_FILENAME) $(MY_UPLOAD_FOLDER)/200KB.2
+	$(EXETEST) server cp $(NEW_SERVER_FOLDER)/$(SAMPLE_FILENAME) $(SERVER_FOLDER_UPLOAD)/200KB.2
 	@touch $@
 t/serv_mv: t/serv_cp
-	$(EXETEST) server mv $(MY_UPLOAD_FOLDER)/200KB.2 $(MY_UPLOAD_FOLDER)/to.delete
+	$(EXETEST) server mv $(SERVER_FOLDER_UPLOAD)/200KB.2 $(SERVER_FOLDER_UPLOAD)/to.delete
 	@touch $@
 t/serv_delete: t/serv_mv
-	$(EXETEST) server delete $(MY_UPLOAD_FOLDER)/to.delete
+	$(EXETEST) server delete $(SERVER_FOLDER_UPLOAD)/to.delete
 	@touch $@
 t/serv_cleanup1:
 	$(EXETEST) server delete $(NEW_SERVER_FOLDER)
@@ -187,7 +187,7 @@ t/serv_nagios_webapp:
 	$(EXETEST) -N server --url=$(FASPEX_SSH_URL) --username=root --ssh-keys=~/.ssh/id_rsa --format=nagios nagios app_services
 	@touch $@
 t/serv_nagios_transfer:
-	$(EXETEST) -N server --url=$(HSTS_SSH_URL) --username=asperaweb --password=demoaspera --format=nagios nagios transfer --to-folder=$(MY_UPLOAD_FOLDER)
+	$(EXETEST) -N server --url=$(HSTS_SSH_URL) --username=asperaweb --password=demoaspera --format=nagios nagios transfer --to-folder=$(SERVER_FOLDER_UPLOAD)
 	@touch $@
 t/serv3:
 	$(EXETEST) -N server --url=$(FASPEX_SSH_URL) --username=root --ssh-keys=~/.ssh/id_rsa ctl all:status
@@ -198,7 +198,7 @@ t/fx1:
 	$(EXETEST) faspex package list
 	@touch $@
 t/fx2:
-	$(EXETEST) faspex package send --delivery-info=@json:'{"title":"'"$(PACKAGE_TITLE)"'","recipients":["laurent.martin.aspera@fr.ibm.com"]}' $(SAMPLE_FILEPATH)
+	$(EXETEST) faspex package send --delivery-info=@json:'{"title":"'"$(CURRENT_DATE)"'","recipients":["laurent.martin.aspera@fr.ibm.com"]}' $(CLIENT_DEMOFILE_PATH)
 	@touch $@
 t/fx3:
 	$(EXETEST) faspex package recv --to-folder=$(LOCAL_FOLDER) --id=$$($(EXETEST) faspex package list --fields=delivery_id --format=csv --box=sent|tail -n 1) --box=sent
@@ -207,10 +207,10 @@ t/fx4:
 	$(EXETEST) faspex package recv --link='$(FASPEX_PUBLINK_RECV_PACKAGE)'
 	@touch $@
 t/fx4b:
-	$(EXETEST) faspex package send --link='$(FASPEX_PUBLINK_SEND_TO_USER)' --delivery-info=@json:'{"title":"'"$(PACKAGE_TITLE)"'"}' $(SAMPLE_FILEPATH)
+	$(EXETEST) faspex package send --link='$(FASPEX_PUBLINK_SEND_TO_USER)' --delivery-info=@json:'{"title":"'"$(CURRENT_DATE)"'"}' $(CLIENT_DEMOFILE_PATH)
 	@touch $@
 t/fx4c:
-	$(EXETEST) faspex package send --link='$(FASPEX_PUBLINK_SEND_DROPBOX)' --delivery-info=@json:'{"title":"'"$(PACKAGE_TITLE)"'"}' $(SAMPLE_FILEPATH)
+	$(EXETEST) faspex package send --link='$(FASPEX_PUBLINK_SEND_DROPBOX)' --delivery-info=@json:'{"title":"'"$(CURRENT_DATE)"'"}' $(CLIENT_DEMOFILE_PATH)
 	@touch $@
 t/fx5:
 	$(EXETEST) faspex source name "Server Files" node br /
@@ -234,13 +234,13 @@ t/nd1:
 	$(EXETEST) node search / --value=@json:'{"sort":"mtime"}'
 	@touch $@
 t/nd2: $(LOCAL_FOLDER)/.exists
-	$(EXETEST) node upload --to-folder=$(MY_UPLOAD_FOLDER) --ts=@json:'{"target_rate_cap_kbps":10000}' $(SAMPLE_FILEPATH)
-	$(EXETEST) node download --to-folder=$(LOCAL_FOLDER) $(MY_UPLOAD_FOLDER)/$(SAMPLE_FILENAME)
-	$(EXETEST) node delete $(MY_UPLOAD_FOLDER)/$(SAMPLE_FILENAME)
+	$(EXETEST) node upload --to-folder=$(SERVER_FOLDER_UPLOAD) --ts=@json:'{"target_rate_cap_kbps":10000}' $(CLIENT_DEMOFILE_PATH)
+	$(EXETEST) node download --to-folder=$(LOCAL_FOLDER) $(SERVER_FOLDER_UPLOAD)/$(SAMPLE_FILENAME)
+	$(EXETEST) node delete $(SERVER_FOLDER_UPLOAD)/$(SAMPLE_FILENAME)
 	rm -f $(LOCAL_FOLDER)/$(SAMPLE_FILENAME)
 	@touch $@
 t/nd3:
-	$(EXETEST) --no-default node --url=$(HSTS_NODE_URL) --username=$(TEST_NODE_USER) --password=$(TEST_NODE_PASS) --insecure=yes upload --to-folder=$(MY_UPLOAD_FOLDER) --sources=@ts --ts=@json:'{"paths":[{"source":"/aspera-test-dir-small/10MB.1"}],"remote_password":"demoaspera","precalculate_job_size":true}' --transfer=node --transfer-info=@json:'{"url":"https://$(HSTS_ADDR):9092","username":"$(TEST_NODE_USER)","password":"'$(TEST_NODE_PASS)'"}' 
+	$(EXETEST) --no-default node --url=$(HSTS_NODE_URL) --username=$(TEST_NODE_USER) --password=$(TEST_NODE_PASS) --insecure=yes upload --to-folder=$(SERVER_FOLDER_UPLOAD) --sources=@ts --ts=@json:'{"paths":[{"source":"/aspera-test-dir-small/10MB.1"}],"remote_password":"demoaspera","precalculate_job_size":true}' --transfer=node --transfer-info=@json:'{"url":"https://$(HSTS_ADDR):9092","username":"$(TEST_NODE_USER)","password":"'$(TEST_NODE_PASS)'"}' 
 	$(EXETEST) --no-default node --url=$(HSTS_NODE_URL) --username=$(TEST_NODE_USER) --password=$(TEST_NODE_PASS) --insecure=yes delete /500M.dat
 	@touch $@
 t/nd4:
@@ -305,7 +305,7 @@ t/aocf5: t/aocf2 # WS: Demo
 	$(EXETEST) aspera files transfer --from-folder=/ --to-folder=xxx 200KB.1
 	@touch $@
 t/aocf2:
-	$(EXETEST) aspera files upload --to-folder=/ $(SAMPLE_FILEPATH)
+	$(EXETEST) aspera files upload --to-folder=/ $(CLIENT_DEMOFILE_PATH)
 	@touch $@
 t/aocf3: $(LOCAL_FOLDER)/.exists
 	@rm -f $(LOCAL_FOLDER)/200KB.1
@@ -322,10 +322,13 @@ t/aocf1e:
 t/aocf1f:
 	$(EXETEST) aspera files file 18891
 	@touch $@
-taocf: t/aocf1 t/aocffin t/aocfmkd t/aocfdel t/aocf1d t/aocf5 t/aocf2 t/aocf3 t/aocf4 t/aocf1e t/aocf1f
+t/aocfpub:
+	$(EXETEST) -N aspera files upload --to-folder=/ $(CLIENT_DEMOFILE_PATH) --link=$(AOC_PUBLINK_FOLDER)
+	@touch $@
+taocf: t/aocf1 t/aocffin t/aocfmkd t/aocfdel t/aocf1d t/aocf5 t/aocf2 t/aocf3 t/aocf4 t/aocf1e t/aocf1f t/aocfpub
 t/aocp1:
-	$(EXETEST) aspera packages send --value=@json:'{"name":"'"$(PACKAGE_TITLE)"'","note":"my note","recipients":["laurent.martin.aspera@fr.ibm.com"]}' $(SAMPLE_FILEPATH)
-	$(EXETEST) aspera packages send --value=@json:'{"name":"'"$(PACKAGE_TITLE)"'","recipients":["laurent.martin.l+external@gmail.com"]}' --new-user-option=@json:'{"package_contact":true}' $(SAMPLE_FILEPATH)
+	$(EXETEST) aspera packages send --value=@json:'{"name":"'"$(CURRENT_DATE)"'","recipients":["laurent.martin.aspera@fr.ibm.com"],"note":"my note"}' $(CLIENT_DEMOFILE_PATH)
+	$(EXETEST) aspera packages send --value=@json:'{"name":"'"$(CURRENT_DATE)"'","recipients":["laurent.martin.l+external@gmail.com"]}' --new-user-option=@json:'{"package_contact":true}' $(CLIENT_DEMOFILE_PATH)
 	@touch $@
 t/aocp2:
 	$(EXETEST) aspera packages list
@@ -337,9 +340,16 @@ t/aocp4:
 	$(EXETEST) aspera packages recv --id=ALL --once-only=yes --lock-port=12345
 	@touch $@
 t/aocp5:
-	$(EXETEST) -N aspera org --link=https://sedemo.ibmaspera.com/packages/public/receive?token=cpDktbNc8aHnyrbI_V49GzFwm5q3jxWnT_cDOjaewrc
+	$(EXETEST) -N aspera org --link=$(AOC_PUBLINK_RECV_PACKAGE)
 	@touch $@
-taocp: t/aocp1 t/aocp2 t/aocp3 t/aocp4 t/aocp5
+t/aocp6:
+	$(EXETEST) -N aspera packages send --value=@json:'{"name":"'"$(CURRENT_DATE)"'"}' $(CLIENT_DEMOFILE_PATH) --link=$(AOC_PUBLINK_SEND_DROPBOX)
+	@touch $@
+t/aocp7:
+	$(EXETEST) -N aspera packages send --value=@json:'{"name":"'"$(CURRENT_DATE)"'"}' $(CLIENT_DEMOFILE_PATH) --link=$(AOC_PUBLINK_SEND_USER)
+	@touch $@
+
+taocp: t/aocp1 t/aocp2 t/aocp3 t/aocp4 t/aocp5 t/aocp5
 HIDE_SECRET1='AML3clHuHwDArShhcQNVvWGHgU9dtnpgLzRCPsBr7H5JdhrFU2oRs69_tJTEYE-hXDVSW-vQ3-klRnJvxrTkxQ'
 t/aoc7:
 	$(EXETEST) aspera admin res node v3 events --secret=$(HIDE_SECRET1)
@@ -388,21 +398,18 @@ t/aocat8:
 #	$(EXETEST) aspera admin ats access_key create --cloud=softlayer --region=ams --params=@json:'{"id":"testkey2","name":"laurent key","storage":{"type":"softlayer_swift","container":"laurent","credentials":{"api_key":"e5d032e026e0b0a16e890a3d44d11fd1471217b6262e83c7f60529f1ff4b27de","username":"IBMOS303446-9:laurentmartin"},"path":"/"}}'
 	@touch $@
 t/aocat9:
-	$(EXETEST) aspera admin ats access_key create --cloud=aws --region=eu-west-1 --params=@json:'{"id":"testkey3","name":"laurent key AWS","storage":{"type":"aws_s3","bucket":"sedemo-ireland","credentials":{"access_key_id":"AKIAIDSWKOSIM7XUVCJA","secret_access_key":"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"},"path":"/laurent"}}'
+	$(EXETEST) aspera admin ats access_key create --cloud=aws --region=eu-west-1 --params=@json:'{"id":"test_key_aoc","name":"laurent key AWS","storage":{"type":"aws_s3","bucket":"sedemo-ireland","credentials":{"access_key_id":"AKIAIDSWKOSIM7XUVCJA","secret_access_key":"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"},"path":"/laurent"}}'
 	@touch $@
 t/aocat10:
 	$(EXETEST) aspera admin ats access_key list --fields=name,id,secret
 	@touch $@
 t/aocat11:
-	$(EXETEST) aspera admin ats access_key --id=testkey3 node browse /
+	$(EXETEST) aspera admin ats access_key --id=test_key_aoc node browse /
 	@touch $@
 t/aocat13:
-	-$(EXETEST) aspera admin ats access_key --id=testkey3 delete
+	-$(EXETEST) aspera admin ats access_key --id=test_key_aoc delete
 	@touch $@
-t/aocat14:
-	-$(EXETEST) aspera admin ats access_key --id=testkey3 delete
-	@touch $@
-taocts: t/aocat4 t/aocat5 t/aocat6 t/aocat7 t/aocat8 t/aocat9 t/aocat10 t/aocat11 t/aocat13 t/aocat14
+taocts: t/aocat4 t/aocat5 t/aocat6 t/aocat7 t/aocat8 t/aocat9 t/aocat10 t/aocat11 t/aocat13
 taoc: taocgen taocf taocp taocadm taocts
 
 t/o1:
@@ -460,22 +467,22 @@ t/at8:
 #	$(EXETEST) ats access_key create --cloud=softlayer --region=ams --params=@json:'{"id":"testkey2","name":"laurent key","storage":{"type":"softlayer_swift","container":"laurent","credentials":{"api_key":"e5d032e026e0b0a16e890a3d44d11fd1471217b6262e83c7f60529f1ff4b27de","username":"IBMOS303446-9:laurentmartin"},"path":"/"}}'
 	@touch $@
 t/at9:
-	$(EXETEST) ats access_key create --cloud=aws --region=eu-west-1 --params=@json:'{"id":"testkey3","name":"laurent key AWS","storage":{"type":"aws_s3","bucket":"sedemo-ireland","credentials":{"access_key_id":"AKIAIDSWKOSIM7XUVCJA","secret_access_key":"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"},"path":"/laurent"}}'
+	$(EXETEST) ats access_key create --cloud=aws --region=eu-west-1 --params=@json:'{"id":"test_key_ats","name":"laurent key AWS","storage":{"type":"aws_s3","bucket":"sedemo-ireland","credentials":{"access_key_id":"AKIAIDSWKOSIM7XUVCJA","secret_access_key":"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"},"path":"/laurent"}}'
 	@touch $@
 t/at10:
 	$(EXETEST) ats access_key list --fields=name,id,secret
 	@touch $@
 t/at11:
-	$(EXETEST) ats access_key --id=testkey3 node browse /
+	$(EXETEST) ats access_key --id=test_key_ats node browse /
 	@touch $@
 t/at12:
-	$(EXETEST) ats access_key --id=testkey3 cluster
+	$(EXETEST) ats access_key --id=test_key_ats cluster
 	@touch $@
 t/at13:
-	-$(EXETEST) ats access_key --id=testkey2 delete
+#	-$(EXETEST) ats access_key --id=testkey2 delete
 	@touch $@
 t/at14:
-	$(EXETEST) ats access_key --id=testkey3 delete
+	$(EXETEST) ats access_key --id=test_key_ats delete
 	@touch $@
 
 tats: t/at4 t/at5 t/at6 t/at7 t/at2 t/at1 t/at3 t/at8 t/at9 t/at10 t/at11 t/at12 t/at13 t/at14
@@ -621,15 +628,15 @@ tprev: t/prev1 t/prev2 t/prev3
 thot:
 	rm -fr source_hot
 	mkdir source_hot
-	-$(EXETEST) server delete $(MY_UPLOAD_FOLDER)/target_hot
-	$(EXETEST) server mkdir $(MY_UPLOAD_FOLDER)/target_hot
+	-$(EXETEST) server delete $(SERVER_FOLDER_UPLOAD)/target_hot
+	$(EXETEST) server mkdir $(SERVER_FOLDER_UPLOAD)/target_hot
 	echo hello > source_hot/newfile
-	$(EXETEST) server upload --to-folder=$(MY_UPLOAD_FOLDER)/target_hot --lock-port=12345 --ts=@json:'{"EX_ascp_args":["--remove-after-transfer","--remove-empty-directories","--exclude-newer-than=-8","--src-base","source_hot"]}' source_hot
-	$(EXETEST) server browse $(MY_UPLOAD_FOLDER)/target_hot
+	$(EXETEST) server upload --to-folder=$(SERVER_FOLDER_UPLOAD)/target_hot --lock-port=12345 --ts=@json:'{"EX_ascp_args":["--remove-after-transfer","--remove-empty-directories","--exclude-newer-than=-8","--src-base","source_hot"]}' source_hot
+	$(EXETEST) server browse $(SERVER_FOLDER_UPLOAD)/target_hot
 	ls -al source_hot
 	sleep 10
-	$(EXETEST) server upload --to-folder=$(MY_UPLOAD_FOLDER)/target_hot --lock-port=12345 --ts=@json:'{"EX_ascp_args":["--remove-after-transfer","--remove-empty-directories","--exclude-newer-than=-8","--src-base","source_hot"]}' source_hot
-	$(EXETEST) server browse $(MY_UPLOAD_FOLDER)/target_hot
+	$(EXETEST) server upload --to-folder=$(SERVER_FOLDER_UPLOAD)/target_hot --lock-port=12345 --ts=@json:'{"EX_ascp_args":["--remove-after-transfer","--remove-empty-directories","--exclude-newer-than=-8","--src-base","source_hot"]}' source_hot
+	$(EXETEST) server browse $(SERVER_FOLDER_UPLOAD)/target_hot
 	ls -al source_hot
 	rm -fr source_hot
 	@touch $@
