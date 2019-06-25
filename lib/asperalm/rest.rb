@@ -128,7 +128,7 @@ module Asperalm
         call_data[:auth][:url_creds].each do |key, value|
           call_data[:url_params][key]=value
         end
-      else raise "bad auth: #{call_data[:auth][:type]}"
+      else raise "unsupported auth type: [#{call_data[:auth][:type]}]"
       end
       # TODO: shall we percent encode subpath (spaces) test with access key delete with space in id
       # URI.escape()
@@ -196,6 +196,7 @@ module Asperalm
         if call_data.has_key?(:headers) and
         call_data[:headers].has_key?('Accept') then
           Log.log.debug("result: body=#{result[:http].body}")
+          # TODO: should base on result[:http].headers['content-type']
           case call_data[:headers]['Accept']
           when 'application/json'
             if !result[:http].body.nil?
