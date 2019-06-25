@@ -51,7 +51,7 @@ module Asperalm
 
       # from bash manual: metacharacter
       # need to be escaped
-      SHELL_SPECIAL_CHARACTERS="|&;()<> \t#"
+      SHELL_SPECIAL_CHARACTERS="|&;()<> \t#\n"
 
       # returns string with single quotes suitable for bash if there is any bash metacharacter
       def self.shell_quote(argument)
