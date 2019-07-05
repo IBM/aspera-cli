@@ -35,7 +35,7 @@ RSpec.describe Asperalm::Cli::Main do
 end
 
 RSpec.describe Asperalm::ProxyAutoConfig do
-  it "works" do
+  it "get right proxy" do
     expect(Asperalm::ProxyAutoConfig.new(Asperalm::UriReader.read('file:///./examples/proxy.pac')).get_proxy('http://eudemo.asperademo.com')).to eq("PROXY proxy.example.com:8080")
   end
 end
