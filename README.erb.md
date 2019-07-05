@@ -104,13 +104,13 @@ Then, follow the section relative to the product you want to interact with ( Asp
 
 In order to use the tool or the gem, it is necessary to install those components:
 
-* ruby
-* asperalm
-* fasp
+* [Ruby](#ruby)
+* [asperalm](#the_gem)
+* [FASP](#fasp_prot)
 
 The following sections provide information on the installation.
 
-## Ruby
+## <a name="ruby"></a>Ruby
 
 A ruby interpreter is required to run the tool or to use the gem. It is also required to have privilege to install gems.
 
@@ -148,7 +148,7 @@ $ yum install ruby rubygems
 
 Note that Ruby 2+ is required, if you have an older Linux (e.g. CentOS 6) or want to use a separate version: you should install "rvm" [https://rvm.io/](https://rvm.io/) and install and use a newer Ruby.
 
-## `asperalm` gem
+## <a name="the_gem"></a>`asperalm` gem
 
 Once you have Ruby and rights to install gems: Install the gem and its dependencies:
 
@@ -163,7 +163,7 @@ $ gem update asperalm
 ```
 
 
-## FASP Protocol
+## <a name="fasp_prot"></a>FASP Protocol
 
 Most file transfers will be done using the FASP protocol. Only two additional files are required to perform
 an Aspera Transfer:
@@ -964,7 +964,7 @@ In Oauth, a "Bearer" token are generated to authenticate REST calls. Bearer toke
 
 The first step is to declare <%=tool%> in Aspera on Cloud using the admin interface.
 
-(official documentation: [https://aspera.asperafiles.com/helpcenter/admin/organization/registering-an-api-client](https://aspera.asperafiles.com/helpcenter/admin/organization/registering-an-api-client) ).
+(official documentation: <https://ibmaspera.com/help/admin/organization/registering_an_api_client> ).
 
 Let's start by a registration with web based authentication (auth=web):
 
@@ -1655,7 +1655,18 @@ to start from ma configuration file, using <%=tool%> standard options.
 
 ## Preview
 
-The preview plugin provides generation of previews for Aspera on Cloud.
+The preview plugin provides generation of previews for Node API Access Key based browsing, as used in Aspera on Cloud.
+
+It generates preview files for Aspera on Cloud for on-premise nodes. (thumbnails and video previews)
+
+The preview generator creates/updates a preview for files located on
+an access key main "storage root". Several candidate detection methods are supported.
+
+Requires ES 3.7.4+
+
+This is related to:
+
+<https://ibmaspera.com/help/admin/organization/installing_the_preview_maker>
 
 The tool requires the following external tools:
 
@@ -1664,31 +1675,32 @@ The tool requires the following external tools:
 * FFmpeg : `ffmpeg` `ffprobe`
 * Libreoffice : `libreoffice`
 
-### Preview Command
-The `preview` plugin allows generation of preview files for Aspera on Cloud for on-premise nodes. (thumbnails and video previews)
-
-The preview generator creates/updates a preview for files located on
-an access key main "storage root". Several candidate detection methods are supported.
-
-This version requires ES 3.7.4+
-
-This is related to:
-
-<https://aspera.asperafiles.com/helpcenter/admin/organization/installing-files-preview-maker>
 
 ### Configuration
 
-Like any <%=tool%> commands, parameters can be passed on command line or using a configuration <%=prst%>. Example using a <%=prst%>:
+Like any <%=tool%> commands, parameters can be passed on command line or using a configuration <%=prst%>. Example using a <%=prst%> named `my_preset_name` (choose any name relevant to you, e.g. to AoC node name):
 
 ```
-$ <%=cmd%> config id my_aoc_access_key update --url=https://localhost:9092 --username=my_access_key --password=my_secret
-$ <%=cmd%> config id default set preview my_aoc_access_key
+$ <%=cmd%> config id my_preset_name update --url=https://localhost:9092 --username=my_access_key --password=my_secret
+$ <%=cmd%> config id default set preview my_preset_name
 ```
 
 Once can check if the access key is well configured using:
 ```
-$ <%=cmd%> -Pmy_aoc_access_key node browse /
+$ <%=cmd%> -Pmy_preset_name node browse /
 ```
+This shall list the contents of the storage root of the access key.
+
+By default, the `preview` plugin expects previews to be generated in a folder named `previews` located in the storage root. So, on the transfer server execute:
+
+```
+# /opt/aspera/bin/asconfigurator -x "server;preview_dir,previews"
+# /opt/aspera/bin/asnodeadmin --reload
+```
+
+If another folder is setup, this can be modified in <%=tool%> using the option `previews_folder`
+
+Some external tools are required, follow the section: [External tools](#prev_ext)
 
 ### Execution
 
@@ -1765,7 +1777,7 @@ with crontab:
 0 * * * *    su -s /bin/bash - xfer -c 'timeout 30m <%=cmd%> preview scan  --skip-types=office --lock-port=12346 --log-level=info --logger=syslog'
 ```
 
-### External tools: Linux
+### <a name="prev_ext"></a>External tools: Linux
 
 Here shown on Redhat/CentOS
 
@@ -1790,11 +1802,13 @@ popd
 
 * Libreoffice
 
+As installation is a little complex, it is possible to not install libreoffice, and skip office document preview generation by using option: `--skip-types=office`
+
 ```
 yum install libreoffice
 ```
 
-* Xvfb
+* Xvfb (for Libreoffice)
 
 Although libreoffice is run headless, older versions may require an X server. If you get error running libreoffice headless, then install Xvfb:
 
