@@ -148,7 +148,7 @@ module Asperalm
           # get new file creation by access key (TODO: what if file already existed?)
           events_filter={
             'access_key'=>@access_key_self['id'],
-            'type'=>'file.created'
+            'type'=>'file.*'
           }
           # and optionally by iteration token
           events_filter['iteration_token']=iteration_token unless iteration_token.nil?
@@ -161,7 +161,12 @@ module Asperalm
             next if file_entry.nil?
             next unless @option_skip_folders.select{|d|file_entry['path'].start_with?(d)}.empty?
             file_entry['parent_file_id']=event['data']['parent_file_id']
-            generate_preview(file_entry)
+            if event['types'].include?('file.deleted')
+              Log.log.error("TODO".red)
+            end
+            if event['types'].include?('file.deleted')
+              generate_preview(file_entry)
+            end
           end
           # write new iteration file
           return events.last['id'].to_s
