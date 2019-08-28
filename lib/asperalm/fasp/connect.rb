@@ -27,8 +27,8 @@ module Asperalm
           Log.log.debug("reading connect port file: #{uri_file}")
           connect_url=File.open(uri_file){|f|f.gets}.strip
           Log.log.debug("found: #{connect_url}")
-          @connect_api=Rest.new({:base_url => "#{connect_url}/v5/connect"})
-          @connect_api.read('info/version')
+          @connect_api=Rest.new({:base_url => "#{connect_url}/v5/connect"}) # could use v6 also now
+          cinfo=@connect_api.read('info/version')[:data]
         rescue => e # Errno::ECONNREFUSED
           raise StandardError,"Unable to start connect after #{trynumber} try" if trynumber >= MAX_CONNECT_START_RETRY
           Log.log.warn("connect is not started. Retry ##{trynumber}, err=#{e}")
