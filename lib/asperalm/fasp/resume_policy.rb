@@ -30,7 +30,7 @@ module Asperalm
       attr_reader :parameters
 
       # calls block a number of times (resumes) until success or limit reached
-      # this is re-entrant, one resumer cam handle multiple transfers in //
+      # this is re-entrant, one resumer can handle multiple transfers in //
       def process(&block)
         # maximum of retry
         remaining_resumes = @parameters[:iter_max]
