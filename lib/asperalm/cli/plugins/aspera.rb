@@ -64,8 +64,13 @@ module Asperalm
         end
 
         def execute_node_gen4_action(top_node_file)
-          command_repo=self.options.get_next_command([ :browse, :find, :mkdir, :rename, :delete, :upload, :download, :transfer, :http_node_download, :v3, :file  ])
+          command_repo=self.options.get_next_command([ :browse, :find, :mkdir, :rename, :delete, :upload, :download, :transfer, :http_node_download, :v3, :file, :bearer_token_node  ])
           case command_repo
+          when :bearer_token_node
+            thepath=self.options.get_next_argument('path')
+            node_file = @api_aoc.resolve_node_file(top_node_file,thepath)
+            token=@api_aoc.oauth_token(scope: OnCloud.node_scope(node_file[:node_info]['access_key'],OnCloud::SCOPE_NODE_USER), refresh: false)
+            return Main.result_status(token)
           when :browse
             thepath=self.options.get_next_argument('path')
             node_file = @api_aoc.resolve_node_file(top_node_file,thepath)
@@ -202,7 +207,7 @@ module Asperalm
             raise "exceeded max redirection: #{MAX_REDIRECT}" if redirect_count > MAX_REDIRECT
             r = Net::HTTP.get_response(uri)
             if r.code.start_with?("3")
-              public_link_url = r.header['location']
+              public_link_url = r['location']
               raise "no location in redirection" if public_link_url.nil?
               Log.log.debug("redirect to: #{public_link_url}")
             else
