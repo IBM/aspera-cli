@@ -2072,6 +2072,13 @@ Gems, or remove your ed25519 key from your `.ssh` folder to solve the issue. Not
 
 # Release Notes
 
+* version 0.9.33
+
+   * new command to display basic token of node
+   * new command to display bearer token of node in AoC
+   * the --fields= option, support +_fieldname_ to add a field to default fields
+   * many small changes
+    
 * version 0.9.32
 
    * all Faspex public links are now supported
