@@ -27,6 +27,8 @@ This manual addresses three parts:
 
 In examples, command line operations (starting with `$`) are shown using a standard shell: `bash`.
 
+Command line parameters in example beginning with `my_`, like `my_param_value` are user proviuded value and not fixed value commands.
+
 # Quick Start
 
 This section guides you from installation, first use and advanced use.
@@ -1662,54 +1664,6 @@ It generates preview files for Aspera on Cloud for on-premise nodes. (thumbnails
 The preview generator creates/updates a preview for files located on
 an access key main "storage root". Several candidate detection methods are supported.
 
-Requires ES 3.7.4+
-
-This is related to:
-
-<https://ibmaspera.com/help/admin/organization/installing_the_preview_maker>
-
-The tool requires the following external tools:
-
-* ImageMagick : `convert` `composite`
-* OptiPNG : `optipng`
-* FFmpeg : `ffmpeg` `ffprobe`
-* Libreoffice : `libreoffice`
-
-
-### Configuration
-
-Like any <%=tool%> commands, parameters can be passed on command line or using a configuration <%=prst%>. Example using a <%=prst%> named `my_preset_name` (choose any name relevant to you, e.g. to AoC node name):
-
-```
-$ <%=cmd%> config id my_preset_name update --url=https://localhost:9092 --username=my_access_key --password=my_secret
-$ <%=cmd%> config id default set preview my_preset_name
-```
-
-Once can check if the access key is well configured using:
-```
-$ <%=cmd%> -Pmy_preset_name node browse /
-```
-This shall list the contents of the storage root of the access key.
-
-By default, the `preview` plugin expects previews to be generated in a folder named `previews` located in the storage root. So, on the transfer server execute:
-
-```
-# /opt/aspera/bin/asconfigurator -x "server;preview_dir,previews"
-# /opt/aspera/bin/asnodeadmin --reload
-```
-
-If another folder is setup, this can be modified in <%=tool%> using the option `previews_folder`
-
-Some external tools are required, follow the section: [External tools](#prev_ext)
-
-### Execution
-
-The tool intentionally supports only a "one shot" mode.
-It needs to be run regularly to create or update preview files.
-It does not implement a loop. Running preview generation
-on a regular basis shall be done using the operating system
-scheduler (e.g. Cron on Linux, or Task Scheduler on Windows). Refer to section [_Scheduling_](#_scheduling_).
-
 ### Candidate detection
 
 The tool will find candidates for preview generation using three commands:
@@ -1717,6 +1671,11 @@ The tool will find candidates for preview generation using three commands:
 * `events` : only recently uploaded files will be tested
 * `scan` : deeply scan all files under the access key&apos;s "storage root"
 * `folder` : same as `scan`, but only on the specified folder&apos;s "file identifier"
+* `file` : for an individual file generation
+
+Note that for the `event`, the option `iteration_file` should be specified so that
+successive calls only process new events. This file will hold an identifier
+telling from where to get new events.
 
 ### File type detection
 
@@ -1762,32 +1721,24 @@ To skip some folders, use the option : `--skip-folders`, note that it expects a 
 $ <%=cmd%> preview scan --skip-folders=@json:'["/not_here"]'
 ```
 
-### Examples
-
-on command line:
-
-```bash
-$ <%=cmd%> preview event --skip-types=office --file-access=remote --overwrite=always --iteration-file=/tmp/restart.txt --lock-port=12346
-```
-
-with crontab:
-
-```bash
-2-59 * * * * su -s /bin/bash - xfer -c 'timeout 10m <%=cmd%> preview event --skip-types=office --lock-port=12346 --log-level=info --logger=syslog --iteration-file=/tmp/preview_restart.txt'
-0 * * * *    su -s /bin/bash - xfer -c 'timeout 30m <%=cmd%> preview scan  --skip-types=office --lock-port=12346 --log-level=info --logger=syslog'
-```
-
 ### <a name="prev_ext"></a>External tools: Linux
 
-Here shown on Redhat/CentOS
+The tool requires the following external tools available in the `PATH`:
 
-* Imagemagick and optipng:
+* ImageMagick : `convert` `composite`
+* OptiPNG : `optipng`
+* FFmpeg : `ffmpeg` `ffprobe`
+* Libreoffice : `libreoffice`
+
+Here shown on Redhat/CentOS.
+
+#### Imagemagick and optipng:
 
 ```
 yum install -y ImageMagick optipng
 ```
 
-* FFmpeg
+#### FFmpeg
 
 ```
 pushd /tmp
@@ -1800,7 +1751,7 @@ ln -s /opt/ffmpeg/{ffmpeg,ffprobe} /usr/bin
 popd
 ```
 
-* Libreoffice
+#### Libreoffice
 
 As installation is a little complex, it is possible to not install libreoffice, and skip office document preview generation by using option: `--skip-types=office`
 
@@ -1808,7 +1759,7 @@ As installation is a little complex, it is possible to not install libreoffice, 
 yum install libreoffice
 ```
 
-* Xvfb (for Libreoffice)
+#### Xvfb (for Libreoffice)
 
 Although libreoffice is run headless, older versions may require an X server. If you get error running libreoffice headless, then install Xvfb:
 
@@ -1831,6 +1782,74 @@ chmod a+x /etc/init.d/xvfb
 chkconfig xvfb on
 service xvfb start
 ```
+
+### Aspera Server configuration
+
+Specify the previews folder as shown in:
+
+<https://ibmaspera.com/help/admin/organization/installing_the_preview_maker>
+
+By default, the `preview` plugin expects previews to be generated in a folder named `previews` located in the storage root. So, on the transfer server execute:
+
+```
+# /opt/aspera/bin/asconfigurator -x "server;preview_dir,previews"
+# /opt/aspera/bin/asnodeadmin --reload
+```
+
+If another folder is setup, this can be modified in <%=tool%> using the option `previews_folder`
+
+### Configuration
+
+Like any <%=tool%> commands, parameters can be passed on command line or using a configuration <%=prst%>. Note that if you use the <%=tool%> run as `xfer` user, like here, the configuration file must be created as the same user. Example using a <%=prst%> named `my_preset_name` (choose any name relevant to you, e.g. the AoC node name, and replace in the following lines):
+
+```bash
+# su -s /bin/bash - xfer
+$ <%=cmd%> config id my_preset_name update --url=https://localhost:9092 --username=my_access_key --password=my_secret --skip-types=office --lock-port=12346
+$ <%=cmd%> config id default set preview my_preset_name
+```
+
+Here we assume that Office file generation is disabled, else remove the option. For the `lock_port` option refer to a previous section in thsi manual.
+
+Once can check if the access key is well configured using:
+
+```bash
+$ <%=cmd%> -Pmy_preset_name node browse /
+```
+
+This shall list the contents of the storage root of the access key.
+
+### Execution
+
+The tool intentionally supports only a "one shot" mode in order to avoid having a hanging process or using too many resources (calling REST api too quickly during the scan or event method).
+It needs to be run regularly to create or update preview files. For that use your best
+reliable scheduler. For instance use "CRON" on Linux or Task Scheduler on Windows. 
+
+Typically, for "Access key" access, the system/transfer is `xfer`. So, in order to be consiustent have generate the appropriate access rights, the generation process
+should be run as user `xfer`.
+
+Lets do a one shot test, using the configuration previously created:
+
+```bash
+# su -s /bin/bash - xfer
+$ <%=cmd%> preview scan --overwrite=always
+```
+
+### Configuration for Execution in scheduler
+
+Here is an example of configuration for use with cron on Linux. Adapt the scripts to your own preference.
+
+We assume here that a configuration preset was created as shown previously.
+
+Here the cronjob is created for `root`, and changes the user to `xfer`, also overriding the shell which should be `aspshell`. (adapt the command below, as it would override existing crontab). It is also up to you to use directly the `xfer` user's crontab. This is an example only.
+
+```bash
+# crontab<<EOF
+2-59 * * * * su -s /bin/bash - xfer -c 'nice +10 timeout 10m <%=cmd%> preview event --log-level=info --logger=syslog --iteration-file=/tmp/preview_restart.txt'
+0 * * * *    su -s /bin/bash - xfer -c 'nice +10 timeout 30m <%=cmd%> preview scan  --log-level=info --logger=syslog'
+EOF
+```
+
+Nopte that the options here may be located in the config preset, but it was left on the command line to keep stdout for command line execution of preview.
 
 # SMTP for email notifications
 
