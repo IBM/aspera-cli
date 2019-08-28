@@ -172,16 +172,19 @@ module Asperalm
                   :transfer_type=>"connect",
                   :source_paths_list=>self.transfer.ts_source_paths.map{|i|i['source']}.join("\r\n")})
                 api_public_link=Rest.new({:base_url=>link_data[:base_url]})
+                # Hum, as this does not always work, we get the javascript and need hack
                 #pkg_created=api_public_link.create(create_path,package_create_params)[:data]
+                # so extract data from javascript
                 pkgdatares=api_public_link.call({:operation=>'POST',:subpath=>create_path,:json_params=>package_create_params,:headers=>{'Accept'=>'text/javascript'}})[:http].body
+                # get args of function call
                 pkgdatares=pkgdatares.match(%r{\((.*?)\);})[1]
-                Log.log.debug("1>>>#{pkgdatares}")
+                #Log.log.debug("1>>>#{pkgdatares}")
                 pkgdatares.gsub!(/^"\{/,'{')
                 pkgdatares.gsub!(/\\"\}",/,'\\"},')
                 pkgdatares.gsub!('\\"','"')
                 pkgdatares.gsub!(/"(\{.*\})",/,"#{$1},")
                 pkgdatares=JSON.parse("[#{pkgdatares}]")
-                Log.log.debug("2>>>#{pkgdatares}")
+                #Log.log.debug("2>>>#{pkgdatares}")
                 transfer_spec=pkgdatares.first
                 transfer_spec['destination_root']='/'
               end
