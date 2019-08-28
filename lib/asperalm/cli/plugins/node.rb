@@ -261,7 +261,7 @@ module Asperalm
           end
         end
 
-        ACTIONS=[ :postprocess,:stream, :transfer, :cleanup, :forward, :access_key, :watch_folder, :service, :async, :central, :asperabrowser ].concat(COMMON_ACTIONS)
+        ACTIONS=[ :postprocess,:stream, :transfer, :cleanup, :forward, :access_key, :watch_folder, :service, :async, :central, :asperabrowser, :basic_token ].concat(COMMON_ACTIONS)
 
         def execute_action(command=nil,prefix_path=nil)
           command||=self.options.get_next_command(ACTIONS)
@@ -402,6 +402,8 @@ module Asperalm
             encoded_params=Base64.strict_encode64(Zlib::Deflate.deflate(JSON.generate(browse_params))).gsub(/=+$/, '').tr('+/', '-_').reverse
             OpenApplication.instance.uri(self.options.get_option(:asperabrowserurl)+'?goto='+encoded_params)
             return Main.result_status('done')
+          when :basic_token
+            return Main.result_status("Basic "+Base64.strict_encode64("#{self.options.get_option(:username,:mandatory)}:#{self.options.get_option(:password,:mandatory)}"))
           end # case command
           raise "ERROR: shall not reach this line"
         end # execute_action
