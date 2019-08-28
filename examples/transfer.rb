@@ -11,7 +11,7 @@ require 'json'
 # generic initialisation : configuration of FaspManager
 
 # set trace level for sample, set to :debug to see complete list of debug information
-Asperalm::Log.instance.level=:warn
+Asperalm::Log.instance.level=:debug
 
 # set path to your copy of ascp binary
 Asperalm::Fasp::Installation.instance.ascp_path='/Users/laurent/Applications/Aspera Connect.app/Contents/Resources/ascp'
@@ -76,7 +76,7 @@ raise "Error(s) occured: #{errors.join(',')}" if !errors.empty?
 ##############################################################
 # second example: upload with node authorization
 
-# create rest client
+# create rest client for Node API
 node_api=Asperalm::Rest.new({
   :base_url => 'https://eudemo.asperademo.com:9092',
   :auth     => {
