@@ -299,11 +299,15 @@ t/nd6:
 	@echo $@
 	$(EXETEST) node transfer list
 	@touch $@
+t/nd7:
+	@echo $@
+	$(EXETEST) node basic_token
+	@touch $@
 t/nd_nagios:
 	@echo $@
 	$(EXETEST) node nagios_check
 	@touch $@
-tnode: t/nd1 t/nd2 t/nd3 t/nd4 t/nd5 t/nd6 t/nd_nagios
+tnode: t/nd1 t/nd2 t/nd3 t/nd4 t/nd5 t/nd6 t/nd7 t/nd_nagios
 
 t/aocg1:
 	@echo $@
@@ -794,7 +798,8 @@ t/sdk1:
 	ruby -I $(LIBDIR) $(DEV_FOLDER)/examples/transfer.rb
 	@touch $@
 tsample: t/sdk1
-tests: t tshares tfaspex tconsole tnode taoc tfasp tsync torc tcon tnsync tconf tprev tats tsample tshares2
+tests: t tshares tfaspex tconsole tnode taoc tfasp tsync torc tcon tnsync tconf tprev tats tsample
+# tshares2
 
 tnagios: t/fx_nagios t/serv_nagios_webapp t/serv_nagios_transfer t/nd_nagios
 
