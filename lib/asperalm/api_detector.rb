@@ -4,6 +4,8 @@ require 'asperalm/rest'
 module Asperalm
   # detect Aspera product by calling API
   class ApiDetector
+    # @return a hash: {:product=>:node,:version=>'unknown'}
+    # if not found: {:product=>:unknown,:version=>'unknown'}
     def self.discover_product(url)
       #uri=URI.parse(url)
       api=Rest.new({:base_url=>url})
