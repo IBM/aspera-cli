@@ -63,8 +63,14 @@ module Asperalm
           return self.transfer.start(*@api_aoc.tr_spec(app,direction,node_file,@workspace_id,@workspace_name,ts_add))
         end
 
-        def execute_node_gen4_action(top_node_file)
-          command_repo=self.options.get_next_command([ :browse, :find, :mkdir, :rename, :delete, :upload, :download, :transfer, :http_node_download, :v3, :file, :bearer_token_node  ])
+        NODE4_COMMANDS=[ :browse, :find, :mkdir, :rename, :delete, :upload, :download, :transfer, :http_node_download, :v3, :file, :bearer_token_node  ]
+
+        def node_gen4_execute_action(top_node_file)
+          command_repo=self.options.get_next_command(NODE4_COMMANDS)
+          return execute_node_gen4_command(command_repo,top_node_file)
+        end
+
+        def execute_node_gen4_command(command_repo,top_node_file)
           case command_repo
           when :bearer_token_node
             thepath=self.options.get_next_argument('path')
@@ -179,7 +185,8 @@ module Asperalm
             items=node_api.read("files/#{fileid}")[:data]
             return {:type=>:single_object,:data=>items}
           end # command_repo
-        end # execute_node_gen4_action
+          throw "ERR"
+        end # node_gen4_execute_action
 
         # check option "link"
         # if present try to get token value (resolve redirection if short links used)
@@ -395,7 +402,7 @@ module Asperalm
           end
         end
 
-        ACTIONS=[ :apiinfo, :bearer_token, :organization, :user, :workspace, :packages, :files, :faspexgw, :admin]
+        ACTIONS=[ :apiinfo, :bearer_token, :organization, :tier_restrictions, :user, :workspace, :packages, :files, :faspexgw, :admin]
 
         def execute_action
           command=self.options.get_next_command(ACTIONS)
@@ -409,6 +416,8 @@ module Asperalm
             return {:type=>:text,:data=>@api_aoc.oauth_token}
           when :organization
             return { :type=>:single_object, :data =>@api_aoc.read('organization')[:data] }
+          when :tier_restrictions
+            return { :type=>:single_object, :data =>@api_aoc.read('tier_restrictions')[:data] }
           when :user
             command=self.options.get_next_command([ :workspaces,:info ])
             case command
@@ -523,10 +532,18 @@ module Asperalm
               end
             end
           when :files
+            # get workspace related information
             set_workspace_info
             set_home_node_file
+            # set node secret in case it was provided
             @api_aoc.secrets[@home_node_file[:node_info]['id']]=@option_ak_secret
-            return execute_node_gen4_action(@home_node_file)
+            command_repo=self.options.get_next_command(NODE4_COMMANDS.clone.concat([:short_link]))
+            case command_repo
+            when *NODE4_COMMANDS; return execute_node_gen4_command(command_repo,@home_node_file)
+            when :short_link
+              return self.entity_action(@api_aoc,'short_links',nil,:id,'self')
+            end
+            throw "Error"
           when :faspexgw
             set_workspace_info
             require 'asperalm/faspex_gw'
@@ -627,7 +644,7 @@ module Asperalm
                 api_node=@api_aoc.get_files_node_api(res_data)
                 return Node.new(@agents.merge(skip_basic_auth_options: true, node_api: api_node)).execute_action if command.eql?(:v3)
                 ak_data=api_node.call({:operation=>'GET',:subpath=>"access_keys/#{res_data['access_key']}",:headers=>{'Accept'=>'application/json'}})[:data]
-                return execute_node_gen4_action({node_info: res_data, file_id: ak_data['root_file_id']})
+                return node_gen4_execute_action({node_info: res_data, file_id: ak_data['root_file_id']})
               when :info
                 object=@api_aoc.read(resource_instance_path)[:data]
                 access_key=object['access_key']
