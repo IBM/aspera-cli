@@ -20,7 +20,7 @@ module Asperalm
   module Fasp
     # default transfer username for access key based transfers
     ACCESS_KEY_TRANSFER_USER='xfer'
-    # executes a local "ascp", equivalent of "Fasp Manager"
+    # executes a local "ascp", connects mgt port, equivalent of "Fasp Manager"
     class Local < Manager
       include Singleton
       # set to false to keep ascp progress bar display (basically: removes ascp's option -q)
@@ -98,7 +98,7 @@ module Asperalm
             this_session[:env_args]=this_session[:env_args].clone()
             this_session[:env_args][:args]=this_session[:env_args][:args].clone()
             this_session[:env_args][:args].unshift("-C#{i}:#{multi_session}")
-            # check if this is necessary ? should be handled by server, this is in man page
+            # necessary only if server is not linux, i.e. server does not support port re-use
             this_session[:env_args][:args].unshift("-O","#{multi_session_udp_port_base+i-1}")
             this_session[:thread] = Thread.new(this_session) {|s|transfer_thread_entry(s)}
             xfer_job[:sessions].push(this_session)
