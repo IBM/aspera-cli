@@ -81,8 +81,10 @@ module Asperalm
         # must override help methods before parser called (in other constructors)
         init_global_options()
         @opt_mgr.add_opt_switch(:help,"-h","Show this message.") { @option_help=true }
-        @plugin_env[:transfer]=TransferAgent.new(@plugin_env)
+        # the Config plugin adds the @preset parser
         @plugin_env[:config]=Plugins::Config.new(@plugin_env,self.program_name,@help_url,self.class.gem_version)
+        # the TransferAgent plugin may use the @preset parser
+        @plugin_env[:transfer]=TransferAgent.new(@plugin_env)
         Log.log.debug('created plugin env'.red)
         # give command line arguments to option manager (no parsing)
         # set application folder for modules
