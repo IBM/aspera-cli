@@ -40,6 +40,7 @@ module Asperalm
           'path'  =>{:type=>:reader ,:func=>lambda{|v|File.expand_path(v)}},
           'env'   =>{:type=>:reader ,:func=>lambda{|v|ENV[v]}},
           'stdin' =>{:type=>:reader ,:func=>lambda{|v|raise "no value allowed for stdin" unless v.empty?;STDIN.gets}},
+          # other handlers can be set using set_handler, e.g. preset is reader in config plugin
         }
       end
       public
@@ -51,8 +52,8 @@ module Asperalm
         @handlers[name]={:type=>type,:func=>method}
       end
 
-      # parse an option value, special behavior for file:, env:, val:
-      # parse only string, other values are returned as is
+      # parse an option value if it is a String using supported extended vaklue modifiers
+      # other value types are returned as is
       def parse(name_or_descr,value)
         return value if !value.is_a?(String)
         decoder_list=@handlers.keys.select{|k|@handlers[k][:type].eql?(:decoder)}
