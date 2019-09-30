@@ -72,7 +72,7 @@ module Asperalm
                 node_config=@env[:config].preset_by_name(param_set_name)
               end
               Log.log.debug("node=#{node_config}")
-              raise CliBadArgument,"the node configuration shall be a hash, use either @json:<json> or @preset:<parameter set name>" if !node_config.is_a?(Hash)
+              raise CliBadArgument,"the node configuration shall be Hash, not #{node_config.class} (#{node_config}), use either @json:<json> or @preset:<parameter set name>" if !node_config.is_a?(Hash)
               # now check there are required parameters
               sym_config=[:url,:username,:password].inject({}) do |h,param|
                 raise CliBadArgument,"missing parameter [#{param}] in node specification: #{node_config}" if !node_config.has_key?(param.to_s)
@@ -184,6 +184,7 @@ module Asperalm
         transfer_spec.merge!(@transfer_spec_cmdline)
         # add bypass keys if there is a token, also prevents connect plugin to ask password
         transfer_spec['authentication']='token' if transfer_spec.has_key?('token')
+        # create transfer agent
         self.set_agent_by_options
         Log.log.debug("mgr is a #{@agent.class}")
         @agent.start_transfer(transfer_spec,options)
