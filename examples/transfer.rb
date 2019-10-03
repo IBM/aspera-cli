@@ -50,10 +50,12 @@ fasp_manager.add_listener(MyListener.new)
 
 # manually build teansfer spec
 transfer_spec={
-  'remote_host'     =>'demo.asperasoft.com',
+  #'remote_host'     =>'demo.asperasoft.com',
+  'remote_host'     =>'eudemo.asperademo.com',
   'remote_user'     =>'asperaweb',
   'remote_password' =>'demoaspera',
   'direction'       =>'receive',
+  'ssh_port'        =>33001,
   'destination_root'=>'.',
   'paths'           =>[{'source'=>'aspera-test-dir-tiny/200KB.1'}]
 }
