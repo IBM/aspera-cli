@@ -6,6 +6,8 @@ MY_PRIVATE_KEY_FILE=$(TOOLCONFIGDIR)/filesapikey
 HSTS_ADDR=eudemo.asperademo.com
 HSTS_SSH_URL=ssh://$(HSTS_ADDR):33001
 HSTS_NODE_URL=https://$(HSTS_ADDR):9092
+TEST_NODE_USER=node_asperaweb
+TEST_NODE_PASS=demoaspera
 FASPEX_ADDR=$(HSTS_ADDR)
 FASPEX_URL=https://$(FASPEX_ADDR)/aspera/faspex
 FASPEX_SSH_URL=ssh://$(FASPEX_ADDR):33001
@@ -14,18 +16,15 @@ FASPEX_PUBLINK_SEND_DROPBOX=https://eudemo.asperademo.com/aspera/faspex/external
 FASPEX_PUBLINK_SEND_TO_USER=https://eudemo.asperademo.com/aspera/faspex/external/submissions/new?passcode=81c8c1df6f21e976e5b78389fa31bb1530e4c480
 SERVER_FOLDER_UPLOAD=/Upload
 
-TEST_SHARE=Upload
-TEST_NODE_USER=node_asperaweb
-TEST_NODE_PASS=demoaspera
+SHARES_UPLOAD="Demo Files (California)/Upload"
 
-TEST_WORKFLOW_ID=894
+# Incoming asset processing
+TEST_WORKFLOW_ID=297
 
 AOC_PUBLINK_RECV_PACKAGE=https://sedemo.ibmaspera.com/packages/public/receive?token=cpDktbNc8aHnyrbI_V49GzFwm5q3jxWnT_cDOjaewrc
 AOC_PUBLINK_SEND_DROPBOX=https://aspera.pub/xxktoFw/Team_Inbox
 AOC_PUBLINK_SEND_USER=https://aspera.pub/Nb4Ui_c
 AOC_PUBLINK_FOLDER=https://aspera.pub/_5VG0jg
-
-
 
 SAMPLE_FILENAME=200KB.1
 CLIENT_DEMOFILE_PATH=~/Documents/Samples/$(SAMPLE_FILENAME)

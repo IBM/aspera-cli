@@ -134,9 +134,9 @@ t/sh1:
 	@touch $@
 t/sh2: $(LOCAL_FOLDER)/.exists
 	@echo $@
-	$(EXETEST) shares repository upload --to-folder=/$(TEST_SHARE) $(CLIENT_DEMOFILE_PATH)
-	$(EXETEST) shares repository download --to-folder=$(LOCAL_FOLDER) /$(TEST_SHARE)/$(SAMPLE_FILENAME)
-	$(EXETEST) shares repository delete /$(TEST_SHARE)/$(SAMPLE_FILENAME)
+	$(EXETEST) shares repository upload --to-folder=/$(SHARES_UPLOAD) $(CLIENT_DEMOFILE_PATH)
+	$(EXETEST) shares repository download --to-folder=$(LOCAL_FOLDER) /$(SHARES_UPLOAD)/$(SAMPLE_FILENAME)
+	$(EXETEST) shares repository delete /$(SHARES_UPLOAD)/$(SAMPLE_FILENAME)
 	@touch $@
 tshares: t/sh1 t/sh2 t/unit
 
@@ -383,6 +383,7 @@ t/aocf1f:
 	@touch $@
 t/aocfpub:
 	@echo $@
+	$(EXETEST) -N aspera files browse / --link=$(AOC_PUBLINK_FOLDER)
 	$(EXETEST) -N aspera files upload --to-folder=/ $(CLIENT_DEMOFILE_PATH) --link=$(AOC_PUBLINK_FOLDER)
 	@touch $@
 taocf: t/aocf1 t/aocffin t/aocfmkd t/aocfdel t/aocf1d t/aocf5 t/aocf2 t/aocf3 t/aocf4 t/aocf1e t/aocf1f t/aocfpub
