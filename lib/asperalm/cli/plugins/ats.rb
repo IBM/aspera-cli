@@ -144,6 +144,7 @@ module Asperalm
             :auth     => {
             :type       => :oauth2,
             :base_url   => 'https://iam.bluemix.net/identity',
+            #  :base_url   => 'https://iam.cloud.ibm.com/identity',
             :grant      => :ibm_apikey,
             :api_key    => self.options.get_option(:ibm_api_key,:mandatory)
             }
@@ -161,7 +162,9 @@ module Asperalm
             instance=self.options.get_option(:instance,:optional)
             #Log.log.error("1>>#{instance}".red)
             if instance.nil?
+              # Take the first Aspera on Cloud transfer service instance ID if not provided by user
               instance=ats_api_v2_auth_ibm.read('instances')[:data]['data'].first
+              self.format.display_status("using first instance: #{instance}")
             end
             #Log.log.error("2>>#{instance}".red)
             rest_add_header={'X-ATS-Service-Instance-Id'=>instance}
