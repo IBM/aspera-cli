@@ -670,6 +670,97 @@ $ <%=cmd%> config proxy_check --fpac=file:///./proxy.pac http://www.example.com
 PROXY proxy.example.com:8080
 ```
 
+## <a name="client"></a>FASP configuration
+
+The `config` plugin also allows specification for the use of a local FASP client. It provides the following commands for `ascp` subcommand:
+
+* `show` : shows the path of ascp used
+* `use` : list,download connect client versions available on internet
+* `products` : list Aspera transfer products available locally
+* `connect` : list,download connect client versions available on internet
+
+### Show path of currently used `ascp`
+
+```
+$ <%=cmd%> config ascp show
+/Users/laurent/Applications/Aspera Connect.app/Contents/Resources/ascp
+```
+
+### Selection of local `ascp`
+
+To temporarily use an alternate ascp path use option `ascp_path` (`--ascp-path=`)
+
+To permanently use another ascp:
+
+```
+$ <%=cmd%> config ascp use '/Users/laurent/Applications/Aspera CLI/bin/ascp'
+saved to default global preset /Users/laurent/Applications/Aspera CLI/bin/ascp
+```
+
+This sets up a global default.
+
+### List locally installed Aspera Transfer products
+
+Locally installed Aspera products can be listed with:
+
+```bash
+$ <%=cmd%> config ascp products list
+:.........................................:................................................:
+:                  name                   :                    app_root                    :
+:.........................................:................................................:
+: Aspera Connect                          : /Users/laurent/Applications/Aspera Connect.app :
+: IBM Aspera CLI                          : /Users/laurent/Applications/Aspera CLI         :
+: IBM Aspera High-Speed Transfer Endpoint : /Library/Aspera                                :
+: Aspera Drive                            : /Applications/Aspera Drive.app                 :
+:.........................................:................................................:
+```
+
+### Selection of local client
+
+If no ascp is selected, this is equivalent to using option: `--use-product=FIRST`.
+
+Using the option use_product finds the ascp binary of the selected product.
+
+To permanently use the ascp of a product:
+
+```bash
+$ <%=cmd%> config ascp products use 'Aspera Connect'
+saved to default global preset /Users/laurent/Applications/Aspera Connect.app/Contents/Resources/ascp
+```
+
+### Installation of Connect Client on command line
+
+```bash
+$ <%=cmd%> config ascp connect list
+:...............................................:......................................:..............:
+:                      id                       :                title                 :   version    :
+:...............................................:......................................:..............:
+: urn:uuid:589F9EE5-0489-4F73-9982-A612FAC70C4E : Aspera Connect for Windows           : 3.7.0.138427 :
+: urn:uuid:A3820D20-083E-11E2-892E-0800200C9A66 : Aspera Connect for Windows 64-bit    : 3.7.0.138427 :
+: urn:uuid:589F9EE5-0489-4F73-9982-A612FAC70C4E : Aspera Connect for Windows XP        : 3.7.0.138427 :
+: urn:uuid:55425020-083E-11E2-892E-0800200C9A66 : Aspera Connect for Windows XP 64-bit : 3.7.0.138427 :
+: urn:uuid:D8629AD2-6898-4811-A46F-2AF386531BFF : Aspera Connect for Mac Intel 10.6    : 3.6.1.111259 :
+: urn:uuid:D8629AD2-6898-4811-A46F-2AF386531BFF : Aspera Connect for Mac Intel         : 3.7.0.138427 :
+: urn:uuid:213C9370-22B1-11E2-81C1-0800200C9A66 : Aspera Connect for Linux 32          : 3.6.2.117442 :
+: urn:uuid:97F94DF0-22B1-11E2-81C1-0800200C9A66 : Aspera Connect for Linux 64          : 3.7.2.141527 :
+:...............................................:......................................:..............:
+$ <%=cmd%> config ascp connect id 'Aspera Connect for Mac Intel 10.6' links list
+:.............................................:..........................:.......................................................................:..........:...............:
+:                    title                    :           type           :                                 href                                  : hreflang :      rel      :
+:.............................................:..........................:.......................................................................:..........:...............:
+: Mac Intel Installer                         : application/octet-stream : bin/AsperaConnect-3.6.1.111259-mac-intel-10.6.dmg                     : en       : enclosure     :
+: Aspera Connect for Mac HTML Documentation   : text/html                :                                                                       : en       : documentation :
+: Aspera Connect PDF Documentation for Mac OS : application/pdf          : docs/user/osx/ja-jp/pdf/Connect_User_3.7.0_OSX_ja-jp.pdf              : ja-jp    : documentation :
+: Aspera Connect PDF Documentation for Mac OS : application/pdf          : docs/user/osx/en/pdf/Connect_User_3.7.0_OSX.pdf                       : en       : documentation :
+: Aspera Connect PDF Documentation for Mac OS : application/pdf          : docs/user/osx/es-es/pdf/Connect_User_3.7.0_OSX_es-es.pdf              : es-es    : documentation :
+: Aspera Connect PDF Documentation for Mac OS : application/pdf          : docs/user/osx/fr-fr/pdf/Connect_User_3.7.0_OSX_fr-fr.pdf              : fr-fr    : documentation :
+: Aspera Connect PDF Documentation for Mac OS : application/pdf          : docs/user/osx/zh-cn/pdf/Connect_User_3.7.0_OSX_zh-cn.pdf              : zh-cn    : documentation :
+: Aspera Connect for Mac Release Notes        : text/html                : http://www.asperasoft.com/en/release_notes/default_1/release_notes_54 : en       : release-notes :
+:.............................................:..........................:.......................................................................:..........:...............:
+$ <%=cmd%> config ascp connect id 'Aspera Connect for Mac Intel 10.6' links id 'Mac Intel Installer' download --to-folder=.
+downloaded: AsperaConnect-3.6.1.111259-mac-intel-10.6.dmg
+```
+
 ## <a name="agents"></a>Transfer Agents
 
 Some of the actions on Aspera Applications lead to file transfers (upload and download) using the FASP protocol (`ascp`).
@@ -1305,7 +1396,27 @@ filename matches the regex.
 
 For instance, to find files with a special extension, use `--value='\.myext$'`
 
-## Aspera Node (Transfer Server)
+## IBM Aspera High Speed Transfer Server (transfer)
+
+This plugin works at FASP level (SSH/ascp/ascmd) and does not use the node API.
+
+### Example
+
+One can test the "server" application using the well known demo server:
+
+```bash
+$ <%=cmd%> config id aspera_demo_server update --url=ssh://demo.asperasoft.com:33001 --username=asperaweb --password=demoaspera
+$ <%=cmd%> config id default set server aspera_demo_server 
+$ <%=cmd%> server browse /aspera-test-dir-large
+$ <%=cmd%> server download /aspera-test-dir-large/200MB
+```
+
+This creates a <%=prst%> "aspera_demo_server" and set it as default for application "server"
+
+
+## IBM Aspera High Speed Transfer Server (node)
+
+This plugin gives access to capabilities provided by HSTS node API.
 
 ### Simple Operations
 
@@ -1390,115 +1501,6 @@ to download files.
 $ <%=cmd%> node access_key create --value=@json:'{"id":"eudemo-sedemo","secret":"mystrongsecret","storage":{"type":"local","path":"/data/asperafiles"}}'
 ```
 
-## <a name="client"></a>FASP configuration
-
-The `config` plugin also allows specification for the use of a local FASP client. It provides the following commands for `ascp` subcommand:
-
-* `show` : shows the path of ascp used
-* `use` : list,download connect client versions available on internet
-* `products` : list Aspera transfer products available locally
-* `connect` : list,download connect client versions available on internet
-
-### Show path of currently used `ascp`
-
-```
-$ <%=cmd%> config ascp show
-/Users/laurent/Applications/Aspera Connect.app/Contents/Resources/ascp
-```
-
-### Selection of local `ascp`
-
-To temporarily use an alternate ascp path use option `ascp_path` (`--ascp-path=`)
-
-To permanently use another ascp:
-
-```
-$ <%=cmd%> config ascp use '/Users/laurent/Applications/Aspera CLI/bin/ascp'
-saved to default global preset /Users/laurent/Applications/Aspera CLI/bin/ascp
-```
-
-This sets up a global default.
-
-### List locally installed Aspera Transfer products
-
-Locally installed Aspera products can be listed with:
-
-```bash
-$ <%=cmd%> config ascp products list
-:.........................................:................................................:
-:                  name                   :                    app_root                    :
-:.........................................:................................................:
-: Aspera Connect                          : /Users/laurent/Applications/Aspera Connect.app :
-: IBM Aspera CLI                          : /Users/laurent/Applications/Aspera CLI         :
-: IBM Aspera High-Speed Transfer Endpoint : /Library/Aspera                                :
-: Aspera Drive                            : /Applications/Aspera Drive.app                 :
-:.........................................:................................................:
-```
-
-### Selection of local client
-
-If no ascp is selected, this is equivalent to using option: `--use-product=FIRST`.
-
-Using the option use_product finds the ascp binary of the selected product.
-
-To permanently use the ascp of a product:
-
-```bash
-$ <%=cmd%> config ascp products use 'Aspera Connect'
-saved to default global preset /Users/laurent/Applications/Aspera Connect.app/Contents/Resources/ascp
-```
-
-### Installation of Connect Client on command line
-
-```bash
-$ <%=cmd%> config ascp connect list
-:...............................................:......................................:..............:
-:                      id                       :                title                 :   version    :
-:...............................................:......................................:..............:
-: urn:uuid:589F9EE5-0489-4F73-9982-A612FAC70C4E : Aspera Connect for Windows           : 3.7.0.138427 :
-: urn:uuid:A3820D20-083E-11E2-892E-0800200C9A66 : Aspera Connect for Windows 64-bit    : 3.7.0.138427 :
-: urn:uuid:589F9EE5-0489-4F73-9982-A612FAC70C4E : Aspera Connect for Windows XP        : 3.7.0.138427 :
-: urn:uuid:55425020-083E-11E2-892E-0800200C9A66 : Aspera Connect for Windows XP 64-bit : 3.7.0.138427 :
-: urn:uuid:D8629AD2-6898-4811-A46F-2AF386531BFF : Aspera Connect for Mac Intel 10.6    : 3.6.1.111259 :
-: urn:uuid:D8629AD2-6898-4811-A46F-2AF386531BFF : Aspera Connect for Mac Intel         : 3.7.0.138427 :
-: urn:uuid:213C9370-22B1-11E2-81C1-0800200C9A66 : Aspera Connect for Linux 32          : 3.6.2.117442 :
-: urn:uuid:97F94DF0-22B1-11E2-81C1-0800200C9A66 : Aspera Connect for Linux 64          : 3.7.2.141527 :
-:...............................................:......................................:..............:
-$ <%=cmd%> config ascp connect id 'Aspera Connect for Mac Intel 10.6' links list
-:.............................................:..........................:.......................................................................:..........:...............:
-:                    title                    :           type           :                                 href                                  : hreflang :      rel      :
-:.............................................:..........................:.......................................................................:..........:...............:
-: Mac Intel Installer                         : application/octet-stream : bin/AsperaConnect-3.6.1.111259-mac-intel-10.6.dmg                     : en       : enclosure     :
-: Aspera Connect for Mac HTML Documentation   : text/html                :                                                                       : en       : documentation :
-: Aspera Connect PDF Documentation for Mac OS : application/pdf          : docs/user/osx/ja-jp/pdf/Connect_User_3.7.0_OSX_ja-jp.pdf              : ja-jp    : documentation :
-: Aspera Connect PDF Documentation for Mac OS : application/pdf          : docs/user/osx/en/pdf/Connect_User_3.7.0_OSX.pdf                       : en       : documentation :
-: Aspera Connect PDF Documentation for Mac OS : application/pdf          : docs/user/osx/es-es/pdf/Connect_User_3.7.0_OSX_es-es.pdf              : es-es    : documentation :
-: Aspera Connect PDF Documentation for Mac OS : application/pdf          : docs/user/osx/fr-fr/pdf/Connect_User_3.7.0_OSX_fr-fr.pdf              : fr-fr    : documentation :
-: Aspera Connect PDF Documentation for Mac OS : application/pdf          : docs/user/osx/zh-cn/pdf/Connect_User_3.7.0_OSX_zh-cn.pdf              : zh-cn    : documentation :
-: Aspera Connect for Mac Release Notes        : text/html                : http://www.asperasoft.com/en/release_notes/default_1/release_notes_54 : en       : release-notes :
-:.............................................:..........................:.......................................................................:..........:...............:
-$ <%=cmd%> config ascp connect id 'Aspera Connect for Mac Intel 10.6' links id 'Mac Intel Installer' download --to-folder=.
-downloaded: AsperaConnect-3.6.1.111259-mac-intel-10.6.dmg
-```
-
-## IBM Aspera High Speed Transfer Server
-
-Works at FASP level (SSH/ascp/ascmd). (different from node api)
-
-### Example
-
-One can test the "server" application using the well known demo server:
-
-```bash
-$ <%=cmd%> config id aspera_demo_server update --url=ssh://demo.asperasoft.com:33001 --username=asperaweb --password=demoaspera
-$ <%=cmd%> config id default set server aspera_demo_server 
-$ <%=cmd%> server browse /aspera-test-dir-large
-$ <%=cmd%> server download /aspera-test-dir-large/200MB
-```
-
-This creates a <%=prst%> "aspera_demo_server" and set it as default for application "server"
-
-
 ## IBM Aspera Faspex
 
 Note that the command "v4" requires the use of APIv4, refer to the Faspex Admin manual on how to activate.
@@ -1574,17 +1576,36 @@ ATS is usable either :
 
 * from an AoC subscription : mlia aspera admin ats
 
-* or from an IBM Cloud (bluemix) subscription : mlia ats
+* or from an IBM Cloud subscription : mlia ats
 
 ### IBM Cloud ATS : creation of api key
 
 First get your IBM Cloud APIkey, as described here:
-[https://console.bluemix.net/docs/iam/userid_keys.html#userapikey](https://console.bluemix.net/docs/iam/userid_keys.html#userapikey)
 
-Execute:
+  * [https://console.bluemix.net/docs/iam/userid_keys.html#userapikey](https://console.bluemix.net/docs/iam/userid_keys.html#userapikey)
+  * [https://ibm.ibmaspera.com/helpcenter/transfer-service](https://ibm.ibmaspera.com/helpcenter/transfer-service)
+
+For instance the IBM cloud API key can be created using the web interface, or using command line:
+
+```bash
+$ ibmcloud iam api-key-create mykeyname -d 'my sample key'
+OK
+API key mykeyname was created
+
+Please preserve the API key! It cannot be retrieved after it's created.
+                 
+Name          mykeyname   
+Description   my sample key
+Created At    2019-09-30T12:17+0000   
+API Key       my_secret_api_key_here_8f8d9fdakjhfsashjk678
+Locked        false   
+UUID          ApiKey-05b8fadf-e7fe-4bc4-93a9-6fd348c5ab1f  
+```
+
+Then, to register the key by default for the ats plugin: execute:
 
 ```
-$ <%=cmd%> config id my_ibm_ats update --ibm-api-key=XXXX
+$ <%=cmd%> config id my_ibm_ats update --ibm-api-key=my_secret_api_key_here_8f8d9fdakjhfsashjk678
 $ <%=cmd%> config id default set ats my_ibm_ats
 $ <%=cmd%> ats api_key instances
 :......................................:
@@ -1608,10 +1629,6 @@ $ <%=cmd%> ats api_key create
 :........:..............................................:
 $ <%=cmd%> config id my_ibm_ats update --ats-key=ats_XXXXXXXXXXXXXXXXXXXXXXXX --ats-secret=YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY
 ```
-
-Note: access key API is described here: [https://ibm.ibmaspera.com/helpcenter/transfer-service](https://ibm.ibmaspera.com/helpcenter/transfer-service)
-
-and here: [https://developer.asperasoft.com/web/node/access-keys](https://developer.asperasoft.com/web/node/access-keys)
 
 ### Examples
 
@@ -2071,6 +2088,11 @@ This means that you do not have ruby support for ED25519 SSH keys. You may eithe
 Gems, or remove your ed25519 key from your `.ssh` folder to solve the issue. Note, this is temporarily fixed in version 0.9.24, but those type of key will just be ignored.
 
 # Release Notes
+
+* version 0.9.34
+
+	* parser "@preset" can be used again in option "transfer_info"
+	* some documentation re-organizing
 
 * version 0.9.33
 
