@@ -81,7 +81,7 @@ node_api=Asperalm::Rest.new({
   :base_url => 'https://eudemo.asperademo.com:9092',
   :auth     => {
   :type     => :basic,
-  :username => 'node_aspera',
+  :username => 'node_asperaweb',
   :password => 'demoaspera'
   }})
 # define sample file(s) and destination folder
