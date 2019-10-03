@@ -80,10 +80,20 @@ module Asperalm
         d_t_s.each do |res|
           r_err=res['transfer_spec']['error']
           if r_err.is_a?(Hash)
-            add_error("Type 8","#{r_err['code']}: #{r_err['reason']}: #{r_err['user_message']}",msg_stack,json_response,req,resp)
+            add_error("T8:node: *_setup","#{r_err['code']}: #{r_err['reason']}: #{r_err['user_message']}",msg_stack,json_response,req,resp)
           end
         end
       end
+    end
+    # call to IBM cloud IAM
+    add_handler do |msg_stack,json_response,req,resp|
+      d_error=json_response['errorMessage']
+      add_error("T9:IBM cloud",d_error,msg_stack,json_response,req,resp) if d_error.is_a?(String)
+    end
+    # faspex v4
+    add_handler do |msg_stack,json_response,req,resp|
+      d_error=json_response['user_message']
+      add_error("T10:faspex v4",d_error,msg_stack,json_response,req,resp) if d_error.is_a?(String)
     end
 
     # called by the Rest object on any result
@@ -102,7 +112,7 @@ module Asperalm
         end
       end
       unless resp.code.start_with?('2') and msg_stack.empty?
-        add_error("Type 9",resp.message,msg_stack,json_response,req,resp) if msg_stack.empty?
+        add_error("Type Generic",resp.message,msg_stack,json_response,req,resp) if msg_stack.empty?
         raise RestCallError.new(req,resp,msg_stack.join("\n"))
       end
     end
