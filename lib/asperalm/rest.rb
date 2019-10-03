@@ -191,8 +191,11 @@ module Asperalm
           end
         end
 
+        # TODO: give change to decode content type of JSON even in case of error code
+        # (in that case do not parse in rest_call_error.rb)
         Log.log.debug("result: code=#{result[:http].code}")
         RestCallError.raiseOnError(req,result[:http])
+        # TODO: check paged on Content-Type rather than Accept
         if call_data.has_key?(:headers) and
         call_data[:headers].has_key?('Accept') then
           Log.log.debug("result: body=#{result[:http].body}")
