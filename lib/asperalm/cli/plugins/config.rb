@@ -38,14 +38,14 @@ module Asperalm
         NEW_AOC_COMMAND='aspera'
         CONNECT_WEB_URL = 'https://d3gcli72yxqn2z.cloudfront.net/connect'
         CONNECT_VERSIONS = 'connectversions.js'
-
         def option_preset; nil; end
-  
+
         def option_preset=(value)
           self.options.add_option_preset(preset_by_name(value))
         end
 
         private_constant :ASPERA_HOME_FOLDER_NAME,:DEFAULT_CONFIG_FILENAME,:CONF_PRESET_CONFIG,:CONF_PRESET_VERSION,:CONF_PRESET_DEFAULT,:OLD_PROGRAM_NAME,:DEFAULT_REDIRECT,:ASPERA_PLUGINS_FOLDERNAME,:GEM_PLUGINS_FOLDER,:RUBY_FILE_EXT,:OLD_AOC_COMMAND,:NEW_AOC_COMMAND
+
         def initialize(env,tool_name,help_url,version)
           super(env)
           @plugins={}
@@ -337,6 +337,7 @@ module Asperalm
               m[v.to_s]=Fasp::Installation.instance.path(v) rescue "Not Found"
               m
             end
+            # read PATHs from ascp directly, and pvcl modules as well
             Open3.popen3(Fasp::Installation.instance.path(:ascp),'-DDL-') do |stdin, stdout, stderr, thread|
               while line=stderr.gets do
                 line.chomp!
@@ -346,6 +347,7 @@ module Asperalm
                 end
               end
             end
+            data['keypass']=Fasp::Installation.instance.add_bypass_keys({})['remote_password']
             return {:type=>:single_object, :data=>data}
           when :products
             command=self.options.get_next_command([:list,:use])

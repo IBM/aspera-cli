@@ -56,7 +56,7 @@ module Asperalm
         end
         return @found_products
       end
-      
+
       FILES=[:ascp,:ascp4,:ssh_bypass_key_dsa,:ssh_bypass_key_rsa,:fallback_cert,:fallback_key]
 
       # get path of one resource file of currently activated product
@@ -120,6 +120,7 @@ module Asperalm
       def add_bypass_keys(transfer_spec)
         transfer_spec['EX_ssh_key_paths'] = [ Installation.instance.path(:ssh_bypass_key_dsa), Installation.instance.path(:ssh_bypass_key_rsa) ]
         transfer_spec['drowssap_etomer'.reverse] = "%08x-%04x-%04x-%04x-%04x%08x" % "t1(\xBF;\xF3E\xB5\xAB\x14F\x02\xC6\x7F)P".unpack("NnnnnN")
+        return transfer_spec
       end
 
       # DEPRECATED ZONE
