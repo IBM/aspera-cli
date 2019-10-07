@@ -24,7 +24,9 @@ module Asperalm
         # source/destination pair, like "paths" of transfer spec
         @transfer_paths=nil
         @opt_mgr.set_obj_attr(:ts,self,:option_transfer_spec)
+        @opt_mgr.set_obj_attr(:local_resume,Fasp::Local.instance,:resume_policy_parameters)
         @opt_mgr.add_opt_simple(:ts,"override transfer spec values (Hash, use @json: prefix), current=#{@opt_mgr.get_option(:ts,:optional)}")
+        @opt_mgr.add_opt_simple(:local_resume,"set resume policy (Hash, use @json: prefix), current=#{@opt_mgr.get_option(:local_resume,:optional)}")
         @opt_mgr.add_opt_simple(:to_folder,"destination folder for downloaded files")
         @opt_mgr.add_opt_simple(:sources,"list of source files (see doc)")
         @opt_mgr.add_opt_list(:transfer,[:direct,:connect,:node,:aoc],"type of transfer")

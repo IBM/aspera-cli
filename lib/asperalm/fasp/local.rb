@@ -25,10 +25,7 @@ module Asperalm
       include Singleton
       # set to false to keep ascp progress bar display (basically: removes ascp's option -q)
       attr_accessor :quiet
-      DEFAULT_RESUMER=ResumePolicy.new
-      private_constant :DEFAULT_RESUMER
-      def self.default_resumer;DEFAULT_RESUMER;end
-
+      attr_accessor :resume_policy_parameters
       # start FASP transfer based on transfer spec (hash table)
       # note that it is asynchronous
       def start_transfer(transfer_spec,options=nil)
@@ -83,7 +80,7 @@ module Asperalm
         session={
           :state    => :initial, # :initial, :started, :success, :failed
           :env_args => env_args,
-          :resumer  => options['resume_policy'] || DEFAULT_RESUMER,
+          :resumer  => options['resume_policy'] || ResumePolicy.new(@resume_policy_parameters),
           :options  => options
         }
 
@@ -316,6 +313,7 @@ module Asperalm
         # must be set before starting monitor, set to false to stop thread. also shared and protected by mutex
         @monitor_stop=false
         @monitor_thread=Thread.new{monitor_thread_entry}
+        @resume_policy_parameters=ResumePolicy::DEFAULTS
       end
 
       # transfer thread entry
