@@ -17,7 +17,7 @@ module Asperalm
 
         ACTIONS=[:info, :workflow, :plugins, :processes]
 
-        # one can either add extnsion ".json" or add url parameter: format=json
+        # one can either add extension ".json" or add url parameter: format=json
         # id can be a parameter id=x, or at the end of url, for workflows: work_order[workflow_id]=wf_id
         def call_API(endpoint,id=nil,url_params={:format=>:json},accept=nil)
           # calls are GET
@@ -63,7 +63,7 @@ module Asperalm
             result=call_API('api/plugin_version')[:data]
             return {:type=>:object_list,:data=>result['Plugin']}
           when :workflow
-            command=self.options.get_next_command([:list, :status, :inputs, :details, :start])
+            command=self.options.get_next_command([:list, :status, :inputs, :details, :start, :export])
             unless [:list, :status].include?(command)
               wf_id=self.options.get_option(:id,:mandatory)
             end
@@ -80,6 +80,9 @@ module Asperalm
             when :inputs
               result=call_API('api/workflow_inputs_spec',wf_id)[:data]
               return {:type=>:single_object,:data=>result['workflow_inputs_spec']}
+            when :export
+              result=call_API('api/export_workflow',wf_id,{})[:http]
+              return {:type=>:text,:data=>result.body}
             when :start
               result={
                 :type=>:single_object,
