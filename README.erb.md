@@ -1580,12 +1580,7 @@ ATS is usable either :
 
 ### IBM Cloud ATS : creation of api key
 
-First get your IBM Cloud APIkey, as described here:
-
-  * [https://console.bluemix.net/docs/iam/userid_keys.html#userapikey](https://console.bluemix.net/docs/iam/userid_keys.html#userapikey)
-  * [https://ibm.ibmaspera.com/helpcenter/transfer-service](https://ibm.ibmaspera.com/helpcenter/transfer-service)
-
-For instance the IBM cloud API key can be created using the web interface, or using command line:
+First get your IBM Cloud APIkey. For instance, it can be created using the IBM Cloud web interface, or using command line:
 
 ```bash
 $ ibmcloud iam api-key-create mykeyname -d 'my sample key'
@@ -1602,31 +1597,31 @@ Locked        false
 UUID          ApiKey-05b8fadf-e7fe-4bc4-93a9-6fd348c5ab1f  
 ```
 
-Then, to register the key by default for the ats plugin: execute:
+References:
+
+  * [https://console.bluemix.net/docs/iam/userid_keys.html#userapikey](https://console.bluemix.net/docs/iam/userid_keys.html#userapikey)
+  * [https://ibm.ibmaspera.com/helpcenter/transfer-service](https://ibm.ibmaspera.com/helpcenter/transfer-service)
+
+
+Then, to register the key by default for the ats plugin, create a preset. Execute:
 
 ```
 $ <%=cmd%> config id my_ibm_ats update --ibm-api-key=my_secret_api_key_here_8f8d9fdakjhfsashjk678
 $ <%=cmd%> config id default set ats my_ibm_ats
 $ <%=cmd%> ats api_key instances
-:......................................:
-:               instance               :
-:......................................:
-: aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee :
-:......................................:
++--------------------------------------+
+| instance                             |
++--------------------------------------+
+| aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee |
++--------------------------------------+
 $ <%=cmd%> config id my_ibm_ats update --instance=aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee
-$ <%=cmd%> ats api_key create --ibm-api-key=XXXX --instance
-:......................................:
-:               instance               :
-:......................................:
-: aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee :
-:......................................:
 $ <%=cmd%> ats api_key create
-:........:..............................................:
-:  key   :                    value                     :
-:........:..............................................:
-: id     : ats_XXXXXXXXXXXXXXXXXXXXXXXX                 :
-: secret : YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY :
-:........:..............................................:
++--------+----------------------------------------------+
+| key    | value                                        |
++--------+----------------------------------------------+
+| id     | ats_XXXXXXXXXXXXXXXXXXXXXXXX                 |
+| secret | YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY |
++--------+----------------------------------------------+
 $ <%=cmd%> config id my_ibm_ats update --ats-key=ats_XXXXXXXXXXXXXXXXXXXXXXXX --ats-secret=YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY
 ```
 
