@@ -1,28 +1,34 @@
-require 'singleton'
 module Asperalm
   module Preview
+    # generator options
     class Options
-      include Singleton
-      attr_accessor :vid_conv_method
-      attr_accessor :vid_offset_seconds
-      attr_accessor :vid_size
-      attr_accessor :vid_framecount
-      attr_accessor :vid_blendframes
-      attr_accessor :vid_framepause
-      attr_accessor :vid_fps
-      attr_accessor :vid_mp4_size_reencode
-      attr_accessor :clips_offset_seconds
-      attr_accessor :clips_size
-      attr_accessor :clips_length
-      attr_accessor :clips_count
-      attr_accessor :thumb_mp4_size
-      attr_accessor :thumb_img_size
-      attr_accessor :thumb_offset_fraction
-      attr_accessor :validate_mime
-      attr_accessor :check_extension
-      attr_accessor :tmpdir
-      # values for option_vid_conv_method
-      def self.vid_conv_methods; [:reencode,:clips,:preview];end
+      # values for video
+      VIDEO_CONVERSION_METHODS=[:preview,:reencode,:clips]
+      # options used in generator
+      DESCRIPTIONS = [
+        { :name => :video_conversion, :default => :reencode, :values => VIDEO_CONVERSION_METHODS, :description => "method for video preview generation" },
+        { :name => :vid_size, :default => '320:-2', :description => "preview only: video size" },
+        { :name => :vid_offset_seconds, :default => 10, :description => "preview only: " },
+        { :name => :vid_framecount, :default => 30, :description => "preview only: " },
+        { :name => :vid_blendframes, :default => 2, :description => "preview only: " },
+        { :name => :vid_framepause, :default => 5, :description => "preview only: " },
+        { :name => :vid_fps, :default => 15, :description => "preview only: " },
+        { :name => :reencode_size, :default => "-2:'min(ih,360)'", :description => "reencode only: video size" },
+        { :name => :clips_size, :default => '320:-2', :description => "clips only: video size of clip" },
+        { :name => :clips_offset_seconds, :default => 10, :description => "clips only: start time" },
+        { :name => :clips_length, :default => 5, :description => "clips only: length in seconds of each clips" },
+        { :name => :clips_count, :default => 5, :description => "clips only: number of clips" },
+        { :name => :thumb_vid_size, :default => "-1:'min(ih,600)'", :description => "size of thumbnail of video (ffmpeg scale argument)" },
+        { :name => :thumb_vid_fraction, :default => 0.1, :description => "fraction of video where to take snapshot for thumbnail" },
+        { :name => :thumb_img_size, :default => 800, :description => "height of thumbnail of non video" },
+        { :name => :validate_mime, :default => :no, :description => "produce warning if mime type of node api is different than file analysis" },
+        { :name => :check_extension, :default => :yes, :description => "check additional extension that are not supported by node api" },
+        { :name => :max_size, :default => 1<<24, :description => "maximum size of preview file" },
+      ]
+      # add accessors
+      DESCRIPTIONS.each do |opt|
+        attr_accessor opt[:name]
+      end
     end # Options
   end # Preview
 end # Asperalm

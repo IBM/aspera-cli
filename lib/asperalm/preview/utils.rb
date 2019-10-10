@@ -6,7 +6,17 @@ require 'open3'
 module Asperalm
   module Preview
     class Utils
+      # from bash manual: meta-character need to be escaped
+      BASH_SPECIAL_CHARACTERS="|&;()<> \t#\n"
       BASH_EXIT_NOT_FOUND=127
+      private_constant :BASH_SPECIAL_CHARACTERS,:BASH_EXIT_NOT_FOUND
+      # returns string with single quotes suitable for bash if there is any bash metacharacter
+      def self.shell_quote(argument)
+        return argument unless argument.split('').any?{|c|BASH_SPECIAL_CHARACTERS.include?(c)}
+        return "'"+argument.gsub(/'/){|s| "'\"'\"'"}+"'"
+      end
+
+      # check that external tools can be executed
       def self.check_tools(skip_types=[])
         required_tools=%w(ffmpeg ffprobe convert composite optipng libreoffice)
         required_tools.delete('libreoffice') if skip_types.include?(:office)
@@ -17,10 +27,11 @@ module Asperalm
         end
       end
 
-      # run command
+      # execute external command
       # one could use "system", but we would need to redirect stdout/err
+      # @return true if su
       def self.external_command(command_args,stdout_return=nil)
-        # build commqnd line, and quote special characters
+        # build command line, and quote special characters
         command=command_args.map{|i| shell_quote(i.to_s)}.join(' ')
         Log.log.debug("cmd=#{command}".red)
         # capture3: only in ruby2+
@@ -44,19 +55,12 @@ module Asperalm
 
       def self.ffmpeg(input_file,input_args,output_file,output_args)
         external_command(['ffmpeg',
-          '-y',
-          '-loglevel','error',
-          input_args,'-i',input_file,output_args,output_file].flatten)
-      end
-
-      # from bash manual: metacharacter
-      # need to be escaped
-      SHELL_SPECIAL_CHARACTERS="|&;()<> \t#\n"
-
-      # returns string with single quotes suitable for bash if there is any bash metacharacter
-      def self.shell_quote(argument)
-        return argument unless argument.split('').any?{|c|SHELL_SPECIAL_CHARACTERS.include?(c)}
-        return "'"+argument.gsub(/'/){|s| "'\"'\"'"}+"'"
+          '-y', # overwrite output without asking
+          '-loglevel','error', # show only errors and up
+          input_args,
+          '-i',input_file,
+          output_args,
+          output_file].flatten)
       end
 
       def self.video_get_duration(input_file)
@@ -69,40 +73,29 @@ module Asperalm
         result.to_f
       end
 
-      def self.calc_interval(duration, offset_seconds, count)
-        (duration - offset_seconds) / count
-      end
-
-      def self.mk_tmpdir(input_file)
-        maintmp=Options.instance.tmpdir || Dir.tmpdir
-        tmpdir=File.join(maintmp,input_file.split('/').last.gsub(/\s/, '_').gsub(/\W/, ''))
-        FileUtils.mkdir_p(tmpdir)
-        tmpdir
-      end
-
       TMPFMT='img%04d.jpg'
 
-      def self.ffmpeg_fmt(tmpdir)
-        return File.join(tmpdir,TMPFMT)
+      def self.ffmpeg_fmt(temp_folder)
+        return File.join(temp_folder,TMPFMT)
       end
 
-      def self.get_tmp_num_filepath(tmpdir, file_number)
-        return File.join(tmpdir,sprintf(TMPFMT,file_number))
+      def self.get_tmp_num_filepath(temp_folder, file_number)
+        return File.join(temp_folder,sprintf(TMPFMT,file_number))
       end
 
-      def self.video_dupe_frame(input_file, tmpdir, dupecount)
+      def self.video_dupe_frame(input_file, temp_folder, dupecount)
         img_number = /img([0-9]*)\.jpg/.match(input_file)[1].to_i
         1.upto(dupecount) do |i|
-          dupename = get_tmp_num_filepath(tmpdir,(i+img_number))
+          dupename = get_tmp_num_filepath(temp_folder,(i+img_number))
           FileUtils.ln_s(input_file,dupename)
         end
       end
 
-      def self.video_blend_frames(img1, img2, tmpdir, blendframes)
+      def self.video_blend_frames(img1, img2, temp_folder, blendframes)
         img_number = /img([0-9]*)\.jpg/.match(img1)[1].to_i
         1.upto(blendframes) do |i|
           percent = 100 * i / (blendframes + 1)
-          filename = get_tmp_num_filepath(tmpdir, img_number + i)
+          filename = get_tmp_num_filepath(temp_folder, img_number + i)
           external_command(['composite','-blend',percent,img2,img1,filename])
         end
       end

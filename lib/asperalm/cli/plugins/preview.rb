@@ -2,6 +2,7 @@ require 'asperalm/cli/basic_auth_plugin'
 require 'asperalm/preview/generator'
 require 'asperalm/preview/options'
 require 'asperalm/preview/utils'
+require 'asperalm/preview/file_types'
 require 'asperalm/persistency_file'
 require 'asperalm/hash_ext'
 require 'date'
@@ -10,69 +11,52 @@ module Asperalm
   module Cli
     module Plugins
       class Preview < BasicAuthPlugin
-        attr_accessor :option_overwrite
+        # option_skip_format has special accessors
         attr_accessor :option_previews_folder
         attr_accessor :option_folder_reset_cache
         attr_accessor :option_temp_folder
         attr_accessor :option_skip_folders
+        attr_accessor :option_overwrite
+        attr_accessor :option_file_access
         def initialize(env)
           super(env)
           @skip_types=[]
           @default_transfer_spec=nil
           # by default generate all supported formats
-          @preview_formats=Asperalm::Preview::Generator.preview_formats
+          @preview_formats_to_generate=Asperalm::Preview::Generator::PREVIEW_FORMATS.clone
+          # options for generation
+          @gen_options=Asperalm::Preview::Options.new
           # link CLI options to gen_info attributes
-          self.options.set_obj_attr(:skip_types,self,:option_skip_types)
           self.options.set_obj_attr(:skip_format,self,:option_skip_format,[])
-          self.options.set_obj_attr(:overwrite,self,:option_overwrite,:mtime)
-          self.options.set_obj_attr(:previews_folder,self,:option_previews_folder,'previews')
           self.options.set_obj_attr(:folder_reset_cache,self,:option_folder_reset_cache,:no)
+          self.options.set_obj_attr(:skip_types,self,:option_skip_types)
+          self.options.set_obj_attr(:previews_folder,self,:option_previews_folder,'previews')
           self.options.set_obj_attr(:temp_folder,self,:option_temp_folder,"/tmp/aspera.previews")
           self.options.set_obj_attr(:skip_folders,self,:option_skip_folders,[])
-          self.options.set_obj_attr(:video,Asperalm::Preview::Options.instance,:vid_conv_method,:reencode)
-          self.options.set_obj_attr(:vid_offset_seconds,Asperalm::Preview::Options.instance,:vid_offset_seconds,10)
-          self.options.set_obj_attr(:vid_size,Asperalm::Preview::Options.instance,:vid_size,'320:-2')
-          self.options.set_obj_attr(:vid_framecount,Asperalm::Preview::Options.instance,:vid_framecount,30)
-          self.options.set_obj_attr(:vid_blendframes,Asperalm::Preview::Options.instance,:vid_blendframes,2)
-          self.options.set_obj_attr(:vid_framepause,Asperalm::Preview::Options.instance,:vid_framepause,5)
-          self.options.set_obj_attr(:vid_fps,Asperalm::Preview::Options.instance,:vid_fps,15)
-          self.options.set_obj_attr(:vid_mp4_size_reencode,Asperalm::Preview::Options.instance,:vid_mp4_size_reencode,"-2:'min(ih,360)'")
-          self.options.set_obj_attr(:clips_offset_seconds,Asperalm::Preview::Options.instance,:clips_offset_seconds,10)
-          self.options.set_obj_attr(:clips_size,Asperalm::Preview::Options.instance,:clips_size,'320:-2')
-          self.options.set_obj_attr(:clips_length,Asperalm::Preview::Options.instance,:clips_length,5)
-          self.options.set_obj_attr(:clips_count,Asperalm::Preview::Options.instance,:clips_count,5)
-          self.options.set_obj_attr(:thumb_mp4_size,Asperalm::Preview::Options.instance,:thumb_mp4_size,"-1:'min(ih,600)'")
-          self.options.set_obj_attr(:thumb_img_size,Asperalm::Preview::Options.instance,:thumb_img_size,800)
-          self.options.set_obj_attr(:thumb_offset_fraction,Asperalm::Preview::Options.instance,:thumb_offset_fraction,0.1)
-          self.options.set_obj_attr(:validate_mime,Asperalm::Preview::Options.instance,:validate_mime,:no)
-          self.options.set_obj_attr(:check_extension,Asperalm::Preview::Options.instance,:check_extension,:yes)
-          self.options.add_opt_list(:file_access,[:local,:remote],"how to read and write files in repository")
-          self.options.add_opt_simple(:skip_types,"skip types in comma separated list")
-          self.options.add_opt_list(:skip_format,Asperalm::Preview::Generator.preview_formats,"skip this preview format (multiple possible)")
-          self.options.add_opt_list(:overwrite,Preview.overwrite_policies,"when to generate preview file")
-          self.options.add_opt_simple(:previews_folder,"preview folder in files")
-          self.options.add_opt_simple(:iteration_file,"path to iteration memory file")
+          self.options.set_obj_attr(:overwrite,self,:option_overwrite,[:always,:never,:mtime])
+          self.options.set_obj_attr(:file_access,self,:option_file_access,[:local,:remote])
+          self.options.add_opt_list(:skip_format,Asperalm::Preview::Generator::PREVIEW_FORMATS,"skip this preview format (multiple possible)")
           self.options.add_opt_list(:folder_reset_cache,[:no,:header,:read],"reset folder cache")
+          self.options.add_opt_simple(:skip_types,"skip types in comma separated list")
+          self.options.add_opt_simple(:previews_folder,"preview folder in storage root")
           self.options.add_opt_simple(:temp_folder,"path to temp folder")
           self.options.add_opt_simple(:skip_folders,"list of folder to skip")
-          self.options.add_opt_list(:video,Asperalm::Preview::Options.vid_conv_methods,"method to generate video")
-          self.options.add_opt_simple(:vid_offset_seconds,"generation parameter")
-          self.options.add_opt_simple(:vid_size,"generation parameter")
-          self.options.add_opt_simple(:vid_framecount,"generation parameter")
-          self.options.add_opt_simple(:vid_blendframes,"generation parameter")
-          self.options.add_opt_simple(:vid_framepause,"generation parameter")
-          self.options.add_opt_simple(:vid_fps,"generation parameter")
-          self.options.add_opt_simple(:vid_mp4_size_reencode,"generation parameter")
-          self.options.add_opt_simple(:clips_offset_seconds,"generation parameter")
-          self.options.add_opt_simple(:clips_size,"generation parameter")
-          self.options.add_opt_simple(:clips_length,"generation parameter")
-          self.options.add_opt_simple(:clips_count,"generation parameter")
-          self.options.add_opt_simple(:thumb_mp4_size,"generation parameter")
-          self.options.add_opt_simple(:thumb_img_size,"generation parameter")
-          self.options.add_opt_simple(:thumb_offset_fraction,"generation parameter")
-          self.options.add_opt_boolean(:validate_mime,"use magic number validation")
-          self.options.add_opt_boolean(:check_extension,"check extra file extensions")
-          self.options.set_option(:file_access,:local)
+          self.options.add_opt_simple(:iteration_file,"path to iteration memory file")
+          self.options.add_opt_list(:overwrite,[:no,:header,:read],"when to overwrite result file")
+          self.options.add_opt_list(:file_access,[:no,:header,:read],"how to read and write files in repository")
+
+          # add generator other options
+          Asperalm::Preview::Options::DESCRIPTIONS.each do |opt|
+            self.options.set_obj_attr(opt[:name],@gen_options,opt[:name],opt[:default])
+            if opt.has_key?(:values)
+              self.options.add_opt_list(opt[:name],opt[:values],opt[:description])
+            elsif [:yes,:no].include?(opt[:default])
+              self.options.add_opt_boolean(opt[:name],opt[:description])
+            else
+              self.options.add_opt_simple(opt[:name],opt[:description])
+            end
+          end
+
           self.options.parse_options!
           raise "skip_folder shall be an Array, use @json:[...]" unless @option_skip_folders.is_a?(Array)
         end
@@ -83,14 +67,11 @@ module Asperalm
         PREVIEW_FOLDER_SUFFIX='.asp-preview'
         PREVIEW_FILE_PREFIX='preview.'
 
-        # values for option_overwrite
-        def self.overwrite_policies; [:always,:never,:mtime];end
-
         def option_skip_types=(value)
           @skip_types=[]
           value.split(',').each do |v|
             s=v.to_sym
-            raise "not supported: #{v}" unless Asperalm::Preview::Generator.conversion_types.include?(s)
+            raise "not supported: #{v}" unless Asperalm::Preview::FileTypes::CONVERSION_TYPES.include?(s)
             @skip_types.push(s)
           end
         end
@@ -100,11 +81,11 @@ module Asperalm
         end
 
         def option_skip_format=(value)
-          @preview_formats.delete(value)
+          @preview_formats_to_generate.delete(value)
         end
 
         def option_skip_format
-          return @preview_formats.map{|i|i.to_s}.join(',')
+          return @preview_formats_to_generate.map{|i|i.to_s}.join(',')
         end
 
         ACTIONS=[:scan,:events,:folder,:check,:test]
@@ -243,7 +224,7 @@ module Asperalm
           # where previews will be generated for this particular entry
           local_entry_preview_dir=String.new
           # prepare generic information
-          gen_infos=@preview_formats.map do |preview_format|
+          gen_infos=@preview_formats_to_generate.map do |preview_format|
             {
               :preview_format => preview_format,
               :base_dest      => preview_filename(preview_format)
@@ -273,7 +254,7 @@ module Asperalm
               end
             end
             # need generator for further checks
-            gen_info[:generator]=Asperalm::Preview::Generator.new(gen_info[:src],gen_info[:dst],entry['content_type'])
+            gen_info[:generator]=Asperalm::Preview::Generator.new(@gen_options,gen_info[:src],gen_info[:dst],entry['content_type'])
             # get conversion_type (if known) and check if supported
             next false unless gen_info[:generator].supported?
             # shall we skip it ?
@@ -347,8 +328,8 @@ module Asperalm
         def execute_action
           @api_node=basic_auth_api
           @transfer_server_address=URI.parse(@api_node.params[:base_url]).host
-          @access_key_self = @api_node.read('access_keys/self')[:data] # same as with accesskey instead of /self
-          @access_remote=self.options.get_option(:file_access,:mandatory).eql?(:remote)
+          @access_key_self = @api_node.read('access_keys/self')[:data] # get current access key
+          @access_remote=@option_file_access.eql?(:remote)
           Log.log.debug("access key info: #{@access_key_self}")
           #TODO: can the previews folder parameter be read from node api ?
           @option_skip_folders.push('/'+@option_previews_folder)
@@ -389,9 +370,9 @@ module Asperalm
             return Main.result_status('tools validated')
           when :test
             source = self.options.get_next_argument("source file")
-            format = self.options.get_next_argument("format",Asperalm::Preview::Generator.preview_formats)
+            format = self.options.get_next_argument("format",Asperalm::Preview::Generator::PREVIEW_FORMATS)
             dest=preview_filename(format)
-            g=Asperalm::Preview::Generator.new(source,dest)
+            g=Asperalm::Preview::Generator.new(@gen_options,source,dest)
             return Main.result_status("format not supported") unless g.supported?
             g.generate
             return Main.result_status("generated: #{dest}")
