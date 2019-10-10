@@ -1,6 +1,16 @@
 module Asperalm
   module Preview
     class FileTypes
+      # values for conversion_type : input format
+      CONVERSION_TYPES=[
+          :image,
+          :video,
+          :office,
+          :pdf,
+          :plaintext
+        ]
+
+      attr_reader :conversion_type
       # define how files are processed based on mime type
       SUPPORTED_MIME_TYPES={
         'application/json' => :plaintext,
