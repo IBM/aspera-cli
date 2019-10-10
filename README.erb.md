@@ -1669,14 +1669,15 @@ to start from ma configuration file, using <%=tool%> standard options.
 
 ## Preview
 
-The preview plugin provides generation of previews for Node API Access Key based browsing, as used in Aspera on Cloud.
+The `preview` generates "previews" of graphical files, i.e. thumbnails (office, images, video) and video previews on an Aspera HSTS for use primarily in the Aspera on Cloud application.
+This is based on the "node API" of Aspera HSTS when using Access Keys only inside it's "storage root".
+Several parameters can be used to tune several aspects:
 
-It generates preview files for Aspera on Cloud for on-premise nodes. (thumbnails and video previews)
+  * methods for detection of new files needing generation
+  * methods for generation of video preview
+  * parameters for video handling
 
-The preview generator creates/updates a preview for files located on
-an access key main "storage root". Several candidate detection methods are supported.
-
-### Candidate detection
+### Candidate detection for creation or update (or deletion)
 
 The tool will find candidates for preview generation using three commands:
 
@@ -1689,22 +1690,7 @@ Note that for the `event`, the option `iteration_file` should be specified so th
 successive calls only process new events. This file will hold an identifier
 telling from where to get new events.
 
-### File type detection
-
-Depending on file type, various generation method is used. The current file types are:
-
-* image
-* video
-* office
-* pdf
-* plaintext
-
-File type is primarily base on file extension (internal base).
-
-Optionally, the tool can detect the mime type using option: validate_mime=yes
-
-
-### Creation/Update
+It is also possible to test a local file, using the `test` command.
 
 Once candidate are selected, once candidates are selected, 
 a preview is always generated if it does not exist already, 
@@ -1715,23 +1701,49 @@ using one of three overwrite method:
 * `never` : preview is generated only if it does not exist already
 * `mtime` : preview is generated only if the original file is newer than the existing
 
-### Access to original files and preview creation
+Deletion of preview for deleted source files: not implemented yet.
 
-Standard open source tools are used to create thumnails and video previews. Those tools
-require that original files are accessible in the local file system and also write generated 
-files on the local file system. The tool provides 2 ways to read and write files with the parameter: `--file-access`
-
-If the preview generator is run on a system that has direct access to the file system, then the value `local` can be used.
-
-If the preview generator does not have access to files on the file system (it is remote, no mount, or is an object storage), then the original file is first downloaded, then the result is uploaded, use method `remote`.
-
-### Options
-
-To skip some folders, use the option : `--skip-folders`, note that it expects a list of path starting with slash, use the `@json:` notation, example:
+If the `scan` or `events` detection method is used, then the option : `skip_folders` can be used
+to skip some folders. It expects a list of path starting with slash, use the `@json:` notation, example:
 
 ```
 $ <%=cmd%> preview scan --skip-folders=@json:'["/not_here"]'
 ```
+
+The option `folder_reset_cache` forces the node service to refresh folder contents using various methods.
+
+### Files types
+
+Not all file types support preview: only those file types being able to be rendered are supported:
+
+* image
+* video
+* office
+* pdf
+* plaintext
+
+File type is primarily base on file extension detected by the node API and translated info a mime type returned
+by the node API.
+Optionally, the tool can also locally detect the mime type using option: validate_mime=yes
+
+To avoid generation for some types, specify a list using option `skip_types`.
+
+Two types of preview can be generated:
+
+  * png: thumbnail
+  * mp4: video preview (only for video) 
+
+### Access to original files and preview creation
+
+Standard open source tools are used to create thumnails and video previews. Those tools
+require that original files are accessible in the local file system and also write generated 
+files on the local file system.
+The tool provides 2 ways to read and write files with the option: `file_access`
+
+If the preview generator is run on a system that has direct access to the file system, then the value `local` can be used. In this case, no transfer happen, source files are directly read from the storage, and preview files
+are directly written to the storage.
+
+If the preview generator does not have access to files on the file system (it is remote, no mount, or is an object storage), then the original file is first downloaded, then the result is uploaded, use method `remote`.
 
 ### <a name="prev_ext"></a>External tools: Linux
 
@@ -1743,6 +1755,8 @@ The tool requires the following external tools available in the `PATH`:
 * Libreoffice : `libreoffice`
 
 Here shown on Redhat/CentOS.
+
+Other OSes should work as well, but are note tested.
 
 #### Imagemagick and optipng:
 
@@ -1801,14 +1815,26 @@ Specify the previews folder as shown in:
 
 <https://ibmaspera.com/help/admin/organization/installing_the_preview_maker>
 
-By default, the `preview` plugin expects previews to be generated in a folder named `previews` located in the storage root. So, on the transfer server execute:
+By default, the `preview` plugin expects previews to be generated in a folder named `previews` located in the storage root. On the transfer server execute:
 
 ```
 # /opt/aspera/bin/asconfigurator -x "server;preview_dir,previews"
 # /opt/aspera/bin/asnodeadmin --reload
 ```
 
-If another folder is setup, this can be modified in <%=tool%> using the option `previews_folder`
+If another folder is configured on the HSTS, then specify it to <%=tool%> using the option `previews_folder`.
+
+The HSTS node API limits any preview file to a parameter: `max_request_file_create_size_kb` (1 KB is 1024 bytes).
+This size is internally capped to `1<<24` Bytes, i.e. 16,777,216 Bytes.
+
+To change this parameter in `aspera.conf`, use `asconfigurator`. To display the value, use `asuserdata`:
+
+```bash
+$ asuserdata -a | grep max_request_file_create_size_kb
+  max_request_file_create_size_kb: "1024"
+```
+
+If yu use a value different than 16,777,216, then specify it using option `max_size`.
 
 ### Configuration
 
