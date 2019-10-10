@@ -19,7 +19,7 @@ SERVER_FOLDER_UPLOAD=/Upload
 SHARES_UPLOAD="Demo Files (California)/Upload"
 
 # Incoming asset processing
-TEST_WORKFLOW_ID=297
+TEST_WORKFLOW_ID=913
 
 AOC_PUBLINK_RECV_PACKAGE=https://sedemo.ibmaspera.com/packages/public/receive?token=cpDktbNc8aHnyrbI_V49GzFwm5q3jxWnT_cDOjaewrc
 AOC_PUBLINK_SEND_DROPBOX=https://aspera.pub/xxktoFw/Team_Inbox
