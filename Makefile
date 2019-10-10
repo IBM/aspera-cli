@@ -762,14 +762,29 @@ t/prev2:
 	@touch $@
 t/prev3:
 	@echo $@
-	$(EXETEST) preview test ~/Documents/Samples/anatomic-2k/TG18-CH/TG18-CH-2k-01.dcm --log-level=debug png --video=clips
+	$(EXETEST) preview test ~/Documents/Samples/anatomic-2k/TG18-CH/TG18-CH-2k-01.dcm --log-level=debug png
 	@touch $@
 t/prev4:
 	@echo $@
-	$(EXETEST) preview test ~/'Documents/Samples/YıçşöğüİÇŞÖĞÜ.pdf' --log-level=debug png --video=clips
+	$(EXETEST) preview test ~/'Documents/Samples/YıçşöğüİÇŞÖĞÜ.pdf' --log-level=debug png
+	@touch $@
+t/prev5:
+	@echo $@
+	$(EXETEST) preview test ~/'Documents/Samples/mxf_video.mxf' --log-level=debug mp4 --video-conversion=preview
+	mv preview.mp4 preview_preview.mp4
+	@touch $@
+t/prev6:
+	@echo $@
+	$(EXETEST) preview test ~/'Documents/Samples/mxf_video.mxf' --log-level=debug mp4 --video-conversion=reencode
+	mv preview.mp4 preview_reencode.mp4
+	@touch $@
+t/prev7:
+	@echo $@
+	$(EXETEST) preview test ~/'Documents/Samples/mxf_video.mxf' --log-level=debug mp4 --video-conversion=clips
+	mv preview.mp4 preview_clips.mp4
 	@touch $@
 
-tprev: t/prev1 t/prev2 t/prev3
+tprev: t/prev1 t/prev2 t/prev3 t/prev4 t/prev5 t/prev6 t/prev7
 
 thot:
 	rm -fr source_hot
