@@ -6,6 +6,7 @@ BINDIR=$(DEV_FOLDER)/bin
 LIBDIR=$(DEV_FOLDER)/lib
 OUT_FOLDER=out
 LOCAL_FOLDER=test.dir
+CONNECT_DOWNLOAD_FOLDER=$(HOME)/Desktop
 # tool invokation
 EXETESTB=$(BINDIR)/$(EXENAME)
 MLIA_CONFIG_FILE=$(DEV_FOLDER)/test.mlia.conf
@@ -364,9 +365,9 @@ t/aocf2:
 	@touch $@
 t/aocf3: $(LOCAL_FOLDER)/.exists
 	@echo $@
-	@rm -f $(LOCAL_FOLDER)/200KB.1
-	$(EXETEST) aspera files download --to-folder=$(LOCAL_FOLDER) --transfer=connect /200KB.1
-	@rm -f $(LOCAL_FOLDER)/200KB.1
+	@rm -f $(CONNECT_DOWNLOAD_FOLDER)/200KB.1
+	$(EXETEST) aspera files download --transfer=connect /200KB.1
+	@rm -f $(CONNECT_DOWNLOAD_FOLDER)/200KB.1
 	@touch $@
 t/aocf4: $(LOCAL_FOLDER)/.exists
 	@echo $@
