@@ -2110,6 +2110,11 @@ Gems, or remove your ed25519 key from your `.ssh` folder to solve the issue. Not
 
 # Release Notes
 
+* version 0.9.35
+
+	* updated plugin `preview` , changed parameter names, added documentation
+	* fix in `ats` plugin : instance id needed in request header
+
 * version 0.9.34
 
 	* parser "@preset" can be used again in option "transfer_info"
