@@ -83,6 +83,7 @@ module Asperalm
       private
 
       def mk_tmpdir(input_file)
+        # TODO: get parameter from plugin
         maintmp=Dir.tmpdir
         temp_folder=File.join(maintmp,input_file.split('/').last.gsub(/\s/, '_').gsub(/\W/, ''))
         FileUtils.mkdir_p(temp_folder)
