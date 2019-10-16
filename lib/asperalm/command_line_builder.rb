@@ -22,7 +22,7 @@ module Asperalm
 
     # @param param_hash
     def initialize(param_hash,params_definition)
-      @param_hash=param_hash.clone # shallow copy is sufficient
+      @param_hash=param_hash  # keep reference so that it can be modified by caller before calling `process_params`
       @params_definition=params_definition
       @result_env={}
       @result_args=[]
