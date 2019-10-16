@@ -368,6 +368,7 @@ In addition it is possible to decode a value, using one or multiple decoders :
 * @zlib: uncompress data
 * @ruby: execute ruby code
 * @csvt: decode a titled CSV value
+* @lines: split a string in multiple lines and return an array
 
 To display the result of an extended value, use the `config echo` command.
 
@@ -851,13 +852,62 @@ As such, it can be modified with option: `--ts=@json:'{"destination_root":"<path
 The option `to_folder` provides an equivalent and convenient way to change this parameter:
 `--to-folder=<path>` .
 
-### Source files for transfers
+### List of files for transfers
 
 When uploading, downloading or sending files, the user must specify
-the list of files to transfer. This is done by using the option:
-`sources`. This is simply the list of paths of files.
+the list of files to transfer. Most of the time, the list of files to transfer will be simply specified on the command line:
 
-Note the special case when the source files are located on "Aspera on Cloud":
+```
+$ <%=cmd%> -Pdemoserver server upload ~/mysample.file secondfile
+```
+
+This is the same as:
+
+```
+$ <%=cmd%> -Pdemoserver server upload --sources=@args ~/mysample.file secondfile
+```
+
+More advanced options are provided to adapt to various cases. In fact, list of files to transfer are conveyed using the [_transfer-spec_](#transferspec) using the field: "paths" which is a list (array) of pairs of "source" (mandatory) and "destination" (optional).
+
+Note that this is different from the "ascp" command line. The paradigm used by <%=tool%> is: all transfer parameters are kept in transfer spec so that execution of a transfer is independent of the transfer agent. It is envisioned that, one day, ascp will accept a transfer spec directly.
+
+For ease of use and flexibility, the list of files to transfer is specified by the option `sources`. The accepted values are:
+
+* the literal `@args` (default value), in that case the list of files is directly provided at the end of the command line (see example above)
+
+* an [Extended Value](#extended) holding an *Array of String*. Examples:
+
+```
+--sources=@json:'["file1","file2"]'
+--sources=@lines:@stdin
+--sources=@ruby:'File.read("myfilelist").split("\n")'
+```
+
+* the literal value `@ts` which specifies that the user provided the list of files directly in the `ts` option, in its `paths` field. Example:
+
+```
+--sources=@ts --ts=@json:'{"paths":[{"source":"file1"},{"source":"file2"}]}'
+```
+
+* Although not recommended, because it applies *only* to the `local` transfer agent (i.e. bare ascp), it is possible to specify bare ascp arguments using the pseudo transfer spec parameter `EX_ascp_args`. In that case, one must specify a dummy list in the transfer spec, which will be overriden by the bare ascp command line provided.
+
+```
+--sources=@ts --ts=@json:'{"paths":[{"source":"dummy"}],"EX_ascp_args":["--file-list","myfilelist"]}'
+```
+
+In case the file list is provided on the command line (i.e. using `--sources=@args` or `--sources=<Array>`, but not `--sources=@ts`), the list of files will be used either as a simple file list or a file pair list depending on the value of the option: `src_type`:
+
+* `list` : (default) the path of destination is the same as source
+* `pair` : in that case, the first element is the first source, the second element is the first destination, and so on.
+
+Example:
+
+```
+mlia server upload --src-type=pair ~/Documents/Samples/200KB.1 /Upload/sample1
+```
+
+
+Note the special case when the source files are located on "Aspera on Cloud", i.e. using access keys and the `file id` API:
 
 * All files must be in the same source folder.
 * If there is a single file : specify the full path
@@ -867,42 +917,6 @@ Source files are located on "Aspera on cloud", when :
 
 * the server is Aspera on Cloud, and making a download / recv
 * the agent is Aspera on Cloud, and making an upload / send
-
-There are 3 ways to specify the list of files:
-
-* on the command line (default) : `--sources=@args`
-
-The list of file path is provided at the end of the command line.
-If the `sources` is not provided, this is the default.
-Example:
-
-```
---sources=@args file1.ext file2.ext
-```
-
-or more simply:
-
-```
-file1.ext file2.ext
-```
-
-* in the transfer spec : `--sources=@ts`
-
-The file list is part of the standard transfer spec. Example:
-
-```
---sources=@ts --ts=@json:'{"paths"=>[{"source"=>"file1.ext"},{"source"=>"file1.ext"}]}'
-```
-
-* as an extended value : `--sources=@&lt;extended value syntax&gt;`
-
-The value must be an Array of String, specified
-using the [Extended Value Syntax](#extended).
-Example:
-
-```
---sources=@json:'[{"source"=>"file1.ext"},{"source"=>"file1.ext"}]'
-```
 
 ### <a name="multisession"></a>Support of multi-session
 
@@ -2109,6 +2123,10 @@ This means that you do not have ruby support for ED25519 SSH keys. You may eithe
 Gems, or remove your ed25519 key from your `.ssh` folder to solve the issue. Note, this is temporarily fixed in version 0.9.24, but those type of key will just be ignored.
 
 # Release Notes
+
+* version 0.9.36
+
+	* added option to specify file pair lists
 
 * version 0.9.35
 
