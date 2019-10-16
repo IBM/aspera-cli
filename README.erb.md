@@ -873,7 +873,13 @@ Note that this is different from the "ascp" command line. The paradigm used by <
 
 For ease of use and flexibility, the list of files to transfer is specified by the option `sources`. The accepted values are:
 
-* the literal `@args` (default value), in that case the list of files is directly provided at the end of the command line (see example above)
+* the literal `@args` (default value), in that case the list of files is directly provided at the end of the command line (see at the beginning of this section). Note that an argument is also evaluated as an [Extended Value](#extended), so the following is also possible:
+
+```
+$ echo /path/to/file1 > myfilelist
+$ echo /path/to/file2 >> myfilelist
+$ <%=cmd%> -Pdemoserver server upload @lines:@file:myfilelist
+```
 
 * an [Extended Value](#extended) holding an *Array of String*. Examples:
 
