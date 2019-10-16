@@ -102,9 +102,6 @@ module Asperalm
         # symbol must be index of Installation.paths
         env_args[:ascp_version]=@builder.process_param('use_ascp4',:get_value) ? :ascp4 : :ascp
 
-        # optional args, at the end to override previous ones (to allow override)
-        @builder.add_command_line_options(@builder.process_param('EX_ascp_args',:get_value,:accepted_types=>Array))
-
         # destination will be base64 encoded, put before path arguments
         @builder.add_command_line_options(['--dest64'])
 
@@ -131,7 +128,9 @@ module Asperalm
             @builder.add_command_line_options(["#{option}=#{file_list_file}"])
           end
         end
-        # destination, use base64 encoding  (as defined previously: --dest64)
+        # optional args, at the end to override previous ones (to allow override)
+        @builder.add_command_line_options(@builder.process_param('EX_ascp_args',:get_value,:accepted_types=>Array))
+        # destination, use base64 encoding  (as defined previously: --dest64) MUST be last one
         @builder.add_command_line_options([Base64.strict_encode64(@builder.process_param('destination_root',:get_value,:accepted_types=>String,:mandatory=>true))])
 
         @builder.add_env_args(env_args[:env],env_args[:args])
