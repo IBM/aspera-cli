@@ -60,11 +60,16 @@ module Asperalm
     # :url_token
     # :user_name
     # :user_pass
+    # :token_type
     def initialize(auth_params)
       Log.log.debug "auth=#{auth_params}"
-      @params=auth_params
+      @params=auth_params.clone
       # default values
+      # name of field to take as token from result of call to /token
+      @params[:token_field]||='access_token'
+      # default endpoint for /token
       @params[:path_token]||='token'
+      # default endpoint for /authorize
       @params[:path_authorize]||='authorize'
       rest_params={:base_url => @params[:base_url]}
       if @params.has_key?(:client_id)
@@ -275,6 +280,13 @@ module Asperalm
             'response_type' => 'cloud_iam',
             'apikey'        => @params[:api_key]
           })
+        when :delegated_refresh
+          resp=create_token_simple({
+            'grant_type'          => 'urn:ibm:params:oauth:grant-type:apikey',
+            'response_type'       => 'delegated_refresh_token',
+            'apikey'              => @params[:api_key],
+            'receiver_client_ids' => 'aspera_ats'
+          })
         when :header_userpass
           # used in Faspex apiv4 and shares2
           resp=create_token_advanced({
@@ -299,7 +311,7 @@ module Asperalm
       end # if ! in_cache
 
       # ok we shall have a token here
-      return 'Bearer '+@token_cache[api_scope]['access_token']
+      return 'Bearer '+@token_cache[api_scope][@params[:token_field]]
     end
 
     # open the login page, wait for code and return parameters
