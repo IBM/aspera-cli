@@ -153,6 +153,9 @@ t/serv_mkdir:
 t/serv_upload: t/serv_mkdir
 	@echo $@
 	$(EXETEST) server upload $(CLIENT_DEMOFILE_PATH) --to-folder=$(NEW_SERVER_FOLDER)
+	$(EXETEST) server upload --src-type=pair $(CLIENT_DEMOFILE_PATH) $(NEW_SERVER_FOLDER)/othername
+	$(EXETEST) server upload --src-type=pair --sources=@json:'["$(CLIENT_DEMOFILE_PATH)","$(NEW_SERVER_FOLDER)/othername"]'
+	$(EXETEST) server upload --sources=@ts --ts=@json:'{"paths":[{"source":"$(CLIENT_DEMOFILE_PATH)","destination":"$(NEW_SERVER_FOLDER)/othername"}]}'
 	@touch $@
 t/serv_md5: t/serv_upload
 	@echo $@
