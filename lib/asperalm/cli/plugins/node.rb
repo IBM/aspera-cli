@@ -12,6 +12,8 @@ module Asperalm
         private_constant :SAMPLE_SOAP_CALL
         def initialize(env)
           super(env)
+          # this is added to some requests , for instance to add tags
+          @add_request_param = env[:add_request_param] || {}
           unless env[:skip_basic_auth_options]
             self.options.add_opt_simple(:validator,"identifier of validator (optional for central)")
             self.options.add_opt_simple(:asperabrowserurl,"URL for simple aspera web ui")
@@ -168,9 +170,10 @@ module Asperalm
             self.format.display_status("Items: #{send_result[:data]['item_count']}/#{send_result[:data]['total_count']}")
             return c_result_remove_prefix_path(result,'path',prefix_path)
           when :upload
-            send_result=@api_node.create('files/upload_setup',{
-              :transfer_requests => [ { :transfer_request => { :paths => [ {
-              :destination => self.transfer.destination_folder('send') } ] } } ] } )[:data]
+            # only one transfer request
+            transfer_request = { :paths => [ { :destination => self.transfer.destination_folder('send') } ] }
+            transfer_request.deep_merge!(@add_request_param)
+            send_result=@api_node.create('files/upload_setup',{:transfer_requests => [ { :transfer_request => transfer_request } ] } )[:data]
             # only one request, so only one answer
             transfer_spec=send_result['transfer_specs'].first['transfer_spec']
             # delete this part, as the returned value contains only destination, and not sources
