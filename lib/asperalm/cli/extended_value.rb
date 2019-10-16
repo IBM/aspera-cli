@@ -35,6 +35,7 @@ module Asperalm
           'zlib'  =>{:type=>:decoder,:func=>lambda{|v|Zlib::Inflate.inflate(v)}},
           'ruby'  =>{:type=>:decoder,:func=>lambda{|v|eval(v)}},
           'csvt'  =>{:type=>:decoder,:func=>lambda{|v|ExtendedValue.decode_csvt(v)}},
+          'lines' =>{:type=>:decoder,:func=>lambda{|v|v.split("\n")}},
           'val'   =>{:type=>:reader ,:func=>lambda{|v|v}},
           'file'  =>{:type=>:reader ,:func=>lambda{|v|File.read(File.expand_path(v))}},
           'path'  =>{:type=>:reader ,:func=>lambda{|v|File.expand_path(v)}},
