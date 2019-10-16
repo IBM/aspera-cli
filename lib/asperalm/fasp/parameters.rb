@@ -97,13 +97,20 @@ module Asperalm
           raise Fasp::Error.new('required: password or ssh key (value or path)')
         end
 
+        # special cases
+        @job_spec.delete('source_root') if @job_spec.has_key?('source_root') and @job_spec['source_root'].empty?
+
+        # process parameters as specified in table
         @builder.process_params
 
         # symbol must be index of Installation.paths
-        env_args[:ascp_version]=@builder.process_param('use_ascp4',:get_value) ? :ascp4 : :ascp
-
-        # destination will be base64 encoded, put before path arguments
-        @builder.add_command_line_options(['--dest64'])
+        if @builder.process_param('use_ascp4',:get_value)
+          env_args[:ascp_version] = :ascp4
+        else
+          env_args[:ascp_version] = :ascp
+          # destination will be base64 encoded, put before path arguments
+          @builder.add_command_line_options(['--dest64'])
+        end
 
         # use file list if there is storage defined for it.
         src_dst_list=@builder.process_param('paths',:get_value,:accepted_types=>Array,:mandatory=>!@job_spec.has_key?('keepalive'))
@@ -130,8 +137,12 @@ module Asperalm
         end
         # optional args, at the end to override previous ones (to allow override)
         @builder.add_command_line_options(@builder.process_param('EX_ascp_args',:get_value,:accepted_types=>Array))
-        # destination, use base64 encoding  (as defined previously: --dest64) MUST be last one
-        @builder.add_command_line_options([Base64.strict_encode64(@builder.process_param('destination_root',:get_value,:accepted_types=>String,:mandatory=>true))])
+        # process destination folder
+        destination_folder = @builder.process_param('destination_root',:get_value,:accepted_types=>String,:mandatory=>true)
+        # ascp4 does not support base64 encoding of destination
+        destination_folder = Base64.strict_encode64(destination_folder) unless env_args[:ascp_version].eql?(:ascp4)
+        # destination MUST be last command line argument to ascp
+        @builder.add_command_line_options([destination_folder])
 
         @builder.add_env_args(env_args[:env],env_args[:args])
 
