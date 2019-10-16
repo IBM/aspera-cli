@@ -788,7 +788,8 @@ t/prev7:
 	@touch $@
 
 tprev: t/prev1 t/prev2 t/prev3 t/prev4 t/prev5 t/prev6 t/prev7
-
+clean::
+	rm -f preview_*.mp4
 thot:
 	rm -fr source_hot
 	mkdir source_hot
