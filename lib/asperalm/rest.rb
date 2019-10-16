@@ -212,7 +212,7 @@ module Asperalm
         end
       rescue RestCallError => e
         # not authorized: oauth token expired
-        if ['401'].include?(result[:http].code.to_s) and call_data[:auth][:type].eql?(:oauth2)
+        if ['401','403'].include?(result[:http].code.to_s) and call_data[:auth][:type].eql?(:oauth2)
           begin
             # try to use refresh token
             req['Authorization']=oauth_token(refresh: true)
