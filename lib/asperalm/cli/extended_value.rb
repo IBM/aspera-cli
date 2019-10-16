@@ -40,7 +40,7 @@ module Asperalm
           'file'  =>{:type=>:reader ,:func=>lambda{|v|File.read(File.expand_path(v))}},
           'path'  =>{:type=>:reader ,:func=>lambda{|v|File.expand_path(v)}},
           'env'   =>{:type=>:reader ,:func=>lambda{|v|ENV[v]}},
-          'stdin' =>{:type=>:reader ,:func=>lambda{|v|raise "no value allowed for stdin" unless v.empty?;STDIN.gets}},
+          'stdin' =>{:type=>:reader ,:func=>lambda{|v|raise "no value allowed for stdin" unless v.empty?;STDIN.read}},
           # other handlers can be set using set_handler, e.g. preset is reader in config plugin
         }
       end
