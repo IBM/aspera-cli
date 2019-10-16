@@ -3,18 +3,23 @@ require 'resolv'
 require 'erb'
 
 module Asperalm
+  # evaluate a proxy autoconfig script
   class ProxyAutoConfig
+    # template file is read once, it contains functions that can be used in a proxy autoconf script
     PAC_FUNC_TEMPLATE=File.read(__FILE__.gsub(/\.rb$/,'.erb.js'))
     private_constant :PAC_FUNC_TEMPLATE
+    # @param proxy_auto_config the proxy auto config script to be evaluated
     def initialize(proxy_auto_config)
       @proxy_auto_config=proxy_auto_config
     end
 
-    # get string representing proxy configuration
+    # execut proxy auto config script for the given URL
     def get_proxy(service_url)
       # require at runtime, in case there is no js engine
       require 'execjs'
-      # set context for template
+      # variables starting with "context_" are replaced in the ERB template file
+      # I did not find an easy way for the javascript to callback ruby
+      # and anyway, it only needs to get DNS translation
       context_self='127.0.0.1'
       context_host=URI.parse(service_url).host
       context_ip=nil
