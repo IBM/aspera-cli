@@ -7,9 +7,10 @@ LIBDIR=$(DEV_FOLDER)/lib
 OUT_FOLDER=out
 LOCAL_FOLDER=test.dir
 CONNECT_DOWNLOAD_FOLDER=$(HOME)/Desktop
-# tool invokation
+# basic tool invocation
 EXETESTB=$(BINDIR)/$(EXENAME)
-MLIA_CONFIG_FILE=$(DEV_FOLDER)/test.mlia.conf
+# this config file contains credentials of platforms used for tests
+MLIA_CONFIG_FILE=$(DEV_FOLDER)/local/test.mlia.conf
 EXETEST=$(EXETESTB) -w --config-file=$(MLIA_CONFIG_FILE)
 GEMNAME=asperalm
 GEMVERSION=$(shell $(EXETEST) --version)
