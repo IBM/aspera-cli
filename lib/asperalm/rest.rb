@@ -71,6 +71,7 @@ module Asperalm
       @http_session=nil
       # default is no auth
       @params[:auth]||={:type=>:none}
+      @params[:not_auth_codes]||=['401']
       # translate old auth parameters, remove prefix, place in auth
       [:auth,:basic,:oauth].each do |p_sym|
         p_str=p_sym.to_s+'_'
@@ -212,7 +213,7 @@ module Asperalm
         end
       rescue RestCallError => e
         # not authorized: oauth token expired
-        if ['401','403'].include?(result[:http].code.to_s) and call_data[:auth][:type].eql?(:oauth2)
+        if @params[:not_auth_codes].include?(result[:http].code.to_s) and call_data[:auth][:type].eql?(:oauth2)
           begin
             # try to use refresh token
             req['Authorization']=oauth_token(refresh: true)
