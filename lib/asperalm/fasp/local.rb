@@ -39,7 +39,7 @@ module Asperalm
           transfer_spec['tags']['aspera']['xfer_id']=SecureRandom.uuid
           Log.log.debug "xfer id=#{transfer_spec['xfer_id']}"
           # TODO: useful ? node only ?
-          transfer_spec['tags']['aspera']['xfer_retry']=3600
+          transfer_spec['tags']['aspera']['xfer_retry']||=3600
         end
         Log.log.debug("ts=#{transfer_spec}")
         # add bypass keys when authentication is token
@@ -246,7 +246,7 @@ module Asperalm
           when 'ERROR'
             Log.log.error("code: #{last_status_event['Code']}")
             if last_status_event['Description']  =~ /bearer token/i
-              Log.log.error("need to regenrate token".red)
+              Log.log.error("need to regenerate token".red)
               if !session.nil? and session[:options].is_a?(Hash) and session[:options].has_key?(:regenerate_token)
                 # regenerate token here, expired, or error on it
                 env_args[:env]['ASPERA_SCP_TOKEN']=session[:options][:regenerate_token].call(true)
