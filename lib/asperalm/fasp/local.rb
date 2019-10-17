@@ -41,7 +41,7 @@ module Asperalm
           # TODO: useful ? node only ?
           transfer_spec['tags']['aspera']['xfer_retry']||=3600
         end
-        Log.log.debug("ts=#{transfer_spec}")
+        Log.dump('ts',transfer_spec)
         # add bypass keys when authentication is token
         if transfer_spec['authentication'].eql?("token")
           Installation.instance.add_bypass_keys(transfer_spec)
