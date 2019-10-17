@@ -31,6 +31,7 @@ module Asperalm
     # found in aspera CLI
     RANDOM_CLIENT='==gYL9VcwFnRwBVLPBVR1JlS50mbtR2dfVmYMRHcTF3QuFHa1F0SmtEZvxEWDZzTGJTeM10ZzZWQNJUbYd2NYl0X6BHbWRzZCFnTPZHbKR2ZDhHbQBjWq1GNHNnUz1GcyZmO05WZpx2YtkGbj1CbhJ2bsdmLhJXZwNXY'
     private_constant :RANDOM_DRIVE,:RANDOM_CLIENT
+
     def self.random_drive
       Base64.strict_decode64(RANDOM_DRIVE.reverse).split(':')
     end
@@ -107,7 +108,7 @@ module Asperalm
     end
 
     # add details to show in analytics
-    def analytics_ts(app,direction,ws_id,ws_name)
+    def self.analytics_ts(app,direction,ws_id,ws_name)
       # translate transfer to operation
       operation=case direction
       when 'send';    'upload'
@@ -129,10 +130,20 @@ module Asperalm
       }
     end
 
+    # build ts addon for IBM Aspera Console
+    def self.console_ts(app,user_name,user_email)
+      elements=[app,user_name,user_email].map{|e|Base64.strict_encode64(e)}
+      elements.unshift('aspera.aoc')
+  Log.dump('elem1'.bg_red,elements[1])
+      return {
+        'cookie'=>elements.join(':')
+      }
+    end
+
     # build "transfer info", 2 elements array with:
     # - transfer spec for aspera on cloud, based on node information and file id
     # - source and token regeneration method
-    def tr_spec(app,direction,node_file,ws_id,ws_name,ts_add)
+    def tr_spec(app,direction,node_file,ts_add)
       # prepare the rest end point is used to generate the bearer token
       token_generation_method=lambda {|do_refresh|self.oauth_token(scope: self.class.node_scope(node_file[:node_info]['access_key'],SCOPE_NODE_USER), refresh: do_refresh)}
       # prepare transfer specification
@@ -144,10 +155,11 @@ module Asperalm
         'aspera'        => {
         'app'             => app,
         'files'           => {
-        'node_id'               => node_file[:node_info]['id'],
+        'node_id'           => node_file[:node_info]['id'],
         }, # files
         'node'            => {
         'access_key'        => node_file[:node_info]['access_key'],
+        #'file_id'           => ts_add['source_root_id']
         'file_id'           => node_file[:file_id]
         } # node
         } # aspera
@@ -156,7 +168,6 @@ module Asperalm
       transfer_spec.merge!(tr_spec_remote_info(node_file[:node_info]))
       # add caller provided transfer spec
       transfer_spec.deep_merge!(ts_add)
-      transfer_spec.deep_merge!(analytics_ts(app,direction,ws_id,ws_name))
       # additional information for transfer agent
       source_and_token_generator={
         :src              => :node_gen4,

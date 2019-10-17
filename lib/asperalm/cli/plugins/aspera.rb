@@ -26,6 +26,7 @@ module Asperalm
           @api_aoc=nil
           @option_ak_secret=nil
           @url_token_data=nil
+          @user_info=nil
           @ats=Ats.new(@agents.merge(skip_secret: true))
           self.options.set_obj_attr(:secret,self,:option_ak_secret)
           self.options.add_opt_list(:auth,Oauth.auth_types,"type of Oauth authentication")
@@ -58,9 +59,25 @@ module Asperalm
           update_aoc_api
         end
 
+        def user_info
+          return @user_info unless @user_info.nil?
+          # get our user's default information
+          # self?embed[]=default_workspace&embed[]=organization
+          begin
+            @user_info=@api_aoc.read('self')[:data]
+          rescue
+            @user_info={
+              'name' => 'unknown',
+              'email' => 'unknown',
+            }
+          end
+        end
+
         # starts transfer using transfer agent
         def transfer_start(app,direction,node_file,ts_add)
-          return self.transfer.start(*@api_aoc.tr_spec(app,direction,node_file,@workspace_id,@workspace_name,ts_add))
+          ts_add.deep_merge!(OnCloud.analytics_ts(app,direction,@workspace_id,@workspace_name))
+          ts_add.deep_merge!(OnCloud.console_ts(app,user_info['name'],user_info['email']))
+          return self.transfer.start(*@api_aoc.tr_spec(app,direction,node_file,ts_add))
         end
 
         NODE4_COMMANDS=[ :browse, :find, :mkdir, :rename, :delete, :upload, :download, :transfer, :http_node_download, :v3, :file, :bearer_token_node  ]
@@ -135,10 +152,11 @@ module Asperalm
             # additional node to node TS info
             add_ts={
               'remote_access_key'   => node_file_server[:node_info]['access_key'],
-              #'destination_root_id' => node_file_server[:file_id],
+              'destination_root_id' => node_file_server[:file_id],
               'source_root_id'      => node_file_client[:file_id]
             }
-            return Main.result_transfer(transfer_start(OnCloud::FILES,client_tr_oper,node_file_server,add_ts))
+            #return Main.result_transfer(transfer_start(OnCloud::FILES,client_tr_oper,node_file_server,add_ts))
+            return Main.result_transfer(transfer_start(OnCloud::FILES,client_tr_oper,node_file_client,add_ts))
           when :upload
             node_file = @api_aoc.resolve_node_file(top_node_file,self.transfer.destination_folder('send'))
             add_ts={'tags'=>{'aspera'=>{'files'=>{'parentCwd'=>"#{node_file[:node_info]['id']}:#{node_file[:file_id]}"}}}}
@@ -288,10 +306,8 @@ module Asperalm
             @default_workspace_id=@url_token_data['data']['workspace_id']
             @persist_ids=[] # TODO : @url_token_data['id'] ?
           else
-            # get our user's default information
-            self_data=@api_aoc.read('self')[:data]
-            @default_workspace_id=self_data['default_workspace_id']
-            @persist_ids=[self_data['id']]
+            @default_workspace_id=user_info['default_workspace_id']
+            @persist_ids=[user_info['id']]
           end
 
           ws_name=self.options.get_option(:workspace,:optional)
@@ -427,12 +443,11 @@ module Asperalm
               #                return {:type=>:object_list,:data=>@api_aoc.read("client_settings/")[:data]}
             when :info
               command=self.options.get_next_command([ :show,:modify ])
-              my_user=@api_aoc.read('self')[:data] # self?embed[]=default_workspace&embed[]=organization
               case command
               when :show
-                return { :type=>:single_object, :data =>my_user }
+                return { :type=>:single_object, :data =>user_info }
               when :modify
-                @api_aoc.update("users/#{my_user['id']}",self.options.get_next_argument('modified parameters (hash)'))
+                @api_aoc.update("users/#{user_info['id']}",self.options.get_next_argument('modified parameters (hash)'))
                 return Main.result_status('modified')
               end
             end
