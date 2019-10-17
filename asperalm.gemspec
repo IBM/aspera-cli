@@ -10,7 +10,7 @@ Gem::Specification.new do |spec|
   spec.email         = ['laurent.martin.aspera@fr.ibm.com']
   spec.summary       = 'gem and command line tool for Aspera Server products: Aspera on Cloud, Faspex, Shares, Node, Console, Orchestrator, Transfer Server'
   spec.description   = 'A powerful transfer gem and CLI for IBM Aspera products.'
-  spec.homepage      = 'http://www.asperasoft.com'
+  spec.homepage      = 'https://ibm.com/aspera'
   spec.license       = 'Apache-2.0'
 
   # Prevent pushing this gem to RubyGems.org. To allow pushes either set the 'allowed_push_host'
@@ -34,6 +34,7 @@ Gem::Specification.new do |spec|
   spec.add_runtime_dependency('execjs', '~> 2.0', '>= 2.0')
 # spec.add_runtime_dependency('text-table', '~> 1.2', '>= 1.2.4')
   spec.add_runtime_dependency('terminal-table', '~> 1.8', '>= 1.8.0')
+  spec.add_runtime_dependency('tty-spinner', '> 0.9')
   spec.add_development_dependency('bundler', '> 1.14')
   spec.add_development_dependency('rake', '> 10.0')
   spec.add_development_dependency('rspec', '~> 3.0', '> 3.0')

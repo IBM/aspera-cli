@@ -1,6 +1,7 @@
 require 'asperalm/fasp/manager'
 require 'asperalm/log'
 require 'singleton'
+require 'tty-spinner'
 
 module Asperalm
   module Fasp
@@ -36,6 +37,13 @@ module Asperalm
 
       # generic method
       def start_transfer(transfer_spec,options=nil)
+        if transfer_spec['tags'].is_a?(Hash) and transfer_spec['tags']['aspera'].is_a?(Hash)
+          transfer_spec['tags']['aspera']['xfer_retry']||=150
+        end
+        # optimisation in case of sending to the same node
+        if transfer_spec['remote_host'].eql?(URI.parse(node_api_.params[:base_url]).host)
+          transfer_spec['remote_host']='localhost'
+        end
         resp=node_api_.create('ops/transfers',transfer_spec)[:data]
         @transfer_id=resp['id']
         Log.log.debug("tr_id=#{@transfer_id}")
@@ -45,6 +53,7 @@ module Asperalm
       # generic method
       def wait_for_transfers_completion
         started=false
+        spinner=nil
         # lets emulate management events to display progress bar
         loop do
           # status is empty sometimes with status 200...
@@ -54,7 +63,13 @@ module Asperalm
             notify_listeners('emulated',{'Type'=>'DONE'})
             break
           when 'waiting','partially_completed'
-            puts trdata['status']
+            if spinner.nil?
+              spinner = TTY::Spinner.new("[:spinner] :title", format: :classic)
+              spinner.start
+            end
+            spinner.update(title: trdata['status'])
+            spinner.spin
+            #puts trdata
           when 'running'
             #puts "running: sessions:#{trdata["sessions"].length}, #{trdata["sessions"].map{|i| i['bytes_transferred']}.join(',')}"
             if !started and trdata['precalc'].is_a?(Hash) and

@@ -3,6 +3,7 @@ require 'asperalm/rest'
 require 'asperalm/open_application'
 require 'securerandom'
 require 'singleton'
+require 'tty-spinner'
 
 module Asperalm
   module Fasp
@@ -63,6 +64,7 @@ module Asperalm
       def wait_for_transfers_completion
         connect_activity_args={'aspera_connect_settings'=>{'app_id'=>@connect_app_id}}
         started=false
+        spinner=nil
         loop do
           result=@connect_api.create('transfers/activity',connect_activity_args)[:data]
           if result['transfers']
@@ -74,7 +76,12 @@ module Asperalm
               notify_listeners("emulated",{'Type'=>'DONE'})
               break
             when 'initiating'
-              puts 'starting'
+              if spinner.nil?
+                spinner = TTY::Spinner.new("[:spinner] :title", format: :classic)
+                spinner.start
+              end
+              spinner.update(title: trdata['status'])
+              spinner.spin
             when 'running'
               #puts "running: sessions:#{trdata["sessions"].length}, #{trdata["sessions"].map{|i| i['bytes_transferred']}.join(',')}"
               if !started and trdata["bytes_expected"] != 0
