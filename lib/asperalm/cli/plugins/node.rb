@@ -180,9 +180,9 @@ module Asperalm
             transfer_spec.delete('paths')
             return Main.result_transfer(self.transfer.start(transfer_spec,{:src=>:node_gen3}))
           when :download
-            send_result=@api_node.create('files/download_setup',{
-              :transfer_requests => [ { :transfer_request => {
-              :paths => self.transfer.ts_source_paths } } ] } )[:data]
+            transfer_request = {:paths => self.transfer.ts_source_paths }
+            transfer_request.deep_merge!(@add_request_param)
+            send_result=@api_node.create('files/download_setup',{:transfer_requests => [ { :transfer_request => transfer_request } ] } )[:data]
             # only one request, so only one answer
             transfer_spec=send_result['transfer_specs'].first['transfer_spec']
             return Main.result_transfer(self.transfer.start(transfer_spec,{:src=>:node_gen3}))
