@@ -2198,6 +2198,10 @@ Gems, or remove your ed25519 key from your `.ssh` folder to solve the issue. Not
 
 # Release Notes
 
+* version 0.9.38
+
+	* fixed bug in preview generator (runtime error)
+
 * version 0.9.37
 
 	* support for transfer using IBM Cloud Object Storage
