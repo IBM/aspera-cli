@@ -14,6 +14,8 @@ module Asperalm
       # values for preview_format : output format
       PREVIEW_FORMATS=[:png,:mp4]
 
+      attr_reader :conversion_type
+
       # @param src source file path
       # @param dst destination file path
       # @param mime_type optional mime type as provided by node api
