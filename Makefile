@@ -821,10 +821,16 @@ t/sdk1:
 	@touch $@
 tsample: t/sdk1
 
-tcos:
-	mlia cos node --service-credentials=@json:@file:$(SERVICE_CREDS_FILE) --region=$(COS_REGION) --bucket=$(COS_BUCKET) upload ~/Documents/Samples/200KB.1 --log-level=debug
+t/tcos:
+	@echo $@
+	mlia cos node --service-credentials=@json:@file:$(SERVICE_CREDS_FILE) --region=$(COS_REGION) --bucket=$(COS_BUCKET) info
+	mlia cos node --service-credentials=@json:@file:$(SERVICE_CREDS_FILE) --region=$(COS_REGION) --bucket=$(COS_BUCKET) access_key --id=self show
+	mlia cos node --service-credentials=@json:@file:$(SERVICE_CREDS_FILE) --region=$(COS_REGION) --bucket=$(COS_BUCKET) upload $(CLIENT_DEMOFILE_PATH)
+	mlia cos node --service-credentials=@json:@file:$(SERVICE_CREDS_FILE) --region=$(COS_REGION) --bucket=$(COS_BUCKET) download $(SAMPLE_FILENAME)
+	@touch $@
+tcos: t/tcos
 
-tests: t tshares tfaspex tconsole tnode taoc tfasp tsync torc tcon tnsync tconf tprev tats tsample
+tests: t tshares tfaspex tconsole tnode taoc tfasp tsync torc tcon tnsync tconf tprev tats tsample tcos
 # tshares2
 
 tnagios: t/fx_nagios t/serv_nagios_webapp t/serv_nagios_transfer t/nd_nagios
