@@ -181,6 +181,10 @@ module Asperalm
             result=ExtendedValue.instance.parse(descr,@unprocessed_cmd_line_arguments.shift)
           when :multiple
             result = @unprocessed_cmd_line_arguments.shift(@unprocessed_cmd_line_arguments.length).map{|v|ExtendedValue.instance.parse(descr,v)}
+            # if expecting list and only one arg of type array : it is the list
+            if result.length.eql?(1) and result.first.is_a?(Array)
+              result=result.first
+            end
           else
             result=self.class.get_from_list(@unprocessed_cmd_line_arguments.shift,descr,expected)
           end
