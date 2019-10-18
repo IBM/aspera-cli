@@ -820,6 +820,10 @@ t/sdk1:
 	ruby -I $(LIBDIR) $(DEV_FOLDER)/examples/transfer.rb
 	@touch $@
 tsample: t/sdk1
+
+tcos:
+	mlia cos node --service-credentials=@json:@file:local/service_creds.json  --region=us-south --bucket=laurent upload ~/Documents/Samples/200KB.1 --log-level=debug
+
 tests: t tshares tfaspex tconsole tnode taoc tfasp tsync torc tcon tnsync tconf tprev tats tsample
 # tshares2
 
