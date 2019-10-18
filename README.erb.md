@@ -1401,14 +1401,43 @@ Download of files is straightforward with a specific syntax for the `aspera file
 
 ### Find Files
 
-Use the command `aspera files find [--value=regex]`.
+The command `aspera files find [--value=expression]` will recursively scan storage to find files matching the expression criteria. It works also on node resource using the v4 command. (see examples)
 
-if no regex is provided, it will list all files recursively.
+The expression can be of 3 formats:
 
-if a regex is provided (using ruby regex syntax, very similar to standard syntax), it find files recursively whose
-filename matches the regex.
+* empty (default) : all files, equivalent to: `exec:true`
+* not starting with `exec:` : the expression is a regular expression, using ruby regex syntax. equivalent to: `exec:f['name'].match(/expression/)`
 
 For instance, to find files with a special extension, use `--value='\.myext$'`
+
+* starting with `exec:` : the ruby code after the prefix is executed for each entry found. the entry variable name is `f`. the file is displayed if the result is true;
+
+Examples of expressions: (think to prefix with `exec:` and put in single quotes using bash)
+
+* find files more recent than 100 days
+
+```
+f["type"].eql?("file") and (DateTime.now-DateTime.parse(f["modified_time"]))<100
+```
+
+* expression to find files older than 1 year on a given node and store in file list
+
+```
+$ <%=cmd%> aspera admin res node --name='my node name' --secret='my secret' v4 find / --fields=path --value='exec:f["type"].eql?("file") and (DateTime.now-DateTime.parse(f["modified_time"]))<100' --format=csv > my_file_list.txt
+```
+
+* delete the files, one by one
+
+```
+$ cat my_file_list.txt|while read path;do echo <%=cmd%> aspera admin res node --name='my node name' --secret='my secret' v4 delete "$path" ;done
+```
+
+* delete the files in bulk
+
+```
+cat my_file_list.txt | mlia aspera admin res node --name='my node name' --secret='my secret' v3 delete @lines:@stdin:
+```
+
 
 ## IBM Aspera High Speed Transfer Server (transfer)
 
@@ -2168,6 +2197,11 @@ This means that you do not have ruby support for ED25519 SSH keys. You may eithe
 Gems, or remove your ed25519 key from your `.ssh` folder to solve the issue. Note, this is temporarily fixed in version 0.9.24, but those type of key will just be ignored.
 
 # Release Notes
+
+* version 0.9.37
+
+	* support for transfer using IBM Cloud Object Storage
+	* improved `find` action using arbitrary expressions
 
 * version 0.9.36
 
