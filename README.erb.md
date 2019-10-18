@@ -1676,6 +1676,51 @@ delete all my access keys:
 for k in $(<%=cmd%> ats access_key list --field=id --format=csv);do <%=cmd%> ats access_key id $k delete;done
 ```
 
+## IBM Cloud Object Storage
+
+*BETA: experimental*
+
+The IBM Cloud Object Storage provides the possibility to execute transfers using FASP.
+
+Required information are:
+
+* service credentials
+* region
+* bucket 
+
+Secrevice credentials are directly created using the IBM cloud web ui. Navigate to: Navigation Menu -> Resource List -> Cloud Object Storage -> Storage -> Cloud Object Storage -> Service Credentials -> <select or create credentials> -> view credentials -> copy
+
+or using the CLI:
+
+```
+$ ibmcloud resource service-keys
+$ ibmcloud resource service-key aoclaurent --output JSON|jq '.[0].credentials'>service_creds.json
+```
+
+It consists in the following structure:
+
+```json
+{
+  "apikey": "xxxxxxx.....",
+  "cos_hmac_keys": {
+    "access_key_id": "xxxxxxx.....",
+    "secret_access_key": "xxxxxxx....."
+  },
+  "endpoints": "https://control.cloud-object-storage.cloud.ibm.com/v2/endpoints",
+  "iam_apikey_description": "my description ...",
+  "iam_apikey_name": "my key name",
+  "iam_role_crn": "crn:v1:bluemix:public:iam::::serviceRole:Writer",
+  "iam_serviceid_crn": "crn:v1:bluemix:public:iam-identity::a/xxxxxxx.....",
+  "resource_instance_id": "crn:v1:bluemix:public:cloud-object-storage:global:a/xxxxxxx....."
+}
+```
+
+Example:
+
+```
+mlia cos node --service-credentials=@json:@file:local/service_creds.json  --region=us-south --bucket=laurent upload myfile.txt
+```
+
 ## IBM Aspera Sync
 
 A basic plugin to start an "async" using <%=tool%>. The main advantage is the possibility
