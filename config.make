@@ -28,3 +28,7 @@ AOC_PUBLINK_FOLDER=https://aspera.pub/_5VG0jg
 
 SAMPLE_FILENAME=200KB.1
 CLIENT_DEMOFILE_PATH=$(HOME)/Documents/Samples/$(SAMPLE_FILENAME)
+
+COS_BUCKET=lolo-de
+COS_REGION=eu-de
+SERVICE_CREDS_FILE=local/service_creds.json
