@@ -1,13 +1,8 @@
 require 'asperalm/open_application'
-
-#require 'asperalm/rest'
 require 'base64'
 require 'date'
 require 'socket'
 require 'securerandom'
-
-# for future use
-UNUSED_STATE='ABC'
 
 module Asperalm
   # implement OAuth 2 for the REST client and generate a bearer token
@@ -20,12 +15,11 @@ module Asperalm
     TOKEN_FILE_PREFIX='token'
     TOKEN_FILE_SEPARATOR='_'
     TOKEN_FILE_SUFFIX='.txt'
-    NO_SCOPE='noscope'
     WINDOWS_PROTECTED_CHAR=%r{[/:"<>\\\*\?]}
     JWT_NOTBEFORE_OFFSET=300
     JWT_EXPIRY_OFFSET=3600
     @@token_cache_folder='.'
-    private_constant :TOKEN_FILE_PREFIX,:TOKEN_FILE_SEPARATOR,:TOKEN_FILE_SUFFIX,:NO_SCOPE,:WINDOWS_PROTECTED_CHAR,:JWT_NOTBEFORE_OFFSET,:JWT_EXPIRY_OFFSET
+    private_constant :TOKEN_FILE_PREFIX,:TOKEN_FILE_SEPARATOR,:TOKEN_FILE_SUFFIX,:WINDOWS_PROTECTED_CHAR,:JWT_NOTBEFORE_OFFSET,:JWT_EXPIRY_OFFSET
     def self.persistency_folder; @@token_cache_folder;end
 
     def self.persistency_folder=(v); @@token_cache_folder=v;end
@@ -55,7 +49,7 @@ module Asperalm
     # :jwt_subject
     # :path_authorize (default: 'authorize')
     # :path_token (default: 'token')
-    # :scope
+    # :scope (optional)
     # :grant (one of returned by self.auth_types)
     # :url_token
     # :user_name
@@ -80,7 +74,7 @@ module Asperalm
           }})
       end
       @token_auth_api=Rest.new(rest_params)
-      # key = scope value, e.g. user:all, or node.*
+      # key = scope value, e.g. user:all, or node.*, or nil
       # value = ruby structure of data of returned value
       @token_cache={}
       if @params.has_key?(:redirect_uri)
@@ -116,8 +110,8 @@ module Asperalm
     # get location of cache for token, using some unique filename
     def token_filepath(api_scope)
       oauth_uri=URI.parse(@params[:base_url])
-      parts=[oauth_uri.host.downcase.gsub(/[^a-z]+/,'_'),oauth_uri.path.downcase.gsub(/[^a-z]+/,'_'),@params[:grant],api_scope]
-      parts.push(api_scope) if !api_scope.nil?
+      parts=[oauth_uri.host.downcase.gsub(/[^a-z]+/,'_'),oauth_uri.path.downcase.gsub(/[^a-z]+/,'_'),@params[:grant]]
+      parts.push(api_scope) unless api_scope.nil?
       parts.push(@params[:user_name]) if @params.has_key?(:user_name)
       parts.push(@params[:url_token]) if @params.has_key?(:url_token)
       parts.push(@params[:api_key]) if @params.has_key?(:api_key)
@@ -157,13 +151,16 @@ module Asperalm
 
     # @param options : :scope and :refresh
     def get_authorization(options={})
-      api_scope=options[:scope] || @params[:scope] || NO_SCOPE
+      # api scope can be overriden to get auth for other scope
+      api_scope=options[:scope] || @params[:scope]
+      # as it is optional in many place: create struct
+      p_scope={}
+      p_scope[:scope] = api_scope unless api_scope.nil?
+      p_client_id_and_scope=p_scope.clone
+      p_client_id_and_scope[:client_id] = @params[:client_id] if @params.has_key?(:client_id)
       use_refresh_token=options[:refresh]
       # file name for cache of token
       token_state_file=token_filepath(api_scope)
-      client_id_and_scope={}
-      client_id_and_scope[:client_id] = @params[:client_id] if @params.has_key?(:client_id)
-      client_id_and_scope[:scope] = api_scope unless api_scope.eql?(NO_SCOPE)
 
       # if first time, try to read from file
       if ! @token_cache.has_key?(api_scope) then
@@ -195,10 +192,9 @@ module Asperalm
           # try to refresh
           # note: admin token has no refresh, and lives by default 1800secs
           # Note: scope is mandatory in Files, and we can either provide basic auth, or client_Secret in data
-          resp=create_token_simple(client_id_and_scope.merge({
+          resp=create_token_simple(p_client_id_and_scope.merge({
             :grant_type   =>'refresh_token',
-            :refresh_token=>refresh_token,
-            :state        =>UNUSED_STATE})) # TODO: remove, not useful
+            :refresh_token=>refresh_token}))
           if resp[:http].code.start_with?('2') then
             # save only if success ?
             save_and_set_token_cache(api_scope,resp[:http].body,token_state_file)
@@ -216,7 +212,7 @@ module Asperalm
           check_code=SecureRandom.uuid
           login_page_url=Rest.build_uri(
           "#{@params[:base_url]}/#{@params[:path_authorize]}",
-          client_id_and_scope.merge({
+          p_client_id_and_scope.merge({
             :response_type => 'code',
             :redirect_uri  => @params[:redirect_uri],
             :client_secret => @params[:client_secret],
@@ -227,11 +223,10 @@ module Asperalm
           code=goto_page_and_get_code(login_page_url,check_code)
 
           # exchange code for token
-          resp=create_token_simple(client_id_and_scope.merge({
+          resp=create_token_simple(p_client_id_and_scope.merge({
             :grant_type   => 'authorization_code',
             :code         => code,
-            :redirect_uri => @params[:redirect_uri],
-            :state        => UNUSED_STATE
+            :redirect_uri => @params[:redirect_uri]
           }))
         when :jwt
           # https://tools.ietf.org/html/rfc7519
@@ -260,20 +255,17 @@ module Asperalm
 
           Log.log.debug("assertion=[#{assertion}]")
 
-          resp=create_token_simple({
+          resp=create_token_simple(p_scope.merge({
             :grant_type => 'urn:ietf:params:oauth:grant-type:jwt-bearer',
-            :assertion  => assertion,
-            :scope      => api_scope
-          })
+            :assertion  => assertion
+          }))
         when :url_token
           # exchange url_token for bearer token
           resp=create_token_advanced({
             :json_params => {:url_token=>@params[:url_token]},
-            :url_params  => {
-            :grant_type    => 'url_token',
-            :scope         => api_scope,
-            :state         => UNUSED_STATE
-            }})
+            :url_params  => p_scope.merge({
+            :grant_type    => 'url_token'
+            })})
         when :ibm_apikey
           resp=create_token_simple({
             'grant_type'    => 'urn:ibm:params:oauth:grant-type:apikey',
@@ -294,11 +286,11 @@ module Asperalm
             :type          => :basic,
             :username      => @params[:user_name],
             :password      => @params[:user_pass]},
-            :json_params => client_id_and_scope.merge({:grant_type => 'password'}), #:www_body_params also works
+            :json_params => p_client_id_and_scope.merge({:grant_type => 'password'}), #:www_body_params also works
           })
         when :body_userpass
           # legacy, not used
-          resp=create_token_simple(client_id_and_scope.merge({
+          resp=create_token_simple(p_client_id_and_scope.merge({
             :grant_type => 'password',
             :username   => @params[:user_name],
             :password   => @params[:user_pass]
