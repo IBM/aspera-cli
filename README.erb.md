@@ -73,7 +73,7 @@ In order to make further calls more convenient, it is advised to define a <%=prs
 $ <%=cmd%> config id demoserver update --url=ssh://demo.asperasoft.com:33001 --username=asperaweb --password=demoaspera
 updated: demoserver
 $ <%=cmd%> config id default set server demoserver
-updated: default->server to demoserver
+updated: default&rarr;server to demoserver
 $ <%=cmd%> server browse /aspera-test-dir-large
 :............:...........:......:..............:...........................:............................:
 :   zmode    :   zuid    : zgid :     size     :           mtime           :            name            :
@@ -1717,7 +1717,7 @@ Required information are:
 * region
 * bucket 
 
-Secrevice credentials are directly created using the IBM cloud web ui. Navigate to: Navigation Menu -> Resource List -> Cloud Object Storage -> Storage -> Cloud Object Storage -> Service Credentials -> <select or create credentials> -> view credentials -> copy
+Secrevice credentials are directly created using the IBM cloud web ui. Navigate to: Navigation Menu &rarr; Resource List &rarr; Cloud Object Storage &rarr; Storage &rarr; Cloud Object Storage &rarr; Service Credentials &rarr; &lt;select or create credentials&gt; &rarr; view credentials &rarr; copy
 
 or using the CLI:
 
@@ -2198,6 +2198,10 @@ Gems, or remove your ed25519 key from your `.ssh` folder to solve the issue. Not
 
 # Release Notes
 
+* version 0.9.38.1
+
+	* fixed bug in documentation
+
 * version 0.9.38
 
 	* fixed bug in preview generator (runtime error)
@@ -2274,7 +2278,7 @@ Gems, or remove your ed25519 key from your `.ssh` folder to solve the issue. Not
 * version 0.9.20
 
   * improved wizard (prepare for AoC global client id)
-  * preview generator: addedoption : --skip-format=<png,mp4>
+  * preview generator: addedoption : --skip-format=&lt;png,mp4&gt;
   * removed outdated pictures from this doc
 
 * version 0.9.19
@@ -2385,14 +2389,14 @@ Gems, or remove your ed25519 key from your `.ssh` folder to solve the issue. Not
 
 Breaking change:
 
-  * ats server list provisioned -> ats cluster list
-  * ats server list clouds -> ats cluster clouds
-  * ats server list instance --cloud=x --region=y -> ats cluster show --cloud=x --region=y
-  * ats server id xxx -> ats cluster show --id=xxx
-  * ats subscriptions -> ats credential subscriptions
-  * ats api_key repository list -> ats credential cache list
-  * ats api_key list -> ats credential list
-  * ats access_key id xxx -> ats access_key --id=xxx
+  * ats server list provisioned &rarr; ats cluster list
+  * ats server list clouds &rarr; ats cluster clouds
+  * ats server list instance --cloud=x --region=y &rarr; ats cluster show --cloud=x --region=y
+  * ats server id xxx &rarr; ats cluster show --id=xxx
+  * ats subscriptions &rarr; ats credential subscriptions
+  * ats api_key repository list &rarr; ats credential cache list
+  * ats api_key list &rarr; ats credential list
+  * ats access_key id xxx &rarr; ats access_key --id=xxx
 
 * Version 0.6.18
 
