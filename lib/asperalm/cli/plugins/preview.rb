@@ -31,19 +31,19 @@ module Asperalm
           self.options.set_obj_attr(:folder_reset_cache,self,:option_folder_reset_cache,:no)
           self.options.set_obj_attr(:skip_types,self,:option_skip_types)
           self.options.set_obj_attr(:previews_folder,self,:option_previews_folder,'previews')
-          self.options.set_obj_attr(:temp_folder,self,:option_temp_folder,"/tmp/aspera.previews")
+          self.options.set_obj_attr(:temp_folder,self,:option_temp_folder,File.join(Dir.tmpdir,'aspera.previews'))
           self.options.set_obj_attr(:skip_folders,self,:option_skip_folders,[])
           self.options.set_obj_attr(:overwrite,self,:option_overwrite,[:always,:never,:mtime])
           self.options.set_obj_attr(:file_access,self,:option_file_access,[:local,:remote])
-          self.options.add_opt_list(:skip_format,Asperalm::Preview::Generator::PREVIEW_FORMATS,"skip this preview format (multiple possible)")
-          self.options.add_opt_list(:folder_reset_cache,[:no,:header,:read],"reset folder cache")
-          self.options.add_opt_simple(:skip_types,"skip types in comma separated list")
-          self.options.add_opt_simple(:previews_folder,"preview folder in storage root")
-          self.options.add_opt_simple(:temp_folder,"path to temp folder")
-          self.options.add_opt_simple(:skip_folders,"list of folder to skip")
-          self.options.add_opt_simple(:iteration_file,"path to iteration memory file")
-          self.options.add_opt_list(:overwrite,[:no,:header,:read],"when to overwrite result file")
-          self.options.add_opt_list(:file_access,[:no,:header,:read],"how to read and write files in repository")
+          self.options.add_opt_list(:skip_format,Asperalm::Preview::Generator::PREVIEW_FORMATS,'skip this preview format (multiple possible)')
+          self.options.add_opt_list(:folder_reset_cache,[:no,:header,:read],'reset folder cache')
+          self.options.add_opt_simple(:skip_types,'skip types in comma separated list')
+          self.options.add_opt_simple(:previews_folder,'preview folder in storage root')
+          self.options.add_opt_simple(:temp_folder,'path to temp folder')
+          self.options.add_opt_simple(:skip_folders,'list of folder to skip')
+          self.options.add_opt_simple(:iteration_file,'path to iteration memory file')
+          self.options.add_opt_list(:overwrite,[:no,:header,:read],'when to overwrite result file')
+          self.options.add_opt_list(:file_access,[:no,:header,:read],'how to read and write files in repository')
 
           # add generator other options
           Asperalm::Preview::Options::DESCRIPTIONS.each do |opt|
@@ -58,7 +58,7 @@ module Asperalm
           end
 
           self.options.parse_options!
-          raise "skip_folder shall be an Array, use @json:[...]" unless @option_skip_folders.is_a?(Array)
+          raise 'skip_folder shall be an Array, use @json:[...]' unless @option_skip_folders.is_a?(Array)
         end
 
         # special tag to identify transfers related to generator
@@ -107,7 +107,7 @@ module Asperalm
           }
           # optionally by iteration token
           events_filter['iteration_token']=iteration_token unless iteration_token.nil?
-          events=@api_node.read("events",args)[:data]
+          events=@api_node.read('events',args)[:data]
           return if events.empty?
           events.each do |event|
             next unless event['data']['direction'].eql?('receive')
@@ -133,7 +133,7 @@ module Asperalm
           }
           # and optionally by iteration token
           events_filter['iteration_token']=iteration_token unless iteration_token.nil?
-          events=@api_node.read("events",events_filter)[:data]
+          events=@api_node.read('events',events_filter)[:data]
           return if events.empty?
           events.each do |event|
             # process only files
@@ -143,7 +143,7 @@ module Asperalm
             next unless @option_skip_folders.select{|d|file_entry['path'].start_with?(d)}.empty?
             file_entry['parent_file_id']=event['data']['parent_file_id']
             if event['types'].include?('file.deleted')
-              Log.log.error("TODO".red)
+              Log.log.error('TODO'.red)
             end
             if event['types'].include?('file.deleted')
               generate_preview(file_entry)
@@ -156,8 +156,8 @@ module Asperalm
         def do_transfer(direction,folder_id,source_filename,destination=nil)
           if @default_transfer_spec.nil?
             # make a dummy call to get some default transfer parameters
-            res=@api_node.create("files/upload_setup",{"transfer_requests"=>[{"transfer_request"=>{"paths"=>[{}],"destination_root"=>"/"}}]})
-            sample_transfer_spec=res[:data]["transfer_specs"].first["transfer_spec"]
+            res=@api_node.create('files/upload_setup',{'transfer_requests'=>[{'transfer_request'=>{'paths'=>[{}],'destination_root'=>'/'}}]})
+            sample_transfer_spec=res[:data]['transfer_specs'].first['transfer_spec']
             # add remote_user ?
             @default_transfer_spec=['ssh_port','fasp_port'].inject({}){|h,e|h[e]=sample_transfer_spec[e];h}
             @default_transfer_spec.merge!({
@@ -255,6 +255,7 @@ module Asperalm
             end
             # need generator for further checks
             gen_info[:generator]=Asperalm::Preview::Generator.new(@gen_options,gen_info[:src],gen_info[:dst],entry['content_type'])
+            gen_info[:generator].tmp_folder=@option_temp_folder
             # get conversion_type (if known) and check if supported
             next false unless gen_info[:generator].supported?
             # shall we skip it ?
@@ -266,7 +267,7 @@ module Asperalm
           # create folder if needed
           FileUtils.mkdir_p(local_entry_preview_dir)
           if @access_remote
-            raise "parent not computed" if entry['parent_file_id'].nil?
+            raise 'parent not computed' if entry['parent_file_id'].nil?
             #  download original file to temp folder @remote_entry_temp_local_folder
             do_transfer('receive',entry['parent_file_id'],entry['name'],@remote_entry_temp_local_folder)
           end
@@ -301,7 +302,7 @@ module Asperalm
             when 'file'
               generate_preview(entry)
             when 'link'
-              Log.log.debug("Ignoring link.")
+              Log.log.debug('Ignoring link.')
             when 'folder'
               if @option_skip_folders.include?(entry['path'])
                 Log.log.debug("#{entry['path']} folder (skip)".bg_red)
@@ -369,11 +370,11 @@ module Asperalm
             Asperalm::Preview::Utils.check_tools(@skip_types)
             return Main.result_status('tools validated')
           when :test
-            source = self.options.get_next_argument("source file")
-            format = self.options.get_next_argument("format",Asperalm::Preview::Generator::PREVIEW_FORMATS)
+            source = self.options.get_next_argument('source file')
+            format = self.options.get_next_argument('format',Asperalm::Preview::Generator::PREVIEW_FORMATS)
             dest=preview_filename(format)
             g=Asperalm::Preview::Generator.new(@gen_options,source,dest)
-            return Main.result_status("format not supported") unless g.supported?
+            return Main.result_status('format not supported') unless g.supported?
             g.generate
             return Main.result_status("generated: #{dest}")
           end

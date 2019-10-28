@@ -1,8 +1,9 @@
 module Asperalm
   module Preview
-    # generator options
+    # generator options. Used as parameter to preview generator object.
+    # also settable by command line.
     class Options
-      # values for video
+      # types of generation for video files
       VIDEO_CONVERSION_METHODS=[:preview,:reencode,:clips]
       # options used in generator
       DESCRIPTIONS = [

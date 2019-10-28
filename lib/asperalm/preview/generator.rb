@@ -14,7 +14,10 @@ module Asperalm
       # values for preview_format : output format
       PREVIEW_FORMATS=[:png,:mp4]
 
+      # CLI needs to know conversion type to know if need skip it
       attr_reader :conversion_type
+      # main temp folder
+      attr_writer :tmp_folder
 
       # @param src source file path
       # @param dst destination file path
@@ -32,6 +35,7 @@ module Asperalm
         @options=options
         @source_file_path=src
         @destination_file_path=dst
+        @tmp_folder=Dir.tmpdir
         # extract preview format from extension of target file
         @preview_format=File.extname(@destination_file_path).gsub(/^\./,'').to_sym
         @mime_type=mime_type
@@ -44,10 +48,14 @@ module Asperalm
         end
       end
 
+      # name of processing method in this object
+      # combination of: conversion type and output format
       def processing_method_symb
         "gen_combi_#{@conversion_type}_#{@preview_format}".to_sym
       end
 
+      # @return true if conversion is supported.
+      # for instance, plaintext to mp4 is not supported
       def supported?
         return respond_to?(processing_method_symb,true)
       end
@@ -84,9 +92,10 @@ module Asperalm
 
       private
 
+      # creates a unique temp folder for file
       def mk_tmpdir(input_file)
         # TODO: get parameter from plugin
-        maintmp=Dir.tmpdir
+        maintmp=@tmp_folder
         temp_folder=File.join(maintmp,input_file.split('/').last.gsub(/\s/, '_').gsub(/\W/, ''))
         FileUtils.mkdir_p(temp_folder)
         return temp_folder
