@@ -2184,10 +2184,9 @@ So, it evolved into <%=tool%>:
 
 # BUGS
 
-This is best effort code without official support, dont expect full capabilities. This code is not
-supported by IBM/Aspera. You can contact the author for bugs or features.
+* This is best effort code without official support, dont expect full capabilities. This code is not supported by IBM/Aspera. You can contact the author for bugs or features.
 
-If you get message:
+* If you get message:
 
 ```
 OpenSSH keys only supported if ED25519 is available
@@ -2195,6 +2194,10 @@ OpenSSH keys only supported if ED25519 is available
 
 This means that you do not have ruby support for ED25519 SSH keys. You may either install the suggested
 Gems, or remove your ed25519 key from your `.ssh` folder to solve the issue. Note, this is temporarily fixed in version 0.9.24, but those type of key will just be ignored.
+(Note: the CLI deactivates this key type to avoid this problem).
+
+* It is not possible to have two options with the same name on the command line. For instance, if an entity is identified by the option `id` but later on the command line another `id` option is required, the later will override the earlier one, and both entity will use the same id.
+As a workaround use another option, if available, to identify the entity, e.g. identify the node by name instead of id.
 
 # Release Notes
 
