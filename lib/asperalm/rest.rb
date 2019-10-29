@@ -87,7 +87,7 @@ module Asperalm
     end
 
     def oauth_token(options={})
-      raise "ERROR" unless @oauth.is_a?(Oauth)
+      raise "ERROR: not Oauth" unless @oauth.is_a?(Oauth)
       return @oauth.get_authorization(options)
     end
 
