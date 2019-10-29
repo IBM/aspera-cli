@@ -1,6 +1,6 @@
 require 'asperalm/log'
 require 'asperalm/oauth'
-require 'asperalm/rest_call_error'
+require 'asperalm/rest_error_analyzer'
 require 'asperalm/hash_ext'
 require 'net/http'
 require 'net/https'
@@ -30,7 +30,7 @@ module Asperalm
         uri=self.class.build_uri(@params[:base_url])
         # this honors http_proxy env var
         @http_session=Net::HTTP.new(uri.host, uri.port)
-        @http_session.use_ssl = uri.scheme == 'https'
+        @http_session.use_ssl = uri.scheme.eql?('https')
         Log.log.debug("insecure=#{@@insecure}")
         @http_session.verify_mode = OpenSSL::SSL::VERIFY_NONE if @@insecure
         @http_session.set_debug_output($stdout) if @@debug
@@ -83,7 +83,7 @@ module Asperalm
         end
       end
       @oauth=Oauth.new(@params[:auth]) if @params[:auth][:type].eql?(:oauth2)
-      Log.dump('REST params2',@params)
+      Log.dump('REST params(2)',@params)
     end
 
     def oauth_token(options={})
@@ -143,8 +143,8 @@ module Asperalm
       end
       if call_data.has_key?(:json_params) and !call_data[:json_params].nil? then
         req.body=JSON.generate(call_data[:json_params])
-        #Log.dump('body JSON data',call_data[:json_params])
-        Log.log.debug("body JSON data=#{JSON.pretty_generate(call_data[:json_params])}")
+        Log.dump('body JSON data',call_data[:json_params])
+        #Log.log.debug("body JSON data=#{JSON.pretty_generate(call_data[:json_params])}")
         req['Content-Type'] = 'application/json'
         #call_data[:headers]['Accept']='application/json'
       end
@@ -192,25 +192,17 @@ module Asperalm
           end
         end
 
-        # TODO: give change to decode content type of JSON even in case of error code
-        # (in that case do not parse in rest_call_error.rb)
-        Log.log.debug("result: code=#{result[:http].code}")
-        RestCallError.raiseOnError(req,result[:http])
-        # TODO: check paged on Content-Type rather than Accept
-        if call_data.has_key?(:headers) and
-        call_data[:headers].has_key?('Accept') then
-          Log.log.debug("result: body=#{result[:http].body}")
-          # TODO: should base on result[:http].headers['content-type']
-          case call_data[:headers]['Accept']
-          when 'application/json'
-            if !result[:http].body.nil?
-              result[:data]=JSON.parse(result[:http].body)
-              Log.dump('result',result[:data])
-            end
-          when 'text/plain'
-            result[:data]=result[:http].body
-          end
+        Log.log.debug("result: body=#{result[:http].body}")
+        result_mime=(result[:http]['Content-Type']||'text/plain').split(';').first
+        case result_mime
+        when 'application/json'
+          result[:data]=JSON.parse(result[:http].body)
+        else #when 'text/plain'
+          result[:data]=result[:http].body
         end
+        Log.dump("result: parsed: #{result_mime}",result[:data])
+        Log.log.debug("result: code=#{result[:http].code}")
+        RestErrorAnalyzer.new(req,result).raiseOnError
       rescue RestCallError => e
         # not authorized: oauth token expired
         if @params[:not_auth_codes].include?(result[:http].code.to_s) and call_data[:auth][:type].eql?(:oauth2)
