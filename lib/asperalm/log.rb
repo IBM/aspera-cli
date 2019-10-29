@@ -1,6 +1,7 @@
 require 'asperalm/colors'
 require 'logger'
 require 'pp'
+require 'json'
 require 'singleton'
 
 module Asperalm
@@ -21,9 +22,14 @@ module Asperalm
     # get the logger object of singleton
     def self.log; self.instance.logger; end
 
-    # dump object in debug mode
-    def self.dump(name,object)
-      self.log.debug("#{name}=\n#{PP.pp(object,'')}")
+    # dump object in debug mode, either pp or json format
+    def self.dump(name,object,format=:json)
+      result=case format
+      when :ruby;PP.pp(object,'')
+      when :json;JSON.pretty_generate(object)
+      else raise "wrong parameter, expect pp or json"
+      end
+      self.log.debug("#{name.green} (#{format})=\n#{result}")
     end
 
     # set log level of underlying logger given symbol level
