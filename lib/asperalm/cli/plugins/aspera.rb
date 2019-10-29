@@ -93,19 +93,19 @@ module Asperalm
           when :bearer_token_node
             thepath=self.options.get_next_argument('path')
             node_file = @api_aoc.resolve_node_file(top_node_file,thepath)
-            token=@api_aoc.oauth_token(scope: OnCloud.node_scope(node_file[:node_info]['access_key'],OnCloud::SCOPE_NODE_USER), refresh: false)
-            return Main.result_status(token)
+            node_api=@api_aoc.get_node_api(node_file[:node_info],OnCloud::SCOPE_NODE_USER)
+            return Main.result_status(node_api.oauth_token)
           when :browse
             thepath=self.options.get_next_argument('path')
             node_file = @api_aoc.resolve_node_file(top_node_file,thepath)
-            node_api=@api_aoc.get_files_node_api(node_file[:node_info],OnCloud::SCOPE_NODE_USER)
+            node_api=@api_aoc.get_node_api(node_file[:node_info],OnCloud::SCOPE_NODE_USER)
             result=node_api.read("files/#{node_file[:file_id]}/files",self.options.get_option(:value,:optional))
             items=result[:data]
             self.format.display_status("Items: #{result[:data].length}/#{result[:http]['X-Total-Count']}")
             return {:type=>:object_list,:data=>items,:fields=>['name','type','recursive_size','size','modified_time','access_level']}
           when :find
             thepath=self.options.get_next_argument('path')
-            exec_prefix="exec:"
+            exec_prefix='exec:'
             expression=self.options.get_option(:value,:optional)||"#{exec_prefix}true"
             node_file=@api_aoc.resolve_node_file(top_node_file,thepath)
             if expression.start_with?(exec_prefix)
@@ -119,20 +119,20 @@ module Asperalm
             containing_folder_path = thepath.split(OnCloud::PATH_SEPARATOR)
             new_folder=containing_folder_path.pop
             node_file = @api_aoc.resolve_node_file(top_node_file,containing_folder_path.join(OnCloud::PATH_SEPARATOR))
-            node_api=@api_aoc.get_files_node_api(node_file[:node_info],OnCloud::SCOPE_NODE_USER)
+            node_api=@api_aoc.get_node_api(node_file[:node_info],OnCloud::SCOPE_NODE_USER)
             result=node_api.create("files/#{node_file[:file_id]}/files",{:name=>new_folder,:type=>:folder})[:data]
             return Main.result_status("created: #{result['name']} (id=#{result['id']})")
           when :rename
             thepath=self.options.get_next_argument('source path')
             newname=self.options.get_next_argument('new name')
             node_file = @api_aoc.resolve_node_file(top_node_file,thepath)
-            node_api=@api_aoc.get_files_node_api(node_file[:node_info],OnCloud::SCOPE_NODE_USER)
+            node_api=@api_aoc.get_node_api(node_file[:node_info],OnCloud::SCOPE_NODE_USER)
             result=node_api.update("files/#{node_file[:file_id]}",{:name=>newname})[:data]
             return Main.result_status("renamed #{thepath} to #{newname}")
           when :delete
             thepath=self.options.get_next_argument('path')
             node_file = @api_aoc.resolve_node_file(top_node_file,thepath)
-            node_api=@api_aoc.get_files_node_api(node_file[:node_info],OnCloud::SCOPE_NODE_USER)
+            node_api=@api_aoc.get_node_api(node_file[:node_info],OnCloud::SCOPE_NODE_USER)
             result=node_api.delete("files/#{node_file[:file_id]}")[:data]
             return Main.result_status("deleted: #{thepath}")
           when :transfer
@@ -153,7 +153,7 @@ module Asperalm
             # force node as agent
             self.options.set_option(:transfer,:node)
             # force node api in node agent
-            Fasp::Node.instance.node_api=@api_aoc.get_files_node_api(node_file_client[:node_info],OnCloud::SCOPE_NODE_USER)
+            Fasp::Node.instance.node_api=@api_aoc.get_node_api(node_file_client[:node_info],OnCloud::SCOPE_NODE_USER)
             # additional node to node TS info
             add_ts={
               'remote_access_key'   => node_file_server[:node_info]['access_key'],
@@ -192,19 +192,19 @@ module Asperalm
             raise CliBadArgument,'one file at a time only in HTTP mode' if source_paths.length > 1
             file_name = source_paths.first['source']
             node_file = @api_aoc.resolve_node_file(top_node_file,File.join(source_folder,file_name))
-            node_api=@api_aoc.get_files_node_api(node_file[:node_info],OnCloud::SCOPE_NODE_USER)
+            node_api=@api_aoc.get_node_api(node_file[:node_info],OnCloud::SCOPE_NODE_USER)
             node_api.call({:operation=>'GET',:subpath=>"files/#{node_file[:file_id]}/content",:save_to_file=>File.join(self.transfer.destination_folder('receive'),file_name)})
             return Main.result_status("downloaded: #{file_name}")
           when :v3
             # Note: other "common" actions are unauthorized with user scope
             command_legacy=self.options.get_next_command(Node::SIMPLE_ACTIONS)
             # TODO: shall we support all methods here ? what if there is a link ?
-            node_api=@api_aoc.get_files_node_api(top_node_file[:node_info],OnCloud::SCOPE_NODE_USER)
+            node_api=@api_aoc.get_node_api(top_node_file[:node_info],OnCloud::SCOPE_NODE_USER)
             return Node.new(@agents.merge(skip_basic_auth_options: true, node_api: node_api)).execute_action(command_legacy)
           when :file
             fileid=self.options.get_next_argument('file id')
             node_file = @api_aoc.resolve_node_file(top_node_file)
-            node_api=@api_aoc.get_files_node_api(node_file[:node_info],OnCloud::SCOPE_NODE_USER)
+            node_api=@api_aoc.get_node_api(node_file[:node_info],OnCloud::SCOPE_NODE_USER)
             items=node_api.read("files/#{fileid}")[:data]
             return {:type=>:single_object,:data=>items}
           end # command_repo
@@ -661,7 +661,7 @@ module Asperalm
                 # mandatory secret : we have only AK
                 self.options.get_option(:secret,:mandatory)
                 @api_aoc.secrets[res_data['id']]=@option_ak_secret unless @option_ak_secret.nil?
-                api_node=@api_aoc.get_files_node_api(res_data)
+                api_node=@api_aoc.get_node_api(res_data)
                 return Node.new(@agents.merge(skip_basic_auth_options: true, node_api: api_node)).execute_action if command.eql?(:v3)
                 ak_data=api_node.call({:operation=>'GET',:subpath=>"access_keys/#{res_data['access_key']}",:headers=>{'Accept'=>'application/json'}})[:data]
                 return node_gen4_execute_action({node_info: res_data, file_id: ak_data['root_file_id']})

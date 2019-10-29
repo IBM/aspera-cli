@@ -179,7 +179,7 @@ module Asperalm
     # returns a node API for access key
     # no scope: requires secret
     # if secret provided beforehand: use it
-    def get_files_node_api(node_info,node_scope=nil)
+    def get_node_api(node_info,node_scope=nil)
       node_rest_params={
         :base_url => node_info['url'],
         :headers  => {'X-Aspera-AccessKey'=>node_info['access_key']},
@@ -217,7 +217,7 @@ module Asperalm
 
     # returns node api and folder_id from soft link
     def read_asplnk(current_file_info)
-      new_node_api=get_files_node_api(self.read("nodes/#{current_file_info['target_node_id']}")[:data],SCOPE_NODE_USER)
+      new_node_api=get_node_api(self.read("nodes/#{current_file_info['target_node_id']}")[:data],SCOPE_NODE_USER)
       return {:node_api=>new_node_api,:folder_id=>current_file_info['target_id']}
     end
 
@@ -226,7 +226,7 @@ module Asperalm
       top_node_info,top_file_id=check_get_node_file(top_node_file)
       Log.log.debug("find_files: node_info=#{top_node_info}, fileid=#{top_file_id}")
       result=[]
-      top_node_api=get_files_node_api(top_node_info,SCOPE_NODE_USER)
+      top_node_api=get_node_api(top_node_info,SCOPE_NODE_USER)
       # initialize loop elements : list of folders to scan
       # Note: top file id is necessarily a folder
       items_to_explore=[{:node_api=>top_node_api,:folder_id=>top_file_id,:path=>''}]
@@ -282,7 +282,7 @@ module Asperalm
         current_item = items_to_explore.shift
         Log.log.debug "searching #{current_item}".bg_green
         # get API if changed
-        current_node_api=get_files_node_api(current_node_info,SCOPE_NODE_USER) if current_node_api.nil?
+        current_node_api=get_node_api(current_node_info,SCOPE_NODE_USER) if current_node_api.nil?
         # get folder content
         folder_contents = current_node_api.read("files/#{current_file_id}/files")
         Log.dump(:folder_contents,folder_contents)
