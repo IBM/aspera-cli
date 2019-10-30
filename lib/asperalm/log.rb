@@ -22,14 +22,16 @@ module Asperalm
     # get the logger object of singleton
     def self.log; self.instance.logger; end
 
-    # dump object in debug mode, either pp or json format
+    # dump object in debug mode
+    # @param name string or symbol
+    # @param format either pp or json format
     def self.dump(name,object,format=:json)
       result=case format
       when :ruby;PP.pp(object,'')
       when :json;JSON.pretty_generate(object)
       else raise "wrong parameter, expect pp or json"
       end
-      self.log.debug("#{name.green} (#{format})=\n#{result}")
+      self.log.debug("#{name.to_s.green} (#{format})=\n#{result}")
     end
 
     # set log level of underlying logger given symbol level
@@ -62,7 +64,7 @@ module Asperalm
       @logger.level=current_severity_integer
       @logger_type=new_logtype
     end
-    
+
     attr_writer :program_name
 
     private
