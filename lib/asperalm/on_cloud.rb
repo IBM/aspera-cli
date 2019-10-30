@@ -87,7 +87,7 @@ module Asperalm
 
     attr_reader :secrets
 
-    # add package information
+    # additional transfer spec (tags) for package information
     def self.package_tags(package_info,operation)
       return {'tags'=>{'aspera'=>{'files'=>{
         'package_id'        => package_info['id'],
@@ -134,7 +134,7 @@ module Asperalm
     def self.console_ts(app,user_name,user_email)
       elements=[app,user_name,user_email].map{|e|Base64.strict_encode64(e)}
       elements.unshift('aspera.aoc')
-  Log.dump('elem1'.bg_red,elements[1])
+      #Log.dump('elem1'.bg_red,elements[1])
       return {
         'cookie'=>elements.join(':')
       }

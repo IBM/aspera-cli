@@ -209,7 +209,7 @@ module Asperalm
             return {:type=>:single_object,:data=>items}
           end # command_repo
           throw "ERR"
-        end # node_gen4_execute_action
+        end # execute_node_gen4_command
 
         # check option "link"
         # if present try to get token value (resolve redirection if short links used)
