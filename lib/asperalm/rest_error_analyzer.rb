@@ -62,7 +62,8 @@ module Asperalm
       if error_struct.is_a?(Hash) and error_struct[msg_key].is_a?(String)
         add_error(type,error_struct[msg_key])
         error_struct.each do |k,v|
-          add_error("#{type}(sub)","#{k}: #{v}") if v.is_a?(String) and !k.eql?(msg_key)
+          next if k.eql?(msg_key)
+          add_error("#{type}(sub)","#{k}: #{v}") if [String,Integer].include?(v.class)
         end
       end
     end
@@ -74,6 +75,7 @@ module Asperalm
     add_simple_handler("Type 1",'error','user_message')
     add_simple_handler("Type 2",'error','description')
     add_simple_handler("Type 3",'error','internal_message')
+    # AoC Automation
     add_simple_handler("Type 4",'error')
     add_simple_handler("Type 5",'error_description')
     add_simple_handler("Type 6",'message')
