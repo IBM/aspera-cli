@@ -22,7 +22,7 @@ module Asperalm
         begin
           handler.call(self)
         rescue => e
-          Log.log.error("ERROR in handler:\n#{e.backtrace}")
+          Log.log.error("ERROR in handler:\n#{e.message}\n#{e.backtrace}")
         end
       end
     end
@@ -39,48 +39,48 @@ module Asperalm
     end
 
     # used by handler to add an error description to list of errors
-    # for logging and tracing : collect error descriptions
-    # @param myself the RestErrorAnalyzer object
+    # for logging and tracing : collect error descriptions (create file to activate)
     # @param type a string describing type of exception, for logging purpose
     # @param msg one error message  to add to list
-    def self.add_error(myself,type,msg)
-      myself.messages.push(msg)
-      # log error for further analysis
+    def add_error(type,msg)
+      @messages.push(msg)
+      # log error for further analysis (file must exist to activate)
       exc_log_file=File.join(Fasp::Installation.instance.config_folder,"exceptions.log")
       if File.exist?(exc_log_file)
         File.open(exc_log_file,"a+") do |f|
-          f.write("\n=#{type}=====\n#{myself.request.method} #{myself.request.path}\n#{myself.result[:http].code}\n#{JSON.generate(myself.result[:data])}\n#{myself.messages.join("\n")}")
+          f.write("\n=#{type}=====\n#{@request.method} #{@request.path}\n#{@result[:http].code}\n#{JSON.generate(@result[:data])}\n#{@messages.join("\n")}")
         end
       end
     end
 
-    # simplest way to add a handler:
     # check that key exists and is string under sdpecified path (hash)
-    def self.add_simple_handler(type,key,path=[])
-      add_handler do |myself|
-        # dig and find sub entry correspopnding to path in deep hash
-        error_data=path.inject(myself.result[:data]) { |subhash, key| subhash.respond_to?(:keys) ? subhash[key] : nil }
-        add_error(myself,type,error_data[key]) if error_data.is_a?(Hash) and error_data[key].is_a?(String)
-      end
-    end
-    add_simple_handler("Type 1",'user_message',['error'])
-    add_simple_handler("Type 2",'description',['error'])
-    add_simple_handler("Type 3",'internal_message',['error'])
-    add_simple_handler("Type 4",'error')
-    add_simple_handler("Type 5",'error_description')
-    add_handler do |myself|
-      if myself.result[:data]['message'].is_a?(String)
-        add_error(myself,"Type 6",myself.result[:data]['message'])
-        # add other fields as info
-        myself.result[:data].each do |k,v|
-          add_error(myself,"Type 6","#{k}: #{v}") unless k.eql?('message')
+    # adds other keys as secondary information
+    def add_if_simple_error(type,path)
+      msg_key=path.pop
+      # dig and find sub entry corresponding to path in deep hash
+      error_struct=path.inject(@result[:data]) { |subhash, key| subhash.respond_to?(:keys) ? subhash[key] : nil }
+      if error_struct.is_a?(Hash) and error_struct[msg_key].is_a?(String)
+        add_error(type,error_struct[msg_key])
+        error_struct.each do |k,v|
+          add_error("#{type}(sub)","#{k}: #{v}") if v.is_a?(String) and !k.eql?(msg_key)
         end
       end
     end
+
+    # simplest way to add a handler
+    def self.add_simple_handler(type,*path)
+      add_handler { |myself| myself.add_if_simple_error(type,path) }
+    end
+    add_simple_handler("Type 1",'error','user_message')
+    add_simple_handler("Type 2",'error','description')
+    add_simple_handler("Type 3",'error','internal_message')
+    add_simple_handler("Type 4",'error')
+    add_simple_handler("Type 5",'error_description')
+    add_simple_handler("Type 6",'message')
     add_handler do |myself|
       if myself.result[:data]['errors'].is_a?(Hash)
         myself.result[:data]['errors'].each do |k,v|
-          add_error(myself,"Type 7","#{k}: #{v}")
+          myself.add_error("Type 7","#{k}: #{v}")
         end
       end
     end
@@ -91,19 +91,19 @@ module Asperalm
         d_t_s.each do |res|
           r_err=res['transfer_spec']['error']
           if r_err.is_a?(Hash)
-            add_error(myself,"T8:node: *_setup","#{r_err['code']}: #{r_err['reason']}: #{r_err['user_message']}")
+            myself.add_error("T8:node: *_setup","#{r_err['code']}: #{r_err['reason']}: #{r_err['user_message']}")
           end
         end
       end
     end
     add_simple_handler("T9:IBM cloud IAM",'errorMessage')
     add_simple_handler("T10:faspex v4",'user_message')
-    add_simple_handler("T11:AoC",'message')
 
     # raises a RestCallError exception if http result code is not 2XX
     def raiseOnError()
-      if !@result[:http].code.start_with?('2')
-        self.class.add_error(self,"Type Generic",@result[:http].message) if @messages.empty?
+      if !@isSuccess
+        # add generic information
+        add_error("Type Generic","#{@request['host']} #{@result[:http].code} #{@result[:http].message}")
         raise RestCallError.new(@request,@result[:http],@messages.join("\n"))
       end
     end
