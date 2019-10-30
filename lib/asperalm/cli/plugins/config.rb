@@ -88,7 +88,9 @@ module Asperalm
           self.options.add_opt_simple(:smtp,"smtp configuration (extended value: hash)")
           self.options.add_opt_simple(:fpac,"proxy auto configuration URL")
           self.options.add_opt_simple(:preset,"-PVALUE","load the named option preset from current config file")
+          self.options.add_opt_boolean(:test_mode,"skip user validation in wizard mode")
           self.options.set_option(:use_generic_client,true)
+          self.options.set_option(:test_mode,false)
           self.options.parse_options!
         end
 
@@ -505,9 +507,11 @@ module Asperalm
                 self.format.display_status("Navigate to your \"Account Settings\"".red)
                 self.format.display_status("Check or update the value of \"Public Key\" to be:".red.blink)
                 self.format.display_status("#{pub_key_pem}")
-                self.format.display_status("Once updated or validated, press enter.")
-                OpenApplication.instance.uri(instance_url)
-                STDIN.gets
+                if ! self.options.get_option(:test_mode)
+                  self.format.display_status("Once updated or validated, press enter.")
+                  OpenApplication.instance.uri(instance_url)
+                  STDIN.gets
+                end
               else
                 self.format.display_status("Using organization specific client_id.")
                 # clear only if user did not specify it already
