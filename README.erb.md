@@ -658,9 +658,9 @@ A (forward) proxy may be used for two reasons:
 * HTTP/S requests
 * FASP transfers
 
-To specify a HTTP proxy, set the HTTP_PROXY environment variable.
+To specify a HTTP proxy, set the HTTP_PROXY environment variable (or HTTPS_PROXY), those are honoured by Ruby when calling REST APIs.
 
-To specify a FASP proxy with "local" agent, set the appropriate transfer spec parameter or ascp parameter in transfer spec. (not possible tih node agent or connect agent).
+To specify a FASP proxy with "local" agent, set the appropriate transfer spec parameter or ascp parameter in transfer spec. (not possible with node agent or connect agent).
 
 The `fpac` option allows specification of a Proxy Auto Configuration (PAC) file, by its URL for local FASP agent. Supported schemes are : http:, https: and file:.
 

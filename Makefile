@@ -228,7 +228,7 @@ t/fx2:
 	@echo $@
 	$(EXETEST) faspex package send --delivery-info=@json:'{"title":"'"$(CURRENT_DATE)"'","recipients":["laurent.martin.aspera@fr.ibm.com"]}' $(CLIENT_DEMOFILE_PATH)
 	@touch $@
-t/fx3:
+t/fx3: $(LOCAL_FOLDER)/.exists
 	@echo $@
 	$(EXETEST) faspex package recv --to-folder=$(LOCAL_FOLDER) --id=$$($(EXETEST) faspex package list --fields=delivery_id --format=csv --box=sent|tail -n 1) --box=sent
 	@touch $@
@@ -248,7 +248,7 @@ t/fx5:
 	@echo $@
 	$(EXETEST) faspex source name "Server Files" node br /
 	@touch $@
-t/fx6:
+t/fx6: $(LOCAL_FOLDER)/.exists
 	@echo $@
 	$(EXETEST) faspex package recv --to-folder=$(LOCAL_FOLDER) --id=ALL --once-only=yes
 	@touch $@
@@ -709,18 +709,17 @@ t/conf_wizard_org:
 	@echo $@
 	$(EXETEST) conf flush
 	$(EXETEST) conf wiz --url=https://sedemo.ibmaspera.com --config-file=$(SAMPLE_CONFIG_FILE) --client-id=$(HIDE_CLIENT_ID) --client-secret=$(HIDE_CLIENT_SECRET) --pkeypath='' --use-generic-client=no --username=laurent.martin.aspera@fr.ibm.com
-	$(EXETEST) conf wiz --url=https://sedemo.ibmaspera.com --config-file=$(SAMPLE_CONFIG_FILE) --pkeypath='' --username=laurent.martin.aspera@fr.ibm.com
 	cat $(SAMPLE_CONFIG_FILE)
 	rm -f $(SAMPLE_CONFIG_FILE)
 	@touch $@
 t/conf_wizard_gen:
 	@echo $@
 	$(EXETEST) conf flush
-	$(EXETEST) conf wiz --url=https://sedemo.ibmaspera.com --config-file=$(SAMPLE_CONFIG_FILE) --pkeypath='' --username=laurent.martin.aspera@fr.ibm.com
+	$(EXETEST) conf wiz --url=https://sedemo.ibmaspera.com --config-file=$(SAMPLE_CONFIG_FILE) --pkeypath='' --username=laurent.martin.aspera@fr.ibm.com --test-mode=yes
 	cat $(SAMPLE_CONFIG_FILE)
 	rm -f $(SAMPLE_CONFIG_FILE)
 	@touch $@
-t/conf_genkey:
+t/conf_genkey: $(LOCAL_FOLDER)/.exists
 	@echo $@
 	$(EXETEST) config genkey $(LOCAL_FOLDER)/mykey
 	@touch $@
