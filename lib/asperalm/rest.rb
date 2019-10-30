@@ -196,7 +196,7 @@ module Asperalm
         result_mime=(result[:http]['Content-Type']||'text/plain').split(';').first
         case result_mime
         when 'application/json'
-          result[:data]=JSON.parse(result[:http].body)
+          result[:data]=JSON.parse(result[:http].body) rescue nil
         else #when 'text/plain'
           result[:data]=result[:http].body
         end
