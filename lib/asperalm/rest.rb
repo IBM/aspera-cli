@@ -195,7 +195,7 @@ module Asperalm
         Log.log.debug("result: body=#{result[:http].body}")
         result_mime=(result[:http]['Content-Type']||'text/plain').split(';').first
         case result_mime
-        when 'application/json'
+        when 'application/json','application/vnd.api+json'
           result[:data]=JSON.parse(result[:http].body) rescue nil
         else #when 'text/plain'
           result[:data]=result[:http].body
