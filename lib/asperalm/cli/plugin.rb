@@ -5,7 +5,7 @@ module Asperalm
       GLOBAL_OPS=[:create,:list]
       INSTANCE_OPS=[:modify,:delete,:show]
       ALL_OPS=[GLOBAL_OPS,INSTANCE_OPS].flatten
-      private_constant :GLOBAL_OPS,:INSTANCE_OPS,:ALL_OPS
+      #private_constant :GLOBAL_OPS,:INSTANCE_OPS,:ALL_OPS
 
       @@done=false
 
@@ -28,13 +28,10 @@ module Asperalm
         end
       end
 
-      # implement generic rest operations on given resource path
-      def entity_action(rest_api,res_class_path,display_fields,id_symb,id_default=nil)
-        #res_name=res_class_path.gsub(%r{^.*/},'').gsub(%r{s$},'').gsub('_',' ')
-        command=self.options.get_next_command(ALL_OPS)
+      def entity_command(command,rest_api,res_class_path,display_fields,id_symb,id_default=nil)
         if INSTANCE_OPS.include?(command)
           begin
-          one_res_id=self.options.get_option(id_symb,:mandatory)
+            one_res_id=self.options.get_option(id_symb,:mandatory)
           rescue => e
             raise e if id_default.nil?
             one_res_id=id_default
@@ -53,7 +50,12 @@ module Asperalm
         when :show
           return {:type => :single_object, :data=>rest_api.read(one_res_path)[:data], :fields=>display_fields}
         when :list
-          return {:type => :object_list, :data=>rest_api.read(res_class_path,parameters)[:data], :fields=>display_fields}
+          resp=rest_api.read(res_class_path,parameters)
+          data=resp[:data]
+          if resp[:http]['Content-Type'].start_with?('application/vnd.api+json')
+            data=resp[:data][res_class_path]
+          end
+          return {:type => :object_list, :data=>data, :fields=>display_fields}
         when :modify
           property=self.options.get_option(:property,:optional)
           parameters={property => parameters} unless property.nil?
@@ -63,6 +65,13 @@ module Asperalm
           rest_api.delete(one_res_path)
           return Main.result_status("deleted")
         end
+      end
+      
+      # implement generic rest operations on given resource path
+      def entity_action(rest_api,res_class_path,display_fields,id_symb,id_default=nil)
+        #res_name=res_class_path.gsub(%r{^.*/},'').gsub(%r{s$},'').gsub('_',' ')
+        command=self.options.get_next_command(ALL_OPS)
+        return entity_command(command,rest_api,res_class_path,display_fields,id_symb,id_default)
       end
 
       def options;@agents[:options];end
