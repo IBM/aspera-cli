@@ -2201,6 +2201,11 @@ As a workaround use another option, if available, to identify the entity, e.g. i
 
 # Release Notes
 
+* version 0.10.1
+
+	* AoC and node v4 "browse" works now on non-folder items: file, link
+	* initial support for AoC automation (do not use yet)
+	
 * version 0.10
 
 	* support for transfer using IBM Cloud Object Storage
