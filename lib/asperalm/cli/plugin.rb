@@ -38,9 +38,11 @@ module Asperalm
           end
           one_res_path="#{res_class_path}/#{one_res_id}"
         end
+        # parameters mandatory for create/modify
         if [:create,:modify].include?(command)
           parameters=self.options.get_option(:value,:mandatory)
         end
+        # parameters optional for list
         if [:list].include?(command)
           parameters=self.options.get_option(:value,:optional)
         end
