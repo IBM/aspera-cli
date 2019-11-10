@@ -61,17 +61,15 @@ module Asperalm
         end
 
         def user_info
-          return @user_info unless @user_info.nil?
-          # get our user's default information
-          # self?embed[]=default_workspace&embed[]=organization
-          begin
-            @user_info=@api_aoc.read('self')[:data]
-          rescue
-            @user_info={
-              'name' => 'unknown',
-              'email' => 'unknown',
+          if @user_info.nil?
+            # get our user's default information
+            # self?embed[]=default_workspace&embed[]=organization
+            @user_info=@api_aoc.read('self')[:data] rescue {
+            'name'  => 'unknown',
+            'email' => 'unknown',
             }
           end
+          return @user_info
         end
 
         # starts transfer using transfer agent
@@ -99,9 +97,13 @@ module Asperalm
             thepath=self.options.get_next_argument('path')
             node_file = @api_aoc.resolve_node_file(top_node_file,thepath)
             node_api=@api_aoc.get_node_api(node_file[:node_info],OnCloud::SCOPE_NODE_USER)
-            result=node_api.read("files/#{node_file[:file_id]}/files",self.options.get_option(:value,:optional))
-            items=result[:data]
-            self.format.display_status("Items: #{result[:data].length}/#{result[:http]['X-Total-Count']}")
+            if node_file[:file_info]['type'].eql?('folder')
+              result=node_api.read("files/#{node_file[:file_id]}/files",self.options.get_option(:value,:optional))
+              items=result[:data]
+              self.format.display_status("Items: #{result[:data].length}/#{result[:http]['X-Total-Count']}")
+            else
+              items=[node_file[:file_info]]
+            end
             return {:type=>:object_list,:data=>items,:fields=>['name','type','recursive_size','size','modified_time','access_level']}
           when :find
             thepath=self.options.get_next_argument('path')
@@ -423,7 +425,7 @@ module Asperalm
           end
         end
 
-        ACTIONS=[ :apiinfo, :bearer_token, :organization, :tier_restrictions, :user, :workspace, :packages, :files, :faspexgw, :admin]
+        ACTIONS=[ :apiinfo, :bearer_token, :organization, :tier_restrictions, :user, :workspace, :packages, :files, :faspexgw, :admin, :automation]
 
         def execute_action
           command=self.options.get_next_command(ACTIONS)
@@ -564,6 +566,30 @@ module Asperalm
               return self.entity_action(@api_aoc,'short_links',nil,:id,'self')
             end
             throw "Error"
+          when :automation
+            # automation api is not in the same place
+            automation_rest_params=@api_aoc.params.clone
+            automation_rest_params[:base_url].gsub!('/api/','/automation/')
+            automation_api=Rest.new(automation_rest_params)
+            command_automation=self.options.get_next_command([ :workflows ])
+            case command_automation
+            when :workflows
+              wF_COMMANDS=Plugin::ALL_OPS.clone.push(:action)
+              wf_command=self.options.get_next_command(wF_COMMANDS)
+              case wf_command
+              when *Plugin::ALL_OPS
+                return self.entity_command(wf_command,automation_api,'workflows',nil,:id)
+              when :action
+                wf_command=self.options.get_next_command([:list,:create,:show])
+                wf_id=self.options.get_option(:id,:mandatory)
+                step=automation_api.create('steps',{'workflow_id'=>wf_id})[:data]
+                automation_api.update("workflows/#{wf_id}",{'step_order'=>[step["id"]]})
+                action=automation_api.create('actions',{'step_id'=>step["id"],'type'=>'manual'})[:data]
+                automation_api.update("steps/#{step["id"]}",{'action_order'=>[action["id"]]})
+                wf=automation_api.read("workflows/#{wf_id}")[:data]
+                return {:type=>:single_object,:data=>wf}
+              end
+            end
           when :faspexgw
             set_workspace_info
             require 'asperalm/faspex_gw'
