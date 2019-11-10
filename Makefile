@@ -501,7 +501,7 @@ t/aocat13:
 	-$(EXETEST) aspera admin ats access_key --id=test_key_aoc delete
 	@touch $@
 taocts: t/aocat4 t/aocat5 t/aocat6 t/aocat7 t/aocat8 t/aocat9 t/aocat10 t/aocat11 t/aocat13
-t/wf_id:
+t/wf_id: t/aocauto1
 	$(EXETEST) aspera automation workflow list --select=@json:'{"name":"laurent_test"}' --fields=id --format=csv > $@
 t/aocauto1:
 	@echo $@
@@ -514,8 +514,8 @@ t/aocauto2:
 	@touch $@
 t/aocauto3: t/wf_id
 	@echo $@
-	WF_ID=$$(cat t/wf_id);$(EXETEST) aspera automation step create --value=@json:'{"workflow_id":'$$WF_ID'}' | tee step.info
-	sed -nEe 's/^\| id +\| ([^ ]+) +\|/\1/p' step.info>step.id;rm -f step.info
+	WF_ID=$$(cat t/wf_id);$(EXETEST) aspera automation workflow --id=$$WF_ID action create --value=@json:'{"name":"toto"}' | tee action.info
+	sed -nEe 's/^\| id +\| ([^ ]+) +\|/\1/p' action.info>action.id;rm -f action.info
 	@touch $@
 t/aocauto10: t/wf_id
 	@echo $@
