@@ -15,15 +15,18 @@ module Asperalm
       @request   = req
       @result    = res
       @isSuccess = @result[:http].code.start_with?('2')
-      # handlers called only failure and valid JSON result found
-      return if @isSuccess or !@result[:data].is_a?(Hash)
       # analyze errors from provided handlers
+      # note that there can be an error even if code is 2XX
       RestErrorAnalyzer::ERROR_HANDLERS.each do |handler|
         begin
           handler.call(self)
         rescue => e
           Log.log.error("ERROR in handler:\n#{e.message}\n#{e.backtrace}")
         end
+      end
+      if !@isSuccess
+        # add generic information
+        add_error("Type Generic","#{@request['host']} #{@result[:http].code} #{@result[:http].message}")
       end
     end
 
@@ -55,7 +58,9 @@ module Asperalm
 
     # check that key exists and is string under sdpecified path (hash)
     # adds other keys as secondary information
-    def add_if_simple_error(type,path)
+    # @param onErrorOnly only if HTTP is not 2XX
+    def add_if_simple_error(type,on_err_only,path)
+      return if on_err_only and @isSuccess
       msg_key=path.pop
       # dig and find sub entry corresponding to path in deep hash
       error_struct=path.inject(@result[:data]) { |subhash, key| subhash.respond_to?(:keys) ? subhash[key] : nil }
@@ -69,16 +74,18 @@ module Asperalm
     end
 
     # simplest way to add a handler
-    def self.add_simple_handler(type,*path)
-      add_handler { |myself| myself.add_if_simple_error(type,path) }
+    def self.add_simple_handler(type,on_err_only,*path)
+      add_handler { |myself| myself.add_if_simple_error(type,on_err_only,path) }
     end
-    add_simple_handler("Type 1",'error','user_message')
-    add_simple_handler("Type 2",'error','description')
-    add_simple_handler("Type 3",'error','internal_message')
+    # Faspex: both user_message and internal_message, and code 200
+    # example: missing meta data on package creation
+    add_simple_handler("Type 1",false,'error','user_message')
+    add_simple_handler("Type 2",true,'error','description')
+    add_simple_handler("Type 3",true,'error','internal_message')
     # AoC Automation
-    add_simple_handler("Type 4",'error')
-    add_simple_handler("Type 5",'error_description')
-    add_simple_handler("Type 6",'message')
+    add_simple_handler("Type 4",true,'error')
+    add_simple_handler("Type 5",true,'error_description')
+    add_simple_handler("Type 6",true,'message')
     add_handler do |myself|
       if myself.result[:data]['errors'].is_a?(Hash)
         myself.result[:data]['errors'].each do |k,v|
@@ -98,14 +105,12 @@ module Asperalm
         end
       end
     end
-    add_simple_handler("T9:IBM cloud IAM",'errorMessage')
-    add_simple_handler("T10:faspex v4",'user_message')
+    add_simple_handler("T9:IBM cloud IAM",true,'errorMessage')
+    add_simple_handler("T10:faspex v4",true,'user_message')
 
     # raises a RestCallError exception if http result code is not 2XX
     def raiseOnError()
-      if !@isSuccess
-        # add generic information
-        add_error("Type Generic","#{@request['host']} #{@result[:http].code} #{@result[:http].message}")
+      unless @messages.empty?
         raise RestCallError.new(@request,@result[:http],@messages.join("\n"))
       end
     end
