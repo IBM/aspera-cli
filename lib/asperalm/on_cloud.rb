@@ -310,7 +310,7 @@ module Asperalm
         end
       end
       Log.log.info("resolve_node_file(#{element_path_string}): file_id=#{current_file_id},node_info=#{current_node_info}")
-      return {node_info: current_node_info, file_id: current_file_id}
+      return {node_info: current_node_info, file_id: current_file_id, file_info: current_file_info}
     end
 
   end # OnCloud
