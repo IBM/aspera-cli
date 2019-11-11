@@ -97,12 +97,13 @@ module Asperalm
             thepath=self.options.get_next_argument('path')
             node_file = @api_aoc.resolve_node_file(top_node_file,thepath)
             node_api=@api_aoc.get_node_api(node_file[:node_info],OnCloud::SCOPE_NODE_USER)
-            if node_file[:file_info]['type'].eql?('folder')
+            file_info = node_api.read("files/#{node_file[:file_id]}")[:data]
+            if file_info['type'].eql?('folder')
               result=node_api.read("files/#{node_file[:file_id]}/files",self.options.get_option(:value,:optional))
               items=result[:data]
               self.format.display_status("Items: #{result[:data].length}/#{result[:http]['X-Total-Count']}")
             else
-              items=[node_file[:file_info]]
+              items=[file_info]
             end
             return {:type=>:object_list,:data=>items,:fields=>['name','type','recursive_size','size','modified_time','access_level']}
           when :find
