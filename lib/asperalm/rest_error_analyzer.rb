@@ -9,12 +9,14 @@ module Asperalm
     attr_reader :messages
     attr_reader :request
     attr_reader :result
+    attr_reader :isDataHash
     def initialize(req,res)
       # multiple error messages can be found
       @messages  = []
       @request   = req
       @result    = res
       @isSuccess = @result[:http].code.start_with?('2')
+      @isDataHash = @result[:data].is_a?(Hash)
       # analyze errors from provided handlers
       # note that there can be an error even if code is 2XX
       RestErrorAnalyzer::ERROR_HANDLERS.each do |handler|
@@ -61,6 +63,7 @@ module Asperalm
     # @param onErrorOnly only if HTTP is not 2XX
     def add_if_simple_error(type,on_err_only,path)
       return if on_err_only and @isSuccess
+      return unless @isDataHash
       msg_key=path.pop
       # dig and find sub entry corresponding to path in deep hash
       error_struct=path.inject(@result[:data]) { |subhash, key| subhash.respond_to?(:keys) ? subhash[key] : nil }
@@ -87,7 +90,7 @@ module Asperalm
     add_simple_handler("Type 5",true,'error_description')
     add_simple_handler("Type 6",true,'message')
     add_handler do |myself|
-      if myself.result[:data]['errors'].is_a?(Hash)
+      if myself.isDataHash and myself.result[:data]['errors'].is_a?(Hash)
         myself.result[:data]['errors'].each do |k,v|
           myself.add_error("Type 7","#{k}: #{v}")
         end
@@ -95,12 +98,14 @@ module Asperalm
     end
     # call to upload_setup and download_setup of node api
     add_handler do |myself|
-      d_t_s=myself.result[:data]['transfer_specs']
-      if d_t_s.is_a?(Array)
-        d_t_s.each do |res|
-          r_err=res['transfer_spec']['error']
-          if r_err.is_a?(Hash)
-            myself.add_error("T8:node: *_setup","#{r_err['code']}: #{r_err['reason']}: #{r_err['user_message']}")
+      if myself.isDataHash
+        d_t_s=myself.result[:data]['transfer_specs']
+        if d_t_s.is_a?(Array)
+          d_t_s.each do |res|
+            r_err=res['transfer_spec']['error']
+            if r_err.is_a?(Hash)
+              myself.add_error("T8:node: *_setup","#{r_err['code']}: #{r_err['reason']}: #{r_err['user_message']}")
+            end
           end
         end
       end
