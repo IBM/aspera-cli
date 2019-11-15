@@ -1,4 +1,5 @@
 require 'asperalm/fasp/listener'
+require 'ruby-progressbar'
 
 module Asperalm
   module Cli
@@ -16,7 +17,6 @@ module Asperalm
           case data['Type']
           when 'NOTIFICATION'
             if data.has_key?('PreTransferBytes') then
-              require 'ruby-progressbar'
               @progress=ProgressBar.create(
               :format     => '%a %B %p%% %r Mbps %e',
               :rate_scale => lambda{|rate|rate/BYTE_PER_MEGABIT},
