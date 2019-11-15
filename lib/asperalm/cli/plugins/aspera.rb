@@ -163,8 +163,8 @@ module Asperalm
               'destination_root_id' => node_file_server[:file_id],
               'source_root_id'      => node_file_client[:file_id]
             }
-            #return Main.result_transfer(transfer_start(OnCloud::FILES,client_tr_oper,node_file_server,add_ts))
-            return Main.result_transfer(transfer_start(OnCloud::FILES,client_tr_oper,node_file_client,add_ts))
+            return Main.result_transfer(transfer_start(OnCloud::FILES,client_tr_oper,node_file_server,add_ts))
+            #bad: return Main.result_transfer(transfer_start(OnCloud::FILES,client_tr_oper,node_file_client,add_ts))
           when :upload
             node_file = @api_aoc.resolve_node_file(top_node_file,self.transfer.destination_folder('send'))
             add_ts={'tags'=>{'aspera'=>{'files'=>{'parentCwd'=>"#{node_file[:node_info]['id']}:#{node_file[:file_id]}"}}}}
