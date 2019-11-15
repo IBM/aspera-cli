@@ -57,7 +57,7 @@ module Asperalm
         # lets emulate management events to display progress bar
         loop do
           # status is empty sometimes with status 200...
-          trdata=node_api_.read("ops/transfers/#{@transfer_id}")[:data] rescue {"status"=>"waiting"}
+          trdata=node_api_.read("ops/transfers/#{@transfer_id}")[:data] || {"status"=>"waiting"} rescue {"status"=>"waiting"}
           case trdata['status']
           when 'completed'
             notify_listeners('emulated',{'Type'=>'DONE'})
