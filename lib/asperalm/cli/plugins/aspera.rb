@@ -607,9 +607,18 @@ module Asperalm
               }))
               return @ats.execute_action_gen(ats_api)
             when :search_nodes
-              ak=self.options.get_next_argument('access_key')
-              nodes=@api_aoc.read("search_nodes",{'q'=>'access_key:"'+ak+'"'})[:data]
-              return {:type=>:other_struct,:data=>nodes}
+              query=self.options.get_option(:query,:optional) || '*'
+              nodes=@api_aoc.read("search_nodes",{'q'=>query})[:data]
+              # simplify output
+              nodes=nodes.map do |i|
+                item=i['_source']
+                item['score']=i['_score']
+                nodedata=item['access_key_recursive_counts'].first
+                item.delete('access_key_recursive_counts')
+                item['node']=nodedata
+                item
+              end
+              return {:type=>:object_list,:data=>nodes,:fields=>['host_name','node_status.cluster_id','node_status.node_id']}
             when :events
               events=@api_aoc.read("admin/events",url_query({q: '*'}))[:data]
               events.map!{|i|i['_source']['_score']=i['_score'];i['_source']}
