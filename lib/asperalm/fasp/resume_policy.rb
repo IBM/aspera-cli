@@ -7,7 +7,6 @@ module Asperalm
     class ResumePolicy
 
       # list of supported parameters and default values
-      # TODO: make this configurable on command line
       DEFAULTS={
         :iter_max      => 7,
         :sleep_initial => 2,
