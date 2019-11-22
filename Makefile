@@ -262,7 +262,15 @@ t/cons1:
 	@echo $@
 	$(EXETEST) console transfer current list 
 	@touch $@
-tconsole: t/cons1
+t/cons2:
+	@echo $@
+	$(EXETEST) console transfer smart list 
+	@touch $@
+t/cons3:
+	@echo $@
+	$(EXETEST) console transfer smart sub 73 @json:'{"source":{"paths":["/AAA"]}}'
+	@touch $@
+tconsole: t/cons1 t/cons2 t/cons3
 
 t/nd1:
 	@echo $@
@@ -464,7 +472,11 @@ t/aoc15:
 	@echo $@
 	$(EXETEST) aspera admin eve --query=@json:'{"page":1,"per_page":2,"q":"*","sort":"-date"}'
 	@touch $@
-taocadm: t/aoc7 t/aoc8 t/aoc9 t/aoc9b t/aoc10 t/aoc11 t/aoc12 t/aoc13 t/aoc14 t/aoc15 
+t/aoc16:
+	@echo $@
+	$(EXETEST) aspera admin search_nodes
+	@touch $@
+taocadm: t/aoc7 t/aoc8 t/aoc9 t/aoc9b t/aoc10 t/aoc11 t/aoc12 t/aoc13 t/aoc14 t/aoc15 t/aoc16
 t/aocat4:
 	@echo $@
 	$(EXETEST) aspera admin ats cluster list
