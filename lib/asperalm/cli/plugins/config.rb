@@ -366,7 +366,7 @@ module Asperalm
           end
         end
 
-        ACTIONS=[:gem_path, :genkey,:plugins,:flush_tokens,:list,:overview,:open,:echo,:id,:documentation,:wizard,:export_to_cli,:detect,:coffee,:ascp,:email_test,:smtp_settings,:proxy_check]
+        ACTIONS=[:gem_path, :genkey,:plugins,:flush_tokens,:list,:overview,:open,:echo,:id,:documentation,:wizard,:export_to_cli,:detect,:coffee,:ascp,:email_test,:smtp_settings,:proxy_check,:folder]
 
         # "config" plugin
         def execute_action
@@ -613,6 +613,8 @@ module Asperalm
             execute_action_ascp
           when :gem_path
             return Main.result_status(Main.gem_root)
+          when :folder
+            return Main.result_status(@main_folder)
           when :email_test
             dest_email=self.options.get_next_argument("destination email")
             send_email({
