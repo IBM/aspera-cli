@@ -347,7 +347,7 @@ module Asperalm
             end
             return {:type=>:object_list,:data=>users}
           when :login_methods
-            login_meths=api_v3.call({:operation=>'GET',:subpath=>"login/new",:headers=>{'Accept'=>'application/xrds+xml'}})[:http].body
+            login_meths=api_v3.call({:operation=>'GET',:subpath=>'login/new',:headers=>{'Accept'=>'application/xrds+xml'}})[:http].body
             login_methods=XmlSimple.xml_in(login_meths, {"ForceArray" => false})
             return {:type=>:object_list, :data=>login_methods['XRD']['Service']}
           end # command
