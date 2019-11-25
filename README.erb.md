@@ -2282,6 +2282,8 @@ As a workaround use another option, if available, to identify the entity, e.g. i
 * version 0.10.2
 
  	* updated `search_nodes` to be more generic, so it can search not only on access key, but also other queries.
+ 	* added doc for "cargo" like actions
+ 	* added doc for multi-session
 
 * version 0.10.1
 
