@@ -191,7 +191,8 @@ module Asperalm
             progress=nil
           end
         end
-
+        # sometimes there is a ITF8 char (e.g. (c) )
+        result[:http].body.force_encoding("UTF-8") if result[:http].body.is_a?(String)
         Log.log.debug("result: body=#{result[:http].body}")
         result_mime=(result[:http]['Content-Type']||'text/plain').split(';').first
         case result_mime
