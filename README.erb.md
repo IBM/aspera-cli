@@ -411,15 +411,22 @@ A convenient way to specify a _Structured Value_ is to use the `@json:` decoder,
 
 It is also possible to provide a _Structured Value_ in a file using `@json:@file:<path>`
 
+## <a name="conffolder"></a>Configuration and Persistency Folder
+
+<%=tool%> configuration and other runtime files (token cache, file lists, persistency files) 
+are stored in folder `$HOME/.aspera/<%=cmd%>`. The folder can be displayed using :
+
+```
+$ <%=cmd%> config folder
+/Users/laurent/.aspera/mlia
+```
+
 ## <a name="configfile"></a>Configuration file
 
-<%=tool%> configuration and other runtime files (token cache, file lists) 
-re stored in folder `$HOME/.aspera/<%=cmd%>`.
+On the first execution of <%=tool%>, an empty configuration file is created in the configuration folder.
+Nevertheless, there is no mandatory information required in this file, the use of it is optional as any option can be provided on the command line.
 
-An empty configuration file is created on the first execution of <%=tool%>.
-Nevertheless, there is no mandatory information required in this file, the use of it is optional.
-
-Although the file is a standard YAML file, <%=tool%> provides commands to read and nmodify it
+Although the file is a standard YAML file, <%=tool%> provides commands to read and modify it
 using the `config` command.
 
 All options for <%=tool%> commands can be set on command line, or by env vars, or using <%=prsts%> in the configuratin file.
@@ -1373,6 +1380,45 @@ $ <%=cmd%> aspera admin res user list --fields=email --query=@json:'{"per_page":
 $ <%=cmd%> aspera admin res user list --fields=email --query=@json:'{"per_page":10000}' --select=@json:'{"member_of_any_workspace":false}'
 ```
 
+* Perform a multi Gbps transfer between two remote shared folders
+
+In this example, a user has access to a workspace where two shared folders are located on differente sites, e.g. different cloud regions.
+
+First, setup the environment (skip if already done)
+
+```
+$ <%=cmd%> conf wizard --url=https://sedemo.ibmaspera.com --username=laurent.martin.aspera@fr.ibm.com
+Detected: Aspera on Cloud
+Preparing preset: aoc_sedemo
+Using existing key:
+/Users/laurent/.aspera/mlia/aspera_on_cloud_key
+Using global client_id.
+Please Login to your Aspera on Cloud instance.
+Navigate to your "Account Settings"
+Check or update the value of "Public Key" to be:
+-----BEGIN PUBLIC KEY-----
+SOME PUBLIC KEY PEM DATA HERE
+-----END PUBLIC KEY-----
+Once updated or validated, press enter.
+
+creating new config preset: aoc_sedemo
+Setting config preset as default for aspera
+saving config file
+Done.
+You can test with:
+mlia aspera user info show
+```
+
+This creates the option preset "aoc_&lt;org name&gt;" to allow seamless command line access and sets it as default for aspera on cloud.
+
+Then, create two shared folders located in two regions, in your files home, in a workspace.
+
+Then, transfer between those:
+
+```
+$ <%=cmd%> -Paoc_show aspera files transfer --from-folder='IBM Cloud SJ' --to-folder='AWS Singapore' 100GB.file --ts=@json:'{"target_rate_kbps":"1000000","multi_session":10,"multi_session_threshold":1}'
+```
+
 ### Send a Package
 
 Send a package:
@@ -1388,9 +1434,23 @@ Notes:
   * if the option `new_user_option` is `@json:{"package_contact":true}` (default), then a public link is sent and the external user does not need to create an account.
   * if the option `new_user_option` is `@json:{}`, then external users are invited to join the workspace
 
-### Receive only new packages
+### <a name="aoccargo"></a>Receive only new packages
 
-TODO
+It is possible to automatically download new packages, like using Aspera Cargo:
+
+```
+$ <%=cmd%> aspera packages recv --id=ALL --once-only=yes --lock-port=12345
+```
+
+* `--id=ALL` (case sensitive) will download all packages
+* `--once-only=yes` keeps memory of any downloaded package in persistency files located in the configuration folder.
+* `--lock-port=12345` ensures that only one instance is started at the same time, to avoid collisions
+
+Typically, one would regularly execute this command on a regular basis, using the method oif your choice:
+
+* Windows scheduler
+* cron
+* etc...
 
 ### Download Files
 
@@ -1438,6 +1498,15 @@ $ cat my_file_list.txt|while read path;do echo <%=cmd%> aspera admin res node --
 cat my_file_list.txt | mlia aspera admin res node --name='my node name' --secret='my secret' v3 delete @lines:@stdin:
 ```
 
+### Search managed nodes with managed storage
+
+The command `search_nodes` will list IBM managed nodes connected to IBM managed storage.
+
+One can search for nodes based on any criteria, for instance access key:
+
+```
+$ <%=cmd%> aspera admin search_node --query=access_key:fasfdsFDSAFdsfs5634gdfFDS --format=jsonpp
+```
 
 ## IBM Aspera High Speed Transfer Server (transfer)
 
@@ -1602,6 +1671,15 @@ under the docroot in "/myfiles" (this must be the same as configured in Faspex).
 The node configuration name is "my_faspex_node" here.
 
 Note: the v4 API provide an API for nodes and shares.
+
+### Automated package download (cargo)
+
+It is possible to tell <%=tool%> to download newly received packages, much like the official
+cargo client, or drive. Refer to the [same section](#aoccargo) in the Aspera on Cloud plugin:
+
+```
+$ <%=cmd%> faspex packages recv --id=ALL --once-only=yes --lock-port=12345
+```
 
 ## IBM Aspera Shares
 
@@ -2200,6 +2278,10 @@ Gems, or remove your ed25519 key from your `.ssh` folder to solve the issue. Not
 As a workaround use another option, if available, to identify the entity, e.g. identify the node by name instead of id.
 
 # Release Notes
+
+* version 0.10.2
+
+ 	* updated `search_nodes` to be more generic, so it can search not only on access key, but also other queries.
 
 * version 0.10.1
 
