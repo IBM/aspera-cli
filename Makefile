@@ -1,5 +1,6 @@
-# just name of tool
+# just the name of the tool
 EXENAME=mlia
+# location of configuration files
 TOOLCONFIGDIR=$(HOME)/.aspera/$(EXENAME)
 DEV_FOLDER=.
 BINDIR=$(DEV_FOLDER)/bin
@@ -40,7 +41,7 @@ all:: gem
 clean::
 	rm -f $(GEMNAME)-*.gem $(SRCZIPBASE)*.zip *.log token.* preview.png aspera_bypass_*.pem sample_file.txt
 	rm -f README.pdf README.html README.md $(INCL_COMMANDS) $(INCL_USAGE) $(INCL_ASESSION) $(TEST_CONFIG)
-	rm -fr contents t doc out "PKG - "*
+	rm -fr tmp_* contents t doc out "PKG - "*
 	mkdir t out
 	rm -f 200KB* *AsperaConnect-ML* sample.conf* .DS_Store 10M.dat
 	gem uninstall -a -x $(GEMNAME)
@@ -527,7 +528,7 @@ t/aocauto2:
 t/aocauto3: t/wf_id
 	@echo $@
 	WF_ID=$$(cat t/wf_id);$(EXETEST) aspera automation workflow --id=$$WF_ID action create --value=@json:'{"name":"toto"}' | tee action.info
-	sed -nEe 's/^\| id +\| ([^ ]+) +\|/\1/p' action.info>action.id;rm -f action.info
+	sed -nEe 's/^\| id +\| ([^ ]+) +\|/\1/p' action.info>tmp_action_id.txt;rm -f action.info
 	@touch $@
 t/aocauto10: t/wf_id
 	@echo $@
