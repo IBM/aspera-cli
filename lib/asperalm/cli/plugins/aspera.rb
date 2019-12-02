@@ -572,14 +572,19 @@ module Asperalm
             automation_rest_params=@api_aoc.params.clone
             automation_rest_params[:base_url].gsub!('/api/','/automation/')
             automation_api=Rest.new(automation_rest_params)
-            command_automation=self.options.get_next_command([ :workflows ])
+            command_automation=self.options.get_next_command([ :workflows, :instances ])
             case command_automation
+            when :instances
+              return self.entity_action(@api_aoc,'workflow_instances',nil,:id,nil)
             when :workflows
-              wF_COMMANDS=Plugin::ALL_OPS.clone.push(:action)
+              wF_COMMANDS=Plugin::ALL_OPS.clone.push(:action,:launch)
               wf_command=self.options.get_next_command(wF_COMMANDS)
               case wf_command
               when *Plugin::ALL_OPS
                 return self.entity_command(wf_command,automation_api,'workflows',nil,:id)
+              when :launch
+                wf_id=self.options.get_option(:id,:mandatory)
+                data=automation_api.create("workflows/#{wf_id}/launch",{})[:data]
               when :action
                 wf_command=self.options.get_next_command([:list,:create,:show])
                 wf_id=self.options.get_option(:id,:mandatory)
