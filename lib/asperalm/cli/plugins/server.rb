@@ -18,6 +18,7 @@ module Asperalm
         def initialize(env)
           super(env)
           self.options.add_opt_simple(:ssh_keys,Array,'one ssh key at a time')
+          self.options.add_opt_simple(:cmd_prefix,'prefix to add for as cmd execution, e.g. sudo or /opt/aspera/bin ')
           self.options.set_option(:ssh_keys,[])
           self.options.parse_options!
         end
@@ -146,6 +147,10 @@ module Asperalm
             return nagios.result
           when :nodeadmin,:userdata,:configurator,:ctl
             realcmd='as'+command.to_s
+            prefix=self.options.get_option(:cmd_prefix,:optional)
+            if !prefix.nil?
+              realcmd="#{prefix}#{realcmd}"
+            end
             args = self.options.get_next_argument("#{realcmd} arguments",:multiple)
             result=shell_executor.execute(args.unshift(realcmd))
             case command
