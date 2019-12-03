@@ -1265,6 +1265,31 @@ other query parameters can be used:
 
 Refer to the AoC API for full list of query parameters.
 
+#### Access Key secrets
+
+In order to access some administrative actions on "nodes" (in fact, access keys), the associated
+secret is required.
+
+When doing such action, it is possible to provide the secret using the `secret` option.
+
+It is also possible to provoide a set of secrets used regularly. This can be done using the `secrets` option. The value provided shall be a Hash, where keys are access key ids, and values is the associated secret.
+
+First choose a repository name, for example `my_secrets`, and populate it like this:
+
+```
+$ <%=cmd%> conf id my_secrets set 'access_key1' 'secret1'
+$ <%=cmd%> conf id my_secrets set 'access_key2' 'secret2'
+```
+
+If you have already set a `config` global preset to preset `cli_default` (refer to earlier in documentation), then the repository can be read by default like this (note the prefix `@val:` to avoid the evaluation of prefix `@preset:`):
+
+```
+$ <%=cmd%> conf id cli_default set secrets @val:@preset:my_secrets
+```
+
+A secret repository can always be selected at runtime using `--secrets=@preset:xxxx`, or `--secrets=@json:'{"accesskey1":"secret1"}'`
+
+
 #### Examples
 
 * Bulk creation
@@ -2278,6 +2303,10 @@ Gems, or remove your ed25519 key from your `.ssh` folder to solve the issue. Not
 As a workaround use another option, if available, to identify the entity, e.g. identify the node by name instead of id.
 
 # Release Notes
+
+* version 0.10.3
+
+ 	* new options for AoC : `secrets`
 
 * version 0.10.2
 
