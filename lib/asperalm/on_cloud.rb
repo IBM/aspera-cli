@@ -82,10 +82,14 @@ module Asperalm
     def initialize(rest_params)
       super(rest_params)
       # access key secrets are provided out of band to get node api access
+      # key: access key
+      # value: associated secret
       @secrets={}
     end
 
-    attr_reader :secrets
+    def add_secrets(secrets)
+      @secrets.merge!(secrets)
+    end
 
     # additional transfer spec (tags) for package information
     def self.package_tags(package_info,operation)
@@ -184,7 +188,7 @@ module Asperalm
         :base_url => node_info['url'],
         :headers  => {'X-Aspera-AccessKey'=>node_info['access_key']},
       }
-      ak_secret=@secrets[node_info['id']]
+      ak_secret=@secrets[node_info['access_key']]
       if ak_secret.nil? and node_scope.nil?
         raise 'There must be at least one of: secret, node scope'
       end

@@ -16,7 +16,7 @@ module Asperalm
         MAX_REDIRECT=10
         private_constant :VAL_ALL,:MAX_REDIRECT
         attr_reader :api_aoc
-        attr_accessor :option_ak_secret
+        attr_accessor :option_ak_secret,:option_secrets
         def initialize(env)
           super(env)
           @default_workspace_id=nil
@@ -26,10 +26,12 @@ module Asperalm
           @home_node_file=nil
           @api_aoc=nil
           @option_ak_secret=nil
+          @option_secrets={}
           @url_token_data=nil
           @user_info=nil
           @ats=Ats.new(@agents.merge(skip_secret: true))
           self.options.set_obj_attr(:secret,self,:option_ak_secret)
+          self.options.set_obj_attr(:secrets,self,:option_secrets)
           self.options.add_opt_list(:auth,Oauth.auth_types,"type of Oauth authentication")
           self.options.add_opt_list(:operation,[:push,:pull],"client operation for transfers")
           self.options.add_opt_simple(:client_id,"API client identifier in application")
@@ -38,6 +40,7 @@ module Asperalm
           self.options.add_opt_simple(:private_key,"RSA private key PEM value for JWT (prefix file path with @val:@file:)")
           self.options.add_opt_simple(:workspace,"name of workspace")
           self.options.add_opt_simple(:secret,"access key secret for node")
+          self.options.add_opt_simple(:secrets,"access key secret for node")
           self.options.add_opt_simple(:eid,"identifier") # used ?
           self.options.add_opt_simple(:name,"resource name")
           self.options.add_opt_simple(:link,"public link to shared resource")
@@ -58,6 +61,8 @@ module Asperalm
           self.options.parse_options!
           return if env[:man_only]
           update_aoc_api
+          raise CliBadArgument,"secrets shall be Hash" unless @option_secrets.is_a?(Hash)
+          @api_aoc.add_secrets(@option_secrets)
         end
 
         def user_info
@@ -559,7 +564,7 @@ module Asperalm
             set_workspace_info
             set_home_node_file
             # set node secret in case it was provided
-            @api_aoc.secrets[@home_node_file[:node_info]['id']]=@option_ak_secret
+            @api_aoc.add_secrets({@home_node_file[:node_info]['access_key']=>@option_ak_secret})
             command_repo=self.options.get_next_command(NODE4_COMMANDS.clone.concat([:short_link]))
             case command_repo
             when *NODE4_COMMANDS; return execute_node_gen4_command(command_repo,@home_node_file)
@@ -701,7 +706,7 @@ module Asperalm
                 res_data=@api_aoc.read(resource_instance_path)[:data]
                 # mandatory secret : we have only AK
                 self.options.get_option(:secret,:mandatory)
-                @api_aoc.secrets[res_data['id']]=@option_ak_secret unless @option_ak_secret.nil?
+                @api_aoc.add_secrets({res_data['access_key']=>@option_ak_secret}) unless @option_ak_secret.nil?
                 api_node=@api_aoc.get_node_api(res_data)
                 return Node.new(@agents.merge(skip_basic_auth_options: true, node_api: api_node)).execute_action if command.eql?(:v3)
                 ak_data=api_node.call({:operation=>'GET',:subpath=>"access_keys/#{res_data['access_key']}",:headers=>{'Accept'=>'application/json'}})[:data]
