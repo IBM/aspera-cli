@@ -5,13 +5,18 @@ require 'securerandom'
 require 'base64'
 require 'json'
 require 'securerandom'
+require 'etc'
+require 'fileutils'
 
 module Asperalm
   module Fasp
     # translate transfer specification to ascp parameter list
     class Parameters
       private
-      @@file_list_folder=nil
+      # temp folder for file lists, must contain only file lists
+      # because of garbage collection takes any file there
+      # this could be refined, as , for instance, on macos, temp folder is already user specific
+      @@file_list_folder=File.join(Etc.systmpdir,Etc.getlogin)
       SEC_IN_DAY=86400
       # assume no transfer last longer than this
       # (garbage collect file list which were not deleted after transfer)
@@ -112,9 +117,9 @@ module Asperalm
           @builder.add_command_line_options(['--dest64'])
         end
 
-        # use file list if there is storage defined for it.
         src_dst_list=@builder.process_param('paths',:get_value,:accepted_types=>Array,:mandatory=>!@job_spec.has_key?('keepalive'))
         unless src_dst_list.nil?
+          # use file list if there is storage defined for it.
           if @@file_list_folder.nil?
             # not safe for special characters ? (maybe not, depends on OS)
             Log.log.debug("placing source file list on command line (no file list file)")
@@ -122,6 +127,7 @@ module Asperalm
           else
             # safer option: file list
             # if there is destination in paths, then use filepairlist
+            # TODO: well, we test only the first one, but anyway it shall be consistent
             if src_dst_list.first.has_key?('destination')
               option='--file-pair-list'
               lines=src_dst_list.inject([]){|m,e|m.push(e['source'],e['destination']);m}
@@ -149,18 +155,20 @@ module Asperalm
         return env_args
       end
 
-      # temp files are created here  (if value is not nil)
-      # garbage collect undeleted files
+      # temp file list files are created here
       def self.file_list_folder=(v)
         @@file_list_folder=v
-        FileUtils.mkdir_p(@@file_list_folder)
-        Dir.entries(@@file_list_folder).each do |name|
-          file_path=File.join(@@file_list_folder,name)
-          age_sec=(Time.now - File.stat(file_path).mtime).to_i
-          # check age of file, delete too old
-          if File.file?(file_path) and age_sec > FILE_LIST_AGE_MAX_SEC
-            Log.log.debug("garbage collecting #{name}")
-            File.delete(file_path)
+        unless @@file_list_folder.nil?
+          FileUtils.mkdir_p(@@file_list_folder)
+          # garbage collect undeleted files
+          Dir.entries(@@file_list_folder).each do |name|
+            file_path=File.join(@@file_list_folder,name)
+            age_sec=(Time.now - File.stat(file_path).mtime).to_i
+            # check age of file, delete too old
+            if File.file?(file_path) and age_sec > FILE_LIST_AGE_MAX_SEC
+              Log.log.debug("garbage collecting #{name}")
+              File.delete(file_path)
+            end
           end
         end
       end

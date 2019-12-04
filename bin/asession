@@ -6,8 +6,10 @@ require 'asperalm/cli/listener/line_dump'
 require 'asperalm/cli/extended_value'
 require 'asperalm/log'
 require 'json'
-
+# extended transfer spec parameter to change log level
 TS_LOGLEVEL='EX_loglevel'
+# by default go to /tmp/username.filelist
+TS_TMP_FILELIST_FOLDER='EX_file_list_folder'
 
 def assert_usage(assertion,errmsg)
   return if assertion
@@ -57,6 +59,11 @@ assert_usage(transfer_spec.is_a?(Hash),"the value must be a hash table#{paramete
 if transfer_spec.has_key?(TS_LOGLEVEL)
   Asperalm::Log.instance.level=transfer_spec[TS_LOGLEVEL]
   transfer_spec.delete(TS_LOGLEVEL)
+end
+# possibly override temp folder
+if transfer_spec.has_key?(TS_TMP_FILELIST_FOLDER)
+  Asperalm::Fasp::Parameters.file_list_folder=transfer_spec[TS_TMP_FILELIST_FOLDER]
+  transfer_spec.delete(TS_TMP_FILELIST_FOLDER)
 end
 # get local agent (ascp)
 client=Asperalm::Fasp::Local.instance

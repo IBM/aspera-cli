@@ -1,4 +1,6 @@
 require 'singleton'
+require 'fileutils'
+
 module Asperalm
   # create a temp file name for a given folder
   # files can be deleted on process exit by calling cleanup
@@ -7,12 +9,14 @@ module Asperalm
     def initialize
       @created_files=[]
     end
+
     def temp_filelist_path(temp_folder)
       FileUtils::mkdir_p(temp_folder) unless Dir.exist?(temp_folder)
       new_file=File.join(temp_folder,SecureRandom.uuid)
       @created_files.push(new_file)
       return new_file
     end
+
     def cleanup
       @created_files.each do |filepath|
         File.delete(filepath)
