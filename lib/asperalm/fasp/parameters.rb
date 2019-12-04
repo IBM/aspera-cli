@@ -16,7 +16,7 @@ module Asperalm
       # temp folder for file lists, must contain only file lists
       # because of garbage collection takes any file there
       # this could be refined, as , for instance, on macos, temp folder is already user specific
-      @@file_list_folder=File.join(Etc.systmpdir,Etc.getlogin)
+      @@file_list_folder=File.join(Etc.systmpdir,Etc.getlogin)+'_asession_filelists'
       SEC_IN_DAY=86400
       # assume no transfer last longer than this
       # (garbage collect file list which were not deleted after transfer)
