@@ -667,7 +667,7 @@ A (forward) proxy may be used for two reasons:
 
 To specify a HTTP proxy, set the HTTP_PROXY environment variable (or HTTPS_PROXY), those are honoured by Ruby when calling REST APIs.
 
-To specify a FASP proxy with "local" agent, set the appropriate transfer spec parameter or ascp parameter in transfer spec. (not possible with node agent or connect agent).
+To specify a FASP proxy with "local" agent, set the appropriate [_transfer-spec_](#transferspec) parameter or ascp parameter in [_transfer-spec_](#transferspec). (not possible with node agent or connect agent).
 
 The `fpac` option allows specification of a Proxy Auto Configuration (PAC) file, by its URL for local FASP agent. Supported schemes are : http:, https: and file:.
 
@@ -876,7 +876,7 @@ $ <%=cmd%> -Pdemoserver server upload --sources=@args ~/mysample.file secondfile
 
 More advanced options are provided to adapt to various cases. In fact, list of files to transfer are conveyed using the [_transfer-spec_](#transferspec) using the field: "paths" which is a list (array) of pairs of "source" (mandatory) and "destination" (optional).
 
-Note that this is different from the "ascp" command line. The paradigm used by <%=tool%> is: all transfer parameters are kept in transfer spec so that execution of a transfer is independent of the transfer agent. It is envisioned that, one day, ascp will accept a transfer spec directly.
+Note that this is different from the "ascp" command line. The paradigm used by <%=tool%> is: all transfer parameters are kept in [_transfer-spec_](#transferspec) so that execution of a transfer is independent of the transfer agent. It is envisioned that, one day, ascp will accept a [_transfer-spec_](#transferspec) directly.
 
 For ease of use and flexibility, the list of files to transfer is specified by the option `sources`. The accepted values are:
 
@@ -896,7 +896,7 @@ For ease of use and flexibility, the list of files to transfer is specified by t
 --sources=@ts --ts=@json:'{"paths":[{"source":"file1"},{"source":"file2"}]}'
 ```
 
-* Although not recommended, because it applies *only* to the `local` transfer agent (i.e. bare ascp), it is possible to specify bare ascp arguments using the pseudo transfer spec parameter `EX_ascp_args`. In that case, one must specify a dummy list in the transfer spec, which will be overriden by the bare ascp command line provided.
+* Although not recommended, because it applies *only* to the `local` transfer agent (i.e. bare ascp), it is possible to specify bare ascp arguments using the pseudo [_transfer-spec_](#transferspec) parameter `EX_ascp_args`. In that case, one must specify a dummy list in the [_transfer-spec_](#transferspec), which will be overriden by the bare ascp command line provided.
 
 ```
 --sources=@ts --ts=@json:'{"paths":[{"source":"dummy"}],"EX_ascp_args":["--file-list","myfilelist"]}'
@@ -2138,6 +2138,8 @@ It aims at simplifying the startup of a FASP session from a programmatic stand p
 * common to Aspera Connect API (browser javascript startTransfer)
 * easy to generate by using any third party language specific JSON library
 
+Hopefully, IBM integrates this diectly in `ascp`, and this tool is made redundant.
+
 This makes it easy to integrate with any language provided that one can spawn a sub process, write to its STDIN, read from STDOUT, generate and parse JSON.
 
 The tool expect one single argument: a [_transfer-spec_](#transferspec).
@@ -2148,6 +2150,13 @@ Note that if JSON is the format, one has to specify `@json:` to tell the tool to
 
 During execution, it generates all low level events, one per line, in JSON format on stdout.
 
+Note that there are special "extended" [_transfer-spec_](#transferspec) parameters supported by `asession`:
+
+  * `EX_loglevel` to change log level of the tool
+  * `EX_file_list_folder` to set the folder used to store (exclusively, because of garbage collection) generated file lists. By default it is `[system tmp folder]/[username]_asession_filelists`
+
+Note that in addition, many "EX_" [_transfer-spec_](#transferspec) parameters are supported for the "local" transfer agent (used by `asession`), refer to section [_transfer-spec_](#transferspec).
+ 
 ## Comparison of interfaces
 
 <table>
@@ -2170,7 +2179,7 @@ echo "${MY_TSPEC}"|asession
 
 `asession` also supports asynchronous commands (on the management port). Instead of the traditional text protocol as described in ascp manual, the format for commands is: one single line per command, formatted in JSON, where parameters shall be "snake" style, for example: `LongParameter` -&gt; `long_parameter`
 
-This is particularly useful for a persistent session ( with the transfer spec parameter: `"keepalive":true` )
+This is particularly useful for a persistent session ( with the [_transfer-spec_](#transferspec) parameter: `"keepalive":true` )
 
 ```
 $ asession
@@ -2227,7 +2236,7 @@ Note that:
 
 * <%=tool%> takes transfer parameters exclusively as a transfer_spec, with `--ts` parameter.
 * not all native ascp arguments are available as standard transfer_spec parameters
-* native ascp arguments can be provided with the transfer spec parameter: EX_ascp_args (array), only for the "local" transfer agent (not connect or node)
+* native ascp arguments can be provided with the [_transfer-spec_](#transferspec) parameter: EX_ascp_args (array), only for the "local" transfer agent (not connect or node)
 
 ### server side and configuration
 
@@ -2304,11 +2313,12 @@ As a workaround use another option, if available, to identify the entity, e.g. i
 
 # Release Notes
 
-* version 0.10.3
+* version 0.10.4
 
  	* new options for AoC : `secrets`
+ 	* ACLI-533 temp file list folder to use file lists is set by default, and used by asession
 
-* version 0.10.2
+* version 0.10.3
 
 	* included user name in oauth bearer token cache for AoC when JWT is used.
 
@@ -2446,7 +2456,7 @@ As a workaround use another option, if available, to identify the entity, e.g. i
 
 * version 0.9.7
 
-  * homogeneous transfer spec for node and local
+  * homogeneous [_transfer-spec_](#transferspec) for node and local
   * preview persistency goes to unique file by default
   * catch mxf extension in preview as video
   * Faspex: possibility to download all paclages by specifying id=ALL
