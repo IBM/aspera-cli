@@ -60,9 +60,8 @@ module Asperalm
           self.options.set_option(:private_key,'@file:'+env[:private_key_path]) if env[:private_key_path].is_a?(String)
           self.options.parse_options!
           return if env[:man_only]
-          update_aoc_api
           raise CliBadArgument,"secrets shall be Hash" unless @option_secrets.is_a?(Hash)
-          @api_aoc.add_secrets(@option_secrets)
+          update_aoc_api
         end
 
         def user_info
@@ -302,6 +301,8 @@ module Asperalm
           else raise "ERROR: unsupported auth method"
           end
           @api_aoc=OnCloud.new(aoc_rest_params)
+          # add access key secrets
+          @api_aoc.add_secrets(@option_secrets)
           return nil
         end
 
@@ -705,8 +706,9 @@ module Asperalm
               when :v3,:v4
                 res_data=@api_aoc.read(resource_instance_path)[:data]
                 # mandatory secret : we have only AK
-                self.options.get_option(:secret,:mandatory)
+                #self.options.get_option(:secret,:optional)
                 @api_aoc.add_secrets({res_data['access_key']=>@option_ak_secret}) unless @option_ak_secret.nil?
+                raise CliBadArgument,"Please provide either option secret or secrets"  unless @api_aoc.has_secret(res_data['access_key'])
                 api_node=@api_aoc.get_node_api(res_data)
                 return Node.new(@agents.merge(skip_basic_auth_options: true, node_api: api_node)).execute_action if command.eql?(:v3)
                 ak_data=api_node.call({:operation=>'GET',:subpath=>"access_keys/#{res_data['access_key']}",:headers=>{'Accept'=>'application/json'}})[:data]

@@ -89,6 +89,13 @@ module Asperalm
 
     def add_secrets(secrets)
       @secrets.merge!(secrets)
+      Log.log.debug("now secrets:#{secrets}")
+      nil
+    end
+
+    def has_secret(ak)
+      Log.log.debug("has key:#{ak} -> #{@secrets.has_key?(ak)}")
+      return @secrets.has_key?(ak)
     end
 
     # additional transfer spec (tags) for package information
