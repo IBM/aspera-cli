@@ -46,18 +46,6 @@ module Asperalm
         if transfer_spec['authentication'].eql?("token")
           Installation.instance.add_bypass_keys(transfer_spec)
         end
-        # multi session is a node parameter, managed here in fasp manager
-        multi_session=0
-        multi_session_udp_port_base=33001
-        if transfer_spec.has_key?('multi_session')
-          multi_session=transfer_spec['multi_session'].to_i
-          transfer_spec.delete('multi_session')
-          # TODO: check if changing fasp port is really necessary
-          if transfer_spec.has_key?('fasp_port')
-            multi_session_udp_port_base=transfer_spec['fasp_port']
-            transfer_spec.delete('fasp_port')
-          end
-        end
 
         # compute known args
         env_args=Parameters.ts_to_env_args(transfer_spec)
@@ -85,10 +73,22 @@ module Asperalm
         }
 
         Log.log.debug("starting session thread(s)")
-        if multi_session.eql?(0)
+        if !transfer_spec.has_key?('multi_session')
+          # single session for transfer : simple
           session[:thread] = Thread.new(session) {|s|transfer_thread_entry(s)}
           xfer_job[:sessions].push(session)
         else
+          # default value overriden by fasp_port
+          multi_session_udp_port_base=33001
+          multi_session=transfer_spec['multi_session'].to_i
+          raise "multi_session(#{transfer_spec['multi_session']}) shall be integer > 1" unless multi_session >= 1
+          # managed here, so delete from transfer spec
+          transfer_spec.delete('multi_session')
+          # TODO: check if changing fasp(UDP) port is really necessary, not clear from doc
+          if transfer_spec.has_key?('fasp_port')
+            multi_session_udp_port_base=transfer_spec['fasp_port']
+            transfer_spec.delete('fasp_port')
+          end
           1.upto(multi_session) do |i|
             # do deep copy (each thread has its own copy because it is modified here below and in thread)
             this_session=session.clone()
@@ -110,6 +110,8 @@ module Asperalm
         return job_id
       end # start_transfer
 
+      # wait for completion of all jobs started
+      # @return list of :success or error message
       def wait_for_transfers_completion
         Log.log.debug("wait_for_sessions: #{@jobs.values.inject(0){|m,j|m+j[:sessions].count}}")
         @mutex.synchronize do
