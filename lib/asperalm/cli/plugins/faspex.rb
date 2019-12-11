@@ -209,7 +209,7 @@ module Asperalm
                 transfer_spec=Fasp::Uri.new(transfer_uri).transfer_spec
                 transfer_spec['direction']='receive'
                 return Main.result_transfer(self.transfer.start(transfer_spec,{:src=>:node_gen3}))
-              end
+              end # public link
               # get command line parameters
               delivid=self.options.get_option(:id,:mandatory)
               mailbox=self.options.get_option(:box,:mandatory).to_s
@@ -228,8 +228,9 @@ module Asperalm
                 # skip_ids_data.select!{|id|pkg_id_uri.select{|p|p[:id].eql?(id)}}
                 pkg_id_uri.select!{|i|!skip_ids_data.include?(i[:id])}
               else
-                # I dont know which delivery id is the right one if package was receive by group
-                entry_xml=api_v3.call({:operation=>'GET',:subpath=>"#{mailbox}/#{delivid}",:headers=>{'Accept'=>'application/xml'}})[:http].body
+                # TODO: delivery id is the right one if package was receive by group
+                apibox=mailbox.eql?('inbox') ? 'received' : mailbox
+                entry_xml=api_v3.call({:operation=>'GET',:subpath=>"#{apibox}/#{delivid}",:headers=>{'Accept'=>'application/xml'}})[:http].body
                 package_entry=XmlSimple.xml_in(entry_xml, {"ForceArray" => true})
                 pkg_id_uri=[{:id=>delivid,:uri=>self.class.get_fasp_uri_from_entry(package_entry)}]
               end
