@@ -1,3 +1,4 @@
+/* demo proxy pac for Amelia */
 function FindProxyForURL(url, host) {
 	/* Normalize the URL for pattern matching */
 	url = url.toLowerCase();
@@ -49,6 +50,10 @@ function FindProxyForURL(url, host) {
 	if (url.substring(0, 5) == 'http:' || url.substring(0, 6) == 'https:'
 			|| url.substring(0, 4) == 'ftp:') {
 		return 'PROXY proxy.example.com:8080';
+	}
+
+	if (url.substring(0, 4) == 'ssh:') {
+		return 'PROXY proxy.aspera.com:9092';
 	}
 
 	return 'DIRECT';
