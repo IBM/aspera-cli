@@ -48,7 +48,9 @@ module Asperalm
           transfer_spec['paths']=resdata['dataTransfer']['files'].map { |i| {'source'=>i['name']}}
         end
         @request_id=SecureRandom.uuid
-        #transfer_spec['authentication']="token" if transfer_spec.has_key?('token')
+        # if there is a token, we ask connect client to use well known ssh private keys
+        # instead of asking password
+        transfer_spec['authentication']='token' if transfer_spec.has_key?('token')
         connect_transfer_args={
           'transfer_specs'=>[{
           'transfer_spec'=>transfer_spec,

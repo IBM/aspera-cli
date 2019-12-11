@@ -349,7 +349,7 @@ module Asperalm
                 end
               end
             end
-            data['keypass']=Fasp::Installation.instance.add_bypass_keys({})['remote_password']
+            data['keypass']=Fasp::Installation.instance.bypass_keys.shift
             return {:type=>:single_object, :data=>data}
           when :products
             command=self.options.get_next_command([:list,:use])

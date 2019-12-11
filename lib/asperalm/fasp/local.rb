@@ -43,8 +43,12 @@ module Asperalm
         end
         Log.dump('ts',transfer_spec)
         # add bypass keys when authentication is token
-        if transfer_spec['authentication'].eql?("token")
-          Installation.instance.add_bypass_keys(transfer_spec)
+        if transfer_spec.has_key?('token') and
+        !transfer_spec.has_key?('remote_password') and
+        !transfer_spec.has_key?('EX_ssh_key_paths')
+          keys=Installation.instance.bypass_keys
+          transfer_spec['remote_password'] = keys.shift
+          transfer_spec['EX_ssh_key_paths'] = keys
         end
 
         # compute known args
