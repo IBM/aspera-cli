@@ -25,31 +25,33 @@ module Asperalm
       # or select one from installed_products()
       def use_ascp_from_product(product_name)
         if product_name.eql?(FIRST_FOUND)
-          p=installed_products.first
-          raise "no FASP installation found\nPlease check manual on how to install FASP." if p.nil?
+          pl=installed_products.first
+          raise "no FASP installation found\nPlease check manual on how to install FASP." if pl.nil?
         else
-          p=installed_products.select{|i|i[:name].eql?(product_name)}.first
-          raise "no such product installed: #{product_name}" if p.nil?
+          pl=installed_products.select{|i|i[:name].eql?(product_name)}.first
+          raise "no such product installed: #{product_name}" if pl.nil?
         end
-        sub_bin = p[:sub_bin] || BIN_SUBFOLDER
-        exec_ext = OpenApplication.current_os_type.eql?(:windows) ? '.exe' : ''
-        @ascp_path=File.join(p[:app_root],sub_bin,'ascp')+exec_ext
+        @ascp_path=pl[:ascp_path]
         Log.log.debug("ascp_path=#{@ascp_path}")
       end
 
       # @return the list of installed products in format of product_locations
       def installed_products
         if @found_products.nil?
-          @found_products=product_locations.select do |l|
-            next false unless Dir.exist?(l[:app_root])
-            Log.log.debug("found #{l[:app_root]}")
-            product_info_file="#{l[:app_root]}/#{PRODUCT_INFO}"
+          @found_products=product_locations.select do |pl|
+            next false unless Dir.exist?(pl[:app_root])
+            Log.log.debug("found #{pl[:app_root]}")
+            sub_bin = pl[:sub_bin] || BIN_SUBFOLDER
+            exec_ext = OpenApplication.current_os_type.eql?(:windows) ? '.exe' : ''
+            pl[:ascp_path]=File.join(pl[:app_root],sub_bin,'ascp')+exec_ext
+            next false unless File.exist?(pl[:ascp_path])
+            product_info_file="#{pl[:app_root]}/#{PRODUCT_INFO}"
             if File.exist?(product_info_file)
               res_s=XmlSimple.xml_in(File.read(product_info_file),{"ForceArray"=>false})
-              l[:name]=res_s['name']
-              l[:version]=res_s['version']
+              pl[:name]=res_s['name']
+              pl[:version]=res_s['version']
             else
-              l[:name]=l[:expected]
+              pl[:name]=pl[:expected]
             end
             true # select this version
           end
