@@ -69,7 +69,7 @@ module Asperalm
         'lock_rate_policy'        => { :type => :ignore, :accepted_types=>Asperalm::CommandLineBuilder::BOOLEAN_CLASSES},
         'lock_min_rate'           => { :type => :ignore, :accepted_types=>Asperalm::CommandLineBuilder::BOOLEAN_CLASSES},
         'lock_target_rate'        => { :type => :ignore, :accepted_types=>Asperalm::CommandLineBuilder::BOOLEAN_CLASSES},
-        'authentication'          => { :type => :ignore, :accepted_types=>String}, # = token
+        #'authentication'          => { :type => :ignore, :accepted_types=>String}, # = token
         'https_fallback_port'     => { :type => :ignore, :accepted_types=>Integer}, # same as http fallback, option -t ?
         'content_protection'      => { :type => :ignore, :accepted_types=>String},
         'cipher_allowed'          => { :type => :ignore, :accepted_types=>String},
