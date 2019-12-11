@@ -574,6 +574,7 @@ module Asperalm
             end
             throw "Error"
           when :automation
+            Log.log.warn("BETA: work under progress")
             # automation api is not in the same place
             automation_rest_params=@api_aoc.params.clone
             automation_rest_params[:base_url].gsub!('/api/','/automation/')
@@ -591,6 +592,7 @@ module Asperalm
               when :launch
                 wf_id=self.options.get_option(:id,:mandatory)
                 data=automation_api.create("workflows/#{wf_id}/launch",{})[:data]
+                return {:type=>:single_object,:data=>data}
               when :action
                 wf_command=self.options.get_next_command([:list,:create,:show])
                 wf_id=self.options.get_option(:id,:mandatory)
