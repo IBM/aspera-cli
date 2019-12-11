@@ -830,7 +830,7 @@ is described in a _transfer-spec_ (Transfer Specification), such as:
 
 If needed, it is possible to modify or add any of the supported _transfer-spec_ parameter using the `ts` option. The `ts` option accepts a [Structured Value](#native) containing one or several _transfer-spec_ parameters.
 
-It is possible to specify ascp options when the `transfer` option is set to `direct` using the special [_transfer-spec_](#transferspec) parameter: `EX_ascp_args`. Example: `--ts=@json:'{"EX_ascp_args":["-l","100m"]}'`.
+It is possible to specify ascp options when the `transfer` option is set to `direct` using the special [_transfer-spec_](#transferspec) parameter: `EX_ascp_args`. Example: `--ts=@json:'{"EX_ascp_args":["-l","100m"]}'`. This is espacially useful for ascp command line parameters not supported yet in the transfer spec.
 
 The use of a _transfer-spec_ instead of `ascp` parameters has the advantage of:
 
@@ -2294,24 +2294,11 @@ So, it evolved into <%=tool%>:
 
 
 
-# BUGS
-
-* This is best effort code without official support, dont expect full capabilities. This code is not supported by IBM/Aspera. You can contact the author for bugs or features.
-
-* If you get message:
-
-```
-OpenSSH keys only supported if ED25519 is available
-```
-
-This means that you do not have ruby support for ED25519 SSH keys. You may either install the suggested
-Gems, or remove your ed25519 key from your `.ssh` folder to solve the issue. Note, this is temporarily fixed in version 0.9.24, but those type of key will just be ignored.
-(Note: the CLI deactivates this key type to avoid this problem).
-
-* It is not possible to have two options with the same name on the command line. For instance, if an entity is identified by the option `id` but later on the command line another `id` option is required, the later will override the earlier one, and both entity will use the same id.
-As a workaround use another option, if available, to identify the entity, e.g. identify the node by name instead of id.
-
 # Release Notes
+
+* version 0.10.5
+
+	* fix faspex package receive command not working
 
 * version 0.10.4
 
@@ -2532,6 +2519,29 @@ some commands take now --id option instead of id command.
 * Version 0.6.15
 * 
 Breaking change: "files" application renamed to "aspera" (for "Aspera on Cloud"). "repository" renamed to "files". Default is automatically reset, e.g. in config files and change key "files" to "aspera" in <%=prst%> "default".
+
+# BUGS
+
+* This is best effort code without official support, dont expect full capabilities. This code is not supported by IBM/Aspera. You can contact the author for bugs or features.
+
+## 
+
+It is not possible to have two options with the same name on the command line. For instance, if an entity is identified by the option `id` but later on the command line another `id` option is required, the later will override the earlier one, and both entity will use the same id.
+As a workaround use another option, if available, to identify the entity, e.g. identify the node by name instead of id.
+
+
+## ED255519 key not supported
+
+ED255519 keys are deactivated since version 0.9.24 so this type of key will just be ignored.
+Without this deactivation, if such key was present the following error was generated:
+
+```
+OpenSSH keys only supported if ED25519 is available
+```
+
+Which meant that you do not have ruby support for ED25519 SSH keys.
+You may either install the suggested Gems, or remove your ed25519 key from your `.ssh` folder to solve the issue.
+
 
 # TODO
 
