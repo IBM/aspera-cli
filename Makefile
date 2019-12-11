@@ -221,43 +221,47 @@ t/serv3:
 	@touch $@
 tfasp: t/serv_browse t/serv_mkdir t/serv_upload t/serv_md5 t/serv_down_lcl t/serv_down_from_node t/serv_cp t/serv_mv t/serv_delete t/serv_cleanup1 t/serv_info t/serv_du t/serv_df t/asession t/serv_nodeadmin t/serv_nagios_webapp t/serv_nagios_transfer t/serv3
 
-t/fx1:
+t/fx_plst:
 	@echo $@
 	$(EXETEST) faspex package list
 	@touch $@
-t/fx2:
+t/fx_psnd:
 	@echo $@
 	$(EXETEST) faspex package send --delivery-info=@json:'{"title":"'"$(CURRENT_DATE)"'","recipients":["laurent.martin.aspera@fr.ibm.com"]}' $(CLIENT_DEMOFILE_PATH)
 	@touch $@
-t/fx3: $(LOCAL_FOLDER)/.exists
+t/fx_prs: $(LOCAL_FOLDER)/.exists
 	@echo $@
-	$(EXETEST) faspex package recv --to-folder=$(LOCAL_FOLDER) --id=$$($(EXETEST) faspex package list --fields=delivery_id --format=csv --box=sent|tail -n 1) --box=sent
+	$(EXETEST) faspex package recv --box=sent --to-folder=$(LOCAL_FOLDER) --id=$$($(EXETEST) faspex package list --fields=package_id --format=csv --box=sent|tail -n 1)
 	@touch $@
-t/fx4:
+t/fx_pri: $(LOCAL_FOLDER)/.exists
+	@echo $@
+	$(EXETEST) faspex package recv --to-folder=$(LOCAL_FOLDER) --id=$$($(EXETEST) faspex package list --fields=package_id --format=csv|tail -n 1)
+	@touch $@
+t/fx_prl:
 	@echo $@
 	-$(EXETEST) faspex package recv --link='$(FASPEX_PUBLINK_RECV_PACKAGE)'
 	@touch $@
-t/fx4b:
+t/fx_prall: $(LOCAL_FOLDER)/.exists
+	@echo $@
+	$(EXETEST) faspex package recv --to-folder=$(LOCAL_FOLDER) --id=ALL --once-only=yes
+	@touch $@
+t/fx_pslu:
 	@echo $@
 	$(EXETEST) faspex package send --link='$(FASPEX_PUBLINK_SEND_TO_USER)' --delivery-info=@json:'{"title":"'"$(CURRENT_DATE)"'"}' $(CLIENT_DEMOFILE_PATH)
 	@touch $@
-t/fx4c:
+t/fx_psld:
 	@echo $@
 	$(EXETEST) faspex package send --link='$(FASPEX_PUBLINK_SEND_DROPBOX)' --delivery-info=@json:'{"title":"'"$(CURRENT_DATE)"'"}' $(CLIENT_DEMOFILE_PATH)
 	@touch $@
-t/fx5:
+t/fx_storage:
 	@echo $@
 	$(EXETEST) faspex source name "Server Files" node br /
-	@touch $@
-t/fx6: $(LOCAL_FOLDER)/.exists
-	@echo $@
-	$(EXETEST) faspex package recv --to-folder=$(LOCAL_FOLDER) --id=ALL --once-only=yes
 	@touch $@
 t/fx_nagios:
 	@echo $@
 	$(EXETEST) faspex nagios_check
 	@touch $@
-tfaspex: t/fx1 t/fx2 t/fx3 t/fx4 t/fx4b t/fx4c t/fx5 t/fx6 t/fx_nagios
+tfaspex: t/fx_plst t/fx_psnd t/fx_prs t/fx_pri t/fx_prl t/fx_pslu t/fx_psld t/fx_storage t/fx_prall t/fx_nagios
 
 t/cons1:
 	@echo $@
