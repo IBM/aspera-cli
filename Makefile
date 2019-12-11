@@ -12,7 +12,7 @@ CONNECT_DOWNLOAD_FOLDER=$(HOME)/Desktop
 EXETESTB=$(BINDIR)/$(EXENAME)
 # this config file contains credentials of platforms used for tests
 MLIA_CONFIG_FILE=$(DEV_FOLDER)/local/test.mlia.conf
-EXETEST=$(EXETESTB) -w --config-file=$(MLIA_CONFIG_FILE)
+EXETEST=$(EXETESTB) --warnings --config-file=$(MLIA_CONFIG_FILE)
 GEMNAME=asperalm
 GEMVERSION=$(shell $(EXETEST) --version)
 GEM_FILENAME=$(GEMNAME)-$(GEMVERSION).gem
@@ -890,6 +890,7 @@ setupprev:
 # ruby -e 'require "yaml";YAML.load_file("lib/asperalm/preview_generator_formats.yml").each {|k,v|puts v};'|while read x;do touch /Users/xfer/docroot/sample${x};done
 
 preparelocal:
+	sudo asnodeadmin --reload
 	sudo asnodeadmin -a -u node_xfer -p $(NODE_PASS) -x xfer
 	sudo asconfigurator -x "user;user_name,xfer;file_restriction,|*;absolute,"
 	sudo asnodeadmin --reload
