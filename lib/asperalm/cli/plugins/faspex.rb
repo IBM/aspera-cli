@@ -212,7 +212,6 @@ module Asperalm
               end # public link
               # get command line parameters
               delivid=self.options.get_option(:id,:mandatory)
-              mailbox=self.options.get_option(:box,:mandatory).to_s
               # list of faspex ID/URI to download
               pkg_id_uri=nil
               skip_ids_data=[]
@@ -224,13 +223,12 @@ module Asperalm
               end
               if delivid.eql?(VAL_ALL)
                 pkg_id_uri=mailbox_all_entries.map{|i|{:id=>i[PACKAGE_MATCH_FIELD],:uri=>self.class.get_fasp_uri_from_entry(i)}}
-                # todo : remove ids from skip not present in inbox
+                # TODO : remove ids from skip not present in inbox
                 # skip_ids_data.select!{|id|pkg_id_uri.select{|p|p[:id].eql?(id)}}
                 pkg_id_uri.select!{|i|!skip_ids_data.include?(i[:id])}
               else
                 # TODO: delivery id is the right one if package was receive by group
-                apibox=mailbox.eql?('inbox') ? 'received' : mailbox
-                entry_xml=api_v3.call({:operation=>'GET',:subpath=>"#{apibox}/#{delivid}",:headers=>{'Accept'=>'application/xml'}})[:http].body
+                entry_xml=api_v3.call({:operation=>'GET',:subpath=>"received/#{delivid}",:headers=>{'Accept'=>'application/xml'}})[:http].body
                 package_entry=XmlSimple.xml_in(entry_xml, {"ForceArray" => true})
                 pkg_id_uri=[{:id=>delivid,:uri=>self.class.get_fasp_uri_from_entry(package_entry)}]
               end
