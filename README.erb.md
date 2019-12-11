@@ -2296,6 +2296,11 @@ So, it evolved into <%=tool%>:
 
 # Release Notes
 
+* version 0.10.6
+
+	* FaspManager: transfer spec `authentication` no more needed for local tranfer to use aspera public keys. public keys will be used if there is a token and no key or password is provided.
+	* gem version requirements made more open
+
 * version 0.10.5
 
 	* fix faspex package receive command not working
@@ -2524,10 +2529,16 @@ Breaking change: "files" application renamed to "aspera" (for "Aspera on Cloud")
 
 * This is best effort code without official support, dont expect full capabilities. This code is not supported by IBM/Aspera. You can contact the author for bugs or features.
 
-## 
+## only one value for any option
 
-It is not possible to have two options with the same name on the command line. For instance, if an entity is identified by the option `id` but later on the command line another `id` option is required, the later will override the earlier one, and both entity will use the same id.
-As a workaround use another option, if available, to identify the entity, e.g. identify the node by name instead of id.
+Some commands and sub commands may ask for the same option name. 
+Currently, since option definition is position independant (last one wins), it is not possible
+to give an option to a command and the same option with different value to a sub command.
+
+For instance, if an entity is identified by the option `id` but later on the command line another `id` option is required, the later will override the earlier one, and both entity will use the same id.
+As a workaround use another option, if available, to identify the entity.
+
+This happens typically for the `node` sub command, e.g. identify the node by name instead of id.
 
 
 ## ED255519 key not supported
@@ -2557,6 +2568,8 @@ You may either install the suggested Gems, or remove your ed25519 key from your 
 * deliveries to dropboxes
 
 * Going through proxy: use env var http_proxy and https_proxy, no_proxy
+
+* easier use with https://github.com/pmq20/ruby-packer
 
 # Contribution
 
