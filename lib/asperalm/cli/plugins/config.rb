@@ -88,6 +88,7 @@ module Asperalm
           self.options.add_opt_simple(:smtp,"smtp configuration (extended value: hash)")
           self.options.add_opt_simple(:fpac,"proxy auto configuration URL")
           self.options.add_opt_simple(:preset,"-PVALUE","load the named option preset from current config file")
+          self.options.add_opt_simple(:default,"set as default configuration for specified plugin")
           self.options.add_opt_boolean(:test_mode,"skip user validation in wizard mode")
           self.options.set_option(:use_generic_client,true)
           self.options.set_option(:test_mode,false)
@@ -414,11 +415,16 @@ module Asperalm
               save_presets_to_config_file
               return Main.result_status("modified: #{@option_config_file}")
             when :update
-              #  TODO: when arguments are provided: --option=value, this creates an entry in the named configuration
+              default_for_plugin=self.options.get_option(:default,:optional)
+              #  get unprocessed options
               theopts=self.options.get_options_table
               Log.log.debug("opts=#{theopts}")
-              @config_presets[config_name]={} if !@config_presets.has_key?(config_name)
+              @config_presets[config_name]||={}
               @config_presets[config_name].merge!(theopts)
+              if ! default_for_plugin.nil?
+                @config_presets[CONF_PRESET_DEFAULT]||=Hash.new
+                @config_presets[CONF_PRESET_DEFAULT][default_for_plugin]=config_name
+              end
               save_presets_to_config_file
               return Main.result_status("updated: #{config_name}")
             when :ask
