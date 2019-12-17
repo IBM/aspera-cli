@@ -21,6 +21,8 @@ end
 
 module Asperalm
   # a simple class to make HTTP calls, equivalent to rest-client
+  # rest call errors are raised as exception RestCallError
+  # and error are analyzed in RestErrorAnalyzer
   class Rest
 
     private
