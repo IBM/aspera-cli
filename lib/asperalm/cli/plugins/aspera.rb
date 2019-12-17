@@ -143,6 +143,8 @@ module Asperalm
             result=node_api.delete("files/#{node_file[:file_id]}")[:data]
             return Main.result_status("deleted: #{thepath}")
           when :transfer
+            # client side is agent
+            # server side is protocol server
             # in same workspace
             server_home_node_file=client_home_node_file=top_node_file
             case self.options.get_option(:operation,:mandatory)
@@ -155,20 +157,19 @@ module Asperalm
               client_folder=self.transfer.destination_folder(client_tr_oper)
               server_folder=self.options.get_option(:from_folder,:mandatory)
             end
-            node_file_client = @api_aoc.resolve_node_file(client_home_node_file,client_folder)
-            node_file_server = @api_aoc.resolve_node_file(server_home_node_file,server_folder)
+            client_node_file = @api_aoc.resolve_node_file(client_home_node_file,client_folder)
+            server_node_file = @api_aoc.resolve_node_file(server_home_node_file,server_folder)
             # force node as agent
             self.options.set_option(:transfer,:node)
             # force node api in node agent
-            Fasp::Node.instance.node_api=@api_aoc.get_node_api(node_file_client[:node_info],OnCloud::SCOPE_NODE_USER)
+            Fasp::Node.instance.node_api=@api_aoc.get_node_api(client_node_file[:node_info],OnCloud::SCOPE_NODE_USER)
             # additional node to node TS info
             add_ts={
-              'remote_access_key'   => node_file_server[:node_info]['access_key'],
-              'destination_root_id' => node_file_server[:file_id],
-              'source_root_id'      => node_file_client[:file_id]
+              'remote_access_key'   => server_node_file[:node_info]['access_key'],
+              'destination_root_id' => server_node_file[:file_id],
+              'source_root_id'      => client_node_file[:file_id]
             }
-            return Main.result_transfer(transfer_start(OnCloud::FILES,client_tr_oper,node_file_server,add_ts))
-            #bad: return Main.result_transfer(transfer_start(OnCloud::FILES,client_tr_oper,node_file_client,add_ts))
+            return Main.result_transfer(transfer_start(OnCloud::FILES,client_tr_oper,server_node_file,add_ts))
           when :upload
             node_file = @api_aoc.resolve_node_file(top_node_file,self.transfer.destination_folder('send'))
             add_ts={'tags'=>{'aspera'=>{'files'=>{'parentCwd'=>"#{node_file[:node_info]['id']}:#{node_file[:file_id]}"}}}}
@@ -256,10 +257,7 @@ module Asperalm
           raise CliBadArgument,'too many redirections'
         end
 
-        # Create a new AoC API REST object and set @api_aoc.
-        # Parameters based on command line options
-        # @return nil
-        def update_aoc_api
+        def aoc_rest_params
 
           # if auth is a public link
           # option "link" is a shortcut for options: url, auth, public_token
@@ -267,8 +265,8 @@ module Asperalm
 
           # Connection paramaters (url and auth) to Aspera on Cloud
           # pre populate rest parameters based on URL
-          aoc_rest_params=OnCloud.base_rest_params(self.options.get_option(:url,:mandatory))
-          aoc_rest_auth=aoc_rest_params[:auth]
+          res_rest_params=OnCloud.base_rest_params(self.options.get_option(:url,:mandatory))
+          aoc_rest_auth=res_rest_params[:auth]
           aoc_rest_auth.merge!({
             :grant         => self.options.get_option(:auth,:mandatory),
             :client_id     => self.options.get_option(:client_id,:mandatory),
@@ -300,6 +298,13 @@ module Asperalm
             })
           else raise "ERROR: unsupported auth method"
           end
+          return res_rest_params
+        end
+
+        # Create a new AoC API REST object and set @api_aoc.
+        # Parameters based on command line options
+        # @return nil
+        def update_aoc_api
           @api_aoc=OnCloud.new(aoc_rest_params)
           # add access key secrets
           @api_aoc.add_secrets(@option_secrets)
@@ -611,8 +616,63 @@ module Asperalm
           when :admin
             self.options.set_option(:scope,OnCloud::SCOPE_FILES_ADMIN)
             update_aoc_api
-            command_admin=self.options.get_next_command([ :ats, :resource, :usage_reports, :search_nodes, :events ])
+            command_admin=self.options.get_next_command([ :ats, :resource, :usage_reports, :search_nodes, :events, :subscription ])
             case command_admin
+            when :subscription
+              org=@api_aoc.read('organization')[:data]
+              bss_rest_param=aoc_rest_params
+              bss_rest_param[:base_url].gsub!('api/v1','bss/platform')
+              bss_api=Rest.new(bss_rest_param)
+              graphql_query="
+      query ($organization_id: ID!) {
+        aoc (organization_id: $organization_id) {
+          bssSubscription {
+            endDate
+            startDate
+            termMonths
+            plan
+            trial
+            termType
+            instances {
+              id
+              entitlements {
+                maxUsageMb
+              }
+            }
+            additionalStorageVolumeGb
+            additionalEgressVolumeGb
+            additionalUsers
+            term {
+              startDate
+              endDate
+              transferVolumeGb
+              egressVolumeGb
+              storageVolumeGb
+            }
+            paygoRate {
+              rate
+              currency
+            }
+            aocPlanData {
+              tier
+              trial
+              workspaces { max }
+              users {
+                planAmount
+                max
+              }
+              samlIntegration
+              activity
+              sharedInboxes
+              uniqueUrls
+              support
+            }
+          }
+        }
+      }
+    "
+              result=bss_api.create('graphql',{'variables'=>{'organization_id'=>org['id']},'query'=>graphql_query})[:data]['data']
+              return {:type=>:single_object,:data=>result['aoc']['bssSubscription']}
             when :ats
               ats_api = Rest.new(@api_aoc.params.deep_merge({
                 :base_url => @api_aoc.params[:base_url]+'/admin/ats/pub/v1',
