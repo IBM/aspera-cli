@@ -97,7 +97,22 @@ module Asperalm
             end
           when :aoc
             @agent=Fasp::Aoc.instance
-            node_config=@opt_mgr.get_option(:transfer_info,:optional)
+            aoc_config=@opt_mgr.get_option(:transfer_info,:optional)
+            if aoc_config.nil?
+              param_set_name=@env[:config].get_plugin_default_config_name(:aspera)
+              raise CliBadArgument,"No default AoC configured, Please specify --#{:transfer_info.to_s.gsub('_','-')}" if param_set_name.nil?
+              aoc_config=@env[:config].preset_by_name(param_set_name)
+            end
+            Log.log.debug("aoc=#{aoc_config}")
+            raise CliBadArgument,"the node configuration shall be Hash, not #{aoc_config.class} (#{aoc_config}), use either @json:<json> or @preset:<parameter set name>" if !aoc_config.is_a?(Hash)
+            # now check there are required parameters
+            sym_config=[:url,:subject].inject({}) do |h,param|
+              raise CliBadArgument,"missing parameter [#{param}] in node specification: #{aoc_config}" if !aoc_config.has_key?(param.to_s)
+              h[param]=aoc_config[param.to_s]
+              h
+            end
+    #@agent.node_api=OnCloud.new(aoc_rest_params)
+            raise "UNDER WORK"
           else raise "INTERNAL ERROR"
           end
           @agent.add_listener(Listener::Logger.new)
@@ -162,7 +177,7 @@ module Asperalm
         when :pair
           raise CliBadArgument,"whe using pair, provide even number of paths: #{file_list.length}" unless file_list.length.even?
           @transfer_paths=file_list.each_slice(2).to_a.map{|s,d|{'source'=>s,'destination'=>d}}
-       else raise "ERROR"
+        else raise "ERROR"
         end
         Log.log.debug("paths=#{@transfer_paths}")
         return @transfer_paths
