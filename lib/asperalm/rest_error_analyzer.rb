@@ -5,6 +5,7 @@ require 'json'
 
 module Asperalm
   # builds a meaningful error message from known formats in Aspera products
+  # TODO: probably too monolithic..
   class RestErrorAnalyzer
     attr_reader :messages
     attr_reader :request
