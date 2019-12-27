@@ -1,5 +1,6 @@
 require 'singleton'
 require 'fileutils'
+require 'etc'
 
 module Asperalm
   # create a temp file name for a given folder
@@ -22,6 +23,11 @@ module Asperalm
         File.delete(filepath)
       end
       @created_files=[]
+    end
+    
+    def global_tmpfile_path(some_name)
+      username = Etc.getlogin || Etc.getpwuid(Process.uid).name
+      return File.join(Etc.systmpdir,username)+'_'+some_name
     end
   end
 end
