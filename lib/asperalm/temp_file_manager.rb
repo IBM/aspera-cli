@@ -24,9 +24,9 @@ module Asperalm
       end
       @created_files=[]
     end
-    
+
     def global_tmpfile_path(some_name)
-      username = Etc.getlogin || Etc.getpwuid(Process.uid).name
+      username = Etc.getlogin || Etc.getpwuid(Process.uid).name || 'unknown' rescue 'unknown'
       return File.join(Etc.systmpdir,username)+'_'+some_name
     end
   end
