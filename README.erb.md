@@ -2296,6 +2296,10 @@ So, it evolved into <%=tool%>:
 
 # Release Notes
 
+* version 0.10.7
+
+	* fix: mlia fails when username cannot be computed on Linux.
+
 * version 0.10.6
 
 	* FaspManager: transfer spec `authentication` no more needed for local tranfer to use aspera public keys. public keys will be used if there is a token and no key or password is provided.
