@@ -28,21 +28,21 @@ module Asperalm
       attr_accessor :resume_policy_parameters
       # start FASP transfer based on transfer spec (hash table)
       # note that it is asynchronous
-      def start_transfer(transfer_spec,options=nil)
-        options||={}
+      def start_transfer(transfer_spec,options={})
         raise "option: must be hash (or nil)" unless options.is_a?(Hash)
         job_id=options[:job_id] || SecureRandom.uuid
+        # if there is aspera tags
         if transfer_spec['tags'].is_a?(Hash) and transfer_spec['tags']['aspera'].is_a?(Hash)
           # TODO: what is this for ? only on local ascp ?
           # NOTE: important: transfer id must be unique: generate random id
           # using a non unique id results in discard of tags in AoC, and a package is never finalized
-          transfer_spec['tags']['aspera']['xfer_id']=SecureRandom.uuid
+          transfer_spec['tags']['aspera']['xfer_id']||=SecureRandom.uuid
           Log.log.debug "xfer id=#{transfer_spec['xfer_id']}"
           # TODO: useful ? node only ?
           transfer_spec['tags']['aspera']['xfer_retry']||=3600
         end
         Log.dump('ts',transfer_spec)
-        # add bypass keys when authentication is token
+        # add bypass keys when authentication is token and no auth is provided
         if transfer_spec.has_key?('token') and
         !transfer_spec.has_key?('remote_password') and
         !transfer_spec.has_key?('EX_ssh_key_paths')
@@ -141,6 +141,8 @@ module Asperalm
             @cond_var.wait(@mutex)
           end # loop
         end # mutex
+        # never reach here
+        raise "internal error"
       end
 
       # terminates monitor thread
@@ -164,6 +166,7 @@ module Asperalm
       # raises FaspError on error
       # if there is a thread info: set and broadcast session id
       # @param env_args a hash containing :args :env :ascp_version
+      # cloud be private method
       def start_transfer_with_args_env(env_args,session=nil)
         begin
           Log.log.debug("env_args=#{env_args.inspect}")
