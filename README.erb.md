@@ -658,18 +658,13 @@ a text editor for file edition.
 * `--ui=text` forces a text environment, the URL or file path to open is displayed on
 terminal.
 
-## Using HTTP and FASP Proxy
-
-A (forward) proxy may be used for two reasons:
-
-* HTTP/S requests
-* FASP transfers
+## HTTP proxy for REST
 
 To specify a HTTP proxy, set the HTTP_PROXY environment variable (or HTTPS_PROXY), those are honoured by Ruby when calling REST APIs.
 
-To specify a FASP proxy with "local" agent, set the appropriate [_transfer-spec_](#transferspec) parameter or ascp parameter in [_transfer-spec_](#transferspec). (not possible with node agent or connect agent).
+## Proxy auto config (BETA)
 
-The `fpac` option allows specification of a Proxy Auto Configuration (PAC) file, by its URL for local FASP agent. Supported schemes are : http:, https: and file:.
+BETA: The `fpac` option allows specification of a Proxy Auto Configuration (PAC) file, by its URL for local FASP agent. Supported schemes are : http:, https: and file:.
 
 The PAC file can be tested with command: `config proxy_check` , example:
 
@@ -677,6 +672,8 @@ The PAC file can be tested with command: `config proxy_check` , example:
 $ <%=cmd%> config proxy_check --fpac=file:///./proxy.pac http://www.example.com
 PROXY proxy.example.com:8080
 ```
+
+This is not yet implemented to specify proxy, so use env vars.
 
 ## <a name="client"></a>FASP configuration
 
@@ -794,6 +791,12 @@ files to the related server from the agent node.
 By default the CLI will use a local FASP protocol.
 <%=tool%> will detect locally installed Aspera products.
 Refer to section [FASP](#client). 
+
+To specify a FASP proxy (only supported with the `direct` agent), set the appropriate [_transfer-spec_](#transferspec) parameter:
+
+* `EX_fasp_proxy_url`
+* `EX_http_proxy_url` (proxy for legacy http fallback)
+* `EX_ascp_args`
 
 ### IBM Aspera Connect Client GUI
 
@@ -2295,6 +2298,11 @@ So, it evolved into <%=tool%>:
 
 
 # Release Notes
+
+* version 0.10.8
+
+	* removed option: `fasp_proxy`, use pseudo transfer spec parameter: `EX_fasp_proxy_url`
+	* removed option: `http_proxy`, use pseudo transfer spec parameter: `EX_http_proxy_url`
 
 * version 0.10.7
 
