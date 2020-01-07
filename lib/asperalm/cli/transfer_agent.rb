@@ -2,26 +2,28 @@ require 'asperalm/fasp/local'
 require 'asperalm/fasp/connect'
 require 'asperalm/fasp/node'
 require 'asperalm/fasp/aoc'
+require 'asperalm/fasp/http_gw'
 require 'asperalm/cli/listener/logger'
 require 'asperalm/cli/listener/progress_multi'
 
 module Asperalm
   module Cli
-    # options to select one of the transfer agents (fasp client)
+    # The Transfer agent is a common interface to start a transfer using
+    # one of the supported transfer agents
+    # provides CLI options to select one of the transfer agents (fasp client)
     class TransferAgent
-      private
-      # read file list from arguments
+      # special value for --sources : read file list from arguments
       FILE_LIST_FROM_ARGS='@args'
-      # read file list from transfer spec (--ts)
+      # special value for --sources : read file list from transfer spec (--ts)
       FILE_LIST_FROM_TRANSFER_SPEC='@ts'
       private_constant :FILE_LIST_FROM_ARGS,:FILE_LIST_FROM_TRANSFER_SPEC
-      def initialize(env)
-        # external objects: option manager, config file manager
-        @env=env
-        @opt_mgr=env[:options]
-        # custom transfer spec provided on command line
+      # @param cli_objects external objects: option manager, config file manager
+      def initialize(cli_objects)
+        @opt_mgr=cli_objects[:options]
+        @config=cli_objects[:config]
+        # transfer spec overrides provided on command line
         @transfer_spec_cmdline={}
-        # the actual selected transfer agent
+        # the currently selected transfer agent
         @agent=nil
         # source/destination pair, like "paths" of transfer spec
         @transfer_paths=nil
@@ -33,12 +35,11 @@ module Asperalm
         @opt_mgr.add_opt_simple(:sources,"list of source files (see doc)")
         @opt_mgr.add_opt_simple(:transfer_info,"additional information for transfer client")
         @opt_mgr.add_opt_list(:src_type,[:list,:pair],"type of file list")
-        @opt_mgr.add_opt_list(:transfer,[:direct,:connect,:node,:aoc],"type of transfer")
+        @opt_mgr.add_opt_list(:transfer,[:direct,:httpgw,:connect,:node,:aoc],"type of transfer")
         @opt_mgr.set_option(:transfer,:direct)
         @opt_mgr.set_option(:src_type,:list)
         @opt_mgr.parse_options!
       end
-      public
 
       def option_transfer_spec; @transfer_spec_cmdline; end
 
@@ -53,16 +54,14 @@ module Asperalm
           case agent_type
           when :direct
             @agent=Fasp::Local.instance
-            if !@opt_mgr.get_option(:fasp_proxy,:optional).nil?
-              @transfer_spec_cmdline['EX_fasp_proxy_url']=@opt_mgr.get_option(:fasp_proxy,:optional)
-            end
-            if !@opt_mgr.get_option(:http_proxy,:optional).nil?
-              @transfer_spec_cmdline['EX_http_proxy_url']=@opt_mgr.get_option(:http_proxy,:optional)
-            end
             # TODO: option to choose progress format
-            # here we disable native stdout progress
-            #@agent.quiet=true
-            Log.log.debug("#{@transfer_spec_cmdline}".red)
+            # a- @agent.quiet=false
+            # b- disable custom progress
+          when :httpgw
+            httpgw_config=@opt_mgr.get_option(:transfer_info,:mandatory)
+            raise CliBadArgument,"transfer_info must have url" unless httpgw_config.has_key?('url')
+            @agent=Fasp::HttpGW.instance
+            @agent.url=httpgw_config['url']
           when :connect
             @agent=Fasp::Connect.instance
           when :node
@@ -75,9 +74,9 @@ module Asperalm
               node_config=@opt_mgr.get_option(:transfer_info,:optional)
               # if not specified: use default node
               if node_config.nil?
-                param_set_name=@env[:config].get_plugin_default_config_name(:node)
+                param_set_name=@config.get_plugin_default_config_name(:node)
                 raise CliBadArgument,"No default node configured, Please specify --#{:transfer_info.to_s.gsub('_','-')}" if param_set_name.nil?
-                node_config=@env[:config].preset_by_name(param_set_name)
+                node_config=@config.preset_by_name(param_set_name)
               end
               Log.log.debug("node=#{node_config}")
               raise CliBadArgument,"the node configuration shall be Hash, not #{node_config.class} (#{node_config}), use either @json:<json> or @preset:<parameter set name>" if !node_config.is_a?(Hash)
@@ -99,9 +98,9 @@ module Asperalm
             @agent=Fasp::Aoc.instance
             aoc_config=@opt_mgr.get_option(:transfer_info,:optional)
             if aoc_config.nil?
-              param_set_name=@env[:config].get_plugin_default_config_name(:aspera)
+              param_set_name=@config.get_plugin_default_config_name(:aspera)
               raise CliBadArgument,"No default AoC configured, Please specify --#{:transfer_info.to_s.gsub('_','-')}" if param_set_name.nil?
-              aoc_config=@env[:config].preset_by_name(param_set_name)
+              aoc_config=@config.preset_by_name(param_set_name)
             end
             Log.log.debug("aoc=#{aoc_config}")
             raise CliBadArgument,"the node configuration shall be Hash, not #{aoc_config.class} (#{aoc_config}), use either @json:<json> or @preset:<parameter set name>" if !aoc_config.is_a?(Hash)
@@ -111,7 +110,7 @@ module Asperalm
               h[param]=aoc_config[param.to_s]
               h
             end
-    #@agent.node_api=OnCloud.new(aoc_rest_params)
+            #@agent.node_api=OnCloud.new(aoc_rest_params)
             raise "UNDER WORK"
           else raise "INTERNAL ERROR"
           end
@@ -183,13 +182,16 @@ module Asperalm
         return @transfer_paths
       end
 
-      # start a transfer
-      # plugins shall use this method
-      # @param: options[:src] specifies how destination_root is set (how transfer spec was generated)
-      # and not the default one
+      # start a transfer and wait for completion, plugins shall use this method
+      # @param transfer_spec
+      # @param options specific options for the transfer_agent
+      # options[:src] specifies how destination_root is set (how transfer spec was generated)
+      # other options are carried to specific agent
       def start(transfer_spec,options)
+        # check parameters
         raise "transfer_spec must be hash" unless transfer_spec.is_a?(Hash)
         raise "options must be hash" unless options.is_a?(Hash)
+        # process :src option
         case transfer_spec['direction']
         when 'receive'
           # init default if required in any case
@@ -213,26 +215,22 @@ module Asperalm
         # only used here
         options.delete(:src)
 
-        #  update command line paths, unless destination already has one
+        # update command line paths, unless destination already has one
         @transfer_spec_cmdline['paths']=transfer_spec['paths'] || ts_source_paths
 
         transfer_spec.merge!(@transfer_spec_cmdline)
         # create transfer agent
         self.set_agent_by_options
-        Log.log.debug("mgr is a #{@agent.class}")
+        Log.log.debug("transfer agent is a #{@agent.class}")
         @agent.start_transfer(transfer_spec,options)
-        return @agent.wait_for_transfers_completion
+        result=@agent.wait_for_transfers_completion
+        Fasp::Manager.validate_status_list(result)
+        return result
       end
 
       # shut down if agent requires it
       def shutdown
         @agent.shutdown if @agent.respond_to?(:shutdown)
-      end
-
-      # @return list of status
-      def wait_for_transfers_completion
-        raise "no transfer agent" if @agent.nil?
-        return @agent.wait_for_transfers_completion
       end
 
       # helper method for above method

@@ -141,8 +141,6 @@ module Asperalm
         @opt_mgr.add_opt_list(:format,self.class.display_formats,"output format")
         @opt_mgr.add_opt_simple(:fields,"comma separated list of fields, or #{FIELDS_ALL}, or #{FIELDS_DEFAULT}")
         @opt_mgr.add_opt_simple(:select,"select only some items in lists, extended value: hash (colum, value)")
-        @opt_mgr.add_opt_simple(:fasp_proxy,"URL of FASP proxy (dnat / dnats)")
-        @opt_mgr.add_opt_simple(:http_proxy,"URL of HTTP proxy (for http fallback)")
         @opt_mgr.add_opt_simple(:lock_port,"prevent dual execution of a command, e.g. in cron")
         @opt_mgr.add_opt_simple(:query,"additional filter for API calls (extended value) (some commands)")
         @opt_mgr.add_opt_boolean(:insecure,"do not validate HTTPS certificate")
@@ -433,9 +431,7 @@ module Asperalm
         # TODO: if not one shot, then wait for status
         #statuses=self.start(transfer_spec,options)
         worst=TransferAgent.session_status(statuses)
-        if !worst.eql?(:success)
-          raise worst
-        end
+        raise worst unless worst.eql?(:success)
         return Main.result_nothing
       end
 
