@@ -6,7 +6,7 @@ module Asperalm
 
       private
 
-      # fields decription for JSON generation
+      # fields description for JSON generation
       IntegerFields=['Bytescont','FaspFileArgIndex','StartByte','Rate','MinRate','Port','Priority','RateCap','MinRateCap','TCPPort','CreatePolicy','TimePolicy','DatagramSize','XoptFlags','VLinkVersion','PeerVLinkVersion','DSPipelineDepth','PeerDSPipelineDepth','ReadBlockSize','WriteBlockSize','ClusterNumNodes','ClusterNodeId','Size','Written','Loss','FileBytes','PreTransferBytes','TransferBytes','PMTU','Elapsedusec','ArgScansAttempted','ArgScansCompleted','PathScansAttempted','FileScansCompleted','TransfersAttempted','TransfersPassed','Delay']
       BooleanFields=['Encryption','Remote','RateLock','MinRateLock','PolicyLock','FilesEncrypt','FilesDecrypt','VLinkLocalEnabled','VLinkRemoteEnabled','MoveRange','Keepalive','TestLogin','UseProxy','Precalc','RTTAutocorrect']
       ExpectedMethod=[:text,:struct,:enhanced]
@@ -58,6 +58,11 @@ module Asperalm
       # start_transfer(transfer_spec,options) : start and wait for completion
       # wait_for_transfers_completion : wait for termination of all transfers, @return list of : :success or error message
       # optional: shutdown
+      
+      def self.validate_status_list(statuses)
+        raise "internal error: bad statuses type: #{statuses.class}" unless statuses.is_a?(Array)
+        raise "internal error: bad statuses type: #{statuses.class}" unless statuses.select{|i|!i.eql?(:success) and !i.is_a?(String)}.empty?
+      end
     end
   end
 end
