@@ -136,7 +136,6 @@ module Asperalm
               })
               statuses=self.transfer.start(probe_ts,{:src=>:direct})
               file.unlink
-              puts("#{statuses}")
               if TransferAgent.session_status(statuses).eql?(:success)
                 nagios.add_ok('transfer','ok')
               else
