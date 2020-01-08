@@ -61,7 +61,7 @@ module Asperalm
       
       def self.validate_status_list(statuses)
         raise "internal error: bad statuses type: #{statuses.class}" unless statuses.is_a?(Array)
-        raise "internal error: bad statuses type: #{statuses.class}" unless statuses.select{|i|!i.eql?(:success) and !i.is_a?(String)}.empty?
+        raise "internal error: bad statuses content: #{statuses}" unless statuses.select{|i|!i.eql?(:success) and !i.is_a?(StandardError)}.empty?
       end
     end
   end
