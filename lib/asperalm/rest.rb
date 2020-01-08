@@ -178,16 +178,23 @@ module Asperalm
           result[:http] = response
           if call_data.has_key?(:save_to_file)
             require 'ruby-progressbar'
+            total_size=result[:http]['Content-Length'].to_i
             progress=ProgressBar.create(
             :format     => '%a %B %p%% %r KB/sec %e',
             :rate_scale => lambda{|rate|rate/1024},
             :title      => 'progress',
-            :total      => result[:http]['Content-Length'].to_i)
+            :total      => total_size)
             Log.log.debug("before write file")
-            File.open(call_data[:save_to_file], "wb") do |file|
+            target_file=call_data[:save_to_file]
+            if m=response['Content-Disposition'].match(/filename="([^"]+)"/)
+              target_file=m[1]
+            end
+            File.open(target_file, "wb") do |file|
               result[:http].read_body do |fragment|
                 file.write(fragment)
-                progress.progress+=fragment.length
+                new_process=progress.progress+fragment.length
+                new_process = total_size if new_process > total_size
+                progress.progress=new_process
               end
             end
             progress=nil
