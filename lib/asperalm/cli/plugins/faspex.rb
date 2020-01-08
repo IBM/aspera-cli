@@ -22,11 +22,11 @@ module Asperalm
           @api_v3=nil
           @api_v4=nil
           super(env)
-          self.options.add_opt_simple(:link,"public link for specific operation")
-          self.options.add_opt_simple(:delivery_info,"package delivery information (extended value)")
-          self.options.add_opt_simple(:source_name,"create package from remote source (by name)")
-          self.options.add_opt_simple(:storage,"Faspex local storage definition")
-          self.options.add_opt_list(:box,[:inbox,:sent,:archive],"package box")
+          self.options.add_opt_simple(:link,'public link for specific operation')
+          self.options.add_opt_simple(:delivery_info,'package delivery information (extended value)')
+          self.options.add_opt_simple(:source_name,'create package from remote source (by name)')
+          self.options.add_opt_simple(:storage,'Faspex local storage definition')
+          self.options.add_opt_list(:box,[:inbox,:sent,:archive],'package box')
           self.options.set_option(:box,:inbox)
           self.options.parse_options!
         end
@@ -38,7 +38,7 @@ module Asperalm
             base=m[1]
             subpath=m[2]
           else
-            raise CliBadArgument, "public link does not match Faspex format"
+            raise CliBadArgument, 'public link does not match Faspex format'
           end
           port_add=publink_uri.port.eql?(publink_uri.default_port)?'':":#{publink_uri.port}"
           result={
@@ -52,11 +52,11 @@ module Asperalm
 
         # get faspe: URI from entry in xml, and fix problems..
         def self.get_fasp_uri_from_entry(entry)
-          raise CliBadArgument, "package is empty" if !entry.has_key?('link')
-          result=entry['link'].select{|e| e["rel"].eql?("package")}.first["href"]
+          raise CliBadArgument, 'package is empty' unless entry.has_key?('link')
+          result=entry['link'].select{|e| e['rel'].eql?('package')}.first['href']
           # tags in the end of URL is not well % encoded... there are "=" that should be %3D
           # TODO: enter ticket to Faspex ?
-          if m=result.match(/(=+)$/);result.gsub!(/=+$/,"#{"%3D"*m[1].length}");end
+          ###XXif m=result.match(/(=+)$/);result.gsub!(/=+$/,"#{"%3D"*m[1].length}");end
           return result
         end
 
@@ -109,7 +109,7 @@ module Asperalm
         def mailbox_all_entries
           mailbox=self.options.get_option(:box,:mandatory).to_s
           all_inbox_xml=api_v3.call({:operation=>'GET',:subpath=>"#{mailbox}.atom",:headers=>{'Accept'=>'application/xml'}})[:http].body
-          all_inbox_data=XmlSimple.xml_in(all_inbox_xml, {"ForceArray" => true})
+          all_inbox_data=XmlSimple.xml_in(all_inbox_xml, {'ForceArray' => true})
           Log.dump(:all_inbox_data,all_inbox_data)
           result=all_inbox_data.has_key?('entry') ? all_inbox_data['entry'] : []
           result.each do |e|
@@ -137,7 +137,7 @@ module Asperalm
               return {:type=>:object_list,:data=>self.mailbox_all_entries,:fields=>[PACKAGE_MATCH_FIELD,'title','items'], :textify => lambda { |table_data| Faspex.textify_package_list(table_data)} }
             when :send
               delivery_info=self.options.get_option(:delivery_info,:mandatory)
-              raise CliBadArgument,"delivery_info must be hash, refer to doc" unless delivery_info.is_a?(Hash)
+              raise CliBadArgument,'delivery_info must be hash, refer to doc' unless delivery_info.is_a?(Hash)
               package_create_params={'delivery'=>delivery_info}
               public_link_url=self.options.get_option(:link,:optional)
               if public_link_url.nil?
@@ -147,7 +147,7 @@ module Asperalm
                 first_source['paths'].push(*self.transfer.ts_source_paths.map{|i|i['source']})
                 source_name=self.options.get_option(:source_name,:optional)
                 if !source_name.nil?
-                  source_list=api_v3.call({:operation=>'GET',:subpath=>"source_shares",:headers=>{'Accept'=>'application/json'}})[:data]['items']
+                  source_list=api_v3.call({:operation=>'GET',:subpath=>'source_shares',:headers=>{'Accept'=>'application/json'}})[:data]['items']
                   source_id=self.class.get_source_id(source_list,source_name)
                   first_source['id']=source_id
                 end
@@ -156,7 +156,7 @@ module Asperalm
                   # no transfer spec if remote source
                   return {:data=>[pkg_created['links']['status']],:type=>:value_list,:name=>'link'}
                 end
-                raise CliBadArgument,"expecting one session exactly" if pkg_created['xfer_sessions'].length != 1
+                raise CliBadArgument,'expecting one session exactly' if pkg_created['xfer_sessions'].length != 1
                 transfer_spec=pkg_created['xfer_sessions'].first
                 # use source from cmd line, this one only contains destination (already in dest root)
                 transfer_spec.delete('paths')
@@ -169,7 +169,7 @@ module Asperalm
                 create_path=link_data[:subpath].split('/')[0..-2].join('/')
                 package_create_params.merge!({:passcode=>link_data[:query]['passcode']})
                 delivery_info.merge!({
-                  :transfer_type=>"connect",
+                  :transfer_type=>'connect',
                   :source_paths_list=>self.transfer.ts_source_paths.map{|i|i['source']}.join("\r\n")})
                 api_public_link=Rest.new({:base_url=>link_data[:base_url]})
                 # Hum, as this does not always work, we get the javascript and need hack
@@ -177,16 +177,14 @@ module Asperalm
                 # so extract data from javascript
                 pkgdatares=api_public_link.call({:operation=>'POST',:subpath=>create_path,:json_params=>package_create_params,:headers=>{'Accept'=>'text/javascript'}})[:http].body
                 # get args of function call
-                pkgdatares=pkgdatares.match(%r{\((.*?)\);})[1]
-                #Log.log.debug("1>>>#{pkgdatares}")
-                pkgdatares.gsub!(/^"\{/,'{')
-                pkgdatares.gsub!(/\\"\}",/,'\\"},')
-                pkgdatares.gsub!('\\"','"')
-                pkgdatares.gsub!(/"(\{.*\})",/,"#{$1},")
+                pkgdatares.gsub!("\n",'') # one line
+                pkgdatares=pkgdatares.gsub!(/^[^"]+\("\{/,'{') # delete header
+                pkgdatares=pkgdatares.gsub!(/"\);[^"]+$/,'"') # delete trailer
+                pkgdatares.gsub!(/\}", *"/,'},"') # between two args
+                pkgdatares.gsub!('\\"','"') # remove protecting quote
                 pkgdatares=JSON.parse("[#{pkgdatares}]")
-                #Log.log.debug("2>>>#{pkgdatares}")
                 transfer_spec=pkgdatares.first
-                transfer_spec['destination_root']='/'
+                #transfer_spec['destination_root']='/'
               end
               #Log.dump('transfer_spec',transfer_spec)
               return Main.result_transfer(self.transfer.start(transfer_spec,{:src=>:node_gen3}))
@@ -202,9 +200,9 @@ module Asperalm
                 pkgdatares=api_public_link.call({:operation=>'GET',:subpath=>link_data[:subpath],:url_params=>{:passcode=>link_data[:query]['passcode']},:headers=>{'Accept'=>'application/xml'}})
                 if !pkgdatares[:http].body.start_with?('<?xml ')
                   OpenApplication.instance.uri(public_link_url)
-                  raise CliError, "no such package"
+                  raise CliError, 'no such package'
                 end
-                package_entry=XmlSimple.xml_in(pkgdatares[:http].body, {"ForceArray" => false})
+                package_entry=XmlSimple.xml_in(pkgdatares[:http].body, {'ForceArray' => false})
                 transfer_uri=self.class.get_fasp_uri_from_entry(package_entry)
                 transfer_spec=Fasp::Uri.new(transfer_uri).transfer_spec
                 transfer_spec['direction']='receive'
@@ -229,7 +227,7 @@ module Asperalm
               else
                 # TODO: delivery id is the right one if package was receive by group
                 entry_xml=api_v3.call({:operation=>'GET',:subpath=>"received/#{delivid}",:headers=>{'Accept'=>'application/xml'}})[:http].body
-                package_entry=XmlSimple.xml_in(entry_xml, {"ForceArray" => true})
+                package_entry=XmlSimple.xml_in(entry_xml, {'ForceArray' => true})
                 pkg_id_uri=[{:id=>delivid,:uri=>self.class.get_fasp_uri_from_entry(package_entry)}]
               end
               Log.dump(:pkg_id_uri,pkg_id_uri)
@@ -241,10 +239,10 @@ module Asperalm
                 if !transfer_spec.has_key?('token')
                   sanitized=id_uri[:uri].gsub('&','&amp;')
                   # TODO: file jira
-                  sanitized.gsub!(/%3D%3D$/,'==')
-                  sanitized.gsub!(/%3D$/,'=')
+                  #XXsanitized.gsub!(/%3D%3D$/,'==')
+                  #XXsanitized.gsub!(/%3D$/,'=')
                   xmlpayload='<?xml version="1.0" encoding="UTF-8"?><url-list xmlns="http://schemas.asperasoft.com/xml/url-list"><url href="'+sanitized+'"/></url-list>'
-                  transfer_spec['token']=api_v3.call({:operation=>'POST',:subpath=>"issue-token?direction=down",:headers=>{'Accept'=>'text/plain','Content-Type'=>'application/vnd.aspera.url-list+xml'},:text_body_params=>xmlpayload})[:http].body
+                  transfer_spec['token']=api_v3.call({:operation=>'POST',:subpath=>'issue-token?direction=down',:headers=>{'Accept'=>'text/plain','Content-Type'=>'application/vnd.aspera.url-list+xml'},:text_body_params=>xmlpayload})[:http].body
                 end
                 transfer_spec['direction']='receive'
                 statuses=self.transfer.start(transfer_spec,{:src=>:node_gen3})
@@ -257,7 +255,7 @@ module Asperalm
             end
           when :source
             command_source=self.options.get_next_command([ :list, :id, :name ])
-            source_list=api_v3.call({:operation=>'GET',:subpath=>"source_shares",:headers=>{'Accept'=>'application/json'}})[:data]['items']
+            source_list=api_v3.call({:operation=>'GET',:subpath=>'source_shares',:headers=>{'Accept'=>'application/json'}})[:data]['items']
             case command_source
             when :list
               return {:type=>:object_list,:data=>source_list}
@@ -272,7 +270,7 @@ module Asperalm
               source_id=source_ids.first['id']
               source_hash=self.options.get_option(:storage,:mandatory)
               # check value of option
-              raise CliError,"storage option must be a Hash" unless source_hash.is_a?(Hash)
+              raise CliError,'storage option must be a Hash' unless source_hash.is_a?(Hash)
               source_hash.each do |name,storage|
                 raise CliError,"storage '#{name}' must be a Hash" unless storage.is_a?(Hash)
                 [KEY_NODE,KEY_PATH].each do |key|
@@ -303,7 +301,7 @@ module Asperalm
               end
             end
           when :me
-            my_info=api_v3.call({:operation=>'GET',:subpath=>"me",:headers=>{'Accept'=>'application/json'}})[:data]
+            my_info=api_v3.call({:operation=>'GET',:subpath=>'me',:headers=>{'Accept'=>'application/json'}})[:data]
             return {:data=>my_info, :type=>:single_object}
           when :dropbox
             command_pkg=self.options.get_next_command([ :list, :create ])
@@ -331,7 +329,7 @@ module Asperalm
               return self.entity_action(api_v4,'metadata_profiles',nil,:id)
             end
           when :address_book
-            result=api_v3.call({:operation=>'GET',:subpath=>"address-book",:headers=>{'Accept'=>'application/json'},:url_params=>{'format'=>'json','count'=>100000}})[:data]
+            result=api_v3.call({:operation=>'GET',:subpath=>'address-book',:headers=>{'Accept'=>'application/json'},:url_params=>{'format'=>'json','count'=>100000}})[:data]
             self.format.display_status("users: #{result['itemsPerPage']}/#{result['totalResults']}, start:#{result['startIndex']}")
             users=result['entry']
             # add missing entries
@@ -350,7 +348,7 @@ module Asperalm
             return {:type=>:object_list,:data=>users}
           when :login_methods
             login_meths=api_v3.call({:operation=>'GET',:subpath=>'login/new',:headers=>{'Accept'=>'application/xrds+xml'}})[:http].body
-            login_methods=XmlSimple.xml_in(login_meths, {"ForceArray" => false})
+            login_methods=XmlSimple.xml_in(login_meths, {'ForceArray' => false})
             return {:type=>:object_list, :data=>login_methods['XRD']['Service']}
           end # command
         end
