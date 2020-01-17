@@ -27,7 +27,7 @@ module Asperalm
         when 'send'
           raise "error"
         when 'receive'
-          transfer_spec['zip_required']=true
+          transfer_spec['zip_required']=false
           transfer_spec['authentication']='token'
           transfer_spec['download_name']='my_download' # TODO
           transfer_spec['source_root']=transfer_spec['paths'].first['source']
