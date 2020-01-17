@@ -5,6 +5,7 @@ require 'asperalm/hash_ext'
 require 'net/http'
 require 'net/https'
 require 'json'
+require 'base64'
 
 # add cancel method to http
 class Net::HTTP::Cancel < Net::HTTPRequest
@@ -54,6 +55,10 @@ module Asperalm
     def self.insecure; @@insecure;end
 
     def self.debug=(flag); Log.log.debug("debug http=#{flag}"); @@debug=flag; end
+
+    def self.basic_creds(user,pass)
+      return "Basic #{Base64.strict_encode64("#{user}:#{pass}")}"
+    end
 
     attr_reader :params
 
@@ -117,6 +122,7 @@ module Asperalm
       raise "Hash call parameter is required (#{call_data.class})" unless call_data.is_a?(Hash)
       Log.log.debug("accessing #{call_data[:subpath]}".red.bold.bg_green)
       call_data[:headers]||={}
+      call_data[:headers]['User-Agent'] ||= 'Amelia'
       call_data=@params.deep_merge(call_data)
       case call_data[:auth][:type]
       when :none
@@ -186,7 +192,7 @@ module Asperalm
             :total      => total_size)
             Log.log.debug("before write file")
             target_file=call_data[:save_to_file]
-            if m=response['Content-Disposition'].match(/filename="([^"]+)"/)
+            if !response['Content-Disposition'].nil? and m=response['Content-Disposition'].match(/filename="([^"]+)"/)
               target_file=m[1]
             end
             File.open(target_file, "wb") do |file|
