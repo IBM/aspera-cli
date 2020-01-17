@@ -442,12 +442,12 @@ called: <%=prsts%>. Then, instead of specifying some common options on the comma
 
 ### <a name="lprt"></a><%=prstt%>
 
-A <%=prst%> is simply a collection of parameters and their associated values.
+A <%=prst%> is simply a collection of parameters and their associated values in a named section in the configuration file.
 
 A named <%=prst%> can be modified directly using <%=tool%>, which will update the configuration file :
 
 ```
-$ <%=cmd%> config id &lt;<%=opprst%>&gt; set|delete|show|initialize|update
+$ <%=cmd%> config id <<%=opprst%>> set|delete|show|initialize|update
 ```
 
 The command `update` allows the easy creation of <%=prst%> by simply providing the options in their command line format, e.g. :
@@ -470,7 +470,7 @@ The command `initialize`, like `update` allows to set several parameters at once
 $ <%=cmd%> config id demo_server initialize @json:'{"url":"ssh://demo.asperasoft.com:33001","username":"asperaweb","password":"demoaspera","ts":{"precalculate_job_size":true}}'
 ```
 
-A good practice is to not manually edit the configurqtion file and use modification commands instead.
+A good practice is to not manually edit the configuration file and use modification commands instead.
 If necessary, the configuration file can be edited (or simply consulted) with:
 
 ```bash
@@ -777,16 +777,17 @@ There are currently 3 agents:
 
 * `direct` : a local execution of `ascp`
 * `connect` : use of a local Connect Client
-* `node` : use of a potentially _remote_ Aspera Transfer Node.
+* `node` : use of an Aspera Transfer Node (potentially _remote_).
+* `httpgw` : use of an Aspera HTTP Gateway
 
 Note that all transfer operation are seen from the point of view of the agent.
-For instance, a node agent making an "upload", or "package send" operation, will effectively push
-files to the related server from the agent node.
+For instance, a node agent making an "upload", or "package send" operation, 
+will effectively push files to the related server from the agent node.
 
 <%=tool%> standadizes on the use of a [_transfer-spec_](#transferspec) instead of _raw_ ascp options to provide parameters for a transfer session, as a common method for those three Transfer Agents.
 
 
-### <a name="agents"></a>Direct (local ascp using FASPManager API)
+### <a name="direct"></a>Direct (local ascp using FASPManager API)
 
 By default the CLI will use a local FASP protocol.
 <%=tool%> will detect locally installed Aspera products.
@@ -817,6 +818,16 @@ and associated credentials (node user or access key).
 The `--transfer-info` parameter can directly specify a pre-configured <%=prst%> : 
 `--transfer-info=@preset:<psetname>` or specified using the option syntax :
 `--transfer-info=@json:'{"url":"https://...","username":"theuser","password":"thepass"}'`
+
+### <a name="httpgw"></a>HTTP Gateway
+
+If it possible to send using a HTTP gateway, in case FASP is not allowed.
+
+Example:
+
+```
+mlia faspex package recv --id=323 --transfer=httpgw --transfer-info=@json:'{"url":"https://eudemo.asperademo.com:9443/aspera/http-gwy/v1"}'
+```
 
 ## <a name="transferspec"></a>Transfer Specification
 
