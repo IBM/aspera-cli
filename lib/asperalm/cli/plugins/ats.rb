@@ -28,7 +28,7 @@ module Asperalm
           region=self.options.get_option(:region,:mandatory)
           return @ats_api_pub.read("servers/#{cloud}/#{region}")[:data]
         end
-
+        
         # require api key only if needed
         def ats_api_pub_v1
           return @ats_api_pub_v1_cache unless @ats_api_pub_v1_cache.nil?
@@ -42,7 +42,7 @@ module Asperalm
         end
 
         def execute_action_access_key
-          commands=[:create,:list,:show,:delete,:node,:cluster]
+          commands=[:create,:list,:show,:delete,:node,:cluster,:entitlement]
           command=self.options.get_next_command(commands)
           # those dont require access key id
           unless [:create,:list].include?(command)
@@ -78,6 +78,13 @@ module Asperalm
           when :show
             res=ats_api_pub_v1.read("access_keys/#{access_key_id}")
             return {:type=>:single_object, :data=>res[:data]}
+          when :entitlement
+            ak=ats_api_pub_v1.read("access_keys/#{access_key_id}")[:data]
+            api_bss=Rest.new({
+              :base_url => 'https://api.ibmaspera.com/metering',
+              :headers  => {'X-Aspera-Entitlement-Authorization' => Rest.basic_creds(ak['license']['entitlement_id'],ak['license']['customer_id'])}
+            })
+            return {:type=>:single_object, :data=>api_bss.read('v1/entitlement')[:data]}
           when :delete
             res=ats_api_pub_v1.delete("access_keys/#{access_key_id}")
             return Main.result_status("deleted #{access_key_id}")
