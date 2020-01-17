@@ -118,6 +118,33 @@ module Asperalm
           return result
         end
 
+        # retrieve transfer spec from pub link for send package
+        def send_publink_to_ts(public_link_url,delivery_info)
+          # pub link user
+          link_data=self.class.get_link_data(public_link_url)
+          if !['external/submissions/new','external/dropbox_submissions/new'].include?(link_data[:subpath])
+            raise CliBadArgument,"pub link is #{link_data[:subpath]}, expecting external/submissions/new"
+          end
+          create_path=link_data[:subpath].split('/')[0..-2].join('/')
+          package_create_params.merge!({:passcode=>link_data[:query]['passcode']})
+          delivery_info.merge!({
+            :transfer_type     => 'connect',
+            :source_paths_list => self.transfer.ts_source_paths.map{|i|i['source']}.join("\r\n")})
+          api_public_link=Rest.new({:base_url=>link_data[:base_url]})
+          # Hum, as this does not always work (only user, but not dropbox), we get the javascript and need hack
+          #pkg_created=api_public_link.create(create_path,package_create_params)[:data]
+          # so extract data from javascript
+          pkgdatares=api_public_link.call({:operation=>'POST',:subpath=>create_path,:json_params=>package_create_params,:headers=>{'Accept'=>'text/javascript'}})[:http].body
+          # get args of function call
+          pkgdatares.gsub!("\n",'') # one line
+          pkgdatares=pkgdatares.gsub!(/^[^"]+\("\{/,'{') # delete header
+          pkgdatares=pkgdatares.gsub!(/"\);[^"]+$/,'"') # delete trailer
+          pkgdatares.gsub!(/\}", *"/,'},"') # between two args
+          pkgdatares.gsub!('\\"','"') # remove protecting quote
+          pkgdatares=JSON.parse("[#{pkgdatares}]")
+          return pkgdatares.first
+        end
+
         def execute_action
           command=self.options.get_next_command(ACTIONS)
           case command
@@ -161,30 +188,7 @@ module Asperalm
                 # use source from cmd line, this one only contains destination (already in dest root)
                 transfer_spec.delete('paths')
               else
-                # pub link user
-                link_data=self.class.get_link_data(public_link_url)
-                if !['external/submissions/new','external/dropbox_submissions/new'].include?(link_data[:subpath])
-                  raise CliBadArgument,"pub link is #{link_data[:subpath]}, expecting external/submissions/new"
-                end
-                create_path=link_data[:subpath].split('/')[0..-2].join('/')
-                package_create_params.merge!({:passcode=>link_data[:query]['passcode']})
-                delivery_info.merge!({
-                  :transfer_type=>'connect',
-                  :source_paths_list=>self.transfer.ts_source_paths.map{|i|i['source']}.join("\r\n")})
-                api_public_link=Rest.new({:base_url=>link_data[:base_url]})
-                # Hum, as this does not always work, we get the javascript and need hack
-                #pkg_created=api_public_link.create(create_path,package_create_params)[:data]
-                # so extract data from javascript
-                pkgdatares=api_public_link.call({:operation=>'POST',:subpath=>create_path,:json_params=>package_create_params,:headers=>{'Accept'=>'text/javascript'}})[:http].body
-                # get args of function call
-                pkgdatares.gsub!("\n",'') # one line
-                pkgdatares=pkgdatares.gsub!(/^[^"]+\("\{/,'{') # delete header
-                pkgdatares=pkgdatares.gsub!(/"\);[^"]+$/,'"') # delete trailer
-                pkgdatares.gsub!(/\}", *"/,'},"') # between two args
-                pkgdatares.gsub!('\\"','"') # remove protecting quote
-                pkgdatares=JSON.parse("[#{pkgdatares}]")
-                transfer_spec=pkgdatares.first
-                #transfer_spec['destination_root']='/'
+                transfer_spec=send_publink_to_ts(public_link_url,delivery_info)
               end
               #Log.dump('transfer_spec',transfer_spec)
               return Main.result_transfer(self.transfer.start(transfer_spec,{:src=>:node_gen3}))
