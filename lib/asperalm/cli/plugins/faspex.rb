@@ -119,7 +119,8 @@ module Asperalm
         end
 
         # retrieve transfer spec from pub link for send package
-        def send_publink_to_ts(public_link_url,delivery_info)
+        def send_publink_to_ts(public_link_url,package_create_params)
+          delivery_info=package_create_params['delivery']
           # pub link user
           link_data=self.class.get_link_data(public_link_url)
           if !['external/submissions/new','external/dropbox_submissions/new'].include?(link_data[:subpath])
@@ -165,6 +166,7 @@ module Asperalm
             when :send
               delivery_info=self.options.get_option(:delivery_info,:mandatory)
               raise CliBadArgument,'delivery_info must be hash, refer to doc' unless delivery_info.is_a?(Hash)
+              # actual parameter to faspex API
               package_create_params={'delivery'=>delivery_info}
               public_link_url=self.options.get_option(:link,:optional)
               if public_link_url.nil?
@@ -187,8 +189,8 @@ module Asperalm
                 transfer_spec=pkg_created['xfer_sessions'].first
                 # use source from cmd line, this one only contains destination (already in dest root)
                 transfer_spec.delete('paths')
-              else
-                transfer_spec=send_publink_to_ts(public_link_url,delivery_info)
+              else # publink
+                transfer_spec=send_publink_to_ts(public_link_url,package_create_params)
               end
               #Log.dump('transfer_spec',transfer_spec)
               return Main.result_transfer(self.transfer.start(transfer_spec,{:src=>:node_gen3}))
