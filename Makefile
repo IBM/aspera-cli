@@ -374,7 +374,7 @@ t/aocf1d:
 	@touch $@
 t/aocf5: t/aocf2 # WS: Demo
 	@echo $@
-	$(EXETEST) aspera files transfer --workspace=eudemo --from-folder='/Demo Files/aspera-test-dir-tiny' --to-folder=xxx 200KB.1
+	$(EXETEST) aspera files transfer --workspace=eudemo --from-folder='/Demo Files/aspera-test-dir-tiny' --to-folder=unit_test 200KB.1
 	@touch $@
 t/aocf2:
 	@echo $@
