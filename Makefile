@@ -380,6 +380,11 @@ t/aocf2:
 	@echo $@
 	$(EXETEST) aspera files upload --to-folder=/ $(CLIENT_DEMOFILE_PATH)
 	@touch $@
+t/aocfbn:
+	@echo $@
+	$(EXETEST) aspera files bearer /
+	@touch $@
+
 t/aocf3: $(LOCAL_FOLDER)/.exists
 	@echo $@
 	@rm -f $(CONNECT_DOWNLOAD_FOLDER)/200KB.1
@@ -404,7 +409,7 @@ t/aocfpub:
 	$(EXETEST) -N aspera files browse / --link=$(AOC_PUBLINK_FOLDER)
 	$(EXETEST) -N aspera files upload --to-folder=/ $(CLIENT_DEMOFILE_PATH) --link=$(AOC_PUBLINK_FOLDER)
 	@touch $@
-taocf: t/aocf1 t/aocffin t/aocfmkd t/aocfdel t/aocf1d t/aocf5 t/aocf2 t/aocf3 t/aocf4 t/aocf1e t/aocf1f t/aocfpub
+taocf: t/aocf1 t/aocffin t/aocfmkd t/aocfdel t/aocf1d t/aocf5 t/aocf2 t/aocf3 t/aocf4 t/aocf1e t/aocf1f t/aocfpub t/aocfbn
 t/aocp1:
 	@echo $@
 	$(EXETEST) aspera packages send --value=@json:'{"name":"'"$(CURRENT_DATE)"'","recipients":["laurent.martin.aspera@fr.ibm.com"],"note":"my note"}' $(CLIENT_DEMOFILE_PATH)
