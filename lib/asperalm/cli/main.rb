@@ -10,12 +10,6 @@ require 'asperalm/log'
 require 'asperalm/rest'
 require 'asperalm/nagios'
 
-#require 'text-table'
-require 'terminal-table'
-require 'fileutils'
-require 'yaml'
-require 'pp'
-
 module Asperalm
   module Cli
     # The main CLI class
@@ -33,11 +27,9 @@ module Asperalm
       CLI_MODULE=Module.nesting[1].to_s
       # Path to Plugin classes: Asperalm::Cli::Plugins
       PLUGINS_MODULE=CLI_MODULE+'::Plugins'
-      FIELDS_ALL='ALL'
-      FIELDS_DEFAULT='DEF'
       VERBOSE_LEVELS=[:normal,:minimal,:quiet]
 
-      private_constant :PROGRAM_NAME,:GEM_NAME,:CLI_MODULE,:PLUGINS_MODULE,:FIELDS_ALL,:FIELDS_DEFAULT,:VERBOSE_LEVELS
+      private_constant :PROGRAM_NAME,:GEM_NAME,:CLI_MODULE,:PLUGINS_MODULE,:VERBOSE_LEVELS
 
       # find the root folder of gem where this class is
       def self.gem_root
@@ -56,9 +48,6 @@ module Asperalm
 
       def option_ui=(value); OpenApplication.instance.url_method=value; end
 
-      attr_accessor :option_flat_hash
-      attr_accessor :option_table_style
-
       # minimum initialization
       def initialize(argv)
         # first thing : manage debug level (allows debugging or option parser)
@@ -71,8 +60,6 @@ module Asperalm
         @option_help=false
         @bash_completion=false
         @option_show_config=false
-        @option_flat_hash=true
-        @option_table_style=':.:'
         @plugin_env={}
         @help_url='http://www.rubydoc.info/gems/'+GEM_NAME
         @gem_url='https://rubygems.org/gems/'+GEM_NAME
@@ -119,36 +106,25 @@ module Asperalm
       # define header for manual
       def init_global_options
         Log.log.debug("init_global_options")
-        @opt_mgr.set_obj_attr(:table_style,self,:option_table_style)
-        @opt_mgr.add_opt_simple(:table_style,"table display style, current=#{@option_table_style}")
         @opt_mgr.add_opt_switch(:help,"-h","Show this message.") { @option_help=true }
         @opt_mgr.add_opt_switch(:bash_comp,"generate bash completion for command") { @bash_completion=true }
         @opt_mgr.add_opt_switch(:show_config, "Display parameters used for the provided action.") { @option_show_config=true }
         @opt_mgr.add_opt_switch(:rest_debug,"-r","more debug for HTTP calls") { Rest.debug=true }
         @opt_mgr.add_opt_switch(:version,'-v','display version') { @plugin_env[:formater].display_message(:data,self.class.gem_version);Process.exit(0) }
         @opt_mgr.add_opt_switch(:warnings,'-w','check for language warnings') { $VERBOSE=true }
-        @opt_mgr.add_opt_list(:display,self.class.display_levels,"output only some information")
-        @opt_mgr.set_option(:display,:info)
         # handler must be set before declaration
         @opt_mgr.set_obj_attr(:log_level,Log.instance,:level)
         @opt_mgr.set_obj_attr(:logger,Log.instance,:logger_type)
         @opt_mgr.set_obj_attr(:insecure,self,:option_insecure,:no)
-        @opt_mgr.set_obj_attr(:flat_hash,self,:option_flat_hash)
         @opt_mgr.set_obj_attr(:ui,self,:option_ui)
         @opt_mgr.add_opt_list(:ui,OpenApplication.user_interfaces,'method to start browser')
         @opt_mgr.add_opt_list(:log_level,Log.levels,"Log level")
         @opt_mgr.add_opt_list(:logger,Log.logtypes,"log method")
-        @opt_mgr.add_opt_list(:format,self.class.display_formats,"output format")
-        @opt_mgr.add_opt_simple(:fields,"comma separated list of fields, or #{FIELDS_ALL}, or #{FIELDS_DEFAULT}")
-        @opt_mgr.add_opt_simple(:select,"select only some items in lists, extended value: hash (colum, value)")
         @opt_mgr.add_opt_simple(:lock_port,"prevent dual execution of a command, e.g. in cron")
         @opt_mgr.add_opt_simple(:query,"additional filter for API calls (extended value) (some commands)")
         @opt_mgr.add_opt_boolean(:insecure,"do not validate HTTPS certificate")
-        @opt_mgr.add_opt_boolean(:flat_hash,"display hash values as additional keys")
         @opt_mgr.add_opt_boolean(:once_only,"process only new items (some commands)")
         @opt_mgr.set_option(:ui,OpenApplication.default_gui_mode)
-        @opt_mgr.set_option(:fields,FIELDS_DEFAULT)
-        @opt_mgr.set_option(:format,:table)
         @opt_mgr.set_option(:once_only,:false)
         # parse declared options
         @opt_mgr.parse_options!
@@ -178,49 +154,6 @@ module Asperalm
         Process.exit(0)
       end
 
-      # @param source [Hash] hash to modify
-      # @param keep_last [bool]
-      def self.flatten_object(source,keep_last)
-        newval={}
-        flatten_sub_hash_rec(source,keep_last,'',newval)
-        source.clear
-        source.merge!(newval)
-      end
-
-      # recursive function to modify a hash
-      # @param source [Hash] to be modified
-      # @param keep_last [bool] truer if last level is not
-      # @param prefix [String] true if last level is not
-      # @param dest [Hash] new hash flattened
-      def self.flatten_sub_hash_rec(source,keep_last,prefix,dest)
-        #is_simple_hash=source.is_a?(Hash) and source.values.inject(true){|m,v| xxx=!v.respond_to?(:each) and m;puts("->#{xxx}>#{v.respond_to?(:each)} #{v}-");xxx}
-        is_simple_hash=false
-        Log.log.debug("(#{keep_last})[#{is_simple_hash}] -#{source.values}- \n-#{source}-")
-        return source if keep_last and is_simple_hash
-        source.each do |k,v|
-          if v.is_a?(Hash) and ( !keep_last or !is_simple_hash )
-            flatten_sub_hash_rec(v,keep_last,prefix+k.to_s+'.',dest)
-          else
-            dest[prefix+k.to_s]=v
-          end
-        end
-        return nil
-      end
-
-      # special for Aspera on Cloud display node
-      # {"param" => [{"name"=>"foo","value"=>"bar"}]} will be expanded to {"param.foo" : "bar"}
-      def self.flatten_name_value_list(hash)
-        hash.keys.each do |k|
-          v=hash[k]
-          if v.is_a?(Array) and v.map{|i|i.class}.uniq.eql?([Hash]) and v.map{|i|i.keys}.flatten.sort.uniq.eql?(["name", "value"])
-            v.each do |pair|
-              hash["#{k}.#{pair["name"]}"]=pair["value"]
-            end
-            hash.delete(k)
-          end
-        end
-      end
-
       # expect some list, but nothing to display
       def self.result_empty; return {:type => :empty, :data => :nil }; end
 
@@ -230,160 +163,6 @@ module Asperalm
       def self.result_status(status); return {:type => :status, :data => status }; end
 
       def self.result_success; return result_status('complete'); end
-
-      # supported output formats
-      def self.display_formats; [:table,:ruby,:json,:jsonpp,:yaml,:csv,:nagios]; end
-
-      # user output levels
-      def self.display_levels; [:info,:data,:error]; end
-
-      CSV_RECORD_SEPARATOR="\n"
-      CSV_FIELD_SEPARATOR=","
-
-      def result_default_fields(results,table_rows_hash_val)
-        if results.has_key?(:fields) and !results[:fields].nil?
-          final_table_columns=results[:fields]
-        else
-          if !table_rows_hash_val.empty?
-            final_table_columns=table_rows_hash_val.first.keys
-          else
-            final_table_columns=['empty']
-          end
-        end
-      end
-
-      def result_all_fields(results,table_rows_hash_val)
-        raise "cannot get field names for empty result" if table_rows_hash_val.empty?
-        if table_rows_hash_val.is_a?(Array)
-          # get the list of all column names used in all lines, not just frst one, as all lines may have different columns
-          final_table_columns=table_rows_hash_val.inject({}){|m,v|v.keys.each{|c|m[c]=true};m}.keys
-        end
-      end
-
-      # this method displays the results, especially the table format
-      def display_results(results)
-        raise "INTERNAL ERROR, result must be Hash (got: #{results.class}: #{results})" unless results.is_a?(Hash)
-        raise "INTERNAL ERROR, result must have type" unless results.has_key?(:type)
-        raise "INTERNAL ERROR, result must have data" unless results.has_key?(:data) or [:empty,:nothing].include?(results[:type])
-        res_data=results[:data]
-        # comma separated list in string format
-        user_asked_fields_list_str=@opt_mgr.get_option(:fields,:mandatory)
-        display_format=@opt_mgr.get_option(:format,:mandatory)
-        case display_format
-        when :nagios
-          Nagios.process(res_data)
-        when :ruby
-          @plugin_env[:formater].display_message(:data,PP.pp(res_data,''))
-        when :json
-          @plugin_env[:formater].display_message(:data,JSON.generate(res_data))
-        when :jsonpp
-          @plugin_env[:formater].display_message(:data,JSON.pretty_generate(res_data))
-        when :yaml
-          @plugin_env[:formater].display_message(:data,res_data.to_yaml)
-        when :table,:csv
-          case results[:type]
-          when :object_list # goes to table display
-            raise "internal error: unexpected type: #{res_data.class}, expecting Array" unless res_data.is_a?(Array)
-            # :object_list is an array of hash tables, where key=colum name
-            table_rows_hash_val = res_data
-            final_table_columns=nil
-            if @option_flat_hash
-              table_rows_hash_val.each do |obj|
-                self.class.flatten_object(obj,results[:option_expand_last])
-              end
-            end
-            final_table_columns=case user_asked_fields_list_str
-            when FIELDS_DEFAULT; result_default_fields(results,table_rows_hash_val)
-            when FIELDS_ALL;     result_all_fields(results,table_rows_hash_val)
-            else
-              if user_asked_fields_list_str.start_with?('+')
-                result_default_fields(results,table_rows_hash_val).push(*user_asked_fields_list_str.gsub(/^\+/,'').split(','))
-              else
-                user_asked_fields_list_str.split(',')
-              end
-            end
-          when :single_object # goes to table display
-            # :single_object is a simple hash table  (can be nested)
-            raise "internal error: expecting Hash: got #{res_data.class}: #{res_data}" unless res_data.is_a?(Hash)
-            final_table_columns = results[:columns] || ['key','value']
-            asked_fields=res_data.keys
-            case user_asked_fields_list_str
-            when FIELDS_DEFAULT;asked_fields=results[:fields] if results.has_key?(:fields)
-            when FIELDS_ALL;# keep all
-            else
-              asked_fields=user_asked_fields_list_str.split(',')
-            end
-            if @option_flat_hash
-              self.class.flatten_object(res_data,results[:option_expand_last])
-              self.class.flatten_name_value_list(res_data)
-              # first level keys are potentially changed
-              asked_fields=res_data.keys
-            end
-            table_rows_hash_val=asked_fields.map { |i| { final_table_columns.first => i, final_table_columns.last => res_data[i] } }
-          when :value_list  # goes to table display
-            # :value_list is a simple array of values, name of column provided in the :name
-            final_table_columns = [results[:name]]
-            table_rows_hash_val=res_data.map { |i| { results[:name] => i } }
-          when :empty # no table
-            @plugin_env[:formater].display_message(:info,'empty')
-            return
-          when :nothing # no result expected
-            Log.log.debug("no result expected")
-            return
-          when :status # no table
-            # :status displays a simple message
-            @plugin_env[:formater].display_message(:info,res_data)
-            return
-          when :text # no table
-            # :status displays a simple message
-            @plugin_env[:formater].display_message(:data,res_data)
-            return
-          when :other_struct # no table
-            # :other_struct is any other type of structure
-            @plugin_env[:formater].display_message(:data,PP.pp(res_data,''))
-            return
-          else
-            raise "unknown data type: #{results[:type]}"
-          end
-          # here we expect: table_rows_hash_val and final_table_columns
-          raise "no field specified" if final_table_columns.nil?
-          if table_rows_hash_val.empty?
-            @plugin_env[:formater].display_message(:info,'empty'.gray) unless display_format.eql?(:csv)
-            return
-          end
-          # convert to string with special function. here table_rows_hash_val is an array of hash
-          table_rows_hash_val=results[:textify].call(table_rows_hash_val) if results.has_key?(:textify)
-          filter=@opt_mgr.get_option(:select,:optional)
-          unless filter.nil?
-            raise CliBadArgument,"expecting hash for select" unless filter.is_a?(Hash)
-            filter.each{|k,v|table_rows_hash_val.select!{|i|i[k].eql?(v)}}
-          end
-
-          # convert data to string, and keep only display fields
-          final_table_rows=table_rows_hash_val.map { |r| final_table_columns.map { |c| r[c].to_s } }
-          # here : final_table_columns : list of column names
-          # here: final_table_rows : array of list of value
-          case display_format
-          when :table
-            style=@option_table_style.split('')
-            # display the table !
-            #@plugin_env[:formater].display_message(:data,Text::Table.new(
-            #:head => final_table_columns,
-            #:rows => final_table_rows,
-            #:horizontal_boundary   => style[0],
-            #:vertical_boundary     => style[1],
-            #:boundary_intersection => style[2]))
-            @plugin_env[:formater].display_message(:data,Terminal::Table.new(
-            :headings => final_table_columns,
-            :rows     => final_table_rows,
-            :border_x => style[0],
-            :border_y => style[1],
-            :border_i => style[2]))
-          when :csv
-            @plugin_env[:formater].display_message(:data,final_table_rows.map{|t| t.join(CSV_FIELD_SEPARATOR)}.join(CSV_RECORD_SEPARATOR))
-          end
-        end
-      end
 
       def exit_with_usage(all_plugins)
         Log.log.debug("exit_with_usage".bg_red)
@@ -482,11 +261,11 @@ module Asperalm
           # help requested for current plugin
           exit_with_usage(false) if @option_help
           if @option_show_config
-            display_results({:type=>:single_object,:data=>@opt_mgr.declared_options(false)})
+            @plugin_env[:formater].display_results({:type=>:single_object,:data=>@opt_mgr.declared_options(false)})
             Process.exit(0)
           end
           # execute and display
-          display_results(command_plugin.execute_action)
+          @plugin_env[:formater].display_results(command_plugin.execute_action)
           # finish
           @plugin_env[:transfer].shutdown
         rescue CliBadArgument => e;          exception_info=[e,'Argument',:usage]
