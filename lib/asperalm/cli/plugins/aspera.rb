@@ -83,7 +83,7 @@ module Asperalm
           return self.transfer.start(*@api_aoc.tr_spec(app,direction,node_file,ts_add))
         end
 
-        NODE4_COMMANDS=[ :browse, :find, :mkdir, :rename, :delete, :upload, :download, :transfer, :http_node_download, :v3, :file, :bearer_token_node  ]
+        NODE4_COMMANDS=[ :browse, :find, :mkdir, :rename, :delete, :upload, :download, :transfer, :http_node_download, :v3, :file, :bearer_token_node, :permissions  ]
 
         def node_gen4_execute_action(top_node_file)
           command_repo=self.options.get_next_command(NODE4_COMMANDS)
@@ -215,6 +215,12 @@ module Asperalm
             node_api=@api_aoc.get_node_api(node_file[:node_info],OnCloud::SCOPE_NODE_USER)
             items=node_api.read("files/#{fileid}")[:data]
             return {:type=>:single_object,:data=>items}
+          when :permissions
+            fileid=self.options.get_next_argument('file id')
+            node_file = @api_aoc.resolve_node_file(top_node_file)
+            node_api=@api_aoc.get_node_api(node_file[:node_info],OnCloud::SCOPE_NODE_USER)
+            items=node_api.read("permissions",['include[]','access_level','include[]','permission_count','file_id',fileid,'inherited',false])[:data]
+            return {:type=>:object_list,:data=>items}
           end # command_repo
           throw "ERR"
         end # execute_node_gen4_command
@@ -437,6 +443,198 @@ module Asperalm
           end
         end
 
+        def execute_admin_action
+          self.options.set_option(:scope,OnCloud::SCOPE_FILES_ADMIN)
+          update_aoc_api
+          command_admin=self.options.get_next_command([ :ats, :resource, :usage_reports, :search_nodes, :events, :subscription, :auth_providers ])
+          case command_admin
+          when :auth_providers
+            command_auth_prov=self.options.get_next_command([ :list, :update ])
+            case command_auth_prov
+            when :list
+              providers=@api_aoc.read('admin/auth_providers')[:data]
+              return {:type=>:object_list,:data=>providers}
+            when :update
+            end
+          when :subscription
+            org=@api_aoc.read('organization')[:data]
+            bss_rest_param=aoc_rest_params
+            bss_rest_param[:base_url].gsub!('api/v1','bss/platform')
+            bss_api=Rest.new(bss_rest_param)
+            graphql_query="
+    query ($organization_id: ID!) {
+      aoc (organization_id: $organization_id) {
+        bssSubscription {
+          endDate
+          startDate
+          termMonths
+          plan
+          trial
+          termType
+          instances {
+            id
+            entitlements {
+              maxUsageMb
+            }
+          }
+          additionalStorageVolumeGb
+          additionalEgressVolumeGb
+          additionalUsers
+          term {
+            startDate
+            endDate
+            transferVolumeGb
+            egressVolumeGb
+            storageVolumeGb
+          }
+          paygoRate {
+            rate
+            currency
+          }
+          aocPlanData {
+            tier
+            trial
+            workspaces { max }
+            users {
+              planAmount
+              max
+            }
+            samlIntegration
+            activity
+            sharedInboxes
+            uniqueUrls
+            support
+          }
+        }
+      }
+    }
+  "
+            result=bss_api.create('graphql',{'variables'=>{'organization_id'=>org['id']},'query'=>graphql_query})[:data]['data']
+            return {:type=>:single_object,:data=>result['aoc']['bssSubscription']}
+          when :ats
+            ats_api = Rest.new(@api_aoc.params.deep_merge({
+              :base_url => @api_aoc.params[:base_url]+'/admin/ats/pub/v1',
+              :auth     => {:scope => OnCloud::SCOPE_FILES_ADMIN_USER}
+            }))
+            return @ats.execute_action_gen(ats_api)
+          when :search_nodes
+            query=self.options.get_option(:query,:optional) || '*'
+            nodes=@api_aoc.read("search_nodes",{'q'=>query})[:data]
+            # simplify output
+            nodes=nodes.map do |i|
+              item=i['_source']
+              item['score']=i['_score']
+              nodedata=item['access_key_recursive_counts'].first
+              item.delete('access_key_recursive_counts')
+              item['node']=nodedata
+              item
+            end
+            return {:type=>:object_list,:data=>nodes,:fields=>['host_name','node_status.cluster_id','node_status.node_id']}
+          when :events
+            events=@api_aoc.read("admin/events",url_query({q: '*'}))[:data]
+            events.map!{|i|i['_source']['_score']=i['_score'];i['_source']}
+            return {:type=>:object_list,:data=>events,:fields=>['user.name','type','data.files_transfer_action','data.workspace_name','date']}
+          when :resource
+            resource_type=self.options.get_next_argument('resource',[:self,:user,:group,:client,:contact,:dropbox,:node,:operation,:package,:saml_configuration, :workspace, :dropbox_membership,:short_link,:workspace_membership,'admin/apps_new'.to_sym])
+            resource_class_path=resource_type.to_s+case resource_type;when :dropbox;'es';when :self,'admin/apps_new'.to_sym;'';else; 's';end
+            singleton_object=[:self].include?(resource_type)
+            global_operations=[:create,:list]
+            supported_operations=[:show]
+            supported_operations.push(:modify,:delete,*global_operations) unless singleton_object
+            supported_operations.push(:v4,:v3,:info) if resource_type.eql?(:node)
+            supported_operations.push(:set_pub_key) if resource_type.eql?(:client)
+            supported_operations.push(:shared_folders) if resource_type.eql?(:workspace)
+            command=self.options.get_next_command(supported_operations)
+
+            # require identifier for non global commands
+            if !singleton_object and !global_operations.include?(command)
+              res_id=self.options.get_option(:id)
+              res_name=self.options.get_option(:name)
+              if res_id.nil? and res_name.nil? and resource_type.eql?(:node)
+                set_workspace_info
+                set_home_node_file
+                res_id=@home_node_file[:node_info]['id']
+              end
+              if !res_name.nil?
+                Log.log.warn("name overrides id") unless res_id.nil?
+                matching=@api_aoc.read(resource_class_path,{:q=>res_name})[:data]
+                raise CliError,"no resource match name" if matching.empty?
+                raise CliError,"several resources match name (#{matching.join(',')})" unless matching.length.eql?(1)
+                res_id=matching.first['id']
+              end
+              raise CliBadArgument,"provide either id or name" if res_id.nil?
+              resource_instance_path="#{resource_class_path}/#{res_id}"
+            end
+            resource_instance_path=resource_class_path if singleton_object
+            case command
+            when :create
+              list_or_one=self.options.get_next_argument("creation data (Hash)")
+              return do_bulk_operation(list_or_one,'created')do|params|
+                raise "expecting Hash" unless params.is_a?(Hash)
+                @api_aoc.create(resource_class_path,params)[:data]
+              end
+            when :list
+              default_fields=['id','name']
+              list_query=nil
+              case resource_type
+              when :node; default_fields.push('host','access_key')
+              when :operation; default_fields=nil
+              when :contact; default_fields=["email","name","source_id","source_type"]
+              when 'admin/apps_new'.to_sym; list_query={:organization_apps=>true}
+                default_fields=['app_type','available']
+              end
+              return {:type=>:object_list,:data=>@api_aoc.read(resource_class_path,url_query(list_query))[:data],:fields=>default_fields}
+            when :show
+              object=@api_aoc.read(resource_instance_path)[:data]
+              fields=object.keys.select{|k|!k.eql?('certificate')}
+              return { :type=>:single_object, :data =>object, :fields=>fields }
+            when :modify
+              changes=self.options.get_next_argument('modified parameters (hash)')
+              @api_aoc.update(resource_instance_path,changes)
+              return Main.result_status('modified')
+            when :delete
+              return do_bulk_operation(res_id,'deleted')do|one_id|
+                @api_aoc.delete("#{resource_class_path}/#{one_id.to_s}")
+                {'id'=>one_id}
+              end
+            when :set_pub_key
+              # special : reads private and generate public
+              the_private_key=self.options.get_next_argument('private_key')
+              the_public_key=OpenSSL::PKey::RSA.new(the_private_key).public_key.to_s
+              @api_aoc.update(resource_instance_path,{:jwt_grant_enabled=>true, :public_key=>the_public_key})
+              return Main.result_success
+            when :v3,:v4
+              res_data=@api_aoc.read(resource_instance_path)[:data]
+              # mandatory secret : we have only AK
+              #self.options.get_option(:secret,:optional)
+              @api_aoc.add_secrets({res_data['access_key']=>@option_ak_secret}) unless @option_ak_secret.nil?
+              raise CliBadArgument,"Please provide either option secret or secrets"  unless @api_aoc.has_secret(res_data['access_key'])
+              api_node=@api_aoc.get_node_api(res_data)
+              return Node.new(@agents.merge(skip_basic_auth_options: true, node_api: api_node)).execute_action if command.eql?(:v3)
+              ak_data=api_node.call({:operation=>'GET',:subpath=>"access_keys/#{res_data['access_key']}",:headers=>{'Accept'=>'application/json'}})[:data]
+              return node_gen4_execute_action({node_info: res_data, file_id: ak_data['root_file_id']})
+            when :info
+              object=@api_aoc.read(resource_instance_path)[:data]
+              access_key=object['access_key']
+              match_list=@api_aoc.read('admin/search_nodes',{:q=>"access_key:\"#{access_key}\""})[:data]
+              result=match_list.select{|i|i["_source"]["access_key_recursive_counts"].first["access_key"].eql?(access_key)}
+              return Main.result_status('Private node') if result.empty?
+              raise CliError,"more than one match" unless result.length.eql?(1)
+              result=result.first["_source"]
+              result.merge!(result['access_key_recursive_counts'].first)
+              result.delete('access_key_recursive_counts')
+              result.delete('token')
+              return { :type=>:single_object, :data =>result}
+            when :shared_folders
+              res_data=@api_aoc.read("#{resource_class_path}/#{res_id}/permissions")[:data]
+              return { :type=>:object_list, :data =>res_data , :fields=>['id','node_name','file_id']} #
+            else raise :ERROR
+            end
+          when :usage_reports
+            return {:type=>:object_list,:data=>@api_aoc.read("usage_reports",{:workspace_id=>@workspace_id})[:data]}
+          end
+        end
+
         ACTIONS=[ :apiinfo, :bearer_token, :organization, :tier_restrictions, :user, :workspace, :packages, :files, :faspexgw, :admin, :automation]
 
         def execute_action
@@ -614,189 +812,11 @@ module Asperalm
             require 'asperalm/faspex_gw'
             FaspexGW.instance.start_server(@api_aoc,@workspace_id)
           when :admin
-            self.options.set_option(:scope,OnCloud::SCOPE_FILES_ADMIN)
-            update_aoc_api
-            command_admin=self.options.get_next_command([ :ats, :resource, :usage_reports, :search_nodes, :events, :subscription ])
-            case command_admin
-            when :subscription
-              org=@api_aoc.read('organization')[:data]
-              bss_rest_param=aoc_rest_params
-              bss_rest_param[:base_url].gsub!('api/v1','bss/platform')
-              bss_api=Rest.new(bss_rest_param)
-              graphql_query="
-      query ($organization_id: ID!) {
-        aoc (organization_id: $organization_id) {
-          bssSubscription {
-            endDate
-            startDate
-            termMonths
-            plan
-            trial
-            termType
-            instances {
-              id
-              entitlements {
-                maxUsageMb
-              }
-            }
-            additionalStorageVolumeGb
-            additionalEgressVolumeGb
-            additionalUsers
-            term {
-              startDate
-              endDate
-              transferVolumeGb
-              egressVolumeGb
-              storageVolumeGb
-            }
-            paygoRate {
-              rate
-              currency
-            }
-            aocPlanData {
-              tier
-              trial
-              workspaces { max }
-              users {
-                planAmount
-                max
-              }
-              samlIntegration
-              activity
-              sharedInboxes
-              uniqueUrls
-              support
-            }
-          }
-        }
-      }
-    "
-              result=bss_api.create('graphql',{'variables'=>{'organization_id'=>org['id']},'query'=>graphql_query})[:data]['data']
-              return {:type=>:single_object,:data=>result['aoc']['bssSubscription']}
-            when :ats
-              ats_api = Rest.new(@api_aoc.params.deep_merge({
-                :base_url => @api_aoc.params[:base_url]+'/admin/ats/pub/v1',
-                :auth     => {:scope => OnCloud::SCOPE_FILES_ADMIN_USER}
-              }))
-              return @ats.execute_action_gen(ats_api)
-            when :search_nodes
-              query=self.options.get_option(:query,:optional) || '*'
-              nodes=@api_aoc.read("search_nodes",{'q'=>query})[:data]
-              # simplify output
-              nodes=nodes.map do |i|
-                item=i['_source']
-                item['score']=i['_score']
-                nodedata=item['access_key_recursive_counts'].first
-                item.delete('access_key_recursive_counts')
-                item['node']=nodedata
-                item
-              end
-              return {:type=>:object_list,:data=>nodes,:fields=>['host_name','node_status.cluster_id','node_status.node_id']}
-            when :events
-              events=@api_aoc.read("admin/events",url_query({q: '*'}))[:data]
-              events.map!{|i|i['_source']['_score']=i['_score'];i['_source']}
-              return {:type=>:object_list,:data=>events,:fields=>['user.name','type','data.files_transfer_action','data.workspace_name','date']}
-            when :resource
-              resource_type=self.options.get_next_argument('resource',[:self,:user,:group,:client,:contact,:dropbox,:node,:operation,:package,:saml_configuration, :workspace, :dropbox_membership,:short_link,:workspace_membership,'admin/apps_new'.to_sym])
-              resource_class_path=resource_type.to_s+case resource_type;when :dropbox;'es';when :self,'admin/apps_new'.to_sym;'';else; 's';end
-              singleton_object=[:self].include?(resource_type)
-              global_operations=[:create,:list]
-              supported_operations=[:show]
-              supported_operations.push(:modify,:delete,*global_operations) unless singleton_object
-              supported_operations.push(:v4,:v3,:info) if resource_type.eql?(:node)
-              supported_operations.push(:set_pub_key) if resource_type.eql?(:client)
-              supported_operations.push(:shared_folders) if resource_type.eql?(:workspace)
-              command=self.options.get_next_command(supported_operations)
-
-              # require identifier for non global commands
-              if !singleton_object and !global_operations.include?(command)
-                res_id=self.options.get_option(:id)
-                res_name=self.options.get_option(:name)
-                if res_id.nil? and res_name.nil? and resource_type.eql?(:node)
-                  set_workspace_info
-                  set_home_node_file
-                  res_id=@home_node_file[:node_info]['id']
-                end
-                if !res_name.nil?
-                  Log.log.warn("name overrides id") unless res_id.nil?
-                  matching=@api_aoc.read(resource_class_path,{:q=>res_name})[:data]
-                  raise CliError,"no resource match name" if matching.empty?
-                  raise CliError,"several resources match name (#{matching.join(',')})" unless matching.length.eql?(1)
-                  res_id=matching.first['id']
-                end
-                raise CliBadArgument,"provide either id or name" if res_id.nil?
-                resource_instance_path="#{resource_class_path}/#{res_id}"
-              end
-              resource_instance_path=resource_class_path if singleton_object
-              case command
-              when :create
-                list_or_one=self.options.get_next_argument("creation data (Hash)")
-                return do_bulk_operation(list_or_one,'created')do|params|
-                  raise "expecting Hash" unless params.is_a?(Hash)
-                  @api_aoc.create(resource_class_path,params)[:data]
-                end
-              when :list
-                default_fields=['id','name']
-                list_query=nil
-                case resource_type
-                when :node; default_fields.push('host','access_key')
-                when :operation; default_fields=nil
-                when :contact; default_fields=["email","name","source_id","source_type"]
-                when 'admin/apps_new'.to_sym; list_query={:organization_apps=>true}
-                  default_fields=['app_type','available']
-                end
-                return {:type=>:object_list,:data=>@api_aoc.read(resource_class_path,url_query(list_query))[:data],:fields=>default_fields}
-              when :show
-                object=@api_aoc.read(resource_instance_path)[:data]
-                fields=object.keys.select{|k|!k.eql?('certificate')}
-                return { :type=>:single_object, :data =>object, :fields=>fields }
-              when :modify
-                changes=self.options.get_next_argument('modified parameters (hash)')
-                @api_aoc.update(resource_instance_path,changes)
-                return Main.result_status('modified')
-              when :delete
-                return do_bulk_operation(res_id,'deleted')do|one_id|
-                  @api_aoc.delete("#{resource_class_path}/#{one_id.to_s}")
-                  {'id'=>one_id}
-                end
-              when :set_pub_key
-                # special : reads private and generate public
-                the_private_key=self.options.get_next_argument('private_key')
-                the_public_key=OpenSSL::PKey::RSA.new(the_private_key).public_key.to_s
-                @api_aoc.update(resource_instance_path,{:jwt_grant_enabled=>true, :public_key=>the_public_key})
-                return Main.result_success
-              when :v3,:v4
-                res_data=@api_aoc.read(resource_instance_path)[:data]
-                # mandatory secret : we have only AK
-                #self.options.get_option(:secret,:optional)
-                @api_aoc.add_secrets({res_data['access_key']=>@option_ak_secret}) unless @option_ak_secret.nil?
-                raise CliBadArgument,"Please provide either option secret or secrets"  unless @api_aoc.has_secret(res_data['access_key'])
-                api_node=@api_aoc.get_node_api(res_data)
-                return Node.new(@agents.merge(skip_basic_auth_options: true, node_api: api_node)).execute_action if command.eql?(:v3)
-                ak_data=api_node.call({:operation=>'GET',:subpath=>"access_keys/#{res_data['access_key']}",:headers=>{'Accept'=>'application/json'}})[:data]
-                return node_gen4_execute_action({node_info: res_data, file_id: ak_data['root_file_id']})
-              when :info
-                object=@api_aoc.read(resource_instance_path)[:data]
-                access_key=object['access_key']
-                match_list=@api_aoc.read('admin/search_nodes',{:q=>"access_key:\"#{access_key}\""})[:data]
-                result=match_list.select{|i|i["_source"]["access_key_recursive_counts"].first["access_key"].eql?(access_key)}
-                return Main.result_status('Private node') if result.empty?
-                raise CliError,"more than one match" unless result.length.eql?(1)
-                result=result.first["_source"]
-                result.merge!(result['access_key_recursive_counts'].first)
-                result.delete('access_key_recursive_counts')
-                result.delete('token')
-                return { :type=>:single_object, :data =>result}
-              when :shared_folders
-                res_data=@api_aoc.read("#{resource_class_path}/#{res_id}/permissions")[:data]
-                return { :type=>:object_list, :data =>res_data , :fields=>['id','node_name','file_id']} #
-              else raise :ERROR
-              end
-            when :usage_reports
-              return {:type=>:object_list,:data=>@api_aoc.read("usage_reports",{:workspace_id=>@workspace_id})[:data]}
-            end
+            return execute_admin_action
+          else
+            raise "internal error: #{command}"
           end # action
-          raise RuntimeError, "internal error"
+          raise RuntimeError, "internal error: command shall return"
         end
       end # Aspera
     end # Plugins
