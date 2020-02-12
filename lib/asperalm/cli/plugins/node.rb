@@ -80,7 +80,7 @@ module Asperalm
           raise StandardError,"expect: nil, String or Array"
         end
 
-        SIMPLE_ACTIONS=[:nagios_check,:events, :space, :info, :mkdir, :mklink, :mkfile, :rename, :delete, :search ]
+        SIMPLE_ACTIONS=[:nagios_check,:events, :space, :info, :license, :mkdir, :mklink, :mkfile, :rename, :delete, :search ]
 
         COMMON_ACTIONS=[:browse, :upload, :download ].concat(SIMPLE_ACTIONS)
 
@@ -111,6 +111,12 @@ module Asperalm
           when :info
             node_info=@api_node.read('info')[:data]
             return { :type=>:single_object, :data => node_info, :textify => lambda { |table_data| c_textify_bool_list_result(table_data,['capabilities','settings'])}}
+          when :license # requires: asnodeadmin -mu <node user> --acl-add=internal --internal
+            node_license=@api_node.read('license')[:data]
+            if node_license['failure'].is_a?(String) and node_license['failure'].include?('ACL')
+              Log.log.error("server must have: asnodeadmin -mu <node user> --acl-add=internal --internal")
+            end
+            return { :type=>:single_object, :data => node_license}
           when :delete
             paths_to_delete = get_next_arg_add_prefix(prefix_path,"file list",:multiple)
             resp=@api_node.create('files/delete',{:paths=>paths_to_delete.map{|i| {'path'=>i.start_with?('/') ? i : '/'+i} }})
@@ -317,7 +323,7 @@ module Asperalm
               raise "error"
             end
           when :access_key
-            return self.entity_action(@api_node,'access_keys',['id','root_file_id','storage','license'],:id,'self')
+            return self.entity_action(@api_node,'access_keys',['id','root_file_id','storage'],:id,'self')
           when :service
             command=self.options.get_next_command([ :list, :create, :delete])
             if [:delete].include?(command)
@@ -326,7 +332,6 @@ module Asperalm
             case command
             when :list
               resp=@api_node.read('rund/services')
-              #  :fields=>['id','root_file_id','storage','license']
               return { :type=>:object_list, :data => resp[:data]["services"] }
             when :create
               # @json:'{"type":"WATCHFOLDERD","run_as":{"user":"user1"}}'
@@ -354,7 +359,6 @@ module Asperalm
               return Main.result_status("#{resp[:data]['id']} created")
             when :list
               resp=@api_node.read(res_class_path,self.options.get_option(:value,:optional))
-              #  :fields=>['id','root_file_id','storage','license']
               return { :type=>:value_list, :data => resp[:data]['ids'], :name=>'id' }
             when :show
               return {:type=>:single_object, :data=>@api_node.read(one_res_path)[:data]}
