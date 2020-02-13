@@ -2314,6 +2314,7 @@ So, it evolved into <%=tool%>:
 
 	* removed option: `fasp_proxy`, use pseudo transfer spec parameter: `EX_fasp_proxy_url`
 	* removed option: `http_proxy`, use pseudo transfer spec parameter: `EX_http_proxy_url`
+	* several other changes..
 
 * version 0.10.7
 
