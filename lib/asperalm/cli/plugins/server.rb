@@ -111,17 +111,10 @@ module Asperalm
             command_nagios=self.options.get_next_command([ :app_services, :transfer ])
             case command_nagios
             when :app_services
-              begin
-                asctl_parse(shell_executor.execute(['asctl','all:status'])).each do |i|
-                  case i['state']
-                  when 'running'
-                    nagios.add_ok(i['process'],i['state'])
-                  else
-                    nagios.add_critical(i['process'],i['state'])
-                  end
-                end
-              rescue => e
-                nagios.add_critical('general',e.to_s)
+              # will not work with aspshell, requires Linux/bash
+              procs=shell_executor.execute('ps -A -o comm').split("\n")
+              ['asperanoded','asredisd'].each do |name|
+                nagios.add_critical('general',"missing process #{name}") unless procs.include?(name)
               end
             when :transfer
               file = Tempfile.new('transfer_test')
@@ -203,7 +196,7 @@ module Asperalm
             rescue Asperalm::AsCmd::Error => e
               raise CliBadArgument,e.extended_message
             end
-          else raise "programing error: unexpected action"
+          else raise "internal error: unexpected action"
           end
         end # execute_action
       end # Server
