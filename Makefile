@@ -497,7 +497,7 @@ t/aocat5:
 	@touch $@
 t/aocat6:
 	@echo $@
-	$(EXETEST) aspera admin ats cluster show --cloud=aws --region=eu-west-1 
+	$(EXETEST) aspera admin ats cluster show --cloud=aws --region=$(AWS_REGION) 
 	@touch $@
 t/aocat7:
 	@echo $@
@@ -508,7 +508,7 @@ t/aocat8:
 	@touch $@
 t/aocat9:
 	@echo $@
-	$(EXETEST) aspera admin ats access_key create --cloud=aws --region=eu-west-1 --params=@json:'{"id":"test_key_aoc","name":"laurent key AWS","storage":{"type":"aws_s3","bucket":"sedemo-ireland","credentials":{"access_key_id":"AKIAIDSWKOSIM7XUVCJA","secret_access_key":"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"},"path":"/laurent"}}'
+	$(EXETEST) aspera admin ats access_key create --cloud=aws --region=$(AWS_REGION) --params=@json:'{"id":"test_key_aoc","name":"laurent key AWS","storage":{"type":"aws_s3","bucket":"'$(AWS_BUCKET)'","credentials":{"access_key_id":"'$(AWS_ACCESS_KEY)'","secret_access_key":"'$(AWS_SECRET_KEY)'"},"path":"/"}}'
 	@touch $@
 t/aocat10:
 	@echo $@
@@ -596,7 +596,7 @@ t/at5:
 	@touch $@
 t/at6:
 	@echo $@
-	$(EXETEST) ats cluster show --cloud=aws --region=eu-west-1 
+	$(EXETEST) ats cluster show --cloud=aws --region=$(AWS_REGION) 
 	@touch $@
 t/at7:
 	@echo $@
@@ -619,7 +619,7 @@ t/at8:
 	@touch $@
 t/at9:
 	@echo $@
-	$(EXETEST) ats access_key create --cloud=aws --region=eu-west-1 --params=@json:'{"id":"test_key_ats","name":"laurent key AWS","storage":{"type":"aws_s3","bucket":"sedemo-ireland","credentials":{"access_key_id":"AKIAIDSWKOSIM7XUVCJA","secret_access_key":"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"},"path":"/laurent"}}'
+	$(EXETEST) ats access_key create --cloud=aws --region=$(AWS_REGION) --params=@json:'{"id":"test_key_ats","name":"laurent key AWS","storage":{"type":"aws_s3","bucket":"'$(AWS_BUCKET)'","credentials":{"access_key_id":"'$(AWS_ACCESS_KEY)'","secret_access_key":"'$(AWS_SECRET_KEY)'"},"path":"/"}}'
 	@touch $@
 t/at10:
 	@echo $@
