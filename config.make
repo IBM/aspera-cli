@@ -1,3 +1,6 @@
+# Private data for test systems
+# Do not share
+
 NODE_PASS=Aspera123_
 MY_CLIENT_ID=BMDiAWLP6g
 MY_PRIVATE_KEY_FILE=$(TOOLCONFIGDIR)/filesapikey
@@ -32,3 +35,8 @@ CLIENT_DEMOFILE_PATH=$(HOME)/Documents/Samples/$(SAMPLE_FILENAME)
 COS_BUCKET=lolo-de
 COS_REGION=eu-de
 SERVICE_CREDS_FILE=local/service_creds.json
+
+AWS_ACCESS_KEY=AKIAI7G453XW6VKEKITA
+AWS_SECRET_KEY=VdTxlSyvC5IEyisv9nSV2UXqtwhfiFdCXyPkuyR0
+AWS_BUCKET=nab2018-aws-eu-frankfurt
+AWS_REGION=eu-central-1
