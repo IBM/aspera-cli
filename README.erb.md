@@ -322,7 +322,7 @@ The style of output can be set using the `format` parameter, supporting:
 Table output can be filtered using the `select` parameter. Example:
 
 ```
-$ <%=cmd%> aspera admin res user list --fields=name,email,ats_admin --query=@json:'{"per_page":1000}' --select=@json:'{"ats_admin":true}'
+$ <%=cmd%> aspera admin res user list --fields=name,email,ats_admin --query=@json:'{"per_page":1000,"page":1,"sort":"name"}' --select=@json:'{"ats_admin":true}'
 :...............................:..................................:...........:
 :             name              :              email               : ats_admin :
 :...............................:..................................:...........:
@@ -1273,7 +1273,7 @@ To get more resources when doing request add:
 
 other query parameters can be used:
 ```
---query=@json:'{"member_of_any_workspace":true,}'
+--query=@json:'{"member_of_any_workspace":true}'
 --query=@json:'{"q":"laurent"}'
 ```
 
