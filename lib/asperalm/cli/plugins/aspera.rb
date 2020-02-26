@@ -583,7 +583,9 @@ module Asperalm
               when 'admin/apps_new'.to_sym; list_query={:organization_apps=>true}
                 default_fields=['app_type','available']
               end
-              return {:type=>:object_list,:data=>@api_aoc.read(resource_class_path,url_query(list_query))[:data],:fields=>default_fields}
+              result=@api_aoc.read(resource_class_path,url_query(list_query))
+              self.format.display_status("Items: #{result[:data].length}/#{result[:http]['X-Total-Count']}")
+              return {:type=>:object_list,:data=>result[:data],:fields=>default_fields}
             when :show
               object=@api_aoc.read(resource_instance_path)[:data]
               fields=object.keys.select{|k|!k.eql?('certificate')}
