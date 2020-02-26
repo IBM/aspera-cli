@@ -15,7 +15,7 @@ module Asperalm
       # temp folder for file lists, must contain only file lists
       # because of garbage collection takes any file there
       # this could be refined, as , for instance, on macos, temp folder is already user specific
-      @@file_list_folder=TempFileManager.instance.global_tmpfile_path('asession_filelists')
+      @@file_list_folder=TempFileManager.instance.new_file_path_global('asession_filelists')
       SEC_IN_DAY=86400
       # assume no transfer last longer than this
       # (garbage collect file list which were not deleted after transfer)
@@ -28,6 +28,7 @@ module Asperalm
         'ssh_private_key'         => { :type => :envvar, :variable=>'ASPERA_SCP_KEY'},
         'EX_at_rest_password'     => { :type => :envvar, :variable=>'ASPERA_SCP_FILEPASS'},
         'EX_proxy_password'       => { :type => :envvar, :variable=>'ASPERA_PROXY_PASS'},
+        'EX_license_text'         => { :type => :envvar, :variable=>'ASPERA_SCP_LICENSE'},
         # bool params
         'create_dir'              => { :type => :opt_without_arg, :option_switch=>'-d'},
         'precalculate_job_size'   => { :type => :opt_without_arg, :option_switch=>'--precalculate-job-size'},
@@ -134,7 +135,7 @@ module Asperalm
               option='--file-list'
               lines=src_dst_list.map{|i|i['source']}
             end
-            file_list_file=Asperalm::TempFileManager.instance.temp_filelist_path(@@file_list_folder)
+            file_list_file=Asperalm::TempFileManager.instance.new_file_path_in_folder(@@file_list_folder)
             File.open(file_list_file, 'w+'){|f|f.puts(lines)}
             Log.log.debug("#{option}=\n#{File.read(file_list_file)}".red)
             @builder.add_command_line_options(["#{option}=#{file_list_file}"])
