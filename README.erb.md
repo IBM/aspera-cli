@@ -1401,6 +1401,52 @@ $ <%=cmd%> aspera admin res workspace_membership list --fields=member_type,manag
 :.............:.........:..................................:
 ```
 
+other query parameters:
+
+```
+{"workspace_membership_through":true,"include_indirect":true}
+```
+
+* <a name="aoc_sample_member"></a>add all members of a workspace to another workspace
+
+a- get id of first workspace
+
+```
+WS1='First Workspace'
+WS1ID=$(mlia aspera admin res workspace list --query=@json:'{"q":"'"$WS1"'"}' --select=@json:'{"name":"'"$WS1"'"}' --fields=id --format=csv)
+```
+
+b- get id of second workspace
+
+```
+WS2='Second Workspace'
+WS2ID=$(mlia aspera admin res workspace list --query=@json:'{"q":"'"$WS2"'"}' --select=@json:'{"name":"'"$WS2"'"}' --fields=id --format=csv)
+```
+
+c- extract membership information and change workspace id
+
+```
+mlia aspera admin res workspace_membership list --fields=manager,member_id,member_type,workspace_id --query=@json:'{"per_page":10000,"workspace_id":'"$WS1ID"'}' --format=jsonpp > ws1_members.json
+```
+
+d- convert to creation data for second workspace:
+
+```
+grep -Eve '(direct|effective_manager|_count|storage|"id")' ws1_members.json|sed '/workspace_id/ s/"'"$WS1ID"'"/"'"$WS2ID"'"/g' > ws2_members.json
+```
+
+or, using jq:
+
+```
+jq '[.[] | {member_type,member_id,workspace_id,manager,workspace_id:"'"$WS2ID"'"}]' ws1_members.json > ws2_members.json
+```
+
+e- add members to second workspace
+
+```
+mlia aspera admin res workspace_membership create --bulk=yes @json:@file:ws2_members.json
+```
+
 * get users who did not log since a date
 
 ```
