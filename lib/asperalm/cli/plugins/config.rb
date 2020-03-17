@@ -375,7 +375,7 @@ module Asperalm
           case action
           when :id
             config_name=self.options.get_next_argument('config name')
-            action=self.options.get_next_command([:show,:delete,:set,:unset,:initialize,:update,:ask])
+            action=self.options.get_next_command([:show,:delete,:set,:get,:unset,:initialize,:update,:ask])
             case action
             when :show
               raise "no such config: #{config_name}" unless @config_presets.has_key?(config_name)
@@ -384,6 +384,9 @@ module Asperalm
               @config_presets.delete(config_name)
               save_presets_to_config_file
               return Main.result_status("deleted: #{config_name}")
+            when :get
+              param_name=self.options.get_next_argument('parameter name')
+              return {:type=>:other_struct,:data=>@config_presets[config_name][param_name]}
             when :set
               param_name=self.options.get_next_argument('parameter name')
               param_value=self.options.get_next_argument('parameter value')
