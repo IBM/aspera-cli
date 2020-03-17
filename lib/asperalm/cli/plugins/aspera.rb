@@ -637,7 +637,7 @@ module Asperalm
           end
         end
 
-        ACTIONS=[ :apiinfo, :bearer_token, :organization, :tier_restrictions, :user, :workspace, :packages, :files, :faspexgw, :admin, :automation]
+        ACTIONS=[ :apiinfo, :bearer_token, :organization, :tier_restrictions, :user, :workspace, :packages, :files, :faspexgw, :admin, :automation, :servers]
 
         def execute_action
           command=self.options.get_next_command(ACTIONS)
@@ -815,6 +815,12 @@ module Asperalm
             FaspexGW.instance.start_server(@api_aoc,@workspace_id)
           when :admin
             return execute_admin_action
+          when :servers
+            self.format.display_status("Beta feature")
+            server_api=Rest.new(base_url: 'https://eudemo.asperademo.com')
+            require 'json'
+            servers=JSON.parse(server_api.read('servers')[:data])
+            return {:type=>:object_list,:data=>servers}
           else
             raise "internal error: #{command}"
           end # action
