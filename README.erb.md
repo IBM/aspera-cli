@@ -489,8 +489,27 @@ A list of <%=prst%> can be displayed using:
 $ <%=cmd%> config list
 ```
 
+### <a name="lprt"></a>Special <%=prstconf%>: config
 
-### Format
+This preset name is reserved and contains a single key: `version`. This is the version of Amelia which created the file.
+
+### <a name="lprt"></a>Special <%=prstdef%>: default
+
+This preset name is reserved and contains an array of key-value , where the key is the name of a plugin, and the value is the name of another preset.
+
+When a plugin is invoked, the preset associated with the name of the plugin is loaded, unless the option --no-default (or -N) is used.
+
+Note that special plugin name: `config` can be associated with a preset that is loaded initially, typically used for default values.
+
+Operations on this preset are done using regular `config` operations:
+
+```
+$ <%=cmd%> config id default set _plugin_name_ _defauklt_preset_for_plugin_
+$ <%=cmd%> config id default get _plugin_name_
+"_defauklt_preset_for_plugin_"
+```
+
+### Format of file
 
 The configuration file is a hash in a YAML file. Example:
 
@@ -498,7 +517,10 @@ The configuration file is a hash in a YAML file. Example:
 config:
   version: 0.3.7
 default:
+  config: cli_default
   server: demo_server
+cli_default:
+  interactive: no
 demo_server:
   url: ssh://demo.asperasoft.com:33001
   username: asperaweb
@@ -510,6 +532,7 @@ We can see here:
 * The configuration was created with CLI version 0.3.7
 * the default <%=prst%> to load for plugin "server" is : `demo_server`
 * the <%=prst%> `demo_server` defines some parameters: the URL and credentials
+* the default <%=prst%> to load in any case is : `cli_default`
 
 Two <%=prsts%> are reserved:
 
@@ -1282,27 +1305,30 @@ Refer to the AoC API for full list of query parameters.
 #### Access Key secrets
 
 In order to access some administrative actions on "nodes" (in fact, access keys), the associated
-secret is required.
+secret is required, it is usually provided using the `secret` option. For example in a command like:
 
-When doing such action, it is possible to provide the secret using the `secret` option.
+```
+$ <%=cmd%> aspera admin res node --id="access_key1" --secret="secret1" v3 info
+```
 
-It is also possible to provoide a set of secrets used regularly. This can be done using the `secrets` option. The value provided shall be a Hash, where keys are access key ids, and values is the associated secret.
+It is also possible to provide a set of secrets used on a regular basis. This can be done using the `secrets` option. The value provided shall be a Hash, where keys are access key ids, and values are the associated secrets.
 
 First choose a repository name, for example `my_secrets`, and populate it like this:
 
 ```
 $ <%=cmd%> conf id my_secrets set 'access_key1' 'secret1'
 $ <%=cmd%> conf id my_secrets set 'access_key2' 'secret2'
+$ <%=cmd%> conf id default get config
+"cli_default"
 ```
 
-If you have already set a `config` global preset to preset `cli_default` (refer to earlier in documentation), then the repository can be read by default like this (note the prefix `@val:` to avoid the evaluation of prefix `@preset:`):
+Here above, one already has set a `config` global preset to preset `cli_default` (refer to earlier in documentation), then the repository can be read by default like this (note the prefix `@val:` to avoid the evaluation of prefix `@preset:`):
 
 ```
 $ <%=cmd%> conf id cli_default set secrets @val:@preset:my_secrets
 ```
 
 A secret repository can always be selected at runtime using `--secrets=@preset:xxxx`, or `--secrets=@json:'{"accesskey1":"secret1"}'`
-
 
 #### Examples
 
@@ -1880,7 +1906,7 @@ Required information are:
 * region
 * bucket 
 
-Secrevice credentials are directly created using the IBM cloud web ui. Navigate to: Navigation Menu &rarr; Resource List &rarr; Cloud Object Storage &rarr; Storage &rarr; Cloud Object Storage &rarr; Service Credentials &rarr; &lt;select or create credentials&gt; &rarr; view credentials &rarr; copy
+Service credentials are directly created using the IBM cloud web ui. Navigate to: Navigation Menu &rarr; Resource List &rarr; Cloud Object Storage &rarr; Storage &rarr; Cloud Object Storage &rarr; Service Credentials &rarr; &lt;select or create credentials&gt; &rarr; view credentials &rarr; copy
 
 or using the CLI:
 
