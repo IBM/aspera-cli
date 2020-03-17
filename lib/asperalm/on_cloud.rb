@@ -69,6 +69,13 @@ module Asperalm
         }}
     end
 
+    def self.metering_api(entitlement_id,customer_id,api_domain=PRODUCT_DOMAIN)
+      return Rest.new({
+        :base_url => "https://api.#{api_domain}/metering/v1",
+        :headers  => {'X-Aspera-Entitlement-Authorization' => Rest.basic_creds(entitlement_id,customer_id)}
+      })
+    end
+
     # node API scopes
     def self.node_scope(access_key,scope)
       return 'node.'+access_key+':'+scope
