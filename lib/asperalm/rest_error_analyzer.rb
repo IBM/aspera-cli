@@ -113,6 +113,19 @@ module Asperalm
     end
     add_simple_handler("T9:IBM cloud IAM",true,'errorMessage')
     add_simple_handler("T10:faspex v4",true,'user_message')
+    add_handler do |myself|
+      if myself.isDataHash
+        d_t_s=myself.result[:data]['errors']
+        if d_t_s.is_a?(Array)
+          d_t_s.each do |res|
+            r_err=res['message']
+            if r_err.is_a?(String)
+              myself.add_error("bss graphql",r_err)
+            end
+          end
+        end
+      end
+    end
 
     # raises a RestCallError exception if http result code is not 2XX
     def raiseOnError()
