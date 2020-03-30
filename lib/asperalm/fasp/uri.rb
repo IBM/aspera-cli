@@ -16,8 +16,10 @@ module Asperalm
         result_ts['remote_user']=@fasp_uri.user
         result_ts['ssh_port']=@fasp_uri.port
         result_ts['paths']=[{"source"=>URI.decode_www_form_component(@fasp_uri.path)}]
+        # faspex does not encode trailing base64 encoded tags, fix that
+        fixed_query = @fasp_uri.query.gsub(/(=+)$/){|x|'%3D'*x.length}
 
-        URI::decode_www_form(@fasp_uri.query).each do |i|
+        URI::decode_www_form(fixed_query).each do |i|
           name=i[0]
           value=i[1]
           case name
