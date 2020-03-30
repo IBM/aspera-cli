@@ -28,7 +28,7 @@ module Asperalm
     def self.dump(name,object,format=:json)
       result=case format
       when :ruby;PP.pp(object,'')
-      when :json;JSON.pretty_generate(object)
+      when :json;JSON.pretty_generate(object) rescue PP.pp(object,'')
       else raise "wrong parameter, expect pp or json"
       end
       self.log.debug("#{name.to_s.green} (#{format})=\n#{result}")
