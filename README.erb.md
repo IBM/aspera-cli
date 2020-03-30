@@ -116,25 +116,28 @@ The following sections provide information on the installation.
 
 A ruby interpreter is required to run the tool or to use the gem. It is also required to have privilege to install gems.
 
-Ruby 2.4+ is prefered, but it should also work with 2.0+.
+Ruby 2.5+ is prefered, but it should also work with 2.0+.
 
-Refer to the following sections for specific operating systems.
+Refer to the following sections for a proposed method for specific operating systems.
+(Or use your preferred method to install Ruby)
 
 ### macOS
 
-Ruby comes pre-installed on macOS. Starting with Macos Sierra, the
-version of Ruby is high enough. Nevertheless, installation of the gem
-requires: `sudo gem install asperalm`.
+Install Ruby using "homebrew" from here: [https://brew.sh/](https://brew.sh/).
 
-Alternatively, install "homebrew", from here: [https://brew.sh/](https://brew.sh/), and then install Ruby:
+Then install Ruby:
 
 ```bash
 $ brew install ruby
 ```
 
+Alternatively, Ruby came pre-installed on macOS (but maybe not on more modern versions).
+Starting with Macos Sierra, the version of Ruby is high enough.
+In that case, installation of the gem requires: `sudo gem install asperalm`.
+
 ### Windows
 
-On windows download Ruby from [https://rubyinstaller.org/](https://rubyinstaller.org/).
+Install Ruby using [https://rubyinstaller.org/](https://rubyinstaller.org/).
 
 Go to "Downloads".
 
@@ -144,26 +147,31 @@ During installation, skip the installation of "MSys2".
 
 ### Linux
 
+Install Ruby using "rvm" [https://rvm.io/](https://rvm.io/) .
+
 ```bash
-$ yum install ruby rubygems
+# rvm install ruby
 ```
 
-Note that Ruby 2+ is required, if you have an older Linux (e.g. CentOS 6) or want to use a separate version: you should install "rvm" [https://rvm.io/](https://rvm.io/) and install and use a newer Ruby.
+Linux often comes with outdated pre-compiled ruby. So it is better to install a recent version of ruby (>2.5). You may try the following, but it is not guaranteed:
+
+```
+# yum install ruby
+```
 
 ## <a name="the_gem"></a>`asperalm` gem
 
 Once you have Ruby and rights to install gems: Install the gem and its dependencies:
 
 ```bash
-$ gem install asperalm
+# gem install asperalm
 ```
 
 To upgrade to the latest version:
 
 ```bash
-$ gem update asperalm
+# gem update asperalm
 ```
-
 
 ## <a name="fasp_prot"></a>FASP Protocol
 
@@ -489,11 +497,11 @@ A list of <%=prst%> can be displayed using:
 $ <%=cmd%> config list
 ```
 
-### <a name="lprt"></a>Special <%=prstconf%>: config
+### <a name="lprtconf"></a>Special <%=prstt%>: config
 
 This preset name is reserved and contains a single key: `version`. This is the version of Amelia which created the file.
 
-### <a name="lprt"></a>Special <%=prstdef%>: default
+### <a name="lprtdef"></a>Special <%=prstt%>: default
 
 This preset name is reserved and contains an array of key-value , where the key is the name of a plugin, and the value is the name of another preset.
 
@@ -2381,6 +2389,11 @@ So, it evolved into <%=tool%>:
 
 
 # Release Notes
+
+* version 0.10.9
+
+	* add total number of items for AoC resource list
+	* better gem version dependency (and fixes to support Ruby 2.0.0)
 
 * version 0.10.8
 
