@@ -63,17 +63,16 @@ module Asperalm
         @plugin_env={}
         @help_url='http://www.rubydoc.info/gems/'+GEM_NAME
         @gem_url='https://rubygems.org/gems/'+GEM_NAME
+        # give command line arguments to option manager (no parsing)
         @plugin_env[:options]=@opt_mgr=Manager.new(self.program_name,argv,app_banner())
         @plugin_env[:formater]=Formater.new(@plugin_env[:options])
         # must override help methods before parser called (in other constructors)
         init_global_options()
-        @opt_mgr.add_opt_switch(:help,"-h","Show this message.") { @option_help=true }
         # the Config plugin adds the @preset parser
         @plugin_env[:config]=Plugins::Config.new(@plugin_env,self.program_name,@help_url,self.class.gem_version)
         # the TransferAgent plugin may use the @preset parser
         @plugin_env[:transfer]=TransferAgent.new(@plugin_env)
         Log.log.debug('created plugin env'.red)
-        # give command line arguments to option manager (no parsing)
         # set application folder for modules
         PersistencyFile.default_folder=@plugin_env[:config].main_folder
         Oauth.persistency_folder=@plugin_env[:config].main_folder
