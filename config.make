@@ -27,7 +27,7 @@ TEST_WORKFLOW_ID=913
 AOC_PUBLINK_RECV_PACKAGE=https://sedemo.ibmaspera.com/packages/public/receive?token=cpDktbNc8aHnyrbI_V49GzFwm5q3jxWnT_cDOjaewrc
 AOC_PUBLINK_SEND_DROPBOX=https://aspera.pub/xxktoFw/Team_Inbox
 AOC_PUBLINK_SEND_USER=https://aspera.pub/Nb4Ui_c
-AOC_PUBLINK_FOLDER=https://aspera.pub/_5VG0jg
+AOC_PUBLINK_FOLDER=https://aspera.pub/mKMHoHU
 
 SAMPLE_FILENAME=200KB.1
 CLIENT_DEMOFILE_PATH=$(HOME)/Documents/Samples/$(SAMPLE_FILENAME)
