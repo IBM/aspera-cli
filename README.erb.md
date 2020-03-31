@@ -125,7 +125,7 @@ Refer to the following sections for a proposed method for specific operating sys
 
 Install Ruby using "homebrew" from here: [https://brew.sh/](https://brew.sh/).
 
-Then install Ruby:
+Then install latest Ruby:
 
 ```bash
 $ brew install ruby
@@ -137,7 +137,7 @@ In that case, installation of the gem requires: `sudo gem install asperalm`.
 
 ### Windows
 
-Install Ruby using [https://rubyinstaller.org/](https://rubyinstaller.org/).
+Install Latest stable Ruby using [https://rubyinstaller.org/](https://rubyinstaller.org/).
 
 Go to "Downloads".
 
@@ -147,16 +147,24 @@ During installation, skip the installation of "MSys2".
 
 ### Linux
 
-Install Ruby using "rvm" [https://rvm.io/](https://rvm.io/) .
+Install Latest Ruby using "rvm" [https://rvm.io/](https://rvm.io/) .
 
 ```bash
 # rvm install ruby
 ```
 
-Linux often comes with outdated pre-compiled ruby. So it is better to install a recent version of ruby (>2.5). You may try the following, but it is not guaranteed:
+Alternatively, only if you know what you do, on RPM based systems (CentOs, Redhat), install the ruby provided by yum which may be 2.0. Pre-install jwt for older Ruby < 2.1.
 
 ```
-# yum install ruby
+# yum install -y ruby
+# gem install jwt -v 1.5.6
+```
+
+You can cleanup your whole yum-installed ruby environment like this to uninstall:
+
+```
+gem uninstall $(ls $(gem env gemdir)/gems/|sed -e 's/-[^-]*$//')
+yum remove -y ruby ruby-libs
 ```
 
 ## <a name="the_gem"></a>`asperalm` gem
@@ -1617,16 +1625,6 @@ $ cat my_file_list.txt|while read path;do echo <%=cmd%> aspera admin res node --
 cat my_file_list.txt | mlia aspera admin res node --name='my node name' --secret='my secret' v3 delete @lines:@stdin:
 ```
 
-### Search managed nodes with managed storage
-
-The command `search_nodes` will list IBM managed nodes connected to IBM managed storage.
-
-One can search for nodes based on any criteria, for instance access key:
-
-```
-$ <%=cmd%> aspera admin search_node --query=access_key:fasfdsFDSAFdsfs5634gdfFDS --format=jsonpp
-```
-
 ## IBM Aspera High Speed Transfer Server (transfer)
 
 This plugin works at FASP level (SSH/ascp/ascmd) and does not use the node API.
@@ -2119,7 +2117,7 @@ $ asuserdata -a | grep max_request_file_create_size_kb
   max_request_file_create_size_kb: "1024"
 ```
 
-If yu use a value different than 16,777,216, then specify it using option `max_size`.
+If you use a value different than 16,777,216, then specify it using option `max_size`.
 
 ### Configuration
 
@@ -2390,10 +2388,11 @@ So, it evolved into <%=tool%>:
 
 # Release Notes
 
-* version 0.10.9
+* version 0.10.9.1
 
 	* add total number of items for AoC resource list
 	* better gem version dependency (and fixes to support Ruby 2.0.0)
+	* removed aoc search_nodes
 
 * version 0.10.8
 
