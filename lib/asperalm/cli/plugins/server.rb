@@ -113,9 +113,11 @@ module Asperalm
             when :app_services
               # will not work with aspshell, requires Linux/bash
               procs=shell_executor.execute('ps -A -o comm').split("\n")
-              ['asperanoded','asredisd'].each do |name|
+              ['asperanoded','asperaredisd'].each do |name|
                 nagios.add_critical('general',"missing process #{name}") unless procs.include?(name)
               end
+              nagios.add_ok('daemons','ok') if nagios.data.empty?
+              return nagios.result
             when :transfer
               file = Tempfile.new('transfer_test')
               filepath=file.path
