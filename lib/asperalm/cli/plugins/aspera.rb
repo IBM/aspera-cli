@@ -446,7 +446,7 @@ module Asperalm
         def execute_admin_action
           self.options.set_option(:scope,OnCloud::SCOPE_FILES_ADMIN)
           update_aoc_api
-          command_admin=self.options.get_next_command([ :ats, :resource, :usage_reports, :search_nodes, :events, :subscription, :auth_providers ])
+          command_admin=self.options.get_next_command([ :ats, :resource, :usage_reports, :events, :subscription, :auth_providers ])
           case command_admin
           when :auth_providers
             command_auth_prov=self.options.get_next_command([ :list, :update ])
@@ -517,23 +517,31 @@ module Asperalm
               :auth     => {:scope => OnCloud::SCOPE_FILES_ADMIN_USER}
             }))
             return @ats.execute_action_gen(ats_api)
-          when :search_nodes
-            query=self.options.get_option(:query,:optional) || '*'
-            nodes=@api_aoc.read("search_nodes",{'q'=>query})[:data]
-            # simplify output
-            nodes=nodes.map do |i|
-              item=i['_source']
-              item['score']=i['_score']
-              nodedata=item['access_key_recursive_counts'].first
-              item.delete('access_key_recursive_counts')
-              item['node']=nodedata
-              item
-            end
-            return {:type=>:object_list,:data=>nodes,:fields=>['host_name','node_status.cluster_id','node_status.node_id']}
+#          when :search_nodes
+#            query=self.options.get_option(:query,:optional) || '*'
+#            nodes=@api_aoc.read("search_nodes",{'q'=>query})[:data]
+#            # simplify output
+#            nodes=nodes.map do |i|
+#              item=i['_source']
+#              item['score']=i['_score']
+#              nodedata=item['access_key_recursive_counts'].first
+#              item.delete('access_key_recursive_counts')
+#              item['node']=nodedata
+#              item
+#            end
+#            return {:type=>:object_list,:data=>nodes,:fields=>['host_name','node_status.cluster_id','node_status.node_id']}
           when :events
-            events=@api_aoc.read("admin/events",url_query({q: '*'}))[:data]
-            events.map!{|i|i['_source']['_score']=i['_score'];i['_source']}
-            return {:type=>:object_list,:data=>events,:fields=>['user.name','type','data.files_transfer_action','data.workspace_name','date']}
+            # begin: old
+            #events=@api_aoc.read("admin/events",url_query({q: '*'}))[:data]
+            #events.map!{|i|i['_source']['_score']=i['_score'];i['_source']}
+            #return {:type=>:object_list,:data=>events,:fields=>['user.name','type','data.files_transfer_action','data.workspace_name','date']}
+            # end: old
+            events_api = Rest.new(@api_aoc.params.deep_merge({
+              :base_url => @api_aoc.params[:base_url].gsub('/api/v1','')+'/analytics/v2/organizations/'+user_info['organization_id'],
+              :auth     => {:scope => OnCloud::SCOPE_FILES_ADMIN_USER}
+            }))
+            events=events_api.read("application_events")[:data]['application_events']
+            return {:type=>:object_list,:data=>events}
           when :resource
             resource_type=self.options.get_next_argument('resource',[:self,:user,:group,:client,:contact,:dropbox,:node,:operation,:package,:saml_configuration, :workspace, :dropbox_membership,:short_link,:workspace_membership,'admin/apps_new'.to_sym])
             resource_class_path=resource_type.to_s+case resource_type;when :dropbox;'es';when :self,'admin/apps_new'.to_sym;'';else; 's';end
@@ -541,7 +549,7 @@ module Asperalm
             global_operations=[:create,:list]
             supported_operations=[:show]
             supported_operations.push(:modify,:delete,*global_operations) unless singleton_object
-            supported_operations.push(:v4,:v3,:info) if resource_type.eql?(:node)
+            supported_operations.push(:v4,:v3) if resource_type.eql?(:node)
             supported_operations.push(:set_pub_key) if resource_type.eql?(:client)
             supported_operations.push(:shared_folders) if resource_type.eql?(:workspace)
             command=self.options.get_next_command(supported_operations)
@@ -615,18 +623,18 @@ module Asperalm
               return Node.new(@agents.merge(skip_basic_auth_options: true, node_api: api_node)).execute_action if command.eql?(:v3)
               ak_data=api_node.call({:operation=>'GET',:subpath=>"access_keys/#{res_data['access_key']}",:headers=>{'Accept'=>'application/json'}})[:data]
               return node_gen4_execute_action({node_info: res_data, file_id: ak_data['root_file_id']})
-            when :info
-              object=@api_aoc.read(resource_instance_path)[:data]
-              access_key=object['access_key']
-              match_list=@api_aoc.read('admin/search_nodes',{:q=>"access_key:\"#{access_key}\""})[:data]
-              result=match_list.select{|i|i["_source"]["access_key_recursive_counts"].first["access_key"].eql?(access_key)}
-              return Main.result_status('Private node') if result.empty?
-              raise CliError,"more than one match" unless result.length.eql?(1)
-              result=result.first["_source"]
-              result.merge!(result['access_key_recursive_counts'].first)
-              result.delete('access_key_recursive_counts')
-              result.delete('token')
-              return { :type=>:single_object, :data =>result}
+#            when :info
+#              object=@api_aoc.read(resource_instance_path)[:data]
+#              access_key=object['access_key']
+#              match_list=@api_aoc.read('admin/search_nodes',{:q=>"access_key:\"#{access_key}\""})[:data]
+#              result=match_list.select{|i|i["_source"]["access_key_recursive_counts"].first["access_key"].eql?(access_key)}
+#              return Main.result_status('Private node') if result.empty?
+#              raise CliError,"more than one match" unless result.length.eql?(1)
+#              result=result.first["_source"]
+#              result.merge!(result['access_key_recursive_counts'].first)
+#              result.delete('access_key_recursive_counts')
+#              result.delete('token')
+#              return { :type=>:single_object, :data =>result}
             when :shared_folders
               res_data=@api_aoc.read("#{resource_class_path}/#{res_id}/permissions")[:data]
               return { :type=>:object_list, :data =>res_data , :fields=>['id','node_name','file_id']} #
