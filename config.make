@@ -19,7 +19,7 @@ FASPEX_PUBLINK_SEND_DROPBOX=https://eudemo.asperademo.com/aspera/faspex/external
 FASPEX_PUBLINK_SEND_TO_USER=https://eudemo.asperademo.com/aspera/faspex/external/submissions/new?passcode=81c8c1df6f21e976e5b78389fa31bb1530e4c480
 SERVER_FOLDER_UPLOAD=/Upload
 
-SHARES_UPLOAD="Demo Files (California)/Upload"
+SHARES_UPLOAD="Upload"
 
 # Incoming asset processing
 TEST_WORKFLOW_ID=913
