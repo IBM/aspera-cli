@@ -114,12 +114,12 @@ The following sections provide information on the installation.
 
 ## <a name="ruby"></a>Ruby
 
-A ruby interpreter is required to run the tool or to use the gem. It is also required to have privilege to install gems.
-
-Ruby 2.5+ is prefered, but it should also work with 2.0+.
+A ruby interpreter is required to run the tool or to use the gem and tool.
+It is required to have privilege to install gems.
+Ruby 2.5+ is prefered, but it should also work with 2.1+.
+Any type of Ruby installation can be used.
 
 Refer to the following sections for a proposed method for specific operating systems.
-(Or use your preferred method to install Ruby)
 
 ### macOS
 
@@ -148,10 +148,20 @@ During installation, skip the installation of "MSys2".
 ### Linux
 
 Install Latest Ruby using "rvm" [https://rvm.io/](https://rvm.io/) .
+It installs by default in /usr/local/rvm , but you can install in another location:
+
+```
+curl -sSL https://get.rvm.io | bash -s -- --path /my/special/path
+```
+
+Once installed, you can install latest ruby:
 
 ```bash
 # rvm install ruby
 ```
+
+If you dont want all users to have ruby by default, 
+rename the file: `/etc/profile.d/rvm.sh` with another extension, and source it to get rvm.
 
 Alternatively, only if you know what you do, on RPM based systems (CentOs, Redhat), install the ruby provided by yum which may be 2.0. Pre-install jwt for older Ruby < 2.1.
 
@@ -1912,14 +1922,20 @@ Required information are:
 * region
 * bucket 
 
-Service credentials are directly created using the IBM cloud web ui. Navigate to: Navigation Menu &rarr; Resource List &rarr; Cloud Object Storage &rarr; Storage &rarr; Cloud Object Storage &rarr; Service Credentials &rarr; &lt;select or create credentials&gt; &rarr; view credentials &rarr; copy
+Service credentials are directly created using the IBM cloud web ui. Navigate to:
+
+Navigation Menu &rarr; Resource List &rarr; Storage &rarr; Cloud Object Storage &rarr; Service Credentials &rarr; &lt;select or create credentials&gt; &rarr; view credentials &rarr; copy
+
+Then save the copied value to a file, e.g. : `$HOME/cos_service_creds.json`
 
 or using the CLI:
 
 ```
 $ ibmcloud resource service-keys
-$ ibmcloud resource service-key aoclaurent --output JSON|jq '.[0].credentials'>service_creds.json
+$ ibmcloud resource service-key aoclaurent --output JSON|jq '.[0].credentials'>$HOME/service_creds.json
 ```
+
+(if you dont have `jq` installed, extract the structure as follows)
 
 It consists in the following structure:
 
@@ -1939,10 +1955,18 @@ It consists in the following structure:
 }
 ```
 
-Example:
+For convenience, let us create a default configuration, for example:
 
 ```
-mlia cos node --service-credentials=@json:@file:local/service_creds.json  --region=us-south --bucket=laurent upload myfile.txt
+$ <%=cmd%> conf id mycos update --service-credentials=@val:@json:@file:$HOME/service_creds.json  --region=us-south --bucket=laurent
+$ <%=cmd%> conf id default set cos mycos
+```
+
+Now, Ready to do operations, a subset of "node" plugin operations are supported, basically node API:
+
+```
+$ <%=cmd%> cos node browse /
+$ <%=cmd%> cos node upload myfile.txt
 ```
 
 ## IBM Aspera Sync
@@ -2388,173 +2412,177 @@ So, it evolved into <%=tool%>:
 
 # Release Notes
 
-* version 0.10.9.1
+* 0.10.10
+
+	* fix on documentation
+
+* 0.10.9.1
 
 	* add total number of items for AoC resource list
 	* better gem version dependency (and fixes to support Ruby 2.0.0)
 	* removed aoc search_nodes
 
-* version 0.10.8
+* 0.10.8
 
 	* removed option: `fasp_proxy`, use pseudo transfer spec parameter: `EX_fasp_proxy_url`
 	* removed option: `http_proxy`, use pseudo transfer spec parameter: `EX_http_proxy_url`
 	* several other changes..
 
-* version 0.10.7
+* 0.10.7
 
 	* fix: mlia fails when username cannot be computed on Linux.
 
-* version 0.10.6
+* 0.10.6
 
 	* FaspManager: transfer spec `authentication` no more needed for local tranfer to use aspera public keys. public keys will be used if there is a token and no key or password is provided.
 	* gem version requirements made more open
 
-* version 0.10.5
+* 0.10.5
 
 	* fix faspex package receive command not working
 
-* version 0.10.4
+* 0.10.4
 
  	* new options for AoC : `secrets`
  	* ACLI-533 temp file list folder to use file lists is set by default, and used by asession
 
-* version 0.10.3
+* 0.10.3
 
 	* included user name in oauth bearer token cache for AoC when JWT is used.
 
-* version 0.10.2
+* 0.10.2
 
  	* updated `search_nodes` to be more generic, so it can search not only on access key, but also other queries.
  	* added doc for "cargo" like actions
  	* added doc for multi-session
 
-* version 0.10.1
+* 0.10.1
 
 	* AoC and node v4 "browse" works now on non-folder items: file, link
 	* initial support for AoC automation (do not use yet)
 	
-* version 0.10
+* 0.10
 
 	* support for transfer using IBM Cloud Object Storage
 	* improved `find` action using arbitrary expressions
 
-* version 0.9.36
+* 0.9.36
 
 	* added option to specify file pair lists
 
-* version 0.9.35
+* 0.9.35
 
 	* updated plugin `preview` , changed parameter names, added documentation
 	* fix in `ats` plugin : instance id needed in request header
 
-* version 0.9.34
+* 0.9.34
 
 	* parser "@preset" can be used again in option "transfer_info"
 	* some documentation re-organizing
 
-* version 0.9.33
+* 0.9.33
 
    * new command to display basic token of node
    * new command to display bearer token of node in AoC
    * the --fields= option, support +_fieldname_ to add a field to default fields
    * many small changes
     
-* version 0.9.32
+* 0.9.32
 
    * all Faspex public links are now supported
    * removed faspex operation recv_publink
    * replaced with option `link` (consistent with AoC)
 
-* version 0.9.31
+* 0.9.31
 
    * added more support for public link: receive and send package, to user or dropbox and files view.
    * delete expired file lists
    * changed text table gem from text-table to terminal-table because it supports multiline values
 
-* version 0.9.27
+* 0.9.27
 
 	* basic email support with SMTP
 	* basic proxy auto config support
 
-* version 0.9.26
+* 0.9.26
 
 	* table display with --fields=ALL now includes all column names from all lines, not only first one
 	* unprocessed argument shows error even if there is an error beforehand
 
-* version 0.9.25
+* 0.9.25
 
 	* the option `value` of command `find`, to filter on name, is not optional
 	* `find` now also reports all types (file, folder, link)
 	* `find` now is able to report all fields (type, size, etc...)
 
-* version 0.9.24
+* 0.9.24
 
   * fix bug where AoC node to node transfer did not work
   * fix bug on error if ED25519 private key is defined in .ssh
 
-* version 0.9.23
+* 0.9.23
 
   * defined REST error handlers, more error conditions detected
   * commands to select specific ascp location
 
-* version 0.9.21
+* 0.9.21
 
   * supports simplified wizard using global client
   * only ascp binary is required, other SDK (keys) files are now generated
 
-* version 0.9.20
+* 0.9.20
 
   * improved wizard (prepare for AoC global client id)
   * preview generator: addedoption : --skip-format=&lt;png,mp4&gt;
   * removed outdated pictures from this doc
 
-* version 0.9.19
+* 0.9.19
 
   * added command aspera bearer --scope=xx
 
-* version 0.9.18
+* 0.9.18
 
   * enhanced aspera admin events to support query
 
-* version 0.9.16
+* 0.9.16
 
   * AoC transfers are now reported in activity app
   * new interface for Rest class authentication (keep backward compatibility)
  
-* version 0.9.15
+* 0.9.15
 
   * new feature: "find" command in aspera files
   * sample code for transfer API
 
-* version 0.9.12
+* 0.9.12
 
   * add nagios commands
   * support of ATS for IBM Cloud, removed old version based on aspera id
 
-* version 0.9.11
+* 0.9.11
 
   * Breaking change: @stdin is now @stdin:
   * support of ATS for IBM Cloud, removed old version based on aspera id
 
 
-* version 0.9.10
+* 0.9.10
 
   * Breaking change: parameter transfer-node becomes more generic: transfer-info
   * Display SaaS storage usage with command: aspera admin res node --id=nn info
   * cleaner way of specifying source file list for transfers
   * Breaking change: replaced download_mode option with http_download action
 
-* version 0.9.9
+* 0.9.9
 
   * Breaking change: "aspera package send" parameter deprecated, use the --value option instead with "recipients" value. See example.
   * Now supports "cargo" for Aspera on Cloud (automatic package download)
 
-* version 0.9.8
+* 0.9.8
 
   * Faspex: use option once_only set to yes to enable cargo like function. id=NEW deprecated.
   * AoC: share to share transfer with command "transfer"
 
-* version 0.9.7
+* 0.9.7
 
   * homogeneous [_transfer-spec_](#transferspec) for node and local
   * preview persistency goes to unique file by default
@@ -2562,23 +2590,23 @@ So, it evolved into <%=tool%>:
   * Faspex: possibility to download all paclages by specifying id=ALL
   * Faspex: to come: cargo-like function to download only new packages with id=NEW
 
-* version 0.9.6
+* 0.9.6
 
   * Breaking change: `@param:`is now `@preset:` and is generic
   * AoC: added command to display current workspace information
 
-* version 0.9.5
+* 0.9.5
 
   * new parameter: new_user_option used to choose between public_link and invite of external users.
   * fixed bug in wizard, and wizard uses now product detection
 
-* version 0.9.4
+* 0.9.4
 
   * Breaking change: onCloud file list follow --source convention as well (plus specific case for download when first path is source folder, and other are source file names).
   * AoC Package send supports external users
   * new command to export AoC config to Aspera CLI config
 
-* version 0.9.3
+* 0.9.3
 
   * REST error message show host and code
   * option for quiet display
@@ -2587,24 +2615,24 @@ So, it evolved into <%=tool%>:
   * async add db parameters
   * Breaking change: new option "sources" to specify files to transfer
 
-* version 0.9.2
+* 0.9.2
 
   * Breaking change: changed AoC package creation to match API, see AoC section
 
-* version 0.9.1
+* 0.9.1
 
   * Breaking change: changed faspex package creation to match API, see Faspex section
 
-* version 0.9
+* 0.9
 
   * Renamed the CLI from aslmcli to <%=tool%>
   * Automatic rename and conversion of former config folder from aslmcli to <%=tool%>
 
-* version 0.7.6
+* 0.7.6
 
   * add "sync" plugin
 
-* version 0.7
+* 0.7
 
   * Breaking change: AoC package recv take option if for package instead of argument.
   * Breaking change: Rest class and Oauth class changed init parameters
@@ -2612,7 +2640,7 @@ So, it evolved into <%=tool%>:
   * select by col value on output
   * added rename (AoC, node)
 
-* Version 0.6.19
+* 0.6.19
 
 Breaking change:
 
@@ -2625,11 +2653,11 @@ Breaking change:
   * ats api_key list &rarr; ats credential list
   * ats access_key id xxx &rarr; ats access_key --id=xxx
 
-* Version 0.6.18
+* 0.6.18
 
 some commands take now --id option instead of id command.
 
-* Version 0.6.15
+* 0.6.15
 * 
 Breaking change: "files" application renamed to "aspera" (for "Aspera on Cloud"). "repository" renamed to "files". Default is automatically reset, e.g. in config files and change key "files" to "aspera" in <%=prst%> "default".
 
