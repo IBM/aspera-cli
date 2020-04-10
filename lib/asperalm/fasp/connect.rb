@@ -17,7 +17,9 @@ module Asperalm
         # TODO: start here and create monitor
       end
       MAX_CONNECT_START_RETRY=3
-      private_constant :MAX_CONNECT_START_RETRY
+      SLEEP_SEC_BETWEEN_RETRY=2
+      private_constant :MAX_CONNECT_START_RETRY,:SLEEP_SEC_BETWEEN_RETRY
+
       public
 
       def start_transfer(transfer_spec,options=nil)
@@ -38,7 +40,7 @@ module Asperalm
             OpenApplication.uri_graphical('https://downloads.asperasoft.com/connect2/')
             raise StandardError,"Connect is not installed"
           end
-          sleep 2
+          sleep SLEEP_SEC_BETWEEN_RETRY
           retry
         end
         if transfer_spec["direction"] == "send"
