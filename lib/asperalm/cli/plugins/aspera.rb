@@ -820,7 +820,7 @@ module Asperalm
           when :faspexgw
             set_workspace_info
             require 'asperalm/faspex_gw'
-            FaspexGW.instance.start_server(@api_aoc,@workspace_id)
+            FaspexGW.new(@api_aoc,@workspace_id).start_server
           when :admin
             return execute_admin_action
           when :servers
