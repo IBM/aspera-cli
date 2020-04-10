@@ -645,7 +645,7 @@ module Asperalm
           end
         end
 
-        ACTIONS=[ :apiinfo, :bearer_token, :organization, :tier_restrictions, :user, :workspace, :packages, :files, :faspexgw, :admin, :automation, :servers]
+        ACTIONS=[ :apiinfo, :bearer_token, :organization, :tier_restrictions, :user, :workspace, :packages, :files, :gateway, :admin, :automation, :servers]
 
         def execute_action
           command=self.options.get_next_command(ACTIONS)
@@ -817,7 +817,7 @@ module Asperalm
                 return {:type=>:single_object,:data=>wf}
               end
             end
-          when :faspexgw
+          when :gateway
             set_workspace_info
             require 'asperalm/faspex_gw'
             FaspexGW.new(@api_aoc,@workspace_id).start_server
