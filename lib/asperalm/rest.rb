@@ -102,7 +102,26 @@ module Asperalm
     def self.build_uri(url,params=nil)
       uri=URI.parse(url)
       raise "REST endpoint shall be http(s)" unless ['http','https'].include?(uri.scheme)
-      uri.query=URI.encode_www_form(params) unless params.nil?
+      if !params.nil?
+        # support array url params, there is no standard. Either p[]=1&p[]=2, or p=1&p=2
+        if params.is_a?(Hash)
+          orig=params
+          params=[]
+          orig.each do |k,v|
+            case v
+            when Array
+              suffix=v.first.eql?('[]') ? v.shift : ''
+              v.each do |e|
+                params.push([k+suffix,e])
+              end
+            else
+              params.push([k,v])
+            end
+          end
+        end
+        # CGI.unescape to transform back %5D into []
+        uri.query=CGI.unescape(URI.encode_www_form(params))
+      end
       return uri
     end
 
