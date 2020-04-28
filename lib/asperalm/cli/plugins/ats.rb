@@ -61,14 +61,14 @@ module Asperalm
             if params.has_key?('storage')
               case params['storage']['type']
               # here we need somehow to map storage type to field to get for auth end point
-              when 'softlayer_swift'
+              when 'ibm-s3'
                 if !params['storage'].has_key?('authentication_endpoint')
                   server_data||=@ats_api_pub.all_servers.select{|i|i['id'].eql?(params['transfer_server_id'])}.first
-                  params['storage']['credentials']['authentication_endpoint'] = server_data['swift_authentication_endpoint']
+                  params['storage']['endpoint'] = server_data['s3_authentication_endpoint']
                 end
               end
             end
-            res=ats_api_pub_v1.create("access_keys",params)
+            res=ats_api_pub_v1.create('access_keys',params)
             return {:type=>:single_object, :data=>res[:data]}
             # TODO : action : modify, with "PUT"
           when :list
