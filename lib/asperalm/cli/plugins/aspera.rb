@@ -64,6 +64,16 @@ module Asperalm
           update_aoc_api
         end
 
+        # call this to populate single AK secret in AoC API object, from options
+        # make sure secret is available
+        def find_ak_secret(ak,mandatory=true)
+          # secret hash is already provisioned
+          # optionally override with specific secret
+          @api_aoc.add_secrets({ak=>@option_ak_secret}) unless @option_ak_secret.nil?
+          # check that secret was provided as single value or dictionary
+          raise CliBadArgument,"Please provide option secret or entry in option secrets for: #{ak}" unless @api_aoc.has_secret(ak) or !mandatory
+        end
+
         def user_info
           if @user_info.nil?
             # get our user's default information
@@ -219,7 +229,7 @@ module Asperalm
             fileid=self.options.get_next_argument('file id')
             node_file = @api_aoc.resolve_node_file(top_node_file)
             node_api=@api_aoc.get_node_api(node_file[:node_info],OnCloud::SCOPE_NODE_USER)
-            items=node_api.read("permissions",['include[]','access_level','include[]','permission_count','file_id',fileid,'inherited',false])[:data]
+            items=node_api.read('permissions',{'include'=>['[]','access_level','permission_count'],'file_id'=>fileid,'inherited'=>false})[:data]
             return {:type=>:object_list,:data=>items}
           end # command_repo
           throw "ERR"
@@ -232,18 +242,18 @@ module Asperalm
           public_link_url=self.options.get_option(:link,:optional)
           return if public_link_url.nil?
           # set to token if available after redirection
-          url_token_value=nil
+          url_param_token_pair=nil
           redirect_count=0
           loop do
             uri=URI.parse(public_link_url)
             if OnCloud::PATHS_PUBLIC_LINK.include?(uri.path)
-              url_token_value=URI::decode_www_form(uri.query).select{|e|e.first.eql?('token')}.first
-              if url_token_value.nil?
+              url_param_token_pair=URI::decode_www_form(uri.query).select{|e|e.first.eql?('token')}.first
+              if url_param_token_pair.nil?
                 raise CliBadArgument,"link option must be URL with 'token' parameter"
               end
               # ok we get it !
               self.options.set_option(:url,'https://'+uri.host)
-              self.options.set_option(:public_token,url_token_value)
+              self.options.set_option(:public_token,url_param_token_pair.last)
               self.options.set_option(:auth,:url_token)
               return
             end
@@ -517,19 +527,19 @@ module Asperalm
               :auth     => {:scope => OnCloud::SCOPE_FILES_ADMIN_USER}
             }))
             return @ats.execute_action_gen(ats_api)
-#          when :search_nodes
-#            query=self.options.get_option(:query,:optional) || '*'
-#            nodes=@api_aoc.read("search_nodes",{'q'=>query})[:data]
-#            # simplify output
-#            nodes=nodes.map do |i|
-#              item=i['_source']
-#              item['score']=i['_score']
-#              nodedata=item['access_key_recursive_counts'].first
-#              item.delete('access_key_recursive_counts')
-#              item['node']=nodedata
-#              item
-#            end
-#            return {:type=>:object_list,:data=>nodes,:fields=>['host_name','node_status.cluster_id','node_status.node_id']}
+            #          when :search_nodes
+            #            query=self.options.get_option(:query,:optional) || '*'
+            #            nodes=@api_aoc.read("search_nodes",{'q'=>query})[:data]
+            #            # simplify output
+            #            nodes=nodes.map do |i|
+            #              item=i['_source']
+            #              item['score']=i['_score']
+            #              nodedata=item['access_key_recursive_counts'].first
+            #              item.delete('access_key_recursive_counts')
+            #              item['node']=nodedata
+            #              item
+            #            end
+            #            return {:type=>:object_list,:data=>nodes,:fields=>['host_name','node_status.cluster_id','node_status.node_id']}
           when :events
             # begin: old
             #events=@api_aoc.read("admin/events",url_query({q: '*'}))[:data]
@@ -615,26 +625,23 @@ module Asperalm
               return Main.result_success
             when :v3,:v4
               res_data=@api_aoc.read(resource_instance_path)[:data]
-              # mandatory secret : we have only AK
-              #self.options.get_option(:secret,:optional)
-              @api_aoc.add_secrets({res_data['access_key']=>@option_ak_secret}) unless @option_ak_secret.nil?
-              raise CliBadArgument,"Please provide either option secret or secrets"  unless @api_aoc.has_secret(res_data['access_key'])
+              find_ak_secret(res_data['access_key'])
               api_node=@api_aoc.get_node_api(res_data)
               return Node.new(@agents.merge(skip_basic_auth_options: true, node_api: api_node)).execute_action if command.eql?(:v3)
               ak_data=api_node.call({:operation=>'GET',:subpath=>"access_keys/#{res_data['access_key']}",:headers=>{'Accept'=>'application/json'}})[:data]
               return node_gen4_execute_action({node_info: res_data, file_id: ak_data['root_file_id']})
-#            when :info
-#              object=@api_aoc.read(resource_instance_path)[:data]
-#              access_key=object['access_key']
-#              match_list=@api_aoc.read('admin/search_nodes',{:q=>"access_key:\"#{access_key}\""})[:data]
-#              result=match_list.select{|i|i["_source"]["access_key_recursive_counts"].first["access_key"].eql?(access_key)}
-#              return Main.result_status('Private node') if result.empty?
-#              raise CliError,"more than one match" unless result.length.eql?(1)
-#              result=result.first["_source"]
-#              result.merge!(result['access_key_recursive_counts'].first)
-#              result.delete('access_key_recursive_counts')
-#              result.delete('token')
-#              return { :type=>:single_object, :data =>result}
+              #            when :info
+              #              object=@api_aoc.read(resource_instance_path)[:data]
+              #              access_key=object['access_key']
+              #              match_list=@api_aoc.read('admin/search_nodes',{:q=>"access_key:\"#{access_key}\""})[:data]
+              #              result=match_list.select{|i|i["_source"]["access_key_recursive_counts"].first["access_key"].eql?(access_key)}
+              #              return Main.result_status('Private node') if result.empty?
+              #              raise CliError,"more than one match" unless result.length.eql?(1)
+              #              result=result.first["_source"]
+              #              result.merge!(result['access_key_recursive_counts'].first)
+              #              result.delete('access_key_recursive_counts')
+              #              result.delete('token')
+              #              return { :type=>:single_object, :data =>result}
             when :shared_folders
               res_data=@api_aoc.read("#{resource_class_path}/#{res_id}/permissions")[:data]
               return { :type=>:object_list, :data =>res_data , :fields=>['id','node_name','file_id']} #
@@ -777,8 +784,7 @@ module Asperalm
             # get workspace related information
             set_workspace_info
             set_home_node_file
-            # set node secret in case it was provided
-            @api_aoc.add_secrets({@home_node_file[:node_info]['access_key']=>@option_ak_secret})
+            find_ak_secret(@home_node_file[:node_info]['access_key'],false)
             command_repo=self.options.get_next_command(NODE4_COMMANDS.clone.concat([:short_link]))
             case command_repo
             when *NODE4_COMMANDS; return execute_node_gen4_command(command_repo,@home_node_file)
