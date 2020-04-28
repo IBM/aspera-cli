@@ -11,28 +11,11 @@ module Asperalm
   # if a token is expired (api returns 4xx), call again get_authorization({:refresh=>true})
   class Oauth
     private
-    # definition of token cache filename
-    TOKEN_FILE_PREFIX='token'
-    TOKEN_FILE_SEPARATOR='_'
-    TOKEN_FILE_SUFFIX='.txt'
-    WINDOWS_PROTECTED_CHAR=%r{[/:"<>\\\*\?]}
+    # remove 5 minutes to account for time offset (TODO: configurable?)
     JWT_NOTBEFORE_OFFSET=300
+    # one hour validity (TODO: configurable?)
     JWT_EXPIRY_OFFSET=3600
-    @@token_cache_folder='.'
-    private_constant :TOKEN_FILE_PREFIX,:TOKEN_FILE_SEPARATOR,:TOKEN_FILE_SUFFIX,:WINDOWS_PROTECTED_CHAR,:JWT_NOTBEFORE_OFFSET,:JWT_EXPIRY_OFFSET
-    def self.persistency_folder; @@token_cache_folder;end
-
-    def self.persistency_folder=(v); @@token_cache_folder=v;end
-
-    # delete cached tokens
-    def self.flush_tokens
-      tokenfiles=Dir[File.join(@@token_cache_folder,TOKEN_FILE_PREFIX+'*'+TOKEN_FILE_SUFFIX)]
-      tokenfiles.each do |filepath|
-        File.delete(filepath)
-      end
-      return tokenfiles
-    end
-
+    private_constant :JWT_NOTBEFORE_OFFSET,:JWT_EXPIRY_OFFSET
     # OAuth methods supported
     def self.auth_types
       [ :body_userpass, :header_userpass, :web, :jwt, :url_token, :ibm_apikey ]
@@ -74,56 +57,12 @@ module Asperalm
           }})
       end
       @token_auth_api=Rest.new(rest_params)
-      # key = scope value, e.g. user:all, or node.*, or nil
-      # value = ruby structure of data of returned value
-      @token_cache={}
       if @params.has_key?(:redirect_uri)
         uri=URI.parse(@params[:redirect_uri])
         raise "redirect_uri scheme must be http" unless uri.scheme.start_with?('http')
         raise "redirect_uri must have a port" if uri.port.nil?
         # we could check that host is localhost or local address
       end
-    end
-
-    # save token data in memory cache
-    # returns decoded token data (includes expiration date)
-    def set_token_cache(api_scope,token_json)
-      @token_cache[api_scope]=JSON.parse(token_json)
-      # for debug only, expiration info is not accurate
-      begin
-        decoded_token_info = JSON.parse(Zlib::Inflate.inflate(Base64.decode64(@token_cache[api_scope]['access_token'])).partition('==SIGNATURE==').first)
-        Log.log.dump('decoded_token_info',decoded_token_info)
-        return decoded_token_info
-      rescue
-        return nil
-      end
-    end
-
-    # save token data in memory and disk cache
-    def save_and_set_token_cache(api_scope,token_json,token_state_file)
-      Log.log.info "token_json=#{token_json}"
-      File.write(token_state_file,token_json)
-      set_token_cache(api_scope,token_json)
-      Log.log.info "new saved token is #{@token_cache[api_scope]['access_token']}"
-    end
-
-    # get location of cache for token, using some unique filename
-    def token_filepath(api_scope)
-      oauth_uri=URI.parse(@params[:base_url])
-      parts=[oauth_uri.host.downcase.gsub(/[^a-z]+/,'_'),oauth_uri.path.downcase.gsub(/[^a-z]+/,'_'),@params[:grant]]
-      parts.push(api_scope) unless api_scope.nil?
-      parts.push(@params[:jwt_subject]) if @params.has_key?(:jwt_subject)
-      parts.push(@params[:user_name]) if @params.has_key?(:user_name)
-      parts.push(@params[:url_token]) if @params.has_key?(:url_token)
-      parts.push(@params[:api_key]) if @params.has_key?(:api_key)
-      basename=parts.dup.unshift(TOKEN_FILE_PREFIX).join(TOKEN_FILE_SEPARATOR)
-      # remove windows forbidden chars
-      basename.gsub!(WINDOWS_PROTECTED_CHAR,TOKEN_FILE_SEPARATOR)
-      # keep dot for extension only (nicer)
-      basename.gsub!('.',TOKEN_FILE_SEPARATOR)
-      filepath=File.join(@@token_cache_folder,basename+TOKEN_FILE_SUFFIX)
-      Log.log.debug("token path=#{filepath}")
-      return filepath
     end
 
     THANK_YOU_HTML = "<html><head><title>Ok</title></head><body><h1>Thank you !</h1><p>You can close this window.</p></body></html>"
@@ -148,6 +87,18 @@ module Asperalm
       return create_token_advanced({:www_body_params=>creation_params})
     end
 
+    # @return String  a unique identifier of token
+    def token_cache_id(api_scope)
+      oauth_uri=URI.parse(@params[:base_url])
+      parts=[oauth_uri.host.downcase.gsub(/[^a-z]+/,'_'),oauth_uri.path.downcase.gsub(/[^a-z]+/,'_'),@params[:grant]]
+      parts.push(api_scope) unless api_scope.nil?
+      parts.push(@params[:jwt_subject]) if @params.has_key?(:jwt_subject)
+      parts.push(@params[:user_name]) if @params.has_key?(:user_name)
+      parts.push(@params[:url_token]) if @params.has_key?(:url_token)
+      parts.push(@params[:api_key]) if @params.has_key?(:api_key)
+      return OauthCache.ids_to_id(parts)
+    end
+
     public
 
     # @param options : :scope and :refresh
@@ -160,36 +111,37 @@ module Asperalm
       p_client_id_and_scope=p_scope.clone
       p_client_id_and_scope[:client_id] = @params[:client_id] if @params.has_key?(:client_id)
       use_refresh_token=options[:refresh]
-      # file name for cache of token
-      token_state_file=token_filepath(api_scope)
 
-      # if first time, try to read from file
-      if ! @token_cache.has_key?(api_scope) then
-        if File.exist?(token_state_file) then
-          Log.log.info "reading token from file cache: #{token_state_file}"
-          # returns decoded data
-          decoded=set_token_cache(api_scope,File.read(token_state_file))
-          # check if node token is expired, then force refresh, mandatory as there is no API call, and ascp will complain
-          if decoded.is_a?(Hash) and decoded['expires_at'].is_a?(String)
-            expires_at=DateTime.parse(decoded['expires_at'])
-            use_refresh_token=true if DateTime.now > (expires_at-Rational(3600,86400))
-          end
+      # generate token identifier to use with cache
+      token_id=token_cache_id(api_scope)
+
+      # get from cache (or nil)
+      cached_token_data=OauthCache.instance.get(token_id)
+
+      # Optional optimization: check if node token is expired, then force refresh
+      # else, anyway, faspmanager is equipped with refresh code
+      if !cached_token_data.nil?
+        decoded_node_token = Node.decode_bearer_token(cached_token_data['access_token']) rescue nil
+        Log.dump('decoded_node_token',decoded_node_token)
+        if decoded_node_token.is_a?(Hash) and decoded_node_token['expires_at'].is_a?(String)
+          expires_at=DateTime.parse(decoded_node_token['expires_at'])
+          # refresh if less than one hour
+          use_refresh_token=true if DateTime.now > (expires_at-Rational(3600,86400))
         end
       end
 
-      # an api was already called, but failed, we need to regenerate or refresh
+      # an API was already called, but failed, we need to regenerate or refresh
       if use_refresh_token
-        if @token_cache[api_scope].is_a?(Hash) and @token_cache[api_scope].has_key?('refresh_token')
+        if cached_token_data.is_a?(Hash) and cached_token_data.has_key?('refresh_token')
           # save possible refresh token, before deleting the cache
-          refresh_token=@token_cache[api_scope]['refresh_token']
+          refresh_token=cached_token_data['refresh_token']
         end
         # delete caches
-        Log.log.info "deleting cache file and memory for token"
-        File.delete(token_state_file) if File.exist?(token_state_file)
-        @token_cache.delete(api_scope)
-        # this token failed, but it has a refresh token
+        OauthCache.instance.discard(token_id)
+        cached_token_data=nil
+        # lets try the existing refresh token
         if !refresh_token.nil?
-          Log.log.info "refresh=[#{refresh_token}]".bg_green()
+          Log.log.info("refresh=[#{refresh_token}]".bg_green)
           # try to refresh
           # note: admin token has no refresh, and lives by default 1800secs
           # Note: scope is mandatory in Files, and we can either provide basic auth, or client_Secret in data
@@ -198,15 +150,16 @@ module Asperalm
             :refresh_token=>refresh_token}))
           if resp[:http].code.start_with?('2') then
             # save only if success ?
-            save_and_set_token_cache(api_scope,resp[:http].body,token_state_file)
+            cached_token_data=JSON.parse(resp[:http].body)
+            OauthCache.instance.save(token_id,cached_token_data)
           else
-            Log.log.debug "refresh failed: #{resp[:http].body}".bg_red()
+            Log.log.debug("refresh failed: #{resp[:http].body}".bg_red)
           end
         end
       end
 
       # no cache
-      if !@token_cache.has_key?(api_scope) then
+      if cached_token_data.nil? then
         resp=nil
         case @params[:grant]
         when :web
@@ -231,17 +184,17 @@ module Asperalm
           }))
         when :jwt
           # https://tools.ietf.org/html/rfc7519
+          # https://tools.ietf.org/html/rfc7523
           require 'jwt'
-          # remove 5 minutes to account for time offset
-          seconds_since_epoch=Time.new.to_i-JWT_NOTBEFORE_OFFSET
+          seconds_since_epoch=Time.new.to_i
           Log.log.info("seconds=#{seconds_since_epoch}")
 
           payload = {
             :iss => @params[:client_id],    # issuer
             :sub => @params[:jwt_subject],  # subject
             :aud => @params[:jwt_audience], # audience
-            :nbf => seconds_since_epoch,
-            :exp => seconds_since_epoch+JWT_EXPIRY_OFFSET # TODO: configurable ?
+            :nbf => seconds_since_epoch-JWT_NOTBEFORE_OFFSET, # not before
+            :exp => seconds_since_epoch+JWT_EXPIRY_OFFSET # expiration
           }
 
           # non standard, only for global ids
@@ -299,12 +252,13 @@ module Asperalm
         else
           raise "auth grant type unknown: #{@params[:grant]}"
         end
-
-        save_and_set_token_cache(api_scope,resp[:http].body,token_state_file)
+        # TODO: test return code ?
+        cached_token_data=JSON.parse(resp[:http].body)
+        OauthCache.instance.save(token_id,cached_token_data)
       end # if ! in_cache
 
       # ok we shall have a token here
-      return 'Bearer '+@token_cache[api_scope][@params[:token_field]]
+      return 'Bearer '+cached_token_data[@params[:token_field]]
     end
 
     # open the login page, wait for code and return parameters
