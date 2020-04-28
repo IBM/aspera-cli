@@ -9,6 +9,7 @@ require 'asperalm/persistency_file'
 require 'asperalm/log'
 require 'asperalm/rest'
 require 'asperalm/nagios'
+require 'asperalm/oauth_cache'
 
 module Asperalm
   module Cli
@@ -75,7 +76,7 @@ module Asperalm
         Log.log.debug('created plugin env'.red)
         # set application folder for modules
         PersistencyFile.default_folder=@plugin_env[:config].main_folder
-        Oauth.persistency_folder=@plugin_env[:config].main_folder
+        OauthCache.instance.persistency_folder=@plugin_env[:config].main_folder
         Fasp::Parameters.file_list_folder=File.join(@plugin_env[:config].main_folder,'filelists')
       end
 
