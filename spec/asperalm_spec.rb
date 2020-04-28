@@ -4,9 +4,11 @@ $LOAD_PATH.unshift(File.dirname(__FILE__)+"/../lib")
 require 'asperalm/cli/main'
 require 'asperalm/ascmd'
 require 'asperalm/ssh'
+require 'asperalm/log'
+require 'uri'
 
-#Asperalm::Log.level=:debug
-
+#Asperalm::Log.instance.level=:debug
+#Asperalm::Log.instance.logger_type=:stderr
 class LocalExecutor
   def execute(cmd,line)
     `echo "#{line}"|#{cmd}`
@@ -14,7 +16,15 @@ class LocalExecutor
 end
 
 PATH_FOLDER_MAIN='/'
-demo_executor=Asperalm::Ssh.new('eudemo.asperademo.com','asperaweb',{:password=>'demoaspera',:port=>33001})
+
+params={}
+[:url,:user,:pass].each do |p|
+  env="HSTS_SSH_#{p.to_s.upcase}"
+  params[p]=ENV[env]
+    raise "missing env var: #{env}" unless params[p].is_a?(String)
+end
+ssh_url=URI.parse(params[:url])
+demo_executor=Asperalm::Ssh.new(ssh_url.host,params[:user],{:password=>params[:pass],:port=>ssh_url.port})
 
 #PATH_FOLDER_MAIN='/workspace/Rubytools/asperalm/local/PATH_FOLDER_MAIN'
 #demo_executor=LocalExecutor.new
@@ -47,7 +57,7 @@ RSpec.describe Asperalm::AsCmd do
   #    ['df'],
   describe "info" do
     it "works" do
-      res=ascmd.execute_single('info',[])
+      res=ascmd.execute_single('info',[]) 
       expect(res).to be_a(Hash)
       expect(res[:lang]).to eq("C")
     end
