@@ -141,7 +141,7 @@ t/sh2: $(LOCAL_FOLDER)/.exists
 	$(EXETEST) shares repository download --to-folder=$(LOCAL_FOLDER) /$(SHARES_UPLOAD)/$(SAMPLE_FILENAME)
 	$(EXETEST) shares repository delete /$(SHARES_UPLOAD)/$(SAMPLE_FILENAME)
 	@touch $@
-tshares: t/sh1 t/sh2 t/unit
+tshares: t/sh1 t/sh2
 
 NEW_SERVER_FOLDER=$(SERVER_FOLDER_UPLOAD)/server_folder
 t/serv_browse:
@@ -499,12 +499,13 @@ t/aocat7:
 	@echo $@
 	$(EXETEST) aspera admin ats cluster show --id=1f412ae7-869a-445c-9c05-02ad16813be2
 	@touch $@
+# see https://developer.ibm.com/api/view/aspera-prod:ibm-aspera:title-IBM_Aspera#113433
 t/aocat8:
-#	$(EXETEST) aspera admin ats access_key create --cloud=softlayer --region=ams --params=@json:'{"id":"testkey2","name":"laurent key","storage":{"type":"softlayer_swift","container":"laurent","credentials":{"api_key":"e5d032e026e0b0a16e890a3d44d11fd1471217b6262e83c7f60529f1ff4b27de","username":"IBMOS303446-9:laurentmartin"},"path":"/"}}'
+	$(EXETEST) aspera admin ats access_key create --cloud=softlayer --region=eu-de --params=@json:'{"id":"ak_ibm_cloud","name":"laurent key","storage":{"type":"ibm-s3","bucket":"$(ICOS_BUCKET)","credentials":{"access_key_id":"$(ICOS_AK_ID)","secret_access_key":"$(ICOS_SECRET_AK)"},"path":"/"}}'
 	@touch $@
 t/aocat9:
 	@echo $@
-	$(EXETEST) aspera admin ats access_key create --cloud=aws --region=$(AWS_REGION) --params=@json:'{"id":"test_key_aoc","name":"laurent key AWS","storage":{"type":"aws_s3","bucket":"'$(AWS_BUCKET)'","credentials":{"access_key_id":"'$(AWS_ACCESS_KEY)'","secret_access_key":"'$(AWS_SECRET_KEY)'"},"path":"/"}}'
+	-$(EXETEST) aspera admin ats access_key create --cloud=aws --region=$(AWS_REGION) --params=@json:'{"id":"ak_aws","name":"laurent key AWS","storage":{"type":"aws_s3","bucket":"'$(AWS_BUCKET)'","credentials":{"access_key_id":"'$(AWS_ACCESS_KEY)'","secret_access_key":"'$(AWS_SECRET_KEY)'"},"path":"/"}}'
 	@touch $@
 t/aocat10:
 	@echo $@
@@ -512,11 +513,11 @@ t/aocat10:
 	@touch $@
 t/aocat11:
 	@echo $@
-	$(EXETEST) aspera admin ats access_key --id=test_key_aoc node browse /
+	$(EXETEST) aspera admin ats access_key --id=ak_ibm_cloud node browse /
 	@touch $@
 t/aocat13:
 	@echo $@
-	-$(EXETEST) aspera admin ats access_key --id=test_key_aoc delete
+	-$(EXETEST) aspera admin ats access_key --id=ak_ibm_cloud delete
 	@touch $@
 taocts: t/aocat4 t/aocat5 t/aocat6 t/aocat7 t/aocat8 t/aocat9 t/aocat10 t/aocat11 t/aocat13
 t/wf_id: t/aocauto1
@@ -611,11 +612,11 @@ t/at3:
 	$(EXETEST) ats api_key create
 	@touch $@
 t/at8:
-#	$(EXETEST) ats access_key create --cloud=softlayer --region=ams --params=@json:'{"id":"testkey2","name":"laurent key","storage":{"type":"softlayer_swift","container":"laurent","credentials":{"api_key":"e5d032e026e0b0a16e890a3d44d11fd1471217b6262e83c7f60529f1ff4b27de","username":"IBMOS303446-9:laurentmartin"},"path":"/"}}'
+	$(EXETEST) ats access_key create --cloud=softlayer --region=eu-de --params=@json:'{"id":"ak_ibm_cloud","name":"laurent key","storage":{"type":"ibm-s3","bucket":"$(ICOS_BUCKET)","credentials":{"access_key_id":"$(ICOS_AK_ID)","secret_access_key":"$(ICOS_SECRET_AK)"},"path":"/"}}'
 	@touch $@
 t/at9:
 	@echo $@
-	$(EXETEST) ats access_key create --cloud=aws --region=$(AWS_REGION) --params=@json:'{"id":"test_key_ats","name":"laurent key AWS","storage":{"type":"aws_s3","bucket":"'$(AWS_BUCKET)'","credentials":{"access_key_id":"'$(AWS_ACCESS_KEY)'","secret_access_key":"'$(AWS_SECRET_KEY)'"},"path":"/"}}'
+	-$(EXETEST) ats access_key create --cloud=aws --region=$(AWS_REGION) --params=@json:'{"id":"ak_aws","name":"laurent key AWS","storage":{"type":"aws_s3","bucket":"'$(AWS_BUCKET)'","credentials":{"access_key_id":"'$(AWS_ACCESS_KEY)'","secret_access_key":"'$(AWS_SECRET_KEY)'"},"path":"/"}}'
 	@touch $@
 t/at10:
 	@echo $@
@@ -623,18 +624,18 @@ t/at10:
 	@touch $@
 t/at11:
 	@echo $@
-	$(EXETEST) ats access_key --id=test_key_ats node browse /
+	$(EXETEST) ats access_key --id=ak_ibm_cloud node browse /
 	@touch $@
 t/at12:
 	@echo $@
-	$(EXETEST) ats access_key --id=test_key_ats cluster
+	$(EXETEST) ats access_key --id=ak_ibm_cloud cluster
 	@touch $@
 t/at13:
-#	-$(EXETEST) ats access_key --id=testkey2 delete
+#	-$(EXETEST) ats access_key --id=ak_ibm_cloud delete
 	@touch $@
 t/at14:
 	@echo $@
-	$(EXETEST) ats access_key --id=test_key_ats delete
+	$(EXETEST) ats access_key --id=ak_aws delete
 	@touch $@
 
 tats: t/at4 t/at5 t/at6 t/at7 t/at2 t/at1 t/at3 t/at8 t/at9 t/at10 t/at11 t/at12 t/at13 t/at14
@@ -869,7 +870,7 @@ t/tcos:
 	@touch $@
 tcos: t/tcos
 
-tests: t tshares tfaspex tconsole tnode taoc tfasp tsync torc tcon tnsync tconf tprev tats tsample tcos
+tests: t t/unit tshares tfaspex tconsole tnode taoc tfasp tsync torc tcon tnsync tconf tprev tats tsample tcos
 # tshares2
 
 tnagios: t/fx_nagios t/serv_nagios_webapp t/serv_nagios_transfer t/nd_nagios
