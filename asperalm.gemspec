@@ -29,7 +29,7 @@ Gem::Specification.new do |spec|
   spec.add_runtime_dependency('xml-simple', '~> 1.0')
   spec.add_runtime_dependency('jwt', '>= 1.5.6')
   spec.add_runtime_dependency('ruby-progressbar', '~> 1.0')
-  spec.add_runtime_dependency('net-ssh', '~> 3.0')
+  spec.add_runtime_dependency('net-ssh', '>= 4.0')
   spec.add_runtime_dependency('mimemagic', '~> 0.3')
   spec.add_runtime_dependency('execjs', '~> 2.0')
   spec.add_runtime_dependency('terminal-table', '~> 1.8')
