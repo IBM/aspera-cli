@@ -2412,6 +2412,10 @@ So, it evolved into <%=tool%>:
 
 # Release Notes
 
+* 0.10.11
+
+	* minoir refactor and fixes
+
 * 0.10.10
 
 	* fix on documentation
