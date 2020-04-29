@@ -501,7 +501,7 @@ t/aocat7:
 	@touch $@
 # see https://developer.ibm.com/api/view/aspera-prod:ibm-aspera:title-IBM_Aspera#113433
 t/aocat8:
-	$(EXETEST) aspera admin ats access_key create --cloud=softlayer --region=eu-de --params=@json:'{"id":"ak_ibm_cloud","name":"laurent key","storage":{"type":"ibm-s3","bucket":"$(ICOS_BUCKET)","credentials":{"access_key_id":"$(ICOS_AK_ID)","secret_access_key":"$(ICOS_SECRET_AK)"},"path":"/"}}'
+	-$(EXETEST) aspera admin ats access_key create --cloud=softlayer --region=eu-de --params=@json:'{"id":"akibmcloud","name":"laurent key","storage":{"type":"ibm-s3","bucket":"$(ICOS_BUCKET)","credentials":{"access_key_id":"$(ICOS_AK_ID)","secret_access_key":"$(ICOS_SECRET_AK)"},"path":"/"}}'
 	@touch $@
 t/aocat9:
 	@echo $@
@@ -513,11 +513,11 @@ t/aocat10:
 	@touch $@
 t/aocat11:
 	@echo $@
-	$(EXETEST) aspera admin ats access_key --id=ak_ibm_cloud node browse /
+	$(EXETEST) aspera admin ats access_key --id=akibmcloud node browse /
 	@touch $@
 t/aocat13:
 	@echo $@
-	-$(EXETEST) aspera admin ats access_key --id=ak_ibm_cloud delete
+	-$(EXETEST) aspera admin ats access_key --id=akibmcloud delete
 	@touch $@
 taocts: t/aocat4 t/aocat5 t/aocat6 t/aocat7 t/aocat8 t/aocat9 t/aocat10 t/aocat11 t/aocat13
 t/wf_id: t/aocauto1
@@ -612,7 +612,7 @@ t/at3:
 	$(EXETEST) ats api_key create
 	@touch $@
 t/at8:
-	$(EXETEST) ats access_key create --cloud=softlayer --region=eu-de --params=@json:'{"id":"ak_ibm_cloud","name":"laurent key","storage":{"type":"ibm-s3","bucket":"$(ICOS_BUCKET)","credentials":{"access_key_id":"$(ICOS_AK_ID)","secret_access_key":"$(ICOS_SECRET_AK)"},"path":"/"}}'
+	$(EXETEST) ats access_key create --cloud=softlayer --region=eu-de --params=@json:'{"id":"akibmcloud","name":"laurent key","storage":{"type":"ibm-s3","bucket":"$(ICOS_BUCKET)","credentials":{"access_key_id":"$(ICOS_AK_ID)","secret_access_key":"$(ICOS_SECRET_AK)"},"path":"/"}}'
 	@touch $@
 t/at9:
 	@echo $@
@@ -624,18 +624,18 @@ t/at10:
 	@touch $@
 t/at11:
 	@echo $@
-	$(EXETEST) ats access_key --id=ak_ibm_cloud node browse /
+	$(EXETEST) ats access_key --id=akibmcloud node browse /
 	@touch $@
 t/at12:
 	@echo $@
-	$(EXETEST) ats access_key --id=ak_ibm_cloud cluster
+	$(EXETEST) ats access_key --id=akibmcloud cluster
 	@touch $@
 t/at13:
-#	-$(EXETEST) ats access_key --id=ak_ibm_cloud delete
+	$(EXETEST) ats access_key --id=akibmcloud delete
 	@touch $@
 t/at14:
 	@echo $@
-	$(EXETEST) ats access_key --id=ak_aws delete
+	-$(EXETEST) ats access_key --id=ak_aws delete
 	@touch $@
 
 tats: t/at4 t/at5 t/at6 t/at7 t/at2 t/at1 t/at3 t/at8 t/at9 t/at10 t/at11 t/at12 t/at13 t/at14
