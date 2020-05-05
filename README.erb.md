@@ -1556,6 +1556,27 @@ Then, transfer between those:
 $ <%=cmd%> -Paoc_show aspera files transfer --from-folder='IBM Cloud SJ' --to-folder='AWS Singapore' 100GB.file --ts=@json:'{"target_rate_kbps":"1000000","multi_session":10,"multi_session_threshold":1}'
 ```
 
+* create registration key to register a node
+```
+$ <%=cmd%> aspera admin res admin/client create @json:'{"data":{"name":"laurenbt","client_subject_scopes":["alee","aejd"],"client_subject_enabled":true}}' --fields=token --format=csv
+jfqslfdjlfdjfhdjklqfhdkl
+```
+
+* delete all registration keys
+
+```
+$ <%=cmd%> aspera admin res admin/client list --fields=id --format=csv|<%=cmd%> aspera admin res admin/client delete --bulk=yes --id=@lines:@stdin:
++-----+---------+
+| id  | status  |
++-----+---------+
+| 99  | deleted |
+| 100 | deleted |
+| 101 | deleted |
+| 102 | deleted |
++-----+---------+
+```
+
+
 ### Send a Package
 
 Send a package:
@@ -2411,6 +2432,10 @@ So, it evolved into <%=tool%>:
 
 
 # Release Notes
+
+* 0.10.12
+
+	* added support for node registration keys
 
 * 0.10.11
 
