@@ -396,7 +396,7 @@ module Asperalm
           return nil
         end
 
-        def do_bulk_operation(params,success,&do_action)
+        def do_bulk_operation(params,success,id_result='id',&do_action)
           params=[params] unless self.options.get_option(:bulk)
           raise "expecting Array" unless params.is_a?(Array)
           result=[]
@@ -408,7 +408,7 @@ module Asperalm
             one['status']=success
             result.push(one)
           end
-          return {:type=>:object_list,:data=>result,:fields=>['id','status']}
+          return {:type=>:object_list,:data=>result,:fields=>[id_result,'status']}
         end
 
         # package creation params can give just email, and full hash is created
@@ -553,7 +553,7 @@ module Asperalm
             events=events_api.read("application_events")[:data]['application_events']
             return {:type=>:object_list,:data=>events}
           when :resource
-            resource_type=self.options.get_next_argument('resource',[:self,:user,:group,:client,:contact,:dropbox,:node,:operation,:package,:saml_configuration, :workspace, :dropbox_membership,:short_link,:workspace_membership,'admin/apps_new'.to_sym])
+            resource_type=self.options.get_next_argument('resource',[:self,:user,:group,:client,:contact,:dropbox,:node,:operation,:package,:saml_configuration, :workspace, :dropbox_membership,:short_link,:workspace_membership,'admin/apps_new'.to_sym,'admin/client_registration_token'.to_sym])
             resource_class_path=resource_type.to_s+case resource_type;when :dropbox;'es';when :self,'admin/apps_new'.to_sym;'';else; 's';end
             singleton_object=[:self].include?(resource_type)
             global_operations=[:create,:list]
@@ -586,8 +586,12 @@ module Asperalm
             resource_instance_path=resource_class_path if singleton_object
             case command
             when :create
+              id_result='id'
+              id_result='token' if resource_class_path.eql?('admin/client_registration_tokens')
+              # TODO: report inconsistency: creation url is !=, and does not return id.
+              resource_class_path='admin/client_registration/token' if resource_class_path.eql?('admin/client_registration_tokens')
               list_or_one=self.options.get_next_argument("creation data (Hash)")
-              return do_bulk_operation(list_or_one,'created')do|params|
+              return do_bulk_operation(list_or_one,'created',id_result)do|params|
                 raise "expecting Hash" unless params.is_a?(Hash)
                 @api_aoc.create(resource_class_path,params)[:data]
               end
@@ -598,8 +602,8 @@ module Asperalm
               when :node; default_fields.push('host','access_key')
               when :operation; default_fields=nil
               when :contact; default_fields=["email","name","source_id","source_type"]
-              when 'admin/apps_new'.to_sym; list_query={:organization_apps=>true}
-                default_fields=['app_type','available']
+              when 'admin/apps_new'.to_sym; list_query={:organization_apps=>true};default_fields=['app_type','available']
+              when 'admin/client_registration_token'.to_sym; default_fields=['id','value','data.client_subject_scopes','created_at']
               end
               result=@api_aoc.read(resource_class_path,url_query(list_query))
               self.format.display_status("Items: #{result[:data].length}/#{result[:http]['X-Total-Count']}")
@@ -705,8 +709,8 @@ module Asperalm
 
               package_creation['workspace_id']=@workspace_id
 
-              # list of files to include in package
-              package_creation['file_names']=self.transfer.ts_source_paths.map{|i|File.basename(i['source'])}
+              # list of files to include in package, optional
+              #package_creation['file_names']=self.transfer.ts_source_paths.map{|i|File.basename(i['source'])}
 
               # lookup users
               resolve_package_recipients(package_creation,'recipients')
