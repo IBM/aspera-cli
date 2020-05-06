@@ -1576,6 +1576,27 @@ $ <%=cmd%> aspera admin res admin/client list --fields=id --format=csv|<%=cmd%> 
 +-----+---------+
 ```
 
+### Shared folders
+
+BETA
+
+* list shared folders in node
+
+```
+$ <%=cmd%> aspera admin res node --id=8669 shared_folders
+```
+
+* list shared folders in workspace
+
+```
+$ <%=cmd%> aspera admin res workspace --id=10818 shared_folders
+```
+
+* list members of shared folder
+
+```
+$ <%=cmd%> aspera admin res node --id=8669 v4 perm 82 show
+```
 
 ### Send a Package
 
