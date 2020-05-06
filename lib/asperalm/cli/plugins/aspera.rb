@@ -229,8 +229,38 @@ module Asperalm
             fileid=self.options.get_next_argument('file id')
             node_file = @api_aoc.resolve_node_file(top_node_file)
             node_api=@api_aoc.get_node_api(node_file[:node_info],OnCloud::SCOPE_NODE_USER)
-            items=node_api.read('permissions',{'include'=>['[]','access_level','permission_count'],'file_id'=>fileid,'inherited'=>false})[:data]
-            return {:type=>:object_list,:data=>items}
+            command_perms=self.options.get_next_command([:show,:create])
+            case command_perms
+            when :show
+              items=node_api.read('permissions',{'include'=>['[]','access_level','permission_count'],'file_id'=>fileid,'inherited'=>false})[:data]
+              return {:type=>:object_list,:data=>items}
+            when :create
+              value=self.options.get_next_argument('creation value')
+              set_workspace_info
+              access_id="ASPERA_ACCESS_KEY_ADMIN_WS_#{@workspace_id}"
+              node_file[:node_info]
+              params={
+                "file_id"=>fileid,
+                "access_type"=>"user",
+                "access_id"=>access_id,
+                "access_levels"=>["list","read","write","delete","mkdir","rename","preview"],
+                "tags"=>{
+                "aspera"=>{
+                "files"=>{
+                "workspace"=>{
+                "id"=>@workspace_id,
+                "workspace_name"=>@workspace_name,
+                "user_name"=>user_info['name'],
+                "shared_by_user_id"=>user_info['id'],
+                "shared_by_name"=>user_info['name'],
+                "shared_by_email"=>user_info['email'],
+                "shared_with_name"=>access_id,
+                "access_key"=>node_file[:node_info]['access_key'],
+                "node"=>node_file[:node_info]['name']}}}}}
+              item=node_api.create('permissions',params)[:data]
+              return {:type=>:single_object,:data=>item}
+            else raise "error"
+            end
           end # command_repo
           throw "ERR"
         end # execute_node_gen4_command
@@ -561,7 +591,7 @@ module Asperalm
             supported_operations.push(:modify,:delete,*global_operations) unless singleton_object
             supported_operations.push(:v4,:v3) if resource_type.eql?(:node)
             supported_operations.push(:set_pub_key) if resource_type.eql?(:client)
-            supported_operations.push(:shared_folders) if resource_type.eql?(:workspace)
+            supported_operations.push(:shared_folders) if [:node,:workspace].include?(resource_type)
             command=self.options.get_next_command(supported_operations)
 
             # require identifier for non global commands
@@ -647,8 +677,18 @@ module Asperalm
               #              result.delete('token')
               #              return { :type=>:single_object, :data =>result}
             when :shared_folders
-              res_data=@api_aoc.read("#{resource_class_path}/#{res_id}/permissions")[:data]
-              return { :type=>:object_list, :data =>res_data , :fields=>['id','node_name','file_id']} #
+              read_params = case resource_type
+              when :workspace;{'access_id'=>"ASPERA_ACCESS_KEY_ADMIN_WS_#{res_id}",'access_type'=>'user'}
+              when :node;{'include'=>['[]','access_level','permission_count'],'created_by_id'=>"ASPERA_ACCESS_KEY_ADMIN"}
+              else raise "error"
+              end
+              res_data=@api_aoc.read("#{resource_class_path}/#{res_id}/permissions",read_params)[:data]
+              fields=case resource_type
+              when :node;['id','file_id','file.path','access_type']
+              when :workspace;['id','node_id','file_id','node_name','file.path','tags.aspera.files.workspace.share_as']
+              else raise "error"
+              end
+              return { :type=>:object_list, :data =>res_data , :fields=>fields}
             else raise :ERROR
             end
           when :usage_reports
