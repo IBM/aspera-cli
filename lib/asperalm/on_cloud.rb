@@ -5,6 +5,22 @@ require 'base64'
 
 module Asperalm
   class OnCloud < Rest
+    private
+    PRODUCT_NAME='Aspera on Cloud'
+    # Production domain of AoC
+    PROD_DOMAIN='ibmaspera.com'
+    # to avoid infinite loop in pub link redirection
+    MAX_REDIRECT=10
+    DEFAULT_CLIENT='aspera.global-cli-client'
+    # Random generator seed
+    # strings /Applications/Aspera\ Drive.app/Contents/MacOS/AsperaDrive|grep -E '.{100}==$'|base64 --decode
+    CLIENT_RANDOM={
+      'aspera.drive' => '1FwelGbL9xsv3M8H-VXPs5k69OdbaMgfB66qfBqlELFPk6r9ANztmGMOSLqaXEWXEPwk-6JnMZ7-RaXAYLd5thLbcL3QzgeU',
+      'aspera.global-cli-client' => 'bK_qpqFpP-OPEuRJ9mnmdw_ebLtpSqCnqhuAKfKdoLXC6OF2yLMgsfAMBmXg7XI_zplV4gBqNOvlJdgCxlP0Zjm4GsRsmprf'
+    }
+    # path in URL of public links
+    PATHS_PUBLIC_LINK=['/packages/public/receive','/packages/public/send','/files/public']
+    private_constant :PRODUCT_NAME,:PROD_DOMAIN,:MAX_REDIRECT,:DEFAULT_CLIENT,:CLIENT_RANDOM,:PATHS_PUBLIC_LINK
 
     public
     # various API scopes supported
@@ -15,39 +31,17 @@ module Asperalm
     SCOPE_FILES_ADMIN_USER_USER=SCOPE_FILES_ADMIN_USER+'+'+SCOPE_FILES_USER
     SCOPE_NODE_USER='user:all'
     SCOPE_NODE_ADMIN='admin:all'
-    # path in URL of public package links
-    PATHS_PUBLIC_LINK=['/packages/public/receive','/packages/public/send','/files/public']
     PATH_SEPARATOR='/'
-
-    FILES='files'
-    PACKAGES='packages'
-
-    PRODUCT_NAME='Aspera on Cloud'
-    PRODUCT_DOMAIN='ibmaspera.com'
-    private_constant :PRODUCT_NAME,:PRODUCT_DOMAIN
-
-    # strings /Applications/Aspera\ Drive.app/Contents/MacOS/AsperaDrive|grep -E '.{100}==$'|rev
-    RANDOM_DRIVE='==QMGdXZsdkYMlDezZ3MNhDStYFWQNXNrZTOPRmYh10ZmJkN2EnZCFHbFxkRQtmNylTQOpHdtdUTPNFTxFGWFdFWFB1dr1iNK5WTadTLSFGWBlFTkVDdoxkYjx0MRp3ZlVlOlZXayRmLhJXZwNXY'
-    # found in aspera CLI
-    RANDOM_CLIENT='==gYL9VcwFnRwBVLPBVR1JlS50mbtR2dfVmYMRHcTF3QuFHa1F0SmtEZvxEWDZzTGJTeM10ZzZWQNJUbYd2NYl0X6BHbWRzZCFnTPZHbKR2ZDhHbQBjWq1GNHNnUz1GcyZmO05WZpx2YtkGbj1CbhJ2bsdmLhJXZwNXY'
-    private_constant :RANDOM_DRIVE,:RANDOM_CLIENT
-
-    def self.random_drive
-      Base64.strict_decode64(RANDOM_DRIVE.reverse).split(':')
-    end
-
-    def self.random_cli
-      Base64.strict_decode64(RANDOM_CLIENT.reverse).split(':')
-    end
+    FILES_APP='files'
+    PACKAGES_APP='packages'
 
     # @param url of AoC instance
-    # @return organization id and AoC domain
-    # AoC domain is: ibmaspera.com, asperafiles.com or qa.asperafiles.com, etc...
+    # @return organization id in url and AoC domain: ibmaspera.com, asperafiles.com or qa.asperafiles.com, etc...
     def self.parse_url(aoc_org_url)
       uri=URI.parse(aoc_org_url.gsub(/\/+$/,''))
       instance_fqdn=uri.host
       Log.log.debug("instance_fqdn=#{instance_fqdn}")
-      raise "No host found in URL.Please check URL format: https://myorg.#{PRODUCT_DOMAIN}" if instance_fqdn.nil?
+      raise "No host found in URL.Please check URL format: https://myorg.#{PROD_DOMAIN}" if instance_fqdn.nil?
       organization,instance_domain=instance_fqdn.split('.',2)
       Log.log.debug("instance_domain=#{instance_domain}")
       Log.log.debug("organization=#{organization}")
@@ -55,21 +49,7 @@ module Asperalm
       return organization,instance_domain
     end
 
-    # @param url of AoC instance
-    # @return necessary fixed information to create JWT or call API
-    def self.base_rest_params(aoc_org_url)
-      organization,instance_domain=parse_url(aoc_org_url)
-      base_url='https://api.'+instance_domain+'/api/v1'
-      return {
-        :base_url => base_url,
-        :auth     => {
-        :type         => :oauth2,
-        :base_url     => "#{base_url}/oauth2/#{organization}",
-        :jwt_audience => 'https://api.asperafiles.com/api/v1/oauth2/token'
-        }}
-    end
-
-    def self.metering_api(entitlement_id,customer_id,api_domain=PRODUCT_DOMAIN)
+    def self.metering_api(entitlement_id,customer_id,api_domain=PROD_DOMAIN)
       return Rest.new({
         :base_url => "https://api.#{api_domain}/metering/v1",
         :headers  => {'X-Aspera-Entitlement-Authorization' => Rest.basic_creds(entitlement_id,customer_id)}
@@ -81,17 +61,101 @@ module Asperalm
       return 'node.'+access_key+':'+scope
     end
 
-    # @return true if the OAuth client_id is globally defined in AoC
-    def self.is_global_client_id?(client_id)
-      client_id.is_a?(String) and client_id.start_with?('aspera.global')
+    # check option "link"
+    # if present try to get token value (resolve redirection if short links used)
+    # then set options url/token/auth
+    def self.resolve_pub_link(rest_opts,public_link_url)
+      return if public_link_url.nil?
+      # set to token if available after redirection
+      url_param_token_pair=nil
+      redirect_count=0
+      loop do
+        uri=URI.parse(public_link_url)
+        if PATHS_PUBLIC_LINK.include?(uri.path)
+          url_param_token_pair=URI::decode_www_form(uri.query).select{|e|e.first.eql?('token')}.first
+          if url_param_token_pair.nil?
+            raise ArgumentError,"link option must be URL with 'token' parameter"
+          end
+          # ok we get it !
+          rest_opts[:org_url]='https://'+uri.host
+          rest_opts[:auth][:grant]=:url_token
+          rest_opts[:auth][:url_token]=url_param_token_pair.last
+          return
+        end
+        Log.log.debug("no expected format: #{public_link_url}")
+        raise "exceeded max redirection: #{MAX_REDIRECT}" if redirect_count > MAX_REDIRECT
+        r = Net::HTTP.get_response(uri)
+        if r.code.start_with?("3")
+          public_link_url = r['location']
+          raise "no location in redirection" if public_link_url.nil?
+          Log.log.debug("redirect to: #{public_link_url}")
+        else
+          # not a redirection
+          raise ArgumentError,'link option must be redirect or have token parameter'
+        end
+      end # loop
+
+      raise RuntimeError,'too many redirections'
     end
 
-    def initialize(rest_params)
-      super(rest_params)
+    # @param :link,:url,:auth,:client_id,:client_secret,:scope,:redirect_uri,:private_key,:username,:subpath
+    def initialize(opt)
       # access key secrets are provided out of band to get node api access
       # key: access key
       # value: associated secret
       @secrets={}
+
+      # init rest params
+      aoc_rest_p={:auth=>{:type =>:oauth2}}
+      # shortcut to auth section
+      aoc_auth_p=aoc_rest_p[:auth]
+
+      # sets [:org_url], [:auth][:grant], [:auth][:url_token]
+      self.class.resolve_pub_link(aoc_rest_p,opt[:link])
+
+      # get org url from pub link or options
+      if aoc_rest_p.has_key?(:org_url)
+        opt[:url] = aoc_rest_p[:org_url]
+        aoc_rest_p.delete(:org_url)
+      else
+        raise ArgumentError,"Missing mandatory option: url" if opt[:url].nil?
+      end
+
+      # set API and OAuth URLs
+      organization,instance_domain=self.class.parse_url(opt[:url])
+      aoc_rest_p[:base_url]="https://api.#{instance_domain}/#{opt[:subpath]}"
+      aoc_auth_p[:base_url] = "#{aoc_rest_p[:base_url]}/oauth2/#{organization}"
+
+      if !aoc_auth_p.has_key?(:grant)
+        raise ArgumentError,"Missing mandatory option: auth" if opt[:auth].nil?
+        aoc_auth_p[:grant] = opt[:auth]
+      end
+
+      aoc_auth_p[:client_id]     = opt[:client_id] || DEFAULT_CLIENT
+      aoc_auth_p[:client_secret] = opt[:client_secret] || CLIENT_RANDOM[DEFAULT_CLIENT].reverse
+      aoc_auth_p[:scope]         = opt[:scope]
+
+      # fill other auth parameters based on Oauth method
+      case aoc_auth_p[:grant]
+      when :web
+        raise ArgumentError,"Missing mandatory option: redirect_uri" if opt[:redirect_uri].nil?
+        aoc_auth_p[:redirect_uri] = opt[:redirect_uri]
+      when :jwt
+        # add jwt payload for global ids
+        if CLIENT_RANDOM.keys.include?(aoc_auth_p[:client_id])
+          aoc_auth_p.merge!({:jwt_add=>{org: organization}})
+        end
+        raise ArgumentError,"Missing mandatory option: private_key" if opt[:private_key].nil?
+        raise ArgumentError,"Missing mandatory option: username" if opt[:username].nil?
+        private_key_PEM_string=opt[:private_key]
+        aoc_auth_p[:jwt_audience]        = 'https://api.asperafiles.com/api/v1/oauth2/token'
+        aoc_auth_p[:jwt_subject]         = opt[:username]
+        aoc_auth_p[:jwt_private_key_obj] = OpenSSL::PKey::RSA.new(private_key_PEM_string)
+      when :url_token
+        # nothing more
+      else raise "ERROR: unsupported auth method"
+      end
+      super(aoc_rest_p)
     end
 
     def add_secrets(secrets)
@@ -115,7 +179,7 @@ module Asperalm
     end
 
     # get transfer connection parameters
-    def tr_spec_remote_info(node_info)
+    def self.tr_spec_remote_info(node_info)
       #TODO: add option to request those parameters by calling /upload_setup on node api
       return {
         'remote_user' => 'xfer',
@@ -148,7 +212,7 @@ module Asperalm
       }
     end
 
-    # build ts addon for IBM Aspera Console
+    # build ts addon for IBM Aspera Console (cookie)
     def self.console_ts(app,user_name,user_email)
       elements=[app,user_name,user_email].map{|e|Base64.strict_encode64(e)}
       elements.unshift('aspera.aoc')
@@ -183,7 +247,7 @@ module Asperalm
         } # aspera
         } # tags
       }
-      transfer_spec.merge!(tr_spec_remote_info(node_file[:node_info]))
+      transfer_spec.merge!(self.class.tr_spec_remote_info(node_file[:node_info]))
       # add caller provided transfer spec
       transfer_spec.deep_merge!(ts_add)
       # additional information for transfer agent
