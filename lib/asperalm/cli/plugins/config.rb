@@ -74,7 +74,8 @@ module Asperalm
           # read correct file
           read_config_file
           # add preset handler (needed for smtp)
-          ExtendedValue.instance.set_handler('preset',:reader,lambda{|v|preset_by_name(v)})
+          ExtendedValue.instance.set_handler(EXTV_PRESET,:reader,lambda{|v|preset_by_name(v)})
+          ExtendedValue.instance.set_handler(EXTV_INCLUDE_PRESETS,:decoder,lambda{|v|expanded_with_preset_includes(v)})
           self.options.set_obj_attr(:override,self,:option_override,:no)
           self.options.set_obj_attr(:ascp_path,self,:option_ascp_path)
           self.options.set_obj_attr(:use_product,self,:option_use_product)
@@ -142,13 +143,17 @@ module Asperalm
           return r
         end
 
-        def set_config_default(key,value)
-          global_default_preset=get_plugin_default_config_name(CONF_GLOBAL_SYM)
-          if global_default_preset.nil?
-            global_default_preset='global_common_defaults'
-            @config_presets[global_default_preset]={}
+        # set parameter and value in global config
+        # creates one if none already created
+        # @return preset that contains global default
+        def set_global_default(key,value)
+          global_default_preset_name=get_plugin_default_config_name(CONF_GLOBAL_SYM)
+          if global_default_preset_name.nil?
+            global_default_preset_name='global_common_defaults'
+            @config_presets[global_default_preset_name]={}
           end
-          @config_presets[global_default_preset][key.to_s]=value
+          @config_presets[global_default_preset_name][key.to_s]=value
+          return global_default_preset_name
         end
 
         public
@@ -160,9 +165,32 @@ module Asperalm
         attr_accessor :option_override
         attr_accessor :option_config_file
 
-        def preset_by_name(config_name)
+        EXTV_INCLUDE_PRESETS='incps'
+        EXTV_PRESET='preset'
+
+        # @return the hash from name (also expands possible includes)
+        def preset_by_name(config_name, include_path=[])
           raise CliError,"no such config preset: #{config_name}" unless @config_presets.has_key?(config_name)
-          return @config_presets[config_name]
+          raise CliError,"loop in include" if include_path.include?(config_name)
+          return expanded_with_preset_includes(@config_presets[config_name],include_path.clone.push(config_name))
+        end
+
+        # @param hash_val
+        def expanded_with_preset_includes(hash_val, include_path=[])
+          raise CliError,"#{EXTV_INCLUDE_PRESETS} requires a Hash" unless hash_val.is_a?(Hash)
+          if hash_val.has_key?(EXTV_INCLUDE_PRESETS)
+            memory=hash_val.clone
+            includes=memory[EXTV_INCLUDE_PRESETS]
+            memory.delete(EXTV_INCLUDE_PRESETS)
+            hash_val={}
+            raise "#{EXTV_INCLUDE_PRESETS} must be an Array" unless includes.is_a?(Array)
+            raise "#{EXTV_INCLUDE_PRESETS} must contain names" unless includes.map{|i|i.class}.uniq.eql?([String])
+            includes.each do |preset_name|
+              hash_val.merge!(preset_by_name(preset_name,include_path))
+            end
+            hash_val.merge!(memory)
+          end
+          return hash_val
         end
 
         def option_ascp_path=(new_value)
@@ -330,7 +358,7 @@ module Asperalm
             raise "file name must be ascp" unless File.basename(default_ascp).eql?('ascp')
             raise "no such file: #{default_ascp}" unless File.exist?(default_ascp)
             raise "not executable: #{default_ascp}" unless File.executable?(default_ascp)
-            preset_name=set_config_default(:ascp_path,default_ascp)
+            preset_name=set_global_default(:ascp_path,default_ascp)
             save_presets_to_config_file
             return {:type=>:status, :data=>"saved to default global preset #{preset_name}"}
           when :show # shows files used
@@ -360,7 +388,7 @@ module Asperalm
             when :use
               default_product=self.options.get_next_argument('product name')
               Fasp::Installation.instance.use_ascp_from_product(default_product)
-              preset_name=set_config_default(:ascp_path,Fasp::Installation.instance.ascp_path)
+              preset_name=set_global_default(:ascp_path,Fasp::Installation.instance.ascp_path)
               save_presets_to_config_file
               return {:type=>:status, :data=>"saved to default global preset #{preset_name}"}
             end

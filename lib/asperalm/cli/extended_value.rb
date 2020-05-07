@@ -30,50 +30,55 @@ module Asperalm
 
       def initialize
         @handlers={
-          'base64'=>{:type=>:decoder,:func=>lambda{|v|Base64.decode64(v)}},
-          'json'  =>{:type=>:decoder,:func=>lambda{|v|JSON.parse(v)}},
-          'zlib'  =>{:type=>:decoder,:func=>lambda{|v|Zlib::Inflate.inflate(v)}},
-          'ruby'  =>{:type=>:decoder,:func=>lambda{|v|eval(v)}},
-          'csvt'  =>{:type=>:decoder,:func=>lambda{|v|ExtendedValue.decode_csvt(v)}},
-          'lines' =>{:type=>:decoder,:func=>lambda{|v|v.split("\n")}},
-          'val'   =>{:type=>:reader ,:func=>lambda{|v|v}},
-          'file'  =>{:type=>:reader ,:func=>lambda{|v|File.read(File.expand_path(v))}},
-          'path'  =>{:type=>:reader ,:func=>lambda{|v|File.expand_path(v)}},
-          'env'   =>{:type=>:reader ,:func=>lambda{|v|ENV[v]}},
-          'stdin' =>{:type=>:reader ,:func=>lambda{|v|raise "no value allowed for stdin" unless v.empty?;STDIN.read}},
+          :decoder=>{
+          'base64' =>lambda{|v|Base64.decode64(v)},
+          'json'   =>lambda{|v|JSON.parse(v)},
+          'zlib'   =>lambda{|v|Zlib::Inflate.inflate(v)},
+          'ruby'   =>lambda{|v|eval(v)},
+          'csvt'   =>lambda{|v|ExtendedValue.decode_csvt(v)},
+          'lines'  =>lambda{|v|v.split("\n")}
+          },
+          :reader=>{
+          'val'    =>lambda{|v|v},
+          'file'   =>lambda{|v|File.read(File.expand_path(v))},
+          'path'   =>lambda{|v|File.expand_path(v)},
+          'env'    =>lambda{|v|ENV[v]},
+          'stdin'  =>lambda{|v|raise "no value allowed for stdin" unless v.empty?;STDIN.read}
+          }
           # other handlers can be set using set_handler, e.g. preset is reader in config plugin
         }
       end
       public
 
-      def modifiers;@handlers.keys;end
+      def modifiers;@handlers.keys.map{|i|@handlers[i].keys}.flatten;end
 
+      # add a new :reader or :decoder
+      # decoder can be chained, reader is last one on right
       def set_handler(name,type,method)
+        raise "type must be one of #{@handlers.keys}" unless @handlers.keys.include?(type)
         Log.log.debug("setting #{type} handler for #{name}")
-        @handlers[name]={:type=>type,:func=>method}
+        @handlers[type][name]=method
       end
 
       # parse an option value if it is a String using supported extended vaklue modifiers
       # other value types are returned as is
       def parse(name_or_descr,value)
         return value if !value.is_a?(String)
-        decoder_list=@handlers.keys.select{|k|@handlers[k][:type].eql?(:decoder)}
-        reader_list=@handlers.keys.select{|k|@handlers[k][:type].eql?(:reader)}
         # first determine decoders, in reversed order
         decoders_reversed=[]
-        while (m=value.match(/^@([^:]+):(.*)/)) and decoder_list.include?(m[1])
+        while (m=value.match(/^@([^:]+):(.*)/)) and @handlers[:decoder].include?(m[1])
           decoders_reversed.unshift(m[1])
           value=m[2]
         end
         # then read value
-        reader_list.each do |reader|
+        @handlers[:reader].each do |reader,method|
           if m=value.match(/^@#{reader}:(.*)/) then
-            value=@handlers[reader][:func].call(m[1])
+            value=method.call(m[1])
             break
           end
         end
         decoders_reversed.each do |decoder|
-          value=@handlers[decoder][:func].call(value)
+          value=@handlers[:decoder][decoder].call(value)
         end
         return value
       end # parse
