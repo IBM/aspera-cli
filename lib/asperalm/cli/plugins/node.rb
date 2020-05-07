@@ -82,7 +82,7 @@ module Asperalm
 
         SIMPLE_ACTIONS=[:nagios_check,:events, :space, :info, :license, :mkdir, :mklink, :mkfile, :rename, :delete, :search ]
 
-        COMMON_ACTIONS=[:browse, :upload, :download ].concat(SIMPLE_ACTIONS)
+        COMMON_ACTIONS=[:browse, :upload, :download, :api_details ].concat(SIMPLE_ACTIONS)
 
         # common API to node and Shares
         # prefix_path is used to list remote sources in Faspex
@@ -192,6 +192,8 @@ module Asperalm
             # only one request, so only one answer
             transfer_spec=send_result['transfer_specs'].first['transfer_spec']
             return Main.result_transfer(self.transfer.start(transfer_spec,{:src=>:node_gen3}))
+          when :api_details
+            return { :type=>:single_object, :data => @api_node.params }
           end
         end
 

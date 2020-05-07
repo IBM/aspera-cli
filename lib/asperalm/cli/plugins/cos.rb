@@ -78,9 +78,9 @@ module Asperalm
               :type     => :basic,
               :username => ats_info['AccessKey']['Id'],
               :password => ats_info['AccessKey']['Secret']}})
-            command=self.options.get_next_command([:upload,:download,:info,:access_key])
             #command=self.options.get_next_command(Node::ACTIONS)
             #command=self.options.get_next_command(Node::COMMON_ACTIONS)
+            command=self.options.get_next_command([:upload,:download,:info,:access_key,:api_details])
             node_plugin=Node.new(@agents.merge(skip_basic_auth_options: true, node_api: api_node, add_request_param: add_ts))
             return node_plugin.execute_action(command)
           end
