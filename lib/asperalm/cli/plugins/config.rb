@@ -533,6 +533,8 @@ module Asperalm
               pub_key_pem=OpenSSL::PKey::RSA.new(File.read(private_key_path)).public_key.to_s
               # define options
               require 'asperalm/cli/plugins/aspera'
+              # make username mandatory for jwt, this triggers interactive input
+              self.options.get_option(:username,:mandatory)
               files_plugin=Plugins::Aspera.new(@agents.merge({skip_basic_auth_options: true, private_key_path: private_key_path}))
               auto_set_pub_key=false
               auto_set_jwt=false
@@ -593,13 +595,15 @@ module Asperalm
               self.format.display_status("creating new config preset: #{aspera_preset_name}")
               @config_presets[aspera_preset_name]={
                 :url.to_s           =>self.options.get_option(:url),
-                :redirect_uri.to_s  =>self.options.get_option(:redirect_uri),
-                :client_id.to_s     =>self.options.get_option(:client_id),
-                :client_secret.to_s =>self.options.get_option(:client_secret),
                 :auth.to_s          =>:jwt.to_s,
                 :private_key.to_s   =>'@file:'+private_key_path,
                 :username.to_s      =>myself['email'],
               }
+              # set only if non nil
+              [:client_id,:client_secret].each do |s|
+                o=self.options.get_option(s)
+                @config_presets[s.to_s] = o unless o.nil?
+              end
               self.format.display_status("Setting config preset as default for #{NEW_AOC_COMMAND}")
               @config_presets[CONF_PRESET_DEFAULT][NEW_AOC_COMMAND]=aspera_preset_name
               self.format.display_status("saving config file")
