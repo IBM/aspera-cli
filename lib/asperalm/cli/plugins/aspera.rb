@@ -13,8 +13,7 @@ module Asperalm
     module Plugins
       class Aspera < BasicAuthPlugin
         VAL_ALL='ALL'
-        MAX_REDIRECT=10
-        private_constant :VAL_ALL,:MAX_REDIRECT
+        private_constant :VAL_ALL
         attr_reader :api_aoc
         attr_accessor :option_ak_secret,:option_secrets
         def initialize(env)
@@ -44,7 +43,6 @@ module Asperalm
           self.options.add_opt_simple(:eid,"identifier") # used ?
           self.options.add_opt_simple(:name,"resource name")
           self.options.add_opt_simple(:link,"public link to shared resource")
-          self.options.add_opt_simple(:public_token,"token value of public link")
           self.options.add_opt_simple(:new_user_option,"new user creation option")
           self.options.add_opt_simple(:from_folder,"share to share source folder")
           self.options.add_opt_simple(:scope,"scope for AoC API calls")
@@ -52,10 +50,7 @@ module Asperalm
           self.options.set_option(:bulk,:no)
           self.options.set_option(:new_user_option,{'package_contact'=>true})
           self.options.set_option(:operation,:push)
-          client_data=OnCloud.random_cli
           self.options.set_option(:auth,:jwt)
-          self.options.set_option(:client_id,client_data.first)
-          self.options.set_option(:client_secret,client_data.last)
           self.options.set_option(:scope,OnCloud::SCOPE_FILES_USER)
           self.options.set_option(:private_key,'@file:'+env[:private_key_path]) if env[:private_key_path].is_a?(String)
           self.options.parse_options!
@@ -179,11 +174,11 @@ module Asperalm
               'destination_root_id' => server_node_file[:file_id],
               'source_root_id'      => client_node_file[:file_id]
             }
-            return Main.result_transfer(transfer_start(OnCloud::FILES,client_tr_oper,server_node_file,add_ts))
+            return Main.result_transfer(transfer_start(OnCloud::FILES_APP,client_tr_oper,server_node_file,add_ts))
           when :upload
             node_file = @api_aoc.resolve_node_file(top_node_file,self.transfer.destination_folder('send'))
             add_ts={'tags'=>{'aspera'=>{'files'=>{'parentCwd'=>"#{node_file[:node_info]['id']}:#{node_file[:file_id]}"}}}}
-            return Main.result_transfer(transfer_start(OnCloud::FILES,'send',node_file,add_ts))
+            return Main.result_transfer(transfer_start(OnCloud::FILES_APP,'send',node_file,add_ts))
           when :download
             source_paths=self.transfer.ts_source_paths
             # special case for AoC : all files must be in same folder
@@ -198,7 +193,7 @@ module Asperalm
             # override paths with just filename
             add_ts={'tags'=>{'aspera'=>{'files'=>{'parentCwd'=>"#{node_file[:node_info]['id']}:#{node_file[:file_id]}"}}}}
             add_ts.merge!({'paths'=>source_paths})
-            return Main.result_transfer(transfer_start(OnCloud::FILES,'receive',node_file,add_ts))
+            return Main.result_transfer(transfer_start(OnCloud::FILES_APP,'receive',node_file,add_ts))
           when :http_node_download
             source_paths=self.transfer.ts_source_paths
             source_folder=source_paths.shift['source']
@@ -235,7 +230,7 @@ module Asperalm
               items=node_api.read('permissions',{'include'=>['[]','access_level','permission_count'],'file_id'=>fileid,'inherited'=>false})[:data]
               return {:type=>:object_list,:data=>items}
             when :create
-              value=self.options.get_next_argument('creation value')
+              #value=self.options.get_next_argument('creation value')
               set_workspace_info
               access_id="ASPERA_ACCESS_KEY_ADMIN_WS_#{@workspace_id}"
               node_file[:node_info]
@@ -265,93 +260,19 @@ module Asperalm
           throw "ERR"
         end # execute_node_gen4_command
 
-        # check option "link"
-        # if present try to get token value (resolve redirection if short links used)
-        # then set options url/token/auth
-        def pub_link_to_url_auth_token
-          public_link_url=self.options.get_option(:link,:optional)
-          return if public_link_url.nil?
-          # set to token if available after redirection
-          url_param_token_pair=nil
-          redirect_count=0
-          loop do
-            uri=URI.parse(public_link_url)
-            if OnCloud::PATHS_PUBLIC_LINK.include?(uri.path)
-              url_param_token_pair=URI::decode_www_form(uri.query).select{|e|e.first.eql?('token')}.first
-              if url_param_token_pair.nil?
-                raise CliBadArgument,"link option must be URL with 'token' parameter"
-              end
-              # ok we get it !
-              self.options.set_option(:url,'https://'+uri.host)
-              self.options.set_option(:public_token,url_param_token_pair.last)
-              self.options.set_option(:auth,:url_token)
-              return
-            end
-            Log.log.debug("no expected format: #{public_link_url}")
-            raise "exceeded max redirection: #{MAX_REDIRECT}" if redirect_count > MAX_REDIRECT
-            r = Net::HTTP.get_response(uri)
-            if r.code.start_with?("3")
-              public_link_url = r['location']
-              raise "no location in redirection" if public_link_url.nil?
-              Log.log.debug("redirect to: #{public_link_url}")
-            else
-              # not a redirection
-              raise CliBadArgument,'not redirection, so link not supported'
-            end
-          end # loop
-
-          raise CliBadArgument,'too many redirections'
-        end
-
-        def aoc_rest_params
-
-          # if auth is a public link
-          # option "link" is a shortcut for options: url, auth, public_token
-          pub_link_to_url_auth_token
-
-          # Connection paramaters (url and auth) to Aspera on Cloud
-          # pre populate rest parameters based on URL
-          res_rest_params=OnCloud.base_rest_params(self.options.get_option(:url,:mandatory))
-          aoc_rest_auth=res_rest_params[:auth]
-          aoc_rest_auth.merge!({
-            :grant         => self.options.get_option(:auth,:mandatory),
-            :client_id     => self.options.get_option(:client_id,:mandatory),
-            :client_secret => self.options.get_option(:client_secret,:mandatory),
-            :scope         => self.options.get_option(:scope,:optional)
-          })
-
-          # add jwt payload for global ids
-          if OnCloud.is_global_client_id?(aoc_rest_auth[:client_id])
-            org=aoc_rest_auth[:base_url].gsub(/.*\//,'')
-            aoc_rest_auth.merge!({:jwt_add=>{org: org}})
-          end
-
-          # fill other auth parameters based on Oauth method
-          case aoc_rest_auth[:grant]
-          when :web
-            aoc_rest_auth.merge!({
-              :redirect_uri => self.options.get_option(:redirect_uri,:mandatory)
-            })
-          when :jwt
-            private_key_PEM_string=self.options.get_option(:private_key,:mandatory)
-            aoc_rest_auth.merge!({
-              :jwt_subject         => self.options.get_option(:username,:mandatory),
-              :jwt_private_key_obj => OpenSSL::PKey::RSA.new(private_key_PEM_string)
-            })
-          when :url_token
-            aoc_rest_auth.merge!({
-              :url_token     => self.options.get_option(:public_token,:mandatory),
-            })
-          else raise "ERROR: unsupported auth method"
-          end
-          return res_rest_params
+        # build constructor option list for OnCloud based on options of CLI
+        def aoc_rest_params(subpath)
+          # copy command line options to args
+          opt=[:link,:url,:auth,:client_id,:client_secret,:scope,:redirect_uri,:private_key,:username].inject({}){|m,i|m[i]=self.options.get_option(i,:optional);m}
+          opt[:subpath]=subpath
+          return opt
         end
 
         # Create a new AoC API REST object and set @api_aoc.
         # Parameters based on command line options
         # @return nil
         def update_aoc_api
-          @api_aoc=OnCloud.new(aoc_rest_params)
+          @api_aoc=OnCloud.new(aoc_rest_params('api/v1'))
           # add access key secrets
           @api_aoc.add_secrets(@option_secrets)
           return nil
@@ -498,9 +419,7 @@ module Asperalm
             end
           when :subscription
             org=@api_aoc.read('organization')[:data]
-            bss_rest_param=aoc_rest_params
-            bss_rest_param[:base_url].gsub!('api/v1','bss/platform')
-            bss_api=Rest.new(bss_rest_param)
+            bss_api=Rest.new(aoc_rest_params('bss/platform'))
             graphql_query="
     query ($organization_id: ID!) {
       aoc (organization_id: $organization_id) {
@@ -767,7 +686,7 @@ module Asperalm
 
               # execute transfer
               node_file = {node_info: node_info, file_id: package_info['contents_file_id']}
-              return Main.result_transfer(transfer_start(OnCloud::PACKAGES,'send',node_file,OnCloud.package_tags(package_info,'upload')))
+              return Main.result_transfer(transfer_start(OnCloud::PACKAGES_APP,'send',node_file,OnCloud.package_tags(package_info,'upload')))
             when :recv
               if !@url_token_data.nil?
                 assert_public_link_types(['view_received_package'])
@@ -800,7 +719,7 @@ module Asperalm
                 self.format.display_status("downloading package: #{package_info['name']}")
                 add_ts={'paths'=>[{'source'=>'.'}]}
                 node_file = {node_info: node_info, file_id: package_info['contents_file_id']}
-                statuses=transfer_start(OnCloud::PACKAGES,'receive',node_file,OnCloud.package_tags(package_info,'download').merge(add_ts))
+                statuses=transfer_start(OnCloud::PACKAGES_APP,'receive',node_file,OnCloud.package_tags(package_info,'download').merge(add_ts))
                 result_transfer.push({'package'=>package_id,'status'=>statuses.map{|i|i.to_s}.join(',')})
                 # update skip list only if all transfer sessions completed
                 if TransferAgent.session_status(statuses).eql?(:success)
