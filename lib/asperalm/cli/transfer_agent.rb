@@ -69,7 +69,7 @@ module Asperalm
             # get not api only if it is not already set
             if @agent.node_api.nil?
               # way for code to setup alternate node api in avance
-              # support: @param:<name>
+              # support: @preset:<name>
               # support extended values
               node_config=@opt_mgr.get_option(:transfer_info,:optional)
               # if not specified: use default node
@@ -95,7 +95,6 @@ module Asperalm
                 }})
             end
           when :aoc
-            @agent=Fasp::Aoc.instance
             aoc_config=@opt_mgr.get_option(:transfer_info,:optional)
             if aoc_config.nil?
               param_set_name=@config.get_plugin_default_config_name(:aspera)
@@ -103,15 +102,13 @@ module Asperalm
               aoc_config=@config.preset_by_name(param_set_name)
             end
             Log.log.debug("aoc=#{aoc_config}")
-            raise CliBadArgument,"the node configuration shall be Hash, not #{aoc_config.class} (#{aoc_config}), use either @json:<json> or @preset:<parameter set name>" if !aoc_config.is_a?(Hash)
-            # now check there are required parameters
-            sym_config=[:url,:subject].inject({}) do |h,param|
-              raise CliBadArgument,"missing parameter [#{param}] in node specification: #{aoc_config}" if !aoc_config.has_key?(param.to_s)
-              h[param]=aoc_config[param.to_s]
-              h
-            end
-            #@agent.node_api=OnCloud.new(aoc_rest_params)
-            raise "UNDER WORK"
+            raise CliBadArgument,"the aoc configuration shall be Hash, not #{aoc_config.class} (#{aoc_config}), refer to manual" if !aoc_config.is_a?(Hash)
+            # convert keys to symbol
+            aoc_config=aoc_config.symbolize_keys
+            # convert auth to symbol
+            aoc_config[:auth]=aoc_config[:auth].to_sym if aoc_config[:auth].is_a?(String)
+            aoc_config[:private_key]=ExtendedValue.instance.evaluate(aoc_config[:private_key])
+            @agent=Fasp::Aoc.new(aoc_config)
           else raise "INTERNAL ERROR"
           end
           @agent.add_listener(Listener::Logger.new)
