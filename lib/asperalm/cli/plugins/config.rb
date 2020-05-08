@@ -595,9 +595,9 @@ module Asperalm
               self.format.display_status("creating new config preset: #{aspera_preset_name}")
               @config_presets[aspera_preset_name]={
                 :url.to_s           =>self.options.get_option(:url),
+                :username.to_s      =>myself['email'],
                 :auth.to_s          =>:jwt.to_s,
                 :private_key.to_s   =>'@file:'+private_key_path,
-                :username.to_s      =>myself['email'],
               }
               # set only if non nil
               [:client_id,:client_secret].each do |s|
