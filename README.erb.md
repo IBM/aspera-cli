@@ -378,13 +378,21 @@ By default, a table output will display one line per entry, and columns. Dependi
 
 Usually, values of options and arguments are specified by a simple string. But sometime it is convenient to read a value from a file, or decode it, or have a value more complex than a string (e.g. Hash table).
 
-The value of options and arguments can optionally be retrieved using one of the following "readers":
+The extended value syntax is:
+
+```
+<0 or more decoders><0 or 1 reader><nothing or some text value>
+```
+
+The difference between reader and decoder is order and ordinality. Both act like a function of value on right hand side. Decoders are at the beginning of the value, followed by a single optional reader, followed by the optional value.
+
+The following "readers" are supported:
 
 * @val:VALUE , prevent further special prefix processing, e.g. `--username=@val:laurent` sets the option `username` to value `laurent`.
 * @file:PATH , read value from a file (prefix "~/" is replaced with the users home folder), e.g. --key=@file:~/.ssh/mykey
 * @path:PATH , performs path expansion (prefix "~/" is replaced with the users home folder), e.g. --config-file=@path:~/sample_config.yml
 * @env:ENVVAR , read from a named env var, e.g.--password=@env:MYPASSVAR
-* @stdin: , read from stdin
+* @stdin: , read from stdin (no value on right)
 * @preset:NAME , get whole <%=opprst%> value by name
 
 In addition it is possible to decode a value, using one or multiple decoders :
@@ -395,6 +403,7 @@ In addition it is possible to decode a value, using one or multiple decoders :
 * @ruby: execute ruby code
 * @csvt: decode a titled CSV value
 * @lines: split a string in multiple lines and return an array
+* @incps: include values of presets specified by key include_presets in hash
 
 To display the result of an extended value, use the `config echo` command.
 
@@ -425,6 +434,15 @@ $ <%=cmd%> config echo @csvt:@file:test.csv
 : toto : titi@tutu.tata      :
 :......:.....................:
 ```
+
+Example: create a hash and include values from preset named "config" of config file
+
+```
+$ <%=cmd%> config echo @incps:@json:'{"hello":true,"incps":["config"]}'
+{"version"=>"0.9", "hello"=>true}
+```
+
+Note that `@incps:@json:'{"incps":["config"]}'` or `@incps:@ruby:'{"incps"=>["config"]}'` is equivalent to: `@preset:config`
 
 ## <a name="native"></a>Structured Value
 
@@ -867,6 +885,8 @@ and associated credentials (node user or access key).
 The `--transfer-info` parameter can directly specify a pre-configured <%=prst%> : 
 `--transfer-info=@preset:<psetname>` or specified using the option syntax :
 `--transfer-info=@json:'{"url":"https://...","username":"theuser","password":"thepass"}'`
+
+### <a name="trinfoaoc"></a>Aspera on cloud
 
 ### <a name="httpgw"></a>HTTP Gateway
 
