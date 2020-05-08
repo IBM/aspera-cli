@@ -153,7 +153,7 @@ module Asperalm
         aoc_auth_p[:jwt_private_key_obj] = OpenSSL::PKey::RSA.new(private_key_PEM_string)
       when :url_token
         # nothing more
-      else raise "ERROR: unsupported auth method"
+      else raise "ERROR: unsupported auth method: #{aoc_auth_p[:grant]}"
       end
       super(aoc_rest_p)
     end
