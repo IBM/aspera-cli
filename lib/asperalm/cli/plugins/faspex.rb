@@ -293,7 +293,7 @@ module Asperalm
               when :info
                 return {:data=>source_info,:type=>:single_object}
               when :node
-                node_config=ExtendedValue.instance.parse(:node,source_info[KEY_NODE])
+                node_config=ExtendedValue.instance.evaluate(source_info[KEY_NODE])
                 raise CliError,"bad type for: \"#{source_info[KEY_NODE]}\"" unless node_config.is_a?(Hash)
                 Log.log.debug("node=#{node_config}")
                 api_node=Rest.new({

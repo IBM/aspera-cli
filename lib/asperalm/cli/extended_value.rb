@@ -60,9 +60,9 @@ module Asperalm
         @handlers[type][name]=method
       end
 
-      # parse an option value if it is a String using supported extended vaklue modifiers
+      # parse an option value if it is a String using supported extended value modifiers
       # other value types are returned as is
-      def parse(name_or_descr,value)
+      def evaluate(value)
         return value if !value.is_a?(String)
         # first determine decoders, in reversed order
         decoders_reversed=[]

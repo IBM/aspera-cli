@@ -152,11 +152,11 @@ module Asperalm
             print "#{type}: #{descr}> "
             entry=STDIN.gets.chomp
             break if entry.empty?
-            result.push(ExtendedValue.instance.parse(descr,entry))
+            result.push(ExtendedValue.instance.evaluate(entry))
           end
         when :single
           print "#{type}: #{descr}> "
-          result=ExtendedValue.instance.parse(descr,STDIN.gets.chomp)
+          result=ExtendedValue.instance.evaluate(STDIN.gets.chomp)
         else # one fixed
           print "#{expected.join(' ')}\n#{type}: #{descr}> "
           result=self.class.get_from_list(STDIN.gets.chomp,descr,expected)
@@ -178,9 +178,9 @@ module Asperalm
           # there are values
           case expected
           when :single
-            result=ExtendedValue.instance.parse(descr,@unprocessed_cmd_line_arguments.shift)
+            result=ExtendedValue.instance.evaluate(@unprocessed_cmd_line_arguments.shift)
           when :multiple
-            result = @unprocessed_cmd_line_arguments.shift(@unprocessed_cmd_line_arguments.length).map{|v|ExtendedValue.instance.parse(descr,v)}
+            result = @unprocessed_cmd_line_arguments.shift(@unprocessed_cmd_line_arguments.length).map{|v|ExtendedValue.instance.evaluate(v)}
             # if expecting list and only one arg of type array : it is the list
             if result.length.eql?(1) and result.first.is_a?(Array)
               result=result.first
@@ -223,7 +223,7 @@ module Asperalm
           raise "ERROR"
           #declare_option(option_symbol)
         end
-        value=ExtendedValue.instance.parse(option_symbol,value)
+        value=ExtendedValue.instance.evaluate(value)
         Log.log.debug("set_option(#{where}) #{option_symbol}=#{value}")
         if @declared_options[option_symbol][:values].eql?(BOOLEAN_VALUES)
           value=enum_to_bool(value)
@@ -373,7 +373,7 @@ module Asperalm
             name=$1
             value=$2
             name.gsub!(OPTION_SEP_LINE,OPTION_SEP_NAME)
-            value=ExtendedValue.instance.parse(name,value)
+            value=ExtendedValue.instance.evaluate(value)
             Log.log.debug("option #{name}=#{value}")
             result[name]=value
             @unprocessed_cmd_line_options.delete(optionval) if remove_from_remaining

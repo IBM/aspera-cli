@@ -49,7 +49,7 @@ assert_usage(!['-h','--help'].include?(ARGV.first),nil)
 # parse transfer spec
 begin
   transfer_spec_arg=ARGV.pop
-  transfer_spec=Asperalm::Cli::ExtendedValue.instance.parse("transfer spec",transfer_spec_arg)
+  transfer_spec=Asperalm::Cli::ExtendedValue.instance.evaluate(transfer_spec_arg)
 rescue => e
   assert_usage(false,"Cannot extract transfer spec from: #{transfer_spec_arg}")
 end
