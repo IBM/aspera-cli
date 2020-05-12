@@ -273,7 +273,7 @@ t/cons2:
 	@touch $@
 t/cons3:
 	@echo $@
-	$(EXETEST) console transfer smart sub 73 @json:'{"source":{"paths":["/AAA"]}}'
+	$(EXETEST) console transfer smart sub 112 @json:'{"source":{"paths":["10MB.1"]}}'
 	@touch $@
 tconsole: t/cons1 t/cons2 t/cons3
 
