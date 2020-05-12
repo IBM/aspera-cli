@@ -888,6 +888,8 @@ The `--transfer-info` parameter can directly specify a pre-configured <%=prst%> 
 
 ### <a name="trinfoaoc"></a>Aspera on cloud
 
+By specifying option: `--transfer=aoc`, WORK IN PROGRESS
+
 ### <a name="httpgw"></a>HTTP Gateway
 
 If it possible to send using a HTTP gateway, in case FASP is not allowed.
