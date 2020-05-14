@@ -62,9 +62,18 @@ module Asperalm
               case params['storage']['type']
               # here we need somehow to map storage type to field to get for auth end point
               when 'ibm-s3'
+                server_data2=nil
+                if server_data.nil?
+                  server_data2=@ats_api_pub.all_servers.select{|s|s['id'].eql?(params['transfer_server_id'])}.first
+                  raise "no such transfer server id: #{params['transfer_server_id']}" if server_data2.nil?
+                else
+                  server_data2=@ats_api_pub.all_servers.select{|s|s['cloud'].eql?(server_data['cloud']) and s['region'].eql?(server_data['region']) and s.has_key?('s3_authentication_endpoint')}.first
+                  raise "no such transfer server id: #{params['transfer_server_id']}" if server_data2.nil?
+                  # specific one do not have s3 end point in id
+                  params['transfer_server_id']=server_data2['id']
+                end
                 if !params['storage'].has_key?('authentication_endpoint')
-                  server_data||=@ats_api_pub.all_servers.select{|i|i['id'].eql?(params['transfer_server_id'])}.first
-                  params['storage']['endpoint'] = server_data['s3_authentication_endpoint']
+                  params['storage']['endpoint'] = server_data2['s3_authentication_endpoint']
                 end
               end
             end
@@ -98,8 +107,8 @@ module Asperalm
               :base_url => server_data['transfer_setup_url'],
               :auth     => {
               :type     => :basic,
-              :username => ak_data['id'],
-              :password => ak_data['secret']}})
+              :username => access_key_id,
+              :password => self.options.get_option(:secret,:mandatory)}})
             command=self.options.get_next_command(Node::COMMON_ACTIONS)
             return Node.new(@agents.merge(skip_basic_auth_options: true, node_api: api_node)).execute_action(command)
           when :cluster
@@ -108,14 +117,8 @@ module Asperalm
               :auth     => {
               :type     => :basic,
               :username => access_key_id,
-              :password => self.options.get_option(:secret,:optional)
+              :password => self.options.get_option(:secret,:mandatory)
               }}
-            # if no access key id provided, then we get from ATS API
-            if rest_params[:auth][:password].nil?
-              ak_data=ats_api_pub_v1.read("access_keys/#{access_key_id}")[:data]
-              #rest_params[:username]=ak_data['id']
-              rest_params[:auth][:password]=ak_data['secret']
-            end
             api_ak_auth=Rest.new(rest_params)
             return {:type=>:single_object, :data=>api_ak_auth.read("servers")[:data]}
           else raise "INTERNAL ERROR"
