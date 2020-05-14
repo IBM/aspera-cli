@@ -42,7 +42,7 @@ module Asperalm
         end
 
         def execute_action_access_key
-          commands=[:create,:list,:show,:delete,:node,:cluster,:entitlement]
+          commands=[:create,:list,:show,:modify,:delete,:node,:cluster,:entitlement]
           command=self.options.get_next_command(commands)
           # those dont require access key id
           unless [:create,:list].include?(command)
@@ -74,10 +74,15 @@ module Asperalm
           when :list
             params=self.options.get_option(:params,:optional) || {'offset'=>0,'max_results'=>1000}
             res=ats_api_pub_v1.read("access_keys",params)
-            return {:type=>:object_list, :data=>res[:data]['data'], :fields => ['name','id','secret','created','modified']}
+            return {:type=>:object_list, :data=>res[:data]['data'], :fields => ['name','id','created.at','modified.at']}
           when :show
             res=ats_api_pub_v1.read("access_keys/#{access_key_id}")
             return {:type=>:single_object, :data=>res[:data]}
+          when :modify
+            params=self.options.get_option(:value,:mandatory)
+            params["id"]=access_key_id
+            res=ats_api_pub_v1.update("access_keys/#{access_key_id}",params)
+            return Main.result_status('modified')
           when :entitlement
             ak=ats_api_pub_v1.read("access_keys/#{access_key_id}")[:data]
             api_bss=OnCloud.metering_api(ak['license']['entitlement_id'],ak['license']['customer_id'])
