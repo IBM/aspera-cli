@@ -164,10 +164,8 @@ module Asperalm
             end
             client_node_file = @api_aoc.resolve_node_file(client_home_node_file,client_folder)
             server_node_file = @api_aoc.resolve_node_file(server_home_node_file,server_folder)
-            # force node as agent
-            self.options.set_option(:transfer,:node)
-            # force node api in node agent
-            Fasp::Node.instance.node_api=@api_aoc.get_node_api(client_node_file[:node_info],OnCloud::SCOPE_NODE_USER)
+            # force node as transfer agent
+            @agents[:transfer].set_agent_instance(Fasp::Node.new(@api_aoc.get_node_api(client_node_file[:node_info],OnCloud::SCOPE_NODE_USER)))
             # additional node to node TS info
             add_ts={
               'remote_access_key'   => server_node_file[:node_info]['access_key'],
@@ -328,7 +326,7 @@ module Asperalm
           return nil
         end
 
-        # @home_node_file  (hash with :node_info and :file_id)
+        # @home_node_file (hash with :node_info and :file_id)
         def set_home_node_file
           if !@url_token_data.nil?
             assert_public_link_types(['view_shared_file'])
