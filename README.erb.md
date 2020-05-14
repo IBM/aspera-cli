@@ -856,7 +856,7 @@ will effectively push files to the related server from the agent node.
 
 ### <a name="direct"></a>Direct (local ascp using FASPManager API)
 
-By default the CLI will use a local FASP protocol.
+By default the CLI will use a local FASP protocol, equivalent to specifying `--transfer=direct`.
 <%=tool%> will detect locally installed Aspera products.
 Refer to section [FASP](#client). 
 
@@ -865,6 +865,15 @@ To specify a FASP proxy (only supported with the `direct` agent), set the approp
 * `EX_fasp_proxy_url`
 * `EX_http_proxy_url` (proxy for legacy http fallback)
 * `EX_ascp_args`
+
+The `transfer-info` optionally provides the following auto resume parameters:
+
+* iter_max (7)
+* sleep_initial (2)
+* sleep_factor (2)
+* sleep_max (60)
+
+This defines the resume algorithm.
 
 ### IBM Aspera Connect Client GUI
 
@@ -2479,6 +2488,8 @@ So, it evolved into <%=tool%>:
 * 0.10.12
 
 	* added support for node registration keys
+	* replaced option : `local_resume` with `transfer_info` for agent `direct`
+	* Transfer agent is no more a Singleton instance, but only one is used in CLI
 
 * 0.10.11
 
