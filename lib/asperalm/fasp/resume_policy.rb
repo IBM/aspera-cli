@@ -16,17 +16,16 @@ module Asperalm
 
       def initialize(params=nil)
         @parameters=DEFAULTS.clone
+        return if params.nil?
+        raise "expecting Hash (or nil), but have #{params.class}" unless params.is_a?(Hash)
         params.each do |k,v|
           if DEFAULTS.has_key?(k)
             @parameters[k]=v
           else
-            raise "unknown parameter: #{k}"
+            raise "unknown resume parameter: #{k}, expect one of #{DEFAULTS.keys.map{|i|i.to_s}.join(",")}"
           end
-        end unless params.nil?
+        end
       end
-      
-      # use this to modify the values of the resumer to change behaviour
-      attr_reader :parameters
 
       # calls block a number of times (resumes) until success or limit reached
       # this is re-entrant, one resumer can handle multiple transfers in //

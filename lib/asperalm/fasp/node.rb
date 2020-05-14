@@ -1,6 +1,5 @@
 require 'asperalm/fasp/manager'
 require 'asperalm/log'
-require 'singleton'
 require 'tty-spinner'
 
 module Asperalm
@@ -8,11 +7,9 @@ module Asperalm
     # this singleton class is used by the CLI to provide a common interface to start a transfer
     # before using it, the use must set the `node_api` member.
     class Node < Manager
-      include Singleton
-      private
-      def initialize
-        super
-        @node_api=nil
+      def initialize(node_api)
+        super()
+        @node_api=node_api
         # TODO: currently only supports one transfer. This is bad shortcut. but ok for CLI.
         @transfer_id=nil
       end
@@ -22,8 +19,6 @@ module Asperalm
         raise StandardError,'Before using this object, set the node_api attribute to a Asperalm::Rest object' if @node_api.nil?
         return @node_api
       end
-
-      public
       # use this to read the node_api end point.
       attr_reader :node_api
 

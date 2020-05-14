@@ -23,14 +23,13 @@ Asperalm::Fasp::Installation.instance.config_folder = '.'
 #Asperalm::Fasp::Installation.instance.use_ascp_from_product('Aspera Connect')
 
 # get FASP Manager singleton based on above ascp location
-fasp_manager=Asperalm::Fasp::Local.instance
+fasp_manager=Asperalm::Fasp::Local.new
 
 # Note that it would also be possible to start transfers using other agents
 #require 'asperalm/fasp/connect'
-#fasp_manager=Asperalm::Fasp::Connect.instance
-#fasp_manager=Asperalm::Fasp::Node.instance
+#fasp_manager=Asperalm::Fasp::Connect.new
 #require 'asperalm/fasp/node'
-#Asperalm::Fasp::Node.instance.node_api=Asperalm::Rest.new()
+#fasp_manager=Asperalm::Fasp::Node.new(Asperalm::Rest.new(...))
 
 ##############################################################
 # Optional : register an event listener

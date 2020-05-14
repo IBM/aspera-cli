@@ -1,21 +1,12 @@
 #!/bin/echo this is a ruby class:
 require 'asperalm/fasp/manager'
-require 'asperalm/fasp/resume_policy'
 require 'asperalm/log'
 require 'asperalm/rest'
-require 'socket'
-require 'timeout'
-require 'singleton'
-require 'securerandom'
 
 module Asperalm
   module Fasp
     # executes a local "ascp", connects mgt port, equivalent of "Fasp Manager"
     class HttpGW < Manager
-      include Singleton
-      # set to false to keep ascp progress bar display (basically: removes ascp's option -q)
-      attr_accessor :gw_api
-      attr_accessor :resume_policy_parameters
       # start FASP transfer based on transfer spec (hash table)
       # note that it is asynchronous
       # HTTP download only supports file list
@@ -52,16 +43,18 @@ module Asperalm
       end
 
       def url=(api_url)
-        @gw_api=Rest.new({:base_url => api_url})
-        api_info = @gw_api.read('info')[:data]
-        Log.log.error("#{api_info}")
       end
 
       private
 
-      def initialize
+      def initialize(params)
+        raise "params must be Hash" unless params.is_a?(Hash)
+        params=params.symbolize_keys
+        raise "must have only one param: url" unless params.keys.eql?([:url])
         super
-        @gw_url=nil
+        @gw_api=Rest.new({:base_url => params[:url]})
+        api_info = @gw_api.read('info')[:data]
+        Log.log.info("#{api_info}")
       end
 
     end # LocalHttp

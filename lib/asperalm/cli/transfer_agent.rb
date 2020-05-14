@@ -28,7 +28,6 @@ module Asperalm
         # source/destination pair, like "paths" of transfer spec
         @transfer_paths=nil
         @opt_mgr.set_obj_attr(:ts,self,:option_transfer_spec)
-        @opt_mgr.set_obj_attr(:local_resume,Fasp::Local.instance,:resume_policy_parameters)
         @opt_mgr.add_opt_simple(:ts,"override transfer spec values (Hash, use @json: prefix), current=#{@opt_mgr.get_option(:ts,:optional)}")
         @opt_mgr.add_opt_simple(:local_resume,"set resume policy (Hash, use @json: prefix), current=#{@opt_mgr.get_option(:local_resume,:optional)}")
         @opt_mgr.add_opt_simple(:to_folder,"destination folder for downloaded files")
@@ -47,53 +46,56 @@ module Asperalm
 
       def option_transfer_spec_deep_merge(ts); @transfer_spec_cmdline.deep_merge!(ts); end
 
-      # @return one of the Fasp:: agents based on parameters
+      def set_agent_instance(instance)
+        @agent=instance
+        @agent.add_listener(Listener::Logger.new)
+        @agent.add_listener(Listener::ProgressMulti.new)
+      end
+
+      # analyze options and create new agent if not already created or set
       def set_agent_by_options
         if @agent.nil?
           agent_type=@opt_mgr.get_option(:transfer,:mandatory)
           case agent_type
           when :direct
-            @agent=Fasp::Local.instance
+            resume_policy=@opt_mgr.get_option(:transfer_info,:optional)
+            resume_policy=resume_policy.symbolize_keys if resume_policy.is_a?(Hash)
+            new_agent=Fasp::Local.new(resume_policy)
             # TODO: option to choose progress format
-            # a- @agent.quiet=false
+            # a- new_agent.quiet=false
             # b- disable custom progress
           when :httpgw
             httpgw_config=@opt_mgr.get_option(:transfer_info,:mandatory)
-            raise CliBadArgument,"transfer_info must have url" unless httpgw_config.has_key?('url')
-            @agent=Fasp::HttpGW.instance
-            @agent.url=httpgw_config['url']
+            new_agent=Fasp::HttpGW.new(httpgw_config)
           when :connect
-            @agent=Fasp::Connect.instance
+            new_agent=Fasp::Connect.new
           when :node
-            @agent=Fasp::Node.instance
-            # get not api only if it is not already set
-            if @agent.node_api.nil?
-              # way for code to setup alternate node api in avance
-              # support: @preset:<name>
-              # support extended values
-              node_config=@opt_mgr.get_option(:transfer_info,:optional)
-              # if not specified: use default node
-              if node_config.nil?
-                param_set_name=@config.get_plugin_default_config_name(:node)
-                raise CliBadArgument,"No default node configured, Please specify --#{:transfer_info.to_s.gsub('_','-')}" if param_set_name.nil?
-                node_config=@config.preset_by_name(param_set_name)
-              end
-              Log.log.debug("node=#{node_config}")
-              raise CliBadArgument,"the node configuration shall be Hash, not #{node_config.class} (#{node_config}), use either @json:<json> or @preset:<parameter set name>" if !node_config.is_a?(Hash)
-              # now check there are required parameters
-              sym_config=[:url,:username,:password].inject({}) do |h,param|
-                raise CliBadArgument,"missing parameter [#{param}] in node specification: #{node_config}" if !node_config.has_key?(param.to_s)
-                h[param]=node_config[param.to_s]
-                h
-              end
-              @agent.node_api=Rest.new({
-                :base_url => sym_config[:url],
-                :auth     => {
-                :type     =>:basic,
-                :username => sym_config[:username],
-                :password => sym_config[:password]
-                }})
+            # way for code to setup alternate node api in avance
+            # support: @preset:<name>
+            # support extended values
+            node_config=@opt_mgr.get_option(:transfer_info,:optional)
+            # if not specified: use default node
+            if node_config.nil?
+              param_set_name=@config.get_plugin_default_config_name(:node)
+              raise CliBadArgument,"No default node configured, Please specify --#{:transfer_info.to_s.gsub('_','-')}" if param_set_name.nil?
+              node_config=@config.preset_by_name(param_set_name)
             end
+            Log.log.debug("node=#{node_config}")
+            raise CliBadArgument,"the node configuration shall be Hash, not #{node_config.class} (#{node_config}), use either @json:<json> or @preset:<parameter set name>" if !node_config.is_a?(Hash)
+            # now check there are required parameters
+            sym_config=[:url,:username,:password].inject({}) do |h,param|
+              raise CliBadArgument,"missing parameter [#{param}] in node specification: #{node_config}" if !node_config.has_key?(param.to_s)
+              h[param]=node_config[param.to_s]
+              h
+            end
+            node_api=Rest.new({
+              :base_url => sym_config[:url],
+              :auth     => {
+              :type     =>:basic,
+              :username => sym_config[:username],
+              :password => sym_config[:password]
+              }})
+            new_agent=Fasp::Node.new(node_api)
           when :aoc
             aoc_config=@opt_mgr.get_option(:transfer_info,:optional)
             if aoc_config.nil?
@@ -103,16 +105,16 @@ module Asperalm
             end
             Log.log.debug("aoc=#{aoc_config}")
             raise CliBadArgument,"the aoc configuration shall be Hash, not #{aoc_config.class} (#{aoc_config}), refer to manual" if !aoc_config.is_a?(Hash)
-            # convert keys to symbol
+            # convert keys from string (config) to symbol (agent)
             aoc_config=aoc_config.symbolize_keys
-            # convert auth to symbol
+            # convert auth value from string (config) to symbol (agent)
             aoc_config[:auth]=aoc_config[:auth].to_sym if aoc_config[:auth].is_a?(String)
+            # private key could be @file:... in config
             aoc_config[:private_key]=ExtendedValue.instance.evaluate(aoc_config[:private_key])
-            @agent=Fasp::Aoc.new(aoc_config)
+            new_agent=Fasp::Aoc.new(aoc_config)
           else raise "INTERNAL ERROR"
           end
-          @agent.add_listener(Listener::Logger.new)
-          @agent.add_listener(Listener::ProgressMulti.new)
+          set_agent_instance(new_agent)
         end
         return nil
       end
@@ -200,7 +202,7 @@ module Asperalm
             @transfer_spec_cmdline['destination_root']=destination_folder(transfer_spec['direction'])
           when :node_gen3
             # in that case, destination is set in return by application (API/upload_setup)
-            # but to_folder was used in intial api call
+            # but to_folder was used in initial API call
             @transfer_spec_cmdline.delete('destination_root')
           when :node_gen4
             @transfer_spec_cmdline['destination_root']='/'

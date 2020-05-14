@@ -13,7 +13,6 @@ require 'asperalm/fasp/resume_policy'
 require 'asperalm/log'
 require 'socket'
 require 'timeout'
-require 'singleton'
 require 'securerandom'
 
 module Asperalm
@@ -22,10 +21,8 @@ module Asperalm
     ACCESS_KEY_TRANSFER_USER='xfer'
     # executes a local "ascp", connects mgt port, equivalent of "Fasp Manager"
     class Local < Manager
-      include Singleton
       # set to false to keep ascp progress bar display (basically: removes ascp's option -q)
       attr_accessor :quiet
-      attr_accessor :resume_policy_parameters
       # start FASP transfer based on transfer spec (hash table)
       # note that it is asynchronous
       def start_transfer(transfer_spec,options={})
@@ -72,7 +69,7 @@ module Asperalm
         session={
           :state    => :initial, # :initial, :started, :success, :failed
           :env_args => env_args,
-          :resumer  => options['resume_policy'] || ResumePolicy.new(@resume_policy_parameters),
+          :resumer  => options['resume_policy'] || @resume_policy,
           :options  => options
         }
 
@@ -309,8 +306,8 @@ module Asperalm
 
       private
 
-      def initialize
-        super
+      def initialize(resume_policy_parameters=nil)
+        super()
         # by default no interactive progress bar
         @quiet=true
         # shared data between transfer threads and others: protected by mutex, CV on change
@@ -322,7 +319,7 @@ module Asperalm
         # must be set before starting monitor, set to false to stop thread. also shared and protected by mutex
         @monitor_stop=false
         @monitor_thread=Thread.new{monitor_thread_entry}
-        @resume_policy_parameters=ResumePolicy::DEFAULTS
+        @resume_policy=ResumePolicy.new(resume_policy_parameters)
       end
 
       # transfer thread entry

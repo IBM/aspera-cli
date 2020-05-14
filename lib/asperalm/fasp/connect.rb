@@ -2,25 +2,20 @@ require 'asperalm/fasp/manager'
 require 'asperalm/rest'
 require 'asperalm/open_application'
 require 'securerandom'
-require 'singleton'
 require 'tty-spinner'
 
 module Asperalm
   module Fasp
     class Connect < Manager
-      include Singleton
-      private
+      MAX_CONNECT_START_RETRY=3
+      SLEEP_SEC_BETWEEN_RETRY=2
+      private_constant :MAX_CONNECT_START_RETRY,:SLEEP_SEC_BETWEEN_RETRY
       # mode=node : activate, set to the REST api object for the node API
       def initialize
         super
         @connect_app_id=SecureRandom.uuid
         # TODO: start here and create monitor
       end
-      MAX_CONNECT_START_RETRY=3
-      SLEEP_SEC_BETWEEN_RETRY=2
-      private_constant :MAX_CONNECT_START_RETRY,:SLEEP_SEC_BETWEEN_RETRY
-
-      public
 
       def start_transfer(transfer_spec,options=nil)
         raise "Using connect requires a graphical environment" if !OpenApplication.default_gui_mode.eql?(:graphical)
