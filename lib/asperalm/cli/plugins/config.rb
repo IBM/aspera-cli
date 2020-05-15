@@ -45,9 +45,12 @@ module Asperalm
         end
 
         private_constant :ASPERA_HOME_FOLDER_NAME,:DEFAULT_CONFIG_FILENAME,:CONF_PRESET_CONFIG,:CONF_PRESET_VERSION,:CONF_PRESET_DEFAULT,:OLD_PROGRAM_NAME,:DEFAULT_REDIRECT,:ASPERA_PLUGINS_FOLDERNAME,:GEM_PLUGINS_FOLDER,:RUBY_FILE_EXT,:OLD_AOC_COMMAND,:NEW_AOC_COMMAND
+        attr_accessor :option_ak_secret,:option_secrets
 
         def initialize(env,tool_name,help_url,version)
           super(env)
+          @option_ak_secret=nil
+          @option_secrets={}
           @plugins={}
           @plugin_lookup_folders=[]
           @use_plugin_defaults=true
@@ -80,6 +83,8 @@ module Asperalm
           self.options.set_obj_attr(:ascp_path,self,:option_ascp_path)
           self.options.set_obj_attr(:use_product,self,:option_use_product)
           self.options.set_obj_attr(:preset,self,:option_preset)
+          self.options.set_obj_attr(:secret,self,:option_ak_secret)
+          self.options.set_obj_attr(:secrets,self,:option_secrets)
           self.options.add_opt_boolean(:override,"override existing value")
           self.options.add_opt_switch(:no_default,"-N","do not load default configuration for plugin") { @use_plugin_defaults=false }
           self.options.add_opt_boolean(:use_generic_client,'wizard: AoC: use global or org specific jwt client id')
@@ -90,12 +95,23 @@ module Asperalm
           self.options.add_opt_simple(:fpac,"proxy auto configuration URL")
           self.options.add_opt_simple(:preset,"-PVALUE","load the named option preset from current config file")
           self.options.add_opt_simple(:default,"set as default configuration for specified plugin")
+          self.options.add_opt_simple(:secret,"access key secret for node")
+          self.options.add_opt_simple(:secrets,"access key secret for node")
           self.options.add_opt_boolean(:test_mode,"skip user validation in wizard mode")
           self.options.set_option(:use_generic_client,true)
           self.options.set_option(:test_mode,false)
           self.options.parse_options!
+          raise CliBadArgument,"secrets shall be Hash" unless @option_secrets.is_a?(Hash)
         end
 
+        def get_secret(id=nil,mandatory=true)
+          secret=self.options.get_option(:secret,:optional) || @option_secrets[id]
+          raise "please provide secret for #{id}" if secret.nil? and mandatory
+          return secret
+        end
+        def get_secrets
+          return @option_secrets
+        end
         # retrieve structure from cloud (CDN) with all versions available
         def connect_versions
           if @connect_versions.nil?

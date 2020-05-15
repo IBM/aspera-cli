@@ -15,7 +15,6 @@ module Asperalm
         VAL_ALL='ALL'
         private_constant :VAL_ALL
         attr_reader :api_aoc
-        attr_accessor :option_ak_secret,:option_secrets
         def initialize(env)
           super(env)
           @default_workspace_id=nil
@@ -24,13 +23,9 @@ module Asperalm
           @persist_ids=nil
           @home_node_file=nil
           @api_aoc=nil
-          @option_ak_secret=nil
-          @option_secrets={}
           @url_token_data=nil
           @user_info=nil
-          @ats=Ats.new(@agents.merge(skip_secret: true))
-          self.options.set_obj_attr(:secret,self,:option_ak_secret)
-          self.options.set_obj_attr(:secrets,self,:option_secrets)
+          @ats=Ats.new(@agents)
           self.options.add_opt_list(:auth,Oauth.auth_types,"type of Oauth authentication")
           self.options.add_opt_list(:operation,[:push,:pull],"client operation for transfers")
           self.options.add_opt_simple(:client_id,"API client identifier in application")
@@ -38,8 +33,6 @@ module Asperalm
           self.options.add_opt_simple(:redirect_uri,"API client redirect URI")
           self.options.add_opt_simple(:private_key,"RSA private key PEM value for JWT (prefix file path with @val:@file:)")
           self.options.add_opt_simple(:workspace,"name of workspace")
-          self.options.add_opt_simple(:secret,"access key secret for node")
-          self.options.add_opt_simple(:secrets,"access key secret for node")
           self.options.add_opt_simple(:eid,"identifier") # used ?
           self.options.add_opt_simple(:name,"resource name")
           self.options.add_opt_simple(:link,"public link to shared resource")
@@ -55,7 +48,6 @@ module Asperalm
           self.options.set_option(:private_key,'@file:'+env[:private_key_path]) if env[:private_key_path].is_a?(String)
           self.options.parse_options!
           return if env[:man_only]
-          raise CliBadArgument,"secrets shall be Hash" unless @option_secrets.is_a?(Hash)
           update_aoc_api
         end
 
@@ -64,7 +56,7 @@ module Asperalm
         def find_ak_secret(ak,mandatory=true)
           # secret hash is already provisioned
           # optionally override with specific secret
-          @api_aoc.add_secrets({ak=>@option_ak_secret}) unless @option_ak_secret.nil?
+          @api_aoc.add_secrets({ak=>self.config.get_secret(ak,mandatory)})
           # check that secret was provided as single value or dictionary
           raise CliBadArgument,"Please provide option secret or entry in option secrets for: #{ak}" unless @api_aoc.has_secret(ak) or !mandatory
         end
@@ -272,7 +264,7 @@ module Asperalm
         def update_aoc_api
           @api_aoc=OnCloud.new(aoc_rest_params('api/v1'))
           # add access key secrets
-          @api_aoc.add_secrets(@option_secrets)
+          @api_aoc.add_secrets(self.config.get_secrets)
           return nil
         end
 

@@ -10,7 +10,6 @@ module Asperalm
       class Ats < Plugin
         def initialize(env)
           super(env)
-          self.options.add_opt_simple(:secret,"Access key secret") unless env[:skip_secret]
           self.options.add_opt_simple(:ibm_api_key,"IBM API key, see https://cloud.ibm.com/iam/apikeys")
           self.options.add_opt_simple(:instance,"ATS instance in ibm cloud")
           self.options.add_opt_simple(:ats_key,"ATS key identifier (ats_xxx)")
@@ -108,7 +107,7 @@ module Asperalm
               :auth     => {
               :type     => :basic,
               :username => access_key_id,
-              :password => self.options.get_option(:secret,:mandatory)}})
+              :password => self.config.get_secret(access_key_id)}})
             command=self.options.get_next_command(Node::COMMON_ACTIONS)
             return Node.new(@agents.merge(skip_basic_auth_options: true, node_api: api_node)).execute_action(command)
           when :cluster
@@ -117,7 +116,7 @@ module Asperalm
               :auth     => {
               :type     => :basic,
               :username => access_key_id,
-              :password => self.options.get_option(:secret,:mandatory)
+              :password => self.config.get_secret(access_key_id)
               }}
             api_ak_auth=Rest.new(rest_params)
             return {:type=>:single_object, :data=>api_ak_auth.read("servers")[:data]}
