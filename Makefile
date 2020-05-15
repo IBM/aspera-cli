@@ -509,11 +509,11 @@ t/aocat9:
 	@touch $@
 t/aocat10:
 	@echo $@
-	$(EXETEST) aspera admin ats access_key list --fields=name,id,secret
+	$(EXETEST) aspera admin ats access_key list --fields=name,id
 	@touch $@
 t/aocat11:
 	@echo $@
-	$(EXETEST) aspera admin ats access_key --id=akibmcloud node browse /
+	$(EXETEST) aspera admin ats access_key --id=akibmcloud --secret=somesecret node browse /
 	@touch $@
 t/aocat13:
 	@echo $@
@@ -620,7 +620,7 @@ t/at9:
 	@touch $@
 t/at10:
 	@echo $@
-	$(EXETEST) ats access_key list --fields=name,id,secret
+	$(EXETEST) ats access_key list --fields=name,id
 	@touch $@
 t/at11:
 	@echo $@
