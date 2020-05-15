@@ -612,7 +612,7 @@ t/at3:
 	$(EXETEST) ats api_key create
 	@touch $@
 t/at8:
-	$(EXETEST) ats access_key create --cloud=softlayer --region=$(ICOS_REGION) --params=@json:'{"id":"akibmcloud","name":"laurent key","storage":{"type":"ibm-s3","bucket":"$(ICOS_BUCKET)","credentials":{"access_key_id":"$(ICOS_AK_ID)","secret_access_key":"$(ICOS_SECRET_AK)"},"path":"/"}}'
+	$(EXETEST) ats access_key create --cloud=softlayer --region=$(ICOS_REGION) --params=@json:'{"id":"akibmcloud","secret":"somesecret","name":"laurent key","storage":{"type":"ibm-s3","bucket":"$(ICOS_BUCKET)","credentials":{"access_key_id":"$(ICOS_AK_ID)","secret_access_key":"$(ICOS_SECRET_AK)"},"path":"/"}}'
 	@touch $@
 t/at9:
 	@echo $@
@@ -624,7 +624,7 @@ t/at10:
 	@touch $@
 t/at11:
 	@echo $@
-	$(EXETEST) ats access_key --id=akibmcloud node browse /
+	$(EXETEST) ats access_key --id=akibmcloud --secret=somesecret node browse /
 	@touch $@
 t/at12:
 	@echo $@
