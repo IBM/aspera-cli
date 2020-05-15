@@ -273,7 +273,7 @@ t/cons2:
 	@touch $@
 t/cons3:
 	@echo $@
-	$(EXETEST) console transfer smart sub 112 @json:'{"source":{"paths":["10MB.1"]}}'
+	$(EXETEST) console transfer smart sub 112 @json:'{"source":{"paths":["10MB.1"]},"source_type":"user_selected"}'
 	@touch $@
 tconsole: t/cons1 t/cons2 t/cons3
 
@@ -501,7 +501,7 @@ t/aocat7:
 	@touch $@
 # see https://developer.ibm.com/api/view/aspera-prod:ibm-aspera:title-IBM_Aspera#113433
 t/aocat8:
-	-$(EXETEST) aspera admin ats access_key create --cloud=softlayer --region=eu-de --params=@json:'{"id":"akibmcloud","name":"laurent key","storage":{"type":"ibm-s3","bucket":"$(ICOS_BUCKET)","credentials":{"access_key_id":"$(ICOS_AK_ID)","secret_access_key":"$(ICOS_SECRET_AK)"},"path":"/"}}'
+	-$(EXETEST) aspera admin ats access_key create --cloud=softlayer --region=$(ICOS_REGION) --params=@json:'{"id":"akibmcloud","secret":"somesecret","name":"laurent key","storage":{"type":"ibm-s3","bucket":"$(ICOS_BUCKET)","credentials":{"access_key_id":"$(ICOS_AK_ID)","secret_access_key":"$(ICOS_SECRET_AK)"},"path":"/"}}'
 	@touch $@
 t/aocat9:
 	@echo $@
@@ -612,7 +612,7 @@ t/at3:
 	$(EXETEST) ats api_key create
 	@touch $@
 t/at8:
-	$(EXETEST) ats access_key create --cloud=softlayer --region=eu-de --params=@json:'{"id":"akibmcloud","name":"laurent key","storage":{"type":"ibm-s3","bucket":"$(ICOS_BUCKET)","credentials":{"access_key_id":"$(ICOS_AK_ID)","secret_access_key":"$(ICOS_SECRET_AK)"},"path":"/"}}'
+	$(EXETEST) ats access_key create --cloud=softlayer --region=$(ICOS_REGION) --params=@json:'{"id":"akibmcloud","name":"laurent key","storage":{"type":"ibm-s3","bucket":"$(ICOS_BUCKET)","credentials":{"access_key_id":"$(ICOS_AK_ID)","secret_access_key":"$(ICOS_SECRET_AK)"},"path":"/"}}'
 	@touch $@
 t/at9:
 	@echo $@
