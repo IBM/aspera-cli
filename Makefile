@@ -628,7 +628,7 @@ t/at11:
 	@touch $@
 t/at12:
 	@echo $@
-	$(EXETEST) ats access_key --id=akibmcloud cluster
+	$(EXETEST) ats access_key --id=akibmcloud --secret=somesecret cluster
 	@touch $@
 t/at13:
 	$(EXETEST) ats access_key --id=akibmcloud delete
