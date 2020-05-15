@@ -66,7 +66,7 @@ if transfer_spec.has_key?(TS_TMP_FILELIST_FOLDER)
   transfer_spec.delete(TS_TMP_FILELIST_FOLDER)
 end
 # get local agent (ascp)
-client=Asperalm::Fasp::Local.instance
+client=Asperalm::Fasp::Local.new
 # disable ascp output on stdout to not mix with JSON events
 client.quiet=true
 # display JSON instead of legacy Lines
