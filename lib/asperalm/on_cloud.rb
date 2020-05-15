@@ -34,6 +34,11 @@ module Asperalm
     PATH_SEPARATOR='/'
     FILES_APP='files'
     PACKAGES_APP='packages'
+    
+    def self.get_client_ids(id,secret,client_name=DEFAULT_CLIENT)
+      return id,secret unless id.nil? and secret.nil?
+      return client_name,CLIENT_RANDOM[client_name].reverse
+    end
 
     # @param url of AoC instance
     # @return organization id in url and AoC domain: ibmaspera.com, asperafiles.com or qa.asperafiles.com, etc...
@@ -131,9 +136,8 @@ module Asperalm
         aoc_auth_p[:grant] = opt[:auth]
       end
 
-      aoc_auth_p[:client_id]     = opt[:client_id] || DEFAULT_CLIENT
-      aoc_auth_p[:client_secret] = opt[:client_secret] || CLIENT_RANDOM[DEFAULT_CLIENT].reverse
-      aoc_auth_p[:scope]         = opt[:scope]
+      aoc_auth_p[:client_id],aoc_auth_p[:client_secret] = self.class.get_client_ids(opt[:client_id],opt[:client_secret])
+      aoc_auth_p[:scope] = opt[:scope]
 
       # fill other auth parameters based on Oauth method
       case aoc_auth_p[:grant]

@@ -109,9 +109,11 @@ module Asperalm
           raise "please provide secret for #{id}" if secret.nil? and mandatory
           return secret
         end
+
         def get_secrets
           return @option_secrets
         end
+
         # retrieve structure from cloud (CDN) with all versions available
         def connect_versions
           if @connect_versions.nil?
@@ -569,11 +571,6 @@ module Asperalm
                 end
               else
                 self.format.display_status("Using organization specific client_id.")
-                # clear only if user did not specify it already
-                if OnCloud.is_global_client_id?(self.options.get_option(:client_id,:optional))
-                  self.options.set_option(:client_id,nil)
-                  self.options.set_option(:client_secret,nil)
-                end
                 if self.options.get_option(:client_id,:optional).nil? or self.options.get_option(:client_secret,:optional).nil?
                   self.format.display_status("Please login to your Aspera on Cloud instance.".red)
                   self.format.display_status("Go to: Apps->Admin->Organization->Integrations")
@@ -644,11 +641,10 @@ module Asperalm
             new_conf={
               'organization'       => organization,
               'hostname'           => [organization,instance_domain].join('.'),
-              'clientId'           => self.options.get_option(:client_id,:mandatory),
-              'clientSecret'       => self.options.get_option(:client_secret,:mandatory),
               'privateKeyFilename' => key_basename,
               'username'           => self.options.get_option(:username,:mandatory)
             }
+            new_conf['clientId'],new_conf['clientSecret']=OnCloud.get_client_ids(self.options.get_option(:client_id,:optional),self.options.get_option(:client_secret,:optional))
             entry=data['AoCAccounts'].select{|i|i['organization'].eql?(organization)}.first
             if entry.nil?
               data['AoCAccounts'].push(new_conf)
