@@ -2487,13 +2487,16 @@ So, it evolved into <%=tool%>:
 
 * 0.10.12
 
-	* added support for node registration keys
+	* added support for AoC node registration keys
 	* replaced option : `local_resume` with `transfer_info` for agent `direct`
 	* Transfer agent is no more a Singleton instance, but only one is used in CLI
+	* `@incps` : new extended value modifier
+	* ATS: no more provides access keys secrets: now user must provide it
+	* begin work on "aoc" transfer agent
 
 * 0.10.11
 
-	* minoir refactor and fixes
+	* minor refactor and fixes
 
 * 0.10.10
 
