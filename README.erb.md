@@ -1589,7 +1589,7 @@ $ <%=cmd%> -Paoc_show aspera files transfer --from-folder='IBM Cloud SJ' --to-fo
 
 * create registration key to register a node
 ```
-$ <%=cmd%> aspera admin res admin/client create @json:'{"data":{"name":"laurenbt","client_subject_scopes":["alee","aejd"],"client_subject_enabled":true}}' --fields=token --format=csv
+$ <%=cmd%> aspera admin res admin/client create @json:'{"data":{"name":"laurentnode","client_subject_scopes":["alee","aejd"],"client_subject_enabled":true}}' --fields=token --format=csv
 jfqslfdjlfdjfhdjklqfhdkl
 ```
 
