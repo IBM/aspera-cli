@@ -890,7 +890,7 @@ t/f5_4:
 
 tf5: t/f5_1 t/f5_2 t/f5_2
 
-tests: t t/unit tshares tfaspex tconsole tnode taoc tfasp tsync torc tcon tnsync tconf tprev tats tsample tcos
+tests: t t/unit tshares tfaspex tconsole tnode taoc tfasp tsync torc tcon tnsync tconf tprev tats tsample tcos tf5
 # tshares2
 
 tnagios: t/fx_nagios t/serv_nagios_webapp t/serv_nagios_transfer t/nd_nagios
@@ -916,6 +916,9 @@ preparelocal:
 	sudo asnodeadmin -a -u node_xfer -p $(NODE_PASS) -x xfer
 	sudo asconfigurator -x "user;user_name,xfer;file_restriction,|*;absolute,"
 	sudo asnodeadmin --reload
+noderestart:
+	sudo launchctl stop com.aspera.asperanoded
+	sudo launchctl start com.aspera.asperanoded
 irb:
 	irb -I $(LIBDIR)
 installgem:

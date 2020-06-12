@@ -2485,6 +2485,10 @@ So, it evolved into <%=tool%>:
 
 # Release Notes
 
+* 0.10.13
+
+	* added Faspex5 (use option `value` to give API arguments)
+
 * 0.10.12
 
 	* added support for AoC node registration keys
