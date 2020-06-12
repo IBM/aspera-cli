@@ -28,7 +28,7 @@ module Asperalm
         end
       end
 
-      def entity_command(command,rest_api,res_class_path,display_fields,id_symb,id_default=nil)
+      def entity_command(command,rest_api,res_class_path,display_fields,id_symb,id_default=nil,subkey=false)
         if INSTANCE_OPS.include?(command)
           begin
             one_res_id=self.options.get_option(id_symb,:mandatory)
@@ -57,6 +57,7 @@ module Asperalm
           if resp[:http]['Content-Type'].start_with?('application/vnd.api+json')
             data=resp[:data][res_class_path]
           end
+          data=data[res_class_path] if subkey
           return {:type => :object_list, :data=>data, :fields=>display_fields}
         when :modify
           property=self.options.get_option(:property,:optional)
@@ -68,12 +69,12 @@ module Asperalm
           return Main.result_status("deleted")
         end
       end
-      
+
       # implement generic rest operations on given resource path
-      def entity_action(rest_api,res_class_path,display_fields,id_symb,id_default=nil)
+      def entity_action(rest_api,res_class_path,display_fields,id_symb,id_default=nil,subkey=false)
         #res_name=res_class_path.gsub(%r{^.*/},'').gsub(%r{s$},'').gsub('_',' ')
         command=self.options.get_next_command(ALL_OPS)
-        return entity_command(command,rest_api,res_class_path,display_fields,id_symb,id_default)
+        return entity_command(command,rest_api,res_class_path,display_fields,id_symb,id_default,subkey)
       end
 
       def options;@agents[:options];end
