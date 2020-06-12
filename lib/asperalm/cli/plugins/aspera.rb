@@ -1,5 +1,6 @@
 require 'asperalm/cli/plugins/node'
 require 'asperalm/cli/plugins/ats'
+require 'asperalm/cli/plugins/bss'
 require 'asperalm/cli/basic_auth_plugin'
 require 'asperalm/cli/transfer_agent'
 require 'asperalm/on_cloud'
@@ -251,7 +252,7 @@ module Asperalm
         end # execute_node_gen4_command
 
         # build constructor option list for OnCloud based on options of CLI
-        def aoc_rest_params(subpath)
+        def oncloud_params(subpath)
           # copy command line options to args
           opt=[:link,:url,:auth,:client_id,:client_secret,:scope,:redirect_uri,:private_key,:username].inject({}){|m,i|m[i]=self.options.get_option(i,:optional);m}
           opt[:subpath]=subpath
@@ -262,7 +263,7 @@ module Asperalm
         # Parameters based on command line options
         # @return nil
         def update_aoc_api
-          @api_aoc=OnCloud.new(aoc_rest_params('api/v1'))
+          @api_aoc=OnCloud.new(oncloud_params('api/v1'))
           # add access key secrets
           @api_aoc.add_secrets(self.config.get_secrets)
           return nil
@@ -397,7 +398,7 @@ module Asperalm
         def execute_admin_action
           self.options.set_option(:scope,OnCloud::SCOPE_FILES_ADMIN)
           update_aoc_api
-          command_admin=self.options.get_next_command([ :ats, :resource, :usage_reports, :events, :subscription, :auth_providers ])
+          command_admin=self.options.get_next_command([ :ats, :resource, :usage_reports, :events, :subscription, :auth_providers, :bss ])
           case command_admin
           when :auth_providers
             command_auth_prov=self.options.get_next_command([ :list, :update ])
@@ -407,9 +408,12 @@ module Asperalm
               return {:type=>:object_list,:data=>providers}
             when :update
             end
+          when :bss
+            bss_api=OnCloud.new(oncloud_params('bss/platform'))
+            bss_node=Bss.new(@agents.merge(skip_basic_auth_options: true, bss_api: bss_api)).execute_action
           when :subscription
             org=@api_aoc.read('organization')[:data]
-            bss_api=Rest.new(aoc_rest_params('bss/platform'))
+            bss_api=OnCloud.new(oncloud_params('bss/platform'))
             graphql_query="
     query ($organization_id: ID!) {
       aoc (organization_id: $organization_id) {

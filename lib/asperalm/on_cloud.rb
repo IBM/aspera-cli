@@ -20,7 +20,10 @@ module Asperalm
     }
     # path in URL of public links
     PATHS_PUBLIC_LINK=['/packages/public/receive','/packages/public/send','/files/public']
-    private_constant :PRODUCT_NAME,:PROD_DOMAIN,:MAX_REDIRECT,:DEFAULT_CLIENT,:CLIENT_RANDOM,:PATHS_PUBLIC_LINK
+    JWT_AUDIENCE='https://api.asperafiles.com/api/v1/oauth2/token'
+    OAUTH_API_SUBPATH='api/v1/oauth2'
+
+    private_constant :PRODUCT_NAME,:PROD_DOMAIN,:MAX_REDIRECT,:DEFAULT_CLIENT,:CLIENT_RANDOM,:PATHS_PUBLIC_LINK,:JWT_AUDIENCE,:OAUTH_API_SUBPATH
 
     public
     # various API scopes supported
@@ -34,7 +37,7 @@ module Asperalm
     PATH_SEPARATOR='/'
     FILES_APP='files'
     PACKAGES_APP='packages'
-    
+
     def self.get_client_ids(id,secret,client_name=DEFAULT_CLIENT)
       return id,secret unless id.nil? and secret.nil?
       return client_name,CLIENT_RANDOM[client_name].reverse
@@ -126,10 +129,14 @@ module Asperalm
         raise ArgumentError,"Missing mandatory option: url" if opt[:url].nil?
       end
 
-      # set API and OAuth URLs
+      # get org name and domain from url
       organization,instance_domain=self.class.parse_url(opt[:url])
-      aoc_rest_p[:base_url]="https://api.#{instance_domain}/#{opt[:subpath]}"
-      aoc_auth_p[:base_url] = "#{aoc_rest_p[:base_url]}/oauth2/#{organization}"
+      # this is the base API url (depends on domain, which could be "qa.xxx")
+      api_base_url="https://api.#{instance_domain}"
+      # base API URL
+      aoc_rest_p[:base_url]="#{api_base_url}/#{opt[:subpath]}"
+      # base auth URL
+      aoc_auth_p[:base_url] = "#{api_base_url}/#{OAUTH_API_SUBPATH}/#{organization}"
 
       if !aoc_auth_p.has_key?(:grant)
         raise ArgumentError,"Missing mandatory option: auth" if opt[:auth].nil?
@@ -152,7 +159,7 @@ module Asperalm
         raise ArgumentError,"Missing mandatory option: private_key" if opt[:private_key].nil?
         raise ArgumentError,"Missing mandatory option: username" if opt[:username].nil?
         private_key_PEM_string=opt[:private_key]
-        aoc_auth_p[:jwt_audience]        = 'https://api.asperafiles.com/api/v1/oauth2/token'
+        aoc_auth_p[:jwt_audience]        = JWT_AUDIENCE
         aoc_auth_p[:jwt_subject]         = opt[:username]
         aoc_auth_p[:jwt_private_key_obj] = OpenSSL::PKey::RSA.new(private_key_PEM_string)
       when :url_token
