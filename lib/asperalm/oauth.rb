@@ -249,6 +249,12 @@ module Asperalm
             :username   => @params[:user_name],
             :password   => @params[:user_pass]
           }))
+          when :body_data
+          # used in Faspex apiv5
+          resp=create_token_advanced({
+            :auth        => {:type => :none},
+            :json_params => @params[:userpass_body],
+          })
         else
           raise "auth grant type unknown: #{@params[:grant]}"
         end
