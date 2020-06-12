@@ -863,12 +863,32 @@ tsample: t/sdk1
 
 t/tcos:
 	@echo $@
-	mlia cos node --service-credentials=@json:@file:$(SERVICE_CREDS_FILE) --region=$(COS_REGION) --bucket=$(COS_BUCKET) info
-	mlia cos node --service-credentials=@json:@file:$(SERVICE_CREDS_FILE) --region=$(COS_REGION) --bucket=$(COS_BUCKET) access_key --id=self show
-	mlia cos node --service-credentials=@json:@file:$(SERVICE_CREDS_FILE) --region=$(COS_REGION) --bucket=$(COS_BUCKET) upload $(CLIENT_DEMOFILE_PATH)
-	mlia cos node --service-credentials=@json:@file:$(SERVICE_CREDS_FILE) --region=$(COS_REGION) --bucket=$(COS_BUCKET) download $(SAMPLE_FILENAME)
+	$(EXETEST) cos node --service-credentials=@json:@file:$(SERVICE_CREDS_FILE) --region=$(COS_REGION) --bucket=$(COS_BUCKET) info
+	$(EXETEST) cos node --service-credentials=@json:@file:$(SERVICE_CREDS_FILE) --region=$(COS_REGION) --bucket=$(COS_BUCKET) access_key --id=self show
+	$(EXETEST) cos node --service-credentials=@json:@file:$(SERVICE_CREDS_FILE) --region=$(COS_REGION) --bucket=$(COS_BUCKET) upload $(CLIENT_DEMOFILE_PATH)
+	$(EXETEST) cos node --service-credentials=@json:@file:$(SERVICE_CREDS_FILE) --region=$(COS_REGION) --bucket=$(COS_BUCKET) download $(SAMPLE_FILENAME)
 	@touch $@
 tcos: t/tcos
+
+t/f5_1:
+	@echo $@
+	$(EXETEST) faspex5 node list --value=@json:'{"type":"received","subtype":"mypackages"}'
+	@touch $@
+t/f5_2:
+	@echo $@
+	$(EXETEST) faspex5 package list --value=@json:'{"state":["released"]}'
+	@touch $@
+t/f5_3:
+	@echo $@
+	$(EXETEST) faspex5 package send --value=@json:'{"title":"test title","recipients":["laurent"]}'
+	@touch $@
+t/f5_4:
+	@echo $@
+	LAST_PACK=$$(mlia faspex5 pack list --value=@json:'{"type":"received","subtype":"mypackages","limit":1}' --fields=id --format=csv);\
+	$(EXETEST) faspex5 package receive --id=$$LAST_PACK
+	@touch $@
+
+tf5: t/f5_1 t/f5_2 t/f5_2
 
 tests: t t/unit tshares tfaspex tconsole tnode taoc tfasp tsync torc tcon tnsync tconf tprev tats tsample tcos
 # tshares2
