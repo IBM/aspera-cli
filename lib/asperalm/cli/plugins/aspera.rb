@@ -145,6 +145,7 @@ module Asperalm
             # server side is protocol server
             # in same workspace
             server_home_node_file=client_home_node_file=top_node_file
+            # default is push
             case self.options.get_option(:operation,:mandatory)
             when :push
               client_tr_oper='send'
