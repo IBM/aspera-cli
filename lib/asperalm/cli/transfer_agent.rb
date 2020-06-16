@@ -205,7 +205,7 @@ module Asperalm
             # but to_folder was used in initial API call
             @transfer_spec_cmdline.delete('destination_root')
           when :node_gen4
-            @transfer_spec_cmdline['destination_root']='/'
+            @transfer_spec_cmdline.delete('destination_root') if @transfer_spec_cmdline.has_key?('destination_root_id')
           else
             raise StandardError,"InternalError: unsupported value: #{options[:src]}"
           end
