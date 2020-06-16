@@ -880,7 +880,7 @@ t/f5_2:
 	@touch $@
 t/f5_3:
 	@echo $@
-	$(EXETEST) faspex5 package send --value=@json:'{"title":"test title","recipients":["laurent"]}'
+	$(EXETEST) faspex5 package send --value=@json:'{"title":"test title","recipients":["laurent"]}' $(CLIENT_DEMOFILE_PATH)
 	@touch $@
 t/f5_4:
 	@echo $@
@@ -888,7 +888,7 @@ t/f5_4:
 	$(EXETEST) faspex5 package receive --id=$$LAST_PACK
 	@touch $@
 
-tf5: t/f5_1 t/f5_2 t/f5_2
+tf5: t/f5_1 t/f5_2 t/f5_3 t/f5_4
 
 tests: t t/unit tshares tfaspex tconsole tnode taoc tfasp tsync torc tcon tnsync tconf tprev tats tsample tcos tf5
 # tshares2
