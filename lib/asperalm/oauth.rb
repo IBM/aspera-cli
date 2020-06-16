@@ -83,7 +83,7 @@ module Asperalm
     end
 
     # shortcut for create_token_advanced
-    def create_token_simple(creation_params)
+    def create_token_www_body(creation_params)
       return create_token_advanced({:www_body_params=>creation_params})
     end
 
@@ -145,7 +145,7 @@ module Asperalm
           # try to refresh
           # note: admin token has no refresh, and lives by default 1800secs
           # Note: scope is mandatory in Files, and we can either provide basic auth, or client_Secret in data
-          resp=create_token_simple(p_client_id_and_scope.merge({
+          resp=create_token_www_body(p_client_id_and_scope.merge({
             :grant_type   =>'refresh_token',
             :refresh_token=>refresh_token}))
           if resp[:http].code.start_with?('2') then
@@ -177,7 +177,7 @@ module Asperalm
           code=goto_page_and_get_code(login_page_url,check_code)
 
           # exchange code for token
-          resp=create_token_simple(p_client_id_and_scope.merge({
+          resp=create_token_www_body(p_client_id_and_scope.merge({
             :grant_type   => 'authorization_code',
             :code         => code,
             :redirect_uri => @params[:redirect_uri]
@@ -209,7 +209,7 @@ module Asperalm
 
           Log.log.debug("assertion=[#{assertion}]")
 
-          resp=create_token_simple(p_scope.merge({
+          resp=create_token_www_body(p_scope.merge({
             :grant_type => 'urn:ietf:params:oauth:grant-type:jwt-bearer',
             :assertion  => assertion
           }))
@@ -221,13 +221,13 @@ module Asperalm
             :grant_type    => 'url_token'
             })})
         when :ibm_apikey
-          resp=create_token_simple({
+          resp=create_token_www_body({
             'grant_type'    => 'urn:ibm:params:oauth:grant-type:apikey',
             'response_type' => 'cloud_iam',
             'apikey'        => @params[:api_key]
           })
         when :delegated_refresh
-          resp=create_token_simple({
+          resp=create_token_www_body({
             'grant_type'          => 'urn:ibm:params:oauth:grant-type:apikey',
             'response_type'       => 'delegated_refresh_token',
             'apikey'              => @params[:api_key],
@@ -244,7 +244,7 @@ module Asperalm
           })
         when :body_userpass
           # legacy, not used
-          resp=create_token_simple(p_client_id_and_scope.merge({
+          resp=create_token_www_body(p_client_id_and_scope.merge({
             :grant_type => 'password',
             :username   => @params[:user_name],
             :password   => @params[:user_pass]
