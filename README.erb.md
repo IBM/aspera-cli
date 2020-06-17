@@ -2484,6 +2484,9 @@ So, it evolved into <%=tool%>:
 
 
 # Release Notes
+* 0.10.14
+
+	* added missing bss plugin
 
 * 0.10.13
 
