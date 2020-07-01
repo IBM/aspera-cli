@@ -37,6 +37,9 @@ module Asperalm
         Log.log.debug("insecure=#{@@insecure}")
         @http_session.verify_mode = OpenSSL::SSL::VERIFY_NONE if @@insecure
         @http_session.set_debug_output($stdout) if @@debug
+        if @params.has_key?(:session_cb)
+          @params[:session_cb].call(@http_session)
+        end
         # manually start session for keep alive (if supported by server, else, session is closed every time)
         @http_session.start
       end
@@ -67,6 +70,7 @@ module Asperalm
     # :username   [:basic]
     # :password   [:basic]
     # :url_creds  [:url]
+    # :session_cb a lambda which takes @http_session as arg, use this to change parameters
     # :*          [:oauth2] see Oauth class
     def initialize(a_rest_params)
       raise "ERROR: expecting Hash" unless a_rest_params.is_a?(Hash)
