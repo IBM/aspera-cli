@@ -63,7 +63,7 @@ module Asperalm
               if pack_id.eql?(VAL_ALL)
                 # todo: if packages have same name, they will overwrite
                 parameters=self.options.get_option(:value,:optional)
-                parameters||={"type":"received","subtype":"mypackages","limit":1000}
+                parameters||={"type"=>"received","subtype"=>"mypackages","limit"=>1000}
                 raise CliBadArgument,'value filter must be hash (API GET)' unless parameters.is_a?(Hash)
                 package_ids=api_v5.read('packages',parameters)[:data]['packages'].map{|p|p['id']}
                 package_ids.select!{|i|!skip_ids_data.include?(i)}
