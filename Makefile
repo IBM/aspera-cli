@@ -315,7 +315,7 @@ t/nd5:
 	@touch $@
 t/nd6:
 	@echo $@
-	$(EXETEST) node transfer list
+	$(EXETEST) node transfer list --value=@json:'{"active_only":true}'
 	@touch $@
 t/nd7:
 	@echo $@
