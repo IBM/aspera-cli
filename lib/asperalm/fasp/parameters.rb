@@ -153,7 +153,7 @@ module Asperalm
         # optional args, at the end to override previous ones (to allow override)
         @builder.add_command_line_options(@builder.process_param('EX_ascp_args',:get_value,:accepted_types=>Array))
         # process destination folder
-        destination_folder = @builder.process_param('destination_root',:get_value,:accepted_types=>String,:mandatory=>true)
+        destination_folder = @builder.process_param('destination_root',:get_value,:accepted_types=>String,:mandatory=>false) || '/'
         # ascp4 does not support base64 encoding of destination
         destination_folder = Base64.strict_encode64(destination_folder) unless env_args[:ascp_version].eql?(:ascp4)
         # destination MUST be last command line argument to ascp
