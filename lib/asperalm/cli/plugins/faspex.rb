@@ -310,13 +310,11 @@ module Asperalm
             my_info=api_v3.call({:operation=>'GET',:subpath=>'me',:headers=>{'Accept'=>'application/json'}})[:data]
             return {:data=>my_info, :type=>:single_object}
           when :dropbox
-            command_pkg=self.options.get_next_command([ :list, :create ])
+            command_pkg=self.options.get_next_command([ :list ])
             case command_pkg
             when :list
               dropbox_list=api_v3.call({:operation=>'GET',:subpath=>'dropboxes',:headers=>{'Accept'=>'application/json'}})[:data]
               return {:type=>:object_list, :data=>dropbox_list['items'], :fields=>['name','id','description','can_read','can_write']}
-              #              when :create
-              #
             end
           when :v4
             command=self.options.get_next_command([:dropbox, :dmembership, :workgroup,:wmembership,:user,:metadata_profile])
