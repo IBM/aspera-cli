@@ -1,6 +1,5 @@
 require 'asperalm/cli/plugins/node'
 require 'asperalm/cli/plugins/ats'
-require 'asperalm/cli/plugins/bss'
 require 'asperalm/cli/basic_auth_plugin'
 require 'asperalm/cli/transfer_agent'
 require 'asperalm/on_cloud'
@@ -399,7 +398,7 @@ module Asperalm
         def execute_admin_action
           self.options.set_option(:scope,OnCloud::SCOPE_FILES_ADMIN)
           update_aoc_api
-          command_admin=self.options.get_next_command([ :ats, :resource, :usage_reports, :events, :subscription, :auth_providers, :bss ])
+          command_admin=self.options.get_next_command([ :ats, :resource, :usage_reports, :events, :subscription, :auth_providers ])
           case command_admin
           when :auth_providers
             command_auth_prov=self.options.get_next_command([ :list, :update ])
@@ -409,9 +408,6 @@ module Asperalm
               return {:type=>:object_list,:data=>providers}
             when :update
             end
-          when :bss
-            bss_api=OnCloud.new(oncloud_params('bss/platform'))
-            bss_node=Bss.new(@agents.merge(skip_basic_auth_options: true, bss_api: bss_api)).execute_action
           when :subscription
             org=@api_aoc.read('organization')[:data]
             bss_api=OnCloud.new(oncloud_params('bss/platform'))
@@ -497,7 +493,7 @@ module Asperalm
             events=events_api.read("application_events")[:data]['application_events']
             return {:type=>:object_list,:data=>events}
           when :resource
-            resource_type=self.options.get_next_argument('resource',[:self,:user,:group,:client,:contact,:dropbox,:node,:operation,:package,:saml_configuration, :workspace, :dropbox_membership,:short_link,:workspace_membership,'admin/apps_new'.to_sym,'admin/client_registration_token'.to_sym])
+            resource_type=self.options.get_next_argument('resource',[:self,:user,:group,:client,:contact,:dropbox,:node,:operation,:package,:saml_configuration, :workspace, :dropbox_membership,:short_link,:workspace_membership,'admin/apps_new'.to_sym,'admin/client_registration_token'.to_sym,'integrations/kms_profile'.to_sym])
             resource_class_path=resource_type.to_s+case resource_type;when :dropbox;'es';when :self,'admin/apps_new'.to_sym;'';else; 's';end
             singleton_object=[:self].include?(resource_type)
             global_operations=[:create,:list]
