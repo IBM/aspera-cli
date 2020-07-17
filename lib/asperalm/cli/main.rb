@@ -279,13 +279,17 @@ module Asperalm
         end
         # cleanup file list files
         TempFileManager.instance.cleanup
-        @opt_mgr.final_errors.each do |msg|
-          @plugin_env[:formater].display_message(:error,"ERROR:".bg_red.gray.blink+" Argument: "+msg)
-        end
-        # processing of error condition
+        # 1- processing of error condition
         unless exception_info.nil?
           @plugin_env[:formater].display_message(:error,"ERROR:".bg_red.gray.blink+" "+exception_info[1]+": "+exception_info[0].message)
           @plugin_env[:formater].display_message(:error,"Use '-h' option to get help.") if exception_info[2].eql?(:usage)
+        end
+        # 2- processing of command not processed (due to exception or bad command line)
+        @opt_mgr.final_errors.each do |msg|
+          @plugin_env[:formater].display_message(:error,"ERROR:".bg_red.gray.blink+" Argument: "+msg)
+        end
+        # 3- in case of error, fail the process status
+        unless exception_info.nil?
           if Log.instance.level.eql?(:debug)
             # will force to show stack trace
             raise exception_info[0]
