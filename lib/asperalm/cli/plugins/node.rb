@@ -18,7 +18,9 @@ module Asperalm
             self.options.add_opt_simple(:validator,"identifier of validator (optional for central)")
             self.options.add_opt_simple(:asperabrowserurl,"URL for simple aspera web ui")
             self.options.add_opt_simple(:name,"sync name")
+            self.options.add_opt_list(:token,[:aspera,:basic,:auto],'package box')
             self.options.set_option(:asperabrowserurl,'https://asperabrowser.mybluemix.net')
+            self.options.set_option(:token,:aspera)
             self.options.parse_options!
           end
           return if env[:man_only]
@@ -50,8 +52,14 @@ module Asperalm
         # reduce the path from a result on given named column
         def c_result_remove_prefix_path(result,column,path_prefix)
           if !path_prefix.nil?
-            result[:data].each do |r|
-              r[column].replace(r[column][path_prefix.length..-1]) if r[column].start_with?(path_prefix)
+            case result[:type]
+            when :object_list
+              result[:data].each do |item|
+                item[column].replace(item[column][path_prefix.length..-1]) if item[column].start_with?(path_prefix)
+              end
+            when :single_object
+              item=result[:data]
+              item[column].replace(item[column][path_prefix.length..-1]) if item[column].start_with?(path_prefix)
             end
           end
           return result
@@ -169,14 +177,21 @@ module Asperalm
             query={ :path => thepath}
             additional_query=self.options.get_option(:query,:optional)
             query.merge!(additional_query) unless additional_query.nil?
-            send_result=@api_node.create('files/browse', query)
-            #send_result={:data=>{'items'=>[{'file'=>"filename1","permissions"=>[{'name'=>'read'},{'name'=>'write'}]}]}}
-            return Main.result_empty if !send_result[:data].has_key?('items')
-            result={ :data => send_result[:data]['items'] , :type => :object_list, :textify => lambda { |table_data| c_textify_browse(table_data) } }
-            self.format.display_status("Items: #{send_result[:data]['item_count']}/#{send_result[:data]['total_count']}")
+            send_result=@api_node.create('files/browse', query)[:data]
+            #example: send_result={'items'=>[{'file'=>"filename1","permissions"=>[{'name'=>'read'},{'name'=>'write'}]}]}
+            # if there is no items
+            case send_result['self']['type']
+            when 'directory'
+              result={ :data => send_result['items'] , :type => :object_list, :textify => lambda { |table_data| c_textify_browse(table_data) } }
+              self.format.display_status("Items: #{send_result['item_count']}/#{send_result['total_count']}")
+            else # 'file','symbolic_link'
+              result={ :data => send_result['self'] , :type => :single_object}
+              #result={ :data => [send_result['self']] , :type => :object_list, :textify => lambda { |table_data| c_textify_browse(table_data) } }
+              #raise "unknown type: #{send_result['self']['type']}"
+            end
             return c_result_remove_prefix_path(result,'path',prefix_path)
           when :upload
-            # only one transfer request
+            # we send only a list of one transfer request
             transfer_request = { :paths => [ { :destination => self.transfer.destination_folder('send') } ] }
             transfer_request.deep_merge!(@add_request_param)
             send_result=@api_node.create('files/upload_setup',{:transfer_requests => [ { :transfer_request => transfer_request } ] } )[:data]
