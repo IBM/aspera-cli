@@ -3,6 +3,7 @@ require 'asperalm/fasp/manager'
 require 'asperalm/log'
 require 'asperalm/rest'
 
+# ref: https://api.ibm.com/explorer/catalog/aspera/product/ibm-aspera/api/http-gateway-api/doc/guides-toc
 module Asperalm
   module Fasp
     # executes a local "ascp", connects mgt port, equivalent of "Fasp Manager"
@@ -13,19 +14,37 @@ module Asperalm
       def start_transfer(transfer_spec,options={})
         raise "GW URL must be set" unless !@gw_api.nil?
         raise "option: must be hash (or nil)" unless options.is_a?(Hash)
-        raise "only one source allowed in http mode" unless transfer_spec['paths'].is_a?(Array) and transfer_spec['paths'].length.eql?(1)
+        raise "paths: must be Array" unless transfer_spec['paths'].is_a?(Array)
         case transfer_spec['direction']
         when 'send'
-          raise "error"
+          # this is a websocket
+          raise "error, not implemented"
         when 'receive'
-          transfer_spec['zip_required']=false
-          transfer_spec['authentication']='token'
-          transfer_spec['download_name']='my_download' # TODO
-          transfer_spec['source_root']=transfer_spec['paths'].first['source']
-          transfer_spec['paths'].first['source']='200KB.1' #TODO: how to get list of files ?
-          creation=@gw_api.create('download',{'transfer_spec'=>transfer_spec})
-          transfer_uuid=creation[:data]['url'].split('/').last
-          file_dest=File.join(transfer_spec['destination_root'],'toto.bin')
+          transfer_spec['zip_required']||=false
+          transfer_spec['authentication']||='token'
+          transfer_spec['source_root']||='/'
+          # is normally provided by application, like package name
+          if !transfer_spec.has_key?('download_name')
+            # by default it is the name of first file
+            dname=File.basename(transfer_spec['paths'].first['source'])
+            # we remove extension
+            dname=dname.gsub(/\.@gw_api.*$/,'')
+            # ands add indication of number of files if there is more than one
+            if transfer_spec['paths'].length > 1
+              dname=dname+" #{transfer_spec['paths'].length} Files"
+            end
+            transfer_spec['download_name']=dname
+          end
+          creation=@gw_api.create('download',{'transfer_spec'=>transfer_spec})[:data]
+          transfer_uuid=creation['url'].split('/').last
+          if transfer_spec['zip_required'] or transfer_spec['paths'].length > 1
+            # it is a zip file if zip is required or there is more than 1 file
+            file_dest=transfer_spec['download_name']+'.zip'
+          else
+            # it is a plain file if we don't require zip and there is only one file
+            file_dest=File.basename(transfer_spec['paths'].first['source'])
+          end
+          file_dest=File.join(transfer_spec['destination_root'],file_dest)
           @gw_api.call({:operation=>'GET',:subpath=>"download/#{transfer_uuid}",:save_to_file=>file_dest})
         else
           raise "error"
@@ -51,7 +70,7 @@ module Asperalm
         raise "params must be Hash" unless params.is_a?(Hash)
         params=params.symbolize_keys
         raise "must have only one param: url" unless params.keys.eql?([:url])
-        super
+        super()
         @gw_api=Rest.new({:base_url => params[:url]})
         api_info = @gw_api.read('info')[:data]
         Log.log.info("#{api_info}")
