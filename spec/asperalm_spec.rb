@@ -19,7 +19,7 @@ PATH_FOLDER_MAIN='/'
 
 params={}
 [:url,:user,:pass].each do |p|
-  env="HSTS_SSH_#{p.to_s.upcase}"
+  env="CF_HSTS_SSH_#{p.to_s.upcase}"
   params[p]=ENV[env]
     raise "missing env var: #{env}" unless params[p].is_a?(String)
 end
