@@ -31,14 +31,16 @@ module Asperalm
         'EX_license_text'         => { :type => :envvar, :variable=>'ASPERA_SCP_LICENSE'},
         # bool params
         'create_dir'              => { :type => :opt_without_arg, :option_switch=>'-d'},
-        'precalculate_job_size'   => { :type => :opt_without_arg, :option_switch=>'--precalculate-job-size'},
-        'keepalive'               => { :type => :opt_without_arg, :option_switch=>'--keepalive'},
-        'delete_before_transfer'  => { :type => :opt_without_arg, :option_switch=>'--delete-before-transfer'}, #TODO: doc
+        'precalculate_job_size'   => { :type => :opt_without_arg},
+        'keepalive'               => { :type => :opt_without_arg},
+        'delete_before_transfer'  => { :type => :opt_without_arg}, #TODO: doc readme
         'preserve_access_time'    => { :type => :opt_without_arg}, #TODO: doc
         'preserve_creation_time'  => { :type => :opt_without_arg}, #TODO: doc
         'preserve_times'          => { :type => :opt_without_arg}, #TODO: doc
         'preserve_modification_time'=> { :type => :opt_without_arg}, #TODO: doc
         'remove_empty_directories'=> { :type => :opt_without_arg}, #TODO: doc
+        'remove_after_transfer'   => { :type => :opt_without_arg}, #TODO: doc
+        'remove_empty_source_directory'=> { :type => :opt_without_arg}, #TODO: doc
 
         # value params
         'cipher'                  => { :type => :opt_with_arg, :option_switch=>'-c',:accepted_types=>String,:translate_values=>{'aes128'=>'aes128','aes-128'=>'aes128','aes192'=>'aes192','aes-192'=>'aes192','aes256'=>'aes256','aes-256'=>'aes256','none'=>'none'}},
@@ -61,6 +63,7 @@ module Asperalm
         'exclude_newer_than'      => { :type => :opt_with_arg, :accepted_types=>Integer}, #todo: doc
         'exclude_older_than'      => { :type => :opt_with_arg, :accepted_types=>Integer}, #todo: doc
         'preserve_acls'           => { :type => :opt_with_arg, :accepted_types=>String}, #todo: doc
+        'move_after_transfer'     => { :type => :opt_with_arg, :accepted_types=>String}, #todo: doc
         # non standard parameters
         'EX_fasp_proxy_url'       => { :type => :opt_with_arg, :option_switch=>'--proxy',:accepted_types=>String},
         'EX_http_proxy_url'       => { :type => :opt_with_arg, :option_switch=>'-x',:accepted_types=>String},
