@@ -2507,7 +2507,8 @@ So, it evolved into <%=tool%>:
 
 * 0.10.15
 
-	*
+	* in case of command line error, display the error cause first, and non-parsed argument second
+	* AoC : Activity / Analytics
 
 * 0.10.14
 
