@@ -480,7 +480,7 @@ t/aoc14:
 	@touch $@
 t/aoc15:
 	@echo $@
-	$(EXETEST) aspera admin eve --query=@json:'{"page":1,"per_page":2,"q":"*","sort":"-date"}'
+	$(EXETEST) aspera admin analytics transfers --query=@json:'{"status":"completed","direction":"receive"}'
 	@touch $@
 taocadm: t/aoc7 t/aoc8 t/aoc9 t/aoc9b t/aoc10 t/aoc11 t/aoc12 t/aoc13 t/aoc14 t/aoc15
 t/aocat4:
