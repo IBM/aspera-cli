@@ -39,6 +39,7 @@ module Asperalm
           self.options.add_opt_simple(:new_user_option,"new user creation option")
           self.options.add_opt_simple(:from_folder,"share to share source folder")
           self.options.add_opt_simple(:scope,"scope for AoC API calls")
+          self.options.add_opt_simple(:notify,"notify users that file was received")
           self.options.add_opt_boolean(:bulk,"bulk operation")
           self.options.set_option(:bulk,:no)
           self.options.set_option(:new_user_option,{'package_contact'=>true})
@@ -398,7 +399,7 @@ module Asperalm
         def execute_admin_action
           self.options.set_option(:scope,OnCloud::SCOPE_FILES_ADMIN)
           update_aoc_api
-          command_admin=self.options.get_next_command([ :ats, :resource, :usage_reports, :events, :subscription, :auth_providers ])
+          command_admin=self.options.get_next_command([ :ats, :resource, :usage_reports, :analytics, :subscription, :auth_providers ])
           case command_admin
           when :auth_providers
             command_auth_prov=self.options.get_next_command([ :list, :update ])
@@ -480,18 +481,58 @@ module Asperalm
             #              item
             #            end
             #            return {:type=>:object_list,:data=>nodes,:fields=>['host_name','node_status.cluster_id','node_status.node_id']}
-          when :events
-            # begin: old
-            #events=@api_aoc.read("admin/events",url_query({q: '*'}))[:data]
-            #events.map!{|i|i['_source']['_score']=i['_score'];i['_source']}
-            #return {:type=>:object_list,:data=>events,:fields=>['user.name','type','data.files_transfer_action','data.workspace_name','date']}
-            # end: old
-            events_api = Rest.new(@api_aoc.params.deep_merge({
-              :base_url => @api_aoc.params[:base_url].gsub('/api/v1','')+'/analytics/v2/organizations/'+user_info['organization_id'],
+          when :analytics
+            analytics_api = Rest.new(@api_aoc.params.deep_merge({
+              :base_url => @api_aoc.params[:base_url].gsub('/api/v1','')+'/analytics/v2',
               :auth     => {:scope => OnCloud::SCOPE_FILES_ADMIN_USER}
             }))
-            events=events_api.read("application_events")[:data]['application_events']
-            return {:type=>:object_list,:data=>events}
+            command_analytics=self.options.get_next_command([ :application_events, :transfers ])
+            case command_analytics
+            when :application_events
+              event_type=command_analytics.to_s
+              events=analytics_api.read("organizations/#{user_info['organization_id']}/#{event_type}")[:data][event_type]
+              return {:type=>:object_list,:data=>events}
+            when :transfers
+              event_type=command_analytics.to_s
+              filter_resource=self.options.get_option(:name,:optional) || 'organizations'
+              filter_id=self.options.get_option(:id,:optional) || case filter_resource
+              when 'organizations'; user_info['organization_id']
+              when 'users'; user_info['id']
+              when 'nodes'; user_info['id']
+              else raise "organizations or users for option --name"
+              end
+              #
+              filter=self.options.get_option(:query,:optional) || {}
+              filter['limit']||=100
+              if self.options.get_option(:once_only,:mandatory)
+                saved_date=[]
+                startdate_persistency=PersistencyFile.new(
+                data: saved_date,
+                ids:  ['aoc_ana_date',self.options.get_option(:url,:mandatory),@workspace_name].push(filter_resource,filter_id))
+                start_datetime=saved_date.first
+                stop_datetime=Time.now.utc.strftime('%FT%T.%LZ')
+                #Log.log().error("start: #{start_datetime}")
+                #Log.log().error("end:   #{stop_datetime}")
+                saved_date[0]=stop_datetime
+                filter['start_time'] = start_datetime unless start_datetime.nil?
+                filter['stop_time'] = stop_datetime
+              end
+              notification=self.options.get_option(:notify,:optional)
+              events=analytics_api.read("#{filter_resource}/#{filter_id}/#{event_type}",url_query(filter))[:data][event_type]
+              startdate_persistency.save unless startdate_persistency.nil?
+              if !notification.nil?
+                require 'erb'
+                events.each do |transfer|
+                  email_to_send={}
+                  notification.each do |k,v|
+                    email_to_send[k.to_sym]=ERB.new(v).result(binding)
+                  end
+                  Log.log().error("send email:   #{email_to_send}")
+                  self.config.send_email(email_to_send)
+                end
+              end
+              return {:type=>:object_list,:data=>events}
+            end
           when :resource
             resource_type=self.options.get_next_argument('resource',[:self,:user,:group,:client,:contact,:dropbox,:node,:operation,:package,:saml_configuration, :workspace, :dropbox_membership,:short_link,:workspace_membership,'admin/apps_new'.to_sym,'admin/client_registration_token'.to_sym,'integrations/kms_profile'.to_sym])
             resource_class_path=resource_type.to_s+case resource_type;when :dropbox;'es';when :self,'admin/apps_new'.to_sym;'';else; 's';end
