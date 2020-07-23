@@ -1708,6 +1708,26 @@ $ cat my_file_list.txt|while read path;do echo <%=cmd%> aspera admin res node --
 cat my_file_list.txt | mlia aspera admin res node --name='my node name' --secret='my secret' v3 delete @lines:@stdin:
 ```
 
+### Activity
+
+The activity app can be queried with:
+
+```
+$ <%=cmd%> aspera admin analytics transfers
+```
+
+It can also support filters and send notification email with a template:
+
+```
+$ <%=cmd%> aspera admin analytics transfers --once-only=yes --lock-port=123455 --query=@json:'{"status":"completed","direction":"receive"}' --notify=@json:'{"to":"<%=transfer[:user_email.to_s]%>","subject":"<%=transfer[:files_completed.to_s]%> files received","body":"Dear <%=transfer[:user_email.to_s]%>\nWe received <%=transfer[:files_completed.to_s]%> files for a total of <%=transfer[:transferred_bytes.to_s]%> bytes, starting with file:\n<%=transfer[:content.to_s]%>\n\nThank you."}'
+```
+
+* `once_only` keep track of last date it was called, so next call will get only new events
+* `query` filter (on API call)
+* `notify` send an email as specified by template, this could be places in a file with the `@file` modifier.
+
+Note this must not be executed in less than 5 minutes because the analytics interface accepts only a period of time between 5 minutes and 6 months. here the period is [date of previous execution]..[now].
+
 ## IBM Aspera High Speed Transfer Server (transfer)
 
 This plugin works at FASP level (SSH/ascp/ascmd) and does not use the node API.
@@ -2484,6 +2504,11 @@ So, it evolved into <%=tool%>:
 
 
 # Release Notes
+
+* 0.10.15
+
+	*
+
 * 0.10.14
 
 	* added missing bss plugin
