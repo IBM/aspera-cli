@@ -218,6 +218,7 @@ module Asperalm
             if !response['Content-Disposition'].nil? and m=response['Content-Disposition'].match(/filename="([^"]+)"/)
               target_file=m[1]
             end
+            Log.log.debug("saving to: #{target_file}")
             File.open(target_file, "wb") do |file|
               result[:http].read_body do |fragment|
                 file.write(fragment)
