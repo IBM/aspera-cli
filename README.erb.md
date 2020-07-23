@@ -1719,7 +1719,9 @@ $ <%=cmd%> aspera admin analytics transfers
 It can also support filters and send notification email with a template:
 
 ```
-$ <%=cmd%> aspera admin analytics transfers --once-only=yes --lock-port=123455 --query=@json:'{"status":"completed","direction":"receive"}' --notify=@json:'{"to":"<%=transfer[:user_email.to_s]%>","subject":"<%=transfer[:files_completed.to_s]%> files received","body":"Dear <%=transfer[:user_email.to_s]%>\nWe received <%=transfer[:files_completed.to_s]%> files for a total of <%=transfer[:transferred_bytes.to_s]%> bytes, starting with file:\n<%=transfer[:content.to_s]%>\n\nThank you."}'
+$ <%=cmd%> aspera admin analytics transfers --once-only=yes --lock-port=123455 \
+--query=@json:'{"status":"completed","direction":"receive"}' \
+--notify=@json:'{"to":"<''%=transfer[:user_email.to_s]%>","subject":"<''%=transfer[:files_completed.to_s]%> files received","body":"Dear <''%=transfer[:user_email.to_s]%>\nWe received <''%=transfer[:files_completed.to_s]%> files for a total of <''%=transfer[:transferred_bytes.to_s]%> bytes, starting with file:\n<''%=transfer[:content.to_s]%>\n\nThank you."}'
 ```
 
 * `once_only` keep track of last date it was called, so next call will get only new events
