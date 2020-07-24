@@ -121,11 +121,12 @@ module Asperalm
       # sets [:org_url], [:auth][:grant], [:auth][:url_token]
       self.class.resolve_pub_link(aoc_rest_p,opt[:link])
 
-      # get org url from pub link or options
       if aoc_rest_p.has_key?(:org_url)
+        # Pub Link only: get org url from pub link
         opt[:url] = aoc_rest_p[:org_url]
         aoc_rest_p.delete(:org_url)
       else
+        # else url is mandatory
         raise ArgumentError,"Missing mandatory option: url" if opt[:url].nil?
       end
 
@@ -144,6 +145,7 @@ module Asperalm
       end
 
       aoc_auth_p[:client_id],aoc_auth_p[:client_secret] = self.class.get_client_ids(opt[:client_id],opt[:client_secret])
+      raise ArgumentError,"Missing mandatory option: scope" if opt[:scope].nil?
       aoc_auth_p[:scope] = opt[:scope]
 
       # fill other auth parameters based on Oauth method
