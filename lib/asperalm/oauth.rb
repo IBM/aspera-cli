@@ -1,4 +1,5 @@
 require 'asperalm/open_application'
+require 'asperalm/oauth_cache'
 require 'base64'
 require 'date'
 require 'socket'
