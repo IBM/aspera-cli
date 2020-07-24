@@ -5,10 +5,10 @@ require 'asperalm/log'
 Asperalm::Log.instance.level=:debug
 
 aocapi=Asperalm::OnCloud.new(
-url: 'https://sedemo.ibmaspera.com',
+url: 'https://myorg.ibmaspera.com',
 auth: :jwt,
-private_key: File.read('/Users/laurent/.aspera/mlia/aspera_on_cloud_key'),
-username: 'laurent.martin.aspera@fr.ibm.com',
+private_key: File.read('path/to_your_private_key.pem'),
+username: 'my.email@example.com',
 scope: 'user:all',
 subpath: 'api/v1')
 
