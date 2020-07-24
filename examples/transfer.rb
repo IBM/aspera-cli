@@ -1,3 +1,4 @@
+#!/usr/bin/env ruby
 # Example: transfer a file using one of the provided transfer agents
 
 require 'asperalm/fasp/local'
