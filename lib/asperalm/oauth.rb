@@ -164,6 +164,7 @@ module Asperalm
         resp=nil
         case @params[:grant]
         when :web
+          # AoC Web based Auth
           check_code=SecureRandom.uuid
           login_page_url=Rest.build_uri(
           "#{@params[:base_url]}/#{@params[:path_authorize]}",
@@ -173,10 +174,8 @@ module Asperalm
             :client_secret => @params[:client_secret],
             :state         => check_code
           }))
-
           # here, we need a human to authorize on a web page
           code=goto_page_and_get_code(login_page_url,check_code)
-
           # exchange code for token
           resp=create_token_www_body(p_client_id_and_scope.merge({
             :grant_type   => 'authorization_code',
@@ -215,19 +214,21 @@ module Asperalm
             :assertion  => assertion
           }))
         when :url_token
-          # exchange url_token for bearer token
+          # AoC Public Link
           resp=create_token_advanced({
             :json_params => {:url_token=>@params[:url_token]},
             :url_params  => p_scope.merge({
             :grant_type    => 'url_token'
             })})
         when :ibm_apikey
+          # ATS
           resp=create_token_www_body({
             'grant_type'    => 'urn:ibm:params:oauth:grant-type:apikey',
             'response_type' => 'cloud_iam',
             'apikey'        => @params[:api_key]
           })
         when :delegated_refresh
+          # COS
           resp=create_token_www_body({
             'grant_type'          => 'urn:ibm:params:oauth:grant-type:apikey',
             'response_type'       => 'delegated_refresh_token',
@@ -250,7 +251,7 @@ module Asperalm
             :username   => @params[:user_name],
             :password   => @params[:user_pass]
           }))
-          when :body_data
+        when :body_data
           # used in Faspex apiv5
           resp=create_token_advanced({
             :auth        => {:type => :none},
