@@ -664,12 +664,19 @@ module Asperalm
           when :tier_restrictions
             return { :type=>:single_object, :data =>@api_aoc.read('tier_restrictions')[:data] }
           when :user
-            command=self.options.get_next_command([ :workspaces,:info ])
+            command=self.options.get_next_command([ :workspaces,:info,:shared_inboxes ])
             case command
             when :workspaces
               return {:type=>:object_list,:data=>@api_aoc.read("workspaces")[:data],:fields=>['id','name']}
               #              when :settings
               #                return {:type=>:object_list,:data=>@api_aoc.read("client_settings/")[:data]}
+            when :shared_inboxes
+              query=url_query(nil)
+              if query.nil?
+                set_workspace_info
+                query={'embed[]'=>'dropbox','workspace_id'=>@workspace_id,'aggregate_permissions_by_dropbox'=>true,'sort'=>'dropbox_name'}
+              end
+              return {:type=>:object_list,:data=>@api_aoc.read("dropbox_memberships",query)[:data],:fields=>['dropbox.name']}
             when :info
               command=self.options.get_next_command([ :show,:modify ])
               case command
