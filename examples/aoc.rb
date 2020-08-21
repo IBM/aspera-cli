@@ -14,4 +14,4 @@ subpath: 'api/v1')
 
 self_user_data=aocapi.read('self')
 
-Asperalm::Log.dump("self",self_user_data)
+Asperalm::Log.dump('self',self_user_data)
