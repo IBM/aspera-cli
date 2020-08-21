@@ -2507,6 +2507,10 @@ So, it evolved into <%=tool%>:
 
 # Release Notes
 
+* 0.10.16
+
+	* added list of shared inboxes in workspace (or global), use `--query=@json:'{}'`
+
 * 0.10.15
 
 	* in case of command line error, display the error cause first, and non-parsed argument second
