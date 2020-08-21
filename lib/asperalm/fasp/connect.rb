@@ -21,9 +21,7 @@ module Asperalm
         raise "Using connect requires a graphical environment" if !OpenApplication.default_gui_mode.eql?(:graphical)
         trynumber=0
         begin
-          uri_file=Installation.instance.connect_uri_file
-          Log.log.debug("reading connect port file: #{uri_file}")
-          connect_url=File.open(uri_file){|f|f.gets}.strip
+          connect_url=Installation.instance.connect_uri
           Log.log.debug("found: #{connect_url}")
           @connect_api=Rest.new({:base_url => "#{connect_url}/v5/connect"}) # could use v6 also now
           cinfo=@connect_api.read('info/version')[:data]

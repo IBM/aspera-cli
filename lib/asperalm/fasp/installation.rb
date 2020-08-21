@@ -107,9 +107,17 @@ module Asperalm
       end
 
       # @returns the file path of local connect where API's URI can be read
-      def connect_uri_file
+      def connect_uri
         connect=get_product_folders('Aspera Connect')
-        return File.join(connect[:run_root],VARRUN_SUBFOLDER,'https.uri')
+        folder=File.join(connect[:run_root],VARRUN_SUBFOLDER)
+        ['','s'].each do |ext|
+          uri_file=File.join(folder,"http#{ext}.uri")
+          Log.log.debug("checking connect port file: #{uri_file}")
+          if File.exist?(uri_file)
+            return File.open(uri_file){|f|f.gets}.strip
+          end
+        end
+        raise "no connect uri file found in #{folder}"
       end
 
       # @ return path to configuration file of aspera CLI
@@ -121,7 +129,7 @@ module Asperalm
       # add Aspera private keys for web access, token based authorization
       def bypass_keys
         return [ "%08x-%04x-%04x-%04x-%04x%08x" % "t1(\xBF;\xF3E\xB5\xAB\x14F\x02\xC6\x7F)P".unpack("NnnnnN"),
-          Installation.instance.path(:ssh_bypass_key_dsa), 
+          Installation.instance.path(:ssh_bypass_key_dsa),
           Installation.instance.path(:ssh_bypass_key_rsa) ]
       end
 
