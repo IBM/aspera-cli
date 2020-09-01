@@ -403,6 +403,7 @@ In addition it is possible to decode a value, using one or multiple decoders :
 * @ruby: execute ruby code
 * @csvt: decode a titled CSV value
 * @lines: split a string in multiple lines and return an array
+* @list: split a string in multiple items taking first character as separator and return an array
 * @incps: include values of presets specified by key include_presets in hash
 
 To display the result of an extended value, use the `config echo` command.
@@ -1734,6 +1735,20 @@ Note this must not be executed in less than 5 minutes because the analytics inte
 
 This plugin works at FASP level (SSH/ascp/ascmd) and does not use the node API.
 
+### Authentication
+
+Both password and SSH keys auth are supported.
+
+Multiple SSH key paths can be provided. The value of the parameter can be a single value or an array. Each value is a path to a private key and is expanded ("~" is replaced with the user's home folder).
+
+Examples:
+
+```
+$ <%=cmd%> server --ssh-keys=~/.ssh/id_rsa
+$ <%=cmd%> server --ssh-keys=@list:,~/.ssh/id_rsa
+$ <%=cmd%> server --ssh-keys=@json:'["~/.ssh/id_rsa"]'
+```
+
 ### Example
 
 One can test the "server" application using the well known demo server:
@@ -2507,6 +2522,11 @@ So, it evolved into <%=tool%>:
 
 # Release Notes
 
+* 0.10.17
+
+	* fixed problem on `server` for option `ssh_keys`, now accepts both single value and list.
+	* new modifier: `@list:<saparator>val1<separator>...`
+
 * 0.10.16
 
 	* added list of shared inboxes in workspace (or global), use `--query=@json:'{}'`
@@ -2814,6 +2834,18 @@ OpenSSH keys only supported if ED25519 is available
 Which meant that you do not have ruby support for ED25519 SSH keys.
 You may either install the suggested Gems, or remove your ed25519 key from your `.ssh` folder to solve the issue.
 
+## could not connect to ssh-agent
+
+If you get error message:
+
+```
+ERROR -- net.ssh.authentication.agent: could not connect to ssh-agent: Agent not configured
+```
+
+It means that the provided ssh key does not exist or work.
+
+[check the manual](https://net-ssh.github.io/ssh/v1/chapter-2.html#s2)
+, check env var: `SSH_AGENT_SOCK`, check if the key is protected with a passphrase.
 
 # TODO
 
