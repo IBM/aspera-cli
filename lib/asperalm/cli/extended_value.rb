@@ -36,7 +36,8 @@ module Asperalm
           'zlib'   =>lambda{|v|Zlib::Inflate.inflate(v)},
           'ruby'   =>lambda{|v|eval(v)},
           'csvt'   =>lambda{|v|ExtendedValue.decode_csvt(v)},
-          'lines'  =>lambda{|v|v.split("\n")}
+          'lines'  =>lambda{|v|v.split("\n")},
+          'list'   =>lambda{|v|v[1..-1].split(v[0])}
           },
           :reader=>{
           'val'    =>lambda{|v|v},
