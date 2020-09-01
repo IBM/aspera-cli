@@ -219,7 +219,12 @@ t/serv3:
 	@echo $@
 	$(EXETEST) -N server --url=$(CF_FASPEX_SSH_URL) --username=root --ssh-keys=~/.ssh/id_rsa ctl all:status
 	@touch $@
-tfasp: t/serv_browse t/serv_mkdir t/serv_upload t/serv_md5 t/serv_down_lcl t/serv_down_from_node t/serv_cp t/serv_mv t/serv_delete t/serv_cleanup1 t/serv_info t/serv_du t/serv_df t/asession t/serv_nodeadmin t/serv_nagios_webapp t/serv_nagios_transfer t/serv3
+t/serv_key:
+	@echo $@
+	$(EXETEST) -Pserver_eudemo_key server br /
+	@touch $@
+
+tfasp: t/serv_browse t/serv_mkdir t/serv_upload t/serv_md5 t/serv_down_lcl t/serv_down_from_node t/serv_cp t/serv_mv t/serv_delete t/serv_cleanup1 t/serv_info t/serv_du t/serv_df t/asession t/serv_nodeadmin t/serv_nagios_webapp t/serv_nagios_transfer t/serv3 t/serv_key
 
 t/fx_plst:
 	@echo $@
@@ -880,7 +885,7 @@ t/f5_2:
 	@touch $@
 t/f5_3:
 	@echo $@
-	$(EXETEST) faspex5 package send --value=@json:'{"title":"test title","recipients":["laurent"]}' $(CF_SAMPLE_FILEPATH)
+	$(EXETEST) faspex5 package send --value=@json:'{"title":"test title","recipients":["admin"]}' $(CF_SAMPLE_FILEPATH)
 	@touch $@
 t/f5_4:
 	@echo $@
