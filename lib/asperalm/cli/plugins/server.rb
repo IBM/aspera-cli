@@ -17,7 +17,7 @@ module Asperalm
 
         def initialize(env)
           super(env)
-          self.options.add_opt_simple(:ssh_keys,Array,'one ssh key at a time')
+          self.options.add_opt_simple(:ssh_keys,'ssh key path list')
           self.options.add_opt_simple(:cmd_prefix,'prefix to add for as cmd execution, e.g. sudo or /opt/aspera/bin ')
           self.options.set_option(:ssh_keys,[])
           self.options.parse_options!
@@ -85,11 +85,16 @@ module Asperalm
               cred_set=true
             end
             ssh_keys=self.options.get_option(:ssh_keys,:optional)
-            raise 'internal error, expecting array' if !ssh_keys.is_a?(Array)
-            if !ssh_keys.empty?
+            if !ssh_keys.nil?
+              raise 'expecting single value or array for ssh_keys' unless ssh_keys.is_a?(Array) or ssh_keys.is_a?(String)
+              ssh_keys=[ssh_keys] if ssh_keys.is_a?(String)
+              ssh_keys.map!{|p|File.expand_path(p)}
               Log.log.debug("ssh keys=#{ssh_keys}")
               ssh_options[:keys]=ssh_keys
               server_transfer_spec['EX_ssh_key_paths']=ssh_keys
+              ssh_keys.each do |k|
+                Log.log.warn("no such key file: #{k}") unless File.exist?(k)
+              end
               cred_set=true
             end
             raise 'either password or key must be provided' if !cred_set
