@@ -181,7 +181,7 @@ module Asperalm
             #example: send_result={'items'=>[{'file'=>"filename1","permissions"=>[{'name'=>'read'},{'name'=>'write'}]}]}
             # if there is no items
             case send_result['self']['type']
-            when 'directory'
+            when 'directory','container' # directory: node, container: shares
               result={ :data => send_result['items'] , :type => :object_list, :textify => lambda { |table_data| c_textify_browse(table_data) } }
               self.format.display_status("Items: #{send_result['item_count']}/#{send_result['total_count']}")
             else # 'file','symbolic_link'
