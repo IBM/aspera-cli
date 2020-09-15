@@ -1739,7 +1739,7 @@ This plugin works at FASP level (SSH/ascp/ascmd) and does not use the node API.
 
 Both password and SSH keys auth are supported.
 
-Multiple SSH key paths can be provided. The value of the parameter can be a single value or an array. Each value is a path to a private key and is expanded ("~" is replaced with the user's home folder).
+Multiple SSH key paths can be provided. The value of the parameter `ssh_keys` can be a single value or an array. Each value is a path to a private key and is expanded ("~" is replaced with the user's home folder).
 
 Examples:
 
@@ -1747,6 +1747,21 @@ Examples:
 $ <%=cmd%> server --ssh-keys=~/.ssh/id_rsa
 $ <%=cmd%> server --ssh-keys=@list:,~/.ssh/id_rsa
 $ <%=cmd%> server --ssh-keys=@json:'["~/.ssh/id_rsa"]'
+```
+
+The underlying ssh library `net::ssh` provides several options that may be used
+depending on environment. By default the ssh library expect that an ssh-agent is running, but if you get the error message:
+
+```
+ERROR -- net.ssh.authentication.agent: could not connect to ssh-agent: Agent not configured
+```
+
+This means that you dont have such agent, check env var: `SSH_AGENT_SOCK`, check if the key is protected with a passphrase. [check the manual](https://net-ssh.github.io/ssh/v1/chapter-2.html#s2)
+
+To diable use of `ssh-agent`, use the option `ssh_option` like this (or set in preset):
+
+```
+$ <%=cmd%> server --ssh-options=@ruby:'{use_agent: false} ...'
 ```
 
 ### Example
@@ -2522,6 +2537,10 @@ So, it evolved into <%=tool%>:
 
 # Release Notes
 
+* 0.10.18
+
+	* new option in. `server` : `ssh_options`
+
 * 0.10.17
 
 	* fixed problem on `server` for option `ssh_keys`, now accepts both single value and list.
@@ -2833,19 +2852,6 @@ OpenSSH keys only supported if ED25519 is available
 
 Which meant that you do not have ruby support for ED25519 SSH keys.
 You may either install the suggested Gems, or remove your ed25519 key from your `.ssh` folder to solve the issue.
-
-## could not connect to ssh-agent
-
-If you get error message:
-
-```
-ERROR -- net.ssh.authentication.agent: could not connect to ssh-agent: Agent not configured
-```
-
-It means that the provided ssh key does not exist or work.
-
-[check the manual](https://net-ssh.github.io/ssh/v1/chapter-2.html#s2)
-, check env var: `SSH_AGENT_SOCK`, check if the key is protected with a passphrase.
 
 # TODO
 

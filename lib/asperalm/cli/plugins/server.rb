@@ -17,9 +17,11 @@ module Asperalm
 
         def initialize(env)
           super(env)
-          self.options.add_opt_simple(:ssh_keys,'ssh key path list')
+          self.options.add_opt_simple(:ssh_keys,'ssh key path list (Array or single)')
+          self.options.add_opt_simple(:ssh_options,'ssh options (Hash)')
           self.options.add_opt_simple(:cmd_prefix,'prefix to add for as cmd execution, e.g. sudo or /opt/aspera/bin ')
           self.options.set_option(:ssh_keys,[])
+          self.options.set_option(:ssh_options,{})
           self.options.parse_options!
         end
 
@@ -72,7 +74,7 @@ module Asperalm
               'remote_host'=>server_uri.hostname,
               'remote_user'=>self.options.get_option(:username,:mandatory),
             }
-            ssh_options={}
+            ssh_options=self.options.get_option(:ssh_options,:optional)
             if !server_uri.port.nil?
               ssh_options[:port]=server_uri.port
               server_transfer_spec['ssh_port']=server_uri.port
