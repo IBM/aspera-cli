@@ -75,6 +75,7 @@ module Asperalm
               'remote_user'=>self.options.get_option(:username,:mandatory),
             }
             ssh_options=self.options.get_option(:ssh_options,:optional)
+            raise 'expecting a Hash for ssh_options' unless ssh_options.is_a?(Hash)
             if !server_uri.port.nil?
               ssh_options[:port]=server_uri.port
               server_transfer_spec['ssh_port']=server_uri.port
