@@ -1761,7 +1761,7 @@ This means that you dont have such agent, check env var: `SSH_AGENT_SOCK`, check
 To diable use of `ssh-agent`, use the option `ssh_option` like this (or set in preset):
 
 ```
-$ <%=cmd%> server --ssh-options=@ruby:'{use_agent: false} ...'
+$ <%=cmd%> server --ssh-options=@ruby:'{use_agent: false}' ...
 ```
 
 ### Example
