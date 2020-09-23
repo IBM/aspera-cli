@@ -236,6 +236,7 @@ t/fx_psnd:
 	@touch $@
 t/fx_prs: $(LOCAL_FOLDER)/.exists
 	@echo $@
+	@sleep 5
 	$(EXETEST) faspex package recv --box=sent --to-folder=$(LOCAL_FOLDER) --id=$$($(EXETEST) faspex package list --fields=package_id --format=csv --box=sent|tail -n 1)
 	@touch $@
 t/fx_pri: $(LOCAL_FOLDER)/.exists
