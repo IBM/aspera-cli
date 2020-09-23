@@ -2537,6 +2537,14 @@ So, it evolved into <%=tool%>:
 
 # Release Notes
 
+* 0.11
+
+	* add option to provide file list directly to ascp like this (only for direct transfer agent):
+
+```
+... --sources=@ts --ts=@json:'{"paths":[],"EX_file_list":"filelist"}'
+```
+
 * 0.10.18
 
 	* new option in. `server` : `ssh_options`
