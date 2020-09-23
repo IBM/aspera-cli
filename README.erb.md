@@ -3,7 +3,7 @@
 Version : <%= ENV["VERSION"] %>
 <%cmd=ENV["TOOLNAME"];tool='`'+cmd+'`';evp=cmd.upcase+'_';opprst='option preset';prst='['+opprst+'](#lprt)';prsts='['+opprst+'s](#lprt)';prstt=opprst.capitalize%>
 
-_Laurent/2016-2018_
+_Laurent/2016-<%=Time.new.year%>_
 
 This gem provides a ruby API to Aspera transfers and a command line interface to Aspera Applications. Location:
 [https://rubygems.org/gems/asperalm](https://rubygems.org/gems/asperalm)
