@@ -60,12 +60,15 @@ module Asperalm
         'sshfp'                   => { :type => :opt_with_arg, :option_switch=>'--check-sshfp',:accepted_types=>String},
         'symlink_policy'          => { :type => :opt_with_arg, :option_switch=>'--symbolic-links',:accepted_types=>String},
         'overwrite'               => { :type => :opt_with_arg, :accepted_types=>String},
-        'exclude_newer_than'      => { :type => :opt_with_arg, :accepted_types=>Integer}, #todo: doc
-        'exclude_older_than'      => { :type => :opt_with_arg, :accepted_types=>Integer}, #todo: doc
-        'preserve_acls'           => { :type => :opt_with_arg, :accepted_types=>String}, #todo: doc
-        'move_after_transfer'     => { :type => :opt_with_arg, :accepted_types=>String}, #todo: doc
+        'exclude_newer_than'      => { :type => :opt_with_arg, :accepted_types=>Integer},
+        'exclude_older_than'      => { :type => :opt_with_arg, :accepted_types=>Integer},
+        'preserve_acls'           => { :type => :opt_with_arg, :accepted_types=>String},
+        'move_after_transfer'     => { :type => :opt_with_arg, :accepted_types=>String},
+        'multi_session_threshold' => { :type => :opt_with_arg, :accepted_types=>String},
         # non standard parameters
         'EX_fasp_proxy_url'       => { :type => :opt_with_arg, :option_switch=>'--proxy',:accepted_types=>String},
+        'EX_file_list'            => { :type => :opt_with_arg, :option_switch=>'--file-list',:accepted_types=>String},
+        'EX_file_pair_list'       => { :type => :opt_with_arg, :option_switch=>'--file-pair-list',:accepted_types=>String},
         'EX_http_proxy_url'       => { :type => :opt_with_arg, :option_switch=>'-x',:accepted_types=>String},
         'EX_ssh_key_paths'        => { :type => :opt_with_arg, :option_switch=>'-i',:accepted_types=>Array},
         'EX_http_transfer_jpeg'   => { :type => :opt_with_arg, :option_switch=>'-j',:accepted_types=>Integer},
@@ -129,27 +132,37 @@ module Asperalm
           @builder.add_command_line_options(['--dest64'])
         end
 
-        src_dst_list=@builder.process_param('paths',:get_value,:accepted_types=>Array,:mandatory=>!@job_spec.has_key?('keepalive'))
-        unless src_dst_list.nil?
+        paths_array=@builder.process_param('paths',:get_value,:accepted_types=>Array,:mandatory=>!@job_spec.has_key?('keepalive'))
+        unless paths_array.nil?
           # use file list if there is storage defined for it.
           if @@file_list_folder.nil?
             # not safe for special characters ? (maybe not, depends on OS)
             Log.log.debug("placing source file list on command line (no file list file)")
-            @builder.add_command_line_options(src_dst_list.map{|i|i['source']})
+            @builder.add_command_line_options(paths_array.map{|i|i['source']})
           else
-            # safer option: file list
-            # if there is destination in paths, then use filepairlist
-            # TODO: well, we test only the first one, but anyway it shall be consistent
-            if src_dst_list.first.has_key?('destination')
-              option='--file-pair-list'
-              lines=src_dst_list.inject([]){|m,e|m.push(e['source'],e['destination']);m}
-            else
+            file_list_file=@builder.process_param('EX_file_list',:get_value,:accepted_types=>String,:mandatory=>false)
+            if !file_list_file.nil?
               option='--file-list'
-              lines=src_dst_list.map{|i|i['source']}
+            else
+              file_list_file=@builder.process_param('EX_file_pair_list',:get_value,:accepted_types=>String,:mandatory=>false)
+              if !file_list_file.nil?
+                option='--file-pair-list'
+              else
+                # safer option: file list
+                # if there is destination in paths, then use filepairlist
+                # TODO: well, we test only the first one, but anyway it shall be consistent
+                if paths_array.first.has_key?('destination')
+                  option='--file-pair-list'
+                  lines=paths_array.inject([]){|m,e|m.push(e['source'],e['destination']);m}
+                else
+                  option='--file-list'
+                  lines=paths_array.map{|i|i['source']}
+                end
+                file_list_file=Asperalm::TempFileManager.instance.new_file_path_in_folder(@@file_list_folder)
+                File.open(file_list_file, 'w+'){|f|f.puts(lines)}
+                Log.log.debug("#{option}=\n#{File.read(file_list_file)}".red)
+              end
             end
-            file_list_file=Asperalm::TempFileManager.instance.new_file_path_in_folder(@@file_list_folder)
-            File.open(file_list_file, 'w+'){|f|f.puts(lines)}
-            Log.log.debug("#{option}=\n#{File.read(file_list_file)}".red)
             @builder.add_command_line_options(["#{option}=#{file_list_file}"])
           end
         end
