@@ -317,7 +317,7 @@ module Asperalm
               return {:type=>:object_list, :data=>dropbox_list['items'], :fields=>['name','id','description','can_read','can_write']}
             end
           when :v4
-            command=self.options.get_next_command([:dropbox, :dmembership, :workgroup,:wmembership,:user,:metadata_profile])
+            command=self.options.get_next_command([:package,:dropbox, :dmembership, :workgroup,:wmembership,:user,:metadata_profile])
             case command
             when :dropbox
               return self.entity_action(api_v4,'admin/dropboxes',['id','e_wg_name','e_wg_desc','created_at'],:id)
@@ -331,6 +331,10 @@ module Asperalm
               return self.entity_action(api_v4,'users',['id','name','first_name','last_name'],:id)
             when :metadata_profile
               return self.entity_action(api_v4,'metadata_profiles',nil,:id)
+            when :package
+              pkg_box_type=self.options.get_next_command([:users])
+              pkg_box_id=self.options.get_option(:id,:mandatory)
+              return self.entity_action(api_v4,"#{pkg_box_type}/#{pkg_box_id}/packages",nil,:id)
             end
           when :address_book
             result=api_v3.call({:operation=>'GET',:subpath=>'address-book',:headers=>{'Accept'=>'application/json'},:url_params=>{'format'=>'json','count'=>100000}})[:data]
