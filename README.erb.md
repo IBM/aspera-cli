@@ -2537,6 +2537,10 @@ So, it evolved into <%=tool%>:
 
 # Release Notes
 
+* 0.11.1
+
+	* enhanced short_link creation commands (see examples)
+
 * 0.11
 
 	* add option to provide file list directly to ascp like this (only for direct transfer agent):

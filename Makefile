@@ -358,7 +358,7 @@ t/aocg6:
 	$(EXETEST) aspera user info modify @json:'{"name":"dummy change"}'
 	@touch $@
 taocgen: t/aocg1 t/aocg2 t/aocg3 t/aocg4 t/aocg5 t/aocg6
-t/aocf1:
+t/aocfbr:
 	@echo $@
 	$(EXETEST) aspera files browse /
 	@touch $@
@@ -370,43 +370,43 @@ t/aocfmkd:
 	@echo $@
 	$(EXETEST) aspera files mkdir /testfolder
 	@touch $@
-t/aocfdel:
+t/aocfren:
 	@echo $@
 	$(EXETEST) aspera files rename /testfolder newname
 	@touch $@
-t/aocf1d:
+t/aocfdel:
 	@echo $@
 	$(EXETEST) aspera files delete /newname
 	@touch $@
-t/aocf5: t/aocf2 # WS: Demo
+t/aocf5: t/aocfupl # WS: Demo
 	@echo $@
 	$(EXETEST) aspera files transfer --workspace=eudemo --from-folder='/Demo Files/aspera-test-dir-tiny' --to-folder=unit_test 200KB.1
 	@touch $@
-t/aocf2:
+t/aocfupl:
 	@echo $@
 	$(EXETEST) aspera files upload --to-folder=/ $(CF_SAMPLE_FILEPATH)
 	@touch $@
-t/aocfbn:
+t/aocfbearnode:
 	@echo $@
 	$(EXETEST) aspera files bearer /
 	@touch $@
 
-t/aocf3: $(LOCAL_FOLDER)/.exists
+t/aocfdown: $(LOCAL_FOLDER)/.exists
 	@echo $@
 	@rm -f $(CONNECT_DOWNLOAD_FOLDER)/200KB.1
 	$(EXETEST) aspera files download --transfer=connect /200KB.1
 	@rm -f $(CONNECT_DOWNLOAD_FOLDER)/200KB.1
 	@touch $@
-t/aocf4: $(LOCAL_FOLDER)/.exists
+t/aocfhttpd: $(LOCAL_FOLDER)/.exists
 	@echo $@
 	$(EXETEST) aspera files http_node_download --to-folder=$(LOCAL_FOLDER) /200KB.1
 	rm -f 200KB.1
 	@touch $@
-t/aocf1e:
+t/aocfv3inf:
 	@echo $@
 	$(EXETEST) aspera files v3 info
 	@touch $@
-t/aocf1f:
+t/aocffid:
 	@echo $@
 	$(EXETEST) aspera files file 18891
 	@touch $@
@@ -415,7 +415,19 @@ t/aocfpub:
 	$(EXETEST) -N aspera files browse / --link=$(CF_AOC_PUBLINK_FOLDER)
 	$(EXETEST) -N aspera files upload --to-folder=/ $(CF_SAMPLE_FILEPATH) --link=$(CF_AOC_PUBLINK_FOLDER)
 	@touch $@
-taocf: t/aocf1 t/aocffin t/aocfmkd t/aocfdel t/aocf1d t/aocf5 t/aocf2 t/aocf3 t/aocf4 t/aocf1e t/aocf1f t/aocfpub t/aocfbn
+t/aocshlk1:
+	@echo $@
+	$(EXETEST) aspera files short_link list --value=@json:'{"purpose":"shared_folder_auth_link"}'
+	@touch $@
+t/aocshlk2:
+	@echo $@
+	$(EXETEST) aspera files short_link create --to-folder='my folder' --value=private
+	@touch $@
+t/aocshlk3:
+	@echo $@
+	$(EXETEST) aspera files short_link create --to-folder='my folder' --value=public
+	@touch $@
+taocf: t/aocfbr t/aocffin t/aocfmkd t/aocfren t/aocfdel t/aocf5 t/aocfupl t/aocfbearnode t/aocfdown t/aocfhttpd t/aocfv3inf t/aocffid t/aocfpub t/aocshlk1 t/aocshlk2 t/aocshlk3
 t/aocp1:
 	@echo $@
 	$(EXETEST) aspera packages send --value=@json:'{"name":"'"$(CURRENT_DATE)"'","recipients":["laurent.martin.aspera@fr.ibm.com"],"note":"my note"}' $(CF_SAMPLE_FILEPATH)
