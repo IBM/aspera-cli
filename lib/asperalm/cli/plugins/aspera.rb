@@ -534,12 +534,12 @@ module Asperalm
               return {:type=>:object_list,:data=>events}
             end
           when :resource
-            resource_type=self.options.get_next_argument('resource',[:self,:user,:group,:client,:contact,:dropbox,:node,:operation,:package,:saml_configuration, :workspace, :dropbox_membership,:short_link,:workspace_membership,'admin/apps_new'.to_sym,'admin/client_registration_token'.to_sym,'integrations/kms_profile'.to_sym])
-            resource_class_path=resource_type.to_s+case resource_type;when :dropbox;'es';when :self,'admin/apps_new'.to_sym;'';else; 's';end
-            singleton_object=[:self].include?(resource_type)
+            resource_type=self.options.get_next_argument('resource',[:self,:organization,:user,:group,:client,:contact,:dropbox,:node,:operation,:package,:saml_configuration, :workspace, :dropbox_membership,:short_link,:workspace_membership,'admin/apps_new'.to_sym,'admin/client_registration_token'.to_sym,'integrations/kms_profile'.to_sym])
+            resource_class_path=resource_type.to_s+case resource_type;when :dropbox;'es';when :self,:organization,'admin/apps_new'.to_sym;'';else; 's';end
+            singleton_object=[:self,:organization].include?(resource_type)
             global_operations=[:create,:list]
-            supported_operations=[:show]
-            supported_operations.push(:modify,:delete,*global_operations) unless singleton_object
+            supported_operations=[:show,:modify]
+            supported_operations.push(:delete,*global_operations) unless singleton_object
             supported_operations.push(:v4,:v3) if resource_type.eql?(:node)
             supported_operations.push(:set_pub_key) if resource_type.eql?(:client)
             supported_operations.push(:shared_folders) if [:node,:workspace].include?(resource_type)
@@ -791,9 +791,70 @@ module Asperalm
             case command_repo
             when *NODE4_COMMANDS; return execute_node_gen4_command(command_repo,@home_node_file)
             when :short_link
-              return self.entity_action(@api_aoc,'short_links',nil,:id,'self')
-            end
-            throw "Error"
+              folder_dest=self.options.get_option(:to_folder,:optional)
+              value_option=self.options.get_option(:value,:optional)
+              case value_option
+              when 'public'
+                value_option={'purpose'=>'token_auth_redirection'}
+              when 'private'
+                value_option={'purpose'=>'shared_folder_auth_link'}
+              when NilClass,Hash
+              else raise "value must be either: public, private, Hash or nil"
+              end
+              create_params=nil
+              node_file=nil
+              if !folder_dest.nil?
+                node_file = @api_aoc.resolve_node_file(@home_node_file,folder_dest)
+                create_params={
+                  file_id: node_file[:file_id],
+                  node_id: node_file[:node_info]['id'],
+                  workspace_id: @workspace_id
+                }
+              end
+              if !value_option.nil? and !create_params.nil?
+                case value_option['purpose']
+                when 'shared_folder_auth_link'
+                  value_option['data']=create_params
+                  value_option['user_selected_name']=nil
+                when 'token_auth_redirection'
+                  create_params['name']=''
+                  value_option['data']={
+                    aoc: true,
+                    url_token_data: {
+                    data: create_params,
+                    purpose: 'view_shared_file'
+                    }
+                  }
+                  value_option['user_selected_name']=nil
+                else
+                  raise "purpose must be one of: token_auth_redirection or shared_folder_auth_link"
+                end
+                self.options.set_option(:value,value_option)
+              end
+              result=self.entity_action(@api_aoc,'short_links',nil,:id,'self')
+              if result[:data].is_a?(Hash) and result[:data].has_key?('created_at') and result[:data]['resource_type'].eql?('UrlToken')
+                node_api=@api_aoc.get_node_api(node_file[:node_info],OnCloud::SCOPE_NODE_USER)
+                perm_data={
+                  "file_id"      =>node_file[:file_id],
+                  "access_type"  =>"user",
+                  "access_id"    =>result[:data]['resource_id'],
+                  "access_levels"=>["delete","list","mkdir","preview","read","rename","write"],
+                  "tags"         =>{
+                  "url_token"       =>true,
+                  "workspace_id"    =>@workspace_id,
+                  "workspace_name"  =>@workspace_name,
+                  "folder_name"     =>"my folder",
+                  "created_by_name" =>user_info['name'],
+                  "created_by_email"=>user_info['email'],
+                  "access_key"      =>node_file[:node_info]['access_key'],
+                  "node"            =>node_file[:node_info]['host']
+                  }
+                }
+                node_api.create("permissions?file_id=#{node_file[:file_id]}",perm_data)
+              end
+              return result
+            end # files command
+            throw "Error: shall not reach this line"
           when :automation
             Log.log.warn("BETA: work under progress")
             # automation api is not in the same place
