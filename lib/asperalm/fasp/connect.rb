@@ -18,7 +18,7 @@ module Asperalm
       end
 
       def start_transfer(transfer_spec,options=nil)
-        raise "Using connect requires a graphical environment" if !OpenApplication.default_gui_mode.eql?(:graphical)
+        raise 'Using connect requires a graphical environment' if !OpenApplication.default_gui_mode.eql?(:graphical)
         trynumber=0
         begin
           connect_url=Installation.instance.connect_uri
@@ -31,15 +31,15 @@ module Asperalm
           trynumber+=1
           if !OpenApplication.uri_graphical('fasp://initialize')
             OpenApplication.uri_graphical('https://downloads.asperasoft.com/connect2/')
-            raise StandardError,"Connect is not installed"
+            raise StandardError,'Connect is not installed'
           end
           sleep SLEEP_SEC_BETWEEN_RETRY
           retry
         end
-        if transfer_spec["direction"] == "send"
+        if transfer_spec['direction'] == 'send'
           Log.log.warn("Connect requires upload selection using GUI, ignoring #{transfer_spec['paths']}".red)
           transfer_spec.delete('paths')
-          resdata=@connect_api.create('windows/select-open-file-dialog/',{"title"=>"Select Files","suggestedName"=>"","allowMultipleSelection"=>true,"allowedFileTypes"=>"","aspera_connect_settings"=>{"app_id"=>@connect_app_id}})[:data]
+          resdata=@connect_api.create('windows/select-open-file-dialog/',{'title'=>'Select Files','suggestedName'=>'','allowMultipleSelection'=>true,'allowedFileTypes'=>'','aspera_connect_settings'=>{'app_id'=>@connect_app_id}})[:data]
           transfer_spec['paths']=resdata['dataTransfer']['files'].map { |i| {'source'=>i['name']}}
         end
         @request_id=SecureRandom.uuid
@@ -66,26 +66,26 @@ module Asperalm
           result=@connect_api.create('transfers/activity',connect_activity_args)[:data]
           if result['transfers']
             trdata=result['transfers'].select{|i| i['aspera_connect_settings'] and i['aspera_connect_settings']['request_id'].eql?(@request_id)}.first
-            raise "problem with connect, please kill it" unless trdata
+            raise 'problem with connect, please kill it' unless trdata
             # TODO: get session id
             case trdata['status']
             when 'completed'
-              notify_listeners("emulated",{'Type'=>'DONE'})
+              notify_listeners('emulated',{'SessionId'=>@connect_app_id,'Type'=>'DONE'})
               break
             when 'initiating'
               if spinner.nil?
-                spinner = TTY::Spinner.new("[:spinner] :title", format: :classic)
+                spinner = TTY::Spinner.new('[:spinner] :title', format: :classic)
                 spinner.start
               end
               spinner.update(title: trdata['status'])
               spinner.spin
             when 'running'
-              #puts "running: sessions:#{trdata["sessions"].length}, #{trdata["sessions"].map{|i| i['bytes_transferred']}.join(',')}"
-              if !started and trdata["bytes_expected"] != 0
-                notify_listeners("emulated",{'Type'=>'NOTIFICATION','PreTransferBytes'=>trdata["bytes_expected"]})
+              #puts "running: sessions:#{trdata['sessions'].length}, #{trdata['sessions'].map{|i| i['bytes_transferred']}.join(',')}"
+              if !started and trdata['bytes_expected'] != 0
+                notify_listeners('emulated',{'SessionId'=>@connect_app_id,'Type'=>'NOTIFICATION','PreTransferBytes'=>trdata['bytes_expected']})
                 started=true
               else
-                notify_listeners("emulated",{'Type'=>'STATS','Bytescont'=>trdata["bytes_written"]})
+                notify_listeners('emulated',{'SessionId'=>@connect_app_id,'Type'=>'STATS','Bytescont'=>trdata['bytes_written']})
               end
             else
               raise Fasp::Error.new("#{trdata['status']}: #{trdata['error_desc']}")
