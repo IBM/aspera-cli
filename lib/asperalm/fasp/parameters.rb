@@ -88,7 +88,7 @@ module Asperalm
         'https_fallback_port'     => { :type => :ignore, :accepted_types=>Integer}, # same as http fallback, option -t ?
         'content_protection'      => { :type => :ignore, :accepted_types=>String},
         'cipher_allowed'          => { :type => :ignore, :accepted_types=>String},
-        #'multi_session'           => { :type => :ignore, :accepted_types=>Integer},
+        'multi_session'           => { :type => :ignore, :accepted_types=>Integer}, # managed 
         # optional tags (  additional option to generate: {:space=>' ',:object_nl=>' ',:space_before=>'+',:array_nl=>'1'}  )
         'tags'                    => { :type => :opt_with_arg, :option_switch=>'--tags64',:accepted_types=>Hash,:encode=>lambda{|tags|Base64.strict_encode64(JSON.generate(tags))}},
       }
