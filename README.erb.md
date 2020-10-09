@@ -2537,6 +2537,10 @@ So, it evolved into <%=tool%>:
 
 # Release Notes
 
+* 0.11.2
+
+	* fixes on multi-session: progress bat and transfer spec param for "direct"
+
 * 0.11.1
 
 	* enhanced short_link creation commands (see examples)
