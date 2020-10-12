@@ -15,10 +15,12 @@ module Asperalm
 
         def update_total
           @progress_bar.total=@sessions.values.inject(0){|m,s|m+=s[:job_size] if !s[:job_size].nil?;m;}
+        rescue nil
         end
 
         def update_progress
           @progress_bar.progress=@sessions.values.inject(0){|m,s|m+=s[:current] if !s[:current].nil?;m;}
+        rescue nil
         end
 
         def event_enhanced(data)
