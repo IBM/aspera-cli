@@ -2537,6 +2537,10 @@ So, it evolved into <%=tool%>:
 
 # Release Notes
 
+* 0.11.3
+
+	* minor fixes on multi-session: avoid exception on progress bar
+
 * 0.11.2
 
 	* fixes on multi-session: progress bat and transfer spec param for "direct"
