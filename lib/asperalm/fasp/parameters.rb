@@ -41,7 +41,6 @@ module Asperalm
         'remove_empty_directories'=> { :type => :opt_without_arg}, #TODO: doc
         'remove_after_transfer'   => { :type => :opt_without_arg}, #TODO: doc
         'remove_empty_source_directory'=> { :type => :opt_without_arg}, #TODO: doc
-
         # value params
         'cipher'                  => { :type => :opt_with_arg, :option_switch=>'-c',:accepted_types=>String,:translate_values=>{'aes128'=>'aes128','aes-128'=>'aes128','aes192'=>'aes192','aes-192'=>'aes192','aes256'=>'aes256','aes-256'=>'aes256','none'=>'none'}},
         'resume_policy'           => { :type => :opt_with_arg, :option_switch=>'-k',:accepted_types=>String,:default=>'sparse_csum',:translate_values=>{'none'=>0,'attrs'=>1,'sparse_csum'=>2,'full_csum'=>3}},
@@ -67,8 +66,6 @@ module Asperalm
         'multi_session_threshold' => { :type => :opt_with_arg, :accepted_types=>String},
         # non standard parameters
         'EX_fasp_proxy_url'       => { :type => :opt_with_arg, :option_switch=>'--proxy',:accepted_types=>String},
-        'EX_file_list'            => { :type => :opt_with_arg, :option_switch=>'--file-list',:accepted_types=>String},
-        'EX_file_pair_list'       => { :type => :opt_with_arg, :option_switch=>'--file-pair-list',:accepted_types=>String},
         'EX_http_proxy_url'       => { :type => :opt_with_arg, :option_switch=>'-x',:accepted_types=>String},
         'EX_ssh_key_paths'        => { :type => :opt_with_arg, :option_switch=>'-i',:accepted_types=>Array},
         'EX_http_transfer_jpeg'   => { :type => :opt_with_arg, :option_switch=>'-j',:accepted_types=>Integer},
@@ -88,9 +85,16 @@ module Asperalm
         'https_fallback_port'     => { :type => :ignore, :accepted_types=>Integer}, # same as http fallback, option -t ?
         'content_protection'      => { :type => :ignore, :accepted_types=>String},
         'cipher_allowed'          => { :type => :ignore, :accepted_types=>String},
-        'multi_session'           => { :type => :ignore, :accepted_types=>Integer}, # managed 
+        'multi_session'           => { :type => :ignore, :accepted_types=>Integer}, # managed
         # optional tags (  additional option to generate: {:space=>' ',:object_nl=>' ',:space_before=>'+',:array_nl=>'1'}  )
         'tags'                    => { :type => :opt_with_arg, :option_switch=>'--tags64',:accepted_types=>Hash,:encode=>lambda{|tags|Base64.strict_encode64(JSON.generate(tags))}},
+        # special processing @builder.process_param( called individually
+        'use_ascp4'               => { :type => :defer, :accepted_types=>Asperalm::CommandLineBuilder::BOOLEAN_CLASSES},
+        'paths'                   => { :type => :defer, :accepted_types=>Array},
+        'EX_file_list'            => { :type => :defer, :option_switch=>'--file-list', :accepted_types=>String},
+        'EX_file_pair_list'       => { :type => :defer, :option_switch=>'--file-pair-list', :accepted_types=>String},
+        'EX_ascp_args'            => { :type => :defer, :accepted_types=>Array},
+        'destination_root'        => { :type => :defer, :accepted_types=>String},
       }
 
       private_constant :SEC_IN_DAY,:FILE_LIST_AGE_MAX_SEC,:PARAM_DEFINITION
@@ -131,8 +135,8 @@ module Asperalm
           # destination will be base64 encoded, put before path arguments
           @builder.add_command_line_options(['--dest64'])
         end
-
-        paths_array=@builder.process_param('paths',:get_value,:accepted_types=>Array,:mandatory=>!@job_spec.has_key?('keepalive'))
+        PARAM_DEFINITION['paths'][:mandatory]=!@job_spec.has_key?('keepalive')
+        paths_array=@builder.process_param('paths',:get_value)
         unless paths_array.nil?
           # use file list if there is storage defined for it.
           if @@file_list_folder.nil?
@@ -140,11 +144,11 @@ module Asperalm
             Log.log.debug("placing source file list on command line (no file list file)")
             @builder.add_command_line_options(paths_array.map{|i|i['source']})
           else
-            file_list_file=@builder.process_param('EX_file_list',:get_value,:accepted_types=>String,:mandatory=>false)
+            file_list_file=@builder.process_param('EX_file_list',:get_value)
             if !file_list_file.nil?
               option='--file-list'
             else
-              file_list_file=@builder.process_param('EX_file_pair_list',:get_value,:accepted_types=>String,:mandatory=>false)
+              file_list_file=@builder.process_param('EX_file_pair_list',:get_value)
               if !file_list_file.nil?
                 option='--file-pair-list'
               else
@@ -167,9 +171,9 @@ module Asperalm
           end
         end
         # optional args, at the end to override previous ones (to allow override)
-        @builder.add_command_line_options(@builder.process_param('EX_ascp_args',:get_value,:accepted_types=>Array))
+        @builder.add_command_line_options(@builder.process_param('EX_ascp_args',:get_value))
         # process destination folder
-        destination_folder = @builder.process_param('destination_root',:get_value,:accepted_types=>String,:mandatory=>false) || '/'
+        destination_folder = @builder.process_param('destination_root',:get_value) || '/'
         # ascp4 does not support base64 encoding of destination
         destination_folder = Base64.strict_encode64(destination_folder) unless env_args[:ascp_version].eql?(:ascp4)
         # destination MUST be last command line argument to ascp

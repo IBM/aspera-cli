@@ -28,7 +28,7 @@ module Asperalm
       @result_args=[]
       @used_param_names=[]
     end
-    
+
     def warn_unrecognized_params
       # warn about non translated arguments
       @param_hash.each_pair{|key,val|Log.log.error("unrecognized parameter: #{key} = \"#{val}\"") if !@used_param_names.include?(key)}
@@ -58,18 +58,22 @@ module Asperalm
       return if options.nil?
       options.each{|o|@result_args.push(o.to_s)}
     end
-    
+
     def process_params
-      @params_definition.each do |k,v|
-        process_param(k,v[:type],v)
+      @params_definition.keys.each do |k|
+        process_param(k)
       end
     end
 
     # Process a parameter from transfer specification and generate command line param or env var
     # @param param_name : key in transfer spec
-    # @param option_type : type of processing
+    # @param action : type of processing: ignore getvalue envvar opt_without_arg opt_with_arg defer
     # @param options : options for type
-    def process_param(param_name,option_type,options={})
+    def process_param(param_name,action=nil)
+      options=@params_definition[param_name]
+      action=options[:type] if action.nil?
+      # should not happen
+      raise "Internal error: ask processing of param #{param_name}" if options.nil?
       # by default : not mandatory
       options[:mandatory]||=false
       if options.has_key?(:accepted_types)
@@ -77,7 +81,7 @@ module Asperalm
         options[:accepted_types]=[options[:accepted_types]] unless options[:accepted_types].is_a?(Array)
       else
         # by default : string, unless it's without arg
-        options[:accepted_types]=option_type.eql?(:opt_without_arg) ? BOOLEAN_CLASSES : [String]
+        options[:accepted_types]=action.eql?(:opt_without_arg) ? BOOLEAN_CLASSES : [String]
       end
       # check mandatory parameter (nil is valid value)
       raise Fasp::Error.new("mandatory parameter: #{param_name}") if options[:mandatory] and !@param_hash.has_key?(param_name)
@@ -85,7 +89,7 @@ module Asperalm
       parameter_value=options[:default] if parameter_value.nil? and options.has_key?(:default)
       # check provided type
       raise Fasp::Error.new("#{param_name} is : #{parameter_value.class} (#{parameter_value}), shall be #{options[:accepted_types]}, ") unless parameter_value.nil? or options[:accepted_types].inject(false){|m,v|m or parameter_value.is_a?(v)}
-      @used_param_names.push(param_name)
+      @used_param_names.push(param_name) unless action.eql?(:defer)
 
       # process only non-nil values
       return nil if parameter_value.nil?
@@ -103,8 +107,8 @@ module Asperalm
         parameter_value=newvalue
       end
 
-      case option_type
-      when :ignore # ignore this parameter
+      case action
+      when :ignore,:defer # ignore this parameter or process later
         return
       when :get_value # just get value
         return parameter_value
