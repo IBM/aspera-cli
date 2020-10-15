@@ -360,19 +360,33 @@ module Asperalm
           raise CliBadArgument,"#{recipient_list_field} must be an Array" unless package_creation[recipient_list_field].is_a?(Array)
           new_user_option=self.options.get_option(:new_user_option,:mandatory)
           resolved_list=[]
-          package_creation[recipient_list_field].each do |recipient_email|
-            if recipient_email.is_a?(Hash) and recipient_email.has_key?('id') and recipient_email.has_key?('type')
+          package_creation[recipient_list_field].each do |recipient_email_or_info|
+            case recipient_email_or_info
+            when Hash
+              raise 'recipient element hash shall have field id and type' unless recipient_email_or_info.has_key?('id') and recipient_email_or_info.has_key?('type')
               # already provided all information ?
-              resolved_list.push(recipient_email)
-            else
-              # or need to resolve email
-              user_lookup=@api_aoc.read('contacts',{'current_workspace_id'=>@workspace_id,'q'=>recipient_email})[:data]
-              case user_lookup.length
-              when 1; recipient_user_id=user_lookup.first
-              when 0; recipient_user_id=@api_aoc.create('contacts',{'current_workspace_id'=>@workspace_id,'email'=>recipient_email}.merge(new_user_option))[:data]
-              else raise CliBadArgument,"multiple match for: #{recipient}"
+              resolved_list.push(recipient_email_or_info)
+            when String
+              if recipient_email_or_info.include?('@')
+                # or need to resolve email
+                item_lookup=@api_aoc.read('contacts',{'current_workspace_id'=>@workspace_id,'q'=>recipient_email_or_info})[:data]
+                case item_lookup.length
+                when 1; recipient_user_id=item_lookup.first
+                when 0; recipient_user_id=@api_aoc.create('contacts',{'current_workspace_id'=>@workspace_id,'email'=>recipient_email_or_info}.merge(new_user_option))[:data]
+                else raise CliBadArgument,"multiple match for: #{recipient_email_or_info}"
+                end
+                resolved_list.push({'id'=>recipient_user_id['source_id'],'type'=>recipient_user_id['source_type']})
+              else
+                item_lookup=@api_aoc.read('dropboxes',{'current_workspace_id'=>@workspace_id,'q'=>recipient_email_or_info})[:data]
+                case item_lookup.length
+                when 1; recipient_user_id=item_lookup.first
+                when 0; raise "no such shared inbox in workspace #{@workspace_name}"
+                else raise CliBadArgument,"multiple match for: #{recipient_email_or_info}"
+                end
+                resolved_list.push({'id'=>recipient_user_id['id'],'type'=>'dropbox'})
               end
-              resolved_list.push({'id'=>recipient_user_id['source_id'],'type'=>recipient_user_id['source_type']})
+            else
+              raise "recipient item must be a String (email, shared inboc) or hash (id,type)"
             end
           end
           package_creation[recipient_list_field]=resolved_list
@@ -676,7 +690,7 @@ module Asperalm
                 set_workspace_info
                 query={'embed[]'=>'dropbox','workspace_id'=>@workspace_id,'aggregate_permissions_by_dropbox'=>true,'sort'=>'dropbox_name'}
               end
-              return {:type=>:object_list,:data=>@api_aoc.read("dropbox_memberships",query)[:data],:fields=>['dropbox.name']}
+              return {:type=>:object_list,:data=>@api_aoc.read("dropbox_memberships",query)[:data],:fields=>['dropbox_id','dropbox.name']}
             when :info
               command=self.options.get_next_command([ :show,:modify ])
               case command
