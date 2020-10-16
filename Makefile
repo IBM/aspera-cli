@@ -457,8 +457,12 @@ t/aocp7:
 	@echo $@
 	$(EXETEST) -N aspera packages send --value=@json:'{"name":"'"$(CURRENT_DATE)"'"}' $(CF_SAMPLE_FILEPATH) --link=$(CF_AOC_PUBLINK_SEND_USER)
 	@touch $@
+t/aocp8:
+	@echo $@
+	$(EXETEST) aspera packages send --workspace="$(CF_AOC_WS_SH_BX)" --value=@json:'{"name":"'"$(CURRENT_DATE)"'","recipients":["$(CF_AOC_SH_BX)"]}' $(CF_SAMPLE_FILEPATH)
+	@touch $@
 
-taocp: t/aocp1 t/aocp2 t/aocp3 t/aocp4 t/aocp5 t/aocp5
+taocp: t/aocp1 t/aocp2 t/aocp3 t/aocp4 t/aocp5 t/aocp5 t/aocp6 t/aocp7 t/aocp8
 HIDE_SECRET1='AML3clHuHwDArShhcQNVvWGHgU9dtnpgLzRCPsBr7H5JdhrFU2oRs69_tJTEYE-hXDVSW-vQ3-klRnJvxrTkxQ'
 t/aoc7:
 	@echo $@
