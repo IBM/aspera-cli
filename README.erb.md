@@ -37,7 +37,7 @@ First, follow the section: [Installation](#installation) (Ruby, Gem, FASP) to st
 
 Once the gem is installed, <%=tool%> shall be accessible:
 
-```bash
+```
 $ <%=cmd%> --version
 <%= ENV["VERSION"] %>
 ```
@@ -127,7 +127,7 @@ Install Ruby using "homebrew" from here: [https://brew.sh/](https://brew.sh/).
 
 Then install latest Ruby:
 
-```bash
+```
 $ brew install ruby
 ```
 
@@ -156,7 +156,7 @@ curl -sSL https://get.rvm.io | bash -s -- --path /my/special/path
 
 Once installed, you can install latest ruby:
 
-```bash
+```
 # rvm install ruby
 ```
 
@@ -181,13 +181,13 @@ yum remove -y ruby ruby-libs
 
 Once you have Ruby and rights to install gems: Install the gem and its dependencies:
 
-```bash
+```
 # gem install asperalm
 ```
 
 To upgrade to the latest version:
 
-```bash
+```
 # gem update asperalm
 ```
 
@@ -244,7 +244,7 @@ The `asperalm` Gem provides a command line interface (CLI) which interacts with 
 
 Basic usage is displayed by executing:
 
-```bash
+```
 $ <%=cmd%> -h
 ```
 
@@ -410,19 +410,19 @@ To display the result of an extended value, use the `config echo` command.
 
 Example: read the content of the specified file, then, base64 decode, then unzip:
 
-```bash
+```
 $ <%=cmd%> config echo @zlib:@base64:@file:myfile.dat
 ```
 
 Example: create a value as a hash, with one key and the value is read from a file:
 
-```bash
+```
 $ <%=cmd%> config echo @ruby:'{"token_verification_key"=>File.read("pubkey.txt")}' 
 ```
 
 Example: read a csv file and create a list of hash for bulk provisioning:
 
-```bash
+```
 $ cat test.csv 
 name,email
 lolo,laurent@example.com
@@ -518,19 +518,19 @@ $ <%=cmd%> config id demo_server initialize @json:'{"url":"ssh://demo.asperasoft
 A good practice is to not manually edit the configuration file and use modification commands instead.
 If necessary, the configuration file can be edited (or simply consulted) with:
 
-```bash
+```
 $ <%=cmd%> config open
 ```
 
 A full terminal based overview of the configuration can be displayed using:
 
-```bash
+```
 $ <%=cmd%> config over
 ```
 
 A list of <%=prst%> can be displayed using:
 
-```bash
+```
 $ <%=cmd%> config list
 ```
 
@@ -591,7 +591,7 @@ Values in the configuration also follow the [Extended Value Syntax](#extended).
 
 Note: if the user wants to use the [Extended Value Syntax](#extended) inside the configuration file, using the `config id update` command, the user shall use the `@val:` prefix. Example:
 
-```bash
+```
 $ <%=cmd%> config id my_aoc_org set private_key @val:@file:"$HOME/.aspera/<%=cmd%>/aocapikey"
 ```
 
@@ -645,13 +645,13 @@ For Faspex, Shares, Node (including ATS, Aspera Transfer Service), Console,
 only username/password and url are required (either on command line, or from config file). 
 Those can usually be provided on the command line:
 
-```bash
+```
 $ <%=cmd%> shares repo browse / --url=https://10.25.0.6 --username=john --password=4sp3ra 
 ```
 
 This can also be provisioned in a config file:
 
-```bash
+```
 1$ <%=cmd%> config id shares06 set url https://10.25.0.6
 2$ <%=cmd%> config id shares06 set username john
 3$ <%=cmd%> config id shares06 set password 4sp3ra
@@ -663,7 +663,7 @@ This can also be provisioned in a config file:
 The three first commands build a <%=prst%>. 
 Note that this can also be done with one single command:
 
-```bash
+```
 $ <%=cmd%> config id shares06 init @json:'{"url":"https://10.25.0.6","username":"john","password":"4sp3ra"}'
 ```
 
@@ -681,7 +681,7 @@ The CLI tool uses a plugin mechanism. The first level command (just after <%=too
 For instance, the plugin "faspex" allows operations on the application "Aspera Faspex".
 
 ### Create your own plugin
-```bash
+```
 $ mkdir -p ~/.aspera/<%=cmd%>/plugins
 $ cat<<EOF>~/.aspera/<%=cmd%>/plugins/test.rb
 require 'asperalm/cli/plugin'
@@ -776,7 +776,7 @@ This sets up a global default.
 
 Locally installed Aspera products can be listed with:
 
-```bash
+```
 $ <%=cmd%> config ascp products list
 :.........................................:................................................:
 :                  name                   :                    app_root                    :
@@ -796,14 +796,14 @@ Using the option use_product finds the ascp binary of the selected product.
 
 To permanently use the ascp of a product:
 
-```bash
+```
 $ <%=cmd%> config ascp products use 'Aspera Connect'
 saved to default global preset /Users/laurent/Applications/Aspera Connect.app/Contents/Resources/ascp
 ```
 
 ### Installation of Connect Client on command line
 
-```bash
+```
 $ <%=cmd%> config ascp connect list
 :...............................................:......................................:..............:
 :                      id                       :                title                 :   version    :
@@ -1026,7 +1026,7 @@ Multi session, i.e. starting a transfer of a file set using multiple sessions is
 
 * when agent=node :
 
-```bash
+```
 --ts=@json:'{"multi_session":10,"multi_session_threshold":1}'
 ```
 
@@ -1034,7 +1034,7 @@ Multi-session is directly supported by the node daemon.
 
 * when agent=direct :
 
-```bash
+```
 --ts=@json:'{"multi_session":5,"multi_session_threshold":1,"resume_policy":"none"}'
 ```
 
@@ -1048,25 +1048,25 @@ Multi-session spawn is done by <%=tool%>.
 
 * Change target rate
 
-```bash
+```
 --ts=@json:'{"target_rate_kbps":500000}'
 ```
 
 * Override the FASP SSH port to a specific TCP port:
 
-```bash
+```
 --ts=@json:'{"ssh_port":33002}'
 ```
 
 * Force http fallback mode:
 
-```bash
+```
 --ts=@json:'{"http_fallback":"force"}'
 ```
 
 * Activate progress when not activated by default on server
 
-```bash
+```
 --ts=@json:'{"precalculate_job_size":true}'
 ```
 
@@ -1086,14 +1086,14 @@ Usually the OS native scheduler shall already provide some sort of such protecti
 
 A non complete list of commands used in unit tests:
 
-```bash
+```
 <%= File.read(ENV["COMMANDS"]) %>
 ...and more
 ```
 
 ## <a name="usage"></a>Usage
 
-```bash
+```
 $ <%=cmd%> -h
 <%= File.read(ENV["USAGE"]) %>
 
@@ -1207,7 +1207,7 @@ updated: my_aoc_org
 
 Define this <%=prst%> as default configuration for the `aspera` plugin:
 
-```bash
+```
 $ <%=cmd%> config id default set aspera my_aoc_org
 ```
 
@@ -1217,7 +1217,7 @@ Note: Default `auth` method is `web` and default `redirect_uri` is `http://local
 
 Once client has been registered and <%=prst%> created: <%=tool%> can be used:
 
-```bash
+```
 $ <%=cmd%> aspera files br /
 Current Workspace: Default Workspace (default)
 empty
@@ -1241,13 +1241,13 @@ This can be done using any of the following method:
 
 * using the CLI:
 
-```bash
+```
 $ <%=cmd%> config genkey ~/.aspera/<%=cmd%>/aocapikey
 ```
 
 * `ssh-keygen`:
 
-```bash
+```
 $ ssh-keygen -t rsa -f ~/.aspera/<%=cmd%>/aocapikey -N ''
 ```
 
@@ -1255,7 +1255,7 @@ $ ssh-keygen -t rsa -f ~/.aspera/<%=cmd%>/aocapikey -N ''
 
 (on some openssl implementation (mac) there is option: -nodes (no DES))
 
-```bash
+```
 $ APIKEY=~/.aspera/<%=cmd%>/aocapikey
 $ openssl genrsa -passout pass:dummypassword -out ${APIKEY}.protected 2048
 $ openssl rsa -passin pass:dummypassword -in ${APIKEY}.protected -out ${APIKEY}
@@ -1278,7 +1278,7 @@ JWT needs to be authorized in Aspera on Cloud. This can be done in two manners:
 
 ##### Using command line
 
-```bash
+```
 $ <%=cmd%> aspera admin res client list
 :............:.........:
 :     id     :  name   :
@@ -1305,7 +1305,7 @@ open the previously generated public key located here: `$HOME/.aspera/<%=cmd%>/a
 
 ##### Using command line
 
-```bash
+```
 $ <%=cmd%> aspera admin res user list
 :........:................:
 :   id   :      name      :
@@ -1329,7 +1329,7 @@ To activate default use of JWT authentication for <%=tool%> using the <%=prst%>,
 
 Execute:
 
-```bash
+```
 $ <%=cmd%> config id my_aoc_org update --auth=jwt --private-key=@val:@file:~/.aspera/<%=cmd%>/aocapikey --username=laurent.martin.aspera@fr.ibm.com
 ```
 
@@ -1392,7 +1392,7 @@ A secret repository can always be selected at runtime using `--secrets=@preset:x
 
 * Bulk creation
 
-```bash
+```
 $ <%=cmd%> aspera admin res user create --bulk=yes @json:'[{"email":"dummyuser1@example.com"},{"email":"dummyuser2@example.com"}]'
 :.......:.........:
 :  id   : status  :
@@ -1404,7 +1404,7 @@ $ <%=cmd%> aspera admin res user create --bulk=yes @json:'[{"email":"dummyuser1@
 
 * Find with filter and delete
 
-```bash
+```
 $ <%=cmd%> aspera admin res user list --query='@json:{"q":"dummyuser"}' --fields=id,email
 :.......:........................:
 :  id   :         email          :
@@ -1768,7 +1768,7 @@ $ <%=cmd%> server --ssh-options=@ruby:'{use_agent: false}' ...
 
 One can test the "server" application using the well known demo server:
 
-```bash
+```
 $ <%=cmd%> config id aspera_demo_server update --url=ssh://demo.asperasoft.com:33001 --username=asperaweb --password=demoaspera
 $ <%=cmd%> config id default set server aspera_demo_server 
 $ <%=cmd%> server browse /aspera-test-dir-large
@@ -1806,7 +1806,7 @@ It is possible to start a FASPStream session using the node API:
 
 Use the "node stream create" command, then arguments are provided as a [_transfer-spec_](#transferspec).
 
-```bash
+```
 $ <%=cmd%> node stream create --ts=@json:'{"direction":"send","source":"udp://233.3.3.4:3000?loopback=1&ttl=2","destination":"udp://233.3.3.3:3001/","remote_host":"localhost","remote_user":"stream","remote_password":"XXXX"}' --preset=stream
 ```
 
@@ -1820,7 +1820,7 @@ Refer to [Aspera documentation](https://download.asperasoft.com/download/docs/en
 * configure a watchfolder to define automated transfers
 
 
-```bash
+```
 $ <%=cmd%> node service create @json:'{"id":"mywatchd","type":"WATCHD","run_as":{"user":"user1"}}'
 $ <%=cmd%> node service create @json:'{"id":"mywatchfolderd","type":"WATCHFOLDERD","run_as":{"user":"user1"}}'
 $ <%=cmd%> node watch_folder create @json:'{"id":"mywfolder","source_dir":"/watch1","target_dir":"/","transport":{"host":"10.25.0.4","user":"user1","pass":"mypassword"}}'
@@ -1852,7 +1852,7 @@ Then create a configuration for the "SHOD" instance in the configuration file: i
 Create another configuration for the Azure ATS instance: in section "node", named azureats.
 Then execute the following command:
 
-```bash
+```
 $ <%=cmd%> node download /share/sourcefile --to-folder=/destinationfolder --preset=awsshod --transfer=node --transfer-info=@preset:azureats
 ```
 
@@ -1955,7 +1955,7 @@ ATS is usable either :
 
 First get your IBM Cloud APIkey. For instance, it can be created using the IBM Cloud web interface, or using command line:
 
-```bash
+```
 $ ibmcloud iam api-key-create mykeyname -d 'my sample key'
 OK
 API key mykeyname was created
@@ -2064,7 +2064,7 @@ $ ibmcloud resource service-key aoclaurent --output JSON|jq '.[0].credentials'>$
 
 It consists in the following structure:
 
-```json
+```
 {
   "apikey": "xxxxxxx.....",
   "cos_hmac_keys": {
@@ -2261,7 +2261,7 @@ This size is internally capped to `1<<24` Bytes, i.e. 16,777,216 Bytes.
 
 To change this parameter in `aspera.conf`, use `asconfigurator`. To display the value, use `asuserdata`:
 
-```bash
+```
 $ asuserdata -a | grep max_request_file_create_size_kb
   max_request_file_create_size_kb: "1024"
 ```
@@ -2272,7 +2272,7 @@ If you use a value different than 16,777,216, then specify it using option `max_
 
 Like any <%=tool%> commands, parameters can be passed on command line or using a configuration <%=prst%>. Note that if you use the <%=tool%> run as `xfer` user, like here, the configuration file must be created as the same user. Example using a <%=prst%> named `my_preset_name` (choose any name relevant to you, e.g. the AoC node name, and replace in the following lines):
 
-```bash
+```
 # su -s /bin/bash - xfer
 $ <%=cmd%> config id my_preset_name update --url=https://localhost:9092 --username=my_access_key --password=my_secret --skip-types=office --lock-port=12346
 $ <%=cmd%> config id default set preview my_preset_name
@@ -2282,7 +2282,7 @@ Here we assume that Office file generation is disabled, else remove the option. 
 
 Once can check if the access key is well configured using:
 
-```bash
+```
 $ <%=cmd%> -Pmy_preset_name node browse /
 ```
 
@@ -2299,7 +2299,7 @@ should be run as user `xfer`.
 
 Lets do a one shot test, using the configuration previously created:
 
-```bash
+```
 # su -s /bin/bash - xfer
 $ <%=cmd%> preview scan --overwrite=always
 ```
@@ -2312,7 +2312,7 @@ We assume here that a configuration preset was created as shown previously.
 
 Here the cronjob is created for `root`, and changes the user to `xfer`, also overriding the shell which should be `aspshell`. (adapt the command below, as it would override existing crontab). It is also up to you to use directly the `xfer` user's crontab. This is an example only.
 
-```bash
+```
 # crontab<<EOF
 2-59 * * * * su -s /bin/bash - xfer -c 'nice +10 timeout 10m <%=cmd%> preview event --log-level=info --logger=syslog --iteration-file=/tmp/preview_restart.txt'
 0 * * * *    su -s /bin/bash - xfer -c 'nice +10 timeout 30m <%=cmd%> preview scan  --log-level=info --logger=syslog'
@@ -2371,7 +2371,7 @@ $ <%=cmd%> config --smtp=@preset:smtp_google email sample.dest@example.com
 # Tool: `asession`
 
 This gem comes with a second executable tool providing a simplified standardized interface 
-to start a FASP session: ```asession```.
+to start a FASP session: `asession`.
 
 It aims at simplifying the startup of a FASP session from a programmatic stand point as formating a [_transfer-spec_](#transferspec) is:
 
@@ -2437,7 +2437,7 @@ Nodejs: [https://www.npmjs.com/package/asperalm](https://www.npmjs.com/package/a
 
 ## Help
 
-```bash
+```
 $ asession -h
 <%= File.read(ENV["ASESSION"]) %>
 ```
@@ -2536,6 +2536,10 @@ So, it evolved into <%=tool%>:
 
 
 # Release Notes
+
+* 0.11.4
+
+	* possibility to give shared inbox name when sending a package (else use id and type)
 
 * 0.11.3
 
