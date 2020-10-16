@@ -1,4 +1,5 @@
 require 'asperalm/fasp/listener'
+require 'asperalm/fasp/manager'
 require 'ruby-progressbar'
 
 module Asperalm
@@ -14,12 +15,12 @@ module Asperalm
         BYTE_PER_MEGABIT=1024*1024/8
 
         def update_total
-          @progress_bar.total=@sessions.values.inject(0){|m,s|m+=s[:job_size] if !s[:job_size].nil?;m;}
+          @progress_bar.total=@sessions.values.inject(0){|m,s|m+=s[:job_size].to_i;m;}
         rescue nil
         end
 
         def update_progress
-          @progress_bar.progress=@sessions.values.inject(0){|m,s|m+=s[:current] if !s[:current].nil?;m;}
+          @progress_bar.progress=@sessions.values.inject(0){|m,s|m+=s[:current].to_i;m;}
         rescue nil
         end
 
@@ -31,14 +32,16 @@ module Asperalm
             :title      => '',
             :total      => nil)
           end
-          if !data['session_id'].is_a?(String)
-            Log.log.error("no session id in event: #{data}")
+          if !data.has_key?(Fasp::Manager::LISTENER_SESSION_ID_S)
+            Log.log.error("Internal error: no #{Fasp::Manager::LISTENER_SESSION_ID_S} in event: #{data}")
             return
           end
           newtitle=@sessions.length < 2 ? '' : "multi=#{@sessions.length}"
           @progress_bar.title=newtitle unless @progress_bar.title.eql?(newtitle)
-          session=@sessions[data['session_id']]||={
-            cumulative: 0
+          session=@sessions[data[Fasp::Manager::LISTENER_SESSION_ID_S]]||={
+            cumulative: 0,
+            job_size: 0,
+            current: 0
           }
           case data['type']
           when 'INIT' # connection to ascp (get id)
@@ -64,14 +67,11 @@ module Asperalm
             # stop event when one file is completed
             session[:cumulative]=session[:cumulative]+data['size'].to_i
           when 'DONE' # end of session
-            @sessions.delete(data['session_id'])
+            @sessions.delete(data[Fasp::Manager::LISTENER_SESSION_ID_S])
             update_progress
             update_total
-            #if @progress_bar.total.nil? then
-            #@progress_bar.total=100
-            #end
-            #@progress_bar.progress=@progress_bar.total
-            #@progress_bar=nil
+          else
+            Log.log.debug("ignore: #{data['type']}")
           end
         end
       end

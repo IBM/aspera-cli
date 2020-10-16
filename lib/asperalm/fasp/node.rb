@@ -55,7 +55,7 @@ module Asperalm
           trdata=node_api_.read("ops/transfers/#{@transfer_id}")[:data] || {"status"=>"unknown"} rescue {"status"=>"waiting(read error)"}
           case trdata['status']
           when 'completed'
-            notify_listeners('emulated',{'SessionId'=>@transfer_id,'Type'=>'DONE'})
+            notify_listeners('emulated',{Manager::LISTENER_SESSION_ID_B=>@transfer_id,'Type'=>'DONE'})
             break
           when 'waiting','partially_completed','unknown','waiting(read error)'
             if spinner.nil?
@@ -69,10 +69,10 @@ module Asperalm
             #puts "running: sessions:#{trdata["sessions"].length}, #{trdata["sessions"].map{|i| i['bytes_transferred']}.join(',')}"
             if !started and trdata['precalc'].is_a?(Hash) and
             trdata['precalc']['status'].eql?('ready')
-              notify_listeners('emulated',{'SessionId'=>@transfer_id,'Type'=>'NOTIFICATION','PreTransferBytes'=>trdata['precalc']['bytes_expected']})
+              notify_listeners('emulated',{Manager::LISTENER_SESSION_ID_B=>@transfer_id,'Type'=>'NOTIFICATION','PreTransferBytes'=>trdata['precalc']['bytes_expected']})
               started=true
             else
-              notify_listeners('emulated',{'SessionId'=>@transfer_id,'Type'=>'STATS','Bytescont'=>trdata['bytes_transferred']})
+              notify_listeners('emulated',{Manager::LISTENER_SESSION_ID_B=>@transfer_id,'Type'=>'STATS','Bytescont'=>trdata['bytes_transferred']})
             end
           else
             Log.log.warn("trdata -> #{trdata}")

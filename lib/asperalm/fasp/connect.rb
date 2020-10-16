@@ -70,7 +70,7 @@ module Asperalm
             # TODO: get session id
             case trdata['status']
             when 'completed'
-              notify_listeners('emulated',{'SessionId'=>@connect_app_id,'Type'=>'DONE'})
+              notify_listeners('emulated',{Manager::LISTENER_SESSION_ID_B=>@connect_app_id,'Type'=>'DONE'})
               break
             when 'initiating'
               if spinner.nil?
@@ -82,10 +82,10 @@ module Asperalm
             when 'running'
               #puts "running: sessions:#{trdata['sessions'].length}, #{trdata['sessions'].map{|i| i['bytes_transferred']}.join(',')}"
               if !started and trdata['bytes_expected'] != 0
-                notify_listeners('emulated',{'SessionId'=>@connect_app_id,'Type'=>'NOTIFICATION','PreTransferBytes'=>trdata['bytes_expected']})
+                notify_listeners('emulated',{Manager::LISTENER_SESSION_ID_B=>@connect_app_id,'Type'=>'NOTIFICATION','PreTransferBytes'=>trdata['bytes_expected']})
                 started=true
               else
-                notify_listeners('emulated',{'SessionId'=>@connect_app_id,'Type'=>'STATS','Bytescont'=>trdata['bytes_written']})
+                notify_listeners('emulated',{Manager::LISTENER_SESSION_ID_B=>@connect_app_id,'Type'=>'STATS','Bytescont'=>trdata['bytes_written']})
               end
             else
               raise Fasp::Error.new("#{trdata['status']}: #{trdata['error_desc']}")

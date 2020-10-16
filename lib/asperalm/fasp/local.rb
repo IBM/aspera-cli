@@ -34,7 +34,7 @@ module Asperalm
           # NOTE: important: transfer id must be unique: generate random id
           # using a non unique id results in discard of tags in AoC, and a package is never finalized
           transfer_spec['tags']['aspera']['xfer_id']||=SecureRandom.uuid
-          Log.log.debug "xfer id=#{transfer_spec['xfer_id']}"
+          Log.log.debug("xfer id=#{transfer_spec['xfer_id']}")
           # TODO: useful ? node only ?
           transfer_spec['tags']['aspera']['xfer_retry']||=3600
         end
@@ -176,11 +176,11 @@ module Asperalm
           # add management port
           ascp_arguments.unshift('-M', mgt_sock.addr[1].to_s)
           # start ascp in sub process
-          Log.log.debug "execute: #{env_args[:env].map{|k,v| "#{k}=\"#{v}\""}.join(' ')} \"#{ascp_path}\" \"#{ascp_arguments.join('" "')}\""
+          Log.log.debug("execute: #{env_args[:env].map{|k,v| "#{k}=\"#{v}\""}.join(' ')} \"#{ascp_path}\" \"#{ascp_arguments.join('" "')}\"")
           # start process
           ascp_pid = Process.spawn(env_args[:env],[ascp_path,ascp_path],*ascp_arguments)
           # in parent, wait for connection to socket max 3 seconds
-          Log.log.debug "before accept for pid (#{ascp_pid})"
+          Log.log.debug("before accept for pid (#{ascp_pid})")
           ascp_mgt_io=nil
           Timeout.timeout( 3 ) do
             ascp_mgt_io = mgt_sock.accept
@@ -189,7 +189,7 @@ module Asperalm
             # TODO: use same value as Encoding.default_external
             ascp_mgt_io.set_encoding(Encoding::UTF_8)
           end
-          Log.log.debug "after accept (#{ascp_mgt_io})"
+          Log.log.debug("after accept (#{ascp_mgt_io})")
 
           unless session.nil?
             @mutex.synchronize do
@@ -225,6 +225,7 @@ module Asperalm
             when ''
               # end event
               raise "unexpected empty line" if current_event_data.nil?
+              current_event_data[Manager::LISTENER_SESSION_ID_B]=ascp_pid
               notify_listeners(current_event_text,current_event_data)
               # TODO: check if this is always the last event
               case current_event_data['Type']
