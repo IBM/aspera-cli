@@ -177,6 +177,25 @@ gem uninstall $(ls $(gem env gemdir)/gems/|sed -e 's/-[^-]*$//')
 yum remove -y ruby ruby-libs
 ```
 
+### Other Unixes: Aix, etc...
+
+If your unix do not provide a pre-built ruby, you can get using one of those
+[methods](https://www.ruby-lang.org/en/documentation/installation/)
+
+
+For instance to build from source, and install in `/opt/ruby` :
+
+```
+# wget https://cache.ruby-lang.org/pub/ruby/2.7/ruby-2.7.2.tar.gz
+# gzip -d ruby-2.7.2.tar.gz
+# tar xvf ruby-2.7.2.tar
+# cd ruby-2.7.2
+# ./configure --prefix=/opt/ruby
+# make ruby.imp
+# make
+# make install
+```
+
 ## <a name="the_gem"></a>`asperalm` gem
 
 Once you have Ruby and rights to install gems: Install the gem and its dependencies:
@@ -730,9 +749,9 @@ terminal.
 
 To specify a HTTP proxy, set the HTTP_PROXY environment variable (or HTTPS_PROXY), those are honoured by Ruby when calling REST APIs.
 
-## Proxy auto config (BETA)
+## Proxy auto config
 
-BETA: The `fpac` option allows specification of a Proxy Auto Configuration (PAC) file, by its URL for local FASP agent. Supported schemes are : http:, https: and file:.
+The `fpac` option allows specification of a Proxy Auto Configuration (PAC) file, by its URL for local FASP agent. Supported schemes are : http:, https: and file:.
 
 The PAC file can be tested with command: `config proxy_check` , example:
 
@@ -741,7 +760,7 @@ $ <%=cmd%> config proxy_check --fpac=file:///./proxy.pac http://www.example.com
 PROXY proxy.example.com:8080
 ```
 
-This is not yet implemented to specify proxy, so use env vars.
+This is not yet implemented to specify http proxy, so use `http_proxy` env vars.
 
 ## <a name="client"></a>FASP configuration
 
@@ -1610,8 +1629,6 @@ $ <%=cmd%> aspera admin res admin/client list --fields=id --format=csv|<%=cmd%> 
 
 ### Shared folders
 
-BETA
-
 * list shared folders in node
 
 ```
@@ -2036,8 +2053,6 @@ for k in $(<%=cmd%> ats access_key list --field=id --format=csv);do <%=cmd%> ats
 ```
 
 ## IBM Cloud Object Storage
-
-*BETA: experimental*
 
 The IBM Cloud Object Storage provides the possibility to execute transfers using FASP.
 
