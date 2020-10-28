@@ -42,7 +42,7 @@ module Asperalm
         'remove_after_transfer'   => { :type => :opt_without_arg}, #TODO: doc
         'remove_empty_source_directory'=> { :type => :opt_without_arg}, #TODO: doc
         # value params
-        'cipher'                  => { :type => :opt_with_arg, :option_switch=>'-c',:accepted_types=>String,:translate_values=>{'aes128'=>'aes128','aes-128'=>'aes128','aes192'=>'aes192','aes-192'=>'aes192','aes256'=>'aes256','aes-256'=>'aes256','none'=>'none'}},
+        'cipher'                  => { :type => :opt_with_arg, :option_switch=>'-c',:accepted_types=>String,:encode=>lambda{|cipher|cipher.tr('-','')}},
         'resume_policy'           => { :type => :opt_with_arg, :option_switch=>'-k',:accepted_types=>String,:default=>'sparse_csum',:translate_values=>{'none'=>0,'attrs'=>1,'sparse_csum'=>2,'full_csum'=>3}},
         'direction'               => { :type => :opt_with_arg, :option_switch=>'--mode',:accepted_types=>String,:translate_values=>{'receive'=>'recv','send'=>'send'}},
         'remote_user'             => { :type => :opt_with_arg, :option_switch=>'--user',:accepted_types=>String},
