@@ -41,13 +41,16 @@ module Asperalm
           self.options.add_opt_simple(:scope,"scope for AoC API calls")
           self.options.add_opt_simple(:notify,"notify users that file was received")
           self.options.add_opt_boolean(:bulk,"bulk operation")
+          self.options.add_opt_boolean(:default_ports,"use standard FASP ports or get from node api")
           self.options.set_option(:bulk,:no)
+          self.options.set_option(:default_ports,:yes)
           self.options.set_option(:new_user_option,{'package_contact'=>true})
           self.options.set_option(:operation,:push)
           self.options.set_option(:auth,:jwt)
           self.options.set_option(:scope,OnCloud::SCOPE_FILES_USER)
           self.options.set_option(:private_key,'@file:'+env[:private_key_path]) if env[:private_key_path].is_a?(String)
           self.options.parse_options!
+          OnCloud.set_use_default_ports(self.options.get_option(:default_ports))
           return if env[:man_only]
           update_aoc_api
         end

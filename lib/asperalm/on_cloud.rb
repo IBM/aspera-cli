@@ -6,6 +6,8 @@ require 'base64'
 module Asperalm
   class OnCloud < Rest
     private
+    @@use_standard_ports = true
+
     PRODUCT_NAME='Aspera on Cloud'
     # Production domain of AoC
     PROD_DOMAIN='ibmaspera.com'
@@ -22,8 +24,13 @@ module Asperalm
     PATHS_PUBLIC_LINK=['/packages/public/receive','/packages/public/send','/files/public']
     JWT_AUDIENCE='https://api.asperafiles.com/api/v1/oauth2/token'
     OAUTH_API_SUBPATH='api/v1/oauth2'
+    DEFAULT_TSPEC_INFO={
+      'remote_user' => 'xfer',
+      'ssh_port'    => 33001,
+      'fasp_port'   => 33001
+    }
 
-    private_constant :PRODUCT_NAME,:PROD_DOMAIN,:MAX_REDIRECT,:DEFAULT_CLIENT,:CLIENT_RANDOM,:PATHS_PUBLIC_LINK,:JWT_AUDIENCE,:OAUTH_API_SUBPATH
+    private_constant :PRODUCT_NAME,:PROD_DOMAIN,:MAX_REDIRECT,:DEFAULT_CLIENT,:CLIENT_RANDOM,:PATHS_PUBLIC_LINK,:JWT_AUDIENCE,:OAUTH_API_SUBPATH,:DEFAULT_TSPEC_INFO
 
     public
     # various API scopes supported
@@ -67,6 +74,10 @@ module Asperalm
     # node API scopes
     def self.node_scope(access_key,scope)
       return 'node.'+access_key+':'+scope
+    end
+
+    def self.set_use_default_ports(val)
+      @@use_standard_ports=val
     end
 
     # check option "link"
@@ -191,17 +202,6 @@ module Asperalm
         }}}}
     end
 
-    # get transfer connection parameters
-    def self.tr_spec_remote_info(node_info)
-      #TODO: add option to request those parameters by calling /upload_setup on node api
-      return {
-        'remote_user' => 'xfer',
-        'remote_host' => node_info['host'],
-        'fasp_port'   => 33001, # TODO: always the case ? or use upload_setup get get info ?
-        'ssh_port'    => 33001, # TODO: always the case ?
-      }
-    end
-
     # add details to show in analytics
     def self.analytics_ts(app,direction,ws_id,ws_name)
       # translate transfer to operation
@@ -260,7 +260,15 @@ module Asperalm
         } # aspera
         } # tags
       }
-      transfer_spec.merge!(self.class.tr_spec_remote_info(node_file[:node_info]))
+      # add remote host info
+      if @@use_standard_ports
+        transfer_spec.merge!(DEFAULT_TSPEC_INFO)
+        transfer_spec['remote_host']=node_file[:node_info]['host']
+      else
+        # retrieve values from API
+        std_t_spec=get_node_api(node_file[:node_info],SCOPE_NODE_USER).create('files/download_setup',{:transfer_requests => [ { :transfer_request => {:paths => [ {"source"=>'/'} ] } } ] } )[:data]['transfer_specs'].first['transfer_spec']
+        ['remote_host','remote_user','ssh_port','fasp_port'].each {|i| transfer_spec[i]=std_t_spec[i]}
+      end
       # add caller provided transfer spec
       transfer_spec.deep_merge!(ts_add)
       # additional information for transfer agent
@@ -272,6 +280,7 @@ module Asperalm
     end
 
     # returns a node API for access key
+    # @param scope e.g. SCOPE_NODE_USER
     # no scope: requires secret
     # if secret provided beforehand: use it
     def get_node_api(node_info,node_scope=nil)
