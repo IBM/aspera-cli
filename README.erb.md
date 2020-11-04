@@ -1748,6 +1748,11 @@ $ <%=cmd%> aspera admin analytics transfers --once-only=yes --lock-port=123455 \
 
 Note this must not be executed in less than 5 minutes because the analytics interface accepts only a period of time between 5 minutes and 6 months. here the period is [date of previous execution]..[now].
 
+### Using specific transfer ports
+
+By default transfer nodes are expected to use ports TCP/UDP 33001. The web UI enforces that. The option `default_ports` allows `mlia` to retrieve the server ports from an API call (download_setup) which reads the information from `aspera.conf` on the server.
+
+
 ## IBM Aspera High Speed Transfer Server (transfer)
 
 This plugin works at FASP level (SSH/ascp/ascmd) and does not use the node API.
@@ -2551,6 +2556,10 @@ So, it evolved into <%=tool%>:
 
 
 # Release Notes
+
+* 0.11.5
+
+	* added option `default_ports`
 
 * 0.11.4
 
