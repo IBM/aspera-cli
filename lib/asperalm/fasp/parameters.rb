@@ -72,6 +72,7 @@ module Asperalm
         'EX_multi_session_part'   => { :type => :opt_with_arg, :option_switch=>'-C',:accepted_types=>String},
         'EX_no_read'              => { :type => :opt_without_arg, :option_switch=>'--no-read'},
         'EX_no_write'             => { :type => :opt_without_arg, :option_switch=>'--no-write'},
+        'EX_apply_local_docroot'  => { :type => :opt_without_arg, :option_switch=>'--apply-local-docroot'},
         # TODO: manage those parameters, some are for connect only ? node api ?
         'target_rate_cap_kbps'    => { :type => :ignore, :accepted_types=>Integer},
         'target_rate_percentage'  => { :type => :ignore, :accepted_types=>String}, # -wf -l<rate>p
