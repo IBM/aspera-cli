@@ -139,10 +139,13 @@ module Asperalm
             return Main.result_status("renamed #{thepath} to #{newname}")
           when :delete
             thepath=self.options.get_next_argument('path')
-            node_file = @api_aoc.resolve_node_file(top_node_file,thepath)
-            node_api=@api_aoc.get_node_api(node_file[:node_info],OnCloud::SCOPE_NODE_USER)
-            result=node_api.delete("files/#{node_file[:file_id]}")[:data]
-            return Main.result_status("deleted: #{thepath}")
+            return do_bulk_operation(thepath,'deleted','path') do |thepath|
+              raise "expecting String (path), got #{thepath.class.name} (#{thepath})" unless thepath.is_a?(String)
+              node_file = @api_aoc.resolve_node_file(top_node_file,thepath)
+              node_api=@api_aoc.get_node_api(node_file[:node_info],OnCloud::SCOPE_NODE_USER)
+              result=node_api.delete("files/#{node_file[:file_id]}")[:data]
+              {'path'=>thepath}
+            end
           when :transfer
             # client side is agent
             # server side is protocol server
@@ -342,19 +345,22 @@ module Asperalm
           return nil
         end
 
-        def do_bulk_operation(params,success,id_result='id',&do_action)
-          params=[params] unless self.options.get_option(:bulk)
-          raise "expecting Array" unless params.is_a?(Array)
-          result=[]
-          params.each do |p|
-            one={'id'=>p}
-            # todo: manage exception and display status by default
-            res=do_action.call(p)
-            one=res if p.is_a?(Hash)
-            one['status']=success
-            result.push(one)
+        def do_bulk_operation(ids_or_one,success_msg,id_result='id',&do_action)
+          ids_or_one=[ids_or_one] unless self.options.get_option(:bulk)
+          raise "expecting Array" unless ids_or_one.is_a?(Array)
+          result_list=[]
+          ids_or_one.each do |id|
+            one={id_result=>id}
+            begin
+              res=do_action.call(id)
+              one=res if id.is_a?(Hash) # if block returns a has, let's use this
+              one['status']=success_msg
+            rescue => e
+              one['status']=e.to_s
+            end
+            result_list.push(one)
           end
-          return {:type=>:object_list,:data=>result,:fields=>[id_result,'status']}
+          return {:type=>:object_list,:data=>result_list,:fields=>[id_result,'status']}
         end
 
         # package creation params can give just email, and full hash is created
