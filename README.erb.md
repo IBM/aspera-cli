@@ -1750,7 +1750,7 @@ Note this must not be executed in less than 5 minutes because the analytics inte
 
 ### Using specific transfer ports
 
-By default transfer nodes are expected to use ports TCP/UDP 33001. The web UI enforces that. The option `default_ports` allows `mlia` to retrieve the server ports from an API call (download_setup) which reads the information from `aspera.conf` on the server.
+By default transfer nodes are expected to use ports TCP/UDP 33001. The web UI enforces that. The option `default_ports` ([yes]/no) allows `mlia` to retrieve the server ports from an API call (download_setup) which reads the information from `aspera.conf` on the server.
 
 
 ## IBM Aspera High Speed Transfer Server (transfer)
@@ -2559,7 +2559,12 @@ So, it evolved into <%=tool%>:
 
 * 0.11.5
 
-	* added option `default_ports`
+	* added option `default_ports` for AoC (see manual) 
+	* allow bulk delete in `aspera files` with option `bulk=yes`
+	* fix getting connect versions
+	* added section for Aix
+	* support all ciphers for `local`ascp (incl. gcm, etc..)
+	* added transfer spec param `apply_local_docroot` for `local`
 
 * 0.11.4
 
