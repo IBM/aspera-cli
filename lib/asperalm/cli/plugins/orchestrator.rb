@@ -10,57 +10,103 @@ module Asperalm
           self.options.add_opt_simple(:params,"parameters hash table, use @json:{\"param\":\"value\"}")
           self.options.add_opt_simple(:result,"specify result value as: 'work step:parameter'")
           self.options.add_opt_boolean(:synchronous,"work step:parameter expected as result")
+          self.options.add_opt_list(:ret_style,[:header,:arg,:ext],'how return type is requested in api')
+          self.options.add_opt_list(:auth_style,[:arg_pass,:head_basic,:apikey],'authentication type')
           self.options.set_option(:params,{})
           self.options.set_option(:synchronous,:no)
+          self.options.set_option(:ret_style,:arg)
+          self.options.set_option(:auth_style,:head_basic)
           self.options.parse_options!
         end
 
         ACTIONS=[:info, :workflow, :plugins, :processes]
 
-        # one can either add extension ".json" or add url parameter: format=json
-        # id can be a parameter id=x, or at the end of url, for workflows: work_order[workflow_id]=wf_id
-        def call_API(endpoint,id=nil,url_params={:format=>:json},accept=nil)
+        # for JSON format: add extension ".json" or add url parameter: format=json or Accept: application/json
+        # id can be: a parameter id=x, or at the end of url /id, for workflows: work_order[workflow_id]=wf_id
+        def call_API_orig(endpoint,id=nil,url_params={:format=>:json},accept=nil)
           # calls are GET
-          call_definition={:operation=>'GET',:subpath=>endpoint}
+          call_args={:operation=>'GET',:subpath=>endpoint}
           # specify id if necessary
-          call_definition[:subpath]=call_definition[:subpath]+'/'+id unless id.nil?
+          call_args[:subpath]=call_args[:subpath]+'/'+id unless id.nil?
           unless url_params.nil?
             if url_params.has_key?(:format)
-              call_definition[:headers]={'Accept'=>'application/'+url_params[:format].to_s}
+              call_args[:headers]={'Accept'=>'application/'+url_params[:format].to_s}
             end
-            call_definition[:headers]={'Accept'=>accept} unless accept.nil?
+            call_args[:headers]={'Accept'=>accept} unless accept.nil?
             # add params if necessary
-            call_definition[:url_params]=url_params
+            call_args[:url_params]=url_params
           end
-          return @api_orch.call(call_definition)
+          return @api_orch.call(call_args)
+        end
+
+        def call_API(endpoint,opt={})
+          opt[:prefix]='api' unless opt.has_key?(:prefix)
+          # calls are GET
+          call_args={:operation=>'GET',:subpath=>endpoint}
+          # specify prefix if necessary
+          call_args[:subpath]="#{opt[:prefix]}/#{call_args[:subpath]}" unless opt[:prefix].nil?
+          # specify id if necessary
+          call_args[:subpath]="#{call_args[:subpath]}/#{opt[:id]}" if opt.has_key?(:id)
+          call_type=self.options.get_option(:ret_style,:mandatory)
+          call_type=opt[:ret_style] if opt.has_key?(:ret_style)
+          format='json'
+          format=opt[:format] if opt.has_key?(:format)
+          call_args[:url_params]=opt[:args] unless opt[:args].nil?
+          unless format.nil?
+            case call_type
+            when :header
+              call_args[:headers]={'Accept'=>'application/'+format}
+            when :arg
+              call_args[:url_params]||={}
+              call_args[:url_params][:format]=format
+            when :ext
+              call_args[:subpath]="#{call_args[:subpath]}.#{format}"
+            else raise "unexpected"
+            end
+          end
+          result=@api_orch.call(call_args)
+          result[:data]=XmlSimple.xml_in(result[:http].body, opt[:xml_opt]||{"ForceArray" => true}) if format.eql?('xml')
+          return result
         end
 
         def execute_action
-          @api_orch=Rest.new({
-            :base_url       => self.options.get_option(:url,:mandatory),
-            # auth can be :url or :basic
-            :auth => {
-            :type      => :url,
-            :url_creds => {
-            'login'   =>self.options.get_option(:username,:mandatory),
-            'password'=>self.options.get_option(:password,:mandatory) }}})
+          rest_params={:base_url       => self.options.get_option(:url,:mandatory)}
+          case self.options.get_option(:auth_style,:mandatory)
+          when :arg_pass
+            rest_params[:auth]={
+              :type      => :url,
+              :url_creds => {
+              'login'      =>self.options.get_option(:username,:mandatory),
+              'password'   =>self.options.get_option(:password,:mandatory) }}
+          when :head_basic
+            rest_params[:auth]={
+              :type      => :basic,
+              :username  =>self.options.get_option(:username,:mandatory),
+              :password  =>self.options.get_option(:password,:mandatory) }
+          when :apikey
+            raise "Not implemented"
+          end
+
+          @api_orch=Rest.new(rest_params)
 
           command1=self.options.get_next_command(ACTIONS)
           case command1
           when :info
-            result=call_API('logon',nil,nil)
-            version='unknown'
-            if m=result[:http].body.match(/\(v([0-9.-]+)\)/)
-              version=m[1]
-            end
-            return {:type=>:single_object,:data=>{'version'=>version}}
+            result=call_API('remote_node_ping',format: 'xml', xml_opt: {"ForceArray" => false})
+            return {:type=>:single_object,:data=>result[:data]}
+            #            result=call_API('workflows',prefix: nil,format: nil)
+            #            version='unknown'
+            #            if m=result[:http].body.match(/\(Orchestrator v([1-9]+\.[\.0-9a-f\-]+)\)/)
+            #              version=m[1]
+            #            end
+            #            return {:type=>:single_object,:data=>{'version'=>version}}
           when :processes
-            # TODO: json format is not respected in AO
-            result=call_API('api/processes_status',nil,{:format=>:xml})
-            res_s=XmlSimple.xml_in(result[:http].body, {"ForceArray" => true})
-            return {:type=>:object_list,:data=>res_s["process"]}
+            # TODO: Jira ? API has only XML format
+            result=call_API('processes_status',format: 'xml')
+            return {:type=>:object_list,:data=>result[:data]['process']}
           when :plugins
-            result=call_API('api/plugin_version')[:data]
+            # TODO: Jira ? only json format on url
+            result=call_API('plugin_version')[:data]
             return {:type=>:object_list,:data=>result['Plugin']}
           when :workflow
             command=self.options.get_next_command([:list, :status, :inputs, :details, :start, :export])
@@ -69,19 +115,19 @@ module Asperalm
             end
             case command
             when :status
-              result=call_API('api/workflows_status')[:data]
+              result=call_API('workflows_status')[:data]
               return {:type=>:object_list,:data=>result['workflows']['workflow']}
             when :list
-              result=call_API('workflow_reporter/workflows_list/0')[:data]
+              result=call_API('workflows_list',id: 0)[:data]
               return {:type=>:object_list,:data=>result['workflows']['workflow'],:fields=>["id","portable_id","name","published_status","published_revision_id","latest_revision_id","last_modification"]}
             when :details
-              result=call_API('api/workflow_details',wf_id)[:data]
+              result=call_API('workflow_details',id: wf_id)[:data]
               return {:type=>:object_list,:data=>result['workflows']['workflow']['statuses']}
             when :inputs
-              result=call_API('api/workflow_inputs_spec',wf_id)[:data]
+              result=call_API('workflow_inputs_spec',id: wf_id)[:data]
               return {:type=>:single_object,:data=>result['workflow_inputs_spec']}
             when :export
-              result=call_API('api/export_workflow',wf_id,{})[:http]
+              result=call_API('export_workflow',id: wf_id,format: nil)[:http]
               return {:type=>:text,:data=>result.body}
             when :start
               result={
@@ -111,7 +157,7 @@ module Asperalm
                 result[:type]=:text
                 override_accept='text/plain'
               end
-              result[:data]=call_API('api/initiate',wf_id,call_params,override_accept)[:data]
+              result[:data]=call_API('initiate',id: wf_id,args: call_params,accept: override_accept)[:data]
               return result
             end # wf command
           else raise "ERROR, unknown command: [#{command}]"
