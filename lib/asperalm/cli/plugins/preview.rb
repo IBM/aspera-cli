@@ -27,14 +27,14 @@ module Asperalm
           # options for generation
           @gen_options=Asperalm::Preview::Options.new
           # link CLI options to gen_info attributes
-          self.options.set_obj_attr(:skip_format,self,:option_skip_format,[])
+          self.options.set_obj_attr(:skip_format,self,:option_skip_format,[]) # no skip
           self.options.set_obj_attr(:folder_reset_cache,self,:option_folder_reset_cache,:no)
           self.options.set_obj_attr(:skip_types,self,:option_skip_types)
           self.options.set_obj_attr(:previews_folder,self,:option_previews_folder,'previews')
           self.options.set_obj_attr(:temp_folder,self,:option_temp_folder,File.join(Dir.tmpdir,'aspera.previews'))
-          self.options.set_obj_attr(:skip_folders,self,:option_skip_folders,[])
-          self.options.set_obj_attr(:overwrite,self,:option_overwrite,[:always,:never,:mtime])
-          self.options.set_obj_attr(:file_access,self,:option_file_access,[:local,:remote])
+          self.options.set_obj_attr(:skip_folders,self,:option_skip_folders,[]) # no skip
+          self.options.set_obj_attr(:overwrite,self,:option_overwrite,:mtime)
+          self.options.set_obj_attr(:file_access,self,:option_file_access,:local)
           self.options.add_opt_list(:skip_format,Asperalm::Preview::Generator::PREVIEW_FORMATS,'skip this preview format (multiple possible)')
           self.options.add_opt_list(:folder_reset_cache,[:no,:header,:read],'reset folder cache')
           self.options.add_opt_simple(:skip_types,'skip types in comma separated list')
@@ -42,8 +42,8 @@ module Asperalm
           self.options.add_opt_simple(:temp_folder,'path to temp folder')
           self.options.add_opt_simple(:skip_folders,'list of folder to skip')
           self.options.add_opt_simple(:iteration_file,'path to iteration memory file')
-          self.options.add_opt_list(:overwrite,[:no,:header,:read],'when to overwrite result file')
-          self.options.add_opt_list(:file_access,[:no,:header,:read],'how to read and write files in repository')
+          self.options.add_opt_list(:overwrite,[:always,:never,:mtime],'when to overwrite result file')
+          self.options.add_opt_list(:file_access,[:local,:remote],'how to read and write files in repository')
 
           # add generator other options
           Asperalm::Preview::Options::DESCRIPTIONS.each do |opt|
