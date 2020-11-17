@@ -36,7 +36,7 @@ module Asperalm
           self.options.set_obj_attr(:overwrite,self,:option_overwrite,:mtime)
           self.options.set_obj_attr(:file_access,self,:option_file_access,:local)
           self.options.add_opt_list(:skip_format,Asperalm::Preview::Generator::PREVIEW_FORMATS,'skip this preview format (multiple possible)')
-          self.options.add_opt_list(:folder_reset_cache,[:no,:header,:read],'reset folder cache')
+          self.options.add_opt_list(:folder_reset_cache,[:no,:header,:read],'force detection of generated preview by refresh cache')
           self.options.add_opt_simple(:skip_types,'skip types in comma separated list')
           self.options.add_opt_simple(:previews_folder,'preview folder in storage root')
           self.options.add_opt_simple(:temp_folder,'path to temp folder')
@@ -45,7 +45,7 @@ module Asperalm
           self.options.add_opt_list(:overwrite,[:always,:never,:mtime],'when to overwrite result file')
           self.options.add_opt_list(:file_access,[:local,:remote],'how to read and write files in repository')
 
-          # add generator other options
+          # add other options for generator (and set default values)
           Asperalm::Preview::Options::DESCRIPTIONS.each do |opt|
             self.options.set_obj_attr(opt[:name],@gen_options,opt[:name],opt[:default])
             if opt.has_key?(:values)
