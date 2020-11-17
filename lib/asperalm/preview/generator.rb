@@ -94,9 +94,7 @@ module Asperalm
 
       # creates a unique temp folder for file
       def mk_tmpdir(input_file)
-        # TODO: get parameter from plugin
-        maintmp=@tmp_folder
-        temp_folder=File.join(maintmp,input_file.split('/').last.gsub(/\s/, '_').gsub(/\W/, ''))
+        temp_folder=File.join(@tmp_folder,input_file.split('/').last.gsub(/\s/, '_').gsub(/\W/, ''))
         FileUtils.mkdir_p(temp_folder)
         return temp_folder
       end
@@ -106,25 +104,25 @@ module Asperalm
         (duration - offset_seconds) / count
       end
 
-      def gen_video_preview()
+      def gen_video_blend()
         duration = Utils.video_get_duration(@source_file_path)
-        offset_seconds = @options.vid_offset_seconds.to_i
-        framecount = @options.vid_framecount.to_i
+        offset_seconds = @options.video_start_sec.to_i
+        framecount = @options.blend_keyframes.to_i
         interval = calc_interval(duration,offset_seconds,framecount)
         temp_folder = mk_tmpdir(@source_file_path)
         previous = ''
         file_number = 1
         1.upto(framecount) do |i|
           filename = Utils.get_tmp_num_filepath(temp_folder, file_number)
-          Utils.video_dump_frame(@source_file_path, offset_seconds, @options.vid_size, filename)
-          Utils.video_dupe_frame(filename, temp_folder, @options.vid_framepause)
-          Utils.video_blend_frames(previous, filename, temp_folder,@options.vid_blendframes) if i > 1
-          previous = Utils.get_tmp_num_filepath(temp_folder, file_number + @options.vid_framepause)
-          file_number += @options.vid_framepause + @options.vid_blendframes + 1
+          Utils.video_dump_frame(@source_file_path, offset_seconds, @options.video_scale, filename)
+          Utils.video_dupe_frame(filename, temp_folder, @options.blend_pauseframes)
+          Utils.video_blend_frames(previous, filename, temp_folder,@options.blend_transframes) if i > 1
+          previous = Utils.get_tmp_num_filepath(temp_folder, file_number + @options.blend_pauseframes)
+          file_number += @options.blend_pauseframes + @options.blend_transframes + 1
           offset_seconds+=interval
         end
         Utils.ffmpeg(Utils.ffmpeg_fmt(temp_folder),
-        ['-framerate',@options.vid_fps],
+        ['-framerate',@options.blend_fps],
         @destination_file_path,
         ['-filter:v',"scale='trunc(iw/2)*2:trunc(ih/2)*2'",'-codec:v','libx264','-r',30,'-pix_fmt','yuv420p'])
         FileUtils.rm_rf(temp_folder)
@@ -134,7 +132,7 @@ module Asperalm
       def gen_video_clips()
         # dump clips
         duration = Utils.video_get_duration(@source_file_path)
-        offset_seconds = @options.clips_offset_seconds.to_i
+        offset_seconds = @options.video_start_sec.to_i
         clips_cnt=@options.clips_count
         interval = calc_interval(duration,offset_seconds,clips_cnt)
         temp_folder = mk_tmpdir(@source_file_path)
@@ -145,7 +143,7 @@ module Asperalm
             Utils.ffmpeg(@source_file_path,
             ['-ss',0.9*offset_seconds],
             File.join(temp_folder,tmpfilename),
-            ['-ss',0.1*offset_seconds,'-t',@options.clips_length,'-filter:v',"scale=#{@options.clips_size}",'-codec:a','libmp3lame'])
+            ['-ss',0.1*offset_seconds,'-t',@options.clips_length,'-filter:v',"scale=#{@options.video_scale}",'-codec:a','libmp3lame'])
             f.puts("file '#{tmpfilename}'")
             offset_seconds += interval
           end
@@ -169,7 +167,7 @@ module Asperalm
           '-b:v','500k',
           '-maxrate','500k',
           '-bufsize','1000k',
-          '-filter:v',"scale=#{@options.reencode_size}",
+          '-filter:v',"scale=#{@options.video_scale}",
           '-threads','0',
           '-codec:a','libmp3lame',
           '-ac','2',
