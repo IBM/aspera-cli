@@ -2201,16 +2201,19 @@ popd
 
 As installation of Libreoffice is a little more complex, it is possible to not install libreoffice, and skip office document preview generation by using option: `--skip-types=office`
 
-Else, for instance on some Linux distribution, you can do:
+Else, for instance on Centos 7, you can do:
 
 ```
 yum install libreoffice
 ```
 
-or go to:
+or download the RPM from:
 [https://www.libreoffice.org/download/download/?type=rpm-x86_64]()
 
-Although libreoffice is run headless, older versions may require an X server. If you get error running libreoffice headless, then install Xvfb:
+Although libreoffice is run headless it requires an X server. Preview generator uses display :42.
+If you get error running libreoffice headless, then install Xvfb:
+
+* Centos 7
 
 ```
 yum install -y Xvfb
@@ -2231,6 +2234,33 @@ chmod a+x /etc/init.d/xvfb
 chkconfig xvfb on
 service xvfb start
 ```
+
+* Centos 8
+
+```
+yum install xorg-x11-server-Xvfb
+cat<<EOF>/etc/systemd/system/xvfb.service
+[Unit]
+Description=Xvfb headless plotting
+After=network.target
+
+[Service]
+User=root
+ExecStart=/usr/bin/Xvfb :42 -screen 0 1280x1024x8 -extension RANDR
+
+[Install]
+WantedBy=multi-user.target
+Alias=Xvfb.service
+Alias=xvfbd.service
+EOF
+systemctl daemon-reload
+systemctl enable xvfb.service
+systemctl start xvfb.service
+```
+
+The preview generator expects the executable `libreoffice` in `PATH`. To change LibreOffice executable path use option: `office_exe`.
+
+
 
 ## Configuration
 
@@ -2347,9 +2377,7 @@ The mp4 video preview file is only for category `video`
 
 File type is primarily based on file extension detected by the node API and translated info a mime type returned by the node API.
 
-The tool can also locally detect the mime type using gem `mimemagic`, option: `validate_mime` set to `yes` will generate warning in case of mismatch.
-
-If is possible to add support for other file extensions than the ones supported by the node api, using option `check_extension` set to `yes`
+The tool can also locally detect the mime type using gem `mimemagic`.
 
 ## Access to original files and preview creation
 
@@ -2584,6 +2612,11 @@ So, it evolved into <%=tool%>:
 
 
 # Release Notes
+
+* 0.11.6
+
+	* added more choice in auth type for orchestrator
+	* cleanup in preview generator (removed and renamed parameters)
 
 * 0.11.5
 
