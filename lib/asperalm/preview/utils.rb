@@ -111,6 +111,7 @@ module Asperalm
         in_p: ['-ss',offset_seconds],
         out_f: output_file,
         out_p: ['-frames:v',1,'-filter:v',"scale=#{scale}"])
+        return output_file
       end
 
       def message_to_png(message)

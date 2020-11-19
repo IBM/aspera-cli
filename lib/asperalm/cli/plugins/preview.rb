@@ -111,13 +111,13 @@ module Asperalm
 
         # old version based on folders
         def process_transfer_events(iteration_token)
-          args={
+          events_filter={
             'access_key'=>@access_key_self['id'],
             'type'=>'download.ended'
           }
           # optionally by iteration token
-          args['iteration_token']=iteration_token unless iteration_token.nil?
-          events=@api_node.read('events',args)[:data]
+          events_filter['iteration_token']=iteration_token unless iteration_token.nil?
+          events=@api_node.read('events',events_filter)[:data]
           return if events.empty?
           events.each do |event|
             next unless event['data']['direction'].eql?('receive')
@@ -342,6 +342,10 @@ module Asperalm
             @transfer_server_address=URI.parse(@api_node.params[:base_url]).host
             # get current access key
             @access_key_self=@api_node.read('access_keys/self')[:data]
+            # TODO: check events is activated here:
+            # note that docroot is good to look at as well
+            node_info=@api_node.read('info')[:data]
+            Log.log.debug("root: #{node_info['docroot']}")
             @access_remote=@option_file_access.eql?(:remote)
             Log.log.debug("access key info: #{@access_key_self}")
             #TODO: can the previews folder parameter be read from node api ?

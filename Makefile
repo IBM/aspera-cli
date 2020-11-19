@@ -837,6 +837,14 @@ t/prev_mxf_blend:
 	@echo $@
 	$(EXETEST) preview test --case=$@ mp4 ~/'Documents/Samples/mxf_video.mxf' --video-conversion=blend --log-level=debug
 	@touch $@
+t/prev_mxf_png_fix:
+	@echo $@
+	$(EXETEST) preview test --case=$@ png ~/'Documents/Samples/mxf_video.mxf' --video-png-conv=fixed --log-level=debug
+	@touch $@
+t/prev_mxf_png_ani:
+	@echo $@
+	$(EXETEST) preview test --case=$@ png ~/'Documents/Samples/mxf_video.mxf' --video-png-conv=animated --log-level=debug
+	@touch $@
 t/prev_mxf_reencode:
 	@echo $@
 	$(EXETEST) preview test --case=$@ mp4 ~/'Documents/Samples/mxf_video.mxf' --video-conversion=reencode --log-level=debug
@@ -855,7 +863,7 @@ t/prev_scan:
 	$(EXETEST) preview scan --skip-types=office --log-level=info
 	@touch $@
 
-tprev: t/prev_check t/prev_dcm t/prev_pdf t/prev_mxf_blend t/prev_mxf_reencode t/prev_mxf_clips t/prev_events t/prev_scan
+tprev: t/prev_check t/prev_dcm t/prev_pdf t/prev_mxf_png_fix t/prev_mxf_png_ani t/prev_mxf_blend t/prev_mxf_reencode t/prev_mxf_clips t/prev_events t/prev_scan
 clean::
 	rm -f preview_*.mp4
 thot:

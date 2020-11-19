@@ -41,8 +41,13 @@ module Asperalm
       # combination of: conversion type and output format (and video_conversion for video)
       def processing_method_symb
         name="convert_#{@conversion_type}_to_#{@preview_format_symb}"
-        if @preview_format_symb.eql?(:mp4)
-          name="#{name}_using_#{@options.video_conversion}"
+        if @conversion_type.eql?(:video)
+          case @preview_format_symb
+          when :mp4
+            name="#{name}_using_#{@options.video_conversion}"
+          when :png
+            name="#{name}_using_#{@options.video_png_conv}"
+          end
         end
         Log.log.debug("method: #{name}")
         return name.to_sym
@@ -80,13 +85,13 @@ module Asperalm
         return @temp_folder
       end
 
-      # @return offset in seconds
+      # @return offset in seconds suitable for ffmpeg -ss option
       # @param duration of video
       # @param start_offset of parts
       # @param total_count of parts
       # @param index of part (start at 1)
       def get_offset(duration, start_offset, total_count, index)
-        return start_offset + (index-1)*(duration - start_offset) / total_count
+        return start_offset + (index-1)*(1.0*duration - start_offset) / total_count
       end
 
       def convert_video_to_mp4_using_blend()
@@ -166,6 +171,33 @@ module Asperalm
           '-movflags','faststart'])
       end
 
+      def convert_video_to_png_using_fixed()
+        Utils.video_dump_frame(
+        @source_file_path,
+        Utils.video_get_duration(@source_file_path)*@options.thumb_vid_fraction,
+        @options.thumb_vid_scale,
+        @destination_file_path)
+      end
+
+      # https://trac.ffmpeg.org/wiki/SponsoringPrograms/GSoC/2015#AnimatedPortableNetworkGraphicsAPNG
+      # ffmpeg -h muxer=apng
+      # thumb is 32x32
+      # ffmpeg  output.png
+      def convert_video_to_png_using_animated()
+        Utils.ffmpeg(
+        in_f: @source_file_path,
+        in_p: [
+          '-ss',10, # seek to input position
+          '-t',20, # max seconds
+        ],
+        out_f: @destination_file_path,
+        out_p: [
+          '-vf',"fps=5,scale=120:-1:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse",
+          '-loop',0,
+          '-f','gif'
+        ])
+      end
+
       def convert_office_to_png()
         Utils.external_command([@options.office_exe,'--display',':42','--headless','--invisible','--convert-to','pdf',
           '--outdir',this_tmpdir,@source_file_path])
@@ -211,16 +243,6 @@ module Asperalm
           '-border',10,
           '+repage',
           @destination_file_path])
-      end
-
-      # https://trac.ffmpeg.org/wiki/SponsoringPrograms/GSoC/2015#AnimatedPortableNetworkGraphicsAPNG
-      # ffmpeg -h muxer=apng
-      def convert_video_to_png()
-        Utils.video_dump_frame(
-        @source_file_path,
-        Utils.video_get_duration(@source_file_path)*@options.thumb_vid_fraction,
-        @options.thumb_vid_scale,
-        @destination_file_path)
       end
 
     end # Generator

@@ -5,6 +5,7 @@ module Asperalm
     class Options
       # types of generation for video files
       VIDEO_CONVERSION_METHODS=[:reencode,:blend,:clips]
+      VIDEO_THUMBNAIL_METHODS=[:fixed,:animated]
       # options used in generator
       # for scaling see: https://trac.ffmpeg.org/wiki/Scaling
       # iw/ih : input width or height
@@ -16,6 +17,7 @@ module Asperalm
         { name: :thumb_vid_fraction,   default: 0.1,                description: "png: video: position of snapshot" },
         { name: :thumb_img_size,       default: 800,                description: "png: non-video: height (and width)" },
         { name: :video_conversion,     default: :reencode,          description: "mp4: method for preview generation", :values => VIDEO_CONVERSION_METHODS },
+        { name: :video_png_conv,       default: :fixed,             description: "mp4: method for thumbnail generation", :values => VIDEO_THUMBNAIL_METHODS },
         { name: :video_start_sec,      default: 10,                 description: "mp4: start offset (seconds) of video preview" },
         { name: :video_scale,          default: "'min(iw,360)':-2", description: "mp4: video scale (ffmpeg)" },
         { name: :blend_keyframes,      default: 30,                 description: "mp4: blend: # key frames" },

@@ -7,10 +7,10 @@ module Asperalm
       # values for conversion_type : input format
       CONVERSION_TYPES=[
         :image,
-        :video,
         :office,
         :pdf,
-        :plaintext
+        :plaintext,
+        :video
       ]
 
       # define how files are processed based on mime type
