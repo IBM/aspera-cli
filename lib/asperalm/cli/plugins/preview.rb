@@ -116,7 +116,7 @@ module Asperalm
             'type'=>'download.ended'
           }
           # optionally by iteration token
-          events_filter['iteration_token']=iteration_token unless iteration_token.nil?
+          args['iteration_token']=iteration_token unless iteration_token.nil?
           events=@api_node.read('events',args)[:data]
           return if events.empty?
           events.each do |event|
