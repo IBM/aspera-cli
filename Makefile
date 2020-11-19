@@ -821,13 +821,9 @@ t/shar2_5:
 	@touch $@
 tshares2: t/shar2_1 t/shar2_2 t/shar2_3 t/shar2_4 t/shar2_5
 
-t/prev_events:
+t/prev_check:
 	@echo $@
-	$(EXETEST) preview events --once-only=yes --skip-types=office
-	@touch $@
-t/prev_scan:
-	@echo $@
-	$(EXETEST) preview scan --skip-types=office --log-level=info
+	$(EXETEST) preview check --skip-types=office
 	@touch $@
 t/prev_dcm:
 	@echo $@
@@ -849,8 +845,17 @@ t/prev_mxf_clips:
 	@echo $@
 	$(EXETEST) preview test --case=$@ mp4 ~/'Documents/Samples/mxf_video.mxf' --video-conversion=clips --log-level=debug
 	@touch $@
+t/prev_events:
+	@echo $@
+	$(EXETEST) -Ptest_preview node upload ~/'Documents/Samples/mxf_video.mxf'
+	$(EXETEST) preview trevents --once-only=yes --skip-types=office --log-level=info
+	@touch $@
+t/prev_scan:
+	@echo $@
+	$(EXETEST) preview scan --skip-types=office --log-level=info
+	@touch $@
 
-tprev: t/prev_events t/prev_scan t/prev_dcm t/prev_pdf t/prev_mxf_blend t/prev_mxf_reencode t/prev_mxf_clips
+tprev: t/prev_check t/prev_dcm t/prev_pdf t/prev_mxf_blend t/prev_mxf_reencode t/prev_mxf_clips t/prev_events t/prev_scan
 clean::
 	rm -f preview_*.mp4
 thot:
