@@ -33,17 +33,17 @@ INCL_ASESSION=$(OUT_FOLDER)/asession_usage.txt
 
 CURRENT_DATE=$(shell date)
 
-
-include local/config.make
+# contains secrets
+include local/secrets.make
 
 all:: gem
 
 clean::
 	rm -f $(GEMNAME)-*.gem $(SRCZIPBASE)*.zip *.log token.* preview.png aspera_bypass_*.pem sample_file.txt
 	rm -f README.pdf README.html README.md $(INCL_COMMANDS) $(INCL_USAGE) $(INCL_ASESSION) $(TEST_CONFIG)
-	rm -fr tmp_* contents t doc out "PKG - "*
-	mkdir t out
+	rm -fr tmp_* contents t $(OUT_FOLDER) "PKG - "*
 	rm -f 200KB* *AsperaConnect-ML* sample.conf* .DS_Store 10M.dat
+	mkdir t $(OUT_FOLDER)
 	gem uninstall -a -x $(GEMNAME)
 cleanupgems:
 	gem uninstall -a -x $(gem list|cut -f 1 -d' '|egrep -v 'rdoc|psych|rake|openssl|json|io-console|bigdecimal')
@@ -53,7 +53,10 @@ changes:
 	git log $(LATEST_TAG)..HEAD --oneline
 diff: changes
 
-doc: README.pdf
+doc: README.pdf docs/secrets.make
+
+docs/secrets.make: local/secrets.make
+	sed 's/=.*/=_value_here_/' < local/secrets.make > docs/secrets.make
 
 README.pdf: README.md
 	pandoc --number-sections --resource-path=. --toc -o README.html README.md
