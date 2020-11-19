@@ -818,39 +818,36 @@ t/shar2_5:
 	@touch $@
 tshares2: t/shar2_1 t/shar2_2 t/shar2_3 t/shar2_4 t/shar2_5
 
-t/prev1:
+t/prev_events:
 	@echo $@
 	$(EXETEST) preview events --once-only=yes --skip-types=office
 	@touch $@
-t/prev2:
+t/prev_scan:
 	@echo $@
 	$(EXETEST) preview scan --skip-types=office --log-level=info
 	@touch $@
-t/prev3:
+t/prev_dcm:
 	@echo $@
-	$(EXETEST) preview test ~/Documents/Samples/anatomic-2k/TG18-CH/TG18-CH-2k-01.dcm --log-level=debug png
+	$(EXETEST) preview test --case=$@ png ~/Documents/Samples/anatomic-2k/TG18-CH/TG18-CH-2k-01.dcm --log-level=debug
 	@touch $@
-t/prev4:
+t/prev_pdf:
 	@echo $@
-	$(EXETEST) preview test ~/'Documents/Samples/YıçşöğüİÇŞÖĞÜ.pdf' --log-level=debug png
+	$(EXETEST) preview test --case=$@ png ~/'Documents/Samples/YıçşöğüİÇŞÖĞÜ.pdf' --log-level=debug
 	@touch $@
-t/prev5:
+t/prev_mxf_blend:
 	@echo $@
-	$(EXETEST) preview test ~/'Documents/Samples/mxf_video.mxf' --log-level=debug mp4 --video-conversion=preview
-	mv preview.mp4 preview_preview.mp4
+	$(EXETEST) preview test --case=$@ mp4 ~/'Documents/Samples/mxf_video.mxf' --video-conversion=blend --log-level=debug
 	@touch $@
-t/prev6:
+t/prev_mxf_reencode:
 	@echo $@
-	$(EXETEST) preview test ~/'Documents/Samples/mxf_video.mxf' --log-level=debug mp4 --video-conversion=reencode
-	mv preview.mp4 preview_reencode.mp4
+	$(EXETEST) preview test --case=$@ mp4 ~/'Documents/Samples/mxf_video.mxf' --video-conversion=reencode --log-level=debug
 	@touch $@
-t/prev7:
+t/prev_mxf_clips:
 	@echo $@
-	$(EXETEST) preview test ~/'Documents/Samples/mxf_video.mxf' --log-level=debug mp4 --video-conversion=clips
-	mv preview.mp4 preview_clips.mp4
+	$(EXETEST) preview test --case=$@ mp4 ~/'Documents/Samples/mxf_video.mxf' --video-conversion=clips --log-level=debug
 	@touch $@
 
-tprev: t/prev1 t/prev2 t/prev3 t/prev4 t/prev5 t/prev6 t/prev7
+tprev: t/prev_events t/prev_scan t/prev_dcm t/prev_pdf t/prev_mxf_blend t/prev_mxf_reencode t/prev_mxf_clips
 clean::
 	rm -f preview_*.mp4
 thot:

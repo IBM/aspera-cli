@@ -1,16 +1,18 @@
+require 'mimemagic'
+require 'mimemagic/overlay'
+
 module Asperalm
   module Preview
     class FileTypes
       # values for conversion_type : input format
       CONVERSION_TYPES=[
-          :image,
-          :video,
-          :office,
-          :pdf,
-          :plaintext
-        ]
+        :image,
+        :video,
+        :office,
+        :pdf,
+        :plaintext
+      ]
 
-      attr_reader :conversion_type
       # define how files are processed based on mime type
       SUPPORTED_MIME_TYPES={
         'application/json' => :plaintext,
@@ -263,6 +265,31 @@ module Asperalm
         'ycbcra' => :image,
         'yuv' => :image,
         'zabw' => :office}
+
+      #private_constant :SUPPORTED_MIME_TYPES, :SUPPORTED_EXTENSIONS
+
+      def self.conversion_type(filepath,mimetype)
+        detected_mime=MimeMagic.by_magic(File.open(filepath)).to_s
+        detected_mime=MimeMagic.by_path(filepath).to_s if detected_mime.empty?
+        detected_mime=nil if detected_mime.empty?
+        if !mimetype.nil?
+          if detected_mime.nil?
+            Log.log.debug("no mime type per magic number")
+          elsif mimetype.eql?(detected_mime)
+            Log.log.debug("matching mime type per magic number")
+          else
+            Log.log.debug("non matching mime types: node=[#{mimetype}], magic=[#{detected_mime}]")
+          end
+        end
+        # 1- get type from provided mime type
+        result=FileTypes::SUPPORTED_MIME_TYPES[mimetype] unless mimetype.nil?
+        # 2- else, from computed mime type
+        result||=FileTypes::SUPPORTED_MIME_TYPES[detected_mime] unless detected_mime.nil?
+        extension = File.extname(filepath).downcase.gsub(/^\./,'')
+        # 3- else, from local extensions
+        result||=FileTypes::SUPPORTED_EXTENSIONS[extension]
+        return result
+      end
     end
   end
 end

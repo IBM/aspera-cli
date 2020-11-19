@@ -33,7 +33,7 @@ module Asperalm
       def self.external_command(command_args,stdout_return=nil)
         # build command line, and quote special characters
         command=command_args.map{|i| shell_quote(i.to_s)}.join(' ')
-        Log.log.debug("cmd=#{command}".red)
+        Log.log.debug("cmd=#{command}".blue)
         # capture3: only in ruby2+
         if Open3.respond_to?('capture3') then
           stdout, stderr, exit_status = Open3.capture3(command)
@@ -46,21 +46,24 @@ module Asperalm
           raise "Error: #{bin} is not in the PATH"
         end
         unless exit_status.success?
-          Log.log.error("Got child status #{exit_status}\ncommandline: #{command}\nstdout: #{stdout}\nstderr: #{stderr}")
-          raise "error"
+          Log.log.error("Got child status".red+" #{exit_status}\ncommandline: #{command}\nstdout: #{stdout}\nstderr: #{stderr}")
+          raise "command returned error"
         end
         stdout_return.replace(stdout) unless stdout_return.nil?
         return exit_status.success?
       end
 
-      def self.ffmpeg(input_file,input_args,output_file,output_args)
-        external_command(['ffmpeg',
+      def self.ffmpeg(a)
+        raise "error: hash expected" unless a.is_a?(Hash)
+        #input_file,input_args,output_file,output_args
+        a[:gl_p]||=[
           '-y', # overwrite output without asking
-          '-loglevel','error', # show only errors and up
-          input_args,
-          '-i',input_file,
-          output_args,
-          output_file].flatten)
+          '-loglevel','error', # show only errors and up]
+        ]
+        a[:in_p]||=[]
+        a[:out_p]||=[]
+        raise "wrong params (#{a.keys.sort})" unless [:gl_p, :in_f, :in_p, :out_f, :out_p].eql?(a.keys.sort)
+        external_command(['ffmpeg',a[:gl_p],a[:in_p],'-i',a[:in_f],a[:out_p],a[:out_f]].flatten)
       end
 
       def self.video_get_duration(input_file)
@@ -83,28 +86,31 @@ module Asperalm
         return File.join(temp_folder,sprintf(TMPFMT,file_number))
       end
 
-      def self.video_dupe_frame(input_file, temp_folder, dupecount)
-        img_number = /img([0-9]*)\.jpg/.match(input_file)[1].to_i
-        1.upto(dupecount) do |i|
-          dupename = get_tmp_num_filepath(temp_folder,(i+img_number))
-          FileUtils.ln_s(input_file,dupename)
+      def self.video_dupe_frame(temp_folder, index, count)
+        input_file=get_tmp_num_filepath(temp_folder,index)
+        1.upto(count) do |i|
+          FileUtils.ln_s(input_file,get_tmp_num_filepath(temp_folder,index+i))
         end
       end
 
-      def self.video_blend_frames(img1, img2, temp_folder, blendframes)
-        img_number = /img([0-9]*)\.jpg/.match(img1)[1].to_i
-        1.upto(blendframes) do |i|
-          percent = 100 * i / (blendframes + 1)
-          filename = get_tmp_num_filepath(temp_folder, img_number + i)
+      def self.video_blend_frames(temp_folder, index1, index2)
+        img1=get_tmp_num_filepath(temp_folder,index1)
+        img2=get_tmp_num_filepath(temp_folder,index2)
+        count=index2-index1-1
+        1.upto(count) do |i|
+          percent = 100 * i / (count + 1)
+          filename = get_tmp_num_filepath(temp_folder, index1 + i)
           external_command(['composite','-blend',percent,img2,img1,filename])
         end
       end
 
-      def self.video_dump_frame(input_file, offset_seconds, size, thumb_file_name)
-        ffmpeg(input_file,
-        ['-ss',offset_seconds],
-        thumb_file_name,
-        ['-frames:v',1,'-filter:v',"scale=#{size}"])
+      def self.video_dump_frame(input_file, offset_seconds, scale, output_file, index=nil)
+        output_file=get_tmp_num_filepath(output_file,index) unless index.nil?
+        ffmpeg(
+        in_f: input_file,
+        in_p: ['-ss',offset_seconds],
+        out_f: output_file,
+        out_p: ['-frames:v',1,'-filter:v',"scale=#{scale}"])
       end
 
       def message_to_png(message)

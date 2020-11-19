@@ -14,7 +14,6 @@ module Asperalm
         # option_skip_format has special accessors
         attr_accessor :option_previews_folder
         attr_accessor :option_folder_reset_cache
-        attr_accessor :option_temp_folder
         attr_accessor :option_skip_folders
         attr_accessor :option_overwrite
         attr_accessor :option_file_access
@@ -31,7 +30,6 @@ module Asperalm
           self.options.set_obj_attr(:folder_reset_cache,self,:option_folder_reset_cache,:no)
           self.options.set_obj_attr(:skip_types,self,:option_skip_types)
           self.options.set_obj_attr(:previews_folder,self,:option_previews_folder,'previews')
-          self.options.set_obj_attr(:temp_folder,self,:option_temp_folder,File.join(Dir.tmpdir,'aspera.previews'))
           self.options.set_obj_attr(:skip_folders,self,:option_skip_folders,[]) # no skip
           self.options.set_obj_attr(:overwrite,self,:option_overwrite,:mtime)
           self.options.set_obj_attr(:file_access,self,:option_file_access,:local)
@@ -41,9 +39,10 @@ module Asperalm
           self.options.add_opt_simple(:previews_folder,'preview folder in storage root')
           self.options.add_opt_simple(:temp_folder,'path to temp folder')
           self.options.add_opt_simple(:skip_folders,'list of folder to skip')
-          self.options.add_opt_simple(:iteration_file,'path to iteration memory file')
+          self.options.add_opt_simple(:case,'test case name')
           self.options.add_opt_list(:overwrite,[:always,:never,:mtime],'when to overwrite result file')
           self.options.add_opt_list(:file_access,[:local,:remote],'how to read and write files in repository')
+          self.options.set_option(:temp_folder,Dir.tmpdir)
 
           # add other options for generator (and set default values)
           Asperalm::Preview::Options::DESCRIPTIONS.each do |opt|
@@ -59,13 +58,17 @@ module Asperalm
 
           self.options.parse_options!
           raise 'skip_folder shall be an Array, use @json:[...]' unless @option_skip_folders.is_a?(Array)
+          @tmp_folder=File.join(self.options.get_option(:temp_folder,:mandatory),TMP_DIR)
+          FileUtils.mkdir_p(@tmp_folder)
+          Log.log.debug("tmpdir: #{@tmp_folder}")
         end
 
         # special tag to identify transfers related to generator
         PREV_GEN_TAG='preview_generator'
         # defined by node API
         PREVIEW_FOLDER_SUFFIX='.asp-preview'
-        PREVIEW_FILE_PREFIX='preview.'
+        PREVIEW_BASENAME='preview'
+        TMP_DIR='aspera.previews'
 
         def option_skip_types=(value)
           @skip_types=[]
@@ -191,13 +194,11 @@ module Asperalm
         end
 
         def get_infos_remote(gen_infos,entry,local_entry_preview_dir)
-          # folder where this entry is downloaded
-          @remote_entry_temp_local_folder=@option_temp_folder
           # store source directly here
-          local_original_filepath=File.join(@remote_entry_temp_local_folder,entry['name'])
+          local_original_filepath=File.join(@tmp_folder,entry['name'])
           #original_mtime=DateTime.parse(entry['modified_time'])
           # out: where previews are generated
-          local_entry_preview_dir.replace(File.join(@remote_entry_temp_local_folder,entry_preview_folder_name(entry)))
+          local_entry_preview_dir.replace(File.join(@tmp_folder,entry_preview_folder_name(entry)))
           #TODO: this does not work because previews is hidden
           #this_preview_folder_entries=get_folder_entries(@previews_folder_entry['id'],{:name=>@entry_preview_folder_name})
           gen_infos.each do |gen_info|
@@ -213,8 +214,8 @@ module Asperalm
           "#{entry['id']}#{PREVIEW_FOLDER_SUFFIX}"
         end
 
-        def preview_filename(preview_format)
-          PREVIEW_FILE_PREFIX+preview_format.to_s
+        def preview_filename(preview_format,filename=PREVIEW_BASENAME)
+          return "#{filename}.#{preview_format.to_s}"
         end
 
         # generate preview files for one folder entry (file) if necessary
@@ -253,8 +254,7 @@ module Asperalm
               end
             end
             # need generator for further checks
-            gen_info[:generator]=Asperalm::Preview::Generator.new(@gen_options,gen_info[:src],gen_info[:dst],entry['content_type'])
-            gen_info[:generator].tmp_folder=@option_temp_folder
+            gen_info[:generator]=Asperalm::Preview::Generator.new(@gen_options,gen_info[:src],gen_info[:dst],@tmp_folder,entry['content_type'])
             # get conversion_type (if known) and check if supported
             next false unless gen_info[:generator].supported?
             # shall we skip it ?
@@ -267,8 +267,8 @@ module Asperalm
           FileUtils.mkdir_p(local_entry_preview_dir)
           if @access_remote
             raise 'parent not computed' if entry['parent_file_id'].nil?
-            #  download original file to temp folder @remote_entry_temp_local_folder
-            do_transfer('receive',entry['parent_file_id'],entry['name'],@remote_entry_temp_local_folder)
+            #  download original file to temp folder
+            do_transfer('receive',entry['parent_file_id'],entry['name'],@tmp_folder)
           end
           gen_infos.each do |gen_info|
             begin
@@ -280,8 +280,6 @@ module Asperalm
           if @access_remote
             # upload
             do_transfer('send',@previews_folder_entry['id'],local_entry_preview_dir)
-            # delete @remote_entry_temp_local_folder and below
-            FileUtils.rm_rf(@remote_entry_temp_local_folder)
           end
           # force read file updated previews
           if @option_folder_reset_cache.eql?(:read)
@@ -369,14 +367,16 @@ module Asperalm
             Asperalm::Preview::Utils.check_tools(@skip_types)
             return Main.result_status('tools validated')
           when :test
-            source = self.options.get_next_argument('source file')
             format = self.options.get_next_argument('format',Asperalm::Preview::Generator::PREVIEW_FORMATS)
-            dest=preview_filename(format)
-            g=Asperalm::Preview::Generator.new(@gen_options,source,dest)
-            return Main.result_status('format not supported') unless g.supported?
+            source = self.options.get_next_argument('source file')
+            dest=preview_filename(format,self.options.get_option(:case,:optional))
+            g=Asperalm::Preview::Generator.new(@gen_options,source,dest,@tmp_folder)
+            raise "format not supported: #{format}" unless g.supported?
             g.generate
             return Main.result_status("generated: #{dest}")
           end
+        ensure
+          FileUtils.rm_rf(@tmp_folder)
         end # execute_action
       end # Preview
     end # Plugins
