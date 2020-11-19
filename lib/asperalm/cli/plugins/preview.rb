@@ -6,11 +6,22 @@ require 'asperalm/preview/file_types'
 require 'asperalm/persistency_file'
 require 'asperalm/hash_ext'
 require 'date'
+require 'securerandom'
 
 module Asperalm
   module Cli
     module Plugins
       class Preview < BasicAuthPlugin
+        # special tag to identify transfers related to generator
+        PREV_GEN_TAG='preview_generator'
+        # defined by node API: suffix for folder containing previews
+        PREVIEW_FOLDER_SUFFIX='.asp-preview'
+        # basename of preview files
+        PREVIEW_BASENAME='preview'
+        # subfolder in system tmp folder
+        TMP_DIR_PREFIX='previews'
+        private_constant :PREV_GEN_TAG, :PREVIEW_FOLDER_SUFFIX, :PREVIEW_BASENAME, :TMP_DIR_PREFIX
+
         # option_skip_format has special accessors
         attr_accessor :option_previews_folder
         attr_accessor :option_folder_reset_cache
@@ -58,17 +69,10 @@ module Asperalm
 
           self.options.parse_options!
           raise 'skip_folder shall be an Array, use @json:[...]' unless @option_skip_folders.is_a?(Array)
-          @tmp_folder=File.join(self.options.get_option(:temp_folder,:mandatory),TMP_DIR)
+          @tmp_folder=File.join(self.options.get_option(:temp_folder,:mandatory),"#{TMP_DIR_PREFIX}.#{SecureRandom.uuid}")
           FileUtils.mkdir_p(@tmp_folder)
           Log.log.debug("tmpdir: #{@tmp_folder}")
         end
-
-        # special tag to identify transfers related to generator
-        PREV_GEN_TAG='preview_generator'
-        # defined by node API
-        PREVIEW_FOLDER_SUFFIX='.asp-preview'
-        PREVIEW_BASENAME='preview'
-        TMP_DIR='aspera.previews'
 
         def option_skip_types=(value)
           @skip_types=[]
@@ -116,7 +120,7 @@ module Asperalm
             next unless event['data']['direction'].eql?('receive')
             next unless event['data']['status'].eql?('completed')
             next unless event['data']['error_code'].eql?(0)
-            next unless event.dig('data','tags','aspera',PREV_GEN_TAG).nil?
+            next unless event['data'].dig('tags','aspera',PREV_GEN_TAG).nil?
             #folder_id=event.dig('data','tags','aspera','node','file_id')
             folder_id=event.dig('data','file_id')
             next if folder_id.nil?
@@ -170,11 +174,13 @@ module Asperalm
             })
           end
           tspec=@default_transfer_spec.merge({
-            'direction'        => direction,
-            'paths'            => [{'source'=>source_filename}],
-            'tags'             => { 'aspera' => {
-            PREV_GEN_TAG         => true,
-            'node'               => { 'access_key' => @access_key_self['id'], 'file_id' => folder_id }}}
+            'direction'  => direction,
+            'paths'      => [{'source'=>source_filename}],
+            'tags'       => { 'aspera' => {
+            PREV_GEN_TAG   => true,
+            'node'         => {
+            'access_key'     => @access_key_self['id'],
+            'file_id'        => folder_id }}}
           })
           tspec['destination_root']=destination unless destination.nil?
           Main.result_transfer(self.transfer.start(tspec,{:src=>:node_gen4}))
@@ -199,7 +205,7 @@ module Asperalm
           #original_mtime=DateTime.parse(entry['modified_time'])
           # out: where previews are generated
           local_entry_preview_dir.replace(File.join(@tmp_folder,entry_preview_folder_name(entry)))
-          #TODO: this does not work because previews is hidden
+          #TODO: this does not work because previews is hidden in api
           #this_preview_folder_entries=get_folder_entries(@previews_folder_entry['id'],{:name=>@entry_preview_folder_name})
           gen_infos.each do |gen_info|
             gen_info[:src]=local_original_filepath
@@ -326,7 +332,8 @@ module Asperalm
         def execute_action
           @api_node=basic_auth_api
           @transfer_server_address=URI.parse(@api_node.params[:base_url]).host
-          @access_key_self = @api_node.read('access_keys/self')[:data] # get current access key
+          # get current access key
+          @access_key_self=@api_node.read('access_keys/self')[:data]
           @access_remote=@option_file_access.eql?(:remote)
           Log.log.debug("access key info: #{@access_key_self}")
           #TODO: can the previews folder parameter be read from node api ?
