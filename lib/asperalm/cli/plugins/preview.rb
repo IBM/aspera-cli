@@ -19,8 +19,11 @@ module Asperalm
         # basename of preview files
         PREVIEW_BASENAME='preview'
         # subfolder in system tmp folder
-        TMP_DIR_PREFIX='previews'
-        private_constant :PREV_GEN_TAG, :PREVIEW_FOLDER_SUFFIX, :PREVIEW_BASENAME, :TMP_DIR_PREFIX
+        TMP_DIR_PREFIX='prev_tmp'
+        DEFAULT_PREVIEWS_FOLDER='previews'
+        AK_MARKER_FILE='.aspera_access_key'
+        LOCAL_STORAGE_PCVL='file:///'
+        private_constant :PREV_GEN_TAG, :PREVIEW_FOLDER_SUFFIX, :PREVIEW_BASENAME, :TMP_DIR_PREFIX, :DEFAULT_PREVIEWS_FOLDER, :LOCAL_STORAGE_PCVL, :AK_MARKER_FILE
 
         # option_skip_format has special accessors
         attr_accessor :option_previews_folder
@@ -40,7 +43,7 @@ module Asperalm
           self.options.set_obj_attr(:skip_format,self,:option_skip_format,[]) # no skip
           self.options.set_obj_attr(:folder_reset_cache,self,:option_folder_reset_cache,:no)
           self.options.set_obj_attr(:skip_types,self,:option_skip_types)
-          self.options.set_obj_attr(:previews_folder,self,:option_previews_folder,'previews')
+          self.options.set_obj_attr(:previews_folder,self,:option_previews_folder,DEFAULT_PREVIEWS_FOLDER)
           self.options.set_obj_attr(:skip_folders,self,:option_skip_folders,[]) # no skip
           self.options.set_obj_attr(:overwrite,self,:option_overwrite,:mtime)
           self.options.set_obj_attr(:file_access,self,:option_file_access,:local)
@@ -95,7 +98,7 @@ module Asperalm
           return @preview_formats_to_generate.map{|i|i.to_s}.join(',')
         end
 
-        ACTIONS=[:scan,:events,:folder,:check,:test]
+        ACTIONS=[:scan,:events,:trevents,:folder,:check,:test]
 
         # /files/id/files is normally cached in redis, but we can discard the cache
         # but /files/id is not cached
@@ -107,7 +110,7 @@ module Asperalm
         end
 
         # old version based on folders
-        def process_file_events_old(iteration_token)
+        def process_transfer_events(iteration_token)
           args={
             'access_key'=>@access_key_self['id'],
             'type'=>'download.ended'
@@ -291,6 +294,8 @@ module Asperalm
           if @option_folder_reset_cache.eql?(:read)
             @api_node.read("files/#{entry['id']}")
           end
+        rescue => e
+          Log.log.error("ERROR: #{e.backtrace}")
         end # generate_preview
 
         # scan all files in provided folder entry
@@ -330,29 +335,49 @@ module Asperalm
         end
 
         def execute_action
-          @api_node=basic_auth_api
-          @transfer_server_address=URI.parse(@api_node.params[:base_url]).host
-          # get current access key
-          @access_key_self=@api_node.read('access_keys/self')[:data]
-          @access_remote=@option_file_access.eql?(:remote)
-          Log.log.debug("access key info: #{@access_key_self}")
-          #TODO: can the previews folder parameter be read from node api ?
-          @option_skip_folders.push('/'+@option_previews_folder)
-          if @access_remote
-            # note the filter "name", it's why we take the first one
-            @previews_folder_entry=get_folder_entries(@access_key_self['root_file_id'],{:name=>@option_previews_folder}).first
-            raise CliError,"Folder #{@option_previews_folder} does not exist on node. Please create it in the storage root, or specify an alternate name." if @previews_folder_entry.nil?
-          else
-            #TODO: option to override @local_storage_root='xxx'
-            @local_storage_root=@access_key_self['storage']['path'].gsub(%r{^file:///},'')
-            raise CliError,"Local storage root folder #{@local_storage_root} does not exist." unless File.directory?(@local_storage_root)
-            @local_preview_folder=File.join(@local_storage_root,@option_previews_folder)
-            raise CliError,"Folder #{@local_preview_folder} does not exist locally. Please create it, or specify an alternate name." unless File.directory?(@local_preview_folder)
-          end
           command=self.options.get_next_command(ACTIONS)
+          unless [:check,:test].include?(command)
+            # this will use node api
+            @api_node=basic_auth_api
+            @transfer_server_address=URI.parse(@api_node.params[:base_url]).host
+            # get current access key
+            @access_key_self=@api_node.read('access_keys/self')[:data]
+            @access_remote=@option_file_access.eql?(:remote)
+            Log.log.debug("access key info: #{@access_key_self}")
+            #TODO: can the previews folder parameter be read from node api ?
+            @option_skip_folders.push('/'+@option_previews_folder)
+            if @access_remote
+              # note the filter "name", it's why we take the first one
+              @previews_folder_entry=get_folder_entries(@access_key_self['root_file_id'],{:name=>@option_previews_folder}).first
+              raise CliError,"Folder #{@option_previews_folder} does not exist on node. Please create it in the storage root, or specify an alternate name." if @previews_folder_entry.nil?
+            else
+              raise "only local storage allowed in this mode" unless @access_key_self['storage']['type'].eql?('local')
+              @local_storage_root=@access_key_self['storage']['path']
+              #TODO: option to override @local_storage_root='xxx'
+              @local_storage_root=@local_storage_root[LOCAL_STORAGE_PCVL.length..-1] if @local_storage_root.start_with?(LOCAL_STORAGE_PCVL)
+              #TODO: windows could have "C:" ?
+              raise "not local storage: #{@local_storage_root}" unless @local_storage_root.start_with?('/')
+              raise CliError,"Local storage root folder #{@local_storage_root} does not exist." unless File.directory?(@local_storage_root)
+              @local_preview_folder=File.join(@local_storage_root,@option_previews_folder)
+              raise CliError,"Folder #{@local_preview_folder} does not exist locally. Please create it, or specify an alternate name." unless File.directory?(@local_preview_folder)
+              # protection to avoid clash of file id for two different access keys
+              marker_file=File.join(@local_preview_folder,AK_MARKER_FILE)
+              Log.log.debug("marker file: #{marker_file}")
+              if File.exist?(marker_file)
+                ak=File.read(marker_file)
+                raise "mismatch access key in #{marker_file}: contains #{ak}, using #{@access_key_self['id']}" unless @access_key_self['id'].eql?(ak)
+              else
+                File.write(marker_file,@access_key_self['id'])
+              end
+            end
+          end
           case command
           when :scan
-            scan_folder_files({ 'id' => @access_key_self['root_file_id'], 'name' => '/', 'type' => 'folder', 'path' => '/' })
+            scan_folder_files({
+              'id'   => @access_key_self['root_file_id'],
+              'name' => '/',
+              'type' => 'folder',
+              'path' => '/' })
             return Main.result_status('scan finished')
           when :events
             iteration_data=[]
@@ -360,11 +385,22 @@ module Asperalm
             if self.options.get_option(:once_only,:mandatory)
               iteration_persistency=PersistencyFile.new(
               data: iteration_data,
-              ids:  ['preview_iteration',self.options.get_option(:url,:mandatory),self.options.get_option(:username,:mandatory)])
+              ids:  ['preview_iteration_events',self.options.get_option(:url,:mandatory),self.options.get_option(:username,:mandatory)])
             end
             iteration_data[0]=process_file_events(iteration_data[0])
             iteration_persistency.save unless iteration_persistency.nil?
             return Main.result_status('events finished')
+          when :trevents
+            iteration_data=[]
+            iteration_persistency=nil
+            if self.options.get_option(:once_only,:mandatory)
+              iteration_persistency=PersistencyFile.new(
+              data: iteration_data,
+              ids:  ['preview_iteration_transfer',self.options.get_option(:url,:mandatory),self.options.get_option(:username,:mandatory)])
+            end
+            iteration_data[0]=process_transfer_events(iteration_data[0])
+            iteration_persistency.save unless iteration_persistency.nil?
+            return Main.result_status('trevents finished')
           when :folder
             file_id=self.options.get_next_argument('file id')
             file_info=@api_node.read("files/#{file_id}")[:data]
