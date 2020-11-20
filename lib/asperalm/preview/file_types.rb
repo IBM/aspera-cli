@@ -268,19 +268,21 @@ module Asperalm
 
       #private_constant :SUPPORTED_MIME_TYPES, :SUPPORTED_EXTENSIONS
 
+      def self.mime_from_file(filepath)
+        detected_mime=MimeMagic.by_magic(File.open(filepath)).to_s
+        detected_mime=MimeMagic.by_path(filepath).to_s if detected_mime.empty?
+        detected_mime=nil if detected_mime.empty?
+        return detected_mime
+      end
+
       def self.conversion_type(filepath,mimetype,try_local_mime)
         detected_mime=nil
         if try_local_mime
-          detected_mime=MimeMagic.by_magic(File.open(filepath)).to_s
-          detected_mime=MimeMagic.by_path(filepath).to_s if detected_mime.empty?
-          detected_mime=nil if detected_mime.empty?
-        end
-        if !mimetype.nil?
-          if detected_mime.nil?
-            Log.log.debug("no mime type per magic number")
-          elsif mimetype.eql?(detected_mime)
+          detected_mime=mime_from_file(filepath)
+          if mimetype.eql?(detected_mime)
             Log.log.debug("matching mime type per magic number")
           else
+            # note: detected can be nil
             Log.log.debug("non matching mime types: node=[#{mimetype}], magic=[#{detected_mime}]")
           end
         end
