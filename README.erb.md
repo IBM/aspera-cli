@@ -2615,8 +2615,13 @@ So, it evolved into <%=tool%>:
 
 * 0.11.6
 
-	* added more choice in auth type for orchestrator
-	* cleanup in preview generator (removed and renamed parameters)
+	* orchestrator : added more choice in auth type
+	* preview: cleanup in generator (removed and renamed parameters)
+	* preview: better documentation
+	* preview: animated thumbnails for video (option: `video_png_conv=animated`)
+	* preview: new event trigger: `trevents` (`events` seems broken)
+	* preview: unique tmp folder to avoid clash of multiple instances
+	* repo: added template for secrets used for testing
 
 * 0.11.5
 
