@@ -36,7 +36,7 @@ module Asperalm
         @opt_mgr.add_opt_simple(:transfer_info,"additional information for transfer client")
         @opt_mgr.add_opt_list(:src_type,[:list,:pair],"type of file list")
         @opt_mgr.add_opt_list(:transfer,[:direct,:httpgw,:connect,:node,:aoc],"type of transfer")
-        @opt_mgr.add_opt_list(:progress,[:none,:native,:multi],"type of transfer")
+        @opt_mgr.add_opt_list(:progress,[:none,:native,:multi],"type of progress bar")
         @opt_mgr.set_option(:transfer,:direct)
         @opt_mgr.set_option(:src_type,:list)
         @opt_mgr.set_option(:progress,:multi)
@@ -224,6 +224,7 @@ module Asperalm
         Log.log.debug("transfer agent is a #{@agent.class}")
         @agent.start_transfer(transfer_spec,options)
         result=@agent.wait_for_transfers_completion
+        @progress_listener.reset
         Fasp::Manager.validate_status_list(result)
         return result
       end
