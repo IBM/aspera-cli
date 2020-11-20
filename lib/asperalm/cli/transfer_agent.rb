@@ -25,6 +25,7 @@ module Asperalm
         @transfer_spec_cmdline={}
         # the currently selected transfer agent
         @agent=nil
+        @progress_listener=Listener::ProgressMulti.new
         # source/destination pair, like "paths" of transfer spec
         @transfer_paths=nil
         @opt_mgr.set_obj_attr(:ts,self,:option_transfer_spec)
@@ -35,8 +36,10 @@ module Asperalm
         @opt_mgr.add_opt_simple(:transfer_info,"additional information for transfer client")
         @opt_mgr.add_opt_list(:src_type,[:list,:pair],"type of file list")
         @opt_mgr.add_opt_list(:transfer,[:direct,:httpgw,:connect,:node,:aoc],"type of transfer")
+        @opt_mgr.add_opt_list(:progress,[:none,:native,:multi],"type of transfer")
         @opt_mgr.set_option(:transfer,:direct)
         @opt_mgr.set_option(:src_type,:list)
+        @opt_mgr.set_option(:progress,:multi)
         @opt_mgr.parse_options!
       end
 
@@ -49,7 +52,7 @@ module Asperalm
       def set_agent_instance(instance)
         @agent=instance
         @agent.add_listener(Listener::Logger.new)
-        @agent.add_listener(Listener::ProgressMulti.new)
+        @agent.add_listener(@progress_listener) if @opt_mgr.get_option(:progress,:mandatory).eql?(:multi)
       end
 
       # analyze options and create new agent if not already created or set
@@ -61,9 +64,7 @@ module Asperalm
             resume_policy=@opt_mgr.get_option(:transfer_info,:optional)
             resume_policy=resume_policy.symbolize_keys if resume_policy.is_a?(Hash)
             new_agent=Fasp::Local.new(resume_policy)
-            # TODO: option to choose progress format
-            # a- new_agent.quiet=false
-            # b- disable custom progress
+            new_agent.quiet=false if @opt_mgr.get_option(:progress,:mandatory).eql?(:native)
           when :httpgw
             httpgw_config=@opt_mgr.get_option(:transfer_info,:mandatory)
             new_agent=Fasp::HttpGW.new(httpgw_config)
