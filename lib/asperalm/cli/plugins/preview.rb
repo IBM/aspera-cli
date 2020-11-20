@@ -212,15 +212,16 @@ module Asperalm
           #original_mtime=DateTime.parse(entry['modified_time'])
           # out: where previews are generated
           local_entry_preview_dir.replace(File.join(@tmp_folder,entry_preview_folder_name(entry)))
+          file_info=@api_node.read("files/#{entry['id']}")[:data]
           #TODO: this does not work because previews is hidden in api
           #this_preview_folder_entries=get_folder_entries(@previews_folder_entry['id'],{:name=>@entry_preview_folder_name})
           gen_infos.each do |gen_info|
             gen_info[:src]=local_original_filepath
             gen_info[:dst]=File.join(local_entry_preview_dir, gen_info[:base_dest])
             # TODO: use this_preview_folder_entries (but it's hidden)
-            gen_info[:preview_exist]=false
+            gen_info[:preview_exist]=file_info.has_key?('preview')
             # TODO: get change time and compare, useful ?
-            gen_info[:preview_newer_than_original] = false
+            gen_info[:preview_newer_than_original] = gen_info[:preview_exist]
           end
         end
 
@@ -237,7 +238,7 @@ module Asperalm
         # entry must contain "parent_file_id" if remote.
         def generate_preview(entry)
           #Log.log.debug(">>>> #{entry}".red)
-          # where previews will be generated for this particular entry
+          # folder where previews will be generated for this particular entry
           local_entry_preview_dir=String.new
           # prepare generic information
           gen_infos=@preview_formats_to_generate.map do |preview_format|
@@ -297,6 +298,9 @@ module Asperalm
           if @access_remote
             # upload
             do_transfer('send',@previews_folder_entry['id'],local_entry_preview_dir)
+            # cleanup after upload
+            FileUtils.rm_rf(local_entry_preview_dir)
+            File.delete(File.join(@tmp_folder,entry['name']))
           end
           # force read file updated previews
           if @option_folder_reset_cache.eql?(:read)
