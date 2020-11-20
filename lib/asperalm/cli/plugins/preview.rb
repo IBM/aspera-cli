@@ -169,8 +169,9 @@ module Asperalm
             # make a dummy call to get some default transfer parameters
             res=@api_node.create('files/upload_setup',{'transfer_requests'=>[{'transfer_request'=>{'paths'=>[{}],'destination_root'=>'/'}}]})
             sample_transfer_spec=res[:data]['transfer_specs'].first['transfer_spec']
-            # add remote_user ?
+            # get ports, anyway that should be 33001 for both. add remote_user ?
             @default_transfer_spec=['ssh_port','fasp_port'].inject({}){|h,e|h[e]=sample_transfer_spec[e];h}
+            # note: we use the same address for ascp than for node api instead of the one from upload_setup
             @default_transfer_spec.merge!({
               'token'            => "Basic #{Base64.strict_encode64("#{@access_key_self['id']}:#{self.options.get_option(:password,:mandatory)}")}",
               'remote_host'      => @transfer_server_address,
