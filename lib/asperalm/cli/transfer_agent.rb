@@ -57,66 +57,66 @@ module Asperalm
 
       # analyze options and create new agent if not already created or set
       def set_agent_by_options
-        if @agent.nil?
-          agent_type=@opt_mgr.get_option(:transfer,:mandatory)
-          case agent_type
-          when :direct
-            resume_policy=@opt_mgr.get_option(:transfer_info,:optional)
-            resume_policy=resume_policy.symbolize_keys if resume_policy.is_a?(Hash)
-            new_agent=Fasp::Local.new(resume_policy)
-            new_agent.quiet=false if @opt_mgr.get_option(:progress,:mandatory).eql?(:native)
-          when :httpgw
-            httpgw_config=@opt_mgr.get_option(:transfer_info,:mandatory)
-            new_agent=Fasp::HttpGW.new(httpgw_config)
-          when :connect
-            new_agent=Fasp::Connect.new
-          when :node
-            # way for code to setup alternate node api in avance
-            # support: @preset:<name>
-            # support extended values
-            node_config=@opt_mgr.get_option(:transfer_info,:optional)
-            # if not specified: use default node
-            if node_config.nil?
-              param_set_name=@config.get_plugin_default_config_name(:node)
-              raise CliBadArgument,"No default node configured, Please specify --#{:transfer_info.to_s.gsub('_','-')}" if param_set_name.nil?
-              node_config=@config.preset_by_name(param_set_name)
-            end
-            Log.log.debug("node=#{node_config}")
-            raise CliBadArgument,"the node configuration shall be Hash, not #{node_config.class} (#{node_config}), use either @json:<json> or @preset:<parameter set name>" if !node_config.is_a?(Hash)
-            # now check there are required parameters
-            sym_config=[:url,:username,:password].inject({}) do |h,param|
-              raise CliBadArgument,"missing parameter [#{param}] in node specification: #{node_config}" if !node_config.has_key?(param.to_s)
-              h[param]=node_config[param.to_s]
-              h
-            end
-            node_api=Rest.new({
-              :base_url => sym_config[:url],
-              :auth     => {
-              :type     =>:basic,
-              :username => sym_config[:username],
-              :password => sym_config[:password]
-              }})
-            new_agent=Fasp::Node.new(node_api)
-          when :aoc
-            aoc_config=@opt_mgr.get_option(:transfer_info,:optional)
-            if aoc_config.nil?
-              param_set_name=@config.get_plugin_default_config_name(:aspera)
-              raise CliBadArgument,"No default AoC configured, Please specify --#{:transfer_info.to_s.gsub('_','-')}" if param_set_name.nil?
-              aoc_config=@config.preset_by_name(param_set_name)
-            end
-            Log.log.debug("aoc=#{aoc_config}")
-            raise CliBadArgument,"the aoc configuration shall be Hash, not #{aoc_config.class} (#{aoc_config}), refer to manual" if !aoc_config.is_a?(Hash)
-            # convert keys from string (config) to symbol (agent)
-            aoc_config=aoc_config.symbolize_keys
-            # convert auth value from string (config) to symbol (agent)
-            aoc_config[:auth]=aoc_config[:auth].to_sym if aoc_config[:auth].is_a?(String)
-            # private key could be @file:... in config
-            aoc_config[:private_key]=ExtendedValue.instance.evaluate(aoc_config[:private_key])
-            new_agent=Fasp::Aoc.new(aoc_config)
-          else raise "INTERNAL ERROR"
+        return nil unless @agent.nil?
+        agent_type=@opt_mgr.get_option(:transfer,:mandatory)
+        case agent_type
+        when :direct
+          resume_policy=@opt_mgr.get_option(:transfer_info,:optional)
+          resume_policy=resume_policy.symbolize_keys if resume_policy.is_a?(Hash)
+          new_agent=Fasp::Local.new(resume_policy)
+          new_agent.quiet=false if @opt_mgr.get_option(:progress,:mandatory).eql?(:native)
+        when :httpgw
+          httpgw_config=@opt_mgr.get_option(:transfer_info,:mandatory)
+          new_agent=Fasp::HttpGW.new(httpgw_config)
+        when :connect
+          new_agent=Fasp::Connect.new
+        when :node
+          # way for code to setup alternate node api in avance
+          # support: @preset:<name>
+          # support extended values
+          node_config=@opt_mgr.get_option(:transfer_info,:optional)
+          # if not specified: use default node
+          if node_config.nil?
+            param_set_name=@config.get_plugin_default_config_name(:node)
+            raise CliBadArgument,"No default node configured, Please specify --#{:transfer_info.to_s.gsub('_','-')}" if param_set_name.nil?
+            node_config=@config.preset_by_name(param_set_name)
           end
-          set_agent_instance(new_agent)
+          Log.log.debug("node=#{node_config}")
+          raise CliBadArgument,"the node configuration shall be Hash, not #{node_config.class} (#{node_config}), use either @json:<json> or @preset:<parameter set name>" if !node_config.is_a?(Hash)
+          # now check there are required parameters
+          sym_config=[:url,:username,:password].inject({}) do |h,param|
+            raise CliBadArgument,"missing parameter [#{param}] in node specification: #{node_config}" if !node_config.has_key?(param.to_s)
+            h[param]=node_config[param.to_s]
+            h
+          end
+          node_api=Rest.new({
+            :base_url => sym_config[:url],
+            :auth     => {
+            :type     =>:basic,
+            :username => sym_config[:username],
+            :password => sym_config[:password]
+            }})
+          new_agent=Fasp::Node.new(node_api)
+        when :aoc
+          aoc_config=@opt_mgr.get_option(:transfer_info,:optional)
+          if aoc_config.nil?
+            param_set_name=@config.get_plugin_default_config_name(:aspera)
+            raise CliBadArgument,"No default AoC configured, Please specify --#{:transfer_info.to_s.gsub('_','-')}" if param_set_name.nil?
+            aoc_config=@config.preset_by_name(param_set_name)
+          end
+          Log.log.debug("aoc=#{aoc_config}")
+          raise CliBadArgument,"the aoc configuration shall be Hash, not #{aoc_config.class} (#{aoc_config}), refer to manual" if !aoc_config.is_a?(Hash)
+          # convert keys from string (config) to symbol (agent)
+          aoc_config=aoc_config.symbolize_keys
+          # convert auth value from string (config) to symbol (agent)
+          aoc_config[:auth]=aoc_config[:auth].to_sym if aoc_config[:auth].is_a?(String)
+          # private key could be @file:... in config
+          aoc_config[:private_key]=ExtendedValue.instance.evaluate(aoc_config[:private_key])
+          new_agent=Fasp::Aoc.new(aoc_config)
+        else
+          raise "INTERNAL ERROR"
         end
+        set_agent_instance(new_agent)
         return nil
       end
 
