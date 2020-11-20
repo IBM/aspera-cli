@@ -12,16 +12,27 @@ module Asperalm
           @sessions={}
         end
 
+        def reset
+          @progress_bar=nil
+          @sessions={}
+        end
+
         BYTE_PER_MEGABIT=1024*1024/8
 
         def update_total
-          @progress_bar.total=@sessions.values.inject(0){|m,s|m+=s[:job_size].to_i;m;}
-        rescue nil
+          begin
+            @progress_bar.total=@sessions.values.inject(0){|m,s|m+=s[:job_size].to_i;m;}
+          rescue
+            nil
+          end
         end
 
         def update_progress
-          @progress_bar.progress=@sessions.values.inject(0){|m,s|m+=s[:current].to_i;m;}
-        rescue nil
+          begin
+            @progress_bar.progress=@sessions.values.inject(0){|m,s|m+=s[:current].to_i;m;}
+          rescue
+            nil
+          end
         end
 
         def event_enhanced(data)
