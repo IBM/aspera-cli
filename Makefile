@@ -865,7 +865,7 @@ t/prev_scan:
 	@touch $@
 t/prev_folder:
 	@echo $@
-	$(EXETEST) preview folder 1 --skip-types=office --log-level=info --file-access=remote
+	$(EXETEST) preview folder 1 --skip-types=office --log-level=info --file-access=remote --ts=@json:'{"target_rate_kbps":1000000}'
 	@touch $@
 
 tprev: t/prev_check t/prev_dcm t/prev_pdf t/prev_mxf_png_fix t/prev_mxf_png_ani t/prev_mxf_blend t/prev_mxf_reencode t/prev_mxf_clips t/prev_events t/prev_scan
