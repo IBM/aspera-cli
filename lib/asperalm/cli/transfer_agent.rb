@@ -194,12 +194,12 @@ module Asperalm
         case transfer_spec['direction']
         when 'receive'
           # init default if required in any case
-          @transfer_spec_cmdline['destination_root']=destination_folder(transfer_spec['direction'])
+          @transfer_spec_cmdline['destination_root']||=destination_folder(transfer_spec['direction'])
         when 'send'
           case options[:src]
           when :direct
             # init default if required
-            @transfer_spec_cmdline['destination_root']=destination_folder(transfer_spec['direction'])
+            @transfer_spec_cmdline['destination_root']||=destination_folder(transfer_spec['direction'])
           when :node_gen3
             # in that case, destination is set in return by application (API/upload_setup)
             # but to_folder was used in initial API call

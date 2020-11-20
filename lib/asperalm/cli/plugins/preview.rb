@@ -163,7 +163,8 @@ module Asperalm
           return events.last['id'].to_s
         end
 
-        def do_transfer(direction,folder_id,source_filename,destination=nil)
+        def do_transfer(direction,folder_id,source_filename,destination='/')
+          raise "error" if destination.nil? and direction.eql?('receive')
           if @default_transfer_spec.nil?
             # make a dummy call to get some default transfer parameters
             res=@api_node.create('files/upload_setup',{'transfer_requests'=>[{'transfer_request'=>{'paths'=>[{}],'destination_root'=>'/'}}]})
@@ -185,7 +186,9 @@ module Asperalm
             'access_key'     => @access_key_self['id'],
             'file_id'        => folder_id }}}
           })
-          tspec['destination_root']=destination unless destination.nil?
+          # force destination
+          # tspec['destination_root']=destination
+          self.transfer.option_transfer_spec_deep_merge({'destination_root'=>destination})
           Main.result_transfer(self.transfer.start(tspec,{:src=>:node_gen4}))
         end
 
@@ -203,6 +206,7 @@ module Asperalm
         end
 
         def get_infos_remote(gen_infos,entry,local_entry_preview_dir)
+          #Log.log.debug(">>>> get_infos_remote #{entry}".red)
           # store source directly here
           local_original_filepath=File.join(@tmp_folder,entry['name'])
           #original_mtime=DateTime.parse(entry['modified_time'])
@@ -213,8 +217,10 @@ module Asperalm
           gen_infos.each do |gen_info|
             gen_info[:src]=local_original_filepath
             gen_info[:dst]=File.join(local_entry_preview_dir, gen_info[:base_dest])
-            gen_info[:preview_exist]=false # TODO: use this_preview_folder_entries (but it's hidden)
-            gen_info[:preview_newer_than_original] = false # TODO: get change time and compare, useful ?
+            # TODO: use this_preview_folder_entries (but it's hidden)
+            gen_info[:preview_exist]=false
+            # TODO: get change time and compare, useful ?
+            gen_info[:preview_newer_than_original] = false
           end
         end
 
@@ -230,6 +236,7 @@ module Asperalm
         # generate preview files for one folder entry (file) if necessary
         # entry must contain "parent_file_id" if remote.
         def generate_preview(entry)
+          #Log.log.debug(">>>> #{entry}".red)
           # where previews will be generated for this particular entry
           local_entry_preview_dir=String.new
           # prepare generic information
@@ -263,7 +270,7 @@ module Asperalm
               end
             end
             # need generator for further checks
-            gen_info[:generator]=Asperalm::Preview::Generator.new(@gen_options,gen_info[:src],gen_info[:dst],@tmp_folder,entry['content_type'])
+            gen_info[:generator]=Asperalm::Preview::Generator.new(@gen_options,gen_info[:src],gen_info[:dst],@tmp_folder,entry['content_type'],false)
             # get conversion_type (if known) and check if supported
             next false unless gen_info[:generator].supported?
             # shall we skip it ?
@@ -283,7 +290,8 @@ module Asperalm
             begin
               gen_info[:generator].generate
             rescue => e
-              Log.log.error("exception: #{e.message}:\n#{e.backtrace.join("\n")}".red)
+              Log.log.error("#{e.message}")
+              Log.log.debug(e.backtrace.join("\n").red)
             end
           end
           if @access_remote
@@ -295,13 +303,14 @@ module Asperalm
             @api_node.read("files/#{entry['id']}")
           end
         rescue => e
-          Log.log.error("ERROR: #{e.backtrace}")
+          Log.log.error("#{e.message}")
+          Log.log.debug(e.backtrace.join("\n").red)
         end # generate_preview
 
         # scan all files in provided folder entry
         def scan_folder_files(top_entry)
           Log.log.debug("scan: #{top_entry}")
-          # dont use recursive call, use list instead
+          # don't use recursive call, use list instead
           items_to_process=[top_entry]
           while !items_to_process.empty?
             entry=items_to_process.shift
@@ -347,6 +356,7 @@ module Asperalm
             node_info=@api_node.read('info')[:data]
             Log.log.debug("root: #{node_info['docroot']}")
             @access_remote=@option_file_access.eql?(:remote)
+            Log.log.debug("remote: #{@access_remote}")
             Log.log.debug("access key info: #{@access_key_self}")
             #TODO: can the previews folder parameter be read from node api ?
             @option_skip_folders.push('/'+@option_previews_folder)

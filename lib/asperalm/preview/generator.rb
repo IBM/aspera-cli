@@ -27,14 +27,14 @@ module Asperalm
       #   -> preview_format is one of Generator::PREVIEW_FORMATS
       # the conversion video->mp4 is implemented in methods: convert_video_to_mp4_using_<video_conversion>
       #  -> conversion method is one of Generator::VIDEO_CONVERSION_METHODS
-      def initialize(options,src,dst,main_temp_dir,api_mime_type=nil)
+      def initialize(options,src,dst,main_temp_dir,api_mime_type=nil,try_local_mime=true)
         @options=options
         @source_file_path=src
         @destination_file_path=dst
         @temp_folder=File.join(main_temp_dir,@source_file_path.split('/').last.gsub(/\s/, '_').gsub(/\W/, ''))
         # extract preview format from extension of target file
         @preview_format_symb=File.extname(@destination_file_path).gsub(/^\./,'').to_sym
-        @conversion_type=FileTypes.conversion_type(@source_file_path,api_mime_type)
+        @conversion_type=FileTypes.conversion_type(@source_file_path,api_mime_type,try_local_mime)
       end
 
       # name of processing method in this object
