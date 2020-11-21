@@ -288,6 +288,7 @@ module Asperalm
             #  download original file to temp folder
             do_transfer('receive',entry['parent_file_id'],entry['name'],@tmp_folder)
           end
+          Log.log.info("source: #{entry['path']})")
           gen_infos.each do |gen_info|
             gen_info[:generator].generate rescue nil
           end
