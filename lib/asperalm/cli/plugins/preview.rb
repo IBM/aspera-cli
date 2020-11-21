@@ -289,12 +289,7 @@ module Asperalm
             do_transfer('receive',entry['parent_file_id'],entry['name'],@tmp_folder)
           end
           gen_infos.each do |gen_info|
-            begin
-              gen_info[:generator].generate
-            rescue => e
-              Log.log.error("#{e.message}")
-              Log.log.debug(e.backtrace.join("\n").red)
-            end
+            gen_info[:generator].generate rescue nil
           end
           if @access_remote
             # upload
@@ -308,7 +303,7 @@ module Asperalm
             @api_node.read("files/#{entry['id']}")
           end
         rescue => e
-          Log.log.error("#{e.message}")
+          Log.log.error("2:#{e.message}")
           Log.log.debug(e.backtrace.join("\n").red)
         end # generate_preview
 

@@ -72,6 +72,10 @@ module Asperalm
           if result_size > @options.max_size
             Log.log.warn("preview size exceeds maximum #{result_size} > #{@options.max_size}")
           end
+        rescue => e
+          Log.log.error("#{e.message}")
+          Log.log.debug(e.backtrace.join("\n").red)
+          FileUtils.cp(File.expand_path(@preview_format_symb.eql?(:mp4)?'video_error.png':'image_error.png',File.dirname(__FILE__)),@destination_file_path)
         ensure
           FileUtils.rm_rf(@temp_folder)
         end
