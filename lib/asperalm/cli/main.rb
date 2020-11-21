@@ -235,8 +235,8 @@ module Asperalm
           lock_port=@opt_mgr.get_option(:lock_port,:optional)
           if !lock_port.nil?
             begin
-              # no need to close later, will be freed on process exit
-              TCPServer.new('127.0.0.1',lock_port.to_i)
+              # no need to close later, will be freed on process exit. must save in member else it is garbage collected
+              @tcp_server=TCPServer.new('127.0.0.1',lock_port.to_i)
             rescue => e
               raise CliError,"Another instance is already running (lock port=#{lock_port})."
             end
