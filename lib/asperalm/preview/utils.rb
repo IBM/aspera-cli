@@ -46,7 +46,10 @@ module Asperalm
           raise "Error: #{bin} is not in the PATH"
         end
         unless exit_status.success?
-          Log.log.error("Got child status".red+" #{exit_status}\ncommandline: #{command}\nstdout: #{stdout}\nstderr: #{stderr}")
+          Log.log.error("commandline: #{command}")
+          Log.log.error("Error code: #{exit_status}")
+          Log.log.error("stdout: #{stdout}")
+          Log.log.error("stderr: #{stderr}")
           raise "command returned error"
         end
         stdout_return.replace(stdout) unless stdout_return.nil?
