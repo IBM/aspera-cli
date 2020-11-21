@@ -303,7 +303,7 @@ module Asperalm
             @api_node.read("files/#{entry['id']}")
           end
         rescue => e
-          Log.log.error("2:#{e.message}")
+          Log.log.error("#{e.message}")
           Log.log.debug(e.backtrace.join("\n").red)
         end # generate_preview
 
