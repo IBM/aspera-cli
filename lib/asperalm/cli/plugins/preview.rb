@@ -124,8 +124,8 @@ module Asperalm
             next unless event['data']['status'].eql?('completed')
             next unless event['data']['error_code'].eql?(0)
             next unless event['data'].dig('tags','aspera',PREV_GEN_TAG).nil?
-            #folder_id=event.dig('data','tags','aspera','node','file_id')
-            folder_id=event.dig('data','file_id')
+            folder_id=event.dig('data','tags','aspera','node','file_id')
+            folder_id||=event.dig('data','file_id')
             next if folder_id.nil?
             folder_entry=@api_node.read("files/#{folder_id}")[:data] rescue nil
             next if folder_entry.nil?
@@ -214,8 +214,9 @@ module Asperalm
           # out: where previews are generated
           local_entry_preview_dir.replace(File.join(@tmp_folder,entry_preview_folder_name(entry)))
           file_info=@api_node.read("files/#{entry['id']}")[:data]
-          #TODO: this does not work because previews is hidden in api
+          #TODO: this does not work because previews is hidden in api (gen4)
           #this_preview_folder_entries=get_folder_entries(@previews_folder_entry['id'],{:name=>@entry_preview_folder_name})
+          # TODO: use gen3 api to list files and get date
           gen_infos.each do |gen_info|
             gen_info[:src]=local_original_filepath
             gen_info[:dst]=File.join(local_entry_preview_dir, gen_info[:base_dest])
@@ -288,7 +289,7 @@ module Asperalm
             #  download original file to temp folder
             do_transfer('receive',entry['parent_file_id'],entry['name'],@tmp_folder)
           end
-          Log.log.info("source: #{entry['path']})")
+          Log.log.info("source: #{entry['id']}: #{entry['path']})")
           gen_infos.each do |gen_info|
             gen_info[:generator].generate rescue nil
           end
