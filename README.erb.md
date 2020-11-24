@@ -163,17 +163,22 @@ Once installed, you can install latest ruby:
 If you dont want all users to have ruby by default, 
 rename the file: `/etc/profile.d/rvm.sh` with another extension, and source it to get rvm.
 
-Alternatively, only if you know what you do, on RPM based systems (CentOs, Redhat), install the ruby provided by yum which may be 2.0. Pre-install jwt for older Ruby < 2.1.
+Alternatively, only if you know what you do, on RPM based systems (CentOs, Redhat), install the ruby provided by yum which may be 2.0. 
 
 ```
-# yum install -y ruby
+# yum install -y ruby rubygems ruby-json
+```
+
+If necessary, pre-install jwt for older Ruby < 2.1.
+
+```
 # gem install jwt -v 1.5.6
 ```
 
 You can cleanup your whole yum-installed ruby environment like this to uninstall:
 
 ```
-gem uninstall $(ls $(gem env gemdir)/gems/|sed -e 's/-[^-]*$//')
+gem uninstall $(ls $(gem env gemdir)/gems/|sed -e 's/-[^-]*$//'|sort -u)
 yum remove -y ruby ruby-libs
 ```
 
@@ -2188,7 +2193,7 @@ yum install -y ImageMagick optipng
 
 ```
 pushd /tmp
-wget http://johnvansickle.com/ffmpeg/releases/ffmpeg-release-64bit-static.tar.xz
+wget https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz
 mkdir -p /opt/
 cd /opt/
 tar xJvf /tmp/ffmpeg-release-64bit-static.tar.xz
