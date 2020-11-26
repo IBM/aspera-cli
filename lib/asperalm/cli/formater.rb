@@ -161,18 +161,14 @@ module Asperalm
             # :single_object is a simple hash table  (can be nested)
             raise "internal error: expecting Hash: got #{res_data.class}: #{res_data}" unless res_data.is_a?(Hash)
             final_table_columns = results[:columns] || ['key','value']
-            asked_fields=res_data.keys
-            case user_asked_fields_list_str
-            when FIELDS_DEFAULT;asked_fields=results[:fields] if results.has_key?(:fields)
-            when FIELDS_ALL;# keep all
-            else
-              asked_fields=user_asked_fields_list_str.split(',')
-            end
             if @option_flat_hash
               self.class.flatten_object(res_data,results[:option_expand_last])
               self.class.flatten_name_value_list(res_data)
-              # first level keys are potentially changed
-              asked_fields=res_data.keys
+            end
+            asked_fields=case user_asked_fields_list_str
+            when FIELDS_DEFAULT; results[:fields]||res_data.keys
+            when FIELDS_ALL;     res_data.keys
+            else                 user_asked_fields_list_str.split(',')
             end
             table_rows_hash_val=asked_fields.map { |i| { final_table_columns.first => i, final_table_columns.last => res_data[i] } }
           when :value_list  # goes to table display
