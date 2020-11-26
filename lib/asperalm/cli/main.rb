@@ -204,11 +204,10 @@ module Asperalm
 
       public
 
-      # plugins shall use this method to check a single transfer
-      # start transfer and wait for completion of all jobs
+      # Process statuses of finished transfer sessions
+      # raise exception if there is one error
+      # else returns an empty status
       def self.result_transfer(statuses)
-        # TODO: if not one shot, then wait for status
-        #statuses=self.start(transfer_spec,options)
         worst=TransferAgent.session_status(statuses)
         raise worst unless worst.eql?(:success)
         return Main.result_nothing
