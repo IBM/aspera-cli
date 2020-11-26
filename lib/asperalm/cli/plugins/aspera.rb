@@ -748,7 +748,10 @@ module Asperalm
 
               # execute transfer
               node_file = {node_info: node_info, file_id: package_info['contents_file_id']}
-              return Main.result_transfer(transfer_start(OnCloud::PACKAGES_APP,'send',node_file,OnCloud.package_tags(package_info,'upload')))
+              # raise esception if at least one error
+              Main.result_transfer(transfer_start(OnCloud::PACKAGES_APP,'send',node_file,OnCloud.package_tags(package_info,'upload')))
+              # return all info on package
+              return { :type=>:single_object, :data =>package_info}
             when :recv
               if !@url_token_data.nil?
                 assert_public_link_types(['view_received_package'])
