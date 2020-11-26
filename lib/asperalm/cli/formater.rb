@@ -1,8 +1,10 @@
 #require 'text-table'
 require 'terminal-table'
+
 #require 'fileutils'
 require 'yaml'
 require 'pp'
+
 module Asperalm
   module Cli
     # Take care of output
@@ -36,18 +38,13 @@ module Asperalm
       end
 
       # main output method
-      def display_message(level,message)
-        case level
-        when :info
-          if @opt_mgr.get_option(:format,:mandatory).eql?(:table) and
-          @opt_mgr.get_option(:display,:mandatory).eql?(:info)
-            STDOUT.puts(message)
-          end
-        when :data
-          STDOUT.puts(message) unless @opt_mgr.get_option(:display,:mandatory).eql?(:error)
-        when :error
-          STDERR.puts(message)
-        else raise "bad case"
+      def display_message(message_level,message)
+        display_level=@opt_mgr.get_option(:display,:mandatory)
+        case message_level
+        when :info; STDOUT.puts(message) if display_level.eql?(:info)
+        when :data; STDOUT.puts(message) unless display_level.eql?(:error)
+        when :error; STDERR.puts(message)
+        else raise "wrong message_level:#{message_level}"
         end
       end
 
