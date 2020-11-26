@@ -60,7 +60,6 @@ module Asperalm
       # start_transfer(transfer_spec,options) : start and wait for completion
       # wait_for_transfers_completion : wait for termination of all transfers, @return list of : :success or error message
       # optional: shutdown
-
       def self.validate_status_list(statuses)
         raise "internal error: bad statuses type: #{statuses.class}" unless statuses.is_a?(Array)
         raise "internal error: bad statuses content: #{statuses}" unless statuses.select{|i|!i.eql?(:success) and !i.is_a?(StandardError)}.empty?
