@@ -80,7 +80,8 @@ module Asperalm
           end
           sleep 1
         end
-        return [] #TODO
+        #TODO get status of sessions
+        return [] 
       end
     end
   end
