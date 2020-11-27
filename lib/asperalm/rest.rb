@@ -242,7 +242,7 @@ module Asperalm
         end
         Log.dump("result: parsed: #{result_mime}",result[:data])
         Log.log.debug("result: code=#{result[:http].code}")
-        RestErrorAnalyzer.new(req,result).raiseOnError
+        RestErrorAnalyzer.instance.raiseOnError(req,result)
       rescue RestCallError => e
         # not authorized: oauth token expired
         if @params[:not_auth_codes].include?(result[:http].code.to_s) and call_data[:auth][:type].eql?(:oauth2)
