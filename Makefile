@@ -66,7 +66,7 @@ README.md: README.erb.md $(INCL_COMMANDS) $(INCL_USAGE) $(INCL_ASESSION)
 	COMMANDS=$(INCL_COMMANDS) USAGE=$(INCL_USAGE) ASESSION=$(INCL_ASESSION) VERSION=`$(EXETEST) --version` TOOLNAME=$(EXENAME) erb README.erb.md > README.md
 
 $(INCL_COMMANDS): Makefile
-	sed -nEe 's/.*\$$\(EXETEST.?\)/$(EXENAME)/p' Makefile|grep -v 'Sales Engineering'|sed -E -e 's/ibmfaspex.asperasoft.com/faspex.mycompany.com/g;s/(")(url|api_key|username|password|access_key_id|secret_access_key|pass)(":")[^"]*(")/\1\2\3my_\2_here\4/g;s/--(secret|url|password|username)=[^ ]*/--\1=my_\1_here/g;s/Aspera123_/_my_pass_/g;s/\$$\(([^)]+)\)/\1/g'|grep -v 'localhost:9443'|sort -u > $(INCL_COMMANDS)
+	sed -nEe 's/.*\$$\(EXETEST.?\)/$(EXENAME)/p' Makefile|grep -v 'Sales Engineering'|sed -E -e 's/(")(url|api_key|username|password|access_key_id|secret_access_key|pass)(":")[^"]*(")/\1\2\3my_\2_here\4/g;s/--(secret|url|password|username)=[^ ]*/--\1=my_\1_here/g;s/Aspera123_/_my_pass_/g;s/\$$\(([^)]+)\)/\1/g'|grep -v 'localhost:9443'|sort -u > $(INCL_COMMANDS)
 incl: Makefile
 	sed -nEe 's/^	\$$\(EXETEST.?\)/$(EXENAME)/p' Makefile|sed -Ee 's/\$$\(([^)]+)\)/\&lt;\1\&gt;/g'
 # depends on all sources, so regenerate always
@@ -202,17 +202,13 @@ t/serv_df:
 	@echo $@
 	$(EXETEST) server df
 	@touch $@
-t/asession:
-	@echo $@
-	$(BINDIR)/asession @json:'{"remote_host":"demo.asperasoft.com","remote_user":"$(CF_HSTS_SSH_USER)","ssh_port":33001,"remote_password":"$(CF_HSTS_SSH_PASS)","direction":"receive","destination_root":"./test.dir","paths":[{"source":"/aspera-test-dir-tiny/200KB.1"}]}'
-	@touch $@
 t/serv_nodeadmin:
 	@echo $@
-	$(EXETEST) -N server --url=ssh://$(CF_HSTS1_ADDR):33001 --username=root --ssh-keys=~/.ssh/id_rsa nodeadmin -- -l
+	$(EXETEST) -N server --url=ssh://$(CF_HSTS_ADDR):33001 --username=$(CF_HSTS_ADMIN_USER) --ssh-keys=$(CF_HSTS_TEST_KEY) nodeadmin -- -l
 	@touch $@
 t/serv_nagios_webapp:
 	@echo $@
-	$(EXETEST) -N server --url=$(CF_FASPEX_SSH_URL) --username=root --ssh-keys=~/.ssh/id_rsa --format=nagios nagios app_services
+	$(EXETEST) -N server --url=$(CF_FASPEX_SSH_URL) --username=$(CF_HSTS_ADMIN_USER) --ssh-keys=$(CF_HSTS_TEST_KEY) --format=nagios nagios app_services
 	@touch $@
 t/serv_nagios_transfer:
 	@echo $@
@@ -220,11 +216,15 @@ t/serv_nagios_transfer:
 	@touch $@
 t/serv3:
 	@echo $@
-	$(EXETEST) -N server --url=$(CF_FASPEX_SSH_URL) --username=root --ssh-keys=~/.ssh/id_rsa ctl all:status
+	$(EXETEST) -N server --url=$(CF_FASPEX_SSH_URL) --username=$(CF_HSTS_ADMIN_USER) --ssh-keys=$(CF_HSTS_TEST_KEY) ctl all:status
 	@touch $@
 t/serv_key:
 	@echo $@
 	$(EXETEST) -Pserver_eudemo_key server br /
+	@touch $@
+t/asession:
+	@echo $@
+	$(BINDIR)/asession @json:'{"remote_host":"demo.asperasoft.com","remote_user":"$(CF_HSTS_SSH_USER)","ssh_port":33001,"remote_password":"$(CF_HSTS_SSH_PASS)","direction":"receive","destination_root":"./test.dir","paths":[{"source":"/aspera-test-dir-tiny/200KB.1"}]}'
 	@touch $@
 
 tfasp: t/serv_browse t/serv_mkdir t/serv_upload t/serv_md5 t/serv_down_lcl t/serv_down_from_node t/serv_cp t/serv_mv t/serv_delete t/serv_cleanup1 t/serv_info t/serv_du t/serv_df t/asession t/serv_nodeadmin t/serv_nagios_webapp t/serv_nagios_transfer t/serv3 t/serv_key
@@ -240,11 +240,11 @@ t/fx_psnd:
 t/fx_prs: $(LOCAL_FOLDER)/.exists
 	@echo $@
 	@sleep 5
-	$(EXETEST) faspex package recv --box=sent --to-folder=$(LOCAL_FOLDER) --id=$$($(EXETEST) faspex package list --fields=package_id --format=csv --box=sent|tail -n 1)
+	$(EXETEST) faspex package recv --box=sent --to-folder=$(LOCAL_FOLDER) --id=$$($(EXETEST) faspex package list --box=sent --fields=package_id --format=csv --display=data|tail -n 1)
 	@touch $@
 t/fx_pri: $(LOCAL_FOLDER)/.exists
 	@echo $@
-	$(EXETEST) faspex package recv --to-folder=$(LOCAL_FOLDER) --id=$$($(EXETEST) faspex package list --fields=package_id --format=csv|tail -n 1)
+	$(EXETEST) faspex package recv --to-folder=$(LOCAL_FOLDER) --id=$$($(EXETEST) faspex package list --fields=package_id --format=csv --display=data|tail -n 1)
 	@touch $@
 t/fx_prl:
 	@echo $@
@@ -301,7 +301,7 @@ t/nd2: $(LOCAL_FOLDER)/.exists
 	@touch $@
 t/nd3:
 	@echo $@
-	$(EXETEST) --no-default node --url=$(CF_HSTS_NODE_URL) --username=$(CF_HSTS_NODE_USER) --password=$(CF_HSTS_NODE_PASS) --insecure=yes upload --to-folder=$(CF_HSTS_FOLDER_UPLOAD) --sources=@ts --ts=@json:'{"paths":[{"source":"/aspera-test-dir-small/10MB.1"}],"remote_password":"$(CF_HSTS_SSH_PASS)","precalculate_job_size":true}' --transfer=node --transfer-info=@json:'{"url":"https://$(CF_HSTS1_ADDR):9092","username":"$(CF_HSTS_NODE_USER)","password":"'$(CF_HSTS_NODE_PASS)'"}' 
+	$(EXETEST) --no-default node --url=$(CF_HSTS_NODE_URL) --username=$(CF_HSTS_NODE_USER) --password=$(CF_HSTS_NODE_PASS) --insecure=yes upload --to-folder=$(CF_HSTS_FOLDER_UPLOAD) --sources=@ts --ts=@json:'{"paths":[{"source":"/aspera-test-dir-small/10MB.1"}],"remote_password":"$(CF_HSTS_SSH_PASS)","precalculate_job_size":true}' --transfer=node --transfer-info=@json:'{"url":"https://$(CF_HSTS_ADDR):9092","username":"$(CF_HSTS_NODE_USER)","password":"'$(CF_HSTS_NODE_PASS)'"}' 
 	$(EXETEST) --no-default node --url=$(CF_HSTS_NODE_URL) --username=$(CF_HSTS_NODE_USER) --password=$(CF_HSTS_NODE_PASS) --insecure=yes delete /500M.dat
 	@touch $@
 t/nd4:
@@ -319,8 +319,8 @@ t/nd4:
 # test creation of access key
 t/nd5:
 	@echo $@
-	$(EXETEST) -N --url=https://localhost:9092 --username=node_xfer --password=$(CF_COMMON_PASS) node acc create --value=@json:'{"id":"aoc_1","secret":"'$(CF_COMMON_PASS)'","storage":{"type":"local","path":"/"}}'
-	sleep 2&&$(EXETEST) -N --url=https://localhost:9092 --username=node_xfer --password=$(CF_COMMON_PASS) node acc delete --id=aoc_1
+	$(EXETEST) -N --url=$(CF_HSTS2_URL) --username=$(CF_HSTS2_NODE_USER) --password=$(CF_HSTS2_NODE_PASS) node acc create --value=@json:'{"id":"aoc_1","storage":{"type":"local","path":"/"}}'
+	sleep 2&&$(EXETEST) -N --url=$(CF_HSTS2_URL) --username=$(CF_HSTS2_NODE_USER) --password=$(CF_HSTS2_NODE_PASS) node acc delete --id=aoc_1
 	@touch $@
 t/nd6:
 	@echo $@
@@ -442,7 +442,7 @@ t/aocp2:
 	@touch $@
 t/aocp3:
 	@echo $@
-	$(EXETEST) aspera packages recv --id=$$($(EXETEST) aspera packages list --format=csv --fields=id|head -n 1)
+	$(EXETEST) aspera packages recv --id=$$($(EXETEST) aspera packages list --format=csv --fields=id --display=data|head -n 1)
 	@touch $@
 t/aocp4:
 	@echo $@
@@ -477,27 +477,27 @@ t/aoc8:
 	@touch $@
 t/aoc9:
 	@echo $@
-	$(EXETEST) aspera admin resource node --name=eudemo-sedemo --secret=$(CF_COMMON_PASS) v3 events
+	$(EXETEST) aspera admin resource node --name=$(CF_AOC_NODE1_NAME) --secret=$(CF_AOC_NODE1_SECRET) v3 events
 	@touch $@
 t/aoc11:
 	@echo $@
-	$(EXETEST) aspera admin resource node --name=eudemo-sedemo --secret=$(CF_COMMON_PASS) v3 access_key create --value=@json:'{"id":"testsub1","storage":{"path":"/folder1"}}'
+	$(EXETEST) aspera admin resource node --name=$(CF_AOC_NODE1_NAME) --secret=$(CF_AOC_NODE1_SECRET) v3 access_key create --value=@json:'{"id":"testsub1","storage":{"path":"/folder1"}}'
 	@touch $@
 t/aoc12:
 	@echo $@
-	$(EXETEST) aspera admin resource node --name=eudemo-sedemo --secret=$(CF_COMMON_PASS) v3 access_key delete --id=testsub1
+	$(EXETEST) aspera admin resource node --name=$(CF_AOC_NODE1_NAME) --secret=$(CF_AOC_NODE1_SECRET) v3 access_key delete --id=testsub1
 	@touch $@
 t/aoc9b:
 	@echo $@
-	$(EXETEST) aspera admin resource node --name=eudemo-sedemo --secret=$(CF_COMMON_PASS) v4 browse /
+	$(EXETEST) aspera admin resource node --name=$(CF_AOC_NODE1_NAME) --secret=$(CF_AOC_NODE1_SECRET) v4 browse /
 	@touch $@
 t/aoc10:
 	@echo $@
-	$(EXETEST) aspera admin resource node --name=eudemo-sedemo --secret=$(CF_COMMON_PASS) v4 mkdir /folder1
+	$(EXETEST) aspera admin resource node --name=$(CF_AOC_NODE1_NAME) --secret=$(CF_AOC_NODE1_SECRET) v4 mkdir /folder1
 	@touch $@
 t/aoc13:
 	@echo $@
-	$(EXETEST) aspera admin resource node --name=eudemo-sedemo --secret=$(CF_COMMON_PASS) v4 delete /folder1
+	$(EXETEST) aspera admin resource node --name=$(CF_AOC_NODE1_NAME) --secret=$(CF_AOC_NODE1_SECRET) v4 delete /folder1
 	@touch $@
 t/aoc14:
 	@echo $@
@@ -546,7 +546,7 @@ t/aocat13:
 	@touch $@
 taocts: t/aocat4 t/aocat5 t/aocat6 t/aocat7 t/aocat8 t/aocat9 t/aocat10 t/aocat11 t/aocat13
 t/wf_id: t/aocauto1
-	$(EXETEST) aspera automation workflow list --select=@json:'{"name":"laurent_test"}' --fields=id --format=csv > $@
+	$(EXETEST) aspera automation workflow list --select=@json:'{"name":"laurent_test"}' --fields=id --format=csv --display=data> $@
 t/aocauto1:
 	@echo $@
 	$(EXETEST) aspera automation workflow create --value=@json:'{"name":"laurent_test"}'
@@ -583,19 +583,19 @@ t/o3:
 	@touch $@
 t/o4:
 	@echo $@
-	$(EXETEST) orchestrator workflow --id=$(CF_WORKFLOW_ID) inputs
+	$(EXETEST) orchestrator workflow --id=$(CF_ORCH_WORKFLOW_ID) inputs
 	@touch $@
 t/o5:
 	@echo $@
-	$(EXETEST) orchestrator workflow --id=$(CF_WORKFLOW_ID) status
+	$(EXETEST) orchestrator workflow --id=$(CF_ORCH_WORKFLOW_ID) status
 	@touch $@
 t/o6:
 	@echo $@
-	$(EXETEST) orchestrator workflow --id=$(CF_WORKFLOW_ID) start --params=@json:'{"Param":"laurent"}'
+	$(EXETEST) orchestrator workflow --id=$(CF_ORCH_WORKFLOW_ID) start --params=@json:'{"Param":"laurent"}'
 	@touch $@
 t/o7:
 	@echo $@
-	$(EXETEST) orchestrator workflow --id=$(CF_WORKFLOW_ID) start --params=@json:'{"Param":"laurent"}' --result=ResultStep:Complete_status_message
+	$(EXETEST) orchestrator workflow --id=$(CF_ORCH_WORKFLOW_ID) start --params=@json:'{"Param":"laurent"}' --result=ResultStep:Complete_status_message
 	@touch $@
 t/o8:
 	@echo $@
@@ -890,7 +890,7 @@ contents:
 	mkdir -p contents
 t/sync1: contents
 	@echo $@
-	$(EXETEST) sync start --parameters=@json:'{"sessions":[{"name":"test","reset":true,"remote_dir":"/sync_test","local_dir":"contents","host":"$(CF_HSTS1_ADDR)","user":"user1","private_key_path":"/Users/laurent/.ssh/id_rsa"}]}'
+	$(EXETEST) sync start --parameters=@json:'{"sessions":[{"name":"test","reset":true,"remote_dir":"/sync_test","local_dir":"contents","host":"$(CF_HSTS_ADDR)","user":"user1","private_key_path":"$(CF_HSTS_TEST_KEY)"}]}'
 	@touch $@
 tsync: t/sync1
 t:
@@ -924,7 +924,7 @@ t/f5_3:
 	@touch $@
 t/f5_4:
 	@echo $@
-	LAST_PACK=$$(mlia faspex5 pack list --value=@json:'{"type":"received","subtype":"mypackages","limit":1}' --fields=id --format=csv);\
+	LAST_PACK=$$(mlia faspex5 pack list --value=@json:'{"type":"received","subtype":"mypackages","limit":1}' --fields=id --format=csv --display=data);\
 	$(EXETEST) faspex5 package receive --id=$$LAST_PACK
 	@touch $@
 
@@ -944,16 +944,16 @@ setupprev:
 	asconfigurator -x "user;user_name,xfer;file_restriction,|*;token_encryption_key,1234"
 	asconfigurator -x "server;activity_logging,true;activity_event_logging,true"
 	sudo asnodeadmin --reload
-	-$(EXE_NOMAN) node access_key --id=testkey delete --no-default --url=https://localhost:9092 --username=node_xfer --password=$(CF_COMMON_PASS)
-	$(EXE_NOMAN) node access_key create --value=@json:'{"id":"testkey","name":"the test key","secret":"secret","storage":{"type":"local", "path":"/Users/xfer/docroot"}}' --no-default --url=https://localhost:9092 --username=node_xfer --password=$(CF_COMMON_PASS) 
-	$(EXE_NOMAN) config id test_preview update --url=https://localhost:9092 --username=testkey --password=secret
+	-$(EXE_NOMAN) node access_key --id=testkey delete --no-default --url=$(CF_HSTS2_URL) --username=$(CF_HSTS2_NODE_USER) --password=$(CF_HSTS2_NODE_PASS)
+	$(EXE_NOMAN) node access_key create --value=@json:'{"id":"testkey","name":"the test key","secret":"secret","storage":{"type":"local", "path":"/Users/xfer/docroot"}}' --no-default --url=$(CF_HSTS2_URL) --username=$(CF_HSTS2_NODE_USER) --password=$(CF_HSTS2_NODE_PASS) 
+	$(EXE_NOMAN) config id test_preview update --url=$(CF_HSTS2_URL) --username=testkey --password=secret
 	$(EXE_NOMAN) config id default set preview test_preview
 
 # ruby -e 'require "yaml";YAML.load_file("lib/asperalm/preview_generator_formats.yml").each {|k,v|puts v};'|while read x;do touch /Users/xfer/docroot/sample${x};done
 
 preparelocal:
 	sudo asnodeadmin --reload
-	sudo asnodeadmin -a -u node_xfer -p $(CF_COMMON_PASS) -x xfer
+	sudo asnodeadmin -a -u $(CF_HSTS2_NODE_USER) -p $(CF_HSTS2_NODE_PASS) -x xfer
 	sudo asconfigurator -x "user;user_name,xfer;file_restriction,|*;absolute,"
 	sudo asnodeadmin --reload
 noderestart:
