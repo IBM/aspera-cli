@@ -78,6 +78,8 @@ module Asperalm
         PersistencyFile.default_folder=@plugin_env[:config].main_folder
         OauthCache.instance.persistency_folder=@plugin_env[:config].main_folder
         Fasp::Parameters.file_list_folder=File.join(@plugin_env[:config].main_folder,'filelists')
+        # register aspera REST call error handlers
+        Asperalm::RestErrorsAspera.registerHandlers
       end
 
       def app_banner

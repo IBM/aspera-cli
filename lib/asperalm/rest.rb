@@ -2,6 +2,7 @@ require 'asperalm/log'
 require 'asperalm/oauth'
 require 'asperalm/rest_error_analyzer'
 require 'asperalm/hash_ext'
+require 'asperalm/rest_errors_aspera'
 require 'net/http'
 require 'net/https'
 require 'json'
@@ -25,7 +26,6 @@ module Asperalm
   # rest call errors are raised as exception RestCallError
   # and error are analyzed in RestErrorAnalyzer
   class Rest
-
     private
     # create and start keep alive connection on demand
     def http_session

@@ -6,6 +6,7 @@ require 'asperalm/fasp/listener'
 require 'asperalm/fasp/installation'
 require 'asperalm/log'
 require 'asperalm/rest'
+require 'asperalm/rest_errors_aspera'
 require 'json'
 
 ##############################################################
@@ -18,6 +19,9 @@ Asperalm::Log.instance.level=:debug
 Asperalm::Fasp::Installation.instance.ascp_path='/Users/laurent/Applications/Aspera Connect.app/Contents/Resources/ascp'
 # some required files are generated here (keys, certs)
 Asperalm::Fasp::Installation.instance.config_folder = '.'
+
+# register aspera REST call error handlers
+Asperalm::RestErrorsAspera.registerHandlers
 
 # another way is to detect installed products and use one of them
 #Asperalm::Fasp::Installation.instance.installed_products.each{|p|puts("found: #{p[:name]}")}
