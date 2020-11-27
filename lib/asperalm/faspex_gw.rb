@@ -8,7 +8,7 @@ require 'openssl'
 require 'json'
 
 module Asperalm
-  # this class answers the Faspex /send API and creates a package on Files
+  # this class answers the Faspex /send API and creates a package on Aspera on Cloud
   class FaspexGW
     class FxGwServlet < WEBrick::HTTPServlet::AbstractServlet
       def initialize(server,a_aoc_api_user,a_workspace_id)
