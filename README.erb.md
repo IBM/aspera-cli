@@ -2618,6 +2618,15 @@ So, it evolved into <%=tool%>:
 
 # Release Notes
 
+* 0.11.7
+
+	* rework on rest call error handling
+	* use option `display` with value `data` to remove out of extraneous information
+	* fixed option `lock_port` not working
+	* generate special icon if preview failed
+	* possibility to choose transfer progress bar type with option `progress`
+	* AoC package creation now output package id
+
 * 0.11.6
 
 	* orchestrator : added more choice in auth type
