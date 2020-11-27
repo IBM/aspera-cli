@@ -346,10 +346,14 @@ The behaviour can be controlled with:
 * --ask-options=&lt;yes|no&gt; (default=no)
    * optional parameters/options are asked to user
 
-## Output Format
+## Output
 
 Command execution will result in output (terminal, stdout/stderr).
-The information displayed depends on the action. Types of result include:
+The information displayed depends on the action.
+
+### Types of output data
+
+Depending on action, the output will contain:
 
 * `single_object` : displayed as a 2 dimensional table: one line per attribute, first column is attribute name, and second is atteribute value. Nested hashes are collapsed.
 * `object_list` : displayed as a 2 dimensional table: one line per item, one colum per attribute.
@@ -358,7 +362,15 @@ The information displayed depends on the action. Types of result include:
 * `status` : a message
 * `other_struct` : a complex structure that cannot be displayed as an array
 
-The table style is `:.:` by default and can be customized with parameter: `table_style` (horizontal, vertical and intersection characters).
+### Format of output
+
+By default, result of type single_object and object_list are displayed using format `table`.
+The table style can be customized with parameter: `table_style` (horizontal, vertical and intersection characters) and is `:.:` by default. 
+
+In a table format, when displaying "objects" (single, or list), by default, sub object are
+flatten (option flat_hash). So, object {"user":{"id":1,"name":"toto"}} will have attributes: user.id and user.name. Setting `flat_hash` to `false` will only display one
+field: "user" and value is the sub hash table. When in flatten mode, it is possible to
+filter fields by "dotted" field name.
 
 The style of output can be set using the `format` parameter, supporting:
 
@@ -368,6 +380,8 @@ The style of output can be set using the `format` parameter, supporting:
 * `jsonpp` : JSON pretty printed
 * `yaml` : YAML
 * `csv` : Comma Separated Values
+
+### Filtering columns for `object_list`
 
 Table output can be filtered using the `select` parameter. Example:
 
@@ -383,14 +397,23 @@ $ <%=cmd%> aspera admin res user list --fields=name,email,ats_admin --query=@jso
 
 Note that `select` filters selected elements from the result of API calls, while the `query` parameters gives filtering parameters to the API when listing elements.
 
-In a table format, when displaying "objects" (single, or list), by default, sub object are
-flatten (option flat_hash). So, object {"user":{"id":1,"name":"toto"}} will have attributes: user.id and user.name. Setting flat_hash to "false" will only display one
-field: "user" and value is the sub hash table. When in flatten mode, it is possible to
-filter fields by "dotted" field name.
+### Verbosity of output
 
-Another option is `display`, which accepts values: info, data, error. Level `info` displays all messages (in table mode only). `data` do not display info messages, `error` display only error messages.
+Outpout messages are categorized in 3 types:
 
-By default, a table output will display one line per entry, and columns. Depending on the command, columns may include by default all properties, or only some selected properties. It is possible to define specific colums to be displayed, by setting the `fields` option to one of the following value:
+* `info` output contain additional information, such as number of elements in a table
+* `data` output contain the actual output of the command (object, or list of objects)
+* `error`output contain error messages
+
+The option `display` controls the level of output:
+
+* `info` displays all messages
+* `data` display `data` and `error` messages
+* `error` display only error messages.
+
+### Selection of output object properties
+
+By default, a table output will display one line per entry, and columns for each entries. Depending on the command, columns may include by default all properties, or only some selected properties. It is possible to define specific colums to be displayed, by setting the `fields` option to one of the following value:
 
 * DEF : default display of columns (that's the default, when not set)
 * ALL : all columns available
