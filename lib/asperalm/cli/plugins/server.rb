@@ -121,6 +121,7 @@ module Asperalm
             when :app_services
               # will not work with aspshell, requires Linux/bash
               procs=shell_executor.execute('ps -A -o comm').split("\n")
+              Log.log.debug("found: #{procs}")
               ['asperanoded','asperaredisd'].each do |name|
                 nagios.add_critical('general',"missing process #{name}") unless procs.include?(name)
               end
