@@ -11,7 +11,6 @@ module Asperalm
       # iw/ih : input width or height
       # -x : keep aspect ratio, having value a multiple of x
       DESCRIPTIONS = [
-        { name: :office_exe,           default: 'libreoffice',      description: "path for libreoffice executable" },
         { name: :max_size,             default: 1<<24,              description: "maximum size (in bytes) of preview file" },
         { name: :thumb_vid_scale,      default: "-1:'min(ih,100)'", description: "png: video: size (ffmpeg scale argument)" },
         { name: :thumb_vid_fraction,   default: 0.1,                description: "png: video: position of snapshot" },

@@ -203,15 +203,19 @@ module Asperalm
       end
 
       def convert_office_to_png()
-        Utils.external_command([@options.office_exe,'--display',':42','--headless','--invisible','--convert-to','pdf',
-          '--outdir',this_tmpdir,@source_file_path])
-        pdf_file=File.join(this_tmpdir,File.basename(@source_file_path,File.extname(@source_file_path))+'.pdf')
-        convert_pdf_to_png(pdf_file)
+        tmp_pdf_file=File.join(this_tmpdir,File.basename(@source_file_path,File.extname(@source_file_path))+'.pdf')
+        Utils.external_command([
+          'unoconv',
+          '-f','pdf',
+          '-o',tmp_pdf_file,
+          @source_file_path])
+        convert_pdf_to_png(tmp_pdf_file)
       end
 
       def convert_pdf_to_png(source_file_path=nil)
         source_file_path||=@source_file_path
-        Utils.external_command(['convert',
+        Utils.external_command([
+          'convert',
           '-size',"x#{@options.thumb_img_size}",
           '-background','white',
           '-flatten',
@@ -220,7 +224,8 @@ module Asperalm
       end
 
       def convert_image_to_png()
-        Utils.external_command(['convert',
+        Utils.external_command([
+          'convert',
           '-auto-orient',
           '-thumbnail',"#{@options.thumb_img_size}x#{@options.thumb_img_size}>",
           '-quality',95,

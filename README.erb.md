@@ -2206,88 +2206,35 @@ Here shown on Redhat/CentOS.
 
 Other OSes should work as well, but are note tested.
 
-### Imagemagick and optipng
+To check if all tools are found properly, execute:
+
+```
+$ <%=cmd%> preview check
+```
+
+### Image: Imagemagick and optipng
 
 ```
 yum install -y ImageMagick optipng
 ```
 
-### FFmpeg
+### Video: FFmpeg
 
 ```
-pushd /tmp
-wget https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz
-mkdir -p /opt/
-cd /opt/
-tar xJvf /tmp/ffmpeg-release-64bit-static.tar.xz
-ln -s ffmpeg-* ffmpeg
-ln -s /opt/ffmpeg/{ffmpeg,ffprobe} /usr/bin
-popd
+curl -s https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz|(mkdir -p /opt && cd /opt && tar xJvf - && rm -f /opt/ffmpeg /usr/bin/{ffmpeg,ffprobe} && ln -s ffmpeg-* ffmpeg && ln -s /opt/ffmpeg/{ffmpeg,ffprobe} /usr/bin)
 ```
 
-### Libreoffice and Xvfb
+### Office: Unoconv and Libreoffice
 
-As installation of Libreoffice is a little more complex, it is possible to not install libreoffice, and skip office document preview generation by using option: `--skip-types=office`
+If you dont want to have preview for office dpcuments or if it is too complex you can skip office document preview generation by using option: `--skip-types=office`
 
-Else, for instance on Centos 7, you can do:
-
-```
-yum install libreoffice
-```
-
-or download the RPM from:
-[https://www.libreoffice.org/download/download/?type=rpm-x86_64]()
-
-Although libreoffice is run headless it requires an X server. Preview generator uses display :42.
-If you get error running libreoffice headless, then install Xvfb:
-
-* Centos 7
-
-```
-yum install -y Xvfb
-cat<<EOF>/etc/init.d/xvfb
-# !/bin/bash
-# chkconfig: 345 95 50
-# description: Starts xvfb on display 42 for headless Libreoffice
-if [ -z "\$1" ]; then
-  echo "\`basename \$0\` {start|stop}"
-  exit
-fi
-case "\$1" in
-start) /usr/bin/Xvfb :42 -screen 0 1280x1024x8 -extension RANDR&;;
-stop) killall Xvfb;;
-esac
-EOF
-chmod a+x /etc/init.d/xvfb
-chkconfig xvfb on
-service xvfb start
-```
+The generation of preview in based on the use of `unoconv` and `libreoffice`
 
 * Centos 8
 
 ```
-yum install xorg-x11-server-Xvfb
-cat<<EOF>/etc/systemd/system/xvfb.service
-[Unit]
-Description=Xvfb headless plotting
-After=network.target
-
-[Service]
-User=root
-ExecStart=/usr/bin/Xvfb :42 -screen 0 1280x1024x8 -extension RANDR
-
-[Install]
-WantedBy=multi-user.target
-Alias=Xvfb.service
-Alias=xvfbd.service
-EOF
-systemctl daemon-reload
-systemctl enable xvfb.service
-systemctl start xvfb.service
+# dnf install unoconv
 ```
-
-The preview generator expects the executable `libreoffice` in `PATH`. To change LibreOffice executable path use option: `office_exe`.
-
 
 
 ## Configuration
@@ -2640,6 +2587,10 @@ So, it evolved into <%=tool%>:
 
 
 # Release Notes
+
+* 0.11.8
+
+	* Simplified to use `unoconv` instead of bare `libreoffice` for office conversion, as `unoconv` does not require a X server (previously using Xvfb
 
 * 0.11.7
 

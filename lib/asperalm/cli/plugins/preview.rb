@@ -285,7 +285,7 @@ module Asperalm
           # create folder if needed
           FileUtils.mkdir_p(local_entry_preview_dir)
           if @access_remote
-            raise 'parent not computed' if entry['parent_file_id'].nil?
+            raise 'missing parent_file_id in entry' if entry['parent_file_id'].nil?
             #  download original file to temp folder
             do_transfer('receive',entry['parent_file_id'],entry['name'],@tmp_folder)
           end

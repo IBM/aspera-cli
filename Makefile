@@ -833,6 +833,10 @@ t/prev_pdf:
 	@echo $@
 	$(EXETEST) preview test --case=$@ png ~/'Documents/Samples/YıçşöğüİÇŞÖĞÜ.pdf' --log-level=debug
 	@touch $@
+t/prev_docx:
+	@echo $@
+	$(EXETEST) preview test --case=$@ png ~/'Documents/Samples/SAMPLE WORD DOCUMENT.docx' --log-level=debug
+	@touch $@
 t/prev_mxf_blend:
 	@echo $@
 	$(EXETEST) preview test --case=$@ mp4 ~/'Documents/Samples/mxf_video.mxf' --video-conversion=blend --log-level=debug
@@ -855,7 +859,7 @@ t/prev_mxf_clips:
 	@touch $@
 t/prev_events:
 	@echo $@
-	$(EXETEST) -Ptest_preview node upload ~/'Documents/Samples/mxf_video.mxf' --ts=@json:'{"target_rate_kbps":1000000}'
+	$(EXETEST) -Ptest_preview node upload ~/'Documents/Samples/mxf_video.mxf' ~/'Documents/Samples/SAMPLE WORD DOCUMENT.docx' --ts=@json:'{"target_rate_kbps":1000000}'
 	sleep 4
 	$(EXETEST) preview trevents --once-only=yes --skip-types=office --log-level=info
 	@touch $@
@@ -868,7 +872,7 @@ t/prev_folder:
 	$(EXETEST) preview folder 1 --skip-types=office --log-level=info --file-access=remote --ts=@json:'{"target_rate_kbps":1000000}'
 	@touch $@
 
-tprev: t/prev_check t/prev_dcm t/prev_pdf t/prev_mxf_png_fix t/prev_mxf_png_ani t/prev_mxf_blend t/prev_mxf_reencode t/prev_mxf_clips t/prev_events t/prev_scan
+tprev: t/prev_check t/prev_dcm t/prev_pdf t/prev_docx t/prev_mxf_png_fix t/prev_mxf_png_ani t/prev_mxf_blend t/prev_mxf_reencode t/prev_mxf_clips t/prev_events t/prev_scan
 clean::
 	rm -f preview_*.mp4
 thot:
