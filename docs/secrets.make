@@ -23,7 +23,7 @@ CF_HSTS_FOLDER_UPLOAD=_value_here_
 
 CF_SHARES_UPLOAD=_value_here_
 
-# used in asperalm_spec.rb
+# used in aspera_spec.rb
 export CF_HSTS_SSH_URL CF_HSTS_SSH_USER CF_HSTS_SSH_PASS
 
 # Incoming asset processing

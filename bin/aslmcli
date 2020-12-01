@@ -1,5 +1,5 @@
 #!/usr/bin/env ruby
 require 'rubygems'
 $LOAD_PATH.unshift(File.dirname(__FILE__)+"/../lib")
-require 'asperalm/cli/main'
-Asperalm::Cli::Main.new(ARGV).process_command_line
+require 'aspera/cli/main'
+Aspera::Cli::Main.new(ARGV).process_command_line

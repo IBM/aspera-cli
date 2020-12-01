@@ -4,6 +4,6 @@
 $LOAD_PATH.unshift File.dirname(__FILE__) + "/../lib"
 
 require 'rubygems'
-require 'asperalm/cli/thor'
+require 'aspera/cli/thor'
 
-Asperalm::Cli::ThorMain.start(ARGV)
+Aspera::Cli::ThorMain.start(ARGV)

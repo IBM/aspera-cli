@@ -13,7 +13,7 @@ EXETESTB=$(BINDIR)/$(EXENAME)
 # this config file contains credentials of platforms used for tests
 MLIA_CONFIG_FILE=$(DEV_FOLDER)/local/test.mlia.conf
 EXETEST=$(EXETESTB) --warnings --config-file=$(MLIA_CONFIG_FILE)
-GEMNAME=asperalm
+GEMNAME=aspera
 GEMVERSION=$(shell $(EXETEST) --version)
 GEM_FILENAME=$(GEMNAME)-$(GEMVERSION).gem
 GEMFILE=$(OUT_FOLDER)/$(GEM_FILENAME)
@@ -83,7 +83,7 @@ $(RELEASE_ZIP_FILE): README.md
 	zip -r $(RELEASE_ZIP_FILE) `git ls-files`
 
 $(GEMFILE): README.md
-	gem build asperalm.gemspec
+	gem build aspera.gemspec
 	mv $(GEM_FILENAME) $(OUT_FOLDER)
 
 gem: $(GEMFILE)
@@ -104,7 +104,7 @@ setkey: $(CF_PRIVATE_KEY_FILE)
 	$(EXETEST) aspera admin res client --id=$(CF_AOC1_CLIENT_ID) set_pub_key @file:$(CF_PRIVATE_KEY_FILE)
 
 yank:
-	gem yank asperalm -v $(GEMVERSION)
+	gem yank aspera -v $(GEMVERSION)
 
 dotag:
 	git tag -a $(GIT_TAG_CURRENT) -m "gem version $(GEMVERSION) pushed"
@@ -953,7 +953,7 @@ setupprev:
 	$(EXE_NOMAN) config id test_preview update --url=$(CF_HSTS2_URL) --username=testkey --password=secret
 	$(EXE_NOMAN) config id default set preview test_preview
 
-# ruby -e 'require "yaml";YAML.load_file("lib/asperalm/preview_generator_formats.yml").each {|k,v|puts v};'|while read x;do touch /Users/xfer/docroot/sample${x};done
+# ruby -e 'require "yaml";YAML.load_file("lib/aspera/preview_generator_formats.yml").each {|k,v|puts v};'|while read x;do touch /Users/xfer/docroot/sample${x};done
 
 preparelocal:
 	sudo asnodeadmin --reload
@@ -966,4 +966,4 @@ noderestart:
 irb:
 	irb -I $(LIBDIR)
 installgem:
-	gem install $$(sed -nEe "/^[^#].*add_[^_]+_dependency/ s/[^']+'([^']+)'.*/\1/p" < asperalm.gemspec )
+	gem install $$(sed -nEe "/^[^#].*add_[^_]+_dependency/ s/[^']+'([^']+)'.*/\1/p" < aspera.gemspec )

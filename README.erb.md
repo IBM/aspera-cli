@@ -1,4 +1,4 @@
-# Asperalm - A Ruby library for Aspera transfers and "Amelia", the _Multi Layer IBM Aspera_ Command Line Tool
+# Aspera - A Ruby library for Aspera transfers and "Amelia", the _Multi Layer IBM Aspera_ Command Line Tool
 
 Version : <%= ENV["VERSION"] %>
 <%cmd=ENV["TOOLNAME"];tool='`'+cmd+'`';evp=cmd.upcase+'_';opprst='option preset';prst='['+opprst+'](#lprt)';prsts='['+opprst+'s](#lprt)';prstt=opprst.capitalize%>
@@ -6,7 +6,7 @@ Version : <%= ENV["VERSION"] %>
 _Laurent/2016-<%=Time.new.year%>_
 
 This gem provides a ruby API to Aspera transfers and a command line interface to Aspera Applications. Location:
-[https://rubygems.org/gems/asperalm](https://rubygems.org/gems/asperalm)
+[https://rubygems.org/gems/aspera](https://rubygems.org/gems/aspera)
 
 Disclaimers:
 
@@ -23,7 +23,7 @@ This manual addresses three parts:
 
 * <%=tool%> : ("Amelia") The Multi Layer IBM Aspera tool
 * `asession` : starting a FASP Session with JSON parameters
-* `Asperalm` : includes a Ruby "FASPManager"
+* `Aspera` : includes a Ruby "FASPManager"
 
 In examples, command line operations (starting with `$`) are shown using a standard shell: `bash`.
 
@@ -107,7 +107,7 @@ Then, follow the section relative to the product you want to interact with ( Asp
 In order to use the tool or the gem, it is necessary to install those components:
 
 * [Ruby](#ruby)
-* [asperalm](#the_gem)
+* [aspera](#the_gem)
 * [FASP](#fasp_prot)
 
 The following sections provide information on the installation.
@@ -133,7 +133,7 @@ $ brew install ruby
 
 Alternatively, Ruby came pre-installed on macOS (but maybe not on more modern versions).
 Starting with Macos Sierra, the version of Ruby is high enough.
-In that case, installation of the gem requires: `sudo gem install asperalm`.
+In that case, installation of the gem requires: `sudo gem install aspera`.
 
 ### Windows
 
@@ -201,18 +201,18 @@ For instance to build from source, and install in `/opt/ruby` :
 # make install
 ```
 
-## <a name="the_gem"></a>`asperalm` gem
+## <a name="the_gem"></a>`aspera` gem
 
 Once you have Ruby and rights to install gems: Install the gem and its dependencies:
 
 ```
-# gem install asperalm
+# gem install aspera
 ```
 
 To upgrade to the latest version:
 
 ```
-# gem update asperalm
+# gem update aspera
 ```
 
 ## <a name="fasp_prot"></a>FASP Protocol
@@ -242,7 +242,7 @@ other methods are available. Refer to section: [Transfer Agents](#agents)
 
 # <a name="cli"></a>Command Line Interface: <%=tool%>
 
-The `asperalm` Gem provides a command line interface (CLI) which interacts with Aspera Products (mostly using REST APIs):
+The `aspera` Gem provides a command line interface (CLI) which interacts with Aspera Products (mostly using REST APIs):
 
 * IBM Aspera High Speed Transfer Server (FASP and Node)
 * IBM Aspera on Cloud (including ATS)
@@ -731,8 +731,8 @@ For instance, the plugin "faspex" allows operations on the application "Aspera F
 ```
 $ mkdir -p ~/.aspera/<%=cmd%>/plugins
 $ cat<<EOF>~/.aspera/<%=cmd%>/plugins/test.rb
-require 'asperalm/cli/plugin'
-module Asperalm
+require 'aspera/cli/plugin'
+module Aspera
   module Cli
     module Plugins
       class Test < Plugin
@@ -741,7 +741,7 @@ module Asperalm
       end # Test
     end # Plugins
   end # Cli
-end # Asperalm
+end # Aspera
 EOF
 ```
 
@@ -2454,7 +2454,7 @@ Note that in addition, many "EX_" [_transfer-spec_](#transferspec) parameters ar
 <table>
 <tr><th>feature/tool</th><th>asession</th><th>ascp</th><th>FaspManager</th><th>Transfer SDK</th></tr>
 <tr><td>language integration</td><td>any</td><td>any</td><td>C/C++<br/>C#/.net<br/>Go<br/>Python<br/>java<br/></td><td>any</td></tr>
-<tr><td>additional components to ascp</td><td>Ruby<br/>Asperalm</td><td>-</td><td>library<br/>(headers)</td><td>daemon</td></tr>
+<tr><td>additional components to ascp</td><td>Ruby<br/>Aspera</td><td>-</td><td>library<br/>(headers)</td><td>daemon</td></tr>
 <tr><td>startup</td><td>JSON on stdin<br/>(standard APIs:<br/>JSON.generate<br/>Process.spawn)</td><td>command line arguments</td><td>API</td><td>ademon</td></tr>
 <tr><td>events</td><td>JSON on stdout</td><td>none by default<br/>or need to open management port<br/>and proprietary text syntax</td><td>callback</td><td>callback</td></tr>
 <tr><td>platforms</td><td>any with ruby and ascp</td><td>any with ascp</td><td>any with ascp</td><td>any with ascp and transferdaemon</td></tr></table>
@@ -2484,7 +2484,7 @@ $ asession
 
 ## Example of language wrapper
 
-Nodejs: [https://www.npmjs.com/package/asperalm](https://www.npmjs.com/package/asperalm)
+Nodejs: [https://www.npmjs.com/package/aspera](https://www.npmjs.com/package/aspera)
 
 ## Help
 
@@ -2549,13 +2549,13 @@ $ <%=cmd%> server upload source_hot --to-folder=/Upload/target_hot --lock-port=1
 
 The local (here, relative path: source_hot) is sent (upload) to basic fasp server, source files are deleted after transfer. growing files will be sent only once they dont grow anymore (based ona 8 second cooloff period). If a transfer takes more than the execution period, then the subsequent execution is skipped (lock-port).
 
-# Module: `Asperalm`
+# Module: `Aspera`
 
 Main components:
 
-* `Asperalm` generic classes for REST and OAuth
-* `Asperalm::Fasp`: starting and monitoring transfers. It can be considered as a FASPManager class for Ruby.
-* `Asperalm::Cli`: <%=tool%>.
+* `Aspera` generic classes for REST and OAuth
+* `Aspera::Fasp`: starting and monitoring transfers. It can be considered as a FASPManager class for Ruby.
+* `Aspera::Cli`: <%=tool%>.
 
 A working example can be found in the gem, example:
 

@@ -1,10 +1,10 @@
 #!/usr/bin/env ruby
 # Laurent Martin/2017
 $LOAD_PATH.unshift(File.dirname(__FILE__)+"/../lib")
-require 'asperalm/fasp/local'
-require 'asperalm/cli/listener/line_dump'
-require 'asperalm/cli/extended_value'
-require 'asperalm/log'
+require 'aspera/fasp/local'
+require 'aspera/cli/listener/line_dump'
+require 'aspera/cli/extended_value'
+require 'aspera/log'
 require 'json'
 # extended transfer spec parameter to change log level
 TS_LOGLEVEL='EX_loglevel'
@@ -49,7 +49,7 @@ assert_usage(!['-h','--help'].include?(ARGV.first),nil)
 # parse transfer spec
 begin
   transfer_spec_arg=ARGV.pop
-  transfer_spec=Asperalm::Cli::ExtendedValue.instance.evaluate(transfer_spec_arg)
+  transfer_spec=Aspera::Cli::ExtendedValue.instance.evaluate(transfer_spec_arg)
 rescue => e
   assert_usage(false,"Cannot extract transfer spec from: #{transfer_spec_arg}")
 end
@@ -57,20 +57,20 @@ end
 assert_usage(transfer_spec.is_a?(Hash),"the value must be a hash table#{parameter_source_err_msg}")
 # additional debug capability
 if transfer_spec.has_key?(TS_LOGLEVEL)
-  Asperalm::Log.instance.level=transfer_spec[TS_LOGLEVEL]
+  Aspera::Log.instance.level=transfer_spec[TS_LOGLEVEL]
   transfer_spec.delete(TS_LOGLEVEL)
 end
 # possibly override temp folder
 if transfer_spec.has_key?(TS_TMP_FILELIST_FOLDER)
-  Asperalm::Fasp::Parameters.file_list_folder=transfer_spec[TS_TMP_FILELIST_FOLDER]
+  Aspera::Fasp::Parameters.file_list_folder=transfer_spec[TS_TMP_FILELIST_FOLDER]
   transfer_spec.delete(TS_TMP_FILELIST_FOLDER)
 end
 # get local agent (ascp)
-client=Asperalm::Fasp::Local.new
+client=Aspera::Fasp::Local.new
 # disable ascp output on stdout to not mix with JSON events
 client.quiet=true
 # display JSON instead of legacy Lines
-client.add_listener(Asperalm::Cli::Listener::LineDump.new)
+client.add_listener(Aspera::Cli::Listener::LineDump.new)
 # start transfer (asynchronous)
 job_id=client.start_transfer(transfer_spec)
 # async commands

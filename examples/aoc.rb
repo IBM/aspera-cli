@@ -1,10 +1,10 @@
 #!/usr/bin/env ruby
-require 'asperalm/on_cloud'
-require 'asperalm/log'
+require 'aspera/on_cloud'
+require 'aspera/log'
 
-Asperalm::Log.instance.level=:debug
+Aspera::Log.instance.level=:debug
 
-aocapi=Asperalm::OnCloud.new(
+aocapi=Aspera::OnCloud.new(
 url: 'https://myorg.ibmaspera.com',
 auth: :jwt,
 private_key: File.read('path/to_your_private_key.pem'),
@@ -14,4 +14,4 @@ subpath: 'api/v1')
 
 self_user_data=aocapi.read('self')
 
-Asperalm::Log.dump('self',self_user_data)
+Aspera::Log.dump('self',self_user_data)

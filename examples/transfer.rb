@@ -1,46 +1,46 @@
 #!/usr/bin/env ruby
 # Example: transfer a file using one of the provided transfer agents
 
-require 'asperalm/fasp/local'
-require 'asperalm/fasp/listener'
-require 'asperalm/fasp/installation'
-require 'asperalm/log'
-require 'asperalm/rest'
-require 'asperalm/rest_errors_aspera'
+require 'aspera/fasp/local'
+require 'aspera/fasp/listener'
+require 'aspera/fasp/installation'
+require 'aspera/log'
+require 'aspera/rest'
+require 'aspera/rest_errors_aspera'
 require 'json'
 
 ##############################################################
 # generic initialisation : configuration of FaspManager
 
 # set trace level for sample, set to :debug to see complete list of debug information
-Asperalm::Log.instance.level=:debug
+Aspera::Log.instance.level=:debug
 
 # set path to your copy of ascp binary
-Asperalm::Fasp::Installation.instance.ascp_path='/Users/laurent/Applications/Aspera Connect.app/Contents/Resources/ascp'
+Aspera::Fasp::Installation.instance.ascp_path='/Users/laurent/Applications/Aspera Connect.app/Contents/Resources/ascp'
 # some required files are generated here (keys, certs)
-Asperalm::Fasp::Installation.instance.config_folder = '.'
+Aspera::Fasp::Installation.instance.config_folder = '.'
 
 # register aspera REST call error handlers
-Asperalm::RestErrorsAspera.registerHandlers
+Aspera::RestErrorsAspera.registerHandlers
 
 # another way is to detect installed products and use one of them
-#Asperalm::Fasp::Installation.instance.installed_products.each{|p|puts("found: #{p[:name]}")}
-#Asperalm::Fasp::Installation.instance.use_ascp_from_product('Aspera Connect')
+#Aspera::Fasp::Installation.instance.installed_products.each{|p|puts("found: #{p[:name]}")}
+#Aspera::Fasp::Installation.instance.use_ascp_from_product('Aspera Connect')
 
 # get FASP Manager singleton based on above ascp location
-fasp_manager=Asperalm::Fasp::Local.new
+fasp_manager=Aspera::Fasp::Local.new
 
 # Note that it would also be possible to start transfers using other agents
-#require 'asperalm/fasp/connect'
-#fasp_manager=Asperalm::Fasp::Connect.new
-#require 'asperalm/fasp/node'
-#fasp_manager=Asperalm::Fasp::Node.new(Asperalm::Rest.new(...))
+#require 'aspera/fasp/connect'
+#fasp_manager=Aspera::Fasp::Connect.new
+#require 'aspera/fasp/node'
+#fasp_manager=Aspera::Fasp::Node.new(Aspera::Rest.new(...))
 
 ##############################################################
 # Optional : register an event listener
 
 # example of event listener that displays events on stdout
-class MyListener < Asperalm::Fasp::Listener
+class MyListener < Aspera::Fasp::Listener
   # this is the callback called during transfers, here we only display the received information
   # but it could be used to get detailed error information, check "type" field is "ERROR"
   def event_enhanced(data);STDOUT.puts(JSON.generate(data));STDOUT.flush;end
@@ -83,7 +83,7 @@ raise "Error(s) occured: #{errors.join(',')}" if !errors.empty?
 # second example: upload with node authorization
 
 # create rest client for Node API
-node_api=Asperalm::Rest.new({
+node_api=Aspera::Rest.new({
   :base_url => 'https://eudemo.asperademo.com:9092',
   :auth     => {
   :type     => :basic,
