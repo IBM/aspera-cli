@@ -10,14 +10,12 @@ require 'asperalm/log'
 require 'asperalm/rest'
 require 'asperalm/nagios'
 require 'asperalm/oauth_cache'
+require 'asperalm/version'
 
 module Asperalm
   module Cli
     # The main CLI class
     class Main
-      def self.gem_version
-        File.read(File.join(gem_root,GEM_NAME,'VERSION')).chomp
-      end
 
       attr_reader :plugin_env
       private
@@ -70,7 +68,7 @@ module Asperalm
         # must override help methods before parser called (in other constructors)
         init_global_options()
         # the Config plugin adds the @preset parser
-        @plugin_env[:config]=Plugins::Config.new(@plugin_env,self.program_name,@help_url,self.class.gem_version)
+        @plugin_env[:config]=Plugins::Config.new(@plugin_env,self.program_name,@help_url,Asperalm::VERSION)
         # the TransferAgent plugin may use the @preset parser
         @plugin_env[:transfer]=TransferAgent.new(@plugin_env)
         Log.log.debug('created plugin env'.red)
@@ -83,7 +81,7 @@ module Asperalm
       end
 
       def app_banner
-        banner = "NAME\n\t#{self.program_name} -- a command line tool for Aspera Applications (v#{self.class.gem_version})\n\n"
+        banner = "NAME\n\t#{self.program_name} -- a command line tool for Aspera Applications (v#{Asperalm::VERSION})\n\n"
         banner << "SYNOPSIS\n"
         banner << "\t#{self.program_name} COMMANDS [OPTIONS] [ARGS]\n"
         banner << "\n"
@@ -112,7 +110,7 @@ module Asperalm
         @opt_mgr.add_opt_switch(:bash_comp,"generate bash completion for command") { @bash_completion=true }
         @opt_mgr.add_opt_switch(:show_config, "Display parameters used for the provided action.") { @option_show_config=true }
         @opt_mgr.add_opt_switch(:rest_debug,"-r","more debug for HTTP calls") { Rest.debug=true }
-        @opt_mgr.add_opt_switch(:version,'-v','display version') { @plugin_env[:formater].display_message(:data,self.class.gem_version);Process.exit(0) }
+        @opt_mgr.add_opt_switch(:version,'-v','display version') { @plugin_env[:formater].display_message(:data,Asperalm::VERSION);Process.exit(0) }
         @opt_mgr.add_opt_switch(:warnings,'-w','check for language warnings') { $VERBOSE=true }
         # handler must be set before declaration
         @opt_mgr.set_obj_attr(:log_level,Log.instance,:level)

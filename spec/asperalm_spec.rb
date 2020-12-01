@@ -42,7 +42,7 @@ PAC_FILE='file:///./examples/proxy.pac'
 
 RSpec.describe Asperalm::Cli::Main do
   it "has a version number" do
-    expect(Asperalm::Cli::Main.gem_version).not_to be(nil)
+    expect(Asperalm::VERSION).not_to be(nil)
   end
 end
 

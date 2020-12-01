@@ -1,11 +1,9 @@
 # coding: utf-8
-lib = File.expand_path('../lib', __FILE__)
-$LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
-require 'asperalm/cli/main'
+require_relative 'lib/asperalm/version'
 
 Gem::Specification.new do |spec|
   spec.name          = 'asperalm'
-  spec.version       = Asperalm::Cli::Main::gem_version
+  spec.version       = Asperalm::VERSION
   spec.authors       = ['Laurent Martin']
   spec.email         = ['laurent.martin.aspera@fr.ibm.com']
   spec.summary       = 'gem and command line tool for Aspera Server products: Aspera on Cloud, Faspex, Shares, Node, Console, Orchestrator, Transfer Server'
