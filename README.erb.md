@@ -123,17 +123,18 @@ Refer to the following sections for a proposed method for specific operating sys
 
 ### macOS
 
-Install Ruby using "homebrew" from here: [https://brew.sh/](https://brew.sh/).
 
-Then install latest Ruby:
+MacOS 10.13+ (High Sierra) comes with a recent Ruby, so you can use it directly, you will need to install aspera using `sudo` :
+
+```
+$ sudo gem install aspera
+```
+
+Alternatively, if you use [Homebrew](https://brew.sh/) already you can install Ruby with it:
 
 ```
 $ brew install ruby
 ```
-
-Alternatively, Ruby came pre-installed on macOS (but maybe not on more modern versions).
-Starting with Macos Sierra, the version of Ruby is high enough.
-In that case, installation of the gem requires: `sudo gem install aspera`.
 
 ### Windows
 
@@ -151,7 +152,7 @@ Install Latest Ruby using "rvm" [https://rvm.io/](https://rvm.io/) .
 It installs by default in /usr/local/rvm , but you can install in another location:
 
 ```
-curl -sSL https://get.rvm.io | bash -s -- --path /my/special/path
+curl -sSL https://get.rvm.io | bash -s -- --path /usr/local
 ```
 
 Once installed, you can install latest ruby:
@@ -186,7 +187,6 @@ yum remove -y ruby ruby-libs
 
 If your unix do not provide a pre-built ruby, you can get using one of those
 [methods](https://www.ruby-lang.org/en/documentation/installation/)
-
 
 For instance to build from source, and install in `/opt/ruby` :
 
@@ -2294,7 +2294,8 @@ Nopte that the options here may be located in the config preset, but it was left
 
 The tool will find candidates for preview generation using three commands:
 
-* `events` : only recently uploaded files will be tested
+* `trevents` : only recently uploaded files will be tested (transfer events)
+* `events` : only recently uploaded files will be tested (file events: not working)
 * `scan` : deeply scan all files under the access key&apos;s "storage root"
 * `folder` : same as `scan`, but only on the specified folder&apos;s "file identifier"
 * `file` : for an individual file generation
