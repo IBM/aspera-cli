@@ -2983,5 +2983,3 @@ You may either install the suggested Gems, or remove your ed25519 key from your 
 Send comments !
 
 Create your own plugin !
-
-
