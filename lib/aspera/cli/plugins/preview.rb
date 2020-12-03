@@ -53,7 +53,9 @@ module Aspera
           self.options.add_opt_simple(:previews_folder,'preview folder in storage root')
           self.options.add_opt_simple(:temp_folder,'path to temp folder')
           self.options.add_opt_simple(:skip_folders,'list of folder to skip')
-          self.options.add_opt_simple(:case,'test case name')
+          self.options.add_opt_simple(:case,'basename of output for for test')
+          self.options.add_opt_simple(:scan_path,'subpath in folder id to start scan in (default=/)')
+          self.options.add_opt_simple(:scan_id,'forder id in storage to start scan in, default is access key main folder id')
           self.options.add_opt_list(:overwrite,[:always,:never,:mtime],'when to overwrite result file')
           self.options.add_opt_list(:file_access,[:local,:remote],'how to read and write files in repository')
           self.options.set_option(:temp_folder,Dir.tmpdir)
@@ -310,12 +312,24 @@ module Aspera
         end # generate_preview
 
         # scan all files in provided folder entry
-        def scan_folder_files(top_entry)
-          Log.log.debug("scan: #{top_entry}")
+        def scan_folder_files(top_entry,scan_start=nil)
+          if !scan_start.nil?
+            # canonical path: start with / and ends with /
+            scan_start='/'+scan_start.split('/').select{|i|!i.empty?}.join('/')
+            scan_start="#{scan_start}/" #unless scan_start.end_with?('/')
+          end
+          Log.log.debug("scan: #{top_entry} : #{scan_start}".green)
           # don't use recursive call, use list instead
-          items_to_process=[top_entry]
-          while !items_to_process.empty?
-            entry=items_to_process.shift
+          entries_to_process=[top_entry]
+          while !entries_to_process.empty?
+            entry=entries_to_process.shift
+            # process this entry only if it is within the scan_start
+            entry_path_with_slash=entry['path']
+            entry_path_with_slash="#{entry_path_with_slash}/" unless entry_path_with_slash.end_with?('/')
+            if !scan_start.nil? and !scan_start.start_with?(entry_path_with_slash) and !entry_path_with_slash.start_with?(scan_start)
+              Log.log.debug("#{entry['path']} folder (skip start)".bg_red)
+              next
+            end
             Log.log.debug("item:#{entry}")
             case entry['type']
             when 'file'
@@ -324,19 +338,19 @@ module Aspera
               Log.log.debug('Ignoring link.')
             when 'folder'
               if @option_skip_folders.include?(entry['path'])
-                Log.log.debug("#{entry['path']} folder (skip)".bg_red)
+                Log.log.debug("#{entry['path']} folder (skip list)".bg_red)
               else
-                Log.log.debug("#{entry['path']} folder")
+                Log.log.debug("#{entry['path']} folder".green)
                 # get folder content
                 folder_entries=get_folder_entries(entry['id'])
                 # process all items in current folder
                 folder_entries.each do |folder_entry|
                   # add path for older versions of ES
                   if !folder_entry.has_key?('path')
-                    folder_entry['path']=(entry['path'].eql?('/')?'':entry['path'])+'/'+folder_entry['name']
+                    folder_entry['path']=entry_path_with_slash+folder_entry['name']
                   end
                   folder_entry['parent_file_id']=entry['id']
-                  items_to_process.push(folder_entry)
+                  entries_to_process.push(folder_entry)
                 end
               end
             else
@@ -389,11 +403,18 @@ module Aspera
           end
           case command
           when :scan
-            scan_folder_files({
-              'id'   => @access_key_self['root_file_id'],
-              'name' => '/',
-              'type' => 'folder',
-              'path' => '/' })
+            scan_path=self.options.get_option(:scan_path,:optional)
+            scan_id=self.options.get_option(:scan_id,:optional)
+            # by default start at root
+            folder_info=if scan_id.nil?
+              { 'id'   => @access_key_self['root_file_id'],
+                'name' => '/',
+                'type' => 'folder',
+                'path' => '/' }
+            else
+              @api_node.read("files/#{scan_id}")[:data]
+            end
+            scan_folder_files(folder_info,scan_path)
             return Main.result_status('scan finished')
           when :events
             iteration_data=[]
@@ -417,11 +438,6 @@ module Aspera
             iteration_data[0]=process_transfer_events(iteration_data[0])
             iteration_persistency.save unless iteration_persistency.nil?
             return Main.result_status('trevents finished')
-          when :folder
-            file_id=self.options.get_next_argument('file id')
-            file_info=@api_node.read("files/#{file_id}")[:data]
-            scan_folder_files(file_info)
-            return Main.result_status('file finished')
           when :check
             Aspera::Preview::Utils.check_tools(@skip_types)
             return Main.result_status('tools validated')
