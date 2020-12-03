@@ -1,5 +1,5 @@
 # just the name of the tool
-EXENAME=mlia
+EXENAME=ascli
 # location of configuration files
 TOOLCONFIGDIR=$(HOME)/.aspera/$(EXENAME)
 DEV_FOLDER=.
@@ -11,8 +11,8 @@ CONNECT_DOWNLOAD_FOLDER=$(HOME)/Desktop
 # basic tool invocation
 EXETESTB=$(BINDIR)/$(EXENAME)
 # this config file contains credentials of platforms used for tests
-MLIA_CONFIG_FILE=$(DEV_FOLDER)/local/test.mlia.conf
-EXETEST=$(EXETESTB) --warnings --config-file=$(MLIA_CONFIG_FILE)
+ASCLI_CONFIG_FILE=$(DEV_FOLDER)/local/test.ascli.conf
+EXETEST=$(EXETESTB) --warnings --config-file=$(ASCLI_CONFIG_FILE)
 GEMNAME=aspera
 GEMVERSION=$(shell $(EXETEST) --version)
 GEM_FILENAME=$(GEMNAME)-$(GEMVERSION).gem
@@ -717,39 +717,39 @@ tnsync: t/sy1 t/sy2 t/sy3 t/sy4 t/sy5
 TEST_CONFIG=sample.conf
 t/conf_id_1:
 	@echo $@
-	MLIA_CONFIG_FILE=$(TEST_CONFIG) $(EXETESTB) config id conf_name set param value
+	ASCLI_CONFIG_FILE=$(TEST_CONFIG) $(EXETESTB) config id conf_name set param value
 	@touch $@
 t/conf_id_2:
 	@echo $@
-	MLIA_CONFIG_FILE=$(TEST_CONFIG) $(EXETESTB) config id conf_name show
+	ASCLI_CONFIG_FILE=$(TEST_CONFIG) $(EXETESTB) config id conf_name show
 	@touch $@
 t/conf_id_3:
 	@echo $@
-	MLIA_CONFIG_FILE=$(TEST_CONFIG) $(EXETESTB) config id default set shares conf_name
+	ASCLI_CONFIG_FILE=$(TEST_CONFIG) $(EXETESTB) config id default set shares conf_name
 	@touch $@
 t/conf_id_4:
 	@echo $@
-	MLIA_CONFIG_FILE=$(TEST_CONFIG) $(EXETESTB) config id conf_name delete
+	ASCLI_CONFIG_FILE=$(TEST_CONFIG) $(EXETESTB) config id conf_name delete
 	@touch $@
 t/conf_id_5:
 	@echo $@
-	MLIA_CONFIG_FILE=$(TEST_CONFIG) $(EXETESTB) config id conf_name initialize @json:'{"p1":"v1","p2":"v2"}'
+	ASCLI_CONFIG_FILE=$(TEST_CONFIG) $(EXETESTB) config id conf_name initialize @json:'{"p1":"v1","p2":"v2"}'
 	@touch $@
 t/conf_id_6:
 	@echo $@
-	MLIA_CONFIG_FILE=$(TEST_CONFIG) $(EXETESTB) config id conf_name update --p1=v1 --p2=v2
+	ASCLI_CONFIG_FILE=$(TEST_CONFIG) $(EXETESTB) config id conf_name update --p1=v1 --p2=v2
 	@touch $@
 t/conf_open:
 	@echo $@
-	MLIA_CONFIG_FILE=$(TEST_CONFIG) $(EXETESTB) config open
+	ASCLI_CONFIG_FILE=$(TEST_CONFIG) $(EXETESTB) config open
 	@touch $@
 t/conf_list:
 	@echo $@
-	MLIA_CONFIG_FILE=$(TEST_CONFIG) $(EXETESTB) config list
+	ASCLI_CONFIG_FILE=$(TEST_CONFIG) $(EXETESTB) config list
 	@touch $@
 t/conf_over:
 	@echo $@
-	MLIA_CONFIG_FILE=$(TEST_CONFIG) $(EXETESTB) config overview
+	ASCLI_CONFIG_FILE=$(TEST_CONFIG) $(EXETESTB) config overview
 	@touch $@
 t/conf_help:
 	@echo $@
@@ -758,7 +758,7 @@ t/conf_help:
 t/conf_open_err:
 	@echo $@
 	printf -- "---\nconfig:\n  version: 0" > $(TEST_CONFIG)
-	-MLIA_CONFIG_FILE=$(TEST_CONFIG) $(EXETEST) config open
+	-ASCLI_CONFIG_FILE=$(TEST_CONFIG) $(EXETEST) config open
 	@touch $@
 t/conf_plugins:
 	@echo $@
@@ -928,7 +928,7 @@ t/f5_3:
 	@touch $@
 t/f5_4:
 	@echo $@
-	LAST_PACK=$$(mlia faspex5 pack list --value=@json:'{"type":"received","subtype":"mypackages","limit":1}' --fields=id --format=csv --display=data);\
+	LAST_PACK=$$(ascli faspex5 pack list --value=@json:'{"type":"received","subtype":"mypackages","limit":1}' --fields=id --format=csv --display=data);\
 	$(EXETEST) faspex5 package receive --id=$$LAST_PACK
 	@touch $@
 

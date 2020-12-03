@@ -510,7 +510,7 @@ are stored in folder `$HOME/.aspera/<%=cmd%>`. The folder can be displayed using
 
 ```
 $ <%=cmd%> config folder
-/Users/laurent/.aspera/mlia
+/Users/laurent/.aspera/ascli
 ```
 
 ## <a name="configfile"></a>Configuration file
@@ -954,7 +954,7 @@ If it possible to send using a HTTP gateway, in case FASP is not allowed.
 Example:
 
 ```
-mlia faspex package recv --id=323 --transfer=httpgw --transfer-info=@json:'{"url":"https://eudemo.asperademo.com:9443/aspera/http-gwy/v1"}'
+ascli faspex package recv --id=323 --transfer=httpgw --transfer-info=@json:'{"url":"https://eudemo.asperademo.com:9443/aspera/http-gwy/v1"}'
 ```
 
 ## <a name="transferspec"></a>Transfer Specification
@@ -1052,7 +1052,7 @@ In case the file list is provided on the command line (i.e. using `--sources=@ar
 Example:
 
 ```
-mlia server upload --src-type=pair ~/Documents/Samples/200KB.1 /Upload/sample1
+ascli server upload --src-type=pair ~/Documents/Samples/200KB.1 /Upload/sample1
 ```
 
 
@@ -1182,7 +1182,7 @@ Preparing preset: aoc_myorg
 Please provide path to your private RSA key, or empty to generate one:
 option: pkeypath>
 using existing key:
-/Users/myself/.aspera/mlia/aspera_on_cloud_key
+/Users/myself/.aspera/ascli/aspera_on_cloud_key
 Using global client_id.
 option: username> john@example.com
 Updating profile with new key
@@ -1191,7 +1191,7 @@ Setting config preset as default for aspera
 saving config file
 Done.
 You can test with:
-mlia aspera user info show
+ascli aspera user info show
 ```
 
 Optionally, it is possible to create a new organization-specific "integration".
@@ -1548,20 +1548,20 @@ a- get id of first workspace
 
 ```
 WS1='First Workspace'
-WS1ID=$(mlia aspera admin res workspace list --query=@json:'{"q":"'"$WS1"'"}' --select=@json:'{"name":"'"$WS1"'"}' --fields=id --format=csv)
+WS1ID=$(ascli aspera admin res workspace list --query=@json:'{"q":"'"$WS1"'"}' --select=@json:'{"name":"'"$WS1"'"}' --fields=id --format=csv)
 ```
 
 b- get id of second workspace
 
 ```
 WS2='Second Workspace'
-WS2ID=$(mlia aspera admin res workspace list --query=@json:'{"q":"'"$WS2"'"}' --select=@json:'{"name":"'"$WS2"'"}' --fields=id --format=csv)
+WS2ID=$(ascli aspera admin res workspace list --query=@json:'{"q":"'"$WS2"'"}' --select=@json:'{"name":"'"$WS2"'"}' --fields=id --format=csv)
 ```
 
 c- extract membership information and change workspace id
 
 ```
-mlia aspera admin res workspace_membership list --fields=manager,member_id,member_type,workspace_id --query=@json:'{"per_page":10000,"workspace_id":'"$WS1ID"'}' --format=jsonpp > ws1_members.json
+ascli aspera admin res workspace_membership list --fields=manager,member_id,member_type,workspace_id --query=@json:'{"per_page":10000,"workspace_id":'"$WS1ID"'}' --format=jsonpp > ws1_members.json
 ```
 
 d- convert to creation data for second workspace:
@@ -1579,7 +1579,7 @@ jq '[.[] | {member_type,member_id,workspace_id,manager,workspace_id:"'"$WS2ID"'"
 e- add members to second workspace
 
 ```
-mlia aspera admin res workspace_membership create --bulk=yes @json:@file:ws2_members.json
+ascli aspera admin res workspace_membership create --bulk=yes @json:@file:ws2_members.json
 ```
 
 * get users who did not log since a date
@@ -1611,7 +1611,7 @@ $ <%=cmd%> conf wizard --url=https://sedemo.ibmaspera.com --username=laurent.mar
 Detected: Aspera on Cloud
 Preparing preset: aoc_sedemo
 Using existing key:
-/Users/laurent/.aspera/mlia/aspera_on_cloud_key
+/Users/laurent/.aspera/ascli/aspera_on_cloud_key
 Using global client_id.
 Please Login to your Aspera on Cloud instance.
 Navigate to your "Account Settings"
@@ -1626,7 +1626,7 @@ Setting config preset as default for aspera
 saving config file
 Done.
 You can test with:
-mlia aspera user info show
+ascli aspera user info show
 ```
 
 This creates the option preset "aoc_&lt;org name&gt;" to allow seamless command line access and sets it as default for aspera on cloud.
@@ -1755,7 +1755,7 @@ $ cat my_file_list.txt|while read path;do echo <%=cmd%> aspera admin res node --
 * delete the files in bulk
 
 ```
-cat my_file_list.txt | mlia aspera admin res node --name='my node name' --secret='my secret' v3 delete @lines:@stdin:
+cat my_file_list.txt | ascli aspera admin res node --name='my node name' --secret='my secret' v3 delete @lines:@stdin:
 ```
 
 ## Activity
@@ -1782,16 +1782,16 @@ Note this must not be executed in less than 5 minutes because the analytics inte
 
 ## Using specific transfer ports
 
-By default transfer nodes are expected to use ports TCP/UDP 33001. The web UI enforces that. The option `default_ports` ([yes]/no) allows `mlia` to retrieve the server ports from an API call (download_setup) which reads the information from `aspera.conf` on the server.
+By default transfer nodes are expected to use ports TCP/UDP 33001. The web UI enforces that. The option `default_ports` ([yes]/no) allows `ascli` to retrieve the server ports from an API call (download_setup) which reads the information from `aspera.conf` on the server.
 
 
 # Plugin: Aspera Transfer Service
 
 ATS is usable either :
 
-* from an AoC subscription : mlia aspera admin ats
+* from an AoC subscription : ascli aspera admin ats
 
-* or from an IBM Cloud subscription : mlia ats
+* or from an IBM Cloud subscription : ascli ats
 
 ## IBM Cloud ATS : creation of api key
 
@@ -2086,7 +2086,7 @@ Aspera Shares supports the "node API" for the file transfer part. (Shares 1 and 
 In Shares2, users, groups listing are paged, to display sequential pages:
 
 ```
-$ for p in 1 2 3;do mlia shares2 admin users list --value=@json:'{"page":'$p'}';done
+$ for p in 1 2 3;do ascli shares2 admin users list --value=@json:'{"page":'$p'}';done
 ```
 
 # Plugin: IBM Cloud Object Storage
@@ -2702,7 +2702,7 @@ So, it evolved into <%=tool%>:
 
 * 0.10.7
 
-	* fix: mlia fails when username cannot be computed on Linux.
+	* fix: ascli fails when username cannot be computed on Linux.
 
 * 0.10.6
 
@@ -2983,5 +2983,3 @@ You may either install the suggested Gems, or remove your ed25519 key from your 
 Send comments !
 
 Create your own plugin !
-
-
