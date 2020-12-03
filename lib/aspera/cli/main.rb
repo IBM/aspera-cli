@@ -3,6 +3,7 @@ require 'aspera/cli/formater'
 require 'aspera/cli/plugins/config'
 require 'aspera/cli/extended_value'
 require 'aspera/cli/transfer_agent'
+require 'aspera/cli/version'
 require 'aspera/open_application'
 require 'aspera/temp_file_manager'
 require 'aspera/persistency_file'
@@ -10,7 +11,6 @@ require 'aspera/log'
 require 'aspera/rest'
 require 'aspera/nagios'
 require 'aspera/oauth_cache'
-require 'aspera/version'
 
 module Aspera
   module Cli
@@ -20,7 +20,7 @@ module Aspera
       attr_reader :plugin_env
       private
       # name of application, also foldername where config is stored
-      PROGRAM_NAME = 'mlia'
+      PROGRAM_NAME = 'ascli'
       GEM_NAME = 'aspera'
       # Container module of current class : Aspera::Cli
       CLI_MODULE=Module.nesting[1].to_s
@@ -68,7 +68,7 @@ module Aspera
         # must override help methods before parser called (in other constructors)
         init_global_options()
         # the Config plugin adds the @preset parser
-        @plugin_env[:config]=Plugins::Config.new(@plugin_env,self.program_name,@help_url,Aspera::VERSION)
+        @plugin_env[:config]=Plugins::Config.new(@plugin_env,self.program_name,@help_url,Aspera::Cli::VERSION)
         # the TransferAgent plugin may use the @preset parser
         @plugin_env[:transfer]=TransferAgent.new(@plugin_env)
         Log.log.debug('created plugin env'.red)
@@ -81,7 +81,7 @@ module Aspera
       end
 
       def app_banner
-        banner = "NAME\n\t#{self.program_name} -- a command line tool for Aspera Applications (v#{Aspera::VERSION})\n\n"
+        banner = "NAME\n\t#{self.program_name} -- a command line tool for Aspera Applications (v#{Aspera::Cli::VERSION})\n\n"
         banner << "SYNOPSIS\n"
         banner << "\t#{self.program_name} COMMANDS [OPTIONS] [ARGS]\n"
         banner << "\n"
@@ -110,7 +110,7 @@ module Aspera
         @opt_mgr.add_opt_switch(:bash_comp,"generate bash completion for command") { @bash_completion=true }
         @opt_mgr.add_opt_switch(:show_config, "Display parameters used for the provided action.") { @option_show_config=true }
         @opt_mgr.add_opt_switch(:rest_debug,"-r","more debug for HTTP calls") { Rest.debug=true }
-        @opt_mgr.add_opt_switch(:version,'-v','display version') { @plugin_env[:formater].display_message(:data,Aspera::VERSION);Process.exit(0) }
+        @opt_mgr.add_opt_switch(:version,'-v','display version') { @plugin_env[:formater].display_message(:data,Aspera::Cli::VERSION);Process.exit(0) }
         @opt_mgr.add_opt_switch(:warnings,'-w','check for language warnings') { $VERBOSE=true }
         # handler must be set before declaration
         @opt_mgr.set_obj_attr(:log_level,Log.instance,:level)
