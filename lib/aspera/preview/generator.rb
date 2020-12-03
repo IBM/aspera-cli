@@ -240,7 +240,8 @@ module Aspera
       def convert_plaintext_to_png()
         # get 100 first lines of text file
         first_lines=File.open(@source_file_path){|f|100.times.map{f.readline rescue ''}}.join
-        Utils.external_command(['convert',
+        Utils.external_command([
+          'convert',
           '-size',"#{@options.thumb_img_size}x#{@options.thumb_img_size}",
           'xc:white',
           '-font','Courier',
