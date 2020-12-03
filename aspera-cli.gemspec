@@ -1,9 +1,9 @@
 # coding: utf-8
-require_relative 'lib/aspera/version'
+require_relative 'lib/aspera/cli/version'
 
 Gem::Specification.new do |spec|
-  spec.name          = 'aspera'
-  spec.version       = Aspera::VERSION
+  spec.name          = 'aspera-cli'
+  spec.version       = Aspera::Cli::VERSION
   spec.authors       = ['Laurent Martin']
   spec.email         = ['laurent.martin.aspera@fr.ibm.com']
   spec.summary       = 'gem and command line tool for Aspera Server products: Aspera on Cloud, Faspex, Shares, Node, Console, Orchestrator, Transfer Server'

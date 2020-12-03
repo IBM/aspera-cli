@@ -42,7 +42,7 @@ PAC_FILE='file:///./examples/proxy.pac'
 
 RSpec.describe Aspera::Cli::Main do
   it "has a version number" do
-    expect(Aspera::VERSION).not_to be(nil)
+    expect(Aspera::Cli::VERSION).not_to be(nil)
   end
 end
 
