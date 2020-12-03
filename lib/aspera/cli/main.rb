@@ -3,6 +3,7 @@ require 'aspera/cli/formater'
 require 'aspera/cli/plugins/config'
 require 'aspera/cli/extended_value'
 require 'aspera/cli/transfer_agent'
+require 'aspera/cli/version'
 require 'aspera/open_application'
 require 'aspera/temp_file_manager'
 require 'aspera/persistency_file'
@@ -10,7 +11,6 @@ require 'aspera/log'
 require 'aspera/rest'
 require 'aspera/nagios'
 require 'aspera/oauth_cache'
-require 'aspera/version'
 
 module Aspera
   module Cli
