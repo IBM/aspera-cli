@@ -96,6 +96,8 @@ module Aspera
         'EX_file_pair_list'       => { :type => :defer, :option_switch=>'--file-pair-list', :accepted_types=>String},
         'EX_ascp_args'            => { :type => :defer, :accepted_types=>Array},
         'destination_root'        => { :type => :defer, :accepted_types=>String},
+        'wss_enabled'             => { :type => :defer, :accepted_types=>Aspera::CommandLineBuilder::BOOLEAN_CLASSES},
+        'wss_port'                => { :type => :defer, :accepted_types=>Integer},
       }
 
       private_constant :SEC_IN_DAY,:FILE_LIST_AGE_MAX_SEC,:PARAM_DEFINITION
@@ -125,6 +127,18 @@ module Aspera
         # special cases
         @job_spec.delete('source_root') if @job_spec.has_key?('source_root') and @job_spec['source_root'].empty?
 
+        # use web socket initiation ?
+        if @builder.process_param('wss_enabled',:get_value)
+          # by default use it if available
+          @builder.add_command_line_options(['--ws-connect'])
+          # TODO: option to give order ssh,ws (legacy http is implied bu ssh)
+          # quel bordel:
+          @job_spec['ssh_port']=@builder.process_param('wss_port',:get_value)
+          @job_spec.delete('fasp_port')
+          @job_spec.delete('EX_ssh_key_paths')
+          @job_spec.delete('sshfp')
+        end
+
         # process parameters as specified in table
         @builder.process_params
 
@@ -136,6 +150,7 @@ module Aspera
           # destination will be base64 encoded, put before path arguments
           @builder.add_command_line_options(['--dest64'])
         end
+
         PARAM_DEFINITION['paths'][:mandatory]=!@job_spec.has_key?('keepalive')
         paths_array=@builder.process_param('paths',:get_value)
         unless paths_array.nil?
