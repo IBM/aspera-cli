@@ -18,7 +18,7 @@ module Aspera
             self.options.add_opt_simple(:validator,"identifier of validator (optional for central)")
             self.options.add_opt_simple(:asperabrowserurl,"URL for simple aspera web ui")
             self.options.add_opt_simple(:name,"sync name")
-            self.options.add_opt_list(:token,[:aspera,:basic,:auto],'package box')
+            self.options.add_opt_list(:token,[:aspera,:basic,:auto],'todo: type of token used for transfers')
             self.options.set_option(:asperabrowserurl,'https://asperabrowser.mybluemix.net')
             self.options.set_option(:token,:aspera)
             self.options.parse_options!
