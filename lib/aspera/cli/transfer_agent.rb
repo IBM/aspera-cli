@@ -61,9 +61,9 @@ module Aspera
         agent_type=@opt_mgr.get_option(:transfer,:mandatory)
         case agent_type
         when :direct
-          resume_policy=@opt_mgr.get_option(:transfer_info,:optional)
-          resume_policy=resume_policy.symbolize_keys if resume_policy.is_a?(Hash)
-          new_agent=Fasp::Local.new(resume_policy)
+          agent_options=@opt_mgr.get_option(:transfer_info,:optional)
+          agent_options=agent_options.symbolize_keys if agent_options.is_a?(Hash)
+          new_agent=Fasp::Local.new(agent_options)
           new_agent.quiet=false if @opt_mgr.get_option(:progress,:mandatory).eql?(:native)
         when :httpgw
           httpgw_config=@opt_mgr.get_option(:transfer_info,:mandatory)

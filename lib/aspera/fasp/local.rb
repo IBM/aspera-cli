@@ -49,7 +49,7 @@ module Aspera
         end
 
         # compute known args
-        env_args=Parameters.ts_to_env_args(transfer_spec)
+        env_args=Parameters.ts_to_env_args(transfer_spec,wss: @enable_wss)
 
         # add fallback cert and key as arguments if needed
         if ['1','force'].include?(transfer_spec['http_fallback'])
@@ -307,7 +307,8 @@ module Aspera
 
       private
 
-      def initialize(resume_policy_parameters=nil)
+      def initialize(agent_options=nil)
+        agent_options||={}
         super()
         # by default no interactive progress bar
         @quiet=true
@@ -320,7 +321,8 @@ module Aspera
         # must be set before starting monitor, set to false to stop thread. also shared and protected by mutex
         @monitor_stop=false
         @monitor_thread=Thread.new{monitor_thread_entry}
-        @resume_policy=ResumePolicy.new(resume_policy_parameters)
+        @resume_policy=ResumePolicy.new(agent_options)
+        @enable_wss = agent_options[:wss] || false
       end
 
       # transfer thread entry

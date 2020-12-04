@@ -916,12 +916,14 @@ To specify a FASP proxy (only supported with the `direct` agent), set the approp
 
 The `transfer-info` optionally provides the following auto resume parameters:
 
-* iter_max (7)
-* sleep_initial (2)
-* sleep_factor (2)
-* sleep_max (60)
-
-This defines the resume algorithm.
+<table>
+<tr><th>Name</th><th>Default</th><th>Feature</th><th>Description</th></tr>
+<tr><td>iter_max</td>.    <td>7</td><td>Resume</td><td>Max number of retry on error</td></tr>
+<tr><td>sleep_initial</td><td>2</td><td>Resume</td><td>First Sleep before retry</td></tr>
+<tr><td>sleep_factor</td> <td>2</td><td>Resume</td><td>Multiplier of Sleep</td></tr>
+<tr><td>sleep_max</td>.   <td>60</td><td>Resume</td><td>Maximum sleep</td></tr>
+<tr><td>wss</td>          <td>false</td><td>Web Socket Session</td><td>Enable use of web socket session in case it is available</td></tr>
+</table>
 
 ### IBM Aspera Connect Client GUI
 

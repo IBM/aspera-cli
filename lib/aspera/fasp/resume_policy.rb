@@ -14,7 +14,7 @@ module Aspera
         :sleep_max     => 60
       }
 
-      def initialize(params=nil)
+      def initialize(params={})
         @parameters=DEFAULTS.clone
         return if params.nil?
         raise "expecting Hash (or nil), but have #{params.class}" unless params.is_a?(Hash)

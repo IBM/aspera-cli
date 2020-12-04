@@ -102,16 +102,17 @@ module Aspera
 
       private_constant :SEC_IN_DAY,:FILE_LIST_AGE_MAX_SEC,:PARAM_DEFINITION
 
-      def initialize(job_spec)
+      def initialize(job_spec,options)
         @job_spec=job_spec
         @builder=Aspera::CommandLineBuilder.new(@job_spec,PARAM_DEFINITION)
+        @options=options
       end
 
       public
 
       # translate transfer spec to env vars and command line arguments for ascp
       # NOTE: parameters starting with "EX_" (extended) are not standard
-      def compute_args
+      def ascp_args()
         env_args={
           :args=>[],
           :env=>{},
@@ -128,7 +129,7 @@ module Aspera
         @job_spec.delete('source_root') if @job_spec.has_key?('source_root') and @job_spec['source_root'].empty?
 
         # use web socket initiation ?
-        if @builder.process_param('wss_enabled',:get_value)
+        if @builder.process_param('wss_enabled',:get_value) and @options[:wss]
           # by default use it if available
           @builder.add_command_line_options(['--ws-connect'])
           # TODO: option to give order ssh,ws (legacy http is implied bu ssh)
@@ -218,12 +219,14 @@ module Aspera
         end
       end
 
-      def self.file_list_folder; @@file_list_folder;end
+      # static methods
+      class << self
+        def file_list_folder; @@file_list_folder;end
 
-      def self.ts_to_env_args(transfer_spec)
-        return Parameters.new(transfer_spec).compute_args
+        def ts_to_env_args(transfer_spec,options)
+          return Parameters.new(transfer_spec,options).ascp_args()
+        end
       end
-
     end # Parameters
   end
 end
