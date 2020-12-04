@@ -8,8 +8,12 @@ module Aspera
     class Utils
       # from bash manual: meta-character need to be escaped
       BASH_SPECIAL_CHARACTERS="|&;()<> \t#\n"
+      # shell exit code when command is not found
       BASH_EXIT_NOT_FOUND=127
-      private_constant :BASH_SPECIAL_CHARACTERS,:BASH_EXIT_NOT_FOUND
+      # external binaries used
+      EXPERNAL_TOOLS=[:ffmpeg,:ffprobe,:convert,:composite,:optipng,:unoconv]
+      private_constant :BASH_SPECIAL_CHARACTERS,:BASH_EXIT_NOT_FOUND,:EXPERNAL_TOOLS
+
       # returns string with single quotes suitable for bash if there is any bash metacharacter
       def self.shell_quote(argument)
         return argument unless argument.split('').any?{|c|BASH_SPECIAL_CHARACTERS.include?(c)}
@@ -18,10 +22,9 @@ module Aspera
 
       # check that external tools can be executed
       def self.check_tools(skip_types=[])
-        required_tools=%w(ffmpeg ffprobe convert composite optipng libreoffice)
-        required_tools.delete('libreoffice') if skip_types.include?(:office)
+        EXPERNAL_TOOLS.delete(:unoconv) if skip_types.include?(:office)
         # Check for binaries
-        required_tools.each do |bin|
+        EXPERNAL_TOOLS.map{|i|i.to_s}.each do |bin|
           `#{bin} -h 2>&1`
           raise "Error: #{bin} is not in the PATH" if $?.exitstatus.eql?(BASH_EXIT_NOT_FOUND)
         end
@@ -30,9 +33,10 @@ module Aspera
       # execute external command
       # one could use "system", but we would need to redirect stdout/err
       # @return true if su
-      def self.external_command(command_args,stdout_return=nil)
+      def self.external_command(command_symb,command_args,stdout_return=nil)
+        raise "unexpected command #{command_symb}" unless EXPERNAL_TOOLS.include?(command_symb)
         # build command line, and quote special characters
-        command=command_args.map{|i| shell_quote(i.to_s)}.join(' ')
+        command=command_args.clone.unshift(command_symb).map{|i| shell_quote(i.to_s)}.join(' ')
         Log.log.debug("cmd=#{command}".blue)
         # capture3: only in ruby2+
         if Open3.respond_to?('capture3') then
@@ -66,12 +70,12 @@ module Aspera
         a[:in_p]||=[]
         a[:out_p]||=[]
         raise "wrong params (#{a.keys.sort})" unless [:gl_p, :in_f, :in_p, :out_f, :out_p].eql?(a.keys.sort)
-        external_command(['ffmpeg',a[:gl_p],a[:in_p],'-i',a[:in_f],a[:out_p],a[:out_f]].flatten)
+        external_command(:ffmpeg,[a[:gl_p],a[:in_p],'-i',a[:in_f],a[:out_p],a[:out_f]].flatten)
       end
 
       def self.video_get_duration(input_file)
         result = String.new
-        external_command(['ffprobe',
+        external_command(:ffprobe,[
           '-loglevel','error',
           '-show_entries','format=duration',
           '-print_format','default=noprint_wrappers=1:nokey=1',
@@ -103,7 +107,7 @@ module Aspera
         1.upto(count) do |i|
           percent = 100 * i / (count + 1)
           filename = get_tmp_num_filepath(temp_folder, index1 + i)
-          external_command(['composite','-blend',percent,img2,img1,filename])
+          external_command(:composite,['-blend',percent,img2,img1,filename])
         end
       end
 
@@ -119,7 +123,7 @@ module Aspera
 
       def message_to_png(message)
         # convert -size 400x  -background '#666666' -fill '#ffffff'  -interword-spacing 10 -kerning 4 -pointsize 10 -gravity West -size x22 label:"Lorem dolor sit amet" -flatten xxx.png
-        external_command(['convert',
+        external_command(:convert,[
         ])
       end
     end # Options
