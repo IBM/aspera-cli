@@ -138,6 +138,9 @@ module Aspera
           @job_spec.delete('fasp_port')
           @job_spec.delete('EX_ssh_key_paths')
           @job_spec.delete('sshfp')
+        else
+          # avoid warning for unused parameter
+          @job_spec.delete('wss_port')
         end
 
         # process parameters as specified in table
