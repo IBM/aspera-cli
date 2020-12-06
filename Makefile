@@ -40,7 +40,7 @@ all:: gem
 
 clean::
 	rm -f $(GEMNAME)-*.gem $(SRCZIPBASE)*.zip *.log token.* preview.png aspera_bypass_*.pem sample_file.txt
-	rm -f README.pdf README.html README.md $(INCL_COMMANDS) $(INCL_USAGE) $(INCL_ASESSION) $(TEST_CONFIG)
+	rm -f README.pdf README.html $(INCL_COMMANDS) $(INCL_USAGE) $(INCL_ASESSION) $(TEST_CONFIG)
 	rm -fr tmp_* contents t $(OUT_FOLDER) "PKG - "*
 	rm -f 200KB* *AsperaConnect-ML* sample.conf* .DS_Store 10M.dat
 	mkdir t $(OUT_FOLDER)
