@@ -2275,6 +2275,10 @@ Lets do a one shot test, using the configuration previously created:
 $ <%=cmd%> preview scan --overwrite=always
 ```
 
+When the preview generator is first executed it will create a file: `.aspera_access_key`
+which contains the access key used.
+On subsequent run it reads this file and check that previews are generated for the same access key, else it fails. This is to prevent clash of different access keys using the same root.
+
 ## Configuration for Execution in scheduler
 
 Here is an example of configuration for use with cron on Linux. Adapt the scripts to your own preference.
