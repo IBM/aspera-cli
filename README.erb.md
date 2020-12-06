@@ -1,11 +1,17 @@
-# Aspera - A Ruby library for Aspera transfers and "Amelia", the _Multi Layer IBM Aspera_ Command Line Tool
+[comment]: # (Do not edit README.md, edit README.erb.md)
+[comment]: # (README.erb.md uses markdown format with embeded ruby macros)
+[comment]: # (README.md is generated after compilation of README.erb.md)
+
+# `ascli` : a Command Line for IBM Aspera products
 
 Version : <%= ENV["VERSION"] %>
 <%cmd=ENV["TOOLNAME"];tool='`'+cmd+'`';evp=cmd.upcase+'_';opprst='option preset';prst='['+opprst+'](#lprt)';prsts='['+opprst+'s](#lprt)';prstt=opprst.capitalize%>
 
 _Laurent/2016-<%=Time.new.year%>_
 
-This gem provides a ruby API to Aspera transfers and a command line interface to Aspera Applications. Location:
+This gem provides a command line interface to Aspera Applications and a ruby API to Aspera transfers.
+
+Location:
 [https://rubygems.org/gems/aspera](https://rubygems.org/gems/aspera)
 
 Disclaimers:
