@@ -13,7 +13,7 @@ EXETESTB=$(BINDIR)/$(EXENAME)
 # this config file contains credentials of platforms used for tests
 ASCLI_CONFIG_FILE=$(DEV_FOLDER)/local/test.ascli.conf
 EXETEST=$(EXETESTB) --warnings --config-file=$(ASCLI_CONFIG_FILE)
-GEMNAME=aspera
+GEMNAME=aspera-cli
 GEMVERSION=$(shell $(EXETEST) --version)
 GEM_FILENAME=$(GEMNAME)-$(GEMVERSION).gem
 GEMFILE=$(OUT_FOLDER)/$(GEM_FILENAME)
@@ -83,7 +83,7 @@ $(RELEASE_ZIP_FILE): README.md
 	zip -r $(RELEASE_ZIP_FILE) `git ls-files`
 
 $(GEMFILE): README.md
-	gem build aspera.gemspec
+	gem build $(GEMNAME)
 	mv $(GEM_FILENAME) $(OUT_FOLDER)
 
 gem: $(GEMFILE)
@@ -966,4 +966,4 @@ noderestart:
 irb:
 	irb -I $(LIBDIR)
 installgem:
-	gem install $$(sed -nEe "/^[^#].*add_[^_]+_dependency/ s/[^']+'([^']+)'.*/\1/p" < aspera.gemspec )
+	gem install $$(sed -nEe "/^[^#].*add_[^_]+_dependency/ s/[^']+'([^']+)'.*/\1/p" < $(GEMNAME).gemspec )
