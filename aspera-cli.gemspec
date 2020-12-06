@@ -6,8 +6,8 @@ Gem::Specification.new do |spec|
   spec.version       = Aspera::Cli::VERSION
   spec.authors       = ['Laurent Martin']
   spec.email         = ['laurent.martin.aspera@fr.ibm.com']
-  spec.summary       = 'gem and command line tool for Aspera Server products: Aspera on Cloud, Faspex, Shares, Node, Console, Orchestrator, Transfer Server'
-  spec.description   = 'A powerful transfer gem and CLI for IBM Aspera products.'
+  spec.summary       = 'Command line tool for Aspera Server products: Aspera on Cloud, Faspex, Shares, Node, Console, Orchestrator, Transfer Server'
+  spec.description   = 'A powerful CLI for IBM Aspera products'
   spec.homepage      = 'https://ibm.com/aspera'
   spec.license       = 'Apache-2.0'
 
