@@ -130,7 +130,7 @@ module Aspera
 
         # use web socket initiation ?
         if @builder.process_param('wss_enabled',:get_value) and @options[:wss]
-          # by default use it if available
+          # by default use web socket session if available, unless removed by user
           @builder.add_command_line_options(['--ws-connect'])
           # TODO: option to give order ssh,ws (legacy http is implied bu ssh)
           # quel bordel:
@@ -139,7 +139,7 @@ module Aspera
           @job_spec.delete('EX_ssh_key_paths')
           @job_spec.delete('sshfp')
         else
-          # avoid warning for unused parameter
+          # remove unused parameter (avoid warning)
           @job_spec.delete('wss_port')
         end
 
