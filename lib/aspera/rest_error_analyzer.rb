@@ -3,10 +3,10 @@ require 'aspera/rest_call_error'
 require 'singleton'
 
 module Aspera
-  # builds a meaningful error message from known formats in Aspera products
-  # TODO: probably too monolithic..
+  # analyze error codes returned by REST calls and raise ruby exception
   class RestErrorAnalyzer
     include Singleton
+    # the singleton object is registered with application specific handlers
     def initialize
       # list of handlers
       @error_handlers=[]
@@ -18,6 +18,7 @@ module Aspera
       end
     end
 
+    # Use this method to analyze a EST result and raise an exception
     # Analyzes REST call response and raises a RestCallError exception
     # if HTTP result code is not 2XX
     def raiseOnError(req,res)
@@ -43,7 +44,7 @@ module Aspera
       end
     end
 
-    # add a new error handler
+    # add a new error handler (done at application initialisation)
     # @param name : name of error handler (for logs)
     # @param block : processing of response: takes two parameters: name, context
     # name is the one provided here
