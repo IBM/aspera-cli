@@ -53,10 +53,12 @@ changes:
 	git log $(LATEST_TAG)..HEAD --oneline
 diff: changes
 
-doc: README.pdf docs/secrets.make
+doc: README.pdf docs/secrets.make docs/test.ascli.conf
 
 docs/secrets.make: local/secrets.make
 	sed 's/=.*/=_value_here_/' < local/secrets.make > docs/secrets.make
+docs/test.ascli.conf: local/test.ascli.conf
+	ruby -e 'require "yaml";n={};c=YAML.load_file("local/test.ascli.conf").each{|k,v| n[k]=["config","default"].include?(k)?v:v.keys.inject({}){|m,i|m[i]="your value here";m}};File.write("docs/test.ascli.conf",n.to_yaml)'
 
 README.pdf: README.md
 	pandoc --number-sections --resource-path=. --toc -o README.html README.md
