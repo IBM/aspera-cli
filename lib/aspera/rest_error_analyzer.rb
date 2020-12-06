@@ -32,7 +32,7 @@ module Aspera
       # note that there can be an error even if code is 2XX
       @error_handlers.each do |handler|
         begin
-          Log.log.debug("test exception: #{handler[:name]}")
+          #Log.log.debug("test exception: #{handler[:name]}")
           handler[:block].call(handler[:name],context)
         rescue => e
           Log.log.error("ERROR in handler:\n#{e.message}\n#{e.backtrace}")
@@ -59,7 +59,7 @@ module Aspera
       add_handler(name) do |type,context|
         # need to clone because we modify and same array is used subsequently
         path=args.clone
-        Log.log.debug("path=#{path}")
+        #Log.log.debug("path=#{path}")
         # if last in path is boolean it tells if the error is only with http error code or always
         always=[true, false].include?(path.last) ? path.pop : false
         if context[:data].is_a?(Hash) and (!context[:response].code.start_with?('2') or always)
