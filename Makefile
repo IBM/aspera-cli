@@ -781,13 +781,11 @@ $(T)/conf_export: $(T)/.exists
 	@echo $@
 	$(EXE_MAN) config export
 	@touch $@
-HIDE_CLIENT_ID=BMDiAWLP6g
-HIDE_CLIENT_SECRET=opkZrJuN-J8anDxPcPA5CFLsY5CopRvLqBeDV24_8KJgarmuYGkI0ha5zNkBLpZ1-edRwzgHZfhisyQltG-xJ-kiZvvxf3Co
-SAMPLE_CONFIG_FILE=todelete.txt
+SAMPLE_CONFIG_FILE=$(DIR_TMP)/todelete.txt
 $(T)/conf_wizard_org: $(T)/.exists
 	@echo $@
 	$(EXE_MAN) conf flush
-	$(EXE_MAN) conf wiz --url=https://$(CF_AOC_ORG).ibmaspera.com --config-file=$(SAMPLE_CONFIG_FILE) --client-id=$(HIDE_CLIENT_ID) --client-secret=$(HIDE_CLIENT_SECRET) --pkeypath='' --use-generic-client=no --username=$(CF_AOC_USER)
+	$(EXE_MAN) conf wiz --url=https://$(CF_AOC_ORG).ibmaspera.com --config-file=$(SAMPLE_CONFIG_FILE) --pkeypath='' --use-generic-client=yes --username=$(CF_AOC_USER)
 	cat $(SAMPLE_CONFIG_FILE)
 	rm -f $(SAMPLE_CONFIG_FILE)
 	@touch $@
