@@ -80,16 +80,16 @@ README.pdf: README.md
 README.md: $(DIR_DOC)/README.erb.md $(INCL_COMMANDS) $(INCL_USAGE) $(INCL_ASESSION)
 	COMMANDS=$(INCL_COMMANDS) USAGE=$(INCL_USAGE) ASESSION=$(INCL_ASESSION) VERSION=`$(EXE_NOMAN) --version` TOOLNAME=$(EXENAME) erb $(DIR_DOC)/README.erb.md > README.md
 
-$(INCL_COMMANDS): Makefile
+$(INCL_COMMANDS): $(DIR_TMP)/.exists Makefile
 	sed -nEe 's/.*\$$\(EXE_MAN.?\)/$(EXENAME)/p' Makefile|sed -E -e 's/(")(url|api_key|username|password|access_key_id|secret_access_key|pass)(":")[^"]*(")/\1\2\3my_\2_here\4/g;s/--(secret|url|password|username)=[^ ]*/--\1=my_\1_here/g;s/\$$\(([^)]+)\)/\1/g;s/"'"'"'"/"/g;s/CF_([0-9A-Z_]*)/my_\1/g;s/\$$(\$$'"'"')/\1/;s/\$$(\$$)/\1/g'|sort -u > $(INCL_COMMANDS)
 incl:
 	sed -nEe 's/.*\$$\(EXE_MAN.?\)/$(EXENAME)/p' Makefile|sed -E -e 's/(")(url|api_key|username|password|access_key_id|secret_access_key|pass)(":")[^"]*(")/\1\2\3my_\2_here\4/g;s/--(secret|url|password|username)=[^ ]*/--\1=my_\1_here/g;s/\$$\(([^)]+)\)/\1/g;s/"'"'"'"/"/g;s/CF_([0-9A-Z_]*)/my_\1/g;s/\$$(\$$'"'"')/\1/;s/\$$(\$$)/\1/g'|sort -u 
 # generated help of tools depends on all sources, so regenerate always
 .PHONY: $(INCL_USAGE)
-$(INCL_USAGE):
+$(INCL_USAGE): $(DIR_TMP)/.exists
 	$(EXE_NOMAN) -Cnone -h 2> $(INCL_USAGE) || true
 .PHONY: $(INCL_ASESSION)
-$(INCL_ASESSION):
+$(INCL_ASESSION): $(DIR_TMP)/.exists
 	$(DIR_BIN)/asession -h 2> $(INCL_ASESSION) || true
 
 # gem file is generated in top folder
@@ -121,6 +121,7 @@ push:
 
 clean::
 	rm -fr $(DIR_TMP)
+	mkdir -p $(DIR_TMP)
 $(DIR_TMP)/.exists:
 	mkdir -p $(DIR_TMP)
 	@touch $(DIR_TMP)/.exists

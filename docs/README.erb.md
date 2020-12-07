@@ -1,6 +1,6 @@
-[comment]: # (Do not edit README.md, edit README.erb.md)
-[comment]: # (README.erb.md uses markdown format with embeded ruby macros)
-[comment]: # (README.md is generated after compilation of README.erb.md)
+[comment1]: # (Do not edit README.md, edit README.erb.md)
+[comment2]: # (README.erb.md uses markdown format with embeded ruby macros)
+[comment3]: # (README.md is generated after compilation of README.erb.md)
 
 # `ascli` : a Command Line for IBM Aspera products
 
