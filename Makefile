@@ -5,8 +5,8 @@
 DIR_TOP=$(shell dirname "$(realpath $(firstword $(MAKEFILE_LIST)))")
 DIR_BIN=$(DIR_TOP)/bin
 DIR_LIB=$(DIR_TOP)/lib
-DIR_OUT=$(DIR_TOP)/out
 DIR_TMP=$(DIR_TOP)/tmp
+DIR_DOC=$(DIR_TOP)/docs
 DIR_PRIV=$(DIR_TOP)/local
 
 # just the name of the command line tool (used for documentation and execution)
@@ -21,8 +21,7 @@ EXE_NOMAN=$(EXE_MAN)
 
 GEMNAME=aspera-cli
 GEMVERSION=$(shell $(EXE_NOMAN) --version)
-NAME_GEMFILE=$(GEMNAME)-$(GEMVERSION).gem
-PATH_GEMFILE=$(DIR_OUT)/$(NAME_GEMFILE)
+PATH_GEMFILE=$(DIR_TOP)/$(GEMNAME)-$(GEMVERSION).gem
 
 GIT_TAG_VERSION_PREFIX='v_'
 GIT_TAG_CURRENT=$(GIT_TAG_VERSION_PREFIX)$(GEMVERSION)
@@ -36,9 +35,9 @@ DIR_CONNECT_DOWNLOAD=$(HOME)/Desktop
 LATEST_TAG=$(shell git describe --tags --abbrev=0)
 
 # files generated to be included in README.md
-INCL_USAGE=$(DIR_OUT)/$(EXENAME)_usage.txt
-INCL_COMMANDS=$(DIR_OUT)/$(EXENAME)_commands.txt
-INCL_ASESSION=$(DIR_OUT)/asession_usage.txt
+INCL_USAGE=$(DIR_TMP)/$(EXENAME)_usage.txt
+INCL_COMMANDS=$(DIR_TMP)/$(EXENAME)_commands.txt
+INCL_ASESSION=$(DIR_TMP)/asession_usage.txt
 
 PKG_TEST_TITLE=$(shell date)
 
@@ -50,9 +49,9 @@ all:: gem
 clean::
 	rm -f $(GEMNAME)-*.gem *.log token.* preview.png aspera_bypass_*.pem sample_file.txt
 	rm -f README.pdf README.html $(INCL_COMMANDS) $(INCL_USAGE) $(INCL_ASESSION) $(TEST_CONFIG)
-	rm -fr tmp_* contents $(T) $(DIR_OUT) "PKG - "*
+	rm -fr tmp_* contents $(T) "PKG - "*
 	rm -f 200KB* *AsperaConnect-ML* sample.conf* .DS_Store 10M.dat
-	mkdir t $(DIR_OUT)
+	mkdir $(T)
 	gem uninstall -a -x $(GEMNAME)
 cleanupgems:
 	gem uninstall -a -x $(gem list|cut -f 1 -d' '|egrep -v 'rdoc|psych|rake|openssl|json|io-console|bigdecimal')
@@ -78,11 +77,11 @@ README.pdf: README.md
 	pandoc --number-sections --resource-path=. --toc -o README.html README.md
 	wkhtmltopdf toc README.html README.pdf
 
-README.md: README.erb.md $(INCL_COMMANDS) $(INCL_USAGE) $(INCL_ASESSION)
-	COMMANDS=$(INCL_COMMANDS) USAGE=$(INCL_USAGE) ASESSION=$(INCL_ASESSION) VERSION=`$(EXE_NOMAN) --version` TOOLNAME=$(EXENAME) erb README.erb.md > README.md
+README.md: $(DIR_DOC)/README.erb.md $(INCL_COMMANDS) $(INCL_USAGE) $(INCL_ASESSION)
+	COMMANDS=$(INCL_COMMANDS) USAGE=$(INCL_USAGE) ASESSION=$(INCL_ASESSION) VERSION=`$(EXE_NOMAN) --version` TOOLNAME=$(EXENAME) erb $(DIR_DOC)/README.erb.md > README.md
 
 $(INCL_COMMANDS): Makefile
-	sed -nEe 's/.*\$$\(EXE_MAN.?\)/$(EXENAME)/p' Makefile|sed -E -e 's/(")(url|api_key|username|password|access_key_id|secret_access_key|pass)(":")[^"]*(")/\1\2\3my_\2_here\4/g;s/--(secret|url|password|username)=[^ ]*/--\1=my_\1_here/g;s/\$$\(([^)]+)\)/\1/g;s/"'"'"'"/"/g;s/CF_([0-9A-Z_]*)/my_\1/g;s/\$$(\$$'"'"')/\1/;s/\$$\($$)/\1/g'|sort -u > $(INCL_COMMANDS)
+	sed -nEe 's/.*\$$\(EXE_MAN.?\)/$(EXENAME)/p' Makefile|sed -E -e 's/(")(url|api_key|username|password|access_key_id|secret_access_key|pass)(":")[^"]*(")/\1\2\3my_\2_here\4/g;s/--(secret|url|password|username)=[^ ]*/--\1=my_\1_here/g;s/\$$\(([^)]+)\)/\1/g;s/"'"'"'"/"/g;s/CF_([0-9A-Z_]*)/my_\1/g;s/\$$(\$$'"'"')/\1/;s/\$$(\$$)/\1/g'|sort -u > $(INCL_COMMANDS)
 incl:
 	sed -nEe 's/.*\$$\(EXE_MAN.?\)/$(EXENAME)/p' Makefile|sed -E -e 's/(")(url|api_key|username|password|access_key_id|secret_access_key|pass)(":")[^"]*(")/\1\2\3my_\2_here\4/g;s/--(secret|url|password|username)=[^ ]*/--\1=my_\1_here/g;s/\$$\(([^)]+)\)/\1/g;s/"'"'"'"/"/g;s/CF_([0-9A-Z_]*)/my_\1/g;s/\$$(\$$'"'"')/\1/;s/\$$(\$$)/\1/g'|sort -u 
 # generated help of tools depends on all sources, so regenerate always
@@ -93,10 +92,9 @@ $(INCL_USAGE):
 $(INCL_ASESSION):
 	$(DIR_BIN)/asession -h 2> $(INCL_ASESSION) || true
 
-# gem file is generated in current folder, move to destination
+# gem file is generated in top folder
 $(PATH_GEMFILE): README.md
 	gem build $(GEMNAME)
-	mv $(NAME_GEMFILE) $(PATH_GEMFILE)
 
 gem: $(PATH_GEMFILE)
 
@@ -237,11 +235,15 @@ $(T)/fx_psnd:
 $(T)/fx_prs: $(DIR_TMP)/.exists
 	@echo $@
 	@sleep 5
-	$(EXE_MAN) faspex package recv --box=sent --to-folder=$(DIR_TMP) --id=$$($(EXE_MAN) faspex package list --box=sent --fields=package_id --format=csv --display=data|tail -n 1)
+	pack_id=$$($(EXE_MAN) faspex package list --box=sent --fields=package_id --format=csv --display=data|tail -n 1);\
+	echo "id=$$pack_id";\
+	$(EXE_MAN) faspex package recv --box=sent --to-folder=$(DIR_TMP) --id=$$pack_id
 	@touch $@
 $(T)/fx_pri: $(DIR_TMP)/.exists
 	@echo $@
-	$(EXE_MAN) faspex package recv --to-folder=$(DIR_TMP) --id=$$($(EXE_MAN) faspex package list --fields=package_id --format=csv --display=data|tail -n 1)
+	pack_id=$$($(EXE_NOMAN) faspex package list --fields=package_id --format=csv --display=data|tail -n 1);\
+	echo "id=$$pack_id";\
+	$(EXE_MAN) faspex package recv --to-folder=$(DIR_TMP) --id=$$pack_id
 	@touch $@
 $(T)/fx_prl:
 	@echo $@
