@@ -115,6 +115,8 @@ module Aspera
           result.each do |e|
             e[PACKAGE_MATCH_FIELD]=e['to'].first['recipient_delivery_id'].first
           end
+          # remove dropbox packages
+          result.select!{|p|p['metadata'].first['field'].select{|j|j['name'].eql?('_dropbox_name')}.empty? rescue false}
           return result
         end
 
@@ -236,7 +238,11 @@ module Aspera
                 pkg_id_uri.select!{|i|!skip_ids_data.include?(i[:id])}
               else
                 # TODO: delivery id is the right one if package was receive by group
-                entry_xml=api_v3.call({:operation=>'GET',:subpath=>"received/#{delivid}",:headers=>{'Accept'=>'application/xml'}})[:http].body
+                endpoint=case self.options.get_option(:box,:mandatory)
+                when :inbox,:archive;'received'
+                when :sent;'sent'
+                end
+                entry_xml=api_v3.call({:operation=>'GET',:subpath=>"#{endpoint}/#{delivid}",:headers=>{'Accept'=>'application/xml'}})[:http].body
                 package_entry=XmlSimple.xml_in(entry_xml, {'ForceArray' => true})
                 pkg_id_uri=[{:id=>delivid,:uri=>self.class.get_fasp_uri_from_entry(package_entry)}]
               end
