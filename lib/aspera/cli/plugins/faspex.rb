@@ -138,11 +138,15 @@ module Aspera
           pkgdatares=api_public_link.call({:operation=>'POST',:subpath=>create_path,:json_params=>package_create_params,:headers=>{'Accept'=>'text/javascript'}})[:http].body
           # get args of function call
           pkgdatares.gsub!("\n",'') # one line
-          pkgdatares=pkgdatares.gsub!(/^[^"]+\("\{/,'{') # delete header
-          pkgdatares=pkgdatares.gsub!(/"\);[^"]+$/,'"') # delete trailer
+          pkgdatares.gsub!(/^[^"]+\("\{/,'{') # delete header
+          pkgdatares.gsub!(/"\);[^"]+$/,'"') # delete trailer
           pkgdatares.gsub!(/\}", *"/,'},"') # between two args
           pkgdatares.gsub!('\\"','"') # remove protecting quote
-          pkgdatares=JSON.parse("[#{pkgdatares}]")
+          begin
+            pkgdatares=JSON.parse("[#{pkgdatares}]")
+          rescue JSON::ParserError # => e
+            raise "Link not valid"
+          end
           return pkgdatares.first
         end
 
