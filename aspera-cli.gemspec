@@ -8,11 +8,10 @@ Gem::Specification.new do |spec|
   spec.email         = ['laurent.martin.aspera@fr.ibm.com']
   spec.summary       = 'Command line tool for Aspera Server products: Aspera on Cloud, Faspex, Shares, Node, Console, Orchestrator, Transfer Server'
   spec.description   = 'A powerful CLI for IBM Aspera products'
-  spec.homepage      = 'https://ibm.com/aspera'
+  spec.homepage      = 'https://github.com/IBM/aspera-cli'
   spec.license       = 'Apache-2.0'
 
-  # Prevent pushing this gem to RubyGems.org. To allow pushes either set the 'allowed_push_host'
-  # to allow pushing to a single host or delete this section to allow pushing to any host.
+  # push only to rubygems.org
   if spec.respond_to?(:metadata)
     spec.metadata['allowed_push_host'] = 'https://rubygems.org'
   else
