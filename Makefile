@@ -1,7 +1,6 @@
 # just the name of the tool
 EXENAME=ascli
 # location of configuration files
-TOOLCONFIGDIR=$(HOME)/.aspera/$(EXENAME)
 DEV_FOLDER=.
 BINDIR=$(DEV_FOLDER)/bin
 LIBDIR=$(DEV_FOLDER)/lib
@@ -92,18 +91,6 @@ gem: $(GEMFILE)
 
 install: $(GEMFILE)
 	gem install $(GEMFILE)
-
-# create a private/public key pair
-# note that the key can also be generated with: ssh-keygen -t rsa -f data/myid -N ''
-# amd the pub key can be extracted with: openssl rsa -in data/myid -pubout -out data/myid.pub.pem
-$(CF_PRIVATE_KEY_FILE):
-	mkdir -p $(TOOLCONFIGDIR)
-	openssl genrsa -passout pass:dummypassword -out $(CF_PRIVATE_KEY_FILE).protected 2048
-	openssl rsa -passin pass:dummypassword -in $(CF_PRIVATE_KEY_FILE).protected -out $(CF_PRIVATE_KEY_FILE)
-	rm -f $(CF_PRIVATE_KEY_FILE).protected
-
-setkey: $(CF_PRIVATE_KEY_FILE)
-	$(EXETEST) aspera admin res client --id=$(CF_AOC1_CLIENT_ID) set_pub_key @file:$(CF_PRIVATE_KEY_FILE)
 
 yank:
 	gem yank aspera -v $(GEMVERSION)
