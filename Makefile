@@ -52,7 +52,7 @@ INCL_USAGE=$(DIR_TMP)/$(EXENAME)_usage.txt
 INCL_COMMANDS=$(DIR_TMP)/$(EXENAME)_commands.txt
 INCL_ASESSION=$(DIR_TMP)/asession_usage.txt
 
-doc: README.pdf docs/secrets.make docs/test.ascli.conf
+doc: $(DIR_DOC)/README.pdf docs/secrets.make docs/test.ascli.conf
 
 # generate template configuration files, remove own secrets
 docs/secrets.make: $(DIR_PRIV)/secrets.make
@@ -60,9 +60,9 @@ docs/secrets.make: $(DIR_PRIV)/secrets.make
 docs/test.ascli.conf: $(DIR_PRIV)/test.ascli.conf
 	ruby -e 'require "yaml";n={};c=YAML.load_file("$(DIR_PRIV)/test.ascli.conf").each{|k,v| n[k]=["config","default"].include?(k)?v:v.keys.inject({}){|m,i|m[i]="your value here";m}};File.write("docs/test.ascli.conf",n.to_yaml)'
 
-README.pdf: README.md
-	pandoc --number-sections --resource-path=. --toc -o README.html README.md
-	wkhtmltopdf toc README.html README.pdf
+$(DIR_DOC)/README.pdf: README.md
+	pandoc --number-sections --resource-path=. --toc -o $(DIR_DOC)/README.html README.md
+	wkhtmltopdf toc $(DIR_DOC)/README.html $(DIR_DOC)/README.pdf
 
 README.md: $(DIR_DOC)/README.erb.md $(INCL_COMMANDS) $(INCL_USAGE) $(INCL_ASESSION)
 	COMMANDS=$(INCL_COMMANDS) USAGE=$(INCL_USAGE) ASESSION=$(INCL_ASESSION) VERSION=`$(EXE_NOMAN) --version` TOOLNAME=$(EXENAME) erb $(DIR_DOC)/README.erb.md > README.md
@@ -77,7 +77,7 @@ $(INCL_USAGE): $(DIR_TMP)/.exists
 $(INCL_ASESSION): $(DIR_TMP)/.exists
 	$(DIR_BIN)/asession -h 2> $(INCL_ASESSION) || true
 clean::
-	rm -f README.pdf README.html $(INCL_COMMANDS) $(INCL_USAGE) $(INCL_ASESSION) 
+	rm -f $(DIR_DOC)/README.pdf $(DIR_DOC)/README.html $(INCL_COMMANDS) $(INCL_USAGE) $(INCL_ASESSION) 
 
 ##################################
 # Gem
@@ -910,16 +910,17 @@ $(T)/sync1: $(T)/.exists
 tsync: $(T)/sync1
 $(T)/sdk1: $(T)/.exists
 	@echo $@
-	ruby -I $(DIR_LIB) $(DIR_TOP)/examples/transfer.rb
+	tmp=$(DIR_TMP) ruby -I $(DIR_LIB) $(DIR_TOP)/examples/transfer.rb
 	@touch $@
 tsample: $(T)/sdk1
 
 $(T)/tcos: $(T)/.exists
 	@echo $@
-	$(EXE_MAN) cos node --service-credentials=@json:@file:$(CF_ICOS_CREDS_FILE) --region=$(CF_ICOS_REGION) --bucket=$(CF_ICOS_BUCKET) info
-	$(EXE_MAN) cos node --service-credentials=@json:@file:$(CF_ICOS_CREDS_FILE) --region=$(CF_ICOS_REGION) --bucket=$(CF_ICOS_BUCKET) access_key --id=self show
-	$(EXE_MAN) cos node --service-credentials=@json:@file:$(CF_ICOS_CREDS_FILE) --region=$(CF_ICOS_REGION) --bucket=$(CF_ICOS_BUCKET) upload $(CF_SAMPLE_FILEPATH)
-	$(EXE_MAN) cos node --service-credentials=@json:@file:$(CF_ICOS_CREDS_FILE) --region=$(CF_ICOS_REGION) --bucket=$(CF_ICOS_BUCKET) download $(CF_SAMPLE_FILENAME)
+	$(EXE_MAN) -N cos node --bucket=$(CF_ICOS_BUCKET) --service-credentials=@json:@file:$(DIR_PRIV)/service_creds.json --region=$(CF_ICOS_REGION) info
+	$(EXE_MAN) cos node info
+	$(EXE_MAN) cos node access_key --id=self show
+	$(EXE_MAN) cos node upload $(CF_SAMPLE_FILEPATH)
+	$(EXE_MAN) cos node download $(CF_SAMPLE_FILENAME)
 	@touch $@
 tcos: $(T)/tcos
 

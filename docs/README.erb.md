@@ -2101,11 +2101,18 @@ $ for p in 1 2 3;do ascli shares2 admin users list --value=@json:'{"page":'$p'}'
 
 The IBM Cloud Object Storage provides the possibility to execute transfers using FASP.
 
-Required information are:
+Required options are either:
 
-* service credentials
-* region
-* bucket 
+* `bucket` bucket name
+* `endpoint` storage endpoint url, e.g. https://s3.hkg02.cloud-object-storage.appdomain.cloud
+* `apikey` API Key
+* `crn` resource instance id
+
+or:
+
+* `bucket` bucket name
+* `region` bucket region, e.g. eu-de
+* `service_credentials` see below
 
 Service credentials are directly created using the IBM cloud web ui. Navigate to:
 
@@ -2139,6 +2146,12 @@ It consists in the following structure:
   "resource_instance_id": "crn:v1:bluemix:public:cloud-object-storage:global:a/xxxxxxx....."
 }
 ```
+
+The field `resource_instance_id` is for option `crn`
+
+The field `apikey` is for option `apikey`
+
+Endpoints for regions can be found by querying the `endpoints` URL.
 
 For convenience, let us create a default configuration, for example:
 
