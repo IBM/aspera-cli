@@ -1,13 +1,14 @@
 # This makefile expects being run with bash or zsh shell
 
-# DIR_TOP: main folder of this project
-# use "." automatic detection does not work, in this case "make" with main folder as current working directory
-DIR_TOP=$(shell dirname "$(realpath $(firstword $(MAKEFILE_LIST)))")
-DIR_BIN=$(DIR_TOP)/bin
-DIR_LIB=$(DIR_TOP)/lib
-DIR_TMP=$(DIR_TOP)/tmp
-DIR_DOC=$(DIR_TOP)/docs
-DIR_PRIV=$(DIR_TOP)/local
+# DIR_TOP: main folder of this project (with trailing slash)
+# if "" (empty) or "./" : execute "make" inside the main folder
+# alternatively : $(shell dirname "$(realpath $(firstword $(MAKEFILE_LIST)))")/
+DIR_TOP=
+DIR_BIN=$(DIR_TOP)bin
+DIR_LIB=$(DIR_TOP)lib
+DIR_TMP=$(DIR_TOP)tmp
+DIR_DOC=$(DIR_TOP)docs
+DIR_PRIV=$(DIR_TOP)local
 
 # just the name of the command line tool as in bin folder
 # (used for documentation and execution)
@@ -16,19 +17,23 @@ EXENAME=ascli
 # use only if another config file is used
 # else use EXE_MAN or EXE_NOMAN
 EXETESTB=$(DIR_BIN)/$(EXENAME)
+# configuration file used for tests, create your own from template in "docs"
+TEST_CONF_FILE_BASE=test.ascli.conf
+TEST_CONF_FILE_PATH=$(DIR_PRIV)/$(TEST_CONF_FILE_BASE)
 # this config file contains credentials of platforms used for tests
 # "EXE_MAN" is used to generate sample commands in documentation
-EXE_MAN=$(EXETESTB) --warnings --config-file=$(DIR_PRIV)/test.ascli.conf
+EXE_MAN=$(EXETESTB) --warnings --config-file=$(TEST_CONF_FILE_PATH)
 # invoked like this: do not go to sample command section in manual
 EXE_NOMAN=$(EXE_MAN)
 
-GEMNAME=aspera-cli
-GEMVERSION=$(shell $(EXE_NOMAN) --version)
-PATH_GEMFILE=$(DIR_TOP)/$(GEMNAME)-$(GEMVERSION).gem
+# contains locations and credentials for test servers
+SECRETS_FILE_NAME=secrets.make
+SECRETS_FILE_PATH=$(DIR_PRIV)/$(SECRETS_FILE_NAME)
 
+GEMVERSION=$(shell $(EXE_NOMAN) --version)
 
 # contains secrets, create your own from template
-include $(DIR_PRIV)/secrets.make
+include $(SECRETS_FILE_PATH)
 
 all:: gem
 
@@ -39,11 +44,6 @@ $(DIR_TMP)/.exists:
 	mkdir -p $(DIR_TMP)
 	@touch $(DIR_TMP)/.exists
 
-#clean::
-#	rm -f *.log token.* preview.png aspera_bypass_*.pem sample_file.txt
-#	rm -f tmp_* "PKG - "* 200KB* *AsperaConnect-ML* sample.conf* .DS_Store 10M.dat
-
-
 
 ##################################
 # Documentation
@@ -51,21 +51,23 @@ $(DIR_TMP)/.exists:
 INCL_USAGE=$(DIR_TMP)/$(EXENAME)_usage.txt
 INCL_COMMANDS=$(DIR_TMP)/$(EXENAME)_commands.txt
 INCL_ASESSION=$(DIR_TMP)/asession_usage.txt
+TMPL_TEST_CONF=$(DIR_DOC)/$(TEST_CONF_FILE_BASE)
+TMPL_SECRETS=$(DIR_DOC)/$(SECRETS_FILE_NAME)
 
-doc: $(DIR_DOC)/README.pdf docs/secrets.make docs/test.ascli.conf
+doc: $(DIR_DOC)/README.pdf $(TMPL_SECRETS) $(TMPL_TEST_CONF)
 
 # generate template configuration files, remove own secrets
-docs/secrets.make: $(DIR_PRIV)/secrets.make
-	sed 's/=.*/=_value_here_/' < $(DIR_PRIV)/secrets.make > docs/secrets.make
-docs/test.ascli.conf: $(DIR_PRIV)/test.ascli.conf
-	ruby -e 'require "yaml";n={};c=YAML.load_file("$(DIR_PRIV)/test.ascli.conf").each{|k,v| n[k]=["config","default"].include?(k)?v:v.keys.inject({}){|m,i|m[i]="your value here";m}};File.write("docs/test.ascli.conf",n.to_yaml)'
+$(TMPL_SECRETS): $(SECRETS_FILE_PATH)
+	sed 's/=.*/=_value_here_/' < $(SECRETS_FILE_PATH) > $(TMPL_SECRETS)
+$(TMPL_TEST_CONF): $(TEST_CONF_FILE_PATH)
+	ruby -e 'require "yaml";n={};c=YAML.load_file("$(TEST_CONF_FILE_PATH)").each{|k,v| n[k]=["config","default"].include?(k)?v:v.keys.inject({}){|m,i|m[i]="your value here";m}};File.write("$(TMPL_TEST_CONF)",n.to_yaml)'
 
-$(DIR_DOC)/README.pdf: README.md
-	pandoc --number-sections --resource-path=. --toc -o $(DIR_DOC)/README.html README.md
+$(DIR_DOC)/README.pdf: $(DIR_TOP)README.md
+	pandoc --number-sections --resource-path=. --toc -o $(DIR_DOC)/README.html $(DIR_TOP)README.md
 	wkhtmltopdf toc $(DIR_DOC)/README.html $(DIR_DOC)/README.pdf
 
-README.md: $(DIR_DOC)/README.erb.md $(INCL_COMMANDS) $(INCL_USAGE) $(INCL_ASESSION)
-	COMMANDS=$(INCL_COMMANDS) USAGE=$(INCL_USAGE) ASESSION=$(INCL_ASESSION) VERSION=`$(EXE_NOMAN) --version` TOOLNAME=$(EXENAME) erb $(DIR_DOC)/README.erb.md > README.md
+$(DIR_TOP)README.md: $(DIR_DOC)/README.erb.md $(INCL_COMMANDS) $(INCL_USAGE) $(INCL_ASESSION)
+	COMMANDS=$(INCL_COMMANDS) USAGE=$(INCL_USAGE) ASESSION=$(INCL_ASESSION) VERSION=`$(EXE_NOMAN) --version` TOOLNAME=$(EXENAME) erb $(DIR_DOC)/README.erb.md > $(DIR_TOP)README.md
 
 $(INCL_COMMANDS): $(DIR_TMP)/.exists Makefile
 	sed -nEe 's/.*\$$\(EXE_MAN.?\)/$(EXENAME)/p' Makefile|sed -E -e 's/(")(url|api_key|username|password|access_key_id|secret_access_key|pass)(":")[^"]*(")/\1\2\3my_\2_here\4/g;s/--(secret|url|password|username)=[^ ]*/--\1=my_\1_here/g;s/\$$\(([^)]+)\)/\1/g;s/"'"'"'"/"/g;s/CF_([0-9A-Z_]*)/my_\1/g;s/\$$(\$$'"'"')/\1/;s/\$$(\$$)/\1/g'|sort -u > $(INCL_COMMANDS)
@@ -81,14 +83,17 @@ clean::
 
 ##################################
 # Gem
+GEMNAME=aspera-cli
+PATH_GEMFILE=$(DIR_TOP)$(GEMNAME)-$(GEMVERSION).gem
 
 # gem file is generated in top folder
-$(PATH_GEMFILE): README.md
+$(PATH_GEMFILE): $(DIR_TOP)README.md
 	gem build $(GEMNAME)
 clean::
 	rm -f $(PATH_GEMFILE)
 gem: $(PATH_GEMFILE)
-
+gempush: all dotag
+	gem push $(PATH_GEMFILE)
 install: $(PATH_GEMFILE)
 	gem install $(PATH_GEMFILE)
 # in case of big problem on released gem version, it can be deleted from rubygems
@@ -96,37 +101,32 @@ yank:
 	gem yank aspera -v $(GEMVERSION)
 cleanupgems:
 	gem uninstall -a -x $(gem list|cut -f 1 -d' '|egrep -v 'rdoc|psych|rake|openssl|json|io-console|bigdecimal')
+installgem:
+	gem install $$(sed -nEe "/^[^#].*add_[^_]+_dependency/ s/[^']+'([^']+)'.*/\1/p" < $(GEMNAME).gemspec )
 
 ##################################
 # GIT
 GIT_TAG_VERSION_PREFIX='v_'
 GIT_TAG_CURRENT=$(GIT_TAG_VERSION_PREFIX)$(GEMVERSION)
 
-
 dotag:
 	git tag -a $(GIT_TAG_CURRENT) -m "gem version $(GEMVERSION) pushed"
-
 deltag:
 	git tag --delete $(GIT_TAG_CURRENT)
-
-gempush: all dotag
-	gem push $(PATH_GEMFILE)
-
 commit:
 	git commit -a
 # eq to: git push origin master
 push:
 	git push
-LATEST_TAG=$(shell git describe --tags --abbrev=0)
 changes:
-	@echo "Changes since $(LATEST_TAG)"
-	git log $(LATEST_TAG)..HEAD --oneline
-
+	@latest_tag=$$(git describe --tags --abbrev=0);\
+	echo "Changes since [$$latest_tag]";\
+	git log $$latest_tag..HEAD --oneline
 
 ##################################
 # Integration tests
 # flag files for integration tests generated here
-T=$(DIR_TOP)/t
+T=$(DIR_TOP)t
 # default download folder for Connect Client
 DIR_CONNECT_DOWNLOAD=$(HOME)/Desktop
 PKG_TEST_TITLE=$(shell date)
@@ -259,7 +259,7 @@ $(T)/fx_pri: $(T)/.exists
 	@touch $@
 $(T)/fx_prl: $(T)/.exists
 	@echo $@
-	-$(EXE_MAN) faspex package recv --link='$(CF_FASPEX_PUBLINK_RECV_PACKAGE)'
+	-$(EXE_MAN) faspex package recv --to-folder=$(DIR_TMP) --link='$(CF_FASPEX_PUBLINK_RECV_PACKAGE)'
 	@touch $@
 $(T)/fx_prall: $(T)/.exists
 	@echo $@
@@ -452,7 +452,8 @@ $(T)/aocp2: $(T)/.exists
 	@touch $@
 $(T)/aocp3: $(T)/.exists
 	@echo $@
-	$(EXE_MAN) oncloud packages recv --id=$$($(EXE_MAN) oncloud packages list --format=csv --fields=id --display=data|head -n 1)
+	last_pack=$$($(EXE_MAN) oncloud packages list --format=csv --fields=id --display=data|head -n 1);\
+	$(EXE_MAN) oncloud packages recv --id=$$last_pack --to-folder=$(DIR_TMP)
 	@touch $@
 $(T)/aocp4: $(T)/.exists
 	@echo $@
@@ -699,7 +700,7 @@ $(T)/co5: $(T)/.exists
 	@touch $@
 $(T)/co6: $(T)/.exists
 	@echo $@
-	$(EXE_MAN) config ascp connect id 'Aspera Connect for Windows' links id 'Windows Installer' download --to-folder=.
+	$(EXE_MAN) config ascp connect id 'Aspera Connect for Windows' links id 'Windows Installer' download --to-folder=$(DIR_TMP)
 	@touch $@
 tcon: $(T)/co1 $(T)/co2 $(T)/co3 $(T)/co4 $(T)/co5 $(T)/co6
 
@@ -786,7 +787,7 @@ SAMPLE_CONFIG_FILE=$(DIR_TMP)/tmp_config.yml
 $(T)/conf_wizard_org: $(T)/.exists
 	@echo $@
 	$(EXE_MAN) conf flush
-	$(EXE_MAN) conf wiz --url=https://$(CF_AOC_ORG).ibmaspera.com --config-file=$(SAMPLE_CONFIG_FILE) --pkeypath='' --username=$(CF_AOC_USER) --use-generic-client=yes
+	$(EXE_MAN) conf wiz --url=https://$(CF_AOC_ORG).ibmaspera.com --config-file=$(SAMPLE_CONFIG_FILE) --pkeypath='' --username=$(CF_AOC_USER) --test-mode=yes --use-generic-client=yes
 	cat $(SAMPLE_CONFIG_FILE)
 	rm -f $(SAMPLE_CONFIG_FILE)
 	@touch $@
@@ -910,7 +911,7 @@ $(T)/sync1: $(T)/.exists
 tsync: $(T)/sync1
 $(T)/sdk1: $(T)/.exists
 	@echo $@
-	tmp=$(DIR_TMP) ruby -I $(DIR_LIB) $(DIR_TOP)/examples/transfer.rb
+	tmp=$(DIR_TMP) ruby -I $(DIR_LIB) $(DIR_TOP)examples/transfer.rb
 	@touch $@
 tsample: $(T)/sdk1
 
@@ -920,7 +921,7 @@ $(T)/tcos: $(T)/.exists
 	$(EXE_MAN) cos node info
 	$(EXE_MAN) cos node access_key --id=self show
 	$(EXE_MAN) cos node upload $(CF_SAMPLE_FILEPATH)
-	$(EXE_MAN) cos node download $(CF_SAMPLE_FILENAME)
+	$(EXE_MAN) cos node download $(CF_SAMPLE_FILENAME) --to-folder=$(DIR_TMP)
 	@touch $@
 tcos: $(T)/tcos
 
@@ -938,13 +939,14 @@ $(T)/f5_3: $(T)/.exists
 	@touch $@
 $(T)/f5_4: $(T)/.exists
 	@echo $@
-	LAST_PACK=$$(ascli faspex5 pack list --value=@json:'{"type":"received","subtype":"mypackages","limit":1}' --fields=id --format=csv --display=data);\
-	$(EXE_MAN) faspex5 package receive --id=$$LAST_PACK
+	package_id=$$($(EXE_NOMAN) faspex5 pack list --value=@json:'{"type":"received","subtype":"mypackages","limit":1}' --fields=id --format=csv --display=data);\
+	echo $$package_id;\
+	$(EXE_MAN) faspex5 package receive --id=$$package_id --to-folder=$(DIR_TMP)
 	@touch $@
 
 tf5: $(T)/f5_1 $(T)/f5_2 $(T)/f5_3 $(T)/f5_4
 
-tests: t $(T)/unit tshares tfaspex tconsole tnode taoc tfasp tsync torc tcon tnsync tconf tprev tats tsample tcos tf5
+tests: $(T)/unit tshares tfaspex tconsole tnode taoc tfasp tsync torc tcon tnsync tconf tprev tats tsample tcos tf5
 # tshares2
 
 tnagios: $(T)/fx_nagios $(T)/serv_nagios_webapp $(T)/serv_nagios_transfer $(T)/nd_nagios
@@ -953,6 +955,9 @@ $(T)/fxgw: $(T)/.exists
 	@echo $@
 	$(EXE_MAN) oncloud faspex
 	@touch $@
+
+###################
+# Various tools
 
 setupprev:
 	sudo asnodeadmin --reload
@@ -972,5 +977,3 @@ noderestart:
 	sudo launchctl start com.aspera.asperanoded
 irb:
 	irb -I $(DIR_LIB)
-installgem:
-	gem install $$(sed -nEe "/^[^#].*add_[^_]+_dependency/ s/[^']+'([^']+)'.*/\1/p" < $(GEMNAME).gemspec )
