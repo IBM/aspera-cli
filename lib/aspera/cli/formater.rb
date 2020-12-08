@@ -108,11 +108,9 @@ module Aspera
       end
 
       def result_all_fields(results,table_rows_hash_val)
-        raise "cannot get field names for empty result" if table_rows_hash_val.empty?
-        if table_rows_hash_val.is_a?(Array)
-          # get the list of all column names used in all lines, not just frst one, as all lines may have different columns
-          final_table_columns=table_rows_hash_val.inject({}){|m,v|v.keys.each{|c|m[c]=true};m}.keys
-        end
+        raise "internal error: must be array" unless table_rows_hash_val.is_a?(Array)
+        # get the list of all column names used in all lines, not just frst one, as all lines may have different columns
+        return table_rows_hash_val.inject({}){|m,v|v.keys.each{|c|m[c]=true};m}.keys
       end
 
       # this method displays the results, especially the table format
