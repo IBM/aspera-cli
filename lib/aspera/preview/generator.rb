@@ -3,8 +3,6 @@ require 'aspera/preview/options'
 require 'aspera/preview/utils'
 require 'aspera/preview/file_types'
 
-# TODO: option : do not match extensions
-# TODO: option : do not match mime type
 module Aspera
   module Preview
     # generate one preview file for one format for one file at a time
