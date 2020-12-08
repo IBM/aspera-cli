@@ -11,7 +11,7 @@ require 'date'
 module Aspera
   module Cli
     module Plugins
-      class Aspera < BasicAuthPlugin
+      class Oncloud < BasicAuthPlugin
         VAL_ALL='ALL'
         private_constant :VAL_ALL
         attr_reader :api_aoc
