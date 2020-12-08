@@ -995,7 +995,7 @@ All standard _transfer-spec_ parameters can be overloaded. To display parameters
 run in debug mode (--log-level=debug). [_transfer-spec_](#transferspec) can 
 also be saved/overridden in the config file.
 
-<%= File.read('docs/transfer_spec.html').gsub(/.*<body>(.*)<\/body>.*/m,'\1') %>
+<%= File.read("#{ENV['DIR_DOC']}transfer_spec.html").gsub(/.*<body>(.*)<\/body>.*/m,'\1') %>
 
 ### Destination folder for transfers
 
