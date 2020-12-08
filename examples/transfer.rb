@@ -9,6 +9,8 @@ require 'aspera/rest'
 require 'aspera/rest_errors_aspera'
 require 'json'
 
+tmpdir=ENV['tmp'] || '.'
+
 ##############################################################
 # generic initialisation : configuration of FaspManager
 
@@ -16,9 +18,9 @@ require 'json'
 Aspera::Log.instance.level=:debug
 
 # set path to your copy of ascp binary
-Aspera::Fasp::Installation.instance.ascp_path='/Users/laurent/Applications/Aspera Connect.app/Contents/Resources/ascp'
+Aspera::Fasp::Installation.instance.ascp_path=ENV['ascp'] || '/Library/aspera/bin/ascp'
 # some required files are generated here (keys, certs)
-Aspera::Fasp::Installation.instance.config_folder = '.'
+Aspera::Fasp::Installation.instance.config_folder = tmpdir
 
 # register aspera REST call error handlers
 Aspera::RestErrorsAspera.registerHandlers
@@ -60,7 +62,7 @@ transfer_spec={
   'remote_password' =>'demoaspera',
   'direction'       =>'receive',
   'ssh_port'        =>33001,
-  'destination_root'=>'.',
+  'destination_root'=>tmpdir,
   'paths'           =>[{'source'=>'aspera-test-dir-tiny/200KB.1'}]
 }
 # start transfer in separate thread
@@ -82,7 +84,7 @@ raise "Error(s) occured: #{errors.join(',')}" if !errors.empty?
 ##############################################################
 # second example: upload with node authorization
 
-# create rest client for Node API
+# create rest client for Node API on a public demo system, using public demo credentials
 node_api=Aspera::Rest.new({
   :base_url => 'https://eudemo.asperademo.com:9092',
   :auth     => {
@@ -91,7 +93,7 @@ node_api=Aspera::Rest.new({
   :password => 'demoaspera'
   }})
 # define sample file(s) and destination folder
-sources=['sample_file.txt']
+sources=["#{tmpdir}/sample_file.txt"]
 destination='/Upload'
 # create sample file(s)
 sources.each{|p|File.write(p,"Hello World!")}
