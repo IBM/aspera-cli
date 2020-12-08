@@ -1233,76 +1233,24 @@ ascli --no-default node --url=my_url_here --username=my_username_here --password
 ascli --no-default node --url=my_url_here --username=my_username_here --password=my_password_here --insecure=yes upload --to-folder=my_HSTS_FOLDER_UPLOAD --sources=@ts --ts=@json:'{"paths":[{"source":"/aspera-test-dir-small/10MB.1"}],"remote_password":"my_HSTS_SSH_PASS","precalculate_job_size":true}' --transfer=node --transfer-info=@json:'{"url":"my_url_here","username":"my_username_here","password":"my_password_here"}' 
 ascli -N --url=my_url_here --username=my_username_here --password=my_password_here node acc create --value=@json:'{"id":"aoc_1","storage":{"type":"local","path":"/"}}'
 ascli -N --url=my_url_here --username=my_username_here --password=my_password_here node acc delete --id=aoc_1
-ascli -N aspera files browse / --link=my_AOC_PUBLINK_FOLDER
-ascli -N aspera files upload --to-folder=/ my_SAMPLE_FILEPATH --link=my_AOC_PUBLINK_FOLDER
-ascli -N aspera org --link=my_AOC_PUBLINK_RECV_PACKAGE
-ascli -N aspera packages send --value=@json:'{"name":"PKG_TEST_TITLE"}' my_SAMPLE_FILEPATH --link=my_AOC_PUBLINK_SEND_DROPBOX
-ascli -N aspera packages send --value=@json:'{"name":"PKG_TEST_TITLE"}' my_SAMPLE_FILEPATH --link=my_AOC_PUBLINK_SEND_USER
+ascli -N cos node --bucket=my_ICOS_BUCKET --service-credentials=@json:@file:DIR_PRIV/service_creds.json --region=my_ICOS_REGION info
+ascli -N oncloud files browse / --link=my_AOC_PUBLINK_FOLDER
+ascli -N oncloud files upload --to-folder=/ my_SAMPLE_FILEPATH --link=my_AOC_PUBLINK_FOLDER
+ascli -N oncloud org --link=my_AOC_PUBLINK_RECV_PACKAGE
+ascli -N oncloud packages send --value=@json:'{"name":"PKG_TEST_TITLE"}' my_SAMPLE_FILEPATH --link=my_AOC_PUBLINK_SEND_DROPBOX
+ascli -N oncloud packages send --value=@json:'{"name":"PKG_TEST_TITLE"}' my_SAMPLE_FILEPATH --link=my_AOC_PUBLINK_SEND_USER
 ascli -N server --url=my_url_here --username=my_username_here --password=my_password_here --format=nagios nagios transfer --to-folder=my_HSTS_FOLDER_UPLOAD
 ascli -N server --url=my_url_here --username=my_username_here --ssh-keys=my_HSTS_TEST_KEY --format=nagios nagios app_services
 ascli -N server --url=my_url_here --username=my_username_here --ssh-keys=my_HSTS_TEST_KEY ctl all:status
 ascli -N server --url=my_url_here --username=my_username_here --ssh-keys=my_HSTS_TEST_KEY nodeadmin -- -l
 ascli -Pserver_eudemo_key server br /
 ascli -h
-ascli aspera admin analytics transfers --query=@json:'{"status":"completed","direction":"receive"}'
-ascli aspera admin ats access_key --id=akibmcloud --secret=my_secret_here node browse /
-ascli aspera admin ats access_key --id=akibmcloud delete
-ascli aspera admin ats access_key create --cloud=aws --region=my_AWS_REGION --params=@json:'{"id":"ak_aws","name":"laurent key AWS","storage":{"type":"aws_s3","bucket":"'my_AWS_BUCKET'","credentials":{"access_key_id":"my_access_key_id_here","secret_access_key":"my_secret_access_key_here"},"path":"/"}}'
-ascli aspera admin ats access_key create --cloud=softlayer --region=my_ICOS_REGION --params=@json:'{"id":"akibmcloud","secret":"somesecret","name":"laurent key","storage":{"type":"ibm-s3","bucket":"my_ICOS_BUCKET","credentials":{"access_key_id":"my_access_key_id_here","secret_access_key":"my_secret_access_key_here"},"path":"/"}}'
-ascli aspera admin ats access_key list --fields=name,id
-ascli aspera admin ats cluster clouds
-ascli aspera admin ats cluster list
-ascli aspera admin ats cluster show --cloud=aws --region=my_AWS_REGION 
-ascli aspera admin ats cluster show --id=1f412ae7-869a-445c-9c05-02ad16813be2
-ascli aspera admin res node v3 events --secret=my_secret_here
-ascli aspera admin resource node --name=my_AOC_NODE1_NAME --secret=my_secret_here v3 access_key create --value=@json:'{"id":"testsub1","storage":{"path":"/folder1"}}'
-ascli aspera admin resource node --name=my_AOC_NODE1_NAME --secret=my_secret_here v3 access_key delete --id=testsub1
-ascli aspera admin resource node --name=my_AOC_NODE1_NAME --secret=my_secret_here v3 events
-ascli aspera admin resource node --name=my_AOC_NODE1_NAME --secret=my_secret_here v4 browse /
-ascli aspera admin resource node --name=my_AOC_NODE1_NAME --secret=my_secret_here v4 delete /folder1
-ascli aspera admin resource node --name=my_AOC_NODE1_NAME --secret=my_secret_here v4 mkdir /folder1
-ascli aspera admin resource workspace list
-ascli aspera admin resource workspace_membership list --fields=ALL --query=@json:'{"page":1,"per_page":50,"embed":"member","inherited":false,"workspace_id":11363,"sort":"name"}'
-ascli aspera apiinfo
-ascli aspera automation workflow --id=$WF_ID action create --value=@json:'{"name":"toto"}' | tee action.info
-ascli aspera automation workflow create --value=@json:'{"name":"laurent_test"}'
-ascli aspera automation workflow delete --id=$WF_ID
-ascli aspera automation workflow list
-ascli aspera automation workflow list --select=@json:'{"name":"laurent_test"}' --fields=id --format=csv --display=data> $@
-ascli aspera automation workflow list --value=@json:'{"show_org_workflows":"true"}' --scope=admin:all
-ascli aspera bearer_token --display=data --scope=user:all
-ascli aspera faspex
-ascli aspera files bearer /
-ascli aspera files browse /
-ascli aspera files delete /newname
-ascli aspera files download --transfer=connect /200KB.1
-ascli aspera files file 18891
-ascli aspera files find / --value='\.partial$'
-ascli aspera files http_node_download --to-folder=DIR_TMP /200KB.1
-ascli aspera files mkdir /testfolder
-ascli aspera files rename /testfolder newname
-ascli aspera files short_link create --to-folder='my folder' --value=private
-ascli aspera files short_link create --to-folder='my folder' --value=public
-ascli aspera files short_link list --value=@json:'{"purpose":"shared_folder_auth_link"}'
-ascli aspera files transfer --workspace=eudemo --from-folder='/Demo Files/aspera-test-dir-tiny' --to-folder=unit_test 200KB.1
-ascli aspera files upload --to-folder=/ my_SAMPLE_FILEPATH
-ascli aspera files v3 info
-ascli aspera organization
-ascli aspera packages list
-ascli aspera packages list --format=csv --fields=id --display=data|head -n 1)
-ascli aspera packages recv --id=ALL --once-only=yes --lock-port=12345
-ascli aspera packages send --value=@json:'{"name":"PKG_TEST_TITLE","recipients":["laurent.martin.l+external@gmail.com"]}' --new-user-option=@json:'{"package_contact":true}' my_SAMPLE_FILEPATH
-ascli aspera packages send --value=@json:'{"name":"PKG_TEST_TITLE","recipients":["my_EMAIL_ADDR"],"note":"my note"}' my_SAMPLE_FILEPATH
-ascli aspera packages send --workspace="my_AOC_WS_SH_BX" --value=@json:'{"name":"PKG_TEST_TITLE","recipients":["my_AOC_SH_BX"]}' my_SAMPLE_FILEPATH
-ascli aspera user info modify @json:'{"name":"dummy change"}'
-ascli aspera user info show
-ascli aspera workspace
 ascli ats access_key --id=ak_aws delete
 ascli ats access_key --id=akibmcloud --secret=my_secret_here cluster
 ascli ats access_key --id=akibmcloud --secret=my_secret_here node browse /
 ascli ats access_key --id=akibmcloud delete
-ascli ats access_key create --cloud=aws --region=my_AWS_REGION --params=@json:'{"id":"ak_aws","name":"laurent key AWS","storage":{"type":"aws_s3","bucket":"'my_AWS_BUCKET'","credentials":{"access_key_id":"my_access_key_id_here","secret_access_key":"my_secret_access_key_here"},"path":"/"}}'
-ascli ats access_key create --cloud=softlayer --region=my_ICOS_REGION --params=@json:'{"id":"akibmcloud","secret":"somesecret","name":"laurent key","storage":{"type":"ibm-s3","bucket":"my_ICOS_BUCKET","credentials":{"access_key_id":"my_access_key_id_here","secret_access_key":"my_secret_access_key_here"},"path":"/"}}'
+ascli ats access_key create --cloud=aws --region=my_AWS_REGION --params=@json:'{"id":"ak_aws","name":"my test key AWS","storage":{"type":"aws_s3","bucket":"'my_AWS_BUCKET'","credentials":{"access_key_id":"my_access_key_id_here","secret_access_key":"my_secret_access_key_here"},"path":"/"}}'
+ascli ats access_key create --cloud=softlayer --region=my_ICOS_REGION --params=@json:'{"id":"akibmcloud","secret":"somesecret","name":"my test key","storage":{"type":"ibm-s3","bucket":"my_ICOS_BUCKET","credentials":{"access_key_id":"my_access_key_id_here","secret_access_key":"my_secret_access_key_here"},"path":"/"}}'
 ascli ats access_key list --fields=name,id
 ascli ats api_key create
 ascli ats api_key instances
@@ -1312,8 +1260,8 @@ ascli ats cluster list
 ascli ats cluster show --cloud=aws --region=my_AWS_REGION 
 ascli ats cluster show --id=1f412ae7-869a-445c-9c05-02ad16813be2
 ascli conf flush
-ascli conf wiz --url=my_url_here --config-file=SAMPLE_CONFIG_FILE --client-id=HIDE_CLIENT_ID --client-secret=HIDE_CLIENT_SECRET --pkeypath='' --use-generic-client=no --username=my_username_here
 ascli conf wiz --url=my_url_here --config-file=SAMPLE_CONFIG_FILE --pkeypath='' --username=my_username_here --test-mode=yes
+ascli conf wiz --url=my_url_here --config-file=SAMPLE_CONFIG_FILE --pkeypath='' --username=my_username_here --use-generic-client=yes
 ascli config ascp connect id 'Aspera Connect for Windows' info
 ascli config ascp connect id 'Aspera Connect for Windows' links id 'Windows Installer' download --to-folder=.
 ascli config ascp connect id 'Aspera Connect for Windows' links list
@@ -1329,10 +1277,10 @@ ascli config proxy_check --fpac=file:///./examples/proxy.pac https://eudemo.aspe
 ascli console transfer current list 
 ascli console transfer smart list 
 ascli console transfer smart sub 112 @json:'{"source":{"paths":["10MB.1"]},"source_type":"user_selected"}'
-ascli cos node --service-credentials=@json:@file:my_ICOS_CREDS_FILE --region=my_ICOS_REGION --bucket=my_ICOS_BUCKET access_key --id=self show
-ascli cos node --service-credentials=@json:@file:my_ICOS_CREDS_FILE --region=my_ICOS_REGION --bucket=my_ICOS_BUCKET download my_SAMPLE_FILENAME
-ascli cos node --service-credentials=@json:@file:my_ICOS_CREDS_FILE --region=my_ICOS_REGION --bucket=my_ICOS_BUCKET info
-ascli cos node --service-credentials=@json:@file:my_ICOS_CREDS_FILE --region=my_ICOS_REGION --bucket=my_ICOS_BUCKET upload my_SAMPLE_FILEPATH
+ascli cos node access_key --id=self show
+ascli cos node download my_SAMPLE_FILENAME
+ascli cos node info
+ascli cos node upload my_SAMPLE_FILEPATH
 ascli faspex nagios_check
 ascli faspex package list
 ascli faspex package list --box=sent --fields=package_id --format=csv --display=data|tail -n 1);\
@@ -1366,12 +1314,65 @@ ascli node service create @json:'{"id":"service1","type":"WATCHD","run_as":{"use
 ascli node service list
 ascli node transfer list --value=@json:'{"active_only":true}'
 ascli node upload --to-folder=my_HSTS_FOLDER_UPLOAD --ts=@json:'{"target_rate_cap_kbps":10000}' my_SAMPLE_FILEPATH
+ascli oncloud admin analytics transfers --query=@json:'{"status":"completed","direction":"receive"}'
+ascli oncloud admin ats access_key --id=akibmcloud --secret=my_secret_here node browse /
+ascli oncloud admin ats access_key --id=akibmcloud delete
+ascli oncloud admin ats access_key create --cloud=aws --region=my_AWS_REGION --params=@json:'{"id":"ak_aws","name":"my test key AWS","storage":{"type":"aws_s3","bucket":"'my_AWS_BUCKET'","credentials":{"access_key_id":"my_access_key_id_here","secret_access_key":"my_secret_access_key_here"},"path":"/"}}'
+ascli oncloud admin ats access_key create --cloud=softlayer --region=my_ICOS_REGION --params=@json:'{"id":"akibmcloud","secret":"somesecret","name":"my test key","storage":{"type":"ibm-s3","bucket":"my_ICOS_BUCKET","credentials":{"access_key_id":"my_access_key_id_here","secret_access_key":"my_secret_access_key_here"},"path":"/"}}'
+ascli oncloud admin ats access_key list --fields=name,id
+ascli oncloud admin ats cluster clouds
+ascli oncloud admin ats cluster list
+ascli oncloud admin ats cluster show --cloud=aws --region=my_AWS_REGION 
+ascli oncloud admin ats cluster show --id=1f412ae7-869a-445c-9c05-02ad16813be2
+ascli oncloud admin res node v3 events --secret=my_secret_here
+ascli oncloud admin resource node --name=my_AOC_NODE1_NAME --secret=my_secret_here v3 access_key create --value=@json:'{"id":"testsub1","storage":{"path":"/folder1"}}'
+ascli oncloud admin resource node --name=my_AOC_NODE1_NAME --secret=my_secret_here v3 access_key delete --id=testsub1
+ascli oncloud admin resource node --name=my_AOC_NODE1_NAME --secret=my_secret_here v3 events
+ascli oncloud admin resource node --name=my_AOC_NODE1_NAME --secret=my_secret_here v4 browse /
+ascli oncloud admin resource node --name=my_AOC_NODE1_NAME --secret=my_secret_here v4 delete /folder1
+ascli oncloud admin resource node --name=my_AOC_NODE1_NAME --secret=my_secret_here v4 mkdir /folder1
+ascli oncloud admin resource workspace list
+ascli oncloud admin resource workspace_membership list --fields=ALL --query=@json:'{"page":1,"per_page":50,"embed":"member","inherited":false,"workspace_id":11363,"sort":"name"}'
+ascli oncloud apiinfo
+ascli oncloud automation workflow --id=$WF_ID action create --value=@json:'{"name":"toto"}' | tee action.info
+ascli oncloud automation workflow create --value=@json:'{"name":"test_workflow"}'
+ascli oncloud automation workflow delete --id=$WF_ID
+ascli oncloud automation workflow list
+ascli oncloud automation workflow list --select=@json:'{"name":"test_workflow"}' --fields=id --format=csv --display=data> $@
+ascli oncloud automation workflow list --value=@json:'{"show_org_workflows":"true"}' --scope=admin:all
+ascli oncloud bearer_token --display=data --scope=user:all
+ascli oncloud faspex
+ascli oncloud files bearer /
+ascli oncloud files browse /
+ascli oncloud files delete /newname
+ascli oncloud files download --transfer=connect /200KB.1
+ascli oncloud files file 18891
+ascli oncloud files find / --value='\.partial$'
+ascli oncloud files http_node_download --to-folder=DIR_TMP /200KB.1
+ascli oncloud files mkdir /testfolder
+ascli oncloud files rename /testfolder newname
+ascli oncloud files short_link create --to-folder='ascli test folder link' --value=private
+ascli oncloud files short_link create --to-folder='ascli test folder link' --value=public
+ascli oncloud files short_link list --value=@json:'{"purpose":"shared_folder_auth_link"}'
+ascli oncloud files transfer --workspace=eudemo --from-folder='/ascli_test' --to-folder=/ascli_test2 200KB.1
+ascli oncloud files upload --to-folder=/ my_SAMPLE_FILEPATH
+ascli oncloud files v3 info
+ascli oncloud organization
+ascli oncloud packages list
+ascli oncloud packages list --format=csv --fields=id --display=data|head -n 1)
+ascli oncloud packages recv --id=ALL --once-only=yes --lock-port=12345
+ascli oncloud packages send --value=@json:'{"name":"PKG_TEST_TITLE","recipients":["my_AOC_EXTERNAL_EMAIL"]}' --new-user-option=@json:'{"package_contact":true}' my_SAMPLE_FILEPATH
+ascli oncloud packages send --value=@json:'{"name":"PKG_TEST_TITLE","recipients":["my_EMAIL_ADDR"],"note":"my note"}' my_SAMPLE_FILEPATH
+ascli oncloud packages send --workspace="my_AOC_WS_SH_BX" --value=@json:'{"name":"PKG_TEST_TITLE","recipients":["my_AOC_SH_BX"]}' my_SAMPLE_FILEPATH
+ascli oncloud user info modify @json:'{"name":"dummy change"}'
+ascli oncloud user info show
+ascli oncloud workspace
 ascli orchestrator info
 ascli orchestrator plugins
 ascli orchestrator processes
 ascli orchestrator workflow --id=my_ORCH_WORKFLOW_ID inputs
-ascli orchestrator workflow --id=my_ORCH_WORKFLOW_ID start --params=@json:'{"Param":"laurent"}'
-ascli orchestrator workflow --id=my_ORCH_WORKFLOW_ID start --params=@json:'{"Param":"laurent"}' --result=ResultStep:Complete_status_message
+ascli orchestrator workflow --id=my_ORCH_WORKFLOW_ID start --params=@json:'{"Param":"world !"}'
+ascli orchestrator workflow --id=my_ORCH_WORKFLOW_ID start --params=@json:'{"Param":"world !"}' --result=ResultStep:Complete_status_message
 ascli orchestrator workflow --id=my_ORCH_WORKFLOW_ID status
 ascli orchestrator workflow list
 ascli orchestrator workflow status
@@ -1416,7 +1417,7 @@ ascli shares2 organization list
 ascli shares2 project list --organization=Sport
 ascli shares2 repository browse /
 ascli shares2 userinfo
-ascli sync start --parameters=@json:'{"sessions":[{"name":"test","reset":true,"remote_dir":"/sync_test","local_dir":"contents","host":"my_HSTS_ADDR","user":"user1","private_key_path":"my_HSTS_TEST_KEY"}]}'
+ascli sync start --parameters=@json:'{"sessions":[{"name":"test","reset":true,"remote_dir":"/sync_test","local_dir":"DIR_TMP/contents","host":"my_HSTS_ADDR","user":"user1","private_key_path":"my_HSTS_TEST_KEY"}]}'
 
 ...and more
 ```
@@ -1543,41 +1544,6 @@ OPTIONS:
         --password=VALUE             user's password
 
 
-COMMAND: aspera
-SUBCOMMANDS: apiinfo bearer_token organization tier_restrictions user workspace packages files gateway admin automation servers
-OPTIONS:
-        --url=VALUE                  URL of application, e.g. https://org.asperafiles.com
-        --username=VALUE             username to log in
-        --password=VALUE             user's password
-
-COMMAND: ats
-SUBCOMMANDS: cluster access_key api_key aws_trust_policy
-OPTIONS:
-        --ibm-api-key=VALUE          IBM API key, see https://cloud.ibm.com/iam/apikeys
-        --instance=VALUE             ATS instance in ibm cloud
-        --ats-key=VALUE              ATS key identifier (ats_xxx)
-        --ats-secret=VALUE           ATS key secret
-        --params=VALUE               Parameters access key creation (@json:)
-        --cloud=VALUE                Cloud provider
-        --region=VALUE               Cloud region
-        --auth=ENUM                  type of Oauth authentication: body_userpass, header_userpass, web, jwt, url_token, ibm_apikey
-        --operation=ENUM             client operation for transfers: push, pull
-        --client-id=VALUE            API client identifier in application
-        --client-secret=VALUE        API client passcode
-        --redirect-uri=VALUE         API client redirect URI
-        --private-key=VALUE          RSA private key PEM value for JWT (prefix file path with @val:@file:)
-        --workspace=VALUE            name of workspace
-        --eid=VALUE                  identifier
-        --name=VALUE                 resource name
-        --link=VALUE                 public link to shared resource
-        --new-user-option=VALUE      new user creation option
-        --from-folder=VALUE          share to share source folder
-        --scope=VALUE                scope for AoC API calls
-        --notify=VALUE               notify users that file was received
-        --bulk=ENUM                  bulk operation: yes, [1m[31mno[0m[22m
-        --default-ports=ENUM         use standard FASP ports or get from node api: yes, [1m[31mno[0m[22m
-
-
 COMMAND: alee
 SUBCOMMANDS: entitlement
 OPTIONS:
@@ -1619,9 +1585,47 @@ OPTIONS:
 COMMAND: cos
 SUBCOMMANDS: node
 OPTIONS:
+        --bucket=VALUE               IBM Cloud Object storage bucket
+        --endpoint=VALUE             storage endpoint url
+        --apikey=VALUE               storage API key
+        --crn=VALUE                  ressource instance id
         --service-credentials=VALUE  IBM Cloud service credentials (Hash)
         --region=VALUE               IBM Cloud Object storage region
-        --bucket=VALUE               IBM Cloud Object storage bucket
+
+
+COMMAND: oncloud
+SUBCOMMANDS: apiinfo bearer_token organization tier_restrictions user workspace packages files gateway admin automation servers
+OPTIONS:
+        --url=VALUE                  URL of application, e.g. https://org.asperafiles.com
+        --username=VALUE             username to log in
+        --password=VALUE             user's password
+
+COMMAND: ats
+SUBCOMMANDS: cluster access_key api_key aws_trust_policy
+OPTIONS:
+        --ibm-api-key=VALUE          IBM API key, see https://cloud.ibm.com/iam/apikeys
+        --instance=VALUE             ATS instance in ibm cloud
+        --ats-key=VALUE              ATS key identifier (ats_xxx)
+        --ats-secret=VALUE           ATS key secret
+        --params=VALUE               Parameters access key creation (@json:)
+        --cloud=VALUE                Cloud provider
+        --region=VALUE               Cloud region
+        --auth=ENUM                  type of Oauth authentication: body_userpass, header_userpass, web, jwt, url_token, ibm_apikey
+        --operation=ENUM             client operation for transfers: push, pull
+        --client-id=VALUE            API client identifier in application
+        --client-secret=VALUE        API client passcode
+        --redirect-uri=VALUE         API client redirect URI
+        --private-key=VALUE          RSA private key PEM value for JWT (prefix file path with @val:@file:)
+        --workspace=VALUE            name of workspace
+        --eid=VALUE                  identifier
+        --name=VALUE                 resource name
+        --link=VALUE                 public link to shared resource
+        --new-user-option=VALUE      new user creation option
+        --from-folder=VALUE          share to share source folder
+        --scope=VALUE                scope for AoC API calls
+        --notify=VALUE               notify users that file was received
+        --bulk=ENUM                  bulk operation: yes, [1m[31mno[0m[22m
+        --default-ports=ENUM         use standard FASP ports or get from node api: yes, [1m[31mno[0m[22m
 
 
 COMMAND: faspex
@@ -1646,10 +1650,69 @@ OPTIONS:
         --organization=VALUE         organization
         --project=VALUE              project
         --share=VALUE                share
-[5m[37m[41mERROR:[0m[0m[25m Other: uninitialized constant Aspera::Cli::Plugins::Aspera::Preview
-Did you mean?  Aspera::Cli::Plugins::Preview
-[5m[37m[41mERROR:[0m[0m[25m Argument: unprocessed options: ["-Cnone"]
-Use '--log-level=debug' to get more details.
+
+
+COMMAND: preview
+SUBCOMMANDS: scan events trevents check test
+OPTIONS:
+        --url=VALUE                  URL of application, e.g. https://org.asperafiles.com
+        --username=VALUE             username to log in
+        --password=VALUE             user's password
+        --skip-format=ENUM           skip this preview format (multiple possible): png, mp4
+        --folder-reset-cache=ENUM    force detection of generated preview by refresh cache: [1m[31mno[0m[22m, header, read
+        --skip-types=VALUE           skip types in comma separated list
+        --previews-folder=VALUE      preview folder in storage root
+        --temp-folder=VALUE          path to temp folder
+        --skip-folders=VALUE         list of folder to skip
+        --case=VALUE                 basename of output for for test
+        --scan-path=VALUE            subpath in folder id to start scan in (default=/)
+        --scan-id=VALUE              forder id in storage to start scan in, default is access key main folder id
+        --overwrite=ENUM             when to overwrite result file: always, never, [1m[31mmtime[0m[22m
+        --file-access=ENUM           how to read and write files in repository: [1m[31mlocal[0m[22m, remote
+        --max-size=VALUE             maximum size (in bytes) of preview file
+        --thumb-vid-scale=VALUE      png: video: size (ffmpeg scale argument)
+        --thumb-vid-fraction=VALUE   png: video: position of snapshot
+        --thumb-img-size=VALUE       png: non-video: height (and width)
+        --video-conversion=ENUM      mp4: method for preview generation: [1m[31mreencode[0m[22m, blend, clips
+        --video-png-conv=ENUM        mp4: method for thumbnail generation: [1m[31mfixed[0m[22m, animated
+        --video-start-sec=VALUE      mp4: start offset (seconds) of video preview
+        --video-scale=VALUE          mp4: video scale (ffmpeg)
+        --blend-keyframes=VALUE      mp4: blend: # key frames
+        --blend-pauseframes=VALUE    mp4: blend: # pause frames
+        --blend-transframes=VALUE    mp4: blend: # transition blend frames
+        --blend-fps=VALUE            mp4: blend: frame per second
+        --clips-count=VALUE          mp4: clips: number of clips
+        --clips-length=VALUE         mp4: clips: length in seconds of each clips
+
+
+COMMAND: sync
+SUBCOMMANDS: start admin
+OPTIONS:
+        --parameters=VALUE           extended value for session set definition
+        --session-name=VALUE         name of session to use for admin commands, by default first one
+/Users/laurent/workspace/aspera-cli/lib/aspera/ssh.rb:5: warning: method redefined; discarding old default_keys
+/usr/local/lib/ruby/gems/2.7.0/gems/net-ssh-6.1.0/lib/net/ssh/authentication/session.rb:139: warning: previous definition of default_keys was here
+
+
+COMMAND: server
+SUBCOMMANDS: nagios nodeadmin userdata configurator ctl download upload browse delete rename ls rm mv du info mkdir cp df md5sum
+OPTIONS:
+        --url=VALUE                  URL of application, e.g. https://org.asperafiles.com
+        --username=VALUE             username to log in
+        --password=VALUE             user's password
+        --ssh-keys=VALUE             ssh key path list (Array or single)
+        --ssh-options=VALUE          ssh options (Hash)
+        --cmd-prefix=VALUE           prefix to add for as cmd execution, e.g. sudo or /opt/aspera/bin 
+
+
+COMMAND: console
+SUBCOMMANDS: transfer nagios_check
+OPTIONS:
+        --url=VALUE                  URL of application, e.g. https://org.asperafiles.com
+        --username=VALUE             username to log in
+        --password=VALUE             user's password
+        --filter-from=DATE           only after date
+        --filter-to=DATE             only before date
 
 
 ```
@@ -2601,11 +2664,18 @@ $ for p in 1 2 3;do ascli shares2 admin users list --value=@json:'{"page":'$p'}'
 
 The IBM Cloud Object Storage provides the possibility to execute transfers using FASP.
 
-Required information are:
+Required options are either:
 
-* service credentials
-* region
-* bucket 
+* `bucket` bucket name
+* `endpoint` storage endpoint url, e.g. https://s3.hkg02.cloud-object-storage.appdomain.cloud
+* `apikey` API Key
+* `crn` resource instance id
+
+or:
+
+* `bucket` bucket name
+* `region` bucket region, e.g. eu-de
+* `service_credentials` see below
 
 Service credentials are directly created using the IBM cloud web ui. Navigate to:
 
@@ -2639,6 +2709,12 @@ It consists in the following structure:
   "resource_instance_id": "crn:v1:bluemix:public:cloud-object-storage:global:a/xxxxxxx....."
 }
 ```
+
+The field `resource_instance_id` is for option `crn`
+
+The field `apikey` is for option `apikey`
+
+Endpoints for regions can be found by querying the `endpoints` URL.
 
 For convenience, let us create a default configuration, for example:
 

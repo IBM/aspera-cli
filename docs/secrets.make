@@ -54,17 +54,16 @@ CF_AWS_SECRET_KEY=_value_here_
 CF_AWS_BUCKET=_value_here_
 CF_AWS_REGION=_value_here_
 
-CF_ICOS_API_KEY=_value_here_
-CF_ICOS_BUCKET=_value_here_
 CF_ICOS_AK_ID=_value_here_
 CF_ICOS_SECRET_AK=_value_here_
+CF_ICOS_BUCKET=_value_here_
 CF_ICOS_REGION=_value_here_
-CF_ICOS_CREDS_FILE=_value_here_
 
 CF_TSTFILE_DCM=_value_here_
 CF_TSTFILE_PDF=_value_here_
 CF_TSTFILE_DOCX=_value_here_
 CF_TSTFILE_MXF=_value_here_
 CF_EMAIL_ADDR=_value_here_
+CF_AOC_EXTERNAL_EMAIL=_value_here_
 CF_AOC_ORG=_value_here_
 CF_AOC_USER=_value_here_
