@@ -9,31 +9,23 @@ DIR_TMP=$(DIR_TOP)/tmp
 DIR_DOC=$(DIR_TOP)/docs
 DIR_PRIV=$(DIR_TOP)/local
 
-# just the name of the command line tool (used for documentation and execution)
+# just the name of the command line tool as in bin folder
+# (used for documentation and execution)
 EXENAME=ascli
-# how tool is called, dont use directly in makefile, use EXE_MAN or EXE_NOMAN
+# how tool is called without argument
+# use only if another config file is used
+# else use EXE_MAN or EXE_NOMAN
 EXETESTB=$(DIR_BIN)/$(EXENAME)
 # this config file contains credentials of platforms used for tests
 # "EXE_MAN" is used to generate sample commands in documentation
 EXE_MAN=$(EXETESTB) --warnings --config-file=$(DIR_PRIV)/test.ascli.conf
-# invoked like this: do not go to manual samples
+# invoked like this: do not go to sample command section in manual
 EXE_NOMAN=$(EXE_MAN)
 
 GEMNAME=aspera-cli
 GEMVERSION=$(shell $(EXE_NOMAN) --version)
 PATH_GEMFILE=$(DIR_TOP)/$(GEMNAME)-$(GEMVERSION).gem
 
-
-# defazult download folder for Connect Client
-DIR_CONNECT_DOWNLOAD=$(HOME)/Desktop
-
-
-# files generated to be included in README.md
-INCL_USAGE=$(DIR_TMP)/$(EXENAME)_usage.txt
-INCL_COMMANDS=$(DIR_TMP)/$(EXENAME)_commands.txt
-INCL_ASESSION=$(DIR_TMP)/asession_usage.txt
-
-PKG_TEST_TITLE=$(shell date)
 
 # contains secrets, create your own from template
 include $(DIR_PRIV)/secrets.make
@@ -55,6 +47,10 @@ $(DIR_TMP)/.exists:
 
 ##################################
 # Documentation
+# files generated to be included in README.md
+INCL_USAGE=$(DIR_TMP)/$(EXENAME)_usage.txt
+INCL_COMMANDS=$(DIR_TMP)/$(EXENAME)_commands.txt
+INCL_ASESSION=$(DIR_TMP)/asession_usage.txt
 
 doc: README.pdf docs/secrets.make docs/test.ascli.conf
 
@@ -95,7 +91,7 @@ gem: $(PATH_GEMFILE)
 
 install: $(PATH_GEMFILE)
 	gem install $(PATH_GEMFILE)
-
+# in case of big problem on released gem version, it can be deleted from rubygems
 yank:
 	gem yank aspera -v $(GEMVERSION)
 cleanupgems:
@@ -131,6 +127,10 @@ changes:
 # Integration tests
 # flag files for integration tests generated here
 T=$(DIR_TOP)/t
+# default download folder for Connect Client
+DIR_CONNECT_DOWNLOAD=$(HOME)/Desktop
+PKG_TEST_TITLE=$(shell date)
+
 clean::
 	rm -fr $(T)
 	mkdir $(T)
@@ -349,232 +349,233 @@ tnode: $(T)/nd1 $(T)/nd2 $(T)/nd3 $(T)/nd4 $(T)/nd5 $(T)/nd6 $(T)/nd7 $(T)/nd_na
 
 $(T)/aocg1: $(T)/.exists
 	@echo $@
-	$(EXE_MAN) aspera apiinfo
+	$(EXE_MAN) oncloud apiinfo
 	@touch $@
 $(T)/aocg2: $(T)/.exists
 	@echo $@
-	$(EXE_MAN) aspera bearer_token --display=data --scope=user:all
+	$(EXE_MAN) oncloud bearer_token --display=data --scope=user:all
 	@touch $@
 $(T)/aocg3: $(T)/.exists
 	@echo $@
-	$(EXE_MAN) aspera organization
+	$(EXE_MAN) oncloud organization
 	@touch $@
 $(T)/aocg4: $(T)/.exists
 	@echo $@
-	$(EXE_MAN) aspera workspace
+	$(EXE_MAN) oncloud workspace
 	@touch $@
 $(T)/aocg5: $(T)/.exists
 	@echo $@
-	$(EXE_MAN) aspera user info show
+	$(EXE_MAN) oncloud user info show
 	@touch $@
 $(T)/aocg6: $(T)/.exists
 	@echo $@
-	$(EXE_MAN) aspera user info modify @json:'{"name":"dummy change"}'
+	$(EXE_MAN) oncloud user info modify @json:'{"name":"dummy change"}'
 	@touch $@
 taocgen: $(T)/aocg1 $(T)/aocg2 $(T)/aocg3 $(T)/aocg4 $(T)/aocg5 $(T)/aocg6
 $(T)/aocfbr: $(T)/.exists
 	@echo $@
-	$(EXE_MAN) aspera files browse /
+	$(EXE_MAN) oncloud files browse /
 	@touch $@
 $(T)/aocffin: $(T)/.exists
 	@echo $@
-	$(EXE_MAN) aspera files find / --value='\.partial$$'
+	$(EXE_MAN) oncloud files find / --value='\.partial$$'
 	@touch $@
 $(T)/aocfmkd: $(T)/.exists
 	@echo $@
-	$(EXE_MAN) aspera files mkdir /testfolder
+	$(EXE_MAN) oncloud files mkdir /testfolder
 	@touch $@
 $(T)/aocfren: $(T)/.exists
 	@echo $@
-	$(EXE_MAN) aspera files rename /testfolder newname
+	$(EXE_MAN) oncloud files rename /testfolder newname
 	@touch $@
 $(T)/aocfdel: $(T)/.exists
 	@echo $@
-	$(EXE_MAN) aspera files delete /newname
+	$(EXE_MAN) oncloud files delete /newname
 	@touch $@
 $(T)/aocf5: $(T)/aocfupl # WS: Demo
 	@echo $@
-	$(EXE_MAN) aspera files transfer --workspace=eudemo --from-folder='/Demo Files/aspera-test-dir-tiny' --to-folder=unit_test 200KB.1
+	$(EXE_MAN) oncloud files transfer --workspace=eudemo --from-folder='/ascli_test' --to-folder=/ascli_test2 200KB.1
 	@touch $@
 $(T)/aocfupl: $(T)/.exists
 	@echo $@
-	$(EXE_MAN) aspera files upload --to-folder=/ $(CF_SAMPLE_FILEPATH)
+	$(EXE_MAN) oncloud files upload --to-folder=/ $(CF_SAMPLE_FILEPATH)
 	@touch $@
 $(T)/aocfbearnode: $(T)/.exists
 	@echo $@
-	$(EXE_MAN) aspera files bearer /
+	$(EXE_MAN) oncloud files bearer /
 	@touch $@
-
 $(T)/aocfdown: $(T)/.exists
 	@echo $@
 	@rm -f $(DIR_CONNECT_DOWNLOAD)/200KB.1
-	$(EXE_MAN) aspera files download --transfer=connect /200KB.1
+	$(EXE_MAN) oncloud files download --transfer=connect /200KB.1
 	@rm -f $(DIR_CONNECT_DOWNLOAD)/200KB.1
 	@touch $@
 $(T)/aocfhttpd: $(T)/.exists
 	@echo $@
-	$(EXE_MAN) aspera files http_node_download --to-folder=$(DIR_TMP) /200KB.1
+	$(EXE_MAN) oncloud files http_node_download --to-folder=$(DIR_TMP) /200KB.1
 	rm -f 200KB.1
 	@touch $@
 $(T)/aocfv3inf: $(T)/.exists
 	@echo $@
-	$(EXE_MAN) aspera files v3 info
+	$(EXE_MAN) oncloud files v3 info
 	@touch $@
 $(T)/aocffid: $(T)/.exists
 	@echo $@
-	$(EXE_MAN) aspera files file 18891
+	$(EXE_MAN) oncloud files file 18891
 	@touch $@
 $(T)/aocfpub: $(T)/.exists
 	@echo $@
-	$(EXE_MAN) -N aspera files browse / --link=$(CF_AOC_PUBLINK_FOLDER)
-	$(EXE_MAN) -N aspera files upload --to-folder=/ $(CF_SAMPLE_FILEPATH) --link=$(CF_AOC_PUBLINK_FOLDER)
+	$(EXE_MAN) -N oncloud files browse / --link=$(CF_AOC_PUBLINK_FOLDER)
+	$(EXE_MAN) -N oncloud files upload --to-folder=/ $(CF_SAMPLE_FILEPATH) --link=$(CF_AOC_PUBLINK_FOLDER)
 	@touch $@
 $(T)/aocshlk1: $(T)/.exists
 	@echo $@
-	$(EXE_MAN) aspera files short_link list --value=@json:'{"purpose":"shared_folder_auth_link"}'
+	$(EXE_MAN) oncloud files short_link list --value=@json:'{"purpose":"shared_folder_auth_link"}'
 	@touch $@
 $(T)/aocshlk2: $(T)/.exists
 	@echo $@
-	$(EXE_MAN) aspera files short_link create --to-folder='my folder' --value=private
+	$(EXE_MAN) oncloud files short_link create --to-folder='ascli test folder link' --value=private
 	@touch $@
 $(T)/aocshlk3: $(T)/.exists
 	@echo $@
-	$(EXE_MAN) aspera files short_link create --to-folder='my folder' --value=public
+	$(EXE_MAN) oncloud files short_link create --to-folder='ascli test folder link' --value=public
 	@touch $@
 taocf: $(T)/aocfbr $(T)/aocffin $(T)/aocfmkd $(T)/aocfren $(T)/aocfdel $(T)/aocf5 $(T)/aocfupl $(T)/aocfbearnode $(T)/aocfdown $(T)/aocfhttpd $(T)/aocfv3inf $(T)/aocffid $(T)/aocfpub $(T)/aocshlk1 $(T)/aocshlk2 $(T)/aocshlk3
 $(T)/aocp1: $(T)/.exists
 	@echo $@
-	$(EXE_MAN) aspera packages send --value=@json:'{"name":"'"$(PKG_TEST_TITLE)"'","recipients":["$(CF_EMAIL_ADDR)"],"note":"my note"}' $(CF_SAMPLE_FILEPATH)
-	$(EXE_MAN) aspera packages send --value=@json:'{"name":"'"$(PKG_TEST_TITLE)"'","recipients":["laurent.martin.l+external@gmail.com"]}' --new-user-option=@json:'{"package_contact":true}' $(CF_SAMPLE_FILEPATH)
+	$(EXE_MAN) oncloud packages send --value=@json:'{"name":"'"$(PKG_TEST_TITLE)"'","recipients":["$(CF_EMAIL_ADDR)"],"note":"my note"}' $(CF_SAMPLE_FILEPATH)
+	$(EXE_MAN) oncloud packages send --value=@json:'{"name":"'"$(PKG_TEST_TITLE)"'","recipients":["$(CF_AOC_EXTERNAL_EMAIL)"]}' --new-user-option=@json:'{"package_contact":true}' $(CF_SAMPLE_FILEPATH)
 	@touch $@
 $(T)/aocp2: $(T)/.exists
 	@echo $@
-	$(EXE_MAN) aspera packages list
+	$(EXE_MAN) oncloud packages list
 	@touch $@
 $(T)/aocp3: $(T)/.exists
 	@echo $@
-	$(EXE_MAN) aspera packages recv --id=$$($(EXE_MAN) aspera packages list --format=csv --fields=id --display=data|head -n 1)
+	$(EXE_MAN) oncloud packages recv --id=$$($(EXE_MAN) oncloud packages list --format=csv --fields=id --display=data|head -n 1)
 	@touch $@
 $(T)/aocp4: $(T)/.exists
 	@echo $@
-	$(EXE_MAN) aspera packages recv --id=ALL --once-only=yes --lock-port=12345
+	$(EXE_MAN) oncloud packages recv --id=ALL --once-only=yes --lock-port=12345
 	@touch $@
 $(T)/aocp5: $(T)/.exists
 	@echo $@
-	$(EXE_MAN) -N aspera org --link=$(CF_AOC_PUBLINK_RECV_PACKAGE)
+	$(EXE_MAN) -N oncloud org --link=$(CF_AOC_PUBLINK_RECV_PACKAGE)
 	@touch $@
 $(T)/aocp6: $(T)/.exists
 	@echo $@
-	$(EXE_MAN) -N aspera packages send --value=@json:'{"name":"'"$(PKG_TEST_TITLE)"'"}' $(CF_SAMPLE_FILEPATH) --link=$(CF_AOC_PUBLINK_SEND_DROPBOX)
+	$(EXE_MAN) -N oncloud packages send --value=@json:'{"name":"'"$(PKG_TEST_TITLE)"'"}' $(CF_SAMPLE_FILEPATH) --link=$(CF_AOC_PUBLINK_SEND_DROPBOX)
 	@touch $@
 $(T)/aocp7: $(T)/.exists
 	@echo $@
-	$(EXE_MAN) -N aspera packages send --value=@json:'{"name":"'"$(PKG_TEST_TITLE)"'"}' $(CF_SAMPLE_FILEPATH) --link=$(CF_AOC_PUBLINK_SEND_USER)
+	$(EXE_MAN) -N oncloud packages send --value=@json:'{"name":"'"$(PKG_TEST_TITLE)"'"}' $(CF_SAMPLE_FILEPATH) --link=$(CF_AOC_PUBLINK_SEND_USER)
 	@touch $@
 $(T)/aocp8: $(T)/.exists
 	@echo $@
-	$(EXE_MAN) aspera packages send --workspace="$(CF_AOC_WS_SH_BX)" --value=@json:'{"name":"'"$(PKG_TEST_TITLE)"'","recipients":["$(CF_AOC_SH_BX)"]}' $(CF_SAMPLE_FILEPATH)
+	$(EXE_MAN) oncloud packages send --workspace="$(CF_AOC_WS_SH_BX)" --value=@json:'{"name":"'"$(PKG_TEST_TITLE)"'","recipients":["$(CF_AOC_SH_BX)"]}' $(CF_SAMPLE_FILEPATH)
 	@touch $@
 
 taocp: $(T)/aocp1 $(T)/aocp2 $(T)/aocp3 $(T)/aocp4 $(T)/aocp5 $(T)/aocp5 $(T)/aocp6 $(T)/aocp7 $(T)/aocp8
 HIDE_SECRET1='AML3clHuHwDArShhcQNVvWGHgU9dtnpgLzRCPsBr7H5JdhrFU2oRs69_tJTEYE-hXDVSW-vQ3-klRnJvxrTkxQ'
 $(T)/aoc7: $(T)/.exists
 	@echo $@
-	$(EXE_MAN) aspera admin res node v3 events --secret=$(HIDE_SECRET1)
+	$(EXE_MAN) oncloud admin res node v3 events --secret=$(HIDE_SECRET1)
 	@touch $@
 $(T)/aoc8: $(T)/.exists
 	@echo $@
-	$(EXE_MAN) aspera admin resource workspace list
+	$(EXE_MAN) oncloud admin resource workspace list
 	@touch $@
 $(T)/aoc9: $(T)/.exists
 	@echo $@
-	$(EXE_MAN) aspera admin resource node --name=$(CF_AOC_NODE1_NAME) --secret=$(CF_AOC_NODE1_SECRET) v3 events
+	$(EXE_MAN) oncloud admin resource node --name=$(CF_AOC_NODE1_NAME) --secret=$(CF_AOC_NODE1_SECRET) v3 events
 	@touch $@
 $(T)/aoc11: $(T)/.exists
 	@echo $@
-	$(EXE_MAN) aspera admin resource node --name=$(CF_AOC_NODE1_NAME) --secret=$(CF_AOC_NODE1_SECRET) v3 access_key create --value=@json:'{"id":"testsub1","storage":{"path":"/folder1"}}'
+	$(EXE_MAN) oncloud admin resource node --name=$(CF_AOC_NODE1_NAME) --secret=$(CF_AOC_NODE1_SECRET) v3 access_key create --value=@json:'{"id":"testsub1","storage":{"path":"/folder1"}}'
 	@touch $@
 $(T)/aoc12: $(T)/.exists
 	@echo $@
-	$(EXE_MAN) aspera admin resource node --name=$(CF_AOC_NODE1_NAME) --secret=$(CF_AOC_NODE1_SECRET) v3 access_key delete --id=testsub1
+	$(EXE_MAN) oncloud admin resource node --name=$(CF_AOC_NODE1_NAME) --secret=$(CF_AOC_NODE1_SECRET) v3 access_key delete --id=testsub1
 	@touch $@
 $(T)/aoc9b: $(T)/.exists
 	@echo $@
-	$(EXE_MAN) aspera admin resource node --name=$(CF_AOC_NODE1_NAME) --secret=$(CF_AOC_NODE1_SECRET) v4 browse /
+	$(EXE_MAN) oncloud admin resource node --name=$(CF_AOC_NODE1_NAME) --secret=$(CF_AOC_NODE1_SECRET) v4 browse /
 	@touch $@
 $(T)/aoc10: $(T)/.exists
 	@echo $@
-	$(EXE_MAN) aspera admin resource node --name=$(CF_AOC_NODE1_NAME) --secret=$(CF_AOC_NODE1_SECRET) v4 mkdir /folder1
+	$(EXE_MAN) oncloud admin resource node --name=$(CF_AOC_NODE1_NAME) --secret=$(CF_AOC_NODE1_SECRET) v4 mkdir /folder1
 	@touch $@
 $(T)/aoc13: $(T)/.exists
 	@echo $@
-	$(EXE_MAN) aspera admin resource node --name=$(CF_AOC_NODE1_NAME) --secret=$(CF_AOC_NODE1_SECRET) v4 delete /folder1
+	$(EXE_MAN) oncloud admin resource node --name=$(CF_AOC_NODE1_NAME) --secret=$(CF_AOC_NODE1_SECRET) v4 delete /folder1
 	@touch $@
 $(T)/aoc14: $(T)/.exists
 	@echo $@
-	$(EXE_MAN) aspera admin resource workspace_membership list --fields=ALL --query=@json:'{"page":1,"per_page":50,"embed":"member","inherited":false,"workspace_id":11363,"sort":"name"}'
+	$(EXE_MAN) oncloud admin resource workspace_membership list --fields=ALL --query=@json:'{"page":1,"per_page":50,"embed":"member","inherited":false,"workspace_id":11363,"sort":"name"}'
 	@touch $@
 $(T)/aoc15: $(T)/.exists
 	@echo $@
-	$(EXE_MAN) aspera admin analytics transfers --query=@json:'{"status":"completed","direction":"receive"}'
+	$(EXE_MAN) oncloud admin analytics transfers --query=@json:'{"status":"completed","direction":"receive"}'
 	@touch $@
 taocadm: $(T)/aoc7 $(T)/aoc8 $(T)/aoc9 $(T)/aoc9b $(T)/aoc10 $(T)/aoc11 $(T)/aoc12 $(T)/aoc13 $(T)/aoc14 $(T)/aoc15
 $(T)/aocat4: $(T)/.exists
 	@echo $@
-	$(EXE_MAN) aspera admin ats cluster list
+	$(EXE_MAN) oncloud admin ats cluster list
 	@touch $@
 $(T)/aocat5: $(T)/.exists
 	@echo $@
-	$(EXE_MAN) aspera admin ats cluster clouds
+	$(EXE_MAN) oncloud admin ats cluster clouds
 	@touch $@
 $(T)/aocat6: $(T)/.exists
 	@echo $@
-	$(EXE_MAN) aspera admin ats cluster show --cloud=aws --region=$(CF_AWS_REGION) 
+	$(EXE_MAN) oncloud admin ats cluster show --cloud=aws --region=$(CF_AWS_REGION) 
 	@touch $@
 $(T)/aocat7: $(T)/.exists
 	@echo $@
-	$(EXE_MAN) aspera admin ats cluster show --id=1f412ae7-869a-445c-9c05-02ad16813be2
+	$(EXE_MAN) oncloud admin ats cluster show --id=1f412ae7-869a-445c-9c05-02ad16813be2
 	@touch $@
 # see https://developer.ibm.com/api/view/aspera-prod:ibm-aspera:title-IBM_Aspera#113433
 $(T)/aocat8: $(T)/.exists
-	-$(EXE_MAN) aspera admin ats access_key create --cloud=softlayer --region=$(CF_ICOS_REGION) --params=@json:'{"id":"akibmcloud","secret":"somesecret","name":"laurent key","storage":{"type":"ibm-s3","bucket":"$(CF_ICOS_BUCKET)","credentials":{"access_key_id":"$(CF_ICOS_AK_ID)","secret_access_key":"$(CF_ICOS_SECRET_AK)"},"path":"/"}}'
+	-$(EXE_MAN) oncloud admin ats access_key create --cloud=softlayer --region=$(CF_ICOS_REGION) --params=@json:'{"id":"akibmcloud","secret":"somesecret","name":"my test key","storage":{"type":"ibm-s3","bucket":"$(CF_ICOS_BUCKET)","credentials":{"access_key_id":"$(CF_ICOS_AK_ID)","secret_access_key":"$(CF_ICOS_SECRET_AK)"},"path":"/"}}'
 	@touch $@
 $(T)/aocat9: $(T)/.exists
 	@echo $@
-	-$(EXE_MAN) aspera admin ats access_key create --cloud=aws --region=$(CF_AWS_REGION) --params=@json:'{"id":"ak_aws","name":"laurent key AWS","storage":{"type":"aws_s3","bucket":"'$(CF_AWS_BUCKET)'","credentials":{"access_key_id":"'$(CF_AWS_ACCESS_KEY)'","secret_access_key":"'$(CF_AWS_SECRET_KEY)'"},"path":"/"}}'
+	-$(EXE_MAN) oncloud admin ats access_key create --cloud=aws --region=$(CF_AWS_REGION) --params=@json:'{"id":"ak_aws","name":"my test key AWS","storage":{"type":"aws_s3","bucket":"'$(CF_AWS_BUCKET)'","credentials":{"access_key_id":"'$(CF_AWS_ACCESS_KEY)'","secret_access_key":"'$(CF_AWS_SECRET_KEY)'"},"path":"/"}}'
 	@touch $@
 $(T)/aocat10: $(T)/.exists
 	@echo $@
-	$(EXE_MAN) aspera admin ats access_key list --fields=name,id
+	$(EXE_MAN) oncloud admin ats access_key list --fields=name,id
 	@touch $@
 $(T)/aocat11: $(T)/.exists
 	@echo $@
-	$(EXE_MAN) aspera admin ats access_key --id=akibmcloud --secret=somesecret node browse /
+	$(EXE_MAN) oncloud admin ats access_key --id=akibmcloud --secret=somesecret node browse /
 	@touch $@
 $(T)/aocat13: $(T)/.exists
 	@echo $@
-	-$(EXE_MAN) aspera admin ats access_key --id=akibmcloud delete
+	-$(EXE_MAN) oncloud admin ats access_key --id=akibmcloud delete
 	@touch $@
 taocts: $(T)/aocat4 $(T)/aocat5 $(T)/aocat6 $(T)/aocat7 $(T)/aocat8 $(T)/aocat9 $(T)/aocat10 $(T)/aocat11 $(T)/aocat13
 $(T)/wf_id: $(T)/aocauto1
-	$(EXE_MAN) aspera automation workflow list --select=@json:'{"name":"laurent_test"}' --fields=id --format=csv --display=data> $@
+	$(EXE_MAN) oncloud automation workflow list --select=@json:'{"name":"test_workflow"}' --fields=id --format=csv --display=data> $@
 $(T)/aocauto1: $(T)/.exists
 	@echo $@
-	$(EXE_MAN) aspera automation workflow create --value=@json:'{"name":"laurent_test"}'
+	$(EXE_MAN) oncloud automation workflow create --value=@json:'{"name":"test_workflow"}'
 	@touch $@
 $(T)/aocauto2: $(T)/.exists
 	@echo $@
-	$(EXE_MAN) aspera automation workflow list
-	$(EXE_MAN) aspera automation workflow list --value=@json:'{"show_org_workflows":"true"}' --scope=admin:all
+	$(EXE_MAN) oncloud automation workflow list
+	$(EXE_MAN) oncloud automation workflow list --value=@json:'{"show_org_workflows":"true"}' --scope=admin:all
 	@touch $@
 $(T)/aocauto3: $(T)/wf_id
 	@echo $@
-	WF_ID=$$(cat $(T)/wf_id);$(EXE_MAN) aspera automation workflow --id=$$WF_ID action create --value=@json:'{"name":"toto"}' | tee action.info
-	sed -nEe 's/^\| id +\| ([^ ]+) +\|/\1/p' action.info>tmp_action_id.txt;rm -f action.info
+	WF_ID=$$(cat $(T)/wf_id);$(EXE_MAN) oncloud automation workflow --id=$$WF_ID action create --value=@json:'{"name":"toto"}' | tee action.info
+	sed -nEe 's/^\| id +\| ([^ ]+) +\|/\1/p' action.info>tmp_action_id.txt
+	rm -f action.info
+	rm -f tmp_action_id.txt
 	@touch $@
 $(T)/aocauto10: $(T)/wf_id
 	@echo $@
-	WF_ID=$$(cat $(T)/wf_id);$(EXE_MAN) aspera automation workflow delete --id=$$WF_ID
+	WF_ID=$$(cat $(T)/wf_id);$(EXE_MAN) oncloud automation workflow delete --id=$$WF_ID
 	rm -f $(T)/wf.id
 	@touch $@
 taocauto: $(T)/aocauto1 $(T)/aocauto2 $(T)/aocauto3 $(T)/aocauto10
@@ -602,11 +603,11 @@ $(T)/o5: $(T)/.exists
 	@touch $@
 $(T)/o6: $(T)/.exists
 	@echo $@
-	$(EXE_MAN) orchestrator workflow --id=$(CF_ORCH_WORKFLOW_ID) start --params=@json:'{"Param":"laurent"}'
+	$(EXE_MAN) orchestrator workflow --id=$(CF_ORCH_WORKFLOW_ID) start --params=@json:'{"Param":"world !"}'
 	@touch $@
 $(T)/o7: $(T)/.exists
 	@echo $@
-	$(EXE_MAN) orchestrator workflow --id=$(CF_ORCH_WORKFLOW_ID) start --params=@json:'{"Param":"laurent"}' --result=ResultStep:Complete_status_message
+	$(EXE_MAN) orchestrator workflow --id=$(CF_ORCH_WORKFLOW_ID) start --params=@json:'{"Param":"world !"}' --result=ResultStep:Complete_status_message
 	@touch $@
 $(T)/o8: $(T)/.exists
 	@echo $@
@@ -648,11 +649,11 @@ $(T)/at3: $(T)/.exists
 	$(EXE_MAN) ats api_key create
 	@touch $@
 $(T)/at8: $(T)/.exists
-	$(EXE_MAN) ats access_key create --cloud=softlayer --region=$(CF_ICOS_REGION) --params=@json:'{"id":"akibmcloud","secret":"somesecret","name":"laurent key","storage":{"type":"ibm-s3","bucket":"$(CF_ICOS_BUCKET)","credentials":{"access_key_id":"$(CF_ICOS_AK_ID)","secret_access_key":"$(CF_ICOS_SECRET_AK)"},"path":"/"}}'
+	$(EXE_MAN) ats access_key create --cloud=softlayer --region=$(CF_ICOS_REGION) --params=@json:'{"id":"akibmcloud","secret":"somesecret","name":"my test key","storage":{"type":"ibm-s3","bucket":"$(CF_ICOS_BUCKET)","credentials":{"access_key_id":"$(CF_ICOS_AK_ID)","secret_access_key":"$(CF_ICOS_SECRET_AK)"},"path":"/"}}'
 	@touch $@
 $(T)/at9: $(T)/.exists
 	@echo $@
-	-$(EXE_MAN) ats access_key create --cloud=aws --region=$(CF_AWS_REGION) --params=@json:'{"id":"ak_aws","name":"laurent key AWS","storage":{"type":"aws_s3","bucket":"'$(CF_AWS_BUCKET)'","credentials":{"access_key_id":"'$(CF_AWS_ACCESS_KEY)'","secret_access_key":"'$(CF_AWS_SECRET_KEY)'"},"path":"/"}}'
+	-$(EXE_MAN) ats access_key create --cloud=aws --region=$(CF_AWS_REGION) --params=@json:'{"id":"ak_aws","name":"my test key AWS","storage":{"type":"aws_s3","bucket":"'$(CF_AWS_BUCKET)'","credentials":{"access_key_id":"'$(CF_AWS_ACCESS_KEY)'","secret_access_key":"'$(CF_AWS_SECRET_KEY)'"},"path":"/"}}'
 	@touch $@
 $(T)/at10: $(T)/.exists
 	@echo $@
@@ -781,11 +782,11 @@ $(T)/conf_export: $(T)/.exists
 	@echo $@
 	$(EXE_MAN) config export
 	@touch $@
-SAMPLE_CONFIG_FILE=$(DIR_TMP)/todelete.txt
+SAMPLE_CONFIG_FILE=$(DIR_TMP)/tmp_config.yml
 $(T)/conf_wizard_org: $(T)/.exists
 	@echo $@
 	$(EXE_MAN) conf flush
-	$(EXE_MAN) conf wiz --url=https://$(CF_AOC_ORG).ibmaspera.com --config-file=$(SAMPLE_CONFIG_FILE) --pkeypath='' --use-generic-client=yes --username=$(CF_AOC_USER)
+	$(EXE_MAN) conf wiz --url=https://$(CF_AOC_ORG).ibmaspera.com --config-file=$(SAMPLE_CONFIG_FILE) --pkeypath='' --username=$(CF_AOC_USER) --use-generic-client=yes
 	cat $(SAMPLE_CONFIG_FILE)
 	rm -f $(SAMPLE_CONFIG_FILE)
 	@touch $@
@@ -949,10 +950,14 @@ tnagios: $(T)/fx_nagios $(T)/serv_nagios_webapp $(T)/serv_nagios_transfer $(T)/n
 
 $(T)/fxgw: $(T)/.exists
 	@echo $@
-	$(EXE_MAN) aspera faspex
+	$(EXE_MAN) oncloud faspex
 	@touch $@
 
 setupprev:
+	sudo asnodeadmin --reload
+	sudo asnodeadmin -a -u $(CF_HSTS2_NODE_USER) -p $(CF_HSTS2_NODE_PASS) -x xfer
+	sudo asconfigurator -x "user;user_name,xfer;file_restriction,|*;absolute,"
+	sudo asnodeadmin --reload
 	asconfigurator -x "user;user_name,xfer;file_restriction,|*;token_encryption_key,1234"
 	asconfigurator -x "server;activity_logging,true;activity_event_logging,true"
 	sudo asnodeadmin --reload
@@ -961,13 +966,6 @@ setupprev:
 	$(EXE_NOMAN) config id test_preview update --url=$(CF_HSTS2_URL) --username=testkey --password=secret
 	$(EXE_NOMAN) config id default set preview test_preview
 
-# ruby -e 'require "yaml";YAML.load_file("lib/aspera/preview_generator_formats.yml").each {|k,v|puts v};'|while read x;do touch /Users/xfer/docroot/sample${x};done
-
-preparelocal:
-	sudo asnodeadmin --reload
-	sudo asnodeadmin -a -u $(CF_HSTS2_NODE_USER) -p $(CF_HSTS2_NODE_PASS) -x xfer
-	sudo asconfigurator -x "user;user_name,xfer;file_restriction,|*;absolute,"
-	sudo asnodeadmin --reload
 noderestart:
 	sudo launchctl stop com.aspera.asperanoded
 	sudo launchctl start com.aspera.asperanoded
