@@ -1261,9 +1261,9 @@ ascli ats cluster show --cloud=aws --region=my_AWS_REGION
 ascli ats cluster show --id=1f412ae7-869a-445c-9c05-02ad16813be2
 ascli conf flush
 ascli conf wiz --url=my_url_here --config-file=SAMPLE_CONFIG_FILE --pkeypath='' --username=my_username_here --test-mode=yes
-ascli conf wiz --url=my_url_here --config-file=SAMPLE_CONFIG_FILE --pkeypath='' --username=my_username_here --use-generic-client=yes
+ascli conf wiz --url=my_url_here --config-file=SAMPLE_CONFIG_FILE --pkeypath='' --username=my_username_here --test-mode=yes --use-generic-client=yes
 ascli config ascp connect id 'Aspera Connect for Windows' info
-ascli config ascp connect id 'Aspera Connect for Windows' links id 'Windows Installer' download --to-folder=.
+ascli config ascp connect id 'Aspera Connect for Windows' links id 'Windows Installer' download --to-folder=DIR_TMP/.
 ascli config ascp connect id 'Aspera Connect for Windows' links list
 ascli config ascp connect list
 ascli config ascp products list
@@ -1278,23 +1278,23 @@ ascli console transfer current list
 ascli console transfer smart list 
 ascli console transfer smart sub 112 @json:'{"source":{"paths":["10MB.1"]},"source_type":"user_selected"}'
 ascli cos node access_key --id=self show
-ascli cos node download my_SAMPLE_FILENAME
+ascli cos node download my_SAMPLE_FILENAME --to-folder=DIR_TMP/.
 ascli cos node info
 ascli cos node upload my_SAMPLE_FILEPATH
 ascli faspex nagios_check
 ascli faspex package list
 ascli faspex package list --box=sent --fields=package_id --format=csv --display=data|tail -n 1);\
-ascli faspex package recv --box=sent --to-folder=DIR_TMP --id=$pack_id
-ascli faspex package recv --link='my_FASPEX_PUBLINK_RECV_PACKAGE'
-ascli faspex package recv --to-folder=DIR_TMP --id=$pack_id
-ascli faspex package recv --to-folder=DIR_TMP --id=ALL --once-only=yes
+ascli faspex package recv --box=sent --to-folder=DIR_TMP/. --id=$pack_id
+ascli faspex package recv --to-folder=DIR_TMP/. --id=$pack_id
+ascli faspex package recv --to-folder=DIR_TMP/. --id=ALL --once-only=yes
+ascli faspex package recv --to-folder=DIR_TMP/. --link='my_FASPEX_PUBLINK_RECV_PACKAGE'
 ascli faspex package send --delivery-info=@json:'{"title":"PKG_TEST_TITLE","recipients":["my_EMAIL_ADDR"]}' my_SAMPLE_FILEPATH
 ascli faspex package send --link='my_FASPEX_PUBLINK_SEND_DROPBOX' --delivery-info=@json:'{"title":"PKG_TEST_TITLE"}' my_SAMPLE_FILEPATH
 ascli faspex package send --link='my_FASPEX_PUBLINK_SEND_TO_USER' --delivery-info=@json:'{"title":"PKG_TEST_TITLE"}' my_SAMPLE_FILEPATH
 ascli faspex source name "Server Files" node br /
 ascli faspex5 node list --value=@json:'{"type":"received","subtype":"mypackages"}'
 ascli faspex5 package list --value=@json:'{"state":["released"]}'
-ascli faspex5 package receive --id=$LAST_PACK
+ascli faspex5 package receive --id=$package_id --to-folder=DIR_TMP/.
 ascli faspex5 package send --value=@json:'{"title":"test title","recipients":["admin"]}' my_SAMPLE_FILEPATH
 ascli node async --id=1 bandwidth 
 ascli node async --id=1 counters 
@@ -1305,7 +1305,7 @@ ascli node async show --id=ALL
 ascli node basic_token
 ascli node browse / -r
 ascli node delete my_HSTS_FOLDER_UPLOAD/my_SAMPLE_FILENAME
-ascli node download --to-folder=DIR_TMP my_HSTS_FOLDER_UPLOAD/my_SAMPLE_FILENAME
+ascli node download --to-folder=DIR_TMP/. my_HSTS_FOLDER_UPLOAD/my_SAMPLE_FILENAME
 ascli node info
 ascli node nagios_check
 ascli node search / --value=@json:'{"sort":"mtime"}'
@@ -1348,7 +1348,7 @@ ascli oncloud files delete /newname
 ascli oncloud files download --transfer=connect /200KB.1
 ascli oncloud files file 18891
 ascli oncloud files find / --value='\.partial$'
-ascli oncloud files http_node_download --to-folder=DIR_TMP /200KB.1
+ascli oncloud files http_node_download --to-folder=DIR_TMP/. /200KB.1
 ascli oncloud files mkdir /testfolder
 ascli oncloud files rename /testfolder newname
 ascli oncloud files short_link create --to-folder='ascli test folder link' --value=private
@@ -1359,7 +1359,8 @@ ascli oncloud files upload --to-folder=/ my_SAMPLE_FILEPATH
 ascli oncloud files v3 info
 ascli oncloud organization
 ascli oncloud packages list
-ascli oncloud packages list --format=csv --fields=id --display=data|head -n 1)
+ascli oncloud packages list --format=csv --fields=id --display=data|head -n 1);\
+ascli oncloud packages recv --id=$last_pack --to-folder=DIR_TMP/.
 ascli oncloud packages recv --id=ALL --once-only=yes --lock-port=12345
 ascli oncloud packages send --value=@json:'{"name":"PKG_TEST_TITLE","recipients":["my_AOC_EXTERNAL_EMAIL"]}' --new-user-option=@json:'{"package_contact":true}' my_SAMPLE_FILEPATH
 ascli oncloud packages send --value=@json:'{"name":"PKG_TEST_TITLE","recipients":["my_EMAIL_ADDR"],"note":"my note"}' my_SAMPLE_FILEPATH
@@ -1395,7 +1396,7 @@ ascli server delete NEW_SERVER_FOLDER
 ascli server delete my_HSTS_FOLDER_UPLOAD/target_hot
 ascli server delete my_HSTS_FOLDER_UPLOAD/to.delete
 ascli server df
-ascli server download NEW_SERVER_FOLDER/my_SAMPLE_FILENAME --to-folder=DIR_TMP
+ascli server download NEW_SERVER_FOLDER/my_SAMPLE_FILENAME --to-folder=DIR_TMP/.
 ascli server download NEW_SERVER_FOLDER/my_SAMPLE_FILENAME --to-folder=my_HSTS_FOLDER_UPLOAD --transfer=node
 ascli server du /
 ascli server info
@@ -1410,7 +1411,7 @@ ascli server upload --to-folder=my_HSTS_FOLDER_UPLOAD/target_hot --lock-port=123
 ascli server upload my_SAMPLE_FILEPATH --to-folder=NEW_SERVER_FOLDER
 ascli shares repository browse /
 ascli shares repository delete /my_SHARES_UPLOAD/my_SAMPLE_FILENAME
-ascli shares repository download --to-folder=DIR_TMP /my_SHARES_UPLOAD/my_SAMPLE_FILENAME
+ascli shares repository download --to-folder=DIR_TMP/. /my_SHARES_UPLOAD/my_SAMPLE_FILENAME
 ascli shares repository upload --to-folder=/my_SHARES_UPLOAD my_SAMPLE_FILEPATH
 ascli shares2 appinfo
 ascli shares2 organization list
@@ -1690,8 +1691,6 @@ SUBCOMMANDS: start admin
 OPTIONS:
         --parameters=VALUE           extended value for session set definition
         --session-name=VALUE         name of session to use for admin commands, by default first one
-/Users/laurent/workspace/aspera-cli/lib/aspera/ssh.rb:5: warning: method redefined; discarding old default_keys
-/usr/local/lib/ruby/gems/2.7.0/gems/net-ssh-6.1.0/lib/net/ssh/authentication/session.rb:139: warning: previous definition of default_keys was here
 
 
 COMMAND: server
