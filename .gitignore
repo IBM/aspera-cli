@@ -8,11 +8,11 @@
 /pkg/
 /spec/reports/
 /tmp/
-/out/
 /t/
-/test.dir/
-/README.md
+/docs/README.html
+/docs/README.pdf
 /aspera-*.gem
 # rspec failure tracking
 .rspec_status
+# local contains private secrets
 /local/
