@@ -34,8 +34,9 @@ module Aspera
         # folder containing plugins in the gem's main folder
         GEM_PLUGINS_FOLDER='aspera/cli/plugins'
         RUBY_FILE_EXT='.rb'
-        OLD_AOC_COMMAND='files'
-        NEW_AOC_COMMAND='aspera'
+        AOC_COMMAND_V1='files'
+        AOC_COMMAND_V2='aspera'
+        AOC_COMMAND_V3='oncloud'
         CONNECT_WEB_URL = 'https://d3gcli72yxqn2z.cloudfront.net/connect'
         CONNECT_VERSIONS = 'connectversions.js'
         def option_preset; nil; end
@@ -44,7 +45,7 @@ module Aspera
           self.options.add_option_preset(preset_by_name(value))
         end
 
-        private_constant :ASPERA_HOME_FOLDER_NAME,:DEFAULT_CONFIG_FILENAME,:CONF_PRESET_CONFIG,:CONF_PRESET_VERSION,:CONF_PRESET_DEFAULT,:OLD_PROGRAM_NAME,:DEFAULT_REDIRECT,:ASPERA_PLUGINS_FOLDERNAME,:GEM_PLUGINS_FOLDER,:RUBY_FILE_EXT,:OLD_AOC_COMMAND,:NEW_AOC_COMMAND
+        private_constant :ASPERA_HOME_FOLDER_NAME,:DEFAULT_CONFIG_FILENAME,:CONF_PRESET_CONFIG,:CONF_PRESET_VERSION,:CONF_PRESET_DEFAULT,:OLD_PROGRAM_NAME,:DEFAULT_REDIRECT,:ASPERA_PLUGINS_FOLDERNAME,:GEM_PLUGINS_FOLDER,:RUBY_FILE_EXT,:AOC_COMMAND_V1,:AOC_COMMAND_V2
         attr_accessor :option_ak_secret,:option_secrets
 
         def initialize(env,tool_name,help_url,version)
@@ -258,10 +259,10 @@ module Aspera
               save_required=false
               config_tested_version='0.6.14'
               if Gem::Version.new(version) <= Gem::Version.new(config_tested_version)
-                if @config_presets[CONF_PRESET_DEFAULT].is_a?(Hash) and @config_presets[CONF_PRESET_DEFAULT].has_key?(OLD_AOC_COMMAND)
-                  @config_presets[CONF_PRESET_DEFAULT][NEW_AOC_COMMAND]=@config_presets[CONF_PRESET_DEFAULT][OLD_AOC_COMMAND]
-                  @config_presets[CONF_PRESET_DEFAULT].delete(OLD_AOC_COMMAND)
-                  Log.log.warn("Converted plugin default: #{OLD_AOC_COMMAND} -> #{NEW_AOC_COMMAND}")
+                if @config_presets[CONF_PRESET_DEFAULT].is_a?(Hash) and @config_presets[CONF_PRESET_DEFAULT].has_key?(AOC_COMMAND_V1)
+                  @config_presets[CONF_PRESET_DEFAULT][AOC_COMMAND_V2]=@config_presets[CONF_PRESET_DEFAULT][AOC_COMMAND_V1]
+                  @config_presets[CONF_PRESET_DEFAULT].delete(AOC_COMMAND_V1)
+                  Log.log.warn("Converted plugin default: #{AOC_COMMAND_V1} -> #{AOC_COMMAND_V2}")
                   save_required=true
                 end
               end
@@ -526,7 +527,7 @@ module Aspera
               # init defaults if necessary
               @config_presets[CONF_PRESET_DEFAULT]||=Hash.new
               if !option_override
-                raise CliError,"a default configuration already exists for plugin '#{NEW_AOC_COMMAND}' (use --override=yes)" if @config_presets[CONF_PRESET_DEFAULT].has_key?(NEW_AOC_COMMAND)
+                raise CliError,"a default configuration already exists for plugin '#{AOC_COMMAND_V2}' (use --override=yes)" if @config_presets[CONF_PRESET_DEFAULT].has_key?(AOC_COMMAND_V2)
                 raise CliError,"preset already exists: #{aspera_preset_name}  (use --override=yes)" if @config_presets.has_key?(aspera_preset_name)
               end
               # lets see if path to priv key is provided
@@ -550,10 +551,10 @@ module Aspera
               self.format.display_status("#{private_key_path}")
               pub_key_pem=OpenSSL::PKey::RSA.new(File.read(private_key_path)).public_key.to_s
               # define options
-              require 'aspera/cli/plugins/aspera'
+              require 'aspera/cli/plugins/oncloud'
               # make username mandatory for jwt, this triggers interactive input
               self.options.get_option(:username,:mandatory)
-              files_plugin=Plugins::Aspera.new(@agents.merge({skip_basic_auth_options: true, private_key_path: private_key_path}))
+              files_plugin=Plugins::Oncloud.new(@agents.merge({skip_basic_auth_options: true, private_key_path: private_key_path}))
               auto_set_pub_key=false
               auto_set_jwt=false
               use_browser_authentication=false
@@ -617,8 +618,8 @@ module Aspera
                 o=self.options.get_option(s)
                 @config_presets[s.to_s] = o unless o.nil?
               end
-              self.format.display_status("Setting config preset as default for #{NEW_AOC_COMMAND}")
-              @config_presets[CONF_PRESET_DEFAULT][NEW_AOC_COMMAND]=aspera_preset_name
+              self.format.display_status("Setting config preset as default for #{AOC_COMMAND_V2}")
+              @config_presets[CONF_PRESET_DEFAULT][AOC_COMMAND_V2]=aspera_preset_name
               self.format.display_status("saving config file")
               save_presets_to_config_file
               return Main.result_status("Done.\nYou can test with:\n#{@tool_name} aspera user info show")
@@ -627,10 +628,10 @@ module Aspera
             end
           when :export_to_cli
             self.format.display_status("Exporting: Aspera on Cloud")
-            require 'aspera/cli/plugins/aspera'
+            require 'aspera/cli/plugins/oncloud'
             # need url / username
-            add_plugin_default_preset(NEW_AOC_COMMAND.to_sym)
-            files_plugin=Plugins::Aspera.new(@agents)
+            add_plugin_default_preset(AOC_COMMAND_V3.to_sym)
+            files_plugin=Plugins::Oncloud.new(@agents) # TODO: is this line needed ?
             url=self.options.get_option(:url,:mandatory)
             cli_conf_file=Fasp::Installation.instance.cli_conf_file
             data=JSON.parse(File.read(cli_conf_file))
