@@ -286,6 +286,9 @@ module Aspera
                 save_presets_to_config_file
                 Log.log.warn("Saving automatic conversion.")
               end
+            rescue Psych::SyntaxError => e
+              Log.log.error("YAML error in config file")
+              raise e
             rescue => e
               Log.log.debug("-> #{e}")
               new_name="#{@option_config_file}.pre#{@program_version}.manual_conversion_needed"
