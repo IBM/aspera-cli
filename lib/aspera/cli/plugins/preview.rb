@@ -8,7 +8,6 @@ require 'aspera/hash_ext'
 require 'date'
 require 'securerandom'
 
-
 module Aspera
   module Cli
     module Plugins
@@ -101,7 +100,7 @@ module Aspera
           return @preview_formats_to_generate.map{|i|i.to_s}.join(',')
         end
 
-        ACTIONS=[:scan,:events,:trevents,:folder,:check,:test]
+        ACTIONS=[:scan,:events,:trevents,:check,:test]
 
         # /files/id/files is normally cached in redis, but we can discard the cache
         # but /files/id is not cached
@@ -235,7 +234,8 @@ module Aspera
           "#{entry['id']}#{PREVIEW_FOLDER_SUFFIX}"
         end
 
-        def preview_filename(preview_format,filename=PREVIEW_BASENAME)
+        def preview_filename(preview_format,filename=nil)
+          filename||=PREVIEW_BASENAME
           return "#{filename}.#{preview_format.to_s}"
         end
 
@@ -450,6 +450,8 @@ module Aspera
             raise "format not supported: #{format}" unless g.supported?
             g.generate
             return Main.result_status("generated: #{dest}")
+          else
+            raise "error"
           end
         ensure
           FileUtils.rm_rf(@tmp_folder)
