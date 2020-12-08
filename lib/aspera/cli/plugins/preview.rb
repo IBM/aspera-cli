@@ -8,6 +8,7 @@ require 'aspera/hash_ext'
 require 'date'
 require 'securerandom'
 
+
 module Aspera
   module Cli
     module Plugins
@@ -35,7 +36,7 @@ module Aspera
           super(env)
           @skip_types=[]
           @default_transfer_spec=nil
-          # by default generate all supported formats
+          # by default generate all supported formats (clone, as altered by options)
           @preview_formats_to_generate=Aspera::Preview::Generator::PREVIEW_FORMATS.clone
           # options for generation
           @gen_options=Aspera::Preview::Options.new
