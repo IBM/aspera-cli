@@ -11,23 +11,19 @@ _Laurent/2016-<%=Time.new.year%>_
 
 This gem provides a command line interface to Aspera Applications and a ruby API to Aspera transfers.
 
-Location:
-[https://rubygems.org/gems/aspera](https://rubygems.org/gems/aspera)
+Location (once released):
+[https://rubygems.org/gems/aspera-cli](https://rubygems.org/gems/aspera-cli)
 
 Disclaimers:
 
-* Aspera, FASP are owned by IBM
-* This GEM is not endorsed/supported by IBM/Aspera
-* Use at your risk (not in production environments)
-* This gem is provided as-is, and is not intended to be a complete CLI, or industry-grade product.
-* some features may not be fully validated
-* IBM provides an officially supported Aspera CLI: [http://downloads.asperasoft.com/en/downloads/62](http://downloads.asperasoft.com/en/downloads/62) .
+* This has not yet been officially released so things may change
+
 
 That being said, <%=tool%> is very powerful and gets things done, it&apos;s also a great tool to learn Aspera APIs.
 
 This manual addresses three parts:
 
-* <%=tool%> : ("Amelia") The Multi Layer IBM Aspera tool
+* <%=tool%> : The main tool
 * `asession` : starting a FASP Session with JSON parameters
 * `Aspera` : includes a Ruby "FASPManager"
 
@@ -167,10 +163,10 @@ Once installed, you can install latest ruby:
 # rvm install ruby
 ```
 
-If you dont want all users to have ruby by default, 
+If you dont want all users to have ruby by default,
 rename the file: `/etc/profile.d/rvm.sh` with another extension, and source it to get rvm.
 
-Alternatively, only if you know what you do, on RPM based systems (CentOs, Redhat), install the ruby provided by yum which may be 2.0. 
+Alternatively, only if you know what you do, on RPM based systems (CentOs, Redhat), install the ruby provided by yum which may be 2.0.
 
 ```
 # yum install -y ruby rubygems ruby-json
@@ -238,7 +234,7 @@ Those can be found in one of IBM Asprea transfer server or client with its licen
 * IBM Aspera High Speed Transfer EndPoint (Licensed)
 
 For instance, Aspera Connect Client can be installed
-by visiting the page: [http://downloads.asperasoft.com/connect2/](http://downloads.asperasoft.com/connect2/). 
+by visiting the page: [http://downloads.asperasoft.com/connect2/](http://downloads.asperasoft.com/connect2/).
 
 <%=tool%> will detect most of Aspera transfer products in standard locations and use the first one found.
 Refer to section [FASP](#client) for details on how to select a client or set path to the FASP protocol.
@@ -331,7 +327,7 @@ The value for _any_ options can come from the following locations (in this order
 * Environment variable
 * Command line
 
-Environment variable starting with prefix: <%=evp%> are taken as option values, 
+Environment variable starting with prefix: <%=evp%> are taken as option values,
 e.g. `<%=evp%>OPTION_NAME` is for `--option-name`.
 
 Options values can be displayed for a given command by providing the `--show-config` option: `<%=cmd%> node --show-config`
@@ -371,7 +367,7 @@ Depending on action, the output will contain:
 ### Format of output
 
 By default, result of type single_object and object_list are displayed using format `table`.
-The table style can be customized with parameter: `table_style` (horizontal, vertical and intersection characters) and is `:.:` by default. 
+The table style can be customized with parameter: `table_style` (horizontal, vertical and intersection characters) and is `:.:` by default.
 
 In a table format, when displaying "objects" (single, or list), by default, sub object are
 flatten (option flat_hash). So, object {"user":{"id":1,"name":"toto"}} will have attributes: user.id and user.name. Setting `flat_hash` to `false` will only display one
@@ -470,13 +466,13 @@ $ <%=cmd%> config echo @zlib:@base64:@file:myfile.dat
 Example: create a value as a hash, with one key and the value is read from a file:
 
 ```
-$ <%=cmd%> config echo @ruby:'{"token_verification_key"=>File.read("pubkey.txt")}' 
+$ <%=cmd%> config echo @ruby:'{"token_verification_key"=>File.read("pubkey.txt")}'
 ```
 
 Example: read a csv file and create a list of hash for bulk provisioning:
 
 ```
-$ cat test.csv 
+$ cat test.csv
 name,email
 lolo,laurent@example.com
 toto,titi@tutu.tata
@@ -511,7 +507,7 @@ It is also possible to provide a _Structured Value_ in a file using `@json:@file
 
 ## <a name="conffolder"></a>Configuration and Persistency Folder
 
-<%=tool%> configuration and other runtime files (token cache, file lists, persistency files) 
+<%=tool%> configuration and other runtime files (token cache, file lists, persistency files)
 are stored in folder `$HOME/.aspera/<%=cmd%>`. The folder can be displayed using :
 
 ```
@@ -532,11 +528,11 @@ All options for <%=tool%> commands can be set on command line, or by env vars, o
 A configuration file provides a way to define default values, especially
 for authentication parameters, thus avoiding to always having to specify those parameters on the command line.
 
-The default configuration file is: `$HOME/.aspera/<%=cmd%>/config.yaml` 
+The default configuration file is: `$HOME/.aspera/<%=cmd%>/config.yaml`
 (this can be overriden with option `--config-file=path` or equivalent env var).
 
 So, finally, the configuration file is simply a catalog of pre-defined lists of options,
-called: <%=prsts%>. Then, instead of specifying some common options on the command line (e.g. address, credentials), it is possible to invoke the ones of a <%=prst%> (e.g. `mypreset`) using the option: `-Pmypreset` or `--preset=mypreset`. 
+called: <%=prsts%>. Then, instead of specifying some common options on the command line (e.g. address, credentials), it is possible to invoke the ones of a <%=prst%> (e.g. `mypreset`) using the option: `-Pmypreset` or `--preset=mypreset`.
 
 ### <a name="lprt"></a><%=prstt%>
 
@@ -589,7 +585,7 @@ $ <%=cmd%> config list
 
 ### <a name="lprtconf"></a>Special <%=prstt%>: config
 
-This preset name is reserved and contains a single key: `version`. This is the version of Amelia which created the file.
+This preset name is reserved and contains a single key: `version`. This is the version of ascli which created the file.
 
 ### <a name="lprtdef"></a>Special <%=prstt%>: default
 
@@ -634,7 +630,7 @@ We can see here:
 
 Two <%=prsts%> are reserved:
 
-* `config` contains a single value: `version` showing the CLI 
+* `config` contains a single value: `version` showing the CLI
 version used to create the configuration file. It is used to check compatibility.
 * `default` is reserved to define the default <%=prst%> name used for known plugins.
 
@@ -694,12 +690,12 @@ $ <%=cmd%> config id cli_default unset interactive
 
 ### Examples
 
-For Faspex, Shares, Node (including ATS, Aspera Transfer Service), Console, 
-only username/password and url are required (either on command line, or from config file). 
+For Faspex, Shares, Node (including ATS, Aspera Transfer Service), Console,
+only username/password and url are required (either on command line, or from config file).
 Those can usually be provided on the command line:
 
 ```
-$ <%=cmd%> shares repo browse / --url=https://10.25.0.6 --username=john --password=4sp3ra 
+$ <%=cmd%> shares repo browse / --url=https://10.25.0.6 --username=john --password=4sp3ra
 ```
 
 This can also be provisioned in a config file:
@@ -708,20 +704,20 @@ This can also be provisioned in a config file:
 1$ <%=cmd%> config id shares06 set url https://10.25.0.6
 2$ <%=cmd%> config id shares06 set username john
 3$ <%=cmd%> config id shares06 set password 4sp3ra
-4$ <%=cmd%> config id default set shares shares06 
+4$ <%=cmd%> config id default set shares shares06
 5$ <%=cmd%> config overview
 6$ <%=cmd%> shares repo browse /
 ```
 
-The three first commands build a <%=prst%>. 
+The three first commands build a <%=prst%>.
 Note that this can also be done with one single command:
 
 ```
 $ <%=cmd%> config id shares06 init @json:'{"url":"https://10.25.0.6","username":"john","password":"4sp3ra"}'
 ```
 
-The fourth command defines this <%=prst%> as the default <%=prst%> for the 
-specified application ("shares"). The 5th command displays the content of configuration file in table format. 
+The fourth command defines this <%=prst%> as the default <%=prst%> for the
+specified application ("shares"). The 5th command displays the content of configuration file in table format.
 Alternative <%=prsts%> can be used with option "-P&lt;<%=prst%>&gt;"
 (or --preset=&lt;<%=prst%>&gt;)
 
@@ -758,7 +754,7 @@ The gem is equipped with traces. By default logging level is "warn". To increase
 ## Learning Aspera Product APIs (REST)
 
 This CLI uses REST APIs.
-To display HTTP calls, use argument `-r` or `--rest-debug`, this is useful to display 
+To display HTTP calls, use argument `-r` or `--rest-debug`, this is useful to display
 exact content or HTTP requests and responses.
 
 In order to get traces of execution, use argument : `--log-level=debug`
@@ -902,7 +898,7 @@ There are currently 3 agents:
 * `httpgw` : use of an Aspera HTTP Gateway
 
 Note that all transfer operation are seen from the point of view of the agent.
-For instance, a node agent making an "upload", or "package send" operation, 
+For instance, a node agent making an "upload", or "package send" operation,
 will effectively push files to the related server from the agent node.
 
 <%=tool%> standadizes on the use of a [_transfer-spec_](#transferspec) instead of _raw_ ascp options to provide parameters for a transfer session, as a common method for those three Transfer Agents.
@@ -912,7 +908,7 @@ will effectively push files to the related server from the agent node.
 
 By default the CLI will use a local FASP protocol, equivalent to specifying `--transfer=direct`.
 <%=tool%> will detect locally installed Aspera products.
-Refer to section [FASP](#client). 
+Refer to section [FASP](#client).
 
 To specify a FASP proxy (only supported with the `direct` agent), set the appropriate [_transfer-spec_](#transferspec) parameter:
 
@@ -933,7 +929,7 @@ The `transfer-info` optionally provides the following auto resume parameters:
 
 ### IBM Aspera Connect Client GUI
 
-By specifying option: `--transfer=connect`, <%=tool%> will start transfers 
+By specifying option: `--transfer=connect`, <%=tool%> will start transfers
 using the locally installed Aspera Connect Client.
 
 ### Aspera Node API : Node to node transfers
@@ -947,7 +943,7 @@ in the configuration file, then this node is used by default else the parameter
 three keys: url, username and password, corresponding to the URL of the node API
 and associated credentials (node user or access key).
 
-The `--transfer-info` parameter can directly specify a pre-configured <%=prst%> : 
+The `--transfer-info` parameter can directly specify a pre-configured <%=prst%> :
 `--transfer-info=@preset:<psetname>` or specified using the option syntax :
 `--transfer-info=@json:'{"url":"https://...","username":"theuser","password":"thepass"}'`
 
@@ -992,7 +988,7 @@ A [_transfer-spec_](#transferspec) is a Hash table, so it is described on the co
 ## <a name="transferparams"></a>Transfer Parameters
 
 All standard _transfer-spec_ parameters can be overloaded. To display parameters,
-run in debug mode (--log-level=debug). [_transfer-spec_](#transferspec) can 
+run in debug mode (--log-level=debug). [_transfer-spec_](#transferspec) can
 also be saved/overridden in the config file.
 
 <%= File.read("#{ENV['DIR_DOC']}transfer_spec.html").gsub(/.*<body>(.*)<\/body>.*/m,'\1') %>
@@ -1004,7 +1000,7 @@ The destination folder is set by <%=tool%> by default to:
 * `.` for downloads
 * `/` for uploads
 
-It is specified by the [_transfer-spec_](#transferspec) parameter `destination_root`. 
+It is specified by the [_transfer-spec_](#transferspec) parameter `destination_root`.
 As such, it can be modified with option: `--ts=@json:'{"destination_root":"<path>"}'`.
 The option `to_folder` provides an equivalent and convenient way to change this parameter:
 `--to-folder=<path>` .
@@ -1160,7 +1156,7 @@ Note that actions and parameter values can be written in short form.
 
 <%=tool%> comes with several Aspera application plugins.
 
-REST APIs of Aspera legacy applications (Aspera Node, Faspex, Shares, Console, Orchestrator, Server) use simple username/password authentication: HTTP Basic Authentication. 
+REST APIs of Aspera legacy applications (Aspera Node, Faspex, Shares, Console, Orchestrator, Server) use simple username/password authentication: HTTP Basic Authentication.
 
 Those are using options:
 
@@ -1281,7 +1277,7 @@ For a Browser-less, Private Key-based authentication, use the following steps.
 
 #### Key Pair Generation
 
-In order to use JWT for Aspera on Cloud API client authentication, 
+In order to use JWT for Aspera on Cloud API client authentication,
 a private/public key pair must be generated (without passphrase)
 This can be done using any of the following method:
 
@@ -1361,7 +1357,7 @@ $ <%=cmd%> aspera admin res user list
 : 109952 : Tech Support   :
 : 109951 : LAURENT MARTIN :
 :........:................:
-$ <%=cmd%> aspera user info modify @ruby:'{"public_key"=>File.read(File.expand_path("~/.aspera/<%=cmd%>/aocapikey.pub"))}'   
+$ <%=cmd%> aspera user info modify @ruby:'{"public_key"=>File.read(File.expand_path("~/.aspera/<%=cmd%>/aocapikey.pub"))}'
 modified
 ```
 
@@ -1593,7 +1589,7 @@ ascli aspera admin res workspace_membership create --bulk=yes @json:@file:ws2_me
 * get users who did not log since a date
 
 ```
-$ <%=cmd%> aspera admin res user list --fields=email --query=@json:'{"per_page":10000,"q":"last_login_at:<2018-05-28"}' 
+$ <%=cmd%> aspera admin res user list --fields=email --query=@json:'{"per_page":10000,"q":"last_login_at:<2018-05-28"}'
 :...............................:
 :             email             :
 :...............................:
@@ -1811,13 +1807,13 @@ OK
 API key mykeyname was created
 
 Please preserve the API key! It cannot be retrieved after it's created.
-                 
-Name          mykeyname   
+
+Name          mykeyname
 Description   my sample key
-Created At    2019-09-30T12:17+0000   
+Created At    2019-09-30T12:17+0000
 API Key       my_secret_api_key_here_8f8d9fdakjhfsashjk678
-Locked        false   
-UUID          ApiKey-05b8fadf-e7fe-4bc4-93a9-6fd348c5ab1f  
+Locked        false
+UUID          ApiKey-05b8fadf-e7fe-4bc4-93a9-6fd348c5ab1f
 ```
 
 References:
@@ -1924,7 +1920,7 @@ One can test the "server" application using the well known demo server:
 
 ```
 $ <%=cmd%> config id aspera_demo_server update --url=ssh://demo.asperasoft.com:33001 --username=asperaweb --password=demoaspera
-$ <%=cmd%> config id default set server aspera_demo_server 
+$ <%=cmd%> config id default set server aspera_demo_server
 $ <%=cmd%> server browse /aspera-test-dir-large
 $ <%=cmd%> server download /aspera-test-dir-large/200MB
 ```
@@ -1997,11 +1993,11 @@ updated
 
 ## Example: SHOD to ATS
 
-Access to a "Shares on Demand" (SHOD) server on AWS is provided by a partner. And we need to 
+Access to a "Shares on Demand" (SHOD) server on AWS is provided by a partner. And we need to
 transfer files from this third party SHOD instance into our Azure BLOB storage.
 Simply create an "Aspera Transfer Service" instance (https://ts.asperasoft.com), which
 provides access to the node API.
-Then create a configuration for the "SHOD" instance in the configuration file: in section 
+Then create a configuration for the "SHOD" instance in the configuration file: in section
 "shares", a configuration named: awsshod.
 Create another configuration for the Azure ATS instance: in section "node", named azureats.
 Then execute the following command:
@@ -2010,7 +2006,7 @@ Then execute the following command:
 $ <%=cmd%> node download /share/sourcefile --to-folder=/destinationfolder --preset=awsshod --transfer=node --transfer-info=@preset:azureats
 ```
 
-This will get transfer information from the SHOD instance and tell the Azure ATS instance 
+This will get transfer information from the SHOD instance and tell the Azure ATS instance
 to download files.
 
 ## Create access key
@@ -2282,7 +2278,7 @@ This shall list the contents of the storage root of the access key.
 
 The tool intentionally supports only a "one shot" mode in order to avoid having a hanging process or using too many resources (calling REST api too quickly during the scan or event method).
 It needs to be run regularly to create or update preview files. For that use your best
-reliable scheduler. For instance use "CRON" on Linux or Task Scheduler on Windows. 
+reliable scheduler. For instance use "CRON" on Linux or Task Scheduler on Windows.
 
 Typically, for "Access key" access, the system/transfer is `xfer`. So, in order to be consiustent have generate the appropriate access rights, the generation process
 should be run as user `xfer`.
@@ -2331,8 +2327,8 @@ telling from where to get new events.
 
 It is also possible to test a local file, using the `test` command.
 
-Once candidate are selected, once candidates are selected, 
-a preview is always generated if it does not exist already, 
+Once candidate are selected, once candidates are selected,
+a preview is always generated if it does not exist already,
 else if a preview already exist, it will be generated
 using one of three overwrite method:
 
@@ -2356,7 +2352,7 @@ The option `folder_reset_cache` forces the node service to refresh folder conten
 Two types of preview can be generated:
 
   * png: thumbnail
-  * mp4: video preview (only for video) 
+  * mp4: video preview (only for video)
 
 To skip generation of a format use option `skip_format`
 
@@ -2394,7 +2390,7 @@ If the preview generator does not have access to files on the file system (it is
 
 # SMTP for email notifications
 
-Amelia can send email, for that setup SMTP configuration. This is done with option `smtp`.
+Aspera CLI can send email, for that setup SMTP configuration. This is done with option `smtp`.
 
 The `smtp` option is a hash table (extended value) with the following fields:
 <table>
@@ -2447,7 +2443,7 @@ $ <%=cmd%> config --smtp=@preset:smtp_google email sample.dest@example.com
 
 # Tool: `asession`
 
-This gem comes with a second executable tool providing a simplified standardized interface 
+This gem comes with a second executable tool providing a simplified standardized interface
 to start a FASP session: `asession`.
 
 It aims at simplifying the startup of a FASP session from a programmatic stand point as formating a [_transfer-spec_](#transferspec) is:
@@ -2474,7 +2470,7 @@ Note that there are special "extended" [_transfer-spec_](#transferspec) paramete
   * `EX_file_list_folder` to set the folder used to store (exclusively, because of garbage collection) generated file lists. By default it is `[system tmp folder]/[username]_asession_filelists`
 
 Note that in addition, many "EX_" [_transfer-spec_](#transferspec) parameters are supported for the "local" transfer agent (used by `asession`), refer to section [_transfer-spec_](#transferspec).
- 
+
 ## Comparison of interfaces
 
 <table>
@@ -2639,7 +2635,7 @@ So, it evolved into <%=tool%>:
 
 * 0.11.5
 
-	* added option `default_ports` for AoC (see manual) 
+	* added option `default_ports` for AoC (see manual)
 	* allow bulk delete in `aspera files` with option `bulk=yes`
 	* fix getting connect versions
 	* added section for Aix
@@ -2757,7 +2753,7 @@ So, it evolved into <%=tool%>:
 
 	* AoC and node v4 "browse" works now on non-folder items: file, link
 	* initial support for AoC automation (do not use yet)
-	
+
 * 0.10
 
 	* support for transfer using IBM Cloud Object Storage
@@ -2783,7 +2779,7 @@ So, it evolved into <%=tool%>:
    * new command to display bearer token of node in AoC
    * the --fields= option, support +_fieldname_ to add a field to default fields
    * many small changes
-    
+
 * 0.9.32
 
    * all Faspex public links are now supported
@@ -2845,7 +2841,7 @@ So, it evolved into <%=tool%>:
 
   * AoC transfers are now reported in activity app
   * new interface for Rest class authentication (keep backward compatibility)
- 
+
 * 0.9.15
 
   * new feature: "find" command in aspera files
@@ -2955,7 +2951,7 @@ Breaking change:
 some commands take now --id option instead of id command.
 
 * 0.6.15
-* 
+*
 Breaking change: "files" application renamed to "aspera" (for "Aspera on Cloud"). "repository" renamed to "files". Default is automatically reset, e.g. in config files and change key "files" to "aspera" in <%=prst%> "default".
 
 # BUGS
@@ -2964,7 +2960,7 @@ Breaking change: "files" application renamed to "aspera" (for "Aspera on Cloud")
 
 ## only one value for any option
 
-Some commands and sub commands may ask for the same option name. 
+Some commands and sub commands may ask for the same option name.
 Currently, since option definition is position independant (last one wins), it is not possible
 to give an option to a command and the same option with different value to a sub command.
 
