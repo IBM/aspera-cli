@@ -1,15 +1,13 @@
-[comment1]: # (Do not edit README.md, edit README.erb.md)
-[comment2]: # (README.erb.md uses markdown format with embeded ruby macros)
-[comment3]: # (README.md is generated after compilation of README.erb.md)
+[comment1]: # (Do not edit this README.md, edit docs/README.erb.md, for details, read docs/README.md)
+<%cmd=ENV["TOOLNAME"];tool='`'+cmd+'`';evp=cmd.upcase+'_';opprst='option preset';prst='['+opprst+'](#lprt)';prsts='['+opprst+'s](#lprt)';prstt=opprst.capitalize%>
 
-# `ascli` : a Command Line for IBM Aspera products
+# <%=tool%> : a Command Line for IBM Aspera products
 
 Version : <%= ENV["VERSION"] %>
-<%cmd=ENV["TOOLNAME"];tool='`'+cmd+'`';evp=cmd.upcase+'_';opprst='option preset';prst='['+opprst+'](#lprt)';prsts='['+opprst+'s](#lprt)';prstt=opprst.capitalize%>
 
 _Laurent/2016-<%=Time.new.year%>_
 
-This gem provides a command line interface to Aspera Applications and a ruby API to Aspera transfers.
+This gem provides a command line interface to Aspera Applications.
 
 Location (once released):
 [https://rubygems.org/gems/aspera-cli](https://rubygems.org/gems/aspera-cli)
@@ -18,18 +16,17 @@ Disclaimers:
 
 * This has not yet been officially released so things may change
 
-
 That being said, <%=tool%> is very powerful and gets things done, it&apos;s also a great tool to learn Aspera APIs.
 
 This manual addresses three parts:
 
-* <%=tool%> : The main tool
+* <%=tool%> : The command line tool
 * `asession` : starting a FASP Session with JSON parameters
 * `Aspera` : includes a Ruby "FASPManager"
 
-In examples, command line operations (starting with `$`) are shown using a standard shell: `bash`.
+In examples, command line operations (starting with `$`) are shown using a standard shell: `bash` or `zsh`.
 
-Command line parameters in example beginning with `my_`, like `my_param_value` are user proviuded value and not fixed value commands.
+Command line parameters in example beginning with `my_`, like `my_param_value` are user-provided value and not fixed value commands.
 
 # Quick Start
 
@@ -512,7 +509,7 @@ are stored in folder `$HOME/.aspera/<%=cmd%>`. The folder can be displayed using
 
 ```
 $ <%=cmd%> config folder
-/Users/laurent/.aspera/ascli
+/Users/kenji/.aspera/<%=cmd%>
 ```
 
 ## <a name="configfile"></a>Configuration file
@@ -585,7 +582,7 @@ $ <%=cmd%> config list
 
 ### <a name="lprtconf"></a>Special <%=prstt%>: config
 
-This preset name is reserved and contains a single key: `version`. This is the version of ascli which created the file.
+This preset name is reserved and contains a single key: `version`. This is the version of <%=tool%> which created the file.
 
 ### <a name="lprtdef"></a>Special <%=prstt%>: default
 
@@ -958,7 +955,7 @@ If it possible to send using a HTTP gateway, in case FASP is not allowed.
 Example:
 
 ```
-ascli faspex package recv --id=323 --transfer=httpgw --transfer-info=@json:'{"url":"https://eudemo.asperademo.com:9443/aspera/http-gwy/v1"}'
+$ <%=cmd%> faspex package recv --id=323 --transfer=httpgw --transfer-info=@json:'{"url":"https://eudemo.asperademo.com:9443/aspera/http-gwy/v1"}'
 ```
 
 ## <a name="transferspec"></a>Transfer Specification
@@ -1056,7 +1053,7 @@ In case the file list is provided on the command line (i.e. using `--sources=@ar
 Example:
 
 ```
-ascli server upload --src-type=pair ~/Documents/Samples/200KB.1 /Upload/sample1
+$ <%=cmd%> server upload --src-type=pair ~/Documents/Samples/200KB.1 /Upload/sample1
 ```
 
 
@@ -1186,7 +1183,7 @@ Preparing preset: aoc_myorg
 Please provide path to your private RSA key, or empty to generate one:
 option: pkeypath>
 using existing key:
-/Users/myself/.aspera/ascli/aspera_on_cloud_key
+/Users/myself/.aspera/<%=cmd%>/aspera_on_cloud_key
 Using global client_id.
 option: username> john@example.com
 Updating profile with new key
@@ -1195,7 +1192,7 @@ Setting config preset as default for aspera
 saving config file
 Done.
 You can test with:
-ascli aspera user info show
+$ <%=cmd%> aspera user info show
 ```
 
 Optionally, it is possible to create a new organization-specific "integration".
@@ -1552,20 +1549,20 @@ a- get id of first workspace
 
 ```
 WS1='First Workspace'
-WS1ID=$(ascli aspera admin res workspace list --query=@json:'{"q":"'"$WS1"'"}' --select=@json:'{"name":"'"$WS1"'"}' --fields=id --format=csv)
+WS1ID=$(<%=cmd%> aspera admin res workspace list --query=@json:'{"q":"'"$WS1"'"}' --select=@json:'{"name":"'"$WS1"'"}' --fields=id --format=csv)
 ```
 
 b- get id of second workspace
 
 ```
 WS2='Second Workspace'
-WS2ID=$(ascli aspera admin res workspace list --query=@json:'{"q":"'"$WS2"'"}' --select=@json:'{"name":"'"$WS2"'"}' --fields=id --format=csv)
+WS2ID=$(<%=cmd%> aspera admin res workspace list --query=@json:'{"q":"'"$WS2"'"}' --select=@json:'{"name":"'"$WS2"'"}' --fields=id --format=csv)
 ```
 
 c- extract membership information and change workspace id
 
 ```
-ascli aspera admin res workspace_membership list --fields=manager,member_id,member_type,workspace_id --query=@json:'{"per_page":10000,"workspace_id":'"$WS1ID"'}' --format=jsonpp > ws1_members.json
+$ <%=cmd%> aspera admin res workspace_membership list --fields=manager,member_id,member_type,workspace_id --query=@json:'{"per_page":10000,"workspace_id":'"$WS1ID"'}' --format=jsonpp > ws1_members.json
 ```
 
 d- convert to creation data for second workspace:
@@ -1583,7 +1580,7 @@ jq '[.[] | {member_type,member_id,workspace_id,manager,workspace_id:"'"$WS2ID"'"
 e- add members to second workspace
 
 ```
-ascli aspera admin res workspace_membership create --bulk=yes @json:@file:ws2_members.json
+$ <%=cmd%> aspera admin res workspace_membership create --bulk=yes @json:@file:ws2_members.json
 ```
 
 * get users who did not log since a date
@@ -1615,7 +1612,7 @@ $ <%=cmd%> conf wizard --url=https://sedemo.ibmaspera.com --username=laurent.mar
 Detected: Aspera on Cloud
 Preparing preset: aoc_sedemo
 Using existing key:
-/Users/laurent/.aspera/ascli/aspera_on_cloud_key
+/Users/laurent/.aspera/<%=cmd%>/aspera_on_cloud_key
 Using global client_id.
 Please Login to your Aspera on Cloud instance.
 Navigate to your "Account Settings"
@@ -1630,7 +1627,7 @@ Setting config preset as default for aspera
 saving config file
 Done.
 You can test with:
-ascli aspera user info show
+$ <%=cmd%> aspera user info show
 ```
 
 This creates the option preset "aoc_&lt;org name&gt;" to allow seamless command line access and sets it as default for aspera on cloud.
@@ -1759,7 +1756,7 @@ $ cat my_file_list.txt|while read path;do echo <%=cmd%> aspera admin res node --
 * delete the files in bulk
 
 ```
-cat my_file_list.txt | ascli aspera admin res node --name='my node name' --secret='my secret' v3 delete @lines:@stdin:
+cat my_file_list.txt | <%=cmd%> aspera admin res node --name='my node name' --secret='my secret' v3 delete @lines:@stdin:
 ```
 
 ## Activity
@@ -1786,16 +1783,16 @@ Note this must not be executed in less than 5 minutes because the analytics inte
 
 ## Using specific transfer ports
 
-By default transfer nodes are expected to use ports TCP/UDP 33001. The web UI enforces that. The option `default_ports` ([yes]/no) allows `ascli` to retrieve the server ports from an API call (download_setup) which reads the information from `aspera.conf` on the server.
+By default transfer nodes are expected to use ports TCP/UDP 33001. The web UI enforces that. The option `default_ports` ([yes]/no) allows <%=cmd%> to retrieve the server ports from an API call (download_setup) which reads the information from `aspera.conf` on the server.
 
 
 # Plugin: Aspera Transfer Service
 
 ATS is usable either :
 
-* from an AoC subscription : ascli aspera admin ats
+* from an AoC subscription : <%=cmd%> aspera admin ats
 
-* or from an IBM Cloud subscription : ascli ats
+* or from an IBM Cloud subscription : <%=cmd%> ats
 
 ## IBM Cloud ATS : creation of api key
 
@@ -2090,7 +2087,7 @@ Aspera Shares supports the "node API" for the file transfer part. (Shares 1 and 
 In Shares2, users, groups listing are paged, to display sequential pages:
 
 ```
-$ for p in 1 2 3;do ascli shares2 admin users list --value=@json:'{"page":'$p'}';done
+$ for p in 1 2 3;do <%=cmd%> shares2 admin users list --value=@json:'{"page":'$p'}';done
 ```
 
 # Plugin: IBM Cloud Object Storage
@@ -2610,6 +2607,15 @@ So, it evolved into <%=tool%>:
 
 # Release Notes
 
+* 4.0.0
+
+        * now available as open source at [https://github.com/IBM/aspera-cli](https://github.com/IBM/aspera-cli) with general cleanup
+        * changed default tool name from `mlia` to `ascli`
+        * changed `aspera` command to `oncloud`
+        * changed gem name from `asperalm` to `aspera-cli`
+        * changed module name from `Asperalm` to `Aspera`
+        * removed command `folder` in `preview`, merged to `scan`
+
 * 0.11.8
 
 	* Simplified to use `unoconv` instead of bare `libreoffice` for office conversion, as `unoconv` does not require a X server (previously using Xvfb
@@ -2723,7 +2729,7 @@ So, it evolved into <%=tool%>:
 
 * 0.10.7
 
-	* fix: ascli fails when username cannot be computed on Linux.
+	* fix: <%=cmd%> fails when username cannot be computed on Linux.
 
 * 0.10.6
 
@@ -2948,11 +2954,11 @@ Breaking change:
 
 * 0.6.18
 
-some commands take now --id option instead of id command.
+  * some commands take now --id option instead of id command.
 
 * 0.6.15
-*
-Breaking change: "files" application renamed to "aspera" (for "Aspera on Cloud"). "repository" renamed to "files". Default is automatically reset, e.g. in config files and change key "files" to "aspera" in <%=prst%> "default".
+
+  * Breaking change: "files" application renamed to "aspera" (for "Aspera on Cloud"). "repository" renamed to "files". Default is automatically reset, e.g. in config files and change key "files" to "aspera" in <%=prst%> "default".
 
 # BUGS
 

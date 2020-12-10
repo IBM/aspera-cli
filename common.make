@@ -27,9 +27,12 @@ EXETESTB=$(DIR_BIN)$(EXENAME)
 
 GEMVERSION=$(shell $(EXETESTB) -Cnone --version)
 
+all::
+
 clean::
 	rm -fr $(DIR_TMP)
 	mkdir -p $(DIR_TMP)
+
 $(DIR_TMP).exists:
 	mkdir -p $(DIR_TMP)
 	@touch $(DIR_TMP).exists

@@ -13,7 +13,7 @@ include $(SECRETS_FILE_PATH)
 all:: gem
 
 doc:
-	cd docs && make doc
+	cd docs && make
 clean::
 	cd docs && make clean
 tests:

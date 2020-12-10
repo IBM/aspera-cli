@@ -5,14 +5,13 @@
 /_yardoc/
 /coverage/
 /doc/
-/pkg/
+/docs/Manual*.html
+/docs/Manual*.pdf
 /spec/reports/
 /tmp/
 /t/
-/docs/README.html
-/docs/README.pdf
 /aspera-*.gem
 # rspec failure tracking
 .rspec_status
-# local contains private secrets
+# contains private secrets:
 /local/

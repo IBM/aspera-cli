@@ -26,7 +26,7 @@ module Aspera
         CONF_PLUGIN_SYM = :config # Plugins::Config.name.split('::').last.downcase.to_sym
         CONF_GLOBAL_SYM = :config
         # old tool name
-        OLD_PROGRAM_NAME = 'aslmcli'
+        PROGRAM_NAME_V1 = 'aslmcli'
         # default redirect for AoC web auth
         DEFAULT_REDIRECT='http://localhost:12345'
         # folder containing custom plugins in `main_folder`
@@ -45,7 +45,7 @@ module Aspera
           self.options.add_option_preset(preset_by_name(value))
         end
 
-        private_constant :ASPERA_HOME_FOLDER_NAME,:DEFAULT_CONFIG_FILENAME,:CONF_PRESET_CONFIG,:CONF_PRESET_VERSION,:CONF_PRESET_DEFAULT,:OLD_PROGRAM_NAME,:DEFAULT_REDIRECT,:ASPERA_PLUGINS_FOLDERNAME,:GEM_PLUGINS_FOLDER,:RUBY_FILE_EXT,:AOC_COMMAND_V1,:AOC_COMMAND_V2
+        private_constant :ASPERA_HOME_FOLDER_NAME,:DEFAULT_CONFIG_FILENAME,:CONF_PRESET_CONFIG,:CONF_PRESET_VERSION,:CONF_PRESET_DEFAULT,:PROGRAM_NAME_V1,:DEFAULT_REDIRECT,:ASPERA_PLUGINS_FOLDERNAME,:GEM_PLUGINS_FOLDER,:RUBY_FILE_EXT,:AOC_COMMAND_V1,:AOC_COMMAND_V2
         attr_accessor :option_ak_secret,:option_secrets
 
         def initialize(env,tool_name,help_url,version)
@@ -60,7 +60,7 @@ module Aspera
           @tool_name=tool_name
           @help_url=help_url
           @main_folder=File.join(Dir.home,ASPERA_HOME_FOLDER_NAME,tool_name)
-          @old_main_folder=File.join(Dir.home,ASPERA_HOME_FOLDER_NAME,OLD_PROGRAM_NAME)
+          @old_main_folder=File.join(Dir.home,ASPERA_HOME_FOLDER_NAME,PROGRAM_NAME_V1)
           if Dir.exist?(@old_main_folder) and ! Dir.exist?(@main_folder)
             Log.log.warn("Detected former configuration folder, renaming: #{@old_main_folder} -> #{@main_folder}")
             FileUtils.mv(@old_main_folder, @main_folder)
@@ -268,7 +268,7 @@ module Aspera
               end
               config_tested_version='0.8.10'
               if Gem::Version.new(version) <= Gem::Version.new(config_tested_version)
-                old_subpath=File.join('',ASPERA_HOME_FOLDER_NAME,OLD_PROGRAM_NAME,'')
+                old_subpath=File.join('',ASPERA_HOME_FOLDER_NAME,PROGRAM_NAME_V1,'')
                 new_subpath=File.join('',ASPERA_HOME_FOLDER_NAME,@tool_name,'')
                 # convert possible keys located in config folder
                 @config_presets.values.select{|p|p.is_a?(Hash)}.each do |preset|

@@ -14,7 +14,14 @@ INCL_ASESSION=$(DIR_TMP)asession_usage.txt
 TMPL_TEST_CONF=$(DIR_DOC)$(TEST_CONF_FILE_BASE)
 TMPL_SECRETS=$(DIR_DOC)$(SECRETS_FILE_NAME)
 
-doc: $(DIR_DOC)README.pdf $(TMPL_SECRETS) $(TMPL_TEST_CONF)
+MANUAL_BASE=$(DIR_DOC)Manual_$(EXENAME)_$(GEMVERSION)
+MANUAL_PDF=$(MANUAL_BASE).pdf
+MANUAL_HTML=$(MANUAL_BASE).html
+
+# main target to build doc
+all:: $(MANUAL_PDF) $(TMPL_SECRETS) $(TMPL_TEST_CONF)
+
+doc: all
 
 # generate template configuration files, remove own secrets
 $(TMPL_SECRETS): $(SECRETS_FILE_PATH)
@@ -22,9 +29,9 @@ $(TMPL_SECRETS): $(SECRETS_FILE_PATH)
 $(TMPL_TEST_CONF): $(TEST_CONF_FILE_PATH)
 	ruby -e 'require "yaml";n={};c=YAML.load_file("$(TEST_CONF_FILE_PATH)").each{|k,v| n[k]=["config","default"].include?(k)?v:v.keys.inject({}){|m,i|m[i]="your value here";m}};File.write("$(TMPL_TEST_CONF)",n.to_yaml)'
 
-$(DIR_DOC)README.pdf: $(DIR_TOP)README.md
-	pandoc --number-sections --resource-path=. --toc -o $(DIR_DOC)README.html $(DIR_TOP)README.md
-	wkhtmltopdf toc $(DIR_DOC)README.html $(DIR_DOC)README.pdf
+$(MANUAL_PDF): $(DIR_TOP)README.md
+	pandoc --number-sections --resource-path=. --toc -o $(MANUAL_HTML) $(DIR_TOP)README.md
+	wkhtmltopdf toc $(MANUAL_HTML) $(MANUAL_PDF)
 
 $(DIR_TOP)README.md: $(DIR_DOC)README.erb.md $(INCL_COMMANDS) $(INCL_USAGE) $(INCL_ASESSION)
 	COMMANDS=$(INCL_COMMANDS) USAGE=$(INCL_USAGE) ASESSION=$(INCL_ASESSION) VERSION=`$(EXETESTB) -Cnone --version` TOOLNAME=$(EXENAME) erb $(DIR_DOC)README.erb.md > $(DIR_TOP)README.md
@@ -39,6 +46,6 @@ $(INCL_USAGE): $(DIR_TMP).exists
 $(INCL_ASESSION): $(DIR_TMP).exists
 	$(DIR_BIN)/asession -h 2> $(INCL_ASESSION) || true
 clean::
-	rm -f $(DIR_DOC)README.pdf $(DIR_DOC)README.html $(INCL_COMMANDS) $(INCL_USAGE) $(INCL_ASESSION) 
+	rm -f $(MANUAL_PDF) $(MANUAL_HTML) $(INCL_COMMANDS) $(INCL_USAGE) $(INCL_ASESSION) 
 
 

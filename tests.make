@@ -364,7 +364,7 @@ $(T)/aocp3: $(T)/.exists
 	@touch $@
 $(T)/aocp4: $(T)/.exists
 	@echo $@
-	$(EXE_MAN) oncloud packages recv --id=ALL --once-only=yes --lock-port=12345
+	$(EXE_MAN) oncloud packages recv --id=ALL --to-folder=$(DIR_TMP). --once-only=yes --lock-port=12345
 	@touch $@
 $(T)/aocp5: $(T)/.exists
 	@echo $@
