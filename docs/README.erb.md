@@ -16,7 +16,7 @@ Location (once released):
 
 Disclaimers:
 
-* This as not yet been officially released so things may change
+* This has not yet been officially released so things may change
 
 
 That being said, <%=tool%> is very powerful and gets things done, it&apos;s also a great tool to learn Aspera APIs.
