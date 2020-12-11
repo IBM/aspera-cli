@@ -27,6 +27,7 @@ module Aspera
         CONF_GLOBAL_SYM = :config
         # old tool name
         PROGRAM_NAME_V1 = 'aslmcli'
+        PROGRAM_NAME_V2 = 'mlia'
         # default redirect for AoC web auth
         DEFAULT_REDIRECT='http://localhost:12345'
         # folder containing custom plugins in `main_folder`
@@ -45,7 +46,7 @@ module Aspera
           self.options.add_option_preset(preset_by_name(value))
         end
 
-        private_constant :ASPERA_HOME_FOLDER_NAME,:DEFAULT_CONFIG_FILENAME,:CONF_PRESET_CONFIG,:CONF_PRESET_VERSION,:CONF_PRESET_DEFAULT,:PROGRAM_NAME_V1,:DEFAULT_REDIRECT,:ASPERA_PLUGINS_FOLDERNAME,:GEM_PLUGINS_FOLDER,:RUBY_FILE_EXT,:AOC_COMMAND_V1,:AOC_COMMAND_V2
+        private_constant :ASPERA_HOME_FOLDER_NAME,:DEFAULT_CONFIG_FILENAME,:CONF_PRESET_CONFIG,:CONF_PRESET_VERSION,:CONF_PRESET_DEFAULT,:PROGRAM_NAME_V1,:PROGRAM_NAME_V2,:DEFAULT_REDIRECT,:ASPERA_PLUGINS_FOLDERNAME,:GEM_PLUGINS_FOLDER,:RUBY_FILE_EXT,:AOC_COMMAND_V1,:AOC_COMMAND_V2,:AOC_COMMAND_V3
         attr_accessor :option_ak_secret,:option_secrets
 
         def initialize(env,tool_name,help_url,version)
@@ -60,12 +61,8 @@ module Aspera
           @tool_name=tool_name
           @help_url=help_url
           @main_folder=File.join(Dir.home,ASPERA_HOME_FOLDER_NAME,tool_name)
-          @old_main_folder=File.join(Dir.home,ASPERA_HOME_FOLDER_NAME,PROGRAM_NAME_V1)
-          if Dir.exist?(@old_main_folder) and ! Dir.exist?(@main_folder)
-            Log.log.warn("Detected former configuration folder, renaming: #{@old_main_folder} -> #{@main_folder}")
-            FileUtils.mv(@old_main_folder, @main_folder)
-          end
-          @option_config_file=File.join(@main_folder,DEFAULT_CONFIG_FILENAME)
+          @conf_file_default=File.join(@main_folder,DEFAULT_CONFIG_FILENAME)
+          @option_config_file=@conf_file_default
           @connect_versions=nil
           # set folder where generated FASP files are
           Fasp::Installation.instance.config_folder=@main_folder
@@ -228,75 +225,108 @@ module Aspera
           "write-only value"
         end
 
-        # read config file and validate format
-        # tries to cnvert if possible and required
-        def read_config_file
-          Log.log.debug("config file is: #{@option_config_file}".red)
-          # oldest compatible conf file format, update to latest version when an incompatible change is made
-          if !File.exist?(@option_config_file)
-            Log.log.warn("No config file found. Creating empty configuration file: #{@option_config_file}")
-            @config_presets={CONF_PRESET_CONFIG=>{CONF_PRESET_VERSION=>@program_version}}
-            save_presets_to_config_file
-          else
-            begin
-              Log.log.debug "loading #{@option_config_file}"
-              @config_presets=YAML.load_file(@option_config_file)
-              Log.log.debug "Available_presets: #{@config_presets}"
-              raise "Expecting YAML Hash" unless @config_presets.is_a?(Hash)
-              # check there is at least the config section
-              if !@config_presets.has_key?(CONF_PRESET_CONFIG)
-                raise "Cannot find key: #{CONF_PRESET_CONFIG}"
-              end
-              version=@config_presets[CONF_PRESET_CONFIG][CONF_PRESET_VERSION]
-              if version.nil?
-                raise "No version found in config section."
-              end
-              # check compatibility of version of conf file
-              config_tested_version='0.4.5'
-              if Gem::Version.new(version) < Gem::Version.new(config_tested_version)
-                raise "Unsupported config file version #{version}. Expecting min version #{config_tested_version}"
-              end
-              save_required=false
-              config_tested_version='0.6.14'
-              if Gem::Version.new(version) <= Gem::Version.new(config_tested_version)
-                if @config_presets[CONF_PRESET_DEFAULT].is_a?(Hash) and @config_presets[CONF_PRESET_DEFAULT].has_key?(AOC_COMMAND_V1)
-                  @config_presets[CONF_PRESET_DEFAULT][AOC_COMMAND_V2]=@config_presets[CONF_PRESET_DEFAULT][AOC_COMMAND_V1]
-                  @config_presets[CONF_PRESET_DEFAULT].delete(AOC_COMMAND_V1)
-                  Log.log.warn("Converted plugin default: #{AOC_COMMAND_V1} -> #{AOC_COMMAND_V2}")
-                  save_required=true
-                end
-              end
-              config_tested_version='0.8.10'
-              if Gem::Version.new(version) <= Gem::Version.new(config_tested_version)
-                old_subpath=File.join('',ASPERA_HOME_FOLDER_NAME,PROGRAM_NAME_V1,'')
-                new_subpath=File.join('',ASPERA_HOME_FOLDER_NAME,@tool_name,'')
-                # convert possible keys located in config folder
-                @config_presets.values.select{|p|p.is_a?(Hash)}.each do |preset|
-                  preset.values.select{|v|v.is_a?(String) and v.include?(old_subpath)}.each do |value|
-                    old_val=value.clone
-                    value.gsub!(old_subpath,new_subpath)
-                    Log.log.warn("Converted copnfig value: #{old_val} -> #{value}")
-                    save_required=true
-                  end
-                end
-              end
-              # Place new compatibility code here
-              if save_required
-                @config_presets[CONF_PRESET_CONFIG][CONF_PRESET_VERSION]=@program_version
-                save_presets_to_config_file
-                Log.log.warn("Saving automatic conversion.")
-              end
-            rescue Psych::SyntaxError => e
-              Log.log.error("YAML error in config file")
-              raise e
-            rescue => e
-              Log.log.debug("-> #{e}")
-              new_name="#{@option_config_file}.pre#{@program_version}.manual_conversion_needed"
-              File.rename(@option_config_file,new_name)
-              Log.log.warn("Renamed config file to #{new_name}.")
-              Log.log.warn("Manual Conversion is required. Next time, a new empty file will be created.")
-              raise CliError,e.to_s
+        def convert_preset_path(old_name,new_name,files_to_copy)
+          old_subpath=File.join('',ASPERA_HOME_FOLDER_NAME,old_name,'')
+          new_subpath=File.join('',ASPERA_HOME_FOLDER_NAME,new_name,'')
+          # convert possible keys located in config folder
+          @config_presets.values.select{|p|p.is_a?(Hash)}.each do |preset|
+            preset.values.select{|v|v.is_a?(String) and v.include?(old_subpath)}.each do |value|
+              old_val=value.clone
+              included_path=File.expand_path(old_val.gsub(/^@file:/,''))
+              files_to_copy.push(included_path) unless files_to_copy.include?(included_path) or !File.exist?(included_path)
+              value.gsub!(old_subpath,new_subpath)
+              Log.log.warn("Converted config value: #{old_val} -> #{value}")
             end
+          end
+        end
+
+        def convert_preset_plugin_name(old_name,new_name)
+          if @config_presets[CONF_PRESET_DEFAULT].is_a?(Hash) and @config_presets[CONF_PRESET_DEFAULT].has_key?(old_name)
+            @config_presets[CONF_PRESET_DEFAULT][new_name]=@config_presets[CONF_PRESET_DEFAULT][old_name]
+            @config_presets[CONF_PRESET_DEFAULT].delete(old_name)
+            Log.log.warn("Converted plugin default: #{old_name} -> #{new_name}")
+          end
+        end
+
+        # read config file and validate format
+        # tries to convert from older version if possible and required
+        def read_config_file
+          begin
+            Log.log.debug("config file is: #{@option_config_file}".red)
+            conf_file_v1=File.join(Dir.home,ASPERA_HOME_FOLDER_NAME,PROGRAM_NAME_V1,DEFAULT_CONFIG_FILENAME)
+            conf_file_v2=File.join(Dir.home,ASPERA_HOME_FOLDER_NAME,PROGRAM_NAME_V2,DEFAULT_CONFIG_FILENAME)
+            # files search for configuration, by default the one given by user
+            search_files=[@option_config_file]
+            # if default file, then also look for older versions
+            search_files.push(conf_file_v2,conf_file_v1) if @option_config_file.eql?(@conf_file_default)
+            # find first existing file (or nil)
+            conf_file_to_load=search_files.select{|f| File.exist?(f)}.first
+            # require save if old version of file
+            save_required=!@option_config_file.eql?(conf_file_to_load)
+            # oldest compatible conf file format, update to latest version when an incompatible change is made
+            @config_presets=if conf_file_to_load.nil?
+              Log.log.warn("No config file found. Creating empty configuration file: #{@option_config_file}")
+              {CONF_PRESET_CONFIG=>{CONF_PRESET_VERSION=>@program_version}}
+            else
+              Log.log.debug "loading #{@option_config_file}"
+              YAML.load_file(conf_file_to_load)
+            end
+            files_to_copy=[]
+            Log.log.debug "Available_presets: #{@config_presets}"
+            raise "Expecting YAML Hash" unless @config_presets.is_a?(Hash)
+            # check there is at least the config section
+            if !@config_presets.has_key?(CONF_PRESET_CONFIG)
+              raise "Cannot find key: #{CONF_PRESET_CONFIG}"
+            end
+            version=@config_presets[CONF_PRESET_CONFIG][CONF_PRESET_VERSION]
+            if version.nil?
+              raise "No version found in config section."
+            end
+            # check compatibility of version of conf file
+            config_tested_version='0.4.5'
+            if Gem::Version.new(version) < Gem::Version.new(config_tested_version)
+              raise "Unsupported config file version #{version}. Expecting min version #{config_tested_version}"
+            end
+            config_tested_version='0.6.15'
+            if Gem::Version.new(version) < Gem::Version.new(config_tested_version)
+              convert_preset_plugin_name(AOC_COMMAND_V1,AOC_COMMAND_V2)
+              version=@config_presets[CONF_PRESET_CONFIG][CONF_PRESET_VERSION]=config_tested_version
+              save_required=true
+            end
+            config_tested_version='0.8.10'
+            if Gem::Version.new(version) <= Gem::Version.new(config_tested_version)
+              convert_preset_path(PROGRAM_NAME_V1,PROGRAM_NAME_V2,files_to_copy)
+              version=@config_presets[CONF_PRESET_CONFIG][CONF_PRESET_VERSION]=config_tested_version
+              save_required=true
+            end
+            config_tested_version='1.0'
+            if Gem::Version.new(version) <= Gem::Version.new(config_tested_version)
+              convert_preset_plugin_name(AOC_COMMAND_V2,AOC_COMMAND_V3)
+              convert_preset_path(PROGRAM_NAME_V2,@tool_name,files_to_copy)
+              version=@config_presets[CONF_PRESET_CONFIG][CONF_PRESET_VERSION]=config_tested_version
+              save_required=true
+            end
+            # Place new compatibility code here
+            if save_required
+              Log.log.warn("Saving automatic conversion.")
+              @config_presets[CONF_PRESET_CONFIG][CONF_PRESET_VERSION]=@program_version
+              save_presets_to_config_file
+              Log.log.warn("Copying referenced files")
+              files_to_copy.each do |file|
+                FileUtils.cp(file,@main_folder)
+                Log.log.warn("..#{file} -> #{@main_folder}")
+              end
+            end
+          rescue Psych::SyntaxError => e
+            Log.log.error("YAML error in config file")
+            raise e
+          rescue => e
+            Log.log.debug("-> #{e}")
+            new_name="#{@option_config_file}.pre#{@program_version}.manual_conversion_needed"
+            File.rename(@option_config_file,new_name)
+            Log.log.warn("Renamed config file to #{new_name}.")
+            Log.log.warn("Manual Conversion is required. Next time, a new empty file will be created.")
+            raise CliError,e.to_s
           end
         end
 
