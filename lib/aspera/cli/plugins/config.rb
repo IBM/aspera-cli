@@ -461,7 +461,7 @@ module Aspera
             selected_preset=@config_presets[config_name]
             case action
             when :show
-              raise "no such config: #{config_name}" unless @config_presets.has_key?(config_name)
+              raise "no such config: #{config_name}" if selected_preset.nil?
               return {:type=>:single_object,:data=>selected_preset}
             when :delete
               @config_presets.delete(config_name)
@@ -475,12 +475,17 @@ module Aspera
               when Numeric,String; return {:type=>:text,:data=>value.to_s}
               end
               return {:type=>:single_object,:data=>value}
+            when :unset
+              param_name=self.options.get_next_argument('parameter name')
+              selected_preset.delete(param_name)
+              save_presets_to_config_file
+              return Main.result_status("removed: #{config_name}: #{param_name}")
             when :set
               param_name=self.options.get_next_argument('parameter name')
               param_value=self.options.get_next_argument('parameter value')
               if !@config_presets.has_key?(config_name)
                 Log.log.debug("no such config name: #{config_name}, initializing")
-                @config_presets[config_name]=Hash.new
+                selected_preset=@config_presets[config_name]={}
               end
               if selected_preset.has_key?(param_name)
                 Log.log.warn("overwriting value: #{selected_preset[param_name]}")
@@ -488,15 +493,6 @@ module Aspera
               selected_preset[param_name]=param_value
               save_presets_to_config_file
               return Main.result_status("updated: #{config_name}: #{param_name} <- #{param_value}")
-            when :unset
-              param_name=self.options.get_next_argument('parameter name')
-              if @config_presets.has_key?(config_name)
-                selected_preset.delete(param_name)
-                save_presets_to_config_file
-              else
-                Log.log.warn("no such parameter: #{param_name} (ignoring)")
-              end
-              return Main.result_status("removed: #{config_name}: #{param_name}")
             when :initialize
               config_value=self.options.get_next_argument('extended value (Hash)')
               if @config_presets.has_key?(config_name)
