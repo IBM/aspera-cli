@@ -1,37 +1,31 @@
+##################################
+# Integration tests
+
 DIR_TOP=
 
 include $(DIR_TOP)common.make
 include $(SECRETS_FILE_PATH)
 
-# this config file contains credentials of platforms used for tests
+# "EXE_MAN" and "EXE_NOMAN" are used to call the tool in the testing environment
 # "EXE_MAN" is used to generate sample commands in documentation (see in docs/Makefile)
 EXE_MAN=$(EXETESTB) --warnings --config-file=$(TEST_CONF_FILE_PATH)
-# invoked like this: do not go to sample command section in manual
+# "EXE_NOMAN" when the command is not needed in documentation
 EXE_NOMAN=$(EXE_MAN)
-
-###################
-# Various tools
 
 # setup local environment for preview generation testing
 setupprev:
+	sudo asnodeadmin -d -u $$($(EXE_NOMAN) conf id tst_node_preview get username)
+	sudo asnodeadmin -a -u $$($(EXE_NOMAN) conf id tst_node_preview get username) -p $$($(EXE_NOMAN) conf id tst_node_preview get password) -x xfer --acl-set admin,impersonation
+	sudo asconfigurator -x "user;user_name,xfer;file_restriction,|*;token_encryption_key,$$(base64 < /dev/urandom|head -c32);absolute,AS_NULL"
+	sudo asconfigurator -x "server;activity_logging,true;activity_event_logging,true"
 	sudo asnodeadmin --reload
-	sudo asnodeadmin -a -u $(CF_HSTS2_NODE_USER) -p $(CF_HSTS2_NODE_PASS) -x xfer
-	sudo asconfigurator -x "user;user_name,xfer;file_restriction,|*;absolute,"
-	sudo asnodeadmin --reload
-	asconfigurator -x "user;user_name,xfer;file_restriction,|*;token_encryption_key,1234"
-	asconfigurator -x "server;activity_logging,true;activity_event_logging,true"
-	sudo asnodeadmin --reload
-	-$(EXE_NOMAN) node access_key --id=testkey delete --no-default --url=$(CF_HSTS2_URL) --username=$(CF_HSTS2_NODE_USER) --password=$(CF_HSTS2_NODE_PASS)
-	$(EXE_NOMAN) node access_key create --value=@json:'{"id":"testkey","name":"the test key","secret":"secret","storage":{"type":"local", "path":"/Users/xfer/docroot"}}' --no-default --url=$(CF_HSTS2_URL) --username=$(CF_HSTS2_NODE_USER) --password=$(CF_HSTS2_NODE_PASS) 
-	$(EXE_NOMAN) config id test_preview update --url=$(CF_HSTS2_URL) --username=testkey --password=secret
-	$(EXE_NOMAN) config id default set preview test_preview
+	-$(EXE_NOMAN) node -N -Ptst_node_preview access_key delete --id=$$($(EXE_NOMAN) conf id tst_ak_preview get username)
+	$(EXE_NOMAN) node -N -Ptst_node_preview access_key create --value=@json:'{"id":"'$$($(EXE_NOMAN) conf id tst_ak_preview get username)'","name":"the test key","secret":"'$$($(EXE_NOMAN) conf id tst_ak_preview get password)'","storage":{"type":"local", "path":"/Users/xfer/docroot"}}'
 
 noderestart:
 	sudo launchctl stop com.aspera.asperanoded
 	sudo launchctl start com.aspera.asperanoded
 
-##################################
-# Integration tests
 # flag files for integration tests generated here
 T=$(DIR_TOP)t
 # default download folder for Connect Client
@@ -237,8 +231,9 @@ $(T)/nd4: $(T)/.exists
 # test creation of access key
 $(T)/nd5: $(T)/.exists
 	@echo $@
-	$(EXE_MAN) -N --url=$(CF_HSTS2_URL) --username=$(CF_HSTS2_NODE_USER) --password=$(CF_HSTS2_NODE_PASS) node acc create --value=@json:'{"id":"aoc_1","storage":{"type":"local","path":"/"}}'
-	sleep 2&&$(EXE_MAN) -N --url=$(CF_HSTS2_URL) --username=$(CF_HSTS2_NODE_USER) --password=$(CF_HSTS2_NODE_PASS) node acc delete --id=aoc_1
+	$(EXE_MAN) node access_key create --value=@json:'{"id":"aoc_1","storage":{"type":"local","path":"/"}}'
+	sleep 2
+	$(EXE_MAN) node access_key delete --id=aoc_1
 	@touch $@
 $(T)/nd6: $(T)/.exists
 	@echo $@
@@ -380,15 +375,10 @@ $(T)/aocp7: $(T)/.exists
 	@touch $@
 $(T)/aocp8: $(T)/.exists
 	@echo $@
-	$(EXE_MAN) oncloud packages send --workspace="$(CF_AOC_WS_SH_BX)" --value=@json:'{"name":"'"$(PKG_TEST_TITLE)"'","recipients":["$(CF_AOC_SH_BX)"]}' $(CF_SAMPLE_FILEPATH)
+	$(EXE_MAN) oncloud packages send --workspace="$(CF_AOC_SH_BX_WS)" --value=@json:'{"name":"'"$(PKG_TEST_TITLE)"'","recipients":["$(CF_AOC_SH_BX_NAME)"]}' $(CF_SAMPLE_FILEPATH)
 	@touch $@
 
 taocp: $(T)/aocp1 $(T)/aocp2 $(T)/aocp3 $(T)/aocp4 $(T)/aocp5 $(T)/aocp5 $(T)/aocp6 $(T)/aocp7 $(T)/aocp8
-HIDE_SECRET1='AML3clHuHwDArShhcQNVvWGHgU9dtnpgLzRCPsBr7H5JdhrFU2oRs69_tJTEYE-hXDVSW-vQ3-klRnJvxrTkxQ'
-$(T)/aoc7: $(T)/.exists
-	@echo $@
-	$(EXE_MAN) oncloud admin res node v3 events --secret=$(HIDE_SECRET1)
-	@touch $@
 $(T)/aoc8: $(T)/.exists
 	@echo $@
 	$(EXE_MAN) oncloud admin resource workspace list
@@ -425,7 +415,7 @@ $(T)/aoc15: $(T)/.exists
 	@echo $@
 	$(EXE_MAN) oncloud admin analytics transfers --query=@json:'{"status":"completed","direction":"receive"}'
 	@touch $@
-taocadm: $(T)/aoc7 $(T)/aoc8 $(T)/aoc9 $(T)/aoc9b $(T)/aoc10 $(T)/aoc11 $(T)/aoc12 $(T)/aoc13 $(T)/aoc14 $(T)/aoc15
+taocadm: $(T)/aoc8 $(T)/aoc9 $(T)/aoc9b $(T)/aoc10 $(T)/aoc11 $(T)/aoc12 $(T)/aoc13 $(T)/aoc14 $(T)/aoc15
 $(T)/aocat4: $(T)/.exists
 	@echo $@
 	$(EXE_MAN) oncloud admin ats cluster list
@@ -779,7 +769,7 @@ $(T)/prev_mxf_clips: $(T)/.exists
 	@touch $@
 $(T)/prev_events: $(T)/.exists
 	@echo $@
-	$(EXE_NOMAN) -Ptest_preview node upload "$(CF_TSTFILE_MXF)" "$(CF_TSTFILE_DOCX)" --ts=@json:'{"target_rate_kbps":1000000}'
+	$(EXE_NOMAN) -Ptst_node_preview node upload "$(CF_TSTFILE_MXF)" "$(CF_TSTFILE_DOCX)" --ts=@json:'{"target_rate_kbps":1000000}'
 	sleep 4
 	$(EXE_MAN) preview trevents --once-only=yes --skip-types=office --log-level=info
 	@touch $@
@@ -813,7 +803,8 @@ thot:
 $(T)/sync1: $(T)/.exists
 	@echo $@
 	mkdir -p $(DIR_TMP)contents
-	$(EXE_MAN) sync start --parameters=@json:'{"sessions":[{"name":"test","reset":true,"remote_dir":"/sync_test","local_dir":"$(DIR_TMP)contents","host":"$(CF_HSTS_ADDR)","user":"user1","private_key_path":"$(CF_HSTS_TEST_KEY)"}]}'
+	cp $(CF_SAMPLE_FILEPATH) $(DIR_TMP)contents
+	$(EXE_MAN) sync start --parameters=@json:'{"sessions":[{"name":"test","reset":true,"remote_dir":"/sync_test","local_dir":"$(DIR_TMP)contents","host":"$(CF_HSTS_ADDR)","tcp_port":33001,"user":"user1","private_key_path":"$(CF_HSTS_TEST_KEY)"}]}'
 	@touch $@
 tsync: $(T)/sync1
 $(T)/sdk1: $(T)/.exists
