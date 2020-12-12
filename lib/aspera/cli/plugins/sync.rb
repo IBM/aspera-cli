@@ -22,11 +22,13 @@ module Aspera
           case command
           when :start
             env_args=Aspera::Sync.new(self.options.get_option(:parameters,:mandatory)).compute_args
-            res=system(env_args[:env],['async','async'],*env_args[:args])
+            async_bin='async'
+            Log.log.debug("execute: #{env_args[:env].map{|k,v| "#{k}=\"#{v}\""}.join(' ')} \"#{async_bin}\" \"#{env_args[:args].join('" "')}\"")
+            res=system(env_args[:env],[async_bin,async_bin],*env_args[:args])
             Log.log.debug("result=#{res}")
             case res
             when true; return Main.result_success
-            when false; return Main.result_status("failed: #{$?}")
+            when false; raise "failed: #{$?}"
             when nil; return Main.result_status("not started: #{$?}")
             else raise "internal error: unspecified case"
             end
