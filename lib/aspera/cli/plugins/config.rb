@@ -456,17 +456,25 @@ module Aspera
           when :id
             config_name=self.options.get_next_argument('config name')
             action=self.options.get_next_command([:show,:delete,:set,:get,:unset,:initialize,:update,:ask])
+            # those operations require existing option
+            raise "no such preset: #{config_name}" if [:show,:delete,:get,:unset].include?(action) and !@config_presets.has_key?(config_name)
+            selected_preset=@config_presets[config_name]
             case action
             when :show
               raise "no such config: #{config_name}" unless @config_presets.has_key?(config_name)
-              return {:type=>:single_object,:data=>@config_presets[config_name]}
+              return {:type=>:single_object,:data=>selected_preset}
             when :delete
               @config_presets.delete(config_name)
               save_presets_to_config_file
               return Main.result_status("deleted: #{config_name}")
             when :get
               param_name=self.options.get_next_argument('parameter name')
-              return {:type=>:other_struct,:data=>@config_presets[config_name][param_name]}
+              value=selected_preset[param_name]
+              raise "no such option in preset #{config_name} : #{param_name}" if value.nil?
+              case value
+              when Numeric,String; return {:type=>:text,:data=>value.to_s}
+              end
+              return {:type=>:single_object,:data=>value}
             when :set
               param_name=self.options.get_next_argument('parameter name')
               param_value=self.options.get_next_argument('parameter value')
@@ -474,16 +482,16 @@ module Aspera
                 Log.log.debug("no such config name: #{config_name}, initializing")
                 @config_presets[config_name]=Hash.new
               end
-              if @config_presets[config_name].has_key?(param_name)
-                Log.log.warn("overwriting value: #{@config_presets[config_name][param_name]}")
+              if selected_preset.has_key?(param_name)
+                Log.log.warn("overwriting value: #{selected_preset[param_name]}")
               end
-              @config_presets[config_name][param_name]=param_value
+              selected_preset[param_name]=param_value
               save_presets_to_config_file
               return Main.result_status("updated: #{config_name}: #{param_name} <- #{param_value}")
             when :unset
               param_name=self.options.get_next_argument('parameter name')
               if @config_presets.has_key?(config_name)
-                @config_presets[config_name].delete(param_name)
+                selected_preset.delete(param_name)
                 save_presets_to_config_file
               else
                 Log.log.warn("no such parameter: #{param_name} (ignoring)")
