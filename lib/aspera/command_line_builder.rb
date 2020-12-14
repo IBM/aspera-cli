@@ -31,7 +31,7 @@ module Aspera
 
     def warn_unrecognized_params
       # warn about non translated arguments
-      @param_hash.each_pair{|key,val|Log.log.error("unrecognized parameter: #{key} = \"#{val}\"") if !@used_param_names.include?(key)}
+      @param_hash.each_pair{|key,val|Log.log.warn("unrecognized parameter: #{key} = \"#{val}\"") if !@used_param_names.include?(key)}
     end
 
     # adds keys :env :args with resulting values after processing
