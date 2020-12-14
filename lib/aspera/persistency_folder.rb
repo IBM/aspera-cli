@@ -24,10 +24,14 @@ module Aspera
     # @return String or nil string on existing persist, else nil
     def get(object_id)
       object_id=marshalled_id(object_id)
+      Log.log.debug("persistency get: #{object_id}")
       if @cache.has_key?(object_id)
+        Log.log.debug("got from memory cache")
+      else
         persist_filepath=id_to_filepath(object_id)
         Log.log.debug("persistency = #{persist_filepath}")
         if File.exist?(persist_filepath)
+          Log.log.debug("got from file cache")
           @cache[object_id]=File.read(persist_filepath)
         end
       end
