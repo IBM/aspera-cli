@@ -1,8 +1,8 @@
 # Private data for test systems
-# Do not share
+# Do not share, github contains only empty values
 # fill this file and place in folder "local"
 
-
+# TODO: remove this part, and replace by use of config file (avoid duplication)
 CF_COMMON_PASS=_value_here_
 CF_PRIVATE_KEY_FILE=_value_here_
 CF_HSTS_ADDR=_value_here_
@@ -14,17 +14,13 @@ CF_HSTS_SSH_PASS=_value_here_
 CF_HSTS_NODE_URL=_value_here_
 CF_HSTS_NODE_USER=_value_here_
 CF_HSTS_NODE_PASS=_value_here_
-CF_HSTS2_URL=_value_here_
-CF_HSTS2_NODE_USER=_value_here_
-CF_HSTS2_NODE_PASS=_value_here_
-#CF_HSTS_ACCESS_KEY=_value_here_
-#CF_HSTS_SECRET=_value_here_
 CF_FASPEX_ADDR=_value_here_
 CF_FASPEX_URL=_value_here_
 CF_FASPEX_SSH_URL=_value_here_
 CF_FASPEX_PUBLINK_RECV_PACKAGE=_value_here_
 CF_FASPEX_PUBLINK_SEND_DROPBOX=_value_here_
 CF_FASPEX_PUBLINK_SEND_TO_USER=_value_here_
+
 
 CF_HSTS_FOLDER_UPLOAD=_value_here_
 
@@ -36,13 +32,19 @@ export CF_HSTS_SSH_URL CF_HSTS_SSH_USER CF_HSTS_SSH_PASS
 # Incoming asset processing
 CF_ORCH_WORKFLOW_ID=_value_here_
 
-CF_AOC1_CLIENT_ID=_value_here_
+# received package public link : https://sedemo.ibmaspera.com/packages/public/receive?token=_value_here_
 CF_AOC_PUBLINK_RECV_PACKAGE=_value_here_
+# shared inbox public link: https://aspera.pub/xxxxxxx
 CF_AOC_PUBLINK_SEND_DROPBOX=_value_here_
+# public link to send package to user: https://aspera.pub/xxxxxx
 CF_AOC_PUBLINK_SEND_USER=_value_here_
+# public link to send files to user's shared folder: https://aspera.pub/xxxxxx
 CF_AOC_PUBLINK_FOLDER=_value_here_
-CF_AOC_WS_SH_BX=_value_here_
-CF_AOC_SH_BX=_value_here_
+# workspace with shared inbox
+CF_AOC_SH_BX_WS=_value_here_
+# name of shared inbox in this workspace
+CF_AOC_SH_BX_NAME=_value_here_
+# name of node to test "node resource"
 CF_AOC_NODE1_NAME=_value_here_
 CF_AOC_NODE1_SECRET=_value_here_
 

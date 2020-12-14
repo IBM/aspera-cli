@@ -1224,8 +1224,6 @@ A non complete list of commands used in unit tests:
 ascli
 ascli --no-default node --url=my_url_here --username=my_username_here --password=my_password_here --insecure=yes delete /500M.dat
 ascli --no-default node --url=my_url_here --username=my_username_here --password=my_password_here --insecure=yes upload --to-folder=my_HSTS_FOLDER_UPLOAD --sources=@ts --ts=@json:'{"paths":[{"source":"/aspera-test-dir-small/10MB.1"}],"remote_password":"my_HSTS_SSH_PASS","precalculate_job_size":true}' --transfer=node --transfer-info=@json:'{"url":"my_url_here","username":"my_username_here","password":"my_password_here"}' 
-ascli -N --url=my_url_here --username=my_username_here --password=my_password_here node acc create --value=@json:'{"id":"aoc_1","storage":{"type":"local","path":"/"}}'
-ascli -N --url=my_url_here --username=my_username_here --password=my_password_here node acc delete --id=aoc_1
 ascli -N cos node --bucket=my_ICOS_BUCKET --service-credentials=@json:@file:DIR_PRIV/service_creds.json --region=my_ICOS_REGION info
 ascli -N oncloud files browse / --link=my_AOC_PUBLINK_FOLDER
 ascli -N oncloud files upload --to-folder=/ my_SAMPLE_FILEPATH --link=my_AOC_PUBLINK_FOLDER
@@ -1252,7 +1250,7 @@ ascli ats cluster clouds
 ascli ats cluster list
 ascli ats cluster show --cloud=aws --region=my_AWS_REGION 
 ascli ats cluster show --id=1f412ae7-869a-445c-9c05-02ad16813be2
-ascli conf flush
+ascli conf flush_tokens
 ascli conf wiz --url=my_url_here --config-file=SAMPLE_CONFIG_FILE --pkeypath='' --username=my_username_here --test-mode=yes
 ascli conf wiz --url=my_url_here --config-file=SAMPLE_CONFIG_FILE --pkeypath='' --username=my_username_here --test-mode=yes --use-generic-client=yes
 ascli config ascp connect id 'Aspera Connect for Windows' info
@@ -1289,6 +1287,8 @@ ascli faspex5 node list --value=@json:'{"type":"received","subtype":"mypackages"
 ascli faspex5 package list --value=@json:'{"state":["released"]}'
 ascli faspex5 package receive --id=$package_id --to-folder=DIR_TMP/.
 ascli faspex5 package send --value=@json:'{"title":"test title","recipients":["admin"]}' my_SAMPLE_FILEPATH
+ascli node -N -Ptst_node_preview access_key create --value=@json:'{"id":"aoc_1","storage":{"type":"local","path":"/"}}'
+ascli node -N -Ptst_node_preview access_key delete --id=aoc_1
 ascli node async --id=1 bandwidth 
 ascli node async --id=1 counters 
 ascli node async --id=1 files 
@@ -1317,7 +1317,6 @@ ascli oncloud admin ats cluster clouds
 ascli oncloud admin ats cluster list
 ascli oncloud admin ats cluster show --cloud=aws --region=my_AWS_REGION 
 ascli oncloud admin ats cluster show --id=1f412ae7-869a-445c-9c05-02ad16813be2
-ascli oncloud admin res node v3 events --secret=my_secret_here
 ascli oncloud admin resource node --name=my_AOC_NODE1_NAME --secret=my_secret_here v3 access_key create --value=@json:'{"id":"testsub1","storage":{"path":"/folder1"}}'
 ascli oncloud admin resource node --name=my_AOC_NODE1_NAME --secret=my_secret_here v3 access_key delete --id=testsub1
 ascli oncloud admin resource node --name=my_AOC_NODE1_NAME --secret=my_secret_here v3 events
@@ -1357,7 +1356,7 @@ ascli oncloud packages recv --id=$last_pack --to-folder=DIR_TMP/.
 ascli oncloud packages recv --id=ALL --to-folder=DIR_TMP/. --once-only=yes --lock-port=12345
 ascli oncloud packages send --value=@json:'{"name":"PKG_TEST_TITLE","recipients":["my_AOC_EXTERNAL_EMAIL"]}' --new-user-option=@json:'{"package_contact":true}' my_SAMPLE_FILEPATH
 ascli oncloud packages send --value=@json:'{"name":"PKG_TEST_TITLE","recipients":["my_EMAIL_ADDR"],"note":"my note"}' my_SAMPLE_FILEPATH
-ascli oncloud packages send --workspace="my_AOC_WS_SH_BX" --value=@json:'{"name":"PKG_TEST_TITLE","recipients":["my_AOC_SH_BX"]}' my_SAMPLE_FILEPATH
+ascli oncloud packages send --workspace="my_AOC_SH_BX_WS" --value=@json:'{"name":"PKG_TEST_TITLE","recipients":["my_AOC_SH_BX_NAME"]}' my_SAMPLE_FILEPATH
 ascli oncloud user info modify @json:'{"name":"dummy change"}'
 ascli oncloud user info show
 ascli oncloud workspace
@@ -1411,7 +1410,7 @@ ascli shares2 organization list
 ascli shares2 project list --organization=Sport
 ascli shares2 repository browse /
 ascli shares2 userinfo
-ascli sync start --parameters=@json:'{"sessions":[{"name":"test","reset":true,"remote_dir":"/sync_test","local_dir":"DIR_TMP/contents","host":"my_HSTS_ADDR","user":"user1","private_key_path":"my_HSTS_TEST_KEY"}]}'
+ascli sync start --parameters=@json:'{"sessions":[{"name":"test","reset":true,"remote_dir":"/sync_test","local_dir":"DIR_TMP/contents","host":"my_HSTS_ADDR","tcp_port":33001,"user":"user1","private_key_path":"my_HSTS_TEST_KEY"}]}'
 
 ...and more
 ```
@@ -1460,7 +1459,7 @@ OPTIONS: global
     -v, --version                    display version
     -w, --warnings                   check for language warnings
         --ui=ENUM                    method to start browser: text, [1m[31mgraphical[0m[22m
-        --log-level=ENUM             Log level: fatal, unknown, debug, info, error, [1m[31mwarn[0m[22m
+        --log-level=ENUM             Log level: unknown, [1m[31mwarn[0m[22m, info, error, debug, fatal
         --logger=ENUM                log method: [1m[31mstderr[0m[22m, stdout, syslog
         --lock-port=VALUE            prevent dual execution of a command, e.g. in cron
         --query=VALUE                additional filter for API calls (extended value) (some commands)
@@ -3197,6 +3196,7 @@ So, it evolved into `ascli`:
         * changed gem name from `asperalm` to `aspera-cli`
         * changed module name from `Asperalm` to `Aspera`
         * removed command `folder` in `preview`, merged to `scan`
+        * persistency files go to sub folder instead of main folder
 
 * 0.11.8
 

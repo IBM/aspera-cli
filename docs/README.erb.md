@@ -2615,6 +2615,7 @@ So, it evolved into <%=tool%>:
         * changed gem name from `asperalm` to `aspera-cli`
         * changed module name from `Asperalm` to `Aspera`
         * removed command `folder` in `preview`, merged to `scan`
+        * persistency files go to sub folder instead of main folder
 
 * 0.11.8
 
