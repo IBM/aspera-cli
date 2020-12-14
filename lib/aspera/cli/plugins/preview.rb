@@ -3,7 +3,7 @@ require 'aspera/preview/generator'
 require 'aspera/preview/options'
 require 'aspera/preview/utils'
 require 'aspera/preview/file_types'
-require 'aspera/persistency_file'
+require 'aspera/persistency_action_once'
 require 'aspera/hash_ext'
 require 'date'
 require 'securerandom'
@@ -421,7 +421,8 @@ module Aspera
             iteration_data=[]
             iteration_persistency=nil
             if self.options.get_option(:once_only,:mandatory)
-              iteration_persistency=PersistencyFile.new(
+              iteration_persistency=PersistencyActionOnce.new(
+              manager: @agents[:persistency],
               data: iteration_data,
               ids:  ['preview_iteration_events',self.options.get_option(:url,:mandatory),self.options.get_option(:username,:mandatory)])
             end
@@ -432,7 +433,8 @@ module Aspera
             iteration_data=[]
             iteration_persistency=nil
             if self.options.get_option(:once_only,:mandatory)
-              iteration_persistency=PersistencyFile.new(
+              iteration_persistency=PersistencyActionOnce.new(
+              manager: @agents[:persistency],
               data: iteration_data,
               ids:  ['preview_iteration_transfer',self.options.get_option(:url,:mandatory),self.options.get_option(:username,:mandatory)])
             end

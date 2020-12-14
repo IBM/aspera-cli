@@ -1,5 +1,5 @@
 require 'aspera/cli/basic_auth_plugin'
-require 'aspera/persistency_file'
+require 'aspera/persistency_action_once'
 require "base64"
 
 module Aspera
@@ -23,7 +23,8 @@ module Aspera
           iteration_data=[]
           iteration_persistency=nil
           if self.options.get_option(:once_only,:mandatory)
-            iteration_persistency=PersistencyFile.new(
+            iteration_persistency=PersistencyActionOnce.new(
+            manager: @agents[:persistency],
             data: iteration_data,
             ids:  ['xnode',self.options.get_option(:url,:mandatory),self.options.get_option(:username,:mandatory)])
           end

@@ -6,11 +6,10 @@ require 'aspera/cli/transfer_agent'
 require 'aspera/cli/version'
 require 'aspera/open_application'
 require 'aspera/temp_file_manager'
-require 'aspera/persistency_file'
+require 'aspera/persistency_folder'
 require 'aspera/log'
 require 'aspera/rest'
 require 'aspera/nagios'
-require 'aspera/oauth_cache'
 
 module Aspera
   module Cli
@@ -73,8 +72,8 @@ module Aspera
         @plugin_env[:transfer]=TransferAgent.new(@plugin_env)
         Log.log.debug('created plugin env'.red)
         # set application folder for modules
-        PersistencyFile.default_folder=@plugin_env[:config].main_folder
-        OauthCache.instance.persistency_folder=@plugin_env[:config].main_folder
+        @plugin_env[:persistency]=PersistencyFolder.new(File.join(@plugin_env[:config].main_folder,'persist_store'))
+        Oauth.persist_mgr=@plugin_env[:persistency]
         Fasp::Parameters.file_list_folder=File.join(@plugin_env[:config].main_folder,'filelists')
         # register aspera REST call error handlers
         Aspera::RestErrorsAspera.registerHandlers

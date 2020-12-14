@@ -3,7 +3,7 @@ require 'aspera/cli/plugins/node'
 require 'aspera/cli/plugins/config'
 require 'aspera/cli/extended_value'
 require 'aspera/cli/transfer_agent'
-require 'aspera/persistency_file'
+require 'aspera/persistency_action_once'
 require 'aspera/open_application'
 require 'aspera/fasp/uri'
 require 'aspera/nagios'
@@ -227,7 +227,8 @@ module Aspera
               skip_ids_data=[]
               skip_ids_persistency=nil
               if self.options.get_option(:once_only,:mandatory)
-                skip_ids_persistency=PersistencyFile.new(
+                skip_ids_persistency=PersistencyActionOnce.new(
+                manager: @agents[:persistency],
                 data: skip_ids_data,
                 ids:  ['faspex_recv',self.options.get_option(:url,:mandatory),self.options.get_option(:username,:mandatory),self.options.get_option(:box,:mandatory).to_s])
               end

@@ -269,7 +269,8 @@ module Aspera
             iteration_data=[]
             skip_ids_persistency=nil
             if self.options.get_option(:once_only,:mandatory)
-              skip_ids_persistency=PersistencyFile.new(
+              skip_ids_persistency=PersistencyActionOnce.new(
+              manager: @agents[:persistency],
               data: iteration_data,
               ids:  ['sync_files',self.options.get_option(:url,:mandatory),self.options.get_option(:username,:mandatory),asyncid])
               unless iteration_data.first.nil?

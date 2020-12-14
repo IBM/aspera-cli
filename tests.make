@@ -683,14 +683,14 @@ $(T)/conf_export: $(T)/.exists
 SAMPLE_CONFIG_FILE=$(DIR_TMP)tmp_config.yml
 $(T)/conf_wizard_org: $(T)/.exists
 	@echo $@
-	$(EXE_MAN) conf flush
+	$(EXE_MAN) conf flush_tokens
 	$(EXE_MAN) conf wiz --url=https://$(CF_AOC_ORG).ibmaspera.com --config-file=$(SAMPLE_CONFIG_FILE) --pkeypath='' --username=$(CF_AOC_USER) --test-mode=yes --use-generic-client=yes
 	cat $(SAMPLE_CONFIG_FILE)
 	rm -f $(SAMPLE_CONFIG_FILE)
 	@touch $@
 $(T)/conf_wizard_gen: $(T)/.exists
 	@echo $@
-	$(EXE_MAN) conf flush
+	$(EXE_MAN) conf flush_tokens
 	$(EXE_MAN) conf wiz --url=https://$(CF_AOC_ORG).ibmaspera.com --config-file=$(SAMPLE_CONFIG_FILE) --pkeypath='' --username=$(CF_AOC_USER) --test-mode=yes
 	cat $(SAMPLE_CONFIG_FILE)
 	rm -f $(SAMPLE_CONFIG_FILE)

@@ -540,7 +540,7 @@ module Aspera
             result[:type]=:object_list if result[:data].is_a?(Array) and result[:data].first.is_a?(Hash)
             return result
           when :flush_tokens
-            deleted_files=OauthCache.instance.flush_tokens
+            deleted_files=Oauth.flush_tokens
             return {:type=>:value_list, :name=>'file',:data=>deleted_files}
           when :plugins
             return {:data => @plugins.keys.map { |i| { 'plugin' => i.to_s, 'path' => @plugins[i][:source] } } , :fields => ['plugin','path'], :type => :object_list }

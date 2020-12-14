@@ -3,7 +3,7 @@ require 'aspera/cli/plugins/ats'
 require 'aspera/cli/basic_auth_plugin'
 require 'aspera/cli/transfer_agent'
 require 'aspera/on_cloud'
-require 'aspera/persistency_file'
+require 'aspera/persistency_action_once'
 require 'securerandom'
 require 'resolv'
 require 'date'
@@ -529,7 +529,8 @@ module Aspera
               filter['limit']||=100
               if self.options.get_option(:once_only,:mandatory)
                 saved_date=[]
-                startdate_persistency=PersistencyFile.new(
+                startdate_persistency=PersistencyActionOnce.new(
+                manager: @agents[:persistency],
                 data: saved_date,
                 ids:  ['aoc_ana_date',self.options.get_option(:url,:mandatory),@workspace_name].push(filter_resource,filter_id))
                 start_datetime=saved_date.first
@@ -762,9 +763,10 @@ module Aspera
               skip_ids_data=[]
               skip_ids_persistency=nil
               if self.options.get_option(:once_only,:mandatory)
-                skip_ids_persistency=PersistencyFile.new(
+                skip_ids_persistency=PersistencyActionOnce.new(
+                manager: @agents[:persistency],
                 data: skip_ids_data,
-                ids:  ['aoc_recv',self.options.get_option(:url,:mandatory),@workspace_name].push(*@persist_ids))
+                ids:  ['aoc_recv',self.options.get_option(:url,:mandatory),@workspace_id].push(*@persist_ids))
               end
               if ids_to_download.eql?(VAL_ALL)
                 # get list of packages in inbox

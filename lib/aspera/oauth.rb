@@ -1,5 +1,4 @@
 require 'aspera/open_application'
-require 'aspera/oauth_cache'
 require 'base64'
 require 'date'
 require 'socket'
@@ -16,10 +15,26 @@ module Aspera
     JWT_NOTBEFORE_OFFSET=300
     # one hour validity (TODO: configurable?)
     JWT_EXPIRY_OFFSET=3600
-    private_constant :JWT_NOTBEFORE_OFFSET,:JWT_EXPIRY_OFFSET
-    # OAuth methods supported
-    def self.auth_types
-      [ :body_userpass, :header_userpass, :web, :jwt, :url_token, :ibm_apikey ]
+    PERSIST_CATEGORY_TOKEN='token'
+    private_constant :JWT_NOTBEFORE_OFFSET,:JWT_EXPIRY_OFFSET,:PERSIST_CATEGORY_TOKEN
+    class << self
+      # OAuth methods supported
+      def auth_types
+        [ :body_userpass, :header_userpass, :web, :jwt, :url_token, :ibm_apikey ]
+      end
+
+      def persist_mgr=(manager)
+        @persist=manager
+      end
+
+      def persist_mgr
+        raise "set persistency manager first" if @persist.nil?
+        return @persist
+      end
+
+      def flush_tokens
+        persist_mgr.flush_by_prefix(PERSIST_CATEGORY_TOKEN)
+      end
     end
 
     # for supported parameters, look in the code for @params
@@ -88,16 +103,16 @@ module Aspera
       return create_token_advanced({:www_body_params=>creation_params})
     end
 
-    # @return String  a unique identifier of token
-    def token_cache_id(api_scope)
+    # @return Array list of unique identifiers of token
+    def token_cache_ids(api_scope)
       oauth_uri=URI.parse(@params[:base_url])
-      parts=[oauth_uri.host.downcase.gsub(/[^a-z]+/,'_'),oauth_uri.path.downcase.gsub(/[^a-z]+/,'_'),@params[:grant]]
+      parts=[PERSIST_CATEGORY_TOKEN,oauth_uri.host.downcase.gsub(/[^a-z]+/,'_'),oauth_uri.path.downcase.gsub(/[^a-z]+/,'_'),@params[:grant]]
       parts.push(api_scope) unless api_scope.nil?
       parts.push(@params[:jwt_subject]) if @params.has_key?(:jwt_subject)
       parts.push(@params[:user_name]) if @params.has_key?(:user_name)
       parts.push(@params[:url_token]) if @params.has_key?(:url_token)
       parts.push(@params[:api_key]) if @params.has_key?(:api_key)
-      return OauthCache.ids_to_id(parts)
+      return parts
     end
 
     public
@@ -114,15 +129,16 @@ module Aspera
       use_refresh_token=options[:refresh]
 
       # generate token identifier to use with cache
-      token_id=token_cache_id(api_scope)
+      token_ids=token_cache_ids(api_scope)
 
-      # get from cache (or nil)
-      cached_token_data=OauthCache.instance.get(token_id)
+      # get token_data from cache (or nil), token_data is what is returned by /token
+      token_data=self.class.persist_mgr.get(token_ids)
+      token_data=JSON.parse(token_data) unless token_data.nil?
 
       # Optional optimization: check if node token is expired, then force refresh
       # else, anyway, faspmanager is equipped with refresh code
-      if !cached_token_data.nil?
-        decoded_node_token = Node.decode_bearer_token(cached_token_data['access_token']) rescue nil
+      if !token_data.nil?
+        decoded_node_token = Node.decode_bearer_token(token_data['access_token']) rescue nil
         Log.dump('decoded_node_token',decoded_node_token)
         if decoded_node_token.is_a?(Hash) and decoded_node_token['expires_at'].is_a?(String)
           expires_at=DateTime.parse(decoded_node_token['expires_at'])
@@ -133,13 +149,13 @@ module Aspera
 
       # an API was already called, but failed, we need to regenerate or refresh
       if use_refresh_token
-        if cached_token_data.is_a?(Hash) and cached_token_data.has_key?('refresh_token')
+        if token_data.is_a?(Hash) and token_data.has_key?('refresh_token')
           # save possible refresh token, before deleting the cache
-          refresh_token=cached_token_data['refresh_token']
+          refresh_token=token_data['refresh_token']
         end
         # delete caches
-        OauthCache.instance.discard(token_id)
-        cached_token_data=nil
+        self.class.persist_mgr.delete(token_ids)
+        token_data=nil
         # lets try the existing refresh token
         if !refresh_token.nil?
           Log.log.info("refresh=[#{refresh_token}]".bg_green)
@@ -151,8 +167,9 @@ module Aspera
             :refresh_token=>refresh_token}))
           if resp[:http].code.start_with?('2') then
             # save only if success ?
-            cached_token_data=JSON.parse(resp[:http].body)
-            OauthCache.instance.save(token_id,cached_token_data)
+            json_data=resp[:http].body
+            token_data=JSON.parse(json_data)
+            self.class.persist_mgr.put(token_ids,json_data)
           else
             Log.log.debug("refresh failed: #{resp[:http].body}".bg_red)
           end
@@ -160,7 +177,7 @@ module Aspera
       end
 
       # no cache
-      if cached_token_data.nil? then
+      if token_data.nil? then
         resp=nil
         case @params[:grant]
         when :web
@@ -261,12 +278,13 @@ module Aspera
           raise "auth grant type unknown: #{@params[:grant]}"
         end
         # TODO: test return code ?
-        cached_token_data=JSON.parse(resp[:http].body)
-        OauthCache.instance.save(token_id,cached_token_data)
+        json_data=resp[:http].body
+        token_data=JSON.parse(json_data)
+        self.class.persist_mgr.put(token_ids,json_data)
       end # if ! in_cache
 
       # ok we shall have a token here
-      return 'Bearer '+cached_token_data[@params[:token_field]]
+      return 'Bearer '+token_data[@params[:token_field]]
     end
 
     # open the login page, wait for code and return parameters
