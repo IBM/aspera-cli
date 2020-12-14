@@ -136,14 +136,15 @@ module Aspera
       token_data=JSON.parse(token_data) unless token_data.nil?
 
       # Optional optimization: check if node token is expired, then force refresh
+      # in case the transfer agent cannot refresh himself
       # else, anyway, faspmanager is equipped with refresh code
       if !token_data.nil?
         decoded_node_token = Node.decode_bearer_token(token_data['access_token']) rescue nil
-        Log.dump('decoded_node_token',decoded_node_token)
         if decoded_node_token.is_a?(Hash) and decoded_node_token['expires_at'].is_a?(String)
+          Log.dump('decoded_node_token',decoded_node_token)
           expires_at=DateTime.parse(decoded_node_token['expires_at'])
-          # refresh if less than one hour
-          use_refresh_token=true if DateTime.now > (expires_at-Rational(3600,86400))
+          one_hour_as_day_fraction=Rational(1,24)
+          use_refresh_token=true if DateTime.now > (expires_at-one_hour_as_day_fraction)
         end
       end
 
