@@ -14,7 +14,7 @@ EXE_NOMAN=$(EXE_MAN)
 
 # setup local environment for preview generation testing
 setupprev:
-	sudo asnodeadmin -d -u $$($(EXE_NOMAN) conf id tst_node_preview get username)
+	-sudo asnodeadmin -d -u $$($(EXE_NOMAN) conf id tst_node_preview get username)
 	sudo asnodeadmin -a -u $$($(EXE_NOMAN) conf id tst_node_preview get username) -p $$($(EXE_NOMAN) conf id tst_node_preview get password) -x xfer --acl-set admin,impersonation
 	sudo asconfigurator -x "user;user_name,xfer;file_restriction,|*;token_encryption_key,$$(base64 < /dev/urandom|head -c32);absolute,AS_NULL"
 	sudo asconfigurator -x "server;activity_logging,true;activity_event_logging,true"
