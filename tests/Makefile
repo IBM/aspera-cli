@@ -134,7 +134,7 @@ $(T)serv_df: $(T).exists
 	@touch $@
 $(T)serv_nodeadmin: $(T).exists
 	@echo $@
-	$(EXE_MAN) -N -Ptst_hstsfaspex_ssh -Plocal_user server nodeadmin -- -l
+	$(EXE_MAN) server -N -Ptst_hstsfaspex_ssh -Plocal_user nodeadmin -- -l
 	@touch $@
 $(T)serv_nagios_transfer: $(T).exists
 	@echo $@
@@ -142,15 +142,15 @@ $(T)serv_nagios_transfer: $(T).exists
 	@touch $@
 $(T)serv_nagios_webapp: $(T).exists
 	@echo $@
-	$(EXE_MAN) -N -Ptst_hstsfaspex_ssh -Plocal_user server nagios app_services --format=nagios
+	$(EXE_MAN) server -N -Ptst_hstsfaspex_ssh -Plocal_user nagios app_services --format=nagios
 	@touch $@
 $(T)serv3: $(T).exists
 	@echo $@
-	$(EXE_MAN) -N -Ptst_hstsfaspex_ssh -Plocal_user server ctl all:status
+	$(EXE_MAN) server -N -Ptst_hstsfaspex_ssh -Plocal_user ctl all:status
 	@touch $@
 $(T)serv_key: $(T).exists
 	@echo $@
-	$(EXE_MAN) -N -Ptst_server_bykey -Plocal_user server br /
+	$(EXE_MAN) server -N -Ptst_server_bykey -Plocal_user br /
 	@touch $@
 $(T)asession: $(T).exists
 	@echo $@
@@ -173,15 +173,13 @@ $(T)fx_psnd: $(T).exists
 $(T)fx_prs: $(T).exists
 	@echo $@
 	@sleep 5
-	pack_id=$$($(EXE_MAN) faspex package list --box=sent --fields=package_id --format=csv --display=data|tail -n 1);\
-	echo "id=$$pack_id";\
-	$(EXE_MAN) faspex package recv --box=sent --to-folder=$(DIR_TMP). --id=$$pack_id
+	set -x;package_id=$$($(EXE_MAN) faspex package list --box=sent --fields=package_id --format=csv --display=data|tail -n 1);\
+	$(EXE_MAN) faspex package recv --box=sent --to-folder=$(DIR_TMP). --id="$${package_id}"
 	@touch $@
 $(T)fx_pri: $(T).exists
 	@echo $@
-	pack_id=$$($(EXE_NOMAN) faspex package list --fields=package_id --format=csv --display=data|tail -n 1);\
-	echo "id=$$pack_id";\
-	$(EXE_MAN) faspex package recv --to-folder=$(DIR_TMP). --id=$$pack_id
+	set -x;package_id=$$($(EXE_NOMAN) faspex package list --fields=package_id --format=csv --display=data|tail -n 1);\
+	$(EXE_MAN) faspex package recv --to-folder=$(DIR_TMP). --id="$${package_id}"
 	@touch $@
 $(T)fx_prl: $(T).exists
 	@echo $@
@@ -243,7 +241,7 @@ $(T)nd_2_nd_xfer: $(T).exists
 	set -x;node_url=$$($(EXE_NOMAN) conf id tst_node get url);\
 	node_user=$$($(EXE_NOMAN) conf id tst_node get username);\
 	node_pass=$$($(EXE_NOMAN) conf id tst_node get password);\
-	$(EXE_MAN) node upload --to-folder="$(CF_HSTS_FOLDER_UPLOAD)" --sources=@ts --ts=@json:'{"paths":[{"source":"/aspera-test-dir-small/10MB.1"}],"precalculate_job_size":true}' --transfer=node --transfer-info=@json:'{"url":"'$${node_url}'","username":"'$${node_user}'","password":"'$${node_pass}'"}'
+	$(EXE_MAN) node upload --to-folder="$(CF_HSTS_FOLDER_UPLOAD)" --sources=@ts --ts=@json:'{"paths":[{"source":"/aspera-test-dir-small/10MB.1"}],"precalculate_job_size":true}' --transfer=node --transfer-info=@json:'{"url":"'"$${node_url}"'","username":"'"$${node_user}"'","password":"'"$${node_pass}"'"}'
 	$(EXE_MAN) node delete $(CF_HSTS_FOLDER_UPLOAD)/10MB.1
 	@touch $@
 $(T)nd4: $(T).exists
@@ -356,8 +354,8 @@ $(T)aocffid: $(T).exists
 	@touch $@
 $(T)aocfpub: $(T).exists
 	@echo $@
-	$(EXE_MAN) -N oncloud files browse / --link=$(CF_AOC_PUBLINK_FOLDER)
-	$(EXE_MAN) -N oncloud files upload --to-folder=/ $(CF_LOCAL_SAMPLE_FILEPATH) --link=$(CF_AOC_PUBLINK_FOLDER)
+	$(EXE_MAN) oncloud files browse / -N --link=$(CF_AOC_PUBLINK_FOLDER)
+	$(EXE_MAN) oncloud files upload -N --to-folder=/ $(CF_LOCAL_SAMPLE_FILEPATH) --link=$(CF_AOC_PUBLINK_FOLDER)
 	@touch $@
 $(T)aocshlk1: $(T).exists
 	@echo $@
@@ -383,8 +381,8 @@ $(T)aocp2: $(T).exists
 	@touch $@
 $(T)aocp3: $(T).exists
 	@echo $@
-	last_pack=$$($(EXE_MAN) oncloud packages list --format=csv --fields=id --display=data|head -n 1);\
-	$(EXE_MAN) oncloud packages recv --id=$$last_pack --to-folder=$(DIR_TMP).
+	set -x;package_id=$$($(EXE_MAN) oncloud packages list --format=csv --fields=id --display=data|head -n 1);\
+	$(EXE_MAN) oncloud packages recv --id="$${package_id}" --to-folder=$(DIR_TMP).
 	@touch $@
 $(T)aocp4: $(T).exists
 	@echo $@
@@ -393,15 +391,15 @@ $(T)aocp4: $(T).exists
 $(T)aocp5: $(T).exists
 	@echo $@
 	set -x;aoc_publink_recv_from_aocuser=$$($(EXE_NOMAN) conf id misc get aoc_publink_recv_from_aocuser);\
-	$(EXE_MAN) -N oncloud org --link=$(CF_AOC_PUBLINK_RECV_PACKAGE)
+	$(EXE_MAN) oncloud org -N --link=$(CF_AOC_PUBLINK_RECV_PACKAGE)
 	@touch $@
 $(T)aocp6: $(T).exists
 	@echo $@
-	$(EXE_MAN) -N oncloud packages send --value=@json:'{"name":"'"$(PKG_TEST_TITLE)"'"}' $(CF_LOCAL_SAMPLE_FILEPATH) --link=$(CF_AOC_PUBLINK_SEND_DROPBOX)
+	$(EXE_MAN) oncloud packages send -N --value=@json:'{"name":"'"$(PKG_TEST_TITLE)"'"}' $(CF_LOCAL_SAMPLE_FILEPATH) --link=$(CF_AOC_PUBLINK_SEND_DROPBOX)
 	@touch $@
 $(T)aocp7: $(T).exists
 	@echo $@
-	$(EXE_MAN) -N oncloud packages send --value=@json:'{"name":"'"$(PKG_TEST_TITLE)"'"}' $(CF_LOCAL_SAMPLE_FILEPATH) --link=$(CF_AOC_PUBLINK_SEND_USER)
+	$(EXE_MAN) oncloud packages send -N --value=@json:'{"name":"'"$(PKG_TEST_TITLE)"'"}' $(CF_LOCAL_SAMPLE_FILEPATH) --link=$(CF_AOC_PUBLINK_SEND_USER)
 	@touch $@
 $(T)aocp8: $(T).exists
 	@echo $@
@@ -496,16 +494,16 @@ $(T)aocauto2: $(T).exists
 	@touch $@
 $(T)aocauto3: $(DIR_TMP)wf_id.txt
 	@echo $@
-	WF_ID=$$(cat $(DIR_TMP)wf_id.txt);\
-	$(EXE_MAN) oncloud automation workflow --id=$$WF_ID action create --value=@json:'{"name":"toto"}' | tee action.info
+	set -x;wf_id=$$(cat $(DIR_TMP)wf_id.txt);\
+	$(EXE_MAN) oncloud automation workflow --id="$${wf_id}" action create --value=@json:'{"name":"toto"}' | tee action.info
 	sed -nEe 's/^\| id +\| ([^ ]+) +\|/\1/p' action.info>tmp_action_id.txt
 	rm -f action.info
 	rm -f tmp_action_id.txt
 	@touch $@
 $(T)aocauto10: $(DIR_TMP)wf_id.txt
 	@echo $@
-	WF_ID=$$(cat $(DIR_TMP)wf_id.txt);\
-	$(EXE_MAN) oncloud automation workflow delete --id=$$WF_ID
+	set -x;wf_id=$$(cat $(DIR_TMP)wf_id.txt);\
+	$(EXE_MAN) oncloud automation workflow delete --id="$${wf_id}"
 	rm -f $(T)wf.id
 	@touch $@
 taocauto: $(T)aocauto1 $(T)aocauto2 $(T)aocauto3 $(T)aocauto10
@@ -837,7 +835,7 @@ $(T)sync1: $(T).exists
 	set -x;remote_host=$$($(EXE_NOMAN) conf id tst_server_bykey get url);remote_host=$${remote_host##*/};remote_port="$${remote_host}";remote_port=$${remote_host#*:};remote_host=$${remote_host%:*};\
 	remote_user=$$($(EXE_NOMAN) conf id misc get syncuser);\
 	local_user_key=$$($(EXE_NOMAN) conf id local_user get ssh_keys);\
-	$(EXE_MAN) sync start --parameters=@json:'{"sessions":[{"name":"test","reset":true,"remote_dir":"/sync_test","local_dir":"$(DIR_TMP)contents","host":"'$${remote_host}'","tcp_port":33001,"user":"'$${remote_user}'","private_key_path":"'$${local_user_key}'"}]}'
+	$(EXE_MAN) sync start --parameters=@json:'{"sessions":[{"name":"test","reset":true,"remote_dir":"/sync_test","local_dir":"$(DIR_TMP)contents","host":"'"$${remote_host}"'","tcp_port":33001,"user":"'"$${remote_user}"'","private_key_path":"'"$${local_user_key}"'"}]}'
 	@touch $@
 tsync: $(T)sync1
 $(T)sdk1: $(T).exists
@@ -848,7 +846,7 @@ tsample: $(T)sdk1
 
 $(T)tcos: $(T).exists
 	@echo $@
-	$(EXE_MAN) -N cos node --bucket=$(CF_ICOS_BUCKET) --service-credentials=@json:@file:$(DIR_PRIV)service_creds.json --region=$(CF_ICOS_REGION) info
+	$(EXE_MAN) cos node -N --bucket=$(CF_ICOS_BUCKET) --service-credentials=@json:@file:$(DIR_PRIV)service_creds.json --region=$(CF_ICOS_REGION) info
 	$(EXE_MAN) cos node info
 	$(EXE_MAN) cos node access_key --id=self show
 	$(EXE_MAN) cos node upload $(CF_LOCAL_SAMPLE_FILEPATH)
@@ -870,9 +868,8 @@ $(T)f5_3: $(T).exists
 	@touch $@
 $(T)f5_4: $(T).exists
 	@echo $@
-	package_id=$$($(EXE_NOMAN) faspex5 pack list --value=@json:'{"type":"received","subtype":"mypackages","limit":1}' --fields=id --format=csv --display=data);\
-	echo $$package_id;\
-	$(EXE_MAN) faspex5 package receive --id=$$package_id --to-folder=$(DIR_TMP).
+	set -x;package_id=$$($(EXE_NOMAN) faspex5 pack list --value=@json:'{"type":"received","subtype":"mypackages","limit":1}' --fields=id --format=csv --display=data);\
+	$(EXE_MAN) faspex5 package receive --id="$${package_id}" --to-folder=$(DIR_TMP).
 	@touch $@
 
 tf5: $(T)f5_1 $(T)f5_2 $(T)f5_3 $(T)f5_4
