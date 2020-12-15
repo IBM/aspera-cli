@@ -47,10 +47,10 @@ Once installation is completed, you can proceed to the first use with a demo ser
 
 If you want to test with Aspera on Cloud, jump to section: [Wizard](#aocwizard)
 
-If you want to test with Aspera demo transfer server:
+If you want to test with Aspera demo transfer server, a default configuratiion is created on first use:
 
 ```
-$ <%=cmd%> server browse / --url=ssh://demo.asperasoft.com:33001 --username=asperaweb --password=demoaspera
+$ <%=cmd%> server browse /
 :............:...........:......:........:...........................:.......................:
 :   zmode    :   zuid    : zgid :  size  :           mtime           :         name          :
 :............:...........:......:........:...........................:.......................:
@@ -61,7 +61,7 @@ $ <%=cmd%> server browse / --url=ssh://demo.asperasoft.com:33001 --username=aspe
 :............:...........:......:........:...........................:.......................:
 ```
 
-In order to make further calls more convenient, it is advised to define a <%=prst%> for the servers identification options. The following example will:
+If you want to use <%=tool%> with another server, and in order to make further calls more convenient, it is advised to define a <%=prst%> for the server's authentication options. The following example will:
 
 * create a <%=prst%>
 * define it as default for "server" plugin
@@ -69,10 +69,10 @@ In order to make further calls more convenient, it is advised to define a <%=prs
 * download a file
 
 ```
-$ <%=cmd%> config id demoserver update --url=ssh://demo.asperasoft.com:33001 --username=asperaweb --password=demoaspera
-updated: demoserver
-$ <%=cmd%> config id default set server demoserver
-updated: default&rarr;server to demoserver
+$ <%=cmd%> config id myserver update --url=ssh://demo.asperasoft.com:33001 --username=asperaweb --password=demoaspera
+updated: myserver
+$ <%=cmd%> config id default set server myserver
+updated: default&rarr;server to myserver
 $ <%=cmd%> server browse /aspera-test-dir-large
 :............:...........:......:..............:...........................:............................:
 :   zmode    :   zuid    : zgid :     size     :           mtime           :            name            :
@@ -1008,22 +1008,22 @@ When uploading, downloading or sending files, the user must specify
 the list of files to transfer. Most of the time, the list of files to transfer will be simply specified on the command line:
 
 ```
-$ <%=cmd%> -Pdemoserver server upload ~/mysample.file secondfile
+$ <%=cmd%> server upload ~/mysample.file secondfile
 ```
 
-This is the same as:
+This is equivalent to:
 
 ```
-$ <%=cmd%> -Pdemoserver server upload --sources=@args ~/mysample.file secondfile
+$ <%=cmd%> server upload --sources=@args ~/mysample.file secondfile
 ```
 
 More advanced options are provided to adapt to various cases. In fact, list of files to transfer are conveyed using the [_transfer-spec_](#transferspec) using the field: "paths" which is a list (array) of pairs of "source" (mandatory) and "destination" (optional).
 
-Note that this is different from the "ascp" command line. The paradigm used by <%=tool%> is: all transfer parameters are kept in [_transfer-spec_](#transferspec) so that execution of a transfer is independent of the transfer agent. It is envisioned that, one day, ascp will accept a [_transfer-spec_](#transferspec) directly.
+Note that this is different from the "ascp" command line. The paradigm used by <%=tool%> is: all transfer parameters are kept in [_transfer-spec_](#transferspec) so that execution of a transfer is independent of the transfer agent. Note that other IBM Aspera interfaces use this: connect, node, transfer sdk.
 
-For ease of use and flexibility, the list of files to transfer is specified by the option `sources`. The accepted values are:
+For ease of use and flexibility, the list of files to transfer is specified by the option `sources`. Accepted values are:
 
-* the literal `@args` (default value), in that case the list of files is directly provided at the end of the command line (see at the beginning of this section).
+* `@args` : (default value) the list of files is directly provided at the end of the command line (see at the beginning of this section).
 
 * an [Extended Value](#extended) holding an *Array of String*. Examples:
 
@@ -1033,7 +1033,7 @@ For ease of use and flexibility, the list of files to transfer is specified by t
 --sources=@ruby:'File.read("myfilelist").split("\n")'
 ```
 
-* the literal value `@ts` which specifies that the user provided the list of files directly in the `ts` option, in its `paths` field. Example:
+* `@ts` : the user provides the list of files directly in the `ts` option, in its `paths` field. Example:
 
 ```
 --sources=@ts --ts=@json:'{"paths":[{"source":"file1"},{"source":"file2"}]}'
@@ -1055,7 +1055,6 @@ Example:
 ```
 $ <%=cmd%> server upload --src-type=pair ~/Documents/Samples/200KB.1 /Upload/sample1
 ```
-
 
 Note the special case when the source files are located on "Aspera on Cloud", i.e. using access keys and the `file id` API:
 
