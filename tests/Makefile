@@ -663,39 +663,39 @@ clean::
 	rm -f $(TEST_CONFIG)
 $(T)conf_id_1: $(T).exists
 	@echo $@
-	$(EXETESTC) $(EXETESTB) config id conf_name set param value
+	$(EXETESTC) config id conf_name set param value
 	@touch $@
 $(T)conf_id_2: $(T).exists
 	@echo $@
-	$(EXETESTC) $(EXETESTB) config id conf_name show
+	$(EXETESTC) config id conf_name show
 	@touch $@
 $(T)conf_id_3: $(T).exists
 	@echo $@
-	$(EXETESTC) $(EXETESTB) config id default set shares conf_name
+	$(EXETESTC) config id default set shares conf_name
 	@touch $@
 $(T)conf_id_4: $(T).exists
 	@echo $@
-	$(EXETESTC) $(EXETESTB) config id conf_name delete
+	$(EXETESTC) config id conf_name delete
 	@touch $@
 $(T)conf_id_5: $(T).exists
 	@echo $@
-	$(EXETESTC) $(EXETESTB) config id conf_name initialize @json:'{"p1":"v1","p2":"v2"}'
+	$(EXETESTC) config id conf_name initialize @json:'{"p1":"v1","p2":"v2"}'
 	@touch $@
 $(T)conf_id_6: $(T).exists
 	@echo $@
-	$(EXETESTC) $(EXETESTB) config id conf_name update --p1=v1 --p2=v2
+	$(EXETESTC) config id conf_name update --p1=v1 --p2=v2
 	@touch $@
 $(T)conf_open: $(T).exists
 	@echo $@
-	$(EXETESTC) $(EXETESTB) config open
+	$(EXETESTC) config open
 	@touch $@
 $(T)conf_list: $(T).exists
 	@echo $@
-	$(EXETESTC) $(EXETESTB) config list
+	$(EXETESTC) config list
 	@touch $@
 $(T)conf_over: $(T).exists
 	@echo $@
-	$(EXETESTC) $(EXETESTB) config overview
+	$(EXETESTC) config overview
 	@touch $@
 $(T)conf_help: $(T).exists
 	@echo $@
@@ -704,7 +704,7 @@ $(T)conf_help: $(T).exists
 $(T)conf_open_err: $(T).exists
 	@echo $@
 	printf -- "---\nconfig:\n  version: 0" > $(TEST_CONFIG)
-	-$(EXETESTC) $(EXE_MAN) config open
+	-$(EXETESTC) config open
 	@touch $@
 $(T)conf_plugins: $(T).exists
 	@echo $@
