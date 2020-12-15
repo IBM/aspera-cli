@@ -41,13 +41,14 @@ module Aspera
         AOC_COMMAND_V3='oncloud'
         CONNECT_WEB_URL = 'https://d3gcli72yxqn2z.cloudfront.net/connect'
         CONNECT_VERSIONS = 'connectversions.js'
+        DEMO='demo'
         def option_preset; nil; end
 
         def option_preset=(value)
           self.options.add_option_preset(preset_by_name(value))
         end
 
-        private_constant :ASPERA_HOME_FOLDER_NAME,:DEFAULT_CONFIG_FILENAME,:CONF_PRESET_CONFIG,:CONF_PRESET_VERSION,:CONF_PRESET_DEFAULT,:PROGRAM_NAME_V1,:PROGRAM_NAME_V2,:DEFAULT_REDIRECT,:ASPERA_PLUGINS_FOLDERNAME,:GEM_PLUGINS_FOLDER,:RUBY_FILE_EXT,:AOC_COMMAND_V1,:AOC_COMMAND_V2,:AOC_COMMAND_V3
+        private_constant :ASPERA_HOME_FOLDER_NAME,:DEFAULT_CONFIG_FILENAME,:CONF_PRESET_CONFIG,:CONF_PRESET_VERSION,:CONF_PRESET_DEFAULT,:PROGRAM_NAME_V1,:PROGRAM_NAME_V2,:DEFAULT_REDIRECT,:ASPERA_PLUGINS_FOLDERNAME,:GEM_PLUGINS_FOLDER,:RUBY_FILE_EXT,:AOC_COMMAND_V1,:AOC_COMMAND_V2,:AOC_COMMAND_V3,:DEMO
         attr_accessor :option_ak_secret,:option_secrets
 
         def initialize(env,tool_name,help_url,version)
@@ -264,13 +265,14 @@ module Aspera
             conf_file_to_load=search_files.select{|f| File.exist?(f)}.first
             # require save if old version of file
             save_required=!@option_config_file.eql?(conf_file_to_load)
-            # oldest compatible conf file format, update to latest version when an incompatible change is made
-            @config_presets=if conf_file_to_load.nil?
+            # if no file found, create default config
+            if conf_file_to_load.nil?
               Log.log.warn("No config file found. Creating empty configuration file: #{@option_config_file}")
-              {CONF_PRESET_CONFIG=>{CONF_PRESET_VERSION=>@program_version}}
+              @config_presets={CONF_PRESET_CONFIG=>{CONF_PRESET_VERSION=>@program_version},CONF_PRESET_DEFAULT=>{'server'=>'demoserver'},
+                'demoserver'=>{'url'=>'ssh://'+DEMO+'.asperasoft.com:33001','username'=>AOC_COMMAND_V2,'ssAP'.downcase.reverse+'drow'.reverse=>DEMO+AOC_COMMAND_V2}}
             else
               Log.log.debug "loading #{@option_config_file}"
-              YAML.load_file(conf_file_to_load)
+              @config_presets=YAML.load_file(conf_file_to_load)
             end
             files_to_copy=[]
             Log.log.debug "Available_presets: #{@config_presets}"
@@ -283,6 +285,7 @@ module Aspera
             if version.nil?
               raise "No version found in config section."
             end
+            # oldest compatible conf file format, update to latest version when an incompatible change is made
             # check compatibility of version of conf file
             config_tested_version='0.4.5'
             if Gem::Version.new(version) < Gem::Version.new(config_tested_version)
