@@ -4,9 +4,11 @@ DIR_BIN=$(DIR_TOP)bin/
 DIR_LIB=$(DIR_TOP)lib/
 DIR_TMP=$(DIR_TOP)tmp/
 DIR_PRIV=$(DIR_TOP)local/
+DIR_TST=$(DIR_TOP)tests/
+DIR_DOC=$(DIR_TOP)docs/
 
 # makefile for integration tests, used for doc generation
-TEST_MAKEFILE=$(DIR_TOP)tests.make
+TEST_MAKEFILE=$(DIR_TST)Makefile
 
 # contains locations and credentials for test servers
 SECRETS_FILE_NAME=secrets.make

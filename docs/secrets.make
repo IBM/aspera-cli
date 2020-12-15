@@ -2,35 +2,8 @@
 # Do not share, github contains only empty values
 # fill this file and place in folder "local"
 
-# TODO: remove this part, and replace by use of config file (avoid duplication)
-CF_COMMON_PASS=_value_here_
-CF_PRIVATE_KEY_FILE=_value_here_
-CF_HSTS_ADDR=_value_here_
-CF_HSTS_ADMIN_USER=_value_here_
-CF_HSTS_TEST_KEY=_value_here_
-CF_HSTS_SSH_URL=_value_here_
-CF_HSTS_SSH_USER=_value_here_
-CF_HSTS_SSH_PASS=_value_here_
-CF_HSTS_NODE_URL=_value_here_
-CF_HSTS_NODE_USER=_value_here_
-CF_HSTS_NODE_PASS=_value_here_
-CF_FASPEX_ADDR=_value_here_
-CF_FASPEX_URL=_value_here_
-CF_FASPEX_SSH_URL=_value_here_
-CF_FASPEX_PUBLINK_RECV_PACKAGE=_value_here_
-CF_FASPEX_PUBLINK_SEND_DROPBOX=_value_here_
-CF_FASPEX_PUBLINK_SEND_TO_USER=_value_here_
-
-
-CF_HSTS_FOLDER_UPLOAD=_value_here_
-
-CF_SHARES_UPLOAD=_value_here_
-
-# used in asperalm_spec.rb
-export CF_HSTS_SSH_URL CF_HSTS_SSH_USER CF_HSTS_SSH_PASS
 
 # Incoming asset processing
-CF_ORCH_WORKFLOW_ID=_value_here_
 
 # received package public link : https://sedemo.ibmaspera.com/packages/public/receive?token=_value_here_
 CF_AOC_PUBLINK_RECV_PACKAGE=_value_here_
@@ -48,8 +21,6 @@ CF_AOC_SH_BX_NAME=_value_here_
 CF_AOC_NODE1_NAME=_value_here_
 CF_AOC_NODE1_SECRET=_value_here_
 
-CF_SAMPLE_FILENAME=_value_here_
-CF_SAMPLE_FILEPATH=_value_here_
 
 CF_AWS_ACCESS_KEY=_value_here_
 CF_AWS_SECRET_KEY=_value_here_
@@ -61,10 +32,6 @@ CF_ICOS_SECRET_AK=_value_here_
 CF_ICOS_BUCKET=_value_here_
 CF_ICOS_REGION=_value_here_
 
-CF_TSTFILE_DCM=_value_here_
-CF_TSTFILE_PDF=_value_here_
-CF_TSTFILE_DOCX=_value_here_
-CF_TSTFILE_MXF=_value_here_
 CF_EMAIL_ADDR=_value_here_
 CF_AOC_EXTERNAL_EMAIL=_value_here_
 CF_AOC_ORG=_value_here_

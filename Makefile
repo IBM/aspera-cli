@@ -13,11 +13,13 @@ include $(SECRETS_FILE_PATH)
 all:: gem
 
 doc:
-	cd docs && make
+	cd $(DIR_DOC) && make
 clean::
-	cd docs && make clean
-tests:
-	make -f $(TEST_MAKEFILE) tests
+	cd $(DIR_DOC) && make clean
+test:
+	cd $(DIR_TST) && make
+clean::
+	cd $(DIR_TST) && make clean
 
 ##################################
 # Gem build

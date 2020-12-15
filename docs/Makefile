@@ -4,8 +4,6 @@
 DIR_TOP=../
 include $(DIR_TOP)common.make
 DIR_DOC=
-# used in README.erb.md
-export DIR_DOC
 
 # files generated to be included in README.md
 INCL_USAGE=$(DIR_TMP)$(EXENAME)_usage.txt
@@ -34,7 +32,7 @@ $(MANUAL_PDF): $(DIR_TOP)README.md
 	wkhtmltopdf toc $(MANUAL_HTML) $(MANUAL_PDF)
 
 $(DIR_TOP)README.md: $(DIR_DOC)README.erb.md $(INCL_COMMANDS) $(INCL_USAGE) $(INCL_ASESSION)
-	COMMANDS=$(INCL_COMMANDS) USAGE=$(INCL_USAGE) ASESSION=$(INCL_ASESSION) VERSION=`$(EXETESTB) -Cnone --version` TOOLNAME=$(EXENAME) erb $(DIR_DOC)README.erb.md > $(DIR_TOP)README.md
+	DIR_DOC=$(DIR_DOC) COMMANDS=$(INCL_COMMANDS) USAGE=$(INCL_USAGE) ASESSION=$(INCL_ASESSION) VERSION=`$(EXETESTB) -Cnone --version` TOOLNAME=$(EXENAME) erb $(DIR_DOC)README.erb.md > $(DIR_TOP)README.md
 
 $(INCL_COMMANDS): $(DIR_TMP).exists $(TEST_MAKEFILE)
 	sed -nEe 's/.*\$$\(EXE_MAN.?\)/$(EXENAME)/p' $(TEST_MAKEFILE)|sed -E -e 's/(")(url|api_key|username|password|access_key_id|secret_access_key|pass)(":")[^"]*(")/\1\2\3my_\2_here\4/g;s/--(secret|url|password|username)=[^ ]*/--\1=my_\1_here/g;s/\$$\((DIR_[^)]+)\)/\1\//g;s/\$$\(([^)]+)\)/\1/g;s/"'"'"'"/"/g;s/CF_([0-9A-Z_]*)/my_\1/g;s/\$$(\$$'"'"')/\1/;s/\$$(\$$)/\1/g'|sort -u > $(INCL_COMMANDS)
@@ -46,6 +44,5 @@ $(INCL_USAGE): $(DIR_TMP).exists
 $(INCL_ASESSION): $(DIR_TMP).exists
 	$(DIR_BIN)/asession -h 2> $(INCL_ASESSION) || true
 clean::
-	rm -f $(MANUAL_PDF) $(MANUAL_HTML) $(INCL_COMMANDS) $(INCL_USAGE) $(INCL_ASESSION) 
-
+	rm -f $(MANUAL_PDF) $(MANUAL_HTML) $(INCL_COMMANDS) $(INCL_USAGE) $(INCL_ASESSION)
 
