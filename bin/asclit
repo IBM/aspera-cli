@@ -1,9 +1,0 @@
-#!/usr/bin/env ruby
-# Laurent Martin/2017
-
-$LOAD_PATH.unshift File.dirname(__FILE__) + "/../lib"
-
-require 'rubygems'
-require 'aspera/cli/thor'
-
-Aspera::Cli::ThorMain.start(ARGV)
