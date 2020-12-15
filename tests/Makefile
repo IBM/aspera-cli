@@ -312,23 +312,26 @@ $(T)aocffin: $(T).exists
 	@touch $@
 $(T)aocfmkd: $(T).exists
 	@echo $@
-	$(EXE_MAN) oncloud files mkdir /testfolder
+	-$(EXE_NOMAN) oncloud files delete /testsrc
+	$(EXE_MAN) oncloud files mkdir /testsrc
 	@touch $@
 $(T)aocfren: $(T).exists
 	@echo $@
-	$(EXE_MAN) oncloud files rename /testfolder newname
+	-$(EXE_NOMAN) oncloud files delete /testdst
+	$(EXE_NOMAN) oncloud files mkdir /somefolder
+	$(EXE_MAN) oncloud files rename /somefolder testdst
 	@touch $@
-$(T)aocfdel: $(T).exists
+$(T)aocfupl: $(T)aocfmkd
 	@echo $@
-	$(EXE_MAN) oncloud files delete /newname
+	$(EXE_MAN) oncloud files upload --to-folder=/testsrc $(CF_LOCAL_SAMPLE_FILEPATH)
 	@touch $@
-$(T)aocf5: $(T)aocfupl # WS: Demo
+$(T)aocftr: $(T)aocfupl $(T)aocfren
 	@echo $@
-	$(EXE_MAN) oncloud files transfer --workspace=eudemo --from-folder='/ascli_test' --to-folder=/ascli_test2 200KB.1
+	$(EXE_MAN) oncloud files transfer --from-folder=/testsrc --to-folder=/testdst $(CF_LOCAL_SAMPLE_FILENAME)
 	@touch $@
-$(T)aocfupl: $(T).exists
+$(T)aocfdel: $(T)aocfren
 	@echo $@
-	$(EXE_MAN) oncloud files upload --to-folder=/ $(CF_LOCAL_SAMPLE_FILEPATH)
+	$(EXE_MAN) oncloud files delete /testsrc
 	@touch $@
 $(T)aocfbearnode: $(T).exists
 	@echo $@
@@ -363,13 +366,13 @@ $(T)aocshlk1: $(T).exists
 	@touch $@
 $(T)aocshlk2: $(T).exists
 	@echo $@
-	$(EXE_MAN) oncloud files short_link create --to-folder='ascli test folder link' --value=private
+	$(EXE_MAN) oncloud files short_link create --to-folder=/testdst --value=private
 	@touch $@
 $(T)aocshlk3: $(T).exists
 	@echo $@
-	$(EXE_MAN) oncloud files short_link create --to-folder='ascli test folder link' --value=public
+	$(EXE_MAN) oncloud files short_link create --to-folder=/testdst --value=public
 	@touch $@
-taocf: $(T)aocfbr $(T)aocffin $(T)aocfmkd $(T)aocfren $(T)aocfdel $(T)aocf5 $(T)aocfupl $(T)aocfbearnode $(T)aocfdown $(T)aocfhttpd $(T)aocfv3inf $(T)aocffid $(T)aocfpub $(T)aocshlk1 $(T)aocshlk2 $(T)aocshlk3
+taocf: $(T)aocfbr $(T)aocffin $(T)aocfmkd $(T)aocfren $(T)aocfupl $(T)aocftr $(T)aocfdel $(T)aocfbearnode $(T)aocfdown $(T)aocfhttpd $(T)aocfv3inf $(T)aocffid $(T)aocfpub $(T)aocshlk1 $(T)aocshlk2 $(T)aocshlk3
 $(T)aocp1: $(T).exists
 	@echo $@
 	$(EXE_MAN) oncloud packages send --value=@json:'{"name":"'"$(PKG_TEST_TITLE)"'","recipients":["$(CF_EMAIL_ADDR)"],"note":"my note"}' $(CF_LOCAL_SAMPLE_FILEPATH)
@@ -655,43 +658,44 @@ $(T)sy5: $(T).exists
 tnsync: $(T)sy1 $(T)sy2 $(T)sy3 $(T)sy4 $(T)sy5
 
 TEST_CONFIG=$(DIR_TMP)sample.conf
+EXETESTC=$(EXETESTB) --config-file=$(TEST_CONFIG) 
 clean::
 	rm -f $(TEST_CONFIG)
 $(T)conf_id_1: $(T).exists
 	@echo $@
-	ASCLI_CONFIG_FILE=$(TEST_CONFIG) $(EXETESTB) config id conf_name set param value
+	$(EXETESTC) $(EXETESTB) config id conf_name set param value
 	@touch $@
 $(T)conf_id_2: $(T).exists
 	@echo $@
-	ASCLI_CONFIG_FILE=$(TEST_CONFIG) $(EXETESTB) config id conf_name show
+	$(EXETESTC) $(EXETESTB) config id conf_name show
 	@touch $@
 $(T)conf_id_3: $(T).exists
 	@echo $@
-	ASCLI_CONFIG_FILE=$(TEST_CONFIG) $(EXETESTB) config id default set shares conf_name
+	$(EXETESTC) $(EXETESTB) config id default set shares conf_name
 	@touch $@
 $(T)conf_id_4: $(T).exists
 	@echo $@
-	ASCLI_CONFIG_FILE=$(TEST_CONFIG) $(EXETESTB) config id conf_name delete
+	$(EXETESTC) $(EXETESTB) config id conf_name delete
 	@touch $@
 $(T)conf_id_5: $(T).exists
 	@echo $@
-	ASCLI_CONFIG_FILE=$(TEST_CONFIG) $(EXETESTB) config id conf_name initialize @json:'{"p1":"v1","p2":"v2"}'
+	$(EXETESTC) $(EXETESTB) config id conf_name initialize @json:'{"p1":"v1","p2":"v2"}'
 	@touch $@
 $(T)conf_id_6: $(T).exists
 	@echo $@
-	ASCLI_CONFIG_FILE=$(TEST_CONFIG) $(EXETESTB) config id conf_name update --p1=v1 --p2=v2
+	$(EXETESTC) $(EXETESTB) config id conf_name update --p1=v1 --p2=v2
 	@touch $@
 $(T)conf_open: $(T).exists
 	@echo $@
-	ASCLI_CONFIG_FILE=$(TEST_CONFIG) $(EXETESTB) config open
+	$(EXETESTC) $(EXETESTB) config open
 	@touch $@
 $(T)conf_list: $(T).exists
 	@echo $@
-	ASCLI_CONFIG_FILE=$(TEST_CONFIG) $(EXETESTB) config list
+	$(EXETESTC) $(EXETESTB) config list
 	@touch $@
 $(T)conf_over: $(T).exists
 	@echo $@
-	ASCLI_CONFIG_FILE=$(TEST_CONFIG) $(EXETESTB) config overview
+	$(EXETESTC) $(EXETESTB) config overview
 	@touch $@
 $(T)conf_help: $(T).exists
 	@echo $@
@@ -700,7 +704,7 @@ $(T)conf_help: $(T).exists
 $(T)conf_open_err: $(T).exists
 	@echo $@
 	printf -- "---\nconfig:\n  version: 0" > $(TEST_CONFIG)
-	-ASCLI_CONFIG_FILE=$(TEST_CONFIG) $(EXE_MAN) config open
+	-$(EXETESTC) $(EXE_MAN) config open
 	@touch $@
 $(T)conf_plugins: $(T).exists
 	@echo $@
