@@ -50,18 +50,21 @@ module Aspera
     @@debug=false
     # true if https ignore certificate
     @@insecure=false
+    @@user_agent='Ruby'
 
     public
 
-    def self.insecure=(v); Log.log.debug("insecure => #{@@insecure}".red);@@insecure=v;end
+    def self.insecure=(v); @@insecure=v;Log.log.debug("insecure => #{@@insecure}".red);end
 
     def self.insecure; @@insecure;end
 
-    def self.debug=(flag); Log.log.debug("debug http=#{flag}"); @@debug=flag; end
+    def self.user_agent=(v); @@user_agent=v;Log.log.debug("user_agent => #{@@user_agent}".red);end
 
-    def self.basic_creds(user,pass)
-      return "Basic #{Base64.strict_encode64("#{user}:#{pass}")}"
-    end
+    def self.user_agent; @@user_agent;end
+
+    def self.debug=(flag); @@debug=flag; Log.log.debug("debug http => #{flag}"); end
+
+    def self.basic_creds(user,pass); return "Basic #{Base64.strict_encode64("#{user}:#{pass}")}";end
 
     attr_reader :params
 
@@ -145,7 +148,7 @@ module Aspera
       raise "Hash call parameter is required (#{call_data.class})" unless call_data.is_a?(Hash)
       Log.log.debug("accessing #{call_data[:subpath]}".red.bold.bg_green)
       call_data[:headers]||={}
-      call_data[:headers]['User-Agent'] ||= 'Amelia'
+      call_data[:headers]['User-Agent'] ||= @@user_agent
       call_data=@params.deep_merge(call_data)
       case call_data[:auth][:type]
       when :none
