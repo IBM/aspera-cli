@@ -19,8 +19,8 @@ module Aspera
       attr_reader :plugin_env
       private
       # name of application, also foldername where config is stored
-      PROGRAM_NAME = 'ascli'
-      GEM_NAME = 'aspera'
+      PROGRAM_NAME = 'acli'
+      GEM_NAME = 'aspera-cli'
       # Container module of current class : Aspera::Cli
       CLI_MODULE=Module.nesting[1].to_s
       # Path to Plugin classes: Aspera::Cli::Plugins
