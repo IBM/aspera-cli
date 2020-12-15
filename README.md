@@ -47,10 +47,10 @@ Once installation is completed, you can proceed to the first use with a demo ser
 
 If you want to test with Aspera on Cloud, jump to section: [Wizard](#aocwizard)
 
-If you want to test with Aspera demo transfer server:
+If you want to test with Aspera demo transfer server, a default configuration is created on first use:
 
 ```
-$ acli server browse / --url=ssh://demo.asperasoft.com:33001 --username=asperaweb --password=demoaspera
+$ acli server browse /
 :............:...........:......:........:...........................:.......................:
 :   zmode    :   zuid    : zgid :  size  :           mtime           :         name          :
 :............:...........:......:........:...........................:.......................:
@@ -61,7 +61,7 @@ $ acli server browse / --url=ssh://demo.asperasoft.com:33001 --username=asperawe
 :............:...........:......:........:...........................:.......................:
 ```
 
-In order to make further calls more convenient, it is advised to define a [option preset](#lprt) for the servers identification options. The following example will:
+If you want to use `acli` with another server, and in order to make further calls more convenient, it is advised to define a [option preset](#lprt) for the server's authentication options. The following example will:
 
 * create a [option preset](#lprt)
 * define it as default for "server" plugin
@@ -69,10 +69,10 @@ In order to make further calls more convenient, it is advised to define a [optio
 * download a file
 
 ```
-$ acli config id demoserver update --url=ssh://demo.asperasoft.com:33001 --username=asperaweb --password=demoaspera
-updated: demoserver
-$ acli config id default set server demoserver
-updated: default&rarr;server to demoserver
+$ acli config id myserver update --url=ssh://demo.asperasoft.com:33001 --username=asperaweb --password=demoaspera
+updated: myserver
+$ acli config id default set server myserver
+updated: default&rarr;server to myserver
 $ acli server browse /aspera-test-dir-large
 :............:...........:......:..............:...........................:............................:
 :   zmode    :   zuid    : zgid :     size     :           mtime           :            name            :
@@ -106,7 +106,7 @@ Then, follow the section relative to the product you want to interact with ( Asp
 In order to use the tool or the gem, it is necessary to install those components:
 
 * [Ruby](#ruby)
-* [aspera](#the_gem)
+* [aspera-cli](#the_gem)
 * [FASP](#fasp_prot)
 
 The following sections provide information on the installation.
@@ -123,10 +123,10 @@ Refer to the following sections for a proposed method for specific operating sys
 ### macOS
 
 
-MacOS 10.13+ (High Sierra) comes with a recent Ruby, so you can use it directly, you will need to install aspera using `sudo` :
+MacOS 10.13+ (High Sierra) comes with a recent Ruby, so you can use it directly, you will need to install aspera-cli using `sudo` :
 
 ```
-$ sudo gem install aspera
+$ sudo gem install aspera-cli
 ```
 
 Alternatively, if you use [Homebrew](https://brew.sh/) already you can install Ruby with it:
@@ -200,18 +200,18 @@ For instance to build from source, and install in `/opt/ruby` :
 # make install
 ```
 
-## <a name="the_gem"></a>`aspera` gem
+## <a name="the_gem"></a>`aspera-cli` gem
 
 Once you have Ruby and rights to install gems: Install the gem and its dependencies:
 
 ```
-# gem install aspera
+# gem install aspera-cli
 ```
 
 To upgrade to the latest version:
 
 ```
-# gem update aspera
+# gem update aspera-cli
 ```
 
 ## <a name="fasp_prot"></a>FASP Protocol
@@ -241,7 +241,7 @@ other methods are available. Refer to section: [Transfer Agents](#agents)
 
 # <a name="cli"></a>Command Line Interface: `acli`
 
-The `aspera` Gem provides a command line interface (CLI) which interacts with Aspera Products (mostly using REST APIs):
+The `aspera-cli` Gem provides a command line interface (CLI) which interacts with Aspera Products (mostly using REST APIs):
 
 * IBM Aspera High Speed Transfer Server (FASP and Node)
 * IBM Aspera on Cloud (including ATS)
@@ -1094,22 +1094,22 @@ When uploading, downloading or sending files, the user must specify
 the list of files to transfer. Most of the time, the list of files to transfer will be simply specified on the command line:
 
 ```
-$ acli -Pdemoserver server upload ~/mysample.file secondfile
+$ acli server upload ~/mysample.file secondfile
 ```
 
-This is the same as:
+This is equivalent to:
 
 ```
-$ acli -Pdemoserver server upload --sources=@args ~/mysample.file secondfile
+$ acli server upload --sources=@args ~/mysample.file secondfile
 ```
 
 More advanced options are provided to adapt to various cases. In fact, list of files to transfer are conveyed using the [_transfer-spec_](#transferspec) using the field: "paths" which is a list (array) of pairs of "source" (mandatory) and "destination" (optional).
 
-Note that this is different from the "ascp" command line. The paradigm used by `acli` is: all transfer parameters are kept in [_transfer-spec_](#transferspec) so that execution of a transfer is independent of the transfer agent. It is envisioned that, one day, ascp will accept a [_transfer-spec_](#transferspec) directly.
+Note that this is different from the "ascp" command line. The paradigm used by `acli` is: all transfer parameters are kept in [_transfer-spec_](#transferspec) so that execution of a transfer is independent of the transfer agent. Note that other IBM Aspera interfaces use this: connect, node, transfer sdk.
 
-For ease of use and flexibility, the list of files to transfer is specified by the option `sources`. The accepted values are:
+For ease of use and flexibility, the list of files to transfer is specified by the option `sources`. Accepted values are:
 
-* the literal `@args` (default value), in that case the list of files is directly provided at the end of the command line (see at the beginning of this section).
+* `@args` : (default value) the list of files is directly provided at the end of the command line (see at the beginning of this section).
 
 * an [Extended Value](#extended) holding an *Array of String*. Examples:
 
@@ -1119,7 +1119,7 @@ For ease of use and flexibility, the list of files to transfer is specified by t
 --sources=@ruby:'File.read("myfilelist").split("\n")'
 ```
 
-* the literal value `@ts` which specifies that the user provided the list of files directly in the `ts` option, in its `paths` field. Example:
+* `@ts` : the user provides the list of files directly in the `ts` option, in its `paths` field. Example:
 
 ```
 --sources=@ts --ts=@json:'{"paths":[{"source":"file1"},{"source":"file2"}]}'
@@ -1141,7 +1141,6 @@ Example:
 ```
 $ acli server upload --src-type=pair ~/Documents/Samples/200KB.1 /Upload/sample1
 ```
-
 
 Note the special case when the source files are located on "Aspera on Cloud", i.e. using access keys and the `file id` API:
 
@@ -1249,7 +1248,6 @@ acli config ascp show
 acli config email_test aspera.user1@gmail.com
 acli config export
 acli config genkey DIR_TMP/mykey
-acli config open
 acli config plugins
 acli config proxy_check --fpac=file:///DIR_TOP/examples/proxy.pac https://eudemo.asperademo.com
 acli console transfer current list 
@@ -1327,18 +1325,18 @@ acli oncloud faspex
 acli oncloud files bearer /
 acli oncloud files browse /
 acli oncloud files browse / -N --link=MY_AOC_PUBLINK_FOLDER
-acli oncloud files delete /newname
+acli oncloud files delete /testsrc
 acli oncloud files download --transfer=connect /200KB.1
 acli oncloud files file 18891
 acli oncloud files find / --value='\.partial$'
 acli oncloud files http_node_download --to-folder=DIR_TMP/. /200KB.1
-acli oncloud files mkdir /testfolder
-acli oncloud files rename /testfolder newname
-acli oncloud files short_link create --to-folder='acli test folder link' --value=private
-acli oncloud files short_link create --to-folder='acli test folder link' --value=public
+acli oncloud files mkdir /testsrc
+acli oncloud files rename /somefolder testdst
+acli oncloud files short_link create --to-folder=/testdst --value=private
+acli oncloud files short_link create --to-folder=/testdst --value=public
 acli oncloud files short_link list --value=@json:'{"purpose":"shared_folder_auth_link"}'
-acli oncloud files transfer --workspace=eudemo --from-folder='/acli_test' --to-folder=/acli_test2 200KB.1
-acli oncloud files upload --to-folder=/ MY_LOCAL_SAMPLE_FILEPATH
+acli oncloud files transfer --from-folder=/testsrc --to-folder=/testdst MY_LOCAL_SAMPLE_FILENAME
+acli oncloud files upload --to-folder=/testsrc MY_LOCAL_SAMPLE_FILEPATH
 acli oncloud files upload -N --to-folder=/ MY_LOCAL_SAMPLE_FILEPATH --link=MY_AOC_PUBLINK_FOLDER
 acli oncloud files v3 info
 acli oncloud org -N --link=MY_AOC_PUBLINK_RECV_PACKAGE
@@ -1419,9 +1417,6 @@ acli sync start --parameters=@json:'{"sessions":[{"name":"test","reset":true,"re
 
 ```
 $ acli -h
-W, [2020-12-15T12:43:33.243861 #13336]  WARN -- : No config file found. Creating empty configuration file: /Users/gegles/.aspera/acli/config.yaml
-W, [2020-12-15T12:43:33.244005 #13336]  WARN -- : Saving automatic conversion.
-W, [2020-12-15T12:43:33.244866 #13336]  WARN -- : Copying referenced files
 NAME
 	acli -- a command line tool for Aspera Applications (v4.0.0)
 
@@ -1462,7 +1457,7 @@ OPTIONS: global
     -v, --version                    display version
     -w, --warnings                   check for language warnings
         --ui=ENUM                    method to start browser: text, [1m[31mgraphical[0m[22m
-        --log-level=ENUM             Log level: fatal, unknown, debug, info, [1m[31mwarn[0m[22m, error
+        --log-level=ENUM             Log level: info, error, fatal, unknown, debug, [1m[31mwarn[0m[22m
         --logger=ENUM                log method: [1m[31mstderr[0m[22m, stdout, syslog
         --lock-port=VALUE            prevent dual execution of a command, e.g. in cron
         --query=VALUE                additional filter for API calls (extended value) (some commands)

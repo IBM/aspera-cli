@@ -36,7 +36,7 @@ module Aspera
         result[:dir].each do |file|
           if file.has_key?(:smode)
             # Converts the first character of the file mode (see 'man ls') into a type.
-            file[:type]=case file[:smode][0,1];when'd';:directory;when'-';:file;when'l';:link;else:other;end
+            file[:type]=case file[:smode][0,1];when'd';:directory;when'-';:file;when'l';:link;else;:other;end
           end
         end
       end
