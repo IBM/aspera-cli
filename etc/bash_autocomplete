@@ -9,7 +9,7 @@ _bash_autocomplete() {
      return 0
 }
 
-PROGS=("ascli")
+PROGS=("acli")
 for p in "${PROGS[@]}"; do
     complete -F _bash_autocomplete "$p"
 done

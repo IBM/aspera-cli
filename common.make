@@ -15,12 +15,12 @@ SECRETS_FILE_NAME=secrets.make
 SECRETS_FILE_PATH=$(DIR_PRIV)$(SECRETS_FILE_NAME)
 
 # configuration file used for tests, create your own from template in "docs"
-TEST_CONF_FILE_BASE=test.ascli.conf
+TEST_CONF_FILE_BASE=test.acli.conf
 TEST_CONF_FILE_PATH=$(DIR_PRIV)$(TEST_CONF_FILE_BASE)
 
 # just the name of the command line tool as in bin folder
 # (used for documentation and execution)
-EXENAME=ascli
+EXENAME=acli
 
 # how tool is called without argument
 # use only if another config file is used

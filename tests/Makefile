@@ -324,7 +324,7 @@ $(T)aocfdel: $(T).exists
 	@touch $@
 $(T)aocf5: $(T)aocfupl # WS: Demo
 	@echo $@
-	$(EXE_MAN) oncloud files transfer --workspace=eudemo --from-folder='/ascli_test' --to-folder=/ascli_test2 200KB.1
+	$(EXE_MAN) oncloud files transfer --workspace=eudemo --from-folder='/acli_test' --to-folder=/acli_test2 200KB.1
 	@touch $@
 $(T)aocfupl: $(T).exists
 	@echo $@
@@ -363,11 +363,11 @@ $(T)aocshlk1: $(T).exists
 	@touch $@
 $(T)aocshlk2: $(T).exists
 	@echo $@
-	$(EXE_MAN) oncloud files short_link create --to-folder='ascli test folder link' --value=private
+	$(EXE_MAN) oncloud files short_link create --to-folder='acli test folder link' --value=private
 	@touch $@
 $(T)aocshlk3: $(T).exists
 	@echo $@
-	$(EXE_MAN) oncloud files short_link create --to-folder='ascli test folder link' --value=public
+	$(EXE_MAN) oncloud files short_link create --to-folder='acli test folder link' --value=public
 	@touch $@
 taocf: $(T)aocfbr $(T)aocffin $(T)aocfmkd $(T)aocfren $(T)aocfdel $(T)aocf5 $(T)aocfupl $(T)aocfbearnode $(T)aocfdown $(T)aocfhttpd $(T)aocfv3inf $(T)aocffid $(T)aocfpub $(T)aocshlk1 $(T)aocshlk2 $(T)aocshlk3
 $(T)aocp1: $(T).exists
@@ -659,39 +659,39 @@ clean::
 	rm -f $(TEST_CONFIG)
 $(T)conf_id_1: $(T).exists
 	@echo $@
-	ASCLI_CONFIG_FILE=$(TEST_CONFIG) $(EXETESTB) config id conf_name set param value
+	ACLI_CONFIG_FILE=$(TEST_CONFIG) $(EXETESTB) config id conf_name set param value
 	@touch $@
 $(T)conf_id_2: $(T).exists
 	@echo $@
-	ASCLI_CONFIG_FILE=$(TEST_CONFIG) $(EXETESTB) config id conf_name show
+	ACLI_CONFIG_FILE=$(TEST_CONFIG) $(EXETESTB) config id conf_name show
 	@touch $@
 $(T)conf_id_3: $(T).exists
 	@echo $@
-	ASCLI_CONFIG_FILE=$(TEST_CONFIG) $(EXETESTB) config id default set shares conf_name
+	ACLI_CONFIG_FILE=$(TEST_CONFIG) $(EXETESTB) config id default set shares conf_name
 	@touch $@
 $(T)conf_id_4: $(T).exists
 	@echo $@
-	ASCLI_CONFIG_FILE=$(TEST_CONFIG) $(EXETESTB) config id conf_name delete
+	ACLI_CONFIG_FILE=$(TEST_CONFIG) $(EXETESTB) config id conf_name delete
 	@touch $@
 $(T)conf_id_5: $(T).exists
 	@echo $@
-	ASCLI_CONFIG_FILE=$(TEST_CONFIG) $(EXETESTB) config id conf_name initialize @json:'{"p1":"v1","p2":"v2"}'
+	ACLI_CONFIG_FILE=$(TEST_CONFIG) $(EXETESTB) config id conf_name initialize @json:'{"p1":"v1","p2":"v2"}'
 	@touch $@
 $(T)conf_id_6: $(T).exists
 	@echo $@
-	ASCLI_CONFIG_FILE=$(TEST_CONFIG) $(EXETESTB) config id conf_name update --p1=v1 --p2=v2
+	ACLI_CONFIG_FILE=$(TEST_CONFIG) $(EXETESTB) config id conf_name update --p1=v1 --p2=v2
 	@touch $@
 $(T)conf_open: $(T).exists
 	@echo $@
-	ASCLI_CONFIG_FILE=$(TEST_CONFIG) $(EXETESTB) config open
+	ACLI_CONFIG_FILE=$(TEST_CONFIG) $(EXETESTB) config open
 	@touch $@
 $(T)conf_list: $(T).exists
 	@echo $@
-	ASCLI_CONFIG_FILE=$(TEST_CONFIG) $(EXETESTB) config list
+	ACLI_CONFIG_FILE=$(TEST_CONFIG) $(EXETESTB) config list
 	@touch $@
 $(T)conf_over: $(T).exists
 	@echo $@
-	ASCLI_CONFIG_FILE=$(TEST_CONFIG) $(EXETESTB) config overview
+	ACLI_CONFIG_FILE=$(TEST_CONFIG) $(EXETESTB) config overview
 	@touch $@
 $(T)conf_help: $(T).exists
 	@echo $@
@@ -700,7 +700,7 @@ $(T)conf_help: $(T).exists
 $(T)conf_open_err: $(T).exists
 	@echo $@
 	printf -- "---\nconfig:\n  version: 0" > $(TEST_CONFIG)
-	-ASCLI_CONFIG_FILE=$(TEST_CONFIG) $(EXE_MAN) config open
+	-ACLI_CONFIG_FILE=$(TEST_CONFIG) $(EXE_MAN) config open
 	@touch $@
 $(T)conf_plugins: $(T).exists
 	@echo $@
