@@ -1,4 +1,5 @@
 require 'aspera/cli/basic_auth_plugin'
+require 'aspera/cli/extended_value'
 require 'aspera/fasp/installation'
 require 'aspera/api_detector'
 require 'aspera/open_application'
@@ -472,7 +473,7 @@ module Aspera
               value=selected_preset[param_name]
               raise "no such option in preset #{config_name} : #{param_name}" if value.nil?
               case value
-              when Numeric,String; return {:type=>:text,:data=>value.to_s}
+              when Numeric,String; return {:type=>:text,:data=>ExtendedValue.instance.evaluate(value.to_s)}
               end
               return {:type=>:single_object,:data=>value}
             when :unset
