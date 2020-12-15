@@ -10,7 +10,6 @@ module Aspera
       MAX_CONNECT_START_RETRY=3
       SLEEP_SEC_BETWEEN_RETRY=2
       private_constant :MAX_CONNECT_START_RETRY,:SLEEP_SEC_BETWEEN_RETRY
-      # mode=node : activate, set to the REST api object for the node API
       def initialize
         super
         @connect_app_id=SecureRandom.uuid
@@ -23,7 +22,7 @@ module Aspera
         begin
           connect_url=Installation.instance.connect_uri
           Log.log.debug("found: #{connect_url}")
-          @connect_api=Rest.new({base_url: "#{connect_url}/v5/connect",headers: {'Origin'=>'ascli'}}) # could use v6 also now
+          @connect_api=Rest.new({base_url: "#{connect_url}/v5/connect",headers: {'Origin'=>Rest.user_agent}}) # could use v6 also now
           cinfo=@connect_api.read('info/version')[:data]
         rescue => e # Errno::ECONNREFUSED
           raise StandardError,"Unable to start connect after #{trynumber} try" if trynumber >= MAX_CONNECT_START_RETRY
