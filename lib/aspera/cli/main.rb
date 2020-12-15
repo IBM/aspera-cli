@@ -64,6 +64,7 @@ module Aspera
         # give command line arguments to option manager (no parsing)
         @plugin_env[:options]=@opt_mgr=Manager.new(self.program_name,argv,app_banner())
         @plugin_env[:formater]=Formater.new(@plugin_env[:options])
+        Rest.user_agent=self.program_name
         # must override help methods before parser called (in other constructors)
         init_global_options()
         # the Config plugin adds the @preset parser
