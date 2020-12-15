@@ -39,7 +39,7 @@ module Aspera
         @opt_mgr.add_opt_list(:progress,[:none,:native,:multi],"type of progress bar")
         @opt_mgr.set_option(:transfer,:direct)
         @opt_mgr.set_option(:src_type,:list)
-        @opt_mgr.set_option(:progress,:multi)
+        @opt_mgr.set_option(:progress,:native) # use native ascp progress bar as it is more reliable
         @opt_mgr.parse_options!
       end
 
@@ -52,7 +52,11 @@ module Aspera
       def set_agent_instance(instance)
         @agent=instance
         @agent.add_listener(Listener::Logger.new)
-        @agent.add_listener(@progress_listener) if @opt_mgr.get_option(:progress,:mandatory).eql?(:multi)
+        # use local progress bar if asked so, or if native and non local ascp (because only local ascp has native progress bar)
+        if @opt_mgr.get_option(:progress,:mandatory).eql?(:multi) or
+        (@opt_mgr.get_option(:progress,:mandatory).eql?(:native) and !@opt_mgr.get_option(:transfer,:mandatory).eql?(:direct))
+          @agent.add_listener(@progress_listener)
+        end
       end
 
       # analyze options and create new agent if not already created or set
