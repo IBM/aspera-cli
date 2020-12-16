@@ -3,7 +3,7 @@
 
 # `ascli` : a Command Line for IBM Aspera products
 
-Version : 4.0.0.beta1
+Version : 4.0.0.pre1
 
 _Laurent/2016-2020_
 
@@ -38,7 +38,7 @@ Once the gem is installed, `ascli` shall be accessible:
 
 ```
 $ ascli --version
-4.0.0.beta1
+4.0.0.pre1
 ```
 
 ## First use
@@ -1418,7 +1418,7 @@ ascli sync start --parameters=@json:'{"sessions":[{"name":"test","reset":true,"r
 ```
 $ ascli -h
 NAME
-	ascli -- a command line tool for Aspera Applications (v4.0.0.beta1)
+	ascli -- a command line tool for Aspera Applications (v4.0.0.pre1)
 
 SYNOPSIS
 	ascli COMMANDS [OPTIONS] [ARGS]
@@ -3186,7 +3186,7 @@ So, it evolved into `ascli`:
 
 # Release Notes
 
-* 4.0.0.beta1
+* 4.0.0.pre1
 
         * now available as open source at [https://github.com/IBM/aspera-cli](https://github.com/IBM/aspera-cli) with general cleanup
         * changed default tool name from `mlia` to `ascli`
