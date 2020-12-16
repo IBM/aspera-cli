@@ -2609,7 +2609,7 @@ So, it evolved into <%=tool%>:
 * 4.0.0
 
         * now available as open source at [https://github.com/IBM/aspera-cli](https://github.com/IBM/aspera-cli) with general cleanup
-        * changed default tool name from `mlia` to `acli`
+        * changed default tool name from `mlia` to `ascli`
         * changed `aspera` command to `oncloud`
         * changed gem name from `asperalm` to `aspera-cli`
         * changed module name from `Asperalm` to `Aspera`
