@@ -20,7 +20,7 @@ TEST_CONF_FILE_PATH=$(DIR_PRIV)$(TEST_CONF_FILE_BASE)
 
 # just the name of the command line tool as in bin folder
 # (used for documentation and execution)
-EXENAME=acli
+EXENAME=ascli
 
 # how tool is called without argument
 # use only if another config file is used
