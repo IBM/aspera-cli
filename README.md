@@ -3,7 +3,7 @@
 
 # `ascli` : a Command Line for IBM Aspera products
 
-Version : 4.0.0
+Version : 4.0.0.beta1
 
 _Laurent/2016-2020_
 
@@ -38,7 +38,7 @@ Once the gem is installed, `ascli` shall be accessible:
 
 ```
 $ ascli --version
-4.0.0
+4.0.0.beta1
 ```
 
 ## First use
@@ -1250,8 +1250,8 @@ ascli config export
 ascli config genkey DIR_TMP/mykey
 ascli config plugins
 ascli config proxy_check --fpac=file:///DIR_TOP/examples/proxy.pac https://eudemo.asperademo.com
-ascli console transfer current list 
-ascli console transfer smart list 
+ascli console transfer current list
+ascli console transfer smart list
 ascli console transfer smart sub 112 @json:'{"source":{"paths":["10MB.1"]},"source_type":"user_selected"}'
 ascli cos node -N --bucket=MY_ICOS_BUCKET --service-credentials=@json:@file:DIR_PRIV/service_creds.json --region=MY_ICOS_REGION info
 ascli cos node access_key --id=self show
@@ -1275,9 +1275,9 @@ ascli faspex5 package receive --id="my_package_id" --to-folder=DIR_TMP/.
 ascli faspex5 package send --value=@json:'{"title":"test title","recipients":["admin"]}' MY_LOCAL_SAMPLE_FILEPATH
 ascli node -N -Ptst_node_preview access_key create --value=@json:'{"id":"aoc_1","storage":{"type":"local","path":"/"}}'
 ascli node -N -Ptst_node_preview access_key delete --id=aoc_1
-ascli node async --id=1 bandwidth 
-ascli node async --id=1 counters 
-ascli node async --id=1 files 
+ascli node async --id=1 bandwidth
+ascli node async --id=1 counters
+ascli node async --id=1 files
 ascli node async list
 ascli node async show --id=1
 ascli node async show --id=ALL
@@ -1303,7 +1303,7 @@ ascli oncloud admin ats access_key create --cloud=softlayer --region=MY_ICOS_REG
 ascli oncloud admin ats access_key list --fields=name,id
 ascli oncloud admin ats cluster clouds
 ascli oncloud admin ats cluster list
-ascli oncloud admin ats cluster show --cloud=aws --region=eu-west-1 
+ascli oncloud admin ats cluster show --cloud=aws --region=eu-west-1
 ascli oncloud admin ats cluster show --id=1f412ae7-869a-445c-9c05-02ad16813be2
 ascli oncloud admin resource node --name=MY_AOC_NODE1_NAME --secret=MY_AOC_NODE1_SECRET v3 access_key create --value=@json:'{"id":"testsub1","storage":{"path":"/folder1"}}'
 ascli oncloud admin resource node --name=MY_AOC_NODE1_NAME --secret=MY_AOC_NODE1_SECRET v3 access_key delete --id=testsub1
@@ -1393,7 +1393,7 @@ ascli server md5sum NEW_SERVER_FOLDER/MY_LOCAL_SAMPLE_FILENAME
 ascli server mkdir MY_HSTS_FOLDER_UPLOAD/target_hot
 ascli server mkdir NEW_SERVER_FOLDER --logger=stdout
 ascli server mv MY_HSTS_FOLDER_UPLOAD/200KB.2 MY_HSTS_FOLDER_UPLOAD/to.delete
-ascli server nagios transfer --to-folder=MY_HSTS_FOLDER_UPLOAD --format=nagios 
+ascli server nagios transfer --to-folder=MY_HSTS_FOLDER_UPLOAD --format=nagios
 ascli server upload --sources=@ts --ts=@json:'{"paths":[{"source":"MY_LOCAL_SAMPLE_FILEPATH","destination":"NEW_SERVER_FOLDER/othername"}]}'
 ascli server upload --src-type=pair --sources=@json:'["MY_LOCAL_SAMPLE_FILEPATH","NEW_SERVER_FOLDER/othername"]'
 ascli server upload --src-type=pair MY_LOCAL_SAMPLE_FILEPATH NEW_SERVER_FOLDER/othername
@@ -1418,7 +1418,7 @@ ascli sync start --parameters=@json:'{"sessions":[{"name":"test","reset":true,"r
 ```
 $ ascli -h
 NAME
-	ascli -- a command line tool for Aspera Applications (v4.0.0)
+	ascli -- a command line tool for Aspera Applications (v4.0.0.beta1)
 
 SYNOPSIS
 	ascli COMMANDS [OPTIONS] [ARGS]
@@ -1691,7 +1691,7 @@ OPTIONS:
         --password=VALUE             user's password
         --ssh-keys=VALUE             ssh key path list (Array or single)
         --ssh-options=VALUE          ssh options (Hash)
-        --cmd-prefix=VALUE           prefix to add for as cmd execution, e.g. sudo or /opt/aspera/bin 
+        --cmd-prefix=VALUE           prefix to add for as cmd execution, e.g. sudo or /opt/aspera/bin
 
 
 COMMAND: console
@@ -3072,7 +3072,7 @@ USAGE
     asession
     asession -h|--help
     asession <transfer spec extended value>
-    
+
     If no argument is provided, default will be used: @json:@stdin
     -h, --help display this message
     <transfer spec extended value> a JSON value for transfer_spec, using the prefix: @json:
@@ -3186,7 +3186,7 @@ So, it evolved into `ascli`:
 
 # Release Notes
 
-* 4.0.0
+* 4.0.0.beta1
 
         * now available as open source at [https://github.com/IBM/aspera-cli](https://github.com/IBM/aspera-cli) with general cleanup
         * changed default tool name from `mlia` to `ascli`
