@@ -1,6 +1,6 @@
 [comment1]: # (Do not edit this README.md, edit docs/README.erb.md, for details, read docs/README.md)
 
-
+ --pre
 # `ascli` : a Command Line for IBM Aspera products
 
 Version : 4.0.0.pre1
@@ -126,7 +126,7 @@ Refer to the following sections for a proposed method for specific operating sys
 MacOS 10.13+ (High Sierra) comes with a recent Ruby, so you can use it directly, you will need to install aspera-cli using `sudo` :
 
 ```
-$ sudo gem install aspera-cli
+$ sudo gem install aspera-cli --pre
 ```
 
 Alternatively, if you use [Homebrew](https://brew.sh/) already you can install Ruby with it:
@@ -205,7 +205,7 @@ For instance to build from source, and install in `/opt/ruby` :
 Once you have Ruby and rights to install gems: Install the gem and its dependencies:
 
 ```
-# gem install aspera-cli
+# gem install aspera-cli --pre
 ```
 
 To upgrade to the latest version:
@@ -1250,8 +1250,8 @@ ascli config export
 ascli config genkey DIR_TMP/mykey
 ascli config plugins
 ascli config proxy_check --fpac=file:///DIR_TOP/examples/proxy.pac https://eudemo.asperademo.com
-ascli console transfer current list
-ascli console transfer smart list
+ascli console transfer current list 
+ascli console transfer smart list 
 ascli console transfer smart sub 112 @json:'{"source":{"paths":["10MB.1"]},"source_type":"user_selected"}'
 ascli cos node -N --bucket=MY_ICOS_BUCKET --service-credentials=@json:@file:DIR_PRIV/service_creds.json --region=MY_ICOS_REGION info
 ascli cos node access_key --id=self show
@@ -1275,9 +1275,9 @@ ascli faspex5 package receive --id="my_package_id" --to-folder=DIR_TMP/.
 ascli faspex5 package send --value=@json:'{"title":"test title","recipients":["admin"]}' MY_LOCAL_SAMPLE_FILEPATH
 ascli node -N -Ptst_node_preview access_key create --value=@json:'{"id":"aoc_1","storage":{"type":"local","path":"/"}}'
 ascli node -N -Ptst_node_preview access_key delete --id=aoc_1
-ascli node async --id=1 bandwidth
-ascli node async --id=1 counters
-ascli node async --id=1 files
+ascli node async --id=1 bandwidth 
+ascli node async --id=1 counters 
+ascli node async --id=1 files 
 ascli node async list
 ascli node async show --id=1
 ascli node async show --id=ALL
@@ -1303,7 +1303,7 @@ ascli oncloud admin ats access_key create --cloud=softlayer --region=MY_ICOS_REG
 ascli oncloud admin ats access_key list --fields=name,id
 ascli oncloud admin ats cluster clouds
 ascli oncloud admin ats cluster list
-ascli oncloud admin ats cluster show --cloud=aws --region=eu-west-1
+ascli oncloud admin ats cluster show --cloud=aws --region=eu-west-1 
 ascli oncloud admin ats cluster show --id=1f412ae7-869a-445c-9c05-02ad16813be2
 ascli oncloud admin resource node --name=MY_AOC_NODE1_NAME --secret=MY_AOC_NODE1_SECRET v3 access_key create --value=@json:'{"id":"testsub1","storage":{"path":"/folder1"}}'
 ascli oncloud admin resource node --name=MY_AOC_NODE1_NAME --secret=MY_AOC_NODE1_SECRET v3 access_key delete --id=testsub1
@@ -1393,7 +1393,7 @@ ascli server md5sum NEW_SERVER_FOLDER/MY_LOCAL_SAMPLE_FILENAME
 ascli server mkdir MY_HSTS_FOLDER_UPLOAD/target_hot
 ascli server mkdir NEW_SERVER_FOLDER --logger=stdout
 ascli server mv MY_HSTS_FOLDER_UPLOAD/200KB.2 MY_HSTS_FOLDER_UPLOAD/to.delete
-ascli server nagios transfer --to-folder=MY_HSTS_FOLDER_UPLOAD --format=nagios
+ascli server nagios transfer --to-folder=MY_HSTS_FOLDER_UPLOAD --format=nagios 
 ascli server upload --sources=@ts --ts=@json:'{"paths":[{"source":"MY_LOCAL_SAMPLE_FILEPATH","destination":"NEW_SERVER_FOLDER/othername"}]}'
 ascli server upload --src-type=pair --sources=@json:'["MY_LOCAL_SAMPLE_FILEPATH","NEW_SERVER_FOLDER/othername"]'
 ascli server upload --src-type=pair MY_LOCAL_SAMPLE_FILEPATH NEW_SERVER_FOLDER/othername
@@ -1457,7 +1457,7 @@ OPTIONS: global
     -v, --version                    display version
     -w, --warnings                   check for language warnings
         --ui=ENUM                    method to start browser: text, [1m[31mgraphical[0m[22m
-        --log-level=ENUM             Log level: info, error, fatal, unknown, debug, [1m[31mwarn[0m[22m
+        --log-level=ENUM             Log level: unknown, [1m[31mwarn[0m[22m, info, error, debug, fatal
         --logger=ENUM                log method: [1m[31mstderr[0m[22m, stdout, syslog
         --lock-port=VALUE            prevent dual execution of a command, e.g. in cron
         --query=VALUE                additional filter for API calls (extended value) (some commands)
@@ -1470,7 +1470,7 @@ OPTIONS:
         --value=VALUE                extended value for create, update, list filter
         --property=VALUE             name of property to set
         --id=VALUE                   resource identifier (modify,delete,show)
-        --config-file=VALUE          read parameters from file in YAML format, current=/Users/gegles/.aspera/ascli/config.yaml
+        --config-file=VALUE          read parameters from file in YAML format, current=/Users/laurent/.aspera/ascli/config.yaml
         --override=ENUM              override existing value: [1m[31myes[0m[22m, no
     -N, --no-default                 do not load default configuration for plugin
         --use-generic-client=ENUM    wizard: AoC: use global or org specific jwt client id: yes, [1m[31mno[0m[22m
@@ -1691,7 +1691,7 @@ OPTIONS:
         --password=VALUE             user's password
         --ssh-keys=VALUE             ssh key path list (Array or single)
         --ssh-options=VALUE          ssh options (Hash)
-        --cmd-prefix=VALUE           prefix to add for as cmd execution, e.g. sudo or /opt/aspera/bin
+        --cmd-prefix=VALUE           prefix to add for as cmd execution, e.g. sudo or /opt/aspera/bin 
 
 
 COMMAND: console
@@ -3072,7 +3072,7 @@ USAGE
     asession
     asession -h|--help
     asession <transfer spec extended value>
-
+    
     If no argument is provided, default will be used: @json:@stdin
     -h, --help display this message
     <transfer spec extended value> a JSON value for transfer_spec, using the prefix: @json:

@@ -1,6 +1,6 @@
 [comment1]: # (Do not edit this README.md, edit docs/README.erb.md, for details, read docs/README.md)
 <%cmd=ENV["TOOLNAME"];tool='`'+cmd+'`';evp=cmd.upcase+'_';opprst='option preset';prst='['+opprst+'](#lprt)';prsts='['+opprst+'s](#lprt)';prstt=opprst.capitalize%>
-
+<%=geminstadd=ENV["VERSION"].match(/\.[^0-9]/)?' --pre':''%>
 # <%=tool%> : a Command Line for IBM Aspera products
 
 Version : <%= ENV["VERSION"] %>
@@ -126,7 +126,7 @@ Refer to the following sections for a proposed method for specific operating sys
 MacOS 10.13+ (High Sierra) comes with a recent Ruby, so you can use it directly, you will need to install aspera-cli using `sudo` :
 
 ```
-$ sudo gem install aspera-cli
+$ sudo gem install aspera-cli<%=geminstadd%>
 ```
 
 Alternatively, if you use [Homebrew](https://brew.sh/) already you can install Ruby with it:
@@ -205,7 +205,7 @@ For instance to build from source, and install in `/opt/ruby` :
 Once you have Ruby and rights to install gems: Install the gem and its dependencies:
 
 ```
-# gem install aspera-cli
+# gem install aspera-cli<%=geminstadd%>
 ```
 
 To upgrade to the latest version:
