@@ -2606,7 +2606,7 @@ So, it evolved into <%=tool%>:
 
 # Release Notes
 
-* 4.0.0.beta1
+* 4.0.0.pre1
 
         * now available as open source at [https://github.com/IBM/aspera-cli](https://github.com/IBM/aspera-cli) with general cleanup
         * changed default tool name from `mlia` to `ascli`
