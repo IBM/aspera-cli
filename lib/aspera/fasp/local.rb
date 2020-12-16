@@ -43,9 +43,8 @@ module Aspera
         if transfer_spec.has_key?('token') and
         !transfer_spec.has_key?('remote_password') and
         !transfer_spec.has_key?('EX_ssh_key_paths')
-          keys=Installation.instance.bypass_keys
-          transfer_spec['remote_password'] = keys.shift
-          transfer_spec['EX_ssh_key_paths'] = keys
+          # transfer_spec['remote_password'] = Installation.instance.bypass_pass # not used
+          transfer_spec['EX_ssh_key_paths'] = Installation.instance.bypass_keys
         end
 
         # compute known args
