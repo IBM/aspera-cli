@@ -434,7 +434,7 @@ module Aspera
                 end
               end
             end
-            data['keypass']=Fasp::Installation.instance.bypass_keys.shift
+            data['keypass']=Fasp::Installation.instance.bypass_pass
             return {:type=>:single_object, :data=>data}
           when :products
             command=self.options.get_next_command([:list,:use])
