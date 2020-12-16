@@ -10,7 +10,7 @@ include $(DIR_TOP)common.make
 # contains secrets, create your own from template in docs
 include $(SECRETS_FILE_PATH)
 
-all:: gem
+all:: gem doc
 
 doc:
 	cd $(DIR_DOC) && make
@@ -29,7 +29,7 @@ PATH_GEMFILE=$(DIR_TOP)$(GEMNAME)-$(GEMVERSION).gem
 gem: $(PATH_GEMFILE)
 
 # gem file is generated in top folder
-$(PATH_GEMFILE): doc
+$(PATH_GEMFILE):
 	gem build $(GEMNAME)
 clean::
 	rm -f $(PATH_GEMFILE)
