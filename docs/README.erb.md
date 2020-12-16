@@ -1,6 +1,6 @@
 [comment1]: # (Do not edit this README.md, edit docs/README.erb.md, for details, read docs/README.md)
 <%cmd=ENV["TOOLNAME"];tool='`'+cmd+'`';evp=cmd.upcase+'_';opprst='option preset';prst='['+opprst+'](#lprt)';prsts='['+opprst+'s](#lprt)';prstt=opprst.capitalize%>
-<%=geminstadd=ENV["VERSION"].match(/\.[^0-9]/)?' --pre':''%>
+<%geminstadd=ENV["VERSION"].match(/\.[^0-9]/)?' --pre':''%>
 # <%=tool%> : a Command Line for IBM Aspera products
 
 Version : <%= ENV["VERSION"] %>

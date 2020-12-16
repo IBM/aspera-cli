@@ -3,6 +3,7 @@
 
 DIR_TOP=../
 include $(DIR_TOP)common.make
+# "make" shall be executed inside the folder containing this makefile
 DIR_DOC=
 
 # files generated to be included in README.md
