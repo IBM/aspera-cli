@@ -7,10 +7,12 @@
 /doc/
 /docs/Manual*.html
 /docs/Manual*.pdf
+/docs/test_env.conf
 /spec/reports/
 /tmp/
 /t/
-/aspera-*.gem
+/pkg
+/aspera-cli-*.gem
 # rspec failure tracking
 .rspec_status
 # contains private secrets:

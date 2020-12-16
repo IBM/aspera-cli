@@ -47,7 +47,7 @@ Once installation is completed, you can proceed to the first use with a demo ser
 
 If you want to test with Aspera on Cloud, jump to section: [Wizard](#aocwizard)
 
-If you want to test with Aspera demo transfer server, a default configuratiion is created on first use:
+If you want to test with Aspera demo transfer server, a default configuration is created on first use:
 
 ```
 $ <%=cmd%> server browse /
@@ -106,7 +106,7 @@ Then, follow the section relative to the product you want to interact with ( Asp
 In order to use the tool or the gem, it is necessary to install those components:
 
 * [Ruby](#ruby)
-* [aspera](#the_gem)
+* [aspera-cli](#the_gem)
 * [FASP](#fasp_prot)
 
 The following sections provide information on the installation.
@@ -123,10 +123,10 @@ Refer to the following sections for a proposed method for specific operating sys
 ### macOS
 
 
-MacOS 10.13+ (High Sierra) comes with a recent Ruby, so you can use it directly, you will need to install aspera using `sudo` :
+MacOS 10.13+ (High Sierra) comes with a recent Ruby, so you can use it directly, you will need to install aspera-cli using `sudo` :
 
 ```
-$ sudo gem install aspera
+$ sudo gem install aspera-cli
 ```
 
 Alternatively, if you use [Homebrew](https://brew.sh/) already you can install Ruby with it:
@@ -200,18 +200,18 @@ For instance to build from source, and install in `/opt/ruby` :
 # make install
 ```
 
-## <a name="the_gem"></a>`aspera` gem
+## <a name="the_gem"></a>`aspera-cli` gem
 
 Once you have Ruby and rights to install gems: Install the gem and its dependencies:
 
 ```
-# gem install aspera
+# gem install aspera-cli
 ```
 
 To upgrade to the latest version:
 
 ```
-# gem update aspera
+# gem update aspera-cli
 ```
 
 ## <a name="fasp_prot"></a>FASP Protocol
@@ -241,7 +241,7 @@ other methods are available. Refer to section: [Transfer Agents](#agents)
 
 # <a name="cli"></a>Command Line Interface: <%=tool%>
 
-The `aspera` Gem provides a command line interface (CLI) which interacts with Aspera Products (mostly using REST APIs):
+The `aspera-cli` Gem provides a command line interface (CLI) which interacts with Aspera Products (mostly using REST APIs):
 
 * IBM Aspera High Speed Transfer Server (FASP and Node)
 * IBM Aspera on Cloud (including ATS)
