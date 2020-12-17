@@ -7,6 +7,9 @@ DIR_PRIV=$(DIR_TOP)local/
 DIR_TST=$(DIR_TOP)tests/
 DIR_DOC=$(DIR_TOP)docs/
 
+GEMNAME=aspera-cli
+GEMSPEC=$(DIR_TOP)$(GEMNAME).gemspec
+
 # makefile for integration tests, used for doc generation
 TEST_MAKEFILE=$(DIR_TST)Makefile
 
