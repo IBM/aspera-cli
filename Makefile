@@ -23,13 +23,12 @@ clean::
 
 ##################################
 # Gem build
-GEMNAME=aspera-cli
 PATH_GEMFILE=$(DIR_TOP)$(GEMNAME)-$(GEMVERSION).gem
 
 gem: $(PATH_GEMFILE)
 
 # gem file is generated in top folder
-$(PATH_GEMFILE):
+$(PATH_GEMFILE): $(GEMSPEC)
 	gem build $(GEMNAME)
 clean::
 	rm -f $(PATH_GEMFILE)
