@@ -1,16 +1,30 @@
 [comment1]: # (Do not edit this README.md, edit docs/README.erb.md, for details, read docs/README.md)
-<%cmd=ENV["TOOLNAME"];tool='`'+cmd+'`';evp=cmd.upcase+'_';opprst='option preset';prst='['+opprst+'](#lprt)';prsts='['+opprst+'s](#lprt)';prstt=opprst.capitalize%>
-<%geminstadd=ENV["VERSION"].match(/\.[^0-9]/)?' --pre':''%>
+<%
+ # check that required env vars exist, and files
+%w{EXENAME GEMSPEC INCL_USAGE INCL_COMMANDS INCL_ASESSION INCL_TRSPEC}.each do |e|
+  raise "missing env var #{e}" unless ENV.has_key?(e)
+  raise "missing file #{ENV[e]}" unless File.exist?(ENV[e]) or !e.start_with?('INCL_') #_
+end
+cmd=ENV["EXENAME"] # just command name
+tool='`'+cmd+'`'   # used in text with formatting of command
+evp=cmd.upcase+'_' # prefix for env vars
+opprst='option preset' # just the name for "option preset"
+prst='['+opprst+'](#lprt)'
+prsts='['+opprst+'s](#lprt)'
+prstt=opprst.capitalize # in title
+gemspec=Gem::Specification::load(ENV["GEMSPEC"]) or raise "error loading #{ENV["GEMSPEC"]}"
+geminstadd=gemspec.version.to_s.match(/\.[^0-9]/)?' --pre':''
+-%>
 # <%=tool%> : a Command Line for IBM Aspera products
 
-Version : <%= ENV["VERSION"] %>
+Version : <%= gemspec.version.to_s %>
 
 _Laurent/2016-<%=Time.new.year%>_
 
 This gem provides a command line interface to Aspera Applications.
 
 Location (once released):
-[https://rubygems.org/gems/aspera-cli](https://rubygems.org/gems/aspera-cli)
+[<%= gemspec.homepage %>](<%= gemspec.homepage %>)
 
 Disclaimers:
 
@@ -38,7 +52,7 @@ Once the gem is installed, <%=tool%> shall be accessible:
 
 ```
 $ <%=cmd%> --version
-<%= ENV["VERSION"] %>
+<%= gemspec.version.to_s %>
 ```
 
 ## First use
@@ -106,7 +120,7 @@ Then, follow the section relative to the product you want to interact with ( Asp
 In order to use the tool or the gem, it is necessary to install those components:
 
 * [Ruby](#ruby)
-* [aspera-cli](#the_gem)
+* [<%= gemspec.name %>](#the_gem)
 * [FASP](#fasp_prot)
 
 The following sections provide information on the installation.
@@ -114,8 +128,7 @@ The following sections provide information on the installation.
 ## <a name="ruby"></a>Ruby
 
 A ruby interpreter is required to run the tool or to use the gem and tool.
-It is required to have privilege to install gems.
-Ruby 2.5+ is prefered, but it should also work with 2.1+.
+The Ruby version shall be <%= gemspec.required_ruby_version %>.
 Any type of Ruby installation can be used.
 
 Refer to the following sections for a proposed method for specific operating systems.
@@ -123,10 +136,10 @@ Refer to the following sections for a proposed method for specific operating sys
 ### macOS
 
 
-MacOS 10.13+ (High Sierra) comes with a recent Ruby, so you can use it directly, you will need to install aspera-cli using `sudo` :
+MacOS 10.13+ (High Sierra) comes with a recent Ruby, so you can use it directly, you will need to install <%= gemspec.name %> using `sudo` :
 
 ```
-$ sudo gem install aspera-cli<%=geminstadd%>
+$ sudo gem install <%= gemspec.name %><%=geminstadd%>
 ```
 
 Alternatively, if you use [Homebrew](https://brew.sh/) already you can install Ruby with it:
@@ -200,18 +213,18 @@ For instance to build from source, and install in `/opt/ruby` :
 # make install
 ```
 
-## <a name="the_gem"></a>`aspera-cli` gem
+## <a name="the_gem"></a>`<%= gemspec.name %>` gem
 
 Once you have Ruby and rights to install gems: Install the gem and its dependencies:
 
 ```
-# gem install aspera-cli<%=geminstadd%>
+# gem install <%= gemspec.name %><%=geminstadd%>
 ```
 
 To upgrade to the latest version:
 
 ```
-# gem update aspera-cli
+# gem update <%= gemspec.name %>
 ```
 
 ## <a name="fasp_prot"></a>FASP Protocol
@@ -241,7 +254,7 @@ other methods are available. Refer to section: [Transfer Agents](#agents)
 
 # <a name="cli"></a>Command Line Interface: <%=tool%>
 
-The `aspera-cli` Gem provides a command line interface (CLI) which interacts with Aspera Products (mostly using REST APIs):
+The `<%= gemspec.name %>` Gem provides a command line interface (CLI) which interacts with Aspera Products (mostly using REST APIs):
 
 * IBM Aspera High Speed Transfer Server (FASP and Node)
 * IBM Aspera on Cloud (including ATS)
@@ -988,7 +1001,7 @@ All standard _transfer-spec_ parameters can be overloaded. To display parameters
 run in debug mode (--log-level=debug). [_transfer-spec_](#transferspec) can
 also be saved/overridden in the config file.
 
-<%= File.read("#{ENV['DIR_DOC']}transfer_spec.html").gsub(/.*<body>(.*)<\/body>.*/m,'\1') %>
+<%= File.read(ENV['INCL_TRSPEC']).gsub(/.*<body>(.*)<\/body>.*/m,'\1') %>
 
 ### Destination folder for transfers
 
@@ -1134,7 +1147,7 @@ Usually the OS native scheduler shall already provide some sort of such protecti
 A non complete list of commands used in unit tests:
 
 ```
-<%= File.read(ENV["COMMANDS"]) %>
+<%= File.read(ENV["INCL_COMMANDS"]) %>
 ...and more
 ```
 
@@ -1142,7 +1155,7 @@ A non complete list of commands used in unit tests:
 
 ```
 $ <%=cmd%> -h
-<%= File.read(ENV["USAGE"]) %>
+<%= File.read(ENV["INCL_USAGE"]) %>
 
 ```
 
@@ -2508,7 +2521,7 @@ Nodejs: [https://www.npmjs.com/package/aspera](https://www.npmjs.com/package/asp
 
 ```
 $ asession -h
-<%= File.read(ENV["ASESSION"]) %>
+<%= File.read(ENV["INCL_ASESSION"]) %>
 ```
 
 # Hot folder
@@ -2608,13 +2621,13 @@ So, it evolved into <%=tool%>:
 
 * 4.0.0.pre1
 
-        * now available as open source at [https://github.com/IBM/aspera-cli](https://github.com/IBM/aspera-cli) with general cleanup
-        * changed default tool name from `mlia` to `ascli`
-        * changed `aspera` command to `oncloud`
-        * changed gem name from `asperalm` to `aspera-cli`
-        * changed module name from `Asperalm` to `Aspera`
-        * removed command `folder` in `preview`, merged to `scan`
-        * persistency files go to sub folder instead of main folder
+	* now available as open source at [<%= gemspec.homepage %>](<%= gemspec.homepage %>) with general cleanup
+	* changed default tool name from `mlia` to `ascli`
+	* changed `aspera` command to `oncloud`
+	* changed gem name from `asperalm` to `aspera-cli`
+	* changed module name from `Asperalm` to `Aspera`
+	* removed command `folder` in `preview`, merged to `scan`
+	* persistency files go to sub folder instead of main folder
 
 * 0.11.8
 
