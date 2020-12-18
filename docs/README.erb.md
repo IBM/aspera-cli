@@ -2347,8 +2347,7 @@ using one of three overwrite method:
 
 Deletion of preview for deleted source files: not implemented yet.
 
-If the `scan` or `events` detection method is used, then the option : `skip_folders` can be used
-to skip some folders. It expects a list of path starting with slash, use the `@json:` notation, example:
+If the `scan` or `events` detection method is used, then the option : `skip_folders` can be used to skip some folders. It expects a list of path relative to the storage root (docroot) starting with slash, use the `@json:` notation, example:
 
 ```
 $ <%=cmd%> preview scan --skip-folders=@json:'["/not_here"]'
