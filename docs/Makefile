@@ -38,16 +38,20 @@ $(DIR_TOP)README.md: $(DIR_DOC)README.erb.md $(DIR_DOC)transfer_spec.html $(INCL
 
 $(INCL_COMMANDS): $(DIR_TMP).exists $(TEST_MAKEFILE)
 	sed -nEe 's/.*\$$\(EXE_MAN.?\)/$(EXENAME)/p' $(TEST_MAKEFILE) > $(DIR_TMP)usg1.txt
-	sed -i.bak -Ee 's/\$$\((DIR_[^)]+)\)/\1\//g' $(DIR_TMP)usg1.txt
+	sed -i.bak -Ee 's/\$$\$$\{([a-z_]+)\}/my_\1/g' $(DIR_TMP)usg1.txt
 	sed -i.bak -Ee 's/\$$\(([^)]+)\)/\1/g' $(DIR_TMP)usg1.txt
-	sed -i.bak -Ee 's/CF_([0-9A-Z_]*)/MY_\1/g' $(DIR_TMP)usg1.txt
 	sed -i.bak -Ee 's/\$$(\$$)/\1/g' $(DIR_TMP)usg1.txt
-	sed -i.bak -Ee 's/"'"'"'"\$${([a-z_]+)}"'"'"'"/"my_\1"/g' $(DIR_TMP)usg1.txt
-	sed -i.bak -Ee 's/="\$${([a-z_]+)}"/="my_\1"/g' $(DIR_TMP)usg1.txt
-	sed -i.bak -Ee 's/\$$@/xyz/g' $(DIR_TMP)usg1.txt
-	sed -i.bak -Ee 's/"'"'"'"/"/g' $(DIR_TMP)usg1.txt
+	sed -i.bak -Ee 's/\$$@/test/g' $(DIR_TMP)usg1.txt
 	sed -i.bak -Ee 's/"'"'"'/"/g' $(DIR_TMP)usg1.txt
 	sed -i.bak -Ee 's/'"'"'"/"/g' $(DIR_TMP)usg1.txt
+	sed -i.bak -Ee 's/""/"/g' $(DIR_TMP)usg1.txt
+	sed -i.bak -Ee 's/CF_//g' $(DIR_TMP)usg1.txt
+	sed -i.bak -Ee 's/DIR_[A-Z]+//g' $(DIR_TMP)usg1.txt
+	sed -i.bak -Ee 's/LOCAL_SAMPLE_FILE(NAME|PATH)/testfile.bin/g' $(DIR_TMP)usg1.txt
+	sed -i.bak -Ee 's/HSTS_FOLDER_UPLOAD/folder_1/g' $(DIR_TMP)usg1.txt
+	sed -i.bak -Ee 's/PKG_TEST_TITLE/Important files delivery/g' $(DIR_TMP)usg1.txt
+	sed -i.bak -Ee 's/AOC_EXTERNAL_EMAIL/external.user@example.com/g' $(DIR_TMP)usg1.txt
+	sed -i.bak -Ee 's/EMAIL_ADDR/internal.user@example.com/g' $(DIR_TMP)usg1.txt
 	sort -u < $(DIR_TMP)usg1.txt > $(INCL_COMMANDS)
 # generated help of tools depends on all sources, so regenerate always
 .PHONY: $(INCL_USAGE)
