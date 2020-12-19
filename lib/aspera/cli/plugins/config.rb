@@ -686,7 +686,11 @@ module Aspera
               'privateKeyFilename' => key_basename,
               'username'           => self.options.get_option(:username,:mandatory)
             }
-            new_conf['clientId'],new_conf['clientSecret']=OnCloud.get_client_ids(self.options.get_option(:client_id,:optional),self.options.get_option(:client_secret,:optional))
+            new_conf['clientId']=self.options.get_option(:client_id,:optional)
+            new_conf['clientSecret']=self.options.get_option(:client_secret,:optional)
+            if new_conf['clientId'].nil?
+              new_conf['clientId'],new_conf['clientSecret']=OnCloud.get_client_info()
+            end
             entry=data['AoCAccounts'].select{|i|i['organization'].eql?(organization)}.first
             if entry.nil?
               data['AoCAccounts'].push(new_conf)
