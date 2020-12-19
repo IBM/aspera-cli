@@ -22,6 +22,7 @@ Gem::Specification.new do |spec|
   spec.metadata['homepage_uri']      = spec.homepage
   spec.metadata['source_code_uri']   = spec.homepage
   spec.metadata['changelog_uri']     = spec.homepage
+  spec.metadata['rubygems_uri']     = 'https://rubygems.org/gems/'+spec.name
   # assume this gemspec is in the root folder of project, and list git files from there
   Dir.chdir(File.dirname(gemspec_file)) do
     spec.files       =`git ls-files -z lib docs bin examples README.md`.split("\x0")

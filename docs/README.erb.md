@@ -24,7 +24,7 @@ _Laurent/2016-<%=Time.new.year%>_
 This gem provides a command line interface to Aspera Applications.
 
 Location (once released):
-[<%= gemspec.homepage %>](<%= gemspec.homepage %>)
+[<%= gemspec.metadata['rubygems_uri'] %>](<%= gemspec.metadata['rubygems_uri'] %>)
 
 Disclaimers:
 
