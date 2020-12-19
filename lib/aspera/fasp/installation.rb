@@ -1,6 +1,7 @@
 require 'singleton'
 require 'aspera/log'
 require 'aspera/open_application' # current_os_type
+require 'aspera/data_repository'
 
 require 'xmlsimple'
 require 'zlib'
@@ -126,9 +127,9 @@ module Aspera
         return File.join(connect[:app_root],BIN_SUBFOLDER,'.aspera_cli_conf')
       end
 
-      # add Aspera private keys for web access, token based authorization
+      # default bypass key phrase
       def bypass_pass
-        return "%08x-%04x-%04x-%04x-%04x%08x" % get_bin(3).unpack("NnnnnN")
+        return "%08x-%04x-%04x-%04x-%04x%08x" % DataRepository.instance.get_bin(3).unpack("NnnnnN")
       end
 
       def bypass_keys
@@ -232,14 +233,9 @@ module Aspera
         end
       end
 
-      # get binary value from data repository
-      def get_bin(id)
-        File.read(File.join(File.expand_path(File.dirname(__FILE__)),'data',id.to_s))
-      end
-
       def get_key(type,id)
         hf=['begin','end'].map{|t|"-----#{t} #{type} private key-----".upcase}
-        bin=Base64.strict_encode64(get_bin(id))
+        bin=Base64.strict_encode64(DataRepository.instance.get_bin(id))
         hf.insert(1,bin).join("\n")
       end
 
