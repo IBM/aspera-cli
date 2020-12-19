@@ -175,7 +175,7 @@ module Aspera
         aoc_auth_p[:redirect_uri] = opt[:redirect_uri]
       when :jwt
         # add jwt payload for global ids
-        if CLIENT_APPS.keys.include?(aoc_auth_p[:client_id])
+        if CLIENT_APPS.include?(aoc_auth_p[:client_id])
           aoc_auth_p.merge!({:jwt_add=>{org: organization}})
         end
         raise ArgumentError,"Missing mandatory option: private_key" if opt[:private_key].nil?
