@@ -15,20 +15,17 @@ INCL_TRSPEC=$(DIR_DOC)transfer_spec.html
 export EXENAME GEMSPEC INCL_USAGE INCL_COMMANDS INCL_ASESSION INCL_TRSPEC
 
 TMPL_TEST_CONF=$(DIR_DOC)$(TEST_CONF_FILE_BASE)
-TMPL_SECRETS=$(DIR_DOC)$(SECRETS_FILE_NAME)
 
 MANUAL_BASE=$(DIR_DOC)Manual_$(EXENAME)_$(GEMVERSION)
 MANUAL_PDF=$(MANUAL_BASE).pdf
 MANUAL_HTML=$(MANUAL_BASE).html
 
 # main target to build doc
-all:: $(MANUAL_PDF) $(TMPL_SECRETS) $(TMPL_TEST_CONF)
+all:: $(MANUAL_PDF) $(TMPL_TEST_CONF)
 
 doc: all
 
-# generate template configuration files, remove own secrets
-$(TMPL_SECRETS): $(SECRETS_FILE_PATH)
-	sed 's/=.*/=_value_here_/' < $(SECRETS_FILE_PATH) > $(TMPL_SECRETS)
+# generate template configuration file for tests, remove own secrets
 $(TMPL_TEST_CONF): $(TEST_CONF_FILE_PATH)
 	ruby -e 'require "yaml";n={};c=YAML.load_file("$(TEST_CONF_FILE_PATH)").each{|k,v| n[k]=["config","default"].include?(k)?v:v.keys.inject({}){|m,i|m[i]="your value here";m}};File.write("$(TMPL_TEST_CONF)",n.to_yaml)'
 

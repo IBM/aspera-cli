@@ -7,9 +7,6 @@ DIR_TOP=
 
 include $(DIR_TOP)common.make
 
-# contains secrets, create your own from template in docs
-include $(SECRETS_FILE_PATH)
-
 all:: gem doc
 
 doc:
