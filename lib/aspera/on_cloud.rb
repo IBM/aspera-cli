@@ -1,6 +1,7 @@
 require 'aspera/log'
 require 'aspera/rest'
 require 'aspera/hash_ext'
+require 'aspera/data_repository'
 require 'base64'
 
 module Aspera
@@ -13,13 +14,9 @@ module Aspera
     PROD_DOMAIN='ibmaspera.com'
     # to avoid infinite loop in pub link redirection
     MAX_REDIRECT=10
-    DEFAULT_CLIENT='aspera.global-cli-client'
-    # Random generator seed
-    # strings /Applications/Aspera\ Drive.app/Contents/MacOS/AsperaDrive|grep -E '.{100}==$'|base64 --decode
-    CLIENT_RANDOM={
-      'aspera.drive' => '1FwelGbL9xsv3M8H-VXPs5k69OdbaMgfB66qfBqlELFPk6r9ANztmGMOSLqaXEWXEPwk-6JnMZ7-RaXAYLd5thLbcL3QzgeU',
-      'aspera.global-cli-client' => 'bK_qpqFpP-OPEuRJ9mnmdw_ebLtpSqCnqhuAKfKdoLXC6OF2yLMgsfAMBmXg7XI_zplV4gBqNOvlJdgCxlP0Zjm4GsRsmprf'
-    }
+    CLIENT_APPS=['aspera.global-cli-client','aspera.drive']
+    DATA_REPO_INDEX_START = 4
+
     # path in URL of public links
     PATHS_PUBLIC_LINK=['/packages/public/receive','/packages/public/send','/files/public']
     JWT_AUDIENCE='https://api.asperafiles.com/api/v1/oauth2/token'
@@ -30,7 +27,7 @@ module Aspera
       'fasp_port'   => 33001
     }
 
-    private_constant :PRODUCT_NAME,:PROD_DOMAIN,:MAX_REDIRECT,:DEFAULT_CLIENT,:CLIENT_RANDOM,:PATHS_PUBLIC_LINK,:JWT_AUDIENCE,:OAUTH_API_SUBPATH,:DEFAULT_TSPEC_INFO
+    private_constant :PRODUCT_NAME,:PROD_DOMAIN,:MAX_REDIRECT,:CLIENT_APPS,:PATHS_PUBLIC_LINK,:JWT_AUDIENCE,:OAUTH_API_SUBPATH,:DEFAULT_TSPEC_INFO
 
     public
     # various API scopes supported
@@ -45,9 +42,16 @@ module Aspera
     FILES_APP='files'
     PACKAGES_APP='packages'
 
-    def self.get_client_ids(id,secret,client_name=DEFAULT_CLIENT)
-      return id,secret unless id.nil? and secret.nil?
-      return client_name,CLIENT_RANDOM[client_name].reverse
+    CLIENT_RANDOM={
+      'aspera.global-cli-client' => 'frpmsRsG4mjZ0PlxCgdJlvONqBg4Vlpz_IX7gXmBMAfsgMLy2FO6CXLodKfKAuhqnCqSptLbe_wdmnm9JRuEPO-PpFqpq_Kb',
+      'aspera.drive' => 'UegzQ3LcbLht5dLYAXaR-7ZMnJ6-kwPEXWEXaqLSOMGmtzNA9r6kPFLElqBfq66BfgMabdO96k5sPXV-H8M3vsx9LbGlewF1'
+    }
+
+    def self.get_client_info(client_name=CLIENT_APPS.first)
+      client_index=CLIENT_APPS.index(client_name)
+      raise "no such pre-defined client: #{client_name}" if client_index.nil?
+      # strings /Applications/Aspera\ Drive.app/Contents/MacOS/AsperaDrive|grep -E '.{100}==$'|base64 --decode
+      return client_name,Base64.urlsafe_encode64(DataRepository.instance.get_bin(DATA_REPO_INDEX_START+client_index))
     end
 
     # @param url of AoC instance
@@ -149,13 +153,18 @@ module Aspera
       aoc_rest_p[:base_url]="#{api_base_url}/#{opt[:subpath]}"
       # base auth URL
       aoc_auth_p[:base_url] = "#{api_base_url}/#{OAUTH_API_SUBPATH}/#{organization}"
+      aoc_auth_p[:client_id]=opt[:client_id]
+      aoc_auth_p[:client_secret] = opt[:client_secret]
 
       if !aoc_auth_p.has_key?(:grant)
         raise ArgumentError,"Missing mandatory option: auth" if opt[:auth].nil?
         aoc_auth_p[:grant] = opt[:auth]
       end
 
-      aoc_auth_p[:client_id],aoc_auth_p[:client_secret] = self.class.get_client_ids(opt[:client_id],opt[:client_secret])
+      if aoc_auth_p[:client_id].nil?
+        aoc_auth_p[:client_id],aoc_auth_p[:client_secret] = self.class.get_client_info()
+      end
+
       raise ArgumentError,"Missing mandatory option: scope" if opt[:scope].nil?
       aoc_auth_p[:scope] = opt[:scope]
 
@@ -166,7 +175,7 @@ module Aspera
         aoc_auth_p[:redirect_uri] = opt[:redirect_uri]
       when :jwt
         # add jwt payload for global ids
-        if CLIENT_RANDOM.keys.include?(aoc_auth_p[:client_id])
+        if CLIENT_APPS.keys.include?(aoc_auth_p[:client_id])
           aoc_auth_p.merge!({:jwt_add=>{org: organization}})
         end
         raise ArgumentError,"Missing mandatory option: private_key" if opt[:private_key].nil?
