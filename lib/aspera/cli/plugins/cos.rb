@@ -51,7 +51,9 @@ module Aspera
               # read endpoints from service provided in service credentials
               endpoints=Aspera::Rest.new({:base_url=>service_credentials['endpoints']}).read('')[:data]
               Aspera::Log.dump('endpoints',endpoints)
-              storage_endpoint='https://'+endpoints['service-endpoints']['regional'][bucket_region]['public'][bucket_region]
+              storage_endpoint=endpoints.dig('service-endpoints','regional',bucket_region,'public',bucket_region)
+              raise "no such region: #{bucket_region}" if storage_endpoint.nil?
+              storage_endpoint='https://'+storage_endpoint
             end
 
             s3_api=Aspera::Rest.new({
