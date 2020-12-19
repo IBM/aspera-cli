@@ -4,7 +4,6 @@
 DIR_TOP=../
 
 include $(DIR_TOP)common.make
-include $(SECRETS_FILE_PATH)
 
 all:: tunit tshares tfaspex tconsole tnode taoc tfasp tsync torc tcon tnsync tconf tprev tats tsample tcos tf5
 # tshares2 tnagios
@@ -25,6 +24,10 @@ CF_TSTFILE_DCM := $(shell $(EXE_NOMAN) conf id misc get file_dcm)
 CF_TSTFILE_PDF := $(shell $(EXE_NOMAN) conf id misc get file_pdf)
 CF_TSTFILE_DOCX := $(shell $(EXE_NOMAN) conf id misc get file_docx)
 CF_TSTFILE_MXF := $(shell $(EXE_NOMAN) conf id misc get file_mxf)
+CF_AOC_NODE1_NAME := $(shell $(EXE_NOMAN) conf id misc get aoc_node1_name)
+CF_AOC_NODE1_SECRET := $(shell $(EXE_NOMAN) conf id misc get aoc_node1_secret)
+CF_EMAIL_ADDR := $(shell $(EXE_NOMAN) conf id misc get email_internal)
+CF_AOC_EXTERNAL_EMAIL := $(shell $(EXE_NOMAN) conf id misc get email_external)
 
 # setup local environment for preview generation testing
 setupprev:
@@ -32,10 +35,12 @@ setupprev:
 	sudo asnodeadmin -a -u $$($(EXE_NOMAN) conf id tst_node_preview get username) -p $$($(EXE_NOMAN) conf id tst_node_preview get password) -x xfer --acl-set admin,impersonation
 	sudo asconfigurator -x "user;user_name,xfer;file_restriction,|*;token_encryption_key,$$(base64 < /dev/urandom|head -c32);absolute,AS_NULL"
 	sudo asconfigurator -x "server;activity_logging,true;activity_event_logging,true"
-	sudo asnodeadmin --reload
+	-sudo launchctl load  /Library/LaunchDaemons/com.aspera.asperanoded.plist
+	sudo launchctl stop com.aspera.asperanoded
+	sudo launchctl start com.aspera.asperanoded
 	-$(EXE_NOMAN) node -N -Ptst_node_preview access_key delete --id=$$($(EXE_NOMAN) conf id tst_ak_preview get username)
 	$(EXE_NOMAN) node -N -Ptst_node_preview access_key create --value=@json:'{"id":"'$$($(EXE_NOMAN) conf id tst_ak_preview get username)'","name":"the test key","secret":"'$$($(EXE_NOMAN) conf id tst_ak_preview get password)'","storage":{"type":"local", "path":"/Users/xfer/docroot"}}'
-
+	rm -f ~/.aspera/$(EXENAME)/persist_store/preview_iteration_transfer_localhost_testkey.txt
 noderestart:
 	sudo launchctl stop com.aspera.asperanoded
 	sudo launchctl start com.aspera.asperanoded
@@ -357,8 +362,12 @@ $(T)aocffid: $(T).exists
 	@touch $@
 $(T)aocfpub: $(T).exists
 	@echo $@
-	$(EXE_MAN) oncloud files browse / -N --link=$(CF_AOC_PUBLINK_FOLDER)
-	$(EXE_MAN) oncloud files upload -N --to-folder=/ $(CF_LOCAL_SAMPLE_FILEPATH) --link=$(CF_AOC_PUBLINK_FOLDER)
+	set -x;\
+	aoc_publink_folder=$$($(EXE_NOMAN) conf id misc get aoc_publink_folder);\
+	$(EXE_MAN) oncloud files browse / -N --link=$${aoc_publink_folder}
+	set -x;\
+	aoc_publink_folder=$$($(EXE_NOMAN) conf id misc get aoc_publink_folder);\
+	$(EXE_MAN) oncloud files upload -N --to-folder=/ $(CF_LOCAL_SAMPLE_FILEPATH) --link=$${aoc_publink_folder}
 	@touch $@
 $(T)aocshlk1: $(T).exists
 	@echo $@
@@ -393,22 +402,29 @@ $(T)aocp4: $(T).exists
 	@touch $@
 $(T)aocp5: $(T).exists
 	@echo $@
-	set -x;aoc_publink_recv_from_aocuser=$$($(EXE_NOMAN) conf id misc get aoc_publink_recv_from_aocuser);\
-	$(EXE_MAN) oncloud org -N --link=$(CF_AOC_PUBLINK_RECV_PACKAGE)
+	set -x;\
+	aoc_publink_recv_from_aocuser=$$($(EXE_NOMAN) conf id misc get aoc_publink_recv_from_aocuser);\
+	$(EXE_MAN) oncloud org -N --link=$${aoc_publink_recv_from_aocuser}
 	@touch $@
 $(T)aocp6: $(T).exists
 	@echo $@
-	$(EXE_MAN) oncloud packages send -N --value=@json:'{"name":"'"$(PKG_TEST_TITLE)"'"}' $(CF_LOCAL_SAMPLE_FILEPATH) --link=$(CF_AOC_PUBLINK_SEND_DROPBOX)
+	set -x;\
+	aoc_publink_send_shd_inbox=$$($(EXE_NOMAN) conf id misc get aoc_publink_send_shd_inbox);\
+	$(EXE_MAN) oncloud packages send -N --value=@json:'{"name":"'"$(PKG_TEST_TITLE)"'"}' $(CF_LOCAL_SAMPLE_FILEPATH) --link=$${aoc_publink_send_shd_inbox}
 	@touch $@
 $(T)aocp7: $(T).exists
 	@echo $@
-	$(EXE_MAN) oncloud packages send -N --value=@json:'{"name":"'"$(PKG_TEST_TITLE)"'"}' $(CF_LOCAL_SAMPLE_FILEPATH) --link=$(CF_AOC_PUBLINK_SEND_USER)
+	set -x;\
+	aoc_publink_send_aoc_user=$$($(EXE_NOMAN) conf id misc get aoc_publink_send_aoc_user);\
+	$(EXE_MAN) oncloud packages send -N --value=@json:'{"name":"'"$(PKG_TEST_TITLE)"'"}' $(CF_LOCAL_SAMPLE_FILEPATH) --link=$${aoc_publink_send_aoc_user}
 	@touch $@
 $(T)aocp8: $(T).exists
 	@echo $@
-	$(EXE_MAN) oncloud packages send --workspace="$(CF_AOC_SH_BX_WS)" --value=@json:'{"name":"'"$(PKG_TEST_TITLE)"'","recipients":["$(CF_AOC_SH_BX_NAME)"]}' $(CF_LOCAL_SAMPLE_FILEPATH)
+	set -x;\
+	aoc_shbx_ws=$$($(EXE_NOMAN) conf id misc get aoc_shbx_ws);\
+	aoc_shbx_name=$$($(EXE_NOMAN) conf id misc get aoc_shbx_name);\
+	$(EXE_MAN) oncloud packages send --workspace="$${aoc_shbx_ws}" --value=@json:'{"name":"'"$(PKG_TEST_TITLE)"'","recipients":["'$${aoc_shbx_name}'"]}' $(CF_LOCAL_SAMPLE_FILEPATH)
 	@touch $@
-
 taocp: $(T)aocp1 $(T)aocp2 $(T)aocp3 $(T)aocp4 $(T)aocp5 $(T)aocp5 $(T)aocp6 $(T)aocp7 $(T)aocp8
 $(T)aoc8: $(T).exists
 	@echo $@
@@ -465,11 +481,22 @@ $(T)aocat7: $(T).exists
 	@touch $@
 # see https://developer.ibm.com/api/view/aspera-prod:ibm-aspera:title-IBM_Aspera#113433
 $(T)aocat8: $(T).exists
-	-$(EXE_MAN) oncloud admin ats access_key create --cloud=softlayer --region=$(CF_ICOS_REGION) --params=@json:'{"id":"akibmcloud","secret":"somesecret","name":"my test key","storage":{"type":"ibm-s3","bucket":"$(CF_ICOS_BUCKET)","credentials":{"access_key_id":"$(CF_ICOS_AK_ID)","secret_access_key":"$(CF_ICOS_SECRET_AK)"},"path":"/"}}'
+	@echo $@
+	set -x;\
+	icos_bucket_region=$$($(EXE_NOMAN) conf id misc get icos_bucket_region);\
+	icos_bucket_name=$$($(EXE_NOMAN) conf id misc get icos_bucket_name);\
+	icos_bucket_key=$$($(EXE_NOMAN) conf id misc get icos_bucket_key);\
+	icos_bucket_secret=$$($(EXE_NOMAN) conf id misc get icos_bucket_secret);\
+	$(EXE_MAN) oncloud admin ats access_key create --cloud=softlayer --region=$${icos_bucket_region} --params=@json:'{"id":"akibmcloud","secret":"somesecret","name":"my test key","storage":{"type":"ibm-s3","bucket":"'$${icos_bucket_name}'","credentials":{"access_key_id":"'$${icos_bucket_key}'","secret_access_key":"'$${icos_bucket_secret}'"},"path":"/"}}'
 	@touch $@
 $(T)aocat9: $(T).exists
 	@echo $@
-	-$(EXE_MAN) oncloud admin ats access_key create --cloud=aws --region=$(CF_AWS_REGION) --params=@json:'{"id":"ak_aws","name":"my test key AWS","storage":{"type":"aws_s3","bucket":"'$(CF_AWS_BUCKET)'","credentials":{"access_key_id":"'$(CF_AWS_ACCESS_KEY)'","secret_access_key":"'$(CF_AWS_SECRET_KEY)'"},"path":"/"}}'
+	-set -x;\
+	aws_bucket_region=$$($(EXE_NOMAN) conf id misc get aws_bucket_region);\
+	aws_bucket_name=$$($(EXE_NOMAN) conf id misc get aws_bucket_name);\
+	aws_bucket_key=$$($(EXE_NOMAN) conf id misc get aws_bucket_key);\
+	aws_bucket_secret=$$($(EXE_NOMAN) conf id misc get aws_bucket_secret);\
+	$(EXE_MAN) oncloud admin ats access_key create --cloud=aws --region=$${aws_bucket_region} --params=@json:'{"id":"ak_aws","name":"my test key AWS","storage":{"type":"aws_s3","bucket":"'$${aws_bucket_name}'","credentials":{"access_key_id":"'$${aws_bucket_key}'","secret_access_key":"'$${aws_bucket_secret}'"},"path":"/"}}'
 	@touch $@
 $(T)aocat10: $(T).exists
 	@echo $@
@@ -580,11 +607,22 @@ $(T)at3: $(T).exists
 	$(EXE_MAN) ats api_key create
 	@touch $@
 $(T)at8: $(T).exists
-	$(EXE_MAN) ats access_key create --cloud=softlayer --region=$(CF_ICOS_REGION) --params=@json:'{"id":"akibmcloud","secret":"somesecret","name":"my test key","storage":{"type":"ibm-s3","bucket":"$(CF_ICOS_BUCKET)","credentials":{"access_key_id":"$(CF_ICOS_AK_ID)","secret_access_key":"$(CF_ICOS_SECRET_AK)"},"path":"/"}}'
+	@echo $@
+	set -x;\
+	icos_bucket_region=$$($(EXE_NOMAN) conf id misc get icos_bucket_region);\
+	icos_bucket_name=$$($(EXE_NOMAN) conf id misc get icos_bucket_name);\
+	icos_bucket_key=$$($(EXE_NOMAN) conf id misc get icos_bucket_key);\
+	icos_bucket_secret=$$($(EXE_NOMAN) conf id misc get icos_bucket_secret);\
+	$(EXE_MAN) ats access_key create --cloud=softlayer --region=$${icos_bucket_region} --params=@json:'{"id":"akibmcloud","secret":"somesecret","name":"my test key","storage":{"type":"ibm-s3","bucket":"'$${icos_bucket_name}'","credentials":{"access_key_id":"'$${icos_bucket_key}'","secret_access_key":"'$${icos_bucket_secret}'"},"path":"/"}}'
 	@touch $@
 $(T)at9: $(T).exists
 	@echo $@
-	-$(EXE_MAN) ats access_key create --cloud=aws --region=$(CF_AWS_REGION) --params=@json:'{"id":"ak_aws","name":"my test key AWS","storage":{"type":"aws_s3","bucket":"'$(CF_AWS_BUCKET)'","credentials":{"access_key_id":"'$(CF_AWS_ACCESS_KEY)'","secret_access_key":"'$(CF_AWS_SECRET_KEY)'"},"path":"/"}}'
+	-set -x;\
+	aws_bucket_region=$$($(EXE_NOMAN) conf id misc get aws_bucket_region);\
+	aws_bucket_name=$$($(EXE_NOMAN) conf id misc get aws_bucket_name);\
+	aws_bucket_key=$$($(EXE_NOMAN) conf id misc get aws_bucket_key);\
+	aws_bucket_secret=$$($(EXE_NOMAN) conf id misc get aws_bucket_secret);\
+	$(EXE_MAN) ats access_key create --cloud=aws --region=$${aws_bucket_region} --params=@json:'{"id":"ak_aws","name":"my test key AWS","storage":{"type":"aws_s3","bucket":"'$${aws_bucket_name}'","credentials":{"access_key_id":"'$${aws_bucket_key}'","secret_access_key":"'$${aws_bucket_secret}'"},"path":"/"}}'
 	@touch $@
 $(T)at10: $(T).exists
 	@echo $@
@@ -718,14 +756,20 @@ SAMPLE_CONFIG_FILE=$(DIR_TMP)tmp_config.yml
 $(T)conf_wizard_org: $(T).exists
 	@echo $@
 	$(EXE_MAN) conf flush_tokens
-	$(EXE_MAN) conf wiz --url=https://$(CF_AOC_ORG).ibmaspera.com --config-file=$(SAMPLE_CONFIG_FILE) --pkeypath='' --username=$(CF_AOC_USER) --test-mode=yes --use-generic-client=yes
+	set -x;\
+	aoc_org=$$($(EXE_NOMAN) conf id misc get aoc_org);\
+	aoc_user=$$($(EXE_NOMAN) conf id misc get aoc_user);\
+	$(EXE_MAN) conf wiz --url=https://$${aoc_org}.ibmaspera.com --config-file=$(SAMPLE_CONFIG_FILE) --pkeypath='' --username=$${aoc_user} --test-mode=yes --use-generic-client=yes
 	cat $(SAMPLE_CONFIG_FILE)
 	rm -f $(SAMPLE_CONFIG_FILE)
 	@touch $@
 $(T)conf_wizard_gen: $(T).exists
 	@echo $@
 	$(EXE_MAN) conf flush_tokens
-	$(EXE_MAN) conf wiz --url=https://$(CF_AOC_ORG).ibmaspera.com --config-file=$(SAMPLE_CONFIG_FILE) --pkeypath='' --username=$(CF_AOC_USER) --test-mode=yes
+	set -x;\
+	aoc_org=$$($(EXE_NOMAN) conf id misc get aoc_org);\
+	aoc_user=$$($(EXE_NOMAN) conf id misc get aoc_user);\
+	$(EXE_MAN) conf wiz --url=https://$${aoc_org}.ibmaspera.com --config-file=$(SAMPLE_CONFIG_FILE) --pkeypath='' --username=$${aoc_user} --test-mode=yes
 	cat $(SAMPLE_CONFIG_FILE)
 	rm -f $(SAMPLE_CONFIG_FILE)
 	@touch $@
@@ -836,7 +880,12 @@ $(T)sync1: $(T).exists
 	@echo $@
 	mkdir -p $(DIR_TMP)contents
 	cp $(CF_LOCAL_SAMPLE_FILEPATH) $(DIR_TMP)contents
-	set -x;remote_host=$$($(EXE_NOMAN) conf id tst_server_bykey get url);remote_host=$${remote_host##*/};remote_port="$${remote_host}";remote_port=$${remote_host#*:};remote_host=$${remote_host%:*};\
+	set -x;\
+	remote_host=$$($(EXE_NOMAN) conf id tst_server_bykey get url);\
+	remote_host=$${remote_host##*/};\
+	remote_port="$${remote_host}";\
+	remote_port=$${remote_host#*:};\
+	remote_host=$${remote_host%:*};\
 	remote_user=$$($(EXE_NOMAN) conf id misc get syncuser);\
 	local_user_key=$$($(EXE_NOMAN) conf id local_user get ssh_keys);\
 	$(EXE_MAN) sync start --parameters=@json:'{"sessions":[{"name":"test","reset":true,"remote_dir":"/sync_test","local_dir":"$(DIR_TMP)contents","host":"'"$${remote_host}"'","tcp_port":33001,"user":"'"$${remote_user}"'","private_key_path":"'"$${local_user_key}"'"}]}'
@@ -850,7 +899,16 @@ tsample: $(T)sdk1
 
 $(T)tcos: $(T).exists
 	@echo $@
-	$(EXE_MAN) cos node -N --bucket=$(CF_ICOS_BUCKET) --service-credentials=@json:@file:$(DIR_PRIV)service_creds.json --region=$(CF_ICOS_REGION) info
+	set -x;\
+	icos_bucket_name=$$($(EXE_NOMAN) conf id misc get icos_bucket_name);\
+	icos_bucket_region=$$($(EXE_NOMAN) conf id misc get icos_bucket_region);\
+	$(EXE_MAN) cos -N --bucket=$${icos_bucket_name} --region=$${icos_bucket_region} --service-credentials=@json:@file:$(DIR_PRIV)service_creds.json node info
+	set -x;\
+	icos_bucket_name=$$($(EXE_NOMAN) conf id misc get icos_bucket_name);\
+	icos_bucket_endpoint=$$($(EXE_NOMAN) conf id misc get icos_bucket_endpoint);\
+	icos_bucket_apikey=$$($(EXE_NOMAN) conf id misc get icos_bucket_apikey);\
+	icos_resource_instance_id=$$($(EXE_NOMAN) conf id misc get icos_resource_instance_id);\
+	$(EXE_MAN) cos -N --bucket=$${icos_bucket_name} --endpoint=$${icos_bucket_endpoint} --apikey=$${icos_bucket_apikey} --crn=$${icos_resource_instance_id} node info
 	$(EXE_MAN) cos node info
 	$(EXE_MAN) cos node access_key --id=self show
 	$(EXE_MAN) cos node upload $(CF_LOCAL_SAMPLE_FILEPATH)
