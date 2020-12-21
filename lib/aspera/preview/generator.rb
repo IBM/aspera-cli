@@ -194,7 +194,7 @@ module Aspera
         ],
         out_f: @destination_file_path,
         out_p: [
-          '-vf',"fps=5,scale=120:-1:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse",
+          '-vf','fps=5,scale=120:-1:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse',
           '-loop',0,
           '-f','gif'
         ])
@@ -203,7 +203,6 @@ module Aspera
       def convert_office_to_png()
         tmp_pdf_file=File.join(this_tmpdir,File.basename(@source_file_path,File.extname(@source_file_path))+'.pdf')
         Utils.external_command(:unoconv,[
-
           '-f','pdf',
           '-o',tmp_pdf_file,
           @source_file_path])
@@ -213,7 +212,6 @@ module Aspera
       def convert_pdf_to_png(source_file_path=nil)
         source_file_path||=@source_file_path
         Utils.external_command(:convert,[
-
           '-size',"x#{@options.thumb_img_size}",
           '-background','white',
           '-flatten',
@@ -223,7 +221,6 @@ module Aspera
 
       def convert_image_to_png()
         Utils.external_command(:convert,[
-
           '-auto-orient',
           '-thumbnail',"#{@options.thumb_img_size}x#{@options.thumb_img_size}>",
           '-quality',95,
@@ -239,7 +236,6 @@ module Aspera
         # get 100 first lines of text file
         first_lines=File.open(@source_file_path){|f|100.times.map{f.readline rescue ''}}.join
         Utils.external_command(:convert,[
-
           '-size',"#{@options.thumb_img_size}x#{@options.thumb_img_size}",
           'xc:white',
           '-font','Courier',
