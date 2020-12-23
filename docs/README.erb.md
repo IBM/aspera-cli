@@ -398,7 +398,7 @@ The style of output can be set using the `format` parameter, supporting:
 Table output can be filtered using the `select` parameter. Example:
 
 ```
-$ <%=cmd%> aspera admin res user list --fields=name,email,ats_admin --query=@json:'{"per_page":1000,"page":1,"sort":"name"}' --select=@json:'{"ats_admin":true}'
+$ <%=cmd%> oncloud admin res user list --fields=name,email,ats_admin --query=@json:'{"per_page":1000,"page":1,"sort":"name"}' --select=@json:'{"ats_admin":true}'
 :...............................:..................................:...........:
 :             name              :              email               : ats_admin :
 :...............................:..................................:...........:
@@ -1204,7 +1204,7 @@ Setting config preset as default for aspera
 saving config file
 Done.
 You can test with:
-$ <%=cmd%> aspera user info show
+$ <%=cmd%> oncloud user info show
 ```
 
 Optionally, it is possible to create a new organization-specific "integration".
@@ -1332,13 +1332,13 @@ If you are not using the built-in client_id and secret, JWT needs to be authoriz
 * Using command line
 
 ```
-$ <%=cmd%> aspera admin res client list
+$ <%=cmd%> oncloud admin res client list
 :............:.........:
 :     id     :  name   :
 :............:.........:
 : BJLPObQiFw : <%=cmd%> :
 :............:.........:
-$ <%=cmd%> aspera admin res client --id=BJLPObQiFw modify @json:'{"jwt_grant_enabled":true,"explicit_authorization_required":false}'
+$ <%=cmd%> oncloud admin res client --id=BJLPObQiFw modify @json:'{"jwt_grant_enabled":true,"explicit_authorization_required":false}'
 modified
 ```
 
@@ -1359,14 +1359,14 @@ open the previously generated public key located here: `$HOME/.aspera/<%=cmd%>/a
 * Using command line
 
 ```
-$ <%=cmd%> aspera admin res user list
+$ <%=cmd%> oncloud admin res user list
 :........:................:
 :   id   :      name      :
 :........:................:
 : 109952 : Tech Support   :
 : 109951 : LAURENT MARTIN :
 :........:................:
-$ <%=cmd%> aspera user info modify @ruby:'{"public_key"=>File.read(File.expand_path("~/.aspera/<%=cmd%>/aocapikey.pub"))}'
+$ <%=cmd%> oncloud user info modify @ruby:'{"public_key"=>File.read(File.expand_path("~/.aspera/<%=cmd%>/aocapikey.pub"))}'
 modified
 ```
 
@@ -1396,7 +1396,7 @@ After this last step, commands do not require web login anymore.
 Once client has been registered and <%=prst%> created: <%=tool%> can be used:
 
 ```
-$ <%=cmd%> aspera files br /
+$ <%=cmd%> oncloud files br /
 Current Workspace: Default Workspace (default)
 empty
 ```
@@ -1430,7 +1430,7 @@ In order to access some administrative actions on "nodes" (in fact, access keys)
 secret is required, it is usually provided using the `secret` option. For example in a command like:
 
 ```
-$ <%=cmd%> aspera admin res node --id="access_key1" --secret="secret1" v3 info
+$ <%=cmd%> oncloud admin res node --id="access_key1" --secret="secret1" v3 info
 ```
 
 It is also possible to provide a set of secrets used on a regular basis. This can be done using the `secrets` option. The value provided shall be a Hash, where keys are access key ids, and values are the associated secrets.
@@ -1457,7 +1457,7 @@ A secret repository can always be selected at runtime using `--secrets=@preset:x
 * Bulk creation
 
 ```
-$ <%=cmd%> aspera admin res user create --bulk=yes @json:'[{"email":"dummyuser1@example.com"},{"email":"dummyuser2@example.com"}]'
+$ <%=cmd%> oncloud admin res user create --bulk=yes @json:'[{"email":"dummyuser1@example.com"},{"email":"dummyuser2@example.com"}]'
 :.......:.........:
 :  id   : status  :
 :.......:.........:
@@ -1469,17 +1469,17 @@ $ <%=cmd%> aspera admin res user create --bulk=yes @json:'[{"email":"dummyuser1@
 * Find with filter and delete
 
 ```
-$ <%=cmd%> aspera admin res user list --query='@json:{"q":"dummyuser"}' --fields=id,email
+$ <%=cmd%> oncloud admin res user list --query='@json:{"q":"dummyuser"}' --fields=id,email
 :.......:........................:
 :  id   :         email          :
 :.......:........................:
 : 98398 : dummyuser1@example.com :
 : 98399 : dummyuser2@example.com :
 :.......:........................:
-$ thelist=$(echo $(<%=cmd%> aspera admin res user list --query='@json:{"q":"dummyuser"}' --fields=id,email --field=id --format=csv)|tr ' ' ,)
+$ thelist=$(echo $(<%=cmd%> oncloud admin res user list --query='@json:{"q":"dummyuser"}' --fields=id,email --field=id --format=csv)|tr ' ' ,)
 $ echo $thelist
 98398,98399
-$ <%=cmd%> aspera admin res user --bulk=yes --id=@json:[$thelist] delete
+$ <%=cmd%> oncloud admin res user --bulk=yes --id=@json:[$thelist] delete
 :.......:.........:
 :  id   : status  :
 :.......:.........:
@@ -1491,7 +1491,7 @@ $ <%=cmd%> aspera admin res user --bulk=yes --id=@json:[$thelist] delete
 * Display current user's workspaces
 
 ```
-$ <%=cmd%> aspera user workspaces
+$ <%=cmd%> oncloud user workspaces
 :......:............................:
 :  id  :            name            :
 :......:............................:
@@ -1506,13 +1506,13 @@ $ <%=cmd%> aspera user workspaces
 Creation of a sub-access key is like creation of access key with the following difference: authentication to node API is made with accesskey (master access key) and only the path parameter is provided: it is relative to the storage root of the master key. (id and secret are optional)
 
 ```
-$ <%=cmd%> aspera admin resource node --name=_node_name_ --secret=_secret_ v4 access_key create --value=@json:'{"storage":{"path":"/folder1"}}'
+$ <%=cmd%> oncloud admin resource node --name=_node_name_ --secret=_secret_ v4 access_key create --value=@json:'{"storage":{"path":"/folder1"}}'
 ```
 
 * Display transfer events (ops/transfer)
 
 ```
-$ <%=cmd%> aspera admin res node --secret=_secret_ v3 transfer list --value=@json:'[["q","*"],["count",5]]'
+$ <%=cmd%> oncloud admin res node --secret=_secret_ v3 transfer list --value=@json:'[["q","*"],["count",5]]'
 ```
 
               # page=1&per_page=10&q=type:(file_upload+OR+file_delete+OR+file_download+OR+file_rename+OR+folder_create+OR+folder_delete+OR+folder_share+OR+folder_share_via_public_link)&sort=-date
@@ -1530,13 +1530,13 @@ $ <%=cmd%> aspera admin res node --secret=_secret_ v3 transfer list --value=@jso
 * Display node events (events)
 
 ```
-$ <%=cmd%> aspera admin res node --secret=_secret_ v3 events
+$ <%=cmd%> oncloud admin res node --secret=_secret_ v3 events
 ```
 
 * display members of a workspace
 
 ```
-$ <%=cmd%> aspera admin res workspace_membership list --fields=member_type,manager,member.email --query=@json:'{"page":1,"per_page":50,"embed":"member","inherited":false,"workspace_id":11363,"sort":"name"}'
+$ <%=cmd%> oncloud admin res workspace_membership list --fields=member_type,manager,member.email --query=@json:'{"page":1,"per_page":50,"embed":"member","inherited":false,"workspace_id":11363,"sort":"name"}'
 :.............:.........:..................................:
 : member_type : manager :           member.email           :
 :.............:.........:..................................:
@@ -1561,20 +1561,20 @@ a- get id of first workspace
 
 ```
 WS1='First Workspace'
-WS1ID=$(<%=cmd%> aspera admin res workspace list --query=@json:'{"q":"'"$WS1"'"}' --select=@json:'{"name":"'"$WS1"'"}' --fields=id --format=csv)
+WS1ID=$(<%=cmd%> oncloud admin res workspace list --query=@json:'{"q":"'"$WS1"'"}' --select=@json:'{"name":"'"$WS1"'"}' --fields=id --format=csv)
 ```
 
 b- get id of second workspace
 
 ```
 WS2='Second Workspace'
-WS2ID=$(<%=cmd%> aspera admin res workspace list --query=@json:'{"q":"'"$WS2"'"}' --select=@json:'{"name":"'"$WS2"'"}' --fields=id --format=csv)
+WS2ID=$(<%=cmd%> oncloud admin res workspace list --query=@json:'{"q":"'"$WS2"'"}' --select=@json:'{"name":"'"$WS2"'"}' --fields=id --format=csv)
 ```
 
 c- extract membership information and change workspace id
 
 ```
-$ <%=cmd%> aspera admin res workspace_membership list --fields=manager,member_id,member_type,workspace_id --query=@json:'{"per_page":10000,"workspace_id":'"$WS1ID"'}' --format=jsonpp > ws1_members.json
+$ <%=cmd%> oncloud admin res workspace_membership list --fields=manager,member_id,member_type,workspace_id --query=@json:'{"per_page":10000,"workspace_id":'"$WS1ID"'}' --format=jsonpp > ws1_members.json
 ```
 
 d- convert to creation data for second workspace:
@@ -1592,13 +1592,13 @@ jq '[.[] | {member_type,member_id,workspace_id,manager,workspace_id:"'"$WS2ID"'"
 e- add members to second workspace
 
 ```
-$ <%=cmd%> aspera admin res workspace_membership create --bulk=yes @json:@file:ws2_members.json
+$ <%=cmd%> oncloud admin res workspace_membership create --bulk=yes @json:@file:ws2_members.json
 ```
 
 * get users who did not log since a date
 
 ```
-$ <%=cmd%> aspera admin res user list --fields=email --query=@json:'{"per_page":10000,"q":"last_login_at:<2018-05-28"}'
+$ <%=cmd%> oncloud admin res user list --fields=email --query=@json:'{"per_page":10000,"q":"last_login_at:<2018-05-28"}'
 :...............................:
 :             email             :
 :...............................:
@@ -1610,7 +1610,7 @@ $ <%=cmd%> aspera admin res user list --fields=email --query=@json:'{"per_page":
 * list "Limited" users
 
 ```
-$ <%=cmd%> aspera admin res user list --fields=email --query=@json:'{"per_page":10000}' --select=@json:'{"member_of_any_workspace":false}'
+$ <%=cmd%> oncloud admin res user list --fields=email --query=@json:'{"per_page":10000}' --select=@json:'{"member_of_any_workspace":false}'
 ```
 
 * Perform a multi Gbps transfer between two remote shared folders
@@ -1639,7 +1639,7 @@ Setting config preset as default for aspera
 saving config file
 Done.
 You can test with:
-$ <%=cmd%> aspera user info show
+$ <%=cmd%> oncloud user info show
 ```
 
 This creates the option preset "aoc_&lt;org name&gt;" to allow seamless command line access and sets it as default for aspera on cloud.
@@ -1654,14 +1654,14 @@ $ <%=cmd%> -Paoc_show aspera files transfer --from-folder='IBM Cloud SJ' --to-fo
 
 * create registration key to register a node
 ```
-$ <%=cmd%> aspera admin res admin/client create @json:'{"data":{"name":"laurentnode","client_subject_scopes":["alee","aejd"],"client_subject_enabled":true}}' --fields=token --format=csv
+$ <%=cmd%> oncloud admin res admin/client create @json:'{"data":{"name":"laurentnode","client_subject_scopes":["alee","aejd"],"client_subject_enabled":true}}' --fields=token --format=csv
 jfqslfdjlfdjfhdjklqfhdkl
 ```
 
 * delete all registration keys
 
 ```
-$ <%=cmd%> aspera admin res admin/client list --fields=id --format=csv|<%=cmd%> aspera admin res admin/client delete --bulk=yes --id=@lines:@stdin:
+$ <%=cmd%> oncloud admin res admin/client list --fields=id --format=csv|<%=cmd%> oncloud admin res admin/client delete --bulk=yes --id=@lines:@stdin:
 +-----+---------+
 | id  | status  |
 +-----+---------+
@@ -1677,19 +1677,19 @@ $ <%=cmd%> aspera admin res admin/client list --fields=id --format=csv|<%=cmd%> 
 * list shared folders in node
 
 ```
-$ <%=cmd%> aspera admin res node --id=8669 shared_folders
+$ <%=cmd%> oncloud admin res node --id=8669 shared_folders
 ```
 
 * list shared folders in workspace
 
 ```
-$ <%=cmd%> aspera admin res workspace --id=10818 shared_folders
+$ <%=cmd%> oncloud admin res workspace --id=10818 shared_folders
 ```
 
 * list members of shared folder
 
 ```
-$ <%=cmd%> aspera admin res node --id=8669 v4 perm 82 show
+$ <%=cmd%> oncloud admin res node --id=8669 v4 perm 82 show
 ```
 
 ## Send a Package
@@ -1697,7 +1697,7 @@ $ <%=cmd%> aspera admin res node --id=8669 v4 perm 82 show
 Send a package:
 
 ```
-$ <%=cmd%> aspera packages send --value=@json:'{"name":"my title","note":"my note","recipients":["laurent.martin.aspera@fr.ibm.com","other@example.com"]}' --sources=@args my_file.dat
+$ <%=cmd%> oncloud packages send --value=@json:'{"name":"my title","note":"my note","recipients":["laurent.martin.aspera@fr.ibm.com","other@example.com"]}' --sources=@args my_file.dat
 ```
 
 Notes:
@@ -1712,7 +1712,7 @@ Notes:
 It is possible to automatically download new packages, like using Aspera Cargo:
 
 ```
-$ <%=cmd%> aspera packages recv --id=ALL --once-only=yes --lock-port=12345
+$ <%=cmd%> oncloud packages recv --id=ALL --once-only=yes --lock-port=12345
 ```
 
 * `--id=ALL` (case sensitive) will download all packages
@@ -1756,19 +1756,19 @@ f["type"].eql?("file") and (DateTime.now-DateTime.parse(f["modified_time"]))<100
 * expression to find files older than 1 year on a given node and store in file list
 
 ```
-$ <%=cmd%> aspera admin res node --name='my node name' --secret='my secret' v4 find / --fields=path --value='exec:f["type"].eql?("file") and (DateTime.now-DateTime.parse(f["modified_time"]))<100' --format=csv > my_file_list.txt
+$ <%=cmd%> oncloud admin res node --name='my node name' --secret='my secret' v4 find / --fields=path --value='exec:f["type"].eql?("file") and (DateTime.now-DateTime.parse(f["modified_time"]))<100' --format=csv > my_file_list.txt
 ```
 
 * delete the files, one by one
 
 ```
-$ cat my_file_list.txt|while read path;do echo <%=cmd%> aspera admin res node --name='my node name' --secret='my secret' v4 delete "$path" ;done
+$ cat my_file_list.txt|while read path;do echo <%=cmd%> oncloud admin res node --name='my node name' --secret='my secret' v4 delete "$path" ;done
 ```
 
 * delete the files in bulk
 
 ```
-cat my_file_list.txt | <%=cmd%> aspera admin res node --name='my node name' --secret='my secret' v3 delete @lines:@stdin:
+cat my_file_list.txt | <%=cmd%> oncloud admin res node --name='my node name' --secret='my secret' v3 delete @lines:@stdin:
 ```
 
 ## Activity
@@ -1776,13 +1776,13 @@ cat my_file_list.txt | <%=cmd%> aspera admin res node --name='my node name' --se
 The activity app can be queried with:
 
 ```
-$ <%=cmd%> aspera admin analytics transfers
+$ <%=cmd%> oncloud admin analytics transfers
 ```
 
 It can also support filters and send notification email with a template:
 
 ```
-$ <%=cmd%> aspera admin analytics transfers --once-only=yes --lock-port=123455 \
+$ <%=cmd%> oncloud admin analytics transfers --once-only=yes --lock-port=123455 \
 --query=@json:'{"status":"completed","direction":"receive"}' \
 --notify=@json:'{"to":"<''%=transfer[:user_email.to_s]%>","subject":"<''%=transfer[:files_completed.to_s]%> files received","body":"Dear <''%=transfer[:user_email.to_s]%>\nWe received <''%=transfer[:files_completed.to_s]%> files for a total of <''%=transfer[:transferred_bytes.to_s]%> bytes, starting with file:\n<''%=transfer[:content.to_s]%>\n\nThank you."}'
 ```
@@ -1802,9 +1802,9 @@ By default transfer nodes are expected to use ports TCP/UDP 33001. The web UI en
 
 ATS is usable either :
 
-* from an AoC subscription : <%=cmd%> aspera admin ats
+* from an AoC subscription : <%=cmd%> oncloud admin ats : use AoC authentication
 
-* or from an IBM Cloud subscription : <%=cmd%> ats
+* or from an IBM Cloud subscription : <%=cmd%> ats : use IBM Cloud API key authentication
 
 ## IBM Cloud ATS : creation of api key
 
@@ -2217,7 +2217,7 @@ To change this parameter in `aspera.conf`, use `asconfigurator`. To display the 
 
 If you use a value different than 16777216, then specify it using option `max_size`.
 
-Note: the HSTS parameter (max_request_file_create_size_kb) is in kilobytes while the generator parameter is in bytes (factor of 1024).
+Note: the HSTS parameter (max_request_file_create_size_kb) is in *kiloBytes* while the generator parameter is in *Bytes* (factor of 1024).
 
 ## <a name="prev_ext"></a>External tools: Linux
 
@@ -2355,14 +2355,14 @@ $ <%=cmd%> preview scan --skip-folders=@json:'["/not_here"]'
 
 The option `folder_reset_cache` forces the node service to refresh folder contents using various methods.
 
-## output preview Files types
+## Preview File types
 
 Two types of preview can be generated:
 
   * png: thumbnail
   * mp4: video preview (only for video)
 
-To skip generation of a format use option `skip_format`
+Use option `skip_format` to skip generation of a format.
 
 ## Supported input Files types
 
