@@ -40,6 +40,7 @@ module Aspera
         AOC_COMMAND_V1='files'
         AOC_COMMAND_V2='aspera'
         AOC_COMMAND_V3='oncloud'
+        AOC_COMMAND_CURRENT=AOC_COMMAND_V3
         CONNECT_WEB_URL = 'https://d3gcli72yxqn2z.cloudfront.net/connect'
         CONNECT_VERSIONS = 'connectversions.js'
         DEMO='demo'
@@ -49,7 +50,7 @@ module Aspera
           self.options.add_option_preset(preset_by_name(value))
         end
 
-        private_constant :ASPERA_HOME_FOLDER_NAME,:DEFAULT_CONFIG_FILENAME,:CONF_PRESET_CONFIG,:CONF_PRESET_VERSION,:CONF_PRESET_DEFAULT,:PROGRAM_NAME_V1,:PROGRAM_NAME_V2,:DEFAULT_REDIRECT,:ASPERA_PLUGINS_FOLDERNAME,:GEM_PLUGINS_FOLDER,:RUBY_FILE_EXT,:AOC_COMMAND_V1,:AOC_COMMAND_V2,:AOC_COMMAND_V3,:DEMO
+        private_constant :ASPERA_HOME_FOLDER_NAME,:DEFAULT_CONFIG_FILENAME,:CONF_PRESET_CONFIG,:CONF_PRESET_VERSION,:CONF_PRESET_DEFAULT,:PROGRAM_NAME_V1,:PROGRAM_NAME_V2,:DEFAULT_REDIRECT,:ASPERA_PLUGINS_FOLDERNAME,:GEM_PLUGINS_FOLDER,:RUBY_FILE_EXT,:AOC_COMMAND_V1,:AOC_COMMAND_V2,:AOC_COMMAND_V3,:AOC_COMMAND_CURRENT,:DEMO
         attr_accessor :option_ak_secret,:option_secrets
 
         def initialize(env,tool_name,help_url,version)
@@ -664,7 +665,7 @@ module Aspera
               @config_presets[CONF_PRESET_DEFAULT][AOC_COMMAND_V2]=aspera_preset_name
               self.format.display_status("saving config file")
               save_presets_to_config_file
-              return Main.result_status("Done.\nYou can test with:\n#{@tool_name} aspera user info show")
+              return Main.result_status("Done.\nYou can test with:\n#{@tool_name} #{AOC_COMMAND_CURRENT} user info show")
             else
               raise CliBadArgument,"Supports only: aoc. Detected: #{appli}"
             end
