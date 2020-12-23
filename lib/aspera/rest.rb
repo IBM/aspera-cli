@@ -7,6 +7,7 @@ require 'net/http'
 require 'net/https'
 require 'json'
 require 'base64'
+require 'ruby-progressbar'
 
 # add cancel method to http
 class Net::HTTP::Cancel < Net::HTTPRequest
@@ -27,6 +28,54 @@ module Aspera
   # and error are analyzed in RestErrorAnalyzer
   class Rest
     private
+    # set to true enables debug in HTTP class
+    @@debug=false
+    # true if https ignore certificate
+    @@insecure=false
+    @@user_agent='Ruby'
+
+    public
+    def self.insecure=(v); @@insecure=v;Log.log.debug("insecure => #{@@insecure}".red);end
+
+    def self.insecure; @@insecure;end
+
+    def self.user_agent=(v); @@user_agent=v;Log.log.debug("user_agent => #{@@user_agent}".red);end
+
+    def self.user_agent; @@user_agent;end
+
+    def self.debug=(flag); @@debug=flag; Log.log.debug("debug http => #{flag}"); end
+
+    def self.basic_creds(user,pass); return "Basic #{Base64.strict_encode64("#{user}:#{pass}")}";end
+
+    # build URI from URL and parameters and check it is http or https
+    def self.build_uri(url,params=nil)
+      uri=URI.parse(url)
+      raise "REST endpoint shall be http(s)" unless ['http','https'].include?(uri.scheme)
+      if !params.nil?
+        # support array url params, there is no standard. Either p[]=1&p[]=2, or p=1&p=2
+        if params.is_a?(Hash)
+          orig=params
+          params=[]
+          orig.each do |k,v|
+            case v
+            when Array
+              suffix=v.first.eql?('[]') ? v.shift : ''
+              v.each do |e|
+                params.push([k+suffix,e])
+              end
+            else
+              params.push([k,v])
+            end
+          end
+        end
+        # CGI.unescape to transform back %5D into []
+        uri.query=CGI.unescape(URI.encode_www_form(params))
+      end
+      return uri
+    end
+
+    private
+
     # create and start keep alive connection on demand
     def http_session
       if @http_session.nil?
@@ -46,25 +95,7 @@ module Aspera
       return @http_session
     end
 
-    # set to true enables debug in HTTP class
-    @@debug=false
-    # true if https ignore certificate
-    @@insecure=false
-    @@user_agent='Ruby'
-
     public
-
-    def self.insecure=(v); @@insecure=v;Log.log.debug("insecure => #{@@insecure}".red);end
-
-    def self.insecure; @@insecure;end
-
-    def self.user_agent=(v); @@user_agent=v;Log.log.debug("user_agent => #{@@user_agent}".red);end
-
-    def self.user_agent; @@user_agent;end
-
-    def self.debug=(flag); @@debug=flag; Log.log.debug("debug http => #{flag}"); end
-
-    def self.basic_creds(user,pass); return "Basic #{Base64.strict_encode64("#{user}:#{pass}")}";end
 
     attr_reader :params
 
@@ -103,33 +134,6 @@ module Aspera
     def oauth_token(options={})
       raise "ERROR: not Oauth" unless @oauth.is_a?(Oauth)
       return @oauth.get_authorization(options)
-    end
-
-    # build URI from URL and parameters and check it is http or https
-    def self.build_uri(url,params=nil)
-      uri=URI.parse(url)
-      raise "REST endpoint shall be http(s)" unless ['http','https'].include?(uri.scheme)
-      if !params.nil?
-        # support array url params, there is no standard. Either p[]=1&p[]=2, or p=1&p=2
-        if params.is_a?(Hash)
-          orig=params
-          params=[]
-          orig.each do |k,v|
-            case v
-            when Array
-              suffix=v.first.eql?('[]') ? v.shift : ''
-              v.each do |e|
-                params.push([k+suffix,e])
-              end
-            else
-              params.push([k,v])
-            end
-          end
-        end
-        # CGI.unescape to transform back %5D into []
-        uri.query=CGI.unescape(URI.encode_www_form(params))
-      end
-      return uri
     end
 
     # HTTP/S REST call
@@ -209,7 +213,6 @@ module Aspera
         http_session.request(req) do |response|
           result[:http] = response
           if call_data.has_key?(:save_to_file)
-            require 'ruby-progressbar'
             total_size=result[:http]['Content-Length'].to_i
             progress=ProgressBar.create(
             :format     => '%a %B %p%% %r KB/sec %e',
@@ -218,11 +221,14 @@ module Aspera
             :total      => total_size)
             Log.log.debug("before write file")
             target_file=call_data[:save_to_file]
+            # override user's path to path in header
             if !response['Content-Disposition'].nil? and m=response['Content-Disposition'].match(/filename="([^"]+)"/)
               target_file=m[1]
             end
+            # download with temp filename
+            target_file_tmp=target_file+'.http.partial'
             Log.log.debug("saving to: #{target_file}")
-            File.open(target_file, "wb") do |file|
+            File.open(target_file_tmp, "wb") do |file|
               result[:http].read_body do |fragment|
                 file.write(fragment)
                 new_process=progress.progress+fragment.length
@@ -230,6 +236,8 @@ module Aspera
                 progress.progress=new_process
               end
             end
+            # rename at the end
+            File.rename(target_file_tmp, target_file)
             progress=nil
           end
         end
