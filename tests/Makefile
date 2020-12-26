@@ -38,6 +38,7 @@ setupprev:
 	-sudo launchctl load  /Library/LaunchDaemons/com.aspera.asperanoded.plist
 	sudo launchctl stop com.aspera.asperanoded
 	sudo launchctl start com.aspera.asperanoded
+	sleep 3
 	-$(EXE_NOMAN) node -N -Ptst_node_preview access_key delete --id=$$($(EXE_NOMAN) conf id tst_ak_preview get username)
 	$(EXE_NOMAN) node -N -Ptst_node_preview access_key create --value=@json:'{"id":"'$$($(EXE_NOMAN) conf id tst_ak_preview get username)'","name":"the test key","secret":"'$$($(EXE_NOMAN) conf id tst_ak_preview get password)'","storage":{"type":"local", "path":"/Users/xfer/docroot"}}'
 	rm -f ~/.aspera/$(EXENAME)/persist_store/preview_iteration_transfer_localhost_testkey.txt
