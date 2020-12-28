@@ -725,7 +725,7 @@ $(T)conf_id_6: $(T).exists
 	$(EXETESTC) config id conf_name update --p1=v1 --p2=v2
 	@touch $@
 $(T)conf_open: $(T).exists
-	@echo $@
+	@echo $@ open configuration file in text editor
 	$(EXETESTC) config open
 	@touch $@
 $(T)conf_list: $(T).exists
