@@ -1,8 +1,8 @@
 require 'singleton'
 require 'aspera/log'
 require 'aspera/open_application' # current_os_type
-require 'aspera/data_repository'
 
+require 'aspera/data_repository'
 require 'xmlsimple'
 require 'zlib'
 require 'base64'
@@ -60,7 +60,7 @@ module Aspera
         return @found_products
       end
 
-      FILES=[:ascp,:ascp4,:ssh_bypass_key_dsa,:ssh_bypass_key_rsa,:fallback_cert,:fallback_key]
+      FILES=[:ascp,:ascp4,:ssh_bypass_key_dsa,:ssh_bypass_key_rsa,:aspera_license,:fallback_cert,:fallback_key]
 
       # get path of one resource file of currently activated product
       # keys and certs are generated locally... (they are well known values, arch. independant)
@@ -78,6 +78,10 @@ module Aspera
         when :ssh_bypass_key_rsa
           file=File.join(@config_folder,'aspera_bypass_rsa.pem')
           File.write(file,get_key('rsa',2)) unless File.exist?(file)
+          File.chmod(0400,file)
+        when :aspera_license
+          file=File.join(@config_folder,'aspera-license')
+          File.write(file,Base64.strict_encode64("#{Zlib::Inflate.inflate(DataRepository.instance.get_bin(6))}==SIGNATURE==\n#{Base64.strict_encode64(DataRepository.instance.get_bin(7))}")) unless File.exist?(file)
           File.chmod(0400,file)
         when :fallback_cert,:fallback_key
           file_key=File.join(@config_folder,'aspera_fallback_key.pem')
