@@ -88,7 +88,7 @@ module Aspera
           file_cert=File.join(@config_folder,'aspera_fallback_cert.pem')
           if !File.exist?(file_key) or !File.exist?(file_cert)
             require 'openssl'
-            # create new self signed certificate forhttp fallback
+            # create new self signed certificate for http fallback
             private_key = OpenSSL::PKey::RSA.new(1024)
             cert = OpenSSL::X509::Certificate.new
             cert.subject = cert.issuer = OpenSSL::X509::Name.parse("/C=US/ST=California/L=Emeryville/O=Aspera Inc./OU=Corporate/CN=Aspera Inc./emailAddress=info@asperasoft.com")
