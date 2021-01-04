@@ -1,6 +1,5 @@
 #!/usr/bin/env ruby
 # Example: transfer a file using one of the provided transfer agents
-
 require 'aspera/fasp/local'
 require 'aspera/fasp/listener'
 require 'aspera/fasp/installation'
@@ -9,7 +8,7 @@ require 'aspera/rest'
 require 'aspera/rest_errors_aspera'
 require 'json'
 
-tmpdir=ENV['tmp'] || '.'
+tmpdir=Dir.tmpdir || '.'
 
 ##############################################################
 # generic initialisation : configuration of FaspManager
@@ -17,10 +16,10 @@ tmpdir=ENV['tmp'] || '.'
 # set trace level for sample, set to :debug to see complete list of debug information
 Aspera::Log.instance.level=:debug
 
-# set path to your copy of ascp binary
+# set path to your copy of ascp binary (else, let the system find)
 Aspera::Fasp::Installation.instance.ascp_path=ENV['ascp'] || '/Library/aspera/bin/ascp'
 # some required files are generated here (keys, certs)
-Aspera::Fasp::Installation.instance.config_folder = tmpdir
+Aspera::Fasp::Installation.instance.folder = tmpdir
 
 # register aspera REST call error handlers
 Aspera::RestErrorsAspera.registerHandlers

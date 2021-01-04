@@ -12,8 +12,8 @@ Gem::Specification.new do |spec|
   spec.version       = Aspera::Cli::VERSION
   spec.authors       = ['Laurent Martin']
   spec.email         = ['laurent.martin.aspera@fr.ibm.com']
-  spec.summary       = 'Command line tool for Aspera Server products: Aspera on Cloud, Faspex, Shares, Node, Console, Orchestrator, Transfer Server'
-  spec.description   = 'A powerful CLI for IBM Aspera products'
+  spec.summary       = 'Execute actions using command line on IBM Aspera Server products: Aspera on Cloud, Faspex, Shares, Node, Console, Orchestrator, Transfer Server'
+  spec.description   = 'Command line interface for IBM Aspera products'
   spec.homepage      = 'https://github.com/IBM/aspera-cli'
   spec.license       = 'Apache-2.0'
   spec.requirements << 'IBM Aspera ascp installed for the user'
@@ -30,7 +30,7 @@ Gem::Specification.new do |spec|
   spec.bindir        = 'bin'
   spec.executables   = spec.files.grep(%r{^#{spec.bindir}}){|f|File.basename(f)}
   spec.require_paths = ['lib']
-  spec.required_ruby_version = '> 2.3'
+  spec.required_ruby_version = '> 2.4'
   spec.add_runtime_dependency('xml-simple', '~> 1.0')
   spec.add_runtime_dependency('jwt', '~> 2.0')
   spec.add_runtime_dependency('ruby-progressbar', '~> 1.0')
@@ -39,6 +39,7 @@ Gem::Specification.new do |spec|
   spec.add_runtime_dependency('execjs', '~> 2.0')
   spec.add_runtime_dependency('terminal-table', '~> 1.8')
   spec.add_runtime_dependency('tty-spinner', '~> 0.9')
+  spec.add_runtime_dependency('rubyzip', '~> 2.0')
   spec.add_development_dependency('bundler', '~> 2.0')
   spec.add_development_dependency('rake', '~> 10.0')
   spec.add_development_dependency('rspec', '~> 3.0')

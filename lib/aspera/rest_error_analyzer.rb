@@ -6,10 +6,12 @@ module Aspera
   # analyze error codes returned by REST calls and raise ruby exception
   class RestErrorAnalyzer
     include Singleton
+    attr_accessor :log_file
     # the singleton object is registered with application specific handlers
     def initialize
       # list of handlers
       @error_handlers=[]
+      @log_file=nil
       self.add_handler('Type Generic') do |type,context|
         if !context[:response].code.start_with?('2')
           # add generic information
@@ -85,14 +87,13 @@ module Aspera
     # @param msg one error message  to add to list
     def self.add_error(context,type,msg)
       context[:messages].push(msg)
+      logfile=instance.log_file
       # log error for further analysis (file must exist to activate)
-      exc_log_file=File.join(Fasp::Installation.instance.config_folder,'exceptions.log')
-      if File.exist?(exc_log_file)
-        File.open(exc_log_file,'a+') do |f|
+      if !logfile.nil? and File.exist?(logfile)
+        File.open(logfile,'a+') do |f|
           f.write("\n=#{type}=====\n#{context[:request].method} #{context[:request].path}\n#{context[:response].code}\n#{JSON.generate(context[:data])}\n#{context[:messages].join("\n")}")
         end
       end
     end
-
   end
 end
