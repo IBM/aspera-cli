@@ -36,9 +36,8 @@ setupprev:
 	sudo asconfigurator -x "user;user_name,xfer;file_restriction,|*;token_encryption_key,$$(base64 < /dev/urandom|head -c32);absolute,AS_NULL"
 	sudo asconfigurator -x "server;activity_logging,true;activity_event_logging,true"
 	-sudo launchctl load  /Library/LaunchDaemons/com.aspera.asperanoded.plist
-	sudo launchctl stop com.aspera.asperanoded
-	sudo launchctl start com.aspera.asperanoded
-	sleep 3
+	sudo launchctl stop com.aspera.asperanoded;sleep 3
+	sudo launchctl start com.aspera.asperanoded;sleep 3
 	-$(EXE_NOMAN) node -N -Ptst_node_preview access_key delete --id=$$($(EXE_NOMAN) conf id tst_ak_preview get username)
 	$(EXE_NOMAN) node -N -Ptst_node_preview access_key create --value=@json:'{"id":"'$$($(EXE_NOMAN) conf id tst_ak_preview get username)'","name":"the test key","secret":"'$$($(EXE_NOMAN) conf id tst_ak_preview get password)'","storage":{"type":"local", "path":"/Users/xfer/docroot"}}'
 	rm -f ~/.aspera/$(EXENAME)/persist_store/preview_iteration_transfer_localhost_testkey.txt
@@ -671,7 +670,15 @@ $(T)co6: $(T).exists
 	@echo $@
 	$(EXE_MAN) config ascp connect id 'Aspera Connect for Windows' links id 'Windows Installer' download --to-folder=$(DIR_TMP).
 	@touch $@
-tcon: $(T)co1 $(T)co2 $(T)co3 $(T)co4 $(T)co5 $(T)co6
+$(T)co7: $(T).exists
+	@echo $@
+	$(EXE_MAN) config ascp info
+	@touch $@
+$(T)co8: $(T).exists
+	@echo $@
+	$(EXE_MAN) config ascp install
+	@touch $@
+tcon: $(T)co1 $(T)co2 $(T)co3 $(T)co4 $(T)co5 $(T)co6 $(T)co7 $(T)co8
 
 $(T)sy1: $(T).exists
 	@echo $@
