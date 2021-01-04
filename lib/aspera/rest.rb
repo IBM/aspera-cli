@@ -171,7 +171,7 @@ module Aspera
       end
       # TODO: shall we percent encode subpath (spaces) test with access key delete with space in id
       # URI.escape()
-      uri=self.class.build_uri("#{@params[:base_url]}/#{call_data[:subpath]}",call_data[:url_params])
+      uri=self.class.build_uri("#{@params[:base_url]}#{call_data[:subpath].nil? ? '' : '/'}#{call_data[:subpath]}",call_data[:url_params])
       Log.log.debug("URI=#{uri}")
       begin
         # instanciate request object based on string name
