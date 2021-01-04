@@ -69,7 +69,8 @@ module Aspera
           @option_config_file=@conf_file_default
           @connect_versions=nil
           # set folder where generated FASP files are
-          Fasp::Installation.instance.config_folder=@main_folder
+          Fasp::Installation.instance.folder=File.join(@main_folder,'sdk')
+          FileUtils.mkdir_p(Fasp::Installation.instance.folder)
           add_plugin_lookup_folder(File.join(@main_folder,ASPERA_PLUGINS_FOLDERNAME))
           add_plugin_lookup_folder(File.join(Main.gem_root,GEM_PLUGINS_FOLDER))
           # do file parameter first
@@ -407,7 +408,7 @@ module Aspera
         end
 
         def execute_action_ascp
-          command=self.options.get_next_command([:connect,:use,:show,:products,:info])
+          command=self.options.get_next_command([:connect,:use,:show,:products,:info,:install])
           case command
           when :connect
             return execute_connect_action
@@ -431,8 +432,10 @@ module Aspera
               while line=stderr.gets do
                 line.chomp!
                 case line
-                when /^DBG Path ([^ ]+) (dir|file) +: (.*)$/;data[$1]=$3
-                when /^DBG Added module group:"([^"]+)" name:"([^"]+)", version:"([^"]+)" interface:"([^"]+)"$/;data[$2]=$4
+                when %r{^DBG Path ([^ ]+) (dir|file) +: (.*)$};data[$1]=$3
+                when %r{^DBG Added module group:"([^"]+)" name:"([^"]+)", version:"([^"]+)" interface:"([^"]+)"$};data[$2]=$4
+                when %r{^DBG License result \(/license/(\S+)\): (.+)$};data[$1]=$2
+                when %r{^LOG (.+) version ([0-9.])+$};data['product_name']=$1;data['product_version']=$2
                 end
               end
             end
@@ -450,7 +453,11 @@ module Aspera
               save_presets_to_config_file
               return {:type=>:status, :data=>"saved to default global preset #{preset_name}"}
             end
+          when :install
+            v=Fasp::Installation.instance.install_sdk
+            return {:type=>:status, :data=>"Installed version #{v}"}
           end
+          raise "unexpected case: #{command}"
         end
 
         ACTIONS=[:gem_path, :genkey,:plugins,:flush_tokens,:list,:overview,:open,:echo,:id,:documentation,:wizard,:export_to_cli,:detect,:coffee,:ascp,:email_test,:smtp_settings,:proxy_check,:folder,:file]
@@ -781,7 +788,7 @@ END_OF_MESSAGE
 
         def save_presets_to_config_file
           raise "no configuration loaded" if @config_presets.nil?
-          FileUtils::mkdir_p(@main_folder) unless Dir.exist?(@main_folder)
+          FileUtils.mkdir_p(@main_folder) unless Dir.exist?(@main_folder)
           Log.log.debug "writing #{@option_config_file}"
           File.write(@option_config_file,@config_presets.to_yaml)
         end

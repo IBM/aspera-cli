@@ -1,4 +1,5 @@
 require 'aspera/log'
+require 'aspera/environment'
 require 'rbconfig'
 require 'singleton'
 
@@ -12,37 +13,23 @@ module Aspera
     def self.user_interfaces; [ :text, :graphical ]; end
 
     def self.default_gui_mode
-      case current_os_type
-      when :windows,:mac
-        return :graphical
-      else # unix family
-        if ENV.has_key?("DISPLAY") and !ENV["DISPLAY"].empty?
-          return :graphical
-        end
-        return :text
-      end
-    end
-
-    def self.current_os_type
-      case RbConfig::CONFIG['host_os']
-      when /mswin|msys|mingw|cygwin|bccwin|wince|emc/
-        return :windows
-      when /darwin|mac os/
-        return :mac
-      else # unix family
-        return :unix
-      end
+      return :graphical if [Aspera::Environment::OS_WINDOWS,Aspera::Environment::OS_X].include?(Aspera::Environment.os)
+      # unix family
+      return :graphical if ENV.has_key?("DISPLAY") and !ENV["DISPLAY"].empty?
+      return :text
     end
 
     # command must be non blocking
     def self.uri_graphical(uri)
-      case current_os_type
-      when :mac
+      case Aspera::Environment.os
+      when Aspera::Environment::OS_X
         return system('open',uri.to_s)
-      when :windows
+      when Aspera::Environment::OS_WINDOWS
         return system('start explorer "'+uri.to_s+'"')
-      else  # unix family
+      when Aspera::Environment::OS_LINUX
         return system("xdg-open '#{uri.to_s}'")
+      else
+        raise "no graphical open method for #{Aspera::Environment.os}"
       end
     end
 

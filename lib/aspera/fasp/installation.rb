@@ -1,7 +1,6 @@
 require 'singleton'
 require 'aspera/log'
-require 'aspera/open_application' # current_os_type
-
+require 'aspera/environment'
 require 'aspera/data_repository'
 require 'xmlsimple'
 require 'zlib'
@@ -15,13 +14,17 @@ module Aspera
     # but the user can specify ascp location by calling:
     # Installation.instance.use_ascp_from_product(product_name)
     # or
-    # Installation.instance.ascp_path=ascp_path
+    # Installation.instance.ascp_path=""
     class Installation
       include Singleton
       # currently used ascp executable
       attr_accessor :ascp_path
-      # where key files are generated and used
-      attr_accessor :config_folder
+      # location of SDK files
+      attr_accessor :folder
+      PRODUCT_CONNECT='Aspera Connect'
+      PRODUCT_CLI_V1='Aspera CLI'
+      PRODUCT_DRIVE='Aspera Drive'
+      PRODUCT_ENTSRV='Enterprise Server'
       # find ascp in named product (use value : FIRST_FOUND='FIRST' to just use first one)
       # or select one from installed_products()
       def use_ascp_from_product(product_name)
@@ -39,12 +42,18 @@ module Aspera
       # @return the list of installed products in format of product_locations
       def installed_products
         if @found_products.nil?
-          @found_products=product_locations.select do |pl|
+          @found_products=product_locations
+          # add sdk as first search path
+          @found_products.unshift({# SDK
+            :expected =>'SDK',
+            :app_root =>@folder,
+            :sub_bin =>''
+          })
+          @found_products.select! do |pl|
             next false unless Dir.exist?(pl[:app_root])
             Log.log.debug("found #{pl[:app_root]}")
             sub_bin = pl[:sub_bin] || BIN_SUBFOLDER
-            exec_ext = OpenApplication.current_os_type.eql?(:windows) ? '.exe' : ''
-            pl[:ascp_path]=File.join(pl[:app_root],sub_bin,'ascp')+exec_ext
+            pl[:ascp_path]=File.join(pl[:app_root],sub_bin,'ascp'+Environment.exe_extension)
             next false unless File.exist?(pl[:ascp_path])
             product_info_file="#{pl[:app_root]}/#{PRODUCT_INFO}"
             if File.exist?(product_info_file)
@@ -72,20 +81,20 @@ module Aspera
           # note that there might be a .exe at the end
           file=file.gsub('ascp','ascp4') if k.eql?(:ascp4)
         when :ssh_bypass_key_dsa
-          file=File.join(@config_folder,'aspera_bypass_dsa.pem')
+          file=File.join(@folder,'aspera_bypass_dsa.pem')
           File.write(file,get_key('dsa',1)) unless File.exist?(file)
           File.chmod(0400,file)
         when :ssh_bypass_key_rsa
-          file=File.join(@config_folder,'aspera_bypass_rsa.pem')
+          file=File.join(@folder,'aspera_bypass_rsa.pem')
           File.write(file,get_key('rsa',2)) unless File.exist?(file)
           File.chmod(0400,file)
         when :aspera_license
-          file=File.join(@config_folder,'aspera-license')
+          file=File.join(@folder,'aspera-license')
           File.write(file,Base64.strict_encode64("#{Zlib::Inflate.inflate(DataRepository.instance.get_bin(6))}==SIGNATURE==\n#{Base64.strict_encode64(DataRepository.instance.get_bin(7))}")) unless File.exist?(file)
           File.chmod(0400,file)
         when :fallback_cert,:fallback_key
-          file_key=File.join(@config_folder,'aspera_fallback_key.pem')
-          file_cert=File.join(@config_folder,'aspera_fallback_cert.pem')
+          file_key=File.join(@folder,'aspera_fallback_key.pem')
+          file_cert=File.join(@folder,'aspera_fallback_cert.pem')
           if !File.exist?(file_key) or !File.exist?(file_cert)
             require 'openssl'
             # create new self signed certificate for http fallback
@@ -113,7 +122,7 @@ module Aspera
 
       # @returns the file path of local connect where API's URI can be read
       def connect_uri
-        connect=get_product_folders('Aspera Connect')
+        connect=get_product_folders(PRODUCT_CONNECT)
         folder=File.join(connect[:run_root],VARRUN_SUBFOLDER)
         ['','s'].each do |ext|
           uri_file=File.join(folder,"http#{ext}.uri")
@@ -127,7 +136,7 @@ module Aspera
 
       # @ return path to configuration file of aspera CLI
       def cli_conf_file
-        connect=get_product_folders('Aspera CLI')
+        connect=get_product_folders(PRODUCT_CLI_V1)
         return File.join(connect[:app_root],BIN_SUBFOLDER,'.aspera_cli_conf')
       end
 
@@ -140,19 +149,30 @@ module Aspera
         return [:ssh_bypass_key_dsa,:ssh_bypass_key_rsa].map{|i|Installation.instance.path(i)}
       end
 
-      # DEPRECATED ZONE
-
-      def activated;Log.log.warn("deprecated, use ascp_path accessor");nil;end
-
-      def activated=(product_name);Log.log.warn("deprecated, use method use_ascp_from_product");use_ascp_from_product(product_name);end
-
-      def paths;Log.log.warn("deprecated, no replacement");raise "deprecated";end
-
-      def paths=(res_paths)
-        raise "must be a hash" unless res_paths.is_a?(Hash)
-        raise "must have :ascp key" unless res_paths.has_key?(:ascp)
-        Log.log.warn("deprecated, use method: ascp_path=")
-        @ascp_path=res_paths[:ascp]
+      def install_sdk
+        require 'zip'
+        sdk_zip_path=File.join(Dir.tmpdir,'sdk.zip')
+        Aspera::Rest.new(base_url: SDK_URL).call(operation: 'GET',save_to_file: sdk_zip_path)
+        filter="/#{Environment.architecture}/"
+        ascp_version='n/a'
+        Zip::File.open(sdk_zip_path) do |zip_file|
+          zip_file.each do |entry|
+            if entry.name.include?(filter) and !entry.name.end_with?('/')
+              archive_file=File.join(@folder,File.basename(entry.name))
+              File.open(archive_file, 'wb') do |output_stream|
+                IO.copy_stream(entry.get_input_stream, output_stream)
+              end
+              if entry.name.include?('ascp')
+                FileUtils.chmod(0755,archive_file)
+                m=`#{archive_file} -A`.match(/ascp version (.*)/)
+                ascp_version=m[1] unless m.nil?
+                File.write(File.join(@folder,PRODUCT_INFO),"<product><name>IBM Aspera SDK</name><version>#{ascp_version}</version></product>")
+              end
+            end
+          end
+        end
+        File.unlink(sdk_zip_path)
+        return ascp_version
       end
 
       private
@@ -164,8 +184,9 @@ module Aspera
       PRODUCT_INFO='product-info.mf'
       # policy for product selection
       FIRST_FOUND='FIRST'
+      SDK_URL='https://eudemo.asperademo.com/aspera/faspex/sdk.zip'
 
-      private_constant :BIN_SUBFOLDER,:ETC_SUBFOLDER,:VARRUN_SUBFOLDER,:PRODUCT_INFO
+      private_constant :BIN_SUBFOLDER,:ETC_SUBFOLDER,:VARRUN_SUBFOLDER,:PRODUCT_INFO,:SDK_URL
 
       # get some specific folder from specific applications: Connect or CLI
       def get_product_folders(name)
@@ -176,62 +197,62 @@ module Aspera
 
       def initialize
         @ascp_path=nil
-        @config_folder='.'
+        @folder='.'
         @found_products=nil
       end
 
       # returns product folders depending on OS
       # fields
       # :expected  M app name is taken from the manifest if present, else defaults to this value
-      # :app_root  M main forlder for the application
+      # :app_root  M main folder for the application
       # :log_root  O location of log files (Linux uses syslog)
       # :run_root  O only for Connect Client, location of http port file
       # :sub_bin   O subfolder with executables, default : bin
       def product_locations
-        case OpenApplication.current_os_type
-        when :windows; return [{
-            :expected =>'Aspera Connect',
+        case Aspera::Environment.os
+        when Aspera::Environment::OS_WINDOWS; return [{
+            :expected =>PRODUCT_CONNECT,
             :app_root =>File.join(ENV['LOCALAPPDATA'],'Programs','Aspera','Aspera Connect'),
             :log_root =>File.join(ENV['LOCALAPPDATA'],'Aspera','Aspera Connect','var','log'),
             :run_root =>File.join(ENV['LOCALAPPDATA'],'Aspera','Aspera Connect')
             },{
-            :expected =>'Aspera CLI',
+            :expected =>PRODUCT_CLI_V1,
             :app_root =>File.join('C:','Program Files','Aspera','cli'),
             :log_root =>File.join('C:','Program Files','Aspera','cli','var','log'),
             },{
-            :expected =>'Enterprise Server',
+            :expected =>PRODUCT_ENTSRV,
             :app_root =>File.join('C:','Program Files','Aspera','Enterprise Server'),
             :log_root =>File.join('C:','Program Files','Aspera','Enterprise Server','var','log'),
             }]
-        when :mac; return [{
-            :expected =>'Aspera Connect',
+        when Aspera::Environment::OS_X; return [{
+            :expected =>PRODUCT_CONNECT,
             :app_root =>File.join(Dir.home,'Applications','Aspera Connect.app'),
             :log_root =>File.join(Dir.home,'Library','Logs','Aspera_Connect'),
             :run_root =>File.join(Dir.home,'Library','Application Support','Aspera','Aspera Connect'),
             :sub_bin  =>File.join('Contents','Resources'),
             },{
-            :expected =>'Aspera CLI',
+            :expected =>PRODUCT_CLI_V1,
             :app_root =>File.join(Dir.home,'Applications','Aspera CLI'),
             :log_root =>File.join(Dir.home,'Library','Logs','Aspera')
             },{
-            :expected =>'Enterprise Server',
+            :expected =>PRODUCT_ENTSRV,
             :app_root =>File.join('','Library','Aspera'),
             :log_root =>File.join(Dir.home,'Library','Logs','Aspera'),
             },{
-            :expected =>'Aspera Drive',
+            :expected =>PRODUCT_DRIVE,
             :app_root =>File.join('','Applications','Aspera Drive.app'),
             :log_root =>File.join(Dir.home,'Library','Logs','Aspera_Drive'),
             :sub_bin  =>File.join('Contents','Resources'),
             }]
         else; return [{  # other: Linux and unix family
-            :expected =>'Aspera Connect',
+            :expected =>PRODUCT_CONNECT,
             :app_root =>File.join(Dir.home,'.aspera','connect'),
             :run_root =>File.join(Dir.home,'.aspera','connect')
             },{
-            :expected =>'Aspera CLI',
+            :expected =>PRODUCT_CLI_V1,
             :app_root =>File.join(Dir.home,'.aspera','cli'),
             },{
-            :expected =>'Enterprise Server',
+            :expected =>PRODUCT_ENTSRV,
             :app_root =>File.join('','opt','aspera'),
             }]
         end

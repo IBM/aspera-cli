@@ -76,6 +76,7 @@ module Aspera
         @plugin_env[:persistency]=PersistencyFolder.new(File.join(@plugin_env[:config].main_folder,'persist_store'))
         Oauth.persist_mgr=@plugin_env[:persistency]
         Fasp::Parameters.file_list_folder=File.join(@plugin_env[:config].main_folder,'filelists')
+        Aspera::RestErrorAnalyzer.instance.log_file=File.join(@plugin_env[:config].main_folder,'rest_exceptions.log')
         # register aspera REST call error handlers
         Aspera::RestErrorsAspera.registerHandlers
       end

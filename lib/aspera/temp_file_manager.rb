@@ -22,7 +22,7 @@ module Aspera
     # ensure that provided folder exists, or create it, generate a unique filename
     # @return path to that unique file
     def new_file_path_in_folder(temp_folder,add_base='')
-      FileUtils::mkdir_p(temp_folder) unless Dir.exist?(temp_folder)
+      FileUtils.mkdir_p(temp_folder) unless Dir.exist?(temp_folder)
       new_file=File.join(temp_folder,add_base+SecureRandom.uuid)
       @created_files.push(new_file)
       return new_file
