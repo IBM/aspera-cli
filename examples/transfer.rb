@@ -7,6 +7,7 @@ require 'aspera/log'
 require 'aspera/rest'
 require 'aspera/rest_errors_aspera'
 require 'json'
+require 'tmpdir'
 
 tmpdir=Dir.tmpdir || '.'
 
