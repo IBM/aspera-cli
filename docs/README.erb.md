@@ -235,6 +235,12 @@ an Aspera Transfer:
 * ascp
 * aspera-license (in same folder, or ../etc)
 
+This can be installed directly with
+
+```
+$ <%=cmd%> conf ascp install
+```
+
 Those can be found in one of IBM Asprea transfer server or client with its license file (some are free):
 
 * IBM Aspera Connect Client (Free)
