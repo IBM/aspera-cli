@@ -2633,6 +2633,7 @@ So, it evolved into <%=tool%>:
 	* changed module name from `Asperalm` to `Aspera`
 	* removed command `folder` in `preview`, merged to `scan`
 	* persistency files go to sub folder instead of main folder
+	* added possibility to install SDK: `config ascp insttall`
 
 * 0.11.8
 
