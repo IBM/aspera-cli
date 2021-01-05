@@ -112,7 +112,7 @@ The following sections provide information on the installation.
 ## <a name="ruby"></a>Ruby
 
 A ruby interpreter is required to run the tool or to use the gem and tool.
-The Ruby version shall be > 2.3.
+The Ruby version shall be > 2.4.
 Any type of Ruby installation can be used.
 
 Refer to the following sections for a proposed method for specific operating systems.
@@ -218,6 +218,12 @@ an Aspera Transfer:
 
 * ascp
 * aspera-license (in same folder, or ../etc)
+
+This can be installed directly with
+
+```
+$ ascli conf ascp install
+```
 
 Those can be found in one of IBM Asprea transfer server or client with its license file (some are free):
 
@@ -1240,6 +1246,8 @@ ascli config ascp connect id 'Aspera Connect for Windows' info
 ascli config ascp connect id 'Aspera Connect for Windows' links id 'Windows Installer' download --to-folder=.
 ascli config ascp connect id 'Aspera Connect for Windows' links list
 ascli config ascp connect list
+ascli config ascp info
+ascli config ascp install
 ascli config ascp products list
 ascli config ascp show
 ascli config email_test aspera.user1@gmail.com
@@ -1455,7 +1463,7 @@ OPTIONS: global
     -v, --version                    display version
     -w, --warnings                   check for language warnings
         --ui=ENUM                    method to start browser: text, [1m[31mgraphical[0m[22m
-        --log-level=ENUM             Log level: unknown, [1m[31mwarn[0m[22m, info, error, debug, fatal
+        --log-level=ENUM             Log level: info, error, fatal, unknown, [1m[31mwarn[0m[22m, debug
         --logger=ENUM                log method: [1m[31mstderr[0m[22m, stdout, syslog
         --lock-port=VALUE            prevent dual execution of a command, e.g. in cron
         --query=VALUE                additional filter for API calls (extended value) (some commands)
