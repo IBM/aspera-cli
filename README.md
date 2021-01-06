@@ -2451,20 +2451,34 @@ $ ascli server --ssh-keys=@list:,~/.ssh/id_rsa
 $ ascli server --ssh-keys=@json:'["~/.ssh/id_rsa"]'
 ```
 
-The underlying ssh library `net::ssh` provides several options that may be used
-depending on environment. By default the ssh library expect that an ssh-agent is running, but if you get the error message:
+The underlying ssh library `net::ssh` provides several options that may be used depending on environment. By default the ssh library expect that an ssh-agent is running.
+
+If you get an error message such as:
 
 ```
+[Linux]
 ERROR -- net.ssh.authentication.agent: could not connect to ssh-agent: Agent not configured
 ```
 
-This means that you dont have such agent, check env var: `SSH_AGENT_SOCK`, check if the key is protected with a passphrase. [check the manual](https://net-ssh.github.io/ssh/v1/chapter-2.html#s2)
+or 
 
-To diable use of `ssh-agent`, use the option `ssh_option` like this (or set in preset):
+```
+[Windows]
+ERROR -- net.ssh.authentication.agent: could not connect to ssh-agent: pageant process not running
+```
+
+This means that you dont have such an ssh agent running:
+
+* check env var: `SSH_AGENT_SOCK`
+* check if the key is protected with a passphrase
+* [check the manual](https://net-ssh.github.io/ssh/v1/chapter-2.html#s2)
+* To diable use of `ssh-agent`, use the option `ssh_option` like this (or set in preset):
 
 ```
 $ ascli server --ssh-options=@ruby:'{use_agent: false}' ...
 ```
+
+This can also be set as default using a preset
 
 ## Example
 
