@@ -7,7 +7,7 @@ module Aspera
     include Singleton
     # get binary value from data repository
     def get_bin(id)
-      File.read(File.join(File.expand_path(File.dirname(__FILE__)),'data',id.to_s))
+      File.read(File.join(File.expand_path(File.dirname(__FILE__)),'data',id.to_s),mode: 'rb')
     end
   end
 end
