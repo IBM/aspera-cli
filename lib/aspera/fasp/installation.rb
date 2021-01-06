@@ -155,6 +155,8 @@ module Aspera
         Aspera::Rest.new(base_url: SDK_URL).call(operation: 'GET',save_to_file: sdk_zip_path)
         filter="/#{Environment.architecture}/"
         ascp_version='n/a'
+        # first ensure license file is here so that ascp invokation for version works
+        self.path(:aspera_license)
         Zip::File.open(sdk_zip_path) do |zip_file|
           zip_file.each do |entry|
             if entry.name.include?(filter) and !entry.name.end_with?('/')
