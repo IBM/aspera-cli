@@ -435,7 +435,8 @@ module Aspera
                 when %r{^DBG Path ([^ ]+) (dir|file) +: (.*)$};data[$1]=$3
                 when %r{^DBG Added module group:"([^"]+)" name:"([^"]+)", version:"([^"]+)" interface:"([^"]+)"$};data[$2]=$4
                 when %r{^DBG License result \(/license/(\S+)\): (.+)$};data[$1]=$2
-                when %r{^LOG (.+) version ([0-9.])+$};data['product_name']=$1;data['product_version']=$2
+                when %r{^LOG (.+) version ([0-9.]+)$};data['product_name']=$1;data['product_version']=$2
+                when %r{^LOG Initializing FASP version ([^,]+),};data['ascp_version']=$1
                 end
               end
             end
