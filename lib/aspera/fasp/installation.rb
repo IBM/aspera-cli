@@ -69,7 +69,7 @@ module Aspera
         return @found_products
       end
 
-      FILES=[:ascp,:ascp4,:ssh_bypass_key_dsa,:ssh_bypass_key_rsa,:aspera_license,:fallback_cert,:fallback_key]
+      FILES=[:ascp,:ascp4,:ssh_bypass_key_dsa,:ssh_bypass_key_rsa,:aspera_license,:aspera_conf,:fallback_cert,:fallback_key]
 
       # get path of one resource file of currently activated product
       # keys and certs are generated locally... (they are well known values, arch. independant)
@@ -91,6 +91,25 @@ module Aspera
         when :aspera_license
           file=File.join(@folder,'aspera-license')
           File.write(file,Base64.strict_encode64("#{Zlib::Inflate.inflate(DataRepository.instance.get_bin(6))}==SIGNATURE==\n#{Base64.strict_encode64(DataRepository.instance.get_bin(7))}")) unless File.exist?(file)
+          File.chmod(0400,file)
+        when :aspera_conf
+          file=File.join(@folder,'aspera.conf')
+          File.write(file,%Q{<?xml version='1.0' encoding='UTF-8'?>
+<CONF version="2">
+<default>
+    <file_system>
+        <storage_rc>
+            <adaptive>
+                true
+            </adaptive>
+        </storage_rc>
+        <resume_suffix>.aspera-ckpt</resume_suffix>
+        <partial_file_suffix>.partial</partial_file_suffix>
+        <replace_illegal_chars>_</replace_illegal_chars>
+    </file_system>
+</default>
+</CONF>
+}) unless File.exist?(file)
           File.chmod(0400,file)
         when :fallback_cert,:fallback_key
           file_key=File.join(@folder,'aspera_fallback_key.pem')
@@ -154,9 +173,10 @@ module Aspera
         sdk_zip_path=File.join(Dir.tmpdir,'sdk.zip')
         Aspera::Rest.new(base_url: SDK_URL).call(operation: 'GET',save_to_file: sdk_zip_path)
         filter="/#{Environment.architecture}/"
-        ascp_version='n/a'
+        ascp_path=nil
         # first ensure license file is here so that ascp invokation for version works
         self.path(:aspera_license)
+        self.path(:aspera_conf)
         Zip::File.open(sdk_zip_path) do |zip_file|
           zip_file.each do |entry|
             if entry.name.include?(filter) and !entry.name.end_with?('/')
@@ -166,14 +186,19 @@ module Aspera
               end
               if entry.name.include?('ascp')
                 FileUtils.chmod(0755,archive_file)
-                m=`#{archive_file} -A`.match(/ascp version (.*)/)
-                ascp_version=m[1] unless m.nil?
-                File.write(File.join(@folder,PRODUCT_INFO),"<product><name>IBM Aspera SDK</name><version>#{ascp_version}</version></product>")
+                ascp_path=archive_file
               end
             end
           end
         end
-        File.unlink(sdk_zip_path)
+        File.unlink(sdk_zip_path) rescue nil # Windows may give error
+        ascp_version='n/a'
+        if !ascp_path.nil?
+          # get version from ascp, only after full extract, as windows requires SSL/TLS DLLs
+          m=%x{#{ascp_path} -A}.match(/ascp version (.*)/)
+          ascp_version=m[1] unless m.nil?
+          File.write(File.join(@folder,PRODUCT_INFO),"<product><name>IBM Aspera SDK</name><version>#{ascp_version}</version></product>")
+        end
         return ascp_version
       end
 
