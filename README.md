@@ -225,7 +225,7 @@ This can be installed directly with
 $ ascli conf ascp install
 ```
 
-Those can be found in one of IBM Asprea transfer server or client with its license file (some are free):
+Those can be found in one of IBM Aspera transfer server or client with its license file (some are free):
 
 * IBM Aspera Connect Client (Free)
 * IBM Aspera Desktop Client (Free)
@@ -3204,7 +3204,7 @@ So, it evolved into `ascli`:
 	* changed module name from `Asperalm` to `Aspera`
 	* removed command `folder` in `preview`, merged to `scan`
 	* persistency files go to sub folder instead of main folder
-	* added possibility to install SDK: `config ascp insttall`
+	* added possibility to install SDK: `config ascp install`
 
 * 0.11.8
 
