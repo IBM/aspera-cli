@@ -284,200 +284,200 @@ tnode: $(T)nd1 $(T)nd2 $(T)nd_2_nd_xfer $(T)nd4 $(T)nd5 $(T)nd6 $(T)nd7 $(T)nd_n
 
 $(T)aocg1: $(T).exists
 	@echo $@
-	$(EXE_MAN) oncloud apiinfo
+	$(EXE_MAN) aoc apiinfo
 	@touch $@
 $(T)aocg2: $(T).exists
 	@echo $@
-	$(EXE_MAN) oncloud bearer_token --display=data --scope=user:all
+	$(EXE_MAN) aoc bearer_token --display=data --scope=user:all
 	@touch $@
 $(T)aocg3: $(T).exists
 	@echo $@
-	$(EXE_MAN) oncloud organization
+	$(EXE_MAN) aoc organization
 	@touch $@
 $(T)aocg4: $(T).exists
 	@echo $@
-	$(EXE_MAN) oncloud workspace
+	$(EXE_MAN) aoc workspace
 	@touch $@
 $(T)aocg5: $(T).exists
 	@echo $@
-	$(EXE_MAN) oncloud user info show
+	$(EXE_MAN) aoc user info show
 	@touch $@
 $(T)aocg6: $(T).exists
 	@echo $@
-	$(EXE_MAN) oncloud user info modify @json:'{"name":"dummy change"}'
+	$(EXE_MAN) aoc user info modify @json:'{"name":"dummy change"}'
 	@touch $@
 taocgen: $(T)aocg1 $(T)aocg2 $(T)aocg3 $(T)aocg4 $(T)aocg5 $(T)aocg6
 $(T)aocfbr: $(T).exists
 	@echo $@
-	$(EXE_MAN) oncloud files browse /
+	$(EXE_MAN) aoc files browse /
 	@touch $@
 $(T)aocffin: $(T).exists
 	@echo $@
-	$(EXE_MAN) oncloud files find / --value='\.partial$$'
+	$(EXE_MAN) aoc files find / --value='\.partial$$'
 	@touch $@
 $(T)aocfmkd: $(T).exists
 	@echo $@
-	-$(EXE_NOMAN) oncloud files delete /testsrc
-	$(EXE_MAN) oncloud files mkdir /testsrc
+	-$(EXE_NOMAN) aoc files delete /testsrc
+	$(EXE_MAN) aoc files mkdir /testsrc
 	@touch $@
 $(T)aocfren: $(T).exists
 	@echo $@
-	-$(EXE_NOMAN) oncloud files delete /testdst
-	$(EXE_NOMAN) oncloud files mkdir /somefolder
-	$(EXE_MAN) oncloud files rename /somefolder testdst
+	-$(EXE_NOMAN) aoc files delete /testdst
+	$(EXE_NOMAN) aoc files mkdir /somefolder
+	$(EXE_MAN) aoc files rename /somefolder testdst
 	@touch $@
 $(T)aocfupl: $(T)aocfmkd
 	@echo $@
-	$(EXE_MAN) oncloud files upload --to-folder=/testsrc $(CF_LOCAL_SAMPLE_FILEPATH)
+	$(EXE_MAN) aoc files upload --to-folder=/testsrc $(CF_LOCAL_SAMPLE_FILEPATH)
 	@touch $@
 $(T)aocftr: $(T)aocfupl $(T)aocfren
 	@echo $@
-	$(EXE_MAN) oncloud files transfer --from-folder=/testsrc --to-folder=/testdst $(CF_LOCAL_SAMPLE_FILENAME)
+	$(EXE_MAN) aoc files transfer --from-folder=/testsrc --to-folder=/testdst $(CF_LOCAL_SAMPLE_FILENAME)
 	@touch $@
 $(T)aocfdel: $(T)aocfren
 	@echo $@
-	$(EXE_MAN) oncloud files delete /testsrc
+	$(EXE_MAN) aoc files delete /testsrc
 	@touch $@
 $(T)aocfbearnode: $(T).exists
 	@echo $@
-	$(EXE_MAN) oncloud files bearer /
+	$(EXE_MAN) aoc files bearer /
 	@touch $@
 $(T)aocfdown: $(T).exists
 	@echo $@
 	@rm -f $(DIR_CONNECT_DOWNLOAD)/200KB.1
-	$(EXE_MAN) oncloud files download --transfer=connect /200KB.1
+	$(EXE_MAN) aoc files download --transfer=connect /200KB.1
 	@rm -f $(DIR_CONNECT_DOWNLOAD)/200KB.1
 	@touch $@
 $(T)aocfhttpd: $(T).exists
 	@echo $@
-	$(EXE_MAN) oncloud files http_node_download --to-folder=$(DIR_TMP). /200KB.1
+	$(EXE_MAN) aoc files http_node_download --to-folder=$(DIR_TMP). /200KB.1
 	@touch $@
 $(T)aocfv3inf: $(T).exists
 	@echo $@
-	$(EXE_MAN) oncloud files v3 info
+	$(EXE_MAN) aoc files v3 info
 	@touch $@
 $(T)aocffid: $(T).exists
 	@echo $@
-	$(EXE_MAN) oncloud files file 18891
+	$(EXE_MAN) aoc files file 18891
 	@touch $@
 $(T)aocfpub: $(T).exists
 	@echo $@
 	set -x;\
 	aoc_publink_folder=$$($(EXE_NOMAN) conf id misc get aoc_publink_folder);\
-	$(EXE_MAN) oncloud files browse / -N --link=$${aoc_publink_folder}
+	$(EXE_MAN) aoc files browse / -N --link=$${aoc_publink_folder}
 	set -x;\
 	aoc_publink_folder=$$($(EXE_NOMAN) conf id misc get aoc_publink_folder);\
-	$(EXE_MAN) oncloud files upload -N --to-folder=/ $(CF_LOCAL_SAMPLE_FILEPATH) --link=$${aoc_publink_folder}
+	$(EXE_MAN) aoc files upload -N --to-folder=/ $(CF_LOCAL_SAMPLE_FILEPATH) --link=$${aoc_publink_folder}
 	@touch $@
 $(T)aocshlk1: $(T).exists
 	@echo $@
-	$(EXE_MAN) oncloud files short_link list --value=@json:'{"purpose":"shared_folder_auth_link"}'
+	$(EXE_MAN) aoc files short_link list --value=@json:'{"purpose":"shared_folder_auth_link"}'
 	@touch $@
 $(T)aocshlk2: $(T).exists
 	@echo $@
-	$(EXE_MAN) oncloud files short_link create --to-folder=/testdst --value=private
+	$(EXE_MAN) aoc files short_link create --to-folder=/testdst --value=private
 	@touch $@
 $(T)aocshlk3: $(T).exists
 	@echo $@
-	$(EXE_MAN) oncloud files short_link create --to-folder=/testdst --value=public
+	$(EXE_MAN) aoc files short_link create --to-folder=/testdst --value=public
 	@touch $@
 taocf: $(T)aocfbr $(T)aocffin $(T)aocfmkd $(T)aocfren $(T)aocfupl $(T)aocftr $(T)aocfdel $(T)aocfbearnode $(T)aocfdown $(T)aocfhttpd $(T)aocfv3inf $(T)aocffid $(T)aocfpub $(T)aocshlk1 $(T)aocshlk2 $(T)aocshlk3
 $(T)aocp1: $(T).exists
 	@echo $@
-	$(EXE_MAN) oncloud packages send --value=@json:'{"name":"'"$(PKG_TEST_TITLE)"'","recipients":["$(CF_EMAIL_ADDR)"],"note":"my note"}' $(CF_LOCAL_SAMPLE_FILEPATH)
-	$(EXE_MAN) oncloud packages send --value=@json:'{"name":"'"$(PKG_TEST_TITLE)"'","recipients":["$(CF_AOC_EXTERNAL_EMAIL)"]}' --new-user-option=@json:'{"package_contact":true}' $(CF_LOCAL_SAMPLE_FILEPATH)
+	$(EXE_MAN) aoc packages send --value=@json:'{"name":"'"$(PKG_TEST_TITLE)"'","recipients":["$(CF_EMAIL_ADDR)"],"note":"my note"}' $(CF_LOCAL_SAMPLE_FILEPATH)
+	$(EXE_MAN) aoc packages send --value=@json:'{"name":"'"$(PKG_TEST_TITLE)"'","recipients":["$(CF_AOC_EXTERNAL_EMAIL)"]}' --new-user-option=@json:'{"package_contact":true}' $(CF_LOCAL_SAMPLE_FILEPATH)
 	@touch $@
 $(T)aocp2: $(T).exists
 	@echo $@
-	$(EXE_MAN) oncloud packages list
+	$(EXE_MAN) aoc packages list
 	@touch $@
 $(T)aocp3: $(T).exists
 	@echo $@
-	set -x;package_id=$$($(EXE_MAN) oncloud packages list --format=csv --fields=id --display=data|head -n 1);\
-	$(EXE_MAN) oncloud packages recv --id="$${package_id}" --to-folder=$(DIR_TMP).
+	set -x;package_id=$$($(EXE_MAN) aoc packages list --format=csv --fields=id --display=data|head -n 1);\
+	$(EXE_MAN) aoc packages recv --id="$${package_id}" --to-folder=$(DIR_TMP).
 	@touch $@
 $(T)aocp4: $(T).exists
 	@echo $@
-	$(EXE_MAN) oncloud packages recv --id=ALL --to-folder=$(DIR_TMP). --once-only=yes --lock-port=12345
+	$(EXE_MAN) aoc packages recv --id=ALL --to-folder=$(DIR_TMP). --once-only=yes --lock-port=12345
 	@touch $@
 $(T)aocp5: $(T).exists
 	@echo $@
 	set -x;\
 	aoc_publink_recv_from_aocuser=$$($(EXE_NOMAN) conf id misc get aoc_publink_recv_from_aocuser);\
-	$(EXE_MAN) oncloud org -N --link=$${aoc_publink_recv_from_aocuser}
+	$(EXE_MAN) aoc org -N --link=$${aoc_publink_recv_from_aocuser}
 	@touch $@
 $(T)aocp6: $(T).exists
 	@echo $@
 	set -x;\
 	aoc_publink_send_shd_inbox=$$($(EXE_NOMAN) conf id misc get aoc_publink_send_shd_inbox);\
-	$(EXE_MAN) oncloud packages send -N --value=@json:'{"name":"'"$(PKG_TEST_TITLE)"'"}' $(CF_LOCAL_SAMPLE_FILEPATH) --link=$${aoc_publink_send_shd_inbox}
+	$(EXE_MAN) aoc packages send -N --value=@json:'{"name":"'"$(PKG_TEST_TITLE)"'"}' $(CF_LOCAL_SAMPLE_FILEPATH) --link=$${aoc_publink_send_shd_inbox}
 	@touch $@
 $(T)aocp7: $(T).exists
 	@echo $@
 	set -x;\
 	aoc_publink_send_aoc_user=$$($(EXE_NOMAN) conf id misc get aoc_publink_send_aoc_user);\
-	$(EXE_MAN) oncloud packages send -N --value=@json:'{"name":"'"$(PKG_TEST_TITLE)"'"}' $(CF_LOCAL_SAMPLE_FILEPATH) --link=$${aoc_publink_send_aoc_user}
+	$(EXE_MAN) aoc packages send -N --value=@json:'{"name":"'"$(PKG_TEST_TITLE)"'"}' $(CF_LOCAL_SAMPLE_FILEPATH) --link=$${aoc_publink_send_aoc_user}
 	@touch $@
 $(T)aocp8: $(T).exists
 	@echo $@
 	set -x;\
 	aoc_shbx_ws=$$($(EXE_NOMAN) conf id misc get aoc_shbx_ws);\
 	aoc_shbx_name=$$($(EXE_NOMAN) conf id misc get aoc_shbx_name);\
-	$(EXE_MAN) oncloud packages send --workspace="$${aoc_shbx_ws}" --value=@json:'{"name":"'"$(PKG_TEST_TITLE)"'","recipients":["'$${aoc_shbx_name}'"]}' $(CF_LOCAL_SAMPLE_FILEPATH)
+	$(EXE_MAN) aoc packages send --workspace="$${aoc_shbx_ws}" --value=@json:'{"name":"'"$(PKG_TEST_TITLE)"'","recipients":["'$${aoc_shbx_name}'"]}' $(CF_LOCAL_SAMPLE_FILEPATH)
 	@touch $@
 taocp: $(T)aocp1 $(T)aocp2 $(T)aocp3 $(T)aocp4 $(T)aocp5 $(T)aocp5 $(T)aocp6 $(T)aocp7 $(T)aocp8
 $(T)aoc8: $(T).exists
 	@echo $@
-	$(EXE_MAN) oncloud admin resource workspace list
+	$(EXE_MAN) aoc admin resource workspace list
 	@touch $@
 $(T)aoc9: $(T).exists
 	@echo $@
-	$(EXE_MAN) oncloud admin resource node --name=$(CF_AOC_NODE1_NAME) --secret=$(CF_AOC_NODE1_SECRET) v3 events
+	$(EXE_MAN) aoc admin resource node --name=$(CF_AOC_NODE1_NAME) --secret=$(CF_AOC_NODE1_SECRET) v3 events
 	@touch $@
 $(T)aoc11: $(T).exists
 	@echo $@
-	$(EXE_MAN) oncloud admin resource node --name=$(CF_AOC_NODE1_NAME) --secret=$(CF_AOC_NODE1_SECRET) v3 access_key create --value=@json:'{"id":"testsub1","storage":{"path":"/folder1"}}'
+	$(EXE_MAN) aoc admin resource node --name=$(CF_AOC_NODE1_NAME) --secret=$(CF_AOC_NODE1_SECRET) v3 access_key create --value=@json:'{"id":"testsub1","storage":{"path":"/folder1"}}'
 	@touch $@
 $(T)aoc12: $(T).exists
 	@echo $@
-	$(EXE_MAN) oncloud admin resource node --name=$(CF_AOC_NODE1_NAME) --secret=$(CF_AOC_NODE1_SECRET) v3 access_key delete --id=testsub1
+	$(EXE_MAN) aoc admin resource node --name=$(CF_AOC_NODE1_NAME) --secret=$(CF_AOC_NODE1_SECRET) v3 access_key delete --id=testsub1
 	@touch $@
 $(T)aoc9b: $(T).exists
 	@echo $@
-	$(EXE_MAN) oncloud admin resource node --name=$(CF_AOC_NODE1_NAME) --secret=$(CF_AOC_NODE1_SECRET) v4 browse /
+	$(EXE_MAN) aoc admin resource node --name=$(CF_AOC_NODE1_NAME) --secret=$(CF_AOC_NODE1_SECRET) v4 browse /
 	@touch $@
 $(T)aoc10: $(T).exists
 	@echo $@
-	$(EXE_MAN) oncloud admin resource node --name=$(CF_AOC_NODE1_NAME) --secret=$(CF_AOC_NODE1_SECRET) v4 mkdir /folder1
+	$(EXE_MAN) aoc admin resource node --name=$(CF_AOC_NODE1_NAME) --secret=$(CF_AOC_NODE1_SECRET) v4 mkdir /folder1
 	@touch $@
 $(T)aoc13: $(T).exists
 	@echo $@
-	$(EXE_MAN) oncloud admin resource node --name=$(CF_AOC_NODE1_NAME) --secret=$(CF_AOC_NODE1_SECRET) v4 delete /folder1
+	$(EXE_MAN) aoc admin resource node --name=$(CF_AOC_NODE1_NAME) --secret=$(CF_AOC_NODE1_SECRET) v4 delete /folder1
 	@touch $@
 $(T)aoc14: $(T).exists
 	@echo $@
-	$(EXE_MAN) oncloud admin resource workspace_membership list --fields=ALL --query=@json:'{"page":1,"per_page":50,"embed":"member","inherited":false,"workspace_id":11363,"sort":"name"}'
+	$(EXE_MAN) aoc admin resource workspace_membership list --fields=ALL --query=@json:'{"page":1,"per_page":50,"embed":"member","inherited":false,"workspace_id":11363,"sort":"name"}'
 	@touch $@
 $(T)aoc15: $(T).exists
 	@echo $@
-	$(EXE_MAN) oncloud admin analytics transfers --query=@json:'{"status":"completed","direction":"receive"}'
+	$(EXE_MAN) aoc admin analytics transfers --query=@json:'{"status":"completed","direction":"receive"}'
 	@touch $@
 taocadm: $(T)aoc8 $(T)aoc9 $(T)aoc9b $(T)aoc10 $(T)aoc11 $(T)aoc12 $(T)aoc13 $(T)aoc14 $(T)aoc15
 $(T)aocat4: $(T).exists
 	@echo $@
-	$(EXE_MAN) oncloud admin ats cluster list
+	$(EXE_MAN) aoc admin ats cluster list
 	@touch $@
 $(T)aocat5: $(T).exists
 	@echo $@
-	$(EXE_MAN) oncloud admin ats cluster clouds
+	$(EXE_MAN) aoc admin ats cluster clouds
 	@touch $@
 $(T)aocat6: $(T).exists
 	@echo $@
-	$(EXE_MAN) oncloud admin ats cluster show --cloud=aws --region=eu-west-1 
+	$(EXE_MAN) aoc admin ats cluster show --cloud=aws --region=eu-west-1
 	@touch $@
 $(T)aocat7: $(T).exists
 	@echo $@
-	$(EXE_MAN) oncloud admin ats cluster show --id=1f412ae7-869a-445c-9c05-02ad16813be2
+	$(EXE_MAN) aoc admin ats cluster show --id=1f412ae7-869a-445c-9c05-02ad16813be2
 	@touch $@
 # see https://developer.ibm.com/api/view/aspera-prod:ibm-aspera:title-IBM_Aspera#113433
 $(T)aocat8: $(T).exists
@@ -487,7 +487,7 @@ $(T)aocat8: $(T).exists
 	icos_bucket_name=$$($(EXE_NOMAN) conf id misc get icos_bucket_name);\
 	icos_bucket_key=$$($(EXE_NOMAN) conf id misc get icos_bucket_key);\
 	icos_bucket_secret=$$($(EXE_NOMAN) conf id misc get icos_bucket_secret);\
-	$(EXE_MAN) oncloud admin ats access_key create --cloud=softlayer --region=$${icos_bucket_region} --params=@json:'{"id":"akibmcloud","secret":"somesecret","name":"my test key","storage":{"type":"ibm-s3","bucket":"'$${icos_bucket_name}'","credentials":{"access_key_id":"'$${icos_bucket_key}'","secret_access_key":"'$${icos_bucket_secret}'"},"path":"/"}}'
+	$(EXE_MAN) aoc admin ats access_key create --cloud=softlayer --region=$${icos_bucket_region} --params=@json:'{"id":"akibmcloud","secret":"somesecret","name":"my test key","storage":{"type":"ibm-s3","bucket":"'$${icos_bucket_name}'","credentials":{"access_key_id":"'$${icos_bucket_key}'","secret_access_key":"'$${icos_bucket_secret}'"},"path":"/"}}'
 	@touch $@
 $(T)aocat9: $(T).exists
 	@echo $@
@@ -496,36 +496,36 @@ $(T)aocat9: $(T).exists
 	aws_bucket_name=$$($(EXE_NOMAN) conf id misc get aws_bucket_name);\
 	aws_bucket_key=$$($(EXE_NOMAN) conf id misc get aws_bucket_key);\
 	aws_bucket_secret=$$($(EXE_NOMAN) conf id misc get aws_bucket_secret);\
-	$(EXE_MAN) oncloud admin ats access_key create --cloud=aws --region=$${aws_bucket_region} --params=@json:'{"id":"ak_aws","name":"my test key AWS","storage":{"type":"aws_s3","bucket":"'$${aws_bucket_name}'","credentials":{"access_key_id":"'$${aws_bucket_key}'","secret_access_key":"'$${aws_bucket_secret}'"},"path":"/"}}'
+	$(EXE_MAN) aoc admin ats access_key create --cloud=aws --region=$${aws_bucket_region} --params=@json:'{"id":"ak_aws","name":"my test key AWS","storage":{"type":"aws_s3","bucket":"'$${aws_bucket_name}'","credentials":{"access_key_id":"'$${aws_bucket_key}'","secret_access_key":"'$${aws_bucket_secret}'"},"path":"/"}}'
 	@touch $@
 $(T)aocat10: $(T).exists
 	@echo $@
-	$(EXE_MAN) oncloud admin ats access_key list --fields=name,id
+	$(EXE_MAN) aoc admin ats access_key list --fields=name,id
 	@touch $@
 $(T)aocat11: $(T).exists
 	@echo $@
-	$(EXE_MAN) oncloud admin ats access_key --id=akibmcloud --secret=somesecret node browse /
+	$(EXE_MAN) aoc admin ats access_key --id=akibmcloud --secret=somesecret node browse /
 	@touch $@
 $(T)aocat13: $(T).exists
 	@echo $@
-	-$(EXE_MAN) oncloud admin ats access_key --id=akibmcloud delete
+	-$(EXE_MAN) aoc admin ats access_key --id=akibmcloud delete
 	@touch $@
 taocts: $(T)aocat4 $(T)aocat5 $(T)aocat6 $(T)aocat7 $(T)aocat8 $(T)aocat9 $(T)aocat10 $(T)aocat11 $(T)aocat13
 $(DIR_TMP)wf_id.txt: $(T)aocauto1
-	$(EXE_MAN) oncloud automation workflow list --select=@json:'{"name":"test_workflow"}' --fields=id --format=csv --display=data > $@
+	$(EXE_MAN) aoc automation workflow list --select=@json:'{"name":"test_workflow"}' --fields=id --format=csv --display=data > $@
 $(T)aocauto1: $(T).exists
 	@echo $@
-	$(EXE_MAN) oncloud automation workflow create --value=@json:'{"name":"test_workflow"}'
+	$(EXE_MAN) aoc automation workflow create --value=@json:'{"name":"test_workflow"}'
 	@touch $@
 $(T)aocauto2: $(T).exists
 	@echo $@
-	$(EXE_MAN) oncloud automation workflow list
-	$(EXE_MAN) oncloud automation workflow list --value=@json:'{"show_org_workflows":"true"}' --scope=admin:all
+	$(EXE_MAN) aoc automation workflow list
+	$(EXE_MAN) aoc automation workflow list --value=@json:'{"show_org_workflows":"true"}' --scope=admin:all
 	@touch $@
 $(T)aocauto3: $(DIR_TMP)wf_id.txt
 	@echo $@
 	set -x;wf_id=$$(cat $(DIR_TMP)wf_id.txt);\
-	$(EXE_MAN) oncloud automation workflow --id="$${wf_id}" action create --value=@json:'{"name":"toto"}' | tee action.info
+	$(EXE_MAN) aoc automation workflow --id="$${wf_id}" action create --value=@json:'{"name":"toto"}' | tee action.info
 	sed -nEe 's/^\| id +\| ([^ ]+) +\|/\1/p' action.info>tmp_action_id.txt
 	rm -f action.info
 	rm -f tmp_action_id.txt
@@ -533,7 +533,7 @@ $(T)aocauto3: $(DIR_TMP)wf_id.txt
 $(T)aocauto10: $(DIR_TMP)wf_id.txt
 	@echo $@
 	set -x;wf_id=$$(cat $(DIR_TMP)wf_id.txt);\
-	$(EXE_MAN) oncloud automation workflow delete --id="$${wf_id}"
+	$(EXE_MAN) aoc automation workflow delete --id="$${wf_id}"
 	rm -f $(T)wf.id
 	@touch $@
 taocauto: $(T)aocauto1 $(T)aocauto2 $(T)aocauto3 $(T)aocauto10
@@ -949,5 +949,5 @@ tnagios: $(T)fx_nagios $(T)serv_nagios_webapp $(T)serv_nagios_transfer $(T)nd_na
 
 $(T)fxgw: $(T).exists
 	@echo $@
-	$(EXE_MAN) oncloud faspex
+	$(EXE_MAN) aoc faspex
 	@touch $@

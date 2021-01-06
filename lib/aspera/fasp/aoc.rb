@@ -1,17 +1,17 @@
 require 'aspera/fasp/node'
 require 'aspera/log'
-require 'aspera/on_cloud.rb'
+require 'aspera/aoc.rb'
 
 module Aspera
   module Fasp
     class Aoc < Node
-      def initialize(on_cloud_options)
-        @app=on_cloud_options[:app] || OnCloud::FILES_APP
-        @api_oncloud=OnCloud.new(on_cloud_options)
+      def initialize(aoc_options)
+        @app=aoc_options[:app] || AoC::FILES_APP
+        @api_aoc=AoC.new(aoc_options)
         Log.log.warn("Under Development")
-        server_node_file = @api_oncloud.resolve_node_file(server_home_node_file,server_folder)
+        server_node_file = @api_aoc.resolve_node_file(server_home_node_file,server_folder)
         # force node as transfer agent
-        node_api=Fasp::Node.new(@api_oncloud.get_node_api(client_node_file[:node_info],OnCloud::SCOPE_NODE_USER))
+        node_api=Fasp::Node.new(@api_aoc.get_node_api(client_node_file[:node_info],AoC::SCOPE_NODE_USER))
         super(node_api)
         # additional node to node TS info
         @add_ts={
