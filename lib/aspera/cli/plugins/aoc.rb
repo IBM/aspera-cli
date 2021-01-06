@@ -2,7 +2,7 @@ require 'aspera/cli/plugins/node'
 require 'aspera/cli/plugins/ats'
 require 'aspera/cli/basic_auth_plugin'
 require 'aspera/cli/transfer_agent'
-require 'aspera/on_cloud'
+require 'aspera/aoc'
 require 'aspera/persistency_action_once'
 require 'securerandom'
 require 'resolv'
@@ -47,10 +47,10 @@ module Aspera
           self.options.set_option(:new_user_option,{'package_contact'=>true})
           self.options.set_option(:operation,:push)
           self.options.set_option(:auth,:jwt)
-          self.options.set_option(:scope,OnCloud::SCOPE_FILES_USER)
+          self.options.set_option(:scope,AoC::SCOPE_FILES_USER)
           self.options.set_option(:private_key,'@file:'+env[:private_key_path]) if env[:private_key_path].is_a?(String)
           self.options.parse_options!
-          OnCloud.set_use_default_ports(self.options.get_option(:default_ports))
+          AoC.set_use_default_ports(self.options.get_option(:default_ports))
           return if env[:man_only]
           update_aoc_api
         end
@@ -79,8 +79,8 @@ module Aspera
 
         # starts transfer using transfer agent
         def transfer_start(app,direction,node_file,ts_add)
-          ts_add.deep_merge!(OnCloud.analytics_ts(app,direction,@workspace_id,@workspace_name))
-          ts_add.deep_merge!(OnCloud.console_ts(app,user_info['name'],user_info['email']))
+          ts_add.deep_merge!(AoC.analytics_ts(app,direction,@workspace_id,@workspace_name))
+          ts_add.deep_merge!(AoC.console_ts(app,user_info['name'],user_info['email']))
           return self.transfer.start(*@api_aoc.tr_spec(app,direction,node_file,ts_add))
         end
 
@@ -96,12 +96,12 @@ module Aspera
           when :bearer_token_node
             thepath=self.options.get_next_argument('path')
             node_file = @api_aoc.resolve_node_file(top_node_file,thepath)
-            node_api=@api_aoc.get_node_api(node_file[:node_info],OnCloud::SCOPE_NODE_USER)
+            node_api=@api_aoc.get_node_api(node_file[:node_info],AoC::SCOPE_NODE_USER)
             return Main.result_status(node_api.oauth_token)
           when :browse
             thepath=self.options.get_next_argument('path')
             node_file = @api_aoc.resolve_node_file(top_node_file,thepath)
-            node_api=@api_aoc.get_node_api(node_file[:node_info],OnCloud::SCOPE_NODE_USER)
+            node_api=@api_aoc.get_node_api(node_file[:node_info],AoC::SCOPE_NODE_USER)
             file_info = node_api.read("files/#{node_file[:file_id]}")[:data]
             if file_info['type'].eql?('folder')
               result=node_api.read("files/#{node_file[:file_id]}/files",self.options.get_option(:value,:optional))
@@ -124,17 +124,17 @@ module Aspera
             return {:type=>:object_list,:data=>@api_aoc.find_files(node_file,test_block),:fields=>['path']}
           when :mkdir
             thepath=self.options.get_next_argument('path')
-            containing_folder_path = thepath.split(OnCloud::PATH_SEPARATOR)
+            containing_folder_path = thepath.split(AoC::PATH_SEPARATOR)
             new_folder=containing_folder_path.pop
-            node_file = @api_aoc.resolve_node_file(top_node_file,containing_folder_path.join(OnCloud::PATH_SEPARATOR))
-            node_api=@api_aoc.get_node_api(node_file[:node_info],OnCloud::SCOPE_NODE_USER)
+            node_file = @api_aoc.resolve_node_file(top_node_file,containing_folder_path.join(AoC::PATH_SEPARATOR))
+            node_api=@api_aoc.get_node_api(node_file[:node_info],AoC::SCOPE_NODE_USER)
             result=node_api.create("files/#{node_file[:file_id]}/files",{:name=>new_folder,:type=>:folder})[:data]
             return Main.result_status("created: #{result['name']} (id=#{result['id']})")
           when :rename
             thepath=self.options.get_next_argument('source path')
             newname=self.options.get_next_argument('new name')
             node_file = @api_aoc.resolve_node_file(top_node_file,thepath)
-            node_api=@api_aoc.get_node_api(node_file[:node_info],OnCloud::SCOPE_NODE_USER)
+            node_api=@api_aoc.get_node_api(node_file[:node_info],AoC::SCOPE_NODE_USER)
             result=node_api.update("files/#{node_file[:file_id]}",{:name=>newname})[:data]
             return Main.result_status("renamed #{thepath} to #{newname}")
           when :delete
@@ -142,7 +142,7 @@ module Aspera
             return do_bulk_operation(thepath,'deleted','path') do |thepath|
               raise "expecting String (path), got #{thepath.class.name} (#{thepath})" unless thepath.is_a?(String)
               node_file = @api_aoc.resolve_node_file(top_node_file,thepath)
-              node_api=@api_aoc.get_node_api(node_file[:node_info],OnCloud::SCOPE_NODE_USER)
+              node_api=@api_aoc.get_node_api(node_file[:node_info],AoC::SCOPE_NODE_USER)
               result=node_api.delete("files/#{node_file[:file_id]}")[:data]
               {'path'=>thepath}
             end
@@ -165,63 +165,63 @@ module Aspera
             client_node_file = @api_aoc.resolve_node_file(client_home_node_file,client_folder)
             server_node_file = @api_aoc.resolve_node_file(server_home_node_file,server_folder)
             # force node as transfer agent
-            @agents[:transfer].set_agent_instance(Fasp::Node.new(@api_aoc.get_node_api(client_node_file[:node_info],OnCloud::SCOPE_NODE_USER)))
+            @agents[:transfer].set_agent_instance(Fasp::Node.new(@api_aoc.get_node_api(client_node_file[:node_info],AoC::SCOPE_NODE_USER)))
             # additional node to node TS info
             add_ts={
               'remote_access_key'   => server_node_file[:node_info]['access_key'],
               'destination_root_id' => server_node_file[:file_id],
               'source_root_id'      => client_node_file[:file_id]
             }
-            return Main.result_transfer(transfer_start(OnCloud::FILES_APP,client_tr_oper,server_node_file,add_ts))
+            return Main.result_transfer(transfer_start(AoC::FILES_APP,client_tr_oper,server_node_file,add_ts))
           when :upload
             node_file = @api_aoc.resolve_node_file(top_node_file,self.transfer.destination_folder('send'))
             add_ts={'tags'=>{'aspera'=>{'files'=>{'parentCwd'=>"#{node_file[:node_info]['id']}:#{node_file[:file_id]}"}}}}
-            return Main.result_transfer(transfer_start(OnCloud::FILES_APP,'send',node_file,add_ts))
+            return Main.result_transfer(transfer_start(AoC::FILES_APP,'send',node_file,add_ts))
           when :download
             source_paths=self.transfer.ts_source_paths
             # special case for AoC : all files must be in same folder
             source_folder=source_paths.shift['source']
             # if a single file: split into folder and path
             if source_paths.empty?
-              source_folder=source_folder.split(OnCloud::PATH_SEPARATOR)
+              source_folder=source_folder.split(AoC::PATH_SEPARATOR)
               source_paths=[{'source'=>source_folder.pop}]
-              source_folder=source_folder.join(OnCloud::PATH_SEPARATOR)
+              source_folder=source_folder.join(AoC::PATH_SEPARATOR)
             end
             node_file = @api_aoc.resolve_node_file(top_node_file,source_folder)
             # override paths with just filename
             add_ts={'tags'=>{'aspera'=>{'files'=>{'parentCwd'=>"#{node_file[:node_info]['id']}:#{node_file[:file_id]}"}}}}
             add_ts.merge!({'paths'=>source_paths})
-            return Main.result_transfer(transfer_start(OnCloud::FILES_APP,'receive',node_file,add_ts))
+            return Main.result_transfer(transfer_start(AoC::FILES_APP,'receive',node_file,add_ts))
           when :http_node_download
             source_paths=self.transfer.ts_source_paths
             source_folder=source_paths.shift['source']
             if source_paths.empty?
-              source_folder=source_folder.split(OnCloud::PATH_SEPARATOR)
+              source_folder=source_folder.split(AoC::PATH_SEPARATOR)
               source_paths=[{'source'=>source_folder.pop}]
-              source_folder=source_folder.join(OnCloud::PATH_SEPARATOR)
+              source_folder=source_folder.join(AoC::PATH_SEPARATOR)
             end
             raise CliBadArgument,'one file at a time only in HTTP mode' if source_paths.length > 1
             file_name = source_paths.first['source']
             node_file = @api_aoc.resolve_node_file(top_node_file,File.join(source_folder,file_name))
-            node_api=@api_aoc.get_node_api(node_file[:node_info],OnCloud::SCOPE_NODE_USER)
+            node_api=@api_aoc.get_node_api(node_file[:node_info],AoC::SCOPE_NODE_USER)
             node_api.call({:operation=>'GET',:subpath=>"files/#{node_file[:file_id]}/content",:save_to_file=>File.join(self.transfer.destination_folder('receive'),file_name)})
             return Main.result_status("downloaded: #{file_name}")
           when :v3
             # Note: other "common" actions are unauthorized with user scope
             command_legacy=self.options.get_next_command(Node::SIMPLE_ACTIONS)
             # TODO: shall we support all methods here ? what if there is a link ?
-            node_api=@api_aoc.get_node_api(top_node_file[:node_info],OnCloud::SCOPE_NODE_USER)
+            node_api=@api_aoc.get_node_api(top_node_file[:node_info],AoC::SCOPE_NODE_USER)
             return Node.new(@agents.merge(skip_basic_auth_options: true, node_api: node_api)).execute_action(command_legacy)
           when :file
             fileid=self.options.get_next_argument('file id')
             node_file = @api_aoc.resolve_node_file(top_node_file)
-            node_api=@api_aoc.get_node_api(node_file[:node_info],OnCloud::SCOPE_NODE_USER)
+            node_api=@api_aoc.get_node_api(node_file[:node_info],AoC::SCOPE_NODE_USER)
             items=node_api.read("files/#{fileid}")[:data]
             return {:type=>:single_object,:data=>items}
           when :permissions
             fileid=self.options.get_next_argument('file id')
             node_file = @api_aoc.resolve_node_file(top_node_file)
-            node_api=@api_aoc.get_node_api(node_file[:node_info],OnCloud::SCOPE_NODE_USER)
+            node_api=@api_aoc.get_node_api(node_file[:node_info],AoC::SCOPE_NODE_USER)
             command_perms=self.options.get_next_command([:show,:create])
             case command_perms
             when :show
@@ -258,8 +258,8 @@ module Aspera
           throw "ERR"
         end # execute_node_gen4_command
 
-        # build constructor option list for OnCloud based on options of CLI
-        def oncloud_params(subpath)
+        # build constructor option list for AoC based on options of CLI
+        def aoc_params(subpath)
           # copy command line options to args
           opt=[:link,:url,:auth,:client_id,:client_secret,:scope,:redirect_uri,:private_key,:username].inject({}){|m,i|m[i]=self.options.get_option(i,:optional);m}
           opt[:subpath]=subpath
@@ -270,7 +270,7 @@ module Aspera
         # Parameters based on command line options
         # @return nil
         def update_aoc_api
-          @api_aoc=OnCloud.new(oncloud_params('api/v1'))
+          @api_aoc=AoC.new(aoc_params('api/v1'))
           # add access key secrets
           @api_aoc.add_secrets(self.config.get_secrets)
           return nil
@@ -420,7 +420,7 @@ module Aspera
         end
 
         def execute_admin_action
-          self.options.set_option(:scope,OnCloud::SCOPE_FILES_ADMIN)
+          self.options.set_option(:scope,AoC::SCOPE_FILES_ADMIN)
           update_aoc_api
           command_admin=self.options.get_next_command([ :ats, :resource, :usage_reports, :analytics, :subscription, :auth_providers ])
           case command_admin
@@ -434,7 +434,7 @@ module Aspera
             end
           when :subscription
             org=@api_aoc.read('organization')[:data]
-            bss_api=OnCloud.new(oncloud_params('bss/platform'))
+            bss_api=AoC.new(aoc_params('bss/platform'))
             graphql_query="
     query ($organization_id: ID!) {
       aoc (organization_id: $organization_id) {
@@ -488,7 +488,7 @@ module Aspera
           when :ats
             ats_api = Rest.new(@api_aoc.params.deep_merge({
               :base_url => @api_aoc.params[:base_url]+'/admin/ats/pub/v1',
-              :auth     => {:scope => OnCloud::SCOPE_FILES_ADMIN_USER}
+              :auth     => {:scope => AoC::SCOPE_FILES_ADMIN_USER}
             }))
             return @ats.execute_action_gen(ats_api)
             #          when :search_nodes
@@ -507,7 +507,7 @@ module Aspera
           when :analytics
             analytics_api = Rest.new(@api_aoc.params.deep_merge({
               :base_url => @api_aoc.params[:base_url].gsub('/api/v1','')+'/analytics/v2',
-              :auth     => {:scope => OnCloud::SCOPE_FILES_ADMIN_USER}
+              :auth     => {:scope => AoC::SCOPE_FILES_ADMIN_USER}
             }))
             command_analytics=self.options.get_next_command([ :application_events, :transfers ])
             case command_analytics
@@ -750,7 +750,7 @@ module Aspera
               # execute transfer
               node_file = {node_info: node_info, file_id: package_info['contents_file_id']}
               # raise esception if at least one error
-              Main.result_transfer(transfer_start(OnCloud::PACKAGES_APP,'send',node_file,OnCloud.package_tags(package_info,'upload')))
+              Main.result_transfer(transfer_start(AoC::PACKAGES_APP,'send',node_file,AoC.package_tags(package_info,'upload')))
               # return all info on package
               return { :type=>:single_object, :data =>package_info}
             when :recv
@@ -786,7 +786,7 @@ module Aspera
                 self.format.display_status("downloading package: #{package_info['name']}")
                 add_ts={'paths'=>[{'source'=>'.'}]}
                 node_file = {node_info: node_info, file_id: package_info['contents_file_id']}
-                statuses=transfer_start(OnCloud::PACKAGES_APP,'receive',node_file,OnCloud.package_tags(package_info,'download').merge(add_ts))
+                statuses=transfer_start(AoC::PACKAGES_APP,'receive',node_file,AoC.package_tags(package_info,'download').merge(add_ts))
                 result_transfer.push({'package'=>package_id,'status'=>statuses.map{|i|i.to_s}.join(',')})
                 # update skip list only if all transfer sessions completed
                 if TransferAgent.session_status(statuses).eql?(:success)
@@ -861,7 +861,7 @@ module Aspera
               end
               result=self.entity_action(@api_aoc,'short_links',nil,:id,'self')
               if result[:data].is_a?(Hash) and result[:data].has_key?('created_at') and result[:data]['resource_type'].eql?('UrlToken')
-                node_api=@api_aoc.get_node_api(node_file[:node_info],OnCloud::SCOPE_NODE_USER)
+                node_api=@api_aoc.get_node_api(node_file[:node_info],AoC::SCOPE_NODE_USER)
                 perm_data={
                   "file_id"      =>node_file[:file_id],
                   "access_type"  =>"user",

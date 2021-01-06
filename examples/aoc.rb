@@ -1,10 +1,10 @@
 #!/usr/bin/env ruby
-require 'aspera/on_cloud'
+require 'aspera/aoc'
 require 'aspera/log'
 
 Aspera::Log.instance.level=:debug
 
-aocapi=Aspera::OnCloud.new(
+aocapi=Aspera::AoC.new(
 url: 'https://myorg.ibmaspera.com',
 auth: :jwt,
 private_key: File.read('path/to_your_private_key.pem'),

@@ -1,5 +1,5 @@
 require 'aspera/log'
-require 'aspera/on_cloud'
+require 'aspera/aoc'
 require 'aspera/cli/main'
 require 'webrick'
 require 'webrick/https'
@@ -55,7 +55,7 @@ module Aspera
         node_info=@aoc_api_user.read("nodes/#{the_package['node_id']}")[:data]
 
         #  get transfer token (for node)
-        node_auth_bearer_token=@aoc_api_user.oauth_token(scope: OnCloud.node_scope(node_info['access_key'],OnCloud::SCOPE_NODE_USER))
+        node_auth_bearer_token=@aoc_api_user.oauth_token(scope: AoC.node_scope(node_info['access_key'],AoC::SCOPE_NODE_USER))
 
         # tell Files what to expect in package: 1 transfer (can also be done after transfer)
         @aoc_api_user.update("packages/#{the_package['id']}",{"sent"=>true,"transfers_expected"=>1})

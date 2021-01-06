@@ -3,7 +3,7 @@ require 'aspera/cli/extended_value'
 require 'aspera/fasp/installation'
 require 'aspera/api_detector'
 require 'aspera/open_application'
-require 'aspera/on_cloud'
+require 'aspera/aoc'
 require 'aspera/proxy_auto_config'
 require 'aspera/uri_reader'
 require 'aspera/rest'
@@ -39,7 +39,7 @@ module Aspera
         RUBY_FILE_EXT='.rb'
         AOC_COMMAND_V1='files'
         AOC_COMMAND_V2='aspera'
-        AOC_COMMAND_V3='oncloud'
+        AOC_COMMAND_V3='aoc'
         AOC_COMMAND_CURRENT=AOC_COMMAND_V3
         CONNECT_WEB_URL = 'https://d3gcli72yxqn2z.cloudfront.net/connect'
         CONNECT_VERSIONS = 'connectversions.js'
@@ -572,7 +572,7 @@ module Aspera
             case appli[:product]
             when :aoc
               self.format.display_status("Detected: Aspera on Cloud".bold)
-              organization,instance_domain=OnCloud.parse_url(instance_url)
+              organization,instance_domain=AoC.parse_url(instance_url)
               aspera_preset_name='aoc_'+organization
               self.format.display_status("Preparing preset: #{aspera_preset_name}")
               # init defaults if necessary
@@ -590,7 +590,7 @@ module Aspera
               end
               # else generate path
               if private_key_path.empty?
-                private_key_path=File.join(@main_folder,'aspera_on_cloud_key')
+                private_key_path=File.join(@main_folder,'aspera_aoc_key')
               end
               if File.exist?(private_key_path)
                 self.format.display_status("Using existing key:")
@@ -602,7 +602,7 @@ module Aspera
               self.format.display_status("#{private_key_path}")
               pub_key_pem=OpenSSL::PKey::RSA.new(File.read(private_key_path)).public_key.to_s
               # define options
-              require 'aspera/cli/plugins/oncloud'
+              require 'aspera/cli/plugins/aoc'
               # make username mandatory for jwt, this triggers interactive input
               self.options.get_option(:username,:mandatory)
               files_plugin=Plugins::Oncloud.new(@agents.merge({skip_basic_auth_options: true, private_key_path: private_key_path}))
@@ -644,7 +644,7 @@ module Aspera
                 self.options.set_option(:redirect_uri,DEFAULT_REDIRECT)
                 auto_set_pub_key=true
                 auto_set_jwt=true
-                self.options.set_option(:scope,OnCloud::SCOPE_FILES_ADMIN)
+                self.options.set_option(:scope,AoC::SCOPE_FILES_ADMIN)
               end
               files_plugin.update_aoc_api
               myself=files_plugin.api_aoc.read('self')[:data]
@@ -679,14 +679,14 @@ module Aspera
             end
           when :export_to_cli
             self.format.display_status("Exporting: Aspera on Cloud")
-            require 'aspera/cli/plugins/oncloud'
+            require 'aspera/cli/plugins/aoc'
             # need url / username
             add_plugin_default_preset(AOC_COMMAND_V3.to_sym)
             files_plugin=Plugins::Oncloud.new(@agents) # TODO: is this line needed ?
             url=self.options.get_option(:url,:mandatory)
             cli_conf_file=Fasp::Installation.instance.cli_conf_file
             data=JSON.parse(File.read(cli_conf_file))
-            organization,instance_domain=OnCloud.parse_url(url)
+            organization,instance_domain=AoC.parse_url(url)
             key_basename='org_'+organization+'.pem'
             key_file=File.join(File.dirname(File.dirname(cli_conf_file)),'etc',key_basename)
             File.write(key_file,self.options.get_option(:private_key,:mandatory))
@@ -699,7 +699,7 @@ module Aspera
             new_conf['clientId']=self.options.get_option(:client_id,:optional)
             new_conf['clientSecret']=self.options.get_option(:client_secret,:optional)
             if new_conf['clientId'].nil?
-              new_conf['clientId'],new_conf['clientSecret']=OnCloud.get_client_info()
+              new_conf['clientId'],new_conf['clientSecret']=AoC.get_client_info()
             end
             entry=data['AoCAccounts'].select{|i|i['organization'].eql?(organization)}.first
             if entry.nil?

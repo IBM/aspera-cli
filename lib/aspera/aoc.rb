@@ -5,7 +5,7 @@ require 'aspera/data_repository'
 require 'base64'
 
 module Aspera
-  class OnCloud < Rest
+  class AoC < Rest
     private
     @@use_standard_ports = true
 
@@ -426,5 +426,5 @@ module Aspera
       return {node_info: current_node_info, file_id: current_file_id}
     end
 
-  end # OnCloud
+  end # AoC
 end # Aspera
