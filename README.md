@@ -1,7 +1,7 @@
 [comment1]: # (Do not edit this README.md, edit docs/README.erb.md, for details, read docs/README.md)
 # `ascli` : a Command Line for IBM Aspera products
 
-Version : 4.0.0.pre1
+Version : 4.0.0.pre2
 
 _Laurent/2016-2021_
 
@@ -36,7 +36,7 @@ Once the gem is installed, `ascli` shall be accessible:
 
 ```
 $ ascli --version
-4.0.0.pre1
+4.0.0.pre2
 ```
 
 ## First use
@@ -1224,83 +1224,132 @@ A non complete list of commands used in unit tests:
 
 ```
 ascli
-ascli --no-default node --url=my_url_here --username=my_username_here --password=my_password_here --insecure=yes delete /500M.dat
-ascli --no-default node --url=my_url_here --username=my_username_here --password=my_password_here --insecure=yes upload --to-folder=my_HSTS_FOLDER_UPLOAD --sources=@ts --ts=@json:'{"paths":[{"source":"/aspera-test-dir-small/10MB.1"}],"remote_password":"my_HSTS_SSH_PASS","precalculate_job_size":true}' --transfer=node --transfer-info=@json:'{"url":"my_url_here","username":"my_username_here","password":"my_password_here"}'
-ascli -N --url=my_url_here --username=my_username_here --password=my_password_here node acc create --value=@json:'{"id":"aoc_1","storage":{"type":"local","path":"/"}}'
-ascli -N --url=my_url_here --username=my_username_here --password=my_password_here node acc delete --id=aoc_1
-ascli -N cos node --bucket=my_ICOS_BUCKET --service-credentials=@json:@file:DIR_PRIV/service_creds.json --region=my_ICOS_REGION info
-ascli -N aoc files browse / --link=my_AOC_PUBLINK_FOLDER
-ascli -N aoc files upload --to-folder=/ my_SAMPLE_FILEPATH --link=my_AOC_PUBLINK_FOLDER
-ascli -N aoc org --link=my_AOC_PUBLINK_RECV_PACKAGE
-ascli -N aoc packages send --value=@json:'{"name":"PKG_TEST_TITLE"}' my_SAMPLE_FILEPATH --link=my_AOC_PUBLINK_SEND_DROPBOX
-ascli -N aoc packages send --value=@json:'{"name":"PKG_TEST_TITLE"}' my_SAMPLE_FILEPATH --link=my_AOC_PUBLINK_SEND_USER
-ascli -N server --url=my_url_here --username=my_username_here --password=my_password_here --format=nagios nagios transfer --to-folder=my_HSTS_FOLDER_UPLOAD
-ascli -N server --url=my_url_here --username=my_username_here --ssh-keys=my_HSTS_TEST_KEY --format=nagios nagios app_services
-ascli -N server --url=my_url_here --username=my_username_here --ssh-keys=my_HSTS_TEST_KEY ctl all:status
-ascli -N server --url=my_url_here --username=my_username_here --ssh-keys=my_HSTS_TEST_KEY nodeadmin -- -l
-ascli -Pserver_eudemo_key server br /
 ascli -h
+ascli aoc admin analytics transfers --query=@json:'{"status":"completed","direction":"receive"}'
+ascli aoc admin ats access_key --id=akibmcloud --secret=somesecret node browse /
+ascli aoc admin ats access_key --id=akibmcloud delete
+ascli aoc admin ats access_key create --cloud=aws --region=my_aws_bucket_region --params=@json:'{"id":"ak_aws","name":"my test key AWS","storage":{"type":"aws_s3","bucket":"my_aws_bucket_name","credentials":{"access_key_id":"my_aws_bucket_key","secret_access_key":"my_aws_bucket_secret"},"path":"/"}}'
+ascli aoc admin ats access_key create --cloud=softlayer --region=my_icos_bucket_region --params=@json:'{"id":"akibmcloud","secret":"somesecret","name":"my test key","storage":{"type":"ibm-s3","bucket":"my_icos_bucket_name","credentials":{"access_key_id":"my_icos_bucket_key","secret_access_key":"my_icos_bucket_secret"},"path":"/"}}'
+ascli aoc admin ats access_key list --fields=name,id
+ascli aoc admin ats cluster clouds
+ascli aoc admin ats cluster list
+ascli aoc admin ats cluster show --cloud=aws --region=eu-west-1
+ascli aoc admin ats cluster show --id=1f412ae7-869a-445c-9c05-02ad16813be2
+ascli aoc admin resource node --name=AOC_NODE1_NAME --secret=AOC_NODE1_SECRET v3 access_key create --value=@json:'{"id":"testsub1","storage":{"path":"/folder1"}}'
+ascli aoc admin resource node --name=AOC_NODE1_NAME --secret=AOC_NODE1_SECRET v3 access_key delete --id=testsub1
+ascli aoc admin resource node --name=AOC_NODE1_NAME --secret=AOC_NODE1_SECRET v3 events
+ascli aoc admin resource node --name=AOC_NODE1_NAME --secret=AOC_NODE1_SECRET v4 browse /
+ascli aoc admin resource node --name=AOC_NODE1_NAME --secret=AOC_NODE1_SECRET v4 delete /folder1
+ascli aoc admin resource node --name=AOC_NODE1_NAME --secret=AOC_NODE1_SECRET v4 mkdir /folder1
+ascli aoc admin resource workspace list
+ascli aoc admin resource workspace_membership list --fields=ALL --query=@json:'{"page":1,"per_page":50,"embed":"member","inherited":false,"workspace_id":11363,"sort":"name"}'
+ascli aoc apiinfo
+ascli aoc automation workflow --id="my_wf_id" action create --value=@json:'{"name":"toto"}' | tee action.info
+ascli aoc automation workflow create --value=@json:'{"name":"test_workflow"}'
+ascli aoc automation workflow delete --id="my_wf_id"
+ascli aoc automation workflow list
+ascli aoc automation workflow list --select=@json:'{"name":"test_workflow"}' --fields=id --format=csv --display=data > test
+ascli aoc automation workflow list --value=@json:'{"show_org_workflows":"true"}' --scope=admin:all
+ascli aoc bearer_token --display=data --scope=user:all
+ascli aoc faspex
+ascli aoc files bearer /
+ascli aoc files browse /
+ascli aoc files browse / -N --link=my_aoc_publink_folder
+ascli aoc files delete /testsrc
+ascli aoc files download --transfer=connect /200KB.1
+ascli aoc files file 18891
+ascli aoc files find / --value='\.partial$'
+ascli aoc files http_node_download --to-folder=. /200KB.1
+ascli aoc files mkdir /testsrc
+ascli aoc files rename /somefolder testdst
+ascli aoc files short_link create --to-folder=/testdst --value=private
+ascli aoc files short_link create --to-folder=/testdst --value=public
+ascli aoc files short_link list --value=@json:'{"purpose":"shared_folder_auth_link"}'
+ascli aoc files transfer --from-folder=/testsrc --to-folder=/testdst testfile.bin
+ascli aoc files upload --to-folder=/testsrc testfile.bin
+ascli aoc files upload -N --to-folder=/ testfile.bin --link=my_aoc_publink_folder
+ascli aoc files v3 info
+ascli aoc org -N --link=my_aoc_publink_recv_from_aocuser
+ascli aoc organization
+ascli aoc packages list
+ascli aoc packages list --format=csv --fields=id --display=data|head -n 1);\
+ascli aoc packages recv --id="my_package_id" --to-folder=.
+ascli aoc packages recv --id=ALL --to-folder=. --once-only=yes --lock-port=12345
+ascli aoc packages send --value=@json:'{"name":"Important files delivery","recipients":["external.user@example.com"]}' --new-user-option=@json:'{"package_contact":true}' testfile.bin
+ascli aoc packages send --value=@json:'{"name":"Important files delivery","recipients":["internal.user@example.com"],"note":"my note"}' testfile.bin
+ascli aoc packages send --workspace="my_aoc_shbx_ws" --value=@json:'{"name":"Important files delivery","recipients":["my_aoc_shbx_name"]}' testfile.bin
+ascli aoc packages send -N --value=@json:'{"name":"Important files delivery"}' testfile.bin --link=my_aoc_publink_send_aoc_user
+ascli aoc packages send -N --value=@json:'{"name":"Important files delivery"}' testfile.bin --link=my_aoc_publink_send_shd_inbox
+ascli aoc user info modify @json:'{"name":"dummy change"}'
+ascli aoc user info show
+ascli aoc workspace
 ascli ats access_key --id=ak_aws delete
-ascli ats access_key --id=akibmcloud --secret=my_secret_here cluster
-ascli ats access_key --id=akibmcloud --secret=my_secret_here node browse /
+ascli ats access_key --id=akibmcloud --secret=somesecret cluster
+ascli ats access_key --id=akibmcloud --secret=somesecret node browse /
 ascli ats access_key --id=akibmcloud delete
-ascli ats access_key create --cloud=aws --region=my_AWS_REGION --params=@json:'{"id":"ak_aws","name":"my test key AWS","storage":{"type":"aws_s3","bucket":"'my_AWS_BUCKET'","credentials":{"access_key_id":"my_access_key_id_here","secret_access_key":"my_secret_access_key_here"},"path":"/"}}'
-ascli ats access_key create --cloud=softlayer --region=my_ICOS_REGION --params=@json:'{"id":"akibmcloud","secret":"somesecret","name":"my test key","storage":{"type":"ibm-s3","bucket":"my_ICOS_BUCKET","credentials":{"access_key_id":"my_access_key_id_here","secret_access_key":"my_secret_access_key_here"},"path":"/"}}'
+ascli ats access_key create --cloud=aws --region=my_aws_bucket_region --params=@json:'{"id":"ak_aws","name":"my test key AWS","storage":{"type":"aws_s3","bucket":"my_aws_bucket_name","credentials":{"access_key_id":"my_aws_bucket_key","secret_access_key":"my_aws_bucket_secret"},"path":"/"}}'
+ascli ats access_key create --cloud=softlayer --region=my_icos_bucket_region --params=@json:'{"id":"akibmcloud","secret":"somesecret","name":"my test key","storage":{"type":"ibm-s3","bucket":"my_icos_bucket_name","credentials":{"access_key_id":"my_icos_bucket_key","secret_access_key":"my_icos_bucket_secret"},"path":"/"}}'
 ascli ats access_key list --fields=name,id
 ascli ats api_key create
 ascli ats api_key instances
 ascli ats api_key list
 ascli ats cluster clouds
 ascli ats cluster list
-ascli ats cluster show --cloud=aws --region=my_AWS_REGION
+ascli ats cluster show --cloud=aws --region=eu-west-1
 ascli ats cluster show --id=1f412ae7-869a-445c-9c05-02ad16813be2
-ascli conf flush
-ascli conf wiz --url=my_url_here --config-file=SAMPLE_CONFIG_FILE --pkeypath='' --username=my_username_here --test-mode=yes
-ascli conf wiz --url=my_url_here --config-file=SAMPLE_CONFIG_FILE --pkeypath='' --username=my_username_here --test-mode=yes --use-generic-client=yes
+ascli conf flush_tokens
+ascli conf wiz --url=https://my_aoc_org.ibmaspera.com --config-file=SAMPLE_CONFIG_FILE --pkeypath='' --username=my_aoc_user --test-mode=yes
+ascli conf wiz --url=https://my_aoc_org.ibmaspera.com --config-file=SAMPLE_CONFIG_FILE --pkeypath='' --username=my_aoc_user --test-mode=yes --use-generic-client=yes
 ascli config ascp connect id 'Aspera Connect for Windows' info
-ascli config ascp connect id 'Aspera Connect for Windows' links id 'Windows Installer' download --to-folder=DIR_TMP/.
+ascli config ascp connect id 'Aspera Connect for Windows' links id 'Windows Installer' download --to-folder=.
 ascli config ascp connect id 'Aspera Connect for Windows' links list
 ascli config ascp connect list
+ascli config ascp info
+ascli config ascp install
 ascli config ascp products list
 ascli config ascp show
 ascli config email_test aspera.user1@gmail.com
 ascli config export
-ascli config genkey DIR_TMP/mykey
-ascli config open
+ascli config genkey mykey
 ascli config plugins
-ascli config proxy_check --fpac=file:///./examples/proxy.pac https://eudemo.asperademo.com
-ascli console transfer current list
-ascli console transfer smart list
+ascli config proxy_check --fpac=file:///examples/proxy.pac https://eudemo.asperademo.com
+ascli console transfer current list 
+ascli console transfer smart list 
 ascli console transfer smart sub 112 @json:'{"source":{"paths":["10MB.1"]},"source_type":"user_selected"}'
+ascli cos -N --bucket=my_icos_bucket_name --endpoint=my_icos_bucket_endpoint --apikey=my_icos_bucket_apikey --crn=my_icos_resource_instance_id node info
+ascli cos -N --bucket=my_icos_bucket_name --region=my_icos_bucket_region --service-credentials=@json:@file:service_creds.json node info
 ascli cos node access_key --id=self show
-ascli cos node download my_SAMPLE_FILENAME --to-folder=DIR_TMP/.
+ascli cos node download testfile.bin --to-folder=.
 ascli cos node info
-ascli cos node upload my_SAMPLE_FILEPATH
+ascli cos node upload testfile.bin
 ascli faspex nagios_check
 ascli faspex package list
 ascli faspex package list --box=sent --fields=package_id --format=csv --display=data|tail -n 1);\
-ascli faspex package recv --box=sent --to-folder=DIR_TMP/. --id=$pack_id
-ascli faspex package recv --to-folder=DIR_TMP/. --id=$pack_id
-ascli faspex package recv --to-folder=DIR_TMP/. --id=ALL --once-only=yes
-ascli faspex package recv --to-folder=DIR_TMP/. --link='my_FASPEX_PUBLINK_RECV_PACKAGE'
-ascli faspex package send --delivery-info=@json:'{"title":"PKG_TEST_TITLE","recipients":["my_EMAIL_ADDR"]}' my_SAMPLE_FILEPATH
-ascli faspex package send --link='my_FASPEX_PUBLINK_SEND_DROPBOX' --delivery-info=@json:'{"title":"PKG_TEST_TITLE"}' my_SAMPLE_FILEPATH
-ascli faspex package send --link='my_FASPEX_PUBLINK_SEND_TO_USER' --delivery-info=@json:'{"title":"PKG_TEST_TITLE"}' my_SAMPLE_FILEPATH
+ascli faspex package recv --box=sent --to-folder=. --id="my_package_id"
+ascli faspex package recv --to-folder=. --id="my_package_id"
+ascli faspex package recv --to-folder=. --id=ALL --once-only=yes
+ascli faspex package recv --to-folder=. --link="my_faspex_publink_recv_from_fxuser"
+ascli faspex package send --delivery-info=@json:'{"title":"Important files delivery","recipients":["internal.user@example.com"]}' testfile.bin
+ascli faspex package send --link="my_faspex_publink_send_to_dropbox" --delivery-info=@json:'{"title":"Important files delivery"}' testfile.bin
+ascli faspex package send --link="my_faspex_publink_send_to_fxuser" --delivery-info=@json:'{"title":"Important files delivery"}' testfile.bin
 ascli faspex source name "Server Files" node br /
 ascli faspex5 node list --value=@json:'{"type":"received","subtype":"mypackages"}'
 ascli faspex5 package list --value=@json:'{"state":["released"]}'
-ascli faspex5 package receive --id=$package_id --to-folder=DIR_TMP/.
-ascli faspex5 package send --value=@json:'{"title":"test title","recipients":["admin"]}' my_SAMPLE_FILEPATH
-ascli node async --id=1 bandwidth
-ascli node async --id=1 counters
-ascli node async --id=1 files
+ascli faspex5 package receive --id="my_package_id" --to-folder=.
+ascli faspex5 package send --value=@json:'{"title":"test title","recipients":["admin"]}' testfile.bin
+ascli node -N -Ptst_node_preview access_key create --value=@json:'{"id":"aoc_1","storage":{"type":"local","path":"/"}}'
+ascli node -N -Ptst_node_preview access_key delete --id=aoc_1
+ascli node async --id=1 bandwidth 
+ascli node async --id=1 counters 
+ascli node async --id=1 files 
 ascli node async list
 ascli node async show --id=1
 ascli node async show --id=ALL
 ascli node basic_token
 ascli node browse / -r
-ascli node delete my_HSTS_FOLDER_UPLOAD/my_SAMPLE_FILENAME
-ascli node download --to-folder=DIR_TMP/. my_HSTS_FOLDER_UPLOAD/my_SAMPLE_FILENAME
+ascli node delete folder_1/10MB.1
+ascli node delete folder_1/testfile.bin
+ascli node download --to-folder=. folder_1/testfile.bin
 ascli node info
 ascli node nagios_check
 ascli node search / --value=@json:'{"sort":"mtime"}'
@@ -1308,112 +1357,64 @@ ascli node service --id=service1 delete
 ascli node service create @json:'{"id":"service1","type":"WATCHD","run_as":{"user":"user1"}}'
 ascli node service list
 ascli node transfer list --value=@json:'{"active_only":true}'
-ascli node upload --to-folder=my_HSTS_FOLDER_UPLOAD --ts=@json:'{"target_rate_cap_kbps":10000}' my_SAMPLE_FILEPATH
-ascli aoc admin analytics transfers --query=@json:'{"status":"completed","direction":"receive"}'
-ascli aoc admin ats access_key --id=akibmcloud --secret=my_secret_here node browse /
-ascli aoc admin ats access_key --id=akibmcloud delete
-ascli aoc admin ats access_key create --cloud=aws --region=my_AWS_REGION --params=@json:'{"id":"ak_aws","name":"my test key AWS","storage":{"type":"aws_s3","bucket":"'my_AWS_BUCKET'","credentials":{"access_key_id":"my_access_key_id_here","secret_access_key":"my_secret_access_key_here"},"path":"/"}}'
-ascli aoc admin ats access_key create --cloud=softlayer --region=my_ICOS_REGION --params=@json:'{"id":"akibmcloud","secret":"somesecret","name":"my test key","storage":{"type":"ibm-s3","bucket":"my_ICOS_BUCKET","credentials":{"access_key_id":"my_access_key_id_here","secret_access_key":"my_secret_access_key_here"},"path":"/"}}'
-ascli aoc admin ats access_key list --fields=name,id
-ascli aoc admin ats cluster clouds
-ascli aoc admin ats cluster list
-ascli aoc admin ats cluster show --cloud=aws --region=my_AWS_REGION
-ascli aoc admin ats cluster show --id=1f412ae7-869a-445c-9c05-02ad16813be2
-ascli aoc admin res node v3 events --secret=my_secret_here
-ascli aoc admin resource node --name=my_AOC_NODE1_NAME --secret=my_secret_here v3 access_key create --value=@json:'{"id":"testsub1","storage":{"path":"/folder1"}}'
-ascli aoc admin resource node --name=my_AOC_NODE1_NAME --secret=my_secret_here v3 access_key delete --id=testsub1
-ascli aoc admin resource node --name=my_AOC_NODE1_NAME --secret=my_secret_here v3 events
-ascli aoc admin resource node --name=my_AOC_NODE1_NAME --secret=my_secret_here v4 browse /
-ascli aoc admin resource node --name=my_AOC_NODE1_NAME --secret=my_secret_here v4 delete /folder1
-ascli aoc admin resource node --name=my_AOC_NODE1_NAME --secret=my_secret_here v4 mkdir /folder1
-ascli aoc admin resource workspace list
-ascli aoc admin resource workspace_membership list --fields=ALL --query=@json:'{"page":1,"per_page":50,"embed":"member","inherited":false,"workspace_id":11363,"sort":"name"}'
-ascli aoc apiinfo
-ascli aoc automation workflow --id=$WF_ID action create --value=@json:'{"name":"toto"}' | tee action.info
-ascli aoc automation workflow create --value=@json:'{"name":"test_workflow"}'
-ascli aoc automation workflow delete --id=$WF_ID
-ascli aoc automation workflow list
-ascli aoc automation workflow list --select=@json:'{"name":"test_workflow"}' --fields=id --format=csv --display=data> $@
-ascli aoc automation workflow list --value=@json:'{"show_org_workflows":"true"}' --scope=admin:all
-ascli aoc bearer_token --display=data --scope=user:all
-ascli aoc faspex
-ascli aoc files bearer /
-ascli aoc files browse /
-ascli aoc files delete /newname
-ascli aoc files download --transfer=connect /200KB.1
-ascli aoc files file 18891
-ascli aoc files find / --value='\.partial$'
-ascli aoc files http_node_download --to-folder=DIR_TMP/. /200KB.1
-ascli aoc files mkdir /testfolder
-ascli aoc files rename /testfolder newname
-ascli aoc files short_link create --to-folder='ascli test folder link' --value=private
-ascli aoc files short_link create --to-folder='ascli test folder link' --value=public
-ascli aoc files short_link list --value=@json:'{"purpose":"shared_folder_auth_link"}'
-ascli aoc files transfer --workspace=eudemo --from-folder='/ascli_test' --to-folder=/ascli_test2 200KB.1
-ascli aoc files upload --to-folder=/ my_SAMPLE_FILEPATH
-ascli aoc files v3 info
-ascli aoc organization
-ascli aoc packages list
-ascli aoc packages list --format=csv --fields=id --display=data|head -n 1);\
-ascli aoc packages recv --id=$last_pack --to-folder=DIR_TMP/.
-ascli aoc packages recv --id=ALL --once-only=yes --lock-port=12345
-ascli aoc packages send --value=@json:'{"name":"PKG_TEST_TITLE","recipients":["my_AOC_EXTERNAL_EMAIL"]}' --new-user-option=@json:'{"package_contact":true}' my_SAMPLE_FILEPATH
-ascli aoc packages send --value=@json:'{"name":"PKG_TEST_TITLE","recipients":["my_EMAIL_ADDR"],"note":"my note"}' my_SAMPLE_FILEPATH
-ascli aoc packages send --workspace="my_AOC_WS_SH_BX" --value=@json:'{"name":"PKG_TEST_TITLE","recipients":["my_AOC_SH_BX"]}' my_SAMPLE_FILEPATH
-ascli aoc user info modify @json:'{"name":"dummy change"}'
-ascli aoc user info show
-ascli aoc workspace
+ascli node upload --to-folder="folder_1" --sources=@ts --ts=@json:'{"paths":[{"source":"/aspera-test-dir-small/10MB.1"}],"precalculate_job_size":true}' --transfer=node --transfer-info=@json:'{"url":"my_node_url","username":"my_node_user","password":"my_node_pass"}'
+ascli node upload --to-folder=folder_1 --ts=@json:'{"target_rate_cap_kbps":10000}' testfile.bin
 ascli orchestrator info
 ascli orchestrator plugins
 ascli orchestrator processes
-ascli orchestrator workflow --id=my_ORCH_WORKFLOW_ID inputs
-ascli orchestrator workflow --id=my_ORCH_WORKFLOW_ID start --params=@json:'{"Param":"world !"}'
-ascli orchestrator workflow --id=my_ORCH_WORKFLOW_ID start --params=@json:'{"Param":"world !"}' --result=ResultStep:Complete_status_message
-ascli orchestrator workflow --id=my_ORCH_WORKFLOW_ID status
+ascli orchestrator workflow --id=ORCH_WORKFLOW_ID inputs
+ascli orchestrator workflow --id=ORCH_WORKFLOW_ID start --params=@json:'{"Param":"world !"}'
+ascli orchestrator workflow --id=ORCH_WORKFLOW_ID start --params=@json:'{"Param":"world !"}' --result=ResultStep:Complete_status_message
+ascli orchestrator workflow --id=ORCH_WORKFLOW_ID status
 ascli orchestrator workflow list
 ascli orchestrator workflow status
 ascli preview check --skip-types=office
 ascli preview folder 1 --skip-types=office --log-level=info --file-access=remote --ts=@json:'{"target_rate_kbps":1000000}'
 ascli preview scan --skip-types=office --log-level=info
-ascli preview test --case=$@ mp4 "my_TSTFILE_MXF" --video-conversion=blend --log-level=debug
-ascli preview test --case=$@ mp4 "my_TSTFILE_MXF" --video-conversion=clips --log-level=debug
-ascli preview test --case=$@ mp4 "my_TSTFILE_MXF" --video-conversion=reencode --log-level=debug
-ascli preview test --case=$@ png "my_TSTFILE_DCM" --log-level=debug
-ascli preview test --case=$@ png "my_TSTFILE_DOCX" --log-level=debug
-ascli preview test --case=$@ png "my_TSTFILE_MXF" --video-png-conv=animated --log-level=debug
-ascli preview test --case=$@ png "my_TSTFILE_MXF" --video-png-conv=fixed --log-level=debug
-ascli preview test --case=$@ png "my_TSTFILE_PDF" --log-level=debug
+ascli preview test --case=test mp4 "TSTFILE_MXF" --video-conversion=blend --log-level=debug
+ascli preview test --case=test mp4 "TSTFILE_MXF" --video-conversion=clips --log-level=debug
+ascli preview test --case=test mp4 "TSTFILE_MXF" --video-conversion=reencode --log-level=debug
+ascli preview test --case=test png "TSTFILE_DCM" --log-level=debug
+ascli preview test --case=test png "TSTFILE_DOCX" --log-level=debug
+ascli preview test --case=test png "TSTFILE_MXF" --video-png-conv=animated --log-level=debug
+ascli preview test --case=test png "TSTFILE_MXF" --video-png-conv=fixed --log-level=debug
+ascli preview test --case=test png "TSTFILE_PDF" --log-level=debug
 ascli preview trevents --once-only=yes --skip-types=office --log-level=info
+ascli server -N -Ptst_hstsfaspex_ssh -Plocal_user ctl all:status
+ascli server -N -Ptst_hstsfaspex_ssh -Plocal_user nagios app_services --format=nagios
+ascli server -N -Ptst_hstsfaspex_ssh -Plocal_user nodeadmin -- -l
+ascli server -N -Ptst_server_bykey -Plocal_user br /
 ascli server browse /
-ascli server browse my_HSTS_FOLDER_UPLOAD/target_hot
-ascli server cp NEW_SERVER_FOLDER/my_SAMPLE_FILENAME my_HSTS_FOLDER_UPLOAD/200KB.2
+ascli server browse folder_1/target_hot
+ascli server cp NEW_SERVER_FOLDER/testfile.bin folder_1/200KB.2
 ascli server delete NEW_SERVER_FOLDER
-ascli server delete my_HSTS_FOLDER_UPLOAD/target_hot
-ascli server delete my_HSTS_FOLDER_UPLOAD/to.delete
+ascli server delete folder_1/target_hot
+ascli server delete folder_1/to.delete
 ascli server df
-ascli server download NEW_SERVER_FOLDER/my_SAMPLE_FILENAME --to-folder=DIR_TMP/.
-ascli server download NEW_SERVER_FOLDER/my_SAMPLE_FILENAME --to-folder=my_HSTS_FOLDER_UPLOAD --transfer=node
+ascli server download NEW_SERVER_FOLDER/testfile.bin --to-folder=.
+ascli server download NEW_SERVER_FOLDER/testfile.bin --to-folder=folder_1 --transfer=node
 ascli server du /
 ascli server info
-ascli server md5sum NEW_SERVER_FOLDER/my_SAMPLE_FILENAME
+ascli server md5sum NEW_SERVER_FOLDER/testfile.bin
 ascli server mkdir NEW_SERVER_FOLDER --logger=stdout
-ascli server mkdir my_HSTS_FOLDER_UPLOAD/target_hot
-ascli server mv my_HSTS_FOLDER_UPLOAD/200KB.2 my_HSTS_FOLDER_UPLOAD/to.delete
-ascli server upload --sources=@ts --ts=@json:'{"paths":[{"source":"my_SAMPLE_FILEPATH","destination":"NEW_SERVER_FOLDER/othername"}]}'
-ascli server upload --src-type=pair --sources=@json:'["my_SAMPLE_FILEPATH","NEW_SERVER_FOLDER/othername"]'
-ascli server upload --src-type=pair my_SAMPLE_FILEPATH NEW_SERVER_FOLDER/othername
-ascli server upload --to-folder=my_HSTS_FOLDER_UPLOAD/target_hot --lock-port=12345 --ts=@json:'{"EX_ascp_args":["--remove-after-transfer","--remove-empty-directories","--exclude-newer-than=-8","--src-base","source_hot"]}' source_hot
-ascli server upload my_SAMPLE_FILEPATH --to-folder=NEW_SERVER_FOLDER
+ascli server mkdir folder_1/target_hot
+ascli server mv folder_1/200KB.2 folder_1/to.delete
+ascli server nagios transfer --to-folder=folder_1 --format=nagios 
+ascli server upload --sources=@ts --ts=@json:'{"paths":[{"source":"testfile.bin","destination":"NEW_SERVER_FOLDER/othername"}]}'
+ascli server upload --src-type=pair --sources=@json:'["testfile.bin","NEW_SERVER_FOLDER/othername"]'
+ascli server upload --src-type=pair testfile.bin NEW_SERVER_FOLDER/othername
+ascli server upload --to-folder=folder_1/target_hot --lock-port=12345 --ts=@json:'{"EX_ascp_args":["--remove-after-transfer","--remove-empty-directories","--exclude-newer-than=-8","--src-base","source_hot"]}' source_hot
+ascli server upload testfile.bin --to-folder=NEW_SERVER_FOLDER
 ascli shares repository browse /
-ascli shares repository delete /my_SHARES_UPLOAD/my_SAMPLE_FILENAME
-ascli shares repository download --to-folder=DIR_TMP/. /my_SHARES_UPLOAD/my_SAMPLE_FILENAME
-ascli shares repository upload --to-folder=/my_SHARES_UPLOAD my_SAMPLE_FILEPATH
+ascli shares repository delete /SHARES_UPLOAD/testfile.bin
+ascli shares repository download --to-folder=. /SHARES_UPLOAD/testfile.bin
+ascli shares repository upload --to-folder=/SHARES_UPLOAD testfile.bin
 ascli shares2 appinfo
 ascli shares2 organization list
 ascli shares2 project list --organization=Sport
 ascli shares2 repository browse /
 ascli shares2 userinfo
-ascli sync start --parameters=@json:'{"sessions":[{"name":"test","reset":true,"remote_dir":"/sync_test","local_dir":"DIR_TMP/contents","host":"my_HSTS_ADDR","user":"user1","private_key_path":"my_HSTS_TEST_KEY"}]}'
+ascli sync start --parameters=@json:'{"sessions":[{"name":"test","reset":true,"remote_dir":"/sync_test","local_dir":"contents","host":"my_remote_host","tcp_port":33001,"user":"my_remote_user","private_key_path":"my_local_user_key"}]}'
 
 ...and more
 ```
@@ -1422,11 +1423,8 @@ ascli sync start --parameters=@json:'{"sessions":[{"name":"test","reset":true,"r
 
 ```
 $ ascli -h
-W, [2021-01-06T10:36:19.253923 #14667]  WARN -- : No config file found. Creating empty configuration file: /Users/gegles/.aspera/ascli/config.yaml
-W, [2021-01-06T10:36:19.254081 #14667]  WARN -- : Saving automatic conversion.
-W, [2021-01-06T10:36:19.254549 #14667]  WARN -- : Copying referenced files
 NAME
-	ascli -- a command line tool for Aspera Applications (v4.0.0.pre1)
+	ascli -- a command line tool for Aspera Applications (v4.0.0.pre2)
 
 SYNOPSIS
 	ascli COMMANDS [OPTIONS] [ARGS]
@@ -1465,7 +1463,7 @@ OPTIONS: global
     -v, --version                    display version
     -w, --warnings                   check for language warnings
         --ui=ENUM                    method to start browser: text, [1m[31mgraphical[0m[22m
-        --log-level=ENUM             Log level: [1m[31mwarn[0m[22m, debug, info, error, fatal, unknown
+        --log-level=ENUM             Log level: info, [1m[31mwarn[0m[22m, error, fatal, unknown, debug
         --logger=ENUM                log method: [1m[31mstderr[0m[22m, stdout, syslog
         --lock-port=VALUE            prevent dual execution of a command, e.g. in cron
         --query=VALUE                additional filter for API calls (extended value) (some commands)
@@ -1478,7 +1476,7 @@ OPTIONS:
         --value=VALUE                extended value for create, update, list filter
         --property=VALUE             name of property to set
         --id=VALUE                   resource identifier (modify,delete,show)
-        --config-file=VALUE          read parameters from file in YAML format, current=/Users/gegles/.aspera/ascli/config.yaml
+        --config-file=VALUE          read parameters from file in YAML format, current=/Users/dwosk/.aspera/ascli/config.yaml
         --override=ENUM              override existing value: [1m[31myes[0m[22m, no
     -N, --no-default                 do not load default configuration for plugin
         --use-generic-client=ENUM    wizard: AoC: use global or org specific jwt client id: yes, [1m[31mno[0m[22m
@@ -2410,7 +2408,7 @@ If you get an error message such as:
 ERROR -- net.ssh.authentication.agent: could not connect to ssh-agent: Agent not configured
 ```
 
-or 
+or
 
 ```
 [Windows]
@@ -3145,7 +3143,7 @@ So, it evolved into `ascli`:
 
 # Release Notes
 
-* 4.0.0.pre1
+* 4.0.0.pre2
 
 	* now available as open source at [https://github.com/IBM/aspera-cli](https://github.com/IBM/aspera-cli) with general cleanup
 	* changed default tool name from `mlia` to `ascli`
