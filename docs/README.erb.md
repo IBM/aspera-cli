@@ -1923,7 +1923,7 @@ If you get an error message such as:
 ERROR -- net.ssh.authentication.agent: could not connect to ssh-agent: Agent not configured
 ```
 
-or 
+or
 
 ```
 [Windows]
@@ -2638,7 +2638,7 @@ So, it evolved into <%=tool%>:
 
 # Release Notes
 
-* 4.0.0.pre1
+* 4.0.0.pre2
 
 	* now available as open source at [<%= gemspec.homepage %>](<%= gemspec.homepage %>) with general cleanup
 	* changed default tool name from `mlia` to `ascli`
