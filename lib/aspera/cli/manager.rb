@@ -2,6 +2,7 @@ require 'aspera/colors'
 require 'aspera/log'
 require 'aspera/cli/extended_value'
 require 'optparse'
+require 'io/console'
 
 module Aspera
   module Cli
@@ -135,6 +136,12 @@ module Aspera
         Log.log.debug("add_cmd_line_options:commands/args=#{@unprocessed_cmd_line_arguments},options=#{@unprocessed_cmd_line_options}".red)
       end
 
+      def prompt_user_input(prompt,sensitive)
+        return STDIN.getpass("#{prompt}> ") if sensitive
+        print "#{prompt}> "
+        return STDIN.gets.chomp
+      end
+
       def get_interactive(type,descr,expected=:single)
         if !@ask_missing_mandatory
           if expected.is_a?(Array)
@@ -143,23 +150,23 @@ module Aspera
           raise CliBadArgument,"missing argument (#{expected}): #{descr}"
         end
         result=nil
+        # Note: mandatory parenthesis here !
+        sensitive = (type.eql?(:option) and @declared_options[descr.to_sym][:sensitive].eql?(true))
+        default_prompt="#{type}: #{descr}"
         # ask interactively
         case expected
         when :multiple
           result=[]
           puts " (one per line, end with empty line)"
           loop do
-            print "#{type}: #{descr}> "
-            entry=STDIN.gets.chomp
+            entry=prompt_user_input(default_prompt,sensitive)
             break if entry.empty?
             result.push(ExtendedValue.instance.evaluate(entry))
           end
         when :single
-          print "#{type}: #{descr}> "
-          result=ExtendedValue.instance.evaluate(STDIN.gets.chomp)
+          result=ExtendedValue.instance.evaluate(prompt_user_input(default_prompt,sensitive))
         else # one fixed
-          print "#{expected.join(' ')}\n#{type}: #{descr}> "
-          result=self.class.get_from_list(STDIN.gets.chomp,descr,expected)
+          result=self.class.get_from_list(prompt_user_input("#{expected.join(' ')}\n#{default_prompt}",sensitive),descr,expected)
         end
         return result
       end
@@ -206,6 +213,12 @@ module Aspera
           return
         end
         @declared_options[option_symbol]={:type=>type}
+        # by default passwords and secrets are sensitive, else specify when declaring the option
+        set_is_sensitive(option_symbol) if !%w{password secret key}.select{|i| option_symbol.to_s.end_with?(i)}.empty?
+      end
+
+      def set_is_sensitive(option_symbol)
+        @declared_options[option_symbol][:sensitive]=true
       end
 
       # define option with handler
