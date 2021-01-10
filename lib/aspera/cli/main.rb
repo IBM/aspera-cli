@@ -21,18 +21,9 @@ module Aspera
       # name of application, also foldername where config is stored
       PROGRAM_NAME = 'ascli'
       GEM_NAME = 'aspera-cli'
-      # Container module of current class : Aspera::Cli
-      CLI_MODULE=Module.nesting[1].to_s
-      # Path to Plugin classes: Aspera::Cli::Plugins
-      PLUGINS_MODULE=CLI_MODULE+'::Plugins'
       VERBOSE_LEVELS=[:normal,:minimal,:quiet]
 
-      private_constant :PROGRAM_NAME,:GEM_NAME,:CLI_MODULE,:PLUGINS_MODULE,:VERBOSE_LEVELS
-
-      # find the root folder of gem where this class is
-      def self.gem_root
-        File.expand_path(CLI_MODULE.to_s.gsub('::','/').gsub(%r([^/]+),'..'),File.dirname(__FILE__))
-      end
+      private_constant :PROGRAM_NAME,:GEM_NAME,:VERBOSE_LEVELS
 
       # =============================================================
       # Parameter handlers
@@ -140,7 +131,7 @@ module Aspera
         require @plugin_env[:config].plugins[plugin_name_sym][:require_stanza]
         # load default params only if no param already loaded before plugin instanciation
         env[:config].add_plugin_default_preset(plugin_name_sym)
-        command_plugin=Object::const_get(PLUGINS_MODULE+'::'+plugin_name_sym.to_s.capitalize).new(env)
+        command_plugin=Plugins::Config.plugin_new(plugin_name_sym,env)
         Log.log.debug("got #{command_plugin.class}")
         # TODO: check that ancestor is Plugin?
         return command_plugin

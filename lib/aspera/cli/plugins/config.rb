@@ -32,10 +32,8 @@ module Aspera
         PROGRAM_NAME_V2 = 'mlia'
         # default redirect for AoC web auth
         DEFAULT_REDIRECT='http://localhost:12345'
-        # folder containing custom plugins in `main_folder`
+        # folder containing custom plugins in user's config folder
         ASPERA_PLUGINS_FOLDERNAME='plugins'
-        # folder containing plugins in the gem's main folder
-        GEM_PLUGINS_FOLDER='aspera/cli/plugins'
         RUBY_FILE_EXT='.rb'
         AOC_COMMAND_V1='files'
         AOC_COMMAND_V2='aspera'
@@ -50,7 +48,7 @@ module Aspera
           self.options.add_option_preset(preset_by_name(value))
         end
 
-        private_constant :ASPERA_HOME_FOLDER_NAME,:DEFAULT_CONFIG_FILENAME,:CONF_PRESET_CONFIG,:CONF_PRESET_VERSION,:CONF_PRESET_DEFAULT,:PROGRAM_NAME_V1,:PROGRAM_NAME_V2,:DEFAULT_REDIRECT,:ASPERA_PLUGINS_FOLDERNAME,:GEM_PLUGINS_FOLDER,:RUBY_FILE_EXT,:AOC_COMMAND_V1,:AOC_COMMAND_V2,:AOC_COMMAND_V3,:AOC_COMMAND_CURRENT,:DEMO
+        private_constant :ASPERA_HOME_FOLDER_NAME,:DEFAULT_CONFIG_FILENAME,:CONF_PRESET_CONFIG,:CONF_PRESET_VERSION,:CONF_PRESET_DEFAULT,:PROGRAM_NAME_V1,:PROGRAM_NAME_V2,:DEFAULT_REDIRECT,:ASPERA_PLUGINS_FOLDERNAME,:RUBY_FILE_EXT,:AOC_COMMAND_V1,:AOC_COMMAND_V2,:AOC_COMMAND_V3,:AOC_COMMAND_CURRENT,:DEMO
         attr_accessor :option_ak_secret,:option_secrets
 
         def initialize(env,tool_name,help_url,version)
@@ -72,7 +70,7 @@ module Aspera
           Fasp::Installation.instance.folder=File.join(@main_folder,'sdk')
           FileUtils.mkdir_p(Fasp::Installation.instance.folder)
           add_plugin_lookup_folder(File.join(@main_folder,ASPERA_PLUGINS_FOLDERNAME))
-          add_plugin_lookup_folder(File.join(Main.gem_root,GEM_PLUGINS_FOLDER))
+          add_plugin_lookup_folder(self.class.gem_plugins_folder)
           # do file parameter first
           self.options.set_obj_attr(:config_file,self,:option_config_file)
           self.options.add_opt_simple(:config_file,"read parameters from file in YAML format, current=#{@option_config_file}")
@@ -152,6 +150,24 @@ module Aspera
           File.write(private_key_path,priv_key.to_s)
           File.write(private_key_path+".pub",priv_key.public_key.to_s)
           nil
+        end
+
+        # folder containing plugins in the gem's main folder
+        def self.gem_plugins_folder
+          File.dirname(File.expand_path(__FILE__))
+        end
+
+        # find the root folder of gem where this class is
+        # go up as many times as englobing modules (not counting class, as it is a file)
+        def self.gem_root
+          File.expand_path(Module.nesting[1].to_s.gsub('::','/').gsub(%r([^/]+),'..'),File.dirname(__FILE__))
+        end
+
+        # instanciate a plugin
+        # plugins must be Capitalized
+        def self.plugin_new(plugin_name_sym,env)
+          # Module.nesting[2] is Aspera::Cli
+          return Object::const_get("#{Module.nesting[2].to_s}::Plugins::#{plugin_name_sym.to_s.capitalize}").new(env)
         end
 
         def self.flatten_all_config(t)
@@ -605,7 +621,8 @@ module Aspera
               require 'aspera/cli/plugins/aoc'
               # make username mandatory for jwt, this triggers interactive input
               self.options.get_option(:username,:mandatory)
-              files_plugin=Plugins::Oncloud.new(@agents.merge({skip_basic_auth_options: true, private_key_path: private_key_path}))
+              # instanciate AoC plugin
+              files_plugin=self.class.plugin_new(AOC_COMMAND_CURRENT,@agents.merge({skip_basic_auth_options: true, private_key_path: private_key_path}))
               auto_set_pub_key=false
               auto_set_jwt=false
               use_browser_authentication=false
@@ -682,7 +699,8 @@ module Aspera
             require 'aspera/cli/plugins/aoc'
             # need url / username
             add_plugin_default_preset(AOC_COMMAND_V3.to_sym)
-            files_plugin=Plugins::Oncloud.new(@agents) # TODO: is this line needed ?
+            # instanciate AoC plugin
+            files_plugin=self.class.plugin_new(AOC_COMMAND_CURRENT,@agents) # TODO: is this line needed ?
             url=self.options.get_option(:url,:mandatory)
             cli_conf_file=Fasp::Installation.instance.cli_conf_file
             data=JSON.parse(File.read(cli_conf_file))
@@ -721,7 +739,7 @@ module Aspera
           when :ascp
             execute_action_ascp
           when :gem_path
-            return Main.result_status(Main.gem_root)
+            return Main.result_status(self.class.gem_root)
           when :folder
             return Main.result_status(@main_folder)
           when :file

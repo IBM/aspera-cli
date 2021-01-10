@@ -1463,7 +1463,7 @@ OPTIONS: global
     -v, --version                    display version
     -w, --warnings                   check for language warnings
         --ui=ENUM                    method to start browser: text, [1m[31mgraphical[0m[22m
-        --log-level=ENUM             Log level: info, [1m[31mwarn[0m[22m, error, fatal, unknown, debug
+        --log-level=ENUM             Log level: [1m[31mwarn[0m[22m, debug, info, error, fatal, unknown
         --logger=ENUM                log method: [1m[31mstderr[0m[22m, stdout, syslog
         --lock-port=VALUE            prevent dual execution of a command, e.g. in cron
         --query=VALUE                additional filter for API calls (extended value) (some commands)
@@ -1476,7 +1476,7 @@ OPTIONS:
         --value=VALUE                extended value for create, update, list filter
         --property=VALUE             name of property to set
         --id=VALUE                   resource identifier (modify,delete,show)
-        --config-file=VALUE          read parameters from file in YAML format, current=/Users/dwosk/.aspera/ascli/config.yaml
+        --config-file=VALUE          read parameters from file in YAML format, current=/Users/laurent/.aspera/ascli/config.yaml
         --override=ENUM              override existing value: [1m[31myes[0m[22m, no
     -N, --no-default                 do not load default configuration for plugin
         --use-generic-client=ENUM    wizard: AoC: use global or org specific jwt client id: yes, [1m[31mno[0m[22m
@@ -1642,10 +1642,62 @@ SUBCOMMANDS: start admin
 OPTIONS:
         --parameters=VALUE           extended value for session set definition
         --session-name=VALUE         name of session to use for admin commands, by default first one
-[5m[37m[41mERROR:[0m[0m[25m Other: uninitialized constant Aspera::Cli::Plugins::Aoc
-Did you mean?  Aspera::AoC
-[5m[37m[41mERROR:[0m[0m[25m Argument: unprocessed options: ["-Cnone"]
-Use '--log-level=debug' to get more details.
+
+
+COMMAND: aoc
+SUBCOMMANDS: apiinfo bearer_token organization tier_restrictions user workspace packages files gateway admin automation servers
+OPTIONS:
+        --url=VALUE                  URL of application, e.g. https://org.asperafiles.com
+        --username=VALUE             username to log in
+        --password=VALUE             user's password
+
+COMMAND: ats
+SUBCOMMANDS: cluster access_key api_key aws_trust_policy
+OPTIONS:
+        --ibm-api-key=VALUE          IBM API key, see https://cloud.ibm.com/iam/apikeys
+        --instance=VALUE             ATS instance in ibm cloud
+        --ats-key=VALUE              ATS key identifier (ats_xxx)
+        --ats-secret=VALUE           ATS key secret
+        --params=VALUE               Parameters access key creation (@json:)
+        --cloud=VALUE                Cloud provider
+        --region=VALUE               Cloud region
+        --auth=ENUM                  type of Oauth authentication: body_userpass, header_userpass, web, jwt, url_token, ibm_apikey
+        --operation=ENUM             client operation for transfers: push, pull
+        --client-id=VALUE            API client identifier in application
+        --client-secret=VALUE        API client passcode
+        --redirect-uri=VALUE         API client redirect URI
+        --private-key=VALUE          RSA private key PEM value for JWT (prefix file path with @val:@file:)
+        --workspace=VALUE            name of workspace
+        --eid=VALUE                  identifier
+        --name=VALUE                 resource name
+        --link=VALUE                 public link to shared resource
+        --new-user-option=VALUE      new user creation option
+        --from-folder=VALUE          share to share source folder
+        --scope=VALUE                scope for AoC API calls
+        --notify=VALUE               notify users that file was received
+        --bulk=ENUM                  bulk operation: yes, [1m[31mno[0m[22m
+        --default-ports=ENUM         use standard FASP ports or get from node api: yes, [1m[31mno[0m[22m
+
+
+COMMAND: server
+SUBCOMMANDS: nagios nodeadmin userdata configurator ctl download upload browse delete rename ls rm mv du info mkdir cp df md5sum
+OPTIONS:
+        --url=VALUE                  URL of application, e.g. https://org.asperafiles.com
+        --username=VALUE             username to log in
+        --password=VALUE             user's password
+        --ssh-keys=VALUE             ssh key path list (Array or single)
+        --ssh-options=VALUE          ssh options (Hash)
+        --cmd-prefix=VALUE           prefix to add for as cmd execution, e.g. sudo or /opt/aspera/bin 
+
+
+COMMAND: console
+SUBCOMMANDS: transfer nagios_check
+OPTIONS:
+        --url=VALUE                  URL of application, e.g. https://org.asperafiles.com
+        --username=VALUE             username to log in
+        --password=VALUE             user's password
+        --filter-from=DATE           only after date
+        --filter-to=DATE             only before date
 
 
 ```
