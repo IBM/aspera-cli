@@ -56,7 +56,8 @@ $(INCL_COMMANDS): $(DIR_TMP).exists $(TEST_MAKEFILE)
 # generated help of tools depends on all sources, so regenerate always
 .PHONY: $(INCL_USAGE)
 $(INCL_USAGE): $(DIR_TMP).exists
-	$(EXETESTB) -Cnone -h 2> $(INCL_USAGE) || true
+	-$(EXETESTB) -Cnone -h 2> $(INCL_USAGE)
+	sed -i -e 's/\/Users\/[^\/]*/\/Users\/FooBar/g' $(INCL_USAGE)
 .PHONY: $(INCL_ASESSION)
 $(INCL_ASESSION): $(DIR_TMP).exists
 	$(DIR_BIN)/asession -h 2> $(INCL_ASESSION) || true

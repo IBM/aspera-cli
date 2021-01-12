@@ -33,7 +33,11 @@ class String
   VTSTYLES.each do |name,code|
     begin_seq=vtcmd(code)
     end_seq=vtcmd((code >= 10) ? 0 : code+20+(code.eql?(1)?1:0))
-    define_method(name){"#{begin_seq}#{self}#{end_seq}"}
+    if STDERR.tty?
+      define_method(name){"#{begin_seq}#{self}#{end_seq}"}
+    else
+      define_method(name){self}
+    end
     public name
   end
 end
