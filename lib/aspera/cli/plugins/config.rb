@@ -594,7 +594,7 @@ module Aspera
               # init defaults if necessary
               @config_presets[CONF_PRESET_DEFAULT]||=Hash.new
               if !option_override
-                raise CliError,"a default configuration already exists for plugin '#{AOC_COMMAND_V2}' (use --override=yes)" if @config_presets[CONF_PRESET_DEFAULT].has_key?(AOC_COMMAND_V2)
+                raise CliError,"a default configuration already exists for plugin '#{AOC_COMMAND_CURRENT}' (use --override=yes)" if @config_presets[CONF_PRESET_DEFAULT].has_key?(AOC_COMMAND_CURRENT)
                 raise CliError,"preset already exists: #{aspera_preset_name}  (use --override=yes)" if @config_presets.has_key?(aspera_preset_name)
               end
               # lets see if path to priv key is provided
@@ -626,7 +626,6 @@ module Aspera
               auto_set_pub_key=false
               auto_set_jwt=false
               use_browser_authentication=false
-
               if self.options.get_option(:use_generic_client)
                 self.format.display_status("Using global client_id.")
                 self.format.display_status("Please Login to your Aspera on Cloud instance.".red)
@@ -686,8 +685,8 @@ module Aspera
                 o=self.options.get_option(s)
                 @config_presets[s.to_s] = o unless o.nil?
               end
-              self.format.display_status("Setting config preset as default for #{AOC_COMMAND_V2}")
-              @config_presets[CONF_PRESET_DEFAULT][AOC_COMMAND_V2]=aspera_preset_name
+              self.format.display_status("Setting config preset as default for #{AOC_COMMAND_CURRENT}")
+              @config_presets[CONF_PRESET_DEFAULT][AOC_COMMAND_CURRENT]=aspera_preset_name
               self.format.display_status("saving config file")
               save_presets_to_config_file
               return Main.result_status("Done.\nYou can test with:\n#{@tool_name} #{AOC_COMMAND_CURRENT} user info show")

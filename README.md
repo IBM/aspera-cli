@@ -1448,27 +1448,27 @@ ARGS
 	Some commands require mandatory arguments, e.g. a path.
 
 OPTIONS: global
-        --interactive=ENUM           use interactive input of missing params: yes, [1m[31mno[0m[22m
-        --ask-options=ENUM           ask even optional options: yes, [1m[31mno[0m[22m
+        --interactive=ENUM           use interactive input of missing params: yes, no
+        --ask-options=ENUM           ask even optional options: yes, no
         --format=ENUM                output format: table, ruby, json, jsonpp, yaml, csv, nagios
         --display=ENUM               output only some information: info, data, error
         --fields=VALUE               comma separated list of fields, or ALL, or DEF
         --select=VALUE               select only some items in lists, extended value: hash (column, value)
         --table-style=VALUE          table display style
-        --flat-hash=ENUM             display hash values as additional keys: [1m[31myes[0m[22m, no
+        --flat-hash=ENUM             display hash values as additional keys: yes, no
     -h, --help                       Show this message.
         --bash-comp                  generate bash completion for command
         --show-config                Display parameters used for the provided action.
     -r, --rest-debug                 more debug for HTTP calls
     -v, --version                    display version
     -w, --warnings                   check for language warnings
-        --ui=ENUM                    method to start browser: text, [1m[31mgraphical[0m[22m
-        --log-level=ENUM             Log level: [1m[31mwarn[0m[22m, debug, info, error, fatal, unknown
-        --logger=ENUM                log method: [1m[31mstderr[0m[22m, stdout, syslog
+        --ui=ENUM                    method to start browser: text, graphical
+        --log-level=ENUM             Log level: warn, debug, info, error, fatal, unknown
+        --logger=ENUM                log method: stderr, stdout, syslog
         --lock-port=VALUE            prevent dual execution of a command, e.g. in cron
         --query=VALUE                additional filter for API calls (extended value) (some commands)
-        --insecure=ENUM              do not validate HTTPS certificate: [1m[31myes[0m[22m, no
-        --once-only=ENUM             process only new items (some commands): yes, [1m[31mno[0m[22m
+        --insecure=ENUM              do not validate HTTPS certificate: yes, no
+        --once-only=ENUM             process only new items (some commands): yes, no
 
 COMMAND: config
 SUBCOMMANDS: gem_path genkey plugins flush_tokens list overview open echo id documentation wizard export_to_cli detect coffee ascp email_test smtp_settings proxy_check folder file
@@ -1476,10 +1476,10 @@ OPTIONS:
         --value=VALUE                extended value for create, update, list filter
         --property=VALUE             name of property to set
         --id=VALUE                   resource identifier (modify,delete,show)
-        --config-file=VALUE          read parameters from file in YAML format, current=/Users/laurent/.aspera/ascli/config.yaml
-        --override=ENUM              override existing value: [1m[31myes[0m[22m, no
+        --config-file=VALUE          read parameters from file in YAML format, current=/Users/FooBar/.aspera/ascli/config.yaml
+        --override=ENUM              override existing value: yes, no
     -N, --no-default                 do not load default configuration for plugin
-        --use-generic-client=ENUM    wizard: AoC: use global or org specific jwt client id: yes, [1m[31mno[0m[22m
+        --use-generic-client=ENUM    wizard: AoC: use global or org specific jwt client id: yes, no
         --pkeypath=VALUE             path to private key for JWT (wizard)
         --ascp-path=VALUE            path to ascp
         --use-product=VALUE          use ascp from specified product
@@ -1489,7 +1489,7 @@ OPTIONS:
         --default=VALUE              set as default configuration for specified plugin
         --secret=VALUE               access key secret for node
         --secrets=VALUE              access key secret for node
-        --test-mode=ENUM             skip user validation in wizard mode: yes, [1m[31mno[0m[22m
+        --test-mode=ENUM             skip user validation in wizard mode: yes, no
         --ts=VALUE                   override transfer spec values (Hash, use @json: prefix), current={}
         --local-resume=VALUE         set resume policy (Hash, use @json: prefix), current=
         --to-folder=VALUE            destination folder for downloaded files
@@ -1528,7 +1528,7 @@ OPTIONS:
         --password=VALUE             user's password
         --params=VALUE               parameters hash table, use @json:{"param":"value"}
         --result=VALUE               specify result value as: 'work step:parameter'
-        --synchronous=ENUM           work step:parameter expected as result: yes, [1m[31mno[0m[22m
+        --synchronous=ENUM           work step:parameter expected as result: yes, no
         --ret-style=ENUM             how return type is requested in api: header, arg, ext
         --auth-style=ENUM            authentication type: arg_pass, head_basic, apikey
 
@@ -1611,7 +1611,7 @@ OPTIONS:
         --username=VALUE             username to log in
         --password=VALUE             user's password
         --skip-format=ENUM           skip this preview format (multiple possible): png, mp4
-        --folder-reset-cache=ENUM    force detection of generated preview by refresh cache: [1m[31mno[0m[22m, header, read
+        --folder-reset-cache=ENUM    force detection of generated preview by refresh cache: no, header, read
         --skip-types=VALUE           skip types in comma separated list
         --previews-folder=VALUE      preview folder in storage root
         --temp-folder=VALUE          path to temp folder
@@ -1619,14 +1619,14 @@ OPTIONS:
         --case=VALUE                 basename of output for for test
         --scan-path=VALUE            subpath in folder id to start scan in (default=/)
         --scan-id=VALUE              forder id in storage to start scan in, default is access key main folder id
-        --overwrite=ENUM             when to overwrite result file: always, never, [1m[31mmtime[0m[22m
-        --file-access=ENUM           how to read and write files in repository: [1m[31mlocal[0m[22m, remote
+        --overwrite=ENUM             when to overwrite result file: always, never, mtime
+        --file-access=ENUM           how to read and write files in repository: local, remote
         --max-size=VALUE             maximum size (in bytes) of preview file
         --thumb-vid-scale=VALUE      png: video: size (ffmpeg scale argument)
         --thumb-vid-fraction=VALUE   png: video: position of snapshot
         --thumb-img-size=VALUE       png: non-video: height (and width)
-        --video-conversion=ENUM      mp4: method for preview generation: [1m[31mreencode[0m[22m, blend, clips
-        --video-png-conv=ENUM        mp4: method for thumbnail generation: [1m[31mfixed[0m[22m, animated
+        --video-conversion=ENUM      mp4: method for preview generation: reencode, blend, clips
+        --video-png-conv=ENUM        mp4: method for thumbnail generation: fixed, animated
         --video-start-sec=VALUE      mp4: start offset (seconds) of video preview
         --video-scale=VALUE          mp4: video scale (ffmpeg)
         --blend-keyframes=VALUE      mp4: blend: # key frames
@@ -1675,8 +1675,8 @@ OPTIONS:
         --from-folder=VALUE          share to share source folder
         --scope=VALUE                scope for AoC API calls
         --notify=VALUE               notify users that file was received
-        --bulk=ENUM                  bulk operation: yes, [1m[31mno[0m[22m
-        --default-ports=ENUM         use standard FASP ports or get from node api: yes, [1m[31mno[0m[22m
+        --bulk=ENUM                  bulk operation: yes, no
+        --default-ports=ENUM         use standard FASP ports or get from node api: yes, no
 
 
 COMMAND: server
