@@ -112,8 +112,9 @@ The following sections provide information on the installation.
 ## <a name="ruby"></a>Ruby
 
 A ruby interpreter is required to run the tool or to use the gem and tool.
-The Ruby version shall be > 2.4.
+The Ruby version shall be at least > 2.4.
 Any type of Ruby installation can be used.
+Ruby 3 is not yet tested.
 
 Refer to the following sections for a proposed method for specific operating systems.
 
@@ -138,13 +139,13 @@ Install Latest stable Ruby using [https://rubyinstaller.org/](https://rubyinstal
 
 Go to "Downloads".
 
-Select the version "without devkit", x64 corresponding to the one recommended "with devkit".
+Select the Ruby 2 version "without devkit", x64 corresponding to the one recommended "with devkit". Devkit is not needed.
 
-During installation, skip the installation of "MSys2".
+At the end of the installer uncheck the box to skip the installation of "MSys2".
 
 ### Linux
 
-Install Latest Ruby using "rvm" [https://rvm.io/](https://rvm.io/) .
+Install Latest Ruby 2 using "rvm" [https://rvm.io/](https://rvm.io/) .
 It installs by default in /usr/local/rvm , but you can install in another location:
 
 ```
@@ -507,13 +508,14 @@ It is also possible to provide a _Structured Value_ in a file using `@json:@file
 
 ## <a name="conffolder"></a>Configuration and Persistency Folder
 
-`ascli` configuration and other runtime files (token cache, file lists, persistency files)
-are stored in folder `$HOME/.aspera/ascli`. The folder can be displayed using :
+`ascli` configuration and other runtime files (token cache, file lists, persistency files) are stored in folder `$HOME/.aspera/ascli`. The folder can be displayed using :
 
 ```
 $ ascli config folder
 /Users/kenji/.aspera/ascli
 ```
+
+It can be overriden by setting the envinonment variable `ASCLI_HOME`.
 
 ## <a name="configfile"></a>Configuration file
 

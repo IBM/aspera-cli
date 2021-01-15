@@ -62,13 +62,13 @@ module Aspera
           @program_version=version
           @tool_name=tool_name
           @help_url=help_url
-          @main_folder=File.join(Dir.home,ASPERA_HOME_FOLDER_NAME,tool_name)
+          @main_folder=ENV["#{tool_name.upcase}_HOME"] || File.join(Dir.home,ASPERA_HOME_FOLDER_NAME,tool_name)
           @conf_file_default=File.join(@main_folder,DEFAULT_CONFIG_FILENAME)
           @option_config_file=@conf_file_default
           @connect_versions=nil
+          Log.log.debug("#{tool_name} is #{@main_folder}")
           # set folder where generated FASP files are
           Fasp::Installation.instance.folder=File.join(@main_folder,'sdk')
-          FileUtils.mkdir_p(Fasp::Installation.instance.folder)
           add_plugin_lookup_folder(File.join(@main_folder,ASPERA_PLUGINS_FOLDERNAME))
           add_plugin_lookup_folder(self.class.gem_plugins_folder)
           # do file parameter first
@@ -235,7 +235,7 @@ module Aspera
         end
 
         def option_ascp_path
-          Fasp::Installation.instance.ascp_path
+          Fasp::Installation.instance.path(:ascp)
         end
 
         def option_use_product=(value)
@@ -466,7 +466,7 @@ module Aspera
             when :use
               default_product=self.options.get_next_argument('product name')
               Fasp::Installation.instance.use_ascp_from_product(default_product)
-              preset_name=set_global_default(:ascp_path,Fasp::Installation.instance.ascp_path)
+              preset_name=set_global_default(:ascp_path,Fasp::Installation.instance.path(:ascp))
               save_presets_to_config_file
               return {:type=>:status, :data=>"saved to default global preset #{preset_name}"}
             end

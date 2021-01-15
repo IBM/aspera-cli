@@ -5,6 +5,7 @@ require 'aspera/data_repository'
 require 'xmlsimple'
 require 'zlib'
 require 'base64'
+require 'fileutils'
 
 module Aspera
   module Fasp
@@ -17,14 +18,21 @@ module Aspera
     # Installation.instance.ascp_path=""
     class Installation
       include Singleton
-      # currently used ascp executable
-      attr_accessor :ascp_path
-      # location of SDK files
-      attr_accessor :folder
       PRODUCT_CONNECT='Aspera Connect'
       PRODUCT_CLI_V1='Aspera CLI'
       PRODUCT_DRIVE='Aspera Drive'
       PRODUCT_ENTSRV='Enterprise Server'
+      # currently used ascp executable
+      def ascp_path=(v)
+        @path_to_ascp=v
+      end
+
+      # location of SDK files
+      def folder=(v)
+        @sdk_folder=v
+        folder_path
+      end
+
       # find ascp in named product (use value : FIRST_FOUND='FIRST' to just use first one)
       # or select one from installed_products()
       def use_ascp_from_product(product_name)
@@ -35,8 +43,8 @@ module Aspera
           pl=installed_products.select{|i|i[:name].eql?(product_name)}.first
           raise "no such product installed: #{product_name}" if pl.nil?
         end
-        @ascp_path=pl[:ascp_path]
-        Log.log.debug("ascp_path=#{@ascp_path}")
+        self.ascp_path=pl[:ascp_path]
+        Log.log.debug("ascp_path=#{@path_to_ascp}")
       end
 
       # @return the list of installed products in format of product_locations
@@ -46,7 +54,7 @@ module Aspera
           # add sdk as first search path
           @found_products.unshift({# SDK
             :expected =>'SDK',
-            :app_root =>@folder,
+            :app_root =>self.folder_path,
             :sub_bin =>''
           })
           @found_products.select! do |pl|
@@ -76,24 +84,24 @@ module Aspera
       def path(k)
         case k
         when :ascp,:ascp4
-          use_ascp_from_product(FIRST_FOUND) if @ascp_path.nil?
-          file=@ascp_path
+          use_ascp_from_product(FIRST_FOUND) if @path_to_ascp.nil?
+          file=@path_to_ascp
           # note that there might be a .exe at the end
           file=file.gsub('ascp','ascp4') if k.eql?(:ascp4)
         when :ssh_bypass_key_dsa
-          file=File.join(@folder,'aspera_bypass_dsa.pem')
+          file=File.join(self.folder_path,'aspera_bypass_dsa.pem')
           File.write(file,get_key('dsa',1)) unless File.exist?(file)
           File.chmod(0400,file)
         when :ssh_bypass_key_rsa
-          file=File.join(@folder,'aspera_bypass_rsa.pem')
+          file=File.join(self.folder_path,'aspera_bypass_rsa.pem')
           File.write(file,get_key('rsa',2)) unless File.exist?(file)
           File.chmod(0400,file)
         when :aspera_license
-          file=File.join(@folder,'aspera-license')
+          file=File.join(self.folder_path,'aspera-license')
           File.write(file,Base64.strict_encode64("#{Zlib::Inflate.inflate(DataRepository.instance.get_bin(6))}==SIGNATURE==\n#{Base64.strict_encode64(DataRepository.instance.get_bin(7))}")) unless File.exist?(file)
           File.chmod(0400,file)
         when :aspera_conf
-          file=File.join(@folder,'aspera.conf')
+          file=File.join(self.folder_path,'aspera.conf')
           File.write(file,%Q{<?xml version='1.0' encoding='UTF-8'?>
 <CONF version="2">
 <default>
@@ -112,8 +120,8 @@ module Aspera
 }) unless File.exist?(file)
           File.chmod(0400,file)
         when :fallback_cert,:fallback_key
-          file_key=File.join(@folder,'aspera_fallback_key.pem')
-          file_cert=File.join(@folder,'aspera_fallback_cert.pem')
+          file_key=File.join(self.folder_path,'aspera_fallback_key.pem')
+          file_cert=File.join(self.folder_path,'aspera_fallback_cert.pem')
           if !File.exist?(file_key) or !File.exist?(file_cert)
             require 'openssl'
             # create new self signed certificate for http fallback
@@ -180,7 +188,7 @@ module Aspera
         Zip::File.open(sdk_zip_path) do |zip_file|
           zip_file.each do |entry|
             if entry.name.include?(filter) and !entry.name.end_with?('/')
-              archive_file=File.join(@folder,File.basename(entry.name))
+              archive_file=File.join(self.folder_path,File.basename(entry.name))
               File.open(archive_file, 'wb') do |output_stream|
                 IO.copy_stream(entry.get_input_stream, output_stream)
               end
@@ -197,7 +205,7 @@ module Aspera
           # get version from ascp, only after full extract, as windows requires SSL/TLS DLLs
           m=%x{#{ascp_path} -A}.match(/ascp version (.*)/)
           ascp_version=m[1] unless m.nil?
-          File.write(File.join(@folder,PRODUCT_INFO),"<product><name>IBM Aspera SDK</name><version>#{ascp_version}</version></product>")
+          File.write(File.join(self.folder_path,PRODUCT_INFO),"<product><name>IBM Aspera SDK</name><version>#{ascp_version}</version></product>")
         end
         return ascp_version
       end
@@ -223,9 +231,15 @@ module Aspera
       end
 
       def initialize
-        @ascp_path=nil
-        @folder='.'
+        @path_to_ascp=nil
+        @sdk_folder=nil
         @found_products=nil
+      end
+
+      def folder_path
+        raise "undefined path to SDK" if @sdk_folder.nil?
+        FileUtils.mkdir_p(@sdk_folder) unless Dir.exist?(@sdk_folder)
+        @sdk_folder
       end
 
       # returns product folders depending on OS

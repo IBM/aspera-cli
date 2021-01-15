@@ -128,8 +128,9 @@ The following sections provide information on the installation.
 ## <a name="ruby"></a>Ruby
 
 A ruby interpreter is required to run the tool or to use the gem and tool.
-The Ruby version shall be <%= gemspec.required_ruby_version %>.
+The Ruby version shall be at least <%= gemspec.required_ruby_version %>.
 Any type of Ruby installation can be used.
+Ruby 3 is not yet tested.
 
 Refer to the following sections for a proposed method for specific operating systems.
 
@@ -154,13 +155,13 @@ Install Latest stable Ruby using [https://rubyinstaller.org/](https://rubyinstal
 
 Go to "Downloads".
 
-Select the version "without devkit", x64 corresponding to the one recommended "with devkit".
+Select the Ruby 2 version "without devkit", x64 corresponding to the one recommended "with devkit". Devkit is not needed.
 
-During installation, skip the installation of "MSys2".
+At the end of the installer uncheck the box to skip the installation of "MSys2".
 
 ### Linux
 
-Install Latest Ruby using "rvm" [https://rvm.io/](https://rvm.io/) .
+Install Latest Ruby 2 using "rvm" [https://rvm.io/](https://rvm.io/) .
 It installs by default in /usr/local/rvm , but you can install in another location:
 
 ```
@@ -523,13 +524,14 @@ It is also possible to provide a _Structured Value_ in a file using `@json:@file
 
 ## <a name="conffolder"></a>Configuration and Persistency Folder
 
-<%=tool%> configuration and other runtime files (token cache, file lists, persistency files)
-are stored in folder `$HOME/.aspera/<%=cmd%>`. The folder can be displayed using :
+<%=tool%> configuration and other runtime files (token cache, file lists, persistency files) are stored in folder `$HOME/.aspera/<%=cmd%>`. The folder can be displayed using :
 
 ```
 $ <%=cmd%> config folder
 /Users/kenji/.aspera/<%=cmd%>
 ```
+
+It can be overriden by setting the envinonment variable `<%=evp%>HOME`.
 
 ## <a name="configfile"></a>Configuration file
 

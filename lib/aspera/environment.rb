@@ -1,4 +1,5 @@
 require 'aspera/log'
+require 'rbconfig'
 
 module Aspera
   # a simple binary data repository
@@ -20,7 +21,7 @@ module Aspera
       when /aix/
         return OS_AIX
       else
-        raise "Unknown: #{RbConfig::CONFIG['host_os']}"
+        raise "Unknown OS: #{RbConfig::CONFIG['host_os']}"
       end
     end
     CPU_X86_64=:x86_64
@@ -31,7 +32,7 @@ module Aspera
 
     def self.cpu
       case RbConfig::CONFIG['host_cpu']
-      when /x86_64/
+      when /x86_64/,/x64/
         return :x86_64
       when /powerpc/
         return :ppc64le if os.eql?(OS_LINUX)
@@ -39,7 +40,7 @@ module Aspera
       when /s390/
         return :s390
       else # other
-        raise "Unknown: #{RbConfig::CONFIG['host_cpu']}"
+        raise "Unknown CPU: #{RbConfig::CONFIG['host_cpu']}"
       end
     end
 
