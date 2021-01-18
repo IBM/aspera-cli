@@ -508,10 +508,12 @@ It is also possible to provide a _Structured Value_ in a file using `@json:@file
 
 ## <a name="conffolder"></a>Configuration and Persistency Folder
 
-`ascli` configuration and other runtime files (token cache, file lists, persistency files) are stored in folder `[User's home folder]/.aspera/ascli`.
-Note that the home folder is found by ruby `Dir.home`. On non-Windows which uses the `HOME` env var on  and `%HOMEDRIVE%%HOMEPATH%` on Windows.
+`ascli` configuration and other runtime files (token cache, file lists, persistency files, SDK) are stored in folder `[User's home folder]/.aspera/ascli`.
 
-The folder can be displayed using :
+Note: `[User's home folder]` is found using ruby's `Dir.home` (`rb_w32_home_dir`).
+It uses the `HOME` env var primarily, and on MS Windows it also looks at `%HOMEDRIVE%%HOMEPATH%` and `%USERPROFILE%`. `ascli` sets the env var `%HOME%` to the value of `%USERPROFILE%` if set and exists. So, on Windows `%USERPROFILE%` is used as it is more reliable than `%HOMEDRIVE%%HOMEPATH%`.
+
+The main folder can be displayed using :
 
 ```
 $ ascli config folder
@@ -2255,15 +2257,24 @@ $ ascli aoc admin res node --id=8669 v4 perm 82 show
 Send a package:
 
 ```
-$ ascli aoc packages send --value=@json:'{"name":"my title","note":"my note","recipients":["laurent.martin.aspera@fr.ibm.com","other@example.com"]}' --sources=@args my_file.dat
+$ ascli aoc packages send --value=[package extended value] [other parameters such as file list and transfer parameters]
 ```
 
 Notes:
 
-* the `value` parameter can contain any supported package creation parameter. Refer to the API, or display an existing package.
-* to list recipients use fields: "recipients" and/or "bcc_recipients". ascli will resolve the list of email addresses to expected user ids. If a recipient is not already registered and the workspace allows external users, then the package is sent to an external user, and
+* the `value` parameter can contain any supported package creation parameter. Refer to the AoC package creation API, or display an existing package to find attributes.
+* to provide the list of recipients, use fields: "recipients" and/or "bcc_recipients". ascli will resolve the list of email addresses to expected user ids.
+* a recipîent can be a shared inbox, in this case just use the name of the shared inbox as recipient.
+* If a recipient is not already registered and the workspace allows external users, then the package is sent to an external user, and
   * if the option `new_user_option` is `@json:{"package_contact":true}` (default), then a public link is sent and the external user does not need to create an account.
   * if the option `new_user_option` is `@json:{}`, then external users are invited to join the workspace
+
+Examples:
+
+```
+$ ascli aoc packages send --value=@json:'{"name":"my title","note":"my note","recipients":["laurent.martin.aspera@fr.ibm.com","other@example.com"]}' --sources=@args my_file.dat
+$ ascli aoc packages send --value=@json:'{"name":"my file in shared inbox","recipients":["The Shared Inbox"]}' my_file.dat --ts=@json:'{"target_rate_kbps":100000}'
+```
 
 ## <a name="aoccargo"></a>Receive new packages only
 
