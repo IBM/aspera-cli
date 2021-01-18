@@ -52,5 +52,15 @@ module Aspera
       return '.exe' if os.eql?(OS_WINDOWS)
       return ''
     end
+
+    # on Windows, the env var %USERPROFILE% provides the path to user's home more reliably then %HOMEDRIVE%%HOMEPATH%
+    def self.fix_home
+      if os.eql?(OS_WINDOWS)
+        if ENV.has_key?('USERPROFILE') and Dir.exist?(ENV['USERPROFILE'])
+          ENV['HOME']=ENV['USERPROFILE']
+          Log.log.debug("Windows: set home to USERPROFILE: #{ENV['HOME']}")
+        end
+      end
+    end
   end
 end

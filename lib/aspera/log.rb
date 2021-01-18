@@ -49,7 +49,15 @@ module Aspera
 
     # change underlying logger, but keep log level
     def logger_type=(new_logtype)
-      current_severity_integer=@logger.nil? ? Logger::Severity::WARN : @logger.level
+      current_severity_integer=if @logger.nil?
+        if ENV.has_key?('AS_LOG_LEVEL')
+          ENV['AS_LOG_LEVEL']
+        else
+          Logger::Severity::WARN
+        end
+      else
+        @logger.level
+      end
       case new_logtype
       when :stderr
         @logger = Logger.new(STDERR)

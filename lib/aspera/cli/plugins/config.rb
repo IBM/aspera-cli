@@ -59,15 +59,22 @@ module Aspera
           @plugin_lookup_folders=[]
           @use_plugin_defaults=true
           @config_presets=nil
+          @connect_versions=nil
           @program_version=version
           @tool_name=tool_name
           @help_url=help_url
-          @main_folder=ENV["#{tool_name.upcase}_HOME"] || File.join(Dir.home,ASPERA_HOME_FOLDER_NAME,tool_name)
+          tool_main_env_var="#{tool_name.upcase}_HOME"
+          if ENV.has_key?(tool_main_env_var)
+            @main_folder=ENV[tool_main_env_var]
+          else
+            user_home_folder=Dir.home
+            raise CliError,"Home folder does not exist: #{user_home_folder}. Check your user environment or use #{tool_main_env_var}." unless Dir.exist?(user_home_folder)
+            @main_folder=File.join(user_home_folder,ASPERA_HOME_FOLDER_NAME,tool_name)
+          end
           @conf_file_default=File.join(@main_folder,DEFAULT_CONFIG_FILENAME)
           @option_config_file=@conf_file_default
-          @connect_versions=nil
-          Log.log.debug("#{tool_name} is #{@main_folder}")
-          # set folder where generated FASP files are
+          Log.log.debug("#{tool_name} folder: #{@main_folder}")
+          # set folder for FASP SDK
           Fasp::Installation.instance.folder=File.join(@main_folder,'sdk')
           add_plugin_lookup_folder(File.join(@main_folder,ASPERA_PLUGINS_FOLDERNAME))
           add_plugin_lookup_folder(self.class.gem_plugins_folder)

@@ -508,14 +508,25 @@ It is also possible to provide a _Structured Value_ in a file using `@json:@file
 
 ## <a name="conffolder"></a>Configuration and Persistency Folder
 
-`ascli` configuration and other runtime files (token cache, file lists, persistency files) are stored in folder `$HOME/.aspera/ascli`. The folder can be displayed using :
+`ascli` configuration and other runtime files (token cache, file lists, persistency files) are stored in folder `[User's home folder]/.aspera/ascli`.
+Note that the home folder is found by ruby `Dir.home`. On non-Windows which uses the `HOME` env var on  and `%HOMEDRIVE%%HOMEPATH%` on Windows.
+
+The folder can be displayed using :
 
 ```
 $ ascli config folder
 /Users/kenji/.aspera/ascli
 ```
 
-It can be overriden by setting the envinonment variable `ASCLI_HOME`.
+It can be overriden using the envinonment variable `ASCLI_HOME`.
+
+Example (Windows):
+
+```
+$ set ASCLI_HOME=C:\Users\Kenji\.aspera\ascli
+$ ascli config folder
+C:\Users\Kenji\.aspera\ascli
+```
 
 ## <a name="configfile"></a>Configuration file
 
@@ -752,6 +763,8 @@ EOF
 ## Debugging
 
 The gem is equipped with traces. By default logging level is "warn". To increase debug level, use parameter `log_level`, so either command line `--log-level=xx` or env var `ASCLI_LOG_LEVEL`.
+
+It is also possible to activate traces before initialisation using env var `AS_LOG_LEVEL`.
 
 ## Learning Aspera Product APIs (REST)
 
@@ -1465,7 +1478,7 @@ OPTIONS: global
     -v, --version                    display version
     -w, --warnings                   check for language warnings
         --ui=ENUM                    method to start browser: text, graphical
-        --log-level=ENUM             Log level: warn, debug, info, error, fatal, unknown
+        --log-level=ENUM             Log level: unknown, warn, info, error, debug, fatal
         --logger=ENUM                log method: stderr, stdout, syslog
         --lock-port=VALUE            prevent dual execution of a command, e.g. in cron
         --query=VALUE                additional filter for API calls (extended value) (some commands)
@@ -2252,7 +2265,7 @@ Notes:
   * if the option `new_user_option` is `@json:{"package_contact":true}` (default), then a public link is sent and the external user does not need to create an account.
   * if the option `new_user_option` is `@json:{}`, then external users are invited to join the workspace
 
-## <a name="aoccargo"></a>Receive only new packages
+## <a name="aoccargo"></a>Receive new packages only
 
 It is possible to automatically download new packages, like using Aspera Cargo:
 

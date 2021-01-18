@@ -2,6 +2,8 @@
 require 'rubygems'
 $LOAD_PATH.unshift(File.dirname(__FILE__)+"/../lib")
 require 'aspera/cli/main'
+require 'aspera/environment'
 Encoding.default_internal = Encoding::UTF_8
 Encoding.default_external = Encoding::UTF_8
+Aspera::Environment.fix_home
 Aspera::Cli::Main.new(ARGV).process_command_line
