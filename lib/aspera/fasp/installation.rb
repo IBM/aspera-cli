@@ -201,12 +201,13 @@ module Aspera
         end
         File.unlink(sdk_zip_path) rescue nil # Windows may give error
         ascp_version='n/a'
-        if !ascp_path.nil?
-          # get version from ascp, only after full extract, as windows requires SSL/TLS DLLs
-          m=%x{#{ascp_path} -A}.match(/ascp version (.*)/)
-          ascp_version=m[1] unless m.nil?
-          File.write(File.join(self.folder_path,PRODUCT_INFO),"<product><name>IBM Aspera SDK</name><version>#{ascp_version}</version></product>")
-        end
+        raise "error in sdk: no ascp included" if ascp_path.nil?
+        cmd_out=%x{#{ascp_path} -A}
+        raise "An error occured when testing ascp: #{cmd_out}" unless $? == 0
+        # get version from ascp, only after full extract, as windows requires DLLs (SSL/TLS/etc...)
+        m=cmd_out.match(/ascp version (.*)/)
+        ascp_version=m[1] unless m.nil?
+        File.write(File.join(self.folder_path,PRODUCT_INFO),"<product><name>IBM Aspera SDK</name><version>#{ascp_version}</version></product>")
         return ascp_version
       end
 
