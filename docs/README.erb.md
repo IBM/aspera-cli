@@ -30,17 +30,11 @@ Disclaimers:
 
 * This has not yet been officially released so things may change
 
-That being said, <%=tool%> is very powerful and gets things done, it&apos;s also a great tool to learn Aspera APIs.
-
-This manual addresses three parts:
-
-* <%=tool%> : The command line tool
-* `asession` : starting a FASP Session with JSON parameters
-* `Aspera` : includes a Ruby "FASPManager"
+<%=tool%> is also a great tool to learn Aspera APIs.
 
 In examples, command line operations (starting with `$`) are shown using a standard shell: `bash` or `zsh`.
 
-Command line parameters in example beginning with `my_`, like `my_param_value` are user-provided value and not fixed value commands.
+Command line parameters in examples beginning with `my_`, like `my_param_value` are user-provided value and not fixed value commands.
 
 # Quick Start
 
@@ -128,14 +122,16 @@ The following sections provide information on the installation.
 ## <a name="ruby"></a>Ruby
 
 A ruby interpreter is required to run the tool or to use the gem and tool.
-The Ruby version shall be at least <%= gemspec.required_ruby_version %>.
-Any type of Ruby installation can be used.
-Ruby 3 is not yet tested.
+
+Ruby minimum version: <%= gemspec.required_ruby_version %>
+
+Ruby 3 is also supported.
+
+Any type of Ruby installation can be used (installer, rpm, rvm, ...).
 
 Refer to the following sections for a proposed method for specific operating systems.
 
 ### macOS
-
 
 MacOS 10.13+ (High Sierra) comes with a recent Ruby, so you can use it directly, you will need to install <%= gemspec.name %> using `sudo` :
 
@@ -148,6 +144,8 @@ Alternatively, if you use [Homebrew](https://brew.sh/) already you can install R
 ```
 $ brew install ruby
 ```
+
+It is also possib le to use `rvm`
 
 ### Windows
 
@@ -183,13 +181,7 @@ Alternatively, only if you know what you do, on RPM based systems (CentOs, Redha
 # yum install -y ruby rubygems ruby-json
 ```
 
-If necessary, pre-install jwt for older Ruby < 2.1.
-
-```
-# gem install jwt -v 1.5.6
-```
-
-You can cleanup your whole yum-installed ruby environment like this to uninstall:
+One can cleanup your whole yum-installed ruby environment like this to uninstall:
 
 ```
 gem uninstall $(ls $(gem env gemdir)/gems/|sed -e 's/-[^-]*$//'|sort -u)
@@ -198,7 +190,7 @@ yum remove -y ruby ruby-libs
 
 ### Other Unixes: Aix, etc...
 
-If your unix do not provide a pre-built ruby, you can get using one of those
+If your unix do not provide a pre-built ruby, you can get it using one of those
 [methods](https://www.ruby-lang.org/en/documentation/installation/)
 
 For instance to build from source, and install in `/opt/ruby` :

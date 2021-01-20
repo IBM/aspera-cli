@@ -14,17 +14,11 @@ Disclaimers:
 
 * This has not yet been officially released so things may change
 
-That being said, `ascli` is very powerful and gets things done, it&apos;s also a great tool to learn Aspera APIs.
-
-This manual addresses three parts:
-
-* `ascli` : The command line tool
-* `asession` : starting a FASP Session with JSON parameters
-* `Aspera` : includes a Ruby "FASPManager"
+`ascli` is also a great tool to learn Aspera APIs.
 
 In examples, command line operations (starting with `$`) are shown using a standard shell: `bash` or `zsh`.
 
-Command line parameters in example beginning with `my_`, like `my_param_value` are user-provided value and not fixed value commands.
+Command line parameters in examples beginning with `my_`, like `my_param_value` are user-provided value and not fixed value commands.
 
 # Quick Start
 
@@ -112,14 +106,16 @@ The following sections provide information on the installation.
 ## <a name="ruby"></a>Ruby
 
 A ruby interpreter is required to run the tool or to use the gem and tool.
-The Ruby version shall be at least > 2.4.
-Any type of Ruby installation can be used.
-Ruby 3 is not yet tested.
+
+Ruby minimum version: > 2.4
+
+Ruby 3 is also supported.
+
+Any type of Ruby installation can be used (installer, rpm, rvm, ...).
 
 Refer to the following sections for a proposed method for specific operating systems.
 
 ### macOS
-
 
 MacOS 10.13+ (High Sierra) comes with a recent Ruby, so you can use it directly, you will need to install aspera-cli using `sudo` :
 
@@ -132,6 +128,8 @@ Alternatively, if you use [Homebrew](https://brew.sh/) already you can install R
 ```
 $ brew install ruby
 ```
+
+It is also possib le to use `rvm`
 
 ### Windows
 
@@ -167,13 +165,7 @@ Alternatively, only if you know what you do, on RPM based systems (CentOs, Redha
 # yum install -y ruby rubygems ruby-json
 ```
 
-If necessary, pre-install jwt for older Ruby < 2.1.
-
-```
-# gem install jwt -v 1.5.6
-```
-
-You can cleanup your whole yum-installed ruby environment like this to uninstall:
+One can cleanup your whole yum-installed ruby environment like this to uninstall:
 
 ```
 gem uninstall $(ls $(gem env gemdir)/gems/|sed -e 's/-[^-]*$//'|sort -u)
@@ -182,7 +174,7 @@ yum remove -y ruby ruby-libs
 
 ### Other Unixes: Aix, etc...
 
-If your unix do not provide a pre-built ruby, you can get using one of those
+If your unix do not provide a pre-built ruby, you can get it using one of those
 [methods](https://www.ruby-lang.org/en/documentation/installation/)
 
 For instance to build from source, and install in `/opt/ruby` :
@@ -1252,6 +1244,24 @@ ascli aoc admin ats cluster clouds
 ascli aoc admin ats cluster list
 ascli aoc admin ats cluster show --cloud=aws --region=eu-west-1
 ascli aoc admin ats cluster show --id=1f412ae7-869a-445c-9c05-02ad16813be2
+ascli aoc admin res apps_new list
+ascli aoc admin res client list
+ascli aoc admin res client_access_key list
+ascli aoc admin res client_registration_token list
+ascli aoc admin res contact list
+ascli aoc admin res dropbox list
+ascli aoc admin res dropbox_membership list
+ascli aoc admin res group list
+ascli aoc admin res kms_profile list
+ascli aoc admin res node list
+ascli aoc admin res operation list
+ascli aoc admin res organization show
+ascli aoc admin res package list
+ascli aoc admin res saml_configuration list
+ascli aoc admin res self show
+ascli aoc admin res short_link list
+ascli aoc admin res user list
+ascli aoc admin res workspace_membership list
 ascli aoc admin resource node --name=AOC_NODE1_NAME --secret=AOC_NODE1_SECRET v3 access_key create --value=@json:'{"id":"testsub1","storage":{"path":"/folder1"}}'
 ascli aoc admin resource node --name=AOC_NODE1_NAME --secret=AOC_NODE1_SECRET v3 access_key delete --id=testsub1
 ascli aoc admin resource node --name=AOC_NODE1_NAME --secret=AOC_NODE1_SECRET v3 events
@@ -1480,7 +1490,7 @@ OPTIONS: global
     -v, --version                    display version
     -w, --warnings                   check for language warnings
         --ui=ENUM                    method to start browser: text, graphical
-        --log-level=ENUM             Log level: unknown, warn, info, error, debug, fatal
+        --log-level=ENUM             Log level: fatal, unknown, debug, info, warn, error
         --logger=ENUM                log method: stderr, stdout, syslog
         --lock-port=VALUE            prevent dual execution of a command, e.g. in cron
         --query=VALUE                additional filter for API calls (extended value) (some commands)
