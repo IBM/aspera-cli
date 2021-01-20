@@ -54,7 +54,7 @@ module Aspera
           # add sdk as first search path
           @found_products.unshift({# SDK
             :expected =>'SDK',
-            :app_root =>self.folder_path,
+            :app_root =>folder_path,
             :sub_bin =>''
           })
           @found_products.select! do |pl|
@@ -89,19 +89,19 @@ module Aspera
           # note that there might be a .exe at the end
           file=file.gsub('ascp','ascp4') if k.eql?(:ascp4)
         when :ssh_bypass_key_dsa
-          file=File.join(self.folder_path,'aspera_bypass_dsa.pem')
+          file=File.join(folder_path,'aspera_bypass_dsa.pem')
           File.write(file,get_key('dsa',1)) unless File.exist?(file)
           File.chmod(0400,file)
         when :ssh_bypass_key_rsa
-          file=File.join(self.folder_path,'aspera_bypass_rsa.pem')
+          file=File.join(folder_path,'aspera_bypass_rsa.pem')
           File.write(file,get_key('rsa',2)) unless File.exist?(file)
           File.chmod(0400,file)
         when :aspera_license
-          file=File.join(self.folder_path,'aspera-license')
+          file=File.join(folder_path,'aspera-license')
           File.write(file,Base64.strict_encode64("#{Zlib::Inflate.inflate(DataRepository.instance.get_bin(6))}==SIGNATURE==\n#{Base64.strict_encode64(DataRepository.instance.get_bin(7))}")) unless File.exist?(file)
           File.chmod(0400,file)
         when :aspera_conf
-          file=File.join(self.folder_path,'aspera.conf')
+          file=File.join(folder_path,'aspera.conf')
           File.write(file,%Q{<?xml version='1.0' encoding='UTF-8'?>
 <CONF version="2">
 <default>
@@ -120,8 +120,8 @@ module Aspera
 }) unless File.exist?(file)
           File.chmod(0400,file)
         when :fallback_cert,:fallback_key
-          file_key=File.join(self.folder_path,'aspera_fallback_key.pem')
-          file_cert=File.join(self.folder_path,'aspera_fallback_cert.pem')
+          file_key=File.join(folder_path,'aspera_fallback_key.pem')
+          file_cert=File.join(folder_path,'aspera_fallback_cert.pem')
           if !File.exist?(file_key) or !File.exist?(file_cert)
             require 'openssl'
             # create new self signed certificate for http fallback
@@ -188,7 +188,7 @@ module Aspera
         Zip::File.open(sdk_zip_path) do |zip_file|
           zip_file.each do |entry|
             if entry.name.include?(filter) and !entry.name.end_with?('/')
-              archive_file=File.join(self.folder_path,File.basename(entry.name))
+              archive_file=File.join(folder_path,File.basename(entry.name))
               File.open(archive_file, 'wb') do |output_stream|
                 IO.copy_stream(entry.get_input_stream, output_stream)
               end
@@ -207,7 +207,7 @@ module Aspera
         # get version from ascp, only after full extract, as windows requires DLLs (SSL/TLS/etc...)
         m=cmd_out.match(/ascp version (.*)/)
         ascp_version=m[1] unless m.nil?
-        File.write(File.join(self.folder_path,PRODUCT_INFO),"<product><name>IBM Aspera SDK</name><version>#{ascp_version}</version></product>")
+        File.write(File.join(folder_path,PRODUCT_INFO),"<product><name>IBM Aspera SDK</name><version>#{ascp_version}</version></product>")
         return ascp_version
       end
 
