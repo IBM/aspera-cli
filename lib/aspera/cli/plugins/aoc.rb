@@ -139,12 +139,12 @@ module Aspera
             return Main.result_status("renamed #{thepath} to #{newname}")
           when :delete
             thepath=self.options.get_next_argument('path')
-            return do_bulk_operation(thepath,'deleted','path') do |thepath|
-              raise "expecting String (path), got #{thepath.class.name} (#{thepath})" unless thepath.is_a?(String)
-              node_file = @api_aoc.resolve_node_file(top_node_file,thepath)
+            return do_bulk_operation(thepath,'deleted','path') do |l_path|
+              raise "expecting String (path), got #{l_path.class.name} (#{l_path})" unless l_path.is_a?(String)
+              node_file = @api_aoc.resolve_node_file(top_node_file,l_path)
               node_api=@api_aoc.get_node_api(node_file[:node_info],AoC::SCOPE_NODE_USER)
               result=node_api.delete("files/#{node_file[:file_id]}")[:data]
-              {'path'=>thepath}
+              {'path'=>l_path}
             end
           when :transfer
             # client side is agent
