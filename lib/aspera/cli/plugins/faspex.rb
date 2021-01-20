@@ -44,7 +44,7 @@ module Aspera
           result={
             :base_url => "#{publink_uri.scheme}://#{publink_uri.host}#{port_add}#{base}",
             :subpath  => subpath,
-            :query    => URI::decode_www_form(publink_uri.query).inject({}){|m,v|m[v.first]=v.last;m}
+            :query    => URI::decode_www_form(publink_uri.query).inject({}){|h,v|h[v.first]=v.last;h}
           }
           Log.dump('publink',result)
           return result
