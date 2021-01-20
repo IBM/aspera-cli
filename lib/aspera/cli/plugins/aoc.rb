@@ -558,8 +558,23 @@ module Aspera
               return {:type=>:object_list,:data=>events}
             end
           when :resource
-            resource_type=self.options.get_next_argument('resource',[:self,:organization,:user,:group,:client,:contact,:dropbox,:node,:operation,:package,:saml_configuration, :workspace, :dropbox_membership,:short_link,:workspace_membership,'admin/apps_new'.to_sym,'admin/client_registration_token'.to_sym,'integrations/kms_profile'.to_sym])
-            resource_class_path=resource_type.to_s+case resource_type;when :dropbox;'es';when :self,:organization,'admin/apps_new'.to_sym;'';else; 's';end
+            resource_type=self.options.get_next_argument('resource',[:self,:organization,:user,:group,:client,:contact,:dropbox,:node,:operation,:package,:saml_configuration, :workspace, :dropbox_membership,:short_link,:workspace_membership,:apps_new,:client_registration_token,:client_access_key,:kms_profile])
+            # get path on API
+            resource_class_path=case resource_type
+            when :self,:organization
+              "#{resource_type}"
+            when :apps_new
+              "admin/#{resource_type}"
+            when :dropbox
+              resource_type.to_s+'es'
+            when :client_registration_token,:client_access_key
+              "admin/#{resource_type}s"
+            when :kms_profile
+              "integrations/#{resource_type}s"
+            else
+              resource_type.to_s+'s'
+            end
+            # build list of supported operations
             singleton_object=[:self,:organization].include?(resource_type)
             global_operations=[:create,:list]
             supported_operations=[:show,:modify]
@@ -568,7 +583,6 @@ module Aspera
             supported_operations.push(:set_pub_key) if resource_type.eql?(:client)
             supported_operations.push(:shared_folders) if [:node,:workspace].include?(resource_type)
             command=self.options.get_next_command(supported_operations)
-
             # require identifier for non global commands
             if !singleton_object and !global_operations.include?(command)
               res_id=self.options.get_option(:id)
@@ -607,8 +621,8 @@ module Aspera
               when :node; default_fields.push('host','access_key')
               when :operation; default_fields=nil
               when :contact; default_fields=["email","name","source_id","source_type"]
-              when 'admin/apps_new'.to_sym; list_query={:organization_apps=>true};default_fields=['app_type','available']
-              when 'admin/client_registration_token'.to_sym; default_fields=['id','value','data.client_subject_scopes','created_at']
+              when :apps_new; list_query={:organization_apps=>true};default_fields=['app_type','available']
+              when :client_registration_token; default_fields=['id','value','data.client_subject_scopes','created_at']
               end
               result=@api_aoc.read(resource_class_path,url_query(list_query))
               self.format.display_status("Items: #{result[:data].length}/#{result[:http]['X-Total-Count']}")
@@ -639,18 +653,6 @@ module Aspera
               return Node.new(@agents.merge(skip_basic_auth_options: true, node_api: api_node)).execute_action if command.eql?(:v3)
               ak_data=api_node.call({:operation=>'GET',:subpath=>"access_keys/#{res_data['access_key']}",:headers=>{'Accept'=>'application/json'}})[:data]
               return node_gen4_execute_action({node_info: res_data, file_id: ak_data['root_file_id']})
-              #            when :info
-              #              object=@api_aoc.read(resource_instance_path)[:data]
-              #              access_key=object['access_key']
-              #              match_list=@api_aoc.read('admin/search_nodes',{:q=>"access_key:\"#{access_key}\""})[:data]
-              #              result=match_list.select{|i|i["_source"]["access_key_recursive_counts"].first["access_key"].eql?(access_key)}
-              #              return Main.result_status('Private node') if result.empty?
-              #              raise CliError,"more than one match" unless result.length.eql?(1)
-              #              result=result.first["_source"]
-              #              result.merge!(result['access_key_recursive_counts'].first)
-              #              result.delete('access_key_recursive_counts')
-              #              result.delete('token')
-              #              return { :type=>:single_object, :data =>result}
             when :shared_folders
               read_params = case resource_type
               when :workspace;{'access_id'=>"ASPERA_ACCESS_KEY_ADMIN_WS_#{res_id}",'access_type'=>'user'}
