@@ -462,7 +462,28 @@ $(T)aoc15: $(T).exists
 	@echo $@
 	$(EXE_MAN) aoc admin analytics transfers --query=@json:'{"status":"completed","direction":"receive"}'
 	@touch $@
-taocadm: $(T)aoc8 $(T)aoc9 $(T)aoc9b $(T)aoc10 $(T)aoc11 $(T)aoc12 $(T)aoc13 $(T)aoc14 $(T)aoc15
+$(T)aocarself: $(T).exists
+	@echo $@
+	$(EXE_MAN) aoc admin res self show
+	$(EXE_MAN) aoc admin res organization show
+	$(EXE_MAN) aoc admin res user list
+	$(EXE_MAN) aoc admin res group list
+	$(EXE_MAN) aoc admin res client list
+	$(EXE_MAN) aoc admin res contact list
+	$(EXE_MAN) aoc admin res dropbox list
+	$(EXE_MAN) aoc admin res node list
+	$(EXE_MAN) aoc admin res operation list
+	$(EXE_MAN) aoc admin res package list
+	$(EXE_MAN) aoc admin res saml_configuration list
+	$(EXE_MAN) aoc admin res dropbox_membership list
+	$(EXE_MAN) aoc admin res workspace_membership list
+	$(EXE_MAN) aoc admin res short_link list
+	$(EXE_MAN) aoc admin res apps_new list
+	$(EXE_MAN) aoc admin res client_registration_token list
+	$(EXE_MAN) aoc admin res client_access_key list
+	$(EXE_MAN) aoc admin res kms_profile list
+	@touch $@
+taocadm: $(T)aoc8 $(T)aoc9 $(T)aoc9b $(T)aoc10 $(T)aoc11 $(T)aoc12 $(T)aoc13 $(T)aoc14 $(T)aoc15 $(T)aocarself
 $(T)aocat4: $(T).exists
 	@echo $@
 	$(EXE_MAN) aoc admin ats cluster list
