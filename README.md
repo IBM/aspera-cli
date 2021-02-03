@@ -1,7 +1,7 @@
 [comment1]: # (Do not edit this README.md, edit docs/README.erb.md, for details, read docs/README.md)
 # `ascli` : a Command Line for IBM Aspera products
 
-Version : 4.0.0.pre3
+Version : 4.0.0
 
 _Laurent/2016-2021_
 
@@ -30,7 +30,7 @@ Once the gem is installed, `ascli` shall be accessible:
 
 ```
 $ ascli --version
-4.0.0.pre3
+4.0.0
 ```
 
 ## First use
@@ -120,7 +120,7 @@ Refer to the following sections for a proposed method for specific operating sys
 MacOS 10.13+ (High Sierra) comes with a recent Ruby, so you can use it directly, you will need to install aspera-cli using `sudo` :
 
 ```
-$ sudo gem install aspera-cli --pre
+$ sudo gem install aspera-cli
 ```
 
 Alternatively, if you use [Homebrew](https://brew.sh/) already you can install Ruby with it:
@@ -195,7 +195,7 @@ For instance to build from source, and install in `/opt/ruby` :
 Once you have Ruby and rights to install gems: Install the gem and its dependencies:
 
 ```
-# gem install aspera-cli --pre
+# gem install aspera-cli
 ```
 
 To upgrade to the latest version:
@@ -1451,7 +1451,7 @@ ascli sync start --parameters=@json:'{"sessions":[{"name":"test","reset":true,"r
 ```
 $ ascli -h
 NAME
-	ascli -- a command line tool for Aspera Applications (v4.0.0.pre3)
+	ascli -- a command line tool for Aspera Applications (v4.0.0)
 
 SYNOPSIS
 	ascli COMMANDS [OPTIONS] [ARGS]
@@ -1490,7 +1490,7 @@ OPTIONS: global
     -v, --version                    display version
     -w, --warnings                   check for language warnings
         --ui=ENUM                    method to start browser: text, graphical
-        --log-level=ENUM             Log level: unknown, warn, info, error, debug, fatal
+        --log-level=ENUM             Log level: debug, info, error, warn, fatal, unknown
         --logger=ENUM                log method: stderr, stdout, syslog
         --lock-port=VALUE            prevent dual execution of a command, e.g. in cron
         --query=VALUE                additional filter for API calls (extended value) (some commands)
