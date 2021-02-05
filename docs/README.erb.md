@@ -21,18 +21,16 @@ Version : <%= gemspec.version.to_s %>
 
 _Laurent/2016-<%=Time.new.year%>_
 
-This gem provides a command line interface to Aspera Applications.
+This gem provides <%=tool%>: a command line interface to Aspera Applications.
 
-Location (once released):
-[<%= gemspec.metadata['rubygems_uri'] %>](<%= gemspec.metadata['rubygems_uri'] %>)
+<%=tool%> is a great tool to learn Aspera APIs.
 
-Disclaimers:
+Location: [<%= gemspec.metadata['rubygems_uri'] %>](<%= gemspec.metadata['rubygems_uri'] %>)
 
-* This has not yet been officially released so things may change
-
-<%=tool%> is also a great tool to learn Aspera APIs.
+# Notations
 
 In examples, command line operations (starting with `$`) are shown using a standard shell: `bash` or `zsh`.
+Prompt `# ` refers to user `root`, prompt `xfer$ ` refer to user `xfer`.
 
 Command line parameters in examples beginning with `my_`, like `my_param_value` are user-provided value and not fixed value commands.
 
@@ -2301,45 +2299,58 @@ The generation of preview in based on the use of `unoconv` and `libreoffice`
 # dnf install unoconv
 ```
 
+* Amazon Linux
+
+```
+# amazon-linux-extras enable libreoffice
+# yum clean metadata
+# yum install libreoffice-core libreoffice-calc libreoffice-opensymbol-fonts libreoffice-ure libreoffice-writer libreoffice-pyuno libreoffice-impress
+# wget https://raw.githubusercontent.com/unoconv/unoconv/master/unoconv
+# mv unoconv /usr/bin
+# chmod a+x /usr/bin/unoconv
+```
 
 ## Configuration
 
-Like any <%=tool%> commands, parameters can be passed on command line or using a configuration <%=prst%>. Note that if you use the <%=tool%> run as `xfer` user, like here, the configuration file must be created as the same user. Example using a <%=prst%> named `my_preset_name` (choose any name relevant to you, e.g. the AoC node name, and replace in the following lines):
+The preview generator is run as a user, preferably a regular user (not root). When using object storage, any user can be used, but when using local storage it is usually better to use the user `xfer`, as uploaded files are under this identity: this ensures proper access rights. (we will assume this)
+
+Like any <%=tool%> commands, parameters can be passed on command line or using a configuration <%=prst%>.  The configuration file must be created with the same user used to run so that it is properly used on runtime.
+
+Note that the `xfer` user has a special protected shell: `aspshell`, so changing identity requires specification of alternate shell:
 
 ```
 # su -s /bin/bash - xfer
-$ <%=cmd%> config id my_preset_name update --url=https://localhost:9092 --username=my_access_key --password=my_secret --skip-types=office --lock-port=12346
-$ <%=cmd%> config id default set preview my_preset_name
+$ <%=cmd%> config id previewconf update --url=https://localhost:9092 --username=my_access_key --password=my_secret --skip-types=office --lock-port=12346
+$ <%=cmd%> config id default set preview previewconf
 ```
 
-Here we assume that Office file generation is disabled, else remove the option. For the `lock_port` option refer to a previous section in thsi manual.
+Here we assume that Office file generation is disabled, else remove the option. `lock_port` prevents concurrent execution of generation when using a scheduler.
 
 Once can check if the access key is well configured using:
 
 ```
-$ <%=cmd%> -Pmy_preset_name node browse /
+$ <%=cmd%> -Ppreviewconf node browse /
 ```
 
 This shall list the contents of the storage root of the access key.
 
 ## Execution
 
-The tool intentionally supports only a "one shot" mode in order to avoid having a hanging process or using too many resources (calling REST api too quickly during the scan or event method).
-It needs to be run regularly to create or update preview files. For that use your best
+The tool intentionally supports only a "one shot" mode (no infinite loop) in order to avoid having a hanging process or using too many resources (calling REST api too quickly during the scan or event method).
+It needs to be run on a regular basis to create or update preview files. For that use your best
 reliable scheduler. For instance use "CRON" on Linux or Task Scheduler on Windows.
 
-Typically, for "Access key" access, the system/transfer is `xfer`. So, in order to be consiustent have generate the appropriate access rights, the generation process
-should be run as user `xfer`.
+Typically, for "Access key" access, the system/transfer is `xfer`. So, in order to be consistent have generate the appropriate access rights, the generation process should be run as user `xfer`.
 
 Lets do a one shot test, using the configuration previously created:
 
 ```
 # su -s /bin/bash - xfer
-$ <%=cmd%> preview scan --overwrite=always
+xfer$ <%=cmd%> preview scan --overwrite=always
 ```
 
 When the preview generator is first executed it will create a file: `.aspera_access_key`
-which contains the access key used.
+in the previews folder which contains the access key used.
 On subsequent run it reads this file and check that previews are generated for the same access key, else it fails. This is to prevent clash of different access keys using the same root.
 
 ## Configuration for Execution in scheduler
@@ -2351,13 +2362,29 @@ We assume here that a configuration preset was created as shown previously.
 Here the cronjob is created for `root`, and changes the user to `xfer`, also overriding the shell which should be `aspshell`. (adapt the command below, as it would override existing crontab). It is also up to you to use directly the `xfer` user's crontab. This is an example only.
 
 ```
-# crontab<<EOF
-2-59 * * * * su -s /bin/bash - xfer -c 'nice +10 timeout 10m <%=cmd%> preview event --log-level=info --logger=syslog --iteration-file=/tmp/preview_restart.txt'
-0 * * * *    su -s /bin/bash - xfer -c 'nice +10 timeout 30m <%=cmd%> preview scan  --log-level=info --logger=syslog'
-EOF
+xfer$ crontab<<EOF
+0    * * * *  /home/xfer/ascli preview scan -Paklocal --logger=syslog --display=error
+2-59 * * * *  /home/xfer/ascli preview trev -Paklocal --logger=syslog --display=errorEOF
 ```
 
-Nopte that the options here may be located in the config preset, but it was left on the command line to keep stdout for command line execution of preview.
+Note that the options here may be located in the config preset, but it was left on the command line to keep stdout for command line execution of preview.
+
+Example of startup scrip, which sets the ruby environment and adds some protection:
+
+```
+#!/bin/bash
+# set a timeout protection, just in case
+case "$1" in
+*event*) tmout=10m ;;
+*) tmout=30m ;;
+esac
+# execute preview generator as xfer user so that preview files belong to same user
+# so it will use this config file: /home/xfer/.aspera/ascli/config.yaml
+# logs go to: grep -w ascli /var/log/*
+. /etc/profile.d/rvm.sh
+rvm use 2.6 --quiet
+exec timeout ${tmout} ascli "${@}"
+```
 
 ## Candidate detection for creation or update (or deletion)
 
