@@ -14,7 +14,7 @@ module Aspera
     attr_reader :logger
     attr_reader :logger_type
     # levels are :debug,:info,:warn,:error,fatal,:unknown
-    def self.levels; Logger::Severity.constants.map{|c| c.downcase.to_sym};end
+    def self.levels; Logger::Severity.constants.sort{|a,b|Logger::Severity.const_get(a)<=>Logger::Severity.const_get(b)}.map{|c|c.downcase.to_sym};end
 
     # where logs are sent to
     def self.logtypes; [:stderr,:stdout,:syslog];end
