@@ -29,15 +29,15 @@ demo_executor=Aspera::Ssh.new(ssh_url.host,params[:user],{:password=>params[:pas
 
 #PATH_FOLDER_MAIN='/workspace/Rubytools/aspera/local/PATH_FOLDER_MAIN'
 #demo_executor=LocalExecutor.new
-
+TEST_RUN_ID=(rand 1000).to_s
 PATH_FOLDER_TINY=File.join(PATH_FOLDER_MAIN,'aspera-test-dir-tiny')
 PATH_FOLDER_DEST=File.join(PATH_FOLDER_MAIN,'Upload')
-PATH_FOLDER_NEW=File.join(PATH_FOLDER_DEST,'newfolder')
-PATH_FOLDER_RENAMED=File.join(PATH_FOLDER_DEST,'renamedfolder')
+PATH_FOLDER_NEW=File.join(PATH_FOLDER_DEST,"newfolder-#{TEST_RUN_ID}")
+PATH_FOLDER_RENAMED=File.join(PATH_FOLDER_DEST,"renamedfolder-#{TEST_RUN_ID}")
 NAME_FILE1='200KB.1'
 PATH_FILE_EXIST=File.join(PATH_FOLDER_TINY,NAME_FILE1)
-PATH_FILE_COPY=File.join(PATH_FOLDER_DEST,NAME_FILE1+'.copy1')
-PATH_FILE_RENAMED=File.join(PATH_FOLDER_DEST,NAME_FILE1+'.renamed')
+PATH_FILE_COPY=File.join(PATH_FOLDER_DEST,NAME_FILE1+".copy1-#{TEST_RUN_ID}")
+PATH_FILE_RENAMED=File.join(PATH_FOLDER_DEST,NAME_FILE1+".renamed-#{TEST_RUN_ID}")
 PAC_FILE='file:///./examples/proxy.pac'
 
 RSpec.describe Aspera::Cli::Main do
