@@ -5,16 +5,19 @@ on: [push, pull_request]
 jobs:
   test:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        ruby: [ '2.4', '2.7' ]
     steps:
     - uses: actions/checkout@v2
     - uses: webfactory/ssh-agent@v0.4.1
       with:
           ssh-private-key: "${{ secrets.TESTS_SSH_PRIVATE_KEY }}"
 
-    - name: Set up Ruby
+    - name: Set up Ruby ${{ matrix.ruby }}
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 2.6
+        ruby-version: ${{ matrix.ruby }}
 
     - name: Set up Node.js
       uses: actions/setup-node@v1
