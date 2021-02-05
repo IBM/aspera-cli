@@ -5,18 +5,16 @@ Version : 4.0.0
 
 _Laurent/2016-2021_
 
-This gem provides a command line interface to Aspera Applications.
+This gem provides `ascli`: a command line interface to Aspera Applications.
 
-Location (once released):
-[https://rubygems.org/gems/aspera-cli](https://rubygems.org/gems/aspera-cli)
+`ascli` is a great tool to learn Aspera APIs.
 
-Disclaimers:
+Location: [https://rubygems.org/gems/aspera-cli](https://rubygems.org/gems/aspera-cli)
 
-* This has not yet been officially released so things may change
-
-`ascli` is also a great tool to learn Aspera APIs.
+# Notations
 
 In examples, command line operations (starting with `$`) are shown using a standard shell: `bash` or `zsh`.
+Prompt `# ` refers to user `root`, prompt `xfer$ ` refer to user `xfer`.
 
 Command line parameters in examples beginning with `my_`, like `my_param_value` are user-provided value and not fixed value commands.
 
@@ -1450,6 +1448,12 @@ ascli sync start --parameters=@json:'{"sessions":[{"name":"test","reset":true,"r
 
 ```
 $ ascli -h
+/Users/FooBar/.rvm/gems/ruby-2.7.0/gems/net-protocol-0.1.0/lib/net/protocol.rb:66: warning: already initialized constant Net::ProtocRetryError
+/Users/FooBar/.rvm/rubies/ruby-2.7.0/lib/ruby/2.7.0/net/protocol.rb:66: warning: previous definition of ProtocRetryError was here
+/Users/FooBar/.rvm/gems/ruby-2.7.0/gems/net-protocol-0.1.0/lib/net/protocol.rb:206: warning: already initialized constant Net::BufferedIO::BUFSIZE
+/Users/FooBar/.rvm/rubies/ruby-2.7.0/lib/ruby/2.7.0/net/protocol.rb:206: warning: previous definition of BUFSIZE was here
+/Users/FooBar/.rvm/gems/ruby-2.7.0/gems/net-protocol-0.1.0/lib/net/protocol.rb:503: warning: already initialized constant Net::NetPrivate::Socket
+/Users/FooBar/.rvm/rubies/ruby-2.7.0/lib/ruby/2.7.0/net/protocol.rb:503: warning: previous definition of Socket was here
 NAME
 	ascli -- a command line tool for Aspera Applications (v4.0.0)
 
@@ -1490,7 +1494,7 @@ OPTIONS: global
     -v, --version                    display version
     -w, --warnings                   check for language warnings
         --ui=ENUM                    method to start browser: text, graphical
-        --log-level=ENUM             Log level: debug, info, error, warn, fatal, unknown
+        --log-level=ENUM             Log level: fatal, unknown, debug, info, error, warn
         --logger=ENUM                log method: stderr, stdout, syslog
         --lock-port=VALUE            prevent dual execution of a command, e.g. in cron
         --query=VALUE                additional filter for API calls (extended value) (some commands)
@@ -2856,45 +2860,58 @@ The generation of preview in based on the use of `unoconv` and `libreoffice`
 # dnf install unoconv
 ```
 
+* Amazon Linux
+
+```
+# amazon-linux-extras enable libreoffice
+# yum clean metadata
+# yum install libreoffice-core libreoffice-calc libreoffice-opensymbol-fonts libreoffice-ure libreoffice-writer libreoffice-pyuno libreoffice-impress
+# wget https://raw.githubusercontent.com/unoconv/unoconv/master/unoconv
+# mv unoconv /usr/bin
+# chmod a+x /usr/bin/unoconv
+```
 
 ## Configuration
 
-Like any `ascli` commands, parameters can be passed on command line or using a configuration [option preset](#lprt). Note that if you use the `ascli` run as `xfer` user, like here, the configuration file must be created as the same user. Example using a [option preset](#lprt) named `my_preset_name` (choose any name relevant to you, e.g. the AoC node name, and replace in the following lines):
+The preview generator is run as a user, preferably a regular user (not root). When using object storage, any user can be used, but when using local storage it is usually better to use the user `xfer`, as uploaded files are under this identity: this ensures proper access rights. (we will assume this)
+
+Like any `ascli` commands, parameters can be passed on command line or using a configuration [option preset](#lprt).  The configuration file must be created with the same user used to run so that it is properly used on runtime.
+
+Note that the `xfer` user has a special protected shell: `aspshell`, so changing identity requires specification of alternate shell:
 
 ```
 # su -s /bin/bash - xfer
-$ ascli config id my_preset_name update --url=https://localhost:9092 --username=my_access_key --password=my_secret --skip-types=office --lock-port=12346
-$ ascli config id default set preview my_preset_name
+$ ascli config id previewconf update --url=https://localhost:9092 --username=my_access_key --password=my_secret --skip-types=office --lock-port=12346
+$ ascli config id default set preview previewconf
 ```
 
-Here we assume that Office file generation is disabled, else remove the option. For the `lock_port` option refer to a previous section in thsi manual.
+Here we assume that Office file generation is disabled, else remove the option. `lock_port` prevents concurrent execution of generation when using a scheduler.
 
 Once can check if the access key is well configured using:
 
 ```
-$ ascli -Pmy_preset_name node browse /
+$ ascli -Ppreviewconf node browse /
 ```
 
 This shall list the contents of the storage root of the access key.
 
 ## Execution
 
-The tool intentionally supports only a "one shot" mode in order to avoid having a hanging process or using too many resources (calling REST api too quickly during the scan or event method).
-It needs to be run regularly to create or update preview files. For that use your best
+The tool intentionally supports only a "one shot" mode (no infinite loop) in order to avoid having a hanging process or using too many resources (calling REST api too quickly during the scan or event method).
+It needs to be run on a regular basis to create or update preview files. For that use your best
 reliable scheduler. For instance use "CRON" on Linux or Task Scheduler on Windows.
 
-Typically, for "Access key" access, the system/transfer is `xfer`. So, in order to be consiustent have generate the appropriate access rights, the generation process
-should be run as user `xfer`.
+Typically, for "Access key" access, the system/transfer is `xfer`. So, in order to be consistent have generate the appropriate access rights, the generation process should be run as user `xfer`.
 
 Lets do a one shot test, using the configuration previously created:
 
 ```
 # su -s /bin/bash - xfer
-$ ascli preview scan --overwrite=always
+xfer$ ascli preview scan --overwrite=always
 ```
 
 When the preview generator is first executed it will create a file: `.aspera_access_key`
-which contains the access key used.
+in the previews folder which contains the access key used.
 On subsequent run it reads this file and check that previews are generated for the same access key, else it fails. This is to prevent clash of different access keys using the same root.
 
 ## Configuration for Execution in scheduler
@@ -2906,13 +2923,29 @@ We assume here that a configuration preset was created as shown previously.
 Here the cronjob is created for `root`, and changes the user to `xfer`, also overriding the shell which should be `aspshell`. (adapt the command below, as it would override existing crontab). It is also up to you to use directly the `xfer` user's crontab. This is an example only.
 
 ```
-# crontab<<EOF
-2-59 * * * * su -s /bin/bash - xfer -c 'nice +10 timeout 10m ascli preview event --log-level=info --logger=syslog --iteration-file=/tmp/preview_restart.txt'
-0 * * * *    su -s /bin/bash - xfer -c 'nice +10 timeout 30m ascli preview scan  --log-level=info --logger=syslog'
-EOF
+xfer$ crontab<<EOF
+0    * * * *  /home/xfer/ascli preview scan -Paklocal --logger=syslog --display=error
+2-59 * * * *  /home/xfer/ascli preview trev -Paklocal --logger=syslog --display=errorEOF
 ```
 
-Nopte that the options here may be located in the config preset, but it was left on the command line to keep stdout for command line execution of preview.
+Note that the options here may be located in the config preset, but it was left on the command line to keep stdout for command line execution of preview.
+
+Example of startup scrip, which sets the ruby environment and adds some protection:
+
+```
+#!/bin/bash
+# set a timeout protection, just in case
+case "$1" in
+*event*) tmout=10m ;;
+*) tmout=30m ;;
+esac
+# execute preview generator as xfer user so that preview files belong to same user
+# so it will use this config file: /home/xfer/.aspera/ascli/config.yaml
+# logs go to: grep -w ascli /var/log/*
+. /etc/profile.d/rvm.sh
+rvm use 2.6 --quiet
+exec timeout ${tmout} ascli "${@}"
+```
 
 ## Candidate detection for creation or update (or deletion)
 
@@ -3114,6 +3147,12 @@ Nodejs: [https://www.npmjs.com/package/aspera](https://www.npmjs.com/package/asp
 
 ```
 $ asession -h
+/Users/laurent/.rvm/gems/ruby-2.7.0/gems/net-protocol-0.1.0/lib/net/protocol.rb:66: warning: already initialized constant Net::ProtocRetryError
+/Users/laurent/.rvm/rubies/ruby-2.7.0/lib/ruby/2.7.0/net/protocol.rb:66: warning: previous definition of ProtocRetryError was here
+/Users/laurent/.rvm/gems/ruby-2.7.0/gems/net-protocol-0.1.0/lib/net/protocol.rb:206: warning: already initialized constant Net::BufferedIO::BUFSIZE
+/Users/laurent/.rvm/rubies/ruby-2.7.0/lib/ruby/2.7.0/net/protocol.rb:206: warning: previous definition of BUFSIZE was here
+/Users/laurent/.rvm/gems/ruby-2.7.0/gems/net-protocol-0.1.0/lib/net/protocol.rb:503: warning: already initialized constant Net::NetPrivate::Socket
+/Users/laurent/.rvm/rubies/ruby-2.7.0/lib/ruby/2.7.0/net/protocol.rb:503: warning: previous definition of Socket was here
 USAGE
     asession
     asession -h|--help
