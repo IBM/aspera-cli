@@ -117,6 +117,8 @@ In order to use the tool or the gem, it is necessary to install those components
 
 The following sections provide information on the installation.
 
+An internet connection is required for the installation. If you dont have internet for the installation, refer to the last sub section.
+
 ## <a name="ruby"></a>Ruby
 
 A ruby interpreter is required to run the tool or to use the gem and tool.
@@ -248,6 +250,14 @@ Refer to section [FASP](#client) for details on how to select a client or set pa
 
 Several methods are provided on how to start a transfer. Use of a local client is one of them, but
 other methods are available. Refer to section: [Transfer Agents](#agents)
+
+## Installation without internet
+
+The procedure consists in:
+
+* installing the tool on a system with access to internet
+* archive (zip, tar) the main ruby folder with gems installed
+* unarchive on the system without internet access
 
 # <a name="cli"></a>Command Line Interface: <%=tool%>
 
@@ -2355,63 +2365,54 @@ On subsequent run it reads this file and check that previews are generated for t
 
 ## Configuration for Execution in scheduler
 
-Here is an example of configuration for use with cron on Linux. Adapt the scripts to your own preference.
+Here is an example of configuration for use with cron on Linux.
+Adapt the scripts to your own preference.
 
 We assume here that a configuration preset was created as shown previously.
 
-Here the cronjob is created for `root`, and changes the user to `xfer`, also overriding the shell which should be `aspshell`. (adapt the command below, as it would override existing crontab). It is also up to you to use directly the `xfer` user's crontab. This is an example only.
+Lets first setup a script that will be used in the sceduler and sets up the environment.
 
-```
-xfer$ crontab<<EOF
-0    * * * *  /home/xfer/ascli preview scan -Paklocal --logger=syslog --display=error
-2-59 * * * *  /home/xfer/ascli preview trev -Paklocal --logger=syslog --display=errorEOF
-```
-
-Note that the options here may be located in the config preset, but it was left on the command line to keep stdout for command line execution of preview.
-
-Example of startup scrip, which sets the ruby environment and adds some protection:
+Example of startup script `cron_ascli`, which sets the Ruby environment and adds some timeout protection:
 
 ```
 #!/bin/bash
 # set a timeout protection, just in case
-case "$1" in
-*event*) tmout=10m ;;
-*) tmout=30m ;;
-esac
-# execute preview generator as xfer user so that preview files belong to same user
-# so it will use this config file: /home/xfer/.aspera/ascli/config.yaml
-# logs go to: grep -w ascli /var/log/*
+case "$*" in *trev*) tmout=10m ;; *) tmout=30m ;; esac
 . /etc/profile.d/rvm.sh
 rvm use 2.6 --quiet
 exec timeout ${tmout} ascli "${@}"
 ```
 
+Here the cronjob is created for user `xfer`.
+
+```
+xfer$ crontab<<EOF
+0    * * * *  /home/xfer/cron_ascli preview scan --logger=syslog --display=error
+2-59 * * * *  /home/xfer/cron_ascli preview trev --logger=syslog --display=error
+EOF
+```
+
+Note that the loging options are kept in the cronfile instead of conf file to allow execution on command line with output on command line.
+
 ## Candidate detection for creation or update (or deletion)
 
-The tool will find candidates for preview generation using three commands:
+The tool generates preview files using those commands:
 
 * `trevents` : only recently uploaded files will be tested (transfer events)
 * `events` : only recently uploaded files will be tested (file events: not working)
-* `scan` : deeply scan all files under the access key&apos;s "storage root"
-* `folder` : same as `scan`, but only on the specified folder&apos;s "file identifier"
-* `file` : for an individual file generation
-
-Note that for the `event`, the option `iteration_file` should be specified so that
-successive calls only process new events. This file will hold an identifier
-telling from where to get new events.
-
-It is also possible to test a local file, using the `test` command.
+* `scan` : recursively scan all files under the access key&apos;s "storage root"
+* `test` : test using a local file
 
 Once candidate are selected, once candidates are selected,
 a preview is always generated if it does not exist already,
 else if a preview already exist, it will be generated
-using one of three overwrite method:
+using one of three values for the `overwrite` option:
 
 * `always` : preview is always generated, even if it already exists and is newer than original
 * `never` : preview is generated only if it does not exist already
 * `mtime` : preview is generated only if the original file is newer than the existing
 
-Deletion of preview for deleted source files: not implemented yet.
+Deletion of preview for deleted source files: not implemented yet (TODO).
 
 If the `scan` or `events` detection method is used, then the option : `skip_folders` can be used to skip some folders. It expects a list of path relative to the storage root (docroot) starting with slash, use the `@json:` notation, example:
 
@@ -2644,6 +2645,34 @@ $ <%=cmd%> server upload source_hot --to-folder=/Upload/target_hot --lock-port=1
 ```
 
 The local (here, relative path: source_hot) is sent (upload) to basic fasp server, source files are deleted after transfer. growing files will be sent only once they dont grow anymore (based ona 8 second cooloff period). If a transfer takes more than the execution period, then the subsequent execution is skipped (lock-port).
+
+# Aspera Health check and Nagios
+
+Each plugin provide a `health` command that will check the health status of the application. Example:
+
+```
+$ <%=cmd%> console health
++--------+-------------+------------+
+| status | component   | message    |
++--------+-------------+------------+
+| ok     | console api | accessible |
++--------+-------------+------------+
+```
+
+Typically, the health check uses the REST API of the application with the following exception: the `server` plugin allows checking health by:
+
+* issuing a transfer to the server
+* checking web app status with `asctl all:status`
+* checking daemons process status
+
+<%=tool%> can be called by Nagios to check the health status of an Aspera server. The output can be made compatible to Nagios with option `--format=nagios` :
+
+```
+$ <%=cmd%> ascli server health transfer --to-folder=/Upload --format=nagios --progress=none
+OK - [transfer:ok]
+$ <%=cmd%> server health asctlstatus --cmd_prefix='sudo ' --format=nagios
+OK - [NP:running, MySQL:running, Mongrels:running, Background:running, DS:running, DB:running, Email:running, Apache:running]
+```
 
 # Module: `Aspera`
 

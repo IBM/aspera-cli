@@ -100,8 +100,6 @@ module Aspera
           return @preview_formats_to_generate.map{|i|i.to_s}.join(',')
         end
 
-        ACTIONS=[:scan,:events,:trevents,:check,:test]
-
         # /files/id/files is normally cached in redis, but we can discard the cache
         # but /files/id is not cached
         def get_folder_entries(file_id,request_args=nil)
@@ -112,7 +110,7 @@ module Aspera
         end
 
         # old version based on folders
-        def process_transfer_events(iteration_token)
+        def process_trevents(iteration_token)
           events_filter={
             'access_key'=>@access_key_self['id'],
             'type'=>'download.ended'
@@ -137,7 +135,7 @@ module Aspera
         end
 
         # requests recent events on node api and process newly modified folders
-        def process_file_events(iteration_token)
+        def process_events(iteration_token)
           # get new file creation by access key (TODO: what if file already existed?)
           events_filter={
             'access_key'=>@access_key_self['id'],
@@ -360,6 +358,8 @@ module Aspera
           end
         end
 
+        ACTIONS=[:scan,:events,:trevents,:check,:test]
+
         def execute_action
           command=self.options.get_next_command(ACTIONS)
           unless [:check,:test].include?(command)
@@ -417,30 +417,18 @@ module Aspera
             end
             scan_folder_files(folder_info,scan_path)
             return Main.result_status('scan finished')
-          when :events
+          when :events,:trevents
             iteration_data=[]
             iteration_persistency=nil
             if self.options.get_option(:once_only,:mandatory)
               iteration_persistency=PersistencyActionOnce.new(
               manager: @agents[:persistency],
               data: iteration_data,
-              ids:  ['preview_iteration_events',self.options.get_option(:url,:mandatory),self.options.get_option(:username,:mandatory)])
+              ids: ["preview_iteration_#{command}",self.options.get_option(:url,:mandatory),self.options.get_option(:username,:mandatory)])
             end
-            iteration_data[0]=process_file_events(iteration_data[0])
+            iteration_data[0]=send("process_#{command}",iteration_data[0])
             iteration_persistency.save unless iteration_persistency.nil?
-            return Main.result_status('events finished')
-          when :trevents
-            iteration_data=[]
-            iteration_persistency=nil
-            if self.options.get_option(:once_only,:mandatory)
-              iteration_persistency=PersistencyActionOnce.new(
-              manager: @agents[:persistency],
-              data: iteration_data,
-              ids:  ['preview_iteration_transfer',self.options.get_option(:url,:mandatory),self.options.get_option(:username,:mandatory)])
-            end
-            iteration_data[0]=process_transfer_events(iteration_data[0])
-            iteration_persistency.save unless iteration_persistency.nil?
-            return Main.result_status('trevents finished')
+            return Main.result_status("#{command} finished")
           when :check
             Aspera::Preview::Utils.check_tools(@skip_types)
             return Main.result_status('tools validated')
