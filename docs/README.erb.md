@@ -2713,7 +2713,12 @@ So, it evolved into <%=tool%>:
 
 # Release Notes
 
-* 4.0.0.pre2
+* 4.x
+
+	* renamed command `nagios_check` to `health`
+	* agent `http_gw` now supports upload
+
+* 4.0.0
 
 	* now available as open source at [<%= gemspec.homepage %>](<%= gemspec.homepage %>) with general cleanup
 	* changed default tool name from `mlia` to `ascli`
