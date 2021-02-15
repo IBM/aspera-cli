@@ -7,6 +7,7 @@ require 'net/http'
 require 'net/https'
 require 'json'
 require 'base64'
+require 'cgi'
 require 'ruby-progressbar'
 
 # add cancel method to http
