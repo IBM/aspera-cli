@@ -28,6 +28,7 @@ CF_AOC_NODE1_NAME := $(shell $(EXE_NOMAN) conf id misc get aoc_node1_name)
 CF_AOC_NODE1_SECRET := $(shell $(EXE_NOMAN) conf id misc get aoc_node1_secret)
 CF_EMAIL_ADDR := $(shell $(EXE_NOMAN) conf id misc get email_internal)
 CF_AOC_EXTERNAL_EMAIL := $(shell $(EXE_NOMAN) conf id misc get email_external)
+CF_FASPEX_USERNAME := $(shell $(EXE_NOMAN) conf id tst_faspex get username)
 
 # setup local environment for preview generation testing
 setupprev:
@@ -36,6 +37,7 @@ setupprev:
 	sudo asconfigurator -x "user;user_name,xfer;file_restriction,|*;token_encryption_key,$$(base64 < /dev/urandom|head -c32);absolute,AS_NULL"
 	sudo asconfigurator -x "server;activity_logging,true;activity_event_logging,true"
 	-sudo launchctl load  /Library/LaunchDaemons/com.aspera.asperanoded.plist
+	test $$(id -u asperadaemon) = $$(stat -f "%u" /Library/Logs/Aspera) || exit 1
 	sudo launchctl stop com.aspera.asperanoded;sleep 3
 	sudo launchctl start com.aspera.asperanoded;sleep 3
 	-$(EXE_NOMAN) node -N -Ptst_node_preview access_key delete --id=$$($(EXE_NOMAN) conf id tst_ak_preview get username)
@@ -143,11 +145,15 @@ $(T)serv_nodeadmin: $(T).exists
 	@touch $@
 $(T)serv_nagios_transfer: $(T).exists
 	@echo $@
-	$(EXE_MAN) server nagios transfer --to-folder=$(CF_HSTS_FOLDER_UPLOAD) --format=nagios 
+	$(EXE_MAN) server health transfer --to-folder=$(CF_HSTS_FOLDER_UPLOAD) --format=nagios 
+	@touch $@
+$(T)serv_nagios_hsts: $(T).exists
+	@echo $@
+	$(EXE_MAN) server -N -Ptst_hstsfaspex_ssh -Plocal_user health app_services --format=nagios
 	@touch $@
 $(T)serv_nagios_webapp: $(T).exists
 	@echo $@
-	$(EXE_MAN) server -N -Ptst_hstsfaspex_ssh -Plocal_user nagios app_services --format=nagios
+	$(EXE_MAN) server -N -Ptst_hstsfaspex_ssh -Plocal_user health asctlstatus --format=nagios --cmd-prefix='sudo '
 	@touch $@
 $(T)serv3: $(T).exists
 	@echo $@
@@ -165,7 +171,7 @@ $(T)asession: $(T).exists
 	$(DIR_BIN)asession @json:'{"remote_host":"'"$${remote_host}"'","remote_user":"'"$${remote_user}"'","ssh_port":'$${remote_port}',"remote_password":"'"$${remote_pass}"'","direction":"receive","destination_root":"$(DIR_TMP).","paths":[{"source":"/aspera-test-dir-tiny/200KB.1"}]}'
 	@touch $@
 
-tfasp: $(T)serv_browse $(T)serv_mkdir $(T)serv_upload $(T)serv_md5 $(T)serv_down_lcl $(T)serv_down_from_node $(T)serv_cp $(T)serv_mv $(T)serv_delete $(T)serv_cleanup1 $(T)serv_info $(T)serv_du $(T)serv_df $(T)asession $(T)serv_nodeadmin $(T)serv_nagios_webapp $(T)serv_nagios_transfer $(T)serv3 $(T)serv_key
+tfasp: $(T)serv_browse $(T)serv_mkdir $(T)serv_upload $(T)serv_md5 $(T)serv_down_lcl $(T)serv_down_from_node $(T)serv_cp $(T)serv_mv $(T)serv_delete $(T)serv_cleanup1 $(T)serv_info $(T)serv_du $(T)serv_df $(T)asession $(T)serv_nodeadmin $(T)serv_nagios_hsts $(T)serv_nagios_webapp $(T)serv_nagios_transfer $(T)serv3 $(T)serv_key
 
 $(T)fx_plst: $(T).exists
 	@echo $@
@@ -173,13 +179,15 @@ $(T)fx_plst: $(T).exists
 	@touch $@
 $(T)fx_psnd: $(T).exists
 	@echo $@
-	$(EXE_MAN) faspex package send --delivery-info=@json:'{"title":"'"$(PKG_TEST_TITLE)"'","recipients":["$(CF_EMAIL_ADDR)"]}' $(CF_LOCAL_SAMPLE_FILEPATH)
+	$(EXE_MAN) faspex package send --delivery-info=@json:'{"title":"'"$(PKG_TEST_TITLE)"'","recipients":["$(CF_EMAIL_ADDR)","$(CF_FASPEX_USERNAME)"]}' $(CF_LOCAL_SAMPLE_FILEPATH)
 	@touch $@
-$(T)fx_prs: $(T).exists
+$(T)fx_prs: $(T)fx_psnd
 	@echo $@
 	@sleep 5
+	set -x;package_id=$$($(EXE_MAN) faspex package list --fields=package_id --format=csv --display=data|tail -n 1);\
+	$(EXE_MAN) faspex package recv --to-folder=$(DIR_TMP). --id="$${package_id}"
 	set -x;package_id=$$($(EXE_MAN) faspex package list --box=sent --fields=package_id --format=csv --display=data|tail -n 1);\
-	$(EXE_MAN) faspex package recv --box=sent --to-folder=$(DIR_TMP). --id="$${package_id}"
+	$(EXE_MAN) faspex package recv --to-folder=$(DIR_TMP). --box=sent --id="$${package_id}"
 	@touch $@
 $(T)fx_pri: $(T).exists
 	@echo $@
@@ -211,7 +219,7 @@ $(T)fx_storage: $(T).exists
 	@touch $@
 $(T)fx_nagios: $(T).exists
 	@echo $@
-	$(EXE_MAN) faspex nagios_check
+	$(EXE_MAN) faspex health
 	@touch $@
 tfaspex: $(T)fx_plst $(T)fx_psnd $(T)fx_prs $(T)fx_pri $(T)fx_prl $(T)fx_pslu $(T)fx_psld $(T)fx_storage $(T)fx_prall $(T)fx_nagios
 
@@ -278,7 +286,7 @@ $(T)nd7: $(T).exists
 	@touch $@
 $(T)nd_nagios: $(T).exists
 	@echo $@
-	$(EXE_MAN) node nagios_check
+	$(EXE_MAN) node health
 	@touch $@
 tnode: $(T)nd1 $(T)nd2 $(T)nd_2_nd_xfer $(T)nd4 $(T)nd5 $(T)nd6 $(T)nd7 $(T)nd_nagios
 
@@ -358,7 +366,9 @@ $(T)aocfv3inf: $(T).exists
 	@touch $@
 $(T)aocffid: $(T).exists
 	@echo $@
-	$(EXE_MAN) aoc files file 18891
+	set -x;\
+	file_id=$$($(EXE_NOMAN) aoc files br /200KB.1 --fields=id --format=csv --display=data);\
+	$(EXE_MAN) aoc files file $${file_id}
 	@touch $@
 $(T)aocfpub: $(T).exists
 	@echo $@
@@ -966,7 +976,7 @@ $(T)f5_4: $(T).exists
 tf5: $(T)f5_1 $(T)f5_2 $(T)f5_3 $(T)f5_4
 
 
-tnagios: $(T)fx_nagios $(T)serv_nagios_webapp $(T)serv_nagios_transfer $(T)nd_nagios
+tnagios: $(T)fx_nagios $(T)serv_nagios_hsts $(T)serv_nagios_transfer $(T)nd_nagios
 
 $(T)fxgw: $(T).exists
 	@echo $@

@@ -62,7 +62,7 @@ module Aspera
           end.select{|i|!i.nil?}
         end
 
-        ACTIONS=[:nagios,:nodeadmin,:userdata,:configurator,:ctl,:download,:upload,:browse,:delete,:rename].concat(Aspera::AsCmd::OPERATIONS)
+        ACTIONS=[:health,:nodeadmin,:userdata,:configurator,:ctl,:download,:upload,:browse,:delete,:rename].concat(Aspera::AsCmd::OPERATIONS)
 
         def execute_action
           server_uri=URI.parse(self.options.get_option(:url,:mandatory))
@@ -116,9 +116,9 @@ module Aspera
           command=:rm if command.eql?(:delete)
           command=:mv if command.eql?(:rename)
           case command
-          when :nagios
+          when :health
             nagios=Nagios.new
-            command_nagios=self.options.get_next_command([ :app_services, :transfer ])
+            command_nagios=self.options.get_next_command([ :app_services, :transfer, :asctlstatus ])
             case command_nagios
             when :app_services
               # will not work with aspshell, requires Linux/bash
@@ -146,6 +146,19 @@ module Aspera
                 nagios.add_ok('transfer','ok')
               else
                 nagios.add_critical('transfer',statuses.select{|i|!i.eql?(:success)}.first.to_s)
+              end
+            when :asctlstatus
+              realcmd='asctl'
+              prefix=self.options.get_option(:cmd_prefix,:optional)
+              realcmd="#{prefix}#{realcmd} all:status" unless prefix.nil?
+              result=shell_executor.execute(realcmd.split(' '))
+              data=asctl_parse(result)
+              data.each do |i|
+                if i['state'].eql?('running')
+                  nagios.add_ok(i['process'],i['state'])
+                else
+                  nagios.add_critical(i['process'],i['state'])
+                end
               end
             else raise "ERROR"
             end

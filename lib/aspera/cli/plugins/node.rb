@@ -88,7 +88,7 @@ module Aspera
           raise StandardError,"expect: nil, String or Array"
         end
 
-        SIMPLE_ACTIONS=[:nagios_check,:events, :space, :info, :license, :mkdir, :mklink, :mkfile, :rename, :delete, :search ]
+        SIMPLE_ACTIONS=[:health,:events, :space, :info, :license, :mkdir, :mklink, :mkfile, :rename, :delete, :search ]
 
         COMMON_ACTIONS=[:browse, :upload, :download, :api_details ].concat(SIMPLE_ACTIONS)
 
@@ -96,7 +96,7 @@ module Aspera
         # prefix_path is used to list remote sources in Faspex
         def execute_simple_common(command,prefix_path)
           case command
-          when :nagios_check
+          when :health
             nagios=Nagios.new
             begin
               info=@api_node.read('info')[:data]

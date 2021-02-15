@@ -14,13 +14,13 @@ module Aspera
           self.options.parse_options!
         end
 
-        ACTIONS=[:transfer,:nagios_check]
+        ACTIONS=[:transfer,:health]
 
         def execute_action
           api_console=basic_auth_api('api')
           command=self.options.get_next_command(ACTIONS)
           case command
-          when :nagios_check
+          when :health
             nagios=Nagios.new
             begin
               api_console.read('ssh_keys')

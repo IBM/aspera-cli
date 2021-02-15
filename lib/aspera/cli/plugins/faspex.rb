@@ -52,7 +52,7 @@ module Aspera
 
         # get faspe: URI from entry in xml, and fix problems..
         def self.get_fasp_uri_from_entry(entry)
-          raise CliBadArgument, 'package is empty' unless entry.has_key?('link')
+          raise CliBadArgument, 'package has no link (deleted?)' unless entry.has_key?('link')
           result=entry['link'].select{|e| e['rel'].eql?('package')}.first['href']
           # tags in the end of URL is not well % encoded... there are "=" that should be %3D
           # TODO: enter ticket to Faspex ?
@@ -101,19 +101,26 @@ module Aspera
           return @api_v4
         end
 
-        ACTIONS=[ :nagios_check,:package, :source, :me, :dropbox, :v4, :address_book, :login_methods ]
+        ACTIONS=[ :health,:package, :source, :me, :dropbox, :v4, :address_book, :login_methods ]
 
         # we match recv command on atom feed on this field
         PACKAGE_MATCH_FIELD='package_id'
 
         def mailbox_all_entries
-          mailbox=self.options.get_option(:box,:mandatory).to_s
+          my_user_name=self.options.get_option(:username,:mandatory)
+          mailbox=self.options.get_option(:box,:mandatory)
           all_inbox_xml=api_v3.call({:operation=>'GET',:subpath=>"#{mailbox}.atom",:headers=>{'Accept'=>'application/xml'}})[:http].body
           all_inbox_data=XmlSimple.xml_in(all_inbox_xml, {'ForceArray' => true})
           Log.dump(:all_inbox_data,all_inbox_data)
           result=all_inbox_data.has_key?('entry') ? all_inbox_data['entry'] : []
           result.each do |e|
-            e[PACKAGE_MATCH_FIELD]=e['to'].first['recipient_delivery_id'].first
+            case mailbox
+            when :inbox,:archive
+              recipient=e['to'].select{|i|i['name'].first.eql?(my_user_name)}.first
+              e[PACKAGE_MATCH_FIELD]=recipient.nil? ? 'n/a' : recipient['recipient_delivery_id'].first
+            when :sent
+              e[PACKAGE_MATCH_FIELD]=e['delivery_id'].first
+            end
           end
           # remove dropbox packages
           result.select!{|p|p['metadata'].first['field'].select{|j|j['name'].eql?('_dropbox_name')}.empty? rescue false}
@@ -155,7 +162,7 @@ module Aspera
         def execute_action
           command=self.options.get_next_command(ACTIONS)
           case command
-          when :nagios_check
+          when :health
             nagios=Nagios.new
             begin
               api_v3.read('me')
@@ -241,7 +248,7 @@ module Aspera
                 # TODO: delivery id is the right one if package was receive by group
                 endpoint=case self.options.get_option(:box,:mandatory)
                 when :inbox,:archive;'received'
-                when :sent;'sent'
+                when :sent; 'sent'
                 end
                 entry_xml=api_v3.call({:operation=>'GET',:subpath=>"#{endpoint}/#{delivid}",:headers=>{'Accept'=>'application/xml'}})[:http].body
                 package_entry=XmlSimple.xml_in(entry_xml, {'ForceArray' => true})
