@@ -29,6 +29,7 @@ CF_AOC_NODE1_SECRET := $(shell $(EXE_NOMAN) conf id misc get aoc_node1_secret)
 CF_EMAIL_ADDR := $(shell $(EXE_NOMAN) conf id misc get email_internal)
 CF_AOC_EXTERNAL_EMAIL := $(shell $(EXE_NOMAN) conf id misc get email_external)
 CF_FASPEX_USERNAME := $(shell $(EXE_NOMAN) conf id tst_faspex get username)
+CF_HTTP_GW_FQDN := $(shell $(EXE_NOMAN) conf id misc get http_gw_fqdn_port)
 
 # setup local environment for preview generation testing
 setupprev:
@@ -71,6 +72,10 @@ $(T)unit: $(T).exists
 	bundle exec rake spec
 	@touch $@
 tunit: $(T)unit
+$(T)shadm: $(T).exists
+	@echo $@
+	$(EXE_MAN) shares admin share list
+	@touch $@
 $(T)sh1: $(T).exists
 	@echo $@
 	$(EXE_MAN) shares repository browse /
@@ -81,7 +86,13 @@ $(T)sh2: $(T).exists
 	$(EXE_MAN) shares repository download --to-folder=$(DIR_TMP). /$(CF_SHARES_UPLOAD)/$(CF_LOCAL_SAMPLE_FILENAME)
 	$(EXE_MAN) shares repository delete /$(CF_SHARES_UPLOAD)/$(CF_LOCAL_SAMPLE_FILENAME)
 	@touch $@
-tshares: $(T)sh1 $(T)sh2
+$(T)sh3: $(T).exists
+	@echo $@
+	$(EXE_MAN) shares repository upload --to-folder=/$(CF_SHARES_UPLOAD) $(CF_LOCAL_SAMPLE_FILEPATH) --transfer=httpgw --transfer-info=@json:'{"url":"https://$(CF_HTTP_GW_FQDN)/aspera/http-gwy/v1"}'
+	$(EXE_MAN) shares repository download --to-folder=$(DIR_TMP). /$(CF_SHARES_UPLOAD)/$(CF_LOCAL_SAMPLE_FILENAME) --transfer=httpgw --transfer-info=@json:'{"url":"https://$(CF_HTTP_GW_FQDN)/aspera/http-gwy/v1"}'
+	$(EXE_MAN) shares repository delete /$(CF_SHARES_UPLOAD)/$(CF_LOCAL_SAMPLE_FILENAME)
+	@touch $@
+tshares: $(T)shadm $(T)sh1 $(T)sh2 $(T)sh3
 
 NEW_SERVER_FOLDER=$(CF_HSTS_FOLDER_UPLOAD)/server_folder
 $(T)serv_browse: $(T).exists
@@ -961,15 +972,17 @@ $(T)f5_1: $(T).exists
 	@touch $@
 $(T)f5_2: $(T).exists
 	@echo $@
-	$(EXE_MAN) faspex5 package list --value=@json:'{"state":["released"]}'
+	$(EXE_MAN) faspex5 package list --value=@json:'{"mailbox":"inbox","state":["released"]}'
 	@touch $@
 $(T)f5_3: $(T).exists
 	@echo $@
-	$(EXE_MAN) faspex5 package send --value=@json:'{"title":"test title","recipients":["admin"]}' $(CF_LOCAL_SAMPLE_FILEPATH)
+	set -x;\
+	f5_user=$$($(EXE_NOMAN) conf id tst_faspex5 get username);\
+	$(EXE_MAN) faspex5 package send --value=@json:'{"title":"test title","recipients":["'"$${f5_user}"'"]}' $(CF_LOCAL_SAMPLE_FILEPATH)
 	@touch $@
 $(T)f5_4: $(T).exists
 	@echo $@
-	set -x;package_id=$$($(EXE_NOMAN) faspex5 pack list --value=@json:'{"type":"received","subtype":"mypackages","limit":1}' --fields=id --format=csv --display=data);\
+	set -x;package_id=$$($(EXE_NOMAN) faspex5 pack list --value=@json:'{"mailbox":"inbox","state":["released"],"limit":1}' --fields=id --format=csv --display=data);\
 	$(EXE_MAN) faspex5 package receive --id="$${package_id}" --to-folder=$(DIR_TMP).
 	@touch $@
 
