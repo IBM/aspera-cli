@@ -3,9 +3,7 @@ require 'aspera/fasp/manager'
 require 'aspera/log'
 require 'aspera/rest'
 require 'websocket-client-simple'
-
-#require 'websocket' # https://rdoc.info/github/imanel/websocket-ruby/frames
-
+require 'securerandom'
 require 'openssl'
 require 'base64'
 require 'json'
@@ -16,9 +14,12 @@ module Aspera
   module Fasp
     # executes a local "ascp", connects mgt port, equivalent of "Fasp Manager"
     class HttpGW < Manager
+      # message returned by HTTP GW in case of success
       OK_MESSAGE='end upload'
+      # refresh rate for progress
       UPLOAD_REFRESH_SEC=0.5
       private_constant :OK_MESSAGE,:UPLOAD_REFRESH_SEC
+      # send message on http gw web socket
       def ws_send(ws,type,data)
         ws.send(JSON.generate({type => data}))
       end
@@ -26,10 +27,15 @@ module Aspera
       def upload(transfer_spec)
         # precalculate size
         total_size=0
+        # currently, files are sent flat
+        source_path=[]
         transfer_spec['paths'].each do |item|
-          total_size+=item['file_size']=File.size(item['source'])
+          filepath=item['source']
+          item['source']=item['destination']=File.basename(filepath)
+          total_size+=item['file_size']=File.size(filepath)
+          source_path.push(filepath)
         end
-        session_id=123456
+        session_id=SecureRandom.uuid
         ws=::WebSocket::Client::Simple::Client.new
         error=nil
         received=0
@@ -56,25 +62,32 @@ module Aspera
         ws.on :close do
           Log.log.info("ws: close")
         end
+        # open web socket to end point
         ws.connect("#{@gw_api.params[:base_url]}/upload")
         while !ws.open? and error.nil? do
           Log.log.info("ws: wait")
           sleep(0.2)
         end
-        notify_listeners('emulated',{Manager::LISTENER_SESSION_ID_B=>session_id,'Type'=>'NOTIFICATION','PreTransferBytes'=>total_size})
+        notify_begin(session_id,total_size)
         ws_send(ws,:transfer_spec,transfer_spec)
+        # current file index
         filenum=0
+        # aggregate size sent
         sent_bytes=0
+        # last progress event
         lastevent=Time.now-1
         transfer_spec['paths'].each do |item|
+          # TODO: on destination write same path?
           destination_path=item['source']
+          # TODO: get mime type?
           file_mime_type=''
-          total=File.size(item['source'])
+          total=item['file_size']
+          # compute total number of slices
           numslices=1+(total-1)/@upload_chunksize
+          # current slice index
           slicenum=0
-          File.open(item['source']) do |file|
+          File.open(source_path[filenum]) do |file|
             while !file.eof? do
-              #puts "loop -------"
               data=file.read(@upload_chunksize)
               slice_data={
                 name: destination_path,
@@ -89,7 +102,7 @@ module Aspera
               sent_bytes+=data.length
               currenttime=Time.now
               if (currenttime-lastevent)>UPLOAD_REFRESH_SEC
-                notify_listeners('emulated',{Manager::LISTENER_SESSION_ID_B=>session_id,'Type'=>'STATS','Bytescont'=>sent_bytes})
+                notify_progress(session_id,sent_bytes)
                 lastevent=currenttime
               end
               slicenum+=1
@@ -99,7 +112,7 @@ module Aspera
           filenum+=1
         end
         ws.close
-        notify_listeners('emulated',{Manager::LISTENER_SESSION_ID_B=>session_id,'Type'=>'DONE'})
+        notify_end(session_id)
       end
 
       def download(transfer_spec)

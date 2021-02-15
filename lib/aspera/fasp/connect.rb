@@ -69,7 +69,7 @@ module Aspera
             # TODO: get session id
             case trdata['status']
             when 'completed'
-              notify_listeners('emulated',{Manager::LISTENER_SESSION_ID_B=>@connect_app_id,'Type'=>'DONE'})
+              notify_end(@connect_app_id)
               break
             when 'initiating'
               if spinner.nil?
@@ -81,10 +81,10 @@ module Aspera
             when 'running'
               #puts "running: sessions:#{trdata['sessions'].length}, #{trdata['sessions'].map{|i| i['bytes_transferred']}.join(',')}"
               if !started and trdata['bytes_expected'] != 0
-                notify_listeners('emulated',{Manager::LISTENER_SESSION_ID_B=>@connect_app_id,'Type'=>'NOTIFICATION','PreTransferBytes'=>trdata['bytes_expected']})
+                notify_begin(@connect_app_id,trdata['bytes_expected'])
                 started=true
               else
-                notify_listeners('emulated',{Manager::LISTENER_SESSION_ID_B=>@connect_app_id,'Type'=>'STATS','Bytescont'=>trdata['bytes_written']})
+                notify_progress(@connect_app_id,trdata['bytes_written'])
               end
             else
               raise Fasp::Error.new("#{trdata['status']}: #{trdata['error_desc']}")

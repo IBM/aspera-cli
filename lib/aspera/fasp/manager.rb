@@ -45,6 +45,18 @@ module Aspera
         end
       end # notify_listeners
 
+      def notify_begin(id,size)
+        notify_listeners('emulated',{LISTENER_SESSION_ID_B=>id,'Type'=>'NOTIFICATION','PreTransferBytes'=>size})
+      end
+
+      def notify_progress(id,size)
+        notify_listeners('emulated',{LISTENER_SESSION_ID_B=>id,'Type'=>'STATS','Bytescont'=>size})
+      end
+
+      def notify_end(id)
+        notify_listeners('emulated',{LISTENER_SESSION_ID_B=>id,'Type'=>'DONE'})
+      end
+
       public
       LISTENER_SESSION_ID_B='ListenerSessionId'
       LISTENER_SESSION_ID_S='listener_session_id'
