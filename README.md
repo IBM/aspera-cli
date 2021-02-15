@@ -101,6 +101,8 @@ In order to use the tool or the gem, it is necessary to install those components
 
 The following sections provide information on the installation.
 
+An internet connection is required for the installation. If you dont have internet for the installation, refer to the last sub section.
+
 ## <a name="ruby"></a>Ruby
 
 A ruby interpreter is required to run the tool or to use the gem and tool.
@@ -232,6 +234,14 @@ Refer to section [FASP](#client) for details on how to select a client or set pa
 
 Several methods are provided on how to start a transfer. Use of a local client is one of them, but
 other methods are available. Refer to section: [Transfer Agents](#agents)
+
+## Installation without internet
+
+The procedure consists in:
+
+* installing the tool on a system with access to internet
+* archive (zip, tar) the main ruby folder with gems installed
+* unarchive on the system without internet access
 
 # <a name="cli"></a>Command Line Interface: `ascli`
 
@@ -1282,7 +1292,7 @@ ascli aoc files browse /
 ascli aoc files browse / -N --link=my_aoc_publink_folder
 ascli aoc files delete /testsrc
 ascli aoc files download --transfer=connect /200KB.1
-ascli aoc files file 18891
+ascli aoc files file my_file_id
 ascli aoc files find / --value='\.partial$'
 ascli aoc files http_node_download --to-folder=. /200KB.1
 ascli aoc files mkdir /testsrc
@@ -1347,21 +1357,22 @@ ascli cos node access_key --id=self show
 ascli cos node download testfile.bin --to-folder=.
 ascli cos node info
 ascli cos node upload testfile.bin
-ascli faspex nagios_check
+ascli faspex health
 ascli faspex package list
 ascli faspex package list --box=sent --fields=package_id --format=csv --display=data|tail -n 1);\
-ascli faspex package recv --box=sent --to-folder=. --id="my_package_id"
+ascli faspex package list --fields=package_id --format=csv --display=data|tail -n 1);\
+ascli faspex package recv --to-folder=. --box=sent --id="my_package_id"
 ascli faspex package recv --to-folder=. --id="my_package_id"
 ascli faspex package recv --to-folder=. --id=ALL --once-only=yes
 ascli faspex package recv --to-folder=. --link="my_faspex_publink_recv_from_fxuser"
-ascli faspex package send --delivery-info=@json:'{"title":"Important files delivery","recipients":["internal.user@example.com"]}' testfile.bin
+ascli faspex package send --delivery-info=@json:'{"title":"Important files delivery","recipients":["internal.user@example.com","FASPEX_USERNAME"]}' testfile.bin
 ascli faspex package send --link="my_faspex_publink_send_to_dropbox" --delivery-info=@json:'{"title":"Important files delivery"}' testfile.bin
 ascli faspex package send --link="my_faspex_publink_send_to_fxuser" --delivery-info=@json:'{"title":"Important files delivery"}' testfile.bin
 ascli faspex source name "Server Files" node br /
 ascli faspex5 node list --value=@json:'{"type":"received","subtype":"mypackages"}'
-ascli faspex5 package list --value=@json:'{"state":["released"]}'
+ascli faspex5 package list --value=@json:'{"mailbox":"inbox","state":["released"]}'
 ascli faspex5 package receive --id="my_package_id" --to-folder=.
-ascli faspex5 package send --value=@json:'{"title":"test title","recipients":["admin"]}' testfile.bin
+ascli faspex5 package send --value=@json:'{"title":"test title","recipients":["${f5_user}"]}' testfile.bin
 ascli node -N -Ptst_node_preview access_key create --value=@json:'{"id":"aoc_1","storage":{"type":"local","path":"/"}}'
 ascli node -N -Ptst_node_preview access_key delete --id=aoc_1
 ascli node async --id=1 bandwidth 
@@ -1375,8 +1386,8 @@ ascli node browse / -r
 ascli node delete folder_1/10MB.1
 ascli node delete folder_1/testfile.bin
 ascli node download --to-folder=. folder_1/testfile.bin
+ascli node health
 ascli node info
-ascli node nagios_check
 ascli node search / --value=@json:'{"sort":"mtime"}'
 ascli node service --id=service1 delete
 ascli node service create @json:'{"id":"service1","type":"WATCHD","run_as":{"user":"user1"}}'
@@ -1406,7 +1417,8 @@ ascli preview test --case=test png "TSTFILE_MXF" --video-png-conv=fixed --log-le
 ascli preview test --case=test png "TSTFILE_PDF" --log-level=debug
 ascli preview trevents --once-only=yes --skip-types=office --log-level=info
 ascli server -N -Ptst_hstsfaspex_ssh -Plocal_user ctl all:status
-ascli server -N -Ptst_hstsfaspex_ssh -Plocal_user nagios app_services --format=nagios
+ascli server -N -Ptst_hstsfaspex_ssh -Plocal_user health app_services --format=nagios
+ascli server -N -Ptst_hstsfaspex_ssh -Plocal_user health asctlstatus --format=nagios --cmd-prefix='sudo '
 ascli server -N -Ptst_hstsfaspex_ssh -Plocal_user nodeadmin -- -l
 ascli server -N -Ptst_server_bykey -Plocal_user br /
 ascli server browse /
@@ -1419,21 +1431,24 @@ ascli server df
 ascli server download NEW_SERVER_FOLDER/testfile.bin --to-folder=.
 ascli server download NEW_SERVER_FOLDER/testfile.bin --to-folder=folder_1 --transfer=node
 ascli server du /
+ascli server health transfer --to-folder=folder_1 --format=nagios 
 ascli server info
 ascli server md5sum NEW_SERVER_FOLDER/testfile.bin
 ascli server mkdir NEW_SERVER_FOLDER --logger=stdout
 ascli server mkdir folder_1/target_hot
 ascli server mv folder_1/200KB.2 folder_1/to.delete
-ascli server nagios transfer --to-folder=folder_1 --format=nagios 
 ascli server upload --sources=@ts --ts=@json:'{"paths":[{"source":"testfile.bin","destination":"NEW_SERVER_FOLDER/othername"}]}'
 ascli server upload --src-type=pair --sources=@json:'["testfile.bin","NEW_SERVER_FOLDER/othername"]'
 ascli server upload --src-type=pair testfile.bin NEW_SERVER_FOLDER/othername
 ascli server upload --to-folder=folder_1/target_hot --lock-port=12345 --ts=@json:'{"EX_ascp_args":["--remove-after-transfer","--remove-empty-directories","--exclude-newer-than=-8","--src-base","source_hot"]}' source_hot
 ascli server upload testfile.bin --to-folder=NEW_SERVER_FOLDER
+ascli shares admin share list
 ascli shares repository browse /
 ascli shares repository delete /SHARES_UPLOAD/testfile.bin
 ascli shares repository download --to-folder=. /SHARES_UPLOAD/testfile.bin
+ascli shares repository download --to-folder=. /SHARES_UPLOAD/testfile.bin --transfer=httpgw --transfer-info=@json:'{"url":"https://HTTP_GW_FQDN/aspera/http-gwy/v1"}'
 ascli shares repository upload --to-folder=/SHARES_UPLOAD testfile.bin
+ascli shares repository upload --to-folder=/SHARES_UPLOAD testfile.bin --transfer=httpgw --transfer-info=@json:'{"url":"https://HTTP_GW_FQDN/aspera/http-gwy/v1"}'
 ascli shares2 appinfo
 ascli shares2 organization list
 ascli shares2 project list --organization=Sport
@@ -1448,12 +1463,6 @@ ascli sync start --parameters=@json:'{"sessions":[{"name":"test","reset":true,"r
 
 ```
 $ ascli -h
-/Users/FooBar/.rvm/gems/ruby-2.7.0/gems/net-protocol-0.1.0/lib/net/protocol.rb:66: warning: already initialized constant Net::ProtocRetryError
-/Users/FooBar/.rvm/rubies/ruby-2.7.0/lib/ruby/2.7.0/net/protocol.rb:66: warning: previous definition of ProtocRetryError was here
-/Users/FooBar/.rvm/gems/ruby-2.7.0/gems/net-protocol-0.1.0/lib/net/protocol.rb:206: warning: already initialized constant Net::BufferedIO::BUFSIZE
-/Users/FooBar/.rvm/rubies/ruby-2.7.0/lib/ruby/2.7.0/net/protocol.rb:206: warning: previous definition of BUFSIZE was here
-/Users/FooBar/.rvm/gems/ruby-2.7.0/gems/net-protocol-0.1.0/lib/net/protocol.rb:503: warning: already initialized constant Net::NetPrivate::Socket
-/Users/FooBar/.rvm/rubies/ruby-2.7.0/lib/ruby/2.7.0/net/protocol.rb:503: warning: previous definition of Socket was here
 NAME
 	ascli -- a command line tool for Aspera Applications (v4.0.0)
 
@@ -1494,7 +1503,7 @@ OPTIONS: global
     -v, --version                    display version
     -w, --warnings                   check for language warnings
         --ui=ENUM                    method to start browser: text, graphical
-        --log-level=ENUM             Log level: fatal, unknown, debug, info, error, warn
+        --log-level=ENUM             Log level: debug, info, warn, error, fatal, unknown
         --logger=ENUM                log method: stderr, stdout, syslog
         --lock-port=VALUE            prevent dual execution of a command, e.g. in cron
         --query=VALUE                additional filter for API calls (extended value) (some commands)
@@ -1540,7 +1549,7 @@ OPTIONS:
 
 
 COMMAND: node
-SUBCOMMANDS: postprocess stream transfer cleanup forward access_key watch_folder service async central asperabrowser basic_token browse upload download api_details nagios_check events space info license mkdir mklink mkfile rename delete search
+SUBCOMMANDS: postprocess stream transfer cleanup forward access_key watch_folder service async central asperabrowser basic_token browse upload download api_details health events space info license mkdir mklink mkfile rename delete search
 OPTIONS:
         --url=VALUE                  URL of application, e.g. https://org.asperafiles.com
         --username=VALUE             username to log in
@@ -1612,7 +1621,7 @@ OPTIONS:
 
 
 COMMAND: faspex
-SUBCOMMANDS: nagios_check package source me dropbox v4 address_book login_methods
+SUBCOMMANDS: health package source me dropbox v4 address_book login_methods
 OPTIONS:
         --url=VALUE                  URL of application, e.g. https://org.asperafiles.com
         --username=VALUE             username to log in
@@ -1711,7 +1720,7 @@ OPTIONS:
 
 
 COMMAND: server
-SUBCOMMANDS: nagios nodeadmin userdata configurator ctl download upload browse delete rename ls rm mv du info mkdir cp df md5sum
+SUBCOMMANDS: health nodeadmin userdata configurator ctl download upload browse delete rename ls rm mv du info mkdir cp df md5sum
 OPTIONS:
         --url=VALUE                  URL of application, e.g. https://org.asperafiles.com
         --username=VALUE             username to log in
@@ -1722,7 +1731,7 @@ OPTIONS:
 
 
 COMMAND: console
-SUBCOMMANDS: transfer nagios_check
+SUBCOMMANDS: transfer health
 OPTIONS:
         --url=VALUE                  URL of application, e.g. https://org.asperafiles.com
         --username=VALUE             username to log in
@@ -2916,63 +2925,54 @@ On subsequent run it reads this file and check that previews are generated for t
 
 ## Configuration for Execution in scheduler
 
-Here is an example of configuration for use with cron on Linux. Adapt the scripts to your own preference.
+Here is an example of configuration for use with cron on Linux.
+Adapt the scripts to your own preference.
 
 We assume here that a configuration preset was created as shown previously.
 
-Here the cronjob is created for `root`, and changes the user to `xfer`, also overriding the shell which should be `aspshell`. (adapt the command below, as it would override existing crontab). It is also up to you to use directly the `xfer` user's crontab. This is an example only.
+Lets first setup a script that will be used in the sceduler and sets up the environment.
 
-```
-xfer$ crontab<<EOF
-0    * * * *  /home/xfer/ascli preview scan -Paklocal --logger=syslog --display=error
-2-59 * * * *  /home/xfer/ascli preview trev -Paklocal --logger=syslog --display=errorEOF
-```
-
-Note that the options here may be located in the config preset, but it was left on the command line to keep stdout for command line execution of preview.
-
-Example of startup scrip, which sets the ruby environment and adds some protection:
+Example of startup script `cron_ascli`, which sets the Ruby environment and adds some timeout protection:
 
 ```
 #!/bin/bash
 # set a timeout protection, just in case
-case "$1" in
-*event*) tmout=10m ;;
-*) tmout=30m ;;
-esac
-# execute preview generator as xfer user so that preview files belong to same user
-# so it will use this config file: /home/xfer/.aspera/ascli/config.yaml
-# logs go to: grep -w ascli /var/log/*
+case "$*" in *trev*) tmout=10m ;; *) tmout=30m ;; esac
 . /etc/profile.d/rvm.sh
 rvm use 2.6 --quiet
 exec timeout ${tmout} ascli "${@}"
 ```
 
+Here the cronjob is created for user `xfer`.
+
+```
+xfer$ crontab<<EOF
+0    * * * *  /home/xfer/cron_ascli preview scan --logger=syslog --display=error
+2-59 * * * *  /home/xfer/cron_ascli preview trev --logger=syslog --display=error
+EOF
+```
+
+Note that the loging options are kept in the cronfile instead of conf file to allow execution on command line with output on command line.
+
 ## Candidate detection for creation or update (or deletion)
 
-The tool will find candidates for preview generation using three commands:
+The tool generates preview files using those commands:
 
 * `trevents` : only recently uploaded files will be tested (transfer events)
 * `events` : only recently uploaded files will be tested (file events: not working)
-* `scan` : deeply scan all files under the access key&apos;s "storage root"
-* `folder` : same as `scan`, but only on the specified folder&apos;s "file identifier"
-* `file` : for an individual file generation
-
-Note that for the `event`, the option `iteration_file` should be specified so that
-successive calls only process new events. This file will hold an identifier
-telling from where to get new events.
-
-It is also possible to test a local file, using the `test` command.
+* `scan` : recursively scan all files under the access key&apos;s "storage root"
+* `test` : test using a local file
 
 Once candidate are selected, once candidates are selected,
 a preview is always generated if it does not exist already,
 else if a preview already exist, it will be generated
-using one of three overwrite method:
+using one of three values for the `overwrite` option:
 
 * `always` : preview is always generated, even if it already exists and is newer than original
 * `never` : preview is generated only if it does not exist already
 * `mtime` : preview is generated only if the original file is newer than the existing
 
-Deletion of preview for deleted source files: not implemented yet.
+Deletion of preview for deleted source files: not implemented yet (TODO).
 
 If the `scan` or `events` detection method is used, then the option : `skip_folders` can be used to skip some folders. It expects a list of path relative to the storage root (docroot) starting with slash, use the `@json:` notation, example:
 
@@ -3147,12 +3147,6 @@ Nodejs: [https://www.npmjs.com/package/aspera](https://www.npmjs.com/package/asp
 
 ```
 $ asession -h
-/Users/laurent/.rvm/gems/ruby-2.7.0/gems/net-protocol-0.1.0/lib/net/protocol.rb:66: warning: already initialized constant Net::ProtocRetryError
-/Users/laurent/.rvm/rubies/ruby-2.7.0/lib/ruby/2.7.0/net/protocol.rb:66: warning: previous definition of ProtocRetryError was here
-/Users/laurent/.rvm/gems/ruby-2.7.0/gems/net-protocol-0.1.0/lib/net/protocol.rb:206: warning: already initialized constant Net::BufferedIO::BUFSIZE
-/Users/laurent/.rvm/rubies/ruby-2.7.0/lib/ruby/2.7.0/net/protocol.rb:206: warning: previous definition of BUFSIZE was here
-/Users/laurent/.rvm/gems/ruby-2.7.0/gems/net-protocol-0.1.0/lib/net/protocol.rb:503: warning: already initialized constant Net::NetPrivate::Socket
-/Users/laurent/.rvm/rubies/ruby-2.7.0/lib/ruby/2.7.0/net/protocol.rb:503: warning: previous definition of Socket was here
 USAGE
     asession
     asession -h|--help
@@ -3232,6 +3226,34 @@ $ ascli server upload source_hot --to-folder=/Upload/target_hot --lock-port=1234
 
 The local (here, relative path: source_hot) is sent (upload) to basic fasp server, source files are deleted after transfer. growing files will be sent only once they dont grow anymore (based ona 8 second cooloff period). If a transfer takes more than the execution period, then the subsequent execution is skipped (lock-port).
 
+# Aspera Health check and Nagios
+
+Each plugin provide a `health` command that will check the health status of the application. Example:
+
+```
+$ ascli console health
++--------+-------------+------------+
+| status | component   | message    |
++--------+-------------+------------+
+| ok     | console api | accessible |
++--------+-------------+------------+
+```
+
+Typically, the health check uses the REST API of the application with the following exception: the `server` plugin allows checking health by:
+
+* issuing a transfer to the server
+* checking web app status with `asctl all:status`
+* checking daemons process status
+
+`ascli` can be called by Nagios to check the health status of an Aspera server. The output can be made compatible to Nagios with option `--format=nagios` :
+
+```
+$ ascli ascli server health transfer --to-folder=/Upload --format=nagios --progress=none
+OK - [transfer:ok]
+$ ascli server health asctlstatus --cmd_prefix='sudo ' --format=nagios
+OK - [NP:running, MySQL:running, Mongrels:running, Background:running, DS:running, DB:running, Email:running, Apache:running]
+```
+
 # Module: `Aspera`
 
 Main components:
@@ -3271,7 +3293,12 @@ So, it evolved into `ascli`:
 
 # Release Notes
 
-* 4.0.0.pre2
+* 4.x
+
+	* renamed command `nagios_check` to `health`
+	* agent `http_gw` now supports upload
+
+* 4.0.0
 
 	* now available as open source at [https://github.com/IBM/aspera-cli](https://github.com/IBM/aspera-cli) with general cleanup
 	* changed default tool name from `mlia` to `ascli`
