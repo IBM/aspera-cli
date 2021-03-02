@@ -117,7 +117,16 @@ module Aspera
           }
           # optionally by iteration token
           events_filter['iteration_token']=iteration_token unless iteration_token.nil?
-          events=@api_node.read('events',events_filter)[:data]
+          begin
+            events=@api_node.read('events',events_filter)[:data]
+          rescue RestCallError => e
+            if e.message.include?('Invalid iteration_token')
+              Log.log.warn("Retrying without iteration token: #{e}")
+              events_filter.delete('iteration_token')
+              retry
+            end
+            raise e
+          end
           return if events.empty?
           events.each do |event|
             next unless event['data']['direction'].eql?('receive')
