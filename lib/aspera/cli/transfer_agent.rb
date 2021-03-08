@@ -22,7 +22,7 @@ module Aspera
         @opt_mgr=cli_objects[:options]
         @config=cli_objects[:config]
         # transfer spec overrides provided on command line
-        @transfer_spec_cmdline={}
+        @transfer_spec_cmdline={"create_dir"=>true}
         # the currently selected transfer agent
         @agent=nil
         @progress_listener=Listener::ProgressMulti.new
