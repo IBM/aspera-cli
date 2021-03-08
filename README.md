@@ -436,25 +436,25 @@ The extended value syntax is:
 
 The difference between reader and decoder is order and ordinality. Both act like a function of value on right hand side. Decoders are at the beginning of the value, followed by a single optional reader, followed by the optional value.
 
-The following "readers" are supported:
+The following "readers" are supported (returns value in []):
 
-* @val:VALUE , prevent further special prefix processing, e.g. `--username=@val:laurent` sets the option `username` to value `laurent`.
-* @file:PATH , read value from a file (prefix "~/" is replaced with the users home folder), e.g. --key=@file:~/.ssh/mykey
-* @path:PATH , performs path expansion (prefix "~/" is replaced with the users home folder), e.g. --config-file=@path:~/sample_config.yml
-* @env:ENVVAR , read from a named env var, e.g.--password=@env:MYPASSVAR
-* @stdin: , read from stdin (no value on right)
-* @preset:NAME , get whole option preset value by name
+* @val:VALUE : [String] prevent further special prefix processing, e.g. `--username=@val:laurent` sets the option `username` to value `laurent`.
+* @file:PATH : [String] read value from a file (prefix "~/" is replaced with the users home folder), e.g. --key=@file:~/.ssh/mykey
+* @path:PATH : [String] performs path expansion (prefix "~/" is replaced with the users home folder), e.g. --config-file=@path:~/sample_config.yml
+* @env:ENVVAR : [String] read from a named env var, e.g.--password=@env:MYPASSVAR
+* @stdin: : [String] read from stdin (no value on right)
+* @preset:NAME : [Hash] get whole option preset value by name
 
 In addition it is possible to decode a value, using one or multiple decoders :
 
-* @base64: decode a base64 encoded string
-* @json: decode JSON values (convenient to provide complex structures)
-* @zlib: uncompress data
-* @ruby: execute ruby code
-* @csvt: decode a titled CSV value
-* @lines: split a string in multiple lines and return an array
-* @list: split a string in multiple items taking first character as separator and return an array
-* @incps: include values of presets specified by key include_presets in hash
+* @base64: [String] decode a base64 encoded string
+* @json: [any] decode JSON values (convenient to provide complex structures)
+* @zlib: [String] uncompress data
+* @ruby: [any] execute ruby code
+* @csvt: [Array] decode a titled CSV value
+* @lines: [Array] split a string in multiple lines and return an array
+* @list: [Array] split a string in multiple items taking first character as separator and return an array
+* @incps: [Hash] include values of presets specified by key `incps` in input hash
 
 To display the result of an extended value, use the `config echo` command.
 
@@ -486,7 +486,7 @@ $ ascli config echo @csvt:@file:test.csv
 :......:.....................:
 ```
 
-Example: create a hash and include values from preset named "config" of config file
+Example: create a hash and include values from preset named "config" of config file in this hash
 
 ```
 $ ascli config echo @incps:@json:'{"hello":true,"incps":["config"]}'
@@ -975,8 +975,10 @@ If it possible to send using a HTTP gateway, in case FASP is not allowed.
 Example:
 
 ```
-$ ascli faspex package recv --id=323 --transfer=httpgw --transfer-info=@json:'{"url":"https://eudemo.asperademo.com:9443/aspera/http-gwy/v1"}'
+$ ascli faspex package recv --id=323 --transfer=httpgw --transfer-info=@json:'{"url":"https://asperagw.example.com:9443/aspera/http-gwy/v1"}'
 ```
+
+Note that the gateway only supports transfers authorized with a token.
 
 ## <a name="transferspec"></a>Transfer Specification
 
@@ -1530,7 +1532,7 @@ OPTIONS:
         --secret=VALUE               access key secret for node
         --secrets=VALUE              access key secret for node
         --test-mode=ENUM             skip user validation in wizard mode: yes, no
-        --ts=VALUE                   override transfer spec values (Hash, use @json: prefix), current={}
+        --ts=VALUE                   override transfer spec values (Hash, use @json: prefix), current={"create_dir"=>true}
         --local-resume=VALUE         set resume policy (Hash, use @json: prefix), current=
         --to-folder=VALUE            destination folder for downloaded files
         --sources=VALUE              list of source files (see doc)
