@@ -220,6 +220,16 @@ To upgrade to the latest version:
 # gem update <%= gemspec.name %>
 ```
 
+<%=tool%> checks every week if a new version is available and notify the user in a WARN log. To de-activate this feature set the option `version_check_days` to `0`, or specify a different period in days.
+
+To check manually:
+
+```
+# <%=cmd%> conf check_update
+```
+
+
+
 ## <a name="fasp_prot"></a>FASP Protocol
 
 Most file transfers will be done using the FASP protocol. Only two additional files are required to perform

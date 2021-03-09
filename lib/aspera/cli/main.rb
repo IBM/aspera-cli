@@ -205,7 +205,7 @@ module Aspera
         return Main.result_nothing
       end
 
-      def options;@opt_mgr;end
+      #def options;@opt_mgr;end
 
       def program_name;PROGRAM_NAME;end
 
@@ -232,6 +232,7 @@ module Aspera
               raise CliError,"Another instance is already running (lock port=#{lock_port})."
             end
           end
+          @plugin_env[:config].periodic_check_newer_gem_version
           if @option_show_config and @opt_mgr.command_or_arg_empty?
             command_sym=Plugins::Config::CONF_PLUGIN_SYM
           else
