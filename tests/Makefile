@@ -836,7 +836,11 @@ $(T)conf_pac: $(T).exists
 	@echo $@
 	$(EXE_MAN) config proxy_check --fpac=file:///$(DIR_TOP)examples/proxy.pac https://eudemo.asperademo.com
 	@touch $@
-tconf: $(T)conf_id_1 $(T)conf_id_2 $(T)conf_id_3 $(T)conf_id_4 $(T)conf_id_5 $(T)conf_id_6 $(T)conf_open $(T)conf_list $(T)conf_over $(T)conf_help $(T)conf_open_err $(T)conf_plugins $(T)conf_export $(T)conf_wizard_org $(T)conf_wizard_gen $(T)conf_genkey $(T)conf_smtp $(T)conf_pac
+$(T)conf_check_gem: $(T).exists
+	@echo $@
+	$(EXE_MAN) config check_update
+	@touch $@
+tconf: $(T)conf_id_1 $(T)conf_id_2 $(T)conf_id_3 $(T)conf_id_4 $(T)conf_id_5 $(T)conf_id_6 $(T)conf_open $(T)conf_list $(T)conf_over $(T)conf_help $(T)conf_open_err $(T)conf_plugins $(T)conf_export $(T)conf_wizard_org $(T)conf_wizard_gen $(T)conf_genkey $(T)conf_smtp $(T)conf_pac $(T)conf_check_gem
 
 $(T)shar2_1: $(T).exists
 	@echo $@

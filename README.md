@@ -204,6 +204,16 @@ To upgrade to the latest version:
 # gem update aspera-cli
 ```
 
+`ascli` checks every week if a new version is available and notify the user in a WARN log. To de-activate this feature set the option `version_check_days` to `0`, or specify a different period in days.
+
+To check manually:
+
+```
+# ascli conf check_update
+```
+
+
+
 ## <a name="fasp_prot"></a>FASP Protocol
 
 Most file transfers will be done using the FASP protocol. Only two additional files are required to perform
@@ -1345,6 +1355,7 @@ ascli config ascp info
 ascli config ascp install
 ascli config ascp products list
 ascli config ascp show
+ascli config check_update
 ascli config email_test aspera.user1@gmail.com
 ascli config export
 ascli config genkey mykey
@@ -1513,7 +1524,7 @@ OPTIONS: global
         --once-only=ENUM             process only new items (some commands): yes, no
 
 COMMAND: config
-SUBCOMMANDS: gem_path genkey plugins flush_tokens list overview open echo id documentation wizard export_to_cli detect coffee ascp email_test smtp_settings proxy_check folder file
+SUBCOMMANDS: gem_path genkey plugins flush_tokens list overview open echo id documentation wizard export_to_cli detect coffee ascp email_test smtp_settings proxy_check folder file check_update
 OPTIONS:
         --value=VALUE                extended value for create, update, list filter
         --property=VALUE             name of property to set
@@ -1532,6 +1543,7 @@ OPTIONS:
         --secret=VALUE               access key secret for node
         --secrets=VALUE              access key secret for node
         --test-mode=ENUM             skip user validation in wizard mode: yes, no
+        --version-check-days=VALUE   period to check neew version in days (zero to disable)
         --ts=VALUE                   override transfer spec values (Hash, use @json: prefix), current={"create_dir"=>true}
         --local-resume=VALUE         set resume policy (Hash, use @json: prefix), current=
         --to-folder=VALUE            destination folder for downloaded files

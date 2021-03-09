@@ -7,10 +7,12 @@ require 'aspera/aoc'
 require 'aspera/proxy_auto_config'
 require 'aspera/uri_reader'
 require 'aspera/rest'
+require 'aspera/persistency_action_once'
 require 'xmlsimple'
 require 'base64'
 require 'net/smtp'
 require 'open3'
+require 'date'
 
 module Aspera
   module Cli
@@ -106,8 +108,10 @@ module Aspera
           self.options.add_opt_simple(:secret,"access key secret for node")
           self.options.add_opt_simple(:secrets,"access key secret for node")
           self.options.add_opt_boolean(:test_mode,"skip user validation in wizard mode")
+          self.options.add_opt_simple(:version_check_days,Integer,"period to check neew version in days (zero to disable)")
           self.options.set_option(:use_generic_client,true)
           self.options.set_option(:test_mode,false)
+          self.options.set_option(:version_check_days,7)
           self.options.parse_options!
           raise CliBadArgument,"secrets shall be Hash" unless @option_secrets.is_a?(Hash)
         end
@@ -120,6 +124,48 @@ module Aspera
 
         def get_secrets
           return @option_secrets
+        end
+
+        def check_gem_version
+          this_gem_name=File.basename(File.dirname(self.class.gem_root)).gsub(/-[0-9].*$/,'')
+          latest_version=begin
+            Rest.new(base_url: "https://rubygems.org/api/v1").read("versions/#{this_gem_name}/latest.json")[:data]['version']
+          rescue
+            nil
+          end
+          return {name: this_gem_name,current: Aspera::Cli::VERSION, latest: latest_version, need_update: Gem::Version.new(Aspera::Cli::VERSION) < Gem::Version.new(latest_version)}
+        end
+
+        def periodic_check_newer_gem_version
+          # get verification period
+          delay_days=options.get_option(:version_check_days,:mandatory)
+          Log.log.info("check days: #{delay_days}")
+          # check only if not zero day
+          if !delay_days.eql?(0)
+            # get last date from persistency
+            last_check_array=[]
+            check_date_persist=PersistencyActionOnce.new(
+            manager: persistency,
+            data:    last_check_array,
+            ids:     ['version_last_check'])
+            # get persisted date or nil
+            last_check_date = begin
+              Date.strptime(last_check_array.first, "%Y/%m/%d")
+            rescue
+              nil
+            end
+            current_date=Date.today
+            Log.log.info("last check: #{last_check_date.class}")
+            if last_check_date.nil? or (current_date - last_check_date) > delay_days
+              Log.log.info("days elapsed #{last_check_date.is_a?(Date) ? current_date - last_check_date : last_check_date.class.name}")
+              last_check_array[0]=current_date.strftime("%Y/%m/%d")
+              check_date_persist.save
+              check_data=check_gem_version
+              if check_data[:need_update]
+                Log.log.warn("A new version is available: #{check_data[:latest]}. You have #{check_data[:current]}. Upgrade with: gem update #{check_data[:nname]}")
+              end
+            end
+          end
         end
 
         # retrieve structure from cloud (CDN) with all versions available
@@ -484,7 +530,7 @@ module Aspera
           raise "unexpected case: #{command}"
         end
 
-        ACTIONS=[:gem_path, :genkey,:plugins,:flush_tokens,:list,:overview,:open,:echo,:id,:documentation,:wizard,:export_to_cli,:detect,:coffee,:ascp,:email_test,:smtp_settings,:proxy_check,:folder,:file]
+        ACTIONS=[:gem_path, :genkey,:plugins,:flush_tokens,:list,:overview,:open,:echo,:id,:documentation,:wizard,:export_to_cli,:detect,:coffee,:ascp,:email_test,:smtp_settings,:proxy_check,:folder,:file,:check_update]
 
         # "config" plugin
         def execute_action
@@ -764,6 +810,8 @@ module Aspera
             pac_url=self.options.get_option(:fpac,:mandatory)
             server_url=self.options.get_next_argument("server url")
             return Main.result_status(Aspera::ProxyAutoConfig.new(UriReader.read(pac_url)).get_proxy(server_url))
+          when :check_update
+            return {:type=>:single_object, :data=>check_gem_version}
           else raise "error"
           end
         end

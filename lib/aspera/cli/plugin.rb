@@ -77,13 +77,15 @@ module Aspera
         return entity_command(command,rest_api,res_class_path,display_fields,id_symb,id_default,subkey)
       end
 
-      def options;@agents[:options];end
+      def options; return @agents[:options];end
 
-      def transfer;@agents[:transfer];end
+      def transfer; return @agents[:transfer];end
 
-      def config;return @agents[:config];end
+      def config; return @agents[:config];end
 
-      def format;return @agents[:formater];end
+      def format; return @agents[:formater];end
+
+      def persistency; return @agents[:persistency];end
 
     end # Plugin
   end # Cli
