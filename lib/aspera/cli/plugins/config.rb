@@ -107,11 +107,13 @@ module Aspera
           self.options.add_opt_simple(:default,"set as default configuration for specified plugin")
           self.options.add_opt_simple(:secret,"access key secret for node")
           self.options.add_opt_simple(:secrets,"access key secret for node")
+          self.options.add_opt_simple(:sdk_url,"URL to get SDK")
           self.options.add_opt_boolean(:test_mode,"skip user validation in wizard mode")
           self.options.add_opt_simple(:version_check_days,Integer,"period to check neew version in days (zero to disable)")
           self.options.set_option(:use_generic_client,true)
           self.options.set_option(:test_mode,false)
           self.options.set_option(:version_check_days,7)
+          self.options.set_option(:sdk_url,'https://eudemo.asperademo.com/aspera/faspex/sdk.zip')
           self.options.parse_options!
           raise CliBadArgument,"secrets shall be Hash" unless @option_secrets.is_a?(Hash)
         end
@@ -524,7 +526,7 @@ module Aspera
               return {:type=>:status, :data=>"saved to default global preset #{preset_name}"}
             end
           when :install
-            v=Fasp::Installation.instance.install_sdk
+            v=Fasp::Installation.instance.install_sdk(self.options.get_option(:sdk_url,:mandatory))
             return {:type=>:status, :data=>"Installed version #{v}"}
           end
           raise "unexpected case: #{command}"

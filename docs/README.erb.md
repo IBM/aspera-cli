@@ -232,19 +232,27 @@ To check manually:
 
 ## <a name="fasp_prot"></a>FASP Protocol
 
-Most file transfers will be done using the FASP protocol. Only two additional files are required to perform
-an Aspera Transfer:
+Most file transfers will be done using the FASP protocol, using `ascp`.
+Only two additional files are required to perform an Aspera Transfer, which are part of Aspera SDK:
 
 * ascp
 * aspera-license (in same folder, or ../etc)
 
-This can be installed directly with
+This can be installed either be installing an Aspera transfer sofware, or using an embedded command:
 
 ```
 $ <%=cmd%> conf ascp install
 ```
 
-Those can be found in one of IBM Aspera transfer server or client with its license file (some are free):
+If a local SDK installation is prefered instead of fetching from internet: one can specify the location of the SDK file:
+
+```
+$ <%=cmd%> conf ascp install --sdk-url=file:///SDK.zip
+```
+
+The format is: `file:///<path>`, where `<path>` can be either a relative path (not starting with `/`), or an absolute path.
+
+If the embedded method is not used, the following packages are also suitable:
 
 * IBM Aspera Connect Client (Free)
 * IBM Aspera Desktop Client (Free)
@@ -2729,6 +2737,7 @@ So, it evolved into <%=tool%>:
 
 	* renamed command `nagios_check` to `health`
 	* agent `http_gw` now supports upload
+	* added option `sdk_url`
 
 * 4.0.0
 

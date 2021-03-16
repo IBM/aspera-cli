@@ -176,10 +176,16 @@ module Aspera
         return [:ssh_bypass_key_dsa,:ssh_bypass_key_rsa].map{|i|Installation.instance.path(i)}
       end
 
-      def install_sdk
+      def install_sdk(sdk_url)
         require 'zip'
         sdk_zip_path=File.join(Dir.tmpdir,'sdk.zip')
-        Aspera::Rest.new(base_url: SDK_URL).call(operation: 'GET',save_to_file: sdk_zip_path)
+        if sdk_url.start_with?('file:')
+          # require specific file scheme: the path part is "relative", or absolute if there are 4 slash
+          raise 'use format: file:///<path>' unless sdk_url.start_with?('file:///')
+          sdk_zip_path=sdk_url.gsub(%r{^file:///},'')
+        else
+          Aspera::Rest.new(base_url: sdk_url).call(operation: 'GET',save_to_file: sdk_zip_path)
+        end
         filter="/#{Environment.architecture}/"
         ascp_path=nil
         # first ensure license file is here so that ascp invokation for version works
@@ -220,9 +226,8 @@ module Aspera
       PRODUCT_INFO='product-info.mf'
       # policy for product selection
       FIRST_FOUND='FIRST'
-      SDK_URL='https://eudemo.asperademo.com/aspera/faspex/sdk.zip'
 
-      private_constant :BIN_SUBFOLDER,:ETC_SUBFOLDER,:VARRUN_SUBFOLDER,:PRODUCT_INFO,:SDK_URL
+      private_constant :BIN_SUBFOLDER,:ETC_SUBFOLDER,:VARRUN_SUBFOLDER,:PRODUCT_INFO
 
       # get some specific folder from specific applications: Connect or CLI
       def get_product_folders(name)
