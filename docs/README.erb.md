@@ -261,7 +261,7 @@ If the embedded method is not used, the following packages are also suitable:
 * IBM Aspera High Speed Transfer EndPoint (Licensed)
 
 For instance, Aspera Connect Client can be installed
-by visiting the page: [http://downloads.asperasoft.com/connect2/](http://downloads.asperasoft.com/connect2/).
+by visiting the page: [https://www.ibm.com/aspera/connect/](https://www.ibm.com/aspera/connect/).
 
 <%=tool%> will detect most of Aspera transfer products in standard locations and use the first one found.
 Refer to section [FASP](#client) for details on how to select a client or set path to the FASP protocol.
