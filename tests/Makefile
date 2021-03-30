@@ -501,11 +501,17 @@ $(T)aocarself: $(T).exists
 	$(EXE_MAN) aoc admin res workspace_membership list
 	$(EXE_MAN) aoc admin res short_link list
 	$(EXE_MAN) aoc admin res apps_new list
-	$(EXE_MAN) aoc admin res client_registration_token list
 	$(EXE_MAN) aoc admin res client_access_key list
 	$(EXE_MAN) aoc admin res kms_profile list
 	@touch $@
-taocadm: $(T)aoc8 $(T)aoc9 $(T)aoc9b $(T)aoc10 $(T)aoc11 $(T)aoc12 $(T)aoc13 $(T)aoc14 $(T)aoc15 $(T)aocarself
+$(T)aoccltreg: $(T).exists
+	@echo $@
+	$(EXE_MAN) aoc admin res client_registration_token create @json:'{"data":{"name":"test_client_reg1","client_subject_scopes":["alee","aejd"],"client_subject_enabled":true}}'
+	$(EXE_MAN) aoc admin res client_registration_token list
+	clt_reg_id=$$($(EXE_NOMAN) aoc admin res client_registration_token list --fields=ALL --select=@json:'{"data.name":"test_client_reg1"}' --fields=id --format=csv --display=data);\
+	$(EXE_MAN) aoc admin res client_registration_token --id=$${clt_reg_id} delete
+	@touch $@
+taocadm: $(T)aoc8 $(T)aoc9 $(T)aoc9b $(T)aoc10 $(T)aoc11 $(T)aoc12 $(T)aoc13 $(T)aoc14 $(T)aoc15 $(T)aocarself $(T)aoccltreg
 $(T)aocat4: $(T).exists
 	@echo $@
 	$(EXE_MAN) aoc admin ats cluster list
