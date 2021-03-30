@@ -27,6 +27,8 @@ This gem provides <%=tool%>: a command line interface to Aspera Applications.
 
 Location: [<%= gemspec.metadata['rubygems_uri'] %>](<%= gemspec.metadata['rubygems_uri'] %>)
 
+Ruby version must be >= <%= gemspec.required_ruby_version %>
+
 # Notations
 
 In examples, command line operations (starting with `$`) are shown using a standard shell: `bash` or `zsh`.
@@ -123,17 +125,56 @@ An internet connection is required for the installation. If you dont have intern
 
 A ruby interpreter is required to run the tool or to use the gem and tool.
 
-Ruby minimum version: <%= gemspec.required_ruby_version %>
-
-Ruby 3 is also supported.
+Ruby minimum version: <%= gemspec.required_ruby_version %>. Ruby version 3 is also supported.
 
 Any type of Ruby installation can be used (installer, rpm, rvm, ...).
 
 Refer to the following sections for a proposed method for specific operating systems.
 
+### Generic Installation
+
+For systems with "bash-like" shell (Linux, Macos, Windows with cygwin, etc...) , use this method which provides more flexibility.
+
+Install Latest Ruby version 2 using "rvm" [https://rvm.io/](https://rvm.io/) .
+
+RVM can be installed as "root" or "regular user".
+
+As root, it installs by default in /usr/local/rvm for all users and creates `/etc/profile.d/rvm.sh`. One can install in another location with :
+
+```
+# curl -sSL https://get.rvm.io | bash -s -- --path /usr/local
+```
+
+As root, make sure this will not collide with other application using Ruby (e.g. Faspex). If so, one can rename the login script: `mv /etc/profile.d/rvm.sh /etc/profile.d/rvm.sh.ok`. To activate ruby (and ascli) source it: `source /etc/profile.d/rvm.sh.ok` .
+
+As regular user, it install in the user's home: `~/.rvm` .
+
+It is advised to get one of the pre-compiled ruby version, you can list with: 
+
+```
+$ rvm list --remote
+```
+
+Then, install pre-compiled version:
+
+```
+# rvm install 2.7.2 --binary
+```
+
+If the generic install is not suitable (e.g. Windows, no cygwin), you can use one of specific install method.
+
+
+### Windows
+
+Install Latest stable Ruby using [https://rubyinstaller.org/](https://rubyinstaller.org/) :
+
+* Go to "Downloads".
+* Select the Ruby 2 version "without devkit", x64 corresponding to the one recommended "with devkit". Devkit is not needed.
+* At the end of the installer uncheck the box to skip the installation of "MSys2": not needed.
+
 ### macOS
 
-MacOS 10.13+ (High Sierra) comes with a recent Ruby, so you can use it directly, you will need to install <%= gemspec.name %> using `sudo` :
+MacOS 10.13+ (High Sierra) comes with a recent Ruby. So you can use it directly. You will need to install <%= gemspec.name %> using `sudo` :
 
 ```
 $ sudo gem install <%= gemspec.name %><%=geminstadd%>
@@ -145,43 +186,19 @@ Alternatively, if you use [Homebrew](https://brew.sh/) already you can install R
 $ brew install ruby
 ```
 
-It is also possib le to use `rvm`
-
-### Windows
-
-Install Latest stable Ruby using [https://rubyinstaller.org/](https://rubyinstaller.org/).
-
-Go to "Downloads".
-
-Select the Ruby 2 version "without devkit", x64 corresponding to the one recommended "with devkit". Devkit is not needed.
-
-At the end of the installer uncheck the box to skip the installation of "MSys2".
+It is also possib le to use `rvm`.
 
 ### Linux
 
-Install Latest Ruby 2 using "rvm" [https://rvm.io/](https://rvm.io/) .
-It installs by default in /usr/local/rvm , but you can install in another location:
+If your Linux distribution provides a standard ruby package, you can use it provided that the version is compatible (check at beginning of section).
 
-```
-curl -sSL https://get.rvm.io | bash -s -- --path /usr/local
-```
-
-Once installed, you can install latest ruby:
-
-```
-# rvm install ruby
-```
-
-If you dont want all users to have ruby by default,
-rename the file: `/etc/profile.d/rvm.sh` with another extension, and source it to get rvm.
-
-Alternatively, only if you know what you do, on RPM based systems (CentOs, Redhat), install the ruby provided by yum which may be 2.0.
+Example:
 
 ```
 # yum install -y ruby rubygems ruby-json
 ```
 
-One can cleanup your whole yum-installed ruby environment like this to uninstall:
+One can cleanup the whole yum-installed ruby environment like this to uninstall:
 
 ```
 gem uninstall $(ls $(gem env gemdir)/gems/|sed -e 's/-[^-]*$//'|sort -u)
@@ -1060,8 +1077,8 @@ The option `to_folder` provides an equivalent and convenient way to change this 
 
 ### List of files for transfers
 
-When uploading, downloading or sending files, the user must specify
-the list of files to transfer. Most of the time, the list of files to transfer will be simply specified on the command line:
+When uploading, downloading or sending files, the user must specify the list of files to transfer.
+Most of the time, the list of files to transfer will be simply specified on the command line:
 
 ```
 $ <%=cmd%> server upload ~/mysample.file secondfile
@@ -1075,7 +1092,8 @@ $ <%=cmd%> server upload --sources=@args ~/mysample.file secondfile
 
 More advanced options are provided to adapt to various cases. In fact, list of files to transfer are conveyed using the [_transfer-spec_](#transferspec) using the field: "paths" which is a list (array) of pairs of "source" (mandatory) and "destination" (optional).
 
-Note that this is different from the "ascp" command line. The paradigm used by <%=tool%> is: all transfer parameters are kept in [_transfer-spec_](#transferspec) so that execution of a transfer is independent of the transfer agent. Note that other IBM Aspera interfaces use this: connect, node, transfer sdk.
+Note that this is different from the "ascp" command line. The paradigm used by <%=tool%> is:
+all transfer parameters are kept in [_transfer-spec_](#transferspec) so that execution of a transfer is independent of the transfer agent. Note that other IBM Aspera interfaces use this: connect, node, transfer sdk.
 
 For ease of use and flexibility, the list of files to transfer is specified by the option `sources`. Accepted values are:
 
@@ -2093,23 +2111,28 @@ $ <%=cmd%> node access_key create --value=@json:'{"id":"eudemo-sedemo","secret":
 
 # Plugin: IBM Aspera Faspex
 
-Note that the command "v4" requires the use of APIv4, refer to the Faspex Admin manual on how to activate.
+Notes:
+
+* the command "v4" requires the use of APIv4, refer to the Faspex Admin manual on how to activate.
+* for full details on Faspex API, refer to: [Reference on Developer Site](https://www.ibm.com/products/aspera/developer)
+
 
 ## Sending a Package
 
-Provide delivery info in JSON, example:
+The command is `faspex package send`. Package information (title, note, metadata, options) is provided in option `delivery_info`. (Refer to Faspex API).
+
+Example:
 
 ```
---delivery-info=@json:'{"title":"my title","recipients":["laurent.martin.aspera@fr.ibm.com"]}'
+$ <%=cmd%> faspex package send --delivery-info=@json:'{"title":"my title","recipients":["laurent.martin.aspera@fr.ibm.com"]}' --url=https://faspex.corp.com/aspera/faspex --username=foo --password=bar /tmp/file1 /home/bar/file2
 ```
 
-a note can be added: `"note":"Please ..."`
+If the recipient is a dropbox, just provide the name of the dropbox in `recipients`: `"recipients":["My Dropbox Name"]`
 
-metadata: `"metadata":{"Meta1":"Val1","Meta2":"Val2"}`
+Additional optional parameters in `delivery_info`:
 
-
-Note for full details, refer to:
-[Reference on Developer Site](https://developer.asperasoft.com/web/faspex/sending)
+* Package Note: : `"note":"note this and that"`
+* Package Metadata: `"metadata":{"Meta1":"Val1","Meta2":"Val2"}`
 
 ## operation on dropboxes
 

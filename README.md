@@ -11,6 +11,8 @@ This gem provides `ascli`: a command line interface to Aspera Applications.
 
 Location: [https://rubygems.org/gems/aspera-cli](https://rubygems.org/gems/aspera-cli)
 
+Ruby version must be >= > 2.4
+
 # Notations
 
 In examples, command line operations (starting with `$`) are shown using a standard shell: `bash` or `zsh`.
@@ -107,17 +109,56 @@ An internet connection is required for the installation. If you dont have intern
 
 A ruby interpreter is required to run the tool or to use the gem and tool.
 
-Ruby minimum version: > 2.4
-
-Ruby 3 is also supported.
+Ruby minimum version: > 2.4. Ruby version 3 is also supported.
 
 Any type of Ruby installation can be used (installer, rpm, rvm, ...).
 
 Refer to the following sections for a proposed method for specific operating systems.
 
+### Generic Installation
+
+For systems with "bash-like" shell (Linux, Macos, Windows with cygwin, etc...) , use this method which provides more flexibility.
+
+Install Latest Ruby version 2 using "rvm" [https://rvm.io/](https://rvm.io/) .
+
+RVM can be installed as "root" or "regular user".
+
+As root, it installs by default in /usr/local/rvm for all users and creates `/etc/profile.d/rvm.sh`. One can install in another location with :
+
+```
+# curl -sSL https://get.rvm.io | bash -s -- --path /usr/local
+```
+
+As root, make sure this will not collide with other application using Ruby (e.g. Faspex). If so, one can rename the login script: `mv /etc/profile.d/rvm.sh /etc/profile.d/rvm.sh.ok`. To activate ruby (and ascli) source it: `source /etc/profile.d/rvm.sh.ok` .
+
+As regular user, it install in the user's home: `~/.rvm` .
+
+It is advised to get one of the pre-compiled ruby version, you can list with: 
+
+```
+$ rvm list --remote
+```
+
+Then, install pre-compiled version:
+
+```
+# rvm install 2.7.2 --binary
+```
+
+If the generic install is not suitable (e.g. Windows, no cygwin), you can use one of specific install method.
+
+
+### Windows
+
+Install Latest stable Ruby using [https://rubyinstaller.org/](https://rubyinstaller.org/) :
+
+* Go to "Downloads".
+* Select the Ruby 2 version "without devkit", x64 corresponding to the one recommended "with devkit". Devkit is not needed.
+* At the end of the installer uncheck the box to skip the installation of "MSys2": not needed.
+
 ### macOS
 
-MacOS 10.13+ (High Sierra) comes with a recent Ruby, so you can use it directly, you will need to install aspera-cli using `sudo` :
+MacOS 10.13+ (High Sierra) comes with a recent Ruby. So you can use it directly. You will need to install aspera-cli using `sudo` :
 
 ```
 $ sudo gem install aspera-cli
@@ -129,43 +170,19 @@ Alternatively, if you use [Homebrew](https://brew.sh/) already you can install R
 $ brew install ruby
 ```
 
-It is also possib le to use `rvm`
-
-### Windows
-
-Install Latest stable Ruby using [https://rubyinstaller.org/](https://rubyinstaller.org/).
-
-Go to "Downloads".
-
-Select the Ruby 2 version "without devkit", x64 corresponding to the one recommended "with devkit". Devkit is not needed.
-
-At the end of the installer uncheck the box to skip the installation of "MSys2".
+It is also possib le to use `rvm`.
 
 ### Linux
 
-Install Latest Ruby 2 using "rvm" [https://rvm.io/](https://rvm.io/) .
-It installs by default in /usr/local/rvm , but you can install in another location:
+If your Linux distribution provides a standard ruby package, you can use it provided that the version is compatible (check at beginning of section).
 
-```
-curl -sSL https://get.rvm.io | bash -s -- --path /usr/local
-```
-
-Once installed, you can install latest ruby:
-
-```
-# rvm install ruby
-```
-
-If you dont want all users to have ruby by default,
-rename the file: `/etc/profile.d/rvm.sh` with another extension, and source it to get rvm.
-
-Alternatively, only if you know what you do, on RPM based systems (CentOs, Redhat), install the ruby provided by yum which may be 2.0.
+Example:
 
 ```
 # yum install -y ruby rubygems ruby-json
 ```
 
-One can cleanup your whole yum-installed ruby environment like this to uninstall:
+One can cleanup the whole yum-installed ruby environment like this to uninstall:
 
 ```
 gem uninstall $(ls $(gem env gemdir)/gems/|sed -e 's/-[^-]*$//'|sort -u)
@@ -216,19 +233,27 @@ To check manually:
 
 ## <a name="fasp_prot"></a>FASP Protocol
 
-Most file transfers will be done using the FASP protocol. Only two additional files are required to perform
-an Aspera Transfer:
+Most file transfers will be done using the FASP protocol, using `ascp`.
+Only two additional files are required to perform an Aspera Transfer, which are part of Aspera SDK:
 
 * ascp
 * aspera-license (in same folder, or ../etc)
 
-This can be installed directly with
+This can be installed either be installing an Aspera transfer sofware, or using an embedded command:
 
 ```
 $ ascli conf ascp install
 ```
 
-Those can be found in one of IBM Aspera transfer server or client with its license file (some are free):
+If a local SDK installation is prefered instead of fetching from internet: one can specify the location of the SDK file:
+
+```
+$ ascli conf ascp install --sdk-url=file:///SDK.zip
+```
+
+The format is: `file:///<path>`, where `<path>` can be either a relative path (not starting with `/`), or an absolute path.
+
+If the embedded method is not used, the following packages are also suitable:
 
 * IBM Aspera Connect Client (Free)
 * IBM Aspera Desktop Client (Free)
@@ -237,7 +262,7 @@ Those can be found in one of IBM Aspera transfer server or client with its licen
 * IBM Aspera High Speed Transfer EndPoint (Licensed)
 
 For instance, Aspera Connect Client can be installed
-by visiting the page: [http://downloads.asperasoft.com/connect2/](http://downloads.asperasoft.com/connect2/).
+by visiting the page: [https://www.ibm.com/aspera/connect/](https://www.ibm.com/aspera/connect/).
 
 `ascli` will detect most of Aspera transfer products in standard locations and use the first one found.
 Refer to section [FASP](#client) for details on how to select a client or set path to the FASP protocol.
@@ -1122,8 +1147,8 @@ The option `to_folder` provides an equivalent and convenient way to change this 
 
 ### List of files for transfers
 
-When uploading, downloading or sending files, the user must specify
-the list of files to transfer. Most of the time, the list of files to transfer will be simply specified on the command line:
+When uploading, downloading or sending files, the user must specify the list of files to transfer.
+Most of the time, the list of files to transfer will be simply specified on the command line:
 
 ```
 $ ascli server upload ~/mysample.file secondfile
@@ -1137,7 +1162,8 @@ $ ascli server upload --sources=@args ~/mysample.file secondfile
 
 More advanced options are provided to adapt to various cases. In fact, list of files to transfer are conveyed using the [_transfer-spec_](#transferspec) using the field: "paths" which is a list (array) of pairs of "source" (mandatory) and "destination" (optional).
 
-Note that this is different from the "ascp" command line. The paradigm used by `ascli` is: all transfer parameters are kept in [_transfer-spec_](#transferspec) so that execution of a transfer is independent of the transfer agent. Note that other IBM Aspera interfaces use this: connect, node, transfer sdk.
+Note that this is different from the "ascp" command line. The paradigm used by `ascli` is:
+all transfer parameters are kept in [_transfer-spec_](#transferspec) so that execution of a transfer is independent of the transfer agent. Note that other IBM Aspera interfaces use this: connect, node, transfer sdk.
 
 For ease of use and flexibility, the list of files to transfer is specified by the option `sources`. Accepted values are:
 
@@ -1267,6 +1293,8 @@ ascli aoc admin ats cluster show --id=1f412ae7-869a-445c-9c05-02ad16813be2
 ascli aoc admin res apps_new list
 ascli aoc admin res client list
 ascli aoc admin res client_access_key list
+ascli aoc admin res client_registration_token --id=my_clt_reg_id delete
+ascli aoc admin res client_registration_token create @json:'{"data":{"name":"test_client_reg1","client_subject_scopes":["alee","aejd"],"client_subject_enabled":true}}'
 ascli aoc admin res client_registration_token list
 ascli aoc admin res contact list
 ascli aoc admin res dropbox list
@@ -1542,6 +1570,7 @@ OPTIONS:
         --default=VALUE              set as default configuration for specified plugin
         --secret=VALUE               access key secret for node
         --secrets=VALUE              access key secret for node
+        --sdk-url=VALUE              URL to get SDK
         --test-mode=ENUM             skip user validation in wizard mode: yes, no
         --version-check-days=VALUE   period to check neew version in days (zero to disable)
         --ts=VALUE                   override transfer spec values (Hash, use @json: prefix), current={"create_dir"=>true}
@@ -2647,23 +2676,28 @@ $ ascli node access_key create --value=@json:'{"id":"eudemo-sedemo","secret":"my
 
 # Plugin: IBM Aspera Faspex
 
-Note that the command "v4" requires the use of APIv4, refer to the Faspex Admin manual on how to activate.
+Notes:
+
+* the command "v4" requires the use of APIv4, refer to the Faspex Admin manual on how to activate.
+* for full details on Faspex API, refer to: [Reference on Developer Site](https://www.ibm.com/products/aspera/developer)
+
 
 ## Sending a Package
 
-Provide delivery info in JSON, example:
+The command is `faspex package send`. Package information (title, note, metadata, options) is provided in option `delivery_info`. (Refer to Faspex API).
+
+Example:
 
 ```
---delivery-info=@json:'{"title":"my title","recipients":["laurent.martin.aspera@fr.ibm.com"]}'
+$ ascli faspex package send --delivery-info=@json:'{"title":"my title","recipients":["laurent.martin.aspera@fr.ibm.com"]}' --url=https://faspex.corp.com/aspera/faspex --username=foo --password=bar /tmp/file1 /home/bar/file2
 ```
 
-a note can be added: `"note":"Please ..."`
+If the recipient is a dropbox, just provide the name of the dropbox in `recipients`: `"recipients":["My Dropbox Name"]`
 
-metadata: `"metadata":{"Meta1":"Val1","Meta2":"Val2"}`
+Additional optional parameters in `delivery_info`:
 
-
-Note for full details, refer to:
-[Reference on Developer Site](https://developer.asperasoft.com/web/faspex/sending)
+* Package Note: : `"note":"note this and that"`
+* Package Metadata: `"metadata":{"Meta1":"Val1","Meta2":"Val2"}`
 
 ## operation on dropboxes
 
@@ -3311,6 +3345,7 @@ So, it evolved into `ascli`:
 
 	* renamed command `nagios_check` to `health`
 	* agent `http_gw` now supports upload
+	* added option `sdk_url`
 
 * 4.0.0
 
