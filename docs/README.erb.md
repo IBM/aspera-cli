@@ -131,21 +131,61 @@ Any type of Ruby installation can be used (installer, rpm, rvm, ...).
 
 Refer to the following sections for a proposed method for specific operating systems.
 
-### Generic Installation
+The recommended installation method is `rvm` for systems with "bash-like" shell (Linux, Macos, Windows with cygwin, etc...).
+If the generic install is not suitable (e.g. Windows, no cygwin), you can use one of OS-specific install method.
 
-For systems with "bash-like" shell (Linux, Macos, Windows with cygwin, etc...) , use this method which provides more flexibility.
+### Installation without internet access
 
-Install Latest Ruby version 2 using "rvm" [https://rvm.io/](https://rvm.io/) .
+Note that currently no pre-packaged version exist yet.
+A method to build one provided here:
 
-RVM can be installed as "root" or "regular user".
+On a server with the same OS version and with internet access follow the "Generic single user installation" method.
 
-As root, it installs by default in /usr/local/rvm for all users and creates `/etc/profile.d/rvm.sh`. One can install in another location with :
+Then create an archive:
 
 ```
-# curl -sSL https://get.rvm.io | bash -s -- --path /usr/local
+$ cd
+$ tar zcvf rvm-ascli.tgz .rvm
 ```
 
-As root, make sure this will not collide with other application using Ruby (e.g. Faspex). If so, one can rename the login script: `mv /etc/profile.d/rvm.sh /etc/profile.d/rvm.sh.ok`. To activate ruby (and ascli) source it: `source /etc/profile.d/rvm.sh.ok` .
+Get the Aspera SDK. Execute:
+
+```
+$ ascli conf --show-config|grep sdk_url
+```
+
+Then download the SDK archive from that URL.
+
+Another method for the SDK is to install the SDK (`ascli conf ascp install`) on the first system, and archive `$HOME/.aspera`.
+
+Transfer those 2 archives to the target system without internet access.
+
+On the target system:
+
+* Extract the RVM archive either in a global location, or in a user's home folder : `path_to_rvm_root`
+* in the user's `.profile` add this line: (replace `path_to_rvm_root` with the actual location)
+
+```
+source path_to_rvm_root/scripts/rvm
+rvm use 2.7.2
+```
+
+For the SDK, either install from archive:
+
+```
+$ ascli conf ascp install --sdk-url=file:///SDK.zip
+```
+
+or restore the `$HOME/.aspera` folder for the user.
+
+### Generic single user installation (not root)
+
+Use this method which provides more flexibility.
+
+Install "rvm": follow [https://rvm.io/](https://rvm.io/) :
+
+* install the 2 keys
+* execute the shell/curl command
 
 As regular user, it install in the user's home: `~/.rvm` .
 
@@ -161,8 +201,20 @@ Then, install pre-compiled version:
 # rvm install 2.7.2 --binary
 ```
 
-If the generic install is not suitable (e.g. Windows, no cygwin), you can use one of specific install method.
+### Generic global installation (as root)
 
+Follow the same method as single user install, but execute as "root".
+
+As root, it installs by default in /usr/local/rvm for all users and creates `/etc/profile.d/rvm.sh`.
+One can install in another location with :
+
+```
+# curl -sSL https://get.rvm.io | bash -s -- --path /usr/local
+```
+
+As root, make sure this will not collide with other application using Ruby (e.g. Faspex).
+If so, one can rename the login script: `mv /etc/profile.d/rvm.sh /etc/profile.d/rvm.sh.ok`.
+To activate ruby (and ascli) later, source it: `source /etc/profile.d/rvm.sh.ok` .
 
 ### Windows
 
