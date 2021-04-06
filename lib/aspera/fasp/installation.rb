@@ -176,6 +176,8 @@ module Aspera
         return [:ssh_bypass_key_dsa,:ssh_bypass_key_rsa].map{|i|Installation.instance.path(i)}
       end
 
+      # download aspera SDK or use local file
+      # extract only ascp binary for current system architecture
       def install_sdk(sdk_url)
         require 'zip'
         sdk_zip_path=File.join(Dir.tmpdir,'sdk.zip')
@@ -184,8 +186,24 @@ module Aspera
           raise 'use format: file:///<path>' unless sdk_url.start_with?('file:///')
           sdk_zip_path=sdk_url.gsub(%r{^file:///},'')
         else
-          Aspera::Rest.new(base_url: sdk_url).call(operation: 'GET',save_to_file: sdk_zip_path)
+          redirect_remain=2
+          begin
+            Aspera::Rest.new(base_url: sdk_url).call(operation: 'GET',save_to_file: sdk_zip_path)
+          rescue Aspera::RestCallError => e
+            if e.response.is_a?(Net::HTTPRedirection)
+              if redirect_remain > 0
+                redirect_remain-=1
+                sdk_url=e.response['location']
+                retry
+              else
+                raise "too meny redirect"
+              end
+            else
+              raise e
+            end
+          end
         end
+        # SDK is organized by architecture
         filter="/#{Environment.architecture}/"
         ascp_path=nil
         # first ensure license file is here so that ascp invokation for version works
@@ -193,6 +211,7 @@ module Aspera
         self.path(:aspera_conf)
         Zip::File.open(sdk_zip_path) do |zip_file|
           zip_file.each do |entry|
+            # get only specified arch, but not folder, only files
             if entry.name.include?(filter) and !entry.name.end_with?('/')
               archive_file=File.join(folder_path,File.basename(entry.name))
               File.open(archive_file, 'wb') do |output_stream|
