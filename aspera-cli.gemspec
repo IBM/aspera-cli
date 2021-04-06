@@ -16,14 +16,14 @@ Gem::Specification.new do |spec|
   spec.description   = 'Command line interface for IBM Aspera products'
   spec.homepage      = 'https://github.com/IBM/aspera-cli'
   spec.license       = 'Apache-2.0'
-  spec.requirements << 'No specific requirements, just RTFM'
+  spec.requirements << 'Read the manual for any requirement'
   raise 'RubyGems 2.0 or newer is required' unless spec.respond_to?(:metadata)
   spec.metadata['allowed_push_host'] = 'https://rubygems.org' # push only to rubygems.org
   spec.metadata['homepage_uri']      = spec.homepage
   spec.metadata['source_code_uri']   = spec.homepage
   spec.metadata['changelog_uri']     = spec.homepage
   spec.metadata['rubygems_uri']      = "https://rubygems.org/gems/#{spec.name}"
-  spec.metadata["documentation_uri"] = "https://www.rubydoc.info/gems/#{spec.name}"
+  spec.metadata['documentation_uri'] = "https://www.rubydoc.info/gems/#{spec.name}"
   # go to the root folder of project (this gemspec is in project root folder), and list git files from there
   Dir.chdir(File.dirname(gemspec_file)) do
     spec.files       =`git ls-files -z lib docs bin examples README.md`.split("\x0")
