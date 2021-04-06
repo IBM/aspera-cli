@@ -238,8 +238,6 @@ Alternatively, if you use [Homebrew](https://brew.sh/) already you can install R
 $ brew install ruby
 ```
 
-It is also possib le to use `rvm`.
-
 ### Linux
 
 If your Linux distribution provides a standard ruby package, you can use it provided that the version is compatible (check at beginning of section).
@@ -316,6 +314,7 @@ $ <%=cmd%> conf ascp install
 If a local SDK installation is prefered instead of fetching from internet: one can specify the location of the SDK file:
 
 ```
+$ curl -Lso SDK.zip https://ibm.biz/aspera_sdk
 $ <%=cmd%> conf ascp install --sdk-url=file:///SDK.zip
 ```
 
@@ -338,13 +337,32 @@ Refer to section [FASP](#client) for details on how to select a client or set pa
 Several methods are provided on how to start a transfer. Use of a local client is one of them, but
 other methods are available. Refer to section: [Transfer Agents](#agents)
 
-## Installation without internet
+## <a name="offline_install"></a>Offline Installation (without internet)
 
 The procedure consists in:
 
-* installing the tool on a system with access to internet
-* archive (zip, tar) the main ruby folder with gems installed
-* unarchive on the system without internet access
+* Follow the non-root installation procedure with RVM, including gem
+* archive (zip, tar) the main RVM folder (includes ascli):
+
+```
+$ cd ~
+$ tar zcvf rvm_ascli.tgz .rvm
+```
+
+* retrieve the SDK:
+
+```
+$ curl -Lso SDK.zip https://ibm.biz/aspera_sdk
+```
+
+* on the system without internet access:
+
+```
+$ cd ~
+$ tar zxvf rvm_ascli.tgz
+$ source ~/.rvm/scripts/rvm
+$ ascli conf ascp install --sdk-url=file:///SDK.zip
+```
 
 # <a name="cli"></a>Command Line Interface: <%=tool%>
 
@@ -2804,15 +2822,17 @@ So, it evolved into <%=tool%>:
 * supports transfers with multiple [Transfer Agents](#agents), that&apos;s why transfer parameters moved from ascp command line to [_transfer-spec_](#transferspec) (more reliable , more standard)
 * `ruby` is consistent with other Aspera products
 
-
-
-# Release Notes
+# Changes (Release notes)
 
 * 4.x
 
-	* renamed command `nagios_check` to `health`
-	* agent `http_gw` now supports upload
-	* added option `sdk_url`
+  	* fix: remove keys from transfer spec and command line when not needed
+  	* fix: default to create_dir:true so that sending single file to a folder does not rename file if folder does not exist 
+  	* fix: update documentation with regard to offline installation
+ 	* feat: renamed command `nagios_check` to `health`
+	* feat: agent `http_gw` now supports upload
+	* feat: added option `sdk_url` to install SDK from local file for offline install
+	* feat: check new gem version periodically
 
 * 4.0.0
 
