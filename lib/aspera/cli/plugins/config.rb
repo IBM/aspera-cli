@@ -43,6 +43,7 @@ module Aspera
         AOC_COMMAND_CURRENT=AOC_COMMAND_V3
         CONNECT_WEB_URL = 'https://d3gcli72yxqn2z.cloudfront.net/connect'
         CONNECT_VERSIONS = 'connectversions.js'
+        TRANSFER_SDK_ARCHIVE_URL = 'https://ibm.biz/aspera_sdk'
         DEMO='demo'
         def option_preset; nil; end
 
@@ -50,7 +51,7 @@ module Aspera
           self.options.add_option_preset(preset_by_name(value))
         end
 
-        private_constant :ASPERA_HOME_FOLDER_NAME,:DEFAULT_CONFIG_FILENAME,:CONF_PRESET_CONFIG,:CONF_PRESET_VERSION,:CONF_PRESET_DEFAULT,:PROGRAM_NAME_V1,:PROGRAM_NAME_V2,:DEFAULT_REDIRECT,:ASPERA_PLUGINS_FOLDERNAME,:RUBY_FILE_EXT,:AOC_COMMAND_V1,:AOC_COMMAND_V2,:AOC_COMMAND_V3,:AOC_COMMAND_CURRENT,:DEMO
+        private_constant :ASPERA_HOME_FOLDER_NAME,:DEFAULT_CONFIG_FILENAME,:CONF_PRESET_CONFIG,:CONF_PRESET_VERSION,:CONF_PRESET_DEFAULT,:PROGRAM_NAME_V1,:PROGRAM_NAME_V2,:DEFAULT_REDIRECT,:ASPERA_PLUGINS_FOLDERNAME,:RUBY_FILE_EXT,:AOC_COMMAND_V1,:AOC_COMMAND_V2,:AOC_COMMAND_V3,:AOC_COMMAND_CURRENT,:DEMO,:TRANSFER_SDK_ARCHIVE_URL
         attr_accessor :option_ak_secret,:option_secrets
 
         def initialize(env,tool_name,help_url,version)
@@ -113,7 +114,7 @@ module Aspera
           self.options.set_option(:use_generic_client,true)
           self.options.set_option(:test_mode,false)
           self.options.set_option(:version_check_days,7)
-          self.options.set_option(:sdk_url,'https://eudemo.asperademo.com/aspera/faspex/sdk.zip')
+          self.options.set_option(:sdk_url,TRANSFER_SDK_ARCHIVE_URL)
           self.options.parse_options!
           raise CliBadArgument,"secrets shall be Hash" unless @option_secrets.is_a?(Hash)
         end
@@ -500,8 +501,10 @@ module Aspera
             end
             # read PATHs from ascp directly, and pvcl modules as well
             Open3.popen3(Fasp::Installation.instance.path(:ascp),'-DDL-') do |stdin, stdout, stderr, thread|
+              last_line=''
               while line=stderr.gets do
                 line.chomp!
+                last_line=line
                 case line
                 when %r{^DBG Path ([^ ]+) (dir|file) +: (.*)$};data[$1]=$3
                 when %r{^DBG Added module group:"([^"]+)" name:"([^"]+)", version:"([^"]+)" interface:"([^"]+)"$};data[$2]=$4
@@ -509,6 +512,9 @@ module Aspera
                 when %r{^LOG (.+) version ([0-9.]+)$};data['product_name']=$1;data['product_version']=$2
                 when %r{^LOG Initializing FASP version ([^,]+),};data['ascp_version']=$1
                 end
+              end
+              if !thread.value.exitstatus.eql?(1) and !data.has_key?('root')
+                raise last_line
               end
             end
             data['keypass']=Fasp::Installation.instance.bypass_pass
