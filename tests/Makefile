@@ -38,7 +38,9 @@ setupprev:
 	sudo asconfigurator -x "user;user_name,xfer;file_restriction,|*;token_encryption_key,$$(base64 < /dev/urandom|head -c32);absolute,AS_NULL"
 	sudo asconfigurator -x "server;activity_logging,true;activity_event_logging,true"
 	-sudo launchctl load  /Library/LaunchDaemons/com.aspera.asperanoded.plist
-	test $$(id -u asperadaemon) = $$(stat -f "%u" /Library/Logs/Aspera) || exit 1
+	if test $$(id -u asperadaemon) -ne $$(stat -f "%u" /Library/Logs/Aspera); then \
+	  echo Fixing right;sudo chown asperadaemon: /Library/Logs/Aspera;\
+	fi
 	sudo launchctl stop com.aspera.asperanoded;sleep 5
 	sudo launchctl start com.aspera.asperanoded
 	while ! $(EXE_NOMAN) node -N -Ptst_node_preview info;do echo waiting..;sleep 2;done
