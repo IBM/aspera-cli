@@ -13,6 +13,34 @@ Location: [https://rubygems.org/gems/aspera-cli](https://rubygems.org/gems/asper
 
 Ruby version must be >= > 2.4
 
+# <a name="when_to_use"></a>When to use and when not to use
+
+`ascli` is designed to be used as a command line tool to:
+
+* execute commands on Aspera products
+* transfer to/from Aspera products
+
+So it is designed for:
+
+* Interactive operations on a text terminal (typically, VT100 compatible)
+* Batch operations in (shell) scripts (e.g. cron job)
+
+`ascli` can be seen as a command line tool integrating:
+
+* a configuration file (config.yaml) and advanced command line options
+* cURL (for REST calls)
+* Aspera transfer (ascp)
+
+One might be tempted to use it as an integration element, e.g. by building a command line programmatically, and then executing it. It is generally not a good idea.
+For such integration cases, such as performing operations and transfer to aspera products, it is preferred to use [Aspera APIs](https://ibm.biz/aspera_api):
+
+* Product APIs (REST) : e.g. AoC, Faspex, node
+* Transfer SDK : with gRPC interface.
+
+Using APIs (application REST API and transfer SDK) will prove to be easier to develop and maintain.
+
+For scripting and ad hoc command line operations, `ascli` is perfect.
+
 # Notations
 
 In examples, command line operations (starting with `$`) are shown using a standard shell: `bash` or `zsh`.
@@ -1795,62 +1823,9 @@ SUBCOMMANDS: start admin
 OPTIONS:
         --parameters=VALUE           extended value for session set definition
         --session-name=VALUE         name of session to use for admin commands, by default first one
-
-
-COMMAND: aoc
-SUBCOMMANDS: apiinfo bearer_token organization tier_restrictions user workspace packages files gateway admin automation servers
-OPTIONS:
-        --url=VALUE                  URL of application, e.g. https://org.asperafiles.com
-        --username=VALUE             username to log in
-        --password=VALUE             user's password
-
-COMMAND: ats
-SUBCOMMANDS: cluster access_key api_key aws_trust_policy
-OPTIONS:
-        --ibm-api-key=VALUE          IBM API key, see https://cloud.ibm.com/iam/apikeys
-        --instance=VALUE             ATS instance in ibm cloud
-        --ats-key=VALUE              ATS key identifier (ats_xxx)
-        --ats-secret=VALUE           ATS key secret
-        --params=VALUE               Parameters access key creation (@json:)
-        --cloud=VALUE                Cloud provider
-        --region=VALUE               Cloud region
-        --auth=ENUM                  type of Oauth authentication: body_userpass, header_userpass, web, jwt, url_token, ibm_apikey
-        --operation=ENUM             client operation for transfers: push, pull
-        --client-id=VALUE            API client identifier in application
-        --client-secret=VALUE        API client passcode
-        --redirect-uri=VALUE         API client redirect URI
-        --private-key=VALUE          RSA private key PEM value for JWT (prefix file path with @val:@file:)
-        --workspace=VALUE            name of workspace
-        --eid=VALUE                  identifier
-        --name=VALUE                 resource name
-        --link=VALUE                 public link to shared resource
-        --new-user-option=VALUE      new user creation option
-        --from-folder=VALUE          share to share source folder
-        --scope=VALUE                scope for AoC API calls
-        --notify=VALUE               notify users that file was received
-        --bulk=ENUM                  bulk operation: yes, no
-        --default-ports=ENUM         use standard FASP ports or get from node api: yes, no
-
-
-COMMAND: server
-SUBCOMMANDS: health nodeadmin userdata configurator ctl download upload browse delete rename ls rm mv du info mkdir cp df md5sum
-OPTIONS:
-        --url=VALUE                  URL of application, e.g. https://org.asperafiles.com
-        --username=VALUE             username to log in
-        --password=VALUE             user's password
-        --ssh-keys=VALUE             ssh key path list (Array or single)
-        --ssh-options=VALUE          ssh options (Hash)
-        --cmd-prefix=VALUE           prefix to add for as cmd execution, e.g. sudo or /opt/aspera/bin 
-
-
-COMMAND: console
-SUBCOMMANDS: transfer health
-OPTIONS:
-        --url=VALUE                  URL of application, e.g. https://org.asperafiles.com
-        --username=VALUE             username to log in
-        --password=VALUE             user's password
-        --filter-from=DATE           only after date
-        --filter-to=DATE             only before date
+ERROR: Other: undefined method `c_user_info' for class `Aspera::Cli::Plugins::Aoc'
+ERROR: Argument: unprocessed options: ["-Cnone"]
+Use '--log-level=debug' to get more details.
 
 
 ```

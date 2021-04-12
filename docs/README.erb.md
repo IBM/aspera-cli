@@ -29,6 +29,34 @@ Location: [<%= gemspec.metadata['rubygems_uri'] %>](<%= gemspec.metadata['rubyge
 
 Ruby version must be >= <%= gemspec.required_ruby_version %>
 
+# <a name="when_to_use"></a>When to use and when not to use
+
+<%=tool%> is designed to be used as a command line tool to:
+
+* execute commands on Aspera products
+* transfer to/from Aspera products
+
+So it is designed for:
+
+* Interactive operations on a text terminal (typically, VT100 compatible)
+* Batch operations in (shell) scripts (e.g. cron job)
+
+<%=tool%> can be seen as a command line tool integrating:
+
+* a configuration file (config.yaml) and advanced command line options
+* cURL (for REST calls)
+* Aspera transfer (ascp)
+
+One might be tempted to use it as an integration element, e.g. by building a command line programmatically, and then executing it. It is generally not a good idea.
+For such integration cases, such as performing operations and transfer to aspera products, it is preferred to use [Aspera APIs](https://ibm.biz/aspera_api):
+
+* Product APIs (REST) : e.g. AoC, Faspex, node
+* Transfer SDK : with gRPC interface.
+
+Using APIs (application REST API and transfer SDK) will prove to be easier to develop and maintain.
+
+For scripting and ad hoc command line operations, <%=tool%> is perfect.
+
 # Notations
 
 In examples, command line operations (starting with `$`) are shown using a standard shell: `bash` or `zsh`.
