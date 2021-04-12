@@ -58,14 +58,16 @@ PKG_TEST_TITLE=$(shell date)
 # flag files for integration tests generated here
 T=$(DIR_TMP)t/
 
+$(T).exists: $(CF_LOCAL_SAMPLE_FILEPATH)
+	mkdir -p $(T)
+	touch $@
 clean::
 	rm -fr $(T)
 	mkdir $(T)
 $(CF_LOCAL_SAMPLE_FILEPATH): $(DIR_TMP).exists
 	dd if=/dev/urandom of=$(CF_LOCAL_SAMPLE_FILEPATH) count=1 bs=200k
-$(T).exists: $(CF_LOCAL_SAMPLE_FILEPATH)
-	mkdir -p $(T)
-	touch $@
+clean::
+	rm -f $(CF_LOCAL_SAMPLE_FILEPATH)
 $(T)unit: $(T).exists
 	@echo $@
 	set -x;\
