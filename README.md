@@ -11,6 +11,8 @@ This gem provides `ascli`: a command line interface to Aspera Applications.
 
 Location: [https://rubygems.org/gems/aspera-cli](https://rubygems.org/gems/aspera-cli)
 
+Ruby doc: [https://www.rubydoc.info/gems/aspera-cli](https://www.rubydoc.info/gems/aspera-cli)
+
 Ruby version must be >= > 2.4
 
 # <a name="when_to_use"></a>When to use and when not to use
@@ -125,13 +127,13 @@ Then, follow the section relative to the product you want to interact with ( Asp
 
 In order to use the tool or the gem, it is necessary to install those components:
 
-* [Ruby](#ruby)
+* [Ruby](#ruby) version >= > 2.4
 * [aspera-cli](#the_gem)
-* [FASP](#fasp_prot)
+* [Aspera SDK (ascp)](#fasp_prot)
 
 The following sections provide information on the installation.
 
-An internet connection is required for the installation. If you dont have internet for the installation, refer to the last sub section.
+An internet connection is required for the installation. If you dont have internet for the installation, refer to section [Installation without internet access](#offline_install).
 
 ## <a name="ruby"></a>Ruby
 
@@ -139,14 +141,110 @@ A ruby interpreter is required to run the tool or to use the gem and tool.
 
 Ruby minimum version: > 2.4. Ruby version 3 is also supported.
 
-Any type of Ruby installation can be used (installer, rpm, rvm, ...).
+*Any type of Ruby installation can be used* : rpm, yum, dnf, rvm, brew, windows installer, ... .
 
 Refer to the following sections for a proposed method for specific operating systems.
 
 The recommended installation method is `rvm` for systems with "bash-like" shell (Linux, Macos, Windows with cygwin, etc...).
 If the generic install is not suitable (e.g. Windows, no cygwin), you can use one of OS-specific install method.
+If you have a simpler better way to install Ruby version >= > 2.4 : use it !
 
-### Installation without internet access
+### Generic: RVM: single user installation (not root)
+
+Use this method which provides more flexibility.
+
+Install "rvm": follow [https://rvm.io/](https://rvm.io/) :
+
+* install the 2 keys
+* execute the shell/curl command
+
+As regular user, it install in the user's home: `~/.rvm` .
+
+It is advised to get one of the pre-compiled ruby version, you can list with: 
+
+```
+$ rvm list --remote
+```
+
+Then, install pre-compiled version:
+
+```
+# rvm install 2.7.2 --binary
+```
+
+### Generic: RVM: global installation (as root)
+
+Follow the same method as single user install, but execute as "root".
+
+As root, it installs by default in /usr/local/rvm for all users and creates `/etc/profile.d/rvm.sh`.
+One can install in another location with :
+
+```
+# curl -sSL https://get.rvm.io | bash -s -- --path /usr/local
+```
+
+As root, make sure this will not collide with other application using Ruby (e.g. Faspex).
+If so, one can rename the login script: `mv /etc/profile.d/rvm.sh /etc/profile.d/rvm.sh.ok`.
+To activate ruby (and ascli) later, source it: `source /etc/profile.d/rvm.sh.ok` .
+
+### Windows: Installer
+
+Install Latest stable Ruby using [https://rubyinstaller.org/](https://rubyinstaller.org/) :
+
+* Go to "Downloads".
+* Select the Ruby 2 version "without devkit", x64 corresponding to the one recommended "with devkit". Devkit is not needed.
+* At the end of the installer uncheck the box to skip the installation of "MSys2": not needed.
+
+### macOS: pre-installed or `brew`
+
+MacOS 10.13+ (High Sierra) comes with a recent Ruby. So you can use it directly. You will need to install aspera-cli using `sudo` :
+
+```
+$ sudo gem install aspera-cli
+```
+
+Alternatively, if you use [Homebrew](https://brew.sh/) already you can install Ruby with it:
+
+```
+$ brew install ruby
+```
+
+### Linux: package
+
+If your Linux distribution provides a standard ruby package, you can use it provided that the version is compatible (check at beginning of section).
+
+Example:
+
+```
+# yum install -y ruby rubygems ruby-json
+```
+
+One can cleanup the whole yum-installed ruby environment like this to uninstall:
+
+```
+gem uninstall $(ls $(gem env gemdir)/gems/|sed -e 's/-[^-]*$//'|sort -u)
+yum remove -y ruby ruby-libs
+```
+
+### Other Unixes: Aix, etc...
+
+If your unix do not provide a pre-built ruby, you can get it using one of those
+[methods](https://www.ruby-lang.org/en/documentation/installation/)
+
+For instance to build from source, and install in `/opt/ruby` :
+
+```
+# wget https://cache.ruby-lang.org/pub/ruby/2.7/ruby-2.7.2.tar.gz
+# gzip -d ruby-2.7.2.tar.gz
+# tar xvf ruby-2.7.2.tar
+# cd ruby-2.7.2
+# ./configure --prefix=/opt/ruby
+# make ruby.imp
+# make
+# make install
+```
+
+### <a name="offline_install"></a>Installation without internet access
 
 Note that currently no pre-packaged version exist yet.
 A method to build one provided here:
@@ -189,101 +287,6 @@ $ ascli conf ascp install --sdk-url=file:///SDK.zip
 ```
 
 or restore the `$HOME/.aspera` folder for the user.
-
-### Generic single user installation (not root)
-
-Use this method which provides more flexibility.
-
-Install "rvm": follow [https://rvm.io/](https://rvm.io/) :
-
-* install the 2 keys
-* execute the shell/curl command
-
-As regular user, it install in the user's home: `~/.rvm` .
-
-It is advised to get one of the pre-compiled ruby version, you can list with: 
-
-```
-$ rvm list --remote
-```
-
-Then, install pre-compiled version:
-
-```
-# rvm install 2.7.2 --binary
-```
-
-### Generic global installation (as root)
-
-Follow the same method as single user install, but execute as "root".
-
-As root, it installs by default in /usr/local/rvm for all users and creates `/etc/profile.d/rvm.sh`.
-One can install in another location with :
-
-```
-# curl -sSL https://get.rvm.io | bash -s -- --path /usr/local
-```
-
-As root, make sure this will not collide with other application using Ruby (e.g. Faspex).
-If so, one can rename the login script: `mv /etc/profile.d/rvm.sh /etc/profile.d/rvm.sh.ok`.
-To activate ruby (and ascli) later, source it: `source /etc/profile.d/rvm.sh.ok` .
-
-### Windows
-
-Install Latest stable Ruby using [https://rubyinstaller.org/](https://rubyinstaller.org/) :
-
-* Go to "Downloads".
-* Select the Ruby 2 version "without devkit", x64 corresponding to the one recommended "with devkit". Devkit is not needed.
-* At the end of the installer uncheck the box to skip the installation of "MSys2": not needed.
-
-### macOS
-
-MacOS 10.13+ (High Sierra) comes with a recent Ruby. So you can use it directly. You will need to install aspera-cli using `sudo` :
-
-```
-$ sudo gem install aspera-cli
-```
-
-Alternatively, if you use [Homebrew](https://brew.sh/) already you can install Ruby with it:
-
-```
-$ brew install ruby
-```
-
-### Linux
-
-If your Linux distribution provides a standard ruby package, you can use it provided that the version is compatible (check at beginning of section).
-
-Example:
-
-```
-# yum install -y ruby rubygems ruby-json
-```
-
-One can cleanup the whole yum-installed ruby environment like this to uninstall:
-
-```
-gem uninstall $(ls $(gem env gemdir)/gems/|sed -e 's/-[^-]*$//'|sort -u)
-yum remove -y ruby ruby-libs
-```
-
-### Other Unixes: Aix, etc...
-
-If your unix do not provide a pre-built ruby, you can get it using one of those
-[methods](https://www.ruby-lang.org/en/documentation/installation/)
-
-For instance to build from source, and install in `/opt/ruby` :
-
-```
-# wget https://cache.ruby-lang.org/pub/ruby/2.7/ruby-2.7.2.tar.gz
-# gzip -d ruby-2.7.2.tar.gz
-# tar xvf ruby-2.7.2.tar
-# cd ruby-2.7.2
-# ./configure --prefix=/opt/ruby
-# make ruby.imp
-# make
-# make install
-```
 
 ## <a name="the_gem"></a>`aspera-cli` gem
 
@@ -1430,7 +1433,7 @@ ascli aoc files browse /
 ascli aoc files browse / -N --link=my_aoc_publink_folder
 ascli aoc files delete /testsrc
 ascli aoc files download --transfer=connect /200KB.1
-ascli aoc files file my_file_id
+ascli aoc files file --id=my_file_id show
 ascli aoc files find / --value='\.partial$'
 ascli aoc files http_node_download --to-folder=. /200KB.1
 ascli aoc files mkdir /testsrc
@@ -1823,9 +1826,51 @@ SUBCOMMANDS: start admin
 OPTIONS:
         --parameters=VALUE           extended value for session set definition
         --session-name=VALUE         name of session to use for admin commands, by default first one
-ERROR: Other: undefined method `c_user_info' for class `Aspera::Cli::Plugins::Aoc'
-ERROR: Argument: unprocessed options: ["-Cnone"]
-Use '--log-level=debug' to get more details.
+
+
+COMMAND: aoc
+SUBCOMMANDS: apiinfo bearer_token organization tier_restrictions user workspace packages files gateway admin automation servers
+OPTIONS:
+        --url=VALUE                  URL of application, e.g. https://org.asperafiles.com
+        --username=VALUE             username to log in
+        --password=VALUE             user's password
+        --auth=ENUM                  type of Oauth authentication: body_userpass, header_userpass, web, jwt, url_token, ibm_apikey
+        --operation=ENUM             client operation for transfers: push, pull
+        --client-id=VALUE            API client identifier in application
+        --client-secret=VALUE        API client passcode
+        --redirect-uri=VALUE         API client redirect URI
+        --private-key=VALUE          RSA private key PEM value for JWT (prefix file path with @val:@file:)
+        --workspace=VALUE            name of workspace
+        --name=VALUE                 resource name
+        --path=VALUE                 file or folder path
+        --link=VALUE                 public link to shared resource
+        --new-user-option=VALUE      new user creation option
+        --from-folder=VALUE          share to share source folder
+        --scope=VALUE                scope for AoC API calls
+        --notify=VALUE               notify users that file was received
+        --bulk=ENUM                  bulk operation: yes, no
+        --default-ports=ENUM         use standard FASP ports or get from node api: yes, no
+
+
+COMMAND: server
+SUBCOMMANDS: health nodeadmin userdata configurator ctl download upload browse delete rename ls rm mv du info mkdir cp df md5sum
+OPTIONS:
+        --url=VALUE                  URL of application, e.g. https://org.asperafiles.com
+        --username=VALUE             username to log in
+        --password=VALUE             user's password
+        --ssh-keys=VALUE             ssh key path list (Array or single)
+        --ssh-options=VALUE          ssh options (Hash)
+        --cmd-prefix=VALUE           prefix to add for as cmd execution, e.g. sudo or /opt/aspera/bin 
+
+
+COMMAND: console
+SUBCOMMANDS: transfer health
+OPTIONS:
+        --url=VALUE                  URL of application, e.g. https://org.asperafiles.com
+        --username=VALUE             username to log in
+        --password=VALUE             user's password
+        --filter-from=DATE           only after date
+        --filter-to=DATE             only before date
 
 
 ```
@@ -3365,6 +3410,16 @@ $ cat $(ascli config gem_path)/../examples/transfer.rb
 This sample code shows some example of use of the API as well as
 REST API.
 Note: although nice, it's probably a good idea to use RestClient for REST.
+
+Example of use of the API of Aspera on Cloud:
+
+```
+require 'aspera/aoc'
+
+aoc=Aspera::AoC.new(url: 'https://sedemo.ibmaspera.com',auth: :jwt, scope: 'user:all', private_key: File.read(File.expand_path('~/.aspera/ascli/aspera_on_cloud_key')),username: 'laurent.martin.aspera@fr.ibm.com',subpath: 'api/v1')
+
+aoc.read('self')
+```
 
 # History
 

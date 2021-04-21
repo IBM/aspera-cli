@@ -27,6 +27,8 @@ This gem provides <%=tool%>: a command line interface to Aspera Applications.
 
 Location: [<%= gemspec.metadata['rubygems_uri'] %>](<%= gemspec.metadata['rubygems_uri'] %>)
 
+Ruby doc: [<%= gemspec.metadata['documentation_uri'] %>](<%= gemspec.metadata['documentation_uri'] %>)
+
 Ruby version must be >= <%= gemspec.required_ruby_version %>
 
 # <a name="when_to_use"></a>When to use and when not to use
@@ -141,13 +143,13 @@ Then, follow the section relative to the product you want to interact with ( Asp
 
 In order to use the tool or the gem, it is necessary to install those components:
 
-* [Ruby](#ruby)
+* [Ruby](#ruby) version >= <%= gemspec.required_ruby_version %>
 * [<%= gemspec.name %>](#the_gem)
-* [FASP](#fasp_prot)
+* [Aspera SDK (ascp)](#fasp_prot)
 
 The following sections provide information on the installation.
 
-An internet connection is required for the installation. If you dont have internet for the installation, refer to the last sub section.
+An internet connection is required for the installation. If you dont have internet for the installation, refer to section [Installation without internet access](#offline_install).
 
 ## <a name="ruby"></a>Ruby
 
@@ -155,14 +157,110 @@ A ruby interpreter is required to run the tool or to use the gem and tool.
 
 Ruby minimum version: <%= gemspec.required_ruby_version %>. Ruby version 3 is also supported.
 
-Any type of Ruby installation can be used (installer, rpm, rvm, ...).
+*Any type of Ruby installation can be used* : rpm, yum, dnf, rvm, brew, windows installer, ... .
 
 Refer to the following sections for a proposed method for specific operating systems.
 
 The recommended installation method is `rvm` for systems with "bash-like" shell (Linux, Macos, Windows with cygwin, etc...).
 If the generic install is not suitable (e.g. Windows, no cygwin), you can use one of OS-specific install method.
+If you have a simpler better way to install Ruby version >= <%= gemspec.required_ruby_version %> : use it !
 
-### Installation without internet access
+### Generic: RVM: single user installation (not root)
+
+Use this method which provides more flexibility.
+
+Install "rvm": follow [https://rvm.io/](https://rvm.io/) :
+
+* install the 2 keys
+* execute the shell/curl command
+
+As regular user, it install in the user's home: `~/.rvm` .
+
+It is advised to get one of the pre-compiled ruby version, you can list with: 
+
+```
+$ rvm list --remote
+```
+
+Then, install pre-compiled version:
+
+```
+# rvm install 2.7.2 --binary
+```
+
+### Generic: RVM: global installation (as root)
+
+Follow the same method as single user install, but execute as "root".
+
+As root, it installs by default in /usr/local/rvm for all users and creates `/etc/profile.d/rvm.sh`.
+One can install in another location with :
+
+```
+# curl -sSL https://get.rvm.io | bash -s -- --path /usr/local
+```
+
+As root, make sure this will not collide with other application using Ruby (e.g. Faspex).
+If so, one can rename the login script: `mv /etc/profile.d/rvm.sh /etc/profile.d/rvm.sh.ok`.
+To activate ruby (and ascli) later, source it: `source /etc/profile.d/rvm.sh.ok` .
+
+### Windows: Installer
+
+Install Latest stable Ruby using [https://rubyinstaller.org/](https://rubyinstaller.org/) :
+
+* Go to "Downloads".
+* Select the Ruby 2 version "without devkit", x64 corresponding to the one recommended "with devkit". Devkit is not needed.
+* At the end of the installer uncheck the box to skip the installation of "MSys2": not needed.
+
+### macOS: pre-installed or `brew`
+
+MacOS 10.13+ (High Sierra) comes with a recent Ruby. So you can use it directly. You will need to install <%= gemspec.name %> using `sudo` :
+
+```
+$ sudo gem install <%= gemspec.name %><%=geminstadd%>
+```
+
+Alternatively, if you use [Homebrew](https://brew.sh/) already you can install Ruby with it:
+
+```
+$ brew install ruby
+```
+
+### Linux: package
+
+If your Linux distribution provides a standard ruby package, you can use it provided that the version is compatible (check at beginning of section).
+
+Example:
+
+```
+# yum install -y ruby rubygems ruby-json
+```
+
+One can cleanup the whole yum-installed ruby environment like this to uninstall:
+
+```
+gem uninstall $(ls $(gem env gemdir)/gems/|sed -e 's/-[^-]*$//'|sort -u)
+yum remove -y ruby ruby-libs
+```
+
+### Other Unixes: Aix, etc...
+
+If your unix do not provide a pre-built ruby, you can get it using one of those
+[methods](https://www.ruby-lang.org/en/documentation/installation/)
+
+For instance to build from source, and install in `/opt/ruby` :
+
+```
+# wget https://cache.ruby-lang.org/pub/ruby/2.7/ruby-2.7.2.tar.gz
+# gzip -d ruby-2.7.2.tar.gz
+# tar xvf ruby-2.7.2.tar
+# cd ruby-2.7.2
+# ./configure --prefix=/opt/ruby
+# make ruby.imp
+# make
+# make install
+```
+
+### <a name="offline_install"></a>Installation without internet access
 
 Note that currently no pre-packaged version exist yet.
 A method to build one provided here:
@@ -205,101 +303,6 @@ $ ascli conf ascp install --sdk-url=file:///SDK.zip
 ```
 
 or restore the `$HOME/.aspera` folder for the user.
-
-### Generic single user installation (not root)
-
-Use this method which provides more flexibility.
-
-Install "rvm": follow [https://rvm.io/](https://rvm.io/) :
-
-* install the 2 keys
-* execute the shell/curl command
-
-As regular user, it install in the user's home: `~/.rvm` .
-
-It is advised to get one of the pre-compiled ruby version, you can list with: 
-
-```
-$ rvm list --remote
-```
-
-Then, install pre-compiled version:
-
-```
-# rvm install 2.7.2 --binary
-```
-
-### Generic global installation (as root)
-
-Follow the same method as single user install, but execute as "root".
-
-As root, it installs by default in /usr/local/rvm for all users and creates `/etc/profile.d/rvm.sh`.
-One can install in another location with :
-
-```
-# curl -sSL https://get.rvm.io | bash -s -- --path /usr/local
-```
-
-As root, make sure this will not collide with other application using Ruby (e.g. Faspex).
-If so, one can rename the login script: `mv /etc/profile.d/rvm.sh /etc/profile.d/rvm.sh.ok`.
-To activate ruby (and ascli) later, source it: `source /etc/profile.d/rvm.sh.ok` .
-
-### Windows
-
-Install Latest stable Ruby using [https://rubyinstaller.org/](https://rubyinstaller.org/) :
-
-* Go to "Downloads".
-* Select the Ruby 2 version "without devkit", x64 corresponding to the one recommended "with devkit". Devkit is not needed.
-* At the end of the installer uncheck the box to skip the installation of "MSys2": not needed.
-
-### macOS
-
-MacOS 10.13+ (High Sierra) comes with a recent Ruby. So you can use it directly. You will need to install <%= gemspec.name %> using `sudo` :
-
-```
-$ sudo gem install <%= gemspec.name %><%=geminstadd%>
-```
-
-Alternatively, if you use [Homebrew](https://brew.sh/) already you can install Ruby with it:
-
-```
-$ brew install ruby
-```
-
-### Linux
-
-If your Linux distribution provides a standard ruby package, you can use it provided that the version is compatible (check at beginning of section).
-
-Example:
-
-```
-# yum install -y ruby rubygems ruby-json
-```
-
-One can cleanup the whole yum-installed ruby environment like this to uninstall:
-
-```
-gem uninstall $(ls $(gem env gemdir)/gems/|sed -e 's/-[^-]*$//'|sort -u)
-yum remove -y ruby ruby-libs
-```
-
-### Other Unixes: Aix, etc...
-
-If your unix do not provide a pre-built ruby, you can get it using one of those
-[methods](https://www.ruby-lang.org/en/documentation/installation/)
-
-For instance to build from source, and install in `/opt/ruby` :
-
-```
-# wget https://cache.ruby-lang.org/pub/ruby/2.7/ruby-2.7.2.tar.gz
-# gzip -d ruby-2.7.2.tar.gz
-# tar xvf ruby-2.7.2.tar
-# cd ruby-2.7.2
-# ./configure --prefix=/opt/ruby
-# make ruby.imp
-# make
-# make install
-```
 
 ## <a name="the_gem"></a>`<%= gemspec.name %>` gem
 
@@ -2833,6 +2836,16 @@ $ cat $(<%=cmd%> config gem_path)/../examples/transfer.rb
 This sample code shows some example of use of the API as well as
 REST API.
 Note: although nice, it's probably a good idea to use RestClient for REST.
+
+Example of use of the API of Aspera on Cloud:
+
+```
+require 'aspera/aoc'
+
+aoc=Aspera::AoC.new(url: 'https://sedemo.ibmaspera.com',auth: :jwt, scope: 'user:all', private_key: File.read(File.expand_path('~/.aspera/ascli/aspera_on_cloud_key')),username: 'laurent.martin.aspera@fr.ibm.com',subpath: 'api/v1')
+
+aoc.read('self')
+```
 
 # History
 
