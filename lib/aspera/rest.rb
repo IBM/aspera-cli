@@ -99,6 +99,7 @@ module Aspera
     public
 
     attr_reader :params
+    attr_reader :oauth
 
     # @param a_rest_params default call parameters and authentication (:auth) :
     # :type (:basic, :oauth2, :url)
