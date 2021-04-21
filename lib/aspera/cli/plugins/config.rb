@@ -45,13 +45,14 @@ module Aspera
         CONNECT_VERSIONS = 'connectversions.js'
         TRANSFER_SDK_ARCHIVE_URL = 'https://ibm.biz/aspera_sdk'
         DEMO='demo'
+        AOC_PATH_API_CLIENTS='admin/api-clients'
         def option_preset; nil; end
 
         def option_preset=(value)
           self.options.add_option_preset(preset_by_name(value))
         end
 
-        private_constant :ASPERA_HOME_FOLDER_NAME,:DEFAULT_CONFIG_FILENAME,:CONF_PRESET_CONFIG,:CONF_PRESET_VERSION,:CONF_PRESET_DEFAULT,:PROGRAM_NAME_V1,:PROGRAM_NAME_V2,:DEFAULT_REDIRECT,:ASPERA_PLUGINS_FOLDERNAME,:RUBY_FILE_EXT,:AOC_COMMAND_V1,:AOC_COMMAND_V2,:AOC_COMMAND_V3,:AOC_COMMAND_CURRENT,:DEMO,:TRANSFER_SDK_ARCHIVE_URL
+        private_constant :ASPERA_HOME_FOLDER_NAME,:DEFAULT_CONFIG_FILENAME,:CONF_PRESET_CONFIG,:CONF_PRESET_VERSION,:CONF_PRESET_DEFAULT,:PROGRAM_NAME_V1,:PROGRAM_NAME_V2,:DEFAULT_REDIRECT,:ASPERA_PLUGINS_FOLDERNAME,:RUBY_FILE_EXT,:AOC_COMMAND_V1,:AOC_COMMAND_V2,:AOC_COMMAND_V3,:AOC_COMMAND_CURRENT,:DEMO,:TRANSFER_SDK_ARCHIVE_URL,:AOC_PATH_API_CLIENTS
         attr_accessor :option_ak_secret,:option_secrets
 
         def initialize(env,tool_name,help_url,version)
@@ -641,7 +642,6 @@ module Aspera
             return {:type=>:object_list,:data=>self.class.flatten_all_config(@config_presets)}
           when :wizard
             self.options.ask_missing_mandatory=true
-            #self.options.set_option(:interactive,:yes)
             # register url option
             BasicAuthPlugin.new(@agents.merge(skip_option_header: true))
             instance_url=self.options.get_option(:url,:mandatory)
@@ -678,12 +678,13 @@ module Aspera
               end
               self.format.display_status("#{private_key_path}")
               pub_key_pem=OpenSSL::PKey::RSA.new(File.read(private_key_path)).public_key.to_s
-              # define options
+              # declare command line options for AoC
               require 'aspera/cli/plugins/aoc'
               # make username mandatory for jwt, this triggers interactive input
               self.options.get_option(:username,:mandatory)
-              # instanciate AoC plugin
+              # instanciate AoC plugin, so that command line options are known
               files_plugin=self.class.plugin_new(AOC_COMMAND_CURRENT,@agents.merge({skip_basic_auth_options: true, private_key_path: private_key_path}))
+              aoc_api=files_plugin.api_aoc
               auto_set_pub_key=false
               auto_set_jwt=false
               use_browser_authentication=false
@@ -710,29 +711,28 @@ module Aspera
                   self.format.display_status("Once created or identified,")
                   self.format.display_status("Please enter:".red)
                 end
-                OpenApplication.instance.uri(instance_url+"/admin/org/integrations")
+                OpenApplication.instance.uri("#{instance_url}/#{AOC_PATH_API_CLIENTS}")
                 self.options.get_option(:client_id,:mandatory)
                 self.options.get_option(:client_secret,:mandatory)
                 use_browser_authentication=true
               end
               if use_browser_authentication
                 self.format.display_status("We will use web authentication to bootstrap.")
-                self.options.set_option(:auth,:web)
-                self.options.set_option(:redirect_uri,DEFAULT_REDIRECT)
                 auto_set_pub_key=true
                 auto_set_jwt=true
-                self.options.set_option(:scope,AoC::SCOPE_FILES_ADMIN)
+                @api_aoc.oauth.params[:auth]=:web
+                @api_aoc.oauth.params[:redirect_uri]=DEFAULT_REDIRECT
+                @api_aoc.oauth.params[:scope]=AoC::SCOPE_FILES_ADMIN
               end
-              files_plugin.update_aoc_api
-              myself=files_plugin.api_aoc.read('self')[:data]
+              myself=aoc_api.read('self')[:data]
               if auto_set_pub_key
-                raise CliError,"public key is already set in profile (use --override=yes)"  unless myself['public_key'].empty? or option_override
-                self.format.display_status("Updating profile with new key")
-                files_plugin.api_aoc.update("users/#{myself['id']}",{'public_key'=>pub_key_pem})
+                raise CliError,'public key is already set in profile (use --override=yes)'  unless myself['public_key'].empty? or option_override
+                self.format.display_status('Updating profile with new key')
+                aoc_api.update("users/#{myself['id']}",{'public_key'=>pub_key_pem})
               end
               if auto_set_jwt
                 self.format.display_status("Enabling JWT for client")
-                files_plugin.api_aoc.update("clients/#{self.options.get_option(:client_id)}",{'jwt_grant_enabled'=>true,'explicit_authorization_required'=>false})
+                aoc_api.update("clients/#{self.options.get_option(:client_id)}",{'jwt_grant_enabled'=>true,'explicit_authorization_required'=>false})
               end
               self.format.display_status("creating new config preset: #{aspera_preset_name}")
               @config_presets[aspera_preset_name]={
