@@ -28,7 +28,13 @@ module Aspera
       end
 
       def persist_mgr
-        raise "set persistency manager first" if @persist.nil?
+        if @persist.nil?
+          Log.log.warn('Not using persistency (use Aspera::Oauth.persist_mgr=Aspera::PersistencyFolder.new)')
+          # create NULL persistency class
+          @persist=Class.new do
+            def get(x);nil;end;def delete(x);nil;end;def put(x,y);nil;end;def flush_by_prefix(x);nil;end
+          end.new
+        end
         return @persist
       end
 
@@ -116,6 +122,9 @@ module Aspera
     end
 
     public
+
+    # used to change parameter, such as scope
+    attr_reader :params
 
     # @param options : :scope and :refresh
     def get_authorization(options={})
