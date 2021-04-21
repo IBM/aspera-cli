@@ -3,6 +3,8 @@ require 'base64'
 module Aspera
   # Provides additional functions using node API.
   class Node < Rest
+    # permissions
+    ACCESS_LEVELS=['delete','list','mkdir','preview','read','rename','write']
     def self.decode_bearer_token(token)
       return JSON.parse(Zlib::Inflate.inflate(Base64.decode64(token)).partition('==SIGNATURE==').first)
     end
