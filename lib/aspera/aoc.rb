@@ -293,6 +293,7 @@ module Aspera
     # no scope: requires secret
     # if secret provided beforehand: use it
     def get_node_api(node_info,node_scope=nil)
+      # X-Aspera-AccessKey required for bearer token only
       node_rest_params={
         :base_url => node_info['url'],
         :headers  => {'X-Aspera-AccessKey'=>node_info['access_key']},
