@@ -6,6 +6,11 @@ module Aspera
   # create a temp file name for a given folder
   # files can be deleted on process exit by calling cleanup
   class TempFileManager
+    SEC_IN_DAY=86400
+    # assume no transfer last longer than this
+    # (garbage collect file list which were not deleted after transfer)
+    FILE_LIST_AGE_MAX_SEC=5*SEC_IN_DAY
+    private_constant :SEC_IN_DAY,:FILE_LIST_AGE_MAX_SEC
     include Singleton
     def initialize
       @created_files=[]
@@ -32,6 +37,20 @@ module Aspera
     def new_file_path_global(base_name)
       username = Etc.getlogin || Etc.getpwuid(Process.uid).name || 'unknown_user' rescue 'unknown_user'
       return new_file_path_in_folder(Etc.systmpdir,base_name+'_'+username+'_')
+    end
+
+    def cleanup_expired(temp_folder)
+      # garbage collect undeleted files
+      Dir.entries(temp_folder).each do |name|
+        file_path=File.join(temp_folder,name)
+        age_sec=(Time.now - File.stat(file_path).mtime).to_i
+        # check age of file, delete too old
+        if File.file?(file_path) and age_sec > FILE_LIST_AGE_MAX_SEC
+          Log.log.debug("garbage collecting #{name}")
+          File.delete(file_path)
+        end
+      end
+
     end
   end
 end

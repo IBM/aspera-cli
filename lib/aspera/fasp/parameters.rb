@@ -16,10 +16,6 @@ module Aspera
       # because of garbage collection takes any file there
       # this could be refined, as , for instance, on macos, temp folder is already user specific
       @@file_list_folder=TempFileManager.instance.new_file_path_global('asession_filelists')
-      SEC_IN_DAY=86400
-      # assume no transfer last longer than this
-      # (garbage collect file list which were not deleted after transfer)
-      FILE_LIST_AGE_MAX_SEC=5*SEC_IN_DAY
       PARAM_DEFINITION={
         # parameters with env vars
         'remote_password'         => { :type => :envvar, :variable=>'ASPERA_SCP_PASS'},
@@ -100,7 +96,7 @@ module Aspera
         'wss_port'                => { :type => :defer, :accepted_types=>Integer},
       }
 
-      private_constant :SEC_IN_DAY,:FILE_LIST_AGE_MAX_SEC,:PARAM_DEFINITION
+      private_constant :PARAM_DEFINITION
 
       def initialize(job_spec,options)
         @job_spec=job_spec
@@ -207,18 +203,9 @@ module Aspera
       # temp file list files are created here
       def self.file_list_folder=(v)
         @@file_list_folder=v
-        unless @@file_list_folder.nil?
+        if !@@file_list_folder.nil?
           FileUtils.mkdir_p(@@file_list_folder)
-          # garbage collect undeleted files
-          Dir.entries(@@file_list_folder).each do |name|
-            file_path=File.join(@@file_list_folder,name)
-            age_sec=(Time.now - File.stat(file_path).mtime).to_i
-            # check age of file, delete too old
-            if File.file?(file_path) and age_sec > FILE_LIST_AGE_MAX_SEC
-              Log.log.debug("garbage collecting #{name}")
-              File.delete(file_path)
-            end
-          end
+          TempFileManager.instance.cleanup_expired(@@file_list_folder)
         end
       end
 
