@@ -232,23 +232,26 @@ module Aspera
             end # case
           end # loop (process mgt port lines)
           # check that last status was received before process exit
-          raise "INTERNAL: nil last status" if last_status_event.nil?
-          case last_status_event['Type']
-          when 'DONE'
-            # return method (or just don't do anything)
-            return
-          when 'ERROR'
-            Log.log.error("code: #{last_status_event['Code']}")
-            if last_status_event['Description']  =~ /bearer token/i
-              Log.log.error("need to regenerate token".red)
-              if session[:options].is_a?(Hash) and session[:options].has_key?(:regenerate_token)
-                # regenerate token here, expired, or error on it
-                env_args[:env]['ASPERA_SCP_TOKEN']=session[:options][:regenerate_token].call(true)
-              end
-            end
-            raise Fasp::Error.new(last_status_event['Description'],last_status_event['Code'].to_i)
+          if last_status_event.nil?
+            Log.log.warn("no status read from ascp mgt port")
           else
-            raise "unexpected last event type: #{last_status_event['Type']}"
+            case last_status_event['Type']
+            when 'DONE'
+              # return method (or just don't do anything)
+              return
+            when 'ERROR'
+              Log.log.error("code: #{last_status_event['Code']}")
+              if last_status_event['Description']  =~ /bearer token/i
+                Log.log.error("need to regenerate token".red)
+                if session[:options].is_a?(Hash) and session[:options].has_key?(:regenerate_token)
+                  # regenerate token here, expired, or error on it
+                  env_args[:env]['ASPERA_SCP_TOKEN']=session[:options][:regenerate_token].call(true)
+                end
+              end
+              raise Fasp::Error.new(last_status_event['Description'],last_status_event['Code'].to_i)
+            else
+              raise "unexpected last event type: #{last_status_event['Type']}"
+            end
           end
         rescue SystemCallError => e
           # Process.spawn
@@ -262,8 +265,12 @@ module Aspera
           unless ascp_pid.nil?
             # "wait" for process to avoid zombie
             Process.wait(ascp_pid)
+            status=$?
             ascp_pid=nil
             session.delete(:io)
+            if !status.success?
+              raise Fasp::Error.new("ascp failed with code #{status.exitstatus}")
+            end
           end
         end # begin-ensure
       end # start_transfer_with_args_env
@@ -301,8 +308,9 @@ module Aspera
         @jobs={}
         # mutex protects global data accessed by threads
         @mutex=Mutex.new
-        @resume_policy=ResumePolicy.new(agent_options)
         @enable_wss = agent_options[:wss] || false
+        agent_options.delete(:wss)
+        @resume_policy=ResumePolicy.new(agent_options)
       end
 
       # transfer thread entry
