@@ -8,9 +8,9 @@ Gem::Specification.new do |spec|
   spec.version       = Asperalm::Cli::Main::gem_version
   spec.authors       = ['Laurent Martin']
   spec.email         = ['laurent.martin.aspera@fr.ibm.com']
-  spec.summary       = 'gem and command line tool for Aspera Server products: Aspera on Cloud, Faspex, Shares, Node, Console, Orchestrator, Transfer Server'
-  spec.description   = 'A powerful transfer gem and CLI for IBM Aspera products.'
-  spec.homepage      = 'https://ibm.com/aspera'
+  spec.summary       = 'This Gem is deprecated, and is not replaced by aspera-cli . Refer to the latest aspera-cli gem. Do not use this one any more.'
+  spec.description   = 'DEPRECATED: Use aspera-cli gem'
+  spec.homepage      = 'https://rubygems.org/gems/aspera-cli'
   spec.license       = 'Apache-2.0'
 
   # Prevent pushing this gem to RubyGems.org. To allow pushes either set the 'allowed_push_host'
