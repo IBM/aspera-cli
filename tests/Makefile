@@ -384,7 +384,7 @@ $(T)aocffid: $(T).exists
 	@echo $@
 	set -x;\
 	file_id=$$($(EXE_NOMAN) aoc files br /200KB.1 --fields=id --format=csv --display=data);\
-	$(EXE_MAN) aoc files file $${file_id}
+	$(EXE_MAN) aoc files file --id=$${file_id} show
 	@touch $@
 $(T)aocfpub: $(T).exists
 	@echo $@
