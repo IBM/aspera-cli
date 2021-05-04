@@ -1,5 +1,5 @@
 [comment1]: # (Do not edit this README.md, edit docs/README.erb.md, for details, read docs/README.md)
-# `ascli` : a Command Line for IBM Aspera products
+# `ascli` : Command Line Interface for IBM Aspera products
 
 Version : 4.0.1.20110407
 
@@ -7,11 +7,11 @@ _Laurent/2016-2021_
 
 This gem provides `ascli`: a command line interface to Aspera Applications.
 
-`ascli` is a great tool to learn Aspera APIs.
+`ascli` is a also great tool to learn Aspera APIs.
 
-Location: [https://rubygems.org/gems/aspera-cli](https://rubygems.org/gems/aspera-cli)
+Ruby Gem: [https://rubygems.org/gems/aspera-cli](https://rubygems.org/gems/aspera-cli)
 
-Ruby doc: [https://www.rubydoc.info/gems/aspera-cli](https://www.rubydoc.info/gems/aspera-cli)
+Ruby Doc: [https://www.rubydoc.info/gems/aspera-cli](https://www.rubydoc.info/gems/aspera-cli)
 
 Ruby version must be >= > 2.4
 
@@ -34,14 +34,14 @@ So it is designed for:
 * Aspera transfer (ascp)
 
 One might be tempted to use it as an integration element, e.g. by building a command line programmatically, and then executing it. It is generally not a good idea.
-For such integration cases, such as performing operations and transfer to aspera products, it is preferred to use [Aspera APIs](https://ibm.biz/aspera_api):
+For such integration cases, e.g. performing operations and transfer to aspera products, it is preferred to use [Aspera APIs](https://ibm.biz/aspera_api):
 
 * Product APIs (REST) : e.g. AoC, Faspex, node
-* Transfer SDK : with gRPC interface.
+* Transfer SDK : with gRPC interface and laguage stubs (C, C++, Python, .NET/C#, java, ruby, etc...)
 
 Using APIs (application REST API and transfer SDK) will prove to be easier to develop and maintain.
 
-For scripting and ad hoc command line operations, `ascli` is perfect.
+For scripting and ad'hoc command line operations, `ascli` is perfect.
 
 # Notations
 
@@ -155,10 +155,23 @@ Use this method which provides more flexibility.
 
 Install "rvm": follow [https://rvm.io/](https://rvm.io/) :
 
-* install the 2 keys
-* execute the shell/curl command
+Install the 2 keys
 
-As regular user, it install in the user's home: `~/.rvm` .
+```
+$ gpg2 --keyserver hkp://pool.sks-keyservers.net --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3 7D2BAF1CF37B13E2069D6956105BD0E739499BDB
+```
+
+Execute the shell/curl command. As regular user, it install in the user's home: `~/.rvm` .
+
+```
+$ \curl -sSL https://get.rvm.io | bash -s stable
+```
+
+If you keep the same terminal (ont needed if re-login):
+
+```
+$ source ~/.rvm/scripts/rvm
+```
 
 It is advised to get one of the pre-compiled ruby version, you can list with: 
 
@@ -166,11 +179,13 @@ It is advised to get one of the pre-compiled ruby version, you can list with:
 $ rvm list --remote
 ```
 
-Then, install pre-compiled version:
+Install the chosen pre-compiled Ruby version:
 
 ```
-# rvm install 2.7.2 --binary
+$ rvm install 2.7.2 --binary
 ```
+
+Ruby is now installed for the user, go on to Gem installation.
 
 ### Generic: RVM: global installation (as root)
 
@@ -185,7 +200,12 @@ One can install in another location with :
 
 As root, make sure this will not collide with other application using Ruby (e.g. Faspex).
 If so, one can rename the login script: `mv /etc/profile.d/rvm.sh /etc/profile.d/rvm.sh.ok`.
-To activate ruby (and ascli) later, source it: `source /etc/profile.d/rvm.sh.ok` .
+To activate ruby (and ascli) later, source it:
+
+```
+# source /etc/profile.d/rvm.sh.ok
+# rvm version
+```
 
 ### Windows: Installer
 
