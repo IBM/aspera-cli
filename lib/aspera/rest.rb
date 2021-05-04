@@ -225,7 +225,7 @@ module Aspera
             target_file=call_data[:save_to_file]
             # override user's path to path in header
             if !response['Content-Disposition'].nil? and m=response['Content-Disposition'].match(/filename="([^"]+)"/)
-              target_file=m[1]
+              target_file=File.join(File.dirname(target_file),m[1])
             end
             # download with temp filename
             target_file_tmp=target_file+'.http.partial'
