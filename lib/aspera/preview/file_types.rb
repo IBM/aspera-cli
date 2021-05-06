@@ -1,5 +1,7 @@
 require 'mimemagic'
-require 'mimemagic/overlay'
+require 'mimemagic/version'
+require 'mimemagic/overlay' if MimeMagic::VERSION.start_with?('0.3.')
+require 'aspera/log'
 
 module Aspera
   module Preview
@@ -269,9 +271,12 @@ module Aspera
       #private_constant :SUPPORTED_MIME_TYPES, :SUPPORTED_EXTENSIONS
 
       def self.mime_from_file(filepath)
+        # check magic number inside file
         detected_mime=MimeMagic.by_magic(File.open(filepath)).to_s
-        detected_mime=MimeMagic.by_path(filepath).to_s if detected_mime.empty?
+        # check extension only
+        detected_mime=MimeMagic.by_extension(File.extname(filepath)).to_s if detected_mime.empty?
         detected_mime=nil if detected_mime.empty?
+        Log.log.debug("mime_from_file: #{detected_mime.class.name} [#{detected_mime}]")
         return detected_mime
       end
 
@@ -293,6 +298,7 @@ module Aspera
         extension = File.extname(filepath).downcase.gsub(/^\./,'')
         # 3- else, from local extensions
         result||=FileTypes::SUPPORTED_EXTENSIONS[extension]
+        Log.log.debug("conversion_type: #{result.class.name} [#{result}]")
         return result
       end
     end

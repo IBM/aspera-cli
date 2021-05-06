@@ -446,7 +446,8 @@ module Aspera
             source = self.options.get_next_argument('source file')
             dest=preview_filename(format,self.options.get_option(:case,:optional))
             g=Aspera::Preview::Generator.new(@gen_options,source,dest,@tmp_folder)
-            raise "format not supported: #{format}" unless g.supported?
+            raise "cannot find file type for #{source}" if g.conversion_type.nil?
+            raise "out format #{format} not supported" unless g.supported?
             g.generate
             return Main.result_status("generated: #{dest}")
           else
