@@ -89,11 +89,6 @@ module Aspera
 
         NODE4_COMMANDS=[ :browse, :find, :mkdir, :rename, :delete, :upload, :download, :transfer, :http_node_download, :v3, :file, :bearer_token_node ]
 
-        def node_gen4_execute_action(top_node_file)
-          command_repo=self.options.get_next_command(NODE4_COMMANDS)
-          return execute_node_gen4_command(command_repo,top_node_file)
-        end
-
         def execute_node_gen4_command(command_repo,top_node_file)
           case command_repo
           when :bearer_token_node
@@ -651,7 +646,8 @@ module Aspera
               api_node=@api_aoc.get_node_api(res_data)
               return Node.new(@agents.merge(skip_basic_auth_options: true, node_api: api_node)).execute_action if command.eql?(:v3)
               ak_data=api_node.call({:operation=>'GET',:subpath=>"access_keys/#{res_data['access_key']}",:headers=>{'Accept'=>'application/json'}})[:data]
-              return node_gen4_execute_action({node_info: res_data, file_id: ak_data['root_file_id']})
+              command_repo=self.options.get_next_command(NODE4_COMMANDS)
+              return execute_node_gen4_command(command_repo,{node_info: res_data, file_id: ak_data['root_file_id']})
             when :shared_folders
               read_params = case resource_type
               when :workspace;{'access_id'=>"ASPERA_ACCESS_KEY_ADMIN_WS_#{res_id}",'access_type'=>'user'}
@@ -957,10 +953,9 @@ module Aspera
           when :admin
             return execute_admin_action
           when :servers
-            self.format.display_status("Beta feature")
-            server_api=Rest.new(base_url: 'https://eudemo.asperademo.com')
-            require 'json'
-            servers=JSON.parse(server_api.read('servers')[:data])
+            self.format.display_status("Beta feature: #{@api_aoc.params[:base_url]}")
+            server_api=Rest.new(base_url: @api_aoc.params[:base_url])
+            servers=server_api.read('servers')[:data]
             return {:type=>:object_list,:data=>servers}
           else
             raise "internal error: #{command}"
