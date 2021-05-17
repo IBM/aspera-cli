@@ -313,7 +313,7 @@ module Aspera
         node_rest_params[:auth]=self.params[:auth].clone
         node_rest_params[:auth][:scope]=self.class.node_scope(node_info['access_key'],node_scope)
       end
-      return Rest.new(node_rest_params)
+      return Node.new(node_rest_params)
     end
 
     # check that parameter has necessary types
@@ -329,102 +329,82 @@ module Aspera
       return node_info,file_id
     end
 
-    # returns node api and folder_id from soft link
-    def read_asplnk(current_file_info)
-      new_node_api=get_node_api(self.read("nodes/#{current_file_info['target_node_id']}")[:data],SCOPE_NODE_USER)
-      return {:node_api=>new_node_api,:folder_id=>current_file_info['target_id']}
+    # add entry to list if test block is success
+    def process_find_files(entry,path)
+      begin
+        # add to result if match filter
+        @find_state[:found].push(entry.merge({'path'=>path})) if @find_state[:test_block].call(entry)
+        # process link
+        if entry[:type].eql?('link')
+          sub_node_info=self.read("nodes/#{entry['target_node_id']}")[:data]
+          sub_opt={method: process_find_files, top_file_id: entry['target_id'], top_file_path: path}
+          get_node_api(sub_node_info,SCOPE_NODE_USER).crawl(self,sub_opt)
+        end
+      rescue => e
+        Log.log.error("#{path}: #{e.message}")
+      end
+      # process all folders
+      return true
     end
 
-    # @returns list of file paths that match given regex
     def find_files( top_node_file, test_block )
       top_node_info,top_file_id=check_get_node_file(top_node_file)
       Log.log.debug("find_files: node_info=#{top_node_info}, fileid=#{top_file_id}")
-      result=[]
-      top_node_api=get_node_api(top_node_info,SCOPE_NODE_USER)
-      # initialize loop elements : list of folders to scan
-      # Note: top file id is necessarily a folder
-      items_to_explore=[{:node_api=>top_node_api,:folder_id=>top_file_id,:path=>''}]
-
-      while !items_to_explore.empty? do
-        current_item = items_to_explore.shift
-        Log.log.debug("searching #{current_item[:path]}".bg_green)
-        # get folder content
-        begin
-          folder_contents = current_item[:node_api].read("files/#{current_item[:folder_id]}/files")[:data]
-        rescue => e
-          Log.log.warn("#{current_item[:path]}: #{e.message}")
-          folder_contents=[]
-        end
-        # TODO: check if this is a folder or file ?
-        Log.dump(:folder_contents,folder_contents)
-        folder_contents.each do |current_file_info|
-          item_path=File.join(current_item[:path],current_file_info['name'])
-          Log.log.debug("looking #{item_path}".bg_green)
-          begin
-            # does item match ?
-            result.push(current_file_info.merge({'path'=>item_path})) if test_block.call(current_file_info)
-            # does it need further processing ?
-            case current_file_info['type']
-            when 'file'
-              Log.log.debug("testing : #{current_file_info['name']}")
-            when 'folder'
-              items_to_explore.push({:node_api=>current_item[:node_api],:folder_id=>current_file_info['id'],:path=>item_path})
-            when 'link' # .*.asp-lnk
-              items_to_explore.push(read_asplnk(current_file_info).merge({:path=>item_path}))
-            else
-              Log.log.error("unknown folder item type: #{current_file_info['type']}")
-            end
-          rescue => e
-            Log.log.error("#{item_path}: #{e.message}")
-          end
-        end
-      end
+      @find_state={found: [], test_block: test_block}
+      get_node_api(top_node_info,SCOPE_NODE_USER).crawl(self,{method: :process_find_files, top_file_id: top_file_id})
+      result=@find_state[:found]
+      @find_state=nil
       return result
     end
 
-    # @return node information (returned by API) and file id, from a "/" based path
-    # supports links to secondary nodes
-    # input: Array(root node,file id), String path
-    # output: Array(node_info,file_id)   for the given path
-    def resolve_node_file( top_node_file, element_path_string='' )
-      Log.log.debug("resolve_node_file: top_node_file=#{top_node_file}, path=#{element_path_string}")
-      # initialize loop invariants
-      current_node_info,current_file_id=check_get_node_file(top_node_file)
-      items_to_explore=element_path_string.split(PATH_SEPARATOR).select{|i| !i.empty?}
-
-      while !items_to_explore.empty? do
-        current_item = items_to_explore.shift
-        Log.log.debug "searching #{current_item}".bg_green
-        # get API if changed
-        current_node_api=get_node_api(current_node_info,SCOPE_NODE_USER) if current_node_api.nil?
-        # get folder content
-        folder_contents = current_node_api.read("files/#{current_file_id}/files")
-        Log.dump(:folder_contents,folder_contents)
-        matching_folders = folder_contents[:data].select { |i| i['name'].eql?(current_item)}
-        #Log.log.debug "matching_folders: #{matching_folders}"
-        raise "no such folder: #{current_item} in #{folder_contents[:data].map { |i| i['name']}}" if matching_folders.empty?
-        current_file_info = matching_folders.first
-        # process type of file
-        case current_file_info['type']
-        when 'file'
-          current_file_id=current_file_info['id']
-          # a file shall be terminal
-          if !items_to_explore.empty? then
-            raise "#{current_item} is a file, expecting folder to find: #{items_to_explore}"
-          end
-        when 'link'
-          current_node_info=self.read("nodes/#{current_file_info['target_node_id']}")[:data]
-          current_file_id=current_file_info['target_id']
-          # need to switch node
-          current_node_api=nil
-        when 'folder'
-          current_file_id=current_file_info['id']
+    def process_resolve_node_file(entry,path)
+      # stop digging here if not in right path
+      return false unless entry['name'].eql?(@resolve_state[:path].first)
+      # ok it matches, so we remove the match
+      @resolve_state[:path].shift
+      case entry['type']
+      when 'file'
+        # file must be terminal
+        raise "#{entry['name']} is a file, expecting folder to find: #{@resolve_state[:path]}" unless @resolve_state[:path].empty?
+        @resolve_state[:result][:file_id]=entry['id']
+      when 'link'
+        @resolve_state[:result][:node_info]=self.read("nodes/#{entry['target_node_id']}")[:data]
+        if @resolve_state[:path].empty?
+          @resolve_state[:result][:file_id]=entry['target_id']
         else
-          Log.log.warn("unknown element type: #{current_file_info['type']}")
+          get_node_api(@resolve_state[:result][:node_info],SCOPE_NODE_USER).crawl(self,{method: :process_resolve_node_file, top_file_id: entry['target_id']})
         end
+      when 'folder'
+        if @resolve_state[:path].empty?
+          # found: store
+          @resolve_state[:result][:file_id]=entry['id']
+          return false
+        end
+      else
+        Log.log.warn("unknown element type: #{entry['type']}")
       end
-      Log.log.info("resolve_node_file(#{element_path_string}): file_id=#{current_file_id},node_info=#{current_node_info}")
-      return {node_info: current_node_info, file_id: current_file_id}
+      # continue to dig folder
+      return true
+    end
+
+    # @return Array(node_info,file_id)   for the given path
+    # @param top_node_file       Array    [root node,file id]
+    # @param element_path_string String   path of element
+    # supports links to secondary nodes
+    def resolve_node_file( top_node_file, element_path_string )
+      top_node_info,top_file_id=check_get_node_file(top_node_file)
+      path_elements=element_path_string.split(PATH_SEPARATOR).select{|i| !i.empty?}
+      result={node_info: top_node_info, file_id: nil}
+      if path_elements.empty?
+        result[:file_id]=top_file_id
+      else
+        @resolve_state={path: path_elements, result: result}
+        get_node_api(top_node_info,SCOPE_NODE_USER).crawl(self,{method: :process_resolve_node_file, top_file_id: top_file_id})
+        not_found=@resolve_state[:path]
+        @resolve_state=nil
+        raise "entry not found: #{not_found}" if result[:file_id].nil?
+      end
+      return result
     end
 
   end # AoC
