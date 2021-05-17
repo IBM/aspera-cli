@@ -67,7 +67,10 @@ module Aspera
         when :delete
           rest_api.delete(one_res_path)
           return Main.result_status("deleted")
+        else
+          raise "unknown action: #{command}"
         end
+        raise "internal error should not reach here"
       end
 
       # implement generic rest operations on given resource path
