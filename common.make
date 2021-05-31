@@ -13,8 +13,10 @@ GEMSPEC=$(DIR_TOP)$(GEMNAME).gemspec
 # makefile for integration tests, used for doc generation
 TEST_MAKEFILE=$(DIR_TST)Makefile
 
-# configuration file used for tests, create your own from template in "docs"
+# configuration file used for tests, template is generated in "docs"
 TEST_CONF_FILE_BASE=test_env.conf
+
+# this is the actual conf file, create your own from template located in "docs"
 TEST_CONF_FILE_PATH=$(DIR_PRIV)$(TEST_CONF_FILE_BASE)
 
 # just the name of the command line tool as in bin folder

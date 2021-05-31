@@ -1,6 +1,7 @@
 ##################################
 # Integration tests
 
+# root folder is one level up
 DIR_TOP=../
 
 include $(DIR_TOP)common.make
@@ -31,12 +32,12 @@ CF_AOC_EXTERNAL_EMAIL := $(shell $(EXE_NOMAN) conf id misc get email_external)
 CF_FASPEX_USERNAME := $(shell $(EXE_NOMAN) conf id tst_faspex get username)
 CF_HTTP_GW_FQDN := $(shell $(EXE_NOMAN) conf id misc get http_gw_fqdn_port)
 
-# setup local environment for preview generation testing
+# setup local environment on Macos for preview generation testing
 setupprev:
 	-sudo asnodeadmin -d -u $$($(EXE_NOMAN) conf id tst_node_preview get username)
 	sudo asnodeadmin -a -u $$($(EXE_NOMAN) conf id tst_node_preview get username) -p $$($(EXE_NOMAN) conf id tst_node_preview get password) -x xfer --acl-set admin,impersonation
 	sudo asconfigurator -x "user;user_name,xfer;file_restriction,|*;token_encryption_key,$$(base64 < /dev/urandom|head -c32);absolute,AS_NULL"
-	sudo asconfigurator -x "server;activity_logging,true;activity_event_logging,true"
+	sudo asconfigurator -x "server;activity_logging,true;activity_event_logging,true;ssh_port,22"
 	-sudo launchctl load  /Library/LaunchDaemons/com.aspera.asperanoded.plist
 	if test $$(id -u asperadaemon) -ne $$(stat -f "%u" /Library/Logs/Aspera); then \
 	  echo Fixing right;sudo chown asperadaemon: /Library/Logs/Aspera;\
@@ -51,9 +52,9 @@ noderestart:
 	sudo launchctl stop com.aspera.asperanoded
 	sudo launchctl start com.aspera.asperanoded
 
-# default download folder for Connect Client
-DIR_CONNECT_DOWNLOAD=$(HOME)/Desktop
-PKG_TEST_TITLE=$(shell date)
+# default download folder for Connect Client (used to cleanup and avoid confirmation from connect when overwrite)
+DIR_CONNECT_DOWNLOAD=$(HOME)/Downloads
+PKG_TEST_TITLE="Test Pkg $(shell date)"
 
 # flag files for integration tests generated here
 T=$(DIR_TMP)t/
