@@ -218,11 +218,15 @@ module Aspera
               {node_info: top_node_file[:node_info],file_id: self.options.get_option(:id,:mandatory)}
             end
             node_api=@api_aoc.get_node_api(node_file[:node_info],AoC::SCOPE_NODE_USER)
-            command_node_file=self.options.get_next_command([:show,:permission])
+            command_node_file=self.options.get_next_command([:show,:permission,:modify])
             case command_node_file
             when :show
               items=node_api.read("files/#{node_file[:file_id]}")[:data]
               return {:type=>:single_object,:data=>items}
+            when :modify
+              update_param=self.options.get_next_argument("update data (Hash)")
+              res=node_api.update("files/#{node_file[:file_id]}",update_param)[:data]
+              return {:type=>:single_object,:data=>res}
             when :permission
               command_perm=self.options.get_next_command([:list,:create])
               case command_perm
