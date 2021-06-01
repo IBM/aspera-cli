@@ -54,7 +54,7 @@ noderestart:
 
 # default download folder for Connect Client (used to cleanup and avoid confirmation from connect when overwrite)
 DIR_CONNECT_DOWNLOAD=$(HOME)/Downloads
-PKG_TEST_TITLE="Test Pkg $(shell date)"
+PKG_TEST_TITLE=Test Pkg $(shell date)
 
 # flag files for integration tests generated here
 T=$(DIR_TMP)t/
