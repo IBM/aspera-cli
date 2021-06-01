@@ -52,10 +52,10 @@ module Aspera
           self.options.add_option_preset(preset_by_name(value))
         end
 
-        private_constant :ASPERA_HOME_FOLDER_NAME,:DEFAULT_CONFIG_FILENAME,:CONF_PRESET_CONFIG,:CONF_PRESET_VERSION,:CONF_PRESET_DEFAULT,:PROGRAM_NAME_V1,:PROGRAM_NAME_V2,:DEFAULT_REDIRECT,:ASPERA_PLUGINS_FOLDERNAME,:RUBY_FILE_EXT,:AOC_COMMAND_V1,:AOC_COMMAND_V2,:AOC_COMMAND_V3,:AOC_COMMAND_CURRENT,:DEMO,:TRANSFER_SDK_ARCHIVE_URL,:AOC_PATH_API_CLIENTS
+        private_constant :DEFAULT_CONFIG_FILENAME,:CONF_PRESET_CONFIG,:CONF_PRESET_VERSION,:CONF_PRESET_DEFAULT,:PROGRAM_NAME_V1,:PROGRAM_NAME_V2,:DEFAULT_REDIRECT,:ASPERA_PLUGINS_FOLDERNAME,:RUBY_FILE_EXT,:AOC_COMMAND_V1,:AOC_COMMAND_V2,:AOC_COMMAND_V3,:AOC_COMMAND_CURRENT,:DEMO,:TRANSFER_SDK_ARCHIVE_URL,:AOC_PATH_API_CLIENTS
         attr_accessor :option_ak_secret,:option_secrets
 
-        def initialize(env,tool_name,help_url,version)
+        def initialize(env,tool_name,help_url,version,main_folder)
           super(env)
           @option_ak_secret=nil
           @option_secrets={}
@@ -67,14 +67,7 @@ module Aspera
           @program_version=version
           @tool_name=tool_name
           @help_url=help_url
-          tool_main_env_var="#{tool_name.upcase}_HOME"
-          if ENV.has_key?(tool_main_env_var)
-            @main_folder=ENV[tool_main_env_var]
-          else
-            user_home_folder=Dir.home
-            raise CliError,"Home folder does not exist: #{user_home_folder}. Check your user environment or use #{tool_main_env_var}." unless Dir.exist?(user_home_folder)
-            @main_folder=File.join(user_home_folder,ASPERA_HOME_FOLDER_NAME,tool_name)
-          end
+          @main_folder=main_folder
           @conf_file_default=File.join(@main_folder,DEFAULT_CONFIG_FILENAME)
           @option_config_file=@conf_file_default
           Log.log.debug("#{tool_name} folder: #{@main_folder}")

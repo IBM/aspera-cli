@@ -53,13 +53,20 @@ module Aspera
         @help_url='http://www.rubydoc.info/gems/'+GEM_NAME
         @gem_url='https://rubygems.org/gems/'+GEM_NAME
         # give command line arguments to option manager (no parsing)
-        @plugin_env[:options]=@opt_mgr=Manager.new(self.program_name,argv,app_banner())
+        app_main_folder=ENV[conf_dir_env_var]
+        # if env var undefined or empty
+        if app_main_folder.nil? or app_main_folder.empty?
+          user_home_folder=Dir.home
+          raise CliError,"Home folder does not exist: #{user_home_folder}. Check your user environment or use #{conf_dir_env_var}." unless Dir.exist?(user_home_folder)
+          app_main_folder=File.join(user_home_folder,Plugins::Config::ASPERA_HOME_FOLDER_NAME,PROGRAM_NAME)
+        end
+        @plugin_env[:options]=@opt_mgr=Manager.new(PROGRAM_NAME,argv,app_banner())
         @plugin_env[:formater]=Formater.new(@plugin_env[:options])
-        Rest.user_agent=self.program_name
+        Rest.user_agent=PROGRAM_NAME
         # must override help methods before parser called (in other constructors)
         init_global_options()
         # the Config plugin adds the @preset parser
-        @plugin_env[:config]=Plugins::Config.new(@plugin_env,self.program_name,@help_url,Aspera::Cli::VERSION)
+        @plugin_env[:config]=Plugins::Config.new(@plugin_env,PROGRAM_NAME,@help_url,Aspera::Cli::VERSION,app_main_folder)
         # the TransferAgent plugin may use the @preset parser
         @plugin_env[:transfer]=TransferAgent.new(@plugin_env)
         Log.log.debug('created plugin env'.red)
@@ -73,21 +80,21 @@ module Aspera
       end
 
       def app_banner
-        banner = "NAME\n\t#{self.program_name} -- a command line tool for Aspera Applications (v#{Aspera::Cli::VERSION})\n\n"
+        banner = "NAME\n\t#{PROGRAM_NAME} -- a command line tool for Aspera Applications (v#{Aspera::Cli::VERSION})\n\n"
         banner << "SYNOPSIS\n"
-        banner << "\t#{self.program_name} COMMANDS [OPTIONS] [ARGS]\n"
-        banner << "\n"
-        banner << "DESCRIPTION\n"
+        banner << "\t#{PROGRAM_NAME} COMMANDS [OPTIONS] [ARGS]\n"
+        banner << "\nDESCRIPTION\n"
         banner << "\tUse Aspera application to perform operations on command line.\n"
         banner << "\tDocumentation and examples: #{@gem_url}\n"
-        banner << "\texecute: #{self.program_name} conf doc\n"
+        banner << "\texecute: #{PROGRAM_NAME} conf doc\n"
         banner << "\tor visit: #{@help_url}\n"
-        banner << "\n"
-        banner << "COMMANDS\n"
-        banner << "\tTo list first level commands, execute: #{self.program_name}\n"
+        banner << "\nENVIRONMENT VARIABLES\n"
+        banner << "\t#{conf_dir_env_var}  config folder, default: $HOME/#{Plugins::Config::ASPERA_HOME_FOLDER_NAME}/#{PROGRAM_NAME}\n"
+        banner << "\t#any option can be set as an environment variable, refer to the manual\n"
+        banner << "\nCOMMANDS\n"
+        banner << "\tTo list first level commands, execute: #{PROGRAM_NAME}\n"
         banner << "\tNote that commands can be written shortened (provided it is unique).\n"
-        banner << "\n"
-        banner << "OPTIONS\n"
+        banner << "\nOPTIONS\n"
         banner << "\tOptions begin with a '-' (minus), and value is provided on command line.\n"
         banner << "\tSpecial values are supported beginning with special prefix, like: #{ExtendedValue.instance.modifiers.map{|m|"@#{m}:"}.join(' ')}.\n"
         banner << "\tDates format is 'DD-MM-YY HH:MM:SS', or 'now' or '-<num>h'\n\n"
@@ -167,7 +174,7 @@ module Aspera
             # override main option parser with a brand new, to avoid having global options
             plugin_env=@plugin_env.clone
             plugin_env[:man_only]=true
-            plugin_env[:options]=Manager.new(self.program_name,[],'')
+            plugin_env[:options]=Manager.new(PROGRAM_NAME,[],'')
             get_plugin_instance_with_options(plugin_name_sym,plugin_env)
             # display generated help for plugin options
             @plugin_env[:formater].display_message(:error,plugin_env[:options].parser.to_s)
@@ -178,10 +185,14 @@ module Aspera
 
       protected
 
+      def conf_dir_env_var
+        return "#{PROGRAM_NAME}_home".upcase
+      end
+
       # early debug for parser
       # Note: does not accept shortcuts
       def early_debug_setup(argv)
-        Log.instance.program_name=self.program_name
+        Log.instance.program_name=PROGRAM_NAME
         argv.each do |arg|
           case arg
           when '--'
@@ -204,10 +215,6 @@ module Aspera
         raise worst unless worst.eql?(:success)
         return Main.result_nothing
       end
-
-      #def options;@opt_mgr;end
-
-      def program_name;PROGRAM_NAME;end
 
       # this is the main function called by initial script just after constructor
       def process_command_line
