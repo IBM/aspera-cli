@@ -62,3 +62,17 @@ changes:
 	@latest_tag=$$(git describe --tags --abbrev=0);\
 	echo "Changes since [$$latest_tag]";\
 	git log $$latest_tag..HEAD --oneline
+
+##################################
+# Docker image
+DOCKER_REPO=martinlaurent/ascli
+DOCKER_TAG_VERSION=$(DOCKER_REPO):$(GEMVERSION)
+DOCKER_TAG_LATEST=$(DOCKER_REPO):latest
+docker: $(PATH_GEMFILE)
+	docker build --build-arg gemfile=$(PATH_GEMFILE) --tag $(DOCKER_TAG_VERSION) --tag $(DOCKER_TAG_LATEST) $(DIR_TOP).
+dockertest:
+	docker run --tty --interactive --rm aspera-cli ascli -h
+dpush:
+	docker push $(DOCKER_TAG_VERSION)
+	docker push $(DOCKER_TAG_LATEST)
+	

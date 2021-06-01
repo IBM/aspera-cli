@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+tag=martinlaurent/ascli:latest
+case "$1" in install)
+docker pull $tag
+exit 0
+esac
+conf_host=${ASCLI_HOME:-$HOME/.aspera/ascli}
+if test ! -d $conf_host;then
+	echo creating foder: $conf_host
+	mkdir -p $conf_host
+fi
+conf_img=/usr/src/app/config
+exec docker run --tty --interactive --rm --env ASCLI_HOME="$conf_img" --volume "$conf_host:$conf_img" $tag ascli "$@"

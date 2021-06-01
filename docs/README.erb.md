@@ -151,6 +151,8 @@ The following sections provide information on the installation.
 
 An internet connection is required for the installation. If you dont have internet for the installation, refer to section [Installation without internet access](#offline_install).
 
+Alternatively, it is possible to install in a docker container.
+
 ## <a name="ruby"></a>Ruby
 
 A ruby interpreter is required to run the tool or to use the gem and tool.
@@ -323,6 +325,27 @@ $ ascli conf ascp install --sdk-url=file:///SDK.zip
 ```
 
 or restore the `$HOME/.aspera` folder for the user.
+
+### Docker container
+
+Ensure that you have Docker installed.
+
+Download the wrapping script:
+
+```
+$ curl -o ascli https://raw.githubusercontent.com/IBM/aspera-cli/develop/bin/dascli
+$ chmod a+x ascli
+```
+
+Install the container image:
+
+```
+$ ./ascli install
+```
+
+Start using it !
+
+Note that the tool is run in the container, but shares the configuration file from `$HOME/.aspera/ascli`.
 
 ## <a name="the_gem"></a>`<%= gemspec.name %>` gem
 
