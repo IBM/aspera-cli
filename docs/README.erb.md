@@ -141,7 +141,7 @@ Then, follow the section relative to the product you want to interact with ( Asp
 
 # <a name="installation"></a>Installation
 
-In order to use the tool or the gem, it is necessary to install those components:
+It is possible to install *either* as a docker container or step by step on the native host:
 
 * [Ruby](#ruby) version >= <%= gemspec.required_ruby_version %>
 * [<%= gemspec.name %>](#the_gem)
@@ -151,9 +151,40 @@ The following sections provide information on the installation.
 
 An internet connection is required for the installation. If you dont have internet for the installation, refer to section [Installation without internet access](#offline_install).
 
-Alternatively, it is possible to install in a docker container.
+## Docker container
+
+This method installs a docker image that contains: Ruby, ascli and the FASP sdk.
+
+Ensure that you have Docker installed.
+
+```
+$ docker --version
+```
+
+Download the wrapping script:
+
+```
+$ curl -o <%=cmd%> https://raw.githubusercontent.com/IBM/aspera-cli/develop/bin/dascli
+$ chmod a+x <%=cmd%>
+```
+
+Install the container image:
+
+```
+$ ./<%=cmd%> install
+```
+
+Start using it !
+
+Note that the tool is run in the container.
+
+The wrapping script maps the container folder `/usr/src/app/config` to configuration folder `$HOME/.aspera/<%=cmd%>`.
+
+To transfer to/from the native host, you will need to map a volume in docker or use the config folder (already mapped).
 
 ## <a name="ruby"></a>Ruby
+
+Use this method to install on the native host.
 
 A ruby interpreter is required to run the tool or to use the gem and tool.
 
@@ -218,7 +249,7 @@ One can install in another location with :
 
 As root, make sure this will not collide with other application using Ruby (e.g. Faspex).
 If so, one can rename the login script: `mv /etc/profile.d/rvm.sh /etc/profile.d/rvm.sh.ok`.
-To activate ruby (and ascli) later, source it:
+To activate ruby (and <%=cmd%>) later, source it:
 
 ```
 # source /etc/profile.d/rvm.sh.ok
@@ -293,18 +324,18 @@ Then create an archive:
 
 ```
 $ cd
-$ tar zcvf rvm-ascli.tgz .rvm
+$ tar zcvf rvm-<%=cmd%>.tgz .rvm
 ```
 
 Get the Aspera SDK. Execute:
 
 ```
-$ ascli conf --show-config|grep sdk_url
+$ <%=cmd%> conf --show-config|grep sdk_url
 ```
 
 Then download the SDK archive from that URL.
 
-Another method for the SDK is to install the SDK (`ascli conf ascp install`) on the first system, and archive `$HOME/.aspera`.
+Another method for the SDK is to install the SDK (`<%=cmd%> conf ascp install`) on the first system, and archive `$HOME/.aspera`.
 
 Transfer those 2 archives to the target system without internet access.
 
@@ -321,31 +352,10 @@ rvm use 2.7.2
 For the SDK, either install from archive:
 
 ```
-$ ascli conf ascp install --sdk-url=file:///SDK.zip
+$ <%=cmd%> conf ascp install --sdk-url=file:///SDK.zip
 ```
 
 or restore the `$HOME/.aspera` folder for the user.
-
-### Docker container
-
-Ensure that you have Docker installed.
-
-Download the wrapping script:
-
-```
-$ curl -o ascli https://raw.githubusercontent.com/IBM/aspera-cli/develop/bin/dascli
-$ chmod a+x ascli
-```
-
-Install the container image:
-
-```
-$ ./ascli install
-```
-
-Start using it !
-
-Note that the tool is run in the container, but shares the configuration file from `$HOME/.aspera/ascli`.
 
 ## <a name="the_gem"></a>`<%= gemspec.name %>` gem
 
@@ -416,11 +426,11 @@ other methods are available. Refer to section: [Transfer Agents](#agents)
 The procedure consists in:
 
 * Follow the non-root installation procedure with RVM, including gem
-* archive (zip, tar) the main RVM folder (includes ascli):
+* archive (zip, tar) the main RVM folder (includes <%=cmd%>):
 
 ```
 $ cd ~
-$ tar zcvf rvm_ascli.tgz .rvm
+$ tar zcvf rvm_<%=cmd%>.tgz .rvm
 ```
 
 * retrieve the SDK:
@@ -433,9 +443,9 @@ $ curl -Lso SDK.zip https://ibm.biz/aspera_sdk
 
 ```
 $ cd ~
-$ tar zxvf rvm_ascli.tgz
+$ tar zxvf rvm_<%=cmd%>.tgz
 $ source ~/.rvm/scripts/rvm
-$ ascli conf ascp install --sdk-url=file:///SDK.zip
+$ <%=cmd%> conf ascp install --sdk-url=file:///SDK.zip
 ```
 
 # <a name="cli"></a>Command Line Interface: <%=tool%>
@@ -720,9 +730,9 @@ It can be overriden using the envinonment variable `<%=evp%>HOME`.
 Example (Windows):
 
 ```
-$ set <%=evp%>HOME=C:\Users\Kenji\.aspera\ascli
+$ set <%=evp%>HOME=C:\Users\Kenji\.aspera\<%=cmd%>
 $ <%=cmd%> config folder
-C:\Users\Kenji\.aspera\ascli
+C:\Users\Kenji\.aspera\<%=cmd%>
 ```
 
 ## <a name="configfile"></a>Configuration file
@@ -2559,7 +2569,7 @@ We assume here that a configuration preset was created as shown previously.
 
 Lets first setup a script that will be used in the sceduler and sets up the environment.
 
-Example of startup script `cron_ascli`, which sets the Ruby environment and adds some timeout protection:
+Example of startup script `cron_<%=cmd%>`, which sets the Ruby environment and adds some timeout protection:
 
 ```
 #!/bin/bash
@@ -2567,15 +2577,15 @@ Example of startup script `cron_ascli`, which sets the Ruby environment and adds
 case "$*" in *trev*) tmout=10m ;; *) tmout=30m ;; esac
 . /etc/profile.d/rvm.sh
 rvm use 2.6 --quiet
-exec timeout ${tmout} ascli "${@}"
+exec timeout ${tmout} <%=cmd%> "${@}"
 ```
 
 Here the cronjob is created for user `xfer`.
 
 ```
 xfer$ crontab<<EOF
-0    * * * *  /home/xfer/cron_ascli preview scan --logger=syslog --display=error
-2-59 * * * *  /home/xfer/cron_ascli preview trev --logger=syslog --display=error
+0    * * * *  /home/xfer/cron_<%=cmd%> preview scan --logger=syslog --display=error
+2-59 * * * *  /home/xfer/cron_<%=cmd%> preview trev --logger=syslog --display=error
 EOF
 ```
 
@@ -2855,7 +2865,7 @@ Typically, the health check uses the REST API of the application with the follow
 <%=tool%> can be called by Nagios to check the health status of an Aspera server. The output can be made compatible to Nagios with option `--format=nagios` :
 
 ```
-$ <%=cmd%> ascli server health transfer --to-folder=/Upload --format=nagios --progress=none
+$ <%=cmd%> server health transfer --to-folder=/Upload --format=nagios --progress=none
 OK - [transfer:ok]
 $ <%=cmd%> server health asctlstatus --cmd_prefix='sudo ' --format=nagios
 OK - [NP:running, MySQL:running, Mongrels:running, Background:running, DS:running, DB:running, Email:running, Apache:running]
@@ -2885,7 +2895,7 @@ Example of use of the API of Aspera on Cloud:
 ```
 require 'aspera/aoc'
 
-aoc=Aspera::AoC.new(url: 'https://sedemo.ibmaspera.com',auth: :jwt, scope: 'user:all', private_key: File.read(File.expand_path('~/.aspera/ascli/aspera_on_cloud_key')),username: 'laurent.martin.aspera@fr.ibm.com',subpath: 'api/v1')
+aoc=Aspera::AoC.new(url: 'https://sedemo.ibmaspera.com',auth: :jwt, scope: 'user:all', private_key: File.read(File.expand_path('~/.aspera/<%=cmd%>/aspera_on_cloud_key')),username: 'laurent.martin.aspera@fr.ibm.com',subpath: 'api/v1')
 
 aoc.read('self')
 ```

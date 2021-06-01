@@ -72,7 +72,6 @@ module Aspera
           @option_config_file=@conf_file_default
           Log.log.debug("#{tool_name} folder: #{@main_folder}")
           # set folder for FASP SDK
-          Fasp::Installation.instance.folder=File.join(@main_folder,'sdk')
           add_plugin_lookup_folder(File.join(@main_folder,ASPERA_PLUGINS_FOLDERNAME))
           add_plugin_lookup_folder(self.class.gem_plugins_folder)
           # do file parameter first
@@ -103,14 +102,17 @@ module Aspera
           self.options.add_opt_simple(:secret,"access key secret for node")
           self.options.add_opt_simple(:secrets,"access key secret for node")
           self.options.add_opt_simple(:sdk_url,"URL to get SDK")
+          self.options.add_opt_simple(:sdk_folder,"SDK folder location")
           self.options.add_opt_boolean(:test_mode,"skip user validation in wizard mode")
           self.options.add_opt_simple(:version_check_days,Integer,"period to check neew version in days (zero to disable)")
           self.options.set_option(:use_generic_client,true)
           self.options.set_option(:test_mode,false)
           self.options.set_option(:version_check_days,7)
           self.options.set_option(:sdk_url,TRANSFER_SDK_ARCHIVE_URL)
+          self.options.set_option(:sdk_folder,File.join(@main_folder,'sdk'))
           self.options.parse_options!
           raise CliBadArgument,"secrets shall be Hash" unless @option_secrets.is_a?(Hash)
+          Fasp::Installation.instance.folder=self.options.get_option(:sdk_folder,:mandatory)
         end
 
         def get_secret(id=nil,mandatory=true)

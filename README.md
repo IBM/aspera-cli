@@ -1,7 +1,7 @@
 [comment1]: # (Do not edit this README.md, edit docs/README.erb.md, for details, read docs/README.md)
 # `ascli` : Command Line Interface for IBM Aspera products
 
-Version : 4.0.1.20110407
+Version : 4.0.1.20210602
 
 _Laurent/2016-2021_
 
@@ -60,7 +60,7 @@ Once the gem is installed, `ascli` shall be accessible:
 
 ```
 $ ascli --version
-4.0.1.20110407
+4.0.1.20210602
 ```
 
 ## First use
@@ -125,7 +125,7 @@ Then, follow the section relative to the product you want to interact with ( Asp
 
 # <a name="installation"></a>Installation
 
-In order to use the tool or the gem, it is necessary to install those components:
+It is possible to install *either* as a docker container or step by step on the native host:
 
 * [Ruby](#ruby) version >= > 2.4
 * [aspera-cli](#the_gem)
@@ -135,7 +135,39 @@ The following sections provide information on the installation.
 
 An internet connection is required for the installation. If you dont have internet for the installation, refer to section [Installation without internet access](#offline_install).
 
+## Docker container
+
+This method installs a docker image that contains: Ruby, ascli and the FASP sdk.
+
+Ensure that you have Docker installed.
+
+```
+$ docker --version
+```
+
+Download the wrapping script:
+
+```
+$ curl -o ascli https://raw.githubusercontent.com/IBM/aspera-cli/develop/bin/dascli
+$ chmod a+x ascli
+```
+
+Install the container image:
+
+```
+$ ./ascli install
+```
+
+Start using it !
+
+Note that the tool is run in the container.
+
+The wrapping script maps the container folder `/usr/src/app/config` to configuration folder `$HOME/.aspera/ascli`.
+
+
 ## <a name="ruby"></a>Ruby
+
+Use this method to install on the native host.
 
 A ruby interpreter is required to run the tool or to use the gem and tool.
 
@@ -1476,6 +1508,7 @@ ascli aoc packages send --value=@json:'{"name":"Important files delivery","recip
 ascli aoc packages send --workspace="my_aoc_shbx_ws" --value=@json:'{"name":"Important files delivery","recipients":["my_aoc_shbx_name"]}' testfile.bin
 ascli aoc packages send -N --value=@json:'{"name":"Important files delivery"}' testfile.bin --link=my_aoc_publink_send_aoc_user
 ascli aoc packages send -N --value=@json:'{"name":"Important files delivery"}' testfile.bin --link=my_aoc_publink_send_shd_inbox
+ascli aoc servers
 ascli aoc user info modify @json:'{"name":"dummy change"}'
 ascli aoc user info show
 ascli aoc workspace
@@ -1626,7 +1659,7 @@ ascli sync start --parameters=@json:'{"sessions":[{"name":"test","reset":true,"r
 ```
 $ ascli -h
 NAME
-	ascli -- a command line tool for Aspera Applications (v4.0.1.20110407)
+	ascli -- a command line tool for Aspera Applications (v4.0.1.20210602)
 
 SYNOPSIS
 	ascli COMMANDS [OPTIONS] [ARGS]
@@ -1636,6 +1669,10 @@ DESCRIPTION
 	Documentation and examples: https://rubygems.org/gems/aspera-cli
 	execute: ascli conf doc
 	or visit: http://www.rubydoc.info/gems/aspera-cli
+
+ENVIRONMENT VARIABLES
+	ASCLI_HOME  config folder, default: $HOME/.aspera/ascli
+	#any option can be set as an environment variable, refer to the manual
 
 COMMANDS
 	To list first level commands, execute: ascli
@@ -1692,6 +1729,7 @@ OPTIONS:
         --secret=VALUE               access key secret for node
         --secrets=VALUE              access key secret for node
         --sdk-url=VALUE              URL to get SDK
+        --sdk-folder=VALUE           SDK folder location
         --test-mode=ENUM             skip user validation in wizard mode: yes, no
         --version-check-days=VALUE   period to check neew version in days (zero to disable)
         --ts=VALUE                   override transfer spec values (Hash, use @json: prefix), current={"create_dir"=>true}
@@ -3406,7 +3444,7 @@ Typically, the health check uses the REST API of the application with the follow
 `ascli` can be called by Nagios to check the health status of an Aspera server. The output can be made compatible to Nagios with option `--format=nagios` :
 
 ```
-$ ascli ascli server health transfer --to-folder=/Upload --format=nagios --progress=none
+$ ascli server health transfer --to-folder=/Upload --format=nagios --progress=none
 OK - [transfer:ok]
 $ ascli server health asctlstatus --cmd_prefix='sudo ' --format=nagios
 OK - [NP:running, MySQL:running, Mongrels:running, Background:running, DS:running, DB:running, Email:running, Apache:running]
