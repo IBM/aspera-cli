@@ -59,17 +59,17 @@ PKG_TEST_TITLE=Test Pkg $(shell date)
 # flag files for integration tests generated here
 T=$(DIR_TMP)t/
 
-$(T).exists: $(CF_LOCAL_SAMPLE_FILEPATH)
+$(T).exists:
 	mkdir -p $(T)
 	touch $@
 clean::
 	rm -fr $(T)
 	mkdir $(T)
-$(CF_LOCAL_SAMPLE_FILEPATH): $(DIR_TMP).exists
+$(CF_LOCAL_SAMPLE_FILEPATH):
 	dd if=/dev/urandom of=$(CF_LOCAL_SAMPLE_FILEPATH) count=1 bs=200k
 clean::
 	rm -f $(CF_LOCAL_SAMPLE_FILEPATH)
-$(T)unit: $(T).exists
+$(T)unit: $(T).exists $(CF_LOCAL_SAMPLE_FILEPATH)
 	@echo $@
 	set -x;\
 	CF_HSTS_SSH_URL=$$($(EXE_NOMAN) conf id tst_server get url) \
