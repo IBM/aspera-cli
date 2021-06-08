@@ -32,7 +32,7 @@ module Aspera
             OpenApplication.uri_graphical('https://downloads.asperasoft.com/connect2/')
             raise StandardError,'Connect is not installed'
           end
-          sleep SLEEP_SEC_BETWEEN_RETRY
+          sleep(SLEEP_SEC_BETWEEN_RETRY)
           retry
         end
         if transfer_spec['direction'] == 'send'
@@ -46,13 +46,14 @@ module Aspera
         # instead of asking password
         transfer_spec['authentication']='token' if transfer_spec.has_key?('token')
         connect_transfer_args={
-          'transfer_specs'=>[{
-          'transfer_spec'=>transfer_spec,
           'aspera_connect_settings'=>{
-          'allow_dialogs'=>true,
-          'app_id'=>@connect_app_id,
-          'request_id'=>@request_id
-          }}]}
+          'app_id'                   =>@connect_app_id,
+          'request_id'               =>@request_id,
+          'allow_dialogs'            =>true,
+          },
+          'transfer_specs'         =>[{
+          'transfer_spec'            =>transfer_spec,
+          }]}
         # asynchronous anyway
         @connect_api.create('transfers/start',connect_transfer_args)
       end
