@@ -341,7 +341,7 @@ module Aspera
               raise "error"
             end
           when :access_key
-            return self.entity_action(@api_node,'access_keys',['id','root_file_id','storage'],:id,'self')
+            return self.entity_action(@api_node,'access_keys',nil,:id,'self')
           when :service
             command=self.options.get_next_command([ :list, :create, :delete])
             if [:delete].include?(command)
