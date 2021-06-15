@@ -66,6 +66,27 @@ Prompt `# ` refers to user `root`, prompt `xfer$ ` refer to user `xfer`.
 
 Command line parameters in examples beginning with `my_`, like `my_param_value` are user-provided value and not fixed value commands.
 
+# <a name="parsing"></a>Shell and Command line parsing
+
+<%=tool%> is typically executed in a shell, either interactively or in a script. <%=tool%> receives its arguments from this shell.
+
+On Linux and Unix environments, this is typically a POSIX shell (bash, zsh, ksh, sh). In this environment shell command line parsing applies before <%=tool%> (Ruby) is executed, e.g. [bash shell operation](https://www.gnu.org/software/bash/manual/bash.html#Shell-Operation). Ruby receives a list parameters and gives it to <%=tool%>. So special character handling (quotes, spaces, env vars, ...) is done in the shell.
+
+On Windows, `cmd` is typically used. Windows process creation does not receive the list of arguments but just the whole line. It's up to the program to parse arguments. Ruby follows the Microsoft C/C++ parameter parsing rules.
+
+* [Windows: How Command Line Parameters Are Parsed](https://daviddeley.com/autohotkey/parameters/parameters.htm#RUBY)
+* [Understand Quoting and Escaping of Windows Command Line Arguments](http://www.windowsinspired.com/understanding-the-command-line-string-and-arguments-received-by-a-windows-program/)
+
+In case of doubt of argument values after parsing test like this:
+
+```
+$ <%=cmd%> conf echo "Hello World" arg2 3
+"Hello World"
+ERROR: Argument: unprocessed values: ["arg2", "3"]
+```
+
+`echo` displays the value of the first argument using ruby syntax (strings get double quotes) after command line parsing (shell) and extended value parsing (ascli), next command line arguments are shown in the error message.
+
 # Quick Start
 
 This section guides you from installation, first use and advanced use.
@@ -1490,7 +1511,7 @@ updated: my_aoc_org
 Define this <%=prst%> as default configuration for the `aspera` plugin:
 
 ```
-$ <%=cmd%> config id default set aspera my_aoc_org
+$ <%=cmd%> config id default set aoc my_aoc_org
 ```
 
 Note: Default `auth` method is `web` and default `redirect_uri` is `http://localhost:12345`. Leave those default values.
@@ -1864,7 +1885,7 @@ Then, create two shared folders located in two regions, in your files home, in a
 Then, transfer between those:
 
 ```
-$ <%=cmd%> -Paoc_show aspera files transfer --from-folder='IBM Cloud SJ' --to-folder='AWS Singapore' 100GB.file --ts=@json:'{"target_rate_kbps":"1000000","multi_session":10,"multi_session_threshold":1}'
+$ <%=cmd%> -Paoc_show aoc files transfer --from-folder='IBM Cloud SJ' --to-folder='AWS Singapore' 100GB.file --ts=@json:'{"target_rate_kbps":"1000000","multi_session":10,"multi_session_threshold":1}'
 ```
 
 * create registration key to register a node
@@ -3056,7 +3077,7 @@ So, it evolved into <%=tool%>:
 
 * 0.10.6
 
-	* FaspManager: transfer spec `authentication` no more needed for local tranfer to use aspera public keys. public keys will be used if there is a token and no key or password is provided.
+	* FaspManager: transfer spec `authentication` no more needed for local tranfer to use Aspera public keys. public keys will be used if there is a token and no key or password is provided.
 	* gem version requirements made more open
 
 * 0.10.5
