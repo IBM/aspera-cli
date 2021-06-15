@@ -12,7 +12,9 @@ module Aspera
       private_constant :MAX_CONNECT_START_RETRY,:SLEEP_SEC_BETWEEN_RETRY
       def initialize
         super
-        @connect_app_id=SecureRandom.uuid
+        @connect_settings={
+          'app_id' => SecureRandom.uuid
+        }
         # TODO: start here and create monitor
       end
 
@@ -38,41 +40,45 @@ module Aspera
         if transfer_spec['direction'] == 'send'
           Log.log.warn("Connect requires upload selection using GUI, ignoring #{transfer_spec['paths']}".red)
           transfer_spec.delete('paths')
-          resdata=@connect_api.create('windows/select-open-file-dialog/',{'title'=>'Select Files','suggestedName'=>'','allowMultipleSelection'=>true,'allowedFileTypes'=>'','aspera_connect_settings'=>{'app_id'=>@connect_app_id}})[:data]
+          resdata=@connect_api.create('windows/select-open-file-dialog/',{'aspera_connect_settings'=>@connect_settings,'title'=>'Select Files','suggestedName'=>'','allowMultipleSelection'=>true,'allowedFileTypes'=>''})[:data]
           transfer_spec['paths']=resdata['dataTransfer']['files'].map { |i| {'source'=>i['name']}}
         end
         @request_id=SecureRandom.uuid
         # if there is a token, we ask connect client to use well known ssh private keys
         # instead of asking password
         transfer_spec['authentication']='token' if transfer_spec.has_key?('token')
+        connect_settings=
         connect_transfer_args={
-          'aspera_connect_settings'=>{
-          'app_id'                   =>@connect_app_id,
+          'aspera_connect_settings'=>@connect_settings.merge({
           'request_id'               =>@request_id,
           'allow_dialogs'            =>true,
-          },
+          }),
           'transfer_specs'         =>[{
           'transfer_spec'            =>transfer_spec,
           }]}
         # asynchronous anyway
-        @connect_api.create('transfers/start',connect_transfer_args)
+        res=@connect_api.create('transfers/start',connect_transfer_args)[:data]
+        @xfer_id=res['transfer_specs'].first['transfer_spec']['tags']['aspera']['xfer_id']
       end
 
       def wait_for_transfers_completion
-        connect_activity_args={'aspera_connect_settings'=>{'app_id'=>@connect_app_id}}
+        connect_activity_args={'aspera_connect_settings'=>@connect_settings}
         started=false
         spinner=nil
         loop do
-          result=@connect_api.create('transfers/activity',connect_activity_args)[:data]
-          if result['transfers']
-            trdata=result['transfers'].select{|i| i['aspera_connect_settings'] and i['aspera_connect_settings']['request_id'].eql?(@request_id)}.first
-            raise 'problem with connect, please kill it' unless trdata
+          tr_info=@connect_api.create("transfers/info/#{@xfer_id}",connect_activity_args)[:data]
+          if tr_info['transfer_info'].is_a?(Hash)
+            trdata=tr_info['transfer_info']
+            if trdata.nil?
+              Log.log.warn("no session in Connect")
+              break
+            end
             # TODO: get session id
             case trdata['status']
             when 'completed'
-              notify_end(@connect_app_id)
+              notify_end(@connect_settings['app_id'])
               break
-            when 'initiating'
+            when 'initiating','queued'
               if spinner.nil?
                 spinner = TTY::Spinner.new('[:spinner] :title', format: :classic)
                 spinner.start
@@ -82,13 +88,13 @@ module Aspera
             when 'running'
               #puts "running: sessions:#{trdata['sessions'].length}, #{trdata['sessions'].map{|i| i['bytes_transferred']}.join(',')}"
               if !started and trdata['bytes_expected'] != 0
-                notify_begin(@connect_app_id,trdata['bytes_expected'])
+                notify_begin(@connect_settings['app_id'],trdata['bytes_expected'])
                 started=true
               else
-                notify_progress(@connect_app_id,trdata['bytes_written'])
+                notify_progress(@connect_settings['app_id'],trdata['bytes_written'])
               end
             else
-              raise Fasp::Error.new("#{trdata['status']}: #{trdata['error_desc']}")
+              raise Fasp::Error.new("unknown status: #{trdata['status']}: #{trdata['error_desc']}")
             end
           end
           sleep 1
