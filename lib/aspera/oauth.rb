@@ -193,14 +193,13 @@ module Aspera
         when :web
           # AoC Web based Auth
           check_code=SecureRandom.uuid
-          login_page_url=Rest.build_uri(
-          "#{@params[:base_url]}/#{@params[:path_authorize]}",
-          p_client_id_and_scope.merge({
+          auth_params=p_client_id_and_scope.merge({
             :response_type => 'code',
             :redirect_uri  => @params[:redirect_uri],
-            :client_secret => @params[:client_secret],
             :state         => check_code
-          }))
+          })
+          auth_params[:client_secret]=@params[:client_secret] if @params.has_key?(:client_secret)
+          login_page_url=Rest.build_uri("#{@params[:base_url]}/#{@params[:path_authorize]}",auth_params)
           # here, we need a human to authorize on a web page
           code=goto_page_and_get_code(login_page_url,check_code)
           # exchange code for token
