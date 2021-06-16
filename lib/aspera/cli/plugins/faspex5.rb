@@ -11,11 +11,11 @@ module Aspera
           super(env)
           options.add_opt_simple(:client_id,'API client identifier in application')
           options.add_opt_simple(:redirect_uri,'API client redirect URI')
-          options.add_opt_list(:auth,Oauth.auth_types,'type of Oauth authentication')
+          options.add_opt_list(:auth,Oauth.auth_types.clone.push(:boot),'type of Oauth authentication')
           options.set_option(:auth,:jwt)
           options.parse_options!
         end
-        ACTIONS=[ :node, :package ]
+        ACTIONS=[ :node, :package, :auth_client ]
 
         def set_api
           faxpex5_api_base_url=options.get_option(:url,:mandatory)
@@ -37,13 +37,13 @@ module Aspera
               #:path_authorize => 'authorize',
               #:userpass_body  => {name: faxpex5_username,password: faxpex5_password}
               }})
+          when :boot
+            @api_v5=Rest.new({
+              :base_url => faxpex5_api_v5_url,
+              :headers => {'Authorization'=>options.get_option(:password,:mandatory)},
+            })
           when :jwt
-            raise "todo"
-          when :old
-            # get parameters
-            faxpex5_username=options.get_option(:username,:mandatory)
-            faxpex5_password=options.get_option(:password,:mandatory)
-            # create object for REST calls to Shares2
+            #raise "JWT to be implemented"
             @api_v5=Rest.new({
               :base_url => faxpex5_api_base_url,
               :auth     => {
@@ -53,16 +53,35 @@ module Aspera
               :token_field    =>'auth_token',
               :path_token     => 'authenticate',
               :path_authorize => :unused,
-              :userpass_body  => {name: faxpex5_username,password: faxpex5_password}
+              :userpass_body  => {name: options.get_option(:username,:mandatory),password: options.get_option(:password,:mandatory)}
               }})
+            #  former version
+            #            # get parameters
+            #            faxpex5_username=options.get_option(:username,:mandatory)
+            #            faxpex5_password=options.get_option(:password,:mandatory)
+            #            # create object for REST calls to Shares2
+            #            @api_v5=Rest.new({
+            #              :base_url => faxpex5_api_base_url,
+            #              :auth     => {
+            #              :type           => :oauth2,
+            #              :base_url       => faxpex5_api_base_url,
+            #              :grant          => :body_data,
+            #              :token_field    =>'auth_token',
+            #              :path_token     => 'authenticate',
+            #              :path_authorize => :unused,
+            #              :userpass_body  => {name: faxpex5_username,password: faxpex5_password}
+            #              }})
           end
         end
 
-        # http://apie-next-ui-shell-dev.mybluemix.net/explorer/catalog/aspera/product/ibm-aspera/api/faspex5-api/spec/openapi
+        #
         def execute_action
           set_api
           command=options.get_next_command(ACTIONS)
           case command
+          when :auth_client
+            api_auth=Rest.new(@api_v5.params.merge({base_url: @api_v5.params[:base_url].gsub(/api\/v5$/,'auth')}))
+            return self.entity_action(api_auth,'oauth_clients',nil,:id,nil,true)
           when :node
             return self.entity_action(@api_v5,'nodes',nil,:id,nil,true)
           when :package

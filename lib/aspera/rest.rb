@@ -34,6 +34,7 @@ module Aspera
     # true if https ignore certificate
     @@insecure=false
     @@user_agent='Ruby'
+    @@download_partial_suffix='.http_partial'
 
     public
     def self.insecure=(v); @@insecure=v;Log.log.debug("insecure => #{@@insecure}".red);end
@@ -101,8 +102,8 @@ module Aspera
     attr_reader :params
     attr_reader :oauth
 
-    # @param a_rest_params default call parameters and authentication (:auth) :
-    # :type (:basic, :oauth2, :url)
+    # @param a_rest_params default call parameters (merged at call) and (+) authentication (:auth) :
+    # :type (:basic, :oauth2, :url, :none)
     # :username   [:basic]
     # :password   [:basic]
     # :url_creds  [:url]
@@ -119,16 +120,16 @@ module Aspera
       # default is no auth
       @params[:auth]||={:type=>:none}
       @params[:not_auth_codes]||=['401']
-      # translate old auth parameters, remove prefix, place in auth
-      [:auth,:basic,:oauth].each do |p_sym|
-        p_str=p_sym.to_s+'_'
-        @params.keys.select{|k|k.to_s.start_with?(p_str)}.each do |k_sym|
-          name=k_sym.to_s[p_str.length..-1]
-          name='grant' if k_sym.eql?(:oauth_type)
-          @params[:auth][name.to_sym]=@params[k_sym]
-          @params.delete(k_sym)
-        end
-      end
+      # translate old auth parameters, remove prefix, place in auth (TODO: delete this)
+#      [:auth,:basic,:oauth].each do |p_sym|
+#        p_str=p_sym.to_s+'_'
+#        @params.keys.select{|k|k.to_s.start_with?(p_str)}.each do |k_sym|
+#          name=k_sym.to_s[p_str.length..-1]
+#          name='grant' if k_sym.eql?(:oauth_type)
+#          @params[:auth][name.to_sym]=@params[k_sym]
+#          @params.delete(k_sym)
+#        end
+#      end
       @oauth=Oauth.new(@params[:auth]) if @params[:auth][:type].eql?(:oauth2)
       Log.dump('REST params(2)',@params)
     end
@@ -208,10 +209,13 @@ module Aspera
 
       Log.log.debug("call_data = #{call_data}")
       result={:http=>nil}
+      # start a block to be able to retry the actual HTTP request
       begin
         # we try the call, and will retry only if oauth, as we can, first with refresh, and then re-auth if refresh is bad
         oauth_tries ||= 2
+        tries_remain_redirect||=4
         Log.log.debug("send request")
+        # make http request (pipelined)
         http_session.request(req) do |response|
           result[:http] = response
           if call_data.has_key?(:save_to_file)
@@ -228,9 +232,9 @@ module Aspera
               target_file=File.join(File.dirname(target_file),m[1])
             end
             # download with temp filename
-            target_file_tmp=target_file+'.http.partial'
+            target_file_tmp="#{target_file}#{@@download_partial_suffix}"
             Log.log.debug("saving to: #{target_file}")
-            File.open(target_file_tmp, "wb") do |file|
+            File.open(target_file_tmp, 'wb') do |file|
               result[:http].read_body do |fragment|
                 file.write(fragment)
                 new_process=progress.progress+fragment.length
@@ -241,7 +245,7 @@ module Aspera
             # rename at the end
             File.rename(target_file_tmp, target_file)
             progress=nil
-          end
+          end # save_to_file
         end
         # sometimes there is a ITF8 char (e.g. (c) )
         result[:http].body.force_encoding("UTF-8") if result[:http].body.is_a?(String)
@@ -269,10 +273,24 @@ module Aspera
           end
           Log.log.debug("using new token=#{call_data[:headers]['Authorization']}")
           retry unless (oauth_tries -= 1).zero?
-        end # if
+        end # if oauth
+        # moved ?
+        if e.response.is_a?(Net::HTTPRedirection)
+          if tries_remain_redirect > 0
+            tries_remain_redirect-=1
+            Log.log.error("URL is moved, check your config: #{e.response['location']}")
+            raise e
+            # TODO: rebuild request with new location
+            #retry
+          else
+            raise "too many redirect"
+          end
+        else
+          raise e
+        end
         # raise exception if could not retry and not return error in result
         raise e unless call_data[:return_error]
-      end
+      end # begin request
       Log.log.debug("result=#{result}")
       return result
 
