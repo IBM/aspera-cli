@@ -121,7 +121,7 @@ module Aspera
       raise RuntimeError,'too many redirections'
     end
 
-    # @param :link,:url,:auth,:client_id,:client_secret,:scope,:redirect_uri,:private_key,:username,:subpath
+    # @param :link,:url,:auth,:client_id,:client_secret,:scope,:redirect_uri,:private_key,:username,:subpath,:password (for pub link)
     def initialize(opt)
       # access key secrets are provided out of band to get node api access
       # key: access key
@@ -185,6 +185,7 @@ module Aspera
         aoc_auth_p[:jwt_subject]         = opt[:username]
         aoc_auth_p[:jwt_private_key_obj] = OpenSSL::PKey::RSA.new(private_key_PEM_string)
       when :url_token
+        aoc_auth_p[:password]=opt[:password] unless opt[:password].nil?
         # nothing more
       else raise "ERROR: unsupported auth method: #{aoc_auth_p[:grant]}"
       end

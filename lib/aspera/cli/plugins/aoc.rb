@@ -279,7 +279,7 @@ module Aspera
         # build constructor option list for AoC based on options of CLI
         def aoc_params(subpath)
           # copy command line options to args
-          opt=[:link,:url,:auth,:client_id,:client_secret,:scope,:redirect_uri,:private_key,:username].inject({}){|m,i|m[i]=self.options.get_option(i,:optional);m}
+          opt=[:link,:url,:auth,:client_id,:client_secret,:scope,:redirect_uri,:private_key,:username,:password].inject({}){|m,i|m[i]=self.options.get_option(i,:optional);m}
           opt[:subpath]=subpath
           return opt
         end

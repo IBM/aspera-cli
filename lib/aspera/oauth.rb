@@ -241,8 +241,10 @@ module Aspera
           }))
         when :url_token
           # AoC Public Link
+          params={:url_token=>@params[:url_token]}
+          params[:password]=@params[:password] if @params.has_key?(:password)
           resp=create_token_advanced({
-            :json_params => {:url_token=>@params[:url_token]},
+            :json_params => params,
             :url_params  => p_scope.merge({
             :grant_type    => 'url_token'
             })})
