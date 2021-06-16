@@ -612,7 +612,9 @@ module Aspera
               return Main.result_status("updated: #{config_name}")
             end
           when :documentation
-            OpenApplication.instance.uri(@help_url)
+            section=options.get_next_argument('private key file path',:single,:optional)
+            section='#'+section unless section.nil?
+            OpenApplication.instance.uri("#{@help_url}#{section}")
             return Main.result_nothing
           when :open
             OpenApplication.instance.uri("#{@option_config_file}") #file://

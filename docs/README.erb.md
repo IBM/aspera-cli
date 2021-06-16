@@ -649,6 +649,7 @@ By default, a table output will display one line per entry, and columns for each
 * a,b,c : the list of attributes specified by the comma separated list
 * Array extended value: for instance, @json:'["a","b","c"]' same as above
 * +a,b,c : add selected properties to the default selection.
+* -a,b,c : remove selected properties from the default selection.
 
 ## <a name="extended"></a>Extended Value Syntax
 
@@ -2291,6 +2292,30 @@ Notes:
 * the command "v4" requires the use of APIv4, refer to the Faspex Admin manual on how to activate.
 * for full details on Faspex API, refer to: [Reference on Developer Site](https://www.ibm.com/products/aspera/developer)
 
+## Faspex 5 Beta1
+
+As no web ui allows adding api client yet, the way to use CLI is:
+
+* open a browser
+* start developer mode
+* login to faspex 5
+* find the first API call with `Authorization` token, and copy it
+
+Use it as password and use `--auth=boot`.
+
+An JWT client can then be created with:
+
+```
+$ jsonk=$(openssl rsa -in  ~/.aspera/ascli/aspera_on_cloud_key -pubout 2> /dev/null | sed -e :a -e N -e '$!ba' -e 's/\n/\\n/g')
+$ <%=cmd%> faspex5 auth_client create --value=@json:'{"name":"hello","client_type":"public","redirect_uris":["https://localhost:12345"],"allow_jwt_grant":true,"public_key":"'$jsonk'"}'
+```
+
+and deleted by name:
+
+```
+$ id=$(<%=cmd%> faspex5 auth_client list --select=@json:'{"name":"hello"}' --fields=client_id --format=csv)
+$ <%=cmd%> faspex5 auth_client delete --id=$id
+```
 
 ## Sending a Package
 
@@ -2948,6 +2973,7 @@ So, it evolved into <%=tool%>:
 	* feat: agent `http_gw` now supports upload
 	* feat: added option `sdk_url` to install SDK from local file for offline install
 	* feat: check new gem version periodically
+   * feat: the --fields= option, support -_fieldname_ to remove a field from default fields
 
 * 4.0.0
 
