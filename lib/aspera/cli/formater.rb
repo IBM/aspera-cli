@@ -151,6 +151,8 @@ module Aspera
             else
               if user_asked_fields_list_str.start_with?('+')
                 result_default_fields(results,table_rows_hash_val).push(*user_asked_fields_list_str.gsub(/^\+/,'').split(','))
+              elsif user_asked_fields_list_str.start_with?('-')
+                result_default_fields(results,table_rows_hash_val).select{|i| ! user_asked_fields_list_str.gsub(/^\-/,'').split(',').include?(i)}
               else
                 user_asked_fields_list_str.split(',')
               end
