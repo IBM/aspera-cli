@@ -10,8 +10,10 @@ module Aspera
         def initialize(env)
           super(env)
           options.add_opt_simple(:client_id,'API client identifier in application')
+          options.add_opt_simple(:client_secret,'API client secret in application')
           options.add_opt_simple(:redirect_uri,'API client redirect URI')
           options.add_opt_list(:auth,Oauth.auth_types.clone.push(:boot),'type of Oauth authentication')
+          options.add_opt_simple(:private_key,'RSA private key PEM value for JWT (prefix file path with @val:@file:)')
           options.set_option(:auth,:jwt)
           options.parse_options!
         end
@@ -29,7 +31,7 @@ module Aspera
               :type           => :oauth2,
               :base_url       => faxpex5_api_auth_url,
               :grant          => :web,
-              #:state          => SecureRandom.uuid,
+              :state          => SecureRandom.uuid,
               :client_id      => options.get_option(:client_id,:mandatory),
               :redirect_uri   => options.get_option(:redirect_uri,:mandatory),
               #:token_field    =>'auth_token',
@@ -47,13 +49,19 @@ module Aspera
             @api_v5=Rest.new({
               :base_url => faxpex5_api_base_url,
               :auth     => {
-              :type           => :oauth2,
-              :base_url       => faxpex5_api_base_url,
-              :grant          => :body_data,
-              :token_field    =>'auth_token',
-              :path_token     => 'authenticate',
-              :path_authorize => :unused,
-              :userpass_body  => {name: options.get_option(:username,:mandatory),password: options.get_option(:password,:mandatory)}
+              :type                => :oauth2,
+              :base_url            => faxpex5_api_auth_url,
+              :grant               => :jwt,
+              :client_id           => options.get_option(:client_id,:mandatory),
+              :client_secret       => options.get_option(:client_secret,:mandatory),
+              #:redirect_uri   => options.get_option(:redirect_uri,:mandatory),
+              :jwt_subject         => "client:#{options.get_option(:client_id,:mandatory)}", # TODO Mmmm
+              :jwt_private_key_obj => OpenSSL::PKey::RSA.new(options.get_option(:private_key,:mandatory)),
+              :jwt_audience =>options.get_option(:client_id,:mandatory), # TODO Mmmm
+              #:token_field    =>'auth_token',
+              #:path_token     => 'authenticate',
+              #:path_authorize => :unused,
+              #:userpass_body  => {name: options.get_option(:username,:mandatory),password: options.get_option(:password,:mandatory)}
               }})
             #  former version
             #            # get parameters
