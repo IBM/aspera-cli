@@ -1241,7 +1241,7 @@ arg: related ascp argument or env var suffix (PASS for ASPERA_SCP_PASS)
 </p>
 <p>
 UNDER CONSTRUCTION<br/>
-<a href="https://developer.ibm.com/api/view/aspera-prod:ibm-aspera:title-IBM_Aspera#id90944">Documentation&rarr;Node API&rarr;/opt/transfers</a><br/>
+<a href="https://developer.ibm.com/apis/catalog/?search=aspera">Aspera API Documentation</a>&rarr;Node API&rarr;/opt/transfers<br/>
 </p>
 
 <table>
@@ -3601,12 +3601,17 @@ So, it evolved into `ascli`:
 
   	* fix: remove keys from transfer spec and command line when not needed
   	* fix: default to create_dir:true so that sending single file to a folder does not rename file if folder does not exist 
-  	* fix: update documentation with regard to offline installation
- 	* feat: renamed command `nagios_check` to `health`
-	* feat: agent `http_gw` now supports upload
-	* feat: added option `sdk_url` to install SDK from local file for offline install
-	* feat: check new gem version periodically
-   * feat: the --fields= option, support -_fieldname_ to remove a field from default fields
+  	* new: update documentation with regard to offline and docker installation
+ 	* new: renamed command `nagios_check` to `health`
+	* new: agent `http_gw` now supports upload
+	* new: added option `sdk_url` to install SDK from local file for offline install
+	* new: check new gem version periodically
+	* new: the --fields= option, support -_fieldname_ to remove a field from default fields
+	* new: Oauth tokens are discarded automatically after 30 minutes (useful for COS delegated refresh tokens)
+	* new: mimemagic is now optional, needs manual install for `preview`, compatible with version 0.4.x
+	* new: AoC a password can be provided for a public link
+	* new: `conf doc` take an optional parameter to go to a section
+	* new: initial support for Faspex 5 Beta 1
 
 * 4.0.0
 
