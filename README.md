@@ -1835,8 +1835,10 @@ OPTIONS:
         --username=VALUE             username to log in
         --password=VALUE             user's password
         --client-id=VALUE            API client identifier in application
+        --client-secret=VALUE        API client secret in application
         --redirect-uri=VALUE         API client redirect URI
         --auth=ENUM                  type of Oauth authentication: body_userpass, header_userpass, web, jwt, url_token, ibm_apikey, boot
+        --private-key=VALUE          RSA private key PEM value for JWT (prefix file path with @val:@file:)
 
 
 COMMAND: cos
@@ -1889,6 +1891,7 @@ OPTIONS:
         --case=VALUE                 basename of output for for test
         --scan-path=VALUE            subpath in folder id to start scan in (default=/)
         --scan-id=VALUE              forder id in storage to start scan in, default is access key main folder id
+        --mimemagic=ENUM             use Mime type detection of gem mimemagic: yes, no
         --overwrite=ENUM             when to overwrite result file: always, never, mtime
         --file-access=ENUM           how to read and write files in repository: local, remote
         --max-size=VALUE             maximum size (in bytes) of preview file
@@ -2859,28 +2862,43 @@ Notes:
 
 ## Faspex 5 Beta1
 
-As no web ui allows adding api client yet, the way to use CLI is:
+As the web UI does not yet allow adding API client yet, the way to use CLI is:
 
 * open a browser
 * start developer mode
 * login to faspex 5
-* find the first API call with `Authorization` token, and copy it
+* find the first API call with `Authorization` token, and copy it (kind of base64 long string)
 
 Use it as password and use `--auth=boot`.
 
-An JWT client can then be created with:
+```
+$ ascli conf id f5boot update --url=https://localhost/aspera/faspex --auth=boot --password=ABC.DEF.GHI...
+```
+
+An JWT client can then be created with a private key:
 
 ```
 $ jsonk=$(openssl rsa -in  ~/.aspera/ascli/aspera_on_cloud_key -pubout 2> /dev/null | sed -e :a -e N -e '$!ba' -e 's/\n/\\n/g')
-$ ascli faspex5 auth_client create --value=@json:'{"name":"hello","client_type":"public","redirect_uris":["https://localhost:12345"],"allow_jwt_grant":true,"public_key":"'$jsonk'"}'
+$ ascli faspex5 -Pf5boot auth_client create --value=@json:'{"name":"hello","client_type":"public","redirect_uris":["https://localhost:12345"],"allow_jwt_grant":true,"public_key":"'$jsonk'"}'
 ```
 
-and deleted by name:
+or deleted by name:
 
 ```
 $ id=$(ascli faspex5 auth_client list --select=@json:'{"name":"hello"}' --fields=client_id --format=csv)
 $ ascli faspex5 auth_client delete --id=$id
 ```
+
+Once the API client is created with a client_id and secret (result of create command), create a configuration:
+
+```
+$ ascli conf id f5 update --url=https://localhost/aspera/faspex --auth=jwt --client-id=abcd --client-secret=def --username=pierre@example.com --private-key=@val:@file:~/.aspera/ascli/aspera_on_cloud_key
+$ ascli conf id default set faspex5 f5
+``` 
+
+Ready to use Faspex5 with CLI.
+
+Once the graphical registration form exist, ther bootstrap method can be removed.
 
 ## Sending a Package
 
@@ -2960,6 +2978,8 @@ $ for p in 1 2 3;do ascli shares2 admin users list --value=@json:'{"page":'$p'}'
 # Plugin: IBM Cloud Object Storage
 
 The IBM Cloud Object Storage provides the possibility to execute transfers using FASP.
+It uses the same transfer service as Aspera on Cloud.
+see [https://status.aspera.io](https://status.aspera.io)
 
 Required options are either:
 
@@ -3016,7 +3036,14 @@ Endpoints for regions can be found by querying the `endpoints` URL.
 For convenience, let us create a default configuration, for example:
 
 ```
-$ ascli conf id mycos update --service-credentials=@val:@json:@file:$HOME/service_creds.json  --region=us-south --bucket=laurent
+$ ascli conf id mycos update --bucket=laurent --service-credentials=@val:@json:@file:~/service_creds.json --region=us-south
+$ ascli conf id default set cos mycos
+```
+
+or using direct parameters:
+
+```
+$ ascli conf id mycos update --bucket=mybucket --endpoint=https://s3.us-east.cloud-object-storage.appdomain.cloud --apikey=abcdefgh --crn=crn:v1:bluemix:public:iam-identity::a/xxxxxxx
 $ ascli conf id default set cos mycos
 ```
 
@@ -3082,6 +3109,7 @@ The tool requires the following external tools available in the `PATH`:
 * OptiPNG : `optipng`
 * FFmpeg : `ffmpeg` `ffprobe`
 * Libreoffice : `libreoffice`
+* ruby gem `mimemagic`
 
 Here shown on Redhat/CentOS.
 
@@ -3092,6 +3120,26 @@ To check if all tools are found properly, execute:
 ```
 $ ascli preview check
 ```
+
+### mimemagic
+
+To benefit from extra mime type detection install gem mimemagic:
+
+```
+# gem install mimemagic
+```
+
+or to install an earlier version if any problem:
+
+```
+# gem install mimemagic -v '~> 0.3.0'
+```
+
+To use it, set option `mimemagic` to `yes`: `--mimemagic=yes`
+
+If not used, Mime type used for conversion is the one provided by the node API.
+
+If used, it the `preview` command will first analyse the file content using mimemagic, and if no match, will try by extension.
 
 ### Image: Imagemagick and optipng
 

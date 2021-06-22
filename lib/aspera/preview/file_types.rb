@@ -1,11 +1,11 @@
-require 'mimemagic'
-require 'mimemagic/version'
-require 'mimemagic/overlay' if MimeMagic::VERSION.start_with?('0.3.')
 require 'aspera/log'
+require 'singleton'
 
 module Aspera
   module Preview
+    # function conversion_type returns one of the types: CONVERSION_TYPES
     class FileTypes
+      include Singleton
       # values for conversion_type : input format
       CONVERSION_TYPES=[
         :image,
@@ -150,6 +150,7 @@ module Aspera
         'dif' => :office,
         'divx' => :video,
         'dng' => :image,
+        'docx' => :office,
         'dpx' => :image,
         'epdf' => :image,
         'epi' => :image,
@@ -206,6 +207,7 @@ module Aspera
         'pam' => :image,
         'pcd' => :image,
         'pcds' => :image,
+        'pdf' => :pdf,
         'pef' => :image,
         'picon' => :image,
         'pict' => :image,
@@ -263,43 +265,67 @@ module Aspera
         'x3f' => :image,
         'xcf' => :image,
         'xlk' => :office,
+        'xlsx' => :office,
+        'xls' => :office,
         'ycbcr' => :image,
         'ycbcra' => :image,
         'yuv' => :image,
         'zabw' => :office}
 
-      #private_constant :SUPPORTED_MIME_TYPES, :SUPPORTED_EXTENSIONS
+      private_constant :SUPPORTED_MIME_TYPES, :SUPPORTED_EXTENSIONS
 
-      def self.mime_from_file(filepath)
-        # check magic number inside file
+      # @attr use_mimemagic [bool] true to use mimemagic to determine real mime type based on file content
+      attr_accessor :use_mimemagic
+
+      def initialize
+        @use_mimemagic=false
+      end
+
+      # use mime magic to find mime type based on file content (magic numbers)
+      def mime_from_file(filepath)
+        # moved here, as mimemagic can cause installation issues
+        require 'mimemagic'
+        require 'mimemagic/version'
+        require 'mimemagic/overlay' if MimeMagic::VERSION.start_with?('0.3.')
+        # check magic number inside file (empty string if not found)
         detected_mime=MimeMagic.by_magic(File.open(filepath)).to_s
         # check extension only
-        detected_mime=MimeMagic.by_extension(File.extname(filepath)).to_s if detected_mime.empty?
+        if !SUPPORTED_MIME_TYPES.has_key?(detected_mime)
+          Log.log.debug("no conversion for #{detected_mime}, trying extension")
+          detected_mime=MimeMagic.by_extension(File.extname(filepath)).to_s
+        end
         detected_mime=nil if detected_mime.empty?
-        Log.log.debug("mime_from_file: #{detected_mime.class.name} [#{detected_mime}]")
+        Log.log.debug("mimemagic: #{detected_mime.class.name} [#{detected_mime}]")
         return detected_mime
       end
 
-      def self.conversion_type(filepath,mimetype,try_local_mime)
-        detected_mime=nil
-        if try_local_mime
+      # return file type, one of enum CONVERSION_TYPES
+      # @param filepath [String] full path to file
+      # @param mimetype [String] provided by node api
+      def conversion_type(filepath,mimetype)
+        Log.log.debug("conversion_type(#{filepath},m=#{mimetype},t=#{@use_mimemagic})")
+        # 1- get type from provided mime type, using local mapping
+        conv_type=SUPPORTED_MIME_TYPES[mimetype] if ! mimetype.nil?
+        # 2- else, from computed mime type (if available)
+        if conv_type.nil? and @use_mimemagic
           detected_mime=mime_from_file(filepath)
-          if mimetype.eql?(detected_mime)
-            Log.log.debug("matching mime type per magic number")
-          else
-            # note: detected can be nil
-            Log.log.debug("non matching mime types: node=[#{mimetype}], magic=[#{detected_mime}]")
+          if ! detected_mime.nil?
+            conv_type=SUPPORTED_MIME_TYPES[detected_mime]
+            if ! mimetype.nil?
+              if mimetype.eql?(detected_mime)
+                Log.log.debug("matching mime type per magic number")
+              else
+                # note: detected can be nil
+                Log.log.debug("non matching mime types: node=[#{mimetype}], magic=[#{detected_mime}]")
+              end
+            end
           end
         end
-        # 1- get type from provided mime type
-        result=FileTypes::SUPPORTED_MIME_TYPES[mimetype] unless mimetype.nil?
-        # 2- else, from computed mime type
-        result||=FileTypes::SUPPORTED_MIME_TYPES[detected_mime] unless detected_mime.nil?
-        extension = File.extname(filepath).downcase.gsub(/^\./,'')
-        # 3- else, from local extensions
-        result||=FileTypes::SUPPORTED_EXTENSIONS[extension]
-        Log.log.debug("conversion_type: #{result.class.name} [#{result}]")
-        return result
+        # 3- else, from extensions, using local mapping
+        extension = File.extname(filepath.downcase)[1..-1]
+        conv_type=SUPPORTED_EXTENSIONS[extension] if conv_type.nil?
+        Log.log.debug("conversion_type(#{extension}): #{conv_type.class.name} [#{conv_type}]")
+        return conv_type
       end
     end
   end

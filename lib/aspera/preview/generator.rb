@@ -15,7 +15,7 @@ module Aspera
 
       # @param src source file path
       # @param dst destination file path
-      # @param api_mime_type optional mime type as provided by node api
+      # @param api_mime_type optional mime type as provided by node api (or nil)
       # node API mime types are from: http://svn.apache.org/repos/asf/httpd/httpd/trunk/docs/conf/mime.types
       # supported preview type is one of Preview::PREVIEW_FORMATS
       # the resulting preview file type is taken from destination file extension.
@@ -25,14 +25,14 @@ module Aspera
       #   -> preview_format is one of Generator::PREVIEW_FORMATS
       # the conversion video->mp4 is implemented in methods: convert_video_to_mp4_using_<video_conversion>
       #  -> conversion method is one of Generator::VIDEO_CONVERSION_METHODS
-      def initialize(options,src,dst,main_temp_dir,api_mime_type=nil,try_local_mime=true)
+      def initialize(options,src,dst,main_temp_dir,api_mime_type)
         @options=options
         @source_file_path=src
         @destination_file_path=dst
         @temp_folder=File.join(main_temp_dir,@source_file_path.split('/').last.gsub(/\s/, '_').gsub(/\W/, ''))
         # extract preview format from extension of target file
         @preview_format_symb=File.extname(@destination_file_path).gsub(/^\./,'').to_sym
-        @conversion_type=FileTypes.conversion_type(@source_file_path,api_mime_type,try_local_mime)
+        @conversion_type=FileTypes.instance.conversion_type(@source_file_path,api_mime_type)
       end
 
       # name of processing method in this object

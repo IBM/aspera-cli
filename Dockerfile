@@ -6,6 +6,7 @@ ENV ASCLI_SDK_FOLDER $appdir/sdk
 COPY $gemfile aspera-cli.gem
 RUN mkdir $appdir/config
 RUN gem install aspera-cli.gem
+RUN gem install mimemagic
 # download ascp
 RUN ascli conf ascp install
 # create key files

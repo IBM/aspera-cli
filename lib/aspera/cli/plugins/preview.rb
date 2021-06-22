@@ -56,9 +56,11 @@ module Aspera
           self.options.add_opt_simple(:case,'basename of output for for test')
           self.options.add_opt_simple(:scan_path,'subpath in folder id to start scan in (default=/)')
           self.options.add_opt_simple(:scan_id,'forder id in storage to start scan in, default is access key main folder id')
+          self.options.add_opt_boolean(:mimemagic,'use Mime type detection of gem mimemagic')
           self.options.add_opt_list(:overwrite,[:always,:never,:mtime],'when to overwrite result file')
           self.options.add_opt_list(:file_access,[:local,:remote],'how to read and write files in repository')
           self.options.set_option(:temp_folder,Dir.tmpdir)
+          self.options.set_option(:mimemagic,:false)
 
           # add other options for generator (and set default values)
           Aspera::Preview::Options::DESCRIPTIONS.each do |opt|
@@ -283,7 +285,7 @@ module Aspera
               end
             end
             # need generator for further checks
-            gen_info[:generator]=Aspera::Preview::Generator.new(@gen_options,gen_info[:src],gen_info[:dst],@tmp_folder,entry['content_type'],false)
+            gen_info[:generator]=Aspera::Preview::Generator.new(@gen_options,gen_info[:src],gen_info[:dst],@tmp_folder,entry['content_type'])
             # get conversion_type (if known) and check if supported
             next false unless gen_info[:generator].supported?
             # shall we skip it ?
@@ -411,6 +413,7 @@ module Aspera
               end
             end
           end
+          Aspera::Preview::FileTypes.instance.use_mimemagic = self.options.get_option(:mimemagic,:mandatory)
           case command
           when :scan
             scan_path=self.options.get_option(:scan_path,:optional)
@@ -445,7 +448,7 @@ module Aspera
             format = self.options.get_next_argument('format',Aspera::Preview::Generator::PREVIEW_FORMATS)
             source = self.options.get_next_argument('source file')
             dest=preview_filename(format,self.options.get_option(:case,:optional))
-            g=Aspera::Preview::Generator.new(@gen_options,source,dest,@tmp_folder)
+            g=Aspera::Preview::Generator.new(@gen_options,source,dest,@tmp_folder,nil)
             raise "cannot find file type for #{source}" if g.conversion_type.nil?
             raise "out format #{format} not supported" unless g.supported?
             g.generate
