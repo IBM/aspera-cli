@@ -16,7 +16,10 @@ module Aspera
     # one hour validity (TODO: configurable?)
     JWT_EXPIRY_OFFSET=3600
     PERSIST_CATEGORY_TOKEN='token'
-    private_constant :JWT_NOTBEFORE_OFFSET,:JWT_EXPIRY_OFFSET,:PERSIST_CATEGORY_TOKEN
+    # tokens older than 30 minutes will be discarded
+    TOKEN_EXPIRY_SECONDS=1800
+    THANK_YOU_HTML = "<html><head><title>Ok</title></head><body><h1>Thank you !</h1><p>You can close this window.</p></body></html>"
+    private_constant :JWT_NOTBEFORE_OFFSET,:JWT_EXPIRY_OFFSET,:PERSIST_CATEGORY_TOKEN,:TOKEN_EXPIRY_SECONDS,:THANK_YOU_HTML
     class << self
       # OAuth methods supported
       def auth_types
@@ -32,14 +35,14 @@ module Aspera
           Log.log.warn('Not using persistency (use Aspera::Oauth.persist_mgr=Aspera::PersistencyFolder.new)')
           # create NULL persistency class
           @persist=Class.new do
-            def get(x);nil;end;def delete(x);nil;end;def put(x,y);nil;end;def flush_by_prefix(x);nil;end
+            def get(x);nil;end;def delete(x);nil;end;def put(x,y);nil;end;def garbage_collect(x,y);nil;end
           end.new
         end
         return @persist
       end
 
       def flush_tokens
-        persist_mgr.flush_by_prefix(PERSIST_CATEGORY_TOKEN)
+        persist_mgr.garbage_collect(PERSIST_CATEGORY_TOKEN,nil)
       end
     end
 
@@ -85,9 +88,9 @@ module Aspera
         raise "redirect_uri must have a port" if uri.port.nil?
         # we could check that host is localhost or local address
       end
+      # cleanup expired tokens
+      self.class.persist_mgr.garbage_collect(PERSIST_CATEGORY_TOKEN,TOKEN_EXPIRY_SECONDS)
     end
-
-    THANK_YOU_HTML = "<html><head><title>Ok</title></head><body><h1>Thank you !</h1><p>You can close this window.</p></body></html>"
 
     # open the login page, wait for code and check_code, then return code
     def goto_page_and_get_code(login_page_url,check_code)

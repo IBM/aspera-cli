@@ -55,12 +55,17 @@ module Aspera
       @cache.delete(object_id)
     end
 
-    def flush_by_prefix(persist_category)
-      persist_files=Dir[File.join(@folder,persist_category+'*'+FILE_SUFFIX)]
-      persist_files.each do |filepath|
-        File.delete(filepath)
+    def garbage_collect(persist_category,max_age_seconds=nil)
+      garbage_files=Dir[File.join(@folder,persist_category+'*'+FILE_SUFFIX)]
+      if !max_age_seconds.nil?
+        current_time = Time.now
+        garbage_files.select! { |filepath| (current_time - File.stat(filepath).mtime).to_i > max_age_seconds}
       end
-      return persist_files
+      garbage_files.each do |filepath|
+        File.delete(filepath)
+        Log.log.debug("Deleted expired: #{filepath}")
+      end
+      return garbage_files
     end
 
     private
