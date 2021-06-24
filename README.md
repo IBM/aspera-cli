@@ -146,17 +146,21 @@ Then, follow the section relative to the product you want to interact with ( Asp
 
 # <a name="installation"></a>Installation
 
-It is possible to install *either* as a docker container or step by step on the native host:
+It is possible to install *either* directly on the host operating system (Linux, Windows, Macos) or as a docker container.
+
+The direct installation is recommended and consists in installing:
 
 * [Ruby](#ruby) version >= > 2.4
 * [aspera-cli](#the_gem)
 * [Aspera SDK (ascp)](#fasp_prot)
 
-The following sections provide information on the installation.
+The following sections provide information on the various installation methods.
 
 An internet connection is required for the installation. If you dont have internet for the installation, refer to section [Installation without internet access](#offline_install).
 
 ## Docker container
+
+Use this method only if you know what you do, else use the standard recommended method as described here above.
 
 This method installs a docker image that contains: Ruby, ascli and the FASP sdk.
 
@@ -181,11 +185,12 @@ $ ./ascli install
 
 Start using it !
 
-Note that the tool is run in the container.
+Note that the tool is run in the container, so transfers are also executed in the container, not calling host.
 
-The wrapping script maps the container folder `/usr/src/app/config` to configuration folder `$HOME/.aspera/ascli`.
+The wrapping script maps the container folder `/usr/src/app/config` to configuration folder `$HOME/.aspera/ascli` on host.
 
 To transfer to/from the native host, you will need to map a volume in docker or use the config folder (already mapped).
+To add local storage as a volume edit the script: ascli and add a `--volume` stanza.
 
 ## <a name="ruby"></a>Ruby
 
@@ -195,7 +200,7 @@ A ruby interpreter is required to run the tool or to use the gem and tool.
 
 Ruby minimum version: > 2.4. Ruby version 3 is also supported.
 
-*Any type of Ruby installation can be used* : rpm, yum, dnf, rvm, brew, windows installer, ... .
+*Ruby can be installed using any method* : rpm, yum, dnf, rvm, brew, windows installer, ... .
 
 Refer to the following sections for a proposed method for specific operating systems.
 
@@ -3597,7 +3602,11 @@ So, it evolved into `ascli`:
 
 # Changes (Release notes)
 
-* 4.x
+* 4.1.0
+
+	* new
+
+* 4.1.0
 
   	* fix: remove keys from transfer spec and command line when not needed
   	* fix: default to create_dir:true so that sending single file to a folder does not rename file if folder does not exist 
