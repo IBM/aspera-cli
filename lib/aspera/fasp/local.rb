@@ -160,6 +160,8 @@ module Aspera
       def start_transfer_with_args_env(env_args,session)
         raise "env_args must be Hash" unless env_args.is_a?(Hash)
         raise "session must be Hash" unless session.is_a?(Hash)
+        # by default we assume an exception will be raised (for ensure block)
+        exception_raised=true
         begin
           Log.log.debug("env_args=#{env_args.inspect}")
           # get location of ascp executable
@@ -232,13 +234,11 @@ module Aspera
             end # case
           end # loop (process mgt port lines)
           # check that last status was received before process exit
-          if last_status_event.nil?
-            Log.log.warn("no status read from ascp mgt port")
-          else
+          if last_status_event.is_a?(Hash)
             case last_status_event['Type']
             when 'DONE'
-              # return method (or just don't do anything)
-              return
+              # all went well
+              exception_raised=false
             when 'ERROR'
               Log.log.error("code: #{last_status_event['Code']}")
               if last_status_event['Description']  =~ /bearer token/i
@@ -249,9 +249,12 @@ module Aspera
                 end
               end
               raise Fasp::Error.new(last_status_event['Description'],last_status_event['Code'].to_i)
-            else
+            else # case
               raise "unexpected last event type: #{last_status_event['Type']}"
             end
+          else
+            exception_raised=false
+            Log.log.debug('no status read from ascp mgt port')
           end
         rescue SystemCallError => e
           # Process.spawn
@@ -269,7 +272,13 @@ module Aspera
             ascp_pid=nil
             session.delete(:io)
             if !status.success?
-              raise Fasp::Error.new("ascp failed with code #{status.exitstatus}")
+              message="ascp failed with code #{status.exitstatus}"
+              if exception_raised
+                # just debug, as main exception is already here
+                Log.log.debug(message)
+              else
+                raise Fasp::Error.new(message)
+              end
             end
           end
         end # begin-ensure
