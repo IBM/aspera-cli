@@ -1971,10 +1971,10 @@ $ <%=cmd%> aoc packages recv --id=ALL --once-only=yes --lock-port=12345
 * `--once-only=yes` keeps memory of any downloaded package in persistency files located in the configuration folder.
 * `--lock-port=12345` ensures that only one instance is started at the same time, to avoid collisions
 
-Typically, one would regularly execute this command on a regular basis, using the method oif your choice:
+Typically, one would regularly execute this command on a regular basis, using the method of your choice:
 
-* Windows scheduler
-* cron
+* Windows: [Task Scheduler](https://docs.microsoft.com/en-us/windows/win32/taskschd/task-scheduler-start-page)
+* Linux/Unix: [cron](https://www.man7.org/linux/man-pages/man5/crontab.5.html)
 * etc...
 
 ## Download Files
