@@ -970,7 +970,7 @@ $(T)sdk1: $(T).exists
 	@touch $@
 tsample: $(T)sdk1
 
-$(T)tcos: $(T).exists
+$(T)tcos: $(T).exists $(CF_LOCAL_SAMPLE_FILEPATH)
 	@echo $@
 	set -x;\
 	icos_bucket_name=$$($(EXE_NOMAN) conf id misc get icos_bucket_name);\

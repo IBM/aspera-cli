@@ -120,16 +120,6 @@ module Aspera
       # default is no auth
       @params[:auth]||={:type=>:none}
       @params[:not_auth_codes]||=['401']
-      # translate old auth parameters, remove prefix, place in auth (TODO: delete this)
-#      [:auth,:basic,:oauth].each do |p_sym|
-#        p_str=p_sym.to_s+'_'
-#        @params.keys.select{|k|k.to_s.start_with?(p_str)}.each do |k_sym|
-#          name=k_sym.to_s[p_str.length..-1]
-#          name='grant' if k_sym.eql?(:oauth_type)
-#          @params[:auth][name.to_sym]=@params[k_sym]
-#          @params.delete(k_sym)
-#        end
-#      end
       @oauth=Oauth.new(@params[:auth]) if @params[:auth][:type].eql?(:oauth2)
       Log.dump('REST params(2)',@params)
     end
@@ -156,6 +146,7 @@ module Aspera
       Log.log.debug("accessing #{call_data[:subpath]}".red.bold.bg_green)
       call_data[:headers]||={}
       call_data[:headers]['User-Agent'] ||= @@user_agent
+      # defaults from @params are overriden by call dataz
       call_data=@params.deep_merge(call_data)
       case call_data[:auth][:type]
       when :none
