@@ -4,6 +4,7 @@ require 'aspera/preview/options'
 require 'aspera/preview/utils'
 require 'aspera/preview/file_types'
 require 'aspera/persistency_action_once'
+require 'aspera/node'
 require 'aspera/hash_ext'
 require 'date'
 require 'securerandom'
@@ -322,12 +323,14 @@ module Aspera
         end # generate_preview
 
         # scan all files in provided folder entry
+        # @param scan_start subpath to start folder scan inside
         def scan_folder_files(top_entry,scan_start=nil)
           if !scan_start.nil?
             # canonical path: start with / and ends with /
             scan_start='/'+scan_start.split('/').select{|i|!i.empty?}.join('/')
             scan_start="#{scan_start}/" #unless scan_start.end_with?('/')
           end
+          filter_block=Aspera::Node.file_matcher(options.get_option(:value,:optional))
           Log.log.debug("scan: #{top_entry} : #{scan_start}".green)
           # don't use recursive call, use list instead
           entries_to_process=[top_entry]
@@ -343,7 +346,11 @@ module Aspera
             Log.log.debug("item:#{entry}")
             case entry['type']
             when 'file'
-              generate_preview(entry)
+              if filter_block.call(entry)
+                generate_preview(entry)
+              else
+                Log.log.debug('skip by filter')
+              end
             when 'link'
               Log.log.debug('Ignoring link.')
             when 'folder'
@@ -438,6 +445,8 @@ module Aspera
               data: iteration_data,
               ids: ["preview_iteration_#{command}",self.options.get_option(:url,:mandatory),self.options.get_option(:username,:mandatory)])
             end
+
+            # call method specified
             iteration_data[0]=send("process_#{command}",iteration_data[0])
             iteration_persistency.save unless iteration_persistency.nil?
             return Main.result_status("#{command} finished")

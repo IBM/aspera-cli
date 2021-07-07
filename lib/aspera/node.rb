@@ -8,10 +8,23 @@ module Aspera
   class Node < Rest
     # permissions
     ACCESS_LEVELS=['delete','list','mkdir','preview','read','rename','write']
+    MATCH_EXEC_PREFIX='exec:'
 
     # for information only
     def self.decode_bearer_token(token)
       return JSON.parse(Zlib::Inflate.inflate(Base64.decode64(token)).partition('==SIGNATURE==').first)
+    end
+
+    # for access keys: provide expression to match entry in folder
+    # if no prefix: regex
+    # if prefix: ruby code
+    # if filder is nil, then always match
+    def self.file_matcher(match_expression)
+      match_expression||="#{MATCH_EXEC_PREFIX}true"
+      if match_expression.start_with?(MATCH_EXEC_PREFIX)
+        return eval "lambda{|f|#{match_expression[MATCH_EXEC_PREFIX.length..-1]}}"
+      end
+      return lambda{|f|f['name'].match(/#{match_expression}/)}
     end
 
     def initialize(rest_params)

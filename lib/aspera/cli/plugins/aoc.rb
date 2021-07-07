@@ -117,14 +117,7 @@ module Aspera
             return {:type=>:object_list,:data=>items,:fields=>['name','type','recursive_size','size','modified_time','access_level']}
           when :find
             thepath=self.options.get_next_argument('path')
-            exec_prefix='exec:'
-            expression=self.options.get_option(:value,:optional)||"#{exec_prefix}true"
-            node_file=@api_aoc.resolve_node_file(top_node_file,thepath)
-            if expression.start_with?(exec_prefix)
-              test_block=eval "lambda{|f|#{expression[exec_prefix.length..-1]}}"
-            else
-              test_block=lambda{|f|f['name'].match(/#{expression}/)}
-            end
+            test_block=Aspera::Node.file_matcher(self.options.get_option(:value,:optional))
             return {:type=>:object_list,:data=>@api_aoc.find_files(node_file,test_block),:fields=>['path']}
           when :mkdir
             thepath=self.options.get_next_argument('path')

@@ -3066,7 +3066,7 @@ to start from ma configuration file, using `ascli` standard options.
 
 # Plugin: Preview
 
-The `preview` generates "previews" of graphical files, i.e. thumbnails (office, images, video) and video previews on an Aspera HSTS for use primarily in the Aspera on Cloud application.
+The `preview` generates "previews" of graphical files, i.e. thumbnails (office, images, video) and video previews on storage for use primarily in the Aspera on Cloud application.
 This is based on the "node API" of Aspera HSTS when using Access Keys only inside it's "storage root".
 Several parameters can be used to tune several aspects:
 
@@ -3195,9 +3195,10 @@ $ ascli config id previewconf update --url=https://localhost:9092 --username=my_
 $ ascli config id default set preview previewconf
 ```
 
-Here we assume that Office file generation is disabled, else remove the option. `lock_port` prevents concurrent execution of generation when using a scheduler.
+Here we assume that Office file generation is disabled, else remove this option.
+`lock_port` prevents concurrent execution of generation when using a scheduler.
 
-Once can check if the access key is well configured using:
+One can check if the access key is well configured using:
 
 ```
 $ ascli -Ppreviewconf node browse /
@@ -3282,6 +3283,14 @@ $ ascli preview scan --skip-folders=@json:'["/not_here"]'
 ```
 
 The option `folder_reset_cache` forces the node service to refresh folder contents using various methods.
+
+When scanning the option `value` has the same behaviour as for the `node find` command.
+
+For instance to filter out files beginning with `._` do:
+
+```
+... --value='exec:!f["name"].start_with?("._") or f["name"].eql?(".DS_Store")'
+```
 
 ## Preview File types
 
@@ -3602,10 +3611,11 @@ So, it evolved into `ascli`:
 
 # Changes (Release notes)
 
-* 4.1.0
+* 4.1.0.latest
 
 	* change: `aoc apiinfo` is removed, use `aoc servers` to provide the list of cloud systems
 	* new: command `aoc remind` to receive organization membership by email
+	* new: in `preview` option `value` to filter out on file name
 
 * 4.1.0
 

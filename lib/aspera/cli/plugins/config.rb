@@ -130,9 +130,10 @@ module Aspera
           latest_version=begin
             Rest.new(base_url: "https://rubygems.org/api/v1").read("versions/#{this_gem_name}/latest.json")[:data]['version']
           rescue
-            nil
+            Log.log.warn("Could not retrieve latest gem version on rubygems.")
+            '0'
           end
-          return {name: this_gem_name,current: Aspera::Cli::VERSION, latest: latest_version, need_update: Gem::Version.new(Aspera::Cli::VERSION) < Gem::Version.new(latest_version)}
+          return {name: this_gem_name, current: Aspera::Cli::VERSION, latest: latest_version, need_update: Gem::Version.new(Aspera::Cli::VERSION) < Gem::Version.new(latest_version)}
         end
 
         def periodic_check_newer_gem_version
@@ -154,14 +155,13 @@ module Aspera
               nil
             end
             current_date=Date.today
-            Log.log.info("last check: #{last_check_date.class}")
+            Log.log.debug("days elapsed: #{last_check_date.is_a?(Date) ? current_date - last_check_date : last_check_date.class.name}")
             if last_check_date.nil? or (current_date - last_check_date) > delay_days
-              Log.log.info("days elapsed #{last_check_date.is_a?(Date) ? current_date - last_check_date : last_check_date.class.name}")
               last_check_array[0]=current_date.strftime("%Y/%m/%d")
               check_date_persist.save
               check_data=check_gem_version
               if check_data[:need_update]
-                Log.log.warn("A new version is available: #{check_data[:latest]}. You have #{check_data[:current]}. Upgrade with: gem update #{check_data[:nname]}")
+                Log.log.warn("A new version is available: #{check_data[:latest]}. You have #{check_data[:current]}. Upgrade with: gem update #{check_data[:name]}")
               end
             end
           end
