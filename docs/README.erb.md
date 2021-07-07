@@ -3016,7 +3016,7 @@ So, it evolved into <%=tool%>:
 
 * <%= gemspec.version.to_s %>
 
-	* new
+	* `aoc apiinfo` is replaced with `aoc servers` to provide the list of cloud systems
 
 * 4.1.0
 

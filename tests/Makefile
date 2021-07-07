@@ -309,7 +309,6 @@ tnode: $(T)nd1 $(T)nd2 $(T)nd_2_nd_xfer $(T)nd4 $(T)nd5 $(T)nd6 $(T)nd7 $(T)nd_n
 
 $(T)aocg1: $(T).exists
 	@echo $@
-	$(EXE_MAN) aoc apiinfo
 	$(EXE_MAN) aoc servers
 	@touch $@
 $(T)aocg2: $(T).exists

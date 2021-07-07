@@ -1499,7 +1499,6 @@ ascli aoc admin resource node --name=AOC_NODE1_NAME --secret=AOC_NODE1_SECRET v4
 ascli aoc admin resource node --name=AOC_NODE1_NAME --secret=AOC_NODE1_SECRET v4 mkdir /folder1
 ascli aoc admin resource workspace list
 ascli aoc admin resource workspace_membership list --fields=ALL --query=@json:'{"page":1,"per_page":50,"embed":"member","inherited":false,"workspace_id":11363,"sort":"name"}'
-ascli aoc apiinfo
 ascli aoc automation workflow --id="my_wf_id" action create --value=@json:'{"name":"toto"}' | tee action.info
 ascli aoc automation workflow create --value=@json:'{"name":"test_workflow"}'
 ascli aoc automation workflow delete --id="my_wf_id"
@@ -1923,7 +1922,7 @@ OPTIONS:
 
 
 COMMAND: aoc
-SUBCOMMANDS: apiinfo bearer_token organization tier_restrictions user workspace packages files gateway admin automation servers
+SUBCOMMANDS: bearer_token organization tier_restrictions user workspace packages files gateway admin automation servers
 OPTIONS:
         --url=VALUE                  URL of application, e.g. https://org.asperafiles.com
         --username=VALUE             username to log in
@@ -3604,7 +3603,7 @@ So, it evolved into `ascli`:
 
 * 4.1.0
 
-	* new
+	* `aoc apiinfo` is replaced with `aoc servers` to provide the list of cloud systems
 
 * 4.1.0
 

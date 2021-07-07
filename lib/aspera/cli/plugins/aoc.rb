@@ -704,16 +704,11 @@ module Aspera
         end
 
         # must be public
-        ACTIONS=[ :apiinfo, :bearer_token, :organization, :tier_restrictions, :user, :workspace, :packages, :files, :gateway, :admin, :automation, :servers]
+        ACTIONS=[ :bearer_token, :organization, :tier_restrictions, :user, :workspace, :packages, :files, :gateway, :admin, :automation, :servers]
 
         def execute_action
           command=self.options.get_next_command(ACTIONS)
           case command
-          when :apiinfo
-            api_info={}
-            num=1
-            Resolv::DNS.open{|dns|dns.each_address('api.ibmaspera.com'){|a| api_info["api.#{num}"]=a;num+=1}}
-            return {:type=>:single_object,:data=>api_info}
           when :bearer_token
             return {:type=>:text,:data=>@api_aoc.oauth_token}
           when :organization
