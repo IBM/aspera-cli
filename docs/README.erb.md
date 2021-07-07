@@ -3016,7 +3016,8 @@ So, it evolved into <%=tool%>:
 
 * <%= gemspec.version.to_s %>
 
-	* `aoc apiinfo` is replaced with `aoc servers` to provide the list of cloud systems
+	* change: `aoc apiinfo` is removed, use `aoc servers` to provide the list of cloud systems
+	* new: command `aoc remind` to receive organization membership by email
 
 * 4.1.0
 

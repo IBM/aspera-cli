@@ -9,6 +9,8 @@ module Aspera
     private
     @@use_standard_ports = true
 
+    API_V1='api/v1'
+
     PRODUCT_NAME='Aspera on Cloud'
     # Production domain of AoC
     PROD_DOMAIN='ibmaspera.com'
@@ -63,9 +65,14 @@ module Aspera
       return organization,instance_domain
     end
 
+    # base API url depends on domain, which could be "qa.xxx"
+    def self.api_base_url(api_domain=PROD_DOMAIN)
+      return "https://api.#{api_domain}"
+    end
+
     def self.metering_api(entitlement_id,customer_id,api_domain=PROD_DOMAIN)
       return Rest.new({
-        :base_url => "https://api.#{api_domain}/metering/v1",
+        :base_url => "#{api_base_url(api_domain)}/metering/v1",
         :headers  => {'X-Aspera-Entitlement-Authorization' => Rest.basic_creds(entitlement_id,customer_id)}
       })
     end
@@ -142,12 +149,12 @@ module Aspera
 
       # get org name and domain from url
       organization,instance_domain=self.class.parse_url(opt[:url])
-      # this is the base API url (depends on domain, which could be "qa.xxx")
-      api_base_url="https://api.#{instance_domain}"
-      # base API URL
-      aoc_rest_p[:base_url]="#{api_base_url}/#{opt[:subpath]}"
+      # this is the base API url
+      api_url_base=self.class.api_base_url(instance_domain)
+      # API URL, including subpath (version ...)
+      aoc_rest_p[:base_url]="#{api_url_base}/#{opt[:subpath]}"
       # base auth URL
-      aoc_auth_p[:base_url] = "#{api_base_url}/#{OAUTH_API_SUBPATH}/#{organization}"
+      aoc_auth_p[:base_url] = "#{api_url_base}/#{OAUTH_API_SUBPATH}/#{organization}"
       aoc_auth_p[:client_id]=opt[:client_id]
       aoc_auth_p[:client_secret] = opt[:client_secret]
 

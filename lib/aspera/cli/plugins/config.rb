@@ -681,7 +681,7 @@ module Aspera
               self.options.get_option(:username,:mandatory)
               # instanciate AoC plugin, so that command line options are known
               files_plugin=self.class.plugin_new(AOC_COMMAND_CURRENT,@agents.merge({skip_basic_auth_options: true, private_key_path: private_key_path}))
-              aoc_api=files_plugin.api_aoc
+              aoc_api=files_plugin.get_api
               auto_set_pub_key=false
               auto_set_jwt=false
               use_browser_authentication=false

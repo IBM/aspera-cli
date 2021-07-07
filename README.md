@@ -1461,6 +1461,8 @@ A non complete list of commands used in unit tests:
 ```
 ascli
 ascli -h
+ascli aoc -N remind --username=my_aoc_user_email
+ascli aoc -N servers
 ascli aoc admin analytics transfers --query=@json:'{"status":"completed","direction":"receive"}'
 ascli aoc admin ats access_key --id=akibmcloud --secret=somesecret node browse /
 ascli aoc admin ats access_key --id=akibmcloud delete
@@ -1535,7 +1537,6 @@ ascli aoc packages send --value=@json:'{"name":"Important files delivery","recip
 ascli aoc packages send --workspace="my_aoc_shbx_ws" --value=@json:'{"name":"Important files delivery","recipients":["my_aoc_shbx_name"]}' testfile.bin
 ascli aoc packages send -N --value=@json:'{"name":"Important files delivery"}' testfile.bin --link=my_aoc_publink_send_aoc_user --password=my_aoc_publink_send_use_pass
 ascli aoc packages send -N --value=@json:'{"name":"Important files delivery"}' testfile.bin --link=my_aoc_publink_send_shd_inbox
-ascli aoc servers
 ascli aoc user info modify @json:'{"name":"dummy change"}'
 ascli aoc user info show
 ascli aoc workspace
@@ -1554,8 +1555,8 @@ ascli ats cluster list
 ascli ats cluster show --cloud=aws --region=eu-west-1
 ascli ats cluster show --id=1f412ae7-869a-445c-9c05-02ad16813be2
 ascli conf flush_tokens
-ascli conf wiz --url=https://my_aoc_org.ibmaspera.com --config-file=SAMPLE_CONFIG_FILE --pkeypath='' --username=my_aoc_user --test-mode=yes
-ascli conf wiz --url=https://my_aoc_org.ibmaspera.com --config-file=SAMPLE_CONFIG_FILE --pkeypath='' --username=my_aoc_user --test-mode=yes --use-generic-client=yes
+ascli conf wiz --url=https://my_aoc_org.ibmaspera.com --config-file=SAMPLE_CONFIG_FILE --pkeypath='' --username=my_aoc_user_email --test-mode=yes
+ascli conf wiz --url=https://my_aoc_org.ibmaspera.com --config-file=SAMPLE_CONFIG_FILE --pkeypath='' --username=my_aoc_user_email --test-mode=yes --use-generic-client=yes
 ascli config ascp connect id 'Aspera Connect for Windows' info
 ascli config ascp connect id 'Aspera Connect for Windows' links id 'Windows Installer' download --to-folder=.
 ascli config ascp connect id 'Aspera Connect for Windows' links list
@@ -1922,7 +1923,7 @@ OPTIONS:
 
 
 COMMAND: aoc
-SUBCOMMANDS: bearer_token organization tier_restrictions user workspace packages files gateway admin automation servers
+SUBCOMMANDS: reminder bearer_token organization tier_restrictions user workspace packages files gateway admin automation servers
 OPTIONS:
         --url=VALUE                  URL of application, e.g. https://org.asperafiles.com
         --username=VALUE             username to log in
@@ -3603,7 +3604,8 @@ So, it evolved into `ascli`:
 
 * 4.1.0
 
-	* `aoc apiinfo` is replaced with `aoc servers` to provide the list of cloud systems
+	* change: `aoc apiinfo` is removed, use `aoc servers` to provide the list of cloud systems
+	* new: command `aoc remind` to receive organization membership by email
 
 * 4.1.0
 

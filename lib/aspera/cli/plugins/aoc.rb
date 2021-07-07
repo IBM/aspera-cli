@@ -15,7 +15,6 @@ module Aspera
       class Aoc < BasicAuthPlugin
         # special value for package id
         VAL_ALL='ALL'
-        attr_reader :api_aoc
         def initialize(env)
           super(env)
           @default_workspace_id=nil
@@ -26,6 +25,7 @@ module Aspera
           @api_aoc=nil
           @url_token_data=nil
           @user_info=nil
+          @api_aoc=nil
           self.options.add_opt_list(:auth,Oauth.auth_types,'type of Oauth authentication')
           self.options.add_opt_list(:operation,[:push,:pull],'client operation for transfers')
           self.options.add_opt_simple(:client_id,'API client identifier in application')
@@ -52,9 +52,15 @@ module Aspera
           self.options.parse_options!
           AoC.set_use_default_ports(self.options.get_option(:default_ports))
           return if env[:man_only]
-          @api_aoc=AoC.new(aoc_params('api/v1'))
-          # add access key secrets
-          @api_aoc.add_secrets(self.config.get_secrets)
+        end
+
+        def get_api
+          if @api_aoc.nil?
+            @api_aoc=AoC.new(aoc_params(AoC::API_V1))
+            # add access key secrets
+            @api_aoc.add_secrets(config.get_secrets)
+          end
+          return @api_aoc
         end
 
         # call this to populate single AK secret in AoC API object, from options
@@ -704,11 +710,17 @@ module Aspera
         end
 
         # must be public
-        ACTIONS=[ :bearer_token, :organization, :tier_restrictions, :user, :workspace, :packages, :files, :gateway, :admin, :automation, :servers]
+        ACTIONS=[ :reminder, :bearer_token, :organization, :tier_restrictions, :user, :workspace, :packages, :files, :gateway, :admin, :automation, :servers]
 
         def execute_action
           command=self.options.get_next_command(ACTIONS)
+          get_api unless [:reminder,:servers].include?(command)
           case command
+          when :reminder
+            # send an email reminder with list of orgs
+            user_email=options.get_option(:username,:mandatory)
+            Rest.new(base_url: "#{AoC.api_base_url}/#{AoC::API_V1}").create('organization_reminders',{email: user_email})[:data]
+            return Main.result_status("List of organizations user is member of, has been sent by e-mail to #{user_email}")
           when :bearer_token
             return {:type=>:text,:data=>@api_aoc.oauth_token}
           when :organization
@@ -952,10 +964,7 @@ module Aspera
           when :admin
             return execute_admin_action
           when :servers
-            self.format.display_status("Beta feature: #{@api_aoc.params[:base_url]}")
-            server_api=Rest.new(base_url: @api_aoc.params[:base_url])
-            servers=server_api.read('servers')[:data]
-            return {:type=>:object_list,:data=>servers}
+            return {:type=>:object_list,:data=>Rest.new(base_url: "#{AoC.api_base_url}/#{AoC::API_V1}").read('servers')[:data]}
           else
             raise "internal error: #{command}"
           end # action

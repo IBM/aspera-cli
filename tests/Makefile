@@ -309,7 +309,10 @@ tnode: $(T)nd1 $(T)nd2 $(T)nd_2_nd_xfer $(T)nd4 $(T)nd5 $(T)nd6 $(T)nd7 $(T)nd_n
 
 $(T)aocg1: $(T).exists
 	@echo $@
-	$(EXE_MAN) aoc servers
+	$(EXE_MAN) aoc -N servers
+	set -x;\
+	aoc_user_email=$$($(EXE_NOMAN) conf id misc get aoc_user_email);\
+	$(EXE_MAN) aoc -N remind --username=$${aoc_user_email}
 	@touch $@
 $(T)aocg2: $(T).exists
 	@echo $@
@@ -821,8 +824,8 @@ $(T)conf_wizard_org: $(T).exists
 	$(EXE_MAN) conf flush_tokens
 	set -x;\
 	aoc_org=$$($(EXE_NOMAN) conf id misc get aoc_org);\
-	aoc_user=$$($(EXE_NOMAN) conf id misc get aoc_user);\
-	$(EXE_MAN) conf wiz --url=https://$${aoc_org}.ibmaspera.com --config-file=$(SAMPLE_CONFIG_FILE) --pkeypath='' --username=$${aoc_user} --test-mode=yes --use-generic-client=yes
+	aoc_user_email=$$($(EXE_NOMAN) conf id misc get aoc_user_email);\
+	$(EXE_MAN) conf wiz --url=https://$${aoc_org}.ibmaspera.com --config-file=$(SAMPLE_CONFIG_FILE) --pkeypath='' --username=$${aoc_user_email} --test-mode=yes --use-generic-client=yes
 	cat $(SAMPLE_CONFIG_FILE)
 	rm -f $(SAMPLE_CONFIG_FILE)
 	@touch $@
@@ -831,8 +834,8 @@ $(T)conf_wizard_gen: $(T).exists
 	$(EXE_MAN) conf flush_tokens
 	set -x;\
 	aoc_org=$$($(EXE_NOMAN) conf id misc get aoc_org);\
-	aoc_user=$$($(EXE_NOMAN) conf id misc get aoc_user);\
-	$(EXE_MAN) conf wiz --url=https://$${aoc_org}.ibmaspera.com --config-file=$(SAMPLE_CONFIG_FILE) --pkeypath='' --username=$${aoc_user} --test-mode=yes
+	aoc_user_email=$$($(EXE_NOMAN) conf id misc get aoc_user_email);\
+	$(EXE_MAN) conf wiz --url=https://$${aoc_org}.ibmaspera.com --config-file=$(SAMPLE_CONFIG_FILE) --pkeypath='' --username=$${aoc_user_email} --test-mode=yes
 	cat $(SAMPLE_CONFIG_FILE)
 	rm -f $(SAMPLE_CONFIG_FILE)
 	@touch $@
