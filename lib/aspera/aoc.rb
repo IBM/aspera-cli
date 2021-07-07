@@ -42,11 +42,6 @@ module Aspera
     FILES_APP='files'
     PACKAGES_APP='packages'
 
-    CLIENT_RANDOM={
-      'aspera.global-cli-client' => 'frpmsRsG4mjZ0PlxCgdJlvONqBg4Vlpz_IX7gXmBMAfsgMLy2FO6CXLodKfKAuhqnCqSptLbe_wdmnm9JRuEPO-PpFqpq_Kb',
-      'aspera.drive' => 'UegzQ3LcbLht5dLYAXaR-7ZMnJ6-kwPEXWEXaqLSOMGmtzNA9r6kPFLElqBfq66BfgMabdO96k5sPXV-H8M3vsx9LbGlewF1'
-    }
-
     def self.get_client_info(client_name=CLIENT_APPS.first)
       client_index=CLIENT_APPS.index(client_name)
       raise "no such pre-defined client: #{client_name}" if client_index.nil?
