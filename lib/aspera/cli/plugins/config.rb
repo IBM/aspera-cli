@@ -53,12 +53,10 @@ module Aspera
         end
 
         private_constant :DEFAULT_CONFIG_FILENAME,:CONF_PRESET_CONFIG,:CONF_PRESET_VERSION,:CONF_PRESET_DEFAULT,:PROGRAM_NAME_V1,:PROGRAM_NAME_V2,:DEFAULT_REDIRECT,:ASPERA_PLUGINS_FOLDERNAME,:RUBY_FILE_EXT,:AOC_COMMAND_V1,:AOC_COMMAND_V2,:AOC_COMMAND_V3,:AOC_COMMAND_CURRENT,:DEMO,:TRANSFER_SDK_ARCHIVE_URL,:AOC_PATH_API_CLIENTS
-        attr_accessor :option_ak_secret,:option_secrets
 
         def initialize(env,tool_name,help_url,version,main_folder)
           super(env)
-          @option_ak_secret=nil
-          @option_secrets={}
+          raise 'missing secret manager' if @agents[:secret].nil?
           @plugins={}
           @plugin_lookup_folders=[]
           @use_plugin_defaults=true
@@ -87,50 +85,40 @@ module Aspera
           self.options.set_obj_attr(:ascp_path,self,:option_ascp_path)
           self.options.set_obj_attr(:use_product,self,:option_use_product)
           self.options.set_obj_attr(:preset,self,:option_preset)
-          self.options.set_obj_attr(:secret,self,:option_ak_secret)
-          self.options.set_obj_attr(:secrets,self,:option_secrets)
-          self.options.add_opt_boolean(:override,"override existing value")
-          self.options.add_opt_switch(:no_default,"-N","do not load default configuration for plugin") { @use_plugin_defaults=false }
+          self.options.set_obj_attr(:secret,@agents[:secret],:default_secret)
+          self.options.set_obj_attr(:secrets,@agents[:secret],:all_secrets)
+          self.options.add_opt_boolean(:override,'override existing value')
+          self.options.add_opt_switch(:no_default,'-N','do not load default configuration for plugin') { @use_plugin_defaults=false }
           self.options.add_opt_boolean(:use_generic_client,'wizard: AoC: use global or org specific jwt client id')
-          self.options.add_opt_simple(:pkeypath,"path to private key for JWT (wizard)")
-          self.options.add_opt_simple(:ascp_path,"path to ascp")
-          self.options.add_opt_simple(:use_product,"use ascp from specified product")
-          self.options.add_opt_simple(:smtp,"smtp configuration (extended value: hash)")
-          self.options.add_opt_simple(:fpac,"proxy auto configuration URL")
-          self.options.add_opt_simple(:preset,"-PVALUE","load the named option preset from current config file")
-          self.options.add_opt_simple(:default,"set as default configuration for specified plugin")
-          self.options.add_opt_simple(:secret,"access key secret for node")
-          self.options.add_opt_simple(:secrets,"access key secret for node")
-          self.options.add_opt_simple(:sdk_url,"URL to get SDK")
-          self.options.add_opt_simple(:sdk_folder,"SDK folder location")
-          self.options.add_opt_boolean(:test_mode,"skip user validation in wizard mode")
-          self.options.add_opt_simple(:version_check_days,Integer,"period to check neew version in days (zero to disable)")
+          self.options.add_opt_simple(:pkeypath,'path to private key for JWT (wizard)')
+          self.options.add_opt_simple(:ascp_path,'path to ascp')
+          self.options.add_opt_simple(:use_product,'use ascp from specified product')
+          self.options.add_opt_simple(:smtp,'smtp configuration (extended value: hash)')
+          self.options.add_opt_simple(:fpac,'proxy auto configuration URL')
+          self.options.add_opt_simple(:preset,'-PVALUE','load the named option preset from current config file')
+          self.options.add_opt_simple(:default,'set as default configuration for specified plugin')
+          self.options.add_opt_simple(:secret,'default secret')
+          self.options.add_opt_simple(:secrets,'secret repository (Hash)')
+          self.options.add_opt_simple(:sdk_url,'URL to get SDK')
+          self.options.add_opt_simple(:sdk_folder,'SDK folder location')
+          self.options.add_opt_boolean(:test_mode,'skip user validation in wizard mode')
+          self.options.add_opt_simple(:version_check_days,Integer,'period to check neew version in days (zero to disable)')
           self.options.set_option(:use_generic_client,true)
           self.options.set_option(:test_mode,false)
           self.options.set_option(:version_check_days,7)
           self.options.set_option(:sdk_url,TRANSFER_SDK_ARCHIVE_URL)
           self.options.set_option(:sdk_folder,File.join(@main_folder,'sdk'))
           self.options.parse_options!
-          raise CliBadArgument,"secrets shall be Hash" unless @option_secrets.is_a?(Hash)
+          raise CliBadArgument,'secrets shall be Hash' unless @agents[:secret].all_secrets.is_a?(Hash)
           Fasp::Installation.instance.folder=self.options.get_option(:sdk_folder,:mandatory)
-        end
-
-        def get_secret(id=nil,mandatory=true)
-          secret=self.options.get_option(:secret,:optional) || @option_secrets[id]
-          raise "please provide secret for #{id}" if secret.nil? and mandatory
-          return secret
-        end
-
-        def get_secrets
-          return @option_secrets
         end
 
         def check_gem_version
           this_gem_name=File.basename(File.dirname(self.class.gem_root)).gsub(/-[0-9].*$/,'')
           latest_version=begin
-            Rest.new(base_url: "https://rubygems.org/api/v1").read("versions/#{this_gem_name}/latest.json")[:data]['version']
+            Rest.new(base_url: 'https://rubygems.org/api/v1').read("versions/#{this_gem_name}/latest.json")[:data]['version']
           rescue
-            Log.log.warn("Could not retrieve latest gem version on rubygems.")
+            Log.log.warn('Could not retrieve latest gem version on rubygems.')
             '0'
           end
           return {name: this_gem_name, current: Aspera::Cli::VERSION, latest: latest_version, need_update: Gem::Version.new(Aspera::Cli::VERSION) < Gem::Version.new(latest_version)}
@@ -150,14 +138,14 @@ module Aspera
             ids:     ['version_last_check'])
             # get persisted date or nil
             last_check_date = begin
-              Date.strptime(last_check_array.first, "%Y/%m/%d")
+              Date.strptime(last_check_array.first, '%Y/%m/%d')
             rescue
               nil
             end
             current_date=Date.today
             Log.log.debug("days elapsed: #{last_check_date.is_a?(Date) ? current_date - last_check_date : last_check_date.class.name}")
             if last_check_date.nil? or (current_date - last_check_date) > delay_days
-              last_check_array[0]=current_date.strftime("%Y/%m/%d")
+              last_check_array[0]=current_date.strftime('%Y/%m/%d')
               check_date_persist.save
               check_data=check_gem_version
               if check_data[:need_update]
@@ -200,7 +188,7 @@ module Aspera
           require 'openssl'
           priv_key = OpenSSL::PKey::RSA.new(4096)
           File.write(private_key_path,priv_key.to_s)
-          File.write(private_key_path+".pub",priv_key.public_key.to_s)
+          File.write(private_key_path+'.pub',priv_key.public_key.to_s)
           nil
         end
 
@@ -226,7 +214,7 @@ module Aspera
           r=[]
           t.each do |k,v|
             v.each do |kk,vv|
-              r.push({"config"=>k,"parameter"=>kk,"value"=>vv})
+              r.push({'config'=>k,'parameter'=>kk,'value'=>vv})
             end
           end
           return r
@@ -260,7 +248,7 @@ module Aspera
         # @return the hash from name (also expands possible includes)
         def preset_by_name(config_name, include_path=[])
           raise CliError,"no such config preset: #{config_name}" unless @config_presets.has_key?(config_name)
-          raise CliError,"loop in include" if include_path.include?(config_name)
+          raise CliError,'loop in include' if include_path.include?(config_name)
           return expanded_with_preset_includes(@config_presets[config_name],include_path.clone.push(config_name))
         end
 
@@ -295,7 +283,7 @@ module Aspera
         end
 
         def option_use_product
-          "write-only value"
+          'write-only value'
         end
 
         def convert_preset_path(old_name,new_name,files_to_copy)
@@ -347,14 +335,14 @@ module Aspera
             end
             files_to_copy=[]
             Log.log.debug "Available_presets: #{@config_presets}"
-            raise "Expecting YAML Hash" unless @config_presets.is_a?(Hash)
+            raise 'Expecting YAML Hash' unless @config_presets.is_a?(Hash)
             # check there is at least the config section
             if !@config_presets.has_key?(CONF_PRESET_CONFIG)
               raise "Cannot find key: #{CONF_PRESET_CONFIG}"
             end
             version=@config_presets[CONF_PRESET_CONFIG][CONF_PRESET_VERSION]
             if version.nil?
-              raise "No version found in config section."
+              raise 'No version found in config section.'
             end
             # oldest compatible conf file format, update to latest version when an incompatible change is made
             # check compatibility of version of conf file
@@ -383,24 +371,24 @@ module Aspera
             end
             # Place new compatibility code here
             if save_required
-              Log.log.warn("Saving automatic conversion.")
+              Log.log.warn('Saving automatic conversion.')
               @config_presets[CONF_PRESET_CONFIG][CONF_PRESET_VERSION]=@program_version
               save_presets_to_config_file
-              Log.log.warn("Copying referenced files")
+              Log.log.warn('Copying referenced files')
               files_to_copy.each do |file|
                 FileUtils.cp(file,@main_folder)
                 Log.log.warn("..#{file} -> #{@main_folder}")
               end
             end
           rescue Psych::SyntaxError => e
-            Log.log.error("YAML error in config file")
+            Log.log.error('YAML error in config file')
             raise e
           rescue => e
             Log.log.debug("-> #{e}")
             new_name="#{@option_config_file}.pre#{@program_version}.manual_conversion_needed"
             File.rename(@option_config_file,new_name)
             Log.log.warn("Renamed config file to #{new_name}.")
-            Log.log.warn("Manual Conversion is required. Next time, a new empty file will be created.")
+            Log.log.warn('Manual Conversion is required. Next time, a new empty file will be created.')
             raise CliError,e.to_s
           end
         end
@@ -482,7 +470,7 @@ module Aspera
             return execute_connect_action
           when :use
             default_ascp=self.options.get_next_argument('path to ascp')
-            raise "file name must be ascp" unless File.basename(default_ascp).eql?('ascp')
+            raise 'file name must be ascp' unless File.basename(default_ascp).eql?('ascp')
             raise "no such file: #{default_ascp}" unless File.exist?(default_ascp)
             raise "not executable: #{default_ascp}" unless File.executable?(default_ascp)
             preset_name=set_global_default(:ascp_path,default_ascp)
@@ -492,7 +480,7 @@ module Aspera
             return {:type=>:status, :data=>Fasp::Installation.instance.path(:ascp)}
           when :info # shows files used
             data=Fasp::Installation::FILES.inject({}) do |m,v|
-              m[v.to_s]=Fasp::Installation.instance.path(v) rescue "Not Found"
+              m[v.to_s]=Fasp::Installation.instance.path(v) rescue 'Not Found'
               m
             end
             # read PATHs from ascp directly, and pvcl modules as well
@@ -624,7 +612,7 @@ module Aspera
             generate_new_key(private_key_path)
             return Main.result_status('generated key: '+private_key_path)
           when :echo # display the content of a value given on command line
-            result={:type=>:other_struct, :data=>self.options.get_next_argument("value")}
+            result={:type=>:other_struct, :data=>self.options.get_next_argument('value')}
             # special for csv
             result[:type]=:object_list if result[:data].is_a?(Array) and result[:data].first.is_a?(Hash)
             return result
@@ -645,7 +633,7 @@ module Aspera
             appli=ApiDetector.discover_product(instance_url)
             case appli[:product]
             when :aoc
-              self.format.display_status("Detected: Aspera on Cloud".bold)
+              self.format.display_status('Detected: Aspera on Cloud'.bold)
               organization,instance_domain=AoC.parse_url(instance_url)
               aspera_preset_name='aoc_'+organization
               self.format.display_status("Preparing preset: #{aspera_preset_name}")
@@ -659,7 +647,7 @@ module Aspera
               private_key_path=self.options.get_option(:pkeypath,:optional)
               # give a chance to provide
               if private_key_path.nil?
-                self.format.display_status("Please provide path to your private RSA key, or empty to generate one:")
+                self.format.display_status('Please provide path to your private RSA key, or empty to generate one:')
                 private_key_path=self.options.get_option(:pkeypath,:mandatory).to_s
               end
               # else generate path
@@ -667,11 +655,11 @@ module Aspera
                 private_key_path=File.join(@main_folder,'aspera_aoc_key')
               end
               if File.exist?(private_key_path)
-                self.format.display_status("Using existing key:")
+                self.format.display_status('Using existing key:')
               else
-                self.format.display_status("Generating key...")
+                self.format.display_status('Generating key...')
                 generate_new_key(private_key_path)
-                self.format.display_status("Created:")
+                self.format.display_status('Created:')
               end
               self.format.display_status("#{private_key_path}")
               pub_key_pem=OpenSSL::PKey::RSA.new(File.read(private_key_path)).public_key.to_s
@@ -686,27 +674,27 @@ module Aspera
               auto_set_jwt=false
               use_browser_authentication=false
               if self.options.get_option(:use_generic_client)
-                self.format.display_status("Using global client_id.")
-                self.format.display_status("Please Login to your Aspera on Cloud instance.".red)
-                self.format.display_status("Navigate to your \"Account Settings\"".red)
-                self.format.display_status("Check or update the value of \"Public Key\" to be:".red.blink)
+                self.format.display_status('Using global client_id.')
+                self.format.display_status('Please Login to your Aspera on Cloud instance.'.red)
+                self.format.display_status('Navigate to your "Account Settings"'.red)
+                self.format.display_status('Check or update the value of "Public Key" to be:'.red.blink)
                 self.format.display_status("#{pub_key_pem}")
                 if ! self.options.get_option(:test_mode)
-                  self.format.display_status("Once updated or validated, press enter.")
+                  self.format.display_status('Once updated or validated, press enter.')
                   OpenApplication.instance.uri(instance_url)
                   STDIN.gets
                 end
               else
-                self.format.display_status("Using organization specific client_id.")
+                self.format.display_status('Using organization specific client_id.')
                 if self.options.get_option(:client_id,:optional).nil? or self.options.get_option(:client_secret,:optional).nil?
-                  self.format.display_status("Please login to your Aspera on Cloud instance.".red)
-                  self.format.display_status("Go to: Apps->Admin->Organization->Integrations")
-                  self.format.display_status("Create or check if there is an existing integration named:")
+                  self.format.display_status('Please login to your Aspera on Cloud instance.'.red)
+                  self.format.display_status('Go to: Apps->Admin->Organization->Integrations')
+                  self.format.display_status('Create or check if there is an existing integration named:')
                   self.format.display_status("- name: #{@tool_name}")
                   self.format.display_status("- redirect uri: #{DEFAULT_REDIRECT}")
-                  self.format.display_status("- origin: localhost")
-                  self.format.display_status("Once created or identified,")
-                  self.format.display_status("Please enter:".red)
+                  self.format.display_status('- origin: localhost')
+                  self.format.display_status('Once created or identified,')
+                  self.format.display_status('Please enter:'.red)
                 end
                 OpenApplication.instance.uri("#{instance_url}/#{AOC_PATH_API_CLIENTS}")
                 self.options.get_option(:client_id,:mandatory)
@@ -714,7 +702,7 @@ module Aspera
                 use_browser_authentication=true
               end
               if use_browser_authentication
-                self.format.display_status("We will use web authentication to bootstrap.")
+                self.format.display_status('We will use web authentication to bootstrap.')
                 auto_set_pub_key=true
                 auto_set_jwt=true
                 @api_aoc.oauth.params[:auth]=:web
@@ -728,7 +716,7 @@ module Aspera
                 aoc_api.update("users/#{myself['id']}",{'public_key'=>pub_key_pem})
               end
               if auto_set_jwt
-                self.format.display_status("Enabling JWT for client")
+                self.format.display_status('Enabling JWT for client')
                 aoc_api.update("clients/#{self.options.get_option(:client_id)}",{'jwt_grant_enabled'=>true,'explicit_authorization_required'=>false})
               end
               self.format.display_status("creating new config preset: #{aspera_preset_name}")
@@ -745,14 +733,14 @@ module Aspera
               end
               self.format.display_status("Setting config preset as default for #{AOC_COMMAND_CURRENT}")
               @config_presets[CONF_PRESET_DEFAULT][AOC_COMMAND_CURRENT]=aspera_preset_name
-              self.format.display_status("saving config file")
+              self.format.display_status('saving config file')
               save_presets_to_config_file
               return Main.result_status("Done.\nYou can test with:\n#{@tool_name} #{AOC_COMMAND_CURRENT} user info show")
             else
               raise CliBadArgument,"Supports only: aoc. Detected: #{appli}"
             end
           when :export_to_cli
-            self.format.display_status("Exporting: Aspera on Cloud")
+            self.format.display_status('Exporting: Aspera on Cloud')
             require 'aspera/cli/plugins/aoc'
             # need url / username
             add_plugin_default_preset(AOC_COMMAND_V3.to_sym)
@@ -802,7 +790,7 @@ module Aspera
           when :file
             return Main.result_status(@option_config_file)
           when :email_test
-            dest_email=self.options.get_next_argument("destination email")
+            dest_email=self.options.get_next_argument('destination email')
             send_email({
               to:         dest_email,
               subject:    'Amelia email test',
@@ -813,11 +801,11 @@ module Aspera
             return {:type=>:single_object,:data=>email_settings}
           when :proxy_check
             pac_url=self.options.get_option(:fpac,:mandatory)
-            server_url=self.options.get_next_argument("server url")
+            server_url=self.options.get_next_argument('server url')
             return Main.result_status(Aspera::ProxyAutoConfig.new(UriReader.read(pac_url)).get_proxy(server_url))
           when :check_update
             return {:type=>:single_object, :data=>check_gem_version}
-          else raise "error"
+          else raise 'error'
           end
         end
 
@@ -865,7 +853,7 @@ END_OF_MESSAGE
         end
 
         def save_presets_to_config_file
-          raise "no configuration loaded" if @config_presets.nil?
+          raise 'no configuration loaded' if @config_presets.nil?
           FileUtils.mkdir_p(@main_folder) unless Dir.exist?(@main_folder)
           Log.log.debug "writing #{@option_config_file}"
           File.write(@option_config_file,@config_presets.to_yaml)
@@ -876,7 +864,7 @@ END_OF_MESSAGE
         def get_plugin_default_config_name(plugin_sym)
           raise "internal error: config_presets shall be defined" if @config_presets.nil?
           if !@use_plugin_defaults
-            Log.log.debug("skip default config")
+            Log.log.debug('skip default config')
             return nil
           end
           if @config_presets.has_key?(CONF_PRESET_DEFAULT) and

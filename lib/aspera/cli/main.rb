@@ -10,6 +10,7 @@ require 'aspera/persistency_folder'
 require 'aspera/log'
 require 'aspera/rest'
 require 'aspera/nagios'
+require 'aspera/secrets'
 
 module Aspera
   module Cli
@@ -65,6 +66,8 @@ module Aspera
         Rest.user_agent=PROGRAM_NAME
         # must override help methods before parser called (in other constructors)
         init_global_options()
+        # secret manager
+        @plugin_env[:secret]=Aspera::Secrets.new
         # the Config plugin adds the @preset parser
         @plugin_env[:config]=Plugins::Config.new(@plugin_env,PROGRAM_NAME,@help_url,Aspera::Cli::VERSION,app_main_folder)
         # the TransferAgent plugin may use the @preset parser

@@ -58,7 +58,7 @@ module Aspera
           if @api_aoc.nil?
             @api_aoc=AoC.new(aoc_params(AoC::API_V1))
             # add access key secrets
-            @api_aoc.add_secrets(config.get_secrets)
+            @api_aoc.add_secrets(@agents[:secret].get_secrets)
           end
           return @api_aoc
         end
@@ -68,7 +68,7 @@ module Aspera
         def find_ak_secret(ak,mandatory=true)
           # secret hash is already provisioned
           # optionally override with specific secret
-          @api_aoc.add_secrets({ak=>self.config.get_secret(ak,mandatory)})
+          @api_aoc.add_secrets({ak=>@agents[:secret].get_secret(ak,mandatory)})
           # check that secret was provided as single value or dictionary
           raise CliBadArgument,"Please provide option secret or entry in option secrets for: #{ak}" unless @api_aoc.has_secret(ak) or !mandatory
         end
@@ -117,6 +117,7 @@ module Aspera
             return {:type=>:object_list,:data=>items,:fields=>['name','type','recursive_size','size','modified_time','access_level']}
           when :find
             thepath=self.options.get_next_argument('path')
+            node_file=@api_aoc.resolve_node_file(top_node_file,thepath)
             test_block=Aspera::Node.file_matcher(self.options.get_option(:value,:optional))
             return {:type=>:object_list,:data=>@api_aoc.find_files(node_file,test_block),:fields=>['path']}
           when :mkdir

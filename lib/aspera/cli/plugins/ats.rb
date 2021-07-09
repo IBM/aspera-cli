@@ -107,7 +107,7 @@ module Aspera
               :auth     => {
               :type     => :basic,
               :username => access_key_id,
-              :password => self.config.get_secret(access_key_id)}})
+              :password => @agents[:secret].get_secret(access_key_id)}})
             command=self.options.get_next_command(Node::COMMON_ACTIONS)
             return Node.new(@agents.merge(skip_basic_auth_options: true, node_api: api_node)).execute_action(command)
           when :cluster
@@ -116,7 +116,7 @@ module Aspera
               :auth     => {
               :type     => :basic,
               :username => access_key_id,
-              :password => self.config.get_secret(access_key_id)
+              :password => @agents[:secret].get_secret(access_key_id)
               }}
             api_ak_auth=Rest.new(rest_params)
             return {:type=>:single_object, :data=>api_ak_auth.read("servers")[:data]}
