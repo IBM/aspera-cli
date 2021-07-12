@@ -106,9 +106,10 @@ Once installation is completed, you can proceed to the first use with a demo ser
 
 If you want to test with Aspera on Cloud, jump to section: [Wizard](#aocwizard)
 
-If you want to test with Aspera demo transfer server, a default configuration is created on first use:
+To test with Aspera demo transfer server, setup the environment and then test:
 
 ```
+$ <%=cmd%> config initdemo
 $ <%=cmd%> server browse /
 :............:...........:......:........:...........................:.......................:
 :   zmode    :   zuid    : zgid :  size  :           mtime           :         name          :
@@ -128,7 +129,7 @@ If you want to use <%=tool%> with another server, and in order to make further c
 * download a file
 
 ```
-$ <%=cmd%> config id myserver update --url=ssh://demo.asperasoft.com:33001 --username=asperaweb --password=demoaspera
+$ <%=cmd%> config id myserver update --url=ssh://demo.asperasoft.com:33001 --username=asperaweb --password=_demo_pass_
 updated: myserver
 $ <%=cmd%> config id default set server myserver
 updated: default&rarr;server to myserver
@@ -794,7 +795,7 @@ $ <%=cmd%> config id <<%=opprst%>> set|delete|show|initialize|update
 The command `update` allows the easy creation of <%=prst%> by simply providing the options in their command line format, e.g. :
 
 ```
-$ <%=cmd%> config id demo_server update --url=ssh://demo.asperasoft.com:33001 --username=asperaweb --password=demoaspera --ts=@json:'{"precalculate_job_size":true}'
+$ <%=cmd%> config id demo_server update --url=ssh://demo.asperasoft.com:33001 --username=asperaweb --password=_demo_pass_ --ts=@json:'{"precalculate_job_size":true}'
 ```
 
 * This creates a <%=prst%> `demo_server` with all provided options.
@@ -802,13 +803,13 @@ $ <%=cmd%> config id demo_server update --url=ssh://demo.asperasoft.com:33001 --
 The command `set` allows setting individual options in a <%=prst%>.
 
 ```
-$ <%=cmd%> config id demo_server set password demoaspera
+$ <%=cmd%> config id demo_server set password _demo_pass_
 ```
 
 The command `initialize`, like `update` allows to set several parameters at once, but it deletes an existing configuration instead of updating it, and expects a _[Structured Value](#native)_.
 
 ```
-$ <%=cmd%> config id demo_server initialize @json:'{"url":"ssh://demo.asperasoft.com:33001","username":"asperaweb","password":"demoaspera","ts":{"precalculate_job_size":true}}'
+$ <%=cmd%> config id demo_server initialize @json:'{"url":"ssh://demo.asperasoft.com:33001","username":"asperaweb","password":"_demo_pass_","ts":{"precalculate_job_size":true}}'
 ```
 
 A good practice is to not manually edit the configuration file and use modification commands instead.
@@ -865,7 +866,7 @@ cli_default:
 demo_server:
   url: ssh://demo.asperasoft.com:33001
   username: asperaweb
-  password: demoaspera
+  password: _demo_pass_
 ```
 
 We can see here:
@@ -2194,7 +2195,7 @@ This can also be set as default using a preset
 One can test the "server" application using the well known demo server:
 
 ```
-$ <%=cmd%> config id aspera_demo_server update --url=ssh://demo.asperasoft.com:33001 --username=asperaweb --password=demoaspera
+$ <%=cmd%> config id aspera_demo_server update --url=ssh://demo.asperasoft.com:33001 --username=asperaweb --password=_demo_pass_
 $ <%=cmd%> config id default set server aspera_demo_server
 $ <%=cmd%> server browse /aspera-test-dir-large
 $ <%=cmd%> server download /aspera-test-dir-large/200MB
@@ -2861,7 +2862,7 @@ Note that in addition, many "EX_" [_transfer-spec_](#transferspec) parameters ar
 ## Simple session
 
 ```
-MY_TSPEC='{"remote_host":"demo.asperasoft.com","remote_user":"asperaweb","ssh_port":33001,"remote_password":"demoaspera","direction":"receive","destination_root":"./test.dir","paths":[{"source":"/aspera-test-dir-tiny/200KB.1"}],"resume_level":"none"}'
+MY_TSPEC='{"remote_host":"demo.asperasoft.com","remote_user":"asperaweb","ssh_port":33001,"remote_password":"_demo_pass_","direction":"receive","destination_root":"./test.dir","paths":[{"source":"/aspera-test-dir-tiny/200KB.1"}],"resume_level":"none"}'
 
 echo "${MY_TSPEC}"|asession
 ```
@@ -2874,7 +2875,7 @@ This is particularly useful for a persistent session ( with the [_transfer-spec_
 
 ```
 $ asession
-{"remote_host":"demo.asperasoft.com","ssh_port":33001,"remote_user":"asperaweb","remote_password":"demoaspera","direction":"receive","destination_root":".","keepalive":true,"resume_level":"none"}
+{"remote_host":"demo.asperasoft.com","ssh_port":33001,"remote_user":"asperaweb","remote_password":"_demo_pass_","direction":"receive","destination_root":".","keepalive":true,"resume_level":"none"}
 {"type":"START","source":"/aspera-test-dir-tiny/200KB.2"}
 {"type":"DONE"}
 ```
@@ -3028,6 +3029,7 @@ So, it evolved into <%=tool%>:
 	* change: `aoc apiinfo` is removed, use `aoc servers` to provide the list of cloud systems
 	* new: command `aoc remind` to receive organization membership by email
 	* new: in `preview` option `value` to filter out on file name
+	* new: `initdemo` to initialize for demo server
 
 * 4.1.0
 

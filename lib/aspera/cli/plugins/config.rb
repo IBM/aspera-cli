@@ -45,6 +45,7 @@ module Aspera
         CONNECT_VERSIONS = 'connectversions.js'
         TRANSFER_SDK_ARCHIVE_URL = 'https://ibm.biz/aspera_sdk'
         DEMO='demo'
+        DEMO_SERVER_PRESET='demoserver'
         AOC_PATH_API_CLIENTS='admin/api-clients'
         def option_preset; nil; end
 
@@ -52,7 +53,7 @@ module Aspera
           self.options.add_option_preset(preset_by_name(value))
         end
 
-        private_constant :DEFAULT_CONFIG_FILENAME,:CONF_PRESET_CONFIG,:CONF_PRESET_VERSION,:CONF_PRESET_DEFAULT,:PROGRAM_NAME_V1,:PROGRAM_NAME_V2,:DEFAULT_REDIRECT,:ASPERA_PLUGINS_FOLDERNAME,:RUBY_FILE_EXT,:AOC_COMMAND_V1,:AOC_COMMAND_V2,:AOC_COMMAND_V3,:AOC_COMMAND_CURRENT,:DEMO,:TRANSFER_SDK_ARCHIVE_URL,:AOC_PATH_API_CLIENTS
+        private_constant :DEFAULT_CONFIG_FILENAME,:CONF_PRESET_CONFIG,:CONF_PRESET_VERSION,:CONF_PRESET_DEFAULT,:PROGRAM_NAME_V1,:PROGRAM_NAME_V2,:DEFAULT_REDIRECT,:ASPERA_PLUGINS_FOLDERNAME,:RUBY_FILE_EXT,:AOC_COMMAND_V1,:AOC_COMMAND_V2,:AOC_COMMAND_V3,:AOC_COMMAND_CURRENT,:DEMO,:TRANSFER_SDK_ARCHIVE_URL,:AOC_PATH_API_CLIENTS,:DEMO_SERVER_PRESET
 
         def initialize(env,tool_name,help_url,version,main_folder)
           super(env)
@@ -327,8 +328,7 @@ module Aspera
             # if no file found, create default config
             if conf_file_to_load.nil?
               Log.log.warn("No config file found. Creating empty configuration file: #{@option_config_file}")
-              @config_presets={CONF_PRESET_CONFIG=>{CONF_PRESET_VERSION=>@program_version},CONF_PRESET_DEFAULT=>{'server'=>'demoserver'},
-                'demoserver'=>{'url'=>'ssh://'+DEMO+'.asperasoft.com:33001','username'=>AOC_COMMAND_V2,'ssAP'.downcase.reverse+'drow'.reverse=>DEMO+AOC_COMMAND_V2}}
+              @config_presets={CONF_PRESET_CONFIG=>{CONF_PRESET_VERSION=>@program_version}}
             else
               Log.log.debug "loading #{@option_config_file}"
               @config_presets=YAML.load_file(conf_file_to_load)
@@ -522,7 +522,7 @@ module Aspera
           raise "unexpected case: #{command}"
         end
 
-        ACTIONS=[:gem_path, :genkey,:plugins,:flush_tokens,:list,:overview,:open,:echo,:id,:documentation,:wizard,:export_to_cli,:detect,:coffee,:ascp,:email_test,:smtp_settings,:proxy_check,:folder,:file,:check_update]
+        ACTIONS=[:gem_path, :genkey,:plugins,:flush_tokens,:list,:overview,:open,:echo,:id,:documentation,:wizard,:export_to_cli,:detect,:coffee,:ascp,:email_test,:smtp_settings,:proxy_check,:folder,:file,:check_update,:initdemo]
 
         # "config" plugin
         def execute_action
@@ -805,6 +805,23 @@ module Aspera
             return Main.result_status(Aspera::ProxyAutoConfig.new(UriReader.read(pac_url)).get_proxy(server_url))
           when :check_update
             return {:type=>:single_object, :data=>check_gem_version}
+          when :initdemo
+            if @config_presets.has_key?(DEMO_SERVER_PRESET)
+              Log.log.warn("Demo server preset already present: #{DEMO_SERVER_PRESET}")
+            else
+              Log.log.info("Creating Demo server preset: #{DEMO_SERVER_PRESET}")
+              @config_presets[DEMO_SERVER_PRESET]={'url'=>'ssh://'+DEMO+'.asperasoft.com:33001','username'=>AOC_COMMAND_V2,'ssAP'.downcase.reverse+'drow'.reverse=>DEMO+AOC_COMMAND_V2}
+            end
+            @config_presets[CONF_PRESET_DEFAULT]||={}
+            if @config_presets[CONF_PRESET_DEFAULT].has_key?('server')
+              Log.log.warn("server default preset already set to: #{@config_presets[CONF_PRESET_DEFAULT]['server']}")
+              Log.log.warn("use #{DEMO_SERVER_PRESET} for demo: -P#{DEMO_SERVER_PRESET}") unless DEMO_SERVER_PRESET.eql?(@config_presets[CONF_PRESET_DEFAULT]['server'])
+            else
+              @config_presets[CONF_PRESET_DEFAULT]['server']=DEMO_SERVER_PRESET
+              Log.log.info("setting server default preset to : #{DEMO_SERVER_PRESET}")
+            end
+            save_presets_to_config_file
+            return Main.result_status("done")
           else raise 'error'
           end
         end
