@@ -128,7 +128,7 @@ module Aspera
       # access key secrets are provided out of band to get node api access
       # key: access key
       # value: associated secret
-      @secrets={}
+      @key_chain=nil
 
       # init rest params
       aoc_rest_p={:auth=>{:type =>:oauth2}}
@@ -194,15 +194,10 @@ module Aspera
       super(aoc_rest_p)
     end
 
-    def add_secrets(secrets)
-      @secrets.merge!(secrets)
-      Log.log.debug("now secrets:#{secrets}")
+    def key_chain=(keychain)
+      raise "keychain already set" unless @key_chain.nil?
+      @key_chain=keychain
       nil
-    end
-
-    def has_secret(ak)
-      Log.log.debug("has key:#{ak} -> #{@secrets.has_key?(ak)}")
-      return @secrets.has_key?(ak)
     end
 
     # additional transfer spec (tags) for package information
@@ -301,9 +296,9 @@ module Aspera
         :base_url => node_info['url'],
         :headers  => {'X-Aspera-AccessKey'=>node_info['access_key']},
       }
-      ak_secret=@secrets[node_info['access_key']]
+      ak_secret=@key_chain.get_secret(node_info['access_key'],false)
       if ak_secret.nil? and node_scope.nil?
-        raise 'There must be at least one of: secret, node scope'
+        raise "There must be at least one of: 'secret' or 'scope' for access key #{node_info['access_key']}"
       end
       # if secret provided on command line or if there is no scope
       if !ak_secret.nil? or node_scope.nil?

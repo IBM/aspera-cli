@@ -26,19 +26,19 @@ module Aspera
           @url_token_data=nil
           @user_info=nil
           @api_aoc=nil
-          self.options.add_opt_list(:auth,Oauth.auth_types,'type of Oauth authentication')
+          self.options.add_opt_list(:auth,Oauth.auth_types,'OAuth type of authentication')
           self.options.add_opt_list(:operation,[:push,:pull],'client operation for transfers')
-          self.options.add_opt_simple(:client_id,'API client identifier in application')
-          self.options.add_opt_simple(:client_secret,'API client passcode')
-          self.options.add_opt_simple(:redirect_uri,'API client redirect URI')
-          self.options.add_opt_simple(:private_key,'RSA private key PEM value for JWT (prefix file path with @val:@file:)')
+          self.options.add_opt_simple(:client_id,'OAuth API client identifier in application')
+          self.options.add_opt_simple(:client_secret,'OAuth API client passcode')
+          self.options.add_opt_simple(:redirect_uri,'OAuth API client redirect URI')
+          self.options.add_opt_simple(:private_key,'OAuth JWT RSA private key PEM value (prefix file path with @val:@file:)')
           self.options.add_opt_simple(:workspace,'name of workspace')
           self.options.add_opt_simple(:name,'resource name')
           self.options.add_opt_simple(:path,'file or folder path')
           self.options.add_opt_simple(:link,'public link to shared resource')
           self.options.add_opt_simple(:new_user_option,'new user creation option')
           self.options.add_opt_simple(:from_folder,'share to share source folder')
-          self.options.add_opt_simple(:scope,'scope for AoC API calls')
+          self.options.add_opt_simple(:scope,'OAuth scope for AoC API calls')
           self.options.add_opt_simple(:notify,'notify users that file was received')
           self.options.add_opt_boolean(:bulk,'bulk operation')
           self.options.add_opt_boolean(:default_ports,'use standard FASP ports or get from node api')
@@ -57,20 +57,10 @@ module Aspera
         def get_api
           if @api_aoc.nil?
             @api_aoc=AoC.new(aoc_params(AoC::API_V1))
-            # add access key secrets
-            @api_aoc.add_secrets(@agents[:secret].get_secrets)
+            # add keychain for access key secrets
+            @api_aoc.key_chain=@agents[:secret]
           end
           return @api_aoc
-        end
-
-        # call this to populate single AK secret in AoC API object, from options
-        # make sure secret is available
-        def find_ak_secret(ak,mandatory=true)
-          # secret hash is already provisioned
-          # optionally override with specific secret
-          @api_aoc.add_secrets({ak=>@agents[:secret].get_secret(ak,mandatory)})
-          # check that secret was provided as single value or dictionary
-          raise CliBadArgument,"Please provide option secret or entry in option secrets for: #{ak}" unless @api_aoc.has_secret(ak) or !mandatory
         end
 
         # cached user information
@@ -646,7 +636,6 @@ module Aspera
               return Main.result_success
             when :v3,:v4
               res_data=@api_aoc.read(resource_instance_path)[:data]
-              find_ak_secret(res_data['access_key'])
               api_node=@api_aoc.get_node_api(res_data)
               return Node.new(@agents.merge(skip_basic_auth_options: true, node_api: api_node)).execute_action if command.eql?(:v3)
               ak_data=api_node.call({:operation=>'GET',:subpath=>"access_keys/#{res_data['access_key']}",:headers=>{'Accept'=>'application/json'}})[:data]
@@ -848,7 +837,6 @@ module Aspera
             # get workspace related information
             set_workspace_info
             set_home_node_file
-            find_ak_secret(@home_node_file[:node_info]['access_key'],false)
             command_repo=self.options.get_next_command(NODE4_COMMANDS.clone.concat([:short_link]))
             case command_repo
             when *NODE4_COMMANDS; return execute_node_gen4_command(command_repo,@home_node_file)
@@ -965,7 +953,7 @@ module Aspera
           raise RuntimeError, "internal error: command shall return"
         end
 
-        private :find_ak_secret,:c_user_info,:aoc_params,:set_workspace_info,:set_home_node_file,:do_bulk_operation,:resolve_package_recipients,:option_url_query,:assert_public_link_types,:execute_admin_action
+        private :c_user_info,:aoc_params,:set_workspace_info,:set_home_node_file,:do_bulk_operation,:resolve_package_recipients,:option_url_query,:assert_public_link_types,:execute_admin_action
         private_constant :VAL_ALL,:NODE4_COMMANDS
 
       end # AoC

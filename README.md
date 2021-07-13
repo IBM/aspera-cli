@@ -1576,7 +1576,7 @@ ascli config plugins
 ascli config proxy_check --fpac=file:///examples/proxy.pac https://eudemo.asperademo.com
 ascli console transfer current list 
 ascli console transfer smart list 
-ascli console transfer smart sub 112 @json:'{"source":{"paths":["10MB.1"]},"source_type":"user_selected"}'
+ascli console transfer smart sub my_job_id @json:'{"source":{"paths":["my_file_name"]},"source_type":"user_selected"}'
 ascli cos -N --bucket=my_icos_bucket_name --endpoint=my_icos_bucket_endpoint --apikey=my_icos_bucket_apikey --crn=my_icos_resource_instance_id node info
 ascli cos -N --bucket=my_icos_bucket_name --region=my_icos_bucket_region --service-credentials=@json:@file:service_creds.json node info
 ascli cos node access_key --id=self show
@@ -1929,19 +1929,19 @@ OPTIONS:
         --url=VALUE                  URL of application, e.g. https://org.asperafiles.com
         --username=VALUE             username to log in
         --password=VALUE             user's password
-        --auth=ENUM                  type of Oauth authentication: body_userpass, header_userpass, web, jwt, url_token, ibm_apikey
+        --auth=ENUM                  OAuth type of authentication: body_userpass, header_userpass, web, jwt, url_token, ibm_apikey
         --operation=ENUM             client operation for transfers: push, pull
-        --client-id=VALUE            API client identifier in application
-        --client-secret=VALUE        API client passcode
-        --redirect-uri=VALUE         API client redirect URI
-        --private-key=VALUE          RSA private key PEM value for JWT (prefix file path with @val:@file:)
+        --client-id=VALUE            OAuth API client identifier in application
+        --client-secret=VALUE        OAuth API client passcode
+        --redirect-uri=VALUE         OAuth API client redirect URI
+        --private-key=VALUE          OAuth JWT RSA private key PEM value (prefix file path with @val:@file:)
         --workspace=VALUE            name of workspace
         --name=VALUE                 resource name
         --path=VALUE                 file or folder path
         --link=VALUE                 public link to shared resource
         --new-user-option=VALUE      new user creation option
         --from-folder=VALUE          share to share source folder
-        --scope=VALUE                scope for AoC API calls
+        --scope=VALUE                OAuth scope for AoC API calls
         --notify=VALUE               notify users that file was received
         --bulk=ENUM                  bulk operation: yes, no
         --default-ports=ENUM         use standard FASP ports or get from node api: yes, no
