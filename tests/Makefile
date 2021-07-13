@@ -250,7 +250,10 @@ $(T)cons2: $(T).exists
 	@touch $@
 $(T)cons3: $(T).exists
 	@echo $@
-	$(EXE_MAN) console transfer smart sub 112 @json:'{"source":{"paths":["10MB.1"]},"source_type":"user_selected"}'
+	set -x;\
+	job_id=$$($(EXE_NOMAN) conf id misc get console_smart_id);\
+	file_name=$$($(EXE_NOMAN) conf id misc get console_smart_file);\
+	$(EXE_MAN) console transfer smart sub $${job_id} @json:'{"source":{"paths":["'"$${file_name}"'"]},"source_type":"user_selected"}'
 	@touch $@
 tconsole: $(T)cons1 $(T)cons2 $(T)cons3
 
