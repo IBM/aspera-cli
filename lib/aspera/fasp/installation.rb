@@ -50,26 +50,30 @@ module Aspera
       # @return the list of installed products in format of product_locations
       def installed_products
         if @found_products.nil?
-          @found_products=product_locations
-          # add sdk as first search path
-          @found_products.unshift({# SDK
+          scan_locations=product_locations.clone
+          # add SDK as first search path
+          scan_locations.unshift({
             :expected =>'SDK',
             :app_root =>folder_path,
             :sub_bin =>''
           })
-          @found_products.select! do |pl|
-            next false unless Dir.exist?(pl[:app_root])
-            Log.log.debug("found #{pl[:app_root]}")
-            sub_bin = pl[:sub_bin] || BIN_SUBFOLDER
-            pl[:ascp_path]=File.join(pl[:app_root],sub_bin,'ascp'+Environment.exe_extension)
-            next false unless File.exist?(pl[:ascp_path])
-            product_info_file="#{pl[:app_root]}/#{PRODUCT_INFO}"
+          # search installed products: with ascp
+          @found_products=scan_locations.select! do |item|
+            # skip if not main folder
+            next false unless Dir.exist?(item[:app_root])
+            Log.log.debug("Found #{item[:app_root]}")
+            sub_bin = item[:sub_bin] || BIN_SUBFOLDER
+            item[:ascp_path]=File.join(item[:app_root],sub_bin,'ascp'+Environment.exe_extension)
+            # skip if no ascp
+            next false unless File.exist?(item[:ascp_path])
+            # read info from product info file if present
+            product_info_file="#{item[:app_root]}/#{PRODUCT_INFO}"
             if File.exist?(product_info_file)
-              res_s=XmlSimple.xml_in(File.read(product_info_file),{"ForceArray"=>false})
-              pl[:name]=res_s['name']
-              pl[:version]=res_s['version']
+              res_s=XmlSimple.xml_in(File.read(product_info_file),{'ForceArray'=>false})
+              item[:name]=res_s['name']
+              item[:version]=res_s['version']
             else
-              pl[:name]=pl[:expected]
+              item[:name]=item[:expected]
             end
             true # select this version
           end
@@ -77,6 +81,7 @@ module Aspera
         return @found_products
       end
 
+      # all ascp files (in SDK)
       FILES=[:ascp,:ascp4,:ssh_bypass_key_dsa,:ssh_bypass_key_rsa,:aspera_license,:aspera_conf,:fallback_cert,:fallback_key]
 
       # get path of one resource file of currently activated product
@@ -147,7 +152,7 @@ module Aspera
         return file
       end
 
-      # @returns the file path of local connect where API's URI can be read
+      # @return the file path of local connect where API's URI can be read
       def connect_uri
         connect=get_product_folders(PRODUCT_CONNECT)
         folder=File.join(connect[:run_root],VARRUN_SUBFOLDER)
@@ -177,7 +182,8 @@ module Aspera
       end
 
       # download aspera SDK or use local file
-      # extract only ascp binary for current system architecture
+      # extracts ascp binary for current system architecture
+      # @return ascp version (from execution)
       def install_sdk(sdk_url)
         require 'zip'
         sdk_zip_path=File.join(Dir.tmpdir,'sdk.zip')
@@ -248,27 +254,28 @@ module Aspera
 
       private_constant :BIN_SUBFOLDER,:ETC_SUBFOLDER,:VARRUN_SUBFOLDER,:PRODUCT_INFO
 
-      # get some specific folder from specific applications: Connect or CLI
-      def get_product_folders(name)
-        found=installed_products.select{|i|i[:expected].eql?(name) or i[:name].eql?(name)}
-        raise "Product: #{name} not found, please install." if found.empty?
-        return found.first
-      end
-
       def initialize
         @path_to_ascp=nil
         @sdk_folder=nil
         @found_products=nil
       end
 
+      # @return folder paths for specified applications
+      # @param name Connect or CLI
+      def get_product_folders(name)
+        found=installed_products.select{|i|i[:expected].eql?(name) or i[:name].eql?(name)}
+        raise "Product: #{name} not found, please install." if found.empty?
+        return found.first
+      end
+
+      # @return the path to folder where SDK is installed
       def folder_path
         raise "undefined path to SDK" if @sdk_folder.nil?
         FileUtils.mkdir_p(@sdk_folder) unless Dir.exist?(@sdk_folder)
         @sdk_folder
       end
 
-      # returns product folders depending on OS
-      # fields
+      # @return product folders depending on OS fields
       # :expected  M app name is taken from the manifest if present, else defaults to this value
       # :app_root  M main folder for the application
       # :log_root  O location of log files (Linux uses syslog)
@@ -324,6 +331,9 @@ module Aspera
         end
       end
 
+      # @return standard bypass keys
+      # @param type rsa or dsa
+      # @param id in repository 1 for dsa, 2 for rsa
       def get_key(type,id)
         hf=['begin','end'].map{|t|"-----#{t} #{type} private key-----".upcase}
         bin=Base64.strict_encode64(DataRepository.instance.get_bin(id))
