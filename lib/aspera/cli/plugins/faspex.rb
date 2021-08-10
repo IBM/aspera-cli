@@ -72,7 +72,7 @@ module Aspera
         def self.get_source_id(source_list,source_name)
           source_ids=source_list.select { |i| i['name'].eql?(source_name) }
           if source_ids.empty?
-            raise CliError,"No such Faspex source #{field_sym.to_s}: #{field_value} in [#{source_list.map{|i| i[field_sym.to_s]}.join(', ')}]"
+            raise CliError,%Q{No such Faspex source "#{source_name}" in [#{source_list.map{|i| %Q{"#{i['name']}"}}.join(', ')}]}
           end
           return source_ids.first['id']
         end
