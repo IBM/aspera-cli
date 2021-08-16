@@ -78,11 +78,12 @@ module Aspera
         'lock_rate_policy'        => { :type => :ignore, :accepted_types=>Aspera::CommandLineBuilder::BOOLEAN_CLASSES},
         'lock_min_rate'           => { :type => :ignore, :accepted_types=>Aspera::CommandLineBuilder::BOOLEAN_CLASSES},
         'lock_target_rate'        => { :type => :ignore, :accepted_types=>Aspera::CommandLineBuilder::BOOLEAN_CLASSES},
-        #'authentication'          => { :type => :ignore, :accepted_types=>String}, # = token
+        'authentication'          => { :type => :ignore, :accepted_types=>String}, # value = token
         'https_fallback_port'     => { :type => :ignore, :accepted_types=>Integer}, # same as http fallback, option -t ?
         'content_protection'      => { :type => :ignore, :accepted_types=>String},
         'cipher_allowed'          => { :type => :ignore, :accepted_types=>String},
         'multi_session'           => { :type => :ignore, :accepted_types=>Integer}, # managed
+        'obfuscate_file_names'          => { :type => :ignore, :accepted_types=>Aspera::CommandLineBuilder::BOOLEAN_CLASSES},
         # optional tags (  additional option to generate: {:space=>' ',:object_nl=>' ',:space_before=>'+',:array_nl=>'1'}  )
         'tags'                    => { :type => :opt_with_arg, :option_switch=>'--tags64',:accepted_types=>Hash,:encode=>lambda{|tags|Base64.strict_encode64(JSON.generate(tags))}},
         # special processing @builder.process_param( called individually
