@@ -59,7 +59,7 @@ module Aspera
         'exclude_older_than'      => { :type => :opt_with_arg, :accepted_types=>Integer},
         'preserve_acls'           => { :type => :opt_with_arg, :accepted_types=>String},
         'move_after_transfer'     => { :type => :opt_with_arg, :accepted_types=>String},
-        'multi_session_threshold' => { :type => :opt_with_arg, :accepted_types=>String},
+        'multi_session_threshold' => { :type => :opt_with_arg, :accepted_types=>Integer},
         # non standard parameters
         'EX_fasp_proxy_url'       => { :type => :opt_with_arg, :option_switch=>'--proxy',:accepted_types=>String},
         'EX_http_proxy_url'       => { :type => :opt_with_arg, :option_switch=>'-x',:accepted_types=>String},
