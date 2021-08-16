@@ -72,7 +72,7 @@ module Aspera
         end
 
         # compute known args
-        env_args=Parameters.ts_to_env_args(transfer_spec,wss: @enable_wss)
+        env_args=Parameters.ts_to_env_args(transfer_spec,wss: @options[:wss])
 
         # add fallback cert and key as arguments if needed
         if ['1','force'].include?(transfer_spec['http_fallback'])
@@ -308,8 +308,9 @@ module Aspera
 
       private
 
-      def initialize(agent_options=nil)
-        agent_options||={}
+      # @param options : keys(symbol): wss, resume
+      def initialize(options=nil)
+        Log.log.debug("local options= #{options}")
         super()
         # by default no interactive progress bar
         @quiet=true
@@ -317,9 +318,9 @@ module Aspera
         @jobs={}
         # mutex protects global data accessed by threads
         @mutex=Mutex.new
-        @enable_wss = agent_options[:wss] || false
-        agent_options.delete(:wss)
-        @resume_policy=ResumePolicy.new(agent_options)
+        @options=options || {}
+        @options[:wss]||=false
+        @resume_policy=ResumePolicy.new(@options[:resume].symbolize_keys)
       end
 
       # transfer thread entry

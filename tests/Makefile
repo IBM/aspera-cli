@@ -109,7 +109,7 @@ $(T)serv_mkdir: $(T).exists
 	@echo $@
 	$(EXE_MAN) server mkdir $(NEW_SERVER_FOLDER) --logger=stdout
 	@touch $@
-$(T)serv_upload: $(T)serv_mkdir
+$(T)serv_upload: $(T)serv_mkdir $(CF_LOCAL_SAMPLE_FILEPATH)
 	@echo $@
 	$(EXE_MAN) server upload $(CF_LOCAL_SAMPLE_FILEPATH) --to-folder=$(NEW_SERVER_FOLDER)
 	$(EXE_MAN) server upload --src-type=pair $(CF_LOCAL_SAMPLE_FILEPATH) $(NEW_SERVER_FOLDER)/othername
@@ -122,7 +122,7 @@ $(T)serv_md5: $(T)serv_upload
 	@touch $@
 $(T)serv_down_lcl: $(T)serv_upload
 	@echo $@
-	$(EXE_MAN) server download $(NEW_SERVER_FOLDER)/$(CF_LOCAL_SAMPLE_FILENAME) --to-folder=$(DIR_TMP).
+	$(EXE_MAN) server download $(NEW_SERVER_FOLDER)/$(CF_LOCAL_SAMPLE_FILENAME) --to-folder=$(DIR_TMP). --transfer-info=@json:'{"wss":false,"resume":{"iter_max":1}}'
 	@touch $@
 $(T)serv_down_from_node: $(T)serv_upload
 	@echo $@

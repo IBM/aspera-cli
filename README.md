@@ -1140,7 +1140,7 @@ will effectively push files to the related server from the agent node.
 
 ### <a name="direct"></a>Direct (local ascp using FASPManager API)
 
-By default the CLI will use a local FASP protocol, equivalent to specifying `--transfer=direct`.
+By default `ascli` uses a local ascp, equivalent to specifying `--transfer=direct`.
 `ascli` will detect locally installed Aspera products.
 Refer to section [FASP](#client).
 
@@ -1150,16 +1150,30 @@ To specify a FASP proxy (only supported with the `direct` agent), set the approp
 * `EX_http_proxy_url` (proxy for legacy http fallback)
 * `EX_ascp_args`
 
-The `transfer-info` optionally provides the following auto resume parameters:
+The `transfer-info` accepts the following optional parameters:
 
 <table>
-<tr><th>Name</th><th>Default</th><th>Feature</th><th>Description</th></tr>
-<tr><td>iter_max</td>.    <td>7</td><td>Resume</td><td>Max number of retry on error</td></tr>
-<tr><td>sleep_initial</td><td>2</td><td>Resume</td><td>First Sleep before retry</td></tr>
-<tr><td>sleep_factor</td> <td>2</td><td>Resume</td><td>Multiplier of Sleep</td></tr>
-<tr><td>sleep_max</td>.   <td>60</td><td>Resume</td><td>Maximum sleep</td></tr>
-<tr><td>wss</td>          <td>false</td><td>Web Socket Session</td><td>Enable use of web socket session in case it is available</td></tr>
+<tr><th>Name</th><th>Type</th><th>Default</th><th>Feature</th><th>Description</th></tr>
+<tr><td>resume</td><td>Hash</td><td>nil</td><td>Resumer parameters</td><td>See below</td></tr>
+<tr><td>wss</td><td>Bool</td><td>false</td><td>Web Socket Session</td><td>Enable use of web socket session in case it is available</td></tr>
 </table>
+
+Resume parameters:
+
+<table>
+<tr><th>Name</th><th>Type</th><th>Default</th><th>Feature</th><th>Description</th></tr>
+<tr><td>iter_max</td><td>int</td><td>7</td><td>Resume</td><td>Max number of retry on error</td></tr>
+<tr><td>sleep_initial</td><td>int</td><td>2</td><td>Resume</td><td>First Sleep before retry</td></tr>
+<tr><td>sleep_factor</td><td>int</td><td>2</td><td>Resume</td><td>Multiplier of Sleep</td></tr>
+<tr><td>sleep_max</td><td>int</td><td>60</td><td>Resume</td><td>Maximum sleep</td></tr>
+</table>
+
+Example:
+
+```
+$ ascli ... --transfer-info=@json:'{"wss":true,"resume":{"iter_max":10}}'
+```
+
 
 ### IBM Aspera Connect Client GUI
 
@@ -1654,7 +1668,7 @@ ascli server delete NEW_SERVER_FOLDER
 ascli server delete folder_1/target_hot
 ascli server delete folder_1/to.delete
 ascli server df
-ascli server download NEW_SERVER_FOLDER/testfile.bin --to-folder=.
+ascli server download NEW_SERVER_FOLDER/testfile.bin --to-folder=. --transfer-info=@json:'{"wss":false,"resume":{"iter_max":1}}'
 ascli server download NEW_SERVER_FOLDER/testfile.bin --to-folder=folder_1 --transfer=node
 ascli server du /
 ascli server health transfer --to-folder=folder_1 --format=nagios 
@@ -3615,6 +3629,7 @@ So, it evolved into `ascli`:
 * 4.1.0.latest
 
 	* change: `aoc apiinfo` is removed, use `aoc servers` to provide the list of cloud systems
+	* change: (break) parameters for resume in `transfer-info` for `direct` are now in sub-key `"resume"`
 	* new: command `aoc remind` to receive organization membership by email
 	* new: in `preview` option `value` to filter out on file name
 	* new: `initdemo` to initialize for demo server

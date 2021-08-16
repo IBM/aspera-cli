@@ -14,17 +14,20 @@ module Aspera
         :sleep_max     => 60
       }
 
-      def initialize(params={})
+      # @param params see DEFAULTS
+      def initialize(params=nil)
         @parameters=DEFAULTS.clone
-        return if params.nil?
-        raise "expecting Hash (or nil), but have #{params.class}" unless params.is_a?(Hash)
-        params.each do |k,v|
-          if DEFAULTS.has_key?(k)
-            @parameters[k]=v
-          else
-            raise "unknown resume parameter: #{k}, expect one of #{DEFAULTS.keys.map{|i|i.to_s}.join(",")}"
+        if !params.nil?
+          raise "expecting Hash (or nil), but have #{params.class}" unless params.is_a?(Hash)
+          params.each do |k,v|
+            if DEFAULTS.has_key?(k)
+              @parameters[k]=v
+            else
+              raise "unknown resume parameter: #{k}, expect one of #{DEFAULTS.keys.map{|i|i.to_s}.join(",")}"
+            end
           end
         end
+        Log.log.debug("resume params=#{@parameters}")
       end
 
       # calls block a number of times (resumes) until success or limit reached
