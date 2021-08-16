@@ -22,9 +22,14 @@ module Aspera
       PRODUCT_CLI_V1='Aspera CLI'
       PRODUCT_DRIVE='Aspera Drive'
       PRODUCT_ENTSRV='Enterprise Server'
-      # currently used ascp executable
+      # set ascp executable path
       def ascp_path=(v)
         @path_to_ascp=v
+      end
+
+      # filename for ascp with optional extension (Windows)
+      def ascp_filename
+        return 'ascp'+Environment.exe_extension
       end
 
       # location of SDK files
@@ -63,7 +68,7 @@ module Aspera
             next false unless Dir.exist?(item[:app_root])
             Log.log.debug("Found #{item[:app_root]}")
             sub_bin = item[:sub_bin] || BIN_SUBFOLDER
-            item[:ascp_path]=File.join(item[:app_root],sub_bin,'ascp'+Environment.exe_extension)
+            item[:ascp_path]=File.join(item[:app_root],sub_bin,ascp_filename)
             # skip if no ascp
             next false unless File.exist?(item[:ascp_path])
             # read info from product info file if present
@@ -181,6 +186,18 @@ module Aspera
         return [:ssh_bypass_key_dsa,:ssh_bypass_key_rsa].map{|i|Installation.instance.path(i)}
       end
 
+      # Check that specified path is ascp and get version
+      def get_ascp_version(ascp_path)
+        raise "File basename of #{ascp_path} must be #{ascp_filename}" unless File.basename(ascp_path).eql?(ascp_filename)
+        ascp_version='n/a'
+        raise "error in sdk: no ascp included" if ascp_path.nil?
+        cmd_out=%x{"#{ascp_path}" -A}
+        raise "An error occured when testing #{ascp_filename}: #{cmd_out}" unless $? == 0
+        # get version from ascp, only after full extract, as windows requires DLLs (SSL/TLS/etc...)
+        m=cmd_out.match(/ascp version (.*)/)
+        ascp_version=m[1] unless m.nil?
+      end
+
       # download aspera SDK or use local file
       # extracts ascp binary for current system architecture
       # @return ascp version (from execution)
@@ -223,7 +240,7 @@ module Aspera
               File.open(archive_file, 'wb') do |output_stream|
                 IO.copy_stream(entry.get_input_stream, output_stream)
               end
-              if entry.name.include?('ascp')
+              if File.basename(entry.name).eql?(ascp_filename)
                 FileUtils.chmod(0755,archive_file)
                 ascp_path=archive_file
               end
@@ -231,13 +248,7 @@ module Aspera
           end
         end
         File.unlink(sdk_zip_path) rescue nil # Windows may give error
-        ascp_version='n/a'
-        raise "error in sdk: no ascp included" if ascp_path.nil?
-        cmd_out=%x{#{ascp_path} -A}
-        raise "An error occured when testing ascp: #{cmd_out}" unless $? == 0
-        # get version from ascp, only after full extract, as windows requires DLLs (SSL/TLS/etc...)
-        m=cmd_out.match(/ascp version (.*)/)
-        ascp_version=m[1] unless m.nil?
+        ascp_version=get_ascp_version(ascp_path)
         File.write(File.join(folder_path,PRODUCT_INFO),"<product><name>IBM Aspera SDK</name><version>#{ascp_version}</version></product>")
         return ascp_version
       end

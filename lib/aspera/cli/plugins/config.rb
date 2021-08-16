@@ -27,6 +27,7 @@ module Aspera
         CONF_PRESET_CONFIG='config'
         CONF_PRESET_VERSION='version'
         CONF_PRESET_DEFAULT='default'
+        CONF_PRESET_GLOBAL='global_common_defaults'
         CONF_PLUGIN_SYM = :config # Plugins::Config.name.split('::').last.downcase.to_sym
         CONF_GLOBAL_SYM = :config
         # old tool name
@@ -53,7 +54,7 @@ module Aspera
           self.options.add_option_preset(preset_by_name(value))
         end
 
-        private_constant :DEFAULT_CONFIG_FILENAME,:CONF_PRESET_CONFIG,:CONF_PRESET_VERSION,:CONF_PRESET_DEFAULT,:PROGRAM_NAME_V1,:PROGRAM_NAME_V2,:DEFAULT_REDIRECT,:ASPERA_PLUGINS_FOLDERNAME,:RUBY_FILE_EXT,:AOC_COMMAND_V1,:AOC_COMMAND_V2,:AOC_COMMAND_V3,:AOC_COMMAND_CURRENT,:DEMO,:TRANSFER_SDK_ARCHIVE_URL,:AOC_PATH_API_CLIENTS,:DEMO_SERVER_PRESET
+        private_constant :DEFAULT_CONFIG_FILENAME,:CONF_PRESET_CONFIG,:CONF_PRESET_VERSION,:CONF_PRESET_DEFAULT,:CONF_PRESET_GLOBAL,:PROGRAM_NAME_V1,:PROGRAM_NAME_V2,:DEFAULT_REDIRECT,:ASPERA_PLUGINS_FOLDERNAME,:RUBY_FILE_EXT,:AOC_COMMAND_V1,:AOC_COMMAND_V2,:AOC_COMMAND_V3,:AOC_COMMAND_CURRENT,:DEMO,:TRANSFER_SDK_ARCHIVE_URL,:AOC_PATH_API_CLIENTS,:DEMO_SERVER_PRESET
 
         def initialize(env,tool_name,help_url,version,main_folder)
           super(env)
@@ -225,12 +226,12 @@ module Aspera
         # creates one if none already created
         # @return preset that contains global default
         def set_global_default(key,value)
-          global_default_preset_name=get_plugin_default_config_name(CONF_GLOBAL_SYM)
-          if global_default_preset_name.nil?
-            global_default_preset_name='global_common_defaults'
-            @config_presets[global_default_preset_name]={}
-          end
+          # get default preset if it exists
+          global_default_preset_name=get_plugin_default_config_name(CONF_GLOBAL_SYM) || CONF_PRESET_GLOBAL
+          @config_presets[global_default_preset_name]||={}
           @config_presets[global_default_preset_name][key.to_s]=value
+          self.format.display_status("Updated: #{global_default_preset_name}: #{key} <- #{value}")
+          save_presets_to_config_file
           return global_default_preset_name
         end
 
@@ -453,10 +454,10 @@ module Aspera
                   fileurl = one_link['href']
                   filename=fileurl.gsub(%r{.*/},'')
                   api_connect_cdn.call({:operation=>'GET',:subpath=>fileurl,:save_to_file=>File.join(folder_dest,filename)})
-                  return Main.result_status("downloaded: #{filename}")
+                  return Main.result_status("Downloaded: #{filename}")
                 when :open #
                   OpenApplication.instance.uri(one_link['href'])
-                  return Main.result_status("opened: #{one_link['href']}")
+                  return Main.result_status("Opened: #{one_link['href']}")
                 end
               end
             end
@@ -469,13 +470,11 @@ module Aspera
           when :connect
             return execute_connect_action
           when :use
-            default_ascp=self.options.get_next_argument('path to ascp')
-            raise 'file name must be ascp' unless File.basename(default_ascp).eql?('ascp')
-            raise "no such file: #{default_ascp}" unless File.exist?(default_ascp)
-            raise "not executable: #{default_ascp}" unless File.executable?(default_ascp)
-            preset_name=set_global_default(:ascp_path,default_ascp)
-            save_presets_to_config_file
-            return {:type=>:status, :data=>"saved to default global preset #{preset_name}"}
+            ascp_path=self.options.get_next_argument('path to ascp')
+            ascp_version=Fasp::Installation.instance.get_ascp_version(ascp_path)
+            self.format.display_status("ascp version: #{ascp_version}")
+            preset_name=set_global_default(:ascp_path,ascp_path)
+            return Main.result_status("Saved to default global preset #{preset_name}")
           when :show # shows files used
             return {:type=>:status, :data=>Fasp::Installation.instance.path(:ascp)}
           when :info # shows files used
@@ -512,12 +511,11 @@ module Aspera
               default_product=self.options.get_next_argument('product name')
               Fasp::Installation.instance.use_ascp_from_product(default_product)
               preset_name=set_global_default(:ascp_path,Fasp::Installation.instance.path(:ascp))
-              save_presets_to_config_file
-              return {:type=>:status, :data=>"saved to default global preset #{preset_name}"}
+              return Main.result_status("Saved to default global preset #{preset_name}")
             end
           when :install
             v=Fasp::Installation.instance.install_sdk(self.options.get_option(:sdk_url,:mandatory))
-            return {:type=>:status, :data=>"Installed version #{v}"}
+            return Main.result_status("Installed version #{v}")
           end
           raise "unexpected case: #{command}"
         end
@@ -541,7 +539,7 @@ module Aspera
             when :delete
               @config_presets.delete(config_name)
               save_presets_to_config_file
-              return Main.result_status("deleted: #{config_name}")
+              return Main.result_status("Deleted: #{config_name}")
             when :get
               param_name=self.options.get_next_argument('parameter name')
               value=selected_preset[param_name]
@@ -554,7 +552,7 @@ module Aspera
               param_name=self.options.get_next_argument('parameter name')
               selected_preset.delete(param_name)
               save_presets_to_config_file
-              return Main.result_status("removed: #{config_name}: #{param_name}")
+              return Main.result_status("Removed: #{config_name}: #{param_name}")
             when :set
               param_name=self.options.get_next_argument('parameter name')
               param_value=self.options.get_next_argument('parameter value')
@@ -567,7 +565,7 @@ module Aspera
               end
               selected_preset[param_name]=param_value
               save_presets_to_config_file
-              return Main.result_status("updated: #{config_name}: #{param_name} <- #{param_value}")
+              return Main.result_status("Updated: #{config_name}: #{param_name} <- #{param_value}")
             when :initialize
               config_value=self.options.get_next_argument('extended value (Hash)')
               if @config_presets.has_key?(config_name)
@@ -575,7 +573,7 @@ module Aspera
               end
               @config_presets[config_name]=config_value
               save_presets_to_config_file
-              return Main.result_status("modified: #{@option_config_file}")
+              return Main.result_status("Modified: #{@option_config_file}")
             when :update
               default_for_plugin=self.options.get_option(:default,:optional)
               #  get unprocessed options
@@ -588,7 +586,7 @@ module Aspera
                 @config_presets[CONF_PRESET_DEFAULT][default_for_plugin]=config_name
               end
               save_presets_to_config_file
-              return Main.result_status("updated: #{config_name}")
+              return Main.result_status("Updated: #{config_name}")
             when :ask
               self.options.ask_missing_mandatory=:yes
               @config_presets[config_name]||={}
@@ -597,7 +595,7 @@ module Aspera
                 @config_presets[config_name][optionname]=option_value
               end
               save_presets_to_config_file
-              return Main.result_status("updated: #{config_name}")
+              return Main.result_status("Updated: #{config_name}")
             end
           when :documentation
             section=options.get_next_argument('private key file path',:single,:optional)
@@ -610,7 +608,7 @@ module Aspera
           when :genkey # generate new rsa key
             private_key_path=self.options.get_next_argument('private key file path')
             generate_new_key(private_key_path)
-            return Main.result_status('generated key: '+private_key_path)
+            return Main.result_status('Generated key: '+private_key_path)
           when :echo # display the content of a value given on command line
             result={:type=>:other_struct, :data=>self.options.get_next_argument('value')}
             # special for csv
@@ -773,11 +771,11 @@ module Aspera
               entry.merge!(new_conf)
             end
             File.write(cli_conf_file,JSON.pretty_generate(data))
-            return Main.result_status("updated: #{cli_conf_file}")
+            return Main.result_status("Updated: #{cli_conf_file}")
           when :detect
             # need url / username
             BasicAuthPlugin.new(@agents)
-            return Main.result_status("found: #{ApiDetector.discover_product(self.options.get_option(:url,:mandatory))}")
+            return Main.result_status("Found: #{ApiDetector.discover_product(self.options.get_option(:url,:mandatory))}")
           when :coffee
             OpenApplication.instance.uri('https://enjoyjava.com/wp-content/uploads/2018/01/How-to-make-strong-coffee.jpg')
             return Main.result_nothing
@@ -821,7 +819,7 @@ module Aspera
               Log.log.info("setting server default preset to : #{DEMO_SERVER_PRESET}")
             end
             save_presets_to_config_file
-            return Main.result_status("done")
+            return Main.result_status("Done")
           else raise 'error'
           end
         end

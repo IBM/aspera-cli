@@ -830,10 +830,18 @@ Note that special plugin name: `config` can be associated with a preset that is 
 Operations on this preset are done using regular `config` operations:
 
 ```
-$ ascli config id default set _plugin_name_ _defauklt_preset_for_plugin_
+$ ascli config id default set _plugin_name_ _default_preset_for_plugin_
 $ ascli config id default get _plugin_name_
-"_defauklt_preset_for_plugin_"
+"_default_preset_for_plugin_"
 ```
+
+### <a name="lprtdef"></a>Special Plugin: config
+
+Plugin `config` (not to be confused with Option preset config) is used to configure `ascli` but it also contains global options.
+
+When `ascli` starts, it lookjs for the `default` Option preset and if there is a value for `config`, if so, it loads the option values for any plugin used.
+
+If no global default is set by the user, the tool will use `global_common_defaults` when setting global parameters (e.g. `conf ascp use`)
 
 ### Format of file
 
@@ -918,7 +926,6 @@ A [option preset](#lprt) value can be removed with `unset`:
 ```
 $ ascli config id cli_default unset interactive
 ```
-
 
 ### Examples
 
@@ -1039,21 +1046,42 @@ The `config` plugin also allows specification for the use of a local FASP client
 
 ```
 $ ascli config ascp show
-/Users/laurent/Applications/Aspera Connect.app/Contents/Resources/ascp
+/Users/laurent/.aspera/ascli/sdk/ascp
+$ ascli config ascp info
++--------------------+-----------------------------------------------------------+
+| key                | value                                                     |
++--------------------+-----------------------------------------------------------+
+| ascp               | /Users/laurent/.aspera/ascli/sdk/ascp                     |
+...
 ```
 
 ### Selection of local `ascp`
 
+By default, `ascli` uses any found local product with ascp, including SDK.
+
 To temporarily use an alternate ascp path use option `ascp_path` (`--ascp-path=`)
 
-To permanently use another ascp:
+For a permanent change, the command `config ascp use` sets the same parameter for the global default.
+
+Using a POSIX shell:
 
 ```
 $ ascli config ascp use '/Users/laurent/Applications/Aspera CLI/bin/ascp'
-saved to default global preset /Users/laurent/Applications/Aspera CLI/bin/ascp
+ascp version: 4.0.0.182279
+Updated: global_common_defaults: ascp_path <- /Users/laurent/Applications/Aspera CLI/bin/ascp
+Saved to default global preset global_common_defaults
 ```
 
-This sets up a global default.
+Windows:
+
+```
+$ ascli config ascp use C:\Users\admin\.aspera\ascli\sdk\ascp.exe
+ascp version: 4.0.0.182279
+Updated: global_common_defaults: ascp_path <- C:\Users\admin\.aspera\ascli\sdk\ascp.exe
+Saved to default global preset global_common_defaults
+```
+
+If the path has spaces, read section: [Shell and Command line parsing](#parsing).
 
 ### List locally installed Aspera Transfer products
 
@@ -3630,13 +3658,14 @@ So, it evolved into `ascli`:
 
 * 4.1.0.latest
 
-	* change: `aoc apiinfo` is removed, use `aoc servers` to provide the list of cloud systems
-	* change: (break) parameters for resume in `transfer-info` for `direct` are now in sub-key `"resume"`
-	* change: (break) multi_session_threshold is Integer, not String
 	* new: command `aoc remind` to receive organization membership by email
 	* new: in `preview` option `value` to filter out on file name
 	* new: `initdemo` to initialize for demo server
 	* new: `direct` transfer agent options: `spawn_timeout_sec` and `spawn_delay_sec`
+	* fix: on Windows `conf ascp use` expects ascp.exe
+	* fix: (break) multi_session_threshold is Integer, not String
+	* change: (break) `aoc apiinfo` is removed, use `aoc servers` to provide the list of cloud systems
+	* change: (break) parameters for resume in `transfer-info` for `direct` are now in sub-key `"resume"`
 
 * 4.1.0
 
