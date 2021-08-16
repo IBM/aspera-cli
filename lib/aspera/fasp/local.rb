@@ -21,16 +21,24 @@ module Aspera
     ACCESS_KEY_TRANSFER_USER='xfer'
     # executes a local "ascp", connects mgt port, equivalent of "Fasp Manager"
     class Local < Manager
-      ASCP_SPAWN_TIMEOUT_SEC = 3
-      private_constant :ASCP_SPAWN_TIMEOUT_SEC
-      # set to false to keep ascp progress bar display (basically: removes ascp's option -q)
+      # options for initialize
+      DEFAULT_OPTIONS = {
+        :spawn_timeout_sec => 3,
+        :spawn_delay_sec   => 2,
+        :wss               => false,
+        :resume            => {}
+      }
+      DEFAULT_UDP_PORT=33001
+      private_constant :DEFAULT_OPTIONS
+      # set to false to keep ascp progress bar display ("true" adds ascp's option -q)
       attr_accessor :quiet
+
       # start ascp transfer (non blocking), single or multi-session
       # job information added to @jobs
       # @param transfer_spec [Hash] aspera transfer specification
       # @param options [Hash] :resumer, :regenerate_token
       def start_transfer(transfer_spec,options={})
-        raise "option: must be hash (or nil)" unless options.is_a?(Hash)
+        raise 'option: must be hash (or nil)' unless options.is_a?(Hash)
         job_options = options.clone
         job_options[:resumer] ||= @resume_policy
         job_options[:job_id] ||= SecureRandom.uuid
@@ -58,7 +66,7 @@ module Aspera
 
         # TODO: check if changing fasp(UDP) port is really necessary, not clear from doc
         # compute this before using transfer spec, even if the var is not used in single session
-        multi_session_udp_port_base=33001
+        multi_session_udp_port_base=DEFAULT_UDP_PORT
         multi_session_number=nil
         if transfer_spec.has_key?('multi_session')
           multi_session_number=transfer_spec['multi_session'].to_i
@@ -98,25 +106,26 @@ module Aspera
           :options  => job_options  # [Hash]
         }
 
-        Log.log.debug("starting session thread(s)")
+        Log.log.debug('starting session thread(s)')
         if !multi_session_number
           # single session for transfer : simple
           session[:thread] = Thread.new(session) {|s|transfer_thread_entry(s)}
           xfer_job[:sessions].push(session)
         else
           1.upto(multi_session_number) do |i|
+            sleep(@options[:spawn_delay_sec]) unless i.eql?(1)
             # do deep copy (each thread has its own copy because it is modified here below and in thread)
             this_session=session.clone()
             this_session[:env_args]=this_session[:env_args].clone()
             this_session[:env_args][:args]=this_session[:env_args][:args].clone()
             this_session[:env_args][:args].unshift("-C#{i}:#{multi_session_number}")
             # necessary only if server is not linux, i.e. server does not support port re-use
-            this_session[:env_args][:args].unshift("-O","#{multi_session_udp_port_base+i-1}")
+            this_session[:env_args][:args].unshift('-O',"#{multi_session_udp_port_base+i-1}")
             this_session[:thread] = Thread.new(this_session) {|s|transfer_thread_entry(s)}
             xfer_job[:sessions].push(this_session)
           end
         end
-        Log.log.debug("started session thread(s)")
+        Log.log.debug('started session thread(s)')
 
         # add job to list of jobs
         @jobs[job_options[:job_id]]=xfer_job
@@ -128,7 +137,7 @@ module Aspera
       # wait for completion of all jobs started
       # @return list of :success or error message
       def wait_for_transfers_completion
-        Log.log.debug("wait_for_transfers_completion")
+        Log.log.debug('wait_for_transfers_completion')
         # set to non-nil to exit loop
         result=[]
         @jobs.each do |id,job|
@@ -138,7 +147,7 @@ module Aspera
             result.push(session[:error] ? session[:error] : :success)
           end
         end
-        Log.log.debug("all transfers joined")
+        Log.log.debug('all transfers joined')
         # since all are finished and we return the result, clear statuses
         @jobs.clear
         return result
@@ -146,7 +155,7 @@ module Aspera
 
       # used by asession (to be removed ?)
       def shutdown
-        Log.log.debug("fasp local shutdown")
+        Log.log.debug('fasp local shutdown')
       end
 
       # This is the low level method to start the "ascp" process
@@ -158,8 +167,8 @@ module Aspera
       # @param session this session information
       # could be private method
       def start_transfer_with_args_env(env_args,session)
-        raise "env_args must be Hash" unless env_args.is_a?(Hash)
-        raise "session must be Hash" unless session.is_a?(Hash)
+        raise 'env_args must be Hash' unless env_args.is_a?(Hash)
+        raise 'session must be Hash' unless session.is_a?(Hash)
         # by default we assume an exception will be raised (for ensure block)
         exception_raised=true
         begin
@@ -184,7 +193,7 @@ module Aspera
           Log.log.debug("before accept for pid (#{ascp_pid})")
           # init management socket
           ascp_mgt_io=nil
-          Timeout.timeout(ASCP_SPAWN_TIMEOUT_SEC) do
+          Timeout.timeout(@options[:spawn_timeout_sec]) do
             ascp_mgt_io = mgt_sock.accept
             # management messages include file names which may be utf8
             # by default socket is US-ASCII
@@ -218,7 +227,7 @@ module Aspera
               current_event_data[$1] = $2
             when ''
               # empty line is separator to end event information
-              raise "unexpected empty line" if current_event_data.nil?
+              raise 'unexpected empty line' if current_event_data.nil?
               current_event_data[Manager::LISTENER_SESSION_ID_B]=ascp_pid
               notify_listeners(current_event_text,current_event_data)
               case current_event_data['Type']
@@ -242,7 +251,7 @@ module Aspera
             when 'ERROR'
               Log.log.error("code: #{last_status_event['Code']}")
               if last_status_event['Description']  =~ /bearer token/i
-                Log.log.error("need to regenerate token".red)
+                Log.log.error('need to regenerate token'.red)
                 if session[:options].is_a?(Hash) and session[:options].has_key?(:regenerate_token)
                   # regenerate token here, expired, or error on it
                   env_args[:env]['ASPERA_SCP_TOKEN']=session[:options][:regenerate_token].call(true)
@@ -292,9 +301,9 @@ module Aspera
       # {'type'=>'DONE'}
       def send_command(job_id,session_index,data)
         job=@jobs[job_id]
-        raise "no such job" if job.nil?
+        raise 'no such job' if job.nil?
         session=job[:sessions][session_index]
-        raise "no such session" if session.nil?
+        raise 'no such session' if session.nil?
         Log.log.debug("command: #{data}")
         # build command
         command=data.
@@ -310,7 +319,6 @@ module Aspera
 
       # @param options : keys(symbol): wss, resume
       def initialize(options=nil)
-        Log.log.debug("local options= #{options}")
         super()
         # by default no interactive progress bar
         @quiet=true
@@ -318,8 +326,19 @@ module Aspera
         @jobs={}
         # mutex protects global data accessed by threads
         @mutex=Mutex.new
-        @options=options || {}
-        @options[:wss]||=false
+        # manage options
+        @options=DEFAULT_OPTIONS.clone
+        if !options.nil?
+          raise "expecting Hash (or nil), but have #{options.class}" unless options.is_a?(Hash)
+          options.each do |k,v|
+            if DEFAULT_OPTIONS.has_key?(k)
+              @options[k]=v
+            else
+              raise "unknown local agent parameter: #{k}, expect one of #{DEFAULT_OPTIONS.keys.map{|i|i.to_s}.join(",")}"
+            end
+          end
+        end
+        Log.log.debug("local options= #{options}")
         @resume_policy=ResumePolicy.new(@options[:resume].symbolize_keys)
       end
 
@@ -328,7 +347,7 @@ module Aspera
       def transfer_thread_entry(session)
         begin
           # set name for logging
-          Thread.current[:name]="transfer"
+          Thread.current[:name]='transfer'
           Log.log.debug("ENTER (#{Thread.current[:name]})")
           # start transfer with selected resumer policy
           session[:options][:resumer].process do

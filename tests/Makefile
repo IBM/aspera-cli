@@ -66,7 +66,7 @@ clean::
 	rm -fr $(T)
 	mkdir $(T)
 $(CF_LOCAL_SAMPLE_FILEPATH):
-	dd if=/dev/urandom of=$(CF_LOCAL_SAMPLE_FILEPATH) count=1 bs=200k
+	dd if=/dev/urandom of=$(CF_LOCAL_SAMPLE_FILEPATH) count=10 bs=1m
 clean::
 	rm -f $(CF_LOCAL_SAMPLE_FILEPATH)
 $(T)unit: $(T).exists $(CF_LOCAL_SAMPLE_FILEPATH)
@@ -111,7 +111,7 @@ $(T)serv_mkdir: $(T).exists
 	@touch $@
 $(T)serv_upload: $(T)serv_mkdir $(CF_LOCAL_SAMPLE_FILEPATH)
 	@echo $@
-	$(EXE_MAN) server upload $(CF_LOCAL_SAMPLE_FILEPATH) --to-folder=$(NEW_SERVER_FOLDER)
+	$(EXE_MAN) server upload $(CF_LOCAL_SAMPLE_FILEPATH) --to-folder=$(NEW_SERVER_FOLDER) --ts=@json:'{"multi_session":3,"multi_session_threshold":1,"resume_policy":"none","target_rate_kbps":1500}' --transfer-info=@json:'{"spawn_delay_sec":2.5}' --progress=multi
 	$(EXE_MAN) server upload --src-type=pair $(CF_LOCAL_SAMPLE_FILEPATH) $(NEW_SERVER_FOLDER)/othername
 	$(EXE_MAN) server upload --src-type=pair --sources=@json:'["$(CF_LOCAL_SAMPLE_FILEPATH)","$(NEW_SERVER_FOLDER)/othername"]'
 	$(EXE_MAN) server upload --sources=@ts --ts=@json:'{"paths":[{"source":"$(CF_LOCAL_SAMPLE_FILEPATH)","destination":"$(NEW_SERVER_FOLDER)/othername"}]}'

@@ -1156,6 +1156,8 @@ The `transfer-info` accepts the following optional parameters:
 <tr><th>Name</th><th>Type</th><th>Default</th><th>Feature</th><th>Description</th></tr>
 <tr><td>resume</td><td>Hash</td><td>nil</td><td>Resumer parameters</td><td>See below</td></tr>
 <tr><td>wss</td><td>Bool</td><td>false</td><td>Web Socket Session</td><td>Enable use of web socket session in case it is available</td></tr>
+<tr><td>spawn_timeout_sec</td><td>Float</td><td>3</td><td>Multi session</td><td>Verification time that ascp is running</td></tr>
+<tr><td>spawn_delay_sec</td><td>Float</td><td>2</td><td>Multi session</td><td>Delay between startup of sessions</td></tr>
 </table>
 
 Resume parameters:
@@ -1681,7 +1683,7 @@ ascli server upload --sources=@ts --ts=@json:'{"paths":[{"source":"testfile.bin"
 ascli server upload --src-type=pair --sources=@json:'["testfile.bin","NEW_SERVER_FOLDER/othername"]'
 ascli server upload --src-type=pair testfile.bin NEW_SERVER_FOLDER/othername
 ascli server upload --to-folder=folder_1/target_hot --lock-port=12345 --ts=@json:'{"EX_ascp_args":["--remove-after-transfer","--remove-empty-directories","--exclude-newer-than=-8","--src-base","source_hot"]}' source_hot
-ascli server upload testfile.bin --to-folder=NEW_SERVER_FOLDER
+ascli server upload testfile.bin --to-folder=NEW_SERVER_FOLDER --ts=@json:'{"multi_session":3,"multi_session_threshold":1,"resume_policy":"none","target_rate_kbps":1500}' --transfer-info=@json:'{"spawn_delay_sec":2.5}' --progress=multi
 ascli shares admin share list
 ascli shares repository browse /
 ascli shares repository delete /SHARES_UPLOAD/testfile.bin
@@ -3630,9 +3632,11 @@ So, it evolved into `ascli`:
 
 	* change: `aoc apiinfo` is removed, use `aoc servers` to provide the list of cloud systems
 	* change: (break) parameters for resume in `transfer-info` for `direct` are now in sub-key `"resume"`
+	* change: (break) multi_session_threshold is Integer, not String
 	* new: command `aoc remind` to receive organization membership by email
 	* new: in `preview` option `value` to filter out on file name
 	* new: `initdemo` to initialize for demo server
+	* new: `direct` transfer agent options: `spawn_timeout_sec` and `spawn_delay_sec`
 
 * 4.1.0
 
