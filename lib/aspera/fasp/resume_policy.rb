@@ -21,6 +21,7 @@ module Aspera
           raise "expecting Hash (or nil), but have #{params.class}" unless params.is_a?(Hash)
           params.each do |k,v|
             if DEFAULTS.has_key?(k)
+              raise "#{k} must be Integer" unless v.is_a?(Integer)
               @parameters[k]=v
             else
               raise "unknown resume parameter: #{k}, expect one of #{DEFAULTS.keys.map{|i|i.to_s}.join(",")}"
