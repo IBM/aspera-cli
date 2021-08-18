@@ -269,7 +269,7 @@ module Aspera
         if e.response.is_a?(Net::HTTPRedirection)
           if tries_remain_redirect > 0
             tries_remain_redirect-=1
-            Log.log.error("URL is moved, check your config: #{e.response['location']}")
+            Log.log.info("URL is moved: #{e.response['location']}")
             raise e
             # TODO: rebuild request with new location
             #retry
