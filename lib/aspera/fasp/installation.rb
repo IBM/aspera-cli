@@ -22,6 +22,8 @@ module Aspera
       PRODUCT_CLI_V1='Aspera CLI'
       PRODUCT_DRIVE='Aspera Drive'
       PRODUCT_ENTSRV='Enterprise Server'
+      MAX_REDIRECT_SDK=2
+      private_constant :MAX_REDIRECT_SDK
       # set ascp executable path
       def ascp_path=(v)
         @path_to_ascp=v
@@ -209,7 +211,7 @@ module Aspera
           raise 'use format: file:///<path>' unless sdk_url.start_with?('file:///')
           sdk_zip_path=sdk_url.gsub(%r{^file:///},'')
         else
-          redirect_remain=2
+          redirect_remain=MAX_REDIRECT_SDK
           begin
             Aspera::Rest.new(base_url: sdk_url).call(operation: 'GET',save_to_file: sdk_zip_path)
           rescue Aspera::RestCallError => e
@@ -219,7 +221,7 @@ module Aspera
                 sdk_url=e.response['location']
                 retry
               else
-                raise "too meny redirect"
+                raise "Too many redirect"
               end
             else
               raise e
@@ -229,6 +231,12 @@ module Aspera
         # SDK is organized by architecture
         filter="/#{Environment.architecture}/"
         ascp_path=nil
+        sdk_path=folder_path
+        # rename old install
+        if File.exist?(File.join(sdk_path,ascp_filename))
+          Log.log.warn("Previous install exists, renaming.")
+          File.rename(sdk_path,"#{sdk_path}.#{Time.now.strftime("%Y%m%d%H%M%S")}")
+        end
         # first ensure license file is here so that ascp invokation for version works
         self.path(:aspera_license)
         self.path(:aspera_conf)
@@ -236,7 +244,7 @@ module Aspera
           zip_file.each do |entry|
             # get only specified arch, but not folder, only files
             if entry.name.include?(filter) and !entry.name.end_with?('/')
-              archive_file=File.join(folder_path,File.basename(entry.name))
+              archive_file=File.join(sdk_path,File.basename(entry.name))
               File.open(archive_file, 'wb') do |output_stream|
                 IO.copy_stream(entry.get_input_stream, output_stream)
               end
@@ -281,7 +289,7 @@ module Aspera
 
       # @return the path to folder where SDK is installed
       def folder_path
-        raise "undefined path to SDK" if @sdk_folder.nil?
+        raise "Undefined path to SDK" if @sdk_folder.nil?
         FileUtils.mkdir_p(@sdk_folder) unless Dir.exist?(@sdk_folder)
         @sdk_folder
       end
@@ -328,7 +336,7 @@ module Aspera
             :log_root =>File.join(Dir.home,'Library','Logs','Aspera_Drive'),
             :sub_bin  =>File.join('Contents','Resources'),
             }]
-        else; return [{  # other: Linux and unix family
+        else; return [{  # other: Linux and Unix family
             :expected =>PRODUCT_CONNECT,
             :app_root =>File.join(Dir.home,'.aspera','connect'),
             :run_root =>File.join(Dir.home,'.aspera','connect')
@@ -342,7 +350,7 @@ module Aspera
         end
       end
 
-      # @return standard bypass keys
+      # @return a standard bypass key
       # @param type rsa or dsa
       # @param id in repository 1 for dsa, 2 for rsa
       def get_key(type,id)
