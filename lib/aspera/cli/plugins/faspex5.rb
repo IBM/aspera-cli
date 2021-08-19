@@ -46,39 +46,22 @@ module Aspera
             })
           when :jwt
             #raise "JWT to be implemented"
+            app_client_id=options.get_option(:client_id,:mandatory)
             @api_v5=Rest.new({
-              :base_url => faxpex5_api_base_url,
+              :base_url => faxpex5_api_v5_url,
               :auth     => {
               :type                => :oauth2,
               :base_url            => faxpex5_api_auth_url,
               :grant               => :jwt,
-              :client_id           => options.get_option(:client_id,:mandatory),
+              :client_id           => app_client_id,
               :client_secret       => options.get_option(:client_secret,:mandatory),
               #:redirect_uri   => options.get_option(:redirect_uri,:mandatory),
-              :jwt_subject         => "client:#{options.get_option(:client_id,:mandatory)}", # TODO Mmmm
+              :jwt_subject         => "client:#{app_client_id}", # TODO Mmmm
+              :jwt_audience        => app_client_id, # TODO Mmmm
               :jwt_private_key_obj => OpenSSL::PKey::RSA.new(options.get_option(:private_key,:mandatory)),
-              :jwt_audience =>options.get_option(:client_id,:mandatory), # TODO Mmmm
-              #:token_field    =>'auth_token',
-              #:path_token     => 'authenticate',
-              #:path_authorize => :unused,
-              #:userpass_body  => {name: options.get_option(:username,:mandatory),password: options.get_option(:password,:mandatory)}
+              :jwt_is_f5           => true,
+              :jwt_headers         => {typ: 'JWT'}
               }})
-            #  former version
-            #            # get parameters
-            #            faxpex5_username=options.get_option(:username,:mandatory)
-            #            faxpex5_password=options.get_option(:password,:mandatory)
-            #            # create object for REST calls to Shares2
-            #            @api_v5=Rest.new({
-            #              :base_url => faxpex5_api_base_url,
-            #              :auth     => {
-            #              :type           => :oauth2,
-            #              :base_url       => faxpex5_api_base_url,
-            #              :grant          => :body_data,
-            #              :token_field    =>'auth_token',
-            #              :path_token     => 'authenticate',
-            #              :path_authorize => :unused,
-            #              :userpass_body  => {name: faxpex5_username,password: faxpex5_password}
-            #              }})
           end
         end
 

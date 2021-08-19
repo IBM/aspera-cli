@@ -225,6 +225,16 @@ module Aspera
             :nbf => seconds_since_epoch-JWT_NOTBEFORE_OFFSET, # not before
             :exp => seconds_since_epoch+JWT_EXPIRY_OFFSET # expiration
           }
+          # Hum.. compliant ? TODO: remove when Faspex5 API is clarified
+          if @params[:jwt_is_f5]
+            payload[:jti] = SecureRandom.uuid
+            payload[:iat] = seconds_since_epoch
+            payload.delete(:nbf)
+            p_scope[:redirect_uri]="https://127.0.0.1:5000/token"
+            p_scope[:state]=SecureRandom.uuid
+            p_scope[:client_id]=@params[:client_id]
+            @token_auth_api.params[:auth]={:type=>:none}
+          end
 
           # non standard, only for global ids
           payload.merge!(@params[:jwt_add]) if @params.has_key?(:jwt_add)
@@ -233,8 +243,8 @@ module Aspera
 
           Log.log.debug("private=[#{rsa_private}]")
 
-          Log.log.debug("JWT assertion=[#{payload}]")
-          assertion = JWT.encode(payload, rsa_private, 'RS256')
+          Log.log.debug("JWT payload=[#{payload}]")
+          assertion = JWT.encode(payload, rsa_private, 'RS256',@params[:jwt_headers]||{})
 
           Log.log.debug("assertion=[#{assertion}]")
 
