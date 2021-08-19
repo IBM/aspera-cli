@@ -67,15 +67,20 @@ module Aspera
         # TODO: check if changing fasp(UDP) port is really necessary, not clear from doc
         # compute this before using transfer spec, even if the var is not used in single session
         multi_session_udp_port_base=DEFAULT_UDP_PORT
-        multi_session_number=nil
+        multi_session_number=0
         if transfer_spec.has_key?('multi_session')
           multi_session_number=transfer_spec['multi_session'].to_i
-          raise "multi_session(#{transfer_spec['multi_session']}) shall be integer > 1" unless multi_session_number >= 1
-          # managed here, so delete from transfer spec
-          transfer_spec.delete('multi_session')
-          if transfer_spec.has_key?('fasp_port')
-            multi_session_udp_port_base=transfer_spec['fasp_port']
-            transfer_spec.delete('fasp_port')
+          if multi_session_number < 0
+            Log.log.error("multi_session(#{transfer_spec['multi_session']}) shall be integer >= 0")
+            multi_session_number = 0
+          end
+          if multi_session_number > 0
+            # managed here, so delete from transfer spec
+            transfer_spec.delete('multi_session')
+            if transfer_spec.has_key?('fasp_port')
+              multi_session_udp_port_base=transfer_spec['fasp_port']
+              transfer_spec.delete('fasp_port')
+            end
           end
         end
 
@@ -106,12 +111,13 @@ module Aspera
           :options  => job_options  # [Hash]
         }
 
-        Log.log.debug('starting session thread(s)')
-        if !multi_session_number
+        if multi_session_number <= 1
+          Log.log.debug('Starting single session thread')
           # single session for transfer : simple
           session[:thread] = Thread.new(session) {|s|transfer_thread_entry(s)}
           xfer_job[:sessions].push(session)
         else
+          Log.log.debug('Starting multi session threads')
           1.upto(multi_session_number) do |i|
             sleep(@options[:spawn_delay_sec]) unless i.eql?(1)
             # do deep copy (each thread has its own copy because it is modified here below and in thread)
