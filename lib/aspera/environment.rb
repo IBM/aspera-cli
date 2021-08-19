@@ -2,7 +2,7 @@ require 'aspera/log'
 require 'rbconfig'
 
 module Aspera
-  # a simple binary data repository
+  # detect OS, architecture, and OS specific stuff
   class Environment
     OS_WINDOWS = :windows
     OS_X = :osx
@@ -53,7 +53,7 @@ module Aspera
       return ''
     end
 
-    # on Windows, the env var %USERPROFILE% provides the path to user's home more reliably then %HOMEDRIVE%%HOMEPATH%
+    # on Windows, the env var %USERPROFILE% provides the path to user's home more reliably than %HOMEDRIVE%%HOMEPATH%
     def self.fix_home
       if os.eql?(OS_WINDOWS)
         if ENV.has_key?('USERPROFILE') and Dir.exist?(ENV['USERPROFILE'])
