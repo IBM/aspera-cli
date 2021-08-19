@@ -118,11 +118,6 @@ module Aspera
 <CONF version="2">
 <default>
     <file_system>
-        <storage_rc>
-            <adaptive>
-                true
-            </adaptive>
-        </storage_rc>
         <resume_suffix>.aspera-ckpt</resume_suffix>
         <partial_file_suffix>.partial</partial_file_suffix>
     </file_system>
