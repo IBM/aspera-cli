@@ -1182,10 +1182,10 @@ The `transfer-info` accepts the following optional parameters:
 
 <table>
 <tr><th>Name</th><th>Type</th><th>Default</th><th>Feature</th><th>Description</th></tr>
-<tr><td>resume</td><td>Hash</td><td>nil</td><td>Resumer parameters</td><td>See below</td></tr>
-<tr><td>wss</td><td>Bool</td><td>false</td><td>Web Socket Session</td><td>Enable use of web socket session in case it is available</td></tr>
 <tr><td>spawn_timeout_sec</td><td>Float</td><td>3</td><td>Multi session</td><td>Verification time that ascp is running</td></tr>
 <tr><td>spawn_delay_sec</td><td>Float</td><td>2</td><td>Multi session</td><td>Delay between startup of sessions</td></tr>
+<tr><td>wss</td><td>Bool</td><td>false</td><td>Web Socket Session</td><td>Enable use of web socket session in case it is available</td></tr>
+<tr><td>resume</td><td>Hash</td><td>nil</td><td>Resumer parameters</td><td>See below</td></tr>
 </table>
 
 Resume parameters:
@@ -1198,12 +1198,12 @@ Resume parameters:
 <tr><td>sleep_max</td><td>int</td><td>60</td><td>Resume</td><td>Maximum sleep</td></tr>
 </table>
 
-Example:
+Examples:
 
 ```
 $ ascli ... --transfer-info=@json:'{"wss":true,"resume":{"iter_max":10}}'
+$ ascli ... --transfer-info=@json:'{"spawn_delay_sec":2.5}'
 ```
-
 
 ### IBM Aspera Connect Client GUI
 
@@ -1642,7 +1642,7 @@ ascli faspex source name "Server Files" node br /
 ascli faspex5 node list --value=@json:'{"type":"received","subtype":"mypackages"}'
 ascli faspex5 package list --value=@json:'{"mailbox":"inbox","state":["released"]}'
 ascli faspex5 package receive --id="my_package_id" --to-folder=.
-ascli faspex5 package send --value=@json:'{"title":"test title","recipients":["${f5_user}"]}' testfile.bin
+ascli faspex5 package send --value=@json:'{"title":"test title","recipients":[{"name":"${f5_user}"}]}' testfile.bin
 ascli node -N -Ptst_node_preview access_key create --value=@json:'{"id":"aoc_1","storage":{"type":"local","path":"/"}}'
 ascli node -N -Ptst_node_preview access_key delete --id=aoc_1
 ascli node async --id=1 bandwidth 
@@ -3664,6 +3664,8 @@ So, it evolved into `ascli`:
 	* new: `direct` transfer agent options: `spawn_timeout_sec` and `spawn_delay_sec`
 	* fix: on Windows `conf ascp use` expects ascp.exe
 	* fix: (break) multi_session_threshold is Integer, not String
+	* fix: `conf ascp install` renames sdk folder if it already exists (leftover shared lib may make fail)
+	* fix: removed replace_illegal_chars from default aspera.conf causing "Error creating illegal char conversion table"
 	* change: (break) `aoc apiinfo` is removed, use `aoc servers` to provide the list of cloud systems
 	* change: (break) parameters for resume in `transfer-info` for `direct` are now in sub-key `"resume"`
 
