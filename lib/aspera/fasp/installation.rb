@@ -125,7 +125,6 @@ module Aspera
         </storage_rc>
         <resume_suffix>.aspera-ckpt</resume_suffix>
         <partial_file_suffix>.partial</partial_file_suffix>
-        <replace_illegal_chars>_</replace_illegal_chars>
     </file_system>
 </default>
 </CONF>
