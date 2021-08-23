@@ -1,7 +1,7 @@
 [comment1]: # (Do not edit this README.md, edit docs/README.erb.md, for details, read docs/README.md)
 # `ascli` : Command Line Interface for IBM Aspera products
 
-Version : 4.1.0
+Version : 4.2.0
 
 _Laurent/2016-2021_
 
@@ -81,7 +81,7 @@ Once the gem is installed, `ascli` shall be accessible:
 
 ```
 $ ascli --version
-4.1.0
+4.2.0
 ```
 
 ## First use
@@ -1734,7 +1734,7 @@ ascli sync start --parameters=@json:'{"sessions":[{"name":"test","reset":true,"r
 ```
 $ ascli -h
 NAME
-	ascli -- a command line tool for Aspera Applications (v4.1.0)
+	ascli -- a command line tool for Aspera Applications (v4.2.0)
 
 SYNOPSIS
 	ascli COMMANDS [OPTIONS] [ARGS]
@@ -3656,7 +3656,7 @@ So, it evolved into `ascli`:
 
 # Changes (Release notes)
 
-* 4.1.0.latest
+* 4.2.0.latest
 
 	* new: command `aoc remind` to receive organization membership by email
 	* new: in `preview` option `value` to filter out on file name
