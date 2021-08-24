@@ -1270,7 +1270,7 @@ is described in a _transfer-spec_ (Transfer Specification), such as:
 
 <%=tool%> builds a default _transfer-spec_ internally, so it is not necessary to provide additional parameters on the command line for this transfer.
 
-If needed, it is possible to modify or add any of the supported _transfer-spec_ parameter using the `ts` option. The `ts` option accepts a [Structured Value](#native) containing one or several _transfer-spec_ parameters.
+If needed, it is possible to modify or add any of the supported _transfer-spec_ parameter using the `ts` option. The `ts` option accepts a [Structured Value](#native) containing one or several _transfer-spec_ parameters. Multiple `ts` options on command line are cummulative.
 
 It is possible to specify ascp options when the `transfer` option is set to `direct` using the special [_transfer-spec_](#transferspec) parameter: `EX_ascp_args`. Example: `--ts=@json:'{"EX_ascp_args":["-l","100m"]}'`. This is espacially useful for ascp command line parameters not supported yet in the transfer spec.
 
@@ -3068,7 +3068,7 @@ So, it evolved into <%=tool%>:
 
 # Changes (Release notes)
 
-* <%= gemspec.version.to_s %>.latest
+* <%= gemspec.version.to_s %>
 
 	* new: command `aoc remind` to receive organization membership by email
 	* new: in `preview` option `value` to filter out on file name
@@ -3452,11 +3452,15 @@ Breaking change:
 
   * Breaking change: "files" application renamed to "aspera" (for "Aspera on Cloud"). "repository" renamed to "files". Default is automatically reset, e.g. in config files and change key "files" to "aspera" in <%=prst%> "default".
 
-# BUGS
+# BUGS, FEATURES, CONTRIBUTION
 
-* This is best effort code without official support, dont expect full capabilities. This code is not supported by IBM/Aspera. You can contact the author for bugs or features.
+For issues or feature requests use the Github repository and issues.
 
-## only one value for any option
+You can also contribute to this open source project.
+
+One can also create one's own command nplugin.
+
+## Only one value for any option
 
 Some commands and sub commands may ask for the same option name.
 Currently, since option definition is position independant (last one wins), it is not possible
@@ -3470,7 +3474,8 @@ This happens typically for the `node` sub command, e.g. identify the node by nam
 
 ## ED255519 key not supported
 
-ED255519 keys are deactivated since version 0.9.24 so this type of key will just be ignored.
+ED25519 keys are deactivated since version 0.9.24 so this type of key will just be ignored.
+
 Without this deactivation, if such key was present the following error was generated:
 
 ```
@@ -3480,7 +3485,17 @@ OpenSSH keys only supported if ED25519 is available
 Which meant that you do not have ruby support for ED25519 SSH keys.
 You may either install the suggested Gems, or remove your ed25519 key from your `.ssh` folder to solve the issue.
 
-# TODO
+## Error "Remote host is not who we expected"
+
+`ascp` version 4.x changed the algorithm used to check the SSH server certificate. To ignore the certificate (SSH fingerprint) add option on client side:
+
+```
+--ts=@json:'{"sshfp":null}'
+```
+
+Refer to ES-1944 in release notes of 4.1 and to [HSTS admin manual section "Configuring Transfer Server Authentication With a Host-Key Fingerprint"](https://www.ibm.com/docs/en/ahts/4.2?topic=upgrades-configuring-ssh-server): if you have access to server side, basically disable other SSH host keys than RSA.
+
+## Miscelaneous
 
 * remove rest and oauth classes and use ruby standard gems:
 
@@ -3496,9 +3511,3 @@ You may either install the suggested Gems, or remove your ed25519 key from your 
 * Going through proxy: use env var http_proxy and https_proxy, no_proxy
 
 * easier use with https://github.com/pmq20/ruby-packer
-
-# Contribution
-
-Send comments !
-
-Create your own plugin !
