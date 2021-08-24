@@ -179,9 +179,9 @@ module Aspera
           # when providing a list, just specify source
           @transfer_paths=file_list.map{|i|{'source'=>i}}
         when :pair
-          raise CliBadArgument,"whe using pair, provide even number of paths: #{file_list.length}" unless file_list.length.even?
+          raise CliBadArgument,"When using pair, provide an even number of paths: #{file_list.length}" unless file_list.length.even?
           @transfer_paths=file_list.each_slice(2).to_a.map{|s,d|{'source'=>s,'destination'=>d}}
-        else raise "ERROR"
+        else raise "Unsupported src_type"
         end
         Log.log.debug("paths=#{@transfer_paths}")
         return @transfer_paths
