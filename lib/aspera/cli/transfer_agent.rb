@@ -10,7 +10,7 @@ module Aspera
   module Cli
     # The Transfer agent is a common interface to start a transfer using
     # one of the supported transfer agents
-    # provides CLI options to select one of the transfer agents (fasp client)
+    # provides CLI options to select one of the transfer agents (FASP/ascp client)
     class TransferAgent
       # special value for --sources : read file list from arguments
       FILE_LIST_FROM_ARGS='@args'
@@ -45,6 +45,7 @@ module Aspera
 
       def option_transfer_spec; @transfer_spec_cmdline; end
 
+      # multiple option are merged
       def option_transfer_spec=(value); @transfer_spec_cmdline.merge!(value); end
 
       def option_transfer_spec_deep_merge(ts); @transfer_spec_cmdline.deep_merge!(ts); end
@@ -75,7 +76,7 @@ module Aspera
         when :connect
           new_agent=Fasp::Connect.new
         when :node
-          # way for code to setup alternate node api in avance
+          # way for code to setup alternate node api in advance
           # support: @preset:<name>
           # support extended values
           node_config=@opt_mgr.get_option(:transfer_info,:optional)
@@ -118,7 +119,7 @@ module Aspera
           aoc_config[:private_key]=ExtendedValue.instance.evaluate(aoc_config[:private_key])
           new_agent=Fasp::Aoc.new(aoc_config)
         else
-          raise "INTERNAL ERROR"
+          raise "Unexpected transfer agent type: #{agent_type}"
         end
         set_agent_instance(new_agent)
         return nil
