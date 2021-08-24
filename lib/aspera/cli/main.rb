@@ -232,16 +232,6 @@ module Aspera
           # load global default options and process
           @plugin_env[:config].add_plugin_default_preset(Plugins::Config::CONF_GLOBAL_SYM)
           @opt_mgr.parse_options!
-          # dual execution locking
-          lock_port=@opt_mgr.get_option(:lock_port,:optional)
-          if !lock_port.nil?
-            begin
-              # no need to close later, will be freed on process exit. must save in member else it is garbage collected
-              @tcp_server=TCPServer.new('127.0.0.1',lock_port.to_i)
-            rescue => e
-              raise CliError,"Another instance is already running (lock port=#{lock_port})."
-            end
-          end
           @plugin_env[:config].periodic_check_newer_gem_version
           if @option_show_config and @opt_mgr.command_or_arg_empty?
             command_sym=Plugins::Config::CONF_PLUGIN_SYM
@@ -266,6 +256,17 @@ module Aspera
             @plugin_env[:formater].display_results({:type=>:single_object,:data=>@opt_mgr.declared_options(false)})
             Process.exit(0)
           end
+          # locking for singkle execution (only after "per plugin" option, in case lock port is there)
+          lock_port=@opt_mgr.get_option(:lock_port,:optional)
+          if !lock_port.nil?
+            begin
+              # no need to close later, will be freed on process exit. must save in member else it is garbage collected
+              Log.log.debug("Opening lock port #{lock_port.to_i}")
+              @tcp_server=TCPServer.new('127.0.0.1',lock_port.to_i)
+            rescue => e
+              raise CliError,"Another instance is already running (#{e.message})."
+            end
+          end
           # execute and display
           @plugin_env[:formater].display_results(command_plugin.execute_action)
           # finish
@@ -273,11 +274,11 @@ module Aspera
         rescue CliBadArgument => e;          exception_info=[e,'Argument',:usage]
         rescue CliNoSuchId => e;             exception_info=[e,'Identifier']
         rescue CliError => e;                exception_info=[e,'Tool',:usage]
-        rescue Fasp::Error => e;             exception_info=[e,"FASP(ascp]"]
-        rescue Aspera::RestCallError => e; exception_info=[e,"Rest"]
-        rescue SocketError => e;             exception_info=[e,"Network"]
-        rescue StandardError => e;           exception_info=[e,"Other",:debug]
-        rescue Interrupt => e;               exception_info=[e,"Interruption",:debug]
+        rescue Fasp::Error => e;             exception_info=[e,'FASP(ascp)']
+        rescue Aspera::RestCallError => e;   exception_info=[e,'Rest']
+        rescue SocketError => e;             exception_info=[e,'Network']
+        rescue StandardError => e;           exception_info=[e,'Other',:debug]
+        rescue Interrupt => e;               exception_info=[e,'Interruption',:debug]
         end
         # cleanup file list files
         TempFileManager.instance.cleanup
