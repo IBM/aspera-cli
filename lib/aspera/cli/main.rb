@@ -256,7 +256,7 @@ module Aspera
             @plugin_env[:formater].display_results({:type=>:single_object,:data=>@opt_mgr.declared_options(false)})
             Process.exit(0)
           end
-          # locking for singkle execution (only after "per plugin" option, in case lock port is there)
+          # locking for single execution (only after "per plugin" option, in case lock port is there)
           lock_port=@opt_mgr.get_option(:lock_port,:optional)
           if !lock_port.nil?
             begin
