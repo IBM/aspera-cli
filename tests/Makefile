@@ -973,7 +973,21 @@ $(T)sdk1: $(T).exists
 	@echo $@
 	tmp=$(DIR_TMP). ruby -I $(DIR_LIB). $(DIR_TOP)examples/transfer.rb
 	@touch $@
-tsample: $(T)sdk1
+$(T)sdk2: $(T).exists
+	@echo $@
+	set -x;url=$$($(EXE_MAN) conf id tst_aoc1 get url);\
+	user=$$($(EXE_MAN) conf id tst_aoc1 get username);\
+	keypath=$$($(EXE_MAN) conf id tst_aoc1 get private_key);\
+	ruby -I $(DIR_LIB). $(DIR_TOP)examples/aoc.rb $${url} $${user} "$${keypath}"
+	@touch $@
+$(T)sdk3: $(T).exists
+	@echo $@
+	set -x;url=$$($(EXE_MAN) conf id tst_faspex get url);\
+	user=$$($(EXE_MAN) conf id tst_faspex get username);\
+	pass=$$($(EXE_MAN) conf id tst_faspex get password);\
+	ruby -I $(DIR_LIB). $(DIR_TOP)examples/faspex4.rb $${url} $${user} $${pass}
+	@touch $@
+tsample: $(T)sdk1 $(T)sdk2 $(T)sdk3
 
 $(T)tcos: $(T).exists $(CF_LOCAL_SAMPLE_FILEPATH)
 	@echo $@
