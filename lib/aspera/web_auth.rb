@@ -93,7 +93,7 @@ module Aspera
     def get_request
       Log.log.debug('get_request')
       # called only once
-      raise "error" if @server.nil?
+      raise "error, called twice ?" if @server.nil?
       @shared_info[:mutex].synchronize do
         @shared_info[:cond].wait(@shared_info[:mutex])
       end

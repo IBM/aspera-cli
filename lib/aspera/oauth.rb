@@ -6,22 +6,21 @@ require 'socket'
 require 'securerandom'
 
 module Aspera
-  # implement OAuth 2 for the REST client and generate a bearer token
+  # Implement OAuth 2 for the REST client and generate a bearer token
   # call get_authorization() to get a token.
   # bearer tokens are kept in memory and also in a file cache for later re-use
   # if a token is expired (api returns 4xx), call again get_authorization({:refresh=>true})
   class Oauth
     private
     # remove 5 minutes to account for time offset (TODO: configurable?)
-    JWT_NOTBEFORE_OFFSET=300
+    JWT_NOTBEFORE_OFFSET_SEC=300
     # one hour validity (TODO: configurable?)
-    JWT_EXPIRY_OFFSET=3600
-    # a prefix for persistency of tokens
+    JWT_EXPIRY_OFFSET_SEC=3600
+    # tokens older than 30 minutes will be discarded from cache
+    TOKEN_CACHE_EXPIRY_SEC=1800
+    # a prefix for persistency of tokens (garbage collect)
     PERSIST_CATEGORY_TOKEN='token'
-    # tokens older than 30 minutes will be discarded
-    TOKEN_EXPIRY_SECONDS=1800
-    THANK_YOU_HTML = "<html><head><title>Ok</title></head><body><h1>Thank you !</h1><p>You can close this window.</p></body></html>"
-    private_constant :JWT_NOTBEFORE_OFFSET,:JWT_EXPIRY_OFFSET,:PERSIST_CATEGORY_TOKEN,:TOKEN_EXPIRY_SECONDS,:THANK_YOU_HTML
+    private_constant :JWT_NOTBEFORE_OFFSET_SEC,:JWT_EXPIRY_OFFSET_SEC,:PERSIST_CATEGORY_TOKEN,:TOKEN_CACHE_EXPIRY_SEC
     class << self
       # OAuth methods supported
       def auth_types
@@ -91,7 +90,7 @@ module Aspera
         # we could check that host is localhost or local address
       end
       # cleanup expired tokens
-      self.class.persist_mgr.garbage_collect(PERSIST_CATEGORY_TOKEN,TOKEN_EXPIRY_SECONDS)
+      self.class.persist_mgr.garbage_collect(PERSIST_CATEGORY_TOKEN,TOKEN_CACHE_EXPIRY_SEC)
     end
 
     # open the login page, wait for code and check_code, then return code
@@ -230,8 +229,8 @@ module Aspera
             :iss => @params[:client_id],    # issuer
             :sub => @params[:jwt_subject],  # subject
             :aud => @params[:jwt_audience], # audience
-            :nbf => seconds_since_epoch-JWT_NOTBEFORE_OFFSET, # not before
-            :exp => seconds_since_epoch+JWT_EXPIRY_OFFSET # expiration
+            :nbf => seconds_since_epoch-JWT_NOTBEFORE_OFFSET_SEC, # not before
+            :exp => seconds_since_epoch+JWT_EXPIRY_OFFSET_SEC # expiration
           }
           # Hum.. compliant ? TODO: remove when Faspex5 API is clarified
           if @params[:jwt_is_f5]
