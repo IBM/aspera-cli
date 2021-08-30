@@ -1,4 +1,5 @@
 require 'aspera/open_application'
+require 'aspera/web_auth'
 require 'base64'
 require 'date'
 require 'socket'
@@ -15,6 +16,7 @@ module Aspera
     JWT_NOTBEFORE_OFFSET=300
     # one hour validity (TODO: configurable?)
     JWT_EXPIRY_OFFSET=3600
+    # a prefix for persistency of tokens
     PERSIST_CATEGORY_TOKEN='token'
     # tokens older than 30 minutes will be discarded
     TOKEN_EXPIRY_SECONDS=1800
@@ -94,7 +96,11 @@ module Aspera
 
     # open the login page, wait for code and check_code, then return code
     def goto_page_and_get_code(login_page_url,check_code)
-      request_params=self.class.goto_page_and_get_request(@params[:redirect_uri],login_page_url)
+      Log.log.info("login_page_url=#{login_page_url}".bg_red.gray)
+      # browser start is not blocking, we hope here that starting is slower than opening port
+      OpenApplication.instance.uri(login_page_url)
+      # start a web server and wait for request code
+      request_params=WebAuth.new(@params[:redirect_uri]).get_request
       Log.log.error("state does not match") if !check_code.eql?(request_params['state'])
       code=request_params['code']
       return code
@@ -309,33 +315,6 @@ module Aspera
 
       # ok we shall have a token here
       return 'Bearer '+token_data[@params[:token_field]]
-    end
-
-    # open the login page, wait for code and return parameters
-    def self.goto_page_and_get_request(redirect_uri,login_page_url,html_page=THANK_YOU_HTML)
-      Log.log.info "login_page_url=#{login_page_url}".bg_red().gray()
-      # browser start is not blocking, we hope here that starting is slower than opening port
-      OpenApplication.instance.uri(login_page_url)
-      port=URI.parse(redirect_uri).port
-      Log.log.info "listening on port #{port}"
-      request_params=nil
-      TCPServer.open('127.0.0.1', port) { |webserver|
-        Log.log.info "server=#{webserver}"
-        websession = webserver.accept
-        sleep 1 # TODO: sometimes: returns nil ? use webrick ?
-        line = websession.gets.chomp
-        Log.log.info "line=#{line}"
-        if ! line.start_with?('GET /?') then
-          raise "unexpected request"
-        end
-        request = line.partition('?').last.partition(' ').first
-        data=URI.decode_www_form(request)
-        request_params=data.to_h
-        Log.log.debug "request_params=#{request_params}"
-        websession.print "HTTP/1.1 200/OK\r\nContent-type:text/html\r\n\r\n#{html_page}"
-        websession.close
-      }
-      return request_params
     end
 
   end # OAuth

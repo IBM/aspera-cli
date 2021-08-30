@@ -17,14 +17,20 @@ module Aspera
           options.set_option(:auth,:jwt)
           options.parse_options!
         end
-        ACTIONS=[ :node, :package, :auth_client ]
 
         def set_api
           faxpex5_api_base_url=options.get_option(:url,:mandatory)
           faxpex5_api_v5_url="#{faxpex5_api_base_url}/api/v5"
           faxpex5_api_auth_url="#{faxpex5_api_base_url}/auth"
           case options.get_option(:auth,:mandatory)
+          when :boot
+            # the password here is the token copied directly from browser in developer mode
+            @api_v5=Rest.new({
+              :base_url => faxpex5_api_v5_url,
+              :headers => {'Authorization'=>options.get_option(:password,:mandatory)},
+            })
           when :web
+            # opens a browser ad ask user to auth
             @api_v5=Rest.new({
               :base_url => faxpex5_api_v5_url,
               :auth     => {
@@ -34,18 +40,9 @@ module Aspera
               :state          => SecureRandom.uuid,
               :client_id      => options.get_option(:client_id,:mandatory),
               :redirect_uri   => options.get_option(:redirect_uri,:mandatory),
-              #:token_field    =>'auth_token',
-              #:path_token     => 'token',
-              #:path_authorize => 'authorize',
-              #:userpass_body  => {name: faxpex5_username,password: faxpex5_password}
               }})
-          when :boot
-            @api_v5=Rest.new({
-              :base_url => faxpex5_api_v5_url,
-              :headers => {'Authorization'=>options.get_option(:password,:mandatory)},
-            })
           when :jwt
-            #raise "JWT to be implemented"
+            # currently Faspex 5 beta 3 only supports a limited set
             app_client_id=options.get_option(:client_id,:mandatory)
             @api_v5=Rest.new({
               :base_url => faxpex5_api_v5_url,
@@ -65,6 +62,8 @@ module Aspera
           end
         end
 
+        ACTIONS=[ :node, :package, :auth_client, :jobs ]
+
         #
         def execute_action
           set_api
@@ -75,6 +74,9 @@ module Aspera
             return self.entity_action(api_auth,'oauth_clients',nil,:id,nil,true)
           when :node
             return self.entity_action(@api_v5,'nodes',nil,:id,nil,true)
+          when :jobs
+            # to test JWT
+            return self.entity_action(@api_v5,'jobs',nil,:id,nil,true)
           when :package
             command=options.get_next_command([:list,:show,:send,:receive])
             case command
