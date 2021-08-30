@@ -30,7 +30,7 @@ module Aspera
               :headers => {'Authorization'=>options.get_option(:password,:mandatory)},
             })
           when :web
-            # opens a browser ad ask user to auth
+            # opens a browser and ask user to auth using web
             @api_v5=Rest.new({
               :base_url => faxpex5_api_v5_url,
               :auth     => {
@@ -42,7 +42,7 @@ module Aspera
               :redirect_uri   => options.get_option(:redirect_uri,:mandatory),
               }})
           when :jwt
-            # currently Faspex 5 beta 3 only supports a limited set
+            # currently Faspex 5 beta 3 only supports non-user based apis (e.g. jobs)
             app_client_id=options.get_option(:client_id,:mandatory)
             @api_v5=Rest.new({
               :base_url => faxpex5_api_v5_url,
@@ -52,11 +52,10 @@ module Aspera
               :grant               => :jwt,
               :client_id           => app_client_id,
               :client_secret       => options.get_option(:client_secret,:mandatory),
-              #:redirect_uri   => options.get_option(:redirect_uri,:mandatory),
               :jwt_subject         => "client:#{app_client_id}", # TODO Mmmm
               :jwt_audience        => app_client_id, # TODO Mmmm
               :jwt_private_key_obj => OpenSSL::PKey::RSA.new(options.get_option(:private_key,:mandatory)),
-              :jwt_is_f5           => true,
+              :jwt_is_f5           => true, # TODO: remove when clarified
               :jwt_headers         => {typ: 'JWT'}
               }})
           end
@@ -88,7 +87,7 @@ module Aspera
               return {:type => :single_object, :data=>@api_v5.read("packages/#{id}")[:data]}
             when :send
               parameters=options.get_option(:value,:mandatory)
-              raise CliBadArgument,'package value must be hash, refer to API' unless parameters.is_a?(Hash)
+              raise CliBadArgument,'value must be hash, refer to API' unless parameters.is_a?(Hash)
               package=@api_v5.create('packages',parameters)[:data]
               transfer_spec=@api_v5.create("packages/#{package['id']}/transfer_spec/upload",{transfer_type: 'Connect'})[:data]
               transfer_spec.delete('authentication')
@@ -100,16 +99,17 @@ module Aspera
               skip_ids_data=[]
               skip_ids_persistency=nil
               if options.get_option(:once_only,:mandatory)
+                # read ids from persistency
                 skip_ids_persistency=PersistencyActionOnce.new(
                 manager: @agents[:persistency],
                 data: skip_ids_data,
                 ids:  ['faspex_recv',options.get_option(:url,:mandatory),options.get_option(:username,:mandatory),pkg_type])
               end
               if pack_id.eql?(VAL_ALL)
-                # todo: if packages have same name, they will overwrite
+                # TODO: if packages have same name, they will overwrite
                 parameters=options.get_option(:value,:optional)
-                parameters||={"type"=>"received","subtype"=>"mypackages","limit"=>1000}
-                raise CliBadArgument,'value filter must be hash (API GET)' unless parameters.is_a?(Hash)
+                parameters||={'type'=>'received','subtype'=>'mypackages','limit'=>1000}
+                raise CliBadArgument,'value filter must be Hash (API GET)' unless parameters.is_a?(Hash)
                 package_ids=@api_v5.read('packages',parameters)[:data]['packages'].map{|p|p['id']}
                 package_ids.select!{|i|!skip_ids_data.include?(i)}
               end

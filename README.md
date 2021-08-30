@@ -1879,7 +1879,7 @@ OPTIONS:
 
 
 COMMAND: faspex5
-SUBCOMMANDS: node package auth_client
+SUBCOMMANDS: node package auth_client jobs
 OPTIONS:
         --url=VALUE                  URL of application, e.g. https://org.asperafiles.com
         --username=VALUE             username to log in
