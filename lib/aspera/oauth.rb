@@ -97,10 +97,12 @@ module Aspera
     # open the login page, wait for code and check_code, then return code
     def goto_page_and_get_code(login_page_url,check_code)
       Log.log.info("login_page_url=#{login_page_url}".bg_red.gray)
-      # browser start is not blocking, we hope here that starting is slower than opening port
+      # start a web server to receive request code
+      webserver=WebAuth.new(@params[:redirect_uri])
+      # start browser on login page
       OpenApplication.instance.uri(login_page_url)
-      # start a web server and wait for request code
-      request_params=WebAuth.new(@params[:redirect_uri]).get_request
+      # wait for code in request
+      request_params=webserver.get_request
       Log.log.error("state does not match") if !check_code.eql?(request_params['state'])
       code=request_params['code']
       return code

@@ -91,10 +91,14 @@ module Aspera
     # wait for request on web server
     # @return Hash the query
     def get_request
+      Log.log.debug('get_request')
+      # called only once
+      raise "error" if @server.nil?
       @shared_info[:mutex].synchronize do
         @shared_info[:cond].wait(@shared_info[:mutex])
       end
       @server.shutdown
+      @server=nil
       return @shared_info[:query]
     end
   end
