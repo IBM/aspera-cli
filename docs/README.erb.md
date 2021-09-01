@@ -2335,16 +2335,15 @@ to download files.
 $ <%=cmd%> node access_key create --value=@json:'{"id":"eudemo-sedemo","secret":"mystrongsecret","storage":{"type":"local","path":"/data/asperafiles"}}'
 ```
 
-# Plugin: IBM Aspera Faspex
+# Plugin: IBM Aspera Faspex5
 
-Notes:
+3 authentication methods are supported:
 
-* the command "v4" requires the use of APIv4, refer to the Faspex Admin manual on how to activate.
-* for full details on Faspex API, refer to: [Reference on Developer Site](https://www.ibm.com/products/aspera/developer)
+* boot
+* web
+* jwt
 
-## Faspex 5 Beta1
-
-As the web UI does not yet allow adding API client yet, the way to use CLI is:
+For boot method:
 
 * open a browser
 * start developer mode
@@ -2357,30 +2356,42 @@ Use it as password and use `--auth=boot`.
 $ <%=cmd%> conf id f5boot update --url=https://localhost/aspera/faspex --auth=boot --password=ABC.DEF.GHI...
 ```
 
-An JWT client can then be created with a private key:
+For web method, create an API client in Faspex, and use: --auth=web
 
-```
-$ jsonk=$(openssl rsa -in  ~/.aspera/ascli/aspera_on_cloud_key -pubout 2> /dev/null | sed -e :a -e N -e '$!ba' -e 's/\n/\\n/g')
-$ <%=cmd%> faspex5 -Pf5boot auth_client create --value=@json:'{"name":"hello","client_type":"public","redirect_uris":["https://localhost:12345"],"allow_jwt_grant":true,"public_key":"'$jsonk'"}'
-```
-
-or deleted by name:
-
-```
-$ id=$(<%=cmd%> faspex5 auth_client list --select=@json:'{"name":"hello"}' --fields=client_id --format=csv)
-$ <%=cmd%> faspex5 auth_client delete --id=$id
-```
-
-Once the API client is created with a client_id and secret (result of create command), create a configuration:
-
-```
-$ <%=cmd%> conf id f5 update --url=https://localhost/aspera/faspex --auth=jwt --client-id=abcd --client-secret=def --username=pierre@example.com --private-key=@val:@file:~/.aspera/ascli/aspera_on_cloud_key
-$ <%=cmd%> conf id default set faspex5 f5
-``` 
+For JWT, create an API client in Faspex with jwt supporot, and use: --auth=jwt
+as of beta£3 this does not allow regular users.
 
 Ready to use Faspex5 with CLI.
 
 Once the graphical registration form exist, ther bootstrap method can be removed.
+
+# Plugin: IBM Aspera Faspex (4.x)
+
+Notes:
+
+* the command "v4" requires the use of APIv4, refer to the Faspex Admin manual on how to activate.
+* for full details on Faspex API, refer to: [Reference on Developer Site](https://www.ibm.com/products/aspera/developer)
+
+## Receiving a Package
+
+The command is `package recv`, possible methosd are:
+
+* provide a package id with option `id`
+* provide a public link with option `link`
+* provide a `faspe:` URI with option `link`
+
+```
+$ <%=cmd%> faspex package recv --id=12345
+$ <%=cmd%> faspex package recv --link=faspe://...
+```
+
+If the package is in a specific dropbox, add option `recipient` for both the `list` and `recv` commands.
+
+```
+$ <%=cmd%> faspex package list --recipient='*thedropboxname'
+```
+
+
 
 ## Sending a Package
 
@@ -3069,6 +3080,11 @@ So, it evolved into <%=tool%>:
 # Changes (Release notes)
 
 * <%= gemspec.version.to_s %>
+
+	* new: command `faspex package recv` supports link of type: `faspe:`
+	* new: command `faspex package recv` supports option `recipient` to specify dropbox with leading `*`
+
+* 4.2.0
 
 	* new: command `aoc remind` to receive organization membership by email
 	* new: in `preview` option `value` to filter out on file name

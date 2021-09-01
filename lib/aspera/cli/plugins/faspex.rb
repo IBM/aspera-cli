@@ -26,6 +26,7 @@ module Aspera
           self.options.add_opt_simple(:delivery_info,'package delivery information (extended value)')
           self.options.add_opt_simple(:source_name,'create package from remote source (by name)')
           self.options.add_opt_simple(:storage,'Faspex local storage definition')
+          self.options.add_opt_simple(:recipient,'use if recipient is a dropbox (with *)')
           self.options.add_opt_list(:box,[:inbox,:sent,:archive],'package box')
           self.options.set_option(:box,:inbox)
           self.options.parse_options!
@@ -107,7 +108,7 @@ module Aspera
         PACKAGE_MATCH_FIELD='package_id'
 
         def mailbox_all_entries
-          my_user_name=self.options.get_option(:username,:mandatory)
+          recipient_name=self.options.get_option(:recipient,:optional) || self.options.get_option(:username,:mandatory)
           mailbox=self.options.get_option(:box,:mandatory)
           all_inbox_xml=api_v3.call({:operation=>'GET',:subpath=>"#{mailbox}.atom",:headers=>{'Accept'=>'application/xml'}})[:http].body
           all_inbox_data=XmlSimple.xml_in(all_inbox_xml, {'ForceArray' => true})
@@ -116,7 +117,7 @@ module Aspera
           result.each do |e|
             case mailbox
             when :inbox,:archive
-              recipient=e['to'].select{|i|i['name'].first.eql?(my_user_name)}.first
+              recipient=e['to'].select{|i|i['name'].first.eql?(recipient_name)}.first
               e[PACKAGE_MATCH_FIELD]=recipient.nil? ? 'n/a' : recipient['recipient_delivery_id'].first
             when :sent
               e[PACKAGE_MATCH_FIELD]=e['delivery_id'].first
@@ -208,9 +209,18 @@ module Aspera
               #Log.dump('transfer_spec',transfer_spec)
               return Main.result_transfer(self.transfer.start(transfer_spec,{:src=>:node_gen3}))
             when :recv
-              public_link_url=self.options.get_option(:link,:optional)
-              if !public_link_url.nil?
-                link_data=self.class.get_link_data(public_link_url)
+              link_url=self.options.get_option(:link,:optional)
+              # list of faspex ID/URI to download
+              pkg_id_uri=nil
+              skip_ids_data=[]
+              skip_ids_persistency=nil
+              case link_url
+              when nil
+                # usual case: no link
+              when /^faspe:/
+                pkg_id_uri=[{:id=>'package',:uri=>link_url}]
+              else
+                link_data=self.class.get_link_data(link_url)
                 if !link_data[:subpath].match(%r{external_deliveries/})
                   raise CliBadArgument,"pub link is #{link_data[:subpath]}, expecting external_deliveries/"
                 end
@@ -218,7 +228,7 @@ module Aspera
                 api_public_link=Rest.new({:base_url=>link_data[:base_url]})
                 pkgdatares=api_public_link.call({:operation=>'GET',:subpath=>link_data[:subpath],:url_params=>{:passcode=>link_data[:query]['passcode']},:headers=>{'Accept'=>'application/xml'}})
                 if !pkgdatares[:http].body.start_with?('<?xml ')
-                  OpenApplication.instance.uri(public_link_url)
+                  OpenApplication.instance.uri(link_url)
                   raise CliError, 'no such package'
                 end
                 package_entry=XmlSimple.xml_in(pkgdatares[:http].body, {'ForceArray' => false})
@@ -227,32 +237,30 @@ module Aspera
                 transfer_spec['direction']='receive'
                 return Main.result_transfer(self.transfer.start(transfer_spec,{:src=>:node_gen3}))
               end # public link
-              # get command line parameters
-              delivid=self.options.get_option(:id,:mandatory)
-              # list of faspex ID/URI to download
-              pkg_id_uri=nil
-              skip_ids_data=[]
-              skip_ids_persistency=nil
-              if self.options.get_option(:once_only,:mandatory)
-                skip_ids_persistency=PersistencyActionOnce.new(
-                manager: @agents[:persistency],
-                data: skip_ids_data,
-                ids:  ['faspex_recv',self.options.get_option(:url,:mandatory),self.options.get_option(:username,:mandatory),self.options.get_option(:box,:mandatory).to_s])
-              end
-              if delivid.eql?(VAL_ALL)
-                pkg_id_uri=mailbox_all_entries.map{|i|{:id=>i[PACKAGE_MATCH_FIELD],:uri=>self.class.get_fasp_uri_from_entry(i)}}
-                # TODO : remove ids from skip not present in inbox
-                # skip_ids_data.select!{|id|pkg_id_uri.select{|p|p[:id].eql?(id)}}
-                pkg_id_uri.select!{|i|!skip_ids_data.include?(i[:id])}
-              else
-                # TODO: delivery id is the right one if package was receive by group
-                endpoint=case self.options.get_option(:box,:mandatory)
-                when :inbox,:archive;'received'
-                when :sent; 'sent'
+              if pkg_id_uri.nil?
+                # get command line parameters
+                delivid=self.options.get_option(:id,:mandatory)
+                if self.options.get_option(:once_only,:mandatory)
+                  skip_ids_persistency=PersistencyActionOnce.new(
+                  manager: @agents[:persistency],
+                  data: skip_ids_data,
+                  ids:  ['faspex_recv',self.options.get_option(:url,:mandatory),self.options.get_option(:username,:mandatory),self.options.get_option(:box,:mandatory).to_s])
                 end
-                entry_xml=api_v3.call({:operation=>'GET',:subpath=>"#{endpoint}/#{delivid}",:headers=>{'Accept'=>'application/xml'}})[:http].body
-                package_entry=XmlSimple.xml_in(entry_xml, {'ForceArray' => true})
-                pkg_id_uri=[{:id=>delivid,:uri=>self.class.get_fasp_uri_from_entry(package_entry)}]
+                if delivid.eql?(VAL_ALL)
+                  pkg_id_uri=mailbox_all_entries.map{|i|{:id=>i[PACKAGE_MATCH_FIELD],:uri=>self.class.get_fasp_uri_from_entry(i)}}
+                  # TODO : remove ids from skip not present in inbox
+                  # skip_ids_data.select!{|id|pkg_id_uri.select{|p|p[:id].eql?(id)}}
+                  pkg_id_uri.select!{|i|!skip_ids_data.include?(i[:id])}
+                else
+                  # TODO: delivery id is the right one if package was receive by group
+                  endpoint=case self.options.get_option(:box,:mandatory)
+                  when :inbox,:archive;'received'
+                  when :sent; 'sent'
+                  end
+                  entry_xml=api_v3.call({:operation=>'GET',:subpath=>"#{endpoint}/#{delivid}",:headers=>{'Accept'=>'application/xml'}})[:http].body
+                  package_entry=XmlSimple.xml_in(entry_xml, {'ForceArray' => true})
+                  pkg_id_uri=[{:id=>delivid,:uri=>self.class.get_fasp_uri_from_entry(package_entry)}]
+                end
               end
               Log.dump(:pkg_id_uri,pkg_id_uri)
               return Main.result_status('no package') if pkg_id_uri.empty?
