@@ -1,7 +1,7 @@
 [comment1]: # (Do not edit this README.md, edit docs/README.erb.md, for details, read docs/README.md)
 # `ascli` : Command Line Interface for IBM Aspera products
 
-Version : 4.2.0
+Version : 4.2.1
 
 _Laurent/2016-2021_
 
@@ -81,7 +81,7 @@ Once the gem is installed, `ascli` shall be accessible:
 
 ```
 $ ascli --version
-4.2.0
+4.2.1
 ```
 
 ## First use
@@ -1734,7 +1734,7 @@ ascli sync start --parameters=@json:'{"sessions":[{"name":"test","reset":true,"r
 ```
 $ ascli -h
 NAME
-	ascli -- a command line tool for Aspera Applications (v4.2.0)
+	ascli -- a command line tool for Aspera Applications (v4.2.1)
 
 SYNOPSIS
 	ascli COMMANDS [OPTIONS] [ARGS]
@@ -3668,7 +3668,7 @@ So, it evolved into `ascli`:
 
 # Changes (Release notes)
 
-* 4.2.0
+* 4.2.1
 
 	* new: command `faspex package recv` supports link of type: `faspe:`
 	* new: command `faspex package recv` supports option `recipient` to specify dropbox with leading `*`
