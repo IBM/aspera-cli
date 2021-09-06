@@ -9,6 +9,7 @@ require 'aspera/fasp/uri'
 require 'aspera/nagios'
 require 'xmlsimple'
 require 'json'
+require 'cgi'
 
 module Aspera
   module Cli
@@ -17,7 +18,16 @@ module Aspera
         KEY_NODE='node'
         KEY_PATH='path'
         VAL_ALL='ALL'
-        private_constant :KEY_NODE,:KEY_PATH,:VAL_ALL
+        # added field in result that identifies the package
+        PACKAGE_MATCH_FIELD='package_id'
+        # list of supported atoms
+        ATOM_MAILBOXES=[:inbox, :archive, :sent]
+        # number is added by CLI
+        MAX_ITEMS='max'
+        MAX_PAGES='pmax'
+        ATOM_PARAMS=['page', 'count', 'startIndex', MAX_ITEMS, MAX_PAGES]
+        private_constant :KEY_NODE,:KEY_PATH,:VAL_ALL,:PACKAGE_MATCH_FIELD,:ATOM_MAILBOXES
+
         def initialize(env)
           @api_v3=nil
           @api_v4=nil
@@ -27,7 +37,7 @@ module Aspera
           self.options.add_opt_simple(:source_name,'create package from remote source (by name)')
           self.options.add_opt_simple(:storage,'Faspex local storage definition')
           self.options.add_opt_simple(:recipient,'use if recipient is a dropbox (with *)')
-          self.options.add_opt_list(:box,[:inbox,:sent,:archive],'package box')
+          self.options.add_opt_list(:box,ATOM_MAILBOXES,'package box')
           self.options.set_option(:box,:inbox)
           self.options.parse_options!
         end
@@ -102,29 +112,54 @@ module Aspera
           return @api_v4
         end
 
-        ACTIONS=[ :health,:package, :source, :me, :dropbox, :v4, :address_book, :login_methods ]
-
-        # we match recv command on atom feed on this field
-        PACKAGE_MATCH_FIELD='package_id'
-
+        # query supports : {"startIndex":10,"count":1,"page":109}
         def mailbox_all_entries
           recipient_name=self.options.get_option(:recipient,:optional) || self.options.get_option(:username,:mandatory)
+          # mailbox is in ATOM_MAILBOXES
           mailbox=self.options.get_option(:box,:mandatory)
-          all_inbox_xml=api_v3.call({:operation=>'GET',:subpath=>"#{mailbox}.atom",:headers=>{'Accept'=>'application/xml'}})[:http].body
-          all_inbox_data=XmlSimple.xml_in(all_inbox_xml, {'ForceArray' => true})
-          Log.dump(:all_inbox_data,all_inbox_data)
-          result=all_inbox_data.has_key?('entry') ? all_inbox_data['entry'] : []
-          result.each do |e|
-            case mailbox
-            when :inbox,:archive
-              recipient=e['to'].select{|i|i['name'].first.eql?(recipient_name)}.first
-              e[PACKAGE_MATCH_FIELD]=recipient.nil? ? 'n/a' : recipient['recipient_delivery_id'].first
-            when :sent
-              e[PACKAGE_MATCH_FIELD]=e['delivery_id'].first
-            end
+          # parameters
+          mailbox_query=self.options.get_option(:query,:optional)
+          max_items=nil
+          max_pages=nil
+          result=[]
+          if !mailbox_query.nil?
+            raise "query: must be Hash or nil" unless mailbox_query.is_a?(Hash)
+            raise "query: supported params: #{ATOM_PARAMS}" unless (mailbox_query.keys-ATOM_PARAMS).empty?
+            raise "query: startIndex and page are exclusive" if mailbox_query.has_key?('startIndex') and mailbox_query.has_key?('page')
+            max_items=mailbox_query[MAX_ITEMS]
+            mailbox_query.delete(MAX_ITEMS)
+            max_pages=mailbox_query[MAX_PAGES]
+            mailbox_query.delete(MAX_PAGES)
           end
-          # remove dropbox packages
-          result.select!{|p|p['metadata'].first['field'].select{|j|j['name'].eql?('_dropbox_name')}.empty? rescue false}
+          loop do
+            atom_xml=api_v3.call({operation: 'GET',subpath: "#{mailbox}.atom",headers: {'Accept'=>'application/xml'},url_params: mailbox_query})[:http].body
+            box_data=XmlSimple.xml_in(atom_xml, {'ForceArray' => true})
+            Log.dump(:box_data,box_data)
+            items=box_data.has_key?('entry') ? box_data['entry'] : []
+            items.each do |package|
+              package[PACKAGE_MATCH_FIELD]=case mailbox
+              when :inbox,:archive
+                recipient=package['to'].select{|i|i['name'].first.eql?(recipient_name)}.first
+                recipient.nil? ? nil : recipient['recipient_delivery_id'].first
+              else # :sent
+                package['delivery_id'].first
+              end
+              # keep only those for the specified recipient
+              result.push(package) unless package[PACKAGE_MATCH_FIELD].nil?
+            end
+            Log.log.debug("items: #{result.count}")
+            # reach the limit ?
+            break if !max_items.nil? and result.count > max_items
+            link=box_data['link'].select{|i|i['rel'].eql?('next')}.first
+            Log.log.debug("link: #{link}")
+            break if link.nil?
+            params=CGI.parse(URI.parse(link['href']).query)
+            mailbox_query=params.keys.inject({}){|m,i|;m[i]=params[i].first;m}
+            Log.log.debug("query: #{mailbox_query}")
+            break if !max_pages.nil? and mailbox_query['page'].to_i > max_pages
+            # remove dropbox packages
+            #items.select!{|p|p['metadata'].first['field'].select{|j|j['name'].eql?('_dropbox_name')}.empty? rescue false}
+          end
           return result
         end
 
@@ -159,6 +194,8 @@ module Aspera
           end
           return pkgdatares.first
         end
+
+        ACTIONS=[ :health,:package, :source, :me, :dropbox, :v4, :address_book, :login_methods ]
 
         def execute_action
           command=self.options.get_next_command(ACTIONS)

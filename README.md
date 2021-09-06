@@ -1913,7 +1913,7 @@ OPTIONS:
         --source-name=VALUE          create package from remote source (by name)
         --storage=VALUE              Faspex local storage definition
         --recipient=VALUE            use if recipient is a dropbox (with *)
-        --box=ENUM                   package box: inbox, sent, archive
+        --box=ENUM                   package box: inbox, archive, sent
 
 
 COMMAND: shares2
@@ -2938,12 +2938,37 @@ Once the graphical registration form exist, ther bootstrap method can be removed
 
 Notes:
 
-* the command "v4" requires the use of APIv4, refer to the Faspex Admin manual on how to activate.
-* for full details on Faspex API, refer to: [Reference on Developer Site](https://www.ibm.com/products/aspera/developer)
+* The command "v4" requires the use of APIv4, refer to the Faspex Admin manual on how to activate.
+* For full details on Faspex API, refer to: [Reference on Developer Site](https://www.ibm.com/products/aspera/developer)
+
+## Listing Packages
+
+Command: `faspex package list`
+
+By default it looks in box `inbox`, but the foillowing boxes are also supported: `archive` and `sent`, selected with option `box`
+
+A user can receive a package because the recipient is:
+
+* the user himself (default)
+* the user is part of a dropbox or a workgroup (select with option `recipient` with value `*<name of WG or DB>`
+
+As inboxes may be large, it is possible to use the following query parameters:
+
+* `count` : (native) number items in a call
+* `page` : (native) id of page in call
+* `startIndex` : (native) which page to start
+* `max` : maximum number of items
+* `pmax` : maximum number of pages
+
+Example:
+
+```
+$ ascli faspex package list --box=inbox --recipient='*my_dropbox' --query=@json:'{"max":20,"pmax":2,"count":20}'
+```
 
 ## Receiving a Package
 
-The command is `package recv`, possible methosd are:
+The command is `package recv`, possible methos are:
 
 * provide a package id with option `id`
 * provide a public link with option `link`
@@ -2960,7 +2985,7 @@ If the package is in a specific dropbox, add option `recipient` for both the `li
 $ ascli faspex package list --recipient='*thedropboxname'
 ```
 
-
+if `id` is set to `ALL`, then all packages are downloaded, and if option `once_only`is used, then a persistency file is created to keep track of already downloaded packages.
 
 ## Sending a Package
 
@@ -3667,6 +3692,8 @@ So, it evolved into `ascli`:
 * `ruby` is consistent with other Aspera products
 
 # Changes (Release notes)
+
+* 4.2.1
 
 * 4.2.1
 
