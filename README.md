@@ -1,7 +1,7 @@
 [comment1]: # (Do not edit this README.md, edit docs/README.erb.md, for details, read docs/README.md)
 # `ascli` : Command Line Interface for IBM Aspera products
 
-Version : 4.2.1
+Version : 4.2.1.pre.latest
 
 _Laurent/2016-2021_
 
@@ -81,7 +81,7 @@ Once the gem is installed, `ascli` shall be accessible:
 
 ```
 $ ascli --version
-4.2.1
+4.2.1.pre.latest
 ```
 
 ## First use
@@ -280,7 +280,7 @@ Install Latest stable Ruby using [https://rubyinstaller.org/](https://rubyinstal
 MacOS 10.13+ (High Sierra) comes with a recent Ruby. So you can use it directly. You will need to install aspera-cli using `sudo` :
 
 ```
-$ sudo gem install aspera-cli
+$ sudo gem install aspera-cli --pre
 ```
 
 Alternatively, if you use [Homebrew](https://brew.sh/) already you can install Ruby with it:
@@ -373,7 +373,7 @@ or restore the `$HOME/.aspera` folder for the user.
 Once you have Ruby and rights to install gems: Install the gem and its dependencies:
 
 ```
-# gem install aspera-cli
+# gem install aspera-cli --pre
 ```
 
 To upgrade to the latest version:
@@ -1734,7 +1734,7 @@ ascli sync start --parameters=@json:'{"sessions":[{"name":"test","reset":true,"r
 ```
 $ ascli -h
 NAME
-	ascli -- a command line tool for Aspera Applications (v4.2.1)
+	ascli -- a command line tool for Aspera Applications (v4.2.1-latest)
 
 SYNOPSIS
 	ascli COMMANDS [OPTIONS] [ARGS]
@@ -2945,7 +2945,7 @@ Notes:
 
 Command: `faspex package list`
 
-By default it looks in box `inbox`, but the foillowing boxes are also supported: `archive` and `sent`, selected with option `box`
+By default it looks in box `inbox`, but the following boxes are also supported: `archive` and `sent`, selected with option `box`.
 
 A user can receive a package because the recipient is:
 
@@ -2966,9 +2966,11 @@ Example:
 $ ascli faspex package list --box=inbox --recipient='*my_dropbox' --query=@json:'{"max":20,"pmax":2,"count":20}'
 ```
 
+If no parameter `max` or `pmax` is provided, then all packages will be listed in the inbox, which result in paged API calls (using parameter: `count` and `page`). By default page is `0` (`10`), it can be increased to have less calls.
+
 ## Receiving a Package
 
-The command is `package recv`, possible methos are:
+The command is `package recv`, possible methods are:
 
 * provide a package id with option `id`
 * provide a public link with option `link`
@@ -3693,7 +3695,11 @@ So, it evolved into `ascli`:
 
 # Changes (Release notes)
 
-* 4.2.1
+* 4.2.1.pre.latest
+
+	* fix: space in faspe: url are precent encoded if needed
+	* new: `faspex package list` retrieves the whole list, not just first page
+	* change: new dependency on gem `webrick` to support web based auth to aoc and faspex 5 using HTTPS
 
 * 4.2.1
 

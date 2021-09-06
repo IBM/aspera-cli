@@ -6,7 +6,7 @@ module Aspera
     # translates a "faspe:" URI (used in Faspex) into transfer spec hash
     class Uri
       def initialize(fasplink)
-        @fasp_uri=URI.parse(fasplink)
+        @fasp_uri=URI.parse(fasplink.gsub(' ','%20'))
         # TODO: check scheme is faspe
       end
 

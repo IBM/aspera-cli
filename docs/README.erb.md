@@ -2376,7 +2376,7 @@ Notes:
 
 Command: `faspex package list`
 
-By default it looks in box `inbox`, but the foillowing boxes are also supported: `archive` and `sent`, selected with option `box`
+By default it looks in box `inbox`, but the following boxes are also supported: `archive` and `sent`, selected with option `box`.
 
 A user can receive a package because the recipient is:
 
@@ -2397,9 +2397,11 @@ Example:
 $ <%=cmd%> faspex package list --box=inbox --recipient='*my_dropbox' --query=@json:'{"max":20,"pmax":2,"count":20}'
 ```
 
+If no parameter `max` or `pmax` is provided, then all packages will be listed in the inbox, which result in paged API calls (using parameter: `count` and `page`). By default page is `0` (`10`), it can be increased to have less calls.
+
 ## Receiving a Package
 
-The command is `package recv`, possible methos are:
+The command is `package recv`, possible methods are:
 
 * provide a package id with option `id`
 * provide a public link with option `link`
@@ -3105,6 +3107,10 @@ So, it evolved into <%=tool%>:
 # Changes (Release notes)
 
 * <%= gemspec.version.to_s %>
+
+	* fix: space in faspe: url are precent encoded if needed
+	* new: `faspex package list` retrieves the whole list, not just first page
+	* change: new dependency on gem `webrick` to support web based auth to aoc and faspex 5 using HTTPS
 
 * 4.2.1
 
