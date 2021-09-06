@@ -62,14 +62,12 @@ T=$(DIR_TMP)t/
 $(T).exists:
 	mkdir -p $(T)
 	touch $@
-clean::
-	rm -fr $(T)
-	mkdir $(T)
-$(CF_LOCAL_SAMPLE_FILEPATH):
 	dd if=/dev/urandom of=$(CF_LOCAL_SAMPLE_FILEPATH) count=10 bs=1m
 clean::
 	rm -f $(CF_LOCAL_SAMPLE_FILEPATH)
-$(T)unit: $(T).exists $(CF_LOCAL_SAMPLE_FILEPATH)
+	rm -fr $(T)
+	mkdir $(T)
+$(T)unit: $(T).exists
 	@echo $@
 	set -x;\
 	CF_HSTS_SSH_URL=$$($(EXE_NOMAN) conf id tst_server get url) \
@@ -109,7 +107,7 @@ $(T)serv_mkdir: $(T).exists
 	@echo $@
 	$(EXE_MAN) server mkdir $(NEW_SERVER_FOLDER) --logger=stdout
 	@touch $@
-$(T)serv_upload: $(T)serv_mkdir $(CF_LOCAL_SAMPLE_FILEPATH)
+$(T)serv_upload: $(T)serv_mkdir
 	@echo $@
 	$(EXE_MAN) server upload $(CF_LOCAL_SAMPLE_FILEPATH) --to-folder=$(NEW_SERVER_FOLDER) --ts=@json:'{"multi_session":3,"multi_session_threshold":1,"resume_policy":"none","target_rate_kbps":1500}' --transfer-info=@json:'{"spawn_delay_sec":2.5}' --progress=multi
 	$(EXE_MAN) server upload --src-type=pair $(CF_LOCAL_SAMPLE_FILEPATH) $(NEW_SERVER_FOLDER)/othername
@@ -989,7 +987,7 @@ $(T)sdk3: $(T).exists
 	@touch $@
 tsample: $(T)sdk1 $(T)sdk2 $(T)sdk3
 
-$(T)tcos: $(T).exists $(CF_LOCAL_SAMPLE_FILEPATH)
+$(T)tcos: $(T).exists
 	@echo $@
 	set -x;\
 	icos_bucket_name=$$($(EXE_NOMAN) conf id misc get icos_bucket_name);\
