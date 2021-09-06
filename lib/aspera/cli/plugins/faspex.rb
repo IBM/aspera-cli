@@ -252,8 +252,34 @@ module Aspera
               skip_ids_data=[]
               skip_ids_persistency=nil
               case link_url
-              when nil
-                # usual case: no link
+              when nil # usual case: no link
+                if self.options.get_option(:once_only,:mandatory)
+                  skip_ids_persistency=PersistencyActionOnce.new(
+                  manager: @agents[:persistency],
+                  data: skip_ids_data,
+                  ids:  ['faspex_recv',self.options.get_option(:url,:mandatory),self.options.get_option(:username,:mandatory),self.options.get_option(:box,:mandatory).to_s])
+                end
+                # get command line parameters
+                delivid=self.options.get_option(:id,:mandatory)
+                if delivid.eql?(VAL_ALL)
+                  pkg_id_uri=mailbox_all_entries.map{|i|{:id=>i[PACKAGE_MATCH_FIELD],:uri=>self.class.get_fasp_uri_from_entry(i)}}
+                  # TODO : remove ids from skip not present in inbox
+                  # skip_ids_data.select!{|id|pkg_id_uri.select{|p|p[:id].eql?(id)}}
+                  pkg_id_uri.select!{|i|!skip_ids_data.include?(i[:id])}
+                else
+                  recipient=options.get_option(:recipient,:optional)
+                  if !recipient.nil? and recipient.start_with?('*')
+                    raise "Dropbox and Workgroup packages should use link option with faspe:"
+                  end
+                  # TODO: delivery id is the right one if package was receive by workgroup
+                  endpoint=case self.options.get_option(:box,:mandatory)
+                  when :inbox,:archive;'received'
+                  when :sent; 'sent'
+                  end
+                  entry_xml=api_v3.call({:operation=>'GET',:subpath=>"#{endpoint}/#{delivid}",:headers=>{'Accept'=>'application/xml'}})[:http].body
+                  package_entry=XmlSimple.xml_in(entry_xml, {'ForceArray' => true})
+                  pkg_id_uri=[{:id=>delivid,:uri=>self.class.get_fasp_uri_from_entry(package_entry)}]
+                end
               when /^faspe:/
                 pkg_id_uri=[{:id=>'package',:uri=>link_url}]
               else
@@ -270,35 +296,8 @@ module Aspera
                 end
                 package_entry=XmlSimple.xml_in(pkgdatares[:http].body, {'ForceArray' => false})
                 transfer_uri=self.class.get_fasp_uri_from_entry(package_entry)
-                transfer_spec=Fasp::Uri.new(transfer_uri).transfer_spec
-                transfer_spec['direction']='receive'
-                return Main.result_transfer(self.transfer.start(transfer_spec,{:src=>:node_gen3}))
+                pkg_id_uri=[{:id=>'package',:uri=>transfer_uri}]
               end # public link
-              if pkg_id_uri.nil?
-                # get command line parameters
-                delivid=self.options.get_option(:id,:mandatory)
-                if self.options.get_option(:once_only,:mandatory)
-                  skip_ids_persistency=PersistencyActionOnce.new(
-                  manager: @agents[:persistency],
-                  data: skip_ids_data,
-                  ids:  ['faspex_recv',self.options.get_option(:url,:mandatory),self.options.get_option(:username,:mandatory),self.options.get_option(:box,:mandatory).to_s])
-                end
-                if delivid.eql?(VAL_ALL)
-                  pkg_id_uri=mailbox_all_entries.map{|i|{:id=>i[PACKAGE_MATCH_FIELD],:uri=>self.class.get_fasp_uri_from_entry(i)}}
-                  # TODO : remove ids from skip not present in inbox
-                  # skip_ids_data.select!{|id|pkg_id_uri.select{|p|p[:id].eql?(id)}}
-                  pkg_id_uri.select!{|i|!skip_ids_data.include?(i[:id])}
-                else
-                  # TODO: delivery id is the right one if package was receive by group
-                  endpoint=case self.options.get_option(:box,:mandatory)
-                  when :inbox,:archive;'received'
-                  when :sent; 'sent'
-                  end
-                  entry_xml=api_v3.call({:operation=>'GET',:subpath=>"#{endpoint}/#{delivid}",:headers=>{'Accept'=>'application/xml'}})[:http].body
-                  package_entry=XmlSimple.xml_in(entry_xml, {'ForceArray' => true})
-                  pkg_id_uri=[{:id=>delivid,:uri=>self.class.get_fasp_uri_from_entry(package_entry)}]
-                end
-              end
               Log.dump(:pkg_id_uri,pkg_id_uri)
               return Main.result_status('no package') if pkg_id_uri.empty?
               result_transfer=[]
@@ -307,9 +306,6 @@ module Aspera
                 # NOTE: only external users have token in faspe: link !
                 if !transfer_spec.has_key?('token')
                   sanitized=id_uri[:uri].gsub('&','&amp;')
-                  # TODO: file jira
-                  #XXsanitized.gsub!(/%3D%3D$/,'==')
-                  #XXsanitized.gsub!(/%3D$/,'=')
                   xmlpayload='<?xml version="1.0" encoding="UTF-8"?><url-list xmlns="http://schemas.asperasoft.com/xml/url-list"><url href="'+sanitized+'"/></url-list>'
                   transfer_spec['token']=api_v3.call({:operation=>'POST',:subpath=>'issue-token?direction=down',:headers=>{'Accept'=>'text/plain','Content-Type'=>'application/vnd.aspera.url-list+xml'},:text_body_params=>xmlpayload})[:http].body
                 end
