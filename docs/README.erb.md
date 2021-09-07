@@ -2370,34 +2370,46 @@ Once the graphical registration form exist, ther bootstrap method can be removed
 Notes:
 
 * The command "v4" requires the use of APIv4, refer to the Faspex Admin manual on how to activate.
-* For full details on Faspex API, refer to: [Reference on Developer Site](https://www.ibm.com/products/aspera/developer)
+* For full details on Faspex API, refer to: [Reference on Developer Site](https://developer.ibm.com/apis/catalog/?search=faspex)
 
 ## Listing Packages
 
 Command: `faspex package list`
 
+### Option `box`
+
 By default it looks in box `inbox`, but the following boxes are also supported: `archive` and `sent`, selected with option `box`.
+
+### Option `recipient`
 
 A user can receive a package because the recipient is:
 
 * the user himself (default)
 * the user is part of a dropbox or a workgroup (select with option `recipient` with value `*<name of WG or DB>`
 
+### Option `query`
+
 As inboxes may be large, it is possible to use the following query parameters:
 
-* `count` : (native) number items in a call
-* `page` : (native) id of page in call
-* `startIndex` : (native) which page to start
+* `count` : (native) number items in one API call (default=0, equivalent to 10)
+* `page` : (native) id of page in call (default=0)
+* `startIndex` : (native) index of item to start, default=0, oldest index=0
 * `max` : maximum number of items
 * `pmax` : maximum number of pages
 
-Example:
+(SQL query is `LIMIT <startIndex>, <count>`)
+
+The API is listed in [Faspex 4 API Reference](https://developer.ibm.com/apis/catalog/?search=faspex) under "Services (API v.3)".
+
+If no parameter `max` or `pmax` is provided, then all packages will be listed in the inbox, which result in paged API calls (using parameter: `count` and `page`). By default page is `0` (`10`), it can be increased to have less calls.
+
+### Example
 
 ```
 $ <%=cmd%> faspex package list --box=inbox --recipient='*my_dropbox' --query=@json:'{"max":20,"pmax":2,"count":20}'
 ```
 
-If no parameter `max` or `pmax` is provided, then all packages will be listed in the inbox, which result in paged API calls (using parameter: `count` and `page`). By default page is `0` (`10`), it can be increased to have less calls.
+List a maximum of 20 items grouped by pages of 20, with maximum 2 pages in received box (inbox) when received in dropbox `*my_dropbox`.
 
 ## Receiving a Package
 
