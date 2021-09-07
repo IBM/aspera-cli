@@ -136,6 +136,9 @@ module Aspera
             box_data=XmlSimple.xml_in(atom_xml, {'ForceArray' => true})
             Log.dump(:box_data,box_data)
             items=box_data.has_key?('entry') ? box_data['entry'] : []
+            Log.log.debug("new items: #{items.count}")
+            # it is the end if page is empty
+            break if items.empty?
             items.each do |package|
               package[PACKAGE_MATCH_FIELD]=case mailbox
               when :inbox,:archive
@@ -147,7 +150,7 @@ module Aspera
               # keep only those for the specified recipient
               result.push(package) unless package[PACKAGE_MATCH_FIELD].nil?
             end
-            Log.log.debug("items: #{result.count}")
+            Log.log.debug("total items: #{result.count}")
             # reach the limit ?
             break if !max_items.nil? and result.count > max_items
             link=box_data['link'].select{|i|i['rel'].eql?('next')}.first
