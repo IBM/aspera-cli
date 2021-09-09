@@ -155,13 +155,13 @@ module Aspera
             break if !max_items.nil? and result.count > max_items
             link=box_data['link'].select{|i|i['rel'].eql?('next')}.first
             Log.log.debug("link: #{link}")
+            # no next link
             break if link.nil?
+            # replace parameters with the ones from next link
             params=CGI.parse(URI.parse(link['href']).query)
             mailbox_query=params.keys.inject({}){|m,i|;m[i]=params[i].first;m}
             Log.log.debug("query: #{mailbox_query}")
             break if !max_pages.nil? and mailbox_query['page'].to_i > max_pages
-            # remove dropbox packages
-            #items.select!{|p|p['metadata'].first['field'].select{|j|j['name'].eql?('_dropbox_name')}.empty? rescue false}
           end
           return result
         end
