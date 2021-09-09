@@ -223,6 +223,7 @@ module Aspera
       def process_command_line
         Log.log.debug('process_command_line')
         exception_info=nil
+        execute_command=true
         begin
           # find plugins, shall be after parse! ?
           @plugin_env[:config].add_plugins_from_lookup_folders
@@ -264,11 +265,12 @@ module Aspera
               Log.log.debug("Opening lock port #{lock_port.to_i}")
               @tcp_server=TCPServer.new('127.0.0.1',lock_port.to_i)
             rescue => e
-              raise CliError,"Another instance is already running (#{e.message})."
+              execute_command=false
+              Log.log.warn("Another instance is already running (#{e.message}).")
             end
           end
-          # execute and display
-          @plugin_env[:formater].display_results(command_plugin.execute_action)
+          # execute and display (if not exclusive execution)
+          @plugin_env[:formater].display_results(command_plugin.execute_action) if execute_command
           # finish
           @plugin_env[:transfer].shutdown
         rescue CliBadArgument => e;          exception_info=[e,'Argument',:usage]
@@ -288,8 +290,10 @@ module Aspera
           @plugin_env[:formater].display_message(:error,"Use '-h' option to get help.") if exception_info[2].eql?(:usage)
         end
         # 2- processing of command not processed (due to exception or bad command line)
-        @opt_mgr.final_errors.each do |msg|
-          @plugin_env[:formater].display_message(:error,"ERROR:".bg_red.gray.blink+" Argument: "+msg)
+        if execute_command
+          @opt_mgr.final_errors.each do |msg|
+            @plugin_env[:formater].display_message(:error,"ERROR:".bg_red.gray.blink+" Argument: "+msg)
+          end
         end
         # 3- in case of error, fail the process status
         unless exception_info.nil?
