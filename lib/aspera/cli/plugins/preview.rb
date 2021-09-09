@@ -344,34 +344,38 @@ module Aspera
               next
             end
             Log.log.debug("item:#{entry}")
-            case entry['type']
-            when 'file'
-              if filter_block.call(entry)
-                generate_preview(entry)
-              else
-                Log.log.debug('skip by filter')
-              end
-            when 'link'
-              Log.log.debug('Ignoring link.')
-            when 'folder'
-              if @option_skip_folders.include?(entry['path'])
-                Log.log.debug("#{entry['path']} folder (skip list)".bg_red)
-              else
-                Log.log.debug("#{entry['path']} folder".green)
-                # get folder content
-                folder_entries=get_folder_entries(entry['id'])
-                # process all items in current folder
-                folder_entries.each do |folder_entry|
-                  # add path for older versions of ES
-                  if !folder_entry.has_key?('path')
-                    folder_entry['path']=entry_path_with_slash+folder_entry['name']
-                  end
-                  folder_entry['parent_file_id']=entry['id']
-                  entries_to_process.push(folder_entry)
+            begin
+              case entry['type']
+              when 'file'
+                if filter_block.call(entry)
+                  generate_preview(entry)
+                else
+                  Log.log.debug('skip by filter')
                 end
+              when 'link'
+                Log.log.debug('Ignoring link.')
+              when 'folder'
+                if @option_skip_folders.include?(entry['path'])
+                  Log.log.debug("#{entry['path']} folder (skip list)".bg_red)
+                else
+                  Log.log.debug("#{entry['path']} folder".green)
+                  # get folder content
+                  folder_entries=get_folder_entries(entry['id'])
+                  # process all items in current folder
+                  folder_entries.each do |folder_entry|
+                    # add path for older versions of ES
+                    if !folder_entry.has_key?('path')
+                      folder_entry['path']=entry_path_with_slash+folder_entry['name']
+                    end
+                    folder_entry['parent_file_id']=entry['id']
+                    entries_to_process.push(folder_entry)
+                  end
+                end
+              else
+                Log.log.warn("unknown entry type: #{entry['type']}")
               end
-            else
-              Log.log.warn("unknown entry type: #{entry['type']}")
+            rescue => e
+              Log.log.warn("An error occured: #{e}, ignoring")
             end
           end
         end
