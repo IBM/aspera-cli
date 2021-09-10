@@ -3120,9 +3120,10 @@ So, it evolved into <%=tool%>:
 
 * <%= gemspec.version.to_s %>
 
-	* fix: space in faspe: url are precent encoded if needed
 	* new: `faspex package list` retrieves the whole list, not just first page
-	* change: new dependency on gem `webrick` to support web based auth to aoc and faspex 5 using HTTPS
+	* new: support web based auth to aoc and faspex 5 using HTTPS, new dependency on gem `webrick`
+	* fix: space character in `faspe:` url are precent encoded if needed
+	* fix: `preview scan`: if file_id is unknown, ignore and continue scan
 
 * 4.2.1
 
