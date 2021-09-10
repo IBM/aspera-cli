@@ -21,15 +21,15 @@ module Aspera
       private
       # name of application, also foldername where config is stored
       PROGRAM_NAME = 'ascli'
+      # name of the containing gem, same as in <gem name>.gemspec
       GEM_NAME = 'aspera-cli'
-      VERBOSE_LEVELS=[:normal,:minimal,:quiet]
+      HELP_URL = "http://www.rubydoc.info/gems/#{GEM_NAME}"
+      GEM_URL  = "https://rubygems.org/gems/#{GEM_NAME}"
 
-      private_constant :PROGRAM_NAME,:GEM_NAME,:VERBOSE_LEVELS
-
+      private_constant :PROGRAM_NAME,:GEM_NAME,:HELP_URL,:GEM_URL
       # =============================================================
       # Parameter handlers
       #
-
       def option_insecure; Rest.insecure ; end
 
       def option_insecure=(value); Rest.insecure = value; end
@@ -40,20 +40,19 @@ module Aspera
 
       # minimum initialization
       def initialize(argv)
-        # first thing : manage debug level (allows debugging or option parser)
+        # first thing : manage debug level (allows debugging of option parser)
         early_debug_setup(argv)
+        # compare $0 with expected name
         current_prog_name=File.basename($PROGRAM_NAME)
         unless current_prog_name.eql?(PROGRAM_NAME)
           @plugin_env[:formater].display_message(:error,"#{"WARNING".bg_red.blink.gray} Please use '#{PROGRAM_NAME}' instead of '#{current_prog_name}', '#{current_prog_name}' will be removed in a future version")
         end
-        # overriding parameters on transfer spec
         @option_help=false
         @bash_completion=false
         @option_show_config=false
+        # environment provided to plugin for various capabilities
         @plugin_env={}
-        @help_url='http://www.rubydoc.info/gems/'+GEM_NAME
-        @gem_url='https://rubygems.org/gems/'+GEM_NAME
-        # give command line arguments to option manager (no parsing)
+        # find out application main folder
         app_main_folder=ENV[conf_dir_env_var]
         # if env var undefined or empty
         if app_main_folder.nil? or app_main_folder.empty?
@@ -61,20 +60,21 @@ module Aspera
           raise CliError,"Home folder does not exist: #{user_home_folder}. Check your user environment or use #{conf_dir_env_var}." unless Dir.exist?(user_home_folder)
           app_main_folder=File.join(user_home_folder,Plugins::Config::ASPERA_HOME_FOLDER_NAME,PROGRAM_NAME)
         end
+        # give command line arguments to option manager (no parsing)
         @plugin_env[:options]=@opt_mgr=Manager.new(PROGRAM_NAME,argv,app_banner())
         @plugin_env[:formater]=Formater.new(@plugin_env[:options])
         Rest.user_agent=PROGRAM_NAME
-        # must override help methods before parser called (in other constructors)
+        # declare and parse global options
         init_global_options()
         # secret manager
         @plugin_env[:secret]=Aspera::Secrets.new
         # the Config plugin adds the @preset parser
-        @plugin_env[:config]=Plugins::Config.new(@plugin_env,PROGRAM_NAME,@help_url,Aspera::Cli::VERSION,app_main_folder)
+        @plugin_env[:config]=Plugins::Config.new(@plugin_env,PROGRAM_NAME,HELP_URL,Aspera::Cli::VERSION,app_main_folder)
         # the TransferAgent plugin may use the @preset parser
         @plugin_env[:transfer]=TransferAgent.new(@plugin_env)
-        Log.log.debug('created plugin env'.red)
         # set application folder for modules
         @plugin_env[:persistency]=PersistencyFolder.new(File.join(@plugin_env[:config].main_folder,'persist_store'))
+        Log.log.debug('plugin env created'.red)
         Oauth.persist_mgr=@plugin_env[:persistency]
         Fasp::Parameters.file_list_folder=File.join(@plugin_env[:config].main_folder,'filelists')
         Aspera::RestErrorAnalyzer.instance.log_file=File.join(@plugin_env[:config].main_folder,'rest_exceptions.log')
@@ -88,9 +88,9 @@ module Aspera
         banner << "\t#{PROGRAM_NAME} COMMANDS [OPTIONS] [ARGS]\n"
         banner << "\nDESCRIPTION\n"
         banner << "\tUse Aspera application to perform operations on command line.\n"
-        banner << "\tDocumentation and examples: #{@gem_url}\n"
+        banner << "\tDocumentation and examples: #{GEM_URL}\n"
         banner << "\texecute: #{PROGRAM_NAME} conf doc\n"
-        banner << "\tor visit: #{@help_url}\n"
+        banner << "\tor visit: #{HELP_URL}\n"
         banner << "\nENVIRONMENT VARIABLES\n"
         banner << "\t#{conf_dir_env_var}  config folder, default: $HOME/#{Plugins::Config::ASPERA_HOME_FOLDER_NAME}/#{PROGRAM_NAME}\n"
         banner << "\t#any option can be set as an environment variable, refer to the manual\n"
@@ -188,6 +188,8 @@ module Aspera
 
       protected
 
+      # env var name to override the app's main folder
+      # default main folder is $HOME/<vendor main app folder>/<program name>
       def conf_dir_env_var
         return "#{PROGRAM_NAME}_home".upcase
       end
@@ -222,7 +224,9 @@ module Aspera
       # this is the main function called by initial script just after constructor
       def process_command_line
         Log.log.debug('process_command_line')
+        # catch exception information , if any
         exception_info=nil
+        # false if command shall not be executed ("once_only")
         execute_command=true
         begin
           # find plugins, shall be after parse! ?
