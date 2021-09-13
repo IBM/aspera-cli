@@ -26,7 +26,8 @@ module Aspera
         MAX_ITEMS='max'
         MAX_PAGES='pmax'
         ATOM_PARAMS=['page', 'count', 'startIndex', MAX_ITEMS, MAX_PAGES]
-        private_constant :KEY_NODE,:KEY_PATH,:VAL_ALL,:PACKAGE_MATCH_FIELD,:ATOM_MAILBOXES
+        PUB_LINK_EXTERNAL_MATCH='external_deliveries/'
+        private_constant :KEY_NODE,:KEY_PATH,:VAL_ALL,:PACKAGE_MATCH_FIELD,:ATOM_MAILBOXES,:PUB_LINK_EXTERNAL_MATCH
 
         def initialize(env)
           @api_v3=nil
@@ -287,10 +288,10 @@ module Aspera
                 pkg_id_uri=[{:id=>'package',:uri=>link_url}]
               else
                 link_data=self.class.get_link_data(link_url)
-                if !link_data[:subpath].match(%r{external_deliveries/})
-                  raise CliBadArgument,"pub link is #{link_data[:subpath]}, expecting external_deliveries/"
+                if !link_data[:subpath].start_with?(PUB_LINK_EXTERNAL_MATCH)
+                  raise CliBadArgument,"Pub link is #{link_data[:subpath]}. Expecting #{PUB_LINK_EXTERNAL_MATCH}"
                 end
-                # Note: unauthenticated API
+                # Note: unauthenticated API (autorization is in url params)
                 api_public_link=Rest.new({:base_url=>link_data[:base_url]})
                 pkgdatares=api_public_link.call({:operation=>'GET',:subpath=>link_data[:subpath],:url_params=>{:passcode=>link_data[:query]['passcode']},:headers=>{'Accept'=>'application/xml'}})
                 if !pkgdatares[:http].body.start_with?('<?xml ')
@@ -298,8 +299,9 @@ module Aspera
                   raise CliError, 'no such package'
                 end
                 package_entry=XmlSimple.xml_in(pkgdatares[:http].body, {'ForceArray' => false})
+                Log.dump(:package_entry,package_entry)
                 transfer_uri=self.class.get_fasp_uri_from_entry(package_entry)
-                pkg_id_uri=[{:id=>'package',:uri=>transfer_uri}]
+                pkg_id_uri=[{:id=>package_entry['id'],:uri=>transfer_uri}]
               end # public link
               Log.dump(:pkg_id_uri,pkg_id_uri)
               return Main.result_status('no package') if pkg_id_uri.empty?
@@ -314,12 +316,12 @@ module Aspera
                 end
                 transfer_spec['direction']='receive'
                 statuses=self.transfer.start(transfer_spec,{:src=>:node_gen3})
-                result_transfer.push({'package'=>id_uri[:id],'status'=>statuses.map{|i|i.to_s}.join(',')})
+                result_transfer.push({'package'=>id_uri[:id],Main::STATUS_FIELD=>statuses})
                 # skip only if all sessions completed
                 skip_ids_data.push(id_uri[:id]) if TransferAgent.session_status(statuses).eql?(:success)
               end
               skip_ids_persistency.save unless skip_ids_persistency.nil?
-              return {:type=>:object_list,:data=>result_transfer}
+              return Main.result_transfer_multiple(result_transfer)
             end
           when :source
             command_source=self.options.get_next_command([ :list, :id, :name ])

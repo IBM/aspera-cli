@@ -3122,8 +3122,10 @@ So, it evolved into <%=tool%>:
 
 	* new: `faspex package list` retrieves the whole list, not just first page
 	* new: support web based auth to aoc and faspex 5 using HTTPS, new dependency on gem `webrick`
+	* new: the error "Remote host is not who we expected" displays a special remediation message
 	* fix: space character in `faspe:` url are precent encoded if needed
 	* fix: `preview scan`: if file_id is unknown, ignore and continue scan
+	* change: for commands that potentially execute several transfers (`package recv --id=ALL`), if one transfer fails it will exit with code 1
 
 * 4.2.1
 

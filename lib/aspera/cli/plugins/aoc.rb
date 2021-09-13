@@ -810,14 +810,14 @@ module Aspera
                 add_ts={'paths'=>[{'source'=>'.'}]}
                 node_file = {node_info: node_info, file_id: package_info['contents_file_id']}
                 statuses=transfer_start(AoC::PACKAGES_APP,'receive',node_file,AoC.package_tags(package_info,'download').merge(add_ts))
-                result_transfer.push({'package'=>package_id,'status'=>statuses.map{|i|i.to_s}.join(',')})
+                result_transfer.push({'package'=>package_id,Main::STATUS_FIELD=>statuses})
                 # update skip list only if all transfer sessions completed
                 if TransferAgent.session_status(statuses).eql?(:success)
                   skip_ids_data.push(package_id)
                   skip_ids_persistency.save unless skip_ids_persistency.nil?
                 end
               end
-              return {:type=>:object_list,:data=>result_transfer}
+              return Main.result_transfer_multiple(result_transfer)
             when :show
               package_id=self.options.get_next_argument('package ID')
               package_info=@api_aoc.read("packages/#{package_id}")[:data]

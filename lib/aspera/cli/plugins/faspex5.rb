@@ -19,9 +19,9 @@ module Aspera
         end
 
         def set_api
-          faxpex5_api_base_url=options.get_option(:url,:mandatory)
-          faxpex5_api_v5_url="#{faxpex5_api_base_url}/api/v5"
-          faxpex5_api_auth_url="#{faxpex5_api_base_url}/auth"
+          @faxpex5_api_base_url=options.get_option(:url,:mandatory)
+          faxpex5_api_v5_url="#{@faxpex5_api_base_url}/api/v5"
+          faxpex5_api_auth_url="#{@faxpex5_api_base_url}/auth"
           case options.get_option(:auth,:mandatory)
           when :boot
             # the password here is the token copied directly from browser in developer mode
@@ -69,7 +69,7 @@ module Aspera
           command=options.get_next_command(ACTIONS)
           case command
           when :auth_client
-            api_auth=Rest.new(@api_v5.params.merge({base_url: @api_v5.params[:base_url].gsub(/api\/v5$/,'auth')}))
+            api_auth=Rest.new(@api_v5.params.merge({base_url: "#{@faxpex5_api_base_url}/auth"}))
             return self.entity_action(api_auth,'oauth_clients',nil,:id,nil,true)
           when :node
             return self.entity_action(@api_v5,'nodes',nil,:id,nil,true)
@@ -119,12 +119,12 @@ module Aspera
                 transfer_spec=@api_v5.create("packages/#{id}/transfer_spec/download",{transfer_type: 'Connect', type: pkg_type})[:data]
                 transfer_spec.delete('authentication')
                 statuses=self.transfer.start(transfer_spec,{:src=>:node_gen3})
-                result_transfer.push({'package'=>id,'status'=>statuses.map{|i|i.to_s}.join(',')})
+                result_transfer.push({'package'=>id,Main::STATUS_FIELD=>statuses})
                 # skip only if all sessions completed
                 skip_ids_data.push(id) if TransferAgent.session_status(statuses).eql?(:success)
               end
               skip_ids_persistency.save unless skip_ids_persistency.nil?
-              return {:type=>:object_list,:data=>result_transfer}
+              return Main.result_transfer_multiple(result_transfer)
             end
           end
         end

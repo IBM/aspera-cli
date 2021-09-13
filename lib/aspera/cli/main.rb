@@ -25,6 +25,8 @@ module Aspera
       GEM_NAME = 'aspera-cli'
       HELP_URL = "http://www.rubydoc.info/gems/#{GEM_NAME}"
       GEM_URL  = "https://rubygems.org/gems/#{GEM_NAME}"
+      SRC_URL  = "https://github.com/IBM/aspera-cli"
+      STATUS_FIELD = 'status'
 
       private_constant :PROGRAM_NAME,:GEM_NAME,:HELP_URL,:GEM_URL
       # =============================================================
@@ -221,6 +223,21 @@ module Aspera
         return Main.result_nothing
       end
 
+      # used when one command executes several transfer jobs (each job being possibly multi session)
+      # @param status_table [Array] [{STATUS_FIELD=>[status array],...},...]
+      # each element has a key STATUS_FIELD which contains the result of possibly mulmtiple sessions
+      def self.result_transfer_multiple(status_table)
+        global_status=:success
+        # transform status into string and find if there was problem
+        status_table.each do |item|
+          worst=TransferAgent.session_status(item[STATUS_FIELD])
+          global_status=worst unless worst.eql?(:success)
+          item[STATUS_FIELD]=item[STATUS_FIELD].map{|i|i.to_s}.join(',')
+        end
+        raise global_status unless global_status.eql?(:success)
+        return {:type=>:object_list,:data=>status_table}
+      end
+
       # this is the main function called by initial script just after constructor
       def process_command_line
         Log.log.debug('process_command_line')
@@ -292,6 +309,9 @@ module Aspera
         unless exception_info.nil?
           @plugin_env[:formater].display_message(:error,"ERROR:".bg_red.gray.blink+" "+exception_info[1]+": "+exception_info[0].message)
           @plugin_env[:formater].display_message(:error,"Use '-h' option to get help.") if exception_info[2].eql?(:usage)
+          if exception_info.first.is_a?(Fasp::Error) and exception_info.first.message.eql?('Remote host is not who we expected')
+            @plugin_env[:formater].display_message(:error,"For this specific error, refer to:\n#{SRC_URL}#error-remote-host-is-not-who-we-expected\nAdd this to arguments:\n--ts=@json:'{\"sshfp\":null}'")
+          end
         end
         # 2- processing of command not processed (due to exception or bad command line)
         if execute_command
