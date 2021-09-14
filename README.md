@@ -1,7 +1,7 @@
 [comment1]: # (Do not edit this README.md, edit docs/README.erb.md, for details, read docs/README.md)
 # `ascli` : Command Line Interface for IBM Aspera products
 
-Version : 4.2.1.pre.latest
+Version : 4.2.2.a
 
 _Laurent/2016-2021_
 
@@ -81,7 +81,7 @@ Once the gem is installed, `ascli` shall be accessible:
 
 ```
 $ ascli --version
-4.2.1.pre.latest
+4.2.2.a
 ```
 
 ## First use
@@ -1271,6 +1271,8 @@ All standard _transfer-spec_ parameters can be overloaded. To display parameters
 run in debug mode (--log-level=debug). [_transfer-spec_](#transferspec) can
 also be saved/overridden in the config file.
 
+Parameters can be displayed with command `ascli config ascp spec`
+
 
 <p>
 Columns:
@@ -1734,7 +1736,7 @@ ascli sync start --parameters=@json:'{"sessions":[{"name":"test","reset":true,"r
 ```
 $ ascli -h
 NAME
-	ascli -- a command line tool for Aspera Applications (v4.2.1-latest)
+	ascli -- a command line tool for Aspera Applications (v4.2.2.a)
 
 SYNOPSIS
 	ascli COMMANDS [OPTIONS] [ARGS]
@@ -3707,11 +3709,12 @@ So, it evolved into `ascli`:
 
 # Changes (Release notes)
 
-* 4.2.1.pre.latest
+* 4.2.2.a
 
 	* new: `faspex package list` retrieves the whole list, not just first page
 	* new: support web based auth to aoc and faspex 5 using HTTPS, new dependency on gem `webrick`
 	* new: the error "Remote host is not who we expected" displays a special remediation message
+	* new: `conf ascp spec` displays supported transfer spec 
 	* fix: space character in `faspe:` url are precent encoded if needed
 	* fix: `preview scan`: if file_id is unknown, ignore and continue scan
 	* change: for commands that potentially execute several transfers (`package recv --id=ALL`), if one transfer fails it will exit with code 1
