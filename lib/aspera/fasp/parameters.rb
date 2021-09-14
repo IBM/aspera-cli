@@ -4,6 +4,7 @@ require 'aspera/temp_file_manager'
 require 'securerandom'
 require 'base64'
 require 'json'
+require 'yaml'
 require 'securerandom'
 require 'fileutils'
 
@@ -16,93 +17,32 @@ module Aspera
       # because of garbage collection takes any file there
       # this could be refined, as , for instance, on macos, temp folder is already user specific
       @@file_list_folder=TempFileManager.instance.new_file_path_global('asession_filelists')
-      PARAM_DEFINITION={
-        # parameters with env vars
-        'remote_password'         => { :type => :envvar, :variable=>'ASPERA_SCP_PASS'},
-        'token'                   => { :type => :envvar, :variable=>'ASPERA_SCP_TOKEN'},
-        'cookie'                  => { :type => :envvar, :variable=>'ASPERA_SCP_COOKIE'},
-        'ssh_private_key'         => { :type => :envvar, :variable=>'ASPERA_SCP_KEY'},
-        'EX_at_rest_password'     => { :type => :envvar, :variable=>'ASPERA_SCP_FILEPASS'},
-        'EX_proxy_password'       => { :type => :envvar, :variable=>'ASPERA_PROXY_PASS'},
-        'EX_license_text'         => { :type => :envvar, :variable=>'ASPERA_SCP_LICENSE'},
-        # bool params
-        'create_dir'              => { :type => :opt_without_arg, :option_switch=>'-d'},
-        'precalculate_job_size'   => { :type => :opt_without_arg},
-        'keepalive'               => { :type => :opt_without_arg},
-        'delete_before_transfer'  => { :type => :opt_without_arg}, #TODO: doc readme
-        'preserve_access_time'    => { :type => :opt_without_arg}, #TODO: doc
-        'preserve_creation_time'  => { :type => :opt_without_arg}, #TODO: doc
-        'preserve_times'          => { :type => :opt_without_arg}, #TODO: doc
-        'preserve_modification_time'=> { :type => :opt_without_arg}, #TODO: doc
-        'remove_empty_directories'=> { :type => :opt_without_arg}, #TODO: doc
-        'remove_after_transfer'   => { :type => :opt_without_arg}, #TODO: doc
-        'remove_empty_source_directory'=> { :type => :opt_without_arg}, #TODO: doc
-        # value params
-        'cipher'                  => { :type => :opt_with_arg, :option_switch=>'-c',:accepted_types=>String,:encode=>lambda{|cipher|cipher.tr('-','')}},
-        'resume_policy'           => { :type => :opt_with_arg, :option_switch=>'-k',:accepted_types=>String,:default=>'sparse_csum',:translate_values=>{'none'=>0,'attrs'=>1,'sparse_csum'=>2,'full_csum'=>3}},
-        'direction'               => { :type => :opt_with_arg, :option_switch=>'--mode',:accepted_types=>String,:translate_values=>{'receive'=>'recv','send'=>'send'}},
-        'remote_user'             => { :type => :opt_with_arg, :option_switch=>'--user',:accepted_types=>String},
-        'remote_host'             => { :type => :opt_with_arg, :option_switch=>'--host',:accepted_types=>String},
-        'ssh_port'                => { :type => :opt_with_arg, :option_switch=>'-P',:accepted_types=>Integer},
-        'fasp_port'               => { :type => :opt_with_arg, :option_switch=>'-O',:accepted_types=>Integer},
-        'dgram_size'              => { :type => :opt_with_arg, :option_switch=>'-Z',:accepted_types=>Integer},
-        'target_rate_kbps'        => { :type => :opt_with_arg, :option_switch=>'-l',:accepted_types=>Integer},
-        'min_rate_kbps'           => { :type => :opt_with_arg, :option_switch=>'-m',:accepted_types=>Integer},
-        'rate_policy'             => { :type => :opt_with_arg, :option_switch=>'--policy',:accepted_types=>String},
-        'http_fallback'           => { :type => :opt_with_arg, :option_switch=>'-y',:accepted_types=>[String,*Aspera::CommandLineBuilder::BOOLEAN_CLASSES],:translate_values=>{'force'=>'F',true=>1,false=>0}},
-        'http_fallback_port'      => { :type => :opt_with_arg, :option_switch=>'-t',:accepted_types=>Integer},
-        'source_root'             => { :type => :opt_with_arg, :option_switch=>'--source-prefix64',:accepted_types=>String,:encode=>lambda{|prefix|Base64.strict_encode64(prefix)}},
-        'sshfp'                   => { :type => :opt_with_arg, :option_switch=>'--check-sshfp',:accepted_types=>String},
-        'symlink_policy'          => { :type => :opt_with_arg, :option_switch=>'--symbolic-links',:accepted_types=>String},
-        'overwrite'               => { :type => :opt_with_arg, :accepted_types=>String},
-        'exclude_newer_than'      => { :type => :opt_with_arg, :accepted_types=>Integer},
-        'exclude_older_than'      => { :type => :opt_with_arg, :accepted_types=>Integer},
-        'preserve_acls'           => { :type => :opt_with_arg, :accepted_types=>String},
-        'move_after_transfer'     => { :type => :opt_with_arg, :accepted_types=>String},
-        'multi_session_threshold' => { :type => :opt_with_arg, :accepted_types=>Integer},
-        # non standard parameters
-        'EX_fasp_proxy_url'       => { :type => :opt_with_arg, :option_switch=>'--proxy',:accepted_types=>String},
-        'EX_http_proxy_url'       => { :type => :opt_with_arg, :option_switch=>'-x',:accepted_types=>String},
-        'EX_ssh_key_paths'        => { :type => :opt_with_arg, :option_switch=>'-i',:accepted_types=>Array},
-        'EX_http_transfer_jpeg'   => { :type => :opt_with_arg, :option_switch=>'-j',:accepted_types=>Integer},
-        'EX_multi_session_part'   => { :type => :opt_with_arg, :option_switch=>'-C',:accepted_types=>String},
-        'EX_no_read'              => { :type => :opt_without_arg, :option_switch=>'--no-read'},
-        'EX_no_write'             => { :type => :opt_without_arg, :option_switch=>'--no-write'},
-        'EX_apply_local_docroot'  => { :type => :opt_without_arg, :option_switch=>'--apply-local-docroot'},
-        # TODO: manage those parameters, some are for connect only ? node api ?
-        'target_rate_cap_kbps'    => { :type => :ignore, :accepted_types=>Integer},
-        'target_rate_percentage'  => { :type => :ignore, :accepted_types=>String}, # -wf -l<rate>p
-        'min_rate_cap_kbps'       => { :type => :ignore, :accepted_types=>Integer},
-        'rate_policy_allowed'     => { :type => :ignore, :accepted_types=>String},
-        'fasp_url'                => { :type => :ignore, :accepted_types=>String},
-        'lock_rate_policy'        => { :type => :ignore, :accepted_types=>Aspera::CommandLineBuilder::BOOLEAN_CLASSES},
-        'lock_min_rate'           => { :type => :ignore, :accepted_types=>Aspera::CommandLineBuilder::BOOLEAN_CLASSES},
-        'lock_target_rate'        => { :type => :ignore, :accepted_types=>Aspera::CommandLineBuilder::BOOLEAN_CLASSES},
-        'authentication'          => { :type => :ignore, :accepted_types=>String}, # value = token
-        'https_fallback_port'     => { :type => :ignore, :accepted_types=>Integer}, # same as http fallback, option -t ?
-        'content_protection'      => { :type => :ignore, :accepted_types=>String},
-        'cipher_allowed'          => { :type => :ignore, :accepted_types=>String},
-        'multi_session'           => { :type => :ignore, :accepted_types=>Integer}, # managed
-        'obfuscate_file_names'          => { :type => :ignore, :accepted_types=>Aspera::CommandLineBuilder::BOOLEAN_CLASSES},
-        # optional tags (  additional option to generate: {:space=>' ',:object_nl=>' ',:space_before=>'+',:array_nl=>'1'}  )
-        'tags'                    => { :type => :opt_with_arg, :option_switch=>'--tags64',:accepted_types=>Hash,:encode=>lambda{|tags|Base64.strict_encode64(JSON.generate(tags))}},
-        # special processing @builder.process_param( called individually
-        'use_ascp4'               => { :type => :defer, :accepted_types=>Aspera::CommandLineBuilder::BOOLEAN_CLASSES},
-        'paths'                   => { :type => :defer, :accepted_types=>Array},
-        'EX_file_list'            => { :type => :defer, :option_switch=>'--file-list', :accepted_types=>String},
-        'EX_file_pair_list'       => { :type => :defer, :option_switch=>'--file-pair-list', :accepted_types=>String},
-        'EX_ascp_args'            => { :type => :defer, :accepted_types=>Array},
-        'destination_root'        => { :type => :defer, :accepted_types=>String},
-        'wss_enabled'             => { :type => :defer, :accepted_types=>Aspera::CommandLineBuilder::BOOLEAN_CLASSES},
-        'wss_port'                => { :type => :defer, :accepted_types=>Integer},
-      }
+      @@spec=nil
+      def self.spec
+        return @@spec unless @@spec.nil?
+        # config file in same folder with same name as this source
+        @@spec=YAML.load_file("#{__FILE__[0..-3]}yaml")
+        @@spec.each do |item|
+        end
+      end
 
-      private_constant :PARAM_DEFINITION
+      # special encoding methods used in YAML
+      def self.encode_cipher(v)
+        v.tr('-','')
+      end
+
+      def self.encode_source_root(v)
+        Base64.strict_encode64(v)
+      end
+
+      def self.encode_tags(v)
+        Base64.strict_encode64(JSON.generate(v))
+      end
 
       def initialize(job_spec,options)
         @job_spec=job_spec
-        @builder=Aspera::CommandLineBuilder.new(@job_spec,PARAM_DEFINITION)
         @options=options
+        @builder=Aspera::CommandLineBuilder.new(@job_spec,self.class.spec)
       end
 
       public
@@ -125,7 +65,7 @@ module Aspera
         # special cases
         @job_spec.delete('source_root') if @job_spec.has_key?('source_root') and @job_spec['source_root'].empty?
 
-        # use web socket initiation ?
+        # use web socket session initiation ?
         if @builder.process_param('wss_enabled',:get_value) and @options[:wss]
           # by default use web socket session if available, unless removed by user
           @builder.add_command_line_options(['--ws-connect'])
@@ -151,8 +91,7 @@ module Aspera
           # destination will be base64 encoded, put before path arguments
           @builder.add_command_line_options(['--dest64'])
         end
-
-        PARAM_DEFINITION['paths'][:mandatory]=!@job_spec.has_key?('keepalive')
+        @builder.params_definition['paths'][:mandatory]=!@job_spec.has_key?('keepalive')
         paths_array=@builder.process_param('paths',:get_value)
         unless paths_array.nil?
           # use file list if there is storage defined for it.

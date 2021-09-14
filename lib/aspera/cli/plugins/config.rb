@@ -1,6 +1,7 @@
 require 'aspera/cli/basic_auth_plugin'
 require 'aspera/cli/extended_value'
 require 'aspera/fasp/installation'
+require 'aspera/fasp/parameters'
 require 'aspera/api_detector'
 require 'aspera/open_application'
 require 'aspera/aoc'
@@ -465,7 +466,7 @@ module Aspera
         end
 
         def execute_action_ascp
-          command=self.options.get_next_command([:connect,:use,:show,:products,:info,:install])
+          command=self.options.get_next_command([:connect,:use,:show,:products,:info,:install,:spec])
           case command
           when :connect
             return execute_connect_action
@@ -516,6 +517,10 @@ module Aspera
           when :install
             v=Fasp::Installation.instance.install_sdk(self.options.get_option(:sdk_url,:mandatory))
             return Main.result_status("Installed version #{v}")
+          when :spec
+            spec=Fasp::Parameters.spec
+            table=spec.keys.map{|k|i=spec[k].clone;i['name']=k;i}
+            return {type: :object_list, data: table, fields: ['name','type','variable','accepted_types','option_switch']}
           end
           raise "unexpected case: #{command}"
         end

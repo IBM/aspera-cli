@@ -4140,13 +4140,17 @@ You may either install the suggested Gems, or remove your ed25519 key from your 
 
 ## Error "Remote host is not who we expected"
 
-`ascp` version 4.x changed the algorithm used to check the SSH server certificate. To ignore the certificate (SSH fingerprint) add option on client side:
+Cause: `ascp` >= 4.x checks fingerprint of highest server host key, including ECDSA. `ascp` < 4.0 (3.9.6 and earlier) support only to RSA level (and ignore ECDSA presented by server). `aspera.conf` supports a single fingerprint.
+
+Workaround on client side: To ignore the certificate (SSH fingerprint) add option on client side (this option can also be added permanently to the config file):
 
 ```
 --ts=@json:'{"sshfp":null}'
 ```
 
-Refer to ES-1944 in release notes of 4.1 and to [HSTS admin manual section "Configuring Transfer Server Authentication With a Host-Key Fingerprint"](https://www.ibm.com/docs/en/ahts/4.2?topic=upgrades-configuring-ssh-server): if you have access to server side, basically disable other SSH host keys than RSA.
+Workaround on server side: Either remove the fingerprint from `aspera.conf`, or keep only RSA host keys in `sshd_config`.
+
+References: ES-1944 in release notes of 4.1 and to [HSTS admin manual section "Configuring Transfer Server Authentication With a Host-Key Fingerprint"](https://www.ibm.com/docs/en/ahts/4.2?topic=upgrades-configuring-ssh-server).
 
 ## Miscelaneous
 

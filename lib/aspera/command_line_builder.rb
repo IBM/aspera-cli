@@ -18,7 +18,7 @@ module Aspera
 
     public
 
-    BOOLEAN_CLASSES=[TrueClass,FalseClass]
+    attr_reader :params_definition
 
     # @param param_hash
     def initialize(param_hash,params_definition)
@@ -76,19 +76,28 @@ module Aspera
       raise "Internal error: ask processing of param #{param_name}" if options.nil?
       # by default : not mandatory
       options[:mandatory]||=false
-      if options.has_key?(:accepted_types)
-        # single type is placed in array
-        options[:accepted_types]=[options[:accepted_types]] unless options[:accepted_types].is_a?(Array)
-      else
-        # by default : string, unless it's without arg
-        options[:accepted_types]=action.eql?(:opt_without_arg) ? BOOLEAN_CLASSES : [String]
+      # by default : string, unless it's without arg
+      if ! options.has_key?(:accepted_types)
+        options[:accepted_types]=action.eql?(:opt_without_arg) ? :bool : :string
       end
+      # single type is placed in array
+      options[:accepted_types]=[options[:accepted_types]] unless options[:accepted_types].is_a?(Array)
       # check mandatory parameter (nil is valid value)
       raise Fasp::Error.new("mandatory parameter: #{param_name}") if options[:mandatory] and !@param_hash.has_key?(param_name)
       parameter_value=@param_hash[param_name]
       parameter_value=options[:default] if parameter_value.nil? and options.has_key?(:default)
+      expected_classes=options[:accepted_types].map do |s|
+        case s
+        when :string; String
+        when :array; Array
+        when :hash; Hash
+        when :int; Integer
+        when :bool; [TrueClass,FalseClass]
+        else raise "INTERNAL: unexpected #{s}"
+        end
+      end.flatten
       # check provided type
-      raise Fasp::Error.new("#{param_name} is : #{parameter_value.class} (#{parameter_value}), shall be #{options[:accepted_types]}, ") unless parameter_value.nil? or options[:accepted_types].inject(false){|m,v|m or parameter_value.is_a?(v)}
+      raise Fasp::Error.new("#{param_name} is : #{parameter_value.class} (#{parameter_value}), shall be #{options[:accepted_types]}, ") unless parameter_value.nil? or expected_classes.include?(parameter_value.class)
       @used_param_names.push(param_name) unless action.eql?(:defer)
 
       # process only non-nil values
@@ -102,7 +111,8 @@ module Aspera
       end
       raise "unsupported value: #{parameter_value}" unless options[:accepted_values].nil? or options[:accepted_values].include?(parameter_value)
       if options[:encode]
-        newvalue=options[:encode].call(parameter_value)
+        # :encode has name of class with encoding method
+        newvalue=Kernel.const_get(options[:encode]).send("encode_#{param_name}",parameter_value)
         raise Fasp::Error.new("unsupported #{param_name}: #{parameter_value}") if newvalue.nil?
         parameter_value=newvalue
       end

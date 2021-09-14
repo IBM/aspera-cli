@@ -1287,6 +1287,8 @@ All standard _transfer-spec_ parameters can be overloaded. To display parameters
 run in debug mode (--log-level=debug). [_transfer-spec_](#transferspec) can
 also be saved/overridden in the config file.
 
+Parameters can be displayed with command `<%=cmd%> config ascp spec`
+
 <%= File.read(ENV['INCL_TRSPEC']).gsub(/.*<body>(.*)<\/body>.*/m,'\1') %>
 
 ### Destination folder for transfers
@@ -3123,6 +3125,7 @@ So, it evolved into <%=tool%>:
 	* new: `faspex package list` retrieves the whole list, not just first page
 	* new: support web based auth to aoc and faspex 5 using HTTPS, new dependency on gem `webrick`
 	* new: the error "Remote host is not who we expected" displays a special remediation message
+	* new: `conf ascp spec` displays supported transfer spec 
 	* fix: space character in `faspe:` url are precent encoded if needed
 	* fix: `preview scan`: if file_id is unknown, ignore and continue scan
 	* change: for commands that potentially execute several transfers (`package recv --id=ALL`), if one transfer fails it will exit with code 1
@@ -3551,13 +3554,17 @@ You may either install the suggested Gems, or remove your ed25519 key from your 
 
 ## Error "Remote host is not who we expected"
 
-`ascp` version 4.x changed the algorithm used to check the SSH server certificate. To ignore the certificate (SSH fingerprint) add option on client side:
+Cause: `ascp` >= 4.x checks fingerprint of highest server host key, including ECDSA. `ascp` < 4.0 (3.9.6 and earlier) support only to RSA level (and ignore ECDSA presented by server). `aspera.conf` supports a single fingerprint.
+
+Workaround on client side: To ignore the certificate (SSH fingerprint) add option on client side (this option can also be added permanently to the config file):
 
 ```
 --ts=@json:'{"sshfp":null}'
 ```
 
-Refer to ES-1944 in release notes of 4.1 and to [HSTS admin manual section "Configuring Transfer Server Authentication With a Host-Key Fingerprint"](https://www.ibm.com/docs/en/ahts/4.2?topic=upgrades-configuring-ssh-server): if you have access to server side, basically disable other SSH host keys than RSA.
+Workaround on server side: Either remove the fingerprint from `aspera.conf`, or keep only RSA host keys in `sshd_config`.
+
+References: ES-1944 in release notes of 4.1 and to [HSTS admin manual section "Configuring Transfer Server Authentication With a Host-Key Fingerprint"](https://www.ibm.com/docs/en/ahts/4.2?topic=upgrades-configuring-ssh-server).
 
 ## Miscelaneous
 
