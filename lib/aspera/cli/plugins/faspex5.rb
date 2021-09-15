@@ -50,12 +50,13 @@ module Aspera
               :type                => :oauth2,
               :base_url            => faxpex5_api_auth_url,
               :grant               => :jwt,
+              :f5_username         => options.get_option(:username,:mandatory),
+              :f5_password         => options.get_option(:password,:mandatory),
               :client_id           => app_client_id,
               :client_secret       => options.get_option(:client_secret,:mandatory),
               :jwt_subject         => "client:#{app_client_id}", # TODO Mmmm
               :jwt_audience        => app_client_id, # TODO Mmmm
               :jwt_private_key_obj => OpenSSL::PKey::RSA.new(options.get_option(:private_key,:mandatory)),
-              :jwt_is_f5           => true, # TODO: remove when clarified
               :jwt_headers         => {typ: 'JWT'}
               }})
           end

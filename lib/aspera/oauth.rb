@@ -233,14 +233,14 @@ module Aspera
             :exp => seconds_since_epoch+JWT_EXPIRY_OFFSET_SEC # expiration
           }
           # Hum.. compliant ? TODO: remove when Faspex5 API is clarified
-          if @params[:jwt_is_f5]
-            payload[:jti] = SecureRandom.uuid
-            payload[:iat] = seconds_since_epoch
+          if @params.has_key?(:f5_username)
+            payload[:jti] = SecureRandom.uuid # JWT id
+            payload[:iat] = seconds_since_epoch # issued at
             payload.delete(:nbf)
             p_scope[:redirect_uri]="https://127.0.0.1:5000/token"
             p_scope[:state]=SecureRandom.uuid
             p_scope[:client_id]=@params[:client_id]
-            @token_auth_api.params[:auth]={:type=>:none}
+            @token_auth_api.params[:auth]={type: :basic,username: @params[:f5_username], password: @params[:f5_password]}
           end
 
           # non standard, only for global ids
