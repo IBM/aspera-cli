@@ -4,16 +4,39 @@ module Aspera
   # process_param is called repeatedly with all known parameters
   # add_env_args is called to get resulting param list and env var (also checks that all params were used)
   class CommandLineBuilder
-
-    private
-    # default value for command line based on option name
-    def switch_name(param_name,options)
-      return options[:option_switch] if options.has_key?(:option_switch)
-      return '--'+param_name.to_s.gsub('_','-')
+    # transform yes/no to trye/false
+    def self.yes_to_true(value)
+      case value
+      when 'yes'; return true
+      when 'no'; return false
+      end
+      raise "unsupported value: #{value}"
     end
 
+    # can be called by provided of definition before constructor
+    def self.normalize_description(d)
+      d.each do |param_name,options|
+        #options[:accepted_types]=:bool if options[:cltype].eql?(:envvar) and !options.has_key?(:accepted_types)
+        # by default : not mandatory
+        options[:mandatory]||=false
+        options[:desc]||=''
+        # by default : string, unless it's without arg
+        if ! options.has_key?(:accepted_types)
+          options[:accepted_types]=options[:cltype].eql?(:opt_without_arg) ? :bool : :string
+        end
+        # single type is placed in array
+        options[:accepted_types]=[options[:accepted_types]] unless options[:accepted_types].is_a?(Array)
+        if !options.has_key?(:option_switch) and options.has_key?(:cltype) and [:opt_without_arg,:opt_with_arg].include?(options[:cltype])
+          options[:option_switch]='--'+param_name.to_s.gsub('_','-')
+        end
+      end
+    end
+
+    private
+
+    # clvarname : command line variable name
     def env_name(param_name,options)
-      return options[:variable]
+      return options[:clvarname]
     end
 
     public
@@ -44,15 +67,6 @@ module Aspera
       return nil
     end
 
-    # transform yes/no to trye/false
-    def self.yes_to_true(value)
-      case value
-      when 'yes'; return true
-      when 'no'; return false
-      end
-      raise "unsupported value: #{value}"
-    end
-
     # add options directly to ascp command line
     def add_command_line_options(options)
       return if options.nil?
@@ -71,21 +85,13 @@ module Aspera
     # @param options : options for type
     def process_param(param_name,action=nil)
       options=@params_definition[param_name]
-      action=options[:type] if action.nil?
+      action=options[:cltype] if action.nil?
       # should not happen
       raise "Internal error: ask processing of param #{param_name}" if options.nil?
-      # by default : not mandatory
-      options[:mandatory]||=false
-      # by default : string, unless it's without arg
-      if ! options.has_key?(:accepted_types)
-        options[:accepted_types]=action.eql?(:opt_without_arg) ? :bool : :string
-      end
-      # single type is placed in array
-      options[:accepted_types]=[options[:accepted_types]] unless options[:accepted_types].is_a?(Array)
       # check mandatory parameter (nil is valid value)
       raise Fasp::Error.new("mandatory parameter: #{param_name}") if options[:mandatory] and !@param_hash.has_key?(param_name)
       parameter_value=@param_hash[param_name]
-      parameter_value=options[:default] if parameter_value.nil? and options.has_key?(:default)
+      #parameter_value=options[:default] if parameter_value.nil? and options.has_key?(:default)
       expected_classes=options[:accepted_types].map do |s|
         case s
         when :string; String
@@ -93,7 +99,7 @@ module Aspera
         when :hash; Hash
         when :int; Integer
         when :bool; [TrueClass,FalseClass]
-        else raise "INTERNAL: unexpected #{s}"
+        else raise "INTERNAL: unexpected value: #{s}"
         end
       end.flatten
       # check provided type
@@ -133,12 +139,12 @@ module Aspera
         else raise Fasp::Error.new("unsupported #{param_name}: #{parameter_value}")
         end
         add_param=!add_param if options[:add_on_false]
-        add_command_line_options([switch_name(param_name,options)]) if add_param
+        add_command_line_options([options[:option_switch]]) if add_param
       when :opt_with_arg # transform into command line option with value
         #parameter_value=parameter_value.to_s if parameter_value.is_a?(Integer)
         parameter_value=[parameter_value] unless parameter_value.is_a?(Array)
         # if transfer_spec value is an array, applies option many times
-        parameter_value.each{|v|add_command_line_options([switch_name(param_name,options),v])}
+        parameter_value.each{|v|add_command_line_options([options[:option_switch],v])}
       else
         raise "Error"
       end

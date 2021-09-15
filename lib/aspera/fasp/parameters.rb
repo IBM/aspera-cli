@@ -18,11 +18,25 @@ module Aspera
       # this could be refined, as , for instance, on macos, temp folder is already user specific
       @@file_list_folder=TempFileManager.instance.new_file_path_global('asession_filelists')
       @@spec=nil
-      def self.spec
+      def self.description
         return @@spec unless @@spec.nil?
         # config file in same folder with same name as this source
         @@spec=YAML.load_file("#{__FILE__[0..-3]}yaml")
-        @@spec.each do |item|
+        Aspera::CommandLineBuilder.normalize_description(@@spec)
+      end
+
+      def self.man_table
+        return description.keys.map do |k|
+          i=description[k]
+          f=i[:context].nil? || i[:context].include?(:local) ? 'Y' : ''
+          n=i[:context].nil? || i[:context].include?(:node) ? 'Y' : ''
+          c=i[:context].nil? || i[:context].include?(:connect) ? 'Y' : ''
+          a=case i[:cltype]
+          when :envvar; 'env:'+i[:clvarname]
+          when :opt_without_arg,:opt_with_arg; i[:option_switch]
+          else ''
+          end
+          {name: k, type: [i[:accepted_types]].flatten.join(','),cli: a, f: f, n: n, c: c, description: i[:desc]}
         end
       end
 
@@ -42,7 +56,7 @@ module Aspera
       def initialize(job_spec,options)
         @job_spec=job_spec
         @options=options
-        @builder=Aspera::CommandLineBuilder.new(@job_spec,self.class.spec)
+        @builder=Aspera::CommandLineBuilder.new(@job_spec,self.class.description)
       end
 
       public

@@ -1,48 +1,53 @@
+require 'aspera/command_line_builder'
+
 module Aspera
   # builds command line arg for async
   class Sync
-    private
     INSTANCE_PARAMS=
     {
-      'alt_logdir'           => { :type => :opt_with_arg, :accepted_types=>:string},
-      'watchd'               => { :type => :opt_with_arg, :accepted_types=>:string},
-      'apply_local_docroot'  => { :type => :opt_without_arg},
-      'quiet'                => { :type => :opt_without_arg},
+      'alt_logdir'           => { :cltype => :opt_with_arg, :accepted_types=>:string},
+      'watchd'               => { :cltype => :opt_with_arg, :accepted_types=>:string},
+      'apply_local_docroot'  => { :cltype => :opt_without_arg},
+      'quiet'                => { :cltype => :opt_without_arg},
     }
     SESSION_PARAMS=
     {
-      'name'                 => { :type => :opt_with_arg, :accepted_types=>:string},
-      'local_dir'            => { :type => :opt_with_arg, :accepted_types=>:string},
-      'remote_dir'           => { :type => :opt_with_arg, :accepted_types=>:string},
-      'local_db_dir'         => { :type => :opt_with_arg, :accepted_types=>:string},
-      'remote_db_dir'        => { :type => :opt_with_arg, :accepted_types=>:string},
-      'host'                 => { :type => :opt_with_arg, :accepted_types=>:string},
-      'user'                 => { :type => :opt_with_arg, :accepted_types=>:string},
-      'private_key_path'     => { :type => :opt_with_arg, :accepted_types=>:string},
-      'direction'            => { :type => :opt_with_arg, :accepted_types=>:string},
-      'checksum'             => { :type => :opt_with_arg, :accepted_types=>:string},
-      'tcp_port'             => { :type => :opt_with_arg, :accepted_types=>:int},
-      'rate_policy'          => { :type => :opt_with_arg, :accepted_types=>:string},
-      'target_rate'          => { :type => :opt_with_arg, :accepted_types=>:string},
-      'cooloff'              => { :type => :opt_with_arg, :accepted_types=>:int},
-      'pending_max'          => { :type => :opt_with_arg, :accepted_types=>:int},
-      'scan_intensity'       => { :type => :opt_with_arg, :accepted_types=>:string},
-      'cipher'               => { :type => :opt_with_arg, :accepted_types=>:string},
-      'transfer_threads'     => { :type => :opt_with_arg, :accepted_types=>:int},
-      'preserve_time'        => { :type => :opt_without_arg},
-      'preserve_access_time' => { :type => :opt_without_arg},
-      'preserve_modification_time' => { :type => :opt_without_arg},
-      'preserve_uid'         => { :type => :opt_without_arg},
-      'preserve_gid'         => { :type => :opt_without_arg},
-      'create_dir'           => { :type => :opt_without_arg},
-      'reset'                => { :type => :opt_without_arg},
+      'name'                 => { :cltype => :opt_with_arg, :accepted_types=>:string},
+      'local_dir'            => { :cltype => :opt_with_arg, :accepted_types=>:string},
+      'remote_dir'           => { :cltype => :opt_with_arg, :accepted_types=>:string},
+      'local_db_dir'         => { :cltype => :opt_with_arg, :accepted_types=>:string},
+      'remote_db_dir'        => { :cltype => :opt_with_arg, :accepted_types=>:string},
+      'host'                 => { :cltype => :opt_with_arg, :accepted_types=>:string},
+      'user'                 => { :cltype => :opt_with_arg, :accepted_types=>:string},
+      'private_key_path'     => { :cltype => :opt_with_arg, :accepted_types=>:string},
+      'direction'            => { :cltype => :opt_with_arg, :accepted_types=>:string},
+      'checksum'             => { :cltype => :opt_with_arg, :accepted_types=>:string},
+      'tcp_port'             => { :cltype => :opt_with_arg, :accepted_types=>:int},
+      'rate_policy'          => { :cltype => :opt_with_arg, :accepted_types=>:string},
+      'target_rate'          => { :cltype => :opt_with_arg, :accepted_types=>:string},
+      'cooloff'              => { :cltype => :opt_with_arg, :accepted_types=>:int},
+      'pending_max'          => { :cltype => :opt_with_arg, :accepted_types=>:int},
+      'scan_intensity'       => { :cltype => :opt_with_arg, :accepted_types=>:string},
+      'cipher'               => { :cltype => :opt_with_arg, :accepted_types=>:string},
+      'transfer_threads'     => { :cltype => :opt_with_arg, :accepted_types=>:int},
+      'preserve_time'        => { :cltype => :opt_without_arg},
+      'preserve_access_time' => { :cltype => :opt_without_arg},
+      'preserve_modification_time' => { :cltype => :opt_without_arg},
+      'preserve_uid'         => { :cltype => :opt_without_arg},
+      'preserve_gid'         => { :cltype => :opt_without_arg},
+      'create_dir'           => { :cltype => :opt_without_arg},
+      'reset'                => { :cltype => :opt_without_arg},
       # note: only one env var, but multiple sessions... may be a problem
-      'remote_password'      => { :type => :envvar, :variable=>'ASPERA_SCP_PASS'},
-      'cookie'               => { :type => :envvar, :variable=>'ASPERA_SCP_COOKIE'},
-      'token'                => { :type => :envvar, :variable=>'ASPERA_SCP_TOKEN'},
-      'license'              => { :type => :envvar, :variable=>'ASPERA_SCP_LICENSE'},
+      'remote_password'      => { :cltype => :envvar, :clvarname=>'ASPERA_SCP_PASS'},
+      'cookie'               => { :cltype => :envvar, :clvarname=>'ASPERA_SCP_COOKIE'},
+      'token'                => { :cltype => :envvar, :clvarname=>'ASPERA_SCP_TOKEN'},
+      'license'              => { :cltype => :envvar, :clvarname=>'ASPERA_SCP_LICENSE'},
     }
-    public
+
+    Aspera::CommandLineBuilder.normalize_description(INSTANCE_PARAMS)
+    Aspera::CommandLineBuilder.normalize_description(SESSION_PARAMS)
+
+    private_constant :INSTANCE_PARAMS,:SESSION_PARAMS
 
     def initialize(sync_params)
       @sync_params=sync_params

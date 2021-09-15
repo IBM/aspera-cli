@@ -1267,99 +1267,28 @@ A [_transfer-spec_](#transferspec) is a Hash table, so it is described on the co
 
 ## <a name="transferparams"></a>Transfer Parameters
 
-All standard _transfer-spec_ parameters can be overloaded. To display parameters,
-run in debug mode (--log-level=debug). [_transfer-spec_](#transferspec) can
-also be saved/overridden in the config file.
+All standard _transfer-spec_ parameters can be speficied.
+[_transfer-spec_](#transferspec) can also be saved/overridden in the config file.
 
-Parameters can be displayed with command `ascli config ascp spec`
+Refer to: [Aspera API Documentation](https://developer.ibm.com/apis/catalog/?search=aspera)&rarr;Node API&rarr;/opt/transfers
 
+Parameters can be displayed with commands:
 
-<p>
+```
+$ ascli config ascp spec
+$ ascli config ascp spec --select=@json:'{"f":"Y"}' --fields=-f,n,c
+```
+
 Columns:
-<ul>
-<li>F=Fasp Manager(local FASP execution)</li>
-<li>N=remote node(node API)</li>
-<li>C=Connect Client(web plugin)</li>
-</ul>
-</p>
-<p>
-Req/Def : Required or default value (- means emty)
-</p>
-<p>
-Fields with EX_ prefix are specific extensions to local mode.
-</p>
-<p>
-arg: related ascp argument or env var suffix (PASS for ASPERA_SCP_PASS)
-</p>
-<p>
-UNDER CONSTRUCTION<br/>
-<a href="https://developer.ibm.com/apis/catalog/?search=aspera">Aspera API Documentation</a>&rarr;Node API&rarr;/opt/transfers<br/>
-</p>
 
-<table>
-<tr><th>Field</th><th>Req/Def</th><th>Type</th><th>F</th><th>N</th><th>C</th><th>arg</th><th>Description</th></tr>
-<tr><td>direction</td><td>Required</td><td>string</td><td class="yes">Y</td><td class="yes">Y</td><td class="yes">Y</td><td>--mode</td><td>Direction: "send" or "receive"</td></tr>
-<tr><td>remote_host</td><td>Required</td><td>string</td><td class="yes">Y</td><td class="yes">Y</td><td class="yes">Y</td><td>--host</td><td>IP or fully qualified domain name of the remote server</td></tr>
-<tr><td>remote_user</td><td>Required</td><td>string</td></td><td class="yes">Y</td><td class="yes">Y</td><td class="yes">Y</td><td>--user</td><td>Remote user. Default value is "xfer" on node or connect.</td></tr>
-<tr><td>destination_root</td><td>Required</td><td>string</td><td class="yes">Y</td><td class="yes">Y</td><td class="yes">Y</td><td>last arg</td><td>Destination root directory.</td></tr>
-<tr><td>title</td><td>-</td><td>string</td><td class="no">N</td><td class="yes">Y</td><td class="yes">Y</td><td>-</td><td>Title of the transfer</td></tr>
-<tr><td>tags</td><td>-</td><td>hash</td><td class="yes">Y</td><td class="yes">Y</td><td class="yes">Y</td><td>--tags<br>--tags64</td><td>Metadata for transfer</td></tr>
-<tr><td>token</td><td>-</td><td>string</td><td class="yes">Y</td><td class="yes">Y</td><td class="yes">Y</td><td>TOKEN<br/>-W</td><td>Authorization token: Bearer, Basic or ATM</td></tr>
-<tr><td>cookie</td><td>-</td><td>string</td><td class="yes">Y</td><td class="yes">Y</td><td class="yes">Y</td><td>COOKIE</td><td>Metadata for transfer (older,string)</td></tr>
-<tr><td>remote_access_key</td><td>TODO</td><td>string</td><td></td><td></td><td></td><td>?</td><td>Node only?</td></tr>
-<tr><td>source_root</td><td>-</td><td>string</td><td></td><td></td><td></td><td>--source-prefix<br/>--source-prefix64</td><td>Source root directory.(TODO: verify option)</td></tr>
-<tr><td>fasp_port</td><td>33001</td><td>integer</td></td><td class="yes">Y</td><td class="yes">Y</td><td class="yes">Y</td><td>-O</td><td>Specifies fasp (UDP) port.</td></tr>
-<tr><td>ssh_port</td><td>22 or 33001</td><td>integer</td></td><td class="yes">Y</td><td class="yes">Y</td><td class="yes">Y</td><td>-P</td><td>Specifies ssh (TCP) port.</td></tr>
-<tr><td>rate_policy</td><td>server config</td><td>string</td><td class="yes">Y</td><td class="yes">Y</td><td class="yes">Y</td><td>--policy</td><td>Valid literals include "low","fair","high" and "fixed".</td></tr>
-<tr><td>symlink_policy</td><td>follow</td><td>string</td><td class="yes">Y</td><td class="yes">Y</td><td class="yes">Y</td><td>--symbolic-links</td><td>copy, follow, copy+force, skip.  Default is follow.  Handle source side symbolic links by following the link (follow), copying the link itself (copy),  skipping (skip), or forcibly copying the link itself (copy+force).</td></tr>
-<tr><td>target_rate_kbps</td><td>-</td><td>integer</td><td class="yes">Y</td><td class="yes">Y</td><td class="yes">Y</td><td>-l</td><td>Specifies desired speed for the transfer.</td></tr>
-<tr><td>min_rate_kbps</td><td>0</td><td>integer</td><td class="yes">Y</td><td class="yes">Y</td><td class="yes">Y</td><td>-m</td><td>Set the minimum transfer rate in kilobits per second.</td></tr>
-<tr><td>cipher</td><td>none</td><td>string</td><td class="yes">Y</td><td class="yes">Y</td><td class="yes">Y</td><td>-c</td><td>in transit encryption type.<br/>none, aes-128, aes-256</td></tr>
-<tr><td>content_protection</td><td>encrypt<br/>decrypt</td><td>string</td><td></td><td></td><td></td><td>--file-crypt=</td><td>encryption at rest</td></tr>
-<tr><td>content_protection_password</td><td>-</td><td>string</td><td></td><td></td><td></td><td>PASS</td><td>Specifies a string password.</td></tr>
-<tr><td>overwrite</td><td>diff</td><td>string</td><td class="yes">Y</td><td class="yes">Y</td><td class="yes">Y</td><td>--overwrite</td><td>Overwrite destination files with the source files of the same name.<br/>never, always, diff, older, or diff+older</td></tr>
-<tr><td>retry_duration</td><td></td><td>string</td><td></td><td></td><td></td><td>TODO</td><td>Specifies how long to wait before retrying transfer. (e.g. "5min")</td></tr>
-<tr><td>http_fallback</td><td></td><td>bool (node), integer</td><td></td><td></td><td></td><td>-y<br/>TODO</td><td>When true(1), attempts to perform an HTTP transfer if a fasp transfer cannot be performed.</td></tr>
-<tr><td>create_dir</td><td></td><td>boolean</td><td class="yes">Y</td><td class="yes">Y</td><td class="yes">Y</td><td>-d</td><td>Specifies whether to create new directories.</td></tr>
-<tr><td>precalculate_job_size</td><td>srv. def.</td><td>boolean</td><td class="yes">Y</td><td class="yes">Y</td><td class="yes">Y</td><td>--precalculate-job-size</td><td>Specifies whether to precalculate the job size.</td></tr>
-<tr><td>delete_source</td><td></td><td>boolean</td><td></td><td class="yes">Y</td><td></td><td>?</td><td>?</td></tr>
-<tr><td>remove_after_transfer</td><td></td><td>boolean</td><td></td><td class="yes">Y</td><td></td><td>?</td><td>Specifies whether to remove file after transfer.</td></tr>
-<tr><td>remove_empty_directories</td><td></td><td>boolean</td><td></td><td class="yes">Y</td><td></td><td>?</td><td>Specifies whether to remove empty directories.</td></tr>
-<tr><td>multi_session</td><td>1</td><td>integer</td><td class="no">N</td><td class="yes">Y</td><td class="no">N</td><td>-C</td><td>Specifies how many parts the transfer is in.</td></tr>
-<tr><td>multi_session_threshold</td><td>null</td><td>integer</td><td class="no">N</td><td class="yes">Y</td><td class="no">N</td><td>-</td><td>in bytes</td></tr>
-<tr><td>exclude_newer_than</td><td></td><td>integer</td><td class="yes">Y</td><td></td><td></td><td>--exclude-newer-than</td><td>-</td></tr>
-<tr><td>exclude_older_than</td><td></td><td>integer</td><td class="yes">Y</td><td></td><td></td><td>--exclude-older-than</td><td>-</td></tr>
-<tr><td>preserve_acls</td><td></td><td>string</td><td class="yes">Y</td><td></td><td></td><td>--preserve-acls</td><td>-</td></tr>
-<tr><td>dgram_size</td><td></td><td>integer</td><td class="yes">Y</td><td></td><td></td><td>-Z</td><td>in bytes</td></tr>
-<tr><td>compression</td><td></td><td>integer</td><td></td><td></td><td></td><td></td><td>ascp4 only, 0 / 1?</td></tr>
-<tr><td>read_threads</td><td></td><td>integer</td><td></td><td></td><td></td><td>-</td><td>ascp4 only</td></tr>
-<tr><td>write_threads</td><td></td><td>integer</td><td></td><td></td><td></td><td>-</td><td>ascp4 only</td></tr>
-<tr><td>use_ascp4</td><td>false</td><td>boolean</td><td></td><td class="yes">Y</td><td></td><td>-</td><td>specify version of protocol</td></tr>
-<tr><td>paths</td><td>source files (dest)</td><td>array</td><td></td><td></td><td></td><td>positional<br/>--file-list<br/>--file-pair-list</td><td>Contains a path to the source (required) and a path to the destination.</td></tr>
-<tr><td>http_fallback_port</td><td></td><td>integer</td><td class="yes">Y</td><td></td><td></td><td>-t</td><td>Specifies http port.</td></tr>
-<tr><td>https_fallback_port</td><td></td><td>integer</td><td></td><td></td><td></td><td>todo</td><td>Specifies https port.</td></tr>
-<tr><td>cipher_allowed</td><td></td><td>string</td><td></td><td></td><td></td><td>-</td><td>returned by node API. Valid literals include "aes-128" and "none".</td></tr>
-<tr><td>target_rate_cap_kbps</td><td></td><td></td><td class="no">N</td><td class="no">?</td><td class="yes">?</td><td>-</td><td>Returned by upload/download_setup node api.</td></tr>
-<tr><td>rate_policy_allowed</td><td></td><td></td><td></td><td></td><td></td><td>-</td><td>returned by node API. Specifies most aggressive rate policy that is allowed. Valid literals include "low", "fair","high" and "fixed".</td></tr>
-<tr><td>ssh_private_key</td><td>-</td><td>string</td><td class="yes">Y</td><td class="no">N</td><td class="no">N</td><td>KEY</td><td>Private key used for SSH authentication, Shall look like: `-----BEGIN RSA PRIVATE KEY-----\nMII`<br/>Note the JSON encoding `\` + `n` for newlines.</td></tr>
-<tr><td>remote_password</td><td>-</td><td>string</td><td class="yes">Y</td><td class="yes">Y</td><td class="yes">Y</td><td>PASS</td><td>SSH session password</td></tr>
-<tr><td>resume_policy</td><td>faspmgr:<br/>none<br/>other:<br/>sparse_csum</td><td>string</td><td class="yes">Y</td><td class="yes">Y</td><td class="yes">Y</td><td>-k</td><td>none,attrs,sparse_csum,full_csum</td></tr>
-<tr><td>authentication</td><td>-</td><td class="no">N</td><td class="no">N</td><td class="yes">Y</td><td>-</td><td>token: Aspera web keys are provided to allow transparent web based session initiation. on connect: password is not asked. Else, password is asked, and keys are not provided.</td></tr>
-<tr><td>EX_ssh_key_paths</td><td>-</td><td>array</td><td class="yes">Y</td><td class="no">N</td><td class="no">N</td><td>-i</td><td>Use public key authentication and specify the private key file</td></tr>
-<tr><td>EX_at_rest_password</td><td>-</td><td>string</td><td class="yes">Y</td><td class="no">N</td><td class="no">N</td><td>FILEPASS</td><td>Passphrase used for at rest encryption or decryption</td></tr>
-<tr><td>EX_proxy_password</td><td>-</td><td>string</td><td class="yes">Y</td><td class="no">N</td><td class="no">N</td><td>PROXY_PASS</td><td>TODO</td></tr>
-<tr><td>EX_fasp_proxy_url</td><td>-</td><td>string</td><td class="yes">Y</td><td class="no">N</td><td class="no">N</td><td>--proxy</td><td>Specify the address of the Aspera high-speed proxy server</td></tr>
-<tr><td>EX_http_proxy_url</td><td>-</td><td>string</td><td class="yes">Y</td><td class="no">N</td><td class="no">N</td><td>-x</td><td>Specify the proxy server address used by HTTP Fallback</td></tr>
-<tr><td>EX_ascp_args</td><td>-</td><td>array</td><td class="yes">Y</td><td class="no">N</td><td class="no">N</td><td>same</td><td>Add command line arguments to ascp</td></tr>
-<tr><td>EX_http_transfer_jpeg</td><td>0</td><td>integer</td><td class="yes">Y</td><td class="no">N</td><td class="no">N</td><td>-j</td><td>HTTP transfers as JPEG file</td></tr>
-<tr><td>EX_license_text</td><td>-</td><td>string</td><td class="yes">Y</td><td class="no">N</td><td class="no">N</td><td>LICENSE</td><td>license file text</td></tr>
-<tr><td>EX_file_list</td><td>-</td><td>string</td><td class="yes">Y</td><td class="no">N</td><td class="no">N</td><td>--file-list</td><td>source file list</td></tr>
-<tr><td>EX_file_pair_list</td><td>-</td><td>string</td><td class="yes">Y</td><td class="no">N</td><td class="no">N</td><td>--file-pair-list</td><td>source file pair list</td></tr>
-<tr><td>EX_multi_session_part</td><td>-</td><td>string</td><td class="yes">Y</td><td class="no">N</td><td class="no">N</td><td>-C</td><td>part for multisession</td></tr>
-<tr><td>EX_no_read</td><td>-</td><td>-</td><td class="yes">Y</td><td class="no">N</td><td class="no">N</td><td>--no-read</td><td>no read source</td></tr>
-<tr><td>EX_no_write</td><td>-</td><td>-</td><td class="yes">Y</td><td class="no">N</td><td class="no">N</td><td>--no-write</td><td>no write estination</td></tr>
-</table>
+* F=Fasp Manager(local FASP execution)
+* N=remote node(node API)
+* C=Connect Client(web plugin)
+* arg=`ascp` argument or environment variable
 
+Fields with EX_ prefix are extensions to local mode. (only in `ascli`). 
+
+<table><tr><th>Field</th><th>Type</th><th>F</th><th>N</th><th>C</th><th>arg</th><th>Description</th></tr><tr><td>remote_password</td><td>string</td><td>Y</td><td>Y</td><td>Y</td><td>env:ASPERA_SCP_PASS</td><td>SSH session password</td></tr><tr><td>token</td><td>string</td><td>Y</td><td>Y</td><td>Y</td><td>env:ASPERA_SCP_TOKEN</td><td>Authorization token: Bearer, Basic or ATM (Also arg -W)</td></tr><tr><td>cookie</td><td>string</td><td>Y</td><td>Y</td><td>Y</td><td>env:ASPERA_SCP_COOKIE</td><td>Metadata for transfer (older,string)</td></tr><tr><td>ssh_private_key</td><td>string</td><td>Y</td><td>&nbsp;</td><td>&nbsp;</td><td>env:ASPERA_SCP_KEY</td><td>Private key used for SSH authentication.<br/> Shall look like: -----BEGIN RSA PRIVATE KEY-----\nMII...<br/> Note the JSON encoding: \n for newlines.</td></tr><tr><td>EX_at_rest_password</td><td>string</td><td>Y</td><td>&nbsp;</td><td>&nbsp;</td><td>env:ASPERA_SCP_FILEPASS</td><td>Passphrase used for at rest encryption or decryption</td></tr><tr><td>EX_proxy_password</td><td>string</td><td>Y</td><td>&nbsp;</td><td>&nbsp;</td><td>env:ASPERA_PROXY_PASS</td><td>TODO</td></tr><tr><td>EX_license_text</td><td>string</td><td>Y</td><td>&nbsp;</td><td>&nbsp;</td><td>env:ASPERA_SCP_LICENSE</td><td>license file text</td></tr><tr><td>create_dir</td><td>bool</td><td>Y</td><td>Y</td><td>Y</td><td>-d</td><td>Specifies whether to create new directories.</td></tr><tr><td>precalculate_job_size</td><td>bool</td><td>Y</td><td>Y</td><td>Y</td><td>--precalculate-job-size</td><td>Specifies whether to precalculate the job size.</td></tr><tr><td>keepalive</td><td>bool</td><td>Y</td><td>Y</td><td>Y</td><td>--keepalive</td><td></td></tr><tr><td>delete_before_transfer</td><td>bool</td><td>Y</td><td>Y</td><td>Y</td><td>--delete-before-transfer</td><td></td></tr><tr><td>preserve_access_time</td><td>bool</td><td>Y</td><td>Y</td><td>Y</td><td>--preserve-access-time</td><td></td></tr><tr><td>preserve_creation_time</td><td>bool</td><td>Y</td><td>Y</td><td>Y</td><td>--preserve-creation-time</td><td></td></tr><tr><td>preserve_times</td><td>bool</td><td>Y</td><td>Y</td><td>Y</td><td>--preserve-times</td><td></td></tr><tr><td>preserve_modification_time</td><td>bool</td><td>Y</td><td>Y</td><td>Y</td><td>--preserve-modification-time</td><td></td></tr><tr><td>remove_empty_directories</td><td>bool</td><td>Y</td><td>Y</td><td>&nbsp;</td><td>--remove-empty-directories</td><td>Specifies whether to remove empty directories.</td></tr><tr><td>remove_after_transfer</td><td>bool</td><td>Y</td><td>Y</td><td>&nbsp;</td><td>--remove-after-transfer</td><td>Remove SRC files after transfer success</td></tr><tr><td>remove_empty_source_directory</td><td>bool</td><td>Y</td><td>Y</td><td>Y</td><td>--remove-empty-source-directory</td><td></td></tr><tr><td>cipher</td><td>string</td><td>Y</td><td>Y</td><td>Y</td><td>-c</td><td>In transit encryption type.<br/>none, aes-128, aes-256</td></tr><tr><td>resume_policy</td><td>string</td><td>Y</td><td>Y</td><td>Y</td><td>-k</td><td>none,attrs,sparse_csum,full_csum</td></tr><tr><td>direction</td><td>string</td><td>Y</td><td>Y</td><td>Y</td><td>--mode</td><td>Direction: "send" or "receive"</td></tr><tr><td>remote_user</td><td>string</td><td>Y</td><td>Y</td><td>Y</td><td>--user</td><td>Remote user. Default value is "xfer" on node or connect.</td></tr><tr><td>remote_host</td><td>string</td><td>Y</td><td>Y</td><td>Y</td><td>--host</td><td>IP or fully qualified domain name of the remote server</td></tr><tr><td>ssh_port</td><td>int</td><td>Y</td><td>Y</td><td>Y</td><td>-P</td><td>Specifies ssh (TCP) port. Default: local:22, other:33001</td></tr><tr><td>fasp_port</td><td>int</td><td>Y</td><td>Y</td><td>Y</td><td>-O</td><td>Specifies fasp (UDP) port.</td></tr><tr><td>dgram_size</td><td>int</td><td>Y</td><td>Y</td><td>Y</td><td>-Z</td><td>in bytes</td></tr><tr><td>target_rate_kbps</td><td>int</td><td>Y</td><td>Y</td><td>Y</td><td>-l</td><td>Specifies desired speed for the transfer.</td></tr><tr><td>min_rate_kbps</td><td>int</td><td>Y</td><td>Y</td><td>Y</td><td>-m</td><td>Set the minimum transfer rate in kilobits per second.</td></tr><tr><td>rate_policy</td><td>string</td><td>Y</td><td>Y</td><td>Y</td><td>--policy</td><td>Valid literals include "low","fair","high" and "fixed".</td></tr><tr><td>http_fallback</td><td>string<br/>bool</td><td>Y</td><td>Y</td><td>Y</td><td>-y</td><td>When true(1), attempts to perform an HTTP transfer if a fasp transfer cannot be performed.</td></tr><tr><td>http_fallback_port</td><td>int</td><td>Y</td><td>&nbsp;</td><td>&nbsp;</td><td>-t</td><td>Specifies http port.</td></tr><tr><td>source_root</td><td>string</td><td>Y</td><td>Y</td><td>Y</td><td>--source-prefix64</td><td>Source root directory.(TODO: verify option)</td></tr><tr><td>sshfp</td><td>string</td><td>Y</td><td>Y</td><td>Y</td><td>--check-sshfp</td><td></td></tr><tr><td>symlink_policy</td><td>string</td><td>Y</td><td>Y</td><td>Y</td><td>--symbolic-links</td><td>Handle source side symbolic links by:<br/> following the link (follow),<br/> copying the link itself (copy),<br/> skipping (skip),<br/> or forcibly copying the link itself (copy+force).<br/> values: copy, follow, copy+force, skip.<br/> Default: follow</td></tr><tr><td>overwrite</td><td>string</td><td>Y</td><td>Y</td><td>Y</td><td>--overwrite</td><td>Overwrite destination files with the source files of the same name.<br/> never, always, diff, older, or diff+older</td></tr><tr><td>exclude_newer_than</td><td>int</td><td>Y</td><td>&nbsp;</td><td>&nbsp;</td><td>--exclude-newer-than</td><td>skip src files with mtime > arg</td></tr><tr><td>exclude_older_than</td><td>int</td><td>Y</td><td>&nbsp;</td><td>&nbsp;</td><td>--exclude-older-than</td><td>skip src files with mtime < arg</td></tr><tr><td>preserve_acls</td><td>string</td><td>Y</td><td>&nbsp;</td><td>&nbsp;</td><td>--preserve-acls</td><td>-</td></tr><tr><td>move_after_transfer</td><td>string</td><td>Y</td><td>Y</td><td>Y</td><td>--move-after-transfer</td><td></td></tr><tr><td>multi_session_threshold</td><td>int</td><td>Y</td><td>Y</td><td>&nbsp;</td><td>--multi-session-threshold</td><td>in bytes</td></tr><tr><td>EX_fasp_proxy_url</td><td>string</td><td>Y</td><td>&nbsp;</td><td>&nbsp;</td><td>--proxy</td><td>Specify the address of the Aspera high-speed proxy server</td></tr><tr><td>EX_http_proxy_url</td><td>string</td><td>Y</td><td>&nbsp;</td><td>&nbsp;</td><td>-x</td><td>Specify the proxy server address used by HTTP Fallback</td></tr><tr><td>EX_ssh_key_paths</td><td>array</td><td>Y</td><td>&nbsp;</td><td>&nbsp;</td><td>-i</td><td>Use public key authentication and specify the private key file</td></tr><tr><td>EX_http_transfer_jpeg</td><td>int</td><td>Y</td><td>&nbsp;</td><td>&nbsp;</td><td>-j</td><td>HTTP transfers as JPEG file</td></tr><tr><td>EX_no_read</td><td>bool</td><td>Y</td><td>&nbsp;</td><td>&nbsp;</td><td>--no-read</td><td>no read source</td></tr><tr><td>EX_no_write</td><td>bool</td><td>Y</td><td>&nbsp;</td><td>&nbsp;</td><td>--no-write</td><td>no write on destination</td></tr><tr><td>EX_apply_local_docroot</td><td>bool</td><td>Y</td><td>Y</td><td>Y</td><td>--apply-local-docroot</td><td></td></tr><tr><td>target_rate_cap_kbps</td><td>int</td><td>&nbsp;</td><td>&nbsp;</td><td>Y</td><td>&nbsp;</td><td>Returned by upload/download_setup node api.</td></tr><tr><td>target_rate_percentage</td><td>string</td><td>Y</td><td>Y</td><td>Y</td><td>&nbsp;</td><td></td></tr><tr><td>min_rate_cap_kbps</td><td>int</td><td>Y</td><td>Y</td><td>Y</td><td>&nbsp;</td><td></td></tr><tr><td>rate_policy_allowed</td><td>string</td><td>&nbsp;</td><td>&nbsp;</td><td>Y</td><td>&nbsp;</td><td>Specifies most aggressive rate policy that is allowed.<br/> Returned by node API. low, fair, high, fixed</td></tr><tr><td>fasp_url</td><td>string</td><td>Y</td><td>Y</td><td>Y</td><td>&nbsp;</td><td></td></tr><tr><td>lock_rate_policy</td><td>bool</td><td>Y</td><td>Y</td><td>Y</td><td>&nbsp;</td><td></td></tr><tr><td>lock_min_rate</td><td>bool</td><td>Y</td><td>Y</td><td>Y</td><td>&nbsp;</td><td></td></tr><tr><td>lock_target_rate</td><td>bool</td><td>Y</td><td>Y</td><td>Y</td><td>&nbsp;</td><td></td></tr><tr><td>authentication</td><td>string</td><td>&nbsp;</td><td>&nbsp;</td><td>Y</td><td>&nbsp;</td><td>value=token for SSH bypass keys, else password asked if not provided.</td></tr><tr><td>https_fallback_port</td><td>int</td><td>Y</td><td>Y</td><td>Y</td><td>&nbsp;</td><td>Specifies https port.</td></tr><tr><td>content_protection</td><td>string</td><td>Y</td><td>Y</td><td>Y</td><td>&nbsp;</td><td>encryption at rest</td></tr><tr><td>cipher_allowed</td><td>string</td><td>Y</td><td>Y</td><td>Y</td><td>&nbsp;</td><td>returned by node API. Valid literals include "aes-128" and "none".</td></tr><tr><td>multi_session</td><td>int</td><td>Y</td><td>Y</td><td>Y</td><td>&nbsp;</td><td>Specifies how many parts the transfer is in.</td></tr><tr><td>obfuscate_file_names</td><td>bool</td><td>Y</td><td>Y</td><td>Y</td><td>&nbsp;</td><td></td></tr><tr><td>tags</td><td>hash</td><td>Y</td><td>Y</td><td>Y</td><td>--tags64</td><td>Metadata for transfer</td></tr><tr><td>use_ascp4</td><td>bool</td><td>Y</td><td>Y</td><td>&nbsp;</td><td>&nbsp;</td><td>specify version of protocol</td></tr><tr><td>paths</td><td>array</td><td>Y</td><td>Y</td><td>Y</td><td>&nbsp;</td><td>Required. Contains a path to the source (required) and a path to the destination.</td></tr><tr><td>EX_file_list</td><td>string</td><td>Y</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>source file list</td></tr><tr><td>EX_file_pair_list</td><td>string</td><td>Y</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>source file pair list</td></tr><tr><td>EX_ascp_args</td><td>array</td><td>Y</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>Add command line arguments to ascp</td></tr><tr><td>destination_root</td><td>string</td><td>Y</td><td>Y</td><td>Y</td><td>&nbsp;</td><td>Destination root directory.</td></tr><tr><td>wss_enabled</td><td>bool</td><td>Y</td><td>Y</td><td>Y</td><td>&nbsp;</td><td></td></tr><tr><td>wss_port</td><td>int</td><td>Y</td><td>Y</td><td>Y</td><td>&nbsp;</td><td></td></tr><tr><td>title</td><td>string</td><td>&nbsp;</td><td>Y</td><td>Y</td><td>&nbsp;</td><td>Title of the transfer</td></tr><tr><td>remote_access_key</td><td>string</td><td>Y</td><td>Y</td><td>Y</td><td>&nbsp;</td><td>Node only?</td></tr><tr><td>content_protection_password</td><td>string</td><td>Y</td><td>Y</td><td>Y</td><td>&nbsp;</td><td>Specifies a string password. (var: ASPERA_SCP_PASS)</td></tr><tr><td>retry_duration</td><td>string</td><td>&nbsp;</td><td>Y</td><td>Y</td><td>&nbsp;</td><td>Specifies how long to wait before retrying transfer. (e.g. "5min")</td></tr><tr><td>delete_source</td><td>bool</td><td>&nbsp;</td><td>Y</td><td>&nbsp;</td><td>&nbsp;</td><td>Remove SRC files after transfer success</td></tr><tr><td>compression</td><td>int</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>ascp4 only, 0 / 1?</td></tr><tr><td>read_threads</td><td>int</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>ascp4 only</td></tr><tr><td>write_threads</td><td>int</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>ascp4 only</td></tr></table>
 
 ### Destination folder for transfers
 
@@ -2910,11 +2839,15 @@ $ ascli node access_key create --value=@json:'{"id":"eudemo-sedemo","secret":"my
 
 3 authentication methods are supported:
 
-* boot
-* web
 * jwt
+* web
+* boot
 
-For boot method:
+For JWT, create an API client in Faspex with jwt support, and use: `--auth=jwt`.
+
+For web method, create an API client in Faspex, and use: --auth=web
+
+For boot method: (will be removed in future)
 
 * open a browser
 * start developer mode
@@ -2927,14 +2860,7 @@ Use it as password and use `--auth=boot`.
 $ ascli conf id f5boot update --url=https://localhost/aspera/faspex --auth=boot --password=ABC.DEF.GHI...
 ```
 
-For web method, create an API client in Faspex, and use: --auth=web
-
-For JWT, create an API client in Faspex with jwt supporot, and use: --auth=jwt
-as of beta£3 this does not allow regular users.
-
 Ready to use Faspex5 with CLI.
-
-Once the graphical registration form exist, ther bootstrap method can be removed.
 
 # Plugin: IBM Aspera Faspex (4.x)
 
@@ -3612,7 +3538,7 @@ Interesting ascp features are found in its arguments: (see ascp manual):
 Note that:
 
 * `ascli` takes transfer parameters exclusively as a transfer_spec, with `--ts` parameter.
-* not all native ascp arguments are available as standard transfer_spec parameters
+* most, but not all native ascp arguments are available as standard transfer_spec parameters
 * native ascp arguments can be provided with the [_transfer-spec_](#transferspec) parameter: EX_ascp_args (array), only for the "local" transfer agent (not connect or node)
 
 ### server side and configuration

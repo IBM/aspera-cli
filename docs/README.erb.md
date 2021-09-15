@@ -1,7 +1,7 @@
 [comment1]: # (Do not edit this README.md, edit docs/README.erb.md, for details, read docs/README.md)
 <%
  # check that required env vars exist, and files
-%w{EXENAME GEMSPEC INCL_USAGE INCL_COMMANDS INCL_ASESSION INCL_TRSPEC}.each do |e|
+%w{EXENAME GEMSPEC INCL_USAGE INCL_COMMANDS INCL_ASESSION INCL_DIR_GEM}.each do |e|
   raise "missing env var #{e}" unless ENV.has_key?(e)
   raise "missing file #{ENV[e]}" unless File.exist?(ENV[e]) or !e.start_with?('INCL_') #_
 end
@@ -14,6 +14,19 @@ prsts='['+opprst+'s](#lprt)'
 prstt=opprst.capitalize # in title
 gemspec=Gem::Specification::load(ENV["GEMSPEC"]) or raise "error loading #{ENV["GEMSPEC"]}"
 geminstadd=gemspec.version.to_s.match(/\.[^0-9]/)?' --pre':''
+$LOAD_PATH.unshift(ENV["INCL_DIR_GEM"])
+require 'aspera/fasp/parameters'
+def spec_table
+    r='<table><tr><th>Field</th><th>Type</th><th>F</th><th>N</th><th>C</th><th>arg</th><th>Description</th></tr>'
+    Aspera::Fasp::Parameters.man_table.each do |p|
+    [:f,:n,:c,:cli].each{|c|p[c]='&nbsp;' if p[c].empty?}
+    p[:description].gsub!("\n",'<br/>')
+    p[:type].gsub!(',','<br/>')
+    r << '<tr><td>'<<p[:name]<<'</td><td>'<<p[:type]<<'</td><td>'<<p[:f]<<'</td><td>'<<p[:n]<<'</td><td>'<<p[:c]<<'</td><td>'<<p[:cli]<<'</td><td>'<<p[:description]<<'</td></tr>'
+    end
+    r << '</table>'
+    return r
+end
 -%>
 # <%=tool%> : Command Line Interface for IBM Aspera products
 
@@ -1283,13 +1296,28 @@ A [_transfer-spec_](#transferspec) is a Hash table, so it is described on the co
 
 ## <a name="transferparams"></a>Transfer Parameters
 
-All standard _transfer-spec_ parameters can be overloaded. To display parameters,
-run in debug mode (--log-level=debug). [_transfer-spec_](#transferspec) can
-also be saved/overridden in the config file.
+All standard _transfer-spec_ parameters can be speficied.
+[_transfer-spec_](#transferspec) can also be saved/overridden in the config file.
 
-Parameters can be displayed with command `<%=cmd%> config ascp spec`
+Refer to: [Aspera API Documentation](https://developer.ibm.com/apis/catalog/?search=aspera)&rarr;Node API&rarr;/opt/transfers
 
-<%= File.read(ENV['INCL_TRSPEC']).gsub(/.*<body>(.*)<\/body>.*/m,'\1') %>
+Parameters can be displayed with commands:
+
+```
+$ <%=cmd%> config ascp spec
+$ <%=cmd%> config ascp spec --select=@json:'{"f":"Y"}' --fields=-f,n,c
+```
+
+Columns:
+
+* F=Fasp Manager(local FASP execution)
+* N=remote node(node API)
+* C=Connect Client(web plugin)
+* arg=`ascp` argument or environment variable
+
+Fields with EX_ prefix are extensions to local mode. (only in <%=tool%>). 
+
+<%= spec_table %>
 
 ### Destination folder for transfers
 
@@ -2341,11 +2369,15 @@ $ <%=cmd%> node access_key create --value=@json:'{"id":"eudemo-sedemo","secret":
 
 3 authentication methods are supported:
 
-* boot
-* web
 * jwt
+* web
+* boot
 
-For boot method:
+For JWT, create an API client in Faspex with jwt support, and use: `--auth=jwt`.
+
+For web method, create an API client in Faspex, and use: --auth=web
+
+For boot method: (will be removed in future)
 
 * open a browser
 * start developer mode
@@ -2358,14 +2390,7 @@ Use it as password and use `--auth=boot`.
 $ <%=cmd%> conf id f5boot update --url=https://localhost/aspera/faspex --auth=boot --password=ABC.DEF.GHI...
 ```
 
-For web method, create an API client in Faspex, and use: --auth=web
-
-For JWT, create an API client in Faspex with jwt supporot, and use: --auth=jwt
-as of beta£3 this does not allow regular users.
-
 Ready to use Faspex5 with CLI.
-
-Once the graphical registration form exist, ther bootstrap method can be removed.
 
 # Plugin: IBM Aspera Faspex (4.x)
 
@@ -3023,7 +3048,7 @@ Interesting ascp features are found in its arguments: (see ascp manual):
 Note that:
 
 * <%=tool%> takes transfer parameters exclusively as a transfer_spec, with `--ts` parameter.
-* not all native ascp arguments are available as standard transfer_spec parameters
+* most, but not all native ascp arguments are available as standard transfer_spec parameters
 * native ascp arguments can be provided with the [_transfer-spec_](#transferspec) parameter: EX_ascp_args (array), only for the "local" transfer agent (not connect or node)
 
 ### server side and configuration

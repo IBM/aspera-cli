@@ -10,9 +10,9 @@ DIR_DOC=
 INCL_USAGE=$(DIR_TMP)$(EXENAME)_usage.txt
 INCL_COMMANDS=$(DIR_TMP)$(EXENAME)_commands.txt
 INCL_ASESSION=$(DIR_TMP)asession_usage.txt
-INCL_TRSPEC=$(DIR_DOC)transfer_spec.html
+
 # env var used in README.erb.md
-export EXENAME GEMSPEC INCL_USAGE INCL_COMMANDS INCL_ASESSION INCL_TRSPEC
+export EXENAME GEMSPEC INCL_USAGE INCL_COMMANDS INCL_ASESSION
 
 TMPL_TEST_CONF=$(DIR_DOC)$(TEST_CONF_FILE_BASE)
 
@@ -34,7 +34,7 @@ $(MANUAL_PDF): $(DIR_TOP)README.md
 	wkhtmltopdf toc $(MANUAL_HTML) $(MANUAL_PDF)
 
 $(DIR_TOP)README.md: $(DIR_DOC)README.erb.md $(DIR_DOC)transfer_spec.html $(INCL_COMMANDS) $(INCL_USAGE) $(INCL_ASESSION)
-	erb -T - --encoding UTF-8:UTF-8 $(DIR_DOC)README.erb.md > $(DIR_TOP)README.md
+	INCL_DIR_GEM=$(DIR_TOP)lib erb -T - --encoding UTF-8:UTF-8 $(DIR_DOC)README.erb.md > $(DIR_TOP)README.md
 
 $(INCL_COMMANDS): $(DIR_TMP).exists $(TEST_MAKEFILE)
 	sed -nEe 's/.*\$$\(EXE_MAN.?\)/$(EXENAME)/p' $(TEST_MAKEFILE) > $(DIR_TMP)usg1.txt
