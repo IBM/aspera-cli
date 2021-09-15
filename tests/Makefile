@@ -959,7 +959,6 @@ $(T)sync1: $(T).exists
 	set -x;\
 	remote_host=$$($(EXE_NOMAN) conf id tst_server_bykey get url);\
 	remote_host=$${remote_host##*/};\
-	remote_port="$${remote_host}";\
 	remote_port=$${remote_host#*:};\
 	remote_host=$${remote_host%:*};\
 	remote_user=$$($(EXE_NOMAN) conf id misc get syncuser);\
@@ -976,14 +975,14 @@ $(T)sdk2: $(T).exists
 	set -x;url=$$($(EXE_NOMAN) conf id tst_aoc1 get url);\
 	user=$$($(EXE_NOMAN) conf id tst_aoc1 get username);\
 	keypath=$$($(EXE_NOMAN) conf id tst_aoc1 get private_key);\
-	ruby -I $(DIR_LIB). $(DIR_TOP)examples/aoc.rb $${url} $${user} "$${keypath}"
+	tmp=$(DIR_TMP). ruby -I $(DIR_LIB). $(DIR_TOP)examples/aoc.rb $${url} $${user} "$${keypath}"
 	@touch $@
 $(T)sdk3: $(T).exists
 	@echo $@
 	set -x;url=$$($(EXE_NOMAN) conf id tst_faspex get url);\
 	user=$$($(EXE_NOMAN) conf id tst_faspex get username);\
 	pass=$$($(EXE_NOMAN) conf id tst_faspex get password);\
-	ruby -I $(DIR_LIB). $(DIR_TOP)examples/faspex4.rb $${url} $${user} $${pass}
+	tmp=$(DIR_TMP). ruby -I $(DIR_LIB). $(DIR_TOP)examples/faspex4.rb $${url} $${user} $${pass}
 	@touch $@
 tsample: $(T)sdk1 $(T)sdk2 $(T)sdk3
 
