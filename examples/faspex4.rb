@@ -23,6 +23,9 @@ faspex_url=ARGV[0]
 faspex_user=ARGV[1]
 faspex_pass=ARGV[2]
 
+# comment out this if certificate is valid, keep to ignore certificate
+Aspera::Rest.insecure=true
+
 # 1: demo API v3
 #---------------
 
