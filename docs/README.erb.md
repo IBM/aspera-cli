@@ -1399,7 +1399,7 @@ Source files are located on "Aspera on cloud", when :
 
 ### <a name="multisession"></a>Support of multi-session
 
-Multi session, i.e. starting a transfer of a file set using multiple sessions is supported on "direct" and "node" agents, not yet on connect.
+Multi session, i.e. starting a transfer of a file set using multiple sessions (one ascp process per session) is supported on "direct" and "node" agents, not yet on connect.
 
 * when agent=node :
 
@@ -1420,6 +1420,7 @@ shall be preferred.
 
 Multi-session spawn is done by <%=tool%>.
 
+When multi-session is used, one separate UDP port is used per session (refer to `ascp` manual page).
 
 ### Examples
 

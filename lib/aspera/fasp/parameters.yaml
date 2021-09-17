@@ -30,13 +30,14 @@ EX_proxy_password:
   :clvarname: ASPERA_PROXY_PASS
   :context:
   - :local
-  :desc: TODO
+  :desc: "Password used for Aspera proxy server authentication.\n
+May be overridden by password in URL EX_fasp_proxy_url."
 EX_license_text:
   :cltype: :envvar
   :clvarname: ASPERA_SCP_LICENSE
   :context:
   - :local
-  :desc: license file text
+  :desc: "License file text override.\nBy default ascp looks for license file near executable."
 create_dir:
   :cltype: :opt_without_arg
   :option_switch: "-d"
@@ -48,6 +49,8 @@ precalculate_job_size:
   :desc: Specifies whether to precalculate the job size.
 keepalive:
   :cltype: :opt_without_arg
+  :context:
+  - :none
 delete_before_transfer:
   :cltype: :opt_without_arg
 preserve_access_time:
@@ -162,21 +165,23 @@ source_root:
   :cltype: :opt_with_arg
   :option_switch: "--source-prefix64"
   :encode: Aspera::Fasp::Parameters
-  :desc: 'Source root directory.(TODO: verify option)'
+  :desc: "Path to be prepended to each source path.\n
+This is either a conventional path or it can be a URI but only if there is no root defined."
 sshfp:
   :cltype: :opt_with_arg
   :option_switch: "--check-sshfp"
+  :desc: Check it against server SSH host key fingerprint
 symlink_policy:
   :cltype: :opt_with_arg
   :option_switch: "--symbolic-links"
   :default: follow
   :desc: "Handle source side symbolic links by:\n
-    following the link (follow),\n
-    copying the link itself (copy),\n
-    skipping (skip),\n
-    or forcibly copying the link itself (copy+force).\n
-    values: copy, follow, copy+force, skip.\n
-    Default: follow"
+following the link (follow),\n
+copying the link itself (copy),\n
+skipping (skip),\n
+or forcibly copying the link itself (copy+force).\n
+values: copy, follow, copy+force, skip.\n
+Default: follow"
 overwrite:
   :cltype: :opt_with_arg
   :default: diff
@@ -213,7 +218,10 @@ EX_fasp_proxy_url:
   :option_switch: "--proxy"
   :context:
   - :local
-  :desc: Specify the address of the Aspera high-speed proxy server
+  :desc: "Specify the address of the Aspera high-speed proxy server.\n
+dnat(s)://[user[:password]@]server:port\n
+Default ports for DNAT and DNATS protocols are 9091 and 9092.\n
+Password, if specified here, overrides the value of environment variable ASPERA_PROXY_PASS."
 EX_http_proxy_url:
   :cltype: :opt_with_arg
   :option_switch: "-x"
@@ -224,10 +232,9 @@ EX_ssh_key_paths:
   :cltype: :opt_with_arg
   :option_switch: "-i"
   :accepted_types: :array
-  :accepted_types: :array
   :context:
   - :local
-  :desc: Use public key authentication and specify the private key file
+  :desc: Use public key authentication for SSH and specify the private key file paths
 EX_http_transfer_jpeg:
   :cltype: :opt_with_arg
   :option_switch: "-j"
@@ -271,6 +278,8 @@ rate_policy_allowed:
   low, fair, high, fixed"
 fasp_url:
   :cltype: :ignore
+  :context:
+  - :unknown
 lock_rate_policy:
   :cltype: :ignore
   :accepted_types: :bool
@@ -303,10 +312,14 @@ multi_session:
   :cltype: :ignore
   :option_switch: "-C"
   :accepted_types: :int
-  :desc: Specifies how many parts the transfer is in.
+  :desc: "Use multi-session transfer. max 128.\n
+Each participant on one host needs an independent UDP (-O) port.\n
+Large files are split between sessions only when transferring with resume_policy=none."
 obfuscate_file_names:
   :cltype: :ignore
   :accepted_types: :bool
+  :context:
+  - :unknown
 tags:
   :cltype: :opt_with_arg
   :option_switch: "--tags64"
@@ -317,14 +330,12 @@ use_ascp4:
   :cltype: :defer
   :accepted_types: :bool
   :default: false
-  :accepted_types: :bool
   :context:
   - :local
   - :node
   :desc: specify version of protocol
 paths:
   :cltype: :defer
-  :accepted_types: :array
   :accepted_types: :array
   :desc: Required. Contains a path to the source (required) and a path to the destination.
 EX_file_list:
@@ -341,7 +352,6 @@ EX_file_pair_list:
   :desc: source file pair list
 EX_ascp_args:
   :cltype: :defer
-  :accepted_types: :array
   :accepted_types: :array
   :context:
   - :local

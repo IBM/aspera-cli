@@ -33,7 +33,7 @@ $(MANUAL_PDF): $(DIR_TOP)README.md
 	pandoc --number-sections --resource-path=. --toc -o $(MANUAL_HTML) $(DIR_TOP)README.md
 	wkhtmltopdf toc $(MANUAL_HTML) $(MANUAL_PDF)
 
-$(DIR_TOP)README.md: $(DIR_DOC)README.erb.md $(DIR_DOC)transfer_spec.html $(INCL_COMMANDS) $(INCL_USAGE) $(INCL_ASESSION)
+$(DIR_TOP)README.md: $(DIR_DOC)README.erb.md $(INCL_COMMANDS) $(INCL_USAGE) $(INCL_ASESSION)
 	INCL_DIR_GEM=$(DIR_TOP)lib erb -T - --encoding UTF-8:UTF-8 $(DIR_DOC)README.erb.md > $(DIR_TOP)README.md
 
 $(INCL_COMMANDS): $(DIR_TMP).exists $(TEST_MAKEFILE)
