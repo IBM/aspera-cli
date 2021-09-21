@@ -17,8 +17,14 @@ geminstadd=gemspec.version.to_s.match(/\.[^0-9]/)?' --pre':''
 $LOAD_PATH.unshift(ENV["INCL_DIR_GEM"])
 require 'aspera/fasp/parameters'
 def spec_table
-    r='<table><tr><th>Field</th><th>Type</th><th>F</th><th>N</th><th>C</th><th>arg</th><th>Description</th></tr>'
+    r='<table><tr><th>Field</th><th>Type</th>'
+    Aspera::Fasp::Parameters::SUPPORTED_AGENTS_SHORT.each do |c|
+      r << '<th>'<<c.to_s.upcase<<'</th>'
+    end
+    r << '<th>Description</th></tr>'
     Aspera::Fasp::Parameters.man_table.each do |p|
+      p[:description] << (p[:description].empty? ? '' : "\n") << "(" << p[:cli] << ")" unless p[:cli].to_s.empty?
+      p.delete(:cli)
       p.keys.each{|c|p[c]='&nbsp;' if p[c].to_s.empty?}
       p[:description].gsub!("\n",'<br/>')
       p[:type].gsub!(',','<br/>')
@@ -26,7 +32,7 @@ def spec_table
       Aspera::Fasp::Parameters::SUPPORTED_AGENTS_SHORT.each do |c|
         r << '<td>'<<p[c]<<'</td>'
       end
-      r << '<td>'<<p[:cli]<<'</td><td>'<<p[:description]<<'</td></tr>'
+      r << '<td>'<<p[:description]<<'</td></tr>'
     end
     r << '</table>'
     return r
