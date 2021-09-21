@@ -1443,7 +1443,7 @@ ascli
 ascli -h
 ascli aoc -N remind --username=my_aoc_user_email
 ascli aoc -N servers
-ascli aoc admin analytics transfers --query=@json:'{"status":"completed","direction":"receive"}'
+ascli aoc admin analytics transfers --query=@json:'{"status":"completed","direction":"receive"}' --notif-to=my_recipient_email --notif-template=@ruby:'%Q{From: <%=from_name%> <<%=from_email%>>\nTo: <<%=to%>>\nSubject: <%=ev["files_completed"]%> files received\n\n<%=ev.to_yaml%>}'
 ascli aoc admin ats access_key --id=akibmcloud --secret=somesecret node browse /
 ascli aoc admin ats access_key --id=akibmcloud delete
 ascli aoc admin ats access_key create --cloud=aws --region=my_aws_bucket_region --params=@json:'{"id":"ak_aws","name":"my test key AWS","storage":{"type":"aws_s3","bucket":"my_aws_bucket_name","credentials":{"access_key_id":"my_aws_bucket_key","secret_access_key":"my_aws_bucket_secret"},"path":"/"}}'
@@ -1548,7 +1548,7 @@ ascli config ascp show
 ascli config check_update
 ascli config doc
 ascli config doc transfer-parameters
-ascli config email_test aspera.user1@gmail.com
+ascli config email_test --notif-to=my_recipient_email
 ascli config export
 ascli config genkey mykey
 ascli config plugins
@@ -1644,7 +1644,7 @@ ascli server mkdir folder_1/target_hot
 ascli server mv folder_1/200KB.2 folder_1/to.delete
 ascli server upload --sources=@ts --ts=@json:'{"paths":[{"source":"testfile.bin","destination":"NEW_SERVER_FOLDER/othername"}]}'
 ascli server upload --src-type=pair --sources=@json:'["testfile.bin","NEW_SERVER_FOLDER/othername"]'
-ascli server upload --src-type=pair testfile.bin NEW_SERVER_FOLDER/othername
+ascli server upload --src-type=pair testfile.bin NEW_SERVER_FOLDER/othername --notif-to=my_recipient_email
 ascli server upload --to-folder=folder_1/target_hot --lock-port=12345 --ts=@json:'{"EX_ascp_args":["--remove-after-transfer","--remove-empty-directories","--exclude-newer-than=-8","--src-base","source_hot"]}' source_hot
 ascli server upload testfile.bin --to-folder=NEW_SERVER_FOLDER --ts=@json:'{"multi_session":3,"multi_session_threshold":1,"resume_policy":"none","target_rate_kbps":1500}' --transfer-info=@json:'{"spawn_delay_sec":2.5}' --progress=multi
 ascli shares admin share list
@@ -1740,6 +1740,8 @@ OPTIONS:
         --secrets=VALUE              secret repository (Hash)
         --sdk-url=VALUE              URL to get SDK
         --sdk-folder=VALUE           SDK folder location
+        --notif-to=VALUE             email recipient for notification of transfers
+        --notif-template=VALUE       email ERB template for notification of transfers
         --test-mode=ENUM             skip user validation in wizard mode: yes, no
         --version-check-days=VALUE   period to check neew version in days (zero to disable)
         --ts=VALUE                   override transfer spec values (Hash, use @json: prefix), current={"create_dir"=>true}
@@ -1922,7 +1924,6 @@ OPTIONS:
         --new-user-option=VALUE      new user creation option
         --from-folder=VALUE          share to share source folder
         --scope=VALUE                OAuth scope for AoC API calls
-        --notify=VALUE               notify users that file was received
         --bulk=ENUM                  bulk operation: yes, no
         --default-ports=ENUM         use standard FASP ports or get from node api: yes, no
 
@@ -2169,7 +2170,7 @@ To activate default use of JWT authentication for `ascli` using the [option pres
 
 * change auth method to JWT
 * provide location of private key
-* provide username to login as (OAuthg "subject")
+* provide username to login as (OAuth "subject")
 
 Execute:
 
@@ -2580,19 +2581,40 @@ The activity app can be queried with:
 $ ascli aoc admin analytics transfers
 ```
 
-It can also support filters and send notification email with a template:
+It can also support filters and send notification using option `notif_to`. a template is defined using option `notif_template` :
+
+`mytemplate.erb`:
 
 ```
-$ ascli aoc admin analytics transfers --once-only=yes --lock-port=123455 \
---query=@json:'{"status":"completed","direction":"receive"}' \
---notify=@json:'{"to":"<''%=transfer[:user_email.to_s]%>","subject":"<''%=transfer[:files_completed.to_s]%> files received","body":"Dear <''%=transfer[:user_email.to_s]%>\nWe received <''%=transfer[:files_completed.to_s]%> files for a total of <''%=transfer[:transferred_bytes.to_s]%> bytes, starting with file:\n<''%=transfer[:content.to_s]%>\n\nThank you."}'
+From: <%=from_name%> <<%=from_email%>>
+To: <<%=ev['user_email']%>>
+Subject: <%=ev['files_completed']%> files received
+
+Dear <%=ev[:user_email.to_s]%>,
+We received <%=ev['files_completed']%> files for a total of <%=ev['transferred_bytes']%> bytes, starting with file:
+<%=ev['content']%>
+
+Thank you.
 ```
+The environment provided contains the following additional variable:
+
+* ev : all details on the transfer event
+
+Example:
+
+```
+$ ascli aoc admin analytics transfers --once-only=yes --lock-port=12345 \
+--query=@json:'{"status":"completed","direction":"receive"}' \
+--notif-to=active --notif-template=@file:mytemplate.erb
+```
+
+Options:
 
 * `once_only` keep track of last date it was called, so next call will get only new events
 * `query` filter (on API call)
 * `notify` send an email as specified by template, this could be places in a file with the `@file` modifier.
 
-Note this must not be executed in less than 5 minutes because the analytics interface accepts only a period of time between 5 minutes and 6 months. here the period is [date of previous execution]..[now].
+Note this must not be executed in less than 5 minutes because the analytics interface accepts only a period of time between 5 minutes and 6 months. The period is [date of previous execution]..[now].
 
 ## Using specific transfer ports
 
@@ -2950,7 +2972,19 @@ Additional optional parameters in `delivery_info`:
 * Package Note: : `"note":"note this and that"`
 * Package Metadata: `"metadata":{"Meta1":"Val1","Meta2":"Val2"}`
 
-## operation on dropboxes
+## Email notification on transfer
+
+Like for any transfer, a notification can be sent by email using parameters: `notif_to` and `notif_template` .
+
+Example:
+
+```
+$ ascli faspex package send --delivery-info=@json:'{"title":"test pkg 1","recipients":["aspera.user1@gmail.com"]}' ~/Documents/Samples/200KB.1 --notif-to=aspera.user1@gmail.com --notif-template=@ruby:'%Q{From: <%=from_name%> <<%=from_email%>>\nTo: <<%=to%>>\nSubject: Package sent: <%=ts["tags"]["aspera"]["faspex"]["metadata"]["_pkg_name"]%> files received\n\nTo user: <%=ts["tags"]["aspera"]["faspex"]["recipients"].first["email"]%>}'
+```
+
+In this example the notification template is directly provided on command line. Package information placed in the message are directly taken from the tags in transfer spec. The template can be placed in a file using modifier: `@file:`
+
+## Operation on dropboxes
 
 Example:
 
@@ -3368,14 +3402,14 @@ Aspera CLI can send email, for that setup SMTP configuration. This is done with 
 The `smtp` option is a hash table (extended value) with the following fields:
 <table>
 <tr><th>field</th><th>default</th><th>example</th><th>description</th></tr>
-<tr><td>server</td><td>-</td><td>smtp.gmail.com</td><td>SMTP server address</td></tr>
-<tr><td>tls</td><td>true</td><td>false</td><td>use of TLS</td></tr>
-<tr><td>port</td><td>587 for tls<br/>25 else</td><td>587</td><td>port for service</td></tr>
-<tr><td>domain</td><td>domain of server</td><td>gmail.com</td><td>email domain of user</td></tr>
-<tr><td>username</td><td>-</td><td>john@example.com</td><td>user to authenticate on SMTP server, leave empty for open auth.</td></tr>
-<tr><td>password</td><td>-</td><td>MyP@ssword</td><td>password for above username</td></tr>
-<tr><td>from\_email</td><td>username if defined</td><td>laurent.martin.l@gmail.com</td><td>address used if received replies</td></tr>
-<tr><td>from\_name</td><td>same as email</td><td>John Wayne</td><td>display name of sender</td></tr>
+<tr><td>`server`</td><td>-</td><td>smtp.gmail.com</td><td>SMTP server address</td></tr>
+<tr><td>`tls`</td><td>true</td><td>false</td><td>use of TLS</td></tr>
+<tr><td>`port`</td><td>587 for tls<br/>25 else</td><td>587</td><td>port for service</td></tr>
+<tr><td>`domain`</td><td>domain of server</td><td>gmail.com</td><td>email domain of user</td></tr>
+<tr><td>`username`</td><td>-</td><td>john@example.com</td><td>user to authenticate on SMTP server, leave empty for open auth.</td></tr>
+<tr><td>`password`</td><td>-</td><td>MyP@ssword</td><td>password for above username</td></tr>
+<tr><td>`from_email`</td><td>username if defined</td><td>laurent.martin.l@gmail.com</td><td>address used if received replies</td></tr>
+<tr><td>`from_name`</td><td>same as email</td><td>John Wayne</td><td>display name of sender</td></tr>
 </table>
 
 ## Example of configuration:
@@ -3405,13 +3439,52 @@ $ ascli config id cli_default set smtp @val:@preset:smtp_google
 $ ascli config id default set config cli_default
 ```
 
+## Email templates
+
+Sent emails are built using a template that uses the [ERB](https://www.tutorialspoint.com/ruby/eruby.htm) syntax.
+
+The template is the full SMTP message, including headers.
+
+The following variables are defined by default:
+
+* from_name
+* from_email
+* to
+
+Other variables are defined depending on context.
+
 ## Test
 
 Check settings with `smtp_settings` command. Send test email with `email_test`.
 
 ```
 $ ascli config --smtp=@preset:smtp_google smtp
-$ ascli config --smtp=@preset:smtp_google email sample.dest@example.com
+$ ascli config --smtp=@preset:smtp_google email --notif-to=sample.dest@example.com
+```
+
+## Notifications for transfer status
+
+An e-mail notification can be sent upon transfer success and failure (one email per transfer job, one job being possibly multi session, and possibly after retry).
+
+To activate, use option `notif_to`.
+
+A default e-mail template is used, but it can be overriden with option `notif_template`.
+
+The environment provided contains the following additional variables:
+
+* subject
+* body
+* global_transfer_status
+* ts
+
+Example of template:
+
+```
+From: <%=from_name%> <<%=from_email%>>
+To: <<%=to%>>
+Subject: <%=subject%>
+
+Transfer is: <%=global_transfer_status%>
 ```
 
 # Tool: `asession`
@@ -3644,10 +3717,12 @@ So, it evolved into `ascli`:
 	* new: `faspex package list` retrieves the whole list, not just first page
 	* new: support web based auth to aoc and faspex 5 using HTTPS, new dependency on gem `webrick`
 	* new: the error "Remote host is not who we expected" displays a special remediation message
-	* new: `conf ascp spec` displays supported transfer spec 
+	* new: `conf ascp spec` displays supported transfer spec
+	* new: options `notif_to` and `notif_template` to send email notifications on transfer (and other events)
 	* fix: space character in `faspe:` url are precent encoded if needed
 	* fix: `preview scan`: if file_id is unknown, ignore and continue scan
 	* change: for commands that potentially execute several transfers (`package recv --id=ALL`), if one transfer fails then `ascli` exits with code 1 (instead of zero=success)
+	* change: (break) option `notify` or `aoc` replaced with `notif_to` and `notif_template`
 
 * 4.2.1
 

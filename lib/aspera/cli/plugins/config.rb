@@ -14,6 +14,7 @@ require 'base64'
 require 'net/smtp'
 require 'open3'
 require 'date'
+require 'erb'
 
 module Aspera
   module Cli
@@ -49,13 +50,20 @@ module Aspera
         DEMO='demo'
         DEMO_SERVER_PRESET='demoserver'
         AOC_PATH_API_CLIENTS='admin/api-clients'
+        EMAIL_TEST_TEMPLATE=<<END_OF_TEMPLATE
+From: <%=from_name%> <<%=from_email%>>
+To: <<%=to%>>
+Subject: Amelia email test
+
+It worked !
+END_OF_TEMPLATE
         def option_preset; nil; end
 
         def option_preset=(value)
           self.options.add_option_preset(preset_by_name(value))
         end
 
-        private_constant :DEFAULT_CONFIG_FILENAME,:CONF_PRESET_CONFIG,:CONF_PRESET_VERSION,:CONF_PRESET_DEFAULT,:CONF_PRESET_GLOBAL,:PROGRAM_NAME_V1,:PROGRAM_NAME_V2,:DEFAULT_REDIRECT,:ASPERA_PLUGINS_FOLDERNAME,:RUBY_FILE_EXT,:AOC_COMMAND_V1,:AOC_COMMAND_V2,:AOC_COMMAND_V3,:AOC_COMMAND_CURRENT,:DEMO,:TRANSFER_SDK_ARCHIVE_URL,:AOC_PATH_API_CLIENTS,:DEMO_SERVER_PRESET
+        private_constant :DEFAULT_CONFIG_FILENAME,:CONF_PRESET_CONFIG,:CONF_PRESET_VERSION,:CONF_PRESET_DEFAULT,:CONF_PRESET_GLOBAL,:PROGRAM_NAME_V1,:PROGRAM_NAME_V2,:DEFAULT_REDIRECT,:ASPERA_PLUGINS_FOLDERNAME,:RUBY_FILE_EXT,:AOC_COMMAND_V1,:AOC_COMMAND_V2,:AOC_COMMAND_V3,:AOC_COMMAND_CURRENT,:DEMO,:TRANSFER_SDK_ARCHIVE_URL,:AOC_PATH_API_CLIENTS,:DEMO_SERVER_PRESET,:EMAIL_TEST_TEMPLATE
 
         def initialize(env,tool_name,help_url,version,main_folder)
           super(env)
@@ -104,6 +112,8 @@ module Aspera
           self.options.add_opt_simple(:secrets,'secret repository (Hash)')
           self.options.add_opt_simple(:sdk_url,'URL to get SDK')
           self.options.add_opt_simple(:sdk_folder,'SDK folder location')
+          self.options.add_opt_simple(:notif_to,'email recipient for notification of transfers')
+          self.options.add_opt_simple(:notif_template,'email ERB template for notification of transfers')
           self.options.add_opt_boolean(:test_mode,'skip user validation in wizard mode')
           self.options.add_opt_simple(:version_check_days,Integer,'period to check neew version in days (zero to disable)')
           self.options.set_option(:use_generic_client,true)
@@ -791,12 +801,7 @@ module Aspera
           when :file
             return Main.result_status(@option_config_file)
           when :email_test
-            dest_email=self.options.get_next_argument('destination email')
-            send_email({
-              to:         dest_email,
-              subject:    'Amelia email test',
-              body:       'It worked !',
-            })
+            send_email_template({},EMAIL_TEST_TEMPLATE)
             return Main.result_nothing
           when :smtp_settings
             return {:type=>:single_object,:data=>email_settings}
@@ -827,9 +832,10 @@ module Aspera
           end
         end
 
+        # @return email server setting with defaults if not defined
         def email_settings
           smtp=self.options.get_option(:smtp,:mandatory)
-          # change string keys into symbols
+          # change string keys into symbol keys
           smtp=smtp.keys.inject({}){|m,v|m[v.to_sym]=smtp[v];m}
           # defaults
           smtp[:tls]||=true
@@ -839,34 +845,42 @@ module Aspera
           smtp[:domain]||=smtp[:from_email].gsub(/^.*@/,'') if smtp.has_key?(:from_email)
           # check minimum required
           [:server,:port,:domain].each do |n|
-            raise "missing smtp parameter: #{n}" unless smtp.has_key?(n)
+            raise "Missing smtp parameter: #{n}" unless smtp.has_key?(n)
           end
           Log.log.debug("smtp=#{smtp}")
           return smtp
         end
 
-        def send_email(email={})
-          opts=email_settings
-          email[:from_name]||=opts[:from_name]
-          email[:from_email]||=opts[:from_email]
-          # check minimum required
-          [:from_name,:from_email,:to,:subject].each do |n|
-            raise "missing email parameter: #{n}" unless email.has_key?(n)
+        # create a clean binding (ruby variable environment)
+        def empty_binding
+          Kernel.binding
+        end
+
+        def send_email_template(vars,email_template_default=nil)
+          vars[:to]||=options.get_option(:notif_to,:mandatory)
+          notif_template=options.get_option(:notif_template,email_template_default.nil? ? :mandatory : :optional) || email_template_default
+          mail_conf=email_settings
+          vars[:from_name]||=mail_conf[:from_name]
+          vars[:from_email]||=mail_conf[:from_email]
+          [:from_name,:from_email].each do |n|
+            raise "Missing email parameter: #{n}" unless vars.has_key?(n)
           end
-          msg = <<END_OF_MESSAGE
-From: #{email[:from_name]} <#{email[:from_email]}>
-To: <#{email[:to]}>
-Subject: #{email[:subject]}
-
-#{email[:body]}
-END_OF_MESSAGE
-          start_options=[opts[:domain]]
-          start_options.push(opts[:username],opts[:password],:login) if opts.has_key?(:username) and opts.has_key?(:password)
-
-          smtp = Net::SMTP.new(opts[:server], opts[:port])
-          smtp.enable_starttls if opts[:tls]
+          start_options=[mail_conf[:domain]]
+          start_options.push(mail_conf[:username],mail_conf[:password],:login) if mail_conf.has_key?(:username) and mail_conf.has_key?(:password)
+          # create a binding with only variables defined in vars
+          template_binding=empty_binding
+          # add variables to binding
+          vars.each do |k,v|
+            raise "key (#{k.class}) must be Symbol" unless k.is_a?(Symbol)
+            template_binding.local_variable_set(k,v)
+          end
+          # execute template
+          msg_with_headers=ERB.new(notif_template).result(template_binding)
+          Log.dump(:msg_with_headers,msg_with_headers)
+          smtp = Net::SMTP.new(mail_conf[:server], mail_conf[:port])
+          smtp.enable_starttls if mail_conf[:tls]
           smtp.start(*start_options) do |smtp|
-            smtp.send_message(msg, email[:from_email], email[:to])
+            smtp.send_message(msg_with_headers, vars[:from_email], vars[:to])
           end
         end
 

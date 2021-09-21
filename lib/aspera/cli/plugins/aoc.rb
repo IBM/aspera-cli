@@ -39,7 +39,6 @@ module Aspera
           self.options.add_opt_simple(:new_user_option,'new user creation option')
           self.options.add_opt_simple(:from_folder,'share to share source folder')
           self.options.add_opt_simple(:scope,'OAuth scope for AoC API calls')
-          self.options.add_opt_simple(:notify,'notify users that file was received')
           self.options.add_opt_boolean(:bulk,'bulk operation')
           self.options.add_opt_boolean(:default_ports,'use standard FASP ports or get from node api')
           self.options.set_option(:bulk,:no)
@@ -527,18 +526,11 @@ module Aspera
                 filter['start_time'] = start_datetime unless start_datetime.nil?
                 filter['stop_time'] = stop_datetime
               end
-              notification=self.options.get_option(:notify,:optional)
               events=analytics_api.read("#{filter_resource}/#{filter_id}/#{event_type}",option_url_query(filter))[:data][event_type]
               startdate_persistency.save unless startdate_persistency.nil?
-              if !notification.nil?
-                require 'erb'
-                events.each do |transfer|
-                  email_to_send={}
-                  notification.each do |k,v|
-                    email_to_send[k.to_sym]=ERB.new(v).result(binding)
-                  end
-                  Log.log().error("send email:   #{email_to_send}")
-                  self.config.send_email(email_to_send)
+              if !self.options.get_option(:notif_to,:optional).nil?
+                events.each do |tr_event|
+                  self.config.send_email_template({ev: tr_event})
                 end
               end
               return {:type=>:object_list,:data=>events}

@@ -110,7 +110,9 @@ $(T)serv_mkdir: $(T).exists
 $(T)serv_upload: $(T)serv_mkdir
 	@echo $@
 	$(EXE_MAN) server upload $(CF_LOCAL_SAMPLE_FILEPATH) --to-folder=$(NEW_SERVER_FOLDER) --ts=@json:'{"multi_session":3,"multi_session_threshold":1,"resume_policy":"none","target_rate_kbps":1500}' --transfer-info=@json:'{"spawn_delay_sec":2.5}' --progress=multi
-	$(EXE_MAN) server upload --src-type=pair $(CF_LOCAL_SAMPLE_FILEPATH) $(NEW_SERVER_FOLDER)/othername
+	set -x;\
+	recipient_email=$$($(EXE_NOMAN) conf id misc get email_external);\
+	$(EXE_MAN) server upload --src-type=pair $(CF_LOCAL_SAMPLE_FILEPATH) $(NEW_SERVER_FOLDER)/othername --notif-to=$${recipient_email}
 	$(EXE_MAN) server upload --src-type=pair --sources=@json:'["$(CF_LOCAL_SAMPLE_FILEPATH)","$(NEW_SERVER_FOLDER)/othername"]'
 	$(EXE_MAN) server upload --sources=@ts --ts=@json:'{"paths":[{"source":"$(CF_LOCAL_SAMPLE_FILEPATH)","destination":"$(NEW_SERVER_FOLDER)/othername"}]}'
 	@touch $@
@@ -492,7 +494,9 @@ $(T)aoc14: $(T).exists
 	@touch $@
 $(T)aoc15: $(T).exists
 	@echo $@
-	$(EXE_MAN) aoc admin analytics transfers --query=@json:'{"status":"completed","direction":"receive"}'
+	set -x;\
+	recipient_email=$$($(EXE_NOMAN) conf id misc get email_external);\
+	$(EXE_MAN) aoc admin analytics transfers --query=@json:'{"status":"completed","direction":"receive"}' --notif-to=$${recipient_email} --notif-template=@ruby:'%Q{From: <%=from_name%> <<%=from_email%>>\nTo: <<%=to%>>\nSubject: <%=ev["files_completed"]%> files received\n\n<%=ev.to_yaml%>}'
 	@touch $@
 $(T)aocarself: $(T).exists
 	@echo $@
@@ -846,7 +850,9 @@ $(T)conf_genkey: $(T).exists
 	@touch $@
 $(T)conf_smtp: $(T).exists
 	@echo $@
-	$(EXE_MAN) config email_test aspera.user1@gmail.com
+	set -x;\
+	recipient_email=$$($(EXE_NOMAN) conf id misc get email_external);\
+	$(EXE_MAN) config email_test --notif-to=$${recipient_email}
 	@touch $@
 $(T)conf_pac: $(T).exists
 	@echo $@
