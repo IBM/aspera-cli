@@ -518,7 +518,7 @@ module Aspera
             v=Fasp::Installation.instance.install_sdk(self.options.get_option(:sdk_url,:mandatory))
             return Main.result_status("Installed version #{v}")
           when :spec
-            return {type: :object_list, data: Fasp::Parameters.man_table, fields: ['name','type','f','n','c','description']}
+            return {type: :object_list, data: Fasp::Parameters.man_table, fields: ['name','type',Fasp::Parameters::SUPPORTED_AGENTS_SHORT.map{|i|i.to_s},'description'].flatten}
           end
           raise "unexpected case: #{command}"
         end

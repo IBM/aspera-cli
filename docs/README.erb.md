@@ -19,10 +19,14 @@ require 'aspera/fasp/parameters'
 def spec_table
     r='<table><tr><th>Field</th><th>Type</th><th>F</th><th>N</th><th>C</th><th>arg</th><th>Description</th></tr>'
     Aspera::Fasp::Parameters.man_table.each do |p|
-    [:f,:n,:c,:cli].each{|c|p[c]='&nbsp;' if p[c].empty?}
-    p[:description].gsub!("\n",'<br/>')
-    p[:type].gsub!(',','<br/>')
-    r << '<tr><td>'<<p[:name]<<'</td><td>'<<p[:type]<<'</td><td>'<<p[:f]<<'</td><td>'<<p[:n]<<'</td><td>'<<p[:c]<<'</td><td>'<<p[:cli]<<'</td><td>'<<p[:description]<<'</td></tr>'
+      p.keys.each{|c|p[c]='&nbsp;' if p[c].to_s.empty?}
+      p[:description].gsub!("\n",'<br/>')
+      p[:type].gsub!(',','<br/>')
+      r << '<tr><td>'<<p[:name]<<'</td><td>'<<p[:type]<<'</td>'
+      Aspera::Fasp::Parameters::SUPPORTED_AGENTS_SHORT.each do |c|
+        r << '<td>'<<p[c]<<'</td>'
+      end
+      r << '<td>'<<p[:cli]<<'</td><td>'<<p[:description]<<'</td></tr>'
     end
     r << '</table>'
     return r
@@ -1299,7 +1303,10 @@ A [_transfer-spec_](#transferspec) is a Hash table, so it is described on the co
 All standard _transfer-spec_ parameters can be speficied.
 [_transfer-spec_](#transferspec) can also be saved/overridden in the config file.
 
-Refer to: [Aspera API Documentation](https://developer.ibm.com/apis/catalog/?search=aspera)&rarr;Node API&rarr;/opt/transfers
+References:
+
+* [Aspera Node API Documentation](https://developer.ibm.com/apis/catalog?search=%22aspera%20node%20api%22)&rarr;/opt/transfers
+* [Aspera Transfer SDK Documentation](https://developer.ibm.com/apis/catalog?search=%22aspera%20transfer%20sdk%22)&rarr;Guides&rarr;API Ref&rarr;Transfer Spec V1
 
 Parameters can be displayed with commands:
 
@@ -1310,12 +1317,12 @@ $ <%=cmd%> config ascp spec --select=@json:'{"f":"Y"}' --fields=-f,n,c
 
 Columns:
 
-* F=Fasp Manager(local FASP execution)
-* N=remote node(node API)
-* C=Connect Client(web plugin)
+* D=Direct (local `ascp` execution)
+* N=Node API
+* C=Connect Client
 * arg=`ascp` argument or environment variable
 
-Fields with EX_ prefix are extensions to local mode. (only in <%=tool%>). 
+Fields with EX_ prefix are extensions to transfer agent `direct`. (only in <%=tool%>).
 
 <%= spec_table %>
 
@@ -3154,7 +3161,7 @@ So, it evolved into <%=tool%>:
 	* new: `conf ascp spec` displays supported transfer spec 
 	* fix: space character in `faspe:` url are precent encoded if needed
 	* fix: `preview scan`: if file_id is unknown, ignore and continue scan
-	* change: for commands that potentially execute several transfers (`package recv --id=ALL`), if one transfer fails it will exit with code 1
+	* change: for commands that potentially execute several transfers (`package recv --id=ALL`), if one transfer fails then <%=tool%> exits with code 1 (instead of zero=success)
 
 * 4.2.1
 

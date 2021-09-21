@@ -1,147 +1,80 @@
 ---
-remote_password:
-  :cltype: :envvar
-  :clvarname: ASPERA_SCP_PASS
-  :desc: SSH session password
-token:
-  :cltype: :envvar
-  :clvarname: ASPERA_SCP_TOKEN
-  :desc: 'Authorization token: Bearer, Basic or ATM (Also arg -W)'
+cipher:
+  :cltype: :opt_with_arg
+  :option_switch: "-c"
+  :enum:
+  - aes128
+  - aes192
+  - aes256
+  - aes128cfb
+  - aes192cfb
+  - aes256cfb
+  - aes128gcm
+  - aes192gcm
+  - aes256gcm
+  :encode: Aspera::Fasp::Parameters
+  :default: none
+  :desc: "In transit encryption type.\nnone, aes-128, aes-256"
+content_protection:
+  :cltype: :ignore
+  :option_switch: "--file-crypt"
+  :enum:
+  - encrypt
+  - decrypt
+  :desc: Enable client-side content protection. (encryption at rest)
+content_protection_password:
+  :accepted_types: :string
+  :desc: "Specifies CSEAR password."
 cookie:
   :cltype: :envvar
   :clvarname: ASPERA_SCP_COOKIE
   :desc: Metadata for transfer (older,string)
-ssh_private_key:
-  :cltype: :envvar
-  :clvarname: ASPERA_SCP_KEY
-  :context:
-  - :local
-  :desc: "Private key used for SSH authentication.\n
-   Shall look like: -----BEGIN RSA PRIVATE KEY-----\\nMII...\n
-   Note the JSON encoding: \\n for newlines."
-EX_at_rest_password:
-  :cltype: :envvar
-  :clvarname: ASPERA_SCP_FILEPASS
-  :context:
-  - :local
-  :desc: Passphrase used for at rest encryption or decryption
-EX_proxy_password:
-  :cltype: :envvar
-  :clvarname: ASPERA_PROXY_PASS
-  :context:
-  - :local
-  :desc: "Password used for Aspera proxy server authentication.\n
-May be overridden by password in URL EX_fasp_proxy_url."
-EX_license_text:
-  :cltype: :envvar
-  :clvarname: ASPERA_SCP_LICENSE
-  :context:
-  - :local
-  :desc: "License file text override.\nBy default ascp looks for license file near executable."
 create_dir:
   :cltype: :opt_without_arg
   :option_switch: "-d"
   :accepted_types: :bool
   :desc: Specifies whether to create new directories.
-precalculate_job_size:
-  :cltype: :opt_without_arg
-  :accepted_types: :bool
-  :desc: Specifies whether to precalculate the job size.
-keepalive:
-  :cltype: :opt_without_arg
-  :context:
-  - :none
 delete_before_transfer:
   :cltype: :opt_without_arg
-preserve_access_time:
-  :cltype: :opt_without_arg
-preserve_creation_time:
-  :cltype: :opt_without_arg
-preserve_times:
-  :cltype: :opt_without_arg
-preserve_modification_time:
-  :cltype: :opt_without_arg
-remove_empty_directories:
-  :cltype: :opt_without_arg
+delete_source:
   :accepted_types: :bool
   :context:
-  - :local
-  - :node
-  :desc: Specifies whether to remove empty directories.
-remove_after_transfer:
-  :cltype: :opt_without_arg
-  :accepted_types: :bool
-  :context:
-  - :local
   - :node
   :desc: Remove SRC files after transfer success
-remove_empty_source_directory:
-  :cltype: :opt_without_arg
-cipher:
-  :cltype: :opt_with_arg
-  :option_switch: "-c"
-  :encode: Aspera::Fasp::Parameters
-  :default: none
-  :desc: "In transit encryption type.\nnone, aes-128, aes-256"
-resume_policy:
-  :cltype: :opt_with_arg
-  :option_switch: "-k"
-  :default: faspmgr:none;other:sparse_csum
-  :translate_values:
-    none: 0
-    attrs: 1
-    sparse_csum: 2
-    full_csum: 3
-  :desc: none,attrs,sparse_csum,full_csum
+destination_root_id:
+  :cltype: :ignore
+  :accepted_types: :string
+  :context:
+  - :sdk
 direction:
   :cltype: :opt_with_arg
   :option_switch: "--mode"
+  :enum:
+  - send
+  - receive
   :translate_values:
     receive: recv
     send: send
   :required: true
-  :desc: 'Direction: "send" or "receive"'
-remote_user:
+  :desc: 'Direction of transfer (on client side)'
+exclude_newer_than:
   :cltype: :opt_with_arg
-  :option_switch: "--user"
-  :required: true
-  :desc: Remote user. Default value is "xfer" on node or connect.
-remote_host:
-  :cltype: :opt_with_arg
-  :option_switch: "--host"
-  :required: true
-  :desc: IP or fully qualified domain name of the remote server
-ssh_port:
-  :cltype: :opt_with_arg
-  :option_switch: "-P"
   :accepted_types: :int
-  :desc: "Specifies ssh (TCP) port. Default: local:22, other:33001"
+  :context:
+  - :direct
+  :desc: skip src files with mtime > arg
+exclude_older_than:
+  :cltype: :opt_with_arg
+  :accepted_types: :int
+  :context:
+  - :direct
+  :desc: skip src files with mtime < arg
 fasp_port:
   :cltype: :opt_with_arg
   :option_switch: "-O"
   :accepted_types: :int
   :default: 33001
   :desc: Specifies fasp (UDP) port.
-dgram_size:
-  :cltype: :opt_with_arg
-  :option_switch: "-Z"
-  :accepted_types: :int
-  :desc: in bytes
-target_rate_kbps:
-  :cltype: :opt_with_arg
-  :option_switch: "-l"
-  :accepted_types: :int
-  :desc: Specifies desired speed for the transfer.
-min_rate_kbps:
-  :cltype: :opt_with_arg
-  :option_switch: "-m"
-  :accepted_types: :int
-  :default: 0
-  :desc: Set the minimum transfer rate in kilobits per second.
-rate_policy:
-  :cltype: :opt_with_arg
-  :option_switch: "--policy"
-  :desc: Valid literals include "low","fair","high" and "fixed".
 http_fallback:
   :cltype: :opt_with_arg
   :option_switch: "-y"
@@ -159,81 +92,347 @@ http_fallback_port:
   :option_switch: "-t"
   :accepted_types: :int
   :context:
-  - :local
+  - :direct
   :desc: Specifies http port.
+https_fallback_port:
+  :cltype: :ignore
+  :accepted_types: :int
+  :desc: Specifies https port.
+move_after_transfer:
+  :cltype: :opt_with_arg
+multi_session:
+  :cltype: :ignore
+  :option_switch: "-C"
+  :accepted_types: :int
+  :desc: "Use multi-session transfer. max 128.\n
+Each participant on one host needs an independent UDP (-O) port.\n
+Large files are split between sessions only when transferring with resume_policy=none."
+multi_session_threshold:
+  :cltype: :opt_with_arg
+  :accepted_types: :int
+  :context:
+  - :direct
+  - :node
+  :desc: in bytes
+overwrite:
+  :cltype: :opt_with_arg
+  :default: diff
+  :enum:
+  - never
+  - always
+  - diff
+  - older
+  - diff+older
+  :desc: "Overwrite destination files with the source files of the same name."
+paths:
+  :cltype: :defer
+  :accepted_types: :array
+  :desc: Required. Contains a path to the source (required) and a path to the destination.
+precalculate_job_size:
+  :cltype: :opt_without_arg
+  :accepted_types: :bool
+  :desc: Specifies whether to precalculate the job size.
+preserve_access_time:
+  :cltype: :opt_without_arg
+preserve_creation_time:
+  :cltype: :opt_without_arg
+preserve_modification_time:
+  :cltype: :opt_without_arg
+preserve_times:
+  :cltype: :opt_without_arg
+rate_policy:
+  :cltype: :opt_with_arg
+  :option_switch: "--policy"
+  :enum:
+  - low
+  - fair
+  - high
+  - fixed
+  :desc: The transfer rate policy to use when sharing bandwidth.
+remote_access_key:
+  :accepted_types: :string
+  :desc: Node only?
+remote_host:
+  :cltype: :opt_with_arg
+  :option_switch: "--host"
+  :required: true
+  :desc: IP or fully qualified domain name of the remote server
+remote_user:
+  :cltype: :opt_with_arg
+  :option_switch: "--user"
+  :required: true
+  :desc: Remote user. Default value is "xfer" on node or connect.
+remote_password:
+  :cltype: :envvar
+  :clvarname: ASPERA_SCP_PASS
+  :desc: SSH session password
+remove_after_transfer:
+  :cltype: :opt_without_arg
+  :accepted_types: :bool
+  :context:
+  - :direct
+  - :node
+  :desc: Remove SRC files after transfer success
+remove_empty_directories:
+  :cltype: :opt_without_arg
+  :accepted_types: :bool
+  :context:
+  - :direct
+  - :node
+  :desc: Specifies whether to remove empty directories.
+remove_skipped:
+  :cltype: :ignore
+  :accepted_types: :bool
+  :context:
+  - :sdk
+proxy:
+  :cltype: :opt_with_arg
+  :context:
+  - :direct
+  - :sdk
+  :desc: "Specify the address of the Aspera high-speed proxy server.\n
+dnat(s)://[user[:password]@]server:port\n
+Default ports for DNAT and DNATS protocols are 9091 and 9092.\n
+Password, if specified here, overrides the value of environment variable ASPERA_PROXY_PASS."
+resume_policy:
+  :cltype: :opt_with_arg
+  :option_switch: "-k"
+  :default: faspmgr:none;other:sparse_csum
+  :enum:
+  - none
+  - attrs
+  - sparse_csum
+  - full_csum
+  :translate_values:
+    none: 0
+    attrs: 1
+    sparse_csum: 2
+    full_csum: 3
+  :desc: If a transfer is interrupted or fails to finish, resume without re-transferring the whole files.
+retry_duration:
+  :accepted_types:
+  - :string
+  - :int
+  :context:
+  - :node
+  - :connect
+  - :sdk
+  :desc: Specifies how long to wait before retrying transfer. (e.g. "5min")
+source_root_id:
+  :cltype: :ignore
+  :accepted_types: :string
+  :context:
+  - :sdk
+ssh_port:
+  :cltype: :opt_with_arg
+  :option_switch: "-P"
+  :accepted_types: :int
+  :desc: "Specifies ssh (TCP) port. Default: local:22, other:33001"
+ssh_private_key:
+  :cltype: :envvar
+  :clvarname: ASPERA_SCP_KEY
+  :context:
+  - :direct
+  - :sdk
+  :desc: "Private key used for SSH authentication.\n
+   Shall look like: -----BEGIN RSA PRIVATE KEY-----\\nMII...\n
+   Note the JSON encoding: \\n for newlines."
+ssh_private_key_passphrase:
+  :cltype: :ignore
+  :accepted_types: :string
+  :context:
+  - :sdk
+ssh_args:
+  :cltype: :ignore
+  :accepted_types: :string
+  :context:
+  - :sdk
+symlink_policy:
+  :cltype: :opt_with_arg
+  :option_switch: "--symbolic-links"
+  :default: follow
+  :enum:
+  - follow
+  - copy
+  - copy+force
+  - skip
+  :desc: "Handle source side symbolic links by:\n
+following the link (follow),\n
+copying the link itself (copy),\n
+skipping (skip),\n
+or forcibly copying the link itself (copy+force).\n
+Default: follow"
+checksum_type:
+  :cltype: :ignore
+  :accepted_types: :string
+  :context:
+  - :sdk
+  :desc: "Enable checksum reporting for transferred files by specifying the hash to use.\n
+Allowable values: sha-512, sha-384, sha-256, sha1, md5. (Default: none)"
+file_checksum:
+  :cltype: :ignore
+  :accepted_types: :string
+  :context:
+  - :sdk
+tags:
+  :cltype: :opt_with_arg
+  :option_switch: "--tags64"
+  :accepted_types: :hash
+  :encode: Aspera::Fasp::Parameters
+  :desc: Metadata for transfer
+target_rate_cap_kbps:
+  :cltype: :ignore
+  :accepted_types: :int
+  :context:
+  - :connect
+  :desc: Returned by upload/download_setup node api.
+target_rate_kbps:
+  :cltype: :opt_with_arg
+  :option_switch: "-l"
+  :accepted_types: :int
+  :desc: Specifies desired speed for the transfer.
+title:
+  :accepted_types: :string
+  :context:
+  - :node
+  - :connect
+  :desc: Title of the transfer
+token:
+  :cltype: :envvar
+  :clvarname: ASPERA_SCP_TOKEN
+  :desc: 'Authorization token: Bearer, Basic or ATM (Also arg -W)'
+use_ascp4:
+  :cltype: :defer
+  :accepted_types: :bool
+  :default: false
+  :context:
+  - :direct
+  - :node
+  - :sdk
+  :desc: specify version of protocol
+use_system_ssh:
+  :cltype: :ignore
+  :option_switch: "-SSH"
+  :accepted_types: :string
+  :context:
+  - :sdk
+destination_root:
+  :cltype: :defer
+  :required: true
+  :desc: Destination root directory.
 source_root:
   :cltype: :opt_with_arg
   :option_switch: "--source-prefix64"
   :encode: Aspera::Fasp::Parameters
   :desc: "Path to be prepended to each source path.\n
 This is either a conventional path or it can be a URI but only if there is no root defined."
+min_rate_cap_kbps:
+  :cltype: :ignore
+  :accepted_types: :int
+lock_rate_policy:
+  :cltype: :ignore
+  :accepted_types: :bool
+lock_target_rate_kbps:
+  :cltype: :ignore
+  :accepted_types: :bool
+lock_min_rate_kbps:
+  :cltype: :ignore
+  :accepted_types: :bool
+apply_local_docroot:
+  :cltype: :opt_without_arg
+  :context:
+  - :direct
+  - :sdk
+preserve_acls:
+  :cltype: :opt_with_arg
+  :context:
+  - :direct
+  - :sdk
+  :desc: "Preserve access control lists.\nAllowable values: none, native, metafile"
+preserve_remote_acls:
+  :cltype: :ignore
+  :accepted_types: :string
+  :context:
+  - :sdk
+  :desc: "Preserve remote access control lists.\n
+Allowable values: none, native, metafile"
+preserve_file_owner_uid:
+  :cltype: :ignore
+  :accepted_types: :bool
+  :context:
+  - :sdk
+preserve_file_owner_gid:
+  :cltype: :ignore
+  :accepted_types: :bool
+  :context:
+  - :sdk
+preserve_extended_attrs:
+  :cltype: :ignore
+  :accepted_types: :string
+  :context:
+  - :sdk
+  :desc: "Preserve the extended attributes.\n
+Allowable values: none, native, metafile"
+preserve_source_access_time:
+  :cltype: :ignore
+  :accepted_types: :bool
+  :context:
+  - :sdk
+remove_empty_source_directory:
+  :cltype: :opt_without_arg
+  :context:
+  - :direct
+  :desc: "TODO: check node, sdk"
+EX_at_rest_password:
+  :cltype: :envvar
+  :clvarname: ASPERA_SCP_FILEPASS
+  :context:
+  - :direct
+  :desc: Passphrase used for at rest encryption or decryption
+EX_proxy_password:
+  :cltype: :envvar
+  :clvarname: ASPERA_PROXY_PASS
+  :context:
+  - :direct
+  :desc: "Password used for Aspera proxy server authentication.\n
+May be overridden by password in URL EX_fasp_proxy_url."
+EX_license_text:
+  :cltype: :envvar
+  :clvarname: ASPERA_SCP_LICENSE
+  :context:
+  - :direct
+  :desc: "License file text override.\nBy default ascp looks for license file near executable."
+keepalive:
+  :cltype: :opt_without_arg
+  :context:
+  - :none
+dgram_size:
+  :cltype: :opt_with_arg
+  :option_switch: "-Z"
+  :accepted_types: :int
+  :desc: in bytes
+min_rate_kbps:
+  :cltype: :opt_with_arg
+  :option_switch: "-m"
+  :accepted_types: :int
+  :default: 0
+  :desc: Set the minimum transfer rate in kilobits per second.
 sshfp:
   :cltype: :opt_with_arg
   :option_switch: "--check-sshfp"
   :desc: Check it against server SSH host key fingerprint
-symlink_policy:
-  :cltype: :opt_with_arg
-  :option_switch: "--symbolic-links"
-  :default: follow
-  :desc: "Handle source side symbolic links by:\n
-following the link (follow),\n
-copying the link itself (copy),\n
-skipping (skip),\n
-or forcibly copying the link itself (copy+force).\n
-values: copy, follow, copy+force, skip.\n
-Default: follow"
-overwrite:
-  :cltype: :opt_with_arg
-  :default: diff
-  :desc: "Overwrite destination files with the source files of the same name.\n
-  never, always, diff, older, or diff+older"
-exclude_newer_than:
-  :cltype: :opt_with_arg
-  :accepted_types: :int
-  :context:
-  - :local
-  :desc: skip src files with mtime > arg
-exclude_older_than:
-  :cltype: :opt_with_arg
-  :accepted_types: :int
-  :context:
-  - :local
-  :desc: skip src files with mtime < arg
-preserve_acls:
-  :cltype: :opt_with_arg
-  :context:
-  - :local
-  :desc: "-"
-move_after_transfer:
-  :cltype: :opt_with_arg
-multi_session_threshold:
-  :cltype: :opt_with_arg
-  :accepted_types: :int
-  :context:
-  - :local
-  - :node
-  :desc: in bytes
-EX_fasp_proxy_url:
-  :cltype: :opt_with_arg
-  :option_switch: "--proxy"
-  :context:
-  - :local
-  :desc: "Specify the address of the Aspera high-speed proxy server.\n
-dnat(s)://[user[:password]@]server:port\n
-Default ports for DNAT and DNATS protocols are 9091 and 9092.\n
-Password, if specified here, overrides the value of environment variable ASPERA_PROXY_PASS."
 EX_http_proxy_url:
   :cltype: :opt_with_arg
   :option_switch: "-x"
   :context:
-  - :local
+  - :direct
   :desc: Specify the proxy server address used by HTTP Fallback
 EX_ssh_key_paths:
   :cltype: :opt_with_arg
   :option_switch: "-i"
   :accepted_types: :array
   :context:
-  - :local
+  - :direct
   :desc: Use public key authentication for SSH and specify the private key file paths
 EX_http_transfer_jpeg:
   :cltype: :opt_with_arg
@@ -241,48 +440,37 @@ EX_http_transfer_jpeg:
   :accepted_types: :int
   :default: '0'
   :context:
-  - :local
+  - :direct
   :desc: HTTP transfers as JPEG file
 EX_no_read:
   :cltype: :opt_without_arg
   :option_switch: "--no-read"
   :context:
-  - :local
+  - :direct
   :desc: no read source
 EX_no_write:
   :cltype: :opt_without_arg
   :option_switch: "--no-write"
   :context:
-  - :local
+  - :direct
   :desc: no write on destination
-EX_apply_local_docroot:
-  :cltype: :opt_without_arg
-  :option_switch: "--apply-local-docroot"
-target_rate_cap_kbps:
-  :cltype: :ignore
-  :accepted_types: :int
-  :context:
-  - :connect
-  :desc: Returned by upload/download_setup node api.
 target_rate_percentage:
   :cltype: :ignore
-min_rate_cap_kbps:
-  :cltype: :ignore
-  :accepted_types: :int
 rate_policy_allowed:
   :cltype: :ignore
   :context:
   - :connect
+  :enum:
+  - low
+  - fair
+  - high
+  - fixed
   :desc: "Specifies most aggressive rate policy that is allowed.\n
-  Returned by node API.
-  low, fair, high, fixed"
+Returned by node API."
 fasp_url:
   :cltype: :ignore
   :context:
   - :unknown
-lock_rate_policy:
-  :cltype: :ignore
-  :accepted_types: :bool
 lock_min_rate:
   :cltype: :ignore
   :accepted_types: :bool
@@ -294,101 +482,38 @@ authentication:
   :context:
   - :connect
   :desc: 'value=token for SSH bypass keys, else password asked if not provided.'
-https_fallback_port:
-  :cltype: :ignore
-  :accepted_types: :int
-  :desc: Specifies https port.
-content_protection:
-  :cltype: :ignore
-  :option_switch: "--file-crypt"
-  :enum:
-  - encrypt
-  - decrypt
-  :desc: encryption at rest
 cipher_allowed:
   :cltype: :ignore
   :desc: returned by node API. Valid literals include "aes-128" and "none".
-multi_session:
-  :cltype: :ignore
-  :option_switch: "-C"
-  :accepted_types: :int
-  :desc: "Use multi-session transfer. max 128.\n
-Each participant on one host needs an independent UDP (-O) port.\n
-Large files are split between sessions only when transferring with resume_policy=none."
 obfuscate_file_names:
   :cltype: :ignore
   :accepted_types: :bool
   :context:
   - :unknown
-tags:
-  :cltype: :opt_with_arg
-  :option_switch: "--tags64"
-  :accepted_types: :hash
-  :encode: Aspera::Fasp::Parameters
-  :desc: Metadata for transfer
-use_ascp4:
-  :cltype: :defer
-  :accepted_types: :bool
-  :default: false
-  :context:
-  - :local
-  - :node
-  :desc: specify version of protocol
-paths:
-  :cltype: :defer
-  :accepted_types: :array
-  :desc: Required. Contains a path to the source (required) and a path to the destination.
 EX_file_list:
   :cltype: :defer
   :option_switch: "--file-list"
   :context:
-  - :local
+  - :direct
   :desc: source file list
 EX_file_pair_list:
   :cltype: :defer
   :option_switch: "--file-pair-list"
   :context:
-  - :local
+  - :direct
   :desc: source file pair list
 EX_ascp_args:
   :cltype: :defer
   :accepted_types: :array
   :context:
-  - :local
+  - :direct
   :desc: Add command line arguments to ascp
-destination_root:
-  :cltype: :defer
-  :required: true
-  :desc: Destination root directory.
 wss_enabled:
   :cltype: :defer
   :accepted_types: :bool
 wss_port:
   :cltype: :defer
   :accepted_types: :int
-title:
-  :accepted_types: :string
-  :context:
-  - :node
-  - :connect
-  :desc: Title of the transfer
-remote_access_key:
-  :accepted_types: :string
-  :desc: Node only?
-content_protection_password:
-  :accepted_types: :string
-  :desc: "Specifies a string password. (var: ASPERA_SCP_PASS)"
-retry_duration:
-  :accepted_types: :string
-  :context:
-  - :node
-  - :connect
-  :desc: Specifies how long to wait before retrying transfer. (e.g. "5min")
-delete_source:
-  :accepted_types: :bool
-  :context:
-  - :node
-  :desc: Remove SRC files after transfer success
 compression:
   :accepted_types: :int
   :context:

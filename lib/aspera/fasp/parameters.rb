@@ -13,42 +13,59 @@ module Aspera
     # translate transfer specification to ascp parameter list
     class Parameters
       private
-      # temp folder for file lists, must contain only file lists
+      # Temp folder for file lists, must contain only file lists
       # because of garbage collection takes any file there
       # this could be refined, as , for instance, on macos, temp folder is already user specific
       @@file_list_folder=TempFileManager.instance.new_file_path_global('asession_filelists')
-      @@spec=nil
+      @@param_description_cache=nil
+      # @return normaiwed description of transfer spec parameters
       def self.description
-        return @@spec unless @@spec.nil?
+        return @@param_description_cache unless @@param_description_cache.nil?
         # config file in same folder with same name as this source
-        @@spec=YAML.load_file("#{__FILE__[0..-3]}yaml")
-        Aspera::CommandLineBuilder.normalize_description(@@spec)
+        @@param_description_cache=YAML.load_file("#{__FILE__[0..-3]}yaml")
+        Aspera::CommandLineBuilder.normalize_description(@@param_description_cache)
       end
 
+      # Agents shown in manual
+      SUPPORTED_AGENTS=[:direct,:node,:connect]
+      # Short names of columns in manual
+      SUPPORTED_AGENTS_SHORT=SUPPORTED_AGENTS.map{|a|a.to_s[0].to_sym}
+
+      # @return a table suitable to display a manual
       def self.man_table
-        return description.keys.map do |k|
+        result=[]
+        description.keys.map do |k|
           i=description[k]
-          f=i[:context].nil? || i[:context].include?(:local) ? 'Y' : ''
-          n=i[:context].nil? || i[:context].include?(:node) ? 'Y' : ''
-          c=i[:context].nil? || i[:context].include?(:connect) ? 'Y' : ''
-          a=case i[:cltype]
+          param={name: k, type: [i[:accepted_types]].flatten.join(','),description: i[:desc]}
+          SUPPORTED_AGENTS.each do |a|
+            param[a.to_s[0].to_sym]=i[:context].nil? || i[:context].include?(a) ? 'Y' : ''
+          end
+          # only keep lines that are usable in supported agents
+          next if SUPPORTED_AGENTS_SHORT.inject(true){|m,i|m and param[i].empty?}
+          param[:cli]=case i[:cltype]
           when :envvar; 'env:'+i[:clvarname]
           when :opt_without_arg,:opt_with_arg; i[:option_switch]
           else ''
           end
-          {name: k, type: [i[:accepted_types]].flatten.join(','),cli: a, f: f, n: n, c: c, description: i[:desc]}
+          if i.has_key?(:enum)
+            param[:description] << "\nAllowed values: #{i[:enum].join(', ')}"
+          end
+          result.push(param)
         end
+        return result
       end
 
-      # special encoding methods used in YAML
+      # special encoding methods used in YAML (key: :encode)
       def self.encode_cipher(v)
         v.tr('-','')
       end
 
+      # special encoding methods used in YAML (key: :encode)
       def self.encode_source_root(v)
         Base64.strict_encode64(v)
       end
 
+      # special encoding methods used in YAML (key: :encode)
       def self.encode_tags(v)
         Base64.strict_encode64(JSON.generate(v))
       end
