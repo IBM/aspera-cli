@@ -1,7 +1,7 @@
 [comment1]: # (Do not edit this README.md, edit docs/README.erb.md, for details, read docs/README.md)
 # `ascli` : Command Line Interface for IBM Aspera products
 
-Version : 4.2.2.a
+Version : 4.2.2
 
 _Laurent/2016-2021_
 
@@ -81,7 +81,7 @@ Once the gem is installed, `ascli` shall be accessible:
 
 ```
 $ ascli --version
-4.2.2.a
+4.2.2
 ```
 
 ## First use
@@ -280,7 +280,7 @@ Install Latest stable Ruby using [https://rubyinstaller.org/](https://rubyinstal
 MacOS 10.13+ (High Sierra) comes with a recent Ruby. So you can use it directly. You will need to install aspera-cli using `sudo` :
 
 ```
-$ sudo gem install aspera-cli --pre
+$ sudo gem install aspera-cli
 ```
 
 Alternatively, if you use [Homebrew](https://brew.sh/) already you can install Ruby with it:
@@ -373,7 +373,7 @@ or restore the `$HOME/.aspera` folder for the user.
 Once you have Ruby and rights to install gems: Install the gem and its dependencies:
 
 ```
-# gem install aspera-cli --pre
+# gem install aspera-cli
 ```
 
 To upgrade to the latest version:
@@ -1669,7 +1669,7 @@ ascli sync start --parameters=@json:'{"sessions":[{"name":"test","reset":true,"r
 ```
 $ ascli -h
 NAME
-	ascli -- a command line tool for Aspera Applications (v4.2.2.a)
+	ascli -- a command line tool for Aspera Applications (v4.2.2)
 
 SYNOPSIS
 	ascli COMMANDS [OPTIONS] [ARGS]
@@ -3712,7 +3712,7 @@ So, it evolved into `ascli`:
 
 # Changes (Release notes)
 
-* 4.2.2.a
+* 4.2.2
 
 	* new: `faspex package list` retrieves the whole list, not just first page
 	* new: support web based auth to aoc and faspex 5 using HTTPS, new dependency on gem `webrick`
