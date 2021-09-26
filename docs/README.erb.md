@@ -1224,10 +1224,18 @@ The `transfer-info` accepts the following optional parameters:
 <tr><td>spawn_timeout_sec</td><td>Float</td><td>3</td><td>Multi session</td><td>Verification time that ascp is running</td></tr>
 <tr><td>spawn_delay_sec</td><td>Float</td><td>2</td><td>Multi session</td><td>Delay between startup of sessions</td></tr>
 <tr><td>wss</td><td>Bool</td><td>false</td><td>Web Socket Session</td><td>Enable use of web socket session in case it is available</td></tr>
+<tr><td>multi_incr_udp</td><td>Bool</td><td>true</td><td>Multi Session</td><td>Increment UDP port on multi-session<br/>If true, each session will have a different UDP port starting at `fasp_port` (or default 33001)<br/>Else, each session will use `fasp_port` (or `ascp` default)</td></tr>
 <tr><td>resume</td><td>Hash</td><td>nil</td><td>Resumer parameters</td><td>See below</td></tr>
 </table>
 
 Resume parameters:
+
+In case of transfer interruption, the agent will resume a transfer up to `iter_max` time.
+Sleep between iteration is:
+
+```
+max( sleep_max , sleep_initial * sleep_factor ^ (iter_index-1) )
+```
 
 <table>
 <tr><th>Name</th><th>Type</th><th>Default</th><th>Feature</th><th>Description</th></tr>
@@ -1241,7 +1249,7 @@ Examples:
 
 ```
 $ <%=cmd%> ... --transfer-info=@json:'{"wss":true,"resume":{"iter_max":10}}'
-$ <%=cmd%> ... --transfer-info=@json:'{"spawn_delay_sec":2.5}'
+$ <%=cmd%> ... --transfer-info=@json:'{"spawn_delay_sec":2.5,"multi_incr_udp":false}'
 ```
 
 ### IBM Aspera Connect Client GUI
@@ -2533,7 +2541,7 @@ $ <%=cmd%> faspex v4 dropbox list
 $ <%=cmd%> faspex v4 dropbox delete --id=36
 ```
 
-## remote sources
+## Remote sources
 
 Faspex lacks an API to list the contents of a remote source (available in web UI). To workaround this,
 the node API is used, for this it is required to add a section ":storage" that links
@@ -2653,7 +2661,7 @@ $ <%=cmd%> conf id mycos update --bucket=mybucket --endpoint=https://s3.us-east.
 $ <%=cmd%> conf id default set cos mycos
 ```
 
-Now, Ready to do operations, a subset of "node" plugin operations are supported, basically node API:
+Now: Ready to do operations. A subset of `node` plugin operations are supported, basically node API:
 
 ```
 $ <%=cmd%> cos node browse /
@@ -2662,8 +2670,8 @@ $ <%=cmd%> cos node upload myfile.txt
 
 # Plugin: IBM Aspera Sync
 
-A basic plugin to start an "async" using <%=tool%>. The main advantage is the possibility
-to start from ma configuration file, using <%=tool%> standard options.
+A basic plugin to start an "async" using <%=tool%>.
+The main advantage is the possibility to start from ma configuration file, using <%=tool%> standard options.
 
 # Plugin: Preview
 
@@ -3232,6 +3240,10 @@ So, it evolved into <%=tool%>:
 # Changes (Release notes)
 
 * <%= gemspec.version.to_s %>
+
+	* new: parameter `multi_incr_udp` for option `transfer_info`: control if UDP port is incremented when multi-session is used on `direct` transfer agent.
+
+* 4.2.2
 
 	* new: `faspex package list` retrieves the whole list, not just first page
 	* new: support web based auth to aoc and faspex 5 using HTTPS, new dependency on gem `webrick`
