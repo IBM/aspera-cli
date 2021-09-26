@@ -21,11 +21,12 @@ module Aspera
     ACCESS_KEY_TRANSFER_USER='xfer'
     # executes a local "ascp", connects mgt port, equivalent of "Fasp Manager"
     class Local < Manager
-      # options for initialize
+      # options for initialize (same as values in option transfer_info)
       DEFAULT_OPTIONS = {
         :spawn_timeout_sec => 3,
         :spawn_delay_sec   => 2,
         :wss               => false,
+        :multi_incr_udp    => true,
         :resume            => {}
       }
       DEFAULT_UDP_PORT=33001
@@ -64,21 +65,27 @@ module Aspera
           transfer_spec['EX_ssh_key_paths'] = Installation.instance.bypass_keys
         end
 
-        # TODO: check if changing fasp(UDP) port is really necessary, not clear from doc
-        # compute this before using transfer spec, even if the var is not used in single session
-        multi_session_udp_port_base=DEFAULT_UDP_PORT
-        multi_session_number=0
+        # Compute this before using transfer spec because it potentially modifies the transfer spec
+        # (even if the var is not used in single session)
+        multi_session_info=nil
         if transfer_spec.has_key?('multi_session')
-          multi_session_number=transfer_spec['multi_session'].to_i
-          if multi_session_number < 0
+          multi_session_info={
+            count: transfer_spec['multi_session'].to_i,
+          }
+          # Managed by multi-session, so delete from transfer spec
+          transfer_spec.delete('multi_session')
+          if multi_session_info[:count] < 0
             Log.log.error("multi_session(#{transfer_spec['multi_session']}) shall be integer >= 0")
-            multi_session_number = 0
-          end
-          if multi_session_number > 0
-            # managed here, so delete from transfer spec
-            transfer_spec.delete('multi_session')
-            if transfer_spec.has_key?('fasp_port')
-              multi_session_udp_port_base=transfer_spec['fasp_port']
+            multi_session_info = nil
+          elsif multi_session_info[:count].eql?(0)
+            Log.log.debug("multi_session  count is zero: no multisession")
+            multi_session_info = nil
+          else # multi_session_info[:count] > 0
+            # if option not true: keep default udp port for all sessions
+            if @options[:multi_incr_udp]
+              # override if specified, else use default value
+              multi_session_info[:udp_base]=transfer_spec.has_key?('fasp_port') ? transfer_spec['fasp_port'] : DEFAULT_UDP_PORT
+              # delete from original transfer spec, as we will increment values
               transfer_spec.delete('fasp_port')
             end
           end
@@ -111,22 +118,23 @@ module Aspera
           :options  => job_options  # [Hash]
         }
 
-        if multi_session_number <= 1
+        if multi_session_info.nil?
           Log.log.debug('Starting single session thread')
           # single session for transfer : simple
           session[:thread] = Thread.new(session) {|s|transfer_thread_entry(s)}
           xfer_job[:sessions].push(session)
         else
           Log.log.debug('Starting multi session threads')
-          1.upto(multi_session_number) do |i|
+          1.upto(multi_session_info[:count]) do |i|
+            # do not delay the first session
             sleep(@options[:spawn_delay_sec]) unless i.eql?(1)
             # do deep copy (each thread has its own copy because it is modified here below and in thread)
             this_session=session.clone()
             this_session[:env_args]=this_session[:env_args].clone()
             this_session[:env_args][:args]=this_session[:env_args][:args].clone()
-            this_session[:env_args][:args].unshift("-C#{i}:#{multi_session_number}")
-            # necessary only if server is not linux, i.e. server does not support port re-use
-            this_session[:env_args][:args].unshift('-O',"#{multi_session_udp_port_base+i-1}")
+            this_session[:env_args][:args].unshift("-C#{i}:#{multi_session_info[:count]}")
+            # option: increment (default as per ascp manual) or not (cluster on other side ?)
+            this_session[:env_args][:args].unshift('-O',"#{multi_session_info[:udp_base]+i-1}") if @options[:multi_incr_udp]
             this_session[:thread] = Thread.new(this_session) {|s|transfer_thread_entry(s)}
             xfer_job[:sessions].push(this_session)
           end
@@ -260,6 +268,7 @@ module Aspera
                 Log.log.error('need to regenerate token'.red)
                 if session[:options].is_a?(Hash) and session[:options].has_key?(:regenerate_token)
                   # regenerate token here, expired, or error on it
+                  # Note: in multi-session, each session will have a different one.
                   env_args[:env]['ASPERA_SCP_TOKEN']=session[:options][:regenerate_token].call(true)
                 end
               end
@@ -323,7 +332,7 @@ module Aspera
 
       private
 
-      # @param options : keys(symbol): wss, resume
+      # @param options : keys(symbol): see DEFAULT_OPTIONS
       def initialize(options=nil)
         super()
         # by default no interactive progress bar
@@ -332,7 +341,7 @@ module Aspera
         @jobs={}
         # mutex protects global data accessed by threads
         @mutex=Mutex.new
-        # manage options
+        # set default options and override if specified
         @options=DEFAULT_OPTIONS.clone
         if !options.nil?
           raise "expecting Hash (or nil), but have #{options.class}" unless options.is_a?(Hash)
@@ -340,7 +349,7 @@ module Aspera
             if DEFAULT_OPTIONS.has_key?(k)
               @options[k]=v
             else
-              raise "unknown local agent parameter: #{k}, expect one of #{DEFAULT_OPTIONS.keys.map{|i|i.to_s}.join(",")}"
+              raise "Unknown local agent parameter: #{k}, expect one of #{DEFAULT_OPTIONS.keys.map{|i|i.to_s}.join(",")}"
             end
           end
         end
