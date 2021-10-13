@@ -1,24 +1,24 @@
 [comment1]: # (Do not edit this README.md, edit docs/README.erb.md, for details, read docs/README.md)
-<%
- # check that required env vars exist, and files
+<% #```ruby
+# check that required env vars exist, and files
 %w{EXENAME GEMSPEC INCL_USAGE INCL_COMMANDS INCL_ASESSION INCL_DIR_GEM}.each do |e|
   raise "missing env var #{e}" unless ENV.has_key?(e)
   raise "missing file #{ENV[e]}" unless File.exist?(ENV[e]) or !e.start_with?('INCL_') #_
 end
-cmd=ENV["EXENAME"] # just command name
+cmd=ENV['EXENAME'] # just command name
 tool='`'+cmd+'`'   # used in text with formatting of command
 evp=cmd.upcase+'_' # prefix for env vars
 opprst='option preset' # just the name for "option preset"
-prst='['+opprst+'](#lprt)'
-prsts='['+opprst+'s](#lprt)'
+prst='['+opprst+'](#lprt)' # name with link
+prsts='['+opprst+'s](#lprt)' # name with link (plural)
 prstt=opprst.capitalize # in title
 gemspec=Gem::Specification::load(ENV["GEMSPEC"]) or raise "error loading #{ENV["GEMSPEC"]}"
 geminstadd=gemspec.version.to_s.match(/\.[^0-9]/)?' --pre':''
 $LOAD_PATH.unshift(ENV["INCL_DIR_GEM"])
 require 'aspera/fasp/parameters'
 def spec_table
-    r='<table><tr><th>Field</th><th>Type</th>'
-    Aspera::Fasp::Parameters::SUPPORTED_AGENTS_SHORT.each do |c|
+  r='<table><tr><th>Field</th><th>Type</th>'
+  Aspera::Fasp::Parameters::SUPPORTED_AGENTS_SHORT.each do |c|
       r << '<th>'<<c.to_s.upcase<<'</th>'
     end
     r << '<th>Description</th></tr>'
@@ -36,7 +36,7 @@ def spec_table
     end
     r << '</table>'
     return r
-end
+end #```
 -%>
 # <%=tool%> : Command Line Interface for IBM Aspera products
 
@@ -52,7 +52,7 @@ Ruby Gem: [<%= gemspec.metadata['rubygems_uri'] %>](<%= gemspec.metadata['rubyge
 
 Ruby Doc: [<%= gemspec.metadata['documentation_uri'] %>](<%= gemspec.metadata['documentation_uri'] %>)
 
-Ruby version must be >= <%= gemspec.required_ruby_version %>
+Required Ruby version: <%= gemspec.required_ruby_version %>
 
 # <a name="when_to_use"></a>When to use and when not to use
 
@@ -68,7 +68,8 @@ So it is designed for:
 
 <%=tool%> can be seen as a command line tool integrating:
 
-* a configuration file (config.yaml) and advanced command line options
+* a configuration file (config.yaml)
+* advanced command line options
 * cURL (for REST calls)
 * Aspera transfer (ascp)
 
@@ -190,7 +191,7 @@ It is possible to install *either* directly on the host operating system (Linux,
 
 The direct installation is recommended and consists in installing:
 
-* [Ruby](#ruby) version >= <%= gemspec.required_ruby_version %>
+* [Ruby](#ruby) version <%= gemspec.required_ruby_version %>
 * [<%= gemspec.name %>](#the_gem)
 * [Aspera SDK (ascp)](#fasp_prot)
 
@@ -238,7 +239,7 @@ Use this method to install on the native host.
 
 A ruby interpreter is required to run the tool or to use the gem and tool.
 
-Ruby minimum version: <%= gemspec.required_ruby_version %>. Ruby version 3 is also supported.
+Required Ruby version: <%= gemspec.required_ruby_version %>. Ruby version 3 is also supported.
 
 *Ruby can be installed using any method* : rpm, yum, dnf, rvm, brew, windows installer, ... .
 
@@ -246,7 +247,7 @@ Refer to the following sections for a proposed method for specific operating sys
 
 The recommended installation method is `rvm` for systems with "bash-like" shell (Linux, Macos, Windows with cygwin, etc...).
 If the generic install is not suitable (e.g. Windows, no cygwin), you can use one of OS-specific install method.
-If you have a simpler better way to install Ruby version >= <%= gemspec.required_ruby_version %> : use it !
+If you have a simpler better way to install Ruby version <%= gemspec.required_ruby_version %> : use it !
 
 ### Generic: RVM: single user installation (not root)
 
@@ -2592,29 +2593,38 @@ $ for p in 1 2 3;do <%=cmd%> shares2 admin users list --value=@json:'{"page":'$p
 # Plugin: IBM Cloud Object Storage
 
 The IBM Cloud Object Storage provides the possibility to execute transfers using FASP.
-It uses the same transfer service as Aspera on Cloud.
-see [https://status.aspera.io](https://status.aspera.io)
+It uses the same transfer service as Aspera on Cloud, called Aspera Transfer Service (ATS).
+Available ATS regions: [https://status.aspera.io](https://status.aspera.io)
 
-Required options are either:
+There are two possibilities to provide credentials. If you already have the endpoint, apikey and CRN, use the forst method. If you dont have credentials but have access to the IBM Cloud console, then use the second method.
+
+## Using endpoint, apikey and Ressource Instance ID (CRN)
+
+If you have those parameters already, then following options shall be provided:
 
 * `bucket` bucket name
 * `endpoint` storage endpoint url, e.g. https://s3.hkg02.cloud-object-storage.appdomain.cloud
 * `apikey` API Key
 * `crn` resource instance id
 
-or:
+For example, let us create a default configuration:
 
-* `bucket` bucket name
-* `region` bucket region, e.g. eu-de
-* `service_credentials` see below
+```
+$ <%=cmd%> conf id mycos update --bucket=mybucket --endpoint=https://s3.us-east.cloud-object-storage.appdomain.cloud --apikey=abcdefgh --crn=crn:v1:bluemix:public:iam-identity::a/xxxxxxx
+$ <%=cmd%> conf id default set cos mycos
+```
 
-Service credentials are directly created using the IBM cloud web ui. Navigate to:
+Then, jump to the transfer example.
+
+## Using service credential file
+
+If you are the COS administrator and dont have yet the credential: Service credentials are directly created using the IBM cloud web ui. Navigate to:
 
 Navigation Menu &rarr; Resource List &rarr; Storage &rarr; Cloud Object Storage &rarr; Service Credentials &rarr; &lt;select or create credentials&gt; &rarr; view credentials &rarr; copy
 
 Then save the copied value to a file, e.g. : `$HOME/cos_service_creds.json`
 
-or using the CLI:
+or using the IBM Cloud CLI:
 
 ```
 $ ibmcloud resource service-keys
@@ -2645,28 +2655,33 @@ The field `resource_instance_id` is for option `crn`
 
 The field `apikey` is for option `apikey`
 
-Endpoints for regions can be found by querying the `endpoints` URL.
+(If needed: endpoints for regions can be found by querying the `endpoints` URL.)
 
-For convenience, let us create a default configuration, for example:
+The required options for this method are:
+
+* `bucket` bucket name
+* `region` bucket region, e.g. eu-de
+* `service_credentials` see below
+
+For example, let us create a default configuration:
 
 ```
 $ <%=cmd%> conf id mycos update --bucket=laurent --service-credentials=@val:@json:@file:~/service_creds.json --region=us-south
 $ <%=cmd%> conf id default set cos mycos
 ```
 
-or using direct parameters:
+## Operations, transfers
+
+Let's assume you created a default configuration from once of the two previous steps (else specify the access options on command lines).
+
+A subset of `node` plugin operations are supported, basically node API:
 
 ```
-$ <%=cmd%> conf id mycos update --bucket=mybucket --endpoint=https://s3.us-east.cloud-object-storage.appdomain.cloud --apikey=abcdefgh --crn=crn:v1:bluemix:public:iam-identity::a/xxxxxxx
-$ <%=cmd%> conf id default set cos mycos
+$ <%=cmd%> cos node info
+$ <%=cmd%> cos node upload 'faux:///sample1G?1g'
 ```
 
-Now: Ready to do operations. A subset of `node` plugin operations are supported, basically node API:
-
-```
-$ <%=cmd%> cos node browse /
-$ <%=cmd%> cos node upload myfile.txt
-```
+Note: we generate a dummy file `sample1G` if size 2GB using the `faux` PVCL (man ascp), but you can of course send a real file by specifying a real file instead.
 
 # Plugin: IBM Aspera Sync
 
