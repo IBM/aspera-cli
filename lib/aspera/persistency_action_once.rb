@@ -38,5 +38,9 @@ module Aspera
       end
     end
 
+    def data
+      return @persisted_object
+    end
+
   end
 end
