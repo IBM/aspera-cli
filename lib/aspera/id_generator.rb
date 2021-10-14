@@ -8,13 +8,8 @@ module Aspera
     private_constant :ID_SEPARATOR,:PROTECTED_CHAR_REPLACE,:WINDOWS_PROTECTED_CHAR
     def self.from_list(object_id)
       if object_id.is_a?(Array)
-        object_id=object_id.map do |i|
-          # special case, url in second position: TODO: check any position
-          if i.is_a?(String) and i =~ URI::ABS_URI
-            URI.parse(i).host
-          else
-            i.to_s
-          end
+        object_id=object_id.select{|i|!i.nil?}.map do |i|
+          (i.is_a?(String) and i.start_with?('https://')) ? URI.parse(i).host : i.to_s
         end.join(ID_SEPARATOR)
       end
       raise "id must be a String" unless object_id.is_a?(String)
