@@ -6,6 +6,7 @@ require 'aspera/preview/file_types'
 require 'aspera/persistency_action_once'
 require 'aspera/node'
 require 'aspera/hash_ext'
+require 'aspera/timer_limiter'
 require 'date'
 require 'securerandom'
 
@@ -24,7 +25,8 @@ module Aspera
         DEFAULT_PREVIEWS_FOLDER='previews'
         AK_MARKER_FILE='.aspera_access_key'
         LOCAL_STORAGE_PCVL='file:///'
-        private_constant :PREV_GEN_TAG, :PREVIEW_FOLDER_SUFFIX, :PREVIEW_BASENAME, :TMP_DIR_PREFIX, :DEFAULT_PREVIEWS_FOLDER, :LOCAL_STORAGE_PCVL, :AK_MARKER_FILE
+        LOG_LIMITER_SEC=30.0
+        private_constant :PREV_GEN_TAG, :PREVIEW_FOLDER_SUFFIX, :PREVIEW_BASENAME, :TMP_DIR_PREFIX, :DEFAULT_PREVIEWS_FOLDER, :LOCAL_STORAGE_PCVL, :AK_MARKER_FILE, :LOG_LIMITER_SEC
 
         # option_skip_format has special accessors
         attr_accessor :option_previews_folder
@@ -40,6 +42,8 @@ module Aspera
           @preview_formats_to_generate=Aspera::Preview::Generator::PREVIEW_FORMATS.clone
           # options for generation
           @gen_options=Aspera::Preview::Options.new
+          # used to trigger periodic processing
+          @periodic=TimerLimiter.new(LOG_LIMITER_SEC)
           # link CLI options to gen_info attributes
           self.options.set_obj_attr(:skip_format,self,:option_skip_format,[]) # no skip
           self.options.set_obj_attr(:folder_reset_cache,self,:option_folder_reset_cache,:no)
@@ -113,13 +117,14 @@ module Aspera
         end
 
         # old version based on folders
-        def process_trevents(iteration_token)
+        # @param iteration_persistency can be nil
+        def process_trevents(iteration_persistency)
           events_filter={
             'access_key'=>@access_key_self['id'],
             'type'=>'download.ended'
           }
-          # optionally by iteration token
-          events_filter['iteration_token']=iteration_token unless iteration_token.nil?
+          # optionally add iteration token from persistency
+          events_filter['iteration_token']=iteration_persistency.data.first unless iteration_persistency.nil?
           begin
             events=@api_node.read('events',events_filter)[:data]
           rescue RestCallError => e
@@ -132,47 +137,63 @@ module Aspera
           end
           return if events.empty?
           events.each do |event|
-            next unless event['data']['direction'].eql?('receive')
-            next unless event['data']['status'].eql?('completed')
-            next unless event['data']['error_code'].eql?(0)
-            next unless event['data'].dig('tags','aspera',PREV_GEN_TAG).nil?
-            folder_id=event.dig('data','tags','aspera','node','file_id')
-            folder_id||=event.dig('data','file_id')
-            next if folder_id.nil?
-            folder_entry=@api_node.read("files/#{folder_id}")[:data] rescue nil
-            next if folder_entry.nil?
-            scan_folder_files(folder_entry)
+            if event['data']['direction'].eql?('receive') and
+            event['data']['status'].eql?('completed') and
+            event['data']['error_code'].eql?(0) and
+            event['data'].dig('tags','aspera',PREV_GEN_TAG).nil?
+              folder_id=event.dig('data','tags','aspera','node','file_id')
+              folder_id||=event.dig('data','file_id')
+              if !folder_id.nil?
+                folder_entry=@api_node.read("files/#{folder_id}")[:data] rescue nil
+                scan_folder_files(folder_entry) unless folder_entry.nil?
+              end
+            end
+            if @periodic.trigger? or event.equal?(events.last)
+              Log.log.info("Processed event #{event['id']}")
+              # save checkpoint to avoid losing processing in case of error
+              if !iteration_persistency.nil?
+                iteration_persistency.data[0]=event['id'].to_s
+                iteration_persistency.save
+              end
+            end
           end
-          return events.last['id'].to_s
         end
 
         # requests recent events on node api and process newly modified folders
-        def process_events(iteration_token)
+        def process_events(iteration_persistency)
           # get new file creation by access key (TODO: what if file already existed?)
           events_filter={
             'access_key'=>@access_key_self['id'],
             'type'=>'file.*'
           }
-          # and optionally by iteration token
-          events_filter['iteration_token']=iteration_token unless iteration_token.nil?
+          # optionally add iteration token from persistency
+          events_filter['iteration_token']=iteration_persistency.data.first unless iteration_persistency.nil?
           events=@api_node.read('events',events_filter)[:data]
           return if events.empty?
           events.each do |event|
             # process only files
-            next unless event.dig('data','type').eql?('file')
-            file_entry=@api_node.read("files/#{event['data']['id']}")[:data] rescue nil
-            next if file_entry.nil?
-            next unless @option_skip_folders.select{|d|file_entry['path'].start_with?(d)}.empty?
-            file_entry['parent_file_id']=event['data']['parent_file_id']
-            if event['types'].include?('file.deleted')
-              Log.log.error('TODO'.red)
+            if event.dig('data','type').eql?('file')
+              file_entry=@api_node.read("files/#{event['data']['id']}")[:data] rescue nil
+              if !file_entry.nil? and
+              @option_skip_folders.select{|d|file_entry['path'].start_with?(d)}.empty?
+                file_entry['parent_file_id']=event['data']['parent_file_id']
+                if event['types'].include?('file.deleted')
+                  Log.log.error('TODO'.red)
+                end
+                if event['types'].include?('file.deleted')
+                  generate_preview(file_entry)
+                end
+              end
             end
-            if event['types'].include?('file.deleted')
-              generate_preview(file_entry)
+            if @periodic.trigger? or event.equal?(events.last)
+              Log.log.info("Processing event #{event['id']}")
+              # save checkpoint to avoid losing processing in case of error
+              if !iteration_persistency.nil?
+                iteration_persistency.data[0]=event['id'].to_s
+                iteration_persistency.save
+              end
             end
           end
-          # write new iteration file
-          return events.last['id'].to_s
         end
 
         def do_transfer(direction,folder_id,source_filename,destination='/')
@@ -338,6 +359,7 @@ module Aspera
             entry=entries_to_process.shift
             # process this entry only if it is within the scan_start
             entry_path_with_slash=entry['path']
+            Log.log.info("processing entry #{entry_path_with_slash}") if @periodic.trigger?
             entry_path_with_slash="#{entry_path_with_slash}/" unless entry_path_with_slash.end_with?('/')
             if !scan_start.nil? and !scan_start.start_with?(entry_path_with_slash) and !entry_path_with_slash.start_with?(scan_start)
               Log.log.debug("#{entry['path']} folder (skip start)".bg_red)
@@ -441,18 +463,15 @@ module Aspera
             scan_folder_files(folder_info,scan_path)
             return Main.result_status('scan finished')
           when :events,:trevents
-            iteration_data=[]
             iteration_persistency=nil
             if self.options.get_option(:once_only,:mandatory)
               iteration_persistency=PersistencyActionOnce.new(
               manager: @agents[:persistency],
-              data: iteration_data,
-              ids: ["preview_iteration_#{command}",self.options.get_option(:url,:mandatory),self.options.get_option(:username,:mandatory)])
+              data: [],
+              ids: ['preview_iteration',command.to_s,self.options.get_option(:url,:mandatory),self.options.get_option(:username,:mandatory)])
             end
-
-            # call method specified
-            iteration_data[0]=send("process_#{command}",iteration_data[0])
-            iteration_persistency.save unless iteration_persistency.nil?
+            # call processing method specified by command line command
+            send("process_#{command}",iteration_persistency)
             return Main.result_status("#{command} finished")
           when :check
             Aspera::Preview::Utils.check_tools(@skip_types)
