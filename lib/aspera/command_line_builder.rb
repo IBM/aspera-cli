@@ -16,7 +16,6 @@ module Aspera
     # Called by provider of definition before constructor of this class so that params_definition has all mandatory fields
     def self.normalize_description(d)
       d.each do |param_name,options|
-        Log.log.debug("def: #{param_name}")
         raise "Expecting Hash, but have #{options.class} in #{param_name}" unless options.is_a?(Hash)
         #options[:accepted_types]=:bool if options[:cltype].eql?(:envvar) and !options.has_key?(:accepted_types)
         # by default : not mandatory
