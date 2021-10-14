@@ -12,6 +12,12 @@ module Aspera
   # bearer tokens are kept in memory and also in a file cache for later re-use
   # if a token is expired (api returns 4xx), call again get_authorization({refresh: true})
   class Oauth
+    # used for code exchange
+    DEFAULT_PATH_AUTHORIZE='authorize'
+    # to generate token
+    DEFAULT_PATH_TOKEN='token'
+    # field with token in result
+    DEFAULT_TOKEN_FIELD='access_token'
     private
     # remove 5 minutes to account for time offset (TODO: configurable?)
     JWT_NOTBEFORE_OFFSET_SEC=300
@@ -21,7 +27,9 @@ module Aspera
     TOKEN_CACHE_EXPIRY_SEC=1800
     # a prefix for persistency of tokens (garbage collect)
     PERSIST_CATEGORY_TOKEN='token'
-    private_constant :JWT_NOTBEFORE_OFFSET_SEC,:JWT_EXPIRY_OFFSET_SEC,:PERSIST_CATEGORY_TOKEN,:TOKEN_CACHE_EXPIRY_SEC
+    ONE_HOUR_AS_DAY_FRACTION=Rational(1,24)
+
+    private_constant :JWT_NOTBEFORE_OFFSET_SEC,:JWT_EXPIRY_OFFSET_SEC,:PERSIST_CATEGORY_TOKEN,:TOKEN_CACHE_EXPIRY_SEC,:ONE_HOUR_AS_DAY_FRACTION
     class << self
       # OAuth methods supported
       def auth_types
@@ -53,6 +61,7 @@ module Aspera
       end
 
       def decode_token(token)
+        Log.log.debug(">>>> #{token} : #{@decoders.length}")
         @decoders.each do |decoder|
           result=decoder.call(token) rescue nil
           return result unless result.nil?
@@ -60,6 +69,9 @@ module Aspera
         return nil
       end
     end
+
+    # seems to be quite standard token encoding (RFC?)
+    self.register_decoder lambda { |token| parts=token.split('.'); raise "not aoc token" unless parts.length.eql?(3); JSON.parse(Base64.decode64(parts[1]))}
 
     # for supported parameters, look in the code for @params
     # parameters are provided all with oauth_ prefix :
@@ -70,8 +82,8 @@ module Aspera
     # :jwt_audience
     # :jwt_private_key_obj
     # :jwt_subject
-    # :path_authorize (default: 'authorize')
-    # :path_token (default: 'token')
+    # :path_authorize (default: DEFAULT_PATH_AUTHORIZE)
+    # :path_token (default: DEFAULT_PATH_TOKEN)
     # :scope (optional)
     # :grant (one of returned by self.auth_types)
     # :url_token
@@ -83,11 +95,11 @@ module Aspera
       @params=auth_params.clone
       # default values
       # name of field to take as token from result of call to /token
-      @params[:token_field]||='access_token'
+      @params[:token_field]||=DEFAULT_TOKEN_FIELD
       # default endpoint for /token
-      @params[:path_token]||='token'
+      @params[:path_token]||=DEFAULT_PATH_TOKEN
       # default endpoint for /authorize
-      @params[:path_authorize]||='authorize'
+      @params[:path_authorize]||=DEFAULT_PATH_AUTHORIZE
       rest_params={base_url: @params[:base_url]}
       if @params.has_key?(:client_id)
         rest_params.merge!({auth: {
@@ -163,12 +175,13 @@ module Aspera
       # in case the transfer agent cannot refresh himself
       # else, anyway, faspmanager is equipped with refresh code
       if !token_data.nil?
+        # TODO: use @params[:token_field] ?
         decoded_node_token = self.class.decode_token(token_data['access_token'])
+        Log.dump('decoded_node_token',decoded_node_token) unless decoded_node_token.nil?
         if decoded_node_token.is_a?(Hash) and decoded_node_token['expires_at'].is_a?(String)
-          Log.dump('decoded_node_token',decoded_node_token)
           expires_at=DateTime.parse(decoded_node_token['expires_at'])
-          one_hour_as_day_fraction=Rational(1,24)
-          use_refresh_token=true if DateTime.now > (expires_at-one_hour_as_day_fraction)
+          # does it seem expired, with one hour of security
+          use_refresh_token=true if DateTime.now > (expires_at-ONE_HOUR_AS_DAY_FRACTION)
         end
       end
 
