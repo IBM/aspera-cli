@@ -44,13 +44,6 @@ module Aspera
     FILES_APP='files'
     PACKAGES_APP='packages'
 
-    Oauth.register_decoder(lambda do |token|
-      parts=token.split('.')
-      raise "not aoc token" unless parts.length.eql?(3)
-      return JSON.parse(Base64.decode64(parts[1]))
-    end
-    )
-
     def self.get_client_info(client_name=CLIENT_APPS.first)
       client_index=CLIENT_APPS.index(client_name)
       raise "no such pre-defined client: #{client_name}" if client_index.nil?
