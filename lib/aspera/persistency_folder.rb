@@ -37,14 +37,14 @@ module Aspera
     def put(object_id,value)
       raise "value: only String supported" unless value.is_a?(String)
       persist_filepath=id_to_filepath(object_id)
-      Log.log.debug("saving: #{persist_filepath}")
+      Log.log.debug("persistency saving: #{persist_filepath}")
       File.write(persist_filepath,value)
       @cache[object_id]=value
     end
 
     def delete(object_id)
       persist_filepath=id_to_filepath(object_id)
-      Log.log.debug("empty data, deleting: #{persist_filepath}")
+      Log.log.debug("persistency deleting: #{persist_filepath}")
       File.delete(persist_filepath) if File.exist?(persist_filepath)
       @cache.delete(object_id)
     end
@@ -57,7 +57,7 @@ module Aspera
       end
       garbage_files.each do |filepath|
         File.delete(filepath)
-        Log.log.debug("Deleted expired: #{filepath}")
+        Log.log.debug("persistency deleted expired: #{filepath}")
       end
       return garbage_files
     end
