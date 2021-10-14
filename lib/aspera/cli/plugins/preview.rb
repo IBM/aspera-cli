@@ -7,6 +7,7 @@ require 'aspera/persistency_action_once'
 require 'aspera/node'
 require 'aspera/hash_ext'
 require 'aspera/timer_limiter'
+require 'aspera/id_generator'
 require 'date'
 require 'securerandom'
 
@@ -467,8 +468,8 @@ module Aspera
             if self.options.get_option(:once_only,:mandatory)
               iteration_persistency=PersistencyActionOnce.new(
               manager: @agents[:persistency],
-              data: [],
-              ids: ['preview_iteration',command.to_s,self.options.get_option(:url,:mandatory),self.options.get_option(:username,:mandatory)])
+              data:    [],
+              id:      IdGenerator.from_list(['preview_iteration',command.to_s,self.options.get_option(:url,:mandatory),self.options.get_option(:username,:mandatory)]))
             end
             # call processing method specified by command line command
             send("process_#{command}",iteration_persistency)

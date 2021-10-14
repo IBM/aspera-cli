@@ -9,6 +9,7 @@ require 'aspera/proxy_auto_config'
 require 'aspera/uri_reader'
 require 'aspera/rest'
 require 'aspera/persistency_action_once'
+require 'aspera/id_generator'
 require 'xmlsimple'
 require 'base64'
 require 'net/smtp'
@@ -148,7 +149,7 @@ END_OF_TEMPLATE
             check_date_persist=PersistencyActionOnce.new(
             manager: persistency,
             data:    last_check_array,
-            ids:     ['version_last_check'])
+            id:      'version_last_check')
             # get persisted date or nil
             last_check_date = begin
               Date.strptime(last_check_array.first, '%Y/%m/%d')

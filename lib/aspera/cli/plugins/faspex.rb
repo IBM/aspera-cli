@@ -7,6 +7,7 @@ require 'aspera/persistency_action_once'
 require 'aspera/open_application'
 require 'aspera/fasp/uri'
 require 'aspera/nagios'
+require 'aspera/id_generator'
 require 'xmlsimple'
 require 'json'
 require 'cgi'
@@ -260,8 +261,8 @@ module Aspera
                 if self.options.get_option(:once_only,:mandatory)
                   skip_ids_persistency=PersistencyActionOnce.new(
                   manager: @agents[:persistency],
-                  data: skip_ids_data,
-                  ids:  ['faspex_recv',self.options.get_option(:url,:mandatory),self.options.get_option(:username,:mandatory),self.options.get_option(:box,:mandatory).to_s])
+                  data:    skip_ids_data,
+                  id:      IdGenerator.from_list(['faspex_recv',self.options.get_option(:url,:mandatory),self.options.get_option(:username,:mandatory),self.options.get_option(:box,:mandatory).to_s]))
                 end
                 # get command line parameters
                 delivid=self.options.get_option(:id,:mandatory)
