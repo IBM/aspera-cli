@@ -6,6 +6,7 @@ module Aspera
   class CosNode < Rest
     attr_reader :add_ts
     IBM_CLOUD_TOKEN_URL='https://iam.cloud.ibm.com/identity'
+    TOKEN_FIELD='delegated_refresh_token'
     def initialize(bucket_name,storage_endpoint,instance_id,api_key,auth_url=IBM_CLOUD_TOKEN_URL)
       @auth_url=auth_url
       @api_key=api_key
@@ -32,7 +33,7 @@ module Aspera
       # prepare transfer spec addition
       @add_ts={'tags'=>{'aspera'=>{'node'=>{'storage_credentials'=>{
         'type'  => 'token',
-        'token' => {'delegated_refresh_token'=>nil}
+        'token' => {TOKEN_FIELD=>nil}
         }}}}}
       generate_token
     end
@@ -45,10 +46,10 @@ module Aspera
         :base_url   => @auth_url,
         :grant      => :delegated_refresh,
         :api_key    => @api_key,
-        :token_field=> 'delegated_refresh_token'
+        :token_field=> TOKEN_FIELD
       })
       # get delagated token to be placed in rest call header and in transfer tags
-      @add_ts['tags']['aspera']['node']['storage_credentials']['token']['delegated_refresh_token']=delegated_oauth.get_authorization().gsub(/^Bearer /,'')
+      @add_ts['tags']['aspera']['node']['storage_credentials']['token'][TOKEN_FIELD]=delegated_oauth.get_authorization().gsub(/^Bearer /,'')
       @params[:headers]={'X-Aspera-Storage-Credentials'=>JSON.generate(@add_ts['tags']['aspera']['node']['storage_credentials'])}
     end
   end
