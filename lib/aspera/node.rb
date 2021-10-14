@@ -10,10 +10,7 @@ module Aspera
     ACCESS_LEVELS=['delete','list','mkdir','preview','read','rename','write']
     MATCH_EXEC_PREFIX='exec:'
 
-    # for information only
-    def self.decode_bearer_token(token)
-      return JSON.parse(Zlib::Inflate.inflate(Base64.decode64(token)).partition('==SIGNATURE==').first)
-    end
+    Oauth.register_decoder(lambda{|token|JSON.parse(Zlib::Inflate.inflate(Base64.decode64(token)).partition('==SIGNATURE==').first)})
 
     # for access keys: provide expression to match entry in folder
     # if no prefix: regex
