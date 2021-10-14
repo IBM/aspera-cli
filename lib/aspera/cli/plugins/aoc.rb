@@ -5,6 +5,7 @@ require 'aspera/cli/transfer_agent'
 require 'aspera/aoc'
 require 'aspera/node'
 require 'aspera/persistency_action_once'
+require 'aspera/id_generator'
 require 'securerandom'
 require 'resolv'
 require 'date'
@@ -517,7 +518,7 @@ module Aspera
                 startdate_persistency=PersistencyActionOnce.new(
                 manager: @agents[:persistency],
                 data: saved_date,
-                ids:  ['aoc_ana_date',self.options.get_option(:url,:mandatory),@workspace_name].push(filter_resource,filter_id))
+                ids: IdGenerator.from_list(['aoc_ana_date',self.options.get_option(:url,:mandatory),@workspace_name].push(filter_resource,filter_id)))
                 start_datetime=saved_date.first
                 stop_datetime=Time.now.utc.strftime('%FT%T.%LZ')
                 #Log.log().error("start: #{start_datetime}")
@@ -781,7 +782,7 @@ module Aspera
                 skip_ids_persistency=PersistencyActionOnce.new(
                 manager: @agents[:persistency],
                 data: skip_ids_data,
-                ids:  ['aoc_recv',self.options.get_option(:url,:mandatory),@workspace_id].push(*@persist_ids))
+                id: IdGenerator.from_list(['aoc_recv',self.options.get_option(:url,:mandatory),@workspace_id].push(*@persist_ids)))
               end
               if ids_to_download.eql?(VAL_ALL)
                 # get list of packages in inbox

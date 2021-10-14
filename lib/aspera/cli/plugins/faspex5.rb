@@ -1,5 +1,6 @@
 require 'aspera/cli/basic_auth_plugin'
 require 'aspera/persistency_action_once'
+require 'aspera/id_generator'
 require 'securerandom'
 
 module Aspera
@@ -103,8 +104,8 @@ module Aspera
                 # read ids from persistency
                 skip_ids_persistency=PersistencyActionOnce.new(
                 manager: @agents[:persistency],
-                data: skip_ids_data,
-                ids:  ['faspex_recv',options.get_option(:url,:mandatory),options.get_option(:username,:mandatory),pkg_type])
+                data:    skip_ids_data,
+                id:      IdGenerator.from_list(['faspex_recv',options.get_option(:url,:mandatory),options.get_option(:username,:mandatory),pkg_type]))
               end
               if pack_id.eql?(VAL_ALL)
                 # TODO: if packages have same name, they will overwrite

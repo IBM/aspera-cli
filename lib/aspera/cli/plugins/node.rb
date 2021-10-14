@@ -1,6 +1,7 @@
 require 'aspera/cli/basic_auth_plugin'
 require 'aspera/nagios'
 require 'aspera/hash_ext'
+require 'aspera/id_generator'
 require 'base64'
 require 'zlib'
 
@@ -271,8 +272,8 @@ module Aspera
             if self.options.get_option(:once_only,:mandatory)
               skip_ids_persistency=PersistencyActionOnce.new(
               manager: @agents[:persistency],
-              data: iteration_data,
-              ids:  ['sync_files',self.options.get_option(:url,:mandatory),self.options.get_option(:username,:mandatory),asyncid])
+              data:    iteration_data,
+              id:      IdGenerator.from_list(['sync_files',self.options.get_option(:url,:mandatory),self.options.get_option(:username,:mandatory),asyncid]))
               unless iteration_data.first.nil?
                 data.select!{|l| l['fnid'].to_i>iteration_data.first}
               end
