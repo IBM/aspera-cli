@@ -2278,10 +2278,10 @@ $ ascli aoc admin res user list --query='@json:{"q":"dummyuser"}' --fields=id,em
 : 98398 : dummyuser1@example.com :
 : 98399 : dummyuser2@example.com :
 :.......:........................:
-$ thelist=$(echo $(ascli aoc admin res user list --query='@json:{"q":"dummyuser"}' --fields=id,email --field=id --format=csv)|tr ' ' ,)
+$ thelist=$(ascli aoc admin res user list --query='@json:{"q":"dummyuser"}' --fields=id --format=json --display=data|jq -cr 'map(.id)')
 $ echo $thelist
-98398,98399
-$ ascli aoc admin res user --bulk=yes --id=@json:[$thelist] delete
+["113501","354061"]
+$ ascli aoc admin res user --bulk=yes --id=@json:"$thelist" delete
 :.......:.........:
 :  id   : status  :
 :.......:.........:
@@ -2289,6 +2289,14 @@ $ ascli aoc admin res user --bulk=yes --id=@json:[$thelist] delete
 : 98399 : deleted :
 :.......:.........:
 ```
+
+* <a name="deactuser"></a>Find deactivated users since more than 2 years
+
+```
+ascli aoc admin res user list --query=@ruby:'{"deactivated"=>true,"q"=>"last_login_at:<#{(DateTime.now.to_time.utc-2*365*86400).iso8601}"}'
+```
+
+To delete them use the same method as before
 
 * Display current user's workspaces
 
