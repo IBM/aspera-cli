@@ -273,7 +273,7 @@ module Aspera
         transfer_spec['remote_host']=node_file[:node_info]['host']
       else
         # retrieve values from API
-        std_t_spec=get_node_api(node_file[:node_info],SCOPE_NODE_USER).create('files/download_setup',{:transfer_requests => [ { :transfer_request => {:paths => [ {"source"=>'/'} ] } } ] } )[:data]['transfer_specs'].first['transfer_spec']
+        std_t_spec=get_node_api(node_file[:node_info],scope: SCOPE_NODE_USER).create('files/download_setup',{:transfer_requests => [ { :transfer_request => {:paths => [ {"source"=>'/'} ] } } ] } )[:data]['transfer_specs'].first['transfer_spec']
         ['remote_host','remote_user','ssh_port','fasp_port'].each {|i| transfer_spec[i]=std_t_spec[i]}
       end
       # add caller provided transfer spec
@@ -290,26 +290,27 @@ module Aspera
     # @param scope e.g. SCOPE_NODE_USER
     # no scope: requires secret
     # if secret provided beforehand: use it
-    def get_node_api(node_info,node_scope=nil)
-      # X-Aspera-AccessKey required for bearer token only
-      node_rest_params={
-        :base_url => node_info['url'],
-        :headers  => {'X-Aspera-AccessKey'=>node_info['access_key']},
-      }
-      ak_secret=@key_chain.get_secret(node_info['access_key'],false)
-      if ak_secret.nil? and node_scope.nil?
+    def get_node_api(node_info,options={})
+      raise "INTERNAL ERROR: method parameters: options must ne hash" unless options.is_a?(Hash)
+      options.keys.each {|k| raise "INTERNAL ERROR: not valid option: #{k}" unless [:scope,:use_secret].include?(k)}
+      # get optional secret unless :use_secret is false (default is true)
+      ak_secret=@key_chain.get_secret(node_info['access_key'],false) if !options.has_key?(:use_secret) or options[:use_secret]
+      if ak_secret.nil? and !options.has_key?(:scope)
         raise "There must be at least one of: 'secret' or 'scope' for access key #{node_info['access_key']}"
       end
-      # if secret provided on command line or if there is no scope
-      if !ak_secret.nil? or node_scope.nil?
+      node_rest_params={base_url: node_info['url']}
+      # if secret is available
+      if !ak_secret.nil?
         node_rest_params[:auth]={
-          :type     => :basic,
-          :username => node_info['access_key'],
-          :password => ak_secret
+          type:     :basic,
+          username: node_info['access_key'],
+          password: ak_secret
         }
       else
+        # X-Aspera-AccessKey required for bearer token only
+        node_rest_params[:headers]= {'X-Aspera-AccessKey'=>node_info['access_key']}
         node_rest_params[:auth]=self.params[:auth].clone
-        node_rest_params[:auth][:scope]=self.class.node_scope(node_info['access_key'],node_scope)
+        node_rest_params[:auth][:scope]=self.class.node_scope(node_info['access_key'],options[:scope])
       end
       return Node.new(node_rest_params)
     end
@@ -336,7 +337,7 @@ module Aspera
         if entry[:type].eql?('link')
           sub_node_info=self.read("nodes/#{entry['target_node_id']}")[:data]
           sub_opt={method: process_find_files, top_file_id: entry['target_id'], top_file_path: path}
-          get_node_api(sub_node_info,SCOPE_NODE_USER).crawl(self,sub_opt)
+          get_node_api(sub_node_info,scope: SCOPE_NODE_USER).crawl(self,sub_opt)
         end
       rescue => e
         Log.log.error("#{path}: #{e.message}")
@@ -349,7 +350,7 @@ module Aspera
       top_node_info,top_file_id=check_get_node_file(top_node_file)
       Log.log.debug("find_files: node_info=#{top_node_info}, fileid=#{top_file_id}")
       @find_state={found: [], test_block: test_block}
-      get_node_api(top_node_info,SCOPE_NODE_USER).crawl(self,{method: :process_find_files, top_file_id: top_file_id})
+      get_node_api(top_node_info,scope: SCOPE_NODE_USER).crawl(self,{method: :process_find_files, top_file_id: top_file_id})
       result=@find_state[:found]
       @find_state=nil
       return result
@@ -370,7 +371,7 @@ module Aspera
         if @resolve_state[:path].empty?
           @resolve_state[:result][:file_id]=entry['target_id']
         else
-          get_node_api(@resolve_state[:result][:node_info],SCOPE_NODE_USER).crawl(self,{method: :process_resolve_node_file, top_file_id: entry['target_id']})
+          get_node_api(@resolve_state[:result][:node_info],scope: SCOPE_NODE_USER).crawl(self,{method: :process_resolve_node_file, top_file_id: entry['target_id']})
         end
       when 'folder'
         if @resolve_state[:path].empty?
@@ -397,7 +398,7 @@ module Aspera
         result[:file_id]=top_file_id
       else
         @resolve_state={path: path_elements, result: result}
-        get_node_api(top_node_info,SCOPE_NODE_USER).crawl(self,{method: :process_resolve_node_file, top_file_id: top_file_id})
+        get_node_api(top_node_info,scope: SCOPE_NODE_USER).crawl(self,{method: :process_resolve_node_file, top_file_id: top_file_id})
         not_found=@resolve_state[:path]
         @resolve_state=nil
         raise "entry not found: #{not_found}" if result[:file_id].nil?

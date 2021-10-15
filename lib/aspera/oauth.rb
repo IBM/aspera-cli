@@ -180,6 +180,7 @@ module Aspera
         Log.dump('decoded_node_token',decoded_node_token) unless decoded_node_token.nil?
         if decoded_node_token.is_a?(Hash) and decoded_node_token['expires_at'].is_a?(String)
           expires_at=DateTime.parse(decoded_node_token['expires_at'])
+          # Time.at(decoded_node_token['exp'])
           # does it seem expired, with one hour of security
           use_refresh_token=true if DateTime.now > (expires_at-ONE_HOUR_AS_DAY_FRACTION)
         end
@@ -268,7 +269,7 @@ module Aspera
           rsa_private=@params[:jwt_private_key_obj]  # type: OpenSSL::PKey::RSA
           Log.log.debug("private=[#{rsa_private}]")
 
-          assertion = JWT.encode(payload, rsa_private, 'RS256',@params[:jwt_headers]||{})
+          assertion = JWT.encode(payload, rsa_private, 'RS256', @params[:jwt_headers]||{})
           Log.log.debug("assertion=[#{assertion}]")
 
           resp=create_token(www_body_params: p_scope.merge({
