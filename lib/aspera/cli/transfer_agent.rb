@@ -108,14 +108,23 @@ END_OF_TEMPLATE
             h[param]=node_config[param.to_s]
             h
           end
-          node_api=Rest.new({
-            :base_url => sym_config[:url],
-            :auth     => {
-            :type     =>:basic,
-            :username => sym_config[:username],
-            :password => sym_config[:password]
-            }})
+          if sym_config[:password].match(/^Bearer /)
+            node_api=Rest.new({
+              base_url: sym_config[:url],
+              headers: {
+              'X-Aspera-AccessKey'=>sym_config[:username],
+              'Authorization'     =>sym_config[:password]}})
+          else
+            node_api=Rest.new({
+              base_url: sym_config[:url],
+              auth:     {
+              type:     :basic,
+              username: sym_config[:username],
+              password: sym_config[:password]
+              }})
+          end
           new_agent=Fasp::Node.new(node_api)
+          new_agent.ts_base=node_config['ts'] if node_config.has_key?('ts')
         when :aoc
           aoc_config=options.get_option(:transfer_info,:optional)
           if aoc_config.nil?

@@ -342,6 +342,10 @@ $(T)aocfbr: $(T).exists
 	@echo $@
 	$(EXE_MAN) aoc files browse /
 	@touch $@
+$(T)aocfbt: $(T).exists
+	@echo $@
+	$(EXE_MAN) aoc files bearer_token_node /
+	@touch $@
 $(T)aocffin: $(T).exists
 	@echo $@
 	$(EXE_MAN) aoc files find / --value='\.partial$$'
@@ -414,7 +418,7 @@ $(T)aocshlk3: $(T).exists
 	@echo $@
 	$(EXE_MAN) aoc files short_link create --to-folder=/testdst --value=public
 	@touch $@
-taocf: $(T)aocfbr $(T)aocffin $(T)aocfmkd $(T)aocfren $(T)aocfupl $(T)aocftr $(T)aocfdel $(T)aocfbearnode $(T)aocfdown $(T)aocfhttpd $(T)aocfv3inf $(T)aocffid $(T)aocfpub $(T)aocshlk1 $(T)aocshlk2 $(T)aocshlk3
+taocf: $(T)aocfbr $(T)aocfbt $(T)aocffin $(T)aocfmkd $(T)aocfren $(T)aocfupl $(T)aocftr $(T)aocfdel $(T)aocfbearnode $(T)aocfdown $(T)aocfhttpd $(T)aocfv3inf $(T)aocffid $(T)aocfpub $(T)aocshlk1 $(T)aocshlk2 $(T)aocshlk3
 $(T)aocp1: $(T).exists
 	@echo $@
 	$(EXE_MAN) aoc packages send --value=@json:'{"name":"'"$(PKG_TEST_TITLE)"'","recipients":["$(CF_EMAIL_ADDR)"],"note":"my note"}' $(CF_LOCAL_SAMPLE_FILEPATH)

@@ -83,19 +83,29 @@ module Aspera
           return self.transfer.start(*@api_aoc.tr_spec(app,direction,node_file,ts_add))
         end
 
-        NODE4_COMMANDS=[ :browse, :find, :mkdir, :rename, :delete, :upload, :download, :transfer, :http_node_download, :v3, :file, :bearer_token_node ]
+        NODE4_COMMANDS=[ :browse, :find, :mkdir, :rename, :delete, :upload, :download, :transfer, :http_node_download, :v3, :file, :bearer_token_node, :transfer_info ]
 
         def execute_node_gen4_command(command_repo,top_node_file)
           case command_repo
           when :bearer_token_node
             thepath=self.options.get_next_argument('path')
             node_file = @api_aoc.resolve_node_file(top_node_file,thepath)
-            node_api=@api_aoc.get_node_api(node_file[:node_info],AoC::SCOPE_NODE_USER)
+            node_api=@api_aoc.get_node_api(node_file[:node_info],scope: AoC::SCOPE_NODE_USER, use_secret: false)
             return Main.result_status(node_api.oauth_token)
+          when :transfer_info
+            thepath=self.options.get_next_argument('path')
+            node_file = @api_aoc.resolve_node_file(top_node_file,thepath)
+            node_api=@api_aoc.get_node_api(node_file[:node_info],scope: AoC::SCOPE_NODE_USER, use_secret: false)
+            return {:type=>:single_object,:data=>{
+              url: node_file[:node_info]['url'],
+              username: node_file[:node_info]['access_key'],
+              password: node_api.oauth_token,
+              ts: {"source_root_id"=>node_file[:file_id]}
+              }}
           when :browse
             thepath=self.options.get_next_argument('path')
             node_file = @api_aoc.resolve_node_file(top_node_file,thepath)
-            node_api=@api_aoc.get_node_api(node_file[:node_info],AoC::SCOPE_NODE_USER)
+            node_api=@api_aoc.get_node_api(node_file[:node_info],scope: AoC::SCOPE_NODE_USER)
             file_info = node_api.read("files/#{node_file[:file_id]}")[:data]
             if file_info['type'].eql?('folder')
               result=node_api.read("files/#{node_file[:file_id]}/files",self.options.get_option(:value,:optional))
@@ -115,14 +125,14 @@ module Aspera
             containing_folder_path = thepath.split(AoC::PATH_SEPARATOR)
             new_folder=containing_folder_path.pop
             node_file = @api_aoc.resolve_node_file(top_node_file,containing_folder_path.join(AoC::PATH_SEPARATOR))
-            node_api=@api_aoc.get_node_api(node_file[:node_info],AoC::SCOPE_NODE_USER)
+            node_api=@api_aoc.get_node_api(node_file[:node_info],scope: AoC::SCOPE_NODE_USER)
             result=node_api.create("files/#{node_file[:file_id]}/files",{:name=>new_folder,:type=>:folder})[:data]
             return Main.result_status("created: #{result['name']} (id=#{result['id']})")
           when :rename
             thepath=self.options.get_next_argument('source path')
             newname=self.options.get_next_argument('new name')
             node_file = @api_aoc.resolve_node_file(top_node_file,thepath)
-            node_api=@api_aoc.get_node_api(node_file[:node_info],AoC::SCOPE_NODE_USER)
+            node_api=@api_aoc.get_node_api(node_file[:node_info],scope: AoC::SCOPE_NODE_USER)
             result=node_api.update("files/#{node_file[:file_id]}",{:name=>newname})[:data]
             return Main.result_status("renamed #{thepath} to #{newname}")
           when :delete
@@ -130,7 +140,7 @@ module Aspera
             return do_bulk_operation(thepath,'deleted','path') do |l_path|
               raise "expecting String (path), got #{l_path.class.name} (#{l_path})" unless l_path.is_a?(String)
               node_file = @api_aoc.resolve_node_file(top_node_file,l_path)
-              node_api=@api_aoc.get_node_api(node_file[:node_info],AoC::SCOPE_NODE_USER)
+              node_api=@api_aoc.get_node_api(node_file[:node_info],scope: AoC::SCOPE_NODE_USER)
               result=node_api.delete("files/#{node_file[:file_id]}")[:data]
               {'path'=>l_path}
             end
@@ -153,7 +163,7 @@ module Aspera
             client_node_file = @api_aoc.resolve_node_file(client_home_node_file,client_folder)
             server_node_file = @api_aoc.resolve_node_file(server_home_node_file,server_folder)
             # force node as transfer agent
-            @agents[:transfer].set_agent_instance(Fasp::Node.new(@api_aoc.get_node_api(client_node_file[:node_info],AoC::SCOPE_NODE_USER)))
+            @agents[:transfer].set_agent_instance(Fasp::Node.new(@api_aoc.get_node_api(client_node_file[:node_info],scope: AoC::SCOPE_NODE_USER)))
             # additional node to node TS info
             add_ts={
               'remote_access_key'   => server_node_file[:node_info]['access_key'],
@@ -191,14 +201,14 @@ module Aspera
             raise CliBadArgument,'one file at a time only in HTTP mode' if source_paths.length > 1
             file_name = source_paths.first['source']
             node_file = @api_aoc.resolve_node_file(top_node_file,File.join(source_folder,file_name))
-            node_api=@api_aoc.get_node_api(node_file[:node_info],AoC::SCOPE_NODE_USER)
+            node_api=@api_aoc.get_node_api(node_file[:node_info],scope: AoC::SCOPE_NODE_USER)
             node_api.call({:operation=>'GET',:subpath=>"files/#{node_file[:file_id]}/content",:save_to_file=>File.join(self.transfer.destination_folder('receive'),file_name)})
             return Main.result_status("downloaded: #{file_name}")
           when :v3
             # Note: other "common" actions are unauthorized with user scope
             command_legacy=self.options.get_next_command(Node::SIMPLE_ACTIONS)
             # TODO: shall we support all methods here ? what if there is a link ?
-            node_api=@api_aoc.get_node_api(top_node_file[:node_info],AoC::SCOPE_NODE_USER)
+            node_api=@api_aoc.get_node_api(top_node_file[:node_info],scope: AoC::SCOPE_NODE_USER)
             return Node.new(@agents.merge(skip_basic_auth_options: true, node_api: node_api)).execute_action(command_legacy)
           when :file
             file_path=self.options.get_option(:path,:optional)
@@ -207,7 +217,7 @@ module Aspera
             else
               {node_info: top_node_file[:node_info],file_id: self.options.get_option(:id,:mandatory)}
             end
-            node_api=@api_aoc.get_node_api(node_file[:node_info],AoC::SCOPE_NODE_USER)
+            node_api=@api_aoc.get_node_api(node_file[:node_info],scope: AoC::SCOPE_NODE_USER)
             command_node_file=self.options.get_next_command([:show,:permission,:modify])
             case command_node_file
             when :show
@@ -654,7 +664,7 @@ module Aspera
               res_data=@api_aoc.read(resource_instance_path)[:data]
               node_file = @api_aoc.resolve_node_file({node_info: res_data, file_id: ak_data['root_file_id']},folder_path)
 
-              #node_api=@api_aoc.get_node_api(node_file[:node_info],AoC::SCOPE_NODE_USER)
+              #node_api=@api_aoc.get_node_api(node_file[:node_info],scope: AoC::SCOPE_NODE_USER)
               #file_info = node_api.read("files/#{node_file[:file_id]}")[:data]
 
               access_id="ASPERA_ACCESS_KEY_ADMIN_WS_#{@workspace_id}"
@@ -876,7 +886,7 @@ module Aspera
               end
               result=self.entity_action(@api_aoc,'short_links',nil,:id,'self')
               if result[:data].is_a?(Hash) and result[:data].has_key?('created_at') and result[:data]['resource_type'].eql?('UrlToken')
-                node_api=@api_aoc.get_node_api(node_file[:node_info],AoC::SCOPE_NODE_USER)
+                node_api=@api_aoc.get_node_api(node_file[:node_info],scope: AoC::SCOPE_NODE_USER)
                 # TODO: access level as arg
                 access_levels=Aspera::Node::ACCESS_LEVELS #['delete','list','mkdir','preview','read','rename','write']
                 perm_data={

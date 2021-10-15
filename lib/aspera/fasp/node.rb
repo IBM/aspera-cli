@@ -7,11 +7,13 @@ module Aspera
     # this singleton class is used by the CLI to provide a common interface to start a transfer
     # before using it, the use must set the `node_api` member.
     class Node < Manager
+      attr_writer :ts_base
       def initialize(node_api)
         super()
         @node_api=node_api
         # TODO: currently only supports one transfer. This is bad shortcut. but ok for CLI.
         @transfer_id=nil
+        @ts_base={}
       end
 
       # used internally to ensure node api is set before using.
@@ -32,6 +34,7 @@ module Aspera
 
       # generic method
       def start_transfer(transfer_spec,options=nil)
+        transfer_spec=@ts_base.deep_merge(transfer_spec)
         if transfer_spec['tags'].is_a?(Hash) and transfer_spec['tags']['aspera'].is_a?(Hash)
           transfer_spec['tags']['aspera']['xfer_retry']||=150
         end

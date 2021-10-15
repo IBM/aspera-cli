@@ -11,7 +11,7 @@ module Aspera
         Log.log.warn("Under Development")
         server_node_file = @api_aoc.resolve_node_file(server_home_node_file,server_folder)
         # force node as transfer agent
-        node_api=Fasp::Node.new(@api_aoc.get_node_api(client_node_file[:node_info],AoC::SCOPE_NODE_USER))
+        node_api=Fasp::Node.new(@api_aoc.get_node_api(client_node_file[:node_info],scope: AoC::SCOPE_NODE_USER))
         super(node_api)
         # additional node to node TS info
         @add_ts={

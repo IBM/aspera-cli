@@ -125,7 +125,7 @@ module Aspera
     end
 
     def oauth_token(options={})
-      raise "ERROR: not Oauth" unless @oauth.is_a?(Oauth)
+      raise "ERROR: expecting Oauth, have #{@oauth.class}" unless @oauth.is_a?(Oauth)
       return @oauth.get_authorization(options)
     end
 
