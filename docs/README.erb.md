@@ -1552,7 +1552,7 @@ For this, specify the option: `--use-generic-client=no`.
 
 This will guide you through the steps to create.
 
-## <a name="aocwizard"></a>Configuration: using manual setup
+## <a name="aocmanual"></a>Configuration: using manual setup
 
 If you used the wizard (recommended): skip this section.
 
@@ -2223,6 +2223,29 @@ $ <%=cmd%> ats api_key create
 +--------+----------------------------------------------+
 $ <%=cmd%> config id my_ibm_ats update --ats-key=ats_XXXXXXXXXXXXXXXXXXXXXXXX --ats-secret=YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY
 ```
+## Cross Organization transfers
+
+It is possible to transfer files directly between organizations without having to first download locally and then upload...
+
+Although optional, the creation of <%=prst%> is recommended to avoid placing all parameters in the command line.
+
+Procedure to send a file from org1 to org2:
+
+* Get access to Organization 1 and create a <%=prst%>: e.g. `org1`, for instance, use the [Wizard](#aocwizard)
+* Check that access works and locate the source file e.g. `mysourcefile`, e.g. using command `files browse`
+* Get access to Organization 2 and create a <%=prst%>: e.g. `org2`
+* Check that access works and locate the destination folder `mydestfolder`
+* execute the following:
+
+```
+$ <%=cmd%> -Porg2 aoc files upload mysourcefile --to-folder=mydestfolder --transfer=node --transfer-info=@json:"$(ascli -Porg1 aoc files transfer_info / --display=data --format=json)"
+```
+
+Explanation:
+
+The command `aoc files upload` is used to upload files to `org2`, this is what we want. But the source is not the local file, but a file located in `org2`, so we use the *Aspera Node* or `org1` where the source file is located as remote transfer agent. So, the Node or org1 will run as a *client* and connect to node of `org2` working as server, and upload the desired file.
+
+The command `aoc files transfer_info` is used to retrieve node information (address and authorization).
 
 ## Examples
 
