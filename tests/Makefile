@@ -369,6 +369,12 @@ $(T)aocftr: $(T)aocfupl $(T)aocfren
 	@echo $@
 	$(EXE_MAN) aoc files transfer --from-folder=/testsrc --to-folder=/testdst $(CF_LOCAL_SAMPLE_FILENAME)
 	@touch $@
+$(T)aocndinf: $(T).exists
+	@echo $@
+	set -x;\
+	other_workspace=$$($(EXE_NOMAN) conf id misc get aoc_workspace2);\
+	$(EXE_MAN) aoc files node_info --workspace="$${other_workspace}" /myfolder --format=json --display=data | $(EXE_MAN) aoc files upload Test.pdf --transfer=node --transfer-info=@json:@stdin:
+	@touch $@
 $(T)aocfdel: $(T)aocfren
 	@echo $@
 	$(EXE_MAN) aoc files delete /testsrc
@@ -418,7 +424,7 @@ $(T)aocshlk3: $(T).exists
 	@echo $@
 	$(EXE_MAN) aoc files short_link create --to-folder=/testdst --value=public
 	@touch $@
-taocf: $(T)aocfbr $(T)aocfbt $(T)aocffin $(T)aocfmkd $(T)aocfren $(T)aocfupl $(T)aocftr $(T)aocfdel $(T)aocfbearnode $(T)aocfdown $(T)aocfhttpd $(T)aocfv3inf $(T)aocffid $(T)aocfpub $(T)aocshlk1 $(T)aocshlk2 $(T)aocshlk3
+taocf: $(T)aocfbr $(T)aocfbt $(T)aocffin $(T)aocfmkd $(T)aocfren $(T)aocfupl $(T)aocftr $(T)aocndinf $(T)aocfdel $(T)aocfbearnode $(T)aocfdown $(T)aocfhttpd $(T)aocfv3inf $(T)aocffid $(T)aocfpub $(T)aocshlk1 $(T)aocshlk2 $(T)aocshlk3
 $(T)aocp1: $(T).exists
 	@echo $@
 	$(EXE_MAN) aoc packages send --value=@json:'{"name":"'"$(PKG_TEST_TITLE)"'","recipients":["$(CF_EMAIL_ADDR)"],"note":"my note"}' $(CF_LOCAL_SAMPLE_FILEPATH)

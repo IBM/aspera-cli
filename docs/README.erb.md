@@ -38,7 +38,7 @@ def spec_table
     return r
 end #```
 -%>
-# <%=tool%> : Command Line Interface for IBM Aspera products
+<font size="+12"><center><%=tool%> : Command Line Interface for IBM Aspera products</center></font>
 
 Version : <%= gemspec.version.to_s %>
 
