@@ -101,30 +101,29 @@ END_OF_TEMPLATE
             node_config=config.preset_by_name(param_set_name)
           end
           Log.log.debug("node=#{node_config}")
-          raise CliBadArgument,"the node configuration shall be Hash, not #{node_config.class} (#{node_config}), use either @json:<json> or @preset:<parameter set name>" if !node_config.is_a?(Hash)
-          # now check there are required parameters
-          sym_config=[:url,:username,:password].inject({}) do |h,param|
-            raise CliBadArgument,"missing parameter [#{param}] in node specification: #{node_config}" if !node_config.has_key?(param.to_s)
-            h[param]=node_config[param.to_s]
-            h
-          end
-          if sym_config[:password].match(/^Bearer /)
+          raise CliBadArgument,"the node configuration shall be Hash, not #{node_config.class} (#{node_config}), use either @json:<json> or @preset:<parameter set name>" unless node_config.is_a?(Hash)
+          # here, node_config is a Hash
+          node_config=node_config.symbolize_keys
+          # Check mandatory params
+          [:url,:username,:password].each { |k| raise CliBadArgument,"missing parameter [#{k}] in node specification: #{node_config}" unless node_config.has_key?(k) }
+          if node_config[:password].match(/^Bearer /)
             node_api=Rest.new({
-              base_url: sym_config[:url],
+              base_url: node_config[:url],
               headers: {
-              'X-Aspera-AccessKey'=>sym_config[:username],
-              'Authorization'     =>sym_config[:password]}})
+              'X-Aspera-AccessKey'=>node_config[:username],
+              'Authorization'     =>node_config[:password]}})
           else
             node_api=Rest.new({
-              base_url: sym_config[:url],
+              base_url: node_config[:url],
               auth:     {
               type:     :basic,
-              username: sym_config[:username],
-              password: sym_config[:password]
+              username: node_config[:username],
+              password: node_config[:password]
               }})
           end
           new_agent=Fasp::Node.new(node_api)
-          new_agent.ts_base=node_config['ts'] if node_config.has_key?('ts')
+          # add root id if it's an access key
+          new_agent.options={root_id: node_config[:root_id]} if node_config.has_key?(:root_id)
         when :aoc
           aoc_config=options.get_option(:transfer_info,:optional)
           if aoc_config.nil?

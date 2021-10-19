@@ -7,13 +7,14 @@ module Aspera
     # this singleton class is used by the CLI to provide a common interface to start a transfer
     # before using it, the use must set the `node_api` member.
     class Node < Manager
-      attr_writer :ts_base
-      def initialize(node_api)
+      # option include: root_id if the node is an access key
+      attr_writer :options
+      def initialize(node_api,options={})
         super()
         @node_api=node_api
+        @options=options
         # TODO: currently only supports one transfer. This is bad shortcut. but ok for CLI.
         @transfer_id=nil
-        @ts_base={}
       end
 
       # used internally to ensure node api is set before using.
@@ -34,7 +35,25 @@ module Aspera
 
       # generic method
       def start_transfer(transfer_spec,options=nil)
-        transfer_spec=@ts_base.deep_merge(transfer_spec)
+        # add root id if access key
+        if @options.has_key?(:root_id)
+          case transfer_spec['direction']
+          when 'send';transfer_spec['source_root_id']=@options[:root_id]
+          when 'receive';transfer_spec['destination_root_id']=@options[:root_id]
+          else raise "unexpected direction in ts: #{transfer_spec['direction']}"
+          end
+        end
+        # manage special additional parameter
+        if transfer_spec.has_key?('EX_ssh_key_paths') and transfer_spec['EX_ssh_key_paths'].is_a?(Array) and !transfer_spec['EX_ssh_key_paths'].empty?
+          # not standard, so place standard field
+          if transfer_spec.has_key?('ssh_private_key')
+            Log.log.warn('Both ssh_private_key and EX_ssh_key_paths are present, using ssh_private_key')
+          else
+            Log.log.warn('EX_ssh_key_paths has multiple keys, using first one only') unless transfer_spec['EX_ssh_key_paths'].length.eql?(1)
+            transfer_spec['ssh_private_key']=File.read(transfer_spec['EX_ssh_key_paths'].first)
+            transfer_spec.delete('EX_ssh_key_paths')
+          end
+        end
         if transfer_spec['tags'].is_a?(Hash) and transfer_spec['tags']['aspera'].is_a?(Hash)
           transfer_spec['tags']['aspera']['xfer_retry']||=150
         end

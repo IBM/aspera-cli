@@ -100,7 +100,7 @@ module Aspera
               url: node_file[:node_info]['url'],
               username: node_file[:node_info]['access_key'],
               password: node_api.oauth_token,
-              ts: {"source_root_id"=>node_file[:file_id]}
+              root_id: node_file[:file_id]
               }}
           when :browse
             thepath=self.options.get_next_argument('path')
