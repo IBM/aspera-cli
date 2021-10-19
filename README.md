@@ -2708,15 +2708,22 @@ Procedure to send a file from org1 to org2:
 * execute the following:
 
 ```
-$ ascli -Porg2 aoc files upload mysourcefile --to-folder=mydestfolder --transfer=node --transfer-info=@json:"$(ascli -Porg1 aoc files transfer_info / --display=data --format=json)"
+$ ascli -Porg1 aoc files node_info /mydestfolder --format=json --display=data | ascli -Porg2 aoc files upload mysourcefile --transfer=node --transfer-info=@json:@stdin:
 ```
 
 Explanation:
 
-The command `aoc files upload` is used to upload files to `org2`, this is what we want. But the source is not the local file, but a file located in `org2`, so we use the *Aspera Node* or `org1` where the source file is located as remote transfer agent. So, the Node or org1 will run as a *client* and connect to node of `org2` working as server, and upload the desired file.
+* `-Porg1 aoc` use Aspera on Cloud plugin and load credentials for `org1`
+* `files node_info /mydestfolder` generate transfer information including node api credential and root id, suitable for the next command
+* `--format=json` format the output in JSON (instead of default text table)
+* `--display=data` display only the result, and remove other information, such as workspace name
+* `|` the standard output of the first command is fed into the second one
+* `-Porg2 aoc` use Aspera on Cloud plugin and load credentials for `org2`
+* `files upload mysourcefile` upload the file named `mysourcefile` (located in `org1`)
+* `--transfer=node` use transfer agent type `node` instead of default `direct`
+* `--transfer-info=@json:@stdin:` provide `node` transfer agent information, i.e. node API credentials, those are expected in JSON format and read from standard input
 
-The command `aoc files transfer_info` is used to retrieve node information (address and authorization).
-
+Note that when using a POSIX shell, another possibility to write `cmd1 | cmd2 --transfer-info=@json:stdin:` is `cmd2 --transfer-info=@json:$(cmd1)` instead of ``
 ## Examples
 
 Example: create access key on softlayer:
@@ -3770,6 +3777,7 @@ So, it evolved into `ascli`:
 * 4.2.3.pre
 
 	* new: parameter `multi_incr_udp` for option `transfer_info`: control if UDP port is incremented when multi-session is used on `direct` transfer agent.
+	* new: command `aoc files node_info` to get node information for a given folder in the Files application of AoC. Allows cross-org or cross-workspace transfers.
 
 * 4.2.2
 
