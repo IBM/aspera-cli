@@ -1,5 +1,5 @@
 [comment1]: # (Do not edit this README.md, edit docs/README.erb.md, for details, read docs/README.md)
-# `ascli` : Command Line Interface for IBM Aspera products
+<font size="+12"><center>`ascli` : Command Line Interface for IBM Aspera products</center></font>
 
 Version : 4.2.3.pre
 
@@ -1515,6 +1515,7 @@ ascli aoc files short_link list --value=@json:'{"purpose":"shared_folder_auth_li
 ascli aoc files transfer --from-folder=/testsrc --to-folder=/testdst testfile.bin
 ascli aoc files upload --to-folder=/testsrc testfile.bin
 ascli aoc files upload -N --to-folder=/ testfile.bin --link=my_aoc_publink_folder
+ascli aoc files upload Test.pdf --transfer=node --transfer-info=@json:@stdin:
 ascli aoc files v3 info
 ascli aoc org -N --link=my_aoc_publink_recv_from_aocuser
 ascli aoc organization
