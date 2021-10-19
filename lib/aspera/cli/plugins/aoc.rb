@@ -83,7 +83,7 @@ module Aspera
           return self.transfer.start(*@api_aoc.tr_spec(app,direction,node_file,ts_add))
         end
 
-        NODE4_COMMANDS=[ :browse, :find, :mkdir, :rename, :delete, :upload, :download, :transfer, :http_node_download, :v3, :file, :bearer_token_node, :transfer_info ]
+        NODE4_COMMANDS=[ :browse, :find, :mkdir, :rename, :delete, :upload, :download, :transfer, :http_node_download, :v3, :file, :bearer_token_node, :node_info ]
 
         def execute_node_gen4_command(command_repo,top_node_file)
           case command_repo
@@ -92,7 +92,7 @@ module Aspera
             node_file = @api_aoc.resolve_node_file(top_node_file,thepath)
             node_api=@api_aoc.get_node_api(node_file[:node_info],scope: AoC::SCOPE_NODE_USER, use_secret: false)
             return Main.result_status(node_api.oauth_token)
-          when :transfer_info
+          when :node_info
             thepath=self.options.get_next_argument('path')
             node_file = @api_aoc.resolve_node_file(top_node_file,thepath)
             node_api=@api_aoc.get_node_api(node_file[:node_info],scope: AoC::SCOPE_NODE_USER, use_secret: false)
