@@ -273,7 +273,7 @@ If you keep the same terminal (ont needed if re-login):
 $ source ~/.rvm/scripts/rvm
 ```
 
-It is advised to get one of the pre-compiled ruby version, you can list with: 
+It is advised to get one of the pre-compiled ruby version, you can list with:
 
 ```
 $ rvm list --remote
@@ -3294,6 +3294,10 @@ So, it evolved into <%=tool%>:
 
 * <%= gemspec.version.to_s %>
 
+  * 
+
+* 4.3.0
+
 	* new: parameter `multi_incr_udp` for option `transfer_info`: control if UDP port is incremented when multi-session is used on `direct` transfer agent.
 	* new: command `aoc files node_info` to get node information for a given folder in the Files application of AoC. Allows cross-org or cross-workspace transfers.
 
@@ -3330,7 +3334,7 @@ So, it evolved into <%=tool%>:
 * 4.1.0
 
   	* fix: remove keys from transfer spec and command line when not needed
-  	* fix: default to create_dir:true so that sending single file to a folder does not rename file if folder does not exist 
+  	* fix: default to create_dir:true so that sending single file to a folder does not rename file if folder does not exist
   	* new: update documentation with regard to offline and docker installation
  	* new: renamed command `nagios_check` to `health`
 	* new: agent `http_gw` now supports upload

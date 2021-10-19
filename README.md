@@ -1,7 +1,7 @@
 [comment1]: # (Do not edit this README.md, edit docs/README.erb.md, for details, read docs/README.md)
 <font size="+12"><center>`ascli` : Command Line Interface for IBM Aspera products</center></font>
 
-Version : 4.3.0
+Version : 4.4.0.pre
 
 _Laurent/2016-2021_
 
@@ -82,7 +82,7 @@ Once the gem is installed, `ascli` shall be accessible:
 
 ```
 $ ascli --version
-4.3.0
+4.4.0.pre
 ```
 
 ## First use
@@ -234,7 +234,7 @@ If you keep the same terminal (ont needed if re-login):
 $ source ~/.rvm/scripts/rvm
 ```
 
-It is advised to get one of the pre-compiled ruby version, you can list with: 
+It is advised to get one of the pre-compiled ruby version, you can list with:
 
 ```
 $ rvm list --remote
@@ -281,7 +281,7 @@ Install Latest stable Ruby using [https://rubyinstaller.org/](https://rubyinstal
 MacOS 10.13+ (High Sierra) comes with a recent Ruby. So you can use it directly. You will need to install aspera-cli using `sudo` :
 
 ```
-$ sudo gem install aspera-cli
+$ sudo gem install aspera-cli --pre
 ```
 
 Alternatively, if you use [Homebrew](https://brew.sh/) already you can install Ruby with it:
@@ -374,7 +374,7 @@ or restore the `$HOME/.aspera` folder for the user.
 Once you have Ruby and rights to install gems: Install the gem and its dependencies:
 
 ```
-# gem install aspera-cli
+# gem install aspera-cli --pre
 ```
 
 To upgrade to the latest version:
@@ -1680,7 +1680,7 @@ ascli sync start --parameters=@json:'{"sessions":[{"name":"test","reset":true,"r
 ```
 $ ascli -h
 NAME
-	ascli -- a command line tool for Aspera Applications (v4.3.0)
+	ascli -- a command line tool for Aspera Applications (v4.4.0.pre)
 
 SYNOPSIS
 	ascli COMMANDS [OPTIONS] [ARGS]
@@ -3775,6 +3775,10 @@ So, it evolved into `ascli`:
 
 # Changes (Release notes)
 
+* 4.4.0.pre
+
+  * 
+
 * 4.3.0
 
 	* new: parameter `multi_incr_udp` for option `transfer_info`: control if UDP port is incremented when multi-session is used on `direct` transfer agent.
@@ -3813,7 +3817,7 @@ So, it evolved into `ascli`:
 * 4.1.0
 
   	* fix: remove keys from transfer spec and command line when not needed
-  	* fix: default to create_dir:true so that sending single file to a folder does not rename file if folder does not exist 
+  	* fix: default to create_dir:true so that sending single file to a folder does not rename file if folder does not exist
   	* new: update documentation with regard to offline and docker installation
  	* new: renamed command `nagios_check` to `health`
 	* new: agent `http_gw` now supports upload
