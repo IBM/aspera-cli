@@ -1,24 +1,24 @@
 [comment1]: # (Do not edit this README.md, edit docs/README.erb.md, for details, read docs/README.md)
 <%load File.join(File.dirname(__FILE__),'doc_tools.rb')-%>
-<font size="+12"><center><%=$tool%> : Command Line Interface for IBM Aspera products</center></font>
+<font size="+12"><center><%=tool%> : Command Line Interface for IBM Aspera products</center></font>
 
-Version : <%= $gemspec.version.to_s %>
+Version : <%=gemspec.version.to_s%>
 
 _Laurent/2016-<%=Time.new.year%>_
 
-This gem provides <%=$tool%>: a command line interface to IBM Aspera software.
+This gem provides <%=tool%>: a command line interface to IBM Aspera software.
 
-<%=$tool%> is a also great tool to learn Aspera APIs.
+<%=tool%> is a also great tool to learn Aspera APIs.
 
-Ruby Gem: [<%= $gemspec.metadata['rubygems_uri'] %>](<%= $gemspec.metadata['rubygems_uri'] %>)
+Ruby Gem: [<%=gemspec.metadata['rubygems_uri']%>](<%=gemspec.metadata['rubygems_uri']%>)
 
-Ruby Doc: [<%= $gemspec.metadata['documentation_uri'] %>](<%= $gemspec.metadata['documentation_uri'] %>)
+Ruby Doc: [<%=gemspec.metadata['documentation_uri']%>](<%=gemspec.metadata['documentation_uri']%>)
 
-Required Ruby version: <%= $gemspec.required_ruby_version %>
+Required Ruby version: <%=gemspec.required_ruby_version%>
 
 # <a name="when_to_use"></a>When to use and when not to use
 
-<%=$tool%> is designed to be used as a command line tool to:
+<%=tool%> is designed to be used as a command line tool to:
 
 * execute commands on Aspera products
 * transfer to/from Aspera products
@@ -28,7 +28,7 @@ So it is designed for:
 * Interactive operations on a text terminal (typically, VT100 compatible)
 * Batch operations in (shell) scripts (e.g. cron job)
 
-<%=$tool%> can be seen as a command line tool integrating:
+<%=tool%> can be seen as a command line tool integrating:
 
 * a configuration file (config.yaml)
 * advanced command line options
@@ -43,7 +43,7 @@ For such integration cases, e.g. performing operations and transfer to aspera pr
 
 Using APIs (application REST API and transfer SDK) will prove to be easier to develop and maintain.
 
-For scripting and ad'hoc command line operations, <%=$tool%> is perfect.
+For scripting and ad'hoc command line operations, <%=tool%> is perfect.
 
 # Notations
 
@@ -54,9 +54,9 @@ Command line parameters in examples beginning with `my_`, like `my_param_value` 
 
 # <a name="parsing"></a>Shell and Command line parsing
 
-<%=$tool%> is typically executed in a shell, either interactively or in a script. <%=$tool%> receives its arguments from this shell.
+<%=tool%> is typically executed in a shell, either interactively or in a script. <%=tool%> receives its arguments from this shell.
 
-On Linux and Unix environments, this is typically a POSIX shell (bash, zsh, ksh, sh). In this environment shell command line parsing applies before <%=$tool%> (Ruby) is executed, e.g. [bash shell operation](https://www.gnu.org/software/bash/manual/bash.html#Shell-Operation). Ruby receives a list parameters and gives it to <%=$tool%>. So special character handling (quotes, spaces, env vars, ...) is done in the shell.
+On Linux and Unix environments, this is typically a POSIX shell (bash, zsh, ksh, sh). In this environment shell command line parsing applies before <%=tool%> (Ruby) is executed, e.g. [bash shell operation](https://www.gnu.org/software/bash/manual/bash.html#Shell-Operation). Ruby receives a list parameters and gives it to <%=tool%>. So special character handling (quotes, spaces, env vars, ...) is done in the shell.
 
 On Windows, `cmd.exe` is typically used. Windows process creation does not receive the list of arguments but just the whole line. It's up to the program to parse arguments. Ruby follows the Microsoft C/C++ parameter parsing rules.
 
@@ -66,7 +66,7 @@ On Windows, `cmd.exe` is typically used. Windows process creation does not recei
 In case of doubt of argument values after parsing test like this:
 
 ```
-$ <%=$cmd%> conf echo "Hello World" arg2 3
+$ <%=cmd%> conf echo "Hello World" arg2 3
 "Hello World"
 ERROR: Argument: unprocessed values: ["arg2", "3"]
 ```
@@ -77,13 +77,13 @@ ERROR: Argument: unprocessed values: ["arg2", "3"]
 
 This section guides you from installation, first use and advanced use.
 
-First, follow the section: [Installation](#installation) (Ruby, Gem, FASP) to start using <%=$tool%>.
+First, follow the section: [Installation](#installation) (Ruby, Gem, FASP) to start using <%=tool%>.
 
-Once the gem is installed, <%=$tool%> shall be accessible:
+Once the gem is installed, <%=tool%> shall be accessible:
 
 ```
-$ <%=$cmd%> --version
-<%= $gemspec.version.to_s %>
+$ <%=cmd%> --version
+<%=gemspec.version.to_s%>
 ```
 
 ## First use
@@ -95,8 +95,8 @@ If you want to test with Aspera on Cloud, jump to section: [Wizard](#aocwizard)
 To test with Aspera demo transfer server, setup the environment and then test:
 
 ```
-$ <%=$cmd%> config initdemo
-$ <%=$cmd%> server browse /
+$ <%=cmd%> config initdemo
+$ <%=cmd%> server browse /
 :............:...........:......:........:...........................:.......................:
 :   zmode    :   zuid    : zgid :  size  :           mtime           :         name          :
 :............:...........:......:........:...........................:.......................:
@@ -107,19 +107,19 @@ $ <%=$cmd%> server browse /
 :............:...........:......:........:...........................:.......................:
 ```
 
-If you want to use <%=$tool%> with another server, and in order to make further calls more convenient, it is advised to define a <%=$prst%> for the server's authentication options. The following example will:
+If you want to use <%=tool%> with another server, and in order to make further calls more convenient, it is advised to define a <%=prst%> for the server's authentication options. The following example will:
 
-* create a <%=$prst%>
+* create a <%=prst%>
 * define it as default for "server" plugin
 * list files in a folder
 * download a file
 
 ```
-$ <%=$cmd%> config id myserver update --url=ssh://demo.asperasoft.com:33001 --username=asperaweb --password=_demo_pass_
+$ <%=cmd%> config id myserver update --url=ssh://demo.asperasoft.com:33001 --username=asperaweb --password=_demo_pass_
 updated: myserver
-$ <%=$cmd%> config id default set server myserver
+$ <%=cmd%> config id default set server myserver
 updated: default&rarr;server to myserver
-$ <%=$cmd%> server browse /aspera-test-dir-large
+$ <%=cmd%> server browse /aspera-test-dir-large
 :............:...........:......:..............:...........................:............................:
 :   zmode    :   zuid    : zgid :     size     :           mtime           :            name            :
 :............:...........:......:..............:...........................:............................:
@@ -136,7 +136,7 @@ $ <%=$cmd%> server browse /aspera-test-dir-large
 : -rw-r--r-- : asperaweb : fasp : 104857600    : 2014-04-10 19:49:29 +0200 : 100MB                      :
 : -rw-r--r-- : asperaweb : fasp : 10737418240  : 2014-04-10 19:49:04 +0200 : 10GB                       :
 :............:...........:......:..............:...........................:............................:
-$ <%=$cmd%> server download /aspera-test-dir-large/200MB
+$ <%=cmd%> server download /aspera-test-dir-large/200MB
 Time: 00:00:02 ========================================================================================================== 100% 100 Mbps Time: 00:00:00
 complete
 ```
@@ -153,8 +153,8 @@ It is possible to install *either* directly on the host operating system (Linux,
 
 The direct installation is recommended and consists in installing:
 
-* [Ruby](#ruby) version <%= $gemspec.required_ruby_version %>
-* [<%= $gemspec.name %>](#the_gem)
+* [Ruby](#ruby) version <%=gemspec.required_ruby_version%>
+* [<%=gemspec.name%>](#the_gem)
 * [Aspera SDK (ascp)](#fasp_prot)
 
 The following sections provide information on the various installation methods.
@@ -176,21 +176,21 @@ $ docker --version
 Download the wrapping script:
 
 ```
-$ curl -o <%=$cmd%> https://raw.githubusercontent.com/IBM/aspera-cli/develop/bin/dascli
-$ chmod a+x <%=$cmd%>
+$ curl -o <%=cmd%> https://raw.githubusercontent.com/IBM/aspera-cli/develop/bin/dascli
+$ chmod a+x <%=cmd%>
 ```
 
 Install the container image:
 
 ```
-$ ./<%=$cmd%> install
+$ ./<%=cmd%> install
 ```
 
 Start using it !
 
 Note that the tool is run in the container, so transfers are also executed in the container, not calling host.
 
-The wrapping script maps the container folder `/usr/src/app/config` to configuration folder `$HOME/.aspera/<%=$cmd%>` on host.
+The wrapping script maps the container folder `/usr/src/app/config` to configuration folder `$HOME/.aspera/<%=cmd%>` on host.
 
 To transfer to/from the native host, you will need to map a volume in docker or use the config folder (already mapped).
 To add local storage as a volume edit the script: ascli and add a `--volume` stanza.
@@ -201,7 +201,7 @@ Use this method to install on the native host.
 
 A ruby interpreter is required to run the tool or to use the gem and tool.
 
-Required Ruby version: <%= $gemspec.required_ruby_version %>. Ruby version 3 is also supported.
+Required Ruby version: <%=gemspec.required_ruby_version%>. Ruby version 3 is also supported.
 
 *Ruby can be installed using any method* : rpm, yum, dnf, rvm, brew, windows installer, ... .
 
@@ -209,7 +209,7 @@ Refer to the following sections for a proposed method for specific operating sys
 
 The recommended installation method is `rvm` for systems with "bash-like" shell (Linux, Macos, Windows with cygwin, etc...).
 If the generic install is not suitable (e.g. Windows, no cygwin), you can use one of OS-specific install method.
-If you have a simpler better way to install Ruby version <%= $gemspec.required_ruby_version %> : use it !
+If you have a simpler better way to install Ruby version <%=gemspec.required_ruby_version%> : use it !
 
 ### Generic: RVM: single user installation (not root)
 
@@ -262,7 +262,7 @@ One can install in another location with :
 
 As root, make sure this will not collide with other application using Ruby (e.g. Faspex).
 If so, one can rename the login script: `mv /etc/profile.d/rvm.sh /etc/profile.d/rvm.sh.ok`.
-To activate ruby (and <%=$cmd%>) later, source it:
+To activate ruby (and <%=cmd%>) later, source it:
 
 ```
 # source /etc/profile.d/rvm.sh.ok
@@ -279,10 +279,10 @@ Install Latest stable Ruby using [https://rubyinstaller.org/](https://rubyinstal
 
 ### macOS: pre-installed or `brew`
 
-MacOS 10.13+ (High Sierra) comes with a recent Ruby. So you can use it directly. You will need to install <%= $gemspec.name %> using `sudo` :
+MacOS 10.13+ (High Sierra) comes with a recent Ruby. So you can use it directly. You will need to install <%=gemspec.name%> using `sudo` :
 
 ```
-$ sudo gem install <%= $gemspec.name %><%=$geminstadd%>
+$ sudo gem install <%=gemspec.name%><%=geminstadd%>
 ```
 
 Alternatively, if you use [Homebrew](https://brew.sh/) already you can install Ruby with it:
@@ -337,18 +337,18 @@ Then create an archive:
 
 ```
 $ cd
-$ tar zcvf rvm-<%=$cmd%>.tgz .rvm
+$ tar zcvf rvm-<%=cmd%>.tgz .rvm
 ```
 
 Get the Aspera SDK. Execute:
 
 ```
-$ <%=$cmd%> conf --show-config|grep sdk_url
+$ <%=cmd%> conf --show-config|grep sdk_url
 ```
 
 Then download the SDK archive from that URL.
 
-Another method for the SDK is to install the SDK (`<%=$cmd%> conf ascp install`) on the first system, and archive `$HOME/.aspera`.
+Another method for the SDK is to install the SDK (`<%=cmd%> conf ascp install`) on the first system, and archive `$HOME/.aspera`.
 
 Transfer those 2 archives to the target system without internet access.
 
@@ -365,31 +365,31 @@ rvm use 2.7.2
 For the SDK, either install from archive:
 
 ```
-$ <%=$cmd%> conf ascp install --sdk-url=file:///SDK.zip
+$ <%=cmd%> conf ascp install --sdk-url=file:///SDK.zip
 ```
 
 or restore the `$HOME/.aspera` folder for the user.
 
-## <a name="the_gem"></a>`<%= $gemspec.name %>` gem
+## <a name="the_gem"></a>`<%=gemspec.name%>` gem
 
 Once you have Ruby and rights to install gems: Install the gem and its dependencies:
 
 ```
-# gem install <%= $gemspec.name %><%=$geminstadd%>
+# gem install <%=gemspec.name%><%=geminstadd%>
 ```
 
 To upgrade to the latest version:
 
 ```
-# gem update <%= $gemspec.name %>
+# gem update <%=gemspec.name%>
 ```
 
-<%=$tool%> checks every week if a new version is available and notify the user in a WARN log. To de-activate this feature set the option `version_check_days` to `0`, or specify a different period in days.
+<%=tool%> checks every week if a new version is available and notify the user in a WARN log. To de-activate this feature set the option `version_check_days` to `0`, or specify a different period in days.
 
 To check manually:
 
 ```
-# <%=$cmd%> conf check_update
+# <%=cmd%> conf check_update
 ```
 
 
@@ -405,14 +405,14 @@ Only two additional files are required to perform an Aspera Transfer, which are 
 This can be installed either be installing an Aspera transfer sofware, or using an embedded command:
 
 ```
-$ <%=$cmd%> conf ascp install
+$ <%=cmd%> conf ascp install
 ```
 
 If a local SDK installation is prefered instead of fetching from internet: one can specify the location of the SDK file:
 
 ```
 $ curl -Lso SDK.zip https://ibm.biz/aspera_sdk
-$ <%=$cmd%> conf ascp install --sdk-url=file:///SDK.zip
+$ <%=cmd%> conf ascp install --sdk-url=file:///SDK.zip
 ```
 
 The format is: `file:///<path>`, where `<path>` can be either a relative path (not starting with `/`), or an absolute path.
@@ -428,7 +428,7 @@ If the embedded method is not used, the following packages are also suitable:
 For instance, Aspera Connect Client can be installed
 by visiting the page: [https://www.ibm.com/aspera/connect/](https://www.ibm.com/aspera/connect/).
 
-<%=$tool%> will detect most of Aspera transfer products in standard locations and use the first one found.
+<%=tool%> will detect most of Aspera transfer products in standard locations and use the first one found.
 Refer to section [FASP](#client) for details on how to select a client or set path to the FASP protocol.
 
 Several methods are provided on how to start a transfer. Use of a local client is one of them, but
@@ -439,11 +439,11 @@ other methods are available. Refer to section: [Transfer Agents](#agents)
 The procedure consists in:
 
 * Follow the non-root installation procedure with RVM, including gem
-* archive (zip, tar) the main RVM folder (includes <%=$cmd%>):
+* archive (zip, tar) the main RVM folder (includes <%=cmd%>):
 
 ```
 $ cd ~
-$ tar zcvf rvm_<%=$cmd%>.tgz .rvm
+$ tar zcvf rvm_<%=cmd%>.tgz .rvm
 ```
 
 * retrieve the SDK:
@@ -456,14 +456,14 @@ $ curl -Lso SDK.zip https://ibm.biz/aspera_sdk
 
 ```
 $ cd ~
-$ tar zxvf rvm_<%=$cmd%>.tgz
+$ tar zxvf rvm_<%=cmd%>.tgz
 $ source ~/.rvm/scripts/rvm
-$ <%=$cmd%> conf ascp install --sdk-url=file:///SDK.zip
+$ <%=cmd%> conf ascp install --sdk-url=file:///SDK.zip
 ```
 
-# <a name="cli"></a>Command Line Interface: <%=$tool%>
+# <a name="cli"></a>Command Line Interface: <%=tool%>
 
-The `<%= $gemspec.name %>` Gem provides a command line interface (CLI) which interacts with Aspera Products (mostly using REST APIs):
+The `<%=gemspec.name%>` Gem provides a command line interface (CLI) which interacts with Aspera Products (mostly using REST APIs):
 
 * IBM Aspera High Speed Transfer Server (FASP and Node)
 * IBM Aspera on Cloud (including ATS)
@@ -473,7 +473,7 @@ The `<%= $gemspec.name %>` Gem provides a command line interface (CLI) which int
 * IBM Aspera Orchestrator
 * and more...
 
-<%=$tool%> provides the following features:
+<%=tool%> provides the following features:
 
 * Supports most Aspera server products (on-premise and SaaS)
 * Any command line options (products URL, credentials or any option) can be provided on command line, in configuration file, in env var, in files
@@ -490,12 +490,12 @@ The `<%= $gemspec.name %>` Gem provides a command line interface (CLI) which int
 Basic usage is displayed by executing:
 
 ```
-$ <%=$cmd%> -h
+$ <%=cmd%> -h
 ```
 
 Refer to sections: [Usage](#usage) and [Sample Commands](#commands).
 
-Not all <%=$tool%> features are fully documented here, the user may explore commands on the command line.
+Not all <%=tool%> features are fully documented here, the user may explore commands on the command line.
 
 ## Arguments : Commands and options
 
@@ -504,7 +504,7 @@ Arguments are the units of command line, as parsed by the shell, typically separ
 There are two types of arguments: Commands and Options. Example :
 
 ```
-$ <%=$cmd%> command --option-name=VAL1 VAL2
+$ <%=cmd%> command --option-name=VAL1 VAL2
 ```
 
 * executes _command_: `command`
@@ -512,7 +512,7 @@ $ <%=$cmd%> command --option-name=VAL1 VAL2
 * this option has a _value_ of: `VAL1`
 * the command has one additional _argument_: `VAL2`
 
-When the value of a command, option or argument is constrained by a fixed list of values, it is possible to use the first letters of the value only, provided that it uniquely identifies a value. For example `<%=$cmd%> conf ov` is the same as `<%=$cmd%> config overview`.
+When the value of a command, option or argument is constrained by a fixed list of values, it is possible to use the first letters of the value only, provided that it uniquely identifies a value. For example `<%=cmd%> conf ov` is the same as `<%=cmd%> config overview`.
 
 The value of options and arguments is evaluated with the [Extended Value Syntax](#extended).
 
@@ -532,7 +532,7 @@ Exceptions:
 * the special option `--` stops option processing and is ignored, following command line arguments are taken as arguments, including the ones starting with a `-`. Example:
 
 ```
-$ <%=$cmd%> config echo -- --sample
+$ <%=cmd%> config echo -- --sample
 "--sample"
 ```
 
@@ -546,10 +546,10 @@ The value for _any_ options can come from the following locations (in this order
 * Environment variable
 * Command line
 
-Environment variable starting with prefix: <%=$evp%> are taken as option values,
-e.g. `<%=$evp%>OPTION_NAME` is for `--option-name`.
+Environment variable starting with prefix: <%=evp%> are taken as option values,
+e.g. `<%=evp%>OPTION_NAME` is for `--option-name`.
 
-Options values can be displayed for a given command by providing the `--show-config` option: `<%=$cmd%> node --show-config`
+Options values can be displayed for a given command by providing the `--show-config` option: `<%=cmd%> node --show-config`
 
 ### Commands and Arguments
 
@@ -607,7 +607,7 @@ The style of output can be set using the `format` parameter, supporting:
 Table output can be filtered using the `select` parameter. Example:
 
 ```
-$ <%=$cmd%> aoc admin res user list --fields=name,email,ats_admin --query=@json:'{"per_page":1000,"page":1,"sort":"name"}' --select=@json:'{"ats_admin":true}'
+$ <%=cmd%> aoc admin res user list --fields=name,email,ats_admin --query=@json:'{"per_page":1000,"page":1,"sort":"name"}' --select=@json:'{"ats_admin":true}'
 :...............................:..................................:...........:
 :             name              :              email               : ats_admin :
 :...............................:..................................:...........:
@@ -662,7 +662,7 @@ The following "readers" are supported (returns value in []):
 * @path:PATH : [String] performs path expansion (prefix "~/" is replaced with the users home folder), e.g. --config-file=@path:~/sample_config.yml
 * @env:ENVVAR : [String] read from a named env var, e.g.--password=@env:MYPASSVAR
 * @stdin: : [String] read from stdin (no value on right)
-* @preset:NAME : [Hash] get whole <%=$opprst%> value by name
+* @preset:NAME : [Hash] get whole <%=opprst%> value by name
 
 In addition it is possible to decode a value, using one or multiple decoders :
 
@@ -680,13 +680,13 @@ To display the result of an extended value, use the `config echo` command.
 Example: read the content of the specified file, then, base64 decode, then unzip:
 
 ```
-$ <%=$cmd%> config echo @zlib:@base64:@file:myfile.dat
+$ <%=cmd%> config echo @zlib:@base64:@file:myfile.dat
 ```
 
 Example: create a value as a hash, with one key and the value is read from a file:
 
 ```
-$ <%=$cmd%> config echo @ruby:'{"token_verification_key"=>File.read("pubkey.txt")}'
+$ <%=cmd%> config echo @ruby:'{"token_verification_key"=>File.read("pubkey.txt")}'
 ```
 
 Example: read a csv file and create a list of hash for bulk provisioning:
@@ -696,7 +696,7 @@ $ cat test.csv
 name,email
 lolo,laurent@example.com
 toto,titi@tutu.tata
-$ <%=$cmd%> config echo @csvt:@file:test.csv
+$ <%=cmd%> config echo @csvt:@file:test.csv
 :......:.....................:
 : name :        email        :
 :......:.....................:
@@ -708,7 +708,7 @@ $ <%=$cmd%> config echo @csvt:@file:test.csv
 Example: create a hash and include values from preset named "config" of config file in this hash
 
 ```
-$ <%=$cmd%> config echo @incps:@json:'{"hello":true,"incps":["config"]}'
+$ <%=cmd%> config echo @incps:@json:'{"hello":true,"incps":["config"]}'
 {"version"=>"0.9", "hello"=>true}
 ```
 
@@ -727,101 +727,101 @@ It is also possible to provide a _Structured Value_ in a file using `@json:@file
 
 ## <a name="conffolder"></a>Configuration and Persistency Folder
 
-<%=$tool%> configuration and other runtime files (token cache, file lists, persistency files, SDK) are stored in folder `[User's home folder]/.aspera/<%=$cmd%>`.
+<%=tool%> configuration and other runtime files (token cache, file lists, persistency files, SDK) are stored in folder `[User's home folder]/.aspera/<%=cmd%>`.
 
 Note: `[User's home folder]` is found using ruby's `Dir.home` (`rb_w32_home_dir`).
-It uses the `HOME` env var primarily, and on MS Windows it also looks at `%HOMEDRIVE%%HOMEPATH%` and `%USERPROFILE%`. <%=$tool%> sets the env var `%HOME%` to the value of `%USERPROFILE%` if set and exists. So, on Windows `%USERPROFILE%` is used as it is more reliable than `%HOMEDRIVE%%HOMEPATH%`.
+It uses the `HOME` env var primarily, and on MS Windows it also looks at `%HOMEDRIVE%%HOMEPATH%` and `%USERPROFILE%`. <%=tool%> sets the env var `%HOME%` to the value of `%USERPROFILE%` if set and exists. So, on Windows `%USERPROFILE%` is used as it is more reliable than `%HOMEDRIVE%%HOMEPATH%`.
 
 The main folder can be displayed using :
 
 ```
-$ <%=$cmd%> config folder
-/Users/kenji/.aspera/<%=$cmd%>
+$ <%=cmd%> config folder
+/Users/kenji/.aspera/<%=cmd%>
 ```
 
-It can be overriden using the envinonment variable `<%=$evp%>HOME`.
+It can be overriden using the envinonment variable `<%=evp%>HOME`.
 
 Example (Windows):
 
 ```
-$ set <%=$evp%>HOME=C:\Users\Kenji\.aspera\<%=$cmd%>
-$ <%=$cmd%> config folder
-C:\Users\Kenji\.aspera\<%=$cmd%>
+$ set <%=evp%>HOME=C:\Users\Kenji\.aspera\<%=cmd%>
+$ <%=cmd%> config folder
+C:\Users\Kenji\.aspera\<%=cmd%>
 ```
 
 ## <a name="configfile"></a>Configuration file
 
-On the first execution of <%=$tool%>, an empty configuration file is created in the configuration folder.
+On the first execution of <%=tool%>, an empty configuration file is created in the configuration folder.
 Nevertheless, there is no mandatory information required in this file, the use of it is optional as any option can be provided on the command line.
 
-Although the file is a standard YAML file, <%=$tool%> provides commands to read and modify it
+Although the file is a standard YAML file, <%=tool%> provides commands to read and modify it
 using the `config` command.
 
-All options for <%=$tool%> commands can be set on command line, or by env vars, or using <%=$prsts%> in the configuratin file.
+All options for <%=tool%> commands can be set on command line, or by env vars, or using <%=prsts%> in the configuratin file.
 
 A configuration file provides a way to define default values, especially
 for authentication parameters, thus avoiding to always having to specify those parameters on the command line.
 
-The default configuration file is: `$HOME/.aspera/<%=$cmd%>/config.yaml`
+The default configuration file is: `$HOME/.aspera/<%=cmd%>/config.yaml`
 (this can be overriden with option `--config-file=path` or equivalent env var).
 
 So, finally, the configuration file is simply a catalog of pre-defined lists of options,
-called: <%=$prsts%>. Then, instead of specifying some common options on the command line (e.g. address, credentials), it is possible to invoke the ones of a <%=$prst%> (e.g. `mypreset`) using the option: `-Pmypreset` or `--preset=mypreset`.
+called: <%=prsts%>. Then, instead of specifying some common options on the command line (e.g. address, credentials), it is possible to invoke the ones of a <%=prst%> (e.g. `mypreset`) using the option: `-Pmypreset` or `--preset=mypreset`.
 
-### <a name="lprt"></a><%=$prstt%>
+### <a name="lprt"></a><%=prstt%>
 
-A <%=$prst%> is simply a collection of parameters and their associated values in a named section in the configuration file.
+A <%=prst%> is simply a collection of parameters and their associated values in a named section in the configuration file.
 
-A named <%=$prst%> can be modified directly using <%=$tool%>, which will update the configuration file :
-
-```
-$ <%=$cmd%> config id <<%=$opprst%>> set|delete|show|initialize|update
-```
-
-The command `update` allows the easy creation of <%=$prst%> by simply providing the options in their command line format, e.g. :
+A named <%=prst%> can be modified directly using <%=tool%>, which will update the configuration file :
 
 ```
-$ <%=$cmd%> config id demo_server update --url=ssh://demo.asperasoft.com:33001 --username=asperaweb --password=_demo_pass_ --ts=@json:'{"precalculate_job_size":true}'
+$ <%=cmd%> config id <<%=opprst%>> set|delete|show|initialize|update
 ```
 
-* This creates a <%=$prst%> `demo_server` with all provided options.
-
-The command `set` allows setting individual options in a <%=$prst%>.
+The command `update` allows the easy creation of <%=prst%> by simply providing the options in their command line format, e.g. :
 
 ```
-$ <%=$cmd%> config id demo_server set password _demo_pass_
+$ <%=cmd%> config id demo_server update --url=ssh://demo.asperasoft.com:33001 --username=asperaweb --password=_demo_pass_ --ts=@json:'{"precalculate_job_size":true}'
+```
+
+* This creates a <%=prst%> `demo_server` with all provided options.
+
+The command `set` allows setting individual options in a <%=prst%>.
+
+```
+$ <%=cmd%> config id demo_server set password _demo_pass_
 ```
 
 The command `initialize`, like `update` allows to set several parameters at once, but it deletes an existing configuration instead of updating it, and expects a _[Structured Value](#native)_.
 
 ```
-$ <%=$cmd%> config id demo_server initialize @json:'{"url":"ssh://demo.asperasoft.com:33001","username":"asperaweb","password":"_demo_pass_","ts":{"precalculate_job_size":true}}'
+$ <%=cmd%> config id demo_server initialize @json:'{"url":"ssh://demo.asperasoft.com:33001","username":"asperaweb","password":"_demo_pass_","ts":{"precalculate_job_size":true}}'
 ```
 
 A good practice is to not manually edit the configuration file and use modification commands instead.
 If necessary, the configuration file can be edited (or simply consulted) with:
 
 ```
-$ <%=$cmd%> config open
+$ <%=cmd%> config open
 ```
 
 A full terminal based overview of the configuration can be displayed using:
 
 ```
-$ <%=$cmd%> config over
+$ <%=cmd%> config over
 ```
 
-A list of <%=$prst%> can be displayed using:
+A list of <%=prst%> can be displayed using:
 
 ```
-$ <%=$cmd%> config list
+$ <%=cmd%> config list
 ```
 
-### <a name="lprtconf"></a>Special <%=$prstt%>: config
+### <a name="lprtconf"></a>Special <%=prstt%>: config
 
-This preset name is reserved and contains a single key: `version`. This is the version of <%=$tool%> which created the file.
+This preset name is reserved and contains a single key: `version`. This is the version of <%=tool%> which created the file.
 
-### <a name="lprtdef"></a>Special <%=$prstt%>: default
+### <a name="lprtdef"></a>Special <%=prstt%>: default
 
 This preset name is reserved and contains an array of key-value , where the key is the name of a plugin, and the value is the name of another preset.
 
@@ -832,16 +832,16 @@ Note that special plugin name: `config` can be associated with a preset that is 
 Operations on this preset are done using regular `config` operations:
 
 ```
-$ <%=$cmd%> config id default set _plugin_name_ _default_preset_for_plugin_
-$ <%=$cmd%> config id default get _plugin_name_
+$ <%=cmd%> config id default set _plugin_name_ _default_preset_for_plugin_
+$ <%=cmd%> config id default get _plugin_name_
 "_default_preset_for_plugin_"
 ```
 
 ### <a name="lprtdef"></a>Special Plugin: config
 
-Plugin `config` (not to be confused with <%=$prstt%> config) is used to configure <%=$tool%> but it also contains global options.
+Plugin `config` (not to be confused with <%=prstt%> config) is used to configure <%=tool%> but it also contains global options.
 
-When <%=$tool%> starts, it lookjs for the `default` <%=$prstt%> and if there is a value for `config`, if so, it loads the option values for any plugin used.
+When <%=tool%> starts, it lookjs for the `default` <%=prstt%> and if there is a value for `config`, if so, it loads the option values for any plugin used.
 
 If no global default is set by the user, the tool will use `global_common_defaults` when setting global parameters (e.g. `conf ascp use`)
 
@@ -866,32 +866,32 @@ demo_server:
 We can see here:
 
 * The configuration was created with CLI version 0.3.7
-* the default <%=$prst%> to load for plugin "server" is : `demo_server`
-* the <%=$prst%> `demo_server` defines some parameters: the URL and credentials
-* the default <%=$prst%> to load in any case is : `cli_default`
+* the default <%=prst%> to load for plugin "server" is : `demo_server`
+* the <%=prst%> `demo_server` defines some parameters: the URL and credentials
+* the default <%=prst%> to load in any case is : `cli_default`
 
-Two <%=$prsts%> are reserved:
+Two <%=prsts%> are reserved:
 
 * `config` contains a single value: `version` showing the CLI
 version used to create the configuration file. It is used to check compatibility.
-* `default` is reserved to define the default <%=$prst%> name used for known plugins.
+* `default` is reserved to define the default <%=prst%> name used for known plugins.
 
-The user may create as many <%=$prsts%> as needed. For instance, a particular <%=$prst%> can be created for a particular application instance and contain URL and credentials.
+The user may create as many <%=prsts%> as needed. For instance, a particular <%=prst%> can be created for a particular application instance and contain URL and credentials.
 
 Values in the configuration also follow the [Extended Value Syntax](#extended).
 
 Note: if the user wants to use the [Extended Value Syntax](#extended) inside the configuration file, using the `config id update` command, the user shall use the `@val:` prefix. Example:
 
 ```
-$ <%=$cmd%> config id my_aoc_org set private_key @val:@file:"$HOME/.aspera/<%=$cmd%>/aocapikey"
+$ <%=cmd%> config id my_aoc_org set private_key @val:@file:"$HOME/.aspera/<%=cmd%>/aocapikey"
 ```
 
-This creates the <%=$prst%>:
+This creates the <%=prst%>:
 
 ```
 ...
 my_aoc_org:
-  private_key: @file:"/Users/laurent/.aspera/<%=$cmd%>/aocapikey"
+  private_key: @file:"/Users/laurent/.aspera/<%=cmd%>/aocapikey"
 ...
 ```
 
@@ -899,15 +899,15 @@ So, the key file will be read only at execution time, but not be embedded in the
 
 Options are loaded using this algorithm:
 
-* if option '--preset=xxxx' is specified (or -Pxxxx), this reads the <%=$prst%> specified from the configuration file.
+* if option '--preset=xxxx' is specified (or -Pxxxx), this reads the <%=prst%> specified from the configuration file.
     * else if option --no-default (or -N) is specified, then dont load default
-    * else it looks for the name of the default <%=$prst%> in section "default" and loads it
+    * else it looks for the name of the default <%=prst%> in section "default" and loads it
 * environment variables are evaluated
 * command line options are evaluated
 
 Parameters are evaluated in the order of command line.
 
-To avoid loading the default <%=$prst%> for a plugin, just specify a non existing configuration: `-Pnone`
+To avoid loading the default <%=prst%> for a plugin, just specify a non existing configuration: `-Pnone`
 
 On command line, words in parameter names are separated by a dash, in configuration file, separator
 is an underscore. E.g. --xxx-yyy  on command line gives xxx_yyy in configuration file.
@@ -915,18 +915,18 @@ is an underscore. E.g. --xxx-yyy  on command line gives xxx_yyy in configuration
 Note: before version 0.4.5, some keys could be ruby symbols, from 0.4.5 all keys are strings. To
 convert olver versions, remove the leading ":" in front of keys.
 
-The main plugin name is *config*, so it is possible to define a default <%=$prst%> for
+The main plugin name is *config*, so it is possible to define a default <%=prst%> for
 the main plugin with:
 
 ```
-$ <%=$cmd%> config id cli_default set interactive no
-$ <%=$cmd%> config id default set config cli_default
+$ <%=cmd%> config id cli_default set interactive no
+$ <%=cmd%> config id default set config cli_default
 ```
 
-A <%=$prst%> value can be removed with `unset`:
+A <%=prst%> value can be removed with `unset`:
 
 ```
-$ <%=$cmd%> config id cli_default unset interactive
+$ <%=cmd%> config id cli_default unset interactive
 ```
 
 ### Examples
@@ -936,44 +936,44 @@ only username/password and url are required (either on command line, or from con
 Those can usually be provided on the command line:
 
 ```
-$ <%=$cmd%> shares repo browse / --url=https://10.25.0.6 --username=john --password=4sp3ra
+$ <%=cmd%> shares repo browse / --url=https://10.25.0.6 --username=john --password=4sp3ra
 ```
 
 This can also be provisioned in a config file:
 
 ```
-1$ <%=$cmd%> config id shares06 set url https://10.25.0.6
-2$ <%=$cmd%> config id shares06 set username john
-3$ <%=$cmd%> config id shares06 set password 4sp3ra
-4$ <%=$cmd%> config id default set shares shares06
-5$ <%=$cmd%> config overview
-6$ <%=$cmd%> shares repo browse /
+1$ <%=cmd%> config id shares06 set url https://10.25.0.6
+2$ <%=cmd%> config id shares06 set username john
+3$ <%=cmd%> config id shares06 set password 4sp3ra
+4$ <%=cmd%> config id default set shares shares06
+5$ <%=cmd%> config overview
+6$ <%=cmd%> shares repo browse /
 ```
 
-The three first commands build a <%=$prst%>.
+The three first commands build a <%=prst%>.
 Note that this can also be done with one single command:
 
 ```
-$ <%=$cmd%> config id shares06 init @json:'{"url":"https://10.25.0.6","username":"john","password":"4sp3ra"}'
+$ <%=cmd%> config id shares06 init @json:'{"url":"https://10.25.0.6","username":"john","password":"4sp3ra"}'
 ```
 
-The fourth command defines this <%=$prst%> as the default <%=$prst%> for the
+The fourth command defines this <%=prst%> as the default <%=prst%> for the
 specified application ("shares"). The 5th command displays the content of configuration file in table format.
-Alternative <%=$prsts%> can be used with option "-P&lt;<%=$prst%>&gt;"
-(or --preset=&lt;<%=$prst%>&gt;)
+Alternative <%=prsts%> can be used with option "-P&lt;<%=prst%>&gt;"
+(or --preset=&lt;<%=prst%>&gt;)
 
 Eventually, the last command shows a call to the shares application using default parameters.
 
 
 ## Plugins
 
-The CLI tool uses a plugin mechanism. The first level command (just after <%=$tool%> on the command line) is the name of the concerned plugin which will execute the command. Each plugin usually represent commands sent to a specific application.
+The CLI tool uses a plugin mechanism. The first level command (just after <%=tool%> on the command line) is the name of the concerned plugin which will execute the command. Each plugin usually represent commands sent to a specific application.
 For instance, the plugin "faspex" allows operations on the application "Aspera Faspex".
 
 ### Create your own plugin
 ```
-$ mkdir -p ~/.aspera/<%=$cmd%>/plugins
-$ cat<<EOF>~/.aspera/<%=$cmd%>/plugins/test.rb
+$ mkdir -p ~/.aspera/<%=cmd%>/plugins
+$ cat<<EOF>~/.aspera/<%=cmd%>/plugins/test.rb
 require 'aspera/cli/plugin'
 module Aspera
   module Cli
@@ -990,7 +990,7 @@ EOF
 
 ## Debugging
 
-The gem is equipped with traces. By default logging level is "warn". To increase debug level, use parameter `log_level`, so either command line `--log-level=xx` or env var `<%=$evp%>LOG_LEVEL`.
+The gem is equipped with traces. By default logging level is "warn". To increase debug level, use parameter `log_level`, so either command line `--log-level=xx` or env var `<%=evp%>LOG_LEVEL`.
 
 It is also possible to activate traces before initialisation using env var `AS_LOG_LEVEL`.
 
@@ -1029,7 +1029,7 @@ The `fpac` option allows specification of a Proxy Auto Configuration (PAC) file,
 The PAC file can be tested with command: `config proxy_check` , example:
 
 ```
-$ <%=$cmd%> config proxy_check --fpac=file:///./proxy.pac http://www.example.com
+$ <%=cmd%> config proxy_check --fpac=file:///./proxy.pac http://www.example.com
 PROXY proxy.example.com:8080
 ```
 
@@ -1047,9 +1047,9 @@ The `config` plugin also allows specification for the use of a local FASP client
 ### Show path of currently used `ascp`
 
 ```
-$ <%=$cmd%> config ascp show
+$ <%=cmd%> config ascp show
 /Users/laurent/.aspera/ascli/sdk/ascp
-$ <%=$cmd%> config ascp info
+$ <%=cmd%> config ascp info
 +--------------------+-----------------------------------------------------------+
 | key                | value                                                     |
 +--------------------+-----------------------------------------------------------+
@@ -1059,7 +1059,7 @@ $ <%=$cmd%> config ascp info
 
 ### Selection of local `ascp`
 
-By default, <%=$tool%> uses any found local product with ascp, including SDK.
+By default, <%=tool%> uses any found local product with ascp, including SDK.
 
 To temporarily use an alternate ascp path use option `ascp_path` (`--ascp-path=`)
 
@@ -1068,7 +1068,7 @@ For a permanent change, the command `config ascp use` sets the same parameter fo
 Using a POSIX shell:
 
 ```
-$ <%=$cmd%> config ascp use '/Users/laurent/Applications/Aspera CLI/bin/ascp'
+$ <%=cmd%> config ascp use '/Users/laurent/Applications/Aspera CLI/bin/ascp'
 ascp version: 4.0.0.182279
 Updated: global_common_defaults: ascp_path <- /Users/laurent/Applications/Aspera CLI/bin/ascp
 Saved to default global preset global_common_defaults
@@ -1077,7 +1077,7 @@ Saved to default global preset global_common_defaults
 Windows:
 
 ```
-$ <%=$cmd%> config ascp use C:\Users\admin\.aspera\ascli\sdk\ascp.exe
+$ <%=cmd%> config ascp use C:\Users\admin\.aspera\ascli\sdk\ascp.exe
 ascp version: 4.0.0.182279
 Updated: global_common_defaults: ascp_path <- C:\Users\admin\.aspera\ascli\sdk\ascp.exe
 Saved to default global preset global_common_defaults
@@ -1090,7 +1090,7 @@ If the path has spaces, read section: [Shell and Command line parsing](#parsing)
 Locally installed Aspera products can be listed with:
 
 ```
-$ <%=$cmd%> config ascp products list
+$ <%=cmd%> config ascp products list
 :.........................................:................................................:
 :                  name                   :                    app_root                    :
 :.........................................:................................................:
@@ -1110,14 +1110,14 @@ Using the option use_product finds the ascp binary of the selected product.
 To permanently use the ascp of a product:
 
 ```
-$ <%=$cmd%> config ascp products use 'Aspera Connect'
+$ <%=cmd%> config ascp products use 'Aspera Connect'
 saved to default global preset /Users/laurent/Applications/Aspera Connect.app/Contents/Resources/ascp
 ```
 
 ### Installation of Connect Client on command line
 
 ```
-$ <%=$cmd%> config ascp connect list
+$ <%=cmd%> config ascp connect list
 :...............................................:......................................:..............:
 :                      id                       :                title                 :   version    :
 :...............................................:......................................:..............:
@@ -1130,7 +1130,7 @@ $ <%=$cmd%> config ascp connect list
 : urn:uuid:213C9370-22B1-11E2-81C1-0800200C9A66 : Aspera Connect for Linux 32          : 3.6.2.117442 :
 : urn:uuid:97F94DF0-22B1-11E2-81C1-0800200C9A66 : Aspera Connect for Linux 64          : 3.7.2.141527 :
 :...............................................:......................................:..............:
-$ <%=$cmd%> config ascp connect id 'Aspera Connect for Mac Intel 10.6' links list
+$ <%=cmd%> config ascp connect id 'Aspera Connect for Mac Intel 10.6' links list
 :.............................................:..........................:.......................................................................:..........:...............:
 :                    title                    :           type           :                                 href                                  : hreflang :      rel      :
 :.............................................:..........................:.......................................................................:..........:...............:
@@ -1143,7 +1143,7 @@ $ <%=$cmd%> config ascp connect id 'Aspera Connect for Mac Intel 10.6' links lis
 : Aspera Connect PDF Documentation for Mac OS : application/pdf          : docs/user/osx/zh-cn/pdf/Connect_User_3.7.0_OSX_zh-cn.pdf              : zh-cn    : documentation :
 : Aspera Connect for Mac Release Notes        : text/html                : http://www.asperasoft.com/en/release_notes/default_1/release_notes_54 : en       : release-notes :
 :.............................................:..........................:.......................................................................:..........:...............:
-$ <%=$cmd%> config ascp connect id 'Aspera Connect for Mac Intel 10.6' links id 'Mac Intel Installer' download --to-folder=.
+$ <%=cmd%> config ascp connect id 'Aspera Connect for Mac Intel 10.6' links id 'Mac Intel Installer' download --to-folder=.
 downloaded: AsperaConnect-3.6.1.111259-mac-intel-10.6.dmg
 ```
 
@@ -1165,13 +1165,13 @@ Note that all transfer operation are seen from the point of view of the agent.
 For instance, a node agent making an "upload", or "package send" operation,
 will effectively push files to the related server from the agent node.
 
-<%=$tool%> standadizes on the use of a [_transfer-spec_](#transferspec) instead of _raw_ ascp options to provide parameters for a transfer session, as a common method for those three Transfer Agents.
+<%=tool%> standadizes on the use of a [_transfer-spec_](#transferspec) instead of _raw_ ascp options to provide parameters for a transfer session, as a common method for those three Transfer Agents.
 
 
 ### <a name="direct"></a>Direct (local ascp using FASPManager API)
 
-By default <%=$tool%> uses a local ascp, equivalent to specifying `--transfer=direct`.
-<%=$tool%> will detect locally installed Aspera products.
+By default <%=tool%> uses a local ascp, equivalent to specifying `--transfer=direct`.
+<%=tool%> will detect locally installed Aspera products.
 Refer to section [FASP](#client).
 
 To specify a FASP proxy (only supported with the `direct` agent), set the appropriate [_transfer-spec_](#transferspec) parameter:
@@ -1211,13 +1211,13 @@ max( sleep_max , sleep_initial * sleep_factor ^ (iter_index-1) )
 Examples:
 
 ```
-$ <%=$cmd%> ... --transfer-info=@json:'{"wss":true,"resume":{"iter_max":10}}'
-$ <%=$cmd%> ... --transfer-info=@json:'{"spawn_delay_sec":2.5,"multi_incr_udp":false}'
+$ <%=cmd%> ... --transfer-info=@json:'{"wss":true,"resume":{"iter_max":10}}'
+$ <%=cmd%> ... --transfer-info=@json:'{"spawn_delay_sec":2.5,"multi_incr_udp":false}'
 ```
 
 ### IBM Aspera Connect Client GUI
 
-By specifying option: `--transfer=connect`, <%=$tool%> will start transfers
+By specifying option: `--transfer=connect`, <%=tool%> will start transfers
 using the locally installed Aspera Connect Client.
 
 ### Aspera Node API : Node to node transfers
@@ -1231,7 +1231,7 @@ in the configuration file, then this node is used by default else the parameter
 three keys: url, username and password, corresponding to the URL of the node API
 and associated credentials (node user or access key).
 
-The `--transfer-info` parameter can directly specify a pre-configured <%=$prst%> :
+The `--transfer-info` parameter can directly specify a pre-configured <%=prst%> :
 `--transfer-info=@preset:<psetname>` or specified using the option syntax :
 `--transfer-info=@json:'{"url":"https://...","username":"theuser","password":"thepass"}'`
 
@@ -1246,7 +1246,7 @@ If it possible to send using a HTTP gateway, in case FASP is not allowed.
 Example:
 
 ```
-$ <%=$cmd%> faspex package recv --id=323 --transfer=httpgw --transfer-info=@json:'{"url":"https://asperagw.example.com:9443/aspera/http-gwy/v1"}'
+$ <%=cmd%> faspex package recv --id=323 --transfer=httpgw --transfer-info=@json:'{"url":"https://asperagw.example.com:9443/aspera/http-gwy/v1"}'
 ```
 
 Note that the gateway only supports transfers authorized with a token.
@@ -1262,7 +1262,7 @@ is described in a _transfer-spec_ (Transfer Specification), such as:
 * file list
 * etc...
 
-<%=$tool%> builds a default _transfer-spec_ internally, so it is not necessary to provide additional parameters on the command line for this transfer.
+<%=tool%> builds a default _transfer-spec_ internally, so it is not necessary to provide additional parameters on the command line for this transfer.
 
 If needed, it is possible to modify or add any of the supported _transfer-spec_ parameter using the `ts` option. The `ts` option accepts a [Structured Value](#native) containing one or several _transfer-spec_ parameters. Multiple `ts` options on command line are cummulative.
 
@@ -1288,8 +1288,8 @@ References:
 Parameters can be displayed with commands:
 
 ```
-$ <%=$cmd%> config ascp spec
-$ <%=$cmd%> config ascp spec --select=@json:'{"f":"Y"}' --fields=-f,n,c
+$ <%=cmd%> config ascp spec
+$ <%=cmd%> config ascp spec --select=@json:'{"f":"Y"}' --fields=-f,n,c
 ```
 
 Columns:
@@ -1299,13 +1299,13 @@ Columns:
 * C=Connect Client
 * arg=`ascp` argument or environment variable
 
-Fields with EX_ prefix are extensions to transfer agent `direct`. (only in <%=$tool%>).
+Fields with EX_ prefix are extensions to transfer agent `direct`. (only in <%=tool%>).
 
-<%= spec_table %>
+<%= spec_table%>
 
 ### Destination folder for transfers
 
-The destination folder is set by <%=$tool%> by default to:
+The destination folder is set by <%=tool%> by default to:
 
 * `.` for downloads
 * `/` for uploads
@@ -1321,18 +1321,18 @@ When uploading, downloading or sending files, the user must specify the list of 
 Most of the time, the list of files to transfer will be simply specified on the command line:
 
 ```
-$ <%=$cmd%> server upload ~/mysample.file secondfile
+$ <%=cmd%> server upload ~/mysample.file secondfile
 ```
 
 This is equivalent to:
 
 ```
-$ <%=$cmd%> server upload --sources=@args ~/mysample.file secondfile
+$ <%=cmd%> server upload --sources=@args ~/mysample.file secondfile
 ```
 
 More advanced options are provided to adapt to various cases. In fact, list of files to transfer are conveyed using the [_transfer-spec_](#transferspec) using the field: "paths" which is a list (array) of pairs of "source" (mandatory) and "destination" (optional).
 
-Note that this is different from the "ascp" command line. The paradigm used by <%=$tool%> is:
+Note that this is different from the "ascp" command line. The paradigm used by <%=tool%> is:
 all transfer parameters are kept in [_transfer-spec_](#transferspec) so that execution of a transfer is independent of the transfer agent. Note that other IBM Aspera interfaces use this: connect, node, transfer sdk.
 
 For ease of use and flexibility, the list of files to transfer is specified by the option `sources`. Accepted values are:
@@ -1367,7 +1367,7 @@ In case the file list is provided on the command line (i.e. using `--sources=@ar
 Example:
 
 ```
-$ <%=$cmd%> server upload --src-type=pair ~/Documents/Samples/200KB.1 /Upload/sample1
+$ <%=cmd%> server upload --src-type=pair ~/Documents/Samples/200KB.1 /Upload/sample1
 ```
 
 Note the special case when the source files are located on "Aspera on Cloud", i.e. using access keys and the `file id` API:
@@ -1402,7 +1402,7 @@ Multi-session is directly supported by the node daemon.
 Note: resume policy of "attr" may cause problems. "none" or "sparse_csum"
 shall be preferred.
 
-Multi-session spawn is done by <%=$tool%>.
+Multi-session spawn is done by <%=tool%>.
 
 When multi-session is used, one separate UDP port is used per session (refer to `ascp` manual page).
 
@@ -1452,7 +1452,7 @@ Usually the OS native scheduler shall already provide some sort of such protecti
 The list of supported *PVCL* adapters can be retried with command:
 
 ```
-$ <%=$cmd%> conf ascp info
+$ <%=cmd%> conf ascp info
 +--------------------+-----------------------------------------------------------+
 | key                | value                                                     |
 +--------------------+-----------------------------------------------------------+
@@ -1483,7 +1483,7 @@ One of the adapters, used in this manual, for testing, is `faux`. It is a pseudo
 
 ## <a name="faux_testing"></a>`faux:` for testing
 
-This is an extract of the man page of `ascp`. This feature is a feature of `ascp`, not <%=$tool%>
+This is an extract of the man page of `ascp`. This feature is a feature of `ascp`, not <%=tool%>
 
 This adapter can be used to simulate a file or a directory.
 
@@ -1542,19 +1542,19 @@ Examples:
 * Upload 20 gigabytes of random data to file myfile to directory /Upload
 
 ```
-$ <%=$cmd%> server upload faux:///myfile\?20g --to-folder=/Upload
+$ <%=cmd%> server upload faux:///myfile\?20g --to-folder=/Upload
 ```
 
 * Upload a file /tmp/sample but do not save results to disk (no docroot on destination)
 
 ```
-$ <%=$cmd%> server upload /tmp/sample --to-folder=faux://
+$ <%=cmd%> server upload /tmp/sample --to-folder=faux://
 ```
 
 * Upload a faux directory `mydir` containing 1 million files, sequentially with sizes ranging from 0 to 2 M - 2 bytes, with the basename of each file being `testfile` to /Upload
 
 ```
-$ <%=$cmd%> server upload "faux:///mydir?file=testfile&count=1m&size=0&inc=2&seq=sequential" --to-folder=/Upload
+$ <%=cmd%> server upload "faux:///mydir?file=testfile&count=1m&size=0&inc=2&seq=sequential" --to-folder=/Upload
 ```
 
 ## <a name="commands"></a>Sample Commands
@@ -1562,15 +1562,15 @@ $ <%=$cmd%> server upload "faux:///mydir?file=testfile&count=1m&size=0&inc=2&seq
 A non complete list of commands used in unit tests:
 
 ```
-<%= File.read(ENV["INCL_COMMANDS"]) %>
+<%= File.read(ENV["INCL_COMMANDS"])%>
 ...and more
 ```
 
 ## <a name="usage"></a>Usage
 
 ```
-$ <%=$cmd%> -h
-<%= File.read(ENV["INCL_USAGE"]) %>
+$ <%=cmd%> -h
+<%= File.read(ENV["INCL_USAGE"])%>
 
 ```
 
@@ -1578,7 +1578,7 @@ Note that actions and parameter values can be written in short form.
 
 # <a name="plugins"></a>Plugins: Application URL and Authentication
 
-<%=$tool%> comes with several Aspera application plugins.
+<%=tool%> comes with several Aspera application plugins.
 
 REST APIs of Aspera legacy applications (Aspera Node, Faspex, Shares, Console, Orchestrator, Server) use simple username/password authentication: HTTP Basic Authentication.
 
@@ -1600,17 +1600,17 @@ It is recommended to use the wizard to set it up, but manual configuration is al
 
 ## <a name="aocwizard"></a>Configuration: using Wizard
 
-<%=$tool%> provides a configuration wizard. Here is a sample invocation :
+<%=tool%> provides a configuration wizard. Here is a sample invocation :
 
 ```
-$ <%=$cmd%> config wizard
+$ <%=cmd%> config wizard
 option: url> https://myorg.ibmaspera.com
 Detected: Aspera on Cloud
 Preparing preset: aoc_myorg
 Please provide path to your private RSA key, or empty to generate one:
 option: pkeypath>
 using existing key:
-/Users/myself/.aspera/<%=$cmd%>/aspera_aoc_key
+/Users/myself/.aspera/<%=cmd%>/aspera_aoc_key
 Using global client_id.
 option: username> john@example.com
 Updating profile with new key
@@ -1619,7 +1619,7 @@ Setting config preset as default for aspera
 saving config file
 Done.
 You can test with:
-$ <%=$cmd%> aoc user info show
+$ <%=cmd%> aoc user info show
 ```
 
 Optionally, it is possible to create a new organization-specific "integration".
@@ -1641,17 +1641,17 @@ Several types of OAuth authentication are supported:
 
 The authentication method is controled by option `auth`.
 
-For a _quick start_, follow the mandatory and sufficient section: [API Client Registration](#clientreg) (auth=web) as well as [<%=$prst%> for Aspera on Cloud](#aocpreset).
+For a _quick start_, follow the mandatory and sufficient section: [API Client Registration](#clientreg) (auth=web) as well as [<%=prst%> for Aspera on Cloud](#aocpreset).
 
 For a more convenient, browser-less, experience follow the [JWT](#jwt) section (auth=jwt) in addition to Client Registration.
 
-In Oauth, a "Bearer" token are generated to authenticate REST calls. Bearer tokens are valid for a period of time.<%=$tool%> saves generated tokens in its configuration folder, tries to re-use them or regenerates them when they have expired.
+In Oauth, a "Bearer" token are generated to authenticate REST calls. Bearer tokens are valid for a period of time.<%=tool%> saves generated tokens in its configuration folder, tries to re-use them or regenerates them when they have expired.
 
 ### <a name="clientreg"></a>Optional: API Client Registration
 
 If you use the built-in client_id and client_secret, skip this and do not set them in next section.
 
-Else you can use a specific OAuth API client_id, the first step is to declare <%=$tool%> in Aspera on Cloud using the admin interface.
+Else you can use a specific OAuth API client_id, the first step is to declare <%=tool%> in Aspera on Cloud using the admin interface.
 
 (official documentation: <https://ibmaspera.com/help/admin/organization/registering_an_api_client> ).
 
@@ -1660,25 +1660,25 @@ Let's start by a registration with web based authentication (auth=web):
 * Open a web browser, log to your instance: e.g. `https://myorg.ibmaspera.com/`
 * Go to Apps&rarr;Admin&rarr;Organization&rarr;Integrations
 * Click "Create New"
-	* Client Name: <%=$tool%>
+	* Client Name: <%=tool%>
 	* Redirect URIs: `http://localhost:12345`
 	* Origins: `localhost`
 	* uncheck "Prompt users to allow client to access"
 	* leave the JWT part for now
 * Save
 
-Note: for web based authentication, <%=$tool%> listens on a local port (e.g. specified by the redirect_uri, in this example: 12345), and the browser will provide the OAuth code there. For `<%=$tool%>, HTTP is required, and 12345 is the default port.
+Note: for web based authentication, <%=tool%> listens on a local port (e.g. specified by the redirect_uri, in this example: 12345), and the browser will provide the OAuth code there. For `<%=tool%>, HTTP is required, and 12345 is the default port.
 
 Once the client is registered, a "Client ID" and "Secret" are created, these values will be used in the next step.
 
-### <a name="aocpreset"></a><%=$prst%> for Aspera on Cloud
+### <a name="aocpreset"></a><%=prst%> for Aspera on Cloud
 
-If you did not use the wizard, you can also manually create a <%=$prst%> for <%=$tool%> in its configuration file.
+If you did not use the wizard, you can also manually create a <%=prst%> for <%=tool%> in its configuration file.
 
-Lets create an <%=$prst%> called: `my_aoc_org` using `ask` interactive input (client info from previous step):
+Lets create an <%=prst%> called: `my_aoc_org` using `ask` interactive input (client info from previous step):
 
 ```
-$ <%=$cmd%> config id my_aoc_org ask url client_id client_secret
+$ <%=cmd%> config id my_aoc_org ask url client_id client_secret
 option: url> https://myorg.ibmaspera.com/
 option: client_id> BJLPObQiFw
 option: client_secret> yFS1mu-crbKuQhGFtfhYuoRW...
@@ -1687,10 +1687,10 @@ updated: my_aoc_org
 
 (This can also be done in one line using the command `config id my_aoc_org update --url=...`)
 
-Define this <%=$prst%> as default configuration for the `aspera` plugin:
+Define this <%=prst%> as default configuration for the `aspera` plugin:
 
 ```
-$ <%=$cmd%> config id default set aoc my_aoc_org
+$ <%=cmd%> config id default set aoc my_aoc_org
 ```
 
 Note: Default `auth` method is `web` and default `redirect_uri` is `http://localhost:12345`. Leave those default values.
@@ -1710,13 +1710,13 @@ This can be done using any of the following method:
 * using the CLI:
 
 ```
-$ <%=$cmd%> config genkey ~/.aspera/<%=$cmd%>/aocapikey
+$ <%=cmd%> config genkey ~/.aspera/<%=cmd%>/aocapikey
 ```
 
 * `ssh-keygen`:
 
 ```
-$ ssh-keygen -t rsa -f ~/.aspera/<%=$cmd%>/aocapikey -N ''
+$ ssh-keygen -t rsa -f ~/.aspera/<%=cmd%>/aocapikey -N ''
 ```
 
 * `openssl`
@@ -1724,7 +1724,7 @@ $ ssh-keygen -t rsa -f ~/.aspera/<%=$cmd%>/aocapikey -N ''
 (on some openssl implementation (mac) there is option: -nodes (no DES))
 
 ```
-$ APIKEY=~/.aspera/<%=$cmd%>/aocapikey
+$ APIKEY=~/.aspera/<%=cmd%>/aocapikey
 $ openssl genrsa -passout pass:dummypassword -out ${APIKEY}.protected 2048
 $ openssl rsa -passin pass:dummypassword -in ${APIKEY}.protected -out ${APIKEY}
 $ openssl rsa -pubout -in ${APIKEY} -out ${APIKEY}.pub
@@ -1747,13 +1747,13 @@ If you are not using the built-in client_id and secret, JWT needs to be authoriz
 * Using command line
 
 ```
-$ <%=$cmd%> aoc admin res client list
+$ <%=cmd%> aoc admin res client list
 :............:.........:
 :     id     :  name   :
 :............:.........:
-: BJLPObQiFw : <%=$cmd%> :
+: BJLPObQiFw : <%=cmd%> :
 :............:.........:
-$ <%=$cmd%> aoc admin res client --id=BJLPObQiFw modify @json:'{"jwt_grant_enabled":true,"explicit_authorization_required":false}'
+$ <%=cmd%> aoc admin res client --id=BJLPObQiFw modify @json:'{"jwt_grant_enabled":true,"explicit_authorization_required":false}'
 modified
 ```
 
@@ -1763,7 +1763,7 @@ The public key must be assigned to your user. This can be done in two manners:
 
 * Graphically
 
-open the previously generated public key located here: `$HOME/.aspera/<%=$cmd%>/aocapikey.pub`
+open the previously generated public key located here: `$HOME/.aspera/<%=cmd%>/aocapikey.pub`
 
 	* Open a web browser, log to your instance: https://myorg.ibmaspera.com/
 	* Click on the user's icon (top right)
@@ -1774,22 +1774,22 @@ open the previously generated public key located here: `$HOME/.aspera/<%=$cmd%>/
 * Using command line
 
 ```
-$ <%=$cmd%> aoc admin res user list
+$ <%=cmd%> aoc admin res user list
 :........:................:
 :   id   :      name      :
 :........:................:
 : 109952 : Tech Support   :
 : 109951 : LAURENT MARTIN :
 :........:................:
-$ <%=$cmd%> aoc user info modify @ruby:'{"public_key"=>File.read(File.expand_path("~/.aspera/<%=$cmd%>/aocapikey.pub"))}'
+$ <%=cmd%> aoc user info modify @ruby:'{"public_key"=>File.read(File.expand_path("~/.aspera/<%=cmd%>/aocapikey.pub"))}'
 modified
 ```
 
 Note: the `aspera user info show` command can be used to verify modifications.
 
-### <%=$prst%> modification for JWT
+### <%=prst%> modification for JWT
 
-To activate default use of JWT authentication for <%=$tool%> using the <%=$prst%>, do the folowing:
+To activate default use of JWT authentication for <%=tool%> using the <%=prst%>, do the folowing:
 
 * change auth method to JWT
 * provide location of private key
@@ -1798,7 +1798,7 @@ To activate default use of JWT authentication for <%=$tool%> using the <%=$prst%
 Execute:
 
 ```
-$ <%=$cmd%> config id my_aoc_org update --auth=jwt --private-key=@val:@file:~/.aspera/<%=$cmd%>/aocapikey --username=laurent.martin.aspera@fr.ibm.com
+$ <%=cmd%> config id my_aoc_org update --auth=jwt --private-key=@val:@file:~/.aspera/<%=cmd%>/aocapikey --username=laurent.martin.aspera@fr.ibm.com
 ```
 
 Note: the private key argument represents the actual PEM string. In order to read the content from a file, use the @file: prefix. But if the @file: argument is used as is, it will read the file and set in the config file. So to keep the "@file" tag in the configuration file, the @val: prefix is added.
@@ -1808,10 +1808,10 @@ After this last step, commands do not require web login anymore.
 
 ### <a name="aocfirst"></a>First Use
 
-Once client has been registered and <%=$prst%> created: <%=$tool%> can be used:
+Once client has been registered and <%=prst%> created: <%=tool%> can be used:
 
 ```
-$ <%=$cmd%> aoc files br /
+$ <%=cmd%> aoc files br /
 Current Workspace: Default Workspace (default)
 empty
 ```
@@ -1845,7 +1845,7 @@ In order to access some administrative actions on "nodes" (in fact, access keys)
 secret is required, it is usually provided using the `secret` option. For example in a command like:
 
 ```
-$ <%=$cmd%> aoc admin res node --id="access_key1" --secret="secret1" v3 info
+$ <%=cmd%> aoc admin res node --id="access_key1" --secret="secret1" v3 info
 ```
 
 It is also possible to provide a set of secrets used on a regular basis. This can be done using the `secrets` option. The value provided shall be a Hash, where keys are access key ids, and values are the associated secrets.
@@ -1853,16 +1853,16 @@ It is also possible to provide a set of secrets used on a regular basis. This ca
 First choose a repository name, for example `my_secrets`, and populate it like this:
 
 ```
-$ <%=$cmd%> conf id my_secrets set 'access_key1' 'secret1'
-$ <%=$cmd%> conf id my_secrets set 'access_key2' 'secret2'
-$ <%=$cmd%> conf id default get config
+$ <%=cmd%> conf id my_secrets set 'access_key1' 'secret1'
+$ <%=cmd%> conf id my_secrets set 'access_key2' 'secret2'
+$ <%=cmd%> conf id default get config
 "cli_default"
 ```
 
 Here above, one already has set a `config` global preset to preset `cli_default` (refer to earlier in documentation), then the repository can be read by default like this (note the prefix `@val:` to avoid the evaluation of prefix `@preset:`):
 
 ```
-$ <%=$cmd%> conf id cli_default set secrets @val:@preset:my_secrets
+$ <%=cmd%> conf id cli_default set secrets @val:@preset:my_secrets
 ```
 
 A secret repository can always be selected at runtime using `--secrets=@preset:xxxx`, or `--secrets=@json:'{"accesskey1":"secret1"}'`
@@ -1872,7 +1872,7 @@ A secret repository can always be selected at runtime using `--secrets=@preset:x
 * Bulk creation
 
 ```
-$ <%=$cmd%> aoc admin res user create --bulk=yes @json:'[{"email":"dummyuser1@example.com"},{"email":"dummyuser2@example.com"}]'
+$ <%=cmd%> aoc admin res user create --bulk=yes @json:'[{"email":"dummyuser1@example.com"},{"email":"dummyuser2@example.com"}]'
 :.......:.........:
 :  id   : status  :
 :.......:.........:
@@ -1884,17 +1884,17 @@ $ <%=$cmd%> aoc admin res user create --bulk=yes @json:'[{"email":"dummyuser1@ex
 * Find with filter and delete
 
 ```
-$ <%=$cmd%> aoc admin res user list --query='@json:{"q":"dummyuser"}' --fields=id,email
+$ <%=cmd%> aoc admin res user list --query='@json:{"q":"dummyuser"}' --fields=id,email
 :.......:........................:
 :  id   :         email          :
 :.......:........................:
 : 98398 : dummyuser1@example.com :
 : 98399 : dummyuser2@example.com :
 :.......:........................:
-$ thelist=$(<%=$cmd%> aoc admin res user list --query='@json:{"q":"dummyuser"}' --fields=id --format=json --display=data|jq -cr 'map(.id)')
+$ thelist=$(<%=cmd%> aoc admin res user list --query='@json:{"q":"dummyuser"}' --fields=id --format=json --display=data|jq -cr 'map(.id)')
 $ echo $thelist
 ["113501","354061"]
-$ <%=$cmd%> aoc admin res user --bulk=yes --id=@json:"$thelist" delete
+$ <%=cmd%> aoc admin res user --bulk=yes --id=@json:"$thelist" delete
 :.......:.........:
 :  id   : status  :
 :.......:.........:
@@ -1914,7 +1914,7 @@ To delete them use the same method as before
 * Display current user's workspaces
 
 ```
-$ <%=$cmd%> aoc user workspaces
+$ <%=cmd%> aoc user workspaces
 :......:............................:
 :  id  :            name            :
 :......:............................:
@@ -1929,13 +1929,13 @@ $ <%=$cmd%> aoc user workspaces
 Creation of a sub-access key is like creation of access key with the following difference: authentication to node API is made with accesskey (master access key) and only the path parameter is provided: it is relative to the storage root of the master key. (id and secret are optional)
 
 ```
-$ <%=$cmd%> aoc admin resource node --name=_node_name_ --secret=_secret_ v4 access_key create --value=@json:'{"storage":{"path":"/folder1"}}'
+$ <%=cmd%> aoc admin resource node --name=_node_name_ --secret=_secret_ v4 access_key create --value=@json:'{"storage":{"path":"/folder1"}}'
 ```
 
 * Display transfer events (ops/transfer)
 
 ```
-$ <%=$cmd%> aoc admin res node --secret=_secret_ v3 transfer list --value=@json:'[["q","*"],["count",5]]'
+$ <%=cmd%> aoc admin res node --secret=_secret_ v3 transfer list --value=@json:'[["q","*"],["count",5]]'
 ```
 
               # page=1&per_page=10&q=type:(file_upload+OR+file_delete+OR+file_download+OR+file_rename+OR+folder_create+OR+folder_delete+OR+folder_share+OR+folder_share_via_public_link)&sort=-date
@@ -1953,13 +1953,13 @@ $ <%=$cmd%> aoc admin res node --secret=_secret_ v3 transfer list --value=@json:
 * Display node events (events)
 
 ```
-$ <%=$cmd%> aoc admin res node --secret=_secret_ v3 events
+$ <%=cmd%> aoc admin res node --secret=_secret_ v3 events
 ```
 
 * display members of a workspace
 
 ```
-$ <%=$cmd%> aoc admin res workspace_membership list --fields=member_type,manager,member.email --query=@json:'{"page":1,"per_page":50,"embed":"member","inherited":false,"workspace_id":11363,"sort":"name"}'
+$ <%=cmd%> aoc admin res workspace_membership list --fields=member_type,manager,member.email --query=@json:'{"page":1,"per_page":50,"embed":"member","inherited":false,"workspace_id":11363,"sort":"name"}'
 :.............:.........:..................................:
 : member_type : manager :           member.email           :
 :.............:.........:..................................:
@@ -1984,20 +1984,20 @@ a- get id of first workspace
 
 ```
 WS1='First Workspace'
-WS1ID=$(<%=$cmd%> aoc admin res workspace list --query=@json:'{"q":"'"$WS1"'"}' --select=@json:'{"name":"'"$WS1"'"}' --fields=id --format=csv)
+WS1ID=$(<%=cmd%> aoc admin res workspace list --query=@json:'{"q":"'"$WS1"'"}' --select=@json:'{"name":"'"$WS1"'"}' --fields=id --format=csv)
 ```
 
 b- get id of second workspace
 
 ```
 WS2='Second Workspace'
-WS2ID=$(<%=$cmd%> aoc admin res workspace list --query=@json:'{"q":"'"$WS2"'"}' --select=@json:'{"name":"'"$WS2"'"}' --fields=id --format=csv)
+WS2ID=$(<%=cmd%> aoc admin res workspace list --query=@json:'{"q":"'"$WS2"'"}' --select=@json:'{"name":"'"$WS2"'"}' --fields=id --format=csv)
 ```
 
 c- extract membership information and change workspace id
 
 ```
-$ <%=$cmd%> aoc admin res workspace_membership list --fields=manager,member_id,member_type,workspace_id --query=@json:'{"per_page":10000,"workspace_id":'"$WS1ID"'}' --format=jsonpp > ws1_members.json
+$ <%=cmd%> aoc admin res workspace_membership list --fields=manager,member_id,member_type,workspace_id --query=@json:'{"per_page":10000,"workspace_id":'"$WS1ID"'}' --format=jsonpp > ws1_members.json
 ```
 
 d- convert to creation data for second workspace:
@@ -2015,13 +2015,13 @@ jq '[.[] | {member_type,member_id,workspace_id,manager,workspace_id:"'"$WS2ID"'"
 e- add members to second workspace
 
 ```
-$ <%=$cmd%> aoc admin res workspace_membership create --bulk=yes @json:@file:ws2_members.json
+$ <%=cmd%> aoc admin res workspace_membership create --bulk=yes @json:@file:ws2_members.json
 ```
 
 * get users who did not log since a date
 
 ```
-$ <%=$cmd%> aoc admin res user list --fields=email --query=@json:'{"per_page":10000,"q":"last_login_at:<2018-05-28"}'
+$ <%=cmd%> aoc admin res user list --fields=email --query=@json:'{"per_page":10000,"q":"last_login_at:<2018-05-28"}'
 :...............................:
 :             email             :
 :...............................:
@@ -2033,7 +2033,7 @@ $ <%=$cmd%> aoc admin res user list --fields=email --query=@json:'{"per_page":10
 * list "Limited" users
 
 ```
-$ <%=$cmd%> aoc admin res user list --fields=email --query=@json:'{"per_page":10000}' --select=@json:'{"member_of_any_workspace":false}'
+$ <%=cmd%> aoc admin res user list --fields=email --query=@json:'{"per_page":10000}' --select=@json:'{"member_of_any_workspace":false}'
 ```
 
 * Perform a multi Gbps transfer between two remote shared folders
@@ -2043,11 +2043,11 @@ In this example, a user has access to a workspace where two shared folders are l
 First, setup the environment (skip if already done)
 
 ```
-$ <%=$cmd%> conf wizard --url=https://sedemo.ibmaspera.com --username=laurent.martin.aspera@fr.ibm.com
+$ <%=cmd%> conf wizard --url=https://sedemo.ibmaspera.com --username=laurent.martin.aspera@fr.ibm.com
 Detected: Aspera on Cloud
 Preparing preset: aoc_sedemo
 Using existing key:
-/Users/laurent/.aspera/<%=$cmd%>/aspera_aoc_key
+/Users/laurent/.aspera/<%=cmd%>/aspera_aoc_key
 Using global client_id.
 Please Login to your Aspera on Cloud instance.
 Navigate to your "Account Settings"
@@ -2062,7 +2062,7 @@ Setting config preset as default for aspera
 saving config file
 Done.
 You can test with:
-$ <%=$cmd%> aoc user info show
+$ <%=cmd%> aoc user info show
 ```
 
 This creates the option preset "aoc_&lt;org name&gt;" to allow seamless command line access and sets it as default for aspera on cloud.
@@ -2072,19 +2072,19 @@ Then, create two shared folders located in two regions, in your files home, in a
 Then, transfer between those:
 
 ```
-$ <%=$cmd%> -Paoc_show aoc files transfer --from-folder='IBM Cloud SJ' --to-folder='AWS Singapore' 100GB.file --ts=@json:'{"target_rate_kbps":"1000000","multi_session":10,"multi_session_threshold":1}'
+$ <%=cmd%> -Paoc_show aoc files transfer --from-folder='IBM Cloud SJ' --to-folder='AWS Singapore' 100GB.file --ts=@json:'{"target_rate_kbps":"1000000","multi_session":10,"multi_session_threshold":1}'
 ```
 
 * create registration key to register a node
 ```
-$ <%=$cmd%> aoc admin res admin/client create @json:'{"data":{"name":"laurentnode","client_subject_scopes":["alee","aejd"],"client_subject_enabled":true}}' --fields=token --format=csv
+$ <%=cmd%> aoc admin res admin/client create @json:'{"data":{"name":"laurentnode","client_subject_scopes":["alee","aejd"],"client_subject_enabled":true}}' --fields=token --format=csv
 jfqslfdjlfdjfhdjklqfhdkl
 ```
 
 * delete all registration keys
 
 ```
-$ <%=$cmd%> aoc admin res admin/client list --fields=id --format=csv|<%=$cmd%> aoc admin res admin/client delete --bulk=yes --id=@lines:@stdin:
+$ <%=cmd%> aoc admin res admin/client list --fields=id --format=csv|<%=cmd%> aoc admin res admin/client delete --bulk=yes --id=@lines:@stdin:
 +-----+---------+
 | id  | status  |
 +-----+---------+
@@ -2100,19 +2100,19 @@ $ <%=$cmd%> aoc admin res admin/client list --fields=id --format=csv|<%=$cmd%> a
 * list shared folders in node
 
 ```
-$ <%=$cmd%> aoc admin res node --id=8669 shared_folders
+$ <%=cmd%> aoc admin res node --id=8669 shared_folders
 ```
 
 * list shared folders in workspace
 
 ```
-$ <%=$cmd%> aoc admin res workspace --id=10818 shared_folders
+$ <%=cmd%> aoc admin res workspace --id=10818 shared_folders
 ```
 
 * list members of shared folder
 
 ```
-$ <%=$cmd%> aoc admin res node --id=8669 v4 perm 82 show
+$ <%=cmd%> aoc admin res node --id=8669 v4 perm 82 show
 ```
 
 ## Send a Package
@@ -2120,13 +2120,13 @@ $ <%=$cmd%> aoc admin res node --id=8669 v4 perm 82 show
 Send a package:
 
 ```
-$ <%=$cmd%> aoc packages send --value=[package extended value] [other parameters such as file list and transfer parameters]
+$ <%=cmd%> aoc packages send --value=[package extended value] [other parameters such as file list and transfer parameters]
 ```
 
 Notes:
 
 * the `value` parameter can contain any supported package creation parameter. Refer to the AoC package creation API, or display an existing package to find attributes.
-* to provide the list of recipients, use fields: "recipients" and/or "bcc_recipients". <%=$cmd%> will resolve the list of email addresses to expected user ids.
+* to provide the list of recipients, use fields: "recipients" and/or "bcc_recipients". <%=cmd%> will resolve the list of email addresses to expected user ids.
 * a recipient can be a shared inbox, in this case just use the name of the shared inbox as recipient.
 * If a recipient is not already registered and the workspace allows external users, then the package is sent to an external user, and
   * if the option `new_user_option` is `@json:{"package_contact":true}` (default), then a public link is sent and the external user does not need to create an account.
@@ -2135,9 +2135,9 @@ Notes:
 Examples:
 
 ```
-$ <%=$cmd%> aoc package send --value=@json:'{"name":"my title","note":"my note","recipients":["laurent.martin.aspera@fr.ibm.com","other@example.com"]}' --sources=@args my_file.dat
-$ <%=$cmd%> aoc package send --value=@json:'{"name":"my file in shared inbox","recipients":["The Shared Inbox"]}' my_file.dat --ts=@json:'{"target_rate_kbps":100000}'
-$ <%=$cmd%> aoc package send --workspace=eudemo --value=@json:'{"name":"my pack title","recipients":["Shared Inbox Name"],"metadata":[{"input_type":"single-text","name":"Project Id","values":["123"]},{"input_type":"single-dropdown","name":"Type","values":["Opt2"]},{"input_type":"multiple-checkbox","name":"CheckThose","values":["Check1","Check2"]},{"input_type":"date","name":"Optional Date","values":["2021-01-13T15:02:00.000Z"]}]}' ~/Documents/Samples/200KB.1
+$ <%=cmd%> aoc package send --value=@json:'{"name":"my title","note":"my note","recipients":["laurent.martin.aspera@fr.ibm.com","other@example.com"]}' --sources=@args my_file.dat
+$ <%=cmd%> aoc package send --value=@json:'{"name":"my file in shared inbox","recipients":["The Shared Inbox"]}' my_file.dat --ts=@json:'{"target_rate_kbps":100000}'
+$ <%=cmd%> aoc package send --workspace=eudemo --value=@json:'{"name":"my pack title","recipients":["Shared Inbox Name"],"metadata":[{"input_type":"single-text","name":"Project Id","values":["123"]},{"input_type":"single-dropdown","name":"Type","values":["Opt2"]},{"input_type":"multiple-checkbox","name":"CheckThose","values":["Check1","Check2"]},{"input_type":"date","name":"Optional Date","values":["2021-01-13T15:02:00.000Z"]}]}' ~/Documents/Samples/200KB.1
 ```
 
 ## <a name="aoccargo"></a>Receive new packages only
@@ -2145,7 +2145,7 @@ $ <%=$cmd%> aoc package send --workspace=eudemo --value=@json:'{"name":"my pack 
 It is possible to automatically download new packages, like using Aspera Cargo:
 
 ```
-$ <%=$cmd%> aoc packages recv --id=ALL --once-only=yes --lock-port=12345
+$ <%=cmd%> aoc packages recv --id=ALL --once-only=yes --lock-port=12345
 ```
 
 * `--id=ALL` (case sensitive) will download all packages
@@ -2189,19 +2189,19 @@ f["type"].eql?("file") and (DateTime.now-DateTime.parse(f["modified_time"]))<100
 * expression to find files older than 1 year on a given node and store in file list
 
 ```
-$ <%=$cmd%> aoc admin res node --name='my node name' --secret='my secret' v4 find / --fields=path --value='exec:f["type"].eql?("file") and (DateTime.now-DateTime.parse(f["modified_time"]))<100' --format=csv > my_file_list.txt
+$ <%=cmd%> aoc admin res node --name='my node name' --secret='my secret' v4 find / --fields=path --value='exec:f["type"].eql?("file") and (DateTime.now-DateTime.parse(f["modified_time"]))<100' --format=csv > my_file_list.txt
 ```
 
 * delete the files, one by one
 
 ```
-$ cat my_file_list.txt|while read path;do echo <%=$cmd%> aoc admin res node --name='my node name' --secret='my secret' v4 delete "$path" ;done
+$ cat my_file_list.txt|while read path;do echo <%=cmd%> aoc admin res node --name='my node name' --secret='my secret' v4 delete "$path" ;done
 ```
 
 * delete the files in bulk
 
 ```
-cat my_file_list.txt | <%=$cmd%> aoc admin res node --name='my node name' --secret='my secret' v3 delete @lines:@stdin:
+cat my_file_list.txt | <%=cmd%> aoc admin res node --name='my node name' --secret='my secret' v3 delete @lines:@stdin:
 ```
 
 ## Activity
@@ -2209,7 +2209,7 @@ cat my_file_list.txt | <%=$cmd%> aoc admin res node --name='my node name' --secr
 The activity app can be queried with:
 
 ```
-$ <%=$cmd%> aoc admin analytics transfers
+$ <%=cmd%> aoc admin analytics transfers
 ```
 
 It can also support filters and send notification using option `notif_to`. a template is defined using option `notif_template` :
@@ -2234,7 +2234,7 @@ The environment provided contains the following additional variable:
 Example:
 
 ```
-$ <%=$cmd%> aoc admin analytics transfers --once-only=yes --lock-port=12345 \
+$ <%=cmd%> aoc admin analytics transfers --once-only=yes --lock-port=12345 \
 --query=@json:'{"status":"completed","direction":"receive"}' \
 --notif-to=active --notif-template=@file:mytemplate.erb
 ```
@@ -2249,16 +2249,16 @@ Note this must not be executed in less than 5 minutes because the analytics inte
 
 ## Using specific transfer ports
 
-By default transfer nodes are expected to use ports TCP/UDP 33001. The web UI enforces that. The option `default_ports` ([yes]/no) allows <%=$cmd%> to retrieve the server ports from an API call (download_setup) which reads the information from `aspera.conf` on the server.
+By default transfer nodes are expected to use ports TCP/UDP 33001. The web UI enforces that. The option `default_ports` ([yes]/no) allows <%=cmd%> to retrieve the server ports from an API call (download_setup) which reads the information from `aspera.conf` on the server.
 
 
 # Plugin: Aspera Transfer Service
 
 ATS is usable either :
 
-* from an AoC subscription : <%=$cmd%> aoc admin ats : use AoC authentication
+* from an AoC subscription : <%=cmd%> aoc admin ats : use AoC authentication
 
-* or from an IBM Cloud subscription : <%=$cmd%> ats : use IBM Cloud API key authentication
+* or from an IBM Cloud subscription : <%=cmd%> ats : use IBM Cloud API key authentication
 
 ## IBM Cloud ATS : creation of api key
 
@@ -2288,40 +2288,40 @@ References:
 Then, to register the key by default for the ats plugin, create a preset. Execute:
 
 ```
-$ <%=$cmd%> config id my_ibm_ats update --ibm-api-key=my_secret_api_key_here_8f8d9fdakjhfsashjk678
-$ <%=$cmd%> config id default set ats my_ibm_ats
-$ <%=$cmd%> ats api_key instances
+$ <%=cmd%> config id my_ibm_ats update --ibm-api-key=my_secret_api_key_here_8f8d9fdakjhfsashjk678
+$ <%=cmd%> config id default set ats my_ibm_ats
+$ <%=cmd%> ats api_key instances
 +--------------------------------------+
 | instance                             |
 +--------------------------------------+
 | aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee |
 +--------------------------------------+
-$ <%=$cmd%> config id my_ibm_ats update --instance=aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee
-$ <%=$cmd%> ats api_key create
+$ <%=cmd%> config id my_ibm_ats update --instance=aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee
+$ <%=cmd%> ats api_key create
 +--------+----------------------------------------------+
 | key    | value                                        |
 +--------+----------------------------------------------+
 | id     | ats_XXXXXXXXXXXXXXXXXXXXXXXX                 |
 | secret | YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY |
 +--------+----------------------------------------------+
-$ <%=$cmd%> config id my_ibm_ats update --ats-key=ats_XXXXXXXXXXXXXXXXXXXXXXXX --ats-secret=YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY
+$ <%=cmd%> config id my_ibm_ats update --ats-key=ats_XXXXXXXXXXXXXXXXXXXXXXXX --ats-secret=YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY
 ```
 ## Cross Organization transfers
 
 It is possible to transfer files directly between organizations without having to first download locally and then upload...
 
-Although optional, the creation of <%=$prst%> is recommended to avoid placing all parameters in the command line.
+Although optional, the creation of <%=prst%> is recommended to avoid placing all parameters in the command line.
 
 Procedure to send a file from org1 to org2:
 
-* Get access to Organization 1 and create a <%=$prst%>: e.g. `org1`, for instance, use the [Wizard](#aocwizard)
+* Get access to Organization 1 and create a <%=prst%>: e.g. `org1`, for instance, use the [Wizard](#aocwizard)
 * Check that access works and locate the source file e.g. `mysourcefile`, e.g. using command `files browse`
-* Get access to Organization 2 and create a <%=$prst%>: e.g. `org2`
+* Get access to Organization 2 and create a <%=prst%>: e.g. `org2`
 * Check that access works and locate the destination folder `mydestfolder`
 * execute the following:
 
 ```
-$ <%=$cmd%> -Porg1 aoc files node_info /mydestfolder --format=json --display=data | <%=$cmd%> -Porg2 aoc files upload mysourcefile --transfer=node --transfer-info=@json:@stdin:
+$ <%=cmd%> -Porg1 aoc files node_info /mydestfolder --format=json --display=data | <%=cmd%> -Porg2 aoc files upload mysourcefile --transfer=node --transfer-info=@json:@stdin:
 ```
 
 Explanation:
@@ -2342,20 +2342,20 @@ Note that when using a POSIX shell, another possibility to write `cmd1 | cmd2 --
 Example: create access key on softlayer:
 
 ```
-$ <%=$cmd%> ats access_key create --cloud=softlayer --region=ams --params=@json:'{"storage":{"type":"softlayer_swift","container":"_container_name_","credentials":{"api_key":"value","username":"_name_:_usr_name_"},"path":"/"},"id":"_optional_id_","name":"_optional_name_"}'
+$ <%=cmd%> ats access_key create --cloud=softlayer --region=ams --params=@json:'{"storage":{"type":"softlayer_swift","container":"_container_name_","credentials":{"api_key":"value","username":"_name_:_usr_name_"},"path":"/"},"id":"_optional_id_","name":"_optional_name_"}'
 ```
 
 Example: create access key on AWS:
 
 ```
-$ <%=$cmd%> ats access_key create --cloud=aws --region=eu-west-1 --params=@json:'{"id":"testkey3","name":"laurent key AWS","storage":{"type":"aws_s3","bucket":"my-bucket","credentials":{"access_key_id":"AKIA_MY_API_KEY","secret_access_key":"my/secret/here"},"path":"/laurent"}}'
+$ <%=cmd%> ats access_key create --cloud=aws --region=eu-west-1 --params=@json:'{"id":"testkey3","name":"laurent key AWS","storage":{"type":"aws_s3","bucket":"my-bucket","credentials":{"access_key_id":"AKIA_MY_API_KEY","secret_access_key":"my/secret/here"},"path":"/laurent"}}'
 
 ```
 
 Example: create access key on Azure SAS:
 
 ```
-$ <%=$cmd%> ats access_key create --cloud=azure --region=eastus --params=@json:'{"id":"testkeyazure","name":"laurent key azure","storage":{"type":"azure_sas","credentials":{"shared_access_signature":"https://containername.blob.core.windows.net/blobname?sr=c&..."},"path":"/"}}'
+$ <%=cmd%> ats access_key create --cloud=azure --region=eastus --params=@json:'{"id":"testkeyazure","name":"laurent key azure","storage":{"type":"azure_sas","credentials":{"shared_access_signature":"https://containername.blob.core.windows.net/blobname?sr=c&..."},"path":"/"}}'
 
 ```
 
@@ -2364,14 +2364,14 @@ $ <%=$cmd%> ats access_key create --cloud=azure --region=eastus --params=@json:'
 Example: create access key on Azure:
 
 ```
-$ <%=$cmd%> ats access_key create --cloud=azure --region=eastus --params=@json:'{"id":"testkeyazure","name":"laurent key azure","storage":{"type":"azure","credentials":{"account":"myaccount","key":"myaccesskey","storage_endpoint":"myblob"},"path":"/"}}'
+$ <%=cmd%> ats access_key create --cloud=azure --region=eastus --params=@json:'{"id":"testkeyazure","name":"laurent key azure","storage":{"type":"azure","credentials":{"account":"myaccount","key":"myaccesskey","storage_endpoint":"myblob"},"path":"/"}}'
 
 ```
 
 delete all my access keys:
 
 ```
-for k in $(<%=$cmd%> ats access_key list --field=id --format=csv);do <%=$cmd%> ats access_key id $k delete;done
+for k in $(<%=cmd%> ats access_key list --field=id --format=csv);do <%=cmd%> ats access_key id $k delete;done
 ```
 
 # Plugin: IBM Aspera High Speed Transfer Server (transfer)
@@ -2387,9 +2387,9 @@ Multiple SSH key paths can be provided. The value of the parameter `ssh_keys` ca
 Examples:
 
 ```
-$ <%=$cmd%> server --ssh-keys=~/.ssh/id_rsa
-$ <%=$cmd%> server --ssh-keys=@list:,~/.ssh/id_rsa
-$ <%=$cmd%> server --ssh-keys=@json:'["~/.ssh/id_rsa"]'
+$ <%=cmd%> server --ssh-keys=~/.ssh/id_rsa
+$ <%=cmd%> server --ssh-keys=@list:,~/.ssh/id_rsa
+$ <%=cmd%> server --ssh-keys=@json:'["~/.ssh/id_rsa"]'
 ```
 
 The underlying ssh library `net::ssh` provides several options that may be used depending on environment. By default the ssh library expect that an ssh-agent is running.
@@ -2416,7 +2416,7 @@ This means that you dont have such an ssh agent running:
 * To diable use of `ssh-agent`, use the option `ssh_option` like this (or set in preset):
 
 ```
-$ <%=$cmd%> server --ssh-options=@ruby:'{use_agent: false}' ...
+$ <%=cmd%> server --ssh-options=@ruby:'{use_agent: false}' ...
 ```
 
 This can also be set as default using a preset
@@ -2426,13 +2426,13 @@ This can also be set as default using a preset
 One can test the "server" application using the well known demo server:
 
 ```
-$ <%=$cmd%> config id aspera_demo_server update --url=ssh://demo.asperasoft.com:33001 --username=asperaweb --password=_demo_pass_
-$ <%=$cmd%> config id default set server aspera_demo_server
-$ <%=$cmd%> server browse /aspera-test-dir-large
-$ <%=$cmd%> server download /aspera-test-dir-large/200MB
+$ <%=cmd%> config id aspera_demo_server update --url=ssh://demo.asperasoft.com:33001 --username=asperaweb --password=_demo_pass_
+$ <%=cmd%> config id default set server aspera_demo_server
+$ <%=cmd%> server browse /aspera-test-dir-large
+$ <%=cmd%> server download /aspera-test-dir-large/200MB
 ```
 
-This creates a <%=$prst%> "aspera_demo_server" and set it as default for application "server"
+This creates a <%=prst%> "aspera_demo_server" and set it as default for application "server"
 
 
 # Plugin: IBM Aspera High Speed Transfer Server (node)
@@ -2452,7 +2452,7 @@ The central subcommand uses the "reliable query" API (session and file). It allo
 
 Filtering can be applied:
 ```
-$ <%=$cmd%> node central file list
+$ <%=cmd%> node central file list
 ```
 
 by providing the `validator` option, offline transfer validation can be done.
@@ -2464,23 +2464,23 @@ It is possible to start a FASPStream session using the node API:
 Use the "node stream create" command, then arguments are provided as a [_transfer-spec_](#transferspec).
 
 ```
-$ <%=$cmd%> node stream create --ts=@json:'{"direction":"send","source":"udp://233.3.3.4:3000?loopback=1&ttl=2","destination":"udp://233.3.3.3:3001/","remote_host":"localhost","remote_user":"stream","remote_password":"XXXX"}' --preset=stream
+$ <%=cmd%> node stream create --ts=@json:'{"direction":"send","source":"udp://233.3.3.4:3000?loopback=1&ttl=2","destination":"udp://233.3.3.3:3001/","remote_host":"localhost","remote_user":"stream","remote_password":"XXXX"}' --preset=stream
 ```
 
 ## Watchfolder
 
 Refer to [Aspera documentation](https://download.asperasoft.com/download/docs/entsrv/3.7.4/es_admin_linux/webhelp/index.html#watchfolder_external/dita/json_conf.html) for watch folder creation.
 
-<%=$tool%> supports remote operations through the node API. Operations are:
+<%=tool%> supports remote operations through the node API. Operations are:
 
 * Start watchd and watchfolderd services running as a system user having access to files
 * configure a watchfolder to define automated transfers
 
 
 ```
-$ <%=$cmd%> node service create @json:'{"id":"mywatchd","type":"WATCHD","run_as":{"user":"user1"}}'
-$ <%=$cmd%> node service create @json:'{"id":"mywatchfolderd","type":"WATCHFOLDERD","run_as":{"user":"user1"}}'
-$ <%=$cmd%> node watch_folder create @json:'{"id":"mywfolder","source_dir":"/watch1","target_dir":"/","transport":{"host":"10.25.0.4","user":"user1","pass":"mypassword"}}'
+$ <%=cmd%> node service create @json:'{"id":"mywatchd","type":"WATCHD","run_as":{"user":"user1"}}'
+$ <%=cmd%> node service create @json:'{"id":"mywatchfolderd","type":"WATCHFOLDERD","run_as":{"user":"user1"}}'
+$ <%=cmd%> node watch_folder create @json:'{"id":"mywfolder","source_dir":"/watch1","target_dir":"/","transport":{"host":"10.25.0.4","user":"user1","pass":"mypassword"}}'
 ```
 
 ## Out of Transfer File Validation
@@ -2488,13 +2488,13 @@ $ <%=$cmd%> node watch_folder create @json:'{"id":"mywfolder","source_dir":"/wat
 Follow the Aspera Transfer Server configuration to activate this feature.
 
 ```
-$ <%=$cmd%> node central file list --validator=<%=$cmd%> --data=@json:'{"file_transfer_filter":{"max_result":1}}'
+$ <%=cmd%> node central file list --validator=<%=cmd%> --data=@json:'{"file_transfer_filter":{"max_result":1}}'
 :..............:..............:............:......................................:
 : session_uuid :    file_id   :   status   :              path                    :
 :..............:..............:............:......................................:
 : 1a74444c-... : 084fb181-... : validating : /home/xfer.../PKG - my title/200KB.1 :
 :..............:..............:............:......................................:
-$ <%=$cmd%> node central file update --validator=<%=$cmd%> --data=@json:'{"files":[{"session_uuid": "1a74444c-...","file_id": "084fb181-...","status": "completed"}]}'
+$ <%=cmd%> node central file update --validator=<%=cmd%> --data=@json:'{"files":[{"session_uuid": "1a74444c-...","file_id": "084fb181-...","status": "completed"}]}'
 updated
 ```
 
@@ -2510,7 +2510,7 @@ Create another configuration for the Azure ATS instance: in section "node", name
 Then execute the following command:
 
 ```
-$ <%=$cmd%> node download /share/sourcefile --to-folder=/destinationfolder --preset=awsshod --transfer=node --transfer-info=@preset:azureats
+$ <%=cmd%> node download /share/sourcefile --to-folder=/destinationfolder --preset=awsshod --transfer=node --transfer-info=@preset:azureats
 ```
 
 This will get transfer information from the SHOD instance and tell the Azure ATS instance
@@ -2519,7 +2519,7 @@ to download files.
 ## Create access key
 
 ```
-$ <%=$cmd%> node access_key create --value=@json:'{"id":"eudemo-sedemo","secret":"mystrongsecret","storage":{"type":"local","path":"/data/asperafiles"}}'
+$ <%=cmd%> node access_key create --value=@json:'{"id":"eudemo-sedemo","secret":"mystrongsecret","storage":{"type":"local","path":"/data/asperafiles"}}'
 ```
 
 # Plugin: IBM Aspera Faspex5
@@ -2544,7 +2544,7 @@ For boot method: (will be removed in future)
 Use it as password and use `--auth=boot`.
 
 ```
-$ <%=$cmd%> conf id f5boot update --url=https://localhost/aspera/faspex --auth=boot --password=ABC.DEF.GHI...
+$ <%=cmd%> conf id f5boot update --url=https://localhost/aspera/faspex --auth=boot --password=ABC.DEF.GHI...
 ```
 
 Ready to use Faspex5 with CLI.
@@ -2590,7 +2590,7 @@ If no parameter `max` or `pmax` is provided, then all packages will be listed in
 ### Example
 
 ```
-$ <%=$cmd%> faspex package list --box=inbox --recipient='*my_dropbox' --query=@json:'{"max":20,"pmax":2,"count":20}'
+$ <%=cmd%> faspex package list --box=inbox --recipient='*my_dropbox' --query=@json:'{"max":20,"pmax":2,"count":20}'
 ```
 
 List a maximum of 20 items grouped by pages of 20, with maximum 2 pages in received box (inbox) when received in dropbox `*my_dropbox`.
@@ -2604,14 +2604,14 @@ The command is `package recv`, possible methods are:
 * provide a `faspe:` URI with option `link`
 
 ```
-$ <%=$cmd%> faspex package recv --id=12345
-$ <%=$cmd%> faspex package recv --link=faspe://...
+$ <%=cmd%> faspex package recv --id=12345
+$ <%=cmd%> faspex package recv --link=faspe://...
 ```
 
 If the package is in a specific dropbox, add option `recipient` for both the `list` and `recv` commands.
 
 ```
-$ <%=$cmd%> faspex package list --recipient='*thedropboxname'
+$ <%=cmd%> faspex package list --recipient='*thedropboxname'
 ```
 
 if `id` is set to `ALL`, then all packages are downloaded, and if option `once_only`is used, then a persistency file is created to keep track of already downloaded packages.
@@ -2623,7 +2623,7 @@ The command is `faspex package send`. Package information (title, note, metadata
 Example:
 
 ```
-$ <%=$cmd%> faspex package send --delivery-info=@json:'{"title":"my title","recipients":["laurent.martin.aspera@fr.ibm.com"]}' --url=https://faspex.corp.com/aspera/faspex --username=foo --password=bar /tmp/file1 /home/bar/file2
+$ <%=cmd%> faspex package send --delivery-info=@json:'{"title":"my title","recipients":["laurent.martin.aspera@fr.ibm.com"]}' --url=https://faspex.corp.com/aspera/faspex --username=foo --password=bar /tmp/file1 /home/bar/file2
 ```
 
 If the recipient is a dropbox, just provide the name of the dropbox in `recipients`: `"recipients":["My Dropbox Name"]`
@@ -2640,7 +2640,7 @@ Like for any transfer, a notification can be sent by email using parameters: `no
 Example:
 
 ```
-$ <%=$cmd%> faspex package send --delivery-info=@json:'{"title":"test pkg 1","recipients":["aspera.user1@gmail.com"]}' ~/Documents/Samples/200KB.1 --notif-to=aspera.user1@gmail.com --notif-template=@ruby:'%Q{From: <%='<'%>%=from_name%> <<%='<'%>%=from_email%>>\nTo: <<%='<'%>%=to%>>\nSubject: Package sent: <%='<'%>%=ts["tags"]["aspera"]["faspex"]["metadata"]["_pkg_name"]%> files received\n\nTo user: <%='<'%>%=ts["tags"]["aspera"]["faspex"]["recipients"].first["email"]%>}'
+$ <%=cmd%> faspex package send --delivery-info=@json:'{"title":"test pkg 1","recipients":["aspera.user1@gmail.com"]}' ~/Documents/Samples/200KB.1 --notif-to=aspera.user1@gmail.com --notif-template=@ruby:'%Q{From: <%='<'%>%=from_name%> <<%='<'%>%=from_email%>>\nTo: <<%='<'%>%=to%>>\nSubject: Package sent: <%='<'%>%=ts["tags"]["aspera"]["faspex"]["metadata"]["_pkg_name"]%> files received\n\nTo user: <%='<'%>%=ts["tags"]["aspera"]["faspex"]["recipients"].first["email"]%>}'
 ```
 
 In this example the notification template is directly provided on command line. Package information placed in the message are directly taken from the tags in transfer spec. The template can be placed in a file using modifier: `@file:`
@@ -2650,9 +2650,9 @@ In this example the notification template is directly provided on command line. 
 Example:
 
 ```
-$ <%=$cmd%> faspex v4 dropbox create --value=@json:'{"dropbox":{"e_wg_name":"test1","e_wg_desc":"test1"}}'
-$ <%=$cmd%> faspex v4 dropbox list
-$ <%=$cmd%> faspex v4 dropbox delete --id=36
+$ <%=cmd%> faspex v4 dropbox create --value=@json:'{"dropbox":{"e_wg_name":"test1","e_wg_desc":"test1"}}'
+$ <%=cmd%> faspex v4 dropbox list
+$ <%=cmd%> faspex v4 dropbox delete --id=36
 ```
 
 ## Remote sources
@@ -2686,11 +2686,11 @@ Note: the v4 API provide an API for nodes and shares.
 
 ## Automated package download (cargo)
 
-It is possible to tell <%=$tool%> to download newly received packages, much like the official
+It is possible to tell <%=tool%> to download newly received packages, much like the official
 cargo client, or drive. Refer to the [same section](#aoccargo) in the Aspera on Cloud plugin:
 
 ```
-$ <%=$cmd%> faspex packages recv --id=ALL --once-only=yes --lock-port=12345
+$ <%=cmd%> faspex packages recv --id=ALL --once-only=yes --lock-port=12345
 ```
 
 # Plugin: IBM Aspera Shares
@@ -2700,7 +2700,7 @@ Aspera Shares supports the "node API" for the file transfer part. (Shares 1 and 
 In Shares2, users, groups listing are paged, to display sequential pages:
 
 ```
-$ for p in 1 2 3;do <%=$cmd%> shares2 admin users list --value=@json:'{"page":'$p'}';done
+$ for p in 1 2 3;do <%=cmd%> shares2 admin users list --value=@json:'{"page":'$p'}';done
 ```
 
 # Plugin: IBM Cloud Object Storage
@@ -2723,8 +2723,8 @@ If you have those parameters already, then following options shall be provided:
 For example, let us create a default configuration:
 
 ```
-$ <%=$cmd%> conf id mycos update --bucket=mybucket --endpoint=https://s3.us-east.cloud-object-storage.appdomain.cloud --apikey=abcdefgh --crn=crn:v1:bluemix:public:iam-identity::a/xxxxxxx
-$ <%=$cmd%> conf id default set cos mycos
+$ <%=cmd%> conf id mycos update --bucket=mybucket --endpoint=https://s3.us-east.cloud-object-storage.appdomain.cloud --apikey=abcdefgh --crn=crn:v1:bluemix:public:iam-identity::a/xxxxxxx
+$ <%=cmd%> conf id default set cos mycos
 ```
 
 Then, jump to the transfer example.
@@ -2779,8 +2779,8 @@ The required options for this method are:
 For example, let us create a default configuration:
 
 ```
-$ <%=$cmd%> conf id mycos update --bucket=laurent --service-credentials=@val:@json:@file:~/service_creds.json --region=us-south
-$ <%=$cmd%> conf id default set cos mycos
+$ <%=cmd%> conf id mycos update --bucket=laurent --service-credentials=@val:@json:@file:~/service_creds.json --region=us-south
+$ <%=cmd%> conf id default set cos mycos
 ```
 
 ## Operations, transfers
@@ -2790,16 +2790,16 @@ Let's assume you created a default configuration from once of the two previous s
 A subset of `node` plugin operations are supported, basically node API:
 
 ```
-$ <%=$cmd%> cos node info
-$ <%=$cmd%> cos node upload 'faux:///sample1G?1g'
+$ <%=cmd%> cos node info
+$ <%=cmd%> cos node upload 'faux:///sample1G?1g'
 ```
 
 Note: we generate a dummy file `sample1G` if size 2GB using the `faux` PVCL (man ascp and section above), but you can of course send a real file by specifying a real file instead.
 
 # Plugin: IBM Aspera Sync
 
-A basic plugin to start an "async" using <%=$tool%>.
-The main advantage is the possibility to start from ma configuration file, using <%=$tool%> standard options.
+A basic plugin to start an "async" using <%=tool%>.
+The main advantage is the possibility to start from ma configuration file, using <%=tool%> standard options.
 
 # Plugin: Preview
 
@@ -2826,7 +2826,7 @@ By default, the `preview` plugin expects previews to be generated in a folder na
 
 Note: the configuration `preview_dir` is *relative* to the storage root, no need leading or trailing `/`. In general just set the value to `previews`
 
-If another folder is configured on the HSTS, then specify it to <%=$tool%> using the option `previews_folder`.
+If another folder is configured on the HSTS, then specify it to <%=tool%> using the option `previews_folder`.
 
 The HSTS node API limits any preview file to a parameter: `max_request_file_create_size_kb` (1 KB is 1024 bytes).
 This size is internally capped to `1<<24` Bytes (16777216) , i.e. 16384 KBytes.
@@ -2860,7 +2860,7 @@ Other OSes should work as well, but are note tested.
 To check if all tools are found properly, execute:
 
 ```
-$ <%=$cmd%> preview check
+$ <%=cmd%> preview check
 ```
 
 ### mimemagic
@@ -2924,14 +2924,14 @@ The generation of preview in based on the use of `unoconv` and `libreoffice`
 
 The preview generator is run as a user, preferably a regular user (not root). When using object storage, any user can be used, but when using local storage it is usually better to use the user `xfer`, as uploaded files are under this identity: this ensures proper access rights. (we will assume this)
 
-Like any <%=$tool%> commands, parameters can be passed on command line or using a configuration <%=$prst%>.  The configuration file must be created with the same user used to run so that it is properly used on runtime.
+Like any <%=tool%> commands, parameters can be passed on command line or using a configuration <%=prst%>.  The configuration file must be created with the same user used to run so that it is properly used on runtime.
 
 Note that the `xfer` user has a special protected shell: `aspshell`, so changing identity requires specification of alternate shell:
 
 ```
 # su -s /bin/bash - xfer
-$ <%=$cmd%> config id previewconf update --url=https://localhost:9092 --username=my_access_key --password=my_secret --skip-types=office --lock-port=12346
-$ <%=$cmd%> config id default set preview previewconf
+$ <%=cmd%> config id previewconf update --url=https://localhost:9092 --username=my_access_key --password=my_secret --skip-types=office --lock-port=12346
+$ <%=cmd%> config id default set preview previewconf
 ```
 
 Here we assume that Office file generation is disabled, else remove this option.
@@ -2940,7 +2940,7 @@ Here we assume that Office file generation is disabled, else remove this option.
 One can check if the access key is well configured using:
 
 ```
-$ <%=$cmd%> -Ppreviewconf node browse /
+$ <%=cmd%> -Ppreviewconf node browse /
 ```
 
 This shall list the contents of the storage root of the access key.
@@ -2957,7 +2957,7 @@ Lets do a one shot test, using the configuration previously created:
 
 ```
 # su -s /bin/bash - xfer
-xfer$ <%=$cmd%> preview scan --overwrite=always
+xfer$ <%=cmd%> preview scan --overwrite=always
 ```
 
 When the preview generator is first executed it will create a file: `.aspera_access_key`
@@ -2973,7 +2973,7 @@ We assume here that a configuration preset was created as shown previously.
 
 Lets first setup a script that will be used in the sceduler and sets up the environment.
 
-Example of startup script `cron_<%=$cmd%>`, which sets the Ruby environment and adds some timeout protection:
+Example of startup script `cron_<%=cmd%>`, which sets the Ruby environment and adds some timeout protection:
 
 ```
 #!/bin/bash
@@ -2981,15 +2981,15 @@ Example of startup script `cron_<%=$cmd%>`, which sets the Ruby environment and 
 case "$*" in *trev*) tmout=10m ;; *) tmout=30m ;; esac
 . /etc/profile.d/rvm.sh
 rvm use 2.6 --quiet
-exec timeout ${tmout} <%=$cmd%> "${@}"
+exec timeout ${tmout} <%=cmd%> "${@}"
 ```
 
 Here the cronjob is created for user `xfer`.
 
 ```
 xfer$ crontab<<EOF
-0    * * * *  /home/xfer/cron_<%=$cmd%> preview scan --logger=syslog --display=error
-2-59 * * * *  /home/xfer/cron_<%=$cmd%> preview trev --logger=syslog --display=error
+0    * * * *  /home/xfer/cron_<%=cmd%> preview scan --logger=syslog --display=error
+2-59 * * * *  /home/xfer/cron_<%=cmd%> preview trev --logger=syslog --display=error
 EOF
 ```
 
@@ -3018,7 +3018,7 @@ Deletion of preview for deleted source files: not implemented yet (TODO).
 If the `scan` or `events` detection method is used, then the option : `skip_folders` can be used to skip some folders. It expects a list of path relative to the storage root (docroot) starting with slash, use the `@json:` notation, example:
 
 ```
-$ <%=$cmd%> preview scan --skip-folders=@json:'["/not_here"]'
+$ <%=cmd%> preview scan --skip-folders=@json:'["/not_here"]'
 ```
 
 The option `folder_reset_cache` forces the node service to refresh folder contents using various methods.
@@ -3092,28 +3092,28 @@ The `smtp` option is a hash table (extended value) with the following fields:
 ## Example of configuration:
 
 ```
-$ <%=$cmd%> config id smtp_google set server smtp.google.com
-$ <%=$cmd%> config id smtp_google set username john@gmail.com
-$ <%=$cmd%> config id smtp_google set password P@ssw0rd
+$ <%=cmd%> config id smtp_google set server smtp.google.com
+$ <%=cmd%> config id smtp_google set username john@gmail.com
+$ <%=cmd%> config id smtp_google set password P@ssw0rd
 ```
 
 or
 
 ```
-$ <%=$cmd%> config id smtp_google init @json:'{"server":"smtp.google.com","username":"john@gmail.com","password":"P@ssw0rd"}'
+$ <%=cmd%> config id smtp_google init @json:'{"server":"smtp.google.com","username":"john@gmail.com","password":"P@ssw0rd"}'
 ```
 
 or
 
 ```
-$ <%=$cmd%> config id smtp_google update --server=smtp.google.com --username=john@gmail.com --password=P@ssw0rd
+$ <%=cmd%> config id smtp_google update --server=smtp.google.com --username=john@gmail.com --password=P@ssw0rd
 ```
 
 Set this configation as global default, for instance:
 
 ```
-$ <%=$cmd%> config id cli_default set smtp @val:@preset:smtp_google
-$ <%=$cmd%> config id default set config cli_default
+$ <%=cmd%> config id cli_default set smtp @val:@preset:smtp_google
+$ <%=cmd%> config id default set config cli_default
 ```
 
 ## Email templates
@@ -3135,8 +3135,8 @@ Other variables are defined depending on context.
 Check settings with `smtp_settings` command. Send test email with `email_test`.
 
 ```
-$ <%=$cmd%> config --smtp=@preset:smtp_google smtp
-$ <%=$cmd%> config --smtp=@preset:smtp_google email --notif-to=sample.dest@example.com
+$ <%=cmd%> config --smtp=@preset:smtp_google smtp
+$ <%=cmd%> config --smtp=@preset:smtp_google email --notif-to=sample.dest@example.com
 ```
 
 ## Notifications for transfer status
@@ -3235,14 +3235,14 @@ Nodejs: [https://www.npmjs.com/package/aspera](https://www.npmjs.com/package/asp
 
 ```
 $ asession -h
-<%= File.read(ENV["INCL_ASESSION"]) %>
+<%= File.read(ENV["INCL_ASESSION"])%>
 ```
 
 # Hot folder
 
 ## Requirements
 
-<%=$tool%> maybe used as a simple hot folder engine. A hot folder being defined as a tool that:
+<%=tool%> maybe used as a simple hot folder engine. A hot folder being defined as a tool that:
 
 * locally (or remotely) detects new files in a top folder
 * send detected files to a remote (respectively, local) repository
@@ -3257,7 +3257,7 @@ In addition: the detection should be made "continuously" or on specific time/dat
 The general idea is to rely on :
 
 * existing `ascp` features for detection and transfer
-* take advantage of <%=$tool%> configuration capabilities and server side knowledge
+* take advantage of <%=tool%> configuration capabilities and server side knowledge
 * the OS scheduler for reliability and continuous operation
 
 ### ascp features
@@ -3271,7 +3271,7 @@ Interesting ascp features are found in its arguments: (see ascp manual):
 
 Note that:
 
-* <%=$tool%> takes transfer parameters exclusively as a transfer_spec, with `--ts` parameter.
+* <%=tool%> takes transfer parameters exclusively as a transfer_spec, with `--ts` parameter.
 * most, but not all native ascp arguments are available as standard transfer_spec parameters
 * native ascp arguments can be provided with the [_transfer-spec_](#transferspec) parameter: EX_ascp_args (array), only for the "local" transfer agent (not connect or node)
 
@@ -3279,16 +3279,16 @@ Note that:
 
 Virtually any transfer on a "repository" on a regular basis might emulate a hot folder. Note that file detection is not based on events (inotify, etc...), but on a stateless scan on source side.
 
-Note: parameters may be saved in a <%=$prst%> and used with `-P`.
+Note: parameters may be saved in a <%=prst%> and used with `-P`.
 
 ### Scheduling
 
-Once <%=$tool%> parameters are defined, run the command using the OS native scheduler, e.g. every minutes, or 5 minutes, etc... Refer to section [_Scheduling_](#_scheduling_).
+Once <%=tool%> parameters are defined, run the command using the OS native scheduler, e.g. every minutes, or 5 minutes, etc... Refer to section [_Scheduling_](#_scheduling_).
 
 ## Example
 
 ```
-$ <%=$cmd%> server upload source_hot --to-folder=/Upload/target_hot --lock-port=12345 --ts=@json:'{"EX_ascp_args":["--remove-after-transfer","--remove-empty-directories","--exclude-newer-than=-8","--src-base","source_hot"]}'
+$ <%=cmd%> server upload source_hot --to-folder=/Upload/target_hot --lock-port=12345 --ts=@json:'{"EX_ascp_args":["--remove-after-transfer","--remove-empty-directories","--exclude-newer-than=-8","--src-base","source_hot"]}'
 
 ```
 
@@ -3299,7 +3299,7 @@ The local (here, relative path: source_hot) is sent (upload) to basic fasp serve
 Each plugin provide a `health` command that will check the health status of the application. Example:
 
 ```
-$ <%=$cmd%> console health
+$ <%=cmd%> console health
 +--------+-------------+------------+
 | status | component   | message    |
 +--------+-------------+------------+
@@ -3313,12 +3313,12 @@ Typically, the health check uses the REST API of the application with the follow
 * checking web app status with `asctl all:status`
 * checking daemons process status
 
-<%=$tool%> can be called by Nagios to check the health status of an Aspera server. The output can be made compatible to Nagios with option `--format=nagios` :
+<%=tool%> can be called by Nagios to check the health status of an Aspera server. The output can be made compatible to Nagios with option `--format=nagios` :
 
 ```
-$ <%=$cmd%> server health transfer --to-folder=/Upload --format=nagios --progress=none
+$ <%=cmd%> server health transfer --to-folder=/Upload --format=nagios --progress=none
 OK - [transfer:ok]
-$ <%=$cmd%> server health asctlstatus --cmd_prefix='sudo ' --format=nagios
+$ <%=cmd%> server health asctlstatus --cmd_prefix='sudo ' --format=nagios
 OK - [NP:running, MySQL:running, Mongrels:running, Background:running, DS:running, DB:running, Email:running, Apache:running]
 ```
 
@@ -3328,13 +3328,13 @@ Main components:
 
 * `Aspera` generic classes for REST and OAuth
 * `Aspera::Fasp`: starting and monitoring transfers. It can be considered as a FASPManager class for Ruby.
-* `Aspera::Cli`: <%=$tool%>.
+* `Aspera::Cli`: <%=tool%>.
 
 A working example can be found in the gem, example:
 
 ```
-$ <%=$cmd%> config gem_path
-$ cat $(<%=$cmd%> config gem_path)/../examples/transfer.rb
+$ <%=cmd%> config gem_path
+$ cat $(<%=cmd%> config gem_path)/../examples/transfer.rb
 ```
 
 This sample code shows some example of use of the API as well as
@@ -3346,7 +3346,7 @@ Example of use of the API of Aspera on Cloud:
 ```
 require 'aspera/aoc'
 
-aoc=Aspera::AoC.new(url: 'https://sedemo.ibmaspera.com',auth: :jwt, scope: 'user:all', private_key: File.read(File.expand_path('~/.aspera/<%=$cmd%>/aspera_on_cloud_key')),username: 'laurent.martin.aspera@fr.ibm.com',subpath: 'api/v1')
+aoc=Aspera::AoC.new(url: 'https://sedemo.ibmaspera.com',auth: :jwt, scope: 'user:all', private_key: File.read(File.expand_path('~/.aspera/<%=cmd%>/aspera_on_cloud_key')),username: 'laurent.martin.aspera@fr.ibm.com',subpath: 'api/v1')
 
 aoc.read('self')
 ```
@@ -3360,7 +3360,7 @@ There were a few pitfalls:
 * The tool was written in the aging `perl` language while most Aspera application products (but the Transfer Server) are written in `ruby`.
 * The tool was only for transfers, but not able to call other products APIs
 
-So, it evolved into <%=$tool%>:
+So, it evolved into <%=tool%>:
 
 * portable: works on platforms supporting `ruby` (and `ascp`)
 * easy to install with the `gem` utility
@@ -3369,7 +3369,11 @@ So, it evolved into <%=$tool%>:
 
 # Changes (Release notes)
 
-* <%= $gemspec.version.to_s %>
+* <%=gemspec.version.to_s%>
+
+	* TODO
+
+* 4.3.0
 
   * 
 
@@ -3387,7 +3391,7 @@ So, it evolved into <%=$tool%>:
 	* new: options `notif_to` and `notif_template` to send email notifications on transfer (and other events)
 	* fix: space character in `faspe:` url are precent encoded if needed
 	* fix: `preview scan`: if file_id is unknown, ignore and continue scan
-	* change: for commands that potentially execute several transfers (`package recv --id=ALL`), if one transfer fails then <%=$tool%> exits with code 1 (instead of zero=success)
+	* change: for commands that potentially execute several transfers (`package recv --id=ALL`), if one transfer fails then <%=tool%> exits with code 1 (instead of zero=success)
 	* change: (break) option `notify` or `aoc` replaced with `notif_to` and `notif_template`
 
 * 4.2.1
@@ -3426,7 +3430,7 @@ So, it evolved into <%=$tool%>:
 
 * 4.0.0
 
-	* now available as open source at [<%= $gemspec.homepage %>](<%= $gemspec.homepage %>) with general cleanup
+	* now available as open source at [<%=gemspec.homepage%>](<%=gemspec.homepage%>) with general cleanup
 	* changed default tool name from `mlia` to `ascli`
 	* changed `aspera` command to `aoc`
 	* changed gem name from `asperalm` to `aspera-cli`
@@ -3548,7 +3552,7 @@ So, it evolved into <%=$tool%>:
 
 * 0.10.7
 
-	* fix: <%=$cmd%> fails when username cannot be computed on Linux.
+	* fix: <%=cmd%> fails when username cannot be computed on Linux.
 
 * 0.10.6
 
@@ -3743,8 +3747,8 @@ So, it evolved into <%=$tool%>:
 
 * 0.9
 
-  * Renamed the CLI from aslmcli to <%=$tool%>
-  * Automatic rename and conversion of former config folder from aslmcli to <%=$tool%>
+  * Renamed the CLI from aslmcli to <%=tool%>
+  * Automatic rename and conversion of former config folder from aslmcli to <%=tool%>
 
 * 0.7.6
 
@@ -3777,7 +3781,7 @@ Breaking change:
 
 * 0.6.15
 
-  * Breaking change: "files" application renamed to "aspera" (for "Aspera on Cloud"). "repository" renamed to "files". Default is automatically reset, e.g. in config files and change key "files" to "aspera" in <%=$prst%> "default".
+  * Breaking change: "files" application renamed to "aspera" (for "Aspera on Cloud"). "repository" renamed to "files". Default is automatically reset, e.g. in config files and change key "files" to "aspera" in <%=prst%> "default".
 
 # BUGS, FEATURES, CONTRIBUTION
 

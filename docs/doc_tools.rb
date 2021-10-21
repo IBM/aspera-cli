@@ -9,15 +9,23 @@ require 'aspera/fasp/parameters'
 end
 
 # set global variables
-$cmd=ENV['EXENAME'] # just command name
-$tool='`'+$cmd+'`'   # used in text with formatting of command
-$evp=$cmd.upcase+'_' # prefix for env vars
-$opprst='option preset' # just the name for "option preset"
-$prst='['+$opprst+'](#lprt)' # name with link
-$prsts='['+$opprst+'s](#lprt)' # name with link (plural)
-$prstt=$opprst.capitalize # in title
-$gemspec=Gem::Specification::load(ENV["GEMSPEC"]) or raise "error loading #{ENV["GEMSPEC"]}"
-$geminstadd=$gemspec.version.to_s.match(/\.[^0-9]/)?' --pre':''
+def cmd;ENV['EXENAME'];end # just command name
+
+def tool;'`'+cmd+'`';end   # used in text with formatting of command
+
+def evp;cmd.upcase+'_';end # prefix for env vars
+
+def opprst;'option preset';end # just the name for "option preset"
+
+def prst;'['+opprst+'](#lprt)';end # name with link
+
+def prsts;'['+opprst+'s](#lprt)';end # name with link (plural)
+
+def prstt;opprst.capitalize;end # in title
+
+def gemspec;Gem::Specification::load(ENV["GEMSPEC"]);end or raise "error loading #{ENV["GEMSPEC"]}"
+
+def geminstadd;gemspec.version.to_s.match(/\.[^0-9]/)?' --pre':'';end
 
 # transfer spec description generation
 def spec_table
