@@ -1444,7 +1444,7 @@ This option is used when the tools is executed automatically, for instance with 
 
 Usually the OS native scheduler shall already provide some sort of such protection (windows scheduler has it natively, linux cron can leverage `flock`).
 
-## "La Provençale"
+## "Proven&ccedil;ale"
 
 `ascp`, the underlying executable implementing Aspera file transfer using FASP, has a capability to not only access the local file system (using system's `open`,`read`,`write`,`close` primitives), but also to do the same operations on other data storage such as S3, Hadoop and others. This mechanism is call *PVCL*. Several *PVCL* adapters are available, some are embedded in `ascp`
 , some are provided om shared libraries and must be activated. (e.g. using `trapd`)
@@ -2127,7 +2127,7 @@ Notes:
 
 * the `value` parameter can contain any supported package creation parameter. Refer to the AoC package creation API, or display an existing package to find attributes.
 * to provide the list of recipients, use fields: "recipients" and/or "bcc_recipients". <%=$cmd%> will resolve the list of email addresses to expected user ids.
-* a recipîent can be a shared inbox, in this case just use the name of the shared inbox as recipient.
+* a recipient can be a shared inbox, in this case just use the name of the shared inbox as recipient.
 * If a recipient is not already registered and the workspace allows external users, then the package is sent to an external user, and
   * if the option `new_user_option` is `@json:{"package_contact":true}` (default), then a public link is sent and the external user does not need to create an account.
   * if the option `new_user_option` is `@json:{}`, then external users are invited to join the workspace
@@ -2891,8 +2891,10 @@ yum install -y ImageMagick optipng
 
 ### Video: FFmpeg
 
+The easiest method is to download and install the latest released version of ffmpeg with static libraries from [https://johnvansickle.com/ffmpeg/](https://johnvansickle.com/ffmpeg/)
+
 ```
-curl -s https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz|(mkdir -p /opt && cd /opt && tar xJvf - && rm -f /opt/ffmpeg /usr/bin/{ffmpeg,ffprobe} && ln -s ffmpeg-* ffmpeg && ln -s /opt/ffmpeg/{ffmpeg,ffprobe} /usr/bin)
+curl -s https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz|(mkdir -p /opt && cd /opt && rm -f ffmpeg /usr/bin/{ffmpeg,ffprobe} && rm -fr ffmpeg-*-amd64-static && tar xJvf - && ln -s ffmpeg-* ffmpeg && ln -s /opt/ffmpeg/{ffmpeg,ffprobe} /usr/bin)
 ```
 
 ### Office: Unoconv and Libreoffice
