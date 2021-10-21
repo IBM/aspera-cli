@@ -5,25 +5,32 @@ require 'aspera/fasp/parameters'
 # check that required env vars exist, and files
 %w{EXENAME GEMSPEC INCL_USAGE INCL_COMMANDS INCL_ASESSION INCL_DIR_GEM}.each do |e|
   raise "missing env var #{e}" unless ENV.has_key?(e)
-  raise "missing file #{ENV[e]}" unless File.exist?(ENV[e]) or !e.start_with?('INCL_') #_
+  raise "missing file #{ENV[e]}" unless File.exist?(ENV[e]) or !e.start_with?('INCL_')
 end
 
-# set global variables
-def cmd;ENV['EXENAME'];end # just command name
+# set values used in ERB
+# just command name
+def cmd;ENV['EXENAME'];end
 
-def tool;'`'+cmd+'`';end   # used in text with formatting of command
+# used in text with formatting of command
+def tool;'`'+cmd+'`';end
 
-def evp;cmd.upcase+'_';end # prefix for env vars
+# prefix for env vars
+def evp;cmd.upcase+'_';end
 
-def opprst;'option preset';end # just the name for "option preset"
+# just the name for "option preset"
+def opprst;'option preset';end
 
-def prst;'['+opprst+'](#lprt)';end # name with link
+# name with link
+def prst;'['+opprst+'](#lprt)';end
 
-def prsts;'['+opprst+'s](#lprt)';end # name with link (plural)
+# name with link (plural)
+def prsts;'['+opprst+'s](#lprt)';end
 
-def prstt;opprst.capitalize;end # in title
+# in title
+def prstt;opprst.capitalize;end
 
-def gemspec;Gem::Specification::load(ENV["GEMSPEC"]);end or raise "error loading #{ENV["GEMSPEC"]}"
+def gemspec;Gem::Specification::load(ENV['GEMSPEC']) or raise "error loading #{ENV["GEMSPEC"]}";end
 
 def geminstadd;gemspec.version.to_s.match(/\.[^0-9]/)?' --pre':'';end
 
