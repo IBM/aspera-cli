@@ -4,15 +4,14 @@ require 'aspera/log'
 require 'aspera/rest'
 require 'websocket-client-simple'
 require 'securerandom'
-require 'openssl'
 require 'base64'
 require 'json'
-require 'uri'
 
 # ref: https://api.ibm.com/explorer/catalog/aspera/product/ibm-aspera/api/http-gateway-api/doc/guides-toc
+# https://developer.ibm.com/apis/catalog?search=%22aspera%20http%22
 module Aspera
   module Fasp
-    # executes a local "ascp", connects mgt port, equivalent of "Fasp Manager"
+    # start a transfer using Aspera HTTP Gateway, using web socket session
     class HttpGW < Manager
       # message returned by HTTP GW in case of success
       OK_MESSAGE='end upload'
@@ -25,20 +24,36 @@ module Aspera
       end
 
       def upload(transfer_spec)
-        # precalculate size
+        # total size of all files
         total_size=0
-        # currently, files are sent flat
-        source_path=[]
+        # we need to keep track of actual file path because transfer spec is modified to be sent in web socket
+        source_paths=[]
+        # get source root or nil
+        source_root = (transfer_spec.has_key?('source_root') and !transfer_spec['source_root'].empty?) ? transfer_spec['source_root'] : nil
+        # source root is ignored by GW, used only here
+        transfer_spec.delete('source_root')
+        # compute total size of files to upload (for progress)
+        # modify transfer spec to be suitable for GW
         transfer_spec['paths'].each do |item|
-          filepath=item['source']
-          item['source']=item['destination']=File.basename(filepath)
-          total_size+=item['file_size']=File.size(filepath)
-          source_path.push(filepath)
+          # save actual file location to be able read contents later
+          full_src_filepath=item['source']
+          # add source root if needed
+          full_src_filepath=File.join(source_root,full_src_filepath) unless source_root.nil?
+          # GW expects a simple file name in 'source' but if user wants to change the name, we take it
+          item['source']=File.basename(item['destination'].nil? ? item['source'] : item['destination'])
+          item['file_size']=File.size(full_src_filepath)
+          total_size+=item['file_size']
+          # save so that we can actually read the file later
+          source_paths.push(full_src_filepath)
         end
+
         session_id=SecureRandom.uuid
         ws=::WebSocket::Client::Simple::Client.new
+        # error message if any in callback
         error=nil
+        # number of files totally sent
         received=0
+        # setup callbacks on websocket
         ws.on :message do |msg|
           Log.log.info("ws: message: #{msg.data}")
           message=msg.data
@@ -64,44 +79,49 @@ module Aspera
         end
         # open web socket to end point
         ws.connect("#{@gw_api.params[:base_url]}/upload")
+        # async wait ready
         while !ws.open? and error.nil? do
           Log.log.info("ws: wait")
           sleep(0.2)
         end
+        # notify progress bar
         notify_begin(session_id,total_size)
+        # first step send transfer spec
+        Log.dump(:ws_spec,transfer_spec)
         ws_send(ws,:transfer_spec,transfer_spec)
         # current file index
-        filenum=0
+        file_index=0
         # aggregate size sent
         sent_bytes=0
         # last progress event
-        lastevent=Time.now-1
+        lastevent=nil
         transfer_spec['paths'].each do |item|
-          # TODO: on destination write same path?
-          destination_path=item['source']
           # TODO: get mime type?
           file_mime_type=''
-          total=item['file_size']
+          file_size=item['file_size']
+          file_name=File.basename(item[item['destination'].nil? ? 'source' : 'destination'])
           # compute total number of slices
-          numslices=1+(total-1)/@upload_chunksize
-          # current slice index
-          slicenum=0
-          File.open(source_path[filenum]) do |file|
+          numslices=1+(file_size-1)/@upload_chunksize
+          File.open(source_paths[file_index]) do |file|
+            # current slice index
+            slicenum=0
             while !file.eof? do
               data=file.read(@upload_chunksize)
               slice_data={
-                name: destination_path,
+                name: file_name,
                 type: file_mime_type,
-                size: total,
+                size: file_size,
                 data: Base64.strict_encode64(data),
                 slice: slicenum,
                 total_slices: numslices,
-                fileIndex: filenum
+                fileIndex: file_index
               }
+              # log without data
+              Log.dump(:slide_data,slice_data.keys.inject({}){|m,i|m[i]=i.eql?(:data)?'base64 data':slice_data[i];m}) if slicenum.eql?(0)
               ws_send(ws,:slice_upload, slice_data)
               sent_bytes+=data.length
               currenttime=Time.now
-              if (currenttime-lastevent)>UPLOAD_REFRESH_SEC
+              if lastevent.nil? or (currenttime-lastevent)>UPLOAD_REFRESH_SEC
                 notify_progress(session_id,sent_bytes)
                 lastevent=currenttime
               end
@@ -109,7 +129,7 @@ module Aspera
               raise error unless error.nil?
             end
           end
-          filenum+=1
+          file_index+=1
         end
         ws.close
         notify_end(session_id)
@@ -150,7 +170,8 @@ module Aspera
         raise "GW URL must be set" unless !@gw_api.nil?
         raise "option: must be hash (or nil)" unless options.is_a?(Hash)
         raise "paths: must be Array" unless transfer_spec['paths'].is_a?(Array)
-        raise "on token based transfer is supported in GW" unless transfer_spec['token'].is_a?(String)
+        raise "only token based transfer is supported in GW" unless transfer_spec['token'].is_a?(String)
+        Log.dump(:user_spec,transfer_spec)
         transfer_spec['authentication']||='token'
         case transfer_spec['direction']
         when 'send'
@@ -188,6 +209,6 @@ module Aspera
         @upload_chunksize=128000 # TODO: configurable ?
       end
 
-    end # LocalHttp
+    end # HttpGW
   end
 end
