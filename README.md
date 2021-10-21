@@ -5,7 +5,7 @@ Version : 4.4.0.pre
 
 _Laurent/2016-2021_
 
-This gem provides `ascli`: a command line interface to Aspera Applications.
+This gem provides `ascli`: a command line interface to IBM Aspera software.
 
 `ascli` is a also great tool to learn Aspera APIs.
 
@@ -57,7 +57,7 @@ Command line parameters in examples beginning with `my_`, like `my_param_value` 
 
 On Linux and Unix environments, this is typically a POSIX shell (bash, zsh, ksh, sh). In this environment shell command line parsing applies before `ascli` (Ruby) is executed, e.g. [bash shell operation](https://www.gnu.org/software/bash/manual/bash.html#Shell-Operation). Ruby receives a list parameters and gives it to `ascli`. So special character handling (quotes, spaces, env vars, ...) is done in the shell.
 
-On Windows, `cmd` is typically used. Windows process creation does not receive the list of arguments but just the whole line. It's up to the program to parse arguments. Ruby follows the Microsoft C/C++ parameter parsing rules.
+On Windows, `cmd.exe` is typically used. Windows process creation does not receive the list of arguments but just the whole line. It's up to the program to parse arguments. Ruby follows the Microsoft C/C++ parameter parsing rules.
 
 * [Windows: How Command Line Parameters Are Parsed](https://daviddeley.com/autohotkey/parameters/parameters.htm#RUBY)
 * [Understand Quoting and Escaping of Windows Command Line Arguments](http://www.windowsinspired.com/understanding-the-command-line-string-and-arguments-received-by-a-windows-program/)
@@ -1442,6 +1442,119 @@ This opens a local TCP server port, and fails if this port is already used, prov
 This option is used when the tools is executed automatically, for instance with "preview" generation.
 
 Usually the OS native scheduler shall already provide some sort of such protection (windows scheduler has it natively, linux cron can leverage `flock`).
+
+## "La Provençale"
+
+`ascp`, the underlying executable implementing Aspera file transfer using FASP, has a capability to not only access the local file system (using system's `open`,`read`,`write`,`close` primitives), but also to do the same operations on other data storage such as S3, Hadoop and others. This mechanism is call *PVCL*. Several *PVCL* adapters are available, some are embedded in `ascp`
+, some are provided om shared libraries and must be activated. (e.g. using `trapd`)
+
+The list of supported *PVCL* adapters can be retried with command:
+
+```
+$ ascli conf ascp info
++--------------------+-----------------------------------------------------------+
+| key                | value                                                     |
++--------------------+-----------------------------------------------------------+
+-----8<----snip---------
+| product_name       | IBM Aspera SDK                                            |
+| product_version    | 4.0.1.182389                                              |
+| process            | pvcl                                                      |
+| shares             | pvcl                                                      |
+| noded              | pvcl                                                      |
+| faux               | pvcl                                                      |
+| file               | pvcl                                                      |
+| stdio              | pvcl                                                      |
+| stdio-tar          | pvcl                                                      |
++--------------------+-----------------------------------------------------------+
+```
+
+Here we can see the adapters: `process`, `shares`, `noded`, `faux`, `file`, `stdio`, `stdio-tar`.
+
+Those adapters can be used wherever a file path is used in `ascp` including configuration. They act as a pseudo "drive".
+
+The simplified format is:
+
+```
+<adapter>:///<sub file path>?<arg1>=<val1>&...
+```
+
+One of the adapters, used in this manual, for testing, is `faux`. It is a pseudo file system allowing generation of file data without actual storage (on source or destination).
+
+## <a name="faux_testing"></a>`faux:` for testing
+
+This is an extract of the man page of `ascp`. This feature is a feature of `ascp`, not `ascli`
+
+This adapter can be used to simulate a file or a directory.
+
+To send uninitialized data in place of an actual source file, the source file is replaced with an argument of the form `faux:///fname?fsize` where:
+
+* `fname` is the name that will be assigned to the file on the destination
+* `fsize` is the number of bytes that will be sent (in decimal).
+
+Note that the character `?` is a special shell character (wildcard), so `faux` file specification on command line shall be protected (using `\?` and `\&` or using quotes). If not, the shell may give error: `no matches found` or equivalent.
+
+For all sizes, a suffix can be added (case insensitive) to the size: k,m,g,t,p,e (values are power of 2, e.g. 1M is 2^20, i.e. 1 mebibyte, not megabyte). The maximum allowed value is 8*2^60. Very large `faux` file sizes (petabyte range and above) will likely fail due to lack of system memory unless `faux://`.
+
+To send uninitialized data in place of a source directory, the source argument is replaced with an argument of the form:
+
+```
+faux:///dirname?<arg1>=<val1>&...
+```
+
+`dirname` is the folder name and can contain `/` to specify a subfolder.
+
+Supported arguments are:
+
+<table>
+<tr><th>name</th><th>type</th><th>default</th><th>description</th></tr>
+<tr><td>count</td><td>int</td><td>mandatory</td><td>number of files</td></tr>
+<tr><td>file</td><td>string</td><td>file</td><td>basename for files</td></tr>
+<tr><td>size</td><td>int</td><td>0</td><td>size of first file.</td></tr>
+<tr><td>inc</td><td>int</td><td>0</td><td>increment applied to determine next file size</td></tr>
+<tr><td>seq</td><td>sequential<br/>random</td><td>sequential</td><td>sequence in determining next file size</td></tr>
+<tr><td>buf_init</td><td>none<br/>zero<br/>random</td><td>zero</td><td>how source data initialized.<br/>Option 'none' is not allowed for downloads.</td></tr>
+</table>
+
+
+The sequence parameter is applied as follows:
+
+* If `seq` is `random` then each file size is:
+
+  * size +/- (inc * rand())
+  * Where rand is a random number between 0 and 1
+  * Note that file size must not be negative, inc will be set to size if it is greater than size
+  * Similarly, overall file size must be less than 8 * 2^60. If size + inc is greater, inc will be reduced to limit size + inc to 7 * 2^60.
+
+* If `seq` is `sequential` then each file size is:
+
+  * size + ((fileindex - 1) * inc)
+  * Where first file is index 1
+  * So file1 is size bytes, file2 is size + inc bytes, file3 is size + inc * 2 bytes, etc.
+  * As with random, inc will be adjusted if size + (count * inc) is not less then 8 ^ 2^60.
+
+Filenames generated are of the form: `<file>_<00000 . . . count>_<filesize>`
+
+To discard data at the destination, the destination argument is set to `faux://` .
+
+Examples:
+
+* Upload 20 gigabytes of random data to file myfile to directory /Upload
+
+```
+$ ascli server upload faux:///myfile\?20g --to-folder=/Upload
+```
+
+* Upload a file /tmp/sample but do not save results to disk (no docroot on destination)
+
+```
+$ ascli server upload /tmp/sample --to-folder=faux://
+```
+
+* Upload a faux directory `mydir` containing 1 million files, sequentially with sizes ranging from 0 to 2 M - 2 bytes, with the basename of each file being `testfile` to /Upload
+
+```
+$ ascli server upload "faux:///mydir?file=testfile&count=1m&size=0&inc=2&seq=sequential" --to-folder=/Upload
+```
 
 ## <a name="commands"></a>Sample Commands
 
@@ -3182,7 +3295,7 @@ $ ascli cos node info
 $ ascli cos node upload 'faux:///sample1G?1g'
 ```
 
-Note: we generate a dummy file `sample1G` if size 2GB using the `faux` PVCL (man ascp), but you can of course send a real file by specifying a real file instead.
+Note: we generate a dummy file `sample1G` if size 2GB using the `faux` PVCL (man ascp and section above), but you can of course send a real file by specifying a real file instead.
 
 # Plugin: IBM Aspera Sync
 
