@@ -3952,10 +3952,9 @@ So, it evolved into `ascli`:
 
 * 4.1.0
 
-  	* fix: remove keys from transfer spec and command line when not needed
-  	* fix: default to create_dir:true so that sending single file to a folder does not rename file if folder does not exist
-  	* new: update documentation with regard to offline and docker installation
- 	* new: renamed command `nagios_check` to `health`
+	* fix: remove keys from transfer spec and command line when not needed 	* fix: default to create_dir:true so that sending single file to a folder does not rename file if folder does not exist
+	* new: update documentation with regard to offline and docker installation
+	* new: renamed command `nagios_check` to `health`
 	* new: agent `http_gw` now supports upload
 	* new: added option `sdk_url` to install SDK from local file for offline install
 	* new: check new gem version periodically
@@ -4112,9 +4111,9 @@ So, it evolved into `ascli`:
 
 * 0.10.2
 
- 	* updated `search_nodes` to be more generic, so it can search not only on access key, but also other queries.
- 	* added doc for "cargo" like actions
- 	* added doc for multi-session
+	* updated `search_nodes` to be more generic, so it can search not only on access key, but also other queries.
+	* added doc for "cargo" like actions
+	* added doc for multi-session
 
 * 0.10.1
 
@@ -4142,22 +4141,22 @@ So, it evolved into `ascli`:
 
 * 0.9.33
 
-   * new command to display basic token of node
-   * new command to display bearer token of node in AoC
-   * the --fields= option, support +_fieldname_ to add a field to default fields
-   * many small changes
+	* new command to display basic token of node
+	* new command to display bearer token of node in AoC
+	* the --fields= option, support +_fieldname_ to add a field to default fields
+	* many small changes
 
 * 0.9.32
 
-   * all Faspex public links are now supported
-   * removed faspex operation recv_publink
-   * replaced with option `link` (consistent with AoC)
+	* all Faspex public links are now supported
+	* removed faspex operation recv_publink
+	* replaced with option `link` (consistent with AoC)
 
 * 0.9.31
 
-   * added more support for public link: receive and send package, to user or dropbox and files view.
-   * delete expired file lists
-   * changed text table gem from text-table to terminal-table because it supports multiline values
+	* added more support for public link: receive and send package, to user or dropbox and files view.
+	* delete expired file lists
+	* changed text table gem from text-table to terminal-table because it supports multiline values
 
 * 0.9.27
 
@@ -4177,149 +4176,149 @@ So, it evolved into `ascli`:
 
 * 0.9.24
 
-  * fix bug where AoC node to node transfer did not work
-  * fix bug on error if ED25519 private key is defined in .ssh
+	* fix bug where AoC node to node transfer did not work
+	* fix bug on error if ED25519 private key is defined in .ssh
 
 * 0.9.23
 
-  * defined REST error handlers, more error conditions detected
-  * commands to select specific ascp location
+	* defined REST error handlers, more error conditions detected
+	* commands to select specific ascp location
 
 * 0.9.21
 
-  * supports simplified wizard using global client
-  * only ascp binary is required, other SDK (keys) files are now generated
+	* supports simplified wizard using global client
+	* only ascp binary is required, other SDK (keys) files are now generated
 
 * 0.9.20
 
-  * improved wizard (prepare for AoC global client id)
-  * preview generator: addedoption : --skip-format=&lt;png,mp4&gt;
-  * removed outdated pictures from this doc
+	* improved wizard (prepare for AoC global client id)
+	* preview generator: addedoption : --skip-format=&lt;png,mp4&gt;
+	* removed outdated pictures from this doc
 
 * 0.9.19
 
-  * added command aspera bearer --scope=xx
+	* added command aspera bearer --scope=xx
 
 * 0.9.18
 
-  * enhanced aspera admin events to support query
+	* enhanced aspera admin events to support query
 
 * 0.9.16
 
-  * AoC transfers are now reported in activity app
-  * new interface for Rest class authentication (keep backward compatibility)
+	* AoC transfers are now reported in activity app
+	* new interface for Rest class authentication (keep backward compatibility)
 
 * 0.9.15
 
-  * new feature: "find" command in aspera files
-  * sample code for transfer API
+	* new feature: "find" command in aspera files
+	* sample code for transfer API
 
 * 0.9.12
 
-  * add nagios commands
-  * support of ATS for IBM Cloud, removed old version based on aspera id
+	* add nagios commands
+	* support of ATS for IBM Cloud, removed old version based on aspera id
 
 * 0.9.11
 
-  * Breaking change: @stdin is now @stdin:
-  * support of ATS for IBM Cloud, removed old version based on aspera id
+	* Breaking change: @stdin is now @stdin:
+	* support of ATS for IBM Cloud, removed old version based on aspera id
 
 
 * 0.9.10
 
-  * Breaking change: parameter transfer-node becomes more generic: transfer-info
-  * Display SaaS storage usage with command: aspera admin res node --id=nn info
-  * cleaner way of specifying source file list for transfers
-  * Breaking change: replaced download_mode option with http_download action
+	* Breaking change: parameter transfer-node becomes more generic: transfer-info
+	* Display SaaS storage usage with command: aspera admin res node --id=nn info
+	* cleaner way of specifying source file list for transfers
+	* Breaking change: replaced download_mode option with http_download action
 
 * 0.9.9
 
-  * Breaking change: "aspera package send" parameter deprecated, use the --value option instead with "recipients" value. See example.
-  * Now supports "cargo" for Aspera on Cloud (automatic package download)
+	* Breaking change: "aspera package send" parameter deprecated, use the --value option instead with "recipients" value. See example.
+	* Now supports "cargo" for Aspera on Cloud (automatic package download)
 
 * 0.9.8
 
-  * Faspex: use option once_only set to yes to enable cargo like function. id=NEW deprecated.
-  * AoC: share to share transfer with command "transfer"
+	* Faspex: use option once_only set to yes to enable cargo like function. id=NEW deprecated.
+	* AoC: share to share transfer with command "transfer"
 
 * 0.9.7
 
-  * homogeneous [_transfer-spec_](#transferspec) for node and local
-  * preview persistency goes to unique file by default
-  * catch mxf extension in preview as video
-  * Faspex: possibility to download all paclages by specifying id=ALL
-  * Faspex: to come: cargo-like function to download only new packages with id=NEW
+	* homogeneous [_transfer-spec_](#transferspec) for node and local
+	* preview persistency goes to unique file by default
+	* catch mxf extension in preview as video
+	* Faspex: possibility to download all paclages by specifying id=ALL
+	* Faspex: to come: cargo-like function to download only new packages with id=NEW
 
 * 0.9.6
 
-  * Breaking change: `@param:`is now `@preset:` and is generic
-  * AoC: added command to display current workspace information
+	* Breaking change: `@param:`is now `@preset:` and is generic
+	* AoC: added command to display current workspace information
 
 * 0.9.5
 
-  * new parameter: new_user_option used to choose between public_link and invite of external users.
-  * fixed bug in wizard, and wizard uses now product detection
+	* new parameter: new_user_option used to choose between public_link and invite of external users.
+	* fixed bug in wizard, and wizard uses now product detection
 
 * 0.9.4
 
-  * Breaking change: onCloud file list follow --source convention as well (plus specific case for download when first path is source folder, and other are source file names).
-  * AoC Package send supports external users
-  * new command to export AoC config to Aspera CLI config
+	* Breaking change: onCloud file list follow --source convention as well (plus specific case for download when first path is source folder, and other are source file names).
+	* AoC Package send supports external users
+	* new command to export AoC config to Aspera CLI config
 
 * 0.9.3
 
-  * REST error message show host and code
-  * option for quiet display
-  * modified transfer interface and allow token re-generation on error
-  * async add admin command
-  * async add db parameters
-  * Breaking change: new option "sources" to specify files to transfer
+	* REST error message show host and code
+	* option for quiet display
+	* modified transfer interface and allow token re-generation on error
+	* async add admin command
+	* async add db parameters
+	* Breaking change: new option "sources" to specify files to transfer
 
 * 0.9.2
 
-  * Breaking change: changed AoC package creation to match API, see AoC section
+	* Breaking change: changed AoC package creation to match API, see AoC section
 
 * 0.9.1
 
-  * Breaking change: changed faspex package creation to match API, see Faspex section
+	* Breaking change: changed faspex package creation to match API, see Faspex section
 
 * 0.9
 
-  * Renamed the CLI from aslmcli to `ascli`
-  * Automatic rename and conversion of former config folder from aslmcli to `ascli`
+	* Renamed the CLI from aslmcli to `ascli`
+	* Automatic rename and conversion of former config folder from aslmcli to `ascli`
 
 * 0.7.6
 
-  * add "sync" plugin
+	* add "sync" plugin
 
 * 0.7
 
-  * Breaking change: AoC package recv take option if for package instead of argument.
-  * Breaking change: Rest class and Oauth class changed init parameters
-  * AoC: receive package from public link
-  * select by col value on output
-  * added rename (AoC, node)
+	* Breaking change: AoC package recv take option if for package instead of argument.
+	* Breaking change: Rest class and Oauth class changed init parameters
+	* AoC: receive package from public link
+	* select by col value on output
+	* added rename (AoC, node)
 
 * 0.6.19
 
 Breaking change:
 
-  * ats server list provisioned &rarr; ats cluster list
-  * ats server list clouds &rarr; ats cluster clouds
-  * ats server list instance --cloud=x --region=y &rarr; ats cluster show --cloud=x --region=y
-  * ats server id xxx &rarr; ats cluster show --id=xxx
-  * ats subscriptions &rarr; ats credential subscriptions
-  * ats api_key repository list &rarr; ats credential cache list
-  * ats api_key list &rarr; ats credential list
-  * ats access_key id xxx &rarr; ats access_key --id=xxx
+	* ats server list provisioned &rarr; ats cluster list
+	* ats server list clouds &rarr; ats cluster clouds
+	* ats server list instance --cloud=x --region=y &rarr; ats cluster show --cloud=x --region=y
+	* ats server id xxx &rarr; ats cluster show --id=xxx
+	* ats subscriptions &rarr; ats credential subscriptions
+	* ats api_key repository list &rarr; ats credential cache list
+	* ats api_key list &rarr; ats credential list
+	* ats access_key id xxx &rarr; ats access_key --id=xxx
 
 * 0.6.18
 
-  * some commands take now --id option instead of id command.
+	* some commands take now --id option instead of id command.
 
 * 0.6.15
 
-  * Breaking change: "files" application renamed to "aspera" (for "Aspera on Cloud"). "repository" renamed to "files". Default is automatically reset, e.g. in config files and change key "files" to "aspera" in [option preset](#lprt) "default".
+	* Breaking change: "files" application renamed to "aspera" (for "Aspera on Cloud"). "repository" renamed to "files". Default is automatically reset, e.g. in config files and change key "files" to "aspera" in [option preset](#lprt) "default".
 
 # BUGS, FEATURES, CONTRIBUTION
 
@@ -4372,8 +4371,8 @@ References: ES-1944 in release notes of 4.1 and to [HSTS admin manual section "C
 
 * remove rest and oauth classes and use ruby standard gems:
 
-  * oauth
-  * https://github.com/rest-client/rest-client
+	* oauth
+	* https://github.com/rest-client/rest-client
 
 * use Thor or any standard Ruby CLI manager
 
