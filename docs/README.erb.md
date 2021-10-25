@@ -1301,7 +1301,7 @@ Columns:
 
 Fields with EX_ prefix are extensions to transfer agent `direct`. (only in <%=tool%>).
 
-<%= spec_table%>
+<%=spec_table%>
 
 ### Destination folder for transfers
 
@@ -1562,7 +1562,7 @@ $ <%=cmd%> server upload "faux:///mydir?file=testfile&count=1m&size=0&inc=2&seq=
 A non complete list of commands used in unit tests:
 
 ```
-<%= File.read(ENV["INCL_COMMANDS"])%>
+<%=File.read(ENV["INCL_COMMANDS"])%>
 ...and more
 ```
 
@@ -1570,7 +1570,7 @@ A non complete list of commands used in unit tests:
 
 ```
 $ <%=cmd%> -h
-<%= File.read(ENV["INCL_USAGE"])%>
+<%=File.read(ENV["INCL_USAGE"])%>
 
 ```
 
@@ -3250,7 +3250,7 @@ Nodejs: [https://www.npmjs.com/package/aspera](https://www.npmjs.com/package/asp
 
 ```
 $ asession -h
-<%= File.read(ENV["INCL_ASESSION"])%>
+<%=File.read(ENV["INCL_ASESSION"])%>
 ```
 
 # Hot folder
