@@ -231,7 +231,7 @@ module Aspera
               command_perm=self.options.get_next_command([:list,:create])
               case command_perm
               when :list
-                # generic options : TODO: as arg ?
+                # generic options : TODO: as arg ? option_url_query
                 list_options||={'include'=>['[]','access_level','permission_count']}
                 # special value: ALL will show all permissions
                 if !VAL_ALL.eql?(node_file[:file_id])
@@ -239,7 +239,6 @@ module Aspera
                   list_options['file_id']=node_file[:file_id]
                   list_options['inherited']||=false
                 end
-                #option_url_query
                 items=node_api.read('permissions',list_options)[:data]
                 return {:type=>:object_list,:data=>items}
               when :create
@@ -826,8 +825,10 @@ module Aspera
               package_info=@api_aoc.read("packages/#{package_id}")[:data]
               return { :type=>:single_object, :data =>package_info }
             when :list
-              # list all packages ('page'=>1,'per_page'=>10,)'sort'=>'-sent_at',
-              packages=@api_aoc.read('packages',{'archived'=>false,'exclude_dropbox_packages'=>true,'has_content'=>true,'received'=>true,'workspace_id'=>@workspace_id})[:data]
+              query=option_url_query({'archived'=>false,'exclude_dropbox_packages'=>true,'has_content'=>true,'received'=>true})
+              raise "option must be Hash" unless query.is_a?(Hash)
+              query['workspace_id']||=@workspace_id
+              packages=@api_aoc.read('packages',query)[:data]
               return {:type=>:object_list,:data=>packages,:fields=>['id','name','bytes_transferred']}
             when :delete
               list_or_one=self.options.get_option(:id,:mandatory)

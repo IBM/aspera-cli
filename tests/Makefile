@@ -337,7 +337,15 @@ $(T)aocg6: $(T).exists
 	@echo $@
 	$(EXE_MAN) aoc user info modify @json:'{"name":"dummy change"}'
 	@touch $@
-taocgen: $(T)aocg1 $(T)aocg2 $(T)aocg3 $(T)aocg4 $(T)aocg5 $(T)aocg6
+$(T)aocg7: $(T).exists
+	@echo $@
+	$(EXE_MAN) aoc user shared_inboxes
+	@touch $@
+$(T)aocg8: $(T).exists
+	@echo $@
+	$(EXE_MAN) aoc user workspaces
+	@touch $@
+taocgen: $(T)aocg1 $(T)aocg2 $(T)aocg3 $(T)aocg4 $(T)aocg5 $(T)aocg6 $(T)aocg7 $(T)aocg8
 $(T)aocfbr: $(T).exists
 	@echo $@
 	$(EXE_MAN) aoc files browse /
@@ -436,7 +444,7 @@ $(T)aocp2: $(T).exists
 	@touch $@
 $(T)aocp3: $(T).exists
 	@echo $@
-	set -x;package_id=$$($(EXE_MAN) aoc packages list --format=csv --fields=id --display=data|head -n 1);\
+	set -x;package_id=$$($(EXE_NOMAN) aoc packages list --format=csv --fields=id --display=data|head -n 1);\
 	$(EXE_MAN) aoc packages recv --id="$${package_id}" --to-folder=$(DIR_TMP).
 	@touch $@
 $(T)aocp4: $(T).exists
@@ -469,7 +477,15 @@ $(T)aocp8: $(T).exists
 	aoc_shbx_name=$$($(EXE_NOMAN) conf id misc get aoc_shbx_name);\
 	$(EXE_MAN) aoc packages send --workspace="$${aoc_shbx_ws}" --value=@json:'{"name":"'"$(PKG_TEST_TITLE)"'","recipients":["'$${aoc_shbx_name}'"]}' $(CF_LOCAL_SAMPLE_FILEPATH)
 	@touch $@
-taocp: $(T)aocp1 $(T)aocp2 $(T)aocp3 $(T)aocp4 $(T)aocp5 $(T)aocp5 $(T)aocp6 $(T)aocp7 $(T)aocp8
+$(T)aocp9: $(T).exists
+	@echo $@
+	set -x;\
+	aoc_shbx_ws=$$($(EXE_NOMAN) conf id misc get aoc_shbx_ws);\
+	aoc_shbx_name=$$($(EXE_NOMAN) conf id misc get aoc_shbx_name);\
+	shbxid=$$($(EXE_NOMAN) aoc user shared_inboxes --select=@json:'{"dropbox.name":"'$${aoc_shbx_name}'"}' --format=csv --fields=dropbox_id --display=data);\
+	$(EXE_MAN) aoc packages list --query=@json:'{"dropbox_id":"'$${shbxid}'","sort":"-received_at","archived":false,"received":true,"has_content":true,"exclude_dropbox_packages":false}'
+	@touch $@
+taocp: $(T)aocp1 $(T)aocp2 $(T)aocp3 $(T)aocp4 $(T)aocp5 $(T)aocp5 $(T)aocp6 $(T)aocp7 $(T)aocp8 $(T)aocp9
 $(T)aoc8: $(T).exists
 	@echo $@
 	$(EXE_MAN) aoc admin resource workspace list

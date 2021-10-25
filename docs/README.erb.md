@@ -2095,6 +2095,21 @@ $ <%=cmd%> aoc admin res admin/client list --fields=id --format=csv|<%=cmd%> aoc
 +-----+---------+
 ```
 
+* List packages in a given shared inbox
+
+First retrieve the id of the shared inbox, and then list packages with the appropriate filter.
+(To find out available filters, consult the API definition, or use the web interface in developer mode).
+
+Note that when no query is provided, the query used by default is: `{"archived":false,"exclude_dropbox_packages":true,"has_content":true,"received":true}`. The workspace id is added if not already present in the query.
+
+```
+shbxid=$(ascli aoc user shared_inboxes --select=@json:'{"dropbox.name":"My Shared Inbox"}' --format=csv --fields=dropbox_id --display=data)
+
+ascli aoc packages list --query=@json:'{"sort":"-received_at","archived":false,"received":true,"has_content":true,"exclude_dropbox_packages":false,"dropbox_id":"'$shbxid'"}'
+```
+
+The following additional filters can be used: `include_draft`, `per_page`, `page`
+
 ## Shared folders
 
 * list shared folders in node
@@ -3371,7 +3386,7 @@ So, it evolved into <%=tool%>:
 
 * <%=gemspec.version.to_s%>
 
-	* TODO
+	* New: `aoc packages list` Add possibility to add filter with option `query`
 
 * 4.3.0
 

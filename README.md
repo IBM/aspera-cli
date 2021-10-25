@@ -1633,7 +1633,7 @@ ascli aoc files v3 info
 ascli aoc org -N --link=my_aoc_publink_recv_from_aocuser
 ascli aoc organization
 ascli aoc packages list
-ascli aoc packages list --format=csv --fields=id --display=data|head -n 1);\
+ascli aoc packages list --query=@json:'{"dropbox_id":"my_shbxid","sort":"-received_at","archived":false,"received":true,"has_content":true,"exclude_dropbox_packages":false}'
 ascli aoc packages recv --id="my_package_id" --to-folder=.
 ascli aoc packages recv --id=ALL --to-folder=. --once-only=yes --lock-port=12345
 ascli aoc packages send --value=@json:'{"name":"Important files delivery","recipients":["external.user@example.com"]}' --new-user-option=@json:'{"package_contact":true}' testfile.bin
@@ -1643,6 +1643,8 @@ ascli aoc packages send -N --value=@json:'{"name":"Important files delivery"}' t
 ascli aoc packages send -N --value=@json:'{"name":"Important files delivery"}' testfile.bin --link=my_aoc_publink_send_shd_inbox
 ascli aoc user info modify @json:'{"name":"dummy change"}'
 ascli aoc user info show
+ascli aoc user shared_inboxes
+ascli aoc user workspaces
 ascli aoc workspace
 ascli ats access_key --id=ak_aws delete
 ascli ats access_key --id=akibmcloud --secret=somesecret cluster
@@ -2595,6 +2597,21 @@ $ ascli aoc admin res admin/client list --fields=id --format=csv|ascli aoc admin
 | 102 | deleted |
 +-----+---------+
 ```
+
+* List packages in a given shared inbox
+
+First retrieve the id of the shared inbox, and then list packages with the appropriate filter.
+(To find out available filters, consult the API definition, or use the web interface in developer mode).
+
+Note that when no query is provided, the query used by default is: `{"archived":false,"exclude_dropbox_packages":true,"has_content":true,"received":true}`. The workspace id is added if not already present in the query.
+
+```
+shbxid=$(ascli aoc user shared_inboxes --select=@json:'{"dropbox.name":"My Shared Inbox"}' --format=csv --fields=dropbox_id --display=data)
+
+ascli aoc packages list --query=@json:'{"sort":"-received_at","archived":false,"received":true,"has_content":true,"exclude_dropbox_packages":false,"dropbox_id":"'$shbxid'"}'
+```
+
+The following additional filters can be used: `include_draft`, `per_page`, `page`
 
 ## Shared folders
 
@@ -3896,7 +3913,7 @@ So, it evolved into `ascli`:
 
 * 4.3.0
 
-	* TODO
+	* New: `aoc packages list` Add possibility to add filter with option `query`
 
 * 4.3.0
 
