@@ -1316,8 +1316,8 @@ The option `to_folder` provides an equivalent and convenient way to change this 
 
 ### List of files for transfers
 
-When uploading, downloading or sending files, the user must specify the list of files to transfer.
-Most of the time, the list of files to transfer will be simply specified on the command line:
+When uploading, downloading or sending files, the user must specify the list of files to transfer. The option to specify the list of files (Extensed value) is `sources`, the default value is `@args`, which means: take remain non used arguments (not starting with `-` as list of files.
+So, by default, the list of files to transfer will be simply specified on the command line:
 
 ```
 $ ascli server upload ~/mysample.file secondfile
@@ -1329,7 +1329,7 @@ This is equivalent to:
 $ ascli server upload --sources=@args ~/mysample.file secondfile
 ```
 
-More advanced options are provided to adapt to various cases. In fact, list of files to transfer are conveyed using the [_transfer-spec_](#transferspec) using the field: "paths" which is a list (array) of pairs of "source" (mandatory) and "destination" (optional).
+More advanced options are provided to adapt to various cases. In fact, list of files to transfer are normally conveyed using the [_transfer-spec_](#transferspec) using the field: "paths" which is a list (array) of pairs of "source" (mandatory) and "destination" (optional).
 
 Note that this is different from the "ascp" command line. The paradigm used by `ascli` is:
 all transfer parameters are kept in [_transfer-spec_](#transferspec) so that execution of a transfer is independent of the transfer agent. Note that other IBM Aspera interfaces use this: connect, node, transfer sdk.
@@ -1352,11 +1352,13 @@ For ease of use and flexibility, the list of files to transfer is specified by t
 --sources=@ts --ts=@json:'{"paths":[{"source":"file1"},{"source":"file2"}]}'
 ```
 
-* Although not recommended, because it applies *only* to the `local` transfer agent (i.e. bare ascp), it is possible to specify bare ascp arguments using the pseudo [_transfer-spec_](#transferspec) parameter `EX_ascp_args`. In that case, one must specify a dummy list in the [_transfer-spec_](#transferspec), which will be overriden by the bare ascp command line provided.
+* Although not recommended, because it applies *only* to the `direct` transfer agent (i.e. bare ascp), it is possible to specify bare ascp arguments using the pseudo [_transfer-spec_](#transferspec) parameter `EX_ascp_args`. In that case, one must specify a dummy list in the [_transfer-spec_](#transferspec), which will be overriden by the bare ascp command line provided.
 
 ```
 --sources=@ts --ts=@json:'{"paths":[{"source":"dummy"}],"EX_ascp_args":["--file-list","myfilelist"]}'
 ```
+
+(TODO: in next version, dummy source paths can be removed)
 
 In case the file list is provided on the command line (i.e. using `--sources=@args` or `--sources=<Array>`, but not `--sources=@ts`), the list of files will be used either as a simple file list or a file pair list depending on the value of the option: `src_type`:
 
@@ -1368,6 +1370,8 @@ Example:
 ```
 $ ascli server upload --src-type=pair ~/Documents/Samples/200KB.1 /Upload/sample1
 ```
+
+Internally, when transfer agent `direct` is used, a temporary file list (or pair) file is generated and provided to ascp, unless `--file-list` or `--file-pait-list` is provided in `ts` in `EX_ascp_args`.
 
 Note the special case when the source files are located on "Aspera on Cloud", i.e. using access keys and the `file id` API:
 
@@ -4005,7 +4009,7 @@ So, it evolved into `ascli`:
 	* allow bulk delete in `aspera files` with option `bulk=yes`
 	* fix getting connect versions
 	* added section for Aix
-	* support all ciphers for `local`ascp (incl. gcm, etc..)
+	* support all ciphers for `local` ascp (including gcm, etc..)
 	* added transfer spec param `apply_local_docroot` for `local`
 
 * 0.11.4

@@ -70,6 +70,10 @@ module Aspera
         Base64.strict_encode64(JSON.generate(v))
       end
 
+      def self.ts_has_file_list(ts)
+        ts.has_key?('EX_ascp_args') and ts['EX_ascp_args'].is_a?(Array) and ['--file-list','--file-pair-list'].any?{|i|ts['EX_ascp_args'].include?(i)}
+      end
+
       def initialize(job_spec,options)
         @job_spec=job_spec
         @options=options
@@ -122,9 +126,17 @@ module Aspera
           # destination will be base64 encoded, put before path arguments
           @builder.add_command_line_options(['--dest64'])
         end
-        @builder.params_definition['paths'][:mandatory]=!@job_spec.has_key?('keepalive')
+        # paths is mandatory, unless ...
+        file_list_provided=self.class.ts_has_file_list(@job_spec)
+        @builder.params_definition['paths'][:mandatory]=!@job_spec.has_key?('keepalive') and !file_list_provided
         paths_array=@builder.process_param('paths',:get_value)
-        unless paths_array.nil?
+        if file_list_provided and ! paths_array.nil?
+          Log.log.warn("file list provided both in transfer spec and ascp file list. Keeping file list only.")
+          paths_array=nil
+        end
+        if ! paths_array.nil?
+          # it's an array
+          raise "paths is empty in transfer spec" if paths_array.empty?
           # use file list if there is storage defined for it.
           if @@file_list_folder.nil?
             # not safe for special characters ? (maybe not, depends on OS)

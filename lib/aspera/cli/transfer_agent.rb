@@ -1,4 +1,5 @@
 require 'aspera/fasp/local'
+require 'aspera/fasp/parameters'
 require 'aspera/fasp/connect'
 require 'aspera/fasp/node'
 require 'aspera/fasp/aoc'
@@ -183,7 +184,8 @@ END_OF_TEMPLATE
           raise CliBadArgument,"specify at least one file on command line or use --sources=#{FILE_LIST_FROM_TRANSFER_SPEC} to use transfer spec" if !file_list.is_a?(Array) or file_list.empty?
         when FILE_LIST_FROM_TRANSFER_SPEC
           Log.log.debug("assume list provided in transfer spec")
-          raise CliBadArgument,"transfer spec on command line must have sources" if @transfer_paths.nil?
+          special_case_direct_with_list=options.get_option(:transfer,:mandatory).eql?(:direct) and Fasp::Parameters.ts_has_file_list(@transfer_spec_cmdline)
+          raise CliBadArgument,"transfer spec on command line must have sources" if @transfer_paths.nil? and !special_case_direct_with_list
           # here we assume check of sources is made in transfer agent
           return @transfer_paths
         when Array
