@@ -45,6 +45,7 @@ module Aspera
         AOC_COMMAND_V2='aspera'
         AOC_COMMAND_V3='aoc'
         AOC_COMMAND_CURRENT=AOC_COMMAND_V3
+        SERVER_COMMAND='server'
         CONNECT_WEB_URL = 'https://d3gcli72yxqn2z.cloudfront.net/connect'
         CONNECT_VERSIONS = 'connectversions.js'
         TRANSFER_SDK_ARCHIVE_URL = 'https://ibm.biz/aspera_sdk'
@@ -58,13 +59,22 @@ Subject: Amelia email test
 
 It worked !
 END_OF_TEMPLATE
+        # special extended values
+        EXTV_INCLUDE_PRESETS='incps'
+        EXTV_PRESET='preset'
+        DEFAULT_CHECK_NEW_VERSION_DAYS=7
+        DEFAULT_PRIV_KEY_FILENAME='aspera_aoc_key'
+        DEFAULT_PRIVKEY_LENGTH=4096
+        private_constant :DEFAULT_CONFIG_FILENAME,:CONF_PRESET_CONFIG,:CONF_PRESET_VERSION,:CONF_PRESET_DEFAULT,
+        :CONF_PRESET_GLOBAL,:PROGRAM_NAME_V1,:PROGRAM_NAME_V2,:DEFAULT_REDIRECT,:ASPERA_PLUGINS_FOLDERNAME,
+        :RUBY_FILE_EXT,:AOC_COMMAND_V1,:AOC_COMMAND_V2,:AOC_COMMAND_V3,:AOC_COMMAND_CURRENT,:DEMO,
+        :TRANSFER_SDK_ARCHIVE_URL,:AOC_PATH_API_CLIENTS,:DEMO_SERVER_PRESET,:EMAIL_TEST_TEMPLATE,:EXTV_INCLUDE_PRESETS,
+        :EXTV_PRESET,:DEFAULT_CHECK_NEW_VERSION_DAYS,:DEFAULT_PRIV_KEY_FILENAME,:SERVER_COMMAND
         def option_preset; nil; end
 
         def option_preset=(value)
           self.options.add_option_preset(preset_by_name(value))
         end
-
-        private_constant :DEFAULT_CONFIG_FILENAME,:CONF_PRESET_CONFIG,:CONF_PRESET_VERSION,:CONF_PRESET_DEFAULT,:CONF_PRESET_GLOBAL,:PROGRAM_NAME_V1,:PROGRAM_NAME_V2,:DEFAULT_REDIRECT,:ASPERA_PLUGINS_FOLDERNAME,:RUBY_FILE_EXT,:AOC_COMMAND_V1,:AOC_COMMAND_V2,:AOC_COMMAND_V3,:AOC_COMMAND_CURRENT,:DEMO,:TRANSFER_SDK_ARCHIVE_URL,:AOC_PATH_API_CLIENTS,:DEMO_SERVER_PRESET,:EMAIL_TEST_TEMPLATE
 
         def initialize(env,tool_name,help_url,version,main_folder)
           super(env)
@@ -93,35 +103,36 @@ END_OF_TEMPLATE
           # add preset handler (needed for smtp)
           ExtendedValue.instance.set_handler(EXTV_PRESET,:reader,lambda{|v|preset_by_name(v)})
           ExtendedValue.instance.set_handler(EXTV_INCLUDE_PRESETS,:decoder,lambda{|v|expanded_with_preset_includes(v)})
-          self.options.set_obj_attr(:override,self,:option_override,:no)
           self.options.set_obj_attr(:ascp_path,self,:option_ascp_path)
           self.options.set_obj_attr(:use_product,self,:option_use_product)
           self.options.set_obj_attr(:preset,self,:option_preset)
           self.options.set_obj_attr(:secret,@agents[:secret],:default_secret)
           self.options.set_obj_attr(:secrets,@agents[:secret],:all_secrets)
-          self.options.add_opt_boolean(:override,'override existing value')
           self.options.add_opt_switch(:no_default,'-N','do not load default configuration for plugin') { @use_plugin_defaults=false }
-          self.options.add_opt_boolean(:use_generic_client,'wizard: AoC: use global or org specific jwt client id')
-          self.options.add_opt_simple(:pkeypath,'path to private key for JWT (wizard)')
+          self.options.add_opt_boolean(:override,'Wizard: override existing value')
+          self.options.add_opt_boolean(:use_generic_client,'Wizard: AoC: use global or org specific jwt client id')
+          self.options.add_opt_boolean(:default,'Wizard: set as default configuration for specified plugin (also: update)')
+          self.options.add_opt_boolean(:test_mode,'Wizard: skip private key check step')
+          self.options.add_opt_simple(:pkeypath,'Wizard: path to private key for JWT')
           self.options.add_opt_simple(:ascp_path,'path to ascp')
           self.options.add_opt_simple(:use_product,'use ascp from specified product')
           self.options.add_opt_simple(:smtp,'smtp configuration (extended value: hash)')
           self.options.add_opt_simple(:fpac,'proxy auto configuration URL')
           self.options.add_opt_simple(:preset,'-PVALUE','load the named option preset from current config file')
-          self.options.add_opt_simple(:default,'set as default configuration for specified plugin')
           self.options.add_opt_simple(:secret,'default secret')
           self.options.add_opt_simple(:secrets,'secret repository (Hash)')
           self.options.add_opt_simple(:sdk_url,'URL to get SDK')
-          self.options.add_opt_simple(:sdk_folder,'SDK folder location')
+          self.options.add_opt_simple(:sdk_folder,'SDK folder path')
           self.options.add_opt_simple(:notif_to,'email recipient for notification of transfers')
           self.options.add_opt_simple(:notif_template,'email ERB template for notification of transfers')
-          self.options.add_opt_boolean(:test_mode,'skip user validation in wizard mode')
-          self.options.add_opt_simple(:version_check_days,Integer,'period to check neew version in days (zero to disable)')
+          self.options.add_opt_simple(:version_check_days,Integer,'period in days to check new version (zero to disable)')
           self.options.set_option(:use_generic_client,true)
           self.options.set_option(:test_mode,false)
-          self.options.set_option(:version_check_days,7)
+          self.options.set_option(:default,true)
+          self.options.set_option(:version_check_days,DEFAULT_CHECK_NEW_VERSION_DAYS)
           self.options.set_option(:sdk_url,TRANSFER_SDK_ARCHIVE_URL)
           self.options.set_option(:sdk_folder,File.join(@main_folder,'sdk'))
+          self.options.set_option(:override,:no)
           self.options.parse_options!
           raise CliBadArgument,'secrets shall be Hash' unless @agents[:secret].all_secrets.is_a?(Hash)
           Fasp::Installation.instance.folder=self.options.get_option(:sdk_folder,:mandatory)
@@ -198,9 +209,9 @@ END_OF_TEMPLATE
         end
         private
 
-        def generate_new_key(private_key_path)
+        def generate_rsa_private_key(private_key_path,length)
           require 'openssl'
-          priv_key = OpenSSL::PKey::RSA.new(4096)
+          priv_key = OpenSSL::PKey::RSA.new(length)
           File.write(private_key_path,priv_key.to_s)
           File.write(private_key_path+'.pub',priv_key.public_key.to_s)
           nil
@@ -253,11 +264,7 @@ END_OF_TEMPLATE
         attr_reader :main_folder
         attr_reader :gem_url
         attr_reader :plugins
-        attr_accessor :option_override
         attr_accessor :option_config_file
-
-        EXTV_INCLUDE_PRESETS='incps'
-        EXTV_PRESET='preset'
 
         # @return the hash from name (also expands possible includes)
         def preset_by_name(config_name, include_path=[])
@@ -343,11 +350,11 @@ END_OF_TEMPLATE
               Log.log.warn("No config file found. Creating empty configuration file: #{@option_config_file}")
               @config_presets={CONF_PRESET_CONFIG=>{CONF_PRESET_VERSION=>@program_version}}
             else
-              Log.log.debug "loading #{@option_config_file}"
+              Log.log.debug("loading #{@option_config_file}")
               @config_presets=YAML.load_file(conf_file_to_load)
             end
             files_to_copy=[]
-            Log.log.debug "Available_presets: #{@config_presets}"
+            Log.log.debug("Available_presets: #{@config_presets}")
             raise 'Expecting YAML Hash' unless @config_presets.is_a?(Hash)
             # check there is at least the config section
             if !@config_presets.has_key?(CONF_PRESET_CONFIG)
@@ -589,7 +596,7 @@ END_OF_TEMPLATE
               save_presets_to_config_file
               return Main.result_status("Modified: #{@option_config_file}")
             when :update
-              default_for_plugin=self.options.get_option(:default,:optional)
+              default_for_plugin=self.options.get_option(:default,:mandatory)
               #  get unprocessed options
               theopts=self.options.get_options_table
               Log.log.debug("opts=#{theopts}")
@@ -621,7 +628,7 @@ END_OF_TEMPLATE
             return Main.result_nothing
           when :genkey # generate new rsa key
             private_key_path=self.options.get_next_argument('private key file path')
-            generate_new_key(private_key_path)
+            generate_rsa_private_key(private_key_path,DEFAULT_PRIVKEY_LENGTH)
             return Main.result_status('Generated key: '+private_key_path)
           when :echo # display the content of a value given on command line
             result={:type=>:other_struct, :data=>self.options.get_next_argument('value')}
@@ -638,23 +645,32 @@ END_OF_TEMPLATE
           when :overview
             return {:type=>:object_list,:data=>self.class.flatten_all_config(@config_presets)}
           when :wizard
+            # interactive mode
             self.options.ask_missing_mandatory=true
             # register url option
             BasicAuthPlugin.new(@agents.merge(skip_option_header: true))
+            # get from option, or ask
             instance_url=self.options.get_option(:url,:mandatory)
+            # allow user to tell the preset name
+            preset_name=self.options.get_option(:id,:optional)
             appli=ApiDetector.discover_product(instance_url)
+            plugin_name="<replace per app>"
+            test_args="<replace per app>"
             case appli[:product]
             when :aoc
               self.format.display_status('Detected: Aspera on Cloud'.bold)
+              plugin_name=AOC_COMMAND_CURRENT
               organization,instance_domain=AoC.parse_url(instance_url)
-              aspera_preset_name='aoc_'+organization
-              self.format.display_status("Preparing preset: #{aspera_preset_name}")
+              # if not defined by user, generate name
+              preset_name=[appli[:product],organization].join('_') if preset_name.nil?
+              self.format.display_status("Preparing preset: #{preset_name}")
               # init defaults if necessary
-              @config_presets[CONF_PRESET_DEFAULT]||=Hash.new
-              if !option_override
-                raise CliError,"a default configuration already exists for plugin '#{AOC_COMMAND_CURRENT}' (use --override=yes)" if @config_presets[CONF_PRESET_DEFAULT].has_key?(AOC_COMMAND_CURRENT)
-                raise CliError,"preset already exists: #{aspera_preset_name}  (use --override=yes)" if @config_presets.has_key?(aspera_preset_name)
-              end
+              @config_presets[CONF_PRESET_DEFAULT]||={}
+              option_override=self.options.get_option(:override,:mandatory)
+              option_default=self.options.get_option(:default,:mandatory)
+              Log.log.error("override=#{option_override} -> #{option_override.class}")
+              raise CliError,"A default configuration already exists for plugin '#{plugin_name}' (use --override=yes or --default=no)" if !option_override and option_default and @config_presets[CONF_PRESET_DEFAULT].has_key?(plugin_name)
+              raise CliError,"Preset already exists: #{preset_name}  (use --override=yes or --id=<name>)" if !option_override and @config_presets.has_key?(preset_name)
               # lets see if path to priv key is provided
               private_key_path=self.options.get_option(:pkeypath,:optional)
               # give a chance to provide
@@ -664,23 +680,23 @@ END_OF_TEMPLATE
               end
               # else generate path
               if private_key_path.empty?
-                private_key_path=File.join(@main_folder,'aspera_aoc_key')
+                private_key_path=File.join(@main_folder,DEFAULT_PRIV_KEY_FILENAME)
               end
               if File.exist?(private_key_path)
                 self.format.display_status('Using existing key:')
               else
-                self.format.display_status('Generating key...')
-                generate_new_key(private_key_path)
+                self.format.display_status("Generating #{DEFAULT_PRIVKEY_LENGTH} bit RSA key...")
+                generate_rsa_private_key(private_key_path,DEFAULT_PRIVKEY_LENGTH)
                 self.format.display_status('Created:')
               end
-              self.format.display_status("#{private_key_path}")
+              self.format.display_status(private_key_path)
               pub_key_pem=OpenSSL::PKey::RSA.new(File.read(private_key_path)).public_key.to_s
               # declare command line options for AoC
               require 'aspera/cli/plugins/aoc'
               # make username mandatory for jwt, this triggers interactive input
               self.options.get_option(:username,:mandatory)
               # instanciate AoC plugin, so that command line options are known
-              files_plugin=self.class.plugin_new(AOC_COMMAND_CURRENT,@agents.merge({skip_basic_auth_options: true, private_key_path: private_key_path}))
+              files_plugin=self.class.plugin_new(plugin_name,@agents.merge({skip_basic_auth_options: true, private_key_path: private_key_path}))
               aoc_api=files_plugin.get_api
               auto_set_pub_key=false
               auto_set_jwt=false
@@ -723,7 +739,7 @@ END_OF_TEMPLATE
               end
               myself=aoc_api.read('self')[:data]
               if auto_set_pub_key
-                raise CliError,'public key is already set in profile (use --override=yes)'  unless myself['public_key'].empty? or option_override
+                raise CliError,'Public key is already set in profile (use --override=yes)'  unless myself['public_key'].empty? or option_override
                 self.format.display_status('Updating profile with new key')
                 aoc_api.update("users/#{myself['id']}",{'public_key'=>pub_key_pem})
               end
@@ -731,8 +747,8 @@ END_OF_TEMPLATE
                 self.format.display_status('Enabling JWT for client')
                 aoc_api.update("clients/#{self.options.get_option(:client_id)}",{'jwt_grant_enabled'=>true,'explicit_authorization_required'=>false})
               end
-              self.format.display_status("creating new config preset: #{aspera_preset_name}")
-              @config_presets[aspera_preset_name]={
+              self.format.display_status("Creating new config preset: #{preset_name}")
+              @config_presets[preset_name]={
                 :url.to_s           =>self.options.get_option(:url),
                 :username.to_s      =>myself['email'],
                 :auth.to_s          =>:jwt.to_s,
@@ -741,16 +757,21 @@ END_OF_TEMPLATE
               # set only if non nil
               [:client_id,:client_secret].each do |s|
                 o=self.options.get_option(s)
-                @config_presets[s.to_s] = o unless o.nil?
+                @config_presets[preset_name][s.to_s] = o unless o.nil?
               end
-              self.format.display_status("Setting config preset as default for #{AOC_COMMAND_CURRENT}")
-              @config_presets[CONF_PRESET_DEFAULT][AOC_COMMAND_CURRENT]=aspera_preset_name
-              self.format.display_status('saving config file')
-              save_presets_to_config_file
-              return Main.result_status("Done.\nYou can test with:\n#{@tool_name} #{AOC_COMMAND_CURRENT} user info show")
+              test_args="#{plugin_name} user info show"
             else
               raise CliBadArgument,"Supports only: aoc. Detected: #{appli}"
+            end # product
+            if option_default
+              self.format.display_status("Setting config preset as default for #{plugin_name}")
+              @config_presets[CONF_PRESET_DEFAULT][plugin_name]=preset_name
+            else
+              test_args="-P#{preset_name} #{test_args}"
             end
+            self.format.display_status('Saving config file.')
+            save_presets_to_config_file
+            return Main.result_status("Done.\nYou can test with:\n#{@tool_name} #{test_args}")
           when :export_to_cli
             self.format.display_status('Exporting: Aspera on Cloud')
             require 'aspera/cli/plugins/aoc'
@@ -820,16 +841,16 @@ END_OF_TEMPLATE
               @config_presets[DEMO_SERVER_PRESET]={'url'=>'ssh://'+DEMO+'.asperasoft.com:33001','username'=>AOC_COMMAND_V2,'ssAP'.downcase.reverse+'drow'.reverse=>DEMO+AOC_COMMAND_V2}
             end
             @config_presets[CONF_PRESET_DEFAULT]||={}
-            if @config_presets[CONF_PRESET_DEFAULT].has_key?('server')
-              Log.log.warn("server default preset already set to: #{@config_presets[CONF_PRESET_DEFAULT]['server']}")
-              Log.log.warn("use #{DEMO_SERVER_PRESET} for demo: -P#{DEMO_SERVER_PRESET}") unless DEMO_SERVER_PRESET.eql?(@config_presets[CONF_PRESET_DEFAULT]['server'])
+            if @config_presets[CONF_PRESET_DEFAULT].has_key?(SERVER_COMMAND)
+              Log.log.warn("Server default preset already set to: #{@config_presets[CONF_PRESET_DEFAULT][SERVER_COMMAND]}")
+              Log.log.warn("Use #{DEMO_SERVER_PRESET} for demo: -P#{DEMO_SERVER_PRESET}") unless DEMO_SERVER_PRESET.eql?(@config_presets[CONF_PRESET_DEFAULT][SERVER_COMMAND])
             else
-              @config_presets[CONF_PRESET_DEFAULT]['server']=DEMO_SERVER_PRESET
-              Log.log.info("setting server default preset to : #{DEMO_SERVER_PRESET}")
+              @config_presets[CONF_PRESET_DEFAULT][SERVER_COMMAND]=DEMO_SERVER_PRESET
+              Log.log.info("Setting server default preset to : #{DEMO_SERVER_PRESET}")
             end
             save_presets_to_config_file
             return Main.result_status("Done")
-          else raise 'error'
+          else raise 'INTERNAL ERROR: wrong case'
           end
         end
 
@@ -888,7 +909,7 @@ END_OF_TEMPLATE
         def save_presets_to_config_file
           raise 'no configuration loaded' if @config_presets.nil?
           FileUtils.mkdir_p(@main_folder) unless Dir.exist?(@main_folder)
-          Log.log.debug "writing #{@option_config_file}"
+          Log.log.debug("Writing #{@option_config_file}")
           File.write(@option_config_file,@config_presets.to_yaml)
         end
 
