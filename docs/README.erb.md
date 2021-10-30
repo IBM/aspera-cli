@@ -1353,15 +1353,15 @@ For ease of use and flexibility, the list of files to transfer is specified by t
 --sources=@ts --ts=@json:'{"paths":[{"source":"file1"},{"source":"file2"}]}'
 ```
 
-* Although not recommended, because it applies *only* to the `direct` transfer agent (i.e. bare ascp), it is possible to specify bare ascp arguments using the pseudo [_transfer-spec_](#transferspec) parameter `EX_ascp_args`. In that case, one must specify a dummy list in the [_transfer-spec_](#transferspec), which will be overriden by the bare ascp command line provided.
+* Not recommended: It is possible to specify bare ascp arguments using the pseudo [_transfer-spec_](#transferspec) parameter `EX_ascp_args`.
 
 ```
 --sources=@ts --ts=@json:'{"paths":[{"source":"dummy"}],"EX_ascp_args":["--file-list","myfilelist"]}'
 ```
 
-(TODO: in next version, dummy source paths can be removed)
+This method avoids creating a copy of the file list, but has drawbacks: it applies *only* to the `direct` transfer agent (i.e. bare ascp) and not for Aspera on Cloud. One must specify a dummy list in the [_transfer-spec_](#transferspec), which will be overriden by the bare ascp command line provided. (TODO) In next version, dummy source paths can be removed.
 
-In case the file list is provided on the command line (i.e. using `--sources=@args` or `--sources=<Array>`, but not `--sources=@ts`), the list of files will be used either as a simple file list or a file pair list depending on the value of the option: `src_type`:
+In case the file list is provided on the command line i.e. using `--sources=@args` or `--sources=<Array>` (but not `--sources=@ts`), then the list of files will be used either as a simple file list or a file pair list depending on the value of the option: `src_type`:
 
 * `list` : (default) the path of destination is the same as source
 * `pair` : in that case, the first element is the first source, the second element is the first destination, and so on.

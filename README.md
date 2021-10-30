@@ -1352,15 +1352,15 @@ For ease of use and flexibility, the list of files to transfer is specified by t
 --sources=@ts --ts=@json:'{"paths":[{"source":"file1"},{"source":"file2"}]}'
 ```
 
-* Although not recommended, because it applies *only* to the `direct` transfer agent (i.e. bare ascp), it is possible to specify bare ascp arguments using the pseudo [_transfer-spec_](#transferspec) parameter `EX_ascp_args`. In that case, one must specify a dummy list in the [_transfer-spec_](#transferspec), which will be overriden by the bare ascp command line provided.
+* Not recommended: It is possible to specify bare ascp arguments using the pseudo [_transfer-spec_](#transferspec) parameter `EX_ascp_args`.
 
 ```
 --sources=@ts --ts=@json:'{"paths":[{"source":"dummy"}],"EX_ascp_args":["--file-list","myfilelist"]}'
 ```
 
-(TODO: in next version, dummy source paths can be removed)
+This method avoids creating a copy of the file list, but has drawbacks: it applies *only* to the `direct` transfer agent (i.e. bare ascp) and not for Aspera on Cloud. One must specify a dummy list in the [_transfer-spec_](#transferspec), which will be overriden by the bare ascp command line provided. (TODO) In next version, dummy source paths can be removed.
 
-In case the file list is provided on the command line (i.e. using `--sources=@args` or `--sources=<Array>`, but not `--sources=@ts`), the list of files will be used either as a simple file list or a file pair list depending on the value of the option: `src_type`:
+In case the file list is provided on the command line i.e. using `--sources=@args` or `--sources=<Array>` (but not `--sources=@ts`), then the list of files will be used either as a simple file list or a file pair list depending on the value of the option: `src_type`:
 
 * `list` : (default) the path of destination is the same as source
 * `pair` : in that case, the first element is the first source, the second element is the first destination, and so on.
@@ -1856,24 +1856,24 @@ OPTIONS:
         --property=VALUE             name of property to set
         --id=VALUE                   resource identifier (modify,delete,show)
         --config-file=VALUE          read parameters from file in YAML format, current=/Users/FooBar/.aspera/ascli/config.yaml
-        --override=ENUM              override existing value: yes, no
     -N, --no-default                 do not load default configuration for plugin
-        --use-generic-client=ENUM    wizard: AoC: use global or org specific jwt client id: yes, no
-        --pkeypath=VALUE             path to private key for JWT (wizard)
+        --override=ENUM              Wizard: override existing value: yes, no
+        --use-generic-client=ENUM    Wizard: AoC: use global or org specific jwt client id: yes, no
+        --default=ENUM               Wizard: set as default configuration for specified plugin (also: update): yes, no
+        --test-mode=ENUM             Wizard: skip private key check step: yes, no
+        --pkeypath=VALUE             Wizard: path to private key for JWT
         --ascp-path=VALUE            path to ascp
         --use-product=VALUE          use ascp from specified product
         --smtp=VALUE                 smtp configuration (extended value: hash)
         --fpac=VALUE                 proxy auto configuration URL
     -P, --presetVALUE                load the named option preset from current config file
-        --default=VALUE              set as default configuration for specified plugin
         --secret=VALUE               default secret
         --secrets=VALUE              secret repository (Hash)
         --sdk-url=VALUE              URL to get SDK
-        --sdk-folder=VALUE           SDK folder location
+        --sdk-folder=VALUE           SDK folder path
         --notif-to=VALUE             email recipient for notification of transfers
         --notif-template=VALUE       email ERB template for notification of transfers
-        --test-mode=ENUM             skip user validation in wizard mode: yes, no
-        --version-check-days=VALUE   period to check neew version in days (zero to disable)
+        --version-check-days=VALUE   period in days to check new version (zero to disable)
         --ts=VALUE                   override transfer spec values (Hash, use @json: prefix), current={"create_dir"=>true}
         --local-resume=VALUE         set resume policy (Hash, use @json: prefix), current=
         --to-folder=VALUE            destination folder for downloaded files
