@@ -28,7 +28,19 @@ module Aspera
           if env.has_key?(:node_api)
             @api_node=env[:node_api]
           else
-            @api_node=basic_auth_api unless env[:man_only]
+            if self.options.get_option(:password,:mandatory).start_with?('Bearer ')
+              # info is provided like node_info of aoc
+              @api_node=Rest.new({
+                base_url: self.options.get_option(:url,:mandatory),
+                headers: {
+                'Authorization'      => self.options.get_option(:password,:mandatory),
+                'X-Aspera-AccessKey' => self.options.get_option(:username,:mandatory),
+                }
+              })
+            else
+              # this is normal case
+              @api_node=basic_auth_api unless env[:man_only]
+            end
           end
         end
 
