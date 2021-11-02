@@ -73,7 +73,15 @@ END_OF_TEMPLATE
         def option_preset; nil; end
 
         def option_preset=(value)
-          self.options.add_option_preset(preset_by_name(value))
+          case value
+          when String
+            self.options.add_option_preset(preset_by_name(value))
+          when Hash
+            self.options.add_option_preset(value)
+          else
+            raise "Preset definition must be a String for name, or Hash for value"
+          end
+          nil
         end
 
         def initialize(env,tool_name,help_url,version,main_folder)
