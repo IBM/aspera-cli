@@ -754,19 +754,15 @@ C:\Users\Kenji\.aspera\<%=cmd%>
 On the first execution of <%=tool%>, an empty configuration file is created in the configuration folder.
 Nevertheless, there is no mandatory information required in this file, the use of it is optional as any option can be provided on the command line.
 
-Although the file is a standard YAML file, <%=tool%> provides commands to read and modify it
-using the `config` command.
+Although the file is a standard YAML file, <%=tool%> provides commands to read and modify it using the `config` command.
 
-All options for <%=tool%> commands can be set on command line, or by env vars, or using <%=prsts%> in the configuratin file.
+All options for <%=tool%> can be set on command line, or by env vars, or using <%=prsts%> in the configuratin file.
 
-A configuration file provides a way to define default values, especially
-for authentication parameters, thus avoiding to always having to specify those parameters on the command line.
+A configuration file provides a way to define default values, especially for authentication parameters, thus avoiding to always having to specify those parameters on the command line.
 
-The default configuration file is: `$HOME/.aspera/<%=cmd%>/config.yaml`
-(this can be overriden with option `--config-file=path` or equivalent env var).
+The default configuration file is: `$HOME/.aspera/<%=cmd%>/config.yaml` (this can be overriden with option `--config-file=path` or equivalent env var).
 
-So, finally, the configuration file is simply a catalog of pre-defined lists of options,
-called: <%=prsts%>. Then, instead of specifying some common options on the command line (e.g. address, credentials), it is possible to invoke the ones of a <%=prst%> (e.g. `mypreset`) using the option: `-Pmypreset` or `--preset=mypreset`.
+The configuration file is simply a catalog of pre-defined lists of options, called: <%=prsts%>. Then, instead of specifying some common options on the command line (e.g. address, credentials), it is possible to invoke the ones of a <%=prst%> (e.g. `mypreset`) using the option: `-Pmypreset` or `--preset=mypreset`.
 
 ### <a name="lprt"></a><%=prstt%>
 
@@ -897,26 +893,26 @@ my_aoc_org:
 
 So, the key file will be read only at execution time, but not be embedded in the configuration file.
 
+### Options evaluation order
+
+Some options are global, some options are available only for some plugins. (the plugin is the first level command).
+
 Options are loaded using this algorithm:
 
-* if option '--preset=xxxx' is specified (or -Pxxxx), this reads the <%=prst%> specified from the configuration file.
-    * else if option --no-default (or -N) is specified, then dont load default
-    * else it looks for the name of the default <%=prst%> in section "default" and loads it
-* environment variables are evaluated
-* command line options are evaluated
+* If option `--no-default` (or `-N`) is specified, then no default value is loaded is loaded for the plugin
+* else it looks for the name of the plugin as key in section `default`, the value is the name of the default <%=prst%> for it, and loads it.
+* If option `--preset=<name or extended value hash>` is specified (or `-Pxxxx`), this reads the <%=prst%> specified from the configuration file, or of the value is a Hash, it uses it as options values.
+* Environment variables are evaluated
+* Command line options are evaluated
 
 Parameters are evaluated in the order of command line.
 
-To avoid loading the default <%=prst%> for a plugin, just specify a non existing configuration: `-Pnone`
+To avoid loading the default <%=prst%> for a plugin, use: `-N`
 
 On command line, words in parameter names are separated by a dash, in configuration file, separator
 is an underscore. E.g. --xxx-yyy  on command line gives xxx_yyy in configuration file.
 
-Note: before version 0.4.5, some keys could be ruby symbols, from 0.4.5 all keys are strings. To
-convert olver versions, remove the leading ":" in front of keys.
-
-The main plugin name is *config*, so it is possible to define a default <%=prst%> for
-the main plugin with:
+The main plugin name is `config`, so it is possible to define a default <%=prst%> for the main plugin with:
 
 ```
 $ <%=cmd%> config id cli_default set interactive no
@@ -927,6 +923,18 @@ A <%=prst%> value can be removed with `unset`:
 
 ```
 $ <%=cmd%> config id cli_default unset interactive
+```
+
+Example: Define options using command line:
+
+```
+$ <%=cmd%> -N --url=x --password=y --username=y node --show-config
+```
+
+Example: Define options using a hash:
+
+```
+$ <%=cmd%> -N --preset=@json:'{"url":"x","password":"y","username":"y"}' node --show-config
 ```
 
 ### Examples
@@ -3391,6 +3399,8 @@ So, it evolved into <%=tool%>:
 * <%=gemspec.version.to_s%>
 
 	* New: `aoc packages list` Add possibility to add filter with option `query`
+	* New: `preset` option can specify name or hash value
+	* New: `node` plugin accepts bearer token and access key as credential 
 
 * 4.3.0
 
