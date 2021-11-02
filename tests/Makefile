@@ -738,6 +738,7 @@ tats: $(T)at4 $(T)at5 $(T)at6 $(T)at7 $(T)at2 $(T)at1 $(T)at3 $(T)at8 $(T)at9 $(
 $(T)co1: $(T).exists
 	@echo $@
 	$(EXE_MAN) config ascp show
+	$(EXE_MAN) config ascp spec
 	@touch $@
 $(T)co2: $(T).exists
 	@echo $@
