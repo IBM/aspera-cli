@@ -421,9 +421,11 @@ module Aspera
               command=self.options.get_next_command([ :list, :modify])
               case command
               when :list
-                request_data.deep_merge!({"validation"=>validation}) unless validation.nil?
-                resp=@api_node.create('services/rest/transfers/v1/files',request_data)
-                return {:type=>:object_list,:data=>resp[:data]["file_transfer_info_result"]["file_transfer_info"],:fields=>["session_uuid","file_id","status","path"]}
+                request_data.deep_merge!({'validation'=>validation}) unless validation.nil?
+                resp=@api_node.create('services/rest/transfers/v1/files',request_data)[:data]
+                resp=JSON.parse(resp) if resp.is_a?(String)
+                Log.dump(:resp,resp)
+                return {:type=>:object_list,:data=>resp['file_transfer_info_result']['file_transfer_info'],:fields=>["session_uuid","file_id","status","path"]}
               when :modify
                 request_data.deep_merge!(validation) unless validation.nil?
                 @api_node.update('services/rest/transfers/v1/files',request_data)
