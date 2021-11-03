@@ -540,7 +540,7 @@ $(T)aocarself: $(T).exists
 	$(EXE_MAN) aoc admin res dropbox_membership list
 	$(EXE_MAN) aoc admin res workspace_membership list
 	$(EXE_MAN) aoc admin res short_link list
-	$(EXE_MAN) aoc admin res apps_new list
+	$(EXE_MAN) aoc admin res application list
 	$(EXE_MAN) aoc admin res client_access_key list
 	$(EXE_MAN) aoc admin res kms_profile list
 	@touch $@

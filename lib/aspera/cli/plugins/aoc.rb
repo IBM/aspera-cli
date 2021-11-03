@@ -205,7 +205,7 @@ module Aspera
             node_api.call({:operation=>'GET',:subpath=>"files/#{node_file[:file_id]}/content",:save_to_file=>File.join(self.transfer.destination_folder('receive'),file_name)})
             return Main.result_status("downloaded: #{file_name}")
           when :v3
-            # Note: other "common" actions are unauthorized with user scope
+            # Note: other common actions are unauthorized with user scope
             command_legacy=self.options.get_next_command(Node::SIMPLE_ACTIONS)
             # TODO: shall we support all methods here ? what if there is a link ?
             node_api=@api_aoc.get_node_api(top_node_file[:node_info],scope: AoC::SCOPE_NODE_USER)
@@ -224,7 +224,7 @@ module Aspera
               items=node_api.read("files/#{node_file[:file_id]}")[:data]
               return {:type=>:single_object,:data=>items}
             when :modify
-              update_param=self.options.get_next_argument("update data (Hash)")
+              update_param=self.options.get_next_argument('update data (Hash)')
               res=node_api.update("files/#{node_file[:file_id]}",update_param)[:data]
               return {:type=>:single_object,:data=>res}
             when :permission
@@ -242,7 +242,7 @@ module Aspera
                 items=node_api.read('permissions',list_options)[:data]
                 return {:type=>:object_list,:data=>items}
               when :create
-                #create_param=self.options.get_next_argument("creation data (Hash)")
+                #create_param=self.options.get_next_argument('creation data (Hash)')
                 set_workspace_info
                 access_id="ASPERA_ACCESS_KEY_ADMIN_WS_#{@workspace_id}"
                 node_file[:node_info]
@@ -265,14 +265,14 @@ module Aspera
                 return {:type=>:single_object,:data=>item}
               else raise "internal error:shall not reach here (#{command_perm})"
               end
-              raise "internal error:shall not reach here"
+              raise 'internal error:shall not reach here'
             else raise "internal error:shall not reach here (#{command_node_file})"
             end
-            raise "internal error:shall not reach here"
+            raise 'internal error:shall not reach here'
           when :permissions
 
           end # command_repo
-          raise "ERR"
+          raise 'ERR'
         end # execute_node_gen4_command
 
         # build constructor option list for AoC based on options of CLI
@@ -303,15 +303,15 @@ module Aspera
 
           ws_name=self.options.get_option(:workspace,:optional)
           if ws_name.nil?
-            Log.log.debug("using default workspace".green)
+            Log.log.debug('using default workspace'.green)
             if @default_workspace_id.eql?(nil)
-              raise CliError,"no default workspace defined for user, please specify workspace"
+              raise CliError,'no default workspace defined for user, please specify workspace'
             end
             # get default workspace
             @workspace_id=@default_workspace_id
           else
             # lookup another workspace
-            wss=@api_aoc.read("workspaces",{'q'=>ws_name})[:data]
+            wss=@api_aoc.read('workspaces',{'q'=>ws_name})[:data]
             wss=wss.select { |i| i['name'].eql?(ws_name) }
             case wss.length
             when 0
@@ -319,14 +319,14 @@ module Aspera
             when 1
               @workspace_id=wss.first['id']
             else
-              raise "unexpected case"
+              raise 'unexpected case'
             end
           end
           @workspace_data=@api_aoc.read("workspaces/#{@workspace_id}")[:data]
           Log.log.debug("workspace_id=#{@workspace_id},@workspace_data=#{@workspace_data}".red)
 
           @workspace_name||=@workspace_data['name']
-          Log.log.info("current workspace is "+@workspace_name.red)
+          Log.log.info('current workspace is '+@workspace_name.red)
 
           # display workspace
           self.format.display_status("Current Workspace: #{@workspace_name.red}#{@workspace_id == @default_workspace_id ? ' (default)' : ''}")
@@ -342,7 +342,7 @@ module Aspera
           end
           home_node_id||=@workspace_data['home_node_id']||@workspace_data['node_id']
           home_file_id||=@workspace_data['home_file_id']
-          raise "node_id must be defined" if home_node_id.to_s.empty?
+          raise 'node_id must be defined' if home_node_id.to_s.empty?
           @home_node_file={
             node_info: @api_aoc.read("nodes/#{home_node_id}")[:data],
             file_id: home_file_id
@@ -354,7 +354,7 @@ module Aspera
 
         def do_bulk_operation(ids_or_one,success_msg,id_result='id',&do_action)
           ids_or_one=[ids_or_one] unless self.options.get_option(:bulk)
-          raise "expecting Array" unless ids_or_one.is_a?(Array)
+          raise 'expecting Array' unless ids_or_one.is_a?(Array)
           result_list=[]
           ids_or_one.each do |id|
             one={id_result=>id}
@@ -516,11 +516,11 @@ module Aspera
               when 'organizations'; c_user_info['organization_id']
               when 'users'; c_user_info['id']
               when 'nodes'; c_user_info['id']
-              else raise "organizations or users for option --name"
+              else raise 'organizations or users for option --name'
               end
               #
               filter=self.options.get_option(:query,:optional) || {}
-              raise "query must be Hash" unless filter.is_a?(Hash)
+              raise 'query must be Hash' unless filter.is_a?(Hash)
               filter['limit']||=100
               if self.options.get_option(:once_only,:mandatory)
                 saved_date=[]
@@ -546,13 +546,13 @@ module Aspera
               return {:type=>:object_list,:data=>events}
             end
           when :resource
-            resource_type=self.options.get_next_argument('resource',[:self,:organization,:user,:group,:client,:contact,:dropbox,:node,:operation,:package,:saml_configuration, :workspace, :dropbox_membership,:short_link,:workspace_membership,:apps_new,:client_registration_token,:client_access_key,:kms_profile])
+            resource_type=self.options.get_next_argument('resource',[:self,:organization,:user,:group,:client,:contact,:dropbox,:node,:operation,:package,:saml_configuration, :workspace, :dropbox_membership,:short_link,:workspace_membership,:application,:client_registration_token,:client_access_key,:kms_profile])
             # get path on API
             resource_class_path=case resource_type
             when :self,:organization
-              "#{resource_type}"
-            when :apps_new
-              "admin/#{resource_type}"
+              resource_type
+            when :application
+              'admin/apps_new'
             when :dropbox
               resource_type.to_s+'es'
             when :client_registration_token,:client_access_key
@@ -581,13 +581,13 @@ module Aspera
                 res_id=@home_node_file[:node_info]['id']
               end
               if !res_name.nil?
-                Log.log.warn("name overrides id") unless res_id.nil?
+                Log.log.warn('name overrides id') unless res_id.nil?
                 matching=@api_aoc.read(resource_class_path,{:q=>res_name})[:data]
-                raise CliError,"no resource match name" if matching.empty?
+                raise CliError,'no resource match name' if matching.empty?
                 raise CliError,"several resources match name (#{matching.join(',')})" unless matching.length.eql?(1)
                 res_id=matching.first['id']
               end
-              raise CliBadArgument,"provide either id or name" if res_id.nil?
+              raise CliBadArgument,'provide either id or name' if res_id.nil?
               resource_instance_path="#{resource_class_path}/#{res_id}"
             end
             resource_instance_path=resource_class_path if singleton_object
@@ -597,19 +597,19 @@ module Aspera
               id_result='token' if resource_class_path.eql?('admin/client_registration_tokens')
               # TODO: report inconsistency: creation url is !=, and does not return id.
               resource_class_path='admin/client_registration/token' if resource_class_path.eql?('admin/client_registration_tokens')
-              list_or_one=self.options.get_next_argument("creation data (Hash)")
+              list_or_one=self.options.get_next_argument('creation data (Hash)')
               return do_bulk_operation(list_or_one,'created',id_result)do|params|
-                raise "expecting Hash" unless params.is_a?(Hash)
+                raise 'expecting Hash' unless params.is_a?(Hash)
                 @api_aoc.create(resource_class_path,params)[:data]
               end
             when :list
-              default_fields=['id','name']
+              default_fields=['id']
               list_query=nil
               case resource_type
               when :node; default_fields.push('host','access_key')
               when :operation; default_fields=nil
-              when :contact; default_fields=["email","name","source_id","source_type"]
-              when :apps_new; list_query={:organization_apps=>true};default_fields=['app_type','available']
+              when :contact; default_fields=['email','name','source_id','source_type']
+              when :application; list_query={:organization_apps=>true};default_fields=['id','app_name','available','direct_authorizations_allowed','workspace_authorizations_allowed']
               when :client_registration_token; default_fields=['id','value','data.client_subject_scopes','created_at']
               end
               result=@api_aoc.read(resource_class_path,option_url_query(list_query))
@@ -646,8 +646,8 @@ module Aspera
             when :shared_folders
               read_params = case resource_type
               when :workspace;{'access_id'=>"ASPERA_ACCESS_KEY_ADMIN_WS_#{res_id}",'access_type'=>'user'}
-              when :node;{'include'=>['[]','access_level','permission_count'],'created_by_id'=>"ASPERA_ACCESS_KEY_ADMIN"}
-              else raise "error"
+              when :node;{'include'=>['[]','access_level','permission_count'],'created_by_id'=>'ASPERA_ACCESS_KEY_ADMIN'}
+              else raise 'error'
               end
               res_data=@api_aoc.read("#{resource_class_path}/#{res_id}/permissions",read_params)[:data]
               fields=case resource_type
@@ -687,7 +687,7 @@ module Aspera
               create_data.deep_merge!(user_create_data)
               Log.dump(:data,create_data)
               raise :ERROR
-            else raise "unknown command"
+            else raise 'unknown command'
             end
           when :usage_reports
             return {:type=>:object_list,:data=>@api_aoc.read('usage_reports',{:workspace_id=>@workspace_id})[:data]}
@@ -718,7 +718,7 @@ module Aspera
             when :workspaces
               return {:type=>:object_list,:data=>@api_aoc.read('workspaces')[:data],:fields=>['id','name']}
               #              when :settings
-              #                return {:type=>:object_list,:data=>@api_aoc.read("client_settings/")[:data]}
+              #                return {:type=>:object_list,:data=>@api_aoc.read('client_settings/')[:data]}
             when :shared_inboxes
               query=option_url_query(nil)
               if query.nil?
@@ -826,7 +826,7 @@ module Aspera
               return { :type=>:single_object, :data =>package_info }
             when :list
               query=option_url_query({'archived'=>false,'exclude_dropbox_packages'=>true,'has_content'=>true,'received'=>true})
-              raise "option must be Hash" unless query.is_a?(Hash)
+              raise 'option must be Hash' unless query.is_a?(Hash)
               query['workspace_id']||=@workspace_id
               packages=@api_aoc.read('packages',query)[:data]
               return {:type=>:object_list,:data=>packages,:fields=>['id','name','bytes_transferred']}
@@ -911,9 +911,9 @@ module Aspera
               end
               return result
             end # files command
-            throw "Error: shall not reach this line"
+            throw 'Error: shall not reach this line'
           when :automation
-            Log.log.warn("BETA: work under progress")
+            Log.log.warn('BETA: work under progress')
             # automation api is not in the same place
             automation_rest_params=@api_aoc.params.clone
             automation_rest_params[:base_url].gsub!('/api/','/automation/')
@@ -936,9 +936,9 @@ module Aspera
                 wf_command=self.options.get_next_command([:list,:create,:show])
                 wf_id=self.options.get_option(:id,:mandatory)
                 step=automation_api.create('steps',{'workflow_id'=>wf_id})[:data]
-                automation_api.update("workflows/#{wf_id}",{'step_order'=>[step["id"]]})
-                action=automation_api.create('actions',{'step_id'=>step["id"],'type'=>'manual'})[:data]
-                automation_api.update("steps/#{step["id"]}",{'action_order'=>[action["id"]]})
+                automation_api.update("workflows/#{wf_id}",{'step_order'=>[step['id']]})
+                action=automation_api.create('actions',{'step_id'=>step['id'],'type'=>'manual'})[:data]
+                automation_api.update("steps/#{step['id']}",{'action_order'=>[action['id']]})
                 wf=automation_api.read("workflows/#{wf_id}")[:data]
                 return {:type=>:single_object,:data=>wf}
               end
@@ -954,7 +954,7 @@ module Aspera
           else
             raise "internal error: #{command}"
           end # action
-          raise RuntimeError, "internal error: command shall return"
+          raise RuntimeError, 'internal error: command shall return'
         end
 
         private :c_user_info,:aoc_params,:set_workspace_info,:set_home_node_file,:do_bulk_operation,:resolve_package_recipients,:option_url_query,:assert_public_link_types,:execute_admin_action

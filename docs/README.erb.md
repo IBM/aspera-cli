@@ -3427,6 +3427,7 @@ So, it evolved into <%=tool%>:
 	* New: `aoc packages list` Add possibility to add filter with option `query`
 	* New: `preset` option can specify name or hash value
 	* New: `node` plugin accepts bearer token and access key as credential 
+	* change: (break) resource `apps_new` of `aoc` replaced with `application` (more clear)
 
 * 4.3.0
 

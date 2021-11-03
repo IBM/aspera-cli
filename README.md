@@ -1613,7 +1613,7 @@ ascli aoc admin ats cluster clouds
 ascli aoc admin ats cluster list
 ascli aoc admin ats cluster show --cloud=aws --region=eu-west-1
 ascli aoc admin ats cluster show --id=1f412ae7-869a-445c-9c05-02ad16813be2
-ascli aoc admin res apps_new list
+ascli aoc admin res application list
 ascli aoc admin res client list
 ascli aoc admin res client_access_key list
 ascli aoc admin res client_registration_token --id=my_clt_reg_id delete
@@ -3955,6 +3955,7 @@ So, it evolved into `ascli`:
 	* New: `aoc packages list` Add possibility to add filter with option `query`
 	* New: `preset` option can specify name or hash value
 	* New: `node` plugin accepts bearer token and access key as credential 
+	* change: (break) resource `apps_new` of `aoc` replaced with `application` (more clear)
 
 * 4.3.0
 
