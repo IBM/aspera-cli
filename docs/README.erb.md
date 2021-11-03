@@ -607,7 +607,7 @@ The style of output can be set using the `format` parameter, supporting:
 Table output can be filtered using the `select` parameter. Example:
 
 ```
-$ <%=cmd%> aoc admin res user list --fields=name,email,ats_admin --query=@json:'{"per_page":1000,"page":1,"sort":"name"}' --select=@json:'{"ats_admin":true}'
+$ <%=cmd%> aoc admin res user list --fields=name,email,ats_admin --query=@json:'{"sort":"name"}' --select=@json:'{"ats_admin":true}'
 :...............................:..................................:...........:
 :             name              :              email               : ats_admin :
 :...............................:..................................:...........:
@@ -1863,19 +1863,26 @@ It allows actions (create, update, delete) on "resources": users, group, nodes, 
 
 Bulk operations are possible using option `bulk` (yes,no(default)): currently: create only. In that case, the operation expects an Array of Hash instead of a simple Hash using the [Extended Value Syntax](#extended).
 
-To get more resources when doing request add:
-
-```
---query=@json:'{"per_page":10000}'
-```
-
-other query parameters can be used:
+Query parameters can be used, for instance fort `list` operation (depends on resource):
 ```
 --query=@json:'{"member_of_any_workspace":true}'
 --query=@json:'{"q":"laurent"}'
 ```
 
 Refer to the AoC API for full list of query parameters.
+
+#### Listing resources
+
+The command `aoc admin res <type> list` list all entities, using paging and multiple requests if necessary. The result can be modified using option `query` which will be appended to the api call.
+
+The following parameters are supported:
+
+* `page` : native api parameter, in general do not use
+* `per_page` : native api parameter, number of items par api call, in general do not use
+* `max` : maximum number of items to retrieve (stop pages when the maximum is passed)
+* `pmax` : maximum number of pages to request
+
+Other parameter in `query` can also be used and depend on the type of entity (refer to AoC API)
 
 #### Access Key secrets
 
@@ -1976,17 +1983,20 @@ $ <%=cmd%> aoc admin resource node --name=_node_name_ --secret=_secret_ v4 acces
 $ <%=cmd%> aoc admin res node --secret=_secret_ v3 transfer list --value=@json:'[["q","*"],["count",5]]'
 ```
 
-              # page=1&per_page=10&q=type:(file_upload+OR+file_delete+OR+file_download+OR+file_rename+OR+folder_create+OR+folder_delete+OR+folder_share+OR+folder_share_via_public_link)&sort=-date
-              #events=@api_files.read('events',{'q'=>'type:(file_upload OR file_download)'})[:data]
-              # can add filters: tag=aspera.files.package_id%3DLA8OU3p8w
-              #'tag'=>'aspera.files.package_id%3DJvbl0w-5A'
+Examples of query (TODO: cleanup):
+
+```
+{"q":"type(file_upload OR file_delete OR file_download OR file_rename OR folder_create OR folder_delete OR folder_share OR folder_share_via_public_link)","sort":"-date"}
+
+{"tag":"aspera.files.package_id=LA8OU3p8w"}
+
               # filter= 'id', 'short_summary', or 'summary'
               # count=nnn
               # tag=x.y.z%3Dvalue
               # iteration_token=nnn
               # after_time=2016-05-01T23:53:09Z
               # active_only=true|false
-
+```
 
 * Display node events (events)
 
@@ -1997,7 +2007,7 @@ $ <%=cmd%> aoc admin res node --secret=_secret_ v3 events
 * display members of a workspace
 
 ```
-$ <%=cmd%> aoc admin res workspace_membership list --fields=member_type,manager,member.email --query=@json:'{"page":1,"per_page":50,"embed":"member","inherited":false,"workspace_id":11363,"sort":"name"}'
+$ <%=cmd%> aoc admin res workspace_membership list --fields=member_type,manager,member.email --query=@json:'{"embed":"member","inherited":false,"workspace_id":11363,"sort":"name"}'
 :.............:.........:..................................:
 : member_type : manager :           member.email           :
 :.............:.........:..................................:
@@ -2035,7 +2045,7 @@ WS2ID=$(<%=cmd%> aoc admin res workspace list --query=@json:'{"q":"'"$WS2"'"}' -
 c- extract membership information and change workspace id
 
 ```
-$ <%=cmd%> aoc admin res workspace_membership list --fields=manager,member_id,member_type,workspace_id --query=@json:'{"per_page":10000,"workspace_id":'"$WS1ID"'}' --format=jsonpp > ws1_members.json
+$ <%=cmd%> aoc admin res workspace_membership list --fields=manager,member_id,member_type,workspace_id --query=@json:'{"workspace_id":'"$WS1ID"'}' --format=jsonpp > ws1_members.json
 ```
 
 d- convert to creation data for second workspace:
@@ -2059,7 +2069,7 @@ $ <%=cmd%> aoc admin res workspace_membership create --bulk=yes @json:@file:ws2_
 * get users who did not log since a date
 
 ```
-$ <%=cmd%> aoc admin res user list --fields=email --query=@json:'{"per_page":10000,"q":"last_login_at:<2018-05-28"}'
+$ <%=cmd%> aoc admin res user list --fields=email --query=@json:'{"q":"last_login_at:<2018-05-28"}'
 :...............................:
 :             email             :
 :...............................:
@@ -2071,7 +2081,7 @@ $ <%=cmd%> aoc admin res user list --fields=email --query=@json:'{"per_page":100
 * list "Limited" users
 
 ```
-$ <%=cmd%> aoc admin res user list --fields=email --query=@json:'{"per_page":10000}' --select=@json:'{"member_of_any_workspace":false}'
+$ <%=cmd%> aoc admin res user list --fields=email --select=@json:'{"member_of_any_workspace":false}'
 ```
 
 * Perform a multi Gbps transfer between two remote shared folders
@@ -3424,9 +3434,10 @@ So, it evolved into <%=tool%>:
 
 * <%=gemspec.version.to_s%>
 
-	* New: `aoc packages list` Add possibility to add filter with option `query`
-	* New: `preset` option can specify name or hash value
-	* New: `node` plugin accepts bearer token and access key as credential 
+	* new: `aoc packages list` add possibility to add filter with option `query`
+	* new: `preset` option can specify name or hash value
+	* new: `node` plugin accepts bearer token and access key as credential
+	* new: aoc admin res list now get all items by default #50
 	* change: (break) resource `apps_new` of `aoc` replaced with `application` (more clear)
 
 * 4.3.0

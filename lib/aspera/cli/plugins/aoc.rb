@@ -428,6 +428,37 @@ module Aspera
           end
         end
 
+        # Call @api_aoc.read with same parameters, but use paging if necessary to get all results
+        def read_with_paging(resource_class_path,base_query)
+          raise "Query must be Hash" unless base_query.is_a?(Hash)
+          # set default large page if user does not specify own parameters. AoC Caps to 1000 anyway
+          base_query['per_page']=1000 unless base_query.has_key?('per_page')
+          max_items=base_query[MAX_ITEMS]
+          base_query.delete(MAX_ITEMS)
+          max_pages=base_query[MAX_PAGES]
+          base_query.delete(MAX_PAGES)
+          item_list=[]
+          total_count=nil
+          current_page=base_query['page']
+          current_page=1 if current_page.nil?
+          page_count=0
+          loop do
+            query=base_query.clone
+            query['page']=current_page
+            result=@api_aoc.read(resource_class_path,query)
+            total_count=result[:http]['X-Total-Count']
+            page_count+=1
+            current_page+=1
+            add_items=result[:data]
+            break if add_items.empty?
+            # append new items to full list
+            item_list += add_items
+            break if !max_pages.nil? and page_count > max_pages
+            break if !max_items.nil? and item_list.count > max_items
+          end
+          return item_list,total_count
+        end
+
         def execute_admin_action
           @api_aoc.oauth.params[:scope]=AoC::SCOPE_FILES_ADMIN
           command_admin=self.options.get_next_command([ :ats, :resource, :usage_reports, :analytics, :subscription, :auth_providers ])
@@ -605,19 +636,21 @@ module Aspera
               end
             when :list
               default_fields=['id']
-              list_query=nil
+              default_query={}
               case resource_type
               when :node; default_fields.push('host','access_key')
+              when :user; default_fields.push('name','email')
+              when :package; default_fields.push('name')
               when :operation; default_fields=nil
               when :contact; default_fields=['email','name','source_id','source_type']
-              when :application; list_query={:organization_apps=>true};default_fields=['id','app_type','app_name','available','direct_authorizations_allowed','workspace_authorizations_allowed']
-              when :client_registration_token; default_fields=['id','value','data.client_subject_scopes','created_at']
+              when :application; default_query={:organization_apps=>true};default_fields.push('app_type','app_name','available','direct_authorizations_allowed','workspace_authorizations_allowed')
+              when :client_registration_token; default_fields.push('value','data.client_subject_scopes','created_at')
               end
-              result=@api_aoc.read(resource_class_path,option_url_query(list_query))
-              count_msg="Items: #{result[:data].length}/#{result[:http]['X-Total-Count']}"
-              count_msg=count_msg.bg_red unless result[:data].length.eql?(result[:http]['X-Total-Count'].to_i)
+              item_list,total_count=read_with_paging(resource_class_path,option_url_query(default_query))
+              count_msg="Items: #{item_list.length}/#{total_count}"
+              count_msg=count_msg.bg_red unless item_list.length.eql?(total_count.to_i)
               self.format.display_status(count_msg)
-              return {:type=>:object_list,:data=>result[:data],:fields=>default_fields}
+              return {:type=>:object_list,:data=>item_list,:fields=>default_fields}
             when :show
               object=@api_aoc.read(resource_instance_path)[:data]
               fields=object.keys.select{|k|!k.eql?('certificate')}
