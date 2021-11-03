@@ -2,10 +2,15 @@ module Aspera
   module Cli
     # base class for plugins modules
     class Plugin
+      # operation without id
       GLOBAL_OPS=[:create,:list]
+      # operation on specific instance
       INSTANCE_OPS=[:modify,:delete,:show]
       ALL_OPS=[GLOBAL_OPS,INSTANCE_OPS].flatten
-      #private_constant :GLOBAL_OPS,:INSTANCE_OPS,:ALL_OPS
+      # max number of items for list command
+      MAX_ITEMS='max'
+      # max number of pages for list command
+      MAX_PAGES='pmax'
 
       @@done=false
 
@@ -28,7 +33,7 @@ module Aspera
         end
       end
 
-      def entity_command(command,rest_api,res_class_path,display_fields,id_symb,id_default=nil,subkey=false)
+      def entity_command(command,rest_api,res_class_path,display_fields,id_symb,id_default=nil,use_subkey=false)
         if INSTANCE_OPS.include?(command)
           begin
             one_res_id=self.options.get_option(id_symb,:mandatory)
@@ -54,10 +59,11 @@ module Aspera
         when :list
           resp=rest_api.read(res_class_path,parameters)
           data=resp[:data]
+          # TODO: not generic : which application is this for ?
           if resp[:http]['Content-Type'].start_with?('application/vnd.api+json')
-            data=resp[:data][res_class_path]
+            data=data[res_class_path]
           end
-          data=data[res_class_path] if subkey
+          data=data[res_class_path] if use_subkey
           return {:type => :object_list, :data=>data, :fields=>display_fields}
         when :modify
           property=self.options.get_option(:property,:optional)
@@ -74,12 +80,13 @@ module Aspera
       end
 
       # implement generic rest operations on given resource path
-      def entity_action(rest_api,res_class_path,display_fields,id_symb,id_default=nil,subkey=false)
+      def entity_action(rest_api,res_class_path,display_fields,id_symb,id_default=nil,use_subkey=false)
         #res_name=res_class_path.gsub(%r{^.*/},'').gsub(%r{s$},'').gsub('_',' ')
         command=self.options.get_next_command(ALL_OPS)
-        return entity_command(command,rest_api,res_class_path,display_fields,id_symb,id_default,subkey)
+        return entity_command(command,rest_api,res_class_path,display_fields,id_symb,id_default,use_subkey)
       end
 
+      # shortcuts for plugin environment
       def options; return @agents[:options];end
 
       def transfer; return @agents[:transfer];end

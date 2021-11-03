@@ -23,12 +23,14 @@ module Aspera
         PACKAGE_MATCH_FIELD='package_id'
         # list of supported atoms
         ATOM_MAILBOXES=[:inbox, :archive, :sent]
-        # number is added by CLI
-        MAX_ITEMS='max'
-        MAX_PAGES='pmax'
-        ATOM_PARAMS=['page', 'count', 'startIndex', MAX_ITEMS, MAX_PAGES]
+        # allowed parameters for inbox.atom
+        ATOM_PARAMS=['page', 'count', 'startIndex']
+        # with special parameters (from Plugin class)
+        ATOM_EXT_PARAMS=ATOM_PARAMS+[MAX_ITEMS, MAX_PAGES]
+        # sub path in url for public link delivery
         PUB_LINK_EXTERNAL_MATCH='external_deliveries/'
-        private_constant :KEY_NODE,:KEY_PATH,:VAL_ALL,:PACKAGE_MATCH_FIELD,:ATOM_MAILBOXES,:PUB_LINK_EXTERNAL_MATCH
+        private_constant :KEY_NODE,:KEY_PATH,:VAL_ALL,:PACKAGE_MATCH_FIELD,:ATOM_MAILBOXES,
+        :ATOM_PARAMS,:ATOM_EXT_PARAMS,:PUB_LINK_EXTERNAL_MATCH
 
         def initialize(env)
           @api_v3=nil
@@ -126,7 +128,7 @@ module Aspera
           result=[]
           if !mailbox_query.nil?
             raise "query: must be Hash or nil" unless mailbox_query.is_a?(Hash)
-            raise "query: supported params: #{ATOM_PARAMS}" unless (mailbox_query.keys-ATOM_PARAMS).empty?
+            raise "query: supported params: #{ATOM_EXT_PARAMS}" unless (mailbox_query.keys-ATOM_EXT_PARAMS).empty?
             raise "query: startIndex and page are exclusive" if mailbox_query.has_key?('startIndex') and mailbox_query.has_key?('page')
             max_items=mailbox_query[MAX_ITEMS]
             mailbox_query.delete(MAX_ITEMS)
