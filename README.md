@@ -1445,15 +1445,41 @@ When multi-session is used, one separate UDP port is used per session (refer to 
 
 
 
-## <a name="scheduling"></a>Scheduling an exclusive execution
+## <a name="scheduling"></a>Lock for exclusive execution
 
-It is possible to ensure that a given command is only run once at a time with parameter: `--lock-port=nnnn`. This is especially usefull when scheduling a command on a regular basis, for instance involving transfers, and a transfer may last longer than the execution period.
+In some conditions, it may be desirable to ensure that `ascli` is not executed several times in parallel.
 
-This opens a local TCP server port, and fails if this port is already used, providing a local lock.
+For instance when `ascli` is executed automatically on a schedule basis, one generally desire that a new execution is not started if a previous execution is still running because an on-going operation may last longer than the scheduling period:
 
-This option is used when the tools is executed automatically, for instance with "preview" generation.
+* Executing instances may pile-up and kill the system
+* The same file may be transfered by multiple instances at the same time.
+* `preview` may generate the same files in multiple instances.
 
-Usually the OS native scheduler shall already provide some sort of such protection (windows scheduler has it natively, linux cron can leverage `flock`).
+Usually the OS native scheduler already provides some sort of protection against parallel execution:
+
+* The Windows scheduler does this by default
+* Linux cron can leverage the utility [`flock`](https://linux.die.net/man/1/flock) to do the same:
+
+```
+/usr/bin/flock -w 0 /var/cron.lock ascli ...
+```
+
+`ascli` natively supports a locking mechanism with option `lock_port`.
+(Technically, this opens a local TCP server port, and fails if this port is already used, providing a local lock. Lock is released when process exits).
+
+Example:
+
+Run this same command in two separate terminals within less than 30 seconds:
+
+```
+ascli config echo @ruby:'sleep(30)' --lock-port=12345
+```
+
+The first instance will sleep 30 seconds, the second one will immediately exit like this:
+
+```
+WARN -- : Another instance is already running (Address already in use - bind(2) for "127.0.0.1" port 12345).
+```
 
 ## "Proven&ccedil;ale"
 
@@ -2982,6 +3008,7 @@ It is possible to:
 The central subcommand uses the "reliable query" API (session and file). It allows listing transfer sessions and transfered files.
 
 Filtering can be applied:
+
 ```
 $ ascli node central file list
 ```
@@ -3006,7 +3033,6 @@ Refer to [Aspera documentation](https://download.asperasoft.com/download/docs/en
 
 * Start watchd and watchfolderd services running as a system user having access to files
 * configure a watchfolder to define automated transfers
-
 
 ```
 $ ascli node service create @json:'{"id":"mywatchd","type":"WATCHD","run_as":{"user":"user1"}}'
