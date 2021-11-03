@@ -410,7 +410,8 @@ module Aspera
 
         # private
         def option_url_query(default)
-          query=self.options.get_option(:query,:optional)||default
+          query=self.options.get_option(:query,:optional)
+          query=default if query.nil?
           Log.log.debug("Query=#{query}".bg_red)
           begin
             # check it is suitable
@@ -609,7 +610,7 @@ module Aspera
               when :node; default_fields.push('host','access_key')
               when :operation; default_fields=nil
               when :contact; default_fields=['email','name','source_id','source_type']
-              when :application; list_query={:organization_apps=>true};default_fields=['id','app_name','available','direct_authorizations_allowed','workspace_authorizations_allowed']
+              when :application; list_query={:organization_apps=>true};default_fields=['id','app_type','app_name','available','direct_authorizations_allowed','workspace_authorizations_allowed']
               when :client_registration_token; default_fields=['id','value','data.client_subject_scopes','created_at']
               end
               result=@api_aoc.read(resource_class_path,option_url_query(list_query))
