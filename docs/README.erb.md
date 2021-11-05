@@ -167,6 +167,8 @@ Use this method only if you know what you do, else use the standard recommended 
 
 This method installs a docker image that contains: Ruby, ascli and the FASP sdk.
 
+The image is: [https://hub.docker.com/r/martinlaurent/ascli](https://hub.docker.com/r/martinlaurent/ascli)
+
 Ensure that you have Docker installed.
 
 ```
