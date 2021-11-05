@@ -797,7 +797,7 @@ module Aspera
               resolve_package_recipients(package_creation,'recipients')
               resolve_package_recipients(package_creation,'bcc_recipients')
 
-              #  create a new package with one file
+              #  create a new package container
               package_info=@api_aoc.create('packages',package_creation)[:data]
 
               #  get node information for the node on which package must be created
@@ -808,7 +808,7 @@ module Aspera
 
               # execute transfer
               node_file = {node_info: node_info, file_id: package_info['contents_file_id']}
-              # raise esception if at least one error
+              # raise exception if at least one error
               Main.result_transfer(transfer_start(AoC::PACKAGES_APP,'send',node_file,AoC.package_tags(package_info,'upload')))
               # return all info on package
               return { :type=>:single_object, :data =>package_info}
