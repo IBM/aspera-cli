@@ -32,7 +32,7 @@ clean::
 install: $(PATH_GEMFILE)
 	gem install $(PATH_GEMFILE)
 cleanupgems:
-	gem uninstall -a -x $(gem list|cut -f 1 -d' '|egrep -v 'rdoc|psych|rake|openssl|json|io-console|bigdecimal')
+	gem uninstall -a -x $$(gem list|cut -f 1 -d' '|egrep -v 'rdoc|psych|rake|openssl|json|io-console|bigdecimal')
 installdeps:
 	gem install $$(sed -nEe "/^[^#].*add_[^_]+_dependency/ s/[^']+'([^']+)'.*/\1/p" < $(GEMNAME).gemspec )
 
