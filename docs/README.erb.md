@@ -604,7 +604,7 @@ The style of output can be set using the `format` parameter, supporting:
 * `yaml` : YAML
 * `csv` : Comma Separated Values
 
-### Filtering columns for `object_list`
+### <a name="option_select"></a>Option: `select`: Filter on columns values for `object_list`
 
 Table output can be filtered using the `select` parameter. Example:
 
@@ -1865,26 +1865,40 @@ It allows actions (create, update, delete) on "resources": users, group, nodes, 
 
 Bulk operations are possible using option `bulk` (yes,no(default)): currently: create only. In that case, the operation expects an Array of Hash instead of a simple Hash using the [Extended Value Syntax](#extended).
 
-Query parameters can be used, for instance fort `list` operation (depends on resource):
-```
---query=@json:'{"member_of_any_workspace":true}'
---query=@json:'{"q":"laurent"}'
-```
-
-Refer to the AoC API for full list of query parameters.
-
 #### Listing resources
 
-The command `aoc admin res <type> list` list all entities, using paging and multiple requests if necessary. The result can be modified using option `query` which will be appended to the api call.
+The command `aoc admin res <type> list` lists all entities of given type. I uses paging and multiple requests if necessary. The result can be filtered using option `query` which will be appended to the api call.
+
+The option `query` can be optionally used to filter results. It expects a Hash using [Extended Value Syntax](#extended), generally provided using: `--query=@json:{...}`.
 
 The following parameters are supported:
 
-* `page` : native api parameter, in general do not use
-* `per_page` : native api parameter, number of items par api call, in general do not use
+* `q` : a filter on name of resource (case insensitive, matches if value is contained in name)
+* `sort`: name of fields to sort results, prefix with `-` for reverse order.
 * `max` : maximum number of items to retrieve (stop pages when the maximum is passed)
-* `pmax` : maximum number of pages to request
+* `pmax` : maximum number of pages to request (stop pages when the maximum is passed)
+* `page` : native api parameter, in general do not use (added by 
+* `per_page` : native api parameter, number of items par api call, in general do not use
+* Other specific parameters depending on resource type.
 
-Other parameter in `query` can also be used and depend on the type of entity (refer to AoC API)
+Both `max` and `pmax` are processed internally in <%=tool%> and limit the number of successive pages requested to API. <%=tool%> will return all values if not provided.
+
+`page` and `per_page` are normally added by <%=tool%> to build successive API calls to get all values if there are more than 1000. (AoC allows a maximum page size of 1000).
+
+Other parameters are directly sent as parameters to the GET request and depend on the type of entity (refer to AoC API)
+
+Examples:
+
+```
+<%=cmd%> aoc admin res user list --query=...
+--query=@json:'{"q":"laurent"}'
+--query=@json:'{"q":"last_login_at:<2018-05-28"}'
+--query=@json:'{"member_of_any_workspace":false,"sort":"-name"}'
+```
+
+Refer to the AoC API for full list of query parameters, or use the browser in developer mode with the web UI.
+
+Note the option `select` can also be used to further refine selection, refer to [section earlier](#option_select).
 
 #### Access Key secrets
 
