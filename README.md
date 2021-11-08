@@ -2371,9 +2371,9 @@ Bulk operations are possible using option `bulk` (yes,no(default)): currently: c
 
 #### Listing resources
 
-The command `aoc admin res <type> list` lists all entities of given type. I uses paging and multiple requests if necessary. The result can be filtered using option `query` which will be appended to the api call.
+The command `aoc admin res <type> list` lists all entities of given type. It uses paging and multiple requests if necessary.
 
-The option `query` can be optionally used to filter results. It expects a Hash using [Extended Value Syntax](#extended), generally provided using: `--query=@json:{...}`.
+The option `query` can be optionally used. It expects a Hash using [Extended Value Syntax](#extended), generally provided using: `--query=@json:{...}`. Values are directly sent to the API call and used as a filter on server side.
 
 The following parameters are supported:
 
@@ -2385,19 +2385,34 @@ The following parameters are supported:
 * `per_page` : native api parameter, number of items par api call, in general do not use
 * Other specific parameters depending on resource type.
 
-Both `max` and `pmax` are processed internally in `ascli` and limit the number of successive pages requested to API. `ascli` will return all values if not provided.
+Both `max` and `pmax` are processed internally in `ascli`, not included in actual API call and limit the number of successive pages requested to API. `ascli` will return all values using paging if not provided.
+
+Other parameters are directly sent as parameters to the GET request on API.
 
 `page` and `per_page` are normally added by `ascli` to build successive API calls to get all values if there are more than 1000. (AoC allows a maximum page size of 1000).
 
-Other parameters are directly sent as parameters to the GET request and depend on the type of entity (refer to AoC API)
+`q` and `sort` are available on most resrouce types.
+
+Other parameters depend on the type of entity (refer to AoC API).
 
 Examples:
 
+* List users with `laurent` in name:
+
 ```
-ascli aoc admin res user list --query=...
---query=@json:'{"q":"laurent"}'
---query=@json:'{"q":"last_login_at:<2018-05-28"}'
---query=@json:'{"member_of_any_workspace":false,"sort":"-name"}'
+ascli aoc admin res user list --query=--query=@json:'{"q":"laurent"}'
+```
+
+* List users who logded-in before a date:
+
+```
+ascli aoc admin res user list --query=@json:'{"q":"last_login_at:<2018-05-28"}'
+```
+
+* List external users and sort in reverse alphabetical order using name:
+
+```
+ascli aoc admin res user list --query=@json:'{"member_of_any_workspace":false,"sort":"-name"}'
 ```
 
 Refer to the AoC API for full list of query parameters, or use the browser in developer mode with the web UI.
