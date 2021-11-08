@@ -2563,27 +2563,27 @@ other query parameters:
 
 * <a name="aoc_sample_member"></a>add all members of a workspace to another workspace
 
-a- get id of first workspace
+a- Get id of first workspace
 
 ```
 WS1='First Workspace'
 WS1ID=$(ascli aoc admin res workspace list --query=@json:'{"q":"'"$WS1"'"}' --select=@json:'{"name":"'"$WS1"'"}' --fields=id --format=csv)
 ```
 
-b- get id of second workspace
+b- Get id of second workspace
 
 ```
 WS2='Second Workspace'
 WS2ID=$(ascli aoc admin res workspace list --query=@json:'{"q":"'"$WS2"'"}' --select=@json:'{"name":"'"$WS2"'"}' --fields=id --format=csv)
 ```
 
-c- extract membership information and change workspace id
+c- Extract membership information
 
 ```
 $ ascli aoc admin res workspace_membership list --fields=manager,member_id,member_type,workspace_id --query=@json:'{"workspace_id":'"$WS1ID"'}' --format=jsonpp > ws1_members.json
 ```
 
-d- convert to creation data for second workspace:
+d- Convert to creation data for second workspace:
 
 ```
 grep -Eve '(direct|effective_manager|_count|storage|"id")' ws1_members.json|sed '/workspace_id/ s/"'"$WS1ID"'"/"'"$WS2ID"'"/g' > ws2_members.json
@@ -2595,13 +2595,13 @@ or, using jq:
 jq '[.[] | {member_type,member_id,workspace_id,manager,workspace_id:"'"$WS2ID"'"}]' ws1_members.json > ws2_members.json
 ```
 
-e- add members to second workspace
+e- Add members to second workspace
 
 ```
 $ ascli aoc admin res workspace_membership create --bulk=yes @json:@file:ws2_members.json
 ```
 
-* get users who did not log since a date
+* Get users who did not log since a date
 
 ```
 $ ascli aoc admin res user list --fields=email --query=@json:'{"q":"last_login_at:<2018-05-28"}'
@@ -2613,7 +2613,7 @@ $ ascli aoc admin res user list --fields=email --query=@json:'{"q":"last_login_a
 :...............................:
 ```
 
-* list "Limited" users
+* List "Limited" users
 
 ```
 $ ascli aoc admin res user list --fields=email --select=@json:'{"member_of_any_workspace":false}'
@@ -2659,6 +2659,7 @@ $ ascli -Paoc_show aoc files transfer --from-folder='IBM Cloud SJ' --to-folder='
 ```
 
 * create registration key to register a node
+
 ```
 $ ascli aoc admin res admin/client create @json:'{"data":{"name":"laurentnode","client_subject_scopes":["alee","aejd"],"client_subject_enabled":true}}' --fields=token --format=csv
 jfqslfdjlfdjfhdjklqfhdkl
@@ -2688,10 +2689,8 @@ Note that when no query is provided, the query used by default is: `{"archived":
 ```
 shbxid=$(ascli aoc user shared_inboxes --select=@json:'{"dropbox.name":"My Shared Inbox"}' --format=csv --fields=dropbox_id --display=data)
 
-ascli aoc packages list --query=@json:'{"sort":"-received_at","archived":false,"received":true,"has_content":true,"exclude_dropbox_packages":false,"dropbox_id":"'$shbxid'"}'
+ascli aoc packages list --query=@json:'{"dropbox_id":"'$shbxid'","archived":false,"received":true,"has_content":true,"exclude_dropbox_packages":false,"include_draft":false,"sort":"-received_at"}'
 ```
-
-The following additional filters can be used: `include_draft`, `per_page`, `page`
 
 ## Shared folders
 
@@ -2734,7 +2733,13 @@ Examples:
 
 ```
 $ ascli aoc package send --value=@json:'{"name":"my title","note":"my note","recipients":["laurent.martin.aspera@fr.ibm.com","other@example.com"]}' --sources=@args my_file.dat
+```
+
+```
 $ ascli aoc package send --value=@json:'{"name":"my file in shared inbox","recipients":["The Shared Inbox"]}' my_file.dat --ts=@json:'{"target_rate_kbps":100000}'
+```
+
+```
 $ ascli aoc package send --workspace=eudemo --value=@json:'{"name":"my pack title","recipients":["Shared Inbox Name"],"metadata":[{"input_type":"single-text","name":"Project Id","values":["123"]},{"input_type":"single-dropdown","name":"Type","values":["Opt2"]},{"input_type":"multiple-checkbox","name":"CheckThose","values":["Check1","Check2"]},{"input_type":"date","name":"Optional Date","values":["2021-01-13T15:02:00.000Z"]}]}' ~/Documents/Samples/200KB.1
 ```
 
@@ -2750,7 +2755,7 @@ $ ascli aoc packages recv --id=ALL --once-only=yes --lock-port=12345
 * `--once-only=yes` keeps memory of any downloaded package in persistency files located in the configuration folder.
 * `--lock-port=12345` ensures that only one instance is started at the same time, to avoid collisions
 
-Typically, one would regularly execute this command on a regular basis, using the method of your choice:
+Typically, one would execute this command on a regular basis, using the method of your choice:
 
 * Windows: [Task Scheduler](https://docs.microsoft.com/en-us/windows/win32/taskschd/task-scheduler-start-page)
 * Linux/Unix: [cron](https://www.man7.org/linux/man-pages/man5/crontab.5.html)
