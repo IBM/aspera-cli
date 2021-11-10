@@ -2259,45 +2259,45 @@ Typically, one would execute this command on a regular basis, using the method o
 
 ## Download Files
 
-Download of files is straightforward with a specific syntax for the `aspera files download` action: Like other commands the source file list is provided as  a list with the `sources` option. Nevertheless, consider this:
+Download of files is straightforward with a specific syntax for the `aoc files download` action: Like other commands the source file list is provided as  a list with the `sources` option. Nevertheless, consider this:
 
 * if only one source is provided, it is downloaded
 * if multiple sources must be downloaded, then the first in list is the path of the source folder, and the remaining items are the file names in this folder (without path).
 
 ## Find Files
 
-The command `aspera files find [--value=expression]` will recursively scan storage to find files matching the expression criteria. It works also on node resource using the v4 command. (see examples)
+The command `aoc files find [--value=expression]` will recursively scan storage to find files matching the expression criteria. It works also on node resource using the v4 command. (see examples)
 
 The expression can be of 3 formats:
 
-* empty (default) : all files, equivalent to: `exec:true`
-* not starting with `exec:` : the expression is a regular expression, using ruby regex syntax. equivalent to: `exec:f['name'].match(/expression/)`
+* empty (default) : all files, equivalent to value: `exec:true`
+* not starting with `exec:` : the expression is a regular expression, using [Ruby Regex](https://ruby-doc.org/core/Regexp.html) syntax. equivalent to value: `exec:f['name'].match(/expression/)`
 
 For instance, to find files with a special extension, use `--value='\.myext$'`
 
-* starting with `exec:` : the ruby code after the prefix is executed for each entry found. the entry variable name is `f`. the file is displayed if the result is true;
+* starting with `exec:` : the Ruby code after the prefix is executed for each entry found. The entry variable name is `f`. The file is displayed if the result of the expression is true;
 
-Examples of expressions: (think to prefix with `exec:` and put in single quotes using bash)
+Examples of expressions: (using like this: `--value=exec:'<expression>'`)
 
-* find files more recent than 100 days
+* Find files more recent than 100 days
 
 ```
 f["type"].eql?("file") and (DateTime.now-DateTime.parse(f["modified_time"]))<100
 ```
 
-* expression to find files older than 1 year on a given node and store in file list
+* Find files older than 1 year on a given node and store in file list
 
 ```
 $ <%=cmd%> aoc admin res node --name='my node name' --secret='my secret' v4 find / --fields=path --value='exec:f["type"].eql?("file") and (DateTime.now-DateTime.parse(f["modified_time"]))<100' --format=csv > my_file_list.txt
 ```
 
-* delete the files, one by one
+* Delete the files, one by one
 
 ```
 $ cat my_file_list.txt|while read path;do echo <%=cmd%> aoc admin res node --name='my node name' --secret='my secret' v4 delete "$path" ;done
 ```
 
-* delete the files in bulk
+* Delete the files in bulk
 
 ```
 cat my_file_list.txt | <%=cmd%> aoc admin res node --name='my node name' --secret='my secret' v3 delete @lines:@stdin:
