@@ -638,13 +638,14 @@ module Aspera
               default_fields=['id']
               default_query={}
               case resource_type
-              when :node; default_fields.push('host','access_key')
-              when :user; default_fields.push('name','email')
-              when :package; default_fields.push('name')
-              when :operation; default_fields=nil
-              when :contact; default_fields=['email','name','source_id','source_type']
               when :application; default_query={:organization_apps=>true};default_fields.push('app_type','app_name','available','direct_authorizations_allowed','workspace_authorizations_allowed')
+              when :client,:client_access_key,:dropbox,:group,:package,:saml_configuration,:workspace; default_fields.push('name')
               when :client_registration_token; default_fields.push('value','data.client_subject_scopes','created_at')
+              when :contact; default_fields=['email','name','source_id','source_type']
+              when :node; default_fields.push('name','host','access_key')
+              when :operation; default_fields=nil
+              when :short_link; default_fields.push('short_url','data.url_token_data.purpose')
+              when :user; default_fields.push('name','email')
               end
               item_list,total_count=read_with_paging(resource_class_path,option_url_query(default_query))
               count_msg="Items: #{item_list.length}/#{total_count}"
