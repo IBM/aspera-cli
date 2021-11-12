@@ -3422,7 +3422,7 @@ $ ascli cos node info
 $ ascli cos node upload 'faux:///sample1G?1g'
 ```
 
-Note: we generate a dummy file `sample1G` if size 2GB using the `faux` PVCL (man ascp and section above), but you can of course send a real file by specifying a real file instead.
+Note: we generate a dummy file `sample1G` of size 2GB using the `faux` PVCL (man ascp and section above), but you can of course send a real file by specifying a real file instead.
 
 # Plugin: IBM Aspera Sync
 
@@ -4020,10 +4020,10 @@ So, it evolved into `ascli`:
 * 4.4.0.pre
 
 	* new: `aoc packages list` add possibility to add filter with option `query`
+	* new: `aoc admin res xxx list` now get all items by default #50
 	* new: `preset` option can specify name or hash value
 	* new: `node` plugin accepts bearer token and access key as credential
-	* new: `node` option `token_type` allows using basoc token instead of ATM.
-	* new: `aoc admin res list` now get all items by default #50
+	* new: `node` option `token_type` allows using basic token in addition to aspera type.
 	* change: `server`: option `username` not mandatory anymore: xfer user is by default. If transfer spec token is provided, password or keys are optional, and bypass keys are used by default. 
 	* change: (break) resource `apps_new` of `aoc` replaced with `application` (more clear)
 
