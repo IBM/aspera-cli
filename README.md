@@ -4002,13 +4002,11 @@ So, it evolved into `ascli`:
 
 * 4.4.0.pre
 
-  * 
-
-* 4.3.0
-
-	* New: `aoc packages list` Add possibility to add filter with option `query`
-	* New: `preset` option can specify name or hash value
-	* New: `node` plugin accepts bearer token and access key as credential 
+	* new: `aoc packages list` add possibility to add filter with option `query`
+	* new: `preset` option can specify name or hash value
+	* new: `node` plugin accepts bearer token and access key as credential
+	* new: aoc admin res list now get all items by default #50
+	* change: `server`: option `username` not mandatory anymore: xfer user is by default. If transfer spec token is provided, password or keys are optional, and bypass keys are used by default. 
 	* change: (break) resource `apps_new` of `aoc` replaced with `application` (more clear)
 
 * 4.3.0
