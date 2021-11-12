@@ -956,7 +956,7 @@ $(T)prev_mxf_clips: $(T).exists
 	@touch $@
 $(T)prev_events: $(T).exists
 	@echo $@
-	$(EXE_NOMAN) -Ptst_ak_preview node upload "$(CF_TSTFILE_MXF)" "$(CF_TSTFILE_DOCX)" --ts=@json:'{"target_rate_kbps":1000000}'
+	$(EXE_NOMAN) -Ptst_ak_preview node upload "$(CF_TSTFILE_MXF)" "$(CF_TSTFILE_DOCX)" --ts=@json:'{"target_rate_kbps":1000000}' --token-type=hybrid
 	sleep 4
 	$(EXE_MAN) preview trevents --once-only=yes --skip-types=office --log-level=info
 	@touch $@

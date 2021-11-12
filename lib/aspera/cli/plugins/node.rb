@@ -13,13 +13,13 @@ module Aspera
         private_constant :SAMPLE_SOAP_CALL
         def initialize(env)
           super(env)
-          # this is added to some requests , for instance to add tags
+          # this is added to some requests , for instance to add tags (COS)
           @add_request_param = env[:add_request_param] || {}
           unless env[:skip_basic_auth_options]
             self.options.add_opt_simple(:validator,"identifier of validator (optional for central)")
             self.options.add_opt_simple(:asperabrowserurl,"URL for simple aspera web ui")
             self.options.add_opt_simple(:name,"sync name")
-            self.options.add_opt_list(:token_type,[:aspera,:basic,:auto],'Type of token used for transfers')
+            self.options.add_opt_list(:token_type,[:aspera,:basic,:hybrid],'Type of token used for transfers')
             self.options.set_option(:asperabrowserurl,'https://asperabrowser.mybluemix.net')
             self.options.set_option(:token_type,:aspera)
             self.options.parse_options!
@@ -99,26 +99,6 @@ module Aspera
           return File.join(path_prefix,thepath) if thepath.is_a?(String)
           return thepath.map {|p| File.join(path_prefix,p)} if thepath.is_a?(Array)
           raise StandardError,"expect: nil, String or Array"
-        end
-
-        def update_token(transfer_spec, token_type=nil)
-          token_type=self.options.get_option(:token_type,:optional) if token_type.nil?
-          # nil if Shares 1.x
-          token_type=:aspera if token_type.nil?
-          case token_type
-          when :aspera
-            # normally, already there (*_setup)
-            raise "expected token" unless transfer_spec['token'].is_a?(String)
-          when :basic
-            raise "shall have auth" unless @api_node.params[:auth].is_a?(Hash)
-            raise "shall be basic auth" unless @api_node.params[:auth][:type].eql?(:basic)
-            Aspera::Node.set_ak_basic_token(transfer_spec,@api_node.params[:auth][:username],@api_node.params[:auth][:password])
-          when :auto
-            is_access_key=transfer_spec['remote_user'].eql?(Aspera::Node::ACCESS_KEY_TRANSFER_USER)
-            # we should call /access_keys/self to check, but checking xfer user should be sufficient
-            update_token(transfer_spec, is_access_key ? :basic : :aspera)
-          else raise "ERROR: token_type #{tt}"
-          end
         end
 
         SIMPLE_ACTIONS=[:health,:events, :space, :info, :license, :mkdir, :mklink, :mkfile, :rename, :delete, :search ]
@@ -223,26 +203,36 @@ module Aspera
               #raise "unknown type: #{send_result['self']['type']}"
             end
             return c_result_remove_prefix_path(result,'path',prefix_path)
-          when :upload
-            # we send only a list of one transfer request
-            transfer_request = { :paths => [ { :destination => self.transfer.destination_folder('send') } ] }
-            transfer_request.deep_merge!(@add_request_param)
-            send_result=@api_node.create('files/upload_setup',{:transfer_requests => [ { :transfer_request => transfer_request } ] } )[:data]
-            # only one request, so only one answer
-            transfer_spec=send_result['transfer_specs'].first['transfer_spec']
-            # delete this part, as the returned value contains only destination, and not sources
-            transfer_spec.delete('paths')
-            # use Aspera token or Basic? (access key)
-            update_token(transfer_spec)
-            return Main.result_transfer(self.transfer.start(transfer_spec,{:src=>:node_gen3}))
-          when :download
-            transfer_request = {:paths => self.transfer.ts_source_paths }
-            transfer_request.deep_merge!(@add_request_param)
-            send_result=@api_node.create('files/download_setup',{:transfer_requests => [ { :transfer_request => transfer_request } ] } )[:data]
-            # only one request, so only one answer
-            transfer_spec=send_result['transfer_specs'].first['transfer_spec']
-            # use Aspera token or Basic? (access key)
-            update_token(transfer_spec)
+          when :upload,:download
+            token_type=self.options.get_option(:token_type,:optional)
+            # nil if Shares 1.x
+            token_type=:aspera if token_type.nil?
+            case token_type
+            when :aspera,:hybrid
+              transfer_paths=case command
+              when :upload;[ { :destination => self.transfer.destination_folder('send') } ]
+              when :download;self.transfer.ts_source_paths
+              end
+              # only one request, so only one answer
+              transfer_spec=@api_node.create("files/#{command}_setup",{:transfer_requests => [ { transfer_request: {
+                paths: transfer_paths
+                }.deep_merge(@add_request_param) } ] } )[:data]['transfer_specs'].first['transfer_spec']
+              # delete this part, as the returned value contains only destination, and not sources
+              transfer_spec.delete('paths') if command.eql?(:upload)
+            when :basic
+              raise "shall have auth" unless @api_node.params[:auth].is_a?(Hash)
+              raise "shall be basic auth" unless @api_node.params[:auth][:type].eql?(:basic)
+              transfer_spec={
+                'remote_host'=>URI.parse(@api_node.params[:base_url]).host,
+                'remote_user'=>Aspera::Node::ACCESS_KEY_TRANSFER_USER,
+                'ssh_port'=>Aspera::Node::SSH_PORT_DEFAULT,
+                'direction'=>case command;when :upload;'send';when :download;'recv';else raise "Error";end
+              }
+            else raise "ERROR: token_type #{tt}"
+            end
+            if [:basic,:hybrid].include?(token_type)
+              Aspera::Node.set_ak_basic_token(transfer_spec,@api_node.params[:auth][:username],@api_node.params[:auth][:password])
+            end
             return Main.result_transfer(self.transfer.start(transfer_spec,{:src=>:node_gen3}))
           when :api_details
             return { :type=>:single_object, :data => @api_node.params }

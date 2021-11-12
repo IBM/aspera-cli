@@ -1938,7 +1938,7 @@ OPTIONS:
         --validator=VALUE            identifier of validator (optional for central)
         --asperabrowserurl=VALUE     URL for simple aspera web ui
         --name=VALUE                 sync name
-        --token-type=ENUM            Type of token used for transfers: aspera, basic, auto
+        --token-type=ENUM            Type of token used for transfers: aspera, basic, hybrid
 
 
 COMMAND: orchestrator
@@ -3050,12 +3050,29 @@ This creates a [option preset](#lprt) "aspera_demo_server" and set it as default
 
 This plugin gives access to capabilities provided by HSTS node API.
 
-## Simple Operations
+## File Operations
 
 It is possible to:
 * browse
 * transfer (upload / download)
 * ...
+
+For transfers, it is possible to control how transfer is authorized using option: `token_type`:
+
+* `aspera` : api `<upload|download>_setup` is called to create the transfer spec including the Aspera token
+* `basic` : transfer spec is created like this:
+
+```
+{
+  "remote_host": address of node url,
+  "remote_user": "xfer",
+  "ssh_port": 33001,
+  "token": "Basic <base 64 encoded user/pass>",
+  "direction": send/recv
+}
+```
+
+* `hybrid` : same as `aspera`, but token is replaced with basic token like `basic`
 
 ## Central
 
@@ -4005,7 +4022,8 @@ So, it evolved into `ascli`:
 	* new: `aoc packages list` add possibility to add filter with option `query`
 	* new: `preset` option can specify name or hash value
 	* new: `node` plugin accepts bearer token and access key as credential
-	* new: aoc admin res list now get all items by default #50
+	* new: `node` option `token_type` allows using basoc token instead of ATM.
+	* new: `aoc admin res list` now get all items by default #50
 	* change: `server`: option `username` not mandatory anymore: xfer user is by default. If transfer spec token is provided, password or keys are optional, and bypass keys are used by default. 
 	* change: (break) resource `apps_new` of `aoc` replaced with `application` (more clear)
 
