@@ -1,5 +1,6 @@
 require 'aspera/log'
 require 'aspera/aoc'
+require 'aspera/node'
 require 'aspera/cli/main'
 require 'webrick'
 require 'webrick/https'
@@ -73,16 +74,16 @@ module Aspera
           "xfer_retry" => 3600 } }
         # this transfer spec is for transfer to AoC
         faspex_transfer_spec={
-          'direction' => 'send',
-          'remote_user' => 'xfer',
+          'direction'   => 'send',
           'remote_host' => node_info['host'],
-          'ssh_port' => 33001,
-          'fasp_port' => 33001,
-          'tags' => ts_tags,
-          'token' => node_auth_bearer_token,
-          'paths' => [{'destination' => '/'}],
-          'cookie' => 'unused',
-          'create_dir' => true,
+          'remote_user' => Node::ACCESS_KEY_TRANSFER_USER,
+          'ssh_port'    => Node::SSH_PORT_DEFAULT,
+          'fasp_port'   => Node::UDP_PORT_DEFAULT
+          'tags'        => ts_tags,
+          'token'       => node_auth_bearer_token,
+          'paths'       => [{'destination' => '/'}],
+          'cookie'      => 'unused',
+          'create_dir'  => true,
           'rate_policy' => 'fair',
           'rate_policy_allowed' => 'fixed',
           'min_rate_cap_kbps' => nil,

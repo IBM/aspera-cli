@@ -17,8 +17,6 @@ require 'securerandom'
 
 module Aspera
   module Fasp
-    # (public) default transfer username for access key based transfers
-    ACCESS_KEY_TRANSFER_USER='xfer'
     # executes a local "ascp", connects mgt port, equivalent of "Fasp Manager"
     class Local < Manager
       # options for initialize (same as values in option transfer_info)

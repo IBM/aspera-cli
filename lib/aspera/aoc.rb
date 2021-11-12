@@ -2,6 +2,7 @@ require 'aspera/log'
 require 'aspera/rest'
 require 'aspera/hash_ext'
 require 'aspera/data_repository'
+require 'aspera/node'
 require 'base64'
 
 module Aspera
@@ -24,9 +25,9 @@ module Aspera
     JWT_AUDIENCE='https://api.asperafiles.com/api/v1/oauth2/token'
     OAUTH_API_SUBPATH='api/v1/oauth2'
     DEFAULT_TSPEC_INFO={
-      'remote_user' => 'xfer',
-      'ssh_port'    => 33001,
-      'fasp_port'   => 33001
+      'remote_user' => Node::ACCESS_KEY_TRANSFER_USER,
+      'ssh_port'    => Node::SSH_PORT_DEFAULT,
+      'fasp_port'   => Node::UDP_PORT_DEFAULT
     }
 
     private_constant :PRODUCT_NAME,:PROD_DOMAIN,:MAX_REDIRECT,:CLIENT_APPS,:PATHS_PUBLIC_LINK,:JWT_AUDIENCE,:OAUTH_API_SUBPATH,:DEFAULT_TSPEC_INFO
