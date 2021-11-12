@@ -6,7 +6,7 @@ Version : <%=gemspec.version.to_s%>
 
 _Laurent/2016-<%=Time.new.year%>_
 
-This gem provides <%=tool%>: a command line interface to IBM Aspera software.
+This gem provides the <%=tool%> Command Line Interface to IBM Aspera software.
 
 <%=tool%> is a also great tool to learn Aspera APIs.
 
@@ -110,7 +110,7 @@ $ <%=cmd%> server browse /
 If you want to use <%=tool%> with another server, and in order to make further calls more convenient, it is advised to define a <%=prst%> for the server's authentication options. The following example will:
 
 * create a <%=prst%>
-* define it as default for "server" plugin
+* define it as default for `server` plugin
 * list files in a folder
 * download a file
 
@@ -433,8 +433,8 @@ by visiting the page: [https://www.ibm.com/aspera/connect/](https://www.ibm.com/
 <%=tool%> will detect most of Aspera transfer products in standard locations and use the first one found.
 Refer to section [FASP](#client) for details on how to select a client or set path to the FASP protocol.
 
-Several methods are provided on how to start a transfer. Use of a local client is one of them, but
-other methods are available. Refer to section: [Transfer Agents](#agents)
+Several methods are provided to start a transfer.
+Use of a local client ([`direct`](#direct) transfer agent) is one of them, but other methods are available. Refer to section: [Transfer Agents](#agents)
 
 ## <a name="offline_install"></a>Offline Installation (without internet)
 
@@ -480,7 +480,7 @@ The `<%=gemspec.name%>` Gem provides a command line interface (CLI) which intera
 * Supports most Aspera server products (on-premise and SaaS)
 * Any command line options (products URL, credentials or any option) can be provided on command line, in configuration file, in env var, in files
 * Supports Commands, Option values and Parameters shortcuts
-* FASP [Transfer Agents](#agents) can be: FaspManager (local ascp), or Connect Client, or any transfer node
+* FASP [Transfer Agents](#agents) can be: local ascp, or Connect Client, or any transfer node
 * Transfer parameters can be altered by modification of _transfer-spec_, this includes requiring multi-session
 * Allows transfers from products to products, essentially at node level (using the node transfer agent)
 * Supports FaspStream creation (using Node API)
@@ -864,7 +864,7 @@ demo_server:
 We can see here:
 
 * The configuration was created with CLI version 0.3.7
-* the default <%=prst%> to load for plugin "server" is : `demo_server`
+* the default <%=prst%> to load for `server` plugin is : `demo_server`
 * the <%=prst%> `demo_server` defines some parameters: the URL and credentials
 * the default <%=prst%> to load in any case is : `cli_default`
 
@@ -1067,7 +1067,7 @@ $ <%=cmd%> config ascp info
 ...
 ```
 
-### Selection of local `ascp`
+### Selection of `ascp` location for [`direct`](#direct) agent
 
 By default, <%=tool%> uses any found local product with ascp, including SDK.
 
@@ -1111,7 +1111,7 @@ $ <%=cmd%> config ascp products list
 :.........................................:................................................:
 ```
 
-### Selection of local client
+### Selection of local client for `ascp` for [`direct`](#direct) agent
 
 If no ascp is selected, this is equivalent to using option: `--use-product=FIRST`.
 
@@ -1166,7 +1166,7 @@ This [_transfer-spec_](#transferspec) will be executed by a transfer client, her
 
 There are currently 3 agents:
 
-* `direct` : a local execution of `ascp`
+* [`direct`](#direct) : a local execution of `ascp`
 * `connect` : use of a local Connect Client
 * `node` : use of an Aspera Transfer Node (potentially _remote_).
 * `httpgw` : use of an Aspera HTTP Gateway
@@ -1178,7 +1178,7 @@ will effectively push files to the related server from the agent node.
 <%=tool%> standadizes on the use of a [_transfer-spec_](#transferspec) instead of _raw_ ascp options to provide parameters for a transfer session, as a common method for those three Transfer Agents.
 
 
-### <a name="direct"></a>Direct (local ascp using FASPManager API)
+### <a name="direct"></a>Direct (local ascp execution)
 
 By default <%=tool%> uses a local ascp, equivalent to specifying `--transfer=direct`.
 <%=tool%> will detect locally installed Aspera products.
@@ -1276,7 +1276,7 @@ is described in a _transfer-spec_ (Transfer Specification), such as:
 
 If needed, it is possible to modify or add any of the supported _transfer-spec_ parameter using the `ts` option. The `ts` option accepts a [Structured Value](#native) containing one or several _transfer-spec_ parameters. Multiple `ts` options on command line are cummulative.
 
-It is possible to specify ascp options when the `transfer` option is set to `direct` using the special [_transfer-spec_](#transferspec) parameter: `EX_ascp_args`. Example: `--ts=@json:'{"EX_ascp_args":["-l","100m"]}'`. This is espacially useful for ascp command line parameters not supported yet in the transfer spec.
+It is possible to specify ascp options when the `transfer` option is set to [`direct`](#direct) using the special [_transfer-spec_](#transferspec) parameter: `EX_ascp_args`. Example: `--ts=@json:'{"EX_ascp_args":["-l","100m"]}'`. This is espacially useful for ascp command line parameters not supported yet in the transfer spec.
 
 The use of a _transfer-spec_ instead of `ascp` parameters has the advantage of:
 
@@ -1309,7 +1309,7 @@ Columns:
 * C=Connect Client
 * arg=`ascp` argument or environment variable
 
-Fields with EX_ prefix are extensions to transfer agent `direct`. (only in <%=tool%>).
+Fields with EX_ prefix are extensions to transfer agent [`direct`](#direct). (only in <%=tool%>).
 
 <%=spec_table%>
 
@@ -1369,7 +1369,7 @@ For ease of use and flexibility, the list of files to transfer is specified by t
 --sources=@ts --ts=@json:'{"paths":[{"source":"dummy"}],"EX_ascp_args":["--file-list","myfilelist"]}'
 ```
 
-This method avoids creating a copy of the file list, but has drawbacks: it applies *only* to the `direct` transfer agent (i.e. bare ascp) and not for Aspera on Cloud. One must specify a dummy list in the [_transfer-spec_](#transferspec), which will be overriden by the bare ascp command line provided. (TODO) In next version, dummy source paths can be removed.
+This method avoids creating a copy of the file list, but has drawbacks: it applies *only* to the [`direct`](#direct) transfer agent (i.e. bare ascp) and not for Aspera on Cloud. One must specify a dummy list in the [_transfer-spec_](#transferspec), which will be overriden by the bare ascp command line provided. (TODO) In next version, dummy source paths can be removed.
 
 In case the file list is provided on the command line i.e. using `--sources=@args` or `--sources=<Array>` (but not `--sources=@ts`), then the list of files will be used either as a simple file list or a file pair list depending on the value of the option: `src_type`:
 
@@ -1382,7 +1382,7 @@ Example:
 $ <%=cmd%> server upload --src-type=pair ~/Documents/Samples/200KB.1 /Upload/sample1
 ```
 
-Internally, when transfer agent `direct` is used, a temporary file list (or pair) file is generated and provided to ascp, unless `--file-list` or `--file-pait-list` is provided in `ts` in `EX_ascp_args`.
+Internally, when transfer agent [`direct`](#direct) is used, a temporary file list (or pair) file is generated and provided to ascp, unless `--file-list` or `--file-pait-list` is provided in `ts` in `EX_ascp_args`.
 
 Note the special case when the source files are located on "Aspera on Cloud", i.e. using access keys and the `file id` API:
 
@@ -2432,7 +2432,7 @@ Explanation:
 * `|` the standard output of the first command is fed into the second one
 * `-Porg2 aoc` use Aspera on Cloud plugin and load credentials for `org2`
 * `files upload mysourcefile` upload the file named `mysourcefile` (located in `org1`)
-* `--transfer=node` use transfer agent type `node` instead of default `direct`
+* `--transfer=node` use transfer agent type `node` instead of default [`direct`](#direct)
 * `--transfer-info=@json:@stdin:` provide `node` transfer agent information, i.e. node API credentials, those are expected in JSON format and read from standard input
 
 Note that when using a POSIX shell, another possibility to write `cmd1 | cmd2 --transfer-info=@json:stdin:` is `cmd2 --transfer-info=@json:$(cmd1)` instead of ``
@@ -2481,6 +2481,14 @@ This plugin works at FASP level (SSH/ascp/ascmd) and does not use the node API.
 
 Both password and SSH keys auth are supported.
 
+If not username is provided, the default transfer user `xfer` is used.
+
+If no ssh password or key is provided, and a token is provided in transfer spec, then standard bypass keys are used.
+
+```
+$ <%=cmd%> server --url=ssh://... --ts=@json:'{"token":"Basic abc123"}'
+```
+
 Multiple SSH key paths can be provided. The value of the parameter `ssh_keys` can be a single value or an array. Each value is a path to a private key and is expanded ("~" is replaced with the user's home folder).
 
 Examples:
@@ -2518,7 +2526,7 @@ This means that you dont have such an ssh agent running:
 $ <%=cmd%> server --ssh-options=@ruby:'{use_agent: false}' ...
 ```
 
-This can also be set as default using a preset
+This can also be set as default using a preset.
 
 ## Example
 
@@ -3291,7 +3299,7 @@ Note that there are special "extended" [_transfer-spec_](#transferspec) paramete
   * `EX_loglevel` to change log level of the tool
   * `EX_file_list_folder` to set the folder used to store (exclusively, because of garbage collection) generated file lists. By default it is `[system tmp folder]/[username]_asession_filelists`
 
-Note that in addition, many "EX_" [_transfer-spec_](#transferspec) parameters are supported for the "local" transfer agent (used by `asession`), refer to section [_transfer-spec_](#transferspec).
+Note that in addition, many "EX_" [_transfer-spec_](#transferspec) parameters are supported for the [`direct`](#direct) transfer agent (used by `asession`), refer to section [_transfer-spec_](#transferspec).
 
 ## Comparison of interfaces
 
@@ -3372,7 +3380,7 @@ Note that:
 
 * <%=tool%> takes transfer parameters exclusively as a transfer_spec, with `--ts` parameter.
 * most, but not all native ascp arguments are available as standard transfer_spec parameters
-* native ascp arguments can be provided with the [_transfer-spec_](#transferspec) parameter: EX_ascp_args (array), only for the "local" transfer agent (not connect or node)
+* native ascp arguments can be provided with the [_transfer-spec_](#transferspec) parameter: EX_ascp_args (array), only for the [`direct`](#direct) transfer agent (not connect or node)
 
 ### server side and configuration
 
@@ -3391,7 +3399,7 @@ $ <%=cmd%> server upload source_hot --to-folder=/Upload/target_hot --lock-port=1
 
 ```
 
-The local (here, relative path: source_hot) is sent (upload) to basic fasp server, source files are deleted after transfer. growing files will be sent only once they dont grow anymore (based ona 8 second cooloff period). If a transfer takes more than the execution period, then the subsequent execution is skipped (lock-port).
+The local folder (here, relative path: source_hot) is sent (upload) to basic fasp server, source files are deleted after transfer. growing files will be sent only once they dont grow anymore (based ona 8 second cooloff period). If a transfer takes more than the execution period, then the subsequent execution is skipped (lock-port).
 
 # Aspera Health check and Nagios
 
@@ -3478,11 +3486,7 @@ So, it evolved into <%=tool%>:
 
 * 4.3.0
 
-  * 
-
-* 4.3.0
-
-	* new: parameter `multi_incr_udp` for option `transfer_info`: control if UDP port is incremented when multi-session is used on `direct` transfer agent.
+	* new: parameter `multi_incr_udp` for option `transfer_info`: control if UDP port is incremented when multi-session is used on [`direct`](#direct) transfer agent.
 	* new: command `aoc files node_info` to get node information for a given folder in the Files application of AoC. Allows cross-org or cross-workspace transfers.
 
 * 4.2.2
@@ -3507,13 +3511,13 @@ So, it evolved into <%=tool%>:
 	* new: command `aoc remind` to receive organization membership by email
 	* new: in `preview` option `value` to filter out on file name
 	* new: `initdemo` to initialize for demo server
-	* new: `direct` transfer agent options: `spawn_timeout_sec` and `spawn_delay_sec`
+	* new: [`direct`](#direct) transfer agent options: `spawn_timeout_sec` and `spawn_delay_sec`
 	* fix: on Windows `conf ascp use` expects ascp.exe
 	* fix: (break) multi_session_threshold is Integer, not String
 	* fix: `conf ascp install` renames sdk folder if it already exists (leftover shared lib may make fail)
 	* fix: removed replace_illegal_chars from default aspera.conf causing "Error creating illegal char conversion table"
 	* change: (break) `aoc apiinfo` is removed, use `aoc servers` to provide the list of cloud systems
-	* change: (break) parameters for resume in `transfer-info` for `direct` are now in sub-key `"resume"`
+	* change: (break) parameters for resume in `transfer-info` for [`direct`](#direct) are now in sub-key `"resume"`
 
 * 4.1.0
 
@@ -3570,8 +3574,8 @@ So, it evolved into <%=tool%>:
 	* allow bulk delete in `aspera files` with option `bulk=yes`
 	* fix getting connect versions
 	* added section for Aix
-	* support all ciphers for `local` ascp (including gcm, etc..)
-	* added transfer spec param `apply_local_docroot` for `local`
+	* support all ciphers for [`direct`](#direct) agent (including gcm, etc..)
+	* added transfer spec param `apply_local_docroot` for [`direct`](#direct)
 
 * 0.11.4
 
@@ -3626,7 +3630,7 @@ So, it evolved into <%=tool%>:
 * 0.10.12
 
 	* added support for AoC node registration keys
-	* replaced option : `local_resume` with `transfer_info` for agent `direct`
+	* replaced option : `local_resume` with `transfer_info` for agent [`direct`](#direct)
 	* Transfer agent is no more a Singleton instance, but only one is used in CLI
 	* `@incps` : new extended value modifier
 	* ATS: no more provides access keys secrets: now user must provide it
@@ -3808,7 +3812,7 @@ So, it evolved into <%=tool%>:
 
 * 0.9.7
 
-	* homogeneous [_transfer-spec_](#transferspec) for node and local
+	* homogeneous [_transfer-spec_](#transferspec) for `node` and [`direct`](#direct) transfer agents
 	* preview persistency goes to unique file by default
 	* catch mxf extension in preview as video
 	* Faspex: possibility to download all paclages by specifying id=ALL

@@ -1,5 +1,6 @@
 require 'aspera/cli/basic_auth_plugin'
 require 'aspera/ascmd'
+require 'aspera/node'
 require 'aspera/ssh'
 require 'aspera/nagios'
 require 'tempfile'
@@ -70,6 +71,10 @@ module Aspera
           shell_executor=nil
           case server_uri.scheme
           when 'ssh'
+            if self.options.get_option(:username,:optional).nil?
+              self.options.set_option(:username,Aspera::Node::ACCESS_KEY_TRANSFER_USER)
+              Log.log.info("Using default transfer user: #{Aspera::Node::ACCESS_KEY_TRANSFER_USER}")
+            end
             server_transfer_spec={
               'remote_host'=>server_uri.hostname,
               'remote_user'=>self.options.get_option(:username,:mandatory),
@@ -102,7 +107,9 @@ module Aspera
                 cred_set=true
               end
             end
-            raise 'either password or key must be provided' if !cred_set
+            # if user provided transfer spec has a token, we will use by pass keys
+            cred_set=true if self.transfer.option_transfer_spec['token'].is_a?(String)
+            raise 'either password, key , or transfer spec token must be provided' if !cred_set
             shell_executor=Ssh.new(server_transfer_spec['remote_host'],server_transfer_spec['remote_user'],ssh_options)
           when 'local'
             shell_executor=LocalExecutor.new

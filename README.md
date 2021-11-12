@@ -5,7 +5,7 @@ Version : 4.4.0.pre
 
 _Laurent/2016-2021_
 
-This gem provides `ascli`: a command line interface to IBM Aspera software.
+This gem provides the `ascli` Command Line Interface to IBM Aspera software.
 
 `ascli` is a also great tool to learn Aspera APIs.
 
@@ -109,7 +109,7 @@ $ ascli server browse /
 If you want to use `ascli` with another server, and in order to make further calls more convenient, it is advised to define a [option preset](#lprt) for the server's authentication options. The following example will:
 
 * create a [option preset](#lprt)
-* define it as default for "server" plugin
+* define it as default for `server` plugin
 * list files in a folder
 * download a file
 
@@ -432,8 +432,8 @@ by visiting the page: [https://www.ibm.com/aspera/connect/](https://www.ibm.com/
 `ascli` will detect most of Aspera transfer products in standard locations and use the first one found.
 Refer to section [FASP](#client) for details on how to select a client or set path to the FASP protocol.
 
-Several methods are provided on how to start a transfer. Use of a local client is one of them, but
-other methods are available. Refer to section: [Transfer Agents](#agents)
+Several methods are provided to start a transfer.
+Use of a local client ([`direct`](#direct) transfer agent) is one of them, but other methods are available. Refer to section: [Transfer Agents](#agents)
 
 ## <a name="offline_install"></a>Offline Installation (without internet)
 
@@ -479,7 +479,7 @@ The `aspera-cli` Gem provides a command line interface (CLI) which interacts wit
 * Supports most Aspera server products (on-premise and SaaS)
 * Any command line options (products URL, credentials or any option) can be provided on command line, in configuration file, in env var, in files
 * Supports Commands, Option values and Parameters shortcuts
-* FASP [Transfer Agents](#agents) can be: FaspManager (local ascp), or Connect Client, or any transfer node
+* FASP [Transfer Agents](#agents) can be: local ascp, or Connect Client, or any transfer node
 * Transfer parameters can be altered by modification of _transfer-spec_, this includes requiring multi-session
 * Allows transfers from products to products, essentially at node level (using the node transfer agent)
 * Supports FaspStream creation (using Node API)
@@ -863,7 +863,7 @@ demo_server:
 We can see here:
 
 * The configuration was created with CLI version 0.3.7
-* the default [option preset](#lprt) to load for plugin "server" is : `demo_server`
+* the default [option preset](#lprt) to load for `server` plugin is : `demo_server`
 * the [option preset](#lprt) `demo_server` defines some parameters: the URL and credentials
 * the default [option preset](#lprt) to load in any case is : `cli_default`
 
@@ -1066,7 +1066,7 @@ $ ascli config ascp info
 ...
 ```
 
-### Selection of local `ascp`
+### Selection of `ascp` location for [`direct`](#direct) agent
 
 By default, `ascli` uses any found local product with ascp, including SDK.
 
@@ -1110,7 +1110,7 @@ $ ascli config ascp products list
 :.........................................:................................................:
 ```
 
-### Selection of local client
+### Selection of local client for `ascp` for [`direct`](#direct) agent
 
 If no ascp is selected, this is equivalent to using option: `--use-product=FIRST`.
 
@@ -1165,7 +1165,7 @@ This [_transfer-spec_](#transferspec) will be executed by a transfer client, her
 
 There are currently 3 agents:
 
-* `direct` : a local execution of `ascp`
+* [`direct`](#direct) : a local execution of `ascp`
 * `connect` : use of a local Connect Client
 * `node` : use of an Aspera Transfer Node (potentially _remote_).
 * `httpgw` : use of an Aspera HTTP Gateway
@@ -1177,7 +1177,7 @@ will effectively push files to the related server from the agent node.
 `ascli` standadizes on the use of a [_transfer-spec_](#transferspec) instead of _raw_ ascp options to provide parameters for a transfer session, as a common method for those three Transfer Agents.
 
 
-### <a name="direct"></a>Direct (local ascp using FASPManager API)
+### <a name="direct"></a>Direct (local ascp execution)
 
 By default `ascli` uses a local ascp, equivalent to specifying `--transfer=direct`.
 `ascli` will detect locally installed Aspera products.
@@ -1275,7 +1275,7 @@ is described in a _transfer-spec_ (Transfer Specification), such as:
 
 If needed, it is possible to modify or add any of the supported _transfer-spec_ parameter using the `ts` option. The `ts` option accepts a [Structured Value](#native) containing one or several _transfer-spec_ parameters. Multiple `ts` options on command line are cummulative.
 
-It is possible to specify ascp options when the `transfer` option is set to `direct` using the special [_transfer-spec_](#transferspec) parameter: `EX_ascp_args`. Example: `--ts=@json:'{"EX_ascp_args":["-l","100m"]}'`. This is espacially useful for ascp command line parameters not supported yet in the transfer spec.
+It is possible to specify ascp options when the `transfer` option is set to [`direct`](#direct) using the special [_transfer-spec_](#transferspec) parameter: `EX_ascp_args`. Example: `--ts=@json:'{"EX_ascp_args":["-l","100m"]}'`. This is espacially useful for ascp command line parameters not supported yet in the transfer spec.
 
 The use of a _transfer-spec_ instead of `ascp` parameters has the advantage of:
 
@@ -1308,7 +1308,7 @@ Columns:
 * C=Connect Client
 * arg=`ascp` argument or environment variable
 
-Fields with EX_ prefix are extensions to transfer agent `direct`. (only in `ascli`).
+Fields with EX_ prefix are extensions to transfer agent [`direct`](#direct). (only in `ascli`).
 
 <table><tr><th>Field</th><th>Type</th><th>D</th><th>N</th><th>C</th><th>Description</th></tr><tr><td>cipher</td><td>string</td><td>Y</td><td>Y</td><td>Y</td><td>In transit encryption type.<br/>none, aes-128, aes-256<br/>Allowed values: aes128, aes192, aes256, aes128cfb, aes192cfb, aes256cfb, aes128gcm, aes192gcm, aes256gcm<br/>(-c)</td></tr><tr><td>content_protection</td><td>string</td><td>Y</td><td>Y</td><td>Y</td><td>Enable client-side content protection. (encryption at rest)<br/>Allowed values: encrypt, decrypt</td></tr><tr><td>content_protection_password</td><td>string</td><td>Y</td><td>Y</td><td>Y</td><td>Specifies CSEAR password.</td></tr><tr><td>cookie</td><td>string</td><td>Y</td><td>Y</td><td>Y</td><td>Metadata for transfer (older,string)<br/>(env:ASPERA_SCP_COOKIE)</td></tr><tr><td>create_dir</td><td>bool</td><td>Y</td><td>Y</td><td>Y</td><td>Specifies whether to create new directories.<br/>(-d)</td></tr><tr><td>delete_before_transfer</td><td>bool</td><td>Y</td><td>Y</td><td>Y</td><td>(--delete-before-transfer)</td></tr><tr><td>delete_source</td><td>bool</td><td>&nbsp;</td><td>Y</td><td>&nbsp;</td><td>Remove SRC files after transfer success</td></tr><tr><td>direction</td><td>string</td><td>Y</td><td>Y</td><td>Y</td><td>Direction of transfer (on client side)<br/>Allowed values: send, receive<br/>(--mode)</td></tr><tr><td>exclude_newer_than</td><td>int</td><td>Y</td><td>&nbsp;</td><td>&nbsp;</td><td>skip src files with mtime > arg<br/>(--exclude-newer-than)</td></tr><tr><td>exclude_older_than</td><td>int</td><td>Y</td><td>&nbsp;</td><td>&nbsp;</td><td>skip src files with mtime < arg<br/>(--exclude-older-than)</td></tr><tr><td>fasp_port</td><td>int</td><td>Y</td><td>Y</td><td>Y</td><td>Specifies fasp (UDP) port.<br/>(-O)</td></tr><tr><td>http_fallback</td><td>string<br/>bool</td><td>Y</td><td>Y</td><td>Y</td><td>When true(1), attempts to perform an HTTP transfer if a fasp transfer cannot be performed.<br/>(-y)</td></tr><tr><td>http_fallback_port</td><td>int</td><td>Y</td><td>&nbsp;</td><td>&nbsp;</td><td>Specifies http port.<br/>(-t)</td></tr><tr><td>https_fallback_port</td><td>int</td><td>Y</td><td>Y</td><td>Y</td><td>Specifies https port.</td></tr><tr><td>move_after_transfer</td><td>string</td><td>Y</td><td>Y</td><td>Y</td><td>(--move-after-transfer)</td></tr><tr><td>multi_session</td><td>int</td><td>Y</td><td>Y</td><td>Y</td><td>Use multi-session transfer. max 128.<br/> Each participant on one host needs an independent UDP (-O) port.<br/> Large files are split between sessions only when transferring with resume_policy=none.</td></tr><tr><td>multi_session_threshold</td><td>int</td><td>Y</td><td>Y</td><td>&nbsp;</td><td>in bytes<br/>(--multi-session-threshold)</td></tr><tr><td>overwrite</td><td>string</td><td>Y</td><td>Y</td><td>Y</td><td>Overwrite destination files with the source files of the same name.<br/>Allowed values: never, always, diff, older, diff+older<br/>(--overwrite)</td></tr><tr><td>paths</td><td>array</td><td>Y</td><td>Y</td><td>Y</td><td>Required. Contains a path to the source (required) and a path to the destination.</td></tr><tr><td>precalculate_job_size</td><td>bool</td><td>Y</td><td>Y</td><td>Y</td><td>Specifies whether to precalculate the job size.<br/>(--precalculate-job-size)</td></tr><tr><td>preserve_access_time</td><td>bool</td><td>Y</td><td>Y</td><td>Y</td><td>(--preserve-access-time)</td></tr><tr><td>preserve_creation_time</td><td>bool</td><td>Y</td><td>Y</td><td>Y</td><td>(--preserve-creation-time)</td></tr><tr><td>preserve_modification_time</td><td>bool</td><td>Y</td><td>Y</td><td>Y</td><td>(--preserve-modification-time)</td></tr><tr><td>preserve_times</td><td>bool</td><td>Y</td><td>Y</td><td>Y</td><td>(--preserve-times)</td></tr><tr><td>rate_policy</td><td>string</td><td>Y</td><td>Y</td><td>Y</td><td>The transfer rate policy to use when sharing bandwidth.<br/>Allowed values: low, fair, high, fixed<br/>(--policy)</td></tr><tr><td>remote_access_key</td><td>string</td><td>Y</td><td>Y</td><td>Y</td><td>Node only?</td></tr><tr><td>remote_host</td><td>string</td><td>Y</td><td>Y</td><td>Y</td><td>IP or fully qualified domain name of the remote server<br/>(--host)</td></tr><tr><td>remote_user</td><td>string</td><td>Y</td><td>Y</td><td>Y</td><td>Remote user. Default value is "xfer" on node or connect.<br/>(--user)</td></tr><tr><td>remote_password</td><td>string</td><td>Y</td><td>Y</td><td>Y</td><td>SSH session password<br/>(env:ASPERA_SCP_PASS)</td></tr><tr><td>remove_after_transfer</td><td>bool</td><td>Y</td><td>Y</td><td>&nbsp;</td><td>Remove SRC files after transfer success<br/>(--remove-after-transfer)</td></tr><tr><td>remove_empty_directories</td><td>bool</td><td>Y</td><td>Y</td><td>&nbsp;</td><td>Specifies whether to remove empty directories.<br/>(--remove-empty-directories)</td></tr><tr><td>proxy</td><td>string</td><td>Y</td><td>&nbsp;</td><td>&nbsp;</td><td>Specify the address of the Aspera high-speed proxy server.<br/> dnat(s)://[user[:password]@]server:port<br/> Default ports for DNAT and DNATS protocols are 9091 and 9092.<br/> Password, if specified here, overrides the value of environment variable ASPERA_PROXY_PASS.<br/>(--proxy)</td></tr><tr><td>resume_policy</td><td>string</td><td>Y</td><td>Y</td><td>Y</td><td>If a transfer is interrupted or fails to finish, resume without re-transferring the whole files.<br/>Allowed values: none, attrs, sparse_csum, full_csum<br/>(-k)</td></tr><tr><td>retry_duration</td><td>string<br/>int</td><td>&nbsp;</td><td>Y</td><td>Y</td><td>Specifies how long to wait before retrying transfer. (e.g. "5min")</td></tr><tr><td>ssh_port</td><td>int</td><td>Y</td><td>Y</td><td>Y</td><td>Specifies ssh (TCP) port. Default: local:22, other:33001<br/>(-P)</td></tr><tr><td>ssh_private_key</td><td>string</td><td>Y</td><td>&nbsp;</td><td>&nbsp;</td><td>Private key used for SSH authentication.<br/> Shall look like: -----BEGIN RSA PRIVATE KEY-----\nMII...<br/> Note the JSON encoding: \n for newlines.<br/>(env:ASPERA_SCP_KEY)</td></tr><tr><td>symlink_policy</td><td>string</td><td>Y</td><td>Y</td><td>Y</td><td>Handle source side symbolic links by:<br/> following the link (follow),<br/> copying the link itself (copy),<br/> skipping (skip),<br/> or forcibly copying the link itself (copy+force).<br/> Default: follow<br/>Allowed values: follow, copy, copy+force, skip<br/>(--symbolic-links)</td></tr><tr><td>tags</td><td>hash</td><td>Y</td><td>Y</td><td>Y</td><td>Metadata for transfer<br/>(--tags64)</td></tr><tr><td>target_rate_cap_kbps</td><td>int</td><td>&nbsp;</td><td>&nbsp;</td><td>Y</td><td>Returned by upload/download_setup node api.</td></tr><tr><td>target_rate_kbps</td><td>int</td><td>Y</td><td>Y</td><td>Y</td><td>Specifies desired speed for the transfer.<br/>(-l)</td></tr><tr><td>title</td><td>string</td><td>&nbsp;</td><td>Y</td><td>Y</td><td>Title of the transfer</td></tr><tr><td>token</td><td>string</td><td>Y</td><td>Y</td><td>Y</td><td>Authorization token: Bearer, Basic or ATM (Also arg -W)<br/>(env:ASPERA_SCP_TOKEN)</td></tr><tr><td>use_ascp4</td><td>bool</td><td>Y</td><td>Y</td><td>&nbsp;</td><td>specify version of protocol</td></tr><tr><td>destination_root</td><td>string</td><td>Y</td><td>Y</td><td>Y</td><td>Destination root directory.</td></tr><tr><td>source_root</td><td>string</td><td>Y</td><td>Y</td><td>Y</td><td>Path to be prepended to each source path.<br/> This is either a conventional path or it can be a URI but only if there is no root defined.<br/>(--source-prefix64)</td></tr><tr><td>min_rate_cap_kbps</td><td>int</td><td>Y</td><td>Y</td><td>Y</td><td>&nbsp;</td></tr><tr><td>lock_rate_policy</td><td>bool</td><td>Y</td><td>Y</td><td>Y</td><td>&nbsp;</td></tr><tr><td>lock_target_rate_kbps</td><td>bool</td><td>Y</td><td>Y</td><td>Y</td><td>&nbsp;</td></tr><tr><td>lock_min_rate_kbps</td><td>bool</td><td>Y</td><td>Y</td><td>Y</td><td>&nbsp;</td></tr><tr><td>apply_local_docroot</td><td>bool</td><td>Y</td><td>&nbsp;</td><td>&nbsp;</td><td>(--apply-local-docroot)</td></tr><tr><td>preserve_acls</td><td>string</td><td>Y</td><td>&nbsp;</td><td>&nbsp;</td><td>Preserve access control lists.<br/>Allowable values: none, native, metafile<br/>(--preserve-acls)</td></tr><tr><td>remove_empty_source_directory</td><td>bool</td><td>Y</td><td>&nbsp;</td><td>&nbsp;</td><td>TODO: check node, sdk<br/>(--remove-empty-source-directory)</td></tr><tr><td>EX_at_rest_password</td><td>string</td><td>Y</td><td>&nbsp;</td><td>&nbsp;</td><td>Passphrase used for at rest encryption or decryption<br/>(env:ASPERA_SCP_FILEPASS)</td></tr><tr><td>EX_proxy_password</td><td>string</td><td>Y</td><td>&nbsp;</td><td>&nbsp;</td><td>Password used for Aspera proxy server authentication.<br/> May be overridden by password in URL EX_fasp_proxy_url.<br/>(env:ASPERA_PROXY_PASS)</td></tr><tr><td>EX_license_text</td><td>string</td><td>Y</td><td>&nbsp;</td><td>&nbsp;</td><td>License file text override.<br/>By default ascp looks for license file near executable.<br/>(env:ASPERA_SCP_LICENSE)</td></tr><tr><td>dgram_size</td><td>int</td><td>Y</td><td>Y</td><td>Y</td><td>in bytes<br/>(-Z)</td></tr><tr><td>min_rate_kbps</td><td>int</td><td>Y</td><td>Y</td><td>Y</td><td>Set the minimum transfer rate in kilobits per second.<br/>(-m)</td></tr><tr><td>sshfp</td><td>string</td><td>Y</td><td>Y</td><td>Y</td><td>Check it against server SSH host key fingerprint<br/>(--check-sshfp)</td></tr><tr><td>EX_http_proxy_url</td><td>string</td><td>Y</td><td>&nbsp;</td><td>&nbsp;</td><td>Specify the proxy server address used by HTTP Fallback<br/>(-x)</td></tr><tr><td>EX_ssh_key_paths</td><td>array</td><td>Y</td><td>&nbsp;</td><td>&nbsp;</td><td>Use public key authentication for SSH and specify the private key file paths<br/>(-i)</td></tr><tr><td>EX_http_transfer_jpeg</td><td>int</td><td>Y</td><td>&nbsp;</td><td>&nbsp;</td><td>HTTP transfers as JPEG file<br/>(-j)</td></tr><tr><td>EX_no_read</td><td>bool</td><td>Y</td><td>&nbsp;</td><td>&nbsp;</td><td>no read source<br/>(--no-read)</td></tr><tr><td>EX_no_write</td><td>bool</td><td>Y</td><td>&nbsp;</td><td>&nbsp;</td><td>no write on destination<br/>(--no-write)</td></tr><tr><td>target_rate_percentage</td><td>string</td><td>Y</td><td>Y</td><td>Y</td><td>&nbsp;</td></tr><tr><td>rate_policy_allowed</td><td>string</td><td>&nbsp;</td><td>&nbsp;</td><td>Y</td><td>Specifies most aggressive rate policy that is allowed.<br/> Returned by node API.<br/>Allowed values: low, fair, high, fixed</td></tr><tr><td>lock_min_rate</td><td>bool</td><td>Y</td><td>Y</td><td>Y</td><td>&nbsp;</td></tr><tr><td>lock_target_rate</td><td>bool</td><td>Y</td><td>Y</td><td>Y</td><td>&nbsp;</td></tr><tr><td>authentication</td><td>string</td><td>&nbsp;</td><td>&nbsp;</td><td>Y</td><td>value=token for SSH bypass keys, else password asked if not provided.</td></tr><tr><td>cipher_allowed</td><td>string</td><td>Y</td><td>Y</td><td>Y</td><td>returned by node API. Valid literals include "aes-128" and "none".</td></tr><tr><td>EX_file_list</td><td>string</td><td>Y</td><td>&nbsp;</td><td>&nbsp;</td><td>source file list</td></tr><tr><td>EX_file_pair_list</td><td>string</td><td>Y</td><td>&nbsp;</td><td>&nbsp;</td><td>source file pair list</td></tr><tr><td>EX_ascp_args</td><td>array</td><td>Y</td><td>&nbsp;</td><td>&nbsp;</td><td>Add command line arguments to ascp</td></tr><tr><td>wss_enabled</td><td>bool</td><td>Y</td><td>Y</td><td>Y</td><td>&nbsp;</td></tr><tr><td>wss_port</td><td>int</td><td>Y</td><td>Y</td><td>Y</td><td>&nbsp;</td></tr></table>
 
@@ -1368,7 +1368,7 @@ For ease of use and flexibility, the list of files to transfer is specified by t
 --sources=@ts --ts=@json:'{"paths":[{"source":"dummy"}],"EX_ascp_args":["--file-list","myfilelist"]}'
 ```
 
-This method avoids creating a copy of the file list, but has drawbacks: it applies *only* to the `direct` transfer agent (i.e. bare ascp) and not for Aspera on Cloud. One must specify a dummy list in the [_transfer-spec_](#transferspec), which will be overriden by the bare ascp command line provided. (TODO) In next version, dummy source paths can be removed.
+This method avoids creating a copy of the file list, but has drawbacks: it applies *only* to the [`direct`](#direct) transfer agent (i.e. bare ascp) and not for Aspera on Cloud. One must specify a dummy list in the [_transfer-spec_](#transferspec), which will be overriden by the bare ascp command line provided. (TODO) In next version, dummy source paths can be removed.
 
 In case the file list is provided on the command line i.e. using `--sources=@args` or `--sources=<Array>` (but not `--sources=@ts`), then the list of files will be used either as a simple file list or a file pair list depending on the value of the option: `src_type`:
 
@@ -1381,7 +1381,7 @@ Example:
 $ ascli server upload --src-type=pair ~/Documents/Samples/200KB.1 /Upload/sample1
 ```
 
-Internally, when transfer agent `direct` is used, a temporary file list (or pair) file is generated and provided to ascp, unless `--file-list` or `--file-pait-list` is provided in `ts` in `EX_ascp_args`.
+Internally, when transfer agent [`direct`](#direct) is used, a temporary file list (or pair) file is generated and provided to ascp, unless `--file-list` or `--file-pait-list` is provided in `ts` in `EX_ascp_args`.
 
 Note the special case when the source files are located on "Aspera on Cloud", i.e. using access keys and the `file id` API:
 
@@ -1915,9 +1915,9 @@ OPTIONS:
         --local-resume=VALUE         set resume policy (Hash, use @json: prefix), current=
         --to-folder=VALUE            destination folder for downloaded files
         --sources=VALUE              list of source files (see doc)
-        --transfer-info=VALUE        additional information for transfer client
+        --transfer-info=VALUE        parameters for transfer agent
         --src-type=ENUM              type of file list: list, pair
-        --transfer=ENUM              type of transfer: direct, httpgw, connect, node, aoc
+        --transfer=ENUM              type of transfer agent: direct, httpgw, connect, node
         --progress=ENUM              type of progress bar: none, native, multi
 
 
@@ -1938,7 +1938,7 @@ OPTIONS:
         --validator=VALUE            identifier of validator (optional for central)
         --asperabrowserurl=VALUE     URL for simple aspera web ui
         --name=VALUE                 sync name
-        --token=ENUM                 todo: type of token used for transfers: aspera, basic, auto
+        --token-type=ENUM            Type of token used for transfers: aspera, basic, auto
 
 
 COMMAND: orchestrator
@@ -2936,7 +2936,7 @@ Explanation:
 * `|` the standard output of the first command is fed into the second one
 * `-Porg2 aoc` use Aspera on Cloud plugin and load credentials for `org2`
 * `files upload mysourcefile` upload the file named `mysourcefile` (located in `org1`)
-* `--transfer=node` use transfer agent type `node` instead of default `direct`
+* `--transfer=node` use transfer agent type `node` instead of default [`direct`](#direct)
 * `--transfer-info=@json:@stdin:` provide `node` transfer agent information, i.e. node API credentials, those are expected in JSON format and read from standard input
 
 Note that when using a POSIX shell, another possibility to write `cmd1 | cmd2 --transfer-info=@json:stdin:` is `cmd2 --transfer-info=@json:$(cmd1)` instead of ``
@@ -2985,6 +2985,14 @@ This plugin works at FASP level (SSH/ascp/ascmd) and does not use the node API.
 
 Both password and SSH keys auth are supported.
 
+If not username is provided, the default transfer user `xfer` is used.
+
+If no ssh password or key is provided, and a token is provided in transfer spec, then standard bypass keys are used.
+
+```
+$ ascli server --url=ssh://... --ts=@json:'{"token":"Basic abc123"}'
+```
+
 Multiple SSH key paths can be provided. The value of the parameter `ssh_keys` can be a single value or an array. Each value is a path to a private key and is expanded ("~" is replaced with the user's home folder).
 
 Examples:
@@ -3022,7 +3030,7 @@ This means that you dont have such an ssh agent running:
 $ ascli server --ssh-options=@ruby:'{use_agent: false}' ...
 ```
 
-This can also be set as default using a preset
+This can also be set as default using a preset.
 
 ## Example
 
@@ -3795,7 +3803,7 @@ Note that there are special "extended" [_transfer-spec_](#transferspec) paramete
   * `EX_loglevel` to change log level of the tool
   * `EX_file_list_folder` to set the folder used to store (exclusively, because of garbage collection) generated file lists. By default it is `[system tmp folder]/[username]_asession_filelists`
 
-Note that in addition, many "EX_" [_transfer-spec_](#transferspec) parameters are supported for the "local" transfer agent (used by `asession`), refer to section [_transfer-spec_](#transferspec).
+Note that in addition, many "EX_" [_transfer-spec_](#transferspec) parameters are supported for the [`direct`](#direct) transfer agent (used by `asession`), refer to section [_transfer-spec_](#transferspec).
 
 ## Comparison of interfaces
 
@@ -3896,7 +3904,7 @@ Note that:
 
 * `ascli` takes transfer parameters exclusively as a transfer_spec, with `--ts` parameter.
 * most, but not all native ascp arguments are available as standard transfer_spec parameters
-* native ascp arguments can be provided with the [_transfer-spec_](#transferspec) parameter: EX_ascp_args (array), only for the "local" transfer agent (not connect or node)
+* native ascp arguments can be provided with the [_transfer-spec_](#transferspec) parameter: EX_ascp_args (array), only for the [`direct`](#direct) transfer agent (not connect or node)
 
 ### server side and configuration
 
@@ -3915,7 +3923,7 @@ $ ascli server upload source_hot --to-folder=/Upload/target_hot --lock-port=1234
 
 ```
 
-The local (here, relative path: source_hot) is sent (upload) to basic fasp server, source files are deleted after transfer. growing files will be sent only once they dont grow anymore (based ona 8 second cooloff period). If a transfer takes more than the execution period, then the subsequent execution is skipped (lock-port).
+The local folder (here, relative path: source_hot) is sent (upload) to basic fasp server, source files are deleted after transfer. growing files will be sent only once they dont grow anymore (based ona 8 second cooloff period). If a transfer takes more than the execution period, then the subsequent execution is skipped (lock-port).
 
 # Aspera Health check and Nagios
 
@@ -4005,7 +4013,7 @@ So, it evolved into `ascli`:
 
 * 4.3.0
 
-	* new: parameter `multi_incr_udp` for option `transfer_info`: control if UDP port is incremented when multi-session is used on `direct` transfer agent.
+	* new: parameter `multi_incr_udp` for option `transfer_info`: control if UDP port is incremented when multi-session is used on [`direct`](#direct) transfer agent.
 	* new: command `aoc files node_info` to get node information for a given folder in the Files application of AoC. Allows cross-org or cross-workspace transfers.
 
 * 4.2.2
@@ -4030,13 +4038,13 @@ So, it evolved into `ascli`:
 	* new: command `aoc remind` to receive organization membership by email
 	* new: in `preview` option `value` to filter out on file name
 	* new: `initdemo` to initialize for demo server
-	* new: `direct` transfer agent options: `spawn_timeout_sec` and `spawn_delay_sec`
+	* new: [`direct`](#direct) transfer agent options: `spawn_timeout_sec` and `spawn_delay_sec`
 	* fix: on Windows `conf ascp use` expects ascp.exe
 	* fix: (break) multi_session_threshold is Integer, not String
 	* fix: `conf ascp install` renames sdk folder if it already exists (leftover shared lib may make fail)
 	* fix: removed replace_illegal_chars from default aspera.conf causing "Error creating illegal char conversion table"
 	* change: (break) `aoc apiinfo` is removed, use `aoc servers` to provide the list of cloud systems
-	* change: (break) parameters for resume in `transfer-info` for `direct` are now in sub-key `"resume"`
+	* change: (break) parameters for resume in `transfer-info` for [`direct`](#direct) are now in sub-key `"resume"`
 
 * 4.1.0
 
@@ -4093,8 +4101,8 @@ So, it evolved into `ascli`:
 	* allow bulk delete in `aspera files` with option `bulk=yes`
 	* fix getting connect versions
 	* added section for Aix
-	* support all ciphers for `local` ascp (including gcm, etc..)
-	* added transfer spec param `apply_local_docroot` for `local`
+	* support all ciphers for [`direct`](#direct) agent (including gcm, etc..)
+	* added transfer spec param `apply_local_docroot` for [`direct`](#direct)
 
 * 0.11.4
 
@@ -4149,7 +4157,7 @@ So, it evolved into `ascli`:
 * 0.10.12
 
 	* added support for AoC node registration keys
-	* replaced option : `local_resume` with `transfer_info` for agent `direct`
+	* replaced option : `local_resume` with `transfer_info` for agent [`direct`](#direct)
 	* Transfer agent is no more a Singleton instance, but only one is used in CLI
 	* `@incps` : new extended value modifier
 	* ATS: no more provides access keys secrets: now user must provide it
@@ -4331,7 +4339,7 @@ So, it evolved into `ascli`:
 
 * 0.9.7
 
-	* homogeneous [_transfer-spec_](#transferspec) for node and local
+	* homogeneous [_transfer-spec_](#transferspec) for `node` and [`direct`](#direct) transfer agents
 	* preview persistency goes to unique file by default
 	* catch mxf extension in preview as video
 	* Faspex: possibility to download all paclages by specifying id=ALL
