@@ -78,6 +78,7 @@ module Aspera
         @job_spec=job_spec
         @options=options
         @builder=Aspera::CommandLineBuilder.new(@job_spec,self.class.description)
+        Log.log.debug("agent options: #{@options}")
       end
 
       public
@@ -101,7 +102,7 @@ module Aspera
         @job_spec.delete('source_root') if @job_spec.has_key?('source_root') and @job_spec['source_root'].empty?
 
         # use web socket session initiation ?
-        if @builder.process_param('wss_enabled',:get_value) and @options[:wss]
+        if @builder.process_param('wss_enabled',:get_value) and ( @options[:wss] or !@job_spec.has_key?('fasp_port') )
           # by default use web socket session if available, unless removed by user
           @builder.add_command_line_options(['--ws-connect'])
           # TODO: option to give order ssh,ws (legacy http is implied bu ssh)

@@ -68,6 +68,7 @@ module Aspera
         def execute_action
           server_uri=URI.parse(self.options.get_option(:url,:mandatory))
           Log.log.debug("URI : #{server_uri}, port=#{server_uri.port}, scheme:#{server_uri.scheme}")
+          server_transfer_spec={'remote_host'=>server_uri.hostname}
           shell_executor=nil
           case server_uri.scheme
           when 'ssh'
@@ -75,10 +76,7 @@ module Aspera
               self.options.set_option(:username,Aspera::Node::ACCESS_KEY_TRANSFER_USER)
               Log.log.info("Using default transfer user: #{Aspera::Node::ACCESS_KEY_TRANSFER_USER}")
             end
-            server_transfer_spec={
-              'remote_host'=>server_uri.hostname,
-              'remote_user'=>self.options.get_option(:username,:mandatory),
-            }
+            server_transfer_spec['remote_user']=self.options.get_option(:username,:mandatory)
             ssh_options=self.options.get_option(:ssh_options,:optional)
             raise 'expecting a Hash for ssh_options' unless ssh_options.is_a?(Hash)
             if !server_uri.port.nil?
@@ -111,6 +109,12 @@ module Aspera
             cred_set=true if self.transfer.option_transfer_spec['token'].is_a?(String)
             raise 'either password, key , or transfer spec token must be provided' if !cred_set
             shell_executor=Ssh.new(server_transfer_spec['remote_host'],server_transfer_spec['remote_user'],ssh_options)
+          when 'https'
+            raise "ERROR: transfer spec with token required" unless self.transfer.option_transfer_spec['token'].is_a?(String)
+            server_transfer_spec.merge!({
+              'wss_enabled'=>true,
+              'wss_port'   =>server_uri.port
+            })
           when 'local'
             shell_executor=LocalExecutor.new
           else
