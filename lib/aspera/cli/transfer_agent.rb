@@ -2,7 +2,6 @@ require 'aspera/fasp/local'
 require 'aspera/fasp/parameters'
 require 'aspera/fasp/connect'
 require 'aspera/fasp/node'
-require 'aspera/fasp/aoc'
 require 'aspera/fasp/http_gw'
 require 'aspera/cli/listener/logger'
 require 'aspera/cli/listener/progress_multi'
@@ -44,9 +43,9 @@ END_OF_TEMPLATE
         options.add_opt_simple(:local_resume,"set resume policy (Hash, use @json: prefix), current=#{options.get_option(:local_resume,:optional)}")
         options.add_opt_simple(:to_folder,"destination folder for downloaded files")
         options.add_opt_simple(:sources,"list of source files (see doc)")
-        options.add_opt_simple(:transfer_info,"additional information for transfer client")
+        options.add_opt_simple(:transfer_info,"parameters for transfer agent")
         options.add_opt_list(:src_type,[:list,:pair],"type of file list")
-        options.add_opt_list(:transfer,[:direct,:httpgw,:connect,:node,:aoc],"type of transfer")
+        options.add_opt_list(:transfer,[:direct,:httpgw,:connect,:node],"type of transfer agent")
         options.add_opt_list(:progress,[:none,:native,:multi],"type of progress bar")
         options.set_option(:transfer,:direct)
         options.set_option(:src_type,:list)
@@ -125,22 +124,6 @@ END_OF_TEMPLATE
           new_agent=Fasp::Node.new(node_api)
           # add root id if it's an access key
           new_agent.options={root_id: node_config[:root_id]} if node_config.has_key?(:root_id)
-        when :aoc
-          aoc_config=options.get_option(:transfer_info,:optional)
-          if aoc_config.nil?
-            param_set_name=config.get_plugin_default_config_name(:aspera)
-            raise CliBadArgument,"No default AoC configured, Please specify --#{:transfer_info.to_s.gsub('_','-')}" if param_set_name.nil?
-            aoc_config=config.preset_by_name(param_set_name)
-          end
-          Log.log.debug("aoc=#{aoc_config}")
-          raise CliBadArgument,"the aoc configuration shall be Hash, not #{aoc_config.class} (#{aoc_config}), refer to manual" if !aoc_config.is_a?(Hash)
-          # convert keys from string (config) to symbol (agent)
-          aoc_config=aoc_config.symbolize_keys
-          # convert auth value from string (config) to symbol (agent)
-          aoc_config[:auth]=aoc_config[:auth].to_sym if aoc_config[:auth].is_a?(String)
-          # private key could be @file:... in config
-          aoc_config[:private_key]=ExtendedValue.instance.evaluate(aoc_config[:private_key])
-          new_agent=Fasp::Aoc.new(aoc_config)
         else
           raise "Unexpected transfer agent type: #{agent_type}"
         end
