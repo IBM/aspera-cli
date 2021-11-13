@@ -1,7 +1,7 @@
 [comment1]: # (Do not edit this README.md, edit docs/README.erb.md, for details, read docs/README.md)
 <font size="+12"><center>`ascli` : Command Line Interface for IBM Aspera products</center></font>
 
-Version : 4.4.0
+Version : 4.5.0.pre
 
 _Laurent/2016-2021_
 
@@ -82,7 +82,7 @@ Once the gem is installed, `ascli` shall be accessible:
 
 ```
 $ ascli --version
-4.4.0
+4.5.0.pre
 ```
 
 ## First use
@@ -283,7 +283,7 @@ Install Latest stable Ruby using [https://rubyinstaller.org/](https://rubyinstal
 MacOS 10.13+ (High Sierra) comes with a recent Ruby. So you can use it directly. You will need to install aspera-cli using `sudo` :
 
 ```
-$ sudo gem install aspera-cli
+$ sudo gem install aspera-cli --pre
 ```
 
 Alternatively, if you use [Homebrew](https://brew.sh/) already you can install Ruby with it:
@@ -376,7 +376,7 @@ or restore the `$HOME/.aspera` folder for the user.
 Once you have Ruby and rights to install gems: Install the gem and its dependencies:
 
 ```
-# gem install aspera-cli
+# gem install aspera-cli --pre
 ```
 
 To upgrade to the latest version:
@@ -1836,7 +1836,7 @@ ascli sync start --parameters=@json:'{"sessions":[{"name":"test","reset":true,"r
 ```
 $ ascli -h
 NAME
-	ascli -- a command line tool for Aspera Applications (v4.4.0)
+	ascli -- a command line tool for Aspera Applications (v4.5.0.pre)
 
 SYNOPSIS
 	ascli COMMANDS [OPTIONS] [ARGS]
@@ -4017,128 +4017,132 @@ So, it evolved into `ascli`:
 
 # Changes (Release notes)
 
+* 4.5.0.pre
+
+    * TBD
+  
 * 4.4.0
 
-	* new: `aoc packages list` add possibility to add filter with option `query`
-	* new: `aoc admin res xxx list` now get all items by default #50
-	* new: `preset` option can specify name or hash value
-	* new: `node` plugin accepts bearer token and access key as credential
-	* new: `node` option `token_type` allows using basic token in addition to aspera type.
-	* change: `server`: option `username` not mandatory anymore: xfer user is by default. If transfer spec token is provided, password or keys are optional, and bypass keys are used by default. 
-	* change: (break) resource `apps_new` of `aoc` replaced with `application` (more clear)
+    * new: `aoc packages list` add possibility to add filter with option `query`
+    * new: `aoc admin res xxx list` now get all items by default #50
+    * new: `preset` option can specify name or hash value
+    * new: `node` plugin accepts bearer token and access key as credential
+    * new: `node` option `token_type` allows using basic token in addition to aspera type.
+    * change: `server`: option `username` not mandatory anymore: xfer user is by default. If transfer spec token is provided, password or keys are optional, and bypass keys are used by default. 
+    * change: (break) resource `apps_new` of `aoc` replaced with `application` (more clear)
 
 * 4.3.0
 
-	* new: parameter `multi_incr_udp` for option `transfer_info`: control if UDP port is incremented when multi-session is used on [`direct`](#direct) transfer agent.
-	* new: command `aoc files node_info` to get node information for a given folder in the Files application of AoC. Allows cross-org or cross-workspace transfers.
+    * new: parameter `multi_incr_udp` for option `transfer_info`: control if UDP port is incremented when multi-session is used on [`direct`](#direct) transfer agent.
+    * new: command `aoc files node_info` to get node information for a given folder in the Files application of AoC. Allows cross-org or cross-workspace transfers.
 
 * 4.2.2
 
-	* new: `faspex package list` retrieves the whole list, not just first page
-	* new: support web based auth to aoc and faspex 5 using HTTPS, new dependency on gem `webrick`
-	* new: the error "Remote host is not who we expected" displays a special remediation message
-	* new: `conf ascp spec` displays supported transfer spec
-	* new: options `notif_to` and `notif_template` to send email notifications on transfer (and other events)
-	* fix: space character in `faspe:` url are precent encoded if needed
-	* fix: `preview scan`: if file_id is unknown, ignore and continue scan
-	* change: for commands that potentially execute several transfers (`package recv --id=ALL`), if one transfer fails then `ascli` exits with code 1 (instead of zero=success)
-	* change: (break) option `notify` or `aoc` replaced with `notif_to` and `notif_template`
+    * new: `faspex package list` retrieves the whole list, not just first page
+    * new: support web based auth to aoc and faspex 5 using HTTPS, new dependency on gem `webrick`
+    * new: the error "Remote host is not who we expected" displays a special remediation message
+    * new: `conf ascp spec` displays supported transfer spec
+    * new: options `notif_to` and `notif_template` to send email notifications on transfer (and other events)
+    * fix: space character in `faspe:` url are precent encoded if needed
+    * fix: `preview scan`: if file_id is unknown, ignore and continue scan
+    * change: for commands that potentially execute several transfers (`package recv --id=ALL`), if one transfer fails then `ascli` exits with code 1 (instead of zero=success)
+    * change: (break) option `notify` or `aoc` replaced with `notif_to` and `notif_template`
 
 * 4.2.1
 
-	* new: command `faspex package recv` supports link of type: `faspe:`
-	* new: command `faspex package recv` supports option `recipient` to specify dropbox with leading `*`
+    * new: command `faspex package recv` supports link of type: `faspe:`
+    * new: command `faspex package recv` supports option `recipient` to specify dropbox with leading `*`
 
 * 4.2.0
 
-	* new: command `aoc remind` to receive organization membership by email
-	* new: in `preview` option `value` to filter out on file name
-	* new: `initdemo` to initialize for demo server
-	* new: [`direct`](#direct) transfer agent options: `spawn_timeout_sec` and `spawn_delay_sec`
-	* fix: on Windows `conf ascp use` expects ascp.exe
-	* fix: (break) multi_session_threshold is Integer, not String
-	* fix: `conf ascp install` renames sdk folder if it already exists (leftover shared lib may make fail)
-	* fix: removed replace_illegal_chars from default aspera.conf causing "Error creating illegal char conversion table"
-	* change: (break) `aoc apiinfo` is removed, use `aoc servers` to provide the list of cloud systems
-	* change: (break) parameters for resume in `transfer-info` for [`direct`](#direct) are now in sub-key `"resume"`
+    * new: command `aoc remind` to receive organization membership by email
+    * new: in `preview` option `value` to filter out on file name
+    * new: `initdemo` to initialize for demo server
+    * new: [`direct`](#direct) transfer agent options: `spawn_timeout_sec` and `spawn_delay_sec`
+    * fix: on Windows `conf ascp use` expects ascp.exe
+    * fix: (break) multi_session_threshold is Integer, not String
+    * fix: `conf ascp install` renames sdk folder if it already exists (leftover shared lib may make fail)
+    * fix: removed replace_illegal_chars from default aspera.conf causing "Error creating illegal char conversion table"
+    * change: (break) `aoc apiinfo` is removed, use `aoc servers` to provide the list of cloud systems
+    * change: (break) parameters for resume in `transfer-info` for [`direct`](#direct) are now in sub-key `"resume"`
 
 * 4.1.0
 
-	* fix: remove keys from transfer spec and command line when not needed 	* fix: default to create_dir:true so that sending single file to a folder does not rename file if folder does not exist
-	* new: update documentation with regard to offline and docker installation
-	* new: renamed command `nagios_check` to `health`
-	* new: agent `http_gw` now supports upload
-	* new: added option `sdk_url` to install SDK from local file for offline install
-	* new: check new gem version periodically
-	* new: the --fields= option, support -_fieldname_ to remove a field from default fields
-	* new: Oauth tokens are discarded automatically after 30 minutes (useful for COS delegated refresh tokens)
-	* new: mimemagic is now optional, needs manual install for `preview`, compatible with version 0.4.x
-	* new: AoC a password can be provided for a public link
-	* new: `conf doc` take an optional parameter to go to a section
-	* new: initial support for Faspex 5 Beta 1
+    * fix: remove keys from transfer spec and command line when not needed 	* fix: default to create_dir:true so that sending single file to a folder does not rename file if folder does not exist
+    * new: update documentation with regard to offline and docker installation
+    * new: renamed command `nagios_check` to `health`
+    * new: agent `http_gw` now supports upload
+    * new: added option `sdk_url` to install SDK from local file for offline install
+    * new: check new gem version periodically
+    * new: the --fields= option, support -_fieldname_ to remove a field from default fields
+    * new: Oauth tokens are discarded automatically after 30 minutes (useful for COS delegated refresh tokens)
+    * new: mimemagic is now optional, needs manual install for `preview`, compatible with version 0.4.x
+    * new: AoC a password can be provided for a public link
+    * new: `conf doc` take an optional parameter to go to a section
+    * new: initial support for Faspex 5 Beta 1
 
 * 4.0.0
 
-	* now available as open source at [https://github.com/IBM/aspera-cli](https://github.com/IBM/aspera-cli) with general cleanup
-	* changed default tool name from `mlia` to `ascli`
-	* changed `aspera` command to `aoc`
-	* changed gem name from `asperalm` to `aspera-cli`
-	* changed module name from `Asperalm` to `Aspera`
-	* removed command `folder` in `preview`, merged to `scan`
-	* persistency files go to sub folder instead of main folder
-	* added possibility to install SDK: `config ascp install`
+    * now available as open source at [https://github.com/IBM/aspera-cli](https://github.com/IBM/aspera-cli) with general cleanup
+    * changed default tool name from `mlia` to `ascli`
+    * changed `aspera` command to `aoc`
+    * changed gem name from `asperalm` to `aspera-cli`
+    * changed module name from `Asperalm` to `Aspera`
+    * removed command `folder` in `preview`, merged to `scan`
+    * persistency files go to sub folder instead of main folder
+    * added possibility to install SDK: `config ascp install`
 
 * 0.11.8
 
-	* Simplified to use `unoconv` instead of bare `libreoffice` for office conversion, as `unoconv` does not require a X server (previously using Xvfb
+    * Simplified to use `unoconv` instead of bare `libreoffice` for office conversion, as `unoconv` does not require a X server (previously using Xvfb
 
 * 0.11.7
 
-	* rework on rest call error handling
-	* use option `display` with value `data` to remove out of extraneous information
-	* fixed option `lock_port` not working
-	* generate special icon if preview failed
-	* possibility to choose transfer progress bar type with option `progress`
-	* AoC package creation now output package id
+    * rework on rest call error handling
+    * use option `display` with value `data` to remove out of extraneous information
+    * fixed option `lock_port` not working
+    * generate special icon if preview failed
+    * possibility to choose transfer progress bar type with option `progress`
+    * AoC package creation now output package id
 
 * 0.11.6
 
-	* orchestrator : added more choice in auth type
-	* preview: cleanup in generator (removed and renamed parameters)
-	* preview: better documentation
-	* preview: animated thumbnails for video (option: `video_png_conv=animated`)
-	* preview: new event trigger: `trevents` (`events` seems broken)
-	* preview: unique tmp folder to avoid clash of multiple instances
-	* repo: added template for secrets used for testing
+    * orchestrator : added more choice in auth type
+    * preview: cleanup in generator (removed and renamed parameters)
+    * preview: better documentation
+    * preview: animated thumbnails for video (option: `video_png_conv=animated`)
+    * preview: new event trigger: `trevents` (`events` seems broken)
+    * preview: unique tmp folder to avoid clash of multiple instances
+    * repo: added template for secrets used for testing
 
 * 0.11.5
 
-	* added option `default_ports` for AoC (see manual)
-	* allow bulk delete in `aspera files` with option `bulk=yes`
-	* fix getting connect versions
-	* added section for Aix
-	* support all ciphers for [`direct`](#direct) agent (including gcm, etc..)
-	* added transfer spec param `apply_local_docroot` for [`direct`](#direct)
+    * added option `default_ports` for AoC (see manual)
+    * allow bulk delete in `aspera files` with option `bulk=yes`
+    * fix getting connect versions
+    * added section for Aix
+    * support all ciphers for [`direct`](#direct) agent (including gcm, etc..)
+    * added transfer spec param `apply_local_docroot` for [`direct`](#direct)
 
 * 0.11.4
 
-	* possibility to give shared inbox name when sending a package (else use id and type)
+    * possibility to give shared inbox name when sending a package (else use id and type)
 
 * 0.11.3
 
-	* minor fixes on multi-session: avoid exception on progress bar
+    * minor fixes on multi-session: avoid exception on progress bar
 
 * 0.11.2
 
-	* fixes on multi-session: progress bat and transfer spec param for "direct"
+    * fixes on multi-session: progress bat and transfer spec param for "direct"
 
 * 0.11.1
 
-	* enhanced short_link creation commands (see examples)
+    * enhanced short_link creation commands (see examples)
 
 * 0.11
 
-	* add option to provide file list directly to ascp like this (only for direct transfer agent):
+    * add option to provide file list directly to ascp like this (only for direct transfer agent):
 
 ```
 ... --sources=@ts --ts=@json:'{"paths":[],"EX_file_list":"filelist"}'
