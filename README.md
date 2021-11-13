@@ -1,7 +1,7 @@
 [comment1]: # (Do not edit this README.md, edit docs/README.erb.md, for details, read docs/README.md)
 <font size="+12"><center>`ascli` : Command Line Interface for IBM Aspera products</center></font>
 
-Version : 4.4.0.pre
+Version : 4.4.0
 
 _Laurent/2016-2021_
 
@@ -82,7 +82,7 @@ Once the gem is installed, `ascli` shall be accessible:
 
 ```
 $ ascli --version
-4.4.0.pre
+4.4.0
 ```
 
 ## First use
@@ -283,7 +283,7 @@ Install Latest stable Ruby using [https://rubyinstaller.org/](https://rubyinstal
 MacOS 10.13+ (High Sierra) comes with a recent Ruby. So you can use it directly. You will need to install aspera-cli using `sudo` :
 
 ```
-$ sudo gem install aspera-cli --pre
+$ sudo gem install aspera-cli
 ```
 
 Alternatively, if you use [Homebrew](https://brew.sh/) already you can install Ruby with it:
@@ -376,7 +376,7 @@ or restore the `$HOME/.aspera` folder for the user.
 Once you have Ruby and rights to install gems: Install the gem and its dependencies:
 
 ```
-# gem install aspera-cli --pre
+# gem install aspera-cli
 ```
 
 To upgrade to the latest version:
@@ -1836,7 +1836,7 @@ ascli sync start --parameters=@json:'{"sessions":[{"name":"test","reset":true,"r
 ```
 $ ascli -h
 NAME
-	ascli -- a command line tool for Aspera Applications (v4.4.0.pre)
+	ascli -- a command line tool for Aspera Applications (v4.4.0)
 
 SYNOPSIS
 	ascli COMMANDS [OPTIONS] [ARGS]
@@ -4017,7 +4017,7 @@ So, it evolved into `ascli`:
 
 # Changes (Release notes)
 
-* 4.4.0.pre
+* 4.4.0
 
 	* new: `aoc packages list` add possibility to add filter with option `query`
 	* new: `aoc admin res xxx list` now get all items by default #50
