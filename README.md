@@ -148,7 +148,7 @@ Then, follow the section relative to the product you want to interact with ( Asp
 
 # <a name="installation"></a>Installation
 
-It is possible to install *either* directly on the host operating system (Linux, Windows, MacOS) or as a docker container.
+It is possible to install *either* directly on the host operating system (Linux, Windows, macOS) or as a docker container.
 
 The direct installation is recommended and consists in installing:
 
@@ -208,7 +208,7 @@ Required Ruby version: > 2.4. Ruby version 3 is also supported.
 
 Refer to the following sections for a proposed method for specific operating systems.
 
-The recommended installation method is `rvm` for systems with "bash-like" shell (Linux, MacOS, Windows with cygwin, etc...).
+The recommended installation method is `rvm` for systems with "bash-like" shell (Linux, macOS, Windows with cygwin, etc...).
 If the generic install is not suitable (e.g. Windows, no cygwin), you can use one of OS-specific install method.
 If you have a simpler better way to install Ruby version > 2.4 : use it !
 
@@ -280,7 +280,7 @@ Install Latest stable Ruby using [https://rubyinstaller.org/](https://rubyinstal
 
 ### macOS: pre-installed or `brew`
 
-MacOS 10.13+ (High Sierra) comes with a recent Ruby. So you can use it directly. You will need to install aspera-cli using `sudo` :
+macOS 10.13+ (High Sierra) comes with a recent Ruby. So you can use it directly. You will need to install aspera-cli using `sudo` :
 
 ```
 $ sudo gem install aspera-cli --pre
