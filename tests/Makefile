@@ -6,7 +6,7 @@ DIR_TOP=../
 
 include $(DIR_TOP)common.make
 
-all:: tunit tshares tfaspex tconsole tnode taoc tfasp tsync torc tcon tnsync tconf tprev tats tsample tcos tf5
+all:: test_env tunit tshares tfaspex tconsole tnode taoc tfasp tsync torc tcon tnsync tconf tprev tats tsample tcos tf5
 # tshares2 tnagios
 
 # "EXE_MAN" and "EXE_NOMAN" are used to call the tool in the testing environment
@@ -18,19 +18,19 @@ EXE_NOMAN=$(EXE_MAN)
 CF_REMOTE_SAMPLE_FILENAME=200KB.1
 CF_LOCAL_SAMPLE_FILENAME=datafile.bin
 CF_LOCAL_SAMPLE_FILEPATH=$(DIR_TMP)$(CF_LOCAL_SAMPLE_FILENAME)
-CF_HSTS_FOLDER_UPLOAD := $(shell $(EXE_NOMAN) conf id misc get upload_folder)
-CF_SHARES_UPLOAD := $(shell $(EXE_NOMAN) conf id misc get shares_upload)
-CF_ORCH_WORKFLOW_ID := $(shell $(EXE_NOMAN) conf id misc get orch_workflow_id)
-CF_TSTFILE_DCM := $(shell $(EXE_NOMAN) conf id misc get file_dcm)
-CF_TSTFILE_PDF := $(shell $(EXE_NOMAN) conf id misc get file_pdf)
-CF_TSTFILE_DOCX := $(shell $(EXE_NOMAN) conf id misc get file_docx)
-CF_TSTFILE_MXF := $(shell $(EXE_NOMAN) conf id misc get file_mxf)
-CF_AOC_NODE1_NAME := $(shell $(EXE_NOMAN) conf id misc get aoc_node1_name)
-CF_AOC_NODE1_SECRET := $(shell $(EXE_NOMAN) conf id misc get aoc_node1_secret)
-CF_EMAIL_ADDR := $(shell $(EXE_NOMAN) conf id misc get email_internal)
-CF_AOC_EXTERNAL_EMAIL := $(shell $(EXE_NOMAN) conf id misc get email_external)
-CF_FASPEX_USERNAME := $(shell $(EXE_NOMAN) conf id tst_faspex get username)
-CF_HTTP_GW_FQDN := $(shell $(EXE_NOMAN) conf id misc get http_gw_fqdn_port)
+CF_HSTS_FOLDER_UPLOAD := $(shell $(EXE_NOMAN) conf id misc get upload_folder 2> /dev/null || echo error)
+CF_SHARES_UPLOAD := $(shell $(EXE_NOMAN) conf id misc get shares_upload 2> /dev/null || echo error)
+CF_ORCH_WORKFLOW_ID := $(shell $(EXE_NOMAN) conf id misc get orch_workflow_id 2> /dev/null || echo error)
+CF_TSTFILE_DCM := $(shell $(EXE_NOMAN) conf id misc get file_dcm 2> /dev/null || echo error)
+CF_TSTFILE_PDF := $(shell $(EXE_NOMAN) conf id misc get file_pdf 2> /dev/null || echo error)
+CF_TSTFILE_DOCX := $(shell $(EXE_NOMAN) conf id misc get file_docx 2> /dev/null || echo error)
+CF_TSTFILE_MXF := $(shell $(EXE_NOMAN) conf id misc get file_mxf 2> /dev/null || echo error)
+CF_AOC_NODE1_NAME := $(shell $(EXE_NOMAN) conf id misc get aoc_node1_name 2> /dev/null || echo error)
+CF_AOC_NODE1_SECRET := $(shell $(EXE_NOMAN) conf id misc get aoc_node1_secret 2> /dev/null || echo error)
+CF_EMAIL_ADDR := $(shell $(EXE_NOMAN) conf id misc get email_internal 2> /dev/null || echo error)
+CF_AOC_EXTERNAL_EMAIL := $(shell $(EXE_NOMAN) conf id misc get email_external 2> /dev/null || echo error)
+CF_FASPEX_USERNAME := $(shell $(EXE_NOMAN) conf id tst_faspex get username 2> /dev/null || echo error)
+CF_HTTP_GW_FQDN := $(shell $(EXE_NOMAN) conf id misc get http_gw_fqdn_port 2> /dev/null || echo error)
 
 # setup local environment on Macos for preview generation testing
 setupprev:
@@ -59,6 +59,11 @@ PKG_TEST_TITLE=Test Pkg $(shell date)
 # flag files for integration tests generated here
 T=$(DIR_TMP)t/
 
+test_env:
+	@if test ! -e $(TEST_CONF_FILE_PATH);then\
+		echo "ERROR: Missing configuration file for testing environment: $(TEST_CONF_FILE_PATH), create with:\nmkdir -p $(DIR_TOP)local\ncp $(DIR_TOP)docs/test_env.conf $(TEST_CONF_FILE_PATH)\nThen fill information in it.";\
+		exit 1;\
+	fi
 $(T).exists:
 	mkdir -p $(T)
 	touch $@
@@ -535,7 +540,7 @@ $(T)aocarself: $(T).exists
 	$(EXE_MAN) aoc admin res dropbox list
 	$(EXE_MAN) aoc admin res node list
 	$(EXE_MAN) aoc admin res operation list
-	$(EXE_MAN) aoc admin res package list
+	$(EXE_MAN) aoc admin res package list --http-options=@json:'{"read_timeout":120.0}'
 	$(EXE_MAN) aoc admin res saml_configuration list
 	$(EXE_MAN) aoc admin res dropbox_membership list
 	$(EXE_MAN) aoc admin res workspace_membership list

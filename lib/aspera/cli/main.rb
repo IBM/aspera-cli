@@ -26,19 +26,36 @@ module Aspera
       HELP_URL = "http://www.rubydoc.info/gems/#{GEM_NAME}"
       GEM_URL  = "https://rubygems.org/gems/#{GEM_NAME}"
       SRC_URL  = "https://github.com/IBM/aspera-cli"
+      # store transfer result using this key and use result_transfer_multiple
       STATUS_FIELD = 'status'
 
       private_constant :PROGRAM_NAME,:GEM_NAME,:HELP_URL,:GEM_URL
       # =============================================================
       # Parameter handlers
       #
-      def option_insecure; Rest.insecure ; end
-
-      def option_insecure=(value); Rest.insecure = value; end
-
+      attr_accessor :option_insecure, :option_http_options
       def option_ui; OpenApplication.instance.url_method; end
 
       def option_ui=(value); OpenApplication.instance.url_method=value; end
+
+      # called everytime a new REST HTTP session is opened
+      # @param http [Net::HTTP] the newly created http session object
+      def set_http_parameters(http)
+        http.verify_mode = OpenSSL::SSL::VERIFY_NONE if @option_insecure
+        http.set_debug_output($stdout) if @option_rest_debug
+        raise "http_options expects Hash" unless @option_http_options.is_a?(Hash)
+        @option_http_options.each do |k,v|
+          puts ">>> #{k} #{v}"
+          method="#{k}=".to_sym
+          # check if accessor is a method of Net::HTTP
+          # continue_timeout= read_timeout= write_timeout=
+          if http.respond_to?(method)
+            http.send(method,v)
+          else
+            Log.log.error("no such attribute: #{k}")
+          end
+        end
+      end
 
       # minimum initialization
       def initialize(argv)
@@ -52,6 +69,9 @@ module Aspera
         @option_help=false
         @bash_completion=false
         @option_show_config=false
+        @option_insecure=false
+        @option_rest_debug=false
+        @option_http_options={}
         # environment provided to plugin for various capabilities
         @plugin_env={}
         # find out application main folder
@@ -66,6 +86,7 @@ module Aspera
         @plugin_env[:options]=@opt_mgr=Manager.new(PROGRAM_NAME,argv,app_banner())
         @plugin_env[:formater]=Formater.new(@plugin_env[:options])
         Rest.user_agent=PROGRAM_NAME
+        Rest.session_cb=lambda {|http| set_http_parameters(http)}
         # declare and parse global options
         init_global_options()
         # secret manager
@@ -113,7 +134,7 @@ module Aspera
         @opt_mgr.add_opt_switch(:help,"-h","Show this message.") { @option_help=true }
         @opt_mgr.add_opt_switch(:bash_comp,"generate bash completion for command") { @bash_completion=true }
         @opt_mgr.add_opt_switch(:show_config, "Display parameters used for the provided action.") { @option_show_config=true }
-        @opt_mgr.add_opt_switch(:rest_debug,"-r","more debug for HTTP calls") { Rest.debug=true }
+        @opt_mgr.add_opt_switch(:rest_debug,"-r","more debug for HTTP calls") { @option_rest_debug=true }
         @opt_mgr.add_opt_switch(:version,'-v','display version') { @plugin_env[:formater].display_message(:data,Aspera::Cli::VERSION);Process.exit(0) }
         @opt_mgr.add_opt_switch(:warnings,'-w','check for language warnings') { $VERBOSE=true }
         # handler must be set before declaration
@@ -121,11 +142,13 @@ module Aspera
         @opt_mgr.set_obj_attr(:logger,Log.instance,:logger_type)
         @opt_mgr.set_obj_attr(:insecure,self,:option_insecure,:no)
         @opt_mgr.set_obj_attr(:ui,self,:option_ui)
+        @opt_mgr.set_obj_attr(:http_options,self,:option_http_options)
         @opt_mgr.add_opt_list(:ui,OpenApplication.user_interfaces,'method to start browser')
         @opt_mgr.add_opt_list(:log_level,Log.levels,"Log level")
         @opt_mgr.add_opt_list(:logger,Log.logtypes,"log method")
         @opt_mgr.add_opt_simple(:lock_port,"prevent dual execution of a command, e.g. in cron")
         @opt_mgr.add_opt_simple(:query,"additional filter for API calls (extended value) (some commands)")
+        @opt_mgr.add_opt_simple(:http_options,"options for http socket (extended value)")
         @opt_mgr.add_opt_boolean(:insecure,"do not validate HTTPS certificate")
         @opt_mgr.add_opt_boolean(:once_only,"process only new items (some commands)")
         @opt_mgr.set_option(:ui,OpenApplication.default_gui_mode)
@@ -225,10 +248,11 @@ module Aspera
 
       # used when one command executes several transfer jobs (each job being possibly multi session)
       # @param status_table [Array] [{STATUS_FIELD=>[status array],...},...]
-      # each element has a key STATUS_FIELD which contains the result of possibly mulmtiple sessions
+      # @return a status object suitable as command result
+      # each element has a key STATUS_FIELD which contains the result of possibly multiple sessions
       def self.result_transfer_multiple(status_table)
         global_status=:success
-        # transform status into string and find if there was problem
+        # transform status array into string and find if there was problem
         status_table.each do |item|
           worst=TransferAgent.session_status(item[STATUS_FIELD])
           global_status=worst unless worst.eql?(:success)

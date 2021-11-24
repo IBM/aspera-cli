@@ -1006,10 +1006,26 @@ It is also possible to activate traces before initialization using env var `AS_L
 ## Learning Aspera Product APIs (REST)
 
 This CLI uses REST APIs.
-To display HTTP calls, use argument `-r` or `--rest-debug`, this is useful to display
-exact content or HTTP requests and responses.
+To display HTTP calls, use argument `-r` or `--rest-debug`, this is useful to display exact content of HTTP requests and responses.
 
 In order to get traces of execution, use argument : `--log-level=debug`
+
+## HTTP socket parameters
+
+If the server does not provide a valid certificate, use parameter: `--insecure=yes`.
+
+Some of HTTP socket parameters can be adjusted, those are the parameters of Ruby [`Net::HTTP`](https://ruby-doc.org/stdlib/libdoc/net/http/rdoc/Net/HTTP.html), for example:
+
+* `read_timeout` 60 sec
+* `write_timeout` 60 sec
+
+Default values are the ones of Ruby.
+
+Example:
+
+```
+$ ascli aoc admin res package list --http-options=@json:'{"read_timeout":10.0}'
+```
 
 ## <a name="graphical"></a>Graphical Interactions: Browser and Text Editor
 
@@ -1629,7 +1645,7 @@ ascli aoc admin res kms_profile list
 ascli aoc admin res node list
 ascli aoc admin res operation list
 ascli aoc admin res organization show
-ascli aoc admin res package list
+ascli aoc admin res package list --http-options=@json:'{"read_timeout":120.0}'
 ascli aoc admin res saml_configuration list
 ascli aoc admin res self show
 ascli aoc admin res short_link list
@@ -1883,6 +1899,7 @@ OPTIONS: global
         --logger=ENUM                log method: stderr, stdout, syslog
         --lock-port=VALUE            prevent dual execution of a command, e.g. in cron
         --query=VALUE                additional filter for API calls (extended value) (some commands)
+        --http-options=VALUE         options for http socket (extended value)
         --insecure=ENUM              do not validate HTTPS certificate: yes, no
         --once-only=ENUM             process only new items (some commands): yes, no
 
@@ -2093,20 +2110,27 @@ OPTIONS:
         --scope=VALUE                OAuth scope for AoC API calls
         --bulk=ENUM                  bulk operation: yes, no
         --default-ports=ENUM         use standard FASP ports or get from node api: yes, no
-/Users/FooBar/.rbenv/versions/2.6.6/lib/ruby/2.6.0/rubygems/core_ext/kernel_require.rb:54:in `require': cannot load such file -- net/ssh (LoadError)
-	from /Users/FooBar/.rbenv/versions/2.6.6/lib/ruby/2.6.0/rubygems/core_ext/kernel_require.rb:54:in `require'
-	from /Users/FooBar/Documents/devel/aspera-cli/lib/aspera/ssh.rb:1:in `<top (required)>'
-	from /Users/FooBar/.rbenv/versions/2.6.6/lib/ruby/2.6.0/rubygems/core_ext/kernel_require.rb:54:in `require'
-	from /Users/FooBar/.rbenv/versions/2.6.6/lib/ruby/2.6.0/rubygems/core_ext/kernel_require.rb:54:in `require'
-	from /Users/FooBar/Documents/devel/aspera-cli/lib/aspera/cli/plugins/server.rb:4:in `<top (required)>'
-	from /Users/FooBar/.rbenv/versions/2.6.6/lib/ruby/2.6.0/rubygems/core_ext/kernel_require.rb:54:in `require'
-	from /Users/FooBar/.rbenv/versions/2.6.6/lib/ruby/2.6.0/rubygems/core_ext/kernel_require.rb:54:in `require'
-	from /Users/FooBar/Documents/devel/aspera-cli/lib/aspera/cli/main.rb:143:in `get_plugin_instance_with_options'
-	from /Users/FooBar/Documents/devel/aspera-cli/lib/aspera/cli/main.rb:183:in `block in exit_with_usage'
-	from /Users/FooBar/Documents/devel/aspera-cli/lib/aspera/cli/main.rb:177:in `each'
-	from /Users/FooBar/Documents/devel/aspera-cli/lib/aspera/cli/main.rb:177:in `exit_with_usage'
-	from /Users/FooBar/Documents/devel/aspera-cli/lib/aspera/cli/main.rb:252:in `process_command_line'
-	from ../bin/ascli:9:in `<main>'
+
+
+COMMAND: server
+SUBCOMMANDS: health nodeadmin userdata configurator ctl download upload browse delete rename ls rm mv du info mkdir cp df md5sum
+OPTIONS:
+        --url=VALUE                  URL of application, e.g. https://org.asperafiles.com
+        --username=VALUE             username to log in
+        --password=VALUE             user's password
+        --ssh-keys=VALUE             ssh key path list (Array or single)
+        --ssh-options=VALUE          ssh options (Hash)
+        --cmd-prefix=VALUE           prefix to add for as cmd execution, e.g. sudo or /opt/aspera/bin 
+
+
+COMMAND: console
+SUBCOMMANDS: transfer health
+OPTIONS:
+        --url=VALUE                  URL of application, e.g. https://org.asperafiles.com
+        --username=VALUE             username to log in
+        --password=VALUE             user's password
+        --filter-from=DATE           only after date
+        --filter-to=DATE             only before date
 
 
 ```

@@ -35,8 +35,14 @@ module Aspera
     @@insecure=false
     @@user_agent='Ruby'
     @@download_partial_suffix='.http_partial'
+    # a lambda which takes the Net::HTTP as arg, use this to change parameters
+    @@session_cb=nil
 
     public
+    def self.session_cb=(v); @@session_cb=v;Log.log.debug("session_cb => #{@@session_cb}".red);end
+
+    def self.session_cb; @@session_cb;end
+
     def self.insecure=(v); @@insecure=v;Log.log.debug("insecure => #{@@insecure}".red);end
 
     def self.insecure; @@insecure;end
@@ -85,12 +91,9 @@ module Aspera
         # this honors http_proxy env var
         @http_session=Net::HTTP.new(uri.host, uri.port)
         @http_session.use_ssl = uri.scheme.eql?('https')
-        Log.log.debug("insecure=#{@@insecure}")
         @http_session.verify_mode = OpenSSL::SSL::VERIFY_NONE if @@insecure
         @http_session.set_debug_output($stdout) if @@debug
-        if @params.has_key?(:session_cb)
-          @params[:session_cb].call(@http_session)
-        end
+        @@session_cb.call(@http_session) unless @@session_cb.nil?
         # manually start session for keep alive (if supported by server, else, session is closed every time)
         @http_session.start
       end
@@ -107,7 +110,6 @@ module Aspera
     # :username   [:basic]
     # :password   [:basic]
     # :url_creds  [:url]
-    # :session_cb a lambda which takes @http_session as arg, use this to change parameters
     # :*          [:oauth2] see Oauth class
     def initialize(a_rest_params)
       raise "ERROR: expecting Hash" unless a_rest_params.is_a?(Hash)

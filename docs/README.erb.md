@@ -1007,10 +1007,26 @@ It is also possible to activate traces before initialization using env var `AS_L
 ## Learning Aspera Product APIs (REST)
 
 This CLI uses REST APIs.
-To display HTTP calls, use argument `-r` or `--rest-debug`, this is useful to display
-exact content or HTTP requests and responses.
+To display HTTP calls, use argument `-r` or `--rest-debug`, this is useful to display exact content of HTTP requests and responses.
 
 In order to get traces of execution, use argument : `--log-level=debug`
+
+## HTTP socket parameters
+
+If the server does not provide a valid certificate, use parameter: `--insecure=yes`.
+
+Some of HTTP socket parameters can be adjusted, those are the parameters of Ruby [`Net::HTTP`](https://ruby-doc.org/stdlib/libdoc/net/http/rdoc/Net/HTTP.html), for example:
+
+* `read_timeout` 60 sec
+* `write_timeout` 60 sec
+
+Default values are the ones of Ruby.
+
+Example:
+
+```
+$ <%=cmd%> aoc admin res package list --http-options=@json:'{"read_timeout":10.0}'
+```
 
 ## <a name="graphical"></a>Graphical Interactions: Browser and Text Editor
 
