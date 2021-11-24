@@ -604,16 +604,11 @@ END_OF_TEMPLATE
               save_presets_to_config_file
               return Main.result_status("Modified: #{@option_config_file}")
             when :update
-              default_for_plugin=self.options.get_option(:default,:mandatory)
               #  get unprocessed options
               theopts=self.options.get_options_table
               Log.log.debug("opts=#{theopts}")
               @config_presets[config_name]||={}
               @config_presets[config_name].merge!(theopts)
-              if ! default_for_plugin.nil?
-                @config_presets[CONF_PRESET_DEFAULT]||=Hash.new
-                @config_presets[CONF_PRESET_DEFAULT][default_for_plugin]=config_name
-              end
               save_presets_to_config_file
               return Main.result_status("Updated: #{config_name}")
             when :ask
