@@ -41,6 +41,6 @@ $(DIR_TMP).exists:
 	mkdir -p $(DIR_TMP)
 	@touch $(DIR_TMP).exists
 $(TEST_CONF_FILE_PATH):
-	@echo "\033[0;32mAn empty configuration file is created:\n$$(realpath $(TEST_CONF_FILE_PATH))\nIt needs to be filled to run tests.\033[0;39m"
 	mkdir -p $(DIR_PRIV)
 	cp $(TMPL_CONF_FILE_PATH) $(TEST_CONF_FILE_PATH)
+	@echo "\033[0;32mAn empty configuration file is created:\n$$(realpath $(TEST_CONF_FILE_PATH))\nIt needs to be filled to run tests.\033[0;39m"
