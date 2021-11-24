@@ -38,7 +38,7 @@ One might be tempted to use it as an integration element, e.g. by building a com
 For such integration cases, e.g. performing operations and transfer to aspera products, it is preferred to use [Aspera APIs](https://ibm.biz/aspera_api):
 
 * Product APIs (REST) : e.g. AoC, Faspex, node
-* Transfer SDK : with gRPC interface and laguage stubs (C, C++, Python, .NET/C#, java, ruby, etc...)
+* Transfer SDK : with gRPC interface and language stubs (C, C++, Python, .NET/C#, java, ruby, etc...)
 
 Using APIs (application REST API and transfer SDK) will prove to be easier to develop and maintain.
 
@@ -148,7 +148,7 @@ Then, follow the section relative to the product you want to interact with ( Asp
 
 # <a name="installation"></a>Installation
 
-It is possible to install *either* directly on the host operating system (Linux, Windows, Macos) or as a docker container.
+It is possible to install *either* directly on the host operating system (Linux, Windows, MacOS) or as a docker container.
 
 The direct installation is recommended and consists in installing:
 
@@ -158,7 +158,7 @@ The direct installation is recommended and consists in installing:
 
 The following sections provide information on the various installation methods.
 
-An internet connection is required for the installation. If you dont have internet for the installation, refer to section [Installation without internet access](#offline_install).
+An internet connection is required for the installation. If you don't have internet for the installation, refer to section [Installation without internet access](#offline_install).
 
 ## Docker container
 
@@ -208,7 +208,7 @@ Required Ruby version: > 2.4. Ruby version 3 is also supported.
 
 Refer to the following sections for a proposed method for specific operating systems.
 
-The recommended installation method is `rvm` for systems with "bash-like" shell (Linux, Macos, Windows with cygwin, etc...).
+The recommended installation method is `rvm` for systems with "bash-like" shell (Linux, MacOS, Windows with cygwin, etc...).
 If the generic install is not suitable (e.g. Windows, no cygwin), you can use one of OS-specific install method.
 If you have a simpler better way to install Ruby version > 2.4 : use it !
 
@@ -230,7 +230,7 @@ Execute the shell/curl command. As regular user, it install in the user's home: 
 $ \curl -sSL https://get.rvm.io | bash -s stable
 ```
 
-If you keep the same terminal (ont needed if re-login):
+If you keep the same terminal (not needed if re-login):
 
 ```
 $ source ~/.rvm/scripts/rvm
@@ -403,13 +403,13 @@ Only two additional files are required to perform an Aspera Transfer, which are 
 * ascp
 * aspera-license (in same folder, or ../etc)
 
-This can be installed either be installing an Aspera transfer sofware, or using an embedded command:
+This can be installed either be installing an Aspera transfer software, or using an embedded command:
 
 ```
 $ ascli conf ascp install
 ```
 
-If a local SDK installation is prefered instead of fetching from internet: one can specify the location of the SDK file:
+If a local SDK installation is preferred instead of fetching from internet: one can specify the location of the SDK file:
 
 ```
 $ curl -Lso SDK.zip https://ibm.biz/aspera_sdk
@@ -539,7 +539,7 @@ $ ascli config echo -- --sample
 
 Note that `--sample` is taken as an argument, and not option.
 
-Options can be optional or mandatory, with or without (hardcoded) default value. Options can be placed anywhere on comand line and evaluated in order.
+Options can be optional or mandatory, with or without (hardcoded) default value. Options can be placed anywhere on command line and evaluated in order.
 
 The value for _any_ options can come from the following locations (in this order, last value evaluated overrides previous value):
 
@@ -560,7 +560,7 @@ Command line arguments that are not options are either commands or arguments. If
 
 Some options and parameters are mandatory and other optional. By default, the tool will ask for missing mandatory options or parameters for interactive execution.
 
-The behaviour can be controlled with:
+The behavior can be controlled with:
 
 * --interactive=&lt;yes|no&gt; (default=yes if STDIN is a terminal, else no)
    * yes : missing mandatory parameters/options are asked to the user
@@ -577,8 +577,8 @@ The information displayed depends on the action.
 
 Depending on action, the output will contain:
 
-* `single_object` : displayed as a 2 dimensional table: one line per attribute, first column is attribute name, and second is atteribute value. Nested hashes are collapsed.
-* `object_list` : displayed as a 2 dimensional table: one line per item, one colum per attribute.
+* `single_object` : displayed as a 2 dimensional table: one line per attribute, first column is attribute name, and second is attribute value. Nested hashes are collapsed.
+* `object_list` : displayed as a 2 dimensional table: one line per item, one column per attribute.
 * `value_list` : a table with one column.
 * `empty` : nothing
 * `status` : a message
@@ -621,7 +621,7 @@ Note that `select` filters selected elements from the result of API calls, while
 
 ### Verbosity of output
 
-Outpout messages are categorized in 3 types:
+Output messages are categorized in 3 types:
 
 * `info` output contain additional information, such as number of elements in a table
 * `data` output contain the actual output of the command (object, or list of objects)
@@ -635,7 +635,7 @@ The option `display` controls the level of output:
 
 ### Selection of output object properties
 
-By default, a table output will display one line per entry, and columns for each entries. Depending on the command, columns may include by default all properties, or only some selected properties. It is possible to define specific colums to be displayed, by setting the `fields` option to one of the following value:
+By default, a table output will display one line per entry, and columns for each entries. Depending on the command, columns may include by default all properties, or only some selected properties. It is possible to define specific columns to be displayed, by setting the `fields` option to one of the following value:
 
 * DEF : default display of columns (that's the default, when not set)
 * ALL : all columns available
@@ -740,7 +740,7 @@ $ ascli config folder
 /Users/kenji/.aspera/ascli
 ```
 
-It can be overriden using the envinonment variable `ASCLI_HOME`.
+It can be overridden using the environment variable `ASCLI_HOME`.
 
 Example (Windows):
 
@@ -757,11 +757,11 @@ Nevertheless, there is no mandatory information required in this file, the use o
 
 Although the file is a standard YAML file, `ascli` provides commands to read and modify it using the `config` command.
 
-All options for `ascli` can be set on command line, or by env vars, or using [option presets](#lprt) in the configuratin file.
+All options for `ascli` can be set on command line, or by env vars, or using [option presets](#lprt) in the configuration file.
 
 A configuration file provides a way to define default values, especially for authentication parameters, thus avoiding to always having to specify those parameters on the command line.
 
-The default configuration file is: `$HOME/.aspera/ascli/config.yaml` (this can be overriden with option `--config-file=path` or equivalent env var).
+The default configuration file is: `$HOME/.aspera/ascli/config.yaml` (this can be overridden with option `--config-file=path` or equivalent env var).
 
 The configuration file is simply a catalog of pre-defined lists of options, called: [option presets](#lprt). Then, instead of specifying some common options on the command line (e.g. address, credentials), it is possible to invoke the ones of a [option preset](#lprt) (e.g. `mypreset`) using the option: `-Pmypreset` or `--preset=mypreset`.
 
@@ -1001,7 +1001,7 @@ EOF
 
 The gem is equipped with traces. By default logging level is "warn". To increase debug level, use parameter `log_level`, so either command line `--log-level=xx` or env var `ASCLI_LOG_LEVEL`.
 
-It is also possible to activate traces before initialisation using env var `AS_LOG_LEVEL`.
+It is also possible to activate traces before initialization using env var `AS_LOG_LEVEL`.
 
 ## Learning Aspera Product APIs (REST)
 
@@ -1029,7 +1029,7 @@ terminal.
 
 ## HTTP proxy for REST
 
-To specify a HTTP proxy, set the HTTP_PROXY environment variable (or HTTPS_PROXY), those are honoured by Ruby when calling REST APIs.
+To specify a HTTP proxy, set the HTTP_PROXY environment variable (or HTTPS_PROXY), those are honored by Ruby when calling REST APIs.
 
 ## Proxy auto config
 
@@ -1174,7 +1174,7 @@ Note that all transfer operation are seen from the point of view of the agent.
 For instance, a node agent making an "upload", or "package send" operation,
 will effectively push files to the related server from the agent node.
 
-`ascli` standadizes on the use of a [_transfer-spec_](#transferspec) instead of _raw_ ascp options to provide parameters for a transfer session, as a common method for those three Transfer Agents.
+`ascli` standardizes on the use of a [_transfer-spec_](#transferspec) instead of _raw_ ascp options to provide parameters for a transfer session, as a common method for those three Transfer Agents.
 
 
 ### <a name="direct"></a>Direct (local ascp execution)
@@ -1273,9 +1273,9 @@ is described in a _transfer-spec_ (Transfer Specification), such as:
 
 `ascli` builds a default _transfer-spec_ internally, so it is not necessary to provide additional parameters on the command line for this transfer.
 
-If needed, it is possible to modify or add any of the supported _transfer-spec_ parameter using the `ts` option. The `ts` option accepts a [Structured Value](#native) containing one or several _transfer-spec_ parameters. Multiple `ts` options on command line are cummulative.
+If needed, it is possible to modify or add any of the supported _transfer-spec_ parameter using the `ts` option. The `ts` option accepts a [Structured Value](#native) containing one or several _transfer-spec_ parameters. Multiple `ts` options on command line are cumulative.
 
-It is possible to specify ascp options when the `transfer` option is set to [`direct`](#direct) using the special [_transfer-spec_](#transferspec) parameter: `EX_ascp_args`. Example: `--ts=@json:'{"EX_ascp_args":["-l","100m"]}'`. This is espacially useful for ascp command line parameters not supported yet in the transfer spec.
+It is possible to specify ascp options when the `transfer` option is set to [`direct`](#direct) using the special [_transfer-spec_](#transferspec) parameter: `EX_ascp_args`. Example: `--ts=@json:'{"EX_ascp_args":["-l","100m"]}'`. This is especially useful for ascp command line parameters not supported yet in the transfer spec.
 
 The use of a _transfer-spec_ instead of `ascp` parameters has the advantage of:
 
@@ -1286,7 +1286,7 @@ A [_transfer-spec_](#transferspec) is a Hash table, so it is described on the co
 
 ## <a name="transferparams"></a>Transfer Parameters
 
-All standard _transfer-spec_ parameters can be speficied.
+All standard _transfer-spec_ parameters can be specified.
 [_transfer-spec_](#transferspec) can also be saved/overridden in the config file.
 
 References:
@@ -1326,7 +1326,7 @@ The option `to_folder` provides an equivalent and convenient way to change this 
 
 ### List of files for transfers
 
-When uploading, downloading or sending files, the user must specify the list of files to transfer. The option to specify the list of files (Extensed value) is `sources`, the default value is `@args`, which means: take remain non used arguments (not starting with `-` as list of files.
+When uploading, downloading or sending files, the user must specify the list of files to transfer. The option to specify the list of files is `sources`, the default value is `@args`, which means: take remain non used arguments (not starting with `-` as list of files.
 So, by default, the list of files to transfer will be simply specified on the command line:
 
 ```
@@ -1368,7 +1368,7 @@ For ease of use and flexibility, the list of files to transfer is specified by t
 --sources=@ts --ts=@json:'{"paths":[{"source":"dummy"}],"EX_ascp_args":["--file-list","myfilelist"]}'
 ```
 
-This method avoids creating a copy of the file list, but has drawbacks: it applies *only* to the [`direct`](#direct) transfer agent (i.e. bare ascp) and not for Aspera on Cloud. One must specify a dummy list in the [_transfer-spec_](#transferspec), which will be overriden by the bare ascp command line provided. (TODO) In next version, dummy source paths can be removed.
+This method avoids creating a copy of the file list, but has drawbacks: it applies *only* to the [`direct`](#direct) transfer agent (i.e. bare ascp) and not for Aspera on Cloud. One must specify a dummy list in the [_transfer-spec_](#transferspec), which will be overridden by the bare ascp command line provided. (TODO) In next version, dummy source paths can be removed.
 
 In case the file list is provided on the command line i.e. using `--sources=@args` or `--sources=<Array>` (but not `--sources=@ts`), then the list of files will be used either as a simple file list or a file pair list depending on the value of the option: `src_type`:
 
@@ -1381,7 +1381,7 @@ Example:
 $ ascli server upload --src-type=pair ~/Documents/Samples/200KB.1 /Upload/sample1
 ```
 
-Internally, when transfer agent [`direct`](#direct) is used, a temporary file list (or pair) file is generated and provided to ascp, unless `--file-list` or `--file-pait-list` is provided in `ts` in `EX_ascp_args`.
+Internally, when transfer agent [`direct`](#direct) is used, a temporary file list (or pair) file is generated and provided to ascp, unless `--file-list` or `--file-pair-list` is provided in `ts` in `EX_ascp_args`.
 
 Note the special case when the source files are located on "Aspera on Cloud", i.e. using access keys and the `file id` API:
 
@@ -1454,7 +1454,7 @@ In some conditions, it may be desirable to ensure that `ascli` is not executed s
 For instance when `ascli` is executed automatically on a schedule basis, one generally desire that a new execution is not started if a previous execution is still running because an on-going operation may last longer than the scheduling period:
 
 * Executing instances may pile-up and kill the system
-* The same file may be transfered by multiple instances at the same time.
+* The same file may be transferred by multiple instances at the same time.
 * `preview` may generate the same files in multiple instances.
 
 Usually the OS native scheduler already provides some sort of protection against parallel execution:
@@ -2093,27 +2093,20 @@ OPTIONS:
         --scope=VALUE                OAuth scope for AoC API calls
         --bulk=ENUM                  bulk operation: yes, no
         --default-ports=ENUM         use standard FASP ports or get from node api: yes, no
-
-
-COMMAND: server
-SUBCOMMANDS: health nodeadmin userdata configurator ctl download upload browse delete rename ls rm mv du info mkdir cp df md5sum
-OPTIONS:
-        --url=VALUE                  URL of application, e.g. https://org.asperafiles.com
-        --username=VALUE             username to log in
-        --password=VALUE             user's password
-        --ssh-keys=VALUE             ssh key path list (Array or single)
-        --ssh-options=VALUE          ssh options (Hash)
-        --cmd-prefix=VALUE           prefix to add for as cmd execution, e.g. sudo or /opt/aspera/bin 
-
-
-COMMAND: console
-SUBCOMMANDS: transfer health
-OPTIONS:
-        --url=VALUE                  URL of application, e.g. https://org.asperafiles.com
-        --username=VALUE             username to log in
-        --password=VALUE             user's password
-        --filter-from=DATE           only after date
-        --filter-to=DATE             only before date
+/Users/FooBar/.rbenv/versions/2.6.6/lib/ruby/2.6.0/rubygems/core_ext/kernel_require.rb:54:in `require': cannot load such file -- net/ssh (LoadError)
+	from /Users/FooBar/.rbenv/versions/2.6.6/lib/ruby/2.6.0/rubygems/core_ext/kernel_require.rb:54:in `require'
+	from /Users/FooBar/Documents/devel/aspera-cli/lib/aspera/ssh.rb:1:in `<top (required)>'
+	from /Users/FooBar/.rbenv/versions/2.6.6/lib/ruby/2.6.0/rubygems/core_ext/kernel_require.rb:54:in `require'
+	from /Users/FooBar/.rbenv/versions/2.6.6/lib/ruby/2.6.0/rubygems/core_ext/kernel_require.rb:54:in `require'
+	from /Users/FooBar/Documents/devel/aspera-cli/lib/aspera/cli/plugins/server.rb:4:in `<top (required)>'
+	from /Users/FooBar/.rbenv/versions/2.6.6/lib/ruby/2.6.0/rubygems/core_ext/kernel_require.rb:54:in `require'
+	from /Users/FooBar/.rbenv/versions/2.6.6/lib/ruby/2.6.0/rubygems/core_ext/kernel_require.rb:54:in `require'
+	from /Users/FooBar/Documents/devel/aspera-cli/lib/aspera/cli/main.rb:143:in `get_plugin_instance_with_options'
+	from /Users/FooBar/Documents/devel/aspera-cli/lib/aspera/cli/main.rb:183:in `block in exit_with_usage'
+	from /Users/FooBar/Documents/devel/aspera-cli/lib/aspera/cli/main.rb:177:in `each'
+	from /Users/FooBar/Documents/devel/aspera-cli/lib/aspera/cli/main.rb:177:in `exit_with_usage'
+	from /Users/FooBar/Documents/devel/aspera-cli/lib/aspera/cli/main.rb:252:in `process_command_line'
+	from ../bin/ascli:9:in `<main>'
 
 
 ```
@@ -2183,7 +2176,7 @@ Several types of OAuth authentication are supported:
 * Web based authentication : authentication is made by user using a browser
 * URL Token : external users authentication with url tokens (public links)
 
-The authentication method is controled by option `auth`.
+The authentication method is controlled by option `auth`.
 
 For a _quick start_, follow the mandatory and sufficient section: [API Client Registration](#clientreg) (auth=web) as well as [[option preset](#lprt) for Aspera on Cloud](#aocpreset).
 
@@ -2333,7 +2326,7 @@ Note: the `aspera user info show` command can be used to verify modifications.
 
 ### [option preset](#lprt) modification for JWT
 
-To activate default use of JWT authentication for `ascli` using the [option preset](#lprt), do the folowing:
+To activate default use of JWT authentication for `ascli` using the [option preset](#lprt), do the following:
 
 * change auth method to JWT
 * provide location of private key
@@ -2391,7 +2384,7 @@ Other parameters are directly sent as parameters to the GET request on API.
 
 `page` and `per_page` are normally added by `ascli` to build successive API calls to get all values if there are more than 1000. (AoC allows a maximum page size of 1000).
 
-`q` and `sort` are available on most resrouce types.
+`q` and `sort` are available on most resource types.
 
 Other parameters depend on the type of entity (refer to AoC API).
 
@@ -2403,7 +2396,7 @@ Examples:
 ascli aoc admin res user list --query=--query=@json:'{"q":"laurent"}'
 ```
 
-* List users who logded-in before a date:
+* List users who logged-in before a date:
 
 ```
 ascli aoc admin res user list --query=@json:'{"q":"last_login_at:<2018-05-28"}'
@@ -2621,7 +2614,7 @@ $ ascli aoc admin res user list --fields=email --select=@json:'{"member_of_any_w
 
 * Perform a multi Gbps transfer between two remote shared folders
 
-In this example, a user has access to a workspace where two shared folders are located on differente sites, e.g. different cloud regions.
+In this example, a user has access to a workspace where two shared folders are located on different sites, e.g. different cloud regions.
 
 First, setup the environment (skip if already done)
 
@@ -3019,12 +3012,12 @@ or
 ERROR -- net.ssh.authentication.agent: could not connect to ssh-agent: pageant process not running
 ```
 
-This means that you dont have such an ssh agent running:
+This means that you don't have such an ssh agent running:
 
 * check env var: `SSH_AGENT_SOCK`
 * check if the key is protected with a passphrase
 * [check the manual](https://net-ssh.github.io/ssh/v1/chapter-2.html#s2)
-* To diable use of `ssh-agent`, use the option `ssh_option` like this (or set in preset):
+* To disable use of `ssh-agent`, use the option `ssh_option` like this (or set in preset):
 
 ```
 $ ascli server --ssh-options=@ruby:'{use_agent: false}' ...
@@ -3076,7 +3069,7 @@ For transfers, it is possible to control how transfer is authorized using option
 
 ## Central
 
-The central subcommand uses the "reliable query" API (session and file). It allows listing transfer sessions and transfered files.
+The central subcommand uses the "reliable query" API (session and file). It allows listing transfer sessions and transferred files.
 
 Filtering can be applied:
 
@@ -3337,9 +3330,9 @@ The IBM Cloud Object Storage provides the possibility to execute transfers using
 It uses the same transfer service as Aspera on Cloud, called Aspera Transfer Service (ATS).
 Available ATS regions: [https://status.aspera.io](https://status.aspera.io)
 
-There are two possibilities to provide credentials. If you already have the endpoint, apikey and CRN, use the forst method. If you dont have credentials but have access to the IBM Cloud console, then use the second method.
+There are two possibilities to provide credentials. If you already have the endpoint, apikey and CRN, use the first method. If you don't have credentials but have access to the IBM Cloud console, then use the second method.
 
-## Using endpoint, apikey and Ressource Instance ID (CRN)
+## Using endpoint, apikey and Resource Instance ID (CRN)
 
 If you have those parameters already, then following options shall be provided:
 
@@ -3359,7 +3352,7 @@ Then, jump to the transfer example.
 
 ## Using service credential file
 
-If you are the COS administrator and dont have yet the credential: Service credentials are directly created using the IBM cloud web ui. Navigate to:
+If you are the COS administrator and don't have yet the credential: Service credentials are directly created using the IBM cloud web ui. Navigate to:
 
 Navigation Menu &rarr; Resource List &rarr; Storage &rarr; Cloud Object Storage &rarr; Service Credentials &rarr; &lt;select or create credentials&gt; &rarr; view credentials &rarr; copy
 
@@ -3372,7 +3365,7 @@ $ ibmcloud resource service-keys
 $ ibmcloud resource service-key aoclaurent --output JSON|jq '.[0].credentials'>$HOME/service_creds.json
 ```
 
-(if you dont have `jq` installed, extract the structure as follows)
+(if you don't have `jq` installed, extract the structure as follows)
 
 It consists in the following structure:
 
@@ -3509,9 +3502,9 @@ To use it, set option `mimemagic` to `yes`: `--mimemagic=yes`
 
 If not used, Mime type used for conversion is the one provided by the node API.
 
-If used, it the `preview` command will first analyse the file content using mimemagic, and if no match, will try by extension.
+If used, it the `preview` command will first analyze the file content using mimemagic, and if no match, will try by extension.
 
-### Image: Imagemagick and optipng
+### Image: ImageMagick and optipng
 
 ```
 yum install -y ImageMagick optipng
@@ -3527,11 +3520,11 @@ curl -s https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.ta
 
 ### Office: Unoconv and Libreoffice
 
-If you dont want to have preview for office dpcuments or if it is too complex you can skip office document preview generation by using option: `--skip-types=office`
+If you don't want to have preview for office documents or if it is too complex you can skip office document preview generation by using option: `--skip-types=office`
 
 The generation of preview in based on the use of `unoconv` and `libreoffice`
 
-* Centos 8
+* CentOS 8
 
 ```
 # dnf install unoconv
@@ -3599,7 +3592,7 @@ Adapt the scripts to your own preference.
 
 We assume here that a configuration preset was created as shown previously.
 
-Lets first setup a script that will be used in the sceduler and sets up the environment.
+Lets first setup a script that will be used in the scheduler and sets up the environment.
 
 Example of startup script `cron_ascli`, which sets the Ruby environment and adds some timeout protection:
 
@@ -3621,7 +3614,7 @@ xfer$ crontab<<EOF
 EOF
 ```
 
-Note that the loging options are kept in the cronfile instead of conf file to allow execution on command line with output on command line.
+Note that the logging options are kept in the cronfile instead of conf file to allow execution on command line with output on command line.
 
 ## Candidate detection for creation or update (or deletion)
 
@@ -3651,7 +3644,7 @@ $ ascli preview scan --skip-folders=@json:'["/not_here"]'
 
 The option `folder_reset_cache` forces the node service to refresh folder contents using various methods.
 
-When scanning the option `value` has the same behaviour as for the `node find` command.
+When scanning the option `value` has the same behavior as for the `node find` command.
 
 For instance to filter out files beginning with `._` do:
 
@@ -3670,7 +3663,7 @@ Use option `skip_format` to skip generation of a format.
 
 ## Supported input Files types
 
-The preview generator supports redering of those file categories:
+The preview generator supports rendering of those file categories:
 
 * image
 * pdf
@@ -3690,7 +3683,7 @@ The tool can also locally detect the mime type using gem `mimemagic`.
 
 ## Access to original files and preview creation
 
-Standard open source tools are used to create thumnails and video previews.
+Standard open source tools are used to create thumbnails and video previews.
 Those tools require that original files are accessible in the local file system and also write generated files on the local file system.
 The tool provides 2 ways to read and write files with the option: `file_access`
 
@@ -3737,7 +3730,7 @@ or
 $ ascli config id smtp_google update --server=smtp.google.com --username=john@gmail.com --password=P@ssw0rd
 ```
 
-Set this configation as global default, for instance:
+Set this configuration as global default, for instance:
 
 ```
 $ ascli config id cli_default set smtp @val:@preset:smtp_google
@@ -3773,7 +3766,7 @@ An e-mail notification can be sent upon transfer success and failure (one email 
 
 To activate, use option `notif_to`.
 
-A default e-mail template is used, but it can be overriden with option `notif_template`.
+A default e-mail template is used, but it can be overridden with option `notif_template`.
 
 The environment provided contains the following additional variables:
 
@@ -3797,7 +3790,7 @@ Transfer is: <%=global_transfer_status%>
 This gem comes with a second executable tool providing a simplified standardized interface
 to start a FASP session: `asession`.
 
-It aims at simplifying the startup of a FASP session from a programmatic stand point as formating a [_transfer-spec_](#transferspec) is:
+It aims at simplifying the startup of a FASP session from a programmatic stand point as formatting a [_transfer-spec_](#transferspec) is:
 
 * common to Aspera Node API (HTTP POST /ops/transfer)
 * common to Aspera Connect API (browser javascript startTransfer)
@@ -3809,7 +3802,7 @@ This makes it easy to integrate with any language provided that one can spawn a 
 
 The tool expect one single argument: a [_transfer-spec_](#transferspec).
 
-If not argument is provided, it assumes a value of: `@json:@stdin:`, i.e. a JSON formated [_transfer-spec_](#transferspec) on stdin.
+If not argument is provided, it assumes a value of: `@json:@stdin:`, i.e. a JSON formatted [_transfer-spec_](#transferspec) on stdin.
 
 Note that if JSON is the format, one has to specify `@json:` to tell the tool to decode the hash using JSON.
 
@@ -3940,7 +3933,7 @@ $ ascli server upload source_hot --to-folder=/Upload/target_hot --lock-port=1234
 
 ```
 
-The local folder (here, relative path: source_hot) is sent (upload) to basic fasp server, source files are deleted after transfer. growing files will be sent only once they dont grow anymore (based ona 8 second cooloff period). If a transfer takes more than the execution period, then the subsequent execution is skipped (lock-port).
+The local folder (here, relative path: source_hot) is sent (upload) to basic fasp server, source files are deleted after transfer. growing files will be sent only once they don't grow anymore (based on an 8-second cooloff period). If a transfer takes more than the execution period, then the subsequent execution is skipped (lock-port).
 
 # Aspera Health check and Nagios
 
@@ -4155,7 +4148,7 @@ So, it evolved into `ascli`:
 * 0.10.17
 
 	* fixed problem on `server` for option `ssh_keys`, now accepts both single value and list.
-	* new modifier: `@list:<saparator>val1<separator>...`
+	* new modifier: `@list:<separator>val1<separator>...`
 
 * 0.10.16
 
@@ -4209,7 +4202,7 @@ So, it evolved into `ascli`:
 
 * 0.10.6
 
-	* FaspManager: transfer spec `authentication` no more needed for local tranfer to use Aspera public keys. public keys will be used if there is a token and no key or password is provided.
+	* FaspManager: transfer spec `authentication` no more needed for local transfer to use Aspera public keys. public keys will be used if there is a token and no key or password is provided.
 	* gem version requirements made more open
 
 * 0.10.5
@@ -4362,7 +4355,7 @@ So, it evolved into `ascli`:
 	* homogeneous [_transfer-spec_](#transferspec) for `node` and [`direct`](#direct) transfer agents
 	* preview persistency goes to unique file by default
 	* catch mxf extension in preview as video
-	* Faspex: possibility to download all paclages by specifying id=ALL
+	* Faspex: possibility to download all packages by specifying id=ALL
 	* Faspex: to come: cargo-like function to download only new packages with id=NEW
 
 * 0.9.6
@@ -4447,7 +4440,7 @@ One can also create one's own command nplugin.
 ## Only one value for any option
 
 Some commands and sub commands may ask for the same option name.
-Currently, since option definition is position independant (last one wins), it is not possible
+Currently, since option definition is position independent (last one wins), it is not possible
 to give an option to a command and the same option with different value to a sub command.
 
 For instance, if an entity is identified by the option `id` but later on the command line another `id` option is required, the later will override the earlier one, and both entity will use the same id.
@@ -4483,7 +4476,7 @@ Workaround on server side: Either remove the fingerprint from `aspera.conf`, or 
 
 References: ES-1944 in release notes of 4.1 and to [HSTS admin manual section "Configuring Transfer Server Authentication With a Host-Key Fingerprint"](https://www.ibm.com/docs/en/ahts/4.2?topic=upgrades-configuring-ssh-server).
 
-## Miscelaneous
+## Miscellaneous
 
 * remove rest and oauth classes and use ruby standard gems:
 
