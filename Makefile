@@ -9,14 +9,19 @@ include $(DIR_TOP)common.make
 
 all:: gem doc
 
-doc:
+doc: $(DIR_TOP).gems_checked
 	cd $(DIR_DOC) && make
 clean::
 	cd $(DIR_DOC) && make clean
-test:
+test: $(DIR_TOP).gems_checked
 	cd $(DIR_TST) && make
 clean::
 	cd $(DIR_TST) && make clean
+	rm -f $(DIR_TOP).gems_checked
+# ensure required ruby gems are installed
+$(DIR_TOP).gems_checked: Gemfile
+	bundle install
+	touch $@
 
 ##################################
 # Gem build
@@ -75,4 +80,3 @@ dockertest:
 dpush:
 	docker push $(DOCKER_TAG_VERSION)
 	docker push $(DOCKER_TAG_LATEST)
-	

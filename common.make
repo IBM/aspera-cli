@@ -18,6 +18,7 @@ TEST_CONF_FILE_BASE=test_env.conf
 
 # this is the actual conf file, create your own from template located in "docs"
 TEST_CONF_FILE_PATH=$(DIR_PRIV)$(TEST_CONF_FILE_BASE)
+TMPL_CONF_FILE_PATH=$(DIR_DOC)$(TEST_CONF_FILE_BASE)
 
 # just the name of the command line tool as in bin folder
 # (used for documentation and execution)
@@ -39,3 +40,7 @@ clean::
 $(DIR_TMP).exists:
 	mkdir -p $(DIR_TMP)
 	@touch $(DIR_TMP).exists
+$(TEST_CONF_FILE_PATH):
+	@echo "\033[0;32mAn empty configuration file is created:\n$$(realpath $(TEST_CONF_FILE_PATH))\nIt needs to be filled to run tests.\033[0;39m"
+	mkdir -p $(DIR_PRIV)
+	cp $(TMPL_CONF_FILE_PATH) $(TEST_CONF_FILE_PATH)

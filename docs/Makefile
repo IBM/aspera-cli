@@ -14,20 +14,18 @@ INCL_ASESSION=$(DIR_TMP)asession_usage.txt
 # env var used in README.erb.md
 export EXENAME GEMSPEC INCL_USAGE INCL_COMMANDS INCL_ASESSION
 
-TMPL_TEST_CONF=$(DIR_DOC)$(TEST_CONF_FILE_BASE)
-
 MANUAL_BASE=$(DIR_DOC)Manual_$(EXENAME)_$(GEMVERSION)
 MANUAL_PDF=$(MANUAL_BASE).pdf
 MANUAL_HTML=$(MANUAL_BASE).html
 
 # main target to build doc
-all:: $(MANUAL_PDF) $(TMPL_TEST_CONF)
+all:: $(MANUAL_PDF) $(TMPL_CONF_FILE_PATH)
 
 doc: all
 
 # generate template configuration file for tests, remove own secrets
-$(TMPL_TEST_CONF): $(TEST_CONF_FILE_PATH)
-	ruby -e 'require "yaml";n={};c=YAML.load_file("$(TEST_CONF_FILE_PATH)").each{|k,v| n[k]=["config","default"].include?(k)?v:v.keys.inject({}){|m,i|m[i]="your value here";m}};File.write("$(TMPL_TEST_CONF)",n.to_yaml)'
+$(TMPL_CONF_FILE_PATH): $(TEST_CONF_FILE_PATH)
+	ruby -e 'require "yaml";n={};c=YAML.load_file("$(TEST_CONF_FILE_PATH)").each{|k,v| n[k]=["config","default"].include?(k)?v:v.keys.inject({}){|m,i|m[i]="your value here";m}};File.write("$(TMPL_CONF_FILE_PATH)",n.to_yaml)'
 
 $(MANUAL_PDF): $(DIR_TOP)README.md
 	pandoc --number-sections --resource-path=. --toc -o $(MANUAL_HTML) $(DIR_TOP)README.md
@@ -58,8 +56,7 @@ $(INCL_COMMANDS): $(DIR_TMP).exists $(TEST_MAKEFILE)
 $(INCL_USAGE): $(DIR_TMP).exists
 	-$(EXETESTB) -Cnone -h 2> $(INCL_USAGE)
 	sed -i -e 's/\/Users\/[^\/]*/\/Users\/FooBar/g' $(INCL_USAGE)
-.PHONY: $(INCL_ASESSION)
-$(INCL_ASESSION): $(DIR_TMP).exists
+$(INCL_ASESSION): $(DIR_TMP).exists $(DIR_BIN)/asession
 	$(DIR_BIN)/asession -h 2> $(INCL_ASESSION) || true
 clean::
 	rm -f $(MANUAL_PDF) $(MANUAL_HTML) $(INCL_COMMANDS) $(INCL_USAGE) $(INCL_ASESSION)
