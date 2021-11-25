@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 require 'rubygems'
-$LOAD_PATH.unshift(File.dirname(__FILE__)+"/../lib")
+$LOAD_PATH.unshift(File.realpath(File.dirname(File.realpath(__FILE__))+"/../lib"))
 require 'aspera/cli/main'
 require 'aspera/environment'
 Encoding.default_internal = Encoding::UTF_8
