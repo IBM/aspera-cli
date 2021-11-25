@@ -74,16 +74,9 @@ module Aspera
         @option_http_options={}
         # environment provided to plugin for various capabilities
         @plugin_env={}
-        # find out application main folder
-        app_main_folder=ENV[conf_dir_env_var]
-        # if env var undefined or empty
-        if app_main_folder.nil? or app_main_folder.empty?
-          user_home_folder=Dir.home
-          raise CliError,"Home folder does not exist: #{user_home_folder}. Check your user environment or use #{conf_dir_env_var}." unless Dir.exist?(user_home_folder)
-          app_main_folder=File.join(user_home_folder,Plugins::Config::ASPERA_HOME_FOLDER_NAME,PROGRAM_NAME)
-        end
-        # give command line arguments to option manager (no parsing)
+        # give command line arguments to option manager
         @plugin_env[:options]=@opt_mgr=Manager.new(PROGRAM_NAME,argv)
+        # formatter adds options
         @plugin_env[:formater]=Formater.new(@plugin_env[:options])
         Rest.user_agent=PROGRAM_NAME
         Rest.session_cb=lambda {|http| set_http_parameters(http)}
@@ -91,10 +84,10 @@ module Aspera
         init_global_options()
         # secret manager
         @plugin_env[:secret]=Aspera::Secrets.new
-        # the Config plugin adds the @preset parser
+        # the Config plugin adds the @preset parser, so declare before TransferAgent which may use it
         @plugin_env[:config]=Plugins::Config.new(@plugin_env,PROGRAM_NAME,HELP_URL,Aspera::Cli::VERSION,app_main_folder)
         # the TransferAgent plugin may use the @preset parser
-        @plugin_env[:transfer]=TransferAgent.new(@plugin_env)
+        @plugin_env[:transfer]=TransferAgent.new(@plugin_env[:options],@plugin_env[:config])
         # set application folder for modules
         @plugin_env[:persistency]=PersistencyFolder.new(File.join(@plugin_env[:config].main_folder,'persist_store'))
         Log.log.debug('plugin env created'.red)
@@ -219,6 +212,18 @@ module Aspera
       # default main folder is $HOME/<vendor main app folder>/<program name>
       def conf_dir_env_var
         return "#{PROGRAM_NAME}_home".upcase
+      end
+
+      def app_main_folder
+        # find out application main folder
+        app_folder=ENV[conf_dir_env_var]
+        # if env var undefined or empty
+        if app_folder.nil? or app_folder.empty?
+          user_home_folder=Dir.home
+          raise CliError,"Home folder does not exist: #{user_home_folder}. Check your user environment or use #{conf_dir_env_var}." unless Dir.exist?(user_home_folder)
+          app_folder=File.join(user_home_folder,Plugins::Config::ASPERA_HOME_FOLDER_NAME,PROGRAM_NAME)
+        end
+        return app_folder
       end
 
       # early debug for parser

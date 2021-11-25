@@ -28,9 +28,9 @@ END_OF_TEMPLATE
       #%
       private_constant :FILE_LIST_FROM_ARGS,:FILE_LIST_FROM_TRANSFER_SPEC,:DEFAULT_TRANSFER_NOTIF_TMPL
       # @param env external objects: option manager, config file manager
-      def initialize(env)
-        # same as plugin environment
-        @env=env
+      def initialize(opt_mgr,config)
+        @opt_mgr=opt_mgr
+        @config=config
         # command line can override transfer spec
         @transfer_spec_cmdline={'create_dir'=>true}
         # the currently selected transfer agent
@@ -38,24 +38,20 @@ END_OF_TEMPLATE
         @progress_listener=Listener::ProgressMulti.new
         # source/destination pair, like "paths" of transfer spec
         @transfer_paths=nil
-        options.set_obj_attr(:ts,self,:option_transfer_spec)
-        options.add_opt_simple(:ts,"override transfer spec values (Hash, use @json: prefix), current=#{options.get_option(:ts,:optional)}")
-        options.add_opt_simple(:local_resume,"set resume policy (Hash, use @json: prefix), current=#{options.get_option(:local_resume,:optional)}")
-        options.add_opt_simple(:to_folder,"destination folder for downloaded files")
-        options.add_opt_simple(:sources,"list of source files (see doc)")
-        options.add_opt_simple(:transfer_info,"parameters for transfer agent")
-        options.add_opt_list(:src_type,[:list,:pair],"type of file list")
-        options.add_opt_list(:transfer,[:direct,:httpgw,:connect,:node],"type of transfer agent")
-        options.add_opt_list(:progress,[:none,:native,:multi],"type of progress bar")
-        options.set_option(:transfer,:direct)
-        options.set_option(:src_type,:list)
-        options.set_option(:progress,:native) # use native ascp progress bar as it is more reliable
-        options.parse_options!
+        @opt_mgr.set_obj_attr(:ts,self,:option_transfer_spec)
+        @opt_mgr.add_opt_simple(:ts,"override transfer spec values (Hash, use @json: prefix), current=#{@opt_mgr.get_option(:ts,:optional)}")
+        @opt_mgr.add_opt_simple(:local_resume,"set resume policy (Hash, use @json: prefix), current=#{@opt_mgr.get_option(:local_resume,:optional)}")
+        @opt_mgr.add_opt_simple(:to_folder,"destination folder for downloaded files")
+        @opt_mgr.add_opt_simple(:sources,"list of source files (see doc)")
+        @opt_mgr.add_opt_simple(:transfer_info,"parameters for transfer agent")
+        @opt_mgr.add_opt_list(:src_type,[:list,:pair],"type of file list")
+        @opt_mgr.add_opt_list(:transfer,[:direct,:httpgw,:connect,:node],"type of transfer agent")
+        @opt_mgr.add_opt_list(:progress,[:none,:native,:multi],"type of progress bar")
+        @opt_mgr.set_option(:transfer,:direct)
+        @opt_mgr.set_option(:src_type,:list)
+        @opt_mgr.set_option(:progress,:native) # use native ascp progress bar as it is more reliable
+        @opt_mgr.parse_options!
       end
-
-      def options; @env[:options];end
-
-      def config; @env[:config];end
 
       def option_transfer_spec; @transfer_spec_cmdline; end
 
@@ -68,8 +64,8 @@ END_OF_TEMPLATE
         @agent=instance
         @agent.add_listener(Listener::Logger.new)
         # use local progress bar if asked so, or if native and non local ascp (because only local ascp has native progress bar)
-        if options.get_option(:progress,:mandatory).eql?(:multi) or
-        (options.get_option(:progress,:mandatory).eql?(:native) and !options.get_option(:transfer,:mandatory).eql?(:direct))
+        if @opt_mgr.get_option(:progress,:mandatory).eql?(:multi) or
+        (@opt_mgr.get_option(:progress,:mandatory).eql?(:native) and !@opt_mgr.get_option(:transfer,:mandatory).eql?(:direct))
           @agent.add_listener(@progress_listener)
         end
       end
@@ -77,28 +73,26 @@ END_OF_TEMPLATE
       # analyze options and create new agent if not already created or set
       def set_agent_by_options
         return nil unless @agent.nil?
-        agent_type=options.get_option(:transfer,:mandatory)
+        agent_type=@opt_mgr.get_option(:transfer,:mandatory)
         case agent_type
         when :direct
-          agent_options=options.get_option(:transfer_info,:optional)
+          agent_options=@opt_mgr.get_option(:transfer_info,:optional)
           agent_options=agent_options.symbolize_keys if agent_options.is_a?(Hash)
           new_agent=Fasp::Local.new(agent_options)
-          new_agent.quiet=false if options.get_option(:progress,:mandatory).eql?(:native)
+          new_agent.quiet=false if @opt_mgr.get_option(:progress,:mandatory).eql?(:native)
         when :httpgw
-          httpgw_config=options.get_option(:transfer_info,:mandatory)
+          httpgw_config=@opt_mgr.get_option(:transfer_info,:mandatory)
           new_agent=Fasp::HttpGW.new(httpgw_config)
         when :connect
           new_agent=Fasp::Connect.new
         when :node
-          # way for code to setup alternate node api in advance
-          # support: @preset:<name>
-          # support extended values
-          node_config=options.get_option(:transfer_info,:optional)
+          # config is an optional extended value
+          node_config=@opt_mgr.get_option(:transfer_info,:optional)
           # if not specified: use default node
           if node_config.nil?
-            param_set_name=config.get_plugin_default_config_name(:node)
+            param_set_name=@config.get_plugin_default_config_name(:node)
             raise CliBadArgument,"No default node configured, Please specify --#{:transfer_info.to_s.gsub('_','-')}" if param_set_name.nil?
-            node_config=config.preset_by_name(param_set_name)
+            node_config=@config.preset_by_name(param_set_name)
           end
           Log.log.debug("node=#{node_config}")
           raise CliBadArgument,"the node configuration shall be Hash, not #{node_config.class} (#{node_config}), use either @json:<json> or @preset:<parameter set name>" unless node_config.is_a?(Hash)
@@ -135,7 +129,7 @@ END_OF_TEMPLATE
       # sets default if needed
       # param: 'send' or 'receive'
       def destination_folder(direction)
-        dest_folder=options.get_option(:to_folder,:optional)
+        dest_folder=@opt_mgr.get_option(:to_folder,:optional)
         return dest_folder unless dest_folder.nil?
         dest_folder=@transfer_spec_cmdline['destination_root']
         return dest_folder unless dest_folder.nil?
@@ -158,16 +152,16 @@ END_OF_TEMPLATE
         # start with lower priority : get paths from transfer spec on command line
         @transfer_paths=@transfer_spec_cmdline['paths'] if @transfer_spec_cmdline.has_key?('paths')
         # is there a source list option ?
-        file_list=options.get_option(:sources,:optional)
+        file_list=@opt_mgr.get_option(:sources,:optional)
         case file_list
         when nil,FILE_LIST_FROM_ARGS
           Log.log.debug("getting file list as parameters")
           # get remaining arguments
-          file_list=options.get_next_argument("source file list",:multiple)
+          file_list=@opt_mgr.get_next_argument("source file list",:multiple)
           raise CliBadArgument,"specify at least one file on command line or use --sources=#{FILE_LIST_FROM_TRANSFER_SPEC} to use transfer spec" if !file_list.is_a?(Array) or file_list.empty?
         when FILE_LIST_FROM_TRANSFER_SPEC
           Log.log.debug("assume list provided in transfer spec")
-          special_case_direct_with_list=options.get_option(:transfer,:mandatory).eql?(:direct) and Fasp::Parameters.ts_has_file_list(@transfer_spec_cmdline)
+          special_case_direct_with_list=@opt_mgr.get_option(:transfer,:mandatory).eql?(:direct) and Fasp::Parameters.ts_has_file_list(@transfer_spec_cmdline)
           raise CliBadArgument,"transfer spec on command line must have sources" if @transfer_paths.nil? and !special_case_direct_with_list
           # here we assume check of sources is made in transfer agent
           return @transfer_paths
@@ -181,7 +175,7 @@ END_OF_TEMPLATE
         if !@transfer_paths.nil?
           Log.log.warn("--sources overrides paths from --ts")
         end
-        case options.get_option(:src_type,:mandatory)
+        case @opt_mgr.get_option(:src_type,:mandatory)
         when :list
           # when providing a list, just specify source
           @transfer_paths=file_list.map{|i|{'source'=>i}}
@@ -243,7 +237,7 @@ END_OF_TEMPLATE
       end
 
       def send_email_transfer_notification(transfer_spec,statuses)
-        return if options.get_option(:notif_to,:optional).nil?
+        return if @opt_mgr.get_option(:notif_to,:optional).nil?
         global_status=self.class.session_status(statuses)
         email_vars={
           global_transfer_status: global_status,
@@ -251,7 +245,7 @@ END_OF_TEMPLATE
           body: "Transfer is: #{global_status}",
           ts: transfer_spec
         }
-        @env[:config].send_email_template(email_vars,DEFAULT_TRANSFER_NOTIF_TMPL)
+        @config.send_email_template(email_vars,DEFAULT_TRANSFER_NOTIF_TMPL)
       end
 
       # @return :success if all sessions statuses returned by "start" are success
