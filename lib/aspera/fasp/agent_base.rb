@@ -2,7 +2,7 @@ module Aspera
   module Fasp
     # Base class for FASP transfer agents
     # sub classes shall implement start_transfer and shutdown
-    class Manager
+    class AgentBase
 
       private
 

@@ -1,8 +1,8 @@
-require 'aspera/fasp/local'
+require 'aspera/fasp/agent_direct'
+require 'aspera/fasp/agent_connect'
+require 'aspera/fasp/agent_node'
+require 'aspera/fasp/agent_http_gw'
 require 'aspera/fasp/parameters'
-require 'aspera/fasp/connect'
-require 'aspera/fasp/node'
-require 'aspera/fasp/http_gw'
 require 'aspera/cli/listener/logger'
 require 'aspera/cli/listener/progress_multi'
 
@@ -78,13 +78,13 @@ END_OF_TEMPLATE
         when :direct
           agent_options=@opt_mgr.get_option(:transfer_info,:optional)
           agent_options=agent_options.symbolize_keys if agent_options.is_a?(Hash)
-          new_agent=Fasp::Local.new(agent_options)
+          new_agent=Fasp::AgentDirect.new(agent_options)
           new_agent.quiet=false if @opt_mgr.get_option(:progress,:mandatory).eql?(:native)
         when :httpgw
           httpgw_config=@opt_mgr.get_option(:transfer_info,:mandatory)
-          new_agent=Fasp::HttpGW.new(httpgw_config)
+          new_agent=Fasp::AgentHttpGW.new(httpgw_config)
         when :connect
-          new_agent=Fasp::Connect.new
+          new_agent=Fasp::AgentConnect.new
         when :node
           # config is an optional extended value
           node_config=@opt_mgr.get_option(:transfer_info,:optional)
@@ -115,7 +115,7 @@ END_OF_TEMPLATE
               password: node_config[:password]
               }})
           end
-          new_agent=Fasp::Node.new(node_api)
+          new_agent=Fasp::AgentNode.new(node_api)
           # add root id if it's an access key
           new_agent.options={root_id: node_config[:root_id]} if node_config.has_key?(:root_id)
         else
@@ -231,7 +231,7 @@ END_OF_TEMPLATE
         @agent.start_transfer(transfer_spec,tr_opts)
         result=@agent.wait_for_transfers_completion
         @progress_listener.reset
-        Fasp::Manager.validate_status_list(result)
+        Fasp::AgentBase.validate_status_list(result)
         send_email_transfer_notification(transfer_spec,result)
         return result
       end

@@ -1,11 +1,11 @@
 #!/usr/bin/env ruby
 # find Faspex API here: https://developer.ibm.com/apis/catalog/?search=faspex
 # this example makes use of class Aspera::Rest for REST calls, alternatively class RestClient of gem rest-client could be used
-# this example makes use of class Aspera::Fasp::Local for transfers, alternatively the official "Transfer SDK" could be used
+# this example makes use of class Aspera::Fasp::AgentDirect for transfers, alternatively the official "Transfer SDK" could be used
 # Aspera SDK can be downloaded with: `ascli conf ascp install` , it installs in $HOME/.aspera/ascli/sdk
 require 'aspera/rest'
 require 'aspera/log'
-require 'aspera/fasp/local'
+require 'aspera/fasp/agent_direct'
 
 tmpdir=ENV['tmp']||Dir.tmpdir || '.'
 
@@ -60,7 +60,7 @@ transfer_spec=pkg_created['xfer_sessions'].first
 # set paths of files to send
 transfer_spec['paths']=[{'source'=>file_to_send}]
 # get the local agent (i.e. ascp)
-transfer_client=Aspera::Fasp::Local.new
+transfer_client=Aspera::Fasp::AgentDirect.new
 # disable ascp output on stdout (optional)
 transfer_client.quiet=true
 # start transfer (asynchronous)

@@ -1,5 +1,5 @@
 require 'aspera/fasp/listener'
-require 'aspera/fasp/manager'
+require 'aspera/fasp/agent_base'
 require 'ruby-progressbar'
 
 module Aspera
@@ -43,13 +43,13 @@ module Aspera
             :title      => '',
             :total      => nil)
           end
-          if !data.has_key?(Fasp::Manager::LISTENER_SESSION_ID_S)
-            Log.log.error("Internal error: no #{Fasp::Manager::LISTENER_SESSION_ID_S} in event: #{data}")
+          if !data.has_key?(Fasp::AgentBase::LISTENER_SESSION_ID_S)
+            Log.log.error("Internal error: no #{Fasp::AgentBase::LISTENER_SESSION_ID_S} in event: #{data}")
             return
           end
           newtitle=@sessions.length < 2 ? '' : "multi=#{@sessions.length}"
           @progress_bar.title=newtitle unless @progress_bar.title.eql?(newtitle)
-          session=@sessions[data[Fasp::Manager::LISTENER_SESSION_ID_S]]||={
+          session=@sessions[data[Fasp::AgentBase::LISTENER_SESSION_ID_S]]||={
             cumulative: 0,
             job_size: 0,
             current: 0
@@ -78,7 +78,7 @@ module Aspera
             # stop event when one file is completed
             session[:cumulative]=session[:cumulative]+data['size'].to_i
           when 'DONE' # end of session
-            @sessions.delete(data[Fasp::Manager::LISTENER_SESSION_ID_S])
+            @sessions.delete(data[Fasp::AgentBase::LISTENER_SESSION_ID_S])
             update_progress
             update_total
           else

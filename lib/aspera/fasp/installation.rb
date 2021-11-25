@@ -10,7 +10,7 @@ require 'fileutils'
 module Aspera
   module Fasp
     # Singleton that tells where to find ascp and other local resources (keys..) , using the "path(symb)" method.
-    # It is used by object : Fasp::Local to find necessary resources
+    # It is used by object : AgentDirect to find necessary resources
     # By default it takes the first Aspera product found specified in product_locations
     # but the user can specify ascp location by calling:
     # Installation.instance.use_ascp_from_product(product_name)
@@ -22,6 +22,9 @@ module Aspera
       PRODUCT_CLI_V1='Aspera CLI'
       PRODUCT_DRIVE='Aspera Drive'
       PRODUCT_ENTSRV='Enterprise Server'
+      # protobuf generated files from sdk
+      EXT_RUBY_PROTOBUF='_pb.rb'
+      RB_SDK_FOLDER='lib'
       MAX_REDIRECT_SDK=2
       private_constant :MAX_REDIRECT_SDK
       # set ascp executable path
@@ -32,6 +35,14 @@ module Aspera
       # filename for ascp with optional extension (Windows)
       def ascp_filename
         return 'ascp'+Environment.exe_extension
+      end
+
+      def transferd_filename
+        return 'asperatransferd'+Environment.exe_extension
+      end
+
+      def sdk_ruby_folder
+        return File.join(folder_path,RB_SDK_FOLDER)
       end
 
       # location of SDK files
@@ -183,15 +194,16 @@ module Aspera
       end
 
       # Check that specified path is ascp and get version
-      def get_ascp_version(ascp_path)
-        raise "File basename of #{ascp_path} must be #{ascp_filename}" unless File.basename(ascp_path).eql?(ascp_filename)
-        ascp_version='n/a'
-        raise "error in sdk: no ascp included" if ascp_path.nil?
-        cmd_out=%x{"#{ascp_path}" -A}
+      def get_exe_version(exe_path,vers_arg)
+        raise "ERROR: nil arg" if exe_path.nil?
+        return nil unless File.exist?(exe_path)
+        exe_version=nil
+        cmd_out=%x{"#{exe_path}" #{vers_arg}}
         raise "An error occured when testing #{ascp_filename}: #{cmd_out}" unless $? == 0
         # get version from ascp, only after full extract, as windows requires DLLs (SSL/TLS/etc...)
-        m=cmd_out.match(/ascp version (.*)/)
-        ascp_version=m[1] unless m.nil?
+        m=cmd_out.match(/ version ([0-9\.]+)/)
+        exe_version=m[1] unless m.nil?
+        return exe_version
       end
 
       # download aspera SDK or use local file
@@ -222,37 +234,46 @@ module Aspera
             end
           end
         end
-        # SDK is organized by architecture
-        filter="/#{Environment.architecture}/"
-        ascp_path=nil
-        sdk_path=folder_path
         # rename old install
-        if File.exist?(File.join(sdk_path,ascp_filename))
-          Log.log.warn("Previous install exists, renaming.")
-          File.rename(sdk_path,"#{sdk_path}.#{Time.now.strftime("%Y%m%d%H%M%S")}")
+        if ! Dir.empty?(folder_path)
+          Log.log.warn("Previous install exists, renaming folder.")
+          File.rename(folder_path,"#{folder_path}.#{Time.now.strftime("%Y%m%d%H%M%S")}")
+          # TODO: delete old archives ?
         end
-        # first ensure license file is here so that ascp invokation for version works
-        self.path(:aspera_license)
-        self.path(:aspera_conf)
+        # SDK is organized by architecture
+        arch_filter="#{Environment.architecture}/"
+        # extract files from archive
         Zip::File.open(sdk_zip_path) do |zip_file|
           zip_file.each do |entry|
-            # get only specified arch, but not folder, only files
-            if entry.name.include?(filter) and !entry.name.end_with?('/')
-              archive_file=File.join(sdk_path,File.basename(entry.name))
-              File.open(archive_file, 'wb') do |output_stream|
+            # skip folder entries
+            next if entry.name.end_with?('/')
+            dest_file=nil
+            # binaries
+            dest_file=File.join(folder_path,File.basename(entry.name)) if entry.name.include?(arch_filter)
+            # ruby adapters
+            dest_file=File.join(sdk_ruby_folder,File.basename(entry.name)) if entry.name.end_with?(EXT_RUBY_PROTOBUF)
+            if !dest_file.nil?
+              File.open(File.join(folder_path,File.basename(entry.name)), 'wb') do |output_stream|
                 IO.copy_stream(entry.get_input_stream, output_stream)
-              end
-              if File.basename(entry.name).eql?(ascp_filename)
-                FileUtils.chmod(0755,archive_file)
-                ascp_path=archive_file
               end
             end
           end
         end
         File.unlink(sdk_zip_path) rescue nil # Windows may give error
-        ascp_version=get_ascp_version(ascp_path)
-        File.write(File.join(folder_path,PRODUCT_INFO),"<product><name>IBM Aspera SDK</name><version>#{ascp_version}</version></product>")
-        return ascp_version
+        # ensure license file are generated so that ascp invokation for version works
+        self.path(:aspera_license)
+        self.path(:aspera_conf)
+        ascp_path=File.join(folder_path,ascp_filename)
+        raise "No #{ascp_filename} found in SDK archive" unless File.exist?(ascp_path)
+        FileUtils.chmod(0755,ascp_path)
+        ascp_version=get_exe_version(File.join(folder_path,ascp_filename),'-A')
+        trd_path=File.join(folder_path,transferd_filename)
+        Log.log.warn("No #{transferd_filename} found in SDK archive") unless File.exist?(trd_path)
+        FileUtils.chmod(0755,trd_path) if File.exist?(trd_path)
+        transferd_version=get_exe_version(File.join(folder_path,transferd_filename),'version')
+        sdk_version = transferd_version||ascp_version
+        File.write(File.join(folder_path,PRODUCT_INFO),"<product><name>IBM Aspera SDK</name><version>#{sdk_version}</version></product>")
+        return sdk_version
       end
 
       private

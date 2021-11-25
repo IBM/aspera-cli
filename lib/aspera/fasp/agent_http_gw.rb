@@ -1,5 +1,5 @@
 #!/bin/echo this is a ruby class:
-require 'aspera/fasp/manager'
+require 'aspera/fasp/agent_base'
 require 'aspera/log'
 require 'aspera/rest'
 require 'websocket-client-simple'
@@ -12,7 +12,7 @@ require 'json'
 module Aspera
   module Fasp
     # start a transfer using Aspera HTTP Gateway, using web socket session
-    class HttpGW < Manager
+    class AgentHttpGW < AgentBase
       # message returned by HTTP GW in case of success
       OK_MESSAGE='end upload'
       # refresh rate for progress
@@ -179,7 +179,7 @@ module Aspera
         when 'receive'
           download(transfer_spec)
         else
-          raise "error"
+          raise "unexpected direction: [#{transfer_spec['direction']}]"
         end
       end # start_transfer
 
@@ -209,6 +209,6 @@ module Aspera
         @upload_chunksize=128000 # TODO: configurable ?
       end
 
-    end # HttpGW
+    end # AgentHttpGW
   end
 end

@@ -48,7 +48,7 @@ module Aspera
         SERVER_COMMAND='server'
         CONNECT_WEB_URL = 'https://d3gcli72yxqn2z.cloudfront.net/connect'
         CONNECT_VERSIONS = 'connectversions.js'
-        TRANSFER_SDK_ARCHIVE_URL = 'https://ibm.biz/aspera_sdk'
+        TRANSFER_SDK_ARCHIVE_URL = 'https://ibm.biz/aspera_transfer_sdk'
         DEMO='demo'
         DEMO_SERVER_PRESET='demoserver'
         AOC_PATH_API_CLIENTS='admin/api-clients'

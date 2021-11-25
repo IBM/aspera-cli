@@ -5,7 +5,7 @@
 # Laurent Martin
 #
 ##############################################################################
-require 'aspera/fasp/manager'
+require 'aspera/fasp/agent_base'
 require 'aspera/fasp/error'
 require 'aspera/fasp/parameters'
 require 'aspera/fasp/installation'
@@ -18,7 +18,7 @@ require 'securerandom'
 module Aspera
   module Fasp
     # executes a local "ascp", connects mgt port, equivalent of "Fasp Manager"
-    class Local < Manager
+    class AgentDirect < AgentBase
       # options for initialize (same as values in option transfer_info)
       DEFAULT_OPTIONS = {
         :spawn_timeout_sec => 3,
@@ -240,7 +240,7 @@ module Aspera
             when ''
               # empty line is separator to end event information
               raise 'unexpected empty line' if current_event_data.nil?
-              current_event_data[Manager::LISTENER_SESSION_ID_B]=ascp_pid
+              current_event_data[AgentBase::LISTENER_SESSION_ID_B]=ascp_pid
               notify_listeners(current_event_text,current_event_data)
               case current_event_data['Type']
               when 'INIT'
@@ -374,6 +374,6 @@ module Aspera
         Log.log.debug("EXIT (#{Thread.current[:name]})")
       end
 
-    end # Local
+    end # AgentDirect
   end
 end

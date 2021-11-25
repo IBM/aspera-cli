@@ -1,4 +1,4 @@
-require 'aspera/fasp/manager'
+require 'aspera/fasp/agent_base'
 require 'aspera/rest'
 require 'aspera/open_application'
 require 'securerandom'
@@ -6,7 +6,7 @@ require 'tty-spinner'
 
 module Aspera
   module Fasp
-    class Connect < Manager
+    class AgentConnect < AgentBase
       MAX_CONNECT_START_RETRY=3
       SLEEP_SEC_BETWEEN_RETRY=2
       private_constant :MAX_CONNECT_START_RETRY,:SLEEP_SEC_BETWEEN_RETRY
@@ -101,6 +101,6 @@ module Aspera
         end
         return [] #TODO
       end # wait
-    end # Connect
+    end # AgentConnect
   end
 end
