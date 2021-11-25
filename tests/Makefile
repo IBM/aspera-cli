@@ -6,7 +6,7 @@ DIR_TOP=../
 
 include $(DIR_TOP)common.make
 
-all:: test_env tunit tshares tfaspex tconsole tnode taoc tfasp tsync torc tcon tnsync tconf tprev tats tsample tcos tf5
+all:: $(TEST_CONF_FILE_PATH) tunit tshares tfaspex tconsole tnode taoc tfasp tsync torc tcon tnsync tconf tprev tats tsample tcos tf5
 # tshares2 tnagios
 
 # "EXE_MAN" and "EXE_NOMAN" are used to call the tool in the testing environment
@@ -59,11 +59,6 @@ PKG_TEST_TITLE=Test Pkg $(shell date)
 # flag files for integration tests generated here
 T=$(DIR_TMP)t/
 
-test_env:
-	@if test ! -e $(TEST_CONF_FILE_PATH);then\
-		echo "ERROR: Missing configuration file for testing environment: $(TEST_CONF_FILE_PATH), create with:\nmkdir -p $(DIR_TOP)local\ncp $(DIR_TOP)docs/test_env.conf $(TEST_CONF_FILE_PATH)\nThen fill information in it.";\
-		exit 1;\
-	fi
 $(T).exists:
 	mkdir -p $(T)
 	touch $@
