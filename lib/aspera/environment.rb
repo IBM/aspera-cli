@@ -33,12 +33,12 @@ module Aspera
     def self.cpu
       case RbConfig::CONFIG['host_cpu']
       when /x86_64/,/x64/
-        return :x86_64
+        return CPU_X86_64
       when /powerpc/
-        return :ppc64le if os.eql?(OS_LINUX)
-        return :ppc64
+        return CPU_PPC64LE if os.eql?(OS_LINUX)
+        return CPU_PPC64
       when /s390/
-        return :s390
+        return CPU_S390
       else # other
         raise "Unknown CPU: #{RbConfig::CONFIG['host_cpu']}"
       end
