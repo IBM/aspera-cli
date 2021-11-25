@@ -271,6 +271,10 @@ module Aspera
       # add remote host info
       if @@use_standard_ports
         transfer_spec.merge!(DEFAULT_TSPEC_INFO)
+        # TODO issue #30
+        if node_file[:node_info]['transfer_url'].is_a?(String) and !node_file[:node_info]['transfer_url'].empty?
+          Log.log.debug("Ignoring transfer url, issue #30")
+        end
         transfer_spec['remote_host']=node_file[:node_info]['host']
       else
         # retrieve values from API
