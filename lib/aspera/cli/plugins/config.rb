@@ -609,6 +609,8 @@ END_OF_TEMPLATE
               Log.log.debug("opts=#{theopts}")
               @config_presets[config_name]||={}
               @config_presets[config_name].merge!(theopts)
+              # fix bug in 4.4 (creating key "true" in "default" preset)
+              @config_presets[CONF_PRESET_DEFAULT].delete(true) if @config_presets[CONF_PRESET_DEFAULT].is_a?(Hash)
               save_presets_to_config_file
               return Main.result_status("Updated: #{config_name}")
             when :ask
