@@ -211,7 +211,7 @@ module Aspera
         # make http request (pipelined)
         http_session.request(req) do |response|
           result[:http] = response
-          if call_data.has_key?(:save_to_file)
+          if call_data.has_key?(:save_to_file) and result[:http].code.to_s.start_with?('2')
             total_size=result[:http]['Content-Length'].to_i
             progress=ProgressBar.create(
             :format     => '%a %B %p%% %r KB/sec %e',
@@ -240,7 +240,7 @@ module Aspera
             progress=nil
           end # save_to_file
         end
-        # sometimes there is a ITF8 char (e.g. (c) )
+        # sometimes there is a UTF8 char (e.g. (c) )
         result[:http].body.force_encoding("UTF-8") if result[:http].body.is_a?(String)
         Log.log.debug("result: body=#{result[:http].body}")
         result_mime=(result[:http]['Content-Type']||'text/plain').split(';').first
