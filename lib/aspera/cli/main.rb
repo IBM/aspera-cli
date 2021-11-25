@@ -83,7 +83,7 @@ module Aspera
           app_main_folder=File.join(user_home_folder,Plugins::Config::ASPERA_HOME_FOLDER_NAME,PROGRAM_NAME)
         end
         # give command line arguments to option manager (no parsing)
-        @plugin_env[:options]=@opt_mgr=Manager.new(PROGRAM_NAME,argv,app_banner())
+        @plugin_env[:options]=@opt_mgr=Manager.new(PROGRAM_NAME,argv)
         @plugin_env[:formater]=Formater.new(@plugin_env[:options])
         Rest.user_agent=PROGRAM_NAME
         Rest.session_cb=lambda {|http| set_http_parameters(http)}
@@ -103,6 +103,8 @@ module Aspera
         Aspera::RestErrorAnalyzer.instance.log_file=File.join(@plugin_env[:config].main_folder,'rest_exceptions.log')
         # register aspera REST call error handlers
         Aspera::RestErrorsAspera.registerHandlers
+        # set banner when all environment is created so that additional extended value modifiers are known, e.g. @preset
+        @opt_mgr.parser.banner=app_banner
       end
 
       def app_banner
@@ -122,7 +124,7 @@ module Aspera
         banner << "\tNote that commands can be written shortened (provided it is unique).\n"
         banner << "\nOPTIONS\n"
         banner << "\tOptions begin with a '-' (minus), and value is provided on command line.\n"
-        banner << "\tSpecial values are supported beginning with special prefix, like: #{ExtendedValue.instance.modifiers.map{|m|"@#{m}:"}.join(' ')}.\n"
+        banner << "\tSpecial values are supported beginning with special prefix @pfx:, where pfx is one of:\n\t#{ExtendedValue.instance.modifiers.map{|m|m.to_s}.join(', ')}\n"
         banner << "\tDates format is 'DD-MM-YY HH:MM:SS', or 'now' or '-<num>h'\n\n"
         banner << "ARGS\n"
         banner << "\tSome commands require mandatory arguments, e.g. a path.\n"
@@ -202,7 +204,7 @@ module Aspera
             # override main option parser with a brand new, to avoid having global options
             plugin_env=@plugin_env.clone
             plugin_env[:man_only]=true
-            plugin_env[:options]=Manager.new(PROGRAM_NAME,[],'')
+            plugin_env[:options]=Manager.new(PROGRAM_NAME)
             get_plugin_instance_with_options(plugin_name_sym,plugin_env)
             # display generated help for plugin options
             @plugin_env[:formater].display_message(:error,plugin_env[:options].parser.to_s)

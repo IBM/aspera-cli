@@ -14,8 +14,7 @@ all:: $(TEST_CONF_FILE_PATH) tunit tshares tfaspex tconsole tnode taoc tfasp tsy
 EXE_MAN=$(EXETESTB) --warnings --config-file=$(TEST_CONF_FILE_PATH)
 # "EXE_NOMAN" when the command is not needed in documentation
 EXE_NOMAN=$(EXE_MAN)
-
-CF_REMOTE_SAMPLE_FILENAME=200KB.1
+# 10MB testing file generated locally
 CF_LOCAL_SAMPLE_FILENAME=datafile.bin
 CF_LOCAL_SAMPLE_FILEPATH=$(DIR_TMP)$(CF_LOCAL_SAMPLE_FILENAME)
 CF_HSTS_FOLDER_UPLOAD := $(shell $(EXE_NOMAN) conf id misc get upload_folder 2> /dev/null || echo error)
@@ -56,7 +55,7 @@ noderestart:
 DIR_CONNECT_DOWNLOAD=$(HOME)/Downloads
 PKG_TEST_TITLE=Test Pkg $(shell date)
 
-# flag files for integration tests generated here
+# folder where flag files for integration tests are generated
 T=$(DIR_TMP)t/
 
 $(T).exists:

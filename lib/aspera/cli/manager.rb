@@ -79,7 +79,7 @@ module Aspera
       attr_accessor :ask_missing_optional
 
       #
-      def initialize(program_name,argv,app_banner)
+      def initialize(program_name,argv=nil)
         # command line values not starting with '-'
         @unprocessed_cmd_line_arguments=[]
         # command line values starting with '-'
@@ -98,7 +98,6 @@ module Aspera
         # Note: was initially inherited but it is prefered to have specific methods
         @parser=OptionParser.new
         @parser.program_name=program_name
-        @parser.banner=app_banner
         # options can also be provided by env vars : --param-name -> ASLMCLI_PARAM_NAME
         env_prefix=program_name.upcase+OPTION_SEP_NAME
         ENV.each do |k,v|
@@ -107,29 +106,29 @@ module Aspera
           end
         end
         Log.log.debug("env=#{@unprocessed_env}".red)
-        # banner is empty when help is generated for every plugin
-        unless app_banner.empty?
-          @parser.separator("")
-          @parser.separator("OPTIONS: global")
-          self.set_obj_attr(:interactive,self,:ask_missing_mandatory)
-          self.set_obj_attr(:ask_options,self,:ask_missing_optional)
-          self.add_opt_boolean(:interactive,"use interactive input of missing params")
-          self.add_opt_boolean(:ask_options,"ask even optional options")
-          self.parse_options!
-        end
         @unprocessed_cmd_line_options=[]
         @unprocessed_cmd_line_arguments=[]
-        process_options=true
-        while !argv.empty?
-          value=argv.shift
-          if process_options and value.start_with?('-')
-            if value.eql?('--')
-              process_options=false
+        # argv is nil when help is generated for every plugin
+        unless argv.nil?
+          @parser.separator('')
+          @parser.separator('OPTIONS: global')
+          self.set_obj_attr(:interactive,self,:ask_missing_mandatory)
+          self.set_obj_attr(:ask_options,self,:ask_missing_optional)
+          self.add_opt_boolean(:interactive,'use interactive input of missing params')
+          self.add_opt_boolean(:ask_options,'ask even optional options')
+          self.parse_options!
+          process_options=true
+          while !argv.empty?
+            value=argv.shift
+            if process_options and value.start_with?('-')
+              if value.eql?('--')
+                process_options=false
+              else
+                @unprocessed_cmd_line_options.push(value)
+              end
             else
-              @unprocessed_cmd_line_options.push(value)
+              @unprocessed_cmd_line_arguments.push(value)
             end
-          else
-            @unprocessed_cmd_line_arguments.push(value)
           end
         end
         @initial_cli_options=@unprocessed_cmd_line_options.dup
