@@ -2,7 +2,7 @@
 # Example: transfer a file using one of the provided transfer agents
 # location of ascp can be specified with env var "ascp"
 # temp folder can be specified with env var "tmp"
-require 'aspera/fasp/local'
+require 'aspera/fasp/agent_direct'
 require 'aspera/fasp/listener'
 require 'aspera/fasp/installation'
 require 'aspera/log'
@@ -39,7 +39,7 @@ Aspera::Fasp::Installation.instance.ascp_path=ENV['ascp'] if ENV.has_key?('ascp'
 # 
 
 # get FASP Manager singleton based on above ascp location
-fasp_manager=Aspera::Fasp::Local.new
+fasp_manager=Aspera::Fasp::AgentDirect.new
 
 # Note that it would also be possible to start transfers using other agents
 #require 'aspera/fasp/connect'

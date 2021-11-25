@@ -163,7 +163,7 @@ module Aspera
             client_node_file = @api_aoc.resolve_node_file(client_home_node_file,client_folder)
             server_node_file = @api_aoc.resolve_node_file(server_home_node_file,server_folder)
             # force node as transfer agent
-            @agents[:transfer].set_agent_instance(Fasp::Node.new(@api_aoc.get_node_api(client_node_file[:node_info],scope: AoC::SCOPE_NODE_USER)))
+            @agents[:transfer].set_agent_instance(Fasp::AgentNode.new(@api_aoc.get_node_api(client_node_file[:node_info],scope: AoC::SCOPE_NODE_USER)))
             # additional node to node TS info
             add_ts={
               'remote_access_key'   => server_node_file[:node_info]['access_key'],

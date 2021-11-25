@@ -296,7 +296,7 @@ module Aspera
     # no scope: requires secret
     # if secret provided beforehand: use it
     def get_node_api(node_info,options={})
-      raise "INTERNAL ERROR: method parameters: options must ne hash" unless options.is_a?(Hash)
+      raise "INTERNAL ERROR: method parameters: options must be Hash" unless options.is_a?(Hash)
       options.keys.each {|k| raise "INTERNAL ERROR: not valid option: #{k}" unless [:scope,:use_secret].include?(k)}
       # get optional secret unless :use_secret is false (default is true)
       ak_secret=@key_chain.get_secret(node_info['access_key'],false) if !options.has_key?(:use_secret) or options[:use_secret]
