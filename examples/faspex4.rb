@@ -59,10 +59,8 @@ pkg_created=api_v3.create('send',package_create_params)[:data]
 transfer_spec=pkg_created['xfer_sessions'].first
 # set paths of files to send
 transfer_spec['paths']=[{'source'=>file_to_send}]
-# get the local agent (i.e. ascp)
-transfer_client=Aspera::Fasp::AgentDirect.new
-# disable ascp output on stdout (optional)
-transfer_client.quiet=true
+# get local agent (ascp), disable ascp output on stdout to not mix with JSON events
+transfer_client=Aspera::Fasp::AgentDirect.new({quiet: true})
 # start transfer (asynchronous)
 job_id=transfer_client.start_transfer(transfer_spec)
 # wait for all transfer completion (for the example)

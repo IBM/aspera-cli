@@ -1,7 +1,3 @@
-require 'aspera/fasp/agent_direct'
-require 'aspera/fasp/agent_connect'
-require 'aspera/fasp/agent_node'
-require 'aspera/fasp/agent_http_gw'
 require 'aspera/fasp/parameters'
 require 'aspera/cli/listener/logger'
 require 'aspera/cli/listener/progress_multi'
@@ -25,8 +21,10 @@ Transfer is: <%=global_transfer_status%>
 
 <%=ts.to_yaml%>
 END_OF_TEMPLATE
-      #%
+      #% (formating bug in eclipse)
       private_constant :FILE_LIST_FROM_ARGS,:FILE_LIST_FROM_TRANSFER_SPEC,:DEFAULT_TRANSFER_NOTIF_TMPL
+      TRANSFER_AGENTS=[:direct,:node,:connect,:httpgw,:trsdk]
+
       # @param env external objects: option manager, config file manager
       def initialize(opt_mgr,config)
         @opt_mgr=opt_mgr
@@ -45,7 +43,7 @@ END_OF_TEMPLATE
         @opt_mgr.add_opt_simple(:sources,"list of source files (see doc)")
         @opt_mgr.add_opt_simple(:transfer_info,"parameters for transfer agent")
         @opt_mgr.add_opt_list(:src_type,[:list,:pair],"type of file list")
-        @opt_mgr.add_opt_list(:transfer,[:direct,:httpgw,:connect,:node],"type of transfer agent")
+        @opt_mgr.add_opt_list(:transfer,TRANSFER_AGENTS,"type of transfer agent")
         @opt_mgr.add_opt_list(:progress,[:none,:native,:multi],"type of progress bar")
         @opt_mgr.set_option(:transfer,:direct)
         @opt_mgr.set_option(:src_type,:list)
@@ -65,7 +63,7 @@ END_OF_TEMPLATE
         @agent.add_listener(Listener::Logger.new)
         # use local progress bar if asked so, or if native and non local ascp (because only local ascp has native progress bar)
         if @opt_mgr.get_option(:progress,:mandatory).eql?(:multi) or
-        (@opt_mgr.get_option(:progress,:mandatory).eql?(:native) and !@opt_mgr.get_option(:transfer,:mandatory).eql?(:direct))
+        (@opt_mgr.get_option(:progress,:mandatory).eql?(:native) and ! instance.class.to_s.eql?('Aspera::Fasp::AgentDirect'))
           @agent.add_listener(@progress_listener)
         end
       end
@@ -74,53 +72,23 @@ END_OF_TEMPLATE
       def set_agent_by_options
         return nil unless @agent.nil?
         agent_type=@opt_mgr.get_option(:transfer,:mandatory)
-        case agent_type
-        when :direct
-          agent_options=@opt_mgr.get_option(:transfer_info,:optional)
-          agent_options=agent_options.symbolize_keys if agent_options.is_a?(Hash)
-          new_agent=Fasp::AgentDirect.new(agent_options)
-          new_agent.quiet=false if @opt_mgr.get_option(:progress,:mandatory).eql?(:native)
-        when :httpgw
-          httpgw_config=@opt_mgr.get_option(:transfer_info,:mandatory)
-          new_agent=Fasp::AgentHttpGW.new(httpgw_config)
-        when :connect
-          new_agent=Fasp::AgentConnect.new
-        when :node
-          # config is an optional extended value
-          node_config=@opt_mgr.get_option(:transfer_info,:optional)
-          # if not specified: use default node
-          if node_config.nil?
-            param_set_name=@config.get_plugin_default_config_name(:node)
-            raise CliBadArgument,"No default node configured, Please specify --#{:transfer_info.to_s.gsub('_','-')}" if param_set_name.nil?
-            node_config=@config.preset_by_name(param_set_name)
-          end
-          Log.log.debug("node=#{node_config}")
-          raise CliBadArgument,"the node configuration shall be Hash, not #{node_config.class} (#{node_config}), use either @json:<json> or @preset:<parameter set name>" unless node_config.is_a?(Hash)
-          # here, node_config is a Hash
-          node_config=node_config.symbolize_keys
-          # Check mandatory params
-          [:url,:username,:password].each { |k| raise CliBadArgument,"missing parameter [#{k}] in node specification: #{node_config}" unless node_config.has_key?(k) }
-          if node_config[:password].match(/^Bearer /)
-            node_api=Rest.new({
-              base_url: node_config[:url],
-              headers: {
-              'X-Aspera-AccessKey'=>node_config[:username],
-              'Authorization'     =>node_config[:password]}})
-          else
-            node_api=Rest.new({
-              base_url: node_config[:url],
-              auth:     {
-              type:     :basic,
-              username: node_config[:username],
-              password: node_config[:password]
-              }})
-          end
-          new_agent=Fasp::AgentNode.new(node_api)
-          # add root id if it's an access key
-          new_agent.options={root_id: node_config[:root_id]} if node_config.has_key?(:root_id)
-        else
-          raise "Unexpected transfer agent type: #{agent_type}"
+        require "aspera/fasp/agent_#{agent_type}"
+        agent_options=@opt_mgr.get_option(:transfer_info,:optional)
+        raise CliBadArgument,"the transfer agent configuration shall be Hash, not #{agent_options.class} (#{agent_options}), use either @json:<json> or @preset:<parameter set name>" unless [Hash,NilClass].include?(agent_options.class)
+        # special case
+        if agent_type.eql?(:node) and agent_options.nil?
+          param_set_name=@config.get_plugin_default_config_name(:node)
+          raise CliBadArgument,"No default node configured, Please specify --#{:transfer_info.to_s.gsub('_','-')}" if param_set_name.nil?
+          agent_options=@config.preset_by_name(param_set_name)
         end
+        # special case
+        if agent_type.eql?(:direct) and @opt_mgr.get_option(:progress,:mandatory).eql?(:native)
+          agent_options={} if agent_options.nil?
+          agent_options[:quiet]=false
+        end
+        agent_options=agent_options.symbolize_keys if agent_options.is_a?(Hash)
+        # get agent instance
+        new_agent=Kernel.const_get("Aspera::Fasp::Agent#{agent_type.capitalize}").new(agent_options)
         set_agent_instance(new_agent)
         return nil
       end

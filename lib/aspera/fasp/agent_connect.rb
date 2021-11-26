@@ -10,8 +10,8 @@ module Aspera
       MAX_CONNECT_START_RETRY=3
       SLEEP_SEC_BETWEEN_RETRY=2
       private_constant :MAX_CONNECT_START_RETRY,:SLEEP_SEC_BETWEEN_RETRY
-      def initialize
-        super
+      def initialize(options)
+        super()
         @connect_settings={
           'app_id' => SecureRandom.uuid
         }

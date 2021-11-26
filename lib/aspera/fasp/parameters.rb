@@ -26,7 +26,7 @@ module Aspera
         Aspera::CommandLineBuilder.normalize_description(@@param_description_cache)
       end
 
-      # Agents shown in manual
+      # Agents shown in manual for parameters (sub list)
       SUPPORTED_AGENTS=[:direct,:node,:connect]
       # Short names of columns in manual
       SUPPORTED_AGENTS_SHORT=SUPPORTED_AGENTS.map{|a|a.to_s[0].to_sym}

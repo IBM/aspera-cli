@@ -65,10 +65,8 @@ if transfer_spec.has_key?(TS_TMP_FILELIST_FOLDER)
   Aspera::Fasp::Parameters.file_list_folder=transfer_spec[TS_TMP_FILELIST_FOLDER]
   transfer_spec.delete(TS_TMP_FILELIST_FOLDER)
 end
-# get local agent (ascp)
-client=Aspera::Fasp::AgentDirect.new
-# disable ascp output on stdout to not mix with JSON events
-client.quiet=true
+# get local agent (ascp), disable ascp output on stdout to not mix with JSON events
+client=Aspera::Fasp::AgentDirect.new({quiet: true})
 # display JSON instead of legacy Lines
 client.add_listener(Aspera::Cli::Listener::LineDump.new)
 # start transfer (asynchronous)

@@ -32,17 +32,10 @@ module Aspera
         @path_to_ascp=v
       end
 
-      # filename for ascp with optional extension (Windows)
-      def ascp_filename
-        return 'ascp'+Environment.exe_extension
-      end
-
-      def transferd_filename
-        return 'asperatransferd'+Environment.exe_extension
-      end
-
       def sdk_ruby_folder
-        return File.join(folder_path,RB_SDK_FOLDER)
+        ruby_pb_folder=File.join(folder_path,RB_SDK_FOLDER)
+        FileUtils.mkdir_p(ruby_pb_folder) unless Dir.exist?(ruby_pb_folder)
+        return ruby_pb_folder
       end
 
       # location of SDK files
@@ -111,6 +104,8 @@ module Aspera
           file=@path_to_ascp
           # note that there might be a .exe at the end
           file=file.gsub('ascp','ascp4') if k.eql?(:ascp4)
+        when :transferd
+          file=transferd_filepath
         when :ssh_bypass_key_dsa
           file=File.join(folder_path,'aspera_bypass_dsa.pem')
           File.write(file,get_key('dsa',1)) unless File.exist?(file)
@@ -247,13 +242,13 @@ module Aspera
           zip_file.each do |entry|
             # skip folder entries
             next if entry.name.end_with?('/')
-            dest_file=nil
+            dest_folder=nil
             # binaries
-            dest_file=File.join(folder_path,File.basename(entry.name)) if entry.name.include?(arch_filter)
+            dest_folder=folder_path if entry.name.include?(arch_filter)
             # ruby adapters
-            dest_file=File.join(sdk_ruby_folder,File.basename(entry.name)) if entry.name.end_with?(EXT_RUBY_PROTOBUF)
-            if !dest_file.nil?
-              File.open(File.join(folder_path,File.basename(entry.name)), 'wb') do |output_stream|
+            dest_folder=sdk_ruby_folder if entry.name.end_with?(EXT_RUBY_PROTOBUF)
+            if !dest_folder.nil?
+              File.open(File.join(dest_folder,File.basename(entry.name)), 'wb') do |output_stream|
                 IO.copy_stream(entry.get_input_stream, output_stream)
               end
             end
@@ -266,11 +261,12 @@ module Aspera
         ascp_path=File.join(folder_path,ascp_filename)
         raise "No #{ascp_filename} found in SDK archive" unless File.exist?(ascp_path)
         FileUtils.chmod(0755,ascp_path)
+        FileUtils.chmod(0755,ascp_path.gsub('ascp','ascp4'))
         ascp_version=get_exe_version(File.join(folder_path,ascp_filename),'-A')
-        trd_path=File.join(folder_path,transferd_filename)
-        Log.log.warn("No #{transferd_filename} found in SDK archive") unless File.exist?(trd_path)
+        trd_path=transferd_filepath
+        Log.log.warn("No #{trd_path} in SDK archive") unless File.exist?(trd_path)
         FileUtils.chmod(0755,trd_path) if File.exist?(trd_path)
-        transferd_version=get_exe_version(File.join(folder_path,transferd_filename),'version')
+        transferd_version=get_exe_version(trd_path,'version')
         sdk_version = transferd_version||ascp_version
         File.write(File.join(folder_path,PRODUCT_INFO),"<product><name>IBM Aspera SDK</name><version>#{sdk_version}</version></product>")
         return sdk_version
@@ -307,6 +303,15 @@ module Aspera
         raise "Undefined path to SDK" if @sdk_folder.nil?
         FileUtils.mkdir_p(@sdk_folder) unless Dir.exist?(@sdk_folder)
         @sdk_folder
+      end
+
+      # filename for ascp with optional extension (Windows)
+      def ascp_filename
+        return 'ascp'+Environment.exe_extension
+      end
+
+      def transferd_filepath
+        return File.join(folder_path,'asperatransferd'+Environment.exe_extension)
       end
 
       # @return product folders depending on OS fields

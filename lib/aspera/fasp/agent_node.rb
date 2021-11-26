@@ -9,10 +9,27 @@ module Aspera
     class AgentNode < AgentBase
       # option include: root_id if the node is an access key
       attr_writer :options
-      def initialize(node_api,options={})
+      def initialize(options)
+        raise "node specification must be Hash" unless options.is_a?(Hash)
+        [:url,:username,:password].each { |k| raise "missing parameter [#{k}] in node specification: #{options}" unless options.has_key?(k) }
         super()
-        @node_api=node_api
-        @options=options
+        # root id is required for access key
+        @root_id=options[:root_id]
+        rest_params={ base_url: options[:url]}
+        if options[:password].match(/^Bearer /)
+          rest_params[:headers]={
+            'X-Aspera-AccessKey'=>options[:username],
+            'Authorization'     =>options[:password]
+          }
+          raise "root_id is required for access key" if @root_id.nil?
+        else
+          rest_params[:auth]={
+            type:     :basic,
+            username: options[:username],
+            password: options[:password]
+          }
+        end
+        @node_api=Rest.new(rest_params)
         # TODO: currently only supports one transfer. This is bad shortcut. but ok for CLI.
         @transfer_id=nil
       end
@@ -36,10 +53,10 @@ module Aspera
       # generic method
       def start_transfer(transfer_spec,options=nil)
         # add root id if access key
-        if @options.has_key?(:root_id)
+        if ! @root_id.nil?
           case transfer_spec['direction']
-          when 'send';transfer_spec['source_root_id']=@options[:root_id]
-          when 'receive';transfer_spec['destination_root_id']=@options[:root_id]
+          when 'send';transfer_spec['source_root_id']=@root_id
+          when 'receive';transfer_spec['destination_root_id']=@root_id
           else raise "unexpected direction in ts: #{transfer_spec['direction']}"
           end
         end

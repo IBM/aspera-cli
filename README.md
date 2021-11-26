@@ -1873,7 +1873,8 @@ COMMANDS
 
 OPTIONS
 	Options begin with a '-' (minus), and value is provided on command line.
-	Special values are supported beginning with special prefix, like: @base64: @json: @zlib: @ruby: @csvt: @lines: @list: @val: @file: @path: @env: @stdin:.
+	Special values are supported beginning with special prefix @pfx:, where pfx is one of:
+	base64, json, zlib, ruby, csvt, lines, list, incps, val, file, path, env, stdin, preset
 	Dates format is 'DD-MM-YY HH:MM:SS', or 'now' or '-<num>h'
 
 ARGS
@@ -1934,9 +1935,9 @@ OPTIONS:
         --sources=VALUE              list of source files (see doc)
         --transfer-info=VALUE        parameters for transfer agent
         --src-type=ENUM              type of file list: list, pair
-        --transfer=ENUM              type of transfer agent: direct, httpgw, connect, node
+        --transfer=ENUM              type of transfer agent: direct, node, connect, httpgw
         --progress=ENUM              type of progress bar: none, native, multi
-
+Usage: ascli [options]
 
 COMMAND: shares
 SUBCOMMANDS: repository admin
@@ -1944,7 +1945,7 @@ OPTIONS:
         --url=VALUE                  URL of application, e.g. https://org.asperafiles.com
         --username=VALUE             username to log in
         --password=VALUE             user's password
-
+Usage: ascli [options]
 
 COMMAND: node
 SUBCOMMANDS: postprocess stream transfer cleanup forward access_key watch_folder service async central asperabrowser basic_token browse upload download api_details health events space info license mkdir mklink mkfile rename delete search
@@ -1956,7 +1957,7 @@ OPTIONS:
         --asperabrowserurl=VALUE     URL for simple aspera web ui
         --name=VALUE                 sync name
         --token-type=ENUM            Type of token used for transfers: aspera, basic, hybrid
-
+Usage: ascli [options]
 
 COMMAND: orchestrator
 SUBCOMMANDS: info workflow plugins processes
@@ -1969,7 +1970,7 @@ OPTIONS:
         --synchronous=ENUM           work step:parameter expected as result: yes, no
         --ret-style=ENUM             how return type is requested in api: header, arg, ext
         --auth-style=ENUM            authentication type: arg_pass, head_basic, apikey
-
+Usage: ascli [options]
 
 COMMAND: bss
 SUBCOMMANDS: subscription
@@ -1977,7 +1978,7 @@ OPTIONS:
         --url=VALUE                  URL of application, e.g. https://org.asperafiles.com
         --username=VALUE             username to log in
         --password=VALUE             user's password
-
+Usage: ascli [options]
 
 COMMAND: alee
 SUBCOMMANDS: entitlement
@@ -1985,7 +1986,7 @@ OPTIONS:
         --url=VALUE                  URL of application, e.g. https://org.asperafiles.com
         --username=VALUE             username to log in
         --password=VALUE             user's password
-
+Usage: ascli [options]
 
 COMMAND: ats
 SUBCOMMANDS: cluster access_key api_key aws_trust_policy
@@ -1997,7 +1998,7 @@ OPTIONS:
         --params=VALUE               Parameters access key creation (@json:)
         --cloud=VALUE                Cloud provider
         --region=VALUE               Cloud region
-
+Usage: ascli [options]
 
 COMMAND: faspex5
 SUBCOMMANDS: node package auth_client jobs
@@ -2010,7 +2011,7 @@ OPTIONS:
         --redirect-uri=VALUE         API client redirect URI
         --auth=ENUM                  type of Oauth authentication: body_userpass, header_userpass, web, jwt, url_token, ibm_apikey, boot
         --private-key=VALUE          RSA private key PEM value for JWT (prefix file path with @val:@file:)
-
+Usage: ascli [options]
 
 COMMAND: cos
 SUBCOMMANDS: node
@@ -2021,7 +2022,7 @@ OPTIONS:
         --crn=VALUE                  ressource instance id
         --service-credentials=VALUE  IBM Cloud service credentials (Hash)
         --region=VALUE               IBM Cloud Object storage region
-
+Usage: ascli [options]
 
 COMMAND: faspex
 SUBCOMMANDS: health package source me dropbox v4 address_book login_methods
@@ -2035,7 +2036,7 @@ OPTIONS:
         --storage=VALUE              Faspex local storage definition
         --recipient=VALUE            use if recipient is a dropbox (with *)
         --box=ENUM                   package box: inbox, archive, sent
-
+Usage: ascli [options]
 
 COMMAND: shares2
 SUBCOMMANDS: repository organization project team share appinfo userinfo admin
@@ -2046,7 +2047,7 @@ OPTIONS:
         --organization=VALUE         organization
         --project=VALUE              project
         --share=VALUE                share
-
+Usage: ascli [options]
 
 COMMAND: preview
 SUBCOMMANDS: scan events trevents check test
@@ -2080,14 +2081,14 @@ OPTIONS:
         --blend-fps=VALUE            mp4: blend: frame per second
         --clips-count=VALUE          mp4: clips: number of clips
         --clips-length=VALUE         mp4: clips: length in seconds of each clips
-
+Usage: ascli [options]
 
 COMMAND: sync
 SUBCOMMANDS: start admin
 OPTIONS:
         --parameters=VALUE           extended value for session set definition
         --session-name=VALUE         name of session to use for admin commands, by default first one
-
+Usage: ascli [options]
 
 COMMAND: aoc
 SUBCOMMANDS: reminder bearer_token organization tier_restrictions user workspace packages files gateway admin automation servers
@@ -2110,7 +2111,7 @@ OPTIONS:
         --scope=VALUE                OAuth scope for AoC API calls
         --bulk=ENUM                  bulk operation: yes, no
         --default-ports=ENUM         use standard FASP ports or get from node api: yes, no
-
+Usage: ascli [options]
 
 COMMAND: server
 SUBCOMMANDS: health nodeadmin userdata configurator ctl download upload browse delete rename ls rm mv du info mkdir cp df md5sum
@@ -2121,7 +2122,7 @@ OPTIONS:
         --ssh-keys=VALUE             ssh key path list (Array or single)
         --ssh-options=VALUE          ssh options (Hash)
         --cmd-prefix=VALUE           prefix to add for as cmd execution, e.g. sudo or /opt/aspera/bin 
-
+Usage: ascli [options]
 
 COMMAND: console
 SUBCOMMANDS: transfer health
@@ -2131,6 +2132,15 @@ OPTIONS:
         --password=VALUE             user's password
         --filter-from=DATE           only after date
         --filter-to=DATE             only before date
+/Users/FooBar/workspace/aspera/aspera-cli/lib/aspera/cli/main.rb:331:in `rescue in process_command_line': uninitialized constant Aspera::Fasp::Error (NameError)
+Did you mean?  IOError
+               Errno
+	from /Users/FooBar/workspace/aspera/aspera-cli/lib/aspera/cli/main.rb:279:in `process_command_line'
+	from ../bin/ascli:9:in `<main>'
+/Users/FooBar/workspace/aspera/aspera-cli/lib/aspera/cli/main.rb:206:in `exit': exit (SystemExit)
+	from /Users/FooBar/workspace/aspera/aspera-cli/lib/aspera/cli/main.rb:206:in `exit_with_usage'
+	from /Users/FooBar/workspace/aspera/aspera-cli/lib/aspera/cli/main.rb:283:in `process_command_line'
+	from ../bin/ascli:9:in `<main>'
 
 
 ```

@@ -205,9 +205,9 @@ module Aspera
             template_ts=res[:data]['transfer_specs'].first['transfer_spec']
             # get ports, anyway that should be 33001 for both. add remote_user ?
             @default_transfer_spec=['ssh_port','fasp_port'].inject({}){|h,e|h[e]=template_ts[e];h}
-            if ! @default_transfer_spec['remote_user'].eql?(Aspera::Node::ACCESS_KEY_TRANSFER_USER)
+            if ! @default_transfer_spec['remote_user'].eql?(Aspera::Fasp::Default::ACCESS_KEY_TRANSFER_USER)
               Log.log.warn("remote_user shall be xfer")
-              @default_transfer_spec['remote_user']=Aspera::Node::ACCESS_KEY_TRANSFER_USER
+              @default_transfer_spec['remote_user']=Aspera::Fasp::Default::ACCESS_KEY_TRANSFER_USER
             end
             Aspera::Node::set_ak_basic_token(@default_transfer_spec,@access_key_self['id'],self.options.get_option(:password,:mandatory))
             # note: we use the same address for ascp than for node api instead of the one from upload_setup

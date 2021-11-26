@@ -2,7 +2,7 @@ require 'aspera/log'
 require 'aspera/rest'
 require 'aspera/hash_ext'
 require 'aspera/data_repository'
-require 'aspera/node'
+require 'aspera/fasp/default'
 require 'base64'
 
 module Aspera
@@ -18,19 +18,15 @@ module Aspera
     # to avoid infinite loop in pub link redirection
     MAX_REDIRECT=10
     CLIENT_APPS=['aspera.global-cli-client','aspera.drive']
+    # index offset in data repository of client app
     DATA_REPO_INDEX_START = 4
 
     # path in URL of public links
     PATHS_PUBLIC_LINK=['/packages/public/receive','/packages/public/send','/files/public']
     JWT_AUDIENCE='https://api.asperafiles.com/api/v1/oauth2/token'
     OAUTH_API_SUBPATH='api/v1/oauth2'
-    DEFAULT_TSPEC_INFO={
-      'remote_user' => Node::ACCESS_KEY_TRANSFER_USER,
-      'ssh_port'    => Node::SSH_PORT_DEFAULT,
-      'fasp_port'   => Node::UDP_PORT_DEFAULT
-    }
 
-    private_constant :PRODUCT_NAME,:PROD_DOMAIN,:MAX_REDIRECT,:CLIENT_APPS,:PATHS_PUBLIC_LINK,:JWT_AUDIENCE,:OAUTH_API_SUBPATH,:DEFAULT_TSPEC_INFO
+    private_constant :PRODUCT_NAME,:PROD_DOMAIN,:MAX_REDIRECT,:CLIENT_APPS,:PATHS_PUBLIC_LINK,:JWT_AUDIENCE,:OAUTH_API_SUBPATH
 
     public
     # various API scopes supported
@@ -270,7 +266,7 @@ module Aspera
       }
       # add remote host info
       if @@use_standard_ports
-        transfer_spec.merge!(DEFAULT_TSPEC_INFO)
+        transfer_spec.merge!(Fasp::Default::AK_TSPEC_BASE)
         # TODO issue #30
         if node_file[:node_info]['transfer_url'].is_a?(String) and !node_file[:node_info]['transfer_url'].empty?
           Log.log.debug("Ignoring transfer url, issue #30")

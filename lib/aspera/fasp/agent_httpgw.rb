@@ -12,7 +12,7 @@ require 'json'
 module Aspera
   module Fasp
     # start a transfer using Aspera HTTP Gateway, using web socket session
-    class AgentHttpGW < AgentBase
+    class AgentHttpgw < AgentBase
       # message returned by HTTP GW in case of success
       OK_MESSAGE='end upload'
       # refresh rate for progress
@@ -209,6 +209,6 @@ module Aspera
         @upload_chunksize=128000 # TODO: configurable ?
       end
 
-    end # AgentHttpGW
+    end # AgentHttpgw
   end
 end

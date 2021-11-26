@@ -2,6 +2,7 @@ require 'aspera/cli/basic_auth_plugin'
 require 'aspera/nagios'
 require 'aspera/hash_ext'
 require 'aspera/id_generator'
+require 'aspera/node'
 require 'base64'
 require 'zlib'
 
@@ -224,9 +225,9 @@ module Aspera
               raise "shall be basic auth" unless @api_node.params[:auth][:type].eql?(:basic)
               transfer_spec={
                 'remote_host'=>URI.parse(@api_node.params[:base_url]).host,
-                'remote_user'=>Aspera::Node::ACCESS_KEY_TRANSFER_USER,
-                'ssh_port'=>Aspera::Node::SSH_PORT_DEFAULT,
-                'direction'=>case command;when :upload;'send';when :download;'recv';else raise "Error";end
+                'remote_user'=>Aspera::Fasp::Default::ACCESS_KEY_TRANSFER_USER,
+                'ssh_port'   =>Aspera::Fasp::Default::SSH_PORT,
+                'direction'  =>case command;when :upload;'send';when :download;'recv';else raise "Error";end
               }
             else raise "ERROR: token_type #{tt}"
             end
