@@ -16,7 +16,7 @@ Ruby Doc: [<%=gemspec.metadata['documentation_uri']%>](<%=gemspec.metadata['docu
 
 Required Ruby version: <%=gemspec.required_ruby_version%>
 
-# <a name="when_to_use"></a>When to use and when not to use
+# <a id="when_to_use"></a>When to use and when not to use
 
 <%=tool%> is designed to be used as a command line tool to:
 
@@ -52,7 +52,7 @@ Prompt `# ` refers to user `root`, prompt `xfer$ ` refer to user `xfer`.
 
 Command line parameters in examples beginning with `my_`, like `my_param_value` are user-provided value and not fixed value commands.
 
-# <a name="parsing"></a>Shell and Command line parsing
+# <a id="parsing"></a>Shell and Command line parsing
 
 <%=tool%> is typically executed in a shell, either interactively or in a script. <%=tool%> receives its arguments from this shell.
 
@@ -147,7 +147,7 @@ Get familiar with configuration, options, commands : [Command Line Interface](#c
 
 Then, follow the section relative to the product you want to interact with ( Aspera on Cloud, Faspex, ...) : [Application Plugins](plugins)
 
-# <a name="installation"></a>Installation
+# <a id="installation"></a>Installation
 
 It is possible to install *either* directly on the host operating system (Linux, Windows, macOS) or as a docker container.
 
@@ -197,7 +197,7 @@ The wrapping script maps the container folder `/usr/src/app/config` to configura
 To transfer to/from the native host, you will need to map a volume in docker or use the config folder (already mapped).
 To add local storage as a volume edit the script: ascli and add a `--volume` stanza.
 
-## <a name="ruby"></a>Ruby
+## <a id="ruby"></a>Ruby
 
 Use this method to install on the native host.
 
@@ -328,7 +328,7 @@ For instance to build from source, and install in `/opt/ruby` :
 # make install
 ```
 
-### <a name="offline_install"></a>Installation without internet access
+### <a id="offline_install"></a>Installation without internet access
 
 Note that currently no pre-packaged version exist yet.
 A method to build one provided here:
@@ -372,7 +372,7 @@ $ <%=cmd%> conf ascp install --sdk-url=file:///SDK.zip
 
 or restore the `$HOME/.aspera` folder for the user.
 
-## <a name="the_gem"></a>`<%=gemspec.name%>` gem
+## <a id="the_gem"></a>`<%=gemspec.name%>` gem
 
 Once you have Ruby and rights to install gems: Install the gem and its dependencies:
 
@@ -396,7 +396,7 @@ To check manually:
 
 
 
-## <a name="fasp_prot"></a>FASP Protocol
+## <a id="fasp_prot"></a>FASP Protocol
 
 Most file transfers will be done using the FASP protocol, using `ascp`.
 Only two additional files are required to perform an Aspera Transfer, which are part of Aspera SDK:
@@ -434,9 +434,9 @@ by visiting the page: [https://www.ibm.com/aspera/connect/](https://www.ibm.com/
 Refer to section [FASP](#client) for details on how to select a client or set path to the FASP protocol.
 
 Several methods are provided to start a transfer.
-Use of a local client ([`direct`](#direct) transfer agent) is one of them, but other methods are available. Refer to section: [Transfer Agents](#agents)
+Use of a local client ([`direct`](#agt_direct) transfer agent) is one of them, but other methods are available. Refer to section: [Transfer Agents](#agents)
 
-## <a name="offline_install"></a>Offline Installation (without internet)
+## <a id="offline_install"></a>Offline Installation (without internet)
 
 The procedure consists in:
 
@@ -463,7 +463,7 @@ $ source ~/.rvm/scripts/rvm
 $ <%=cmd%> conf ascp install --sdk-url=file:///SDK.zip
 ```
 
-# <a name="cli"></a>Command Line Interface: <%=tool%>
+# <a id="cli"></a>Command Line Interface: <%=tool%>
 
 The `<%=gemspec.name%>` Gem provides a command line interface (CLI) which interacts with Aspera Products (mostly using REST APIs):
 
@@ -604,7 +604,7 @@ The style of output can be set using the `format` parameter, supporting:
 * `yaml` : YAML
 * `csv` : Comma Separated Values
 
-### <a name="option_select"></a>Option: `select`: Filter on columns values for `object_list`
+### <a id="option_select"></a>Option: `select`: Filter on columns values for `object_list`
 
 Table output can be filtered using the `select` parameter. Example:
 
@@ -645,7 +645,7 @@ By default, a table output will display one line per entry, and columns for each
 * +a,b,c : add selected properties to the default selection.
 * -a,b,c : remove selected properties from the default selection.
 
-## <a name="extended"></a>Extended Value Syntax
+## <a id="extended"></a>Extended Value Syntax
 
 Usually, values of options and arguments are specified by a simple string. But sometime it is convenient to read a value from a file, or decode it, or have a value more complex than a string (e.g. Hash table).
 
@@ -716,7 +716,7 @@ $ <%=cmd%> config echo @incps:@json:'{"hello":true,"incps":["config"]}'
 
 Note that `@incps:@json:'{"incps":["config"]}'` or `@incps:@ruby:'{"incps"=>["config"]}'` is equivalent to: `@preset:config`
 
-## <a name="native"></a>Structured Value
+## <a id="native"></a>Structured Value
 
 Some options and parameters expect a _Structured Value_, i.e. a value more complex than a simple string. This is usually a Hash table or an Array, which could also contain sub structures.
 
@@ -727,7 +727,7 @@ A convenient way to specify a _Structured Value_ is to use the `@json:` decoder,
 
 It is also possible to provide a _Structured Value_ in a file using `@json:@file:<path>`
 
-## <a name="conffolder"></a>Configuration and Persistency Folder
+## <a id="conffolder"></a>Configuration and Persistency Folder
 
 <%=tool%> configuration and other runtime files (token cache, file lists, persistency files, SDK) are stored in folder `[User's home folder]/.aspera/<%=cmd%>`.
 
@@ -751,7 +751,7 @@ $ <%=cmd%> config folder
 C:\Users\Kenji\.aspera\<%=cmd%>
 ```
 
-## <a name="configfile"></a>Configuration file
+## <a id="configfile"></a>Configuration file
 
 On the first execution of <%=tool%>, an empty configuration file is created in the configuration folder.
 Nevertheless, there is no mandatory information required in this file, the use of it is optional as any option can be provided on the command line.
@@ -766,7 +766,7 @@ The default configuration file is: `$HOME/.aspera/<%=cmd%>/config.yaml` (this ca
 
 The configuration file is simply a catalog of pre-defined lists of options, called: <%=prsts%>. Then, instead of specifying some common options on the command line (e.g. address, credentials), it is possible to invoke the ones of a <%=prst%> (e.g. `mypreset`) using the option: `-Pmypreset` or `--preset=mypreset`.
 
-### <a name="lprt"></a><%=prstt%>
+### <a id="lprt"></a><%=prstt%>
 
 A <%=prst%> is simply a collection of parameters and their associated values in a named section in the configuration file.
 
@@ -815,11 +815,11 @@ A list of <%=prst%> can be displayed using:
 $ <%=cmd%> config list
 ```
 
-### <a name="lprtconf"></a>Special <%=prstt%>: config
+### <a id="lprtconf"></a>Special <%=prstt%>: config
 
 This preset name is reserved and contains a single key: `version`. This is the version of <%=tool%> which created the file.
 
-### <a name="lprtdef"></a>Special <%=prstt%>: default
+### <a id="lprtdef"></a>Special <%=prstt%>: default
 
 This preset name is reserved and contains an array of key-value , where the key is the name of a plugin, and the value is the name of another preset.
 
@@ -835,7 +835,7 @@ $ <%=cmd%> config id default get _plugin_name_
 "_default_preset_for_plugin_"
 ```
 
-### <a name="lprtdef"></a>Special Plugin: config
+### <a id="lprtdef"></a>Special Plugin: config
 
 Plugin `config` (not to be confused with <%=prstt%> config) is used to configure <%=tool%> but it also contains global options.
 
@@ -1011,7 +1011,7 @@ To display HTTP calls, use argument `-r` or `--rest-debug`, this is useful to di
 
 In order to get traces of execution, use argument : `--log-level=debug`
 
-## HTTP socket parameters
+## <a id="http_options"></a>HTTP socket parameters
 
 If the server does not provide a valid certificate, use parameter: `--insecure=yes`.
 
@@ -1028,7 +1028,7 @@ Example:
 $ <%=cmd%> aoc admin res package list --http-options=@json:'{"read_timeout":10.0}'
 ```
 
-## <a name="graphical"></a>Graphical Interactions: Browser and Text Editor
+## <a id="graphical"></a>Graphical Interactions: Browser and Text Editor
 
 Some actions may require the use of a graphical tool:
 
@@ -1061,7 +1061,7 @@ PROXY proxy.example.com:8080
 
 This is not yet implemented to specify http proxy, so use `http_proxy` env vars.
 
-## <a name="client"></a>FASP configuration
+## <a id="client"></a>FASP configuration
 
 The `config` plugin also allows specification for the use of a local FASP client. It provides the following commands for `ascp` subcommand:
 
@@ -1083,7 +1083,7 @@ $ <%=cmd%> config ascp info
 ...
 ```
 
-### Selection of `ascp` location for [`direct`](#direct) agent
+### Selection of `ascp` location for [`direct`](#agt_direct) agent
 
 By default, <%=tool%> uses any found local product with ascp, including SDK.
 
@@ -1127,7 +1127,7 @@ $ <%=cmd%> config ascp products list
 :.........................................:................................................:
 ```
 
-### Selection of local client for `ascp` for [`direct`](#direct) agent
+### Selection of local client for `ascp` for [`direct`](#agt_direct) agent
 
 If no ascp is selected, this is equivalent to using option: `--use-product=FIRST`.
 
@@ -1173,7 +1173,7 @@ $ <%=cmd%> config ascp connect id 'Aspera Connect for Mac Intel 10.6' links id '
 downloaded: AsperaConnect-3.6.1.111259-mac-intel-10.6.dmg
 ```
 
-## <a name="agents"></a>Transfer Agents
+## <a id="agents"></a>Transfer Agents
 
 Some of the actions on Aspera Applications lead to file transfers (upload and download) using the FASP protocol (`ascp`).
 
@@ -1182,10 +1182,11 @@ This [_transfer-spec_](#transferspec) will be executed by a transfer client, her
 
 There are currently 3 agents:
 
-* [`direct`](#direct) : a local execution of `ascp`
-* `connect` : use of a local Connect Client
-* `node` : use of an Aspera Transfer Node (potentially _remote_).
-* `httpgw` : use of an Aspera HTTP Gateway
+* [`direct`](#agt_direct) : a local execution of `ascp`
+* [`connect`](#agt_connect) : use of a local Connect Client
+* [`node`](#agt_node) : use of an Aspera Transfer Node (potentially _remote_).
+* [`httpgw`](#agt_httpgw) : use of an Aspera HTTP Gateway
+* [`trsdk`](#agt_trsdk) : use of Aspera Transfer SDK
 
 Note that all transfer operation are seen from the point of view of the agent.
 For instance, a node agent making an "upload", or "package send" operation,
@@ -1194,7 +1195,7 @@ will effectively push files to the related server from the agent node.
 <%=tool%> standardizes on the use of a [_transfer-spec_](#transferspec) instead of _raw_ ascp options to provide parameters for a transfer session, as a common method for those three Transfer Agents.
 
 
-### <a name="direct"></a>Direct (local ascp execution)
+### <a id="agt_direct"></a>Direct (local ascp execution)
 
 By default <%=tool%> uses a local ascp, equivalent to specifying `--transfer=direct`.
 <%=tool%> will detect locally installed Aspera products.
@@ -1241,12 +1242,11 @@ $ <%=cmd%> ... --transfer-info=@json:'{"wss":true,"resume":{"iter_max":10}}'
 $ <%=cmd%> ... --transfer-info=@json:'{"spawn_delay_sec":2.5,"multi_incr_udp":false}'
 ```
 
-### IBM Aspera Connect Client GUI
+### <a id="agt_connect"></a>IBM Aspera Connect Client GUI
 
-By specifying option: `--transfer=connect`, <%=tool%> will start transfers
-using the locally installed Aspera Connect Client.
+By specifying option: `--transfer=connect`, <%=tool%> will start transfers using the locally installed Aspera Connect Client.
 
-### Aspera Node API : Node to node transfers
+### <a id="agt_node"></a>Aspera Node API : Node to node transfers
 
 By specifying option: `--transfer=node`, the CLI will start transfers in an Aspera
 Transfer Server using the Node API, either on a local or remote node.
@@ -1261,11 +1261,7 @@ The `--transfer-info` parameter can directly specify a pre-configured <%=prst%> 
 `--transfer-info=@preset:<psetname>` or specified using the option syntax :
 `--transfer-info=@json:'{"url":"https://...","username":"theuser","password":"thepass"}'`
 
-### <a name="trinfoaoc"></a>Aspera on cloud
-
-By specifying option: `--transfer=aoc`, WORK IN PROGRESS
-
-### <a name="httpgw"></a>HTTP Gateway
+### <a id="agt_httpgw"></a>HTTP Gateway
 
 If it possible to send using a HTTP gateway, in case FASP is not allowed.
 
@@ -1277,7 +1273,13 @@ $ <%=cmd%> faspex package recv --id=323 --transfer=httpgw --transfer-info=@json:
 
 Note that the gateway only supports transfers authorized with a token.
 
-## <a name="transferspec"></a>Transfer Specification
+### <a id="agt_trsdk"></a>Transfer SDK
+
+Another possibility is to use the Transfer SDK daemon (asperatransferd).
+
+By default it will listen on local port `55002` on `127.0.0.1`.
+
+## <a id="transferspec"></a>Transfer Specification
 
 Some commands lead to file transfer (upload/download), all parameters necessary for this transfer
 is described in a _transfer-spec_ (Transfer Specification), such as:
@@ -1292,7 +1294,7 @@ is described in a _transfer-spec_ (Transfer Specification), such as:
 
 If needed, it is possible to modify or add any of the supported _transfer-spec_ parameter using the `ts` option. The `ts` option accepts a [Structured Value](#native) containing one or several _transfer-spec_ parameters. Multiple `ts` options on command line are cumulative.
 
-It is possible to specify ascp options when the `transfer` option is set to [`direct`](#direct) using the special [_transfer-spec_](#transferspec) parameter: `EX_ascp_args`. Example: `--ts=@json:'{"EX_ascp_args":["-l","100m"]}'`. This is especially useful for ascp command line parameters not supported yet in the transfer spec.
+It is possible to specify ascp options when the `transfer` option is set to [`direct`](#agt_direct) using the special [_transfer-spec_](#transferspec) parameter: `EX_ascp_args`. Example: `--ts=@json:'{"EX_ascp_args":["-l","100m"]}'`. This is especially useful for ascp command line parameters not supported yet in the transfer spec.
 
 The use of a _transfer-spec_ instead of `ascp` parameters has the advantage of:
 
@@ -1301,7 +1303,7 @@ The use of a _transfer-spec_ instead of `ascp` parameters has the advantage of:
 
 A [_transfer-spec_](#transferspec) is a Hash table, so it is described on the command line with the [Extended Value Syntax](#extended).
 
-## <a name="transferparams"></a>Transfer Parameters
+## <a id="transferparams"></a>Transfer Parameters
 
 All standard _transfer-spec_ parameters can be specified.
 [_transfer-spec_](#transferspec) can also be saved/overridden in the config file.
@@ -1325,7 +1327,7 @@ Columns:
 * C=Connect Client
 * arg=`ascp` argument or environment variable
 
-Fields with EX_ prefix are extensions to transfer agent [`direct`](#direct). (only in <%=tool%>).
+Fields with EX_ prefix are extensions to transfer agent [`direct`](#agt_direct). (only in <%=tool%>).
 
 <%=spec_table%>
 
@@ -1385,7 +1387,7 @@ For ease of use and flexibility, the list of files to transfer is specified by t
 --sources=@ts --ts=@json:'{"paths":[{"source":"dummy"}],"EX_ascp_args":["--file-list","myfilelist"]}'
 ```
 
-This method avoids creating a copy of the file list, but has drawbacks: it applies *only* to the [`direct`](#direct) transfer agent (i.e. bare ascp) and not for Aspera on Cloud. One must specify a dummy list in the [_transfer-spec_](#transferspec), which will be overridden by the bare ascp command line provided. (TODO) In next version, dummy source paths can be removed.
+This method avoids creating a copy of the file list, but has drawbacks: it applies *only* to the [`direct`](#agt_direct) transfer agent (i.e. bare ascp) and not for Aspera on Cloud. One must specify a dummy list in the [_transfer-spec_](#transferspec), which will be overridden by the bare ascp command line provided. (TODO) In next version, dummy source paths can be removed.
 
 In case the file list is provided on the command line i.e. using `--sources=@args` or `--sources=<Array>` (but not `--sources=@ts`), then the list of files will be used either as a simple file list or a file pair list depending on the value of the option: `src_type`:
 
@@ -1398,7 +1400,7 @@ Example:
 $ <%=cmd%> server upload --src-type=pair ~/Documents/Samples/200KB.1 /Upload/sample1
 ```
 
-Internally, when transfer agent [`direct`](#direct) is used, a temporary file list (or pair) file is generated and provided to ascp, unless `--file-list` or `--file-pair-list` is provided in `ts` in `EX_ascp_args`.
+Internally, when transfer agent [`direct`](#agt_direct) is used, a temporary file list (or pair) file is generated and provided to ascp, unless `--file-list` or `--file-pair-list` is provided in `ts` in `EX_ascp_args`.
 
 Note the special case when the source files are located on "Aspera on Cloud", i.e. using access keys and the `file id` API:
 
@@ -1411,7 +1413,7 @@ Source files are located on "Aspera on cloud", when :
 * the server is Aspera on Cloud, and making a download / recv
 * the agent is Aspera on Cloud, and making an upload / send
 
-### <a name="multisession"></a>Support of multi-session
+### <a id="multisession"></a>Support of multi-session
 
 Multi session, i.e. starting a transfer of a file set using multiple sessions (one ascp process per session) is supported on "direct" and "node" agents, not yet on connect.
 
@@ -1464,7 +1466,7 @@ When multi-session is used, one separate UDP port is used per session (refer to 
 
 
 
-## <a name="scheduling"></a>Lock for exclusive execution
+## <a id="scheduling"></a>Lock for exclusive execution
 
 In some conditions, it may be desirable to ensure that <%=tool%> is not executed several times in parallel.
 
@@ -1537,7 +1539,7 @@ The simplified format is:
 
 One of the adapters, used in this manual, for testing, is `faux`. It is a pseudo file system allowing generation of file data without actual storage (on source or destination).
 
-## <a name="faux_testing"></a>`faux:` for testing
+## <a id="faux_testing"></a>`faux:` for testing
 
 This is an extract of the man page of `ascp`. This feature is a feature of `ascp`, not <%=tool%>
 
@@ -1613,7 +1615,7 @@ $ <%=cmd%> server upload /tmp/sample --to-folder=faux://
 $ <%=cmd%> server upload "faux:///mydir?file=testfile&count=1m&size=0&inc=2&seq=sequential" --to-folder=/Upload
 ```
 
-## <a name="commands"></a>Sample Commands
+## <a id="commands"></a>Sample Commands
 
 A non complete list of commands used in unit tests:
 
@@ -1622,7 +1624,7 @@ A non complete list of commands used in unit tests:
 ...and more
 ```
 
-## <a name="usage"></a>Usage
+## <a id="usage"></a>Usage
 
 ```
 $ <%=cmd%> -h
@@ -1632,7 +1634,7 @@ $ <%=cmd%> -h
 
 Note that actions and parameter values can be written in short form.
 
-# <a name="plugins"></a>Plugins: Application URL and Authentication
+# <a id="plugins"></a>Plugins: Application URL and Authentication
 
 <%=tool%> comes with several Aspera application plugins.
 
@@ -1648,13 +1650,13 @@ Those can be provided using command line, parameter set, env var, see section ab
 
 Aspera on Cloud relies on Oauth, refer to the [Aspera on Cloud](#aoc) section.
 
-# <a name="aoc"></a>Plugin: Aspera on Cloud
+# <a id="aoc"></a>Plugin: Aspera on Cloud
 
 Aspera on Cloud uses the more advanced Oauth v2 mechanism for authentication (HTTP Basic authentication is not supported).
 
 It is recommended to use the wizard to set it up, but manual configuration is also possible.
 
-## <a name="aocwizard"></a>Configuration: using Wizard
+## <a id="aocwizard"></a>Configuration: using Wizard
 
 <%=tool%> provides a configuration wizard. Here is a sample invocation :
 
@@ -1683,7 +1685,7 @@ For this, specify the option: `--use-generic-client=no`.
 
 This will guide you through the steps to create.
 
-## <a name="aocmanual"></a>Configuration: using manual setup
+## <a id="aocmanual"></a>Configuration: using manual setup
 
 If you used the wizard (recommended): skip this section.
 
@@ -1703,7 +1705,7 @@ For a more convenient, browser-less, experience follow the [JWT](#jwt) section (
 
 In Oauth, a "Bearer" token are generated to authenticate REST calls. Bearer tokens are valid for a period of time.<%=tool%> saves generated tokens in its configuration folder, tries to re-use them or regenerates them when they have expired.
 
-### <a name="clientreg"></a>Optional: API Client Registration
+### <a id="clientreg"></a>Optional: API Client Registration
 
 If you use the built-in client_id and client_secret, skip this and do not set them in next section.
 
@@ -1727,7 +1729,7 @@ Note: for web based authentication, <%=tool%> listens on a local port (e.g. spec
 
 Once the client is registered, a "Client ID" and "Secret" are created, these values will be used in the next step.
 
-### <a name="aocpreset"></a><%=prst%> for Aspera on Cloud
+### <a id="aocpreset"></a><%=prst%> for Aspera on Cloud
 
 If you did not use the wizard, you can also manually create a <%=prst%> for <%=tool%> in its configuration file.
 
@@ -1751,7 +1753,7 @@ $ <%=cmd%> config id default set aoc my_aoc_org
 
 Note: Default `auth` method is `web` and default `redirect_uri` is `http://localhost:12345`. Leave those default values.
 
-### <a name="jwt"></a>Activation of JSON Web Token (JWT) for direct authentication
+### <a id="jwt"></a>Activation of JSON Web Token (JWT) for direct authentication
 
 For a Browser-less, Private Key-based authentication, use the following steps.
 
@@ -1862,7 +1864,7 @@ Note: the private key argument represents the actual PEM string. In order to rea
 After this last step, commands do not require web login anymore.
 
 
-### <a name="aocfirst"></a>First Use
+### <a id="aocfirst"></a>First Use
 
 Once client has been registered and <%=prst%> created: <%=tool%> can be used:
 
@@ -1995,7 +1997,7 @@ $ <%=cmd%> aoc admin res user --bulk=yes --id=@json:"$thelist" delete
 :.......:.........:
 ```
 
-* <a name="deactuser"></a>Find deactivated users since more than 2 years
+* <a id="deactuser"></a>Find deactivated users since more than 2 years
 
 ```
 ascli aoc admin res user list --query=@ruby:'{"deactivated"=>true,"q"=>"last_login_at:<#{(DateTime.now.to_time.utc-2*365*86400).iso8601}"}'
@@ -2073,7 +2075,7 @@ other query parameters:
 {"workspace_membership_through":true,"include_indirect":true}
 ```
 
-* <a name="aoc_sample_member"></a>add all members of a workspace to another workspace
+* <a id="aoc_sample_member"></a>add all members of a workspace to another workspace
 
 a- Get id of first workspace
 
@@ -2255,7 +2257,7 @@ $ <%=cmd%> aoc package send --value=@json:'{"name":"my file in shared inbox","re
 $ <%=cmd%> aoc package send --workspace=eudemo --value=@json:'{"name":"my pack title","recipients":["Shared Inbox Name"],"metadata":[{"input_type":"single-text","name":"Project Id","values":["123"]},{"input_type":"single-dropdown","name":"Type","values":["Opt2"]},{"input_type":"multiple-checkbox","name":"CheckThose","values":["Check1","Check2"]},{"input_type":"date","name":"Optional Date","values":["2021-01-13T15:02:00.000Z"]}]}' ~/Documents/Samples/200KB.1
 ```
 
-## <a name="aoccargo"></a>Receive new packages only
+## <a id="aoccargo"></a>Receive new packages only
 
 It is possible to automatically download new packages, like using Aspera Cargo:
 
@@ -2448,7 +2450,7 @@ Explanation:
 * `|` the standard output of the first command is fed into the second one
 * `-Porg2 aoc` use Aspera on Cloud plugin and load credentials for `org2`
 * `files upload mysourcefile` upload the file named `mysourcefile` (located in `org1`)
-* `--transfer=node` use transfer agent type `node` instead of default [`direct`](#direct)
+* `--transfer=node` use transfer agent type `node` instead of default [`direct`](#agt_direct)
 * `--transfer-info=@json:@stdin:` provide `node` transfer agent information, i.e. node API credentials, those are expected in JSON format and read from standard input
 
 Note that when using a POSIX shell, another possibility to write `cmd1 | cmd2 --transfer-info=@json:stdin:` is `cmd2 --transfer-info=@json:$(cmd1)` instead of ``
@@ -2983,7 +2985,7 @@ If you use a value different than 16777216, then specify it using option `max_si
 
 Note: the HSTS parameter (max_request_file_create_size_kb) is in *kiloBytes* while the generator parameter is in *Bytes* (factor of 1024).
 
-## <a name="prev_ext"></a>External tools: Linux
+## <a id="prev_ext"></a>External tools: Linux
 
 The tool requires the following external tools available in the `PATH`:
 
@@ -3332,7 +3334,7 @@ Note that there are special "extended" [_transfer-spec_](#transferspec) paramete
   * `EX_loglevel` to change log level of the tool
   * `EX_file_list_folder` to set the folder used to store (exclusively, because of garbage collection) generated file lists. By default it is `[system tmp folder]/[username]_asession_filelists`
 
-Note that in addition, many "EX_" [_transfer-spec_](#transferspec) parameters are supported for the [`direct`](#direct) transfer agent (used by `asession`), refer to section [_transfer-spec_](#transferspec).
+Note that in addition, many "EX_" [_transfer-spec_](#transferspec) parameters are supported for the [`direct`](#agt_direct) transfer agent (used by `asession`), refer to section [_transfer-spec_](#transferspec).
 
 ## Comparison of interfaces
 
@@ -3413,7 +3415,7 @@ Note that:
 
 * <%=tool%> takes transfer parameters exclusively as a transfer_spec, with `--ts` parameter.
 * most, but not all native ascp arguments are available as standard transfer_spec parameters
-* native ascp arguments can be provided with the [_transfer-spec_](#transferspec) parameter: EX_ascp_args (array), only for the [`direct`](#direct) transfer agent (not connect or node)
+* native ascp arguments can be provided with the [_transfer-spec_](#transferspec) parameter: EX_ascp_args (array), only for the [`direct`](#agt_direct) transfer agent (not connect or node)
 
 ### server side and configuration
 
@@ -3511,7 +3513,9 @@ So, it evolved into <%=tool%>:
 
 * <%=gemspec.version.to_s%>
 
-    * TBD
+    * new: support transfer agent: [Transfer SDK](#agt_trsdk)
+    * new: support [http socket options](#http_options)
+    * change: (break) renaming of some classes (transfer agents and few other)
   
 * 4.4.0
 
@@ -3525,7 +3529,7 @@ So, it evolved into <%=tool%>:
 
 * 4.3.0
 
-    * new: parameter `multi_incr_udp` for option `transfer_info`: control if UDP port is incremented when multi-session is used on [`direct`](#direct) transfer agent.
+    * new: parameter `multi_incr_udp` for option `transfer_info`: control if UDP port is incremented when multi-session is used on [`direct`](#agt_direct) transfer agent.
     * new: command `aoc files node_info` to get node information for a given folder in the Files application of AoC. Allows cross-org or cross-workspace transfers.
 
 * 4.2.2
@@ -3550,13 +3554,13 @@ So, it evolved into <%=tool%>:
     * new: command `aoc remind` to receive organization membership by email
     * new: in `preview` option `value` to filter out on file name
     * new: `initdemo` to initialize for demo server
-    * new: [`direct`](#direct) transfer agent options: `spawn_timeout_sec` and `spawn_delay_sec`
+    * new: [`direct`](#agt_direct) transfer agent options: `spawn_timeout_sec` and `spawn_delay_sec`
     * fix: on Windows `conf ascp use` expects ascp.exe
     * fix: (break) multi_session_threshold is Integer, not String
     * fix: `conf ascp install` renames sdk folder if it already exists (leftover shared lib may make fail)
     * fix: removed replace_illegal_chars from default aspera.conf causing "Error creating illegal char conversion table"
     * change: (break) `aoc apiinfo` is removed, use `aoc servers` to provide the list of cloud systems
-    * change: (break) parameters for resume in `transfer-info` for [`direct`](#direct) are now in sub-key `"resume"`
+    * change: (break) parameters for resume in `transfer-info` for [`direct`](#agt_direct) are now in sub-key `"resume"`
 
 * 4.1.0
 
@@ -3613,8 +3617,8 @@ So, it evolved into <%=tool%>:
     * allow bulk delete in `aspera files` with option `bulk=yes`
     * fix getting connect versions
     * added section for Aix
-    * support all ciphers for [`direct`](#direct) agent (including gcm, etc..)
-    * added transfer spec param `apply_local_docroot` for [`direct`](#direct)
+    * support all ciphers for [`direct`](#agt_direct) agent (including gcm, etc..)
+    * added transfer spec param `apply_local_docroot` for [`direct`](#agt_direct)
 
 * 0.11.4
 
@@ -3669,7 +3673,7 @@ So, it evolved into <%=tool%>:
 * 0.10.12
 
 	* added support for AoC node registration keys
-	* replaced option : `local_resume` with `transfer_info` for agent [`direct`](#direct)
+	* replaced option : `local_resume` with `transfer_info` for agent [`direct`](#agt_direct)
 	* Transfer agent is no more a Singleton instance, but only one is used in CLI
 	* `@incps` : new extended value modifier
 	* ATS: no more provides access keys secrets: now user must provide it
@@ -3851,7 +3855,7 @@ So, it evolved into <%=tool%>:
 
 * 0.9.7
 
-	* homogeneous [_transfer-spec_](#transferspec) for `node` and [`direct`](#direct) transfer agents
+	* homogeneous [_transfer-spec_](#transferspec) for `node` and [`direct`](#agt_direct) transfer agents
 	* preview persistency goes to unique file by default
 	* catch mxf extension in preview as video
 	* Faspex: possibility to download all packages by specifying id=ALL
