@@ -18,15 +18,14 @@ module Aspera
     # The main CLI class
     class Main
 
-      attr_reader :plugin_env
       private
-      # name of application, also foldername where config is stored
+      # name of application, also used as foldername where config is stored
       PROGRAM_NAME = 'ascli'
       # name of the containing gem, same as in <gem name>.gemspec
       GEM_NAME = 'aspera-cli'
       HELP_URL = "http://www.rubydoc.info/gems/#{GEM_NAME}"
       GEM_URL  = "https://rubygems.org/gems/#{GEM_NAME}"
-      SRC_URL  = "https://github.com/IBM/aspera-cli"
+      SRC_URL  = 'https://github.com/IBM/aspera-cli'
       # store transfer result using this key and use result_transfer_multiple
       STATUS_FIELD = 'status'
 
@@ -46,7 +45,6 @@ module Aspera
         http.set_debug_output($stdout) if @option_rest_debug
         raise "http_options expects Hash" unless @option_http_options.is_a?(Hash)
         @option_http_options.each do |k,v|
-          puts ">>> #{k} #{v}"
           method="#{k}=".to_sym
           # check if accessor is a method of Net::HTTP
           # continue_timeout= read_timeout= write_timeout=
@@ -89,7 +87,7 @@ module Aspera
         @plugin_env[:config]=Plugins::Config.new(@plugin_env,PROGRAM_NAME,HELP_URL,Aspera::Cli::VERSION,app_main_folder)
         # the TransferAgent plugin may use the @preset parser
         @plugin_env[:transfer]=TransferAgent.new(@plugin_env[:options],@plugin_env[:config])
-        # set application folder for modules
+        # data persistency
         @plugin_env[:persistency]=PersistencyFolder.new(File.join(@plugin_env[:config].main_folder,'persist_store'))
         Log.log.debug('plugin env created'.red)
         Oauth.persist_mgr=@plugin_env[:persistency]
@@ -110,9 +108,10 @@ module Aspera
         banner << "\tDocumentation and examples: #{GEM_URL}\n"
         banner << "\texecute: #{PROGRAM_NAME} conf doc\n"
         banner << "\tor visit: #{HELP_URL}\n"
+        banner << "\tsource repo: #{SRC_URL}\n"
         banner << "\nENVIRONMENT VARIABLES\n"
         banner << "\t#{conf_dir_env_var}  config folder, default: $HOME/#{Plugins::Config::ASPERA_HOME_FOLDER_NAME}/#{PROGRAM_NAME}\n"
-        banner << "\t#any option can be set as an environment variable, refer to the manual\n"
+        banner << "\tany option can be set as an environment variable, refer to the manual\n"
         banner << "\nCOMMANDS\n"
         banner << "\tTo list first level commands, execute: #{PROGRAM_NAME}\n"
         banner << "\tNote that commands can be written shortened (provided it is unique).\n"
@@ -199,9 +198,10 @@ module Aspera
             plugin_env=@plugin_env.clone
             plugin_env[:man_only]=true
             plugin_env[:options]=Manager.new(PROGRAM_NAME)
+            plugin_env[:options].parser.banner='' # remove default banner
             get_plugin_instance_with_options(plugin_name_sym,plugin_env)
             # display generated help for plugin options
-            @plugin_env[:formater].display_message(:error,plugin_env[:options].parser.to_s)
+            @plugin_env[:formater].display_message(:error,plugin_env[:options].parser.help)
           end
         end
         Process.exit(0)
