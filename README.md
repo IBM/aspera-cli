@@ -1864,10 +1864,11 @@ DESCRIPTION
 	Documentation and examples: https://rubygems.org/gems/aspera-cli
 	execute: ascli conf doc
 	or visit: http://www.rubydoc.info/gems/aspera-cli
+	source repo: https://github.com/IBM/aspera-cli
 
 ENVIRONMENT VARIABLES
 	ASCLI_HOME  config folder, default: $HOME/.aspera/ascli
-	#any option can be set as an environment variable, refer to the manual
+	any option can be set as an environment variable, refer to the manual
 
 COMMANDS
 	To list first level commands, execute: ascli
@@ -1939,7 +1940,7 @@ OPTIONS:
         --src-type=ENUM              type of file list: list, pair
         --transfer=ENUM              type of transfer agent: direct, node, connect, httpgw, trsdk
         --progress=ENUM              type of progress bar: none, native, multi
-Usage: ascli [options]
+
 
 COMMAND: shares
 SUBCOMMANDS: repository admin
@@ -1947,7 +1948,7 @@ OPTIONS:
         --url=VALUE                  URL of application, e.g. https://org.asperafiles.com
         --username=VALUE             username to log in
         --password=VALUE             user's password
-Usage: ascli [options]
+
 
 COMMAND: node
 SUBCOMMANDS: postprocess stream transfer cleanup forward access_key watch_folder service async central asperabrowser basic_token browse upload download api_details health events space info license mkdir mklink mkfile rename delete search
@@ -1959,7 +1960,7 @@ OPTIONS:
         --asperabrowserurl=VALUE     URL for simple aspera web ui
         --name=VALUE                 sync name
         --token-type=ENUM            Type of token used for transfers: aspera, basic, hybrid
-Usage: ascli [options]
+
 
 COMMAND: orchestrator
 SUBCOMMANDS: info workflow plugins processes
@@ -1972,7 +1973,7 @@ OPTIONS:
         --synchronous=ENUM           work step:parameter expected as result: yes, no
         --ret-style=ENUM             how return type is requested in api: header, arg, ext
         --auth-style=ENUM            authentication type: arg_pass, head_basic, apikey
-Usage: ascli [options]
+
 
 COMMAND: bss
 SUBCOMMANDS: subscription
@@ -1980,7 +1981,7 @@ OPTIONS:
         --url=VALUE                  URL of application, e.g. https://org.asperafiles.com
         --username=VALUE             username to log in
         --password=VALUE             user's password
-Usage: ascli [options]
+
 
 COMMAND: alee
 SUBCOMMANDS: entitlement
@@ -1988,7 +1989,7 @@ OPTIONS:
         --url=VALUE                  URL of application, e.g. https://org.asperafiles.com
         --username=VALUE             username to log in
         --password=VALUE             user's password
-Usage: ascli [options]
+
 
 COMMAND: ats
 SUBCOMMANDS: cluster access_key api_key aws_trust_policy
@@ -2000,7 +2001,7 @@ OPTIONS:
         --params=VALUE               Parameters access key creation (@json:)
         --cloud=VALUE                Cloud provider
         --region=VALUE               Cloud region
-Usage: ascli [options]
+
 
 COMMAND: faspex5
 SUBCOMMANDS: node package auth_client jobs
@@ -2013,7 +2014,7 @@ OPTIONS:
         --redirect-uri=VALUE         API client redirect URI
         --auth=ENUM                  type of Oauth authentication: body_userpass, header_userpass, web, jwt, url_token, ibm_apikey, boot
         --private-key=VALUE          RSA private key PEM value for JWT (prefix file path with @val:@file:)
-Usage: ascli [options]
+
 
 COMMAND: cos
 SUBCOMMANDS: node
@@ -2024,7 +2025,7 @@ OPTIONS:
         --crn=VALUE                  ressource instance id
         --service-credentials=VALUE  IBM Cloud service credentials (Hash)
         --region=VALUE               IBM Cloud Object storage region
-Usage: ascli [options]
+
 
 COMMAND: faspex
 SUBCOMMANDS: health package source me dropbox v4 address_book login_methods
@@ -2038,7 +2039,7 @@ OPTIONS:
         --storage=VALUE              Faspex local storage definition
         --recipient=VALUE            use if recipient is a dropbox (with *)
         --box=ENUM                   package box: inbox, archive, sent
-Usage: ascli [options]
+
 
 COMMAND: shares2
 SUBCOMMANDS: repository organization project team share appinfo userinfo admin
@@ -2049,7 +2050,7 @@ OPTIONS:
         --organization=VALUE         organization
         --project=VALUE              project
         --share=VALUE                share
-Usage: ascli [options]
+
 
 COMMAND: preview
 SUBCOMMANDS: scan events trevents check test
@@ -2083,14 +2084,14 @@ OPTIONS:
         --blend-fps=VALUE            mp4: blend: frame per second
         --clips-count=VALUE          mp4: clips: number of clips
         --clips-length=VALUE         mp4: clips: length in seconds of each clips
-Usage: ascli [options]
+
 
 COMMAND: sync
 SUBCOMMANDS: start admin
 OPTIONS:
         --parameters=VALUE           extended value for session set definition
         --session-name=VALUE         name of session to use for admin commands, by default first one
-Usage: ascli [options]
+
 
 COMMAND: aoc
 SUBCOMMANDS: reminder bearer_token organization tier_restrictions user workspace packages files gateway admin automation servers
@@ -2113,7 +2114,7 @@ OPTIONS:
         --scope=VALUE                OAuth scope for AoC API calls
         --bulk=ENUM                  bulk operation: yes, no
         --default-ports=ENUM         use standard FASP ports or get from node api: yes, no
-Usage: ascli [options]
+
 
 COMMAND: server
 SUBCOMMANDS: health nodeadmin userdata configurator ctl download upload browse delete rename ls rm mv du info mkdir cp df md5sum
@@ -2124,7 +2125,7 @@ OPTIONS:
         --ssh-keys=VALUE             ssh key path list (Array or single)
         --ssh-options=VALUE          ssh options (Hash)
         --cmd-prefix=VALUE           prefix to add for as cmd execution, e.g. sudo or /opt/aspera/bin 
-Usage: ascli [options]
+
 
 COMMAND: console
 SUBCOMMANDS: transfer health
