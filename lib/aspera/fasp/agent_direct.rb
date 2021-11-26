@@ -10,6 +10,7 @@ require 'aspera/fasp/error'
 require 'aspera/fasp/parameters'
 require 'aspera/fasp/installation'
 require 'aspera/fasp/resume_policy'
+require 'aspera/fasp/default'
 require 'aspera/log'
 require 'socket'
 require 'timeout'
@@ -21,16 +22,14 @@ module Aspera
     class AgentDirect < AgentBase
       # options for initialize (same as values in option transfer_info)
       DEFAULT_OPTIONS = {
-        :spawn_timeout_sec => 3,
-        :spawn_delay_sec   => 2,
-        :wss               => false,
-        :multi_incr_udp    => true,
-        :resume            => {}
+        spawn_timeout_sec: 3,
+        spawn_delay_sec:   2,
+        wss:               false,
+        multi_incr_udp:    true,
+        resume:            {},
+        quiet:             true   # by default no interactive progress bar
       }
-      DEFAULT_UDP_PORT=33001
       private_constant :DEFAULT_OPTIONS
-      # set to false to keep ascp progress bar display ("true" adds ascp's option -q)
-      attr_accessor :quiet
 
       # start ascp transfer (non blocking), single or multi-session
       # job information added to @jobs
@@ -82,7 +81,7 @@ module Aspera
             # if option not true: keep default udp port for all sessions
             if @options[:multi_incr_udp]
               # override if specified, else use default value
-              multi_session_info[:udp_base]=transfer_spec.has_key?('fasp_port') ? transfer_spec['fasp_port'] : DEFAULT_UDP_PORT
+              multi_session_info[:udp_base]=transfer_spec.has_key?('fasp_port') ? transfer_spec['fasp_port'] : Default::UDP_PORT
               # delete from original transfer spec, as we will increment values
               transfer_spec.delete('fasp_port')
             end
@@ -98,7 +97,7 @@ module Aspera
           env_args[:args].unshift('-I',Installation.instance.path(:fallback_cert))
         end
 
-        env_args[:args].unshift('-q') if @quiet
+        env_args[:args].unshift('-q') if @options[:quiet]
 
         # transfer job can be multi session
         xfer_job={
@@ -333,8 +332,6 @@ module Aspera
       # @param options : keys(symbol): see DEFAULT_OPTIONS
       def initialize(options=nil)
         super()
-        # by default no interactive progress bar
-        @quiet=true
         # all transfer jobs, key = SecureRandom.uuid, protected by mutex, condvar on change
         @jobs={}
         # mutex protects global data accessed by threads

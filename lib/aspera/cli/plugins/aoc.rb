@@ -2,6 +2,7 @@ require 'aspera/cli/plugins/node'
 require 'aspera/cli/plugins/ats'
 require 'aspera/cli/basic_auth_plugin'
 require 'aspera/cli/transfer_agent'
+require 'aspera/fasp/agent_node'
 require 'aspera/aoc'
 require 'aspera/node'
 require 'aspera/persistency_action_once'
@@ -163,7 +164,13 @@ module Aspera
             client_node_file = @api_aoc.resolve_node_file(client_home_node_file,client_folder)
             server_node_file = @api_aoc.resolve_node_file(server_home_node_file,server_folder)
             # force node as transfer agent
-            @agents[:transfer].set_agent_instance(Fasp::AgentNode.new(@api_aoc.get_node_api(client_node_file[:node_info],scope: AoC::SCOPE_NODE_USER)))
+            client_node_api=@api_aoc.get_node_api(client_node_file[:node_info],scope: AoC::SCOPE_NODE_USER, use_secret: false)
+            @agents[:transfer].set_agent_instance(Fasp::AgentNode.new({
+              url: client_node_api.params[:base_url],
+              username: client_node_file[:node_info]['access_key'],
+              password: client_node_api.oauth_token,
+              root_id:  client_node_file[:file_id]
+            }))
             # additional node to node TS info
             add_ts={
               'remote_access_key'   => server_node_file[:node_info]['access_key'],

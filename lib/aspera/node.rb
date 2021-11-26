@@ -1,3 +1,4 @@
+require 'aspera/fasp/default'
 require 'aspera/rest'
 require 'aspera/oauth'
 require 'aspera/log'
@@ -10,16 +11,12 @@ module Aspera
     # permissions
     ACCESS_LEVELS=['delete','list','mkdir','preview','read','rename','write']
     MATCH_EXEC_PREFIX='exec:'
-    # (public) default transfer username for access key based transfers
-    ACCESS_KEY_TRANSFER_USER='xfer'
-    SSH_PORT_DEFAULT=33001
-    UDP_PORT_DEFAULT=33001
 
     # register node special token decoder
     Oauth.register_decoder(lambda{|token|JSON.parse(Zlib::Inflate.inflate(Base64.decode64(token)).partition('==SIGNATURE==').first)})
 
     def self.set_ak_basic_token(ts,ak,secret)
-      raise "ERROR: expected xfer" unless ts['remote_user'].eql?(ACCESS_KEY_TRANSFER_USER)
+      raise "ERROR: expected xfer" unless ts['remote_user'].eql?(Fasp::Default::ACCESS_KEY_TRANSFER_USER)
       ts['token']="Basic #{Base64.strict_encode64("#{ak}:#{secret}")}"
     end
 

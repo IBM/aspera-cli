@@ -1,6 +1,6 @@
 require 'aspera/cli/basic_auth_plugin'
 require 'aspera/ascmd'
-require 'aspera/node'
+require 'aspera/fasp/default'
 require 'aspera/ssh'
 require 'aspera/nagios'
 require 'tempfile'
@@ -73,8 +73,8 @@ module Aspera
           case server_uri.scheme
           when 'ssh'
             if self.options.get_option(:username,:optional).nil?
-              self.options.set_option(:username,Aspera::Node::ACCESS_KEY_TRANSFER_USER)
-              Log.log.info("Using default transfer user: #{Aspera::Node::ACCESS_KEY_TRANSFER_USER}")
+              self.options.set_option(:username,Aspera::Fasp::Default::ACCESS_KEY_TRANSFER_USER)
+              Log.log.info("Using default transfer user: #{Aspera::Fasp::Default::ACCESS_KEY_TRANSFER_USER}")
             end
             server_transfer_spec['remote_user']=self.options.get_option(:username,:mandatory)
             ssh_options=self.options.get_option(:ssh_options,:optional)
