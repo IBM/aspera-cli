@@ -1507,14 +1507,14 @@ WARN -- : Another instance is already running (Address already in use - bind(2) 
 `ascp`, the underlying executable implementing Aspera file transfer using FASP, has a capability to not only access the local file system (using system's `open`,`read`,`write`,`close` primitives), but also to do the same operations on other data storage such as S3, Hadoop and others. This mechanism is call *PVCL*. Several *PVCL* adapters are available, some are embedded in `ascp`
 , some are provided om shared libraries and must be activated. (e.g. using `trapd`)
 
-The list of supported *PVCL* adapters can be retried with command:
+The list of supported *PVCL* adapters can be retrieved with command:
 
 ```
 $ <%=cmd%> conf ascp info
 +--------------------+-----------------------------------------------------------+
 | key                | value                                                     |
 +--------------------+-----------------------------------------------------------+
------8<----snip---------
+-----8<-----snip-----8<-----
 | product_name       | IBM Aspera SDK                                            |
 | product_version    | 4.0.1.182389                                              |
 | process            | pvcl                                                      |
@@ -1541,18 +1541,24 @@ One of the adapters, used in this manual, for testing, is `faux`. It is a pseudo
 
 ## <a id="faux_testing"></a>`faux:` for testing
 
-This is an extract of the man page of `ascp`. This feature is a feature of `ascp`, not <%=tool%>
+This is an extract of the man page of `ascp`. This feature is a feature of `ascp`, not <%=tool%>.
 
 This adapter can be used to simulate a file or a directory.
 
-To send uninitialized data in place of an actual source file, the source file is replaced with an argument of the form `faux:///fname?fsize` where:
+To send uninitialized data in place of an actual source file, the source file is replaced with an argument of the form:
 
-* `fname` is the name that will be assigned to the file on the destination
-* `fsize` is the number of bytes that will be sent (in decimal).
+```
+faux:///filename?filesize
+```
 
-Note that the character `?` is a special shell character (wildcard), so `faux` file specification on command line shall be protected (using `\?` and `\&` or using quotes). If not, the shell may give error: `no matches found` or equivalent.
+where:
 
-For all sizes, a suffix can be added (case insensitive) to the size: k,m,g,t,p,e (values are power of 2, e.g. 1M is 2^20, i.e. 1 mebibyte, not megabyte). The maximum allowed value is 8*2^60. Very large `faux` file sizes (petabyte range and above) will likely fail due to lack of system memory unless `faux://`.
+* `filename` is the name that will be assigned to the file on the destination
+* `filesize` is the number of bytes that will be sent (in decimal).
+
+Note: characters `?` and `&` are shell special characters (wildcard and backround), so `faux` file specification on command line should be protected (using quotes or `\`). If not, the shell may give error: `no matches found` or equivalent.
+
+For all sizes, a suffix can be added (case insensitive) to the size: k,m,g,t,p,e (values are power of 2, e.g. 1M is 2<sup>20</sup>, i.e. 1 mebibyte, not megabyte). The maximum allowed value is 8*2<sup>60</sup>. Very large `faux` file sizes (petabyte range and above) will likely fail due to lack of destination storage unless destination is `faux://`.
 
 To send uninitialized data in place of a source directory, the source argument is replaced with an argument of the form:
 
@@ -1560,20 +1566,20 @@ To send uninitialized data in place of a source directory, the source argument i
 faux:///dirname?<arg1>=<val1>&...
 ```
 
-`dirname` is the folder name and can contain `/` to specify a subfolder.
+where:
 
-Supported arguments are:
+* `dirname` is the folder name and can contain `/` to specify a subfolder.
+* supported arguments are:
 
 <table>
 <tr><th>name</th><th>type</th><th>default</th><th>description</th></tr>
-<tr><td>count</td><td>int</td><td>mandatory</td><td>number of files</td></tr>
-<tr><td>file</td><td>string</td><td>file</td><td>basename for files</td></tr>
-<tr><td>size</td><td>int</td><td>0</td><td>size of first file.</td></tr>
-<tr><td>inc</td><td>int</td><td>0</td><td>increment applied to determine next file size</td></tr>
-<tr><td>seq</td><td>sequential<br/>random</td><td>sequential</td><td>sequence in determining next file size</td></tr>
-<tr><td>buf_init</td><td>none<br/>zero<br/>random</td><td>zero</td><td>how source data initialized.<br/>Option 'none' is not allowed for downloads.</td></tr>
+<tr><td>count</td><td>int</td><td>mandatory</td><td>Number of files</td></tr>
+<tr><td>file</td><td>string</td><td>file</td><td>Basename for files</td></tr>
+<tr><td>size</td><td>int</td><td>0</td><td>Size of first file.</td></tr>
+<tr><td>inc</td><td>int</td><td>0</td><td>Increment applied to determine next file size</td></tr>
+<tr><td>seq</td><td>sequential<br/>random</td><td>sequential</td><td>Sequence in determining next file size</td></tr>
+<tr><td>buf_init</td><td>none<br/>zero<br/>random</td><td>zero</td><td>How source data is initialized<br/>Option 'none' is not allowed for downloads.</td></tr>
 </table>
-
 
 The sequence parameter is applied as follows:
 
@@ -1582,22 +1588,22 @@ The sequence parameter is applied as follows:
   * size +/- (inc * rand())
   * Where rand is a random number between 0 and 1
   * Note that file size must not be negative, inc will be set to size if it is greater than size
-  * Similarly, overall file size must be less than 8 * 2^60. If size + inc is greater, inc will be reduced to limit size + inc to 7 * 2^60.
+  * Similarly, overall file size must be less than 8*2<sup>60</sup>. If size + inc is greater, inc will be reduced to limit size + inc to 7*2<sup>60</sup>.
 
 * If `seq` is `sequential` then each file size is:
 
-  * size + ((fileindex - 1) * inc)
+  * `size + ((fileindex - 1) * inc)`
   * Where first file is index 1
-  * So file1 is size bytes, file2 is size + inc bytes, file3 is size + inc * 2 bytes, etc.
-  * As with random, inc will be adjusted if size + (count * inc) is not less then 8 ^ 2^60.
+  * So file1 is `size` bytes, file2 is `size + inc` bytes, file3 is `size + inc * 2` bytes, etc.
+  * As with `random`, `inc` will be adjusted if `size + (count * inc)` is not less then 8*2<sup>60</sup>.
 
-Filenames generated are of the form: `<file>_<00000 . . . count>_<filesize>`
+Filenames generated are of the form: `<file>_<00000 ... count>_<filesize>`
 
 To discard data at the destination, the destination argument is set to `faux://` .
 
 Examples:
 
-* Upload 20 gigabytes of random data to file myfile to directory /Upload
+* Upload 20 gibibytes of random data to file myfile to directory /Upload
 
 ```
 $ <%=cmd%> server upload faux:///myfile\?20g --to-folder=/Upload
@@ -1609,7 +1615,7 @@ $ <%=cmd%> server upload faux:///myfile\?20g --to-folder=/Upload
 $ <%=cmd%> server upload /tmp/sample --to-folder=faux://
 ```
 
-* Upload a faux directory `mydir` containing 1 million files, sequentially with sizes ranging from 0 to 2 M - 2 bytes, with the basename of each file being `testfile` to /Upload
+* Upload a faux directory `mydir` containing 1 million files, sequentially with sizes ranging from 0 to 2 Mebibyte - 2 bytes, with the basename of each file being `testfile` to /Upload
 
 ```
 $ <%=cmd%> server upload "faux:///mydir?file=testfile&count=1m&size=0&inc=2&seq=sequential" --to-folder=/Upload
