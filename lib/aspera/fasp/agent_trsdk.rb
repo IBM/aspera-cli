@@ -78,8 +78,8 @@ module Aspera
         started=false
         # monitor transfer status
         @transfer_client.monitor_transfers(Transfersdk::RegistrationRequest.new(transferId: [@transfer_id])) do |response|
-          #Log.dump(:response, response.to_h)
-          Log.log.debug("#{response.sessionInfo.preTransferBytes} #{response.transferInfo.bytesTransferred}")
+          Log.dump(:response, response.to_h)
+          #Log.log.debug("#{response.sessionInfo.preTransferBytes} #{response.transferInfo.bytesTransferred}")
           case response.status
           when :RUNNING
             if !started and !response.sessionInfo.preTransferBytes.eql?(0)
@@ -90,6 +90,7 @@ module Aspera
             end
           when :FAILED, :COMPLETED, :CANCELED
             notify_end(@transfer_id)
+            raise Fasp::Error.new(JSON.parse(response.message)['Description']) unless :COMPLETED.eql?(response.status)
             break
           when :QUEUED,:UNKNOWN_STATUS,:PAUSED,:ORPHANED
             # ignore
