@@ -5,22 +5,46 @@ require 'json'
 module Aspera
   module Fasp
     class AgentTrsdk < AgentBase
-      SDK_GRPC_ADDR = '127.0.0.1'
-      SDK_GRPC_PORT = 55002
-      def initialize(options)
+      DEFAULT_OPTIONS = {
+        address: '127.0.0.1',
+        port:    55002,
+      }
+      private_constant :DEFAULT_OPTIONS
+
+      # options come from transfer_info
+      def initialize(user_opts)
+        raise "expecting Hash (or nil), but have #{user_opts.class}" unless user_opts.nil? or user_opts.is_a?(Hash)
+        # set default options and override if specified
+        options=DEFAULT_OPTIONS.clone
+        if !user_opts.nil?
+          user_opts.each do |k,v|
+            if DEFAULT_OPTIONS.has_key?(k)
+              options[k]=v
+            else
+              raise "Unknown local agent parameter: #{k}, expect one of #{DEFAULT_OPTIONS.keys.map{|i|i.to_s}.join(",")}"
+            end
+          end
+        end
+        Log.log.debug("options= #{options}")
         super()
+        # load and create SDK stub
         $LOAD_PATH.unshift(Installation.instance.sdk_ruby_folder)
-        bin_folder=File.realpath(File.join(Installation.instance.sdk_ruby_folder,'..'))
         require 'transfer_services_pb'
-        @transfer_client = Transfersdk::TransferService::Stub.new("#{SDK_GRPC_ADDR}:#{SDK_GRPC_PORT}",:this_channel_is_insecure)
+        @transfer_client = Transfersdk::TransferService::Stub.new("#{options[:address]}:#{options[:port]}",:this_channel_is_insecure)
         begin
           get_info_response = @transfer_client.get_info(Transfersdk::InstanceInfoRequest.new)
           Log.log.debug("daemon info: #{get_info_response}")
         rescue GRPC::Unavailable => e
-          Log.log.warn("no daemon, starting...")
+          Log.log.warn("no daemon present, starting daemon...")
+          # location of daemon binary
+          bin_folder=File.realpath(File.join(Installation.instance.sdk_ruby_folder,'..'))
+          # config file and logs are created in same folder
+          conf_file = File.join(bin_folder,'sdk.conf')
+          log_base = File.join(bin_folder,'transferd')
+          # create a config file for daemon
           config = {
-            address: SDK_GRPC_ADDR,
-            port: SDK_GRPC_PORT,
+            address: options[:address],
+            port:    options[:port],
             fasp_runtime: {
             use_embedded: false,
             user_defined: {
@@ -29,27 +53,14 @@ module Aspera
             }
             }
           }
-          conf_file = File.join(bin_folder,'sdk.conf')
-          log_base = File.join(bin_folder,'transferd')
           File.write(conf_file,config.to_json)
-          daemon=Installation.instance.path(:transferd)
-          trd_pid = Process.spawn([daemon,daemon],'--config' , conf_file, out: "#{log_base}.out", err: "#{log_base}.err")
+          trd_pid = Process.spawn(Installation.instance.path(:transferd),'--config' , conf_file, out: "#{log_base}.out", err: "#{log_base}.err")
           Process.detach(trd_pid)
           sleep(2.0)
           retry
         end
       end
 
-      #            filters: [
-      #              Transfersdk::RegistrationFilter.new(
-      #              operator: Transfersdk::RegistrationFilterOperator::OR,
-      #              eventType: [Transfersdk::TransferEvent::FILE_STOP],
-      #              direction: 'Receive'),
-      #              Transfersdk::RegistrationFilter.new(
-      #              operator: Transfersdk::RegistrationFilterOperator::AND,
-      #              transferStatus: [Transfersdk::TransferStatus::COMPLETED]
-      #              )
-      #            ]
       def start_transfer(transfer_spec,options=nil)
         # create a transfer request
         transfer_request = Transfersdk::TransferRequest.new(
@@ -67,20 +78,21 @@ module Aspera
         started=false
         # monitor transfer status
         @transfer_client.monitor_transfers(Transfersdk::RegistrationRequest.new(transferId: [@transfer_id])) do |response|
-          Log.log.debug("transfer info #{response}")
-          # check transfer status in response, and exit if it's done
+          #Log.dump(:response, response.to_h)
+          Log.log.debug("#{response.sessionInfo.preTransferBytes} #{response.transferInfo.bytesTransferred}")
           case response.status
-          when :QUEUED,:UNKNOWN_STATUS,:PAUSED,:ORPHANED
           when :RUNNING
             if !started and !response.sessionInfo.preTransferBytes.eql?(0)
               notify_begin(@transfer_id,response.sessionInfo.preTransferBytes)
               started=true
-            else
+            elsif started
               notify_progress(@transfer_id,response.transferInfo.bytesTransferred)
             end
           when :FAILED, :COMPLETED, :CANCELED
             notify_end(@transfer_id)
             break
+          when :QUEUED,:UNKNOWN_STATUS,:PAUSED,:ORPHANED
+            # ignore
           else
             Log.log.error("unknown status#{response.status}")
           end
