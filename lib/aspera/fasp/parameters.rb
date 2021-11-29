@@ -7,6 +7,7 @@ require 'json'
 require 'yaml'
 require 'securerandom'
 require 'fileutils'
+require 'openssl'
 
 module Aspera
   module Fasp
@@ -111,6 +112,8 @@ module Aspera
           @job_spec.delete('fasp_port')
           @job_spec.delete('EX_ssh_key_paths')
           @job_spec.delete('sshfp')
+          # set default location for CA bundle, see env var SSL_CERT_FILE / SSL_CERT_DIR
+          @job_spec['EX_ssh_key_paths']=[OpenSSL::X509::DEFAULT_CERT_FILE]
         else
           # remove unused parameter (avoid warning)
           @job_spec.delete('wss_port')
