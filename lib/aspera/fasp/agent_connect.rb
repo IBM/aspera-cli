@@ -65,41 +65,49 @@ module Aspera
         connect_activity_args={'aspera_connect_settings'=>@connect_settings}
         started=false
         spinner=nil
-        loop do
-          tr_info=@connect_api.create("transfers/info/#{@xfer_id}",connect_activity_args)[:data]
-          if tr_info['transfer_info'].is_a?(Hash)
-            trdata=tr_info['transfer_info']
-            if trdata.nil?
-              Log.log.warn("no session in Connect")
-              break
-            end
-            # TODO: get session id
-            case trdata['status']
-            when 'completed'
-              notify_end(@connect_settings['app_id'])
-              break
-            when 'initiating','queued'
-              if spinner.nil?
-                spinner = TTY::Spinner.new('[:spinner] :title', format: :classic)
-                spinner.start
+        begin
+          loop do
+            tr_info=@connect_api.create("transfers/info/#{@xfer_id}",connect_activity_args)[:data]
+            if tr_info['transfer_info'].is_a?(Hash)
+              trdata=tr_info['transfer_info']
+              if trdata.nil?
+                Log.log.warn("no session in Connect")
+                break
               end
-              spinner.update(title: trdata['status'])
-              spinner.spin
-            when 'running'
-              #puts "running: sessions:#{trdata['sessions'].length}, #{trdata['sessions'].map{|i| i['bytes_transferred']}.join(',')}"
-              if !started and trdata['bytes_expected'] != 0
-                notify_begin(@connect_settings['app_id'],trdata['bytes_expected'])
-                started=true
+              # TODO: get session id
+              case trdata['status']
+              when 'completed'
+                notify_end(@connect_settings['app_id'])
+                break
+              when 'initiating','queued'
+                if spinner.nil?
+                  spinner = TTY::Spinner.new('[:spinner] :title', format: :classic)
+                  spinner.start
+                end
+                spinner.update(title: trdata['status'])
+                spinner.spin
+              when 'running'
+                #puts "running: sessions:#{trdata['sessions'].length}, #{trdata['sessions'].map{|i| i['bytes_transferred']}.join(',')}"
+                if !started and trdata['bytes_expected'] != 0
+                  spinner.success unless spinner.nil?
+                  notify_begin(@connect_settings['app_id'],trdata['bytes_expected'])
+                  started=true
+                else
+                  notify_progress(@connect_settings['app_id'],trdata['bytes_written'])
+                end
+              when 'failed'
+                spinner.error unless spinner.nil?
+                raise Fasp::Error.new(trdata['error_desc'])
               else
-                notify_progress(@connect_settings['app_id'],trdata['bytes_written'])
+                raise Fasp::Error.new("unknown status: #{trdata['status']}: #{trdata['error_desc']}")
               end
-            else
-              raise Fasp::Error.new("unknown status: #{trdata['status']}: #{trdata['error_desc']}")
             end
+            sleep 1
           end
-          sleep 1
+        rescue => e
+          return [e]
         end
-        return [] #TODO
+        return [:success]
       end # wait
     end # AgentConnect
   end
