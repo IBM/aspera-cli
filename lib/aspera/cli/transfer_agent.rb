@@ -98,7 +98,7 @@ END_OF_TEMPLATE
       # param: 'send' or 'receive'
       def destination_folder(direction)
         dest_folder=@opt_mgr.get_option(:to_folder,:optional)
-        return dest_folder unless dest_folder.nil?
+        return File.expand_path(dest_folder) unless dest_folder.nil?
         dest_folder=@transfer_spec_cmdline['destination_root']
         return dest_folder unless dest_folder.nil?
         # default: / on remote, . on local
