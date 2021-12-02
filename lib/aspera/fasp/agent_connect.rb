@@ -15,10 +15,6 @@ module Aspera
         @connect_settings={
           'app_id' => SecureRandom.uuid
         }
-        # TODO: start here and create monitor
-      end
-
-      def start_transfer(transfer_spec,options=nil)
         raise 'Using connect requires a graphical environment' if !OpenApplication.default_gui_mode.eql?(:graphical)
         trynumber=0
         begin
@@ -38,6 +34,9 @@ module Aspera
           sleep(SLEEP_SEC_BETWEEN_RETRY)
           retry
         end
+      end
+
+      def start_transfer(transfer_spec,options=nil)
         if transfer_spec['direction'] == 'send'
           Log.log.warn("Connect requires upload selection using GUI, ignoring #{transfer_spec['paths']}".red)
           transfer_spec.delete('paths')
