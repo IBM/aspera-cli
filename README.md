@@ -1050,11 +1050,11 @@ It is also possible to force the graphical mode with option --ui :
 
 To specify a HTTP proxy, set the HTTP_PROXY environment variable (or HTTPS_PROXY), those are honored by Ruby when calling REST APIs.
 
-## SSL CA certificate bundle
+## <a id="certificates"></a>SSL CA certificate bundle
 
 `ascli` uses ruby `openssl` gem, which uses the `openssl` library, so certificates are checked against the ruby default certificates [OpenSSL::X509::DEFAULT_CERT_FILE](https://ruby-doc.org/stdlib-3.0.3/libdoc/openssl/rdoc/OpenSSL/X509/Store.html), which are typically the ones of `openssl` on Unix systems (Linux, macOS, etc..). The environment variables `SSL_CERT_FILE` and `SSL_CERT_DIR` are used if defined.
 
-`ascp` also needs to validate certificates when using WSS, `ascli` automatically sets the default ruby path as well for `ascp` using `-i` switch.
+`ascp` also needs to validate certificates when using WSS. By default, `ascp` uses primarily certificates from hard coded path (e.g. on macOS: `/Library/Aspera/ssl`). `ascli` overrides and sets the default ruby path as well for `ascp` using `-i` switch. So to update certificates, update ruby's `openssl` gem, or use env vars `SSL_CERT_*`.
 
 ## Proxy auto config
 
@@ -4058,7 +4058,10 @@ So, it evolved into `ascli`:
 
     * new: support transfer agent: [Transfer SDK](#agt_trsdk)
     * new: support [http socket options](#http_options)
+    * new: logs hide passwords and secrets, option `log_passwords`
+    * change: when using wss, use [ruby's CA certs](#certificates)
     * change: (break) renaming of some classes (transfer agents and few other)
+    * fix: various smaller fixes
   
 * 4.4.0
 
