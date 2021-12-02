@@ -8,30 +8,47 @@ module Aspera
   # Singleton object for logging
   class Log
 
-    public
     include Singleton
+    # class methods
+    class << self
+      # levels are :debug,:info,:warn,:error,fatal,:unknown
+      def levels; Logger::Severity.constants.sort{|a,b|Logger::Severity.const_get(a)<=>Logger::Severity.const_get(b)}.map{|c|c.downcase.to_sym};end
 
-    attr_reader :logger
-    attr_reader :logger_type
-    # levels are :debug,:info,:warn,:error,fatal,:unknown
-    def self.levels; Logger::Severity.constants.sort{|a,b|Logger::Severity.const_get(a)<=>Logger::Severity.const_get(b)}.map{|c|c.downcase.to_sym};end
+      # where logs are sent to
+      def logtypes; [:stderr,:stdout,:syslog];end
 
-    # where logs are sent to
-    def self.logtypes; [:stderr,:stdout,:syslog];end
+      # get the logger object of singleton
+      alias_method :log, :instance
+      #def log; instance;end
 
-    # get the logger object of singleton
-    def self.log; self.instance.logger; end
-
-    # dump object in debug mode
-    # @param name string or symbol
-    # @param format either pp or json format
-    def self.dump(name,object,format=:json)
-      result=case format
-      when :ruby;PP.pp(object,'')
-      when :json;JSON.pretty_generate(object) rescue PP.pp(object,'')
-      else raise "wrong parameter, expect pp or json"
+      # dump object in debug mode
+      # @param name string or symbol
+      # @param format either pp or json format
+      def dump(name,object,format=:json)
+        result=case format
+        when :ruby;PP.pp(object,'')
+        when :json;JSON.pretty_generate(object) rescue PP.pp(object,'')
+        else raise "wrong parameter, expect pp or json"
+        end
+        self.log.debug("#{name.to_s.green} (#{format})=\n#{result}")
       end
-      self.log.debug("#{name.to_s.green} (#{format})=\n#{result}")
+    end
+
+    attr_reader :logger_type
+    attr_writer :program_name
+    attr_accessor :log_passwords
+
+    # define methods in single that are the same as underlying logger
+    Logger::Severity.constants.each do |lev_sym|
+      lev_meth=lev_sym.to_s.downcase.to_sym
+      define_method(lev_meth) do |message|
+        unless @log_passwords
+          message=message.gsub(/("[^"]*(password|secret|private_key)[^"]*"=>")([^"]+)(")/){"#{$1}***#{$4}"}
+          message=message.gsub(/("[^"]*(secret)[^"]*"=>{)([^}]+)(})/){"#{$1}***#{$4}"}
+          message=message.gsub(/((secrets)={)([^}]+)(})/){"#{$1}***#{$4}"}
+        end
+        @logger.send(lev_meth,message)
+      end
     end
 
     # set log level of underlying logger given symbol level
@@ -44,6 +61,7 @@ module Aspera
       Logger::Severity.constants.each do |name|
         return name.downcase.to_sym if @logger.level.eql?(Logger::Severity.const_get(name))
       end
+      # should not happen
       raise "error"
     end
 
@@ -73,15 +91,15 @@ module Aspera
       @logger_type=new_logtype
     end
 
-    attr_writer :program_name
-
     private
 
     def initialize
       @logger=nil
       @program_name='aspera'
-      # this sets @logger and @logger_type
+      @log_passwords=false
+      # this sets @logger and @logger_type (self needed to call method instead of local var)
       self.logger_type=:stderr
+      raise "error logger shall be defined" if @logger.nil?
     end
 
   end
