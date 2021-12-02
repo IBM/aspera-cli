@@ -7,7 +7,6 @@ require 'singleton'
 module Aspera
   # Singleton object for logging
   class Log
-
     include Singleton
     # class methods
     class << self
@@ -18,38 +17,30 @@ module Aspera
       def logtypes; [:stderr,:stdout,:syslog];end
 
       # get the logger object of singleton
-      alias_method :log, :instance
-      #def log; instance;end
+      def log; instance.logger;end
 
       # dump object in debug mode
       # @param name string or symbol
       # @param format either pp or json format
       def dump(name,object,format=:json)
-        result=case format
-        when :ruby;PP.pp(object,'')
-        when :json;JSON.pretty_generate(object) rescue PP.pp(object,'')
-        else raise "wrong parameter, expect pp or json"
+        self.log.debug() do
+          result=case format
+          when :json
+            JSON.pretty_generate(object) rescue PP.pp(object,'')
+          when :ruby
+            PP.pp(object,'')
+          else
+            raise "wrong parameter, expect pp or json"
+          end
+          "#{name.to_s.green} (#{format})=\n#{result}"
         end
-        self.log.debug("#{name.to_s.green} (#{format})=\n#{result}")
       end
     end
 
     attr_reader :logger_type
+    attr_reader :logger
     attr_writer :program_name
     attr_accessor :log_passwords
-
-    # define methods in single that are the same as underlying logger
-    Logger::Severity.constants.each do |lev_sym|
-      lev_meth=lev_sym.to_s.downcase.to_sym
-      define_method(lev_meth) do |message|
-        unless @log_passwords
-          message=message.gsub(/("[^"]*(password|secret|private_key)[^"]*"=>")([^"]+)(")/){"#{$1}***#{$4}"}
-          message=message.gsub(/("[^"]*(secret)[^"]*"=>{)([^}]+)(})/){"#{$1}***#{$4}"}
-          message=message.gsub(/((secrets)={)([^}]+)(})/){"#{$1}***#{$4}"}
-        end
-        @logger.send(lev_meth,message)
-      end
-    end
 
     # set log level of underlying logger given symbol level
     def level=(new_level)
@@ -67,15 +58,9 @@ module Aspera
 
     # change underlying logger, but keep log level
     def logger_type=(new_logtype)
-      current_severity_integer=if @logger.nil?
-        if ENV.has_key?('AS_LOG_LEVEL')
-          ENV['AS_LOG_LEVEL']
-        else
-          Logger::Severity::WARN
-        end
-      else
-        @logger.level
-      end
+      current_severity_integer=@logger.level unless @logger.nil?
+      current_severity_integer=ENV['AS_LOG_LEVEL'] if current_severity_integer.nil? and ENV.has_key?('AS_LOG_LEVEL')
+      current_severity_integer=Logger::Severity::WARN if current_severity_integer.nil?
       case new_logtype
       when :stderr
         @logger = Logger.new(STDERR)
@@ -89,6 +74,16 @@ module Aspera
       end
       @logger.level=current_severity_integer
       @logger_type=new_logtype
+      original_formatter = @logger.formatter || Logger::Formatter.new
+      # update formatter with password hiding
+      @logger.formatter=proc do |severity, datetime, progname, msg|
+        unless @log_passwords
+          msg=msg.gsub(/("[^"]*(password|secret|private_key)[^"]*"=>")([^"]+)(")/){"#{$1}***#{$4}"}
+          msg=msg.gsub(/("[^"]*(secret)[^"]*"=>{)([^}]+)(})/){"#{$1}***#{$4}"}
+          msg=msg.gsub(/((secrets)={)([^}]+)(})/){"#{$1}***#{$4}"}
+        end
+        original_formatter.call(severity, datetime, progname, msg)
+      end
     end
 
     private
