@@ -26,6 +26,7 @@ module Aspera
           Log.log.debug("found: #{connect_url}")
           @connect_api=Rest.new({base_url: "#{connect_url}/v5/connect",headers: {'Origin'=>Rest.user_agent}}) # could use v6 also now
           cinfo=@connect_api.read('info/version')[:data]
+          Log.dump(:connect_version,cinfo)
         rescue => e # Errno::ECONNREFUSED
           raise StandardError,"Unable to start connect after #{trynumber} try" if trynumber >= MAX_CONNECT_START_RETRY
           Log.log.warn("connect is not started. Retry ##{trynumber}, err=#{e}")
@@ -47,7 +48,6 @@ module Aspera
         # if there is a token, we ask connect client to use well known ssh private keys
         # instead of asking password
         transfer_spec['authentication']='token' if transfer_spec.has_key?('token')
-        connect_settings=
         connect_transfer_args={
           'aspera_connect_settings'=>@connect_settings.merge({
           'request_id'               =>@request_id,
