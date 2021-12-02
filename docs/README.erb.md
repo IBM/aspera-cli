@@ -16,6 +16,8 @@ Ruby Doc: [<%=gemspec.metadata['documentation_uri']%>](<%=gemspec.metadata['docu
 
 Required Ruby version: <%=gemspec.required_ruby_version%>
 
+[Aspera APIs](https://developer.ibm.com/?size=30&q=aspera&DWContentType[0]=APIs)
+
 # <a id="when_to_use"></a>When to use and when not to use
 
 <%=tool%> is designed to be used as a command line tool to:
@@ -998,11 +1000,15 @@ end # Aspera
 EOF
 ```
 
-## Debugging
+## Logging, Debugging
 
-The gem is equipped with traces. By default logging level is "warn". To increase debug level, use parameter `log_level`, so either command line `--log-level=xx` or env var `<%=evp%>LOG_LEVEL`.
+The gem is equipped with traces. By default logging level is `warn`.
+To increase debug level, use parameter `log_level` (e.g. using command line `--log-level=xx`, env var `<%=evp%>LOG_LEVEL`, or parameter in con file).
 
 It is also possible to activate traces before initialization using env var `AS_LOG_LEVEL`.
+
+By default passwords and secrets are removed from logs.
+Use option `log_passwords` to change this behaviour.
 
 ## Learning Aspera Product APIs (REST)
 

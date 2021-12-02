@@ -138,6 +138,7 @@ module Aspera
         @opt_mgr.set_obj_attr(:insecure,self,:option_insecure,:no)
         @opt_mgr.set_obj_attr(:ui,self,:option_ui)
         @opt_mgr.set_obj_attr(:http_options,self,:option_http_options)
+        @opt_mgr.set_obj_attr(:log_passwords,Log.instance,:log_passwords)
         @opt_mgr.add_opt_list(:ui,OpenApplication.user_interfaces,'method to start browser')
         @opt_mgr.add_opt_list(:log_level,Log.levels,"Log level")
         @opt_mgr.add_opt_list(:logger,Log.logtypes,"log method")
@@ -146,6 +147,7 @@ module Aspera
         @opt_mgr.add_opt_simple(:http_options,"options for http socket (extended value)")
         @opt_mgr.add_opt_boolean(:insecure,"do not validate HTTPS certificate")
         @opt_mgr.add_opt_boolean(:once_only,"process only new items (some commands)")
+        @opt_mgr.add_opt_boolean(:log_passwords,"show passwords in logs")
         @opt_mgr.set_option(:ui,OpenApplication.default_gui_mode)
         @opt_mgr.set_option(:once_only,:false)
         # parse declared options

@@ -15,6 +15,8 @@ Ruby Doc: [https://www.rubydoc.info/gems/aspera-cli](https://www.rubydoc.info/ge
 
 Required Ruby version: > 2.4
 
+[Aspera APIs](https://developer.ibm.com/?size=30&q=aspera&DWContentType[0]=APIs)
+
 # <a id="when_to_use"></a>When to use and when not to use
 
 `ascli` is designed to be used as a command line tool to:
@@ -997,11 +999,15 @@ end # Aspera
 EOF
 ```
 
-## Debugging
+## Logging, Debugging
 
-The gem is equipped with traces. By default logging level is "warn". To increase debug level, use parameter `log_level`, so either command line `--log-level=xx` or env var `ASCLI_LOG_LEVEL`.
+The gem is equipped with traces. By default logging level is `warn`.
+To increase debug level, use parameter `log_level` (e.g. using command line `--log-level=xx`, env var `ASCLI_LOG_LEVEL`, or parameter in con file).
 
 It is also possible to activate traces before initialization using env var `AS_LOG_LEVEL`.
+
+By default passwords and secrets are removed from logs.
+Use option `log_passwords` to change this behaviour.
 
 ## Learning Aspera Product APIs (REST)
 
@@ -1915,6 +1921,7 @@ OPTIONS: global
         --http-options=VALUE         options for http socket (extended value)
         --insecure=ENUM              do not validate HTTPS certificate: yes, no
         --once-only=ENUM             process only new items (some commands): yes, no
+        --log-passwords=ENUM         show passwords in logs: yes, no
 
 COMMAND: config
 SUBCOMMANDS: gem_path genkey plugins flush_tokens list overview open echo id documentation wizard export_to_cli detect coffee ascp email_test smtp_settings proxy_check folder file check_update initdemo
