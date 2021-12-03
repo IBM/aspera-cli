@@ -73,7 +73,7 @@ $ <%=cmd%> conf echo "Hello World" arg2 3
 ERROR: Argument: unprocessed values: ["arg2", "3"]
 ```
 
-`echo` displays the value of the first argument using ruby syntax (strings get double quotes) after command line parsing (shell) and extended value parsing (ascli), next command line arguments are shown in the error message.
+`echo` displays the value of the first argument using ruby syntax (strings get double quotes) after command line parsing (shell) and extended value parsing (<%=tool%>), next command line arguments are shown in the error message.
 
 # Quick Start
 
@@ -167,7 +167,7 @@ An internet connection is required for the installation. If you don't have inter
 
 Use this method only if you know what you do, else use the standard recommended method as described here above.
 
-This method installs a docker image that contains: Ruby, ascli and the FASP sdk.
+This method installs a docker image that contains: Ruby, <%=tool%> and the FASP sdk.
 
 The image is: [https://hub.docker.com/r/martinlaurent/ascli](https://hub.docker.com/r/martinlaurent/ascli)
 
@@ -197,7 +197,7 @@ Note that the tool is run in the container, so transfers are also executed in th
 The wrapping script maps the container folder `/usr/src/app/config` to configuration folder `$HOME/.aspera/<%=cmd%>` on host.
 
 To transfer to/from the native host, you will need to map a volume in docker or use the config folder (already mapped).
-To add local storage as a volume edit the script: ascli and add a `--volume` stanza.
+To add local storage as a volume edit the script: <%=tool%> and add a `--volume` stanza.
 
 ## <a id="ruby"></a>Ruby
 
@@ -1502,7 +1502,7 @@ Example:
 Run this same command in two separate terminals within less than 30 seconds:
 
 ```
-ascli config echo @ruby:'sleep(30)' --lock-port=12345
+<%=cmd%> config echo @ruby:'sleep(30)' --lock-port=12345
 ```
 
 The first instance will sleep 30 seconds, the second one will immediately exit like this:
@@ -2015,7 +2015,7 @@ $ <%=cmd%> aoc admin res user --bulk=yes --id=@json:"$thelist" delete
 * <a id="deactuser"></a>Find deactivated users since more than 2 years
 
 ```
-ascli aoc admin res user list --query=@ruby:'{"deactivated"=>true,"q"=>"last_login_at:<#{(DateTime.now.to_time.utc-2*365*86400).iso8601}"}'
+<%=cmd%> aoc admin res user list --query=@ruby:'{"deactivated"=>true,"q"=>"last_login_at:<#{(DateTime.now.to_time.utc-2*365*86400).iso8601}"}'
 ```
 
 To delete them use the same method as before
@@ -2216,9 +2216,9 @@ First retrieve the id of the shared inbox, and then list packages with the appro
 Note that when no query is provided, the query used by default is: `{"archived":false,"exclude_dropbox_packages":true,"has_content":true,"received":true}`. The workspace id is added if not already present in the query.
 
 ```
-shbxid=$(ascli aoc user shared_inboxes --select=@json:'{"dropbox.name":"My Shared Inbox"}' --format=csv --fields=dropbox_id --display=data)
+shbxid=$(<%=cmd%> aoc user shared_inboxes --select=@json:'{"dropbox.name":"My Shared Inbox"}' --format=csv --fields=dropbox_id --display=data)
 
-ascli aoc packages list --query=@json:'{"dropbox_id":"'$shbxid'","archived":false,"received":true,"has_content":true,"exclude_dropbox_packages":false,"include_draft":false,"sort":"-received_at"}'
+<%=cmd%> aoc packages list --query=@json:'{"dropbox_id":"'$shbxid'","archived":false,"received":true,"has_content":true,"exclude_dropbox_packages":false,"include_draft":false,"sort":"-received_at"}'
 ```
 
 ## Shared folders
