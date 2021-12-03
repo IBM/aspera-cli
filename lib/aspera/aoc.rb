@@ -24,12 +24,14 @@ module Aspera
     COOKIE_PREFIX='aspera.aoc'
 
     # path in URL of public links
-    PATHS_PUBLIC_LINK=['/packages/public/receive','/packages/public/send','/files/public']
+    PUBLIC_LINK_PATHS=['/packages/public/receive','/packages/public/send','/files/public']
     JWT_AUDIENCE='https://api.asperafiles.com/api/v1/oauth2/token'
     OAUTH_API_SUBPATH='api/v1/oauth2'
+    # minimum fields for user info if retrieval fails
+    USER_INFO_FIELDS_MIN=['name','email','id','default_workspace_id','organization_id']
 
-    private_constant :PRODUCT_NAME,:PROD_DOMAIN,:MAX_REDIRECT,:CLIENT_APPS,:PATHS_PUBLIC_LINK,:JWT_AUDIENCE,
-      :OAUTH_API_SUBPATH,:COOKIE_PREFIX
+    private_constant :PRODUCT_NAME,:PROD_DOMAIN,:MAX_REDIRECT,:CLIENT_APPS,:PUBLIC_LINK_PATHS,:JWT_AUDIENCE,
+    :OAUTH_API_SUBPATH,:COOKIE_PREFIX,:USER_INFO_FIELDS_MIN
 
     public
     # various API scopes supported
@@ -44,84 +46,119 @@ module Aspera
     FILES_APP='files'
     PACKAGES_APP='packages'
 
-    def self.get_client_info(client_name=CLIENT_APPS.first)
-      client_index=CLIENT_APPS.index(client_name)
-      raise "no such pre-defined client: #{client_name}" if client_index.nil?
+    # class static methods
+    class << self
       # strings /Applications/Aspera\ Drive.app/Contents/MacOS/AsperaDrive|grep -E '.{100}==$'|base64 --decode
-      return client_name,Base64.urlsafe_encode64(DataRepository.instance.get_bin(DATA_REPO_INDEX_START+client_index))
-    end
+      def get_client_info(client_name=CLIENT_APPS.first)
+        client_index=CLIENT_APPS.index(client_name)
+        raise "no such pre-defined client: #{client_name}" if client_index.nil?
+        return client_name,Base64.urlsafe_encode64(DataRepository.instance.get_bin(DATA_REPO_INDEX_START+client_index))
+      end
 
-    # @param url of AoC instance
-    # @return organization id in url and AoC domain: ibmaspera.com, asperafiles.com or qa.asperafiles.com, etc...
-    def self.parse_url(aoc_org_url)
-      uri=URI.parse(aoc_org_url.gsub(/\/+$/,''))
-      instance_fqdn=uri.host
-      Log.log.debug("instance_fqdn=#{instance_fqdn}")
-      raise "No host found in URL.Please check URL format: https://myorg.#{PROD_DOMAIN}" if instance_fqdn.nil?
-      organization,instance_domain=instance_fqdn.split('.',2)
-      Log.log.debug("instance_domain=#{instance_domain}")
-      Log.log.debug("organization=#{organization}")
-      raise "expecting a public FQDN for #{PRODUCT_NAME}" if instance_domain.nil?
-      return organization,instance_domain
-    end
+      # @param url of AoC instance
+      # @return organization id in url and AoC domain: ibmaspera.com, asperafiles.com or qa.asperafiles.com, etc...
+      def parse_url(aoc_org_url)
+        uri=URI.parse(aoc_org_url.gsub(/\/+$/,''))
+        instance_fqdn=uri.host
+        Log.log.debug("instance_fqdn=#{instance_fqdn}")
+        raise "No host found in URL.Please check URL format: https://myorg.#{PROD_DOMAIN}" if instance_fqdn.nil?
+        organization,instance_domain=instance_fqdn.split('.',2)
+        Log.log.debug("instance_domain=#{instance_domain}")
+        Log.log.debug("organization=#{organization}")
+        raise "expecting a public FQDN for #{PRODUCT_NAME}" if instance_domain.nil?
+        return organization,instance_domain
+      end
 
-    # base API url depends on domain, which could be "qa.xxx"
-    def self.api_base_url(api_domain=PROD_DOMAIN)
-      return "https://api.#{api_domain}"
-    end
+      # base API url depends on domain, which could be "qa.xxx"
+      def api_base_url(api_domain=PROD_DOMAIN)
+        return "https://api.#{api_domain}"
+      end
 
-    def self.metering_api(entitlement_id,customer_id,api_domain=PROD_DOMAIN)
-      return Rest.new({
-        :base_url => "#{api_base_url(api_domain)}/metering/v1",
-        :headers  => {'X-Aspera-Entitlement-Authorization' => Rest.basic_creds(entitlement_id,customer_id)}
-      })
-    end
+      def metering_api(entitlement_id,customer_id,api_domain=PROD_DOMAIN)
+        return Rest.new({
+          :base_url => "#{api_base_url(api_domain)}/metering/v1",
+          :headers  => {'X-Aspera-Entitlement-Authorization' => Rest.basic_creds(entitlement_id,customer_id)}
+        })
+      end
 
-    # node API scopes
-    def self.node_scope(access_key,scope)
-      return 'node.'+access_key+':'+scope
-    end
+      # node API scopes
+      def node_scope(access_key,scope)
+        return 'node.'+access_key+':'+scope
+      end
 
-    def self.set_use_default_ports(val)
-      @@use_standard_ports=val
-    end
+      def set_use_default_ports(val)
+        @@use_standard_ports=val
+      end
 
-    # check option "link"
-    # if present try to get token value (resolve redirection if short links used)
-    # then set options url/token/auth
-    def self.resolve_pub_link(rest_opts,public_link_url)
-      return if public_link_url.nil?
-      # set to token if available after redirection
-      url_param_token_pair=nil
-      redirect_count=0
-      loop do
-        uri=URI.parse(public_link_url)
-        if PATHS_PUBLIC_LINK.include?(uri.path)
-          url_param_token_pair=URI::decode_www_form(uri.query).select{|e|e.first.eql?('token')}.first
-          if url_param_token_pair.nil?
-            raise ArgumentError,"link option must be URL with 'token' parameter"
+      # check option "link"
+      # if present try to get token value (resolve redirection if short links used)
+      # then set options url/token/auth
+      def resolve_pub_link(rest_opts,public_link_url)
+        return if public_link_url.nil?
+        # set to token if available after redirection
+        url_param_token_pair=nil
+        redirect_count=0
+        loop do
+          uri=URI.parse(public_link_url)
+          if PUBLIC_LINK_PATHS.include?(uri.path)
+            url_param_token_pair=URI::decode_www_form(uri.query).select{|e|e.first.eql?('token')}.first
+            if url_param_token_pair.nil?
+              raise ArgumentError,"link option must be URL with 'token' parameter"
+            end
+            # ok we get it !
+            rest_opts[:org_url]='https://'+uri.host
+            rest_opts[:auth][:grant]=:url_token
+            rest_opts[:auth][:url_token]=url_param_token_pair.last
+            return
           end
-          # ok we get it !
-          rest_opts[:org_url]='https://'+uri.host
-          rest_opts[:auth][:grant]=:url_token
-          rest_opts[:auth][:url_token]=url_param_token_pair.last
-          return
-        end
-        Log.log.debug("no expected format: #{public_link_url}")
-        raise "exceeded max redirection: #{MAX_REDIRECT}" if redirect_count > MAX_REDIRECT
-        r = Net::HTTP.get_response(uri)
-        if r.code.start_with?("3")
-          public_link_url = r['location']
-          raise "no location in redirection" if public_link_url.nil?
-          Log.log.debug("redirect to: #{public_link_url}")
-        else
-          # not a redirection
-          raise ArgumentError,'link option must be redirect or have token parameter'
-        end
-      end # loop
+          Log.log.debug("no expected format: #{public_link_url}")
+          raise "exceeded max redirection: #{MAX_REDIRECT}" if redirect_count > MAX_REDIRECT
+          r = Net::HTTP.get_response(uri)
+          if r.code.start_with?("3")
+            public_link_url = r['location']
+            raise "no location in redirection" if public_link_url.nil?
+            Log.log.debug("redirect to: #{public_link_url}")
+          else
+            # not a redirection
+            raise ArgumentError,'link option must be redirect or have token parameter'
+          end
+        end # loop
 
-      raise RuntimeError,'too many redirections'
-    end
+        raise RuntimeError,'too many redirections'
+      end
+
+      # additional transfer spec (tags) for package information
+      def package_tags(package_info,operation)
+        return {'tags'=>{'aspera'=>{'files'=>{
+          'package_id'        => package_info['id'],
+          'package_name'      => package_info['name'],
+          'package_operation' => operation
+          }}}}
+      end
+
+      # add details to show in analytics
+      def analytics_ts(app,direction,ws_id,ws_name)
+        # translate transfer to operation
+        operation=case direction
+        when 'send';    'upload'
+        when 'receive'; 'download'
+        else raise "ERROR: unexpected value: #{direction}"
+        end
+
+        return {
+          'tags'        => {
+          'aspera'        => {
+          'usage_id'        => "aspera.files.workspace.#{ws_id}", # activity tracking
+          'files'           => {
+          'files_transfer_action' => "#{operation}_#{app.gsub(/s$/,'')}",
+          'workspace_name'        => ws_name,  # activity tracking
+          'workspace_id'          => ws_id,
+          }
+          }
+          }
+        }
+      end
+    end # static methods
 
     # @param :link,:url,:auth,:client_id,:client_secret,:scope,:redirect_uri,:private_key,:username,:subpath,:password (for pub link)
     def initialize(opt)
@@ -129,6 +166,7 @@ module Aspera
       # key: access key
       # value: associated secret
       @key_chain=nil
+      @user_info=nil
 
       # init rest params
       aoc_rest_p={:auth=>{:type =>:oauth2}}
@@ -200,45 +238,23 @@ module Aspera
       nil
     end
 
-    # additional transfer spec (tags) for package information
-    def self.package_tags(package_info,operation)
-      return {'tags'=>{'aspera'=>{'files'=>{
-        'package_id'        => package_info['id'],
-        'package_name'      => package_info['name'],
-        'package_operation' => operation
-        }}}}
-    end
-
-    # add details to show in analytics
-    def self.analytics_ts(app,direction,ws_id,ws_name)
-      # translate transfer to operation
-      operation=case direction
-      when 'send';    'upload'
-      when 'receive'; 'download'
-      else raise "ERROR: unexpected value: #{direction}"
+    # cached user information
+    def user_info
+      if @user_info.nil?
+        # get our user's default information
+        @user_info=self.read('self')[:data] rescue nil
+        @user_info=USER_INFO_FIELDS_MIN.inject({}){|m,f|m[f]=nil;m} if @user_info.nil?
+        USER_INFO_FIELDS_MIN.each{|f|@user_info[f]='unknown' if @user_info[f].nil?}
       end
-
-      return {
-        'tags'        => {
-        'aspera'        => {
-        'usage_id'        => "aspera.files.workspace.#{ws_id}", # activity tracking
-        'files'           => {
-        'files_transfer_action' => "#{operation}_#{app.gsub(/s$/,'')}",
-        'workspace_name'        => ws_name,  # activity tracking
-        'workspace_id'          => ws_id,
-        }
-        }
-        }
-      }
+      return @user_info
     end
 
     # build ts addon for IBM Aspera Console (cookie)
-    def self.console_ts(app,user_name,user_email)
-      elements=[app,user_name,user_email].map{|e|Base64.strict_encode64(e.nil? ? 'N/A' : e)}
+    def console_ts(app)
+      # we are sure that fields are not nil
+      elements=[app,user_info['name'],user_info['email']].map{|e|Base64.strict_encode64(e)}
       elements.unshift(COOKIE_PREFIX)
-      return {
-        'cookie'=>elements.join(':')
-      }
+      return {'cookie'=>elements.join(':')}
     end
 
     # build "transfer info", 2 elements array with:
@@ -246,12 +262,12 @@ module Aspera
     # - source and token regeneration method
     def tr_spec(app,direction,node_file,ts_add)
       # prepare the rest end point is used to generate the bearer token
-      token_generation_method=lambda {|do_refresh|self.oauth_token(scope: self.class.node_scope(node_file[:node_info]['access_key'],SCOPE_NODE_USER), refresh: do_refresh)}
+      token_generation_lambda=lambda {|do_refresh|self.oauth_token(scope: self.class.node_scope(node_file[:node_info]['access_key'],SCOPE_NODE_USER), refresh: do_refresh)}
       # prepare transfer specification
       # note xfer_id and xfer_retry are set by the transfer agent itself
       transfer_spec={
         'direction'   => direction,
-        'token'       => token_generation_method.call(false), # first time, use cache
+        'token'       => token_generation_lambda.call(false), # first time, use cache
         'tags'        => {
         'aspera'        => {
         'app'             => app,
@@ -284,7 +300,7 @@ module Aspera
       # additional information for transfer agent
       source_and_token_generator={
         :src              => :node_gen4,
-        :regenerate_token => token_generation_method
+        :regenerate_token => token_generation_lambda
       }
       return transfer_spec,source_and_token_generator
     end
