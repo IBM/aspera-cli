@@ -72,7 +72,7 @@ $ ascli conf echo "Hello World" arg2 3
 ERROR: Argument: unprocessed values: ["arg2", "3"]
 ```
 
-`echo` displays the value of the first argument using ruby syntax (strings get double quotes) after command line parsing (shell) and extended value parsing (ascli), next command line arguments are shown in the error message.
+`echo` displays the value of the first argument using ruby syntax (strings get double quotes) after command line parsing (shell) and extended value parsing (`ascli`), next command line arguments are shown in the error message.
 
 # Quick Start
 
@@ -166,7 +166,7 @@ An internet connection is required for the installation. If you don't have inter
 
 Use this method only if you know what you do, else use the standard recommended method as described here above.
 
-This method installs a docker image that contains: Ruby, ascli and the FASP sdk.
+This method installs a docker image that contains: Ruby, `ascli` and the FASP sdk.
 
 The image is: [https://hub.docker.com/r/martinlaurent/ascli](https://hub.docker.com/r/martinlaurent/ascli)
 
@@ -196,7 +196,7 @@ Note that the tool is run in the container, so transfers are also executed in th
 The wrapping script maps the container folder `/usr/src/app/config` to configuration folder `$HOME/.aspera/ascli` on host.
 
 To transfer to/from the native host, you will need to map a volume in docker or use the config folder (already mapped).
-To add local storage as a volume edit the script: ascli and add a `--volume` stanza.
+To add local storage as a volume edit the script: `ascli` and add a `--volume` stanza.
 
 ## <a id="ruby"></a>Ruby
 

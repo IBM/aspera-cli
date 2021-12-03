@@ -20,13 +20,16 @@ module Aspera
     CLIENT_APPS=['aspera.global-cli-client','aspera.drive']
     # index offset in data repository of client app
     DATA_REPO_INDEX_START = 4
+    # cookie prefix so that console can decode identity
+    COOKIE_PREFIX='aspera.aoc'
 
     # path in URL of public links
     PATHS_PUBLIC_LINK=['/packages/public/receive','/packages/public/send','/files/public']
     JWT_AUDIENCE='https://api.asperafiles.com/api/v1/oauth2/token'
     OAUTH_API_SUBPATH='api/v1/oauth2'
 
-    private_constant :PRODUCT_NAME,:PROD_DOMAIN,:MAX_REDIRECT,:CLIENT_APPS,:PATHS_PUBLIC_LINK,:JWT_AUDIENCE,:OAUTH_API_SUBPATH
+    private_constant :PRODUCT_NAME,:PROD_DOMAIN,:MAX_REDIRECT,:CLIENT_APPS,:PATHS_PUBLIC_LINK,:JWT_AUDIENCE,
+      :OAUTH_API_SUBPATH,:COOKIE_PREFIX
 
     public
     # various API scopes supported
@@ -231,9 +234,8 @@ module Aspera
 
     # build ts addon for IBM Aspera Console (cookie)
     def self.console_ts(app,user_name,user_email)
-      elements=[app,user_name,user_email].map{|e|Base64.strict_encode64(e)}
-      elements.unshift('aspera.aoc')
-      #Log.dump('elem1'.bg_red,elements[1])
+      elements=[app,user_name,user_email].map{|e|Base64.strict_encode64(e.nil? ? 'N/A' : e)}
+      elements.unshift(COOKIE_PREFIX)
       return {
         'cookie'=>elements.join(':')
       }
