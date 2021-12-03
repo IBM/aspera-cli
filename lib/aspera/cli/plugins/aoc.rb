@@ -26,7 +26,6 @@ module Aspera
           @home_node_file=nil
           @api_aoc=nil
           @url_token_data=nil
-          @user_info=nil
           @api_aoc=nil
           self.options.add_opt_list(:auth,Oauth.auth_types,'OAuth type of authentication')
           self.options.add_opt_list(:operation,[:push,:pull],'client operation for transfers')
@@ -64,23 +63,10 @@ module Aspera
           return @api_aoc
         end
 
-        # cached user information
-        def c_user_info
-          if @user_info.nil?
-            # get our user's default information
-            # self?embed[]=default_workspace&embed[]=organization
-            @user_info=@api_aoc.read('self')[:data] rescue {
-            'name'  => 'unknown',
-            'email' => 'unknown',
-            }
-          end
-          return @user_info
-        end
-
         # starts transfer using transfer agent
         def transfer_start(app,direction,node_file,ts_add)
           ts_add.deep_merge!(AoC.analytics_ts(app,direction,@workspace_id,@workspace_name))
-          ts_add.deep_merge!(AoC.console_ts(app,c_user_info['name'],c_user_info['email']))
+          ts_add.deep_merge!(@api_aoc.console_ts(app))
           return self.transfer.start(*@api_aoc.tr_spec(app,direction,node_file,ts_add))
         end
 
@@ -261,10 +247,10 @@ module Aspera
                   'tags'         =>{'aspera'=>{'files'=>{'workspace'=>{
                   'id'               =>@workspace_id,
                   'workspace_name'   =>@workspace_name,
-                  'user_name'        =>c_user_info['name'],
-                  'shared_by_user_id'=>c_user_info['id'],
-                  'shared_by_name'   =>c_user_info['name'],
-                  'shared_by_email'  =>c_user_info['email'],
+                  'user_name'        =>@api_aoc.user_info['name'],
+                  'shared_by_user_id'=>@api_aoc.user_info['id'],
+                  'shared_by_name'   =>@api_aoc.user_info['name'],
+                  'shared_by_email'  =>@api_aoc.user_info['email'],
                   'shared_with_name' =>access_id,
                   'access_key'       =>node_file[:node_info]['access_key'],
                   'node'             =>node_file[:node_info]['name']}}}}}
@@ -304,8 +290,8 @@ module Aspera
             @default_workspace_id=@url_token_data['data']['workspace_id']
             @persist_ids=[] # TODO : @url_token_data['id'] ?
           else
-            @default_workspace_id=c_user_info['default_workspace_id']
-            @persist_ids=[c_user_info['id']]
+            @default_workspace_id=@api_aoc.user_info['default_workspace_id']
+            @persist_ids=[@api_aoc.user_info['id']]
           end
 
           ws_name=self.options.get_option(:workspace,:optional)
@@ -546,15 +532,15 @@ module Aspera
             case command_analytics
             when :application_events
               event_type=command_analytics.to_s
-              events=analytics_api.read("organizations/#{c_user_info['organization_id']}/#{event_type}")[:data][event_type]
+              events=analytics_api.read("organizations/#{@api_aoc.user_info['organization_id']}/#{event_type}")[:data][event_type]
               return {:type=>:object_list,:data=>events}
             when :transfers
               event_type=command_analytics.to_s
               filter_resource=self.options.get_option(:name,:optional) || 'organizations'
               filter_id=self.options.get_option(:id,:optional) || case filter_resource
-              when 'organizations'; c_user_info['organization_id']
-              when 'users'; c_user_info['id']
-              when 'nodes'; c_user_info['id']
+              when 'organizations'; @api_aoc.user_info['organization_id']
+              when 'users'; @api_aoc.user_info['id']
+              when 'nodes'; @api_aoc.user_info['id']
               else raise 'organizations or users for option --name'
               end
               #
@@ -718,10 +704,10 @@ module Aspera
                 'id'               =>@workspace_id,
                 'workspace_name'   =>@workspace_name,
                 'share_as'         =>File.basename(folder_path),
-                'user_name'        =>c_user_info['name'],
-                'shared_by_user_id'=>c_user_info['id'],
-                'shared_by_name'   =>c_user_info['name'],
-                'shared_by_email'  =>c_user_info['email'],
+                'user_name'        =>@api_aoc.user_info['name'],
+                'shared_by_user_id'=>@api_aoc.user_info['id'],
+                'shared_by_name'   =>@api_aoc.user_info['name'],
+                'shared_by_email'  =>@api_aoc.user_info['email'],
                 'shared_with_name' =>access_id,
                 'access_key'       =>node_file[:node_info]['access_key'],
                 'node'             =>node_file[:node_info]['name']}
@@ -772,9 +758,9 @@ module Aspera
               command=self.options.get_next_command([ :show,:modify ])
               case command
               when :show
-                return { :type=>:single_object, :data =>c_user_info }
+                return { :type=>:single_object, :data =>@api_aoc.user_info }
               when :modify
-                @api_aoc.update("users/#{c_user_info['id']}",self.options.get_next_argument('modified parameters (hash)'))
+                @api_aoc.update("users/#{@api_aoc.user_info['id']}",self.options.get_next_argument('modified parameters (hash)'))
                 return Main.result_status('modified')
               end
             end
@@ -942,8 +928,8 @@ module Aspera
                   'workspace_id'    =>@workspace_id,
                   'workspace_name'  =>@workspace_name,
                   'folder_name'     =>'my folder',
-                  'created_by_name' =>c_user_info['name'],
-                  'created_by_email'=>c_user_info['email'],
+                  'created_by_name' =>@api_aoc.user_info['name'],
+                  'created_by_email'=>@api_aoc.user_info['email'],
                   'access_key'      =>node_file[:node_info]['access_key'],
                   'node'            =>node_file[:node_info]['host']
                   }
@@ -999,7 +985,7 @@ module Aspera
           raise RuntimeError, 'internal error: command shall return'
         end
 
-        private :c_user_info,:aoc_params,:set_workspace_info,:set_home_node_file,:do_bulk_operation,:resolve_package_recipients,:option_url_query,:assert_public_link_types,:execute_admin_action
+        private :aoc_params,:set_workspace_info,:set_home_node_file,:do_bulk_operation,:resolve_package_recipients,:option_url_query,:assert_public_link_types,:execute_admin_action
         private_constant :VAL_ALL,:NODE4_COMMANDS
 
       end # AoC
