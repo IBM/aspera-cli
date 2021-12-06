@@ -36,7 +36,7 @@ Gem::Specification.new do |spec|
   spec.add_runtime_dependency('jwt', '~> 2.0')
   spec.add_runtime_dependency('ruby-progressbar', '~> 1.0')
   spec.add_runtime_dependency('net-ssh', '~> 6.0')
-  #spec.add_runtime_dependency('mimemagic', '~> 0.3') # remove because cause problems, and only used by preview
+  spec.add_runtime_dependency('mimemagic', '~> 0.3') # remove because cause problems, and only used by preview
   spec.add_runtime_dependency('execjs', '~> 2.0')
   spec.add_runtime_dependency('terminal-table', '~> 1.8')
   spec.add_runtime_dependency('tty-spinner', '~> 0.9')
