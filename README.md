@@ -1765,8 +1765,8 @@ ascli cos node info
 ascli cos node upload testfile.bin
 ascli faspex health
 ascli faspex package list
-ascli faspex package list --box=sent --fields=package_id --format=csv --display=data|tail -n 1);\
-ascli faspex package list --fields=package_id --format=csv --display=data|tail -n 1);\
+ascli faspex package list --box=sent --fields=package_id --format=csv --display=data --query=@json:'{"max":1}'|tail -n 1);\
+ascli faspex package list --fields=package_id --format=csv --display=data --query=@json:'{"max":1}'|tail -n 1);\
 ascli faspex package recv --to-folder=. --box=sent --id="my_package_id"
 ascli faspex package recv --to-folder=. --id="my_package_id"
 ascli faspex package recv --to-folder=. --id=ALL --once-only=yes
