@@ -268,6 +268,7 @@ module Aspera
                 end
                 # get command line parameters
                 delivid=self.options.get_option(:id,:mandatory)
+                raise "empty id" if delivid.empty?
                 if delivid.eql?(VAL_ALL)
                   pkg_id_uri=mailbox_all_entries.map{|i|{:id=>i[PACKAGE_MATCH_FIELD],:uri=>self.class.get_fasp_uri_from_entry(i)}}
                   # TODO : remove ids from skip not present in inbox
