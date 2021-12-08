@@ -261,8 +261,6 @@ module Aspera
             else raise "internal error:shall not reach here (#{command_node_file})"
             end
             raise 'internal error:shall not reach here'
-          when :permissions
-
           end # command_repo
           raise 'ERR'
         end # execute_node_gen4_command
