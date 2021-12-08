@@ -1055,7 +1055,7 @@ To specify a HTTP proxy, set the HTTP_PROXY environment variable (or HTTPS_PROXY
 
 <%=tool%> uses ruby `openssl` gem, which uses the `openssl` library, so certificates are checked against the ruby default certificates [OpenSSL::X509::DEFAULT_CERT_FILE](https://ruby-doc.org/stdlib-3.0.3/libdoc/openssl/rdoc/OpenSSL/X509/Store.html), which are typically the ones of `openssl` on Unix systems (Linux, macOS, etc..). The environment variables `SSL_CERT_FILE` and `SSL_CERT_DIR` are used if defined.
 
-`ascp` also needs to validate certificates when using WSS. By default, `ascp` uses primarily certificates from hard coded path (e.g. on macOS: `/Library/Aspera/ssl`). <%=tool%> overrides and sets the default ruby path as well for `ascp` using `-i` switch. So to update certificates, update ruby's `openssl` gem, or use env vars `SSL_CERT_*`.
+`ascp` also needs to validate certificates when using WSS. By default, `ascp` uses primarily certificates from hard coded path (e.g. on macOS: `/Library/Aspera/ssl`). <%=tool%> overrides and sets the default ruby certificate path as well for `ascp` using `-i` switch. So to update certificates, update ruby's `openssl` gem, or use env vars `SSL_CERT_*`.
 
 ## Proxy auto config
 
@@ -1473,8 +1473,6 @@ When multi-session is used, one separate UDP port is used per session (refer to 
 ```
 --ts=@json:'{"precalculate_job_size":true}'
 ```
-
-
 
 ## <a id="scheduling"></a>Lock for exclusive execution
 
@@ -2252,22 +2250,30 @@ $ <%=cmd%> aoc packages send --value=[package extended value] [other parameters 
 
 Notes:
 
-* the `value` parameter can contain any supported package creation parameter. Refer to the AoC package creation API, or display an existing package to find attributes.
-* to provide the list of recipients, use fields: "recipients" and/or "bcc_recipients". <%=cmd%> will resolve the list of email addresses to expected user ids.
-* a recipient can be a shared inbox, in this case just use the name of the shared inbox as recipient.
-* If a recipient is not already registered and the workspace allows external users, then the package is sent to an external user, and
-  * if the option `new_user_option` is `@json:{"package_contact":true}` (default), then a public link is sent and the external user does not need to create an account.
+* The `value` option can contain any supported package creation parameter. Refer to the AoC package creation API, or display an existing package in JSON to list attributes.
+* List allowed shared inbox destinations with: `<%=cmd%> aoc user shared_inboxes`
+* Use fields: `recipients` and/or `bcc_recipients` to provide the list of recipients: user or shared inbox. 
+  * Provide either ids as expected by API: `"recipients":[{"type":"dropbox","id":"1234"}]`
+  * or just names: `"recipients":[{"The Dest"}]` . <%=cmd%> will resolve the list of email addresses and dropbox names to the expected type/id list, based on case insensitive partial match.
+* If a user recipient (email) is not already registered and the workspace allows external users, then the package is sent to an external user, and
+  * if the option `new_user_option` is `@json:{"package_contact":true}` (default), then a public link is sent and the external user does not need to create an account
   * if the option `new_user_option` is `@json:{}`, then external users are invited to join the workspace
 
 Examples:
 
-```
-$ <%=cmd%> aoc package send --value=@json:'{"name":"my title","note":"my note","recipients":["laurent.martin.aspera@fr.ibm.com","other@example.com"]}' --sources=@args my_file.dat
-```
+* Send a package with one file to two users, using their email
 
 ```
-$ <%=cmd%> aoc package send --value=@json:'{"name":"my file in shared inbox","recipients":["The Shared Inbox"]}' my_file.dat --ts=@json:'{"target_rate_kbps":100000}'
+$ <%=cmd%> aoc package send --value=@json:'{"name":"my title","note":"my note","recipients":["laurent.martin.aspera@fr.ibm.com","other@example.com"]}' my_file.dat
 ```
+
+* Send a package with one file to a shared inbox, using internal identifier, with specific transfer parameters
+
+```
+$ <%=cmd%> aoc package send --value=@json:'{"name":"my delivery","recipients":[{"type":"dropbox","id":"12345"}]}' --ts=@json:'{"target_rate_kbps":100000}'  my_file.dat
+```
+
+* Send a package with one file to a shared inbox (by name) with metadata
 
 ```
 $ <%=cmd%> aoc package send --workspace=eudemo --value=@json:'{"name":"my pack title","recipients":["Shared Inbox Name"],"metadata":[{"input_type":"single-text","name":"Project Id","values":["123"]},{"input_type":"single-dropdown","name":"Type","values":["Opt2"]},{"input_type":"multiple-checkbox","name":"CheckThose","values":["Check1","Check2"]},{"input_type":"date","name":"Optional Date","values":["2021-01-13T15:02:00.000Z"]}]}' ~/Documents/Samples/200KB.1
@@ -2282,8 +2288,8 @@ $ <%=cmd%> aoc packages recv --id=ALL --once-only=yes --lock-port=12345
 ```
 
 * `--id=ALL` (case sensitive) will download all packages
-* `--once-only=yes` keeps memory of any downloaded package in persistency files located in the configuration folder.
-* `--lock-port=12345` ensures that only one instance is started at the same time, to avoid collisions
+* `--once-only=yes` keeps memory of any downloaded package in persistency files located in the configuration folder
+* `--lock-port=12345` ensures that only one instance is started at the same time, to avoid running two downloads in parallel
 
 Typically, one would execute this command on a regular basis, using the method of your choice:
 
