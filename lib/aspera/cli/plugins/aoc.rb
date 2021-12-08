@@ -8,7 +8,6 @@ require 'aspera/node'
 require 'aspera/persistency_action_once'
 require 'aspera/id_generator'
 require 'securerandom'
-require 'resolv'
 require 'date'
 
 module Aspera
@@ -368,36 +367,47 @@ module Aspera
           return unless package_creation.has_key?(recipient_list_field)
           raise CliBadArgument,"#{recipient_list_field} must be an Array" unless package_creation[recipient_list_field].is_a?(Array)
           new_user_option=self.options.get_option(:new_user_option,:mandatory)
+          # list with resolved elements
           resolved_list=[]
-          package_creation[recipient_list_field].each do |recipient_email_or_info|
-            case recipient_email_or_info
-            when Hash
-              raise 'recipient element hash shall have field id and type' unless recipient_email_or_info.has_key?('id') and recipient_email_or_info.has_key?('type')
-              # already provided all information ?
-              resolved_list.push(recipient_email_or_info)
-            when String
-              if recipient_email_or_info.include?('@')
-                # or need to resolve email
-                item_lookup=@api_aoc.read('contacts',{'current_workspace_id'=>@workspace_id,'q'=>recipient_email_or_info})[:data]
-                case item_lookup.length
-                when 1; recipient_user_id=item_lookup.first
-                when 0; recipient_user_id=@api_aoc.create('contacts',{'current_workspace_id'=>@workspace_id,'email'=>recipient_email_or_info}.merge(new_user_option))[:data]
-                else raise CliBadArgument,"multiple match for: #{recipient_email_or_info}"
-                end
-                resolved_list.push({'id'=>recipient_user_id['source_id'],'type'=>recipient_user_id['source_type']})
+          package_creation[recipient_list_field].each do |short_recipient_info|
+            case short_recipient_info
+            when Hash # native api information, check keys
+              raise "#{recipient_list_field} element shall have fields: id and type" unless short_recipient_info.keys.sort.eql?(['id','type'])
+            when String # need to resolve name to type/id
+              # email: user, else dropbox
+              entity_type=short_recipient_info.include?('@') ? 'contacts' : 'dropboxes'
+              # find items containing name (not only exact match)
+              item_lookup=@api_aoc.read(entity_type,{'current_workspace_id'=>@workspace_id,'q'=>short_recipient_info})[:data]
+              case item_lookup.length
+              when 1
+                full_recipient_info=item_lookup.first
+              when 0
+                # dropbox: no such
+                raise "no such shared inbox in workspace #{@workspace_name}" unless entity_type.eql?('contacts')
+                # user: create external user
+                full_recipient_info=@api_aoc.create('contacts',{'current_workspace_id'=>@workspace_id,'email'=>short_recipient_info}.merge(new_user_option))[:data]
               else
-                item_lookup=@api_aoc.read('dropboxes',{'current_workspace_id'=>@workspace_id,'q'=>recipient_email_or_info})[:data]
-                case item_lookup.length
-                when 1; recipient_user_id=item_lookup.first
-                when 0; raise "no such shared inbox in workspace #{@workspace_name}"
-                else raise CliBadArgument,"multiple match for: #{recipient_email_or_info}"
+                # multiple case insensitive partial matches, try case insensitive full match
+                # (anyway AoC does not allow creation of 2 dropbox with same case insensitive name)
+                icase_matches=item_lookup.select{|i|i['name'].casecmp?(short_recipient_info)}
+                case icase_matches.length
+                when 1; full_recipient_info=icase_matches.first
+                when 0; raise CliBadArgument,"#{recipient_list_field}: multiple case insensitive partial match for: \"#{short_recipient_info}\": #{item_lookup.map{|i|i['name']}} but no case insensitive full match. Please pecify more specific or full name."
+                else raise "Two shared inboxes cannot have the same case insensitive name: #{icase_matches.map{|i|i['name']}}"
                 end
-                resolved_list.push({'id'=>recipient_user_id['id'],'type'=>'dropbox'})
               end
-            else
-              raise "recipient item must be a String (email, shared inboc) or hash (id,type)"
-            end
+              if entity_type.eql?('dropboxes')
+                short_recipient_info={'id'=>full_recipient_info['id'],'type'=>'dropbox'}
+              else
+                short_recipient_info={'id'=>full_recipient_info['source_id'],'type'=>full_recipient_info['source_type']}
+              end
+            else # unexpected extended value, must be String or Hash
+              raise "#{recipient_list_field} item must be a String (email, shared inbox) or Hash (id,type)"
+            end # type of recipient info
+            # add original or resolved recipient info
+            resolved_list.push(short_recipient_info)
           end
+          # replace with resolved elements
           package_creation[recipient_list_field]=resolved_list
         end
 
