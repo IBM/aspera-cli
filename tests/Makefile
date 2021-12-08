@@ -197,9 +197,9 @@ $(T)fx_psnd: $(T).exists
 	@echo $@
 	$(EXE_MAN) faspex package send --delivery-info=@json:'{"title":"'"$(PKG_TEST_TITLE)"'","recipients":["$(CF_EMAIL_ADDR)","$(CF_FASPEX_USERNAME)"]}' $(CF_LOCAL_SAMPLE_FILEPATH)
 	@touch $@
+	@sleep 8
 $(T)fx_prs: $(T)fx_psnd
 	@echo $@
-	@sleep 5
 	set -x;package_id=$$($(EXE_MAN) faspex package list --fields=package_id --format=csv --display=data --query=@json:'{"max":1}'|tail -n 1);\
 	$(EXE_MAN) faspex package recv --to-folder=$(DIR_TMP). --id="$${package_id}"
 	set -x;package_id=$$($(EXE_MAN) faspex package list --box=sent --fields=package_id --format=csv --display=data --query=@json:'{"max":1}'|tail -n 1);\
@@ -547,7 +547,7 @@ $(T)aoccltreg: $(T).exists
 	@echo $@
 	$(EXE_MAN) aoc admin res client_registration_token create @json:'{"data":{"name":"test_client_reg1","client_subject_scopes":["alee","aejd"],"client_subject_enabled":true}}'
 	$(EXE_MAN) aoc admin res client_registration_token list
-	clt_reg_id=$$($(EXE_NOMAN) aoc admin res client_registration_token list --fields=ALL --select=@json:'{"data.name":"test_client_reg1"}' --fields=id --format=csv --display=data);\
+	clt_reg_id=$$($(EXE_NOMAN) aoc admin res client_registration_token list --fields=ALL --select=@json:'{"data.name":"test_client_reg1"}' --fields=id --format=csv --display=data|tail -n 1);\
 	$(EXE_MAN) aoc admin res client_registration_token --id=$${clt_reg_id} delete
 	@touch $@
 taocadm: $(T)aoc8 $(T)aoc9 $(T)aoc9b $(T)aoc10 $(T)aoc11 $(T)aoc12 $(T)aoc13 $(T)aoc14 $(T)aoc15 $(T)aocarself $(T)aoccltreg
