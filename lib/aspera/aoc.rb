@@ -284,12 +284,14 @@ module Aspera
       }
       # add remote host info
       if @@use_standard_ports
+        # get default TCP/UDP ports and transfer user
         transfer_spec.merge!(Fasp::Default::AK_TSPEC_BASE)
-        # TODO issue #30
-        if node_file[:node_info]['transfer_url'].is_a?(String) and !node_file[:node_info]['transfer_url'].empty?
-          Log.log.debug("Ignoring transfer url, issue #30")
-        end
+        # by default: same address as node API
         transfer_spec['remote_host']=node_file[:node_info]['host']
+        # 30 it's necessarily https scheme: webui does not allow anything else
+        if node_file[:node_info]['transfer_url'].is_a?(String) and !node_file[:node_info]['transfer_url'].empty?
+          transfer_spec['remote_host']=URI.parse(node_file[:node_info]['transfer_url']).host
+        end
       else
         # retrieve values from API
         std_t_spec=get_node_api(node_file[:node_info],scope: SCOPE_NODE_USER).create('files/download_setup',{:transfer_requests => [ { :transfer_request => {:paths => [ {"source"=>'/'} ] } } ] } )[:data]['transfer_specs'].first['transfer_spec']
