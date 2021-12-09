@@ -1204,45 +1204,37 @@ will effectively push files to the related server from the agent node.
 <%=tool%> standardizes on the use of a [_transfer-spec_](#transferspec) instead of _raw_ ascp options to provide parameters for a transfer session, as a common method for those three Transfer Agents.
 
 
-### <a id="agt_direct"></a>Direct (local ascp execution)
+### <a id="agt_direct"></a>Direct
 
-By default <%=tool%> uses a local ascp, equivalent to specifying `--transfer=direct`.
-<%=tool%> will detect locally installed Aspera products.
+The `direct` agent directly executes a local ascp.
+This is the default for <%=tool%>.
+This is equivalent to specifying `--transfer=direct`.
+<%=tool%> will detect locally installed Aspera products, including SDK.
 Refer to section [FASP](#client).
 
-To specify a FASP proxy (only supported with the `direct` agent), set the appropriate [_transfer-spec_](#transferspec) parameter:
-
-* `EX_fasp_proxy_url`
-* `EX_http_proxy_url` (proxy for legacy http fallback)
-* `EX_ascp_args`
-
-The `transfer-info` accepts the following optional parameters:
+The `transfer-info` accepts the following optional parameters to control multi-session, WSS
 
 <table>
-<tr><th>Name</th><th>Type</th><th>Default</th><th>Feature</th><th>Description</th></tr>
-<tr><td>spawn_timeout_sec</td><td>Float</td><td>3</td><td>Multi session</td><td>Verification time that ascp is running</td></tr>
-<tr><td>spawn_delay_sec</td><td>Float</td><td>2</td><td>Multi session</td><td>Delay between startup of sessions</td></tr>
-<tr><td>wss</td><td>Bool</td><td>false</td><td>Web Socket Session</td><td>Enable use of web socket session in case it is available</td></tr>
-<tr><td>multi_incr_udp</td><td>Bool</td><td>true</td><td>Multi Session</td><td>Increment UDP port on multi-session<br/>If true, each session will have a different UDP port starting at `fasp_port` (or default 33001)<br/>Else, each session will use `fasp_port` (or `ascp` default)</td></tr>
-<tr><td>resume</td><td>Hash</td><td>nil</td><td>Resumer parameters</td><td>See below</td></tr>
+<tr><th>Name</th><th>Type</th><th>Description</th></tr>
+<tr><td>wss</td><td>Bool</td><td>Web Socket Session<br/>Enable use of web socket session in case it is available<br/>Default: false</td></tr>
+<tr><td>spawn_timeout_sec</td><td>Float</td><td>Multi session<br/>Verification time that ascp is running<br/>Default: 3</td></tr>
+<tr><td>spawn_delay_sec</td><td>Float</td><td>Multi session<br/>Delay between startup of sessions<br/>Default: 2</td></tr>
+<tr><td>multi_incr_udp</td><td>Bool</td><td>Multi Session<br/>Increment UDP port on multi-session<br/>If true, each session will have a different UDP port starting at `fasp_port` (or default 33001)<br/>Else, each session will use `fasp_port` (or `ascp` default)<br/>Default: true</td></tr>
+<tr><td>resume</td><td>Hash</td><td>Resume<br/>parameters<br/>See below</td></tr>
+<tr><td>resume.iter_max</td><td>int</td><td>Resume<br/>Max number of retry on error<br/>Default: 7</td></tr>
+<tr><td>resume.sleep_initial</td><td>int</td><td>Resume<br/>First Sleep before retry<br/>Default: 2</td></tr>
+<tr><td>resume.sleep_factor</td><td>int</td><td>Resume<br/>Multiplier of sleep period between attempts<br/>Default: 2</td></tr>
+<tr><td>resume.sleep_max</td><td>int</td><td>Resume<br/>Default: 60</td></tr>
 </table>
 
-Resume parameters:
-
-In case of transfer interruption, the agent will resume a transfer up to `iter_max` time.
-Sleep between iteration is:
+Resume: In case of transfer interruption, the agent will resume a transfer up to `iter_max` time.
+Sleep between iterations is:
 
 ```
 max( sleep_max , sleep_initial * sleep_factor ^ (iter_index-1) )
 ```
 
-<table>
-<tr><th>Name</th><th>Type</th><th>Default</th><th>Feature</th><th>Description</th></tr>
-<tr><td>iter_max</td><td>int</td><td>7</td><td>Resume</td><td>Max number of retry on error</td></tr>
-<tr><td>sleep_initial</td><td>int</td><td>2</td><td>Resume</td><td>First Sleep before retry</td></tr>
-<tr><td>sleep_factor</td><td>int</td><td>2</td><td>Resume</td><td>Multiplier of Sleep</td></tr>
-<tr><td>sleep_max</td><td>int</td><td>60</td><td>Resume</td><td>Maximum sleep</td></tr>
-</table>
+Some transfer errors are considered "retryable" (e.g. timeout) and some other not (e.g. wrong password).
 
 Examples:
 
@@ -1251,28 +1243,41 @@ $ <%=cmd%> ... --transfer-info=@json:'{"wss":true,"resume":{"iter_max":10}}'
 $ <%=cmd%> ... --transfer-info=@json:'{"spawn_delay_sec":2.5,"multi_incr_udp":false}'
 ```
 
+To specify a FASP proxy (only supported with the `direct` agent), set the appropriate [_transfer-spec_](#transferspec) parameter:
+
+* `EX_fasp_proxy_url`
+* `EX_http_proxy_url` (proxy for legacy http fallback)
+* `EX_ascp_args`
+
 ### <a id="agt_connect"></a>IBM Aspera Connect Client GUI
 
-By specifying option: `--transfer=connect`, <%=tool%> will start transfers using the locally installed Aspera Connect Client.
+By specifying option: `--transfer=connect`, <%=tool%> will start transfers using the locally installed Aspera Connect Client. There are no option for `transfer_info`.
 
 ### <a id="agt_node"></a>Aspera Node API : Node to node transfers
 
 By specifying option: `--transfer=node`, the CLI will start transfers in an Aspera
 Transfer Server using the Node API, either on a local or remote node.
+Parameters provided in option `transfer_info` are:
 
-If a default node has been configured
-in the configuration file, then this node is used by default else the parameter
-`--transfer-info` is required. The node specification shall be a hash table with
-three keys: url, username and password, corresponding to the URL of the node API
-and associated credentials (node user or access key).
+<table>
+<tr><th>Name</th><th>Type</th><th>Description</th></tr>
+<tr><td>url</td><td>string</td><td>URL of the node API</br>Mandatory</td></tr>
+<tr><td>username</td><td>string</td><td>node api user or access key</br>Mandatory</td></tr>
+<tr><td>password</td><td>string</td><td>password, secret or bearer token</br>Mandatory</td></tr>
+<tr><td>root_id</td><td>string</td><td>password or secret</br>Mandatory only for bearer token</td></tr>
+</table>
 
-The `--transfer-info` parameter can directly specify a pre-configured <%=prst%> :
-`--transfer-info=@preset:<psetname>` or specified using the option syntax :
+Like any other option, `transfer_info` can get its value from a pre-configured <%=prst%> :
+`--transfer-info=@preset:<psetname>` or be specified using the extended value syntax :
 `--transfer-info=@json:'{"url":"https://...","username":"theuser","password":"thepass"}'`
+
+If `transfer_info` is not specified and a default node has been configured (name in `node` for section `default`) then this node is used by default.
+
+If the `password` value begins with `Bearer ` then the `username` is expected to be an access key and the parameter `root_id` is mandatory and specifies the root file id on the node. It can be either the access key's root file id, or any authorized file id underneath it.
 
 ### <a id="agt_httpgw"></a>HTTP Gateway
 
-If it possible to send using a HTTP gateway, in case FASP is not allowed.
+If it possible to send using a HTTP gateway, in case FASP is not allowed. `transfer_info` shall have a single mandatory parameter: `url`.
 
 Example:
 
