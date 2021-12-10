@@ -200,14 +200,14 @@ $(T)fx_psnd: $(T).exists
 	@sleep 8
 $(T)fx_prs: $(T)fx_psnd
 	@echo $@
-	set -x;package_id=$$($(EXE_MAN) faspex package list --fields=package_id --format=csv --display=data --query=@json:'{"max":1}'|tail -n 1);\
+	set -x;package_id=$$($(EXE_MAN) faspex package list --fields=package_id --format=csv --display=data --query=@json:'{"max":1}');\
 	$(EXE_MAN) faspex package recv --to-folder=$(DIR_TMP). --id="$${package_id}"
-	set -x;package_id=$$($(EXE_MAN) faspex package list --box=sent --fields=package_id --format=csv --display=data --query=@json:'{"max":1}'|tail -n 1);\
+	set -x;package_id=$$($(EXE_MAN) faspex package list --box=sent --fields=package_id --format=csv --display=data --query=@json:'{"max":1}');\
 	$(EXE_MAN) faspex package recv --to-folder=$(DIR_TMP). --box=sent --id="$${package_id}"
 	@touch $@
 $(T)fx_pri: $(T).exists
 	@echo $@
-	set -x;package_id=$$($(EXE_NOMAN) faspex package list --fields=package_id --format=csv --display=data --query=@json:'{"max":1}'|tail -n 1);\
+	set -x;package_id=$$($(EXE_NOMAN) faspex package list --fields=package_id --format=csv --display=data --query=@json:'{"max":1}');\
 	$(EXE_MAN) faspex package recv --to-folder=$(DIR_TMP). --id="$${package_id}"
 	@touch $@
 $(T)fx_prl: $(T).exists

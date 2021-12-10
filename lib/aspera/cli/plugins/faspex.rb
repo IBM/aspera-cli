@@ -136,6 +136,8 @@ module Aspera
             mailbox_query.delete(MAX_PAGES)
           end
           loop do
+            # get a batch of package information
+            # order: first batch is latest packages, and then in a batch ids are increasing
             atom_xml=api_v3.call({operation: 'GET',subpath: "#{mailbox}.atom",headers: {'Accept'=>'application/xml'},url_params: mailbox_query})[:http].body
             box_data=XmlSimple.xml_in(atom_xml, {'ForceArray' => true})
             Log.dump(:box_data,box_data)
@@ -143,7 +145,8 @@ module Aspera
             Log.log.debug("new items: #{items.count}")
             # it is the end if page is empty
             break if items.empty?
-            items.each do |package|
+            # results will be sorted in reverse id
+            items.reverse.each do |package|
               package[PACKAGE_MATCH_FIELD]=case mailbox
               when :inbox,:archive
                 recipient=package['to'].select{|i|i['name'].first.eql?(recipient_name)}.first
@@ -151,12 +154,16 @@ module Aspera
               else # :sent
                 package['delivery_id'].first
               end
-              # keep only those for the specified recipient
+              # keep only those for the specified recipient,
               result.push(package) unless package[PACKAGE_MATCH_FIELD].nil?
             end
+            #result.push({PACKAGE_MATCH_FIELD=>'======'})
             Log.log.debug("total items: #{result.count}")
             # reach the limit ?
-            break if !max_items.nil? and result.count > max_items
+            if !max_items.nil? and result.count >= max_items
+              result=result.slice(0,max_items) if result.count > max_items
+              break
+            end
             link=box_data['link'].select{|i|i['rel'].eql?('next')}.first
             Log.log.debug("link: #{link}")
             # no next link
