@@ -188,6 +188,11 @@ module Aspera
         return [:ssh_bypass_key_dsa,:ssh_bypass_key_rsa].map{|i|Installation.instance.path(i)}
       end
 
+      # use in plugin `config`
+      def get_ascp_version(exe_path)
+        return get_exe_version(exe_path,'-A')
+      end
+
       # Check that specified path is ascp and get version
       def get_exe_version(exe_path,vers_arg)
         raise "ERROR: nil arg" if exe_path.nil?
@@ -262,7 +267,7 @@ module Aspera
         raise "No #{ascp_filename} found in SDK archive" unless File.exist?(ascp_path)
         FileUtils.chmod(0755,ascp_path)
         FileUtils.chmod(0755,ascp_path.gsub('ascp','ascp4'))
-        ascp_version=get_exe_version(File.join(folder_path,ascp_filename),'-A')
+        ascp_version=get_ascp_version(File.join(folder_path,ascp_filename))
         trd_path=transferd_filepath
         Log.log.warn("No #{trd_path} in SDK archive") unless File.exist?(trd_path)
         FileUtils.chmod(0755,trd_path) if File.exist?(trd_path)
