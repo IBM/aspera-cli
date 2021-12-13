@@ -46,14 +46,11 @@ Using APIs (application REST API and transfer SDK) will prove to be easier to de
 
 For scripting and ad'hoc command line operations, `ascli` is perfect.
 
-# Notations
+# <a id="parsing"></a>Notations, Shell and Command line parsing
 
-In examples, command line operations (starting with `$`) are shown using a standard shell: `bash` or `zsh`.
-Prompt `# ` refers to user `root`, prompt `xfer$ ` refer to user `xfer`.
+In examples, command line operations are shown using a shell such: `bash` or `zsh`.
 
 Command line parameters in examples beginning with `my_`, like `my_param_value` are user-provided value and not fixed value commands.
-
-# <a id="parsing"></a>Shell and Command line parsing
 
 `ascli` is typically executed in a shell, either interactively or in a script. `ascli` receives its arguments from this shell.
 
@@ -67,7 +64,10 @@ On Windows, `cmd.exe` is typically used. Windows process creation does not recei
 In case of doubt of argument values after parsing test like this:
 
 ```
-$ ascli conf echo "Hello World" arg2 3
+ascli conf echo "Hello World" arg2 3
+```
+
+```
 "Hello World"
 ERROR: Argument: unprocessed values: ["arg2", "3"]
 ```
@@ -83,7 +83,10 @@ First, follow the section: [Installation](#installation) (Ruby, Gem, FASP) to st
 Once the gem is installed, `ascli` shall be accessible:
 
 ```
-$ ascli --version
+ascli --version
+```
+
+```
 4.5.0.pre
 ```
 
@@ -96,8 +99,14 @@ If you want to test with Aspera on Cloud, jump to section: [Wizard](#aocwizard)
 To test with Aspera demo transfer server, setup the environment and then test:
 
 ```
-$ ascli config initdemo
-$ ascli server browse /
+ascli config initdemo
+```
+
+```
+ascli server browse /
+```
+
+```
 :............:...........:......:........:...........................:.......................:
 :   zmode    :   zuid    : zgid :  size  :           mtime           :         name          :
 :............:...........:......:........:...........................:.......................:
@@ -116,11 +125,26 @@ If you want to use `ascli` with another server, and in order to make further cal
 * download a file
 
 ```
-$ ascli config id myserver update --url=ssh://demo.asperasoft.com:33001 --username=asperaweb --password=_demo_pass_
+ascli config id myserver update --url=ssh://demo.asperasoft.com:33001 --username=asperaweb --password=_demo_pass_
+```
+
+```
 updated: myserver
-$ ascli config id default set server myserver
+```
+
+```
+ascli config id default set server myserver
+```
+
+```
 updated: default&rarr;server to myserver
-$ ascli server browse /aspera-test-dir-large
+```
+
+```
+ascli server browse /aspera-test-dir-large
+```
+
+```
 :............:...........:......:..............:...........................:............................:
 :   zmode    :   zuid    : zgid :     size     :           mtime           :            name            :
 :............:...........:......:..............:...........................:............................:
@@ -137,7 +161,13 @@ $ ascli server browse /aspera-test-dir-large
 : -rw-r--r-- : asperaweb : fasp : 104857600    : 2014-04-10 19:49:29 +0200 : 100MB                      :
 : -rw-r--r-- : asperaweb : fasp : 10737418240  : 2014-04-10 19:49:04 +0200 : 10GB                       :
 :............:...........:......:..............:...........................:............................:
-$ ascli server download /aspera-test-dir-large/200MB
+```
+
+```
+ascli server download /aspera-test-dir-large/200MB
+```
+
+```
 Time: 00:00:02 ========================================================================================================== 100% 100 Mbps Time: 00:00:00
 complete
 ```
@@ -173,20 +203,23 @@ The image is: [https://hub.docker.com/r/martinlaurent/ascli](https://hub.docker.
 Ensure that you have Docker installed.
 
 ```
-$ docker --version
+docker --version
 ```
 
 Download the wrapping script:
 
 ```
-$ curl -o ascli https://raw.githubusercontent.com/IBM/aspera-cli/develop/bin/dascli
-$ chmod a+x ascli
+curl -o ascli https://raw.githubusercontent.com/IBM/aspera-cli/develop/bin/dascli
+```
+
+```
+chmod a+x ascli
 ```
 
 Install the container image:
 
 ```
-$ ./ascli install
+./ascli install
 ```
 
 Start using it !
@@ -223,31 +256,31 @@ Install "rvm": follow [https://rvm.io/](https://rvm.io/) :
 Install the 2 keys
 
 ```
-$ gpg2 --keyserver hkp://pool.sks-keyservers.net --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3 7D2BAF1CF37B13E2069D6956105BD0E739499BDB
+gpg2 --keyserver hkp://pool.sks-keyservers.net --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3 7D2BAF1CF37B13E2069D6956105BD0E739499BDB
 ```
 
 Execute the shell/curl command. As regular user, it install in the user's home: `~/.rvm` .
 
 ```
-$ \curl -sSL https://get.rvm.io | bash -s stable
+\curl -sSL https://get.rvm.io | bash -s stable
 ```
 
 If you keep the same terminal (not needed if re-login):
 
 ```
-$ source ~/.rvm/scripts/rvm
+source ~/.rvm/scripts/rvm
 ```
 
 It is advised to get one of the pre-compiled ruby version, you can list with:
 
 ```
-$ rvm list --remote
+rvm list --remote
 ```
 
 Install the chosen pre-compiled Ruby version:
 
 ```
-$ rvm install 2.7.2 --binary
+rvm install 2.7.2 --binary
 ```
 
 Ruby is now installed for the user, go on to Gem installation.
@@ -260,7 +293,7 @@ As root, it installs by default in /usr/local/rvm for all users and creates `/et
 One can install in another location with :
 
 ```
-# curl -sSL https://get.rvm.io | bash -s -- --path /usr/local
+curl -sSL https://get.rvm.io | bash -s -- --path /usr/local
 ```
 
 As root, make sure this will not collide with other application using Ruby (e.g. Faspex).
@@ -268,8 +301,11 @@ If so, one can rename the login script: `mv /etc/profile.d/rvm.sh /etc/profile.d
 To activate ruby (and ascli) later, source it:
 
 ```
-# source /etc/profile.d/rvm.sh.ok
-# rvm version
+source /etc/profile.d/rvm.sh.ok
+```
+
+```
+rvm version
 ```
 
 ### Windows: Installer
@@ -285,13 +321,13 @@ Install Latest stable Ruby using [https://rubyinstaller.org/](https://rubyinstal
 macOS 10.13+ (High Sierra) comes with a recent Ruby. So you can use it directly. You will need to install aspera-cli using `sudo` :
 
 ```
-$ sudo gem install aspera-cli --pre
+sudo gem install aspera-cli --pre
 ```
 
 Alternatively, if you use [Homebrew](https://brew.sh/) already you can install Ruby with it:
 
 ```
-$ brew install ruby
+brew install ruby
 ```
 
 ### Linux: package
@@ -301,90 +337,56 @@ If your Linux distribution provides a standard ruby package, you can use it prov
 Example:
 
 ```
-# yum install -y ruby rubygems ruby-json
+yum install -y ruby rubygems ruby-json
 ```
 
 One can cleanup the whole yum-installed ruby environment like this to uninstall:
 
 ```
 gem uninstall $(ls $(gem env gemdir)/gems/|sed -e 's/-[^-]*$//'|sort -u)
+```
+
+```
 yum remove -y ruby ruby-libs
 ```
 
 ### Other Unixes: Aix, etc...
 
-If your unix do not provide a pre-built ruby, you can get it using one of those
+If your Unix does not provide a pre-built ruby, you can get it using one of those
 [methods](https://www.ruby-lang.org/en/documentation/installation/)
 
 For instance to build from source, and install in `/opt/ruby` :
 
 ```
-# wget https://cache.ruby-lang.org/pub/ruby/2.7/ruby-2.7.2.tar.gz
-# gzip -d ruby-2.7.2.tar.gz
-# tar xvf ruby-2.7.2.tar
-# cd ruby-2.7.2
-# ./configure --prefix=/opt/ruby
-# make ruby.imp
-# make
-# make install
+wget https://cache.ruby-lang.org/pub/ruby/2.7/ruby-2.7.2.tar.gz
+
+gzip -d ruby-2.7.2.tar.gz
+
+tar xvf ruby-2.7.2.tar
+
+cd ruby-2.7.2
+
+./configure --prefix=/opt/ruby
+
+make ruby.imp
+
+make
+
+make install
 ```
-
-### <a id="offline_install"></a>Installation without internet access
-
-Note that currently no pre-packaged version exist yet.
-A method to build one provided here:
-
-On a server with the same OS version and with internet access follow the "Generic single user installation" method.
-
-Then create an archive:
-
-```
-$ cd
-$ tar zcvf rvm-ascli.tgz .rvm
-```
-
-Get the Aspera SDK. Execute:
-
-```
-$ ascli conf --show-config|grep sdk_url
-```
-
-Then download the SDK archive from that URL.
-
-Another method for the SDK is to install the SDK (`ascli conf ascp install`) on the first system, and archive `$HOME/.aspera`.
-
-Transfer those 2 archives to the target system without internet access.
-
-On the target system:
-
-* Extract the RVM archive either in a global location, or in a user's home folder : `path_to_rvm_root`
-* in the user's `.profile` add this line: (replace `path_to_rvm_root` with the actual location)
-
-```
-source path_to_rvm_root/scripts/rvm
-rvm use 2.7.2
-```
-
-For the SDK, either install from archive:
-
-```
-$ ascli conf ascp install --sdk-url=file:///SDK.zip
-```
-
-or restore the `$HOME/.aspera` folder for the user.
 
 ## <a id="the_gem"></a>`aspera-cli` gem
 
 Once you have Ruby and rights to install gems: Install the gem and its dependencies:
 
 ```
-# gem install aspera-cli --pre
+gem install aspera-cli --pre
 ```
 
 To upgrade to the latest version:
 
 ```
-# gem update aspera-cli
+gem update aspera-cli
 ```
 
 `ascli` checks every week if a new version is available and notify the user in a WARN log. To de-activate this feature set the option `version_check_days` to `0`, or specify a different period in days.
@@ -392,10 +394,8 @@ To upgrade to the latest version:
 To check manually:
 
 ```
-# ascli conf check_update
+ascli conf check_update
 ```
-
-
 
 ## <a id="fasp_prot"></a>FASP Protocol
 
@@ -408,14 +408,17 @@ Only two additional files are required to perform an Aspera Transfer, which are 
 This can be installed either be installing an Aspera transfer software, or using an embedded command:
 
 ```
-$ ascli conf ascp install
+ascli conf ascp install
 ```
 
 If a local SDK installation is preferred instead of fetching from internet: one can specify the location of the SDK file:
 
 ```
-$ curl -Lso SDK.zip https://ibm.biz/aspera_sdk
-$ ascli conf ascp install --sdk-url=file:///SDK.zip
+curl -Lso SDK.zip https://ibm.biz/aspera_sdk
+```
+
+```
+ascli conf ascp install --sdk-url=file:///SDK.zip
 ```
 
 The format is: `file:///<path>`, where `<path>` can be either a relative path (not starting with `/`), or an absolute path.
@@ -437,31 +440,50 @@ Refer to section [FASP](#client) for details on how to select a client or set pa
 Several methods are provided to start a transfer.
 Use of a local client ([`direct`](#agt_direct) transfer agent) is one of them, but other methods are available. Refer to section: [Transfer Agents](#agents)
 
-## <a id="offline_install"></a>Offline Installation (without internet)
+## <a id="offline_install"></a>Installation in air gapped environment
 
-The procedure consists in:
+Note that currently no pre-packaged version exist yet.
+A method to build one is provided here:
+
+The procedure:
 
 * Follow the non-root installation procedure with RVM, including gem
-* archive (zip, tar) the main RVM folder (includes ascli):
+* Archive (zip, tar) the main RVM folder (includes ascli):
 
 ```
-$ cd ~
-$ tar zcvf rvm_ascli.tgz .rvm
+cd $HOME && tar zcvf rvm-ascli.tgz .rvm
 ```
 
-* retrieve the SDK:
+* Get the Aspera SDK.
 
 ```
-$ curl -Lso SDK.zip https://ibm.biz/aspera_sdk
+ascli conf --show-config --fields=sdk_url
 ```
 
-* on the system without internet access:
+* Download the SDK archive from that URL.
 
 ```
-$ cd ~
-$ tar zxvf rvm_ascli.tgz
-$ source ~/.rvm/scripts/rvm
-$ ascli conf ascp install --sdk-url=file:///SDK.zip
+curl -Lso SDK.zip https://ibm.biz/aspera_sdk
+```
+
+* Transfer those 2 files to the target system
+
+* On target system
+
+```
+cd $HOME
+
+tar zxvf rvm-ascli.tgz
+
+source ~/.rvm/scripts/rvm
+
+ascli conf ascp install --sdk-url=file:///SDK.zip
+```
+
+* Add those lines to shell init (`.profile`)
+
+```
+source ~/.rvm/scripts/rvm
 ```
 
 # <a id="cli"></a>Command Line Interface: `ascli`
@@ -493,7 +515,7 @@ The `aspera-cli` Gem provides a command line interface (CLI) which interacts wit
 Basic usage is displayed by executing:
 
 ```
-$ ascli -h
+ascli -h
 ```
 
 Refer to sections: [Usage](#usage) and [Sample Commands](#commands).
@@ -507,7 +529,7 @@ Arguments are the units of command line, as parsed by the shell, typically separ
 There are two types of arguments: Commands and Options. Example :
 
 ```
-$ ascli command --option-name=VAL1 VAL2
+ascli command --option-name=VAL1 VAL2
 ```
 
 * executes _command_: `command`
@@ -535,7 +557,10 @@ Exceptions:
 * the special option `--` stops option processing and is ignored, following command line arguments are taken as arguments, including the ones starting with a `-`. Example:
 
 ```
-$ ascli config echo -- --sample
+ascli config echo -- --sample
+```
+
+```
 "--sample"
 ```
 
@@ -610,7 +635,10 @@ The style of output can be set using the `format` parameter, supporting:
 Table output can be filtered using the `select` parameter. Example:
 
 ```
-$ ascli aoc admin res user list --fields=name,email,ats_admin --query=@json:'{"sort":"name"}' --select=@json:'{"ats_admin":true}'
+ascli aoc admin res user list --fields=name,email,ats_admin --query=@json:'{"sort":"name"}' --select=@json:'{"ats_admin":true}'
+```
+
+```
 :...............................:..................................:...........:
 :             name              :              email               : ats_admin :
 :...............................:..................................:...........:
@@ -683,23 +711,32 @@ To display the result of an extended value, use the `config echo` command.
 Example: read the content of the specified file, then, base64 decode, then unzip:
 
 ```
-$ ascli config echo @zlib:@base64:@file:myfile.dat
+ascli config echo @zlib:@base64:@file:myfile.dat
 ```
 
 Example: create a value as a hash, with one key and the value is read from a file:
 
 ```
-$ ascli config echo @ruby:'{"token_verification_key"=>File.read("pubkey.txt")}'
+ascli config echo @ruby:'{"token_verification_key"=>File.read("pubkey.txt")}'
 ```
 
 Example: read a csv file and create a list of hash for bulk provisioning:
 
 ```
-$ cat test.csv
+cat test.csv
+```
+
+```
 name,email
 lolo,laurent@example.com
 toto,titi@tutu.tata
-$ ascli config echo @csvt:@file:test.csv
+```
+
+```
+ascli config echo @csvt:@file:test.csv
+```
+
+```
 :......:.....................:
 : name :        email        :
 :......:.....................:
@@ -711,7 +748,10 @@ $ ascli config echo @csvt:@file:test.csv
 Example: create a hash and include values from preset named "config" of config file in this hash
 
 ```
-$ ascli config echo @incps:@json:'{"hello":true,"incps":["config"]}'
+ascli config echo @incps:@json:'{"hello":true,"incps":["config"]}'
+```
+
+```
 {"version"=>"0.9", "hello"=>true}
 ```
 
@@ -738,7 +778,10 @@ It uses the `HOME` env var primarily, and on MS Windows it also looks at `%HOMED
 The main folder can be displayed using :
 
 ```
-$ ascli config folder
+ascli config folder
+```
+
+```
 /Users/kenji/.aspera/ascli
 ```
 
@@ -747,8 +790,8 @@ It can be overridden using the environment variable `ASCLI_HOME`.
 Example (Windows):
 
 ```
-$ set ASCLI_HOME=C:\Users\Kenji\.aspera\ascli
-$ ascli config folder
+set ASCLI_HOME=C:\Users\Kenji\.aspera\ascli
+ascli config folder
 C:\Users\Kenji\.aspera\ascli
 ```
 
@@ -774,13 +817,13 @@ A [option preset](#lprt) is simply a collection of parameters and their associat
 A named [option preset](#lprt) can be modified directly using `ascli`, which will update the configuration file :
 
 ```
-$ ascli config id <option preset> set|delete|show|initialize|update
+ascli config id <option preset> set|delete|show|initialize|update
 ```
 
 The command `update` allows the easy creation of [option preset](#lprt) by simply providing the options in their command line format, e.g. :
 
 ```
-$ ascli config id demo_server update --url=ssh://demo.asperasoft.com:33001 --username=asperaweb --password=_demo_pass_ --ts=@json:'{"precalculate_job_size":true}'
+ascli config id demo_server update --url=ssh://demo.asperasoft.com:33001 --username=asperaweb --password=_demo_pass_ --ts=@json:'{"precalculate_job_size":true}'
 ```
 
 * This creates a [option preset](#lprt) `demo_server` with all provided options.
@@ -788,32 +831,32 @@ $ ascli config id demo_server update --url=ssh://demo.asperasoft.com:33001 --use
 The command `set` allows setting individual options in a [option preset](#lprt).
 
 ```
-$ ascli config id demo_server set password _demo_pass_
+ascli config id demo_server set password _demo_pass_
 ```
 
 The command `initialize`, like `update` allows to set several parameters at once, but it deletes an existing configuration instead of updating it, and expects a _[Structured Value](#native)_.
 
 ```
-$ ascli config id demo_server initialize @json:'{"url":"ssh://demo.asperasoft.com:33001","username":"asperaweb","password":"_demo_pass_","ts":{"precalculate_job_size":true}}'
+ascli config id demo_server initialize @json:'{"url":"ssh://demo.asperasoft.com:33001","username":"asperaweb","password":"_demo_pass_","ts":{"precalculate_job_size":true}}'
 ```
 
 A good practice is to not manually edit the configuration file and use modification commands instead.
 If necessary, the configuration file can be edited (or simply consulted) with:
 
 ```
-$ ascli config open
+ascli config open
 ```
 
 A full terminal based overview of the configuration can be displayed using:
 
 ```
-$ ascli config over
+ascli config over
 ```
 
 A list of [option preset](#lprt) can be displayed using:
 
 ```
-$ ascli config list
+ascli config list
 ```
 
 ### <a id="lprtconf"></a>Special Option preset: config
@@ -831,16 +874,16 @@ Note that special plugin name: `config` can be associated with a preset that is 
 Operations on this preset are done using regular `config` operations:
 
 ```
-$ ascli config id default set _plugin_name_ _default_preset_for_plugin_
-$ ascli config id default get _plugin_name_
+ascli config id default set _plugin_name_ _default_preset_for_plugin_
+ascli config id default get _plugin_name_
 "_default_preset_for_plugin_"
 ```
 
-### <a id="lprtdef"></a>Special Plugin: config
+### <a id="lplugconf"></a>Special Plugin: config
 
 Plugin `config` (not to be confused with Option preset config) is used to configure `ascli` but it also contains global options.
 
-When `ascli` starts, it lookjs for the `default` Option preset and if there is a value for `config`, if so, it loads the option values for any plugin used.
+When `ascli` starts, it looks for the `default` Option preset and if there is a value for `config`, if so, it loads the option values for any plugin used.
 
 If no global default is set by the user, the tool will use `global_common_defaults` when setting global parameters (e.g. `conf ascp use`)
 
@@ -882,7 +925,7 @@ Values in the configuration also follow the [Extended Value Syntax](#extended).
 Note: if the user wants to use the [Extended Value Syntax](#extended) inside the configuration file, using the `config id update` command, the user shall use the `@val:` prefix. Example:
 
 ```
-$ ascli config id my_aoc_org set private_key @val:@file:"$HOME/.aspera/ascli/aocapikey"
+ascli config id my_aoc_org set private_key @val:@file:"$HOME/.aspera/ascli/aocapikey"
 ```
 
 This creates the [option preset](#lprt):
@@ -918,26 +961,29 @@ is an underscore. E.g. --xxx-yyy  on command line gives xxx_yyy in configuration
 The main plugin name is `config`, so it is possible to define a default [option preset](#lprt) for the main plugin with:
 
 ```
-$ ascli config id cli_default set interactive no
-$ ascli config id default set config cli_default
+ascli config id cli_default set interactive no
+```
+
+```
+ascli config id default set config cli_default
 ```
 
 A [option preset](#lprt) value can be removed with `unset`:
 
 ```
-$ ascli config id cli_default unset interactive
+ascli config id cli_default unset interactive
 ```
 
 Example: Define options using command line:
 
 ```
-$ ascli -N --url=x --password=y --username=y node --show-config
+ascli -N --url=x --password=y --username=y node --show-config
 ```
 
 Example: Define options using a hash:
 
 ```
-$ ascli -N --preset=@json:'{"url":"x","password":"y","username":"y"}' node --show-config
+ascli -N --preset=@json:'{"url":"x","password":"y","username":"y"}' node --show-config
 ```
 
 ### Examples
@@ -947,44 +993,59 @@ only username/password and url are required (either on command line, or from con
 Those can usually be provided on the command line:
 
 ```
-$ ascli shares repo browse / --url=https://10.25.0.6 --username=john --password=4sp3ra
+ascli shares repo browse / --url=https://10.25.0.6 --username=john --password=4sp3ra
 ```
 
 This can also be provisioned in a config file:
 
+* Build [option preset](#lprt)
+
 ```
-1$ ascli config id shares06 set url https://10.25.0.6
-2$ ascli config id shares06 set username john
-3$ ascli config id shares06 set password 4sp3ra
-4$ ascli config id default set shares shares06
-5$ ascli config overview
-6$ ascli shares repo browse /
+ascli config id shares06 set url https://10.25.0.6
+ascli config id shares06 set username john
+ascli config id shares06 set password 4sp3ra
 ```
 
-The three first commands build a [option preset](#lprt).
 Note that this can also be done with one single command:
 
 ```
-$ ascli config id shares06 init @json:'{"url":"https://10.25.0.6","username":"john","password":"4sp3ra"}'
+ascli config id shares06 init @json:'{"url":"https://10.25.0.6","username":"john","password":"4sp3ra"}'
 ```
 
-The fourth command defines this [option preset](#lprt) as the default [option preset](#lprt) for the
-specified application ("shares"). The 5th command displays the content of configuration file in table format.
-Alternative [option presets](#lprt) can be used with option "-P&lt;[option preset](#lprt)&gt;"
-(or --preset=&lt;[option preset](#lprt)&gt;)
+or
 
-Eventually, the last command shows a call to the shares application using default parameters.
+```
+ascli config id shares06 update --url=https://10.25.0.6 --username=john --password=4sp3ra
+```
 
+* Define this [option preset](#lprt) as the default [option preset](#lprt) for the specified plugin (`shares`)
+
+```
+ascli config id default set shares shares06
+```
+
+* Display the content of configuration file in table format
+
+```
+ascli config overview
+```
+
+* Execute a command on the shares application using default parameters
+
+```
+ascli shares repo browse /
+```
 
 ## Plugins
 
 The CLI tool uses a plugin mechanism. The first level command (just after `ascli` on the command line) is the name of the concerned plugin which will execute the command. Each plugin usually represent commands sent to a specific application.
 For instance, the plugin "faspex" allows operations on the application "Aspera Faspex".
 
-### Create your own plugin
+### <a id="createownplugin"></a>Create your own plugin
+
 ```
-$ mkdir -p ~/.aspera/ascli/plugins
-$ cat<<EOF>~/.aspera/ascli/plugins/test.rb
+mkdir -p ~/.aspera/ascli/plugins
+cat<<EOF>~/.aspera/ascli/plugins/test.rb
 require 'aspera/cli/plugin'
 module Aspera
   module Cli
@@ -998,6 +1059,22 @@ module Aspera
 end # Aspera
 EOF
 ```
+
+### <a id="plugins"></a>Plugins: Application URL and Authentication
+
+`ascli` comes with several Aspera application plugins.
+
+REST APIs of Aspera legacy applications (Aspera Node, Faspex, Shares, Console, Orchestrator, Server) use simple username/password authentication: HTTP Basic Authentication.
+
+Those are using options:
+
+* url
+* username
+* password
+
+Those can be provided using command line, parameter set, env var, see section above.
+
+Aspera on Cloud relies on Oauth, refer to the [Aspera on Cloud](#aoc) section.
 
 ## Logging, Debugging
 
@@ -1030,7 +1107,7 @@ Default values are the ones of Ruby.
 Example:
 
 ```
-$ ascli aoc admin res package list --http-options=@json:'{"read_timeout":10.0}'
+ascli aoc admin res package list --http-options=@json:'{"read_timeout":10.0}'
 ```
 
 ## <a id="graphical"></a>Graphical Interactions: Browser and Text Editor
@@ -1063,7 +1140,7 @@ The `fpac` option allows specification of a Proxy Auto Configuration (PAC) file,
 The PAC file can be tested with command: `config proxy_check` , example:
 
 ```
-$ ascli config proxy_check --fpac=file:///./proxy.pac http://www.example.com
+ascli config proxy_check --fpac=file:///./proxy.pac http://www.example.com
 PROXY proxy.example.com:8080
 ```
 
@@ -1081,9 +1158,9 @@ The `config` plugin also allows specification for the use of a local FASP client
 ### Show path of currently used `ascp`
 
 ```
-$ ascli config ascp show
+ascli config ascp show
 /Users/laurent/.aspera/ascli/sdk/ascp
-$ ascli config ascp info
+ascli config ascp info
 +--------------------+-----------------------------------------------------------+
 | key                | value                                                     |
 +--------------------+-----------------------------------------------------------+
@@ -1102,7 +1179,7 @@ For a permanent change, the command `config ascp use` sets the same parameter fo
 Using a POSIX shell:
 
 ```
-$ ascli config ascp use '/Users/laurent/Applications/Aspera CLI/bin/ascp'
+ascli config ascp use '/Users/laurent/Applications/Aspera CLI/bin/ascp'
 ascp version: 4.0.0.182279
 Updated: global_common_defaults: ascp_path <- /Users/laurent/Applications/Aspera CLI/bin/ascp
 Saved to default global preset global_common_defaults
@@ -1111,7 +1188,7 @@ Saved to default global preset global_common_defaults
 Windows:
 
 ```
-$ ascli config ascp use C:\Users\admin\.aspera\ascli\sdk\ascp.exe
+ascli config ascp use C:\Users\admin\.aspera\ascli\sdk\ascp.exe
 ascp version: 4.0.0.182279
 Updated: global_common_defaults: ascp_path <- C:\Users\admin\.aspera\ascli\sdk\ascp.exe
 Saved to default global preset global_common_defaults
@@ -1124,7 +1201,7 @@ If the path has spaces, read section: [Shell and Command line parsing](#parsing)
 Locally installed Aspera products can be listed with:
 
 ```
-$ ascli config ascp products list
+ascli config ascp products list
 :.........................................:................................................:
 :                  name                   :                    app_root                    :
 :.........................................:................................................:
@@ -1144,14 +1221,14 @@ Using the option use_product finds the ascp binary of the selected product.
 To permanently use the ascp of a product:
 
 ```
-$ ascli config ascp products use 'Aspera Connect'
+ascli config ascp products use 'Aspera Connect'
 saved to default global preset /Users/laurent/Applications/Aspera Connect.app/Contents/Resources/ascp
 ```
 
 ### Installation of Connect Client on command line
 
 ```
-$ ascli config ascp connect list
+ascli config ascp connect list
 :...............................................:......................................:..............:
 :                      id                       :                title                 :   version    :
 :...............................................:......................................:..............:
@@ -1164,7 +1241,7 @@ $ ascli config ascp connect list
 : urn:uuid:213C9370-22B1-11E2-81C1-0800200C9A66 : Aspera Connect for Linux 32          : 3.6.2.117442 :
 : urn:uuid:97F94DF0-22B1-11E2-81C1-0800200C9A66 : Aspera Connect for Linux 64          : 3.7.2.141527 :
 :...............................................:......................................:..............:
-$ ascli config ascp connect id 'Aspera Connect for Mac Intel 10.6' links list
+ascli config ascp connect id 'Aspera Connect for Mac Intel 10.6' links list
 :.............................................:..........................:.......................................................................:..........:...............:
 :                    title                    :           type           :                                 href                                  : hreflang :      rel      :
 :.............................................:..........................:.......................................................................:..........:...............:
@@ -1177,7 +1254,7 @@ $ ascli config ascp connect id 'Aspera Connect for Mac Intel 10.6' links list
 : Aspera Connect PDF Documentation for Mac OS : application/pdf          : docs/user/osx/zh-cn/pdf/Connect_User_3.7.0_OSX_zh-cn.pdf              : zh-cn    : documentation :
 : Aspera Connect for Mac Release Notes        : text/html                : http://www.asperasoft.com/en/release_notes/default_1/release_notes_54 : en       : release-notes :
 :.............................................:..........................:.......................................................................:..........:...............:
-$ ascli config ascp connect id 'Aspera Connect for Mac Intel 10.6' links id 'Mac Intel Installer' download --to-folder=.
+ascli config ascp connect id 'Aspera Connect for Mac Intel 10.6' links id 'Mac Intel Installer' download --to-folder=.
 downloaded: AsperaConnect-3.6.1.111259-mac-intel-10.6.dmg
 ```
 
@@ -1203,11 +1280,44 @@ will effectively push files to the related server from the agent node.
 `ascli` standardizes on the use of a [_transfer-spec_](#transferspec) instead of _raw_ ascp options to provide parameters for a transfer session, as a common method for those three Transfer Agents.
 
 
-### <a id="agt_direct"></a>Direct (local ascp execution)
+### <a id="agt_direct"></a>Direct
 
-By default `ascli` uses a local ascp, equivalent to specifying `--transfer=direct`.
-`ascli` will detect locally installed Aspera products.
+The `direct` agent directly executes a local ascp.
+This is the default for `ascli`.
+This is equivalent to specifying `--transfer=direct`.
+`ascli` will detect locally installed Aspera products, including SDK.
 Refer to section [FASP](#client).
+
+The `transfer-info` accepts the following optional parameters to control multi-session, WSS
+
+<table>
+<tr><th>Name</th><th>Type</th><th>Description</th></tr>
+<tr><td>wss</td><td>Bool</td><td>Web Socket Session<br/>Enable use of web socket session in case it is available<br/>Default: false</td></tr>
+<tr><td>spawn_timeout_sec</td><td>Float</td><td>Multi session<br/>Verification time that ascp is running<br/>Default: 3</td></tr>
+<tr><td>spawn_delay_sec</td><td>Float</td><td>Multi session<br/>Delay between startup of sessions<br/>Default: 2</td></tr>
+<tr><td>multi_incr_udp</td><td>Bool</td><td>Multi Session<br/>Increment UDP port on multi-session<br/>If true, each session will have a different UDP port starting at `fasp_port` (or default 33001)<br/>Else, each session will use `fasp_port` (or `ascp` default)<br/>Default: true</td></tr>
+<tr><td>resume</td><td>Hash</td><td>Resume<br/>parameters<br/>See below</td></tr>
+<tr><td>resume.iter_max</td><td>int</td><td>Resume<br/>Max number of retry on error<br/>Default: 7</td></tr>
+<tr><td>resume.sleep_initial</td><td>int</td><td>Resume<br/>First Sleep before retry<br/>Default: 2</td></tr>
+<tr><td>resume.sleep_factor</td><td>int</td><td>Resume<br/>Multiplier of sleep period between attempts<br/>Default: 2</td></tr>
+<tr><td>resume.sleep_max</td><td>int</td><td>Resume<br/>Default: 60</td></tr>
+</table>
+
+Resume: In case of transfer interruption, the agent will resume a transfer up to `iter_max` time.
+Sleep between iterations is:
+
+```
+max( sleep_max , sleep_initial * sleep_factor ^ (iter_index-1) )
+```
+
+Some transfer errors are considered "retryable" (e.g. timeout) and some other not (e.g. wrong password).
+
+Examples:
+
+```
+ascli ... --transfer-info=@json:'{"wss":true,"resume":{"iter_max":10}}'
+ascli ... --transfer-info=@json:'{"spawn_delay_sec":2.5,"multi_incr_udp":false}'
+```
 
 To specify a FASP proxy (only supported with the `direct` agent), set the appropriate [_transfer-spec_](#transferspec) parameter:
 
@@ -1215,68 +1325,40 @@ To specify a FASP proxy (only supported with the `direct` agent), set the approp
 * `EX_http_proxy_url` (proxy for legacy http fallback)
 * `EX_ascp_args`
 
-The `transfer-info` accepts the following optional parameters:
-
-<table>
-<tr><th>Name</th><th>Type</th><th>Default</th><th>Feature</th><th>Description</th></tr>
-<tr><td>spawn_timeout_sec</td><td>Float</td><td>3</td><td>Multi session</td><td>Verification time that ascp is running</td></tr>
-<tr><td>spawn_delay_sec</td><td>Float</td><td>2</td><td>Multi session</td><td>Delay between startup of sessions</td></tr>
-<tr><td>wss</td><td>Bool</td><td>false</td><td>Web Socket Session</td><td>Enable use of web socket session in case it is available</td></tr>
-<tr><td>multi_incr_udp</td><td>Bool</td><td>true</td><td>Multi Session</td><td>Increment UDP port on multi-session<br/>If true, each session will have a different UDP port starting at `fasp_port` (or default 33001)<br/>Else, each session will use `fasp_port` (or `ascp` default)</td></tr>
-<tr><td>resume</td><td>Hash</td><td>nil</td><td>Resumer parameters</td><td>See below</td></tr>
-</table>
-
-Resume parameters:
-
-In case of transfer interruption, the agent will resume a transfer up to `iter_max` time.
-Sleep between iteration is:
-
-```
-max( sleep_max , sleep_initial * sleep_factor ^ (iter_index-1) )
-```
-
-<table>
-<tr><th>Name</th><th>Type</th><th>Default</th><th>Feature</th><th>Description</th></tr>
-<tr><td>iter_max</td><td>int</td><td>7</td><td>Resume</td><td>Max number of retry on error</td></tr>
-<tr><td>sleep_initial</td><td>int</td><td>2</td><td>Resume</td><td>First Sleep before retry</td></tr>
-<tr><td>sleep_factor</td><td>int</td><td>2</td><td>Resume</td><td>Multiplier of Sleep</td></tr>
-<tr><td>sleep_max</td><td>int</td><td>60</td><td>Resume</td><td>Maximum sleep</td></tr>
-</table>
-
-Examples:
-
-```
-$ ascli ... --transfer-info=@json:'{"wss":true,"resume":{"iter_max":10}}'
-$ ascli ... --transfer-info=@json:'{"spawn_delay_sec":2.5,"multi_incr_udp":false}'
-```
-
 ### <a id="agt_connect"></a>IBM Aspera Connect Client GUI
 
-By specifying option: `--transfer=connect`, `ascli` will start transfers using the locally installed Aspera Connect Client.
+By specifying option: `--transfer=connect`, `ascli` will start transfers using the locally installed Aspera Connect Client. There are no option for `transfer_info`.
 
 ### <a id="agt_node"></a>Aspera Node API : Node to node transfers
 
 By specifying option: `--transfer=node`, the CLI will start transfers in an Aspera
 Transfer Server using the Node API, either on a local or remote node.
+Parameters provided in option `transfer_info` are:
 
-If a default node has been configured
-in the configuration file, then this node is used by default else the parameter
-`--transfer-info` is required. The node specification shall be a hash table with
-three keys: url, username and password, corresponding to the URL of the node API
-and associated credentials (node user or access key).
+<table>
+<tr><th>Name</th><th>Type</th><th>Description</th></tr>
+<tr><td>url</td><td>string</td><td>URL of the node API</br>Mandatory</td></tr>
+<tr><td>username</td><td>string</td><td>node api user or access key</br>Mandatory</td></tr>
+<tr><td>password</td><td>string</td><td>password, secret or bearer token</br>Mandatory</td></tr>
+<tr><td>root_id</td><td>string</td><td>password or secret</br>Mandatory only for bearer token</td></tr>
+</table>
 
-The `--transfer-info` parameter can directly specify a pre-configured [option preset](#lprt) :
-`--transfer-info=@preset:<psetname>` or specified using the option syntax :
+Like any other option, `transfer_info` can get its value from a pre-configured [option preset](#lprt) :
+`--transfer-info=@preset:<psetname>` or be specified using the extended value syntax :
 `--transfer-info=@json:'{"url":"https://...","username":"theuser","password":"thepass"}'`
+
+If `transfer_info` is not specified and a default node has been configured (name in `node` for section `default`) then this node is used by default.
+
+If the `password` value begins with `Bearer ` then the `username` is expected to be an access key and the parameter `root_id` is mandatory and specifies the root file id on the node. It can be either the access key's root file id, or any authorized file id underneath it.
 
 ### <a id="agt_httpgw"></a>HTTP Gateway
 
-If it possible to send using a HTTP gateway, in case FASP is not allowed.
+If it possible to send using a HTTP gateway, in case FASP is not allowed. `transfer_info` shall have a single mandatory parameter: `url`.
 
 Example:
 
 ```
-$ ascli faspex package recv --id=323 --transfer=httpgw --transfer-info=@json:'{"url":"https://asperagw.example.com:9443/aspera/http-gwy/v1"}'
+ascli faspex package recv --id=323 --transfer=httpgw --transfer-info=@json:'{"url":"https://asperagw.example.com:9443/aspera/http-gwy/v1"}'
 ```
 
 Note that the gateway only supports transfers authorized with a token.
@@ -1325,8 +1407,8 @@ References:
 Parameters can be displayed with commands:
 
 ```
-$ ascli config ascp spec
-$ ascli config ascp spec --select=@json:'{"f":"Y"}' --fields=-f,n,c
+ascli config ascp spec
+ascli config ascp spec --select=@json:'{"f":"Y"}' --fields=-f,n,c
 ```
 
 Columns:
@@ -1358,13 +1440,13 @@ When uploading, downloading or sending files, the user must specify the list of 
 So, by default, the list of files to transfer will be simply specified on the command line:
 
 ```
-$ ascli server upload ~/mysample.file secondfile
+ascli server upload ~/mysample.file secondfile
 ```
 
 This is equivalent to:
 
 ```
-$ ascli server upload --sources=@args ~/mysample.file secondfile
+ascli server upload --sources=@args ~/mysample.file secondfile
 ```
 
 More advanced options are provided to adapt to various cases. In fact, list of files to transfer are normally conveyed using the [_transfer-spec_](#transferspec) using the field: "paths" which is a list (array) of pairs of "source" (mandatory) and "destination" (optional).
@@ -1406,7 +1488,7 @@ In case the file list is provided on the command line i.e. using `--sources=@arg
 Example:
 
 ```
-$ ascli server upload --src-type=pair ~/Documents/Samples/200KB.1 /Upload/sample1
+ascli server upload --src-type=pair ~/Documents/Samples/200KB.1 /Upload/sample1
 ```
 
 Internally, when transfer agent [`direct`](#agt_direct) is used, a temporary file list (or pair) file is generated and provided to ascp, unless `--file-list` or `--file-pair-list` is provided in `ts` in `EX_ascp_args`.
@@ -1517,7 +1599,7 @@ WARN -- : Another instance is already running (Address already in use - bind(2) 
 The list of supported *PVCL* adapters can be retrieved with command:
 
 ```
-$ ascli conf ascp info
+ascli conf ascp info
 +--------------------+-----------------------------------------------------------+
 | key                | value                                                     |
 +--------------------+-----------------------------------------------------------+
@@ -1613,19 +1695,19 @@ Examples:
 * Upload 20 gibibytes of random data to file myfile to directory /Upload
 
 ```
-$ ascli server upload faux:///myfile\?20g --to-folder=/Upload
+ascli server upload faux:///myfile\?20g --to-folder=/Upload
 ```
 
 * Upload a file /tmp/sample but do not save results to disk (no docroot on destination)
 
 ```
-$ ascli server upload /tmp/sample --to-folder=faux://
+ascli server upload /tmp/sample --to-folder=faux://
 ```
 
 * Upload a faux directory `mydir` containing 1 million files, sequentially with sizes ranging from 0 to 2 Mebibyte - 2 bytes, with the basename of each file being `testfile` to /Upload
 
 ```
-$ ascli server upload "faux:///mydir?file=testfile&count=1m&size=0&inc=2&seq=sequential" --to-folder=/Upload
+ascli server upload "faux:///mydir?file=testfile&count=1m&size=0&inc=2&seq=sequential" --to-folder=/Upload
 ```
 
 ## <a id="commands"></a>Sample Commands
@@ -1763,8 +1845,8 @@ ascli cos node info
 ascli cos node upload testfile.bin
 ascli faspex health
 ascli faspex package list
-ascli faspex package list --box=sent --fields=package_id --format=csv --display=data --query=@json:'{"max":1}'|tail -n 1);\
-ascli faspex package list --fields=package_id --format=csv --display=data --query=@json:'{"max":1}'|tail -n 1);\
+ascli faspex package list --box=sent --fields=package_id --format=csv --display=data --query=@json:'{"max":1}');\
+ascli faspex package list --fields=package_id --format=csv --display=data --query=@json:'{"max":1}');\
 ascli faspex package recv --to-folder=. --box=sent --id="my_package_id"
 ascli faspex package recv --to-folder=. --id="my_package_id"
 ascli faspex package recv --to-folder=. --id=ALL --once-only=yes
@@ -1866,7 +1948,7 @@ ascli sync start --parameters=@json:'{"sessions":[{"name":"test","reset":true,"r
 ## <a id="usage"></a>Usage
 
 ```
-$ ascli -h
+ascli -h
 NAME
 	ascli -- a command line tool for Aspera Applications (v4.5.0.pre)
 
@@ -2156,22 +2238,6 @@ OPTIONS:
 
 Note that actions and parameter values can be written in short form.
 
-# <a id="plugins"></a>Plugins: Application URL and Authentication
-
-`ascli` comes with several Aspera application plugins.
-
-REST APIs of Aspera legacy applications (Aspera Node, Faspex, Shares, Console, Orchestrator, Server) use simple username/password authentication: HTTP Basic Authentication.
-
-Those are using options:
-
-* url
-* username
-* password
-
-Those can be provided using command line, parameter set, env var, see section above.
-
-Aspera on Cloud relies on Oauth, refer to the [Aspera on Cloud](#aoc) section.
-
 # <a id="aoc"></a>Plugin: Aspera on Cloud
 
 Aspera on Cloud uses the more advanced Oauth v2 mechanism for authentication (HTTP Basic authentication is not supported).
@@ -2183,7 +2249,7 @@ It is recommended to use the wizard to set it up, but manual configuration is al
 `ascli` provides a configuration wizard. Here is a sample invocation :
 
 ```
-$ ascli config wizard
+ascli config wizard
 option: url> https://myorg.ibmaspera.com
 Detected: Aspera on Cloud
 Preparing preset: aoc_myorg
@@ -2199,7 +2265,7 @@ Setting config preset as default for aspera
 saving config file
 Done.
 You can test with:
-$ ascli aoc user info show
+ascli aoc user info show
 ```
 
 Optionally, it is possible to create a new organization-specific "integration".
@@ -2258,7 +2324,7 @@ If you did not use the wizard, you can also manually create a [option preset](#l
 Lets create an [option preset](#lprt) called: `my_aoc_org` using `ask` interactive input (client info from previous step):
 
 ```
-$ ascli config id my_aoc_org ask url client_id client_secret
+ascli config id my_aoc_org ask url client_id client_secret
 option: url> https://myorg.ibmaspera.com/
 option: client_id> BJLPObQiFw
 option: client_secret> yFS1mu-crbKuQhGFtfhYuoRW...
@@ -2270,7 +2336,7 @@ updated: my_aoc_org
 Define this [option preset](#lprt) as default configuration for the `aspera` plugin:
 
 ```
-$ ascli config id default set aoc my_aoc_org
+ascli config id default set aoc my_aoc_org
 ```
 
 Note: Default `auth` method is `web` and default `redirect_uri` is `http://localhost:12345`. Leave those default values.
@@ -2290,13 +2356,13 @@ This can be done using any of the following method:
 * using the CLI:
 
 ```
-$ ascli config genkey ~/.aspera/ascli/aocapikey
+ascli config genkey ~/.aspera/ascli/aocapikey
 ```
 
 * `ssh-keygen`:
 
 ```
-$ ssh-keygen -t rsa -f ~/.aspera/ascli/aocapikey -N ''
+ssh-keygen -t rsa -f ~/.aspera/ascli/aocapikey -N ''
 ```
 
 * `openssl`
@@ -2304,11 +2370,11 @@ $ ssh-keygen -t rsa -f ~/.aspera/ascli/aocapikey -N ''
 (on some openssl implementation (mac) there is option: -nodes (no DES))
 
 ```
-$ APIKEY=~/.aspera/ascli/aocapikey
-$ openssl genrsa -passout pass:dummypassword -out ${APIKEY}.protected 2048
-$ openssl rsa -passin pass:dummypassword -in ${APIKEY}.protected -out ${APIKEY}
-$ openssl rsa -pubout -in ${APIKEY} -out ${APIKEY}.pub
-$ rm -f ${APIKEY}.protected
+APIKEY=~/.aspera/ascli/aocapikey
+openssl genrsa -passout pass:dummypassword -out ${APIKEY}.protected 2048
+openssl rsa -passin pass:dummypassword -in ${APIKEY}.protected -out ${APIKEY}
+openssl rsa -pubout -in ${APIKEY} -out ${APIKEY}.pub
+rm -f ${APIKEY}.protected
 ```
 
 #### API Client JWT activation
@@ -2327,13 +2393,13 @@ If you are not using the built-in client_id and secret, JWT needs to be authoriz
 * Using command line
 
 ```
-$ ascli aoc admin res client list
+ascli aoc admin res client list
 :............:.........:
 :     id     :  name   :
 :............:.........:
 : BJLPObQiFw : ascli :
 :............:.........:
-$ ascli aoc admin res client --id=BJLPObQiFw modify @json:'{"jwt_grant_enabled":true,"explicit_authorization_required":false}'
+ascli aoc admin res client --id=BJLPObQiFw modify @json:'{"jwt_grant_enabled":true,"explicit_authorization_required":false}'
 modified
 ```
 
@@ -2354,14 +2420,14 @@ open the previously generated public key located here: `$HOME/.aspera/ascli/aoca
 * Using command line
 
 ```
-$ ascli aoc admin res user list
+ascli aoc admin res user list
 :........:................:
 :   id   :      name      :
 :........:................:
 : 109952 : Tech Support   :
 : 109951 : LAURENT MARTIN :
 :........:................:
-$ ascli aoc user info modify @ruby:'{"public_key"=>File.read(File.expand_path("~/.aspera/ascli/aocapikey.pub"))}'
+ascli aoc user info modify @ruby:'{"public_key"=>File.read(File.expand_path("~/.aspera/ascli/aocapikey.pub"))}'
 modified
 ```
 
@@ -2378,7 +2444,7 @@ To activate default use of JWT authentication for `ascli` using the [option pres
 Execute:
 
 ```
-$ ascli config id my_aoc_org update --auth=jwt --private-key=@val:@file:~/.aspera/ascli/aocapikey --username=laurent.martin.aspera@fr.ibm.com
+ascli config id my_aoc_org update --auth=jwt --private-key=@val:@file:~/.aspera/ascli/aocapikey --username=laurent.martin.aspera@fr.ibm.com
 ```
 
 Note: the private key argument represents the actual PEM string. In order to read the content from a file, use the @file: prefix. But if the @file: argument is used as is, it will read the file and set in the config file. So to keep the "@file" tag in the configuration file, the @val: prefix is added.
@@ -2391,13 +2457,13 @@ After this last step, commands do not require web login anymore.
 Once client has been registered and [option preset](#lprt) created: `ascli` can be used:
 
 ```
-$ ascli aoc files br /
+ascli aoc files br /
 Current Workspace: Default Workspace (default)
 empty
 ```
 
 
-### Administration
+## Administration
 
 The `admin` command allows several administrative tasks (and require admin privilege).
 
@@ -2405,7 +2471,7 @@ It allows actions (create, update, delete) on "resources": users, group, nodes, 
 
 Bulk operations are possible using option `bulk` (yes,no(default)): currently: create only. In that case, the operation expects an Array of Hash instead of a simple Hash using the [Extended Value Syntax](#extended).
 
-#### Listing resources
+### Listing resources
 
 The command `aoc admin res <type> list` lists all entities of given type. It uses paging and multiple requests if necessary.
 
@@ -2455,13 +2521,13 @@ Refer to the AoC API for full list of query parameters, or use the browser in de
 
 Note the option `select` can also be used to further refine selection, refer to [section earlier](#option_select).
 
-#### Access Key secrets
+### Access Key secrets
 
 In order to access some administrative actions on "nodes" (in fact, access keys), the associated
 secret is required, it is usually provided using the `secret` option. For example in a command like:
 
 ```
-$ ascli aoc admin res node --id="access_key1" --secret="secret1" v3 info
+ascli aoc admin res node --id="access_key1" --secret="secret1" v3 info
 ```
 
 It is also possible to provide a set of secrets used on a regular basis. This can be done using the `secrets` option. The value provided shall be a Hash, where keys are access key ids, and values are the associated secrets.
@@ -2469,394 +2535,26 @@ It is also possible to provide a set of secrets used on a regular basis. This ca
 First choose a repository name, for example `my_secrets`, and populate it like this:
 
 ```
-$ ascli conf id my_secrets set 'access_key1' 'secret1'
-$ ascli conf id my_secrets set 'access_key2' 'secret2'
-$ ascli conf id default get config
+ascli conf id my_secrets set 'access_key1' 'secret1'
+ascli conf id my_secrets set 'access_key2' 'secret2'
+ascli conf id default get config
 "cli_default"
 ```
 
 Here above, one already has set a `config` global preset to preset `cli_default` (refer to earlier in documentation), then the repository can be read by default like this (note the prefix `@val:` to avoid the evaluation of prefix `@preset:`):
 
 ```
-$ ascli conf id cli_default set secrets @val:@preset:my_secrets
+ascli conf id cli_default set secrets @val:@preset:my_secrets
 ```
 
 A secret repository can always be selected at runtime using `--secrets=@preset:xxxx`, or `--secrets=@json:'{"accesskey1":"secret1"}'`
 
-#### Examples
-
-* Bulk creation
-
-```
-$ ascli aoc admin res user create --bulk=yes @json:'[{"email":"dummyuser1@example.com"},{"email":"dummyuser2@example.com"}]'
-:.......:.........:
-:  id   : status  :
-:.......:.........:
-: 98398 : created :
-: 98399 : created :
-:.......:.........:
-```
-
-* Find with filter and delete
-
-```
-$ ascli aoc admin res user list --query='@json:{"q":"dummyuser"}' --fields=id,email
-:.......:........................:
-:  id   :         email          :
-:.......:........................:
-: 98398 : dummyuser1@example.com :
-: 98399 : dummyuser2@example.com :
-:.......:........................:
-$ thelist=$(ascli aoc admin res user list --query='@json:{"q":"dummyuser"}' --fields=id --format=json --display=data|jq -cr 'map(.id)')
-$ echo $thelist
-["113501","354061"]
-$ ascli aoc admin res user --bulk=yes --id=@json:"$thelist" delete
-:.......:.........:
-:  id   : status  :
-:.......:.........:
-: 98398 : deleted :
-: 98399 : deleted :
-:.......:.........:
-```
-
-* <a id="deactuser"></a>Find deactivated users since more than 2 years
-
-```
-ascli aoc admin res user list --query=@ruby:'{"deactivated"=>true,"q"=>"last_login_at:<#{(DateTime.now.to_time.utc-2*365*86400).iso8601}"}'
-```
-
-To delete them use the same method as before
-
-* Display current user's workspaces
-
-```
-$ ascli aoc user workspaces
-:......:............................:
-:  id  :            name            :
-:......:............................:
-: 16   : Engineering                :
-: 17   : Marketing                  :
-: 18   : Sales                      :
-:......:............................:
-```
-
-* Create a sub access key in a "node"
-
-Creation of a sub-access key is like creation of access key with the following difference: authentication to node API is made with accesskey (master access key) and only the path parameter is provided: it is relative to the storage root of the master key. (id and secret are optional)
-
-```
-$ ascli aoc admin resource node --name=_node_name_ --secret=_secret_ v4 access_key create --value=@json:'{"storage":{"path":"/folder1"}}'
-```
-
-* Display transfer events (ops/transfer)
-
-```
-$ ascli aoc admin res node --secret=_secret_ v3 transfer list --value=@json:'[["q","*"],["count",5]]'
-```
-
-Examples of query (TODO: cleanup):
-
-```
-{"q":"type(file_upload OR file_delete OR file_download OR file_rename OR folder_create OR folder_delete OR folder_share OR folder_share_via_public_link)","sort":"-date"}
-
-{"tag":"aspera.files.package_id=LA8OU3p8w"}
-
-              # filter= 'id', 'short_summary', or 'summary'
-              # count=nnn
-              # tag=x.y.z%3Dvalue
-              # iteration_token=nnn
-              # after_time=2016-05-01T23:53:09Z
-              # active_only=true|false
-```
-
-* Display node events (events)
-
-```
-$ ascli aoc admin res node --secret=_secret_ v3 events
-```
-
-* display members of a workspace
-
-```
-$ ascli aoc admin res workspace_membership list --fields=member_type,manager,member.email --query=@json:'{"embed":"member","inherited":false,"workspace_id":11363,"sort":"name"}'
-:.............:.........:..................................:
-: member_type : manager :           member.email           :
-:.............:.........:..................................:
-: user        : true    : john.curtis@email.com            :
-: user        : false   : laurent.martin.aspera@fr.ibm.com :
-: user        : false   : jean.dupont@me.com               :
-: user        : false   : another.user@example.com         :
-: group       : false   :                                  :
-: user        : false   : aspera.user@gmail.com            :
-:.............:.........:..................................:
-```
-
-other query parameters:
-
-```
-{"workspace_membership_through":true,"include_indirect":true}
-```
-
-* <a id="aoc_sample_member"></a>add all members of a workspace to another workspace
-
-a- Get id of first workspace
-
-```
-WS1='First Workspace'
-WS1ID=$(ascli aoc admin res workspace list --query=@json:'{"q":"'"$WS1"'"}' --select=@json:'{"name":"'"$WS1"'"}' --fields=id --format=csv)
-```
-
-b- Get id of second workspace
-
-```
-WS2='Second Workspace'
-WS2ID=$(ascli aoc admin res workspace list --query=@json:'{"q":"'"$WS2"'"}' --select=@json:'{"name":"'"$WS2"'"}' --fields=id --format=csv)
-```
-
-c- Extract membership information
-
-```
-$ ascli aoc admin res workspace_membership list --fields=manager,member_id,member_type,workspace_id --query=@json:'{"workspace_id":'"$WS1ID"'}' --format=jsonpp > ws1_members.json
-```
-
-d- Convert to creation data for second workspace:
-
-```
-grep -Eve '(direct|effective_manager|_count|storage|"id")' ws1_members.json|sed '/workspace_id/ s/"'"$WS1ID"'"/"'"$WS2ID"'"/g' > ws2_members.json
-```
-
-or, using jq:
-
-```
-jq '[.[] | {member_type,member_id,workspace_id,manager,workspace_id:"'"$WS2ID"'"}]' ws1_members.json > ws2_members.json
-```
-
-e- Add members to second workspace
-
-```
-$ ascli aoc admin res workspace_membership create --bulk=yes @json:@file:ws2_members.json
-```
-
-* Get users who did not log since a date
-
-```
-$ ascli aoc admin res user list --fields=email --query=@json:'{"q":"last_login_at:<2018-05-28"}'
-:...............................:
-:             email             :
-:...............................:
-: John.curtis@acme.com          :
-: Jean.Dupont@tropfort.com      :
-:...............................:
-```
-
-* List "Limited" users
-
-```
-$ ascli aoc admin res user list --fields=email --select=@json:'{"member_of_any_workspace":false}'
-```
-
-* Perform a multi Gbps transfer between two remote shared folders
-
-In this example, a user has access to a workspace where two shared folders are located on different sites, e.g. different cloud regions.
-
-First, setup the environment (skip if already done)
-
-```
-$ ascli conf wizard --url=https://sedemo.ibmaspera.com --username=laurent.martin.aspera@fr.ibm.com
-Detected: Aspera on Cloud
-Preparing preset: aoc_sedemo
-Using existing key:
-/Users/laurent/.aspera/ascli/aspera_aoc_key
-Using global client_id.
-Please Login to your Aspera on Cloud instance.
-Navigate to your "Account Settings"
-Check or update the value of "Public Key" to be:
------BEGIN PUBLIC KEY-----
-SOME PUBLIC KEY PEM DATA HERE
------END PUBLIC KEY-----
-Once updated or validated, press enter.
-
-creating new config preset: aoc_sedemo
-Setting config preset as default for aspera
-saving config file
-Done.
-You can test with:
-$ ascli aoc user info show
-```
-
-This creates the option preset "aoc_&lt;org name&gt;" to allow seamless command line access and sets it as default for aspera on cloud.
-
-Then, create two shared folders located in two regions, in your files home, in a workspace.
-
-Then, transfer between those:
-
-```
-$ ascli -Paoc_show aoc files transfer --from-folder='IBM Cloud SJ' --to-folder='AWS Singapore' 100GB.file --ts=@json:'{"target_rate_kbps":"1000000","multi_session":10,"multi_session_threshold":1}'
-```
-
-* create registration key to register a node
-
-```
-$ ascli aoc admin res admin/client create @json:'{"data":{"name":"laurentnode","client_subject_scopes":["alee","aejd"],"client_subject_enabled":true}}' --fields=token --format=csv
-jfqslfdjlfdjfhdjklqfhdkl
-```
-
-* delete all registration keys
-
-```
-$ ascli aoc admin res admin/client list --fields=id --format=csv|ascli aoc admin res admin/client delete --bulk=yes --id=@lines:@stdin:
-+-----+---------+
-| id  | status  |
-+-----+---------+
-| 99  | deleted |
-| 100 | deleted |
-| 101 | deleted |
-| 102 | deleted |
-+-----+---------+
-```
-
-* List packages in a given shared inbox
-
-First retrieve the id of the shared inbox, and then list packages with the appropriate filter.
-(To find out available filters, consult the API definition, or use the web interface in developer mode).
-
-Note that when no query is provided, the query used by default is: `{"archived":false,"exclude_dropbox_packages":true,"has_content":true,"received":true}`. The workspace id is added if not already present in the query.
-
-```
-shbxid=$(ascli aoc user shared_inboxes --select=@json:'{"dropbox.name":"My Shared Inbox"}' --format=csv --fields=dropbox_id --display=data)
-
-ascli aoc packages list --query=@json:'{"dropbox_id":"'$shbxid'","archived":false,"received":true,"has_content":true,"exclude_dropbox_packages":false,"include_draft":false,"sort":"-received_at"}'
-```
-
-## Shared folders
-
-* list shared folders in node
-
-```
-$ ascli aoc admin res node --id=8669 shared_folders
-```
-
-* list shared folders in workspace
-
-```
-$ ascli aoc admin res workspace --id=10818 shared_folders
-```
-
-* list members of shared folder
-
-```
-$ ascli aoc admin res node --id=8669 v4 perm 82 show
-```
-
-## Send a Package
-
-Send a package:
-
-```
-$ ascli aoc packages send --value=[package extended value] [other parameters such as file list and transfer parameters]
-```
-
-Notes:
-
-* The `value` option can contain any supported package creation parameter. Refer to the AoC package creation API, or display an existing package in JSON to list attributes.
-* List allowed shared inbox destinations with: `ascli aoc user shared_inboxes`
-* Use fields: `recipients` and/or `bcc_recipients` to provide the list of recipients: user or shared inbox. 
-  * Provide either ids as expected by API: `"recipients":[{"type":"dropbox","id":"1234"}]`
-  * or just names: `"recipients":[{"The Dest"}]` . ascli will resolve the list of email addresses and dropbox names to the expected type/id list, based on case insensitive partial match.
-* If a user recipient (email) is not already registered and the workspace allows external users, then the package is sent to an external user, and
-  * if the option `new_user_option` is `@json:{"package_contact":true}` (default), then a public link is sent and the external user does not need to create an account
-  * if the option `new_user_option` is `@json:{}`, then external users are invited to join the workspace
-
-Examples:
-
-* Send a package with one file to two users, using their email
-
-```
-$ ascli aoc package send --value=@json:'{"name":"my title","note":"my note","recipients":["laurent.martin.aspera@fr.ibm.com","other@example.com"]}' my_file.dat
-```
-
-* Send a package with one file to a shared inbox, using internal identifier, with specific transfer parameters
-
-```
-$ ascli aoc package send --value=@json:'{"name":"my delivery","recipients":[{"type":"dropbox","id":"12345"}]}' --ts=@json:'{"target_rate_kbps":100000}'  my_file.dat
-```
-
-* Send a package with one file to a shared inbox (by name) with metadata
-
-```
-$ ascli aoc package send --workspace=eudemo --value=@json:'{"name":"my pack title","recipients":["Shared Inbox Name"],"metadata":[{"input_type":"single-text","name":"Project Id","values":["123"]},{"input_type":"single-dropdown","name":"Type","values":["Opt2"]},{"input_type":"multiple-checkbox","name":"CheckThose","values":["Check1","Check2"]},{"input_type":"date","name":"Optional Date","values":["2021-01-13T15:02:00.000Z"]}]}' ~/Documents/Samples/200KB.1
-```
-
-## <a id="aoccargo"></a>Receive new packages only
-
-It is possible to automatically download new packages, like using Aspera Cargo:
-
-```
-$ ascli aoc packages recv --id=ALL --once-only=yes --lock-port=12345
-```
-
-* `--id=ALL` (case sensitive) will download all packages
-* `--once-only=yes` keeps memory of any downloaded package in persistency files located in the configuration folder
-* `--lock-port=12345` ensures that only one instance is started at the same time, to avoid running two downloads in parallel
-
-Typically, one would execute this command on a regular basis, using the method of your choice:
-
-* Windows: [Task Scheduler](https://docs.microsoft.com/en-us/windows/win32/taskschd/task-scheduler-start-page)
-* Linux/Unix: [cron](https://www.man7.org/linux/man-pages/man5/crontab.5.html)
-* etc...
-
-## Download Files
-
-Download of files is straightforward with a specific syntax for the `aoc files download` action: Like other commands the source file list is provided as  a list with the `sources` option. Nevertheless, consider this:
-
-* if only one source is provided, it is downloaded
-* if multiple sources must be downloaded, then the first in list is the path of the source folder, and the remaining items are the file names in this folder (without path).
-
-## Find Files
-
-The command `aoc files find [--value=expression]` will recursively scan storage to find files matching the expression criteria. It works also on node resource using the v4 command. (see examples)
-
-The expression can be of 3 formats:
-
-* empty (default) : all files, equivalent to value: `exec:true`
-* not starting with `exec:` : the expression is a regular expression, using [Ruby Regex](https://ruby-doc.org/core/Regexp.html) syntax. equivalent to value: `exec:f['name'].match(/expression/)`
-
-For instance, to find files with a special extension, use `--value='\.myext$'`
-
-* starting with `exec:` : the Ruby code after the prefix is executed for each entry found. The entry variable name is `f`. The file is displayed if the result of the expression is true;
-
-Examples of expressions: (using like this: `--value=exec:'<expression>'`)
-
-* Find files more recent than 100 days
-
-```
-f["type"].eql?("file") and (DateTime.now-DateTime.parse(f["modified_time"]))<100
-```
-
-* Find files older than 1 year on a given node and store in file list
-
-```
-$ ascli aoc admin res node --name='my node name' --secret='my secret' v4 find / --fields=path --value='exec:f["type"].eql?("file") and (DateTime.now-DateTime.parse(f["modified_time"]))<100' --format=csv > my_file_list.txt
-```
-
-* Delete the files, one by one
-
-```
-$ cat my_file_list.txt|while read path;do echo ascli aoc admin res node --name='my node name' --secret='my secret' v4 delete "$path" ;done
-```
-
-* Delete the files in bulk
-
-```
-cat my_file_list.txt | ascli aoc admin res node --name='my node name' --secret='my secret' v3 delete @lines:@stdin:
-```
-
-## Activity
+### Activity
 
 The activity app can be queried with:
 
 ```
-$ ascli aoc admin analytics transfers
+ascli aoc admin analytics transfers
 ```
 
 It can also support filters and send notification using option `notif_to`. a template is defined using option `notif_template` :
@@ -2881,7 +2579,7 @@ The environment provided contains the following additional variable:
 Example:
 
 ```
-$ ascli aoc admin analytics transfers --once-only=yes --lock-port=12345 \
+ascli aoc admin analytics transfers --once-only=yes --lock-port=12345 \
 --query=@json:'{"status":"completed","direction":"receive"}' \
 --notif-to=active --notif-template=@file:mytemplate.erb
 ```
@@ -2894,12 +2592,455 @@ Options:
 
 Note this must not be executed in less than 5 minutes because the analytics interface accepts only a period of time between 5 minutes and 6 months. The period is [date of previous execution]..[now].
 
-## Using specific transfer ports
+### Transfer: Using specific transfer ports
 
-By default transfer nodes are expected to use ports TCP/UDP 33001. The web UI enforces that. The option `default_ports` ([yes]/no) allows ascli to retrieve the server ports from an API call (download_setup) which reads the information from `aspera.conf` on the server.
+By default transfer nodes are expected to use ports TCP/UDP 33001. The web UI enforces that.
+The option `default_ports` ([yes]/no) allows ascli to retrieve the server ports from an API call (download_setup) which reads the information from `aspera.conf` on the server.
+
+### Using ATS
+
+Refer to section "Examples" of [ATS](#ats) and substitute command `ats` with `aoc admin ats`.
 
 
-# Plugin: Aspera Transfer Service
+### Example: Bulk creation
+
+```
+ascli aoc admin res user create --bulk=yes @json:'[{"email":"dummyuser1@example.com"},{"email":"dummyuser2@example.com"}]'
+:.......:.........:
+:  id   : status  :
+:.......:.........:
+: 98398 : created :
+: 98399 : created :
+:.......:.........:
+```
+
+### Example: Find with filter and delete
+
+```
+ascli aoc admin res user list --query='@json:{"q":"dummyuser"}' --fields=id,email
+:.......:........................:
+:  id   :         email          :
+:.......:........................:
+: 98398 : dummyuser1@example.com :
+: 98399 : dummyuser2@example.com :
+:.......:........................:
+thelist=$(ascli aoc admin res user list --query='@json:{"q":"dummyuser"}' --fields=id --format=json --display=data|jq -cr 'map(.id)')
+echo $thelist
+["113501","354061"]
+ascli aoc admin res user --bulk=yes --id=@json:"$thelist" delete
+:.......:.........:
+:  id   : status  :
+:.......:.........:
+: 98398 : deleted :
+: 98399 : deleted :
+:.......:.........:
+```
+
+### Example: <a id="deactuser"></a>Find deactivated users since more than 2 years
+
+```
+ascli aoc admin res user list --query=@ruby:'{"deactivated"=>true,"q"=>"last_login_at:<#{(DateTime.now.to_time.utc-2*365*86400).iso8601}"}'
+```
+
+To delete them use the same method as before
+
+### Example: Display current user's workspaces
+
+```
+ascli aoc user workspaces
+:......:............................:
+:  id  :            name            :
+:......:............................:
+: 16   : Engineering                :
+: 17   : Marketing                  :
+: 18   : Sales                      :
+:......:............................:
+```
+
+### Example: Create a sub access key in a "node"
+
+Creation of a sub-access key is like creation of access key with the following difference: authentication to node API is made with accesskey (master access key) and only the path parameter is provided: it is relative to the storage root of the master key. (id and secret are optional)
+
+```
+ascli aoc admin resource node --name=_node_name_ --secret=_secret_ v4 access_key create --value=@json:'{"storage":{"path":"/folder1"}}'
+```
+
+### Example: Display transfer events (ops/transfer)
+
+```
+ascli aoc admin res node --secret=_secret_ v3 transfer list --value=@json:'[["q","*"],["count",5]]'
+```
+
+Examples of query (TODO: cleanup):
+
+```
+{"q":"type(file_upload OR file_delete OR file_download OR file_rename OR folder_create OR folder_delete OR folder_share OR folder_share_via_public_link)","sort":"-date"}
+
+{"tag":"aspera.files.package_id=LA8OU3p8w"}
+
+              # filter= 'id', 'short_summary', or 'summary'
+              # count=nnn
+              # tag=x.y.z%3Dvalue
+              # iteration_token=nnn
+              # after_time=2016-05-01T23:53:09Z
+              # active_only=true|false
+```
+
+### Example: Display node events (events)
+
+```
+ascli aoc admin res node --secret=_secret_ v3 events
+```
+
+### Example: Display members of a workspace
+
+```
+ascli aoc admin res workspace_membership list --fields=member_type,manager,member.email --query=@json:'{"embed":"member","inherited":false,"workspace_id":11363,"sort":"name"}'
+:.............:.........:..................................:
+: member_type : manager :           member.email           :
+:.............:.........:..................................:
+: user        : true    : john.curtis@email.com            :
+: user        : false   : laurent.martin.aspera@fr.ibm.com :
+: user        : false   : jean.dupont@me.com               :
+: user        : false   : another.user@example.com         :
+: group       : false   :                                  :
+: user        : false   : aspera.user@gmail.com            :
+:.............:.........:..................................:
+```
+
+other query parameters:
+
+```
+{"workspace_membership_through":true,"include_indirect":true}
+```
+
+### Example: <a id="aoc_sample_member"></a>add all members of a workspace to another workspace
+
+a- Get id of first workspace
+
+```
+WS1='First Workspace'
+WS1ID=$(ascli aoc admin res workspace list --query=@json:'{"q":"'"$WS1"'"}' --select=@json:'{"name":"'"$WS1"'"}' --fields=id --format=csv)
+```
+
+b- Get id of second workspace
+
+```
+WS2='Second Workspace'
+WS2ID=$(ascli aoc admin res workspace list --query=@json:'{"q":"'"$WS2"'"}' --select=@json:'{"name":"'"$WS2"'"}' --fields=id --format=csv)
+```
+
+c- Extract membership information
+
+```
+ascli aoc admin res workspace_membership list --fields=manager,member_id,member_type,workspace_id --query=@json:'{"workspace_id":'"$WS1ID"'}' --format=jsonpp > ws1_members.json
+```
+
+d- Convert to creation data for second workspace:
+
+```
+grep -Eve '(direct|effective_manager|_count|storage|"id")' ws1_members.json|sed '/workspace_id/ s/"'"$WS1ID"'"/"'"$WS2ID"'"/g' > ws2_members.json
+```
+
+or, using jq:
+
+```
+jq '[.[] | {member_type,member_id,workspace_id,manager,workspace_id:"'"$WS2ID"'"}]' ws1_members.json > ws2_members.json
+```
+
+e- Add members to second workspace
+
+```
+ascli aoc admin res workspace_membership create --bulk=yes @json:@file:ws2_members.json
+```
+
+### Example: Get users who did not log since a date
+
+```
+ascli aoc admin res user list --fields=email --query=@json:'{"q":"last_login_at:<2018-05-28"}'
+:...............................:
+:             email             :
+:...............................:
+: John.curtis@acme.com          :
+: Jean.Dupont@tropfort.com      :
+:...............................:
+```
+
+### Example: List "Limited" users
+
+```
+ascli aoc admin res user list --fields=email --select=@json:'{"member_of_any_workspace":false}'
+```
+
+### Example: Perform a multi Gbps transfer between two remote shared folders
+
+In this example, a user has access to a workspace where two shared folders are located on different sites, e.g. different cloud regions.
+
+First, setup the environment (skip if already done)
+
+```
+ascli conf wizard --url=https://sedemo.ibmaspera.com --username=laurent.martin.aspera@fr.ibm.com
+Detected: Aspera on Cloud
+Preparing preset: aoc_sedemo
+Using existing key:
+/Users/laurent/.aspera/ascli/aspera_aoc_key
+Using global client_id.
+Please Login to your Aspera on Cloud instance.
+Navigate to your "Account Settings"
+Check or update the value of "Public Key" to be:
+-----BEGIN PUBLIC KEY-----
+SOME PUBLIC KEY PEM DATA HERE
+-----END PUBLIC KEY-----
+Once updated or validated, press enter.
+
+creating new config preset: aoc_sedemo
+Setting config preset as default for aspera
+saving config file
+Done.
+You can test with:
+ascli aoc user info show
+```
+
+This creates the option preset "aoc_&lt;org name&gt;" to allow seamless command line access and sets it as default for aspera on cloud.
+
+Then, create two shared folders located in two regions, in your files home, in a workspace.
+
+Then, transfer between those:
+
+```
+ascli -Paoc_show aoc files transfer --from-folder='IBM Cloud SJ' --to-folder='AWS Singapore' 100GB.file --ts=@json:'{"target_rate_kbps":"1000000","multi_session":10,"multi_session_threshold":1}'
+```
+
+### Example: create registration key to register a node
+
+```
+ascli aoc admin res client create @json:'{"data":{"name":"laurentnode","client_subject_scopes":["alee","aejd"],"client_subject_enabled":true}}' --fields=token --format=csv
+jfqslfdjlfdjfhdjklqfhdkl
+```
+
+### Example: delete all registration keys
+
+```
+ascli aoc admin res client list --fields=id --format=csv|ascli aoc admin res client delete --bulk=yes --id=@lines:@stdin:
++-----+---------+
+| id  | status  |
++-----+---------+
+| 99  | deleted |
+| 100 | deleted |
+| 101 | deleted |
+| 102 | deleted |
++-----+---------+
+```
+
+### Example: Create a node
+
+AoC nodes as actually composed with two related entities:
+
+* An access key created on the Transfer Server (HSTS/ATS)
+* a `node` resource in the AoC application.
+
+The web UI allows creation of both entities in one shot but not the CLI for more flexibility.
+Note that when selecting "Use existing access key" in the web UI, this actually skips access key creation.
+
+So, for example, the creation of a node using ATS in IBM Cloud looks like (see other example in this manual):
+
+* create the access key on ATS
+
+```
+ascli aoc admin ats access_key create --cloud=softlayer --region=eu-de --params=@json:'{"storage":{"type":"ibm-s3","bucket":"mybucket","credentials":{"access_key_id":"mykey","secret_access_key":"mysecret"},"path":"/"}}'
+```
+
+Take a note of the randomly generated `id` and `secret`.
+
+* Retrieve the ATS node address
+
+```
+ascli aoc admin ats cluster show --cloud=softlayer --region=eu-de --fields=transfer_setup_url --format=csv|cut -f2 -d,
+```
+
+* Create the node entity
+
+```
+ascli aoc admin res node create @json:'{"name":"myname","access_key":"*accesskeyid*","ats_access_key":true,"ats_storage_type":"ibm-s3","url":"https://ats-sl-fra-all.aspera.io"}'
+```
+
+Creation of a node with a self-managed node is similar, but the command `aoc admin ats access_key create` is replaced with `node access_key create` on the private node itself.
+
+### Example: List packages in a given shared inbox
+
+First retrieve the id of the shared inbox, and then list packages with the appropriate filter.
+(To find out available filters, consult the API definition, or use the web interface in developer mode).
+
+Note that when no query is provided, the query used by default is: `{"archived":false,"exclude_dropbox_packages":true,"has_content":true,"received":true}`. The workspace id is added if not already present in the query.
+
+```
+shbxid=$(ascli aoc user shared_inboxes --select=@json:'{"dropbox.name":"My Shared Inbox"}' --format=csv --fields=dropbox_id --display=data)
+
+ascli aoc packages list --query=@json:'{"dropbox_id":"'$shbxid'","archived":false,"received":true,"has_content":true,"exclude_dropbox_packages":false,"include_draft":false,"sort":"-received_at"}'
+```
+
+## Packages
+
+The webmail-like application.
+
+### Send a Package
+
+Send a package:
+
+```
+ascli aoc packages send --value=[package extended value] [other parameters such as file list and transfer parameters]
+```
+
+Notes:
+
+* The `value` option can contain any supported package creation parameter. Refer to the AoC package creation API, or display an existing package in JSON to list attributes.
+* List allowed shared inbox destinations with: `ascli aoc user shared_inboxes`
+* Use fields: `recipients` and/or `bcc_recipients` to provide the list of recipients: user or shared inbox. 
+  * Provide either ids as expected by API: `"recipients":[{"type":"dropbox","id":"1234"}]`
+  * or just names: `"recipients":[{"The Dest"}]` . ascli will resolve the list of email addresses and dropbox names to the expected type/id list, based on case insensitive partial match.
+* If a user recipient (email) is not already registered and the workspace allows external users, then the package is sent to an external user, and
+  * if the option `new_user_option` is `@json:{"package_contact":true}` (default), then a public link is sent and the external user does not need to create an account
+  * if the option `new_user_option` is `@json:{}`, then external users are invited to join the workspace
+
+Examples:
+
+* Send a package with one file to two users, using their email
+
+```
+ascli aoc package send --value=@json:'{"name":"my title","note":"my note","recipients":["laurent.martin.aspera@fr.ibm.com","other@example.com"]}' my_file.dat
+```
+
+* Send a package with one file to a shared inbox, using internal identifier, with specific transfer parameters
+
+```
+ascli aoc package send --value=@json:'{"name":"my delivery","recipients":[{"type":"dropbox","id":"12345"}]}' --ts=@json:'{"target_rate_kbps":100000}'  my_file.dat
+```
+
+* Send a package with one file to a shared inbox (by name) with metadata
+
+```
+ascli aoc package send --workspace=eudemo --value=@json:'{"name":"my pack title","recipients":["Shared Inbox Name"],"metadata":[{"input_type":"single-text","name":"Project Id","values":["123"]},{"input_type":"single-dropdown","name":"Type","values":["Opt2"]},{"input_type":"multiple-checkbox","name":"CheckThose","values":["Check1","Check2"]},{"input_type":"date","name":"Optional Date","values":["2021-01-13T15:02:00.000Z"]}]}' ~/Documents/Samples/200KB.1
+```
+
+### <a id="aoccargo"></a>Receive new packages only (Cargo)
+
+It is possible to automatically download new packages, like using Aspera Cargo:
+
+```
+ascli aoc packages recv --id=ALL --once-only=yes --lock-port=12345
+```
+
+* `--id=ALL` (case sensitive) will download all packages
+* `--once-only=yes` keeps memory of any downloaded package in persistency files located in the configuration folder
+* `--lock-port=12345` ensures that only one instance is started at the same time, to avoid running two downloads in parallel
+
+Typically, one would execute this command on a regular basis, using the method of your choice:
+
+* Windows: [Task Scheduler](https://docs.microsoft.com/en-us/windows/win32/taskschd/task-scheduler-start-page)
+* Linux/Unix: [cron](https://www.man7.org/linux/man-pages/man5/crontab.5.html)
+* etc...
+
+## Files
+
+Folder sharing app.
+
+### Download Files
+
+Download of files is straightforward with a specific syntax for the `aoc files download` action: Like other commands the source file list is provided as  a list with the `sources` option. Nevertheless, consider this:
+
+* if only one source is provided, it is downloaded
+* if multiple sources must be downloaded, then the first in list is the path of the source folder, and the remaining items are the file names in this folder (without path).
+
+### Shared folders
+
+* list shared folders in node
+
+```
+ascli aoc admin res node --id=8669 shared_folders
+```
+
+* list shared folders in workspace
+
+```
+ascli aoc admin res workspace --id=10818 shared_folders
+```
+
+* list members of shared folder
+
+```
+ascli aoc admin res node --id=8669 v4 perm 82 show
+```
+
+### Cross Organization transfers
+
+It is possible to transfer files directly between organizations without having to first download locally and then upload...
+
+Although optional, the creation of [option preset](#lprt) is recommended to avoid placing all parameters in the command line.
+
+Procedure to send a file from org1 to org2:
+
+* Get access to Organization 1 and create a [option preset](#lprt): e.g. `org1`, for instance, use the [Wizard](#aocwizard)
+* Check that access works and locate the source file e.g. `mysourcefile`, e.g. using command `files browse`
+* Get access to Organization 2 and create a [option preset](#lprt): e.g. `org2`
+* Check that access works and locate the destination folder `mydestfolder`
+* execute the following:
+
+```
+ascli -Porg1 aoc files node_info /mydestfolder --format=json --display=data | ascli -Porg2 aoc files upload mysourcefile --transfer=node --transfer-info=@json:@stdin:
+```
+
+Explanation:
+
+* `-Porg1 aoc` use Aspera on Cloud plugin and load credentials for `org1`
+* `files node_info /mydestfolder` generate transfer information including node api credential and root id, suitable for the next command
+* `--format=json` format the output in JSON (instead of default text table)
+* `--display=data` display only the result, and remove other information, such as workspace name
+* `|` the standard output of the first command is fed into the second one
+* `-Porg2 aoc` use Aspera on Cloud plugin and load credentials for `org2`
+* `files upload mysourcefile` upload the file named `mysourcefile` (located in `org1`)
+* `--transfer=node` use transfer agent type `node` instead of default [`direct`](#agt_direct)
+* `--transfer-info=@json:@stdin:` provide `node` transfer agent information, i.e. node API credentials, those are expected in JSON format and read from standard input
+
+### Find Files
+
+The command `aoc files find [--value=expression]` will recursively scan storage to find files matching the expression criteria. It works also on node resource using the v4 command. (see examples)
+
+The expression can be of 3 formats:
+
+* empty (default) : all files, equivalent to value: `exec:true`
+* not starting with `exec:` : the expression is a regular expression, using [Ruby Regex](https://ruby-doc.org/core/Regexp.html) syntax. equivalent to value: `exec:f['name'].match(/expression/)`
+
+For instance, to find files with a special extension, use `--value='\.myext$'`
+
+* starting with `exec:` : the Ruby code after the prefix is executed for each entry found. The entry variable name is `f`. The file is displayed if the result of the expression is true;
+
+Examples of expressions: (using like this: `--value=exec:'<expression>'`)
+
+* Find files more recent than 100 days
+
+```
+f["type"].eql?("file") and (DateTime.now-DateTime.parse(f["modified_time"]))<100
+```
+
+* Find files older than 1 year on a given node and store in file list
+
+```
+ascli aoc admin res node --name='my node name' --secret='my secret' v4 find / --fields=path --value='exec:f["type"].eql?("file") and (DateTime.now-DateTime.parse(f["modified_time"]))<100' --format=csv > my_file_list.txt
+```
+
+* Delete the files, one by one
+
+```
+cat my_file_list.txt|while read path;do echo ascli aoc admin res node --name='my node name' --secret='my secret' v4 delete "$path" ;done
+```
+
+* Delete the files in bulk
+
+```
+cat my_file_list.txt | ascli aoc admin res node --name='my node name' --secret='my secret' v3 delete @lines:@stdin:
+```
+
+# <a id="ats"></a>Plugin: Aspera Transfer Service
 
 ATS is usable either :
 
@@ -2909,10 +3050,13 @@ ATS is usable either :
 
 ## IBM Cloud ATS : creation of api key
 
+This section is about using ATS with an IBM cloud subscription.
+If you are using ATS as part of AoC, then authentication is thropugh AoC, not IBM Cloud.
+
 First get your IBM Cloud APIkey. For instance, it can be created using the IBM Cloud web interface, or using command line:
 
 ```
-$ ibmcloud iam api-key-create mykeyname -d 'my sample key'
+ibmcloud iam api-key-create mykeyname -d 'my sample key'
 OK
 API key mykeyname was created
 
@@ -2931,78 +3075,47 @@ References:
   * [https://console.bluemix.net/docs/iam/userid_keys.html#userapikey](https://console.bluemix.net/docs/iam/userid_keys.html#userapikey)
   * [https://ibm.ibmaspera.com/helpcenter/transfer-service](https://ibm.ibmaspera.com/helpcenter/transfer-service)
 
-
 Then, to register the key by default for the ats plugin, create a preset. Execute:
 
 ```
-$ ascli config id my_ibm_ats update --ibm-api-key=my_secret_api_key_here_8f8d9fdakjhfsashjk678
-$ ascli config id default set ats my_ibm_ats
-$ ascli ats api_key instances
+ascli config id my_ibm_ats update --ibm-api-key=my_secret_api_key_here_8f8d9fdakjhfsashjk678
+ascli config id default set ats my_ibm_ats
+ascli ats api_key instances
 +--------------------------------------+
 | instance                             |
 +--------------------------------------+
 | aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee |
 +--------------------------------------+
-$ ascli config id my_ibm_ats update --instance=aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee
-$ ascli ats api_key create
+ascli config id my_ibm_ats update --instance=aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee
+ascli ats api_key create
 +--------+----------------------------------------------+
 | key    | value                                        |
 +--------+----------------------------------------------+
 | id     | ats_XXXXXXXXXXXXXXXXXXXXXXXX                 |
 | secret | YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY |
 +--------+----------------------------------------------+
-$ ascli config id my_ibm_ats update --ats-key=ats_XXXXXXXXXXXXXXXXXXXXXXXX --ats-secret=YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY
-```
-## Cross Organization transfers
-
-It is possible to transfer files directly between organizations without having to first download locally and then upload...
-
-Although optional, the creation of [option preset](#lprt) is recommended to avoid placing all parameters in the command line.
-
-Procedure to send a file from org1 to org2:
-
-* Get access to Organization 1 and create a [option preset](#lprt): e.g. `org1`, for instance, use the [Wizard](#aocwizard)
-* Check that access works and locate the source file e.g. `mysourcefile`, e.g. using command `files browse`
-* Get access to Organization 2 and create a [option preset](#lprt): e.g. `org2`
-* Check that access works and locate the destination folder `mydestfolder`
-* execute the following:
-
-```
-$ ascli -Porg1 aoc files node_info /mydestfolder --format=json --display=data | ascli -Porg2 aoc files upload mysourcefile --transfer=node --transfer-info=@json:@stdin:
+ascli config id my_ibm_ats update --ats-key=ats_XXXXXXXXXXXXXXXXXXXXXXXX --ats-secret=YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY
 ```
 
-Explanation:
-
-* `-Porg1 aoc` use Aspera on Cloud plugin and load credentials for `org1`
-* `files node_info /mydestfolder` generate transfer information including node api credential and root id, suitable for the next command
-* `--format=json` format the output in JSON (instead of default text table)
-* `--display=data` display only the result, and remove other information, such as workspace name
-* `|` the standard output of the first command is fed into the second one
-* `-Porg2 aoc` use Aspera on Cloud plugin and load credentials for `org2`
-* `files upload mysourcefile` upload the file named `mysourcefile` (located in `org1`)
-* `--transfer=node` use transfer agent type `node` instead of default [`direct`](#agt_direct)
-* `--transfer-info=@json:@stdin:` provide `node` transfer agent information, i.e. node API credentials, those are expected in JSON format and read from standard input
-
-Note that when using a POSIX shell, another possibility to write `cmd1 | cmd2 --transfer-info=@json:stdin:` is `cmd2 --transfer-info=@json:$(cmd1)` instead of ``
 ## Examples
 
-Example: create access key on softlayer:
+Example: create access key on IBM Cloud (softlayer):
 
 ```
-$ ascli ats access_key create --cloud=softlayer --region=ams --params=@json:'{"storage":{"type":"softlayer_swift","container":"_container_name_","credentials":{"api_key":"value","username":"_name_:_usr_name_"},"path":"/"},"id":"_optional_id_","name":"_optional_name_"}'
+ascli ats access_key create --cloud=softlayer --region=ams --params=@json:'{"storage":{"type":"softlayer_swift","container":"_container_name_","credentials":{"api_key":"value","username":"_name_:_usr_name_"},"path":"/"},"id":"_optional_id_","name":"_optional_name_"}'
 ```
 
 Example: create access key on AWS:
 
 ```
-$ ascli ats access_key create --cloud=aws --region=eu-west-1 --params=@json:'{"id":"testkey3","name":"laurent key AWS","storage":{"type":"aws_s3","bucket":"my-bucket","credentials":{"access_key_id":"AKIA_MY_API_KEY","secret_access_key":"my/secret/here"},"path":"/laurent"}}'
+ascli ats access_key create --cloud=aws --region=eu-west-1 --params=@json:'{"id":"testkey3","name":"laurent key AWS","storage":{"type":"aws_s3","bucket":"my-bucket","credentials":{"access_key_id":"AKIA_MY_API_KEY","secret_access_key":"my/secret/here"},"path":"/laurent"}}'
 
 ```
 
 Example: create access key on Azure SAS:
 
 ```
-$ ascli ats access_key create --cloud=azure --region=eastus --params=@json:'{"id":"testkeyazure","name":"laurent key azure","storage":{"type":"azure_sas","credentials":{"shared_access_signature":"https://containername.blob.core.windows.net/blobname?sr=c&..."},"path":"/"}}'
+ascli ats access_key create --cloud=azure --region=eastus --params=@json:'{"id":"testkeyazure","name":"laurent key azure","storage":{"type":"azure_sas","credentials":{"shared_access_signature":"https://containername.blob.core.windows.net/blobname?sr=c&..."},"path":"/"}}'
 
 ```
 
@@ -3011,7 +3124,7 @@ $ ascli ats access_key create --cloud=azure --region=eastus --params=@json:'{"id
 Example: create access key on Azure:
 
 ```
-$ ascli ats access_key create --cloud=azure --region=eastus --params=@json:'{"id":"testkeyazure","name":"laurent key azure","storage":{"type":"azure","credentials":{"account":"myaccount","key":"myaccesskey","storage_endpoint":"myblob"},"path":"/"}}'
+ascli ats access_key create --cloud=azure --region=eastus --params=@json:'{"id":"testkeyazure","name":"laurent key azure","storage":{"type":"azure","credentials":{"account":"myaccount","key":"myaccesskey","storage_endpoint":"myblob"},"path":"/"}}'
 
 ```
 
@@ -3020,6 +3133,8 @@ delete all my access keys:
 ```
 for k in $(ascli ats access_key list --field=id --format=csv);do ascli ats access_key id $k delete;done
 ```
+
+The parameters provided to ATS for access key creation are the ones of [ATS API](https://developer.ibm.com/apis/catalog?search=%22aspera%20ats%22) for the `POST /access_keys` endpoint.
 
 # Plugin: IBM Aspera High Speed Transfer Server (transfer)
 
@@ -3034,7 +3149,7 @@ If not username is provided, the default transfer user `xfer` is used.
 If no ssh password or key is provided, and a token is provided in transfer spec, then standard bypass keys are used.
 
 ```
-$ ascli server --url=ssh://... --ts=@json:'{"token":"Basic abc123"}'
+ascli server --url=ssh://... --ts=@json:'{"token":"Basic abc123"}'
 ```
 
 Multiple SSH key paths can be provided. The value of the parameter `ssh_keys` can be a single value or an array. Each value is a path to a private key and is expanded ("~" is replaced with the user's home folder).
@@ -3042,9 +3157,9 @@ Multiple SSH key paths can be provided. The value of the parameter `ssh_keys` ca
 Examples:
 
 ```
-$ ascli server --ssh-keys=~/.ssh/id_rsa
-$ ascli server --ssh-keys=@list:,~/.ssh/id_rsa
-$ ascli server --ssh-keys=@json:'["~/.ssh/id_rsa"]'
+ascli server --ssh-keys=~/.ssh/id_rsa
+ascli server --ssh-keys=@list:,~/.ssh/id_rsa
+ascli server --ssh-keys=@json:'["~/.ssh/id_rsa"]'
 ```
 
 The underlying ssh library `net::ssh` provides several options that may be used depending on environment. By default the ssh library expect that an ssh-agent is running.
@@ -3071,7 +3186,7 @@ This means that you don't have such an ssh agent running:
 * To disable use of `ssh-agent`, use the option `ssh_option` like this (or set in preset):
 
 ```
-$ ascli server --ssh-options=@ruby:'{use_agent: false}' ...
+ascli server --ssh-options=@ruby:'{use_agent: false}' ...
 ```
 
 This can also be set as default using a preset.
@@ -3081,10 +3196,10 @@ This can also be set as default using a preset.
 One can test the "server" application using the well known demo server:
 
 ```
-$ ascli config id aspera_demo_server update --url=ssh://demo.asperasoft.com:33001 --username=asperaweb --password=_demo_pass_
-$ ascli config id default set server aspera_demo_server
-$ ascli server browse /aspera-test-dir-large
-$ ascli server download /aspera-test-dir-large/200MB
+ascli config id aspera_demo_server update --url=ssh://demo.asperasoft.com:33001 --username=asperaweb --password=_demo_pass_
+ascli config id default set server aspera_demo_server
+ascli server browse /aspera-test-dir-large
+ascli server download /aspera-test-dir-large/200MB
 ```
 
 This creates a [option preset](#lprt) "aspera_demo_server" and set it as default for application "server"
@@ -3125,7 +3240,7 @@ The central subcommand uses the "reliable query" API (session and file). It allo
 Filtering can be applied:
 
 ```
-$ ascli node central file list
+ascli node central file list
 ```
 
 by providing the `validator` option, offline transfer validation can be done.
@@ -3137,7 +3252,7 @@ It is possible to start a FASPStream session using the node API:
 Use the "node stream create" command, then arguments are provided as a [_transfer-spec_](#transferspec).
 
 ```
-$ ascli node stream create --ts=@json:'{"direction":"send","source":"udp://233.3.3.4:3000?loopback=1&ttl=2","destination":"udp://233.3.3.3:3001/","remote_host":"localhost","remote_user":"stream","remote_password":"XXXX"}' --preset=stream
+ascli node stream create --ts=@json:'{"direction":"send","source":"udp://233.3.3.4:3000?loopback=1&ttl=2","destination":"udp://233.3.3.3:3001/","remote_host":"localhost","remote_user":"stream","remote_password":"XXXX"}' --preset=stream
 ```
 
 ## Watchfolder
@@ -3150,9 +3265,9 @@ Refer to [Aspera documentation](https://download.asperasoft.com/download/docs/en
 * configure a watchfolder to define automated transfers
 
 ```
-$ ascli node service create @json:'{"id":"mywatchd","type":"WATCHD","run_as":{"user":"user1"}}'
-$ ascli node service create @json:'{"id":"mywatchfolderd","type":"WATCHFOLDERD","run_as":{"user":"user1"}}'
-$ ascli node watch_folder create @json:'{"id":"mywfolder","source_dir":"/watch1","target_dir":"/","transport":{"host":"10.25.0.4","user":"user1","pass":"mypassword"}}'
+ascli node service create @json:'{"id":"mywatchd","type":"WATCHD","run_as":{"user":"user1"}}'
+ascli node service create @json:'{"id":"mywatchfolderd","type":"WATCHFOLDERD","run_as":{"user":"user1"}}'
+ascli node watch_folder create @json:'{"id":"mywfolder","source_dir":"/watch1","target_dir":"/","transport":{"host":"10.25.0.4","user":"user1","pass":"mypassword"}}'
 ```
 
 ## Out of Transfer File Validation
@@ -3160,13 +3275,13 @@ $ ascli node watch_folder create @json:'{"id":"mywfolder","source_dir":"/watch1"
 Follow the Aspera Transfer Server configuration to activate this feature.
 
 ```
-$ ascli node central file list --validator=ascli --data=@json:'{"file_transfer_filter":{"max_result":1}}'
+ascli node central file list --validator=ascli --data=@json:'{"file_transfer_filter":{"max_result":1}}'
 :..............:..............:............:......................................:
 : session_uuid :    file_id   :   status   :              path                    :
 :..............:..............:............:......................................:
 : 1a74444c-... : 084fb181-... : validating : /home/xfer.../PKG - my title/200KB.1 :
 :..............:..............:............:......................................:
-$ ascli node central file update --validator=ascli --data=@json:'{"files":[{"session_uuid": "1a74444c-...","file_id": "084fb181-...","status": "completed"}]}'
+ascli node central file update --validator=ascli --data=@json:'{"files":[{"session_uuid": "1a74444c-...","file_id": "084fb181-...","status": "completed"}]}'
 updated
 ```
 
@@ -3182,7 +3297,7 @@ Create another configuration for the Azure ATS instance: in section "node", name
 Then execute the following command:
 
 ```
-$ ascli node download /share/sourcefile --to-folder=/destinationfolder --preset=awsshod --transfer=node --transfer-info=@preset:azureats
+ascli node download /share/sourcefile --to-folder=/destinationfolder --preset=awsshod --transfer=node --transfer-info=@preset:azureats
 ```
 
 This will get transfer information from the SHOD instance and tell the Azure ATS instance
@@ -3191,7 +3306,7 @@ to download files.
 ## Create access key
 
 ```
-$ ascli node access_key create --value=@json:'{"id":"eudemo-sedemo","secret":"mystrongsecret","storage":{"type":"local","path":"/data/asperafiles"}}'
+ascli node access_key create --value=@json:'{"id":"eudemo-sedemo","secret":"mystrongsecret","storage":{"type":"local","path":"/data/asperafiles"}}'
 ```
 
 # Plugin: IBM Aspera Faspex5
@@ -3216,7 +3331,7 @@ For boot method: (will be removed in future)
 Use it as password and use `--auth=boot`.
 
 ```
-$ ascli conf id f5boot update --url=https://localhost/aspera/faspex --auth=boot --password=ABC.DEF.GHI...
+ascli conf id f5boot update --url=https://localhost/aspera/faspex --auth=boot --password=ABC.DEF.GHI...
 ```
 
 Ready to use Faspex5 with CLI.
@@ -3262,7 +3377,7 @@ If no parameter `max` or `pmax` is provided, then all packages will be listed in
 ### Example
 
 ```
-$ ascli faspex package list --box=inbox --recipient='*my_dropbox' --query=@json:'{"max":20,"pmax":2,"count":20}'
+ascli faspex package list --box=inbox --recipient='*my_dropbox' --query=@json:'{"max":20,"pmax":2,"count":20}'
 ```
 
 List a maximum of 20 items grouped by pages of 20, with maximum 2 pages in received box (inbox) when received in dropbox `*my_dropbox`.
@@ -3276,14 +3391,14 @@ The command is `package recv`, possible methods are:
 * provide a `faspe:` URI with option `link`
 
 ```
-$ ascli faspex package recv --id=12345
-$ ascli faspex package recv --link=faspe://...
+ascli faspex package recv --id=12345
+ascli faspex package recv --link=faspe://...
 ```
 
 If the package is in a specific dropbox, add option `recipient` for both the `list` and `recv` commands.
 
 ```
-$ ascli faspex package list --recipient='*thedropboxname'
+ascli faspex package list --recipient='*thedropboxname'
 ```
 
 if `id` is set to `ALL`, then all packages are downloaded, and if option `once_only`is used, then a persistency file is created to keep track of already downloaded packages.
@@ -3295,7 +3410,7 @@ The command is `faspex package send`. Package information (title, note, metadata
 Example:
 
 ```
-$ ascli faspex package send --delivery-info=@json:'{"title":"my title","recipients":["laurent.martin.aspera@fr.ibm.com"]}' --url=https://faspex.corp.com/aspera/faspex --username=foo --password=bar /tmp/file1 /home/bar/file2
+ascli faspex package send --delivery-info=@json:'{"title":"my title","recipients":["laurent.martin.aspera@fr.ibm.com"]}' --url=https://faspex.corp.com/aspera/faspex --username=foo --password=bar /tmp/file1 /home/bar/file2
 ```
 
 If the recipient is a dropbox, just provide the name of the dropbox in `recipients`: `"recipients":["My Dropbox Name"]`
@@ -3312,7 +3427,7 @@ Like for any transfer, a notification can be sent by email using parameters: `no
 Example:
 
 ```
-$ ascli faspex package send --delivery-info=@json:'{"title":"test pkg 1","recipients":["aspera.user1@gmail.com"]}' ~/Documents/Samples/200KB.1 --notif-to=aspera.user1@gmail.com --notif-template=@ruby:'%Q{From: <%=from_name%> <<%=from_email%>>\nTo: <<%=to%>>\nSubject: Package sent: <%=ts["tags"]["aspera"]["faspex"]["metadata"]["_pkg_name"]%> files received\n\nTo user: <%=ts["tags"]["aspera"]["faspex"]["recipients"].first["email"]%>}'
+ascli faspex package send --delivery-info=@json:'{"title":"test pkg 1","recipients":["aspera.user1@gmail.com"]}' ~/Documents/Samples/200KB.1 --notif-to=aspera.user1@gmail.com --notif-template=@ruby:'%Q{From: <%=from_name%> <<%=from_email%>>\nTo: <<%=to%>>\nSubject: Package sent: <%=ts["tags"]["aspera"]["faspex"]["metadata"]["_pkg_name"]%> files received\n\nTo user: <%=ts["tags"]["aspera"]["faspex"]["recipients"].first["email"]%>}'
 ```
 
 In this example the notification template is directly provided on command line. Package information placed in the message are directly taken from the tags in transfer spec. The template can be placed in a file using modifier: `@file:`
@@ -3322,9 +3437,9 @@ In this example the notification template is directly provided on command line. 
 Example:
 
 ```
-$ ascli faspex v4 dropbox create --value=@json:'{"dropbox":{"e_wg_name":"test1","e_wg_desc":"test1"}}'
-$ ascli faspex v4 dropbox list
-$ ascli faspex v4 dropbox delete --id=36
+ascli faspex v4 dropbox create --value=@json:'{"dropbox":{"e_wg_name":"test1","e_wg_desc":"test1"}}'
+ascli faspex v4 dropbox list
+ascli faspex v4 dropbox delete --id=36
 ```
 
 ## Remote sources
@@ -3362,7 +3477,7 @@ It is possible to tell `ascli` to download newly received packages, much like th
 cargo client, or drive. Refer to the [same section](#aoccargo) in the Aspera on Cloud plugin:
 
 ```
-$ ascli faspex packages recv --id=ALL --once-only=yes --lock-port=12345
+ascli faspex packages recv --id=ALL --once-only=yes --lock-port=12345
 ```
 
 # Plugin: IBM Aspera Shares
@@ -3372,7 +3487,7 @@ Aspera Shares supports the "node API" for the file transfer part. (Shares 1 and 
 In Shares2, users, groups listing are paged, to display sequential pages:
 
 ```
-$ for p in 1 2 3;do ascli shares2 admin users list --value=@json:'{"page":'$p'}';done
+for p in 1 2 3;do ascli shares2 admin users list --value=@json:'{"page":'$p'}';done
 ```
 
 # Plugin: IBM Cloud Object Storage
@@ -3395,8 +3510,8 @@ If you have those parameters already, then following options shall be provided:
 For example, let us create a default configuration:
 
 ```
-$ ascli conf id mycos update --bucket=mybucket --endpoint=https://s3.us-east.cloud-object-storage.appdomain.cloud --apikey=abcdefgh --crn=crn:v1:bluemix:public:iam-identity::a/xxxxxxx
-$ ascli conf id default set cos mycos
+ascli conf id mycos update --bucket=mybucket --endpoint=https://s3.us-east.cloud-object-storage.appdomain.cloud --apikey=abcdefgh --crn=crn:v1:bluemix:public:iam-identity::a/xxxxxxx
+ascli conf id default set cos mycos
 ```
 
 Then, jump to the transfer example.
@@ -3412,8 +3527,8 @@ Then save the copied value to a file, e.g. : `$HOME/cos_service_creds.json`
 or using the IBM Cloud CLI:
 
 ```
-$ ibmcloud resource service-keys
-$ ibmcloud resource service-key aoclaurent --output JSON|jq '.[0].credentials'>$HOME/service_creds.json
+ibmcloud resource service-keys
+ibmcloud resource service-key aoclaurent --output JSON|jq '.[0].credentials'>$HOME/service_creds.json
 ```
 
 (if you don't have `jq` installed, extract the structure as follows)
@@ -3451,8 +3566,8 @@ The required options for this method are:
 For example, let us create a default configuration:
 
 ```
-$ ascli conf id mycos update --bucket=laurent --service-credentials=@val:@json:@file:~/service_creds.json --region=us-south
-$ ascli conf id default set cos mycos
+ascli conf id mycos update --bucket=laurent --service-credentials=@val:@json:@file:~/service_creds.json --region=us-south
+ascli conf id default set cos mycos
 ```
 
 ## Operations, transfers
@@ -3462,8 +3577,8 @@ Let's assume you created a default configuration from once of the two previous s
 A subset of `node` plugin operations are supported, basically node API:
 
 ```
-$ ascli cos node info
-$ ascli cos node upload 'faux:///sample1G?1g'
+ascli cos node info
+ascli cos node upload 'faux:///sample1G?1g'
 ```
 
 Note: we generate a dummy file `sample1G` of size 2GB using the `faux` PVCL (man ascp and section above), but you can of course send a real file by specifying a real file instead.
@@ -3492,8 +3607,10 @@ Specify the previews folder as shown in:
 By default, the `preview` plugin expects previews to be generated in a folder named `previews` located in the storage root. On the transfer server execute:
 
 ```
-# /opt/aspera/bin/asconfigurator -x "server;preview_dir,previews"
-# /opt/aspera/bin/asnodeadmin --reload
+PATH=/opt/aspera/bin:$PATH
+
+asconfigurator -x "server;preview_dir,previews"
+asnodeadmin --reload
 ```
 
 Note: the configuration `preview_dir` is *relative* to the storage root, no need leading or trailing `/`. In general just set the value to `previews`
@@ -3506,9 +3623,11 @@ This size is internally capped to `1<<24` Bytes (16777216) , i.e. 16384 KBytes.
 To change this parameter in `aspera.conf`, use `asconfigurator`. To display the value, use `asuserdata`:
 
 ```
-# /opt/aspera/bin/asuserdata -a | grep max_request_file_create_size_kb
+asuserdata -a | grep max_request_file_create_size_kb
+
   max_request_file_create_size_kb: "1024"
-# /opt/aspera/bin/asconfigurator -x "server; max_request_file_create_size_kb,16384"
+
+asconfigurator -x "server; max_request_file_create_size_kb,16384"
 ```
 
 If you use a value different than 16777216, then specify it using option `max_size`.
@@ -3532,7 +3651,7 @@ Other OSes should work as well, but are note tested.
 To check if all tools are found properly, execute:
 
 ```
-$ ascli preview check
+ascli preview check
 ```
 
 ### mimemagic
@@ -3540,13 +3659,13 @@ $ ascli preview check
 To benefit from extra mime type detection install gem mimemagic:
 
 ```
-# gem install mimemagic
+gem install mimemagic
 ```
 
 or to install an earlier version if any problem:
 
 ```
-# gem install mimemagic -v '~> 0.3.0'
+gem install mimemagic -v '~> 0.3.0'
 ```
 
 To use it, set option `mimemagic` to `yes`: `--mimemagic=yes`
@@ -3578,18 +3697,18 @@ The generation of preview in based on the use of `unoconv` and `libreoffice`
 * CentOS 8
 
 ```
-# dnf install unoconv
+dnf install unoconv
 ```
 
 * Amazon Linux
 
 ```
-# amazon-linux-extras enable libreoffice
-# yum clean metadata
-# yum install libreoffice-core libreoffice-calc libreoffice-opensymbol-fonts libreoffice-ure libreoffice-writer libreoffice-pyuno libreoffice-impress
-# wget https://raw.githubusercontent.com/unoconv/unoconv/master/unoconv
-# mv unoconv /usr/bin
-# chmod a+x /usr/bin/unoconv
+amazon-linux-extras enable libreoffice
+yum clean metadata
+yum install libreoffice-core libreoffice-calc libreoffice-opensymbol-fonts libreoffice-ure libreoffice-writer libreoffice-pyuno libreoffice-impress
+wget https://raw.githubusercontent.com/unoconv/unoconv/master/unoconv
+mv unoconv /usr/bin
+chmod a+x /usr/bin/unoconv
 ```
 
 ## Configuration
@@ -3601,9 +3720,11 @@ Like any `ascli` commands, parameters can be passed on command line or using a c
 Note that the `xfer` user has a special protected shell: `aspshell`, so changing identity requires specification of alternate shell:
 
 ```
-# su -s /bin/bash - xfer
-$ ascli config id previewconf update --url=https://localhost:9092 --username=my_access_key --password=my_secret --skip-types=office --lock-port=12346
-$ ascli config id default set preview previewconf
+su -s /bin/bash - xfer
+
+ascli config id previewconf update --url=https://localhost:9092 --username=my_access_key --password=my_secret --skip-types=office --lock-port=12346
+
+ascli config id default set preview previewconf
 ```
 
 Here we assume that Office file generation is disabled, else remove this option.
@@ -3612,7 +3733,7 @@ Here we assume that Office file generation is disabled, else remove this option.
 One can check if the access key is well configured using:
 
 ```
-$ ascli -Ppreviewconf node browse /
+ascli -Ppreviewconf node browse /
 ```
 
 This shall list the contents of the storage root of the access key.
@@ -3628,8 +3749,9 @@ Typically, for "Access key" access, the system/transfer is `xfer`. So, in order 
 Lets do a one shot test, using the configuration previously created:
 
 ```
-# su -s /bin/bash - xfer
-xfer$ ascli preview scan --overwrite=always
+su -s /bin/bash - xfer
+
+ascli preview scan --overwrite=always
 ```
 
 When the preview generator is first executed it will create a file: `.aspera_access_key`
@@ -3659,7 +3781,7 @@ exec timeout ${tmout} ascli "${@}"
 Here the cronjob is created for user `xfer`.
 
 ```
-xfer$ crontab<<EOF
+crontab<<EOF
 0    * * * *  /home/xfer/cron_ascli preview scan --logger=syslog --display=error
 2-59 * * * *  /home/xfer/cron_ascli preview trev --logger=syslog --display=error
 EOF
@@ -3690,7 +3812,7 @@ Deletion of preview for deleted source files: not implemented yet (TODO).
 If the `scan` or `events` detection method is used, then the option : `skip_folders` can be used to skip some folders. It expects a list of path relative to the storage root (docroot) starting with slash, use the `@json:` notation, example:
 
 ```
-$ ascli preview scan --skip-folders=@json:'["/not_here"]'
+ascli preview scan --skip-folders=@json:'["/not_here"]'
 ```
 
 The option `folder_reset_cache` forces the node service to refresh folder contents using various methods.
@@ -3764,28 +3886,28 @@ The `smtp` option is a hash table (extended value) with the following fields:
 ## Example of configuration:
 
 ```
-$ ascli config id smtp_google set server smtp.google.com
-$ ascli config id smtp_google set username john@gmail.com
-$ ascli config id smtp_google set password P@ssw0rd
+ascli config id smtp_google set server smtp.google.com
+ascli config id smtp_google set username john@gmail.com
+ascli config id smtp_google set password P@ssw0rd
 ```
 
 or
 
 ```
-$ ascli config id smtp_google init @json:'{"server":"smtp.google.com","username":"john@gmail.com","password":"P@ssw0rd"}'
+ascli config id smtp_google init @json:'{"server":"smtp.google.com","username":"john@gmail.com","password":"P@ssw0rd"}'
 ```
 
 or
 
 ```
-$ ascli config id smtp_google update --server=smtp.google.com --username=john@gmail.com --password=P@ssw0rd
+ascli config id smtp_google update --server=smtp.google.com --username=john@gmail.com --password=P@ssw0rd
 ```
 
 Set this configuration as global default, for instance:
 
 ```
-$ ascli config id cli_default set smtp @val:@preset:smtp_google
-$ ascli config id default set config cli_default
+ascli config id cli_default set smtp @val:@preset:smtp_google
+ascli config id default set config cli_default
 ```
 
 ## Email templates
@@ -3807,8 +3929,8 @@ Other variables are defined depending on context.
 Check settings with `smtp_settings` command. Send test email with `email_test`.
 
 ```
-$ ascli config --smtp=@preset:smtp_google smtp
-$ ascli config --smtp=@preset:smtp_google email --notif-to=sample.dest@example.com
+ascli config --smtp=@preset:smtp_google smtp
+ascli config --smtp=@preset:smtp_google email --notif-to=sample.dest@example.com
 ```
 
 ## Notifications for transfer status
@@ -3891,7 +4013,7 @@ echo "${MY_TSPEC}"|asession
 This is particularly useful for a persistent session ( with the [_transfer-spec_](#transferspec) parameter: `"keepalive":true` )
 
 ```
-$ asession
+asession
 {"remote_host":"demo.asperasoft.com","ssh_port":33001,"remote_user":"asperaweb","remote_password":"_demo_pass_","direction":"receive","destination_root":".","keepalive":true,"resume_level":"none"}
 {"type":"START","source":"/aspera-test-dir-tiny/200KB.2"}
 {"type":"DONE"}
@@ -3906,7 +4028,7 @@ Nodejs: [https://www.npmjs.com/package/aspera](https://www.npmjs.com/package/asp
 ## Help
 
 ```
-$ asession -h
+asession -h
 USAGE
     asession
     asession -h|--help
@@ -3980,7 +4102,7 @@ Once `ascli` parameters are defined, run the command using the OS native schedul
 ## Example
 
 ```
-$ ascli server upload source_hot --to-folder=/Upload/target_hot --lock-port=12345 --ts=@json:'{"EX_ascp_args":["--remove-after-transfer","--remove-empty-directories","--exclude-newer-than=-8","--src-base","source_hot"]}'
+ascli server upload source_hot --to-folder=/Upload/target_hot --lock-port=12345 --ts=@json:'{"EX_ascp_args":["--remove-after-transfer","--remove-empty-directories","--exclude-newer-than=-8","--src-base","source_hot"]}'
 
 ```
 
@@ -3991,7 +4113,7 @@ The local folder (here, relative path: source_hot) is sent (upload) to basic fas
 Each plugin provide a `health` command that will check the health status of the application. Example:
 
 ```
-$ ascli console health
+ascli console health
 +--------+-------------+------------+
 | status | component   | message    |
 +--------+-------------+------------+
@@ -4008,13 +4130,13 @@ Typically, the health check uses the REST API of the application with the follow
 `ascli` can be called by Nagios to check the health status of an Aspera server. The output can be made compatible to Nagios with option `--format=nagios` :
 
 ```
-$ ascli server health transfer --to-folder=/Upload --format=nagios --progress=none
+ascli server health transfer --to-folder=/Upload --format=nagios --progress=none
 OK - [transfer:ok]
-$ ascli server health asctlstatus --cmd_prefix='sudo ' --format=nagios
+ascli server health asctlstatus --cmd_prefix='sudo ' --format=nagios
 OK - [NP:running, MySQL:running, Mongrels:running, Background:running, DS:running, DB:running, Email:running, Apache:running]
 ```
 
-# Module: `Aspera`
+# Ruby Module: `Aspera`
 
 Main components:
 
@@ -4025,8 +4147,8 @@ Main components:
 A working example can be found in the gem, example:
 
 ```
-$ ascli config gem_path
-$ cat $(ascli config gem_path)/../examples/transfer.rb
+ascli config gem_path
+cat $(ascli config gem_path)/../examples/transfer.rb
 ```
 
 This sample code shows some example of use of the API as well as
@@ -4491,7 +4613,7 @@ For issues or feature requests use the Github repository and issues.
 
 You can also contribute to this open source project.
 
-One can also create one's own command nplugin.
+One can also [create one's own plugin](#createownplugin).
 
 ## Only one value for any option
 
