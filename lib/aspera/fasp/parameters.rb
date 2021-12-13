@@ -114,6 +114,7 @@ module Aspera
           @job_spec.delete('sshfp')
           # set default location for CA bundle, see env var SSL_CERT_FILE / SSL_CERT_DIR
           @job_spec['EX_ssh_key_paths']=[OpenSSL::X509::DEFAULT_CERT_FILE]
+          Log.log.debug("CA certs: EX_ssh_key_paths <- DEFAULT_CERT_FILE from openssl")
         else
           # remove unused parameter (avoid warning)
           @job_spec.delete('wss_port')
@@ -166,8 +167,8 @@ module Aspera
                   lines=paths_array.map{|i|i['source']}
                 end
                 file_list_file=Aspera::TempFileManager.instance.new_file_path_in_folder(@@file_list_folder)
-                File.open(file_list_file, 'w+'){|f|f.puts(lines)}
-                Log.log.debug("#{option}=\n#{File.read(file_list_file)}".red)
+                File.open(file_list_file, 'w+'){|f|f.write(lines.join("\n"))}
+                Log.log.debug{"#{option}=\n#{File.read(file_list_file)}".red}
               end
             end
             @builder.add_command_line_options(["#{option}=#{file_list_file}"])

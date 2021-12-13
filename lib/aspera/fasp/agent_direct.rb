@@ -75,7 +75,7 @@ module Aspera
             Log.log.error("multi_session(#{transfer_spec['multi_session']}) shall be integer >= 0")
             multi_session_info = nil
           elsif multi_session_info[:count].eql?(0)
-            Log.log.debug("multi_session  count is zero: no multisession")
+            Log.log.debug("multi_session count is zero: no multisession")
             multi_session_info = nil
           else # multi_session_info[:count] > 0
             # if option not true: keep default udp port for all sessions
