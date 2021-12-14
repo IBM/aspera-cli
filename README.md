@@ -1041,7 +1041,26 @@ ascli shares repo browse /
 When a secret or password is needed, it is possible to store in the secret vault.
 
 By default the vault is defined using option `secrets`.
-The value provided shall be a Hash, where keys are usernames (or access key id), and values are the associated secrets.
+
+### Modern format: encrypted in config file
+
+It is possible to store and use secrets encrypted.
+For this use the `config vault` command.
+
+The vault can be initialized with `config vault init`
+
+Then secrets can be manipulated using commands:
+
+* `set`
+* `get`
+* `list`
+* `delete`
+
+Secrets must be uniquely identified by `url` and `username`. An optional description can be provided using option `value`.
+
+### Legacy format
+
+The value provided can be a Hash, where keys are usernames (or access key id), and values are the associated password or secrets in clear.
 
 For example, choose a repository name, for example `my_secrets`, and populate it like this:
 
@@ -1868,8 +1887,6 @@ ascli config export
 ascli config genkey mykey
 ascli config plugins
 ascli config proxy_check --fpac=file:///examples/proxy.pac https://eudemo.asperademo.com
-ascli config vault get --url=https://example.com --username=toto --secret=titi
-ascli config vault get --url=https://example.com --username=toto --secrets=@json:'{"toto":"titi"}'
 ascli console transfer current list 
 ascli console transfer smart list 
 ascli console transfer smart sub my_job_id @json:'{"source":{"paths":["my_file_name"]},"source_type":"user_selected"}'
@@ -4211,7 +4228,7 @@ So, it evolved into `ascli`:
     * new: support transfer agent: [Transfer SDK](#agt_trsdk)
     * new: support [http socket options](#http_options)
     * new: logs hide passwords and secrets, option `log_passwords`
-    * new: `config vault`
+    * new: `config vault` supports encrypted passwords
     * change: when using wss, use [ruby's CA certs](#certificates)
     * change: (break) renaming of some classes (transfer agents and few other)
     * fix: various smaller fixes
