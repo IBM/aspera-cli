@@ -10,6 +10,7 @@ require 'aspera/uri_reader'
 require 'aspera/rest'
 require 'aspera/persistency_action_once'
 require 'aspera/id_generator'
+require 'aspera/secrets'
 require 'xmlsimple'
 require 'base64'
 require 'net/smtp'
@@ -86,12 +87,12 @@ END_OF_TEMPLATE
 
         def initialize(env,tool_name,help_url,version,main_folder)
           super(env)
-          raise 'missing secret manager' if @agents[:secret].nil?
           @plugins={}
           @plugin_lookup_folders=[]
           @use_plugin_defaults=true
           @config_presets=nil
           @connect_versions=nil
+          @vault=nil
           @program_version=version
           @tool_name=tool_name
           @help_url=help_url
@@ -111,24 +112,25 @@ END_OF_TEMPLATE
           # add preset handler (needed for smtp)
           ExtendedValue.instance.set_handler(EXTV_PRESET,:reader,lambda{|v|preset_by_name(v)})
           ExtendedValue.instance.set_handler(EXTV_INCLUDE_PRESETS,:decoder,lambda{|v|expanded_with_preset_includes(v)})
+          # load defaults before it can be overriden
+          self.add_plugin_default_preset(CONF_GLOBAL_SYM)
+          self.options.parse_options!
           self.options.set_obj_attr(:ascp_path,self,:option_ascp_path)
           self.options.set_obj_attr(:use_product,self,:option_use_product)
           self.options.set_obj_attr(:preset,self,:option_preset)
-          self.options.set_obj_attr(:secret,@agents[:secret],:default_secret)
-          self.options.set_obj_attr(:secrets,@agents[:secret],:all_secrets)
           self.options.add_opt_switch(:no_default,'-N','do not load default configuration for plugin') { @use_plugin_defaults=false }
           self.options.add_opt_boolean(:override,'Wizard: override existing value')
           self.options.add_opt_boolean(:use_generic_client,'Wizard: AoC: use global or org specific jwt client id')
           self.options.add_opt_boolean(:default,'Wizard: set as default configuration for specified plugin (also: update)')
           self.options.add_opt_boolean(:test_mode,'Wizard: skip private key check step')
+          self.options.add_opt_simple(:preset,'-PVALUE','load the named option preset from current config file')
           self.options.add_opt_simple(:pkeypath,'Wizard: path to private key for JWT')
           self.options.add_opt_simple(:ascp_path,'path to ascp')
           self.options.add_opt_simple(:use_product,'use ascp from specified product')
           self.options.add_opt_simple(:smtp,'smtp configuration (extended value: hash)')
           self.options.add_opt_simple(:fpac,'proxy auto configuration URL')
-          self.options.add_opt_simple(:preset,'-PVALUE','load the named option preset from current config file')
           self.options.add_opt_simple(:secret,'default secret')
-          self.options.add_opt_simple(:secrets,'secret repository (Hash)')
+          self.options.add_opt_simple(:secrets,'secret vault')
           self.options.add_opt_simple(:sdk_url,'URL to get SDK')
           self.options.add_opt_simple(:sdk_folder,'SDK folder path')
           self.options.add_opt_simple(:notif_to,'email recipient for notification of transfers')
@@ -142,7 +144,6 @@ END_OF_TEMPLATE
           self.options.set_option(:sdk_folder,File.join(@main_folder,'sdk'))
           self.options.set_option(:override,:no)
           self.options.parse_options!
-          raise CliBadArgument,'secrets shall be Hash' unless @agents[:secret].all_secrets.is_a?(Hash)
           Fasp::Installation.instance.folder=self.options.get_option(:sdk_folder,:mandatory)
         end
 
@@ -549,7 +550,7 @@ END_OF_TEMPLATE
           raise "unexpected case: #{command}"
         end
 
-        ACTIONS=[:gem_path, :genkey,:plugins,:flush_tokens,:list,:overview,:open,:echo,:id,:documentation,:wizard,:export_to_cli,:detect,:coffee,:ascp,:email_test,:smtp_settings,:proxy_check,:folder,:file,:check_update,:initdemo]
+        ACTIONS=[:gem_path, :genkey,:plugins,:flush_tokens,:list,:overview,:open,:echo,:id,:documentation,:wizard,:export_to_cli,:detect,:coffee,:ascp,:email_test,:smtp_settings,:proxy_check,:folder,:file,:check_update,:initdemo,:vault]
 
         # "config" plugin
         def execute_action
@@ -855,6 +856,16 @@ END_OF_TEMPLATE
             end
             save_presets_to_config_file
             return Main.result_status("Done")
+          when :vault
+            command=self.options.get_next_command([:get])
+            case command
+            when :get
+              # register url option
+              BasicAuthPlugin.new(@agents.merge(skip_option_header: true))
+              username=self.options.get_option(:username,:mandatory)
+              url=self.options.get_option(:url,:optional)
+              return {:type=>:single_object, :data=>{url: url, username: username, secret: get_secret(username: username, url: url)}}
+            end
           else raise 'INTERNAL ERROR: wrong case'
           end
         end
@@ -938,6 +949,29 @@ END_OF_TEMPLATE
           return nil
         end # get_plugin_default_config_name
 
+        #
+        def get_secret(options)
+          raise "options shall be Hash" unless options.is_a?(Hash)
+          raise "options shall have username" unless options.has_key?(:username)
+          secret=self.options.get_option(:secret,:optional)
+          if secret.nil?
+            if @vault.nil?
+              vault_info=self.options.get_option(:secrets,:optional)
+              case vault_info
+              when Hash
+                @vault=Secrets.new(vault_info)
+              when NilClass
+                # keep nil
+              else
+                raise CliBadArgument,'secrets shall be Hash'
+              end
+            end
+            secret=@vault.get_secret(options) unless @vault.nil?
+            # mandatory by default
+            raise "please provide secret for #{options[:username]}" if secret.nil? and ( options[:mandatory].nil? or options[:mandatory] )
+          end
+          return secret
+        end
       end
     end
   end

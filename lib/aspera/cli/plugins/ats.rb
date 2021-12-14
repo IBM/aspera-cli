@@ -102,21 +102,24 @@ module Aspera
             ak_data=ats_api_pub_v1.read("access_keys/#{access_key_id}")[:data]
             server_data=@ats_api_pub.all_servers.select {|i| i['id'].start_with?(ak_data['transfer_server_id'])}.first
             raise CliError,"no such server found" if server_data.nil?
+            base_url=server_data['transfer_setup_url']
             api_node=Rest.new({
-              :base_url => server_data['transfer_setup_url'],
+              :base_url => base_url,
               :auth     => {
               :type     => :basic,
               :username => access_key_id,
-              :password => @agents[:secret].get_secret(access_key_id)}})
+              :password => @agents[:config].get_secret(url: base_url,username: access_key_id)
+              }})
             command=self.options.get_next_command(Node::COMMON_ACTIONS)
             return Node.new(@agents.merge(skip_basic_auth_options: true, node_api: api_node)).execute_action(command)
           when :cluster
+            base_url=ats_api_pub_v1.params[:base_url]
             rest_params={
-              :base_url => ats_api_pub_v1.params[:base_url],
+              :base_url => base_url,
               :auth     => {
               :type     => :basic,
               :username => access_key_id,
-              :password => @agents[:secret].get_secret(access_key_id)
+              :password => @agents[:config].get_secret(url: base_url, username: access_key_id)
               }}
             api_ak_auth=Rest.new(rest_params)
             return {:type=>:single_object, :data=>api_ak_auth.read("servers")[:data]}

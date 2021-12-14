@@ -1037,6 +1037,40 @@ or
 <%=cmd%> shares repo browse /
 ```
 
+## <a id="vault"></a>Secret Vault
+
+When a secret or password is needed, it is possible to store in the secret vault.
+
+By default the vault is defined using option `secrets`.
+The value provided shall be a Hash, where keys are usernames (or access key id), and values are the associated secrets.
+
+For example, choose a repository name, for example `my_secrets`, and populate it like this:
+
+```
+<%=cmd%> conf id my_secrets set 'access_key1' 'secret1'
+
+<%=cmd%> conf id my_secrets set 'access_key2' 'secret2'
+
+<%=cmd%> conf id default get config
+
+cli_default
+```
+
+Here above, one has already set a `config` global preset to preset `cli_default` (refer to earlier in documentation).
+So the repository can be read by default like this (note the prefix `@val:` to avoid the evaluation of prefix `@preset:`):
+
+```
+<%=cmd%> conf id cli_default set secrets @val:@preset:my_secrets
+```
+
+A secret repository can always be selected at runtime using `--secrets=@preset:xxxx`, or `--secrets=@json:'{"accesskey1":"secret1"}'`
+
+To test if a secret can be found use:
+
+```
+<%=cmd%> conf vault get --username=access_key1
+```
+
 ## Plugins
 
 The CLI tool uses a plugin mechanism. The first level command (just after <%=tool%> on the command line) is the name of the concerned plugin which will execute the command. Each plugin usually represent commands sent to a specific application.
@@ -1961,7 +1995,10 @@ The `admin` command allows several administrative tasks (and require admin privi
 
 It allows actions (create, update, delete) on "resources": users, group, nodes, workspace, etc... with the `admin resource` command.
 
-Bulk operations are possible using option `bulk` (yes,no(default)): currently: create only. In that case, the operation expects an Array of Hash instead of a simple Hash using the [Extended Value Syntax](#extended).
+### Bulk creation and deletion of resource 
+
+Bulk creation and deletion of resources are possible using option `bulk` (yes,no(default)).
+In that case, the operation expects an Array of Hash instead of a simple Hash using the [Extended Value Syntax](#extended).
 
 ### Listing resources
 
@@ -2015,31 +2052,15 @@ Note the option `select` can also be used to further refine selection, refer to 
 
 ### Access Key secrets
 
-In order to access some administrative actions on "nodes" (in fact, access keys), the associated
-secret is required, it is usually provided using the `secret` option. For example in a command like:
+In order to access some administrative actions on "nodes" (in fact, access keys), the associated secret is required.
+It is usually provided using the `secret` option.
+For example in a command like:
 
 ```
 <%=cmd%> aoc admin res node --id="access_key1" --secret="secret1" v3 info
 ```
 
-It is also possible to provide a set of secrets used on a regular basis. This can be done using the `secrets` option. The value provided shall be a Hash, where keys are access key ids, and values are the associated secrets.
-
-First choose a repository name, for example `my_secrets`, and populate it like this:
-
-```
-<%=cmd%> conf id my_secrets set 'access_key1' 'secret1'
-<%=cmd%> conf id my_secrets set 'access_key2' 'secret2'
-<%=cmd%> conf id default get config
-"cli_default"
-```
-
-Here above, one already has set a `config` global preset to preset `cli_default` (refer to earlier in documentation), then the repository can be read by default like this (note the prefix `@val:` to avoid the evaluation of prefix `@preset:`):
-
-```
-<%=cmd%> conf id cli_default set secrets @val:@preset:my_secrets
-```
-
-A secret repository can always be selected at runtime using `--secrets=@preset:xxxx`, or `--secrets=@json:'{"accesskey1":"secret1"}'`
+It is also possible to provide a set of secrets used on a regular basis using the [secret vault](#vault).
 
 ### Activity
 
@@ -2093,8 +2114,7 @@ The option `default_ports` ([yes]/no) allows <%=cmd%> to retrieve the server por
 
 Refer to section "Examples" of [ATS](#ats) and substitute command `ats` with `aoc admin ats`.
 
-
-### Example: Bulk creation
+### Example: Bulk creation of users
 
 ```
 <%=cmd%> aoc admin res user create --bulk=yes @json:'[{"email":"dummyuser1@example.com"},{"email":"dummyuser2@example.com"}]'
@@ -2630,21 +2650,25 @@ The parameters provided to ATS for access key creation are the ones of [ATS API]
 
 # Plugin: IBM Aspera High Speed Transfer Server (transfer)
 
-This plugin works at FASP level (SSH/ascp/ascmd) and does not use the node API.
+This plugin uses SSH as a session protocol (using commands `ascp` and `ascmd`) and does not use the node API.
+It is the legacy way of accessing an Aspera Server, often used for server to server transfers.
+Modern mode is to use the node API and transfer tokens.
 
 ## Authentication
 
 Both password and SSH keys auth are supported.
 
-If not username is provided, the default transfer user `xfer` is used.
+If username is not provided, the default transfer user `xfer` is used.
 
-If no ssh password or key is provided, and a token is provided in transfer spec, then standard bypass keys are used.
+If no SSH password or key is provided, and a token is provided in transfer spec, then standard bypass keys are used:
 
 ```
 <%=cmd%> server --url=ssh://... --ts=@json:'{"token":"Basic abc123"}'
 ```
 
-Multiple SSH key paths can be provided. The value of the parameter `ssh_keys` can be a single value or an array. Each value is a path to a private key and is expanded ("~" is replaced with the user's home folder).
+Multiple SSH key paths can be provided.
+The value of the parameter `ssh_keys` can be a single value or an array.
+Each value is a path to a private key and is expanded (`~` is replaced with the user's home folder).
 
 Examples:
 
@@ -2654,48 +2678,45 @@ Examples:
 <%=cmd%> server --ssh-keys=@json:'["~/.ssh/id_rsa"]'
 ```
 
-The underlying ssh library `net::ssh` provides several options that may be used depending on environment. By default the ssh library expect that an ssh-agent is running.
+The underlying ssh library `net::ssh` provides several options that may be used depending on environment.
+By default the ssh library expect that an ssh-agent is running.
 
-If you get an error message such as:
+On Linux, if you get an error message such as:
 
 ```
-[Linux]
 ERROR -- net.ssh.authentication.agent: could not connect to ssh-agent: Agent not configured
 ```
 
-or
+or on Windows:
 
 ```
-[Windows]
 ERROR -- net.ssh.authentication.agent: could not connect to ssh-agent: pageant process not running
 ```
 
-This means that you don't have such an ssh agent running:
+This means that you don't have such an ssh agent running, then:
 
 * check env var: `SSH_AGENT_SOCK`
-* check if the key is protected with a passphrase
+* check if the ssh key is protected with a passphrase
 * [check the manual](https://net-ssh.github.io/ssh/v1/chapter-2.html#s2)
-* To disable use of `ssh-agent`, use the option `ssh_option` like this (or set in preset):
+* To disable use of `ssh-agent`, use the option `ssh_option` like this:
 
 ```
 <%=cmd%> server --ssh-options=@ruby:'{use_agent: false}' ...
 ```
 
-This can also be set as default using a preset.
+This can also be set as default using a global preset.
 
 ## Example
 
-One can test the "server" application using the well known demo server:
+One can test the `server` application using the well known demo server:
 
 ```
-<%=cmd%> config id aspera_demo_server update --url=ssh://demo.asperasoft.com:33001 --username=asperaweb --password=_demo_pass_
-<%=cmd%> config id default set server aspera_demo_server
+<%=cmd%> config initdemo
 <%=cmd%> server browse /aspera-test-dir-large
 <%=cmd%> server download /aspera-test-dir-large/200MB
 ```
 
-This creates a <%=prst%> "aspera_demo_server" and set it as default for application "server"
-
+`initdemo` creates a <%=prst%> `demoserver` and set it as default for plugin `server`.
 
 # Plugin: IBM Aspera High Speed Transfer Server (node)
 
@@ -3660,6 +3681,7 @@ So, it evolved into <%=tool%>:
     * new: support transfer agent: [Transfer SDK](#agt_trsdk)
     * new: support [http socket options](#http_options)
     * new: logs hide passwords and secrets, option `log_passwords`
+    * new: `config vault`
     * change: when using wss, use [ruby's CA certs](#certificates)
     * change: (break) renaming of some classes (transfer agents and few other)
     * fix: various smaller fixes

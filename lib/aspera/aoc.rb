@@ -234,6 +234,7 @@ module Aspera
 
     def key_chain=(keychain)
       raise "keychain already set" unless @key_chain.nil?
+      raise "keychain must have get_secret" unless keychain.respond_to?(:get_secret)
       @key_chain=keychain
       nil
     end
@@ -315,7 +316,7 @@ module Aspera
       raise "INTERNAL ERROR: method parameters: options must be Hash" unless options.is_a?(Hash)
       options.keys.each {|k| raise "INTERNAL ERROR: not valid option: #{k}" unless [:scope,:use_secret].include?(k)}
       # get optional secret unless :use_secret is false (default is true)
-      ak_secret=@key_chain.get_secret(node_info['access_key'],false) if !options.has_key?(:use_secret) or options[:use_secret]
+      ak_secret=@key_chain.get_secret(url: node_info['url'], username: node_info['access_key'], mandatory: false) if !@key_chain.nil? and ( !options.has_key?(:use_secret) or options[:use_secret] )
       if ak_secret.nil? and !options.has_key?(:scope)
         raise "There must be at least one of: 'secret' or 'scope' for access key #{node_info['access_key']}"
       end
