@@ -32,6 +32,7 @@ module Aspera
         CONF_PRESET_VERSION='version'
         CONF_PRESET_DEFAULT='default'
         CONF_PRESET_GLOBAL='global_common_defaults'
+        CONF_PRESET_SECRETS='default_secrets'
         CONF_PLUGIN_SYM = :config # Plugins::Config.name.split('::').last.downcase.to_sym
         CONF_GLOBAL_SYM = :config
         # old tool name
@@ -70,7 +71,7 @@ END_OF_TEMPLATE
         :CONF_PRESET_GLOBAL,:PROGRAM_NAME_V1,:PROGRAM_NAME_V2,:DEFAULT_REDIRECT,:ASPERA_PLUGINS_FOLDERNAME,
         :RUBY_FILE_EXT,:AOC_COMMAND_V1,:AOC_COMMAND_V2,:AOC_COMMAND_V3,:AOC_COMMAND_CURRENT,:DEMO,
         :TRANSFER_SDK_ARCHIVE_URL,:AOC_PATH_API_CLIENTS,:DEMO_SERVER_PRESET,:EMAIL_TEST_TEMPLATE,:EXTV_INCLUDE_PRESETS,
-        :EXTV_PRESET,:DEFAULT_CHECK_NEW_VERSION_DAYS,:DEFAULT_PRIV_KEY_FILENAME,:SERVER_COMMAND
+        :EXTV_PRESET,:DEFAULT_CHECK_NEW_VERSION_DAYS,:DEFAULT_PRIV_KEY_FILENAME,:SERVER_COMMAND,:CONF_PRESET_SECRETS
         def option_preset; nil; end
 
         def option_preset=(value)
@@ -192,8 +193,8 @@ END_OF_TEMPLATE
         # retrieve structure from cloud (CDN) with all versions available
         def connect_versions
           if @connect_versions.nil?
-            api_connect_cdn=Rest.new({:base_url=>CONNECT_WEB_URL})
-            javascript=api_connect_cdn.call({:operation=>'GET',:subpath=>CONNECT_VERSIONS})
+            api_connect_cdn=Rest.new({base_url: CONNECT_WEB_URL})
+            javascript=api_connect_cdn.call({operation: 'GET',subpath: CONNECT_VERSIONS})
             # get result on one line
             connect_versions_javascript=javascript[:http].body.gsub(/\r?\n\s*/,'')
             Log.log.debug("javascript=[\n#{connect_versions_javascript}\n]")
@@ -256,10 +257,15 @@ END_OF_TEMPLATE
 
         # set parameter and value in global config
         # creates one if none already created
-        # @return preset that contains global default
+        # @return preset name that contains global default
         def set_global_default(key,value)
           # get default preset if it exists
-          global_default_preset_name=get_plugin_default_config_name(CONF_GLOBAL_SYM) || CONF_PRESET_GLOBAL
+          global_default_preset_name=get_plugin_default_config_name(CONF_GLOBAL_SYM)
+          if global_default_preset_name.nil?
+            global_default_preset_name=CONF_PRESET_GLOBAL
+            @config_presets[CONF_PRESET_DEFAULT]||={}
+            @config_presets[CONF_PRESET_DEFAULT][CONF_GLOBAL_SYM.to_s]=global_default_preset_name
+          end
           @config_presets[global_default_preset_name]||={}
           @config_presets[global_default_preset_name][key.to_s]=value
           self.format.display_status("Updated: #{global_default_preset_name}: #{key} <- #{value}")
@@ -447,14 +453,14 @@ END_OF_TEMPLATE
             Log.log.warn("skipping plugin already registered: #{plugin_symbol}")
             return
           end
-          @plugins[plugin_symbol]={:source=>path,:require_stanza=>req}
+          @plugins[plugin_symbol]={source: path,require_stanza: req}
         end
 
         def execute_connect_action
           command=self.options.get_next_command([:list,:id])
           case command
           when :list
-            return {:type=>:object_list, :data=>connect_versions, :fields => ['id','title','version']}
+            return {type: :object_list, data: connect_versions, fields: ['id','title','version']}
           when :id
             connect_id=self.options.get_next_argument('id or title')
             one_res=connect_versions.select{|i|i['id'].eql?(connect_id) || i['title'].eql?(connect_id)}.first
@@ -463,13 +469,13 @@ END_OF_TEMPLATE
             case command
             when :info # shows files used
               one_res.delete('links')
-              return {:type=>:single_object, :data=>one_res}
+              return {type: :single_object, data: one_res}
             when :links # shows files used
               command=self.options.get_next_command([:list,:id])
               all_links=one_res['links']
               case command
               when :list # shows files used
-                return {:type=>:object_list, :data=>all_links}
+                return {type: :object_list, data: all_links}
               when :id
                 link_title=self.options.get_next_argument('title')
                 one_link=all_links.select {|i| i['title'].eql?(link_title)}.first
@@ -478,10 +484,10 @@ END_OF_TEMPLATE
                 when :download #
                   folder_dest=self.transfer.destination_folder('receive')
                   #folder_dest=self.options.get_next_argument('destination folder')
-                  api_connect_cdn=Rest.new({:base_url=>CONNECT_WEB_URL})
+                  api_connect_cdn=Rest.new({base_url: CONNECT_WEB_URL})
                   fileurl = one_link['href']
                   filename=fileurl.gsub(%r{.*/},'')
-                  api_connect_cdn.call({:operation=>'GET',:subpath=>fileurl,:save_to_file=>File.join(folder_dest,filename)})
+                  api_connect_cdn.call({operation: 'GET',subpath: fileurl,save_to_file: File.join(folder_dest,filename)})
                   return Main.result_status("Downloaded: #{filename}")
                 when :open #
                   OpenApplication.instance.uri(one_link['href'])
@@ -504,7 +510,7 @@ END_OF_TEMPLATE
             preset_name=set_global_default(:ascp_path,ascp_path)
             return Main.result_status("Saved to default global preset #{preset_name}")
           when :show # shows files used
-            return {:type=>:status, :data=>Fasp::Installation.instance.path(:ascp)}
+            return {type: :status, data: Fasp::Installation.instance.path(:ascp)}
           when :info # shows files used
             data=Fasp::Installation::FILES.inject({}) do |m,v|
               m[v.to_s]=Fasp::Installation.instance.path(v) rescue 'Not Found'
@@ -529,12 +535,12 @@ END_OF_TEMPLATE
               end
             end
             data['keypass']=Fasp::Installation.instance.bypass_pass
-            return {:type=>:single_object, :data=>data}
+            return {type: :single_object, data: data}
           when :products
             command=self.options.get_next_command([:list,:use])
             case command
             when :list
-              return {:type=>:object_list, :data=>Fasp::Installation.instance.installed_products, :fields=>['name','app_root']}
+              return {type: :object_list, data: Fasp::Installation.instance.installed_products, fields: ['name','app_root']}
             when :use
               default_product=self.options.get_next_argument('product name')
               Fasp::Installation.instance.use_ascp_from_product(default_product)
@@ -565,7 +571,7 @@ END_OF_TEMPLATE
             case action
             when :show
               raise "no such config: #{config_name}" if selected_preset.nil?
-              return {:type=>:single_object,:data=>selected_preset}
+              return {type: :single_object, data: selected_preset}
             when :delete
               @config_presets.delete(config_name)
               save_presets_to_config_file
@@ -575,9 +581,9 @@ END_OF_TEMPLATE
               value=selected_preset[param_name]
               raise "no such option in preset #{config_name} : #{param_name}" if value.nil?
               case value
-              when Numeric,String; return {:type=>:text,:data=>ExtendedValue.instance.evaluate(value.to_s)}
+              when Numeric,String; return {type: :text, data: ExtendedValue.instance.evaluate(value.to_s)}
               end
-              return {:type=>:single_object,:data=>value}
+              return {type: :single_object, data: value}
             when :unset
               param_name=self.options.get_next_argument('parameter name')
               selected_preset.delete(param_name)
@@ -637,19 +643,19 @@ END_OF_TEMPLATE
             generate_rsa_private_key(private_key_path,DEFAULT_PRIVKEY_LENGTH)
             return Main.result_status('Generated key: '+private_key_path)
           when :echo # display the content of a value given on command line
-            result={:type=>:other_struct, :data=>self.options.get_next_argument('value')}
+            result={type: :other_struct, data: self.options.get_next_argument('value')}
             # special for csv
             result[:type]=:object_list if result[:data].is_a?(Array) and result[:data].first.is_a?(Hash)
             return result
           when :flush_tokens
             deleted_files=Oauth.flush_tokens
-            return {:type=>:value_list, :name=>'file',:data=>deleted_files}
+            return {type: :value_list, data: deleted_files, name: 'file'}
           when :plugins
-            return {:data => @plugins.keys.map { |i| { 'plugin' => i.to_s, 'path' => @plugins[i][:source] } } , :fields => ['plugin','path'], :type => :object_list }
+            return {type: :object_list, data: @plugins.keys.map { |i| { 'plugin' => i.to_s, 'path' => @plugins[i][:source] } } , fields: ['plugin','path']}
           when :list
-            return {:data => @config_presets.keys, :type => :value_list, :name => 'name'}
+            return {type: :value_list, data: @config_presets.keys, name: 'name'}
           when :overview
-            return {:type=>:object_list,:data=>self.class.flatten_all_config(@config_presets)}
+            return {type: :object_list, data: self.class.flatten_all_config(@config_presets)}
           when :wizard
             # interactive mode
             self.options.ask_missing_mandatory=true
@@ -832,13 +838,13 @@ END_OF_TEMPLATE
             send_email_template({},EMAIL_TEST_TEMPLATE)
             return Main.result_nothing
           when :smtp_settings
-            return {:type=>:single_object,:data=>email_settings}
+            return {type: :single_object, data: email_settings}
           when :proxy_check
             pac_url=self.options.get_option(:fpac,:mandatory)
             server_url=self.options.get_next_argument('server url')
             return Main.result_status(Aspera::ProxyAutoConfig.new(UriReader.read(pac_url)).get_proxy(server_url))
           when :check_update
-            return {:type=>:single_object, :data=>check_gem_version}
+            return {type: :single_object, data: check_gem_version}
           when :initdemo
             if @config_presets.has_key?(DEMO_SERVER_PRESET)
               Log.log.warn("Demo server preset already present: #{DEMO_SERVER_PRESET}")
@@ -857,14 +863,44 @@ END_OF_TEMPLATE
             save_presets_to_config_file
             return Main.result_status("Done")
           when :vault
-            command=self.options.get_next_command([:get])
+            command=self.options.get_next_command([:init,:list,:get,:set,:delete])
             case command
+            when :init
+              type=self.options.get_option(:value,:optional)
+              case type
+              when 'config',NilClass
+                raise "default secrets already exists" if @config_presets.has_key?(CONF_PRESET_SECRETS)
+                @config_presets[CONF_PRESET_SECRETS]={}
+                set_global_default(:secrets,"@preset:#{CONF_PRESET_SECRETS}")
+              else raise "no such vault type"
+              end
+              return Main.result_status("Done")
+            when :list
+              return {type: :object_list, data: vault.list}
+            when :set
+              # register url option
+              BasicAuthPlugin.new(@agents.merge(skip_option_header: true))
+              username=self.options.get_option(:username,:mandatory)
+              url=self.options.get_option(:url,:mandatory)
+              description=self.options.get_option(:value,:optional)
+              secret=self.options.get_next_argument('secret')
+              vault.set(username: username, url: url, description: description, secret: secret)
+              save_presets_to_config_file if vault.is_a?(Aspera::Secrets)
+              return Main.result_status("Done")
             when :get
               # register url option
               BasicAuthPlugin.new(@agents.merge(skip_option_header: true))
               username=self.options.get_option(:username,:mandatory)
               url=self.options.get_option(:url,:optional)
-              return {:type=>:single_object, :data=>{url: url, username: username, secret: get_secret(username: username, url: url)}}
+              result=vault.get(username: username, url: url)
+              return {type: :single_object, data: result}
+            when :delete
+              # register url option
+              BasicAuthPlugin.new(@agents.merge(skip_option_header: true))
+              username=self.options.get_option(:username,:mandatory)
+              url=self.options.get_option(:url,:optional)
+              result=vault.delete(username: username, url: url)
+              return Main.result_status("Done")
             end
           else raise 'INTERNAL ERROR: wrong case'
           end
@@ -949,24 +985,28 @@ END_OF_TEMPLATE
           return nil
         end # get_plugin_default_config_name
 
-        #
+        def vault
+          if @vault.nil?
+            vault_info=self.options.get_option(:secrets,:optional)
+            case vault_info
+            when Hash
+              @vault=Secrets.new(vault_info)
+            when NilClass
+              # keep nil
+            else
+              raise CliBadArgument,'secrets shall be Hash'
+            end
+          end
+          raise "No vault defined" if @vault.nil?
+          @vault
+        end
+
         def get_secret(options)
           raise "options shall be Hash" unless options.is_a?(Hash)
           raise "options shall have username" unless options.has_key?(:username)
           secret=self.options.get_option(:secret,:optional)
           if secret.nil?
-            if @vault.nil?
-              vault_info=self.options.get_option(:secrets,:optional)
-              case vault_info
-              when Hash
-                @vault=Secrets.new(vault_info)
-              when NilClass
-                # keep nil
-              else
-                raise CliBadArgument,'secrets shall be Hash'
-              end
-            end
-            secret=@vault.get_secret(options) unless @vault.nil?
+            secret=vault.get(options) rescue nil
             # mandatory by default
             raise "please provide secret for #{options[:username]}" if secret.nil? and ( options[:mandatory].nil? or options[:mandatory] )
           end
