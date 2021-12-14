@@ -1036,6 +1036,40 @@ ascli config overview
 ascli shares repo browse /
 ```
 
+## <a id="vault"></a>Secret Vault
+
+When a secret or password is needed, it is possible to store in the secret vault.
+
+By default the vault is defined using option `secrets`.
+The value provided shall be a Hash, where keys are usernames (or access key id), and values are the associated secrets.
+
+For example, choose a repository name, for example `my_secrets`, and populate it like this:
+
+```
+ascli conf id my_secrets set 'access_key1' 'secret1'
+
+ascli conf id my_secrets set 'access_key2' 'secret2'
+
+ascli conf id default get config
+
+cli_default
+```
+
+Here above, one has already set a `config` global preset to preset `cli_default` (refer to earlier in documentation).
+So the repository can be read by default like this (note the prefix `@val:` to avoid the evaluation of prefix `@preset:`):
+
+```
+ascli conf id cli_default set secrets @val:@preset:my_secrets
+```
+
+A secret repository can always be selected at runtime using `--secrets=@preset:xxxx`, or `--secrets=@json:'{"accesskey1":"secret1"}'`
+
+To test if a secret can be found use:
+
+```
+ascli conf vault get --username=access_key1
+```
+
 ## Plugins
 
 The CLI tool uses a plugin mechanism. The first level command (just after `ascli` on the command line) is the name of the concerned plugin which will execute the command. Each plugin usually represent commands sent to a specific application.
@@ -1834,6 +1868,8 @@ ascli config export
 ascli config genkey mykey
 ascli config plugins
 ascli config proxy_check --fpac=file:///examples/proxy.pac https://eudemo.asperademo.com
+ascli config vault get --url=https://example.com --username=toto --secret=titi
+ascli config vault get --url=https://example.com --username=toto --secrets=@json:'{"toto":"titi"}'
 ascli console transfer current list 
 ascli console transfer smart list 
 ascli console transfer smart sub my_job_id @json:'{"source":{"paths":["my_file_name"]},"source_type":"user_selected"}'
@@ -2005,7 +2041,7 @@ OPTIONS: global
         --log-passwords=ENUM         show passwords in logs: yes, no
 
 COMMAND: config
-SUBCOMMANDS: gem_path genkey plugins flush_tokens list overview open echo id documentation wizard export_to_cli detect coffee ascp email_test smtp_settings proxy_check folder file check_update initdemo
+SUBCOMMANDS: gem_path genkey plugins flush_tokens list overview open echo id documentation wizard export_to_cli detect coffee ascp email_test smtp_settings proxy_check folder file check_update initdemo vault
 OPTIONS:
         --value=VALUE                extended value for create, update, list filter
         --property=VALUE             name of property to set
@@ -2016,14 +2052,14 @@ OPTIONS:
         --use-generic-client=ENUM    Wizard: AoC: use global or org specific jwt client id: yes, no
         --default=ENUM               Wizard: set as default configuration for specified plugin (also: update): yes, no
         --test-mode=ENUM             Wizard: skip private key check step: yes, no
+    -P, --presetVALUE                load the named option preset from current config file
         --pkeypath=VALUE             Wizard: path to private key for JWT
         --ascp-path=VALUE            path to ascp
         --use-product=VALUE          use ascp from specified product
         --smtp=VALUE                 smtp configuration (extended value: hash)
         --fpac=VALUE                 proxy auto configuration URL
-    -P, --presetVALUE                load the named option preset from current config file
         --secret=VALUE               default secret
-        --secrets=VALUE              secret repository (Hash)
+        --secrets=VALUE              secret vault
         --sdk-url=VALUE              URL to get SDK
         --sdk-folder=VALUE           SDK folder path
         --notif-to=VALUE             email recipient for notification of transfers
@@ -2469,7 +2505,10 @@ The `admin` command allows several administrative tasks (and require admin privi
 
 It allows actions (create, update, delete) on "resources": users, group, nodes, workspace, etc... with the `admin resource` command.
 
-Bulk operations are possible using option `bulk` (yes,no(default)): currently: create only. In that case, the operation expects an Array of Hash instead of a simple Hash using the [Extended Value Syntax](#extended).
+### Bulk creation and deletion of resource 
+
+Bulk creation and deletion of resources are possible using option `bulk` (yes,no(default)).
+In that case, the operation expects an Array of Hash instead of a simple Hash using the [Extended Value Syntax](#extended).
 
 ### Listing resources
 
@@ -2523,31 +2562,15 @@ Note the option `select` can also be used to further refine selection, refer to 
 
 ### Access Key secrets
 
-In order to access some administrative actions on "nodes" (in fact, access keys), the associated
-secret is required, it is usually provided using the `secret` option. For example in a command like:
+In order to access some administrative actions on "nodes" (in fact, access keys), the associated secret is required.
+It is usually provided using the `secret` option.
+For example in a command like:
 
 ```
 ascli aoc admin res node --id="access_key1" --secret="secret1" v3 info
 ```
 
-It is also possible to provide a set of secrets used on a regular basis. This can be done using the `secrets` option. The value provided shall be a Hash, where keys are access key ids, and values are the associated secrets.
-
-First choose a repository name, for example `my_secrets`, and populate it like this:
-
-```
-ascli conf id my_secrets set 'access_key1' 'secret1'
-ascli conf id my_secrets set 'access_key2' 'secret2'
-ascli conf id default get config
-"cli_default"
-```
-
-Here above, one already has set a `config` global preset to preset `cli_default` (refer to earlier in documentation), then the repository can be read by default like this (note the prefix `@val:` to avoid the evaluation of prefix `@preset:`):
-
-```
-ascli conf id cli_default set secrets @val:@preset:my_secrets
-```
-
-A secret repository can always be selected at runtime using `--secrets=@preset:xxxx`, or `--secrets=@json:'{"accesskey1":"secret1"}'`
+It is also possible to provide a set of secrets used on a regular basis using the [secret vault](#vault).
 
 ### Activity
 
@@ -2601,8 +2624,7 @@ The option `default_ports` ([yes]/no) allows ascli to retrieve the server ports 
 
 Refer to section "Examples" of [ATS](#ats) and substitute command `ats` with `aoc admin ats`.
 
-
-### Example: Bulk creation
+### Example: Bulk creation of users
 
 ```
 ascli aoc admin res user create --bulk=yes @json:'[{"email":"dummyuser1@example.com"},{"email":"dummyuser2@example.com"}]'
@@ -3138,21 +3160,25 @@ The parameters provided to ATS for access key creation are the ones of [ATS API]
 
 # Plugin: IBM Aspera High Speed Transfer Server (transfer)
 
-This plugin works at FASP level (SSH/ascp/ascmd) and does not use the node API.
+This plugin uses SSH as a session protocol (using commands `ascp` and `ascmd`) and does not use the node API.
+It is the legacy way of accessing an Aspera Server, often used for server to server transfers.
+Modern mode is to use the node API and transfer tokens.
 
 ## Authentication
 
 Both password and SSH keys auth are supported.
 
-If not username is provided, the default transfer user `xfer` is used.
+If username is not provided, the default transfer user `xfer` is used.
 
-If no ssh password or key is provided, and a token is provided in transfer spec, then standard bypass keys are used.
+If no SSH password or key is provided, and a token is provided in transfer spec, then standard bypass keys are used:
 
 ```
 ascli server --url=ssh://... --ts=@json:'{"token":"Basic abc123"}'
 ```
 
-Multiple SSH key paths can be provided. The value of the parameter `ssh_keys` can be a single value or an array. Each value is a path to a private key and is expanded ("~" is replaced with the user's home folder).
+Multiple SSH key paths can be provided.
+The value of the parameter `ssh_keys` can be a single value or an array.
+Each value is a path to a private key and is expanded (`~` is replaced with the user's home folder).
 
 Examples:
 
@@ -3162,48 +3188,45 @@ ascli server --ssh-keys=@list:,~/.ssh/id_rsa
 ascli server --ssh-keys=@json:'["~/.ssh/id_rsa"]'
 ```
 
-The underlying ssh library `net::ssh` provides several options that may be used depending on environment. By default the ssh library expect that an ssh-agent is running.
+The underlying ssh library `net::ssh` provides several options that may be used depending on environment.
+By default the ssh library expect that an ssh-agent is running.
 
-If you get an error message such as:
+On Linux, if you get an error message such as:
 
 ```
-[Linux]
 ERROR -- net.ssh.authentication.agent: could not connect to ssh-agent: Agent not configured
 ```
 
-or
+or on Windows:
 
 ```
-[Windows]
 ERROR -- net.ssh.authentication.agent: could not connect to ssh-agent: pageant process not running
 ```
 
-This means that you don't have such an ssh agent running:
+This means that you don't have such an ssh agent running, then:
 
 * check env var: `SSH_AGENT_SOCK`
-* check if the key is protected with a passphrase
+* check if the ssh key is protected with a passphrase
 * [check the manual](https://net-ssh.github.io/ssh/v1/chapter-2.html#s2)
-* To disable use of `ssh-agent`, use the option `ssh_option` like this (or set in preset):
+* To disable use of `ssh-agent`, use the option `ssh_option` like this:
 
 ```
 ascli server --ssh-options=@ruby:'{use_agent: false}' ...
 ```
 
-This can also be set as default using a preset.
+This can also be set as default using a global preset.
 
 ## Example
 
-One can test the "server" application using the well known demo server:
+One can test the `server` application using the well known demo server:
 
 ```
-ascli config id aspera_demo_server update --url=ssh://demo.asperasoft.com:33001 --username=asperaweb --password=_demo_pass_
-ascli config id default set server aspera_demo_server
+ascli config initdemo
 ascli server browse /aspera-test-dir-large
 ascli server download /aspera-test-dir-large/200MB
 ```
 
-This creates a [option preset](#lprt) "aspera_demo_server" and set it as default for application "server"
-
+`initdemo` creates a [option preset](#lprt) `demoserver` and set it as default for plugin `server`.
 
 # Plugin: IBM Aspera High Speed Transfer Server (node)
 
@@ -4188,6 +4211,7 @@ So, it evolved into `ascli`:
     * new: support transfer agent: [Transfer SDK](#agt_trsdk)
     * new: support [http socket options](#http_options)
     * new: logs hide passwords and secrets, option `log_passwords`
+    * new: `config vault`
     * change: when using wss, use [ruby's CA certs](#certificates)
     * change: (break) renaming of some classes (transfer agents and few other)
     * fix: various smaller fixes

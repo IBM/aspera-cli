@@ -893,7 +893,11 @@ $(T)conf_doc: $(T).exists
 	$(EXE_MAN) config doc
 	$(EXE_MAN) config doc transfer-parameters
 	@touch $@
-tconf: $(T)conf_id_1 $(T)conf_id_2 $(T)conf_id_3 $(T)conf_id_4 $(T)conf_id_5 $(T)conf_id_6 $(T)conf_open $(T)conf_list $(T)conf_over $(T)conf_help $(T)conf_open_err $(T)conf_plugins $(T)conf_export $(T)conf_wizard_org $(T)conf_wizard_gen $(T)conf_genkey $(T)conf_smtp $(T)conf_pac $(T)conf_check_gem $(T)conf_doc
+$(T)conf_vault: $(T).exists
+	$(EXE_MAN) config vault get --url=https://example.com --username=toto --secret=titi
+	$(EXE_MAN) config vault get --url=https://example.com --username=toto --secrets=@json:'{"toto":"titi"}'
+	@touch $@
+tconf: $(T)conf_id_1 $(T)conf_id_2 $(T)conf_id_3 $(T)conf_id_4 $(T)conf_id_5 $(T)conf_id_6 $(T)conf_open $(T)conf_list $(T)conf_over $(T)conf_help $(T)conf_open_err $(T)conf_plugins $(T)conf_export $(T)conf_wizard_org $(T)conf_wizard_gen $(T)conf_genkey $(T)conf_smtp $(T)conf_pac $(T)conf_check_gem $(T)conf_doc $(T)conf_vault
 
 $(T)shar2_1: $(T).exists
 	@echo $@

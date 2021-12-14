@@ -11,7 +11,6 @@ require 'aspera/persistency_folder'
 require 'aspera/log'
 require 'aspera/rest'
 require 'aspera/nagios'
-require 'aspera/secrets'
 
 module Aspera
   module Cli
@@ -81,8 +80,6 @@ module Aspera
         Rest.session_cb=lambda {|http| set_http_parameters(http)}
         # declare and parse global options
         init_global_options()
-        # secret manager
-        @plugin_env[:secret]=Aspera::Secrets.new
         # the Config plugin adds the @preset parser, so declare before TransferAgent which may use it
         @plugin_env[:config]=Plugins::Config.new(@plugin_env,PROGRAM_NAME,HELP_URL,Aspera::Cli::VERSION,app_main_folder)
         # the TransferAgent plugin may use the @preset parser
@@ -285,9 +282,6 @@ module Aspera
           # help requested without command ? (plugins must be known here)
           exit_with_usage(true) if @option_help and @opt_mgr.command_or_arg_empty?
           generate_bash_completion if @bash_completion
-          # load global default options and process
-          @plugin_env[:config].add_plugin_default_preset(Plugins::Config::CONF_GLOBAL_SYM)
-          @opt_mgr.parse_options!
           @plugin_env[:config].periodic_check_newer_gem_version
           if @option_show_config and @opt_mgr.command_or_arg_empty?
             command_sym=Plugins::Config::CONF_PLUGIN_SYM

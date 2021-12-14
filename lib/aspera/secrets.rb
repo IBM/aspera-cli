@@ -1,20 +1,15 @@
 module Aspera
-  # Manage secrets in CLI using secure way (encryption, wallet, etc...)
+  # Manage secrets in a simple Hash
   class Secrets
-    attr_accessor :default_secret,:all_secrets
-    def initialize()
-      @default_secret=nil
-      @all_secrets={}
+    def initialize(values)
+      raise "values shall be Hash" unless values.is_a?(Hash)
+      @all_secrets=values
     end
 
-    def get_secret(id=nil,mandatory=true)
-      secret=@default_secret || @all_secrets[id]
-      raise "please provide secret for #{id}" if secret.nil? and mandatory
-      return secret
-    end
-
-    def get_secrets
-      return @all_secrets
+    def get_secret(options)
+      raise "options shall be Hash" unless options.is_a?(Hash)
+      raise "options shall have username" unless options.has_key?(:username)
+      return @all_secrets[options[:username]]
     end
   end
 end
