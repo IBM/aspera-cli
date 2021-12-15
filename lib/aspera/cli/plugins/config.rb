@@ -10,7 +10,7 @@ require 'aspera/uri_reader'
 require 'aspera/rest'
 require 'aspera/persistency_action_once'
 require 'aspera/id_generator'
-require 'aspera/secrets'
+require 'aspera/keychain/encrypted_hash'
 require 'xmlsimple'
 require 'base64'
 require 'net/smtp'
@@ -885,7 +885,7 @@ END_OF_TEMPLATE
               description=self.options.get_option(:value,:optional)
               secret=self.options.get_next_argument('secret')
               vault.set(username: username, url: url, description: description, secret: secret)
-              save_presets_to_config_file if vault.is_a?(Aspera::Secrets)
+              save_presets_to_config_file if vault.is_a?(Keychain::EncryptedHash)
               return Main.result_status("Done")
             when :get
               # register url option
@@ -990,7 +990,7 @@ END_OF_TEMPLATE
             vault_info=self.options.get_option(:secrets,:optional)
             case vault_info
             when Hash
-              @vault=Secrets.new(vault_info)
+              @vault=Keychain::EncryptedHash.new(vault_info)
             when NilClass
               # keep nil
             else
