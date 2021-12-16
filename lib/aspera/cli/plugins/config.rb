@@ -11,6 +11,7 @@ require 'aspera/rest'
 require 'aspera/persistency_action_once'
 require 'aspera/id_generator'
 require 'aspera/keychain/encrypted_hash'
+require 'aspera/keychain/macos_security'
 require 'xmlsimple'
 require 'base64'
 require 'net/smtp'
@@ -991,6 +992,15 @@ END_OF_TEMPLATE
             case vault_info
             when Hash
               @vault=Keychain::EncryptedHash.new(vault_info)
+            when /^system/
+              name=vault_info.start_with?('system:') ? vault_info[7..-1] : nil
+              case Environment.os
+              when Environment::OS_X
+                @vault=Keychain::MacosSecurity.new(name)
+              when Environment::OS_WINDOWS,Environment::OS_LINUX,Environment::OS_AIX
+                raise "not implemented"
+              else raise "Error"
+              end
             when NilClass
               # keep nil
             else
