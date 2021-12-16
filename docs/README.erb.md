@@ -1043,7 +1043,15 @@ When a secret or password is needed, it is possible to store in the secret vault
 
 By default the vault is defined using option `secrets`.
 
-### Modern format: encrypted in config file
+### Using system keychain
+
+Only on macOS.
+
+It is possible to store secrets in macOS keychain (only read supported currently).
+
+Set option `secrets` to value `system` to use the default keychain or use value `system:[name]` to use a custom keychain.
+
+### Modern config file format: encrypted in config file
 
 It is possible to store and use secrets encrypted.
 For this use the `config vault` command.
@@ -1059,7 +1067,7 @@ Then secrets can be manipulated using commands:
 
 Secrets must be uniquely identified by `url` and `username`. An optional description can be provided using option `value`.
 
-### Legacy format
+### Legacy config file format
 
 The value provided can be a Hash, where keys are usernames (or access key id), and values are the associated password or secrets in clear.
 
@@ -3700,7 +3708,7 @@ So, it evolved into <%=tool%>:
     * new: support transfer agent: [Transfer SDK](#agt_trsdk)
     * new: support [http socket options](#http_options)
     * new: logs hide passwords and secrets, option `log_passwords`
-    * new: `config vault` supports encrypted passwords
+    * new: `config vault` supports encrypted passwords, also macos keychain
     * change: when using wss, use [ruby's CA certs](#certificates)
     * change: (break) renaming of some classes (transfer agents and few other)
     * fix: various smaller fixes
