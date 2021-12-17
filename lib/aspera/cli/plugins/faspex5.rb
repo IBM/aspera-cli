@@ -7,14 +7,27 @@ module Aspera
   module Cli
     module Plugins
       class Faspex5 < BasicAuthPlugin
+        class << self
+          def detect(base_url)
+            api=Rest.new({:base_url=>base_url})
+            result=api.read('api/v5/configuration/ping')
+            if result[:http].code.start_with?('2')
+              return {version: '5'}
+            end
+            return nil
+          end
+        end
+
         VAL_ALL='ALL'
+        private_constant :VAL_ALL
+
         def initialize(env)
           super(env)
-          options.add_opt_simple(:client_id,'API client identifier in application')
-          options.add_opt_simple(:client_secret,'API client secret in application')
-          options.add_opt_simple(:redirect_uri,'API client redirect URI')
-          options.add_opt_list(:auth,Oauth.auth_types.clone.push(:boot),'type of Oauth authentication')
-          options.add_opt_simple(:private_key,'RSA private key PEM value for JWT (prefix file path with @val:@file:)')
+          options.add_opt_simple(:client_id,'OAuth client identifier')
+          options.add_opt_simple(:client_secret,'OAuth client secret')
+          options.add_opt_simple(:redirect_uri,'OAuth redirect URI')
+          options.add_opt_list(:auth,Oauth.auth_types.clone.push(:boot),'OAuth type of authentication')
+          options.add_opt_simple(:private_key,'Oauth RSA private key PEM value for JWT (prefix file path with @val:@file:)')
           options.set_option(:auth,:jwt)
           options.parse_options!
         end
@@ -43,7 +56,7 @@ module Aspera
               :redirect_uri   => options.get_option(:redirect_uri,:mandatory),
               }})
           when :jwt
-            # currently Faspex 5 beta 3 only supports non-user based apis (e.g. jobs)
+            # currently Faspex 5 beta 4 only supports non-user based apis (e.g. jobs)
             app_client_id=options.get_option(:client_id,:mandatory)
             @api_v5=Rest.new({
               :base_url => faxpex5_api_v5_url,

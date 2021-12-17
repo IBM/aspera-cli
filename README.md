@@ -1888,6 +1888,8 @@ ascli config ascp products list
 ascli config ascp show
 ascli config ascp spec
 ascli config check_update
+ascli config detect --url=https://my_aoc_org.ibmaspera.com;\
+ascli config detect --url=my_faspex_url
 ascli config doc
 ascli config doc transfer-parameters
 ascli config email_test --notif-to=my_recipient_email
@@ -2167,11 +2169,11 @@ OPTIONS:
         --url=VALUE                  URL of application, e.g. https://org.asperafiles.com
         --username=VALUE             username to log in
         --password=VALUE             user's password
-        --client-id=VALUE            API client identifier in application
-        --client-secret=VALUE        API client secret in application
-        --redirect-uri=VALUE         API client redirect URI
-        --auth=ENUM                  type of Oauth authentication: body_userpass, header_userpass, web, jwt, url_token, ibm_apikey, boot
-        --private-key=VALUE          RSA private key PEM value for JWT (prefix file path with @val:@file:)
+        --client-id=VALUE            OAuth client identifier
+        --client-secret=VALUE        OAuth client secret
+        --redirect-uri=VALUE         OAuth redirect URI
+        --auth=ENUM                  OAuth type of authentication: body_userpass, header_userpass, web, jwt, url_token, ibm_apikey, boot
+        --private-key=VALUE          Oauth RSA private key PEM value for JWT (prefix file path with @val:@file:)
 
 
 COMMAND: cos

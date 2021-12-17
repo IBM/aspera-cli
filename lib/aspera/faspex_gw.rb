@@ -78,7 +78,7 @@ module Aspera
           'remote_host' => node_info['host'],
           'remote_user' => Fasp::Default::ACCESS_KEY_TRANSFER_USER,
           'ssh_port'    => Fasp::Default::SSH_PORT,
-          'fasp_port'   => Fasp::Default::UDP_PORT
+          'fasp_port'   => Fasp::Default::UDP_PORT,
           'tags'        => ts_tags,
           'token'       => node_auth_bearer_token,
           'paths'       => [{'destination' => '/'}],

@@ -27,7 +27,7 @@ module Aspera
     def self.file_matcher(match_expression)
       match_expression||="#{MATCH_EXEC_PREFIX}true"
       if match_expression.start_with?(MATCH_EXEC_PREFIX)
-        return eval "lambda{|f|#{match_expression[MATCH_EXEC_PREFIX.length..-1]}}"
+        return eval("lambda{|f|#{match_expression[MATCH_EXEC_PREFIX.length..-1]}}")
       end
       return lambda{|f|f['name'].match(/#{match_expression}/)}
     end

@@ -2,7 +2,6 @@ require 'aspera/cli/basic_auth_plugin'
 require 'aspera/cli/extended_value'
 require 'aspera/fasp/installation'
 require 'aspera/fasp/parameters'
-require 'aspera/api_detector'
 require 'aspera/open_application'
 require 'aspera/aoc'
 require 'aspera/proxy_auto_config'
@@ -241,9 +240,9 @@ END_OF_TEMPLATE
 
         # instanciate a plugin
         # plugins must be Capitalized
-        def self.plugin_new(plugin_name_sym,env)
+        def self.plugin_class(plugin_name_sym)
           # Module.nesting[2] is Aspera::Cli
-          return Object::const_get("#{Module.nesting[2].to_s}::Plugins::#{plugin_name_sym.to_s.capitalize}").new(env)
+          return Object::const_get("#{Module.nesting[2].to_s}::Plugins::#{plugin_name_sym.to_s.capitalize}")
         end
 
         def self.flatten_all_config(t)
@@ -457,6 +456,34 @@ END_OF_TEMPLATE
           @plugins[plugin_symbol]={source: path,require_stanza: req}
         end
 
+        def identify_plugin_for_url(url)
+          plugins.each do |plugin_name_sym,plugin_info|
+            next if plugin_name_sym.eql?(CONF_PLUGIN_SYM)
+            require plugin_info[:require_stanza]
+            c=self.class.plugin_class(plugin_name_sym)
+            if c.respond_to?(:detect)
+              begin
+                res=c.send(:detect,url)
+                return res.merge(product: plugin_name_sym.to_s, url: url) unless res.nil?
+              rescue
+              end
+              # is there a redirect ?
+              api=Rest.new({:base_url=>url})
+              begin
+                result=api.call({operation: 'GET',subpath: '',redirect_max: 1})
+                redirected_url=result[:http].uri.to_s
+                # check if redirect
+                if ! url.eql?(redirected_url)
+                  res=c.send(:detect,redirected_url)
+                  return res.merge(product: plugin_name_sym.to_s, url: redirected_url) unless res.nil?
+                end
+              rescue
+              end
+            end
+          end
+          return ApiDetector.discover_product(url)
+        end
+
         def execute_connect_action
           command=self.options.get_next_command([:list,:id])
           case command
@@ -666,7 +693,7 @@ END_OF_TEMPLATE
             instance_url=self.options.get_option(:url,:mandatory)
             # allow user to tell the preset name
             preset_name=self.options.get_option(:id,:optional)
-            appli=ApiDetector.discover_product(instance_url)
+            appli=identify_plugin_for_url(instance_url)
             plugin_name="<replace per app>"
             test_args="<replace per app>"
             case appli[:product]
@@ -709,7 +736,7 @@ END_OF_TEMPLATE
               # make username mandatory for jwt, this triggers interactive input
               self.options.get_option(:username,:mandatory)
               # instanciate AoC plugin, so that command line options are known
-              files_plugin=self.class.plugin_new(plugin_name,@agents.merge({skip_basic_auth_options: true, private_key_path: private_key_path}))
+              files_plugin=self.class.plugin_class(plugin_name).new(@agents.merge({skip_basic_auth_options: true, private_key_path: private_key_path}))
               aoc_api=files_plugin.get_api
               auto_set_pub_key=false
               auto_set_jwt=false
@@ -791,7 +818,7 @@ END_OF_TEMPLATE
             # need url / username
             add_plugin_default_preset(AOC_COMMAND_V3.to_sym)
             # instanciate AoC plugin
-            files_plugin=self.class.plugin_new(AOC_COMMAND_CURRENT,@agents) # TODO: is this line needed ?
+            files_plugin=self.class.plugin_class(AOC_COMMAND_CURRENT).new(@agents) # TODO: is this line needed ?
             url=self.options.get_option(:url,:mandatory)
             cli_conf_file=Fasp::Installation.instance.cli_conf_file
             data=JSON.parse(File.read(cli_conf_file))
@@ -823,7 +850,7 @@ END_OF_TEMPLATE
           when :detect
             # need url / username
             BasicAuthPlugin.new(@agents)
-            return Main.result_status("Found: #{ApiDetector.discover_product(self.options.get_option(:url,:mandatory))}")
+            return Main.result_status("Found: #{identify_plugin_for_url(self.options.get_option(:url,:mandatory))}")
           when :coffee
             OpenApplication.instance.uri('https://enjoyjava.com/wp-content/uploads/2018/01/How-to-make-strong-coffee.jpg')
             return Main.result_nothing
