@@ -11,7 +11,7 @@ module Aspera
           def detect(base_url)
             api=Rest.new({:base_url=>base_url})
             result=api.read('api/v5/configuration/ping')
-            if result[:http].code.start_with?('2')
+            if result[:http].code.start_with?('2') and result[:http].body.strip.empty?
               return {version: '5'}
             end
             return nil
