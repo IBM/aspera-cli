@@ -9,8 +9,8 @@ module Aspera
             api=Rest.new({:base_url=>base_url})
             # Shares
             begin
-              result=api.read('node_api/app')
-              # shares requires auth
+              # shall fail: shares requires auth, but we check error message
+              api.read('node_api/app')
             rescue RestCallError => e
               if e.response.code.to_s.eql?('401') and e.response.body.eql?('{"error":{"user_message":"API user authentication failed"}}')
                 return {:version=>'unknown'}
