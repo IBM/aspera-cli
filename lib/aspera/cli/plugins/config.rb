@@ -462,26 +462,26 @@ END_OF_TEMPLATE
             require plugin_info[:require_stanza]
             c=self.class.plugin_class(plugin_name_sym)
             if c.respond_to?(:detect)
+              current_url=url
               begin
-                res=c.send(:detect,url)
-                return res.merge(product: plugin_name_sym.to_s, url: url) unless res.nil?
+                res=c.send(:detect,current_url)
+                return res.merge(product: plugin_name_sym, url: current_url) unless res.nil?
               rescue
               end
-              # is there a redirect ?
-              api=Rest.new({:base_url=>url})
               begin
-                result=api.call({operation: 'GET',subpath: '',redirect_max: 1})
-                redirected_url=result[:http].uri.to_s
+                # is there a redirect ?
+                result=Rest.new({:base_url=>url}).call({operation: 'GET',subpath: '',redirect_max: 1})
+                current_url=result[:http].uri.to_s
                 # check if redirect
-                if ! url.eql?(redirected_url)
-                  res=c.send(:detect,redirected_url)
-                  return res.merge(product: plugin_name_sym.to_s, url: redirected_url) unless res.nil?
+                if ! url.eql?(current_url)
+                  res=c.send(:detect,current_url)
+                  return res.merge(product: plugin_name_sym, url: current_url) unless res.nil?
                 end
               rescue
               end
             end
           end
-          return ApiDetector.discover_product(url)
+          raise "No known application found at #{url}"
         end
 
         def execute_connect_action
