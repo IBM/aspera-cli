@@ -4,6 +4,23 @@ module Aspera
   module Cli
     module Plugins
       class Shares < BasicAuthPlugin
+        class << self
+          def detect(base_url)
+            api=Rest.new({:base_url=>base_url})
+            # Shares
+            begin
+              result=api.read('node_api/app')
+              # shares requires auth
+            rescue RestCallError => e
+              if e.response.code.to_s.eql?('401') and e.response.body.eql?('{"error":{"user_message":"API user authentication failed"}}')
+                return {:version=>'unknown'}
+              end
+            rescue
+            end
+            nil
+          end
+        end
+
         def initialize(env)
           super(env)
           #self.options.parse_options!

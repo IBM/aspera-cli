@@ -14,8 +14,19 @@ module Aspera
   module Cli
     module Plugins
       class Aoc < BasicAuthPlugin
+        class << self
+          def detect(base_url)
+            api=Rest.new({:base_url=>base_url})
+            result=api.call({:operation=>'GET',:subpath=>'',:headers=>{'Accept'=>'text/html'}})
+            if result[:http].body.include?('content="AoC"')
+              return {:product=>:aoc,:version=>'unknown'}
+            end
+            return nil
+          end
+        end
         # special value for package id
         VAL_ALL='ALL'
+
         def initialize(env)
           super(env)
           @default_workspace_id=nil

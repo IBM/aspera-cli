@@ -160,7 +160,7 @@ module Aspera
         require @plugin_env[:config].plugins[plugin_name_sym][:require_stanza]
         # load default params only if no param already loaded before plugin instanciation
         env[:config].add_plugin_default_preset(plugin_name_sym)
-        command_plugin=Plugins::Config.plugin_new(plugin_name_sym,env)
+        command_plugin=Plugins::Config.plugin_class(plugin_name_sym).new(env)
         Log.log.debug("got #{command_plugin.class}")
         # TODO: check that ancestor is Plugin?
         return command_plugin

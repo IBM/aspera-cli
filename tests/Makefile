@@ -877,6 +877,14 @@ $(T)conf_wizard_gen: $(T).exists
 	cat $(SAMPLE_CONFIG_FILE)
 	rm -f $(SAMPLE_CONFIG_FILE)
 	@touch $@
+$(T)conf_detect: $(T).exists
+	@echo $@
+	set -x;\
+	aoc_org=$$($(EXE_NOMAN) conf id misc get aoc_org);\
+	faspex_url=$$($(EXE_NOMAN) conf id tst_faspex get url);\
+	$(EXE_MAN) config detect --url=https://$${aoc_org}.ibmaspera.com;\
+	$(EXE_MAN) config detect --url=$${faspex_url}
+	@touch $@
 $(T)conf_genkey: $(T).exists
 	@echo $@
 	$(EXE_MAN) config genkey $(DIR_TMP)mykey
@@ -900,7 +908,7 @@ $(T)conf_doc: $(T).exists
 	$(EXE_MAN) config doc
 	$(EXE_MAN) config doc transfer-parameters
 	@touch $@
-tconf: $(T)conf_id_1 $(T)conf_id_2 $(T)conf_id_3 $(T)conf_id_4 $(T)conf_id_5 $(T)conf_id_6 $(T)conf_open $(T)conf_list $(T)conf_over $(T)conf_vault $(T)conf_help $(T)conf_open_err $(T)conf_plugins $(T)conf_export $(T)conf_wizard_org $(T)conf_wizard_gen $(T)conf_genkey $(T)conf_smtp $(T)conf_pac $(T)conf_check_gem $(T)conf_doc
+tconf: $(T)conf_id_1 $(T)conf_id_2 $(T)conf_id_3 $(T)conf_id_4 $(T)conf_id_5 $(T)conf_id_6 $(T)conf_open $(T)conf_list $(T)conf_over $(T)conf_vault $(T)conf_help $(T)conf_open_err $(T)conf_plugins $(T)conf_export $(T)conf_wizard_org $(T)conf_wizard_gen $(T)conf_detect $(T)conf_genkey $(T)conf_smtp $(T)conf_pac $(T)conf_check_gem $(T)conf_doc
 
 $(T)shar2_1: $(T).exists
 	@echo $@

@@ -19,3 +19,5 @@
 # contains private secrets:
 /local/
 .*_checked
+.project
+.settings

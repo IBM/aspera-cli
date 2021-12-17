@@ -32,6 +32,20 @@ module Aspera
         private_constant :KEY_NODE,:KEY_PATH,:VAL_ALL,:PACKAGE_MATCH_FIELD,:ATOM_MAILBOXES,
         :ATOM_PARAMS,:ATOM_EXT_PARAMS,:PUB_LINK_EXTERNAL_MATCH
 
+        class << self
+          def detect(base_url)
+            api=Rest.new({:base_url=>base_url})
+            result=api.call({:operation=>'POST',:subpath=>'aspera/faspex',:headers=>{'Accept'=>'application/xrds+xml'},:text_body_params=>''})
+            # 4.x
+            if result[:http].body.start_with?('<?xml')
+              res_s=XmlSimple.xml_in(result[:http].body, {'ForceArray' => false})
+              version=res_s['XRD']['application']['version']
+              return {version: version}
+            end
+            return nil
+          end
+        end
+
         def initialize(env)
           @api_v3=nil
           @api_v4=nil

@@ -217,22 +217,7 @@ module Aspera
           raise 'use format: file:///<path>' unless sdk_url.start_with?('file:///')
           sdk_zip_path=sdk_url.gsub(%r{^file:///},'')
         else
-          redirect_remain=MAX_REDIRECT_SDK
-          begin
-            Aspera::Rest.new(base_url: sdk_url).call(operation: 'GET',save_to_file: sdk_zip_path)
-          rescue Aspera::RestCallError => e
-            if e.response.is_a?(Net::HTTPRedirection)
-              if redirect_remain > 0
-                redirect_remain-=1
-                sdk_url=e.response['location']
-                retry
-              else
-                raise "Too many redirect"
-              end
-            else
-              raise e
-            end
-          end
+          Aspera::Rest.new(base_url: sdk_url, redirect_max: 3).call(operation: 'GET',save_to_file: sdk_zip_path)
         end
         # rename old install
         if ! Dir.empty?(folder_path)

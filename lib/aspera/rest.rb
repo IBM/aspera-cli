@@ -131,47 +131,14 @@ module Aspera
       return @oauth.get_authorization(options)
     end
 
-    # HTTP/S REST call
-    # call_data has keys:
-    # :auth
-    # :operation
-    # :subpath
-    # :headers
-    # :json_params
-    # :url_params
-    # :www_body_params
-    # :text_body_params
-    # :save_to_file (filepath)
-    # :return_error (bool)
-    def call(call_data)
-      raise "Hash call parameter is required (#{call_data.class})" unless call_data.is_a?(Hash)
-      Log.log.debug("accessing #{call_data[:subpath]}".red.bold.bg_green)
-      call_data[:headers]||={}
-      call_data[:headers]['User-Agent'] ||= @@user_agent
-      # defaults from @params are overriden by call dataz
-      call_data=@params.deep_merge(call_data)
-      case call_data[:auth][:type]
-      when :none
-        # no auth
-      when :basic
-        Log.log.debug("using Basic auth")
-        basic_auth_data=[call_data[:auth][:username],call_data[:auth][:password]]
-      when :oauth2
-        call_data[:headers]['Authorization']=oauth_token unless call_data[:headers].has_key?('Authorization')
-      when :url
-        call_data[:url_params]||={}
-        call_data[:auth][:url_creds].each do |key, value|
-          call_data[:url_params][key]=value
-        end
-      else raise "unsupported auth type: [#{call_data[:auth][:type]}]"
-      end
+    def build_request(call_data)
       # TODO: shall we percent encode subpath (spaces) test with access key delete with space in id
       # URI.escape()
-      uri=self.class.build_uri("#{@params[:base_url]}#{call_data[:subpath].nil? ? '' : '/'}#{call_data[:subpath]}",call_data[:url_params])
+      uri=self.class.build_uri("#{call_data[:base_url]}#{['','/'].include?(call_data[:subpath]) ? '' : '/'}#{call_data[:subpath]}",call_data[:url_params])
       Log.log.debug("URI=#{uri}")
       begin
         # instanciate request object based on string name
-        req=Object::const_get('Net::HTTP::'+call_data[:operation].capitalize).new(uri.request_uri)
+        req=Object::const_get('Net::HTTP::'+call_data[:operation].capitalize).new(uri)#.request_uri
       rescue NameError => e
         raise "unsupported operation : #{call_data[:operation]}"
       end
@@ -198,15 +165,54 @@ module Aspera
         end
       end
       # :type = :basic
-      req.basic_auth(*basic_auth_data) unless basic_auth_data.nil?
+      req.basic_auth(call_data[:auth][:username],call_data[:auth][:password]) if call_data[:auth][:type].eql?(:basic)
+      return req
+    end
 
+    # HTTP/S REST call
+    # call_data has keys:
+    # :auth
+    # :operation
+    # :subpath
+    # :headers
+    # :json_params
+    # :url_params
+    # :www_body_params
+    # :text_body_params
+    # :save_to_file (filepath)
+    # :return_error (bool)
+    # :redirect_max (int)
+    def call(call_data)
+      raise "Hash call parameter is required (#{call_data.class})" unless call_data.is_a?(Hash)
+      call_data[:subpath]='' if call_data[:subpath].nil?
+      Log.log.debug("accessing #{call_data[:subpath]}".red.bold.bg_green)
+      call_data[:headers]||={}
+      call_data[:headers]['User-Agent'] ||= @@user_agent
+      # defaults from @params are overriden by call data
+      call_data=@params.deep_merge(call_data)
+      case call_data[:auth][:type]
+      when :none
+        # no auth
+      when :basic
+        Log.log.debug("using Basic auth")
+        # done in build_req
+      when :oauth2
+        call_data[:headers]['Authorization']=oauth_token unless call_data[:headers].has_key?('Authorization')
+      when :url
+        call_data[:url_params]||={}
+        call_data[:auth][:url_creds].each do |key, value|
+          call_data[:url_params][key]=value
+        end
+      else raise "unsupported auth type: [#{call_data[:auth][:type]}]"
+      end
+      req=build_request(call_data)
       Log.log.debug("call_data = #{call_data}")
       result={:http=>nil}
       # start a block to be able to retry the actual HTTP request
       begin
         # we try the call, and will retry only if oauth, as we can, first with refresh, and then re-auth if refresh is bad
         oauth_tries ||= 2
-        tries_remain_redirect||=4
+        tries_remain_redirect||=call_data[:redirect_max].nil? ? 0 : call_data[:redirect_max].to_i
         Log.log.debug("send request")
         # make http request (pipelined)
         http_session.request(req) do |response|
@@ -272,9 +278,18 @@ module Aspera
           if tries_remain_redirect > 0
             tries_remain_redirect-=1
             Log.log.info("URL is moved: #{e.response['location']}")
-            raise e
-            # TODO: rebuild request with new location
-            #retry
+            current_uri=URI.parse(call_data[:base_url])
+            redir_uri=URI.parse(e.response['location'])
+            call_data[:base_url]=e.response['location']
+            call_data[:subpath]=''
+            if current_uri.host.eql?(redir_uri.host) and current_uri.port.eql?(redir_uri.port)
+              req=build_request(call_data)
+              retry
+            else
+              # change host
+              Log.log.info("Redirect changes host: #{current_uri.host} -> #{redir_uri.host}")
+              return self.class.new(call_data).call(call_data)
+            end
           else
             raise "too many redirect"
           end
@@ -286,7 +301,6 @@ module Aspera
       end # begin request
       Log.log.debug("result=#{result}")
       return result
-
     end
 
     #
