@@ -1469,7 +1469,7 @@ Parameters can be displayed with commands:
 
 ```
 ascli config ascp spec
-ascli config ascp spec --select=@json:'{"f":"Y"}' --fields=-f,n,c
+ascli config ascp spec --select=@json:'{"d":"Y"}' --fields=-d,n,c
 ```
 
 Columns:
@@ -1477,7 +1477,8 @@ Columns:
 * D=Direct (local `ascp` execution)
 * N=Node API
 * C=Connect Client
-* arg=`ascp` argument or environment variable
+
+`ascp` argument or environment variable is provided in description.
 
 Fields with EX_ prefix are extensions to transfer agent [`direct`](#agt_direct). (only in `ascli`).
 
