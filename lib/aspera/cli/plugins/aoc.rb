@@ -705,7 +705,7 @@ module Aspera
               end
               return { type: :object_list, data: res_data , fields: fields}
             when :shared_create
-              # TODO
+              # TODO: finish implementation
               folder_path=self.options.get_next_argument('folder path in node')
               user_create_data=self.options.get_next_argument('creation data (Hash)')
               res_data=@api_aoc.read(resource_instance_path)[:data]
