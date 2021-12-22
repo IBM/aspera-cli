@@ -81,7 +81,7 @@ module Aspera
           return self.transfer.start(*@api_aoc.tr_spec(app,direction,node_file,ts_add))
         end
 
-        NODE4_COMMANDS=[ :browse, :find, :mkdir, :rename, :delete, :upload, :download, :transfer, :http_node_download, :v3, :file, :bearer_token_node, :node_info ]
+        NODE4_COMMANDS=[ :browse, :find, :mkdir, :rename, :delete, :upload, :download, :transfer, :http_node_download, :v3, :file, :bearer_token_node, :node_info ].freeze
 
         def execute_node_gen4_command(command_repo,top_node_file)
           case command_repo
@@ -743,7 +743,7 @@ module Aspera
         end
 
         # must be public
-        ACTIONS=[ :reminder, :bearer_token, :organization, :tier_restrictions, :user, :workspace, :packages, :files, :gateway, :admin, :automation, :servers]
+        ACTIONS=[ :reminder, :bearer_token, :organization, :tier_restrictions, :user, :workspace, :packages, :files, :gateway, :admin, :automation, :servers].freeze
 
         def execute_action
           command=self.options.get_next_command(ACTIONS)
@@ -889,7 +889,7 @@ module Aspera
             # get workspace related information
             set_workspace_info
             set_home_node_file
-            command_repo=self.options.get_next_command(NODE4_COMMANDS.clone.concat([:short_link]))
+            command_repo=self.options.get_next_command([NODE4_COMMANDS,:short_link].flatten)
             case command_repo
             when *NODE4_COMMANDS; return execute_node_gen4_command(command_repo,@home_node_file)
             when :short_link
