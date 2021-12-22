@@ -256,7 +256,7 @@ module Aspera
           unless command.eql?(:list)
             asyncname=self.options.get_option(:name,:optional)
             if asyncname.nil?
-              asyncid=self.options.get_option(:id,:mandatory)
+              asyncid=self.instance_identifier()
               if asyncid.eql?('ALL') and [:show,:delete].include?(command)
                 asyncids=@api_node.read('async/list')[:data]['sync_ids']
               else
@@ -362,7 +362,7 @@ module Aspera
             command=self.options.get_next_command([ :list, :cancel, :show ])
             res_class_path='ops/transfers'
             if [:cancel, :show].include?(command)
-              one_res_id=self.options.get_option(:id,:mandatory)
+              one_res_id=self.instance_identifier()
               one_res_path="#{res_class_path}/#{one_res_id}"
             end
             case command
@@ -384,7 +384,7 @@ module Aspera
           when :service
             command=self.options.get_next_command([ :list, :create, :delete])
             if [:delete].include?(command)
-              svcid=self.options.get_option(:id,:mandatory)
+              svcid=self.instance_identifier()
             end
             case command
             when :list
@@ -404,7 +404,7 @@ module Aspera
             #return entity_action(@api_node,'v3/watchfolders',nil,:id)
             command=self.options.get_next_command([ :create, :list, :show, :modify, :delete, :state])
             if [:show,:modify,:delete,:state].include?(command)
-              one_res_id=self.options.get_option(:id,:mandatory)
+              one_res_id=self.instance_identifier()
               one_res_path="#{res_class_path}/#{one_res_id}"
             end
             # hum, to avoid: Unable to convert 2016_09_14 configuration

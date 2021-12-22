@@ -33,10 +33,18 @@ module Aspera
         end
       end
 
+      # must be called AFTER the instance action
+      def instance_identifier()
+        res_id=self.options.get_option(:id)
+        res_id=self.options.get_next_argument('identifier') if res_id.nil?
+        return res_id
+      end
+
       def entity_command(command,rest_api,res_class_path,display_fields,id_symb,id_default=nil,use_subkey=false)
+        raise "not id" unless :id.eql?(id_symb)
         if INSTANCE_OPS.include?(command)
           begin
-            one_res_id=self.options.get_option(id_symb,:mandatory)
+            one_res_id=instance_identifier()
           rescue => e
             raise e if id_default.nil?
             one_res_id=id_default

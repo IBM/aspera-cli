@@ -125,7 +125,7 @@ If you want to use `ascli` with another server, and in order to make further cal
 * download a file
 
 ```
-ascli config id myserver update --url=ssh://demo.asperasoft.com:33001 --username=asperaweb --password=_demo_pass_
+ascli config preset update myserver --url=ssh://demo.asperasoft.com:33001 --username=asperaweb --password=_demo_pass_
 ```
 
 ```
@@ -133,7 +133,7 @@ updated: myserver
 ```
 
 ```
-ascli config id default set server myserver
+ascli config preset set default server myserver
 ```
 
 ```
@@ -817,13 +817,13 @@ A [option preset](#lprt) is simply a collection of parameters and their associat
 A named [option preset](#lprt) can be modified directly using `ascli`, which will update the configuration file :
 
 ```
-ascli config id <option preset> set|delete|show|initialize|update
+ascli config preset set|delete|show|initialize|update <option preset>
 ```
 
 The command `update` allows the easy creation of [option preset](#lprt) by simply providing the options in their command line format, e.g. :
 
 ```
-ascli config id demo_server update --url=ssh://demo.asperasoft.com:33001 --username=asperaweb --password=_demo_pass_ --ts=@json:'{"precalculate_job_size":true}'
+ascli config preset update demo_server --url=ssh://demo.asperasoft.com:33001 --username=asperaweb --password=_demo_pass_ --ts=@json:'{"precalculate_job_size":true}'
 ```
 
 * This creates a [option preset](#lprt) `demo_server` with all provided options.
@@ -831,33 +831,42 @@ ascli config id demo_server update --url=ssh://demo.asperasoft.com:33001 --usern
 The command `set` allows setting individual options in a [option preset](#lprt).
 
 ```
-ascli config id demo_server set password _demo_pass_
+ascli config preset set demo_server password _demo_pass_
 ```
 
 The command `initialize`, like `update` allows to set several parameters at once, but it deletes an existing configuration instead of updating it, and expects a _[Structured Value](#native)_.
 
 ```
-ascli config id demo_server initialize @json:'{"url":"ssh://demo.asperasoft.com:33001","username":"asperaweb","password":"_demo_pass_","ts":{"precalculate_job_size":true}}'
-```
-
-A good practice is to not manually edit the configuration file and use modification commands instead.
-If necessary, the configuration file can be edited (or simply consulted) with:
-
-```
-ascli config open
+ascli config preset initialize demo_server @json:'{"url":"ssh://demo.asperasoft.com:33001","username":"asperaweb","password":"_demo_pass_","ts":{"precalculate_job_size":true}}'
 ```
 
 A full terminal based overview of the configuration can be displayed using:
 
 ```
-ascli config over
+ascli config preset over
 ```
 
 A list of [option preset](#lprt) can be displayed using:
 
 ```
+ascli config preset list
+```
+
+A good practice is to not manually edit the configuration file and use modification commands instead.
+If necessary, the configuration file can opened in a text editor with:
+
+```
+ascli config open
+```
+
+Older format for commands are still supported:
+
+```
+ascli config id <name> set|delete|show|initialize|update
+ascli config over
 ascli config list
 ```
+
 
 ### <a id="lprtconf"></a>Special Option preset: config
 
@@ -874,8 +883,8 @@ Note that special plugin name: `config` can be associated with a preset that is 
 Operations on this preset are done using regular `config` operations:
 
 ```
-ascli config id default set _plugin_name_ _default_preset_for_plugin_
-ascli config id default get _plugin_name_
+ascli config preset set default _plugin_name_ _default_preset_for_plugin_
+ascli config preset get default _plugin_name_
 "_default_preset_for_plugin_"
 ```
 
@@ -922,10 +931,10 @@ The user may create as many [option presets](#lprt) as needed. For instance, a p
 
 Values in the configuration also follow the [Extended Value Syntax](#extended).
 
-Note: if the user wants to use the [Extended Value Syntax](#extended) inside the configuration file, using the `config id update` command, the user shall use the `@val:` prefix. Example:
+Note: if the user wants to use the [Extended Value Syntax](#extended) inside the configuration file, using the `config preset update` command, the user shall use the `@val:` prefix. Example:
 
 ```
-ascli config id my_aoc_org set private_key @val:@file:"$HOME/.aspera/ascli/aocapikey"
+ascli config preset set my_aoc_org private_key @val:@file:"$HOME/.aspera/ascli/aocapikey"
 ```
 
 This creates the [option preset](#lprt):
@@ -961,17 +970,17 @@ is an underscore. E.g. --xxx-yyy  on command line gives xxx_yyy in configuration
 The main plugin name is `config`, so it is possible to define a default [option preset](#lprt) for the main plugin with:
 
 ```
-ascli config id cli_default set interactive no
+ascli config preset set cli_default interactive no
 ```
 
 ```
-ascli config id default set config cli_default
+ascli config preset set default config cli_default
 ```
 
 A [option preset](#lprt) value can be removed with `unset`:
 
 ```
-ascli config id cli_default unset interactive
+ascli config preset unset cli_default interactive
 ```
 
 Example: Define options using command line:
@@ -1001,27 +1010,27 @@ This can also be provisioned in a config file:
 * Build [option preset](#lprt)
 
 ```
-ascli config id shares06 set url https://10.25.0.6
-ascli config id shares06 set username john
-ascli config id shares06 set password 4sp3ra
+ascli config preset set shares06 url https://10.25.0.6
+ascli config preset set shares06 username john
+ascli config preset set shares06 password 4sp3ra
 ```
 
 Note that this can also be done with one single command:
 
 ```
-ascli config id shares06 init @json:'{"url":"https://10.25.0.6","username":"john","password":"4sp3ra"}'
+ascli config preset init shares06 @json:'{"url":"https://10.25.0.6","username":"john","password":"4sp3ra"}'
 ```
 
 or
 
 ```
-ascli config id shares06 update --url=https://10.25.0.6 --username=john --password=4sp3ra
+ascli config preset update shares06 --url=https://10.25.0.6 --username=john --password=4sp3ra
 ```
 
 * Define this [option preset](#lprt) as the default [option preset](#lprt) for the specified plugin (`shares`)
 
 ```
-ascli config id default set shares shares06
+ascli config preset set default shares shares06
 ```
 
 * Display the content of configuration file in table format
@@ -1782,20 +1791,20 @@ ascli -h
 ascli aoc -N remind --username=my_aoc_user_email
 ascli aoc -N servers
 ascli aoc admin analytics transfers --query=@json:'{"status":"completed","direction":"receive"}' --notif-to=my_recipient_email --notif-template=@ruby:'%Q{From: <%=from_name%> <<%=from_email%>>\nTo: <<%=to%>>\nSubject: <%=ev["files_completed"]%> files received\n\n<%=ev.to_yaml%>}'
-ascli aoc admin ats access_key --id=akibmcloud --secret=somesecret node browse /
-ascli aoc admin ats access_key --id=akibmcloud delete
 ascli aoc admin ats access_key create --cloud=aws --region=my_aws_bucket_region --params=@json:'{"id":"ak_aws","name":"my test key AWS","storage":{"type":"aws_s3","bucket":"my_aws_bucket_name","credentials":{"access_key_id":"my_aws_bucket_key","secret_access_key":"my_aws_bucket_secret"},"path":"/"}}'
 ascli aoc admin ats access_key create --cloud=softlayer --region=my_icos_bucket_region --params=@json:'{"id":"akibmcloud","secret":"somesecret","name":"my test key","storage":{"type":"ibm-s3","bucket":"my_icos_bucket_name","credentials":{"access_key_id":"my_icos_bucket_key","secret_access_key":"my_icos_bucket_secret"},"path":"/"}}'
+ascli aoc admin ats access_key delete akibmcloud
 ascli aoc admin ats access_key list --fields=name,id
+ascli aoc admin ats access_key node akibmcloud --secret=somesecret browse /
 ascli aoc admin ats cluster clouds
 ascli aoc admin ats cluster list
 ascli aoc admin ats cluster show --cloud=aws --region=eu-west-1
-ascli aoc admin ats cluster show --id=1f412ae7-869a-445c-9c05-02ad16813be2
+ascli aoc admin ats cluster show 1f412ae7-869a-445c-9c05-02ad16813be2
 ascli aoc admin res application list
 ascli aoc admin res client list
 ascli aoc admin res client_access_key list
-ascli aoc admin res client_registration_token --id=my_clt_reg_id delete
 ascli aoc admin res client_registration_token create @json:'{"data":{"name":"test_client_reg1","client_subject_scopes":["alee","aejd"],"client_subject_enabled":true}}'
+ascli aoc admin res client_registration_token delete my_clt_reg_id
 ascli aoc admin res client_registration_token list
 ascli aoc admin res contact list
 ascli aoc admin res dropbox list
@@ -1812,16 +1821,16 @@ ascli aoc admin res short_link list
 ascli aoc admin res user list
 ascli aoc admin res workspace_membership list
 ascli aoc admin resource node --name=AOC_NODE1_NAME --secret=AOC_NODE1_SECRET v3 access_key create --value=@json:'{"id":"testsub1","storage":{"path":"/folder1"}}'
-ascli aoc admin resource node --name=AOC_NODE1_NAME --secret=AOC_NODE1_SECRET v3 access_key delete --id=testsub1
 ascli aoc admin resource node --name=AOC_NODE1_NAME --secret=AOC_NODE1_SECRET v3 events
 ascli aoc admin resource node --name=AOC_NODE1_NAME --secret=AOC_NODE1_SECRET v4 browse /
 ascli aoc admin resource node --name=AOC_NODE1_NAME --secret=AOC_NODE1_SECRET v4 delete /folder1
 ascli aoc admin resource node --name=AOC_NODE1_NAME --secret=AOC_NODE1_SECRET v4 mkdir /folder1
+ascli aoc admin resource node v3 name AOC_NODE1_NAME --secret=AOC_NODE1_SECRET access_key delete testsub1
 ascli aoc admin resource workspace list
 ascli aoc admin resource workspace_membership list --fields=ALL --query=@json:'{"page":1,"per_page":50,"embed":"member","inherited":false,"workspace_id":11363,"sort":"name"}'
-ascli aoc automation workflow --id="my_wf_id" action create --value=@json:'{"name":"toto"}' | tee action.info
+ascli aoc automation workflow "my_wf_id" action create --value=@json:'{"name":"toto"}' | tee action.info
 ascli aoc automation workflow create --value=@json:'{"name":"test_workflow"}'
-ascli aoc automation workflow delete --id="my_wf_id"
+ascli aoc automation workflow delete "my_wf_id"
 ascli aoc automation workflow list
 ascli aoc automation workflow list --select=@json:'{"name":"test_workflow"}' --fields=id --format=csv --display=data > test
 ascli aoc automation workflow list --value=@json:'{"show_org_workflows":"true"}' --scope=admin:all
@@ -1833,7 +1842,7 @@ ascli aoc files browse /
 ascli aoc files browse / -N --link=my_aoc_publink_folder
 ascli aoc files delete /testsrc
 ascli aoc files download --transfer=connect /200KB.1
-ascli aoc files file --id=my_file_id show
+ascli aoc files file show my_file_id
 ascli aoc files find / --value='\.partial$'
 ascli aoc files http_node_download --to-folder=. /200KB.1
 ascli aoc files mkdir /testsrc
@@ -1850,8 +1859,8 @@ ascli aoc org -N --link=my_aoc_publink_recv_from_aocuser
 ascli aoc organization
 ascli aoc packages list
 ascli aoc packages list --query=@json:'{"dropbox_id":"my_shbxid","sort":"-received_at","archived":false,"received":true,"has_content":true,"exclude_dropbox_packages":false}'
-ascli aoc packages recv --id="my_package_id" --to-folder=.
-ascli aoc packages recv --id=ALL --to-folder=. --once-only=yes --lock-port=12345
+ascli aoc packages recv "my_package_id" --to-folder=.
+ascli aoc packages recv ALL --to-folder=. --once-only=yes --lock-port=12345
 ascli aoc packages send --value=@json:'{"name":"Important files delivery","recipients":["external.user@example.com"]}' --new-user-option=@json:'{"package_contact":true}' testfile.bin
 ascli aoc packages send --value=@json:'{"name":"Important files delivery","recipients":["internal.user@example.com"],"note":"my note"}' testfile.bin
 ascli aoc packages send --workspace="my_aoc_shbx_ws" --value=@json:'{"name":"Important files delivery","recipients":["my_aoc_shbx_name"]}' testfile.bin
@@ -1862,20 +1871,20 @@ ascli aoc user info show
 ascli aoc user shared_inboxes
 ascli aoc user workspaces
 ascli aoc workspace
-ascli ats access_key --id=ak_aws delete
-ascli ats access_key --id=akibmcloud --secret=somesecret cluster
-ascli ats access_key --id=akibmcloud --secret=somesecret node browse /
-ascli ats access_key --id=akibmcloud delete
+ascli ats access_key cluster akibmcloud --secret=somesecret
 ascli ats access_key create --cloud=aws --region=my_aws_bucket_region --params=@json:'{"id":"ak_aws","name":"my test key AWS","storage":{"type":"aws_s3","bucket":"my_aws_bucket_name","credentials":{"access_key_id":"my_aws_bucket_key","secret_access_key":"my_aws_bucket_secret"},"path":"/"}}'
 ascli ats access_key create --cloud=softlayer --region=my_icos_bucket_region --params=@json:'{"id":"akibmcloud","secret":"somesecret","name":"my test key","storage":{"type":"ibm-s3","bucket":"my_icos_bucket_name","credentials":{"access_key_id":"my_icos_bucket_key","secret_access_key":"my_icos_bucket_secret"},"path":"/"}}'
+ascli ats access_key delete ak_aws
+ascli ats access_key delete akibmcloud
 ascli ats access_key list --fields=name,id
+ascli ats access_key node akibmcloud browse / --secret=somesecret
 ascli ats api_key create
 ascli ats api_key instances
 ascli ats api_key list
 ascli ats cluster clouds
 ascli ats cluster list
 ascli ats cluster show --cloud=aws --region=eu-west-1
-ascli ats cluster show --id=1f412ae7-869a-445c-9c05-02ad16813be2
+ascli ats cluster show 1f412ae7-869a-445c-9c05-02ad16813be2
 ascli conf flush_tokens
 ascli conf wiz --url=https://my_aoc_org.ibmaspera.com --config-file=SAMPLE_CONFIG_FILE --pkeypath='' --username=my_aoc_user_email --test-mode=yes
 ascli conf wiz --url=https://my_aoc_org.ibmaspera.com --config-file=SAMPLE_CONFIG_FILE --pkeypath='' --username=my_aoc_user_email --test-mode=yes --use-generic-client=yes
@@ -1903,7 +1912,7 @@ ascli console transfer smart list
 ascli console transfer smart sub my_job_id @json:'{"source":{"paths":["my_file_name"]},"source_type":"user_selected"}'
 ascli cos -N --bucket=my_icos_bucket_name --endpoint=my_icos_bucket_endpoint --apikey=my_icos_bucket_apikey --crn=my_icos_resource_instance_id node info
 ascli cos -N --bucket=my_icos_bucket_name --region=my_icos_bucket_region --service-credentials=@json:@file:service_creds.json node info
-ascli cos node access_key --id=self show
+ascli cos node access_key show self
 ascli cos node download testfile.bin --to-folder=.
 ascli cos node info
 ascli cos node upload testfile.bin
@@ -1911,26 +1920,27 @@ ascli faspex health
 ascli faspex package list
 ascli faspex package list --box=sent --fields=package_id --format=csv --display=data --query=@json:'{"max":1}');\
 ascli faspex package list --fields=package_id --format=csv --display=data --query=@json:'{"max":1}');\
-ascli faspex package recv --to-folder=. --box=sent --id="my_package_id"
-ascli faspex package recv --to-folder=. --id="my_package_id"
-ascli faspex package recv --to-folder=. --id=ALL --once-only=yes
+ascli faspex package recv "my_package_id" --to-folder=.
+ascli faspex package recv "my_package_id" --to-folder=. --box=sent
+ascli faspex package recv --to-folder=. "my_package_id"
 ascli faspex package recv --to-folder=. --link="my_faspex_publink_recv_from_fxuser"
+ascli faspex package recv ALL --to-folder=. --once-only=yes
 ascli faspex package send --delivery-info=@json:'{"title":"Important files delivery","recipients":["internal.user@example.com","FASPEX_USERNAME"]}' testfile.bin
 ascli faspex package send --link="my_faspex_publink_send_to_dropbox" --delivery-info=@json:'{"title":"Important files delivery"}' testfile.bin
 ascli faspex package send --link="my_faspex_publink_send_to_fxuser" --delivery-info=@json:'{"title":"Important files delivery"}' testfile.bin
 ascli faspex source name "Server Files" node br /
 ascli faspex5 node list --value=@json:'{"type":"received","subtype":"mypackages"}'
 ascli faspex5 package list --value=@json:'{"mailbox":"inbox","state":["released"]}'
-ascli faspex5 package receive --id="my_package_id" --to-folder=.
+ascli faspex5 package receive "my_package_id" --to-folder=.
 ascli faspex5 package send --value=@json:'{"title":"test title","recipients":[{"name":"${f5_user}"}]}' testfile.bin
 ascli node -N -Ptst_node_preview access_key create --value=@json:'{"id":"aoc_1","storage":{"type":"local","path":"/"}}'
-ascli node -N -Ptst_node_preview access_key delete --id=aoc_1
-ascli node async --id=1 bandwidth 
-ascli node async --id=1 counters 
-ascli node async --id=1 files 
+ascli node -N -Ptst_node_preview access_key delete aoc_1
+ascli node async bandwidth 1
+ascli node async counters 1
+ascli node async files 1
 ascli node async list
-ascli node async show --id=1
-ascli node async show --id=ALL
+ascli node async show 1
+ascli node async show ALL
 ascli node basic_token
 ascli node browse / -r
 ascli node delete folder_1/10MB.1
@@ -1939,8 +1949,8 @@ ascli node download --to-folder=. folder_1/testfile.bin
 ascli node health
 ascli node info
 ascli node search / --value=@json:'{"sort":"mtime"}'
-ascli node service --id=service1 delete
 ascli node service create @json:'{"id":"service1","type":"WATCHD","run_as":{"user":"user1"}}'
+ascli node service delete service1
 ascli node service list
 ascli node transfer list --value=@json:'{"active_only":true}'
 ascli node upload --to-folder="folder_1" --sources=@ts --ts=@json:'{"paths":[{"source":"/aspera-test-dir-small/10MB.1"}],"precalculate_job_size":true}' --transfer=node --transfer-info=@json:'{"url":"my_node_url","username":"my_node_user","password":"my_node_pass"}'
@@ -1948,12 +1958,12 @@ ascli node upload --to-folder=folder_1 --ts=@json:'{"target_rate_cap_kbps":10000
 ascli orchestrator info
 ascli orchestrator plugins
 ascli orchestrator processes
-ascli orchestrator workflow --id=ORCH_WORKFLOW_ID inputs
-ascli orchestrator workflow --id=ORCH_WORKFLOW_ID start --params=@json:'{"Param":"world !"}'
-ascli orchestrator workflow --id=ORCH_WORKFLOW_ID start --params=@json:'{"Param":"world !"}' --result=ResultStep:Complete_status_message
-ascli orchestrator workflow --id=ORCH_WORKFLOW_ID status
+ascli orchestrator workflow inputs ORCH_WORKFLOW_ID
 ascli orchestrator workflow list
+ascli orchestrator workflow start ORCH_WORKFLOW_ID --params=@json:'{"Param":"world !"}'
+ascli orchestrator workflow start ORCH_WORKFLOW_ID --params=@json:'{"Param":"world !"}' --result=ResultStep:Complete_status_message
 ascli orchestrator workflow status
+ascli orchestrator workflow status ORCH_WORKFLOW_ID
 ascli preview check --skip-types=office
 ascli preview folder 1 --skip-types=office --log-level=info --file-access=remote --ts=@json:'{"target_rate_kbps":1000000}'
 ascli preview scan --skip-types=office --log-level=info
@@ -2069,7 +2079,7 @@ OPTIONS: global
         --log-passwords=ENUM         show passwords in logs: yes, no
 
 COMMAND: config
-SUBCOMMANDS: gem_path genkey plugins flush_tokens list overview open echo id documentation wizard export_to_cli detect coffee ascp email_test smtp_settings proxy_check folder file check_update initdemo vault
+SUBCOMMANDS: list overview id preset open documentation genkey gem_path plugins flush_tokens echo wizard export_to_cli detect coffee ascp email_test smtp_settings proxy_check folder file check_update initdemo vault
 OPTIONS:
         --value=VALUE                extended value for create, update, list filter
         --property=VALUE             name of property to set
@@ -2388,19 +2398,19 @@ If you did not use the wizard, you can also manually create a [option preset](#l
 Lets create an [option preset](#lprt) called: `my_aoc_org` using `ask` interactive input (client info from previous step):
 
 ```
-ascli config id my_aoc_org ask url client_id client_secret
+ascli config preset ask my_aoc_org url client_id client_secret
 option: url> https://myorg.ibmaspera.com/
 option: client_id> BJLPObQiFw
 option: client_secret> yFS1mu-crbKuQhGFtfhYuoRW...
 updated: my_aoc_org
 ```
 
-(This can also be done in one line using the command `config id my_aoc_org update --url=...`)
+(This can also be done in one line using the command `config preset update my_aoc_org --url=...`)
 
 Define this [option preset](#lprt) as default configuration for the `aspera` plugin:
 
 ```
-ascli config id default set aoc my_aoc_org
+ascli config preset set default aoc my_aoc_org
 ```
 
 Note: Default `auth` method is `web` and default `redirect_uri` is `http://localhost:12345`. Leave those default values.
@@ -2463,7 +2473,7 @@ ascli aoc admin res client list
 :............:.........:
 : BJLPObQiFw : ascli :
 :............:.........:
-ascli aoc admin res client --id=BJLPObQiFw modify @json:'{"jwt_grant_enabled":true,"explicit_authorization_required":false}'
+ascli aoc admin res client modify --id=BJLPObQiFw @json:'{"jwt_grant_enabled":true,"explicit_authorization_required":false}'
 modified
 ```
 
@@ -2508,7 +2518,7 @@ To activate default use of JWT authentication for `ascli` using the [option pres
 Execute:
 
 ```
-ascli config id my_aoc_org update --auth=jwt --private-key=@val:@file:~/.aspera/ascli/aocapikey --username=laurent.martin.aspera@fr.ibm.com
+ascli config preset update my_aoc_org --auth=jwt --private-key=@val:@file:~/.aspera/ascli/aocapikey --username=laurent.martin.aspera@fr.ibm.com
 ```
 
 Note: the private key argument represents the actual PEM string. In order to read the content from a file, use the @file: prefix. But if the @file: argument is used as is, it will read the file and set in the config file. So to keep the "@file" tag in the configuration file, the @val: prefix is added.
@@ -2588,6 +2598,17 @@ Refer to the AoC API for full list of query parameters, or use the browser in de
 
 Note the option `select` can also be used to further refine selection, refer to [section earlier](#option_select).
 
+### <a id="res_select"></a>Selecting a resource
+
+Resources are identified by a unique `id`, as well as a unique `name` (case insensitive).
+
+To execute an action on a specific resource, select it using one of those methods:
+
+* *recommended:* give id directly on command line *after the action*: `aoc admin res node show 123`
+* give name on command line *after the action*: `aoc admin res node show name abc`
+* provide option `id` : `aoc admin res node show --id=123`
+* provide option `name` : `aoc admin res node show --name=abc`
+
 ### Access Key secrets
 
 In order to access some administrative actions on "nodes" (in fact, access keys), the associated secret is required.
@@ -2595,7 +2616,7 @@ It is usually provided using the `secret` option.
 For example in a command like:
 
 ```
-ascli aoc admin res node --id="access_key1" --secret="secret1" v3 info
+ascli aoc admin res node --id=123 --secret="secret1" v3 info
 ```
 
 It is also possible to provide a set of secrets used on a regular basis using the [secret vault](#vault).
@@ -3128,15 +3149,15 @@ References:
 Then, to register the key by default for the ats plugin, create a preset. Execute:
 
 ```
-ascli config id my_ibm_ats update --ibm-api-key=my_secret_api_key_here_8f8d9fdakjhfsashjk678
-ascli config id default set ats my_ibm_ats
+ascli config preset update my_ibm_ats --ibm-api-key=my_secret_api_key_here_8f8d9fdakjhfsashjk678
+ascli config preset set default ats my_ibm_ats
 ascli ats api_key instances
 +--------------------------------------+
 | instance                             |
 +--------------------------------------+
 | aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee |
 +--------------------------------------+
-ascli config id my_ibm_ats update --instance=aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee
+ascli config preset update my_ibm_ats --instance=aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee
 ascli ats api_key create
 +--------+----------------------------------------------+
 | key    | value                                        |
@@ -3144,7 +3165,7 @@ ascli ats api_key create
 | id     | ats_XXXXXXXXXXXXXXXXXXXXXXXX                 |
 | secret | YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY |
 +--------+----------------------------------------------+
-ascli config id my_ibm_ats update --ats-key=ats_XXXXXXXXXXXXXXXXXXXXXXXX --ats-secret=YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY
+ascli config preset update my_ibm_ats --ats-key=ats_XXXXXXXXXXXXXXXXXXXXXXXX --ats-secret=YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY
 ```
 
 ## Examples
@@ -3773,9 +3794,9 @@ Note that the `xfer` user has a special protected shell: `aspshell`, so changing
 ```
 su -s /bin/bash - xfer
 
-ascli config id previewconf update --url=https://localhost:9092 --username=my_access_key --password=my_secret --skip-types=office --lock-port=12346
+ascli config preset update previewconf --url=https://localhost:9092 --username=my_access_key --password=my_secret --skip-types=office --lock-port=12346
 
-ascli config id default set preview previewconf
+ascli config preset set default preview previewconf
 ```
 
 Here we assume that Office file generation is disabled, else remove this option.
@@ -3821,8 +3842,8 @@ Lets first setup a script that will be used in the scheduler and sets up the env
 Example of startup script `cron_ascli`, which sets the Ruby environment and adds some timeout protection:
 
 ```
-#!/bin/bash
-# set a timeout protection, just in case
+ #!/bin/bash
+ # set a timeout protection, just in case
 case "$*" in *trev*) tmout=10m ;; *) tmout=30m ;; esac
 . /etc/profile.d/rvm.sh
 rvm use 2.6 --quiet
@@ -3937,28 +3958,28 @@ The `smtp` option is a hash table (extended value) with the following fields:
 ## Example of configuration:
 
 ```
-ascli config id smtp_google set server smtp.google.com
-ascli config id smtp_google set username john@gmail.com
-ascli config id smtp_google set password P@ssw0rd
+ascli config preset set smtp_google server smtp.google.com
+ascli config preset set smtp_google username john@gmail.com
+ascli config preset set smtp_google password P@ssw0rd
 ```
 
 or
 
 ```
-ascli config id smtp_google init @json:'{"server":"smtp.google.com","username":"john@gmail.com","password":"P@ssw0rd"}'
+ascli config preset init smtp_google @json:'{"server":"smtp.google.com","username":"john@gmail.com","password":"P@ssw0rd"}'
 ```
 
 or
 
 ```
-ascli config id smtp_google update --server=smtp.google.com --username=john@gmail.com --password=P@ssw0rd
+ascli config preset update smtp_google --server=smtp.google.com --username=john@gmail.com --password=P@ssw0rd
 ```
 
 Set this configuration as global default, for instance:
 
 ```
-ascli config id cli_default set smtp @val:@preset:smtp_google
-ascli config id default set config cli_default
+ascli config preset set cli_default smtp @val:@preset:smtp_google
+ascli config preset set default config cli_default
 ```
 
 ## Email templates
@@ -4159,9 +4180,9 @@ ascli server upload source_hot --to-folder=/Upload/target_hot --lock-port=12345 
 
 The local folder (here, relative path: source_hot) is sent (upload) to basic fasp server, source files are deleted after transfer. growing files will be sent only once they don't grow anymore (based on an 8-second cooloff period). If a transfer takes more than the execution period, then the subsequent execution is skipped (lock-port).
 
-# Aspera Health check and Nagios
+# Health check and Nagios
 
-Each plugin provide a `health` command that will check the health status of the application. Example:
+Most plugin provide a `health` command that will check the health status of the application. Example:
 
 ```
 ascli console health
@@ -4238,10 +4259,13 @@ So, it evolved into `ascli`:
 
     * new: support transfer agent: [Transfer SDK](#agt_trsdk)
     * new: support [http socket options](#http_options)
-    * new: logs hide passwords and secrets, option `log_passwords`
+    * new: logs hide passwords and secrets, option `log_passwords` to enable logging secrets
     * new: `config vault` supports encrypted passwords, also macos keychain
+    * new: identifier can be provided using either option `id` or directly after the command, e.g. `delete 123` is the same as `delete --id=123`
     * change: when using wss, use [ruby's CA certs](#certificates)
-    * change: (break) renaming of some classes (transfer agents and few other)
+    * change: (break) renaming of some internal classes (transfer agents and few other)
+    * change: (break) `aoc admin res node` does not take workspace main node as default node if no `id` specified.
+    * change: (break) options `id` and `name` cannot be specified at the same time anymore, use [positional identifer or name selection](#res_select)
     * fix: various smaller fixes
   
 * 4.4.0
@@ -4673,8 +4697,8 @@ Some commands and sub commands may ask for the same option name.
 Currently, since option definition is position independent (last one wins), it is not possible
 to give an option to a command and the same option with different value to a sub command.
 
-For instance, if an entity is identified by the option `id` but later on the command line another `id` option is required, the later will override the earlier one, and both entity will use the same id.
-As a workaround use another option, if available, to identify the entity.
+For instance, if an entity is identified by the option `id` but later on the command line another `id` option is required, then the later will override the earlier one, and both entity will use the same id.
+As a solution, use the position specific notation for selection, i.e. provide the identified just after command and do not use option `id`.
 
 This happens typically for the `node` sub command, e.g. identify the node by name instead of id.
 

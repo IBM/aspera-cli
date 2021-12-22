@@ -126,7 +126,7 @@ If you want to use <%=tool%> with another server, and in order to make further c
 * download a file
 
 ```
-<%=cmd%> config id myserver update --url=ssh://demo.asperasoft.com:33001 --username=asperaweb --password=_demo_pass_
+<%=cmd%> config preset update myserver --url=ssh://demo.asperasoft.com:33001 --username=asperaweb --password=_demo_pass_
 ```
 
 ```
@@ -134,7 +134,7 @@ updated: myserver
 ```
 
 ```
-<%=cmd%> config id default set server myserver
+<%=cmd%> config preset set default server myserver
 ```
 
 ```
@@ -818,13 +818,13 @@ A <%=prst%> is simply a collection of parameters and their associated values in 
 A named <%=prst%> can be modified directly using <%=tool%>, which will update the configuration file :
 
 ```
-<%=cmd%> config id <<%=opprst%>> set|delete|show|initialize|update
+<%=cmd%> config preset set|delete|show|initialize|update <<%=opprst%>>
 ```
 
 The command `update` allows the easy creation of <%=prst%> by simply providing the options in their command line format, e.g. :
 
 ```
-<%=cmd%> config id demo_server update --url=ssh://demo.asperasoft.com:33001 --username=asperaweb --password=_demo_pass_ --ts=@json:'{"precalculate_job_size":true}'
+<%=cmd%> config preset update demo_server --url=ssh://demo.asperasoft.com:33001 --username=asperaweb --password=_demo_pass_ --ts=@json:'{"precalculate_job_size":true}'
 ```
 
 * This creates a <%=prst%> `demo_server` with all provided options.
@@ -832,33 +832,42 @@ The command `update` allows the easy creation of <%=prst%> by simply providing t
 The command `set` allows setting individual options in a <%=prst%>.
 
 ```
-<%=cmd%> config id demo_server set password _demo_pass_
+<%=cmd%> config preset set demo_server password _demo_pass_
 ```
 
 The command `initialize`, like `update` allows to set several parameters at once, but it deletes an existing configuration instead of updating it, and expects a _[Structured Value](#native)_.
 
 ```
-<%=cmd%> config id demo_server initialize @json:'{"url":"ssh://demo.asperasoft.com:33001","username":"asperaweb","password":"_demo_pass_","ts":{"precalculate_job_size":true}}'
-```
-
-A good practice is to not manually edit the configuration file and use modification commands instead.
-If necessary, the configuration file can be edited (or simply consulted) with:
-
-```
-<%=cmd%> config open
+<%=cmd%> config preset initialize demo_server @json:'{"url":"ssh://demo.asperasoft.com:33001","username":"asperaweb","password":"_demo_pass_","ts":{"precalculate_job_size":true}}'
 ```
 
 A full terminal based overview of the configuration can be displayed using:
 
 ```
-<%=cmd%> config over
+<%=cmd%> config preset over
 ```
 
 A list of <%=prst%> can be displayed using:
 
 ```
+<%=cmd%> config preset list
+```
+
+A good practice is to not manually edit the configuration file and use modification commands instead.
+If necessary, the configuration file can opened in a text editor with:
+
+```
+<%=cmd%> config open
+```
+
+Older format for commands are still supported:
+
+```
+<%=cmd%> config id <name> set|delete|show|initialize|update
+<%=cmd%> config over
 <%=cmd%> config list
 ```
+
 
 ### <a id="lprtconf"></a>Special <%=prstt%>: config
 
@@ -875,8 +884,8 @@ Note that special plugin name: `config` can be associated with a preset that is 
 Operations on this preset are done using regular `config` operations:
 
 ```
-<%=cmd%> config id default set _plugin_name_ _default_preset_for_plugin_
-<%=cmd%> config id default get _plugin_name_
+<%=cmd%> config preset set default _plugin_name_ _default_preset_for_plugin_
+<%=cmd%> config preset get default _plugin_name_
 "_default_preset_for_plugin_"
 ```
 
@@ -923,10 +932,10 @@ The user may create as many <%=prsts%> as needed. For instance, a particular <%=
 
 Values in the configuration also follow the [Extended Value Syntax](#extended).
 
-Note: if the user wants to use the [Extended Value Syntax](#extended) inside the configuration file, using the `config id update` command, the user shall use the `@val:` prefix. Example:
+Note: if the user wants to use the [Extended Value Syntax](#extended) inside the configuration file, using the `config preset update` command, the user shall use the `@val:` prefix. Example:
 
 ```
-<%=cmd%> config id my_aoc_org set private_key @val:@file:"$HOME/.aspera/<%=cmd%>/aocapikey"
+<%=cmd%> config preset set my_aoc_org private_key @val:@file:"$HOME/.aspera/<%=cmd%>/aocapikey"
 ```
 
 This creates the <%=prst%>:
@@ -962,17 +971,17 @@ is an underscore. E.g. --xxx-yyy  on command line gives xxx_yyy in configuration
 The main plugin name is `config`, so it is possible to define a default <%=prst%> for the main plugin with:
 
 ```
-<%=cmd%> config id cli_default set interactive no
+<%=cmd%> config preset set cli_default interactive no
 ```
 
 ```
-<%=cmd%> config id default set config cli_default
+<%=cmd%> config preset set default config cli_default
 ```
 
 A <%=prst%> value can be removed with `unset`:
 
 ```
-<%=cmd%> config id cli_default unset interactive
+<%=cmd%> config preset unset cli_default interactive
 ```
 
 Example: Define options using command line:
@@ -1002,27 +1011,27 @@ This can also be provisioned in a config file:
 * Build <%=prst%>
 
 ```
-<%=cmd%> config id shares06 set url https://10.25.0.6
-<%=cmd%> config id shares06 set username john
-<%=cmd%> config id shares06 set password 4sp3ra
+<%=cmd%> config preset set shares06 url https://10.25.0.6
+<%=cmd%> config preset set shares06 username john
+<%=cmd%> config preset set shares06 password 4sp3ra
 ```
 
 Note that this can also be done with one single command:
 
 ```
-<%=cmd%> config id shares06 init @json:'{"url":"https://10.25.0.6","username":"john","password":"4sp3ra"}'
+<%=cmd%> config preset init shares06 @json:'{"url":"https://10.25.0.6","username":"john","password":"4sp3ra"}'
 ```
 
 or
 
 ```
-<%=cmd%> config id shares06 update --url=https://10.25.0.6 --username=john --password=4sp3ra
+<%=cmd%> config preset update shares06 --url=https://10.25.0.6 --username=john --password=4sp3ra
 ```
 
 * Define this <%=prst%> as the default <%=prst%> for the specified plugin (`shares`)
 
 ```
-<%=cmd%> config id default set shares shares06
+<%=cmd%> config preset set default shares shares06
 ```
 
 * Display the content of configuration file in table format
@@ -1878,19 +1887,19 @@ If you did not use the wizard, you can also manually create a <%=prst%> for <%=t
 Lets create an <%=prst%> called: `my_aoc_org` using `ask` interactive input (client info from previous step):
 
 ```
-<%=cmd%> config id my_aoc_org ask url client_id client_secret
+<%=cmd%> config preset ask my_aoc_org url client_id client_secret
 option: url> https://myorg.ibmaspera.com/
 option: client_id> BJLPObQiFw
 option: client_secret> yFS1mu-crbKuQhGFtfhYuoRW...
 updated: my_aoc_org
 ```
 
-(This can also be done in one line using the command `config id my_aoc_org update --url=...`)
+(This can also be done in one line using the command `config preset update my_aoc_org --url=...`)
 
 Define this <%=prst%> as default configuration for the `aspera` plugin:
 
 ```
-<%=cmd%> config id default set aoc my_aoc_org
+<%=cmd%> config preset set default aoc my_aoc_org
 ```
 
 Note: Default `auth` method is `web` and default `redirect_uri` is `http://localhost:12345`. Leave those default values.
@@ -1953,7 +1962,7 @@ If you are not using the built-in client_id and secret, JWT needs to be authoriz
 :............:.........:
 : BJLPObQiFw : <%=cmd%> :
 :............:.........:
-<%=cmd%> aoc admin res client --id=BJLPObQiFw modify @json:'{"jwt_grant_enabled":true,"explicit_authorization_required":false}'
+<%=cmd%> aoc admin res client modify --id=BJLPObQiFw @json:'{"jwt_grant_enabled":true,"explicit_authorization_required":false}'
 modified
 ```
 
@@ -1998,7 +2007,7 @@ To activate default use of JWT authentication for <%=tool%> using the <%=prst%>,
 Execute:
 
 ```
-<%=cmd%> config id my_aoc_org update --auth=jwt --private-key=@val:@file:~/.aspera/<%=cmd%>/aocapikey --username=laurent.martin.aspera@fr.ibm.com
+<%=cmd%> config preset update my_aoc_org --auth=jwt --private-key=@val:@file:~/.aspera/<%=cmd%>/aocapikey --username=laurent.martin.aspera@fr.ibm.com
 ```
 
 Note: the private key argument represents the actual PEM string. In order to read the content from a file, use the @file: prefix. But if the @file: argument is used as is, it will read the file and set in the config file. So to keep the "@file" tag in the configuration file, the @val: prefix is added.
@@ -2078,6 +2087,17 @@ Refer to the AoC API for full list of query parameters, or use the browser in de
 
 Note the option `select` can also be used to further refine selection, refer to [section earlier](#option_select).
 
+### <a id="res_select"></a>Selecting a resource
+
+Resources are identified by a unique `id`, as well as a unique `name` (case insensitive).
+
+To execute an action on a specific resource, select it using one of those methods:
+
+* *recommended:* give id directly on command line *after the action*: `aoc admin res node show 123`
+* give name on command line *after the action*: `aoc admin res node show name abc`
+* provide option `id` : `aoc admin res node show --id=123`
+* provide option `name` : `aoc admin res node show --name=abc`
+
 ### Access Key secrets
 
 In order to access some administrative actions on "nodes" (in fact, access keys), the associated secret is required.
@@ -2085,7 +2105,7 @@ It is usually provided using the `secret` option.
 For example in a command like:
 
 ```
-<%=cmd%> aoc admin res node --id="access_key1" --secret="secret1" v3 info
+<%=cmd%> aoc admin res node --id=123 --secret="secret1" v3 info
 ```
 
 It is also possible to provide a set of secrets used on a regular basis using the [secret vault](#vault).
@@ -2618,15 +2638,15 @@ References:
 Then, to register the key by default for the ats plugin, create a preset. Execute:
 
 ```
-<%=cmd%> config id my_ibm_ats update --ibm-api-key=my_secret_api_key_here_8f8d9fdakjhfsashjk678
-<%=cmd%> config id default set ats my_ibm_ats
+<%=cmd%> config preset update my_ibm_ats --ibm-api-key=my_secret_api_key_here_8f8d9fdakjhfsashjk678
+<%=cmd%> config preset set default ats my_ibm_ats
 <%=cmd%> ats api_key instances
 +--------------------------------------+
 | instance                             |
 +--------------------------------------+
 | aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee |
 +--------------------------------------+
-<%=cmd%> config id my_ibm_ats update --instance=aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee
+<%=cmd%> config preset update my_ibm_ats --instance=aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee
 <%=cmd%> ats api_key create
 +--------+----------------------------------------------+
 | key    | value                                        |
@@ -2634,7 +2654,7 @@ Then, to register the key by default for the ats plugin, create a preset. Execut
 | id     | ats_XXXXXXXXXXXXXXXXXXXXXXXX                 |
 | secret | YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY |
 +--------+----------------------------------------------+
-<%=cmd%> config id my_ibm_ats update --ats-key=ats_XXXXXXXXXXXXXXXXXXXXXXXX --ats-secret=YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY
+<%=cmd%> config preset update my_ibm_ats --ats-key=ats_XXXXXXXXXXXXXXXXXXXXXXXX --ats-secret=YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY
 ```
 
 ## Examples
@@ -3263,9 +3283,9 @@ Note that the `xfer` user has a special protected shell: `aspshell`, so changing
 ```
 su -s /bin/bash - xfer
 
-<%=cmd%> config id previewconf update --url=https://localhost:9092 --username=my_access_key --password=my_secret --skip-types=office --lock-port=12346
+<%=cmd%> config preset update previewconf --url=https://localhost:9092 --username=my_access_key --password=my_secret --skip-types=office --lock-port=12346
 
-<%=cmd%> config id default set preview previewconf
+<%=cmd%> config preset set default preview previewconf
 ```
 
 Here we assume that Office file generation is disabled, else remove this option.
@@ -3311,8 +3331,8 @@ Lets first setup a script that will be used in the scheduler and sets up the env
 Example of startup script `cron_<%=cmd%>`, which sets the Ruby environment and adds some timeout protection:
 
 ```
-#!/bin/bash
-# set a timeout protection, just in case
+ #!/bin/bash
+ # set a timeout protection, just in case
 case "$*" in *trev*) tmout=10m ;; *) tmout=30m ;; esac
 . /etc/profile.d/rvm.sh
 rvm use 2.6 --quiet
@@ -3427,28 +3447,28 @@ The `smtp` option is a hash table (extended value) with the following fields:
 ## Example of configuration:
 
 ```
-<%=cmd%> config id smtp_google set server smtp.google.com
-<%=cmd%> config id smtp_google set username john@gmail.com
-<%=cmd%> config id smtp_google set password P@ssw0rd
+<%=cmd%> config preset set smtp_google server smtp.google.com
+<%=cmd%> config preset set smtp_google username john@gmail.com
+<%=cmd%> config preset set smtp_google password P@ssw0rd
 ```
 
 or
 
 ```
-<%=cmd%> config id smtp_google init @json:'{"server":"smtp.google.com","username":"john@gmail.com","password":"P@ssw0rd"}'
+<%=cmd%> config preset init smtp_google @json:'{"server":"smtp.google.com","username":"john@gmail.com","password":"P@ssw0rd"}'
 ```
 
 or
 
 ```
-<%=cmd%> config id smtp_google update --server=smtp.google.com --username=john@gmail.com --password=P@ssw0rd
+<%=cmd%> config preset update smtp_google --server=smtp.google.com --username=john@gmail.com --password=P@ssw0rd
 ```
 
 Set this configuration as global default, for instance:
 
 ```
-<%=cmd%> config id cli_default set smtp @val:@preset:smtp_google
-<%=cmd%> config id default set config cli_default
+<%=cmd%> config preset set cli_default smtp @val:@preset:smtp_google
+<%=cmd%> config preset set default config cli_default
 ```
 
 ## Email templates
@@ -3629,9 +3649,9 @@ Once <%=tool%> parameters are defined, run the command using the OS native sched
 
 The local folder (here, relative path: source_hot) is sent (upload) to basic fasp server, source files are deleted after transfer. growing files will be sent only once they don't grow anymore (based on an 8-second cooloff period). If a transfer takes more than the execution period, then the subsequent execution is skipped (lock-port).
 
-# Aspera Health check and Nagios
+# Health check and Nagios
 
-Each plugin provide a `health` command that will check the health status of the application. Example:
+Most plugin provide a `health` command that will check the health status of the application. Example:
 
 ```
 <%=cmd%> console health
@@ -3708,10 +3728,13 @@ So, it evolved into <%=tool%>:
 
     * new: support transfer agent: [Transfer SDK](#agt_trsdk)
     * new: support [http socket options](#http_options)
-    * new: logs hide passwords and secrets, option `log_passwords`
+    * new: logs hide passwords and secrets, option `log_passwords` to enable logging secrets
     * new: `config vault` supports encrypted passwords, also macos keychain
+    * new: identifier can be provided using either option `id` or directly after the command, e.g. `delete 123` is the same as `delete --id=123`
     * change: when using wss, use [ruby's CA certs](#certificates)
-    * change: (break) renaming of some classes (transfer agents and few other)
+    * change: (break) renaming of some internal classes (transfer agents and few other)
+    * change: (break) `aoc admin res node` does not take workspace main node as default node if no `id` specified.
+    * change: (break) options `id` and `name` cannot be specified at the same time anymore, use [positional identifer or name selection](#res_select)
     * fix: various smaller fixes
   
 * 4.4.0
@@ -4143,8 +4166,8 @@ Some commands and sub commands may ask for the same option name.
 Currently, since option definition is position independent (last one wins), it is not possible
 to give an option to a command and the same option with different value to a sub command.
 
-For instance, if an entity is identified by the option `id` but later on the command line another `id` option is required, the later will override the earlier one, and both entity will use the same id.
-As a workaround use another option, if available, to identify the entity.
+For instance, if an entity is identified by the option `id` but later on the command line another `id` option is required, then the later will override the earlier one, and both entity will use the same id.
+As a solution, use the position specific notation for selection, i.e. provide the identified just after command and do not use option `id`.
 
 This happens typically for the `node` sub command, e.g. identify the node by name instead of id.
 

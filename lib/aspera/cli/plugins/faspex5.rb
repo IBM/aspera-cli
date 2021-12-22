@@ -98,7 +98,7 @@ module Aspera
               parameters=options.get_option(:value,:optional)
               return {:type => :object_list, :data=>@api_v5.read('packages',parameters)[:data]['packages']}
             when :show
-              id=options.get_option(:id,:mandatory)
+              id=instance_identifier()
               return {:type => :single_object, :data=>@api_v5.read("packages/#{id}")[:data]}
             when :send
               parameters=options.get_option(:value,:mandatory)
@@ -109,7 +109,7 @@ module Aspera
               return Main.result_transfer(self.transfer.start(transfer_spec,{:src=>:node_gen3}))
             when :receive
               pkg_type='received'
-              pack_id=options.get_option(:id,:mandatory)
+              pack_id=instance_identifier()
               package_ids=[pack_id]
               skip_ids_data=[]
               skip_ids_persistency=nil

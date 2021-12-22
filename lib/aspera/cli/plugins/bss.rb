@@ -46,7 +46,7 @@ module Aspera
               # give fields to keep order
               return {:type=>:object_list, :data=>result['data'][object],:fields=> FIELDS['bssSubscriptions']}
             when :show
-              id = self.options.get_option(:id,:mandatory)
+              id = self.instance_identifier()
               request={
                 'variables'=>{'id'=>id},
                 'query'=>"query($id: ID!) {#{object}(id: $id) { #{all_fields('bssSubscriptions')} roleAssignments(uniqueSubjectId: true) { id subjectId } instances { id state planId serviceId ssmSubscriptionId entitlement { id } aocOrganization { id subdomainName name status tier urlId trialExpiresAt users(organizationAdmin: true) { id name email atsAdmin subscriptionAdmin } } } } }"
@@ -55,7 +55,7 @@ module Aspera
               result.delete('instances')
               return {:type=>:single_object, :data=>result}
             when :instances
-              id = self.options.get_option(:id,:mandatory)
+              id = self.instance_identifier()
               request={
                 'variables'=>{'id'=>id},
                 'query'=>"query($id: ID!) {#{object}(id: $id) { aocOrganization { id subdomainName name status tier urlId trialExpiresAt } } } }"

@@ -44,9 +44,7 @@ module Aspera
           commands=[:create,:list,:show,:modify,:delete,:node,:cluster,:entitlement]
           command=self.options.get_next_command(commands)
           # those dont require access key id
-          unless [:create,:list].include?(command)
-            access_key_id=self.options.get_option(:id,:mandatory)
-          end
+          access_key_id=self.instance_identifier() unless [:create,:list].include?(command)
           case command
           when :create
             params=self.options.get_option(:params,:optional) || {}
@@ -135,10 +133,10 @@ module Aspera
           when :list
             return {:type=>:object_list, :data=>@ats_api_pub.all_servers, :fields=>['id','cloud','region']}
           when :show
-            server_id=self.options.get_option(:id,:optional)
-            if server_id.nil?
+            if self.options.get_option(:cloud,:optional) or self.options.get_option(:region,:optional)
               server_data=server_by_cloud_region
             else
+              server_id=instance_identifier()
               server_data=@ats_api_pub.all_servers.select {|i| i['id'].eql?(server_id)}.first
               raise "no such server id" if server_data.nil?
             end
@@ -163,7 +161,7 @@ module Aspera
         def execute_action_api_key
           command=self.options.get_next_command([:instances, :create, :list, :show, :delete])
           if [:show,:delete].include?(command)
-            concerned_id=self.options.get_option(:id,:mandatory)
+            concerned_id=self.instance_identifier()
           end
           rest_add_header={}
           if !command.eql?(:instances)
