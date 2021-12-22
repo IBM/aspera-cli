@@ -345,6 +345,8 @@ module Aspera
         if execute_command
           @opt_mgr.final_errors.each do |msg|
             @plugin_env[:formater].display_message(:error,"ERROR:".bg_red.gray.blink+" Argument: "+msg)
+            # add code as exception if there is not already an error
+            exception_info=[Exception.new(msg),'UnusedArg'] if exception_info.nil?
           end
         end
         # 3- in case of error, fail the process status
