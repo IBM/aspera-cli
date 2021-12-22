@@ -1544,6 +1544,12 @@ For ease of use and flexibility, the list of files to transfer is specified by t
 --sources=@ts --ts=@json:'{"paths":[{"source":"file1"},{"source":"file2"}]}'
 ```
 
+providing a file list directly to ascp:
+
+```
+... --sources=@ts --ts=@json:'{"paths":[],"EX_file_list":"filelist.txt"}'
+```
+
 * Not recommended: It is possible to specify bare ascp arguments using the pseudo [_transfer-spec_](#transferspec) parameter `EX_ascp_args`.
 
 ```
@@ -3730,13 +3736,15 @@ So, it evolved into <%=tool%>:
     * new: support [http socket options](#http_options)
     * new: logs hide passwords and secrets, option `log_passwords` to enable logging secrets
     * new: `config vault` supports encrypted passwords, also macos keychain
+    * new: `config preset` command for consistency with id
     * new: identifier can be provided using either option `id` or directly after the command, e.g. `delete 123` is the same as `delete --id=123`
     * change: when using wss, use [ruby's CA certs](#certificates)
-    * change: (break) renaming of some internal classes (transfer agents and few other)
-    * change: (break) `aoc admin res node` does not take workspace main node as default node if no `id` specified.
+    * change: unexpected parameter makes exit code not zero
     * change: (break) options `id` and `name` cannot be specified at the same time anymore, use [positional identifer or name selection](#res_select)
-    * fix: various smaller fixes
-  
+    * change: (break) `aoc admin res node` does not take workspace main node as default node if no `id` specified.
+    * change: (break): `orchestrator workflow status` requires id, and supports special id `ALL`
+    * fix: various smaller fixes and renaming of some internal classes (transfer agents and few other)
+
 * 4.4.0
 
     * new: `aoc packages list` add possibility to add filter with option `query`
@@ -3858,11 +3866,7 @@ So, it evolved into <%=tool%>:
 
 * 0.11
 
-    * add option to provide file list directly to ascp like this (only for direct transfer agent):
-
-```
-... --sources=@ts --ts=@json:'{"paths":[],"EX_file_list":"filelist"}'
-```
+    * add transfer spec option (agent `direct` only) to provide file list directly to ascp: `EX_file_list`.
 
 * 0.10.18
 
