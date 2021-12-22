@@ -110,12 +110,14 @@ module Aspera
             return {:type=>:object_list,:data=>result['Plugin']}
           when :workflow
             command=self.options.get_next_command([:list, :status, :inputs, :details, :start, :export])
-            unless [:list, :status].include?(command)
+            unless [:list].include?(command)
               wf_id=self.instance_identifier()
             end
             case command
             when :status
-              result=call_API('workflows_status')[:data]
+              options={}
+              options[:id]=wf_id unless wf_id.eql?('ALL')
+              result=call_API('workflows_status',options)[:data]
               return {:type=>:object_list,:data=>result['workflows']['workflow']}
             when :list
               result=call_API('workflows_list',id: 0)[:data]
