@@ -637,7 +637,7 @@ $(T)o2: $(T).exists
 	@touch $@
 $(T)o3: $(T).exists
 	@echo $@
-	$(EXE_MAN) orchestrator workflow status
+	$(EXE_MAN) orchestrator workflow status ALL
 	@touch $@
 $(T)o4: $(T).exists
 	@echo $@
@@ -793,7 +793,7 @@ $(T)sy5: $(T).exists
 tnsync: $(T)sy1 $(T)sy2 $(T)sy3 $(T)sy4 $(T)sy5
 
 TEST_CONFIG=$(DIR_TMP)sample.conf
-EXETESTC=$(EXETESTB) --config-file=$(TEST_CONFIG) 
+EXETESTC=$(EXETESTB) --config-file=$(TEST_CONFIG)
 clean::
 	rm -f $(TEST_CONFIG)
 $(T)conf_id_1: $(T).exists
