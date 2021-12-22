@@ -177,7 +177,7 @@ module Aspera
           when :mkdir
             path_list=get_next_arg_add_prefix(prefix_path,"folder path or ext.val. list")
             path_list=[path_list] unless path_list.is_a?(Array)
-            #TODO
+            #TODO: a command for that ?
             #resp=@api_node.create('space',{ "paths" => path_list.map {|i| {:type=>:directory,:path=>i} } } )
             resp=@api_node.create('files/create',{ "paths" => [{ :type => :directory, :path => path_list } ] } )
             return c_result_translate_rem_prefix(resp,'folder','created',prefix_path)
@@ -339,7 +339,7 @@ module Aspera
             case command
             when :list
               resp=@api_node.read('ops/transfers',self.options.get_option(:value,:optional))
-              return { :type => :object_list, :data => resp[:data], :fields=>['id','status']  } # TODO
+              return { :type => :object_list, :data => resp[:data], :fields=>['id','status']  } # TODO: useful?
             when :create
               resp=@api_node.create('streams',self.options.get_option(:value,:mandatory))
               return { :type => :single_object, :data => resp[:data] }

@@ -95,8 +95,8 @@ module Aspera
           'lock_rate_policy' => true,
           'source_root' => '',
           'content_protection' => nil,
-          'target_rate_cap_kbps' => 20000, # TODO
-          'target_rate_kbps' => 10000, # TODO
+          'target_rate_cap_kbps' => 20000, # TODO: is this value useful ?
+          'target_rate_kbps' => 10000, # TODO: get from where?
           'cipher' => 'aes-128',
           'cipher_allowed' => nil,
           'http_fallback' => false,
