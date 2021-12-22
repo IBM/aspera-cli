@@ -589,7 +589,7 @@ END_OF_TEMPLATE
         # require existing preset
         PRESET_EXST_ACTIONS=[:show,:delete,:get,:unset].freeze
         # require id
-        PRESET_INSTANCE_ACTIONS=[PRESET_EXST_ACTIONS,:initialize,:update,:ask].flatten.freeze
+        PRESET_INSTANCE_ACTIONS=[PRESET_EXST_ACTIONS,:initialize,:update,:ask,:set].flatten.freeze
         PRESET_ALL_ACTIONS=[PRESET_GBL_ACTIONS,PRESET_INSTANCE_ACTIONS].flatten.freeze
 
         def execute_file_action(action,config_name)
