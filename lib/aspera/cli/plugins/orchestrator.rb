@@ -111,7 +111,7 @@ module Aspera
           when :workflow
             command=self.options.get_next_command([:list, :status, :inputs, :details, :start, :export])
             unless [:list, :status].include?(command)
-              wf_id=self.options.get_option(:id,:mandatory)
+              wf_id=self.instance_identifier()
             end
             case command
             when :status

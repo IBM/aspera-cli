@@ -584,87 +584,107 @@ END_OF_TEMPLATE
           raise "unexpected case: #{command}"
         end
 
-        ACTIONS=[:gem_path, :genkey,:plugins,:flush_tokens,:list,:overview,:open,:echo,:id,:documentation,:wizard,:export_to_cli,:detect,:coffee,:ascp,:email_test,:smtp_settings,:proxy_check,:folder,:file,:check_update,:initdemo,:vault]
+        # legacy actions available globally
+        PRESET_GBL_ACTIONS=[:list,:overview].freeze
+        # require existing preset
+        PRESET_EXST_ACTIONS=[:show,:delete,:get,:unset].freeze
+        # require id
+        PRESET_INSTANCE_ACTIONS=[PRESET_EXST_ACTIONS,:initialize,:update,:ask].flatten.freeze
+        PRESET_ALL_ACTIONS=[PRESET_GBL_ACTIONS,PRESET_INSTANCE_ACTIONS].flatten.freeze
+
+        def execute_file_action(action,config_name)
+          action=self.options.get_next_command(PRESET_ALL_ACTIONS) if action.nil?
+          config_name=instance_identifier() if config_name.nil? and PRESET_INSTANCE_ACTIONS.include?(action)
+          # those operations require existing option
+          raise "no such preset: #{config_name}" if PRESET_EXST_ACTIONS.include?(action) and !@config_presets.has_key?(config_name)
+          selected_preset=@config_presets[config_name]
+          case action
+          when :list
+            return {type: :value_list, data: @config_presets.keys, name: 'name'}
+          when :overview
+            return {type: :object_list, data: self.class.flatten_all_config(@config_presets)}
+          when :show
+            raise "no such config: #{config_name}" if selected_preset.nil?
+            return {type: :single_object, data: selected_preset}
+          when :delete
+            @config_presets.delete(config_name)
+            save_presets_to_config_file
+            return Main.result_status("Deleted: #{config_name}")
+          when :get
+            param_name=self.options.get_next_argument('parameter name')
+            value=selected_preset[param_name]
+            raise "no such option in preset #{config_name} : #{param_name}" if value.nil?
+            case value
+            when Numeric,String; return {type: :text, data: ExtendedValue.instance.evaluate(value.to_s)}
+            end
+            return {type: :single_object, data: value}
+          when :unset
+            param_name=self.options.get_next_argument('parameter name')
+            selected_preset.delete(param_name)
+            save_presets_to_config_file
+            return Main.result_status("Removed: #{config_name}: #{param_name}")
+          when :set
+            param_name=self.options.get_next_argument('parameter name')
+            param_value=self.options.get_next_argument('parameter value')
+            if !@config_presets.has_key?(config_name)
+              Log.log.debug("no such config name: #{config_name}, initializing")
+              selected_preset=@config_presets[config_name]={}
+            end
+            if selected_preset.has_key?(param_name)
+              Log.log.warn("overwriting value: #{selected_preset[param_name]}")
+            end
+            selected_preset[param_name]=param_value
+            save_presets_to_config_file
+            return Main.result_status("Updated: #{config_name}: #{param_name} <- #{param_value}")
+          when :initialize
+            config_value=self.options.get_next_argument('extended value (Hash)')
+            if @config_presets.has_key?(config_name)
+              Log.log.warn("configuration already exists: #{config_name}, overwriting")
+            end
+            @config_presets[config_name]=config_value
+            save_presets_to_config_file
+            return Main.result_status("Modified: #{@option_config_file}")
+          when :update
+            #  get unprocessed options
+            theopts=self.options.get_options_table
+            Log.log.debug("opts=#{theopts}")
+            @config_presets[config_name]||={}
+            @config_presets[config_name].merge!(theopts)
+            # fix bug in 4.4 (creating key "true" in "default" preset)
+            @config_presets[CONF_PRESET_DEFAULT].delete(true) if @config_presets[CONF_PRESET_DEFAULT].is_a?(Hash)
+            save_presets_to_config_file
+            return Main.result_status("Updated: #{config_name}")
+          when :ask
+            self.options.ask_missing_mandatory=:yes
+            @config_presets[config_name]||={}
+            self.options.get_next_argument('option names',:multiple).each do |optionname|
+              option_value=self.options.get_interactive(:option,optionname)
+              @config_presets[config_name][optionname]=option_value
+            end
+            save_presets_to_config_file
+            return Main.result_status("Updated: #{config_name}")
+          end
+        end
+
+        ACTIONS=[PRESET_GBL_ACTIONS,:id,:preset,:open,:documentation,:genkey,:gem_path,:plugins,:flush_tokens,:echo,:wizard,:export_to_cli,:detect,:coffee,:ascp,:email_test,:smtp_settings,:proxy_check,:folder,:file,:check_update,:initdemo,:vault].flatten.freeze
 
         # "config" plugin
         def execute_action
           action=self.options.get_next_command(ACTIONS)
           case action
-          when :id
-            config_name=self.options.get_next_argument('config name')
-            action=self.options.get_next_command([:show,:delete,:set,:get,:unset,:initialize,:update,:ask])
-            # those operations require existing option
-            raise "no such preset: #{config_name}" if [:show,:delete,:get,:unset].include?(action) and !@config_presets.has_key?(config_name)
-            selected_preset=@config_presets[config_name]
-            case action
-            when :show
-              raise "no such config: #{config_name}" if selected_preset.nil?
-              return {type: :single_object, data: selected_preset}
-            when :delete
-              @config_presets.delete(config_name)
-              save_presets_to_config_file
-              return Main.result_status("Deleted: #{config_name}")
-            when :get
-              param_name=self.options.get_next_argument('parameter name')
-              value=selected_preset[param_name]
-              raise "no such option in preset #{config_name} : #{param_name}" if value.nil?
-              case value
-              when Numeric,String; return {type: :text, data: ExtendedValue.instance.evaluate(value.to_s)}
-              end
-              return {type: :single_object, data: value}
-            when :unset
-              param_name=self.options.get_next_argument('parameter name')
-              selected_preset.delete(param_name)
-              save_presets_to_config_file
-              return Main.result_status("Removed: #{config_name}: #{param_name}")
-            when :set
-              param_name=self.options.get_next_argument('parameter name')
-              param_value=self.options.get_next_argument('parameter value')
-              if !@config_presets.has_key?(config_name)
-                Log.log.debug("no such config name: #{config_name}, initializing")
-                selected_preset=@config_presets[config_name]={}
-              end
-              if selected_preset.has_key?(param_name)
-                Log.log.warn("overwriting value: #{selected_preset[param_name]}")
-              end
-              selected_preset[param_name]=param_value
-              save_presets_to_config_file
-              return Main.result_status("Updated: #{config_name}: #{param_name} <- #{param_value}")
-            when :initialize
-              config_value=self.options.get_next_argument('extended value (Hash)')
-              if @config_presets.has_key?(config_name)
-                Log.log.warn("configuration already exists: #{config_name}, overwriting")
-              end
-              @config_presets[config_name]=config_value
-              save_presets_to_config_file
-              return Main.result_status("Modified: #{@option_config_file}")
-            when :update
-              #  get unprocessed options
-              theopts=self.options.get_options_table
-              Log.log.debug("opts=#{theopts}")
-              @config_presets[config_name]||={}
-              @config_presets[config_name].merge!(theopts)
-              # fix bug in 4.4 (creating key "true" in "default" preset)
-              @config_presets[CONF_PRESET_DEFAULT].delete(true) if @config_presets[CONF_PRESET_DEFAULT].is_a?(Hash)
-              save_presets_to_config_file
-              return Main.result_status("Updated: #{config_name}")
-            when :ask
-              self.options.ask_missing_mandatory=:yes
-              @config_presets[config_name]||={}
-              self.options.get_next_argument('option names',:multiple).each do |optionname|
-                option_value=self.options.get_interactive(:option,optionname)
-                @config_presets[config_name][optionname]=option_value
-              end
-              save_presets_to_config_file
-              return Main.result_status("Updated: #{config_name}")
-            end
+          when *PRESET_GBL_ACTIONS # older syntax
+            return execute_file_action(action,nil)
+          when :id # older syntax
+            return execute_file_action(nil,self.options.get_next_argument('config name'))
+          when :preset # newer syntax
+            return execute_file_action(nil,nil)
+          when :open
+            OpenApplication.instance.uri("#{@option_config_file}") #file://
+            return Main.result_nothing
           when :documentation
             section=options.get_next_argument('private key file path',:single,:optional)
             section='#'+section unless section.nil?
             OpenApplication.instance.uri("#{@help_url}#{section}")
-            return Main.result_nothing
-          when :open
-            OpenApplication.instance.uri("#{@option_config_file}") #file://
             return Main.result_nothing
           when :genkey # generate new rsa key
             private_key_path=self.options.get_next_argument('private key file path')
@@ -680,10 +700,6 @@ END_OF_TEMPLATE
             return {type: :value_list, data: deleted_files, name: 'file'}
           when :plugins
             return {type: :object_list, data: @plugins.keys.map { |i| { 'plugin' => i.to_s, 'path' => @plugins[i][:source] } } , fields: ['plugin','path']}
-          when :list
-            return {type: :value_list, data: @config_presets.keys, name: 'name'}
-          when :overview
-            return {type: :object_list, data: self.class.flatten_all_config(@config_presets)}
           when :wizard
             # interactive mode
             self.options.ask_missing_mandatory=true

@@ -288,11 +288,11 @@ module Aspera
                   id:      IdGenerator.from_list(['faspex_recv',self.options.get_option(:url,:mandatory),self.options.get_option(:username,:mandatory),self.options.get_option(:box,:mandatory).to_s]))
                 end
                 # get command line parameters
-                delivid=self.options.get_option(:id,:mandatory)
+                delivid=self.instance_identifier()
                 raise "empty id" if delivid.empty?
                 if delivid.eql?(VAL_ALL)
                   pkg_id_uri=mailbox_all_entries.map{|i|{:id=>i[PACKAGE_MATCH_FIELD],:uri=>self.class.get_fasp_uri_from_entry(i)}}
-                  # TODO : remove ids from skip not present in inbox
+                  # TODO : remove ids from skip not present in inbox to avoid growing too big
                   # skip_ids_data.select!{|id|pkg_id_uri.select{|p|p[:id].eql?(id)}}
                   pkg_id_uri.select!{|i|!skip_ids_data.include?(i[:id])}
                 else
@@ -316,7 +316,7 @@ module Aspera
                 if !link_data[:subpath].start_with?(PUB_LINK_EXTERNAL_MATCH)
                   raise CliBadArgument,"Pub link is #{link_data[:subpath]}. Expecting #{PUB_LINK_EXTERNAL_MATCH}"
                 end
-                # Note: unauthenticated API (autorization is in url params)
+                # Note: unauthenticated API (authorization is in url params)
                 api_public_link=Rest.new({:base_url=>link_data[:base_url]})
                 pkgdatares=api_public_link.call({:operation=>'GET',:subpath=>link_data[:subpath],:url_params=>{:passcode=>link_data[:query]['passcode']},:headers=>{'Accept'=>'application/xml'}})
                 if !pkgdatares[:http].body.start_with?('<?xml ')
@@ -422,7 +422,7 @@ module Aspera
               return self.entity_action(api_v4,'metadata_profiles',nil,:id)
             when :package
               pkg_box_type=self.options.get_next_command([:users])
-              pkg_box_id=self.options.get_option(:id,:mandatory)
+              pkg_box_id=self.instance_identifier()
               return self.entity_action(api_v4,"#{pkg_box_type}/#{pkg_box_id}/packages",nil,:id)
             end
           when :address_book

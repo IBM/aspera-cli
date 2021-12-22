@@ -44,7 +44,7 @@ setupprev:
 	sudo launchctl stop com.aspera.asperanoded;sleep 5
 	sudo launchctl start com.aspera.asperanoded
 	while ! $(EXE_NOMAN) node -N -Ptst_node_preview info;do echo waiting..;sleep 2;done
-	-$(EXE_NOMAN) node -N -Ptst_node_preview access_key delete --id=$$($(EXE_NOMAN) conf id tst_ak_preview get username)
+	-$(EXE_NOMAN) node -N -Ptst_node_preview access_key delete $$($(EXE_NOMAN) conf id tst_ak_preview get username)
 	$(EXE_NOMAN) node -N -Ptst_node_preview access_key create --value=@json:'{"id":"'$$($(EXE_NOMAN) conf id tst_ak_preview get username)'","name":"the test key","secret":"'$$($(EXE_NOMAN) conf id tst_ak_preview get password)'","storage":{"type":"local", "path":"/Users/xfer/docroot"}}'
 	rm -f ~/.aspera/$(EXENAME)/persist_store/preview_iteration_transfer_localhost_testkey.txt
 noderestart:
@@ -201,14 +201,14 @@ $(T)fx_psnd: $(T).exists
 $(T)fx_prs: $(T)fx_psnd
 	@echo $@
 	set -x;package_id=$$($(EXE_MAN) faspex package list --fields=package_id --format=csv --display=data --query=@json:'{"max":1}');\
-	$(EXE_MAN) faspex package recv --to-folder=$(DIR_TMP). --id="$${package_id}"
+	$(EXE_MAN) faspex package recv --to-folder=$(DIR_TMP). "$${package_id}"
 	set -x;package_id=$$($(EXE_MAN) faspex package list --box=sent --fields=package_id --format=csv --display=data --query=@json:'{"max":1}');\
-	$(EXE_MAN) faspex package recv --to-folder=$(DIR_TMP). --box=sent --id="$${package_id}"
+	$(EXE_MAN) faspex package recv "$${package_id}" --to-folder=$(DIR_TMP). --box=sent
 	@touch $@
 $(T)fx_pri: $(T).exists
 	@echo $@
 	set -x;package_id=$$($(EXE_NOMAN) faspex package list --fields=package_id --format=csv --display=data --query=@json:'{"max":1}');\
-	$(EXE_MAN) faspex package recv --to-folder=$(DIR_TMP). --id="$${package_id}"
+	$(EXE_MAN) faspex package recv "$${package_id}" --to-folder=$(DIR_TMP).
 	@touch $@
 $(T)fx_prl: $(T).exists
 	@echo $@
@@ -217,7 +217,7 @@ $(T)fx_prl: $(T).exists
 	@touch $@
 $(T)fx_prall: $(T).exists
 	@echo $@
-	$(EXE_MAN) faspex package recv --to-folder=$(DIR_TMP). --id=ALL --once-only=yes
+	$(EXE_MAN) faspex package recv ALL --to-folder=$(DIR_TMP). --once-only=yes
 	@touch $@
 $(T)fx_pslu: $(T).exists
 	@echo $@
@@ -281,7 +281,7 @@ $(T)nd4: $(T).exists
 	$(EXE_MAN) node service create @json:'{"id":"service1","type":"WATCHD","run_as":{"user":"user1"}}'
 	$(EXE_MAN) node service list
 	@echo "waiting a little...";sleep 2
-	$(EXE_MAN) node service --id=service1 delete
+	$(EXE_MAN) node service delete service1
 	$(EXE_MAN) node service list
 	@echo "waiting a little...";sleep 5
 	$(EXE_MAN) node service list
@@ -293,7 +293,7 @@ $(T)nd5: $(T).exists
 	@echo $@
 	$(EXE_MAN) node -N -Ptst_node_preview access_key create --value=@json:'{"id":"aoc_1","storage":{"type":"local","path":"/"}}'
 	sleep 2
-	$(EXE_MAN) node -N -Ptst_node_preview access_key delete --id=aoc_1
+	$(EXE_MAN) node -N -Ptst_node_preview access_key delete aoc_1
 	@touch $@
 $(T)nd6: $(T).exists
 	@echo $@
@@ -408,7 +408,7 @@ $(T)aocffid: $(T).exists
 	@echo $@
 	set -x;\
 	file_id=$$($(EXE_NOMAN) aoc files br /200KB.1 --fields=id --format=csv --display=data);\
-	$(EXE_MAN) aoc files file --id=$${file_id} show
+	$(EXE_MAN) aoc files file show $${file_id}
 	@touch $@
 $(T)aocfpub: $(T).exists
 	@echo $@
@@ -444,11 +444,11 @@ $(T)aocp2: $(T).exists
 $(T)aocp3: $(T).exists
 	@echo $@
 	set -x;package_id=$$($(EXE_NOMAN) aoc packages list --format=csv --fields=id --display=data|head -n 1);\
-	$(EXE_MAN) aoc packages recv --id="$${package_id}" --to-folder=$(DIR_TMP).
+	$(EXE_MAN) aoc packages recv "$${package_id}" --to-folder=$(DIR_TMP).
 	@touch $@
 $(T)aocp4: $(T).exists
 	@echo $@
-	$(EXE_MAN) aoc packages recv --id=ALL --to-folder=$(DIR_TMP). --once-only=yes --lock-port=12345
+	$(EXE_MAN) aoc packages recv ALL --to-folder=$(DIR_TMP). --once-only=yes --lock-port=12345
 	@touch $@
 $(T)aocp5: $(T).exists
 	@echo $@
@@ -499,7 +499,7 @@ $(T)aoc11: $(T).exists
 	@touch $@
 $(T)aoc12: $(T).exists
 	@echo $@
-	$(EXE_MAN) aoc admin resource node --name=$(CF_AOC_NODE1_NAME) --secret=$(CF_AOC_NODE1_SECRET) v3 access_key delete --id=testsub1
+	$(EXE_MAN) aoc admin resource node v3 name $(CF_AOC_NODE1_NAME) --secret=$(CF_AOC_NODE1_SECRET) access_key delete testsub1
 	@touch $@
 $(T)aoc9b: $(T).exists
 	@echo $@
@@ -548,7 +548,7 @@ $(T)aoccltreg: $(T).exists
 	$(EXE_MAN) aoc admin res client_registration_token create @json:'{"data":{"name":"test_client_reg1","client_subject_scopes":["alee","aejd"],"client_subject_enabled":true}}'
 	$(EXE_MAN) aoc admin res client_registration_token list
 	clt_reg_id=$$($(EXE_NOMAN) aoc admin res client_registration_token list --fields=ALL --select=@json:'{"data.name":"test_client_reg1"}' --fields=id --format=csv --display=data|tail -n 1);\
-	$(EXE_MAN) aoc admin res client_registration_token --id=$${clt_reg_id} delete
+	$(EXE_MAN) aoc admin res client_registration_token delete $${clt_reg_id}
 	@touch $@
 taocadm: $(T)aoc8 $(T)aoc9 $(T)aoc9b $(T)aoc10 $(T)aoc11 $(T)aoc12 $(T)aoc13 $(T)aoc14 $(T)aoc15 $(T)aocarself $(T)aoccltreg
 $(T)aocat4: $(T).exists
@@ -565,7 +565,7 @@ $(T)aocat6: $(T).exists
 	@touch $@
 $(T)aocat7: $(T).exists
 	@echo $@
-	$(EXE_MAN) aoc admin ats cluster show --id=1f412ae7-869a-445c-9c05-02ad16813be2
+	$(EXE_MAN) aoc admin ats cluster show 1f412ae7-869a-445c-9c05-02ad16813be2
 	@touch $@
 # see https://developer.ibm.com/api/view/aspera-prod:ibm-aspera:title-IBM_Aspera#113433
 $(T)aocat8: $(T).exists
@@ -592,11 +592,11 @@ $(T)aocat10: $(T).exists
 	@touch $@
 $(T)aocat11: $(T).exists
 	@echo $@
-	$(EXE_MAN) aoc admin ats access_key --id=akibmcloud --secret=somesecret node browse /
+	$(EXE_MAN) aoc admin ats access_key node akibmcloud --secret=somesecret browse /
 	@touch $@
 $(T)aocat13: $(T).exists
 	@echo $@
-	-$(EXE_MAN) aoc admin ats access_key --id=akibmcloud delete
+	-$(EXE_MAN) aoc admin ats access_key delete akibmcloud
 	@touch $@
 taocts: $(T)aocat4 $(T)aocat5 $(T)aocat6 $(T)aocat7 $(T)aocat8 $(T)aocat9 $(T)aocat10 $(T)aocat11 $(T)aocat13
 $(DIR_TMP)wf_id.txt: $(T)aocauto1
@@ -613,7 +613,7 @@ $(T)aocauto2: $(T).exists
 $(T)aocauto3: $(DIR_TMP)wf_id.txt
 	@echo $@
 	set -x;wf_id=$$(cat $(DIR_TMP)wf_id.txt);\
-	$(EXE_MAN) aoc automation workflow --id="$${wf_id}" action create --value=@json:'{"name":"toto"}' | tee action.info
+	$(EXE_MAN) aoc automation workflow "$${wf_id}" action create --value=@json:'{"name":"toto"}' | tee action.info
 	sed -nEe 's/^\| id +\| ([^ ]+) +\|/\1/p' action.info>tmp_action_id.txt
 	rm -f action.info
 	rm -f tmp_action_id.txt
@@ -621,7 +621,7 @@ $(T)aocauto3: $(DIR_TMP)wf_id.txt
 $(T)aocauto10: $(DIR_TMP)wf_id.txt
 	@echo $@
 	set -x;wf_id=$$(cat $(DIR_TMP)wf_id.txt);\
-	$(EXE_MAN) aoc automation workflow delete --id="$${wf_id}"
+	$(EXE_MAN) aoc automation workflow delete "$${wf_id}"
 	rm -f $(T)wf.id
 	@touch $@
 taocauto: $(T)aocauto1 $(T)aocauto2 $(T)aocauto3 $(T)aocauto10
@@ -641,19 +641,19 @@ $(T)o3: $(T).exists
 	@touch $@
 $(T)o4: $(T).exists
 	@echo $@
-	$(EXE_MAN) orchestrator workflow --id=$(CF_ORCH_WORKFLOW_ID) inputs
+	$(EXE_MAN) orchestrator workflow inputs $(CF_ORCH_WORKFLOW_ID)
 	@touch $@
 $(T)o5: $(T).exists
 	@echo $@
-	$(EXE_MAN) orchestrator workflow --id=$(CF_ORCH_WORKFLOW_ID) status
+	$(EXE_MAN) orchestrator workflow status $(CF_ORCH_WORKFLOW_ID)
 	@touch $@
 $(T)o6: $(T).exists
 	@echo $@
-	$(EXE_MAN) orchestrator workflow --id=$(CF_ORCH_WORKFLOW_ID) start --params=@json:'{"Param":"world !"}'
+	$(EXE_MAN) orchestrator workflow start $(CF_ORCH_WORKFLOW_ID) --params=@json:'{"Param":"world !"}'
 	@touch $@
 $(T)o7: $(T).exists
 	@echo $@
-	$(EXE_MAN) orchestrator workflow --id=$(CF_ORCH_WORKFLOW_ID) start --params=@json:'{"Param":"world !"}' --result=ResultStep:Complete_status_message
+	$(EXE_MAN) orchestrator workflow start $(CF_ORCH_WORKFLOW_ID) --params=@json:'{"Param":"world !"}' --result=ResultStep:Complete_status_message
 	@touch $@
 $(T)o8: $(T).exists
 	@echo $@
@@ -680,7 +680,7 @@ $(T)at6: $(T).exists
 	@touch $@
 $(T)at7: $(T).exists
 	@echo $@
-	$(EXE_MAN) ats cluster show --id=1f412ae7-869a-445c-9c05-02ad16813be2
+	$(EXE_MAN) ats cluster show 1f412ae7-869a-445c-9c05-02ad16813be2
 	@touch $@
 $(T)at2: $(T).exists
 	@echo $@
@@ -718,18 +718,18 @@ $(T)at10: $(T).exists
 	@touch $@
 $(T)at11: $(T).exists
 	@echo $@
-	$(EXE_MAN) ats access_key --id=akibmcloud --secret=somesecret node browse /
+	$(EXE_MAN) ats access_key node akibmcloud browse / --secret=somesecret
 	@touch $@
 $(T)at12: $(T).exists
 	@echo $@
-	$(EXE_MAN) ats access_key --id=akibmcloud --secret=somesecret cluster
+	$(EXE_MAN) ats access_key cluster akibmcloud --secret=somesecret
 	@touch $@
 $(T)at13: $(T).exists
-	$(EXE_MAN) ats access_key --id=akibmcloud delete
+	$(EXE_MAN) ats access_key delete akibmcloud
 	@touch $@
 $(T)at14: $(T).exists
 	@echo $@
-	-$(EXE_MAN) ats access_key --id=ak_aws delete
+	-$(EXE_MAN) ats access_key delete ak_aws
 	@touch $@
 
 tats: $(T)at4 $(T)at5 $(T)at6 $(T)at7 $(T)at2 $(T)at1 $(T)at3 $(T)at8 $(T)at9 $(T)at10 $(T)at11 $(T)at12 $(T)at13 $(T)at14
@@ -775,20 +775,20 @@ $(T)sy1: $(T).exists
 	@touch $@
 $(T)sy2: $(T).exists
 	@echo $@
-	$(EXE_MAN) node async show --id=1
-	$(EXE_MAN) node async show --id=ALL
+	$(EXE_MAN) node async show 1
+	$(EXE_MAN) node async show ALL
 	@touch $@
 $(T)sy3: $(T).exists
 	@echo $@
-	$(EXE_MAN) node async --id=1 counters 
+	$(EXE_MAN) node async counters 1
 	@touch $@
 $(T)sy4: $(T).exists
 	@echo $@
-	$(EXE_MAN) node async --id=1 bandwidth 
+	$(EXE_MAN) node async bandwidth 1
 	@touch $@
 $(T)sy5: $(T).exists
 	@echo $@
-	$(EXE_MAN) node async --id=1 files 
+	$(EXE_MAN) node async files 1
 	@touch $@
 tnsync: $(T)sy1 $(T)sy2 $(T)sy3 $(T)sy4 $(T)sy5
 
@@ -798,27 +798,27 @@ clean::
 	rm -f $(TEST_CONFIG)
 $(T)conf_id_1: $(T).exists
 	@echo $@
-	$(EXETESTC) config id conf_name set param value
+	$(EXETESTC) config preset set conf_name param value
 	@touch $@
 $(T)conf_id_2: $(T).exists
 	@echo $@
-	$(EXETESTC) config id conf_name show
+	$(EXETESTC) config preset show conf_name
 	@touch $@
 $(T)conf_id_3: $(T).exists
 	@echo $@
-	$(EXETESTC) config id default set shares conf_name
+	$(EXETESTC) config preset set default shares conf_name
 	@touch $@
 $(T)conf_id_4: $(T).exists
 	@echo $@
-	$(EXETESTC) config id conf_name delete
+	$(EXETESTC) config preset delete conf_name
 	@touch $@
 $(T)conf_id_5: $(T).exists
 	@echo $@
-	$(EXETESTC) config id conf_name initialize @json:'{"p1":"v1","p2":"v2"}'
+	$(EXETESTC) config preset initialize conf_name @json:'{"p1":"v1","p2":"v2"}'
 	@touch $@
 $(T)conf_id_6: $(T).exists
 	@echo $@
-	$(EXETESTC) config id conf_name update --p1=v1 --p2=v2
+	$(EXETESTC) config preset update conf_name --p1=v1 --p2=v2
 	@touch $@
 $(T)conf_open: $(T).exists
 	@echo $@ open configuration file in text editor
@@ -1046,7 +1046,7 @@ $(T)tcos: $(T).exists
 	icos_resource_instance_id=$$($(EXE_NOMAN) conf id misc get icos_resource_instance_id);\
 	$(EXE_MAN) cos -N --bucket=$${icos_bucket_name} --endpoint=$${icos_bucket_endpoint} --apikey=$${icos_bucket_apikey} --crn=$${icos_resource_instance_id} node info
 	$(EXE_MAN) cos node info
-	$(EXE_MAN) cos node access_key --id=self show
+	$(EXE_MAN) cos node access_key show self
 	$(EXE_MAN) cos node upload $(CF_LOCAL_SAMPLE_FILEPATH)
 	$(EXE_MAN) cos node download $(CF_LOCAL_SAMPLE_FILENAME) --to-folder=$(DIR_TMP).
 	@touch $@
@@ -1069,7 +1069,7 @@ $(T)f5_3: $(T).exists
 $(T)f5_4: $(T).exists
 	@echo $@
 	set -x;package_id=$$($(EXE_NOMAN) faspex5 pack list --value=@json:'{"mailbox":"inbox","state":["released"],"limit":1}' --fields=id --format=csv --display=data);\
-	$(EXE_MAN) faspex5 package receive --id="$${package_id}" --to-folder=$(DIR_TMP).
+	$(EXE_MAN) faspex5 package receive "$${package_id}" --to-folder=$(DIR_TMP).
 	@touch $@
 
 tf5: $(T)f5_1 $(T)f5_2 $(T)f5_3 $(T)f5_4
