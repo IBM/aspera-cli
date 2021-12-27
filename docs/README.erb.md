@@ -2038,7 +2038,7 @@ The `admin` command allows several administrative tasks (and require admin privi
 
 It allows actions (create, update, delete) on "resources": users, group, nodes, workspace, etc... with the `admin resource` command.
 
-### Bulk creation and deletion of resource 
+### Bulk creation and deletion of resource
 
 Bulk creation and deletion of resources are possible using option `bulk` (yes,no(default)).
 In that case, the operation expects an Array of Hash instead of a simple Hash using the [Extended Value Syntax](#extended).
@@ -2055,7 +2055,7 @@ The following parameters are supported:
 * `sort`: name of fields to sort results, prefix with `-` for reverse order.
 * `max` : maximum number of items to retrieve (stop pages when the maximum is passed)
 * `pmax` : maximum number of pages to request (stop pages when the maximum is passed)
-* `page` : native api parameter, in general do not use (added by 
+* `page` : native api parameter, in general do not use (added by
 * `per_page` : native api parameter, number of items par api call, in general do not use
 * Other specific parameters depending on resource type.
 
@@ -2461,7 +2461,7 @@ Notes:
 
 * The `value` option can contain any supported package creation parameter. Refer to the AoC package creation API, or display an existing package in JSON to list attributes.
 * List allowed shared inbox destinations with: `<%=cmd%> aoc user shared_inboxes`
-* Use fields: `recipients` and/or `bcc_recipients` to provide the list of recipients: user or shared inbox. 
+* Use fields: `recipients` and/or `bcc_recipients` to provide the list of recipients: user or shared inbox.
   * Provide either ids as expected by API: `"recipients":[{"type":"dropbox","id":"1234"}]`
   * or just names: `"recipients":[{"The Dest"}]` . <%=cmd%> will resolve the list of email addresses and dropbox names to the expected type/id list, based on case insensitive partial match.
 * If a user recipient (email) is not already registered and the workspace allows external users, then the package is sent to an external user, and
@@ -3732,6 +3732,8 @@ So, it evolved into <%=tool%>:
 
 * <%=gemspec.version.to_s%>
 
+* 4.5.0
+
     * new: support transfer agent: [Transfer SDK](#agt_trsdk)
     * new: support [http socket options](#http_options)
     * new: logs hide passwords and secrets, option `log_passwords` to enable logging secrets
@@ -3752,7 +3754,7 @@ So, it evolved into <%=tool%>:
     * new: `preset` option can specify name or hash value
     * new: `node` plugin accepts bearer token and access key as credential
     * new: `node` option `token_type` allows using basic token in addition to aspera type.
-    * change: `server`: option `username` not mandatory anymore: xfer user is by default. If transfer spec token is provided, password or keys are optional, and bypass keys are used by default. 
+    * change: `server`: option `username` not mandatory anymore: xfer user is by default. If transfer spec token is provided, password or keys are optional, and bypass keys are used by default.
     * change: (break) resource `apps_new` of `aoc` replaced with `application` (more clear)
 
 * 4.3.0
