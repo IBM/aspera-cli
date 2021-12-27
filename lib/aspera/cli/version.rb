@@ -1,5 +1,5 @@
 module Aspera
   module Cli
-    VERSION = "4.5.0.pre"
+    VERSION = "4.5.0"
   end
 end
