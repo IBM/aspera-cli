@@ -26,9 +26,9 @@ Gem::Specification.new do |spec|
   spec.metadata['documentation_uri'] = "https://www.rubydoc.info/gems/#{spec.name}"
   spec.bindir        = 'bin'
   spec.require_paths = ['lib']
-  spec.executables   = spec.files.grep(%r{^#{spec.bindir}}){|f|File.basename(f)}
   # list git files from specified location in root folder of project (this gemspec is in project root folder)
   spec.files=Dir.chdir(File.dirname(gemspec_file)){%x{git ls-files -z lib docs bin examples README.md}.split("\x0")}
+  spec.executables   = spec.files.grep(%r{^#{spec.bindir}}){|f|File.basename(f)} # must be after spec.files and spec.bindir
   spec.required_ruby_version = '> 2.4'
   spec.add_runtime_dependency('execjs', '~> 2.0')
   spec.add_runtime_dependency('grpc', '~> 1.0')
