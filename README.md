@@ -3,7 +3,7 @@
 
 Version : 4.6.0.pre
 
-_Laurent/2016-2021_
+_Laurent/2016-2022_
 
 This gem provides the `ascli` Command Line Interface to IBM Aspera software.
 
@@ -1165,14 +1165,19 @@ In order to get traces of execution, use argument : `--log-level=debug`
 
 ## <a id="http_options"></a>HTTP socket parameters
 
-If the server does not provide a valid certificate, use parameter: `--insecure=yes`.
+If the server does not provide a valid certificate, use option: `--insecure=yes`.
 
-Some of HTTP socket parameters can be adjusted, those are the parameters of Ruby [`Net::HTTP`](https://ruby-doc.org/stdlib/libdoc/net/http/rdoc/Net/HTTP.html), for example:
+Ruby HTTP socket parameters can be adjusted. Default values are the ones of Ruby:
 
 * `read_timeout` 60 sec
 * `write_timeout` 60 sec
+* `open_timeout` 60 sec
+* `keep_alive_timeout` 2 sec
 
-Default values are the ones of Ruby.
+For details refer to the Ruby library: [`Net::HTTP`](https://ruby-doc.org/stdlib/libdoc/net/http/rdoc/Net/HTTP.html).
+
+Values are in seconds and can be of type either integer or float.
+Like any other option, those can be set either on command line, or in config file, either in a global preset or server-specific one.
 
 Example:
 
@@ -4262,6 +4267,8 @@ So, it evolved into `ascli`:
 # Changes (Release notes)
 
 * 4.6.0.pre
+
+    * fix: #60 ascli executable was not any more found by default in 4.5.0
 
 * 4.5.0
 
