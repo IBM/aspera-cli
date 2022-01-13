@@ -93,6 +93,7 @@ module Aspera
         @http_session.use_ssl = uri.scheme.eql?('https')
         @http_session.verify_mode = OpenSSL::SSL::VERIFY_NONE if @@insecure
         @http_session.set_debug_output($stdout) if @@debug
+        # set http options in callback, such as timeout and cert. verification
         @@session_cb.call(@http_session) unless @@session_cb.nil?
         # manually start session for keep alive (if supported by server, else, session is closed every time)
         @http_session.start
