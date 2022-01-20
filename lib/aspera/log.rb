@@ -78,7 +78,7 @@ module Aspera
       # update formatter with password hiding
       @logger.formatter=proc do |severity, datetime, progname, msg|
         unless @log_passwords
-          msg=msg.gsub(/("[^"]*(password|secret|private_key)[^"]*"=>")([^"]+)(")/){"#{$1}***#{$4}"}
+          msg=msg.gsub(/(["':][^"]*(password|secret|private_key)[^"]*["']?[=>: ]+")([^"]+)(")/){"#{$1}***#{$4}"}
           msg=msg.gsub(/("[^"]*(secret)[^"]*"=>{)([^}]+)(})/){"#{$1}***#{$4}"}
           msg=msg.gsub(/((secrets)={)([^}]+)(})/){"#{$1}***#{$4}"}
         end
