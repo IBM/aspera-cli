@@ -34,7 +34,7 @@ module Aspera
       case RbConfig::CONFIG['host_cpu']
       when /x86_64/,/x64/
         return CPU_X86_64
-      when /powerpc/
+      when /powerpc/,/ppc64/
         return CPU_PPC64LE if os.eql?(OS_LINUX)
         return CPU_PPC64
       when /s390/
