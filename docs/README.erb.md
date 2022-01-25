@@ -377,6 +377,12 @@ make
 make install
 ```
 
+Another possibility, if you already have a Java JVM is to use jruby:
+
+<https://www.jruby.org/download>
+
+Note that using jruby the startup time is longer than the native ruby.
+
 ### <a id="the_gem"></a>`<%=gemspec.name%>` gem
 
 Once you have Ruby and rights to install gems: Install the gem and its dependencies:
