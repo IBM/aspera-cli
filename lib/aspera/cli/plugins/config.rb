@@ -64,6 +64,7 @@ END_OF_TEMPLATE
         # special extended values
         EXTV_INCLUDE_PRESETS='incps'
         EXTV_PRESET='preset'
+        PRESET_DIG_SEPARATOR='.'
         DEFAULT_CHECK_NEW_VERSION_DAYS=7
         DEFAULT_PRIV_KEY_FILENAME='aspera_aoc_key'
         DEFAULT_PRIVKEY_LENGTH=4096
@@ -71,7 +72,8 @@ END_OF_TEMPLATE
         :CONF_PRESET_GLOBAL,:PROGRAM_NAME_V1,:PROGRAM_NAME_V2,:DEFAULT_REDIRECT,:ASPERA_PLUGINS_FOLDERNAME,
         :RUBY_FILE_EXT,:AOC_COMMAND_V1,:AOC_COMMAND_V2,:AOC_COMMAND_V3,:AOC_COMMAND_CURRENT,:DEMO,
         :TRANSFER_SDK_ARCHIVE_URL,:AOC_PATH_API_CLIENTS,:DEMO_SERVER_PRESET,:EMAIL_TEST_TEMPLATE,:EXTV_INCLUDE_PRESETS,
-        :EXTV_PRESET,:DEFAULT_CHECK_NEW_VERSION_DAYS,:DEFAULT_PRIV_KEY_FILENAME,:SERVER_COMMAND,:CONF_PRESET_SECRETS
+        :EXTV_PRESET,:DEFAULT_CHECK_NEW_VERSION_DAYS,:DEFAULT_PRIV_KEY_FILENAME,:SERVER_COMMAND,:CONF_PRESET_SECRETS,
+        :PRESET_DIG_SEPARATOR
         def option_preset; nil; end
 
         def option_preset=(value)
@@ -284,15 +286,27 @@ END_OF_TEMPLATE
         attr_accessor :option_config_file
 
         # @return the hash from name (also expands possible includes)
+        # @param config_name name of the preset in config file
+        # @param include_path used to detect and avoid include loops
         def preset_by_name(config_name, include_path=[])
-          raise CliError,"no such config preset: #{config_name}" unless @config_presets.has_key?(config_name)
           raise CliError,'loop in include' if include_path.include?(config_name)
-          return expanded_with_preset_includes(@config_presets[config_name],include_path.clone.push(config_name))
+          include_path=include_path.clone # avoid messing up if there are multiple branches
+          current=@config_presets
+          config_name.split(PRESET_DIG_SEPARATOR).each do |name|
+            raise CliError,"not a Hash: #{include_path} (#{current.class})" unless current.is_a?(Hash)
+            include_path.push(name)
+            current=current[name]
+            raise CliError,"no such config preset: #{include_path}" if nil?
+          end
+          return expanded_with_preset_includes(current,include_path) if current.is_a?(Hash)
+          return current
         end
 
+        # @return the hash value with 'incps' keys expanced to include other presets
         # @param hash_val
+        # @param include_path to avoid inclusion loop
         def expanded_with_preset_includes(hash_val, include_path=[])
-          raise CliError,"#{EXTV_INCLUDE_PRESETS} requires a Hash" unless hash_val.is_a?(Hash)
+          raise CliError,"#{EXTV_INCLUDE_PRESETS} requires a Hash, have #{hash_val.class}" unless hash_val.is_a?(Hash)
           if hash_val.has_key?(EXTV_INCLUDE_PRESETS)
             memory=hash_val.clone
             includes=memory[EXTV_INCLUDE_PRESETS]
