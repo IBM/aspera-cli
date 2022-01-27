@@ -18,18 +18,6 @@ EXE_NOMAN=$(EXE_MAN)
 CF_LOCAL_SAMPLE_FILENAME=datafile.bin
 CF_LOCAL_SAMPLE_FILEPATH=$(DIR_TMP)$(CF_LOCAL_SAMPLE_FILENAME)
 CF_HSTS_FOLDER_UPLOAD := $(shell $(EXE_NOMAN) conf id misc get upload_folder 2> /dev/null || echo error)
-CF_SHARES_UPLOAD := $(shell $(EXE_NOMAN) conf id misc get shares_upload 2> /dev/null || echo error)
-CF_ORCH_WORKFLOW_ID := $(shell $(EXE_NOMAN) conf id misc get orch_workflow_id 2> /dev/null || echo error)
-CF_TSTFILE_DCM := $(shell $(EXE_NOMAN) conf id misc get file_dcm 2> /dev/null || echo error)
-CF_TSTFILE_PDF := $(shell $(EXE_NOMAN) conf id misc get file_pdf 2> /dev/null || echo error)
-CF_TSTFILE_DOCX := $(shell $(EXE_NOMAN) conf id misc get file_docx 2> /dev/null || echo error)
-CF_TSTFILE_MXF := $(shell $(EXE_NOMAN) conf id misc get file_mxf 2> /dev/null || echo error)
-CF_AOC_NODE1_NAME := $(shell $(EXE_NOMAN) conf id misc get aoc_node1_name 2> /dev/null || echo error)
-CF_AOC_NODE1_SECRET := $(shell $(EXE_NOMAN) conf id misc get aoc_node1_secret 2> /dev/null || echo error)
-CF_EMAIL_ADDR := $(shell $(EXE_NOMAN) conf id misc get email_internal 2> /dev/null || echo error)
-CF_AOC_EXTERNAL_EMAIL := $(shell $(EXE_NOMAN) conf id misc get email_external 2> /dev/null || echo error)
-CF_FASPEX_USERNAME := $(shell $(EXE_NOMAN) conf id tst_faspex get username 2> /dev/null || echo error)
-CF_HTTP_GW_FQDN := $(shell $(EXE_NOMAN) conf id misc get http_gw_fqdn_port 2> /dev/null || echo error)
 
 # setup local environment on Macos for preview generation testing
 setupprev:
@@ -41,7 +29,7 @@ setupprev:
 	if test $$(id -u asperadaemon) -ne $$(stat -f "%u" /Library/Logs/Aspera); then \
 	  echo Fixing right;sudo chown asperadaemon: /Library/Logs/Aspera;\
 	fi
-	sudo launchctl stop com.aspera.asperanoded;sleep 5
+	sudo launchctl stop com.aspera.asperanoded&&sleep 5
 	sudo launchctl start com.aspera.asperanoded
 	while ! $(EXE_NOMAN) node -N -Ptst_node_preview info;do echo waiting..;sleep 2;done
 	-$(EXE_NOMAN) node -N -Ptst_node_preview access_key delete $$($(EXE_NOMAN) conf id tst_ak_preview get username)
@@ -68,7 +56,7 @@ clean::
 	mkdir $(T)
 $(T)unit: $(T).exists
 	@echo $@
-	set -x;\
+	set -x&&\
 	CF_HSTS_SSH_URL=$$($(EXE_NOMAN) conf id tst_server get url) \
 	CF_HSTS_SSH_USER=$$($(EXE_NOMAN) conf id tst_server get username) \
 	CF_HSTS_SSH_PASS=$$($(EXE_NOMAN) conf id tst_server get password) \
@@ -85,15 +73,20 @@ $(T)sh1: $(T).exists
 	@touch $@
 $(T)sh2: $(T).exists
 	@echo $@
-	$(EXE_MAN) shares repository upload --to-folder=/$(CF_SHARES_UPLOAD) $(CF_LOCAL_SAMPLE_FILEPATH)
-	$(EXE_MAN) shares repository download --to-folder=$(DIR_TMP). /$(CF_SHARES_UPLOAD)/$(CF_LOCAL_SAMPLE_FILENAME)
-	$(EXE_MAN) shares repository delete /$(CF_SHARES_UPLOAD)/$(CF_LOCAL_SAMPLE_FILENAME)
+	set -x&&\
+	shares_upload=$$($(EXE_NOMAN) conf id misc get shares_upload)&&\
+	$(EXE_MAN) shares repository upload --to-folder=$${shares_upload} $(CF_LOCAL_SAMPLE_FILEPATH)&&\
+	$(EXE_MAN) shares repository download --to-folder=$(DIR_TMP). $${shares_upload}/$(CF_LOCAL_SAMPLE_FILENAME)&&\
+	$(EXE_MAN) shares repository delete $${shares_upload}/$(CF_LOCAL_SAMPLE_FILENAME)
 	@touch $@
 $(T)sh3: $(T).exists
 	@echo $@
-	$(EXE_MAN) shares repository upload --to-folder=/$(CF_SHARES_UPLOAD) $(CF_LOCAL_SAMPLE_FILEPATH) --transfer=httpgw --transfer-info=@json:'{"url":"https://$(CF_HTTP_GW_FQDN)/aspera/http-gwy/v1"}'
-	$(EXE_MAN) shares repository download --to-folder=$(DIR_TMP). /$(CF_SHARES_UPLOAD)/$(CF_LOCAL_SAMPLE_FILENAME) --transfer=httpgw --transfer-info=@json:'{"url":"https://$(CF_HTTP_GW_FQDN)/aspera/http-gwy/v1"}'
-	$(EXE_MAN) shares repository delete /$(CF_SHARES_UPLOAD)/$(CF_LOCAL_SAMPLE_FILENAME)
+	set -x&&\
+	shares_upload=$$($(EXE_NOMAN) conf id misc get shares_upload)&&\
+	http_gw_fqdn=$$($(EXE_NOMAN) conf id misc get http_gw_fqdn_port)&&\
+	$(EXE_MAN) shares repository upload --to-folder=$${shares_upload} $(CF_LOCAL_SAMPLE_FILEPATH) --transfer=httpgw --transfer-info=@json:'{"url":"https://'"$${http_gw_fqdn}"'/aspera/http-gwy/v1"}'&&\
+	$(EXE_MAN) shares repository download --to-folder=$(DIR_TMP). $${shares_upload}/$(CF_LOCAL_SAMPLE_FILENAME) --transfer=httpgw --transfer-info=@json:'{"url":"https://'"$${http_gw_fqdn}"'/aspera/http-gwy/v1"}'&&\
+	$(EXE_MAN) shares repository delete $${shares_upload}/$(CF_LOCAL_SAMPLE_FILENAME)
 	@touch $@
 tshares: $(T)shadm $(T)sh1 $(T)sh2 $(T)sh3
 
@@ -109,7 +102,7 @@ $(T)serv_mkdir: $(T).exists
 $(T)serv_upload: $(T)serv_mkdir
 	@echo $@
 	$(EXE_MAN) server upload $(CF_LOCAL_SAMPLE_FILEPATH) --to-folder=$(NEW_SERVER_FOLDER) --ts=@json:'{"multi_session":3,"multi_session_threshold":1,"resume_policy":"none","target_rate_kbps":1500}' --transfer-info=@json:'{"spawn_delay_sec":2.5}' --progress=multi
-	set -x;\
+	set -x&&\
 	recipient_email=$$($(EXE_NOMAN) conf id misc get email_external)&&\
 	$(EXE_MAN) server upload --src-type=pair $(CF_LOCAL_SAMPLE_FILEPATH) $(NEW_SERVER_FOLDER)/othername --notif-to=$${recipient_email}
 	$(EXE_MAN) server upload --src-type=pair --sources=@json:'["$(CF_LOCAL_SAMPLE_FILEPATH)","$(NEW_SERVER_FOLDER)/othername"]'
@@ -181,7 +174,7 @@ $(T)serv_key: $(T).exists
 	@touch $@
 $(T)asession: $(T).exists
 	@echo $@
-	remote_host=$$($(EXE_NOMAN) conf id tst_server get url);remote_host=$${remote_host##*/};remote_port="$remote_host";remote_port=$${remote_host#*:};remote_host=$${remote_host%:*};\
+	remote_host=$$($(EXE_NOMAN) conf id tst_server get url)&&remote_host=$${remote_host##*/}&&remote_port="$remote_host"&&remote_port=$${remote_host#*:}&&remote_host=$${remote_host%:*}&&\
 	remote_user=$$($(EXE_NOMAN) conf id tst_server get username)&&\
 	remote_pass=$$($(EXE_NOMAN) conf id tst_server get password)&&\
 	$(DIR_BIN)asession @json:'{"remote_host":"'"$${remote_host}"'","remote_user":"'"$${remote_user}"'","ssh_port":'$${remote_port}',"remote_password":"'"$${remote_pass}"'","direction":"receive","destination_root":"$(DIR_TMP).","paths":[{"source":"/aspera-test-dir-tiny/200KB.1"}]}'
@@ -195,24 +188,27 @@ $(T)fx_plst: $(T).exists
 	@touch $@
 $(T)fx_psnd: $(T).exists
 	@echo $@
-	$(EXE_MAN) faspex package send --delivery-info=@json:'{"title":"'"$(PKG_TEST_TITLE)"'","recipients":["$(CF_EMAIL_ADDR)","$(CF_FASPEX_USERNAME)"]}' $(CF_LOCAL_SAMPLE_FILEPATH)
+	set -x&&\
+	faspex_username=$$($(EXE_NOMAN) conf id tst_faspex get username)&&\
+	email_internal_user=$$($(EXE_NOMAN) conf id misc get email_internal)&&\
+	$(EXE_MAN) faspex package send --delivery-info=@json:'{"title":"'"$(PKG_TEST_TITLE)"'","recipients":['"$${email_internal_user}"',"'"$${faspex_username}"'"]}' $(CF_LOCAL_SAMPLE_FILEPATH)
 	@touch $@
 	@sleep 8
 $(T)fx_prs: $(T)fx_psnd
 	@echo $@
-	set -x;package_id=$$($(EXE_MAN) faspex package list --fields=package_id --format=csv --display=data --query=@json:'{"max":1}')&&\
+	set -x&&package_id=$$($(EXE_MAN) faspex package list --fields=package_id --format=csv --display=data --query=@json:'{"max":1}')&&\
 	$(EXE_MAN) faspex package recv --to-folder=$(DIR_TMP). "$${package_id}"
-	set -x;package_id=$$($(EXE_MAN) faspex package list --box=sent --fields=package_id --format=csv --display=data --query=@json:'{"max":1}')&&\
+	set -x&&package_id=$$($(EXE_MAN) faspex package list --box=sent --fields=package_id --format=csv --display=data --query=@json:'{"max":1}')&&\
 	$(EXE_MAN) faspex package recv "$${package_id}" --to-folder=$(DIR_TMP). --box=sent
 	@touch $@
 $(T)fx_pri: $(T).exists
 	@echo $@
-	set -x;package_id=$$($(EXE_NOMAN) faspex package list --fields=package_id --format=csv --display=data --query=@json:'{"max":1}')&&\
+	set -x&&package_id=$$($(EXE_NOMAN) faspex package list --fields=package_id --format=csv --display=data --query=@json:'{"max":1}')&&\
 	$(EXE_MAN) faspex package recv "$${package_id}" --to-folder=$(DIR_TMP).
 	@touch $@
 $(T)fx_prl: $(T).exists
 	@echo $@
-	set -x;faspex_publink_recv_from_fxuser=$$($(EXE_NOMAN) conf id misc get faspex_publink_recv_from_fxuser)&&\
+	set -x&&faspex_publink_recv_from_fxuser=$$($(EXE_NOMAN) conf id misc get faspex_publink_recv_from_fxuser)&&\
 	$(EXE_MAN) faspex package recv --to-folder=$(DIR_TMP). --link="$${faspex_publink_recv_from_fxuser}"
 	@touch $@
 $(T)fx_prall: $(T).exists
@@ -221,12 +217,12 @@ $(T)fx_prall: $(T).exists
 	@touch $@
 $(T)fx_pslu: $(T).exists
 	@echo $@
-	set -x;faspex_publink_send_to_fxuser=$$($(EXE_NOMAN) conf id misc get faspex_publink_send_to_fxuser)&&\
+	set -x&&faspex_publink_send_to_fxuser=$$($(EXE_NOMAN) conf id misc get faspex_publink_send_to_fxuser)&&\
 	$(EXE_MAN) faspex package send --link="$${faspex_publink_send_to_fxuser}" --delivery-info=@json:'{"title":"'"$(PKG_TEST_TITLE)"'"}' $(CF_LOCAL_SAMPLE_FILEPATH)
 	@touch $@
 $(T)fx_psld: $(T).exists
 	@echo $@
-	set -x;faspex_publink_send_to_dropbox=$$($(EXE_NOMAN) conf id misc get faspex_publink_send_to_dropbox)&&\
+	set -x&&faspex_publink_send_to_dropbox=$$($(EXE_NOMAN) conf id misc get faspex_publink_send_to_dropbox)&&\
 	$(EXE_MAN) faspex package send --link="$${faspex_publink_send_to_dropbox}" --delivery-info=@json:'{"title":"'"$(PKG_TEST_TITLE)"'"}' $(CF_LOCAL_SAMPLE_FILEPATH)
 	@touch $@
 $(T)fx_storage: $(T).exists
@@ -249,7 +245,7 @@ $(T)cons2: $(T).exists
 	@touch $@
 $(T)cons3: $(T).exists
 	@echo $@
-	set -x;\
+	set -x&&\
 	job_id=$$($(EXE_NOMAN) conf id misc get console_smart_id)&&\
 	file_name=$$($(EXE_NOMAN) conf id misc get console_smart_file)&&\
 	$(EXE_MAN) console transfer smart sub $${job_id} @json:'{"source":{"paths":["'"$${file_name}"'"]},"source_type":"user_selected"}'
@@ -270,7 +266,7 @@ $(T)nd2: $(T).exists
 	@touch $@
 $(T)nd_2_nd_xfer: $(T).exists
 	@echo $@
-	set -x;node_url=$$($(EXE_NOMAN) conf id tst_node get url)&&\
+	set -x&&node_url=$$($(EXE_NOMAN) conf id tst_node get url)&&\
 	node_user=$$($(EXE_NOMAN) conf id tst_node get username)&&\
 	node_pass=$$($(EXE_NOMAN) conf id tst_node get password)&&\
 	$(EXE_MAN) node upload --to-folder="$(CF_HSTS_FOLDER_UPLOAD)" --sources=@ts --ts=@json:'{"paths":[{"source":"/aspera-test-dir-small/10MB.1"}],"precalculate_job_size":true}' --transfer=node --transfer-info=@json:'{"url":"'"$${node_url}"'","username":"'"$${node_user}"'","password":"'"$${node_pass}"'"}'
@@ -312,7 +308,7 @@ tnode: $(T)nd1 $(T)nd2 $(T)nd_2_nd_xfer $(T)nd4 $(T)nd5 $(T)nd6 $(T)nd7 $(T)nd_n
 $(T)aocg1: $(T).exists
 	@echo $@
 	$(EXE_MAN) aoc -N servers
-	set -x;\
+	set -x&&\
 	aoc_user_email=$$($(EXE_NOMAN) conf id misc get aoc_user_email)&&\
 	$(EXE_MAN) aoc -N remind --username=$${aoc_user_email}
 	@touch $@
@@ -378,7 +374,7 @@ $(T)aocftr: $(T)aocfupl $(T)aocfren
 	@touch $@
 $(T)aocndinf: $(T).exists
 	@echo $@
-	set -x;\
+	set -x&&\
 	other_workspace=$$($(EXE_NOMAN) conf id misc get aoc_workspace2)&&\
 	$(EXE_MAN) aoc files node_info --workspace="$${other_workspace}" /myfolder --format=json --display=data | $(EXE_MAN) aoc files upload Test.pdf --transfer=node --transfer-info=@json:@stdin:
 	@touch $@
@@ -406,16 +402,16 @@ $(T)aocfv3inf: $(T).exists
 	@touch $@
 $(T)aocffid: $(T).exists
 	@echo $@
-	set -x;\
+	set -x&&\
 	file_id=$$($(EXE_NOMAN) aoc files br /200KB.1 --fields=id --format=csv --display=data)&&\
 	$(EXE_MAN) aoc files file show $${file_id}
 	@touch $@
 $(T)aocfpub: $(T).exists
 	@echo $@
-	set -x;\
+	set -x&&\
 	aoc_publink_folder=$$($(EXE_NOMAN) conf id misc get aoc_publink_folder)&&\
 	$(EXE_MAN) aoc files browse / -N --link=$${aoc_publink_folder}
-	set -x;\
+	set -x&&\
 	aoc_publink_folder=$$($(EXE_NOMAN) conf id misc get aoc_publink_folder)&&\
 	$(EXE_MAN) aoc files upload -N --to-folder=/ $(CF_LOCAL_SAMPLE_FILEPATH) --link=$${aoc_publink_folder}
 	@touch $@
@@ -434,8 +430,11 @@ $(T)aocshlk3: $(T).exists
 taocf: $(T)aocfbr $(T)aocfbt $(T)aocffin $(T)aocfmkd $(T)aocfren $(T)aocfupl $(T)aocftr $(T)aocndinf $(T)aocfdel $(T)aocfbearnode $(T)aocfdown $(T)aocfhttpd $(T)aocfv3inf $(T)aocffid $(T)aocfpub $(T)aocshlk1 $(T)aocshlk2 $(T)aocshlk3
 $(T)aocp1: $(T).exists
 	@echo $@
-	$(EXE_MAN) aoc packages send --value=@json:'{"name":"'"$(PKG_TEST_TITLE)"'","recipients":["$(CF_EMAIL_ADDR)"],"note":"my note"}' $(CF_LOCAL_SAMPLE_FILEPATH)
-	$(EXE_MAN) aoc packages send --value=@json:'{"name":"'"$(PKG_TEST_TITLE)"'","recipients":["$(CF_AOC_EXTERNAL_EMAIL)"]}' --new-user-option=@json:'{"package_contact":true}' $(CF_LOCAL_SAMPLE_FILEPATH)
+	set -x&&\
+	email_internal_user=$$($(EXE_NOMAN) conf id misc get email_internal)&&\
+	email_external_user=$$($(EXE_NOMAN) conf id misc get email_external)&&\
+	$(EXE_MAN) aoc packages send --value=@json:'{"name":"'"$(PKG_TEST_TITLE)"'","recipients":['"$${email_internal_user}"'],"note":"my note"}' $(CF_LOCAL_SAMPLE_FILEPATH)&&\
+	$(EXE_MAN) aoc packages send --value=@json:'{"name":"'"$(PKG_TEST_TITLE)"'","recipients":['"$${email_external_user}"']}' --new-user-option=@json:'{"package_contact":true}' $(CF_LOCAL_SAMPLE_FILEPATH)
 	@touch $@
 $(T)aocp2: $(T).exists
 	@echo $@
@@ -443,7 +442,7 @@ $(T)aocp2: $(T).exists
 	@touch $@
 $(T)aocp3: $(T).exists
 	@echo $@
-	set -x;package_id=$$($(EXE_NOMAN) aoc packages list --format=csv --fields=id --display=data|head -n 1)&&\
+	set -x&&package_id=$$($(EXE_NOMAN) aoc packages list --format=csv --fields=id --display=data|head -n 1)&&\
 	$(EXE_MAN) aoc packages recv "$${package_id}" --to-folder=$(DIR_TMP).
 	@touch $@
 $(T)aocp4: $(T).exists
@@ -452,42 +451,42 @@ $(T)aocp4: $(T).exists
 	@touch $@
 $(T)aocp5: $(T).exists
 	@echo $@
-	set -x;\
+	set -x&&\
 	aoc_publink_recv_from_aocuser=$$($(EXE_NOMAN) conf id misc get aoc_publink_recv_from_aocuser)&&\
 	$(EXE_MAN) aoc org -N --link=$${aoc_publink_recv_from_aocuser}
 	@touch $@
 $(T)aocp6: $(T).exists
 	@echo $@
-	set -x;\
+	set -x&&\
 	aoc_publink_send_shd_inbox=$$($(EXE_NOMAN) conf id misc get aoc_publink_send_shd_inbox)&&\
 	$(EXE_MAN) aoc packages send -N --value=@json:'{"name":"'"$(PKG_TEST_TITLE)"'"}' $(CF_LOCAL_SAMPLE_FILEPATH) --link=$${aoc_publink_send_shd_inbox}
 	@touch $@
 $(T)aocp7: $(T).exists
 	@echo $@
-	set -x;\
+	set -x&&\
 	aoc_publink_send_aoc_user=$$($(EXE_NOMAN) conf id misc get aoc_publink_send_aoc_user)&&\
 	aoc_publink_send_use_pass=$$($(EXE_NOMAN) conf id misc get aoc_publink_send_use_pass)&&\
 	$(EXE_MAN) aoc packages send -N --value=@json:'{"name":"'"$(PKG_TEST_TITLE)"'"}' $(CF_LOCAL_SAMPLE_FILEPATH) --link=$${aoc_publink_send_aoc_user} --password=$${aoc_publink_send_use_pass}
 	@touch $@
 $(T)aocp8: $(T).exists
 	@echo $@
-	set -x;\
+	set -x&&\
 	aoc_shbx_ws=$$($(EXE_NOMAN) conf id misc get aoc_shbx_ws)&&\
 	aoc_shbx_name=$$($(EXE_NOMAN) conf id misc get aoc_shbx_name)&&\
 	$(EXE_MAN) aoc packages send --workspace="$${aoc_shbx_ws}" --value=@json:'{"name":"'"$(PKG_TEST_TITLE)"'","recipients":["'$${aoc_shbx_name}'"]}' $(CF_LOCAL_SAMPLE_FILEPATH)
-	set -x;\
+	set -x&&\
 	aoc_shbx_ws=$$($(EXE_NOMAN) conf id misc get aoc_shbx_ws)&&\
 	aoc_shbx_name=$$($(EXE_NOMAN) conf id misc get aoc_shbx_meta)&&\
 	$(EXE_MAN) aoc packages send --workspace="$${aoc_shbx_ws}" --value=@json:'{"name":"'"$(PKG_TEST_TITLE)"'","recipients":["'$${aoc_shbx_name}'"],"metadata":[{"input_type":"single-text","name":"Project Id","values":["123"]},{"input_type":"single-dropdown","name":"Type","values":["Opt2"]},{"input_type":"multiple-checkbox","name":"CheckThose","values":["Check1","Check2"]},{"input_type":"date","name":"Optional Date","values":["2021-01-13T15:02:00.000Z"]}]}' $(CF_LOCAL_SAMPLE_FILEPATH)
 	@touch $@
-	set -x;\
+	set -x&&\
 	aoc_shbx_ws=$$($(EXE_NOMAN) conf id misc get aoc_shbx_ws)&&\
 	aoc_shbx_name=$$($(EXE_NOMAN) conf id misc get aoc_shbx_meta)&&\
 	$(EXE_MAN) aoc packages send --workspace="$${aoc_shbx_ws}" --value=@json:'{"name":"'"$(PKG_TEST_TITLE)"'","recipients":["'$${aoc_shbx_name}'"],"metadata":{"Project Id":"456","Type":"Opt2","CheckThose":["Check1","Check2"],"Optional Date":"2021-01-13T15:02:00.000Z"}}' $(CF_LOCAL_SAMPLE_FILEPATH)
 	@touch $@
 $(T)aocp9: $(T).exists
 	@echo $@
-	set -x;\
+	set -x&&\
 	aoc_shbx_ws=$$($(EXE_NOMAN) conf id misc get aoc_shbx_ws)&&\
 	aoc_shbx_name=$$($(EXE_NOMAN) conf id misc get aoc_shbx_name)&&\
 	$(EXE_MAN) aoc packages list --query=@json:'{"dropbox_name":"'$${aoc_shbx_name}'","sort":"-received_at","archived":false,"received":true,"has_content":true,"exclude_dropbox_packages":false}'
@@ -499,27 +498,27 @@ $(T)aoc8: $(T).exists
 	@touch $@
 $(T)aoc9: $(T).exists
 	@echo $@
-	$(EXE_MAN) aoc admin resource node --name=$(CF_AOC_NODE1_NAME) --secret=$(CF_AOC_NODE1_SECRET) v3 events
+	$(EXE_MAN) aoc admin resource node --name=@preset:misc.aoc_node1_name --secret=@preset:misc.aoc_node1_secret v3 events
 	@touch $@
 $(T)aoc11: $(T).exists
 	@echo $@
-	$(EXE_MAN) aoc admin resource node --name=$(CF_AOC_NODE1_NAME) --secret=$(CF_AOC_NODE1_SECRET) v3 access_key create --value=@json:'{"id":"testsub1","storage":{"path":"/folder1"}}'
+	$(EXE_MAN) aoc admin resource node --name=@preset:misc.aoc_node1_name --secret=@preset:misc.aoc_node1_secret v3 access_key create --value=@json:'{"id":"testsub1","storage":{"path":"/folder1"}}'
 	@touch $@
 $(T)aoc12: $(T).exists
 	@echo $@
-	$(EXE_MAN) aoc admin resource node v3 name $(CF_AOC_NODE1_NAME) --secret=$(CF_AOC_NODE1_SECRET) access_key delete testsub1
+	$(EXE_MAN) aoc admin resource node v3 name @preset:misc.aoc_node1_name --secret=@preset:misc.aoc_node1_secret access_key delete testsub1
 	@touch $@
 $(T)aoc9b: $(T).exists
 	@echo $@
-	$(EXE_MAN) aoc admin resource node --name=$(CF_AOC_NODE1_NAME) --secret=$(CF_AOC_NODE1_SECRET) v4 browse /
+	$(EXE_MAN) aoc admin resource node --name=@preset:misc.aoc_node1_name --secret=@preset:misc.aoc_node1_secret v4 browse /
 	@touch $@
 $(T)aoc10: $(T).exists
 	@echo $@
-	$(EXE_MAN) aoc admin resource node --name=$(CF_AOC_NODE1_NAME) --secret=$(CF_AOC_NODE1_SECRET) v4 mkdir /folder1
+	$(EXE_MAN) aoc admin resource node --name=@preset:misc.aoc_node1_name --secret=@preset:misc.aoc_node1_secret v4 mkdir /folder1
 	@touch $@
 $(T)aoc13: $(T).exists
 	@echo $@
-	$(EXE_MAN) aoc admin resource node --name=$(CF_AOC_NODE1_NAME) --secret=$(CF_AOC_NODE1_SECRET) v4 delete /folder1
+	$(EXE_MAN) aoc admin resource node --name=@preset:misc.aoc_node1_name --secret=@preset:misc.aoc_node1_secret v4 delete /folder1
 	@touch $@
 $(T)aoc14: $(T).exists
 	@echo $@
@@ -527,7 +526,7 @@ $(T)aoc14: $(T).exists
 	@touch $@
 $(T)aoc15: $(T).exists
 	@echo $@
-	set -x;\
+	set -x&&\
 	recipient_email=$$($(EXE_NOMAN) conf id misc get email_external)&&\
 	$(EXE_MAN) aoc admin analytics transfers --query=@json:'{"status":"completed","direction":"receive"}' --notif-to=$${recipient_email} --notif-template=@ruby:'%Q{From: <%=from_name%> <<%=from_email%>>\nTo: <<%=to%>>\nSubject: <%=ev["files_completed"]%> files received\n\n<%=ev.to_yaml%>}'
 	@touch $@
@@ -578,7 +577,7 @@ $(T)aocat7: $(T).exists
 # see https://developer.ibm.com/api/view/aspera-prod:ibm-aspera:title-IBM_Aspera#113433
 $(T)aocat8: $(T).exists
 	@echo $@
-	set -x;\
+	set -x&&\
 	icos_bucket_region=$$($(EXE_NOMAN) conf id misc get icos_bucket_region)&&\
 	icos_bucket_name=$$($(EXE_NOMAN) conf id misc get icos_bucket_name)&&\
 	icos_bucket_key=$$($(EXE_NOMAN) conf id misc get icos_bucket_key)&&\
@@ -587,7 +586,7 @@ $(T)aocat8: $(T).exists
 	@touch $@
 $(T)aocat9: $(T).exists
 	@echo $@
-	-set -x;\
+	-set -x&&\
 	aws_bucket_region=$$($(EXE_NOMAN) conf id misc get aws_bucket_region)&&\
 	aws_bucket_name=$$($(EXE_NOMAN) conf id misc get aws_bucket_name)&&\
 	aws_bucket_key=$$($(EXE_NOMAN) conf id misc get aws_bucket_key)&&\
@@ -620,7 +619,7 @@ $(T)aocauto2: $(T).exists
 	@touch $@
 $(T)aocauto3: $(DIR_TMP)wf_id.txt
 	@echo $@
-	set -x;wf_id=$$(cat $(DIR_TMP)wf_id.txt)&&\
+	set -x&&wf_id=$$(cat $(DIR_TMP)wf_id.txt)&&\
 	$(EXE_MAN) aoc automation workflow "$${wf_id}" action create --value=@json:'{"name":"toto"}' | tee action.info
 	sed -nEe 's/^\| id +\| ([^ ]+) +\|/\1/p' action.info>tmp_action_id.txt
 	rm -f action.info
@@ -628,7 +627,7 @@ $(T)aocauto3: $(DIR_TMP)wf_id.txt
 	@touch $@
 $(T)aocauto10: $(DIR_TMP)wf_id.txt
 	@echo $@
-	set -x;wf_id=$$(cat $(DIR_TMP)wf_id.txt)&&\
+	set -x&&wf_id=$$(cat $(DIR_TMP)wf_id.txt)&&\
 	$(EXE_MAN) aoc automation workflow delete "$${wf_id}"
 	rm -f $(T)wf.id
 	@touch $@
@@ -649,19 +648,19 @@ $(T)o3: $(T).exists
 	@touch $@
 $(T)o4: $(T).exists
 	@echo $@
-	$(EXE_MAN) orchestrator workflow inputs $(CF_ORCH_WORKFLOW_ID)
+	$(EXE_MAN) orchestrator workflow inputs @preset:misc.orch_workflow_id
 	@touch $@
 $(T)o5: $(T).exists
 	@echo $@
-	$(EXE_MAN) orchestrator workflow status $(CF_ORCH_WORKFLOW_ID)
+	$(EXE_MAN) orchestrator workflow status @preset:misc.orch_workflow_id
 	@touch $@
 $(T)o6: $(T).exists
 	@echo $@
-	$(EXE_MAN) orchestrator workflow start $(CF_ORCH_WORKFLOW_ID) --params=@json:'{"Param":"world !"}'
+	$(EXE_MAN) orchestrator workflow start @preset:misc.orch_workflow_id --params=@json:'{"Param":"world !"}'
 	@touch $@
 $(T)o7: $(T).exists
 	@echo $@
-	$(EXE_MAN) orchestrator workflow start $(CF_ORCH_WORKFLOW_ID) --params=@json:'{"Param":"world !"}' --result=ResultStep:Complete_status_message
+	$(EXE_MAN) orchestrator workflow start @preset:misc.orch_workflow_id --params=@json:'{"Param":"world !"}' --result=ResultStep:Complete_status_message
 	@touch $@
 $(T)o8: $(T).exists
 	@echo $@
@@ -704,7 +703,7 @@ $(T)at3: $(T).exists
 	@touch $@
 $(T)at8: $(T).exists
 	@echo $@
-	set -x;\
+	set -x&&\
 	icos_bucket_region=$$($(EXE_NOMAN) conf id misc get icos_bucket_region)&&\
 	icos_bucket_name=$$($(EXE_NOMAN) conf id misc get icos_bucket_name)&&\
 	icos_bucket_key=$$($(EXE_NOMAN) conf id misc get icos_bucket_key)&&\
@@ -713,7 +712,7 @@ $(T)at8: $(T).exists
 	@touch $@
 $(T)at9: $(T).exists
 	@echo $@
-	-set -x;\
+	-set -x&&\
 	aws_bucket_region=$$($(EXE_NOMAN) conf id misc get aws_bucket_region)&&\
 	aws_bucket_name=$$($(EXE_NOMAN) conf id misc get aws_bucket_name)&&\
 	aws_bucket_key=$$($(EXE_NOMAN) conf id misc get aws_bucket_key)&&\
@@ -870,7 +869,7 @@ SAMPLE_CONFIG_FILE=$(DIR_TMP)tmp_config.yml
 $(T)conf_wizard_org: $(T).exists
 	@echo $@
 	$(EXE_MAN) conf flush_tokens
-	set -x;\
+	set -x&&\
 	aoc_org=$$($(EXE_NOMAN) conf id misc get aoc_org)&&\
 	aoc_user_email=$$($(EXE_NOMAN) conf id misc get aoc_user_email)&&\
 	$(EXE_MAN) conf wiz --url=https://$${aoc_org}.ibmaspera.com --config-file=$(SAMPLE_CONFIG_FILE) --pkeypath='' --username=$${aoc_user_email} --test-mode=yes --use-generic-client=yes
@@ -880,7 +879,7 @@ $(T)conf_wizard_org: $(T).exists
 $(T)conf_wizard_gen: $(T).exists
 	@echo $@
 	$(EXE_MAN) conf flush_tokens
-	set -x;\
+	set -x&&\
 	aoc_org=$$($(EXE_NOMAN) conf id misc get aoc_org)&&\
 	aoc_user_email=$$($(EXE_NOMAN) conf id misc get aoc_user_email)&&\
 	$(EXE_MAN) conf wiz --url=https://$${aoc_org}.ibmaspera.com --config-file=$(SAMPLE_CONFIG_FILE) --pkeypath='' --username=$${aoc_user_email} --test-mode=yes
@@ -889,10 +888,10 @@ $(T)conf_wizard_gen: $(T).exists
 	@touch $@
 $(T)conf_detect: $(T).exists
 	@echo $@
-	set -x;\
+	set -x&&\
 	aoc_org=$$($(EXE_NOMAN) conf id misc get aoc_org)&&\
 	faspex_url=$$($(EXE_NOMAN) conf id tst_faspex get url)&&\
-	$(EXE_MAN) config detect --url=https://$${aoc_org}.ibmaspera.com;\
+	$(EXE_MAN) config detect --url=https://$${aoc_org}.ibmaspera.com&&\
 	$(EXE_MAN) config detect --url=$${faspex_url}
 	@touch $@
 $(T)conf_genkey: $(T).exists
@@ -901,7 +900,7 @@ $(T)conf_genkey: $(T).exists
 	@touch $@
 $(T)conf_smtp: $(T).exists
 	@echo $@
-	set -x;\
+	set -x&&\
 	recipient_email=$$($(EXE_NOMAN) conf id misc get email_external)&&\
 	$(EXE_MAN) config email_test --notif-to=$${recipient_email}
 	@touch $@
@@ -948,39 +947,39 @@ $(T)prev_check: $(T).exists
 	@touch $@
 $(T)prev_dcm: $(T).exists
 	@echo $@
-	$(EXE_MAN) preview test --case=$@ png "$(CF_TSTFILE_DCM)" --log-level=debug
+	$(EXE_MAN) preview test --case=$@ png @preset:misc.file_dcm --log-level=debug
 	@touch $@
 $(T)prev_pdf: $(T).exists
 	@echo $@
-	$(EXE_MAN) preview test --case=$@ png "$(CF_TSTFILE_PDF)" --log-level=debug
+	$(EXE_MAN) preview test --case=$@ png @preset:misc.file_pdf --log-level=debug
 	@touch $@
 $(T)prev_docx: $(T).exists
 	@echo $@
-	$(EXE_MAN) preview test --case=$@ png "$(CF_TSTFILE_DOCX)" --log-level=debug
+	$(EXE_MAN) preview test --case=$@ png @preset:misc.file_docx --log-level=debug
 	@touch $@
 $(T)prev_mxf_blend: $(T).exists
 	@echo $@
-	$(EXE_MAN) preview test --case=$@ mp4 "$(CF_TSTFILE_MXF)" --video-conversion=blend --log-level=debug
+	$(EXE_MAN) preview test --case=$@ mp4 @preset:misc.file_mxf --video-conversion=blend --log-level=debug
 	@touch $@
 $(T)prev_mxf_png_fix: $(T).exists
 	@echo $@
-	$(EXE_MAN) preview test --case=$@ png "$(CF_TSTFILE_MXF)" --video-png-conv=fixed --log-level=debug
+	$(EXE_MAN) preview test --case=$@ png @preset:misc.file_mxf --video-png-conv=fixed --log-level=debug
 	@touch $@
 $(T)prev_mxf_png_ani: $(T).exists
 	@echo $@
-	$(EXE_MAN) preview test --case=$@ png "$(CF_TSTFILE_MXF)" --video-png-conv=animated --log-level=debug
+	$(EXE_MAN) preview test --case=$@ png @preset:misc.file_mxf --video-png-conv=animated --log-level=debug
 	@touch $@
 $(T)prev_mxf_reencode: $(T).exists
 	@echo $@
-	$(EXE_MAN) preview test --case=$@ mp4 "$(CF_TSTFILE_MXF)" --video-conversion=reencode --log-level=debug
+	$(EXE_MAN) preview test --case=$@ mp4 @preset:misc.file_mxf --video-conversion=reencode --log-level=debug
 	@touch $@
 $(T)prev_mxf_clips: $(T).exists
 	@echo $@
-	$(EXE_MAN) preview test --case=$@ mp4 "$(CF_TSTFILE_MXF)" --video-conversion=clips --log-level=debug
+	$(EXE_MAN) preview test --case=$@ mp4 @preset:misc.file_mxf --video-conversion=clips --log-level=debug
 	@touch $@
 $(T)prev_events: $(T).exists
 	@echo $@
-	$(EXE_NOMAN) -Ptst_ak_preview node upload "$(CF_TSTFILE_MXF)" "$(CF_TSTFILE_DOCX)" --ts=@json:'{"target_rate_kbps":1000000}' --token-type=hybrid
+	$(EXE_NOMAN) -Ptst_ak_preview node upload @preset:misc.file_mxf @preset:misc.file_docx --ts=@json:'{"target_rate_kbps":1000000}' --token-type=hybrid
 	sleep 4
 	$(EXE_MAN) preview trevents --once-only=yes --skip-types=office --log-level=info
 	@touch $@
@@ -1013,11 +1012,11 @@ $(T)sync1: $(T).exists
 	@echo $@
 	mkdir -p $(DIR_TMP)contents
 	cp $(CF_LOCAL_SAMPLE_FILEPATH) $(DIR_TMP)contents
-	set -x;\
+	set -x&&\
 	remote_host=$$($(EXE_NOMAN) conf id tst_server_bykey get url)&&\
-	remote_host=$${remote_host##*/};\
-	remote_port=$${remote_host#*:};\
-	remote_host=$${remote_host%:*};\
+	remote_host=$${remote_host##*/}&&\
+	remote_port=$${remote_host#*:}&&\
+	remote_host=$${remote_host%:*}&&\
 	remote_user=$$($(EXE_NOMAN) conf id misc get syncuser)&&\
 	local_user_key=$$($(EXE_NOMAN) conf id local_user get ssh_keys)&&\
 	$(EXE_MAN) sync start --parameters=@json:'{"sessions":[{"name":"test","reset":true,"remote_dir":"/sync_test","local_dir":"$(DIR_TMP)contents","host":"'"$${remote_host}"'","tcp_port":33001,"user":"'"$${remote_user}"'","private_key_path":"'"$${local_user_key}"'"}]}'
@@ -1029,14 +1028,14 @@ $(T)sdk1: $(T).exists
 	@touch $@
 $(T)sdk2: $(T).exists
 	@echo $@
-	set -x;url=$$($(EXE_NOMAN) conf id tst_aoc1 get url)&&\
+	set -x&&url=$$($(EXE_NOMAN) conf id tst_aoc1 get url)&&\
 	user=$$($(EXE_NOMAN) conf id tst_aoc1 get username)&&\
 	keypath=$$($(EXE_NOMAN) conf id tst_aoc1 get private_key)&&\
 	tmp=$(DIR_TMP). ruby -I $(DIR_LIB). $(DIR_TOP)examples/aoc.rb $${url} $${user} "$${keypath}"
 	@touch $@
 $(T)sdk3: $(T).exists
 	@echo $@
-	set -x;url=$$($(EXE_NOMAN) conf id tst_faspex get url)&&\
+	set -x&&url=$$($(EXE_NOMAN) conf id tst_faspex get url)&&\
 	user=$$($(EXE_NOMAN) conf id tst_faspex get username)&&\
 	pass=$$($(EXE_NOMAN) conf id tst_faspex get password)&&\
 	tmp=$(DIR_TMP). ruby -I $(DIR_LIB). $(DIR_TOP)examples/faspex4.rb $${url} $${user} $${pass}
@@ -1045,11 +1044,11 @@ tsample: $(T)sdk1 $(T)sdk2 $(T)sdk3
 
 $(T)tcos: $(T).exists
 	@echo $@
-	set -x;\
+	set -x&&\
 	icos_bucket_name=$$($(EXE_NOMAN) conf id misc get icos_bucket_name)&&\
 	icos_bucket_region=$$($(EXE_NOMAN) conf id misc get icos_bucket_region)&&\
 	$(EXE_MAN) cos -N --bucket=$${icos_bucket_name} --region=$${icos_bucket_region} --service-credentials=@json:@file:$(DIR_PRIV)service_creds.json node info
-	set -x;\
+	set -x&&\
 	icos_bucket_name=$$($(EXE_NOMAN) conf id misc get icos_bucket_name)&&\
 	icos_bucket_endpoint=$$($(EXE_NOMAN) conf id misc get icos_bucket_endpoint)&&\
 	icos_bucket_apikey=$$($(EXE_NOMAN) conf id misc get icos_bucket_apikey)&&\
@@ -1072,13 +1071,13 @@ $(T)f5_2: $(T).exists
 	@touch $@
 $(T)f5_3: $(T).exists
 	@echo $@
-	set -x;\
+	set -x&&\
 	f5_user=$$($(EXE_NOMAN) conf id tst_faspex5 get username)&&\
 	$(EXE_MAN) faspex5 package send --value=@json:'{"title":"test title","recipients":[{"name":"'"$${f5_user}"'"}]}' $(CF_LOCAL_SAMPLE_FILEPATH)
 	@touch $@
 $(T)f5_4: $(T).exists
 	@echo $@
-	set -x;package_id=$$($(EXE_NOMAN) faspex5 pack list --value=@json:'{"mailbox":"inbox","state":["released"],"limit":1}' --fields=id --format=csv --display=data)&&\
+	set -x&&package_id=$$($(EXE_NOMAN) faspex5 pack list --value=@json:'{"mailbox":"inbox","state":["released"],"limit":1}' --fields=id --format=csv --display=data)&&\
 	$(EXE_MAN) faspex5 package receive "$${package_id}" --to-folder=$(DIR_TMP).
 	@touch $@
 
