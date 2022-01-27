@@ -372,7 +372,9 @@ module Aspera
           return {type: :object_list,data: result_list,fields: [id_result,'status']}
         end
 
-        def get_resource_path_from_args(resource_class_path)
+        # get identifier or name from command line
+        # @return identifier
+        def get_resource_id_from_args(resource_class_path)
           l_res_id=self.options.get_option(:id)
           l_res_name=self.options.get_option(:name)
           raise "Provide either option id or name, not both" unless l_res_id.nil? or l_res_name.nil?
@@ -383,7 +385,11 @@ module Aspera
             l_res_id=self.options.get_next_argument('identifier')
             l_res_id=@api_aoc.lookup_entity_by_name(resource_class_path,self.options.get_next_argument('identifier'))['id'] if l_res_id.eql?('name')
           end
-          return "#{resource_class_path}/#{l_res_id}"
+          return l_res_id
+        end
+
+        def get_resource_path_from_args(resource_class_path)
+          return "#{resource_class_path}/#{get_resource_id_from_args(resource_class_path)}"
         end
 
         # package creation params can give just email, and full hash is created
@@ -637,7 +643,8 @@ module Aspera
             command=self.options.get_next_command(supported_operations)
             # require identifier for non global commands
             if !singleton_object and !global_operations.include?(command)
-              resource_instance_path=get_resource_path_from_args(resource_class_path)
+              res_id=get_resource_id_from_args(resource_class_path)
+              resource_instance_path="#{resource_class_path}/#{res_id}"
             end
             resource_instance_path=resource_class_path if singleton_object
             case command
@@ -701,7 +708,7 @@ module Aspera
               when :node;{'include'=>['[]','access_level','permission_count'],'created_by_id'=>ID_AK_ADMIN}
               else raise 'error'
               end
-              res_data=@api_aoc.read("#{resource_class_path}/#{res_id}/permissions",read_params)[:data]
+              res_data=@api_aoc.read("#{resource_instance_path}/permissions",read_params)[:data]
               fields=case resource_type
               when :node;['id','file_id','file.path','access_type']
               when :workspace;['id','node_id','file_id','node_name','file.path','tags.aspera.files.workspace.share_as']
