@@ -700,7 +700,7 @@ The following "readers" are supported (returns value in []):
 * @path:PATH : [String] performs path expansion (prefix "~/" is replaced with the users home folder), e.g. --config-file=@path:~/sample_config.yml
 * @env:ENVVAR : [String] read from a named env var, e.g.--password=@env:MYPASSVAR
 * @stdin: : [String] read from stdin (no value on right)
-* @preset:NAME : [Hash] get whole <%=opprst%> value by name
+* @preset:NAME : [Hash] get whole <%=opprst%> value by name. Subvalues can also be used using `.` as separator. e.g. foo.bar is conf[foo][bar]
 
 In addition it is possible to decode a value, using one or multiple decoders :
 
