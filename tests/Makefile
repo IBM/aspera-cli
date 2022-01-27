@@ -850,7 +850,9 @@ $(T)conf_open_err: $(T).exists
 	@touch $@
 $(T)conf_plugins: $(T).exists
 	@echo $@
-	$(EXE_MAN) config plugins
+	$(EXE_MAN) config plugin list
+	$(EXE_MAN) config plugin create mycommand $(T)
+	$(EXE_MAN) mycommand --plugin-folder=$(T)
 	@touch $@
 $(T)conf_export: $(T).exists
 	@echo $@

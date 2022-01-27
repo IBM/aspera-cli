@@ -81,7 +81,7 @@ END_OF_TEMPLATE
           when Hash
             self.options.add_option_preset(value)
           else
-            raise "Preset definition must be a String for name, or Hash for value"
+            raise 'Preset definition must be a String for name, or Hash for value'
           end
           nil
         end
@@ -102,8 +102,8 @@ END_OF_TEMPLATE
           @option_config_file=@conf_file_default
           Log.log.debug("#{tool_name} folder: #{@main_folder}")
           # set folder for FASP SDK
-          add_plugin_lookup_folder(File.join(@main_folder,ASPERA_PLUGINS_FOLDERNAME))
           add_plugin_lookup_folder(self.class.gem_plugins_folder)
+          add_plugin_lookup_folder(File.join(@main_folder,ASPERA_PLUGINS_FOLDERNAME))
           # do file parameter first
           self.options.set_obj_attr(:config_file,self,:option_config_file)
           self.options.add_opt_simple(:config_file,"read parameters from file in YAML format, current=#{@option_config_file}")
@@ -119,6 +119,7 @@ END_OF_TEMPLATE
           self.options.set_obj_attr(:ascp_path,self,:option_ascp_path)
           self.options.set_obj_attr(:use_product,self,:option_use_product)
           self.options.set_obj_attr(:preset,self,:option_preset)
+          self.options.set_obj_attr(:plugin_folder,self,:option_plugin_folder)
           self.options.add_opt_switch(:no_default,'-N','do not load default configuration for plugin') { @use_plugin_defaults=false }
           self.options.add_opt_boolean(:override,'Wizard: override existing value')
           self.options.add_opt_boolean(:use_generic_client,'Wizard: AoC: use global or org specific jwt client id')
@@ -137,6 +138,7 @@ END_OF_TEMPLATE
           self.options.add_opt_simple(:notif_to,'email recipient for notification of transfers')
           self.options.add_opt_simple(:notif_template,'email ERB template for notification of transfers')
           self.options.add_opt_simple(:version_check_days,Integer,'period in days to check new version (zero to disable)')
+          self.options.add_opt_simple(:plugin_folder,'folder where to find additional plugins')
           self.options.set_option(:use_generic_client,true)
           self.options.set_option(:test_mode,false)
           self.options.set_option(:default,true)
@@ -322,6 +324,18 @@ END_OF_TEMPLATE
           'write-only value'
         end
 
+        def option_plugin_folder=(value)
+          case value
+          when String; add_plugin_lookup_folder(value)
+          when Array; value.each{|f|add_plugin_lookup_folder(f)}
+          else raise "folder shall be Array or String, not #{value.class}"
+          end
+        end
+
+        def option_plugin_folder
+          return @plugin_lookup_folders
+        end
+
         def convert_preset_path(old_name,new_name,files_to_copy)
           old_subpath=File.join('',ASPERA_HOME_FOLDER_NAME,old_name,'')
           new_subpath=File.join('',ASPERA_HOME_FOLDER_NAME,new_name,'')
@@ -442,7 +456,7 @@ END_OF_TEMPLATE
         end
 
         def add_plugin_lookup_folder(folder)
-          @plugin_lookup_folders.push(folder)
+          @plugin_lookup_folders.unshift(folder)
         end
 
         def add_plugin_info(path)
@@ -666,7 +680,7 @@ END_OF_TEMPLATE
           end
         end
 
-        ACTIONS=[PRESET_GBL_ACTIONS,:id,:preset,:open,:documentation,:genkey,:gem_path,:plugins,:flush_tokens,:echo,:wizard,:export_to_cli,:detect,:coffee,:ascp,:email_test,:smtp_settings,:proxy_check,:folder,:file,:check_update,:initdemo,:vault].flatten.freeze
+        ACTIONS=[PRESET_GBL_ACTIONS,:id,:preset,:open,:documentation,:genkey,:gem_path,:plugin,:flush_tokens,:echo,:wizard,:export_to_cli,:detect,:coffee,:ascp,:email_test,:smtp_settings,:proxy_check,:folder,:file,:check_update,:initdemo,:vault].flatten.freeze
 
         # "config" plugin
         def execute_action
@@ -698,8 +712,30 @@ END_OF_TEMPLATE
           when :flush_tokens
             deleted_files=Oauth.flush_tokens
             return {type: :value_list, data: deleted_files, name: 'file'}
-          when :plugins
-            return {type: :object_list, data: @plugins.keys.map { |i| { 'plugin' => i.to_s, 'path' => @plugins[i][:source] } } , fields: ['plugin','path']}
+          when :plugin
+            case self.options.get_next_command([:list,:create])
+            when :list
+              return {type: :object_list, data: @plugins.keys.map { |i| { 'plugin' => i.to_s, 'path' => @plugins[i][:source] } } , fields: ['plugin','path']}
+            when :create
+              plugin_name=options.get_next_argument('name',:single,:mandatory).downcase
+              plugin_folder=options.get_next_argument('folder',:single,:optional) || File.join(@main_folder,ASPERA_PLUGINS_FOLDERNAME)
+              plugin_file=File.join(plugin_folder,"#{plugin_name}.rb")
+              content=<<_EOF_
+require 'aspera/cli/plugin'
+module Aspera
+  module Cli
+    module Plugins
+      class #{plugin_name.capitalize} < Plugin
+        ACTIONS=[]
+        def execute_action; return Main.result_status("You called plugin #{plugin_name}"); end
+      end # #{plugin_name.capitalize}
+    end # Plugins
+  end # Cli
+end # Aspera
+_EOF_
+              File.write(plugin_file,content)
+              return Main.result_status("Created #{plugin_file}")
+            end
           when :wizard
             # interactive mode
             self.options.ask_missing_mandatory=true
@@ -905,7 +941,7 @@ END_OF_TEMPLATE
               Log.log.info("Setting server default preset to : #{DEMO_SERVER_PRESET}")
             end
             save_presets_to_config_file
-            return Main.result_status("Done")
+            return Main.result_status('Done')
           when :vault
             command=self.options.get_next_command([:init,:list,:get,:set,:delete])
             case command
@@ -916,9 +952,9 @@ END_OF_TEMPLATE
                 raise "default secrets already exists" if @config_presets.has_key?(CONF_PRESET_SECRETS)
                 @config_presets[CONF_PRESET_SECRETS]={}
                 set_global_default(:secrets,"@preset:#{CONF_PRESET_SECRETS}")
-              else raise "no such vault type"
+              else raise 'no such vault type'
               end
-              return Main.result_status("Done")
+              return Main.result_status('Done')
             when :list
               return {type: :object_list, data: vault.list}
             when :set
@@ -930,7 +966,7 @@ END_OF_TEMPLATE
               secret=self.options.get_next_argument('secret')
               vault.set(username: username, url: url, description: description, secret: secret)
               save_presets_to_config_file if vault.is_a?(Keychain::EncryptedHash)
-              return Main.result_status("Done")
+              return Main.result_status('Done')
             when :get
               # register url option
               BasicAuthPlugin.new(@agents.merge(skip_option_header: true))
@@ -944,7 +980,7 @@ END_OF_TEMPLATE
               username=self.options.get_option(:username,:mandatory)
               url=self.options.get_option(:url,:optional)
               result=vault.delete(username: username, url: url)
-              return Main.result_status("Done")
+              return Main.result_status('Done')
             end
           else raise 'INTERNAL ERROR: wrong case'
           end

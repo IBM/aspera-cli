@@ -1115,26 +1115,43 @@ To test if a secret can be found use:
 
 ### Plugins
 
-The CLI tool uses a plugin mechanism. The first level command (just after <%=tool%> on the command line) is the name of the concerned plugin which will execute the command. Each plugin usually represent commands sent to a specific application.
-For instance, the plugin "faspex" allows operations on the application "Aspera Faspex".
+The CLI tool uses a plugin mechanism.
+The first level command (just after <%=tool%> on the command line) is the name of the concerned plugin which will execute the command.
+Each plugin usually represents commands sent to a specific application.
+For instance, the plugin `faspex` allows operations on the application "Aspera Faspex".
+
+Available plugins can be found using command:
+
+```bash
+<%=cmd%> conf plugin list
+```
+
+```text
++--------------+-----------------------------------------------------------------------------------+
+| plugin       | path                                                                              |
++--------------+-----------------------------------------------------------------------------------+
+| shares       | /Users/laurent/workspace/aspera/aspera-cli/lib/aspera/cli/plugins/shares.rb       |
+| node         | /Users/laurent/workspace/aspera/aspera-cli/lib/aspera/cli/plugins/node.rb         |
+...
++--------------+-----------------------------------------------------------------------------------+
+```
 
 #### <a id="createownplugin"></a>Create your own plugin
 
+By default plugins are looked-up in folders specifed by (multi-value) option `plugin_folder`:
+
+```
+ascli --show-config --select=@json:'{"key":"plugin_folder"}'
+```
+
+You can create the skeleton of a new plugin like this:
+
 ```bash
-mkdir -p ~/.aspera/<%=cmd%>/plugins
-cat<<EOF>~/.aspera/<%=cmd%>/plugins/test.rb
-require 'aspera/cli/plugin'
-module Aspera
-  module Cli
-    module Plugins
-      class Test < Plugin
-        ACTIONS=[]
-        def execute_action; puts "Hello World!"; end
-      end # Test
-    end # Plugins
-  end # Cli
-end # Aspera
-EOF
+<%=cmd%> conf plugin create foo .
+
+Created ./foo.rb
+
+<%=cmd%> --plugin-folder=. foo
 ```
 
 #### <a id="plugins"></a>Plugins: Application URL and Authentication
@@ -3737,8 +3754,10 @@ So, it evolved into <%=tool%>:
 
 * <%=gemspec.version.to_s%>
 
-  * fix: #60 ascli executable was not any more found by default in 4.5.0
-  * fix: add case for password hiding in logs
+  * new: command `conf plugin create`
+  * change: (break) command `conf plugins` replaced with `conf plugin list`
+  * fix: #60 ascli executable was not installed by default in 4.5.0
+  * fix: add password hiding case in logs
 
 * 4.5.0
 
