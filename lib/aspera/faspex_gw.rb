@@ -172,7 +172,7 @@ module Aspera
         :SSLEnable          => true,
         :SSLVerifyClient    => OpenSSL::SSL::VERIFY_NONE,
       }
-      case 2
+      case 1
       when 0
         # generate self signed cert
         webrick_options[:SSLCertName]    = [ [ 'CN',WEBrick::Utils::getservername ] ]
@@ -180,6 +180,7 @@ module Aspera
       when 1
         fill_self_signed_cert(webrick_options)
       when 2
+        # TODO: args to set certificate of server
         webrick_options[:SSLPrivateKey] =OpenSSL::PKey::RSA.new(File.read('/Users/laurent/workspace/Tools/certificate/myserver.key'))
         webrick_options[:SSLCertificate] = OpenSSL::X509::Certificate.new(File.read('/Users/laurent/workspace/Tools/certificate/myserver.crt'))
       end
