@@ -2471,6 +2471,12 @@ shbxid=$(<%=cmd%> aoc user shared_inboxes --select=@json:'{"dropbox.name":"My Sh
 <%=cmd%> aoc packages list --query=@json:'{"dropbox_id":"'$shbxid'","archived":false,"received":true,"has_content":true,"exclude_dropbox_packages":false,"include_draft":false,"sort":"-received_at"}'
 ```
 
+Alternatively:
+
+```bash
+<%=cmd%> aoc packages list --query=@json:'{"dropbox_name":"My Shared Inbox","archived":false,"received":true,"has_content":true,"exclude_dropbox_packages":false,"include_draft":false,"sort":"-received_at"}'
+```
+
 ### Packages
 
 The webmail-like application.
@@ -2508,10 +2514,16 @@ Examples:
 <%=cmd%> aoc package send --value=@json:'{"name":"my delivery","recipients":[{"type":"dropbox","id":"12345"}]}' --ts=@json:'{"target_rate_kbps":100000}'  my_file.dat
 ```
 
-* Send a package with one file to a shared inbox (by name) with metadata
+* Send a package with one file to a shared inbox (by name) with metadata (using native interface)
 
 ```bash
 <%=cmd%> aoc package send --workspace=eudemo --value=@json:'{"name":"my pack title","recipients":["Shared Inbox Name"],"metadata":[{"input_type":"single-text","name":"Project Id","values":["123"]},{"input_type":"single-dropdown","name":"Type","values":["Opt2"]},{"input_type":"multiple-checkbox","name":"CheckThose","values":["Check1","Check2"]},{"input_type":"date","name":"Optional Date","values":["2021-01-13T15:02:00.000Z"]}]}' ~/Documents/Samples/200KB.1
+```
+
+A simpler possibility is to provide only metadata names and values:
+
+```bash
+<%=cmd%> aoc package send --workspace=eudemo --value=@json:'{"name":"my pack title","recipients":["Shared Inbox With Meta"],"metadata":{"Project Id":"123","Type":"Opt2","CheckThose":["Check1","Check2"],"Optional Date":"2021-01-13T15:02:00.000Z"}}' ~/Documents/Samples/200KB.1
 ```
 
 #### <a id="aoccargo"></a>Receive new packages only (Cargo)
@@ -3755,7 +3767,14 @@ So, it evolved into <%=tool%>:
 * <%=gemspec.version.to_s%>
 
   * new: command `conf plugin create`
-  * change: (break) command `conf plugins` replaced with `conf plugin list`
+  * new: global option `plugin_folder`
+  * new: command `aoc user workspaces show`
+  * new: simplified metadata passing for shared inbox package creation in AoC
+  * change: (break) command `aoc packages shared_inboxes list` replaces `aoc user shared_inboxes`
+  * change: (break) command `aoc user profile` replaces `aoc user info`
+  * change: (break) command `aoc user workspaces list` replaces `aoc user workspaces`
+  * change: (break) command `aoc user workspaces current` replaces `aoc workspace`
+  * change: (break) command `conf plugin list` replaces `conf plugins`
   * fix: #60 ascli executable was not installed by default in 4.5.0
   * fix: add password hiding case in logs
 

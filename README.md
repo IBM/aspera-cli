@@ -376,6 +376,12 @@ make
 make install
 ```
 
+Another possibility, if you already have a Java JVM is to use jruby:
+
+<https://www.jruby.org/download>
+
+Note that using jruby the startup time is longer than the native ruby.
+
 ### <a id="the_gem"></a>`aspera-cli` gem
 
 Once you have Ruby and rights to install gems: Install the gem and its dependencies:
@@ -1108,26 +1114,43 @@ ascli conf vault get --username=access_key1
 
 ### Plugins
 
-The CLI tool uses a plugin mechanism. The first level command (just after `ascli` on the command line) is the name of the concerned plugin which will execute the command. Each plugin usually represent commands sent to a specific application.
-For instance, the plugin "faspex" allows operations on the application "Aspera Faspex".
+The CLI tool uses a plugin mechanism.
+The first level command (just after `ascli` on the command line) is the name of the concerned plugin which will execute the command.
+Each plugin usually represents commands sent to a specific application.
+For instance, the plugin `faspex` allows operations on the application "Aspera Faspex".
+
+Available plugins can be found using command:
+
+```bash
+ascli conf plugin list
+```
+
+```text
++--------------+-----------------------------------------------------------------------------------+
+| plugin       | path                                                                              |
++--------------+-----------------------------------------------------------------------------------+
+| shares       | /Users/laurent/workspace/aspera/aspera-cli/lib/aspera/cli/plugins/shares.rb       |
+| node         | /Users/laurent/workspace/aspera/aspera-cli/lib/aspera/cli/plugins/node.rb         |
+...
++--------------+-----------------------------------------------------------------------------------+
+```
 
 #### <a id="createownplugin"></a>Create your own plugin
 
+By default plugins are looked-up in folders specifed by (multi-value) option `plugin_folder`:
+
+```
+ascli --show-config --select=@json:'{"key":"plugin_folder"}'
+```
+
+You can create the skeleton of a new plugin like this:
+
 ```bash
-mkdir -p ~/.aspera/ascli/plugins
-cat<<EOF>~/.aspera/ascli/plugins/test.rb
-require 'aspera/cli/plugin'
-module Aspera
-  module Cli
-    module Plugins
-      class Test < Plugin
-        ACTIONS=[]
-        def execute_action; puts "Hello World!"; end
-      end # Test
-    end # Plugins
-  end # Cli
-end # Aspera
-EOF
+ascli conf plugin create foo .
+
+Created ./foo.rb
+
+ascli --plugin-folder=. foo
 ```
 
 #### <a id="plugins"></a>Plugins: Application URL and Authentication
@@ -1873,6 +1896,8 @@ ascli aoc packages recv "my_package_id" --to-folder=.
 ascli aoc packages recv ALL --to-folder=. --once-only=yes --lock-port=12345
 ascli aoc packages send --value=@json:'{"name":"Important files delivery","recipients":["external.user@example.com"]}' --new-user-option=@json:'{"package_contact":true}' testfile.bin
 ascli aoc packages send --value=@json:'{"name":"Important files delivery","recipients":["internal.user@example.com"],"note":"my note"}' testfile.bin
+ascli aoc packages send --workspace="my_aoc_shbx_ws" --value=@json:'{"name":"Important files delivery","recipients":["my_aoc_shbx_name"],"metadata":[{"input_type":"single-text","name":"Project Id","values":["123"]},{"input_type":"single-dropdown","name":"Type","values":["Opt2"]},{"input_type":"multiple-checkbox","name":"CheckThose","values":["Check1","Check2"]},{"input_type":"date","name":"Optional Date","values":["2021-01-13T15:02:00.000Z"]}]}' testfile.bin
+ascli aoc packages send --workspace="my_aoc_shbx_ws" --value=@json:'{"name":"Important files delivery","recipients":["my_aoc_shbx_name"],"metadata":{"Project Id":"456","Type":"Opt2","CheckThose":["Check1","Check2"],"Optional Date":"2021-01-13T15:02:00.000Z"}}' testfile.bin
 ascli aoc packages send --workspace="my_aoc_shbx_ws" --value=@json:'{"name":"Important files delivery","recipients":["my_aoc_shbx_name"]}' testfile.bin
 ascli aoc packages send -N --value=@json:'{"name":"Important files delivery"}' testfile.bin --link=my_aoc_publink_send_aoc_user --password=my_aoc_publink_send_use_pass
 ascli aoc packages send -N --value=@json:'{"name":"Important files delivery"}' testfile.bin --link=my_aoc_publink_send_shd_inbox
@@ -1915,7 +1940,8 @@ ascli config doc transfer-parameters
 ascli config email_test --notif-to=my_recipient_email
 ascli config export
 ascli config genkey mykey
-ascli config plugins
+ascli config plugin create mycommand T
+ascli config plugin list
 ascli config proxy_check --fpac=file:///examples/proxy.pac https://eudemo.asperademo.com
 ascli console transfer current list 
 ascli console transfer smart list 
@@ -1943,6 +1969,7 @@ ascli faspex5 node list --value=@json:'{"type":"received","subtype":"mypackages"
 ascli faspex5 package list --value=@json:'{"mailbox":"inbox","state":["released"]}'
 ascli faspex5 package receive "my_package_id" --to-folder=.
 ascli faspex5 package send --value=@json:'{"title":"test title","recipients":[{"name":"${f5_user}"}]}' testfile.bin
+ascli mycommand --plugin-folder=T
 ascli node -N -Ptst_node_preview access_key create --value=@json:'{"id":"aoc_1","storage":{"type":"local","path":"/"}}'
 ascli node -N -Ptst_node_preview access_key delete aoc_1
 ascli node async bandwidth 1
@@ -2089,7 +2116,7 @@ OPTIONS: global
         --log-passwords=ENUM         show passwords in logs: yes, no
 
 COMMAND: config
-SUBCOMMANDS: list overview id preset open documentation genkey gem_path plugins flush_tokens echo wizard export_to_cli detect coffee ascp email_test smtp_settings proxy_check folder file check_update initdemo vault
+SUBCOMMANDS: list overview id preset open documentation genkey gem_path plugin flush_tokens echo wizard export_to_cli detect coffee ascp email_test smtp_settings proxy_check folder file check_update initdemo vault
 OPTIONS:
         --value=VALUE                extended value for create, update, list filter
         --property=VALUE             name of property to set
@@ -2113,6 +2140,7 @@ OPTIONS:
         --notif-to=VALUE             email recipient for notification of transfers
         --notif-template=VALUE       email ERB template for notification of transfers
         --version-check-days=VALUE   period in days to check new version (zero to disable)
+        --plugin-folder=VALUE        folder where to find additional plugins
         --ts=VALUE                   override transfer spec values (Hash, use @json: prefix), current={"create_dir"=>true}
         --local-resume=VALUE         set resume policy (Hash, use @json: prefix), current=
         --to-folder=VALUE            destination folder for downloaded files
@@ -2275,7 +2303,7 @@ OPTIONS:
 
 
 COMMAND: aoc
-SUBCOMMANDS: reminder bearer_token organization tier_restrictions user workspace packages files gateway admin automation servers
+SUBCOMMANDS: reminder servers bearer_token organization tier_restrictions user packages files admin automation gateway
 OPTIONS:
         --url=VALUE                  URL of application, e.g. https://org.asperafiles.com
         --username=VALUE             username to log in
@@ -2959,6 +2987,12 @@ shbxid=$(ascli aoc user shared_inboxes --select=@json:'{"dropbox.name":"My Share
 ascli aoc packages list --query=@json:'{"dropbox_id":"'$shbxid'","archived":false,"received":true,"has_content":true,"exclude_dropbox_packages":false,"include_draft":false,"sort":"-received_at"}'
 ```
 
+Alternatively:
+
+```bash
+ascli aoc packages list --query=@json:'{"dropbox_name":"My Shared Inbox","archived":false,"received":true,"has_content":true,"exclude_dropbox_packages":false,"include_draft":false,"sort":"-received_at"}'
+```
+
 ### Packages
 
 The webmail-like application.
@@ -2996,10 +3030,16 @@ ascli aoc package send --value=@json:'{"name":"my title","note":"my note","recip
 ascli aoc package send --value=@json:'{"name":"my delivery","recipients":[{"type":"dropbox","id":"12345"}]}' --ts=@json:'{"target_rate_kbps":100000}'  my_file.dat
 ```
 
-* Send a package with one file to a shared inbox (by name) with metadata
+* Send a package with one file to a shared inbox (by name) with metadata (using native interface)
 
 ```bash
 ascli aoc package send --workspace=eudemo --value=@json:'{"name":"my pack title","recipients":["Shared Inbox Name"],"metadata":[{"input_type":"single-text","name":"Project Id","values":["123"]},{"input_type":"single-dropdown","name":"Type","values":["Opt2"]},{"input_type":"multiple-checkbox","name":"CheckThose","values":["Check1","Check2"]},{"input_type":"date","name":"Optional Date","values":["2021-01-13T15:02:00.000Z"]}]}' ~/Documents/Samples/200KB.1
+```
+
+A simpler possibility is to provide only metadata names and values:
+
+```bash
+ascli aoc package send --workspace=eudemo --value=@json:'{"name":"my pack title","recipients":["Shared Inbox With Meta"],"metadata":{"Project Id":"123","Type":"Opt2","CheckThose":["Check1","Check2"],"Optional Date":"2021-01-13T15:02:00.000Z"}}' ~/Documents/Samples/200KB.1
 ```
 
 #### <a id="aoccargo"></a>Receive new packages only (Cargo)
@@ -4262,8 +4302,17 @@ So, it evolved into `ascli`:
 
 * 4.6.0.pre
 
-  * fix: #60 ascli executable was not any more found by default in 4.5.0
-  * fix: add case for password hiding in logs
+  * new: command `conf plugin create`
+  * new: global option `plugin_folder`
+  * new: command `aoc user workspaces show`
+  * new: simplified metadata passing for shared inbox package creation in AoC
+  * change: (break) command `aoc packages shared_inboxes list` replaces `aoc user shared_inboxes`
+  * change: (break) command `aoc user profile` replaces `aoc user info`
+  * change: (break) command `aoc user workspaces list` replaces `aoc user workspaces`
+  * change: (break) command `aoc user workspaces current` replaces `aoc workspace`
+  * change: (break) command `conf plugin list` replaces `conf plugins`
+  * fix: #60 ascli executable was not installed by default in 4.5.0
+  * fix: add password hiding case in logs
 
 * 4.5.0
 

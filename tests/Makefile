@@ -475,6 +475,15 @@ $(T)aocp8: $(T).exists
 	aoc_shbx_ws=$$($(EXE_NOMAN) conf id misc get aoc_shbx_ws);\
 	aoc_shbx_name=$$($(EXE_NOMAN) conf id misc get aoc_shbx_name);\
 	$(EXE_MAN) aoc packages send --workspace="$${aoc_shbx_ws}" --value=@json:'{"name":"'"$(PKG_TEST_TITLE)"'","recipients":["'$${aoc_shbx_name}'"]}' $(CF_LOCAL_SAMPLE_FILEPATH)
+	set -x;\
+	aoc_shbx_ws=$$($(EXE_NOMAN) conf id misc get aoc_shbx_ws);\
+	aoc_shbx_name=$$($(EXE_NOMAN) conf id misc get aoc_shbx_meta);\
+	$(EXE_MAN) aoc packages send --workspace="$${aoc_shbx_ws}" --value=@json:'{"name":"'"$(PKG_TEST_TITLE)"'","recipients":["'$${aoc_shbx_name}'"],"metadata":[{"input_type":"single-text","name":"Project Id","values":["123"]},{"input_type":"single-dropdown","name":"Type","values":["Opt2"]},{"input_type":"multiple-checkbox","name":"CheckThose","values":["Check1","Check2"]},{"input_type":"date","name":"Optional Date","values":["2021-01-13T15:02:00.000Z"]}]}' $(CF_LOCAL_SAMPLE_FILEPATH)
+	@touch $@
+	set -x;\
+	aoc_shbx_ws=$$($(EXE_NOMAN) conf id misc get aoc_shbx_ws);\
+	aoc_shbx_name=$$($(EXE_NOMAN) conf id misc get aoc_shbx_meta);\
+	$(EXE_MAN) aoc packages send --workspace="$${aoc_shbx_ws}" --value=@json:'{"name":"'"$(PKG_TEST_TITLE)"'","recipients":["'$${aoc_shbx_name}'"],"metadata":{"Project Id":"456","Type":"Opt2","CheckThose":["Check1","Check2"],"Optional Date":"2021-01-13T15:02:00.000Z"}}' $(CF_LOCAL_SAMPLE_FILEPATH)
 	@touch $@
 $(T)aocp9: $(T).exists
 	@echo $@
