@@ -43,6 +43,7 @@ $(INCL_COMMANDS): $(DIR_TMP).exists $(TEST_MAKEFILE)
 	sed -i.bak -Ee 's/"'"'"'/"/g' $(DIR_TMP)usg1.txt
 	sed -i.bak -Ee 's/'"'"'"/"/g' $(DIR_TMP)usg1.txt
 	sed -i.bak -Ee 's/""/"/g' $(DIR_TMP)usg1.txt
+	sed -i.bak -Ee 's/@preset:misc./my_/g' $(DIR_TMP)usg1.txt
 	sed -i.bak -Ee 's/CF_//g' $(DIR_TMP)usg1.txt
 	sed -i.bak -Ee 's/DIR_[A-Z]+//g' $(DIR_TMP)usg1.txt
 	sed -i.bak -Ee 's/LOCAL_SAMPLE_FILE(NAME|PATH)/testfile.bin/g' $(DIR_TMP)usg1.txt
