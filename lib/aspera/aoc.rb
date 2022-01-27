@@ -428,5 +428,26 @@ module Aspera
       return result
     end
 
+    # @param entity_type path of entuty in API
+    # @param entity_name name of searched entity
+    # @param options additional search options
+    def lookup_entity_by_name(entity_type,entity_name,options={})
+      # returns entities whose name contains value (case insensitive)
+      matching_items=read(entity_type,options.merge({'q'=>entity_name}))[:data]
+      case matching_items.length
+      when 1; return matching_items.first
+      when 0; raise RuntimeError,'not found'
+      else
+        # multiple case insensitive partial matches, try case insensitive full match
+        # (anyway AoC does not allow creation of 2 entities with same case insensitive name)
+        icase_matches=matching_items.select{|i|i['name'].casecmp?(entity_name)}
+        case icase_matches.length
+        when 1; return icase_matches.first
+        when 0; raise "#{entity_type}: multiple case insensitive partial match for: \"#{entity_name}\": #{matching_items.map{|i|i['name']}} but no case insensitive full match. Please be more specific or give exact name."
+        else    raise "Two entities cannot have the same case insensitive name: #{icase_matches.map{|i|i['name']}}"
+        end
+      end
+    end
+
   end # AoC
 end # Aspera
