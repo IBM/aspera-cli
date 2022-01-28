@@ -644,7 +644,7 @@ The style of output can be set using the `format` parameter, supporting:
 
 Table output can be filtered using the `select` parameter. Example:
 
-```json
+```javascript
 <%=cmd%> aoc admin res user list --fields=name,email,ats_admin --query=@json:'{"sort":"name"}' --select=@json:'{"ats_admin":true}'
 ```
 
@@ -699,8 +699,8 @@ The difference between reader and decoder is order and ordinality. Both act like
 The following "readers" are supported (returns value in []):
 
 * @val:VALUE : [String] prevent further special prefix processing, e.g. `--username=@val:laurent` sets the option `username` to value `laurent`.
-* @file:PATH : [String] read value from a file (prefix "~/" is replaced with the users home folder), e.g. --key=@file:~/.ssh/mykey
-* @path:PATH : [String] performs path expansion (prefix "~/" is replaced with the users home folder), e.g. --config-file=@path:~/sample_config.yml
+* @file:PATH : [String] read value from a file (prefix `~/` is replaced with the users home folder), e.g. `--key=@file:~/.ssh/mykey`
+* @path:PATH : [String] performs path expansion (prefix `~/` is replaced with the users home folder), e.g. `--config-file=@path:~/sample_config.yml`
 * @env:ENVVAR : [String] read from a named env var, e.g.--password=@env:MYPASSVAR
 * @stdin: : [String] read from stdin (no value on right)
 * @preset:NAME : [Hash] get whole <%=opprst%> value by name. Subvalues can also be used using `.` as separator. e.g. foo.bar is conf[foo][bar]
@@ -757,7 +757,7 @@ toto,titi@tutu.tata
 
 Example: create a hash and include values from preset named "config" of config file in this hash
 
-```json
+```javascript
 <%=cmd%> config echo @incps:@json:'{"hello":true,"incps":["config"]}'
 ```
 
@@ -846,7 +846,7 @@ The command `set` allows setting individual options in a <%=prst%>.
 
 The command `initialize`, like `update` allows to set several parameters at once, but it deletes an existing configuration instead of updating it, and expects a _[Structured Value](#native)_.
 
-```json
+```javascript
 <%=cmd%> config preset initialize demo_server @json:'{"url":"ssh://demo.asperasoft.com:33001","username":"asperaweb","password":"_demo_pass_","ts":{"precalculate_job_size":true}}'
 ```
 
@@ -1001,7 +1001,7 @@ Example: Define options using command line:
 
 Example: Define options using a hash:
 
-```json
+```javascript
 <%=cmd%> -N --preset=@json:'{"url":"x","password":"y","username":"y"}' node --show-config
 ```
 
@@ -1027,7 +1027,7 @@ This can also be provisioned in a config file:
 
 Note that this can also be done with one single command:
 
-```json
+```javascript
 <%=cmd%> config preset init shares06 @json:'{"url":"https://10.25.0.6","username":"john","password":"4sp3ra"}'
 ```
 
@@ -1143,7 +1143,7 @@ Available plugins can be found using command:
 
 By default plugins are looked-up in folders specifed by (multi-value) option `plugin_folder`:
 
-```json
+```javascript
 ascli --show-config --select=@json:'{"key":"plugin_folder"}'
 ```
 
@@ -1208,7 +1208,7 @@ Like any other option, those can be set either on command line, or in config fil
 
 Example:
 
-```json
+```javascript
 <%=cmd%> aoc admin res package list --http-options=@json:'{"read_timeout":10.0}'
 ```
 
@@ -1415,7 +1415,7 @@ Some transfer errors are considered "retryable" (e.g. timeout) and some other no
 
 Examples:
 
-```json
+```javascript
 <%=cmd%> ... --transfer-info=@json:'{"wss":true,"resume":{"iter_max":10}}'
 <%=cmd%> ... --transfer-info=@json:'{"spawn_delay_sec":2.5,"multi_incr_udp":false}'
 ```
@@ -1458,7 +1458,7 @@ If it possible to send using a HTTP gateway, in case FASP is not allowed. `trans
 
 Example:
 
-```json
+```javascript
 <%=cmd%> faspex package recv --id=323 --transfer=httpgw --transfer-info=@json:'{"url":"https://asperagw.example.com:9443/aspera/http-gwy/v1"}'
 ```
 
@@ -1507,7 +1507,7 @@ References:
 
 Parameters can be displayed with commands:
 
-```json
+```javascript
 <%=cmd%> config ascp spec
 <%=cmd%> config ascp spec --select=@json:'{"d":"Y"}' --fields=-d,n,c
 ```
@@ -1562,7 +1562,7 @@ For ease of use and flexibility, the list of files to transfer is specified by t
 
 * an [Extended Value](#extended) holding an *Array of String*. Examples:
 
-```json
+```javascript
 --sources=@json:'["file1","file2"]'
 ```
 
@@ -1576,19 +1576,19 @@ For ease of use and flexibility, the list of files to transfer is specified by t
 
 * `@ts` : the user provides the list of files directly in the `ts` option, in its `paths` field. Example:
 
-```json
+```javascript
 --sources=@ts --ts=@json:'{"paths":[{"source":"file1"},{"source":"file2"}]}'
 ```
 
 providing a file list directly to ascp:
 
-```json
+```javascript
 ... --sources=@ts --ts=@json:'{"paths":[],"EX_file_list":"filelist.txt"}'
 ```
 
 * Not recommended: It is possible to specify bare ascp arguments using the pseudo [_transfer-spec_](#transferspec) parameter `EX_ascp_args`.
 
-```json
+```javascript
 --sources=@ts --ts=@json:'{"paths":[{"source":"dummy"}],"EX_ascp_args":["--file-list","myfilelist"]}'
 ```
 
@@ -1624,7 +1624,7 @@ Multi session, i.e. starting a transfer of a file set using multiple sessions (o
 
 * when agent=node :
 
-```json
+```javascript
 --ts=@json:'{"multi_session":10,"multi_session_threshold":1}'
 ```
 
@@ -1632,7 +1632,7 @@ Multi-session is directly supported by the node daemon.
 
 * when agent=direct :
 
-```json
+```javascript
 --ts=@json:'{"multi_session":5,"multi_session_threshold":1,"resume_policy":"none"}'
 ```
 
@@ -1647,25 +1647,25 @@ When multi-session is used, one separate UDP port is used per session (refer to 
 
 * Change target rate
 
-```json
+```javascript
 --ts=@json:'{"target_rate_kbps":500000}'
 ```
 
 * Override the FASP SSH port to a specific TCP port:
 
-```json
+```javascript
 --ts=@json:'{"ssh_port":33002}'
 ```
 
 * Force http fallback mode:
 
-```json
+```javascript
 --ts=@json:'{"http_fallback":"force"}'
 ```
 
 * Activate progress when not activated by default on server
 
-```json
+```javascript
 --ts=@json:'{"precalculate_job_size":true}'
 ```
 
@@ -2009,7 +2009,7 @@ If you are not using the built-in client_id and secret, JWT needs to be authoriz
 :............:...............:
 ```
 
-```json
+```javascript
 <%=cmd%> aoc admin res client modify BJLPObQiFw @json:'{"jwt_grant_enabled":true,"explicit_authorization_required":false}'
 ```
 
@@ -2125,19 +2125,19 @@ Examples:
 
 * List users with `laurent` in name:
 
-```json
+```javascript
 <%=cmd%> aoc admin res user list --query=--query=@json:'{"q":"laurent"}'
 ```
 
 * List users who logged-in before a date:
 
-```json
+```javascript
 <%=cmd%> aoc admin res user list --query=@json:'{"q":"last_login_at:<2018-05-28"}'
 ```
 
 * List external users and sort in reverse alphabetical order using name:
 
-```json
+```javascript
 <%=cmd%> aoc admin res user list --query=@json:'{"member_of_any_workspace":false,"sort":"-name"}'
 ```
 
@@ -2198,7 +2198,7 @@ The environment provided contains the following additional variable:
 
 Example:
 
-```json
+```javascript
 <%=cmd%> aoc admin analytics transfers --once-only=yes --lock-port=12345 \
 --query=@json:'{"status":"completed","direction":"receive"}' \
 --notif-to=active --notif-template=@file:mytemplate.erb
@@ -2223,7 +2223,7 @@ Refer to section "Examples" of [ATS](#ats) and substitute command `ats` with `ao
 
 #### Example: Bulk creation of users
 
-```json
+```javascript
 <%=cmd%> aoc admin res user create --bulk=yes @json:'[{"email":"dummyuser1@example.com"},{"email":"dummyuser2@example.com"}]'
 ```
 
@@ -2238,7 +2238,7 @@ Refer to section "Examples" of [ATS](#ats) and substitute command `ats` with `ao
 
 #### Example: Find with filter and delete
 
-```json
+```javascript
 <%=cmd%> aoc admin res user list --query='@json:{"q":"dummyuser"}' --fields=id,email
 ```
 
@@ -2259,7 +2259,7 @@ thelist=$(<%=cmd%> aoc admin res user list --query='@json:{"q":"dummyuser"}' --f
 echo $thelist
 ```
 
-```json
+```javascript
 ["113501","354061"]
 ```
 
@@ -2316,11 +2316,11 @@ Creation of a sub-access key is like creation of access key with the following d
 
 Examples of query (TODO: cleanup):
 
-```json
+```javascript
 {"q":"type(file_upload OR file_delete OR file_download OR file_rename OR folder_create OR folder_delete OR folder_share OR folder_share_via_public_link)","sort":"-date"}
 ```
 
-```json
+```javascript
 {"tag":"aspera.files.package_id=LA8OU3p8w"}
 ```
 
@@ -2332,7 +2332,7 @@ Examples of query (TODO: cleanup):
 
 #### Example: Display members of a workspace
 
-```json
+```javascript
 <%=cmd%> aoc admin res workspace_membership list --fields=member_type,manager,member.email --query=@json:'{"embed":"member","inherited":false,"workspace_id":11363,"sort":"name"}'
 ```
 
@@ -2351,7 +2351,7 @@ Examples of query (TODO: cleanup):
 
 other query parameters:
 
-```json
+```javascript
 {"workspace_membership_through":true,"include_indirect":true}
 ```
 
@@ -2397,7 +2397,7 @@ e- Add members to second workspace
 
 #### Example: Get users who did not log since a date
 
-```json
+```javascript
 <%=cmd%> aoc admin res user list --fields=email --query=@json:'{"q":"last_login_at:<2018-05-28"}'
 ```
 
@@ -2412,7 +2412,7 @@ e- Add members to second workspace
 
 #### Example: List "Limited" users
 
-```json
+```javascript
 <%=cmd%> aoc admin res user list --fields=email --select=@json:'{"member_of_any_workspace":false}'
 ```
 
@@ -2454,13 +2454,13 @@ Then, create two shared folders located in two regions, in your files home, in a
 
 Then, transfer between those:
 
-```json
+```javascript
 <%=cmd%> -Paoc_show aoc files transfer --from-folder='IBM Cloud SJ' --to-folder='AWS Singapore' 100GB.file --ts=@json:'{"target_rate_kbps":"1000000","multi_session":10,"multi_session_threshold":1}'
 ```
 
 #### Example: create registration key to register a node
 
-```json
+```javascript
 <%=cmd%> aoc admin res client create @json:'{"data":{"name":"laurentnode","client_subject_scopes":["alee","aejd"],"client_subject_enabled":true}}' --fields=token --format=csv
 ```
 
@@ -2499,7 +2499,7 @@ So, for example, the creation of a node using ATS in IBM Cloud looks like (see o
 
 * create the access key on ATS
 
-```json
+```javascript
 <%=cmd%> aoc admin ats access_key create --cloud=softlayer --region=eu-de --params=@json:'{"storage":{"type":"ibm-s3","bucket":"mybucket","credentials":{"access_key_id":"mykey","secret_access_key":"mysecret"},"path":"/"}}'
 ```
 
@@ -2513,7 +2513,7 @@ Take a note of the randomly generated `id` and `secret`.
 
 * Create the node entity
 
-```json
+```javascript
 <%=cmd%> aoc admin res node create @json:'{"name":"myname","access_key":"*accesskeyid*","ats_access_key":true,"ats_storage_type":"ibm-s3","url":"https://ats-sl-fra-all.aspera.io"}'
 ```
 
@@ -2550,13 +2550,13 @@ Notes:
 
 #### Example: Send a package to a shared inbox with metadata
 
-```json
+```javascript
 <%=cmd%> aoc package send --workspace=eudemo --value=@json:'{"name":"my pack title","recipients":["Shared Inbox With Meta"],"metadata":{"Project Id":"123","Type":"Opt2","CheckThose":["Check1","Check2"],"Optional Date":"2021-01-13T15:02:00.000Z"}}' ~/Documents/Samples/200KB.1
 ```
 
 It is also possible to use identifiers and API parameters:
 
-```json
+```javascript
 <%=cmd%> aoc package send --workspace=eudemo --value=@json:'{"name":"my pack title","recipients":[{"type":"dropbox","id":"12345"}],"metadata":[{"input_type":"single-text","name":"Project Id","values":["123"]},{"input_type":"single-dropdown","name":"Type","values":["Opt2"]},{"input_type":"multiple-checkbox","name":"CheckThose","values":["Check1","Check2"]},{"input_type":"date","name":"Optional Date","values":["2021-01-13T15:02:00.000Z"]}]}' ~/Documents/Samples/200KB.1
 ```
 
@@ -2564,7 +2564,7 @@ It is also possible to use identifiers and API parameters:
 
 When user packages are listed, the following query is used:
 
-```json
+```javascript
 {"archived":false,"exclude_dropbox_packages":true,"has_content":true,"received":true}
 ```
 
@@ -2572,7 +2572,7 @@ To list packages in a shared inbox, the query has to be specified with withe the
 
 Using shared inbox name:
 
-```json
+```javascript
 <%=cmd%> aoc packages list --query=@json:'{"dropbox_name":"My Shared Inbox","archived":false,"received":true,"has_content":true,"exclude_dropbox_packages":false,"include_draft":false,"sort":"-received_at"}'
 ```
 
@@ -2582,7 +2582,7 @@ Using shared inbox identifier: first retrieve the id of the shared inbox, and th
 shbxid=$(<%=cmd%> aoc packages shared_inboxes show name 'My Shared Inbox' --format=csv --display=data --fields=id --transpose-single=no)
 ```
 
-```json
+```javascript
 <%=cmd%> aoc packages list --query=@json:'{"dropbox_id":"'$shbxid'","archived":false,"received":true,"has_content":true,"exclude_dropbox_packages":false,"include_draft":false,"sort":"-received_at"}'
 ```
 
@@ -2786,19 +2786,19 @@ Then, to register the key by default for the ats plugin, create a preset. Execut
 
 Example: create access key on IBM Cloud (softlayer):
 
-```json
+```javascript
 <%=cmd%> ats access_key create --cloud=softlayer --region=ams --params=@json:'{"storage":{"type":"softlayer_swift","container":"_container_name_","credentials":{"api_key":"value","username":"_name_:_usr_name_"},"path":"/"},"id":"_optional_id_","name":"_optional_name_"}'
 ```
 
 Example: create access key on AWS:
 
-```json
+```javascript
 <%=cmd%> ats access_key create --cloud=aws --region=eu-west-1 --params=@json:'{"id":"testkey3","name":"laurent key AWS","storage":{"type":"aws_s3","bucket":"my-bucket","credentials":{"access_key_id":"AKIA_MY_API_KEY","secret_access_key":"my/secret/here"},"path":"/laurent"}}'
 ```
 
 Example: create access key on Azure SAS:
 
-```json
+```javascript
 <%=cmd%> ats access_key create --cloud=azure --region=eastus --params=@json:'{"id":"testkeyazure","name":"laurent key azure","storage":{"type":"azure_sas","credentials":{"shared_access_signature":"https://containername.blob.core.windows.net/blobname?sr=c&..."},"path":"/"}}'
 ```
 
@@ -2806,7 +2806,7 @@ Example: create access key on Azure SAS:
 
 Example: create access key on Azure:
 
-```json
+```javascript
 <%=cmd%> ats access_key create --cloud=azure --region=eastus --params=@json:'{"id":"testkeyazure","name":"laurent key azure","storage":{"type":"azure","credentials":{"account":"myaccount","key":"myaccesskey","storage_endpoint":"myblob"},"path":"/"}}'
 ```
 
@@ -2832,7 +2832,7 @@ If username is not provided, the default transfer user `xfer` is used.
 
 If no SSH password or key is provided, and a token is provided in transfer spec, then standard bypass keys are used:
 
-```json
+```javascript
 <%=cmd%> server --url=ssh://... --ts=@json:'{"token":"Basic abc123"}'
 ```
 
@@ -2905,7 +2905,7 @@ For transfers, it is possible to control how transfer is authorized using option
 * `aspera` : api `<upload|download>_setup` is called to create the transfer spec including the Aspera token
 * `basic` : transfer spec is created like this:
 
-```json
+```javascript
 {
   "remote_host": address of node url,
   "remote_user": "xfer",
@@ -2935,7 +2935,7 @@ It is possible to start a FASPStream session using the node API:
 
 Use the "node stream create" command, then arguments are provided as a [_transfer-spec_](#transferspec).
 
-```json
+```javascript
 <%=cmd%> node stream create --ts=@json:'{"direction":"send","source":"udp://233.3.3.4:3000?loopback=1&ttl=2","destination":"udp://233.3.3.3:3001/","remote_host":"localhost","remote_user":"stream","remote_password":"XXXX"}' --preset=stream
 ```
 
@@ -2948,7 +2948,7 @@ Refer to [Aspera documentation](https://download.asperasoft.com/download/docs/en
 * Start watchd and watchfolderd services running as a system user having access to files
 * configure a watchfolder to define automated transfers
 
-```json
+```javascript
 <%=cmd%> node service create @json:'{"id":"mywatchd","type":"WATCHD","run_as":{"user":"user1"}}'
 <%=cmd%> node service create @json:'{"id":"mywatchfolderd","type":"WATCHFOLDERD","run_as":{"user":"user1"}}'
 <%=cmd%> node watch_folder create @json:'{"id":"mywfolder","source_dir":"/watch1","target_dir":"/","transport":{"host":"10.25.0.4","user":"user1","pass":"mypassword"}}'
@@ -2958,7 +2958,7 @@ Refer to [Aspera documentation](https://download.asperasoft.com/download/docs/en
 
 Follow the Aspera Transfer Server configuration to activate this feature.
 
-```json
+```javascript
 <%=cmd%> node central file list --validator=<%=cmd%> --data=@json:'{"file_transfer_filter":{"max_result":1}}'
 ```
 
@@ -2970,7 +2970,7 @@ Follow the Aspera Transfer Server configuration to activate this feature.
 :..............:..............:............:......................................:
 ```
 
-```json
+```javascript
 <%=cmd%> node central file update --validator=<%=cmd%> --data=@json:'{"files":[{"session_uuid": "1a74444c-...","file_id": "084fb181-...","status": "completed"}]}'
 ```
 
@@ -2995,7 +2995,7 @@ This will get transfer information from the SHOD instance and tell the Azure ATS
 
 ### Create access key
 
-```json
+```javascript
 <%=cmd%> node access_key create --value=@json:'{"id":"eudemo-sedemo","secret":"mystrongsecret","storage":{"type":"local","path":"/data/asperafiles"}}'
 ```
 
@@ -3066,7 +3066,7 @@ If no parameter `max` or `pmax` is provided, then all packages will be listed in
 
 #### Example: list packages in dropbox
 
-```json
+```javascript
 <%=cmd%> faspex package list --box=inbox --recipient='*my_dropbox' --query=@json:'{"max":20,"pmax":2,"count":20}'
 ```
 
@@ -3099,7 +3099,7 @@ The command is `faspex package send`. Package information (title, note, metadata
 
 Example:
 
-```json
+```javascript
 <%=cmd%> faspex package send --delivery-info=@json:'{"title":"my title","recipients":["laurent.martin.aspera@fr.ibm.com"]}' --url=https://faspex.corp.com/aspera/faspex --username=foo --password=bar /tmp/file1 /home/bar/file2
 ```
 
@@ -3116,7 +3116,7 @@ Like for any transfer, a notification can be sent by email using parameters: `no
 
 Example:
 
-```json
+```javascript
 <%=cmd%> faspex package send --delivery-info=@json:'{"title":"test pkg 1","recipients":["aspera.user1@gmail.com"]}' ~/Documents/Samples/200KB.1 --notif-to=aspera.user1@gmail.com --notif-template=@ruby:'%Q{From: <%='<'%>%=from_name%> <<%='<'%>%=from_email%>>\nTo: <<%='<'%>%=to%>>\nSubject: Package sent: <%='<'%>%=ts["tags"]["aspera"]["faspex"]["metadata"]["_pkg_name"]%> files received\n\nTo user: <%='<'%>%=ts["tags"]["aspera"]["faspex"]["recipients"].first["email"]%>}'
 ```
 
@@ -3126,7 +3126,7 @@ In this example the notification template is directly provided on command line. 
 
 Example:
 
-```json
+```javascript
 <%=cmd%> faspex v4 dropbox create --value=@json:'{"dropbox":{"e_wg_name":"test1","e_wg_desc":"test1"}}'
 <%=cmd%> faspex v4 dropbox list
 <%=cmd%> faspex v4 dropbox delete --id=36
@@ -3225,7 +3225,7 @@ ibmcloud resource service-key aoclaurent --output JSON|jq '.[0].credentials'>$HO
 
 It consists in the following structure:
 
-```json
+```javascript
 {
   "apikey": "xxxxxxx.....",
   "cos_hmac_keys": {
@@ -3582,7 +3582,7 @@ The `smtp` option is a hash table (extended value) with the following fields:
 
 or
 
-```json
+```javascript
 <%=cmd%> config preset init smtp_google @json:'{"server":"smtp.google.com","username":"john@gmail.com","password":"P@ssw0rd"}'
 ```
 
@@ -3689,7 +3689,7 @@ Note that in addition, many "EX_" [_transfer-spec_](#transferspec) parameters ar
 
 ### Simple session
 
-```json
+```javascript
 MY_TSPEC='{"remote_host":"demo.asperasoft.com","remote_user":"asperaweb","ssh_port":33001,"remote_password":"_demo_pass_","direction":"receive","destination_root":"./test.dir","paths":[{"source":"/aspera-test-dir-tiny/200KB.1"}],"resume_level":"none"}'
 
 echo "${MY_TSPEC}"|asession
@@ -3701,7 +3701,7 @@ echo "${MY_TSPEC}"|asession
 
 This is particularly useful for a persistent session ( with the [_transfer-spec_](#transferspec) parameter: `"keepalive":true` )
 
-```json
+```javascript
 asession
 {"remote_host":"demo.asperasoft.com","ssh_port":33001,"remote_user":"asperaweb","remote_password":"_demo_pass_","direction":"receive","destination_root":".","keepalive":true,"resume_level":"none"}
 {"type":"START","source":"/aspera-test-dir-tiny/200KB.2"}
@@ -3770,7 +3770,7 @@ Once <%=tool%> parameters are defined, run the command using the OS native sched
 
 ### Example: upload folder
 
-```json
+```javascript
 <%=cmd%> server upload source_hot --to-folder=/Upload/target_hot --lock-port=12345 --ts=@json:'{"EX_ascp_args":["--remove-after-transfer","--remove-empty-directories","--exclude-newer-than=-8","--src-base","source_hot"]}'
 ```
 
