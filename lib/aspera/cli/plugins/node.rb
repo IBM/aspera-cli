@@ -12,10 +12,10 @@ module Aspera
       class Node < BasicAuthPlugin
         class << self
           def detect(base_url)
-            api=Rest.new({:base_url=>base_url})
-            result=api.call({:operation=>'GET',:subpath=>'ping'})
+            api=Rest.new({ base_url: base_url})
+            result=api.call({ operation: 'GET', subpath: 'ping'})
             if result[:http].body.eql?('')
-              return {:product=>:node,:version=>'unknown'}
+              return { product: :node, version: 'unknown'}
             end
             return nil
           end
@@ -27,15 +27,13 @@ module Aspera
           super(env)
           # this is added to some requests , for instance to add tags (COS)
           @add_request_param = env[:add_request_param] || {}
-          unless env[:skip_basic_auth_options]
-            self.options.add_opt_simple(:validator,"identifier of validator (optional for central)")
-            self.options.add_opt_simple(:asperabrowserurl,"URL for simple aspera web ui")
-            self.options.add_opt_simple(:name,"sync name")
-            self.options.add_opt_list(:token_type,[:aspera,:basic,:hybrid],'Type of token used for transfers')
-            self.options.set_option(:asperabrowserurl,'https://asperabrowser.mybluemix.net')
-            self.options.set_option(:token_type,:aspera)
-            self.options.parse_options!
-          end
+          self.options.add_opt_simple(:validator,"identifier of validator (optional for central)")
+          self.options.add_opt_simple(:asperabrowserurl,"URL for simple aspera web ui")
+          self.options.add_opt_simple(:sync_name,"sync name")
+          self.options.add_opt_list(:token_type,[:aspera,:basic,:hybrid],'Type of token used for transfers')
+          self.options.set_option(:asperabrowserurl,'https://asperabrowser.mybluemix.net')
+          self.options.set_option(:token_type,:aspera)
+          self.options.parse_options!
           return if env[:man_only]
           if env.has_key?(:node_api)
             @api_node=env[:node_api]
@@ -92,7 +90,7 @@ module Aspera
 
         # translates paths results into CLI result, and removes prefix
         def c_result_translate_rem_prefix(resp,type,success_msg,path_prefix)
-          resres={:data=>[],:type=>:object_list,:fields=>[type,'result']}
+          resres={ data: [], type: :object_list, fields: [type,'result']}
           JSON.parse(resp[:http].body)['paths'].each do |p|
             result=success_msg
             if p.has_key?('error')
@@ -132,7 +130,7 @@ module Aspera
               nagios.add_critical('node api',e.to_s)
             end
             begin
-              @api_node.call({:operation=>'POST',:subpath=>'services/soap/Transfer-201210',:headers=>{'Content-Type'=>'text/xml;charset=UTF-8','SOAPAction'=>'FASPSessionNET-200911#GetSessionInfo'},:text_body_params=>SAMPLE_SOAP_CALL})[:http].body
+              @api_node.call({ operation: 'POST', subpath: 'services/soap/Transfer-201210', headers: {'Content-Type'=>'text/xml;charset=UTF-8','SOAPAction'=>'FASPSessionNET-200911#GetSessionInfo'}, text_body_params: SAMPLE_SOAP_CALL})[:http].body
               nagios.add_ok('central','accessible by node')
             rescue => e
               nagios.add_critical('central',e.to_s)
@@ -140,19 +138,19 @@ module Aspera
             return nagios.result
           when :events
             events=@api_node.read('events',self.options.get_option(:value,:optional))[:data]
-            return { :type=>:object_list, :data => events}
+            return { type: :object_list, data: events}
           when :info
             node_info=@api_node.read('info')[:data]
-            return { :type=>:single_object, :data => node_info, :textify => lambda { |table_data| c_textify_bool_list_result(table_data,['capabilities','settings'])}}
+            return { type: :single_object, data: node_info, textify: lambda { |table_data| c_textify_bool_list_result(table_data,['capabilities','settings'])}}
           when :license # requires: asnodeadmin -mu <node user> --acl-add=internal --internal
             node_license=@api_node.read('license')[:data]
             if node_license['failure'].is_a?(String) and node_license['failure'].include?('ACL')
               Log.log.error("server must have: asnodeadmin -mu <node user> --acl-add=internal --internal")
             end
-            return { :type=>:single_object, :data => node_license}
+            return { type: :single_object, data: node_license}
           when :delete
             paths_to_delete = get_next_arg_add_prefix(prefix_path,"file list",:multiple)
-            resp=@api_node.create('files/delete',{:paths=>paths_to_delete.map{|i| {'path'=>i.start_with?('/') ? i : '/'+i} }})
+            resp=@api_node.create('files/delete',{ paths: paths_to_delete.map{|i| {'path'=>i.start_with?('/') ? i : '/'+i} }})
             return c_result_translate_rem_prefix(resp,'file','deleted',prefix_path)
           when :search
             search_root = get_next_arg_add_prefix(prefix_path,"search root")
@@ -160,7 +158,7 @@ module Aspera
             other_options=self.options.get_option(:value,:optional)
             parameters.merge!(other_options) unless other_options.nil?
             resp=@api_node.create('files/search',parameters)
-            result={ :type=>:object_list, :data => resp[:data]['items']}
+            result={ type: :object_list, data: resp[:data]['items']}
             return Main.result_empty if result[:data].empty?
             result[:fields]=result[:data].first.keys.select{|i|!['basename','permissions'].include?(i)}
             self.format.display_status("Items: #{resp[:data]['item_count']}/#{resp[:data]['total_count']}")
@@ -170,26 +168,26 @@ module Aspera
             # TODO: could be a list of path
             path_list=get_next_arg_add_prefix(prefix_path,"folder path or ext.val. list")
             path_list=[path_list] unless path_list.is_a?(Array)
-            resp=@api_node.create('space',{ "paths" => path_list.map {|i| {:path=>i} } } )
-            result={:data=>resp[:data]['paths'],:type=>:object_list}
+            resp=@api_node.create('space',{ "paths" => path_list.map {|i| { path: i} } } )
+            result={ data: resp[:data]['paths'], type: :object_list}
             #return c_result_translate_rem_prefix(resp,'folder','created',prefix_path)
             return c_result_remove_prefix_path(result,'path',prefix_path)
           when :mkdir
             path_list=get_next_arg_add_prefix(prefix_path,"folder path or ext.val. list")
             path_list=[path_list] unless path_list.is_a?(Array)
             #TODO: a command for that ?
-            #resp=@api_node.create('space',{ "paths" => path_list.map {|i| {:type=>:directory,:path=>i} } } )
-            resp=@api_node.create('files/create',{ "paths" => [{ :type => :directory, :path => path_list } ] } )
+            #resp=@api_node.create('space',{ "paths" => path_list.map {|i| { type: :directory, path: i} } } )
+            resp=@api_node.create('files/create',{ "paths" => [{ type: :directory, path: path_list } ] } )
             return c_result_translate_rem_prefix(resp,'folder','created',prefix_path)
           when :mklink
             target=get_next_arg_add_prefix(prefix_path,"target")
             path_list=get_next_arg_add_prefix(prefix_path,"link path")
-            resp=@api_node.create('files/create',{ "paths" => [{ :type => :symbolic_link, :path => path_list, :target => {:path => target} } ] } )
+            resp=@api_node.create('files/create',{ "paths" => [{ type: :symbolic_link, path: path_list, target: { path: target} } ] } )
             return c_result_translate_rem_prefix(resp,'folder','created',prefix_path)
           when :mkfile
             path_list=get_next_arg_add_prefix(prefix_path,"file path")
             contents64=Base64.strict_encode64(self.options.get_next_argument("contents"))
-            resp=@api_node.create('files/create',{ "paths" => [{ :type => :file, :path => path_list, :contents => contents64 } ] } )
+            resp=@api_node.create('files/create',{ "paths" => [{ type: :file, path: path_list, contents: contents64 } ] } )
             return c_result_translate_rem_prefix(resp,'folder','created',prefix_path)
           when :rename
             path_base=get_next_arg_add_prefix(prefix_path,"path_base")
@@ -199,7 +197,7 @@ module Aspera
             return c_result_translate_rem_prefix(resp,'entry','moved',prefix_path)
           when :browse
             thepath=get_next_arg_add_prefix(prefix_path,"path")
-            query={ :path => thepath}
+            query={ path: thepath}
             additional_query=self.options.get_option(:query,:optional)
             query.merge!(additional_query) unless additional_query.nil?
             send_result=@api_node.create('files/browse', query)[:data]
@@ -207,11 +205,11 @@ module Aspera
             # if there is no items
             case send_result['self']['type']
             when 'directory','container' # directory: node, container: shares
-              result={ :data => send_result['items'] , :type => :object_list, :textify => lambda { |table_data| c_textify_browse(table_data) } }
+              result={ data: send_result['items'] , type: :object_list, textify: lambda { |table_data| c_textify_browse(table_data) } }
               self.format.display_status("Items: #{send_result['item_count']}/#{send_result['total_count']}")
             else # 'file','symbolic_link'
-              result={ :data => send_result['self'] , :type => :single_object}
-              #result={ :data => [send_result['self']] , :type => :object_list, :textify => lambda { |table_data| c_textify_browse(table_data) } }
+              result={ data: send_result['self'] , type: :single_object}
+              #result={ data: [send_result['self']] , type: :object_list, textify: lambda { |table_data| c_textify_browse(table_data) } }
               #raise "unknown type: #{send_result['self']['type']}"
             end
             return c_result_remove_prefix_path(result,'path',prefix_path)
@@ -222,11 +220,11 @@ module Aspera
             case token_type
             when :aspera,:hybrid
               transfer_paths=case command
-              when :upload;[ { :destination => self.transfer.destination_folder('send') } ]
+              when :upload;[ { destination: self.transfer.destination_folder('send') } ]
               when :download;self.transfer.ts_source_paths
               end
               # only one request, so only one answer
-              transfer_spec=@api_node.create("files/#{command}_setup",{:transfer_requests => [ { transfer_request: {
+              transfer_spec=@api_node.create("files/#{command}_setup",{ transfer_requests: [ { transfer_request: {
                 paths: transfer_paths
                 }.deep_merge(@add_request_param) } ] } )[:data]['transfer_specs'].first['transfer_spec']
               # delete this part, as the returned value contains only destination, and not sources
@@ -239,22 +237,22 @@ module Aspera
                 'remote_user'=>Aspera::Fasp::Default::ACCESS_KEY_TRANSFER_USER,
                 'ssh_port'   =>Aspera::Fasp::Default::SSH_PORT,
                 'direction'  =>case command;when :upload;'send';when :download;'recv';else raise "Error";end
-              }
+              }.deep_merge(@add_request_param)
             else raise "ERROR: token_type #{tt}"
             end
             if [:basic,:hybrid].include?(token_type)
               Aspera::Node.set_ak_basic_token(transfer_spec,@api_node.params[:auth][:username],@api_node.params[:auth][:password])
             end
-            return Main.result_transfer(self.transfer.start(transfer_spec,{:src=>:node_gen3}))
+            return Main.result_transfer(self.transfer.start(transfer_spec,{ src: :node_gen3}))
           when :api_details
-            return { :type=>:single_object, :data => @api_node.params }
+            return { type: :single_object, data: @api_node.params }
           end
         end
 
         def execute_async
           command=self.options.get_next_command([:list,:delete,:files,:show,:counters,:bandwidth])
           unless command.eql?(:list)
-            asyncname=self.options.get_option(:name,:optional)
+            asyncname=self.options.get_option(:sync_name,:optional)
             if asyncname.nil?
               asyncid=self.instance_identifier()
               if asyncid.eql?('ALL') and [:show,:delete].include?(command)
@@ -276,25 +274,25 @@ module Aspera
           case command
           when :list
             resp=@api_node.read('async/list')[:data]['sync_ids']
-            return { :type => :value_list, :data => resp, :name=>'id'  }
+            return { type: :value_list, data: resp, name: 'id'  }
           when :show
             resp=@api_node.create('async/summary',pdata)[:data]['sync_summaries']
             return Main.result_empty if resp.empty?
             if asyncid.eql?('ALL')
-              return { :type => :object_list, :data => resp, :fields => ['snid','name','local_dir','remote_dir'] }
+              return { type: :object_list, data: resp, fields: ['snid','name','local_dir','remote_dir'] }
             else
-              return { :type => :single_object, :data => resp.first }
+              return { type: :single_object, data: resp.first }
             end
           when :delete
             resp=@api_node.create('async/delete',pdata)[:data]
-            return { :type => :single_object, :data => resp, :name=>'id'  }
+            return { type: :single_object, data: resp, name: 'id'  }
           when :bandwidth
             pdata['seconds']=100  # TODO: as parameter with --value
             resp=@api_node.create('async/bandwidth',pdata)[:data]
             data=resp['bandwidth_data']
             return Main.result_empty if data.empty?
             data=data.first[asyncid]['data']
-            return { :type => :object_list, :data => data, :name=>'id'  }
+            return { type: :object_list, data: data, name: 'id'  }
           when :files
             # count int
             # filename str
@@ -319,11 +317,11 @@ module Aspera
             end
             return Main.result_empty if data.empty?
             skip_ids_persistency.save unless skip_ids_persistency.nil?
-            return { :type => :object_list, :data => data, :name=>'id'  }
+            return { type: :object_list, data: data, name: 'id'  }
           when :counters
             resp=@api_node.create('async/counters',pdata)[:data]["sync_counters"].first[asyncid].last
             return Main.result_empty if resp.nil?
-            return { :type => :single_object, :data => resp }
+            return { type: :single_object, data: resp }
           end
         end
 
@@ -339,22 +337,22 @@ module Aspera
             case command
             when :list
               resp=@api_node.read('ops/transfers',self.options.get_option(:value,:optional))
-              return { :type => :object_list, :data => resp[:data], :fields=>['id','status']  } # TODO: useful?
+              return { type: :object_list, data: resp[:data], fields: ['id','status']  } # TODO: useful?
             when :create
               resp=@api_node.create('streams',self.options.get_option(:value,:mandatory))
-              return { :type => :single_object, :data => resp[:data] }
+              return { type: :single_object, data: resp[:data] }
             when :show
               trid=self.options.get_next_argument("transfer id")
               resp=@api_node.read('ops/transfers/'+trid)
-              return { :type=>:other_struct, :data => resp[:data] }
+              return { type: :other_struct, data: resp[:data] }
             when :modify
               trid=self.options.get_next_argument("transfer id")
               resp=@api_node.update('streams/'+trid,self.options.get_option(:value,:mandatory))
-              return { :type=>:other_struct, :data => resp[:data] }
+              return { type: :other_struct, data: resp[:data] }
             when :cancel
               trid=self.options.get_next_argument("transfer id")
               resp=@api_node.cancel('streams/'+trid)
-              return { :type=>:other_struct, :data => resp[:data] }
+              return { type: :other_struct, data: resp[:data] }
             else
               raise "error"
             end
@@ -367,15 +365,15 @@ module Aspera
             end
             case command
             when :list
-              # could use ? :subpath=>'transfers'
+              # could use ? subpath: 'transfers'
               resp=@api_node.read(res_class_path,self.options.get_option(:value,:optional))
-              return { :type => :object_list, :data => resp[:data], :fields=>['id','status','start_spec.direction','start_spec.remote_user','start_spec.remote_host','start_spec.destination_path']}
+              return { type: :object_list, data: resp[:data], fields: ['id','status','start_spec.direction','start_spec.remote_user','start_spec.remote_host','start_spec.destination_path']}
             when :cancel
               resp=@api_node.cancel(one_res_path)
-              return { :type=>:other_struct, :data => resp[:data] }
+              return { type: :other_struct, data: resp[:data] }
             when :show
               resp=@api_node.read(one_res_path)
-              return { :type=>:other_struct, :data => resp[:data] }
+              return { type: :other_struct, data: resp[:data] }
             else
               raise "error"
             end
@@ -389,7 +387,7 @@ module Aspera
             case command
             when :list
               resp=@api_node.read('rund/services')
-              return { :type=>:object_list, :data => resp[:data]["services"] }
+              return { type: :object_list, data: resp[:data]["services"] }
             when :create
               # @json:'{"type":"WATCHFOLDERD","run_as":{"user":"user1"}}'
               params=self.options.get_next_argument("Run creation data (structure)")
@@ -416,9 +414,9 @@ module Aspera
               return Main.result_status("#{resp[:data]['id']} created")
             when :list
               resp=@api_node.read(res_class_path,self.options.get_option(:value,:optional))
-              return { :type=>:value_list, :data => resp[:data]['ids'], :name=>'id' }
+              return { type: :value_list, data: resp[:data]['ids'], name: 'id' }
             when :show
-              return {:type=>:single_object, :data=>@api_node.read(one_res_path)[:data]}
+              return { type: :single_object, data: @api_node.read(one_res_path)[:data]}
             when :modify
               @api_node.update(one_res_path,self.options.get_option(:value,:mandatory))
               return Main.result_status("#{one_res_id} updated")
@@ -426,7 +424,7 @@ module Aspera
               @api_node.delete(one_res_path)
               return Main.result_status("#{one_res_id} deleted")
             when :state
-              return { :type=>:single_object, :data => @api_node.read("#{one_res_path}/state")[:data] }
+              return { type: :single_object, data: @api_node.read("#{one_res_path}/state")[:data] }
             end
           when :central
             command=self.options.get_next_command([ :session,:file])
@@ -441,7 +439,7 @@ module Aspera
               when :list
                 request_data.deep_merge!({"validation"=>validation}) unless validation.nil?
                 resp=@api_node.create('services/rest/transfers/v1/sessions',request_data)
-                return {:type=>:object_list,:data=>resp[:data]["session_info_result"]["session_info"],:fields=>["session_uuid","status","transport","direction","bytes_transferred"]}
+                return { type: :object_list, data: resp[:data]["session_info_result"]["session_info"], fields: ["session_uuid","status","transport","direction","bytes_transferred"]}
               end
             when :file
               command=self.options.get_next_command([ :list, :modify])
@@ -451,7 +449,7 @@ module Aspera
                 resp=@api_node.create('services/rest/transfers/v1/files',request_data)[:data]
                 resp=JSON.parse(resp) if resp.is_a?(String)
                 Log.dump(:resp,resp)
-                return {:type=>:object_list,:data=>resp['file_transfer_info_result']['file_transfer_info'],:fields=>["session_uuid","file_id","status","path"]}
+                return { type: :object_list, data: resp['file_transfer_info_result']['file_transfer_info'], fields: ["session_uuid","file_id","status","path"]}
               when :modify
                 request_data.deep_merge!(validation) unless validation.nil?
                 @api_node.update('services/rest/transfers/v1/files',request_data)
