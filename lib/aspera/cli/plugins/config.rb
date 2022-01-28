@@ -868,7 +868,7 @@ _EOF_
                 o=self.options.get_option(s)
                 @config_presets[preset_name][s.to_s] = o unless o.nil?
               end
-              test_args="#{plugin_name} user info show"
+              test_args="#{plugin_name} user profile show"
             else
               raise CliBadArgument,"Supports only: aoc. Detected: #{appli}"
             end # product
