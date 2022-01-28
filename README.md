@@ -1955,7 +1955,7 @@ ascli aoc packages list --query=@json:'{"dropbox_name":"my_aoc_shbx_name","sort"
 ascli aoc packages recv "my_package_id" --to-folder=.
 ascli aoc packages recv ALL --to-folder=. --once-only=yes --lock-port=12345
 ascli aoc packages send --value=@json:'{"name":"Important files delivery","recipients":["my_email_external_user"]}' --new-user-option=@json:'{"package_contact":true}' testfile.bin
-ascli aoc packages send --value=@json:'{"name":"Important files delivery","recipients":["my_email_internal_user"],"note":"my note"}' testfile.bin&&\
+ascli aoc packages send --value=@json:'{"name":"Important files delivery","recipients":["my_email_internal_user"],"note":"my note"}' testfile.bin
 ascli aoc packages send --workspace="my_aoc_shbx_ws" --value=@json:'{"name":"Important files delivery","recipients":["my_aoc_shbx_name"],"metadata":[{"input_type":"single-text","name":"Project Id","values":["123"]},{"input_type":"single-dropdown","name":"Type","values":["Opt2"]},{"input_type":"multiple-checkbox","name":"CheckThose","values":["Check1","Check2"]},{"input_type":"date","name":"Optional Date","values":["2021-01-13T15:02:00.000Z"]}]}' testfile.bin
 ascli aoc packages send --workspace="my_aoc_shbx_ws" --value=@json:'{"name":"Important files delivery","recipients":["my_aoc_shbx_name"],"metadata":{"Project Id":"456","Type":"Opt2","CheckThose":["Check1","Check2"],"Optional Date":"2021-01-13T15:02:00.000Z"}}' testfile.bin
 ascli aoc packages send --workspace="my_aoc_shbx_ws" --value=@json:'{"name":"Important files delivery","recipients":["my_aoc_shbx_name"]}' testfile.bin
@@ -1994,7 +1994,7 @@ ascli config ascp products list
 ascli config ascp show
 ascli config ascp spec
 ascli config check_update
-ascli config detect --url=https://my_aoc_org.ibmaspera.com&&\
+ascli config detect --url=https://my_aoc_org.ibmaspera.com
 ascli config detect --url=my_faspex_url
 ascli config doc
 ascli config doc transfer-parameters
@@ -2015,8 +2015,8 @@ ascli cos node info
 ascli cos node upload testfile.bin
 ascli faspex health
 ascli faspex package list
-ascli faspex package list --box=sent --fields=package_id --format=csv --display=data --query=@json:'{"max":1}')&&\
-ascli faspex package list --fields=package_id --format=csv --display=data --query=@json:'{"max":1}')&&\
+ascli faspex package list --box=sent --fields=package_id --format=csv --display=data --query=@json:'{"max":1}')
+ascli faspex package list --fields=package_id --format=csv --display=data --query=@json:'{"max":1}')
 ascli faspex package recv "my_package_id" --to-folder=.
 ascli faspex package recv "my_package_id" --to-folder=. --box=sent
 ascli faspex package recv --to-folder=. "my_package_id"
@@ -2103,10 +2103,10 @@ ascli server upload testfile.bin --to-folder=NEW_SERVER_FOLDER --ts=@json:'{"mul
 ascli shares admin share list
 ascli shares repository browse /
 ascli shares repository delete my_shares_upload/testfile.bin
-ascli shares repository download --to-folder=. my_shares_upload/testfile.bin --transfer=httpgw --transfer-info=@json:'{"url":"https://"my_http_gw_fqdn"/aspera/http-gwy/v1"}'&&\
-ascli shares repository download --to-folder=. my_shares_upload/testfile.bin&&\
-ascli shares repository upload --to-folder=my_shares_upload testfile.bin --transfer=httpgw --transfer-info=@json:'{"url":"https://"my_http_gw_fqdn"/aspera/http-gwy/v1"}'&&\
-ascli shares repository upload --to-folder=my_shares_upload testfile.bin&&\
+ascli shares repository download --to-folder=. my_shares_upload/testfile.bin
+ascli shares repository download --to-folder=. my_shares_upload/testfile.bin --transfer=httpgw --transfer-info=@json:'{"url":"https://"my_http_gw_fqdn"/aspera/http-gwy/v1"}'
+ascli shares repository upload --to-folder=my_shares_upload testfile.bin
+ascli shares repository upload --to-folder=my_shares_upload testfile.bin --transfer=httpgw --transfer-info=@json:'{"url":"https://"my_http_gw_fqdn"/aspera/http-gwy/v1"}'
 ascli shares2 appinfo
 ascli shares2 organization list
 ascli shares2 project list --organization=Sport
