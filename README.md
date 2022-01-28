@@ -1280,8 +1280,17 @@ The `config` plugin also allows specification for the use of a local FASP client
 
 ```bash
 ascli config ascp show
+```
+
+```output
 /Users/laurent/.aspera/ascli/sdk/ascp
+```
+
+```bash
 ascli config ascp info
+```
+
+```output
 +--------------------+-----------------------------------------------------------+
 | key                | value                                                     |
 +--------------------+-----------------------------------------------------------+
@@ -1329,6 +1338,9 @@ Locally installed Aspera products can be listed with:
 
 ```bash
 ascli config ascp products list
+```
+
+```output
 :.........................................:................................................:
 :                  name                   :                    app_root                    :
 :.........................................:................................................:
@@ -1359,45 +1371,40 @@ ascli config ascp connect list
 ```
 
 ```output
-:...............................................:......................................:..............:
-:                      id                       :                title                 :   version    :
-:...............................................:......................................:..............:
-: urn:uuid:589F9EE5-0489-4F73-9982-A612FAC70C4E : Aspera Connect for Windows           : 3.7.0.138427 :
-: urn:uuid:A3820D20-083E-11E2-892E-0800200C9A66 : Aspera Connect for Windows 64-bit    : 3.7.0.138427 :
-: urn:uuid:589F9EE5-0489-4F73-9982-A612FAC70C4E : Aspera Connect for Windows XP        : 3.7.0.138427 :
-: urn:uuid:55425020-083E-11E2-892E-0800200C9A66 : Aspera Connect for Windows XP 64-bit : 3.7.0.138427 :
-: urn:uuid:D8629AD2-6898-4811-A46F-2AF386531BFF : Aspera Connect for Mac Intel 10.6    : 3.6.1.111259 :
-: urn:uuid:D8629AD2-6898-4811-A46F-2AF386531BFF : Aspera Connect for Mac Intel         : 3.7.0.138427 :
-: urn:uuid:213C9370-22B1-11E2-81C1-0800200C9A66 : Aspera Connect for Linux 32          : 3.6.2.117442 :
-: urn:uuid:97F94DF0-22B1-11E2-81C1-0800200C9A66 : Aspera Connect for Linux 64          : 3.7.2.141527 :
-:...............................................:......................................:..............:
++-----------------------------------------------+--------------------------------------+-----------+
+| id                                            | title                                | version   |
++-----------------------------------------------+--------------------------------------+-----------+
+| urn:uuid:589F9EE5-0489-4F73-9982-A612FAC70C4E | Aspera Connect for Windows           | 3.11.2.63 |
+| urn:uuid:A3820D20-083E-11E2-892E-0800200C9A66 | Aspera Connect for Windows 64-bit    | 3.11.2.63 |
+| urn:uuid:589F9EE5-0489-4F73-9982-A612FAC70C4E | Aspera Connect for Windows XP        | 3.11.2.63 |
+| urn:uuid:55425020-083E-11E2-892E-0800200C9A66 | Aspera Connect for Windows XP 64-bit | 3.11.2.63 |
+| urn:uuid:D8629AD2-6898-4811-A46F-2AF386531BFF | Aspera Connect for Mac Intel         | 3.11.2.63 |
+| urn:uuid:97F94DF0-22B1-11E2-81C1-0800200C9A66 | Aspera Connect for Linux 64          | 3.11.2.63 |
++-----------------------------------------------+--------------------------------------+-----------+
 ```
 
 ```bash
-ascli config ascp connect id 'Aspera Connect for Mac Intel 10.6' links list
+ascli config ascp connect version 'Aspera Connect for Mac Intel' list
 ```
 
 ```output
-:.............................................:..........................:.......................................................................:..........:...............:
-:                    title                    :           type           :                                 href                                  : hreflang :      rel      :
-:.............................................:..........................:.......................................................................:..........:...............:
-: Mac Intel Installer                         : application/octet-stream : bin/AsperaConnect-3.6.1.111259-mac-intel-10.6.dmg                     : en       : enclosure     :
-: Aspera Connect for Mac HTML Documentation   : text/html                :                                                                       : en       : documentation :
-: Aspera Connect PDF Documentation for Mac OS : application/pdf          : docs/user/osx/ja-jp/pdf/Connect_User_3.7.0_OSX_ja-jp.pdf              : ja-jp    : documentation :
-: Aspera Connect PDF Documentation for Mac OS : application/pdf          : docs/user/osx/en/pdf/Connect_User_3.7.0_OSX.pdf                       : en       : documentation :
-: Aspera Connect PDF Documentation for Mac OS : application/pdf          : docs/user/osx/es-es/pdf/Connect_User_3.7.0_OSX_es-es.pdf              : es-es    : documentation :
-: Aspera Connect PDF Documentation for Mac OS : application/pdf          : docs/user/osx/fr-fr/pdf/Connect_User_3.7.0_OSX_fr-fr.pdf              : fr-fr    : documentation :
-: Aspera Connect PDF Documentation for Mac OS : application/pdf          : docs/user/osx/zh-cn/pdf/Connect_User_3.7.0_OSX_zh-cn.pdf              : zh-cn    : documentation :
-: Aspera Connect for Mac Release Notes        : text/html                : http://www.asperasoft.com/en/release_notes/default_1/release_notes_54 : en       : release-notes :
-:.............................................:..........................:.......................................................................:..........:...............:
++-------------------------------------------+--------------------------+-----------------------------------------------------------------------------------------+----------+---------------------+
+| title                                     | type                     | href                                                                                    | hreflang | rel                 |
++-------------------------------------------+--------------------------+-----------------------------------------------------------------------------------------+----------+---------------------+
+| Mac Intel Installer                       | application/octet-stream | bin/IBMAsperaConnectInstaller-3.11.2.63.dmg                                             | en       | enclosure           |
+| Mac Intel Installer                       | application/octet-stream | bin/IBMAsperaConnectInstallerOneClick-3.11.2.63.dmg                                     | en       | enclosure-one-click |
+| Aspera Connect for Mac HTML Documentation | text/html                | https://www.ibm.com/docs/en/aspera-connect/3.11?topic=aspera-connect-user-guide-macos   | en       | documentation       |
+| Aspera Connect for Mac Release Notes      | text/html                | https://www.ibm.com/docs/en/aspera-connect/3.11?topic=notes-release-aspera-connect-3112 | en       | release-notes       |
++-------------------------------------------+--------------------------+-----------------------------------------------------------------------------------------+----------+---------------------+
 ```
 
 ```bash
-ascli config ascp connect id 'Aspera Connect for Mac Intel 10.6' links id 'Mac Intel Installer' download --to-folder=.
+ascli config ascp connect version 'Aspera Connect for Mac Intel' download enclosure --to-folder=.
 ```
 
 ```output
-downloaded: AsperaConnect-3.6.1.111259-mac-intel-10.6.dmg
+Time: 00:00:02 ======================================================================= 100% 27766 KB/sec Time: 00:00:02
+Downloaded: IBMAsperaConnectInstaller-3.11.2.63.dmg
 ```
 
 ### <a id="agents"></a>Transfer Agents
@@ -1976,10 +1983,11 @@ ascli ats cluster show 1f412ae7-869a-445c-9c05-02ad16813be2
 ascli conf flush_tokens
 ascli conf wiz --url=https://my_aoc_org.ibmaspera.com --config-file=SAMPLE_CONFIG_FILE --pkeypath='' --username=my_aoc_user_email --test-mode=yes
 ascli conf wiz --url=https://my_aoc_org.ibmaspera.com --config-file=SAMPLE_CONFIG_FILE --pkeypath='' --username=my_aoc_user_email --test-mode=yes --use-generic-client=yes
-ascli config ascp connect id 'Aspera Connect for Windows' info
-ascli config ascp connect id 'Aspera Connect for Windows' links id 'Windows Installer' download --to-folder=.
-ascli config ascp connect id 'Aspera Connect for Windows' links list
+ascli config ascp connect info 'Aspera Connect for Windows'
 ascli config ascp connect list
+ascli config ascp connect version 'Aspera Connect for Windows' download 'Windows Installer' --to-folder=.
+ascli config ascp connect version 'Aspera Connect for Windows' list
+ascli config ascp connect version 'Aspera Connect for Windows' open documentation
 ascli config ascp info
 ascli config ascp install
 ascli config ascp products list
@@ -2221,7 +2229,7 @@ OPTIONS:
         --password=VALUE             user's password
         --validator=VALUE            identifier of validator (optional for central)
         --asperabrowserurl=VALUE     URL for simple aspera web ui
-        --name=VALUE                 sync name
+        --sync-name=VALUE            sync name
         --token-type=ENUM            Type of token used for transfers: aspera, basic, hybrid
 
 
@@ -4431,6 +4439,8 @@ aoc=Aspera::AoC.new(url: 'https://sedemo.ibmaspera.com',auth: :jwt, scope: 'user
 aoc.read('self')
 ```
 
+<https://github.com/IBM/aspera-cli/blob/main/examples/aoc.rb>
+
 ## History
 
 When I joined Aspera, there was only one CLI: `ascp`, which is the implementation of the FASP protocol, but there was no CLI to access the various existing products (Server, Faspex, Shares). Once, Serban (founder) provided a shell script able to create a Faspex Package using Faspex REST API. Since all products relate to file transfers using FASP (ascp), I thought it would be interesting to have a unified CLI for transfers using FASP. Also, because there was already the `ascp` tool, I thought of an extended tool : `eascp.pl` which was accepting all `ascp` options for transfer but was also able to transfer to Faspex and Shares (destination was a kind of URI for the applications).
@@ -4460,6 +4470,7 @@ So, it evolved into `ascli`:
   * change: (break) command `aoc user workspaces list` replaces `aoc user workspaces`
   * change: (break) command `aoc user workspaces current` replaces `aoc workspace`
   * change: (break) command `conf plugin list` replaces `conf plugins`
+  * change: (break) command `conf connect` simplified
   * fix: #60 ascli executable was not installed by default in 4.5.0
   * fix: add password hiding case in logs
 
