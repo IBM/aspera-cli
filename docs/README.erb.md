@@ -108,7 +108,7 @@ To test with Aspera demo transfer server, setup the environment and then test:
 <%=cmd%> server browse /
 ```
 
-```bash
+```output
 :............:...........:......:........:...........................:.......................:
 :   zmode    :   zuid    : zgid :  size  :           mtime           :         name          :
 :............:...........:......:........:...........................:.......................:
@@ -130,7 +130,7 @@ If you want to use <%=tool%> with another server, and in order to make further c
 <%=cmd%> config preset update myserver --url=ssh://demo.asperasoft.com:33001 --username=asperaweb --password=_demo_pass_
 ```
 
-```bash
+```output
 updated: myserver
 ```
 
@@ -138,7 +138,7 @@ updated: myserver
 <%=cmd%> config preset set default server myserver
 ```
 
-```bash
+```output
 updated: default&rarr;server to myserver
 ```
 
@@ -146,7 +146,7 @@ updated: default&rarr;server to myserver
 <%=cmd%> server browse /aspera-test-dir-large
 ```
 
-```bash
+```output
 :............:...........:......:..............:...........................:............................:
 :   zmode    :   zuid    : zgid :     size     :           mtime           :            name            :
 :............:...........:......:..............:...........................:............................:
@@ -169,7 +169,7 @@ updated: default&rarr;server to myserver
 <%=cmd%> server download /aspera-test-dir-large/200MB
 ```
 
-```bash
+```output
 Time: 00:00:02 ========================================================================================================== 100% 100 Mbps Time: 00:00:00
 complete
 ```
@@ -352,10 +352,15 @@ gem uninstall $(ls $(gem env gemdir)/gems/|sed -e 's/-[^-]*$//'|sort -u)
 yum remove -y ruby ruby-libs
 ```
 
-#### Other Unixes: Aix, etc...
+#### Other Unixes (AIX)
+
+Ruby is sometimes made available as installable package through third party providers.
+For example for AIX, one can look at:
+
+<https://www.ibm.com/support/pages/aix-toolbox-open-source-software-downloads-alpha#R>
 
 If your Unix does not provide a pre-built ruby, you can get it using one of those
-[methods](https://www.ruby-lang.org/en/documentation/installation/)
+[methods](https://www.ruby-lang.org/en/documentation/installation/).
 
 For instance to build from source, and install in `/opt/ruby` :
 
@@ -377,11 +382,11 @@ make
 make install
 ```
 
-Another possibility, if you already have a Java JVM is to use jruby:
+If you already have a Java JVM on your system (`java`), it is possible to use `jruby`:
 
 <https://www.jruby.org/download>
 
-Note that using jruby the startup time is longer than the native ruby.
+Note that using jruby the startup time is longer than the native ruby, but transfer speed is not impacted (executed by `ascp` binary).
 
 ### <a id="the_gem"></a>`<%=gemspec.name%>` gem
 
@@ -648,7 +653,7 @@ Table output can be filtered using the `select` parameter. Example:
 <%=cmd%> aoc admin res user list --fields=name,email,ats_admin --query=@json:'{"sort":"name"}' --select=@json:'{"ats_admin":true}'
 ```
 
-```bash
+```output
 :...............................:..................................:...........:
 :             name              :              email               : ats_admin :
 :...............................:..................................:...........:
@@ -746,7 +751,7 @@ toto,titi@tutu.tata
 <%=cmd%> config echo @csvt:@file:test.csv
 ```
 
-```bash
+```output
 :......:.....................:
 : name :        email        :
 :......:.....................:
@@ -799,9 +804,11 @@ It can be overridden using the environment variable `<%=evp%>HOME`.
 
 Example (Windows):
 
-```bash
+```output
 set <%=evp%>HOME=C:\Users\Kenji\.aspera\<%=cmd%>
+
 <%=cmd%> config folder
+
 C:\Users\Kenji\.aspera\<%=cmd%>
 ```
 
@@ -894,7 +901,13 @@ Operations on this preset are done using regular `config` operations:
 
 ```bash
 <%=cmd%> config preset set default _plugin_name_ _default_preset_for_plugin_
+```
+
+```bash
 <%=cmd%> config preset get default _plugin_name_
+```
+
+```javascript
 "_default_preset_for_plugin_"
 ```
 
@@ -1005,7 +1018,7 @@ Example: Define options using a hash:
 <%=cmd%> -N --preset=@json:'{"url":"x","password":"y","username":"y"}' node --show-config
 ```
 
-#### Examples
+#### Shares Examples
 
 For Faspex, Shares, Node (including ATS, Aspera Transfer Service), Console,
 only username/password and url are required (either on command line, or from config file).
@@ -1025,7 +1038,7 @@ This can also be provisioned in a config file:
 <%=cmd%> config preset set shares06 password 4sp3ra
 ```
 
-Note that this can also be done with one single command:
+This can also be done with one single command:
 
 ```javascript
 <%=cmd%> config preset init shares06 @json:'{"url":"https://10.25.0.6","username":"john","password":"4sp3ra"}'
@@ -1151,9 +1164,13 @@ You can create the skeleton of a new plugin like this:
 
 ```bash
 <%=cmd%> conf plugin create foo .
+```
 
+```output
 Created ./foo.rb
+```
 
+```bash
 <%=cmd%> --plugin-folder=. foo
 ```
 
@@ -1194,16 +1211,19 @@ In order to get traces of execution, use argument : `--log-level=debug`
 
 If the server does not provide a valid certificate, use option: `--insecure=yes`.
 
-Ruby HTTP socket parameters can be adjusted. Default values are the ones of Ruby:
+Ruby HTTP socket parameters can be adjusted.
 
-* `read_timeout` 60 sec
-* `write_timeout` 60 sec
-* `open_timeout` 60 sec
-* `keep_alive_timeout` 2 sec
+| parameter            | default |
+|----------------------|---------|
+| `read_timeout`       | 60      |
+| `write_timeout`      | 60      |
+| `open_timeout`       | 60      |
+| `keep_alive_timeout` | 2       |
 
+Values are in set **seconds** and can be of type either integer or float.
+Default values are the ones of Ruby.
 For details refer to the Ruby library: [`Net::HTTP`](https://ruby-doc.org/stdlib/libdoc/net/http/rdoc/Net/HTTP.html).
 
-Values are in seconds and can be of type either integer or float.
 Like any other option, those can be set either on command line, or in config file, either in a global preset or server-specific one.
 
 Example:
@@ -1281,7 +1301,10 @@ For a permanent change, the command `config ascp use` sets the same parameter fo
 Using a POSIX shell:
 
 ```bash
-<%=cmd%> config ascp use '/Users/laurent/Applications/Aspera CLI/bin/ascp'
+<%=cmd%> config ascp use @path:'~/Applications/Aspera CLI/bin/ascp'
+```
+
+```output
 ascp version: 4.0.0.182279
 Updated: global_common_defaults: ascp_path <- /Users/laurent/Applications/Aspera CLI/bin/ascp
 Saved to default global preset global_common_defaults
@@ -1291,6 +1314,9 @@ Windows:
 
 ```bash
 <%=cmd%> config ascp use C:\Users\admin\.aspera\ascli\sdk\ascp.exe
+```
+
+```output
 ascp version: 4.0.0.182279
 Updated: global_common_defaults: ascp_path <- C:\Users\admin\.aspera\ascli\sdk\ascp.exe
 Saved to default global preset global_common_defaults
@@ -1331,6 +1357,9 @@ saved to default global preset /Users/laurent/Applications/Aspera Connect.app/Co
 
 ```bash
 <%=cmd%> config ascp connect list
+```
+
+```output
 :...............................................:......................................:..............:
 :                      id                       :                title                 :   version    :
 :...............................................:......................................:..............:
@@ -1343,7 +1372,13 @@ saved to default global preset /Users/laurent/Applications/Aspera Connect.app/Co
 : urn:uuid:213C9370-22B1-11E2-81C1-0800200C9A66 : Aspera Connect for Linux 32          : 3.6.2.117442 :
 : urn:uuid:97F94DF0-22B1-11E2-81C1-0800200C9A66 : Aspera Connect for Linux 64          : 3.7.2.141527 :
 :...............................................:......................................:..............:
+```
+
+```bash
 <%=cmd%> config ascp connect id 'Aspera Connect for Mac Intel 10.6' links list
+```
+
+```output
 :.............................................:..........................:.......................................................................:..........:...............:
 :                    title                    :           type           :                                 href                                  : hreflang :      rel      :
 :.............................................:..........................:.......................................................................:..........:...............:
@@ -1356,7 +1391,13 @@ saved to default global preset /Users/laurent/Applications/Aspera Connect.app/Co
 : Aspera Connect PDF Documentation for Mac OS : application/pdf          : docs/user/osx/zh-cn/pdf/Connect_User_3.7.0_OSX_zh-cn.pdf              : zh-cn    : documentation :
 : Aspera Connect for Mac Release Notes        : text/html                : http://www.asperasoft.com/en/release_notes/default_1/release_notes_54 : en       : release-notes :
 :.............................................:..........................:.......................................................................:..........:...............:
+```
+
+```bash
 <%=cmd%> config ascp connect id 'Aspera Connect for Mac Intel 10.6' links id 'Mac Intel Installer' download --to-folder=.
+```
+
+```output
 downloaded: AsperaConnect-3.6.1.111259-mac-intel-10.6.dmg
 ```
 
@@ -1643,7 +1684,7 @@ Multi-session spawn is done by <%=tool%>.
 
 When multi-session is used, one separate UDP port is used per session (refer to `ascp` manual page).
 
-#### Examples
+#### Transfer Spec Examples
 
 * Change target rate
 
@@ -1714,6 +1755,9 @@ The list of supported *PVCL* adapters can be retrieved with command:
 
 ```bash
 <%=cmd%> conf ascp info
+```
+
+```output
 +--------------------+-----------------------------------------------------------+
 | key                | value                                                     |
 +--------------------+-----------------------------------------------------------+
@@ -2080,6 +2124,9 @@ Once client has been registered and <%=prst%> created: <%=tool%> can be used:
 
 ```bash
 <%=cmd%> aoc files br /
+```
+
+```output
 Current Workspace: Default Workspace (default)
 empty
 ```
@@ -2544,7 +2591,7 @@ Notes:
 
 #### Example: Send a package with one file to two users, using their email
 
-```bash
+```javascript
 <%=cmd%> aoc package send --value=@json:'{"name":"my title","note":"my note","recipients":["laurent.martin.aspera@fr.ibm.com","other@example.com"]}' my_file.dat
 ```
 
