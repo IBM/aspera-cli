@@ -756,15 +756,16 @@ $(T)co3: $(T).exists
 	@touch $@
 $(T)co4: $(T).exists
 	@echo $@
-	$(EXE_MAN) config ascp connect id 'Aspera Connect for Windows' info
+	$(EXE_MAN) config ascp connect info 'Aspera Connect for Windows'
 	@touch $@
 $(T)co5: $(T).exists
 	@echo $@
-	$(EXE_MAN) config ascp connect id 'Aspera Connect for Windows' links list
+	$(EXE_MAN) config ascp connect version 'Aspera Connect for Windows' list
 	@touch $@
 $(T)co6: $(T).exists
 	@echo $@
-	$(EXE_MAN) config ascp connect id 'Aspera Connect for Windows' links id 'Windows Installer' download --to-folder=$(DIR_TMP).
+	$(EXE_MAN) config ascp connect version 'Aspera Connect for Windows' download 'Windows Installer' --to-folder=$(DIR_TMP).
+	$(EXE_MAN) config ascp connect version 'Aspera Connect for Windows' open documentation
 	@touch $@
 $(T)co7: $(T).exists
 	@echo $@

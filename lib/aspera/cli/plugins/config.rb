@@ -516,43 +516,40 @@ END_OF_TEMPLATE
         end
 
         def execute_connect_action
-          command=self.options.get_next_command([:list,:id])
-          case command
-          when :list
-            return {type: :object_list, data: connect_versions, fields: ['id','title','version']}
-          when :id
+          command=self.options.get_next_command([:list,:info,:version])
+          if [:info,:version].include?(command)
             connect_id=self.options.get_next_argument('id or title')
             one_res=connect_versions.select{|i|i['id'].eql?(connect_id) || i['title'].eql?(connect_id)}.first
             raise CliNoSuchId.new(:connect,connect_id) if one_res.nil?
-            command=self.options.get_next_command([:info,:links])
+          end
+          case command
+          when :list
+            return {type: :object_list, data: connect_versions, fields: ['id','title','version']}
+          when :info # shows files used
+            one_res.delete('links')
+            return {type: :single_object, data: one_res}
+          when :version # shows files used
+            all_links=one_res['links']
+            command=self.options.get_next_command([:list,:download,:open])
+            if [:download,:open].include?(command)
+              link_title=self.options.get_next_argument('title or rel')
+              one_link=all_links.select {|i| i['title'].eql?(link_title) or i['rel'].eql?(link_title)}.first
+              raise "no such value" if one_link.nil?
+            end
             case command
-            when :info # shows files used
-              one_res.delete('links')
-              return {type: :single_object, data: one_res}
-            when :links # shows files used
-              command=self.options.get_next_command([:list,:id])
-              all_links=one_res['links']
-              case command
-              when :list # shows files used
-                return {type: :object_list, data: all_links}
-              when :id
-                link_title=self.options.get_next_argument('title')
-                one_link=all_links.select {|i| i['title'].eql?(link_title)}.first
-                command=self.options.get_next_command([:download,:open])
-                case command
-                when :download #
-                  folder_dest=self.transfer.destination_folder('receive')
-                  #folder_dest=self.options.get_next_argument('destination folder')
-                  api_connect_cdn=Rest.new({base_url: CONNECT_WEB_URL})
-                  fileurl = one_link['href']
-                  filename=fileurl.gsub(%r{.*/},'')
-                  api_connect_cdn.call({operation: 'GET',subpath: fileurl,save_to_file: File.join(folder_dest,filename)})
-                  return Main.result_status("Downloaded: #{filename}")
-                when :open #
-                  OpenApplication.instance.uri(one_link['href'])
-                  return Main.result_status("Opened: #{one_link['href']}")
-                end
-              end
+            when :list # shows files used
+              return {type: :object_list, data: all_links}
+            when :download #
+              folder_dest=self.transfer.destination_folder('receive')
+              #folder_dest=self.options.get_next_argument('destination folder')
+              api_connect_cdn=Rest.new({base_url: CONNECT_WEB_URL})
+              fileurl = one_link['href']
+              filename=fileurl.gsub(%r{.*/},'')
+              api_connect_cdn.call({operation: 'GET',subpath: fileurl,save_to_file: File.join(folder_dest,filename)})
+              return Main.result_status("Downloaded: #{filename}")
+            when :open #
+              OpenApplication.instance.uri(one_link['href'])
+              return Main.result_status("Opened: #{one_link['href']}")
             end
           end
         end
