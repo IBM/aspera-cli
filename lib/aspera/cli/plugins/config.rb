@@ -298,8 +298,11 @@ END_OF_TEMPLATE
             current=current[name]
             raise CliError,"no such config preset: #{include_path}" if nil?
           end
-          return expanded_with_preset_includes(current,include_path) if current.is_a?(Hash)
-          return current
+          case current
+          when Hash;return expanded_with_preset_includes(current,include_path)
+          when String; return ExtendedValue.instance.evaluate(current)
+          else return current
+          end
         end
 
         # @return the hash value with 'incps' keys expanced to include other presets

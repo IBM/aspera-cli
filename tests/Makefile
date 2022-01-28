@@ -191,7 +191,7 @@ $(T)fx_psnd: $(T).exists
 	set -x&&\
 	faspex_username=$$($(EXE_NOMAN) conf id tst_faspex get username)&&\
 	email_internal_user=$$($(EXE_NOMAN) conf id misc get email_internal)&&\
-	$(EXE_MAN) faspex package send --delivery-info=@json:'{"title":"'"$(PKG_TEST_TITLE)"'","recipients":['"$${email_internal_user}"',"'"$${faspex_username}"'"]}' $(CF_LOCAL_SAMPLE_FILEPATH)
+	$(EXE_MAN) faspex package send --delivery-info=@json:'{"title":"'"$(PKG_TEST_TITLE)"'","recipients":["'"$${email_internal_user}"'","'"$${faspex_username}"'"]}' $(CF_LOCAL_SAMPLE_FILEPATH)
 	@touch $@
 	@sleep 8
 $(T)fx_prs: $(T)fx_psnd
@@ -433,8 +433,8 @@ $(T)aocp1: $(T).exists
 	set -x&&\
 	email_internal_user=$$($(EXE_NOMAN) conf id misc get email_internal)&&\
 	email_external_user=$$($(EXE_NOMAN) conf id misc get email_external)&&\
-	$(EXE_MAN) aoc packages send --value=@json:'{"name":"'"$(PKG_TEST_TITLE)"'","recipients":['"$${email_internal_user}"'],"note":"my note"}' $(CF_LOCAL_SAMPLE_FILEPATH)&&\
-	$(EXE_MAN) aoc packages send --value=@json:'{"name":"'"$(PKG_TEST_TITLE)"'","recipients":['"$${email_external_user}"']}' --new-user-option=@json:'{"package_contact":true}' $(CF_LOCAL_SAMPLE_FILEPATH)
+	$(EXE_MAN) aoc packages send --value=@json:'{"name":"'"$(PKG_TEST_TITLE)"'","recipients":["'"$${email_internal_user}"'"],"note":"my note"}' $(CF_LOCAL_SAMPLE_FILEPATH)&&\
+	$(EXE_MAN) aoc packages send --value=@json:'{"name":"'"$(PKG_TEST_TITLE)"'","recipients":["'"$${email_external_user}"'"]}' --new-user-option=@json:'{"package_contact":true}' $(CF_LOCAL_SAMPLE_FILEPATH)
 	@touch $@
 $(T)aocp2: $(T).exists
 	@echo $@
