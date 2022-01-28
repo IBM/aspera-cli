@@ -19,18 +19,21 @@ module Aspera
       CSV_FIELD_SEPARATOR=","
 
       private_constant :FIELDS_ALL,:FIELDS_DEFAULT,:DISPLAY_FORMATS,:DISPLAY_LEVELS,:CSV_RECORD_SEPARATOR,:CSV_FIELD_SEPARATOR
-      attr_accessor :option_flat_hash
+      attr_accessor :option_flat_hash,:option_transpose_single
 
       def initialize(opt_mgr)
         @option_flat_hash=true
+        @option_transpose_single=true
         @opt_mgr=opt_mgr
         @opt_mgr.set_obj_attr(:flat_hash,self,:option_flat_hash)
+        @opt_mgr.set_obj_attr(:transpose_single,self,:option_transpose_single)
         @opt_mgr.add_opt_list(:format,DISPLAY_FORMATS,"output format")
         @opt_mgr.add_opt_list(:display,DISPLAY_LEVELS,"output only some information")
         @opt_mgr.add_opt_simple(:fields,"comma separated list of fields, or #{FIELDS_ALL}, or #{FIELDS_DEFAULT}")
         @opt_mgr.add_opt_simple(:select,"select only some items in lists, extended value: hash (column, value)")
         @opt_mgr.add_opt_simple(:table_style,"table display style")
         @opt_mgr.add_opt_boolean(:flat_hash,"display hash values as additional keys")
+        @opt_mgr.add_opt_boolean(:transpose_single,"single object fields output vertically")
         @opt_mgr.set_option(:format,:table)
         @opt_mgr.set_option(:display,:info)
         @opt_mgr.set_option(:fields,FIELDS_DEFAULT)
@@ -134,6 +137,10 @@ module Aspera
         when :yaml
           display_message(:data,res_data.to_yaml)
         when :table,:csv
+          if !@option_transpose_single and results[:type].eql?(:single_object)
+            results[:type]=:object_list
+            res_data=[res_data]
+          end
           case results[:type]
           when :object_list # goes to table display
             raise "internal error: unexpected type: #{res_data.class}, expecting Array" unless res_data.is_a?(Array)
