@@ -77,6 +77,7 @@ module Aspera
       attr_reader :parser
       attr_accessor :ask_missing_mandatory
       attr_accessor :ask_missing_optional
+      attr_writer :fail_on_missing_mandatory
 
       #
       def initialize(program_name,argv=nil)
@@ -92,6 +93,7 @@ module Aspera
         @ask_missing_mandatory=false # STDIN.isatty
         # ask optional options if not provided and in interactive
         @ask_missing_optional=false
+        @fail_on_missing_mandatory=true
         # those must be set before parse, parse consumes those defined only
         @unprocessed_defaults=[]
         @unprocessed_env=[]
@@ -232,7 +234,7 @@ module Aspera
       def set_option(option_symbol,value,where="default")
         if ! @declared_options.has_key?(option_symbol)
           Log.log.debug("set unknown option: #{option_symbol}")
-          raise "ERROR"
+          raise "ERROR: cannot set undeclared option"
           #declare_option(option_symbol)
         end
         value=ExtendedValue.instance.evaluate(value)
@@ -267,6 +269,8 @@ module Aspera
           end
           Log.log.debug("get #{option_symbol} (#{@declared_options[option_symbol][:type]}) : #{result}")
         end
+        # do not fail for manual generation if option mandatory but not set
+        result||='' unless @fail_on_missing_mandatory
         Log.log.debug("interactive=#{@ask_missing_mandatory}")
         if result.nil?
           if !@ask_missing_mandatory
