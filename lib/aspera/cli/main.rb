@@ -42,7 +42,7 @@ module Aspera
       def set_http_parameters(http)
         http.verify_mode = OpenSSL::SSL::VERIFY_NONE if @option_insecure
         http.set_debug_output($stdout) if @option_rest_debug
-        raise "http_options expects Hash" unless @option_http_options.is_a?(Hash)
+        raise 'http_options expects Hash' unless @option_http_options.is_a?(Hash)
         @option_http_options.each do |k,v|
           method="#{k}=".to_sym
           # check if accessor is a method of Net::HTTP
@@ -122,11 +122,11 @@ module Aspera
 
       # define header for manual
       def init_global_options
-        Log.log.debug("init_global_options")
-        @opt_mgr.add_opt_switch(:help,"-h","Show this message.") { @option_help=true }
-        @opt_mgr.add_opt_switch(:bash_comp,"generate bash completion for command") { @bash_completion=true }
-        @opt_mgr.add_opt_switch(:show_config, "Display parameters used for the provided action.") { @option_show_config=true }
-        @opt_mgr.add_opt_switch(:rest_debug,"-r","more debug for HTTP calls") { @option_rest_debug=true }
+        Log.log.debug('init_global_options')
+        @opt_mgr.add_opt_switch(:help,'-h','Show this message.') { @option_help=true }
+        @opt_mgr.add_opt_switch(:bash_comp,'generate bash completion for command') { @bash_completion=true }
+        @opt_mgr.add_opt_switch(:show_config, 'Display parameters used for the provided action.') { @option_show_config=true }
+        @opt_mgr.add_opt_switch(:rest_debug,'-r','more debug for HTTP calls') { @option_rest_debug=true }
         @opt_mgr.add_opt_switch(:version,'-v','display version') { @plugin_env[:formater].display_message(:data,Aspera::Cli::VERSION);Process.exit(0) }
         @opt_mgr.add_opt_switch(:warnings,'-w','check for language warnings') { $VERBOSE=true }
         # handler must be set before declaration
@@ -137,14 +137,14 @@ module Aspera
         @opt_mgr.set_obj_attr(:http_options,self,:option_http_options)
         @opt_mgr.set_obj_attr(:log_passwords,Log.instance,:log_passwords)
         @opt_mgr.add_opt_list(:ui,OpenApplication.user_interfaces,'method to start browser')
-        @opt_mgr.add_opt_list(:log_level,Log.levels,"Log level")
-        @opt_mgr.add_opt_list(:logger,Log.logtypes,"log method")
-        @opt_mgr.add_opt_simple(:lock_port,"prevent dual execution of a command, e.g. in cron")
-        @opt_mgr.add_opt_simple(:query,"additional filter for API calls (extended value) (some commands)")
-        @opt_mgr.add_opt_simple(:http_options,"options for http socket (extended value)")
-        @opt_mgr.add_opt_boolean(:insecure,"do not validate HTTPS certificate")
-        @opt_mgr.add_opt_boolean(:once_only,"process only new items (some commands)")
-        @opt_mgr.add_opt_boolean(:log_passwords,"show passwords in logs")
+        @opt_mgr.add_opt_list(:log_level,Log.levels,'Log level')
+        @opt_mgr.add_opt_list(:logger,Log.logtypes,'log method')
+        @opt_mgr.add_opt_simple(:lock_port,'prevent dual execution of a command, e.g. in cron')
+        @opt_mgr.add_opt_simple(:query,'additional filter for API calls (extended value) (some commands)')
+        @opt_mgr.add_opt_simple(:http_options,'options for http socket (extended value)')
+        @opt_mgr.add_opt_boolean(:insecure,'do not validate HTTPS certificate')
+        @opt_mgr.add_opt_boolean(:once_only,'process only new items (some commands)')
+        @opt_mgr.add_opt_boolean(:log_passwords,'show passwords in logs')
         @opt_mgr.set_option(:ui,OpenApplication.default_gui_mode)
         @opt_mgr.set_option(:once_only,:false)
         # parse declared options
@@ -167,10 +167,10 @@ module Aspera
       end
 
       def generate_bash_completion
-        if @opt_mgr.get_next_argument("",:multiple,:optional).nil?
+        if @opt_mgr.get_next_argument('',:multiple,:optional).nil?
           @plugin_env[:config].plugins.keys.each{|p|puts p.to_s}
         else
-          Log.log.warn("only first level completion so far")
+          Log.log.warn('only first level completion so far')
         end
         Process.exit(0)
       end
@@ -186,7 +186,7 @@ module Aspera
       def self.result_success; return result_status('complete'); end
 
       def exit_with_usage(all_plugins)
-        Log.log.debug("exit_with_usage".bg_red)
+        Log.log.debug('exit_with_usage'.bg_red)
         # display main plugin options
         @plugin_env[:formater].display_message(:error,@opt_mgr.parser)
         if all_plugins
@@ -288,6 +288,8 @@ module Aspera
           else
             command_sym=@opt_mgr.get_next_command(@plugin_env[:config].plugins.keys.dup.unshift(:help))
           end
+          # command will not be executed, but we need manual
+          @opt_mgr.fail_on_missing_mandatory=false if @option_help
           # main plugin is not dynamically instanciated
           case command_sym
           when :help
@@ -335,8 +337,8 @@ module Aspera
         TempFileManager.instance.cleanup
         # 1- processing of error condition
         unless exception_info.nil?
-          @plugin_env[:formater].display_message(:error,"ERROR:".bg_red.gray.blink+" "+exception_info[1]+": "+exception_info[0].message)
-          @plugin_env[:formater].display_message(:error,"Use '-h' option to get help.") if exception_info[2].eql?(:usage)
+          @plugin_env[:formater].display_message(:error,"#{'ERROR:'.bg_red.gray.blink} #{exception_info[1]}: #{exception_info[0].message}")
+          @plugin_env[:formater].display_message(:error,'Use option -h to get help.') if exception_info[2].eql?(:usage)
           if exception_info.first.is_a?(Fasp::Error) and exception_info.first.message.eql?('Remote host is not who we expected')
             @plugin_env[:formater].display_message(:error,"For this specific error, refer to:\n#{SRC_URL}#error-remote-host-is-not-who-we-expected\nAdd this to arguments:\n--ts=@json:'{\"sshfp\":null}'")
           end
@@ -344,7 +346,7 @@ module Aspera
         # 2- processing of command not processed (due to exception or bad command line)
         if execute_command
           @opt_mgr.final_errors.each do |msg|
-            @plugin_env[:formater].display_message(:error,"ERROR:".bg_red.gray.blink+" Argument: "+msg)
+            @plugin_env[:formater].display_message(:error,"#{'ERROR:'.bg_red.gray.blink} Argument: #{msg}")
             # add code as exception if there is not already an error
             exception_info=[Exception.new(msg),'UnusedArg'] if exception_info.nil?
           end
@@ -355,7 +357,7 @@ module Aspera
             # will force to show stack trace
             raise exception_info[0]
           else
-            @plugin_env[:formater].display_message(:error,"Use '--log-level=debug' to get more details.") if exception_info[2].eql?(:debug)
+            @plugin_env[:formater].display_message(:error,'Use --log-level=debug to get more details.') if exception_info[2].eql?(:debug)
             Process.exit(1)
           end
         end
