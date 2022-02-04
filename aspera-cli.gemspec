@@ -27,7 +27,9 @@ Gem::Specification.new do |spec|
   spec.require_paths = ['lib']
   spec.bindir        = 'bin'
   # list git files from specified location in root folder of project (this gemspec is in project root folder)
-  spec.files=Dir.chdir(File.dirname(gemspec_file)){%x{git ls-files -z lib docs bin examples README.md}.split("\x0")}
+  spec.files=Dir.chdir(File.dirname(gemspec_file)){%x{git ls-files -z lib bin examples README.md docs/*.conf}.split("\x0")}
+  # remove specific files from list
+  spec.files.select!{|f|!['transfer_spec.erb.rb'].include?(File.basename(f))}
   spec.executables   = spec.files.grep(%r{^#{spec.bindir}}){|f|File.basename(f)} # must be after spec.bindir and spec.files
   spec.required_ruby_version = '> 2.4'
   spec.add_runtime_dependency('execjs', '~> 2.0')
