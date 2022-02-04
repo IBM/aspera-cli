@@ -3923,6 +3923,8 @@ So, it evolved into <%=tool%>:
 
 * <%=gemspec.version.to_s%>
 
+* 4.6.0
+
   * new: command `conf plugin create`
   * new: global option `plugin_folder`
   * new: global option `transpose_single`

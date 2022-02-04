@@ -2,7 +2,7 @@
 
 [comment1]: # (Do not edit this README.md, edit docs/README.erb.md, for details, read docs/README.md)
 
-Version : 4.6.0
+Version : 4.7.0.pre
 
 Laurent/2016-2022
 
@@ -88,7 +88,7 @@ ascli --version
 ```
 
 ```bash
-4.6.0
+4.7.0.pre
 ```
 
 ### First use
@@ -322,7 +322,7 @@ Install Latest stable Ruby using [https://rubyinstaller.org/](https://rubyinstal
 macOS 10.13+ (High Sierra) comes with a recent Ruby. So you can use it directly. You will need to install aspera-cli using `sudo` :
 
 ```bash
-sudo gem install aspera-cli
+sudo gem install aspera-cli --pre
 ```
 
 Alternatively, if you use [Homebrew](https://brew.sh/) already you can install Ruby with it:
@@ -392,7 +392,7 @@ Note that using jruby the startup time is longer than the native ruby, but trans
 Once you have Ruby and rights to install gems: Install the gem and its dependencies:
 
 ```bash
-gem install aspera-cli
+gem install aspera-cli --pre
 ```
 
 To upgrade to the latest version:
@@ -2122,7 +2122,7 @@ ascli sync start --parameters=@json:'{"sessions":[{"name":"test","reset":true,"r
 ```bash
 ascli -h
 NAME
-	ascli -- a command line tool for Aspera Applications (v4.6.0)
+	ascli -- a command line tool for Aspera Applications (v4.7.0.pre)
 
 SYNOPSIS
 	ascli COMMANDS [OPTIONS] [ARGS]
@@ -4458,6 +4458,8 @@ So, it evolved into `ascli`:
 * `ruby` is consistent with other Aspera products
 
 ## Changes (Release notes)
+
+* 4.7.0.pre
 
 * 4.6.0
 
