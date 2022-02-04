@@ -13,7 +13,7 @@ doc: $(DIR_TOP).gems_checked
 	cd $(DIR_DOC) && make
 clean::
 	cd $(DIR_DOC) && make clean
-test: $(DIR_TOP).gems_checked
+test: gem $(DIR_TOP).gems_checked
 	cd $(DIR_TST) && make
 clean::
 	cd $(DIR_TST) && make clean
@@ -30,7 +30,7 @@ PATH_GEMFILE=$(DIR_TOP)$(GEMNAME)-$(GEMVERSION).gem
 gem: $(PATH_GEMFILE)
 
 # gem file is generated in top folder
-$(PATH_GEMFILE): $(GEMSPEC)
+$(PATH_GEMFILE): $(GEMSPEC) $(DIR_LIB)aspera/fasp/transfer_spec.rb
 	gem build $(GEMNAME)
 clean::
 	rm -f $(PATH_GEMFILE)
@@ -40,7 +40,8 @@ cleanupgems:
 	gem uninstall -a -x $$(gem list|cut -f 1 -d' '|egrep -v 'rdoc|psych|rake|openssl|json|io-console|bigdecimal')
 installdeps:
 	gem install $$(sed -nEe "/^[^#].*add_[^_]+_dependency/ s/[^']+'([^']+)'.*/\1/p" < $(GEMNAME).gemspec )
-
+$(DIR_LIB)aspera/fasp/transfer_spec.rb: $(DIR_LIB)aspera/fasp/transfer_spec.erb.rb
+	RUBYLIB=$(DIR_LIB) erb -T - -U -r aspera/fasp/parameters $(DIR_LIB)aspera/fasp/transfer_spec.erb.rb > $@
 ##################################
 # Gem publish
 gempush: all dotag
