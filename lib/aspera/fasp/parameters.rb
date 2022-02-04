@@ -13,68 +13,80 @@ module Aspera
   module Fasp
     # translate transfer specification to ascp parameter list
     class Parameters
-      private
-      # Temp folder for file lists, must contain only file lists
-      # because of garbage collection takes any file there
-      # this could be refined, as , for instance, on macos, temp folder is already user specific
-      @@file_list_folder=TempFileManager.instance.new_file_path_global('asession_filelists')
-      @@param_description_cache=nil
-      # @return normaiwed description of transfer spec parameters
-      def self.description
-        return @@param_description_cache unless @@param_description_cache.nil?
-        # config file in same folder with same name as this source
-        @@param_description_cache=YAML.load_file("#{__FILE__[0..-3]}yaml")
-        Aspera::CommandLineBuilder.normalize_description(@@param_description_cache)
-      end
-
       # Agents shown in manual for parameters (sub list)
       SUPPORTED_AGENTS=[:direct,:node,:connect]
       # Short names of columns in manual
       SUPPORTED_AGENTS_SHORT=SUPPORTED_AGENTS.map{|a|a.to_s[0].to_sym}
 
-      # @return a table suitable to display a manual
-      def self.man_table
-        result=[]
-        description.keys.map do |k|
-          i=description[k]
-          param={name: k, type: [i[:accepted_types]].flatten.join(','),description: i[:desc]}
-          SUPPORTED_AGENTS.each do |a|
-            param[a.to_s[0].to_sym]=i[:context].nil? || i[:context].include?(a) ? 'Y' : ''
-          end
-          # only keep lines that are usable in supported agents
-          next if SUPPORTED_AGENTS_SHORT.inject(true){|m,i|m and param[i].empty?}
-          param[:cli]=case i[:cltype]
-          when :envvar; 'env:'+i[:clvarname]
-          when :opt_without_arg,:opt_with_arg; i[:option_switch]
-          else ''
-          end
-          if i.has_key?(:enum)
-            param[:description] << "\nAllowed values: #{i[:enum].join(', ')}"
-          end
-          result.push(param)
+      class << self
+        # Temp folder for file lists, must contain only file lists
+        # because of garbage collection takes any file there
+        # this could be refined, as , for instance, on macos, temp folder is already user specific
+        @@file_list_folder=TempFileManager.instance.new_file_path_global('asession_filelists')
+        @@param_description_cache=nil
+        # @return normaiwed description of transfer spec parameters
+        def description
+          return @@param_description_cache unless @@param_description_cache.nil?
+          # config file in same folder with same name as this source
+          @@param_description_cache=YAML.load_file("#{__FILE__[0..-3]}yaml")
+          Aspera::CommandLineBuilder.normalize_description(@@param_description_cache)
         end
-        return result
+
+        # @return a table suitable to display a manual
+        def man_table
+          result=[]
+          description.keys.map do |k|
+            i=description[k]
+            param={name: k, type: [i[:accepted_types]].flatten.join(','),description: i[:desc]}
+            SUPPORTED_AGENTS.each do |a|
+              param[a.to_s[0].to_sym]=i[:context].nil? || i[:context].include?(a) ? 'Y' : ''
+            end
+            # only keep lines that are usable in supported agents
+            next if SUPPORTED_AGENTS_SHORT.inject(true){|m,i|m and param[i].empty?}
+            param[:cli]=case i[:cltype]
+            when :envvar; 'env:'+i[:clvarname]
+            when :opt_without_arg,:opt_with_arg; i[:option_switch]
+            else ''
+            end
+            if i.has_key?(:enum)
+              param[:description] << "\nAllowed values: #{i[:enum].join(', ')}"
+            end
+            result.push(param)
+          end
+          return result
+        end
+
+        # special encoding methods used in YAML (key: :encode)
+        def encode_cipher(v); v.tr('-',''); end
+
+        # special encoding methods used in YAML (key: :encode)
+        def encode_source_root(v); Base64.strict_encode64(v); end
+
+        # special encoding methods used in YAML (key: :encode)
+        def encode_tags(v); Base64.strict_encode64(JSON.generate(v)); end
+
+        def ts_has_file_list(ts)
+          ts.has_key?('EX_ascp_args') and ts['EX_ascp_args'].is_a?(Array) and ['--file-list','--file-pair-list'].any?{|i|ts['EX_ascp_args'].include?(i)}
+        end
+
+        def ts_to_env_args(transfer_spec,options)
+          return Parameters.new(transfer_spec,options).ascp_args()
+        end
+
+        # temp file list files are created here
+        def file_list_folder=(v)
+          @@file_list_folder=v
+          if !@@file_list_folder.nil?
+            FileUtils.mkdir_p(@@file_list_folder)
+            TempFileManager.instance.cleanup_expired(@@file_list_folder)
+          end
+        end
+
+        # static methods
+        def file_list_folder; @@file_list_folder;end
       end
 
-      # special encoding methods used in YAML (key: :encode)
-      def self.encode_cipher(v)
-        v.tr('-','')
-      end
-
-      # special encoding methods used in YAML (key: :encode)
-      def self.encode_source_root(v)
-        Base64.strict_encode64(v)
-      end
-
-      # special encoding methods used in YAML (key: :encode)
-      def self.encode_tags(v)
-        Base64.strict_encode64(JSON.generate(v))
-      end
-
-      def self.ts_has_file_list(ts)
-        ts.has_key?('EX_ascp_args') and ts['EX_ascp_args'].is_a?(Array) and ['--file-list','--file-pair-list'].any?{|i|ts['EX_ascp_args'].include?(i)}
-      end
-
+      # @param options [Hash] key: :wss: bool
       def initialize(job_spec,options)
         @job_spec=job_spec
         @options=options
@@ -112,7 +124,7 @@ module Aspera
           @job_spec.delete('fasp_port')
           @job_spec.delete('EX_ssh_key_paths')
           @job_spec.delete('sshfp')
-          # set default location for CA bundle, see env var SSL_CERT_FILE / SSL_CERT_DIR
+          # set location for CA bundle to be the one of Ruby, see env var SSL_CERT_FILE / SSL_CERT_DIR
           @job_spec['EX_ssh_key_paths']=[OpenSSL::X509::DEFAULT_CERT_FILE]
           Log.log.debug("CA certs: EX_ssh_key_paths <- DEFAULT_CERT_FILE from openssl")
         else
@@ -188,23 +200,6 @@ module Aspera
         return env_args
       end
 
-      # temp file list files are created here
-      def self.file_list_folder=(v)
-        @@file_list_folder=v
-        if !@@file_list_folder.nil?
-          FileUtils.mkdir_p(@@file_list_folder)
-          TempFileManager.instance.cleanup_expired(@@file_list_folder)
-        end
-      end
-
-      # static methods
-      class << self
-        def file_list_folder; @@file_list_folder;end
-
-        def ts_to_env_args(transfer_spec,options)
-          return Parameters.new(transfer_spec,options).ascp_args()
-        end
-      end
     end # Parameters
   end
 end
