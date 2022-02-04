@@ -6,6 +6,7 @@ require 'xmlsimple'
 require 'zlib'
 require 'base64'
 require 'fileutils'
+require 'openssl'
 
 module Aspera
   module Fasp
@@ -366,7 +367,8 @@ module Aspera
       def get_key(type,id)
         hf=['begin','end'].map{|t|"-----#{t} #{type} private key-----".upcase}
         bin=Base64.strict_encode64(DataRepository.instance.get_bin(id))
-        hf.insert(1,bin).join("\n")
+        # validate valie and generate key in connonical format
+        OpenSSL::PKey.const_get(type.upcase).send(:new,hf.insert(1,bin).join("\n")).to_pem
       end
 
     end # Installation
