@@ -7,10 +7,7 @@ DIR_PRIV=$(DIR_TOP)local/
 DIR_TST=$(DIR_TOP)tests/
 DIR_DOC=$(DIR_TOP)docs/
 
-GEMNAME=aspera-cli
-GEMSPEC=$(DIR_TOP)$(GEMNAME).gemspec
-
-# makefile for integration tests, used for doc generation
+# makefile for integration tests, used for doc generation (extract sample commands)
 TEST_MAKEFILE=$(DIR_TST)Makefile
 
 # configuration file used for tests, template is generated in "docs"
@@ -29,7 +26,9 @@ EXENAME=ascli
 # else use EXE_MAN or EXE_NOMAN
 EXETESTB=$(DIR_BIN)$(EXENAME)
 
-GEMVERSION=$(shell $(EXETESTB) -Cnone --version)
+GEMNAME=$(shell $(EXETESTB) conf gem name)
+GEMSPEC=$(DIR_TOP)$(GEMNAME).gemspec
+GEMVERSION=$(shell $(EXETESTB) conf gem version)
 
 all::
 

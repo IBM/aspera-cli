@@ -81,7 +81,7 @@ module Aspera
         # declare and parse global options
         init_global_options()
         # the Config plugin adds the @preset parser, so declare before TransferAgent which may use it
-        @plugin_env[:config]=Plugins::Config.new(@plugin_env,PROGRAM_NAME,HELP_URL,Aspera::Cli::VERSION,app_main_folder)
+        @plugin_env[:config]=Plugins::Config.new(@plugin_env, gem: GEM_NAME, name: PROGRAM_NAME, help: HELP_URL, version: Aspera::Cli::VERSION)
         # the TransferAgent plugin may use the @preset parser
         @plugin_env[:transfer]=TransferAgent.new(@plugin_env[:options],@plugin_env[:config])
         # data persistency
@@ -107,7 +107,7 @@ module Aspera
         banner << "\tor visit: #{HELP_URL}\n"
         banner << "\tsource repo: #{SRC_URL}\n"
         banner << "\nENVIRONMENT VARIABLES\n"
-        banner << "\t#{conf_dir_env_var}  config folder, default: $HOME/#{Plugins::Config::ASPERA_HOME_FOLDER_NAME}/#{PROGRAM_NAME}\n"
+        banner << "\t#{@plugin_env[:config].conf_dir_env_var}  config folder, default: $HOME/#{Plugins::Config::ASPERA_HOME_FOLDER_NAME}/#{PROGRAM_NAME}\n"
         banner << "\tany option can be set as an environment variable, refer to the manual\n"
         banner << "\nCOMMANDS\n"
         banner << "\tTo list first level commands, execute: #{PROGRAM_NAME}\n"
@@ -208,24 +208,6 @@ module Aspera
 
       protected
 
-      # env var name to override the app's main folder
-      # default main folder is $HOME/<vendor main app folder>/<program name>
-      def conf_dir_env_var
-        return "#{PROGRAM_NAME}_home".upcase
-      end
-
-      def app_main_folder
-        # find out application main folder
-        app_folder=ENV[conf_dir_env_var]
-        # if env var undefined or empty
-        if app_folder.nil? or app_folder.empty?
-          user_home_folder=Dir.home
-          raise CliError,"Home folder does not exist: #{user_home_folder}. Check your user environment or use #{conf_dir_env_var}." unless Dir.exist?(user_home_folder)
-          app_folder=File.join(user_home_folder,Plugins::Config::ASPERA_HOME_FOLDER_NAME,PROGRAM_NAME)
-        end
-        return app_folder
-      end
-
       # early debug for parser
       # Note: does not accept shortcuts
       def early_debug_setup(argv)
@@ -289,7 +271,7 @@ module Aspera
             command_sym=@opt_mgr.get_next_command(@plugin_env[:config].plugins.keys.dup.unshift(:help))
           end
           # command will not be executed, but we need manual
-          @opt_mgr.fail_on_missing_mandatory=false if @option_help
+          @opt_mgr.fail_on_missing_mandatory=false if @option_help or @option_show_config
           # main plugin is not dynamically instanciated
           case command_sym
           when :help
