@@ -18,6 +18,7 @@ EXE_NOMAN=$(EXE_MAN)
 CF_LOCAL_SAMPLE_FILENAME=datafile.bin
 CF_LOCAL_SAMPLE_FILEPATH=$(DIR_TMP)$(CF_LOCAL_SAMPLE_FILENAME)
 CF_HSTS_FOLDER_UPLOAD := $(shell $(EXE_NOMAN) conf id misc get upload_folder 2> /dev/null || echo error)
+CF_HSTS_UPLOADED_FILE=$(CF_HSTS_FOLDER_UPLOAD)/$(CF_LOCAL_SAMPLE_FILENAME)
 
 # setup local environment on Macos for preview generation testing
 setupprev:
@@ -260,9 +261,11 @@ $(T)nd1: $(T).exists
 	@touch $@
 $(T)nd2: $(T).exists
 	@echo $@
-	$(EXE_MAN) node upload --to-folder=$(CF_HSTS_FOLDER_UPLOAD) --ts=@json:'{"target_rate_cap_kbps":10000}' $(CF_LOCAL_SAMPLE_FILEPATH)
-	$(EXE_MAN) node download --to-folder=$(DIR_TMP). $(CF_HSTS_FOLDER_UPLOAD)/$(CF_LOCAL_SAMPLE_FILENAME)
-	$(EXE_MAN) node delete $(CF_HSTS_FOLDER_UPLOAD)/$(CF_LOCAL_SAMPLE_FILENAME)
+	$(EXE_MAN) node upload $(CF_LOCAL_SAMPLE_FILEPATH) --to-folder=$(CF_HSTS_FOLDER_UPLOAD) --ts=@json:'{"target_rate_cap_kbps":10000}'
+	$(EXE_MAN) node upload $(CF_LOCAL_SAMPLE_FILEPATH) --to-folder=$(CF_HSTS_FOLDER_UPLOAD) --ts=@json:'{"target_rate_cap_kbps":10000}' --token-type=hybrid
+	$(EXE_MAN) node download $(CF_HSTS_UPLOADED_FILE) --to-folder=$(DIR_TMP).
+	$(EXE_MAN) node download $(CF_HSTS_UPLOADED_FILE) --to-folder=$(DIR_TMP). --token-type=hybrid
+	$(EXE_MAN) node delete $(CF_HSTS_UPLOADED_FILE)
 	@touch $@
 $(T)nd_2_nd_xfer: $(T).exists
 	@echo $@
