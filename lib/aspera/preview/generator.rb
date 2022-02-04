@@ -234,17 +234,17 @@ module Aspera
       # text to png
       def convert_plaintext_to_png()
         # get 100 first lines of text file
-        first_lines=File.open(@source_file_path){|f|100.times.map{f.readline rescue ''}}.join
+        first_lines=File.open(@source_file_path){|f|100.times.map{f.readline rescue ''}.join}
         Utils.external_command(:convert,[
           '-size',"#{@options.thumb_img_size}x#{@options.thumb_img_size}",
-          'xc:white',
-          '-font','Courier',
+          'xc:white', # define canvas with background color (xc, or canvas) of preceding size
+          '-font',@options.thumb_text_font,
           '-pointsize',12,
-          '-fill','black',
-          '-annotate','+15+15',first_lines,
-          '-trim',
-          '-bordercolor','#FFF',
-          '-border',10,
+          '-fill','black', # font color
+          '-annotate','+0+0',first_lines,
+          '-trim', # avoid large blank regions
+          '-bordercolor','white',
+          '-border',8,
           '+repage',
           @destination_file_path])
       end
