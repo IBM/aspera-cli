@@ -2,7 +2,7 @@
 
 [comment1]: # (Do not edit this README.md, edit docs/README.erb.md, for details, read docs/README.md)
 
-Version : 4.7.0.pre
+Version : 4.6.0.pre
 
 Laurent/2016-2022
 
@@ -88,7 +88,7 @@ ascli --version
 ```
 
 ```bash
-4.7.0.pre
+4.6.0.pre
 ```
 
 ### First use
@@ -2042,8 +2042,9 @@ ascli node async show ALL
 ascli node basic_token
 ascli node browse / -r
 ascli node delete folder_1/10MB.1
-ascli node delete folder_1/testfile.bin
-ascli node download --to-folder=. folder_1/testfile.bin
+ascli node delete testfile.bin
+ascli node download testfile.bin --to-folder=.
+ascli node download testfile.bin --to-folder=. --token-type=hybrid
 ascli node health
 ascli node info
 ascli node search / --value=@json:'{"sort":"mtime"}'
@@ -2052,7 +2053,8 @@ ascli node service delete service1
 ascli node service list
 ascli node transfer list --value=@json:'{"active_only":true}'
 ascli node upload --to-folder="folder_1" --sources=@ts --ts=@json:'{"paths":[{"source":"/aspera-test-dir-small/10MB.1"}],"precalculate_job_size":true}' --transfer=node --transfer-info=@json:'{"url":"my_node_url","username":"my_node_user","password":"my_node_pass"}'
-ascli node upload --to-folder=folder_1 --ts=@json:'{"target_rate_cap_kbps":10000}' testfile.bin
+ascli node upload testfile.bin --to-folder=folder_1 --ts=@json:'{"target_rate_cap_kbps":10000}'
+ascli node upload testfile.bin --to-folder=folder_1 --ts=@json:'{"target_rate_cap_kbps":10000}' --token-type=hybrid
 ascli orchestrator info
 ascli orchestrator plugins
 ascli orchestrator processes
@@ -2122,7 +2124,7 @@ ascli sync start --parameters=@json:'{"sessions":[{"name":"test","reset":true,"r
 ```bash
 ascli -h
 NAME
-	ascli -- a command line tool for Aspera Applications (v4.7.0.pre)
+	ascli -- a command line tool for Aspera Applications (v4.6.0.pre)
 
 SYNOPSIS
 	ascli COMMANDS [OPTIONS] [ARGS]
@@ -2178,7 +2180,7 @@ OPTIONS: global
         --log-passwords=ENUM         show passwords in logs: yes, no
 
 COMMAND: config
-SUBCOMMANDS: list overview id preset open documentation genkey gem_path plugin flush_tokens echo wizard export_to_cli detect coffee ascp email_test smtp_settings proxy_check folder file check_update initdemo vault
+SUBCOMMANDS: list overview id preset open documentation genkey gem plugin flush_tokens echo wizard export_to_cli detect coffee ascp email_test smtp_settings proxy_check folder file check_update initdemo vault
 OPTIONS:
         --value=VALUE                extended value for create, update, list filter
         --property=VALUE             name of property to set
@@ -2345,6 +2347,7 @@ OPTIONS:
         --thumb-vid-scale=VALUE      png: video: size (ffmpeg scale argument)
         --thumb-vid-fraction=VALUE   png: video: position of snapshot
         --thumb-img-size=VALUE       png: non-video: height (and width)
+        --thumb-text-font=VALUE      png: plaintext: font to render text with image magick convert, list with: identify -list font
         --video-conversion=ENUM      mp4: method for preview generation: reencode, blend, clips
         --video-png-conv=ENUM        mp4: method for thumbnail generation: fixed, animated
         --video-start-sec=VALUE      mp4: start offset (seconds) of video preview
@@ -3474,7 +3477,8 @@ It is possible to:
 
 For transfers, it is possible to control how transfer is authorized using option: `token_type`:
 
-* `aspera` : api `<upload|download>_setup` is called to create the transfer spec including the Aspera token
+* `aspera` : api `<upload|download>_setup` is called to create the transfer spec including the Aspera token, used as is.
+* `hybrid` : same as `aspera`, but token is replaced with basic token like `basic`
 * `basic` : transfer spec is created like this:
 
 ```javascript
@@ -3483,11 +3487,11 @@ For transfers, it is possible to control how transfer is authorized using option
   "remote_user": "xfer",
   "ssh_port": 33001,
   "token": "Basic <base 64 encoded user/pass>",
-  "direction": send/recv
+  "direction": send/receive
 }
 ```
 
-* `hybrid` : same as `aspera`, but token is replaced with basic token like `basic`
+Note that the port is assumed to be the default SSH port `33001` and transfer user is assumed to be `xfer`.
 
 ### Central
 
@@ -3904,7 +3908,6 @@ The tool requires the following external tools available in the `PATH`:
 * OptiPNG : `optipng`
 * FFmpeg : `ffmpeg` `ffprobe`
 * Libreoffice : `libreoffice`
-* ruby gem `mimemagic`
 
 Here shown on Redhat/CentOS.
 
@@ -3916,31 +3919,15 @@ To check if all tools are found properly, execute:
 ascli preview check
 ```
 
-#### mimemagic
-
-To benefit from extra mime type detection install gem mimemagic:
-
-```bash
-gem install mimemagic
-```
-
-or to install an earlier version if any problem:
-
-```bash
-gem install mimemagic -v '~> 0.3.0'
-```
-
-To use it, set option `mimemagic` to `yes`: `--mimemagic=yes`
-
-If not used, Mime type used for conversion is the one provided by the node API.
-
-If used, it the `preview` command will first analyze the file content using mimemagic, and if no match, will try by extension.
-
 #### Image: ImageMagick and optipng
 
 ```bash
 yum install -y ImageMagick optipng
 ```
+
+You may also install `ghostscript` which adds fonts to ImageMagick.
+Available fonts, used to generate png for text, can be listed with `magick identify -list font`.
+Prefer ImageMagick version >=7.
 
 #### Video: FFmpeg
 
@@ -4114,7 +4101,13 @@ The mp4 video preview file is only for category `video`
 
 File type is primarily based on file extension detected by the node API and translated info a mime type returned by the node API.
 
-The tool can also locally detect the mime type using gem `mimemagic`.
+The tool can also locally detect the mime type using option `mimemagic`.
+
+To use it, set option `mimemagic` to `yes`: `--mimemagic=yes`
+
+If not used, Mime type used for conversion is the one provided by the node API.
+
+If used, the `preview` command will first analyze the file content using mimemagic, and if no match, will try by extension.
 
 ### Access to original files and preview creation
 
@@ -4419,11 +4412,11 @@ Main components:
 A working example can be found in the gem, example:
 
 ```bash
-ascli config gem_path
+ascli config gem path
 ```
 
 ```bash
-cat $(ascli config gem_path)/../examples/transfer.rb
+cat $(ascli config gem path)/../examples/transfer.rb
 ```
 
 This sample code shows some example of use of the API as well as REST API.
@@ -4459,7 +4452,10 @@ So, it evolved into `ascli`:
 
 ## Changes (Release notes)
 
-* 4.7.0.pre
+* 4.6.0.pre
+
+  * new: option to specify font used to generate image of text file in `preview`
+  * change: (break) command `conf gem path` replaces `conf gem_path`
 
 * 4.6.0
 

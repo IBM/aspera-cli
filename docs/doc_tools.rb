@@ -1,9 +1,8 @@
 # get transfer spec parameter description
-$LOAD_PATH.unshift(ENV["INCL_DIR_GEM"])
 require 'aspera/fasp/parameters'
 
 # check that required env vars exist, and files
-%w{EXENAME GEMSPEC INCL_USAGE INCL_COMMANDS INCL_ASESSION INCL_DIR_GEM}.each do |e|
+%w{EXENAME GEMSPEC INCL_USAGE INCL_COMMANDS INCL_ASESSION}.each do |e|
   raise "missing env var #{e}" unless ENV.has_key?(e)
   raise "missing file #{ENV[e]}" unless File.exist?(ENV[e]) or !e.start_with?('INCL_')
 end

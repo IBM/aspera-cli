@@ -2956,7 +2956,8 @@ It is possible to:
 
 For transfers, it is possible to control how transfer is authorized using option: `token_type`:
 
-* `aspera` : api `<upload|download>_setup` is called to create the transfer spec including the Aspera token
+* `aspera` : api `<upload|download>_setup` is called to create the transfer spec including the Aspera token, used as is.
+* `hybrid` : same as `aspera`, but token is replaced with basic token like `basic`
 * `basic` : transfer spec is created like this:
 
 ```javascript
@@ -2965,11 +2966,11 @@ For transfers, it is possible to control how transfer is authorized using option
   "remote_user": "xfer",
   "ssh_port": 33001,
   "token": "Basic <base 64 encoded user/pass>",
-  "direction": send/recv
+  "direction": send/receive
 }
 ```
 
-* `hybrid` : same as `aspera`, but token is replaced with basic token like `basic`
+Note that the port is assumed to be the default SSH port `33001` and transfer user is assumed to be `xfer`.
 
 ### Central
 
@@ -3386,7 +3387,6 @@ The tool requires the following external tools available in the `PATH`:
 * OptiPNG : `optipng`
 * FFmpeg : `ffmpeg` `ffprobe`
 * Libreoffice : `libreoffice`
-* ruby gem `mimemagic`
 
 Here shown on Redhat/CentOS.
 
@@ -3398,31 +3398,15 @@ To check if all tools are found properly, execute:
 <%=cmd%> preview check
 ```
 
-#### mimemagic
-
-To benefit from extra mime type detection install gem mimemagic:
-
-```bash
-gem install mimemagic
-```
-
-or to install an earlier version if any problem:
-
-```bash
-gem install mimemagic -v '~> 0.3.0'
-```
-
-To use it, set option `mimemagic` to `yes`: `--mimemagic=yes`
-
-If not used, Mime type used for conversion is the one provided by the node API.
-
-If used, it the `preview` command will first analyze the file content using mimemagic, and if no match, will try by extension.
-
 #### Image: ImageMagick and optipng
 
 ```bash
 yum install -y ImageMagick optipng
 ```
+
+You may also install `ghostscript` which adds fonts to ImageMagick.
+Available fonts, used to generate png for text, can be listed with `magick identify -list font`.
+Prefer ImageMagick version >=7.
 
 #### Video: FFmpeg
 
@@ -3596,7 +3580,13 @@ The mp4 video preview file is only for category `video`
 
 File type is primarily based on file extension detected by the node API and translated info a mime type returned by the node API.
 
-The tool can also locally detect the mime type using gem `mimemagic`.
+The tool can also locally detect the mime type using option `mimemagic`.
+
+To use it, set option `mimemagic` to `yes`: `--mimemagic=yes`
+
+If not used, Mime type used for conversion is the one provided by the node API.
+
+If used, the `preview` command will first analyze the file content using mimemagic, and if no match, will try by extension.
 
 ### Access to original files and preview creation
 
@@ -3881,11 +3871,11 @@ Main components:
 A working example can be found in the gem, example:
 
 ```bash
-<%=cmd%> config gem_path
+<%=cmd%> config gem path
 ```
 
 ```bash
-cat $(<%=cmd%> config gem_path)/../examples/transfer.rb
+cat $(<%=cmd%> config gem path)/../examples/transfer.rb
 ```
 
 This sample code shows some example of use of the API as well as REST API.
@@ -3922,6 +3912,9 @@ So, it evolved into <%=tool%>:
 ## Changes (Release notes)
 
 * <%=gemspec.version.to_s%>
+
+  * new: option to specify font used to generate image of text file in `preview`
+  * change: (break) command `conf gem path` replaces `conf gem_path`
 
 * 4.6.0
 

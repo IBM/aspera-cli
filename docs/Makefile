@@ -32,7 +32,7 @@ $(MANUAL_PDF): $(DIR_TOP)README.md
 	wkhtmltopdf toc $(MANUAL_HTML) $(MANUAL_PDF)
 
 $(DIR_TOP)README.md: $(DIR_DOC)README.erb.md $(INCL_COMMANDS) $(INCL_USAGE) $(INCL_ASESSION)
-	INCL_DIR_GEM=$(DIR_TOP)lib erb -T - --encoding UTF-8:UTF-8 $(DIR_DOC)README.erb.md > $(DIR_TOP)README.md
+	RUBYLIB=$(DIR_TOP)lib erb -T - -U --encoding UTF-8:UTF-8 $(DIR_DOC)README.erb.md > $(DIR_TOP)README.md
 
 $(INCL_COMMANDS): $(DIR_TMP).exists $(TEST_MAKEFILE)
 	sed -nEe 's/.*\$$\(EXE_MAN.?\)/$(EXENAME)/p' $(TEST_MAKEFILE) > $(DIR_TMP)usg1.txt
@@ -49,6 +49,7 @@ $(INCL_COMMANDS): $(DIR_TMP).exists $(TEST_MAKEFILE)
 	sed -i.bak -Ee 's/DIR_[A-Z]+//g' $(DIR_TMP)usg1.txt
 	sed -i.bak -Ee 's/LOCAL_SAMPLE_FILE(NAME|PATH)/testfile.bin/g' $(DIR_TMP)usg1.txt
 	sed -i.bak -Ee 's/HSTS_FOLDER_UPLOAD/folder_1/g' $(DIR_TMP)usg1.txt
+	sed -i.bak -Ee 's/HSTS_UPLOADED_FILE/testfile.bin/g' $(DIR_TMP)usg1.txt
 	sed -i.bak -Ee 's/PKG_TEST_TITLE/Important files delivery/g' $(DIR_TMP)usg1.txt
 	sed -i.bak -Ee 's/AOC_EXTERNAL_EMAIL/external.user@example.com/g' $(DIR_TMP)usg1.txt
 	sed -i.bak -Ee 's/EMAIL_ADDR/internal.user@example.com/g' $(DIR_TMP)usg1.txt
