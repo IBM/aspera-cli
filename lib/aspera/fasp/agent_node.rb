@@ -1,4 +1,5 @@
 require 'aspera/fasp/agent_base'
+require 'aspera/fasp/transfer_spec'
 require 'aspera/log'
 require 'tty-spinner'
 
@@ -55,8 +56,8 @@ module Aspera
         # add root id if access key
         if ! @root_id.nil?
           case transfer_spec['direction']
-          when 'send';transfer_spec['source_root_id']=@root_id
-          when 'receive';transfer_spec['destination_root_id']=@root_id
+          when Fasp::TransferSpec::DIRECTION_SEND;transfer_spec['source_root_id']=@root_id
+          when Fasp::TransferSpec::DIRECTION_RECEIVE;transfer_spec['destination_root_id']=@root_id
           else raise "unexpected direction in ts: #{transfer_spec['direction']}"
           end
         end

@@ -1,5 +1,6 @@
 #!/bin/echo this is a ruby class:
 require 'aspera/fasp/agent_base'
+require 'aspera/fasp/transfer_spec'
 require 'aspera/log'
 require 'aspera/rest'
 require 'websocket-client-simple'
@@ -174,9 +175,9 @@ module Aspera
         Log.dump(:user_spec,transfer_spec)
         transfer_spec['authentication']||='token'
         case transfer_spec['direction']
-        when 'send'
+        when Fasp::TransferSpec::DIRECTION_SEND
           upload(transfer_spec)
-        when 'receive'
+        when Fasp::TransferSpec::DIRECTION_RECEIVE
           download(transfer_spec)
         else
           raise "unexpected direction: [#{transfer_spec['direction']}]"

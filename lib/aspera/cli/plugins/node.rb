@@ -3,6 +3,7 @@ require 'aspera/nagios'
 require 'aspera/hash_ext'
 require 'aspera/id_generator'
 require 'aspera/node'
+require 'aspera/fasp/transfer_spec'
 require 'base64'
 require 'zlib'
 
@@ -232,11 +233,13 @@ module Aspera
             when :basic
               raise "shall have auth" unless @api_node.params[:auth].is_a?(Hash)
               raise "shall be basic auth" unless @api_node.params[:auth][:type].eql?(:basic)
+              ts_direction=case command;when :upload;Fasp::TransferSpec::DIRECTION_SEND;when :download;Fasp::TransferSpec::DIRECTION_RECEIVE;else raise "Error: need upload or download";end
               transfer_spec={
-                'remote_host'=>URI.parse(@api_node.params[:base_url]).host,
-                'remote_user'=>Aspera::Fasp::Default::ACCESS_KEY_TRANSFER_USER,
-                'ssh_port'   =>Aspera::Fasp::Default::SSH_PORT,
-                'direction'  =>case command;when :upload;'send';when :download;'recv';else raise "Error";end
+                'remote_host'     =>URI.parse(@api_node.params[:base_url]).host,
+                'remote_user'     =>Aspera::Fasp::TransferSpec::ACCESS_KEY_TRANSFER_USER,
+                'ssh_port'        =>Aspera::Fasp::TransferSpec::SSH_PORT,
+                'direction'       =>ts_direction,
+                'destination_root'=>self.transfer.destination_folder(ts_direction)
               }.deep_merge(@add_request_param)
             else raise "ERROR: token_type #{tt}"
             end

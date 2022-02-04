@@ -3,6 +3,7 @@ require 'aspera/cli/plugins/ats'
 require 'aspera/cli/basic_auth_plugin'
 require 'aspera/cli/transfer_agent'
 require 'aspera/fasp/agent_node'
+require 'aspera/fasp/transfer_spec'
 require 'aspera/aoc'
 require 'aspera/node'
 require 'aspera/persistency_action_once'
@@ -150,11 +151,11 @@ module Aspera
             # default is push
             case self.options.get_option(:operation,:mandatory)
             when :push
-              client_tr_oper='send'
+              client_tr_oper=Fasp::TransferSpec::DIRECTION_SEND
               client_folder=self.options.get_option(:from_folder,:mandatory)
               server_folder=self.transfer.destination_folder(client_tr_oper)
             when :pull
-              client_tr_oper='receive'
+              client_tr_oper=Fasp::TransferSpec::DIRECTION_RECEIVE
               client_folder=self.transfer.destination_folder(client_tr_oper)
               server_folder=self.options.get_option(:from_folder,:mandatory)
             end
@@ -176,9 +177,9 @@ module Aspera
             }
             return Main.result_transfer(transfer_start(AoC::FILES_APP,client_tr_oper,server_node_file,add_ts))
           when :upload
-            node_file = @api_aoc.resolve_node_file(top_node_file,self.transfer.destination_folder('send'))
+            node_file = @api_aoc.resolve_node_file(top_node_file,self.transfer.destination_folder(Fasp::TransferSpec::DIRECTION_SEND))
             add_ts={'tags'=>{'aspera'=>{'files'=>{'parentCwd'=>"#{node_file[:node_info]['id']}:#{node_file[:file_id]}"}}}}
-            return Main.result_transfer(transfer_start(AoC::FILES_APP,'send',node_file,add_ts))
+            return Main.result_transfer(transfer_start(AoC::FILES_APP,Fasp::TransferSpec::DIRECTION_SEND,node_file,add_ts))
           when :download
             source_paths=self.transfer.ts_source_paths
             # special case for AoC : all files must be in same folder
@@ -193,7 +194,7 @@ module Aspera
             # override paths with just filename
             add_ts={'tags'=>{'aspera'=>{'files'=>{'parentCwd'=>"#{node_file[:node_info]['id']}:#{node_file[:file_id]}"}}}}
             add_ts.merge!({'paths'=>source_paths})
-            return Main.result_transfer(transfer_start(AoC::FILES_APP,'receive',node_file,add_ts))
+            return Main.result_transfer(transfer_start(AoC::FILES_APP,Fasp::TransferSpec::DIRECTION_RECEIVE,node_file,add_ts))
           when :http_node_download
             source_paths=self.transfer.ts_source_paths
             source_folder=source_paths.shift['source']
@@ -206,7 +207,7 @@ module Aspera
             file_name = source_paths.first['source']
             node_file = @api_aoc.resolve_node_file(top_node_file,File.join(source_folder,file_name))
             node_api=@api_aoc.get_node_api(node_file[:node_info],scope: AoC::SCOPE_NODE_USER)
-            node_api.call({operation: 'GET',subpath: "files/#{node_file[:file_id]}/content",save_to_file: File.join(self.transfer.destination_folder('receive'),file_name)})
+            node_api.call({operation: 'GET',subpath: "files/#{node_file[:file_id]}/content",save_to_file: File.join(self.transfer.destination_folder(Fasp::TransferSpec::DIRECTION_RECEIVE),file_name)})
             return Main.result_status("downloaded: #{file_name}")
           when :v3
             # Note: other common actions are unauthorized with user scope
@@ -844,7 +845,7 @@ module Aspera
               # get destination: package folder
               node_file = {node_info: node_info, file_id: package_info['contents_file_id']}
               # execute transfer, raise exception if at least one error
-              Main.result_transfer(transfer_start(AoC::PACKAGES_APP,'send',node_file,AoC.package_tags(package_info,'upload')))
+              Main.result_transfer(transfer_start(AoC::PACKAGES_APP,Fasp::TransferSpec::DIRECTION_SEND,node_file,AoC.package_tags(package_info,'upload')))
               # return all info on package
               return { type: :single_object, data: package_info}
             when :recv
@@ -880,7 +881,7 @@ module Aspera
                 self.format.display_status("downloading package: #{package_info['name']}")
                 add_ts={'paths'=>[{'source'=>'.'}]}
                 node_file = {node_info: node_info, file_id: package_info['contents_file_id']}
-                statuses=transfer_start(AoC::PACKAGES_APP,'receive',node_file,AoC.package_tags(package_info,'download').merge(add_ts))
+                statuses=transfer_start(AoC::PACKAGES_APP,Fasp::TransferSpec::DIRECTION_RECEIVE,node_file,AoC.package_tags(package_info,'download').merge(add_ts))
                 result_transfer.push({'package'=>package_id,Main::STATUS_FIELD=>statuses})
                 # update skip list only if all transfer sessions completed
                 if TransferAgent.session_status(statuses).eql?(:success)

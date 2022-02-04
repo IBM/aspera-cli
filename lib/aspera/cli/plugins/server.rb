@@ -1,6 +1,6 @@
 require 'aspera/cli/basic_auth_plugin'
 require 'aspera/ascmd'
-require 'aspera/fasp/default'
+require 'aspera/fasp/transfer_spec'
 require 'aspera/ssh'
 require 'aspera/nagios'
 require 'tempfile'
@@ -73,8 +73,8 @@ module Aspera
           case server_uri.scheme
           when 'ssh'
             if self.options.get_option(:username,:optional).nil?
-              self.options.set_option(:username,Aspera::Fasp::Default::ACCESS_KEY_TRANSFER_USER)
-              Log.log.info("Using default transfer user: #{Aspera::Fasp::Default::ACCESS_KEY_TRANSFER_USER}")
+              self.options.set_option(:username,Aspera::Fasp::TransferSpec::ACCESS_KEY_TRANSFER_USER)
+              Log.log.info("Using default transfer user: #{Aspera::Fasp::TransferSpec::ACCESS_KEY_TRANSFER_USER}")
             end
             server_transfer_spec['remote_user']=self.options.get_option(:username,:mandatory)
             ssh_options=self.options.get_option(:ssh_options,:optional)
@@ -211,9 +211,9 @@ module Aspera
             end
             return Main.result_status(result)
           when :upload
-            return Main.result_transfer(self.transfer.start(server_transfer_spec.merge('direction'=>'send'),{:src=>:direct}))
+            return Main.result_transfer(self.transfer.start(server_transfer_spec.merge('direction'=>Fasp::TransferSpec::DIRECTION_SEND),{:src=>:direct}))
           when :download
-            return Main.result_transfer(self.transfer.start(server_transfer_spec.merge('direction'=>'receive'),{:src=>:direct}))
+            return Main.result_transfer(self.transfer.start(server_transfer_spec.merge('direction'=>Fasp::TransferSpec::DIRECTION_RECEIVE),{:src=>:direct}))
           when *Aspera::AsCmd::OPERATIONS
             args=self.options.get_next_argument('ascmd command arguments',:multiple,:optional)
             ascmd=Aspera::AsCmd.new(shell_executor)

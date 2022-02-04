@@ -2,7 +2,7 @@ require 'aspera/log'
 require 'aspera/rest'
 require 'aspera/hash_ext'
 require 'aspera/data_repository'
-require 'aspera/fasp/default'
+require 'aspera/fasp/transfer_spec'
 require 'base64'
 
 module Aspera
@@ -140,8 +140,8 @@ module Aspera
       def analytics_ts(app,direction,ws_id,ws_name)
         # translate transfer to operation
         operation=case direction
-        when 'send';    'upload'
-        when 'receive'; 'download'
+        when Fasp::TransferSpec::DIRECTION_SEND;    'upload'
+        when Fasp::TransferSpec::DIRECTION_RECEIVE; 'download'
         else raise "ERROR: unexpected value: #{direction}"
         end
 
@@ -286,7 +286,7 @@ module Aspera
       # add remote host info
       if @@use_standard_ports
         # get default TCP/UDP ports and transfer user
-        transfer_spec.merge!(Fasp::Default::AK_TSPEC_BASE)
+        transfer_spec.merge!(Fasp::TransferSpec::AK_TSPEC_BASE)
         # by default: same address as node API
         transfer_spec['remote_host']=node_file[:node_info]['host']
         # 30 it's necessarily https scheme: webui does not allow anything else

@@ -1,4 +1,4 @@
-require 'aspera/fasp/default'
+require 'aspera/fasp/transfer_spec'
 require 'aspera/rest'
 require 'aspera/oauth'
 require 'aspera/log'
@@ -10,13 +10,14 @@ module Aspera
   class Node < Rest
     # permissions
     ACCESS_LEVELS=['delete','list','mkdir','preview','read','rename','write']
+    # prefix for ruby code for filter
     MATCH_EXEC_PREFIX='exec:'
 
     # register node special token decoder
     Oauth.register_decoder(lambda{|token|JSON.parse(Zlib::Inflate.inflate(Base64.decode64(token)).partition('==SIGNATURE==').first)})
 
     def self.set_ak_basic_token(ts,ak,secret)
-      raise "ERROR: expected xfer" unless ts['remote_user'].eql?(Fasp::Default::ACCESS_KEY_TRANSFER_USER)
+      Log.log.warn("Expected transfer user: #{Fasp::TransferSpec::ACCESS_KEY_TRANSFER_USER}, but have #{ts['remote_user']}") unless ts['remote_user'].eql?(Fasp::TransferSpec::ACCESS_KEY_TRANSFER_USER)
       ts['token']="Basic #{Base64.strict_encode64("#{ak}:#{secret}")}"
     end
 

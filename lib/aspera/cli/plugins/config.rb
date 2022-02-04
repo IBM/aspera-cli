@@ -1,7 +1,9 @@
 require 'aspera/cli/basic_auth_plugin'
 require 'aspera/cli/extended_value'
+require 'aspera/cli/version'
 require 'aspera/fasp/installation'
 require 'aspera/fasp/parameters'
+require 'aspera/fasp/transfer_spec'
 require 'aspera/open_application'
 require 'aspera/aoc'
 require 'aspera/proxy_auto_config'
@@ -88,21 +90,21 @@ END_OF_TEMPLATE
           nil
         end
 
-        def initialize(env,tool_name,help_url,version,main_folder)
+        def initialize(env,params)
+          raise "env and params must be Hash" unless env.is_a?(Hash) and params.is_a?(Hash)
+          raise "missing param" unless [:name,:help,:version,:gem].sort.eql?(params.keys.sort)
           super(env)
+          @info=params
+          @main_folder=default_app_main_folder
           @plugins={}
           @plugin_lookup_folders=[]
           @use_plugin_defaults=true
           @config_presets=nil
           @connect_versions=nil
           @vault=nil
-          @program_version=version
-          @tool_name=tool_name
-          @help_url=help_url
-          @main_folder=main_folder
           @conf_file_default=File.join(@main_folder,DEFAULT_CONFIG_FILENAME)
           @option_config_file=@conf_file_default
-          Log.log.debug("#{tool_name} folder: #{@main_folder}")
+          Log.log.debug("#{@info[:name]} folder: #{@main_folder}")
           # set folder for FASP SDK
           add_plugin_lookup_folder(self.class.gem_plugins_folder)
           add_plugin_lookup_folder(File.join(@main_folder,ASPERA_PLUGINS_FOLDERNAME))
@@ -150,6 +152,24 @@ END_OF_TEMPLATE
           self.options.set_option(:override,:no)
           self.options.parse_options!
           Fasp::Installation.instance.folder=self.options.get_option(:sdk_folder,:mandatory)
+        end
+
+        # env var name to override the app's main folder
+        # default main folder is $HOME/<vendor main app folder>/<program name>
+        def conf_dir_env_var
+          return "#{@info[:name]}_home".upcase
+        end
+
+        def default_app_main_folder
+          # find out application main folder
+          app_folder=ENV[conf_dir_env_var]
+          # if env var undefined or empty
+          if app_folder.nil? or app_folder.empty?
+            user_home_folder=Dir.home
+            raise CliError,"Home folder does not exist: #{user_home_folder}. Check your user environment or use #{conf_dir_env_var}." unless Dir.exist?(user_home_folder)
+            app_folder=File.join(user_home_folder,ASPERA_HOME_FOLDER_NAME,@info[:name])
+          end
+          return app_folder
         end
 
         def check_gem_version
@@ -394,7 +414,7 @@ END_OF_TEMPLATE
             # if no file found, create default config
             if conf_file_to_load.nil?
               Log.log.warn("No config file found. Creating empty configuration file: #{@option_config_file}")
-              @config_presets={CONF_PRESET_CONFIG=>{CONF_PRESET_VERSION=>@program_version}}
+              @config_presets={CONF_PRESET_CONFIG=>{CONF_PRESET_VERSION=>@info[:version]}}
             else
               Log.log.debug("loading #{@option_config_file}")
               @config_presets=YAML.load_file(conf_file_to_load)
@@ -431,14 +451,14 @@ END_OF_TEMPLATE
             config_tested_version='1.0'
             if Gem::Version.new(version) <= Gem::Version.new(config_tested_version)
               convert_preset_plugin_name(AOC_COMMAND_V2,AOC_COMMAND_V3)
-              convert_preset_path(PROGRAM_NAME_V2,@tool_name,files_to_copy)
+              convert_preset_path(PROGRAM_NAME_V2,@info[:name],files_to_copy)
               version=@config_presets[CONF_PRESET_CONFIG][CONF_PRESET_VERSION]=config_tested_version
               save_required=true
             end
             # Place new compatibility code here
             if save_required
               Log.log.warn('Saving automatic conversion.')
-              @config_presets[CONF_PRESET_CONFIG][CONF_PRESET_VERSION]=@program_version
+              @config_presets[CONF_PRESET_CONFIG][CONF_PRESET_VERSION]=@info[:version]
               save_presets_to_config_file
               Log.log.warn('Copying referenced files')
               files_to_copy.each do |file|
@@ -451,7 +471,7 @@ END_OF_TEMPLATE
             raise e
           rescue => e
             Log.log.debug("-> #{e}")
-            new_name="#{@option_config_file}.pre#{@program_version}.manual_conversion_needed"
+            new_name="#{@option_config_file}.pre#{@info[:version]}.manual_conversion_needed"
             File.rename(@option_config_file,new_name)
             Log.log.warn("Renamed config file to #{new_name}.")
             Log.log.warn('Manual Conversion is required. Next time, a new empty file will be created.')
@@ -540,7 +560,7 @@ END_OF_TEMPLATE
             when :list # shows files used
               return {type: :object_list, data: all_links}
             when :download #
-              folder_dest=self.transfer.destination_folder('receive')
+              folder_dest=self.transfer.destination_folder(Fasp::TransferSpec::DIRECTION_RECEIVE)
               #folder_dest=self.options.get_next_argument('destination folder')
               api_connect_cdn=Rest.new({base_url: CONNECT_WEB_URL})
               fileurl = one_link['href']
@@ -694,7 +714,7 @@ END_OF_TEMPLATE
           end
         end
 
-        ACTIONS=[PRESET_GBL_ACTIONS,:id,:preset,:open,:documentation,:genkey,:gem_path,:plugin,:flush_tokens,:echo,:wizard,:export_to_cli,:detect,:coffee,:ascp,:email_test,:smtp_settings,:proxy_check,:folder,:file,:check_update,:initdemo,:vault].flatten.freeze
+        ACTIONS=[PRESET_GBL_ACTIONS,:id,:preset,:open,:documentation,:genkey,:gem,:plugin,:flush_tokens,:echo,:wizard,:export_to_cli,:detect,:coffee,:ascp,:email_test,:smtp_settings,:proxy_check,:folder,:file,:check_update,:initdemo,:vault].flatten.freeze
 
         # "config" plugin
         def execute_action
@@ -712,7 +732,7 @@ END_OF_TEMPLATE
           when :documentation
             section=options.get_next_argument('private key file path',:single,:optional)
             section='#'+section unless section.nil?
-            OpenApplication.instance.uri("#{@help_url}#{section}")
+            OpenApplication.instance.uri("#{@info[:help]}#{section}")
             return Main.result_nothing
           when :genkey # generate new rsa key
             private_key_path=self.options.get_next_argument('private key file path')
@@ -824,7 +844,7 @@ _EOF_
                   self.format.display_status('Please login to your Aspera on Cloud instance.'.red)
                   self.format.display_status('Go to: Apps->Admin->Organization->Integrations')
                   self.format.display_status('Create or check if there is an existing integration named:')
-                  self.format.display_status("- name: #{@tool_name}")
+                  self.format.display_status("- name: #{@info[:name]}")
                   self.format.display_status("- redirect uri: #{DEFAULT_REDIRECT}")
                   self.format.display_status('- origin: localhost')
                   self.format.display_status('Once created or identified,')
@@ -877,7 +897,7 @@ _EOF_
             end
             self.format.display_status('Saving config file.')
             save_presets_to_config_file
-            return Main.result_status("Done.\nYou can test with:\n#{@tool_name} #{test_args}")
+            return Main.result_status("Done.\nYou can test with:\n#{@info[:name]} #{test_args}")
           when :export_to_cli
             self.format.display_status('Exporting: Aspera on Cloud')
             require 'aspera/cli/plugins/aoc'
@@ -922,8 +942,12 @@ _EOF_
             return Main.result_nothing
           when :ascp
             execute_action_ascp
-          when :gem_path
-            return Main.result_status(self.class.gem_root)
+          when :gem
+            case self.options.get_next_command([:path,:version,:name])
+            when :path; return Main.result_status(self.class.gem_root)
+            when :version; return Main.result_status(Aspera::Cli::VERSION)
+            when :name; return Main.result_status(@info[:gem])
+            end
           when :folder
             return Main.result_status(@main_folder)
           when :file
@@ -1071,7 +1095,7 @@ _EOF_
           @config_presets[CONF_PRESET_DEFAULT].has_key?(plugin_sym.to_s)
             default_config_name=@config_presets[CONF_PRESET_DEFAULT][plugin_sym.to_s]
             if !@config_presets.has_key?(default_config_name)
-              Log.log.error("Default config name [#{default_config_name}] specified for plugin [#{plugin_sym.to_s}], but it does not exist in config file.\nPlease fix the issue: either create preset with one parameter (#{@tool_name} config id #{default_config_name} init @json:'{}') or remove default (#{@tool_name} config id default remove #{plugin_sym.to_s}).")
+              Log.log.error("Default config name [#{default_config_name}] specified for plugin [#{plugin_sym.to_s}], but it does not exist in config file.\nPlease fix the issue: either create preset with one parameter (#{@info[:name]} config id #{default_config_name} init @json:'{}') or remove default (#{@info[:name]} config id default remove #{plugin_sym.to_s}).")
             end
             raise CliError,"Config name [#{default_config_name}] must be a hash, check config file." if !@config_presets[default_config_name].is_a?(Hash)
             return default_config_name

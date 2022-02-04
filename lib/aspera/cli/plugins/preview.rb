@@ -3,6 +3,7 @@ require 'aspera/preview/generator'
 require 'aspera/preview/options'
 require 'aspera/preview/utils'
 require 'aspera/preview/file_types'
+require 'aspera/fasp/transfer_spec'
 require 'aspera/persistency_action_once'
 require 'aspera/node'
 require 'aspera/hash_ext'
@@ -138,7 +139,7 @@ module Aspera
           end
           return if events.empty?
           events.each do |event|
-            if event['data']['direction'].eql?('receive') and
+            if event['data']['direction'].eql?(Fasp::TransferSpec::DIRECTION_RECEIVE) and
             event['data']['status'].eql?('completed') and
             event['data']['error_code'].eql?(0) and
             event['data'].dig('tags','aspera',PREV_GEN_TAG).nil?
@@ -198,16 +199,16 @@ module Aspera
         end
 
         def do_transfer(direction,folder_id,source_filename,destination='/')
-          raise "error" if destination.nil? and direction.eql?('receive')
+          raise "error" if destination.nil? and direction.eql?(Fasp::TransferSpec::DIRECTION_RECEIVE)
           if @default_transfer_spec.nil?
             # make a dummy call to get some default transfer parameters
             res=@api_node.create('files/upload_setup',{'transfer_requests'=>[{'transfer_request'=>{'paths'=>[{}],'destination_root'=>'/'}}]})
             template_ts=res[:data]['transfer_specs'].first['transfer_spec']
             # get ports, anyway that should be 33001 for both. add remote_user ?
             @default_transfer_spec=['ssh_port','fasp_port'].inject({}){|h,e|h[e]=template_ts[e];h}
-            if ! @default_transfer_spec['remote_user'].eql?(Aspera::Fasp::Default::ACCESS_KEY_TRANSFER_USER)
+            if ! @default_transfer_spec['remote_user'].eql?(Aspera::Fasp::TransferSpec::ACCESS_KEY_TRANSFER_USER)
               Log.log.warn("remote_user shall be xfer")
-              @default_transfer_spec['remote_user']=Aspera::Fasp::Default::ACCESS_KEY_TRANSFER_USER
+              @default_transfer_spec['remote_user']=Aspera::Fasp::TransferSpec::ACCESS_KEY_TRANSFER_USER
             end
             Aspera::Node::set_ak_basic_token(@default_transfer_spec,@access_key_self['id'],self.options.get_option(:password,:mandatory))
             # note: we use the same address for ascp than for node api instead of the one from upload_setup
@@ -324,7 +325,7 @@ module Aspera
           if @access_remote
             raise 'missing parent_file_id in entry' if entry['parent_file_id'].nil?
             #  download original file to temp folder
-            do_transfer('receive',entry['parent_file_id'],entry['name'],@tmp_folder)
+            do_transfer(Fasp::TransferSpec::DIRECTION_RECEIVE,entry['parent_file_id'],entry['name'],@tmp_folder)
           end
           Log.log.info("source: #{entry['id']}: #{entry['path']})")
           gen_infos.each do |gen_info|
@@ -332,7 +333,7 @@ module Aspera
           end
           if @access_remote
             # upload
-            do_transfer('send',@previews_folder_entry['id'],local_entry_preview_dir)
+            do_transfer(Fasp::TransferSpec::DIRECTION_SEND,@previews_folder_entry['id'],local_entry_preview_dir)
             # cleanup after upload
             FileUtils.rm_rf(local_entry_preview_dir)
             File.delete(File.join(@tmp_folder,entry['name']))

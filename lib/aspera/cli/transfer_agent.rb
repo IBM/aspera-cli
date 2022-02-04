@@ -1,4 +1,4 @@
-require 'aspera/fasp/parameters'
+require 'aspera/fasp/transfer_spec'
 require 'aspera/cli/listener/logger'
 require 'aspera/cli/listener/progress_multi'
 
@@ -103,8 +103,8 @@ END_OF_TEMPLATE
         return dest_folder unless dest_folder.nil?
         # default: / on remote, . on local
         case direction.to_s
-        when 'send';dest_folder='/'
-        when 'receive';dest_folder='.'
+        when Fasp::TransferSpec::DIRECTION_SEND;dest_folder='/'
+        when Fasp::TransferSpec::DIRECTION_RECEIVE;dest_folder='.'
         else raise "wrong direction: #{direction}"
         end
         return dest_folder
@@ -167,10 +167,10 @@ END_OF_TEMPLATE
         raise "tr_opts must be hash" unless tr_opts.is_a?(Hash)
         # process :src option
         case transfer_spec['direction']
-        when 'receive'
+        when Fasp::TransferSpec::DIRECTION_RECEIVE
           # init default if required in any case
           @transfer_spec_cmdline['destination_root']||=destination_folder(transfer_spec['direction'])
-        when 'send'
+        when Fasp::TransferSpec::DIRECTION_SEND
           case tr_opts[:src]
           when :direct
             # init default if required

@@ -6,6 +6,7 @@ require 'aspera/cli/transfer_agent'
 require 'aspera/persistency_action_once'
 require 'aspera/open_application'
 require 'aspera/fasp/uri'
+require 'aspera/fasp/transfer_spec'
 require 'aspera/nagios'
 require 'aspera/id_generator'
 require 'xmlsimple'
@@ -339,7 +340,7 @@ module Aspera
                   xmlpayload='<?xml version="1.0" encoding="UTF-8"?><url-list xmlns="http://schemas.asperasoft.com/xml/url-list"><url href="'+sanitized+'"/></url-list>'
                   transfer_spec['token']=api_v3.call({:operation=>'POST',:subpath=>'issue-token?direction=down',:headers=>{'Accept'=>'text/plain','Content-Type'=>'application/vnd.aspera.url-list+xml'},:text_body_params=>xmlpayload})[:http].body
                 end
-                transfer_spec['direction']='receive'
+                transfer_spec['direction']=Fasp::TransferSpec::DIRECTION_RECEIVE
                 statuses=self.transfer.start(transfer_spec,{:src=>:node_gen3})
                 result_transfer.push({'package'=>id_uri[:id],Main::STATUS_FIELD=>statuses})
                 # skip only if all sessions completed

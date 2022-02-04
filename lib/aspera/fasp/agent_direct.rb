@@ -10,11 +10,12 @@ require 'aspera/fasp/error'
 require 'aspera/fasp/parameters'
 require 'aspera/fasp/installation'
 require 'aspera/fasp/resume_policy'
-require 'aspera/fasp/default'
+require 'aspera/fasp/transfer_spec'
 require 'aspera/log'
 require 'socket'
 require 'timeout'
 require 'securerandom'
+require 'shellwords'
 
 module Aspera
   module Fasp
@@ -81,7 +82,7 @@ module Aspera
             # if option not true: keep default udp port for all sessions
             if @options[:multi_incr_udp]
               # override if specified, else use default value
-              multi_session_info[:udp_base]=transfer_spec.has_key?('fasp_port') ? transfer_spec['fasp_port'] : Default::UDP_PORT
+              multi_session_info[:udp_base]=transfer_spec.has_key?('fasp_port') ? transfer_spec['fasp_port'] : TransferSpec::UDP_PORT
               # delete from original transfer spec, as we will increment values
               transfer_spec.delete('fasp_port')
             end
@@ -197,7 +198,7 @@ module Aspera
           # add management port
           ascp_arguments.unshift('-M', mgt_sock.addr[1].to_s)
           # start ascp in sub process
-          Log.log.debug("execute: #{env_args[:env].map{|k,v| "#{k}=\"#{v}\""}.join(' ')} \"#{ascp_path}\" \"#{ascp_arguments.join('" "')}\"")
+          Log.log.debug("execute: #{env_args[:env].map{|k,v| "#{k}=#{Shellwords.shellescape(v)}"}.join(' ')} #{Shellwords.shellescape(ascp_path)} #{ascp_arguments.map{|a|Shellwords.shellescape(a)}.join(' ')}")
           # start process
           ascp_pid = Process.spawn(env_args[:env],[ascp_path,ascp_path],*ascp_arguments)
           # in parent, wait for connection to socket max 3 seconds

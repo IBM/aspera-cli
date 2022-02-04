@@ -1,6 +1,6 @@
 require 'aspera/log'
 require 'aspera/aoc'
-require 'aspera/fasp/default'
+require 'aspera/fasp/transfer_spec'
 require 'aspera/cli/main'
 require 'webrick'
 require 'webrick/https'
@@ -76,9 +76,9 @@ module Aspera
         faspex_transfer_spec={
           'direction'   => 'send',
           'remote_host' => node_info['host'],
-          'remote_user' => Fasp::Default::ACCESS_KEY_TRANSFER_USER,
-          'ssh_port'    => Fasp::Default::SSH_PORT,
-          'fasp_port'   => Fasp::Default::UDP_PORT,
+          'remote_user' => Fasp::TransferSpec::ACCESS_KEY_TRANSFER_USER,
+          'ssh_port'    => Fasp::TransferSpec::SSH_PORT,
+          'fasp_port'   => Fasp::TransferSpec::UDP_PORT,
           'tags'        => ts_tags,
           'token'       => node_auth_bearer_token,
           'paths'       => [{'destination' => '/'}],
