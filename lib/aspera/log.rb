@@ -7,6 +7,9 @@ require 'singleton'
 module Aspera
   # Singleton object for logging
   class Log
+    # display string for hidden secrets
+    HIDDEN_PASSWORD='***'.freeze
+    private_constant :HIDDEN_PASSWORD
     include Singleton
     # class methods
     class << self
@@ -35,7 +38,7 @@ module Aspera
           "#{name.to_s.green} (#{format})=\n#{result}"
         end
       end
-    end
+    end # class
 
     attr_reader :logger_type
     attr_reader :logger
@@ -53,7 +56,7 @@ module Aspera
         return name.downcase.to_sym if @logger.level.eql?(Logger::Severity.const_get(name))
       end
       # should not happen
-      raise "error"
+      raise "INTERNAL ERROR: unexpected level #{@logger.level}"
     end
 
     # change underlying logger, but keep log level
@@ -75,12 +78,13 @@ module Aspera
       @logger.level=current_severity_integer
       @logger_type=new_logtype
       original_formatter = @logger.formatter || Logger::Formatter.new
-      # update formatter with password hiding
-      @logger.formatter=proc do |severity, datetime, progname, msg|
+      # update formatter with password hiding, note that @log_passwords may be set AFTER this init is done, so it's done at runtime
+      @logger.formatter=lambda do |severity, datetime, progname, msg|
         unless @log_passwords
-          msg=msg.gsub(/(["':][^"]*(password|secret|private_key)[^"]*["']?[=>: ]+")([^"]+)(")/){"#{$1}***#{$4}"}
-          msg=msg.gsub(/("[^"]*(secret)[^"]*"=>{)([^}]+)(})/){"#{$1}***#{$4}"}
-          msg=msg.gsub(/((secrets)={)([^}]+)(})/){"#{$1}***#{$4}"}
+          msg=msg.gsub(/(["':][^"]*(password|secret|private_key)[^"]*["']?[=>: ]+")([^"]+)(")/){"#{$1}#{HIDDEN_PASSWORD}#{$4}"}
+          msg=msg.gsub(/("[^"]*(secret)[^"]*"=>{)([^}]+)(})/){"#{$1}#{HIDDEN_PASSWORD}#{$4}"}
+          msg=msg.gsub(/((secrets)={)([^}]+)(})/){"#{$1}#{HIDDEN_PASSWORD}#{$4}"}
+          msg=msg.gsub(/--+BEGIN[A-Z ]+KEY--+.+--+END[A-Z ]+KEY--+/m){HIDDEN_PASSWORD}
         end
         original_formatter.call(severity, datetime, progname, msg)
       end

@@ -113,13 +113,13 @@ module Aspera
       if options.has_key?(:translate_values)
         # translate using conversion table
         new_value=options[:translate_values][parameter_value]
-        raise "unsupported value: #{parameter_value}" if new_value.nil?
+        raise "unsupported value: #{parameter_value}, expect: #{options[:translate_values].keys.join(', ')}" if new_value.nil?
         parameter_value=new_value
       end
       raise "unsupported value: #{parameter_value}" unless options[:accepted_values].nil? or options[:accepted_values].include?(parameter_value)
       if options[:encode]
         # :encode has name of class with encoding method
-        newvalue=Kernel.const_get(options[:encode]).send("encode_#{param_name}",parameter_value)
+        newvalue=Kernel.const_get(options[:encode]).send("#{:encode}_#{param_name}",parameter_value)
         raise Fasp::Error.new("unsupported #{param_name}: #{parameter_value}") if newvalue.nil?
         parameter_value=newvalue
       end

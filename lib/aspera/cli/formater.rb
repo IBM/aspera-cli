@@ -212,8 +212,8 @@ module Aspera
           # convert to string with special function. here table_rows_hash_val is an array of hash
           table_rows_hash_val=results[:textify].call(table_rows_hash_val) if results.has_key?(:textify)
           filter=@opt_mgr.get_option(:select,:optional)
-          unless filter.nil?
-            raise CliBadArgument,"expecting hash for select" unless filter.is_a?(Hash)
+          unless filter.nil? or (filter.respond_to?('empty?') and filter.empty?)
+            raise CliBadArgument,"expecting hash for select, have #{filter.class}: #{filter}" unless filter.is_a?(Hash)
             filter.each{|k,v|table_rows_hash_val.select!{|i|i[k].eql?(v)}}
           end
 
