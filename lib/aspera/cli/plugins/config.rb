@@ -76,20 +76,6 @@ END_OF_TEMPLATE
         :TRANSFER_SDK_ARCHIVE_URL,:AOC_PATH_API_CLIENTS,:DEMO_SERVER_PRESET,:EMAIL_TEST_TEMPLATE,:EXTV_INCLUDE_PRESETS,
         :EXTV_PRESET,:DEFAULT_CHECK_NEW_VERSION_DAYS,:DEFAULT_PRIV_KEY_FILENAME,:SERVER_COMMAND,:CONF_PRESET_SECRETS,
         :PRESET_DIG_SEPARATOR
-        def option_preset; nil; end
-
-        def option_preset=(value)
-          case value
-          when String
-            self.options.add_option_preset(preset_by_name(value))
-          when Hash
-            self.options.add_option_preset(value)
-          else
-            raise 'Preset definition must be a String for name, or Hash for value'
-          end
-          nil
-        end
-
         def initialize(env,params)
           raise "env and params must be Hash" unless env.is_a?(Hash) and params.is_a?(Hash)
           raise "missing param" unless [:name,:help,:version,:gem].sort.eql?(params.keys.sort)
@@ -120,7 +106,8 @@ END_OF_TEMPLATE
           # load defaults before it can be overriden
           self.add_plugin_default_preset(CONF_GLOBAL_SYM)
           self.options.parse_options!
-          self.options.set_obj_attr(:ascp_path,self,:option_ascp_path)
+          self.options.set_obj_attr(:ascp_path,Fasp::Installation.instance,:ascp_path)
+          self.options.set_obj_attr(:sdk_folder,Fasp::Installation.instance,:sdk_folder)
           self.options.set_obj_attr(:use_product,self,:option_use_product)
           self.options.set_obj_attr(:preset,self,:option_preset)
           self.options.set_obj_attr(:plugin_folder,self,:option_plugin_folder)
@@ -151,7 +138,6 @@ END_OF_TEMPLATE
           self.options.set_option(:sdk_folder,File.join(@main_folder,'sdk'))
           self.options.set_option(:override,:no)
           self.options.parse_options!
-          Fasp::Installation.instance.folder=self.options.get_option(:sdk_folder,:mandatory)
         end
 
         # env var name to override the app's main folder
@@ -345,20 +331,12 @@ END_OF_TEMPLATE
           return hash_val
         end
 
-        def option_ascp_path=(new_value)
-          Fasp::Installation.instance.ascp_path=new_value
-        end
-
-        def option_ascp_path
-          Fasp::Installation.instance.path(:ascp)
-        end
-
         def option_use_product=(value)
           Fasp::Installation.instance.use_ascp_from_product(value)
         end
 
         def option_use_product
-          'write-only value'
+          'write-only option, see value of ascp_path'
         end
 
         def option_plugin_folder=(value)
@@ -371,6 +349,20 @@ END_OF_TEMPLATE
 
         def option_plugin_folder
           return @plugin_lookup_folders
+        end
+
+        def option_preset; 'write-only option'; end
+
+        def option_preset=(value)
+          case value
+          when String
+            self.options.add_option_preset(preset_by_name(value))
+          when Hash
+            self.options.add_option_preset(value)
+          else
+            raise 'Preset definition must be a String for name, or Hash for value'
+          end
+          nil
         end
 
         def convert_preset_path(old_name,new_name,files_to_copy)

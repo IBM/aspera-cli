@@ -19,6 +19,7 @@ module Aspera
     # Installation.instance.ascp_path=""
     class Installation
       include Singleton
+      # known product names
       PRODUCT_CONNECT='Aspera Connect'
       PRODUCT_CLI_V1='Aspera CLI'
       PRODUCT_DRIVE='Aspera Drive'
@@ -26,23 +27,35 @@ module Aspera
       # protobuf generated files from sdk
       EXT_RUBY_PROTOBUF='_pb.rb'
       RB_SDK_FOLDER='lib'
-      MAX_REDIRECT_SDK=2
-      private_constant :MAX_REDIRECT_SDK
       # set ascp executable path
       def ascp_path=(v)
         @path_to_ascp=v
       end
 
+      def ascp_path
+        path(:ascp)
+      end
+
       def sdk_ruby_folder
-        ruby_pb_folder=File.join(folder_path,RB_SDK_FOLDER)
+        ruby_pb_folder=File.join(sdk_folder,RB_SDK_FOLDER)
         FileUtils.mkdir_p(ruby_pb_folder) unless Dir.exist?(ruby_pb_folder)
         return ruby_pb_folder
       end
 
       # location of SDK files
-      def folder=(v)
-        @sdk_folder=v
-        folder_path
+      def sdk_folder=(v)
+        @sdk_dir=v
+        sdk_folder
+      end
+
+      # backward compatibility in sample program
+      alias :folder= :sdk_folder=
+
+      # @return the path to folder where SDK is installed
+      def sdk_folder
+        raise "SDK path was ot initialized" if @sdk_dir.nil?
+        FileUtils.mkdir_p(@sdk_dir) unless Dir.exist?(@sdk_dir)
+        @sdk_dir
       end
 
       # find ascp in named product (use value : FIRST_FOUND='FIRST' to just use first one)
@@ -66,7 +79,7 @@ module Aspera
           # add SDK as first search path
           scan_locations.unshift({
             :expected =>'SDK',
-            :app_root =>folder_path,
+            :app_root =>sdk_folder,
             :sub_bin =>''
           })
           # search installed products: with ascp
@@ -108,19 +121,19 @@ module Aspera
         when :transferd
           file=transferd_filepath
         when :ssh_bypass_key_dsa
-          file=File.join(folder_path,'aspera_bypass_dsa.pem')
+          file=File.join(sdk_folder,'aspera_bypass_dsa.pem')
           File.write(file,get_key('dsa',1)) unless File.exist?(file)
           File.chmod(0400,file)
         when :ssh_bypass_key_rsa
-          file=File.join(folder_path,'aspera_bypass_rsa.pem')
+          file=File.join(sdk_folder,'aspera_bypass_rsa.pem')
           File.write(file,get_key('rsa',2)) unless File.exist?(file)
           File.chmod(0400,file)
         when :aspera_license
-          file=File.join(folder_path,'aspera-license')
+          file=File.join(sdk_folder,'aspera-license')
           File.write(file,Base64.strict_encode64("#{Zlib::Inflate.inflate(DataRepository.instance.get_bin(6))}==SIGNATURE==\n#{Base64.strict_encode64(DataRepository.instance.get_bin(7))}")) unless File.exist?(file)
           File.chmod(0400,file)
         when :aspera_conf
-          file=File.join(folder_path,'aspera.conf')
+          file=File.join(sdk_folder,'aspera.conf')
           File.write(file,%Q{<?xml version='1.0' encoding='UTF-8'?>
 <CONF version="2">
 <default>
@@ -133,8 +146,8 @@ module Aspera
 }) unless File.exist?(file)
           File.chmod(0400,file)
         when :fallback_cert,:fallback_key
-          file_key=File.join(folder_path,'aspera_fallback_key.pem')
-          file_cert=File.join(folder_path,'aspera_fallback_cert.pem')
+          file_key=File.join(sdk_folder,'aspera_fallback_key.pem')
+          file_cert=File.join(sdk_folder,'aspera_fallback_cert.pem')
           if !File.exist?(file_key) or !File.exist?(file_cert)
             require 'openssl'
             # create new self signed certificate for http fallback
@@ -221,9 +234,9 @@ module Aspera
           Aspera::Rest.new(base_url: sdk_url, redirect_max: 3).call(operation: 'GET',save_to_file: sdk_zip_path)
         end
         # rename old install
-        if ! Dir.empty?(folder_path)
+        if ! Dir.empty?(sdk_folder)
           Log.log.warn("Previous install exists, renaming folder.")
-          File.rename(folder_path,"#{folder_path}.#{Time.now.strftime("%Y%m%d%H%M%S")}")
+          File.rename(sdk_folder,"#{sdk_folder}.#{Time.now.strftime("%Y%m%d%H%M%S")}")
           # TODO: delete old archives ?
         end
         # SDK is organized by architecture
@@ -235,7 +248,7 @@ module Aspera
             next if entry.name.end_with?('/')
             dest_folder=nil
             # binaries
-            dest_folder=folder_path if entry.name.include?(arch_filter)
+            dest_folder=sdk_folder if entry.name.include?(arch_filter)
             # ruby adapters
             dest_folder=sdk_ruby_folder if entry.name.end_with?(EXT_RUBY_PROTOBUF)
             if !dest_folder.nil?
@@ -249,17 +262,17 @@ module Aspera
         # ensure license file are generated so that ascp invokation for version works
         self.path(:aspera_license)
         self.path(:aspera_conf)
-        ascp_path=File.join(folder_path,ascp_filename)
+        ascp_path=File.join(sdk_folder,ascp_filename)
         raise "No #{ascp_filename} found in SDK archive" unless File.exist?(ascp_path)
         FileUtils.chmod(0755,ascp_path)
         FileUtils.chmod(0755,ascp_path.gsub('ascp','ascp4'))
-        ascp_version=get_ascp_version(File.join(folder_path,ascp_filename))
+        ascp_version=get_ascp_version(File.join(sdk_folder,ascp_filename))
         trd_path=transferd_filepath
         Log.log.warn("No #{trd_path} in SDK archive") unless File.exist?(trd_path)
         FileUtils.chmod(0755,trd_path) if File.exist?(trd_path)
         transferd_version=get_exe_version(trd_path,'version')
         sdk_version = transferd_version||ascp_version
-        File.write(File.join(folder_path,PRODUCT_INFO),"<product><name>IBM Aspera SDK</name><version>#{sdk_version}</version></product>")
+        File.write(File.join(sdk_folder,PRODUCT_INFO),"<product><name>IBM Aspera SDK</name><version>#{sdk_version}</version></product>")
         return sdk_version
       end
 
@@ -277,7 +290,7 @@ module Aspera
 
       def initialize
         @path_to_ascp=nil
-        @sdk_folder=nil
+        @sdk_dir=nil
         @found_products=nil
       end
 
@@ -289,20 +302,13 @@ module Aspera
         return found.first
       end
 
-      # @return the path to folder where SDK is installed
-      def folder_path
-        raise "Undefined path to SDK" if @sdk_folder.nil?
-        FileUtils.mkdir_p(@sdk_folder) unless Dir.exist?(@sdk_folder)
-        @sdk_folder
-      end
-
       # filename for ascp with optional extension (Windows)
       def ascp_filename
         return 'ascp'+Environment.exe_extension
       end
 
       def transferd_filepath
-        return File.join(folder_path,'asperatransferd'+Environment.exe_extension)
+        return File.join(sdk_folder,'asperatransferd'+Environment.exe_extension)
       end
 
       # @return product folders depending on OS fields
