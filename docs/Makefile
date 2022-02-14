@@ -28,7 +28,7 @@ $(TMPL_CONF_FILE_PATH): $(TEST_CONF_FILE_PATH)
 	ruby -e 'require "yaml";n={};c=YAML.load_file("$(TEST_CONF_FILE_PATH)").each{|k,v| n[k]=["config","default"].include?(k)?v:v.keys.inject({}){|m,i|m[i]="your value here";m}};File.write("$(TMPL_CONF_FILE_PATH)",n.to_yaml)'
 
 $(MANUAL_PDF): $(DIR_TOP)README.md
-	pandoc --number-sections --resource-path=. --toc -o $(MANUAL_HTML) $(DIR_TOP)README.md
+	pandoc --number-sections --shift-heading-level-by=-1 --resource-path=. --toc -o $(MANUAL_HTML) $(DIR_TOP)README.md
 	wkhtmltopdf toc $(MANUAL_HTML) $(MANUAL_PDF)
 
 $(DIR_TOP)README.md: $(DIR_DOC)README.erb.md $(INCL_COMMANDS) $(INCL_USAGE) $(INCL_ASESSION)

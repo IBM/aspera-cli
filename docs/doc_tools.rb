@@ -26,6 +26,9 @@ def prst;'['+opprst+'](#lprt)';end
 # name with link (plural)
 def prsts;'['+opprst+'s](#lprt)';end
 
+# Transfer spec name with link
+def trspec;'[*transfer-spec*](#transferspec)';end
+
 # in title
 def prstt;opprst.capitalize;end
 
