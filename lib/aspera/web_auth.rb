@@ -10,7 +10,7 @@ module Aspera
         @shared=info
       end
 
-      def do_GET (request, response)
+      def service(request, response)
         if ! request.path.eql?(@shared[:expected_path])
           response.status=400
           return
@@ -63,19 +63,13 @@ module Aspera
       when 'https'
         webrick_options[:SSLEnable]=true
         webrick_options[:SSLVerifyClient]=OpenSSL::SSL::VERIFY_NONE
-        case 0
-        when 0
-          # generate self signed cert
-          fill_self_signed_cert(webrick_options)
-        when 1
-          # short
-          webrick_options[:SSLCertName]    = [ [ 'CN',WEBrick::Utils::getservername ] ]
-          Log.log.error(">>>#{webrick_options[:SSLCertName]}")
-        when 2
-          # good cert
-          webrick_options[:SSLPrivateKey] =OpenSSL::PKey::RSA.new(File.read('/Users/laurent/workspace/Tools/certificate/myserver.key'))
-          webrick_options[:SSLCertificate] = OpenSSL::X509::Certificate.new(File.read('/Users/laurent/workspace/Tools/certificate/myserver.crt'))
-        end
+        # generate self signed cert
+        fill_self_signed_cert(webrick_options)
+        ## short
+        # webrick_options[:SSLCertName]    = [ [ 'CN',WEBrick::Utils::getservername ] ]
+        ## good cert
+        #webrick_options[:SSLPrivateKey] =OpenSSL::PKey::RSA.new(File.read('/Users/laurent/workspace/Tools/certificate/myserver.key'))
+        #webrick_options[:SSLCertificate] = OpenSSL::X509::Certificate.new(File.read('/Users/laurent/workspace/Tools/certificate/myserver.crt'))
       end
       # parameters for servlet
       @shared_info={
