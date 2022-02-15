@@ -121,7 +121,7 @@ module Aspera
       @params[:base_url]=@params[:base_url].gsub(/\/+$/,'')
       @http_session=nil
       # default is no auth
-      @params[:auth]||={:type=>:none}
+      @params[:auth]||={type: :none}
       @params[:not_auth_codes]||=['401']
       @oauth=Oauth.new(@params[:auth]) if @params[:auth][:type].eql?(:oauth2)
       Log.dump('REST params(2)',@params)
@@ -208,7 +208,7 @@ module Aspera
       end
       req=build_request(call_data)
       Log.log.debug("call_data = #{call_data}")
-      result={:http=>nil}
+      result={http: nil}
       # start a block to be able to retry the actual HTTP request
       begin
         # we try the call, and will retry only if oauth, as we can, first with refresh, and then re-auth if refresh is bad
@@ -221,10 +221,10 @@ module Aspera
           if call_data.has_key?(:save_to_file) and result[:http].code.to_s.start_with?('2')
             total_size=result[:http]['Content-Length'].to_i
             progress=ProgressBar.create(
-            :format     => '%a %B %p%% %r KB/sec %e',
-            :rate_scale => lambda{|rate|rate/1024},
-            :title      => 'progress',
-            :total      => total_size)
+            format:     '%a %B %p%% %r KB/sec %e',
+            rate_scale: lambda{|rate|rate/1024},
+            title:      'progress',
+            total:      total_size)
             Log.log.debug("before write file")
             target_file=call_data[:save_to_file]
             # override user's path to path in header
@@ -248,7 +248,7 @@ module Aspera
           end # save_to_file
         end
         # sometimes there is a UTF8 char (e.g. (c) )
-        result[:http].body.force_encoding("UTF-8") if result[:http].body.is_a?(String)
+        result[:http].body.force_encoding('UTF-8') if result[:http].body.is_a?(String)
         Log.log.debug("result: body=#{result[:http].body}")
         result_mime=(result[:http]['Content-Type']||'text/plain').split(';').first
         case result_mime
@@ -267,7 +267,7 @@ module Aspera
             # try to use refresh token
             req['Authorization']=oauth_token(refresh: true)
           rescue RestCallError => e
-            Log.log.error("refresh failed".bg_red)
+            Log.log.error('refresh failed'.bg_red)
             # regenerate a brand new token
             req['Authorization']=oauth_token
           end
@@ -292,7 +292,7 @@ module Aspera
               return self.class.new(call_data).call(call_data)
             end
           else
-            raise "too many redirect"
+            raise e unless call_data[:return_error]
           end
         else
           raise e
@@ -310,23 +310,23 @@ module Aspera
 
     # @param encoding : one of: :json_params, :url_params
     def create(subpath,params,encoding=:json_params)
-      return call({:operation=>'POST',:subpath=>subpath,:headers=>{'Accept'=>'application/json'},encoding=>params})
+      return call({operation: 'POST',subpath: subpath,headers: {'Accept'=>'application/json'},encoding=>params})
     end
 
     def read(subpath,args=nil)
-      return call({:operation=>'GET',:subpath=>subpath,:headers=>{'Accept'=>'application/json'},:url_params=>args})
+      return call({operation: 'GET',subpath: subpath,headers: {'Accept'=>'application/json'},url_params: args})
     end
 
     def update(subpath,params)
-      return call({:operation=>'PUT',:subpath=>subpath,:headers=>{'Accept'=>'application/json'},:json_params=>params})
+      return call({operation: 'PUT',subpath: subpath,headers: {'Accept'=>'application/json'},json_params: params})
     end
 
     def delete(subpath)
-      return call({:operation=>'DELETE',:subpath=>subpath,:headers=>{'Accept'=>'application/json'}})
+      return call({operation: 'DELETE',subpath: subpath,headers: {'Accept'=>'application/json'}})
     end
 
     def cancel(subpath)
-      return call({:operation=>'CANCEL',:subpath=>subpath,:headers=>{'Accept'=>'application/json'}})
+      return call({operation: 'CANCEL',subpath: subpath,headers: {'Accept'=>'application/json'}})
     end
   end
 end #module Aspera
