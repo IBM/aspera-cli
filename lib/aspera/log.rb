@@ -80,11 +80,12 @@ module Aspera
       original_formatter = @logger.formatter || Logger::Formatter.new
       # update formatter with password hiding, note that @log_passwords may be set AFTER this init is done, so it's done at runtime
       @logger.formatter=lambda do |severity, datetime, progname, msg|
-        unless @log_passwords
-          msg=msg.gsub(/(["':][^"]*(password|secret|private_key)[^"]*["']?[=>: ]+")([^"]+)(")/){"#{$1}#{HIDDEN_PASSWORD}#{$4}"}
-          msg=msg.gsub(/("[^"]*(secret)[^"]*"=>{)([^}]+)(})/){"#{$1}#{HIDDEN_PASSWORD}#{$4}"}
-          msg=msg.gsub(/((secrets)={)([^}]+)(})/){"#{$1}#{HIDDEN_PASSWORD}#{$4}"}
-          msg=msg.gsub(/--+BEGIN[A-Z ]+KEY--+.+--+END[A-Z ]+KEY--+/m){HIDDEN_PASSWORD}
+        if msg.is_a?(String) and ! @log_passwords
+          msg=msg.clone
+          msg.gsub!(/(["':][^"]*(password|secret|private_key)[^"]*["']?[=>: ]+")([^"]+)(")/){"#{$1}#{HIDDEN_PASSWORD}#{$4}"}
+          msg.gsub!(/("[^"]*(secret)[^"]*"=>{)([^}]+)(})/){"#{$1}#{HIDDEN_PASSWORD}#{$4}"}
+          msg.gsub!(/((secrets)={)([^}]+)(})/){"#{$1}#{HIDDEN_PASSWORD}#{$4}"}
+          msg.gsub!(/--+BEGIN[A-Z ]+KEY--+.+--+END[A-Z ]+KEY--+/m){HIDDEN_PASSWORD}
         end
         original_formatter.call(severity, datetime, progname, msg)
       end
