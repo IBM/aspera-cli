@@ -703,11 +703,12 @@ The difference between reader and decoder is order and ordinality. Both act like
 
 The following "readers" are supported (returns value in []):
 
-* @val:VALUE : [String] prevent further special prefix processing, e.g. `--username=@val:laurent` sets the option `username` to value `laurent`.
-* @file:PATH : [String] read value from a file (prefix `~/` is replaced with the users home folder), e.g. `--key=@file:~/.ssh/mykey`
-* @path:PATH : [String] performs path expansion (prefix `~/` is replaced with the users home folder), e.g. `--config-file=@path:~/sample_config.yml`
-* @env:ENVVAR : [String] read from a named env var, e.g.--password=@env:MYPASSVAR
-* @stdin: : [String] read from stdin (no value on right)
+* @val:VALUE   : [String] prevent further special prefix processing, e.g. `--username=@val:laurent` sets the option `username` to value `laurent`.
+* @file:PATH   : [String] read value from a URL, e.g. `--fpac=@uri:http://serv/f.pac`
+* @uri:URL     : [String] read value from a file (prefix `~/` is replaced with the users home folder), e.g. `--key=@file:~/.ssh/mykey`
+* @path:PATH   : [String] performs path expansion (prefix `~/` is replaced with the users home folder), e.g. `--config-file=@path:~/sample_config.yml`
+* @env:ENVVAR  : [String] read from a named env var, e.g.--password=@env:MYPASSVAR
+* @stdin:      : [String] read from stdin (no value on right)
 * @preset:NAME : [Hash] get whole option preset value by name. Subvalues can also be used using `.` as separator. e.g. foo.bar is conf[foo][bar]
 
 In addition it is possible to decode a value, using one or multiple decoders :
@@ -1247,33 +1248,48 @@ It is also possible to force the graphical mode with option --ui :
 
 ### Proxy
 
-There are several types of network connections, each of them may be using a different *proxy*:
+There are several types of network connections, each of them use a different mechanism to define a *proxy*.
 
-* HTTP proxy for REST calls and for transfers using HTTP gateway
-* FASP proxy (forward) for transfers
-* HTTP proxy legacy Aspera HTTP fallback transfers
+#### HTTP proxy for REST calls and transfers using HTTP gateway
 
-To specify a HTTP proxy when ruby HTTP is used, set the `HTTP_PROXY` environment variable (or `HTTPS_PROXY`).
-This is the case for REST calls and HTTP Gateway
+To specify a HTTP proxy when ruby HTTP is used, set the `http_proxy` environment variable (lower case, preferred, or upper case).
+See [Ruby findproxy](https://rubyapi.org/3.0/o/uri/generic#method-i-find_proxy).
+
+```bash
+export http_proxy=http://myproxy.org.net:3128
+```
+
+#### FASP proxy (forward) for transfers
 
 To specify a FASP proxy (forward), set the [*transfer-spec*](#transferspec) parameter: `EX_fasp_proxy_url` (only supported with the `direct` agent).
+
+#### HTTP proxy legacy Aspera HTTP fallback transfers
 
 To specify a proxy for legacy http fallback, set the [*transfer-spec*](#transferspec) parameter: `EX_http_proxy_url` (only supported with the `direct` agent).
 (It is also possible to use `EX_ascp_args`)
 
-### Proxy auto config
+#### Proxy auto config
 
-The `fpac` option allows specification of a Proxy Auto Configuration (PAC) file, by its URL for local FASP agent.
-Supported schemes are : `http:`, `https:` and `file:`.
+The `fpac` option allows use of a Proxy Auto Configuration (PAC) file specified by its javascript value.
+To read a from URL (`http:`, `https:` and `file:`), use: `@uri:`.
+Use of auto config is currently only for REST calls.
 
 The PAC file can be tested with command: `config proxy_check`. Example:
 
+```
+ascli conf proxy_check --fpac='function FindProxyForURL(url, host) {return "PROXY proxy.example.com:1234;DIRECT";}' http://example.com
+PROXY proxy.example.com:1234;DIRECT
+```
+
 ```bash
-ascli config proxy_check --fpac=file:///./proxy.pac http://www.example.com
+ascli config proxy_check --fpac=@file:./proxy.pac http://www.example.com
 PROXY proxy.example.com:8080
 ```
 
-Use of auto config is not yet used to specify proxies, so refer to previous section.
+```bash
+ascli config proxy_check --fpac=@uri:http://server/proxy.pac http://www.example.com
+PROXY proxy.example.com:8080
+```
 
 ### <a id="certificates"></a>SSL CA certificate bundle
 
@@ -1843,7 +1859,7 @@ where:
 |size    |int   |Size of first file.<br>Default: 0|
 |inc     |int   |Increment applied to determine next file size<br>Default: 0|
 |seq     |enum  |Sequence in determining next file size<br/>Values: random, sequential<br/>Default: sequential|
-|buf_init|enum|How source data is initialized<br/>Option 'none' is not allowed for downloads.<br/>Values:none, zero, random<br/>Default:zero|
+|buf_init|enum  |How source data is initialized<br/>Option 'none' is not allowed for downloads.<br/>Values:none, zero, random<br/>Default:zero|
 
 The sequence parameter is applied as follows:
 
@@ -2158,7 +2174,7 @@ COMMANDS
 OPTIONS
 	Options begin with a '-' (minus), and value is provided on command line.
 	Special values are supported beginning with special prefix @pfx:, where pfx is one of:
-	base64, json, zlib, ruby, csvt, lines, list, incps, val, file, path, env, stdin, preset
+	base64, json, zlib, ruby, csvt, lines, list, incps, val, file, path, env, uri, stdin, preset
 	Dates format is 'DD-MM-YY HH:MM:SS', or 'now' or '-<num>h'
 
 ARGS
@@ -4498,6 +4514,7 @@ So, it evolved into `ascli`:
 
   * new: option to specify font used to generate image of text file in `preview`
   * change: (break) command `conf gem path` replaces `conf gem_path`
+  * change: (break) option `fpac` expects a value instead of URL
 
 * 4.6.0
 

@@ -4,15 +4,14 @@ require 'aspera/cli/version'
 require 'aspera/fasp/installation'
 require 'aspera/fasp/parameters'
 require 'aspera/fasp/transfer_spec'
-require 'aspera/open_application'
-require 'aspera/aoc'
 require 'aspera/proxy_auto_config'
-require 'aspera/uri_reader'
-require 'aspera/rest'
+require 'aspera/open_application'
 require 'aspera/persistency_action_once'
 require 'aspera/id_generator'
 require 'aspera/keychain/encrypted_hash'
 require 'aspera/keychain/macos_security'
+require 'aspera/aoc'
+require 'aspera/rest'
 require 'xmlsimple'
 require 'base64'
 require 'net/smtp'
@@ -90,6 +89,7 @@ END_OF_TEMPLATE
           @vault=nil
           @conf_file_default=File.join(@main_folder,DEFAULT_CONFIG_FILENAME)
           @option_config_file=@conf_file_default
+          @pac_exec=nil
           Log.log.debug("#{@info[:name]} folder: #{@main_folder}")
           # set folder for FASP SDK
           add_plugin_lookup_folder(self.class.gem_plugins_folder)
@@ -138,6 +138,12 @@ END_OF_TEMPLATE
           self.options.set_option(:sdk_folder,File.join(@main_folder,'sdk'))
           self.options.set_option(:override,:no)
           self.options.parse_options!
+          pac_script=self.options.get_option(:fpac,:optional)
+          if !pac_script.nil?
+            pac_exec=@pac_exec=Aspera::ProxyAutoConfig.new(pac_script)
+            URI::Generic.alias_method(:find_proxy_orig,:find_proxy)
+            URI::Generic.define_method(:find_proxy) {|env=ENV| pac_exec.get_proxies(to_s).first || find_proxy_orig(env)}
+          end
         end
 
         # env var name to override the app's main folder
@@ -950,9 +956,9 @@ _EOF_
           when :smtp_settings
             return {type: :single_object, data: email_settings}
           when :proxy_check
-            pac_url=self.options.get_option(:fpac,:mandatory)
+            self.options.get_option(:fpac,:mandatory)
             server_url=self.options.get_next_argument('server url')
-            return Main.result_status(Aspera::ProxyAutoConfig.new(UriReader.read(pac_url)).get_proxy(server_url))
+            return Main.result_status(@pac_exec.get_proxy(server_url))
           when :check_update
             return {type: :single_object, data: check_gem_version}
           when :initdemo
