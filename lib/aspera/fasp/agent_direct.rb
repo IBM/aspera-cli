@@ -48,6 +48,7 @@ module Aspera
           # TODO: what is this for ? only on local ascp ?
           # NOTE: important: transfer id must be unique: generate random id
           # using a non unique id results in discard of tags in AoC, and a package is never finalized
+          # all sessions in a multi-session transfer must have the same xfer_id (see admin manual)
           transfer_spec['tags']['aspera']['xfer_id']||=SecureRandom.uuid
           Log.log.debug("xfer id=#{transfer_spec['xfer_id']}")
           # TODO: useful ? node only ?
