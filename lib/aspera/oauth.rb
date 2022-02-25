@@ -68,7 +68,7 @@ module Aspera
         end
         return nil
       end
-    end
+    end # self
 
     # seems to be quite standard token encoding (RFC?)
     self.register_decoder lambda { |token| parts=token.split('.'); raise "not aoc token" unless parts.length.eql?(3); JSON.parse(Base64.decode64(parts[1]))}
@@ -92,6 +92,7 @@ module Aspera
     # :token_type
     def initialize(auth_params)
       Log.log.debug("auth=#{auth_params}")
+      @handlers={}
       @params=auth_params.clone
       # default values
       # name of field to take as token from result of call to /token
@@ -119,20 +120,6 @@ module Aspera
       self.class.persist_mgr.garbage_collect(PERSIST_CATEGORY_TOKEN,TOKEN_CACHE_EXPIRY_SEC)
     end
 
-    # open the login page, wait for code and check_code, then return code
-    def goto_page_and_get_code(login_page_url,check_code)
-      Log.log.info("login_page_url=#{login_page_url}".bg_red.gray)
-      # start a web server to receive request code
-      webserver=WebAuth.new(@params[:redirect_uri])
-      # start browser on login page
-      OpenApplication.instance.uri(login_page_url)
-      # wait for code in request
-      request_params=webserver.get_request
-      Log.log.error("state does not match") if !check_code.eql?(request_params['state'])
-      code=request_params['code']
-      return code
-    end
-
     def create_token(rest_params)
       return @token_auth_api.call({
         operation: 'POST',
@@ -156,6 +143,8 @@ module Aspera
 
     # @param options : :scope and :refresh
     def get_authorization(options={})
+      # can be overriden later
+      use_refresh_token=options[:refresh]
       # api scope can be overriden to get auth for other scope
       api_scope=options[:scope] || @params[:scope]
       # as it is optional in many place: create struct
@@ -163,7 +152,6 @@ module Aspera
       p_scope[:scope] = api_scope unless api_scope.nil?
       p_client_id_and_scope=p_scope.clone
       p_client_id_and_scope[:client_id] = @params[:client_id] if @params.has_key?(:client_id)
-      use_refresh_token=options[:refresh]
 
       # generate token identifier to use with cache
       token_id=token_cache_id(api_scope)
@@ -230,7 +218,15 @@ module Aspera
           auth_params[:client_secret]=@params[:client_secret] if @params.has_key?(:client_secret)
           login_page_url=Rest.build_uri("#{@params[:base_url]}/#{@params[:path_authorize]}",auth_params)
           # here, we need a human to authorize on a web page
-          code=goto_page_and_get_code(login_page_url,check_code)
+          Log.log.info("login_page_url=#{login_page_url}".bg_red.gray)
+          # start a web server to receive request code
+          webserver=WebAuth.new(@params[:redirect_uri])
+          # start browser on login page
+          OpenApplication.instance.uri(login_page_url)
+          # wait for code in request
+          request_params=webserver.get_request
+          Log.log.error("state does not match") if !check_code.eql?(request_params['state'])
+          code=request_params['code']
           # exchange code for token
           resp=create_token(www_body_params: p_client_id_and_scope.merge({
             grant_type:   'authorization_code',
@@ -259,7 +255,7 @@ module Aspera
             p_scope[:redirect_uri]="https://127.0.0.1:5000/token" # used ?
             p_scope[:state]=SecureRandom.uuid
             p_scope[:client_id]=@params[:client_id]
-            @token_auth_api.params[:auth]={type: :basic,username: @params[:f5_username], password: @params[:f5_password]}
+            @token_auth_api.params[:auth]={type: :basic, username: @params[:f5_username], password: @params[:f5_password]}
           end
 
           # non standard, only for global ids
@@ -322,7 +318,11 @@ module Aspera
             json_params: @params[:userpass_body],
           })
         else
-          raise "auth grant type unknown: #{@params[:grant]}"
+          if @handlers.has_key?(@params[:grant])
+            resp=@handlers[@params[:grant]].call(@token_auth_api,@params)
+          else
+            raise "auth grant type unknown: #{@params[:grant]}"
+          end
         end
         # TODO: test return code ?
         json_data=resp[:http].body
@@ -332,6 +332,11 @@ module Aspera
       raise "API error: No such field in answer: #{@params[:token_field]}" unless token_data.has_key?(@params[:token_field])
       # ok we shall have a token here
       return 'Bearer '+token_data[@params[:token_field]]
+    end
+
+    def register_handler(id, method)
+      raise "error" unless id.is_a?(Symbol) and method.is_a?(Proc)
+      @handlers[id]=method
     end
 
   end # OAuth
