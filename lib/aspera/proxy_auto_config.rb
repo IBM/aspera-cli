@@ -33,7 +33,6 @@ module Aspera
         # Kernel.binding contains current local variables
         pac_functions=ERB.new(PAC_FUNC_TEMPLATE).result(binding)
         js_to_execute=pac_functions+@proxy_auto_config
-        File.write('/tmp/toto',js_to_execute)
         js_context = ExecJS.compile(js_to_execute)
         @cache[simple_url]=js_context.call('FindProxyForURL', simple_url, context_host)
       end
