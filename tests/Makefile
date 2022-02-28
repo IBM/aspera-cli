@@ -911,7 +911,7 @@ $(T)conf_smtp: $(T).exists
 	@touch $@
 $(T)conf_pac: $(T).exists
 	@echo $@
-	$(EXE_MAN) config proxy_check --fpac=file:///$(DIR_TOP)examples/proxy.pac https://eudemo.asperademo.com
+	$(EXE_MAN) config proxy_check --fpac=@file:$(DIR_TOP)examples/proxy.pac https://eudemo.asperademo.com
 	@touch $@
 $(T)conf_check_gem: $(T).exists
 	@echo $@
