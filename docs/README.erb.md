@@ -1719,6 +1719,29 @@ Multi-session spawn is done by <%=tool%>.
 
 When multi-session is used, one separate UDP port is used per session (refer to `ascp` manual page).
 
+#### Content protection
+
+Also known as Client-side encryption at reast (CSEAR), content protection allows a client to send files to a server
+which will store them encrypted (upload), and decrypt files as they are being downloaded from a server, both
+using a passphrase, only known by users sharing files. Files stay encrypted on server side.
+
+activating CSEAR consists in using transfer spec parameters:
+
+* `content_protection` : activate encryption (`encrypt` for upload) or decryption (`decrypt` for download)
+* `content_protection_password` : the passphrase to be used.
+
+Example: parameter to download a faspex package and decrypt on the fly
+
+```json
+--ts=@json:'{"content_protection":"decrypt","content_protection_password":"mysecret!"}'
+```
+
+Note that up to version 4.6.0, the following parameters should be used for agennt `direct`:
+
+```json
+--ts=@json:'{"EX_ascp_args":["--file-crypt=decrypt"],"EX_at_rest_password":"mysecret!"}'
+```
+
 #### Transfer Spec Examples
 
 * Change target rate
@@ -3972,6 +3995,7 @@ So, it evolved into <%=tool%>:
 * <%=gemspec.version.to_s%>
 
   * new: option to specify font used to generate image of text file in `preview`
+  * new: #66 improvement for content protection (support standard transfer spec options for direct agent)
   * change: (break) command `conf gem path` replaces `conf gem_path`
   * change: (break) option `fpac` expects a value instead of URL
 

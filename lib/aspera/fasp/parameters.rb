@@ -39,13 +39,13 @@ module Aspera
             i=description[k]
             param={name: k, type: [i[:accepted_types]].flatten.join(','),description: i[:desc]}
             SUPPORTED_AGENTS.each do |a|
-              param[a.to_s[0].to_sym]=i[:context].nil? || i[:context].include?(a) ? 'Y' : ''
+              param[a.to_s[0].to_sym]=i[:tragents].nil? || i[:tragents].include?(a) ? 'Y' : ''
             end
             # only keep lines that are usable in supported agents
             next if SUPPORTED_AGENTS_SHORT.inject(true){|m,i|m and param[i].empty?}
             param[:cli]=case i[:cltype]
             when :envvar; 'env:'+i[:clvarname]
-            when :opt_without_arg,:opt_with_arg; i[:option_switch]
+            when :opt_without_arg,:opt_with_arg; i[:clswitch]
             else ''
             end
             if i.has_key?(:enum)
@@ -56,13 +56,13 @@ module Aspera
           return result
         end
 
-        # special encoding methods used in YAML (key: :encode)
+        # special encoding methods used in YAML (key: :clencode)
         def encode_cipher(v); v.tr('-',''); end
 
-        # special encoding methods used in YAML (key: :encode)
+        # special encoding methods used in YAML (key: :clencode)
         def encode_source_root(v); Base64.strict_encode64(v); end
 
-        # special encoding methods used in YAML (key: :encode)
+        # special encoding methods used in YAML (key: :clencode)
         def encode_tags(v); Base64.strict_encode64(JSON.generate(v)); end
 
         def ts_has_file_list(ts)

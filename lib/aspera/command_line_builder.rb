@@ -4,6 +4,8 @@ module Aspera
   # process_param is called repeatedly with all known parameters
   # add_env_args is called to get resulting param list and env var (also checks that all params were used)
   class CommandLineBuilder
+    # prefix for argument encoding methods
+    ENCODE_PREFIX='encode_'
     # transform yes/no to trye/false
     def self.yes_to_true(value)
       case value
@@ -27,8 +29,8 @@ module Aspera
         end
         # single type is placed in array
         options[:accepted_types]=[options[:accepted_types]] unless options[:accepted_types].is_a?(Array)
-        if !options.has_key?(:option_switch) and options.has_key?(:cltype) and [:opt_without_arg,:opt_with_arg].include?(options[:cltype])
-          options[:option_switch]='--'+param_name.to_s.gsub('_','-')
+        if !options.has_key?(:clswitch) and options.has_key?(:cltype) and [:opt_without_arg,:opt_with_arg].include?(options[:cltype])
+          options[:clswitch]='--'+param_name.to_s.gsub('_','-')
         end
       end
     end
@@ -117,9 +119,9 @@ module Aspera
         parameter_value=new_value
       end
       raise "unsupported value: #{parameter_value}" unless options[:accepted_values].nil? or options[:accepted_values].include?(parameter_value)
-      if options[:encode]
-        # :encode has name of class with encoding method
-        newvalue=Kernel.const_get(options[:encode]).send("#{:encode}_#{param_name}",parameter_value)
+      if options[:clencode]
+        # :clencode has name of class with encoding method
+        newvalue=Kernel.const_get(options[:clencode]).send("#{ENCODE_PREFIX}#{param_name}",parameter_value)
         raise Fasp::Error.new("unsupported #{param_name}: #{parameter_value}") if newvalue.nil?
         parameter_value=newvalue
       end
@@ -140,14 +142,16 @@ module Aspera
         else raise Fasp::Error.new("unsupported #{param_name}: #{parameter_value}")
         end
         add_param=!add_param if options[:add_on_false]
-        add_command_line_options([options[:option_switch]]) if add_param
+        add_command_line_options([options[:clswitch]]) if add_param
       when :opt_with_arg # transform into command line option with value
         #parameter_value=parameter_value.to_s if parameter_value.is_a?(Integer)
         parameter_value=[parameter_value] unless parameter_value.is_a?(Array)
         # if transfer_spec value is an array, applies option many times
-        parameter_value.each{|v|add_command_line_options([options[:option_switch],v])}
+        parameter_value.each{|v|add_command_line_options([options[:clswitch],v])}
+      when NilClass
+        Log.log.debug("Ignoring parameter: #{param_name}")
       else
-        raise "Error"
+        raise "ERROR: unknown action: #{action}/#{action.class}"
       end
     end
   end
