@@ -32,8 +32,8 @@ module Aspera
         raise "DNS name not found: #{context_host}" if context_ip.nil?
         # Kernel.binding contains current local variables
         pac_functions=ERB.new(PAC_FUNC_TEMPLATE).result(binding)
-        context = ExecJS.compile(pac_functions+@proxy_auto_config)
-        @cache[simple_url]=context.call('FindProxyForURL', simple_url, context_host)
+        js_context = ExecJS.compile(pac_functions+@proxy_auto_config)
+        @cache[simple_url]=js_context.call('FindProxyForURL', simple_url, context_host)
       end
       return @cache[simple_url]
     end
