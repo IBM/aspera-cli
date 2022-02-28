@@ -1736,7 +1736,7 @@ Example: parameter to download a faspex package and decrypt on the fly
 --ts=@json:'{"content_protection":"decrypt","content_protection_password":"mysecret!"}'
 ```
 
-Note that up to version 4.6.0, the following parameters should be used for agennt `direct`:
+Note that up to version 4.6.0, the following parameters should be used for agent `direct`:
 
 ```json
 --ts=@json:'{"EX_ascp_args":["--file-crypt=decrypt"],"EX_at_rest_password":"mysecret!"}'
