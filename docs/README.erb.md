@@ -3998,6 +3998,7 @@ So, it evolved into <%=tool%>:
   * new: #66 improvement for content protection (support standard transfer spec options for direct agent)
   * change: (break) command `conf gem path` replaces `conf gem_path`
   * change: (break) option `fpac` expects a value instead of URL
+  * change: (break) option `cipher` in transfger spec must have hyphen
 
 * 4.6.0
 

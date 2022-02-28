@@ -56,14 +56,14 @@ module Aspera
           return result
         end
 
-        # special encoding methods used in YAML (key: :clencode)
-        def encode_cipher(v); v.tr('-',''); end
+        # special encoding methods used in YAML (key: :clconvert)
+        def clconv_remove_hyphen(v); v.tr('-',''); end
 
-        # special encoding methods used in YAML (key: :clencode)
-        def encode_source_root(v); Base64.strict_encode64(v); end
+        # special encoding methods used in YAML (key: :clconvert)
+        def clconv_json64(v); Base64.strict_encode64(JSON.generate(v)); end
 
-        # special encoding methods used in YAML (key: :clencode)
-        def encode_tags(v); Base64.strict_encode64(JSON.generate(v)); end
+        # special encoding methods used in YAML (key: :clconvert)
+        def clconv_base64(v); Base64.strict_encode64(v); end
 
         def ts_has_file_list(ts)
           ts.has_key?('EX_ascp_args') and ts['EX_ascp_args'].is_a?(Array) and ['--file-list','--file-pair-list'].any?{|i|ts['EX_ascp_args'].include?(i)}

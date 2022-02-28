@@ -4,9 +4,7 @@ module Aspera
   # process_param is called repeatedly with all known parameters
   # add_env_args is called to get resulting param list and env var (also checks that all params were used)
   class CommandLineBuilder
-    # prefix for argument encoding methods
-    ENCODE_PREFIX='encode_'
-    # transform yes/no to trye/false
+    # transform yes/no to true/false
     def self.yes_to_true(value)
       case value
       when 'yes'; return true
@@ -88,13 +86,19 @@ module Aspera
     # @param options : options for type
     def process_param(param_name,action=nil)
       options=@params_definition[param_name]
-      action=options[:cltype] if action.nil?
       # should not happen
-      raise "Internal error: ask processing of param #{param_name}" if options.nil?
+      if options.nil?
+        Log.log.warn("Unknown parameter #{param_name}")
+        return
+      end
+      action=options[:cltype] if action.nil?
       # check mandatory parameter (nil is valid value)
-      raise Fasp::Error.new("mandatory parameter: #{param_name}") if options[:mandatory] and !@param_hash.has_key?(param_name)
+      raise Fasp::Error.new("Missing mandatory parameter: #{param_name}") if options[:mandatory] and !@param_hash.has_key?(param_name)
       parameter_value=@param_hash[param_name]
+
       #parameter_value=options[:default] if parameter_value.nil? and options.has_key?(:default)
+
+      # Check parameter type
       expected_classes=options[:accepted_types].map do |s|
         case s
         when :string; String
@@ -105,25 +109,30 @@ module Aspera
         else raise "INTERNAL: unexpected value: #{s}"
         end
       end.flatten
-      # check provided type
       raise Fasp::Error.new("#{param_name} is : #{parameter_value.class} (#{parameter_value}), shall be #{options[:accepted_types]}, ") unless parameter_value.nil? or expected_classes.include?(parameter_value.class)
       @used_param_names.push(param_name) unless action.eql?(:defer)
 
       # process only non-nil values
       return nil if parameter_value.nil?
 
-      if options.has_key?(:translate_values)
+      # check that value is of an accepted type (string, int bool)
+      raise "Value #{parameter_value} is not allowed for #{param_name}" if options.has_key?(:enum) and !options[:enum].include?(parameter_value)
+
+      # convert some values if value on command line needs processing from value in structure
+      case options[:clconvert]
+      when Hash
         # translate using conversion table
-        new_value=options[:translate_values][parameter_value]
-        raise "unsupported value: #{parameter_value}, expect: #{options[:translate_values].keys.join(', ')}" if new_value.nil?
+        new_value=options[:clconvert][parameter_value]
+        raise "unsupported value: #{parameter_value}, expect: #{options[:clconvert].keys.join(', ')}" if new_value.nil?
         parameter_value=new_value
-      end
-      raise "unsupported value: #{parameter_value}" unless options[:accepted_values].nil? or options[:accepted_values].include?(parameter_value)
-      if options[:clencode]
-        # :clencode has name of class with encoding method
-        newvalue=Kernel.const_get(options[:clencode]).send("#{ENCODE_PREFIX}#{param_name}",parameter_value)
+      when String
+        # :clconvert has name of class and encoding method
+        convclass,convmethod=options[:clconvert].split('.')
+        newvalue=Kernel.const_get(convclass).send(convmethod,parameter_value)
         raise Fasp::Error.new("unsupported #{param_name}: #{parameter_value}") if newvalue.nil?
         parameter_value=newvalue
+      when NilClass
+      else raise "not expected type for clconvert #{options[:clconvert].class} for #{param_name}"
       end
 
       case action
