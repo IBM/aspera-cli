@@ -33,7 +33,7 @@ module Aspera
           when :ruby
             PP.pp(object,'')
           else
-            raise "wrong parameter, expect pp or json"
+            raise 'wrong parameter, expect pp or json'
           end
           "#{name.to_s.green} (#{format})=\n#{result}"
         end
@@ -99,7 +99,7 @@ module Aspera
       @log_passwords=false
       # this sets @logger and @logger_type (self needed to call method instead of local var)
       self.logger_type=:stderr
-      raise "error logger shall be defined" if @logger.nil?
+      raise 'error logger shall be defined' if @logger.nil?
     end
 
   end

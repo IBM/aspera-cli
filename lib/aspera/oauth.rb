@@ -71,7 +71,7 @@ module Aspera
     end # self
 
     # seems to be quite standard token encoding (RFC?)
-    self.register_decoder lambda { |token| parts=token.split('.'); raise "not aoc token" unless parts.length.eql?(3); JSON.parse(Base64.decode64(parts[1]))}
+    self.register_decoder lambda { |token| parts=token.split('.'); raise 'not aoc token' unless parts.length.eql?(3); JSON.parse(Base64.decode64(parts[1]))}
 
     # for supported parameters, look in the code for @params
     # parameters are provided all with oauth_ prefix :
@@ -112,8 +112,8 @@ module Aspera
       @token_auth_api=Rest.new(rest_params)
       if @params.has_key?(:redirect_uri)
         uri=URI.parse(@params[:redirect_uri])
-        raise "redirect_uri scheme must be http" unless uri.scheme.start_with?('http')
-        raise "redirect_uri must have a port" if uri.port.nil?
+        raise 'redirect_uri scheme must be http' unless uri.scheme.start_with?('http')
+        raise 'redirect_uri must have a port' if uri.port.nil?
         # we could check that host is localhost or local address
       end
       # cleanup expired tokens
@@ -225,7 +225,7 @@ module Aspera
           OpenApplication.instance.uri(login_page_url)
           # wait for code in request
           request_params=webserver.get_request
-          Log.log.error("state does not match") if !check_code.eql?(request_params['state'])
+          Log.log.error('state does not match') if !check_code.eql?(request_params['state'])
           code=request_params['code']
           # exchange code for token
           resp=create_token(www_body_params: p_client_id_and_scope.merge({
@@ -252,7 +252,7 @@ module Aspera
             payload[:jti] = SecureRandom.uuid # JWT id
             payload[:iat] = seconds_since_epoch # issued at
             payload.delete(:nbf) # not used in f5
-            p_scope[:redirect_uri]="https://127.0.0.1:5000/token" # used ?
+            p_scope[:redirect_uri]='https://127.0.0.1:5000/token' # used ?
             p_scope[:state]=SecureRandom.uuid
             p_scope[:client_id]=@params[:client_id]
             @token_auth_api.params[:auth]={type: :basic, username: @params[:f5_username], password: @params[:f5_password]}
@@ -335,7 +335,7 @@ module Aspera
     end
 
     def register_handler(id, method)
-      raise "error" unless id.is_a?(Symbol) and method.is_a?(Proc)
+      raise 'error' unless id.is_a?(Symbol) and method.is_a?(Proc)
       @handlers[id]=method
     end
 

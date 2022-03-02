@@ -35,7 +35,7 @@ module Aspera
           get_info_response = @transfer_client.get_info(Transfersdk::InstanceInfoRequest.new)
           Log.log.debug("daemon info: #{get_info_response}")
         rescue GRPC::Unavailable => e
-          Log.log.warn("no daemon present, starting daemon...")
+          Log.log.warn('no daemon present, starting daemon...')
           # location of daemon binary
           bin_folder=File.realpath(File.join(Installation.instance.sdk_ruby_folder,'..'))
           # config file and logs are created in same folder

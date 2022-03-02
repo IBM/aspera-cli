@@ -45,13 +45,13 @@ module Aspera
 
     # translate for display
     def result
-      raise "missing result" if @data.empty?
+      raise 'missing result' if @data.empty?
       {type: :object_list,data: @data.map{|i|{'status'=>LEVELS[i[:code]].to_s,'component'=>i[:comp],'message'=>i[:msg]}}}
     end
 
     # process results of a analysis and display status and exit with code
     def self.process(data)
-      raise "INTERNAL ERROR, result must be list and not empty" unless data.is_a?(Array) and !data.empty?
+      raise 'INTERNAL ERROR, result must be list and not empty' unless data.is_a?(Array) and !data.empty?
       ['status','component','message'].each{|c|raise "INTERNAL ERROR, result must have #{c}" unless data.first.has_key?(c)}
       res_errors = data.select{|s|!s['status'].eql?('ok')}
       # keep only errors in case of problem, other ok are assumed so

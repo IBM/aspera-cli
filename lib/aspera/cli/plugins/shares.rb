@@ -69,7 +69,7 @@ module Aspera
               when :name
                 share_name=self.options.get_next_argument('share name')
                 share_id=all_shares.select{|s| s['name'].eql?(share_name)}.first['id']
-                raise "TODO"
+                raise 'TODO'
               end
             end
           end

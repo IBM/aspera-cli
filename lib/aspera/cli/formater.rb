@@ -16,7 +16,7 @@ module Aspera
       # user output levels
       DISPLAY_LEVELS=[:info,:data,:error]
       CSV_RECORD_SEPARATOR="\n"
-      CSV_FIELD_SEPARATOR=","
+      CSV_FIELD_SEPARATOR=','
 
       private_constant :FIELDS_ALL,:FIELDS_DEFAULT,:DISPLAY_FORMATS,:DISPLAY_LEVELS,:CSV_RECORD_SEPARATOR,:CSV_FIELD_SEPARATOR
       attr_accessor :option_flat_hash,:option_transpose_single
@@ -27,13 +27,13 @@ module Aspera
         @opt_mgr=opt_mgr
         @opt_mgr.set_obj_attr(:flat_hash,self,:option_flat_hash)
         @opt_mgr.set_obj_attr(:transpose_single,self,:option_transpose_single)
-        @opt_mgr.add_opt_list(:format,DISPLAY_FORMATS,"output format")
-        @opt_mgr.add_opt_list(:display,DISPLAY_LEVELS,"output only some information")
+        @opt_mgr.add_opt_list(:format,DISPLAY_FORMATS,'output format')
+        @opt_mgr.add_opt_list(:display,DISPLAY_LEVELS,'output only some information')
         @opt_mgr.add_opt_simple(:fields,"comma separated list of fields, or #{FIELDS_ALL}, or #{FIELDS_DEFAULT}")
-        @opt_mgr.add_opt_simple(:select,"select only some items in lists, extended value: hash (column, value)")
-        @opt_mgr.add_opt_simple(:table_style,"table display style")
-        @opt_mgr.add_opt_boolean(:flat_hash,"display hash values as additional keys")
-        @opt_mgr.add_opt_boolean(:transpose_single,"single object fields output vertically")
+        @opt_mgr.add_opt_simple(:select,'select only some items in lists, extended value: hash (column, value)')
+        @opt_mgr.add_opt_simple(:table_style,'table display style')
+        @opt_mgr.add_opt_boolean(:flat_hash,'display hash values as additional keys')
+        @opt_mgr.add_opt_boolean(:transpose_single,'single object fields output vertically')
         @opt_mgr.set_option(:format,:table)
         @opt_mgr.set_option(:display,:info)
         @opt_mgr.set_option(:fields,FIELDS_DEFAULT)
@@ -89,9 +89,9 @@ module Aspera
       def self.flatten_name_value_list(hash)
         hash.keys.each do |k|
           v=hash[k]
-          if v.is_a?(Array) and v.map{|i|i.class}.uniq.eql?([Hash]) and v.map{|i|i.keys}.flatten.sort.uniq.eql?(["name", "value"])
+          if v.is_a?(Array) and v.map{|i|i.class}.uniq.eql?([Hash]) and v.map{|i|i.keys}.flatten.sort.uniq.eql?(['name', 'value'])
             v.each do |pair|
-              hash["#{k}.#{pair["name"]}"]=pair["value"]
+              hash["#{k}.#{pair["name"]}"]=pair['value']
             end
             hash.delete(k)
           end
@@ -111,7 +111,7 @@ module Aspera
       end
 
       def result_all_fields(results,table_rows_hash_val)
-        raise "internal error: must be array" unless table_rows_hash_val.is_a?(Array)
+        raise 'internal error: must be array' unless table_rows_hash_val.is_a?(Array)
         # get the list of all column names used in all lines, not just frst one, as all lines may have different columns
         return table_rows_hash_val.inject({}){|m,v|v.keys.each{|c|m[c]=true};m}.keys
       end
@@ -119,8 +119,8 @@ module Aspera
       # this method displays the results, especially the table format
       def display_results(results)
         raise "INTERNAL ERROR, result must be Hash (got: #{results.class}: #{results})" unless results.is_a?(Hash)
-        raise "INTERNAL ERROR, result must have type" unless results.has_key?(:type)
-        raise "INTERNAL ERROR, result must have data" unless results.has_key?(:data) or [:empty,:nothing].include?(results[:type])
+        raise 'INTERNAL ERROR, result must have type' unless results.has_key?(:type)
+        raise 'INTERNAL ERROR, result must have data' unless results.has_key?(:data) or [:empty,:nothing].include?(results[:type])
         res_data=results[:data]
         # comma separated list in string format
         user_asked_fields_list_str=@opt_mgr.get_option(:fields,:mandatory)
@@ -186,7 +186,7 @@ module Aspera
             display_message(:info,'empty')
             return
           when :nothing # no result expected
-            Log.log.debug("no result expected")
+            Log.log.debug('no result expected')
             return
           when :status # no table
             # :status displays a simple message
@@ -204,7 +204,7 @@ module Aspera
             raise "unknown data type: #{results[:type]}"
           end
           # here we expect: table_rows_hash_val and final_table_columns
-          raise "no field specified" if final_table_columns.nil?
+          raise 'no field specified' if final_table_columns.nil?
           if table_rows_hash_val.empty?
             display_message(:info,'empty'.gray) unless display_format.eql?(:csv)
             return

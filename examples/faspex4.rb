@@ -51,7 +51,7 @@ api_v3.read('me')
 
 # create a sample file to send
 file_to_send=File.join(tmpdir,'myfile.bin')
-File.open(file_to_send, "w") {|f| f.write("sample data") }
+File.open(file_to_send, 'w') {|f| f.write('sample data') }
 # package creation parameters
 package_create_params={'delivery'=>{'title'=>'test package','recipients'=>['aspera.user1@gmail.com'],'sources'=>[{'paths'=>[file_to_send]}]}}
 pkg_created=api_v3.create('send',package_create_params)[:data]

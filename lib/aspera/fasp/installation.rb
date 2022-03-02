@@ -53,7 +53,7 @@ module Aspera
 
       # @return the path to folder where SDK is installed
       def sdk_folder
-        raise "SDK path was ot initialized" if @sdk_dir.nil?
+        raise 'SDK path was ot initialized' if @sdk_dir.nil?
         FileUtils.mkdir_p(@sdk_dir) unless Dir.exist?(@sdk_dir)
         @sdk_dir
       end
@@ -153,7 +153,7 @@ module Aspera
             # create new self signed certificate for http fallback
             private_key = OpenSSL::PKey::RSA.new(1024)
             cert = OpenSSL::X509::Certificate.new
-            cert.subject = cert.issuer = OpenSSL::X509::Name.parse("/C=US/ST=California/L=Emeryville/O=Aspera Inc./OU=Corporate/CN=Aspera Inc./emailAddress=info@asperasoft.com")
+            cert.subject = cert.issuer = OpenSSL::X509::Name.parse('/C=US/ST=California/L=Emeryville/O=Aspera Inc./OU=Corporate/CN=Aspera Inc./emailAddress=info@asperasoft.com')
             cert.not_before = Time.now
             cert.not_after = Time.now + 365 * 24 * 60 * 60
             cert.public_key = private_key.public_key
@@ -195,7 +195,7 @@ module Aspera
 
       # default bypass key phrase
       def bypass_pass
-        return "%08x-%04x-%04x-%04x-%04x%08x" % DataRepository.instance.get_bin(3).unpack("NnnnnN")
+        return '%08x-%04x-%04x-%04x-%04x%08x' % DataRepository.instance.get_bin(3).unpack('NnnnnN')
       end
 
       def bypass_keys
@@ -209,7 +209,7 @@ module Aspera
 
       # Check that specified path is ascp and get version
       def get_exe_version(exe_path,vers_arg)
-        raise "ERROR: nil arg" if exe_path.nil?
+        raise 'ERROR: nil arg' if exe_path.nil?
         return nil unless File.exist?(exe_path)
         exe_version=nil
         cmd_out=%x{"#{exe_path}" #{vers_arg}}
@@ -235,7 +235,7 @@ module Aspera
         end
         # rename old install
         if ! Dir.empty?(sdk_folder)
-          Log.log.warn("Previous install exists, renaming folder.")
+          Log.log.warn('Previous install exists, renaming folder.')
           File.rename(sdk_folder,"#{sdk_folder}.#{Time.now.strftime("%Y%m%d%H%M%S")}")
           # TODO: delete old archives ?
         end

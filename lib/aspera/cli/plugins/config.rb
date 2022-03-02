@@ -76,8 +76,8 @@ END_OF_TEMPLATE
         :EXTV_PRESET,:DEFAULT_CHECK_NEW_VERSION_DAYS,:DEFAULT_PRIV_KEY_FILENAME,:SERVER_COMMAND,:CONF_PRESET_SECRETS,
         :PRESET_DIG_SEPARATOR
         def initialize(env,params)
-          raise "env and params must be Hash" unless env.is_a?(Hash) and params.is_a?(Hash)
-          raise "missing param" unless [:name,:help,:version,:gem].sort.eql?(params.keys.sort)
+          raise 'env and params must be Hash' unless env.is_a?(Hash) and params.is_a?(Hash)
+          raise 'missing param' unless [:name,:help,:version,:gem].sort.eql?(params.keys.sort)
           super(env)
           @info=params
           @main_folder=default_app_main_folder
@@ -552,7 +552,7 @@ END_OF_TEMPLATE
             if [:download,:open].include?(command)
               link_title=self.options.get_next_argument('title or rel')
               one_link=all_links.select {|i| i['title'].eql?(link_title) or i['rel'].eql?(link_title)}.first
-              raise "no such value" if one_link.nil?
+              raise 'no such value' if one_link.nil?
             end
             case command
             when :list # shows files used
@@ -778,8 +778,8 @@ _EOF_
             # allow user to tell the preset name
             preset_name=self.options.get_option(:id,:optional)
             appli=identify_plugin_for_url(instance_url)
-            plugin_name="<replace per app>"
-            test_args="<replace per app>"
+            plugin_name='<replace per app>'
+            test_args='<replace per app>'
             case appli[:product]
             when :aoc
               self.format.display_status('Detected: Aspera on Cloud'.bold)
@@ -985,7 +985,7 @@ _EOF_
               type=self.options.get_option(:value,:optional)
               case type
               when 'config',NilClass
-                raise "default secrets already exists" if @config_presets.has_key?(CONF_PRESET_SECRETS)
+                raise 'default secrets already exists' if @config_presets.has_key?(CONF_PRESET_SECRETS)
                 @config_presets[CONF_PRESET_SECRETS]={}
                 set_global_default(:secrets,"@preset:#{CONF_PRESET_SECRETS}")
               else raise 'no such vault type'
@@ -1084,7 +1084,7 @@ _EOF_
         # returns [String] name if config_presets has default
         # returns nil if there is no config or bypass default params
         def get_plugin_default_config_name(plugin_sym)
-          raise "internal error: config_presets shall be defined" if @config_presets.nil?
+          raise 'internal error: config_presets shall be defined' if @config_presets.nil?
           if !@use_plugin_defaults
             Log.log.debug('skip default config')
             return nil
@@ -1113,8 +1113,8 @@ _EOF_
               when Environment::OS_X
                 @vault=Keychain::MacosSecurity.new(name)
               when Environment::OS_WINDOWS,Environment::OS_LINUX,Environment::OS_AIX
-                raise "not implemented"
-              else raise "Error"
+                raise 'not implemented'
+              else raise 'Error'
               end
             when NilClass
               # keep nil
@@ -1122,13 +1122,13 @@ _EOF_
               raise CliBadArgument,'secrets shall be Hash'
             end
           end
-          raise "No vault defined" if @vault.nil?
+          raise 'No vault defined' if @vault.nil?
           @vault
         end
 
         def get_secret(options)
-          raise "options shall be Hash" unless options.is_a?(Hash)
-          raise "options shall have username" unless options.has_key?(:username)
+          raise 'options shall be Hash' unless options.is_a?(Hash)
+          raise 'options shall have username' unless options.has_key?(:username)
           secret=self.options.get_option(:secret,:optional)
           if secret.nil?
             secret=vault.get(options) rescue nil

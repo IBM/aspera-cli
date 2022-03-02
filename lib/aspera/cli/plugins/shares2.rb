@@ -7,9 +7,9 @@ module Aspera
       class Shares2 < BasicAuthPlugin
         def initialize(env)
           super(env)
-          self.options.add_opt_simple(:organization,"organization")
-          self.options.add_opt_simple(:project,"project")
-          self.options.add_opt_simple(:share,"share")
+          self.options.add_opt_simple(:organization,'organization')
+          self.options.add_opt_simple(:project,'project')
+          self.options.add_opt_simple(:share,'share')
           self.options.parse_options!
           return if env[:man_only]
           unless env[:man_only]
@@ -66,7 +66,7 @@ module Aspera
           command=self.options.get_next_command(operations)
           case command
           when :create
-            params=self.options.get_next_argument("creation data (json structure)")
+            params=self.options.get_next_argument('creation data (json structure)')
             resp=@api_shares2_oauth.create(resource_path,params)
             return {data: resp[:data],type: :other_struct}
           when :list

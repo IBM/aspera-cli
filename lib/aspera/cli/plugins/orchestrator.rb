@@ -7,9 +7,9 @@ module Aspera
       class Orchestrator < BasicAuthPlugin
         def initialize(env)
           super(env)
-          self.options.add_opt_simple(:params,"parameters hash table, use @json:{\"param\":\"value\"}")
+          self.options.add_opt_simple(:params,'parameters hash table, use @json:{"param":"value"}')
           self.options.add_opt_simple(:result,"specify result value as: 'work step:parameter'")
-          self.options.add_opt_boolean(:synchronous,"work step:parameter expected as result")
+          self.options.add_opt_boolean(:synchronous,'work step:parameter expected as result')
           self.options.add_opt_list(:ret_style,[:header,:arg,:ext],'how return type is requested in api')
           self.options.add_opt_list(:auth_style,[:arg_pass,:head_basic,:apikey],'authentication type')
           self.options.set_option(:params,{})
@@ -61,11 +61,11 @@ module Aspera
               call_args[:url_params][:format]=format
             when :ext
               call_args[:subpath]="#{call_args[:subpath]}.#{format}"
-            else raise "unexpected"
+            else raise 'unexpected'
             end
           end
           result=@api_orch.call(call_args)
-          result[:data]=XmlSimple.xml_in(result[:http].body, opt[:xml_opt]||{"ForceArray" => true}) if format.eql?('xml')
+          result[:data]=XmlSimple.xml_in(result[:http].body, opt[:xml_opt]||{'ForceArray' => true}) if format.eql?('xml')
           return result
         end
 
@@ -84,7 +84,7 @@ module Aspera
               username:   self.options.get_option(:username,:mandatory),
               password:   self.options.get_option(:password,:mandatory) }
           when :apikey
-            raise "Not implemented"
+            raise 'Not implemented'
           end
 
           @api_orch=Rest.new(rest_params)
@@ -92,7 +92,7 @@ module Aspera
           command1=self.options.get_next_command(ACTIONS)
           case command1
           when :info
-            result=call_API('remote_node_ping',format: 'xml', xml_opt: {"ForceArray" => false})
+            result=call_API('remote_node_ping',format: 'xml', xml_opt: {'ForceArray' => false})
             return {type: :single_object,data: result[:data]}
             #            result=call_API('workflows',prefix: nil,format: nil)
             #            version='unknown'
@@ -121,7 +121,7 @@ module Aspera
               return {type: :object_list,data: result['workflows']['workflow']}
             when :list
               result=call_API('workflows_list',id: 0)[:data]
-              return {type: :object_list,data: result['workflows']['workflow'],fields: ["id","portable_id","name","published_status","published_revision_id","latest_revision_id","last_modification"]}
+              return {type: :object_list,data: result['workflows']['workflow'],fields: ['id','portable_id','name','published_status','published_revision_id','latest_revision_id','last_modification']}
             when :details
               result=call_API('workflow_details',id: wf_id)[:data]
               return {type: :object_list,data: result['workflows']['workflow']['statuses']}

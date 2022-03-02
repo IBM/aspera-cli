@@ -23,7 +23,7 @@ module Aspera
     def execute(cmd,input=nil)
       if cmd.is_a?(Array)
         # concatenate arguments, enclose in double quotes
-        cmd=cmd.map{|v|'"'+v+'"'}.join(" ")
+        cmd=cmd.map{|v|'"'+v+'"'}.join(' ')
       end
       Log.log.debug("cmd=#{cmd}")
       response = ''
@@ -35,7 +35,7 @@ module Aspera
           channel.on_extended_data do |chan, type, data|
             errormsg="#{cmd}: [#{data.chomp}]"
             # Happens when windows user hasn't logged in and created home account.
-            if data.include?("Could not chdir to home directory")
+            if data.include?('Could not chdir to home directory')
               errormsg=errormsg+"\nHint: home not created in Windows?"
             end
             raise errormsg

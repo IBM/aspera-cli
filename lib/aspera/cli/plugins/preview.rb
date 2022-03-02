@@ -199,7 +199,7 @@ module Aspera
         end
 
         def do_transfer(direction,folder_id,source_filename,destination='/')
-          raise "error" if destination.nil? and direction.eql?(Fasp::TransferSpec::DIRECTION_RECEIVE)
+          raise 'error' if destination.nil? and direction.eql?(Fasp::TransferSpec::DIRECTION_RECEIVE)
           if @default_transfer_spec.nil?
             # make a dummy call to get some default transfer parameters
             res=@api_node.create('files/upload_setup',{'transfer_requests'=>[{'transfer_request'=>{'paths'=>[{}],'destination_root'=>'/'}}]})
@@ -207,7 +207,7 @@ module Aspera
             # get ports, anyway that should be 33001 for both. add remote_user ?
             @default_transfer_spec=['ssh_port','fasp_port'].inject({}){|h,e|h[e]=template_ts[e];h}
             if ! @default_transfer_spec['remote_user'].eql?(Aspera::Fasp::TransferSpec::ACCESS_KEY_TRANSFER_USER)
-              Log.log.warn("remote_user shall be xfer")
+              Log.log.warn('remote_user shall be xfer')
               @default_transfer_spec['remote_user']=Aspera::Fasp::TransferSpec::ACCESS_KEY_TRANSFER_USER
             end
             Aspera::Node::set_ak_basic_token(@default_transfer_spec,@access_key_self['id'],self.options.get_option(:password,:mandatory))
@@ -430,7 +430,7 @@ module Aspera
               @previews_folder_entry=get_folder_entries(@access_key_self['root_file_id'],{name: @option_previews_folder}).first
               raise CliError,"Folder #{@option_previews_folder} does not exist on node. Please create it in the storage root, or specify an alternate name." if @previews_folder_entry.nil?
             else
-              raise "only local storage allowed in this mode" unless @access_key_self['storage']['type'].eql?('local')
+              raise 'only local storage allowed in this mode' unless @access_key_self['storage']['type'].eql?('local')
               @local_storage_root=@access_key_self['storage']['path']
               #TODO: option to override @local_storage_root='xxx'
               @local_storage_root=@local_storage_root[LOCAL_STORAGE_PCVL.length..-1] if @local_storage_root.start_with?(LOCAL_STORAGE_PCVL)
@@ -490,7 +490,7 @@ module Aspera
             g.generate
             return Main.result_status("generated: #{dest}")
           else
-            raise "error"
+            raise 'error'
           end
         ensure
           FileUtils.rm_rf(@tmp_folder)

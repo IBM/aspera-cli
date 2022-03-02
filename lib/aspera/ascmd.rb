@@ -25,7 +25,7 @@ module Aspera
       bytebuffer=@command_executor.execute('ascmd',stdin_input).unpack('C*')
       # get hash or table result
       result=self.class.parse(bytebuffer,:result)
-      raise "ERROR: unparsed bytes remaining" unless bytebuffer.empty?
+      raise 'ERROR: unparsed bytes remaining' unless bytebuffer.empty?
       # get and delete info,always present in results
       system_info=result[:info]
       result.delete(:info)
@@ -41,7 +41,7 @@ module Aspera
         end
       end
       # for info, second overrides first, so restore it
-      case result.keys.length;when 0;result=system_info;when 1;result=result[result.keys.first];else raise "error";end
+      case result.keys.length;when 0;result=system_info;when 1;result=result[result.keys.first];else raise 'error';end
       # raise error as exception
       raise Error.new(result[:errno],result[:errstr],action_sym,args) if result.is_a?(Hash) and result.keys.sort == TYPES_DESCR[:error][:fields].map{|i|i[:name]}.sort
       return result
@@ -101,7 +101,7 @@ module Aspera
       case type_descr[:decode]
       when :base
         num_bytes=type_name.eql?(:zstr) ? buffer.length : type_descr[:size]
-        raise "ERROR:not enough bytes" if buffer.length < num_bytes
+        raise 'ERROR:not enough bytes' if buffer.length < num_bytes
         byte_array=buffer.shift(num_bytes);byte_array=[byte_array] unless byte_array.is_a?(Array)
         result=byte_array.pack('C*').unpack(type_descr[:unpack]).first
         Log.log.debug("#{"   ."*indent_level}-> base:#{byte_array} -> #{result}")
@@ -111,7 +111,7 @@ module Aspera
         while !buffer.empty?
           btype=parse(buffer,:int8,indent_level)
           length=parse(buffer,:int32,indent_level)
-          raise "ERROR:not enough bytes" if buffer.length < length
+          raise 'ERROR:not enough bytes' if buffer.length < length
           value=buffer.shift(length)
           result.push({btype: btype,buffer: value})
           Log.log.debug("#{"   ."*indent_level}:buffer_list[#{result.length-1}] #{result.last}")

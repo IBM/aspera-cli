@@ -70,7 +70,7 @@ module Aspera
             if tr_info['transfer_info'].is_a?(Hash)
               trdata=tr_info['transfer_info']
               if trdata.nil?
-                Log.log.warn("no session in Connect")
+                Log.log.warn('no session in Connect')
                 break
               end
               # TODO: get session id

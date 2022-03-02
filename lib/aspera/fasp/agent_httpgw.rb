@@ -73,16 +73,16 @@ module Aspera
           error=e
         end
         ws.on :open do
-          Log.log.info("ws: open")
+          Log.log.info('ws: open')
         end
         ws.on :close do
-          Log.log.info("ws: close")
+          Log.log.info('ws: close')
         end
         # open web socket to end point
         ws.connect("#{@gw_api.params[:base_url]}/upload")
         # async wait ready
         while !ws.open? and error.nil? do
-          Log.log.info("ws: wait")
+          Log.log.info('ws: wait')
           sleep(0.2)
         end
         # notify progress bar
@@ -168,10 +168,10 @@ module Aspera
       # note that it is asynchronous
       # HTTP download only supports file list
       def start_transfer(transfer_spec,options={})
-        raise "GW URL must be set" unless !@gw_api.nil?
-        raise "option: must be hash (or nil)" unless options.is_a?(Hash)
-        raise "paths: must be Array" unless transfer_spec['paths'].is_a?(Array)
-        raise "only token based transfer is supported in GW" unless transfer_spec['token'].is_a?(String)
+        raise 'GW URL must be set' unless !@gw_api.nil?
+        raise 'option: must be hash (or nil)' unless options.is_a?(Hash)
+        raise 'paths: must be Array' unless transfer_spec['paths'].is_a?(Array)
+        raise 'only token based transfer is supported in GW' unless transfer_spec['token'].is_a?(String)
         Log.dump(:user_spec,transfer_spec)
         transfer_spec['authentication']||='token'
         case transfer_spec['direction']
@@ -200,9 +200,9 @@ module Aspera
       private
 
       def initialize(params)
-        raise "params must be Hash" unless params.is_a?(Hash)
+        raise 'params must be Hash' unless params.is_a?(Hash)
         params=params.symbolize_keys
-        raise "must have only one param: url" unless params.keys.eql?([:url])
+        raise 'must have only one param: url' unless params.keys.eql?([:url])
         super()
         @gw_api=Rest.new({base_url: params[:url]})
         api_info = @gw_api.read('info')[:data]

@@ -11,7 +11,7 @@ module Aspera
       # option include: root_id if the node is an access key
       attr_writer :options
       def initialize(options)
-        raise "node specification must be Hash" unless options.is_a?(Hash)
+        raise 'node specification must be Hash' unless options.is_a?(Hash)
         [:url,:username,:password].each { |k| raise "missing parameter [#{k}] in node specification: #{options}" unless options.has_key?(k) }
         super()
         # root id is required for access key
@@ -22,7 +22,7 @@ module Aspera
             'X-Aspera-AccessKey'=>options[:username],
             'Authorization'     =>options[:password]
           }
-          raise "root_id is required for access key" if @root_id.nil?
+          raise 'root_id is required for access key' if @root_id.nil?
         else
           rest_params[:auth]={
             type:     :basic,
@@ -92,14 +92,14 @@ module Aspera
         # lets emulate management events to display progress bar
         loop do
           # status is empty sometimes with status 200...
-          trdata=node_api_.read("ops/transfers/#{@transfer_id}")[:data] || {"status"=>"unknown"} rescue {"status"=>"waiting(read error)"}
+          trdata=node_api_.read("ops/transfers/#{@transfer_id}")[:data] || {'status'=>'unknown'} rescue {'status'=>'waiting(read error)'}
           case trdata['status']
           when 'completed'
             notify_end(@transfer_id)
             break
           when 'waiting','partially_completed','unknown','waiting(read error)'
             if spinner.nil?
-              spinner = TTY::Spinner.new("[:spinner] :title", format: :classic)
+              spinner = TTY::Spinner.new('[:spinner] :title', format: :classic)
               spinner.start
             end
             spinner.update(title: trdata['status'])

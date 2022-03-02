@@ -11,24 +11,27 @@ require 'aspera/persistency_folder'
 require 'aspera/log'
 require 'aspera/rest'
 require 'aspera/nagios'
+require 'aspera/colors'
 
 module Aspera
   module Cli
     # The main CLI class
     class Main
-
-      private
       # name of application, also used as foldername where config is stored
-      PROGRAM_NAME = 'ascli'
+      PROGRAM_NAME = 'ascli'.freeze
       # name of the containing gem, same as in <gem name>.gemspec
-      GEM_NAME = 'aspera-cli'
-      HELP_URL = "http://www.rubydoc.info/gems/#{GEM_NAME}"
-      GEM_URL  = "https://rubygems.org/gems/#{GEM_NAME}"
-      SRC_URL  = 'https://github.com/IBM/aspera-cli'
+      GEM_NAME = 'aspera-cli'.freeze
+      HELP_URL = "http://www.rubydoc.info/gems/#{GEM_NAME}".freeze
+      GEM_URL  = "https://rubygems.org/gems/#{GEM_NAME}".freeze
+      SRC_URL  = 'https://github.com/IBM/aspera-cli'.freeze
+      ERROR_FLASH='ERROR:'.bg_red.gray.blink.freeze
+      private_constant :PROGRAM_NAME,:GEM_NAME,:HELP_URL,:GEM_URL,:SRC_URL,:ERROR_FLASH
+
       # store transfer result using this key and use result_transfer_multiple
       STATUS_FIELD = 'status'
 
-      private_constant :PROGRAM_NAME,:GEM_NAME,:HELP_URL,:GEM_URL
+      private
+
       # =============================================================
       # Parameter handlers
       #
@@ -39,10 +42,11 @@ module Aspera
 
       # called everytime a new REST HTTP session is opened
       # @param http [Net::HTTP] the newly created http session object
-      def set_http_parameters(http)
+      def http_parameters=(http)
         http.verify_mode = OpenSSL::SSL::VERIFY_NONE if @option_insecure
         http.set_debug_output($stdout) if @option_rest_debug
         raise 'http_options expects Hash' unless @option_http_options.is_a?(Hash)
+
         @option_http_options.each do |k,v|
           method="#{k}=".to_sym
           # check if accessor is a method of Net::HTTP
@@ -62,7 +66,7 @@ module Aspera
         # compare $0 with expected name
         current_prog_name=File.basename($PROGRAM_NAME)
         unless current_prog_name.eql?(PROGRAM_NAME)
-          @plugin_env[:formater].display_message(:error,"#{"WARNING".bg_red.blink.gray} Please use '#{PROGRAM_NAME}' instead of '#{current_prog_name}', '#{current_prog_name}' will be removed in a future version")
+          @plugin_env[:formater].display_message(:error,"#{'WARNING'.bg_red.blink.gray} Please use '#{PROGRAM_NAME}' instead of '#{current_prog_name}', '#{current_prog_name}' will be removed in a future version")
         end
         @option_help=false
         @bash_completion=false
@@ -77,7 +81,7 @@ module Aspera
         # formatter adds options
         @plugin_env[:formater]=Formater.new(@plugin_env[:options])
         Rest.user_agent=PROGRAM_NAME
-        Rest.session_cb=lambda {|http| set_http_parameters(http)}
+        Rest.session_cb=lambda{|http|self.http_parameters=http}
         # declare and parse global options
         init_global_options()
         # the Config plugin adds the @preset parser, so declare before TransferAgent which may use it
@@ -217,9 +221,9 @@ module Aspera
           when '--'
             return
           when /^--log-level=(.*)/
-            Log.instance.level = $1.to_sym
+            Log.instance.level = Regexp.last_match(1).to_sym
           when /^--logger=(.*)/
-            Log.instance.logger_type=$1.to_sym
+            Log.instance.logger_type=Regexp.last_match(1).to_sym
           end
         end
       end
@@ -306,42 +310,40 @@ module Aspera
           @plugin_env[:formater].display_results(command_plugin.execute_action) if execute_command
           # finish
           @plugin_env[:transfer].shutdown
-        rescue CliBadArgument => e;          exception_info=[e,'Argument',:usage]
-        rescue CliNoSuchId => e;             exception_info=[e,'Identifier']
-        rescue CliError => e;                exception_info=[e,'Tool',:usage]
-        rescue Fasp::Error => e;             exception_info=[e,'FASP(ascp)']
-        rescue Aspera::RestCallError => e;   exception_info=[e,'Rest']
-        rescue SocketError => e;             exception_info=[e,'Network']
-        rescue StandardError => e;           exception_info=[e,'Other',:debug]
-        rescue Interrupt => e;               exception_info=[e,'Interruption',:debug]
+        rescue CliBadArgument => e;          exception_info={e: e,t: 'Argument',usage: true}
+        rescue CliNoSuchId => e;             exception_info={e: e,t: 'Identifier'}
+        rescue CliError => e;                exception_info={e: e,t: 'Tool',usage: true}
+        rescue Fasp::Error => e;             exception_info={e: e,t: 'FASP(ascp)'}
+        rescue Aspera::RestCallError => e;   exception_info={e: e,t: 'Rest'}
+        rescue SocketError => e;             exception_info={e: e,t: 'Network'}
+        rescue StandardError => e;           exception_info={e: e,t: 'Other',debug: true}
+        rescue Interrupt => e;               exception_info={e: e,t: 'Interruption',debug: true}
         end
         # cleanup file list files
         TempFileManager.instance.cleanup
         # 1- processing of error condition
         unless exception_info.nil?
-          @plugin_env[:formater].display_message(:error,"#{'ERROR:'.bg_red.gray.blink} #{exception_info[1]}: #{exception_info[0].message}")
-          @plugin_env[:formater].display_message(:error,'Use option -h to get help.') if exception_info[2].eql?(:usage)
-          if exception_info.first.is_a?(Fasp::Error) and exception_info.first.message.eql?('Remote host is not who we expected')
+          @plugin_env[:formater].display_message(:error,"#{ERROR_FLASH} #{exception_info[:t]}: #{exception_info[:e].message}")
+          @plugin_env[:formater].display_message(:error,'Use option -h to get help.') if exception_info[:usage]
+          if exception_info[:e].is_a?(Fasp::Error) and exception_info[:e].message.eql?('Remote host is not who we expected')
             @plugin_env[:formater].display_message(:error,"For this specific error, refer to:\n#{SRC_URL}#error-remote-host-is-not-who-we-expected\nAdd this to arguments:\n--ts=@json:'{\"sshfp\":null}'")
           end
         end
         # 2- processing of command not processed (due to exception or bad command line)
         if execute_command
           @opt_mgr.final_errors.each do |msg|
-            @plugin_env[:formater].display_message(:error,"#{'ERROR:'.bg_red.gray.blink} Argument: #{msg}")
+            @plugin_env[:formater].display_message(:error,"#{ERROR_FLASH} Argument: #{msg}")
             # add code as exception if there is not already an error
-            exception_info=[Exception.new(msg),'UnusedArg'] if exception_info.nil?
+            exception_info={e: Exception.new(msg),t: 'UnusedArg'} if exception_info.nil?
           end
         end
         # 3- in case of error, fail the process status
         unless exception_info.nil?
-          if Log.instance.level.eql?(:debug)
-            # will force to show stack trace
-            raise exception_info[0]
-          else
-            @plugin_env[:formater].display_message(:error,'Use --log-level=debug to get more details.') if exception_info[2].eql?(:debug)
-            Process.exit(1)
-          end
+          # show stack trace in debug mode
+          raise exception_info[:e] if Log.instance.level.eql?(:debug)
+          # else give hint and exit
+          @plugin_env[:formater].display_message(:error,'Use --log-level=debug to get more details.') if exception_info[:debug]
+          Process.exit(1)
         end
         return nil
       end # process_command_line

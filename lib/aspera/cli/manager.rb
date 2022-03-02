@@ -41,37 +41,39 @@ module Aspera
     # arguments options start with '-', others are commands
     # resolves on extended value syntax
     class Manager
-      def self.time_to_string(time)
-        time.strftime("%Y-%m-%d %H:%M:%S")
-      end
-
       # boolean options are set to true/false from the following values
-      TRUE_VALUES=[:yes,true]
-      BOOLEAN_VALUES=TRUE_VALUES.clone.push(:no,false)
-      BOOLEAN_SIMPLE=[:yes,:no]
+      TRUE_VALUES=[:yes,true].freeze
+      BOOLEAN_VALUES=[TRUE_VALUES,:no,false].flatten.freeze
+      BOOLEAN_SIMPLE=[:yes,:no].freeze
       # option name separator on command line
-      OPTION_SEP_LINE='-'
+      OPTION_SEP_LINE='-'.freeze
       # option name separator in code (symbol)
-      OPTION_SEP_NAME='_'
+      OPTION_SEP_NAME='_'.freeze
 
       private_constant :TRUE_VALUES,:BOOLEAN_VALUES,:BOOLEAN_SIMPLE,:OPTION_SEP_LINE,:OPTION_SEP_NAME
 
-      def enum_to_bool(enum);TRUE_VALUES.include?(enum);end
+      class << self
+        def enum_to_bool(enum);TRUE_VALUES.include?(enum);end
 
-      # find shortened string value in allowed symbol list
-      def self.get_from_list(shortval,descr,allowed_values)
-        # we accept shortcuts
-        matching_exact=allowed_values.select{|i| i.to_s.eql?(shortval)}
-        return matching_exact.first if matching_exact.length == 1
-        matching=allowed_values.select{|i| i.to_s.start_with?(shortval)}
-        raise cli_bad_arg("unknown value for #{descr}: #{shortval}",allowed_values) if matching.empty?
-        raise cli_bad_arg("ambigous shortcut for #{descr}: #{shortval}",matching) unless matching.length.eql?(1)
-        return enum_to_bool(matching.first) if allowed_values.eql?(BOOLEAN_VALUES)
-        return matching.first
-      end
+        def time_to_string(time)
+          time.strftime('%Y-%m-%d %H:%M:%S')
+        end
 
-      def self.cli_bad_arg(error_msg,choices)
-        return CliBadArgument.new(error_msg+"\nUse:\n"+choices.map{|c| "- #{c.to_s}\n"}.sort.join(''))
+        # find shortened string value in allowed symbol list
+        def get_from_list(shortval,descr,allowed_values)
+          # we accept shortcuts
+          matching_exact=allowed_values.select{|i| i.to_s.eql?(shortval)}
+          return matching_exact.first if matching_exact.length == 1
+          matching=allowed_values.select{|i| i.to_s.start_with?(shortval)}
+          raise cli_bad_arg("unknown value for #{descr}: #{shortval}",allowed_values) if matching.empty?
+          raise cli_bad_arg("ambigous shortcut for #{descr}: #{shortval}",matching) unless matching.length.eql?(1)
+          return enum_to_bool(matching.first) if allowed_values.eql?(BOOLEAN_VALUES)
+          return matching.first
+        end
+
+        def cli_bad_arg(error_msg,choices)
+          return CliBadArgument.new(error_msg+"\nUse:\n"+choices.map{|c| "- #{c.to_s}\n"}.sort.join(''))
+        end
       end
 
       attr_reader :parser
@@ -158,7 +160,7 @@ module Aspera
         case expected
         when :multiple
           result=[]
-          puts " (one per line, end with empty line)"
+          puts(' (one per line, end with empty line)')
           loop do
             entry=prompt_user_input(default_prompt,sensitive)
             break if entry.empty?
@@ -227,20 +229,20 @@ module Aspera
         Log.log.debug("set attr obj #{option_symbol} (#{object},#{attr_symb})")
         declare_option(option_symbol,:accessor)
         @declared_options[option_symbol][:accessor]=AttrAccessor.new(object,attr_symb)
-        set_option(option_symbol,default_value,"default obj attr") if !default_value.nil?
+        set_option(option_symbol,default_value,'default obj attr') if !default_value.nil?
       end
 
       # set an option value by name, either store value or call handler
-      def set_option(option_symbol,value,where="default")
+      def set_option(option_symbol,value,where='default')
         if ! @declared_options.has_key?(option_symbol)
           Log.log.debug("set unknown option: #{option_symbol}")
-          raise "ERROR: cannot set undeclared option"
+          raise 'ERROR: cannot set undeclared option'
           #declare_option(option_symbol)
         end
         value=ExtendedValue.instance.evaluate(value)
         Log.log.debug("set_option(#{where}) #{option_symbol}=#{value}")
         if @declared_options[option_symbol][:values].eql?(BOOLEAN_VALUES)
-          value=enum_to_bool(value)
+          value=Manager.enum_to_bool(value)
         end
         Log.log.debug("set #{option_symbol}=#{value} (#{@declared_options[option_symbol][:type]}) : #{where}".blue)
         case @declared_options[option_symbol][:type]
@@ -249,7 +251,7 @@ module Aspera
         when :value
           @declared_options[option_symbol][:value]=value
         else # nil or other
-          raise "error"
+          raise 'error'
         end
       end
 
@@ -265,7 +267,7 @@ module Aspera
           when :value
             result=@declared_options[option_symbol][:value]
           else
-            raise "unknown type"
+            raise 'unknown type'
           end
           Log.log.debug("get #{option_symbol} (#{@declared_options[option_symbol][:type]}) : #{result}")
         end
@@ -285,7 +287,7 @@ module Aspera
                 expected=@declared_options[option_symbol][:values]
               end
               result=get_interactive(:option,option_symbol.to_s,expected)
-              set_option(option_symbol,result,"interactive")
+              set_option(option_symbol,result,'interactive')
             end
           end
         end
@@ -326,7 +328,7 @@ module Aspera
         on_args.push(values)
         on_args.push("#{help}: #{help_values}")
         Log.log.debug("on_args=#{on_args}")
-        @parser.on(*on_args){|v|set_option(option_symbol,self.class.get_from_list(v.to_s,help,values),"cmdline")}
+        @parser.on(*on_args){|v|set_option(option_symbol,self.class.get_from_list(v.to_s,help,values),'cmdline')}
       end
 
       def add_opt_boolean(option_symbol,help,*on_args)
@@ -337,22 +339,22 @@ module Aspera
       def add_opt_simple(option_symbol,*on_args)
         declare_option(option_symbol,:value)
         Log.log.debug("add_opt_simple #{option_symbol}")
-        on_args.unshift(symbol_to_option(option_symbol,"VALUE"))
+        on_args.unshift(symbol_to_option(option_symbol,'VALUE'))
         Log.log.debug("on_args=#{on_args}")
-        @parser.on(*on_args) { |v| set_option(option_symbol,v,"cmdline") }
+        @parser.on(*on_args) { |v| set_option(option_symbol,v,'cmdline') }
       end
 
       # define an option with date format
       def add_opt_date(option_symbol,*on_args)
         declare_option(option_symbol,:value)
         Log.log.debug("add_opt_date #{option_symbol}")
-        on_args.unshift(symbol_to_option(option_symbol,"DATE"))
+        on_args.unshift(symbol_to_option(option_symbol,'DATE'))
         Log.log.debug("on_args=#{on_args}")
         @parser.on(*on_args) do |v|
           case v
-          when 'now'; set_option(option_symbol,Manager.time_to_string(Time.now),"cmdline")
-          when /^-([0-9]+)h/; set_option(option_symbol,Manager.time_to_string(Time.now-$1.to_i*3600),"cmdline")
-          else set_option(option_symbol,v,"cmdline")
+          when 'now'; set_option(option_symbol,Manager.time_to_string(Time.now),'cmdline')
+          when /^-([0-9]+)h/; set_option(option_symbol,Manager.time_to_string(Time.now-$1.to_i*3600),'cmdline')
+          else set_option(option_symbol,v,'cmdline')
           end
         end
       end
@@ -402,10 +404,9 @@ module Aspera
 
       # return options as taken from config file and command line just before command execution
       def declared_options(all=true)
-        return @declared_options.keys.inject({}) do |h,option_symb|
+        return @declared_options.keys.each_with_object({}) do |option_symb,h|
           v=get_option(option_symb)
           h[option_symb.to_s]=v if all or !v.nil?
-          h
         end
       end
 
@@ -430,17 +431,17 @@ module Aspera
 
       # removes already known options from the list
       def parse_options!
-        Log.log.debug("parse_options!".red)
+        Log.log.debug('parse_options!'.red)
         # first conf file, then env var
-        apply_options_preset(@unprocessed_defaults,"file")
-        apply_options_preset(@unprocessed_env,"env")
+        apply_options_preset(@unprocessed_defaults,'file')
+        apply_options_preset(@unprocessed_env,'env')
         # command line override
         unknown_options=[]
         begin
           # remove known options one by one, exception if unknown
-          Log.log.debug("before parse".red)
+          Log.log.debug('before parse'.red)
           @parser.parse!(@unprocessed_cmd_line_options)
-          Log.log.debug("After parse".red)
+          Log.log.debug('After parse'.red)
         rescue OptionParser::InvalidOption => e
           Log.log.debug("InvalidOption #{e}".red)
           # save for later processing

@@ -62,7 +62,7 @@ module Aspera
           self.options.set_option(:scope,AoC::SCOPE_FILES_USER)
           self.options.set_option(:private_key,'@file:'+env[:private_key_path]) if env[:private_key_path].is_a?(String)
           self.options.parse_options!
-          AoC.set_use_default_ports(self.options.get_option(:default_ports))
+          AoC.use_standard_ports=self.options.get_option(:default_ports)
           return if env[:man_only]
         end
 
@@ -378,7 +378,7 @@ module Aspera
         def get_resource_id_from_args(resource_class_path)
           l_res_id=self.options.get_option(:id)
           l_res_name=self.options.get_option(:name)
-          raise "Provide either option id or name, not both" unless l_res_id.nil? or l_res_name.nil?
+          raise 'Provide either option id or name, not both' unless l_res_id.nil? or l_res_name.nil?
           # try to find item by name (single partial match or exact match)
           l_res_id=@api_aoc.lookup_entity_by_name(resource_class_path,l_res_name)['id'] unless l_res_name.nil?
           # if no name or id option, taken on command line (after command)
@@ -474,7 +474,7 @@ module Aspera
 
         # Call @api_aoc.read with same parameters, but use paging if necessary to get all results
         def read_with_paging(resource_class_path,base_query)
-          raise "Query must be Hash" unless base_query.is_a?(Hash)
+          raise 'Query must be Hash' unless base_query.is_a?(Hash)
           # set default large page if user does not specify own parameters. AoC Caps to 1000 anyway
           base_query['per_page']=1000 unless base_query.has_key?('per_page')
           max_items=base_query[MAX_ITEMS]

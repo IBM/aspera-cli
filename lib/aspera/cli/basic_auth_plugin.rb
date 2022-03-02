@@ -8,8 +8,8 @@ module Aspera
       def initialize(env)
         super(env)
         unless env[:skip_basic_auth_options]
-          self.options.add_opt_simple(:url,"URL of application, e.g. https://org.asperafiles.com")
-          self.options.add_opt_simple(:username,"username to log in")
+          self.options.add_opt_simple(:url,'URL of application, e.g. https://org.asperafiles.com')
+          self.options.add_opt_simple(:username,'username to log in')
           self.options.add_opt_simple(:password,"user's password")
           self.options.parse_options!
         end
@@ -17,7 +17,7 @@ module Aspera
       ACTIONS=[]
 
       def execute_action
-        raise "do not execute action on this generic plugin"
+        raise 'do not execute action on this generic plugin'
       end
 
       # returns a Rest object with basic auth

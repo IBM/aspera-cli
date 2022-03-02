@@ -105,7 +105,7 @@ node_api=Aspera::Rest.new({
 sources=["#{tmpdir}/sample_file.txt"]
 destination='/Upload'
 # create sample file(s)
-sources.each{|p|File.write(p,"Hello World!")}
+sources.each{|p|File.write(p,'Hello World!')}
 # request transfer authorization to node for a single transfer (This is a node api v3 call)
 send_result=node_api.create('files/upload_setup',{ :transfer_requests => [ { :transfer_request => { :paths => [ { :destination => destination } ] } } ] } )[:data]
 # we normally have only one transfer spec in list, so just get the first transfer_spec

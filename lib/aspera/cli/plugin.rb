@@ -17,16 +17,16 @@ module Aspera
       def initialize(env)
         @agents=env
         raise StandardError,"execute_action shall be redefined by subclass #{self.class}" unless respond_to?(:execute_action)
-        raise StandardError,"ACTIONS shall be redefined by subclass" unless self.class.constants.include?(:ACTIONS)
+        raise StandardError,'ACTIONS shall be redefined by subclass' unless self.class.constants.include?(:ACTIONS)
         unless env[:skip_option_header]
-          self.options.parser.separator ""
+          self.options.parser.separator ''
           self.options.parser.separator "COMMAND: #{self.class.name.split('::').last.downcase}"
           self.options.parser.separator "SUBCOMMANDS: #{self.class.const_get(:ACTIONS).map{ |p| p.to_s}.join(' ')}"
-          self.options.parser.separator "OPTIONS:"
+          self.options.parser.separator 'OPTIONS:'
         end
         unless @@done
-          self.options.add_opt_simple(:value,"extended value for create, update, list filter")
-          self.options.add_opt_simple(:property,"name of property to set")
+          self.options.add_opt_simple(:value,'extended value for create, update, list filter')
+          self.options.add_opt_simple(:property,'name of property to set')
           self.options.add_opt_simple(:id,"resource identifier (#{INSTANCE_OPS.join(",")})")
           self.options.parse_options!
           @@done=true
@@ -41,7 +41,7 @@ module Aspera
       end
 
       def entity_command(command,rest_api,res_class_path,display_fields,id_symb,id_default=nil,use_subkey=false)
-        raise "not id" unless :id.eql?(id_symb)
+        raise 'not id' unless :id.eql?(id_symb)
         if INSTANCE_OPS.include?(command)
           begin
             one_res_id=instance_identifier()
@@ -80,11 +80,11 @@ module Aspera
           return Main.result_status('modified')
         when :delete
           rest_api.delete(one_res_path)
-          return Main.result_status("deleted")
+          return Main.result_status('deleted')
         else
           raise "unknown action: #{command}"
         end
-        raise "internal error should not reach here"
+        raise 'internal error should not reach here'
       end
 
       # implement generic rest operations on given resource path

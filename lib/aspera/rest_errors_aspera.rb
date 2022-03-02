@@ -6,7 +6,7 @@ module Aspera
   class RestErrorsAspera
     # handlers should probably be defined by plugins for modularity
     def self.registerHandlers
-      Log.log.debug("registering Aspera REST error handlers")
+      Log.log.debug('registering Aspera REST error handlers')
       # Faspex 4: both user_message and internal_message, and code 200
       # example: missing meta data on package creation
       RestErrorAnalyzer.instance.add_simple_handler('Type 1: error:user_message','error','user_message',true)

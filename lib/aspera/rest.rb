@@ -58,7 +58,7 @@ module Aspera
     # build URI from URL and parameters and check it is http or https
     def self.build_uri(url,params=nil)
       uri=URI.parse(url)
-      raise "REST endpoint shall be http(s)" unless ['http','https'].include?(uri.scheme)
+      raise 'REST endpoint shall be http(s)' unless ['http','https'].include?(uri.scheme)
       if !params.nil?
         # support array url params, there is no standard. Either p[]=1&p[]=2, or p=1&p=2
         if params.is_a?(Hash)
@@ -113,8 +113,8 @@ module Aspera
     # :url_creds  [:url]
     # :*          [:oauth2] see Oauth class
     def initialize(a_rest_params)
-      raise "ERROR: expecting Hash" unless a_rest_params.is_a?(Hash)
-      raise "ERROR: expecting base_url" unless a_rest_params[:base_url].is_a?(String)
+      raise 'ERROR: expecting Hash' unless a_rest_params.is_a?(Hash)
+      raise 'ERROR: expecting base_url' unless a_rest_params[:base_url].is_a?(String)
       @params=a_rest_params.clone
       Log.dump('REST params',@params)
       # base url without trailing slashes (note: string may be frozen)
@@ -195,7 +195,7 @@ module Aspera
       when :none
         # no auth
       when :basic
-        Log.log.debug("using Basic auth")
+        Log.log.debug('using Basic auth')
         # done in build_req
       when :oauth2
         call_data[:headers]['Authorization']=oauth_token unless call_data[:headers].has_key?('Authorization')
@@ -214,7 +214,7 @@ module Aspera
         # we try the call, and will retry only if oauth, as we can, first with refresh, and then re-auth if refresh is bad
         oauth_tries ||= 2
         tries_remain_redirect||=call_data[:redirect_max].nil? ? 0 : call_data[:redirect_max].to_i
-        Log.log.debug("send request")
+        Log.log.debug('send request')
         # make http request (pipelined)
         http_session.request(req) do |response|
           result[:http] = response
@@ -225,7 +225,7 @@ module Aspera
             rate_scale: lambda{|rate|rate/1024},
             title:      'progress',
             total:      total_size)
-            Log.log.debug("before write file")
+            Log.log.debug('before write file')
             target_file=call_data[:save_to_file]
             # override user's path to path in header
             if !response['Content-Disposition'].nil? and m=response['Content-Disposition'].match(/filename="([^"]+)"/)

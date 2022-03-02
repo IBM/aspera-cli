@@ -10,13 +10,13 @@ module Aspera
       class Ats < Plugin
         def initialize(env)
           super(env)
-          self.options.add_opt_simple(:ibm_api_key,"IBM API key, see https://cloud.ibm.com/iam/apikeys")
-          self.options.add_opt_simple(:instance,"ATS instance in ibm cloud")
-          self.options.add_opt_simple(:ats_key,"ATS key identifier (ats_xxx)")
-          self.options.add_opt_simple(:ats_secret,"ATS key secret")
-          self.options.add_opt_simple(:params,"Parameters access key creation (@json:)")
-          self.options.add_opt_simple(:cloud,"Cloud provider")
-          self.options.add_opt_simple(:region,"Cloud region")
+          self.options.add_opt_simple(:ibm_api_key,'IBM API key, see https://cloud.ibm.com/iam/apikeys')
+          self.options.add_opt_simple(:instance,'ATS instance in ibm cloud')
+          self.options.add_opt_simple(:ats_key,'ATS key identifier (ats_xxx)')
+          self.options.add_opt_simple(:ats_secret,'ATS key secret')
+          self.options.add_opt_simple(:params,'Parameters access key creation (@json:)')
+          self.options.add_opt_simple(:cloud,'Cloud provider')
+          self.options.add_opt_simple(:region,'Cloud region')
           self.options.parse_options!
         end
 
@@ -79,14 +79,14 @@ module Aspera
             # TODO : action : modify, with "PUT"
           when :list
             params=self.options.get_option(:params,:optional) || {'offset'=>0,'max_results'=>1000}
-            res=ats_api_pub_v1.read("access_keys",params)
+            res=ats_api_pub_v1.read('access_keys',params)
             return {type: :object_list, data: res[:data]['data'], fields:  ['name','id','created.at','modified.at']}
           when :show
             res=ats_api_pub_v1.read("access_keys/#{access_key_id}")
             return {type: :single_object, data: res[:data]}
           when :modify
             params=self.options.get_option(:value,:mandatory)
-            params["id"]=access_key_id
+            params['id']=access_key_id
             res=ats_api_pub_v1.update("access_keys/#{access_key_id}",params)
             return Main.result_status('modified')
           when :entitlement
@@ -99,7 +99,7 @@ module Aspera
           when :node
             ak_data=ats_api_pub_v1.read("access_keys/#{access_key_id}")[:data]
             server_data=@ats_api_pub.all_servers.select {|i| i['id'].start_with?(ak_data['transfer_server_id'])}.first
-            raise CliError,"no such server found" if server_data.nil?
+            raise CliError,'no such server found' if server_data.nil?
             base_url=server_data['transfer_setup_url']
             api_node=Rest.new({
               base_url:  base_url,
@@ -120,8 +120,8 @@ module Aspera
               password:  @agents[:config].get_secret(url: base_url, username: access_key_id)
               }}
             api_ak_auth=Rest.new(rest_params)
-            return {type: :single_object, data: api_ak_auth.read("servers")[:data]}
-          else raise "INTERNAL ERROR"
+            return {type: :single_object, data: api_ak_auth.read('servers')[:data]}
+          else raise 'INTERNAL ERROR'
           end
         end
 
@@ -138,7 +138,7 @@ module Aspera
             else
               server_id=instance_identifier()
               server_data=@ats_api_pub.all_servers.select {|i| i['id'].eql?(server_id)}.first
-              raise "no such server id" if server_data.nil?
+              raise 'no such server id' if server_data.nil?
             end
             return {type: :single_object, data: server_data}
           end
@@ -194,7 +194,7 @@ module Aspera
           when :delete #
             res=ats_ibm_api.delete("api_keys/#{concerned_id}")
             return Main.result_status("deleted #{concerned_id}")
-          else raise "INTERNAL ERROR"
+          else raise 'INTERNAL ERROR'
           end
         end
 
@@ -218,7 +218,7 @@ module Aspera
           when :aws_trust_policy
             res=ats_api_pub_v1.read('aws/trustpolicy',{region: self.options.get_option(:region,:mandatory)})[:data]
             return {type: :single_object, data: res}
-          else raise "ERROR"
+          else raise 'ERROR'
           end
         end
 

@@ -15,32 +15,32 @@ module Aspera
         result_ts['remote_host']=@fasp_uri.host
         result_ts['remote_user']=@fasp_uri.user
         result_ts['ssh_port']=@fasp_uri.port
-        result_ts['paths']=[{"source"=>URI.decode_www_form_component(@fasp_uri.path)}]
+        result_ts['paths']=[{'source'=>URI.decode_www_form_component(@fasp_uri.path)}]
         # faspex does not encode trailing base64 encoded tags, fix that
         fixed_query = @fasp_uri.query.gsub(/(=+)$/){|x|'%3D'*x.length}
 
-        URI::decode_www_form(fixed_query).each do |i|
+        URI.decode_www_form(fixed_query).each do |i|
           name=i[0]
           value=i[1]
           case name
-          when 'cookie'; result_ts['cookie']=value
-          when 'token'; result_ts['token']=value
-          when 'policy'; result_ts['rate_policy']=value
-          when 'httpport'; result_ts['http_fallback_port']=value.to_i
-          when 'targetrate'; result_ts['target_rate_kbps']=value.to_i
-          when 'minrate'; result_ts['min_rate_kbps']=value.to_i
-          when 'port'; result_ts['fasp_port']=value.to_i
-          when 'enc'; result_ts['cipher']=value.gsub(/^aes/,'aes-').gsub(/cfb$/,'-cfb').gsub(/gcm$/,'-gcm').gsub(/--/,'-')
-          when 'tags64'; result_ts['tags']=JSON.parse(Base64.strict_decode64(value))
-          when 'bwcap'; result_ts['target_rate_cap_kbps']=value.to_i
-          when 'createpath'; result_ts['create_dir']=CommandLineBuilder.yes_to_true(value)
-          when 'fallback'; result_ts['http_fallback']=CommandLineBuilder.yes_to_true(value)
-          when 'lockpolicy'; result_ts['lock_rate_policy']=CommandLineBuilder.yes_to_true(value)
-          when 'lockminrate'; result_ts['lock_min_rate']=CommandLineBuilder.yes_to_true(value)
-          when 'sshfp'; result_ts['sshfp']=value
-          when 'auth'; Log.log.debug("ignoring #{name}=#{value}") # TODO: translate into transfer spec ? yes/no
-          when 'v'; Log.log.debug("ignoring #{name}=#{value}") # TODO: translate into transfer spec ? 2
-          when 'protect'; Log.log.debug("ignoring #{name}=#{value}") # TODO: translate into transfer spec ?
+          when 'cookie' then result_ts['cookie']=value
+          when 'token' then result_ts['token']=value
+          when 'sshfp' then result_ts['sshfp']=value
+          when 'policy' then result_ts['rate_policy']=value
+          when 'httpport' then result_ts['http_fallback_port']=value.to_i
+          when 'targetrate' then result_ts['target_rate_kbps']=value.to_i
+          when 'minrate' then result_ts['min_rate_kbps']=value.to_i
+          when 'port' then result_ts['fasp_port']=value.to_i
+          when 'bwcap' then result_ts['target_rate_cap_kbps']=value.to_i
+          when 'enc' then result_ts['cipher']=value.gsub(/^aes/,'aes-').gsub(/cfb$/,'-cfb').gsub(/gcm$/,'-gcm').gsub(/--/,'-')
+          when 'tags64' then result_ts['tags']=JSON.parse(Base64.strict_decode64(value))
+          when 'createpath' then result_ts['create_dir']=CommandLineBuilder.yes_to_true(value)
+          when 'fallback' then result_ts['http_fallback']=CommandLineBuilder.yes_to_true(value)
+          when 'lockpolicy' then result_ts['lock_rate_policy']=CommandLineBuilder.yes_to_true(value)
+          when 'lockminrate' then result_ts['lock_min_rate']=CommandLineBuilder.yes_to_true(value)
+          when 'auth' then Log.log.debug("ignoring auth #{name}=#{value}") # TODO: translate into transfer spec ? yes/no
+          when 'v' then Log.log.debug("ignoring v #{name}=#{value}") # TODO: translate into transfer spec ? 2
+          when 'protect' then Log.log.debug("ignoring protect #{name}=#{value}") # TODO: translate into transfer spec ?
           else Log.log.warn("URI parameter ignored: #{name} = #{value}")
           end
         end

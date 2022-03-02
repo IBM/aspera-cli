@@ -33,7 +33,7 @@ module Aspera
       end
 
       def notify_listeners(current_event_text,current_event_data)
-        Log.log.debug("send event to listeners")
+        Log.log.debug('send event to listeners')
         enhanced_event=nil
         @listeners.each do |listener|
           listener.send(:event_text,current_event_text) if listener.respond_to?(:event_text)

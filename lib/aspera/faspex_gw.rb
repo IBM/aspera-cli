@@ -30,7 +30,7 @@ module Aspera
       #      }
       #    }
       def process_faspex_send(request, response)
-        raise "no payload" if request.body.nil?
+        raise 'no payload' if request.body.nil?
         faspex_pkg_parameters=JSON.parse(request.body)
         faspex_pkg_delivery=faspex_pkg_parameters['delivery']
         Log.log.debug "faspex pkg create parameters=#{faspex_pkg_parameters}"
@@ -38,19 +38,19 @@ module Aspera
         # get recipient ids
         files_pkg_recipients=[]
         faspex_pkg_delivery['recipients'].each do |recipient_email|
-          user_lookup=@aoc_api_user.read("contacts",{'current_workspace_id'=>@aoc_workspace_id,'q'=>recipient_email})[:data]
+          user_lookup=@aoc_api_user.read('contacts',{'current_workspace_id'=>@aoc_workspace_id,'q'=>recipient_email})[:data]
           raise StandardError,"no such unique user: #{recipient_email} / #{user_lookup}" unless !user_lookup.nil? and user_lookup.length == 1
           recipient_user_info=user_lookup.first
-          files_pkg_recipients.push({"id"=>recipient_user_info['source_id'],"type"=>recipient_user_info['source_type']})
+          files_pkg_recipients.push({'id'=>recipient_user_info['source_id'],'type'=>recipient_user_info['source_type']})
         end
 
         #  create a new package with one file
-        the_package=@aoc_api_user.create("packages",{
-          "file_names"=>faspex_pkg_delivery['sources'][0]['paths'],
-          "name"=>faspex_pkg_delivery['title'],
-          "note"=>faspex_pkg_delivery['note'],
-          "recipients"=>files_pkg_recipients,
-          "workspace_id"=>@aoc_workspace_id})[:data]
+        the_package=@aoc_api_user.create('packages',{
+          'file_names'=>faspex_pkg_delivery['sources'][0]['paths'],
+          'name'=>faspex_pkg_delivery['title'],
+          'note'=>faspex_pkg_delivery['note'],
+          'recipients'=>files_pkg_recipients,
+          'workspace_id'=>@aoc_workspace_id})[:data]
 
         #  get node information for the node on which package must be created
         node_info=@aoc_api_user.read("nodes/#{the_package['node_id']}")[:data]
@@ -59,19 +59,19 @@ module Aspera
         node_auth_bearer_token=@aoc_api_user.oauth_token(scope: AoC.node_scope(node_info['access_key'],AoC::SCOPE_NODE_USER))
 
         # tell Files what to expect in package: 1 transfer (can also be done after transfer)
-        @aoc_api_user.update("packages/#{the_package['id']}",{"sent"=>true,"transfers_expected"=>1})
+        @aoc_api_user.update("packages/#{the_package['id']}",{'sent'=>true,'transfers_expected'=>1})
 
         if false
           response.status=400
-          return "ERROR HERE"
+          return 'ERROR HERE'
         end
         # TODO: check about xfer_*
         ts_tags={
-          "aspera" => {
-          "files"      => { "package_id" => the_package['id'], "package_operation" => "upload" },
-          "node"       => { "access_key" => node_info['access_key'], "file_id" => the_package['contents_file_id'] },
-          "xfer_id"    => SecureRandom.uuid,
-          "xfer_retry" => 3600 } }
+          'aspera' => {
+          'files'      => { 'package_id' => the_package['id'], 'package_operation' => 'upload' },
+          'node'       => { 'access_key' => node_info['access_key'], 'file_id' => the_package['contents_file_id'] },
+          'xfer_id'    => SecureRandom.uuid,
+          'xfer_retry' => 3600 } }
         # this transfer spec is for transfer to AoC
         faspex_transfer_spec={
           'direction'   => 'send',
@@ -111,7 +111,7 @@ module Aspera
         }
         Log.log.info("faspex_package_create_result=#{faspex_package_create_result}")
         response.status=200
-        response.content_type = "application/json"
+        response.content_type = 'application/json'
         response.body=JSON.generate(faspex_package_create_result)
       end
 
@@ -121,7 +121,7 @@ module Aspera
           process_faspex_send(request, response)
         else
           response.status=400
-          return "ERROR HERE"
+          return 'ERROR HERE'
           raise "unsupported path: #{request.path}"
         end
       end
@@ -132,7 +132,7 @@ module Aspera
         case request.path
         when '/newuser'
           response.status=200
-          response.content_type = "text/html"
+          response.content_type = 'text/html'
           response.body='<html><body>hello world</body></html>'
         else
           raise "unsupported path: [#{request.path}]"
@@ -143,7 +143,7 @@ module Aspera
     def fill_self_signed_cert(options)
       key = OpenSSL::PKey::RSA.new(4096)
       cert = OpenSSL::X509::Certificate.new
-      cert.subject = cert.issuer = OpenSSL::X509::Name.parse("/C=FR/O=Test/OU=Test/CN=Test")
+      cert.subject = cert.issuer = OpenSSL::X509::Name.parse('/C=FR/O=Test/OU=Test/CN=Test')
       cert.not_before = Time.now
       cert.not_after = Time.now + 365 * 24 * 60 * 60
       cert.public_key = key.public_key
@@ -153,11 +153,11 @@ module Aspera
       ef.issuer_certificate = cert
       ef.subject_certificate = cert
       cert.extensions = [
-        ef.create_extension("basicConstraints","CA:TRUE", true),
-        ef.create_extension("subjectKeyIdentifier", "hash"),
+        ef.create_extension('basicConstraints','CA:TRUE', true),
+        ef.create_extension('subjectKeyIdentifier', 'hash'),
         # ef.create_extension("keyUsage", "cRLSign,keyCertSign", true),
       ]
-      cert.add_extension(ef.create_extension("authorityKeyIdentifier","keyid:always,issuer:always"))
+      cert.add_extension(ef.create_extension('authorityKeyIdentifier','keyid:always,issuer:always'))
       cert.sign(key, OpenSSL::Digest::SHA256.new)
       options[:SSLPrivateKey]  = key
       options[:SSLCertificate] = cert

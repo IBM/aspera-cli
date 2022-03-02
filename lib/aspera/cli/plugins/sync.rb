@@ -10,8 +10,8 @@ module Aspera
       class Sync < Plugin
         def initialize(env)
           super(env)
-          self.options.add_opt_simple(:parameters,"extended value for session set definition")
-          self.options.add_opt_simple(:session_name,"name of session to use for admin commands, by default first one")
+          self.options.add_opt_simple(:parameters,'extended value for session set definition')
+          self.options.add_opt_simple(:session_name,'name of session to use for admin commands, by default first one')
           self.options.parse_options!
         end
 
@@ -30,7 +30,7 @@ module Aspera
             when true; return Main.result_success
             when false; raise "failed: #{$?}"
             when nil; return Main.result_status("not started: #{$?}")
-            else raise "internal error: unspecified case"
+            else raise 'internal error: unspecified case'
             end
           when :admin
             p=self.options.get_option(:parameters,:mandatory)
@@ -54,9 +54,9 @@ module Aspera
               Log.log.debug("status=#{status}, stderr=#{stderr}")
               items=stdout.split("\n").inject({}){|m,l|i=l.split(/:  */);m[i.first.lstrip]=i.last.lstrip;m}
               return {type: :single_object,data: items}
-            else raise "error"
+            else raise 'error'
             end # command
-          else raise "error"
+          else raise 'error'
           end # command
         end # execute_action
       end # Sync

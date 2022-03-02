@@ -126,7 +126,7 @@ module Aspera
           @job_spec.delete('sshfp')
           # set location for CA bundle to be the one of Ruby, see env var SSL_CERT_FILE / SSL_CERT_DIR
           @job_spec['EX_ssh_key_paths']=[OpenSSL::X509::DEFAULT_CERT_FILE]
-          Log.log.debug("CA certs: EX_ssh_key_paths <- DEFAULT_CERT_FILE from openssl")
+          Log.log.debug('CA certs: EX_ssh_key_paths <- DEFAULT_CERT_FILE from openssl')
         else
           # remove unused parameter (avoid warning)
           @job_spec.delete('wss_port')
@@ -148,16 +148,16 @@ module Aspera
         @builder.params_definition['paths'][:mandatory]=!@job_spec.has_key?('keepalive') and !file_list_provided
         paths_array=@builder.process_param('paths',:get_value)
         if file_list_provided and ! paths_array.nil?
-          Log.log.warn("file list provided both in transfer spec and ascp file list. Keeping file list only.")
+          Log.log.warn('file list provided both in transfer spec and ascp file list. Keeping file list only.')
           paths_array=nil
         end
         if ! paths_array.nil?
           # it's an array
-          raise "paths is empty in transfer spec" if paths_array.empty?
+          raise 'paths is empty in transfer spec' if paths_array.empty?
           # use file list if there is storage defined for it.
           if @@file_list_folder.nil?
             # not safe for special characters ? (maybe not, depends on OS)
-            Log.log.debug("placing source file list on command line (no file list file)")
+            Log.log.debug('placing source file list on command line (no file list file)')
             @builder.add_command_line_options(paths_array.map{|i|i['source']})
           else
             file_list_file=@builder.process_param('EX_file_list',:get_value)

@@ -22,12 +22,12 @@ module Aspera
     def get(object_id)
       Log.log.debug("persistency get: #{object_id}")
       if @cache.has_key?(object_id)
-        Log.log.debug("got from memory cache")
+        Log.log.debug('got from memory cache')
       else
         persist_filepath=id_to_filepath(object_id)
         Log.log.debug("persistency = #{persist_filepath}")
         if File.exist?(persist_filepath)
-          Log.log.debug("got from file cache")
+          Log.log.debug('got from file cache')
           @cache[object_id]=File.read(persist_filepath)
         end
       end
@@ -35,7 +35,7 @@ module Aspera
     end
 
     def put(object_id,value)
-      raise "value: only String supported" unless value.is_a?(String)
+      raise 'value: only String supported' unless value.is_a?(String)
       persist_filepath=id_to_filepath(object_id)
       Log.log.debug("persistency saving: #{persist_filepath}")
       File.write(persist_filepath,value)
@@ -66,7 +66,7 @@ module Aspera
 
     # @param object_id String or Array
     def id_to_filepath(object_id)
-      raise "object_id: only String supported" unless object_id.is_a?(String)
+      raise 'object_id: only String supported' unless object_id.is_a?(String)
       FileUtils.mkdir_p(@folder)
       return File.join(@folder,"#{object_id}#{FILE_SUFFIX}")
       #.gsub(/[^a-z]+/,FILE_FIELD_SEPARATOR)

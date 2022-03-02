@@ -28,20 +28,20 @@ module Aspera
       SEPARATOR='%'
       private_constant :SEPARATOR
       def initialize(values)
-        raise "values shall be Hash" unless values.is_a?(Hash)
+        raise 'values shall be Hash' unless values.is_a?(Hash)
         @all_secrets=values
       end
 
       def set(options)
-        raise "options shall be Hash" unless options.is_a?(Hash)
+        raise 'options shall be Hash' unless options.is_a?(Hash)
         unsupported=options.keys-[:username,:url,:secret,:description]
         raise "unsupported options: #{unsupported}" unless unsupported.empty?
         username=options[:username]
-        raise "options shall have username" if username.nil?
+        raise 'options shall have username' if username.nil?
         url=options[:url]
-        raise "options shall have username" if url.nil?
+        raise 'options shall have username' if url.nil?
         secret=options[:secret]
-        raise "options shall have secret" if secret.nil?
+        raise 'options shall have secret' if secret.nil?
         key=[url,username].join(SEPARATOR)
         raise "secret #{key} already exist, delete first" if @all_secrets.has_key?(key)
         obj={username: username, url: url, secret: SimpleCipher.new(key).encrypt(secret)}
@@ -60,7 +60,7 @@ module Aspera
             o=v.clone
             o.delete(:secret)
             o[:description]||=''
-          else raise "error"
+          else raise 'error'
           end
           o[:description]=v[:description] if v.is_a?(Hash) and v[:description].is_a?(String)
           result.push(o)
@@ -69,11 +69,11 @@ module Aspera
       end
 
       def delete(options)
-        raise "options shall be Hash" unless options.is_a?(Hash)
+        raise 'options shall be Hash' unless options.is_a?(Hash)
         unsupported=options.keys-[:username,:url]
         raise "unsupported options: #{unsupported}" unless unsupported.empty?
         username=options[:username]
-        raise "options shall have username" if username.nil?
+        raise 'options shall have username' if username.nil?
         url=options[:url]
         key=nil
         if !url.nil?
@@ -82,16 +82,16 @@ module Aspera
         end
         # backward compatibility: TODO: remove in future ? (make url mandatory ?)
         key=username if key.nil? and @all_secrets.has_key?(username)
-        raise "no such secret" if key.nil?
+        raise 'no such secret' if key.nil?
         @all_secrets.delete(key)
       end
 
       def get(options)
-        raise "options shall be Hash" unless options.is_a?(Hash)
+        raise 'options shall be Hash' unless options.is_a?(Hash)
         unsupported=options.keys-[:username,:url]
         raise "unsupported options: #{unsupported}" unless unsupported.empty?
         username=options[:username]
-        raise "options shall have username" if username.nil?
+        raise 'options shall have username' if username.nil?
         url=options[:url]
         val=nil
         if !url.nil?
@@ -104,14 +104,14 @@ module Aspera
         result=options.clone
         case val
         when NilClass
-          raise "no such secret"
+          raise 'no such secret'
         when String
           result.merge!({secret: val, description: ''})
         when Hash
           key=[url,username].join(SEPARATOR)
           plain=SimpleCipher.new(key).decrypt(val[:secret])
           result.merge!({secret: plain, description: val[:description]})
-        else raise "error"
+        else raise 'error'
         end
         return result
       end

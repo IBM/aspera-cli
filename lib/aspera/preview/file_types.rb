@@ -313,7 +313,7 @@ module Aspera
             conv_type=SUPPORTED_MIME_TYPES[detected_mime]
             if ! mimetype.nil?
               if mimetype.eql?(detected_mime)
-                Log.log.debug("matching mime type per magic number")
+                Log.log.debug('matching mime type per magic number')
               else
                 # note: detected can be nil
                 Log.log.debug("non matching mime types: node=[#{mimetype}], magic=[#{detected_mime}]")

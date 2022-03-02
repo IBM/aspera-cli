@@ -142,9 +142,9 @@ module Aspera
           max_pages=nil
           result=[]
           if !mailbox_query.nil?
-            raise "query: must be Hash or nil" unless mailbox_query.is_a?(Hash)
+            raise 'query: must be Hash or nil' unless mailbox_query.is_a?(Hash)
             raise "query: supported params: #{ATOM_EXT_PARAMS}" unless (mailbox_query.keys-ATOM_EXT_PARAMS).empty?
-            raise "query: startIndex and page are exclusive" if mailbox_query.has_key?('startIndex') and mailbox_query.has_key?('page')
+            raise 'query: startIndex and page are exclusive' if mailbox_query.has_key?('startIndex') and mailbox_query.has_key?('page')
             max_items=mailbox_query[MAX_ITEMS]
             mailbox_query.delete(MAX_ITEMS)
             max_pages=mailbox_query[MAX_PAGES]
@@ -219,7 +219,7 @@ module Aspera
           begin
             pkgdatares=JSON.parse("[#{pkgdatares}]")
           rescue JSON::ParserError # => e
-            raise "Link not valid"
+            raise 'Link not valid'
           end
           return pkgdatares.first
         end
@@ -290,7 +290,7 @@ module Aspera
                 end
                 # get command line parameters
                 delivid=self.instance_identifier()
-                raise "empty id" if delivid.empty?
+                raise 'empty id' if delivid.empty?
                 if delivid.eql?(VAL_ALL)
                   pkg_id_uri=mailbox_all_entries.map{|i|{id: i[PACKAGE_MATCH_FIELD],uri: self.class.get_fasp_uri_from_entry(i)}}
                   # TODO : remove ids from skip not present in inbox to avoid growing too big
@@ -299,7 +299,7 @@ module Aspera
                 else
                   recipient=options.get_option(:recipient,:optional)
                   if !recipient.nil? and recipient.start_with?('*')
-                    raise "Dropbox and Workgroup packages should use link option with faspe:"
+                    raise 'Dropbox and Workgroup packages should use link option with faspe:'
                   end
                   # TODO: delivery id is the right one if package was receive by workgroup
                   endpoint=case self.options.get_option(:box,:mandatory)

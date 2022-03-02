@@ -54,14 +54,14 @@ module Aspera
           Log.log.error("Error code: #{exit_status}")
           Log.log.error("stdout: #{stdout}")
           Log.log.error("stderr: #{stderr}")
-          raise "command returned error"
+          raise 'command returned error'
         end
         stdout_return.replace(stdout) unless stdout_return.nil?
         return exit_status.success?
       end
 
       def self.ffmpeg(a)
-        raise "error: hash expected" unless a.is_a?(Hash)
+        raise 'error: hash expected' unless a.is_a?(Hash)
         #input_file,input_args,output_file,output_args
         a[:gl_p]||=[
           '-y', # overwrite output without asking

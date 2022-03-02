@@ -46,7 +46,7 @@ module Aspera
           path:    lambda{|v|File.expand_path(v)},
           env:     lambda{|v|ENV[v]},
           uri:     lambda{|v|UriReader.read(v)},
-          stdin:   lambda{|v|raise "no value allowed for stdin" unless v.empty?;STDIN.read}
+          stdin:   lambda{|v|raise 'no value allowed for stdin' unless v.empty?;STDIN.read}
           }
           # other handlers can be set using set_handler, e.g. preset is reader in config plugin
         }
@@ -59,7 +59,7 @@ module Aspera
       # decoder can be chained, reader is last one on right
       def set_handler(name,type,method)
         Log.log.debug("setting #{type} handler for #{name}")
-        raise "name must be Symbol" unless name.is_a?(Symbol)
+        raise 'name must be Symbol' unless name.is_a?(Symbol)
         raise "type #{type} must be one of #{@handlers.keys}" unless @handlers.keys.include?(type)
         @handlers[type][name]=method
       end

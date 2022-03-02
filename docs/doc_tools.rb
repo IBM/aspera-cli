@@ -46,7 +46,7 @@ def spec_table
   end
   r << '<th>Description</th></tr>'
   Aspera::Fasp::Parameters.man_table.each do |p|
-    p[:description] << (p[:description].empty? ? '' : "\n") << "(" << p[:cli] << ")" unless p[:cli].to_s.empty?
+    p[:description] << (p[:description].empty? ? '' : "\n") << '(' << p[:cli] << ')' unless p[:cli].to_s.empty?
     p.delete(:cli)
     p.keys.each{|c|p[c]='&nbsp;' if p[c].to_s.empty?}
     p[:description].gsub!("\n",'<br/>')

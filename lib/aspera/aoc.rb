@@ -7,14 +7,9 @@ require 'base64'
 
 module Aspera
   class AoC < Rest
-    private
-    @@use_standard_ports = true
-
-    API_V1='api/v1'
-
-    PRODUCT_NAME='Aspera on Cloud'
+    PRODUCT_NAME='Aspera on Cloud'.freeze
     # Production domain of AoC
-    PROD_DOMAIN='ibmaspera.com'
+    PROD_DOMAIN='ibmaspera.com'.freeze
     # to avoid infinite loop in pub link redirection
     MAX_REDIRECT=10
     CLIENT_APPS=['aspera.global-cli-client','aspera.drive']
@@ -22,7 +17,6 @@ module Aspera
     DATA_REPO_INDEX_START = 4
     # cookie prefix so that console can decode identity
     COOKIE_PREFIX='aspera.aoc'
-
     # path in URL of public links
     PUBLIC_LINK_PATHS=['/packages/public/receive','/packages/public/send','/files/public']
     JWT_AUDIENCE='https://api.asperafiles.com/api/v1/oauth2/token'
@@ -30,10 +24,9 @@ module Aspera
     # minimum fields for user info if retrieval fails
     USER_INFO_FIELDS_MIN=['name','email','id','default_workspace_id','organization_id']
 
-    private_constant :PRODUCT_NAME,:PROD_DOMAIN,:MAX_REDIRECT,:CLIENT_APPS,:PUBLIC_LINK_PATHS,:JWT_AUDIENCE,
-    :OAUTH_API_SUBPATH,:COOKIE_PREFIX,:USER_INFO_FIELDS_MIN
+    private_constant :PRODUCT_NAME,:PROD_DOMAIN,:MAX_REDIRECT,:CLIENT_APPS,:DATA_REPO_INDEX_START,
+    :COOKIE_PREFIX,:PUBLIC_LINK_PATHS,:JWT_AUDIENCE,:OAUTH_API_SUBPATH,:USER_INFO_FIELDS_MIN
 
-    public
     # various API scopes supported
     SCOPE_FILES_SELF='self'
     SCOPE_FILES_USER='user:all'
@@ -45,9 +38,14 @@ module Aspera
     PATH_SEPARATOR='/'
     FILES_APP='files'
     PACKAGES_APP='packages'
+    API_V1='api/v1'.freeze
+
+    # class instance variable, access with accessors on class
+    @use_standard_ports = true
 
     # class static methods
     class << self
+      attr_accessor :use_standard_ports
       # strings /Applications/Aspera\ Drive.app/Contents/MacOS/AsperaDrive|grep -E '.{100}==$'|base64 --decode
       def get_client_info(client_name=CLIENT_APPS.first)
         client_index=CLIENT_APPS.index(client_name)
@@ -86,10 +84,6 @@ module Aspera
         return 'node.'+access_key+':'+scope
       end
 
-      def set_use_default_ports(val)
-        @@use_standard_ports=val
-      end
-
       # check option "link"
       # if present try to get token value (resolve redirection if short links used)
       # then set options url/token/auth
@@ -114,9 +108,9 @@ module Aspera
           Log.log.debug("no expected format: #{public_link_url}")
           raise "exceeded max redirection: #{MAX_REDIRECT}" if redirect_count > MAX_REDIRECT
           r = Net::HTTP.get_response(uri)
-          if r.code.start_with?("3")
+          if r.code.start_with?('3')
             public_link_url = r['location']
-            raise "no location in redirection" if public_link_url.nil?
+            raise 'no location in redirection' if public_link_url.nil?
             Log.log.debug("redirect to: #{public_link_url}")
           else
             # not a redirection
@@ -182,7 +176,7 @@ module Aspera
         aoc_rest_p.delete(:org_url)
       else
         # else url is mandatory
-        raise ArgumentError,"Missing mandatory option: url" if opt[:url].nil?
+        raise ArgumentError,'Missing mandatory option: url' if opt[:url].nil?
       end
 
       # get org name and domain from url
@@ -197,7 +191,7 @@ module Aspera
       aoc_auth_p[:client_secret] = opt[:client_secret]
 
       if !aoc_auth_p.has_key?(:grant)
-        raise ArgumentError,"Missing mandatory option: auth" if opt[:auth].nil?
+        raise ArgumentError,'Missing mandatory option: auth' if opt[:auth].nil?
         aoc_auth_p[:grant] = opt[:auth]
       end
 
@@ -205,21 +199,21 @@ module Aspera
         aoc_auth_p[:client_id],aoc_auth_p[:client_secret] = self.class.get_client_info()
       end
 
-      raise ArgumentError,"Missing mandatory option: scope" if opt[:scope].nil?
+      raise ArgumentError,'Missing mandatory option: scope' if opt[:scope].nil?
       aoc_auth_p[:scope] = opt[:scope]
 
       # fill other auth parameters based on Oauth method
       case aoc_auth_p[:grant]
       when :web
-        raise ArgumentError,"Missing mandatory option: redirect_uri" if opt[:redirect_uri].nil?
+        raise ArgumentError,'Missing mandatory option: redirect_uri' if opt[:redirect_uri].nil?
         aoc_auth_p[:redirect_uri] = opt[:redirect_uri]
       when :jwt
         # add jwt payload for global ids
         if CLIENT_APPS.include?(aoc_auth_p[:client_id])
           aoc_auth_p.merge!({jwt_add: {org: organization}})
         end
-        raise ArgumentError,"Missing mandatory option: private_key" if opt[:private_key].nil?
-        raise ArgumentError,"Missing mandatory option: username" if opt[:username].nil?
+        raise ArgumentError,'Missing mandatory option: private_key' if opt[:private_key].nil?
+        raise ArgumentError,'Missing mandatory option: username' if opt[:username].nil?
         private_key_PEM_string=opt[:private_key]
         aoc_auth_p[:jwt_audience]        = JWT_AUDIENCE
         aoc_auth_p[:jwt_subject]         = opt[:username]
@@ -233,8 +227,8 @@ module Aspera
     end
 
     def key_chain=(keychain)
-      raise "keychain already set" unless @key_chain.nil?
-      raise "keychain must have get_secret" unless keychain.respond_to?(:get_secret)
+      raise 'keychain already set' unless @key_chain.nil?
+      raise 'keychain must have get_secret' unless keychain.respond_to?(:get_secret)
       @key_chain=keychain
       nil
     end
@@ -284,7 +278,7 @@ module Aspera
         } # tags
       }
       # add remote host info
-      if @@use_standard_ports
+      if self.class.use_standard_ports
         # get default TCP/UDP ports and transfer user
         transfer_spec.merge!(Fasp::TransferSpec::AK_TSPEC_BASE)
         # by default: same address as node API
@@ -295,7 +289,7 @@ module Aspera
         end
       else
         # retrieve values from API
-        std_t_spec=get_node_api(node_file[:node_info],scope: SCOPE_NODE_USER).create('files/download_setup',{transfer_requests:  [ { transfer_request:  {paths:  [ {"source"=>'/'} ] } } ] } )[:data]['transfer_specs'].first['transfer_spec']
+        std_t_spec=get_node_api(node_file[:node_info],scope: SCOPE_NODE_USER).create('files/download_setup',{transfer_requests:  [ { transfer_request:  {paths:  [ {'source'=>'/'} ] } } ] } )[:data]['transfer_specs'].first['transfer_spec']
         ['remote_host','remote_user','ssh_port','fasp_port'].each {|i| transfer_spec[i]=std_t_spec[i]}
       end
       # add caller provided transfer spec
@@ -313,7 +307,7 @@ module Aspera
     # no scope: requires secret
     # if secret provided beforehand: use it
     def get_node_api(node_info,options={})
-      raise "INTERNAL ERROR: method parameters: options must be Hash" unless options.is_a?(Hash)
+      raise 'INTERNAL ERROR: method parameters: options must be Hash' unless options.is_a?(Hash)
       options.keys.each {|k| raise "INTERNAL ERROR: not valid option: #{k}" unless [:scope,:use_secret].include?(k)}
       # get optional secret unless :use_secret is false (default is true)
       ak_secret=@key_chain.get_secret(url: node_info['url'], username: node_info['access_key'], mandatory: false) if !@key_chain.nil? and ( !options.has_key?(:use_secret) or options[:use_secret] )
@@ -341,7 +335,7 @@ module Aspera
     # @return split values
     def check_get_node_file(node_file)
       raise "node_file must be Hash (got #{node_file.class})" unless node_file.is_a?(Hash)
-      raise "node_file must have 2 keys: :file_id and :node_info" unless node_file.keys.sort.eql?([:file_id,:node_info])
+      raise 'node_file must have 2 keys: :file_id and :node_info' unless node_file.keys.sort.eql?([:file_id,:node_info])
       node_info=node_file[:node_info]
       file_id=node_file[:file_id]
       raise "node_info must be Hash  (got #{node_info.class}: #{node_info})" unless node_info.is_a?(Hash)

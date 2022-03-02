@@ -110,7 +110,7 @@ module Aspera
             raise 'either password, key , or transfer spec token must be provided' if !cred_set
             shell_executor=Ssh.new(server_transfer_spec['remote_host'],server_transfer_spec['remote_user'],ssh_options)
           when 'https'
-            raise "ERROR: transfer spec with token required" unless self.transfer.option_transfer_spec['token'].is_a?(String)
+            raise 'ERROR: transfer spec with token required' unless self.transfer.option_transfer_spec['token'].is_a?(String)
             server_transfer_spec.merge!({
               'wss_enabled'=>true,
               'wss_port'   =>server_uri.port
@@ -143,7 +143,7 @@ module Aspera
             when :transfer
               file = Tempfile.new('transfer_test')
               filepath=file.path
-              file.write("This is a test file for transfer test")
+              file.write('This is a test file for transfer test')
               file.close
               probe_ts=server_transfer_spec.merge({
                 'direction'     => 'send',
@@ -171,7 +171,7 @@ module Aspera
                   nagios.add_critical(i['process'],i['state'])
                 end
               end
-            else raise "ERROR"
+            else raise 'ERROR'
             end
             return nagios.result
           when :nodeadmin,:userdata,:configurator,:ctl
@@ -233,7 +233,7 @@ module Aspera
             rescue Aspera::AsCmd::Error => e
               raise CliBadArgument,e.extended_message
             end
-          else raise "internal error: unexpected action"
+          else raise 'internal error: unexpected action'
           end
         end # execute_action
       end # Server

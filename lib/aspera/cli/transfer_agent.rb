@@ -39,12 +39,12 @@ END_OF_TEMPLATE
         @opt_mgr.set_obj_attr(:ts,self,:option_transfer_spec)
         @opt_mgr.add_opt_simple(:ts,"override transfer spec values (Hash, use @json: prefix), current=#{@opt_mgr.get_option(:ts,:optional)}")
         @opt_mgr.add_opt_simple(:local_resume,"set resume policy (Hash, use @json: prefix), current=#{@opt_mgr.get_option(:local_resume,:optional)}")
-        @opt_mgr.add_opt_simple(:to_folder,"destination folder for downloaded files")
-        @opt_mgr.add_opt_simple(:sources,"list of source files (see doc)")
-        @opt_mgr.add_opt_simple(:transfer_info,"parameters for transfer agent")
-        @opt_mgr.add_opt_list(:src_type,[:list,:pair],"type of file list")
-        @opt_mgr.add_opt_list(:transfer,TRANSFER_AGENTS,"type of transfer agent")
-        @opt_mgr.add_opt_list(:progress,[:none,:native,:multi],"type of progress bar")
+        @opt_mgr.add_opt_simple(:to_folder,'destination folder for downloaded files')
+        @opt_mgr.add_opt_simple(:sources,'list of source files (see doc)')
+        @opt_mgr.add_opt_simple(:transfer_info,'parameters for transfer agent')
+        @opt_mgr.add_opt_list(:src_type,[:list,:pair],'type of file list')
+        @opt_mgr.add_opt_list(:transfer,TRANSFER_AGENTS,'type of transfer agent')
+        @opt_mgr.add_opt_list(:progress,[:none,:native,:multi],'type of progress bar')
         @opt_mgr.set_option(:transfer,:direct)
         @opt_mgr.set_option(:src_type,:list)
         @opt_mgr.set_option(:progress,:native) # use native ascp progress bar as it is more reliable
@@ -123,25 +123,25 @@ END_OF_TEMPLATE
         file_list=@opt_mgr.get_option(:sources,:optional)
         case file_list
         when nil,FILE_LIST_FROM_ARGS
-          Log.log.debug("getting file list as parameters")
+          Log.log.debug('getting file list as parameters')
           # get remaining arguments
-          file_list=@opt_mgr.get_next_argument("source file list",:multiple)
+          file_list=@opt_mgr.get_next_argument('source file list',:multiple)
           raise CliBadArgument,"specify at least one file on command line or use --sources=#{FILE_LIST_FROM_TRANSFER_SPEC} to use transfer spec" if !file_list.is_a?(Array) or file_list.empty?
         when FILE_LIST_FROM_TRANSFER_SPEC
-          Log.log.debug("assume list provided in transfer spec")
+          Log.log.debug('assume list provided in transfer spec')
           special_case_direct_with_list=@opt_mgr.get_option(:transfer,:mandatory).eql?(:direct) and Fasp::Parameters.ts_has_file_list(@transfer_spec_cmdline)
-          raise CliBadArgument,"transfer spec on command line must have sources" if @transfer_paths.nil? and !special_case_direct_with_list
+          raise CliBadArgument,'transfer spec on command line must have sources' if @transfer_paths.nil? and !special_case_direct_with_list
           # here we assume check of sources is made in transfer agent
           return @transfer_paths
         when Array
-          Log.log.debug("getting file list as extended value")
-          raise CliBadArgument,"sources must be a Array of String" if !file_list.select{|f|!f.is_a?(String)}.empty?
+          Log.log.debug('getting file list as extended value')
+          raise CliBadArgument,'sources must be a Array of String' if !file_list.select{|f|!f.is_a?(String)}.empty?
         else
           raise CliBadArgument,"sources must be a Array, not #{file_list.class}"
         end
         # here, file_list is an Array or String
         if !@transfer_paths.nil?
-          Log.log.warn("--sources overrides paths from --ts")
+          Log.log.warn('--sources overrides paths from --ts')
         end
         case @opt_mgr.get_option(:src_type,:mandatory)
         when :list
@@ -150,7 +150,7 @@ END_OF_TEMPLATE
         when :pair
           raise CliBadArgument,"When using pair, provide an even number of paths: #{file_list.length}" unless file_list.length.even?
           @transfer_paths=file_list.each_slice(2).to_a.map{|s,d|{'source'=>s,'destination'=>d}}
-        else raise "Unsupported src_type"
+        else raise 'Unsupported src_type'
         end
         Log.log.debug("paths=#{@transfer_paths}")
         return @transfer_paths
@@ -163,8 +163,8 @@ END_OF_TEMPLATE
       # other options are carried to specific agent
       def start(transfer_spec,tr_opts)
         # check parameters
-        raise "transfer_spec must be hash" unless transfer_spec.is_a?(Hash)
-        raise "tr_opts must be hash" unless tr_opts.is_a?(Hash)
+        raise 'transfer_spec must be hash' unless transfer_spec.is_a?(Hash)
+        raise 'tr_opts must be hash' unless tr_opts.is_a?(Hash)
         # process :src option
         case transfer_spec['direction']
         when Fasp::TransferSpec::DIRECTION_RECEIVE

@@ -44,14 +44,14 @@ module Aspera
       result=[]
       strlist=get_proxy(service_url)
       return result if strlist.nil?
-      raise "expect String" unless strlist.is_a?(String)
+      raise 'expect String' unless strlist.is_a?(String)
       strlist.split(';').each do |one|
         d=one.strip.gsub(/\s+/,' ').split(' ')
         case d[0]
         when 'DIRECT'
-          raise "DIRECT has no param" unless d.length.eql?(1)
+          raise 'DIRECT has no param' unless d.length.eql?(1)
         when 'PROXY'
-          raise "PROXY shall have one param" unless d.length.eql?(2)
+          raise 'PROXY shall have one param' unless d.length.eql?(2)
           d[1]='proxy://'+d[1] unless d[1].include?('://')
           result.push(URI.parse(d[1])) rescue nil
         else Log.log.warn("proxy type #{d.first} not supported")
