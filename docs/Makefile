@@ -64,3 +64,13 @@ $(INCL_ASESSION): $(DIR_TMP).exists $(DIR_BIN)/asession
 clean::
 	rm -f $(MANUAL_PDF) $(MANUAL_HTML) $(INCL_COMMANDS) $(INCL_USAGE) $(INCL_ASESSION)
 
+##################################
+# UML Diagram : requires tools: graphviz and gem xumlidot
+# on mac: `gem install xumlidot pry` and `brew install graphviz`
+uml: $(DIR_DOC)uml.png
+$(DIR_DOC)uml.png:
+	xumlidot --dot --no-composition $(DIR_LIB) > $(DIR_DOC)uml.dot
+	dot -Tpng $(DIR_DOC)uml.dot > $(DIR_DOC)uml.png
+clean::
+	rm -f $(DIR_DOC)uml.dot $(DIR_DOC)uml.png
+

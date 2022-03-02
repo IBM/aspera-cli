@@ -1735,7 +1735,7 @@ Example: parameter to download a faspex package and decrypt on the fly
 --ts=@json:'{"content_protection":"decrypt","content_protection_password":"mysecret!"}'
 ```
 
-Note that up to version 4.6.0, the following parameters should be used for agennt `direct`:
+Note that up to version 4.6.0, the following parameters should be used for agent `direct`:
 
 ```json
 --ts=@json:'{"EX_ascp_args":["--file-crypt=decrypt"],"EX_at_rest_password":"mysecret!"}'
@@ -2053,7 +2053,7 @@ ascli config export
 ascli config genkey mykey
 ascli config plugin create mycommand T
 ascli config plugin list
-ascli config proxy_check --fpac=file:///examples/proxy.pac https://eudemo.asperademo.com
+ascli config proxy_check --fpac=@file:examples/proxy.pac https://eudemo.asperademo.com
 ascli console transfer current list 
 ascli console transfer smart list 
 ascli console transfer smart sub my_job_id @json:'{"source":{"paths":["my_file_name"]},"source_type":"user_selected"}'
