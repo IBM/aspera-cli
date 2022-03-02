@@ -30,7 +30,7 @@ PATH_GEMFILE=$(DIR_TOP)$(GEMNAME)-$(GEMVERSION).gem
 gem: $(PATH_GEMFILE)
 
 # gem file is generated in top folder
-$(PATH_GEMFILE): $(GEMSPEC) $(DIR_LIB)aspera/fasp/transfer_spec.rb
+$(PATH_GEMFILE):
 	gem build $(GEMNAME)
 clean::
 	rm -f $(PATH_GEMFILE)
@@ -40,8 +40,6 @@ cleanupgems:
 	gem uninstall -a -x $$(gem list|cut -f 1 -d' '|egrep -v 'rdoc|psych|rake|openssl|json|io-console|bigdecimal')
 installdeps:
 	gem install $$(sed -nEe "/^[^#].*add_[^_]+_dependency/ s/[^']+'([^']+)'.*/\1/p" < $(GEMNAME).gemspec )
-$(DIR_LIB)aspera/fasp/transfer_spec.rb: $(DIR_LIB)aspera/fasp/transfer_spec.rb.erb
-	RUBYLIB=$(DIR_LIB) erb -T - -U -r aspera/fasp/parameters $(DIR_LIB)aspera/fasp/transfer_spec.rb.erb > $@
 ##################################
 # Gem publish
 gempush: all dotag
