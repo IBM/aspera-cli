@@ -96,7 +96,7 @@ module Aspera
         return start_offset + (index-1)*(1.0*duration - start_offset) / total_count
       end
 
-      def convert_video_to_mp4_using_blend()
+      def convert_video_to_mp4_using_blend
         p_duration = Utils.video_get_duration(@source_file_path)
         p_start_offset = @options.video_start_sec.to_i
         p_keyframecount = @options.blend_keyframes.to_i
@@ -124,7 +124,7 @@ module Aspera
       end
 
       # generate n clips starting at offset
-      def convert_video_to_mp4_using_clips()
+      def convert_video_to_mp4_using_clips
         p_duration = Utils.video_get_duration(@source_file_path)
         filelist = File.join(this_tmpdir,'clip_files.txt')
         File.open(filelist, 'w+') do |f|
@@ -152,7 +152,7 @@ module Aspera
       end
 
       # do a simple reencoding
-      def convert_video_to_mp4_using_reencode()
+      def convert_video_to_mp4_using_reencode
         Utils.ffmpeg(
         in_f: @source_file_path,
         out_f: @destination_file_path,
@@ -173,7 +173,7 @@ module Aspera
           '-movflags','faststart'])
       end
 
-      def convert_video_to_png_using_fixed()
+      def convert_video_to_png_using_fixed
         Utils.video_dump_frame(
         @source_file_path,
         Utils.video_get_duration(@source_file_path)*@options.thumb_vid_fraction,
@@ -185,7 +185,7 @@ module Aspera
       # ffmpeg -h muxer=apng
       # thumb is 32x32
       # ffmpeg  output.png
-      def convert_video_to_png_using_animated()
+      def convert_video_to_png_using_animated
         Utils.ffmpeg(
         in_f: @source_file_path,
         in_p: [
@@ -200,7 +200,7 @@ module Aspera
         ])
       end
 
-      def convert_office_to_png()
+      def convert_office_to_png
         tmp_pdf_file=File.join(this_tmpdir,File.basename(@source_file_path,File.extname(@source_file_path))+'.pdf')
         Utils.external_command(:unoconv,[
           '-f','pdf',
@@ -219,7 +219,7 @@ module Aspera
           @destination_file_path])
       end
 
-      def convert_image_to_png()
+      def convert_image_to_png
         Utils.external_command(:convert,[
           '-auto-orient',
           '-thumbnail',"#{@options.thumb_img_size}x#{@options.thumb_img_size}>",
@@ -232,7 +232,7 @@ module Aspera
       end
 
       # text to png
-      def convert_plaintext_to_png()
+      def convert_plaintext_to_png
         # get 100 first lines of text file
         first_lines=File.open(@source_file_path){|f|100.times.map{f.readline rescue ''}.join}
         Utils.external_command(:convert,[

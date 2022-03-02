@@ -34,7 +34,7 @@ module Aspera
       end
 
       # must be called AFTER the instance action
-      def instance_identifier()
+      def instance_identifier
         res_id=self.options.get_option(:id)
         res_id=self.options.get_next_argument('identifier') if res_id.nil?
         return res_id

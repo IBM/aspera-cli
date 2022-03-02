@@ -98,7 +98,7 @@ module Aspera
 
       # translate transfer spec to env vars and command line arguments for ascp
       # NOTE: parameters starting with "EX_" (extended) are not standard
-      def ascp_args()
+      def ascp_args
         env_args={
           args: [],
           env: {},
