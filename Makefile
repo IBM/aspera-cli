@@ -41,7 +41,7 @@ cleanupgems:
 installdeps:
 	gem install $$(sed -nEe "/^[^#].*add_[^_]+_dependency/ s/[^']+'([^']+)'.*/\1/p" < $(GEMNAME).gemspec )
 $(DIR_LIB)aspera/fasp/transfer_spec.rb: $(DIR_LIB)aspera/fasp/transfer_spec.erb.rb
-	RUBYLIB=$(DIR_LIB) erb -T - -U -r aspera/fasp/parameters $(DIR_LIB)aspera/fasp/transfer_spec.erb.rb > $@
+	RUBYLIB=$(DIR_LIB) erb -T - -U -r aspera/fasp/parameters $(DIR_LIB)aspera/fasp/transfer_spec.rb.erb > $@
 ##################################
 # Gem publish
 gempush: all dotag
