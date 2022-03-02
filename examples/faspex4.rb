@@ -36,11 +36,11 @@ Aspera::Rest.insecure=true
 
 # create REST API object
 api_v3=Aspera::Rest.new({
-  :base_url => faspex_url,
-  :auth     => {
-  :type     => :basic,
-  :username => faspex_user,
-  :password => faspex_pass
+  base_url: faspex_url,
+  auth: {
+  type:     :basic,
+  username: faspex_user,
+  password: faspex_pass
   }})
 
 # very simple api call
@@ -73,14 +73,14 @@ end
 # 3: Faspex 4 API v4
 #---------------
 api_v4=Aspera::Rest.new({
-  :base_url  => faspex_url+'/api',
-  :auth      => {
-  :type      => :oauth2,
-  :base_url  => faspex_url+'/auth/oauth2',
-  :grant     => :header_userpass,
-  :user_name => faspex_user,
-  :user_pass => faspex_pass,
-  :scope     => 'admin'
+  base_url: faspex_url+'/api',
+  auth: {
+  type: :oauth2,
+  base_url: faspex_url+'/auth/oauth2',
+  grant: :header_userpass,
+  user_name: faspex_user,
+  user_pass: faspex_pass,
+  scope: 'admin'
   }})
 
 # Use it. Note that Faspex 4 API v4 is totally different from Faspex 4 v3 APIs, see ref on line 2

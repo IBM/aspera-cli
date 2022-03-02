@@ -95,11 +95,11 @@ raise "Error(s) occured: #{errors.join(',')}" if !errors.empty?
 
 # create rest client for Node API on a public demo system, using public demo credentials
 node_api=Aspera::Rest.new({
-  :base_url => DEMO_CONFIG[1],
-  :auth     => {
-  :type     => :basic,
-  :username => URI.parse(DEMO_CONFIG[1]).user,
-  :password => DEMO_CONFIG[2]
+  base_url: DEMO_CONFIG[1],
+  auth: {
+  type:     :basic,
+  username: URI.parse(DEMO_CONFIG[1]).user,
+  password: DEMO_CONFIG[2]
   }})
 # define sample file(s) and destination folder
 sources=["#{tmpdir}/sample_file.txt"]
@@ -107,7 +107,7 @@ destination='/Upload'
 # create sample file(s)
 sources.each{|p|File.write(p,'Hello World!')}
 # request transfer authorization to node for a single transfer (This is a node api v3 call)
-send_result=node_api.create('files/upload_setup',{ :transfer_requests => [ { :transfer_request => { :paths => [ { :destination => destination } ] } } ] } )[:data]
+send_result=node_api.create('files/upload_setup',{ transfer_requests: [ { transfer_request: { paths: [ { destination: destination } ] } } ] } )[:data]
 # we normally have only one transfer spec in list, so just get the first transfer_spec
 transfer_spec=send_result['transfer_specs'].first['transfer_spec']
 # add list of files to upload

@@ -27,7 +27,7 @@ ssh_url=URI.parse(params[:url])
 
 # main folder relative to docroot and server executor
 PATH_FOLDER_MAIN='/'
-demo_executor=Aspera::Ssh.new(ssh_url.host,params[:user],{:password=>params[:pass],:port=>ssh_url.port})
+demo_executor=Aspera::Ssh.new(ssh_url.host,params[:user],{password: params[:pass],port: ssh_url.port})
 
 # to use a local executor, set PATH_FOLDER_MAIN to the main folder
 #PATH_FOLDER_MAIN='/local/data'
