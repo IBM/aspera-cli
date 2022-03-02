@@ -29,6 +29,42 @@ module Aspera
 
       # store transfer result using this key and use result_transfer_multiple
       STATUS_FIELD = 'status'
+      class << self
+        # expect some list, but nothing to display
+        def result_empty; return {type: :empty, data: :nil}; end
+
+        # nothing expected
+        def result_nothing; return {type: :nothing, data: :nil}; end
+
+        def result_status(status); return {type: :status, data: status}; end
+
+        def result_success; return result_status('complete'); end
+
+        # Process statuses of finished transfer sessions
+        # raise exception if there is one error
+        # else returns an empty status
+        def result_transfer(statuses)
+          worst=TransferAgent.session_status(statuses)
+          raise worst unless worst.eql?(:success)
+          return Main.result_nothing
+        end
+
+        # used when one command executes several transfer jobs (each job being possibly multi session)
+        # @param status_table [Array] [{STATUS_FIELD=>[status array],...},...]
+        # @return a status object suitable as command result
+        # each element has a key STATUS_FIELD which contains the result of possibly multiple sessions
+        def result_transfer_multiple(status_table)
+          global_status=:success
+          # transform status array into string and find if there was problem
+          status_table.each do |item|
+            worst=TransferAgent.session_status(item[STATUS_FIELD])
+            global_status=worst unless worst.eql?(:success)
+            item[STATUS_FIELD]=item[STATUS_FIELD].map{|i|i.to_s}.join(',')
+          end
+          raise global_status unless global_status.eql?(:success)
+          return {type: :object_list,data: status_table}
+        end
+      end
 
       private
 
@@ -36,6 +72,7 @@ module Aspera
       # Parameter handlers
       #
       attr_accessor :option_insecure, :option_http_options
+
       def option_ui; OpenApplication.instance.url_method; end
 
       def option_ui=(value); OpenApplication.instance.url_method=value; end
@@ -179,16 +216,6 @@ module Aspera
         Process.exit(0)
       end
 
-      # expect some list, but nothing to display
-      def self.result_empty; return {type: :empty, data: :nil }; end
-
-      # nothing expected
-      def self.result_nothing; return {type: :nothing, data: :nil }; end
-
-      def self.result_status(status); return {type: :status, data:  status }; end
-
-      def self.result_success; return result_status('complete'); end
-
       def exit_with_usage(all_plugins)
         Log.log.debug('exit_with_usage'.bg_red)
         # display main plugin options
@@ -229,31 +256,6 @@ module Aspera
       end
 
       public
-
-      # Process statuses of finished transfer sessions
-      # raise exception if there is one error
-      # else returns an empty status
-      def self.result_transfer(statuses)
-        worst=TransferAgent.session_status(statuses)
-        raise worst unless worst.eql?(:success)
-        return Main.result_nothing
-      end
-
-      # used when one command executes several transfer jobs (each job being possibly multi session)
-      # @param status_table [Array] [{STATUS_FIELD=>[status array],...},...]
-      # @return a status object suitable as command result
-      # each element has a key STATUS_FIELD which contains the result of possibly multiple sessions
-      def self.result_transfer_multiple(status_table)
-        global_status=:success
-        # transform status array into string and find if there was problem
-        status_table.each do |item|
-          worst=TransferAgent.session_status(item[STATUS_FIELD])
-          global_status=worst unless worst.eql?(:success)
-          item[STATUS_FIELD]=item[STATUS_FIELD].map{|i|i.to_s}.join(',')
-        end
-        raise global_status unless global_status.eql?(:success)
-        return {type: :object_list,data: status_table}
-      end
 
       # this is the main function called by initial script just after constructor
       def process_command_line
