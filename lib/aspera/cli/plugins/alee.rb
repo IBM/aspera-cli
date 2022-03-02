@@ -15,7 +15,7 @@ module Aspera
             entitlement_id = self.options.get_option(:username,:mandatory)
             customer_id = self.options.get_option(:password,:mandatory)
             api_metering=AoC.metering_api(entitlement_id,customer_id)
-            return {:type=>:single_object, :data=>api_metering.read('entitlement')[:data]}
+            return {type: :single_object, data: api_metering.read('entitlement')[:data]}
           end
         end
       end # Aspera

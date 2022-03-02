@@ -112,7 +112,7 @@ END_OF_TEMPLATE
 
       # This is how the list of files to be transfered is specified
       # get paths suitable for transfer spec from command line
-      # @return {:source=>(mandatory), :destination=>(optional)}
+      # @return {source: (mandatory), destination: (optional)}
       # computation is done only once, cache is kept in @transfer_paths
       def ts_source_paths
         # return cache if set

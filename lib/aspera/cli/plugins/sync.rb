@@ -53,7 +53,7 @@ module Aspera
               stdout, stderr, status = Open3.capture3(*cmdline)
               Log.log.debug("status=#{status}, stderr=#{stderr}")
               items=stdout.split("\n").inject({}){|m,l|i=l.split(/:  */);m[i.first.lstrip]=i.last.lstrip;m}
-              return {:type=>:single_object,:data=>items}
+              return {type: :single_object,data: items}
             else raise "error"
             end # command
           else raise "error"

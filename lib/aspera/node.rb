@@ -71,7 +71,7 @@ module Aspera
           Log.log.debug("looking #{relative_path}".bg_green)
           # entry type is file, folder or link
           if processor.send(opt[:method],entry,relative_path) and entry['type'].eql?('folder')
-            folders_to_explore.push({:id=>entry['id'],:relpath=>relative_path})
+            folders_to_explore.push({id: entry['id'],relpath: relative_path})
           end
         end
       end

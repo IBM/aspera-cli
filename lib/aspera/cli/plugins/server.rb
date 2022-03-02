@@ -151,7 +151,7 @@ module Aspera
                 'resume_policy' => 'none',
                 'paths'         => [{'source'=>filepath,'destination'=>'.fasping'}]
               })
-              statuses=self.transfer.start(probe_ts,{:src=>:direct})
+              statuses=self.transfer.start(probe_ts,{src: :direct})
               file.unlink
               if TransferAgent.session_status(statuses).eql?(:success)
                 nagios.add_ok('transfer','ok')
@@ -184,7 +184,7 @@ module Aspera
             result=shell_executor.execute(args.unshift(realcmd))
             case command
             when :ctl
-              return {:type=>:object_list,:data=>asctl_parse(result)}#
+              return {type: :object_list,data: asctl_parse(result)}#
             when :configurator
               lines=result.split("\n")
               Log.log.debug(`type asconfigurator`)
@@ -206,14 +206,14 @@ module Aspera
                   datapart['default']=data.pop
                   datapart['value']=data.pop
                 end
-                return {:type=>:single_object,:data=>result,:fields=>['section','name','value','default'],:option_expand_last=>true}
+                return {type: :single_object,data: result,fields: ['section','name','value','default'],option_expand_last: true}
               end
             end
             return Main.result_status(result)
           when :upload
-            return Main.result_transfer(self.transfer.start(server_transfer_spec.merge('direction'=>Fasp::TransferSpec::DIRECTION_SEND),{:src=>:direct}))
+            return Main.result_transfer(self.transfer.start(server_transfer_spec.merge('direction'=>Fasp::TransferSpec::DIRECTION_SEND),{src: :direct}))
           when :download
-            return Main.result_transfer(self.transfer.start(server_transfer_spec.merge('direction'=>Fasp::TransferSpec::DIRECTION_RECEIVE),{:src=>:direct}))
+            return Main.result_transfer(self.transfer.start(server_transfer_spec.merge('direction'=>Fasp::TransferSpec::DIRECTION_RECEIVE),{src: :direct}))
           when *Aspera::AsCmd::OPERATIONS
             args=self.options.get_next_argument('ascmd command arguments',:multiple,:optional)
             ascmd=Aspera::AsCmd.new(shell_executor)
@@ -224,11 +224,11 @@ module Aspera
               when :mv;     return Main.result_success
               when :cp;     return Main.result_success
               when :rm;     return Main.result_success
-              when :ls;     return {:type=>:object_list,:data=>key_symb_to_str_list(result),:fields=>['zmode','zuid','zgid','size','mtime','name']}
-              when :info;   return {:type=>:single_object,:data=>key_symb_to_str_single(result)}
-              when :df;     return {:type=>:object_list,:data=>key_symb_to_str_list(result)}
-              when :du;     return {:type=>:single_object,:data=>key_symb_to_str_single(result)}
-              when :md5sum; return {:type=>:single_object,:data=>key_symb_to_str_single(result)}
+              when :ls;     return {type: :object_list,data: key_symb_to_str_list(result),fields: ['zmode','zuid','zgid','size','mtime','name']}
+              when :info;   return {type: :single_object,data: key_symb_to_str_single(result)}
+              when :df;     return {type: :object_list,data: key_symb_to_str_list(result)}
+              when :du;     return {type: :single_object,data: key_symb_to_str_single(result)}
+              when :md5sum; return {type: :single_object,data: key_symb_to_str_single(result)}
               end
             rescue Aspera::AsCmd::Error => e
               raise CliBadArgument,e.extended_message

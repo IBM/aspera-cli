@@ -11,25 +11,25 @@ module Aspera
       @auth_url=auth_url
       @api_key=api_key
       s3_api=Aspera::Rest.new({
-        :base_url       => storage_endpoint,
-        :not_auth_codes => ['401','403'], # error codes when not authorized
-        :headers        => {'ibm-service-instance-id' => instance_id},
-        :auth           => {
-        :type      => :oauth2,
-        :base_url  => @auth_url,
-        :grant     => :ibm_apikey,
-        :api_key   => @api_key
+        base_url:        storage_endpoint,
+        not_auth_codes:  ['401','403'], # error codes when not authorized
+        headers:         {'ibm-service-instance-id' => instance_id},
+        auth:            {
+        type:       :oauth2,
+        base_url:   @auth_url,
+        grant:      :ibm_apikey,
+        api_key:    @api_key
         }})
       # read FASP connection information for bucket
-      xml_result_text=s3_api.call({:operation=>'GET',:subpath=>bucket_name,:headers=>{'Accept'=>'application/xml'},:url_params=>{'faspConnectionInfo'=>nil}})[:http].body
+      xml_result_text=s3_api.call({operation: 'GET',subpath: bucket_name,headers: {'Accept'=>'application/xml'},url_params: {'faspConnectionInfo'=>nil}})[:http].body
       ats_info=XmlSimple.xml_in(xml_result_text, {'ForceArray' => false})
       Aspera::Log.dump('ats_info',ats_info)
       super({
-        :base_url => ats_info['ATSEndpoint'],
-        :auth     => {
-        :type     => :basic,
-        :username => ats_info['AccessKey']['Id'],
-        :password => ats_info['AccessKey']['Secret']}})
+        base_url:  ats_info['ATSEndpoint'],
+        auth:      {
+        type:      :basic,
+        username:  ats_info['AccessKey']['Id'],
+        password:  ats_info['AccessKey']['Secret']}})
       # prepare transfer spec addition
       @add_ts={'tags'=>{'aspera'=>{'node'=>{'storage_credentials'=>{
         'type'  => 'token',
@@ -42,11 +42,11 @@ module Aspera
     def generate_token
       # OAuth API to get delegated token
       delegated_oauth=Oauth.new({
-        :type       => :oauth2,
-        :base_url   => @auth_url,
-        :grant      => :delegated_refresh,
-        :api_key    => @api_key,
-        :token_field=> TOKEN_FIELD
+        type:        :oauth2,
+        base_url:    @auth_url,
+        grant:       :delegated_refresh,
+        api_key:     @api_key,
+        token_field: TOKEN_FIELD
       })
       # get delagated token to be placed in rest call header and in transfer tags
       @add_ts['tags']['aspera']['node']['storage_credentials']['token'][TOKEN_FIELD]=delegated_oauth.get_authorization().gsub(/^Bearer /,'')

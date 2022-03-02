@@ -76,8 +76,8 @@ module Aspera
 
       def metering_api(entitlement_id,customer_id,api_domain=PROD_DOMAIN)
         return Rest.new({
-          :base_url => "#{api_base_url(api_domain)}/metering/v1",
-          :headers  => {'X-Aspera-Entitlement-Authorization' => Rest.basic_creds(entitlement_id,customer_id)}
+          base_url:  "#{api_base_url(api_domain)}/metering/v1",
+          headers:   {'X-Aspera-Entitlement-Authorization' => Rest.basic_creds(entitlement_id,customer_id)}
         })
       end
 
@@ -169,7 +169,7 @@ module Aspera
       @user_info=nil
 
       # init rest params
-      aoc_rest_p={:auth=>{:type =>:oauth2}}
+      aoc_rest_p={auth: {type: :oauth2}}
       # shortcut to auth section
       aoc_auth_p=aoc_rest_p[:auth]
 
@@ -216,7 +216,7 @@ module Aspera
       when :jwt
         # add jwt payload for global ids
         if CLIENT_APPS.include?(aoc_auth_p[:client_id])
-          aoc_auth_p.merge!({:jwt_add=>{org: organization}})
+          aoc_auth_p.merge!({jwt_add: {org: organization}})
         end
         raise ArgumentError,"Missing mandatory option: private_key" if opt[:private_key].nil?
         raise ArgumentError,"Missing mandatory option: username" if opt[:username].nil?
@@ -295,15 +295,15 @@ module Aspera
         end
       else
         # retrieve values from API
-        std_t_spec=get_node_api(node_file[:node_info],scope: SCOPE_NODE_USER).create('files/download_setup',{:transfer_requests => [ { :transfer_request => {:paths => [ {"source"=>'/'} ] } } ] } )[:data]['transfer_specs'].first['transfer_spec']
+        std_t_spec=get_node_api(node_file[:node_info],scope: SCOPE_NODE_USER).create('files/download_setup',{transfer_requests:  [ { transfer_request:  {paths:  [ {"source"=>'/'} ] } } ] } )[:data]['transfer_specs'].first['transfer_spec']
         ['remote_host','remote_user','ssh_port','fasp_port'].each {|i| transfer_spec[i]=std_t_spec[i]}
       end
       # add caller provided transfer spec
       transfer_spec.deep_merge!(ts_add)
       # additional information for transfer agent
       source_and_token_generator={
-        :src              => :node_gen4,
-        :regenerate_token => token_generation_lambda
+        src:               :node_gen4,
+        regenerate_token:  token_generation_lambda
       }
       return transfer_spec,source_and_token_generator
     end

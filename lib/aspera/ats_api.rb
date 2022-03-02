@@ -6,24 +6,24 @@ module Aspera
     # currently supported clouds
     # Note to Aspera: shall be an API call
     CLOUD_NAME={
-      :aws =>'Amazon Web Services',
-      :azure =>'Microsoft Azure',
-      :google =>'Google Cloud',
-      :limelight =>'Limelight',
-      :rackspace =>'Rackspace',
-      :softlayer =>'IBM Cloud'
+      aws:       'Amazon Web Services',
+      azure:     'Microsoft Azure',
+      google:    'Google Cloud',
+      limelight: 'Limelight',
+      rackspace: 'Rackspace',
+      softlayer: 'IBM Cloud'
     }
-    
+
     private_constant :CLOUD_NAME
-    
+
     def self.base_url;'https://ats.aspera.io';end
 
     def initialize
-      super({:base_url=>AtsApi.base_url+'/pub/v1'})
+      super({base_url: AtsApi.base_url+'/pub/v1'})
       # cache of server data
       @all_servers_cache=nil
     end
-    
+
     def cloud_names;CLOUD_NAME;end
 
     # all available ATS servers

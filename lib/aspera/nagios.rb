@@ -8,7 +8,7 @@ module Aspera
     # add methods to add nagios error levels, each take component name and message
     LEVELS.each_index do |code|
       name="#{ADD_PREFIX}#{LEVELS[code]}".to_sym
-      define_method(name){|comp,msg|@data.push({:code=>code,:comp=>comp,:msg=>msg})}
+      define_method(name){|comp,msg|@data.push({code: code,comp: comp,msg: msg})}
       public name
     end
     # date offset levels
@@ -46,7 +46,7 @@ module Aspera
     # translate for display
     def result
       raise "missing result" if @data.empty?
-      {:type=>:object_list,:data=>@data.map{|i|{'status'=>LEVELS[i[:code]].to_s,'component'=>i[:comp],'message'=>i[:msg]}}}
+      {type: :object_list,data: @data.map{|i|{'status'=>LEVELS[i[:code]].to_s,'component'=>i[:comp],'message'=>i[:msg]}}}
     end
 
     # process results of a analysis and display status and exit with code

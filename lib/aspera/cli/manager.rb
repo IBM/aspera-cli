@@ -213,7 +213,7 @@ module Aspera
           raise "INTERNAL ERROR: option #{option_symbol} already declared. only accessor can be redeclared and ignored" unless @declared_options[option_symbol][:type].eql?(:accessor)
           return
         end
-        @declared_options[option_symbol]={:type=>type}
+        @declared_options[option_symbol]={type: type}
         # by default passwords and secrets are sensitive, else specify when declaring the option
         set_is_sensitive(option_symbol) if !%w{password secret key}.select{|i| option_symbol.to_s.end_with?(i)}.empty?
       end

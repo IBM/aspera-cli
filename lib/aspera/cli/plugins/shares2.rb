@@ -20,21 +20,21 @@ module Aspera
 
             # create object for REST calls to Shares2
             @api_shares2_oauth=Rest.new({
-              :base_url => shares2_api_base_url,
-              :auth     => {
-              :type      => :oauth2,
-              :base_url  => shares2_api_base_url+'/oauth2',
-              :grant     => :header_userpass,
-              :user_name => shares2_username,
-              :user_pass => shares2_password
+              base_url:  shares2_api_base_url,
+              auth:      {
+              type:       :oauth2,
+              base_url:   shares2_api_base_url+'/oauth2',
+              grant:      :header_userpass,
+              user_name:  shares2_username,
+              user_pass:  shares2_password
               }})
 
             @api_node=Rest.new({
-              :base_url => shares2_api_base_url+'/node_api',
-              :auth     => {
-              :type     => :basic,
-              :username => shares2_username,
-              :password => shares2_password}})
+              base_url:  shares2_api_base_url+'/node_api',
+              auth:      {
+              type:      :basic,
+              username:  shares2_username,
+              password:  shares2_password}})
           end
         end
 
@@ -68,18 +68,18 @@ module Aspera
           when :create
             params=self.options.get_next_argument("creation data (json structure)")
             resp=@api_shares2_oauth.create(resource_path,params)
-            return {:data=>resp[:data],:type => :other_struct}
+            return {data: resp[:data],type: :other_struct}
           when :list
             default_fields=['id','name']
             query=self.options.get_option(:query,:optional)
             args=query.nil? ? nil : {'json_query'=>query}
             Log.log.debug("#{args}".bg_red)
-            return {:data=>@api_shares2_oauth.read(resource_path,args)[:data],:fields=>default_fields,:type=>:object_list}
+            return {data: @api_shares2_oauth.read(resource_path,args)[:data],fields: default_fields,type: :object_list}
           when :delete
             @api_shares2_oauth.delete(set_resource_path_by_id_or_name(path_prefix,resource_sym))
             return Main.result_status('deleted')
           when :info
-            return {:type=>:other_struct,:data=>@api_shares2_oauth.read(set_resource_path_by_id_or_name(path_prefix,resource_sym),args)[:data]}
+            return {type: :other_struct,data: @api_shares2_oauth.read(set_resource_path_by_id_or_name(path_prefix,resource_sym),args)[:data]}
           else raise :ERROR
           end
         end
@@ -93,11 +93,11 @@ module Aspera
             command=self.options.get_next_command(Node::COMMON_ACTIONS)
             return Node.new(@agents.merge(skip_basic_auth_options: true, node_api: @api_node)).execute_action(command)
           when :appinfo
-            node_info=@api_node.call({:operation=>'GET',:subpath=>'app',:headers=>{'Accept'=>'application/json','Content-Type'=>'application/json'}})[:data]
-            return { :type=>:single_object ,:data => node_info }
+            node_info=@api_node.call({operation: 'GET',subpath: 'app',headers: {'Accept'=>'application/json','Content-Type'=>'application/json'}})[:data]
+            return { type: :single_object ,data:  node_info }
           when :userinfo
-            node_info=@api_node.call({:operation=>'GET',:subpath=>'current_user',:headers=>{'Accept'=>'application/json','Content-Type'=>'application/json'}})[:data]
-            return { :type=>:single_object ,:data => node_info }
+            node_info=@api_node.call({operation: 'GET',subpath: 'current_user',headers: {'Accept'=>'application/json','Content-Type'=>'application/json'}})[:data]
+            return { type: :single_object ,data:  node_info }
           when :organization,:project,:share,:team
             prefix=''
             set_resource_path_by_id_or_name(prefix,:organization) if [:project,:team,:share].include?(command)

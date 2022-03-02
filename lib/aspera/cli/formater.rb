@@ -226,17 +226,17 @@ module Aspera
             style=@opt_mgr.get_option(:table_style,:mandatory).split('')
             # display the table !
             #display_message(:data,Text::Table.new(
-            #:head => final_table_columns,
-            #:rows => final_table_rows,
-            #:horizontal_boundary   => style[0],
-            #:vertical_boundary     => style[1],
-            #:boundary_intersection => style[2]))
+            #head:  final_table_columns,
+            #rows:  final_table_rows,
+            #horizontal_boundary:    style[0],
+            #vertical_boundary:      style[1],
+            #boundary_intersection:  style[2]))
             display_message(:data,Terminal::Table.new(
-            :headings => final_table_columns,
-            :rows     => final_table_rows,
-            :border_x => style[0],
-            :border_y => style[1],
-            :border_i => style[2]))
+            headings:  final_table_columns,
+            rows:      final_table_rows,
+            border_x:  style[0],
+            border_y:  style[1],
+            border_i:  style[2]))
           when :csv
             display_message(:data,final_table_rows.map{|t| t.join(CSV_FIELD_SEPARATOR)}.join(CSV_RECORD_SEPARATOR))
           end

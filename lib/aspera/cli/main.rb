@@ -176,12 +176,12 @@ module Aspera
       end
 
       # expect some list, but nothing to display
-      def self.result_empty; return {:type => :empty, :data => :nil }; end
+      def self.result_empty; return {type: :empty, data: :nil }; end
 
       # nothing expected
-      def self.result_nothing; return {:type => :nothing, :data => :nil }; end
+      def self.result_nothing; return {type: :nothing, data: :nil }; end
 
-      def self.result_status(status); return {:type => :status, :data => status }; end
+      def self.result_status(status); return {type: :status, data:  status }; end
 
       def self.result_success; return result_status('complete'); end
 
@@ -248,7 +248,7 @@ module Aspera
           item[STATUS_FIELD]=item[STATUS_FIELD].map{|i|i.to_s}.join(',')
         end
         raise global_status unless global_status.eql?(:success)
-        return {:type=>:object_list,:data=>status_table}
+        return {type: :object_list,data: status_table}
       end
 
       # this is the main function called by initial script just after constructor
@@ -287,7 +287,7 @@ module Aspera
           # help requested for current plugin
           exit_with_usage(false) if @option_help
           if @option_show_config
-            @plugin_env[:formater].display_results({:type=>:single_object,:data=>@opt_mgr.declared_options(false)})
+            @plugin_env[:formater].display_results({type: :single_object,data: @opt_mgr.declared_options(false)})
             Process.exit(0)
           end
           # locking for single execution (only after "per plugin" option, in case lock port is there)

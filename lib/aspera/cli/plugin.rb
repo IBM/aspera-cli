@@ -61,9 +61,9 @@ module Aspera
         end
         case command
         when :create
-          return {:type => :single_object, :data=>rest_api.create(res_class_path,parameters)[:data], :fields=>display_fields}
+          return {type: :single_object, data: rest_api.create(res_class_path,parameters)[:data], fields: display_fields}
         when :show
-          return {:type => :single_object, :data=>rest_api.read(one_res_path)[:data], :fields=>display_fields}
+          return {type: :single_object, data: rest_api.read(one_res_path)[:data], fields: display_fields}
         when :list
           resp=rest_api.read(res_class_path,parameters)
           data=resp[:data]
@@ -72,7 +72,7 @@ module Aspera
             data=data[res_class_path]
           end
           data=data[res_class_path] if use_subkey
-          return {:type => :object_list, :data=>data, :fields=>display_fields}
+          return {type: :object_list, data: data, fields: display_fields}
         when :modify
           property=self.options.get_option(:property,:optional)
           parameters={property => parameters} unless property.nil?

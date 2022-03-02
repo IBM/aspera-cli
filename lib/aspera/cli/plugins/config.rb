@@ -63,8 +63,8 @@ Subject: Amelia email test
 It worked !
 END_OF_TEMPLATE
         # special extended values
-        EXTV_INCLUDE_PRESETS='incps'
-        EXTV_PRESET='preset'
+        EXTV_INCLUDE_PRESETS=:incps
+        EXTV_PRESET=:preset
         PRESET_DIG_SEPARATOR='.'
         DEFAULT_CHECK_NEW_VERSION_DAYS=7
         DEFAULT_PRIV_KEY_FILENAME='aspera_aoc_key' # pragma: allowlist secret
@@ -519,7 +519,7 @@ END_OF_TEMPLATE
               end
               begin
                 # is there a redirect ?
-                result=Rest.new({:base_url=>url}).call({operation: 'GET',subpath: '',redirect_max: 1})
+                result=Rest.new({base_url: url}).call({operation: 'GET',subpath: '',redirect_max: 1})
                 current_url=result[:http].uri.to_s
                 # check if redirect
                 if ! url.eql?(current_url)

@@ -103,18 +103,18 @@ module Aspera
 
         # transfer job can be multi session
         xfer_job={
-          :id            => job_options[:job_id],
-          :sessions      => [] # all sessions as below
+          id:             job_options[:job_id],
+          sessions:       [] # all sessions as below
         }
 
         # generic session information
         session={
-          :thread   => nil,         # Thread object monitoring management port, not nil when pushed to :sessions
-          :error    => nil,         # exception if failed
-          :io       => nil,         # management port server socket
-          :id       => nil,         # SessionId from INIT message in mgt port
-          :env_args => env_args,    # env vars and args to ascp (from transfer spec)
-          :options  => job_options  # [Hash]
+          thread:    nil,         # Thread object monitoring management port, not nil when pushed to :sessions
+          error:     nil,         # exception if failed
+          io:        nil,         # management port server socket
+          id:        nil,         # SessionId from INIT message in mgt port
+          env_args:  env_args,    # env vars and args to ascp (from transfer spec)
+          options:   job_options  # [Hash]
         }
 
         if multi_session_info.nil?

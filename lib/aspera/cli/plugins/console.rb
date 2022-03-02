@@ -36,22 +36,22 @@ module Aspera
               command=self.options.get_next_command([:list,:submit])
               case command
               when :list
-                return {:type=>:object_list,:data=>api_console.read('smart_transfers')[:data]}
+                return {type: :object_list,data: api_console.read('smart_transfers')[:data]}
               when :submit
                 smart_id = self.options.get_next_argument("smart_id")
                 params = self.options.get_next_argument("transfer parameters")
-                return {:type=>:object_list,:data=>api_console.create('smart_transfers/'+smart_id,params)[:data]}
+                return {type: :object_list,data: api_console.create('smart_transfers/'+smart_id,params)[:data]}
               end
             when :current
               command=self.options.get_next_command([ :list ])
               case command
               when :list
-                return {:type=>:object_list,
-                  :data=>api_console.read('transfers',{
+                return {type: :object_list,
+                  data: api_console.read('transfers',{
                   'from'=>self.options.get_option(:filter_from,:mandatory),
                   'to'=>self.options.get_option(:filter_to,:mandatory)
                   })[:data],
-                  :fields=>['id','contact','name','status']}
+                  fields: ['id','contact','name','status']}
               end
             end
           end

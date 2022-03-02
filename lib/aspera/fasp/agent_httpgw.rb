@@ -161,7 +161,7 @@ module Aspera
           file_dest=File.basename(transfer_spec['paths'].first['source'])
         end
         file_dest=File.join(transfer_spec['destination_root'],file_dest)
-        @gw_api.call({:operation=>'GET',:subpath=>"download/#{transfer_uuid}",:save_to_file=>file_dest})
+        @gw_api.call({operation: 'GET',subpath: "download/#{transfer_uuid}",save_to_file: file_dest})
       end
 
       # start FASP transfer based on transfer spec (hash table)
@@ -204,7 +204,7 @@ module Aspera
         params=params.symbolize_keys
         raise "must have only one param: url" unless params.keys.eql?([:url])
         super()
-        @gw_api=Rest.new({:base_url => params[:url]})
+        @gw_api=Rest.new({base_url: params[:url]})
         api_info = @gw_api.read('info')[:data]
         Log.log.info("#{api_info}")
         @upload_chunksize=128000 # TODO: configurable ?

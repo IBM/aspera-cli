@@ -9,7 +9,7 @@ module Aspera
       class Faspex5 < BasicAuthPlugin
         class << self
           def detect(base_url)
-            api=Rest.new({:base_url=>base_url})
+            api=Rest.new({base_url: base_url})
             result=api.read('api/v5/configuration/ping')
             if result[:http].code.start_with?('2') and result[:http].body.strip.empty?
               return {version: '5'}
@@ -40,38 +40,38 @@ module Aspera
           when :boot
             # the password here is the token copied directly from browser in developer mode
             @api_v5=Rest.new({
-              :base_url => faxpex5_api_v5_url,
-              :headers => {'Authorization'=>options.get_option(:password,:mandatory)},
+              base_url:  faxpex5_api_v5_url,
+              headers:  {'Authorization'=>options.get_option(:password,:mandatory)},
             })
           when :web
             # opens a browser and ask user to auth using web
             @api_v5=Rest.new({
-              :base_url => faxpex5_api_v5_url,
-              :auth     => {
-              :type           => :oauth2,
-              :base_url       => faxpex5_api_auth_url,
-              :grant          => :web,
-              :state          => SecureRandom.uuid,
-              :client_id      => options.get_option(:client_id,:mandatory),
-              :redirect_uri   => options.get_option(:redirect_uri,:mandatory),
+              base_url:  faxpex5_api_v5_url,
+              auth:      {
+              type:            :oauth2,
+              base_url:        faxpex5_api_auth_url,
+              grant:           :web,
+              state:           SecureRandom.uuid,
+              client_id:       options.get_option(:client_id,:mandatory),
+              redirect_uri:    options.get_option(:redirect_uri,:mandatory),
               }})
           when :jwt
             # currently Faspex 5 beta 4 only supports non-user based apis (e.g. jobs)
             app_client_id=options.get_option(:client_id,:mandatory)
             @api_v5=Rest.new({
-              :base_url => faxpex5_api_v5_url,
-              :auth     => {
-              :type                => :oauth2,
-              :base_url            => faxpex5_api_auth_url,
-              :grant               => :jwt,
-              :f5_username         => options.get_option(:username,:mandatory),
-              :f5_password         => options.get_option(:password,:mandatory),
-              :client_id           => app_client_id,
-              :client_secret       => options.get_option(:client_secret,:mandatory),
-              :jwt_subject         => "client:#{app_client_id}", # TODO Mmmm
-              :jwt_audience        => app_client_id, # TODO Mmmm
-              :jwt_private_key_obj => OpenSSL::PKey::RSA.new(options.get_option(:private_key,:mandatory)),
-              :jwt_headers         => {typ: 'JWT'}
+              base_url:  faxpex5_api_v5_url,
+              auth:      {
+              type:                 :oauth2,
+              base_url:             faxpex5_api_auth_url,
+              grant:                :jwt,
+              f5_username:          options.get_option(:username,:mandatory),
+              f5_password:          options.get_option(:password,:mandatory),
+              client_id:            app_client_id,
+              client_secret:        options.get_option(:client_secret,:mandatory),
+              jwt_subject:          "client:#{app_client_id}", # TODO Mmmm
+              jwt_audience:         app_client_id, # TODO Mmmm
+              jwt_private_key_obj:  OpenSSL::PKey::RSA.new(options.get_option(:private_key,:mandatory)),
+              jwt_headers:          {typ: 'JWT'}
               }})
           end
         end
@@ -96,17 +96,17 @@ module Aspera
             case command
             when :list
               parameters=options.get_option(:value,:optional)
-              return {:type => :object_list, :data=>@api_v5.read('packages',parameters)[:data]['packages']}
+              return {type: :object_list, data: @api_v5.read('packages',parameters)[:data]['packages']}
             when :show
               id=instance_identifier()
-              return {:type => :single_object, :data=>@api_v5.read("packages/#{id}")[:data]}
+              return {type: :single_object, data: @api_v5.read("packages/#{id}")[:data]}
             when :send
               parameters=options.get_option(:value,:mandatory)
               raise CliBadArgument,'value must be hash, refer to API' unless parameters.is_a?(Hash)
               package=@api_v5.create('packages',parameters)[:data]
               transfer_spec=@api_v5.create("packages/#{package['id']}/transfer_spec/upload",{transfer_type: 'Connect'})[:data]
               transfer_spec.delete('authentication')
-              return Main.result_transfer(self.transfer.start(transfer_spec,{:src=>:node_gen3}))
+              return Main.result_transfer(self.transfer.start(transfer_spec,{src: :node_gen3}))
             when :receive
               pkg_type='received'
               pack_id=instance_identifier()
@@ -133,7 +133,7 @@ module Aspera
                 # TODO: allow from sent as well ?
                 transfer_spec=@api_v5.create("packages/#{id}/transfer_spec/download",{transfer_type: 'Connect', type: pkg_type})[:data]
                 transfer_spec.delete('authentication')
-                statuses=self.transfer.start(transfer_spec,{:src=>:node_gen3})
+                statuses=self.transfer.start(transfer_spec,{src: :node_gen3})
                 result_transfer.push({'package'=>id,Main::STATUS_FIELD=>statuses})
                 # skip only if all sessions completed
                 skip_ids_data.push(id) if TransferAgent.session_status(statuses).eql?(:success)

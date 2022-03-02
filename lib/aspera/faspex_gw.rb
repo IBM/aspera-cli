@@ -165,12 +165,12 @@ module Aspera
 
     def initialize(a_aoc_api_user,a_workspace_id)
       webrick_options = {
-        :app                => FaspexGW,
-        :Port               => 9443,
-        :Logger             => Log.log,
-        #:DocumentRoot       => Cli::Main.gem_root,
-        :SSLEnable          => true,
-        :SSLVerifyClient    => OpenSSL::SSL::VERIFY_NONE,
+        app:                 FaspexGW,
+        Port:                9443,
+        Logger:              Log.log,
+        #DocumentRoot:        Cli::Main.gem_root,
+        SSLEnable:           true,
+        SSLVerifyClient:     OpenSSL::SSL::VERIFY_NONE,
       }
       case 1
       when 0

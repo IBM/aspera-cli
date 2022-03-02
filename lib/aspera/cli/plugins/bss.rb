@@ -44,7 +44,7 @@ module Aspera
               }
               result=@api_bss.create('graphql',request)[:data]
               # give fields to keep order
-              return {:type=>:object_list, :data=>result['data'][object],:fields=> FIELDS['bssSubscriptions']}
+              return {type: :object_list, data: result['data'][object],fields: FIELDS['bssSubscriptions']}
             when :show
               id = self.instance_identifier()
               request={
@@ -53,7 +53,7 @@ module Aspera
               }
               result=@api_bss.create('graphql',request)[:data]['data'][object].first
               result.delete('instances')
-              return {:type=>:single_object, :data=>result}
+              return {type: :single_object, data: result}
             when :instances
               id = self.instance_identifier()
               request={
@@ -61,7 +61,7 @@ module Aspera
                 'query'=>"query($id: ID!) {#{object}(id: $id) { aocOrganization { id subdomainName name status tier urlId trialExpiresAt } } } }"
               }
               result=@api_bss.create('graphql',request)[:data]['data'][object].first
-              return {:type=>:object_list, :data=>result['instances']}
+              return {type: :object_list, data: result['instances']}
             end
           end
         end

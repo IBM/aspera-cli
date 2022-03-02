@@ -46,7 +46,7 @@ module Aspera
               service_api_key=service_credentials['apikey']
               instance_id=service_credentials['resource_instance_id']
               # read endpoints from service provided in service credentials
-              endpoints=Aspera::Rest.new({:base_url=>service_credentials['endpoints']}).read('')[:data]
+              endpoints=Aspera::Rest.new({base_url: service_credentials['endpoints']}).read('')[:data]
               Aspera::Log.dump('endpoints',endpoints)
               storage_endpoint=endpoints.dig('service-endpoints','regional',bucket_region,'public',bucket_region)
               raise "no such region: #{bucket_region}" if storage_endpoint.nil?

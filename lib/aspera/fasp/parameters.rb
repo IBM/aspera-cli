@@ -100,9 +100,9 @@ module Aspera
       # NOTE: parameters starting with "EX_" (extended) are not standard
       def ascp_args()
         env_args={
-          :args=>[],
-          :env=>{},
-          :ascp_version=>:ascp
+          args: [],
+          env: {},
+          ascp_version: :ascp
         }
         # some ssh credentials are required to avoid interactive password input
         if !@job_spec.has_key?('remote_password') and

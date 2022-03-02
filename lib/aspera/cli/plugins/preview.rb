@@ -114,7 +114,7 @@ module Aspera
         def get_folder_entries(file_id,request_args=nil)
           headers={'Accept'=>'application/json'}
           headers.merge!({'X-Aspera-Cache-Control'=>'no-cache'}) if @option_folder_reset_cache.eql?(:header)
-          return @api_node.call({:operation=>'GET',:subpath=>"files/#{file_id}/files",:headers=>headers,:url_params=>request_args})[:data]
+          return @api_node.call({operation: 'GET',subpath: "files/#{file_id}/files",headers: headers,url_params: request_args})[:data]
           #return @api_node.read("files/#{file_id}/files",request_args)[:data]
         end
 
@@ -227,7 +227,7 @@ module Aspera
           # force destination
           # tspec['destination_root']=destination
           self.transfer.option_transfer_spec_deep_merge({'destination_root'=>destination})
-          Main.result_transfer(self.transfer.start(tspec,{:src=>:node_gen4}))
+          Main.result_transfer(self.transfer.start(tspec,{src: :node_gen4}))
         end
 
         def get_infos_local(gen_infos,entry,local_entry_preview_dir)
@@ -252,7 +252,7 @@ module Aspera
           local_entry_preview_dir.replace(File.join(@tmp_folder,entry_preview_folder_name(entry)))
           file_info=@api_node.read("files/#{entry['id']}")[:data]
           #TODO: this does not work because previews is hidden in api (gen4)
-          #this_preview_folder_entries=get_folder_entries(@previews_folder_entry['id'],{:name=>@entry_preview_folder_name})
+          #this_preview_folder_entries=get_folder_entries(@previews_folder_entry['id'],{name: @entry_preview_folder_name})
           # TODO: use gen3 api to list files and get date
           gen_infos.each do |gen_info|
             gen_info[:src]=local_original_filepath
@@ -283,8 +283,8 @@ module Aspera
           # prepare generic information
           gen_infos=@preview_formats_to_generate.map do |preview_format|
             {
-              :preview_format => preview_format,
-              :base_dest      => preview_filename(preview_format)
+              preview_format:  preview_format,
+              base_dest:       preview_filename(preview_format)
             }
           end
           # lets gather some infos on possibly existing previews
@@ -427,7 +427,7 @@ module Aspera
             @option_skip_folders.push('/'+@option_previews_folder)
             if @access_remote
               # note the filter "name", it's why we take the first one
-              @previews_folder_entry=get_folder_entries(@access_key_self['root_file_id'],{:name=>@option_previews_folder}).first
+              @previews_folder_entry=get_folder_entries(@access_key_self['root_file_id'],{name: @option_previews_folder}).first
               raise CliError,"Folder #{@option_previews_folder} does not exist on node. Please create it in the storage root, or specify an alternate name." if @previews_folder_entry.nil?
             else
               raise "only local storage allowed in this mode" unless @access_key_self['storage']['type'].eql?('local')

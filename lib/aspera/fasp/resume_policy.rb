@@ -8,10 +8,10 @@ module Aspera
 
       # list of supported parameters and default values
       DEFAULTS={
-        :iter_max      => 7,
-        :sleep_initial => 2,
-        :sleep_factor  => 2,
-        :sleep_max     => 60
+        iter_max:       7,
+        sleep_initial:  2,
+        sleep_factor:   2,
+        sleep_max:      60
       }
 
       # @param params see DEFAULTS

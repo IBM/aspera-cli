@@ -32,11 +32,11 @@ module Aspera
         def ats_api_pub_v1
           return @ats_api_pub_v1_cache unless @ats_api_pub_v1_cache.nil?
           @ats_api_pub_v1_cache=Rest.new({
-            :base_url => AtsApi.base_url+'/pub/v1',
-            :auth     => {
-            :type     => :basic,
-            :username => self.options.get_option(:ats_key,:mandatory),
-            :password => self.options.get_option(:ats_secret,:mandatory)}
+            base_url:  AtsApi.base_url+'/pub/v1',
+            auth:      {
+            type:      :basic,
+            username:  self.options.get_option(:ats_key,:mandatory),
+            password:  self.options.get_option(:ats_secret,:mandatory)}
           })
         end
 
@@ -75,15 +75,15 @@ module Aspera
               end
             end
             res=ats_api_pub_v1.create('access_keys',params)
-            return {:type=>:single_object, :data=>res[:data]}
+            return {type: :single_object, data: res[:data]}
             # TODO : action : modify, with "PUT"
           when :list
             params=self.options.get_option(:params,:optional) || {'offset'=>0,'max_results'=>1000}
             res=ats_api_pub_v1.read("access_keys",params)
-            return {:type=>:object_list, :data=>res[:data]['data'], :fields => ['name','id','created.at','modified.at']}
+            return {type: :object_list, data: res[:data]['data'], fields:  ['name','id','created.at','modified.at']}
           when :show
             res=ats_api_pub_v1.read("access_keys/#{access_key_id}")
-            return {:type=>:single_object, :data=>res[:data]}
+            return {type: :single_object, data: res[:data]}
           when :modify
             params=self.options.get_option(:value,:mandatory)
             params["id"]=access_key_id
@@ -92,7 +92,7 @@ module Aspera
           when :entitlement
             ak=ats_api_pub_v1.read("access_keys/#{access_key_id}")[:data]
             api_bss=AoC.metering_api(ak['license']['entitlement_id'],ak['license']['customer_id'])
-            return {:type=>:single_object, :data=>api_bss.read('entitlement')[:data]}
+            return {type: :single_object, data: api_bss.read('entitlement')[:data]}
           when :delete
             res=ats_api_pub_v1.delete("access_keys/#{access_key_id}")
             return Main.result_status("deleted #{access_key_id}")
@@ -102,25 +102,25 @@ module Aspera
             raise CliError,"no such server found" if server_data.nil?
             base_url=server_data['transfer_setup_url']
             api_node=Rest.new({
-              :base_url => base_url,
-              :auth     => {
-              :type     => :basic,
-              :username => access_key_id,
-              :password => @agents[:config].get_secret(url: base_url,username: access_key_id)
+              base_url:  base_url,
+              auth:      {
+              type:      :basic,
+              username:  access_key_id,
+              password:  @agents[:config].get_secret(url: base_url,username: access_key_id)
               }})
             command=self.options.get_next_command(Node::COMMON_ACTIONS)
             return Node.new(@agents.merge(skip_basic_auth_options: true, node_api: api_node)).execute_action(command)
           when :cluster
             base_url=ats_api_pub_v1.params[:base_url]
             rest_params={
-              :base_url => base_url,
-              :auth     => {
-              :type     => :basic,
-              :username => access_key_id,
-              :password => @agents[:config].get_secret(url: base_url, username: access_key_id)
+              base_url:  base_url,
+              auth:      {
+              type:      :basic,
+              username:  access_key_id,
+              password:  @agents[:config].get_secret(url: base_url, username: access_key_id)
               }}
             api_ak_auth=Rest.new(rest_params)
-            return {:type=>:single_object, :data=>api_ak_auth.read("servers")[:data]}
+            return {type: :single_object, data: api_ak_auth.read("servers")[:data]}
           else raise "INTERNAL ERROR"
           end
         end
@@ -129,9 +129,9 @@ module Aspera
           command=self.options.get_next_command([ :clouds, :list, :show])
           case command
           when :clouds
-            return {:type=>:single_object, :data=>@ats_api_pub.cloud_names, :columns=>['id','name']}
+            return {type: :single_object, data: @ats_api_pub.cloud_names, columns: ['id','name']}
           when :list
-            return {:type=>:object_list, :data=>@ats_api_pub.all_servers, :fields=>['id','cloud','region']}
+            return {type: :object_list, data: @ats_api_pub.all_servers, fields: ['id','cloud','region']}
           when :show
             if self.options.get_option(:cloud,:optional) or self.options.get_option(:region,:optional)
               server_data=server_by_cloud_region
@@ -140,20 +140,20 @@ module Aspera
               server_data=@ats_api_pub.all_servers.select {|i| i['id'].eql?(server_id)}.first
               raise "no such server id" if server_data.nil?
             end
-            return {:type=>:single_object, :data=>server_data}
+            return {type: :single_object, data: server_data}
           end
         end
 
         def ats_api_v2_auth_ibm(rest_add_headers={})
           return Rest.new({
-            :base_url => AtsApi.base_url+'/v2',
-            :headers  => rest_add_headers,
-            :auth     => {
-            :type       => :oauth2,
-            :base_url   => 'https://iam.bluemix.net/identity',
-            #does not work:  :base_url   => 'https://iam.cloud.ibm.com/identity',
-            :grant      => :ibm_apikey,
-            :api_key    => self.options.get_option(:ibm_api_key,:mandatory)
+            base_url:  AtsApi.base_url+'/v2',
+            headers:   rest_add_headers,
+            auth:      {
+            type:        :oauth2,
+            base_url:    'https://iam.bluemix.net/identity',
+            #does not work:  base_url:    'https://iam.cloud.ibm.com/identity',
+            grant:       :ibm_apikey,
+            api_key:     self.options.get_option(:ibm_api_key,:mandatory)
             }
           })
         end
@@ -180,17 +180,17 @@ module Aspera
           when :instances
             instances=ats_ibm_api.read('instances')[:data]
             Log.log.warn("more instances remaining: #{instances['remaining']}") unless instances['remaining'].to_i.eql?(0)
-            return {:type=>:value_list, :data=>instances['data'], :name=>'instance'}
+            return {type: :value_list, data: instances['data'], name: 'instance'}
           when :create
             create_value=self.options.get_option(:value,:optional)||{}
             created_key=ats_ibm_api.create('api_keys',create_value)[:data]
-            return {:type=>:single_object, :data=>created_key}
+            return {type: :single_object, data: created_key}
           when :list # list known api keys in ATS (this require an api_key ...)
             res=ats_ibm_api.read('api_keys',{'offset'=>0,'max_results'=>1000})
-            return {:type=>:value_list, :data=>res[:data]['data'], :name => 'ats_id'}
+            return {type: :value_list, data: res[:data]['data'], name:  'ats_id'}
           when :show # show one of api_key in ATS
             res=ats_ibm_api.read("api_keys/#{concerned_id}")
-            return {:type=>:single_object, :data=>res[:data]}
+            return {type: :single_object, data: res[:data]}
           when :delete #
             res=ats_ibm_api.delete("api_keys/#{concerned_id}")
             return Main.result_status("deleted #{concerned_id}")
@@ -216,8 +216,8 @@ module Aspera
           when :api_key # manage credential to access ATS API
             return execute_action_api_key
           when :aws_trust_policy
-            res=ats_api_pub_v1.read('aws/trustpolicy',{:region=>self.options.get_option(:region,:mandatory)})[:data]
-            return {:type=>:single_object, :data=>res}
+            res=ats_api_pub_v1.read('aws/trustpolicy',{region: self.options.get_option(:region,:mandatory)})[:data]
+            return {type: :single_object, data: res}
           else raise "ERROR"
           end
         end
