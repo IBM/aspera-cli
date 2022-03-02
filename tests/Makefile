@@ -47,14 +47,13 @@ PKG_TEST_TITLE=Test Pkg $(shell LANG=C date)
 # folder where flag files for integration tests are generated
 T=$(DIR_TMP)t/
 
-$(T).exists:
+$(T).exists: $(DIR_TMP).exists
 	mkdir -p $(T)
-	touch $@
 	dd if=/dev/urandom of=$(CF_LOCAL_SAMPLE_FILEPATH) count=10 bs=1m
+	touch $@
 clean::
 	rm -f $(CF_LOCAL_SAMPLE_FILEPATH)
 	rm -fr $(T)
-	mkdir $(T)
 $(T)unit: $(T).exists
 	@echo $@
 	set -x&&\

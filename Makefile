@@ -8,16 +8,16 @@ DIR_TOP=
 include $(DIR_TOP)common.make
 
 all:: gem doc
-
+gem: $(PATH_GEMFILE)
 doc: $(DIR_TOP).gems_checked
 	cd $(DIR_DOC) && make
-clean::
-	cd $(DIR_DOC) && make clean
 test: gem $(DIR_TOP).gems_checked
 	cd $(DIR_TST) && make
 clean::
-	cd $(DIR_TST) && make clean
+	rm -fr $(DIR_TMP)
 	rm -f $(DIR_TOP).gems_checked
+	cd $(DIR_DOC) && make clean
+	cd $(DIR_TST) && make clean
 # ensure required ruby gems are installed
 $(DIR_TOP).gems_checked: Gemfile
 	bundle install
@@ -26,8 +26,6 @@ $(DIR_TOP).gems_checked: Gemfile
 ##################################
 # Gem build
 PATH_GEMFILE=$(DIR_TOP)$(GEMNAME)-$(GEMVERSION).gem
-
-gem: $(PATH_GEMFILE)
 
 # gem file is generated in top folder
 $(PATH_GEMFILE):

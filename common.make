@@ -33,12 +33,10 @@ GEMVERSION=$(shell $(EXETESTB) conf gem version)
 all::
 
 clean::
-	rm -fr $(DIR_TMP)
-	mkdir -p $(DIR_TMP)
 
 $(DIR_TMP).exists:
 	mkdir -p $(DIR_TMP)
-	@touch $(DIR_TMP).exists
+	@touch $@
 $(TEST_CONF_FILE_PATH):
 	mkdir -p $(DIR_PRIV)
 	cp $(TMPL_CONF_FILE_PATH) $(TEST_CONF_FILE_PATH)
