@@ -40,7 +40,7 @@ cleanupgems:
 	gem uninstall -a -x $$(gem list|cut -f 1 -d' '|egrep -v 'rdoc|psych|rake|openssl|json|io-console|bigdecimal')
 installdeps:
 	gem install $$(sed -nEe "/^[^#].*add_[^_]+_dependency/ s/[^']+'([^']+)'.*/\1/p" < $(GEMNAME).gemspec )
-$(DIR_LIB)aspera/fasp/transfer_spec.rb: $(DIR_LIB)aspera/fasp/transfer_spec.erb.rb
+$(DIR_LIB)aspera/fasp/transfer_spec.rb: $(DIR_LIB)aspera/fasp/transfer_spec.rb.erb
 	RUBYLIB=$(DIR_LIB) erb -T - -U -r aspera/fasp/parameters $(DIR_LIB)aspera/fasp/transfer_spec.rb.erb > $@
 ##################################
 # Gem publish
