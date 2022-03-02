@@ -1,6 +1,5 @@
 require 'webrick'
 require 'webrick/https'
-require 'thread'
 
 module Aspera
   # servlet called on callback: it records the callback request
