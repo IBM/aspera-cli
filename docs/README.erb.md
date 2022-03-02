@@ -128,7 +128,7 @@ If you want to use <%=tool%> with another server, and in order to make further c
 * download a file
 
 ```bash
-<%=cmd%> config preset update myserver --url=ssh://demo.asperasoft.com:33001 --username=asperaweb --password=_demo_pass_
+<%=cmd%> config preset update myserver --url=ssh://demo.asperasoft.com:33001 --username=asperaweb --password=_pass_here_
 ```
 
 ```output
@@ -842,7 +842,7 @@ A named <%=prst%> can be modified directly using <%=tool%>, which will update th
 The command `update` allows the easy creation of <%=prst%> by simply providing the options in their command line format, e.g. :
 
 ```bash
-<%=cmd%> config preset update demo_server --url=ssh://demo.asperasoft.com:33001 --username=asperaweb --password=_demo_pass_ --ts=@json:'{"precalculate_job_size":true}'
+<%=cmd%> config preset update demo_server --url=ssh://demo.asperasoft.com:33001 --username=asperaweb --password=_pass_here_ --ts=@json:'{"precalculate_job_size":true}'
 ```
 
 * This creates a <%=prst%> `demo_server` with all provided options.
@@ -850,13 +850,13 @@ The command `update` allows the easy creation of <%=prst%> by simply providing t
 The command `set` allows setting individual options in a <%=prst%>.
 
 ```bash
-<%=cmd%> config preset set demo_server password _demo_pass_
+<%=cmd%> config preset set demo_server password _pass_here_
 ```
 
 The command `initialize`, like `update` allows to set several parameters at once, but it deletes an existing configuration instead of updating it, and expects a [*Structured Value*](#native).
 
 ```javascript
-<%=cmd%> config preset initialize demo_server @json:'{"url":"ssh://demo.asperasoft.com:33001","username":"asperaweb","password":"_demo_pass_","ts":{"precalculate_job_size":true}}'
+<%=cmd%> config preset initialize demo_server @json:'{"url":"ssh://demo.asperasoft.com:33001","username":"asperaweb","password":"_pass_here_","ts":{"precalculate_job_size":true}}'
 ```
 
 A full terminal based overview of the configuration can be displayed using:
@@ -936,7 +936,7 @@ cli_default:
 demo_server:
   url: ssh://demo.asperasoft.com:33001
   username: asperaweb
-  password: _demo_pass_
+  password: _pass_here_
 ```
 
 We can see here:
@@ -1011,13 +1011,13 @@ A <%=prst%> value can be removed with `unset`:
 Example: Define options using command line:
 
 ```bash
-<%=cmd%> -N --url=x --password=y --username=y node --show-config
+<%=cmd%> -N --url=_url_here_ --password=_pass_here_ --username=_name_here_ node --show-config
 ```
 
 Example: Define options using a hash:
 
 ```javascript
-<%=cmd%> -N --preset=@json:'{"url":"x","password":"y","username":"y"}' node --show-config
+<%=cmd%> -N --preset=@json:'{"url":"_url_here_","password":"_pass_here_","username":"_name_here_"}' node --show-config
 ```
 
 #### Shares Examples
@@ -1027,7 +1027,7 @@ only username/password and url are required (either on command line, or from con
 Those can usually be provided on the command line:
 
 ```bash
-<%=cmd%> shares repo browse / --url=https://10.25.0.6 --username=john --password=4sp3ra
+<%=cmd%> shares repo browse / --url=https://10.25.0.6 --username=john --password=_pass_here_
 ```
 
 This can also be provisioned in a config file:
@@ -1037,19 +1037,19 @@ This can also be provisioned in a config file:
 ```bash
 <%=cmd%> config preset set shares06 url https://10.25.0.6
 <%=cmd%> config preset set shares06 username john
-<%=cmd%> config preset set shares06 password 4sp3ra
+<%=cmd%> config preset set shares06 password _pass_here_
 ```
 
 This can also be done with one single command:
 
 ```javascript
-<%=cmd%> config preset init shares06 @json:'{"url":"https://10.25.0.6","username":"john","password":"4sp3ra"}'
+<%=cmd%> config preset init shares06 @json:'{"url":"https://10.25.0.6","username":"john","password":"_pass_here_"}'
 ```
 
 or
 
 ```bash
-<%=cmd%> config preset update shares06 --url=https://10.25.0.6 --username=john --password=4sp3ra
+<%=cmd%> config preset update shares06 --url=https://10.25.0.6 --username=john --password=_pass_here_
 ```
 
 * Define this <%=prst%> as the default <%=prst%> for the specified plugin (`shares`)
@@ -1522,7 +1522,7 @@ Parameters provided in option `transfer_info` are:
 
 Like any other option, `transfer_info` can get its value from a pre-configured <%=prst%> :
 `--transfer-info=@preset:<psetname>` or be specified using the extended value syntax :
-`--transfer-info=@json:'{"url":"https://...","username":"theuser","password":"thepass"}'`
+`--transfer-info=@json:'{"url":"https://...","username":"theuser","password":"_pass_here_"}'`
 
 If `transfer_info` is not specified and a default node has been configured (name in `node` for section `default`) then this node is used by default.
 
@@ -1733,13 +1733,13 @@ activating CSEAR consists in using transfer spec parameters:
 Example: parameter to download a faspex package and decrypt on the fly
 
 ```json
---ts=@json:'{"content_protection":"decrypt","content_protection_password":"mysecret!"}'
+--ts=@json:'{"content_protection":"decrypt","content_protection_password":"_pass_here_"}'
 ```
 
 Note that up to version 4.6.0, the following parameters should be used for agent `direct`:
 
 ```json
---ts=@json:'{"EX_ascp_args":["--file-crypt=decrypt"],"EX_at_rest_password":"mysecret!"}'
+--ts=@json:'{"EX_ascp_args":["--file-crypt=decrypt"],"EX_at_rest_password":"_secret_here_"}'
 ```
 
 #### Transfer Spec Examples
@@ -2032,7 +2032,7 @@ Lets create an <%=prst%> called: `my_aoc_org` using `ask` interactive input (cli
 ```bash
 <%=cmd%> config preset ask my_aoc_org url client_id client_secret
 option: url> https://myorg.ibmaspera.com/
-option: client_id> BJLPObQiFw
+option: client_id> my_BJbQiFw
 option: client_secret> yFS1mu-crbKuQhGFtfhYuoRW...
 updated: my_aoc_org
 ```
@@ -2106,12 +2106,12 @@ If you are not using the built-in client_id and secret, JWT needs to be authoriz
 :............:...............:
 :     id     :  name         :
 :............:...............:
-: BJLPObQiFw : my-client-app :
+: my_BJbQiFw : my-client-app :
 :............:...............:
 ```
 
 ```javascript
-<%=cmd%> aoc admin res client modify BJLPObQiFw @json:'{"jwt_grant_enabled":true,"explicit_authorization_required":false}'
+<%=cmd%> aoc admin res client modify my_BJbQiFw @json:'{"jwt_grant_enabled":true,"explicit_authorization_required":false}'
 ```
 
 ```output
@@ -2793,19 +2793,19 @@ f["type"].eql?("file") and (DateTime.now-DateTime.parse(f["modified_time"]))<100
 * Find files older than 1 year on a given node and store in file list
 
 ```bash
-<%=cmd%> aoc admin res node --name='my node name' --secret='my secret' v4 find / --fields=path --value='exec:f["type"].eql?("file") and (DateTime.now-DateTime.parse(f["modified_time"]))<100' --format=csv > my_file_list.txt
+<%=cmd%> aoc admin res node --name='my node name' --secret='_secret_here_' v4 find / --fields=path --value='exec:f["type"].eql?("file") and (DateTime.now-DateTime.parse(f["modified_time"]))<100' --format=csv > my_file_list.txt
 ```
 
 * Delete the files, one by one
 
 ```bash
-cat my_file_list.txt|while read path;do echo <%=cmd%> aoc admin res node --name='my node name' --secret='my secret' v4 delete "$path" ;done
+cat my_file_list.txt|while read path;do echo <%=cmd%> aoc admin res node --name='my node name' --secret='_secret_here_' v4 delete "$path" ;done
 ```
 
 * Delete the files in bulk
 
 ```bash
-cat my_file_list.txt | <%=cmd%> aoc admin res node --name='my node name' --secret='my secret' v3 delete @lines:@stdin:
+cat my_file_list.txt | <%=cmd%> aoc admin res node --name='my node name' --secret='_secret_here_' v3 delete @lines:@stdin:
 ```
 
 ## <a id="ats"></a>Plugin: Aspera Transfer Service
@@ -2891,13 +2891,13 @@ Then, to register the key by default for the ats plugin, create a preset. Execut
 Example: create access key on IBM Cloud (softlayer):
 
 ```javascript
-<%=cmd%> ats access_key create --cloud=softlayer --region=ams --params=@json:'{"storage":{"type":"softlayer_swift","container":"_container_name_","credentials":{"api_key":"value","username":"_name_:_usr_name_"},"path":"/"},"id":"_optional_id_","name":"_optional_name_"}'
+<%=cmd%> ats access_key create --cloud=softlayer --region=ams --params=@json:'{"storage":{"type":"softlayer_swift","container":"_container_name_","credentials":{"api_key":"_secret_here_","username":"_name_:_usr_name_"},"path":"/"},"id":"_optional_id_","name":"_optional_name_"}'
 ```
 
 Example: create access key on AWS:
 
 ```javascript
-<%=cmd%> ats access_key create --cloud=aws --region=eu-west-1 --params=@json:'{"id":"testkey3","name":"laurent key AWS","storage":{"type":"aws_s3","bucket":"my-bucket","credentials":{"access_key_id":"AKIA_MY_API_KEY","secret_access_key":"my/secret/here"},"path":"/laurent"}}'
+<%=cmd%> ats access_key create --cloud=aws --region=eu-west-1 --params=@json:'{"id":"testkey3","name":"laurent key AWS","storage":{"type":"aws_s3","bucket":"my-bucket","credentials":{"access_key_id":"AKIA_MY_API_KEY","secret_access_key":"_secret_here_"},"path":"/laurent"}}'
 ```
 
 Example: create access key on Azure SAS:
@@ -3041,7 +3041,7 @@ It is possible to start a FASPStream session using the node API:
 Use the "node stream create" command, then arguments are provided as a <%=trspec%>.
 
 ```javascript
-<%=cmd%> node stream create --ts=@json:'{"direction":"send","source":"udp://233.3.3.4:3000?loopback=1&ttl=2","destination":"udp://233.3.3.3:3001/","remote_host":"localhost","remote_user":"stream","remote_password":"XXXX"}' --preset=stream
+<%=cmd%> node stream create --ts=@json:'{"direction":"send","source":"udp://233.3.3.4:3000?loopback=1&ttl=2","destination":"udp://233.3.3.3:3001/","remote_host":"localhost","remote_user":"stream","remote_password":"_pass_here_"}' --preset=stream
 ```
 
 ### Watchfolder
@@ -3363,14 +3363,14 @@ It consists in the following structure:
 
 ```javascript
 {
-  "apikey": "xxxxxxx.....",
+  "apikey": "_api_key_here_",
   "cos_hmac_keys": {
-    "access_key_id": "xxxxxxx.....",
-    "secret_access_key": "xxxxxxx....."
+    "access_key_id": "_access_key_here_",
+    "secret_access_key": "_secret_here_"
   },
   "endpoints": "https://control.cloud-object-storage.cloud.ibm.com/v2/endpoints",
-  "iam_apikey_description": "my description ...",
-  "iam_apikey_name": "my key name",
+  "iam_apikey_description": "my description _here_ ...",
+  "iam_apikey_name": "my key name _here_",
   "iam_role_crn": "crn:v1:bluemix:public:iam::::serviceRole:Writer",
   "iam_serviceid_crn": "crn:v1:bluemix:public:iam-identity::a/xxxxxxx.....",
   "resource_instance_id": "crn:v1:bluemix:public:cloud-object-storage:global:a/xxxxxxx....."
@@ -3702,19 +3702,19 @@ The `smtp` option is a hash table (extended value) with the following fields:
 ```bash
 <%=cmd%> config preset set smtp_google server smtp.google.com
 <%=cmd%> config preset set smtp_google username john@gmail.com
-<%=cmd%> config preset set smtp_google password P@ssw0rd
+<%=cmd%> config preset set smtp_google password _pass_here_
 ```
 
 or
 
 ```javascript
-<%=cmd%> config preset init smtp_google @json:'{"server":"smtp.google.com","username":"john@gmail.com","password":"P@ssw0rd"}'
+<%=cmd%> config preset init smtp_google @json:'{"server":"smtp.google.com","username":"john@gmail.com","password":"_pass_here_"}'
 ```
 
 or
 
 ```bash
-<%=cmd%> config preset update smtp_google --server=smtp.google.com --username=john@gmail.com --password=P@ssw0rd
+<%=cmd%> config preset update smtp_google --server=smtp.google.com --username=john@gmail.com --password=_pass_here_
 ```
 
 Set this configuration as global default, for instance:
@@ -3815,7 +3815,7 @@ Note that in addition, many "EX_" <%=trspec%> parameters are supported for the [
 ### Simple session
 
 ```javascript
-MY_TSPEC='{"remote_host":"demo.asperasoft.com","remote_user":"asperaweb","ssh_port":33001,"remote_password":"_demo_pass_","direction":"receive","destination_root":"./test.dir","paths":[{"source":"/aspera-test-dir-tiny/200KB.1"}],"resume_level":"none"}'
+MY_TSPEC='{"remote_host":"demo.asperasoft.com","remote_user":"asperaweb","ssh_port":33001,"remote_password":"_pass_here_","direction":"receive","destination_root":"./test.dir","paths":[{"source":"/aspera-test-dir-tiny/200KB.1"}],"resume_level":"none"}'
 
 echo "${MY_TSPEC}"|asession
 ```
@@ -3828,7 +3828,7 @@ This is particularly useful for a persistent session ( with the <%=trspec%> para
 
 ```javascript
 asession
-{"remote_host":"demo.asperasoft.com","ssh_port":33001,"remote_user":"asperaweb","remote_password":"_demo_pass_","direction":"receive","destination_root":".","keepalive":true,"resume_level":"none"}
+{"remote_host":"demo.asperasoft.com","ssh_port":33001,"remote_user":"asperaweb","remote_password":"_pass_here_","direction":"receive","destination_root":".","keepalive":true,"resume_level":"none"}
 {"type":"START","source":"/aspera-test-dir-tiny/200KB.2"}
 {"type":"DONE"}
 ```

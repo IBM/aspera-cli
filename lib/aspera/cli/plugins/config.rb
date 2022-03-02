@@ -33,7 +33,7 @@ module Aspera
         CONF_PRESET_VERSION='version'
         CONF_PRESET_DEFAULT='default'
         CONF_PRESET_GLOBAL='global_common_defaults'
-        CONF_PRESET_SECRETS='default_secrets'
+        CONF_PRESET_SECRETS='default_secrets' # pragma: allowlist secret
         CONF_PLUGIN_SYM = :config # Plugins::Config.name.split('::').last.downcase.to_sym
         CONF_GLOBAL_SYM = :config
         # old tool name
@@ -67,7 +67,7 @@ END_OF_TEMPLATE
         EXTV_PRESET='preset'
         PRESET_DIG_SEPARATOR='.'
         DEFAULT_CHECK_NEW_VERSION_DAYS=7
-        DEFAULT_PRIV_KEY_FILENAME='aspera_aoc_key'
+        DEFAULT_PRIV_KEY_FILENAME='aspera_aoc_key' # pragma: allowlist secret
         DEFAULT_PRIVKEY_LENGTH=4096
         private_constant :DEFAULT_CONFIG_FILENAME,:CONF_PRESET_CONFIG,:CONF_PRESET_VERSION,:CONF_PRESET_DEFAULT,
         :CONF_PRESET_GLOBAL,:PROGRAM_NAME_V1,:PROGRAM_NAME_V2,:DEFAULT_REDIRECT,:ASPERA_PLUGINS_FOLDERNAME,

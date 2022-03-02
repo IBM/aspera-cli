@@ -127,7 +127,7 @@ If you want to use `ascli` with another server, and in order to make further cal
 * download a file
 
 ```bash
-ascli config preset update myserver --url=ssh://demo.asperasoft.com:33001 --username=asperaweb --password=_demo_pass_
+ascli config preset update myserver --url=ssh://demo.asperasoft.com:33001 --username=asperaweb --password=_pass_here_
 ```
 
 ```output
@@ -841,7 +841,7 @@ ascli config preset set|delete|show|initialize|update <option preset>
 The command `update` allows the easy creation of [option preset](#lprt) by simply providing the options in their command line format, e.g. :
 
 ```bash
-ascli config preset update demo_server --url=ssh://demo.asperasoft.com:33001 --username=asperaweb --password=_demo_pass_ --ts=@json:'{"precalculate_job_size":true}'
+ascli config preset update demo_server --url=ssh://demo.asperasoft.com:33001 --username=asperaweb --password=_pass_here_ --ts=@json:'{"precalculate_job_size":true}'
 ```
 
 * This creates a [option preset](#lprt) `demo_server` with all provided options.
@@ -849,13 +849,13 @@ ascli config preset update demo_server --url=ssh://demo.asperasoft.com:33001 --u
 The command `set` allows setting individual options in a [option preset](#lprt).
 
 ```bash
-ascli config preset set demo_server password _demo_pass_
+ascli config preset set demo_server password _pass_here_
 ```
 
 The command `initialize`, like `update` allows to set several parameters at once, but it deletes an existing configuration instead of updating it, and expects a [*Structured Value*](#native).
 
 ```javascript
-ascli config preset initialize demo_server @json:'{"url":"ssh://demo.asperasoft.com:33001","username":"asperaweb","password":"_demo_pass_","ts":{"precalculate_job_size":true}}'
+ascli config preset initialize demo_server @json:'{"url":"ssh://demo.asperasoft.com:33001","username":"asperaweb","password":"_pass_here_","ts":{"precalculate_job_size":true}}'
 ```
 
 A full terminal based overview of the configuration can be displayed using:
@@ -935,7 +935,7 @@ cli_default:
 demo_server:
   url: ssh://demo.asperasoft.com:33001
   username: asperaweb
-  password: _demo_pass_
+  password: _pass_here_
 ```
 
 We can see here:
@@ -1010,13 +1010,13 @@ ascli config preset unset cli_default interactive
 Example: Define options using command line:
 
 ```bash
-ascli -N --url=x --password=y --username=y node --show-config
+ascli -N --url=_url_here_ --password=_pass_here_ --username=_name_here_ node --show-config
 ```
 
 Example: Define options using a hash:
 
 ```javascript
-ascli -N --preset=@json:'{"url":"x","password":"y","username":"y"}' node --show-config
+ascli -N --preset=@json:'{"url":"_url_here_","password":"_pass_here_","username":"_name_here_"}' node --show-config
 ```
 
 #### Shares Examples
@@ -1026,7 +1026,7 @@ only username/password and url are required (either on command line, or from con
 Those can usually be provided on the command line:
 
 ```bash
-ascli shares repo browse / --url=https://10.25.0.6 --username=john --password=4sp3ra
+ascli shares repo browse / --url=https://10.25.0.6 --username=john --password=_pass_here_
 ```
 
 This can also be provisioned in a config file:
@@ -1036,19 +1036,19 @@ This can also be provisioned in a config file:
 ```bash
 ascli config preset set shares06 url https://10.25.0.6
 ascli config preset set shares06 username john
-ascli config preset set shares06 password 4sp3ra
+ascli config preset set shares06 password _pass_here_
 ```
 
 This can also be done with one single command:
 
 ```javascript
-ascli config preset init shares06 @json:'{"url":"https://10.25.0.6","username":"john","password":"4sp3ra"}'
+ascli config preset init shares06 @json:'{"url":"https://10.25.0.6","username":"john","password":"_pass_here_"}'
 ```
 
 or
 
 ```bash
-ascli config preset update shares06 --url=https://10.25.0.6 --username=john --password=4sp3ra
+ascli config preset update shares06 --url=https://10.25.0.6 --username=john --password=_pass_here_
 ```
 
 * Define this [option preset](#lprt) as the default [option preset](#lprt) for the specified plugin (`shares`)
@@ -1521,7 +1521,7 @@ Parameters provided in option `transfer_info` are:
 
 Like any other option, `transfer_info` can get its value from a pre-configured [option preset](#lprt) :
 `--transfer-info=@preset:<psetname>` or be specified using the extended value syntax :
-`--transfer-info=@json:'{"url":"https://...","username":"theuser","password":"thepass"}'`
+`--transfer-info=@json:'{"url":"https://...","username":"theuser","password":"_pass_here_"}'`
 
 If `transfer_info` is not specified and a default node has been configured (name in `node` for section `default`) then this node is used by default.
 
@@ -1597,7 +1597,7 @@ Columns:
 
 Fields with EX_ prefix are extensions to transfer agent [`direct`](#agt_direct). (only in `ascli`).
 
-<table><tr><th>Field</th><th>Type</th><th>D</th><th>N</th><th>C</th><th>Description</th></tr><tr><td>cipher</td><td>string</td><td>Y</td><td>Y</td><td>Y</td><td>In transit encryption type.<br/>Allowed values: none, aes-128, aes-192, aes-256, aes-128-cfb, aes-192-cfb, aes-256-cfb, aes-128-gcm, aes-192-gcm, aes-256-gcm<br/>(-c)</td></tr><tr><td>content_protection</td><td>string</td><td>Y</td><td>Y</td><td>Y</td><td>Enable client-side encryption at rest. (CSEAR, content protection)<br/>Allowed values: encrypt, decrypt<br/>(--file-crypt)</td></tr><tr><td>content_protection_password</td><td>string</td><td>Y</td><td>Y</td><td>Y</td><td>Specifies CSEAR password. (content protection)<br/>(env:ASPERA_SCP_FILEPASS)</td></tr><tr><td>cookie</td><td>string</td><td>Y</td><td>Y</td><td>Y</td><td>Metadata for transfer specified by application<br/>(env:ASPERA_SCP_COOKIE)</td></tr><tr><td>create_dir</td><td>bool</td><td>Y</td><td>Y</td><td>Y</td><td>Specifies whether to create new directories.<br/>(-d)</td></tr><tr><td>delete_before_transfer</td><td>bool</td><td>Y</td><td>Y</td><td>Y</td><td>Before transfer, delete files that exist at the destination but not at the source. The source and destination arguments must be directories that have matching names. Objects on the destination that have the same name but different type or size as objects on the source are not deleted.<br/>(--delete-before-transfer)</td></tr><tr><td>delete_source</td><td>bool</td><td>Y</td><td>Y</td><td>&nbsp;</td><td>Remove SRC files after transfer success<br/>(--remove-after-transfer)</td></tr><tr><td>destination_root</td><td>string</td><td>Y</td><td>Y</td><td>Y</td><td>Destination root directory.</td></tr><tr><td>direction</td><td>string</td><td>Y</td><td>Y</td><td>Y</td><td>Direction of transfer (on client side)<br/>Allowed values: send, receive<br/>(--mode)</td></tr><tr><td>exclude_newer_than</td><td>int</td><td>Y</td><td>&nbsp;</td><td>&nbsp;</td><td>skip src files with mtime > arg<br/>(--exclude-newer-than)</td></tr><tr><td>exclude_older_than</td><td>int</td><td>Y</td><td>&nbsp;</td><td>&nbsp;</td><td>skip src files with mtime < arg<br/>(--exclude-older-than)</td></tr><tr><td>fasp_port</td><td>int</td><td>Y</td><td>Y</td><td>Y</td><td>Specifies fasp (UDP) port.<br/>(-O)</td></tr><tr><td>file_checksum</td><td>string</td><td>Y</td><td>Y</td><td>&nbsp;</td><td>Enable checksum reporting for transferred files by specifying the hash to use.<br/>Allowed values: sha-512, sha-384, sha-256, sha1, md5, none</td></tr><tr><td>http_fallback</td><td>bool<br/>string</td><td>Y</td><td>Y</td><td>Y</td><td>When true(1), attempts to perform an HTTP transfer if a FASP transfer cannot be performed.<br/>(-y)</td></tr><tr><td>http_fallback_port</td><td>int</td><td>Y</td><td>&nbsp;</td><td>&nbsp;</td><td>Specifies http port when no cipher is used<br/>(-t)</td></tr><tr><td>https_fallback_port</td><td>int</td><td>Y</td><td>Y</td><td>Y</td><td>Specifies https port when cipher is used<br/>(-t)</td></tr><tr><td>move_after_transfer</td><td>string</td><td>Y</td><td>Y</td><td>Y</td><td>(--move-after-transfer)</td></tr><tr><td>multi_session</td><td>int</td><td>Y</td><td>Y</td><td>Y</td><td>Use multi-session transfer. max 128.<br/> Each participant on one host needs an independent UDP (-O) port.<br/> Large files are split between sessions only when transferring with resume_policy=none.</td></tr><tr><td>multi_session_threshold</td><td>int</td><td>Y</td><td>Y</td><td>&nbsp;</td><td>Split files across multiple ascp sessions if their size in bytes is greater than or equal to the specified value. (0=no file is split)<br/>(--multi-session-threshold)</td></tr><tr><td>overwrite</td><td>string</td><td>Y</td><td>Y</td><td>Y</td><td>Overwrite destination files with the source files of the same name.<br/>Allowed values: never, always, diff, older, diff+older<br/>(--overwrite)</td></tr><tr><td>paths</td><td>array</td><td>Y</td><td>Y</td><td>Y</td><td>Array of path to the source (required) and a path to the destination (optional).</td></tr><tr><td>precalculate_job_size</td><td>bool</td><td>Y</td><td>Y</td><td>Y</td><td>Specifies whether to precalculate the job size.<br/>(--precalculate-job-size)</td></tr><tr><td>preserve_access_time</td><td>bool</td><td>Y</td><td>Y</td><td>Y</td><td>(--preserve-access-time)</td></tr><tr><td>preserve_creation_time</td><td>bool</td><td>Y</td><td>Y</td><td>Y</td><td>(--preserve-creation-time)</td></tr><tr><td>preserve_modification_time</td><td>bool</td><td>Y</td><td>Y</td><td>Y</td><td>(--preserve-modification-time)</td></tr><tr><td>preserve_times</td><td>bool</td><td>Y</td><td>Y</td><td>Y</td><td>(--preserve-times)</td></tr><tr><td>rate_policy</td><td>string</td><td>Y</td><td>Y</td><td>Y</td><td>The transfer rate policy to use when sharing bandwidth.<br/>Allowed values: low, fair, high, fixed<br/>(--policy)</td></tr><tr><td>remote_host</td><td>string</td><td>Y</td><td>Y</td><td>Y</td><td>IP or fully qualified domain name of the remote server<br/>(--host)</td></tr><tr><td>remote_user</td><td>string</td><td>Y</td><td>Y</td><td>Y</td><td>Remote user. Default value is "xfer" on node or connect.<br/>(--user)</td></tr><tr><td>remote_password</td><td>string</td><td>Y</td><td>Y</td><td>Y</td><td>SSH session password<br/>(env:ASPERA_SCP_PASS)</td></tr><tr><td>remove_after_transfer</td><td>bool</td><td>Y</td><td>Y</td><td>&nbsp;</td><td>Remove SRC files after transfer success<br/>(--remove-after-transfer)</td></tr><tr><td>remove_empty_directories</td><td>bool</td><td>Y</td><td>Y</td><td>&nbsp;</td><td>Specifies whether to remove empty directories.<br/>(--remove-empty-directories)</td></tr><tr><td>remove_skipped</td><td>bool</td><td>Y</td><td>Y</td><td>Y</td><td>Must also have remove_after_transfer set to true, Defaults to false, if true, skipped files will be removed as well.<br/>(--remove-skipped)</td></tr><tr><td>proxy</td><td>string</td><td>Y</td><td>&nbsp;</td><td>&nbsp;</td><td>Specify the address of the Aspera high-speed proxy server.<br/> dnat(s)://[user[:password]@]server:port<br/> Default ports for DNAT and DNATS protocols are 9091 and 9092.<br/> Password, if specified here, overrides the value of environment variable ASPERA_PROXY_PASS.<br/>(--proxy)</td></tr><tr><td>resume_policy</td><td>string</td><td>Y</td><td>Y</td><td>Y</td><td>If a transfer is interrupted or fails to finish, resume without re-transferring the whole files.<br/>Allowed values: none, attrs, sparse_csum, full_csum<br/>(-k)</td></tr><tr><td>retry_duration</td><td>string<br/>int</td><td>&nbsp;</td><td>Y</td><td>Y</td><td>Specifies how long to wait before retrying transfer. (e.g. "5min")</td></tr><tr><td>source_root_id</td><td>string</td><td>&nbsp;</td><td>Y</td><td>&nbsp;</td><td>The file ID of the source root directory. Required when using Bearer token auth for the source node.</td></tr><tr><td>ssh_port</td><td>int</td><td>Y</td><td>Y</td><td>Y</td><td>Specifies SSH (TCP) port. Default: local:22, other:33001<br/>(-P)</td></tr><tr><td>ssh_private_key</td><td>string</td><td>Y</td><td>&nbsp;</td><td>&nbsp;</td><td>Private key used for SSH authentication.<br/> Shall look like: -----BEGIN RSA PRIVATE KEY-----\nMII...<br/> Note the JSON encoding: \n for newlines.<br/>(env:ASPERA_SCP_KEY)</td></tr><tr><td>ssh_private_key_passphrase</td><td>string</td><td>Y</td><td>&nbsp;</td><td>&nbsp;</td><td>The passphrase associated with the transfer user's SSH private key. Available as of 3.7.2.<br/>(env:ASPERA_SCP_PASS)</td></tr><tr><td>symlink_policy</td><td>string</td><td>Y</td><td>Y</td><td>Y</td><td>Handle source side symbolic links<br/>Allowed values: follow, copy, copy+force, skip<br/>(--symbolic-links)</td></tr><tr><td>tags</td><td>hash</td><td>Y</td><td>Y</td><td>Y</td><td>Metadata for transfer as JSON<br/>(--tags64)</td></tr><tr><td>target_rate_cap_kbps</td><td>int</td><td>&nbsp;</td><td>&nbsp;</td><td>Y</td><td>Returned by upload/download_setup node API.</td></tr><tr><td>target_rate_kbps</td><td>int</td><td>Y</td><td>Y</td><td>Y</td><td>Specifies desired speed for the transfer.<br/>(-l)</td></tr><tr><td>title</td><td>string</td><td>&nbsp;</td><td>Y</td><td>Y</td><td>Title of the transfer</td></tr><tr><td>token</td><td>string</td><td>Y</td><td>Y</td><td>Y</td><td>Authorization token: Bearer, Basic or ATM (Also arg -W)<br/>(env:ASPERA_SCP_TOKEN)</td></tr><tr><td>use_ascp4</td><td>bool</td><td>Y</td><td>Y</td><td>&nbsp;</td><td>specify version of protocol</td></tr><tr><td>source_root</td><td>string</td><td>Y</td><td>Y</td><td>Y</td><td>Path to be prepended to each source path.<br/> This is either a conventional path or it can be a URI but only if there is no root defined.<br/>(--source-prefix64)</td></tr><tr><td>min_rate_cap_kbps</td><td>int</td><td>Y</td><td>Y</td><td>Y</td><td>&nbsp;</td></tr><tr><td>lock_rate_policy</td><td>bool</td><td>Y</td><td>Y</td><td>Y</td><td>&nbsp;</td></tr><tr><td>lock_target_rate_kbps</td><td>bool</td><td>Y</td><td>Y</td><td>Y</td><td>&nbsp;</td></tr><tr><td>lock_min_rate_kbps</td><td>bool</td><td>Y</td><td>Y</td><td>Y</td><td>&nbsp;</td></tr><tr><td>apply_local_docroot</td><td>bool</td><td>Y</td><td>&nbsp;</td><td>&nbsp;</td><td>(--apply-local-docroot)</td></tr><tr><td>preserve_acls</td><td>string</td><td>Y</td><td>&nbsp;</td><td>&nbsp;</td><td>Preserve access control lists.<br/>Allowed values: none, native, metafile<br/>(--preserve-acls)</td></tr><tr><td>preserve_remote_acls</td><td>string</td><td>Y</td><td>&nbsp;</td><td>&nbsp;</td><td>Preserve remote access control lists.<br/>Allowed values: none, native, metafile<br/>(--remote-preserve-acls)</td></tr><tr><td>preserve_file_owner_uid</td><td>bool</td><td>Y</td><td>&nbsp;</td><td>&nbsp;</td><td>Preserve the user ID for a file owner<br/>(--preserve-file-owner-uid)</td></tr><tr><td>preserve_file_owner_gid</td><td>bool</td><td>Y</td><td>&nbsp;</td><td>&nbsp;</td><td>Preserve the group ID for a file owner<br/>(--preserve-file-owner-gid)</td></tr><tr><td>preserve_source_access_time</td><td>bool</td><td>Y</td><td>&nbsp;</td><td>&nbsp;</td><td>Preserve the time logged for when the source file was accessed<br/>(--preserve-source-access-time)</td></tr><tr><td>remove_empty_source_directory</td><td>bool</td><td>Y</td><td>&nbsp;</td><td>&nbsp;</td><td>Remove empty source subdirectories and remove the source directory itself, if empty<br/>(--remove-empty-source-directory)</td></tr><tr><td>EX_at_rest_password</td><td>string</td><td>Y</td><td>&nbsp;</td><td>&nbsp;</td><td>Passphrase used for at rest encryption or decryption. Prefer to use standard: content_protection_password<br/>(env:ASPERA_SCP_FILEPASS)</td></tr><tr><td>EX_proxy_password</td><td>string</td><td>Y</td><td>&nbsp;</td><td>&nbsp;</td><td>Password used for Aspera proxy server authentication.<br/> May be overridden by password in URL EX_fasp_proxy_url.<br/>(env:ASPERA_PROXY_PASS)</td></tr><tr><td>EX_license_text</td><td>string</td><td>Y</td><td>&nbsp;</td><td>&nbsp;</td><td>License file text override.<br/>By default ascp looks for license file near executable.<br/>(env:ASPERA_SCP_LICENSE)</td></tr><tr><td>dgram_size</td><td>int</td><td>Y</td><td>Y</td><td>Y</td><td>UDP datagram size in bytes<br/>(-Z)</td></tr><tr><td>min_rate_kbps</td><td>int</td><td>Y</td><td>Y</td><td>Y</td><td>Set the minimum transfer rate in kilobits per second.<br/>(-m)</td></tr><tr><td>sshfp</td><td>string</td><td>Y</td><td>Y</td><td>Y</td><td>Check it against server SSH host key fingerprint<br/>(--check-sshfp)</td></tr><tr><td>EX_http_proxy_url</td><td>string</td><td>Y</td><td>&nbsp;</td><td>&nbsp;</td><td>Specify the proxy server address used by HTTP Fallback<br/>(-x)</td></tr><tr><td>EX_ssh_key_paths</td><td>array</td><td>Y</td><td>&nbsp;</td><td>&nbsp;</td><td>Use public key authentication for SSH and specify the private key file paths<br/>(-i)</td></tr><tr><td>EX_http_transfer_jpeg</td><td>int</td><td>Y</td><td>&nbsp;</td><td>&nbsp;</td><td>HTTP transfers as JPEG file<br/>(-j)</td></tr><tr><td>EX_no_read</td><td>bool</td><td>Y</td><td>&nbsp;</td><td>&nbsp;</td><td>no read source<br/>(--no-read)</td></tr><tr><td>EX_no_write</td><td>bool</td><td>Y</td><td>&nbsp;</td><td>&nbsp;</td><td>no write on destination<br/>(--no-write)</td></tr><tr><td>target_rate_percentage</td><td>string</td><td>Y</td><td>Y</td><td>Y</td><td>&nbsp;</td></tr><tr><td>rate_policy_allowed</td><td>string</td><td>&nbsp;</td><td>&nbsp;</td><td>Y</td><td>Specifies most aggressive rate policy that is allowed.<br/>Returned by node API.<br/>Allowed values: low, fair, high, fixed</td></tr><tr><td>lock_min_rate</td><td>bool</td><td>Y</td><td>Y</td><td>Y</td><td>&nbsp;</td></tr><tr><td>lock_target_rate</td><td>bool</td><td>Y</td><td>Y</td><td>Y</td><td>&nbsp;</td></tr><tr><td>authentication</td><td>string</td><td>&nbsp;</td><td>&nbsp;</td><td>Y</td><td>value=token for SSH bypass keys, else password asked if not provided.</td></tr><tr><td>cipher_allowed</td><td>string</td><td>Y</td><td>Y</td><td>Y</td><td>returned by node API. Valid literals include "aes-128" and "none".</td></tr><tr><td>EX_file_list</td><td>string</td><td>Y</td><td>&nbsp;</td><td>&nbsp;</td><td>source file list</td></tr><tr><td>EX_file_pair_list</td><td>string</td><td>Y</td><td>&nbsp;</td><td>&nbsp;</td><td>source file pair list</td></tr><tr><td>EX_ascp_args</td><td>array</td><td>Y</td><td>&nbsp;</td><td>&nbsp;</td><td>Add native command line arguments to ascp</td></tr><tr><td>wss_enabled</td><td>bool</td><td>Y</td><td>Y</td><td>Y</td><td>&nbsp;</td></tr><tr><td>wss_port</td><td>int</td><td>Y</td><td>Y</td><td>Y</td><td>TCP port used for websocket service feed.</td></tr></table>
+<table><tr><th>Field</th><th>Type</th><th>D</th><th>N</th><th>C</th><th>Description</th></tr><tr><td>cipher</td><td>string</td><td>Y</td><td>Y</td><td>Y</td><td>In transit encryption type.<br/>Allowed values: none, aes-128, aes-192, aes-256, aes-128-cfb, aes-192-cfb, aes-256-cfb, aes-128-gcm, aes-192-gcm, aes-256-gcm<br/>(-c)</td></tr><tr><td>content_protection</td><td>string</td><td>Y</td><td>Y</td><td>Y</td><td>Enable client-side encryption at rest. (CSEAR, content protection)<br/>Allowed values: encrypt, decrypt<br/>(--file-crypt)</td></tr><tr><td>content_protection_password</td><td>string</td><td>Y</td><td>Y</td><td>Y</td><td>Specifies CSEAR password. (content protection)<br/>(env:ASPERA_SCP_FILEPASS)</td></tr><tr><td>cookie</td><td>string</td><td>Y</td><td>Y</td><td>Y</td><td>Metadata for transfer specified by application<br/>(env:ASPERA_SCP_COOKIE)</td></tr><tr><td>create_dir</td><td>bool</td><td>Y</td><td>Y</td><td>Y</td><td>Specifies whether to create new directories.<br/>(-d)</td></tr><tr><td>delete_before_transfer</td><td>bool</td><td>Y</td><td>Y</td><td>Y</td><td>Before transfer, delete files that exist at the destination but not at the source. The source and destination arguments must be directories that have matching names. Objects on the destination that have the same name but different type or size as objects on the source are not deleted.<br/>(--delete-before-transfer)</td></tr><tr><td>delete_source</td><td>bool</td><td>Y</td><td>Y</td><td>&nbsp;</td><td>Remove SRC files after transfer success<br/>(--remove-after-transfer)</td></tr><tr><td>destination_root</td><td>string</td><td>Y</td><td>Y</td><td>Y</td><td>Destination root directory.</td></tr><tr><td>direction</td><td>string</td><td>Y</td><td>Y</td><td>Y</td><td>Direction of transfer (on client side)<br/>Allowed values: send, receive<br/>(--mode)</td></tr><tr><td>exclude_newer_than</td><td>int</td><td>Y</td><td>&nbsp;</td><td>&nbsp;</td><td>skip src files with mtime > arg<br/>(--exclude-newer-than)</td></tr><tr><td>exclude_older_than</td><td>int</td><td>Y</td><td>&nbsp;</td><td>&nbsp;</td><td>skip src files with mtime < arg<br/>(--exclude-older-than)</td></tr><tr><td>fasp_port</td><td>int</td><td>Y</td><td>Y</td><td>Y</td><td>Specifies fasp (UDP) port.<br/>(-O)</td></tr><tr><td>file_checksum</td><td>string</td><td>Y</td><td>Y</td><td>&nbsp;</td><td>Enable checksum reporting for transferred files by specifying the hash to use.<br/>Allowed values: sha-512, sha-384, sha-256, sha1, md5, none</td></tr><tr><td>http_fallback</td><td>bool<br/>string</td><td>Y</td><td>Y</td><td>Y</td><td>When true(1), attempts to perform an HTTP transfer if a FASP transfer cannot be performed.<br/>(-y)</td></tr><tr><td>http_fallback_port</td><td>int</td><td>Y</td><td>&nbsp;</td><td>&nbsp;</td><td>Specifies http port when no cipher is used<br/>(-t)</td></tr><tr><td>https_fallback_port</td><td>int</td><td>Y</td><td>Y</td><td>Y</td><td>Specifies https port when cipher is used<br/>(-t)</td></tr><tr><td>move_after_transfer</td><td>string</td><td>Y</td><td>Y</td><td>Y</td><td>(--move-after-transfer)</td></tr><tr><td>multi_session</td><td>int</td><td>Y</td><td>Y</td><td>Y</td><td>Use multi-session transfer. max 128.<br/> Each participant on one host needs an independent UDP (-O) port.<br/> Large files are split between sessions only when transferring with resume_policy=none.</td></tr><tr><td>multi_session_threshold</td><td>int</td><td>Y</td><td>Y</td><td>&nbsp;</td><td>Split files across multiple ascp sessions if their size in bytes is greater than or equal to the specified value. (0=no file is split)<br/>(--multi-session-threshold)</td></tr><tr><td>overwrite</td><td>string</td><td>Y</td><td>Y</td><td>Y</td><td>Overwrite destination files with the source files of the same name.<br/>Allowed values: never, always, diff, older, diff+older<br/>(--overwrite)</td></tr><tr><td>paths</td><td>array</td><td>Y</td><td>Y</td><td>Y</td><td>Array of path to the source (required) and a path to the destination (optional).</td></tr><tr><td>precalculate_job_size</td><td>bool</td><td>Y</td><td>Y</td><td>Y</td><td>Specifies whether to precalculate the job size.<br/>(--precalculate-job-size)</td></tr><tr><td>preserve_access_time</td><td>bool</td><td>Y</td><td>Y</td><td>Y</td><td>(--preserve-access-time)</td></tr><tr><td>preserve_creation_time</td><td>bool</td><td>Y</td><td>Y</td><td>Y</td><td>(--preserve-creation-time)</td></tr><tr><td>preserve_modification_time</td><td>bool</td><td>Y</td><td>Y</td><td>Y</td><td>(--preserve-modification-time)</td></tr><tr><td>preserve_times</td><td>bool</td><td>Y</td><td>Y</td><td>Y</td><td>(--preserve-times)</td></tr><tr><td>rate_policy</td><td>string</td><td>Y</td><td>Y</td><td>Y</td><td>The transfer rate policy to use when sharing bandwidth.<br/>Allowed values: low, fair, high, fixed<br/>(--policy)</td></tr><tr><td>remote_host</td><td>string</td><td>Y</td><td>Y</td><td>Y</td><td>IP or fully qualified domain name of the remote server<br/>(--host)</td></tr><tr><td>remote_user</td><td>string</td><td>Y</td><td>Y</td><td>Y</td><td>Remote user. Default value is "xfer" on node or connect.<br/>(--user)</td></tr><tr><td>remote_password</td><td>string</td><td>Y</td><td>Y</td><td>Y</td><td>SSH session password<br/>(env:ASPERA_SCP_PASS)</td></tr><tr><td>remove_after_transfer</td><td>bool</td><td>Y</td><td>Y</td><td>&nbsp;</td><td>Remove SRC files after transfer success<br/>(--remove-after-transfer)</td></tr><tr><td>remove_empty_directories</td><td>bool</td><td>Y</td><td>Y</td><td>&nbsp;</td><td>Specifies whether to remove empty directories.<br/>(--remove-empty-directories)</td></tr><tr><td>remove_skipped</td><td>bool</td><td>Y</td><td>Y</td><td>Y</td><td>Must also have remove_after_transfer set to true, Defaults to false, if true, skipped files will be removed as well.<br/>(--remove-skipped)</td></tr><tr><td>proxy</td><td>string</td><td>Y</td><td>&nbsp;</td><td>&nbsp;</td><td>Specify the address of the Aspera high-speed proxy server.<br/> dnat(s)://[user[:password]@]server:port<br/> Default ports for DNAT and DNATS protocols are 9091 and 9092.<br/> Password, if specified here, overrides the value of environment variable ASPERA_PROXY_PASS.<br/>(--proxy)</td></tr><tr><td>resume_policy</td><td>string</td><td>Y</td><td>Y</td><td>Y</td><td>If a transfer is interrupted or fails to finish, resume without re-transferring the whole files.<br/>Allowed values: none, attrs, sparse_csum, full_csum<br/>(-k)</td></tr><tr><td>retry_duration</td><td>string<br/>int</td><td>&nbsp;</td><td>Y</td><td>Y</td><td>Specifies how long to wait before retrying transfer. (e.g. "5min")</td></tr><tr><td>source_root_id</td><td>string</td><td>&nbsp;</td><td>Y</td><td>&nbsp;</td><td>The file ID of the source root directory. Required when using Bearer token auth for the source node.</td></tr><tr><td>ssh_port</td><td>int</td><td>Y</td><td>Y</td><td>Y</td><td>Specifies SSH (TCP) port. Default: local:22, other:33001<br/>(-P)</td></tr><tr><td>ssh_private_key</td><td>string</td><td>Y</td><td>&nbsp;</td><td>&nbsp;</td><td>Private key used for SSH authentication.<br/> Shall look like: -----BEGIN RSA PRIV4TE KEY-----\nMII...<br/> Note the JSON encoding: \n for newlines.<br/>(env:ASPERA_SCP_KEY)</td></tr><tr><td>ssh_private_key_passphrase</td><td>string</td><td>Y</td><td>&nbsp;</td><td>&nbsp;</td><td>The passphrase associated with the transfer user's SSH private key. Available as of 3.7.2.<br/>(env:ASPERA_SCP_PASS)</td></tr><tr><td>symlink_policy</td><td>string</td><td>Y</td><td>Y</td><td>Y</td><td>Handle source side symbolic links<br/>Allowed values: follow, copy, copy+force, skip<br/>(--symbolic-links)</td></tr><tr><td>tags</td><td>hash</td><td>Y</td><td>Y</td><td>Y</td><td>Metadata for transfer as JSON<br/>(--tags64)</td></tr><tr><td>target_rate_cap_kbps</td><td>int</td><td>&nbsp;</td><td>&nbsp;</td><td>Y</td><td>Returned by upload/download_setup node API.</td></tr><tr><td>target_rate_kbps</td><td>int</td><td>Y</td><td>Y</td><td>Y</td><td>Specifies desired speed for the transfer.<br/>(-l)</td></tr><tr><td>title</td><td>string</td><td>&nbsp;</td><td>Y</td><td>Y</td><td>Title of the transfer</td></tr><tr><td>token</td><td>string</td><td>Y</td><td>Y</td><td>Y</td><td>Authorization token: Bearer, Basic or ATM (Also arg -W)<br/>(env:ASPERA_SCP_TOKEN)</td></tr><tr><td>use_ascp4</td><td>bool</td><td>Y</td><td>Y</td><td>&nbsp;</td><td>specify version of protocol</td></tr><tr><td>source_root</td><td>string</td><td>Y</td><td>Y</td><td>Y</td><td>Path to be prepended to each source path.<br/> This is either a conventional path or it can be a URI but only if there is no root defined.<br/>(--source-prefix64)</td></tr><tr><td>min_rate_cap_kbps</td><td>int</td><td>Y</td><td>Y</td><td>Y</td><td>&nbsp;</td></tr><tr><td>lock_rate_policy</td><td>bool</td><td>Y</td><td>Y</td><td>Y</td><td>&nbsp;</td></tr><tr><td>lock_target_rate_kbps</td><td>bool</td><td>Y</td><td>Y</td><td>Y</td><td>&nbsp;</td></tr><tr><td>lock_min_rate_kbps</td><td>bool</td><td>Y</td><td>Y</td><td>Y</td><td>&nbsp;</td></tr><tr><td>apply_local_docroot</td><td>bool</td><td>Y</td><td>&nbsp;</td><td>&nbsp;</td><td>(--apply-local-docroot)</td></tr><tr><td>preserve_acls</td><td>string</td><td>Y</td><td>&nbsp;</td><td>&nbsp;</td><td>Preserve access control lists.<br/>Allowed values: none, native, metafile<br/>(--preserve-acls)</td></tr><tr><td>preserve_remote_acls</td><td>string</td><td>Y</td><td>&nbsp;</td><td>&nbsp;</td><td>Preserve remote access control lists.<br/>Allowed values: none, native, metafile<br/>(--remote-preserve-acls)</td></tr><tr><td>preserve_file_owner_uid</td><td>bool</td><td>Y</td><td>&nbsp;</td><td>&nbsp;</td><td>Preserve the user ID for a file owner<br/>(--preserve-file-owner-uid)</td></tr><tr><td>preserve_file_owner_gid</td><td>bool</td><td>Y</td><td>&nbsp;</td><td>&nbsp;</td><td>Preserve the group ID for a file owner<br/>(--preserve-file-owner-gid)</td></tr><tr><td>preserve_source_access_time</td><td>bool</td><td>Y</td><td>&nbsp;</td><td>&nbsp;</td><td>Preserve the time logged for when the source file was accessed<br/>(--preserve-source-access-time)</td></tr><tr><td>remove_empty_source_directory</td><td>bool</td><td>Y</td><td>&nbsp;</td><td>&nbsp;</td><td>Remove empty source subdirectories and remove the source directory itself, if empty<br/>(--remove-empty-source-directory)</td></tr><tr><td>EX_at_rest_password</td><td>string</td><td>Y</td><td>&nbsp;</td><td>&nbsp;</td><td>Passphrase used for at rest encryption or decryption. Prefer to use standard: content_protection_password<br/>(env:ASPERA_SCP_FILEPASS)</td></tr><tr><td>EX_proxy_password</td><td>string</td><td>Y</td><td>&nbsp;</td><td>&nbsp;</td><td>Password used for Aspera proxy server authentication.<br/> May be overridden by password in URL EX_fasp_proxy_url.<br/>(env:ASPERA_PROXY_PASS)</td></tr><tr><td>EX_license_text</td><td>string</td><td>Y</td><td>&nbsp;</td><td>&nbsp;</td><td>License file text override.<br/>By default ascp looks for license file near executable.<br/>(env:ASPERA_SCP_LICENSE)</td></tr><tr><td>dgram_size</td><td>int</td><td>Y</td><td>Y</td><td>Y</td><td>UDP datagram size in bytes<br/>(-Z)</td></tr><tr><td>min_rate_kbps</td><td>int</td><td>Y</td><td>Y</td><td>Y</td><td>Set the minimum transfer rate in kilobits per second.<br/>(-m)</td></tr><tr><td>sshfp</td><td>string</td><td>Y</td><td>Y</td><td>Y</td><td>Check it against server SSH host key fingerprint<br/>(--check-sshfp)</td></tr><tr><td>EX_http_proxy_url</td><td>string</td><td>Y</td><td>&nbsp;</td><td>&nbsp;</td><td>Specify the proxy server address used by HTTP Fallback<br/>(-x)</td></tr><tr><td>EX_ssh_key_paths</td><td>array</td><td>Y</td><td>&nbsp;</td><td>&nbsp;</td><td>Use public key authentication for SSH and specify the private key file paths<br/>(-i)</td></tr><tr><td>EX_http_transfer_jpeg</td><td>int</td><td>Y</td><td>&nbsp;</td><td>&nbsp;</td><td>HTTP transfers as JPEG file<br/>(-j)</td></tr><tr><td>EX_no_read</td><td>bool</td><td>Y</td><td>&nbsp;</td><td>&nbsp;</td><td>no read source<br/>(--no-read)</td></tr><tr><td>EX_no_write</td><td>bool</td><td>Y</td><td>&nbsp;</td><td>&nbsp;</td><td>no write on destination<br/>(--no-write)</td></tr><tr><td>target_rate_percentage</td><td>string</td><td>Y</td><td>Y</td><td>Y</td><td>&nbsp;</td></tr><tr><td>rate_policy_allowed</td><td>string</td><td>&nbsp;</td><td>&nbsp;</td><td>Y</td><td>Specifies most aggressive rate policy that is allowed.<br/>Returned by node API.<br/>Allowed values: low, fair, high, fixed</td></tr><tr><td>lock_min_rate</td><td>bool</td><td>Y</td><td>Y</td><td>Y</td><td>&nbsp;</td></tr><tr><td>lock_target_rate</td><td>bool</td><td>Y</td><td>Y</td><td>Y</td><td>&nbsp;</td></tr><tr><td>authentication</td><td>string</td><td>&nbsp;</td><td>&nbsp;</td><td>Y</td><td>value=token for SSH bypass keys, else password asked if not provided.</td></tr><tr><td>cipher_allowed</td><td>string</td><td>Y</td><td>Y</td><td>Y</td><td>returned by node API. Valid literals include "aes-128" and "none".</td></tr><tr><td>EX_file_list</td><td>string</td><td>Y</td><td>&nbsp;</td><td>&nbsp;</td><td>source file list</td></tr><tr><td>EX_file_pair_list</td><td>string</td><td>Y</td><td>&nbsp;</td><td>&nbsp;</td><td>source file pair list</td></tr><tr><td>EX_ascp_args</td><td>array</td><td>Y</td><td>&nbsp;</td><td>&nbsp;</td><td>Add native command line arguments to ascp</td></tr><tr><td>wss_enabled</td><td>bool</td><td>Y</td><td>Y</td><td>Y</td><td>&nbsp;</td></tr><tr><td>wss_port</td><td>int</td><td>Y</td><td>Y</td><td>Y</td><td>TCP port used for websocket service feed.</td></tr></table>
 
 #### Destination folder for transfers
 
@@ -1732,13 +1732,13 @@ activating CSEAR consists in using transfer spec parameters:
 Example: parameter to download a faspex package and decrypt on the fly
 
 ```json
---ts=@json:'{"content_protection":"decrypt","content_protection_password":"mysecret!"}'
+--ts=@json:'{"content_protection":"decrypt","content_protection_password":"_pass_here_"}'
 ```
 
 Note that up to version 4.6.0, the following parameters should be used for agent `direct`:
 
 ```json
---ts=@json:'{"EX_ascp_args":["--file-crypt=decrypt"],"EX_at_rest_password":"mysecret!"}'
+--ts=@json:'{"EX_ascp_args":["--file-crypt=decrypt"],"EX_at_rest_password":"_secret_here_"}'
 ```
 
 #### Transfer Spec Examples
@@ -2150,7 +2150,7 @@ ascli server mv folder_1/200KB.2 folder_1/to.delete
 ascli server upload --sources=@ts --ts=@json:'{"paths":[{"source":"testfile.bin","destination":"NEW_SERVER_FOLDER/othername"}]}'
 ascli server upload --src-type=pair --sources=@json:'["testfile.bin","NEW_SERVER_FOLDER/othername"]'
 ascli server upload --src-type=pair testfile.bin NEW_SERVER_FOLDER/othername --notif-to=my_recipient_email
-ascli server upload --src-type=pair testfile.bin folder_1/with_options --ts=@json:'{"cipher":"aes-192-gcm","content_protection":"encrypt","content_protection_password":"testit","cookie":"biscuit","create_dir":true,"delete_before_transfer":false,"delete_source":false,"exclude_newer_than":1,"exclude_older_than":10000,"fasp_port":33001,"http_fallback":false,"multi_session":0,"overwrite":"diff+older","precalculate_job_size":true,"preserve_access_time":true,"preserve_creation_time":true,"rate_policy":"fair","resume_policy":"sparse_csum","symlink_policy":"follow"}'
+ascli server upload --src-type=pair testfile.bin folder_1/with_options --ts=@json:'{"cipher":"aes-192-gcm","content_protection":"encrypt","content_protection_password":"_secret_here_","cookie":"biscuit","create_dir":true,"delete_before_transfer":false,"delete_source":false,"exclude_newer_than":1,"exclude_older_than":10000,"fasp_port":33001,"http_fallback":false,"multi_session":0,"overwrite":"diff+older","precalculate_job_size":true,"preserve_access_time":true,"preserve_creation_time":true,"rate_policy":"fair","resume_policy":"sparse_csum","symlink_policy":"follow"}'
 ascli server upload --to-folder=folder_1/target_hot --lock-port=12345 --ts=@json:'{"EX_ascp_args":["--remove-after-transfer","--remove-empty-directories","--exclude-newer-than=-8","--src-base","source_hot"]}' source_hot
 ascli server upload testfile.bin --to-folder=NEW_SERVER_FOLDER --ts=@json:'{"multi_session":3,"multi_session_threshold":1,"resume_policy":"none","target_rate_kbps":1500}' --transfer-info=@json:'{"spawn_delay_sec":2.5}' --progress=multi
 ascli shares admin share list
@@ -2554,7 +2554,7 @@ Lets create an [option preset](#lprt) called: `my_aoc_org` using `ask` interacti
 ```bash
 ascli config preset ask my_aoc_org url client_id client_secret
 option: url> https://myorg.ibmaspera.com/
-option: client_id> BJLPObQiFw
+option: client_id> my_BJbQiFw
 option: client_secret> yFS1mu-crbKuQhGFtfhYuoRW...
 updated: my_aoc_org
 ```
@@ -2628,12 +2628,12 @@ ascli aoc admin res client list
 :............:...............:
 :     id     :  name         :
 :............:...............:
-: BJLPObQiFw : my-client-app :
+: my_BJbQiFw : my-client-app :
 :............:...............:
 ```
 
 ```javascript
-ascli aoc admin res client modify BJLPObQiFw @json:'{"jwt_grant_enabled":true,"explicit_authorization_required":false}'
+ascli aoc admin res client modify my_BJbQiFw @json:'{"jwt_grant_enabled":true,"explicit_authorization_required":false}'
 ```
 
 ```output
@@ -3315,19 +3315,19 @@ f["type"].eql?("file") and (DateTime.now-DateTime.parse(f["modified_time"]))<100
 * Find files older than 1 year on a given node and store in file list
 
 ```bash
-ascli aoc admin res node --name='my node name' --secret='my secret' v4 find / --fields=path --value='exec:f["type"].eql?("file") and (DateTime.now-DateTime.parse(f["modified_time"]))<100' --format=csv > my_file_list.txt
+ascli aoc admin res node --name='my node name' --secret='_secret_here_' v4 find / --fields=path --value='exec:f["type"].eql?("file") and (DateTime.now-DateTime.parse(f["modified_time"]))<100' --format=csv > my_file_list.txt
 ```
 
 * Delete the files, one by one
 
 ```bash
-cat my_file_list.txt|while read path;do echo ascli aoc admin res node --name='my node name' --secret='my secret' v4 delete "$path" ;done
+cat my_file_list.txt|while read path;do echo ascli aoc admin res node --name='my node name' --secret='_secret_here_' v4 delete "$path" ;done
 ```
 
 * Delete the files in bulk
 
 ```bash
-cat my_file_list.txt | ascli aoc admin res node --name='my node name' --secret='my secret' v3 delete @lines:@stdin:
+cat my_file_list.txt | ascli aoc admin res node --name='my node name' --secret='_secret_here_' v3 delete @lines:@stdin:
 ```
 
 ## <a id="ats"></a>Plugin: Aspera Transfer Service
@@ -3413,13 +3413,13 @@ ascli config preset update my_ibm_ats --ats-key=ats_XXXXXXXXXXXXXXXXXXXXXXXX --a
 Example: create access key on IBM Cloud (softlayer):
 
 ```javascript
-ascli ats access_key create --cloud=softlayer --region=ams --params=@json:'{"storage":{"type":"softlayer_swift","container":"_container_name_","credentials":{"api_key":"value","username":"_name_:_usr_name_"},"path":"/"},"id":"_optional_id_","name":"_optional_name_"}'
+ascli ats access_key create --cloud=softlayer --region=ams --params=@json:'{"storage":{"type":"softlayer_swift","container":"_container_name_","credentials":{"api_key":"_secret_here_","username":"_name_:_usr_name_"},"path":"/"},"id":"_optional_id_","name":"_optional_name_"}'
 ```
 
 Example: create access key on AWS:
 
 ```javascript
-ascli ats access_key create --cloud=aws --region=eu-west-1 --params=@json:'{"id":"testkey3","name":"laurent key AWS","storage":{"type":"aws_s3","bucket":"my-bucket","credentials":{"access_key_id":"AKIA_MY_API_KEY","secret_access_key":"my/secret/here"},"path":"/laurent"}}'
+ascli ats access_key create --cloud=aws --region=eu-west-1 --params=@json:'{"id":"testkey3","name":"laurent key AWS","storage":{"type":"aws_s3","bucket":"my-bucket","credentials":{"access_key_id":"AKIA_MY_API_KEY","secret_access_key":"_secret_here_"},"path":"/laurent"}}'
 ```
 
 Example: create access key on Azure SAS:
@@ -3563,7 +3563,7 @@ It is possible to start a FASPStream session using the node API:
 Use the "node stream create" command, then arguments are provided as a [*transfer-spec*](#transferspec).
 
 ```javascript
-ascli node stream create --ts=@json:'{"direction":"send","source":"udp://233.3.3.4:3000?loopback=1&ttl=2","destination":"udp://233.3.3.3:3001/","remote_host":"localhost","remote_user":"stream","remote_password":"XXXX"}' --preset=stream
+ascli node stream create --ts=@json:'{"direction":"send","source":"udp://233.3.3.4:3000?loopback=1&ttl=2","destination":"udp://233.3.3.3:3001/","remote_host":"localhost","remote_user":"stream","remote_password":"_pass_here_"}' --preset=stream
 ```
 
 ### Watchfolder
@@ -3885,14 +3885,14 @@ It consists in the following structure:
 
 ```javascript
 {
-  "apikey": "xxxxxxx.....",
+  "apikey": "_api_key_here_",
   "cos_hmac_keys": {
-    "access_key_id": "xxxxxxx.....",
-    "secret_access_key": "xxxxxxx....."
+    "access_key_id": "_access_key_here_",
+    "secret_access_key": "_secret_here_"
   },
   "endpoints": "https://control.cloud-object-storage.cloud.ibm.com/v2/endpoints",
-  "iam_apikey_description": "my description ...",
-  "iam_apikey_name": "my key name",
+  "iam_apikey_description": "my description _here_ ...",
+  "iam_apikey_name": "my key name _here_",
   "iam_role_crn": "crn:v1:bluemix:public:iam::::serviceRole:Writer",
   "iam_serviceid_crn": "crn:v1:bluemix:public:iam-identity::a/xxxxxxx.....",
   "resource_instance_id": "crn:v1:bluemix:public:cloud-object-storage:global:a/xxxxxxx....."
@@ -4224,19 +4224,19 @@ The `smtp` option is a hash table (extended value) with the following fields:
 ```bash
 ascli config preset set smtp_google server smtp.google.com
 ascli config preset set smtp_google username john@gmail.com
-ascli config preset set smtp_google password P@ssw0rd
+ascli config preset set smtp_google password _pass_here_
 ```
 
 or
 
 ```javascript
-ascli config preset init smtp_google @json:'{"server":"smtp.google.com","username":"john@gmail.com","password":"P@ssw0rd"}'
+ascli config preset init smtp_google @json:'{"server":"smtp.google.com","username":"john@gmail.com","password":"_pass_here_"}'
 ```
 
 or
 
 ```bash
-ascli config preset update smtp_google --server=smtp.google.com --username=john@gmail.com --password=P@ssw0rd
+ascli config preset update smtp_google --server=smtp.google.com --username=john@gmail.com --password=_pass_here_
 ```
 
 Set this configuration as global default, for instance:
@@ -4337,7 +4337,7 @@ Note that in addition, many "EX_" [*transfer-spec*](#transferspec) parameters ar
 ### Simple session
 
 ```javascript
-MY_TSPEC='{"remote_host":"demo.asperasoft.com","remote_user":"asperaweb","ssh_port":33001,"remote_password":"_demo_pass_","direction":"receive","destination_root":"./test.dir","paths":[{"source":"/aspera-test-dir-tiny/200KB.1"}],"resume_level":"none"}'
+MY_TSPEC='{"remote_host":"demo.asperasoft.com","remote_user":"asperaweb","ssh_port":33001,"remote_password":"_pass_here_","direction":"receive","destination_root":"./test.dir","paths":[{"source":"/aspera-test-dir-tiny/200KB.1"}],"resume_level":"none"}'
 
 echo "${MY_TSPEC}"|asession
 ```
@@ -4350,7 +4350,7 @@ This is particularly useful for a persistent session ( with the [*transfer-spec*
 
 ```javascript
 asession
-{"remote_host":"demo.asperasoft.com","ssh_port":33001,"remote_user":"asperaweb","remote_password":"_demo_pass_","direction":"receive","destination_root":".","keepalive":true,"resume_level":"none"}
+{"remote_host":"demo.asperasoft.com","ssh_port":33001,"remote_user":"asperaweb","remote_password":"_pass_here_","direction":"receive","destination_root":".","keepalive":true,"resume_level":"none"}
 {"type":"START","source":"/aspera-test-dir-tiny/200KB.2"}
 {"type":"DONE"}
 ```

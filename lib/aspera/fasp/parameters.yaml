@@ -280,7 +280,7 @@ ssh_port:
   :clswitch: "-P"
 ssh_private_key:
   :desc: "Private key used for SSH authentication.\n
-   Shall look like: -----BEGIN RSA PRIVATE KEY-----\\nMII...\n
+   Shall look like: -----BEGIN RSA PRIV4TE KEY-----\\nMII...\n
    Note the JSON encoding: \\n for newlines."
   :tragents:
   - :direct

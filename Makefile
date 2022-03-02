@@ -77,3 +77,8 @@ dockertest:
 dpush:
 	docker push $(DOCKER_TAG_VERSION)
 	docker push $(DOCKER_TAG_LATEST)
+##################################
+# scan secrets
+scan:
+	detect-secrets scan --exclude-files '^.secrets.baseline$$' --exclude-secrets '_here_' --exclude-secrets '^my_' --exclude-secrets '^your ' --exclude-secrets demoaspera
+

@@ -16,8 +16,7 @@ class LocalExecutor
   end
 end
 
-PATH_FOLDER_MAIN='/'
-
+# check required env vars
 params={}
 [:url,:user,:pass].each do |p|
   env="CF_HSTS_SSH_#{p.to_s.upcase}"
@@ -25,9 +24,13 @@ params={}
   raise "missing env var: #{env}" unless params[p].is_a?(String)
 end
 ssh_url=URI.parse(params[:url])
+
+# main folder relative to docroot and server executor
+PATH_FOLDER_MAIN='/'
 demo_executor=Aspera::Ssh.new(ssh_url.host,params[:user],{:password=>params[:pass],:port=>ssh_url.port})
 
-#PATH_FOLDER_MAIN='/workspace/Rubytools/aspera/local/PATH_FOLDER_MAIN'
+# to use a local executor, set PATH_FOLDER_MAIN to the main folder
+#PATH_FOLDER_MAIN='/local/data'
 #demo_executor=LocalExecutor.new
 TEST_RUN_ID=(rand 1000).to_s
 PATH_FOLDER_TINY=File.join(PATH_FOLDER_MAIN,'aspera-test-dir-tiny')
