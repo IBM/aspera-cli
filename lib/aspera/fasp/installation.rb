@@ -195,7 +195,7 @@ module Aspera
 
       # default bypass key phrase
       def bypass_pass
-        return '%08x-%04x-%04x-%04x-%04x%08x' % DataRepository.instance.get_bin(3).unpack('NnnnnN')
+        return format('%08x-%04x-%04x-%04x-%04x%08x',*DataRepository.instance.get_bin(3).unpack('NnnnnN'))
       end
 
       def bypass_keys

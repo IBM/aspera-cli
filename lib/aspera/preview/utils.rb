@@ -90,7 +90,7 @@ module Aspera
       end
 
       def self.get_tmp_num_filepath(temp_folder, file_number)
-        return File.join(temp_folder,sprintf(TMPFMT,file_number))
+        return File.join(temp_folder,format(TMPFMT,file_number))
       end
 
       def self.video_dupe_frame(temp_folder, index, count)

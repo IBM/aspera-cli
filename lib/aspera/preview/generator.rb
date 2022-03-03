@@ -130,7 +130,7 @@ module Aspera
         File.open(filelist, 'w+') do |f|
           1.upto(@options.clips_count.to_i) do |i|
             offset_seconds=get_offset(p_duration,@options.video_start_sec.to_i,@options.clips_count.to_i,i)
-            tmpfilename=sprintf('clip%04d.mp4',i)
+            tmpfilename=format('clip%04d.mp4',i)
             Utils.ffmpeg(
             in_f: @source_file_path,
             in_p: ['-ss',0.9*offset_seconds],
