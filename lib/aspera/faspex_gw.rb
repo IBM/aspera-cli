@@ -39,17 +39,17 @@ module Aspera
         files_pkg_recipients=[]
         faspex_pkg_delivery['recipients'].each do |recipient_email|
           user_lookup=@aoc_api_user.read('contacts',{'current_workspace_id'=>@aoc_workspace_id,'q'=>recipient_email})[:data]
-          raise StandardError,"no such unique user: #{recipient_email} / #{user_lookup}" unless !user_lookup.nil? and user_lookup.length == 1
+          raise StandardError,"no such unique user: #{recipient_email} / #{user_lookup}" unless !user_lookup.nil? and user_lookup.length.eql?(1)
           recipient_user_info=user_lookup.first
           files_pkg_recipients.push({'id'=>recipient_user_info['source_id'],'type'=>recipient_user_info['source_type']})
         end
 
         #  create a new package with one file
         the_package=@aoc_api_user.create('packages',{
-          'file_names'=>faspex_pkg_delivery['sources'][0]['paths'],
-          'name'=>faspex_pkg_delivery['title'],
-          'note'=>faspex_pkg_delivery['note'],
-          'recipients'=>files_pkg_recipients,
+          'file_names'  =>faspex_pkg_delivery['sources'][0]['paths'],
+          'name'        =>faspex_pkg_delivery['title'],
+          'note'        =>faspex_pkg_delivery['note'],
+          'recipients'  =>files_pkg_recipients,
           'workspace_id'=>@aoc_workspace_id})[:data]
 
         #  get node information for the node on which package must be created
@@ -85,24 +85,24 @@ module Aspera
           'cookie'      => 'unused',
           'create_dir'  => true,
           'rate_policy' => 'fair',
-          'rate_policy_allowed' => 'fixed',
-          'min_rate_cap_kbps' => nil,
-          'min_rate_kbps' => 0,
+          'rate_policy_allowed'  => 'fixed',
+          'min_rate_cap_kbps'    => nil,
+          'min_rate_kbps'        => 0,
           'target_rate_percentage' => nil,
-          'lock_target_rate' => nil,
-          'fasp_url' => 'unused',
-          'lock_min_rate' => true,
-          'lock_rate_policy' => true,
-          'source_root' => '',
-          'content_protection' => nil,
+          'lock_target_rate'     => nil,
+          'fasp_url'             => 'unused',
+          'lock_min_rate'        => true,
+          'lock_rate_policy'     => true,
+          'source_root'          => '',
+          'content_protection'   => nil,
           'target_rate_cap_kbps' => 20000, # TODO: is this value useful ?
-          'target_rate_kbps' => 10000, # TODO: get from where?
-          'cipher' => 'aes-128',
-          'cipher_allowed' => nil,
-          'http_fallback' => false,
-          'http_fallback_port' => nil,
-          'https_fallback_port' => nil,
-          'destination_root' => '/'
+          'target_rate_kbps'     => 10000, # TODO: get from where?
+          'cipher'               => 'aes-128',
+          'cipher_allowed'       => nil,
+          'http_fallback'        => false,
+          'http_fallback_port'   => nil,
+          'https_fallback_port'  => nil,
+          'destination_root'     => '/'
         }
         # but we place it in a Faspex package creation response
         faspex_package_create_result={
@@ -122,7 +122,6 @@ module Aspera
         else
           response.status=400
           return 'ERROR HERE'
-          raise "unsupported path: #{request.path}"
         end
       end
     end # FxGwServlet
@@ -140,50 +139,14 @@ module Aspera
       end
     end
 
-    def fill_self_signed_cert(options)
-      key = OpenSSL::PKey::RSA.new(4096)
-      cert = OpenSSL::X509::Certificate.new
-      cert.subject = cert.issuer = OpenSSL::X509::Name.parse('/C=FR/O=Test/OU=Test/CN=Test')
-      cert.not_before = Time.now
-      cert.not_after = Time.now + 365 * 24 * 60 * 60
-      cert.public_key = key.public_key
-      cert.serial = 0x0
-      cert.version = 2
-      ef = OpenSSL::X509::ExtensionFactory.new
-      ef.issuer_certificate = cert
-      ef.subject_certificate = cert
-      cert.extensions = [
-        ef.create_extension('basicConstraints','CA:TRUE', true),
-        ef.create_extension('subjectKeyIdentifier', 'hash'),
-        # ef.create_extension("keyUsage", "cRLSign,keyCertSign", true),
-      ]
-      cert.add_extension(ef.create_extension('authorityKeyIdentifier','keyid:always,issuer:always'))
-      cert.sign(key, OpenSSL::Digest::SHA256.new)
-      options[:SSLPrivateKey]  = key
-      options[:SSLCertificate] = cert
-    end
-
     def initialize(a_aoc_api_user,a_workspace_id)
       webrick_options = {
-        app:                 FaspexGW,
         Port:                9443,
         Logger:              Log.log,
-        #DocumentRoot:        Cli::Main.gem_root,
         SSLEnable:           true,
-        SSLVerifyClient:     OpenSSL::SSL::VERIFY_NONE
+        SSLVerifyClient:     OpenSSL::SSL::VERIFY_NONE,
+        SSLCertName:         [['CN',WEBrick::Utils.getservername]]
       }
-      case 1
-      when 0
-        # generate self signed cert
-        webrick_options[:SSLCertName]    = [['CN',WEBrick::Utils.getservername]]
-        Log.log.error(">>>#{webrick_options[:SSLCertName]}")
-      when 1
-        fill_self_signed_cert(webrick_options)
-      when 2
-        # TODO: args to set certificate of server
-        webrick_options[:SSLPrivateKey] =OpenSSL::PKey::RSA.new(File.read('/Users/laurent/workspace/Tools/certificate/myserver.key'))
-        webrick_options[:SSLCertificate] = OpenSSL::X509::Certificate.new(File.read('/Users/laurent/workspace/Tools/certificate/myserver.crt'))
-      end
       Log.log.info("Server started on port #{webrick_options[:Port]}")
       @server = WEBrick::HTTPServer.new(webrick_options)
       @server.mount('/aspera/faspex', FxGwServlet,a_aoc_api_user,a_workspace_id)

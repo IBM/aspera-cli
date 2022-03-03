@@ -13,7 +13,7 @@ module Security
   class Password
     class << self
       # add some login to original method
-      alias_method :orig_flags_for_options, :flags_for_options
+      alias orig_flags_for_options flags_for_options
       def flags_for_options(options = {})
         keychain=options.delete(:keychain)
         url=options.delete(:url)

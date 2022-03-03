@@ -84,7 +84,6 @@ module Aspera
         else
           raise "unknown action: #{command}"
         end
-        raise 'internal error should not reach here'
       end
 
       # implement generic rest operations on given resource path

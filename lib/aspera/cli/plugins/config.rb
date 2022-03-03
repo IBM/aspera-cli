@@ -140,8 +140,11 @@ END_OF_TEMPLATE
           options.parse_options!
           pac_script=options.get_option(:fpac,:optional)
           if !pac_script.nil?
+            # create PAC executor
             pac_exec=@pac_exec=Aspera::ProxyAutoConfig.new(pac_script)
+            # save original method that finds proxy in URI::Generic, it uses env var http_proxy
             URI::Generic.alias_method(:find_proxy_orig,:find_proxy)
+            # overload the method with get_proxies 
             URI::Generic.define_method(:find_proxy) {|env=ENV| pac_exec.get_proxies(to_s).first || find_proxy_orig(env)}
           end
         end
@@ -958,7 +961,7 @@ _EOF_
           when :proxy_check
             options.get_option(:fpac,:mandatory)
             server_url=options.get_next_argument('server url')
-            return Main.result_status(@pac_exec.get_proxy(server_url))
+            return Main.result_status(@pac_exec.find_proxy_for_url(server_url))
           when :check_update
             return {type: :single_object, data: check_gem_version}
           when :initdemo

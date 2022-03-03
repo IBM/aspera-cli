@@ -49,7 +49,7 @@ module Aspera
       end
 
       # backward compatibility in sample program
-      alias :folder= :sdk_folder=
+      alias folder= sdk_folder=
 
       # @return the path to folder where SDK is installed
       def sdk_folder
