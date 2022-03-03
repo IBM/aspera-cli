@@ -52,6 +52,8 @@ Layout/FirstArgumentIndentation:
   Enabled: false
 Layout/MultilineArrayBraceLayout:
   Enabled: false
+Style/WordArray:
+  Enabled: false
 Style/RescueModifier:
   Enabled: false
 Style/SymbolArray:
@@ -107,6 +109,7 @@ Layout/MultilineOperationIndentation:
   EnforcedStyle: indented
 
 Layout/MultilineMethodCallIndentation:
+  Enabled: false
   EnforcedStyle: indented
 
 Layout/BlockAlignment:
@@ -161,9 +164,6 @@ Style/ModuleFunction:
   Enabled: true
 
 Style/SpecialGlobalVars:
-  Enabled: true
-
-Style/WordArray:
   Enabled: true
 
 Style/MixinUsage:
