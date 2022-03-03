@@ -26,8 +26,8 @@ module Aspera
           end
         end
         # special value for package id
-        VAL_ALL='ALL'
-        ID_AK_ADMIN='ASPERA_ACCESS_KEY_ADMIN'
+        VAL_ALL='ALL'.freeze
+        ID_AK_ADMIN='ASPERA_ACCESS_KEY_ADMIN'.freeze
 
         def initialize(env)
           super(env)
@@ -1004,8 +1004,7 @@ module Aspera
             when :instances
               return entity_action(@api_aoc,'workflow_instances',nil,:id,nil)
             when :workflows
-              wF_COMMANDS=Plugin::ALL_OPS.clone.push(:action,:launch)
-              wf_command=options.get_next_command(wF_COMMANDS)
+              wf_command=options.get_next_command([Plugin::ALL_OPS,:action,:launch].flatten)
               case wf_command
               when *Plugin::ALL_OPS
                 return entity_command(wf_command,automation_api,'workflows',nil,:id)
@@ -1015,8 +1014,8 @@ module Aspera
                 return {type: :single_object,data: data}
               when :action
                 #TODO: not complete
-                wf_command=options.get_next_command([:list,:create,:show])
-                Log.log.warn("Not implemented: #{wf_command}")
+                wf_action_cmd=options.get_next_command([:list,:create,:show])
+                Log.log.warn("Not implemented: #{wf_action_cmd}")
                 wf_id=instance_identifier()
                 step=automation_api.create('steps',{'workflow_id'=>wf_id})[:data]
                 automation_api.update("workflows/#{wf_id}",{'step_order'=>[step['id']]})
