@@ -72,7 +72,7 @@ module Aspera
         webrick_options[:SSLEnable]=true
         webrick_options[:SSLVerifyClient] = OpenSSL::SSL::VERIFY_NONE
         # a- automatic certificate generation
-        webrick_options[:SSLCertName]   = [['CN',WEBrick::Utils.getservername]]
+        webrick_options[:SSLCertName] = [['CN',WEBrick::Utils.getservername]]
         # b- generate self signed cert
         #webrick_options[:SSLPrivateKey]   = OpenSSL::PKey::RSA.new(4096)
         #webrick_options[:SSLCertificate]  = OpenSSL::X509::Certificate.new

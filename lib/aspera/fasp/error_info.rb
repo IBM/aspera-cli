@@ -54,7 +54,7 @@ module Aspera
       48 => { r: false, c: 'FILE_ENCRYPTION_ERROR', m: 'File encryption error, e.g. corrupt file',       a: 'File encryption/decryption error, e.g. corrupt file'},
       49 => { r: false, c: 'FILE_DECRYPTION_PASS',  m: 'File encryption/decryption error, e.g. corrupt file', a: 'File decryption error, bad passphrase'},
       50 => { r: false, c: 'BAD_CONFIGURATION',     m: 'Aspera.conf contains invalid data and was rejected',  a: 'Invalid configuration'},
-      51 => { r: false, c: 'UNDEFINED',             m: 'Should never happen, report to Aspera',          a: 'Undefined error'}
+      51 => { r: false, c: 'UNDEFINED',             m: 'Should never happen, report to Aspera', a: 'Undefined error'}
     }
   end
 end

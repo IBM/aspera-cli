@@ -178,10 +178,10 @@ module Aspera
             case user_asked_fields_list_str
             when FIELDS_DEFAULT then results[:fields]||res_data.keys
             when FIELDS_ALL then     res_data.keys
-            else                 user_asked_fields_list_str.split(',')
+            else user_asked_fields_list_str.split(',')
             end
             table_rows_hash_val=asked_fields.map { |i| { final_table_columns.first => i, final_table_columns.last => res_data[i] } }
-          when :value_list  # goes to table display
+          when :value_list # goes to table display
             # :value_list is a simple array of values, name of column provided in the :name
             final_table_columns = [results[:name]]
             table_rows_hash_val=res_data.map { |i| { results[:name] => i } }

@@ -283,7 +283,7 @@ module Aspera
           case command
           when :list
             resp=@api_node.read('async/list')[:data]['sync_ids']
-            return { type: :value_list, data: resp, name: 'id'  }
+            return { type: :value_list, data: resp, name: 'id' }
           when :show
             resp=@api_node.create('async/summary',pdata)[:data]['sync_summaries']
             return Main.result_empty if resp.empty?
@@ -294,14 +294,14 @@ module Aspera
             end
           when :delete
             resp=@api_node.create('async/delete',pdata)[:data]
-            return { type: :single_object, data: resp, name: 'id'  }
+            return { type: :single_object, data: resp, name: 'id' }
           when :bandwidth
-            pdata['seconds']=100  # TODO: as parameter with --value
+            pdata['seconds']=100 # TODO: as parameter with --value
             resp=@api_node.create('async/bandwidth',pdata)[:data]
             data=resp['bandwidth_data']
             return Main.result_empty if data.empty?
             data=data.first[asyncid]['data']
-            return { type: :object_list, data: data, name: 'id'  }
+            return { type: :object_list, data: data, name: 'id' }
           when :files
             # count int
             # filename str
@@ -326,7 +326,7 @@ module Aspera
             end
             return Main.result_empty if data.empty?
             skip_ids_persistency.save unless skip_ids_persistency.nil?
-            return { type: :object_list, data: data, name: 'id'  }
+            return { type: :object_list, data: data, name: 'id' }
           when :counters
             resp=@api_node.create('async/counters',pdata)[:data]['sync_counters'].first[asyncid].last
             return Main.result_empty if resp.nil?
@@ -346,7 +346,7 @@ module Aspera
             case command
             when :list
               resp=@api_node.read('ops/transfers',options.get_option(:value,:optional))
-              return { type: :object_list, data: resp[:data], fields: ['id','status']  } # TODO: useful?
+              return { type: :object_list, data: resp[:data], fields: ['id','status'] } # TODO: useful?
             when :create
               resp=@api_node.create('streams',options.get_option(:value,:mandatory))
               return { type: :single_object, data: resp[:data] }

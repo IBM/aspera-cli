@@ -46,7 +46,7 @@ module Aspera
 
     # @param param_hash
     def initialize(param_hash,params_definition)
-      @param_hash=param_hash  # keep reference so that it can be modified by caller before calling `process_params`
+      @param_hash=param_hash # keep reference so that it can be modified by caller before calling `process_params`
       @params_definition=params_definition
       @result_env={}
       @result_args=[]
@@ -146,7 +146,7 @@ module Aspera
       when :opt_without_arg # if present and true : just add option without value
         add_param=false
         case parameter_value
-        when false# nothing to put on command line, no creation by default
+        when false # nothing to put on command line, no creation by default
         when true then add_param=true
         else raise Fasp::Error.new("unsupported #{param_name}: #{parameter_value}")
         end

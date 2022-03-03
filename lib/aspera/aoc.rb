@@ -146,7 +146,7 @@ module Aspera
           'usage_id'        => "aspera.files.workspace.#{ws_id}", # activity tracking
           'files'           => {
           'files_transfer_action' => "#{operation}_#{app.gsub(/s$/,'')}",
-          'workspace_name'        => ws_name,  # activity tracking
+          'workspace_name'        => ws_name, # activity tracking
           'workspace_id'          => ws_id
           }
           }
@@ -290,7 +290,7 @@ module Aspera
         end
       else
         # retrieve values from API
-        std_t_spec=get_node_api(node_file[:node_info],scope: SCOPE_NODE_USER).create('files/download_setup',{transfer_requests:  [{ transfer_request:  {paths:  [{'source'=>'/'}] } }] })[:data]['transfer_specs'].first['transfer_spec']
+        std_t_spec=get_node_api(node_file[:node_info],scope: SCOPE_NODE_USER).create('files/download_setup',{transfer_requests: [{ transfer_request: {paths: [{'source'=>'/'}] } }] })[:data]['transfer_specs'].first['transfer_spec']
         ['remote_host','remote_user','ssh_port','fasp_port'].each {|i| transfer_spec[i]=std_t_spec[i]}
       end
       # add caller provided transfer spec
@@ -439,7 +439,7 @@ module Aspera
         case icase_matches.length
         when 1 then return icase_matches.first
         when 0 then raise "#{entity_type}: multiple case insensitive partial match for: \"#{entity_name}\": #{matching_items.map{|i|i['name']}} but no case insensitive full match. Please be more specific or give exact name."
-        else    raise "Two entities cannot have the same case insensitive name: #{icase_matches.map{|i|i['name']}}"
+        else raise "Two entities cannot have the same case insensitive name: #{icase_matches.map{|i|i['name']}}"
         end
       end
     end

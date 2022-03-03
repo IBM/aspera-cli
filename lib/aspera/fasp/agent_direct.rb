@@ -28,7 +28,7 @@ module Aspera
         wss:               false,
         multi_incr_udp:    true,
         resume:            {},
-        quiet:             true   # by default no interactive progress bar
+        quiet:             true # by default no interactive progress bar
       }
       private_constant :DEFAULT_OPTIONS
 
@@ -263,7 +263,7 @@ module Aspera
               exception_raised=false
             when 'ERROR'
               Log.log.error("code: #{last_status_event['Code']}")
-              if last_status_event['Description']  =~ /bearer token/i
+              if last_status_event['Description'] =~ /bearer token/i
                 Log.log.error('need to regenerate token'.red)
                 if session[:options].is_a?(Hash) and session[:options].has_key?(:regenerate_token)
                   # regenerate token here, expired, or error on it

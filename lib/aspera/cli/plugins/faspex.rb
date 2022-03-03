@@ -243,7 +243,7 @@ module Aspera
             command_pkg=options.get_next_command([:send, :recv, :list])
             case command_pkg
             when :list
-              return {type: :object_list,data: mailbox_all_entries,fields: [PACKAGE_MATCH_FIELD,'title','items'], textify:  lambda { |table_data| Faspex.textify_package_list(table_data)} }
+              return {type: :object_list,data: mailbox_all_entries,fields: [PACKAGE_MATCH_FIELD,'title','items'], textify: lambda { |table_data| Faspex.textify_package_list(table_data)} }
             when :send
               delivery_info=options.get_option(:delivery_info,:mandatory)
               raise CliBadArgument,'delivery_info must be hash, refer to doc' unless delivery_info.is_a?(Hash)

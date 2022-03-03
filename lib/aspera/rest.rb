@@ -134,7 +134,7 @@ module Aspera
       Log.log.debug("URI=#{uri}")
       begin
         # instanciate request object based on string name
-        req=Object.const_get('Net::HTTP::'+call_data[:operation].capitalize).new(uri)#.request_uri
+        req=Net::HTTP.const_get(call_data[:operation].capitalize).new(uri)
       rescue NameError
         raise "unsupported operation : #{call_data[:operation]}"
       end

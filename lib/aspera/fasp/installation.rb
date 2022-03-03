@@ -353,7 +353,7 @@ module Aspera
             log_root: File.join(Dir.home,'Library','Logs','Aspera_Drive'),
             sub_bin: File.join('Contents','Resources')
             }]
-        else; return [{  # other: Linux and Unix family
+        else; return [{ # other: Linux and Unix family
             expected: PRODUCT_CONNECT,
             app_root: File.join(Dir.home,'.aspera','connect'),
             run_root: File.join(Dir.home,'.aspera','connect')

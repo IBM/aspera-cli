@@ -184,7 +184,7 @@ module Aspera
             result=shell_executor.execute(args.unshift(realcmd))
             case command
             when :ctl
-              return {type: :object_list,data: asctl_parse(result)}#
+              return {type: :object_list,data: asctl_parse(result)}
             when :configurator
               lines=result.split("\n")
               Log.log.debug(`type asconfigurator`)

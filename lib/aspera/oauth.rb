@@ -262,7 +262,7 @@ module Aspera
           payload.merge!(@params[:jwt_add]) if @params.has_key?(:jwt_add)
           Log.log.debug("JWT payload=[#{payload}]")
 
-          rsa_private=@params[:jwt_private_key_obj]  # type: OpenSSL::PKey::RSA
+          rsa_private=@params[:jwt_private_key_obj] # type: OpenSSL::PKey::RSA
           Log.log.debug("private=[#{rsa_private}]")
 
           assertion = JWT.encode(payload, rsa_private, 'RS256', @params[:jwt_headers]||{})

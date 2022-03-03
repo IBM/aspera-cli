@@ -866,7 +866,7 @@ _EOF_
               end
               myself=aoc_api.read('self')[:data]
               if auto_set_pub_key
-                raise CliError,'Public key is already set in profile (use --override=yes)'  unless myself['public_key'].empty? or option_override
+                raise CliError,'Public key is already set in profile (use --override=yes)' unless myself['public_key'].empty? or option_override
                 self.format.display_status('Updating profile with new key')
                 aoc_api.update("users/#{myself['id']}",{'public_key'=>pub_key_pem})
               end

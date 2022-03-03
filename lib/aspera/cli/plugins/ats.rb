@@ -80,7 +80,7 @@ module Aspera
           when :list
             params=options.get_option(:params,:optional) || {'offset'=>0,'max_results'=>1000}
             res=ats_api_pub_v1.read('access_keys',params)
-            return {type: :object_list, data: res[:data]['data'], fields:  ['name','id','created.at','modified.at']}
+            return {type: :object_list, data: res[:data]['data'], fields: ['name','id','created.at','modified.at']}
           when :show
             res=ats_api_pub_v1.read("access_keys/#{access_key_id}")
             return {type: :single_object, data: res[:data]}
@@ -187,7 +187,7 @@ module Aspera
             return {type: :single_object, data: created_key}
           when :list # list known api keys in ATS (this require an api_key ...)
             res=ats_ibm_api.read('api_keys',{'offset'=>0,'max_results'=>1000})
-            return {type: :value_list, data: res[:data]['data'], name:  'ats_id'}
+            return {type: :value_list, data: res[:data]['data'], name: 'ats_id'}
           when :show # show one of api_key in ATS
             res=ats_ibm_api.read("api_keys/#{concerned_id}")
             return {type: :single_object, data: res[:data]}
