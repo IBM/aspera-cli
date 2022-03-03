@@ -1260,22 +1260,30 @@ See [Ruby findproxy](https://rubyapi.org/3.0/o/uri/generic#method-i-find_proxy).
 export http_proxy=http://myproxy.org.net:3128
 ```
 
+Note that ruby expects a URL and `myproxy.org.net:3128` alone is not accepted.
+
 #### FASP proxy (forward) for transfers
 
 To specify a FASP proxy (forward), set the <%=trspec%> parameter: `EX_fasp_proxy_url` (only supported with the `direct` agent).
 
 #### HTTP proxy legacy Aspera HTTP fallback transfers
 
-To specify a proxy for legacy http fallback, set the <%=trspec%> parameter: `EX_http_proxy_url` (only supported with the `direct` agent).
-(It is also possible to use `EX_ascp_args`)
+To specify a proxy for legacy HTTP fallback, set the <%=trspec%> parameter: `EX_http_proxy_url` (only supported with the `direct` agent).
+(It is also possible to use `EX_ascp_args` and native options in `direct`)
 
 #### Proxy auto config
 
-The `fpac` option allows use of a Proxy Auto Configuration (PAC) file specified by its javascript value.
-To read a from URL (`http:`, `https:` and `file:`), use: `@uri:`.
-Use of auto config is currently only for REST calls.
+The `fpac` option allows use of a [Proxy Auto Configuration (PAC)](https://en.wikipedia.org/wiki/Proxy_auto-config) script defined as javascript value.
+To read the script from a URL (`http:`, `https:` and `file:`), use: `@uri:`.
+A minimal script can be specified, for example like this, to define the use of a local proxy:
 
-The PAC file can be tested with command: `config proxy_check`. Example:
+```bash
+export ASCLI_FPAC='function FindProxyForURL(url, host){return "PROXY localhost:3128"}'
+```
+
+The PAC file will be used for any HTTP/HTTPS/REST connection, but not other (e.g. FASP, HTTP fallback, HTTPGW)
+
+The PAC file can be tested with command: `config proxy_check`. Example, using command line option:
 
 ```
 <%=cmd%> conf proxy_check --fpac='function FindProxyForURL(url, host) {return "PROXY proxy.example.com:1234;DIRECT";}' http://example.com
@@ -3996,6 +4004,7 @@ So, it evolved into <%=tool%>:
 
   * new: option to specify font used to generate image of text file in `preview`
   * new: #66 improvement for content protection (support standard transfer spec options for direct agent)
+  * new: option `fpac` is now applicable to all ruby based HTTP connections, i.e. API calls
   * change: (break) command `conf gem path` replaces `conf gem_path`
   * change: (break) option `fpac` expects a value instead of URL
   * change: (break) option `cipher` in transfger spec must have hyphen

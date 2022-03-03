@@ -7,9 +7,9 @@ module Aspera
   class ProxyAutoConfig
     # template file is read once, it contains functions that can be used in a proxy autoconf script
     # it is similar to mozilla ascii_pac_utils.inc
-    PAC_FUNC_TEMPLATE=File.read(__FILE__.gsub(/\.rb$/,'.erb.js')).freeze
+    PAC_UTILS_TEMPLATE=__FILE__.gsub(/\.rb$/,'.erb.js').freeze
     PAC_MAIN_FUNCTION='FindProxyForURL'.freeze
-    private_constant :PAC_FUNC_TEMPLATE,:PAC_MAIN_FUNCTION
+    private_constant :PAC_UTILS_TEMPLATE,:PAC_MAIN_FUNCTION
 
     private
     # variables starting with "context_" are replaced in the ERB template file
@@ -28,8 +28,11 @@ module Aspera
 
     # @param proxy_auto_config the proxy auto config script to be evaluated
     def initialize(proxy_auto_config)
+      # user provided javascript with FindProxyForURL function
       @proxy_auto_config=proxy_auto_config
+      # avoid multiple execution, this does not support load balancing
       @cache={}
+      @lib_template=nil
     end
 
     # execute proxy auto config script for the given URL : https://en.wikipedia.org/wiki/Proxy_auto-config
@@ -40,11 +43,14 @@ module Aspera
       if !@cache.has_key?(simple_url)
         # require at runtime, in case there is no js engine
         require 'execjs'
-        # generate javascript library
-        pac_functions=ERB.new(PAC_FUNC_TEMPLATE).result(build_binding(uri.host))
-        js_to_execute=pac_functions+@proxy_auto_config
-        js_context = ExecJS.compile(js_to_execute)
-        @cache[simple_url]=js_context.call(PAC_MAIN_FUNCTION, simple_url, uri.host)
+        # read template lib
+        @lib_template=File.read(PAC_UTILS_TEMPLATE).freeze if @lib_template.nil?
+        # generate javascript library with dns resolution
+        pac_utils_with_resolve=ERB.new(@lib_template).result(build_binding(uri.host))
+        # to be executed is utils + user function
+        js_to_execute=pac_utils_with_resolve+@proxy_auto_config
+        executable_js = ExecJS.compile(js_to_execute)
+        @cache[simple_url]=executable_js.call(PAC_MAIN_FUNCTION, simple_url, uri.host)
       end
       return @cache[simple_url]
     end
@@ -71,10 +77,14 @@ module Aspera
         when 'PROXY'
           addr_port=parts.shift
           raise 'PROXY shall have one param' unless addr_port.is_a?(String) and parts.empty?
-          # typically, PAC addresses are <host>:<port>, but we want to return URIs, so add dummy scheme
-          addr_port="proxy://#{addr_port}" unless addr_port.include?('://')
           begin
-            uri_list.push(URI.parse(addr_port))
+            # PAC proxy addresses are <host>:<port>
+            if addr_port.match(/:[0-9]+$/)
+              # we want to return URIs, so add dummy scheme
+              uri_list.push(URI.parse("proxy://#{addr_port}"))
+            else
+              Log.log.warn("PAC: PROXY must be <address>:<port>, ignoring #{addr_port}")
+            end
           rescue
             Log.log.warn("PAC: cannot parse #{addr_port}")
           end
