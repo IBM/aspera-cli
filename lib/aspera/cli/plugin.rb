@@ -21,7 +21,7 @@ module Aspera
         unless env[:skip_option_header]
           options.parser.separator ''
           options.parser.separator "COMMAND: #{self.class.name.split('::').last.downcase}"
-          options.parser.separator "SUBCOMMANDS: #{self.class.const_get(:ACTIONS).map{ |p| p.to_s}.join(' ')}"
+          options.parser.separator "SUBCOMMANDS: #{self.class.const_get(:ACTIONS).map(&:to_s).join(' ')}"
           options.parser.separator 'OPTIONS:'
         end
         unless @@done

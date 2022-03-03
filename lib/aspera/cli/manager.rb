@@ -80,7 +80,6 @@ module Aspera
       attr_accessor :ask_missing_mandatory, :ask_missing_optional
       attr_writer :fail_on_missing_mandatory
 
-      #
       def initialize(program_name,argv=nil)
         # command line values not starting with '-'
         @unprocessed_cmd_line_arguments=[]

@@ -78,7 +78,6 @@ module Aspera
 
         ACTIONS=[:node, :package, :auth_client, :jobs]
 
-        #
         def execute_action
           set_api
           command=options.get_next_command(ACTIONS)

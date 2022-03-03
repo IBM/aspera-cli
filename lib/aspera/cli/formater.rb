@@ -89,7 +89,7 @@ module Aspera
       def self.flatten_name_value_list(hash)
         hash.keys.each do |k|
           v=hash[k]
-          if v.is_a?(Array) and v.map{|i|i.class}.uniq.eql?([Hash]) and v.map{|i|i.keys}.flatten.sort.uniq.eql?(['name', 'value'])
+          if v.is_a?(Array) and v.map(&:class).uniq.eql?([Hash]) and v.map(&:keys).flatten.sort.uniq.eql?(['name', 'value'])
             v.each do |pair|
               hash["#{k}.#{pair['name']}"]=pair['value']
             end

@@ -339,8 +339,12 @@ module Aspera
                 # NOTE: only external users have token in faspe: link !
                 if !transfer_spec.has_key?('token')
                   sanitized=id_uri[:uri].gsub('&','&amp;')
-                  xmlpayload='<?xml version="1.0" encoding="UTF-8"?><url-list xmlns="http://schemas.asperasoft.com/xml/url-list"><url href="'+sanitized+'"/></url-list>'
-                  transfer_spec['token']=api_v3.call({operation: 'POST',subpath: 'issue-token?direction=down',headers: {'Accept'=>'text/plain','Content-Type'=>'application/vnd.aspera.url-list+xml'},text_body_params: xmlpayload})[:http].body
+                  xmlpayload=%(<?xml version="1.0" encoding="UTF-8"?><url-list xmlns="http://schemas.asperasoft.com/xml/url-list"><url href="#{sanitized}"/></url-list>)
+                  transfer_spec['token']=api_v3.call({
+                    operation: 'POST',
+                    subpath:   'issue-token?direction=down',
+                    headers:   {'Accept'=>'text/plain','Content-Type'=>'application/vnd.aspera.url-list+xml'},
+                    text_body_params: xmlpayload})[:http].body
                 end
                 transfer_spec['direction']=Fasp::TransferSpec::DIRECTION_RECEIVE
                 statuses=transfer.start(transfer_spec,{src: :node_gen3})

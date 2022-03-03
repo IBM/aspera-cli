@@ -95,7 +95,7 @@ module Aspera
         end
 
         def option_skip_types
-          return @skip_types.map{|i|i.to_s}.join(',')
+          return @skip_types.map(&:to_s).join(',')
         end
 
         def option_skip_format=(value)
@@ -103,7 +103,7 @@ module Aspera
         end
 
         def option_skip_format
-          return @preview_formats_to_generate.map{|i|i.to_s}.join(',')
+          return @preview_formats_to_generate.map(&:to_s).join(',')
         end
 
         # /files/id/files is normally cached in redis, but we can discard the cache
@@ -349,7 +349,7 @@ module Aspera
         def scan_folder_files(top_entry,scan_start=nil)
           if !scan_start.nil?
             # canonical path: start with / and ends with /
-            scan_start='/'+scan_start.split('/').reject{|i|i.empty?}.join('/')
+            scan_start='/'+scan_start.split('/').reject(&:empty?).join('/')
             scan_start="#{scan_start}/" #unless scan_start.end_with?('/')
           end
           filter_block=Aspera::Node.file_matcher(options.get_option(:value,:optional))

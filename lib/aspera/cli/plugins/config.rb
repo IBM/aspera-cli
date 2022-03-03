@@ -246,32 +246,34 @@ END_OF_TEMPLATE
           nil
         end
 
-        # folder containing plugins in the gem's main folder
-        def self.gem_plugins_folder
-          File.dirname(File.expand_path(__FILE__))
-        end
-
-        # find the root folder of gem where this class is
-        # go up as many times as englobing modules (not counting class, as it is a file)
-        def self.gem_root
-          File.expand_path(Module.nesting[1].to_s.gsub('::','/').gsub(%r{[^/]+},'..'),File.dirname(__FILE__))
-        end
-
-        # instanciate a plugin
-        # plugins must be Capitalized
-        def self.plugin_class(plugin_name_sym)
-          # Module.nesting[2] is Aspera::Cli
-          return Object.const_get("#{Module.nesting[2]}::Plugins::#{plugin_name_sym.to_s.capitalize}")
-        end
-
-        def self.flatten_all_config(t)
-          r=[]
-          t.each do |k,v|
-            v.each do |kk,vv|
-              r.push({'config'=>k,'parameter'=>kk,'value'=>vv})
-            end
+        class << self
+          # folder containing plugins in the gem's main folder
+          def gem_plugins_folder
+            File.dirname(File.expand_path(__FILE__))
           end
-          return r
+
+          # find the root folder of gem where this class is
+          # go up as many times as englobing modules (not counting class, as it is a file)
+          def gem_root
+            File.expand_path(Module.nesting[1].to_s.gsub('::','/').gsub(%r{[^/]+},'..'),File.dirname(__FILE__))
+          end
+
+          # instanciate a plugin
+          # plugins must be Capitalized
+          def plugin_class(plugin_name_sym)
+            # Module.nesting[2] is Aspera::Cli::Plugins
+            return Object.const_get("#{Module.nesting[2]}::#{plugin_name_sym.to_s.capitalize}")
+          end
+
+          def flatten_all_config(t)
+            r=[]
+            t.each do |k,v|
+              v.each do |kk,vv|
+                r.push({'config'=>k,'parameter'=>kk,'value'=>vv})
+              end
+            end
+            return r
+          end
         end
 
         # set parameter and value in global config
@@ -330,7 +332,7 @@ END_OF_TEMPLATE
             memory.delete(EXTV_INCLUDE_PRESETS)
             hash_val={}
             raise "#{EXTV_INCLUDE_PRESETS} must be an Array" unless includes.is_a?(Array)
-            raise "#{EXTV_INCLUDE_PRESETS} must contain names" unless includes.map{|i|i.class}.uniq.eql?([String])
+            raise "#{EXTV_INCLUDE_PRESETS} must contain names" unless includes.map(&:class).uniq.eql?([String])
             includes.each do |preset_name|
               hash_val.merge!(preset_by_name(preset_name,include_path))
             end
@@ -560,7 +562,7 @@ END_OF_TEMPLATE
             case command
             when :list # shows files used
               return {type: :object_list, data: all_links}
-            when :download #
+            when :download
               folder_dest=transfer.destination_folder(Fasp::TransferSpec::DIRECTION_RECEIVE)
               #folder_dest=self.options.get_next_argument('destination folder')
               api_connect_cdn=Rest.new({base_url: CONNECT_WEB_URL})
@@ -568,7 +570,7 @@ END_OF_TEMPLATE
               filename=fileurl.gsub(%r{.*/},'')
               api_connect_cdn.call({operation: 'GET',subpath: fileurl,save_to_file: File.join(folder_dest,filename)})
               return Main.result_status("Downloaded: #{filename}")
-            when :open #
+            when :open
               OpenApplication.instance.uri(one_link['href'])
               return Main.result_status("Opened: #{one_link['href']}")
             end
@@ -627,7 +629,7 @@ END_OF_TEMPLATE
             v=Fasp::Installation.instance.install_sdk(options.get_option(:sdk_url,:mandatory))
             return Main.result_status("Installed version #{v}")
           when :spec
-            return {type: :object_list, data: Fasp::Parameters.man_table, fields: ['name','type',Fasp::Parameters::SUPPORTED_AGENTS_SHORT.map{|i|i.to_s},'description'].flatten}
+            return {type: :object_list, data: Fasp::Parameters.man_table, fields: ['name','type',Fasp::Parameters::SUPPORTED_AGENTS_SHORT.map(&:to_s),'description'].flatten}
           end
           raise "unexpected case: #{command}"
         end

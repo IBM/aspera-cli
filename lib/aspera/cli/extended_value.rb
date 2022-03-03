@@ -53,7 +53,7 @@ module Aspera
       end
       public
 
-      def modifiers;@handlers.keys.map{|i|@handlers[i].keys}.flatten.map{|i|i.to_s};end
+      def modifiers;@handlers.keys.map{|i|@handlers[i].keys}.flatten.map(&:to_s);end
 
       # add a new :reader or :decoder
       # decoder can be chained, reader is last one on right

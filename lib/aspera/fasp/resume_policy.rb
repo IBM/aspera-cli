@@ -23,7 +23,7 @@ module Aspera
               raise "#{k} must be Integer" unless v.is_a?(Integer)
               @parameters[k]=v
             else
-              raise "unknown resume parameter: #{k}, expect one of #{DEFAULTS.keys.map{|i|i.to_s}.join(',')}"
+              raise "unknown resume parameter: #{k}, expect one of #{DEFAULTS.keys.map(&:to_s).join(',')}"
             end
           end
         end

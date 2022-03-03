@@ -409,7 +409,7 @@ module Aspera
     # supports links to secondary nodes
     def resolve_node_file(top_node_file, element_path_string)
       top_node_info,top_file_id=check_get_node_file(top_node_file)
-      path_elements=element_path_string.split(PATH_SEPARATOR).reject{|i| i.empty?}
+      path_elements=element_path_string.split(PATH_SEPARATOR).reject(&:empty?)
       result={node_info: top_node_info, file_id: nil}
       if path_elements.empty?
         result[:file_id]=top_file_id

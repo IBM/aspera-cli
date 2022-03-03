@@ -20,7 +20,6 @@ module Aspera
           options.parse_options!
         end
 
-        #
         def server_by_cloud_region
           # todo: provide list ?
           cloud=options.get_option(:cloud,:mandatory).upcase
@@ -191,7 +190,7 @@ module Aspera
           when :show # show one of api_key in ATS
             res=ats_ibm_api.read("api_keys/#{concerned_id}")
             return {type: :single_object, data: res[:data]}
-          when :delete #
+          when :delete
             ats_ibm_api.delete("api_keys/#{concerned_id}")
             return Main.result_status("deleted #{concerned_id}")
           else raise 'INTERNAL ERROR'

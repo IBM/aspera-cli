@@ -21,7 +21,7 @@ module Aspera
             if DEFAULT_OPTIONS.has_key?(k)
               options[k]=v
             else
-              raise "Unknown local agent parameter: #{k}, expect one of #{DEFAULT_OPTIONS.keys.map{|i|i.to_s}.join(',')}"
+              raise "Unknown local agent parameter: #{k}, expect one of #{DEFAULT_OPTIONS.keys.map(&:to_s).join(',')}"
             end
           end
         end

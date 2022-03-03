@@ -24,7 +24,7 @@ module Aspera
       def self.check_tools(skip_types=[])
         EXPERNAL_TOOLS.delete(:unoconv) if skip_types.include?(:office)
         # Check for binaries
-        EXPERNAL_TOOLS.map{|i|i.to_s}.each do |bin|
+        EXPERNAL_TOOLS.map(&:to_s).each do |bin|
           `#{bin} -h 2>&1`
           raise "Error: #{bin} is not in the PATH" if $?.exitstatus.eql?(BASH_EXIT_NOT_FOUND)
         end

@@ -445,7 +445,6 @@ module Aspera
               })
             end
             pkg_data['metadata']=api_meta
-
           else raise "metadata field if not of expected type: #{pkg_meta.class}"
           end
           nil
@@ -594,7 +593,6 @@ module Aspera
               when 'nodes' then @api_aoc.user_info['id']
               else raise 'organizations or users for option --name'
               end
-              #
               filter=options.get_option(:query,:optional) || {}
               raise 'query must be Hash' unless filter.is_a?(Hash)
               filter['limit']||=100
