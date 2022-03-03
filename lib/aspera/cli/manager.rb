@@ -152,8 +152,7 @@ module Aspera
           raise CliBadArgument,"missing argument (#{expected}): #{descr}"
         end
         result=nil
-        # Note: mandatory parenthesis here !
-        sensitive = (type.eql?(:option) and @declared_options[descr.to_sym][:sensitive].eql?(true))
+        sensitive = type.eql?(:option) && @declared_options[descr.to_sym][:sensitive]
         default_prompt="#{type}: #{descr}"
         # ask interactively
         case expected
@@ -216,11 +215,7 @@ module Aspera
         end
         @declared_options[option_symbol]={type: type}
         # by default passwords and secrets are sensitive, else specify when declaring the option
-        set_is_sensitive(option_symbol) if !%w[password secret key].select{|i| option_symbol.to_s.end_with?(i)}.empty?
-      end
-
-      def set_is_sensitive(option_symbol)
-        @declared_options[option_symbol][:sensitive]=true
+        @declared_options[option_symbol][:sensitive]=true if !%w[password secret key].select{|i| option_symbol.to_s.end_with?(i)}.empty?
       end
 
       # define option with handler

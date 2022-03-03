@@ -33,9 +33,9 @@ module Aspera
       return lambda{|f|f['name'].match(/#{match_expression}/)}
     end
 
-    def initialize(rest_params)
-      super(rest_params)
-    end
+    #    def initialize(rest_params)
+    #      super(rest_params)
+    #    end
 
     # recursively crawl in a folder.
     # subfolders a processed if the processing method returns true

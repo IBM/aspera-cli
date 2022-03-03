@@ -27,7 +27,8 @@ module Aspera
       # @param format either pp or json format
       def dump(name,object,format=:json)
         log.debug() do
-          result=case format
+          result=
+          case format
           when :json
             JSON.pretty_generate(object) rescue PP.pp(object,'')
           when :ruby

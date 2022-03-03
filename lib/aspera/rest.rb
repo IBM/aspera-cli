@@ -28,7 +28,6 @@ module Aspera
   # rest call errors are raised as exception RestCallError
   # and error are analyzed in RestErrorAnalyzer
   class Rest
-    private
     class<<self
       # set to true enables debug in HTTP class
       @debug=false

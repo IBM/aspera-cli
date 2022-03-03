@@ -133,7 +133,8 @@ module Aspera
       # add details to show in analytics
       def analytics_ts(app,direction,ws_id,ws_name)
         # translate transfer to operation
-        operation=case direction
+        operation=
+        case direction
         when Fasp::TransferSpec::DIRECTION_SEND then    'upload'
         when Fasp::TransferSpec::DIRECTION_RECEIVE then 'download'
         else raise "ERROR: unexpected value: #{direction}"

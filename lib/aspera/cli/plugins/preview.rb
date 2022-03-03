@@ -453,7 +453,8 @@ module Aspera
             scan_path=options.get_option(:scan_path,:optional)
             scan_id=options.get_option(:scan_id,:optional)
             # by default start at root
-            folder_info=if scan_id.nil?
+            folder_info=
+            if scan_id.nil?
               { 'id'   => @access_key_self['root_file_id'],
                 'name' => '/',
                 'type' => 'folder',

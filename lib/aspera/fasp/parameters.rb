@@ -43,7 +43,8 @@ module Aspera
             end
             # only keep lines that are usable in supported agents
             next if SUPPORTED_AGENTS_SHORT.inject(true){|m,i|m and param[i].empty?}
-            param[:cli]=case i[:cltype]
+            param[:cli]=
+            case i[:cltype]
             when :envvar then 'env:'+i[:clvarname]
             when :opt_without_arg,:opt_with_arg then i[:clswitch]
             else ''
@@ -93,8 +94,6 @@ module Aspera
         @builder=Aspera::CommandLineBuilder.new(@job_spec,self.class.description)
         Log.log.debug("agent options: #{@options}")
       end
-
-      public
 
       # translate transfer spec to env vars and command line arguments for ascp
       # NOTE: parameters starting with "EX_" (extended) are not standard

@@ -1,0 +1,292 @@
+---
+AllCops:
+  Exclude:
+    - ".github/**/*"
+    - "bin/**/*"
+    - "local/**/*"
+  NewCops: enable
+  TargetRubyVersion: "2.5"
+Style/MutableConstant:
+  Enabled: false
+Style/FrozenStringLiteralComment:
+  Enabled: false
+Metrics/ClassLength:
+  Enabled: false
+Metrics/MethodLength:
+  Enabled: false
+Metrics/AbcSize:
+  Enabled: false
+Layout/AssignmentIndentation:
+  Enabled: false
+Layout/SpaceAfterComma:
+  Enabled: false
+Layout/SpaceAroundOperators:
+  Enabled: false
+Layout/SpaceBeforeBlockBraces:
+  Enabled: false
+Layout/SpaceInsideBlockBraces:
+  Enabled: false
+Layout/SpaceAroundBlockParameters:
+  Enabled: false
+Layout/SpaceInsideHashLiteralBraces:
+  Enabled: false
+Layout/EmptyLinesAroundAttributeAccessor:
+  Enabled: false
+Layout/LeadingCommentSpace:
+  Enabled: false
+Layout/FirstHashElementIndentation:
+  Enabled: false
+Layout/EmptyLineAfterGuardClause:
+  Enabled: false
+Layout/HashAlignment:
+  Enabled: false
+Layout/CaseIndentation:
+  Enabled: false
+Layout/MultilineHashBraceLayout:
+  Enabled: false
+Layout/SpaceAfterSemicolon:
+  Enabled: false
+Layout/MultilineMethodCallBraceLayout:
+  Enabled: false
+Layout/FirstArgumentIndentation:
+  Enabled: false
+Layout/MultilineArrayBraceLayout:
+  Enabled: false
+Style/RescueModifier:
+  Enabled: false
+Style/SymbolArray:
+  Enabled: false
+Style/IfUnlessModifier:
+  Enabled: false
+Style/PreferredHashMethods:
+  Enabled: false
+Style/RegexpLiteral:
+  Enabled: false
+Style/CommentAnnotation:
+  Enabled: false
+Style/Lambda:
+  Enabled: false
+Style/CommentedKeyword:
+  Enabled: false
+Style/Semicolon:
+  Enabled: false
+Style/NegatedIf:
+  Enabled: false
+Style/AndOr:
+  Enabled: false
+Style/SingleLineMethods:
+  Enabled: false
+Style/RedundantReturn:
+  Enabled: false
+Style/HashEachMethods:
+  Enabled: false
+Style/StringConcatenation:
+  Enabled: false
+Layout/SpaceAroundEqualsInParameterDefault:
+  Enabled: false
+Style/FormatStringToken:
+  Description: "Use a consistent style for format string tokens."
+  Enabled: true
+  EnforcedStyle: unannotated
+
+Style/StringLiterals:
+  Enabled: true
+  EnforcedStyle: single_quotes
+
+Style/Strip:
+  Enabled: true
+
+Bundler/DuplicatedGem:
+  Enabled: true
+
+Bundler/OrderedGems:
+  Enabled: true
+
+Layout/MultilineOperationIndentation:
+  Enabled: false
+  EnforcedStyle: indented
+
+Layout/MultilineMethodCallIndentation:
+  EnforcedStyle: indented
+
+Layout/BlockAlignment:
+  Enabled: true
+  EnforcedStyleAlignWith: start_of_block
+
+Style/MethodCallWithArgsParentheses:
+  IgnoredMethods: [gem, require, include, puts, render, redirect_to, yield,
+                   head, respond_with, ruby, source, send_data, instance_eval,
+                   require_relative, to, not_to]
+
+Style/Documentation:
+  Enabled: false
+
+Style/AsciiComments:
+  Enabled: false
+
+Style/LambdaCall:
+  Enabled: false
+
+Metrics/BlockLength:
+  Enabled: false
+
+Metrics/CyclomaticComplexity:
+  Max: 20
+
+Style/MethodCallWithoutArgsParentheses:
+  Enabled: false
+
+Layout/EmptyLineAfterMagicComment:
+  Enabled: false
+
+Naming/MethodParameterName:
+  Enabled: true
+
+Lint/UselessAssignment:
+  Enabled: true
+
+Naming/ClassAndModuleCamelCase:
+  Enabled: true
+
+Naming/AccessorMethodName:
+  Enabled: true
+
+Style/NumericLiteralPrefix:
+  EnforcedOctalStyle: zero_only
+
+Lint/LiteralInInterpolation:
+  Enabled: true
+
+Style/ModuleFunction:
+  Enabled: true
+
+Style/SpecialGlobalVars:
+  Enabled: true
+
+Style/WordArray:
+  Enabled: true
+
+Style/MixinUsage:
+  Enabled: true
+
+Style/ClassAndModuleChildren:
+  Enabled: true
+
+Style/GlobalVars:
+  Enabled: true
+
+Style/MissingRespondToMissing:
+  Enabled: true
+
+Style/AccessModifierDeclarations:
+  Enabled: true
+
+Layout/ExtraSpacing:
+  Enabled: true
+
+Style/SymbolProc:
+  Enabled: true
+
+Lint/SuppressedException:
+  AllowComments: true
+
+Lint/ReturnInVoidContext:
+  Enabled: true
+
+Lint/ShadowedException:
+  Enabled: true
+
+Naming/MemoizedInstanceVariableName:
+  EnforcedStyleForLeadingUnderscores: optional
+  Enabled: true
+
+Naming/MethodName:
+  Enabled: true
+
+Layout/LineLength:
+  Max: 180
+
+Layout/SpaceAroundMethodCallOperator:
+  Enabled: true
+
+Lint/RaiseException:
+  Enabled: true
+
+Lint/StructNewOverride:
+  Enabled: true
+
+Style/ExponentialNotation:
+  Enabled: true
+
+Style/HashTransformKeys:
+  Enabled: true
+
+Style/HashTransformValues:
+  Enabled: true
+
+Layout/SpaceBeforeBrackets: # (new in 1.7)
+  Enabled: true
+
+Lint/AmbiguousAssignment: # (new in 1.7)
+  Enabled: true
+
+Lint/DeprecatedConstants: # (new in 1.8)
+  Enabled: true
+
+Lint/DuplicateBranch: # (new in 1.3)
+  Enabled: true
+
+Lint/DuplicateRegexpCharacterClassElement: # (new in 1.1)
+  Enabled: true
+
+Lint/EmptyBlock: # (new in 1.1)
+  Enabled: true
+
+Lint/EmptyClass: # (new in 1.3)
+  Enabled: false
+
+Lint/LambdaWithoutLiteralBlock: # (new in 1.8)
+  Enabled: true
+
+Lint/NoReturnInBeginEndBlocks: # (new in 1.2)
+  Enabled: true
+
+Lint/RedundantDirGlobSort: # (new in 1.8)
+  Enabled: true
+
+Lint/ToEnumArguments: # (new in 1.1)
+  Enabled: true
+
+Lint/UnexpectedBlockArity: # (new in 1.5)
+  Enabled: true
+
+Lint/UnmodifiedReduceAccumulator: # (new in 1.1)
+  Enabled: true
+
+Style/ArgumentsForwarding: # (new in 1.1)
+  Enabled: true
+
+Style/CollectionCompact: # (new in 1.2)
+  Enabled: true
+
+Style/DocumentDynamicEvalDefinition: # (new in 1.1)
+  Enabled: true
+
+Style/EndlessMethod: # (new in 1.8)
+  Enabled: true
+
+Style/HashExcept: # (new in 1.7)
+  Enabled: true
+
+Style/NegatedIfElseCondition: # (new in 1.2)
+  Enabled: true
+
+Style/NilLambda: # (new in 1.3)
+  Enabled: true
+
+Style/RedundantArgument: # (new in 1.4)
+  Enabled: true
+
+Style/SwapValues: # (new in 1.1)
+  Enabled: true
+

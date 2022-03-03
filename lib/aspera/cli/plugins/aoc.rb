@@ -218,7 +218,8 @@ module Aspera
           when :file
             command_node_file=options.get_next_command([:show,:permission,:modify])
             file_path=options.get_option(:path,:optional)
-            node_file = if !file_path.nil?
+            node_file =
+            if !file_path.nil?
               @api_aoc.resolve_node_file(top_node_file,file_path) # TODO: allow follow link ?
             else
               {node_info: top_node_file[:node_info],file_id: instance_identifier()}
@@ -588,7 +589,8 @@ module Aspera
             when :transfers
               event_type=command_analytics.to_s
               filter_resource=options.get_option(:name,:optional) || 'organizations'
-              filter_id=options.get_option(:id,:optional) || case filter_resource
+              filter_id=options.get_option(:id,:optional) ||
+              case filter_resource
               when 'organizations' then @api_aoc.user_info['organization_id']
               when 'users' then @api_aoc.user_info['id']
               when 'nodes' then @api_aoc.user_info['id']
@@ -624,7 +626,8 @@ module Aspera
           when :resource
             resource_type=options.get_next_argument('resource',[:self,:organization,:user,:group,:client,:contact,:dropbox,:node,:operation,:package,:saml_configuration, :workspace, :dropbox_membership,:short_link,:workspace_membership,:application,:client_registration_token,:client_access_key,:kms_profile])
             # get path on API, resource type is singular, but api is plural
-            resource_class_path=case resource_type
+            resource_class_path=
+            case resource_type
             # special cases: singleton, in admin, with x
             when :self,:organization then resource_type
             when :client_registration_token,:client_access_key then "admin/#{resource_type}s"
@@ -704,13 +707,15 @@ module Aspera
               command_repo=options.get_next_command(NODE4_COMMANDS)
               return execute_node_gen4_command(command_repo,{node_info: res_data, file_id: ak_data['root_file_id']})
             when :shared_folders
-              read_params = case resource_type
+              read_params=
+              case resource_type
               when :workspace then{'access_id'=>"#{ID_AK_ADMIN}_WS_#{res_id}",'access_type'=>'user'}
               when :node then{'include'=>['[]','access_level','permission_count'],'created_by_id'=>ID_AK_ADMIN}
               else raise 'error'
               end
               res_data=@api_aoc.read("#{resource_instance_path}/permissions",read_params)[:data]
-              fields=case resource_type
+              fields=
+              case resource_type
               when :node then['id','file_id','file.path','access_type']
               when :workspace then['id','node_id','file_id','node_name','file.path','tags.aspera.files.workspace.share_as']
               else raise "unexpected resource type #{resource_type}"

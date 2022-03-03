@@ -21,10 +21,9 @@ module Aspera
           end
         end
 
-        def initialize(env)
-          super(env)
-          #self.options.parse_options!
-        end
+        #        def initialize(env)
+        #          super(env)
+        #        end
 
         ACTIONS=[:repository,:admin]
 

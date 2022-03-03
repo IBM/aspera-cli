@@ -162,7 +162,8 @@ module Aspera
             break if items.empty?
             # results will be sorted in reverse id
             items.reverse.each do |package|
-              package[PACKAGE_MATCH_FIELD]=case mailbox
+              package[PACKAGE_MATCH_FIELD]=
+              case mailbox
               when :inbox,:archive
                 recipient=package['to'].select{|i|i['name'].first.eql?(recipient_name)}.first
                 recipient.nil? ? nil : recipient['recipient_delivery_id'].first
@@ -302,7 +303,8 @@ module Aspera
                     raise 'Dropbox and Workgroup packages should use link option with faspe:'
                   end
                   # TODO: delivery id is the right one if package was receive by workgroup
-                  endpoint=case options.get_option(:box,:mandatory)
+                  endpoint=
+                  case options.get_option(:box,:mandatory)
                   when :inbox,:archive then'received'
                   when :sent then 'sent'
                   end

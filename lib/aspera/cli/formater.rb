@@ -153,7 +153,8 @@ module Aspera
                 self.class.flatten_object(obj,results[:option_expand_last])
               end
             end
-            final_table_columns=case user_asked_fields_list_str
+            final_table_columns=
+            case user_asked_fields_list_str
             when FIELDS_DEFAULT then result_default_fields(results,table_rows_hash_val)
             when FIELDS_ALL then     result_all_fields(results,table_rows_hash_val)
             else
@@ -173,7 +174,8 @@ module Aspera
               self.class.flatten_object(res_data,results[:option_expand_last])
               self.class.flatten_name_value_list(res_data)
             end
-            asked_fields=case user_asked_fields_list_str
+            asked_fields=
+            case user_asked_fields_list_str
             when FIELDS_DEFAULT then results[:fields]||res_data.keys
             when FIELDS_ALL then     res_data.keys
             else                 user_asked_fields_list_str.split(',')

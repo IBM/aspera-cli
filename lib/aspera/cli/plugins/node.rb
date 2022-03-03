@@ -220,7 +220,8 @@ module Aspera
             token_type=:aspera if token_type.nil?
             case token_type
             when :aspera,:hybrid
-              transfer_paths=case command
+              transfer_paths=
+              case command
               when :upload then[{ destination: transfer.destination_folder('send') }]
               when :download then transfer.ts_source_paths
               end
@@ -233,7 +234,12 @@ module Aspera
             when :basic
               raise 'shall have auth' unless @api_node.params[:auth].is_a?(Hash)
               raise 'shall be basic auth' unless @api_node.params[:auth][:type].eql?(:basic)
-              ts_direction=case command;when :upload then Fasp::TransferSpec::DIRECTION_SEND;when :download then Fasp::TransferSpec::DIRECTION_RECEIVE;else raise 'Error: need upload or download';end
+              ts_direction=
+              case command
+              when :upload then Fasp::TransferSpec::DIRECTION_SEND
+              when :download then Fasp::TransferSpec::DIRECTION_RECEIVE
+              else raise 'Error: need upload or download'
+              end
               transfer_spec={
                 'remote_host'     =>URI.parse(@api_node.params[:base_url]).host,
                 'remote_user'     =>Aspera::Fasp::TransferSpec::ACCESS_KEY_TRANSFER_USER,
