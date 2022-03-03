@@ -61,7 +61,7 @@ module Aspera
         end
       end
 
-      def start_transfer(transfer_spec,options=nil)
+      def start_transfer(transfer_spec,_options=nil)
         # create a transfer request
         transfer_request = Transfersdk::TransferRequest.new(
         transferType: Transfersdk::TransferType::FILE_REGULAR, # transfer type (file/stream)
@@ -90,7 +90,7 @@ module Aspera
             end
           when :FAILED, :COMPLETED, :CANCELED
             notify_end(@transfer_id)
-            raise Fasp::Error.new(JSON.parse(response.message)['Description']) unless :COMPLETED.eql?(response.status)
+            raise Fasp::Error, JSON.parse(response.message)['Description'] unless :COMPLETED.eql?(response.status)
             break
           when :QUEUED,:UNKNOWN_STATUS,:PAUSED,:ORPHANED
             # ignore

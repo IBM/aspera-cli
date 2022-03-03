@@ -44,9 +44,9 @@ module Aspera
       def display_message(message_level,message)
         display_level=@opt_mgr.get_option(:display,:mandatory)
         case message_level
-        when :info then STDOUT.puts(message) if display_level.eql?(:info)
-        when :data then STDOUT.puts(message) unless display_level.eql?(:error)
-        when :error then STDERR.puts(message)
+        when :info then $stdout.puts(message) if display_level.eql?(:info)
+        when :data then $stdout.puts(message) unless display_level.eql?(:error)
+        when :error then $stderr.puts(message)
         else raise "wrong message_level:#{message_level}"
         end
       end
@@ -111,10 +111,10 @@ module Aspera
         return final_table_columns
       end
 
-      def result_all_fields(results,table_rows_hash_val)
+      def result_all_fields(_results,table_rows_hash_val)
         raise 'internal error: must be array' unless table_rows_hash_val.is_a?(Array)
         # get the list of all column names used in all lines, not just frst one, as all lines may have different columns
-        return table_rows_hash_val.inject({}){|m,v|v.keys.each{|c|m[c]=true};m}.keys
+        return table_rows_hash_val.each_with_object({}){|v,m|v.keys.each{|c|m[c]=true};}.keys
       end
 
       # this method displays the results, especially the table format
@@ -161,7 +161,7 @@ module Aspera
               if user_asked_fields_list_str.start_with?('+')
                 result_default_fields(results,table_rows_hash_val).push(*user_asked_fields_list_str.gsub(/^\+/,'').split(','))
               elsif user_asked_fields_list_str.start_with?('-')
-                result_default_fields(results,table_rows_hash_val).select{|i| !user_asked_fields_list_str.gsub(/^\-/,'').split(',').include?(i)}
+                result_default_fields(results,table_rows_hash_val).reject{|i| user_asked_fields_list_str.gsub(/^-/,'').split(',').include?(i)}
               else
                 user_asked_fields_list_str.split(',')
               end
@@ -226,7 +226,7 @@ module Aspera
           # here: final_table_rows : array of list of value
           case display_format
           when :table
-            style=@opt_mgr.get_option(:table_style,:mandatory).split('')
+            style=@opt_mgr.get_option(:table_style,:mandatory).chars
             # display the table !
             #display_message(:data,Text::Table.new(
             #head:  final_table_columns,

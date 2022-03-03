@@ -25,7 +25,7 @@ module Aspera
             end
           when 'STOP'
             # stop event when one file is completed
-            @cumulative=@cumulative+data['Size'].to_i
+            @cumulative+=data['Size'].to_i
           when 'STATS'
             if !@progress.nil?
               if data.has_key?('Bytescont')

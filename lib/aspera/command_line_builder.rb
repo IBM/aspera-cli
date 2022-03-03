@@ -36,7 +36,7 @@ module Aspera
     private
 
     # clvarname : command line variable name
-    def env_name(param_name,options)
+    def env_name(_param_name,options)
       return options[:clvarname]
     end
 
@@ -93,7 +93,7 @@ module Aspera
       end
       action=options[:cltype] if action.nil?
       # check mandatory parameter (nil is valid value)
-      raise Fasp::Error.new("Missing mandatory parameter: #{param_name}") if options[:mandatory] and !@param_hash.has_key?(param_name)
+      raise Fasp::Error, "Missing mandatory parameter: #{param_name}" if options[:mandatory] and !@param_hash.has_key?(param_name)
       parameter_value=@param_hash[param_name]
 
       #parameter_value=options[:default] if parameter_value.nil? and options.has_key?(:default)
@@ -109,7 +109,7 @@ module Aspera
         else raise "INTERNAL: unexpected value: #{s}"
         end
       end.flatten
-      raise Fasp::Error.new("#{param_name} is : #{parameter_value.class} (#{parameter_value}), shall be #{options[:accepted_types]}, ") unless parameter_value.nil? or expected_classes.include?(parameter_value.class)
+      raise Fasp::Error, "#{param_name} is : #{parameter_value.class} (#{parameter_value}), shall be #{options[:accepted_types]}, " unless parameter_value.nil? or expected_classes.include?(parameter_value.class)
       @used_param_names.push(param_name) unless action.eql?(:defer)
 
       # process only non-nil values
@@ -129,7 +129,7 @@ module Aspera
         # :clconvert has name of class and encoding method
         convclass,convmethod=options[:clconvert].split('.')
         newvalue=Kernel.const_get(convclass).send(convmethod,parameter_value)
-        raise Fasp::Error.new("unsupported #{param_name}: #{parameter_value}") if newvalue.nil?
+        raise Fasp::Error, "unsupported #{param_name}: #{parameter_value}" if newvalue.nil?
         parameter_value=newvalue
       when NilClass
       else raise "not expected type for clconvert #{options[:clconvert].class} for #{param_name}"
@@ -148,7 +148,7 @@ module Aspera
         case parameter_value
         when false # nothing to put on command line, no creation by default
         when true then add_param=true
-        else raise Fasp::Error.new("unsupported #{param_name}: #{parameter_value}")
+        else raise Fasp::Error, "unsupported #{param_name}: #{parameter_value}"
         end
         add_param=!add_param if options[:add_on_false]
         add_command_line_options([options[:clswitch]]) if add_param

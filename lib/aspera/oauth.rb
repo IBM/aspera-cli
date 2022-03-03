@@ -45,7 +45,7 @@ module Aspera
           Log.log.warn('Not using persistency (use Aspera::Oauth.persist_mgr=Aspera::PersistencyFolder.new)')
           # create NULL persistency class
           @persist=Class.new do
-            def get(x);nil;end;def delete(x);nil;end;def put(x,y);nil;end;def garbage_collect(x,y);nil;end
+            def get(_x);nil;end;def delete(_x);nil;end;def put(_x,_y);nil;end;def garbage_collect(_x,_y);nil;end
           end.new
         end
         return @persist

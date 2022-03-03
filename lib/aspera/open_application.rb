@@ -27,7 +27,7 @@ module Aspera
       when Aspera::Environment::OS_WINDOWS
         return system('start explorer "'+uri.to_s+'"')
       when Aspera::Environment::OS_LINUX
-        return system("xdg-open '#{uri.to_s}'")
+        return system("xdg-open '#{uri}'")
       else
         raise "no graphical open method for #{Aspera::Environment.os}"
       end

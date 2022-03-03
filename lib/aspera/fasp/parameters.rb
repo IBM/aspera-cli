@@ -42,7 +42,7 @@ module Aspera
               param[a.to_s[0].to_sym]=i[:tragents].nil? || i[:tragents].include?(a) ? 'Y' : ''
             end
             # only keep lines that are usable in supported agents
-            next if SUPPORTED_AGENTS_SHORT.inject(true){|m,i|m and param[i].empty?}
+            next if SUPPORTED_AGENTS_SHORT.inject(true){|m,j|m and param[j].empty?}
             param[:cli]=
             case i[:cltype]
             when :envvar then 'env:'+i[:clvarname]
@@ -84,7 +84,7 @@ module Aspera
         end
 
         # static methods
-        def file_list_folder; @file_list_folder;end
+        attr_reader :file_list_folder
       end # self
 
       # @param options [Hash] key: :wss: bool
@@ -107,7 +107,7 @@ module Aspera
         if !@job_spec.has_key?('remote_password') and
         !@job_spec.has_key?('ssh_private_key') and
         !@job_spec.has_key?('EX_ssh_key_paths')
-          raise Fasp::Error.new('required: password or ssh key (value or path)')
+          raise Fasp::Error, 'required: password or ssh key (value or path)'
         end
 
         # special cases
@@ -172,7 +172,7 @@ module Aspera
                 # TODO: well, we test only the first one, but anyway it shall be consistent
                 if paths_array.first.has_key?('destination')
                   option='--file-pair-list'
-                  lines=paths_array.inject([]){|m,e|m.push(e['source'],e['destination']);m}
+                  lines=paths_array.each_with_object([]){|e,m|m.push(e['source'],e['destination']);}
                 else
                   option='--file-list'
                   lines=paths_array.map{|i|i['source']}

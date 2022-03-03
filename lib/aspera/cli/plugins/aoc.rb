@@ -280,7 +280,7 @@ module Aspera
         # build constructor option list for AoC based on options of CLI
         def aoc_params(subpath)
           # copy command line options to args
-          opt=[:link,:url,:auth,:client_id,:client_secret,:scope,:redirect_uri,:private_key,:username,:password].inject({}){|m,i|m[i]=options.get_option(i,:optional);m}
+          opt=[:link,:url,:auth,:client_id,:client_secret,:scope,:redirect_uri,:private_key,:username,:password].each_with_object({}){|i,m|m[i]=options.get_option(i,:optional);}
           opt[:subpath]=subpath
           return opt
         end
@@ -680,7 +680,7 @@ module Aspera
               return {type: :object_list,data: item_list,fields: default_fields}
             when :show
               object=@api_aoc.read(resource_instance_path)[:data]
-              fields=object.keys.select{|k|!k.eql?('certificate')}
+              fields=object.keys.reject{|k|k.eql?('certificate')}
               return { type: :single_object, data: object, fields: fields }
             when :modify
               changes=options.get_next_argument('modified parameters (hash)')
@@ -688,7 +688,7 @@ module Aspera
               return Main.result_status('modified')
             when :delete
               return do_bulk_operation(res_id,'deleted')do|one_id|
-                @api_aoc.delete("#{resource_class_path}/#{one_id.to_s}")
+                @api_aoc.delete("#{resource_class_path}/#{one_id}")
                 {'id'=>one_id}
               end
             when :set_pub_key
@@ -872,7 +872,7 @@ module Aspera
                 # remove from list the ones already downloaded
                 ids_to_download=package_info.map{|e|e['id']}
                 # array here
-                ids_to_download.select!{|id|!skip_ids_data.include?(id)}
+                ids_to_download.reject!{|id|skip_ids_data.include?(id)}
               end # ALL
               # list here
               ids_to_download = [ids_to_download] unless ids_to_download.is_a?(Array)

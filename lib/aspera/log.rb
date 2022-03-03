@@ -66,9 +66,9 @@ module Aspera
       current_severity_integer=Logger::Severity::WARN if current_severity_integer.nil?
       case new_logtype
       when :stderr
-        @logger = Logger.new(STDERR)
+        @logger = Logger.new($stderr)
       when :stdout
-        @logger = Logger.new(STDOUT)
+        @logger = Logger.new($stdout)
       when :syslog
         require 'syslog/logger'
         @logger = Syslog::Logger.new(@program_name)

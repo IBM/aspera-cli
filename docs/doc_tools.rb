@@ -36,7 +36,7 @@ def prstt;opprst.capitalize;end
 
 def gemspec;Gem::Specification.load(ENV['GEMSPEC']) or raise "error loading #{ENV['GEMSPEC']}";end
 
-def geminstadd;gemspec.version.to_s.match(/\.[^0-9]/) ? ' --pre' : '' ;end
+def geminstadd;gemspec.version.to_s.match(/\.[^0-9]/) ? ' --pre' : '';end
 
 # transfer spec description generation
 def spec_table

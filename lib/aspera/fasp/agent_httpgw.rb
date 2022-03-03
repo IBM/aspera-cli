@@ -118,7 +118,7 @@ module Aspera
                 fileIndex: file_index
               }
               # log without data
-              Log.dump(:slide_data,slice_data.keys.inject({}){|m,i|m[i]=i.eql?(:data)?'base64 data':slice_data[i];m}) if slicenum.eql?(0)
+              Log.dump(:slide_data,slice_data.keys.each_with_object({}){|i,m|m[i]=i.eql?(:data)?'base64 data':slice_data[i];}) if slicenum.eql?(0)
               ws_send(ws,:slice_upload, slice_data)
               sent_bytes+=data.length
               currenttime=Time.now
@@ -147,7 +147,7 @@ module Aspera
           dname=dname.gsub(/\.@gw_api.*$/,'')
           # ands add indication of number of files if there is more than one
           if transfer_spec['paths'].length > 1
-            dname=dname+" #{transfer_spec['paths'].length} Files"
+            dname+=" #{transfer_spec['paths'].length} Files"
           end
           transfer_spec['download_name']=dname
         end

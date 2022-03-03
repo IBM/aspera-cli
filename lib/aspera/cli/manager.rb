@@ -72,7 +72,7 @@ module Aspera
         end
 
         def cli_bad_arg(error_msg,choices)
-          return CliBadArgument.new(error_msg+"\nUse:\n"+choices.map{|c| "- #{c.to_s}\n"}.sort.join(''))
+          return CliBadArgument.new(error_msg+"\nUse:\n"+choices.map{|c| "- #{c}\n"}.sort.join(''))
         end
       end
 
@@ -139,9 +139,9 @@ module Aspera
       end
 
       def prompt_user_input(prompt,sensitive)
-        return STDIN.getpass("#{prompt}> ") if sensitive
+        return $stdin.getpass("#{prompt}> ") if sensitive
         print "#{prompt}> "
-        return STDIN.gets.chomp
+        return $stdin.gets.chomp
       end
 
       def get_interactive(type,descr,expected=:single)
@@ -304,7 +304,7 @@ module Aspera
       end
 
       def highlight_current(value)
-        STDOUT.isatty ? value.to_s.red.bold : "[#{value}]"
+        $stdout.isatty ? value.to_s.red.bold : "[#{value}]"
       end
 
       # define an option with restricted values
@@ -404,7 +404,7 @@ module Aspera
         end
       end
 
-      def apply_options_preset(preset,where,force=false)
+      def apply_options_preset(preset,where,_force=false)
         unprocessed=[]
         preset.each do |pair|
           k,v=*pair

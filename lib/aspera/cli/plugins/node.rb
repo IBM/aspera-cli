@@ -161,7 +161,7 @@ module Aspera
             resp=@api_node.create('files/search',parameters)
             result={ type: :object_list, data: resp[:data]['items']}
             return Main.result_empty if result[:data].empty?
-            result[:fields]=result[:data].first.keys.select{|i|!['basename','permissions'].include?(i)}
+            result[:fields]=result[:data].first.keys.reject{|i|['basename','permissions'].include?(i)}
             self.format.display_status("Items: #{resp[:data]['item_count']}/#{resp[:data]['total_count']}")
             self.format.display_status("params: #{resp[:data]['parameters'].keys.map{|k|"#{k}:#{resp[:data]['parameters'][k]}"}.join(',')}")
             return c_result_remove_prefix_path(result,'path',prefix_path)

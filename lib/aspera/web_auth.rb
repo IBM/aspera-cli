@@ -4,7 +4,7 @@ require 'webrick/https'
 module Aspera
   # servlet called on callback: it records the callback request
   class WebAuthServlet < WEBrick::HTTPServlet::AbstractServlet
-    def initialize(server,application) # additional args get here
+    def initialize(_server,application) # additional args get here
       Log.log.debug('WebAuthServlet.new')
       @app=application
     end

@@ -190,7 +190,7 @@ module Aspera
         in_f: @source_file_path,
         in_p: [
           '-ss',10, # seek to input position
-          '-t',20, # max seconds
+          '-t',20 # max seconds
         ],
         out_f: @destination_file_path,
         out_p: [

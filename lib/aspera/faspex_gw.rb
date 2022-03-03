@@ -12,7 +12,7 @@ module Aspera
   # this class answers the Faspex /send API and creates a package on Aspera on Cloud
   class FaspexGW
     class FxGwServlet < WEBrick::HTTPServlet::AbstractServlet
-      def initialize(server,a_aoc_api_user,a_workspace_id)
+      def initialize(_server,a_aoc_api_user,a_workspace_id)
         @aoc_api_user=a_aoc_api_user
         @aoc_workspace_id=a_workspace_id
       end

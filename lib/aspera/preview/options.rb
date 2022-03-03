@@ -25,7 +25,7 @@ module Aspera
         { name: :blend_transframes,    default: 5,                  description: 'mp4: blend: # transition blend frames' },
         { name: :blend_fps,            default: 15,                 description: 'mp4: blend: frame per second' },
         { name: :clips_count,          default: 5,                  description: 'mp4: clips: number of clips' },
-        { name: :clips_length,         default: 5,                  description: 'mp4: clips: length in seconds of each clips' },
+        { name: :clips_length,         default: 5,                  description: 'mp4: clips: length in seconds of each clips' }
       ]
       # add accessors
       DESCRIPTIONS.each do |opt|

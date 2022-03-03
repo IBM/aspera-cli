@@ -10,7 +10,7 @@ module Aspera
       MAX_CONNECT_START_RETRY=3
       SLEEP_SEC_BETWEEN_RETRY=2
       private_constant :MAX_CONNECT_START_RETRY,:SLEEP_SEC_BETWEEN_RETRY
-      def initialize(options)
+      def initialize(_options)
         super()
         @connect_settings={
           'app_id' => SecureRandom.uuid
@@ -36,7 +36,7 @@ module Aspera
         end
       end
 
-      def start_transfer(transfer_spec,options=nil)
+      def start_transfer(transfer_spec,_options=nil)
         if transfer_spec['direction'] == 'send'
           Log.log.warn("Connect requires upload selection using GUI, ignoring #{transfer_spec['paths']}".red)
           transfer_spec.delete('paths')
@@ -96,9 +96,9 @@ module Aspera
                 end
               when 'failed'
                 spinner.error unless spinner.nil?
-                raise Fasp::Error.new(trdata['error_desc'])
+                raise Fasp::Error, trdata['error_desc']
               else
-                raise Fasp::Error.new("unknown status: #{trdata['status']}: #{trdata['error_desc']}")
+                raise Fasp::Error, "unknown status: #{trdata['status']}: #{trdata['error_desc']}"
               end
             end
             sleep 1

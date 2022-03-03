@@ -135,7 +135,7 @@ END_OF_TEMPLATE
           return @transfer_paths
         when Array
           Log.log.debug('getting file list as extended value')
-          raise CliBadArgument,'sources must be a Array of String' if !file_list.select{|f|!f.is_a?(String)}.empty?
+          raise CliBadArgument,'sources must be a Array of String' if !file_list.reject{|f|f.is_a?(String)}.empty?
         else
           raise CliBadArgument,"sources must be a Array, not #{file_list.class}"
         end
@@ -219,7 +219,7 @@ END_OF_TEMPLATE
       # @return :success if all sessions statuses returned by "start" are success
       # else return the first error exception object
       def self.session_status(statuses)
-        error_statuses=statuses.select{|i|!i.eql?(:success)}
+        error_statuses=statuses.reject{|i|i.eql?(:success)}
         return :success if error_statuses.empty?
         return error_statuses.first
       end

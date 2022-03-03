@@ -126,17 +126,17 @@ module Aspera
                 parameters||={'type'=>'received','subtype'=>'mypackages','limit'=>1000}
                 raise CliBadArgument,'value filter must be Hash (API GET)' unless parameters.is_a?(Hash)
                 package_ids=@api_v5.read('packages',parameters)[:data]['packages'].map{|p|p['id']}
-                package_ids.select!{|i|!skip_ids_data.include?(i)}
+                package_ids.reject!{|i|skip_ids_data.include?(i)}
               end
               result_transfer=[]
-              package_ids.each do |id|
+              package_ids.each do |pkgid|
                 # TODO: allow from sent as well ?
-                transfer_spec=@api_v5.create("packages/#{id}/transfer_spec/download",{transfer_type: 'Connect', type: pkg_type})[:data]
+                transfer_spec=@api_v5.create("packages/#{pkgid}/transfer_spec/download",{transfer_type: 'Connect', type: pkg_type})[:data]
                 transfer_spec.delete('authentication')
                 statuses=transfer.start(transfer_spec,{src: :node_gen3})
-                result_transfer.push({'package'=>id,Main::STATUS_FIELD=>statuses})
+                result_transfer.push({'package'=>pkgid,Main::STATUS_FIELD=>statuses})
                 # skip only if all sessions completed
-                skip_ids_data.push(id) if TransferAgent.session_status(statuses).eql?(:success)
+                skip_ids_data.push(pkgid) if TransferAgent.session_status(statuses).eql?(:success)
               end
               skip_ids_persistency.save unless skip_ids_persistency.nil?
               return Main.result_transfer_multiple(result_transfer)

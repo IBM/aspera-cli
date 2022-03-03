@@ -38,7 +38,7 @@ module Aspera
       end
     end
 
-    def check_product_version(component, product, version)
+    def check_product_version(component, _product, version)
       add_ok(component,"version #{version}")
       # TODO check on database if latest version
     end
@@ -53,7 +53,7 @@ module Aspera
     def self.process(data)
       raise 'INTERNAL ERROR, result must be list and not empty' unless data.is_a?(Array) and !data.empty?
       ['status','component','message'].each{|c|raise "INTERNAL ERROR, result must have #{c}" unless data.first.has_key?(c)}
-      res_errors = data.select{|s|!s['status'].eql?('ok')}
+      res_errors = data.reject{|s|s['status'].eql?('ok')}
       # keep only errors in case of problem, other ok are assumed so
       data = res_errors unless res_errors.empty?
       # first is most critical

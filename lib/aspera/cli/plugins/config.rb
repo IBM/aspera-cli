@@ -144,8 +144,8 @@ END_OF_TEMPLATE
             pac_exec=@pac_exec=Aspera::ProxyAutoConfig.new(pac_script)
             # save original method that finds proxy in URI::Generic, it uses env var http_proxy
             URI::Generic.alias_method(:find_proxy_orig,:find_proxy)
-            # overload the method with get_proxies 
-            URI::Generic.define_method(:find_proxy) {|env=ENV| pac_exec.get_proxies(to_s).first || find_proxy_orig(env)}
+            # overload the method with get_proxies
+            URI::Generic.define_method(:find_proxy) {|envars=ENV| pac_exec.get_proxies(to_s).first || find_proxy_orig(envars)}
           end
         end
 
@@ -261,7 +261,7 @@ END_OF_TEMPLATE
         # plugins must be Capitalized
         def self.plugin_class(plugin_name_sym)
           # Module.nesting[2] is Aspera::Cli
-          return Object.const_get("#{Module.nesting[2].to_s}::Plugins::#{plugin_name_sym.to_s.capitalize}")
+          return Object.const_get("#{Module.nesting[2]}::Plugins::#{plugin_name_sym.to_s.capitalize}")
         end
 
         def self.flatten_all_config(t)
@@ -589,14 +589,13 @@ END_OF_TEMPLATE
           when :show # shows files used
             return {type: :status, data: Fasp::Installation.instance.path(:ascp)}
           when :info # shows files used
-            data=Fasp::Installation::FILES.inject({}) do |m,v|
+            data=Fasp::Installation::FILES.each_with_object({}) do |v,m|
               m[v.to_s]=Fasp::Installation.instance.path(v) rescue 'Not Found'
-              m
             end
             # read PATHs from ascp directly, and pvcl modules as well
-            Open3.popen3(Fasp::Installation.instance.path(:ascp),'-DDL-') do |stdin, stdout, stderr, thread|
+            Open3.popen3(Fasp::Installation.instance.path(:ascp),'-DDL-') do |_stdin, _stdout, stderr, thread|
               last_line=''
-              while line=stderr.gets
+              while (line=stderr.gets)
                 line.chomp!
                 last_line=line
                 case line
@@ -837,7 +836,7 @@ _EOF_
                 if !options.get_option(:test_mode)
                   self.format.display_status('Once updated or validated, press enter.')
                   OpenApplication.instance.uri(instance_url)
-                  STDIN.gets
+                  $stdin.gets
                 end
               else
                 self.format.display_status('Using organization specific client_id.')
@@ -1029,7 +1028,7 @@ _EOF_
         def email_settings
           smtp=options.get_option(:smtp,:mandatory)
           # change string keys into symbol keys
-          smtp=smtp.keys.inject({}){|m,v|m[v.to_sym]=smtp[v];m}
+          smtp=smtp.keys.each_with_object({}){|v,m|m[v.to_sym]=smtp[v];}
           # defaults
           smtp[:tls]||=true
           smtp[:port]||=smtp[:tls]?587:25
@@ -1072,8 +1071,8 @@ _EOF_
           Log.dump(:msg_with_headers,msg_with_headers)
           smtp = Net::SMTP.new(mail_conf[:server], mail_conf[:port])
           smtp.enable_starttls if mail_conf[:tls]
-          smtp.start(*start_options) do |smtp|
-            smtp.send_message(msg_with_headers, vars[:from_email], vars[:to])
+          smtp.start(*start_options) do |smtp_session|
+            smtp_session.send_message(msg_with_headers, vars[:from_email], vars[:to])
           end
         end
 
@@ -1096,7 +1095,7 @@ _EOF_
           @config_presets[CONF_PRESET_DEFAULT].has_key?(plugin_sym.to_s)
             default_config_name=@config_presets[CONF_PRESET_DEFAULT][plugin_sym.to_s]
             if !@config_presets.has_key?(default_config_name)
-              Log.log.error("Default config name [#{default_config_name}] specified for plugin [#{plugin_sym.to_s}], but it does not exist in config file.\nPlease fix the issue: either create preset with one parameter (#{@info[:name]} config id #{default_config_name} init @json:'{}') or remove default (#{@info[:name]} config id default remove #{plugin_sym.to_s}).")
+              Log.log.error("Default config name [#{default_config_name}] specified for plugin [#{plugin_sym}], but it does not exist in config file.\nPlease fix the issue: either create preset with one parameter (#{@info[:name]} config id #{default_config_name} init @json:'{}') or remove default (#{@info[:name]} config id default remove #{plugin_sym}).")
             end
             raise CliError,"Config name [#{default_config_name}] must be a hash, check config file." if !@config_presets[default_config_name].is_a?(Hash)
             return default_config_name

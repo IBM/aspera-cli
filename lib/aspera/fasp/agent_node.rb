@@ -52,7 +52,7 @@ module Aspera
       end
 
       # generic method
-      def start_transfer(transfer_spec,options=nil)
+      def start_transfer(transfer_spec,_options=nil)
         # add root id if access key
         if !@root_id.nil?
           case transfer_spec['direction']
@@ -116,7 +116,7 @@ module Aspera
             end
           else
             Log.log.warn("trdata -> #{trdata}")
-            raise Fasp::Error.new("#{trdata['status']}: #{trdata['error_desc']}")
+            raise Fasp::Error, "#{trdata['status']}: #{trdata['error_desc']}"
           end
           sleep 1
         end

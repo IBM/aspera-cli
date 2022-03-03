@@ -8,8 +8,8 @@ module Aspera
       # FASP event listener display management events as JSON
       class LineDump < Fasp::Listener
         def event_enhanced(data)
-          STDOUT.puts(JSON.generate(data))
-          STDOUT.flush
+          $stdout.puts(JSON.generate(data))
+          $stdout.flush
         end
       end
     end

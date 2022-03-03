@@ -38,13 +38,13 @@ module Aspera
       # a lambda which takes the Net::HTTP as arg, use this to change parameters
       @session_cb=nil
       attr_accessor :download_partial_suffix
-      def session_cb=(v); @session_cb=v;Log.log.debug("session_cb => #{@session_cb}".red);end
+      def session_cb=(val); @session_cb=val;Log.log.debug("session_cb => #{@session_cb}".red);end
 
       attr_reader :session_cb, :insecure, :user_agent, :debug
 
-      def insecure=(v); @insecure=v;Log.log.debug("insecure => #{@insecure}".red);end
+      def insecure=(val); @insecure=val;Log.log.debug("insecure => #{@insecure}".red);end
 
-      def user_agent=(v); @user_agent=v;Log.log.debug("user_agent => #{@user_agent}".red);end
+      def user_agent=(val); @user_agent=val;Log.log.debug("user_agent => #{@user_agent}".red);end
 
       def debug=(flag); @debug=flag; Log.log.debug("debug http => #{flag}"); end
 
@@ -223,7 +223,7 @@ module Aspera
             Log.log.debug('before write file')
             target_file=call_data[:save_to_file]
             # override user's path to path in header
-            if !response['Content-Disposition'].nil? and m=response['Content-Disposition'].match(/filename="([^"]+)"/)
+            if !response['Content-Disposition'].nil? and (m=response['Content-Disposition'].match(/filename="([^"]+)"/))
               target_file=File.join(File.dirname(target_file),m[1])
             end
             # download with temp filename
@@ -271,7 +271,7 @@ module Aspera
         end # if oauth
         # moved ?
         if e.response.is_a?(Net::HTTPRedirection)
-          if tries_remain_redirect > 0
+          if tries_remain_redirect.positive?
             tries_remain_redirect-=1
             Log.log.info("URL is moved: #{e.response['location']}")
             current_uri=URI.parse(call_data[:base_url])

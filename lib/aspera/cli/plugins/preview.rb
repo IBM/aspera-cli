@@ -202,7 +202,7 @@ module Aspera
             res=@api_node.create('files/upload_setup',{'transfer_requests'=>[{'transfer_request'=>{'paths'=>[{}],'destination_root'=>'/'}}]})
             template_ts=res[:data]['transfer_specs'].first['transfer_spec']
             # get ports, anyway that should be 33001 for both. add remote_user ?
-            @default_transfer_spec=['ssh_port','fasp_port'].inject({}){|h,e|h[e]=template_ts[e];h}
+            @default_transfer_spec=['ssh_port','fasp_port'].each_with_object({}){|e,h|h[e]=template_ts[e];}
             if !@default_transfer_spec['remote_user'].eql?(Aspera::Fasp::TransferSpec::ACCESS_KEY_TRANSFER_USER)
               Log.log.warn('remote_user shall be xfer')
               @default_transfer_spec['remote_user']=Aspera::Fasp::TransferSpec::ACCESS_KEY_TRANSFER_USER
@@ -268,7 +268,7 @@ module Aspera
 
         def preview_filename(preview_format,filename=nil)
           filename||=PREVIEW_BASENAME
-          return "#{filename}.#{preview_format.to_s}"
+          return "#{filename}.#{preview_format}"
         end
 
         # generate preview files for one folder entry (file) if necessary
@@ -349,7 +349,7 @@ module Aspera
         def scan_folder_files(top_entry,scan_start=nil)
           if !scan_start.nil?
             # canonical path: start with / and ends with /
-            scan_start='/'+scan_start.split('/').select{|i|!i.empty?}.join('/')
+            scan_start='/'+scan_start.split('/').reject{|i|i.empty?}.join('/')
             scan_start="#{scan_start}/" #unless scan_start.end_with?('/')
           end
           filter_block=Aspera::Node.file_matcher(options.get_option(:value,:optional))

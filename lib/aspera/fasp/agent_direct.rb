@@ -73,7 +73,7 @@ module Aspera
           }
           # Managed by multi-session, so delete from transfer spec
           transfer_spec.delete('multi_session')
-          if multi_session_info[:count] < 0
+          if multi_session_info[:count].negative?
             Log.log.error("multi_session(#{transfer_spec['multi_session']}) shall be integer >= 0")
             multi_session_info = nil
           elsif multi_session_info[:count].eql?(0)
@@ -153,7 +153,7 @@ module Aspera
         Log.log.debug('wait_for_transfers_completion')
         # set to non-nil to exit loop
         result=[]
-        @jobs.each do |id,job|
+        @jobs.each do |_id,job|
           job[:sessions].each do |session|
             Log.log.debug("join #{session[:thread]}")
             session[:thread].join
@@ -191,7 +191,7 @@ module Aspera
             Fasp::Installation.instance.path(env_args[:ascp_version])
           end
           # (optional) check it exists
-          raise Fasp::Error.new("no such file: #{ascp_path}") unless File.exist?(ascp_path)
+          raise Fasp::Error, "no such file: #{ascp_path}" unless File.exist?(ascp_path)
           # open random local TCP port for listening for ascp management
           mgt_sock = TCPServer.new('127.0.0.1',0)
           # clone arguments as we eed to modify with mgt port
@@ -227,7 +227,7 @@ module Aspera
             line = ascp_mgt_io.gets
             # nil when ascp process exits
             break if line.nil?
-            current_event_text=current_event_text+line
+            current_event_text+=line
             line.chomp!
             Log.log.debug("line=[#{line}]")
             case line
@@ -281,11 +281,11 @@ module Aspera
           end
         rescue SystemCallError => e
           # Process.spawn
-          raise Fasp::Error.new(e.message)
+          raise Fasp::Error, e.message
         rescue Timeout::Error
-          raise Fasp::Error.new('timeout waiting mgt port connect')
+          raise Fasp::Error, 'timeout waiting mgt port connect'
         rescue Interrupt
-          raise Fasp::Error.new('transfer interrupted by user')
+          raise Fasp::Error, 'transfer interrupted by user'
         ensure
           # if ascp was successfully started
           unless ascp_pid.nil?
@@ -300,7 +300,7 @@ module Aspera
                 # just debug, as main exception is already here
                 Log.log.debug(message)
               else
-                raise Fasp::Error.new(message)
+                raise Fasp::Error, message
               end
             end
           end

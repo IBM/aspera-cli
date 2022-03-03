@@ -46,7 +46,7 @@ module Aspera
           path:    lambda{|v|File.expand_path(v)},
           env:     lambda{|v|ENV[v]},
           uri:     lambda{|v|UriReader.read(v)},
-          stdin:   lambda{|v|raise 'no value allowed for stdin' unless v.empty?;STDIN.read}
+          stdin:   lambda{|v|raise 'no value allowed for stdin' unless v.empty?;$stdin.read}
           }
           # other handlers can be set using set_handler, e.g. preset is reader in config plugin
         }
@@ -76,7 +76,7 @@ module Aspera
         end
         # then read value
         @handlers[:reader].each do |reader,method|
-          if m=value.match(/^@#{reader}:(.*)/)
+          if (m=value.match(/^@#{reader}:(.*)/))
             value=method.call(m[1])
             break
           end

@@ -11,7 +11,7 @@ module Aspera
       # implement basic remote access with FASP/SSH
       class Server < BasicAuthPlugin
         class LocalExecutor
-          def execute(cmd,input=nil)
+          def execute(cmd,_input=nil)
             `#{cmd}`
           end
         end
@@ -27,7 +27,7 @@ module Aspera
         end
 
         def key_symb_to_str_single(source)
-          return source.inject({}){|memo,(k,v)| memo[k.to_s] = v; memo}
+          return source.each_with_object({}){|(k,v),memo| memo[k.to_s] = v; }
         end
 
         def key_symb_to_str_list(source)
@@ -156,7 +156,7 @@ module Aspera
               if TransferAgent.session_status(statuses).eql?(:success)
                 nagios.add_ok('transfer','ok')
               else
-                nagios.add_critical('transfer',statuses.select{|i|!i.eql?(:success)}.first.to_s)
+                nagios.add_critical('transfer',statuses.reject{|i|i.eql?(:success)}.first.to_s)
               end
             when :asctlstatus
               realcmd='asctl'

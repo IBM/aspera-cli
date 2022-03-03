@@ -159,7 +159,7 @@ module Aspera
             cert.public_key = private_key.public_key
             cert.serial = 0x0
             cert.version = 2
-            cert.sign(private_key, OpenSSL::Digest::SHA1.new)
+            cert.sign(private_key, OpenSSL::Digest.new('SHA1'))
             File.write(file_key,private_key.to_pem)
             File.write(file_cert,cert.to_pem)
             File.chmod(0400,file_key)
@@ -215,7 +215,7 @@ module Aspera
         cmd_out=%x("#{exe_path}" #{vers_arg})
         raise "An error occured when testing #{ascp_filename}: #{cmd_out}" unless $? == 0
         # get version from ascp, only after full extract, as windows requires DLLs (SSL/TLS/etc...)
-        m=cmd_out.match(/ version ([0-9\.]+)/)
+        m=cmd_out.match(/ version ([0-9.]+)/)
         exe_version=m[1] unless m.nil?
         return exe_version
       end

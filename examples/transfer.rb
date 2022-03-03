@@ -16,7 +16,7 @@ tmpdir=ENV['tmp']||Dir.tmpdir || '.'
 DEMO_CONFIG=[
   'ssh://asperaweb@eudemo.asperademo.com:33001',
   'https://node_asperaweb@eudemo.asperademo.com:9092',
-  'demoaspera',
+  'demoaspera'
 ]
 
 ##############################################################
@@ -54,7 +54,7 @@ fasp_manager=Aspera::Fasp::AgentDirect.new
 class MyListener < Aspera::Fasp::Listener
   # this is the callback called during transfers, here we only display the received information
   # but it could be used to get detailed error information, check "type" field is "ERROR"
-  def event_enhanced(data);STDOUT.puts(JSON.generate(data));STDOUT.flush;end
+  def event_enhanced(data);$stdout.puts(JSON.generate(data));$stdout.flush;end
 end
 
 # register the sample listener to display events
@@ -84,9 +84,9 @@ fasp_manager.start_transfer(transfer_spec)
 # get array of status, one for each session (so, a single value array)
 # each status is either :success or "error message"
 transfer_result=fasp_manager.wait_for_transfers_completion
-STDOUT.puts(JSON.generate(transfer_result))
+$stdout.puts(JSON.generate(transfer_result))
 # get list of errors only
-errors=transfer_result.select{|i|!i.eql?(:success)}
+errors=transfer_result.reject{|i|i.eql?(:success)}
 # the transfer was not success, as there is at least one error
 raise "Error(s) occured: #{errors.join(',')}" if !errors.empty?
 
@@ -118,7 +118,7 @@ transfer_spec['authentication']='token'
 fasp_manager.start_transfer(transfer_spec)
 # optional: wait for transfer completion helper function to get events
 transfer_result=fasp_manager.wait_for_transfers_completion
-errors=transfer_result.select{|i|!i.eql?(:success)}
+errors=transfer_result.reject{|i|i.eql?(:success)}
 # the transfer was not success, as there is at least one error
 raise "Error(s) occured: #{errors.join(',')}" if !errors.empty?
 

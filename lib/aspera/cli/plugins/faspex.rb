@@ -64,7 +64,7 @@ module Aspera
         # extract elements from anonymous faspex link
         def self.get_link_data(publink)
           publink_uri=URI.parse(publink)
-          if m=publink_uri.path.match(/^(.*)\/(external.*)$/)
+          if (m=publink_uri.path.match(/^(.*)\/(external.*)$/))
             base=m[1]
             subpath=m[2]
           else
@@ -74,7 +74,7 @@ module Aspera
           result={
             base_url:  "#{publink_uri.scheme}://#{publink_uri.host}#{port_add}#{base}",
             subpath:   subpath,
-            query:     URI.decode_www_form(publink_uri.query).inject({}){|h,v|h[v.first]=v.last;h}
+            query:     URI.decode_www_form(publink_uri.query).each_with_object({}){|v,h|h[v.first]=v.last;}
           }
           Log.dump('publink',result)
           return result
@@ -186,7 +186,7 @@ module Aspera
             break if link.nil?
             # replace parameters with the ones from next link
             params=CGI.parse(URI.parse(link['href']).query)
-            mailbox_query=params.keys.inject({}){|m,i|;m[i]=params[i].first;m}
+            mailbox_query=params.keys.each_with_object({}){|i,m|;m[i]=params[i].first;}
             Log.log.debug("query: #{mailbox_query}")
             break if !max_pages.nil? and mailbox_query['page'].to_i > max_pages
           end
@@ -296,7 +296,7 @@ module Aspera
                   pkg_id_uri=mailbox_all_entries.map{|i|{id: i[PACKAGE_MATCH_FIELD],uri: self.class.get_fasp_uri_from_entry(i)}}
                   # TODO : remove ids from skip not present in inbox to avoid growing too big
                   # skip_ids_data.select!{|id|pkg_id_uri.select{|p|p[:id].eql?(id)}}
-                  pkg_id_uri.select!{|i|!skip_ids_data.include?(i[:id])}
+                  pkg_id_uri.reject!{|i|skip_ids_data.include?(i[:id])}
                 else
                   recipient=options.get_option(:recipient,:optional)
                   if !recipient.nil? and recipient.start_with?('*')
@@ -361,7 +361,7 @@ module Aspera
               source_match_val=options.get_next_argument('source id or name')
               source_ids=source_list.select { |i| i[command_source.to_s].to_s.eql?(source_match_val) }
               if source_ids.empty?
-                raise CliError,"No such Faspex source #{command_source.to_s}: #{source_match_val} in [#{source_list.map{|i| i[command_source.to_s]}.join(', ')}]"
+                raise CliError,"No such Faspex source #{command_source}: #{source_match_val} in [#{source_list.map{|i| i[command_source.to_s]}.join(', ')}]"
               end
               # get id and name
               source_name=source_ids.first['name']

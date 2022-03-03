@@ -16,8 +16,8 @@ module Aspera
 
       # returns string with single quotes suitable for bash if there is any bash metacharacter
       def self.shell_quote(argument)
-        return argument unless argument.split('').any?{|c|BASH_SPECIAL_CHARACTERS.include?(c)}
-        return "'"+argument.gsub(/'/){|s| "'\"'\"'"}+"'"
+        return argument unless argument.chars.any?{|c|BASH_SPECIAL_CHARACTERS.include?(c)}
+        return "'"+argument.gsub(/'/){|_s| "'\"'\"'"}+"'"
       end
 
       # check that external tools can be executed
@@ -65,7 +65,7 @@ module Aspera
         #input_file,input_args,output_file,output_args
         a[:gl_p]||=[
           '-y', # overwrite output without asking
-          '-loglevel','error', # show only errors and up]
+          '-loglevel','error' # show only errors and up]
         ]
         a[:in_p]||=[]
         a[:out_p]||=[]
@@ -121,7 +121,7 @@ module Aspera
         return output_file
       end
 
-      def message_to_png(message)
+      def message_to_png(_message)
         # convert -size 400x  -background '#666666' -fill '#ffffff'  -interword-spacing 10 -kerning 4 -pointsize 10 -gravity West -size x22 label:"Lorem dolor sit amet" -flatten xxx.png
         external_command(:convert,[])
       end

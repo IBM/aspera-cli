@@ -12,7 +12,7 @@ module Aspera
 
       # translates legacy event into enhanced (JSON) event
       def enhanced_event_format(event)
-        return event.keys.inject({}) do |h,e|
+        return event.keys.each_with_object({}) do |e,h|
           # capital_to_snake_case
           new_name=e.
           gsub(/([A-Z]+)([A-Z][a-z])/,'\1_\2').
@@ -23,7 +23,6 @@ module Aspera
           value=value.to_i if IntegerFields.include?(e)
           value=value.eql?('Yes') ? true : false if BooleanFields.include?(e)
           h[new_name]=value
-          h
         end
       end
 

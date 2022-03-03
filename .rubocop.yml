@@ -16,6 +16,10 @@ Metrics/MethodLength:
   Enabled: false
 Metrics/AbcSize:
   Enabled: false
+Metrics/PerceivedComplexity:
+  Enabled: false
+Layout/DotPosition:
+  Enabled: false
 Layout/AssignmentIndentation:
   Enabled: false
 Layout/SpaceAfterComma:
@@ -84,6 +88,8 @@ Style/HashEachMethods:
   Enabled: false
 Style/StringConcatenation:
   Enabled: false
+Style/SafeNavigation:
+  Enabled: false
 Layout/SpaceAroundEqualsInParameterDefault:
   Enabled: false
 Style/FormatStringToken:
@@ -130,10 +136,13 @@ Style/AsciiComments:
 Style/LambdaCall:
   Enabled: false
 
+Metrics/BlockNesting:
+  Enabled: false
 Metrics/BlockLength:
   Enabled: false
 
 Metrics/CyclomaticComplexity:
+  Enabled: false
   Max: 20
 
 Style/MethodCallWithoutArgsParentheses:
@@ -144,6 +153,7 @@ Layout/EmptyLineAfterMagicComment:
 
 Naming/MethodParameterName:
   Enabled: true
+  MinNameLength: 1
 
 Lint/UselessAssignment:
   Enabled: true

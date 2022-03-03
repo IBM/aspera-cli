@@ -67,7 +67,7 @@ Aspera::Log.dump('job_id',job_id)
 # wait for all transfer completion (for the example)
 result=transfer_client.wait_for_transfers_completion
 #  notify of any transfer error
-result.select{|i|!i.eql?(:success)}.each do |e|
+result.reject{|i|i.eql?(:success)}.each do |e|
   Aspera::Log.log.error("A transfer error occured: #{e.message}")
 end
 

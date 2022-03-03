@@ -30,17 +30,17 @@ module Aspera
       Net::SSH.start(@host, @username, @ssh_options) do |session|
         ssh_channel=session.open_channel do |channel|
           # prepare stdout processing
-          channel.on_data{|chan,data|response << data}
+          channel.on_data{|_chan,data|response << data}
           # prepare stderr processing, stderr if type = 1
-          channel.on_extended_data do |chan, type, data|
+          channel.on_extended_data do |_chan, _type, data|
             errormsg="#{cmd}: [#{data.chomp}]"
             # Happens when windows user hasn't logged in and created home account.
             if data.include?('Could not chdir to home directory')
-              errormsg=errormsg+"\nHint: home not created in Windows?"
+              errormsg+="\nHint: home not created in Windows?"
             end
             raise errormsg
           end
-          channel.exec(cmd){|ch,success|channel.send_data(input) unless input.nil?}
+          channel.exec(cmd){|_ch,_success|channel.send_data(input) unless input.nil?}
         end
         # wait for channel to finish (command exit)
         ssh_channel.wait

@@ -239,7 +239,7 @@ module Aspera
       if @user_info.nil?
         # get our user's default information
         @user_info=read('self')[:data] rescue nil
-        @user_info=USER_INFO_FIELDS_MIN.inject({}){|m,f|m[f]=nil;m} if @user_info.nil?
+        @user_info=USER_INFO_FIELDS_MIN.each_with_object({}){|f,m|m[f]=nil;} if @user_info.nil?
         USER_INFO_FIELDS_MIN.each{|f|@user_info[f]='unknown' if @user_info[f].nil?}
       end
       return @user_info
@@ -373,7 +373,7 @@ module Aspera
       return result
     end
 
-    def process_resolve_node_file(entry,path)
+    def process_resolve_node_file(entry,_path)
       # stop digging here if not in right path
       return false unless entry['name'].eql?(@resolve_state[:path].first)
       # ok it matches, so we remove the match
@@ -409,7 +409,7 @@ module Aspera
     # supports links to secondary nodes
     def resolve_node_file(top_node_file, element_path_string)
       top_node_info,top_file_id=check_get_node_file(top_node_file)
-      path_elements=element_path_string.split(PATH_SEPARATOR).select{|i| !i.empty?}
+      path_elements=element_path_string.split(PATH_SEPARATOR).reject{|i| i.empty?}
       result={node_info: top_node_info, file_id: nil}
       if path_elements.empty?
         result[:file_id]=top_file_id
