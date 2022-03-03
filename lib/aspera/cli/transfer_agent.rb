@@ -63,7 +63,7 @@ END_OF_TEMPLATE
         @agent.add_listener(Listener::Logger.new)
         # use local progress bar if asked so, or if native and non local ascp (because only local ascp has native progress bar)
         if @opt_mgr.get_option(:progress,:mandatory).eql?(:multi) or
-        (@opt_mgr.get_option(:progress,:mandatory).eql?(:native) and ! instance.class.to_s.eql?('Aspera::Fasp::AgentDirect'))
+        (@opt_mgr.get_option(:progress,:mandatory).eql?(:native) and !instance.class.to_s.eql?('Aspera::Fasp::AgentDirect'))
           @agent.add_listener(@progress_listener)
         end
       end
@@ -103,8 +103,8 @@ END_OF_TEMPLATE
         return dest_folder unless dest_folder.nil?
         # default: / on remote, . on local
         case direction.to_s
-        when Fasp::TransferSpec::DIRECTION_SEND;dest_folder='/'
-        when Fasp::TransferSpec::DIRECTION_RECEIVE;dest_folder='.'
+        when Fasp::TransferSpec::DIRECTION_SEND then dest_folder='/'
+        when Fasp::TransferSpec::DIRECTION_RECEIVE then dest_folder='.'
         else raise "wrong direction: #{direction}"
         end
         return dest_folder
@@ -194,7 +194,7 @@ END_OF_TEMPLATE
 
         transfer_spec.merge!(@transfer_spec_cmdline)
         # create transfer agent
-        self.set_agent_by_options
+        set_agent_by_options
         Log.log.debug("transfer agent is a #{@agent.class}")
         @agent.start_transfer(transfer_spec,tr_opts)
         result=@agent.wait_for_transfers_completion
@@ -228,7 +228,6 @@ END_OF_TEMPLATE
       def shutdown
         @agent.shutdown if @agent.respond_to?(:shutdown)
       end
-
     end
   end
 end

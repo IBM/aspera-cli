@@ -8,7 +8,7 @@ module Aspera
       'alt_logdir'           => { cltype: :opt_with_arg, accepted_types: :string},
       'watchd'               => { cltype: :opt_with_arg, accepted_types: :string},
       'apply_local_docroot'  => { cltype: :opt_without_arg},
-      'quiet'                => { cltype: :opt_without_arg},
+      'quiet'                => { cltype: :opt_without_arg}
     }
     SESSION_PARAMS=
     {
@@ -41,7 +41,7 @@ module Aspera
       'remote_password'      => { cltype: :envvar, clvarname: 'ASPERA_SCP_PASS'},
       'cookie'               => { cltype: :envvar, clvarname: 'ASPERA_SCP_COOKIE'},
       'token'                => { cltype: :envvar, clvarname: 'ASPERA_SCP_TOKEN'},
-      'license'              => { cltype: :envvar, clvarname: 'ASPERA_SCP_LICENSE'},
+      'license'              => { cltype: :envvar, clvarname: 'ASPERA_SCP_LICENSE'}
     }
 
     Aspera::CommandLineBuilder.normalize_description(INSTANCE_PARAMS)

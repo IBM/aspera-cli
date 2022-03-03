@@ -16,7 +16,7 @@ module Aspera
         def event_struct(data)
           case data['Type']
           when 'NOTIFICATION'
-            if data.has_key?('PreTransferBytes') then
+            if data.has_key?('PreTransferBytes')
               @progress=ProgressBar.create(
               format:      '%a %B %p%% %r Mbps %e',
               rate_scale:  lambda{|rate|rate/BYTE_PER_MEGABIT},
@@ -27,7 +27,7 @@ module Aspera
             # stop event when one file is completed
             @cumulative=@cumulative+data['Size'].to_i
           when 'STATS'
-            if !@progress.nil? then
+            if !@progress.nil?
               if data.has_key?('Bytescont')
                 @progress.progress=@cumulative+data['Bytescont'].to_i
               else
@@ -37,7 +37,7 @@ module Aspera
               puts '.'
             end
           when 'DONE'
-            if !@progress.nil? then
+            if !@progress.nil?
               @progress.progress=@progress.total
               @progress=nil
             else

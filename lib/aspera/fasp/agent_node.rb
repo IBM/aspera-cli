@@ -54,10 +54,10 @@ module Aspera
       # generic method
       def start_transfer(transfer_spec,options=nil)
         # add root id if access key
-        if ! @root_id.nil?
+        if !@root_id.nil?
           case transfer_spec['direction']
-          when Fasp::TransferSpec::DIRECTION_SEND;transfer_spec['source_root_id']=@root_id
-          when Fasp::TransferSpec::DIRECTION_RECEIVE;transfer_spec['destination_root_id']=@root_id
+          when Fasp::TransferSpec::DIRECTION_SEND then transfer_spec['source_root_id']=@root_id
+          when Fasp::TransferSpec::DIRECTION_RECEIVE then transfer_spec['destination_root_id']=@root_id
           else raise "unexpected direction in ts: #{transfer_spec['direction']}"
           end
         end

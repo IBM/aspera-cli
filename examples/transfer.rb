@@ -26,7 +26,7 @@ DEMO_CONFIG=[
 Aspera::Log.instance.level=:debug
 
 # register aspera REST call error handlers
-Aspera::RestErrorsAspera.registerHandlers
+Aspera::RestErrorsAspera.register_handlers
 
 # some required files are generated here (keys, certs)
 Aspera::Fasp::Installation.instance.folder = tmpdir
@@ -107,7 +107,7 @@ destination='/Upload'
 # create sample file(s)
 sources.each{|p|File.write(p,'Hello World!')}
 # request transfer authorization to node for a single transfer (This is a node api v3 call)
-send_result=node_api.create('files/upload_setup',{ transfer_requests: [ { transfer_request: { paths: [ { destination: destination } ] } } ] } )[:data]
+send_result=node_api.create('files/upload_setup',{ transfer_requests: [{ transfer_request: { paths: [{ destination: destination }] } }] })[:data]
 # we normally have only one transfer spec in list, so just get the first transfer_spec
 transfer_spec=send_result['transfer_specs'].first['transfer_spec']
 # add list of files to upload

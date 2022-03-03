@@ -39,11 +39,11 @@ module Aspera
         command=command_args.clone.unshift(command_symb).map{|i| shell_quote(i.to_s)}.join(' ')
         Log.log.debug("cmd=#{command}".blue)
         # capture3: only in ruby2+
-        if Open3.respond_to?('capture3') then
+        if Open3.respond_to?('capture3')
           stdout, stderr, exit_status = Open3.capture3(command)
         else
           stderr='<merged with stdout>'
-          stdout=%x[#{command} 2>&1]
+          stdout=%x(#{command} 2>&1)
           exit_status=$?
         end
         if BASH_EXIT_NOT_FOUND.eql?(exit_status)
@@ -123,8 +123,7 @@ module Aspera
 
       def message_to_png(message)
         # convert -size 400x  -background '#666666' -fill '#ffffff'  -interword-spacing 10 -kerning 4 -pointsize 10 -gravity West -size x22 label:"Lorem dolor sit amet" -flatten xxx.png
-        external_command(:convert,[
-        ])
+        external_command(:convert,[])
       end
     end # Options
   end # Preview

@@ -3,7 +3,6 @@ module Aspera
     # Base class for FASP transfer agents
     # sub classes shall implement start_transfer and shutdown
     class AgentBase
-
       private
 
       # fields description for JSON generation
@@ -79,7 +78,6 @@ module Aspera
       # start_transfer(transfer_spec,options) : start and wait for completion
       # wait_for_transfers_completion : wait for termination of all transfers, @return list of : :success or error message
       # optional: shutdown
-
     end
   end
 end

@@ -7,7 +7,7 @@ module Aspera
     class AgentTrsdk < AgentBase
       DEFAULT_OPTIONS = {
         address: '127.0.0.1',
-        port:    55002,
+        port:    55002
       }
       private_constant :DEFAULT_OPTIONS
 
@@ -21,7 +21,7 @@ module Aspera
             if DEFAULT_OPTIONS.has_key?(k)
               options[k]=v
             else
-              raise "Unknown local agent parameter: #{k}, expect one of #{DEFAULT_OPTIONS.keys.map{|i|i.to_s}.join(",")}"
+              raise "Unknown local agent parameter: #{k}, expect one of #{DEFAULT_OPTIONS.keys.map{|i|i.to_s}.join(',')}"
             end
           end
         end
@@ -34,7 +34,7 @@ module Aspera
         begin
           get_info_response = @transfer_client.get_info(Transfersdk::InstanceInfoRequest.new)
           Log.log.debug("daemon info: #{get_info_response}")
-        rescue GRPC::Unavailable => e
+        rescue GRPC::Unavailable
           Log.log.warn('no daemon present, starting daemon...')
           # location of daemon binary
           bin_folder=File.realpath(File.join(Installation.instance.sdk_ruby_folder,'..'))
@@ -49,12 +49,12 @@ module Aspera
             use_embedded: false,
             user_defined: {
             bin: bin_folder,
-            etc: bin_folder,
+            etc: bin_folder
             }
             }
           }
           File.write(conf_file,config.to_json)
-          trd_pid = Process.spawn(Installation.instance.path(:transferd),'--config' , conf_file, out: "#{log_base}.out", err: "#{log_base}.err")
+          trd_pid = Process.spawn(Installation.instance.path(:transferd),'--config', conf_file, out: "#{log_base}.out", err: "#{log_base}.err")
           Process.detach(trd_pid)
           sleep(2.0)
           retry

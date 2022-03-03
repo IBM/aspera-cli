@@ -7,8 +7,8 @@ module Aspera
     # transform yes/no to true/false
     def self.yes_to_true(value)
       case value
-      when 'yes'; return true
-      when 'no'; return false
+      when 'yes' then return true
+      when 'no' then return false
       end
       raise "unsupported value: #{value}"
     end
@@ -22,7 +22,7 @@ module Aspera
         options[:mandatory]||=false
         options[:desc]||=''
         # by default : string, unless it's without arg
-        if ! options.has_key?(:accepted_types)
+        if !options.has_key?(:accepted_types)
           options[:accepted_types]=options[:cltype].eql?(:opt_without_arg) ? :bool : :string
         end
         # single type is placed in array
@@ -101,11 +101,11 @@ module Aspera
       # Check parameter type
       expected_classes=options[:accepted_types].map do |s|
         case s
-        when :string; String
-        when :array; Array
-        when :hash; Hash
-        when :int; Integer
-        when :bool; [TrueClass,FalseClass]
+        when :string then String
+        when :array then Array
+        when :hash then Hash
+        when :int then Integer
+        when :bool then [TrueClass,FalseClass]
         else raise "INTERNAL: unexpected value: #{s}"
         end
       end.flatten
@@ -147,7 +147,7 @@ module Aspera
         add_param=false
         case parameter_value
         when false# nothing to put on command line, no creation by default
-        when true; add_param=true
+        when true then add_param=true
         else raise Fasp::Error.new("unsupported #{param_name}: #{parameter_value}")
         end
         add_param=!add_param if options[:add_on_false]

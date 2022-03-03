@@ -69,7 +69,7 @@ module Aspera
         multi_session_info=nil
         if transfer_spec.has_key?('multi_session')
           multi_session_info={
-            count: transfer_spec['multi_session'].to_i,
+            count: transfer_spec['multi_session'].to_i
           }
           # Managed by multi-session, so delete from transfer spec
           transfer_spec.delete('multi_session')
@@ -233,11 +233,11 @@ module Aspera
             case line
             when 'FASPMGR 2'
               # begin event
-              current_event_data = Hash.new
+              current_event_data = {}
               current_event_text = ''
             when /^([^:]+): (.*)$/
               # event field
-              current_event_data[$1] = $2
+              current_event_data[Regexp.last_match(1)] = Regexp.last_match(2)
             when ''
               # empty line is separator to end event information
               raise 'unexpected empty line' if current_event_data.nil?
@@ -282,9 +282,9 @@ module Aspera
         rescue SystemCallError => e
           # Process.spawn
           raise Fasp::Error.new(e.message)
-        rescue Timeout::Error => e
+        rescue Timeout::Error
           raise Fasp::Error.new('timeout waiting mgt port connect')
-        rescue Interrupt => e
+        rescue Interrupt
           raise Fasp::Error.new('transfer interrupted by user')
         ensure
           # if ascp was successfully started
@@ -346,7 +346,7 @@ module Aspera
             if DEFAULT_OPTIONS.has_key?(k)
               @options[k]=v
             else
-              raise "Unknown local agent parameter: #{k}, expect one of #{DEFAULT_OPTIONS.keys.map{|i|i.to_s}.join(",")}"
+              raise "Unknown local agent parameter: #{k}, expect one of #{DEFAULT_OPTIONS.keys.map{|i|i.to_s}.join(',')}"
             end
           end
         end
@@ -372,7 +372,6 @@ module Aspera
         end
         Log.log.debug("EXIT (#{Thread.current[:name]})")
       end
-
     end # AgentDirect
   end
 end

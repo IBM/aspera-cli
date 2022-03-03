@@ -44,9 +44,9 @@ module Aspera
       def display_message(message_level,message)
         display_level=@opt_mgr.get_option(:display,:mandatory)
         case message_level
-        when :info; STDOUT.puts(message) if display_level.eql?(:info)
-        when :data; STDOUT.puts(message) unless display_level.eql?(:error)
-        when :error; STDERR.puts(message)
+        when :info then STDOUT.puts(message) if display_level.eql?(:info)
+        when :data then STDOUT.puts(message) unless display_level.eql?(:error)
+        when :error then STDERR.puts(message)
         else raise "wrong message_level:#{message_level}"
         end
       end
@@ -75,7 +75,7 @@ module Aspera
         Log.log.debug("(#{keep_last})[#{is_simple_hash}] -#{source.values}- \n-#{source}-")
         return source if keep_last and is_simple_hash
         source.each do |k,v|
-          if v.is_a?(Hash) and ( !keep_last or !is_simple_hash )
+          if v.is_a?(Hash) and (!keep_last or !is_simple_hash)
             flatten_sub_hash_rec(v,keep_last,prefix+k.to_s+'.',dest)
           else
             dest[prefix+k.to_s]=v
@@ -91,7 +91,7 @@ module Aspera
           v=hash[k]
           if v.is_a?(Array) and v.map{|i|i.class}.uniq.eql?([Hash]) and v.map{|i|i.keys}.flatten.sort.uniq.eql?(['name', 'value'])
             v.each do |pair|
-              hash["#{k}.#{pair["name"]}"]=pair['value']
+              hash["#{k}.#{pair['name']}"]=pair['value']
             end
             hash.delete(k)
           end
@@ -108,6 +108,7 @@ module Aspera
             final_table_columns=['empty']
           end
         end
+        return final_table_columns
       end
 
       def result_all_fields(results,table_rows_hash_val)
@@ -153,13 +154,13 @@ module Aspera
               end
             end
             final_table_columns=case user_asked_fields_list_str
-            when FIELDS_DEFAULT; result_default_fields(results,table_rows_hash_val)
-            when FIELDS_ALL;     result_all_fields(results,table_rows_hash_val)
+            when FIELDS_DEFAULT then result_default_fields(results,table_rows_hash_val)
+            when FIELDS_ALL then     result_all_fields(results,table_rows_hash_val)
             else
               if user_asked_fields_list_str.start_with?('+')
                 result_default_fields(results,table_rows_hash_val).push(*user_asked_fields_list_str.gsub(/^\+/,'').split(','))
               elsif user_asked_fields_list_str.start_with?('-')
-                result_default_fields(results,table_rows_hash_val).select{|i| ! user_asked_fields_list_str.gsub(/^\-/,'').split(',').include?(i)}
+                result_default_fields(results,table_rows_hash_val).select{|i| !user_asked_fields_list_str.gsub(/^\-/,'').split(',').include?(i)}
               else
                 user_asked_fields_list_str.split(',')
               end
@@ -173,8 +174,8 @@ module Aspera
               self.class.flatten_name_value_list(res_data)
             end
             asked_fields=case user_asked_fields_list_str
-            when FIELDS_DEFAULT; results[:fields]||res_data.keys
-            when FIELDS_ALL;     res_data.keys
+            when FIELDS_DEFAULT then results[:fields]||res_data.keys
+            when FIELDS_ALL then     res_data.keys
             else                 user_asked_fields_list_str.split(',')
             end
             table_rows_hash_val=asked_fields.map { |i| { final_table_columns.first => i, final_table_columns.last => res_data[i] } }

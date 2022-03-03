@@ -134,7 +134,7 @@ module Aspera
           File.chmod(0400,file)
         when :aspera_conf
           file=File.join(sdk_folder,'aspera.conf')
-          File.write(file,%Q{<?xml version='1.0' encoding='UTF-8'?>
+          File.write(file,%Q(<?xml version='1.0' encoding='UTF-8'?>
 <CONF version="2">
 <default>
     <file_system>
@@ -143,7 +143,7 @@ module Aspera
     </file_system>
 </default>
 </CONF>
-}) unless File.exist?(file)
+)) unless File.exist?(file)
           File.chmod(0400,file)
         when :fallback_cert,:fallback_key
           file_key=File.join(sdk_folder,'aspera_fallback_key.pem')
@@ -212,7 +212,7 @@ module Aspera
         raise 'ERROR: nil arg' if exe_path.nil?
         return nil unless File.exist?(exe_path)
         exe_version=nil
-        cmd_out=%x{"#{exe_path}" #{vers_arg}}
+        cmd_out=%x("#{exe_path}" #{vers_arg})
         raise "An error occured when testing #{ascp_filename}: #{cmd_out}" unless $? == 0
         # get version from ascp, only after full extract, as windows requires DLLs (SSL/TLS/etc...)
         m=cmd_out.match(/ version ([0-9\.]+)/)
@@ -234,9 +234,9 @@ module Aspera
           Aspera::Rest.new(base_url: sdk_url, redirect_max: 3).call(operation: 'GET',save_to_file: sdk_zip_path)
         end
         # rename old install
-        if ! Dir.empty?(sdk_folder)
+        if !Dir.empty?(sdk_folder)
           Log.log.warn('Previous install exists, renaming folder.')
-          File.rename(sdk_folder,"#{sdk_folder}.#{Time.now.strftime("%Y%m%d%H%M%S")}")
+          File.rename(sdk_folder,"#{sdk_folder}.#{Time.now.strftime('%Y%m%d%H%M%S')}")
           # TODO: delete old archives ?
         end
         # SDK is organized by architecture
@@ -260,8 +260,8 @@ module Aspera
         end
         File.unlink(sdk_zip_path) rescue nil # Windows may give error
         # ensure license file are generated so that ascp invokation for version works
-        self.path(:aspera_license)
-        self.path(:aspera_conf)
+        path(:aspera_license)
+        path(:aspera_conf)
         ascp_path=File.join(sdk_folder,ascp_filename)
         raise "No #{ascp_filename} found in SDK archive" unless File.exist?(ascp_path)
         FileUtils.chmod(0755,ascp_path)
@@ -327,18 +327,18 @@ module Aspera
             },{
             expected: PRODUCT_CLI_V1,
             app_root: File.join('C:','Program Files','Aspera','cli'),
-            log_root: File.join('C:','Program Files','Aspera','cli','var','log'),
+            log_root: File.join('C:','Program Files','Aspera','cli','var','log')
             },{
             expected: PRODUCT_ENTSRV,
             app_root: File.join('C:','Program Files','Aspera','Enterprise Server'),
-            log_root: File.join('C:','Program Files','Aspera','Enterprise Server','var','log'),
+            log_root: File.join('C:','Program Files','Aspera','Enterprise Server','var','log')
             }]
         when Aspera::Environment::OS_X; return [{
             expected: PRODUCT_CONNECT,
             app_root: File.join(Dir.home,'Applications','Aspera Connect.app'),
             log_root: File.join(Dir.home,'Library','Logs','Aspera_Connect'),
             run_root: File.join(Dir.home,'Library','Application Support','Aspera','Aspera Connect'),
-            sub_bin: File.join('Contents','Resources'),
+            sub_bin: File.join('Contents','Resources')
             },{
             expected: PRODUCT_CLI_V1,
             app_root: File.join(Dir.home,'Applications','Aspera CLI'),
@@ -346,12 +346,12 @@ module Aspera
             },{
             expected: PRODUCT_ENTSRV,
             app_root: File.join('','Library','Aspera'),
-            log_root: File.join(Dir.home,'Library','Logs','Aspera'),
+            log_root: File.join(Dir.home,'Library','Logs','Aspera')
             },{
             expected: PRODUCT_DRIVE,
             app_root: File.join('','Applications','Aspera Drive.app'),
             log_root: File.join(Dir.home,'Library','Logs','Aspera_Drive'),
-            sub_bin: File.join('Contents','Resources'),
+            sub_bin: File.join('Contents','Resources')
             }]
         else; return [{  # other: Linux and Unix family
             expected: PRODUCT_CONNECT,
@@ -359,10 +359,10 @@ module Aspera
             run_root: File.join(Dir.home,'.aspera','connect')
             },{
             expected: PRODUCT_CLI_V1,
-            app_root: File.join(Dir.home,'.aspera','cli'),
+            app_root: File.join(Dir.home,'.aspera','cli')
             },{
             expected: PRODUCT_ENTSRV,
-            app_root: File.join('','opt','aspera'),
+            app_root: File.join('','opt','aspera')
             }]
         end
       end
@@ -376,7 +376,6 @@ module Aspera
         # validate valie and generate key in connonical format
         OpenSSL::PKey.const_get(type.upcase).send(:new,hf.insert(1,bin).join("\n")).to_pem
       end
-
     end # Installation
   end
 end

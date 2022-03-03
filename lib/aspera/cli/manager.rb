@@ -77,8 +77,7 @@ module Aspera
       end
 
       attr_reader :parser
-      attr_accessor :ask_missing_mandatory
-      attr_accessor :ask_missing_optional
+      attr_accessor :ask_missing_mandatory, :ask_missing_optional
       attr_writer :fail_on_missing_mandatory
 
       #
@@ -116,11 +115,11 @@ module Aspera
         unless argv.nil?
           @parser.separator('')
           @parser.separator('OPTIONS: global')
-          self.set_obj_attr(:interactive,self,:ask_missing_mandatory)
-          self.set_obj_attr(:ask_options,self,:ask_missing_optional)
-          self.add_opt_boolean(:interactive,'use interactive input of missing params')
-          self.add_opt_boolean(:ask_options,'ask even optional options')
-          self.parse_options!
+          set_obj_attr(:interactive,self,:ask_missing_mandatory)
+          set_obj_attr(:ask_options,self,:ask_missing_optional)
+          add_opt_boolean(:interactive,'use interactive input of missing params')
+          add_opt_boolean(:ask_options,'ask even optional options')
+          parse_options!
           process_options=true
           while !argv.empty?
             value=argv.shift
@@ -217,7 +216,7 @@ module Aspera
         end
         @declared_options[option_symbol]={type: type}
         # by default passwords and secrets are sensitive, else specify when declaring the option
-        set_is_sensitive(option_symbol) if !%w{password secret key}.select{|i| option_symbol.to_s.end_with?(i)}.empty?
+        set_is_sensitive(option_symbol) if !%w[password secret key].select{|i| option_symbol.to_s.end_with?(i)}.empty?
       end
 
       def set_is_sensitive(option_symbol)
@@ -234,7 +233,7 @@ module Aspera
 
       # set an option value by name, either store value or call handler
       def set_option(option_symbol,value,where='default')
-        if ! @declared_options.has_key?(option_symbol)
+        if !@declared_options.has_key?(option_symbol)
           Log.log.debug("set unknown option: #{option_symbol}")
           raise 'ERROR: cannot set undeclared option'
           #declare_option(option_symbol)
@@ -352,8 +351,8 @@ module Aspera
         Log.log.debug("on_args=#{on_args}")
         @parser.on(*on_args) do |v|
           case v
-          when 'now'; set_option(option_symbol,Manager.time_to_string(Time.now),'cmdline')
-          when /^-([0-9]+)h/; set_option(option_symbol,Manager.time_to_string(Time.now-$1.to_i*3600),'cmdline')
+          when 'now' then set_option(option_symbol,Manager.time_to_string(Time.now),'cmdline')
+          when /^-([0-9]+)h/ then set_option(option_symbol,Manager.time_to_string(Time.now-Regexp.last_match(1).to_i*3600),'cmdline')
           else set_option(option_symbol,v,'cmdline')
           end
         end
@@ -388,8 +387,8 @@ module Aspera
           when /^--([^=]+)$/
             # ignore
           when /^--([^=]+)=(.*)$/
-            name=$1
-            value=$2
+            name=Regexp.last_match(1)
+            value=Regexp.last_match(2)
             name.gsub!(OPTION_SEP_LINE,OPTION_SEP_NAME)
             value=ExtendedValue.instance.evaluate(value)
             Log.log.debug("option #{name}=#{value}")

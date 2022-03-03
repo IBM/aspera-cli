@@ -8,7 +8,6 @@ DIR_TOP=
 include $(DIR_TOP)common.make
 
 all:: gem doc
-gem: $(PATH_GEMFILE)
 doc: $(DIR_TOP).gems_checked
 	cd $(DIR_DOC) && make
 test: gem $(DIR_TOP).gems_checked
@@ -26,7 +25,7 @@ $(DIR_TOP).gems_checked: Gemfile
 ##################################
 # Gem build
 PATH_GEMFILE=$(DIR_TOP)$(GEMNAME)-$(GEMVERSION).gem
-
+gem: $(PATH_GEMFILE)
 # gem file is generated in top folder
 $(PATH_GEMFILE):
 	gem build $(GEMNAME)

@@ -58,12 +58,12 @@ module Aspera
           when 'INIT' # connection to ascp (get id)
           when 'SESSION' # session information
           when 'NOTIFICATION' # sent from remote
-            if data.has_key?('pre_transfer_bytes') then
+            if data.has_key?('pre_transfer_bytes')
               session[:job_size]=data['pre_transfer_bytes']
               update_total
             end
           when 'STATS' # during transfer
-            if !@progress_bar.total.nil? then
+            if !@progress_bar.total.nil?
               if data.has_key?('bytescont')
                 session[:current]=session[:cumulative]+data['bytescont'].to_i
                 update_progress

@@ -17,7 +17,7 @@ Aspera::Log.instance.level=:debug
 # (if data files are not there, they will be created)
 Aspera::Fasp::Installation.instance.folder = tmpdir
 
-if ! ARGV.length.eql?(3)
+if !ARGV.length.eql?(3)
   Aspera::Log.log.error("Wrong number of args: #{ARGV.length}")
   Aspera::Log.log.error("Usage: #{$0} <faspex URL> <faspex username> <faspex password>")
   Aspera::Log.log.error("Example: #{$0} https://faspex.com/aspera/faspex john p@sSw0rd")
@@ -63,6 +63,7 @@ transfer_spec['paths']=[{'source'=>file_to_send}]
 transfer_client=Aspera::Fasp::AgentDirect.new({quiet: true})
 # start transfer (asynchronous)
 job_id=transfer_client.start_transfer(transfer_spec)
+Aspera::Log.dump('job_id',job_id)
 # wait for all transfer completion (for the example)
 result=transfer_client.wait_for_transfers_completion
 #  notify of any transfer error

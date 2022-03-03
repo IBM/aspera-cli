@@ -115,7 +115,7 @@ module Aspera
         response.body=JSON.generate(faspex_package_create_result)
       end
 
-      def do_GET (request, response)
+      def do_GET(request, response) # rubocop:disable Naming/MethodName
         case request.path
         when '/aspera/faspex/send'
           process_faspex_send(request, response)
@@ -128,7 +128,7 @@ module Aspera
     end # FxGwServlet
 
     class NewUserServlet < WEBrick::HTTPServlet::AbstractServlet
-      def do_GET (request, response)
+      def do_GET(request, response) # rubocop:disable Naming/MethodName
         case request.path
         when '/newuser'
           response.status=200
@@ -170,12 +170,12 @@ module Aspera
         Logger:              Log.log,
         #DocumentRoot:        Cli::Main.gem_root,
         SSLEnable:           true,
-        SSLVerifyClient:     OpenSSL::SSL::VERIFY_NONE,
+        SSLVerifyClient:     OpenSSL::SSL::VERIFY_NONE
       }
       case 1
       when 0
         # generate self signed cert
-        webrick_options[:SSLCertName]    = [ [ 'CN',WEBrick::Utils::getservername ] ]
+        webrick_options[:SSLCertName]    = [['CN',WEBrick::Utils.getservername]]
         Log.log.error(">>>#{webrick_options[:SSLCertName]}")
       when 1
         fill_self_signed_cert(webrick_options)

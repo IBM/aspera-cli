@@ -4,7 +4,7 @@
 require 'aspera/fasp/parameters'
 
 # check that required env vars exist, and files
-%w{EXENAME GEMSPEC INCL_USAGE INCL_COMMANDS INCL_ASESSION}.each do |e|
+%w[EXENAME GEMSPEC INCL_USAGE INCL_COMMANDS INCL_ASESSION].each do |e|
   raise "missing env var #{e}" unless ENV.has_key?(e)
   raise "missing file #{ENV[e]}" unless File.exist?(ENV[e]) or !e.start_with?('INCL_')
 end
@@ -34,7 +34,7 @@ def trspec;'[*transfer-spec*](#transferspec)';end
 # in title
 def prstt;opprst.capitalize;end
 
-def gemspec;Gem::Specification::load(ENV['GEMSPEC']) or raise "error loading #{ENV["GEMSPEC"]}";end
+def gemspec;Gem::Specification.load(ENV['GEMSPEC']) or raise "error loading #{ENV['GEMSPEC']}";end
 
 def geminstadd;gemspec.version.to_s.match(/\.[^0-9]/) ? ' --pre' : '' ;end
 

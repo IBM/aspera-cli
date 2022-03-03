@@ -22,7 +22,7 @@ module Aspera
     end
 
     # comparte remote time with local time
-    def check_time_offset( remote_date, component )
+    def check_time_offset(remote_date, component)
       # check date if specified : 2015-10-13T07:32:01Z
       rtime = DateTime.strptime(remote_date)
       diff_time = (rtime - DateTime.now).abs
@@ -38,7 +38,7 @@ module Aspera
       end
     end
 
-    def check_product_version( component, product, version )
+    def check_product_version(component, product, version)
       add_ok(component,"version #{version}")
       # TODO check on database if latest version
     end

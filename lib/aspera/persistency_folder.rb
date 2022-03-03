@@ -71,6 +71,5 @@ module Aspera
       return File.join(@folder,"#{object_id}#{FILE_SUFFIX}")
       #.gsub(/[^a-z]+/,FILE_FIELD_SEPARATOR)
     end
-
   end # PersistencyFolder
 end # Aspera

@@ -22,14 +22,14 @@ module Aspera
         # Temp folder for file lists, must contain only file lists
         # because of garbage collection takes any file there
         # this could be refined, as , for instance, on macos, temp folder is already user specific
-        @@file_list_folder=TempFileManager.instance.new_file_path_global('asession_filelists')
-        @@param_description_cache=nil
+        @file_list_folder=TempFileManager.instance.new_file_path_global('asession_filelists')
+        @param_description_cache=nil
         # @return normaiwed description of transfer spec parameters
         def description
-          return @@param_description_cache unless @@param_description_cache.nil?
+          return @param_description_cache unless @param_description_cache.nil?
           # config file in same folder with same name as this source
-          @@param_description_cache=YAML.load_file("#{__FILE__[0..-3]}yaml")
-          Aspera::CommandLineBuilder.normalize_description(@@param_description_cache)
+          @param_description_cache=YAML.load_file("#{__FILE__[0..-3]}yaml")
+          Aspera::CommandLineBuilder.normalize_description(@param_description_cache)
         end
 
         # @return a table suitable to display a manual
@@ -44,8 +44,8 @@ module Aspera
             # only keep lines that are usable in supported agents
             next if SUPPORTED_AGENTS_SHORT.inject(true){|m,i|m and param[i].empty?}
             param[:cli]=case i[:cltype]
-            when :envvar; 'env:'+i[:clvarname]
-            when :opt_without_arg,:opt_with_arg; i[:clswitch]
+            when :envvar then 'env:'+i[:clvarname]
+            when :opt_without_arg,:opt_with_arg then i[:clswitch]
             else ''
             end
             if i.has_key?(:enum)
@@ -75,16 +75,16 @@ module Aspera
 
         # temp file list files are created here
         def file_list_folder=(v)
-          @@file_list_folder=v
-          if !@@file_list_folder.nil?
-            FileUtils.mkdir_p(@@file_list_folder)
-            TempFileManager.instance.cleanup_expired(@@file_list_folder)
+          @file_list_folder=v
+          if !@file_list_folder.nil?
+            FileUtils.mkdir_p(@file_list_folder)
+            TempFileManager.instance.cleanup_expired(@file_list_folder)
           end
         end
 
         # static methods
-        def file_list_folder; @@file_list_folder;end
-      end
+        def file_list_folder; @file_list_folder;end
+      end # self
 
       # @param options [Hash] key: :wss: bool
       def initialize(job_spec,options)
@@ -107,7 +107,7 @@ module Aspera
         # some ssh credentials are required to avoid interactive password input
         if !@job_spec.has_key?('remote_password') and
         !@job_spec.has_key?('ssh_private_key') and
-        !@job_spec.has_key?('EX_ssh_key_paths') then
+        !@job_spec.has_key?('EX_ssh_key_paths')
           raise Fasp::Error.new('required: password or ssh key (value or path)')
         end
 
@@ -115,7 +115,7 @@ module Aspera
         @job_spec.delete('source_root') if @job_spec.has_key?('source_root') and @job_spec['source_root'].empty?
 
         # use web socket session initiation ?
-        if @builder.process_param('wss_enabled',:get_value) and ( @options[:wss] or !@job_spec.has_key?('fasp_port') )
+        if @builder.process_param('wss_enabled',:get_value) and (@options[:wss] or !@job_spec.has_key?('fasp_port'))
           # by default use web socket session if available, unless removed by user
           @builder.add_command_line_options(['--ws-connect'])
           # TODO: option to give order ssh,ws (legacy http is implied bu ssh)
@@ -147,15 +147,15 @@ module Aspera
         file_list_provided=self.class.ts_has_file_list(@job_spec)
         @builder.params_definition['paths'][:mandatory]=!@job_spec.has_key?('keepalive') and !file_list_provided
         paths_array=@builder.process_param('paths',:get_value)
-        if file_list_provided and ! paths_array.nil?
+        if file_list_provided and !paths_array.nil?
           Log.log.warn('file list provided both in transfer spec and ascp file list. Keeping file list only.')
           paths_array=nil
         end
-        if ! paths_array.nil?
+        if !paths_array.nil?
           # it's an array
           raise 'paths is empty in transfer spec' if paths_array.empty?
           # use file list if there is storage defined for it.
-          if @@file_list_folder.nil?
+          if self.class.file_list_folder.nil?
             # not safe for special characters ? (maybe not, depends on OS)
             Log.log.debug('placing source file list on command line (no file list file)')
             @builder.add_command_line_options(paths_array.map{|i|i['source']})
@@ -178,7 +178,7 @@ module Aspera
                   option='--file-list'
                   lines=paths_array.map{|i|i['source']}
                 end
-                file_list_file=Aspera::TempFileManager.instance.new_file_path_in_folder(@@file_list_folder)
+                file_list_file=Aspera::TempFileManager.instance.new_file_path_in_folder(self.class.file_list_folder)
                 File.open(file_list_file, 'w+'){|f|f.write(lines.join("\n"))}
                 Log.log.debug{"#{option}=\n#{File.read(file_list_file)}".red}
               end
@@ -199,7 +199,6 @@ module Aspera
 
         return env_args
       end
-
     end # Parameters
   end
 end

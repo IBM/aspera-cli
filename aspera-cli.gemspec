@@ -1,11 +1,10 @@
-# coding: utf-8
 require_relative 'lib/aspera/cli/version'
 
+# expected extension of gemspec file
+GEMSPEC_EXT='.gemspec'.freeze
 Gem::Specification.new do |spec|
   # get location of this file (shall be in project root)
   gemspec_file=File.expand_path(__FILE__)
-  # expected extension of gemspec file
-  GEMSPEC_EXT='.gemspec'
   raise "Error: this file extension must be '#{GEMSPEC_EXT}'" unless gemspec_file.end_with?(GEMSPEC_EXT)
   # the base name of this file shall be the gem name
   spec.name          = File.basename(gemspec_file,GEMSPEC_EXT).downcase
@@ -27,7 +26,7 @@ Gem::Specification.new do |spec|
   spec.require_paths = ['lib']
   spec.bindir        = 'bin'
   # list git files from specified location in root folder of project (this gemspec is in project root folder)
-  spec.files=Dir.chdir(File.dirname(gemspec_file)){%x{git ls-files -z lib bin examples README.md docs/*.conf}.split("\x0")}
+  spec.files=Dir.chdir(File.dirname(gemspec_file)){%x(git ls-files -z lib bin examples README.md docs/*.conf).split("\x0")}
   # remove specific files from list
   spec.files.select!{|f|!['transfer_spec.erb.rb'].include?(File.basename(f))}
   spec.executables   = spec.files.grep(%r{^#{spec.bindir}}){|f|File.basename(f)} # must be after spec.bindir and spec.files

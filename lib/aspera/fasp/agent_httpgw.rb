@@ -81,7 +81,7 @@ module Aspera
         # open web socket to end point
         ws.connect("#{@gw_api.params[:base_url]}/upload")
         # async wait ready
-        while !ws.open? and error.nil? do
+        while !ws.open? and error.nil?
           Log.log.info('ws: wait')
           sleep(0.2)
         end
@@ -106,7 +106,7 @@ module Aspera
           File.open(source_paths[file_index]) do |file|
             # current slice index
             slicenum=0
-            while !file.eof? do
+            while !file.eof?
               data=file.read(@upload_chunksize)
               slice_data={
                 name: file_name,
@@ -209,7 +209,6 @@ module Aspera
         Log.log.info("#{api_info}")
         @upload_chunksize=128000 # TODO: configurable ?
       end
-
     end # AgentHttpgw
   end
 end

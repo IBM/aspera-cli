@@ -26,7 +26,7 @@ module Aspera
       # @param name string or symbol
       # @param format either pp or json format
       def dump(name,object,format=:json)
-        self.log.debug() do
+        log.debug() do
           result=case format
           when :json
             JSON.pretty_generate(object) rescue PP.pp(object,'')
@@ -40,8 +40,7 @@ module Aspera
       end
     end # class
 
-    attr_reader :logger_type
-    attr_reader :logger
+    attr_reader :logger_type, :logger
     attr_writer :program_name
     attr_accessor :log_passwords
 
@@ -80,11 +79,11 @@ module Aspera
       original_formatter = @logger.formatter || Logger::Formatter.new
       # update formatter with password hiding, note that @log_passwords may be set AFTER this init is done, so it's done at runtime
       @logger.formatter=lambda do |severity, datetime, progname, msg|
-        if msg.is_a?(String) and ! @log_passwords
+        if msg.is_a?(String) and !@log_passwords
           msg=msg.clone
-          msg.gsub!(/(["':][^"]*(password|secret|private_key)[^"]*["']?[=>: ]+")([^"]+)(")/){"#{$1}#{HIDDEN_PASSWORD}#{$4}"}
-          msg.gsub!(/("[^"]*(secret)[^"]*"=>{)([^}]+)(})/){"#{$1}#{HIDDEN_PASSWORD}#{$4}"}
-          msg.gsub!(/((secrets)={)([^}]+)(})/){"#{$1}#{HIDDEN_PASSWORD}#{$4}"}
+          msg.gsub!(/(["':][^"]*(password|secret|private_key)[^"]*["']?[=>: ]+")([^"]+)(")/){"#{Regexp.last_match(1)}#{HIDDEN_PASSWORD}#{Regexp.last_match(4)}"}
+          msg.gsub!(/("[^"]*(secret)[^"]*"=>{)([^}]+)(})/){"#{Regexp.last_match(1)}#{HIDDEN_PASSWORD}#{Regexp.last_match(4)}"}
+          msg.gsub!(/((secrets)={)([^}]+)(})/){"#{Regexp.last_match(1)}#{HIDDEN_PASSWORD}#{Regexp.last_match(4)}"}
           msg.gsub!(/--+BEGIN[A-Z ]+KEY--+.+--+END[A-Z ]+KEY--+/m){HIDDEN_PASSWORD}
         end
         original_formatter.call(severity, datetime, progname, msg)
@@ -101,6 +100,5 @@ module Aspera
       self.logger_type=:stderr
       raise 'error logger shall be defined' if @logger.nil?
     end
-
   end
 end

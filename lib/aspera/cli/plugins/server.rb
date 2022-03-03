@@ -18,12 +18,12 @@ module Aspera
 
         def initialize(env)
           super(env)
-          self.options.add_opt_simple(:ssh_keys,'ssh key path list (Array or single)')
-          self.options.add_opt_simple(:ssh_options,'ssh options (Hash)')
-          self.options.add_opt_simple(:cmd_prefix,'prefix to add for as cmd execution, e.g. sudo or /opt/aspera/bin ')
-          self.options.set_option(:ssh_keys,[])
-          self.options.set_option(:ssh_options,{})
-          self.options.parse_options!
+          options.add_opt_simple(:ssh_keys,'ssh key path list (Array or single)')
+          options.add_opt_simple(:ssh_options,'ssh options (Hash)')
+          options.add_opt_simple(:cmd_prefix,'prefix to add for as cmd execution, e.g. sudo or /opt/aspera/bin ')
+          options.set_option(:ssh_keys,[])
+          options.set_option(:ssh_options,{})
+          options.parse_options!
         end
 
         def key_symb_to_str_single(source)
@@ -66,31 +66,31 @@ module Aspera
         ACTIONS=[:health,:nodeadmin,:userdata,:configurator,:ctl,:download,:upload,:browse,:delete,:rename].concat(Aspera::AsCmd::OPERATIONS)
 
         def execute_action
-          server_uri=URI.parse(self.options.get_option(:url,:mandatory))
+          server_uri=URI.parse(options.get_option(:url,:mandatory))
           Log.log.debug("URI : #{server_uri}, port=#{server_uri.port}, scheme:#{server_uri.scheme}")
           server_transfer_spec={'remote_host'=>server_uri.hostname}
           shell_executor=nil
           case server_uri.scheme
           when 'ssh'
-            if self.options.get_option(:username,:optional).nil?
-              self.options.set_option(:username,Aspera::Fasp::TransferSpec::ACCESS_KEY_TRANSFER_USER)
+            if options.get_option(:username,:optional).nil?
+              options.set_option(:username,Aspera::Fasp::TransferSpec::ACCESS_KEY_TRANSFER_USER)
               Log.log.info("Using default transfer user: #{Aspera::Fasp::TransferSpec::ACCESS_KEY_TRANSFER_USER}")
             end
-            server_transfer_spec['remote_user']=self.options.get_option(:username,:mandatory)
-            ssh_options=self.options.get_option(:ssh_options,:optional)
+            server_transfer_spec['remote_user']=options.get_option(:username,:mandatory)
+            ssh_options=options.get_option(:ssh_options,:optional)
             raise 'expecting a Hash for ssh_options' unless ssh_options.is_a?(Hash)
             if !server_uri.port.nil?
               ssh_options[:port]=server_uri.port
               server_transfer_spec['ssh_port']=server_uri.port
             end
             cred_set=false
-            password=self.options.get_option(:password,:optional)
+            password=options.get_option(:password,:optional)
             if !password.nil?
               ssh_options[:password]=password
               server_transfer_spec['remote_password']=password
               cred_set=true
             end
-            ssh_keys=self.options.get_option(:ssh_keys,:optional)
+            ssh_keys=options.get_option(:ssh_keys,:optional)
             if !ssh_keys.nil?
               raise 'expecting single value or array for ssh_keys' unless ssh_keys.is_a?(Array) or ssh_keys.is_a?(String)
               ssh_keys=[ssh_keys] if ssh_keys.is_a?(String)
@@ -106,11 +106,11 @@ module Aspera
               end
             end
             # if user provided transfer spec has a token, we will use by pass keys
-            cred_set=true if self.transfer.option_transfer_spec['token'].is_a?(String)
+            cred_set=true if transfer.option_transfer_spec['token'].is_a?(String)
             raise 'either password, key , or transfer spec token must be provided' if !cred_set
             shell_executor=Ssh.new(server_transfer_spec['remote_host'],server_transfer_spec['remote_user'],ssh_options)
           when 'https'
-            raise 'ERROR: transfer spec with token required' unless self.transfer.option_transfer_spec['token'].is_a?(String)
+            raise 'ERROR: transfer spec with token required' unless transfer.option_transfer_spec['token'].is_a?(String)
             server_transfer_spec.merge!({
               'wss_enabled'=>true,
               'wss_port'   =>server_uri.port
@@ -122,14 +122,14 @@ module Aspera
           end
 
           # get command and set aliases
-          command=self.options.get_next_command(ACTIONS)
+          command=options.get_next_command(ACTIONS)
           command=:ls if command.eql?(:browse)
           command=:rm if command.eql?(:delete)
           command=:mv if command.eql?(:rename)
           case command
           when :health
             nagios=Nagios.new
-            command_nagios=self.options.get_next_command([ :app_services, :transfer, :asctlstatus ])
+            command_nagios=options.get_next_command([:app_services, :transfer, :asctlstatus])
             case command_nagios
             when :app_services
               # will not work with aspshell, requires Linux/bash
@@ -151,7 +151,7 @@ module Aspera
                 'resume_policy' => 'none',
                 'paths'         => [{'source'=>filepath,'destination'=>'.fasping'}]
               })
-              statuses=self.transfer.start(probe_ts,{src: :direct})
+              statuses=transfer.start(probe_ts,{src: :direct})
               file.unlink
               if TransferAgent.session_status(statuses).eql?(:success)
                 nagios.add_ok('transfer','ok')
@@ -160,7 +160,7 @@ module Aspera
               end
             when :asctlstatus
               realcmd='asctl'
-              prefix=self.options.get_option(:cmd_prefix,:optional)
+              prefix=options.get_option(:cmd_prefix,:optional)
               realcmd="#{prefix}#{realcmd} all:status" unless prefix.nil?
               result=shell_executor.execute(realcmd.split(' '))
               data=asctl_parse(result)
@@ -176,11 +176,11 @@ module Aspera
             return nagios.result
           when :nodeadmin,:userdata,:configurator,:ctl
             realcmd='as'+command.to_s
-            prefix=self.options.get_option(:cmd_prefix,:optional)
+            prefix=options.get_option(:cmd_prefix,:optional)
             if !prefix.nil?
               realcmd="#{prefix}#{realcmd}"
             end
-            args = self.options.get_next_argument("#{realcmd} arguments",:multiple)
+            args = options.get_next_argument("#{realcmd} arguments",:multiple)
             result=shell_executor.execute(args.unshift(realcmd))
             case command
             when :ctl
@@ -194,7 +194,7 @@ module Aspera
                 result={}
                 lines.each do |line|
                   Log.log.debug("#{line}")
-                  data=line.split(',').map{|i|i.gsub(/^"/,'').gsub(/"$/,'')}.map{|i|case i;when'AS_NULL';nil;when'true';true;when'false';false;else i;end}
+                  data=line.split(',').map{|i|i.gsub(/^"/,'').gsub(/"$/,'')}.map{|i|case i;when'AS_NULL' then nil;when'true' then true;when'false' then false;else i;end}
                   Log.log.debug("#{data}")
                   section=data.shift
                   datapart=result[section]||={}
@@ -211,24 +211,24 @@ module Aspera
             end
             return Main.result_status(result)
           when :upload
-            return Main.result_transfer(self.transfer.start(server_transfer_spec.merge('direction'=>Fasp::TransferSpec::DIRECTION_SEND),{src: :direct}))
+            return Main.result_transfer(transfer.start(server_transfer_spec.merge('direction'=>Fasp::TransferSpec::DIRECTION_SEND),{src: :direct}))
           when :download
-            return Main.result_transfer(self.transfer.start(server_transfer_spec.merge('direction'=>Fasp::TransferSpec::DIRECTION_RECEIVE),{src: :direct}))
+            return Main.result_transfer(transfer.start(server_transfer_spec.merge('direction'=>Fasp::TransferSpec::DIRECTION_RECEIVE),{src: :direct}))
           when *Aspera::AsCmd::OPERATIONS
-            args=self.options.get_next_argument('ascmd command arguments',:multiple,:optional)
+            args=options.get_next_argument('ascmd command arguments',:multiple,:optional)
             ascmd=Aspera::AsCmd.new(shell_executor)
             begin
               result=ascmd.send(:execute_single,command,args)
               case command
-              when :mkdir;  return Main.result_success
-              when :mv;     return Main.result_success
-              when :cp;     return Main.result_success
-              when :rm;     return Main.result_success
-              when :ls;     return {type: :object_list,data: key_symb_to_str_list(result),fields: ['zmode','zuid','zgid','size','mtime','name']}
-              when :info;   return {type: :single_object,data: key_symb_to_str_single(result)}
-              when :df;     return {type: :object_list,data: key_symb_to_str_list(result)}
-              when :du;     return {type: :single_object,data: key_symb_to_str_single(result)}
-              when :md5sum; return {type: :single_object,data: key_symb_to_str_single(result)}
+              when :mkdir then  return Main.result_success
+              when :mv then     return Main.result_success
+              when :cp then     return Main.result_success
+              when :rm then     return Main.result_success
+              when :ls then     return {type: :object_list,data: key_symb_to_str_list(result),fields: ['zmode','zuid','zgid','size','mtime','name']}
+              when :info then   return {type: :single_object,data: key_symb_to_str_single(result)}
+              when :df then     return {type: :object_list,data: key_symb_to_str_list(result)}
+              when :du then     return {type: :single_object,data: key_symb_to_str_single(result)}
+              when :md5sum then return {type: :single_object,data: key_symb_to_str_single(result)}
               end
             rescue Aspera::AsCmd::Error => e
               raise CliBadArgument,e.extended_message

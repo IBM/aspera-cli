@@ -49,7 +49,7 @@ module Aspera
         file_path = File.join(temp_folder, name)
         age_sec = (Time.now - File.stat(file_path).mtime).to_i
         # check age of file, delete too old
-        if File.file?(file_path) and ( age_sec > FILE_LIST_AGE_MAX_SEC )
+        if File.file?(file_path) and (age_sec > FILE_LIST_AGE_MAX_SEC)
           Log.log.debug("garbage collecting #{name}")
           File.delete(file_path)
         end

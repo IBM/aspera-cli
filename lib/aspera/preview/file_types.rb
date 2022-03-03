@@ -305,13 +305,13 @@ module Aspera
       def conversion_type(filepath,mimetype)
         Log.log.debug("conversion_type(#{filepath},m=#{mimetype},t=#{@use_mimemagic})")
         # 1- get type from provided mime type, using local mapping
-        conv_type=SUPPORTED_MIME_TYPES[mimetype] if ! mimetype.nil?
+        conv_type=SUPPORTED_MIME_TYPES[mimetype] if !mimetype.nil?
         # 2- else, from computed mime type (if available)
         if conv_type.nil? and @use_mimemagic
           detected_mime=mime_from_file(filepath)
-          if ! detected_mime.nil?
+          if !detected_mime.nil?
             conv_type=SUPPORTED_MIME_TYPES[detected_mime]
-            if ! mimetype.nil?
+            if !mimetype.nil?
               if mimetype.eql?(detected_mime)
                 Log.log.debug('matching mime type per magic number')
               else

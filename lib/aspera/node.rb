@@ -55,7 +55,7 @@ module Aspera
       #top_info=read("files/#{opt[:top_file_id]}")[:data]
       folders_to_explore=[{id: opt[:top_file_id], relpath: opt[:top_file_path]}]
       Log.dump(:folders_to_explore,folders_to_explore)
-      while !folders_to_explore.empty? do
+      while !folders_to_explore.empty?
         current_item = folders_to_explore.shift
         Log.log.debug("searching #{current_item[:relpath]}".bg_green)
         # get folder content

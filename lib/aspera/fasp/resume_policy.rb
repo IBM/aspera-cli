@@ -5,7 +5,6 @@ module Aspera
   module Fasp
     # implements a simple resume policy
     class ResumePolicy
-
       # list of supported parameters and default values
       DEFAULTS={
         iter_max:       7,
@@ -24,7 +23,7 @@ module Aspera
               raise "#{k} must be Integer" unless v.is_a?(Integer)
               @parameters[k]=v
             else
-              raise "unknown resume parameter: #{k}, expect one of #{DEFAULTS.keys.map{|i|i.to_s}.join(",")}"
+              raise "unknown resume parameter: #{k}, expect one of #{DEFAULTS.keys.map{|i|i.to_s}.join(',')}"
             end
           end
         end
@@ -45,9 +44,9 @@ module Aspera
             block.call
             break
           rescue Fasp::Error => e
-            Log.log.warn("An error occured: #{e.message}" );
+            Log.log.warn("An error occured: #{e.message}");
             # failure in ascp
-            if e.retryable? then
+            if e.retryable?
               # exit if we exceed the max number of retry
               raise Fasp::Error,'Maximum number of retry reached' if remaining_resumes <= 0
             else
@@ -61,7 +60,7 @@ module Aspera
 
           # take this retry in account
           remaining_resumes-=1
-          Log.log.warn( "resuming in  #{sleep_seconds} seconds (retry left:#{remaining_resumes})" );
+          Log.log.warn("resuming in  #{sleep_seconds} seconds (retry left:#{remaining_resumes})");
 
           # wait a bit before retrying, maybe network condition will be better
           sleep(sleep_seconds)

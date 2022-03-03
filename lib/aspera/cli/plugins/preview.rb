@@ -32,10 +32,7 @@ module Aspera
 
         # option_skip_format has special accessors
         attr_accessor :option_previews_folder
-        attr_accessor :option_folder_reset_cache
-        attr_accessor :option_skip_folders
-        attr_accessor :option_overwrite
-        attr_accessor :option_file_access
+        attr_accessor :option_folder_reset_cache, :option_skip_folders, :option_overwrite, :option_file_access
         def initialize(env)
           super(env)
           @skip_types=[]
@@ -47,43 +44,43 @@ module Aspera
           # used to trigger periodic processing
           @periodic=TimerLimiter.new(LOG_LIMITER_SEC)
           # link CLI options to gen_info attributes
-          self.options.set_obj_attr(:skip_format,self,:option_skip_format,[]) # no skip
-          self.options.set_obj_attr(:folder_reset_cache,self,:option_folder_reset_cache,:no)
-          self.options.set_obj_attr(:skip_types,self,:option_skip_types)
-          self.options.set_obj_attr(:previews_folder,self,:option_previews_folder,DEFAULT_PREVIEWS_FOLDER)
-          self.options.set_obj_attr(:skip_folders,self,:option_skip_folders,[]) # no skip
-          self.options.set_obj_attr(:overwrite,self,:option_overwrite,:mtime)
-          self.options.set_obj_attr(:file_access,self,:option_file_access,:local)
-          self.options.add_opt_list(:skip_format,Aspera::Preview::Generator::PREVIEW_FORMATS,'skip this preview format (multiple possible)')
-          self.options.add_opt_list(:folder_reset_cache,[:no,:header,:read],'force detection of generated preview by refresh cache')
-          self.options.add_opt_simple(:skip_types,'skip types in comma separated list')
-          self.options.add_opt_simple(:previews_folder,'preview folder in storage root')
-          self.options.add_opt_simple(:temp_folder,'path to temp folder')
-          self.options.add_opt_simple(:skip_folders,'list of folder to skip')
-          self.options.add_opt_simple(:case,'basename of output for for test')
-          self.options.add_opt_simple(:scan_path,'subpath in folder id to start scan in (default=/)')
-          self.options.add_opt_simple(:scan_id,'forder id in storage to start scan in, default is access key main folder id')
-          self.options.add_opt_boolean(:mimemagic,'use Mime type detection of gem mimemagic')
-          self.options.add_opt_list(:overwrite,[:always,:never,:mtime],'when to overwrite result file')
-          self.options.add_opt_list(:file_access,[:local,:remote],'how to read and write files in repository')
-          self.options.set_option(:temp_folder,Dir.tmpdir)
-          self.options.set_option(:mimemagic,:false)
+          options.set_obj_attr(:skip_format,self,:option_skip_format,[]) # no skip
+          options.set_obj_attr(:folder_reset_cache,self,:option_folder_reset_cache,:no)
+          options.set_obj_attr(:skip_types,self,:option_skip_types)
+          options.set_obj_attr(:previews_folder,self,:option_previews_folder,DEFAULT_PREVIEWS_FOLDER)
+          options.set_obj_attr(:skip_folders,self,:option_skip_folders,[]) # no skip
+          options.set_obj_attr(:overwrite,self,:option_overwrite,:mtime)
+          options.set_obj_attr(:file_access,self,:option_file_access,:local)
+          options.add_opt_list(:skip_format,Aspera::Preview::Generator::PREVIEW_FORMATS,'skip this preview format (multiple possible)')
+          options.add_opt_list(:folder_reset_cache,[:no,:header,:read],'force detection of generated preview by refresh cache')
+          options.add_opt_simple(:skip_types,'skip types in comma separated list')
+          options.add_opt_simple(:previews_folder,'preview folder in storage root')
+          options.add_opt_simple(:temp_folder,'path to temp folder')
+          options.add_opt_simple(:skip_folders,'list of folder to skip')
+          options.add_opt_simple(:case,'basename of output for for test')
+          options.add_opt_simple(:scan_path,'subpath in folder id to start scan in (default=/)')
+          options.add_opt_simple(:scan_id,'forder id in storage to start scan in, default is access key main folder id')
+          options.add_opt_boolean(:mimemagic,'use Mime type detection of gem mimemagic')
+          options.add_opt_list(:overwrite,[:always,:never,:mtime],'when to overwrite result file')
+          options.add_opt_list(:file_access,[:local,:remote],'how to read and write files in repository')
+          options.set_option(:temp_folder,Dir.tmpdir)
+          options.set_option(:mimemagic,:false)
 
           # add other options for generator (and set default values)
           Aspera::Preview::Options::DESCRIPTIONS.each do |opt|
-            self.options.set_obj_attr(opt[:name],@gen_options,opt[:name],opt[:default])
+            options.set_obj_attr(opt[:name],@gen_options,opt[:name],opt[:default])
             if opt.has_key?(:values)
-              self.options.add_opt_list(opt[:name],opt[:values],opt[:description])
+              options.add_opt_list(opt[:name],opt[:values],opt[:description])
             elsif [:yes,:no].include?(opt[:default])
-              self.options.add_opt_boolean(opt[:name],opt[:description])
+              options.add_opt_boolean(opt[:name],opt[:description])
             else
-              self.options.add_opt_simple(opt[:name],opt[:description])
+              options.add_opt_simple(opt[:name],opt[:description])
             end
           end
 
-          self.options.parse_options!
+          options.parse_options!
           raise 'skip_folder shall be an Array, use @json:[...]' unless @option_skip_folders.is_a?(Array)
-          @tmp_folder=File.join(self.options.get_option(:temp_folder,:mandatory),"#{TMP_DIR_PREFIX}.#{SecureRandom.uuid}")
+          @tmp_folder=File.join(options.get_option(:temp_folder,:mandatory),"#{TMP_DIR_PREFIX}.#{SecureRandom.uuid}")
           FileUtils.mkdir_p(@tmp_folder)
           Log.log.debug("tmpdir: #{@tmp_folder}")
         end
@@ -206,11 +203,11 @@ module Aspera
             template_ts=res[:data]['transfer_specs'].first['transfer_spec']
             # get ports, anyway that should be 33001 for both. add remote_user ?
             @default_transfer_spec=['ssh_port','fasp_port'].inject({}){|h,e|h[e]=template_ts[e];h}
-            if ! @default_transfer_spec['remote_user'].eql?(Aspera::Fasp::TransferSpec::ACCESS_KEY_TRANSFER_USER)
+            if !@default_transfer_spec['remote_user'].eql?(Aspera::Fasp::TransferSpec::ACCESS_KEY_TRANSFER_USER)
               Log.log.warn('remote_user shall be xfer')
               @default_transfer_spec['remote_user']=Aspera::Fasp::TransferSpec::ACCESS_KEY_TRANSFER_USER
             end
-            Aspera::Node::set_ak_basic_token(@default_transfer_spec,@access_key_self['id'],self.options.get_option(:password,:mandatory))
+            Aspera::Node.set_ak_basic_token(@default_transfer_spec,@access_key_self['id'],options.get_option(:password,:mandatory))
             # note: we use the same address for ascp than for node api instead of the one from upload_setup
             # TODO: configurable ? useful ?
             @default_transfer_spec['remote_host']=@transfer_server_address
@@ -226,8 +223,8 @@ module Aspera
           })
           # force destination
           # tspec['destination_root']=destination
-          self.transfer.option_transfer_spec_deep_merge({'destination_root'=>destination})
-          Main.result_transfer(self.transfer.start(tspec,{src: :node_gen4}))
+          transfer.option_transfer_spec_deep_merge({'destination_root'=>destination})
+          Main.result_transfer(transfer.start(tspec,{src: :node_gen4}))
         end
 
         def get_infos_local(gen_infos,entry,local_entry_preview_dir)
@@ -409,7 +406,7 @@ module Aspera
         ACTIONS=[:scan,:events,:trevents,:check,:test]
 
         def execute_action
-          command=self.options.get_next_command(ACTIONS)
+          command=options.get_next_command(ACTIONS)
           unless [:check,:test].include?(command)
             # this will use node api
             @api_node=basic_auth_api
@@ -450,11 +447,11 @@ module Aspera
               end
             end
           end
-          Aspera::Preview::FileTypes.instance.use_mimemagic = self.options.get_option(:mimemagic,:mandatory)
+          Aspera::Preview::FileTypes.instance.use_mimemagic = options.get_option(:mimemagic,:mandatory)
           case command
           when :scan
-            scan_path=self.options.get_option(:scan_path,:optional)
-            scan_id=self.options.get_option(:scan_id,:optional)
+            scan_path=options.get_option(:scan_path,:optional)
+            scan_id=options.get_option(:scan_id,:optional)
             # by default start at root
             folder_info=if scan_id.nil?
               { 'id'   => @access_key_self['root_file_id'],
@@ -468,11 +465,11 @@ module Aspera
             return Main.result_status('scan finished')
           when :events,:trevents
             iteration_persistency=nil
-            if self.options.get_option(:once_only,:mandatory)
+            if options.get_option(:once_only,:mandatory)
               iteration_persistency=PersistencyActionOnce.new(
               manager: @agents[:persistency],
               data:    [],
-              id:      IdGenerator.from_list(['preview_iteration',command.to_s,self.options.get_option(:url,:mandatory),self.options.get_option(:username,:mandatory)]))
+              id:      IdGenerator.from_list(['preview_iteration',command.to_s,options.get_option(:url,:mandatory),options.get_option(:username,:mandatory)]))
             end
             # call processing method specified by command line command
             send("process_#{command}",iteration_persistency)
@@ -481,9 +478,9 @@ module Aspera
             Aspera::Preview::Utils.check_tools(@skip_types)
             return Main.result_status('tools validated')
           when :test
-            format = self.options.get_next_argument('format',Aspera::Preview::Generator::PREVIEW_FORMATS)
-            source = self.options.get_next_argument('source file')
-            dest=preview_filename(format,self.options.get_option(:case,:optional))
+            format = options.get_next_argument('format',Aspera::Preview::Generator::PREVIEW_FORMATS)
+            source = options.get_next_argument('source file')
+            dest=preview_filename(format,options.get_option(:case,:optional))
             g=Aspera::Preview::Generator.new(@gen_options,source,dest,@tmp_folder,nil)
             raise "cannot find file type for #{source}" if g.conversion_type.nil?
             raise "out format #{format} not supported" unless g.supported?

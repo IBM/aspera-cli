@@ -51,14 +51,14 @@ module Aspera
           @api_v3=nil
           @api_v4=nil
           super(env)
-          self.options.add_opt_simple(:link,'public link for specific operation')
-          self.options.add_opt_simple(:delivery_info,'package delivery information (extended value)')
-          self.options.add_opt_simple(:source_name,'create package from remote source (by name)')
-          self.options.add_opt_simple(:storage,'Faspex local storage definition')
-          self.options.add_opt_simple(:recipient,'use if recipient is a dropbox (with *)')
-          self.options.add_opt_list(:box,ATOM_MAILBOXES,'package box')
-          self.options.set_option(:box,:inbox)
-          self.options.parse_options!
+          options.add_opt_simple(:link,'public link for specific operation')
+          options.add_opt_simple(:delivery_info,'package delivery information (extended value)')
+          options.add_opt_simple(:source_name,'create package from remote source (by name)')
+          options.add_opt_simple(:storage,'Faspex local storage definition')
+          options.add_opt_simple(:recipient,'use if recipient is a dropbox (with *)')
+          options.add_opt_list(:box,ATOM_MAILBOXES,'package box')
+          options.set_option(:box,:inbox)
+          options.parse_options!
         end
 
         # extract elements from anonymous faspex link
@@ -74,7 +74,7 @@ module Aspera
           result={
             base_url:  "#{publink_uri.scheme}://#{publink_uri.host}#{port_add}#{base}",
             subpath:   subpath,
-            query:     URI::decode_www_form(publink_uri.query).inject({}){|h,v|h[v.first]=v.last;h}
+            query:     URI.decode_www_form(publink_uri.query).inject({}){|h,v|h[v.first]=v.last;h}
           }
           Log.dump('publink',result)
           return result
@@ -102,7 +102,7 @@ module Aspera
         def self.get_source_id(source_list,source_name)
           source_ids=source_list.select { |i| i['name'].eql?(source_name) }
           if source_ids.empty?
-            raise CliError,%Q{No such Faspex source "#{source_name}" in [#{source_list.map{|i| %Q{"#{i['name']}"}}.join(', ')}]}
+            raise CliError,%Q(No such Faspex source "#{source_name}" in [#{source_list.map{|i| %Q("#{i['name']}")}.join(', ')}])
           end
           return source_ids.first['id']
         end
@@ -116,15 +116,15 @@ module Aspera
 
         def api_v4
           if @api_v4.nil?
-            faspex_api_base=self.options.get_option(:url,:mandatory)
+            faspex_api_base=options.get_option(:url,:mandatory)
             @api_v4=Rest.new({
               base_url:   faspex_api_base+'/api',
               auth:       {
               type:       :oauth2,
               base_url:   faspex_api_base+'/auth/oauth2',
               grant:      :header_userpass,
-              user_name:  self.options.get_option(:username,:mandatory),
-              user_pass:  self.options.get_option(:password,:mandatory),
+              user_name:  options.get_option(:username,:mandatory),
+              user_pass:  options.get_option(:password,:mandatory),
               scope:      'admin'
               }})
           end
@@ -133,11 +133,11 @@ module Aspera
 
         # query supports : {"startIndex":10,"count":1,"page":109}
         def mailbox_all_entries
-          recipient_name=self.options.get_option(:recipient,:optional) || self.options.get_option(:username,:mandatory)
+          recipient_name=options.get_option(:recipient,:optional) || options.get_option(:username,:mandatory)
           # mailbox is in ATOM_MAILBOXES
-          mailbox=self.options.get_option(:box,:mandatory)
+          mailbox=options.get_option(:box,:mandatory)
           # parameters
-          mailbox_query=self.options.get_option(:query,:optional)
+          mailbox_query=options.get_option(:query,:optional)
           max_items=nil
           max_pages=nil
           result=[]
@@ -204,7 +204,7 @@ module Aspera
           package_create_params.merge!({passcode: link_data[:query]['passcode']})
           delivery_info.merge!({
             transfer_type:      'connect',
-            source_paths_list:  self.transfer.ts_source_paths.map{|i|i['source']}.join("\r\n")})
+            source_paths_list:  transfer.ts_source_paths.map{|i|i['source']}.join("\r\n")})
           api_public_link=Rest.new({base_url: link_data[:base_url]})
           # Hum, as this does not always work (only user, but not dropbox), we get the javascript and need hack
           #pkg_created=api_public_link.create(create_path,package_create_params)[:data]
@@ -224,10 +224,10 @@ module Aspera
           return pkgdatares.first
         end
 
-        ACTIONS=[ :health,:package, :source, :me, :dropbox, :v4, :address_book, :login_methods ]
+        ACTIONS=[:health,:package, :source, :me, :dropbox, :v4, :address_book, :login_methods]
 
         def execute_action
-          command=self.options.get_next_command(ACTIONS)
+          command=options.get_next_command(ACTIONS)
           case command
           when :health
             nagios=Nagios.new
@@ -239,22 +239,22 @@ module Aspera
             end
             return nagios.result
           when :package
-            command_pkg=self.options.get_next_command([ :send, :recv, :list ])
+            command_pkg=options.get_next_command([:send, :recv, :list])
             case command_pkg
             when :list
-              return {type: :object_list,data: self.mailbox_all_entries,fields: [PACKAGE_MATCH_FIELD,'title','items'], textify:  lambda { |table_data| Faspex.textify_package_list(table_data)} }
+              return {type: :object_list,data: mailbox_all_entries,fields: [PACKAGE_MATCH_FIELD,'title','items'], textify:  lambda { |table_data| Faspex.textify_package_list(table_data)} }
             when :send
-              delivery_info=self.options.get_option(:delivery_info,:mandatory)
+              delivery_info=options.get_option(:delivery_info,:mandatory)
               raise CliBadArgument,'delivery_info must be hash, refer to doc' unless delivery_info.is_a?(Hash)
               # actual parameter to faspex API
               package_create_params={'delivery'=>delivery_info}
-              public_link_url=self.options.get_option(:link,:optional)
+              public_link_url=options.get_option(:link,:optional)
               if public_link_url.nil?
                 # authenticated user
                 delivery_info['sources']||=[{'paths'=>[]}]
                 first_source=delivery_info['sources'].first
-                first_source['paths'].push(*self.transfer.ts_source_paths.map{|i|i['source']})
-                source_name=self.options.get_option(:source_name,:optional)
+                first_source['paths'].push(*transfer.ts_source_paths.map{|i|i['source']})
+                source_name=options.get_option(:source_name,:optional)
                 if !source_name.nil?
                   source_list=api_v3.call({operation: 'GET',subpath: 'source_shares',headers: {'Accept'=>'application/json'}})[:data]['items']
                   source_id=self.class.get_source_id(source_list,source_name)
@@ -273,23 +273,23 @@ module Aspera
                 transfer_spec=send_publink_to_ts(public_link_url,package_create_params)
               end
               #Log.dump('transfer_spec',transfer_spec)
-              return Main.result_transfer(self.transfer.start(transfer_spec,{src: :node_gen3}))
+              return Main.result_transfer(transfer.start(transfer_spec,{src: :node_gen3}))
             when :recv
-              link_url=self.options.get_option(:link,:optional)
+              link_url=options.get_option(:link,:optional)
               # list of faspex ID/URI to download
               pkg_id_uri=nil
               skip_ids_data=[]
               skip_ids_persistency=nil
               case link_url
               when nil # usual case: no link
-                if self.options.get_option(:once_only,:mandatory)
+                if options.get_option(:once_only,:mandatory)
                   skip_ids_persistency=PersistencyActionOnce.new(
                   manager: @agents[:persistency],
                   data:    skip_ids_data,
-                  id:      IdGenerator.from_list(['faspex_recv',self.options.get_option(:url,:mandatory),self.options.get_option(:username,:mandatory),self.options.get_option(:box,:mandatory).to_s]))
+                  id:      IdGenerator.from_list(['faspex_recv',options.get_option(:url,:mandatory),options.get_option(:username,:mandatory),options.get_option(:box,:mandatory).to_s]))
                 end
                 # get command line parameters
-                delivid=self.instance_identifier()
+                delivid=instance_identifier()
                 raise 'empty id' if delivid.empty?
                 if delivid.eql?(VAL_ALL)
                   pkg_id_uri=mailbox_all_entries.map{|i|{id: i[PACKAGE_MATCH_FIELD],uri: self.class.get_fasp_uri_from_entry(i)}}
@@ -302,9 +302,9 @@ module Aspera
                     raise 'Dropbox and Workgroup packages should use link option with faspe:'
                   end
                   # TODO: delivery id is the right one if package was receive by workgroup
-                  endpoint=case self.options.get_option(:box,:mandatory)
-                  when :inbox,:archive;'received'
-                  when :sent; 'sent'
+                  endpoint=case options.get_option(:box,:mandatory)
+                  when :inbox,:archive then'received'
+                  when :sent then 'sent'
                   end
                   entry_xml=api_v3.call({operation: 'GET',subpath: "#{endpoint}/#{delivid}",headers: {'Accept'=>'application/xml'}})[:http].body
                   package_entry=XmlSimple.xml_in(entry_xml, {'ForceArray' => true})
@@ -341,7 +341,7 @@ module Aspera
                   transfer_spec['token']=api_v3.call({operation: 'POST',subpath: 'issue-token?direction=down',headers: {'Accept'=>'text/plain','Content-Type'=>'application/vnd.aspera.url-list+xml'},text_body_params: xmlpayload})[:http].body
                 end
                 transfer_spec['direction']=Fasp::TransferSpec::DIRECTION_RECEIVE
-                statuses=self.transfer.start(transfer_spec,{src: :node_gen3})
+                statuses=transfer.start(transfer_spec,{src: :node_gen3})
                 result_transfer.push({'package'=>id_uri[:id],Main::STATUS_FIELD=>statuses})
                 # skip only if all sessions completed
                 skip_ids_data.push(id_uri[:id]) if TransferAgent.session_status(statuses).eql?(:success)
@@ -350,21 +350,21 @@ module Aspera
               return Main.result_transfer_multiple(result_transfer)
             end
           when :source
-            command_source=self.options.get_next_command([ :list, :id, :name ])
+            command_source=options.get_next_command([:list, :id, :name])
             source_list=api_v3.call({operation: 'GET',subpath: 'source_shares',headers: {'Accept'=>'application/json'}})[:data]['items']
             case command_source
             when :list
               return {type: :object_list,data: source_list}
             else # :id or :name
-              source_match_val=self.options.get_next_argument('source id or name')
+              source_match_val=options.get_next_argument('source id or name')
               source_ids=source_list.select { |i| i[command_source.to_s].to_s.eql?(source_match_val) }
               if source_ids.empty?
                 raise CliError,"No such Faspex source #{command_source.to_s}: #{source_match_val} in [#{source_list.map{|i| i[command_source.to_s]}.join(', ')}]"
               end
               # get id and name
               source_name=source_ids.first['name']
-              source_id=source_ids.first['id']
-              source_hash=self.options.get_option(:storage,:mandatory)
+              #source_id=source_ids.first['id']
+              source_hash=options.get_option(:storage,:mandatory)
               # check value of option
               raise CliError,'storage option must be a Hash' unless source_hash.is_a?(Hash)
               source_hash.each do |name,storage|
@@ -378,7 +378,7 @@ module Aspera
               end
               source_info=source_hash[source_name]
               Log.log.debug("source_info: #{source_info}")
-              command_node=self.options.get_next_command([ :info, :node ])
+              command_node=options.get_next_command([:info, :node])
               case command_node
               when :info
                 return {data: source_info,type: :single_object}
@@ -392,7 +392,7 @@ module Aspera
                   type:      :basic,
                   username:  node_config['username'],
                   password:  node_config['password']}})
-                command=self.options.get_next_command(Node::COMMON_ACTIONS)
+                command=options.get_next_command(Node::COMMON_ACTIONS)
                 return Node.new(@agents.merge(skip_basic_auth_options: true, node_api: api_node)).execute_action(command,source_info[KEY_PATH])
               end
             end
@@ -400,31 +400,31 @@ module Aspera
             my_info=api_v3.call({operation: 'GET',subpath: 'me',headers: {'Accept'=>'application/json'}})[:data]
             return {data: my_info, type: :single_object}
           when :dropbox
-            command_pkg=self.options.get_next_command([ :list ])
+            command_pkg=options.get_next_command([:list])
             case command_pkg
             when :list
               dropbox_list=api_v3.call({operation: 'GET',subpath: 'dropboxes',headers: {'Accept'=>'application/json'}})[:data]
               return {type: :object_list, data: dropbox_list['items'], fields: ['name','id','description','can_read','can_write']}
             end
           when :v4
-            command=self.options.get_next_command([:package,:dropbox, :dmembership, :workgroup,:wmembership,:user,:metadata_profile])
+            command=options.get_next_command([:package,:dropbox, :dmembership, :workgroup,:wmembership,:user,:metadata_profile])
             case command
             when :dropbox
-              return self.entity_action(api_v4,'admin/dropboxes',['id','e_wg_name','e_wg_desc','created_at'],:id)
+              return entity_action(api_v4,'admin/dropboxes',['id','e_wg_name','e_wg_desc','created_at'],:id)
             when :dmembership
-              return self.entity_action(api_v4,'dropbox_memberships',nil,:id)
+              return entity_action(api_v4,'dropbox_memberships',nil,:id)
             when :workgroup
-              return self.entity_action(api_v4,'admin/workgroups',['id','e_wg_name','e_wg_desc','created_at'],:id)
+              return entity_action(api_v4,'admin/workgroups',['id','e_wg_name','e_wg_desc','created_at'],:id)
             when :wmembership
-              return self.entity_action(api_v4,'workgroup_memberships',nil,:id)
+              return entity_action(api_v4,'workgroup_memberships',nil,:id)
             when :user
-              return self.entity_action(api_v4,'users',['id','name','first_name','last_name'],:id)
+              return entity_action(api_v4,'users',['id','name','first_name','last_name'],:id)
             when :metadata_profile
-              return self.entity_action(api_v4,'metadata_profiles',nil,:id)
+              return entity_action(api_v4,'metadata_profiles',nil,:id)
             when :package
-              pkg_box_type=self.options.get_next_command([:users])
-              pkg_box_id=self.instance_identifier()
-              return self.entity_action(api_v4,"#{pkg_box_type}/#{pkg_box_id}/packages",nil,:id)
+              pkg_box_type=options.get_next_command([:users])
+              pkg_box_id=instance_identifier()
+              return entity_action(api_v4,"#{pkg_box_type}/#{pkg_box_id}/packages",nil,:id)
             end
           when :address_book
             result=api_v3.call({operation: 'GET',subpath: 'address-book',headers: {'Accept'=>'application/json'},url_params: {'format'=>'json','count'=>100000}})[:data]

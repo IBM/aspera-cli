@@ -132,7 +132,7 @@ module Aspera
         Fasp::Parameters.file_list_folder=File.join(@plugin_env[:config].main_folder,'filelists')
         Aspera::RestErrorAnalyzer.instance.log_file=File.join(@plugin_env[:config].main_folder,'rest_exceptions.log')
         # register aspera REST call error handlers
-        Aspera::RestErrorsAspera.registerHandlers
+        Aspera::RestErrorsAspera.register_handlers
         # set banner when all environment is created so that additional extended value modifiers are known, e.g. @preset
         @opt_mgr.parser.banner=app_banner
       end

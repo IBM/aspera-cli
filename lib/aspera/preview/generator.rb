@@ -64,7 +64,7 @@ module Aspera
         method_symb=processing_method_symb
         Log.log.info("#{@source_file_path}->#{@destination_file_path} (#{method_symb})")
         begin
-          self.send(method_symb)
+          send(method_symb)
           # check that generated size does not exceed maximum
           result_size=File.size(@destination_file_path)
           if result_size > @options.max_size
@@ -248,7 +248,6 @@ module Aspera
           '+repage',
           @destination_file_path])
       end
-
     end # Generator
   end # Preview
 end # Aspera

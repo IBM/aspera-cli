@@ -26,7 +26,7 @@ module Aspera
             hasharray.push(entry)
           end
         end
-        value=hasharray
+        return hasharray
       end
 
       def initialize
@@ -76,7 +76,7 @@ module Aspera
         end
         # then read value
         @handlers[:reader].each do |reader,method|
-          if m=value.match(/^@#{reader}:(.*)/) then
+          if m=value.match(/^@#{reader}:(.*)/)
             value=method.call(m[1])
             break
           end

@@ -93,9 +93,8 @@ RSpec.describe Aspera::AsCmd do
       expect(res).to be(true)
     end
     it 'fails if no such file' do
-      res=nil
       begin
-        res=ascmd.execute_single('mv',['/notexist',PATH_FOLDER_NEW])
+        ascmd.execute_single('mv',['/notexist',PATH_FOLDER_NEW])
         raise 'Shall not reach here'
       rescue Aspera::AsCmd::Error => e
         expect(e.message).to eq('ascmd: (2) No such file or directory')
@@ -112,9 +111,8 @@ RSpec.describe Aspera::AsCmd do
       expect(res).to be(true)
     end
     it 'fails if no such file' do
-      res=nil
       begin
-        res=ascmd.execute_single('mv',['/notexist',PATH_FOLDER_NEW])
+        ascmd.execute_single('mv',['/notexist',PATH_FOLDER_NEW])
         raise 'Shall not reach here'
       rescue Aspera::AsCmd::Error => e
         expect(e.message).to eq('ascmd: (2) No such file or directory')
@@ -128,9 +126,8 @@ RSpec.describe Aspera::AsCmd do
       expect(res[:md5sum]).to be_a(String)
     end
     it 'fails if no such file' do
-      res=nil
       begin
-        res=ascmd.execute_single('md5sum',['/notexist'])
+        ascmd.execute_single('md5sum',['/notexist'])
         raise 'Shall not reach here'
       rescue Aspera::AsCmd::Error => e
         expect(e.message).to eq('ascmd: (2) No such file or directory')
@@ -147,9 +144,8 @@ RSpec.describe Aspera::AsCmd do
       expect(res).to be(true)
     end
     it 'fails if no such file' do
-      res=nil
       begin
-        res=ascmd.execute_single('mv',['/notexist',PATH_FOLDER_NEW])
+        ascmd.execute_single('mv',['/notexist',PATH_FOLDER_NEW])
         raise 'Shall not reach here'
       rescue Aspera::AsCmd::Error => e
         expect(e.message).to eq('ascmd: (2) No such file or directory')
@@ -165,9 +161,8 @@ RSpec.describe Aspera::AsCmd do
       expect(res.first[:total]).to be_a(Integer)
     end
     it 'fails if no such file' do
-      res=nil
       begin
-        res=ascmd.execute_single('mv',['/notexist',PATH_FOLDER_NEW])
+        ascmd.execute_single('mv',['/notexist',PATH_FOLDER_NEW])
         raise 'Shall not reach here'
       rescue Aspera::AsCmd::Error => e
         expect(e.message).to eq('ascmd: (2) No such file or directory')

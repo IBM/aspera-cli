@@ -29,57 +29,54 @@ module Aspera
   # and error are analyzed in RestErrorAnalyzer
   class Rest
     private
-    # set to true enables debug in HTTP class
-    @@debug=false
-    # true if https ignore certificate
-    @@insecure=false
-    @@user_agent='Ruby'
-    @@download_partial_suffix='.http_partial'
-    # a lambda which takes the Net::HTTP as arg, use this to change parameters
-    @@session_cb=nil
+    class<<self
+      # set to true enables debug in HTTP class
+      @debug=false
+      # true if https ignore certificate
+      @insecure=false
+      @user_agent='Ruby'
+      @download_partial_suffix='.http_partial'
+      # a lambda which takes the Net::HTTP as arg, use this to change parameters
+      @session_cb=nil
+      attr_accessor :download_partial_suffix
+      def session_cb=(v); @session_cb=v;Log.log.debug("session_cb => #{@session_cb}".red);end
 
-    public
-    def self.session_cb=(v); @@session_cb=v;Log.log.debug("session_cb => #{@@session_cb}".red);end
+      attr_reader :session_cb, :insecure, :user_agent, :debug
 
-    def self.session_cb; @@session_cb;end
+      def insecure=(v); @insecure=v;Log.log.debug("insecure => #{@insecure}".red);end
 
-    def self.insecure=(v); @@insecure=v;Log.log.debug("insecure => #{@@insecure}".red);end
+      def user_agent=(v); @user_agent=v;Log.log.debug("user_agent => #{@user_agent}".red);end
 
-    def self.insecure; @@insecure;end
+      def debug=(flag); @debug=flag; Log.log.debug("debug http => #{flag}"); end
 
-    def self.user_agent=(v); @@user_agent=v;Log.log.debug("user_agent => #{@@user_agent}".red);end
+      def basic_creds(user,pass); return "Basic #{Base64.strict_encode64("#{user}:#{pass}")}";end
 
-    def self.user_agent; @@user_agent;end
-
-    def self.debug=(flag); @@debug=flag; Log.log.debug("debug http => #{flag}"); end
-
-    def self.basic_creds(user,pass); return "Basic #{Base64.strict_encode64("#{user}:#{pass}")}";end
-
-    # build URI from URL and parameters and check it is http or https
-    def self.build_uri(url,params=nil)
-      uri=URI.parse(url)
-      raise 'REST endpoint shall be http(s)' unless ['http','https'].include?(uri.scheme)
-      if !params.nil?
-        # support array url params, there is no standard. Either p[]=1&p[]=2, or p=1&p=2
-        if params.is_a?(Hash)
-          orig=params
-          params=[]
-          orig.each do |k,v|
-            case v
-            when Array
-              suffix=v.first.eql?('[]') ? v.shift : ''
-              v.each do |e|
-                params.push([k+suffix,e])
+      # build URI from URL and parameters and check it is http or https
+      def build_uri(url,params=nil)
+        uri=URI.parse(url)
+        raise 'REST endpoint shall be http(s)' unless ['http','https'].include?(uri.scheme)
+        if !params.nil?
+          # support array url params, there is no standard. Either p[]=1&p[]=2, or p=1&p=2
+          if params.is_a?(Hash)
+            orig=params
+            params=[]
+            orig.each do |k,v|
+              case v
+              when Array
+                suffix=v.first.eql?('[]') ? v.shift : ''
+                v.each do |e|
+                  params.push([k+suffix,e])
+                end
+              else
+                params.push([k,v])
               end
-            else
-              params.push([k,v])
             end
           end
+          # CGI.unescape to transform back %5D into []
+          uri.query=CGI.unescape(URI.encode_www_form(params))
         end
-        # CGI.unescape to transform back %5D into []
-        uri.query=CGI.unescape(URI.encode_www_form(params))
+        return uri
       end
-      return uri
     end
 
     private
@@ -91,10 +88,10 @@ module Aspera
         # this honors http_proxy env var
         @http_session=Net::HTTP.new(uri.host, uri.port)
         @http_session.use_ssl = uri.scheme.eql?('https')
-        @http_session.verify_mode = OpenSSL::SSL::VERIFY_NONE if @@insecure
-        @http_session.set_debug_output($stdout) if @@debug
+        @http_session.verify_mode = OpenSSL::SSL::VERIFY_NONE if self.class.insecure
+        @http_session.set_debug_output($stdout) if self.class.debug
         # set http options in callback, such as timeout and cert. verification
-        @@session_cb.call(@http_session) unless @@session_cb.nil?
+        self.class.session_cb.call(@http_session) unless self.class.session_cb.nil?
         # manually start session for keep alive (if supported by server, else, session is closed every time)
         @http_session.start
       end
@@ -103,8 +100,7 @@ module Aspera
 
     public
 
-    attr_reader :params
-    attr_reader :oauth
+    attr_reader :params, :oauth
 
     # @param a_rest_params default call parameters (merged at call) and (+) authentication (:auth) :
     # :type (:basic, :oauth2, :url, :none)
@@ -139,28 +135,28 @@ module Aspera
       Log.log.debug("URI=#{uri}")
       begin
         # instanciate request object based on string name
-        req=Object::const_get('Net::HTTP::'+call_data[:operation].capitalize).new(uri)#.request_uri
-      rescue NameError => e
+        req=Object.const_get('Net::HTTP::'+call_data[:operation].capitalize).new(uri)#.request_uri
+      rescue NameError
         raise "unsupported operation : #{call_data[:operation]}"
       end
-      if call_data.has_key?(:json_params) and !call_data[:json_params].nil? then
+      if call_data.has_key?(:json_params) and !call_data[:json_params].nil?
         req.body=JSON.generate(call_data[:json_params])
         Log.dump('body JSON data',call_data[:json_params])
         #Log.log.debug("body JSON data=#{JSON.pretty_generate(call_data[:json_params])}")
         req['Content-Type'] = 'application/json'
         #call_data[:headers]['Accept']='application/json'
       end
-      if call_data.has_key?(:www_body_params) then
+      if call_data.has_key?(:www_body_params)
         req.body=URI.encode_www_form(call_data[:www_body_params])
         Log.log.debug("body www data=#{req.body.chomp}")
         req['Content-Type'] = 'application/x-www-form-urlencoded'
       end
-      if call_data.has_key?(:text_body_params) then
+      if call_data.has_key?(:text_body_params)
         req.body=call_data[:text_body_params]
         Log.log.debug("body data=#{req.body.chomp}")
       end
       # set headers
-      if call_data.has_key?(:headers) then
+      if call_data.has_key?(:headers)
         call_data[:headers].keys.each do |key|
           req[key] = call_data[:headers][key]
         end
@@ -188,7 +184,7 @@ module Aspera
       call_data[:subpath]='' if call_data[:subpath].nil?
       Log.log.debug("accessing #{call_data[:subpath]}".red.bold.bg_green)
       call_data[:headers]||={}
-      call_data[:headers]['User-Agent'] ||= @@user_agent
+      call_data[:headers]['User-Agent'] ||= self.class.user_agent
       # defaults from @params are overriden by call data
       call_data=@params.deep_merge(call_data)
       case call_data[:auth][:type]
@@ -232,7 +228,7 @@ module Aspera
               target_file=File.join(File.dirname(target_file),m[1])
             end
             # download with temp filename
-            target_file_tmp="#{target_file}#{@@download_partial_suffix}"
+            target_file_tmp="#{target_file}#{self.class.download_partial_suffix}"
             Log.log.debug("saving to: #{target_file}")
             File.open(target_file_tmp, 'wb') do |file|
               result[:http].read_body do |fragment|
@@ -259,7 +255,7 @@ module Aspera
         end
         Log.dump("result: parsed: #{result_mime}",result[:data])
         Log.log.debug("result: code=#{result[:http].code}")
-        RestErrorAnalyzer.instance.raiseOnError(req,result)
+        RestErrorAnalyzer.instance.raise_on_error(req,result)
       rescue RestCallError => e
         # not authorized: oauth token expired
         if @params[:not_auth_codes].include?(result[:http].code.to_s) and call_data[:auth][:type].eql?(:oauth2)

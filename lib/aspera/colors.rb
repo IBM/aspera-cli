@@ -26,7 +26,7 @@ class String
     bg_blue: 44,
     bg_magenta: 45,
     bg_cyan: 46,
-    bg_gray: 47,
+    bg_gray: 47
   }
   private_constant :VTSTYLES
   # defines methods to String, one per entry in VTSTYLES

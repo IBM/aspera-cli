@@ -41,7 +41,7 @@ module Aspera
             # the password here is the token copied directly from browser in developer mode
             @api_v5=Rest.new({
               base_url:  faxpex5_api_v5_url,
-              headers:  {'Authorization'=>options.get_option(:password,:mandatory)},
+              headers:  {'Authorization'=>options.get_option(:password,:mandatory)}
             })
           when :web
             # opens a browser and ask user to auth using web
@@ -53,7 +53,7 @@ module Aspera
               grant:           :web,
               state:           SecureRandom.uuid,
               client_id:       options.get_option(:client_id,:mandatory),
-              redirect_uri:    options.get_option(:redirect_uri,:mandatory),
+              redirect_uri:    options.get_option(:redirect_uri,:mandatory)
               }})
           when :jwt
             # currently Faspex 5 beta 4 only supports non-user based apis (e.g. jobs)
@@ -76,7 +76,7 @@ module Aspera
           end
         end
 
-        ACTIONS=[ :node, :package, :auth_client, :jobs ]
+        ACTIONS=[:node, :package, :auth_client, :jobs]
 
         #
         def execute_action
@@ -85,12 +85,12 @@ module Aspera
           case command
           when :auth_client
             api_auth=Rest.new(@api_v5.params.merge({base_url: "#{@faxpex5_api_base_url}/auth"}))
-            return self.entity_action(api_auth,'oauth_clients',nil,:id,nil,true)
+            return entity_action(api_auth,'oauth_clients',nil,:id,nil,true)
           when :node
-            return self.entity_action(@api_v5,'nodes',nil,:id,nil,true)
+            return entity_action(@api_v5,'nodes',nil,:id,nil,true)
           when :jobs
             # to test JWT
-            return self.entity_action(@api_v5,'jobs',nil,:id,nil,true)
+            return entity_action(@api_v5,'jobs',nil,:id,nil,true)
           when :package
             command=options.get_next_command([:list,:show,:send,:receive])
             case command
@@ -106,7 +106,7 @@ module Aspera
               package=@api_v5.create('packages',parameters)[:data]
               transfer_spec=@api_v5.create("packages/#{package['id']}/transfer_spec/upload",{transfer_type: 'Connect'})[:data]
               transfer_spec.delete('authentication')
-              return Main.result_transfer(self.transfer.start(transfer_spec,{src: :node_gen3}))
+              return Main.result_transfer(transfer.start(transfer_spec,{src: :node_gen3}))
             when :receive
               pkg_type='received'
               pack_id=instance_identifier()
@@ -133,7 +133,7 @@ module Aspera
                 # TODO: allow from sent as well ?
                 transfer_spec=@api_v5.create("packages/#{id}/transfer_spec/download",{transfer_type: 'Connect', type: pkg_type})[:data]
                 transfer_spec.delete('authentication')
-                statuses=self.transfer.start(transfer_spec,{src: :node_gen3})
+                statuses=transfer.start(transfer_spec,{src: :node_gen3})
                 result_transfer.push({'package'=>id,Main::STATUS_FIELD=>statuses})
                 # skip only if all sessions completed
                 skip_ids_data.push(id) if TransferAgent.session_status(statuses).eql?(:success)

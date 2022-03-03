@@ -87,7 +87,7 @@ module Aspera
         username=options[:username]
         raise 'options shall have username' if username.nil?
         url=options[:url]
-        raise 'delete not implemented'
+        raise "delete not implemented #{url}"
       end
     end
   end

@@ -95,50 +95,50 @@ END_OF_TEMPLATE
           add_plugin_lookup_folder(self.class.gem_plugins_folder)
           add_plugin_lookup_folder(File.join(@main_folder,ASPERA_PLUGINS_FOLDERNAME))
           # do file parameter first
-          self.options.set_obj_attr(:config_file,self,:option_config_file)
-          self.options.add_opt_simple(:config_file,"read parameters from file in YAML format, current=#{@option_config_file}")
-          self.options.parse_options!
+          options.set_obj_attr(:config_file,self,:option_config_file)
+          options.add_opt_simple(:config_file,"read parameters from file in YAML format, current=#{@option_config_file}")
+          options.parse_options!
           # read correct file
           read_config_file
           # add preset handler (needed for smtp)
           ExtendedValue.instance.set_handler(EXTV_PRESET,:reader,lambda{|v|preset_by_name(v)})
           ExtendedValue.instance.set_handler(EXTV_INCLUDE_PRESETS,:decoder,lambda{|v|expanded_with_preset_includes(v)})
           # load defaults before it can be overriden
-          self.add_plugin_default_preset(CONF_GLOBAL_SYM)
-          self.options.parse_options!
-          self.options.set_obj_attr(:ascp_path,Fasp::Installation.instance,:ascp_path)
-          self.options.set_obj_attr(:sdk_folder,Fasp::Installation.instance,:sdk_folder)
-          self.options.set_obj_attr(:use_product,self,:option_use_product)
-          self.options.set_obj_attr(:preset,self,:option_preset)
-          self.options.set_obj_attr(:plugin_folder,self,:option_plugin_folder)
-          self.options.add_opt_switch(:no_default,'-N','do not load default configuration for plugin') { @use_plugin_defaults=false }
-          self.options.add_opt_boolean(:override,'Wizard: override existing value')
-          self.options.add_opt_boolean(:use_generic_client,'Wizard: AoC: use global or org specific jwt client id')
-          self.options.add_opt_boolean(:default,'Wizard: set as default configuration for specified plugin (also: update)')
-          self.options.add_opt_boolean(:test_mode,'Wizard: skip private key check step')
-          self.options.add_opt_simple(:preset,'-PVALUE','load the named option preset from current config file')
-          self.options.add_opt_simple(:pkeypath,'Wizard: path to private key for JWT')
-          self.options.add_opt_simple(:ascp_path,'path to ascp')
-          self.options.add_opt_simple(:use_product,'use ascp from specified product')
-          self.options.add_opt_simple(:smtp,'smtp configuration (extended value: hash)')
-          self.options.add_opt_simple(:fpac,'proxy auto configuration URL')
-          self.options.add_opt_simple(:secret,'default secret')
-          self.options.add_opt_simple(:secrets,'secret vault')
-          self.options.add_opt_simple(:sdk_url,'URL to get SDK')
-          self.options.add_opt_simple(:sdk_folder,'SDK folder path')
-          self.options.add_opt_simple(:notif_to,'email recipient for notification of transfers')
-          self.options.add_opt_simple(:notif_template,'email ERB template for notification of transfers')
-          self.options.add_opt_simple(:version_check_days,Integer,'period in days to check new version (zero to disable)')
-          self.options.add_opt_simple(:plugin_folder,'folder where to find additional plugins')
-          self.options.set_option(:use_generic_client,true)
-          self.options.set_option(:test_mode,false)
-          self.options.set_option(:default,true)
-          self.options.set_option(:version_check_days,DEFAULT_CHECK_NEW_VERSION_DAYS)
-          self.options.set_option(:sdk_url,TRANSFER_SDK_ARCHIVE_URL)
-          self.options.set_option(:sdk_folder,File.join(@main_folder,'sdk'))
-          self.options.set_option(:override,:no)
-          self.options.parse_options!
-          pac_script=self.options.get_option(:fpac,:optional)
+          add_plugin_default_preset(CONF_GLOBAL_SYM)
+          options.parse_options!
+          options.set_obj_attr(:ascp_path,Fasp::Installation.instance,:ascp_path)
+          options.set_obj_attr(:sdk_folder,Fasp::Installation.instance,:sdk_folder)
+          options.set_obj_attr(:use_product,self,:option_use_product)
+          options.set_obj_attr(:preset,self,:option_preset)
+          options.set_obj_attr(:plugin_folder,self,:option_plugin_folder)
+          options.add_opt_switch(:no_default,'-N','do not load default configuration for plugin') { @use_plugin_defaults=false }
+          options.add_opt_boolean(:override,'Wizard: override existing value')
+          options.add_opt_boolean(:use_generic_client,'Wizard: AoC: use global or org specific jwt client id')
+          options.add_opt_boolean(:default,'Wizard: set as default configuration for specified plugin (also: update)')
+          options.add_opt_boolean(:test_mode,'Wizard: skip private key check step')
+          options.add_opt_simple(:preset,'-PVALUE','load the named option preset from current config file')
+          options.add_opt_simple(:pkeypath,'Wizard: path to private key for JWT')
+          options.add_opt_simple(:ascp_path,'path to ascp')
+          options.add_opt_simple(:use_product,'use ascp from specified product')
+          options.add_opt_simple(:smtp,'smtp configuration (extended value: hash)')
+          options.add_opt_simple(:fpac,'proxy auto configuration URL')
+          options.add_opt_simple(:secret,'default secret')
+          options.add_opt_simple(:secrets,'secret vault')
+          options.add_opt_simple(:sdk_url,'URL to get SDK')
+          options.add_opt_simple(:sdk_folder,'SDK folder path')
+          options.add_opt_simple(:notif_to,'email recipient for notification of transfers')
+          options.add_opt_simple(:notif_template,'email ERB template for notification of transfers')
+          options.add_opt_simple(:version_check_days,Integer,'period in days to check new version (zero to disable)')
+          options.add_opt_simple(:plugin_folder,'folder where to find additional plugins')
+          options.set_option(:use_generic_client,true)
+          options.set_option(:test_mode,false)
+          options.set_option(:default,true)
+          options.set_option(:version_check_days,DEFAULT_CHECK_NEW_VERSION_DAYS)
+          options.set_option(:sdk_url,TRANSFER_SDK_ARCHIVE_URL)
+          options.set_option(:sdk_folder,File.join(@main_folder,'sdk'))
+          options.set_option(:override,:no)
+          options.parse_options!
+          pac_script=options.get_option(:fpac,:optional)
           if !pac_script.nil?
             pac_exec=@pac_exec=Aspera::ProxyAutoConfig.new(pac_script)
             URI::Generic.alias_method(:find_proxy_orig,:find_proxy)
@@ -230,7 +230,7 @@ END_OF_TEMPLATE
         def add_plugin_default_preset(plugin_name_sym)
           default_config_name=get_plugin_default_config_name(plugin_name_sym)
           Log.log.debug("add_plugin_default_preset:#{plugin_name_sym}:#{default_config_name}")
-          self.options.add_option_preset(preset_by_name(default_config_name),:unshift) unless default_config_name.nil?
+          options.add_option_preset(preset_by_name(default_config_name),:unshift) unless default_config_name.nil?
           return nil
         end
         private
@@ -251,14 +251,14 @@ END_OF_TEMPLATE
         # find the root folder of gem where this class is
         # go up as many times as englobing modules (not counting class, as it is a file)
         def self.gem_root
-          File.expand_path(Module.nesting[1].to_s.gsub('::','/').gsub(%r([^/]+),'..'),File.dirname(__FILE__))
+          File.expand_path(Module.nesting[1].to_s.gsub('::','/').gsub(%r{[^/]+},'..'),File.dirname(__FILE__))
         end
 
         # instanciate a plugin
         # plugins must be Capitalized
         def self.plugin_class(plugin_name_sym)
           # Module.nesting[2] is Aspera::Cli
-          return Object::const_get("#{Module.nesting[2].to_s}::Plugins::#{plugin_name_sym.to_s.capitalize}")
+          return Object.const_get("#{Module.nesting[2].to_s}::Plugins::#{plugin_name_sym.to_s.capitalize}")
         end
 
         def self.flatten_all_config(t)
@@ -293,8 +293,7 @@ END_OF_TEMPLATE
 
         # $HOME/.aspera/`program_name`
         attr_reader :main_folder
-        attr_reader :gem_url
-        attr_reader :plugins
+        attr_reader :gem_url, :plugins
         attr_accessor :option_config_file
 
         # @return the hash from name (also expands possible includes)
@@ -311,8 +310,8 @@ END_OF_TEMPLATE
             raise CliError,"no such config preset: #{include_path}" if nil?
           end
           case current
-          when Hash;return expanded_with_preset_includes(current,include_path)
-          when String; return ExtendedValue.instance.evaluate(current)
+          when Hash then return expanded_with_preset_includes(current,include_path)
+          when String then return ExtendedValue.instance.evaluate(current)
           else return current
           end
         end
@@ -347,8 +346,8 @@ END_OF_TEMPLATE
 
         def option_plugin_folder=(value)
           case value
-          when String; add_plugin_lookup_folder(value)
-          when Array; value.each{|f|add_plugin_lookup_folder(f)}
+          when String then add_plugin_lookup_folder(value)
+          when Array then value.each{|f|add_plugin_lookup_folder(f)}
           else raise "folder shall be Array or String, not #{value.class}"
           end
         end
@@ -362,9 +361,9 @@ END_OF_TEMPLATE
         def option_preset=(value)
           case value
           when String
-            self.options.add_option_preset(preset_by_name(value))
+            options.add_option_preset(preset_by_name(value))
           when Hash
-            self.options.add_option_preset(value)
+            options.add_option_preset(value)
           else
             raise 'Preset definition must be a String for name, or Hash for value'
           end
@@ -453,6 +452,7 @@ END_OF_TEMPLATE
               version=@config_presets[CONF_PRESET_CONFIG][CONF_PRESET_VERSION]=config_tested_version
               save_required=true
             end
+            Log.log.debug("conf version: #{version}")
             # Place new compatibility code here
             if save_required
               Log.log.warn('Saving automatic conversion.')
@@ -522,7 +522,7 @@ END_OF_TEMPLATE
                 result=Rest.new({base_url: url}).call({operation: 'GET',subpath: '',redirect_max: 1})
                 current_url=result[:http].uri.to_s
                 # check if redirect
-                if ! url.eql?(current_url)
+                if !url.eql?(current_url)
                   res=c.send(:detect,current_url)
                   return res.merge(product: plugin_name_sym, url: current_url) unless res.nil?
                 end
@@ -534,9 +534,9 @@ END_OF_TEMPLATE
         end
 
         def execute_connect_action
-          command=self.options.get_next_command([:list,:info,:version])
+          command=options.get_next_command([:list,:info,:version])
           if [:info,:version].include?(command)
-            connect_id=self.options.get_next_argument('id or title')
+            connect_id=options.get_next_argument('id or title')
             one_res=connect_versions.select{|i|i['id'].eql?(connect_id) || i['title'].eql?(connect_id)}.first
             raise CliNoSuchId.new(:connect,connect_id) if one_res.nil?
           end
@@ -548,9 +548,9 @@ END_OF_TEMPLATE
             return {type: :single_object, data: one_res}
           when :version # shows files used
             all_links=one_res['links']
-            command=self.options.get_next_command([:list,:download,:open])
+            command=options.get_next_command([:list,:download,:open])
             if [:download,:open].include?(command)
-              link_title=self.options.get_next_argument('title or rel')
+              link_title=options.get_next_argument('title or rel')
               one_link=all_links.select {|i| i['title'].eql?(link_title) or i['rel'].eql?(link_title)}.first
               raise 'no such value' if one_link.nil?
             end
@@ -558,7 +558,7 @@ END_OF_TEMPLATE
             when :list # shows files used
               return {type: :object_list, data: all_links}
             when :download #
-              folder_dest=self.transfer.destination_folder(Fasp::TransferSpec::DIRECTION_RECEIVE)
+              folder_dest=transfer.destination_folder(Fasp::TransferSpec::DIRECTION_RECEIVE)
               #folder_dest=self.options.get_next_argument('destination folder')
               api_connect_cdn=Rest.new({base_url: CONNECT_WEB_URL})
               fileurl = one_link['href']
@@ -573,12 +573,12 @@ END_OF_TEMPLATE
         end
 
         def execute_action_ascp
-          command=self.options.get_next_command([:connect,:use,:show,:products,:info,:install,:spec])
+          command=options.get_next_command([:connect,:use,:show,:products,:info,:install,:spec])
           case command
           when :connect
             return execute_connect_action
           when :use
-            ascp_path=self.options.get_next_argument('path to ascp')
+            ascp_path=options.get_next_argument('path to ascp')
             ascp_version=Fasp::Installation.instance.get_ascp_version(ascp_path)
             self.format.display_status("ascp version: #{ascp_version}")
             preset_name=set_global_default(:ascp_path,ascp_path)
@@ -593,15 +593,15 @@ END_OF_TEMPLATE
             # read PATHs from ascp directly, and pvcl modules as well
             Open3.popen3(Fasp::Installation.instance.path(:ascp),'-DDL-') do |stdin, stdout, stderr, thread|
               last_line=''
-              while line=stderr.gets do
+              while line=stderr.gets
                 line.chomp!
                 last_line=line
                 case line
-                when %r{^DBG Path ([^ ]+) (dir|file) +: (.*)$};data[$1]=$3
-                when %r{^DBG Added module group:"([^"]+)" name:"([^"]+)", version:"([^"]+)" interface:"([^"]+)"$};data[$2]=$4
-                when %r{^DBG License result \(/license/(\S+)\): (.+)$};data[$1]=$2
-                when %r{^LOG (.+) version ([0-9.]+)$};data['product_name']=$1;data['product_version']=$2
-                when %r{^LOG Initializing FASP version ([^,]+),};data['ascp_version']=$1
+                when %r{^DBG Path ([^ ]+) (dir|file) +: (.*)$} then data[Regexp.last_match(1)]=Regexp.last_match(3)
+                when %r{^DBG Added module group:"([^"]+)" name:"([^"]+)", version:"([^"]+)" interface:"([^"]+)"$} then data[Regexp.last_match(2)]=Regexp.last_match(4)
+                when %r{^DBG License result \(/license/(\S+)\): (.+)$} then data[Regexp.last_match(1)]=Regexp.last_match(2)
+                when %r{^LOG (.+) version ([0-9.]+)$} then data['product_name']=Regexp.last_match(1);data['product_version']=Regexp.last_match(2)
+                when %r{^LOG Initializing FASP version ([^,]+),} then data['ascp_version']=Regexp.last_match(1)
                 end
               end
               if !thread.value.exitstatus.eql?(1) and !data.has_key?('root')
@@ -611,18 +611,18 @@ END_OF_TEMPLATE
             data['keypass']=Fasp::Installation.instance.bypass_pass
             return {type: :single_object, data: data}
           when :products
-            command=self.options.get_next_command([:list,:use])
+            command=options.get_next_command([:list,:use])
             case command
             when :list
               return {type: :object_list, data: Fasp::Installation.instance.installed_products, fields: ['name','app_root']}
             when :use
-              default_product=self.options.get_next_argument('product name')
+              default_product=options.get_next_argument('product name')
               Fasp::Installation.instance.use_ascp_from_product(default_product)
               preset_name=set_global_default(:ascp_path,Fasp::Installation.instance.path(:ascp))
               return Main.result_status("Saved to default global preset #{preset_name}")
             end
           when :install
-            v=Fasp::Installation.instance.install_sdk(self.options.get_option(:sdk_url,:mandatory))
+            v=Fasp::Installation.instance.install_sdk(options.get_option(:sdk_url,:mandatory))
             return Main.result_status("Installed version #{v}")
           when :spec
             return {type: :object_list, data: Fasp::Parameters.man_table, fields: ['name','type',Fasp::Parameters::SUPPORTED_AGENTS_SHORT.map{|i|i.to_s},'description'].flatten}
@@ -639,7 +639,7 @@ END_OF_TEMPLATE
         PRESET_ALL_ACTIONS=[PRESET_GBL_ACTIONS,PRESET_INSTANCE_ACTIONS].flatten.freeze
 
         def execute_file_action(action,config_name)
-          action=self.options.get_next_command(PRESET_ALL_ACTIONS) if action.nil?
+          action=options.get_next_command(PRESET_ALL_ACTIONS) if action.nil?
           config_name=instance_identifier() if config_name.nil? and PRESET_INSTANCE_ACTIONS.include?(action)
           # those operations require existing option
           raise "no such preset: #{config_name}" if PRESET_EXST_ACTIONS.include?(action) and !@config_presets.has_key?(config_name)
@@ -657,21 +657,21 @@ END_OF_TEMPLATE
             save_presets_to_config_file
             return Main.result_status("Deleted: #{config_name}")
           when :get
-            param_name=self.options.get_next_argument('parameter name')
+            param_name=options.get_next_argument('parameter name')
             value=selected_preset[param_name]
             raise "no such option in preset #{config_name} : #{param_name}" if value.nil?
             case value
-            when Numeric,String; return {type: :text, data: ExtendedValue.instance.evaluate(value.to_s)}
+            when Numeric,String then return {type: :text, data: ExtendedValue.instance.evaluate(value.to_s)}
             end
             return {type: :single_object, data: value}
           when :unset
-            param_name=self.options.get_next_argument('parameter name')
+            param_name=options.get_next_argument('parameter name')
             selected_preset.delete(param_name)
             save_presets_to_config_file
             return Main.result_status("Removed: #{config_name}: #{param_name}")
           when :set
-            param_name=self.options.get_next_argument('parameter name')
-            param_value=self.options.get_next_argument('parameter value')
+            param_name=options.get_next_argument('parameter name')
+            param_value=options.get_next_argument('parameter value')
             if !@config_presets.has_key?(config_name)
               Log.log.debug("no such config name: #{config_name}, initializing")
               selected_preset=@config_presets[config_name]={}
@@ -683,7 +683,7 @@ END_OF_TEMPLATE
             save_presets_to_config_file
             return Main.result_status("Updated: #{config_name}: #{param_name} <- #{param_value}")
           when :initialize
-            config_value=self.options.get_next_argument('extended value (Hash)')
+            config_value=options.get_next_argument('extended value (Hash)')
             if @config_presets.has_key?(config_name)
               Log.log.warn("configuration already exists: #{config_name}, overwriting")
             end
@@ -692,7 +692,7 @@ END_OF_TEMPLATE
             return Main.result_status("Modified: #{@option_config_file}")
           when :update
             #  get unprocessed options
-            theopts=self.options.get_options_table
+            theopts=options.get_options_table
             Log.log.debug("opts=#{theopts}")
             @config_presets[config_name]||={}
             @config_presets[config_name].merge!(theopts)
@@ -701,10 +701,10 @@ END_OF_TEMPLATE
             save_presets_to_config_file
             return Main.result_status("Updated: #{config_name}")
           when :ask
-            self.options.ask_missing_mandatory=:yes
+            options.ask_missing_mandatory=:yes
             @config_presets[config_name]||={}
-            self.options.get_next_argument('option names',:multiple).each do |optionname|
-              option_value=self.options.get_interactive(:option,optionname)
+            options.get_next_argument('option names',:multiple).each do |optionname|
+              option_value=options.get_interactive(:option,optionname)
               @config_presets[config_name][optionname]=option_value
             end
             save_presets_to_config_file
@@ -716,12 +716,12 @@ END_OF_TEMPLATE
 
         # "config" plugin
         def execute_action
-          action=self.options.get_next_command(ACTIONS)
+          action=options.get_next_command(ACTIONS)
           case action
           when *PRESET_GBL_ACTIONS # older syntax
             return execute_file_action(action,nil)
           when :id # older syntax
-            return execute_file_action(nil,self.options.get_next_argument('config name'))
+            return execute_file_action(nil,options.get_next_argument('config name'))
           when :preset # newer syntax
             return execute_file_action(nil,nil)
           when :open
@@ -733,11 +733,11 @@ END_OF_TEMPLATE
             OpenApplication.instance.uri("#{@info[:help]}#{section}")
             return Main.result_nothing
           when :genkey # generate new rsa key
-            private_key_path=self.options.get_next_argument('private key file path')
+            private_key_path=options.get_next_argument('private key file path')
             generate_rsa_private_key(private_key_path,DEFAULT_PRIVKEY_LENGTH)
             return Main.result_status('Generated key: '+private_key_path)
           when :echo # display the content of a value given on command line
-            result={type: :other_struct, data: self.options.get_next_argument('value')}
+            result={type: :other_struct, data: options.get_next_argument('value')}
             # special for csv
             result[:type]=:object_list if result[:data].is_a?(Array) and result[:data].first.is_a?(Hash)
             return result
@@ -745,9 +745,9 @@ END_OF_TEMPLATE
             deleted_files=Oauth.flush_tokens
             return {type: :value_list, data: deleted_files, name: 'file'}
           when :plugin
-            case self.options.get_next_command([:list,:create])
+            case options.get_next_command([:list,:create])
             when :list
-              return {type: :object_list, data: @plugins.keys.map { |i| { 'plugin' => i.to_s, 'path' => @plugins[i][:source] } } , fields: ['plugin','path']}
+              return {type: :object_list, data: @plugins.keys.map { |i| { 'plugin' => i.to_s, 'path' => @plugins[i][:source] } }, fields: ['plugin','path']}
             when :create
               plugin_name=options.get_next_argument('name',:single,:mandatory).downcase
               plugin_folder=options.get_next_argument('folder',:single,:optional) || File.join(@main_folder,ASPERA_PLUGINS_FOLDERNAME)
@@ -770,13 +770,13 @@ _EOF_
             end
           when :wizard
             # interactive mode
-            self.options.ask_missing_mandatory=true
+            options.ask_missing_mandatory=true
             # register url option
             BasicAuthPlugin.new(@agents.merge(skip_option_header: true))
             # get from option, or ask
-            instance_url=self.options.get_option(:url,:mandatory)
+            instance_url=options.get_option(:url,:mandatory)
             # allow user to tell the preset name
-            preset_name=self.options.get_option(:id,:optional)
+            preset_name=options.get_option(:id,:optional)
             appli=identify_plugin_for_url(instance_url)
             plugin_name='<replace per app>'
             test_args='<replace per app>'
@@ -784,23 +784,23 @@ _EOF_
             when :aoc
               self.format.display_status('Detected: Aspera on Cloud'.bold)
               plugin_name=AOC_COMMAND_CURRENT
-              organization,instance_domain=AoC.parse_url(instance_url)
+              organization=AoC.parse_url(instance_url).first
               # if not defined by user, generate name
               preset_name=[appli[:product],organization].join('_') if preset_name.nil?
               self.format.display_status("Preparing preset: #{preset_name}")
               # init defaults if necessary
               @config_presets[CONF_PRESET_DEFAULT]||={}
-              option_override=self.options.get_option(:override,:mandatory)
-              option_default=self.options.get_option(:default,:mandatory)
+              option_override=options.get_option(:override,:mandatory)
+              option_default=options.get_option(:default,:mandatory)
               Log.log.error("override=#{option_override} -> #{option_override.class}")
               raise CliError,"A default configuration already exists for plugin '#{plugin_name}' (use --override=yes or --default=no)" if !option_override and option_default and @config_presets[CONF_PRESET_DEFAULT].has_key?(plugin_name)
               raise CliError,"Preset already exists: #{preset_name}  (use --override=yes or --id=<name>)" if !option_override and @config_presets.has_key?(preset_name)
               # lets see if path to priv key is provided
-              private_key_path=self.options.get_option(:pkeypath,:optional)
+              private_key_path=options.get_option(:pkeypath,:optional)
               # give a chance to provide
               if private_key_path.nil?
                 self.format.display_status('Please provide path to your private RSA key, or empty to generate one:')
-                private_key_path=self.options.get_option(:pkeypath,:mandatory).to_s
+                private_key_path=options.get_option(:pkeypath,:mandatory).to_s
               end
               # else generate path
               if private_key_path.empty?
@@ -818,27 +818,27 @@ _EOF_
               # declare command line options for AoC
               require 'aspera/cli/plugins/aoc'
               # make username mandatory for jwt, this triggers interactive input
-              self.options.get_option(:username,:mandatory)
+              options.get_option(:username,:mandatory)
               # instanciate AoC plugin, so that command line options are known
               files_plugin=self.class.plugin_class(plugin_name).new(@agents.merge({skip_basic_auth_options: true, private_key_path: private_key_path}))
               aoc_api=files_plugin.get_api
               auto_set_pub_key=false
               auto_set_jwt=false
               use_browser_authentication=false
-              if self.options.get_option(:use_generic_client)
+              if options.get_option(:use_generic_client)
                 self.format.display_status('Using global client_id.')
                 self.format.display_status('Please Login to your Aspera on Cloud instance.'.red)
                 self.format.display_status('Navigate to your "Account Settings"'.red)
                 self.format.display_status('Check or update the value of "Public Key" to be:'.red.blink)
                 self.format.display_status("#{pub_key_pem}")
-                if ! self.options.get_option(:test_mode)
+                if !options.get_option(:test_mode)
                   self.format.display_status('Once updated or validated, press enter.')
                   OpenApplication.instance.uri(instance_url)
                   STDIN.gets
                 end
               else
                 self.format.display_status('Using organization specific client_id.')
-                if self.options.get_option(:client_id,:optional).nil? or self.options.get_option(:client_secret,:optional).nil?
+                if options.get_option(:client_id,:optional).nil? or options.get_option(:client_secret,:optional).nil?
                   self.format.display_status('Please login to your Aspera on Cloud instance.'.red)
                   self.format.display_status('Go to: Apps->Admin->Organization->Integrations')
                   self.format.display_status('Create or check if there is an existing integration named:')
@@ -849,8 +849,8 @@ _EOF_
                   self.format.display_status('Please enter:'.red)
                 end
                 OpenApplication.instance.uri("#{instance_url}/#{AOC_PATH_API_CLIENTS}")
-                self.options.get_option(:client_id,:mandatory)
-                self.options.get_option(:client_secret,:mandatory)
+                options.get_option(:client_id,:mandatory)
+                options.get_option(:client_secret,:mandatory)
                 use_browser_authentication=true
               end
               if use_browser_authentication
@@ -869,18 +869,18 @@ _EOF_
               end
               if auto_set_jwt
                 self.format.display_status('Enabling JWT for client')
-                aoc_api.update("clients/#{self.options.get_option(:client_id)}",{'jwt_grant_enabled'=>true,'explicit_authorization_required'=>false})
+                aoc_api.update("clients/#{options.get_option(:client_id)}",{'jwt_grant_enabled'=>true,'explicit_authorization_required'=>false})
               end
               self.format.display_status("Creating new config preset: #{preset_name}")
               @config_presets[preset_name]={
-                :url.to_s           =>self.options.get_option(:url),
+                :url.to_s           =>options.get_option(:url),
                 :username.to_s      =>myself['email'],
                 :auth.to_s          =>:jwt.to_s,
-                :private_key.to_s   =>'@file:'+private_key_path,
+                :private_key.to_s   =>'@file:'+private_key_path
               }
               # set only if non nil
               [:client_id,:client_secret].each do |s|
-                o=self.options.get_option(s)
+                o=options.get_option(s)
                 @config_presets[preset_name][s.to_s] = o unless o.nil?
               end
               test_args="#{plugin_name} user profile show"
@@ -902,22 +902,22 @@ _EOF_
             # need url / username
             add_plugin_default_preset(AOC_COMMAND_V3.to_sym)
             # instanciate AoC plugin
-            files_plugin=self.class.plugin_class(AOC_COMMAND_CURRENT).new(@agents) # TODO: is this line needed ?
-            url=self.options.get_option(:url,:mandatory)
+            self.class.plugin_class(AOC_COMMAND_CURRENT).new(@agents) # TODO: is this line needed ? get options ?
+            url=options.get_option(:url,:mandatory)
             cli_conf_file=Fasp::Installation.instance.cli_conf_file
             data=JSON.parse(File.read(cli_conf_file))
             organization,instance_domain=AoC.parse_url(url)
             key_basename='org_'+organization+'.pem'
             key_file=File.join(File.dirname(File.dirname(cli_conf_file)),'etc',key_basename)
-            File.write(key_file,self.options.get_option(:private_key,:mandatory))
+            File.write(key_file,options.get_option(:private_key,:mandatory))
             new_conf={
               'organization'       => organization,
               'hostname'           => [organization,instance_domain].join('.'),
               'privateKeyFilename' => key_basename,
-              'username'           => self.options.get_option(:username,:mandatory)
+              'username'           => options.get_option(:username,:mandatory)
             }
-            new_conf['clientId']=self.options.get_option(:client_id,:optional)
-            new_conf['clientSecret']=self.options.get_option(:client_secret,:optional)
+            new_conf['clientId']=options.get_option(:client_id,:optional)
+            new_conf['clientSecret']=options.get_option(:client_secret,:optional)
             if new_conf['clientId'].nil?
               new_conf['clientId'],new_conf['clientSecret']=AoC.get_client_info()
             end
@@ -934,17 +934,17 @@ _EOF_
           when :detect
             # need url / username
             BasicAuthPlugin.new(@agents)
-            return Main.result_status("Found: #{identify_plugin_for_url(self.options.get_option(:url,:mandatory))}")
+            return Main.result_status("Found: #{identify_plugin_for_url(options.get_option(:url,:mandatory))}")
           when :coffee
             OpenApplication.instance.uri('https://enjoyjava.com/wp-content/uploads/2018/01/How-to-make-strong-coffee.jpg')
             return Main.result_nothing
           when :ascp
             execute_action_ascp
           when :gem
-            case self.options.get_next_command([:path,:version,:name])
-            when :path; return Main.result_status(self.class.gem_root)
-            when :version; return Main.result_status(Aspera::Cli::VERSION)
-            when :name; return Main.result_status(@info[:gem])
+            case options.get_next_command([:path,:version,:name])
+            when :path then return Main.result_status(self.class.gem_root)
+            when :version then return Main.result_status(Aspera::Cli::VERSION)
+            when :name then return Main.result_status(@info[:gem])
             end
           when :folder
             return Main.result_status(@main_folder)
@@ -956,8 +956,8 @@ _EOF_
           when :smtp_settings
             return {type: :single_object, data: email_settings}
           when :proxy_check
-            self.options.get_option(:fpac,:mandatory)
-            server_url=self.options.get_next_argument('server url')
+            options.get_option(:fpac,:mandatory)
+            server_url=options.get_next_argument('server url')
             return Main.result_status(@pac_exec.get_proxy(server_url))
           when :check_update
             return {type: :single_object, data: check_gem_version}
@@ -979,10 +979,10 @@ _EOF_
             save_presets_to_config_file
             return Main.result_status('Done')
           when :vault
-            command=self.options.get_next_command([:init,:list,:get,:set,:delete])
+            command=options.get_next_command([:init,:list,:get,:set,:delete])
             case command
             when :init
-              type=self.options.get_option(:value,:optional)
+              type=options.get_option(:value,:optional)
               case type
               when 'config',NilClass
                 raise 'default secrets already exists' if @config_presets.has_key?(CONF_PRESET_SECRETS)
@@ -996,26 +996,26 @@ _EOF_
             when :set
               # register url option
               BasicAuthPlugin.new(@agents.merge(skip_option_header: true))
-              username=self.options.get_option(:username,:mandatory)
-              url=self.options.get_option(:url,:mandatory)
-              description=self.options.get_option(:value,:optional)
-              secret=self.options.get_next_argument('secret')
+              username=options.get_option(:username,:mandatory)
+              url=options.get_option(:url,:mandatory)
+              description=options.get_option(:value,:optional)
+              secret=options.get_next_argument('secret')
               vault.set(username: username, url: url, description: description, secret: secret)
               save_presets_to_config_file if vault.is_a?(Keychain::EncryptedHash)
               return Main.result_status('Done')
             when :get
               # register url option
               BasicAuthPlugin.new(@agents.merge(skip_option_header: true))
-              username=self.options.get_option(:username,:mandatory)
-              url=self.options.get_option(:url,:optional)
+              username=options.get_option(:username,:mandatory)
+              url=options.get_option(:url,:optional)
               result=vault.get(username: username, url: url)
               return {type: :single_object, data: result}
             when :delete
               # register url option
               BasicAuthPlugin.new(@agents.merge(skip_option_header: true))
-              username=self.options.get_option(:username,:mandatory)
-              url=self.options.get_option(:url,:optional)
-              result=vault.delete(username: username, url: url)
+              username=options.get_option(:username,:mandatory)
+              url=options.get_option(:url,:optional)
+              vault.delete(username: username, url: url)
               return Main.result_status('Done')
             end
           else raise 'INTERNAL ERROR: wrong case'
@@ -1024,7 +1024,7 @@ _EOF_
 
         # @return email server setting with defaults if not defined
         def email_settings
-          smtp=self.options.get_option(:smtp,:mandatory)
+          smtp=options.get_option(:smtp,:mandatory)
           # change string keys into symbol keys
           smtp=smtp.keys.inject({}){|m,v|m[v.to_sym]=smtp[v];m}
           # defaults
@@ -1103,7 +1103,7 @@ _EOF_
 
         def vault
           if @vault.nil?
-            vault_info=self.options.get_option(:secrets,:optional)
+            vault_info=options.get_option(:secrets,:optional)
             case vault_info
             when Hash
               @vault=Keychain::EncryptedHash.new(vault_info)
@@ -1133,7 +1133,7 @@ _EOF_
           if secret.nil?
             secret=vault.get(options) rescue nil
             # mandatory by default
-            raise "please provide secret for #{options[:username]}" if secret.nil? and ( options[:mandatory].nil? or options[:mandatory] )
+            raise "please provide secret for #{options[:username]}" if secret.nil? and (options[:mandatory].nil? or options[:mandatory])
           end
           return secret
         end

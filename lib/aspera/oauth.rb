@@ -33,7 +33,7 @@ module Aspera
     class << self
       # OAuth methods supported
       def auth_types
-        [ :body_userpass, :header_userpass, :web, :jwt, :url_token, :ibm_apikey ]
+        [:body_userpass, :header_userpass, :web, :jwt, :url_token, :ibm_apikey]
       end
 
       def persist_mgr=(manager)
@@ -71,7 +71,7 @@ module Aspera
     end # self
 
     # seems to be quite standard token encoding (RFC?)
-    self.register_decoder lambda { |token| parts=token.split('.'); raise 'not aoc token' unless parts.length.eql?(3); JSON.parse(Base64.decode64(parts[1]))}
+    register_decoder lambda { |token| parts=token.split('.'); raise 'not aoc token' unless parts.length.eql?(3); JSON.parse(Base64.decode64(parts[1]))}
 
     # for supported parameters, look in the code for @params
     # parameters are provided all with oauth_ prefix :
@@ -192,7 +192,7 @@ module Aspera
           resp=create_token(www_body_params: p_client_id_and_scope.merge({
             grant_type:    'refresh_token',
             refresh_token: refresh_token}))
-          if resp[:http].code.start_with?('2') then
+          if resp[:http].code.start_with?('2')
             # save only if success
             json_data=resp[:http].body
             token_data=JSON.parse(json_data)
@@ -204,7 +204,7 @@ module Aspera
       end
 
       # no cache
-      if token_data.nil? then
+      if token_data.nil?
         resp=nil
         case @params[:grant]
         when :web
@@ -315,7 +315,7 @@ module Aspera
           # used in Faspex apiv5
           resp=create_token({
             auth:        {type: :none},
-            json_params: @params[:userpass_body],
+            json_params: @params[:userpass_body]
           })
         else
           if @handlers.has_key?(@params[:grant])
@@ -338,6 +338,5 @@ module Aspera
       raise 'error' unless id.is_a?(Symbol) and method.is_a?(Proc)
       @handlers[id]=method
     end
-
   end # OAuth
 end # Aspera

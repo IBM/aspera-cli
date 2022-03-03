@@ -95,7 +95,7 @@ module Aspera
         loop do
           uri=URI.parse(public_link_url)
           if PUBLIC_LINK_PATHS.include?(uri.path)
-            url_param_token_pair=URI::decode_www_form(uri.query).select{|e|e.first.eql?('token')}.first
+            url_param_token_pair=URI.decode_www_form(uri.query).select{|e|e.first.eql?('token')}.first
             if url_param_token_pair.nil?
               raise ArgumentError,"link option must be URL with 'token' parameter"
             end
@@ -134,8 +134,8 @@ module Aspera
       def analytics_ts(app,direction,ws_id,ws_name)
         # translate transfer to operation
         operation=case direction
-        when Fasp::TransferSpec::DIRECTION_SEND;    'upload'
-        when Fasp::TransferSpec::DIRECTION_RECEIVE; 'download'
+        when Fasp::TransferSpec::DIRECTION_SEND then    'upload'
+        when Fasp::TransferSpec::DIRECTION_RECEIVE then 'download'
         else raise "ERROR: unexpected value: #{direction}"
         end
 
@@ -146,7 +146,7 @@ module Aspera
           'files'           => {
           'files_transfer_action' => "#{operation}_#{app.gsub(/s$/,'')}",
           'workspace_name'        => ws_name,  # activity tracking
-          'workspace_id'          => ws_id,
+          'workspace_id'          => ws_id
           }
           }
           }
@@ -237,7 +237,7 @@ module Aspera
     def user_info
       if @user_info.nil?
         # get our user's default information
-        @user_info=self.read('self')[:data] rescue nil
+        @user_info=read('self')[:data] rescue nil
         @user_info=USER_INFO_FIELDS_MIN.inject({}){|m,f|m[f]=nil;m} if @user_info.nil?
         USER_INFO_FIELDS_MIN.each{|f|@user_info[f]='unknown' if @user_info[f].nil?}
       end
@@ -257,7 +257,7 @@ module Aspera
     # - source and token regeneration method
     def tr_spec(app,direction,node_file,ts_add)
       # prepare the rest end point is used to generate the bearer token
-      token_generation_lambda=lambda {|do_refresh|self.oauth_token(scope: self.class.node_scope(node_file[:node_info]['access_key'],SCOPE_NODE_USER), refresh: do_refresh)}
+      token_generation_lambda=lambda {|do_refresh|oauth_token(scope: self.class.node_scope(node_file[:node_info]['access_key'],SCOPE_NODE_USER), refresh: do_refresh)}
       # prepare transfer specification
       # note xfer_id and xfer_retry are set by the transfer agent itself
       transfer_spec={
@@ -267,7 +267,7 @@ module Aspera
         'aspera'        => {
         'app'             => app,
         'files'           => {
-        'node_id'           => node_file[:node_info]['id'],
+        'node_id'           => node_file[:node_info]['id']
         }, # files
         'node'            => {
         'access_key'        => node_file[:node_info]['access_key'],
@@ -289,7 +289,7 @@ module Aspera
         end
       else
         # retrieve values from API
-        std_t_spec=get_node_api(node_file[:node_info],scope: SCOPE_NODE_USER).create('files/download_setup',{transfer_requests:  [ { transfer_request:  {paths:  [ {'source'=>'/'} ] } } ] } )[:data]['transfer_specs'].first['transfer_spec']
+        std_t_spec=get_node_api(node_file[:node_info],scope: SCOPE_NODE_USER).create('files/download_setup',{transfer_requests:  [{ transfer_request:  {paths:  [{'source'=>'/'}] } }] })[:data]['transfer_specs'].first['transfer_spec']
         ['remote_host','remote_user','ssh_port','fasp_port'].each {|i| transfer_spec[i]=std_t_spec[i]}
       end
       # add caller provided transfer spec
@@ -310,7 +310,7 @@ module Aspera
       raise 'INTERNAL ERROR: method parameters: options must be Hash' unless options.is_a?(Hash)
       options.keys.each {|k| raise "INTERNAL ERROR: not valid option: #{k}" unless [:scope,:use_secret].include?(k)}
       # get optional secret unless :use_secret is false (default is true)
-      ak_secret=@key_chain.get_secret(url: node_info['url'], username: node_info['access_key'], mandatory: false) if !@key_chain.nil? and ( !options.has_key?(:use_secret) or options[:use_secret] )
+      ak_secret=@key_chain.get_secret(url: node_info['url'], username: node_info['access_key'], mandatory: false) if !@key_chain.nil? and (!options.has_key?(:use_secret) or options[:use_secret])
       if ak_secret.nil? and !options.has_key?(:scope)
         raise "There must be at least one of: 'secret' or 'scope' for access key #{node_info['access_key']}"
       end
@@ -325,7 +325,7 @@ module Aspera
       else
         # X-Aspera-AccessKey required for bearer token only
         node_rest_params[:headers]= {'X-Aspera-AccessKey'=>node_info['access_key']}
-        node_rest_params[:auth]=self.params[:auth].clone
+        node_rest_params[:auth]=params[:auth].clone
         node_rest_params[:auth][:scope]=self.class.node_scope(node_info['access_key'],options[:scope])
       end
       return Node.new(node_rest_params)
@@ -351,7 +351,7 @@ module Aspera
         @find_state[:found].push(entry.merge({'path'=>path})) if @find_state[:test_block].call(entry)
         # process link
         if entry[:type].eql?('link')
-          sub_node_info=self.read("nodes/#{entry['target_node_id']}")[:data]
+          sub_node_info=read("nodes/#{entry['target_node_id']}")[:data]
           sub_opt={method: process_find_files, top_file_id: entry['target_id'], top_file_path: path}
           get_node_api(sub_node_info,scope: SCOPE_NODE_USER).crawl(self,sub_opt)
         end
@@ -362,7 +362,7 @@ module Aspera
       return true
     end
 
-    def find_files( top_node_file, test_block )
+    def find_files(top_node_file, test_block)
       top_node_info,top_file_id=check_get_node_file(top_node_file)
       Log.log.debug("find_files: node_info=#{top_node_info}, fileid=#{top_file_id}")
       @find_state={found: [], test_block: test_block}
@@ -383,7 +383,7 @@ module Aspera
         raise "#{entry['name']} is a file, expecting folder to find: #{@resolve_state[:path]}" unless @resolve_state[:path].empty?
         @resolve_state[:result][:file_id]=entry['id']
       when 'link'
-        @resolve_state[:result][:node_info]=self.read("nodes/#{entry['target_node_id']}")[:data]
+        @resolve_state[:result][:node_info]=read("nodes/#{entry['target_node_id']}")[:data]
         if @resolve_state[:path].empty?
           @resolve_state[:result][:file_id]=entry['target_id']
         else
@@ -406,7 +406,7 @@ module Aspera
     # @param top_node_file       Array    [root node,file id]
     # @param element_path_string String   path of element
     # supports links to secondary nodes
-    def resolve_node_file( top_node_file, element_path_string )
+    def resolve_node_file(top_node_file, element_path_string)
       top_node_info,top_file_id=check_get_node_file(top_node_file)
       path_elements=element_path_string.split(PATH_SEPARATOR).select{|i| !i.empty?}
       result={node_info: top_node_info, file_id: nil}
@@ -429,19 +429,18 @@ module Aspera
       # returns entities whose name contains value (case insensitive)
       matching_items=read(entity_type,options.merge({'q'=>entity_name}))[:data]
       case matching_items.length
-      when 1; return matching_items.first
-      when 0; raise RuntimeError,'not found'
+      when 1 then return matching_items.first
+      when 0 then raise RuntimeError,'not found'
       else
         # multiple case insensitive partial matches, try case insensitive full match
         # (anyway AoC does not allow creation of 2 entities with same case insensitive name)
         icase_matches=matching_items.select{|i|i['name'].casecmp?(entity_name)}
         case icase_matches.length
-        when 1; return icase_matches.first
-        when 0; raise "#{entity_type}: multiple case insensitive partial match for: \"#{entity_name}\": #{matching_items.map{|i|i['name']}} but no case insensitive full match. Please be more specific or give exact name."
+        when 1 then return icase_matches.first
+        when 0 then raise "#{entity_type}: multiple case insensitive partial match for: \"#{entity_name}\": #{matching_items.map{|i|i['name']}} but no case insensitive full match. Please be more specific or give exact name."
         else    raise "Two entities cannot have the same case insensitive name: #{icase_matches.map{|i|i['name']}}"
         end
       end
     end
-
   end # AoC
 end # Aspera

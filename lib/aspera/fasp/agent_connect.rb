@@ -50,10 +50,10 @@ module Aspera
         connect_transfer_args={
           'aspera_connect_settings'=>@connect_settings.merge({
           'request_id'               =>@request_id,
-          'allow_dialogs'            =>true,
+          'allow_dialogs'            =>true
           }),
           'transfer_specs'         =>[{
-          'transfer_spec'            =>transfer_spec,
+          'transfer_spec'            =>transfer_spec
           }]}
         # asynchronous anyway
         res=@connect_api.create('transfers/start',connect_transfer_args)[:data]

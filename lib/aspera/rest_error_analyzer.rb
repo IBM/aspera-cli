@@ -12,7 +12,7 @@ module Aspera
       # list of handlers
       @error_handlers=[]
       @log_file=nil
-      self.add_handler('Type Generic') do |type,call_context|
+      add_handler('Type Generic') do |type,call_context|
         if !call_context[:response].code.start_with?('2')
           # add generic information
           RestErrorAnalyzer.add_error(call_context,type,"#{call_context[:request]['host']} #{call_context[:response].code} #{call_context[:response].message}")
@@ -23,7 +23,7 @@ module Aspera
     # Use this method to analyze a EST result and raise an exception
     # Analyzes REST call response and raises a RestCallError exception
     # if HTTP result code is not 2XX
-    def raiseOnError(req,res)
+    def raise_on_error(req,res)
       call_context={
         messages: [],
         request:  req,
@@ -50,7 +50,7 @@ module Aspera
     # @param name : name of error handler (for logs)
     # @param block : processing of response: takes two parameters: name, call_context
     # name is the one provided here
-    # call_context is built in method raiseOnError
+    # call_context is built in method raise_on_error
     def add_handler(name,&block)
       @error_handlers.unshift({name: name, block: block})
     end

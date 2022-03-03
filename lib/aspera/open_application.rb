@@ -10,7 +10,7 @@ module Aspera
   class OpenApplication
     include Singleton
     # User Interfaces
-    def self.user_interfaces; [ :text, :graphical ]; end
+    def self.user_interfaces; [:text, :graphical]; end
 
     def self.default_gui_mode
       return :graphical if [Aspera::Environment::OS_WINDOWS,Aspera::Environment::OS_X].include?(Aspera::Environment.os)

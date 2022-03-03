@@ -11,7 +11,7 @@ module Aspera
       end
 
       def info
-        r=Fasp::ERROR_INFO[@err_code] || {r: false , c: 'UNKNOWN', m: 'unknown', a: 'unknown'}
+        r=Fasp::ERROR_INFO[@err_code] || {r: false, c: 'UNKNOWN', m: 'unknown', a: 'unknown'}
         return r.merge({i: @err_code})
       end
 
