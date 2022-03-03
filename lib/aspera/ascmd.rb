@@ -81,7 +81,6 @@ module Aspera
     private_constant :TYPES_DESCR,:ENUM_START
 
     class << self
-      private
       # get description of structure's field, @param struct_name, @param typed_buffer provides field name
       def field_description(struct_name,typed_buffer)
         result=TYPES_DESCR[struct_name][:fields][typed_buffer[:btype]-ENUM_START]
