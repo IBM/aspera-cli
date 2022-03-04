@@ -13,6 +13,7 @@ module Aspera
   class FaspexGW
     class FxGwServlet < WEBrick::HTTPServlet::AbstractServlet
       def initialize(_server,a_aoc_api_user,a_workspace_id)
+        super
         @aoc_api_user=a_aoc_api_user
         @aoc_workspace_id=a_workspace_id
       end

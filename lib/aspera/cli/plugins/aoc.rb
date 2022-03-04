@@ -66,7 +66,7 @@ module Aspera
           return if env[:man_only]
         end
 
-        def get_api
+        def aoc_api
           if @api_aoc.nil?
             @api_aoc=AoC.new(aoc_params(AoC::API_V1))
             # add keychain for access key secrets
@@ -78,8 +78,8 @@ module Aspera
         # starts transfer using transfer agent
         def transfer_start(app,direction,node_file,ts_add)
           ts_add.deep_merge!(AoC.analytics_ts(app,direction,@workspace_id,@workspace_name))
-          ts_add.deep_merge!(@api_aoc.console_ts(app))
-          return transfer.start(*@api_aoc.tr_spec(app,direction,node_file,ts_add))
+          ts_add.deep_merge!(aoc_api.console_ts(app))
+          return transfer.start(*aoc_api.tr_spec(app,direction,node_file,ts_add))
         end
 
         NODE4_COMMANDS=[:browse, :find, :mkdir, :rename, :delete, :upload, :download, :transfer, :http_node_download, :v3, :file, :bearer_token_node, :node_info].freeze
@@ -88,13 +88,13 @@ module Aspera
           case command_repo
           when :bearer_token_node
             thepath=options.get_next_argument('path')
-            node_file = @api_aoc.resolve_node_file(top_node_file,thepath)
-            node_api=@api_aoc.get_node_api(node_file[:node_info],scope: AoC::SCOPE_NODE_USER, use_secret: false)
+            node_file = aoc_api.resolve_node_file(top_node_file,thepath)
+            node_api=aoc_api.get_node_api(node_file[:node_info],scope: AoC::SCOPE_NODE_USER, use_secret: false)
             return Main.result_status(node_api.oauth_token)
           when :node_info
             thepath=options.get_next_argument('path')
-            node_file = @api_aoc.resolve_node_file(top_node_file,thepath)
-            node_api=@api_aoc.get_node_api(node_file[:node_info],scope: AoC::SCOPE_NODE_USER, use_secret: false)
+            node_file = aoc_api.resolve_node_file(top_node_file,thepath)
+            node_api=aoc_api.get_node_api(node_file[:node_info],scope: AoC::SCOPE_NODE_USER, use_secret: false)
             return {type: :single_object,data: {
               url: node_file[:node_info]['url'],
               username: node_file[:node_info]['access_key'],
@@ -103,8 +103,8 @@ module Aspera
               }}
           when :browse
             thepath=options.get_next_argument('path')
-            node_file = @api_aoc.resolve_node_file(top_node_file,thepath)
-            node_api=@api_aoc.get_node_api(node_file[:node_info],scope: AoC::SCOPE_NODE_USER)
+            node_file = aoc_api.resolve_node_file(top_node_file,thepath)
+            node_api=aoc_api.get_node_api(node_file[:node_info],scope: AoC::SCOPE_NODE_USER)
             file_info = node_api.read("files/#{node_file[:file_id]}")[:data]
             if file_info['type'].eql?('folder')
               result=node_api.read("files/#{node_file[:file_id]}/files",options.get_option(:value,:optional))
@@ -116,30 +116,30 @@ module Aspera
             return {type: :object_list,data: items,fields: ['name','type','recursive_size','size','modified_time','access_level']}
           when :find
             thepath=options.get_next_argument('path')
-            node_file=@api_aoc.resolve_node_file(top_node_file,thepath)
+            node_file=aoc_api.resolve_node_file(top_node_file,thepath)
             test_block=Aspera::Node.file_matcher(options.get_option(:value,:optional))
-            return {type: :object_list,data: @api_aoc.find_files(node_file,test_block),fields: ['path']}
+            return {type: :object_list,data: aoc_api.find_files(node_file,test_block),fields: ['path']}
           when :mkdir
             thepath=options.get_next_argument('path')
             containing_folder_path = thepath.split(AoC::PATH_SEPARATOR)
             new_folder=containing_folder_path.pop
-            node_file = @api_aoc.resolve_node_file(top_node_file,containing_folder_path.join(AoC::PATH_SEPARATOR))
-            node_api=@api_aoc.get_node_api(node_file[:node_info],scope: AoC::SCOPE_NODE_USER)
+            node_file = aoc_api.resolve_node_file(top_node_file,containing_folder_path.join(AoC::PATH_SEPARATOR))
+            node_api=aoc_api.get_node_api(node_file[:node_info],scope: AoC::SCOPE_NODE_USER)
             result=node_api.create("files/#{node_file[:file_id]}/files",{name: new_folder,type: :folder})[:data]
             return Main.result_status("created: #{result['name']} (id=#{result['id']})")
           when :rename
             thepath=options.get_next_argument('source path')
             newname=options.get_next_argument('new name')
-            node_file = @api_aoc.resolve_node_file(top_node_file,thepath)
-            node_api=@api_aoc.get_node_api(node_file[:node_info],scope: AoC::SCOPE_NODE_USER)
+            node_file = aoc_api.resolve_node_file(top_node_file,thepath)
+            node_api=aoc_api.get_node_api(node_file[:node_info],scope: AoC::SCOPE_NODE_USER)
             result=node_api.update("files/#{node_file[:file_id]}",{name: newname})[:data]
             return Main.result_status("renamed #{thepath} to #{newname}")
           when :delete
             thepath=options.get_next_argument('path')
             return do_bulk_operation(thepath,'deleted','path') do |l_path|
               raise "expecting String (path), got #{l_path.class.name} (#{l_path})" unless l_path.is_a?(String)
-              node_file = @api_aoc.resolve_node_file(top_node_file,l_path)
-              node_api=@api_aoc.get_node_api(node_file[:node_info],scope: AoC::SCOPE_NODE_USER)
+              node_file = aoc_api.resolve_node_file(top_node_file,l_path)
+              node_api=aoc_api.get_node_api(node_file[:node_info],scope: AoC::SCOPE_NODE_USER)
               result=node_api.delete("files/#{node_file[:file_id]}")[:data]
               {'path'=>l_path}
             end
@@ -159,16 +159,16 @@ module Aspera
               client_folder=transfer.destination_folder(client_tr_oper)
               server_folder=options.get_option(:from_folder,:mandatory)
             end
-            client_node_file = @api_aoc.resolve_node_file(client_home_node_file,client_folder)
-            server_node_file = @api_aoc.resolve_node_file(server_home_node_file,server_folder)
+            client_node_file = aoc_api.resolve_node_file(client_home_node_file,client_folder)
+            server_node_file = aoc_api.resolve_node_file(server_home_node_file,server_folder)
             # force node as transfer agent
-            client_node_api=@api_aoc.get_node_api(client_node_file[:node_info],scope: AoC::SCOPE_NODE_USER, use_secret: false)
-            @agents[:transfer].set_agent_instance(Fasp::AgentNode.new({
+            client_node_api=aoc_api.get_node_api(client_node_file[:node_info],scope: AoC::SCOPE_NODE_USER, use_secret: false)
+            @agents[:transfer].agent_instance=Fasp::AgentNode.new({
               url: client_node_api.params[:base_url],
               username: client_node_file[:node_info]['access_key'],
               password: client_node_api.oauth_token,
               root_id:  client_node_file[:file_id]
-            }))
+            })
             # additional node to node TS info
             add_ts={
               'remote_access_key'   => server_node_file[:node_info]['access_key'],
@@ -177,7 +177,7 @@ module Aspera
             }
             return Main.result_transfer(transfer_start(AoC::FILES_APP,client_tr_oper,server_node_file,add_ts))
           when :upload
-            node_file = @api_aoc.resolve_node_file(top_node_file,transfer.destination_folder(Fasp::TransferSpec::DIRECTION_SEND))
+            node_file = aoc_api.resolve_node_file(top_node_file,transfer.destination_folder(Fasp::TransferSpec::DIRECTION_SEND))
             add_ts={'tags'=>{'aspera'=>{'files'=>{'parentCwd'=>"#{node_file[:node_info]['id']}:#{node_file[:file_id]}"}}}}
             return Main.result_transfer(transfer_start(AoC::FILES_APP,Fasp::TransferSpec::DIRECTION_SEND,node_file,add_ts))
           when :download
@@ -190,7 +190,7 @@ module Aspera
               source_paths=[{'source'=>source_folder.pop}]
               source_folder=source_folder.join(AoC::PATH_SEPARATOR)
             end
-            node_file = @api_aoc.resolve_node_file(top_node_file,source_folder)
+            node_file = aoc_api.resolve_node_file(top_node_file,source_folder)
             # override paths with just filename
             add_ts={'tags'=>{'aspera'=>{'files'=>{'parentCwd'=>"#{node_file[:node_info]['id']}:#{node_file[:file_id]}"}}}}
             add_ts.merge!({'paths'=>source_paths})
@@ -205,26 +205,27 @@ module Aspera
             end
             raise CliBadArgument,'one file at a time only in HTTP mode' if source_paths.length > 1
             file_name = source_paths.first['source']
-            node_file = @api_aoc.resolve_node_file(top_node_file,File.join(source_folder,file_name))
-            node_api=@api_aoc.get_node_api(node_file[:node_info],scope: AoC::SCOPE_NODE_USER)
-            node_api.call({operation: 'GET',subpath: "files/#{node_file[:file_id]}/content",save_to_file: File.join(transfer.destination_folder(Fasp::TransferSpec::DIRECTION_RECEIVE),file_name)})
+            node_file = aoc_api.resolve_node_file(top_node_file,File.join(source_folder,file_name))
+            node_api=aoc_api.get_node_api(node_file[:node_info],scope: AoC::SCOPE_NODE_USER)
+            node_api.call({operation: 'GET',subpath: "files/#{node_file[:file_id]}/content",
+save_to_file: File.join(transfer.destination_folder(Fasp::TransferSpec::DIRECTION_RECEIVE),file_name)})
             return Main.result_status("downloaded: #{file_name}")
           when :v3
             # Note: other common actions are unauthorized with user scope
             command_legacy=options.get_next_command(Node::SIMPLE_ACTIONS)
             # TODO: shall we support all methods here ? what if there is a link ?
-            node_api=@api_aoc.get_node_api(top_node_file[:node_info],scope: AoC::SCOPE_NODE_USER)
+            node_api=aoc_api.get_node_api(top_node_file[:node_info],scope: AoC::SCOPE_NODE_USER)
             return Node.new(@agents.merge(skip_basic_auth_options: true, node_api: node_api)).execute_action(command_legacy)
           when :file
             command_node_file=options.get_next_command([:show,:permission,:modify])
             file_path=options.get_option(:path,:optional)
             node_file =
             if !file_path.nil?
-              @api_aoc.resolve_node_file(top_node_file,file_path) # TODO: allow follow link ?
+              aoc_api.resolve_node_file(top_node_file,file_path) # TODO: allow follow link ?
             else
               {node_info: top_node_file[:node_info],file_id: instance_identifier()}
             end
-            node_api=@api_aoc.get_node_api(node_file[:node_info],scope: AoC::SCOPE_NODE_USER)
+            node_api=aoc_api.get_node_api(node_file[:node_info],scope: AoC::SCOPE_NODE_USER)
             case command_node_file
             when :show
               items=node_api.read("files/#{node_file[:file_id]}")[:data]
@@ -260,10 +261,10 @@ module Aspera
                   'tags'         =>{'aspera'=>{'files'=>{'workspace'=>{
                   'id'               =>@workspace_id,
                   'workspace_name'   =>@workspace_name,
-                  'user_name'        =>@api_aoc.user_info['name'],
-                  'shared_by_user_id'=>@api_aoc.user_info['id'],
-                  'shared_by_name'   =>@api_aoc.user_info['name'],
-                  'shared_by_email'  =>@api_aoc.user_info['email'],
+                  'user_name'        =>aoc_api.user_info['name'],
+                  'shared_by_user_id'=>aoc_api.user_info['id'],
+                  'shared_by_name'   =>aoc_api.user_info['name'],
+                  'shared_by_email'  =>aoc_api.user_info['email'],
                   'shared_with_name' =>access_id,
                   'access_key'       =>node_file[:node_info]['access_key'],
                   'node'             =>node_file[:node_info]['name']}}}}}
@@ -293,14 +294,14 @@ module Aspera
         # @persist_ids
         # returns nil
         def set_workspace_info
-          if @api_aoc.params[:auth].has_key?(:url_token)
+          if aoc_api.params[:auth].has_key?(:url_token)
             # TODO: can there be several in list ?
-            @url_token_data=@api_aoc.read('url_tokens')[:data].first
+            @url_token_data=aoc_api.read('url_tokens')[:data].first
             @default_workspace_id=@url_token_data['data']['workspace_id']
             @persist_ids=[] # TODO : @url_token_data['id'] ?
           else
-            @default_workspace_id=@api_aoc.user_info['default_workspace_id']
-            @persist_ids=[@api_aoc.user_info['id']]
+            @default_workspace_id=aoc_api.user_info['default_workspace_id']
+            @persist_ids=[aoc_api.user_info['id']]
           end
 
           ws_name=options.get_option(:workspace,:optional)
@@ -313,7 +314,7 @@ module Aspera
             @workspace_id=@default_workspace_id
           else
             # lookup another workspace
-            wss=@api_aoc.read('workspaces',{'q'=>ws_name})[:data]
+            wss=aoc_api.read('workspaces',{'q'=>ws_name})[:data]
             wss=wss.select { |i| i['name'].eql?(ws_name) }
             case wss.length
             when 0
@@ -324,7 +325,7 @@ module Aspera
               raise 'unexpected case'
             end
           end
-          @workspace_data=@api_aoc.read("workspaces/#{@workspace_id}")[:data]
+          @workspace_data=aoc_api.read("workspaces/#{@workspace_id}")[:data]
           Log.log.debug("workspace_id=#{@workspace_id},@workspace_data=#{@workspace_data}".red)
 
           @workspace_name||=@workspace_data['name']
@@ -346,10 +347,10 @@ module Aspera
           home_file_id||=@workspace_data['home_file_id']
           raise 'node_id must be defined' if home_node_id.to_s.empty?
           @home_node_file={
-            node_info: @api_aoc.read("nodes/#{home_node_id}")[:data],
+            node_info: aoc_api.read("nodes/#{home_node_id}")[:data],
             file_id: home_file_id
           }
-          @api_aoc.check_get_node_file(@home_node_file)
+          aoc_api.check_get_node_file(@home_node_file)
 
           return nil
         end
@@ -379,11 +380,11 @@ module Aspera
           l_res_name=options.get_option(:name)
           raise 'Provide either option id or name, not both' unless l_res_id.nil? or l_res_name.nil?
           # try to find item by name (single partial match or exact match)
-          l_res_id=@api_aoc.lookup_entity_by_name(resource_class_path,l_res_name)['id'] unless l_res_name.nil?
+          l_res_id=aoc_api.lookup_entity_by_name(resource_class_path,l_res_name)['id'] unless l_res_name.nil?
           # if no name or id option, taken on command line (after command)
           if l_res_id.nil?
             l_res_id=options.get_next_argument('identifier')
-            l_res_id=@api_aoc.lookup_entity_by_name(resource_class_path,options.get_next_argument('identifier'))['id'] if l_res_id.eql?('name')
+            l_res_id=aoc_api.lookup_entity_by_name(resource_class_path,options.get_next_argument('identifier'))['id'] if l_res_id.eql?('name')
           end
           return l_res_id
         end
@@ -407,19 +408,16 @@ module Aspera
               # email: user, else dropbox
               entity_type=short_recipient_info.include?('@') ? 'contacts' : 'dropboxes'
               begin
-                full_recipient_info=@api_aoc.lookup_entity_by_name(entity_type,short_recipient_info,{'current_workspace_id'=>@workspace_id})
+                full_recipient_info=aoc_api.lookup_entity_by_name(entity_type,short_recipient_info,{'current_workspace_id'=>@workspace_id})
               rescue RuntimeError => e
                 raise e unless e.message.eql?('not found')
-                if entity_type.eql?('contacts')
-                  full_recipient_info=@api_aoc.create('contacts',{'current_workspace_id'=>@workspace_id,'email'=>short_recipient_info}.merge(new_user_option))[:data]
-                else
-                  raise "no such shared inbox in workspace #{@workspace_name}"
-                end
+                raise "no such shared inbox in workspace #{@workspace_name}" if entity_type.eql?('contacts')
+                full_recipient_info=aoc_api.create('contacts',{'current_workspace_id'=>@workspace_id,'email'=>short_recipient_info}.merge(new_user_option))[:data]
               end
-              if entity_type.eql?('dropboxes')
-                short_recipient_info={'id'=>full_recipient_info['id'],'type'=>'dropbox'}
-              else
-                short_recipient_info={'id'=>full_recipient_info['source_id'],'type'=>full_recipient_info['source_type']}
+              short_recipient_info=if entity_type.eql?('dropboxes')
+                                     {'id'=>full_recipient_info['id'],'type'=>'dropbox'}
+                                   else
+                                     {'id'=>full_recipient_info['source_id'],'type'=>full_recipient_info['source_type']}
               end
             else # unexpected extended value, must be String or Hash
               raise "#{recipient_list_field} item must be a String (email, shared inbox) or Hash (id,type)"
@@ -465,12 +463,12 @@ module Aspera
         end
 
         def assert_public_link_types(expected)
-          if !expected.include?(@url_token_data['purpose'])
-            raise CliBadArgument,"public link type is #{@url_token_data['purpose']} but action requires one of #{expected.join(',')}"
-          end
+          raise CliBadArgument,
+"public link type is #{@url_token_data['purpose']} but action requires one of #{expected.join(',')}" unless expected.include?(@url_token_data['purpose'])
         end
 
-        # Call @api_aoc.read with same parameters, but use paging if necessary to get all results
+        # Call aoc_api.read with same parameters.
+        # Use paging if necessary to get all results
         def read_with_paging(resource_class_path,base_query)
           raise 'Query must be Hash' unless base_query.is_a?(Hash)
           # set default large page if user does not specify own parameters. AoC Caps to 1000 anyway
@@ -487,7 +485,7 @@ module Aspera
           loop do
             query=base_query.clone
             query['page']=current_page
-            result=@api_aoc.read(resource_class_path,query)
+            result=aoc_api.read(resource_class_path,query)
             total_count=result[:http]['X-Total-Count']
             page_count+=1
             current_page+=1
@@ -502,19 +500,19 @@ module Aspera
         end
 
         def execute_admin_action
-          @api_aoc.oauth.params[:scope]=AoC::SCOPE_FILES_ADMIN
+          aoc_api.oauth.params[:scope]=AoC::SCOPE_FILES_ADMIN
           command_admin=options.get_next_command([:ats, :resource, :usage_reports, :analytics, :subscription, :auth_providers])
           case command_admin
           when :auth_providers
             command_auth_prov=options.get_next_command([:list, :update])
             case command_auth_prov
             when :list
-              providers=@api_aoc.read('admin/auth_providers')[:data]
+              providers=aoc_api.read('admin/auth_providers')[:data]
               return {type: :object_list,data: providers}
             when :update
             end
           when :subscription
-            org=@api_aoc.read('organization')[:data]
+            org=aoc_api.read('organization')[:data]
             bss_api=AoC.new(aoc_params('bss/platform'))
             graphql_query="
     query ($organization_id: ID!) {
@@ -567,30 +565,30 @@ module Aspera
             result=bss_api.create('graphql',{'variables'=>{'organization_id'=>org['id']},'query'=>graphql_query})[:data]['data']
             return {type: :single_object,data: result['aoc']['bssSubscription']}
           when :ats
-            ats_api = Rest.new(@api_aoc.params.deep_merge({
-              base_url: @api_aoc.params[:base_url]+'/admin/ats/pub/v1',
+            ats_api = Rest.new(aoc_api.params.deep_merge({
+              base_url: aoc_api.params[:base_url]+'/admin/ats/pub/v1',
               auth: {scope: AoC::SCOPE_FILES_ADMIN_USER}
             }))
             return Ats.new(@agents).execute_action_gen(ats_api)
           when :analytics
-            analytics_api = Rest.new(@api_aoc.params.deep_merge({
-              base_url: @api_aoc.params[:base_url].gsub('/api/v1','')+'/analytics/v2',
+            analytics_api = Rest.new(aoc_api.params.deep_merge({
+              base_url: aoc_api.params[:base_url].gsub('/api/v1','')+'/analytics/v2',
               auth: {scope: AoC::SCOPE_FILES_ADMIN_USER}
             }))
             command_analytics=options.get_next_command([:application_events, :transfers])
             case command_analytics
             when :application_events
               event_type=command_analytics.to_s
-              events=analytics_api.read("organizations/#{@api_aoc.user_info['organization_id']}/#{event_type}")[:data][event_type]
+              events=analytics_api.read("organizations/#{aoc_api.user_info['organization_id']}/#{event_type}")[:data][event_type]
               return {type: :object_list,data: events}
             when :transfers
               event_type=command_analytics.to_s
               filter_resource=options.get_option(:name,:optional) || 'organizations'
               filter_id=options.get_option(:id,:optional) ||
               case filter_resource
-              when 'organizations' then @api_aoc.user_info['organization_id']
-              when 'users' then @api_aoc.user_info['id']
-              when 'nodes' then @api_aoc.user_info['id']
+              when 'organizations' then aoc_api.user_info['organization_id']
+              when 'users' then aoc_api.user_info['id']
+              when 'nodes' then aoc_api.user_info['id']
               else raise 'organizations or users for option --name'
               end
               filter=options.get_option(:query,:optional) || {}
@@ -620,7 +618,9 @@ module Aspera
               return {type: :object_list,data: events}
             end
           when :resource
-            resource_type=options.get_next_argument('resource',[:self,:organization,:user,:group,:client,:contact,:dropbox,:node,:operation,:package,:saml_configuration, :workspace, :dropbox_membership,:short_link,:workspace_membership,:application,:client_registration_token,:client_access_key,:kms_profile])
+            resource_type=options.get_next_argument('resource',
+[:self,:organization,:user,:group,:client,:contact,:dropbox,:node,:operation,:package,:saml_configuration, :workspace, :dropbox_membership,:short_link,:workspace_membership,
+ :application,:client_registration_token,:client_access_key,:kms_profile])
             # get path on API, resource type is singular, but api is plural
             resource_class_path=
             case resource_type
@@ -654,15 +654,16 @@ module Aspera
               # TODO: report inconsistency: creation url is !=, and does not return id.
               resource_class_path='admin/client_registration/token' if resource_class_path.eql?('admin/client_registration_tokens')
               list_or_one=options.get_next_argument('creation data (Hash)')
-              return do_bulk_operation(list_or_one,'created',id_result)do|params|
+              return do_bulk_operation(list_or_one,'created',id_result) do |params|
                 raise 'expecting Hash' unless params.is_a?(Hash)
-                @api_aoc.create(resource_class_path,params)[:data]
+                aoc_api.create(resource_class_path,params)[:data]
               end
             when :list
               default_fields=['id']
               default_query={}
               case resource_type
-              when :application then default_query={organization_apps: true};default_fields.push('app_type','app_name','available','direct_authorizations_allowed','workspace_authorizations_allowed')
+              when :application then default_query={organization_apps: true};
+                                     default_fields.push('app_type','app_name','available','direct_authorizations_allowed','workspace_authorizations_allowed')
               when :client,:client_access_key,:dropbox,:group,:package,:saml_configuration,:workspace then default_fields.push('name')
               when :client_registration_token then default_fields.push('value','data.client_subject_scopes','created_at')
               when :contact then default_fields=['email','name','source_id','source_type']
@@ -677,27 +678,27 @@ module Aspera
               self.format.display_status(count_msg)
               return {type: :object_list,data: item_list,fields: default_fields}
             when :show
-              object=@api_aoc.read(resource_instance_path)[:data]
+              object=aoc_api.read(resource_instance_path)[:data]
               fields=object.keys.reject{|k|k.eql?('certificate')}
               return { type: :single_object, data: object, fields: fields }
             when :modify
               changes=options.get_next_argument('modified parameters (hash)')
-              @api_aoc.update(resource_instance_path,changes)
+              aoc_api.update(resource_instance_path,changes)
               return Main.result_status('modified')
             when :delete
-              return do_bulk_operation(res_id,'deleted')do|one_id|
-                @api_aoc.delete("#{resource_class_path}/#{one_id}")
+              return do_bulk_operation(res_id,'deleted') do |one_id|
+                aoc_api.delete("#{resource_class_path}/#{one_id}")
                 {'id'=>one_id}
               end
             when :set_pub_key
               # special : reads private and generate public
               the_private_key=options.get_next_argument('private_key')
               the_public_key=OpenSSL::PKey::RSA.new(the_private_key).public_key.to_s
-              @api_aoc.update(resource_instance_path,{jwt_grant_enabled: true, public_key: the_public_key})
+              aoc_api.update(resource_instance_path,{jwt_grant_enabled: true, public_key: the_public_key})
               return Main.result_success
             when :v3,:v4
-              res_data=@api_aoc.read(resource_instance_path)[:data]
-              api_node=@api_aoc.get_node_api(res_data)
+              res_data=aoc_api.read(resource_instance_path)[:data]
+              api_node=aoc_api.get_node_api(res_data)
               return Node.new(@agents.merge(skip_basic_auth_options: true, node_api: api_node)).execute_action if command.eql?(:v3)
               ak_data=api_node.call({operation: 'GET',subpath: "access_keys/#{res_data['access_key']}",headers: {'Accept'=>'application/json'}})[:data]
               command_repo=options.get_next_command(NODE4_COMMANDS)
@@ -709,7 +710,7 @@ module Aspera
               when :node then{'include'=>['[]','access_level','permission_count'],'created_by_id'=>ID_AK_ADMIN}
               else raise 'error'
               end
-              res_data=@api_aoc.read("#{resource_instance_path}/permissions",read_params)[:data]
+              res_data=aoc_api.read("#{resource_instance_path}/permissions",read_params)[:data]
               fields=
               case resource_type
               when :node then['id','file_id','file.path','access_type']
@@ -721,10 +722,10 @@ module Aspera
               # TODO: finish implementation
               folder_path=options.get_next_argument('folder path in node')
               user_create_data=options.get_next_argument('creation data (Hash)')
-              res_data=@api_aoc.read(resource_instance_path)[:data]
-              node_file = @api_aoc.resolve_node_file({node_info: res_data, file_id: ak_data['root_file_id']},folder_path)
+              res_data=aoc_api.read(resource_instance_path)[:data]
+              node_file = aoc_api.resolve_node_file({node_info: res_data, file_id: ak_data['root_file_id']},folder_path)
 
-              #node_api=@api_aoc.get_node_api(node_file[:node_info],scope: AoC::SCOPE_NODE_USER)
+              #node_api=aoc_api.get_node_api(node_file[:node_info],scope: AoC::SCOPE_NODE_USER)
               #file_info = node_api.read("files/#{node_file[:file_id]}")[:data]
 
               access_id="#{ID_AK_ADMIN}_WS_#{@workspace_id}"
@@ -737,10 +738,10 @@ module Aspera
                 'id'               =>@workspace_id,
                 'workspace_name'   =>@workspace_name,
                 'share_as'         =>File.basename(folder_path),
-                'user_name'        =>@api_aoc.user_info['name'],
-                'shared_by_user_id'=>@api_aoc.user_info['id'],
-                'shared_by_name'   =>@api_aoc.user_info['name'],
-                'shared_by_email'  =>@api_aoc.user_info['email'],
+                'user_name'        =>aoc_api.user_info['name'],
+                'shared_by_user_id'=>aoc_api.user_info['id'],
+                'shared_by_name'   =>aoc_api.user_info['name'],
+                'shared_by_email'  =>aoc_api.user_info['email'],
                 'shared_with_name' =>access_id,
                 'access_key'       =>node_file[:node_info]['access_key'],
                 'node'             =>node_file[:node_info]['name']}
@@ -751,7 +752,7 @@ module Aspera
             else raise 'unknown command'
             end
           when :usage_reports
-            return {type: :object_list,data: @api_aoc.read('usage_reports',{workspace_id: @workspace_id})[:data]}
+            return {type: :object_list,data: aoc_api.read('usage_reports',{workspace_id: @workspace_id})[:data]}
           end
         end
 
@@ -760,8 +761,6 @@ module Aspera
 
         def execute_action
           command=options.get_next_command(ACTIONS)
-          # all commands require to login, but those 2
-          get_api unless [:reminder,:servers].include?(command)
           case command
           when :reminder
             # send an email reminder with list of orgs
@@ -771,19 +770,19 @@ module Aspera
           when :servers
             return {type: :object_list,data: Rest.new(base_url: "#{AoC.api_base_url}/#{AoC::API_V1}").read('servers')[:data]}
           when :bearer_token
-            return {type: :text,data: @api_aoc.oauth_token}
+            return {type: :text,data: aoc_api.oauth_token}
           when :organization
-            return { type: :single_object, data: @api_aoc.read('organization')[:data] }
+            return { type: :single_object, data: aoc_api.read('organization')[:data] }
           when :tier_restrictions
-            return { type: :single_object, data: @api_aoc.read('tier_restrictions')[:data] }
+            return { type: :single_object, data: aoc_api.read('tier_restrictions')[:data] }
           when :user
             case options.get_next_command([:workspaces,:profile])
             # when :settings
-            # return {type: :object_list,data: @api_aoc.read('client_settings/')[:data]}
+            # return {type: :object_list,data: aoc_api.read('client_settings/')[:data]}
             when :workspaces
               case options.get_next_command([:list,:current])
               when :list
-                return {type: :object_list,data: @api_aoc.read('workspaces')[:data],fields: ['id','name']}
+                return {type: :object_list,data: aoc_api.read('workspaces')[:data],fields: ['id','name']}
               when :current
                 set_workspace_info
                 return { type: :single_object, data: @workspace_data }
@@ -791,9 +790,9 @@ module Aspera
             when :profile
               case options.get_next_command([:show,:modify])
               when :show
-                return { type: :single_object, data: @api_aoc.user_info }
+                return { type: :single_object, data: aoc_api.user_info }
               when :modify
-                @api_aoc.update("users/#{@api_aoc.user_info['id']}",options.get_next_argument('modified parameters (hash)'))
+                aoc_api.update("users/#{aoc_api.user_info['id']}",options.get_next_argument('modified parameters (hash)'))
                 return Main.result_status('modified')
               end
             end
@@ -807,9 +806,9 @@ module Aspera
                 if query.nil?
                   query={'embed[]'=>'dropbox','workspace_id'=>@workspace_id,'aggregate_permissions_by_dropbox'=>true,'sort'=>'dropbox_name'}
                 end
-                return {type: :object_list,data: @api_aoc.read('dropbox_memberships',query)[:data],fields: ['dropbox_id','dropbox.name']}
+                return {type: :object_list,data: aoc_api.read('dropbox_memberships',query)[:data],fields: ['dropbox_id','dropbox.name']}
               when :show
-                return {type: :single_object,data: @api_aoc.read(get_resource_path_from_args('dropboxes'),query)[:data]}
+                return {type: :single_object,data: aoc_api.read(get_resource_path_from_args('dropboxes'),query)[:data]}
               end
             when :send
               package_data=options.get_option(:value,:mandatory)
@@ -833,15 +832,15 @@ module Aspera
               normalize_metadata(package_data)
 
               #  create a new package container
-              package_info=@api_aoc.create('packages',package_data)[:data]
+              package_info=aoc_api.create('packages',package_data)[:data]
 
               #  get node information for the node on which package must be created
-              node_info=@api_aoc.read("nodes/#{package_info['node_id']}")[:data]
+              node_info=aoc_api.read("nodes/#{package_info['node_id']}")[:data]
 
               # tell AoC what to expect in package: 1 transfer (can also be done after transfer)
               # TODO: if multisession was used we should probably tell
               # also, currently no "multi-source" , i.e. only from client-side files, unless "node" agent is used
-              @api_aoc.update("packages/#{package_info['id']}",{'sent'=>true,'transfers_expected'=>1})[:data]
+              aoc_api.update("packages/#{package_info['id']}",{'sent'=>true,'transfers_expected'=>1})[:data]
 
               # get destination: package folder
               node_file = {node_info: node_info, file_id: package_info['contents_file_id']}
@@ -866,7 +865,7 @@ module Aspera
               end
               if ids_to_download.eql?(VAL_ALL)
                 # get list of packages in inbox
-                package_info=@api_aoc.read('packages',{'archived'=>false,'exclude_dropbox_packages'=>true,'has_content'=>true,'received'=>true,'workspace_id'=>@workspace_id})[:data]
+                package_info=aoc_api.read('packages',{'archived'=>false,'exclude_dropbox_packages'=>true,'has_content'=>true,'received'=>true,'workspace_id'=>@workspace_id})[:data]
                 # remove from list the ones already downloaded
                 ids_to_download=package_info.map{|e|e['id']}
                 # array here
@@ -877,8 +876,8 @@ module Aspera
               result_transfer=[]
               self.format.display_status("found #{ids_to_download.length} package(s).")
               ids_to_download.each do |package_id|
-                package_info=@api_aoc.read("packages/#{package_id}")[:data]
-                node_info=@api_aoc.read("nodes/#{package_info['node_id']}")[:data]
+                package_info=aoc_api.read("packages/#{package_id}")[:data]
+                node_info=aoc_api.read("nodes/#{package_info['node_id']}")[:data]
                 self.format.display_status("downloading package: #{package_info['name']}")
                 add_ts={'paths'=>[{'source'=>'.'}]}
                 node_file = {node_info: node_info, file_id: package_info['contents_file_id']}
@@ -893,25 +892,25 @@ module Aspera
               return Main.result_transfer_multiple(result_transfer)
             when :show
               package_id=options.get_next_argument('package ID')
-              package_info=@api_aoc.read("packages/#{package_id}")[:data]
+              package_info=aoc_api.read("packages/#{package_id}")[:data]
               return { type: :single_object, data: package_info }
             when :list
               query=option_url_query({'archived'=>false,'exclude_dropbox_packages'=>true,'has_content'=>true,'received'=>true})
               if query.has_key?('dropbox_name')
                 # convenience: specify name instead of id
                 raise 'not both dropbox_name and dropbox_id' if query.has_key?('dropbox_id')
-                query['dropbox_id']=@api_aoc.lookup_entity_by_name('dropboxes',query['dropbox_name'])['id']
+                query['dropbox_id']=aoc_api.lookup_entity_by_name('dropboxes',query['dropbox_name'])['id']
                 query.delete('dropbox_name')
               end
               raise 'option must be Hash' unless query.is_a?(Hash)
               query['workspace_id']||=@workspace_id
-              packages=@api_aoc.read('packages',query)[:data]
+              packages=aoc_api.read('packages',query)[:data]
               return {type: :object_list,data: packages,fields: ['id','name','bytes_transferred']}
             when :delete
               list_or_one=instance_identifier()
-              return do_bulk_operation(list_or_one,'deleted')do|id|
+              return do_bulk_operation(list_or_one,'deleted') do |id|
                 raise 'expecting String identifier' unless id.is_a?(String) or id.is_a?(Integer)
-                @api_aoc.delete("packages/#{id}")[:data]
+                aoc_api.delete("packages/#{id}")[:data]
               end
             end
           when :files
@@ -935,7 +934,7 @@ module Aspera
               create_params=nil
               node_file=nil
               if !folder_dest.nil?
-                node_file = @api_aoc.resolve_node_file(@home_node_file,folder_dest)
+                node_file = aoc_api.resolve_node_file(@home_node_file,folder_dest)
                 create_params={
                   file_id: node_file[:file_id],
                   node_id: node_file[:node_info]['id'],
@@ -964,7 +963,7 @@ module Aspera
               end
               result=entity_action(@api_aoc,'short_links',nil,:id,'self')
               if result[:data].is_a?(Hash) and result[:data].has_key?('created_at') and result[:data]['resource_type'].eql?('UrlToken')
-                node_api=@api_aoc.get_node_api(node_file[:node_info],scope: AoC::SCOPE_NODE_USER)
+                node_api=aoc_api.get_node_api(node_file[:node_info],scope: AoC::SCOPE_NODE_USER)
                 # TODO: access level as arg
                 access_levels=Aspera::Node::ACCESS_LEVELS #['delete','list','mkdir','preview','read','rename','write']
                 perm_data={
@@ -977,8 +976,8 @@ module Aspera
                   'workspace_id'    =>@workspace_id,
                   'workspace_name'  =>@workspace_name,
                   'folder_name'     =>'my folder',
-                  'created_by_name' =>@api_aoc.user_info['name'],
-                  'created_by_email'=>@api_aoc.user_info['email'],
+                  'created_by_name' =>aoc_api.user_info['name'],
+                  'created_by_email'=>aoc_api.user_info['email'],
                   'access_key'      =>node_file[:node_info]['access_key'],
                   'node'            =>node_file[:node_info]['host']
                   }
@@ -992,7 +991,7 @@ module Aspera
           when :automation
             Log.log.warn('BETA: work under progress')
             # automation api is not in the same place
-            automation_rest_params=@api_aoc.params.clone
+            automation_rest_params=aoc_api.params.clone
             automation_rest_params[:base_url].gsub!('/api/','/automation/')
             automation_api=Rest.new(automation_rest_params)
             command_automation=options.get_next_command([:workflows, :instances])

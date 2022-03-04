@@ -1,4 +1,3 @@
-#!/bin/echo this is a ruby class:
 require 'aspera/fasp/agent_base'
 require 'aspera/fasp/transfer_spec'
 require 'aspera/log'
@@ -62,11 +61,7 @@ module Aspera
             received+=1
           else
             message.chomp!
-            if message[0].eql?('"') and message[-1].eql?('"')
-              error=JSON.parse(Base64.strict_decode64(message.chomp[1..-2]))['message']
-            else
-              error="expecting quotes in [#{message}]"
-            end
+            error=message.start_with?('"') && message.end_with?('"') ? JSON.parse(Base64.strict_decode64(message.chomp[1..-2]))['message'] : "expecting quotes in [#{message}]"
           end
         end
         ws.on :error do |e|
@@ -102,7 +97,7 @@ module Aspera
           file_size=item['file_size']
           file_name=File.basename(item[item['destination'].nil? ? 'source' : 'destination'])
           # compute total number of slices
-          numslices=1+(file_size-1)/@upload_chunksize
+          numslices=1+((file_size-1)/@upload_chunksize)
           File.open(source_paths[file_index]) do |file|
             # current slice index
             slicenum=0
@@ -153,12 +148,12 @@ module Aspera
         end
         creation=@gw_api.create('download',{'transfer_spec'=>transfer_spec})[:data]
         transfer_uuid=creation['url'].split('/').last
-        if transfer_spec['zip_required'] or transfer_spec['paths'].length > 1
-          # it is a zip file if zip is required or there is more than 1 file
-          file_dest=transfer_spec['download_name']+'.zip'
-        else
-          # it is a plain file if we don't require zip and there is only one file
-          file_dest=File.basename(transfer_spec['paths'].first['source'])
+        file_dest=if transfer_spec['zip_required'] || transfer_spec['paths'].length > 1
+                    # it is a zip file if zip is required or there is more than 1 file
+                    transfer_spec['download_name']+'.zip'
+                  else
+                    # it is a plain file if we don't require zip and there is only one file
+                    File.basename(transfer_spec['paths'].first['source'])
         end
         file_dest=File.join(transfer_spec['destination_root'],file_dest)
         @gw_api.call({operation: 'GET',subpath: "download/#{transfer_uuid}",save_to_file: file_dest})
@@ -168,7 +163,7 @@ module Aspera
       # note that it is asynchronous
       # HTTP download only supports file list
       def start_transfer(transfer_spec,options={})
-        raise 'GW URL must be set' unless !@gw_api.nil?
+        raise 'GW URL must be set' if @gw_api.nil?
         raise 'option: must be hash (or nil)' unless options.is_a?(Hash)
         raise 'paths: must be Array' unless transfer_spec['paths'].is_a?(Array)
         raise 'only token based transfer is supported in GW' unless transfer_spec['token'].is_a?(String)
@@ -191,11 +186,9 @@ module Aspera
       end
 
       # terminates monitor thread
-      def shutdown
-      end
+      def shutdown; end
 
-      def url=(api_url)
-      end
+      def url=(api_url); end
 
       private
 
@@ -206,7 +199,7 @@ module Aspera
         super()
         @gw_api=Rest.new({base_url: params[:url]})
         api_info = @gw_api.read('info')[:data]
-        Log.log.info("#{api_info}")
+        Log.log.info(api_info.to_s)
         @upload_chunksize=128000 # TODO: configurable ?
       end
     end # AgentHttpgw

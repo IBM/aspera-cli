@@ -71,7 +71,7 @@ module Aspera
             Log.log.warn("preview size exceeds maximum #{result_size} > #{@options.max_size}")
           end
         rescue => e
-          Log.log.error("#{e.message}")
+          Log.log.error(e.message.to_s)
           Log.log.debug(e.backtrace.join("\n").red)
           FileUtils.cp(File.expand_path(@preview_format_symb.eql?(:mp4)?'video_error.png':'image_error.png',File.dirname(__FILE__)),@destination_file_path)
         ensure
@@ -93,7 +93,8 @@ module Aspera
       # @param total_count of parts
       # @param index of part (start at 1)
       def get_offset(duration, start_offset, total_count, index)
-        return start_offset + (index-1)*(1.0*duration - start_offset) / total_count
+        raise "duration must be Float" unless duration.is_a?(Float)
+        return start_offset + ((index-1)*(duration - start_offset) / total_count)
       end
 
       def convert_video_to_mp4_using_blend
@@ -203,31 +204,31 @@ module Aspera
       def convert_office_to_png
         tmp_pdf_file=File.join(this_tmpdir,File.basename(@source_file_path,File.extname(@source_file_path))+'.pdf')
         Utils.external_command(:unoconv,[
-          '-f','pdf',
-          '-o',tmp_pdf_file,
-          @source_file_path])
+                                 '-f','pdf',
+                                 '-o',tmp_pdf_file,
+                                 @source_file_path])
         convert_pdf_to_png(tmp_pdf_file)
       end
 
       def convert_pdf_to_png(source_file_path=nil)
         source_file_path||=@source_file_path
         Utils.external_command(:convert,[
-          '-size',"x#{@options.thumb_img_size}",
-          '-background','white',
-          '-flatten',
-          "#{source_file_path}[0]",
-          @destination_file_path])
+                                 '-size',"x#{@options.thumb_img_size}",
+                                 '-background','white',
+                                 '-flatten',
+                                 "#{source_file_path}[0]",
+                                 @destination_file_path])
       end
 
       def convert_image_to_png
         Utils.external_command(:convert,[
-          '-auto-orient',
-          '-thumbnail',"#{@options.thumb_img_size}x#{@options.thumb_img_size}>",
-          '-quality',95,
-          '+dither',
-          '-posterize',40,
-          "#{@source_file_path}[0]",
-          @destination_file_path])
+                                 '-auto-orient',
+                                 '-thumbnail',"#{@options.thumb_img_size}x#{@options.thumb_img_size}>",
+                                 '-quality',95,
+                                 '+dither',
+                                 '-posterize',40,
+                                 "#{@source_file_path}[0]",
+                                 @destination_file_path])
         Utils.external_command(:optipng,[@destination_file_path])
       end
 
@@ -236,17 +237,17 @@ module Aspera
         # get 100 first lines of text file
         first_lines=File.open(@source_file_path){|f|100.times.map{f.readline rescue ''}.join}
         Utils.external_command(:convert,[
-          '-size',"#{@options.thumb_img_size}x#{@options.thumb_img_size}",
-          'xc:white', # define canvas with background color (xc, or canvas) of preceding size
-          '-font',@options.thumb_text_font,
-          '-pointsize',12,
-          '-fill','black', # font color
-          '-annotate','+0+0',first_lines,
-          '-trim', # avoid large blank regions
-          '-bordercolor','white',
-          '-border',8,
-          '+repage',
-          @destination_file_path])
+                                 '-size',"#{@options.thumb_img_size}x#{@options.thumb_img_size}",
+                                 'xc:white', # define canvas with background color (xc, or canvas) of preceding size
+                                 '-font',@options.thumb_text_font,
+                                 '-pointsize',12,
+                                 '-fill','black', # font color
+                                 '-annotate','+0+0',first_lines,
+                                 '-trim', # avoid large blank regions
+                                 '-bordercolor','white',
+                                 '-border',8,
+                                 '+repage',
+                                 @destination_file_path])
       end
     end # Generator
   end # Preview

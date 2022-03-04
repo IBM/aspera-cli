@@ -195,11 +195,9 @@ module Aspera
           else
             result=self.class.get_from_list(@unprocessed_cmd_line_arguments.shift,descr,expected)
           end
-        else
+        elsif is_type.eql?(:mandatory)
           # no value provided
-          if is_type.eql?(:mandatory)
-            result=get_interactive(:argument,descr,expected)
-          end
+          result=get_interactive(:argument,descr,expected)
         end
         Log.log.debug("#{descr}=#{result}")
         return result
@@ -269,9 +267,8 @@ module Aspera
         Log.log.debug("interactive=#{@ask_missing_mandatory}")
         if result.nil?
           if !@ask_missing_mandatory
-            if is_type.eql?(:mandatory)
-              raise CliBadArgument,"Missing mandatory option: #{option_symbol}"
-            end
+
+            raise CliBadArgument,"Missing mandatory option: #{option_symbol}" if is_type.eql?(:mandatory)
           else # ask_missing_mandatory
             if @ask_missing_optional or is_type.eql?(:mandatory)
               expected=:single
@@ -346,7 +343,7 @@ module Aspera
         @parser.on(*on_args) do |v|
           case v
           when 'now' then set_option(option_symbol,Manager.time_to_string(Time.now),'cmdline')
-          when /^-([0-9]+)h/ then set_option(option_symbol,Manager.time_to_string(Time.now-Regexp.last_match(1).to_i*3600),'cmdline')
+          when /^-([0-9]+)h/ then set_option(option_symbol,Manager.time_to_string(Time.now-(3600*Regexp.last_match(1).to_i)),'cmdline')
           else set_option(option_symbol,v,'cmdline')
           end
         end

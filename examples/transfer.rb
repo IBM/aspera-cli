@@ -36,7 +36,7 @@ Aspera::Fasp::Installation.instance.ascp_path=ENV['ascp'] if ENV.has_key?('ascp'
 #Aspera::Fasp::Installation.instance.installed_products.each{|p|puts("found: #{p[:name]}")}
 #Aspera::Fasp::Installation.instance.use_ascp_from_product('Aspera Connect')
 # or install:
-# 
+#
 
 # get FASP Manager singleton based on above ascp location
 fasp_manager=Aspera::Fasp::AgentDirect.new
@@ -121,4 +121,3 @@ transfer_result=fasp_manager.wait_for_transfers_completion
 errors=transfer_result.reject{|i|i.eql?(:success)}
 # the transfer was not success, as there is at least one error
 raise "Error(s) occured: #{errors.join(',')}" if !errors.empty?
-

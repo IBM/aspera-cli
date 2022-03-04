@@ -18,11 +18,8 @@ module Aspera
         options=DEFAULT_OPTIONS.clone
         if !user_opts.nil?
           user_opts.each do |k,v|
-            if DEFAULT_OPTIONS.has_key?(k)
-              options[k]=v
-            else
-              raise "Unknown local agent parameter: #{k}, expect one of #{DEFAULT_OPTIONS.keys.map(&:to_s).join(',')}"
-            end
+            raise "Unknown local agent parameter: #{k}, expect one of #{DEFAULT_OPTIONS.keys.map(&:to_s).join(',')}" unless DEFAULT_OPTIONS.has_key?(k)
+            options[k]=v
           end
         end
         Log.log.debug("options= #{options}")

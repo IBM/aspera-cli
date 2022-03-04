@@ -41,9 +41,7 @@ module Aspera
           Log.log.error("ERROR in handler:\n#{e.message}\n#{e.backtrace}")
         end
       end
-      unless call_context[:messages].empty?
-        raise RestCallError.new(call_context[:request],call_context[:response],call_context[:messages].join("\n"))
-      end
+      raise RestCallError.new(call_context[:request],call_context[:response],call_context[:messages].join("\n")) unless call_context[:messages].empty?
     end
 
     # add a new error handler (done at application initialisation)
@@ -89,10 +87,9 @@ module Aspera
       call_context[:messages].push(msg)
       logfile=instance.log_file
       # log error for further analysis (file must exist to activate)
-      if !logfile.nil? and File.exist?(logfile)
-        File.open(logfile,'a+') do |f|
-          f.write("\n=#{type}=====\n#{call_context[:request].method} #{call_context[:request].path}\n#{call_context[:response].code}\n#{JSON.generate(call_context[:data])}\n#{call_context[:messages].join("\n")}")
-        end
+      return if logfile.nil? || !File.exist?(logfile)
+      File.open(logfile,'a+') do |f|
+        f.write("\n=#{type}=====\n#{call_context[:request].method} #{call_context[:request].path}\n#{call_context[:response].code}\n#{JSON.generate(call_context[:data])}\n#{call_context[:messages].join("\n")}")
       end
     end
   end

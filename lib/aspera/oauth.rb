@@ -18,7 +18,9 @@ module Aspera
     DEFAULT_PATH_TOKEN='token'
     # field with token in result
     DEFAULT_TOKEN_FIELD='access_token'
+
     private
+
     # remove 5 minutes to account for time offset (TODO: configurable?)
     JWT_NOTBEFORE_OFFSET_SEC=300
     # one hour validity (TODO: configurable?)
@@ -303,7 +305,7 @@ module Aspera
             type:     :basic,
             username: @params[:user_name],
             password: @params[:user_pass]}
-          )
+        )
         when :body_userpass
           # legacy, not used
           resp=create_token(www_body_params: p_client_id_and_scope.merge({
@@ -318,11 +320,8 @@ module Aspera
             json_params: @params[:userpass_body]
           })
         else
-          if @handlers.has_key?(@params[:grant])
-            resp=@handlers[@params[:grant]].call(@token_auth_api,@params)
-          else
-            raise "auth grant type unknown: #{@params[:grant]}"
-          end
+          raise "auth grant type unknown: #{@params[:grant]}" unless @handlers.has_key?(@params[:grant])
+          resp=@handlers[@params[:grant]].call(@token_auth_api,@params)
         end
         # TODO: test return code ?
         json_data=resp[:http].body

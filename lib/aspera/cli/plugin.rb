@@ -24,13 +24,12 @@ module Aspera
           options.parser.separator "SUBCOMMANDS: #{self.class.const_get(:ACTIONS).map(&:to_s).join(' ')}"
           options.parser.separator 'OPTIONS:'
         end
-        unless @@done
-          options.add_opt_simple(:value,'extended value for create, update, list filter')
-          options.add_opt_simple(:property,'name of property to set')
-          options.add_opt_simple(:id,"resource identifier (#{INSTANCE_OPS.join(',')})")
-          options.parse_options!
-          @@done=true
-        end
+        return if @@done
+        options.add_opt_simple(:value,'extended value for create, update, list filter')
+        options.add_opt_simple(:property,'name of property to set')
+        options.add_opt_simple(:id,"resource identifier (#{INSTANCE_OPS.join(',')})")
+        options.parse_options!
+        @@done=true
       end
 
       # must be called AFTER the instance action

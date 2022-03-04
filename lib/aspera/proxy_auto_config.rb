@@ -11,6 +11,7 @@ module Aspera
     private_constant :PAC_FUNCTIONS_FILE,:PAC_MAIN_FUNCTION
 
     private
+
     # variables starting with "context_" are replaced in the ERB template file
     # I did not find an easy way for the javascript to callback ruby
     # and anyway, it only needs to get DNS translation
@@ -41,6 +42,15 @@ END_OF_JAVASCRIPT
       @proxy_auto_config=proxy_auto_config
       # avoid multiple execution, this does not support load balancing
       @cache={}
+    end
+
+    def register_uri_generic
+      # save original method that finds proxy in URI::Generic, it uses env var http_proxy
+      URI::Generic.alias_method(:find_proxy_orig,:find_proxy)
+      executor=self
+      # overload the method with get_proxies
+      URI::Generic.define_method(:find_proxy) {|envars=ENV| executor.get_proxies(to_s).first || find_proxy_orig(envars)}
+      return self
     end
 
     # execute proxy auto config script for the given URL : https://en.wikipedia.org/wiki/Proxy_auto-config
@@ -103,4 +113,3 @@ END_OF_JAVASCRIPT
     end
   end
 end
-

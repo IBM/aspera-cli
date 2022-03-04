@@ -36,7 +36,7 @@ module Aspera
         result[:dir].each do |file|
           if file.has_key?(:smode)
             # Converts the first character of the file mode (see 'man ls') into a type.
-            file[:type]=case file[:smode][0,1];when'd' then:directory;when'-' then:file;when'l' then:link;else;:other;end
+            file[:type]=case file[:smode][0,1];when 'd' then:directory;when '-' then:file;when 'l' then:link;else;:other;end
           end
         end
       end
@@ -50,7 +50,7 @@ module Aspera
     # This exception is raised when +ascmd+ returns an error.
     class Error < StandardError
       attr_reader :errno, :errstr, :command, :args
-      def initialize(errno,errstr,cmd,args);@errno=errno;@errstr=errstr;@command=cmd;@args=args;end
+      def initialize(errno,errstr,cmd,args);super();@errno=errno;@errstr=errstr;@command=cmd;@args=args;end
 
       def message; "ascmd: (#{errno}) #{errstr}"; end
 
@@ -60,12 +60,21 @@ module Aspera
     # description of result structures (see ascmdtypes.h). Base types are big endian
     # key = name of type
     TYPES_DESCR={
-      result: {decode: :field_list,fields: [{name: :file,is_a: :stat},{name: :dir,is_a: :stat,special: :substruct},{name: :size,is_a: :size},{name: :error,is_a: :error},{name: :info,is_a: :info},{name: :success,is_a: nil,special: :return_true},{name: :exit,is_a: nil},{name: :df,is_a: :mnt,special: :restart_on_first},{name: :md5sum,is_a: :md5sum}]},
-      stat:   {decode: :field_list,fields: [{name: :name,is_a: :zstr},{name: :size,is_a: :int64},{name: :mode,is_a: :int32,check: nil},{name: :zmode,is_a: :zstr},{name: :uid,is_a: :int32,check: nil},{name: :zuid,is_a: :zstr},{name: :gid,is_a: :int32,check: nil},{name: :zgid,is_a: :zstr},{name: :ctime,is_a: :epoch},{name: :zctime,is_a: :zstr},{name: :mtime,is_a: :epoch},{name: :zmtime,is_a: :zstr},{name: :atime,is_a: :epoch},{name: :zatime,is_a: :zstr},{name: :symlink,is_a: :zstr},{name: :errno,is_a: :int32},{name: :errstr,is_a: :zstr}]},
-      info:   {decode: :field_list,fields: [{name: :platform,is_a: :zstr},{name: :version,is_a: :zstr},{name: :lang,is_a: :zstr},{name: :territory,is_a: :zstr},{name: :codeset,is_a: :zstr},{name: :lc_ctype,is_a: :zstr},{name: :lc_numeric,is_a: :zstr},{name: :lc_time,is_a: :zstr},{name: :lc_all,is_a: :zstr},{name: :dev,is_a: :zstr,special: :multiple},{name: :browse_caps,is_a: :zstr},{name: :protocol,is_a: :zstr}]},
-      size:   {decode: :field_list,fields: [{name: :size,is_a: :int64},{name: :fcount,is_a: :int32},{name: :dcount,is_a: :int32},{name: :failed_fcount,is_a: :int32},{name: :failed_dcount,is_a: :int32}]},
+      result: {decode: :field_list,
+fields: [{name: :file,is_a: :stat},{name: :dir,is_a: :stat,special: :substruct},{name: :size,is_a: :size},{name: :error,is_a: :error},{name: :info,is_a: :info},
+         {name: :success,is_a: nil,special: :return_true},{name: :exit,is_a: nil},{name: :df,is_a: :mnt,special: :restart_on_first},{name: :md5sum,is_a: :md5sum}]},
+      stat:   {decode: :field_list,
+fields: [{name: :name,is_a: :zstr},{name: :size,is_a: :int64},{name: :mode,is_a: :int32,check: nil},{name: :zmode,is_a: :zstr},{name: :uid,is_a: :int32,check: nil},
+         {name: :zuid,is_a: :zstr},{name: :gid,is_a: :int32,check: nil},{name: :zgid,is_a: :zstr},{name: :ctime,is_a: :epoch},{name: :zctime,is_a: :zstr},{name: :mtime,is_a: :epoch},{name: :zmtime,is_a: :zstr},{name: :atime,is_a: :epoch},{name: :zatime,is_a: :zstr},{name: :symlink,is_a: :zstr},{name: :errno,is_a: :int32},{name: :errstr,is_a: :zstr}]},
+      info:   {decode: :field_list,
+fields: [{name: :platform,is_a: :zstr},{name: :version,is_a: :zstr},{name: :lang,is_a: :zstr},{name: :territory,is_a: :zstr},{name: :codeset,is_a: :zstr},
+         {name: :lc_ctype,is_a: :zstr},{name: :lc_numeric,is_a: :zstr},{name: :lc_time,is_a: :zstr},{name: :lc_all,is_a: :zstr},{name: :dev,is_a: :zstr,special: :multiple},{name: :browse_caps,is_a: :zstr},{name: :protocol,is_a: :zstr}]},
+      size:   {decode: :field_list,
+fields: [{name: :size,is_a: :int64},{name: :fcount,is_a: :int32},{name: :dcount,is_a: :int32},{name: :failed_fcount,is_a: :int32},{name: :failed_dcount,is_a: :int32}]},
       error:  {decode: :field_list,fields: [{name: :errno,is_a: :int32},{name: :errstr,is_a: :zstr}]},
-      mnt:    {decode: :field_list,fields: [{name: :fs,is_a: :zstr},{name: :dir,is_a: :zstr},{name: :is_a,is_a: :zstr},{name: :total,is_a: :int64},{name: :used,is_a: :int64},{name: :free,is_a: :int64},{name: :fcount,is_a: :int64},{name: :errno,is_a: :int32},{name: :errstr,is_a: :zstr}]},
+      mnt:    {decode: :field_list,
+fields: [{name: :fs,is_a: :zstr},{name: :dir,is_a: :zstr},{name: :is_a,is_a: :zstr},{name: :total,is_a: :int64},{name: :used,is_a: :int64},{name: :free,is_a: :int64},
+         {name: :fcount,is_a: :int64},{name: :errno,is_a: :int32},{name: :errstr,is_a: :zstr}]},
       md5sum: {decode: :field_list,fields: [{name: :md5sum,is_a: :zstr}]},
       int8:   {decode: :base,unpack: 'C',size: 1},
       int32:  {decode: :base,unpack: 'L>',size: 4},
@@ -102,7 +111,7 @@ module Aspera
           num_bytes=type_name.eql?(:zstr) ? buffer.length : type_descr[:size]
           raise 'ERROR:not enough bytes' if buffer.length < num_bytes
           byte_array=buffer.shift(num_bytes);byte_array=[byte_array] unless byte_array.is_a?(Array)
-          result=byte_array.pack('C*').unpack(type_descr[:unpack]).first
+          result=byte_array.pack('C*').unpack1(type_descr[:unpack])
           Log.log.debug("#{'   .'*indent_level}-> base:#{byte_array} -> #{result}")
           result=Time.at(result) if type_name.eql?(:epoch)
         when :buffer_list

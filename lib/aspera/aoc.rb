@@ -92,13 +92,12 @@ module Aspera
         # set to token if available after redirection
         url_param_token_pair=nil
         redirect_count=0
-        loop do
+        while redirect_count <= MAX_REDIRECT
           uri=URI.parse(public_link_url)
+          # detect if it's an expected format
           if PUBLIC_LINK_PATHS.include?(uri.path)
             url_param_token_pair=URI.decode_www_form(uri.query).select{|e|e.first.eql?('token')}.first
-            if url_param_token_pair.nil?
-              raise ArgumentError,"link option must be URL with 'token' parameter"
-            end
+            raise ArgumentError,'link option must be URL with "token" parameter' if url_param_token_pair.nil?
             # ok we get it !
             rest_opts[:org_url]='https://'+uri.host
             rest_opts[:auth][:grant]=:url_token
@@ -106,19 +105,14 @@ module Aspera
             return
           end
           Log.log.debug("no expected format: #{public_link_url}")
-          raise "exceeded max redirection: #{MAX_REDIRECT}" if redirect_count > MAX_REDIRECT
           r = Net::HTTP.get_response(uri)
-          if r.code.start_with?('3')
-            public_link_url = r['location']
-            raise 'no location in redirection' if public_link_url.nil?
-            Log.log.debug("redirect to: #{public_link_url}")
-          else
-            # not a redirection
-            raise ArgumentError,'link option must be redirect or have token parameter'
-          end
+          # not a redirection
+          raise ArgumentError,'link option must be redirect or have token parameter' unless r.code.start_with?('3')
+          public_link_url = r['location']
+          raise 'no location in redirection' if public_link_url.nil?
+          Log.log.debug("redirect to: #{public_link_url}")
         end # loop
-
-        raise RuntimeError,'too many redirections'
+        raise "exceeded max redirection: #{MAX_REDIRECT}"
       end
 
       # additional transfer spec (tags) for package information
@@ -175,9 +169,9 @@ module Aspera
         # Pub Link only: get org url from pub link
         opt[:url] = aoc_rest_p[:org_url]
         aoc_rest_p.delete(:org_url)
-      else
+      elsif opt[:url].nil?
         # else url is mandatory
-        raise ArgumentError,'Missing mandatory option: url' if opt[:url].nil?
+        raise ArgumentError,'Missing mandatory option: url'
       end
 
       # get org name and domain from url
@@ -215,10 +209,10 @@ module Aspera
         end
         raise ArgumentError,'Missing mandatory option: private_key' if opt[:private_key].nil?
         raise ArgumentError,'Missing mandatory option: username' if opt[:username].nil?
-        private_key_PEM_string=opt[:private_key]
+        private_key_pem_string=opt[:private_key]
         aoc_auth_p[:jwt_audience]        = JWT_AUDIENCE
         aoc_auth_p[:jwt_subject]         = opt[:username]
-        aoc_auth_p[:jwt_private_key_obj] = OpenSSL::PKey::RSA.new(private_key_PEM_string)
+        aoc_auth_p[:jwt_private_key_obj] = OpenSSL::PKey::RSA.new(private_key_pem_string)
       when :url_token
         aoc_auth_p[:password]=opt[:password] unless opt[:password].nil?
         # nothing more
@@ -231,7 +225,6 @@ module Aspera
       raise 'keychain already set' unless @key_chain.nil?
       raise 'keychain must have get_secret' unless keychain.respond_to?(:get_secret)
       @key_chain=keychain
-      nil
     end
 
     # cached user information
@@ -290,7 +283,8 @@ module Aspera
         end
       else
         # retrieve values from API
-        std_t_spec=get_node_api(node_file[:node_info],scope: SCOPE_NODE_USER).create('files/download_setup',{transfer_requests: [{ transfer_request: {paths: [{'source'=>'/'}] } }] })[:data]['transfer_specs'].first['transfer_spec']
+        std_t_spec=get_node_api(node_file[:node_info],scope: SCOPE_NODE_USER).create('files/download_setup',
+{transfer_requests: [{ transfer_request: {paths: [{'source'=>'/'}] } }] })[:data]['transfer_specs'].first['transfer_spec']
         ['remote_host','remote_user','ssh_port','fasp_port'].each {|i| transfer_spec[i]=std_t_spec[i]}
       end
       # add caller provided transfer spec
@@ -311,7 +305,8 @@ module Aspera
       raise 'INTERNAL ERROR: method parameters: options must be Hash' unless options.is_a?(Hash)
       options.keys.each {|k| raise "INTERNAL ERROR: not valid option: #{k}" unless [:scope,:use_secret].include?(k)}
       # get optional secret unless :use_secret is false (default is true)
-      ak_secret=@key_chain.get_secret(url: node_info['url'], username: node_info['access_key'], mandatory: false) if !@key_chain.nil? and (!options.has_key?(:use_secret) or options[:use_secret])
+      ak_secret=@key_chain.get_secret(url: node_info['url'], username: node_info['access_key'],
+mandatory: false) if !@key_chain.nil? and (!options.has_key?(:use_secret) or options[:use_secret])
       if ak_secret.nil? and !options.has_key?(:scope)
         raise "There must be at least one of: 'secret' or 'scope' for access key #{node_info['access_key']}"
       end
@@ -438,7 +433,9 @@ module Aspera
         icase_matches=matching_items.select{|i|i['name'].casecmp?(entity_name)}
         case icase_matches.length
         when 1 then return icase_matches.first
-        when 0 then raise "#{entity_type}: multiple case insensitive partial match for: \"#{entity_name}\": #{matching_items.map{|i|i['name']}} but no case insensitive full match. Please be more specific or give exact name."
+        when 0 then raise "#{entity_type}: multiple case insensitive partial match for: \"#{entity_name}\": #{matching_items.map{|i|
+          i['name']
+        } } but no case insensitive full match. Please be more specific or give exact name."
         else raise "Two entities cannot have the same case insensitive name: #{icase_matches.map{|i|i['name']}}"
         end
       end

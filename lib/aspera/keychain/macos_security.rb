@@ -5,7 +5,7 @@ module Security
   class Keychain
     class << self
       def by_name(name)
-        keychains_from_output(`security list-keychains`).select{|kc|kc.filename.end_with?("/#{name}.keychain-db")}.first
+        keychains_from_output(%(security list-keychains)).select{|kc|kc.filename.end_with?("/#{name}.keychain-db")}.first
       end
     end
   end
@@ -39,11 +39,7 @@ module Aspera
     # keychain based on macOS keychain, using `security` cmmand line
     class MacosSecurity
       def initialize(name=nil)
-        if name.nil?
-          @keychain=Security::Keychain.default_keychain
-        else
-          @keychain=Security::Keychain.by_name(name)
-        end
+        @keychain=name.nil? ? Security::Keychain.default_keychain : Security::Keychain.by_name(name)
         raise "no such keychain #{name}" if @keychain.nil?
       end
 
@@ -58,7 +54,6 @@ module Aspera
         secret=options[:secret]
         raise 'options shall have secret' if secret.nil?
         raise 'set not implemented'
-        self
       end
 
       def get(options)

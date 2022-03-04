@@ -3,12 +3,15 @@ module Aspera
     # Base class for FASP transfer agents
     # sub classes shall implement start_transfer and shutdown
     class AgentBase
-      private
-
       # fields description for JSON generation
-      IntegerFields=['Bytescont','FaspFileArgIndex','StartByte','Rate','MinRate','Port','Priority','RateCap','MinRateCap','TCPPort','CreatePolicy','TimePolicy','DatagramSize','XoptFlags','VLinkVersion','PeerVLinkVersion','DSPipelineDepth','PeerDSPipelineDepth','ReadBlockSize','WriteBlockSize','ClusterNumNodes','ClusterNodeId','Size','Written','Loss','FileBytes','PreTransferBytes','TransferBytes','PMTU','Elapsedusec','ArgScansAttempted','ArgScansCompleted','PathScansAttempted','FileScansCompleted','TransfersAttempted','TransfersPassed','Delay']
-      BooleanFields=['Encryption','Remote','RateLock','MinRateLock','PolicyLock','FilesEncrypt','FilesDecrypt','VLinkLocalEnabled','VLinkRemoteEnabled','MoveRange','Keepalive','TestLogin','UseProxy','Precalc','RTTAutocorrect']
-      ExpectedMethod=[:text,:struct,:enhanced]
+      INTEGER_FIELDS=%w(Bytescont FaspFileArgIndex StartByte Rate MinRate Port Priority RateCap MinRateCap TCPPort CreatePolicy TimePolicy DatagramSize XoptFlags VLinkVersion
+                        PeerVLinkVersion DSPipelineDepth PeerDSPipelineDepth ReadBlockSize WriteBlockSize ClusterNumNodes ClusterNodeId Size Written Loss FileBytes PreTransferBytes TransferBytes PMTU Elapsedusec ArgScansAttempted ArgScansCompleted PathScansAttempted FileScansCompleted TransfersAttempted TransfersPassed Delay).freeze
+      BOOLEAN_FIELDS=%w(Encryption Remote RateLock MinRateLock PolicyLock FilesEncrypt FilesDecrypt VLinkLocalEnabled VLinkRemoteEnabled MoveRange Keepalive TestLogin UseProxy
+                        Precalc RTTAutocorrect).freeze
+      EXPECTED_METHODS=%i(text struct enhanced).freeze
+      private_constant :INTEGER_FIELDS,:BOOLEAN_FIELDS,:EXPECTED_METHODS
+
+      private
 
       # translates legacy event into enhanced (JSON) event
       def enhanced_event_format(event)
@@ -20,8 +23,8 @@ module Aspera
           gsub(/([a-z\d])(usec)$/,'\1_\2').
           downcase
           value=event[e]
-          value=value.to_i if IntegerFields.include?(e)
-          value=value.eql?('Yes') ? true : false if BooleanFields.include?(e)
+          value=value.to_i if INTEGER_FIELDS.include?(e)
+          value=value.eql?('Yes') ? true : false if BOOLEAN_FIELDS.include?(e)
           h[new_name]=value
         end
       end
@@ -34,8 +37,8 @@ module Aspera
         Log.log.debug('send event to listeners')
         enhanced_event=nil
         @listeners.each do |listener|
-          listener.send(:event_text,current_event_text) if listener.respond_to?(:event_text)
-          listener.send(:event_struct,current_event_data) if listener.respond_to?(:event_struct)
+          listener.event_text(current_event_text) if listener.respond_to?(:event_text)
+          listener.event_struct(current_event_data) if listener.respond_to?(:event_struct)
           if listener.respond_to?(:event_enhanced)
             enhanced_event=enhanced_event_format(current_event_data) if enhanced_event.nil?
             listener.send(:event_enhanced,enhanced_event)
@@ -56,12 +59,13 @@ module Aspera
       end
 
       public
+
       LISTENER_SESSION_ID_B='ListenerSessionId'
       LISTENER_SESSION_ID_S='listener_session_id'
 
       # listener receives events
       def add_listener(listener)
-        raise "expect one of #{ExpectedMethod}" if ExpectedMethod.inject(0){|m,e|m+=listener.respond_to?("event_#{e}")?1:0;m}.eql?(0)
+        raise "expect one of #{EXPECTED_METHODS}" if EXPECTED_METHODS.inject(0){|m,e|m+=listener.respond_to?("event_#{e}")?1:0;m}.eql?(0)
         @listeners.push(listener)
         self
       end

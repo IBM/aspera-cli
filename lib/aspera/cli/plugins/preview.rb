@@ -340,7 +340,7 @@ module Aspera
             @api_node.read("files/#{entry['id']}")
           end
         rescue => e
-          Log.log.error("#{e.message}")
+          Log.log.error(e.message.to_s)
           Log.log.debug(e.backtrace.join("\n").red)
         end # generate_preview
 
@@ -425,7 +425,8 @@ module Aspera
             if @access_remote
               # note the filter "name", it's why we take the first one
               @previews_folder_entry=get_folder_entries(@access_key_self['root_file_id'],{name: @option_previews_folder}).first
-              raise CliError,"Folder #{@option_previews_folder} does not exist on node. Please create it in the storage root, or specify an alternate name." if @previews_folder_entry.nil?
+              raise CliError,
+"Folder #{@option_previews_folder} does not exist on node. Please create it in the storage root, or specify an alternate name." if @previews_folder_entry.nil?
             else
               raise 'only local storage allowed in this mode' unless @access_key_self['storage']['type'].eql?('local')
               @local_storage_root=@access_key_self['storage']['path']

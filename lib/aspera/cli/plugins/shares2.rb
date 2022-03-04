@@ -12,30 +12,28 @@ module Aspera
           options.add_opt_simple(:share,'share')
           options.parse_options!
           return if env[:man_only]
-          unless env[:man_only]
-            # get parameters
-            shares2_api_base_url=options.get_option(:url,:mandatory)
-            shares2_username=options.get_option(:username,:mandatory)
-            shares2_password=options.get_option(:password,:mandatory)
+          # get parameters
+          shares2_api_base_url=options.get_option(:url,:mandatory)
+          shares2_username=options.get_option(:username,:mandatory)
+          shares2_password=options.get_option(:password,:mandatory)
 
-            # create object for REST calls to Shares2
-            @api_shares2_oauth=Rest.new({
-              base_url:  shares2_api_base_url,
-              auth:      {
-              type:       :oauth2,
-              base_url:   shares2_api_base_url+'/oauth2',
-              grant:      :header_userpass,
-              user_name:  shares2_username,
-              user_pass:  shares2_password
-              }})
+          # create object for REST calls to Shares2
+          @api_shares2_oauth=Rest.new({
+            base_url:  shares2_api_base_url,
+            auth:      {
+            type:       :oauth2,
+            base_url:   shares2_api_base_url+'/oauth2',
+            grant:      :header_userpass,
+            user_name:  shares2_username,
+            user_pass:  shares2_password
+            }})
 
-            @api_node=Rest.new({
-              base_url:  shares2_api_base_url+'/node_api',
-              auth:      {
-              type:      :basic,
-              username:  shares2_username,
-              password:  shares2_password}})
-          end
+          @api_node=Rest.new({
+            base_url:  shares2_api_base_url+'/node_api',
+            auth:      {
+            type:      :basic,
+            username:  shares2_username,
+            password:  shares2_password}})
         end
 
         # path_prefix is either "" or "res/id/"
@@ -44,7 +42,7 @@ module Aspera
         def set_resource_path_by_id_or_name(resource_path,resource_sym)
           res_id=options.get_option(resource_sym,:mandatory)
           # lets get the class path
-          resource_path<<resource_sym.to_s+'s'
+          resource_path<<"#{resource_sym}s"
           # is this an integer ? or a name
           if res_id.to_i.to_s != res_id
             all=@api_shares2_oauth.read(resource_path)[:data]
@@ -55,7 +53,7 @@ module Aspera
             res_id=one.first['id'].to_s
           end
           Log.log.debug("res_id=#{res_id}")
-          resource_path<<'/'+res_id+'/'
+          resource_path<<"/#{res_id}/"
           return resource_path
         end
 
@@ -73,7 +71,7 @@ module Aspera
             default_fields=['id','name']
             query=options.get_option(:query,:optional)
             args=query.nil? ? nil : {'json_query'=>query}
-            Log.log.debug("#{args}".bg_red)
+            Log.log.debug(args.to_s.bg_red)
             return {data: @api_shares2_oauth.read(resource_path,args)[:data],fields: default_fields,type: :object_list}
           when :delete
             @api_shares2_oauth.delete(set_resource_path_by_id_or_name(path_prefix,resource_sym))

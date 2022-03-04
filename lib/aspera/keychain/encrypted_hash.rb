@@ -12,7 +12,7 @@ module Aspera
         @cipher.encrypt
         @cipher.key = @key
         s = @cipher.update(value) + @cipher.final
-        s.unpack('H*').first
+        s.unpack1('H*')
       end
 
       def decrypt(value)

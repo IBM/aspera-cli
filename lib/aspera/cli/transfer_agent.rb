@@ -12,15 +12,15 @@ module Aspera
       FILE_LIST_FROM_ARGS='@args'
       # special value for --sources : read file list from transfer spec (--ts)
       FILE_LIST_FROM_TRANSFER_SPEC='@ts'
-      DEFAULT_TRANSFER_NOTIF_TMPL=<<END_OF_TEMPLATE
-From: <%=from_name%> <<%=from_email%>>
-To: <<%=to%>>
-Subject: <%=subject%>
+      DEFAULT_TRANSFER_NOTIF_TMPL=<<~END_OF_TEMPLATE
+        From: <%=from_name%> <<%=from_email%>>
+        To: <<%=to%>>
+        Subject: <%=subject%>
 
-Transfer is: <%=global_transfer_status%>
+        Transfer is: <%=global_transfer_status%>
 
-<%=ts.to_yaml%>
-END_OF_TEMPLATE
+        <%=ts.to_yaml%>
+      END_OF_TEMPLATE
       #% (formating bug in eclipse)
       private_constant :FILE_LIST_FROM_ARGS,:FILE_LIST_FROM_TRANSFER_SPEC,:DEFAULT_TRANSFER_NOTIF_TMPL
       TRANSFER_AGENTS=[:direct,:node,:connect,:httpgw,:trsdk]
@@ -58,7 +58,7 @@ END_OF_TEMPLATE
 
       def option_transfer_spec_deep_merge(ts); @transfer_spec_cmdline.deep_merge!(ts); end
 
-      def set_agent_instance(instance)
+      def agent_instance=(instance)
         @agent=instance
         @agent.add_listener(Listener::Logger.new)
         # use local progress bar if asked so, or if native and non local ascp (because only local ascp has native progress bar)
@@ -74,7 +74,9 @@ END_OF_TEMPLATE
         agent_type=@opt_mgr.get_option(:transfer,:mandatory)
         require "aspera/fasp/agent_#{agent_type}"
         agent_options=@opt_mgr.get_option(:transfer_info,:optional)
-        raise CliBadArgument,"the transfer agent configuration shall be Hash, not #{agent_options.class} (#{agent_options}), use either @json:<json> or @preset:<parameter set name>" unless [Hash,NilClass].include?(agent_options.class)
+        raise CliBadArgument,
+"the transfer agent configuration shall be Hash, not #{agent_options.class} (#{agent_options}), use either @json:<json> or @preset:<parameter set name>" unless [
+  Hash,NilClass].include?(agent_options.class)
         # special case
         if agent_type.eql?(:node) and agent_options.nil?
           param_set_name=@config.get_plugin_default_config_name(:node)
@@ -89,7 +91,7 @@ END_OF_TEMPLATE
         agent_options=agent_options.symbolize_keys if agent_options.is_a?(Hash)
         # get agent instance
         new_agent=Kernel.const_get("Aspera::Fasp::Agent#{agent_type.capitalize}").new(agent_options)
-        set_agent_instance(new_agent)
+        self.agent_instance=new_agent
         return nil
       end
 
@@ -126,7 +128,8 @@ END_OF_TEMPLATE
           Log.log.debug('getting file list as parameters')
           # get remaining arguments
           file_list=@opt_mgr.get_next_argument('source file list',:multiple)
-          raise CliBadArgument,"specify at least one file on command line or use --sources=#{FILE_LIST_FROM_TRANSFER_SPEC} to use transfer spec" if !file_list.is_a?(Array) or file_list.empty?
+          raise CliBadArgument,
+"specify at least one file on command line or use --sources=#{FILE_LIST_FROM_TRANSFER_SPEC} to use transfer spec" if !file_list.is_a?(Array) or file_list.empty?
         when FILE_LIST_FROM_TRANSFER_SPEC
           Log.log.debug('assume list provided in transfer spec')
           special_case_direct_with_list=@opt_mgr.get_option(:transfer,:mandatory).eql?(:direct) and Fasp::Parameters.ts_has_file_list(@transfer_spec_cmdline)

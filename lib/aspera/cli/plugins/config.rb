@@ -55,13 +55,13 @@ module Aspera
         DEMO='demo'
         DEMO_SERVER_PRESET='demoserver'
         AOC_PATH_API_CLIENTS='admin/api-clients'
-        EMAIL_TEST_TEMPLATE=<<END_OF_TEMPLATE
-From: <%=from_name%> <<%=from_email%>>
-To: <<%=to%>>
-Subject: Amelia email test
+        EMAIL_TEST_TEMPLATE=<<~END_OF_TEMPLATE
+          From: <%=from_name%> <<%=from_email%>>
+          To: <<%=to%>>
+          Subject: Amelia email test
 
-It worked !
-END_OF_TEMPLATE
+          It worked !
+        END_OF_TEMPLATE
         # special extended values
         EXTV_INCLUDE_PRESETS=:incps
         EXTV_PRESET=:preset
@@ -139,14 +139,8 @@ END_OF_TEMPLATE
           options.set_option(:override,:no)
           options.parse_options!
           pac_script=options.get_option(:fpac,:optional)
-          if !pac_script.nil?
-            # create PAC executor
-            pac_exec=@pac_exec=Aspera::ProxyAutoConfig.new(pac_script)
-            # save original method that finds proxy in URI::Generic, it uses env var http_proxy
-            URI::Generic.alias_method(:find_proxy_orig,:find_proxy)
-            # overload the method with get_proxies
-            URI::Generic.define_method(:find_proxy) {|envars=ENV| pac_exec.get_proxies(to_s).first || find_proxy_orig(envars)}
-          end
+          # create PAC executor
+          @pac_exec=Aspera::ProxyAutoConfig.new(pac_script).register_uri_generic unless pac_script.nil?
         end
 
         # env var name to override the app's main folder
@@ -168,6 +162,7 @@ END_OF_TEMPLATE
         end
 
         def check_gem_version
+          # can also get version from Cli::VERSION
           this_gem_name=File.basename(File.dirname(self.class.gem_root)).gsub(/-[0-9].*$/,'')
           latest_version=begin
             Rest.new(base_url: 'https://rubygems.org/api/v1').read("versions/#{this_gem_name}/latest.json")[:data]['version']
@@ -175,7 +170,8 @@ END_OF_TEMPLATE
             Log.log.warn('Could not retrieve latest gem version on rubygems.')
             '0'
           end
-          return {name: this_gem_name, current: Aspera::Cli::VERSION, latest: latest_version, need_update: Gem::Version.new(Aspera::Cli::VERSION) < Gem::Version.new(latest_version)}
+          return {name: this_gem_name, current: Aspera::Cli::VERSION, latest: latest_version,
+need_update: Gem::Version.new(Aspera::Cli::VERSION) < Gem::Version.new(latest_version)}
         end
 
         def periodic_check_newer_gem_version
@@ -183,30 +179,29 @@ END_OF_TEMPLATE
           delay_days=options.get_option(:version_check_days,:mandatory)
           Log.log.info("check days: #{delay_days}")
           # check only if not zero day
-          if !delay_days.eql?(0)
-            # get last date from persistency
-            last_check_array=[]
-            check_date_persist=PersistencyActionOnce.new(
-            manager: persistency,
-            data:    last_check_array,
-            id:      'version_last_check')
-            # get persisted date or nil
-            last_check_date = begin
-              Date.strptime(last_check_array.first, '%Y/%m/%d')
-            rescue
-              nil
-            end
-            current_date=Date.today
-            Log.log.debug("days elapsed: #{last_check_date.is_a?(Date) ? current_date - last_check_date : last_check_date.class.name}")
-            if last_check_date.nil? or (current_date - last_check_date) > delay_days
-              last_check_array[0]=current_date.strftime('%Y/%m/%d')
-              check_date_persist.save
-              check_data=check_gem_version
-              if check_data[:need_update]
-                Log.log.warn("A new version is available: #{check_data[:latest]}. You have #{check_data[:current]}. Upgrade with: gem update #{check_data[:name]}")
-              end
-            end
+          return if delay_days.eql?(0)
+          # get last date from persistency
+          last_check_array=[]
+          check_date_persist=PersistencyActionOnce.new(
+          manager: persistency,
+          data:    last_check_array,
+          id:      'version_last_check')
+          # get persisted date or nil
+          current_date=Date.today
+          last_check_days = begin
+            current_date-Date.strptime(last_check_array.first, '%Y/%m/%d')
+          rescue
+            # negative value will force check
+            -1
           end
+          Log.log.debug("days elapsed: #{last_check_days}")
+          return if last_check_days < delay_days
+          # generate timestamp
+          last_check_array[0]=current_date.strftime('%Y/%m/%d')
+          check_date_persist.save
+          # compare this version and the one on internet
+          check_data=check_gem_version
+          Log.log.warn("A new version is available: #{check_data[:latest]}. You have #{check_data[:current]}. Upgrade with: gem update #{check_data[:name]}") if check_data[:need_update]
         end
 
         # retrieve structure from cloud (CDN) with all versions available
@@ -236,6 +231,7 @@ END_OF_TEMPLATE
           options.add_option_preset(preset_by_name(default_config_name),:unshift) unless default_config_name.nil?
           return nil
         end
+
         private
 
         def generate_rsa_private_key(private_key_path,length)
@@ -372,7 +368,6 @@ END_OF_TEMPLATE
           else
             raise 'Preset definition must be a String for name, or Hash for value'
           end
-          nil
         end
 
         def convert_preset_path(old_name,new_name,files_to_copy)
@@ -391,11 +386,11 @@ END_OF_TEMPLATE
         end
 
         def convert_preset_plugin_name(old_name,new_name)
-          if @config_presets[CONF_PRESET_DEFAULT].is_a?(Hash) and @config_presets[CONF_PRESET_DEFAULT].has_key?(old_name)
-            @config_presets[CONF_PRESET_DEFAULT][new_name]=@config_presets[CONF_PRESET_DEFAULT][old_name]
-            @config_presets[CONF_PRESET_DEFAULT].delete(old_name)
-            Log.log.warn("Converted plugin default: #{old_name} -> #{new_name}")
-          end
+          default_preset=@config_presets[CONF_PRESET_DEFAULT]
+          return unless default_preset.is_a?(Hash) and default_preset.has_key?(old_name)
+          default_preset[new_name]=default_preset[old_name]
+          default_preset.delete(old_name)
+          Log.log.warn("Converted plugin default: #{old_name} -> #{new_name}")
         end
 
         # read config file and validate format
@@ -485,12 +480,11 @@ END_OF_TEMPLATE
         # find plugins in defined paths
         def add_plugins_from_lookup_folders
           @plugin_lookup_folders.each do |folder|
-            if File.directory?(folder)
-              #TODO: add gem root to load path ? and require short folder ?
-              #$LOAD_PATH.push(folder) if i[:add_path]
-              Dir.entries(folder).select{|file|file.end_with?(RUBY_FILE_EXT)}.each do |source|
-                add_plugin_info(File.join(folder,source))
-              end
+            next unless File.directory?(folder)
+            #TODO: add gem root to load path ? and require short folder ?
+            #$LOAD_PATH.push(folder) if i[:add_path]
+            Dir.entries(folder).select{|file|file.end_with?(RUBY_FILE_EXT)}.each do |source|
+              add_plugin_info(File.join(folder,source))
             end
           end
         end
@@ -512,29 +506,30 @@ END_OF_TEMPLATE
 
         def identify_plugin_for_url(url)
           plugins.each do |plugin_name_sym,plugin_info|
+            # no detection for internal plugin
             next if plugin_name_sym.eql?(CONF_PLUGIN_SYM)
+            # load plugin class
             require plugin_info[:require_stanza]
             c=self.class.plugin_class(plugin_name_sym)
-            if c.respond_to?(:detect)
-              current_url=url
-              begin
-                res=c.send(:detect,current_url)
-                return res.merge(product: plugin_name_sym, url: current_url) unless res.nil?
-              rescue
-              end
-              begin
-                # is there a redirect ?
-                result=Rest.new({base_url: url}).call({operation: 'GET',subpath: '',redirect_max: 1})
-                current_url=result[:http].uri.to_s
-                # check if redirect
-                if !url.eql?(current_url)
-                  res=c.send(:detect,current_url)
-                  return res.merge(product: plugin_name_sym, url: current_url) unless res.nil?
-                end
-              rescue
-              end
+            next unless c.respond_to?(:detect)
+            current_url=url
+            detection_info=nil
+            # first try : direct
+            begin
+              detection_info=c.detect(current_url)
+            rescue => e
+              Log.log.debug("Cannot detect #{plugin_name_sym} : #{e.message}")
             end
-          end
+            # second try : is there a redirect ?
+            begin
+              # TODO: check if redirect ?
+              current_url=Rest.new(base_url: url).call(operation: 'GET',subpath: '',redirect_max: 1)[:http].uri.to_s
+              detection_info=c.detect(current_url) unless url.eql?(current_url)
+            rescue => e
+              Log.log.debug("Cannot detect #{plugin_name_sym} : #{e.message}")
+            end
+            return detection_info.merge(product: plugin_name_sym, url: current_url) unless detection_info.nil?
+          end # loop
           raise "No known application found at #{url}"
         end
 
@@ -716,7 +711,8 @@ END_OF_TEMPLATE
           end
         end
 
-        ACTIONS=[PRESET_GBL_ACTIONS,:id,:preset,:open,:documentation,:genkey,:gem,:plugin,:flush_tokens,:echo,:wizard,:export_to_cli,:detect,:coffee,:ascp,:email_test,:smtp_settings,:proxy_check,:folder,:file,:check_update,:initdemo,:vault].flatten.freeze
+        ACTIONS=[PRESET_GBL_ACTIONS,:id,:preset,:open,:documentation,:genkey,:gem,:plugin,:flush_tokens,:echo,:wizard,:export_to_cli,:detect,:coffee,:ascp,:email_test,
+                 :smtp_settings,:proxy_check,:folder,:file,:check_update,:initdemo,:vault].flatten.freeze
 
         # "config" plugin
         def execute_action
@@ -729,7 +725,7 @@ END_OF_TEMPLATE
           when :preset # newer syntax
             return execute_file_action(nil,nil)
           when :open
-            OpenApplication.instance.uri("#{@option_config_file}") #file://
+            OpenApplication.instance.uri(@option_config_file.to_s) #file://
             return Main.result_nothing
           when :documentation
             section=options.get_next_argument('private key file path',:single,:optional)
@@ -756,19 +752,19 @@ END_OF_TEMPLATE
               plugin_name=options.get_next_argument('name',:single,:mandatory).downcase
               plugin_folder=options.get_next_argument('folder',:single,:optional) || File.join(@main_folder,ASPERA_PLUGINS_FOLDERNAME)
               plugin_file=File.join(plugin_folder,"#{plugin_name}.rb")
-              content=<<_EOF_
-require 'aspera/cli/plugin'
-module Aspera
-  module Cli
-    module Plugins
-      class #{plugin_name.capitalize} < Plugin
-        ACTIONS=[]
-        def execute_action; return Main.result_status("You called plugin #{plugin_name}"); end
-      end # #{plugin_name.capitalize}
-    end # Plugins
-  end # Cli
-end # Aspera
-_EOF_
+              content=<<~_EOF_
+                require 'aspera/cli/plugin'
+                module Aspera
+                  module Cli
+                    module Plugins
+                      class #{plugin_name.capitalize} < Plugin
+                        ACTIONS=[]
+                        def execute_action; return Main.result_status("You called plugin #{plugin_name}"); end
+                      end # #{plugin_name.capitalize}
+                    end # Plugins
+                  end # Cli
+                end # Aspera
+              _EOF_
               File.write(plugin_file,content)
               return Main.result_status("Created #{plugin_file}")
             end
@@ -797,7 +793,8 @@ _EOF_
               option_override=options.get_option(:override,:mandatory)
               option_default=options.get_option(:default,:mandatory)
               Log.log.error("override=#{option_override} -> #{option_override.class}")
-              raise CliError,"A default configuration already exists for plugin '#{plugin_name}' (use --override=yes or --default=no)" if !option_override and option_default and @config_presets[CONF_PRESET_DEFAULT].has_key?(plugin_name)
+              raise CliError,
+"A default configuration already exists for plugin '#{plugin_name}' (use --override=yes or --default=no)" if !option_override and option_default and @config_presets[CONF_PRESET_DEFAULT].has_key?(plugin_name)
               raise CliError,"Preset already exists: #{preset_name}  (use --override=yes or --id=<name>)" if !option_override and @config_presets.has_key?(preset_name)
               # lets see if path to priv key is provided
               private_key_path=options.get_option(:pkeypath,:optional)
@@ -834,7 +831,7 @@ _EOF_
                 self.format.display_status('Please Login to your Aspera on Cloud instance.'.red)
                 self.format.display_status('Navigate to your "Account Settings"'.red)
                 self.format.display_status('Check or update the value of "Public Key" to be:'.red.blink)
-                self.format.display_status("#{pub_key_pem}")
+                self.format.display_status(pub_key_pem.to_s)
                 if !options.get_option(:test_mode)
                   self.format.display_status('Once updated or validated, press enter.')
                   OpenApplication.instance.uri(instance_url)
@@ -938,7 +935,7 @@ _EOF_
           when :detect
             # need url / username
             BasicAuthPlugin.new(@agents)
-            return Main.result_status("Found: #{identify_plugin_for_url(options.get_option(:url,:mandatory))}")
+            return {type: :single_object, data: identify_plugin_for_url(options.get_option(:url,:mandatory))}
           when :coffee
             OpenApplication.instance.uri('https://enjoyjava.com/wp-content/uploads/2018/01/How-to-make-strong-coffee.jpg')
             return Main.result_nothing
@@ -970,7 +967,8 @@ _EOF_
               Log.log.warn("Demo server preset already present: #{DEMO_SERVER_PRESET}")
             else
               Log.log.info("Creating Demo server preset: #{DEMO_SERVER_PRESET}")
-              @config_presets[DEMO_SERVER_PRESET]={'url'=>'ssh://'+DEMO+'.asperasoft.com:33001','username'=>AOC_COMMAND_V2,'ssAP'.downcase.reverse+'drow'.reverse=>DEMO+AOC_COMMAND_V2}
+              @config_presets[DEMO_SERVER_PRESET]=
+{'url'=>'ssh://'+DEMO+'.asperasoft.com:33001','username'=>AOC_COMMAND_V2,'ssAP'.downcase.reverse+'drow'.reverse=>DEMO+AOC_COMMAND_V2}
             end
             @config_presets[CONF_PRESET_DEFAULT]||={}
             if @config_presets[CONF_PRESET_DEFAULT].has_key?(SERVER_COMMAND)

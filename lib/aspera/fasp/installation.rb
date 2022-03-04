@@ -1,3 +1,4 @@
+require 'English'
 require 'singleton'
 require 'aspera/log'
 require 'aspera/environment'
@@ -27,6 +28,7 @@ module Aspera
       # protobuf generated files from sdk
       EXT_RUBY_PROTOBUF='_pb.rb'
       RB_SDK_FOLDER='lib'
+      ONE_YEAR_SECONDS=365 * 24 * 60 * 60
       # set ascp executable path
       def ascp_path=(v)
         @path_to_ascp=v
@@ -130,7 +132,8 @@ module Aspera
           File.chmod(0400,file)
         when :aspera_license
           file=File.join(sdk_folder,'aspera-license')
-          File.write(file,Base64.strict_encode64("#{Zlib::Inflate.inflate(DataRepository.instance.get_bin(6))}==SIGNATURE==\n#{Base64.strict_encode64(DataRepository.instance.get_bin(7))}")) unless File.exist?(file)
+          File.write(file,
+Base64.strict_encode64("#{Zlib::Inflate.inflate(DataRepository.instance.get_bin(6))}==SIGNATURE==\n#{Base64.strict_encode64(DataRepository.instance.get_bin(7))}")) unless File.exist?(file)
           File.chmod(0400,file)
         when :aspera_conf
           file=File.join(sdk_folder,'aspera.conf')
@@ -155,7 +158,7 @@ module Aspera
             cert = OpenSSL::X509::Certificate.new
             cert.subject = cert.issuer = OpenSSL::X509::Name.parse('/C=US/ST=California/L=Emeryville/O=Aspera Inc./OU=Corporate/CN=Aspera Inc./emailAddress=info@asperasoft.com')
             cert.not_before = Time.now
-            cert.not_after = Time.now + 365 * 24 * 60 * 60
+            cert.not_after = Time.now + ONE_YEAR_SECONDS
             cert.public_key = private_key.public_key
             cert.serial = 0x0
             cert.version = 2
@@ -213,7 +216,7 @@ module Aspera
         return nil unless File.exist?(exe_path)
         exe_version=nil
         cmd_out=%x("#{exe_path}" #{vers_arg})
-        raise "An error occured when testing #{ascp_filename}: #{cmd_out}" unless $? == 0
+        raise "An error occured when testing #{ascp_filename}: #{cmd_out}" unless $CHILD_STATUS == 0
         # get version from ascp, only after full extract, as windows requires DLLs (SSL/TLS/etc...)
         m=cmd_out.match(/ version ([0-9.]+)/)
         exe_version=m[1] unless m.nil?

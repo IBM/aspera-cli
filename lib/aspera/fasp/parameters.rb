@@ -5,7 +5,6 @@ require 'securerandom'
 require 'base64'
 require 'json'
 require 'yaml'
-require 'securerandom'
 require 'fileutils'
 require 'openssl'
 
@@ -77,10 +76,9 @@ module Aspera
         # temp file list files are created here
         def file_list_folder=(v)
           @file_list_folder=v
-          if !@file_list_folder.nil?
-            FileUtils.mkdir_p(@file_list_folder)
-            TempFileManager.instance.cleanup_expired(@file_list_folder)
-          end
+          return if @file_list_folder.nil?
+          FileUtils.mkdir_p(@file_list_folder)
+          TempFileManager.instance.cleanup_expired(@file_list_folder)
         end
 
         # static methods

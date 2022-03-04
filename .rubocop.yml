@@ -18,6 +18,8 @@ Metrics/AbcSize:
   Enabled: false
 Metrics/PerceivedComplexity:
   Enabled: false
+Layout/EndAlignment:
+  Enabled: false
 Layout/DotPosition:
   Enabled: false
 Layout/AssignmentIndentation:
@@ -56,6 +58,8 @@ Layout/FirstArgumentIndentation:
   Enabled: false
 Layout/MultilineArrayBraceLayout:
   Enabled: false
+Style/CaseEquality:
+  AllowOnConstant: true
 Style/WordArray:
   Enabled: false
 Style/RescueModifier:
@@ -90,7 +94,13 @@ Style/StringConcatenation:
   Enabled: false
 Style/SafeNavigation:
   Enabled: false
+Style/RedundantBegin:
+  Enabled: false
+Style/CommandLiteral:
+  EnforcedStyle: percent_x
 Layout/SpaceAroundEqualsInParameterDefault:
+  Enabled: false
+Layout/ArgumentAlignment:
   Enabled: false
 Style/FormatStringToken:
   Description: "Use a consistent style for format string tokens."

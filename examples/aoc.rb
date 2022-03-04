@@ -6,8 +6,8 @@ Aspera::Log.instance.level=:debug
 
 if !ARGV.length.eql?(3)
   Aspera::Log.log.error("wrong number of args: #{ARGV.length}")
-  Aspera::Log.log.error("Usage: #{$0} <aoc URL> <aoc username> <aoc private key content>")
-  Aspera::Log.log.error("Example: #{$0} https://myorg.ibmaspera.com john@example.com $(cat /home/john/my_key.pem)")
+  Aspera::Log.log.error("Usage: #{$PROGRAM_NAME} <aoc URL> <aoc username> <aoc private key content>")
+  Aspera::Log.log.error("Example: #{$PROGRAM_NAME} https://myorg.ibmaspera.com john@example.com $(cat /home/john/my_key.pem)")
   Process.exit(1)
 end
 

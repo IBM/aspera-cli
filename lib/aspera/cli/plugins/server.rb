@@ -12,7 +12,7 @@ module Aspera
       class Server < BasicAuthPlugin
         class LocalExecutor
           def execute(cmd,_input=nil)
-            `#{cmd}`
+            %x(#{cmd})
           end
         end
 
@@ -187,15 +187,16 @@ module Aspera
               return {type: :object_list,data: asctl_parse(result)}
             when :configurator
               lines=result.split("\n")
-              Log.log.debug(`type asconfigurator`)
+              # not windows
+              Log.log.debug(%x(type asconfigurator))
               result=lines
               if lines.first.eql?('success')
                 lines.shift
                 result={}
                 lines.each do |line|
-                  Log.log.debug("#{line}")
-                  data=line.split(',').map{|i|i.gsub(/^"/,'').gsub(/"$/,'')}.map{|i|case i;when'AS_NULL' then nil;when'true' then true;when'false' then false;else i;end}
-                  Log.log.debug("#{data}")
+                  Log.log.debug(line.to_s)
+                  data=line.split(',').map{|i|i.gsub(/^"/,'').gsub(/"$/,'')}.map{|i|case i;when 'AS_NULL' then nil;when 'true' then true;when 'false' then false;else i;end}
+                  Log.log.debug(data.to_s)
                   section=data.shift
                   datapart=result[section]||={}
                   if section.eql?('user')

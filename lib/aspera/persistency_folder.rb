@@ -10,10 +10,6 @@ module Aspera
     private_constant :FILE_SUFFIX
     def initialize(folder)
       @cache={}
-      set_folder(folder)
-    end
-
-    def set_folder(folder)
       @folder=folder
       Log.log.debug("persistency folder: #{@folder}")
     end

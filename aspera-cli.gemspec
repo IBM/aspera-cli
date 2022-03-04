@@ -41,11 +41,12 @@ Gem::Specification.new do |spec|
   spec.add_runtime_dependency('security', '~> 0.0')
   spec.add_runtime_dependency('terminal-table', '~> 1.8')
   spec.add_runtime_dependency('tty-spinner', '~> 0.9')
+  spec.add_runtime_dependency('webrick', '~> 1.7')
   spec.add_runtime_dependency('websocket', '~> 1.2')
   spec.add_runtime_dependency('websocket-client-simple', '~> 0.3')
-  spec.add_runtime_dependency('webrick', '~> 1.7')
   spec.add_runtime_dependency('xml-simple', '~> 1.0')
   spec.add_development_dependency('bundler', '~> 2.0')
   spec.add_development_dependency('rake', '~> 13.0')
   spec.add_development_dependency('rspec', '~> 3.0')
+  spec.add_development_dependency('rubocop', '~> 1.0')
 end

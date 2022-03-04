@@ -36,22 +36,20 @@ module Aspera
           options.set_option(:token_type,:aspera)
           options.parse_options!
           return if env[:man_only]
-          if env.has_key?(:node_api)
-            @api_node=env[:node_api]
-          else
-            if options.get_option(:password,:mandatory).start_with?('Bearer ')
-              # info is provided like node_info of aoc
-              @api_node=Rest.new({
-                base_url: options.get_option(:url,:mandatory),
-                headers: {
-                'Authorization'      => options.get_option(:password,:mandatory),
-                'X-Aspera-AccessKey' => options.get_option(:username,:mandatory)
-                }
-              })
-            else
-              # this is normal case
-              @api_node=basic_auth_api
-            end
+          @api_node=if env.has_key?(:node_api)
+                      env[:node_api]
+                    elsif options.get_option(:password,:mandatory).start_with?('Bearer ')
+                      # info is provided like node_info of aoc
+                      Rest.new({
+                        base_url: options.get_option(:url,:mandatory),
+                        headers: {
+                        'Authorization'      => options.get_option(:password,:mandatory),
+                        'X-Aspera-AccessKey' => options.get_option(:username,:mandatory)
+                        }
+                      })
+                    else
+                      # this is normal case
+                      basic_auth_api
           end
         end
 
@@ -131,7 +129,8 @@ module Aspera
               nagios.add_critical('node api',e.to_s)
             end
             begin
-              @api_node.call({ operation: 'POST', subpath: 'services/soap/Transfer-201210', headers: {'Content-Type'=>'text/xml;charset=UTF-8','SOAPAction'=>'FASPSessionNET-200911#GetSessionInfo'}, text_body_params: SAMPLE_SOAP_CALL})[:http].body
+              @api_node.call({ operation: 'POST', subpath: 'services/soap/Transfer-201210',
+headers: {'Content-Type'=>'text/xml;charset=UTF-8','SOAPAction'=>'FASPSessionNET-200911#GetSessionInfo'}, text_body_params: SAMPLE_SOAP_CALL})[:http].body
               nagios.add_ok('central','accessible by node')
             rescue => e
               nagios.add_critical('central',e.to_s)
@@ -287,11 +286,8 @@ module Aspera
           when :show
             resp=@api_node.create('async/summary',pdata)[:data]['sync_summaries']
             return Main.result_empty if resp.empty?
-            if asyncid.eql?('ALL')
-              return { type: :object_list, data: resp, fields: ['snid','name','local_dir','remote_dir'] }
-            else
-              return { type: :single_object, data: resp.first }
-            end
+            return { type: :object_list, data: resp, fields: ['snid','name','local_dir','remote_dir'] } if asyncid.eql?('ALL')
+            return { type: :single_object, data: resp.first }
           when :delete
             resp=@api_node.create('async/delete',pdata)[:data]
             return { type: :single_object, data: resp, name: 'id' }
@@ -376,7 +372,8 @@ module Aspera
             when :list
               # could use ? subpath: 'transfers'
               resp=@api_node.read(res_class_path,options.get_option(:value,:optional))
-              return { type: :object_list, data: resp[:data], fields: ['id','status','start_spec.direction','start_spec.remote_user','start_spec.remote_host','start_spec.destination_path']}
+              return { type: :object_list, data: resp[:data],
+fields: ['id','status','start_spec.direction','start_spec.remote_user','start_spec.remote_host','start_spec.destination_path']}
             when :cancel
               resp=@api_node.cancel(one_res_path)
               return { type: :other_struct, data: resp[:data] }
@@ -448,7 +445,8 @@ module Aspera
               when :list
                 request_data.deep_merge!({'validation'=>validation}) unless validation.nil?
                 resp=@api_node.create('services/rest/transfers/v1/sessions',request_data)
-                return { type: :object_list, data: resp[:data]['session_info_result']['session_info'], fields: ['session_uuid','status','transport','direction','bytes_transferred']}
+                return { type: :object_list, data: resp[:data]['session_info_result']['session_info'],
+fields: ['session_uuid','status','transport','direction','bytes_transferred']}
               end
             when :file
               command=options.get_next_command([:list, :modify])

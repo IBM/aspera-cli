@@ -1,10 +1,4 @@
-#!/bin/echo this is a ruby class:
-#
-# FASP manager for Ruby
-# Aspera 2016
-# Laurent Martin
-#
-##############################################################################
+require 'English'
 require 'aspera/fasp/agent_base'
 require 'aspera/fasp/error'
 require 'aspera/fasp/parameters'
@@ -79,14 +73,12 @@ module Aspera
           elsif multi_session_info[:count].eql?(0)
             Log.log.debug('multi_session count is zero: no multisession')
             multi_session_info = nil
-          else # multi_session_info[:count] > 0
+          elsif @options[:multi_incr_udp] # multi_session_info[:count] > 0
             # if option not true: keep default udp port for all sessions
-            if @options[:multi_incr_udp]
-              # override if specified, else use default value
-              multi_session_info[:udp_base]=transfer_spec.has_key?('fasp_port') ? transfer_spec['fasp_port'] : TransferSpec::UDP_PORT
-              # delete from original transfer spec, as we will increment values
-              transfer_spec.delete('fasp_port')
-            end
+            multi_session_info[:udp_base]=transfer_spec.has_key?('fasp_port') ? transfer_spec['fasp_port'] : TransferSpec::UDP_PORT
+            # delete from original transfer spec, as we will increment values
+            transfer_spec.delete('fasp_port')
+            # override if specified, else use default value
           end
         end
 
@@ -133,7 +125,7 @@ module Aspera
             this_session[:env_args][:args]=this_session[:env_args][:args].clone()
             this_session[:env_args][:args].unshift("-C#{i}:#{multi_session_info[:count]}")
             # option: increment (default as per ascp manual) or not (cluster on other side ?)
-            this_session[:env_args][:args].unshift('-O',"#{multi_session_info[:udp_base]+i-1}") if @options[:multi_incr_udp]
+            this_session[:env_args][:args].unshift('-O',(multi_session_info[:udp_base]+i-1).to_s) if @options[:multi_incr_udp]
             this_session[:thread] = Thread.new(this_session) {|s|transfer_thread_entry(s)}
             xfer_job[:sessions].push(this_session)
           end
@@ -199,7 +191,9 @@ module Aspera
           # add management port
           ascp_arguments.unshift('-M', mgt_sock.addr[1].to_s)
           # start ascp in sub process
-          Log.log.debug("execute: #{env_args[:env].map{|k,v| "#{k}=#{Shellwords.shellescape(v)}"}.join(' ')} #{Shellwords.shellescape(ascp_path)} #{ascp_arguments.map{|a|Shellwords.shellescape(a)}.join(' ')}")
+          Log.log.debug("execute: #{env_args[:env].map{|k,v| "#{k}=#{Shellwords.shellescape(v)}"}.join(' ')} #{Shellwords.shellescape(ascp_path)} #{ascp_arguments.map{|a|
+            Shellwords.shellescape(a)
+          }.join(' ')}")
           # start process
           ascp_pid = Process.spawn(env_args[:env],[ascp_path,ascp_path],*ascp_arguments)
           # in parent, wait for connection to socket max 3 seconds
@@ -291,17 +285,15 @@ module Aspera
           unless ascp_pid.nil?
             # "wait" for process to avoid zombie
             Process.wait(ascp_pid)
-            status=$?
+            status=$CHILD_STATUS
             ascp_pid=nil
             session.delete(:io)
             if !status.success?
               message="ascp failed with code #{status.exitstatus}"
-              if exception_raised
-                # just debug, as main exception is already here
-                Log.log.debug(message)
-              else
-                raise Fasp::Error, message
-              end
+              # raise error only if there was not already an exception
+              raise Fasp::Error, message unless exception_raised
+              # else just debug, as main exception is already here
+              Log.log.debug(message)
             end
           end
         end # begin-ensure
@@ -343,11 +335,8 @@ module Aspera
         if !options.nil?
           raise "expecting Hash (or nil), but have #{options.class}" unless options.is_a?(Hash)
           options.each do |k,v|
-            if DEFAULT_OPTIONS.has_key?(k)
-              @options[k]=v
-            else
-              raise "Unknown local agent parameter: #{k}, expect one of #{DEFAULT_OPTIONS.keys.map(&:to_s).join(',')}"
-            end
+            raise "Unknown local agent parameter: #{k}, expect one of #{DEFAULT_OPTIONS.keys.map(&:to_s).join(',')}" unless DEFAULT_OPTIONS.has_key?(k)
+            @options[k]=v
           end
         end
         Log.log.debug("local options= #{options}")

@@ -54,13 +54,11 @@ module Aspera
     end
 
     # on Windows, the env var %USERPROFILE% provides the path to user's home more reliably than %HOMEDRIVE%%HOMEPATH%
+    # so, tell Ruby the right way
     def self.fix_home
-      if os.eql?(OS_WINDOWS)
-        if ENV.has_key?('USERPROFILE') and Dir.exist?(ENV['USERPROFILE'])
-          ENV['HOME']=ENV['USERPROFILE']
-          Log.log.debug("Windows: set home to USERPROFILE: #{ENV['HOME']}")
-        end
-      end
+      return unless os.eql?(OS_WINDOWS) && ENV.has_key?('USERPROFILE') && Dir.exist?(ENV['USERPROFILE'])
+      ENV['HOME']=ENV['USERPROFILE']
+      Log.log.debug("Windows: set home to USERPROFILE: #{ENV['HOME']}")
     end
   end
 end

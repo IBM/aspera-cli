@@ -5,12 +5,15 @@ module Aspera
   module Cli
     module Plugins
       class Console < BasicAuthPlugin
+        DEFAULT_FILTER_AGE_SECONDS=3*3600
+        private_constant :DEFAULT_FILTER_AGE_SECONDS
         def initialize(env)
           super(env)
           options.add_opt_date(:filter_from,'only after date')
           options.add_opt_date(:filter_to,'only before date')
-          options.set_option(:filter_from,Manager.time_to_string(Time.now - 3*3600))
-          options.set_option(:filter_to,Manager.time_to_string(Time.now))
+          time_now=Time.now
+          options.set_option(:filter_from,Manager.time_to_string(time_now - DEFAULT_FILTER_AGE_SECONDS))
+          options.set_option(:filter_to,Manager.time_to_string(time_now))
           options.parse_options!
         end
 

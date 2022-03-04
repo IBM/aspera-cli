@@ -8,7 +8,7 @@ module Aspera
       class Logger < Fasp::Listener
         def event_struct(data)
           Log.log.debug(data.to_s)
-          Log.log.error("#{data['Description']}") if data['Type'].eql?('FILEERROR')
+          Log.log.error((data['Description']).to_s) if data['Type'].eql?('FILEERROR')
         end
 
         def event_enhanced(data)

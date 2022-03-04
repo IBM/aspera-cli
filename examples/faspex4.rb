@@ -19,8 +19,8 @@ Aspera::Fasp::Installation.instance.folder = tmpdir
 
 if !ARGV.length.eql?(3)
   Aspera::Log.log.error("Wrong number of args: #{ARGV.length}")
-  Aspera::Log.log.error("Usage: #{$0} <faspex URL> <faspex username> <faspex password>")
-  Aspera::Log.log.error("Example: #{$0} https://faspex.com/aspera/faspex john p@sSw0rd")
+  Aspera::Log.log.error("Usage: #{$PROGRAM_NAME} <faspex URL> <faspex username> <faspex password>")
+  Aspera::Log.log.error("Example: #{$PROGRAM_NAME} https://faspex.com/aspera/faspex john p@sSw0rd")
   Process.exit(1)
 end
 

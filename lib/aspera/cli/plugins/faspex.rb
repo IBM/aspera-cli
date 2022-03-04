@@ -64,12 +64,9 @@ module Aspera
         # extract elements from anonymous faspex link
         def self.get_link_data(publink)
           publink_uri=URI.parse(publink)
-          if (m=publink_uri.path.match(/^(.*)\/(external.*)$/))
-            base=m[1]
-            subpath=m[2]
-          else
-            raise CliBadArgument, 'public link does not match Faspex format'
-          end
+          raise CliBadArgument, 'public link does not match Faspex format' unless (m=publink_uri.path.match(/^(.*)\/(external.*)$/))
+          base=m[1]
+          subpath=m[2]
           port_add=publink_uri.port.eql?(publink_uri.default_port)?'':":#{publink_uri.port}"
           result={
             base_url:  "#{publink_uri.scheme}://#{publink_uri.host}#{port_add}#{base}",
@@ -243,7 +240,9 @@ module Aspera
             command_pkg=options.get_next_command([:send, :recv, :list])
             case command_pkg
             when :list
-              return {type: :object_list,data: mailbox_all_entries,fields: [PACKAGE_MATCH_FIELD,'title','items'], textify: lambda { |table_data| Faspex.textify_package_list(table_data)} }
+              return {type: :object_list,data: mailbox_all_entries,fields: [PACKAGE_MATCH_FIELD,'title','items'], textify: lambda { |table_data|
+                Faspex.textify_package_list(table_data)
+              } }
             when :send
               delivery_info=options.get_option(:delivery_info,:mandatory)
               raise CliBadArgument,'delivery_info must be hash, refer to doc' unless delivery_info.is_a?(Hash)
@@ -287,7 +286,8 @@ module Aspera
                   skip_ids_persistency=PersistencyActionOnce.new(
                   manager: @agents[:persistency],
                   data:    skip_ids_data,
-                  id:      IdGenerator.from_list(['faspex_recv',options.get_option(:url,:mandatory),options.get_option(:username,:mandatory),options.get_option(:box,:mandatory).to_s]))
+                  id:      IdGenerator.from_list(['faspex_recv',options.get_option(:url,:mandatory),options.get_option(:username,:mandatory),
+                                                  options.get_option(:box,:mandatory).to_s]))
                 end
                 # get command line parameters
                 delivid=instance_identifier()
@@ -321,7 +321,8 @@ module Aspera
                 end
                 # Note: unauthenticated API (authorization is in url params)
                 api_public_link=Rest.new({base_url: link_data[:base_url]})
-                pkgdatares=api_public_link.call({operation: 'GET',subpath: link_data[:subpath],url_params: {passcode: link_data[:query]['passcode']},headers: {'Accept'=>'application/xml'}})
+                pkgdatares=api_public_link.call({operation: 'GET',subpath: link_data[:subpath],url_params: {passcode: link_data[:query]['passcode']},
+headers: {'Accept'=>'application/xml'}})
                 if !pkgdatares[:http].body.start_with?('<?xml ')
                   OpenApplication.instance.uri(link_url)
                   raise CliError, 'no such package'

@@ -1,6 +1,7 @@
 # simple vt100 colors
 class String
   private
+
   def self.vtcmd(code);"\e[#{code}m";end
   # see https://en.wikipedia.org/wiki/ANSI_escape_code
   # symbol is the method name added to String
@@ -38,6 +39,6 @@ class String
     else
       define_method(name){self}
     end
-    public name
+    self.public(name)
   end
 end

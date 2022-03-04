@@ -1,3 +1,4 @@
+require 'English'
 require 'aspera/cli/plugin'
 require 'aspera/sync'
 require 'aspera/log'
@@ -28,19 +29,15 @@ module Aspera
             Log.log.debug("result=#{res}")
             case res
             when true then return Main.result_success
-            when false then raise "failed: #{$?}"
-            when nil then return Main.result_status("not started: #{$?}")
+            when false then raise "failed: #{$CHILD_STATUS}"
+            when nil then return Main.result_status("not started: #{$CHILD_STATUS}")
             else raise 'internal error: unspecified case'
             end
           when :admin
             p=options.get_option(:parameters,:mandatory)
             n=options.get_option(:session_name,:optional)
             cmdline=['asyncadmin','--quiet']
-            if n.nil?
-              session=p['sessions'].first
-            else
-              session=p['sessions'].select{|s|s['name'].eql?(n)}.first
-            end
+            session=n.nil? ? p['sessions'].first : p['sessions'].select{|s|s['name'].eql?(n)}.first
             cmdline.push('--name='+session['name'])
             if session.has_key?('local_db_dir')
               cmdline.push('--local-db-dir='+session['local_db_dir'])

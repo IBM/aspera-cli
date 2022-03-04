@@ -246,11 +246,11 @@ module Aspera
         result[:http].body.force_encoding('UTF-8') if result[:http].body.is_a?(String)
         Log.log.debug("result: body=#{result[:http].body}")
         result_mime=(result[:http]['Content-Type']||'text/plain').split(';').first
-        case result_mime
+        result[:data]=case result_mime
         when 'application/json','application/vnd.api+json'
-          result[:data]=JSON.parse(result[:http].body) rescue nil
+          JSON.parse(result[:http].body) rescue nil
         else #when 'text/plain'
-          result[:data]=result[:http].body
+          result[:http].body
         end
         Log.dump("result: parsed: #{result_mime}",result[:data])
         Log.log.debug("result: code=#{result[:http].code}")
@@ -270,27 +270,24 @@ module Aspera
           retry unless (oauth_tries -= 1).zero?
         end # if oauth
         # moved ?
-        if e.response.is_a?(Net::HTTPRedirection)
-          if tries_remain_redirect.positive?
-            tries_remain_redirect-=1
-            Log.log.info("URL is moved: #{e.response['location']}")
-            current_uri=URI.parse(call_data[:base_url])
-            redir_uri=URI.parse(e.response['location'])
-            call_data[:base_url]=e.response['location']
-            call_data[:subpath]=''
-            if current_uri.host.eql?(redir_uri.host) and current_uri.port.eql?(redir_uri.port)
-              req=build_request(call_data)
-              retry
-            else
-              # change host
-              Log.log.info("Redirect changes host: #{current_uri.host} -> #{redir_uri.host}")
-              return self.class.new(call_data).call(call_data)
-            end
+        raise e unless e.response.is_a?(Net::HTTPRedirection)
+        if tries_remain_redirect.positive?
+          tries_remain_redirect-=1
+          Log.log.info("URL is moved: #{e.response['location']}")
+          current_uri=URI.parse(call_data[:base_url])
+          redir_uri=URI.parse(e.response['location'])
+          call_data[:base_url]=e.response['location']
+          call_data[:subpath]=''
+          if current_uri.host.eql?(redir_uri.host) and current_uri.port.eql?(redir_uri.port)
+            req=build_request(call_data)
+            retry
           else
-            raise e unless call_data[:return_error]
+            # change host
+            Log.log.info("Redirect changes host: #{current_uri.host} -> #{redir_uri.host}")
+            return self.class.new(call_data).call(call_data)
           end
         else
-          raise e
+          raise e unless call_data[:return_error]
         end
         # raise exception if could not retry and not return error in result
         raise e unless call_data[:return_error]

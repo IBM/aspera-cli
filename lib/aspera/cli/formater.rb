@@ -12,7 +12,7 @@ module Aspera
       FIELDS_ALL='ALL'
       FIELDS_DEFAULT='DEF'
       # supported output formats
-      DISPLAY_FORMATS=[:table,:ruby,:json,:jsonpp,:yaml,:csv,:nagios]
+      DISPLAY_FORMATS=%i(table ruby json jsonpp yaml csv nagios)
       # user output levels
       DISPLAY_LEVELS=[:info,:data,:error]
       CSV_RECORD_SEPARATOR="\n"
@@ -89,26 +89,18 @@ module Aspera
       def self.flatten_name_value_list(hash)
         hash.keys.each do |k|
           v=hash[k]
-          if v.is_a?(Array) and v.map(&:class).uniq.eql?([Hash]) and v.map(&:keys).flatten.sort.uniq.eql?(['name', 'value'])
-            v.each do |pair|
-              hash["#{k}.#{pair['name']}"]=pair['value']
-            end
-            hash.delete(k)
+          next unless v.is_a?(Array) && v.map(&:class).uniq.eql?([Hash]) && v.map(&:keys).flatten.sort.uniq.eql?(['name', 'value'])
+          v.each do |pair|
+            hash["#{k}.#{pair['name']}"]=pair['value']
           end
+          hash.delete(k)
         end
       end
 
       def result_default_fields(results,table_rows_hash_val)
-        if results.has_key?(:fields) and !results[:fields].nil?
-          final_table_columns=results[:fields]
-        else
-          if !table_rows_hash_val.empty?
-            final_table_columns=table_rows_hash_val.first.keys
-          else
-            final_table_columns=['empty']
-          end
-        end
-        return final_table_columns
+        return results[:fields] if results.has_key?(:fields) && !results[:fields].nil?
+        return ['empty'] if table_rows_hash_val.empty?
+        return table_rows_hash_val.first.keys
       end
 
       def result_all_fields(_results,table_rows_hash_val)

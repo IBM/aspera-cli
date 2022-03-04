@@ -7,12 +7,11 @@ module Aspera
     class BasicAuthPlugin < Plugin
       def initialize(env)
         super(env)
-        unless env[:skip_basic_auth_options]
-          options.add_opt_simple(:url,'URL of application, e.g. https://org.asperafiles.com')
-          options.add_opt_simple(:username,'username to log in')
-          options.add_opt_simple(:password,"user's password")
-          options.parse_options!
-        end
+        return if env[:skip_basic_auth_options]
+        options.add_opt_simple(:url,'URL of application, e.g. https://org.asperafiles.com')
+        options.add_opt_simple(:username,'username to log in')
+        options.add_opt_simple(:password,"user's password")
+        options.parse_options!
       end
       ACTIONS=[]
 

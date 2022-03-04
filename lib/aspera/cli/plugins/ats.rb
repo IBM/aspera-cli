@@ -63,7 +63,9 @@ module Aspera
                   server_data2=@ats_api_pub.all_servers.select{|s|s['id'].eql?(params['transfer_server_id'])}.first
                   raise "no such transfer server id: #{params['transfer_server_id']}" if server_data2.nil?
                 else
-                  server_data2=@ats_api_pub.all_servers.select{|s|s['cloud'].eql?(server_data['cloud']) and s['region'].eql?(server_data['region']) and s.has_key?('s3_authentication_endpoint')}.first
+                  server_data2=@ats_api_pub.all_servers.select{|s|
+                    s['cloud'].eql?(server_data['cloud']) and s['region'].eql?(server_data['region']) and s.has_key?('s3_authentication_endpoint')
+                  }.first
                   raise "no such transfer server id: #{params['transfer_server_id']}" if server_data2.nil?
                   # specific one do not have s3 end point in id
                   params['transfer_server_id']=server_data2['id']

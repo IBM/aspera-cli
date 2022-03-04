@@ -109,7 +109,8 @@ module Aspera
         else raise "INTERNAL: unexpected value: #{s}"
         end
       end.flatten
-      raise Fasp::Error, "#{param_name} is : #{parameter_value.class} (#{parameter_value}), shall be #{options[:accepted_types]}, " unless parameter_value.nil? or expected_classes.include?(parameter_value.class)
+      raise Fasp::Error,
+"#{param_name} is : #{parameter_value.class} (#{parameter_value}), shall be #{options[:accepted_types]}, " unless parameter_value.nil? or expected_classes.include?(parameter_value.class)
       @used_param_names.push(param_name) unless action.eql?(:defer)
 
       # process only non-nil values

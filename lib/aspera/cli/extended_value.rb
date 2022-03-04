@@ -11,7 +11,9 @@ module Aspera
     # command line extended values
     class ExtendedValue
       include Singleton
+
       private
+
       # decode comma separated table text
       def self.decode_csvt(value)
         col_titles=nil
@@ -51,6 +53,7 @@ module Aspera
           # other handlers can be set using set_handler, e.g. preset is reader in config plugin
         }
       end
+
       public
 
       def modifiers;@handlers.keys.map{|i|@handlers[i].keys}.flatten.map(&:to_s);end

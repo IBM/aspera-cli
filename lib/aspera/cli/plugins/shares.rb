@@ -15,7 +15,6 @@ module Aspera
               if e.response.code.to_s.eql?('401') and e.response.body.eql?('{"error":{"user_message":"API user authentication failed"}}')
                 return {version: 'unknown'}
               end
-            rescue
             end
             nil
           end
