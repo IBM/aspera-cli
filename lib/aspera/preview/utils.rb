@@ -8,12 +8,12 @@ module Aspera
   module Preview
     class Utils
       # from bash manual: meta-character need to be escaped
-      BASH_SPECIAL_CHARACTERS="|&;()<> \t#\n"
+      BASH_SPECIAL_CHARACTERS="|&;()<> \t#\n".freeze
       # shell exit code when command is not found
       BASH_EXIT_NOT_FOUND=127
       # external binaries used
       EXPERNAL_TOOLS=[:ffmpeg,:ffprobe,:convert,:composite,:optipng,:unoconv]
-      TMPFMT='img%04d.jpg'
+      TMPFMT='img%04d.jpg'.freeze
       private_constant :BASH_SPECIAL_CHARACTERS,:BASH_EXIT_NOT_FOUND,:EXPERNAL_TOOLS,:TMPFMT
 
       class<<self
@@ -77,7 +77,7 @@ module Aspera
 
         # @return Float in seconds
         def video_get_duration(input_file)
-          result = String.new
+          result = ''
           external_command(:ffprobe,[
                              '-loglevel','error',
                              '-show_entries','format=duration',

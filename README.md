@@ -2104,7 +2104,7 @@ ascli node delete testfile.bin
 ascli node download testfile.bin --to-folder=.
 ascli node download testfile.bin --to-folder=. --token-type=hybrid
 ascli node health
-ascli node info
+ascli node info --fpac='function FindProxyForURL(url,host){return "DIRECT"}'
 ascli node search / --value=@json:'{"sort":"mtime"}'
 ascli node service create @json:'{"id":"service1","type":"WATCHD","run_as":{"user":"user1"}}'
 ascli node service delete service1
@@ -2255,7 +2255,7 @@ OPTIONS:
         --ascp-path=VALUE            path to ascp
         --use-product=VALUE          use ascp from specified product
         --smtp=VALUE                 smtp configuration (extended value: hash)
-        --fpac=VALUE                 proxy auto configuration URL
+        --fpac=VALUE                 proxy auto configuration script
         --secret=VALUE               default secret
         --secrets=VALUE              secret vault
         --sdk-url=VALUE              URL to get SDK

@@ -121,7 +121,7 @@ module Aspera
           options.add_opt_simple(:ascp_path,'path to ascp')
           options.add_opt_simple(:use_product,'use ascp from specified product')
           options.add_opt_simple(:smtp,'smtp configuration (extended value: hash)')
-          options.add_opt_simple(:fpac,'proxy auto configuration URL')
+          options.add_opt_simple(:fpac,'proxy auto configuration script')
           options.add_opt_simple(:secret,'default secret')
           options.add_opt_simple(:secrets,'secret vault')
           options.add_opt_simple(:sdk_url,'URL to get SDK')
@@ -162,16 +162,13 @@ module Aspera
         end
 
         def check_gem_version
-          # can also get version from Cli::VERSION
-          this_gem_name=File.basename(File.dirname(self.class.gem_root)).gsub(/-[0-9].*$/,'')
           latest_version=begin
-            Rest.new(base_url: 'https://rubygems.org/api/v1').read("versions/#{this_gem_name}/latest.json")[:data]['version']
-          rescue
+            Rest.new(base_url: 'https://rubygems.org/api/v1').read("versions/#{@info[:gem]}/latest.json")[:data]['version']
+          rescue StandardError
             Log.log.warn('Could not retrieve latest gem version on rubygems.')
             '0'
           end
-          return {name: this_gem_name, current: Aspera::Cli::VERSION, latest: latest_version,
-need_update: Gem::Version.new(Aspera::Cli::VERSION) < Gem::Version.new(latest_version)}
+          return {name: @info[:gem], current: Aspera::Cli::VERSION, latest: latest_version, need_update: Gem::Version.new(Aspera::Cli::VERSION) < Gem::Version.new(latest_version)}
         end
 
         def periodic_check_newer_gem_version
@@ -190,7 +187,7 @@ need_update: Gem::Version.new(Aspera::Cli::VERSION) < Gem::Version.new(latest_ve
           current_date=Date.today
           last_check_days = begin
             current_date-Date.strptime(last_check_array.first, '%Y/%m/%d')
-          rescue
+          rescue StandardError
             # negative value will force check
             -1
           end
@@ -248,17 +245,24 @@ need_update: Gem::Version.new(Aspera::Cli::VERSION) < Gem::Version.new(latest_ve
             File.dirname(File.expand_path(__FILE__))
           end
 
-          # find the root folder of gem where this class is
+          # name of englobin module
+          # @return "Aspera::Cli::Plugins"
+          def module_full_name
+            Log.log.debug(">>>"+Module.nesting[2].to_s)
+            return Module.nesting[2].to_s
+          end
+
+          # @return main folder where code is, i.e. .../lib
           # go up as many times as englobing modules (not counting class, as it is a file)
-          def gem_root
-            File.expand_path(Module.nesting[1].to_s.gsub('::','/').gsub(%r{[^/]+},'..'),File.dirname(__FILE__))
+          def gem_src_root
+            File.expand_path(module_full_name.gsub('::','/').gsub(%r{[^/]+},'..'),gem_plugins_folder)
           end
 
           # instanciate a plugin
           # plugins must be Capitalized
           def plugin_class(plugin_name_sym)
             # Module.nesting[2] is Aspera::Cli::Plugins
-            return Object.const_get("#{Module.nesting[2]}::#{plugin_name_sym.to_s.capitalize}")
+            return Object.const_get("#{module_full_name}::#{plugin_name_sym.to_s.capitalize}")
           end
 
           def flatten_all_config(t)
@@ -467,7 +471,7 @@ need_update: Gem::Version.new(Aspera::Cli::VERSION) < Gem::Version.new(latest_ve
           rescue Psych::SyntaxError => e
             Log.log.error('YAML error in config file')
             raise e
-          rescue => e
+          rescue StandardError => e
             Log.log.debug("-> #{e}")
             new_name="#{@option_config_file}.pre#{@info[:version]}.manual_conversion_needed"
             File.rename(@option_config_file,new_name)
@@ -517,7 +521,7 @@ need_update: Gem::Version.new(Aspera::Cli::VERSION) < Gem::Version.new(latest_ve
             # first try : direct
             begin
               detection_info=c.detect(current_url)
-            rescue => e
+            rescue StandardError => e
               Log.log.debug("Cannot detect #{plugin_name_sym} : #{e.message}")
             end
             # second try : is there a redirect ?
@@ -525,7 +529,7 @@ need_update: Gem::Version.new(Aspera::Cli::VERSION) < Gem::Version.new(latest_ve
               # TODO: check if redirect ?
               current_url=Rest.new(base_url: url).call(operation: 'GET',subpath: '',redirect_max: 1)[:http].uri.to_s
               detection_info=c.detect(current_url) unless url.eql?(current_url)
-            rescue => e
+            rescue StandardError => e
               Log.log.debug("Cannot detect #{plugin_name_sym} : #{e.message}")
             end
             return detection_info.merge(product: plugin_name_sym, url: current_url) unless detection_info.nil?
@@ -793,8 +797,7 @@ need_update: Gem::Version.new(Aspera::Cli::VERSION) < Gem::Version.new(latest_ve
               option_override=options.get_option(:override,:mandatory)
               option_default=options.get_option(:default,:mandatory)
               Log.log.error("override=#{option_override} -> #{option_override.class}")
-              raise CliError,
-"A default configuration already exists for plugin '#{plugin_name}' (use --override=yes or --default=no)" if !option_override and option_default and @config_presets[CONF_PRESET_DEFAULT].has_key?(plugin_name)
+              raise CliError,"A default configuration already exists for plugin '#{plugin_name}' (use --override=yes or --default=no)" if !option_override and option_default and @config_presets[CONF_PRESET_DEFAULT].has_key?(plugin_name)
               raise CliError,"Preset already exists: #{preset_name}  (use --override=yes or --id=<name>)" if !option_override and @config_presets.has_key?(preset_name)
               # lets see if path to priv key is provided
               private_key_path=options.get_option(:pkeypath,:optional)
@@ -821,8 +824,7 @@ need_update: Gem::Version.new(Aspera::Cli::VERSION) < Gem::Version.new(latest_ve
               # make username mandatory for jwt, this triggers interactive input
               options.get_option(:username,:mandatory)
               # instanciate AoC plugin, so that command line options are known
-              files_plugin=self.class.plugin_class(plugin_name).new(@agents.merge({skip_basic_auth_options: true, private_key_path: private_key_path}))
-              aoc_api=files_plugin.get_api
+              aoc_api=self.class.plugin_class(plugin_name).new(@agents.merge({skip_basic_auth_options: true, private_key_path: private_key_path})).aoc_api
               auto_set_pub_key=false
               auto_set_jwt=false
               use_browser_authentication=false
@@ -943,7 +945,7 @@ need_update: Gem::Version.new(Aspera::Cli::VERSION) < Gem::Version.new(latest_ve
             execute_action_ascp
           when :gem
             case options.get_next_command([:path,:version,:name])
-            when :path then return Main.result_status(self.class.gem_root)
+            when :path then return Main.result_status(self.class.gem_src_root)
             when :version then return Main.result_status(Aspera::Cli::VERSION)
             when :name then return Main.result_status(@info[:gem])
             end
@@ -957,6 +959,7 @@ need_update: Gem::Version.new(Aspera::Cli::VERSION) < Gem::Version.new(latest_ve
           when :smtp_settings
             return {type: :single_object, data: email_settings}
           when :proxy_check
+            # ensure fpac was provided
             options.get_option(:fpac,:mandatory)
             server_url=options.get_next_argument('server url')
             return Main.result_status(@pac_exec.find_proxy_for_url(server_url))

@@ -61,7 +61,7 @@ module Aspera
         # get folder content
         folder_contents = begin
           read("files/#{current_item[:id]}/files")[:data]
-        rescue => e
+        rescue StandardError => e
           Log.log.warn("#{current_item[:relpath]}: #{e.class} #{e.message}")
           []
         end

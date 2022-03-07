@@ -70,7 +70,7 @@ module Aspera
           if result_size > @options.max_size
             Log.log.warn("preview size exceeds maximum #{result_size} > #{@options.max_size}")
           end
-        rescue => e
+        rescue StandardError => e
           Log.log.error(e.message.to_s)
           Log.log.debug(e.backtrace.join("\n").red)
           FileUtils.cp(File.expand_path(@preview_format_symb.eql?(:mp4)?'video_error.png':'image_error.png',File.dirname(__FILE__)),@destination_file_path)

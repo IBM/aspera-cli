@@ -21,7 +21,7 @@ module Aspera
             return nil
           end
         end
-        SAMPLE_SOAP_CALL='<?xml version="1.0" encoding="UTF-8"?><soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:typ="urn:Aspera:XML:FASPSessionNET:2009/11:Types"><soapenv:Header></soapenv:Header><soapenv:Body><typ:GetSessionInfoRequest><SessionFilter><SessionStatus>running</SessionStatus></SessionFilter></typ:GetSessionInfoRequest></soapenv:Body></soapenv:Envelope>'
+        SAMPLE_SOAP_CALL='<?xml version="1.0" encoding="UTF-8"?><soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:typ="urn:Aspera:XML:FASPSessionNET:2009/11:Types"><soapenv:Header></soapenv:Header><soapenv:Body><typ:GetSessionInfoRequest><SessionFilter><SessionStatus>running</SessionStatus></SessionFilter></typ:GetSessionInfoRequest></soapenv:Body></soapenv:Envelope>'.freeze
         private_constant :SAMPLE_SOAP_CALL
 
         def initialize(env)
@@ -60,14 +60,13 @@ module Aspera
         # key/value is defined in main in hash_table
         def c_textify_bool_list_result(list,name_list)
           list.each_index do |i|
-            if name_list.include?(list[i]['key'])
-              list[i]['value'].each do |item|
-                list.push({'key'=>item['name'],'value'=>item['value']})
-              end
-              list.delete_at(i)
-              # continue at same index because we delete current one
-              redo
+            next unless name_list.include?(list[i]['key'])
+            list[i]['value'].each do |item|
+              list.push({'key'=>item['name'],'value'=>item['value']})
             end
+            list.delete_at(i)
+            # continue at same index because we delete current one
+            redo
           end
         end
 
@@ -125,14 +124,14 @@ module Aspera
               nagios.add_ok('node api','accessible')
               nagios.check_time_offset(info['current_time'],'node api')
               nagios.check_product_version('node api','entsrv', info['version'])
-            rescue => e
+            rescue StandardError => e
               nagios.add_critical('node api',e.to_s)
             end
             begin
               @api_node.call({ operation: 'POST', subpath: 'services/soap/Transfer-201210',
 headers: {'Content-Type'=>'text/xml;charset=UTF-8','SOAPAction'=>'FASPSessionNET-200911#GetSessionInfo'}, text_body_params: SAMPLE_SOAP_CALL})[:http].body
               nagios.add_ok('central','accessible by node')
-            rescue => e
+            rescue StandardError => e
               nagios.add_critical('central',e.to_s)
             end
             return nagios.result
@@ -384,7 +383,7 @@ fields: ['id','status','start_spec.direction','start_spec.remote_user','start_sp
               raise 'error'
             end
           when :access_key
-            return entity_action(@api_node,'access_keys',nil,:id,'self')
+            return entity_action(@api_node,'access_keys',id_default: 'self')
           when :service
             command=options.get_next_command([:list, :create, :delete])
             if [:delete].include?(command)
@@ -405,7 +404,6 @@ fields: ['id','status','start_spec.direction','start_spec.remote_user','start_sp
             end
           when :watch_folder
             res_class_path='v3/watchfolders'
-            #return entity_action(@api_node,'v3/watchfolders',nil,:id)
             command=options.get_next_command([:create, :list, :show, :modify, :delete, :state])
             if [:show,:modify,:delete,:state].include?(command)
               one_res_id=instance_identifier()

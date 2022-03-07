@@ -149,7 +149,7 @@ module Aspera
           job[:sessions].each do |session|
             Log.log.debug("join #{session[:thread]}")
             session[:thread].join
-            result.push(session[:error] ? session[:error] : :success)
+            result.push(session[:error] || :success)
           end
         end
         Log.log.debug('all transfers joined')
@@ -355,7 +355,7 @@ module Aspera
             start_transfer_with_args_env(session[:env_args],session)
           end
           Log.log.debug('transfer ok'.bg_green)
-        rescue => e
+        rescue StandardError => e
           session[:error]=e
           Log.log.error("Transfer thread error: #{e.class}:\n#{e.message}:\n#{e.backtrace.join("\n")}".red) if Log.instance.level.eql?(:debug)
         end

@@ -255,7 +255,7 @@ tconsole: $(T)cons1 $(T)cons2 $(T)cons3
 
 $(T)nd1: $(T).exists
 	@echo $@
-	$(EXE_MAN) node info
+	$(EXE_MAN) node info --fpac='function FindProxyForURL(url,host){return "DIRECT"}'
 	$(EXE_MAN) node browse / -r
 	$(EXE_MAN) node search / --value=@json:'{"sort":"mtime"}'
 	@touch $@

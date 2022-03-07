@@ -29,7 +29,6 @@ module Aspera
 
   # start a local web server, then start a browser that will callback the local server upon authentication
   class WebAuth
-    #    class << self
     #      # generates and adds self signed cert to provided webrick options
     #      def fill_self_signed_cert(cert,key)
     #        cert.subject = cert.issuer = OpenSSL::X509::Name.parse('/C=FR/O=Test/OU=Test/CN=Test')
@@ -49,7 +48,6 @@ module Aspera
     #        cert.add_extension(ef.create_extension('authorityKeyIdentifier','keyid:always,issuer:always'))
     #        cert.sign(key, OpenSSL::Digest::SHA256.new)
     #      end
-    #    end
     attr_reader :expected_path,:mutex,:cond
     attr_writer :query
     # @param endpoint_url [String] e.g. 'https://127.0.0.1:12345'

@@ -23,7 +23,7 @@ module Aspera
           @connect_api=Rest.new({base_url: "#{connect_url}/v5/connect",headers: {'Origin'=>Rest.user_agent}}) # could use v6 also now
           cinfo=@connect_api.read('info/version')[:data]
           Log.dump(:connect_version,cinfo)
-        rescue => e # Errno::ECONNREFUSED
+        rescue StandardError => e # Errno::ECONNREFUSED
           raise StandardError,"Unable to start connect after #{trynumber} try" if trynumber >= MAX_CONNECT_START_RETRY
           Log.log.warn("connect is not started. Retry ##{trynumber}, err=#{e}")
           trynumber+=1
@@ -104,7 +104,7 @@ module Aspera
             end
             sleep 1
           end
-        rescue => e
+        rescue StandardError => e
           return [e]
         end
         return [:success]

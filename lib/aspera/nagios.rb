@@ -9,7 +9,7 @@ module Aspera
     LEVELS.each_index do |code|
       name="#{ADD_PREFIX}#{LEVELS[code]}".to_sym
       define_method(name){|comp,msg|@data.push({code: code,comp: comp,msg: msg})}
-      self.public(name)
+      public name
     end
     # date offset levels
     DATE_WARN_OFFSET=2

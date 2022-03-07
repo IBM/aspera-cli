@@ -12,7 +12,8 @@ module Aspera
       # max number of pages for list command
       MAX_PAGES='pmax'.freeze
 
-      @@done=false
+      # global for inherited classes
+      @@options_created=false
 
       def initialize(env)
         @agents=env
@@ -24,12 +25,12 @@ module Aspera
           options.parser.separator "SUBCOMMANDS: #{self.class.const_get(:ACTIONS).map(&:to_s).join(' ')}"
           options.parser.separator 'OPTIONS:'
         end
-        return if @@done
+        return if @@options_created
         options.add_opt_simple(:value,'extended value for create, update, list filter')
         options.add_opt_simple(:property,'name of property to set')
         options.add_opt_simple(:id,"resource identifier (#{INSTANCE_OPS.join(',')})")
         options.parse_options!
-        @@done=true
+        @@options_created=true
       end
 
       # must be called AFTER the instance action
@@ -39,12 +40,11 @@ module Aspera
         return res_id
       end
 
-      def entity_command(command,rest_api,res_class_path,display_fields,id_symb,id_default=nil,use_subkey=false)
-        raise 'not id' unless :id.eql?(id_symb)
+      def entity_command(command,rest_api,res_class_path,display_fields: nil,id_default: nil,use_subkey: false)
         if INSTANCE_OPS.include?(command)
           begin
             one_res_id=instance_identifier()
-          rescue => e
+          rescue StandardError => e
             raise e if id_default.nil?
             one_res_id=id_default
           end
@@ -86,10 +86,10 @@ module Aspera
       end
 
       # implement generic rest operations on given resource path
-      def entity_action(rest_api,res_class_path,display_fields,id_symb,id_default=nil,use_subkey=false)
+      def entity_action(rest_api,res_class_path,**opts)
         #res_name=res_class_path.gsub(%r{^.*/},'').gsub(%r{s$},'').gsub('_',' ')
         command=options.get_next_command(ALL_OPS)
-        return entity_command(command,rest_api,res_class_path,display_fields,id_symb,id_default,use_subkey)
+        return entity_command(command,rest_api,res_class_path,opts)
       end
 
       # shortcuts for plugin environment

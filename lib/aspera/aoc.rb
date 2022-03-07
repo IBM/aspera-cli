@@ -89,8 +89,6 @@ module Aspera
       # then set options url/token/auth
       def resolve_pub_link(rest_opts,public_link_url)
         return if public_link_url.nil?
-        # set to token if available after redirection
-        url_param_token_pair=nil
         redirect_count=0
         while redirect_count <= MAX_REDIRECT
           uri=URI.parse(public_link_url)
@@ -305,8 +303,7 @@ module Aspera
       raise 'INTERNAL ERROR: method parameters: options must be Hash' unless options.is_a?(Hash)
       options.keys.each {|k| raise "INTERNAL ERROR: not valid option: #{k}" unless [:scope,:use_secret].include?(k)}
       # get optional secret unless :use_secret is false (default is true)
-      ak_secret=@key_chain.get_secret(url: node_info['url'], username: node_info['access_key'],
-mandatory: false) if !@key_chain.nil? and (!options.has_key?(:use_secret) or options[:use_secret])
+      ak_secret=@key_chain.get_secret(url: node_info['url'], username: node_info['access_key'], mandatory: false) if !@key_chain.nil? and (!options.has_key?(:use_secret) or options[:use_secret])
       if ak_secret.nil? and !options.has_key?(:scope)
         raise "There must be at least one of: 'secret' or 'scope' for access key #{node_info['access_key']}"
       end
@@ -351,7 +348,7 @@ mandatory: false) if !@key_chain.nil? and (!options.has_key?(:use_secret) or opt
           sub_opt={method: process_find_files, top_file_id: entry['target_id'], top_file_path: path}
           get_node_api(sub_node_info,scope: SCOPE_NODE_USER).crawl(self,sub_opt)
         end
-      rescue => e
+      rescue StandardError => e
         Log.log.error("#{path}: #{e.message}")
       end
       # process all folders
@@ -426,16 +423,14 @@ mandatory: false) if !@key_chain.nil? and (!options.has_key?(:use_secret) or opt
       matching_items=read(entity_type,options.merge({'q'=>entity_name}))[:data]
       case matching_items.length
       when 1 then return matching_items.first
-      when 0 then raise RuntimeError,'not found'
+      when 0 then raise 'not found'
       else
         # multiple case insensitive partial matches, try case insensitive full match
         # (anyway AoC does not allow creation of 2 entities with same case insensitive name)
         icase_matches=matching_items.select{|i|i['name'].casecmp?(entity_name)}
         case icase_matches.length
         when 1 then return icase_matches.first
-        when 0 then raise "#{entity_type}: multiple case insensitive partial match for: \"#{entity_name}\": #{matching_items.map{|i|
-          i['name']
-        } } but no case insensitive full match. Please be more specific or give exact name."
+        when 0 then raise %Q(#{entity_type}: multiple case insensitive partial match for: "#{entity_name}": #{matching_items.map{|i|i['name']}} but no case insensitive full match. Please be more specific or give exact name.)
         else raise "Two entities cannot have the same case insensitive name: #{icase_matches.map{|i|i['name']}}"
         end
       end

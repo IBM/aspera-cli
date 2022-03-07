@@ -5,7 +5,7 @@ module Security
   class Keychain
     class << self
       def by_name(name)
-        keychains_from_output(%(security list-keychains)).select{|kc|kc.filename.end_with?("/#{name}.keychain-db")}.first
+        keychains_from_output("security list-keychains").select{|kc|kc.filename.end_with?("/#{name}.keychain-db")}.first
       end
     end
   end

@@ -12,7 +12,7 @@ module Aspera
       FIELDS_ALL='ALL'
       FIELDS_DEFAULT='DEF'
       # supported output formats
-      DISPLAY_FORMATS=%i(table ruby json jsonpp yaml csv nagios)
+      DISPLAY_FORMATS=%i[table ruby json jsonpp yaml csv nagios]
       # user output levels
       DISPLAY_LEVELS=[:info,:data,:error]
       CSV_RECORD_SEPARATOR="\n"

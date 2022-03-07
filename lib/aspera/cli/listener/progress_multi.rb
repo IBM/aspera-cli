@@ -23,7 +23,7 @@ module Aspera
         def update_total
           begin
             @progress_bar.total=@sessions.values.inject(0){|m,s|m+=s[:job_size].to_i;m;}
-          rescue
+          rescue StandardError
             nil
           end
         end
@@ -31,7 +31,7 @@ module Aspera
         def update_progress
           begin
             @progress_bar.progress=@sessions.values.inject(0){|m,s|m+=s[:current].to_i;m;}
-          rescue
+          rescue StandardError
             nil
           end
         end
@@ -64,16 +64,11 @@ module Aspera
               update_total
             end
           when 'STATS' # during transfer
-            if !@progress_bar.total.nil?
-              if data.has_key?('bytescont')
-                session[:current]=session[:cumulative]+data['bytescont'].to_i
-                update_progress
-              else
-                session[:current]=data['transfer_bytes'].to_i
-                update_progress
-              end
-            else
+            if @progress_bar.total.nil?
               @progress_bar.increment
+            else
+              session[:current]=data.has_key?('bytescont') ? session[:cumulative]+data['bytescont'].to_i : data['transfer_bytes'].to_i
+              update_progress
             end
           when 'STOP'
             # stop event when one file is completed

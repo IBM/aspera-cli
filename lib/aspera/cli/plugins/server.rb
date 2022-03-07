@@ -35,32 +35,35 @@ module Aspera
         end
 
         def asctl_parse(text)
+          # normal separator
           r=/:\s*/
-          return text.split("\n").map do |line|
-            # console
+          result=[]
+          text.split("\n").each do |line|
+            # console: missing space
             line.gsub!(/(SessionDataCollector)/,'\1 ')
             # orchestrator
             line.gsub!(/ with pid:.*/,'')
             line.gsub!(/ is /,': ')
-            x=line.split(r)
-            next unless x.length.eql?(2)
-            y={'process'=>x.first,'state'=>x.last}
+            items=line.split(r)
+            next unless items.length.eql?(2)
+            state={'process'=>items.first,'state'=>items.last}
             # console
-            y['state'].gsub!(/\.+$/,'')
+            state['state'].gsub!(/\.+$/,'')
             # console
-            y['process'].gsub!(/^.+::/,'')
+            state['process'].gsub!(/^.+::/,'')
             # faspex
-            y['process'].gsub!(/^Faspex /,'')
+            state['process'].gsub!(/^Faspex /,'')
             # faspex
-            y['process'].gsub!(/ Background/,'')
-            y['process'].gsub!(/serving orchestrator on port /,'')
+            state['process'].gsub!(/ Background/,'')
+            state['process'].gsub!(/serving orchestrator on port /,'')
             # console
-            r=/\s+/ if y['process'].eql?('Console')
+            r=/\s+/ if state['process'].eql?('Console')
             # orchestrator
-            y['process'].gsub!(/^  -> /,'')
-            y['process'].gsub!(/ Process/,'')
-            y
-          end.select{|i|!i.nil?}
+            state['process'].gsub!(/^  -> /,'')
+            state['process'].gsub!(/ Process/,'')
+            result.push(state)
+          end
+          return result
         end
 
         ACTIONS=[:health,:nodeadmin,:userdata,:configurator,:ctl,:download,:upload,:browse,:delete,:rename].concat(Aspera::AsCmd::OPERATIONS)
@@ -162,7 +165,7 @@ module Aspera
               realcmd='asctl'
               prefix=options.get_option(:cmd_prefix,:optional)
               realcmd="#{prefix}#{realcmd} all:status" unless prefix.nil?
-              result=shell_executor.execute(realcmd.split(' '))
+              result=shell_executor.execute(realcmd.split)
               data=asctl_parse(result)
               data.each do |i|
                 if i['state'].eql?('running')

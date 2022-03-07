@@ -365,7 +365,7 @@ save_to_file: File.join(transfer.destination_folder(Fasp::TransferSpec::DIRECTIO
               res=do_action.call(id)
               one=res if id.is_a?(Hash) # if block returns a has, let's use this
               one['status']=success_msg
-            rescue => e
+            rescue StandardError => e
               one['status']=e.to_s
             end
             result_list.push(one)
@@ -411,7 +411,7 @@ save_to_file: File.join(transfer.destination_folder(Fasp::TransferSpec::DIRECTIO
                 full_recipient_info=aoc_api.lookup_entity_by_name(entity_type,short_recipient_info,{'current_workspace_id'=>@workspace_id})
               rescue RuntimeError => e
                 raise e unless e.message.eql?('not found')
-                raise "no such shared inbox in workspace #{@workspace_name}" if entity_type.eql?('contacts')
+                raise "no such shared inbox in workspace #{@workspace_name}" unless entity_type.eql?('contacts')
                 full_recipient_info=aoc_api.create('contacts',{'current_workspace_id'=>@workspace_id,'email'=>short_recipient_info}.merge(new_user_option))[:data]
               end
               short_recipient_info=if entity_type.eql?('dropboxes')
@@ -456,15 +456,14 @@ save_to_file: File.join(transfer.destination_folder(Fasp::TransferSpec::DIRECTIO
           begin
             # check it is suitable
             URI.encode_www_form(query) unless query.nil?
-          rescue => e
+          rescue StandardError => e
             raise CliBadArgument,"query must be an extended value which can be encoded with URI.encode_www_form. Refer to manual. (#{e.message})"
           end
           return query
         end
 
         def assert_public_link_types(expected)
-          raise CliBadArgument,
-"public link type is #{@url_token_data['purpose']} but action requires one of #{expected.join(',')}" unless expected.include?(@url_token_data['purpose'])
+          raise CliBadArgument,"public link type is #{@url_token_data['purpose']} but action requires one of #{expected.join(',')}" unless expected.include?(@url_token_data['purpose'])
         end
 
         # Call aoc_api.read with same parameters.
@@ -493,8 +492,8 @@ save_to_file: File.join(transfer.destination_folder(Fasp::TransferSpec::DIRECTIO
             break if add_items.empty?
             # append new items to full list
             item_list += add_items
-            break if !max_pages.nil? and page_count > max_pages
-            break if !max_items.nil? and item_list.count > max_items
+            break if !max_pages.nil? && page_count > max_pages
+            break if !max_items.nil? && item_list.count > max_items
           end
           return item_list,total_count
         end
@@ -961,7 +960,7 @@ save_to_file: File.join(transfer.destination_folder(Fasp::TransferSpec::DIRECTIO
                 end
                 options.set_option(:value,value_option)
               end
-              result=entity_action(@api_aoc,'short_links',nil,:id,'self')
+              result=entity_action(@api_aoc,'short_links',id_default: 'self')
               if result[:data].is_a?(Hash) and result[:data].has_key?('created_at') and result[:data]['resource_type'].eql?('UrlToken')
                 node_api=aoc_api.get_node_api(node_file[:node_info],scope: AoC::SCOPE_NODE_USER)
                 # TODO: access level as arg
@@ -997,12 +996,12 @@ save_to_file: File.join(transfer.destination_folder(Fasp::TransferSpec::DIRECTIO
             command_automation=options.get_next_command([:workflows, :instances])
             case command_automation
             when :instances
-              return entity_action(@api_aoc,'workflow_instances',nil,:id,nil)
+              return entity_action(@api_aoc,'workflow_instances')
             when :workflows
               wf_command=options.get_next_command([Plugin::ALL_OPS,:action,:launch].flatten)
               case wf_command
               when *Plugin::ALL_OPS
-                return entity_command(wf_command,automation_api,'workflows',nil,:id)
+                return entity_command(wf_command,automation_api,'workflows',id_default: :id)
               when :launch
                 wf_id=instance_identifier()
                 data=automation_api.create("workflows/#{wf_id}/launch",{})[:data]
@@ -1029,7 +1028,7 @@ save_to_file: File.join(transfer.destination_folder(Fasp::TransferSpec::DIRECTIO
           else
             raise "internal error: #{command}"
           end # action
-          raise RuntimeError, 'internal error: command shall return'
+          raise 'internal error: command shall return'
         end
 
         private :aoc_params,:set_workspace_info,:set_home_node_file,:do_bulk_operation,:resolve_package_recipients,:option_url_query,:assert_public_link_types,:execute_admin_action

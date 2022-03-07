@@ -103,7 +103,7 @@ module Aspera
             process_entity_action(command,prefix)
           when :admin
             command=options.get_next_command([:users,:groups,:nodes])
-            return entity_action(@api_shares2_oauth,"system/#{command}",nil,:id)
+            return entity_action(@api_shares2_oauth,"system/#{command}")
           end # command
         end # execute_action
       end # Files

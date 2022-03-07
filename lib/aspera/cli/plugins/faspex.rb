@@ -26,7 +26,7 @@ module Aspera
         ATOM_MAILBOXES=[:inbox, :archive, :sent]
         # allowed parameters for inbox.atom
         ATOM_PARAMS=['page', 'count', 'startIndex']
-        # with special parameters (from Plugin class)
+        # with special parameters (from Plugin class) : max and pmax
         ATOM_EXT_PARAMS=ATOM_PARAMS+[MAX_ITEMS, MAX_PAGES]
         # sub path in url for public link delivery
         PUB_LINK_EXTERNAL_MATCH='external_deliveries/'
@@ -45,6 +45,49 @@ module Aspera
             end
             return nil
           end
+
+          # extract elements from anonymous faspex link
+          def get_link_data(publink)
+            publink_uri=URI.parse(publink)
+            raise CliBadArgument, 'public link does not match Faspex format' unless (m=publink_uri.path.match(/^(.*)\/(external.*)$/))
+            base=m[1]
+            subpath=m[2]
+            port_add=publink_uri.port.eql?(publink_uri.default_port) ? '' : ":#{publink_uri.port}"
+            result={
+              base_url:  "#{publink_uri.scheme}://#{publink_uri.host}#{port_add}#{base}",
+              subpath:   subpath,
+              query:     URI.decode_www_form(publink_uri.query).each_with_object({}){|v,h|h[v.first]=v.last;}
+            }
+            Log.dump('publink',result)
+            return result
+          end
+
+          # get faspe: URI from entry in xml, and fix problems..
+          def get_fasp_uri_from_entry(entry)
+            raise CliBadArgument, 'package has no link (deleted?)' unless entry.has_key?('link')
+            result=entry['link'].select{|e| e['rel'].eql?('package')}.first['href']
+            # tags in the end of URL is not well % encoded... there are "=" that should be %3D
+            # TODO: enter ticket to Faspex ?
+            ###XXif m=result.match(/(=+)$/);result.gsub!(/=+$/,"#{"%3D"*m[1].length}");end
+            return result
+          end
+
+          def textify_package_list(table_data)
+            return table_data.map do |e|
+              e.keys.each {|k| e[k]=e[k].first if e[k].is_a?(Array) and e[k].length == 1}
+              e['items'] = e.has_key?('link') ? e['link'].length : 0
+              e
+            end
+          end
+
+          # field_sym : :id or :name
+          def get_source_id(source_list,source_name)
+            source_ids=source_list.select { |i| i['name'].eql?(source_name) }
+            if source_ids.empty?
+              raise CliError,%Q(No such Faspex source "#{source_name}" in [#{source_list.map{|i| %Q("#{i['name']}")}.join(', ')}])
+            end
+            return source_ids.first['id']
+          end
         end
 
         def initialize(env)
@@ -59,49 +102,6 @@ module Aspera
           options.add_opt_list(:box,ATOM_MAILBOXES,'package box')
           options.set_option(:box,:inbox)
           options.parse_options!
-        end
-
-        # extract elements from anonymous faspex link
-        def self.get_link_data(publink)
-          publink_uri=URI.parse(publink)
-          raise CliBadArgument, 'public link does not match Faspex format' unless (m=publink_uri.path.match(/^(.*)\/(external.*)$/))
-          base=m[1]
-          subpath=m[2]
-          port_add=publink_uri.port.eql?(publink_uri.default_port)?'':":#{publink_uri.port}"
-          result={
-            base_url:  "#{publink_uri.scheme}://#{publink_uri.host}#{port_add}#{base}",
-            subpath:   subpath,
-            query:     URI.decode_www_form(publink_uri.query).each_with_object({}){|v,h|h[v.first]=v.last;}
-          }
-          Log.dump('publink',result)
-          return result
-        end
-
-        # get faspe: URI from entry in xml, and fix problems..
-        def self.get_fasp_uri_from_entry(entry)
-          raise CliBadArgument, 'package has no link (deleted?)' unless entry.has_key?('link')
-          result=entry['link'].select{|e| e['rel'].eql?('package')}.first['href']
-          # tags in the end of URL is not well % encoded... there are "=" that should be %3D
-          # TODO: enter ticket to Faspex ?
-          ###XXif m=result.match(/(=+)$/);result.gsub!(/=+$/,"#{"%3D"*m[1].length}");end
-          return result
-        end
-
-        def self.textify_package_list(table_data)
-          return table_data.map { |e|
-            e.keys.each {|k| e[k]=e[k].first if e[k].is_a?(Array) and e[k].length == 1}
-            e['items'] = e.has_key?('link') ? e['link'].length : 0
-            e
-          }
-        end
-
-        # field_sym : :id or :name
-        def self.get_source_id(source_list,source_name)
-          source_ids=source_list.select { |i| i['name'].eql?(source_name) }
-          if source_ids.empty?
-            raise CliError,%Q(No such Faspex source "#{source_name}" in [#{source_list.map{|i| %Q("#{i['name']}")}.join(', ')}])
-          end
-          return source_ids.first['id']
         end
 
         def api_v3
@@ -128,7 +128,7 @@ module Aspera
           return @api_v4
         end
 
-        # query supports : {"startIndex":10,"count":1,"page":109}
+        # query supports : {"startIndex":10,"count":1,"page":109,"max":2,"pmax":1}
         def mailbox_all_entries
           recipient_name=options.get_option(:recipient,:optional) || options.get_option(:username,:mandatory)
           # mailbox is in ATOM_MAILBOXES
@@ -222,7 +222,7 @@ module Aspera
           return pkgdatares.first
         end
 
-        ACTIONS=[:health,:package, :source, :me, :dropbox, :v4, :address_book, :login_methods]
+        ACTIONS=[:health,:package, :source, :me, :dropbox, :v4, :address_book, :login_methods].freeze
 
         def execute_action
           command=options.get_next_command(ACTIONS)
@@ -232,7 +232,7 @@ module Aspera
             begin
               api_v3.read('me')
               nagios.add_ok('faspex api','accessible')
-            rescue => e
+            rescue StandardError => e
               nagios.add_critical('faspex api',e.to_s)
             end
             return nagios.result
@@ -240,9 +240,7 @@ module Aspera
             command_pkg=options.get_next_command([:send, :recv, :list])
             case command_pkg
             when :list
-              return {type: :object_list,data: mailbox_all_entries,fields: [PACKAGE_MATCH_FIELD,'title','items'], textify: lambda { |table_data|
-                Faspex.textify_package_list(table_data)
-              } }
+              return {type: :object_list,data: mailbox_all_entries,fields: [PACKAGE_MATCH_FIELD,'title','items'], textify: lambda {|table_data|Faspex.textify_package_list(table_data)} }
             when :send
               delivery_info=options.get_option(:delivery_info,:mandatory)
               raise CliBadArgument,'delivery_info must be hash, refer to doc' unless delivery_info.is_a?(Hash)
@@ -321,8 +319,7 @@ module Aspera
                 end
                 # Note: unauthenticated API (authorization is in url params)
                 api_public_link=Rest.new({base_url: link_data[:base_url]})
-                pkgdatares=api_public_link.call({operation: 'GET',subpath: link_data[:subpath],url_params: {passcode: link_data[:query]['passcode']},
-headers: {'Accept'=>'application/xml'}})
+                pkgdatares=api_public_link.call({operation: 'GET',subpath: link_data[:subpath],url_params: {passcode: link_data[:query]['passcode']}, headers: {'Accept'=>'application/xml'}})
                 if !pkgdatares[:http].body.start_with?('<?xml ')
                   OpenApplication.instance.uri(link_url)
                   raise CliError, 'no such package'
@@ -340,7 +337,7 @@ headers: {'Accept'=>'application/xml'}})
                 # NOTE: only external users have token in faspe: link !
                 if !transfer_spec.has_key?('token')
                   sanitized=id_uri[:uri].gsub('&','&amp;')
-                  xmlpayload=%(<?xml version="1.0" encoding="UTF-8"?><url-list xmlns="http://schemas.asperasoft.com/xml/url-list"><url href="#{sanitized}"/></url-list>)
+                  xmlpayload=%Q(<?xml version="1.0" encoding="UTF-8"?><url-list xmlns="http://schemas.asperasoft.com/xml/url-list"><url href="#{sanitized}"/></url-list>)
                   transfer_spec['token']=api_v3.call({
                     operation: 'POST',
                     subpath:   'issue-token?direction=down',
@@ -417,24 +414,24 @@ headers: {'Accept'=>'application/xml'}})
             command=options.get_next_command([:package,:dropbox, :dmembership, :workgroup,:wmembership,:user,:metadata_profile])
             case command
             when :dropbox
-              return entity_action(api_v4,'admin/dropboxes',['id','e_wg_name','e_wg_desc','created_at'],:id)
+              return entity_action(api_v4,'admin/dropboxes',display_fields: ['id','e_wg_name','e_wg_desc','created_at'])
             when :dmembership
-              return entity_action(api_v4,'dropbox_memberships',nil,:id)
+              return entity_action(api_v4,'dropbox_memberships')
             when :workgroup
-              return entity_action(api_v4,'admin/workgroups',['id','e_wg_name','e_wg_desc','created_at'],:id)
+              return entity_action(api_v4,'admin/workgroups',display_fields: ['id','e_wg_name','e_wg_desc','created_at'])
             when :wmembership
-              return entity_action(api_v4,'workgroup_memberships',nil,:id)
+              return entity_action(api_v4,'workgroup_memberships')
             when :user
-              return entity_action(api_v4,'users',['id','name','first_name','last_name'],:id)
+              return entity_action(api_v4,'users',display_fields: ['id','name','first_name','last_name'])
             when :metadata_profile
-              return entity_action(api_v4,'metadata_profiles',nil,:id)
+              return entity_action(api_v4,'metadata_profiles')
             when :package
               pkg_box_type=options.get_next_command([:users])
               pkg_box_id=instance_identifier()
-              return entity_action(api_v4,"#{pkg_box_type}/#{pkg_box_id}/packages",nil,:id)
+              return entity_action(api_v4,"#{pkg_box_type}/#{pkg_box_id}/packages")
             end
           when :address_book
-            result=api_v3.call({operation: 'GET',subpath: 'address-book',headers: {'Accept'=>'application/json'},url_params: {'format'=>'json','count'=>100000}})[:data]
+            result=api_v3.call({operation: 'GET',subpath: 'address-book',headers: {'Accept'=>'application/json'},url_params: {'format'=>'json','count'=>100_000}})[:data]
             self.format.display_status("users: #{result['itemsPerPage']}/#{result['totalResults']}, start:#{result['startIndex']}")
             users=result['entry']
             # add missing entries

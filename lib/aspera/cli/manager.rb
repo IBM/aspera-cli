@@ -65,14 +65,14 @@ module Aspera
           matching_exact=allowed_values.select{|i| i.to_s.eql?(shortval)}
           return matching_exact.first if matching_exact.length == 1
           matching=allowed_values.select{|i| i.to_s.start_with?(shortval)}
-          raise cli_bad_arg("unknown value for #{descr}: #{shortval}",allowed_values) if matching.empty?
-          raise cli_bad_arg("ambigous shortcut for #{descr}: #{shortval}",matching) unless matching.length.eql?(1)
+          raise CliBadArgument,bad_arg_message_multi("unknown value for #{descr}: #{shortval}",allowed_values) if matching.empty?
+          raise CliBadArgument,bad_arg_message_multi("ambigous shortcut for #{descr}: #{shortval}",matching) unless matching.length.eql?(1)
           return enum_to_bool(matching.first) if allowed_values.eql?(BOOLEAN_VALUES)
           return matching.first
         end
 
-        def cli_bad_arg(error_msg,choices)
-          return CliBadArgument.new(error_msg+"\nUse:\n"+choices.map{|c| "- #{c}\n"}.sort.join(''))
+        def bad_arg_message_multi(error_msg,choices)
+          return [error_msg,'Use:',choices.map{|c|"- #{c}"}.sort].flatten.join("\n")
         end
       end
 
@@ -145,9 +145,7 @@ module Aspera
 
       def get_interactive(type,descr,expected=:single)
         if !@ask_missing_mandatory
-          if expected.is_a?(Array)
-            raise self.class.cli_bad_arg("missing: #{descr}",expected)
-          end
+          raise CliBadArgument,self.class.bad_arg_message_multi("missing: #{descr}",expected) if expected.is_a?(Array)
           raise CliBadArgument,"missing argument (#{expected}): #{descr}"
         end
         result=nil
@@ -371,7 +369,7 @@ module Aspera
       end
 
       # get all original options  on command line used to generate a config in config file
-      def get_options_table(remove_from_remaining=true)
+      def get_options_table(remove_from_remaining: true)
         result={}
         @initial_cli_options.each do |optionval|
           case optionval
@@ -393,10 +391,10 @@ module Aspera
       end
 
       # return options as taken from config file and command line just before command execution
-      def declared_options(all=true)
+      def declared_options(only_defined: false)
         return @declared_options.keys.each_with_object({}) do |option_symb,h|
           v=get_option(option_symb)
-          h[option_symb.to_s]=v if all or !v.nil?
+          h[option_symb.to_s]=v unless only_defined && v.nil?
         end
       end
 

@@ -4,11 +4,11 @@ module Aspera
     # sub classes shall implement start_transfer and shutdown
     class AgentBase
       # fields description for JSON generation
-      INTEGER_FIELDS=%w(Bytescont FaspFileArgIndex StartByte Rate MinRate Port Priority RateCap MinRateCap TCPPort CreatePolicy TimePolicy DatagramSize XoptFlags VLinkVersion
-                        PeerVLinkVersion DSPipelineDepth PeerDSPipelineDepth ReadBlockSize WriteBlockSize ClusterNumNodes ClusterNodeId Size Written Loss FileBytes PreTransferBytes TransferBytes PMTU Elapsedusec ArgScansAttempted ArgScansCompleted PathScansAttempted FileScansCompleted TransfersAttempted TransfersPassed Delay).freeze
-      BOOLEAN_FIELDS=%w(Encryption Remote RateLock MinRateLock PolicyLock FilesEncrypt FilesDecrypt VLinkLocalEnabled VLinkRemoteEnabled MoveRange Keepalive TestLogin UseProxy
-                        Precalc RTTAutocorrect).freeze
-      EXPECTED_METHODS=%i(text struct enhanced).freeze
+      INTEGER_FIELDS=%w[Bytescont FaspFileArgIndex StartByte Rate MinRate Port Priority RateCap MinRateCap TCPPort CreatePolicy TimePolicy DatagramSize XoptFlags VLinkVersion
+                        PeerVLinkVersion DSPipelineDepth PeerDSPipelineDepth ReadBlockSize WriteBlockSize ClusterNumNodes ClusterNodeId Size Written Loss FileBytes PreTransferBytes TransferBytes PMTU Elapsedusec ArgScansAttempted ArgScansCompleted PathScansAttempted FileScansCompleted TransfersAttempted TransfersPassed Delay].freeze
+      BOOLEAN_FIELDS=%w[Encryption Remote RateLock MinRateLock PolicyLock FilesEncrypt FilesDecrypt VLinkLocalEnabled VLinkRemoteEnabled MoveRange Keepalive TestLogin UseProxy
+                        Precalc RTTAutocorrect].freeze
+      EXPECTED_METHODS=%i[text struct enhanced].freeze
       private_constant :INTEGER_FIELDS,:BOOLEAN_FIELDS,:EXPECTED_METHODS
 
       private
@@ -24,7 +24,7 @@ module Aspera
           downcase
           value=event[e]
           value=value.to_i if INTEGER_FIELDS.include?(e)
-          value=value.eql?('Yes') ? true : false if BOOLEAN_FIELDS.include?(e)
+          value=value.eql?('Yes') if BOOLEAN_FIELDS.include?(e)
           h[new_name]=value
         end
       end
@@ -41,7 +41,7 @@ module Aspera
           listener.event_struct(current_event_data) if listener.respond_to?(:event_struct)
           if listener.respond_to?(:event_enhanced)
             enhanced_event=enhanced_event_format(current_event_data) if enhanced_event.nil?
-            listener.send(:event_enhanced,enhanced_event)
+            listener.event_enhanced(enhanced_event)
           end
         end
       end # notify_listeners

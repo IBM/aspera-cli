@@ -29,6 +29,18 @@ module Aspera
       EXT_RUBY_PROTOBUF='_pb.rb'
       RB_SDK_FOLDER='lib'
       ONE_YEAR_SECONDS=365 * 24 * 60 * 60
+      DEFAULT_ASPERA_CONF=<<~END_OF_CONFIG_FILE
+<?xml version='1.0' encoding='UTF-8'?>
+<CONF version="2">
+<default>
+    <file_system>
+        <resume_suffix>.aspera-ckpt</resume_suffix>
+        <partial_file_suffix>.partial</partial_file_suffix>
+    </file_system>
+</default>
+</CONF>
+END_OF_CONFIG_FILE
+      private_constant :PRODUCT_CONNECT,:PRODUCT_CLI_V1,:PRODUCT_DRIVE,:PRODUCT_ENTSRV,:EXT_RUBY_PROTOBUF,:RB_SDK_FOLDER,:ONE_YEAR_SECONDS,:DEFAULT_ASPERA_CONF
       # set ascp executable path
       def ascp_path=(v)
         @path_to_ascp=v
@@ -132,21 +144,11 @@ module Aspera
           File.chmod(0400,file)
         when :aspera_license
           file=File.join(sdk_folder,'aspera-license')
-          File.write(file,
-Base64.strict_encode64("#{Zlib::Inflate.inflate(DataRepository.instance.get_bin(6))}==SIGNATURE==\n#{Base64.strict_encode64(DataRepository.instance.get_bin(7))}")) unless File.exist?(file)
+          File.write(file,Base64.strict_encode64("#{Zlib::Inflate.inflate(DataRepository.instance.get_bin(6))}==SIGNATURE==\n#{Base64.strict_encode64(DataRepository.instance.get_bin(7))}")) unless File.exist?(file)
           File.chmod(0400,file)
         when :aspera_conf
           file=File.join(sdk_folder,'aspera.conf')
-          File.write(file,%Q(<?xml version='1.0' encoding='UTF-8'?>
-<CONF version="2">
-<default>
-    <file_system>
-        <resume_suffix>.aspera-ckpt</resume_suffix>
-        <partial_file_suffix>.partial</partial_file_suffix>
-    </file_system>
-</default>
-</CONF>
-)) unless File.exist?(file)
+          File.write(file,DEFAULT_ASPERA_CONF) unless File.exist?(file)
           File.chmod(0400,file)
         when :fallback_cert,:fallback_key
           file_key=File.join(sdk_folder,'aspera_fallback_key.pem')
@@ -254,10 +256,9 @@ Base64.strict_encode64("#{Zlib::Inflate.inflate(DataRepository.instance.get_bin(
             dest_folder=sdk_folder if entry.name.include?(arch_filter)
             # ruby adapters
             dest_folder=sdk_ruby_folder if entry.name.end_with?(EXT_RUBY_PROTOBUF)
-            if !dest_folder.nil?
-              File.open(File.join(dest_folder,File.basename(entry.name)), 'wb') do |output_stream|
-                IO.copy_stream(entry.get_input_stream, output_stream)
-              end
+            next if dest_folder.nil?
+            File.open(File.join(dest_folder,File.basename(entry.name)), 'wb') do |output_stream|
+              IO.copy_stream(entry.get_input_stream, output_stream)
             end
           end
         end

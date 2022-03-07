@@ -294,7 +294,7 @@ module Aspera
           # help requested for current plugin
           exit_with_usage(false) if @option_help
           if @option_show_config
-            @plugin_env[:formater].display_results({type: :single_object,data: @opt_mgr.declared_options(false)})
+            @plugin_env[:formater].display_results({type: :single_object,data: @opt_mgr.declared_options(only_defined: true)})
             Process.exit(0)
           end
           # locking for single execution (only after "per plugin" option, in case lock port is there)
@@ -304,7 +304,7 @@ module Aspera
               # no need to close later, will be freed on process exit. must save in member else it is garbage collected
               Log.log.debug("Opening lock port #{lock_port.to_i}")
               @tcp_server=TCPServer.new('127.0.0.1',lock_port.to_i)
-            rescue => e
+            rescue StandardError => e
               execute_command=false
               Log.log.warn("Another instance is already running (#{e.message}).")
             end

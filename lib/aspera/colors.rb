@@ -39,6 +39,6 @@ class String
     else
       define_method(name){self}
     end
-    self.public(name)
+    public name
   end
 end

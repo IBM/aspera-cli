@@ -37,7 +37,7 @@ module Aspera
         begin
           #Log.log.debug("test exception: #{handler[:name]}")
           handler[:block].call(handler[:name],call_context)
-        rescue => e
+        rescue StandardError => e
           Log.log.error("ERROR in handler:\n#{e.message}\n#{e.backtrace}")
         end
       end

@@ -7,7 +7,7 @@ module Aspera
     class AgentTrsdk < AgentBase
       DEFAULT_OPTIONS = {
         address: '127.0.0.1',
-        port:    55002
+        port:    55_002
       }
       private_constant :DEFAULT_OPTIONS
 

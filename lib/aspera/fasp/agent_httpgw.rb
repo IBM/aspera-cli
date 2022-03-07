@@ -200,7 +200,7 @@ module Aspera
         @gw_api=Rest.new({base_url: params[:url]})
         api_info = @gw_api.read('info')[:data]
         Log.log.info(api_info.to_s)
-        @upload_chunksize=128000 # TODO: configurable ?
+        @upload_chunksize=128_000 # TODO: configurable ?
       end
     end # AgentHttpgw
   end

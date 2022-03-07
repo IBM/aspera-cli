@@ -1,6 +1,17 @@
 require 'uri'
 require 'resolv'
 
+module URI
+  class Generic
+      # save original method that finds proxy in URI::Generic, it uses env var http_proxy
+      alias :find_proxy_orig :find_proxy
+      def self.register_proxy_finder(&block)
+        # overload the method
+        define_method(:find_proxy) {|envars=ENV| block.call(self.to_s) || find_proxy_orig(envars)}
+    end
+  end
+end
+
 module Aspera
   # Evaluate a proxy autoconfig script
   class ProxyAutoConfig
@@ -42,14 +53,12 @@ END_OF_JAVASCRIPT
       @proxy_auto_config=proxy_auto_config
       # avoid multiple execution, this does not support load balancing
       @cache={}
+      @pac_functions=nil
     end
 
     def register_uri_generic
-      # save original method that finds proxy in URI::Generic, it uses env var http_proxy
-      URI::Generic.alias_method(:find_proxy_orig,:find_proxy)
-      executor=self
-      # overload the method with get_proxies
-      URI::Generic.define_method(:find_proxy) {|envars=ENV| executor.get_proxies(to_s).first || find_proxy_orig(envars)}
+      URI::Generic.register_proxy_finder{|url_str|self.get_proxies(url_str).first}
+      # allow chaining
       return self
     end
 
@@ -88,7 +97,7 @@ END_OF_JAVASCRIPT
       proxy_list_str.gsub!(/\s+/,' ')
       proxy_list_str.split(';').each do |item|
         # strip and split by space
-        parts=item.strip.split(' ')
+        parts=item.strip.split
         case parts.shift
         when 'DIRECT'
           raise 'DIRECT has no param' unless parts.empty?
@@ -103,7 +112,7 @@ END_OF_JAVASCRIPT
             else
               Log.log.warn("PAC: PROXY must be <address>:<port>, ignoring #{addr_port}")
             end
-          rescue
+          rescue StandardError
             Log.log.warn("PAC: cannot parse #{addr_port}")
           end
         else Log.log.warn("PAC: ignoring proxy type #{parts.first}: not supported")

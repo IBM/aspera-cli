@@ -28,7 +28,7 @@ module Aspera
             begin
               api_console.read('ssh_keys')
               nagios.add_ok('console api','accessible')
-            rescue => e
+            rescue StandardError => e
               nagios.add_critical('console api',e.to_s)
             end
             return nagios.result

@@ -13,11 +13,11 @@ module Aspera
   # if a token is expired (api returns 4xx), call again get_authorization({refresh: true})
   class Oauth
     # used for code exchange
-    DEFAULT_PATH_AUTHORIZE='authorize'
+    DEFAULT_PATH_AUTHORIZE='authorize'.freeze
     # to generate token
-    DEFAULT_PATH_TOKEN='token'
+    DEFAULT_PATH_TOKEN='token'.freeze
     # field with token in result
-    DEFAULT_TOKEN_FIELD='access_token'
+    DEFAULT_TOKEN_FIELD='access_token'.freeze
 
     private
 
@@ -28,7 +28,7 @@ module Aspera
     # tokens older than 30 minutes will be discarded from cache
     TOKEN_CACHE_EXPIRY_SEC=1800
     # a prefix for persistency of tokens (garbage collect)
-    PERSIST_CATEGORY_TOKEN='token'
+    PERSIST_CATEGORY_TOKEN='token'.freeze
     ONE_HOUR_AS_DAY_FRACTION=Rational(1,24)
 
     private_constant :JWT_NOTBEFORE_OFFSET_SEC,:JWT_EXPIRY_OFFSET_SEC,:PERSIST_CATEGORY_TOKEN,:TOKEN_CACHE_EXPIRY_SEC,:ONE_HOUR_AS_DAY_FRACTION

@@ -12,7 +12,7 @@ require 'uri'
 
 class LocalExecutor
   def execute(cmd,line)
-    %(echo "#{line}"|#{cmd})
+    %Q(echo "#{line}"|#{cmd})
   end
 end
 

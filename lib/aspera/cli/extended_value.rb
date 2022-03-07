@@ -12,24 +12,26 @@ module Aspera
     class ExtendedValue
       include Singleton
 
-      private
-
-      # decode comma separated table text
-      def self.decode_csvt(value)
-        col_titles=nil
-        hasharray=[]
-        CSV.parse(value).each do |values|
-          next if values.empty?
-          if col_titles.nil?
-            col_titles=values
-          else
-            entry={}
-            col_titles.each{|title|entry[title]=values.shift}
-            hasharray.push(entry)
+      class<<self
+        # decode comma separated table text
+        def self.decode_csvt(value)
+          col_titles=nil
+          hasharray=[]
+          CSV.parse(value).each do |values|
+            next if values.empty?
+            if col_titles.nil?
+              col_titles=values
+            else
+              entry={}
+              col_titles.each{|title|entry[title]=values.shift}
+              hasharray.push(entry)
+            end
           end
+          return hasharray
         end
-        return hasharray
       end
+
+      private
 
       def initialize
         @handlers={

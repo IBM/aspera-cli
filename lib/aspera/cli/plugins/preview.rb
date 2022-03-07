@@ -147,13 +147,13 @@ module Aspera
                 scan_folder_files(folder_entry) unless folder_entry.nil?
               end
             end
-            if @periodic.trigger? or event.equal?(events.last)
-              Log.log.info("Processed event #{event['id']}")
-              # save checkpoint to avoid losing processing in case of error
-              if !iteration_persistency.nil?
-                iteration_persistency.data[0]=event['id'].to_s
-                iteration_persistency.save
-              end
+            # log/persist periodically or last one
+            next unless @periodic.trigger? || event.equal?(events.last)
+            Log.log.info("Processed event #{event['id']}")
+            # save checkpoint to avoid losing processing in case of error
+            if !iteration_persistency.nil?
+              iteration_persistency.data[0]=event['id'].to_s
+              iteration_persistency.save
             end
           end
         end
@@ -184,13 +184,13 @@ module Aspera
                 end
               end
             end
-            if @periodic.trigger? or event.equal?(events.last)
-              Log.log.info("Processing event #{event['id']}")
-              # save checkpoint to avoid losing processing in case of error
-              if !iteration_persistency.nil?
-                iteration_persistency.data[0]=event['id'].to_s
-                iteration_persistency.save
-              end
+            # log/persist periodically or last one
+            next unless @periodic.trigger? || event.equal?(events.last)
+            Log.log.info("Processing event #{event['id']}")
+            # save checkpoint to avoid losing processing in case of error
+            if !iteration_persistency.nil?
+              iteration_persistency.data[0]=event['id'].to_s
+              iteration_persistency.save
             end
           end
         end
@@ -276,7 +276,7 @@ module Aspera
         def generate_preview(entry)
           #Log.log.debug(">>>> #{entry}".red)
           # folder where previews will be generated for this particular entry
-          local_entry_preview_dir=String.new
+          local_entry_preview_dir=''
           # prepare generic information
           gen_infos=@preview_formats_to_generate.map do |preview_format|
             {
@@ -339,7 +339,7 @@ module Aspera
           if @option_folder_reset_cache.eql?(:read)
             @api_node.read("files/#{entry['id']}")
           end
-        rescue => e
+        rescue StandardError => e
           Log.log.error(e.message.to_s)
           Log.log.debug(e.backtrace.join("\n").red)
         end # generate_preview
@@ -397,7 +397,7 @@ module Aspera
               else
                 Log.log.warn("unknown entry type: #{entry['type']}")
               end
-            rescue => e
+            rescue StandardError => e
               Log.log.warn("An error occured: #{e}, ignoring")
             end
           end
@@ -425,8 +425,7 @@ module Aspera
             if @access_remote
               # note the filter "name", it's why we take the first one
               @previews_folder_entry=get_folder_entries(@access_key_self['root_file_id'],{name: @option_previews_folder}).first
-              raise CliError,
-"Folder #{@option_previews_folder} does not exist on node. Please create it in the storage root, or specify an alternate name." if @previews_folder_entry.nil?
+              raise CliError,"Folder #{@option_previews_folder} does not exist on node. Please create it in the storage root, or specify an alternate name." if @previews_folder_entry.nil?
             else
               raise 'only local storage allowed in this mode' unless @access_key_self['storage']['type'].eql?('local')
               @local_storage_root=@access_key_self['storage']['path']

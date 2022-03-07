@@ -28,26 +28,24 @@ module Aspera
   # rest call errors are raised as exception RestCallError
   # and error are analyzed in RestErrorAnalyzer
   class Rest
-    class<<self
-      # set to true enables debug in HTTP class
-      @debug=false
+    # global settings also valid for any subclass
+    @@global={
+      debug: false,
       # true if https ignore certificate
-      @insecure=false
-      @user_agent='Ruby'
-      @download_partial_suffix='.http_partial'
+      insecure: false,
+      user_agent: 'Ruby'.freeze,
+      download_partial_suffix: '.http_partial'.freeze,
       # a lambda which takes the Net::HTTP as arg, use this to change parameters
-      @session_cb=nil
-      attr_accessor :download_partial_suffix
-      def session_cb=(val); @session_cb=val;Log.log.debug("session_cb => #{@session_cb}".red);end
+      session_cb:nil
+    }
 
-      attr_reader :session_cb, :insecure, :user_agent, :debug
-
-      def insecure=(val); @insecure=val;Log.log.debug("insecure => #{@insecure}".red);end
-
-      def user_agent=(val); @user_agent=val;Log.log.debug("user_agent => #{@user_agent}".red);end
-
-      def debug=(flag); @debug=flag; Log.log.debug("debug http => #{flag}"); end
-
+    class<<self
+      # define accessors
+      @@global.keys.each do |p|
+        define_method(p){@@global[p]}
+        define_method("#{p}="){|val|Log.log.debug("#{p} => #{val}".red);@@global[p]=val}
+      end
+   
       def basic_creds(user,pass); return "Basic #{Base64.strict_encode64("#{user}:#{pass}")}";end
 
       # build URI from URL and parameters and check it is http or https

@@ -18,7 +18,7 @@ module Aspera
           end
         end
 
-        VAL_ALL='ALL'
+        VAL_ALL='ALL'.freeze
         private_constant :VAL_ALL
 
         def initialize(env)
@@ -76,7 +76,7 @@ module Aspera
           end
         end
 
-        ACTIONS=[:node, :package, :auth_client, :jobs]
+        ACTIONS=[:node, :package, :auth_client, :jobs].freeze
 
         def execute_action
           set_api
@@ -84,12 +84,12 @@ module Aspera
           case command
           when :auth_client
             api_auth=Rest.new(@api_v5.params.merge({base_url: "#{@faxpex5_api_base_url}/auth"}))
-            return entity_action(api_auth,'oauth_clients',nil,:id,nil,true)
+            return entity_action(api_auth,'oauth_clients',use_subkey: true)
           when :node
-            return entity_action(@api_v5,'nodes',nil,:id,nil,true)
+            return entity_action(@api_v5,'nodes',use_subkey: true)
           when :jobs
             # to test JWT
-            return entity_action(@api_v5,'jobs',nil,:id,nil,true)
+            return entity_action(@api_v5,'jobs',use_subkey: true)
           when :package
             command=options.get_next_command([:list,:show,:send,:receive])
             case command

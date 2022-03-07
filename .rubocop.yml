@@ -5,7 +5,7 @@ AllCops:
     - "bin/**/*"
     - "local/**/*"
   NewCops: enable
-  TargetRubyVersion: "2.5"
+  TargetRubyVersion: "2.4"
 Style/MutableConstant:
   Enabled: false
 Style/FrozenStringLiteralComment:
@@ -58,6 +58,8 @@ Layout/FirstArgumentIndentation:
   Enabled: false
 Layout/MultilineArrayBraceLayout:
   Enabled: false
+Style/BarePercentLiterals:
+  EnforcedStyle: percent_q
 Style/CaseEquality:
   AllowOnConstant: true
 Style/WordArray:
@@ -224,7 +226,7 @@ Naming/MethodName:
   Enabled: true
 
 Layout/LineLength:
-  Max: 180
+  Max: 240
 
 Layout/SpaceAroundMethodCallOperator:
   Enabled: true
