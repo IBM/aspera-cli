@@ -36,7 +36,7 @@ module Aspera
         # execute external command
         # one could use "system", but we would need to redirect stdout/err
         # @return true if su
-        def external_command(command_symb,command_args,stdout_return=nil)
+        def external_command(command_symb,command_args)
           raise "unexpected command #{command_symb}" unless EXPERNAL_TOOLS.include?(command_symb)
           # build command line, and quote special characters
           command=command_args.clone.unshift(command_symb).map{|i| shell_quote(i.to_s)}.join(' ')
@@ -59,8 +59,7 @@ module Aspera
             Log.log.error("stderr: #{stderr}")
             raise "#{command_symb} error #{exit_status}"
           end
-          stdout_return.replace(stdout) unless stdout_return.nil?
-          return exit_status
+          return {status: exit_status, stdout: stdout}
         end
 
         def ffmpeg(a)
@@ -78,13 +77,12 @@ module Aspera
 
         # @return Float in seconds
         def video_get_duration(input_file)
-          result = ''
-          external_command(:ffprobe,[
+          result=external_command(:ffprobe,[
                              '-loglevel','error',
                              '-show_entries','format=duration',
                              '-print_format','default=noprint_wrappers=1:nokey=1',
-                             input_file],result)
-          result.to_f
+                             input_file])
+          return result[:stdout].to_f
         end
 
         def ffmpeg_fmt(temp_folder)
