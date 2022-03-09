@@ -1,4 +1,4 @@
-#!/usr/bin/env ruby --enable=frozen-string-literal
+#!/usr/bin/env ruby
 require 'rubygems'
 $LOAD_PATH.unshift(File.realpath(File.dirname(File.realpath(__FILE__))+"/../lib"))
 require 'aspera/cli/main'
