@@ -416,9 +416,9 @@ save_to_file: File.join(transfer.destination_folder(Fasp::TransferSpec::DIRECTIO
                 full_recipient_info=aoc_api.create('contacts',{'current_workspace_id'=>@workspace_id,'email'=>short_recipient_info}.merge(new_user_option))[:data]
               end
               short_recipient_info=if entity_type.eql?('dropboxes')
-                                     {'id'=>full_recipient_info['id'],'type'=>'dropbox'}
-                                   else
-                                     {'id'=>full_recipient_info['source_id'],'type'=>full_recipient_info['source_type']}
+                {'id'=>full_recipient_info['id'],'type'=>'dropbox'}
+              else
+                {'id'=>full_recipient_info['source_id'],'type'=>full_recipient_info['source_type']}
               end
             else # unexpected extended value, must be String or Hash
               raise "#{recipient_list_field} item must be a String (email, shared inbox) or Hash (id,type)"

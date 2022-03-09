@@ -38,19 +38,19 @@ module Aspera
           options.parse_options!
           return if env[:man_only]
           @api_node=if env.has_key?(:node_api)
-                      env[:node_api]
-                    elsif options.get_option(:password,:mandatory).start_with?('Bearer ')
-                      # info is provided like node_info of aoc
-                      Rest.new({
-                        base_url: options.get_option(:url,:mandatory),
-                        headers: {
-                        'Authorization'      => options.get_option(:password,:mandatory),
-                        'X-Aspera-AccessKey' => options.get_option(:username,:mandatory)
-                        }
-                      })
-                    else
-                      # this is normal case
-                      basic_auth_api
+            env[:node_api]
+          elsif options.get_option(:password,:mandatory).start_with?('Bearer ')
+            # info is provided like node_info of aoc
+            Rest.new({
+              base_url: options.get_option(:url,:mandatory),
+              headers: {
+              'Authorization'      => options.get_option(:password,:mandatory),
+              'X-Aspera-AccessKey' => options.get_option(:username,:mandatory)
+              }
+            })
+          else
+            # this is normal case
+            basic_auth_api
           end
         end
 
