@@ -30,11 +30,11 @@ module Aspera
       end
 
       def value
-        @object.send(@attr_symb.to_s)
+        return @object.send(@attr_symb)
       end
 
       def value=(val)
-        @object.send(@attr_symb.to_s+'=',val)
+        return @object.send("#{@attr_symb}=",val)
       end
     end
 
@@ -47,20 +47,20 @@ module Aspera
       BOOLEAN_VALUES=[TRUE_VALUES,:no,false].flatten.freeze
       BOOLEAN_SIMPLE=[:yes,:no].freeze
       # option name separator on command line
-      OPTION_SEP_LINE='-'.freeze
+      OPTION_SEP_LINE='-'
       # option name separator in code (symbol)
-      OPTION_SEP_NAME='_'.freeze
+      OPTION_SEP_NAME='_'
 
       private_constant :TRUE_VALUES,:BOOLEAN_VALUES,:BOOLEAN_SIMPLE,:OPTION_SEP_LINE,:OPTION_SEP_NAME
 
       class << self
         def enum_to_bool(enum)
           raise "Value not valid for boolean: #{enum}/#{enum.class}" unless BOOLEAN_VALUES.include?(enum)
-          TRUE_VALUES.include?(enum)
+          return TRUE_VALUES.include?(enum)
         end
 
         def time_to_string(time)
-          time.strftime('%Y-%m-%d %H:%M:%S')
+          return time.strftime('%Y-%m-%d %H:%M:%S')
         end
 
         # find shortened string value in allowed symbol list
@@ -201,11 +201,8 @@ module Aspera
           #declare_option(option_symbol)
         end
         value=ExtendedValue.instance.evaluate(value)
-        Log.log.debug("set_option(#{where}) #{option_symbol}=#{value}")
-        if @declared_options[option_symbol][:values].eql?(BOOLEAN_VALUES)
-          value=Manager.enum_to_bool(value)
-        end
-        Log.log.debug("set #{option_symbol}=#{value} (#{@declared_options[option_symbol][:type]}) : #{where}".blue)
+        value=Manager.enum_to_bool(value) if @declared_options[option_symbol][:values].eql?(BOOLEAN_VALUES)
+        Log.log.debug("set #{option_symbol}=#{value} (#{@declared_options[option_symbol][:type]}) : #{where}")
         case @declared_options[option_symbol][:type]
         when :accessor
           @declared_options[option_symbol][:accessor].value=value
@@ -233,8 +230,8 @@ module Aspera
           Log.log.debug("get #{option_symbol} (#{@declared_options[option_symbol][:type]}) : #{result}")
         end
         # do not fail for manual generation if option mandatory but not set
-        result||='' unless @fail_on_missing_mandatory
-        Log.log.debug("interactive=#{@ask_missing_mandatory}")
+        result='' if result.nil? && !@fail_on_missing_mandatory
+        #Log.log.debug("interactive=#{@ask_missing_mandatory}")
         if result.nil?
           if !@ask_missing_mandatory
             raise CliBadArgument,"Missing mandatory option: #{option_symbol}" if is_type.eql?(:mandatory)
@@ -351,10 +348,12 @@ module Aspera
 
       # return options as taken from config file and command line just before command execution
       def declared_options(only_defined: false)
-        return @declared_options.keys.each_with_object({}) do |option_symb,h|
+        result={}
+        @declared_options.keys.each do |option_symb|
           v=get_option(option_symb)
-          h[option_symb.to_s]=v unless only_defined && v.nil?
+          result[option_symb.to_s]=v unless only_defined && v.nil?
         end
+        return result
       end
 
       # removes already known options from the list
