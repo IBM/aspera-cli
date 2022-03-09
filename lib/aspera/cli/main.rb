@@ -19,12 +19,12 @@ module Aspera
     # The main CLI class
     class Main
       # name of application, also used as foldername where config is stored
-      PROGRAM_NAME = 'ascli'.freeze
+      PROGRAM_NAME = 'ascli'
       # name of the containing gem, same as in <gem name>.gemspec
-      GEM_NAME = 'aspera-cli'.freeze
+      GEM_NAME = 'aspera-cli'
       HELP_URL = "http://www.rubydoc.info/gems/#{GEM_NAME}".freeze
       GEM_URL  = "https://rubygems.org/gems/#{GEM_NAME}".freeze
-      SRC_URL  = 'https://github.com/IBM/aspera-cli'.freeze
+      SRC_URL  = 'https://github.com/IBM/aspera-cli'
       ERROR_FLASH='ERROR:'.bg_red.gray.blink.freeze
       private_constant :PROGRAM_NAME,:GEM_NAME,:HELP_URL,:GEM_URL,:SRC_URL,:ERROR_FLASH
 
@@ -178,7 +178,7 @@ module Aspera
         @opt_mgr.set_obj_attr(:insecure,self,:option_insecure,:no)
         @opt_mgr.set_obj_attr(:ui,self,:option_ui)
         @opt_mgr.set_obj_attr(:http_options,self,:option_http_options)
-        @opt_mgr.set_obj_attr(:log_passwords,Log.instance,:log_passwords)
+        @opt_mgr.set_obj_attr(:log_secrets,Log.instance,:log_secrets)
         @opt_mgr.add_opt_list(:ui,OpenApplication.user_interfaces,'method to start browser')
         @opt_mgr.add_opt_list(:log_level,Log.levels,'Log level')
         @opt_mgr.add_opt_list(:logger,Log.logtypes,'log method')
@@ -187,7 +187,7 @@ module Aspera
         @opt_mgr.add_opt_simple(:http_options,'options for http socket (extended value)')
         @opt_mgr.add_opt_boolean(:insecure,'do not validate HTTPS certificate')
         @opt_mgr.add_opt_boolean(:once_only,'process only new items (some commands)')
-        @opt_mgr.add_opt_boolean(:log_passwords,'show passwords in logs')
+        @opt_mgr.add_opt_boolean(:log_secrets,'show passwords in logs')
         @opt_mgr.set_option(:ui,OpenApplication.default_gui_mode)
         @opt_mgr.set_option(:once_only,false)
         # parse declared options
@@ -293,7 +293,7 @@ module Aspera
           exit_with_usage(false) if @option_help
           if @option_show_config
             @plugin_env[:formater].display_results({type: :single_object,data: @opt_mgr.declared_options(only_defined: true)})
-            Process.exit(0)
+            execute_command=false
           end
           # locking for single execution (only after "per plugin" option, in case lock port is there)
           lock_port=@opt_mgr.get_option(:lock_port,:optional)
@@ -332,7 +332,7 @@ module Aspera
           end
         end
         # 2- processing of command not processed (due to exception or bad command line)
-        if execute_command
+        if execute_command || @option_show_config
           @opt_mgr.final_errors.each do |msg|
             @plugin_env[:formater].display_message(:error,"#{ERROR_FLASH} Argument: #{msg}")
             # add code as exception if there is not already an error
