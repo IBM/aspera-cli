@@ -44,7 +44,7 @@ Gem::Specification.new do |spec|
   spec.add_runtime_dependency('websocket', '~> 1.2')
   spec.add_runtime_dependency('websocket-client-simple', '~> 0.3')
   spec.add_runtime_dependency('xml-simple', '~> 1.0')
-  spec.add_runtime_dependency('net-smtp', '>=2.0', '<4.0')
+  spec.add_runtime_dependency('net-smtp', '>=0.2', '<0.4')
   spec.add_development_dependency('bundler', '~> 2.0')
   spec.add_development_dependency('rake', '~> 13.0')
   spec.add_development_dependency('rspec', '~> 3.0')
