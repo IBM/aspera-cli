@@ -121,15 +121,17 @@ module Aspera
       end
 
       def deep_remove_secret(obj)
-        #puts "call>>>#{obj.class} #{@option_show_secrets}".red
         return if @option_show_secrets
         case obj
         when Array then obj.each{|i|deep_remove_secret(i)}
         when Hash
           obj.keys.each do |k|
-            #puts ">>>#{k} #{k.class} [#{obj[k]}]".green
             next if %w[show_secrets log_secrets].any?{|kw|kw.eql?(k)}
-            obj[k]=HIDDEN_PASSWORD if k.is_a?(String) && SECRET_KEYWORDS.any?{|kw|k.include?(kw)}
+            if k.is_a?(String) && SECRET_KEYWORDS.any?{|kw|k.include?(kw)}
+              obj[k]=HIDDEN_PASSWORD
+            elsif obj[k].is_a?(Hash)
+              deep_remove_secret(obj[k])
+            end
           end
         end
       end
