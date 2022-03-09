@@ -1,8 +1,5 @@
 # frozen_string_literal: true
-#require 'text-table'
 require 'terminal-table'
-
-#require 'fileutils'
 require 'yaml'
 require 'pp'
 
@@ -16,37 +13,92 @@ module Aspera
       DISPLAY_FORMATS=%i[table ruby json jsonpp yaml csv nagios]
       # user output levels
       DISPLAY_LEVELS=[:info,:data,:error]
-      CSV_RECORD_SEPARATOR="\n"
+      CSV_RECORD_SEPARATOR="\n".freeze
       CSV_FIELD_SEPARATOR=','
+      HIDDEN_PASSWORD='🔑'
+      SECRET_KEYWORDS=%w(password secret private_key)
+  
+      private_constant :FIELDS_ALL,:FIELDS_DEFAULT,:DISPLAY_FORMATS,:DISPLAY_LEVELS,:CSV_RECORD_SEPARATOR,:CSV_FIELD_SEPARATOR,:HIDDEN_PASSWORD
 
-      private_constant :FIELDS_ALL,:FIELDS_DEFAULT,:DISPLAY_FORMATS,:DISPLAY_LEVELS,:CSV_RECORD_SEPARATOR,:CSV_FIELD_SEPARATOR
-      attr_accessor :option_flat_hash,:option_transpose_single
+      class<<self
+        # @param source [Hash] hash to modify
+        # @param keep_last [bool]
+        def flatten_object(source,keep_last)
+          newval={}
+          flatten_sub_hash_rec(source,keep_last,'',newval)
+          source.clear
+          source.merge!(newval)
+        end
 
+        # recursive function to modify a hash
+        # @param source [Hash] to be modified
+        # @param keep_last [bool] truer if last level is not
+        # @param prefix [String] true if last level is not
+        # @param dest [Hash] new hash flattened
+        def flatten_sub_hash_rec(source,keep_last,prefix,dest)
+          #is_simple_hash=source.is_a?(Hash) and source.values.inject(true){|m,v| xxx=!v.respond_to?(:each) and m;puts("->#{xxx}>#{v.respond_to?(:each)} #{v}-");xxx}
+          is_simple_hash=false
+          Log.log.debug("(#{keep_last})[#{is_simple_hash}] -#{source.values}- \n-#{source}-")
+          return source if keep_last && is_simple_hash
+          source.each do |k,v|
+            if v.is_a?(Hash) && (!keep_last || !is_simple_hash)
+              flatten_sub_hash_rec(v,keep_last,prefix+k.to_s+'.',dest)
+            else
+              dest[prefix+k.to_s]=v
+            end
+          end
+          return nil
+        end
+
+        # special for Aspera on Cloud display node
+        # {"param" => [{"name"=>"foo","value"=>"bar"}]} will be expanded to {"param.foo" : "bar"}
+        def flatten_name_value_list(hash)
+          hash.keys.each do |k|
+            v=hash[k]
+            next unless v.is_a?(Array) && v.map(&:class).uniq.eql?([Hash]) && v.map(&:keys).flatten.sort.uniq.eql?(['name', 'value'])
+            v.each do |pair|
+              hash["#{k}.#{pair['name']}"]=pair['value']
+            end
+            hash.delete(k)
+          end
+        end
+      end
+
+      attr_accessor :option_flat_hash,:option_transpose_single,:option_format,:option_display,:option_fields,:option_table_style,:option_select,:option_show_secrets
+
+      # adds options but does not parse
       def initialize(opt_mgr)
+        @option_format=:table
+        @option_display=:info
+        @option_fields=FIELDS_DEFAULT
+        @option_select=nil
+        @option_table_style=':.:'
         @option_flat_hash=true
         @option_transpose_single=true
-        @opt_mgr=opt_mgr
-        @opt_mgr.set_obj_attr(:flat_hash,self,:option_flat_hash)
-        @opt_mgr.set_obj_attr(:transpose_single,self,:option_transpose_single)
-        @opt_mgr.add_opt_list(:format,DISPLAY_FORMATS,'output format')
-        @opt_mgr.add_opt_list(:display,DISPLAY_LEVELS,'output only some information')
-        @opt_mgr.add_opt_simple(:fields,"comma separated list of fields, or #{FIELDS_ALL}, or #{FIELDS_DEFAULT}")
-        @opt_mgr.add_opt_simple(:select,'select only some items in lists, extended value: hash (column, value)')
-        @opt_mgr.add_opt_simple(:table_style,'table display style')
-        @opt_mgr.add_opt_boolean(:flat_hash,'display hash values as additional keys')
-        @opt_mgr.add_opt_boolean(:transpose_single,'single object fields output vertically')
-        @opt_mgr.set_option(:format,:table)
-        @opt_mgr.set_option(:display,:info)
-        @opt_mgr.set_option(:fields,FIELDS_DEFAULT)
-        @opt_mgr.set_option(:table_style,':.:')
+        @option_show_secrets=true
+        opt_mgr.set_obj_attr(:format,self,:option_format)
+        opt_mgr.set_obj_attr(:display,self,:option_display)
+        opt_mgr.set_obj_attr(:fields,self,:option_fields)
+        opt_mgr.set_obj_attr(:select,self,:option_select)
+        opt_mgr.set_obj_attr(:table_style,self,:option_table_style)
+        opt_mgr.set_obj_attr(:flat_hash,self,:option_flat_hash)
+        opt_mgr.set_obj_attr(:transpose_single,self,:option_transpose_single)
+        opt_mgr.set_obj_attr(:show_secrets,self,:option_show_secrets)
+        opt_mgr.add_opt_list(:format,DISPLAY_FORMATS,'output format')
+        opt_mgr.add_opt_list(:display,DISPLAY_LEVELS,'output only some information')
+        opt_mgr.add_opt_simple(:fields,"comma separated list of fields, or #{FIELDS_ALL}, or #{FIELDS_DEFAULT}")
+        opt_mgr.add_opt_simple(:select,'select only some items in lists, extended value: hash (column, value)')
+        opt_mgr.add_opt_simple(:table_style,'table display style')
+        opt_mgr.add_opt_boolean(:flat_hash,'display hash values as additional keys')
+        opt_mgr.add_opt_boolean(:transpose_single,'single object fields output vertically')
+        opt_mgr.add_opt_boolean(:show_secrets,'show secrets on command output')
       end
 
       # main output method
       def display_message(message_level,message)
-        display_level=@opt_mgr.get_option(:display,:mandatory)
         case message_level
-        when :info then $stdout.puts(message) if display_level.eql?(:info)
-        when :data then $stdout.puts(message) unless display_level.eql?(:error)
+        when :info then $stdout.puts(message) if @option_display.eql?(:info)
+        when :data then $stdout.puts(message) unless @option_display.eql?(:error)
         when :error then $stderr.puts(message)
         else raise "wrong message_level:#{message_level}"
         end
@@ -54,48 +106,6 @@ module Aspera
 
       def display_status(status)
         display_message(:info,status)
-      end
-
-      # @param source [Hash] hash to modify
-      # @param keep_last [bool]
-      def self.flatten_object(source,keep_last)
-        newval={}
-        flatten_sub_hash_rec(source,keep_last,'',newval)
-        source.clear
-        source.merge!(newval)
-      end
-
-      # recursive function to modify a hash
-      # @param source [Hash] to be modified
-      # @param keep_last [bool] truer if last level is not
-      # @param prefix [String] true if last level is not
-      # @param dest [Hash] new hash flattened
-      def self.flatten_sub_hash_rec(source,keep_last,prefix,dest)
-        #is_simple_hash=source.is_a?(Hash) and source.values.inject(true){|m,v| xxx=!v.respond_to?(:each) and m;puts("->#{xxx}>#{v.respond_to?(:each)} #{v}-");xxx}
-        is_simple_hash=false
-        Log.log.debug("(#{keep_last})[#{is_simple_hash}] -#{source.values}- \n-#{source}-")
-        return source if keep_last && is_simple_hash
-        source.each do |k,v|
-          if v.is_a?(Hash) && (!keep_last || !is_simple_hash)
-            flatten_sub_hash_rec(v,keep_last,prefix+k.to_s+'.',dest)
-          else
-            dest[prefix+k.to_s]=v
-          end
-        end
-        return nil
-      end
-
-      # special for Aspera on Cloud display node
-      # {"param" => [{"name"=>"foo","value"=>"bar"}]} will be expanded to {"param.foo" : "bar"}
-      def self.flatten_name_value_list(hash)
-        hash.keys.each do |k|
-          v=hash[k]
-          next unless v.is_a?(Array) && v.map(&:class).uniq.eql?([Hash]) && v.map(&:keys).flatten.sort.uniq.eql?(['name', 'value'])
-          v.each do |pair|
-            hash["#{k}.#{pair['name']}"]=pair['value']
-          end
-          hash.delete(k)
-        end
       end
 
       def result_default_fields(results,table_rows_hash_val)
@@ -110,16 +120,30 @@ module Aspera
         return table_rows_hash_val.each_with_object({}){|v,m|v.keys.each{|c|m[c]=true};}.keys
       end
 
+      def deep_remove_secret(obj)
+        #puts "call>>>#{obj.class} #{@option_show_secrets}".red
+        return if @option_show_secrets
+        case obj
+        when Array then obj.each{|i|deep_remove_secret(i)}
+        when Hash
+          obj.keys.each do |k|
+            #puts ">>>#{k} #{k.class} [#{obj[k]}]".green
+            next if %w[show_secrets log_secrets].any?{|kw|kw.eql?(k)}
+            obj[k]=HIDDEN_PASSWORD if k.is_a?(String) && SECRET_KEYWORDS.any?{|kw|k.include?(kw)}
+          end
+        end
+      end
+
       # this method displays the results, especially the table format
       def display_results(results)
         raise "INTERNAL ERROR, result must be Hash (got: #{results.class}: #{results})" unless results.is_a?(Hash)
         raise 'INTERNAL ERROR, result must have type' unless results.has_key?(:type)
         raise 'INTERNAL ERROR, result must have data' unless results.has_key?(:data) || [:empty,:nothing].include?(results[:type])
         res_data=results[:data]
+        deep_remove_secret(res_data)
         # comma separated list in string format
-        user_asked_fields_list_str=@opt_mgr.get_option(:fields,:mandatory)
-        display_format=@opt_mgr.get_option(:format,:mandatory)
-        case display_format
+        user_asked_fields_list_str=@option_fields
+        case @option_format
         when :nagios
           Nagios.process(res_data)
         when :ruby
@@ -202,24 +226,22 @@ module Aspera
           # here we expect: table_rows_hash_val and final_table_columns
           raise 'no field specified' if final_table_columns.nil?
           if table_rows_hash_val.empty?
-            display_message(:info,'empty'.gray) unless display_format.eql?(:csv)
+            display_message(:info,'empty'.gray) unless @option_format.eql?(:csv)
             return
           end
           # convert to string with special function. here table_rows_hash_val is an array of hash
           table_rows_hash_val=results[:textify].call(table_rows_hash_val) if results.has_key?(:textify)
-          filter=@opt_mgr.get_option(:select,:optional)
-          unless filter.nil? || (filter.respond_to?('empty?') && filter.empty?)
-            raise CliBadArgument,"expecting hash for select, have #{filter.class}: #{filter}" unless filter.is_a?(Hash)
-            filter.each{|k,v|table_rows_hash_val.select!{|i|i[k].eql?(v)}}
+          unless @option_select.nil? || (@option_select.respond_to?('empty?') && @option_select.empty?)
+            raise CliBadArgument,"expecting hash for select, have #{@option_select.class}: #{@option_select}" unless @option_select.is_a?(Hash)
+            @option_select.each{|k,v|table_rows_hash_val.select!{|i|i[k].eql?(v)}}
           end
-
           # convert data to string, and keep only display fields
           final_table_rows=table_rows_hash_val.map { |r| final_table_columns.map { |c| r[c].to_s } }
           # here : final_table_columns : list of column names
           # here: final_table_rows : array of list of value
-          case display_format
+          case @option_format
           when :table
-            style=@opt_mgr.get_option(:table_style,:mandatory).chars
+            style=@option_table_style.chars
             # display the table !
             #display_message(:data,Text::Table.new(
             #head:  final_table_columns,

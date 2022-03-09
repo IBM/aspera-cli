@@ -679,6 +679,9 @@ The option `display` controls the level of output:
 * `data` display `data` and `error` messages
 * `error` display only error messages.
 
+By default, secrets are shown on output.
+To hide secrets from results, set option `show_secrets` to `no`.
+
 #### Selection of output object properties
 
 By default, a table output will display one line per entry, and columns for each entries. Depending on the command, columns may include by default all properties, or only some selected properties. It is possible to define specific columns to be displayed, by setting the `fields` option to one of the following value:
@@ -1200,7 +1203,7 @@ To increase debug level, use parameter `log_level` (e.g. using command line `--l
 It is also possible to activate traces before initialization using env var `AS_LOG_LEVEL`.
 
 By default passwords and secrets are removed from logs.
-Use option `log_passwords` to change this behaviour.
+Use option `log_secrets` set to `yes` to reveal secrets in logs.
 
 ### Learning Aspera Product APIs (REST)
 
@@ -4005,9 +4008,11 @@ So, it evolved into <%=tool%>:
   * new: option to specify font used to generate image of text file in `preview`
   * new: #66 improvement for content protection (support standard transfer spec options for direct agent)
   * new: option `fpac` is now applicable to all ruby based HTTP connections, i.e. API calls
+  * new: option `show_secrets` to reveal secrets in command output
   * change: (break) command `conf gem path` replaces `conf gem_path`
   * change: (break) option `fpac` expects a value instead of URL
-  * change: (break) option `cipher` in transfger spec must have hyphen
+  * change: (break) option `cipher` in transfer spec must have hyphen
+  * change: (break) renamed option `log_passwords` to `log_secrets`
 
 * 4.6.0
 
