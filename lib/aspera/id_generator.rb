@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 require 'uri'
 
 module Aspera
@@ -9,7 +10,7 @@ module Aspera
     def self.from_list(object_id)
       if object_id.is_a?(Array)
         object_id=object_id.reject(&:nil?).map do |i|
-          (i.is_a?(String) and i.start_with?('https://')) ? URI.parse(i).host : i.to_s
+          i.is_a?(String) && i.start_with?('https://') ? URI.parse(i).host : i.to_s
         end.join(ID_SEPARATOR)
       end
       raise 'id must be a String' unless object_id.is_a?(String)

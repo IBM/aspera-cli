@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 require 'English'
 require 'aspera/cli/plugin'
 require 'aspera/sync'

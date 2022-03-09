@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 require 'aspera/log'
 require 'aspera/rest_call_error'
 require 'singleton'
@@ -63,11 +64,11 @@ module Aspera
         #Log.log.debug("path=#{path}")
         # if last in path is boolean it tells if the error is only with http error code or always
         always=[true, false].include?(path.last) ? path.pop : false
-        if call_context[:data].is_a?(Hash) and (!call_context[:response].code.start_with?('2') or always)
+        if call_context[:data].is_a?(Hash) && (!call_context[:response].code.start_with?('2') || always)
           msg_key=path.pop
           # dig and find sub entry corresponding to path in deep hash
           error_struct=path.inject(call_context[:data]) { |subhash, key| subhash.respond_to?(:keys) ? subhash[key] : nil }
-          if error_struct.is_a?(Hash) and error_struct[msg_key].is_a?(String)
+          if error_struct.is_a?(Hash) && error_struct[msg_key].is_a?(String)
             RestErrorAnalyzer.add_error(call_context,type,error_struct[msg_key])
             error_struct.each do |k,v|
               next if k.eql?(msg_key)

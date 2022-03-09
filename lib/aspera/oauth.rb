@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 require 'aspera/open_application'
 require 'aspera/web_auth'
 require 'aspera/id_generator'
@@ -47,7 +48,7 @@ module Aspera
           Log.log.warn('Not using persistency (use Aspera::Oauth.persist_mgr=Aspera::PersistencyFolder.new)')
           # create NULL persistency class
           @persist=Class.new do
-            def get(_x);nil;end;def delete(_x);nil;end;def put(_x,_y);nil;end;def garbage_collect(_x,_y);nil;end
+            def get(_x);nil;end;def delete(_x);nil;end;def put(_x,_y);nil;end;def garbage_collect(_x,_y);nil;end # rubocop:disable Layout/EmptyLineBetweenDefs
           end.new
         end
         return @persist
@@ -168,7 +169,7 @@ module Aspera
         # TODO: use @params[:token_field] ?
         decoded_node_token = self.class.decode_token(token_data['access_token'])
         Log.dump('decoded_node_token',decoded_node_token) unless decoded_node_token.nil?
-        if decoded_node_token.is_a?(Hash) and decoded_node_token['expires_at'].is_a?(String)
+        if decoded_node_token.is_a?(Hash) && decoded_node_token['expires_at'].is_a?(String)
           expires_at=DateTime.parse(decoded_node_token['expires_at'])
           # Time.at(decoded_node_token['exp'])
           # does it seem expired, with one hour of security
@@ -178,7 +179,7 @@ module Aspera
 
       # an API was already called, but failed, we need to regenerate or refresh
       if use_refresh_token
-        if token_data.is_a?(Hash) and token_data.has_key?('refresh_token')
+        if token_data.is_a?(Hash) && token_data.has_key?('refresh_token')
           # save possible refresh token, before deleting the cache
           refresh_token=token_data['refresh_token']
         end
@@ -226,7 +227,7 @@ module Aspera
           # start browser on login page
           OpenApplication.instance.uri(login_page_url)
           # wait for code in request
-          request_params=webserver.get_request
+          request_params=webserver.received_request
           Log.log.error('state does not match') if !check_code.eql?(request_params['state'])
           code=request_params['code']
           # exchange code for token
@@ -334,7 +335,7 @@ module Aspera
     end
 
     def register_handler(id, method)
-      raise 'error' unless id.is_a?(Symbol) and method.is_a?(Proc)
+      raise 'error' unless id.is_a?(Symbol) && method.is_a?(Proc)
       @handlers[id]=method
     end
   end # OAuth

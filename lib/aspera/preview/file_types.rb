@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 require 'aspera/log'
 require 'singleton'
 
@@ -307,7 +308,7 @@ module Aspera
         # 1- get type from provided mime type, using local mapping
         conv_type=SUPPORTED_MIME_TYPES[mimetype] if !mimetype.nil?
         # 2- else, from computed mime type (if available)
-        if conv_type.nil? and @use_mimemagic
+        if conv_type.nil? && @use_mimemagic
           detected_mime=mime_from_file(filepath)
           if !detected_mime.nil?
             conv_type=SUPPORTED_MIME_TYPES[detected_mime]

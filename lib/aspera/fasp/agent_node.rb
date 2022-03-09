@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 require 'aspera/fasp/agent_base'
 require 'aspera/fasp/transfer_spec'
 require 'aspera/log'
@@ -45,7 +46,7 @@ module Aspera
 
       # use this to set the node_api end point before using the class.
       def node_api=(new_value)
-        if !@node_api.nil? and !new_value.nil?
+        if !@node_api.nil? && !new_value.nil?
           Log.log.warn('overriding existing node api value')
         end
         @node_api=new_value
@@ -62,7 +63,7 @@ module Aspera
           end
         end
         # manage special additional parameter
-        if transfer_spec.has_key?('EX_ssh_key_paths') and transfer_spec['EX_ssh_key_paths'].is_a?(Array) and !transfer_spec['EX_ssh_key_paths'].empty?
+        if transfer_spec.has_key?('EX_ssh_key_paths') && transfer_spec['EX_ssh_key_paths'].is_a?(Array) && !transfer_spec['EX_ssh_key_paths'].empty?
           # not standard, so place standard field
           if transfer_spec.has_key?('ssh_private_key')
             Log.log.warn('Both ssh_private_key and EX_ssh_key_paths are present, using ssh_private_key')
@@ -72,7 +73,7 @@ module Aspera
             transfer_spec.delete('EX_ssh_key_paths')
           end
         end
-        if transfer_spec['tags'].is_a?(Hash) and transfer_spec['tags']['aspera'].is_a?(Hash)
+        if transfer_spec['tags'].is_a?(Hash) && transfer_spec['tags']['aspera'].is_a?(Hash)
           transfer_spec['tags']['aspera']['xfer_retry']||=150
         end
         # optimisation in case of sending to the same node
@@ -107,7 +108,7 @@ module Aspera
             #puts trdata
           when 'running'
             #puts "running: sessions:#{trdata["sessions"].length}, #{trdata["sessions"].map{|i| i['bytes_transferred']}.join(',')}"
-            if !started and trdata['precalc'].is_a?(Hash) and
+            if !started && trdata['precalc'].is_a?(Hash) &&
             trdata['precalc']['status'].eql?('ready')
               notify_begin(@transfer_id,trdata['precalc']['bytes_expected'])
               started=true

@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 require 'aspera/log'
 require 'aspera/rest'
 require 'aspera/hash_ext'
@@ -276,7 +277,7 @@ module Aspera
         # by default: same address as node API
         transfer_spec['remote_host']=node_file[:node_info]['host']
         # 30 it's necessarily https scheme: webui does not allow anything else
-        if node_file[:node_info]['transfer_url'].is_a?(String) and !node_file[:node_info]['transfer_url'].empty?
+        if node_file[:node_info]['transfer_url'].is_a?(String) && !node_file[:node_info]['transfer_url'].empty?
           transfer_spec['remote_host']=URI.parse(node_file[:node_info]['transfer_url']).host
         end
       else
@@ -303,8 +304,8 @@ module Aspera
       raise 'INTERNAL ERROR: method parameters: options must be Hash' unless options.is_a?(Hash)
       options.keys.each {|k| raise "INTERNAL ERROR: not valid option: #{k}" unless [:scope,:use_secret].include?(k)}
       # get optional secret unless :use_secret is false (default is true)
-      ak_secret=@key_chain.get_secret(url: node_info['url'], username: node_info['access_key'], mandatory: false) if !@key_chain.nil? and (!options.has_key?(:use_secret) or options[:use_secret])
-      if ak_secret.nil? and !options.has_key?(:scope)
+      ak_secret=@key_chain.get_secret(url: node_info['url'], username: node_info['access_key'], mandatory: false) if !@key_chain.nil? && (!options.has_key?(:use_secret) || options[:use_secret])
+      if ak_secret.nil? && !options.has_key?(:scope)
         raise "There must be at least one of: 'secret' or 'scope' for access key #{node_info['access_key']}"
       end
       node_rest_params={base_url: node_info['url']}

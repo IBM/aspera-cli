@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 require 'aspera/colors'
 require 'logger'
 require 'pp'
@@ -62,7 +63,7 @@ module Aspera
     # change underlying logger, but keep log level
     def logger_type=(new_logtype)
       current_severity_integer=@logger.level unless @logger.nil?
-      current_severity_integer=ENV['AS_LOG_LEVEL'] if current_severity_integer.nil? and ENV.has_key?('AS_LOG_LEVEL')
+      current_severity_integer=ENV['AS_LOG_LEVEL'] if current_severity_integer.nil? && ENV.has_key?('AS_LOG_LEVEL')
       current_severity_integer=Logger::Severity::WARN if current_severity_integer.nil?
       case new_logtype
       when :stderr
@@ -80,12 +81,12 @@ module Aspera
       original_formatter = @logger.formatter || Logger::Formatter.new
       # update formatter with password hiding, note that @log_passwords may be set AFTER this init is done, so it's done at runtime
       @logger.formatter=lambda do |severity, datetime, progname, msg|
-        if msg.is_a?(String) and !@log_passwords
-          msg=msg.clone
-          msg.gsub!(/(["':][^"]*(password|secret|private_key)[^"]*["']?[=>: ]+")([^"]+)(")/){"#{Regexp.last_match(1)}#{HIDDEN_PASSWORD}#{Regexp.last_match(4)}"}
-          msg.gsub!(/("[^"]*(secret)[^"]*"=>{)([^}]+)(})/){"#{Regexp.last_match(1)}#{HIDDEN_PASSWORD}#{Regexp.last_match(4)}"}
-          msg.gsub!(/((secrets)={)([^}]+)(})/){"#{Regexp.last_match(1)}#{HIDDEN_PASSWORD}#{Regexp.last_match(4)}"}
-          msg.gsub!(/--+BEGIN[A-Z ]+KEY--+.+--+END[A-Z ]+KEY--+/m){HIDDEN_PASSWORD}
+        if msg.is_a?(String) && !@log_passwords
+          msg=msg
+          .gsub(/(["':][^"]*(password|secret|private_key)[^"]*["']?[=>: ]+")([^"]+)(")/){"#{Regexp.last_match(1)}#{HIDDEN_PASSWORD}#{Regexp.last_match(4)}"}
+          .gsub(/("[^"]*(secret)[^"]*"=>{)([^}]+)(})/){"#{Regexp.last_match(1)}#{HIDDEN_PASSWORD}#{Regexp.last_match(4)}"}
+          .gsub(/((secrets)={)([^}]+)(})/){"#{Regexp.last_match(1)}#{HIDDEN_PASSWORD}#{Regexp.last_match(4)}"}
+          .gsub(/--+BEGIN[A-Z ]+KEY--+.+--+END[A-Z ]+KEY--+/m){HIDDEN_PASSWORD}
         end
         original_formatter.call(severity, datetime, progname, msg)
       end

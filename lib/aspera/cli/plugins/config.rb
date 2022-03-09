@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 require 'aspera/cli/basic_auth_plugin'
 require 'aspera/cli/extended_value'
 require 'aspera/cli/version'
@@ -76,7 +77,7 @@ module Aspera
         :EXTV_PRESET,:DEFAULT_CHECK_NEW_VERSION_DAYS,:DEFAULT_PRIV_KEY_FILENAME,:SERVER_COMMAND,:CONF_PRESET_SECRETS,
         :PRESET_DIG_SEPARATOR
         def initialize(env,params)
-          raise 'env and params must be Hash' unless env.is_a?(Hash) and params.is_a?(Hash)
+          raise 'env and params must be Hash' unless env.is_a?(Hash) && params.is_a?(Hash)
           raise 'missing param' unless [:name,:help,:version,:gem].sort.eql?(params.keys.sort)
           super(env)
           @info=params
@@ -153,7 +154,7 @@ module Aspera
           # find out application main folder
           app_folder=ENV[conf_dir_env_var]
           # if env var undefined or empty
-          if app_folder.nil? or app_folder.empty?
+          if app_folder.nil? || app_folder.empty?
             user_home_folder=Dir.home
             raise CliError,"Home folder does not exist: #{user_home_folder}. Check your user environment or use #{conf_dir_env_var}." unless Dir.exist?(user_home_folder)
             app_folder=File.join(user_home_folder,ASPERA_HOME_FOLDER_NAME,@info[:name])
@@ -248,7 +249,6 @@ module Aspera
           # name of englobin module
           # @return "Aspera::Cli::Plugins"
           def module_full_name
-            Log.log.debug(">>>"+Module.nesting[2].to_s)
             return Module.nesting[2].to_s
           end
 
@@ -382,7 +382,7 @@ module Aspera
             preset.values.select{|v|v.is_a?(String) and v.include?(old_subpath)}.each do |value|
               old_val=value.clone
               included_path=File.expand_path(old_val.gsub(/^@file:/,''))
-              files_to_copy.push(included_path) unless files_to_copy.include?(included_path) or !File.exist?(included_path)
+              files_to_copy.push(included_path) unless files_to_copy.include?(included_path) || !File.exist?(included_path)
               value.gsub!(old_subpath,new_subpath)
               Log.log.warn("Converted config value: #{old_val} -> #{value}")
             end
@@ -391,7 +391,7 @@ module Aspera
 
         def convert_preset_plugin_name(old_name,new_name)
           default_preset=@config_presets[CONF_PRESET_DEFAULT]
-          return unless default_preset.is_a?(Hash) and default_preset.has_key?(old_name)
+          return unless default_preset.is_a?(Hash) && default_preset.has_key?(old_name)
           default_preset[new_name]=default_preset[old_name]
           default_preset.delete(old_name)
           Log.log.warn("Converted plugin default: #{old_name} -> #{new_name}")
@@ -411,7 +411,7 @@ module Aspera
             # find first existing file (or nil)
             conf_file_to_load=search_files.select{|f| File.exist?(f)}.first
             # require save if old version of file
-            save_required=!@option_config_file.eql?(conf_file_to_load)
+            save_required= !@option_config_file.eql?(conf_file_to_load)
             # if no file found, create default config
             if conf_file_to_load.nil?
               Log.log.warn("No config file found. Creating empty configuration file: #{@option_config_file}")
@@ -607,7 +607,7 @@ module Aspera
                 when %r{^LOG Initializing FASP version ([^,]+),} then data['ascp_version']=Regexp.last_match(1)
                 end
               end
-              if !thread.value.exitstatus.eql?(1) and !data.has_key?('root')
+              if !thread.value.exitstatus.eql?(1) && !data.has_key?('root')
                 raise last_line
               end
             end
@@ -643,9 +643,9 @@ module Aspera
 
         def execute_file_action(action,config_name)
           action=options.get_next_command(PRESET_ALL_ACTIONS) if action.nil?
-          config_name=instance_identifier() if config_name.nil? and PRESET_INSTANCE_ACTIONS.include?(action)
+          config_name=instance_identifier() if config_name.nil? && PRESET_INSTANCE_ACTIONS.include?(action)
           # those operations require existing option
-          raise "no such preset: #{config_name}" if PRESET_EXST_ACTIONS.include?(action) and !@config_presets.has_key?(config_name)
+          raise "no such preset: #{config_name}" if PRESET_EXST_ACTIONS.include?(action) && !@config_presets.has_key?(config_name)
           selected_preset=@config_presets[config_name]
           case action
           when :list
@@ -743,7 +743,7 @@ module Aspera
           when :echo # display the content of a value given on command line
             result={type: :other_struct, data: options.get_next_argument('value')}
             # special for csv
-            result[:type]=:object_list if result[:data].is_a?(Array) and result[:data].first.is_a?(Hash)
+            result[:type]=:object_list if result[:data].is_a?(Array) && result[:data].first.is_a?(Hash)
             return result
           when :flush_tokens
             deleted_files=Oauth.flush_tokens
@@ -797,8 +797,8 @@ module Aspera
               option_override=options.get_option(:override,:mandatory)
               option_default=options.get_option(:default,:mandatory)
               Log.log.error("override=#{option_override} -> #{option_override.class}")
-              raise CliError,"A default configuration already exists for plugin '#{plugin_name}' (use --override=yes or --default=no)" if !option_override and option_default and @config_presets[CONF_PRESET_DEFAULT].has_key?(plugin_name)
-              raise CliError,"Preset already exists: #{preset_name}  (use --override=yes or --id=<name>)" if !option_override and @config_presets.has_key?(preset_name)
+              raise CliError,"A default configuration already exists for plugin '#{plugin_name}' (use --override=yes or --default=no)" if !option_override && option_default && @config_presets[CONF_PRESET_DEFAULT].has_key?(plugin_name)
+              raise CliError,"Preset already exists: #{preset_name}  (use --override=yes or --id=<name>)" if !option_override && @config_presets.has_key?(preset_name)
               # lets see if path to priv key is provided
               private_key_path=options.get_option(:pkeypath,:optional)
               # give a chance to provide
@@ -841,7 +841,7 @@ module Aspera
                 end
               else
                 self.format.display_status('Using organization specific client_id.')
-                if options.get_option(:client_id,:optional).nil? or options.get_option(:client_secret,:optional).nil?
+                if options.get_option(:client_id,:optional).nil? || options.get_option(:client_secret,:optional).nil?
                   self.format.display_status('Please login to your Aspera on Cloud instance.'.red)
                   self.format.display_status('Go to: Apps->Admin->Organization->Integrations')
                   self.format.display_status('Create or check if there is an existing integration named:')
@@ -866,7 +866,7 @@ module Aspera
               end
               myself=aoc_api.read('self')[:data]
               if auto_set_pub_key
-                raise CliError,'Public key is already set in profile (use --override=yes)' unless myself['public_key'].empty? or option_override
+                raise CliError,'Public key is already set in profile (use --override=yes)' unless myself['public_key'].empty? || option_override
                 self.format.display_status('Updating profile with new key')
                 aoc_api.update("users/#{myself['id']}",{'public_key'=>pub_key_pem})
               end
@@ -1061,7 +1061,7 @@ module Aspera
             raise "Missing email parameter: #{n}" unless vars.has_key?(n)
           end
           start_options=[mail_conf[:domain]]
-          start_options.push(mail_conf[:username],mail_conf[:password],:login) if mail_conf.has_key?(:username) and mail_conf.has_key?(:password)
+          start_options.push(mail_conf[:username],mail_conf[:password],:login) if mail_conf.has_key?(:username) && mail_conf.has_key?(:password)
           # create a binding with only variables defined in vars
           template_binding=empty_binding
           # add variables to binding
@@ -1094,7 +1094,7 @@ module Aspera
             Log.log.debug('skip default config')
             return nil
           end
-          if @config_presets.has_key?(CONF_PRESET_DEFAULT) and
+          if @config_presets.has_key?(CONF_PRESET_DEFAULT) &&
           @config_presets[CONF_PRESET_DEFAULT].has_key?(plugin_sym.to_s)
             default_config_name=@config_presets[CONF_PRESET_DEFAULT][plugin_sym.to_s]
             if !@config_presets.has_key?(default_config_name)
@@ -1138,7 +1138,7 @@ module Aspera
           if secret.nil?
             secret=vault.get(options) rescue nil
             # mandatory by default
-            raise "please provide secret for #{options[:username]}" if secret.nil? and (options[:mandatory].nil? or options[:mandatory])
+            raise "please provide secret for #{options[:username]}" if secret.nil? && (options[:mandatory].nil? || options[:mandatory])
           end
           return secret
         end

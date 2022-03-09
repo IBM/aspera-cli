@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 require 'aspera/cli/basic_auth_plugin'
 require 'aspera/preview/generator'
 require 'aspera/preview/options'
@@ -64,7 +65,7 @@ module Aspera
           options.add_opt_list(:overwrite,[:always,:never,:mtime],'when to overwrite result file')
           options.add_opt_list(:file_access,[:local,:remote],'how to read and write files in repository')
           options.set_option(:temp_folder,Dir.tmpdir)
-          options.set_option(:mimemagic,:false)
+          options.set_option(:mimemagic,false)
 
           # add other options for generator (and set default values)
           Aspera::Preview::Options::DESCRIPTIONS.each do |opt|
@@ -136,9 +137,9 @@ module Aspera
           end
           return if events.empty?
           events.each do |event|
-            if event['data']['direction'].eql?(Fasp::TransferSpec::DIRECTION_RECEIVE) and
-            event['data']['status'].eql?('completed') and
-            event['data']['error_code'].eql?(0) and
+            if event['data']['direction'].eql?(Fasp::TransferSpec::DIRECTION_RECEIVE) &&
+            event['data']['status'].eql?('completed') &&
+            event['data']['error_code'].eql?(0) &&
             event['data'].dig('tags','aspera',PREV_GEN_TAG).nil?
               folder_id=event.dig('data','tags','aspera','node','file_id')
               folder_id||=event.dig('data','file_id')
@@ -173,7 +174,7 @@ module Aspera
             # process only files
             if event.dig('data','type').eql?('file')
               file_entry=@api_node.read("files/#{event['data']['id']}")[:data] rescue nil
-              if !file_entry.nil? and
+              if !file_entry.nil? &&
               @option_skip_folders.select{|d|file_entry['path'].start_with?(d)}.empty?
                 file_entry['parent_file_id']=event['data']['parent_file_id']
                 if event['types'].include?('file.deleted')
@@ -196,7 +197,7 @@ module Aspera
         end
 
         def do_transfer(direction,folder_id,source_filename,destination='/')
-          raise 'error' if destination.nil? and direction.eql?(Fasp::TransferSpec::DIRECTION_RECEIVE)
+          raise 'error' if destination.nil? && direction.eql?(Fasp::TransferSpec::DIRECTION_RECEIVE)
           if @default_transfer_spec.nil?
             # make a dummy call to get some default transfer parameters
             res=@api_node.create('files/upload_setup',{'transfer_requests'=>[{'transfer_request'=>{'paths'=>[{}],'destination_root'=>'/'}}]})
@@ -362,7 +363,7 @@ module Aspera
             entry_path_with_slash=entry['path']
             Log.log.info("processing entry #{entry_path_with_slash}") if @periodic.trigger?
             entry_path_with_slash="#{entry_path_with_slash}/" unless entry_path_with_slash.end_with?('/')
-            if !scan_start.nil? and !scan_start.start_with?(entry_path_with_slash) and !entry_path_with_slash.start_with?(scan_start)
+            if !scan_start.nil? && !scan_start.start_with?(entry_path_with_slash) && !entry_path_with_slash.start_with?(scan_start)
               Log.log.debug("#{entry['path']} folder (skip start)".bg_red)
               next
             end

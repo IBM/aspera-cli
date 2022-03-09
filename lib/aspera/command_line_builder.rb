@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 module Aspera
   # helper class to build command line from a parameter list (key-value hash)
   # constructor takes hash: { 'param1':'value1', ...}
@@ -27,7 +28,7 @@ module Aspera
         end
         # single type is placed in array
         options[:accepted_types]=[options[:accepted_types]] unless options[:accepted_types].is_a?(Array)
-        if !options.has_key?(:clswitch) and options.has_key?(:cltype) and [:opt_without_arg,:opt_with_arg].include?(options[:cltype])
+        if !options.has_key?(:clswitch) && options.has_key?(:cltype) && [:opt_without_arg,:opt_with_arg].include?(options[:cltype])
           options[:clswitch]='--'+param_name.to_s.gsub('_','-')
         end
       end
@@ -93,7 +94,7 @@ module Aspera
       end
       action=options[:cltype] if action.nil?
       # check mandatory parameter (nil is valid value)
-      raise Fasp::Error, "Missing mandatory parameter: #{param_name}" if options[:mandatory] and !@param_hash.has_key?(param_name)
+      raise Fasp::Error, "Missing mandatory parameter: #{param_name}" if options[:mandatory] && !@param_hash.has_key?(param_name)
       parameter_value=@param_hash[param_name]
 
       #parameter_value=options[:default] if parameter_value.nil? and options.has_key?(:default)
@@ -109,14 +110,14 @@ module Aspera
         else raise "INTERNAL: unexpected value: #{s}"
         end
       end.flatten
-      raise Fasp::Error,"#{param_name} is : #{parameter_value.class} (#{parameter_value}), shall be #{options[:accepted_types]}, " unless parameter_value.nil? or expected_classes.include?(parameter_value.class)
+      raise Fasp::Error,"#{param_name} is : #{parameter_value.class} (#{parameter_value}), shall be #{options[:accepted_types]}, " unless parameter_value.nil? || expected_classes.include?(parameter_value.class)
       @used_param_names.push(param_name) unless action.eql?(:defer)
 
       # process only non-nil values
       return nil if parameter_value.nil?
 
       # check that value is of an accepted type (string, int bool)
-      raise "Value #{parameter_value} is not allowed for #{param_name}" if options.has_key?(:enum) and !options[:enum].include?(parameter_value)
+      raise "Value #{parameter_value} is not allowed for #{param_name}" if options.has_key?(:enum) && !options[:enum].include?(parameter_value)
 
       # convert some values if value on command line needs processing from value in structure
       case options[:clconvert]
@@ -146,11 +147,11 @@ module Aspera
       when :opt_without_arg # if present and true : just add option without value
         add_param=false
         case parameter_value
-        when false # nothing to put on command line, no creation by default
+        when false then nil # nothing to put on command line, no creation by default
         when true then add_param=true
         else raise Fasp::Error, "unsupported #{param_name}: #{parameter_value}"
         end
-        add_param=!add_param if options[:add_on_false]
+        add_param= !add_param if options[:add_on_false]
         add_command_line_options([options[:clswitch]]) if add_param
       when :opt_with_arg # transform into command line option with value
         #parameter_value=parameter_value.to_s if parameter_value.is_a?(Integer)

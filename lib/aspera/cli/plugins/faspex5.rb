@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 require 'aspera/cli/basic_auth_plugin'
 require 'aspera/persistency_action_once'
 require 'aspera/id_generator'
@@ -11,7 +12,7 @@ module Aspera
           def detect(base_url)
             api=Rest.new({base_url: base_url})
             result=api.read('api/v5/configuration/ping')
-            if result[:http].code.start_with?('2') and result[:http].body.strip.empty?
+            if result[:http].code.start_with?('2') && result[:http].body.strip.empty?
               return {version: '5'}
             end
             return nil

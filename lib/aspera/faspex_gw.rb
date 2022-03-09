@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 require 'aspera/log'
 require 'aspera/aoc'
 require 'aspera/fasp/transfer_spec'
@@ -40,7 +41,7 @@ module Aspera
         files_pkg_recipients=[]
         faspex_pkg_delivery['recipients'].each do |recipient_email|
           user_lookup=@aoc_api_user.read('contacts',{'current_workspace_id'=>@aoc_workspace_id,'q'=>recipient_email})[:data]
-          raise StandardError,"no such unique user: #{recipient_email} / #{user_lookup}" unless !user_lookup.nil? and user_lookup.length.eql?(1)
+          raise StandardError,"no such unique user: #{recipient_email} / #{user_lookup}" unless !user_lookup.nil? && user_lookup.length.eql?(1)
           recipient_user_info=user_lookup.first
           files_pkg_recipients.push({'id'=>recipient_user_info['source_id'],'type'=>recipient_user_info['source_type']})
         end

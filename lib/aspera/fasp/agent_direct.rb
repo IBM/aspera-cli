@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 require 'English'
 require 'aspera/fasp/agent_base'
 require 'aspera/fasp/error'
@@ -38,7 +39,7 @@ module Aspera
         # clone transfer spec because we modify it (first level keys)
         transfer_spec=transfer_spec.clone
         # if there is aspera tags
-        if transfer_spec['tags'].is_a?(Hash) and transfer_spec['tags']['aspera'].is_a?(Hash)
+        if transfer_spec['tags'].is_a?(Hash) && transfer_spec['tags']['aspera'].is_a?(Hash)
           # TODO: what is this for ? only on local ascp ?
           # NOTE: important: transfer id must be unique: generate random id
           # using a non unique id results in discard of tags in AoC, and a package is never finalized
@@ -51,8 +52,8 @@ module Aspera
         Log.dump('ts',transfer_spec)
 
         # add bypass keys when authentication is token and no auth is provided
-        if transfer_spec.has_key?('token') and
-        !transfer_spec.has_key?('remote_password') and
+        if transfer_spec.has_key?('token') &&
+        !transfer_spec.has_key?('remote_password') &&
         !transfer_spec.has_key?('EX_ssh_key_paths')
           # transfer_spec['remote_password'] = Installation.instance.bypass_pass # not used
           transfer_spec['EX_ssh_key_paths'] = Installation.instance.bypass_keys
@@ -191,9 +192,7 @@ module Aspera
           # add management port
           ascp_arguments.unshift('-M', mgt_sock.addr[1].to_s)
           # start ascp in sub process
-          Log.log.debug("execute: #{env_args[:env].map{|k,v| "#{k}=#{Shellwords.shellescape(v)}"}.join(' ')} #{Shellwords.shellescape(ascp_path)} #{ascp_arguments.map{|a|
-            Shellwords.shellescape(a)
-          }.join(' ')}")
+          Log.log.debug("execute: #{env_args[:env].map{|k,v| "#{k}=#{Shellwords.shellescape(v)}"}.join(' ')} #{Shellwords.shellescape(ascp_path)} #{ascp_arguments.map{|a|Shellwords.shellescape(a)}.join(' ')}")
           # start process
           ascp_pid = Process.spawn(env_args[:env],[ascp_path,ascp_path],*ascp_arguments)
           # in parent, wait for connection to socket max 3 seconds
@@ -259,7 +258,7 @@ module Aspera
               Log.log.error("code: #{last_status_event['Code']}")
               if last_status_event['Description'] =~ /bearer token/i
                 Log.log.error('need to regenerate token'.red)
-                if session[:options].is_a?(Hash) and session[:options].has_key?(:regenerate_token)
+                if session[:options].is_a?(Hash) && session[:options].has_key?(:regenerate_token)
                   # regenerate token here, expired, or error on it
                   # Note: in multi-session, each session will have a different one.
                   env_args[:env]['ASPERA_SCP_TOKEN']=session[:options][:regenerate_token].call(true)

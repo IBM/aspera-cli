@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 require 'aspera/log'
 require 'aspera/oauth'
 require 'aspera/rest_error_analyzer'
@@ -29,14 +30,14 @@ module Aspera
   # and error are analyzed in RestErrorAnalyzer
   class Rest
     # global settings also valid for any subclass
-    @@global={
+    @@global={ # rubocop:disable Style/ClassVars
       debug: false,
       # true if https ignore certificate
       insecure: false,
       user_agent: 'Ruby'.freeze,
       download_partial_suffix: '.http_partial'.freeze,
       # a lambda which takes the Net::HTTP as arg, use this to change parameters
-      session_cb:nil
+      session_cb: nil
     }
 
     class<<self
@@ -45,7 +46,7 @@ module Aspera
         define_method(p){@@global[p]}
         define_method("#{p}="){|val|Log.log.debug("#{p} => #{val}".red);@@global[p]=val}
       end
-   
+
       def basic_creds(user,pass); return "Basic #{Base64.strict_encode64("#{user}:#{pass}")}";end
 
       # build URI from URL and parameters and check it is http or https
@@ -136,7 +137,7 @@ module Aspera
       rescue NameError
         raise "unsupported operation : #{call_data[:operation]}"
       end
-      if call_data.has_key?(:json_params) and !call_data[:json_params].nil?
+      if call_data.has_key?(:json_params) && !call_data[:json_params].nil?
         req.body=JSON.generate(call_data[:json_params])
         Log.dump('body JSON data',call_data[:json_params])
         #Log.log.debug("body JSON data=#{JSON.pretty_generate(call_data[:json_params])}")
@@ -211,7 +212,7 @@ module Aspera
         # make http request (pipelined)
         http_session.request(req) do |response|
           result[:http] = response
-          if call_data.has_key?(:save_to_file) and result[:http].code.to_s.start_with?('2')
+          if call_data.has_key?(:save_to_file) && result[:http].code.to_s.start_with?('2')
             total_size=result[:http]['Content-Length'].to_i
             progress=ProgressBar.create(
             format:     '%a %B %p%% %r KB/sec %e',
@@ -221,7 +222,7 @@ module Aspera
             Log.log.debug('before write file')
             target_file=call_data[:save_to_file]
             # override user's path to path in header
-            if !response['Content-Disposition'].nil? and (m=response['Content-Disposition'].match(/filename="([^"]+)"/))
+            if !response['Content-Disposition'].nil? && (m=response['Content-Disposition'].match(/filename="([^"]+)"/))
               target_file=File.join(File.dirname(target_file),m[1])
             end
             # download with temp filename
@@ -255,7 +256,7 @@ module Aspera
         RestErrorAnalyzer.instance.raise_on_error(req,result)
       rescue RestCallError => e
         # not authorized: oauth token expired
-        if @params[:not_auth_codes].include?(result[:http].code.to_s) and call_data[:auth][:type].eql?(:oauth2)
+        if @params[:not_auth_codes].include?(result[:http].code.to_s) && call_data[:auth][:type].eql?(:oauth2)
           begin
             # try to use refresh token
             req['Authorization']=oauth_token(refresh: true)
@@ -276,7 +277,7 @@ module Aspera
           redir_uri=URI.parse(e.response['location'])
           call_data[:base_url]=e.response['location']
           call_data[:subpath]=''
-          if current_uri.host.eql?(redir_uri.host) and current_uri.port.eql?(redir_uri.port)
+          if current_uri.host.eql?(redir_uri.host) && current_uri.port.eql?(redir_uri.port)
             req=build_request(call_data)
             retry
           else

@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 # for older rubies
 unless Hash.method_defined?(:dig)
   class Hash

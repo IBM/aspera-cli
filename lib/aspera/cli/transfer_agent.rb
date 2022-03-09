@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 require 'aspera/fasp/transfer_spec'
 require 'aspera/cli/listener/logger'
 require 'aspera/cli/listener/progress_multi'
@@ -62,8 +63,8 @@ module Aspera
         @agent=instance
         @agent.add_listener(Listener::Logger.new)
         # use local progress bar if asked so, or if native and non local ascp (because only local ascp has native progress bar)
-        if @opt_mgr.get_option(:progress,:mandatory).eql?(:multi) or
-        (@opt_mgr.get_option(:progress,:mandatory).eql?(:native) and !instance.class.to_s.eql?('Aspera::Fasp::AgentDirect'))
+        if @opt_mgr.get_option(:progress,:mandatory).eql?(:multi) ||
+        (@opt_mgr.get_option(:progress,:mandatory).eql?(:native) && !instance.class.to_s.eql?('Aspera::Fasp::AgentDirect'))
           @agent.add_listener(@progress_listener)
         end
       end
@@ -74,16 +75,15 @@ module Aspera
         agent_type=@opt_mgr.get_option(:transfer,:mandatory)
         require "aspera/fasp/agent_#{agent_type}"
         agent_options=@opt_mgr.get_option(:transfer_info,:optional)
-        raise CliBadArgument,"the transfer agent configuration shall be Hash, not #{agent_options.class} (#{agent_options}), use either @json:<json> or @preset:<parameter set name>" unless [
-  Hash,NilClass].include?(agent_options.class)
+        raise CliBadArgument,"the transfer agent configuration shall be Hash, not #{agent_options.class} (#{agent_options}), use either @json:<json> or @preset:<parameter set name>" unless [Hash,NilClass].include?(agent_options.class)
         # special case
-        if agent_type.eql?(:node) and agent_options.nil?
+        if agent_type.eql?(:node) && agent_options.nil?
           param_set_name=@config.get_plugin_default_config_name(:node)
           raise CliBadArgument,"No default node configured, Please specify --#{:transfer_info.to_s.gsub('_','-')}" if param_set_name.nil?
           agent_options=@config.preset_by_name(param_set_name)
         end
         # special case
-        if agent_type.eql?(:direct) and @opt_mgr.get_option(:progress,:mandatory).eql?(:native)
+        if agent_type.eql?(:direct) && @opt_mgr.get_option(:progress,:mandatory).eql?(:native)
           agent_options={} if agent_options.nil?
           agent_options[:quiet]=false
         end
@@ -127,11 +127,11 @@ module Aspera
           Log.log.debug('getting file list as parameters')
           # get remaining arguments
           file_list=@opt_mgr.get_next_argument('source file list',:multiple)
-          raise CliBadArgument,"specify at least one file on command line or use --sources=#{FILE_LIST_FROM_TRANSFER_SPEC} to use transfer spec" if !file_list.is_a?(Array) or file_list.empty?
+          raise CliBadArgument,"specify at least one file on command line or use --sources=#{FILE_LIST_FROM_TRANSFER_SPEC} to use transfer spec" if !file_list.is_a?(Array) || file_list.empty?
         when FILE_LIST_FROM_TRANSFER_SPEC
           Log.log.debug('assume list provided in transfer spec')
           special_case_direct_with_list=@opt_mgr.get_option(:transfer,:mandatory).eql?(:direct) and Fasp::Parameters.ts_has_file_list(@transfer_spec_cmdline)
-          raise CliBadArgument,'transfer spec on command line must have sources' if @transfer_paths.nil? and !special_case_direct_with_list
+          raise CliBadArgument,'transfer spec on command line must have sources' if @transfer_paths.nil? && !special_case_direct_with_list
           # here we assume check of sources is made in transfer agent
           return @transfer_paths
         when Array

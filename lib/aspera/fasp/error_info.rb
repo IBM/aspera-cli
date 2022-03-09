@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 module Aspera
   module Fasp
     # from https://www.google.com/search?q=FASP+error+codes

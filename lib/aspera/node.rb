@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 require 'aspera/fasp/transfer_spec'
 require 'aspera/rest'
 require 'aspera/oauth'
@@ -70,7 +71,7 @@ module Aspera
           relative_path=File.join(current_item[:relpath],entry['name'])
           Log.log.debug("looking #{relative_path}".bg_green)
           # entry type is file, folder or link
-          if processor.send(opt[:method],entry,relative_path) and entry['type'].eql?('folder')
+          if processor.send(opt[:method],entry,relative_path) && entry['type'].eql?('folder')
             folders_to_explore.push({id: entry['id'],relpath: relative_path})
           end
         end

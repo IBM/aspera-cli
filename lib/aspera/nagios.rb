@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 require 'date'
 
 module Aspera
@@ -5,16 +6,16 @@ module Aspera
     # nagios levels
     LEVELS=[:ok,:warning,:critical,:unknown,:dependent]
     ADD_PREFIX='add_'
-    # add methods to add nagios error levels, each take component name and message
-    LEVELS.each_index do |code|
-      name="#{ADD_PREFIX}#{LEVELS[code]}".to_sym
-      define_method(name){|comp,msg|@data.push({code: code,comp: comp,msg: msg})}
-      public name
-    end
     # date offset levels
     DATE_WARN_OFFSET=2
     DATE_CRIT_OFFSET=5
     private_constant :LEVELS,:ADD_PREFIX,:DATE_WARN_OFFSET,:DATE_CRIT_OFFSET
+
+    # add methods to add nagios error levels, each take component name and message
+    LEVELS.each_index do |code|
+      name="#{ADD_PREFIX}#{LEVELS[code]}".to_sym
+      define_method(name){|comp,msg|@data.push({code: code,comp: comp,msg: msg})}
+    end
 
     attr_reader :data
     def initialize
@@ -51,7 +52,7 @@ module Aspera
 
     # process results of a analysis and display status and exit with code
     def self.process(data)
-      raise 'INTERNAL ERROR, result must be list and not empty' unless data.is_a?(Array) and !data.empty?
+      raise 'INTERNAL ERROR, result must be list and not empty' unless data.is_a?(Array) && !data.empty?
       ['status','component','message'].each{|c|raise "INTERNAL ERROR, result must have #{c}" unless data.first.has_key?(c)}
       res_errors = data.reject{|s|s['status'].eql?('ok')}
       # keep only errors in case of problem, other ok are assumed so

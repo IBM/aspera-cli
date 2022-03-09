@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 require 'aspera/cli/basic_auth_plugin'
 require 'aspera/nagios'
 

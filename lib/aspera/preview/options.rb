@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 module Aspera
   module Preview
     # generator options. Used as parameter to preview generator object.

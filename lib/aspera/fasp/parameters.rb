@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 require 'aspera/log'
 require 'aspera/command_line_builder'
 require 'aspera/temp_file_manager'
@@ -41,7 +42,7 @@ module Aspera
               param[a.to_s[0].to_sym]=i[:tragents].nil? || i[:tragents].include?(a) ? 'Y' : ''
             end
             # only keep lines that are usable in supported agents
-            next if SUPPORTED_AGENTS_SHORT.inject(true){|m,j|m and param[j].empty?}
+            next if SUPPORTED_AGENTS_SHORT.inject(true){|m,j|m && param[j].empty?}
             param[:cli]=
             case i[:cltype]
             when :envvar then 'env:'+i[:clvarname]
@@ -102,17 +103,17 @@ module Aspera
           ascp_version: :ascp
         }
         # some ssh credentials are required to avoid interactive password input
-        if !@job_spec.has_key?('remote_password') and
-        !@job_spec.has_key?('ssh_private_key') and
+        if !@job_spec.has_key?('remote_password') &&
+        !@job_spec.has_key?('ssh_private_key') &&
         !@job_spec.has_key?('EX_ssh_key_paths')
           raise Fasp::Error, 'required: password or ssh key (value or path)'
         end
 
         # special cases
-        @job_spec.delete('source_root') if @job_spec.has_key?('source_root') and @job_spec['source_root'].empty?
+        @job_spec.delete('source_root') if @job_spec.has_key?('source_root') && @job_spec['source_root'].empty?
 
         # use web socket session initiation ?
-        if @builder.process_param('wss_enabled',:get_value) and (@options[:wss] or !@job_spec.has_key?('fasp_port'))
+        if @builder.process_param('wss_enabled',:get_value) && (@options[:wss] || !@job_spec.has_key?('fasp_port'))
           # by default use web socket session if available, unless removed by user
           @builder.add_command_line_options(['--ws-connect'])
           # TODO: option to give order ssh,ws (legacy http is implied bu ssh)
@@ -144,7 +145,7 @@ module Aspera
         file_list_provided=self.class.ts_has_file_list(@job_spec)
         @builder.params_definition['paths'][:mandatory]=!@job_spec.has_key?('keepalive') and !file_list_provided
         paths_array=@builder.process_param('paths',:get_value)
-        if file_list_provided and !paths_array.nil?
+        if file_list_provided && !paths_array.nil?
           Log.log.warn('file list provided both in transfer spec and ascp file list. Keeping file list only.')
           paths_array=nil
         end

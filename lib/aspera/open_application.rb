@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 require 'aspera/log'
 require 'aspera/environment'
 require 'rbconfig'
@@ -15,7 +16,7 @@ module Aspera
     def self.default_gui_mode
       return :graphical if [Aspera::Environment::OS_WINDOWS,Aspera::Environment::OS_X].include?(Aspera::Environment.os)
       # unix family
-      return :graphical if ENV.has_key?('DISPLAY') and !ENV['DISPLAY'].empty?
+      return :graphical if ENV.has_key?('DISPLAY') && !ENV['DISPLAY'].empty?
       return :text
     end
 

@@ -18,6 +18,8 @@ Metrics/AbcSize:
   Enabled: false
 Metrics/PerceivedComplexity:
   Enabled: false
+Metrics/ParameterLists:
+  Max: 6
 Layout/EndAlignment:
   Enabled: false
 Layout/DotPosition:
@@ -85,7 +87,7 @@ Style/Semicolon:
 Style/NegatedIf:
   Enabled: false
 Style/AndOr:
-  Enabled: false
+  Enabled: true
 Style/SingleLineMethods:
   Enabled: false
 Style/RedundantReturn:
@@ -192,7 +194,7 @@ Style/MixinUsage:
   Enabled: true
 
 Style/ClassAndModuleChildren:
-  Enabled: true
+  Enabled: false
 
 Style/GlobalVars:
   Enabled: true
@@ -227,6 +229,7 @@ Naming/MethodName:
 
 Layout/LineLength:
   Max: 240
+  Enabled: false
 
 Layout/SpaceAroundMethodCallOperator:
   Enabled: true
@@ -301,7 +304,9 @@ Style/HashExcept: # (new in 1.7)
   Enabled: true
 
 Style/NegatedIfElseCondition: # (new in 1.2)
-  Enabled: true
+  Enabled: false
+Style/NegatedWhile:
+  Enabled: false
 
 Style/NilLambda: # (new in 1.3)
   Enabled: true
@@ -311,4 +316,7 @@ Style/RedundantArgument: # (new in 1.4)
 
 Style/SwapValues: # (new in 1.1)
   Enabled: true
-
+Security/Eval:
+  Enabled: false
+Style/StderrPuts:
+  Enabled: false

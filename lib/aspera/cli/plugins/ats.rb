@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 require 'aspera/cli/plugins/node'
 require 'aspera/ats_api'
 
@@ -64,8 +65,8 @@ module Aspera
                   raise "no such transfer server id: #{params['transfer_server_id']}" if server_data2.nil?
                 else
                   server_data2=@ats_api_pub.all_servers.select do |s|
-                    s['cloud'].eql?(server_data['cloud']) && 
-                    s['region'].eql?(server_data['region']) && 
+                    s['cloud'].eql?(server_data['cloud']) &&
+                    s['region'].eql?(server_data['region']) &&
                     s.has_key?('s3_authentication_endpoint')
                   end.first
                   raise "no such transfer server id: #{params['transfer_server_id']}" if server_data2.nil?
@@ -136,7 +137,7 @@ module Aspera
           when :list
             return {type: :object_list, data: @ats_api_pub.all_servers, fields: ['id','cloud','region']}
           when :show
-            if options.get_option(:cloud,:optional) or options.get_option(:region,:optional)
+            if options.get_option(:cloud,:optional) || options.get_option(:region,:optional)
               server_data=server_by_cloud_region
             else
               server_id=instance_identifier()

@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 #!/usr/bin/env ruby
 # find Faspex API here: https://developer.ibm.com/apis/catalog/?search=faspex
 # this example makes use of class Aspera::Rest for REST calls, alternatively class RestClient of gem rest-client could be used

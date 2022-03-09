@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 require 'open3'
 require 'aspera/preview/options'
 require 'aspera/preview/utils'
@@ -93,7 +94,7 @@ module Aspera
       # @param total_count of parts
       # @param index of part (start at 1)
       def get_offset(duration, start_offset, total_count, index)
-        raise "duration must be Float" unless duration.is_a?(Float)
+        raise 'duration must be Float' unless duration.is_a?(Float)
         return start_offset + ((index-1)*(duration - start_offset) / total_count)
       end
 

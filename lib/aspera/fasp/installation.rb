@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 require 'English'
 require 'singleton'
 require 'aspera/log'
@@ -153,7 +154,7 @@ END_OF_CONFIG_FILE
         when :fallback_cert,:fallback_key
           file_key=File.join(sdk_folder,'aspera_fallback_key.pem')
           file_cert=File.join(sdk_folder,'aspera_fallback_cert.pem')
-          if !File.exist?(file_key) or !File.exist?(file_cert)
+          if !File.exist?(file_key) || !File.exist?(file_cert)
             require 'openssl'
             # create new self signed certificate for http fallback
             private_key = OpenSSL::PKey::RSA.new(1024)

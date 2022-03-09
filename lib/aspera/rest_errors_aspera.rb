@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 require 'aspera/rest_error_analyzer'
 require 'aspera/log'
 
@@ -17,7 +18,7 @@ module Aspera
       RestErrorAnalyzer.instance.add_simple_handler('Type 5','error_description')
       RestErrorAnalyzer.instance.add_simple_handler('Type 6','message')
       RestErrorAnalyzer.instance.add_handler('Type 7: errors[]') do |name,call_context|
-        if call_context[:data].is_a?(Hash) and call_context[:data]['errors'].is_a?(Hash)
+        if call_context[:data].is_a?(Hash) && call_context[:data]['errors'].is_a?(Hash)
           call_context[:data]['errors'].each do |k,v|
             RestErrorAnalyzer.add_error(call_context,name,"#{k}: #{v}")
           end

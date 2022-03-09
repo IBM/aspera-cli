@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 require 'aspera/colors'
 require 'aspera/log'
 require 'aspera/cli/extended_value'
@@ -53,7 +54,10 @@ module Aspera
       private_constant :TRUE_VALUES,:BOOLEAN_VALUES,:BOOLEAN_SIMPLE,:OPTION_SEP_LINE,:OPTION_SEP_NAME
 
       class << self
-        def enum_to_bool(enum);TRUE_VALUES.include?(enum);end
+        def enum_to_bool(enum)
+          raise "Value not valid for boolean: #{enum}/#{enum.class}" unless BOOLEAN_VALUES.include?(enum)
+          TRUE_VALUES.include?(enum)
+        end
 
         def time_to_string(time)
           time.strftime('%Y-%m-%d %H:%M:%S')
@@ -122,7 +126,7 @@ module Aspera
           process_options=true
           while !argv.empty?
             value=argv.shift
-            if process_options and value.start_with?('-')
+            if process_options && value.start_with?('-')
               if value.eql?('--')
                 process_options=false
               else
@@ -135,38 +139,6 @@ module Aspera
         end
         @initial_cli_options=@unprocessed_cmd_line_options.dup
         Log.log.debug("add_cmd_line_options:commands/args=#{@unprocessed_cmd_line_arguments},options=#{@unprocessed_cmd_line_options}".red)
-      end
-
-      def prompt_user_input(prompt,sensitive)
-        return $stdin.getpass("#{prompt}> ") if sensitive
-        print "#{prompt}> "
-        return $stdin.gets.chomp
-      end
-
-      def get_interactive(type,descr,expected=:single)
-        if !@ask_missing_mandatory
-          raise CliBadArgument,self.class.bad_arg_message_multi("missing: #{descr}",expected) if expected.is_a?(Array)
-          raise CliBadArgument,"missing argument (#{expected}): #{descr}"
-        end
-        result=nil
-        sensitive = type.eql?(:option) && @declared_options[descr.to_sym][:sensitive]
-        default_prompt="#{type}: #{descr}"
-        # ask interactively
-        case expected
-        when :multiple
-          result=[]
-          puts(' (one per line, end with empty line)')
-          loop do
-            entry=prompt_user_input(default_prompt,sensitive)
-            break if entry.empty?
-            result.push(ExtendedValue.instance.evaluate(entry))
-          end
-        when :single
-          result=ExtendedValue.instance.evaluate(prompt_user_input(default_prompt,sensitive))
-        else # one fixed
-          result=self.class.get_from_list(prompt_user_input("#{expected.join(' ')}\n#{default_prompt}",sensitive),descr,expected)
-        end
-        return result
       end
 
       def get_next_command(command_list); return get_next_argument('command',command_list); end
@@ -187,7 +159,7 @@ module Aspera
           when :multiple
             result = @unprocessed_cmd_line_arguments.shift(@unprocessed_cmd_line_arguments.length).map{|v|ExtendedValue.instance.evaluate(v)}
             # if expecting list and only one arg of type array : it is the list
-            if result.length.eql?(1) and result.first.is_a?(Array)
+            if result.length.eql?(1) && result.first.is_a?(Array)
               result=result.first
             end
           else
@@ -265,18 +237,16 @@ module Aspera
         Log.log.debug("interactive=#{@ask_missing_mandatory}")
         if result.nil?
           if !@ask_missing_mandatory
-
             raise CliBadArgument,"Missing mandatory option: #{option_symbol}" if is_type.eql?(:mandatory)
-          else # ask_missing_mandatory
-            if @ask_missing_optional or is_type.eql?(:mandatory)
-              expected=:single
-              #print "please enter: #{option_symbol.to_s}"
-              if @declared_options.has_key?(option_symbol) and @declared_options[option_symbol].has_key?(:values)
-                expected=@declared_options[option_symbol][:values]
-              end
-              result=get_interactive(:option,option_symbol.to_s,expected)
-              set_option(option_symbol,result,'interactive')
+          elsif @ask_missing_optional || is_type.eql?(:mandatory)
+            # ask_missing_mandatory
+            expected=:single
+            #print "please enter: #{option_symbol.to_s}"
+            if @declared_options.has_key?(option_symbol) && @declared_options[option_symbol].has_key?(:values)
+              expected=@declared_options[option_symbol][:values]
             end
+            result=get_interactive(:option,option_symbol.to_s,expected)
+            set_option(option_symbol,result,'interactive')
           end
         end
         return result
@@ -290,17 +260,6 @@ module Aspera
         preset_hash.each{|k,v|@unprocessed_defaults.send(op,[k.to_sym,v])}
       end
 
-      # generate command line option from option symbol
-      def symbol_to_option(symbol,opt_val)
-        result='--'+symbol.to_s.gsub(OPTION_SEP_NAME,OPTION_SEP_LINE)
-        result=result+'='+opt_val unless opt_val.nil?
-        return result
-      end
-
-      def highlight_current(value)
-        $stdout.isatty ? value.to_s.red.bold : "[#{value}]"
-      end
-
       # define an option with restricted values
       def add_opt_list(option_symbol,values,help,*on_args)
         declare_option(option_symbol,:value)
@@ -311,7 +270,7 @@ module Aspera
         value=get_option(option_symbol)
         help_values=values.map{|i|i.eql?(value)?highlight_current(i):i}.join(', ')
         if values.eql?(BOOLEAN_VALUES)
-          help_values=BOOLEAN_SIMPLE.map{|i|((i.eql?(:yes) and value) or (i.eql?(:no) and not value))?highlight_current(i):i}.join(', ')
+          help_values=BOOLEAN_SIMPLE.map{|i|(i.eql?(:yes) && value) || (i.eql?(:no) && !value) ? highlight_current(i) : i}.join(', ')
         end
         on_args.push(values)
         on_args.push("#{help}: #{help_values}")
@@ -398,25 +357,6 @@ module Aspera
         end
       end
 
-      def apply_options_preset(preset,where,_force=false)
-        unprocessed=[]
-        preset.each do |pair|
-          k,v=*pair
-          if @declared_options.has_key?(k)
-            # constrained parameters as string are revert to symbol
-            if @declared_options[k].has_key?(:values) and v.is_a?(String)
-              v=self.class.get_from_list(v,k.to_s+" in #{where}",@declared_options[k][:values])
-            end
-            set_option(k,v,where)
-          else
-            unprocessed.push(pair)
-          end
-        end
-        # keep only unprocessed values for next parse
-        preset.clear
-        preset.push(*unprocessed)
-      end
-
       # removes already known options from the list
       def parse_options!
         Log.log.debug('parse_options!'.red)
@@ -439,6 +379,70 @@ module Aspera
         Log.log.debug("remains: #{unknown_options}")
         # set unprocessed options for next time
         @unprocessed_cmd_line_options=unknown_options
+      end
+
+      private
+
+      def prompt_user_input(prompt,sensitive)
+        return $stdin.getpass("#{prompt}> ") if sensitive
+        print "#{prompt}> "
+        return $stdin.gets.chomp
+      end
+
+      def get_interactive(type,descr,expected=:single)
+        if !@ask_missing_mandatory
+          raise CliBadArgument,self.class.bad_arg_message_multi("missing: #{descr}",expected) if expected.is_a?(Array)
+          raise CliBadArgument,"missing argument (#{expected}): #{descr}"
+        end
+        result=nil
+        sensitive = type.eql?(:option) && @declared_options[descr.to_sym][:sensitive]
+        default_prompt="#{type}: #{descr}"
+        # ask interactively
+        case expected
+        when :multiple
+          result=[]
+          puts(' (one per line, end with empty line)')
+          loop do
+            entry=prompt_user_input(default_prompt,sensitive)
+            break if entry.empty?
+            result.push(ExtendedValue.instance.evaluate(entry))
+          end
+        when :single
+          result=ExtendedValue.instance.evaluate(prompt_user_input(default_prompt,sensitive))
+        else # one fixed
+          result=self.class.get_from_list(prompt_user_input("#{expected.join(' ')}\n#{default_prompt}",sensitive),descr,expected)
+        end
+        return result
+      end
+
+      # generate command line option from option symbol
+      def symbol_to_option(symbol,opt_val)
+        result='--'+symbol.to_s.gsub(OPTION_SEP_NAME,OPTION_SEP_LINE)
+        result=result+'='+opt_val unless opt_val.nil?
+        return result
+      end
+
+      def highlight_current(value)
+        $stdout.isatty ? value.to_s.red.bold : "[#{value}]"
+      end
+
+      def apply_options_preset(preset,where)
+        unprocessed=[]
+        preset.each do |pair|
+          k,v=*pair
+          if @declared_options.has_key?(k)
+            # constrained parameters as string are revert to symbol
+            if @declared_options[k].has_key?(:values) && v.is_a?(String)
+              v=self.class.get_from_list(v,k.to_s+" in #{where}",@declared_options[k][:values])
+            end
+            set_option(k,v,where)
+          else
+            unprocessed.push(pair)
+          end
+        end
+        # keep only unprocessed values for next parse
+        preset.clear
+        preset.push(*unprocessed)
       end
     end
   end

@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 require 'aspera/fasp/agent_base'
 require 'aspera/rest'
 require 'aspera/open_application'
@@ -88,7 +89,7 @@ module Aspera
                 spinner.spin
               when 'running'
                 #puts "running: sessions:#{trdata['sessions'].length}, #{trdata['sessions'].map{|i| i['bytes_transferred']}.join(',')}"
-                if !started and trdata['bytes_expected'] != 0
+                if !started && (trdata['bytes_expected'] != 0)
                   spinner.success unless spinner.nil?
                   notify_begin(@connect_settings['app_id'],trdata['bytes_expected'])
                   started=true

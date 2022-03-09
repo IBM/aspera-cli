@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 require 'aspera/cli/plugins/config'
 require 'aspera/uri_reader'
 require 'json'
@@ -75,7 +76,7 @@ module Aspera
         return value if !value.is_a?(String)
         # first determine decoders, in reversed order
         decoders_reversed=[]
-        while (m=value.match(/^@([^:]+):(.*)/)) and @handlers[:decoder].include?(m[1].to_sym)
+        while (m=value.match(/^@([^:]+):(.*)/)) && @handlers[:decoder].include?(m[1].to_sym)
           decoders_reversed.unshift(m[1].to_sym)
           value=m[2]
         end

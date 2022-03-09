@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 module Aspera
   # used to throttle logs
   class TimerLimiter
@@ -12,7 +13,7 @@ module Aspera
       old_time=@last_time
       @last_time=Time.now.to_f
       @count+=1
-      if old_time.nil? or (@last_time-old_time)>@delay
+      if old_time.nil? || ((@last_time-old_time)>@delay)
         @count=0
         return true
       end

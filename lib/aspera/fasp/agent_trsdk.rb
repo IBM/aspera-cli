@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 require 'aspera/fasp/agent_base'
 require 'aspera/fasp/installation'
 require 'json'
@@ -13,7 +14,7 @@ module Aspera
 
       # options come from transfer_info
       def initialize(user_opts)
-        raise "expecting Hash (or nil), but have #{user_opts.class}" unless user_opts.nil? or user_opts.is_a?(Hash)
+        raise "expecting Hash (or nil), but have #{user_opts.class}" unless user_opts.nil? || user_opts.is_a?(Hash)
         # set default options and override if specified
         options=DEFAULT_OPTIONS.clone
         if !user_opts.nil?
@@ -79,7 +80,7 @@ module Aspera
           #Log.log.debug("#{response.sessionInfo.preTransferBytes} #{response.transferInfo.bytesTransferred}")
           case response.status
           when :RUNNING
-            if !started and !response.sessionInfo.preTransferBytes.eql?(0)
+            if !started && !response.sessionInfo.preTransferBytes.eql?(0)
               notify_begin(@transfer_id,response.sessionInfo.preTransferBytes)
               started=true
             elsif started

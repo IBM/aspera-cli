@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 require 'aspera/cli/manager'
 require 'aspera/cli/formater'
 require 'aspera/cli/plugins/config'
@@ -188,7 +189,7 @@ module Aspera
         @opt_mgr.add_opt_boolean(:once_only,'process only new items (some commands)')
         @opt_mgr.add_opt_boolean(:log_passwords,'show passwords in logs')
         @opt_mgr.set_option(:ui,OpenApplication.default_gui_mode)
-        @opt_mgr.set_option(:once_only,:false)
+        @opt_mgr.set_option(:once_only,false)
         # parse declared options
         @opt_mgr.parse_options!
       end
@@ -246,12 +247,9 @@ module Aspera
         Log.instance.program_name=PROGRAM_NAME
         argv.each do |arg|
           case arg
-          when '--'
-            return
-          when /^--log-level=(.*)/
-            Log.instance.level = Regexp.last_match(1).to_sym
-          when /^--logger=(.*)/
-            Log.instance.logger_type=Regexp.last_match(1).to_sym
+          when '--' then break
+          when /^--log-level=(.*)/ then Log.instance.level = Regexp.last_match(1).to_sym
+          when /^--logger=(.*)/ then Log.instance.logger_type=Regexp.last_match(1).to_sym
           end
         end
       end
@@ -269,7 +267,7 @@ module Aspera
           # find plugins, shall be after parse! ?
           @plugin_env[:config].add_plugins_from_lookup_folders
           # help requested without command ? (plugins must be known here)
-          exit_with_usage(true) if @option_help and @opt_mgr.command_or_arg_empty?
+          exit_with_usage(true) if @option_help && @opt_mgr.command_or_arg_empty?
           generate_bash_completion if @bash_completion
           @plugin_env[:config].periodic_check_newer_gem_version
           command_sym=if @option_show_config && @opt_mgr.command_or_arg_empty?
@@ -278,7 +276,7 @@ module Aspera
                         @opt_mgr.get_next_command(@plugin_env[:config].plugins.keys.dup.unshift(:help))
           end
           # command will not be executed, but we need manual
-          @opt_mgr.fail_on_missing_mandatory=false if @option_help or @option_show_config
+          @opt_mgr.fail_on_missing_mandatory=false if @option_help || @option_show_config
           # main plugin is not dynamically instanciated
           case command_sym
           when :help
@@ -328,7 +326,7 @@ module Aspera
         unless exception_info.nil?
           @plugin_env[:formater].display_message(:error,"#{ERROR_FLASH} #{exception_info[:t]}: #{exception_info[:e].message}")
           @plugin_env[:formater].display_message(:error,'Use option -h to get help.') if exception_info[:usage]
-          if exception_info[:e].is_a?(Fasp::Error) and exception_info[:e].message.eql?('Remote host is not who we expected')
+          if exception_info[:e].is_a?(Fasp::Error) && exception_info[:e].message.eql?('Remote host is not who we expected')
             @plugin_env[:formater].display_message(:error,
 "For this specific error, refer to:\n#{SRC_URL}#error-remote-host-is-not-who-we-expected\nAdd this to arguments:\n--ts=@json:'{\"sshfp\":null}'")
           end

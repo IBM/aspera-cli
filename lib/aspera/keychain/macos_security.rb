@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 require 'security'
 
 # enhance the gem to support other keychains
@@ -5,7 +6,7 @@ module Security
   class Keychain
     class << self
       def by_name(name)
-        keychains_from_output("security list-keychains").select{|kc|kc.filename.end_with?("/#{name}.keychain-db")}.first
+        keychains_from_output('security list-keychains').select{|kc|kc.filename.end_with?("/#{name}.keychain-db")}.first
       end
     end
   end
@@ -24,7 +25,7 @@ module Security
           raise 'host required in URL' if uri.host.nil?
           options[:s]=uri.host
           options[:p]=uri.path unless ['','/'].include?(uri.path)
-          options[:P]=uri.port unless uri.port.eql?(443) and !url.include?(':443/')
+          options[:P]=uri.port unless uri.port.eql?(443) && !url.include?(':443/')
         end
         flags=[orig_flags_for_options(options)]
         flags.push(keychain.filename) unless keychain.nil?

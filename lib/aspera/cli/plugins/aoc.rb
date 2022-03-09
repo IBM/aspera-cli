@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 require 'aspera/cli/plugins/node'
 require 'aspera/cli/plugins/ats'
 require 'aspera/cli/basic_auth_plugin'
@@ -378,7 +379,7 @@ save_to_file: File.join(transfer.destination_folder(Fasp::TransferSpec::DIRECTIO
         def get_resource_id_from_args(resource_class_path)
           l_res_id=options.get_option(:id)
           l_res_name=options.get_option(:name)
-          raise 'Provide either option id or name, not both' unless l_res_id.nil? or l_res_name.nil?
+          raise 'Provide either option id or name, not both' unless l_res_id.nil? || l_res_name.nil?
           # try to find item by name (single partial match or exact match)
           l_res_id=aoc_api.lookup_entity_by_name(resource_class_path,l_res_name)['id'] unless l_res_name.nil?
           # if no name or id option, taken on command line (after command)
@@ -509,6 +510,7 @@ save_to_file: File.join(transfer.destination_folder(Fasp::TransferSpec::DIRECTIO
               providers=aoc_api.read('admin/auth_providers')[:data]
               return {type: :object_list,data: providers}
             when :update
+              raise 'not implemented'
             end
           when :subscription
             org=aoc_api.read('organization')[:data]
@@ -641,7 +643,7 @@ save_to_file: File.join(transfer.destination_folder(Fasp::TransferSpec::DIRECTIO
             supported_operations.push(:shared_folders,:shared_create) if [:node,:workspace].include?(resource_type)
             command=options.get_next_command(supported_operations)
             # require identifier for non global commands
-            if !singleton_object and !global_operations.include?(command)
+            if !singleton_object && !global_operations.include?(command)
               res_id=get_resource_id_from_args(resource_class_path)
               resource_instance_path="#{resource_class_path}/#{res_id}"
             end
@@ -908,7 +910,7 @@ save_to_file: File.join(transfer.destination_folder(Fasp::TransferSpec::DIRECTIO
             when :delete
               list_or_one=instance_identifier()
               return do_bulk_operation(list_or_one,'deleted') do |id|
-                raise 'expecting String identifier' unless id.is_a?(String) or id.is_a?(Integer)
+                raise 'expecting String identifier' unless id.is_a?(String) || id.is_a?(Integer)
                 aoc_api.delete("packages/#{id}")[:data]
               end
             end
@@ -923,11 +925,9 @@ save_to_file: File.join(transfer.destination_folder(Fasp::TransferSpec::DIRECTIO
               folder_dest=options.get_option(:to_folder,:optional)
               value_option=options.get_option(:value,:optional)
               case value_option
-              when 'public'
-                value_option={'purpose'=>'token_auth_redirection'}
-              when 'private'
-                value_option={'purpose'=>'shared_folder_auth_link'}
-              when NilClass,Hash
+              when 'public'  then value_option={'purpose'=>'token_auth_redirection'}
+              when 'private' then value_option={'purpose'=>'shared_folder_auth_link'}
+              when NilClass,Hash then nil # keep value
               else raise 'value must be either: public, private, Hash or nil'
               end
               create_params=nil
@@ -940,7 +940,7 @@ save_to_file: File.join(transfer.destination_folder(Fasp::TransferSpec::DIRECTIO
                   workspace_id: @workspace_id
                 }
               end
-              if !value_option.nil? and !create_params.nil?
+              if !value_option.nil? && !create_params.nil?
                 case value_option['purpose']
                 when 'shared_folder_auth_link'
                   value_option['data']=create_params
@@ -961,7 +961,7 @@ save_to_file: File.join(transfer.destination_folder(Fasp::TransferSpec::DIRECTIO
                 options.set_option(:value,value_option)
               end
               result=entity_action(@api_aoc,'short_links',id_default: 'self')
-              if result[:data].is_a?(Hash) and result[:data].has_key?('created_at') and result[:data]['resource_type'].eql?('UrlToken')
+              if result[:data].is_a?(Hash) && result[:data].has_key?('created_at') && result[:data]['resource_type'].eql?('UrlToken')
                 node_api=aoc_api.get_node_api(node_file[:node_info],scope: AoC::SCOPE_NODE_USER)
                 # TODO: access level as arg
                 access_levels=Aspera::Node::ACCESS_LEVELS #['delete','list','mkdir','preview','read','rename','write']

@@ -1,13 +1,14 @@
+# frozen_string_literal: true
 require 'uri'
 require 'resolv'
 
 module URI
   class Generic
-      # save original method that finds proxy in URI::Generic, it uses env var http_proxy
-      alias :find_proxy_orig :find_proxy
-      def self.register_proxy_finder(&block)
-        # overload the method
-        define_method(:find_proxy) {|envars=ENV| block.call(self.to_s) || find_proxy_orig(envars)}
+    # save original method that finds proxy in URI::Generic, it uses env var http_proxy
+    alias :find_proxy_orig find_proxy
+    def self.register_proxy_finder(&block)
+      # overload the method
+      define_method(:find_proxy) {|envars=ENV| block.call(to_s) || find_proxy_orig(envars)}
     end
   end
 end
@@ -57,7 +58,7 @@ END_OF_JAVASCRIPT
     end
 
     def register_uri_generic
-      URI::Generic.register_proxy_finder{|url_str|self.get_proxies(url_str).first}
+      URI::Generic.register_proxy_finder{|url_str|get_proxies(url_str).first}
       # allow chaining
       return self
     end
@@ -103,7 +104,7 @@ END_OF_JAVASCRIPT
           raise 'DIRECT has no param' unless parts.empty?
         when 'PROXY'
           addr_port=parts.shift
-          raise 'PROXY shall have one param' unless addr_port.is_a?(String) and parts.empty?
+          raise 'PROXY shall have one param' unless addr_port.is_a?(String) && parts.empty?
           begin
             # PAC proxy addresses are <host>:<port>
             if addr_port.match(/:[0-9]+$/)

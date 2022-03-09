@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 # Tools used in README.erb.md
 
 # get transfer spec parameter description
@@ -6,7 +7,7 @@ require 'aspera/fasp/parameters'
 # check that required env vars exist, and files
 %w[EXENAME GEMSPEC INCL_USAGE INCL_COMMANDS INCL_ASESSION].each do |e|
   raise "missing env var #{e}" unless ENV.has_key?(e)
-  raise "missing file #{ENV[e]}" unless File.exist?(ENV[e]) or !e.start_with?('INCL_')
+  raise "missing file #{ENV[e]}" unless File.exist?(ENV[e]) || !e.start_with?('INCL_')
 end
 
 # set values used in ERB

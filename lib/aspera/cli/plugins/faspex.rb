@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 require 'aspera/cli/basic_auth_plugin'
 require 'aspera/cli/plugins/node'
 require 'aspera/cli/plugins/config'
@@ -74,7 +75,7 @@ module Aspera
 
           def textify_package_list(table_data)
             return table_data.map do |e|
-              e.keys.each {|k| e[k]=e[k].first if e[k].is_a?(Array) and e[k].length == 1}
+              e.keys.each {|k| e[k]=e[k].first if e[k].is_a?(Array) && (e[k].length == 1)}
               e['items'] = e.has_key?('link') ? e['link'].length : 0
               e
             end
@@ -141,7 +142,7 @@ module Aspera
           if !mailbox_query.nil?
             raise 'query: must be Hash or nil' unless mailbox_query.is_a?(Hash)
             raise "query: supported params: #{ATOM_EXT_PARAMS}" unless (mailbox_query.keys-ATOM_EXT_PARAMS).empty?
-            raise 'query: startIndex and page are exclusive' if mailbox_query.has_key?('startIndex') and mailbox_query.has_key?('page')
+            raise 'query: startIndex and page are exclusive' if mailbox_query.has_key?('startIndex') && mailbox_query.has_key?('page')
             max_items=mailbox_query[MAX_ITEMS]
             mailbox_query.delete(MAX_ITEMS)
             max_pages=mailbox_query[MAX_PAGES]
@@ -173,7 +174,7 @@ module Aspera
             #result.push({PACKAGE_MATCH_FIELD=>'======'})
             Log.log.debug("total items: #{result.count}")
             # reach the limit ?
-            if !max_items.nil? and result.count >= max_items
+            if !max_items.nil? && (result.count >= max_items)
               result=result.slice(0,max_items) if result.count > max_items
               break
             end
@@ -185,7 +186,7 @@ module Aspera
             params=CGI.parse(URI.parse(link['href']).query)
             mailbox_query=params.keys.each_with_object({}){|i,m|;m[i]=params[i].first;}
             Log.log.debug("query: #{mailbox_query}")
-            break if !max_pages.nil? and mailbox_query['page'].to_i > max_pages
+            break if !max_pages.nil? && (mailbox_query['page'].to_i > max_pages)
           end
           return result
         end
@@ -297,7 +298,7 @@ module Aspera
                   pkg_id_uri.reject!{|i|skip_ids_data.include?(i[:id])}
                 else
                   recipient=options.get_option(:recipient,:optional)
-                  if !recipient.nil? and recipient.start_with?('*')
+                  if !recipient.nil? && recipient.start_with?('*')
                     raise 'Dropbox and Workgroup packages should use link option with faspe:'
                   end
                   # TODO: delivery id is the right one if package was receive by workgroup

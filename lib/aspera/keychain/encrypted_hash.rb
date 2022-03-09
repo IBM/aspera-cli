@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 require 'openssl'
 
 module Aspera
@@ -62,7 +63,7 @@ module Aspera
             o[:description]||=''
           else raise 'error'
           end
-          o[:description]=v[:description] if v.is_a?(Hash) and v[:description].is_a?(String)
+          o[:description]=v[:description] if v.is_a?(Hash) && v[:description].is_a?(String)
           result.push(o)
         end
         return result
@@ -81,7 +82,7 @@ module Aspera
           key=extk if @all_secrets.has_key?(extk)
         end
         # backward compatibility: TODO: remove in future ? (make url mandatory ?)
-        key=username if key.nil? and @all_secrets.has_key?(username)
+        key=username if key.nil? && @all_secrets.has_key?(username)
         raise 'no such secret' if key.nil?
         @all_secrets.delete(key)
       end

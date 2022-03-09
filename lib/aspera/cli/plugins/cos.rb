@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 require 'aspera/cli/plugin'
 require 'aspera/cli/plugins/node'
 require 'aspera/cos_node'
@@ -28,8 +29,8 @@ module Aspera
             # get service credentials, Hash, e.g. @json:@file:...
             service_credentials=options.get_option(:service_credentials,:optional)
             storage_endpoint=options.get_option(:endpoint,:optional)
-            raise 'one of: endpoint or service_credentials is required' if service_credentials.nil? and storage_endpoint.nil?
-            raise 'endpoint and service_credentials are mutually exclusive' unless service_credentials.nil? or storage_endpoint.nil?
+            raise 'one of: endpoint or service_credentials is required' if service_credentials.nil? && storage_endpoint.nil?
+            raise 'endpoint and service_credentials are mutually exclusive' unless service_credentials.nil? || storage_endpoint.nil?
             if service_credentials.nil?
               service_api_key = options.get_option(:apikey,:mandatory)
               instance_id = options.get_option(:crn,:mandatory)

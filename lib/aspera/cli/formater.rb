@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 #require 'text-table'
 require 'terminal-table'
 
@@ -73,9 +74,9 @@ module Aspera
         #is_simple_hash=source.is_a?(Hash) and source.values.inject(true){|m,v| xxx=!v.respond_to?(:each) and m;puts("->#{xxx}>#{v.respond_to?(:each)} #{v}-");xxx}
         is_simple_hash=false
         Log.log.debug("(#{keep_last})[#{is_simple_hash}] -#{source.values}- \n-#{source}-")
-        return source if keep_last and is_simple_hash
+        return source if keep_last && is_simple_hash
         source.each do |k,v|
-          if v.is_a?(Hash) and (!keep_last or !is_simple_hash)
+          if v.is_a?(Hash) && (!keep_last || !is_simple_hash)
             flatten_sub_hash_rec(v,keep_last,prefix+k.to_s+'.',dest)
           else
             dest[prefix+k.to_s]=v
@@ -113,7 +114,7 @@ module Aspera
       def display_results(results)
         raise "INTERNAL ERROR, result must be Hash (got: #{results.class}: #{results})" unless results.is_a?(Hash)
         raise 'INTERNAL ERROR, result must have type' unless results.has_key?(:type)
-        raise 'INTERNAL ERROR, result must have data' unless results.has_key?(:data) or [:empty,:nothing].include?(results[:type])
+        raise 'INTERNAL ERROR, result must have data' unless results.has_key?(:data) || [:empty,:nothing].include?(results[:type])
         res_data=results[:data]
         # comma separated list in string format
         user_asked_fields_list_str=@opt_mgr.get_option(:fields,:mandatory)
@@ -130,7 +131,7 @@ module Aspera
         when :yaml
           display_message(:data,res_data.to_yaml)
         when :table,:csv
-          if !@option_transpose_single and results[:type].eql?(:single_object)
+          if !@option_transpose_single && results[:type].eql?(:single_object)
             results[:type]=:object_list
             res_data=[res_data]
           end
@@ -207,7 +208,7 @@ module Aspera
           # convert to string with special function. here table_rows_hash_val is an array of hash
           table_rows_hash_val=results[:textify].call(table_rows_hash_val) if results.has_key?(:textify)
           filter=@opt_mgr.get_option(:select,:optional)
-          unless filter.nil? or (filter.respond_to?('empty?') and filter.empty?)
+          unless filter.nil? || (filter.respond_to?('empty?') && filter.empty?)
             raise CliBadArgument,"expecting hash for select, have #{filter.class}: #{filter}" unless filter.is_a?(Hash)
             filter.each{|k,v|table_rows_hash_val.select!{|i|i[k].eql?(v)}}
           end

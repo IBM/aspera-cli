@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 require 'aspera/cli/plugins/node'
 
 module Aspera
@@ -12,7 +13,7 @@ module Aspera
               # shall fail: shares requires auth, but we check error message
               api.read('node_api/app')
             rescue RestCallError => e
-              if e.response.code.to_s.eql?('401') and e.response.body.eql?('{"error":{"user_message":"API user authentication failed"}}')
+              if e.response.code.to_s.eql?('401') && e.response.body.eql?('{"error":{"user_message":"API user authentication failed"}}')
                 return {version: 'unknown'}
               end
             end

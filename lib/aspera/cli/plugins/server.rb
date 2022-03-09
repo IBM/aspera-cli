@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 require 'aspera/cli/basic_auth_plugin'
 require 'aspera/ascmd'
 require 'aspera/fasp/transfer_spec'
@@ -95,7 +96,7 @@ module Aspera
             end
             ssh_keys=options.get_option(:ssh_keys,:optional)
             if !ssh_keys.nil?
-              raise 'expecting single value or array for ssh_keys' unless ssh_keys.is_a?(Array) or ssh_keys.is_a?(String)
+              raise 'expecting single value or array for ssh_keys' unless ssh_keys.is_a?(Array) || ssh_keys.is_a?(String)
               ssh_keys=[ssh_keys] if ssh_keys.is_a?(String)
               ssh_keys.map!{|p|File.expand_path(p)}
               Log.log.debug("ssh keys=#{ssh_keys}")

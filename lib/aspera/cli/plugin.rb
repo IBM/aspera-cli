@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 module Aspera
   module Cli
     # base class for plugins modules
@@ -13,7 +14,7 @@ module Aspera
       MAX_PAGES='pmax'.freeze
 
       # global for inherited classes
-      @@options_created=false
+      @@options_created=false # rubocop:disable Style/ClassVars
 
       def initialize(env)
         @agents=env
@@ -30,7 +31,7 @@ module Aspera
         options.add_opt_simple(:property,'name of property to set')
         options.add_opt_simple(:id,"resource identifier (#{INSTANCE_OPS.join(',')})")
         options.parse_options!
-        @@options_created=true
+        @@options_created=true # rubocop:disable Style/ClassVars
       end
 
       # must be called AFTER the instance action
@@ -89,7 +90,7 @@ module Aspera
       def entity_action(rest_api,res_class_path,**opts)
         #res_name=res_class_path.gsub(%r{^.*/},'').gsub(%r{s$},'').gsub('_',' ')
         command=options.get_next_command(ALL_OPS)
-        return entity_command(command,rest_api,res_class_path,opts)
+        return entity_command(command,rest_api,res_class_path,**opts)
       end
 
       # shortcuts for plugin environment

@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 require 'aspera/log'
 
 module Aspera
@@ -43,7 +44,7 @@ module Aspera
       # for info, second overrides first, so restore it
       case result.keys.length;when 0 then result=system_info;when 1 then result=result[result.keys.first];else raise 'error';end
       # raise error as exception
-      raise Error.new(result[:errno],result[:errstr],action_sym,args) if result.is_a?(Hash) and result.keys.sort == TYPES_DESCR[:error][:fields].map{|i|i[:name]}.sort
+      raise Error.new(result[:errno],result[:errstr],action_sym,args) if result.is_a?(Hash) && (result.keys.sort == TYPES_DESCR[:error][:fields].map{|i|i[:name]}.sort)
       return result
     end # execute_single
 

@@ -1,8 +1,11 @@
+# frozen_string_literal: true
 # simple vt100 colors
 class String
-  private
+  class<<self
+    private
 
-  def self.vtcmd(code);"\e[#{code}m";end
+    def vtcmd(code);"\e[#{code}m";end
+  end
   # see https://en.wikipedia.org/wiki/ANSI_escape_code
   # symbol is the method name added to String
   # it adds control chars to set color (and reset at the end).
@@ -33,12 +36,11 @@ class String
   # defines methods to String, one per entry in VTSTYLES
   VTSTYLES.each do |name,code|
     begin_seq=vtcmd(code)
-    end_seq=vtcmd((code >= 10) ? 0 : code+20+(code.eql?(1)?1:0))
+    end_seq=vtcmd(code >= 10 ? 0 : code+20+(code.eql?(1)?1:0))
     if $stderr.tty?
       define_method(name){"#{begin_seq}#{self}#{end_seq}"}
     else
       define_method(name){self}
     end
-    public name
   end
 end

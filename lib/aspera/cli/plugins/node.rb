@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 require 'aspera/cli/basic_auth_plugin'
 require 'aspera/nagios'
 require 'aspera/hash_ext'
@@ -143,7 +144,7 @@ headers: {'Content-Type'=>'text/xml;charset=UTF-8','SOAPAction'=>'FASPSessionNET
             return { type: :single_object, data: node_info, textify: lambda { |table_data| c_textify_bool_list_result(table_data,['capabilities','settings'])}}
           when :license # requires: asnodeadmin -mu <node user> --acl-add=internal --internal
             node_license=@api_node.read('license')[:data]
-            if node_license['failure'].is_a?(String) and node_license['failure'].include?('ACL')
+            if node_license['failure'].is_a?(String) && node_license['failure'].include?('ACL')
               Log.log.error('server must have: asnodeadmin -mu <node user> --acl-add=internal --internal')
             end
             return { type: :single_object, data: node_license}
@@ -262,7 +263,7 @@ headers: {'Content-Type'=>'text/xml;charset=UTF-8','SOAPAction'=>'FASPSessionNET
             asyncname=options.get_option(:sync_name,:optional)
             if asyncname.nil?
               asyncid=instance_identifier()
-              if asyncid.eql?('ALL') and [:show,:delete].include?(command)
+              if asyncid.eql?('ALL') && [:show,:delete].include?(command)
                 asyncids=@api_node.read('async/list')[:data]['sync_ids']
               else
                 Integer(asyncid) # must be integer

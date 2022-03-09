@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 require 'aspera/fasp/agent_base'
 require 'aspera/fasp/transfer_spec'
 require 'aspera/log'
@@ -29,7 +30,7 @@ module Aspera
         # we need to keep track of actual file path because transfer spec is modified to be sent in web socket
         source_paths=[]
         # get source root or nil
-        source_root = (transfer_spec.has_key?('source_root') and !transfer_spec['source_root'].empty?) ? transfer_spec['source_root'] : nil
+        source_root = transfer_spec.has_key?('source_root') && !transfer_spec['source_root'].empty? ? transfer_spec['source_root'] : nil
         # source root is ignored by GW, used only here
         transfer_spec.delete('source_root')
         # compute total size of files to upload (for progress)
@@ -76,7 +77,7 @@ module Aspera
         # open web socket to end point
         ws.connect("#{@gw_api.params[:base_url]}/upload")
         # async wait ready
-        while !ws.open? and error.nil?
+        while !ws.open? && error.nil?
           Log.log.info('ws: wait')
           sleep(0.2)
         end
@@ -117,7 +118,7 @@ module Aspera
               ws_send(ws,:slice_upload, slice_data)
               sent_bytes+=data.length
               currenttime=Time.now
-              if lastevent.nil? or (currenttime-lastevent)>UPLOAD_REFRESH_SEC
+              if lastevent.nil? || ((currenttime-lastevent)>UPLOAD_REFRESH_SEC)
                 notify_progress(session_id,sent_bytes)
                 lastevent=currenttime
               end

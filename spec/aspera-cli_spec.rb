@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 require 'spec_helper'
 
 $LOAD_PATH.unshift(File.dirname(__FILE__)+'/../lib')

@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 require 'webrick'
 require 'webrick/https'
 
@@ -87,10 +88,10 @@ module Aspera
 
     # wait for request on web server
     # @return Hash the query
-    def get_request
-      Log.log.debug('get_request')
+    def received_request
+      Log.log.debug('received_request')
       # shall be called only once
-      raise 'error, get_request called twice ?' if @server.nil?
+      raise 'error, received_request called twice ?' if @server.nil?
       # wait for signal from thread
       @mutex.synchronize{@cond.wait(@mutex)}
       # tell server thread to stop

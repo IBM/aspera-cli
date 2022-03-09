@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 require 'aspera/fasp/listener'
 require 'aspera/fasp/agent_base'
 require 'ruby-progressbar'

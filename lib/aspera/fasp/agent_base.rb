@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 module Aspera
   module Fasp
     # Base class for FASP transfer agents
@@ -74,7 +75,7 @@ module Aspera
       # it must be a list of :success or exception
       def self.validate_status_list(statuses)
         raise "internal error: bad statuses type: #{statuses.class}" unless statuses.is_a?(Array)
-        raise "internal error: bad statuses content: #{statuses}" unless statuses.select{|i|!i.eql?(:success) and !i.is_a?(StandardError)}.empty?
+        raise "internal error: bad statuses content: #{statuses}" unless statuses.select{|i|!i.eql?(:success) && !i.is_a?(StandardError)}.empty?
       end
 
       # the following methods must be implemented by subclass:
