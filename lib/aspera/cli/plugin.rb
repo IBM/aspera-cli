@@ -9,9 +9,9 @@ module Aspera
       INSTANCE_OPS=[:modify,:delete,:show].freeze
       ALL_OPS=[GLOBAL_OPS,INSTANCE_OPS].flatten.freeze
       # max number of items for list command
-      MAX_ITEMS='max'.freeze
+      MAX_ITEMS='max'
       # max number of pages for list command
-      MAX_PAGES='pmax'.freeze
+      MAX_PAGES='pmax'
 
       # global for inherited classes
       @@options_created=false # rubocop:disable Style/ClassVars

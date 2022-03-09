@@ -19,7 +19,7 @@ module Aspera
     # template file is read once, it contains functions that can be used in a proxy autoconf script
     # it is similar to mozilla ascii_pac_utils.inc
     PAC_FUNCTIONS_FILE=__FILE__.gsub(/\.rb$/,'.js').freeze
-    PAC_MAIN_FUNCTION='FindProxyForURL'.freeze
+    PAC_MAIN_FUNCTION='FindProxyForURL'
     private_constant :PAC_FUNCTIONS_FILE,:PAC_MAIN_FUNCTION
 
     private

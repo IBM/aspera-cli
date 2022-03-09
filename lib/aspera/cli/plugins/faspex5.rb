@@ -19,7 +19,7 @@ module Aspera
           end
         end
 
-        VAL_ALL='ALL'.freeze
+        VAL_ALL='ALL'
         private_constant :VAL_ALL
 
         def initialize(env)

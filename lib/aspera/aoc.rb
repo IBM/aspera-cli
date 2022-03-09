@@ -8,9 +8,9 @@ require 'base64'
 
 module Aspera
   class AoC < Rest
-    PRODUCT_NAME='Aspera on Cloud'.freeze
+    PRODUCT_NAME='Aspera on Cloud'
     # Production domain of AoC
-    PROD_DOMAIN='ibmaspera.com'.freeze
+    PROD_DOMAIN='ibmaspera.com'
     # to avoid infinite loop in pub link redirection
     MAX_REDIRECT=10
     CLIENT_APPS=['aspera.global-cli-client','aspera.drive']
@@ -39,7 +39,7 @@ module Aspera
     PATH_SEPARATOR='/'
     FILES_APP='files'
     PACKAGES_APP='packages'
-    API_V1='api/v1'.freeze
+    API_V1='api/v1'
 
     # class instance variable, access with accessors on class
     @use_standard_ports = true

@@ -22,7 +22,7 @@ module Aspera
             return nil
           end
         end
-        SAMPLE_SOAP_CALL='<?xml version="1.0" encoding="UTF-8"?><soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:typ="urn:Aspera:XML:FASPSessionNET:2009/11:Types"><soapenv:Header></soapenv:Header><soapenv:Body><typ:GetSessionInfoRequest><SessionFilter><SessionStatus>running</SessionStatus></SessionFilter></typ:GetSessionInfoRequest></soapenv:Body></soapenv:Envelope>'.freeze
+        SAMPLE_SOAP_CALL='<?xml version="1.0" encoding="UTF-8"?><soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:typ="urn:Aspera:XML:FASPSessionNET:2009/11:Types"><soapenv:Header></soapenv:Header><soapenv:Body><typ:GetSessionInfoRequest><SessionFilter><SessionStatus>running</SessionStatus></SessionFilter></typ:GetSessionInfoRequest></soapenv:Body></soapenv:Envelope>'
         private_constant :SAMPLE_SOAP_CALL
 
         def initialize(env)

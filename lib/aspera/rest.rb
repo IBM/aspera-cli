@@ -34,8 +34,8 @@ module Aspera
       debug: false,
       # true if https ignore certificate
       insecure: false,
-      user_agent: 'Ruby'.freeze,
-      download_partial_suffix: '.http_partial'.freeze,
+      user_agent: 'Ruby',
+      download_partial_suffix: '.http_partial',
       # a lambda which takes the Net::HTTP as arg, use this to change parameters
       session_cb: nil
     }

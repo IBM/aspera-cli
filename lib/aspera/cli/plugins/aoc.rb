@@ -27,8 +27,8 @@ module Aspera
           end
         end
         # special value for package id
-        VAL_ALL='ALL'.freeze
-        ID_AK_ADMIN='ASPERA_ACCESS_KEY_ADMIN'.freeze
+        VAL_ALL='ALL'
+        ID_AK_ADMIN='ASPERA_ACCESS_KEY_ADMIN'
 
         def initialize(env)
           super(env)
