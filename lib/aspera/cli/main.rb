@@ -140,36 +140,36 @@ module Aspera
       end
 
       def app_banner
-        banner=<<~END_OF_BANNER
-        NAME
-        \t#{PROGRAM_NAME} -- a command line tool for Aspera Applications (v#{Aspera::Cli::VERSION})
+        return <<~END_OF_BANNER
+          NAME
+          \t#{PROGRAM_NAME} -- a command line tool for Aspera Applications (v#{Aspera::Cli::VERSION})
 
-        SYNOPSIS
-        \t#{PROGRAM_NAME} COMMANDS [OPTIONS] [ARGS]
-        
-        DESCRIPTION
-        \tUse Aspera application to perform operations on command line.
-        \tDocumentation and examples: #{GEM_URL}
-        \texecute: #{PROGRAM_NAME} conf doc
-        \tor visit: #{HELP_URL}
-        \tsource repo: #{SRC_URL}
-        
-        ENVIRONMENT VARIABLES
-        \t#{@plugin_env[:config].conf_dir_env_var} config folder, default: $HOME/#{Plugins::Config::ASPERA_HOME_FOLDER_NAME}/#{PROGRAM_NAME}
-        \tAny option can be set as an environment variable, refer to the manual
-        
-        COMMANDS
-        \tTo list first level commands, execute: #{PROGRAM_NAME}
-        \tNote that commands can be written shortened (provided it is unique).
-        
-        OPTIONS
-        \tOptions begin with a '-' (minus), and value is provided on command line.
-        \tSpecial values are supported beginning with special prefix @pfx:, where pfx is one of:
-        \t#{ExtendedValue.instance.modifiers.map(&:to_s).join(', ')}
-        \tDates format is 'DD-MM-YY HH:MM:SS', or 'now' or '-<num>h'
-        
-        ARGS
-        \tSome commands require mandatory arguments, e.g. a path.
+          SYNOPSIS
+          \t#{PROGRAM_NAME} COMMANDS [OPTIONS] [ARGS]
+
+          DESCRIPTION
+          \tUse Aspera application to perform operations on command line.
+          \tDocumentation and examples: #{GEM_URL}
+          \texecute: #{PROGRAM_NAME} conf doc
+          \tor visit: #{HELP_URL}
+          \tsource repo: #{SRC_URL}
+
+          ENVIRONMENT VARIABLES
+          \t#{@plugin_env[:config].conf_dir_env_var} config folder, default: $HOME/#{Plugins::Config::ASPERA_HOME_FOLDER_NAME}/#{PROGRAM_NAME}
+          \tAny option can be set as an environment variable, refer to the manual
+
+          COMMANDS
+          \tTo list first level commands, execute: #{PROGRAM_NAME}
+          \tNote that commands can be written shortened (provided it is unique).
+
+          OPTIONS
+          \tOptions begin with a '-' (minus), and value is provided on command line.
+          \tSpecial values are supported beginning with special prefix @pfx:, where pfx is one of:
+          \t#{ExtendedValue.instance.modifiers.map(&:to_s).join(', ')}
+          \tDates format is 'DD-MM-YY HH:MM:SS', or 'now' or '-<num>h'
+
+          ARGS
+          \tSome commands require mandatory arguments, e.g. a path.
         END_OF_BANNER
       end
 

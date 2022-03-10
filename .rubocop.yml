@@ -295,7 +295,7 @@ Style/CollectionCompact: # (new in 1.2)
   Enabled: true
 
 Style/DocumentDynamicEvalDefinition: # (new in 1.1)
-  Enabled: true
+  Enabled: false
 
 Style/EndlessMethod: # (new in 1.8)
   Enabled: true

@@ -63,10 +63,10 @@ module Aspera
         # tell Files what to expect in package: 1 transfer (can also be done after transfer)
         @aoc_api_user.update("packages/#{the_package['id']}",{'sent'=>true,'transfers_expected'=>1})
 
-        if false
-          response.status=400
-          return 'ERROR HERE'
-        end
+        # to return an error:
+        # response.status=400
+        # return 'ERROR HERE'
+
         # TODO: check about xfer_*
         ts_tags={
           'aspera' => {

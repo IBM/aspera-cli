@@ -49,7 +49,7 @@ module Aspera
         # main ssh session loop
         session.loop
       end # session
-      return response.join('')
+      return response.join
     end
   end
 end

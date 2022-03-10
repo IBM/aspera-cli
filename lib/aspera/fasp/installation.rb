@@ -31,16 +31,16 @@ module Aspera
       RB_SDK_FOLDER='lib'
       ONE_YEAR_SECONDS=365 * 24 * 60 * 60
       DEFAULT_ASPERA_CONF=<<~END_OF_CONFIG_FILE
-<?xml version='1.0' encoding='UTF-8'?>
-<CONF version="2">
-<default>
-    <file_system>
-        <resume_suffix>.aspera-ckpt</resume_suffix>
-        <partial_file_suffix>.partial</partial_file_suffix>
-    </file_system>
-</default>
-</CONF>
-END_OF_CONFIG_FILE
+        <?xml version='1.0' encoding='UTF-8'?>
+        <CONF version="2">
+        <default>
+            <file_system>
+                <resume_suffix>.aspera-ckpt</resume_suffix>
+                <partial_file_suffix>.partial</partial_file_suffix>
+            </file_system>
+        </default>
+        </CONF>
+      END_OF_CONFIG_FILE
       private_constant :PRODUCT_CONNECT,:PRODUCT_CLI_V1,:PRODUCT_DRIVE,:PRODUCT_ENTSRV,:EXT_RUBY_PROTOBUF,:RB_SDK_FOLDER,:ONE_YEAR_SECONDS,:DEFAULT_ASPERA_CONF
       # set ascp executable path
       def ascp_path=(v)

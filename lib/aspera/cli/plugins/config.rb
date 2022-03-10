@@ -761,19 +761,19 @@ module Aspera
               plugin_name=options.get_next_argument('name',:single,:mandatory).downcase
               plugin_folder=options.get_next_argument('folder',:single,:optional) || File.join(@main_folder,ASPERA_PLUGINS_FOLDERNAME)
               plugin_file=File.join(plugin_folder,"#{plugin_name}.rb")
-              content=<<~_EOF_
+              content=<<~END_OF_PLUGIN_CODE
                 require 'aspera/cli/plugin'
                 module Aspera
                   module Cli
                     module Plugins
                       class #{plugin_name.capitalize} < Plugin
                         ACTIONS=[]
-                        def execute_action; return Main.result_status("You called plugin #{plugin_name}"); end
+                        def execute_action; return Main.result_status('You called plugin #{plugin_name}'); end
                       end # #{plugin_name.capitalize}
                     end # Plugins
                   end # Cli
                 end # Aspera
-              _EOF_
+              END_OF_PLUGIN_CODE
               File.write(plugin_file,content)
               return Main.result_status("Created #{plugin_file}")
             end

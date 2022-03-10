@@ -78,10 +78,10 @@ module Aspera
         # @return Float in seconds
         def video_get_duration(input_file)
           result=external_command(:ffprobe,[
-                             '-loglevel','error',
-                             '-show_entries','format=duration',
-                             '-print_format','default=noprint_wrappers=1:nokey=1',
-                             input_file])
+            '-loglevel','error',
+            '-show_entries','format=duration',
+            '-print_format','default=noprint_wrappers=1:nokey=1',
+            input_file])
           return result[:stdout].to_f
         end
 

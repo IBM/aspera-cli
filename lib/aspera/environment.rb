@@ -25,7 +25,7 @@ module Aspera
         raise "Unknown OS: #{RbConfig::CONFIG['host_os']}"
       end
     end
-    CPU_X86_64=:x86_64
+    CPU_X86_64=:x86_64 # rubocop:disable Naming/VariableNumber
     CPU_PPC64=:ppc64
     CPU_PPC64LE=:ppc64le
     CPU_S390=:s390
