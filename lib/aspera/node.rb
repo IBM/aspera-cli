@@ -10,28 +10,34 @@ module Aspera
   # Provides additional functions using node API.
   class Node < Rest
     # permissions
-    ACCESS_LEVELS=['delete','list','mkdir','preview','read','rename','write']
+    ACCESS_LEVELS=%w[delete list mkdir preview read rename write].freeze
     # prefix for ruby code for filter
     MATCH_EXEC_PREFIX='exec:'
 
     # register node special token decoder
     Oauth.register_decoder(lambda{|token|JSON.parse(Zlib::Inflate.inflate(Base64.decode64(token)).partition('==SIGNATURE==').first)})
 
-    def self.set_ak_basic_token(ts,ak,secret)
-      Log.log.warn("Expected transfer user: #{Fasp::TransferSpec::ACCESS_KEY_TRANSFER_USER}, but have #{ts['remote_user']}") unless ts['remote_user'].eql?(Fasp::TransferSpec::ACCESS_KEY_TRANSFER_USER)
-      ts['token']="Basic #{Base64.strict_encode64("#{ak}:#{secret}")}"
-    end
-
-    # for access keys: provide expression to match entry in folder
-    # if no prefix: regex
-    # if prefix: ruby code
-    # if filder is nil, then always match
-    def self.file_matcher(match_expression)
-      match_expression||="#{MATCH_EXEC_PREFIX}true"
-      if match_expression.start_with?(MATCH_EXEC_PREFIX)
-        return eval("lambda{|f|#{match_expression[MATCH_EXEC_PREFIX.length..-1]}}")
+    class<<self
+      def set_ak_basic_token(ts,ak,secret)
+        Log.log.warn("Expected transfer user: #{Fasp::TransferSpec::ACCESS_KEY_TRANSFER_USER}, but have #{ts['remote_user']}") unless ts['remote_user'].eql?(Fasp::TransferSpec::ACCESS_KEY_TRANSFER_USER)
+        ts['token']="Basic #{Base64.strict_encode64("#{ak}:#{secret}")}"
       end
-      return lambda{|f|f['name'].match(/#{match_expression}/)}
+
+      def empty_binding
+        return Kernel.binding
+      end
+
+      # for access keys: provide expression to match entry in folder
+      # if no prefix: regex
+      # if prefix: ruby code
+      # if filder is nil, then always match
+      def file_matcher(match_expression)
+        match_expression||="#{MATCH_EXEC_PREFIX}true"
+        if match_expression.start_with?(MATCH_EXEC_PREFIX)
+          return eval("lambda{|f|#{match_expression[MATCH_EXEC_PREFIX.length..-1]}}", empty_binding, __FILE__, __LINE__)
+        end
+        return lambda{|f|f['name'].match(/#{match_expression}/)}
+      end
     end
 
     #    def initialize(rest_params)

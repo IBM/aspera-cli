@@ -13,11 +13,11 @@ module Aspera
       DISPLAY_FORMATS=%i[table ruby json jsonpp yaml csv nagios]
       # user output levels
       DISPLAY_LEVELS=[:info,:data,:error]
-      CSV_RECORD_SEPARATOR="\n".freeze
+      CSV_RECORD_SEPARATOR="\n"
       CSV_FIELD_SEPARATOR=','
       HIDDEN_PASSWORD='🔑'
-      SECRET_KEYWORDS=%w(password secret private_key)
-  
+      SECRET_KEYWORDS=%w[password secret private_key]
+
       private_constant :FIELDS_ALL,:FIELDS_DEFAULT,:DISPLAY_FORMATS,:DISPLAY_LEVELS,:CSV_RECORD_SEPARATOR,:CSV_FIELD_SEPARATOR,:HIDDEN_PASSWORD
 
       class<<self

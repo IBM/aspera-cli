@@ -34,7 +34,7 @@ module Aspera
       end
 
       def value=(val)
-        return @object.send("#{@attr_symb}=",val)
+        @object.send("#{@attr_symb}=",val)
       end
     end
 

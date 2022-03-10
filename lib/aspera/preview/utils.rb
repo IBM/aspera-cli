@@ -9,7 +9,7 @@ module Aspera
   module Preview
     class Utils
       # from bash manual: meta-character need to be escaped
-      BASH_SPECIAL_CHARACTERS="|&;()<> \t#\n".freeze
+      BASH_SPECIAL_CHARACTERS="|&;()<> \t#\n"
       # shell exit code when command is not found
       BASH_EXIT_NOT_FOUND=127
       # external binaries used

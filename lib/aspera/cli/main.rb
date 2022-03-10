@@ -22,8 +22,8 @@ module Aspera
       PROGRAM_NAME = 'ascli'
       # name of the containing gem, same as in <gem name>.gemspec
       GEM_NAME = 'aspera-cli'
-      HELP_URL = "http://www.rubydoc.info/gems/#{GEM_NAME}".freeze
-      GEM_URL  = "https://rubygems.org/gems/#{GEM_NAME}".freeze
+      HELP_URL = "http://www.rubydoc.info/gems/#{GEM_NAME}"
+      GEM_URL  = "https://rubygems.org/gems/#{GEM_NAME}"
       SRC_URL  = 'https://github.com/IBM/aspera-cli'
       ERROR_FLASH='ERROR:'.bg_red.gray.blink.freeze
       private_constant :PROGRAM_NAME,:GEM_NAME,:HELP_URL,:GEM_URL,:SRC_URL,:ERROR_FLASH
@@ -140,27 +140,37 @@ module Aspera
       end
 
       def app_banner
-        banner = "NAME\n\t#{PROGRAM_NAME} -- a command line tool for Aspera Applications (v#{Aspera::Cli::VERSION})\n\n"
-        banner << "SYNOPSIS\n"
-        banner << "\t#{PROGRAM_NAME} COMMANDS [OPTIONS] [ARGS]\n"
-        banner << "\nDESCRIPTION\n"
-        banner << "\tUse Aspera application to perform operations on command line.\n"
-        banner << "\tDocumentation and examples: #{GEM_URL}\n"
-        banner << "\texecute: #{PROGRAM_NAME} conf doc\n"
-        banner << "\tor visit: #{HELP_URL}\n"
-        banner << "\tsource repo: #{SRC_URL}\n"
-        banner << "\nENVIRONMENT VARIABLES\n"
-        banner << "\t#{@plugin_env[:config].conf_dir_env_var}  config folder, default: $HOME/#{Plugins::Config::ASPERA_HOME_FOLDER_NAME}/#{PROGRAM_NAME}\n"
-        banner << "\tany option can be set as an environment variable, refer to the manual\n"
-        banner << "\nCOMMANDS\n"
-        banner << "\tTo list first level commands, execute: #{PROGRAM_NAME}\n"
-        banner << "\tNote that commands can be written shortened (provided it is unique).\n"
-        banner << "\nOPTIONS\n"
-        banner << "\tOptions begin with a '-' (minus), and value is provided on command line.\n"
-        banner << "\tSpecial values are supported beginning with special prefix @pfx:, where pfx is one of:\n\t#{ExtendedValue.instance.modifiers.map(&:to_s).join(', ')}\n"
-        banner << "\tDates format is 'DD-MM-YY HH:MM:SS', or 'now' or '-<num>h'\n\n"
-        banner << "ARGS\n"
-        banner << "\tSome commands require mandatory arguments, e.g. a path.\n"
+        banner=<<~END_OF_BANNER
+        NAME
+        \t#{PROGRAM_NAME} -- a command line tool for Aspera Applications (v#{Aspera::Cli::VERSION})
+
+        SYNOPSIS
+        \t#{PROGRAM_NAME} COMMANDS [OPTIONS] [ARGS]
+        
+        DESCRIPTION
+        \tUse Aspera application to perform operations on command line.
+        \tDocumentation and examples: #{GEM_URL}
+        \texecute: #{PROGRAM_NAME} conf doc
+        \tor visit: #{HELP_URL}
+        \tsource repo: #{SRC_URL}
+        
+        ENVIRONMENT VARIABLES
+        \t#{@plugin_env[:config].conf_dir_env_var} config folder, default: $HOME/#{Plugins::Config::ASPERA_HOME_FOLDER_NAME}/#{PROGRAM_NAME}
+        \tAny option can be set as an environment variable, refer to the manual
+        
+        COMMANDS
+        \tTo list first level commands, execute: #{PROGRAM_NAME}
+        \tNote that commands can be written shortened (provided it is unique).
+        
+        OPTIONS
+        \tOptions begin with a '-' (minus), and value is provided on command line.
+        \tSpecial values are supported beginning with special prefix @pfx:, where pfx is one of:
+        \t#{ExtendedValue.instance.modifiers.map(&:to_s).join(', ')}
+        \tDates format is 'DD-MM-YY HH:MM:SS', or 'now' or '-<num>h'
+        
+        ARGS
+        \tSome commands require mandatory arguments, e.g. a path.
+        END_OF_BANNER
       end
 
       # define header for manual

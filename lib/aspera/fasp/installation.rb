@@ -145,7 +145,7 @@ END_OF_CONFIG_FILE
           File.chmod(0400,file)
         when :aspera_license
           file=File.join(sdk_folder,'aspera-license')
-          File.write(file,Base64.strict_encode64("#{Zlib::Inflate.inflate(DataRepository.instance.get_bin(6))}==SIGNATURE==\n#{Base64.strict_encode64(DataRepository.instance.get_bin(7))}")) unless File.exist?(file)
+          File.write(file,Base64.strict_encode64("#{Zlib::Inflate.inflate(DataRepository.instance.data(6))}==SIGNATURE==\n#{Base64.strict_encode64(DataRepository.instance.data(7))}")) unless File.exist?(file)
           File.chmod(0400,file)
         when :aspera_conf
           file=File.join(sdk_folder,'aspera.conf')
@@ -201,7 +201,7 @@ END_OF_CONFIG_FILE
 
       # default bypass key phrase
       def bypass_pass
-        return format('%08x-%04x-%04x-%04x-%04x%08x',*DataRepository.instance.get_bin(3).unpack('NnnnnN'))
+        return format('%08x-%04x-%04x-%04x-%04x%08x',*DataRepository.instance.data(3).unpack('NnnnnN'))
       end
 
       def bypass_keys
@@ -377,7 +377,7 @@ END_OF_CONFIG_FILE
       # @param id in repository 1 for dsa, 2 for rsa
       def get_key(type,id)
         hf=['begin','end'].map{|t|"-----#{t} #{type} private key-----".upcase}
-        bin=Base64.strict_encode64(DataRepository.instance.get_bin(id))
+        bin=Base64.strict_encode64(DataRepository.instance.data(id))
         # validate valie and generate key in connonical format
         OpenSSL::PKey.const_get(type.upcase).send(:new,hf.insert(1,bin).join("\n")).to_pem
       end

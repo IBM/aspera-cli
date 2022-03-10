@@ -174,9 +174,9 @@ module Aspera
     # :url_params
     # :www_body_params
     # :text_body_params
-    # :save_to_file (filepath)
-    # :return_error (bool)
-    # :redirect_max (int)
+    # :save_to_file (filepath) default: nil
+    # :return_error (bool) default: nil
+    # :redirect_max (int) default: 0
     def call(call_data)
       raise "Hash call parameter is required (#{call_data.class})" unless call_data.is_a?(Hash)
       call_data[:subpath]='' if call_data[:subpath].nil?
@@ -212,7 +212,7 @@ module Aspera
         # make http request (pipelined)
         http_session.request(req) do |response|
           result[:http] = response
-          if call_data.has_key?(:save_to_file) && result[:http].code.to_s.start_with?('2')
+          if !call_data[:save_to_file].nil? && result[:http].code.to_s.start_with?('2')
             total_size=result[:http]['Content-Length'].to_i
             progress=ProgressBar.create(
             format:     '%a %B %p%% %r KB/sec %e',
