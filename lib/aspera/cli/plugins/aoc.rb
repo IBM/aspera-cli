@@ -19,8 +19,8 @@ module Aspera
         class << self
           def detect(base_url)
             api=Rest.new({base_url: base_url})
-            result=api.call({operation: 'GET',subpath: '',headers: {'Accept'=>'text/html'}})
-            if result[:http].body.include?('content="AoC"')
+            if URI.parse(base_url).host.include?(Aspera::AoC::PROD_DOMAIN) ||
+              api.call({operation: 'GET', redirect_max: 1, headers: {'Accept'=>'text/html'}})[:http].body.include?(Aspera::AoC::PRODUCT_NAME)
               return {product: :aoc,version: 'unknown'}
             end
             return nil
@@ -415,11 +415,7 @@ save_to_file: File.join(transfer.destination_folder(Fasp::TransferSpec::DIRECTIO
                 raise "no such shared inbox in workspace #{@workspace_name}" unless entity_type.eql?('contacts')
                 full_recipient_info=aoc_api.create('contacts',{'current_workspace_id'=>@workspace_id,'email'=>short_recipient_info}.merge(new_user_option))[:data]
               end
-              short_recipient_info=if entity_type.eql?('dropboxes')
-                {'id'=>full_recipient_info['id'],'type'=>'dropbox'}
-              else
-                {'id'=>full_recipient_info['source_id'],'type'=>full_recipient_info['source_type']}
-              end
+              short_recipient_info=entity_type.eql?('dropboxes') ? {'id'=>full_recipient_info['id'],'type'=>'dropbox'} : {'id'=>full_recipient_info['source_id'],'type'=>full_recipient_info['source_type']}
             else # unexpected extended value, must be String or Hash
               raise "#{recipient_list_field} item must be a String (email, shared inbox) or Hash (id,type)"
             end # type of recipient info

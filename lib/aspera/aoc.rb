@@ -25,7 +25,7 @@ module Aspera
     # minimum fields for user info if retrieval fails
     USER_INFO_FIELDS_MIN=['name','email','id','default_workspace_id','organization_id']
 
-    private_constant :PRODUCT_NAME,:PROD_DOMAIN,:MAX_REDIRECT,:CLIENT_APPS,:DATA_REPO_INDEX_START,
+    private_constant :MAX_REDIRECT,:CLIENT_APPS,:DATA_REPO_INDEX_START,
     :COOKIE_PREFIX,:PUBLIC_LINK_PATHS,:JWT_AUDIENCE,:OAUTH_API_SUBPATH,:USER_INFO_FIELDS_MIN
 
     # various API scopes supported
@@ -51,7 +51,7 @@ module Aspera
       def get_client_info(client_name=CLIENT_APPS.first)
         client_index=CLIENT_APPS.index(client_name)
         raise "no such pre-defined client: #{client_name}" if client_index.nil?
-        return client_name,Base64.urlsafe_encode64(DataRepository.instance.get_bin(DATA_REPO_INDEX_START+client_index))
+        return client_name,Base64.urlsafe_encode64(DataRepository.instance.data(DATA_REPO_INDEX_START+client_index))
       end
 
       # @param url of AoC instance
