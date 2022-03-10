@@ -41,17 +41,18 @@ def geminstadd;gemspec.version.to_s.match(/\.[^0-9]/) ? ' --pre' : '';end
 
 # transfer spec description generation
 def spec_table
-  r='<table><tr><th>Field</th><th>Type</th>'
+  r=[]
+  r<<'<table><tr><th>Field</th><th>Type</th>'
   Aspera::Fasp::Parameters::SUPPORTED_AGENTS_SHORT.each do |c|
     r << '<th>'<<c.to_s.upcase<<'</th>'
   end
   r << '<th>Description</th></tr>'
   Aspera::Fasp::Parameters.man_table.each do |p|
-    p[:description] << (p[:description].empty? ? '' : "\n") << '(' << p[:cli] << ')' unless p[:cli].to_s.empty?
+    p[:description] += (p[:description].empty? ? '' : "\n") + '(' + p[:cli] + ')' unless p[:cli].to_s.empty?
     p.delete(:cli)
     p.keys.each{|c|p[c]='&nbsp;' if p[c].to_s.empty?}
-    p[:description].gsub!("\n",'<br/>')
-    p[:type].gsub!(',','<br/>')
+    p[:description]=p[:description].gsub("\n",'<br/>')
+    p[:type]=p[:type].gsub(',','<br/>')
     r << '<tr><td>'<<p[:name]<<'</td><td>'<<p[:type]<<'</td>'
     Aspera::Fasp::Parameters::SUPPORTED_AGENTS_SHORT.each do |c|
       r << '<td>'<<p[c]<<'</td>'
@@ -59,5 +60,5 @@ def spec_table
     r << '<td>'<<p[:description]<<'</td></tr>'
   end
   r << '</table>'
-  return r
+  return r.join
 end
