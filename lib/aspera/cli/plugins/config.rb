@@ -525,12 +525,17 @@ module Aspera
               Log.log.debug("Cannot detect #{plugin_name_sym} : #{e.message}")
             end
             # second try : is there a redirect ?
-            begin
-              # TODO: check if redirect ?
-              current_url=Rest.new(base_url: url).call(operation: 'GET',subpath: '',redirect_max: 1)[:http].uri.to_s
-              detection_info=c.detect(current_url) unless url.eql?(current_url)
-            rescue StandardError => e
-              Log.log.debug("Cannot detect #{plugin_name_sym} : #{e.message}")
+            if detection_info.nil?
+              begin
+                # TODO: check if redirect ?
+                new_url=Rest.new(base_url: url).call(operation: 'GET',subpath: '',redirect_max: 1)[:http].uri.to_s
+                unless url.eql?(new_url)
+                  detection_info=c.detect(new_url)
+                  current_url=new_url
+                end
+              rescue StandardError => e
+                Log.log.debug("Cannot detect #{plugin_name_sym} : #{e.message}")
+              end
             end
             return detection_info.merge(product: plugin_name_sym, url: current_url) unless detection_info.nil?
           end # loop
