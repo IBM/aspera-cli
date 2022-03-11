@@ -2049,6 +2049,7 @@ ascli config ascp connect list
 ascli config ascp connect version 'Aspera Connect for Windows' download 'Windows Installer' --to-folder=.
 ascli config ascp connect version 'Aspera Connect for Windows' list
 ascli config ascp connect version 'Aspera Connect for Windows' open documentation
+ascli config ascp errors
 ascli config ascp info
 ascli config ascp install
 ascli config ascp products list

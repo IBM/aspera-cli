@@ -5,6 +5,7 @@ require 'aspera/cli/version'
 require 'aspera/fasp/installation'
 require 'aspera/fasp/parameters'
 require 'aspera/fasp/transfer_spec'
+require 'aspera/fasp/error_info'
 require 'aspera/proxy_auto_config'
 require 'aspera/open_application'
 require 'aspera/persistency_action_once'
@@ -582,7 +583,7 @@ module Aspera
         end
 
         def execute_action_ascp
-          command=options.get_next_command([:connect,:use,:show,:products,:info,:install,:spec])
+          command=options.get_next_command([:connect,:use,:show,:products,:info,:install,:spec,:errors])
           case command
           when :connect
             return execute_connect_action
@@ -634,6 +635,12 @@ module Aspera
             return Main.result_status("Installed version #{v}")
           when :spec
             return {type: :object_list, data: Fasp::Parameters.man_table, fields: ['name','type',Fasp::Parameters::SUPPORTED_AGENTS_SHORT.map(&:to_s),'description'].flatten}
+          when :errors
+            error_data=[]
+            Fasp::ERROR_INFO.each_pair do |k,v|
+              error_data.push(code: k, mnemonic: v[:c], 'retry'.to_sym => v[:r], info: v[:a] )
+            end
+            return {type: :object_list, data: error_data}
           end
           raise "unexpected case: #{command}"
         end

@@ -748,6 +748,7 @@ $(T)co1: $(T).exists
 	@echo $@
 	$(EXE_MAN) config ascp show
 	$(EXE_MAN) config ascp spec
+	$(EXE_MAN) config ascp errors
 	@touch $@
 $(T)co2: $(T).exists
 	@echo $@
@@ -842,6 +843,7 @@ $(T)conf_list: $(T).exists
 $(T)conf_over: $(T).exists
 	@echo $@
 	$(EXETESTC) config overview
+	$(EXETESTC) config ascp use /usr/bin/ascp
 	@touch $@
 $(T)conf_vault: $(T).exists
 	$(EXETESTC) config vault init --value=config
