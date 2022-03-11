@@ -637,8 +637,8 @@ module Aspera
             return {type: :object_list, data: Fasp::Parameters.man_table, fields: ['name','type',Fasp::Parameters::SUPPORTED_AGENTS_SHORT.map(&:to_s),'description'].flatten}
           when :errors
             error_data=[]
-            Fasp::ERROR_INFO.each_pair do |k,v|
-              error_data.push(code: k, mnemonic: v[:c], 'retry'.to_sym => v[:r], info: v[:a] )
+            Fasp::ERROR_INFO.each_pair do |code,prop|
+              error_data.push(code: code, mnemonic: prop[:c], retry: prop[:r], info: prop[:a])
             end
             return {type: :object_list, data: error_data}
           end
