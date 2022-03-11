@@ -3,6 +3,7 @@
 
 # get transfer spec parameter description
 require 'aspera/fasp/parameters'
+require 'aspera/cli/info'
 require 'yaml'
 
 # check that required env vars exist
@@ -70,10 +71,14 @@ def spec_table
   return r.join
 end
 
-#def include_commands
-#  read_file_var('INCL_COMMANDS')
-#end
-#
+def ruby_version
+  message="version: #{gemspec.required_ruby_version}"
+  unless Aspera::Cli::RUBY_CURRENT_MINIMUM_VERSION.eql?(Aspera::Cli::RUBY_FUTURE_MINIMUM_VERSION)
+    message+=". Deprecation notice: the minimum will be #{Aspera::Cli::RUBY_FUTURE_MINIMUM_VERSION} in a future version"
+  end
+  return message
+end
+
 def include_usage
   read_file_var('INCL_USAGE').gsub(%r[(current=).*(/.aspera/)],'\1/usershome\2')
 end

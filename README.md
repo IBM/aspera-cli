@@ -14,7 +14,7 @@ Ruby Gem: [https://rubygems.org/gems/aspera-cli](https://rubygems.org/gems/asper
 
 Ruby Doc: [https://www.rubydoc.info/gems/aspera-cli](https://www.rubydoc.info/gems/aspera-cli)
 
-Required Ruby version: > 2.4
+Minimum required Ruby version: >= 2.4. Deprecation notice: the minimum will be 2.5 in a future version.
 
 [Aspera APIs on IBM developer](https://developer.ibm.com/?size=30&q=aspera&DWContentType[0]=APIs)
 [Link 2](https://developer.ibm.com/apis/catalog/?search=aspera)
@@ -186,7 +186,7 @@ It is possible to install *either* directly on the host operating system (Linux,
 
 The direct installation is recommended and consists in installing:
 
-* [Ruby](#ruby) version > 2.4
+* [Ruby](#ruby) (version: >= 2.4. Deprecation notice: the minimum will be 2.5 in a future version)
 * [aspera-cli](#the_gem)
 * [Aspera SDK (ascp)](#fasp_prot)
 
@@ -239,7 +239,7 @@ Use this method to install on the native host.
 
 A ruby interpreter is required to run the tool or to use the gem and tool.
 
-Required Ruby version: > 2.4. Ruby version 3 is also supported.
+Required Ruby version: >= 2.4. Deprecation notice: the minimum will be 2.5 in a future version.
 
 *Ruby can be installed using any method* : rpm, yum, dnf, rvm, brew, windows installer, ... .
 
@@ -247,7 +247,7 @@ Refer to the following sections for a proposed method for specific operating sys
 
 The recommended installation method is `rvm` for systems with "bash-like" shell (Linux, macOS, Windows with cygwin, etc...).
 If the generic install is not suitable (e.g. Windows, no cygwin), you can use one of OS-specific install method.
-If you have a simpler better way to install Ruby version > 2.4 : use it !
+If you have a simpler better way to install Ruby : use it ! (version: >= 2.4. Deprecation notice: the minimum will be 2.5 in a future version)
 
 #### Generic: RVM: single user installation (not root)
 

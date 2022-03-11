@@ -170,6 +170,9 @@ module Aspera
             Log.log.warn('Could not retrieve latest gem version on rubygems.')
             '0'
           end
+          if Gem::Version.new(Environment.ruby_version) < Gem::Version.new(RUBY_FUTURE_MINIMUM_VERSION)
+            Log.log.warn("Note that a future version will require Ruby version #{RUBY_FUTURE_MINIMUM_VERSION} at minimum, you are using #{Environment.ruby_version}")
+          end
           return {name: @info[:gem], current: Aspera::Cli::VERSION, latest: latest_version, need_update: Gem::Version.new(Aspera::Cli::VERSION) < Gem::Version.new(latest_version)}
         end
 
