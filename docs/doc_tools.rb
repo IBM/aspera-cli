@@ -3,16 +3,23 @@
 
 # get transfer spec parameter description
 require 'aspera/fasp/parameters'
+require 'yaml'
 
-# check that required env vars exist, and files
-%w[EXENAME GEMSPEC INCL_USAGE INCL_COMMANDS INCL_ASESSION].each do |e|
-  raise "missing env var #{e}" unless ENV.has_key?(e)
-  raise "missing file #{ENV[e]}" unless File.exist?(ENV[e]) || !e.start_with?('INCL_')
+# check that required env vars exist
+def checked_env(varname)
+  raise "missing env var #{varname}" unless ENV.has_key?(varname)
+  return ENV[varname]
+end
+
+def read_file_var(varname)
+  raise "missing env var #{varname}" unless ENV.has_key?(varname)
+  raise "missing file for #{varname}: #{checked_env(varname)}" unless File.exist?(checked_env(varname))
+  return File.read(checked_env(varname))
 end
 
 # set values used in ERB
 # just command name
-def cmd;ENV['EXENAME'];end
+def cmd;checked_env('EXENAME');end
 
 # used in text with formatting of command
 def tool;'`'+cmd+'`';end
@@ -35,7 +42,7 @@ def trspec;'[*transfer-spec*](#transferspec)';end
 # in title
 def prstt;opprst.capitalize;end
 
-def gemspec;Gem::Specification.load(ENV['GEMSPEC']) or raise "error loading #{ENV['GEMSPEC']}";end
+def gemspec;Gem::Specification.load(checked_env('GEMSPEC')) or raise "error loading #{checked_env('GEMSPEC')}";end
 
 def geminstadd;gemspec.version.to_s.match(/\.[^0-9]/) ? ' --pre' : '';end
 
@@ -61,4 +68,66 @@ def spec_table
   end
   r << '</table>'
   return r.join
+end
+
+#def include_commands
+#  read_file_var('INCL_COMMANDS')
+#end
+#
+def include_usage
+  read_file_var('INCL_USAGE').gsub(%r[(current=).*(/.aspera/)],'\1/usershome\2')
+end
+
+def include_asession
+  read_file_var('INCL_ASESSION')
+end
+
+REPLACEMENTS={
+  '@preset:misc.'=>'my_',
+  'LOCAL_SAMPLE_FILENAME'=>'testfile.bin',
+  'LOCAL_SAMPLE_FILEPATH'=>'testfile.bin',
+  'HSTS_FOLDER_UPLOAD'=>'folder_1',
+  'HSTS_UPLOADED_FILE'=>'testfile.bin',
+  'PKG_TEST_TITLE'=>'Important files delivery',
+  'AOC_EXTERNAL_EMAIL'=>'external.user@example.com',
+  'EMAIL_ADDR'=>'internal.user@example.com',
+  'CF_'=>'',
+  '$@'=>'test'
+}
+
+def include_commands
+  commands=[]
+  File.open(checked_env('TEST_MAKEFILE')) do |f|
+    f.each_line do |line|
+      next unless line.include?('$(EXE_MAN')
+      line=line.chomp()
+      # replace command name
+      line=line.gsub(/^.*\$\(EXE_MAN.?\)/,cmd)
+      # remove multi command mark
+      line=line.gsub(/&&\\$/,'')
+      # remove redirection
+      line=line.gsub(/ > .*$/,'')
+      # de-dup dollar coming from makefile
+      line=line.gsub('$$','$')
+      # remove folder macro
+      line=line.gsub(/DIR_[A-Z]+/,'')
+      # replace shell vars
+      line=line.gsub(/\$\{([a-z_]+)\}/,'my_\1')
+      # replace makefile macros
+      line=line.gsub(/\$\(([^)]*)\)/,'\1')
+      # replace any multiple quote combination to double quote
+      line=line.gsub(/['"]{2,}/,'"')
+      REPLACEMENTS.each_pair{|k,v|line=line.gsub(k,v)}
+      commands.push(line)
+    end
+  end
+  return commands.sort.uniq.join("\n")
+end
+
+def generic_secrets
+  n={}
+  c=YAML.load_file(checked_env('TEST_CONF_FILE_PATH')).each do |k,v|
+    n[k]=["config","default"].include?(k) ? v : v.keys.each_with_object({}){|i,m|m[i]='your value here'}
+  end
+  puts(n.to_yaml)
 end

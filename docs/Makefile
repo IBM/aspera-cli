@@ -8,11 +8,10 @@ DIR_DOC=
 
 # files generated to be included in README.md
 INCL_USAGE=$(DIR_TMP)$(EXENAME)_usage.txt
-INCL_COMMANDS=$(DIR_TMP)$(EXENAME)_commands.txt
 INCL_ASESSION=$(DIR_TMP)asession_usage.txt
 
 # env var used in README.erb.md
-export EXENAME GEMSPEC INCL_USAGE INCL_COMMANDS INCL_ASESSION
+export EXENAME GEMSPEC TEST_MAKEFILE TEST_CONF_FILE_PATH INCL_USAGE INCL_ASESSION
 
 MANUAL_BASE=$(DIR_DOC)Manual_$(EXENAME)_$(GEMVERSION)
 MANUAL_PDF=$(MANUAL_BASE).pdf
@@ -25,44 +24,23 @@ doc: all
 
 # generate template configuration file for tests, remove own secrets
 $(TMPL_CONF_FILE_PATH): $(TEST_CONF_FILE_PATH)
-	ruby -e 'require "yaml";n={};c=YAML.load_file("$(TEST_CONF_FILE_PATH)").each{|k,v| n[k]=["config","default"].include?(k)?v:v.keys.inject({}){|m,i|m[i]="your value here";m}};File.write("$(TMPL_CONF_FILE_PATH)",n.to_yaml)'
+	ruby -I . -I $(DIR_LIB) -r doc_tools -e generic_secrets > $@
 
 $(MANUAL_PDF): $(DIR_TOP)README.md
 	pandoc --number-sections --shift-heading-level-by=-1 --resource-path=. --toc -o $(MANUAL_HTML) $(DIR_TOP)README.md
-	wkhtmltopdf toc $(MANUAL_HTML) $(MANUAL_PDF)
+	wkhtmltopdf toc $(MANUAL_HTML) $@
 
-$(DIR_TOP)README.md: $(DIR_DOC)README.erb.md $(INCL_COMMANDS) $(INCL_USAGE) $(INCL_ASESSION)
-	RUBYLIB=$(DIR_TOP)lib erb -T - -U --encoding UTF-8:UTF-8 $(DIR_DOC)README.erb.md > $(DIR_TOP)README.md
+$(DIR_TOP)README.md: $(DIR_DOC)README.erb.md $(INCL_USAGE) $(INCL_ASESSION)
+	RUBYLIB=$(DIR_LIB) erb -T - -U --encoding UTF-8:UTF-8 $(DIR_DOC)README.erb.md > $@
 
-$(INCL_COMMANDS): $(DIR_TMP).exists $(TEST_MAKEFILE)
-	sed -nEe 's/.*\$$\(EXE_MAN.?\)/$(EXENAME)/p' $(TEST_MAKEFILE) > $(DIR_TMP)usg1.txt
-	sed -i.bak -Ee 's/\$$\$$\{([a-z_]+)\}/my_\1/g' $(DIR_TMP)usg1.txt
-	sed -i.bak -Ee 's/\$$\(([^)]+)\)/\1/g' $(DIR_TMP)usg1.txt
-	sed -i.bak -Ee 's/\$$(\$$)/\1/g' $(DIR_TMP)usg1.txt
-	sed -i.bak -Ee 's/\$$@/test/g' $(DIR_TMP)usg1.txt
-	sed -i.bak -Ee 's/"'"'"'/"/g' $(DIR_TMP)usg1.txt
-	sed -i.bak -Ee 's/'"'"'"/"/g' $(DIR_TMP)usg1.txt
-	sed -i.bak -Ee 's/""/"/g' $(DIR_TMP)usg1.txt
-	sed -i.bak -Ee 's/&&\\$$//g' $(DIR_TMP)usg1.txt
-	sed -i.bak -Ee 's/@preset:misc./my_/g' $(DIR_TMP)usg1.txt
-	sed -i.bak -Ee 's/CF_//g' $(DIR_TMP)usg1.txt
-	sed -i.bak -Ee 's/DIR_[A-Z]+//g' $(DIR_TMP)usg1.txt
-	sed -i.bak -Ee 's/LOCAL_SAMPLE_FILE(NAME|PATH)/testfile.bin/g' $(DIR_TMP)usg1.txt
-	sed -i.bak -Ee 's/HSTS_FOLDER_UPLOAD/folder_1/g' $(DIR_TMP)usg1.txt
-	sed -i.bak -Ee 's/HSTS_UPLOADED_FILE/testfile.bin/g' $(DIR_TMP)usg1.txt
-	sed -i.bak -Ee 's/PKG_TEST_TITLE/Important files delivery/g' $(DIR_TMP)usg1.txt
-	sed -i.bak -Ee 's/AOC_EXTERNAL_EMAIL/external.user@example.com/g' $(DIR_TMP)usg1.txt
-	sed -i.bak -Ee 's/EMAIL_ADDR/internal.user@example.com/g' $(DIR_TMP)usg1.txt
-	sort -u < $(DIR_TMP)usg1.txt > $(INCL_COMMANDS)
 # generated help of tools depends on all sources, so regenerate always
 .PHONY: $(INCL_USAGE)
 $(INCL_USAGE): $(DIR_TMP).exists
-	-$(EXETESTB) -Cnone -h 2> $(INCL_USAGE)
-	sed -i.bak -e 's/\/Users\/[^\/]*/\/Users\/FooBar/g' $(INCL_USAGE)
+	-$(EXETESTB) -Cnone -h 2> $@
 $(INCL_ASESSION): $(DIR_TMP).exists $(DIR_BIN)/asession
-	$(DIR_BIN)/asession -h 2> $(INCL_ASESSION) || true
+	-$(DIR_BIN)/asession -h 2> $@
 clean::
-	rm -f $(MANUAL_PDF) $(MANUAL_HTML) $(INCL_COMMANDS) $(INCL_USAGE) $(INCL_ASESSION)
+	rm -f $(MANUAL_PDF) $(MANUAL_HTML) $(INCL_USAGE) $(INCL_ASESSION)
 
 ##################################
 # UML Diagram : requires tools: graphviz and gem xumlidot

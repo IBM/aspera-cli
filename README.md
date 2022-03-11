@@ -1986,7 +1986,7 @@ ascli aoc automation workflow "my_wf_id" action create --value=@json:'{"name":"t
 ascli aoc automation workflow create --value=@json:'{"name":"test_workflow"}'
 ascli aoc automation workflow delete "my_wf_id"
 ascli aoc automation workflow list
-ascli aoc automation workflow list --select=@json:'{"name":"test_workflow"}' --fields=id --format=csv --display=data > test
+ascli aoc automation workflow list --select=@json:'{"name":"test_workflow"}' --fields=id --format=csv --display=data
 ascli aoc automation workflow list --value=@json:'{"show_org_workflows":"true"}' --scope=admin:all
 ascli aoc bearer_token --display=data --scope=user:all
 ascli aoc faspex
@@ -2042,8 +2042,8 @@ ascli ats cluster list
 ascli ats cluster show --cloud=aws --region=eu-west-1
 ascli ats cluster show 1f412ae7-869a-445c-9c05-02ad16813be2
 ascli conf flush_tokens
-ascli conf wiz --url=https://my_aoc_org.ibmaspera.com --config-file=SAMPLE_CONFIG_FILE --pkeypath='' --username=my_aoc_user_email --test-mode=yes
-ascli conf wiz --url=https://my_aoc_org.ibmaspera.com --config-file=SAMPLE_CONFIG_FILE --pkeypath='' --username=my_aoc_user_email --test-mode=yes --use-generic-client=yes
+ascli conf wiz --url=https://my_aoc_org.ibmaspera.com --config-file=SAMPLE_CONFIG_FILE --pkeypath= --username=my_aoc_user_email --test-mode=yes
+ascli conf wiz --url=https://my_aoc_org.ibmaspera.com --config-file=SAMPLE_CONFIG_FILE --pkeypath= --username=my_aoc_user_email --test-mode=yes --use-generic-client=yes
 ascli config ascp connect info 'Aspera Connect for Windows'
 ascli config ascp connect list
 ascli config ascp connect version 'Aspera Connect for Windows' download 'Windows Installer' --to-folder=.
@@ -2178,7 +2178,6 @@ ascli shares2 project list --organization=Sport
 ascli shares2 repository browse /
 ascli shares2 userinfo
 ascli sync start --parameters=@json:'{"sessions":[{"name":"test","reset":true,"remote_dir":"/sync_test","local_dir":"contents","host":"my_remote_host","tcp_port":33001,"user":"my_remote_user","private_key_path":"my_local_user_key"}]}'
-
 ...and more
 ```
 
@@ -2249,7 +2248,7 @@ OPTIONS:
         --value=VALUE                extended value for create, update, list filter
         --property=VALUE             name of property to set
         --id=VALUE                   resource identifier (modify,delete,show)
-        --config-file=VALUE          read parameters from file in YAML format, current=/Users/FooBar/.aspera/ascli/config.yaml
+        --config-file=VALUE          read parameters from file in YAML format, current=/usershome/.aspera/ascli/config.yaml
     -N, --no-default                 do not load default configuration for plugin
         --override=ENUM              Wizard: override existing value: yes, no
         --use-generic-client=ENUM    Wizard: AoC: use global or org specific jwt client id: yes, no

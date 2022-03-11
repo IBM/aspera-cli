@@ -878,7 +878,7 @@ $(T)conf_wizard_org: $(T).exists
 	set -x&&\
 	aoc_org=$$($(EXE_NOMAN) conf id misc get aoc_org)&&\
 	aoc_user_email=$$($(EXE_NOMAN) conf id misc get aoc_user_email)&&\
-	$(EXE_MAN) conf wiz --url=https://$${aoc_org}.ibmaspera.com --config-file=$(SAMPLE_CONFIG_FILE) --pkeypath='' --username=$${aoc_user_email} --test-mode=yes --use-generic-client=yes
+	$(EXE_MAN) conf wiz --url=https://$${aoc_org}.ibmaspera.com --config-file=$(SAMPLE_CONFIG_FILE) --pkeypath= --username=$${aoc_user_email} --test-mode=yes --use-generic-client=yes
 	cat $(SAMPLE_CONFIG_FILE)
 	rm -f $(SAMPLE_CONFIG_FILE)
 	@touch $@
@@ -888,7 +888,7 @@ $(T)conf_wizard_gen: $(T).exists
 	set -x&&\
 	aoc_org=$$($(EXE_NOMAN) conf id misc get aoc_org)&&\
 	aoc_user_email=$$($(EXE_NOMAN) conf id misc get aoc_user_email)&&\
-	$(EXE_MAN) conf wiz --url=https://$${aoc_org}.ibmaspera.com --config-file=$(SAMPLE_CONFIG_FILE) --pkeypath='' --username=$${aoc_user_email} --test-mode=yes
+	$(EXE_MAN) conf wiz --url=https://$${aoc_org}.ibmaspera.com --config-file=$(SAMPLE_CONFIG_FILE) --pkeypath= --username=$${aoc_user_email} --test-mode=yes
 	cat $(SAMPLE_CONFIG_FILE)
 	rm -f $(SAMPLE_CONFIG_FILE)
 	@touch $@

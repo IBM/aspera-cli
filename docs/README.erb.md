@@ -1941,7 +1941,7 @@ Examples:
 A non complete list of commands used in unit tests:
 
 ```bash
-<%=File.read(ENV["INCL_COMMANDS"])%>
+<%=include_commands%>
 ...and more
 ```
 
@@ -1949,7 +1949,7 @@ A non complete list of commands used in unit tests:
 
 ```bash
 <%=cmd%> -h
-<%=File.read(ENV["INCL_USAGE"])%>
+<%=include_usage%>
 
 ```
 
@@ -3854,7 +3854,7 @@ Nodejs: [https://www.npmjs.com/package/aspera](https://www.npmjs.com/package/asp
 
 ```bash
 asession -h
-<%=File.read(ENV["INCL_ASESSION"])%>
+<%=include_asession%>
 ```
 
 ## Hot folder
