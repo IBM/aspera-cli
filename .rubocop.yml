@@ -5,7 +5,7 @@ AllCops:
     - "bin/**/*"
     - "local/**/*"
   NewCops: enable
-  TargetRubyVersion: "2.4"
+#  TargetRubyVersion: "2.4"
 Style/MutableConstant:
   Enabled: false
 Style/FrozenStringLiteralComment:

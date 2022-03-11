@@ -35,9 +35,9 @@ class String
   private_constant :VTSTYLES
   # defines methods to String, one per entry in VTSTYLES
   VTSTYLES.each do |name,code|
-    begin_seq=vtcmd(code)
-    end_seq=vtcmd(code >= 10 ? 0 : code+20+(code.eql?(1)?1:0))
     if $stderr.tty?
+      begin_seq=vtcmd(code)
+      end_seq=vtcmd(code >= 10 ? 0 : code+20+(code.eql?(1)?1:0))
       define_method(name){"#{begin_seq}#{self}#{end_seq}"}
     else
       define_method(name){self}
