@@ -1148,13 +1148,13 @@ Available plugins can be found using command:
 ```
 
 ```output
-+--------------+-----------------------------------------------------------------------------------+
-| plugin       | path                                                                              |
-+--------------+-----------------------------------------------------------------------------------+
-| shares       | /Users/laurent/workspace/aspera/aspera-cli/lib/aspera/cli/plugins/shares.rb       |
-| node         | /Users/laurent/workspace/aspera/aspera-cli/lib/aspera/cli/plugins/node.rb         |
++--------------+--------------------------------------------------------+
+| plugin       | path                                                   |
++--------------+--------------------------------------------------------+
+| shares       | ..../aspera-cli/lib/aspera/cli/plugins/shares.rb       |
+| node         | ..../aspera-cli/lib/aspera/cli/plugins/node.rb         |
 ...
-+--------------+-----------------------------------------------------------------------------------+
++--------------+--------------------------------------------------------+
 ```
 
 #### <a id="createownplugin"></a>Create your own plugin

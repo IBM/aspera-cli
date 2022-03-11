@@ -5,6 +5,7 @@ require 'aspera/cli/plugins/config'
 require 'aspera/cli/extended_value'
 require 'aspera/cli/transfer_agent'
 require 'aspera/cli/version'
+require 'aspera/cli/info'
 require 'aspera/fasp/error'
 require 'aspera/open_application'
 require 'aspera/temp_file_manager'
@@ -18,18 +19,13 @@ module Aspera
   module Cli
     # The main CLI class
     class Main
-      # name of application, also used as foldername where config is stored
-      PROGRAM_NAME = 'ascli'
-      # name of the containing gem, same as in <gem name>.gemspec
-      GEM_NAME = 'aspera-cli'
-      HELP_URL = "http://www.rubydoc.info/gems/#{GEM_NAME}"
-      GEM_URL  = "https://rubygems.org/gems/#{GEM_NAME}"
-      SRC_URL  = 'https://github.com/IBM/aspera-cli'
+      # prefix to display error messages
       ERROR_FLASH='ERROR:'.bg_red.gray.blink.freeze
-      private_constant :PROGRAM_NAME,:GEM_NAME,:HELP_URL,:GEM_URL,:SRC_URL,:ERROR_FLASH
+      private_constant :ERROR_FLASH
 
       # store transfer result using this key and use result_transfer_multiple
       STATUS_FIELD = 'status'
+
       class << self
         # expect some list, but nothing to display
         def result_empty; return {type: :empty, data: :nil}; end
@@ -124,7 +120,7 @@ module Aspera
         # declare and parse global options
         init_global_options()
         # the Config plugin adds the @preset parser, so declare before TransferAgent which may use it
-        @plugin_env[:config]=Plugins::Config.new(@plugin_env, gem: GEM_NAME, name: PROGRAM_NAME, help: HELP_URL, version: Aspera::Cli::VERSION)
+        @plugin_env[:config]=Plugins::Config.new(@plugin_env, gem: GEM_NAME, name: PROGRAM_NAME, help: DOC_URL, version: Aspera::Cli::VERSION)
         # the TransferAgent plugin may use the @preset parser
         @plugin_env[:transfer]=TransferAgent.new(@plugin_env[:options],@plugin_env[:config])
         # data persistency
@@ -151,7 +147,7 @@ module Aspera
           \tUse Aspera application to perform operations on command line.
           \tDocumentation and examples: #{GEM_URL}
           \texecute: #{PROGRAM_NAME} conf doc
-          \tor visit: #{HELP_URL}
+          \tor visit: #{DOC_URL}
           \tsource repo: #{SRC_URL}
 
           ENVIRONMENT VARIABLES
