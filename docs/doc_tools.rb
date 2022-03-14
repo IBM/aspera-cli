@@ -90,7 +90,7 @@ end
 
 # various replacements from commands in test makefile
 REPLACEMENTS={
-  '@preset:misc.'=>'my_',
+  '@preset:misc.'        =>'my_',
   'LOCAL_SAMPLE_FILENAME'=>'testfile.bin',
   'LOCAL_SAMPLE_FILEPATH'=>'testfile.bin',
   'HSTS_UPLOADED_FILE'   =>'testfile.bin',
