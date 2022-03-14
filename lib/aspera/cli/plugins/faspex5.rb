@@ -20,7 +20,8 @@ module Aspera
         end
 
         VAL_ALL='ALL'
-        private_constant :VAL_ALL
+        TRANSFER_CONNECT='connect'
+        private_constant :VAL_ALL,:TRANSFER_CONNECT
 
         def initialize(env)
           super(env)
@@ -104,7 +105,7 @@ module Aspera
               parameters=options.get_option(:value,:mandatory)
               raise CliBadArgument,'value must be hash, refer to API' unless parameters.is_a?(Hash)
               package=@api_v5.create('packages',parameters)[:data]
-              transfer_spec=@api_v5.create("packages/#{package['id']}/transfer_spec/upload",{transfer_type: 'Connect'})[:data]
+              transfer_spec=@api_v5.create("packages/#{package['id']}/transfer_spec/upload",{transfer_type: TRANSFER_CONNECT})[:data]
               transfer_spec.delete('authentication')
               return Main.result_transfer(transfer.start(transfer_spec,{src: :node_gen3}))
             when :receive
@@ -131,7 +132,7 @@ module Aspera
               result_transfer=[]
               package_ids.each do |pkgid|
                 # TODO: allow from sent as well ?
-                transfer_spec=@api_v5.create("packages/#{pkgid}/transfer_spec/download",{transfer_type: 'Connect', type: pkg_type})[:data]
+                transfer_spec=@api_v5.create("packages/#{pkgid}/transfer_spec/download",{transfer_type: TRANSFER_CONNECT, type: pkg_type})[:data]
                 transfer_spec.delete('authentication')
                 statuses=transfer.start(transfer_spec,{src: :node_gen3})
                 result_transfer.push({'package'=>pkgid,Main::STATUS_FIELD=>statuses})
