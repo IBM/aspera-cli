@@ -7,9 +7,6 @@ DIR_PRIV=$(DIR_TOP)local/
 DIR_TST=$(DIR_TOP)tests/
 DIR_DOC=$(DIR_TOP)docs/
 
-# makefile for integration tests, used for doc generation (extract sample commands)
-TEST_MAKEFILE=$(DIR_TST)Makefile
-
 # configuration file used for tests, template is generated in "docs"
 TEST_CONF_FILE_BASE=test_env.conf
 

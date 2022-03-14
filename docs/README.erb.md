@@ -1,7 +1,6 @@
 # Command Line Interface for IBM Aspera products
 
 [comment1]: # (Do not edit this README.md, edit docs/README.erb.md, for details, read docs/README.md)
-<%load File.join(File.dirname(__FILE__),'doc_tools.rb')-%>
 
 Version : <%=gemspec.version.to_s%>
 

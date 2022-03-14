@@ -2216,31 +2216,31 @@ ARGS
 	Some commands require mandatory arguments, e.g. a path.
 
 OPTIONS: global
-        --interactive=ENUM           use interactive input of missing params: yes, no
-        --ask-options=ENUM           ask even optional options: yes, no
-        --format=ENUM                output format: table, ruby, json, jsonpp, yaml, csv, nagios
-        --display=ENUM               output only some information: info, data, error
+        --interactive=ENUM           use interactive input of missing params: yes, [no]
+        --ask-options=ENUM           ask even optional options: yes, [no]
+        --format=ENUM                output format: [table], ruby, json, jsonpp, yaml, csv, nagios
+        --display=ENUM               output only some information: [info], data, error
         --fields=VALUE               comma separated list of fields, or ALL, or DEF
         --select=VALUE               select only some items in lists, extended value: hash (column, value)
         --table-style=VALUE          table display style
-        --flat-hash=ENUM             display hash values as additional keys: yes, no
-        --transpose-single=ENUM      single object fields output vertically: yes, no
-        --show-secrets=ENUM          show secrets on command output: yes, no
+        --flat-hash=ENUM             display hash values as additional keys: [yes], no
+        --transpose-single=ENUM      single object fields output vertically: [yes], no
+        --show-secrets=ENUM          show secrets on command output: [yes], no
     -h, --help                       Show this message.
         --bash-comp                  generate bash completion for command
         --show-config                Display parameters used for the provided action.
     -r, --rest-debug                 more debug for HTTP calls
     -v, --version                    display version
     -w, --warnings                   check for language warnings
-        --ui=ENUM                    method to start browser: text, graphical
-        --log-level=ENUM             Log level: debug, info, warn, error, fatal, unknown
-        --logger=ENUM                log method: stderr, stdout, syslog
+        --ui=ENUM                    method to start browser: text, [graphical]
+        --log-level=ENUM             Log level: debug, info, [warn], error, fatal, unknown
+        --logger=ENUM                log method: [stderr], stdout, syslog
         --lock-port=VALUE            prevent dual execution of a command, e.g. in cron
         --query=VALUE                additional filter for API calls (extended value) (some commands)
         --http-options=VALUE         options for http socket (extended value)
-        --insecure=ENUM              do not validate HTTPS certificate: yes, no
-        --once-only=ENUM             process only new items (some commands): yes, no
-        --log-secrets=ENUM           show passwords in logs: yes, no
+        --insecure=ENUM              do not validate HTTPS certificate: [yes], no
+        --once-only=ENUM             process only new items (some commands): yes, [no]
+        --log-secrets=ENUM           show passwords in logs: yes, [no]
 
 COMMAND: config
 SUBCOMMANDS: list overview id preset open documentation genkey gem plugin flush_tokens echo wizard export_to_cli detect coffee ascp email_test smtp_settings proxy_check folder file check_update initdemo vault
@@ -2250,10 +2250,10 @@ OPTIONS:
         --id=VALUE                   resource identifier (modify,delete,show)
         --config-file=VALUE          read parameters from file in YAML format, current=/usershome/.aspera/ascli/config.yaml
     -N, --no-default                 do not load default configuration for plugin
-        --override=ENUM              Wizard: override existing value: yes, no
-        --use-generic-client=ENUM    Wizard: AoC: use global or org specific jwt client id: yes, no
-        --default=ENUM               Wizard: set as default configuration for specified plugin (also: update): yes, no
-        --test-mode=ENUM             Wizard: skip private key check step: yes, no
+        --override=ENUM              Wizard: override existing value: yes, [no]
+        --use-generic-client=ENUM    Wizard: AoC: use global or org specific jwt client id: yes, [no]
+        --default=ENUM               Wizard: set as default configuration for specified plugin (also: update): yes, [no]
+        --test-mode=ENUM             Wizard: skip private key check step: yes, [no]
     -P, --presetVALUE                load the named option preset from current config file
         --pkeypath=VALUE             Wizard: path to private key for JWT
         --ascp-path=VALUE            path to ascp
@@ -2306,7 +2306,7 @@ OPTIONS:
         --password=VALUE             user's password
         --params=VALUE               parameters hash table, use @json:{"param":"value"}
         --result=VALUE               specify result value as: 'work step:parameter'
-        --synchronous=ENUM           work step:parameter expected as result: yes, no
+        --synchronous=ENUM           work step:parameter expected as result: yes, [no]
         --ret-style=ENUM             how return type is requested in api: header, arg, ext
         --auth-style=ENUM            authentication type: arg_pass, head_basic, apikey
 
@@ -2395,7 +2395,7 @@ OPTIONS:
         --username=VALUE             username to log in
         --password=VALUE             user's password
         --skip-format=ENUM           skip this preview format (multiple possible): png, mp4
-        --folder-reset-cache=ENUM    force detection of generated preview by refresh cache: no, header, read
+        --folder-reset-cache=ENUM    force detection of generated preview by refresh cache: [no], header, read
         --skip-types=VALUE           skip types in comma separated list
         --previews-folder=VALUE      preview folder in storage root
         --temp-folder=VALUE          path to temp folder
@@ -2403,16 +2403,16 @@ OPTIONS:
         --case=VALUE                 basename of output for for test
         --scan-path=VALUE            subpath in folder id to start scan in (default=/)
         --scan-id=VALUE              forder id in storage to start scan in, default is access key main folder id
-        --mimemagic=ENUM             use Mime type detection of gem mimemagic: yes, no
-        --overwrite=ENUM             when to overwrite result file: always, never, mtime
-        --file-access=ENUM           how to read and write files in repository: local, remote
+        --mimemagic=ENUM             use Mime type detection of gem mimemagic: yes, [no]
+        --overwrite=ENUM             when to overwrite result file: always, never, [mtime]
+        --file-access=ENUM           how to read and write files in repository: [local], remote
         --max-size=VALUE             maximum size (in bytes) of preview file
         --thumb-vid-scale=VALUE      png: video: size (ffmpeg scale argument)
         --thumb-vid-fraction=VALUE   png: video: position of snapshot
         --thumb-img-size=VALUE       png: non-video: height (and width)
         --thumb-text-font=VALUE      png: plaintext: font to render text with image magick convert, list with: identify -list font
-        --video-conversion=ENUM      mp4: method for preview generation: reencode, blend, clips
-        --video-png-conv=ENUM        mp4: method for thumbnail generation: fixed, animated
+        --video-conversion=ENUM      mp4: method for preview generation: [reencode], blend, clips
+        --video-png-conv=ENUM        mp4: method for thumbnail generation: [fixed], animated
         --video-start-sec=VALUE      mp4: start offset (seconds) of video preview
         --video-scale=VALUE          mp4: video scale (ffmpeg)
         --blend-keyframes=VALUE      mp4: blend: # key frames
@@ -2449,8 +2449,8 @@ OPTIONS:
         --new-user-option=VALUE      new user creation option
         --from-folder=VALUE          share to share source folder
         --scope=VALUE                OAuth scope for AoC API calls
-        --bulk=ENUM                  bulk operation: yes, no
-        --default-ports=ENUM         use standard FASP ports or get from node api: yes, no
+        --bulk=ENUM                  bulk operation: yes, [no]
+        --default-ports=ENUM         use standard FASP ports or get from node api: yes, [no]
 
 
 COMMAND: server

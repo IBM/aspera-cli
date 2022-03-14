@@ -5,22 +5,11 @@
 require 'aspera/fasp/parameters'
 require 'aspera/cli/info'
 require 'yaml'
-
-# check that required env vars exist
-def checked_env(varname)
-  raise "missing env var #{varname}" unless ENV.has_key?(varname)
-  return ENV[varname]
-end
-
-def read_file_var(varname)
-  raise "missing env var #{varname}" unless ENV.has_key?(varname)
-  raise "missing file for #{varname}: #{checked_env(varname)}" unless File.exist?(checked_env(varname))
-  return File.read(checked_env(varname))
-end
+require 'erb'
 
 # set values used in ERB
 # just command name
-def cmd;checked_env('EXENAME');end
+def cmd;Aspera::Cli::PROGRAM_NAME;end
 
 # used in text with formatting of command
 def tool;'`'+cmd+'`';end
@@ -43,7 +32,7 @@ def trspec;'[*transfer-spec*](#transferspec)';end
 # in title
 def prstt;opprst.capitalize;end
 
-def gemspec;Gem::Specification.load(checked_env('GEMSPEC')) or raise "error loading #{checked_env('GEMSPEC')}";end
+def gemspec;Gem::Specification.load($env[:GEMSPEC]) or raise "error loading #{$env[:GEMSPEC]}";end
 
 def geminstadd;gemspec.version.to_s.match(/\.[^0-9]/) ? ' --pre' : '';end
 
@@ -71,38 +60,51 @@ def spec_table
   return r.join
 end
 
+# @return the minimum ruby version from gemspec
+def ruby_minimum_version
+  requirement=gemspec.required_ruby_version.to_s
+  raise "gemspec version must be generic, i.e. like '>= x.y', not specific like '#{requirement}'" if gemspec.required_ruby_version.specific?
+  return requirement.gsub(/^[^0-9]*/,'')
+end
+
 def ruby_version
   message="version: #{gemspec.required_ruby_version}"
-  unless Aspera::Cli::RUBY_CURRENT_MINIMUM_VERSION.eql?(Aspera::Cli::RUBY_FUTURE_MINIMUM_VERSION)
+  unless ruby_minimum_version.eql?(Aspera::Cli::RUBY_FUTURE_MINIMUM_VERSION)
     message+=". Deprecation notice: the minimum will be #{Aspera::Cli::RUBY_FUTURE_MINIMUM_VERSION} in a future version"
   end
   return message
 end
 
+def generate_help(varname)
+  raise "missing #{varname}" unless $env.has_key?(varname)
+  return `#{$env[varname]} -h 2>&1`
+end
+
 def include_usage
-  read_file_var('INCL_USAGE').gsub(%r[(current=).*(/.aspera/)],'\1/usershome\2')
+  generate_help(:ASCLI).gsub(%r{(current=).*(/.aspera/)},'\1/usershome\2')
 end
 
 def include_asession
-  read_file_var('INCL_ASESSION')
+  generate_help(:ASESSION)
 end
 
+# various replacements from commands in test makefile
 REPLACEMENTS={
   '@preset:misc.'=>'my_',
   'LOCAL_SAMPLE_FILENAME'=>'testfile.bin',
   'LOCAL_SAMPLE_FILEPATH'=>'testfile.bin',
-  'HSTS_FOLDER_UPLOAD'=>'folder_1',
-  'HSTS_UPLOADED_FILE'=>'testfile.bin',
-  'PKG_TEST_TITLE'=>'Important files delivery',
-  'AOC_EXTERNAL_EMAIL'=>'external.user@example.com',
-  'EMAIL_ADDR'=>'internal.user@example.com',
-  'CF_'=>'',
-  '$@'=>'test'
+  'HSTS_UPLOADED_FILE'   =>'testfile.bin',
+  'HSTS_FOLDER_UPLOAD'   =>'folder_1',
+  'PKG_TEST_TITLE'       =>'Important files delivery',
+  'AOC_EXTERNAL_EMAIL'   =>'external.user@example.com',
+  'EMAIL_ADDR'           =>'internal.user@example.com',
+  'CF_'                  =>'',
+  '$@'                   =>'test'
 }
 
 def include_commands
   commands=[]
-  File.open(checked_env('TEST_MAKEFILE')) do |f|
+  File.open($env[:TEST_MAKEFILE]) do |f|
     f.each_line do |line|
       next unless line.include?('$(EXE_MAN')
       line=line.chomp()
@@ -129,10 +131,23 @@ def include_commands
   return commands.sort.uniq.join("\n")
 end
 
-def generic_secrets
+# main function to generate config file with secrets
+def generate_generic_conf
   n={}
-  c=YAML.load_file(checked_env('TEST_CONF_FILE_PATH')).each do |k,v|
-    n[k]=["config","default"].include?(k) ? v : v.keys.each_with_object({}){|i,m|m[i]='your value here'}
+  local_config=ARGV.first
+  raise "missing argument: local config file" if local_config.nil?
+  YAML.load_file(local_config).each do |k,v|
+    n[k]=['config','default'].include?(k) ? v : v.keys.each_with_object({}){|i,m|m[i]='your value here'}
   end
   puts(n.to_yaml)
+end
+
+# main function to generate README.md
+def generate_doc
+  $env={}
+  %i[TEMPLATE ASCLI ASESSION TEST_MAKEFILE GEMSPEC].each do |var|
+   $env[var]=ARGV.shift
+   raise "Missing arg: #{var}" if $env[var].nil?
+  end
+  puts ERB.new(File.read($env[:TEMPLATE])).result(Kernel.binding)
 end
