@@ -60,6 +60,8 @@ Layout/FirstArgumentIndentation:
   Enabled: false
 Layout/MultilineArrayBraceLayout:
   Enabled: false
+Layout/FirstArrayElementIndentation:
+  EnforcedStyle: consistent
 Style/BarePercentLiterals:
   EnforcedStyle: percent_q
 Style/CaseEquality:

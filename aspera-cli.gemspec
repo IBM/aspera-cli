@@ -32,7 +32,7 @@ Gem::Specification.new do |spec|
   spec.files=Dir.chdir(File.dirname(gemspec_file)){%x(git ls-files -z lib bin examples README.md docs/*.conf).split("\x0")}
   # specify executable names: must be after lines defining: spec.bindir and spec.files
   spec.executables = spec.files.grep(%r{^#{spec.bindir}}){|f|File.basename(f)}
-  spec.required_ruby_version = ">= #{Aspera::Cli::RUBY_CURRENT_MINIMUM_VERSION}"
+  spec.required_ruby_version = '>= 2.4'
   spec.add_runtime_dependency('execjs', '~> 2.0')
   spec.add_runtime_dependency('grpc', '~> 1.0')
   spec.add_runtime_dependency('jwt', '~> 2.0')
