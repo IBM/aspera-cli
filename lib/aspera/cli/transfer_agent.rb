@@ -198,6 +198,7 @@ module Aspera
         set_agent_by_options
         Log.log.debug("transfer agent is a #{@agent.class}")
         @agent.start_transfer(transfer_spec,tr_opts)
+        # list of : :success or error message
         result=@agent.wait_for_transfers_completion
         @progress_listener.reset
         Fasp::AgentBase.validate_status_list(result)
