@@ -1067,27 +1067,36 @@ $(T)tcos: $(T).exists
 	@touch $@
 tcos: $(T)tcos
 
-$(T)f5_1: $(T).exists
-	@echo $@
-	$(EXE_MAN) faspex5 node list --value=@json:'{"type":"received","subtype":"mypackages"}'
-	@touch $@
-$(T)f5_2: $(T).exists
-	@echo $@
-	$(EXE_MAN) faspex5 package list --value=@json:'{"mailbox":"inbox","state":["released"]}'
-	@touch $@
-$(T)f5_3: $(T).exists
+$(T)f5_p1: $(T).exists
 	@echo $@
 	set -x&&\
 	f5_user=$$($(EXE_NOMAN) conf id tst_faspex5 get username)&&\
 	$(EXE_MAN) faspex5 package send --value=@json:'{"title":"test title","recipients":[{"name":"'"$${f5_user}"'"}]}' $(CF_LOCAL_SAMPLE_FILEPATH)
 	@touch $@
-$(T)f5_4: $(T).exists
+$(T)f5_p2: $(T).exists
+	@echo $@
+	$(EXE_MAN) faspex5 package list --value=@json:'{"mailbox":"inbox","state":["released"]}'
+	@touch $@
+$(T)f5_p3: $(T).exists
 	@echo $@
 	set -x&&package_id=$$($(EXE_NOMAN) faspex5 pack list --value=@json:'{"mailbox":"inbox","state":["released"],"limit":1}' --fields=id --format=csv --display=data)&&\
 	$(EXE_MAN) faspex5 package receive "$${package_id}" --to-folder=$(DIR_TMP).
 	@touch $@
+$(T)f5_a1: $(T).exists
+	@echo $@
+	$(EXE_MAN) faspex5 admin res accounts list
+	$(EXE_MAN) faspex5 admin res contacts list
+	$(EXE_MAN) faspex5 admin res jobs list
+	$(EXE_MAN) faspex5 admin res workgroups list
+	$(EXE_MAN) faspex5 admin res shared_inboxes list
+	$(EXE_MAN) faspex5 admin res workgroups list
+	$(EXE_MAN) faspex5 admin res node list --value=@json:'{"type":"received","subtype":"mypackages"}'
+	$(EXE_MAN) faspex5 admin res oauth_clients list
+	$(EXE_MAN) faspex5 admin res registrations list
+	$(EXE_MAN) faspex5 admin res saml_configs list
+	@touch $@
 
-tf5: $(T)f5_1 $(T)f5_2 $(T)f5_3 $(T)f5_4
+tf5: $(T)f5_p1 $(T)f5_p2 $(T)f5_p3 $(T)f5_a1
 
 tnagios: $(T)fx_nagios $(T)serv_nagios_hsts $(T)serv_nagios_transfer $(T)nd_nagios
 

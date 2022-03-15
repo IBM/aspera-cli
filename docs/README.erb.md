@@ -961,7 +961,7 @@ Values in the configuration also follow the [Extended Value Syntax](#extended).
 Note: if the user wants to use the [Extended Value Syntax](#extended) inside the configuration file, using the `config preset update` command, the user shall use the `@val:` prefix. Example:
 
 ```bash
-<%=cmd%> config preset set my_aoc_org private_key @val:@file:"$HOME/.aspera/<%=cmd%>/aocapikey"
+<%=cmd%> config preset set my_aoc_org private_key @val:@file:"$HOME/.aspera/<%=cmd%>/my_private_key"
 ```
 
 This creates the <%=prst%>:
@@ -969,7 +969,7 @@ This creates the <%=prst%>:
 ```yaml
 ...
 my_aoc_org:
-  private_key: @file:"/Users/laurent/.aspera/<%=cmd%>/aocapikey"
+  private_key: @file:"/Users/laurent/.aspera/<%=cmd%>/my_private_key"
 ...
 ```
 
@@ -1132,6 +1132,54 @@ To test if a secret can be found use:
 ```bash
 <%=cmd%> conf vault get --username=access_key1
 ```
+
+##### <a id="private_key"></a>Private Key
+
+Some applications allow the user to be authenticated using a private key (Server, AoC, Faspex5...).
+It consists in generating a private key, or using a previouly generated key.
+The same key can be used for multiple applications.
+Technically, a private key contains the public key, which can be extracted.
+Currently, only private key not protected by a passphrase are supported.
+(TODO: add passphrase protection as option for aspera apps).
+
+Several methods can be used to generate a key pair:
+
+* <%=tool%>
+
+The generated key is of type RSA 4096 bit. For convenience, the public key is also extracted.
+
+```bash
+<%=cmd%> config genkey ~/.aspera/<%=cmd%>/my_private_key
+```
+
+* `ssh-keygen`
+
+```bash
+ssh-keygen -t rsa -f ~/.aspera/<%=cmd%>/my_private_key -N ''
+```
+
+* `openssl`
+
+openssl is sometimes compiled to support option `-nodes` (no DES, i.e. no passphrase, e.g. on macOS). To generate a privatekey pait without passphrase the following shall work on any system:
+
+```bash
+APIKEY=~/.aspera/<%=cmd%>/my_private_key
+openssl genrsa -passout pass:dummypassword -out ${APIKEY}.protected 2048
+openssl rsa -passin pass:dummypassword -in ${APIKEY}.protected -out ${APIKEY}
+openssl rsa -pubout -in ${APIKEY} -out ${APIKEY}.pub
+rm -f ${APIKEY}.protected
+```
+
+### <a id="certificates"></a>SSL CA certificate bundle
+
+<%=tool%> uses ruby `openssl` gem, which uses the `openssl` library.
+Certificates are checked against the ruby default certificates [OpenSSL::X509::DEFAULT_CERT_FILE](https://ruby-doc.org/stdlib-3.0.3/libdoc/openssl/rdoc/OpenSSL/X509/Store.html), which are typically the ones of `openssl` on Unix systems (Linux, macOS, etc..).
+The environment variables `SSL_CERT_FILE` and `SSL_CERT_DIR` are used if defined.
+
+`ascp` also needs to validate certificates when using WSS.
+By default, `ascp` uses primarily certificates from hard-coded path (e.g. on macOS: `/Library/Aspera/ssl`).
+<%=tool%> overrides and sets the default ruby certificate path as well for `ascp` using `-i` switch.
+So to update certificates, update ruby's `openssl` gem, or use env vars `SSL_CERT_*`.
 
 ### Plugins
 
@@ -1301,17 +1349,6 @@ PROXY proxy.example.com:8080
 <%=cmd%> config proxy_check --fpac=@uri:http://server/proxy.pac http://www.example.com
 PROXY proxy.example.com:8080
 ```
-
-### <a id="certificates"></a>SSL CA certificate bundle
-
-<%=tool%> uses ruby `openssl` gem, which uses the `openssl` library.
-Certificates are checked against the ruby default certificates [OpenSSL::X509::DEFAULT_CERT_FILE](https://ruby-doc.org/stdlib-3.0.3/libdoc/openssl/rdoc/OpenSSL/X509/Store.html), which are typically the ones of `openssl` on Unix systems (Linux, macOS, etc..).
-The environment variables `SSL_CERT_FILE` and `SSL_CERT_DIR` are used if defined.
-
-`ascp` also needs to validate certificates when using WSS.
-By default, `ascp` uses primarily certificates from hard-coded path (e.g. on macOS: `/Library/Aspera/ssl`).
-<%=tool%> overrides and sets the default ruby certificate path as well for `ascp` using `-i` switch.
-So to update certificates, update ruby's `openssl` gem, or use env vars `SSL_CERT_*`.
 
 ### <a id="client"></a>FASP configuration
 
@@ -2061,37 +2098,8 @@ Note: Default `auth` method is `web` and default `redirect_uri` is `http://local
 
 For a Browser-less, Private Key-based authentication, use the following steps.
 
-##### Key Pair Generation
-
 In order to use JWT for Aspera on Cloud API client authentication,
-a private/public key pair must be generated (without passphrase)
-This can be done using any of the following method:
-
-(TODO: add passphrase protection as option).
-
-* using the CLI:
-
-```bash
-<%=cmd%> config genkey ~/.aspera/<%=cmd%>/aocapikey
-```
-
-* `ssh-keygen`:
-
-```bash
-ssh-keygen -t rsa -f ~/.aspera/<%=cmd%>/aocapikey -N ''
-```
-
-* `openssl`
-
-(on some openssl implementation (mac) there is option: -nodes (no DES))
-
-```bash
-APIKEY=~/.aspera/<%=cmd%>/aocapikey
-openssl genrsa -passout pass:dummypassword -out ${APIKEY}.protected 2048
-openssl rsa -passin pass:dummypassword -in ${APIKEY}.protected -out ${APIKEY}
-openssl rsa -pubout -in ${APIKEY} -out ${APIKEY}.pub
-rm -f ${APIKEY}.protected
-```
+a [private/public key pair](#private_key) must be used (without passphrase)
 
 ##### API Client JWT activation
 
@@ -2134,7 +2142,7 @@ The public key must be assigned to your user. This can be done in two manners:
 
 ##### Graphically
 
-open the previously generated public key located here: `$HOME/.aspera/<%=cmd%>/aocapikey.pub`
+Open the previously generated public key located here: `$HOME/.aspera/<%=cmd%>/my_private_key.pub`
 
 * Open a web browser, log to your instance: https://myorg.ibmaspera.com/
 * Click on the user's icon (top right)
@@ -2158,7 +2166,7 @@ open the previously generated public key located here: `$HOME/.aspera/<%=cmd%>/a
 ```
 
 ```ruby
-<%=cmd%> aoc user profile modify @ruby:'{"public_key"=>File.read(File.expand_path("~/.aspera/<%=cmd%>/aocapikey.pub"))}'
+<%=cmd%> aoc user profile modify @ruby:'{"public_key"=>File.read(File.expand_path("~/.aspera/<%=cmd%>/my_private_key.pub"))}'
 ```
 
 ```output
@@ -2178,7 +2186,7 @@ To activate default use of JWT authentication for <%=tool%> using the <%=prst%>,
 Execute:
 
 ```bash
-<%=cmd%> config preset update my_aoc_org --auth=jwt --private-key=@val:@file:~/.aspera/<%=cmd%>/aocapikey --username=laurent.martin.aspera@fr.ibm.com
+<%=cmd%> config preset update my_aoc_org --auth=jwt --private-key=@val:@file:~/.aspera/<%=cmd%>/my_private_key --username=laurent.martin.aspera@fr.ibm.com
 ```
 
 Note: the private key argument represents the actual PEM string. In order to read the content from a file, use the @file: prefix. But if the @file: argument is used as is, it will read the file and set in the config file. So to keep the "@file" tag in the configuration file, the @val: prefix is added.
@@ -3118,7 +3126,7 @@ This will get transfer information from the SHOD instance and tell the Azure ATS
 
 This is currently in beta, limited operations are supported.
 
-This was tested with version Beta 4.
+This was tested with version Beta 5.
 
 ### Faspex 5 authentication
 
@@ -3128,15 +3136,20 @@ This was tested with version Beta 4.
 * web
 * boot
 
-#### Client identification
-
-For both JWT and web methods, a "client" must be configured by the Faspex administrator. This will generate a `client_id` and `client_secret`.
-
 #### Faspex 5 using JWT
 
-This is the default method to use.
+This is the preferred method to use.
 
-For JWT, create an API client in Faspex with jwt support, and use options:
+For JWT, create an API client in Faspex with JWT support:
+
+* Identify a private key, if you don't have any refer to section [Private Key](#private_key)
+* Navigate to the web UI: Admin &rarr; Configurations &rarr; API Clients &rarr; Create
+* Activate JWT
+* Paste public key in the appropriate section
+* Click on Create Button
+* Take note of Client Id and Secret
+
+Then use options:
 
 ```text
 --auth=jwt
@@ -3149,7 +3162,15 @@ For JWT, create an API client in Faspex with jwt support, and use options:
 
 #### Faspex 5 using web browser
 
-For web method, create an API client in Faspex, and use options:
+For web method, create an API client in Faspex without JWT:
+
+* Navigate to the web UI: Admin &rarr; Configurations &rarr; API Clients &rarr; Create
+* Do not Activate JWT
+* enter https://127.0.0.1:8888 in the redirect URI
+* Click on Create Button
+* Take note of Client Id
+
+Then use options:
 
 ```text
 --auth=web
@@ -4008,6 +4029,7 @@ So, it evolved into <%=tool%>:
   * new: #66 improvement for content protection (support standard transfer spec options for direct agent)
   * new: option `fpac` is now applicable to all ruby based HTTP connections, i.e. API calls
   * new: option `show_secrets` to reveal secrets in command output
+  * new: added and updated commands for Faspex 5
   * change: (break) command `conf gem path` replaces `conf gem_path`
   * change: (break) option `fpac` expects a value instead of URL
   * change: (break) option `cipher` in transfer spec must have hyphen
