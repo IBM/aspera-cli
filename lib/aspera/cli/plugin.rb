@@ -41,6 +41,12 @@ module Aspera
         return res_id
       end
 
+      # @param command [Symbol] command to execute: create show list modify delete
+      # @param rest_api [Rest] api to use
+      # @param res_class_path [String] sub path in URL to resource relative to base url
+      # @param display_fields [Array] fields to display by default
+      # @param id_default [String] default identifier to use for existing entity commands (show, modify)
+      # @param use_subkey [bool] true if the result is in a subkey of the json
       def entity_command(command,rest_api,res_class_path,display_fields: nil,id_default: nil,use_subkey: false)
         if INSTANCE_OPS.include?(command)
           begin
