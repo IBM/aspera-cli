@@ -64,8 +64,11 @@ module Aspera
           end
 
           # get faspe: URI from entry in xml, and fix problems..
-          def get_fasp_uri_from_entry(entry)
-            raise CliBadArgument, 'package has no link (deleted?)' unless entry.has_key?('link')
+          def get_fasp_uri_from_entry(entry, raise_no_link: true)
+            unless entry.has_key?('link')
+              raise CliBadArgument, 'package has no link (deleted?)' if raise_no_link
+              return nil
+            end
             result=entry['link'].select{|e| e['rel'].eql?('package')}.first['href']
             # tags in the end of URL is not well % encoded... there are "=" that should be %3D
             # TODO: enter ticket to Faspex ?
@@ -285,14 +288,13 @@ module Aspera
                   skip_ids_persistency=PersistencyActionOnce.new(
                   manager: @agents[:persistency],
                   data:    skip_ids_data,
-                  id:      IdGenerator.from_list(['faspex_recv',options.get_option(:url,:mandatory),options.get_option(:username,:mandatory),
-                                                  options.get_option(:box,:mandatory).to_s]))
+                  id:      IdGenerator.from_list(['faspex_recv',options.get_option(:url,:mandatory),options.get_option(:username,:mandatory),options.get_option(:box,:mandatory).to_s]))
                 end
                 # get command line parameters
                 delivid=instance_identifier()
                 raise 'empty id' if delivid.empty?
                 if delivid.eql?(VAL_ALL)
-                  pkg_id_uri=mailbox_all_entries.map{|i|{id: i[PACKAGE_MATCH_FIELD],uri: self.class.get_fasp_uri_from_entry(i)}}
+                  pkg_id_uri=mailbox_all_entries.map{|i|{id: i[PACKAGE_MATCH_FIELD],uri: self.class.get_fasp_uri_from_entry(i, raise_no_link: false)}}
                   # TODO : remove ids from skip not present in inbox to avoid growing too big
                   # skip_ids_data.select!{|id|pkg_id_uri.select{|p|p[:id].eql?(id)}}
                   pkg_id_uri.reject!{|i|skip_ids_data.include?(i[:id])}
@@ -334,19 +336,24 @@ module Aspera
               return Main.result_status('no package') if pkg_id_uri.empty?
               result_transfer=[]
               pkg_id_uri.each do |id_uri|
-                transfer_spec=Fasp::Uri.new(id_uri[:uri]).transfer_spec
-                # NOTE: only external users have token in faspe: link !
-                if !transfer_spec.has_key?('token')
-                  sanitized=id_uri[:uri].gsub('&','&amp;')
-                  xmlpayload=%Q(<?xml version="1.0" encoding="UTF-8"?><url-list xmlns="http://schemas.asperasoft.com/xml/url-list"><url href="#{sanitized}"/></url-list>)
-                  transfer_spec['token']=api_v3.call({
-                    operation: 'POST',
-                    subpath:   'issue-token?direction=down',
-                    headers:   {'Accept'=>'text/plain','Content-Type'=>'application/vnd.aspera.url-list+xml'},
-                    text_body_params: xmlpayload})[:http].body
+                if id_uri[:uri].nil?
+                  # skip package with no link: empty or content deleted
+                  statuses=[:success]
+                else
+                  transfer_spec=Fasp::Uri.new(id_uri[:uri]).transfer_spec
+                  # NOTE: only external users have token in faspe: link !
+                  if !transfer_spec.has_key?('token')
+                    sanitized=id_uri[:uri].gsub('&','&amp;')
+                    xmlpayload=%Q(<?xml version="1.0" encoding="UTF-8"?><url-list xmlns="http://schemas.asperasoft.com/xml/url-list"><url href="#{sanitized}"/></url-list>)
+                    transfer_spec['token']=api_v3.call({
+                      operation: 'POST',
+                      subpath:   'issue-token?direction=down',
+                      headers:   {'Accept'=>'text/plain','Content-Type'=>'application/vnd.aspera.url-list+xml'},
+                      text_body_params: xmlpayload})[:http].body
+                  end
+                  transfer_spec['direction']=Fasp::TransferSpec::DIRECTION_RECEIVE
+                  statuses=transfer.start(transfer_spec,{src: :node_gen3})
                 end
-                transfer_spec['direction']=Fasp::TransferSpec::DIRECTION_RECEIVE
-                statuses=transfer.start(transfer_spec,{src: :node_gen3})
                 result_transfer.push({'package'=>id_uri[:id],Main::STATUS_FIELD=>statuses})
                 # skip only if all sessions completed
                 skip_ids_data.push(id_uri[:id]) if TransferAgent.session_status(statuses).eql?(:success)
