@@ -109,7 +109,14 @@ module Aspera
       end
 
       def result_default_fields(results,table_rows_hash_val)
-        return results[:fields] if results.has_key?(:fields) && !results[:fields].nil?
+        unless results[:fields].nil?
+          raise "internal error: must be Array" unless results[:fields].is_a?(Array)
+            if results[:fields].first.eql?(:all_but) && !table_rows_hash_val.empty?
+              filter=results[:fields][1..]
+              return table_rows_hash_val.first.keys.reject{|i|filter.include?(i)}
+            end
+          return results[:fields]
+        end
         return ['empty'] if table_rows_hash_val.empty?
         return table_rows_hash_val.first.keys
       end
