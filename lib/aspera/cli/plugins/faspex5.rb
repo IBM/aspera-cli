@@ -35,9 +35,9 @@ module Aspera
         end
 
         def set_api
-          @faxpex5_api_base_url=options.get_option(:url,:mandatory)
-          faxpex5_api_v5_url="#{@faxpex5_api_base_url}/api/v5"
-          faxpex5_api_auth_url="#{@faxpex5_api_base_url}/auth"
+          faxpex5_api_base_url=options.get_option(:url,:mandatory)
+          faxpex5_api_v5_url="#{faxpex5_api_base_url}/api/v5"
+          @faxpex5_api_auth_url="#{faxpex5_api_base_url}/auth"
           case options.get_option(:auth,:mandatory)
           when :boot
             # the password here is the token copied directly from browser in developer mode
@@ -51,7 +51,7 @@ module Aspera
               base_url:  faxpex5_api_v5_url,
               auth:      {
               type:            :oauth2,
-              base_url:        faxpex5_api_auth_url,
+              base_url:        @faxpex5_api_auth_url,
               grant:           :web,
               state:           SecureRandom.uuid,
               client_id:       options.get_option(:client_id,:mandatory),
@@ -64,7 +64,7 @@ module Aspera
               base_url:  faxpex5_api_v5_url,
               auth:      {
               type:                 :oauth2,
-              base_url:             faxpex5_api_auth_url,
+              base_url:             @faxpex5_api_auth_url,
               grant:                :jwt,
               f5_username:          options.get_option(:username,:mandatory),
               f5_password:          options.get_option(:password,:mandatory),
@@ -78,20 +78,12 @@ module Aspera
           end
         end
 
-        ACTIONS=[:node, :package, :auth_client, :jobs].freeze
+        ACTIONS=[:package, :admin].freeze
 
         def execute_action
           set_api
           command=options.get_next_command(ACTIONS)
           case command
-          when :auth_client
-            api_auth=Rest.new(@api_v5.params.merge({base_url: "#{@faxpex5_api_base_url}/auth"}))
-            return entity_action(api_auth,'oauth_clients',use_subkey: true)
-          when :node
-            return entity_action(@api_v5,'nodes',use_subkey: true)
-          when :jobs
-            # to test JWT
-            return entity_action(@api_v5,'jobs',use_subkey: true)
           when :package
             command=options.get_next_command([:list,:show,:send,:receive])
             case command
@@ -141,10 +133,27 @@ module Aspera
               end
               skip_ids_persistency.save unless skip_ids_persistency.nil?
               return Main.result_transfer_multiple(result_transfer)
+            end # case package
+          when :admin
+            case options.get_next_command([:resource])
+            when :resource
+              res_type=options.get_next_command([:accounts, :contacts, :jobs, :workgroups, :shared_inboxes, :nodes, :oauth_clients, :registrations, :saml_configs])
+              res_path=res_type.to_s
+              display_fields=
+              case res_type
+              when :accounts then [:all_but,'user_profile_data_attributes']
+              when :oauth_clients then [:all_but,'public_key']
+              else nil
+              end
+              adm_api=@api_v5
+              if res_type.eql?(:oauth_clients)
+                adm_api=Rest.new(@api_v5.params.merge({base_url: @faxpex5_api_auth_url}))
+              end
+              return entity_action(adm_api,res_path,use_subkey: true, display_fields: display_fields)
             end
-          end
-        end
-      end
+          end # case command
+        end # action
+      end # Faspex5
     end # Plugins
   end # Cli
 end # Aspera
