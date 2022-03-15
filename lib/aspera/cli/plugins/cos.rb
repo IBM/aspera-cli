@@ -10,11 +10,10 @@ module Aspera
         def initialize(env)
           super(env)
           @service_creds=nil
-          options.add_opt_simple(:bucket,'IBM Cloud Object storage bucket')
+          options.add_opt_simple(:bucket,'IBM Cloud Object Storage bucket name')
           options.add_opt_simple(:endpoint,'storage endpoint url')
           options.add_opt_simple(:apikey,'storage API key')
           options.add_opt_simple(:crn,'ressource instance id')
-          #self.options.add_opt_simple(:oauth,'Oauth url')
           options.add_opt_simple(:service_credentials,'IBM Cloud service credentials (Hash)')
           options.add_opt_simple(:region,'IBM Cloud Object storage region')
         end

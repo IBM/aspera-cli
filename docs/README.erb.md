@@ -1133,7 +1133,7 @@ To test if a secret can be found use:
 <%=cmd%> conf vault get --username=access_key1
 ```
 
-##### <a id="private_key"></a>Private Key
+### <a id="private_key"></a>Private Key
 
 Some applications allow the user to be authenticated using a private key (Server, AoC, Faspex5...).
 It consists in generating a private key, or using a previouly generated key.
