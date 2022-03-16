@@ -77,8 +77,19 @@ dpush:
 	docker push $(DOCKER_TAG_VERSION)
 	docker push $(DOCKER_TAG_LATEST)
 ##################################
+# Single executable using https://github.com/pmq20/ruby-packer
+CLIEXEC=$(EXENAME).exe
+single:$(CLIEXEC)
+$(CLIEXEC):
+	rubyc -o $(CLIEXEC) $(EXETESTB)
+clean::
+	rm -f $(CLIEXEC)
+##################################
 # utils
-scan:
+# https://github.com/Yelp/detect-secrets
+scaninit:
 	detect-secrets scan --exclude-files '^.secrets.baseline$$' --exclude-secrets '_here_' --exclude-secrets '^my_' --exclude-secrets '^your ' --exclude-secrets demoaspera
+scan:
+	detect-secrets scan --baseline .secrets.baseline
 tidy:
 	rubocop $(DIR_LIB).
