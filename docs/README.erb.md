@@ -4474,37 +4474,7 @@ So, it evolved into <%=tool%>:
 
   * Breaking change: "files" application renamed to "aspera" (for "Aspera on Cloud"). "repository" renamed to "files". Default is automatically reset, e.g. in config files and change key "files" to "aspera" in <%=prst%> "default".
 
-## BUGS, FEATURES, CONTRIBUTION
-
-For issues or feature requests use the Github repository and issues.
-
-You can also contribute to this open source project.
-
-One can also [create one's own plugin](#createownplugin).
-
-### Only one value for any option
-
-Some commands and sub commands may ask for the same option name.
-Currently, since option definition is position independent (last one wins), it is not possible
-to give an option to a command and the same option with different value to a sub command.
-
-For instance, if an entity is identified by the option `id` but later on the command line another `id` option is required, then the later will override the earlier one, and both entity will use the same id.
-As a solution, use the position specific notation for selection, i.e. provide the identified just after command and do not use option `id`.
-
-This happens typically for the `node` sub command, e.g. identify the node by name instead of id.
-
-### ED255519 key not supported
-
-ED25519 keys are deactivated since version 0.9.24 so this type of key will just be ignored.
-
-Without this deactivation, if such key was present the following error was generated:
-
-```output
-OpenSSH keys only supported if ED25519 is available
-```
-
-Which meant that you do not have ruby support for ED25519 SSH keys.
-You may either install the suggested Gems, or remove your ed25519 key from your `.ssh` folder to solve the issue.
+## Common problems
 
 ### Error "Remote host is not who we expected"
 
@@ -4520,17 +4490,34 @@ Workaround on server side: Either remove the fingerprint from `aspera.conf`, or 
 
 References: ES-1944 in release notes of 4.1 and to [HSTS admin manual section "Configuring Transfer Server Authentication With a Host-Key Fingerprint"](https://www.ibm.com/docs/en/ahts/4.2?topic=upgrades-configuring-ssh-server).
 
-### Miscellaneous
+### ED255519 key not supported
 
-* remove rest and oauth classes and use ruby standard gems:
+ED25519 keys are deactivated since version 0.9.24 so this type of key will just be ignored.
+
+Without this deactivation, if such key was present the following error was generated:
+
+```output
+OpenSSH keys only supported if ED25519 is available
+```
+
+Which meant that you do not have ruby support for ED25519 SSH keys.
+You may either install the suggested Gems, or remove your ed25519 key from your `.ssh` folder to solve the issue.
+
+## BUGS, FEATURES, CONTRIBUTION
+
+For issues reports or feature requests use the Github repository and issues.
+
+You can also contribute to this open source project.
+
+One can also [create one's own plugin](#createownplugin).
+
+## Miscellaneous
+
+* replace rest and oauth classes with ruby standard gems:
 
   * oauth
   * <https://github.com/rest-client/rest-client>
 
-* use Thor or any standard Ruby CLI manager
+* use Thor or other standard Ruby CLI manager
 
-* provide metadata in packages
-
-* deliveries to dropboxes
-
-* easier use with <https://github.com/pmq20/ruby-packer>
+* easier use with <https://github.com/pmq20/ruby-packer> (rubyc)
