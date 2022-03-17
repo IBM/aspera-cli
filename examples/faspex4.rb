@@ -76,14 +76,14 @@ end
 #---------------
 api_v4=Aspera::Rest.new({
   base_url: faspex_url+'/api',
-  auth: {
-  type: :oauth2,
-  base_url: faspex_url+'/auth/oauth2',
-  grant: :header_userpass,
-  user_name: faspex_user,
-  user_pass: faspex_pass,
-  scope: 'admin'
-  }})
+  auth:     {
+    type:         :oauth2,
+    base_url:     faspex_url+'/auth/oauth2',
+    auth:         {type: :basic, username: faspex_user, password: faspex_pass},
+    crtype:       :generic,
+    generic:       {grant_type: 'password'},
+    scope:        'admin'
+    }})
 
 # Use it. Note that Faspex 4 API v4 is totally different from Faspex 4 v3 APIs, see ref on line 2
 Aspera::Log.dump('users',api_v4.read('users')[:data])

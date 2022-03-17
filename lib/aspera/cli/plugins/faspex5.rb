@@ -28,7 +28,7 @@ module Aspera
           options.add_opt_simple(:client_id,'OAuth client identifier')
           options.add_opt_simple(:client_secret,'OAuth client secret')
           options.add_opt_simple(:redirect_uri,'OAuth redirect URI')
-          options.add_opt_list(:auth,Oauth.auth_types.clone.push(:boot),'OAuth type of authentication')
+          options.add_opt_list(:auth,[Oauth::STD_AUTH_TYPES,:boot].flatten,'OAuth type of authentication')
           options.add_opt_simple(:private_key,'Oauth RSA private key PEM value for JWT (prefix file path with @val:@file:)')
           options.set_option(:auth,:jwt)
           options.parse_options!
@@ -50,30 +50,31 @@ module Aspera
             @api_v5=Rest.new({
               base_url:  faxpex5_api_v5_url,
               auth:      {
-              type:            :oauth2,
-              base_url:        @faxpex5_api_auth_url,
-              grant:           :web,
-              state:           SecureRandom.uuid,
-              client_id:       options.get_option(:client_id,:mandatory),
-              redirect_uri:    options.get_option(:redirect_uri,:mandatory)
+              type:        :oauth2,
+              base_url:    @faxpex5_api_auth_url,
+              crtype:      :web,
+              client_id:   options.get_option(:client_id,:mandatory),
+              web:         {redirect_uri: options.get_option(:redirect_uri,:mandatory)}
               }})
           when :jwt
-            # currently Faspex 5 beta 4 only supports non-user based apis (e.g. jobs)
             app_client_id=options.get_option(:client_id,:mandatory)
             @api_v5=Rest.new({
               base_url:  faxpex5_api_v5_url,
               auth:      {
-              type:                 :oauth2,
-              base_url:             @faxpex5_api_auth_url,
-              grant:                :jwt,
-              f5_username:          options.get_option(:username,:mandatory),
-              f5_password:          options.get_option(:password,:mandatory),
-              client_id:            app_client_id,
-              client_secret:        options.get_option(:client_secret,:mandatory),
-              jwt_subject:          "client:#{app_client_id}", # TODO Mmmm
-              jwt_audience:         app_client_id, # TODO Mmmm
-              jwt_private_key_obj:  OpenSSL::PKey::RSA.new(options.get_option(:private_key,:mandatory)),
-              jwt_headers:          {typ: 'JWT'}
+              type:        :oauth2,
+              base_url:    @faxpex5_api_auth_url,
+              crtype:      :jwt,
+              client_id:   app_client_id,
+              jwt:         {
+                payload:     {
+                  iss: app_client_id,    # issuer
+                  aud: app_client_id,    # audience TODO: ???
+                  sub: "user:#{options.get_option(:username,:mandatory)}"  # subject also "client:#{app_client_id}" + auth user/pass
+                },
+                #auth:                {type: :basic, options.get_option(:username,:mandatory), options.get_option(:password,:mandatory),
+                private_key_obj:  OpenSSL::PKey::RSA.new(options.get_option(:private_key,:mandatory)),
+                headers:          {typ: 'JWT'}
+              }
               }})
           end
         end

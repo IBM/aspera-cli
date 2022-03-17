@@ -16,11 +16,14 @@ module Aspera
         not_auth_codes:  ['401','403'], # error codes when not authorized
         headers:         {'ibm-service-instance-id' => instance_id},
         auth:            {
-        type:       :oauth2,
-        base_url:   @auth_url,
-        grant:      :ibm_apikey,
-        api_key:    @api_key
-        }})
+        type:              :oauth2,
+        base_url:          @auth_url,
+        crtype:            :generic,
+        generic:            {
+        grant_type:          'urn:ibm:params:oauth:grant-type:apikey',
+        response_type:       'cloud_iam',
+        apikey:              @api_key
+      }}})
       # read FASP connection information for bucket
       xml_result_text=s3_api.call({operation: 'GET',subpath: bucket_name,headers: {'Accept'=>'application/xml'},url_params: {'faspConnectionInfo'=>nil}})[:http].body
       ats_info=XmlSimple.xml_in(xml_result_text, {'ForceArray' => false})
@@ -45,10 +48,14 @@ module Aspera
       delegated_oauth=Oauth.new({
         type:        :oauth2,
         base_url:    @auth_url,
-        grant:       :delegated_refresh,
-        api_key:     @api_key,
-        token_field: TOKEN_FIELD
-      })
+        token_field: TOKEN_FIELD,
+        crtype:            :generic,
+        generic:            {
+        grant_type:          'urn:ibm:params:oauth:grant-type:apikey',
+        response_type:       'delegated_refresh_token',
+        apikey:              @api_key,
+        receiver_client_ids: 'aspera_ats'
+      }})
       # get delagated token to be placed in rest call header and in transfer tags
       @add_ts['tags']['aspera']['node']['storage_credentials']['token'][TOKEN_FIELD]=delegated_oauth.get_authorization().gsub(/^Bearer /,'')
       @params[:headers]={'X-Aspera-Storage-Credentials'=>JSON.generate(@add_ts['tags']['aspera']['node']['storage_credentials'])}

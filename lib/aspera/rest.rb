@@ -98,14 +98,17 @@ module Aspera
 
     public
 
-    attr_reader :params, :oauth
+    attr_reader :params
 
-    # @param a_rest_params default call parameters (merged at call) and (+) authentication (:auth) :
-    # :type (:basic, :oauth2, :url, :none)
-    # :username   [:basic]
-    # :password   [:basic]
-    # :url_creds  [:url]
-    # :*          [:oauth2] see Oauth class
+    def oauth
+      if @oauth.nil?
+        raise "ERROR: no OAuth defined" unless @params[:auth][:type].eql?(:oauth2)
+        @oauth=Oauth.new(@params[:auth])
+      end
+      return @oauth
+    end
+
+    # @param a_rest_params [Hash] default call parameters (merged at call)
     def initialize(a_rest_params)
       raise 'ERROR: expecting Hash' unless a_rest_params.is_a?(Hash)
       raise 'ERROR: expecting base_url' unless a_rest_params[:base_url].is_a?(String)
@@ -117,13 +120,13 @@ module Aspera
       # default is no auth
       @params[:auth]||={type: :none}
       @params[:not_auth_codes]||=['401']
-      @oauth=Oauth.new(@params[:auth]) if @params[:auth][:type].eql?(:oauth2)
+      @oauth=nil
       Log.dump('REST params(2)',@params)
     end
 
-    def oauth_token(options={})
-      raise "ERROR: expecting Oauth, have #{@oauth.class}" unless @oauth.is_a?(Oauth)
-      return @oauth.get_authorization(options)
+    def oauth_token(force_refresh: false)
+      raise "ERROR: expecting boolean, have #{force_refresh}" unless [true,false].include?(force_refresh)
+      return oauth.get_authorization(use_refresh_token: force_refresh)
     end
 
     def build_request(call_data)
@@ -177,6 +180,14 @@ module Aspera
     # :save_to_file (filepath) default: nil
     # :return_error (bool) default: nil
     # :redirect_max (int) default: 0
+    # :not_auth_codes (array)
+    # ----
+    # authentication (:auth) :
+    # :type (:none, :basic, :oauth2, :url)
+    # :username   [:basic]
+    # :password   [:basic]
+    # :url_creds  [:url] a hash
+    # :*          [:oauth2] see Oauth class
     def call(call_data)
       raise "Hash call parameter is required (#{call_data.class})" unless call_data.is_a?(Hash)
       call_data[:subpath]='' if call_data[:subpath].nil?
@@ -256,10 +267,10 @@ module Aspera
         RestErrorAnalyzer.instance.raise_on_error(req,result)
       rescue RestCallError => e
         # not authorized: oauth token expired
-        if @params[:not_auth_codes].include?(result[:http].code.to_s) && call_data[:auth][:type].eql?(:oauth2)
+        if call_data[:not_auth_codes].include?(result[:http].code.to_s) && call_data[:auth][:type].eql?(:oauth2)
           begin
             # try to use refresh token
-            req['Authorization']=oauth_token(refresh: true)
+            req['Authorization']=oauth_token(force_refresh: true)
           rescue RestCallError => e
             Log.log.error('refresh failed'.bg_red)
             # regenerate a brand new token
