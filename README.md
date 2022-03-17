@@ -2125,6 +2125,12 @@ ascli faspex package send --delivery-info=@json:'{"title":"Important files deliv
 ascli faspex package send --link="my_faspex_publink_send_to_dropbox" --delivery-info=@json:'{"title":"Important files delivery"}' testfile.bin
 ascli faspex package send --link="my_faspex_publink_send_to_fxuser" --delivery-info=@json:'{"title":"Important files delivery"}' testfile.bin
 ascli faspex source name "Server Files" node br /
+ascli faspex v4 dmembership list
+ascli faspex v4 dropbox list
+ascli faspex v4 metadata_profile list
+ascli faspex v4 user list
+ascli faspex v4 wmembership list
+ascli faspex v4 workgroup list
 ascli faspex5 admin res accounts list
 ascli faspex5 admin res contacts list
 ascli faspex5 admin res jobs list
@@ -2393,7 +2399,7 @@ OPTIONS:
         --client-id=VALUE            OAuth client identifier
         --client-secret=VALUE        OAuth client secret
         --redirect-uri=VALUE         OAuth redirect URI
-        --auth=ENUM                  OAuth type of authentication: body_userpass, header_userpass, web, jwt, url_token, ibm_apikey, boot
+        --auth=ENUM                  OAuth type of authentication: web, jwt, boot
         --private-key=VALUE          Oauth RSA private key PEM value for JWT (prefix file path with @val:@file:)
 
 
@@ -2420,17 +2426,6 @@ OPTIONS:
         --storage=VALUE              Faspex local storage definition
         --recipient=VALUE            use if recipient is a dropbox (with *)
         --box=ENUM                   package box: inbox, archive, sent
-
-
-COMMAND: shares2
-SUBCOMMANDS: repository organization project team share appinfo userinfo admin
-OPTIONS:
-        --url=VALUE                  URL of application, e.g. https://org.asperafiles.com
-        --username=VALUE             username to log in
-        --password=VALUE             user's password
-        --organization=VALUE         organization
-        --project=VALUE              project
-        --share=VALUE                share
 
 
 COMMAND: preview
@@ -2481,7 +2476,7 @@ OPTIONS:
         --url=VALUE                  URL of application, e.g. https://org.asperafiles.com
         --username=VALUE             username to log in
         --password=VALUE             user's password
-        --auth=ENUM                  OAuth type of authentication: body_userpass, header_userpass, web, jwt, url_token, ibm_apikey
+        --auth=ENUM                  OAuth type of authentication: web, jwt
         --operation=ENUM             client operation for transfers: push, pull
         --client-id=VALUE            OAuth API client identifier in application
         --client-secret=VALUE        OAuth API client passcode
@@ -3873,12 +3868,6 @@ ascli faspex packages recv --id=ALL --once-only=yes --lock-port=12345
 
 Aspera Shares supports the "node API" for the file transfer part. (Shares 1 and 2)
 
-In Shares2, users, groups listing are paged, to display sequential pages:
-
-```bash
-for p in 1 2 3;do ascli shares2 admin users list --value=@json:'{"page":'$p'}';done
-```
-
 ## Plugin: IBM Cloud Object Storage
 
 The IBM Cloud Object Storage provides the possibility to execute transfers using FASP.
@@ -4586,6 +4575,7 @@ So, it evolved into `ascli`:
   * change: (break) option `fpac` expects a value instead of URL
   * change: (break) option `cipher` in transfer spec must have hyphen
   * change: (break) renamed option `log_passwords` to `log_secrets`
+  * change: (break) removed plugin `shares2` as products is now EOL
 
 * 4.6.0
 

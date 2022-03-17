@@ -3341,12 +3341,6 @@ cargo client, or drive. Refer to the [same section](#aoccargo) in the Aspera on 
 
 Aspera Shares supports the "node API" for the file transfer part. (Shares 1 and 2)
 
-In Shares2, users, groups listing are paged, to display sequential pages:
-
-```bash
-for p in 1 2 3;do <%=cmd%> shares2 admin users list --value=@json:'{"page":'$p'}';done
-```
-
 ## Plugin: IBM Cloud Object Storage
 
 The IBM Cloud Object Storage provides the possibility to execute transfers using FASP.
@@ -4034,6 +4028,7 @@ So, it evolved into <%=tool%>:
   * change: (break) option `fpac` expects a value instead of URL
   * change: (break) option `cipher` in transfer spec must have hyphen
   * change: (break) renamed option `log_passwords` to `log_secrets`
+  * change: (break) removed plugin `shares2` as products is now EOL
 
 * 4.6.0
 
