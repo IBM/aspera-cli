@@ -31,12 +31,25 @@ module Aspera
     TOKEN_CACHE_EXPIRY_SEC=1800
     # a prefix for persistency of tokens (garbage collect)
     PERSIST_CATEGORY_TOKEN='token'
-    ONE_HOUR_AS_DAY_FRACTION=Rational(1,24)
+    TOKEN_EXPIRATION_GUARD_SEC=120
 
-    private_constant :JWT_NOTBEFORE_OFFSET_SEC,:JWT_EXPIRY_OFFSET_SEC,:TOKEN_CACHE_EXPIRY_SEC,:PERSIST_CATEGORY_TOKEN,:ONE_HOUR_AS_DAY_FRACTION
+    private_constant :JWT_NOTBEFORE_OFFSET_SEC,:JWT_EXPIRY_OFFSET_SEC,:TOKEN_CACHE_EXPIRY_SEC,:PERSIST_CATEGORY_TOKEN,:TOKEN_EXPIRATION_GUARD_SEC
 
+    # persistency manager
     @persist=nil
+    # token creation methods
     @handlers={}
+    # token unique identifiers from oauth parameters
+    @id_elements=[
+      [:scope],
+      [:crtype],
+      [:auth,:username],
+      [:jwt,:payload,:sub],
+      [:generic,:grant_type],
+      [:generic,:apikey],
+      [:generic,:response_type],
+      [:aoc_pub_link,:json,:url_token]
+      ]
 
     class << self
       def persist_mgr=(manager)
@@ -67,7 +80,6 @@ module Aspera
       end
 
       def decode_token(token)
-        Log.log.debug(">>>> #{token} : #{@decoders.length}")
         @decoders.each do |decoder|
           result=decoder.call(token) rescue nil
           return result unless result.nil?
@@ -83,6 +95,10 @@ module Aspera
       def token_creator(id)
         raise "token create type unknown: #{id}/#{id.class}" unless @handlers.has_key?(id)
         @handlers[id]
+      end
+      
+      def id_elements
+        return @id_elements
       end
     end # self
 
@@ -134,8 +150,8 @@ module Aspera
       return create_token(@params[:generic])
     end
 
+    # Web browser based Auth
     def create_token_web
-      # Web based Auth
       callback_verif=SecureRandom.uuid # used to check later
       login_page_url=Rest.build_uri("#{@params[:base_url]}/#{@params[:web][:path_authorize]}",optional_scope_client_id({response_type: 'code', redirect_uri:  @params[:web][:redirect_uri], state: callback_verif}))
       # here, we need a human to authorize on a web page
@@ -151,9 +167,10 @@ module Aspera
       return create_token(optional_scope_client_id({grant_type: 'authorization_code', code: received_params['code'], redirect_uri: @params[:web][:redirect_uri]},add_secret: true))
     end
 
+    # private key based Auth
     def create_token_jwt
-      # https://tools.ietf.org/html/rfc7519
       # https://tools.ietf.org/html/rfc7523
+      # https://tools.ietf.org/html/rfc7519
       require 'jwt'
       seconds_since_epoch=Time.new.to_i
       Log.log.info("seconds=#{seconds_since_epoch}")
@@ -173,18 +190,16 @@ module Aspera
     end
 
     # @return unique identifier of token
+    # TODO: external handlers shall provide unique identifiers
     def token_cache_id
       oauth_uri=URI.parse(@params[:base_url])
       parts=[PERSIST_CATEGORY_TOKEN,oauth_uri.host,oauth_uri.path]
       # add some of the parameters that uniquely identify the token
-      parts.push(@params.dig(:scope))
-      parts.push(@params.dig(:crtype))
-      parts.push(@params.dig(:auth,:username))
-      parts.push(@params.dig(:jwt,:payload,:sub))
-      parts.push(@params.dig(:generic,:grant_type).split(':').last) unless @params.dig(:generic,:grant_type).nil?
-      parts.push(@params.dig(:generic,:apikey))
-      parts.push(@params.dig(:generic,:response_type))
-      parts.push(@params.dig(:aoc_pub_link,:json,:url_token))
+      self.class.id_elements.each do |p|
+        identifier=@params.dig(*p)
+        identifier=identifier.split(':').last if identifier.is_a?(String) && p.last.eql?(:grant_type)
+        parts.push(identifier) unless identifier.nil?
+      end
       return IdGenerator.from_list(parts)
     end
 
@@ -200,26 +215,29 @@ module Aspera
       return call_params
     end
 
-    # @param options : :scope and :refresh
+    # Oauth v2 token generation
+    # @param use_refresh_token set to true to force refresh or re-generation (if previous failed)
     def get_authorization(use_refresh_token: false)
-      # generate token identifier to use with cache
+      # generate token unique identifier for persistency (memory/disk cache)
       token_id=token_cache_id
 
       # get token_data from cache (or nil), token_data is what is returned by /token
       token_data=self.class.persist_mgr.get(token_id)
       token_data=JSON.parse(token_data) unless token_data.nil?
-      # Optional optimization: check if node token is expired, then force refresh
-      # in case the transfer agent cannot refresh himself
-      # else, anyway, faspmanager is equipped with refresh code
-      if !token_data.nil?
-        # TODO: use @params[:token_field] ?
-        decoded_node_token = self.class.decode_token(token_data['access_token'])
-        Log.dump('decoded_node_token',decoded_node_token) unless decoded_node_token.nil?
-        if decoded_node_token.is_a?(Hash) && decoded_node_token['expires_at'].is_a?(String)
-          expires_at=DateTime.parse(decoded_node_token['expires_at'])
-          # Time.at(decoded_node_token['exp'])
-          # does it seem expired, with one hour of security
-          use_refresh_token=true if DateTime.now > (expires_at-ONE_HOUR_AS_DAY_FRACTION)
+      # Optional optimization: check if node token is expired  basd on decoded content then force refresh if close enough
+      # might help in case the transfer agent cannot refresh himself
+      # `direct` agent is equipped with refresh code
+      if !use_refresh_token && !token_data.nil?
+        decoded_token = self.class.decode_token(token_data[@params[:token_field]])
+        Log.dump('decoded_token',decoded_token) unless decoded_token.nil?
+        if decoded_token.is_a?(Hash)
+          expires_at_sec=
+          if    decoded_token['expires_at'].is_a?(String) then DateTime.parse(decoded_token['expires_at']).to_time
+          elsif decoded_token['exp'].is_a?(Integer)       then Time.at(decoded_token['exp'])
+          else  nil
+          end
+          use_refresh_token=true if expires_at_sec.is_a?(Time) && (expires_at_sec-Time.now) < TOKEN_EXPIRATION_GUARD_SEC
+          Log.log.debug("Expiration: #{expires_at_sec} / #{use_refresh_token}")
         end
       end
 
@@ -229,15 +247,14 @@ module Aspera
           # save possible refresh token, before deleting the cache
           refresh_token=token_data['refresh_token']
         end
-        # delete caches
+        # delete cache
         self.class.persist_mgr.delete(token_id)
         token_data=nil
         # lets try the existing refresh token
         if !refresh_token.nil?
           Log.log.info("refresh=[#{refresh_token}]".bg_green)
           # try to refresh
-          # note: admin token has no refresh, and lives by default 1800secs
-          # Note: scope is mandatory in Files, and we can either provide basic auth, or client_Secret in data
+          # note: AoC admin token has no refresh, and lives by default 1800secs
           resp=create_token(optional_scope_client_id({grant_type: 'refresh_token',refresh_token: refresh_token}))
           if resp[:http].code.start_with?('2')
             # save only if success
