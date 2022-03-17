@@ -20,6 +20,9 @@ CF_LOCAL_SAMPLE_FILEPATH=$(DIR_TMP)$(CF_LOCAL_SAMPLE_FILENAME)
 CF_HSTS_FOLDER_UPLOAD := $(shell $(EXE_NOMAN) conf id misc get upload_folder 2> /dev/null || echo error)
 CF_HSTS_UPLOADED_FILE=$(CF_HSTS_FOLDER_UPLOAD)/$(CF_LOCAL_SAMPLE_FILENAME)
 
+clean::
+	$(EXE_NOMAN) conf flush
+
 # setup local environment on Macos for preview generation testing
 setupprev:
 	-sudo asnodeadmin -d -u $$($(EXE_NOMAN) conf id tst_node_preview get username)
@@ -49,7 +52,8 @@ T=$(DIR_TMP)t/
 
 $(T).exists: $(DIR_TMP).exists
 	mkdir -p $(T)
-	dd if=/dev/urandom of=$(CF_LOCAL_SAMPLE_FILEPATH) count=10 bs=1m
+	#dd if=/dev/urandom of=$(CF_LOCAL_SAMPLE_FILEPATH) count=10 bs=1m
+	echo 'This is a small test file' > $(CF_LOCAL_SAMPLE_FILEPATH)
 	touch $@
 clean::
 	rm -f $(CF_LOCAL_SAMPLE_FILEPATH)
@@ -234,7 +238,16 @@ $(T)fx_nagios: $(T).exists
 	@echo $@
 	$(EXE_MAN) faspex health
 	@touch $@
-tfaspex: $(T)fx_plst $(T)fx_psnd $(T)fx_prs $(T)fx_pri $(T)fx_prl $(T)fx_pslu $(T)fx_psld $(T)fx_storage $(T)fx_prall $(T)fx_nagios
+$(T)fx_v4: $(T).exists
+	@echo $@
+	$(EXE_MAN) faspex v4 dropbox list
+	$(EXE_MAN) faspex v4 dmembership list
+	$(EXE_MAN) faspex v4 workgroup list
+	$(EXE_MAN) faspex v4 wmembership list
+	$(EXE_MAN) faspex v4 user list
+	$(EXE_MAN) faspex v4 metadata_profile list
+	@touch $@
+tfaspex: $(T)fx_plst $(T)fx_psnd $(T)fx_prs $(T)fx_pri $(T)fx_prl $(T)fx_pslu $(T)fx_psld $(T)fx_storage $(T)fx_prall $(T)fx_nagios $(T)fx_v4
 
 $(T)cons1: $(T).exists
 	@echo $@
@@ -598,7 +611,7 @@ $(T)aocat9: $(T).exists
 	@touch $@
 $(T)aocat10: $(T).exists
 	@echo $@
-	$(EXE_MAN) aoc admin ats access_key list --fields=name,id
+	-$(EXE_MAN) aoc admin ats access_key list --fields=name,id
 	@touch $@
 $(T)aocat11: $(T).exists
 	@echo $@
@@ -724,7 +737,7 @@ $(T)at9: $(T).exists
 	@touch $@
 $(T)at10: $(T).exists
 	@echo $@
-	$(EXE_MAN) ats access_key list --fields=name,id
+	-$(EXE_MAN) ats access_key list --fields=name,id
 	@touch $@
 $(T)at11: $(T).exists
 	@echo $@
