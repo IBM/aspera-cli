@@ -5,18 +5,16 @@ require 'webrick/https'
 module Aspera
   # servlet called on callback: it records the callback request
   class WebAuthServlet < WEBrick::HTTPServlet::AbstractServlet
-    def initialize(_server,application) # additional args get here
-      super
-      Log.log.debug('WebAuthServlet.new')
+    def initialize(server,application) # additional args get here
+      Log.log.debug('WebAuthServlet initialize')
+      super(server)
       @app=application
     end
 
     def service(request, response)
-      if !request.path.eql?(@app.expected_path)
-        Log.log.error("unexpected path: #{request.path}")
-        response.status=400
-        return
-      end
+      Log.log.debug("received request from browser #{request.request_method} #{request.path}")
+      raise WEBrick::HTTPStatus::MethodNotAllowed,"unexpected method: #{request.request_method}" unless request.request_method.eql?('GET')
+      raise WEBrick::HTTPStatus::NotFound,"unexpected path: #{request.path}" unless request.path.eql?(@app.expected_path)
       # acquire lock and signal change
       @app.mutex.synchronize do
         @app.query=request.query
@@ -25,30 +23,32 @@ module Aspera
       response.status=200
       response.content_type = 'text/html'
       response.body='<html><head><title>Ok</title></head><body><h1>Thank you !</h1><p>You can close this window.</p></body></html>'
+      return nil
     end
   end # WebAuthServlet
 
+    # generates and adds self signed cert to provided webrick options
+    #def fill_self_signed_cert(cert,key)
+    #  cert.subject = cert.issuer = OpenSSL::X509::Name.parse('/C=FR/O=Test/OU=Test/CN=Test')
+    #  cert.not_before = Time.now
+    #  cert.not_after = Time.now + 365 * 24 * 60 * 60
+    #  cert.public_key = key.public_key
+    #  cert.serial = 0x0
+    #  cert.version = 2
+    #  ef = OpenSSL::X509::ExtensionFactory.new
+    #  ef.issuer_certificate = cert
+    #  ef.subject_certificate = cert
+    #  cert.extensions = [
+    #    ef.create_extension('basicConstraints','CA:TRUE', true),
+    #    ef.create_extension('subjectKeyIdentifier', 'hash'),
+    #    # ef.create_extension('keyUsage', 'cRLSign,keyCertSign', true),
+    #  ]
+    #  cert.add_extension(ef.create_extension('authorityKeyIdentifier','keyid:always,issuer:always'))
+    #  cert.sign(key, OpenSSL::Digest::SHA256.new)
+    #end
+
   # start a local web server, then start a browser that will callback the local server upon authentication
   class WebAuth
-    #      # generates and adds self signed cert to provided webrick options
-    #      def fill_self_signed_cert(cert,key)
-    #        cert.subject = cert.issuer = OpenSSL::X509::Name.parse('/C=FR/O=Test/OU=Test/CN=Test')
-    #        cert.not_before = Time.now
-    #        cert.not_after = Time.now + 365 * 24 * 60 * 60
-    #        cert.public_key = key.public_key
-    #        cert.serial = 0x0
-    #        cert.version = 2
-    #        ef = OpenSSL::X509::ExtensionFactory.new
-    #        ef.issuer_certificate = cert
-    #        ef.subject_certificate = cert
-    #        cert.extensions = [
-    #          ef.create_extension('basicConstraints','CA:TRUE', true),
-    #          ef.create_extension('subjectKeyIdentifier', 'hash'),
-    #          # ef.create_extension('keyUsage', 'cRLSign,keyCertSign', true),
-    #        ]
-    #        cert.add_extension(ef.create_extension('authorityKeyIdentifier','keyid:always,issuer:always'))
-    #        cert.sign(key, OpenSSL::Digest::SHA256.new)
-    #      end
     attr_reader :expected_path,:mutex,:cond
     attr_writer :query
     # @param endpoint_url [String] e.g. 'https://127.0.0.1:12345'
@@ -63,7 +63,8 @@ module Aspera
       webrick_options = {
         BindAddress: uri.host,
         Port:        uri.port,
-        Logger:      Log.log
+        Logger:      Log.log,
+        AccessLog:   [[self, WEBrick::AccessLog::COMMON_LOG_FORMAT]] # see "<<" below
       }
       case uri.scheme
       when 'http'
@@ -86,10 +87,14 @@ module Aspera
       Thread.new { @server.start }
     end
 
+    # log web server access
+    def <<(access_log)
+      Log.log.debug{"webrick log #{access_log.chomp}"}
+    end
+
     # wait for request on web server
     # @return Hash the query
     def received_request
-      Log.log.debug('received_request')
       # shall be called only once
       raise 'error, received_request called twice ?' if @server.nil?
       # wait for signal from thread
