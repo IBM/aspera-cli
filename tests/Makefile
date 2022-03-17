@@ -363,7 +363,7 @@ $(T)aocfbr: $(T).exists
 	@touch $@
 $(T)aocfbt: $(T).exists
 	@echo $@
-	$(EXE_MAN) aoc files bearer_token_node /
+	$(EXE_MAN) aoc files bearer_token_node / --cache-tokens=no
 	@touch $@
 $(T)aocffin: $(T).exists
 	@echo $@

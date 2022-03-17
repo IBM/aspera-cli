@@ -68,7 +68,7 @@ module Aspera
       # =============================================================
       # Parameter handlers
       #
-      attr_accessor :option_insecure, :option_http_options
+      attr_accessor :option_insecure, :option_http_options, :option_cache_tokens
 
       def option_ui; OpenApplication.instance.url_method; end
 
@@ -99,15 +99,13 @@ module Aspera
         early_debug_setup(argv)
         # compare $0 with expected name
         current_prog_name=File.basename($PROGRAM_NAME)
-        unless current_prog_name.eql?(PROGRAM_NAME)
-          @plugin_env[:formater].display_message(:error,
-"#{'WARNING'.bg_red.blink.gray} Please use '#{PROGRAM_NAME}' instead of '#{current_prog_name}', '#{current_prog_name}' will be removed in a future version")
-        end
+        @plugin_env[:formater].display_message(:error,"#{'WARNING'.bg_red.blink.gray} Please use '#{PROGRAM_NAME}' instead of '#{current_prog_name}'") unless current_prog_name.eql?(PROGRAM_NAME)
         @option_help=false
         @bash_completion=false
         @option_show_config=false
         @option_insecure=false
         @option_rest_debug=false
+        @option_cache_tokens=true
         @option_http_options={}
         # environment provided to plugin for various capabilities
         @plugin_env={}
@@ -126,7 +124,7 @@ module Aspera
         # data persistency
         @plugin_env[:persistency]=PersistencyFolder.new(File.join(@plugin_env[:config].main_folder,'persist_store'))
         Log.log.debug('plugin env created'.red)
-        Oauth.persist_mgr=@plugin_env[:persistency]
+        Oauth.persist_mgr=@plugin_env[:persistency] if @option_cache_tokens
         Fasp::Parameters.file_list_folder=File.join(@plugin_env[:config].main_folder,'filelists')
         Aspera::RestErrorAnalyzer.instance.log_file=File.join(@plugin_env[:config].main_folder,'rest_exceptions.log')
         # register aspera REST call error handlers
@@ -185,6 +183,7 @@ module Aspera
         @opt_mgr.set_obj_attr(:ui,self,:option_ui)
         @opt_mgr.set_obj_attr(:http_options,self,:option_http_options)
         @opt_mgr.set_obj_attr(:log_secrets,Log.instance,:log_secrets)
+        @opt_mgr.set_obj_attr(:cache_tokens,self,:option_cache_tokens)
         @opt_mgr.add_opt_list(:ui,OpenApplication.user_interfaces,'method to start browser')
         @opt_mgr.add_opt_list(:log_level,Log.levels,'Log level')
         @opt_mgr.add_opt_list(:logger,Log.logtypes,'log method')
@@ -194,6 +193,7 @@ module Aspera
         @opt_mgr.add_opt_boolean(:insecure,'do not validate HTTPS certificate')
         @opt_mgr.add_opt_boolean(:once_only,'process only new items (some commands)')
         @opt_mgr.add_opt_boolean(:log_secrets,'show passwords in logs')
+        @opt_mgr.add_opt_boolean(:cache_tokens,'save and reuse Oauth tokens')
         @opt_mgr.set_option(:ui,OpenApplication.default_gui_mode)
         @opt_mgr.set_option(:once_only,false)
         # parse declared options
@@ -276,10 +276,11 @@ module Aspera
           exit_with_usage(true) if @option_help && @opt_mgr.command_or_arg_empty?
           generate_bash_completion if @bash_completion
           @plugin_env[:config].periodic_check_newer_gem_version
-          command_sym=if @option_show_config && @opt_mgr.command_or_arg_empty?
-                        Plugins::Config::CONF_PLUGIN_SYM
-                      else
-                        @opt_mgr.get_next_command(@plugin_env[:config].plugins.keys.dup.unshift(:help))
+          command_sym=
+          if @option_show_config && @opt_mgr.command_or_arg_empty?
+            Plugins::Config::CONF_PLUGIN_SYM
+          else
+            @opt_mgr.get_next_command(@plugin_env[:config].plugins.keys.dup.unshift(:help))
           end
           # command will not be executed, but we need manual
           @opt_mgr.fail_on_missing_mandatory=false if @option_help || @option_show_config
@@ -333,8 +334,7 @@ module Aspera
           @plugin_env[:formater].display_message(:error,"#{ERROR_FLASH} #{exception_info[:t]}: #{exception_info[:e].message}")
           @plugin_env[:formater].display_message(:error,'Use option -h to get help.') if exception_info[:usage]
           if exception_info[:e].is_a?(Fasp::Error) && exception_info[:e].message.eql?('Remote host is not who we expected')
-            @plugin_env[:formater].display_message(:error,
-"For this specific error, refer to:\n#{SRC_URL}#error-remote-host-is-not-who-we-expected\nAdd this to arguments:\n--ts=@json:'{\"sshfp\":null}'")
+            @plugin_env[:formater].display_message(:error,"For this specific error, refer to:\n#{SRC_URL}#error-remote-host-is-not-who-we-expected\nAdd this to arguments:\n--ts=@json:'{\"sshfp\":null}'")
           end
         end
         # 2- processing of command not processed (due to exception or bad command line)

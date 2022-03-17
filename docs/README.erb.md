@@ -816,6 +816,8 @@ set <%=evp%>HOME=C:\Users\Kenji\.aspera\<%=cmd%>
 C:\Users\Kenji\.aspera\<%=cmd%>
 ```
 
+Option `cache_tokens` (default=yes/no) allows to control if Oauth tokens are cached on file system, or generated for each request.
+
 ### <a id="configfile"></a>Configuration file
 
 On the first execution of <%=tool%>, an empty configuration file is created in the configuration folder.
@@ -4024,6 +4026,7 @@ So, it evolved into <%=tool%>:
   * new: option `fpac` is now applicable to all ruby based HTTP connections, i.e. API calls
   * new: option `show_secrets` to reveal secrets in command output
   * new: added and updated commands for Faspex 5
+  * new: option `cache_tokens`
   * change: (break) command `conf gem path` replaces `conf gem_path`
   * change: (break) option `fpac` expects a value instead of URL
   * change: (break) option `cipher` in transfer spec must have hyphen

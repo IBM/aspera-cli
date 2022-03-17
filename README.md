@@ -816,6 +816,8 @@ ascli config folder
 C:\Users\Kenji\.aspera\ascli
 ```
 
+Option `cache_tokens` (default=yes/no) allows to control if Oauth tokens are cached on file system, or generated for each request.
+
 ### <a id="configfile"></a>Configuration file
 
 On the first execution of `ascli`, an empty configuration file is created in the configuration folder.
@@ -2028,7 +2030,7 @@ ascli aoc automation workflow list --value=@json:'{"show_org_workflows":"true"}'
 ascli aoc bearer_token --display=data --scope=user:all
 ascli aoc faspex
 ascli aoc files bearer /
-ascli aoc files bearer_token_node /
+ascli aoc files bearer_token_node / --cache-tokens=no
 ascli aoc files browse /
 ascli aoc files browse / -N --link=my_aoc_publink_folder
 ascli aoc files delete /testsrc
@@ -2292,6 +2294,7 @@ OPTIONS: global
         --insecure=ENUM              do not validate HTTPS certificate: [yes], no
         --once-only=ENUM             process only new items (some commands): yes, [no]
         --log-secrets=ENUM           show passwords in logs: yes, [no]
+        --cache-tokens=ENUM          save and reuse Oauth tokens: [yes], no
 
 COMMAND: config
 SUBCOMMANDS: list overview id preset open documentation genkey gem plugin flush_tokens echo wizard export_to_cli detect coffee ascp email_test smtp_settings proxy_check folder file check_update initdemo vault
@@ -4571,6 +4574,7 @@ So, it evolved into `ascli`:
   * new: option `fpac` is now applicable to all ruby based HTTP connections, i.e. API calls
   * new: option `show_secrets` to reveal secrets in command output
   * new: added and updated commands for Faspex 5
+  * new: option `cache_tokens`
   * change: (break) command `conf gem path` replaces `conf gem_path`
   * change: (break) option `fpac` expects a value instead of URL
   * change: (break) option `cipher` in transfer spec must have hyphen
