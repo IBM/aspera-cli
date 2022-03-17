@@ -69,7 +69,7 @@ module Aspera
                 payload:     {
                   iss: app_client_id,    # issuer
                   aud: app_client_id,    # audience TODO: ???
-                  sub: "user:#{options.get_option(:username,:mandatory)}"  # subject also "client:#{app_client_id}" + auth user/pass
+                  sub: "user:#{options.get_option(:username,:mandatory)}" # subject also "client:#{app_client_id}" + auth user/pass
                 },
                 #auth:                {type: :basic, options.get_option(:username,:mandatory), options.get_option(:password,:mandatory),
                 private_key_obj:  OpenSSL::PKey::RSA.new(options.get_option(:private_key,:mandatory)),
@@ -144,7 +144,6 @@ module Aspera
               case res_type
               when :accounts then [:all_but,'user_profile_data_attributes']
               when :oauth_clients then [:all_but,'public_key']
-              else nil
               end
               adm_api=@api_v5
               if res_type.eql?(:oauth_clients)

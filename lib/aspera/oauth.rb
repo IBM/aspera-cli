@@ -49,7 +49,7 @@ module Aspera
       [:generic,:apikey],
       [:generic,:response_type],
       [:aoc_pub_link,:json,:url_token]
-      ]
+    ]
 
     class << self
       def persist_mgr=(manager)
@@ -96,7 +96,7 @@ module Aspera
         raise "token create type unknown: #{id}/#{id.class}" unless @handlers.has_key?(id)
         @handlers[id]
       end
-      
+
       def id_elements
         return @id_elements
       end
@@ -127,15 +127,15 @@ module Aspera
       Log.log.debug("auth=#{a_params}")
       # replace default values
       @params=DEFAULT_CREATE_PARAMS.clone.deep_merge(a_params)
-      rest_params={base_url: @params[:base_url]}
-      rest_params[:auth]=a_params[:auth] if a_params.has_key?(:auth)
-      @token_auth_api=Rest.new(rest_params)
       if @params.has_key?(:redirect_uri)
         uri=URI.parse(@params[:web][:redirect_uri])
         raise 'redirect_uri scheme must be http or https' unless ['http','https'].include?(uri.scheme)
         raise 'redirect_uri must have a port' if uri.port.nil?
-        # we could check that host is localhost or local address
+        # TODO: we could check that host is localhost or local address
       end
+      rest_params={base_url: @params[:base_url]}
+      rest_params[:auth]=a_params[:auth] if a_params.has_key?(:auth)
+      @token_auth_api=Rest.new(rest_params)
     end
 
     def create_token(www_params)
@@ -153,7 +153,7 @@ module Aspera
     # Web browser based Auth
     def create_token_web
       callback_verif=SecureRandom.uuid # used to check later
-      login_page_url=Rest.build_uri("#{@params[:base_url]}/#{@params[:web][:path_authorize]}",optional_scope_client_id({response_type: 'code', redirect_uri:  @params[:web][:redirect_uri], state: callback_verif}))
+      login_page_url=Rest.build_uri("#{@params[:base_url]}/#{@params[:web][:path_authorize]}",optional_scope_client_id({response_type: 'code', redirect_uri: @params[:web][:redirect_uri], state: callback_verif}))
       # here, we need a human to authorize on a web page
       Log.log.info("login_page_url=#{login_page_url}".bg_red.gray)
       # start a web server to receive request code
@@ -174,7 +174,7 @@ module Aspera
       require 'jwt'
       seconds_since_epoch=Time.new.to_i
       Log.log.info("seconds=#{seconds_since_epoch}")
-      raise "missing jwt payload" unless @params[:jwt][:payload].is_a?(Hash)
+      raise 'missing jwt payload' unless @params[:jwt][:payload].is_a?(Hash)
       jwt_payload = {
         exp: seconds_since_epoch+JWT_EXPIRY_OFFSET_SEC, # expiration time
         nbf: seconds_since_epoch-JWT_NOTBEFORE_OFFSET_SEC, # not before
@@ -186,7 +186,7 @@ module Aspera
       Log.log.debug("private=[#{rsa_private}]")
       assertion = JWT.encode(jwt_payload, rsa_private, 'RS256', @params[:jwt][:headers]||{})
       Log.log.debug("assertion=[#{assertion}]")
-      return create_token(optional_scope_client_id({grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer', assertion:  assertion}))
+      return create_token(optional_scope_client_id({grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer', assertion: assertion}))
     end
 
     # @return unique identifier of token
@@ -203,17 +203,14 @@ module Aspera
       return IdGenerator.from_list(parts)
     end
 
-    public
-
-    # used to change parameter, such as scope
-    attr_reader :params
-
     def optional_scope_client_id(call_params, add_secret: false)
       call_params[:scope] = @params[:scope] unless @params[:scope].nil?
       call_params[:client_id] = @params[:client_id] unless @params[:client_id].nil?
       call_params[:client_secret] = @params[:client_secret] if add_secret && !@params[:client_id].nil?
       return call_params
     end
+
+    public
 
     # Oauth v2 token generation
     # @param use_refresh_token set to true to force refresh or re-generation (if previous failed)
@@ -234,7 +231,6 @@ module Aspera
           expires_at_sec=
           if    decoded_token['expires_at'].is_a?(String) then DateTime.parse(decoded_token['expires_at']).to_time
           elsif decoded_token['exp'].is_a?(Integer)       then Time.at(decoded_token['exp'])
-          else  nil
           end
           use_refresh_token=true if expires_at_sec.is_a?(Time) && (expires_at_sec-Time.now) < TOKEN_EXPIRATION_GUARD_SEC
           Log.log.debug("Expiration: #{expires_at_sec} / #{use_refresh_token}")

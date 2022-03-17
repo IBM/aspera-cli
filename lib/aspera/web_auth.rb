@@ -27,25 +27,25 @@ module Aspera
     end
   end # WebAuthServlet
 
-    # generates and adds self signed cert to provided webrick options
-    #def fill_self_signed_cert(cert,key)
-    #  cert.subject = cert.issuer = OpenSSL::X509::Name.parse('/C=FR/O=Test/OU=Test/CN=Test')
-    #  cert.not_before = Time.now
-    #  cert.not_after = Time.now + 365 * 24 * 60 * 60
-    #  cert.public_key = key.public_key
-    #  cert.serial = 0x0
-    #  cert.version = 2
-    #  ef = OpenSSL::X509::ExtensionFactory.new
-    #  ef.issuer_certificate = cert
-    #  ef.subject_certificate = cert
-    #  cert.extensions = [
-    #    ef.create_extension('basicConstraints','CA:TRUE', true),
-    #    ef.create_extension('subjectKeyIdentifier', 'hash'),
-    #    # ef.create_extension('keyUsage', 'cRLSign,keyCertSign', true),
-    #  ]
-    #  cert.add_extension(ef.create_extension('authorityKeyIdentifier','keyid:always,issuer:always'))
-    #  cert.sign(key, OpenSSL::Digest::SHA256.new)
-    #end
+  # generates and adds self signed cert to provided webrick options
+  #def fill_self_signed_cert(cert,key)
+  #  cert.subject = cert.issuer = OpenSSL::X509::Name.parse('/C=FR/O=Test/OU=Test/CN=Test')
+  #  cert.not_before = Time.now
+  #  cert.not_after = Time.now + 365 * 24 * 60 * 60
+  #  cert.public_key = key.public_key
+  #  cert.serial = 0x0
+  #  cert.version = 2
+  #  ef = OpenSSL::X509::ExtensionFactory.new
+  #  ef.issuer_certificate = cert
+  #  ef.subject_certificate = cert
+  #  cert.extensions = [
+  #    ef.create_extension('basicConstraints','CA:TRUE', true),
+  #    ef.create_extension('subjectKeyIdentifier', 'hash'),
+  #    # ef.create_extension('keyUsage', 'cRLSign,keyCertSign', true),
+  #  ]
+  #  cert.add_extension(ef.create_extension('authorityKeyIdentifier','keyid:always,issuer:always'))
+  #  cert.sign(key, OpenSSL::Digest::SHA256.new)
+  #end
 
   # start a local web server, then start a browser that will callback the local server upon authentication
   class WebAuth

@@ -102,7 +102,7 @@ module Aspera
 
     def oauth
       if @oauth.nil?
-        raise "ERROR: no OAuth defined" unless @params[:auth][:type].eql?(:oauth2)
+        raise 'ERROR: no OAuth defined' unless @params[:auth][:type].eql?(:oauth2)
         @oauth=Oauth.new(@params[:auth])
       end
       return @oauth

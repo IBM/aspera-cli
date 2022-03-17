@@ -32,7 +32,7 @@ def trspec;'[*transfer-spec*](#transferspec)';end
 # in title
 def prstt;opprst.capitalize;end
 
-def gemspec;Gem::Specification.load($env[:GEMSPEC]) or raise "error loading #{$env[:GEMSPEC]}";end
+def gemspec;Gem::Specification.load(@env[:GEMSPEC]) or raise "error loading #{@env[:GEMSPEC]}";end
 
 def geminstadd;gemspec.version.to_s.match(/\.[^0-9]/) ? ' --pre' : '';end
 
@@ -76,8 +76,8 @@ def ruby_version
 end
 
 def generate_help(varname)
-  raise "missing #{varname}" unless $env.has_key?(varname)
-  return `#{$env[varname]} -h 2>&1`
+  raise "missing #{varname}" unless @env.has_key?(varname)
+  return %x(#{@env[varname]} -h 2>&1)
 end
 
 def include_usage
@@ -104,7 +104,7 @@ REPLACEMENTS={
 
 def include_commands
   commands=[]
-  File.open($env[:TEST_MAKEFILE]) do |f|
+  File.open(@env[:TEST_MAKEFILE]) do |f|
     f.each_line do |line|
       next unless line.include?('$(EXE_MAN')
       line=line.chomp()
@@ -135,7 +135,7 @@ end
 def generate_generic_conf
   n={}
   local_config=ARGV.first
-  raise "missing argument: local config file" if local_config.nil?
+  raise 'missing argument: local config file' if local_config.nil?
   YAML.load_file(local_config).each do |k,v|
     n[k]=['config','default'].include?(k) ? v : v.keys.each_with_object({}){|i,m|m[i]='your value here'}
   end
@@ -144,10 +144,10 @@ end
 
 # main function to generate README.md
 def generate_doc
-  $env={}
+  @env={}
   %i[TEMPLATE ASCLI ASESSION TEST_MAKEFILE GEMSPEC].each do |var|
-   $env[var]=ARGV.shift
-   raise "Missing arg: #{var}" if $env[var].nil?
+    @env[var]=ARGV.shift
+    raise "Missing arg: #{var}" if @env[var].nil?
   end
-  puts ERB.new(File.read($env[:TEMPLATE])).result(Kernel.binding)
+  puts ERB.new(File.read(@env[:TEMPLATE])).result(Kernel.binding)
 end

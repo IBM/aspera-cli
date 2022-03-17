@@ -6,13 +6,15 @@ require 'aspera/data_repository'
 require 'aspera/fasp/transfer_spec'
 require 'base64'
 
-Aspera::Oauth.register_token_creator(:aoc_pub_link,lambda{|o|o.token_auth_api.call({
+Aspera::Oauth.register_token_creator(:aoc_pub_link,lambda{|o|
+  o.token_auth_api.call({
   operation:       'POST',
   subpath:         o.params[:path_token],
   headers:         {'Accept'=>'application/json'},
   json_params:     o.params[:aoc_pub_link][:json],
   url_params:      o.params[:aoc_pub_link][:url].merge(scope: o.params[:scope]) # scope is here because it changes over time (node)
-})})
+  })
+})
 
 module Aspera
   class AoC < Rest
@@ -218,8 +220,8 @@ module Aspera
           private_key_obj: OpenSSL::PKey::RSA.new(opt[:private_key]),
           payload: {
             iss: aoc_auth_p[:client_id],  # issuer
-            sub: opt[:username],   # subject
-            aud: JWT_AUDIENCE,
+            sub: opt[:username],          # subject
+            aud: JWT_AUDIENCE
           }
         }
         # add jwt payload for global ids
@@ -251,7 +253,7 @@ module Aspera
         @user_info=
         begin
           read('self')[:data]
-        rescue => e
+        rescue StandardError => e
           Log.log.debug("ignoring error: #{e}")
           {}
         end
@@ -326,7 +328,7 @@ module Aspera
     # no scope: requires secret
     # if secret provided beforehand: use it
     def get_node_api(node_info, scope: SCOPE_NODE_USER, use_secret: true)
-      raise "internal error" unless node_info.is_a?(Hash) && node_info.has_key?('url') && node_info.has_key?('access_key')
+      raise 'internal error' unless node_info.is_a?(Hash) && node_info.has_key?('url') && node_info.has_key?('access_key')
       # get optional secret unless :use_secret is false
       ak_secret=@key_chain.get_secret(url: node_info['url'], username: node_info['access_key'], mandatory: false) if use_secret && !@key_chain.nil?
       raise "There must be at least one of: 'secret' or 'scope' for access key #{node_info['access_key']}" if ak_secret.nil? && scope.nil?
