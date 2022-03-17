@@ -35,7 +35,7 @@ module Aspera
         raise 'no payload' if request.body.nil?
         faspex_pkg_parameters=JSON.parse(request.body)
         faspex_pkg_delivery=faspex_pkg_parameters['delivery']
-        Log.log.debug "faspex pkg create parameters=#{faspex_pkg_parameters}"
+        Log.log.debug("faspex pkg create parameters=#{faspex_pkg_parameters}")
 
         # get recipient ids
         files_pkg_recipients=[]
