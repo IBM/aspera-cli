@@ -41,14 +41,14 @@ module Aspera
     @handlers={}
     # token unique identifiers from oauth parameters
     @id_elements=[
-      [:scope],
       [:crtype],
-      [:auth,:username],
-      [:jwt,:payload,:sub],
       [:generic,:grant_type],
+      [:jwt,:payload,:sub],
+      [:auth,:username],
+      [:aoc_pub_link,:json,:url_token],
       [:generic,:apikey],
-      [:generic,:response_type],
-      [:aoc_pub_link,:json,:url_token]
+      [:scope],
+      [:generic,:response_type]
     ]
 
     class << self
@@ -192,8 +192,7 @@ module Aspera
     # @return unique identifier of token
     # TODO: external handlers shall provide unique identifiers
     def token_cache_id
-      oauth_uri=URI.parse(@params[:base_url])
-      parts=[PERSIST_CATEGORY_TOKEN,oauth_uri.host,oauth_uri.path]
+      parts=[PERSIST_CATEGORY_TOKEN,@params[:base_url]]
       # add some of the parameters that uniquely identify the token
       self.class.id_elements.each do |p|
         identifier=@params.dig(*p)
