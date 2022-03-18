@@ -9,7 +9,7 @@ AllCops:
 Style/MutableConstant:
   Enabled: false
 Style/FrozenStringLiteralComment:
-  Enabled: false
+  Enabled: true
 Metrics/ClassLength:
   Enabled: false
 Metrics/MethodLength:
@@ -17,7 +17,8 @@ Metrics/MethodLength:
 Metrics/AbcSize:
   Enabled: false
 Metrics/PerceivedComplexity:
-  Enabled: false
+  Enabled: true
+  Max: 60
 Metrics/ParameterLists:
   Max: 6
 Layout/EndAlignment:
@@ -38,6 +39,10 @@ Layout/SpaceAroundBlockParameters:
   Enabled: false
 Layout/SpaceInsideHashLiteralBraces:
   Enabled: false
+Layout/SpaceAroundMethodCallOperator:
+  Enabled: true
+Layout/SpaceBeforeBrackets: # (new in 1.7)
+  Enabled: true
 Layout/EmptyLinesAroundAttributeAccessor:
   Enabled: false
 Layout/LeadingCommentSpace:
@@ -131,8 +136,9 @@ Layout/MultilineOperationIndentation:
   EnforcedStyle: indented
 
 Layout/MultilineMethodCallIndentation:
-  Enabled: false
+  Enabled: true
   EnforcedStyle: indented
+  IndentationWidth: 0
 
 Layout/BlockAlignment:
   Enabled: true
@@ -147,13 +153,14 @@ Style/Documentation:
   Enabled: false
 
 Style/AsciiComments:
-  Enabled: false
+  Enabled: true
 
 Style/LambdaCall:
   Enabled: false
 
 Metrics/BlockNesting:
-  Enabled: false
+  Enabled: true
+  Max: 5
 Metrics/BlockLength:
   Enabled: false
 
@@ -232,10 +239,6 @@ Naming/MethodName:
 Layout/LineLength:
   Max: 240
   Enabled: false
-
-Layout/SpaceAroundMethodCallOperator:
-  Enabled: true
-
 Lint/RaiseException:
   Enabled: true
 
@@ -249,9 +252,6 @@ Style/HashTransformKeys:
   Enabled: true
 
 Style/HashTransformValues:
-  Enabled: true
-
-Layout/SpaceBeforeBrackets: # (new in 1.7)
   Enabled: true
 
 Lint/AmbiguousAssignment: # (new in 1.7)
