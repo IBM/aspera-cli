@@ -110,20 +110,20 @@ def include_commands
       line=line.chomp()
       # replace command name
       line=line.gsub(/^.*\$\(EXE_MAN.?\)/,cmd)
-      # remove multi command mark
-      line=line.gsub(/&&\\$/,'')
-      # remove redirection
-      line=line.gsub(/ > .*$/,'')
-      # de-dup dollar coming from makefile
-      line=line.gsub('$$','$')
-      # remove folder macro
-      line=line.gsub(/DIR_[A-Z]+/,'')
-      # replace shell vars
-      line=line.gsub(/\$\{([a-z_]+)\}/,'my_\1')
       # replace makefile macros
       line=line.gsub(/\$\(([^)]*)\)/,'\1')
-      # replace any multiple quote combination to double quote
-      line=line.gsub(/['"]{2,}/,'"')
+      # remove multi command mark
+      line=line.gsub(/\)?&&\\$/,'')
+      # remove redirection
+      line=line.gsub(/ [>|] .*$/,'')
+      # remove folder macro
+      line=line.gsub(/DIR_[A-Z]+/,'')
+      # replace shell vars in JSON
+      line=line.gsub(/'"\$\$\{([a-z_0-9]+)\}"'/,'my_\1')
+      # replace shell vars in shell
+      line=line.gsub(/\$\$\{([a-z_0-9]+)\}/,'my_\1')
+      # de-dup dollar in regex
+      line=line.gsub('$$','$')
       REPLACEMENTS.each_pair{|k,v|line=line.gsub(k,v)}
       commands.push(line)
     end
