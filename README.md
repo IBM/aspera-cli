@@ -2021,9 +2021,9 @@ ascli aoc admin resource node --name=my_aoc_node1_name --secret=my_aoc_node1_sec
 ascli aoc admin resource node v3 name my_aoc_node1_name --secret=my_aoc_node1_secret access_key delete testsub1
 ascli aoc admin resource workspace list
 ascli aoc admin resource workspace_membership list --fields=ALL --query=@json:'{"page":1,"per_page":50,"embed":"member","inherited":false,"workspace_id":11363,"sort":"name"}'
-ascli aoc automation workflow "my_wf_id" action create --value=@json:'{"name":"toto"}' | tee action.info
+ascli aoc automation workflow action my_wf_id create --value=@json:'{"name":"toto"}'
 ascli aoc automation workflow create --value=@json:'{"name":"test_workflow"}'
-ascli aoc automation workflow delete "my_wf_id"
+ascli aoc automation workflow delete my_wf_id
 ascli aoc automation workflow list
 ascli aoc automation workflow list --select=@json:'{"name":"test_workflow"}' --fields=id --format=csv --display=data
 ascli aoc automation workflow list --value=@json:'{"show_org_workflows":"true"}' --scope=admin:all
@@ -2114,15 +2114,19 @@ ascli cos node access_key show self
 ascli cos node download testfile.bin --to-folder=.
 ascli cos node info
 ascli cos node upload testfile.bin
+ascli faspex dropbox list
 ascli faspex health
 ascli faspex package list
-ascli faspex package list --box=sent --fields=package_id --format=csv --display=data --query=@json:'{"max":1}')
-ascli faspex package list --fields=package_id --format=csv --display=data --query=@json:'{"max":1}')
+ascli faspex package list --box=sent --fields=package_id --format=csv --display=data --query=@json:'{"max":1}'
+ascli faspex package list --fields=package_id --format=csv --display=data --query=@json:'{"max":1}'
+ascli faspex package list --recipient="*my_faspex_dbx" --format=csv --fields=package_id --query=@json:'{"max":1}'
 ascli faspex package recv "my_package_id" --to-folder=.
 ascli faspex package recv "my_package_id" --to-folder=. --box=sent
 ascli faspex package recv --to-folder=. "my_package_id"
 ascli faspex package recv --to-folder=. --link="my_faspex_publink_recv_from_fxuser"
 ascli faspex package recv ALL --to-folder=. --once-only=yes
+ascli faspex package recv my_pkgid --recipient="*my_faspex_dbx"
+ascli faspex package send --delivery-info=@json:'{"title":"Important files delivery","recipients":["*my_faspex_dbx"]}' testfile.bin
 ascli faspex package send --delivery-info=@json:'{"title":"Important files delivery","recipients":["my_email_internal_user","my_faspex_username"]}' testfile.bin
 ascli faspex package send --link="my_faspex_publink_send_to_dropbox" --delivery-info=@json:'{"title":"Important files delivery"}' testfile.bin
 ascli faspex package send --link="my_faspex_publink_send_to_fxuser" --delivery-info=@json:'{"title":"Important files delivery"}' testfile.bin
@@ -2144,7 +2148,7 @@ ascli faspex5 admin res shared_inboxes list
 ascli faspex5 admin res workgroups list
 ascli faspex5 package list --value=@json:'{"mailbox":"inbox","state":["released"]}'
 ascli faspex5 package receive "my_package_id" --to-folder=.
-ascli faspex5 package send --value=@json:'{"title":"test title","recipients":[{"name":"${f5_user}"}]}' testfile.bin
+ascli faspex5 package send --value=@json:'{"title":"test title","recipients":[{"name":"my_f5_user"}]}' testfile.bin
 ascli mycommand --plugin-folder=T
 ascli node -N -Ptst_node_preview access_key create --value=@json:'{"id":"aoc_1","storage":{"type":"local","path":"/"}}'
 ascli node -N -Ptst_node_preview access_key delete aoc_1
@@ -2222,9 +2226,9 @@ ascli shares admin share list
 ascli shares repository browse /
 ascli shares repository delete my_shares_upload/testfile.bin
 ascli shares repository download --to-folder=. my_shares_upload/testfile.bin
-ascli shares repository download --to-folder=. my_shares_upload/testfile.bin --transfer=httpgw --transfer-info=@json:'{"url":"https://"my_http_gw_fqdn"/aspera/http-gwy/v1"}'
+ascli shares repository download --to-folder=. my_shares_upload/testfile.bin --transfer=httpgw --transfer-info=@json:'{"url":"https://my_http_gw_fqdn/aspera/http-gwy/v1"}'
 ascli shares repository upload --to-folder=my_shares_upload testfile.bin
-ascli shares repository upload --to-folder=my_shares_upload testfile.bin --transfer=httpgw --transfer-info=@json:'{"url":"https://"my_http_gw_fqdn"/aspera/http-gwy/v1"}'
+ascli shares repository upload --to-folder=my_shares_upload testfile.bin --transfer=httpgw --transfer-info=@json:'{"url":"https://my_http_gw_fqdn/aspera/http-gwy/v1"}'
 ascli shares2 appinfo
 ascli shares2 organization list
 ascli shares2 project list --organization=Sport
@@ -4575,6 +4579,7 @@ So, it evolved into `ascli`:
   * new: option `show_secrets` to reveal secrets in command output
   * new: added and updated commands for Faspex 5
   * new: option `cache_tokens`
+  * new: Faspex4 dropbox packages can now be received by id
   * change: (break) command `conf gem path` replaces `conf gem_path`
   * change: (break) option `fpac` expects a value instead of URL
   * change: (break) option `cipher` in transfer spec must have hyphen

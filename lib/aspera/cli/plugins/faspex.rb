@@ -133,7 +133,7 @@ module Aspera
         end
 
         # query supports : {"startIndex":10,"count":1,"page":109,"max":2,"pmax":1}
-        def mailbox_all_entries
+        def mailbox_all_entries(stop_at_id: nil)
           recipient_name=options.get_option(:recipient,:optional) || options.get_option(:username,:mandatory)
           # mailbox is in ATOM_MAILBOXES
           mailbox=options.get_option(:box,:mandatory)
@@ -161,6 +161,7 @@ module Aspera
             Log.log.debug("new items: #{items.count}")
             # it is the end if page is empty
             break if items.empty?
+            stop_condition=false
             # results will be sorted in reverse id
             items.reverse.each do |package|
               package[PACKAGE_MATCH_FIELD]=
@@ -171,9 +172,12 @@ module Aspera
               else # :sent
                 package['delivery_id'].first
               end
+              # if we look for a specific package
+              stop_condition=true if !stop_at_id.nil? && stop_at_id.eql?(package[PACKAGE_MATCH_FIELD])
               # keep only those for the specified recipient,
               result.push(package) unless package[PACKAGE_MATCH_FIELD].nil?
             end
+            break if stop_condition
             #result.push({PACKAGE_MATCH_FIELD=>'======'})
             Log.log.debug("total items: #{result.count}")
             # reach the limit ?
@@ -293,16 +297,17 @@ module Aspera
                 # get command line parameters
                 delivid=instance_identifier()
                 raise 'empty id' if delivid.empty?
+                recipient=options.get_option(:recipient,:optional)
                 if delivid.eql?(VAL_ALL)
                   pkg_id_uri=mailbox_all_entries.map{|i|{id: i[PACKAGE_MATCH_FIELD],uri: self.class.get_fasp_uri_from_entry(i, raise_no_link: false)}}
                   # TODO : remove ids from skip not present in inbox to avoid growing too big
                   # skip_ids_data.select!{|id|pkg_id_uri.select{|p|p[:id].eql?(id)}}
                   pkg_id_uri.reject!{|i|skip_ids_data.include?(i[:id])}
+                elsif !recipient.nil? && recipient.start_with?('*')
+                  found_package_link=mailbox_all_entries(stop_at_id: delivid).select{|p|p[PACKAGE_MATCH_FIELD].eql?(delivid)}.first['link'].first['href']
+                  raise 'Not Found. Dropbox and Workgroup packages can use the link option with faspe:' if found_package_link.nil?
+                  pkg_id_uri=[{id: delivid,uri: found_package_link}]
                 else
-                  recipient=options.get_option(:recipient,:optional)
-                  if !recipient.nil? && recipient.start_with?('*')
-                    raise 'Dropbox and Workgroup packages should use link option with faspe:'
-                  end
                   # TODO: delivery id is the right one if package was receive by workgroup
                   endpoint=
                   case options.get_option(:box,:mandatory)

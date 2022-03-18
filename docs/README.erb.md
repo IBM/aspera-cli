@@ -4027,6 +4027,7 @@ So, it evolved into <%=tool%>:
   * new: option `show_secrets` to reveal secrets in command output
   * new: added and updated commands for Faspex 5
   * new: option `cache_tokens`
+  * new: Faspex4 dropbox packages can now be received by id
   * change: (break) command `conf gem path` replaces `conf gem_path`
   * change: (break) option `fpac` expects a value instead of URL
   * change: (break) option `cipher` in transfer spec must have hyphen

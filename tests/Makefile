@@ -196,7 +196,7 @@ $(T)fx_psnd: $(T).exists
 	set -x&&\
 	faspex_username=$$($(EXE_NOMAN) conf id tst_faspex get username)&&\
 	email_internal_user=$$($(EXE_NOMAN) conf id misc get email_internal)&&\
-	$(EXE_MAN) faspex package send --delivery-info=@json:'{"title":"'"$(PKG_TEST_TITLE)"'","recipients":["'"$${email_internal_user}"'","'"$${faspex_username}"'"]}' $(CF_LOCAL_SAMPLE_FILEPATH)
+	$(EXE_MAN) faspex package send --delivery-info=@json:'{"title":"$(PKG_TEST_TITLE)","recipients":["'"$${email_internal_user}"'","'"$${faspex_username}"'"]}' $(CF_LOCAL_SAMPLE_FILEPATH)
 	@touch $@
 	@sleep 8
 $(T)fx_prs: $(T)fx_psnd
@@ -223,12 +223,13 @@ $(T)fx_prall: $(T).exists
 $(T)fx_pslu: $(T).exists
 	@echo $@
 	set -x&&faspex_publink_send_to_fxuser=$$($(EXE_NOMAN) conf id misc get faspex_publink_send_to_fxuser)&&\
-	$(EXE_MAN) faspex package send --link="$${faspex_publink_send_to_fxuser}" --delivery-info=@json:'{"title":"'"$(PKG_TEST_TITLE)"'"}' $(CF_LOCAL_SAMPLE_FILEPATH)
+	$(EXE_MAN) faspex package send --link="$${faspex_publink_send_to_fxuser}" --delivery-info=@json:'{"title":"$(PKG_TEST_TITLE)"}' $(CF_LOCAL_SAMPLE_FILEPATH)
 	@touch $@
 $(T)fx_psld: $(T).exists
 	@echo $@
-	set -x&&faspex_publink_send_to_dropbox=$$($(EXE_NOMAN) conf id misc get faspex_publink_send_to_dropbox)&&\
-	$(EXE_MAN) faspex package send --link="$${faspex_publink_send_to_dropbox}" --delivery-info=@json:'{"title":"'"$(PKG_TEST_TITLE)"'"}' $(CF_LOCAL_SAMPLE_FILEPATH)
+	set -x&&\
+	faspex_publink_send_to_dropbox=$$($(EXE_NOMAN) conf id misc get faspex_publink_send_to_dropbox)&&\
+	$(EXE_MAN) faspex package send --link="$${faspex_publink_send_to_dropbox}" --delivery-info=@json:'{"title":"$(PKG_TEST_TITLE)"}' $(CF_LOCAL_SAMPLE_FILEPATH)
 	@touch $@
 $(T)fx_storage: $(T).exists
 	@echo $@
@@ -247,7 +248,16 @@ $(T)fx_v4: $(T).exists
 	$(EXE_MAN) faspex v4 user list
 	$(EXE_MAN) faspex v4 metadata_profile list
 	@touch $@
-tfaspex: $(T)fx_plst $(T)fx_psnd $(T)fx_prs $(T)fx_pri $(T)fx_prl $(T)fx_pslu $(T)fx_psld $(T)fx_storage $(T)fx_prall $(T)fx_nagios $(T)fx_v4
+$(T)fx_db1: $(T).exists
+	@echo $@
+	$(EXE_MAN) faspex dropbox list
+	set -x&&\
+	faspex_dbx=$$($(EXE_NOMAN) conf id misc get faspex_dbx)&&\
+	pkgid=$$($(EXE_MAN) faspex package list --recipient="*$${faspex_dbx}" --format=csv --fields=package_id --query=@json:'{"max":1}')&&\
+	$(EXE_MAN) faspex package recv $${pkgid} --recipient="*$${faspex_dbx}"&&\
+	$(EXE_MAN) faspex package send --delivery-info=@json:'{"title":"$(PKG_TEST_TITLE)","recipients":["*'"$${faspex_dbx}"'"]}' $(CF_LOCAL_SAMPLE_FILEPATH)
+	@touch $@
+tfaspex: $(T)fx_plst $(T)fx_psnd $(T)fx_prs $(T)fx_pri $(T)fx_prl $(T)fx_pslu $(T)fx_psld $(T)fx_storage $(T)fx_prall $(T)fx_nagios $(T)fx_v4 $(T)fx_db1
 
 $(T)cons1: $(T).exists
 	@echo $@
@@ -449,8 +459,8 @@ $(T)aocp1: $(T).exists
 	set -x&&\
 	email_internal_user=$$($(EXE_NOMAN) conf id misc get email_internal)&&\
 	email_external_user=$$($(EXE_NOMAN) conf id misc get email_external)&&\
-	$(EXE_MAN) aoc packages send --value=@json:'{"name":"'"$(PKG_TEST_TITLE)"'","recipients":["'"$${email_internal_user}"'"],"note":"my note"}' $(CF_LOCAL_SAMPLE_FILEPATH)&&\
-	$(EXE_MAN) aoc packages send --value=@json:'{"name":"'"$(PKG_TEST_TITLE)"'","recipients":["'"$${email_external_user}"'"]}' --new-user-option=@json:'{"package_contact":true}' $(CF_LOCAL_SAMPLE_FILEPATH)
+	$(EXE_MAN) aoc packages send --value=@json:'{"name":"$(PKG_TEST_TITLE)","recipients":["'"$${email_internal_user}"'"],"note":"my note"}' $(CF_LOCAL_SAMPLE_FILEPATH)&&\
+	$(EXE_MAN) aoc packages send --value=@json:'{"name":"$(PKG_TEST_TITLE)","recipients":["'"$${email_external_user}"'"]}' --new-user-option=@json:'{"package_contact":true}' $(CF_LOCAL_SAMPLE_FILEPATH)
 	@touch $@
 $(T)aocp2: $(T).exists
 	@echo $@
@@ -475,37 +485,37 @@ $(T)aocp6: $(T).exists
 	@echo $@
 	set -x&&\
 	aoc_publink_send_shd_inbox=$$($(EXE_NOMAN) conf id misc get aoc_publink_send_shd_inbox)&&\
-	$(EXE_MAN) aoc packages send -N --value=@json:'{"name":"'"$(PKG_TEST_TITLE)"'"}' $(CF_LOCAL_SAMPLE_FILEPATH) --link=$${aoc_publink_send_shd_inbox}
+	$(EXE_MAN) aoc packages send -N --value=@json:'{"name":"$(PKG_TEST_TITLE)"}' $(CF_LOCAL_SAMPLE_FILEPATH) --link=$${aoc_publink_send_shd_inbox}
 	@touch $@
 $(T)aocp7: $(T).exists
 	@echo $@
 	set -x&&\
 	aoc_publink_send_aoc_user=$$($(EXE_NOMAN) conf id misc get aoc_publink_send_aoc_user)&&\
 	aoc_publink_send_use_pass=$$($(EXE_NOMAN) conf id misc get aoc_publink_send_use_pass)&&\
-	$(EXE_MAN) aoc packages send -N --value=@json:'{"name":"'"$(PKG_TEST_TITLE)"'"}' $(CF_LOCAL_SAMPLE_FILEPATH) --link=$${aoc_publink_send_aoc_user} --password=$${aoc_publink_send_use_pass}
+	$(EXE_MAN) aoc packages send -N --value=@json:'{"name":"$(PKG_TEST_TITLE)"}' $(CF_LOCAL_SAMPLE_FILEPATH) --link=$${aoc_publink_send_aoc_user} --password=$${aoc_publink_send_use_pass}
 	@touch $@
 $(T)aocp8: $(T).exists
 	@echo $@
 	set -x&&\
 	aoc_shbx_ws=$$($(EXE_NOMAN) conf id misc get aoc_shbx_ws)&&\
 	aoc_shbx_name=$$($(EXE_NOMAN) conf id misc get aoc_shbx_name)&&\
-	$(EXE_MAN) aoc packages send --workspace="$${aoc_shbx_ws}" --value=@json:'{"name":"'"$(PKG_TEST_TITLE)"'","recipients":["'$${aoc_shbx_name}'"]}' $(CF_LOCAL_SAMPLE_FILEPATH)
+	$(EXE_MAN) aoc packages send --workspace="$${aoc_shbx_ws}" --value=@json:'{"name":"$(PKG_TEST_TITLE)","recipients":["'"$${aoc_shbx_name}"'"]}' $(CF_LOCAL_SAMPLE_FILEPATH)
 	set -x&&\
 	aoc_shbx_ws=$$($(EXE_NOMAN) conf id misc get aoc_shbx_ws)&&\
 	aoc_shbx_name=$$($(EXE_NOMAN) conf id misc get aoc_shbx_meta)&&\
-	$(EXE_MAN) aoc packages send --workspace="$${aoc_shbx_ws}" --value=@json:'{"name":"'"$(PKG_TEST_TITLE)"'","recipients":["'$${aoc_shbx_name}'"],"metadata":[{"input_type":"single-text","name":"Project Id","values":["123"]},{"input_type":"single-dropdown","name":"Type","values":["Opt2"]},{"input_type":"multiple-checkbox","name":"CheckThose","values":["Check1","Check2"]},{"input_type":"date","name":"Optional Date","values":["2021-01-13T15:02:00.000Z"]}]}' $(CF_LOCAL_SAMPLE_FILEPATH)
+	$(EXE_MAN) aoc packages send --workspace="$${aoc_shbx_ws}" --value=@json:'{"name":"$(PKG_TEST_TITLE)","recipients":["'"$${aoc_shbx_name}"'"],"metadata":[{"input_type":"single-text","name":"Project Id","values":["123"]},{"input_type":"single-dropdown","name":"Type","values":["Opt2"]},{"input_type":"multiple-checkbox","name":"CheckThose","values":["Check1","Check2"]},{"input_type":"date","name":"Optional Date","values":["2021-01-13T15:02:00.000Z"]}]}' $(CF_LOCAL_SAMPLE_FILEPATH)
 	@touch $@
 	set -x&&\
 	aoc_shbx_ws=$$($(EXE_NOMAN) conf id misc get aoc_shbx_ws)&&\
 	aoc_shbx_name=$$($(EXE_NOMAN) conf id misc get aoc_shbx_meta)&&\
-	$(EXE_MAN) aoc packages send --workspace="$${aoc_shbx_ws}" --value=@json:'{"name":"'"$(PKG_TEST_TITLE)"'","recipients":["'$${aoc_shbx_name}'"],"metadata":{"Project Id":"456","Type":"Opt2","CheckThose":["Check1","Check2"],"Optional Date":"2021-01-13T15:02:00.000Z"}}' $(CF_LOCAL_SAMPLE_FILEPATH)
+	$(EXE_MAN) aoc packages send --workspace="$${aoc_shbx_ws}" --value=@json:'{"name":"$(PKG_TEST_TITLE)","recipients":["'"$${aoc_shbx_name}"'"],"metadata":{"Project Id":"456","Type":"Opt2","CheckThose":["Check1","Check2"],"Optional Date":"2021-01-13T15:02:00.000Z"}}' $(CF_LOCAL_SAMPLE_FILEPATH)
 	@touch $@
 $(T)aocp9: $(T).exists
 	@echo $@
 	set -x&&\
 	aoc_shbx_ws=$$($(EXE_NOMAN) conf id misc get aoc_shbx_ws)&&\
 	aoc_shbx_name=$$($(EXE_NOMAN) conf id misc get aoc_shbx_name)&&\
-	$(EXE_MAN) aoc packages list --query=@json:'{"dropbox_name":"'$${aoc_shbx_name}'","sort":"-received_at","archived":false,"received":true,"has_content":true,"exclude_dropbox_packages":false}'
+	$(EXE_MAN) aoc packages list --query=@json:'{"dropbox_name":"'"$${aoc_shbx_name}"'","sort":"-received_at","archived":false,"received":true,"has_content":true,"exclude_dropbox_packages":false}'
 	@touch $@
 taocp: $(T)aocp1 $(T)aocp2 $(T)aocp3 $(T)aocp4 $(T)aocp5 $(T)aocp5 $(T)aocp6 $(T)aocp7 $(T)aocp8 $(T)aocp9
 $(T)aoc8: $(T).exists
@@ -598,7 +608,7 @@ $(T)aocat8: $(T).exists
 	icos_bucket_name=$$($(EXE_NOMAN) conf id misc get icos_bucket_name)&&\
 	icos_bucket_key=$$($(EXE_NOMAN) conf id misc get icos_bucket_key)&&\
 	icos_bucket_secret=$$($(EXE_NOMAN) conf id misc get icos_bucket_secret)&&\
-	$(EXE_MAN) aoc admin ats access_key create --cloud=softlayer --region=$${icos_bucket_region} --params=@json:'{"id":"akibmcloud","secret":"somesecret","name":"my test key","storage":{"type":"ibm-s3","bucket":"'$${icos_bucket_name}'","credentials":{"access_key_id":"'$${icos_bucket_key}'","secret_access_key":"'$${icos_bucket_secret}'"},"path":"/"}}'
+	$(EXE_MAN) aoc admin ats access_key create --cloud=softlayer --region=$${icos_bucket_region} --params=@json:'{"id":"akibmcloud","secret":"somesecret","name":"my test key","storage":{"type":"ibm-s3","bucket":"'"$${icos_bucket_name}"'","credentials":{"access_key_id":"'"$${icos_bucket_key}"'","secret_access_key":"'"$${icos_bucket_secret}"'"},"path":"/"}}'
 	@touch $@
 $(T)aocat9: $(T).exists
 	@echo $@
@@ -607,7 +617,7 @@ $(T)aocat9: $(T).exists
 	aws_bucket_name=$$($(EXE_NOMAN) conf id misc get aws_bucket_name)&&\
 	aws_bucket_key=$$($(EXE_NOMAN) conf id misc get aws_bucket_key)&&\
 	aws_bucket_secret=$$($(EXE_NOMAN) conf id misc get aws_bucket_secret)&&\
-	$(EXE_MAN) aoc admin ats access_key create --cloud=aws --region=$${aws_bucket_region} --params=@json:'{"id":"ak_aws","name":"my test key AWS","storage":{"type":"aws_s3","bucket":"'$${aws_bucket_name}'","credentials":{"access_key_id":"'$${aws_bucket_key}'","secret_access_key":"'$${aws_bucket_secret}'"},"path":"/"}}'
+	$(EXE_MAN) aoc admin ats access_key create --cloud=aws --region=$${aws_bucket_region} --params=@json:'{"id":"ak_aws","name":"my test key AWS","storage":{"type":"aws_s3","bucket":"'"$${aws_bucket_name}"'","credentials":{"access_key_id":"'"$${aws_bucket_key}"'","secret_access_key":"'"$${aws_bucket_secret}"'"},"path":"/"}}'
 	@touch $@
 $(T)aocat10: $(T).exists
 	@echo $@
@@ -636,7 +646,7 @@ $(T)aocauto2: $(T).exists
 $(T)aocauto3: $(DIR_TMP)wf_id.txt
 	@echo $@
 	set -x&&wf_id=$$(cat $(DIR_TMP)wf_id.txt)&&\
-	$(EXE_MAN) aoc automation workflow "$${wf_id}" action create --value=@json:'{"name":"toto"}' | tee action.info
+	$(EXE_MAN) aoc automation workflow action $${wf_id} create --value=@json:'{"name":"toto"}' | tee action.info
 	sed -nEe 's/^\| id +\| ([^ ]+) +\|/\1/p' action.info>tmp_action_id.txt
 	rm -f action.info
 	rm -f tmp_action_id.txt
@@ -644,7 +654,7 @@ $(T)aocauto3: $(DIR_TMP)wf_id.txt
 $(T)aocauto10: $(DIR_TMP)wf_id.txt
 	@echo $@
 	set -x&&wf_id=$$(cat $(DIR_TMP)wf_id.txt)&&\
-	$(EXE_MAN) aoc automation workflow delete "$${wf_id}"
+	$(EXE_MAN) aoc automation workflow delete $${wf_id}
 	rm -f $(T)wf.id
 	@touch $@
 taocauto: $(T)aocauto1 $(T)aocauto2 $(T)aocauto3 $(T)aocauto10
@@ -724,7 +734,7 @@ $(T)at8: $(T).exists
 	icos_bucket_name=$$($(EXE_NOMAN) conf id misc get icos_bucket_name)&&\
 	icos_bucket_key=$$($(EXE_NOMAN) conf id misc get icos_bucket_key)&&\
 	icos_bucket_secret=$$($(EXE_NOMAN) conf id misc get icos_bucket_secret)&&\
-	$(EXE_MAN) ats access_key create --cloud=softlayer --region=$${icos_bucket_region} --params=@json:'{"id":"akibmcloud","secret":"somesecret","name":"my test key","storage":{"type":"ibm-s3","bucket":"'$${icos_bucket_name}'","credentials":{"access_key_id":"'$${icos_bucket_key}'","secret_access_key":"'$${icos_bucket_secret}'"},"path":"/"}}'
+	$(EXE_MAN) ats access_key create --cloud=softlayer --region=$${icos_bucket_region} --params=@json:'{"id":"akibmcloud","secret":"somesecret","name":"my test key","storage":{"type":"ibm-s3","bucket":"'"$${icos_bucket_name}"'","credentials":{"access_key_id":"'"$${icos_bucket_key}"'","secret_access_key":"'"$${icos_bucket_secret}"'"},"path":"/"}}'
 	@touch $@
 $(T)at9: $(T).exists
 	@echo $@
@@ -733,7 +743,7 @@ $(T)at9: $(T).exists
 	aws_bucket_name=$$($(EXE_NOMAN) conf id misc get aws_bucket_name)&&\
 	aws_bucket_key=$$($(EXE_NOMAN) conf id misc get aws_bucket_key)&&\
 	aws_bucket_secret=$$($(EXE_NOMAN) conf id misc get aws_bucket_secret)&&\
-	$(EXE_MAN) ats access_key create --cloud=aws --region=$${aws_bucket_region} --params=@json:'{"id":"ak_aws","name":"my test key AWS","storage":{"type":"aws_s3","bucket":"'$${aws_bucket_name}'","credentials":{"access_key_id":"'$${aws_bucket_key}'","secret_access_key":"'$${aws_bucket_secret}'"},"path":"/"}}'
+	$(EXE_MAN) ats access_key create --cloud=aws --region=$${aws_bucket_region} --params=@json:'{"id":"ak_aws","name":"my test key AWS","storage":{"type":"aws_s3","bucket":"'"$${aws_bucket_name}"'","credentials":{"access_key_id":"'"$${aws_bucket_key}"'","secret_access_key":"'"$${aws_bucket_secret}"'"},"path":"/"}}'
 	@touch $@
 $(T)at10: $(T).exists
 	@echo $@
