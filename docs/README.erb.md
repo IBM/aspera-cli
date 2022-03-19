@@ -3215,7 +3215,7 @@ By default it looks in box `inbox`, but the following boxes are also supported: 
 A user can receive a package because the recipient is:
 
 * the user himself (default)
-* the user is part of a dropbox or a workgroup (select with option `recipient` with value `*<name of WG or DB>`
+* the user is part of a dropbox or a workgroup (using option `recipient` set with value `*<name of WG or DB>`
 
 #### Option `query`
 
@@ -3254,10 +3254,11 @@ The command is `package recv`, possible methods are:
 <%=cmd%> faspex package recv --link=faspe://...
 ```
 
-If the package is in a specific dropbox, add option `recipient` for both the `list` and `recv` commands.
+If the package is in a specific **dropbox**, add option `recipient` for both the `list` and `recv` commands.
 
 ```bash
 <%=cmd%> faspex package list --recipient='*thedropboxname'
+<%=cmd%> faspex package recv 125 --recipient='*thedropboxname'
 ```
 
 if `id` is set to `ALL`, then all packages are downloaded, and if option `once_only`is used, then a persistency file is created to keep track of already downloaded packages.
@@ -3313,7 +3314,7 @@ Example:
 my_faspex_conf:
   url: https://10.25.0.3/aspera/faspex
   username: admin
-  password: MyPassword
+  password: MyUserPassword
   storage:
     testlaurent:
       node: "@preset:my_faspex_node"
@@ -3321,14 +3322,14 @@ my_faspex_conf:
 my_faspex_node:
   url: https://10.25.0.3:9092
   username: node_faspex
-  password: MyPassword
+  password: MyNodePassword
 ```
 
 In this example, a faspex storage named "testlaurent" exists in Faspex, and is located
 under the docroot in "/myfiles" (this must be the same as configured in Faspex).
 The node configuration name is "my_faspex_node" here.
 
-Note: the v4 API provide an API for nodes and shares.
+Note: the v4 API provides an API for nodes and shares.
 
 ### Automated package download (cargo)
 
