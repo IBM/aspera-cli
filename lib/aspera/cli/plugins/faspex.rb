@@ -18,8 +18,9 @@ module Aspera
   module Cli
     module Plugins
       class Faspex < BasicAuthPlugin
-        KEY_NODE='node'
-        KEY_PATH='path'
+        # required hash key for source in config
+        KEY_NODE='node' # value must be hash with url, username, password
+        KEY_PATH='path' # value must be same sub-path as in Faspex's node
         VAL_ALL='ALL'
         # added field in result that identifies the package
         PACKAGE_MATCH_FIELD='package_id'
@@ -133,8 +134,10 @@ module Aspera
         end
 
         # query supports : {"startIndex":10,"count":1,"page":109,"max":2,"pmax":1}
-        def mailbox_all_entries(stop_at_id: nil)
-          recipient_name=options.get_option(:recipient,:optional) || options.get_option(:username,:mandatory)
+        def mailbox_filtered_entries(stop_at_id: nil)
+          recipient_names=[options.get_option(:recipient,:optional) || options.get_option(:username,:mandatory)]
+          # some workgroup messages have no star in recipient name
+          recipient_names.push(recipient_names.first[1..-1]) if recipient_names.first.start_with?('*')
           # mailbox is in ATOM_MAILBOXES
           mailbox=options.get_option(:box,:mandatory)
           # parameters
@@ -167,7 +170,7 @@ module Aspera
               package[PACKAGE_MATCH_FIELD]=
               case mailbox
               when :inbox,:archive
-                recipient=package['to'].select{|i|i['name'].first.eql?(recipient_name)}.first
+                recipient=package['to'].select{|i|recipient_names.include?(i['name'].first)}.first
                 recipient.nil? ? nil : recipient['recipient_delivery_id'].first
               else # :sent
                 package['delivery_id'].first
@@ -248,7 +251,7 @@ module Aspera
             command_pkg=options.get_next_command([:send, :recv, :list])
             case command_pkg
             when :list
-              return {type: :object_list,data: mailbox_all_entries,fields: [PACKAGE_MATCH_FIELD,'title','items'], textify: lambda {|table_data|Faspex.textify_package_list(table_data)} }
+              return {type: :object_list,data: mailbox_filtered_entries,fields: [PACKAGE_MATCH_FIELD,'title','items'], textify: lambda {|table_data|Faspex.textify_package_list(table_data)} }
             when :send
               delivery_info=options.get_option(:delivery_info,:mandatory)
               raise CliBadArgument,'delivery_info must be hash, refer to doc' unless delivery_info.is_a?(Hash)
@@ -299,12 +302,12 @@ module Aspera
                 raise 'empty id' if delivid.empty?
                 recipient=options.get_option(:recipient,:optional)
                 if delivid.eql?(VAL_ALL)
-                  pkg_id_uri=mailbox_all_entries.map{|i|{id: i[PACKAGE_MATCH_FIELD],uri: self.class.get_fasp_uri_from_entry(i, raise_no_link: false)}}
+                  pkg_id_uri=mailbox_filtered_entries.map{|i|{id: i[PACKAGE_MATCH_FIELD],uri: self.class.get_fasp_uri_from_entry(i, raise_no_link: false)}}
                   # TODO : remove ids from skip not present in inbox to avoid growing too big
                   # skip_ids_data.select!{|id|pkg_id_uri.select{|p|p[:id].eql?(id)}}
                   pkg_id_uri.reject!{|i|skip_ids_data.include?(i[:id])}
                 elsif !recipient.nil? && recipient.start_with?('*')
-                  found_package_link=mailbox_all_entries(stop_at_id: delivid).select{|p|p[PACKAGE_MATCH_FIELD].eql?(delivid)}.first['link'].first['href']
+                  found_package_link=mailbox_filtered_entries(stop_at_id: delivid).select{|p|p[PACKAGE_MATCH_FIELD].eql?(delivid)}.first['link'].first['href']
                   raise 'Not Found. Dropbox and Workgroup packages can use the link option with faspe:' if found_package_link.nil?
                   pkg_id_uri=[{id: delivid,uri: found_package_link}]
                 else

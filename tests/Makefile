@@ -250,12 +250,18 @@ $(T)fx_v4: $(T).exists
 	@touch $@
 $(T)fx_db1: $(T).exists
 	@echo $@
-	$(EXE_MAN) faspex dropbox list
+	$(EXE_MAN) faspex dropbox list --recipient="*$${faspex_dbx}"
 	set -x&&\
 	faspex_dbx=$$($(EXE_NOMAN) conf id misc get faspex_dbx)&&\
+	$(EXE_MAN) faspex package send --delivery-info=@json:'{"title":"$(PKG_TEST_TITLE)","recipients":["*'"$${faspex_dbx}"'"]}' $(CF_LOCAL_SAMPLE_FILEPATH)&&\
 	pkgid=$$($(EXE_MAN) faspex package list --recipient="*$${faspex_dbx}" --format=csv --fields=package_id --query=@json:'{"max":1}')&&\
-	$(EXE_MAN) faspex package recv $${pkgid} --recipient="*$${faspex_dbx}"&&\
-	$(EXE_MAN) faspex package send --delivery-info=@json:'{"title":"$(PKG_TEST_TITLE)","recipients":["*'"$${faspex_dbx}"'"]}' $(CF_LOCAL_SAMPLE_FILEPATH)
+	$(EXE_MAN) faspex package recv $${pkgid} --recipient="*$${faspex_dbx}"
+	$(EXE_MAN) faspex dropbox list --recipient="*$${faspex_wkg}"
+	set -x&&\
+	faspex_wkg=$$($(EXE_NOMAN) conf id misc get faspex_wkg)&&\
+	$(EXE_MAN) faspex package send --delivery-info=@json:'{"title":"$(PKG_TEST_TITLE)","recipients":["*'"$${faspex_wkg}"'"]}' $(CF_LOCAL_SAMPLE_FILEPATH)&&\
+	pkgid=$$($(EXE_MAN) faspex package list --recipient="*$${faspex_wkg}" --format=csv --fields=package_id --query=@json:'{"max":1}')&&\
+	$(EXE_MAN) faspex package recv $${pkgid} --recipient="*$${faspex_wkg}"
 	@touch $@
 tfaspex: $(T)fx_plst $(T)fx_psnd $(T)fx_prs $(T)fx_pri $(T)fx_prl $(T)fx_pslu $(T)fx_psld $(T)fx_storage $(T)fx_prall $(T)fx_nagios $(T)fx_v4 $(T)fx_db1
 

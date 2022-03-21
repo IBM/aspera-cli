@@ -2114,19 +2114,23 @@ ascli cos node access_key show self
 ascli cos node download testfile.bin --to-folder=.
 ascli cos node info
 ascli cos node upload testfile.bin
-ascli faspex dropbox list
+ascli faspex dropbox list --recipient="*my_faspex_dbx"
+ascli faspex dropbox list --recipient="*my_faspex_wkg"
 ascli faspex health
 ascli faspex package list
 ascli faspex package list --box=sent --fields=package_id --format=csv --display=data --query=@json:'{"max":1}'
 ascli faspex package list --fields=package_id --format=csv --display=data --query=@json:'{"max":1}'
 ascli faspex package list --recipient="*my_faspex_dbx" --format=csv --fields=package_id --query=@json:'{"max":1}'
+ascli faspex package list --recipient="*my_faspex_wkg" --format=csv --fields=package_id --query=@json:'{"max":1}'
 ascli faspex package recv "my_package_id" --to-folder=.
 ascli faspex package recv "my_package_id" --to-folder=. --box=sent
 ascli faspex package recv --to-folder=. "my_package_id"
 ascli faspex package recv --to-folder=. --link="my_faspex_publink_recv_from_fxuser"
 ascli faspex package recv ALL --to-folder=. --once-only=yes
 ascli faspex package recv my_pkgid --recipient="*my_faspex_dbx"
+ascli faspex package recv my_pkgid --recipient="*my_faspex_wkg"
 ascli faspex package send --delivery-info=@json:'{"title":"Important files delivery","recipients":["*my_faspex_dbx"]}' testfile.bin
+ascli faspex package send --delivery-info=@json:'{"title":"Important files delivery","recipients":["*my_faspex_wkg"]}' testfile.bin
 ascli faspex package send --delivery-info=@json:'{"title":"Important files delivery","recipients":["my_email_internal_user","my_faspex_username"]}' testfile.bin
 ascli faspex package send --link="my_faspex_publink_send_to_dropbox" --delivery-info=@json:'{"title":"Important files delivery"}' testfile.bin
 ascli faspex package send --link="my_faspex_publink_send_to_fxuser" --delivery-info=@json:'{"title":"Important files delivery"}' testfile.bin
@@ -3662,6 +3666,8 @@ This is currently in beta, limited operations are supported.
 
 This was tested with version Beta 5.
 
+The API is listed in [Faspex 5 API Reference](https://developer.ibm.com/apis/catalog/?search=faspex) under "IBM Aspera Faspex API".
+
 ### Faspex 5 authentication
 
 3 authentication methods are supported:
@@ -3747,7 +3753,7 @@ By default it looks in box `inbox`, but the following boxes are also supported: 
 A user can receive a package because the recipient is:
 
 * the user himself (default)
-* the user is part of a dropbox or a workgroup (using option `recipient` set with value `*<name of WG or DB>`
+* the user is member of a dropbox/workgroup: filter using option `recipient` set with value `*<name of dropbox/workgroup>`
 
 #### Option `query`
 
@@ -3786,7 +3792,7 @@ ascli faspex package recv --id=12345
 ascli faspex package recv --link=faspe://...
 ```
 
-If the package is in a specific **dropbox**, add option `recipient` for both the `list` and `recv` commands.
+If the package is in a specific **dropbox**/**workgroup**, add option `recipient` for both the `list` and `recv` commands.
 
 ```bash
 ascli faspex package list --recipient='*thedropboxname'
@@ -3805,7 +3811,8 @@ Example:
 ascli faspex package send --delivery-info=@json:'{"title":"my title","recipients":["laurent.martin.aspera@fr.ibm.com"]}' --url=https://faspex.corp.com/aspera/faspex --username=foo --password=bar /tmp/file1 /home/bar/file2
 ```
 
-If the recipient is a dropbox, just provide the name of the dropbox in `recipients`: `"recipients":["My Dropbox Name"]`
+If the recipient is a dropbox or workgroup: provide the name of the dropbox or workgroup preceded with `*` in the `recipients` field of the `delivery_info` option:
+`"recipients":["*MyDropboxName"]`
 
 Additional optional parameters in `delivery_info`:
 

@@ -3130,6 +3130,8 @@ This is currently in beta, limited operations are supported.
 
 This was tested with version Beta 5.
 
+The API is listed in [Faspex 5 API Reference](https://developer.ibm.com/apis/catalog/?search=faspex) under "IBM Aspera Faspex API".
+
 ### Faspex 5 authentication
 
 3 authentication methods are supported:
@@ -3215,7 +3217,7 @@ By default it looks in box `inbox`, but the following boxes are also supported: 
 A user can receive a package because the recipient is:
 
 * the user himself (default)
-* the user is part of a dropbox or a workgroup (using option `recipient` set with value `*<name of WG or DB>`
+* the user is member of a dropbox/workgroup: filter using option `recipient` set with value `*<name of dropbox/workgroup>`
 
 #### Option `query`
 
@@ -3254,7 +3256,7 @@ The command is `package recv`, possible methods are:
 <%=cmd%> faspex package recv --link=faspe://...
 ```
 
-If the package is in a specific **dropbox**, add option `recipient` for both the `list` and `recv` commands.
+If the package is in a specific **dropbox**/**workgroup**, add option `recipient` for both the `list` and `recv` commands.
 
 ```bash
 <%=cmd%> faspex package list --recipient='*thedropboxname'
@@ -3273,7 +3275,8 @@ Example:
 <%=cmd%> faspex package send --delivery-info=@json:'{"title":"my title","recipients":["laurent.martin.aspera@fr.ibm.com"]}' --url=https://faspex.corp.com/aspera/faspex --username=foo --password=bar /tmp/file1 /home/bar/file2
 ```
 
-If the recipient is a dropbox, just provide the name of the dropbox in `recipients`: `"recipients":["My Dropbox Name"]`
+If the recipient is a dropbox or workgroup: provide the name of the dropbox or workgroup preceded with `*` in the `recipients` field of the `delivery_info` option:
+`"recipients":["*MyDropboxName"]`
 
 Additional optional parameters in `delivery_info`:
 
