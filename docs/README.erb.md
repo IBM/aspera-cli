@@ -789,12 +789,12 @@ It is also possible to provide a _Structured Value_ in a file using `@json:@file
 
 ### <a id="conffolder"></a>Configuration and Persistency Folder
 
-<%=tool%> configuration and other runtime files (token cache, file lists, persistency files, SDK) are stored in folder `[User's home folder]/.aspera/<%=cmd%>`.
+<%=tool%> configuration and other runtime files (token cache, file lists, persistency files, SDK) are stored `[config folder]`: `[User's home folder]/.aspera/<%=cmd%>`.
 
 Note: `[User's home folder]` is found using ruby's `Dir.home` (`rb_w32_home_dir`).
 It uses the `HOME` env var primarily, and on MS Windows it also looks at `%HOMEDRIVE%%HOMEPATH%` and `%USERPROFILE%`. <%=tool%> sets the env var `%HOME%` to the value of `%USERPROFILE%` if set and exists. So, on Windows `%USERPROFILE%` is used as it is more reliable than `%HOMEDRIVE%%HOMEPATH%`.
 
-The main folder can be displayed using :
+The [config folder] can be displayed using :
 
 ```bash
 <%=cmd%> config folder
@@ -816,7 +816,11 @@ set <%=evp%>HOME=C:\Users\Kenji\.aspera\<%=cmd%>
 C:\Users\Kenji\.aspera\<%=cmd%>
 ```
 
-Option `cache_tokens` (default=yes/no) allows to control if Oauth tokens are cached on file system, or generated for each request.
+When OAuth is used (AoC, Faspex4 apiv4, Faspex5) <%=tool%> keeps a cache of generated bearer tokens in `[config folder]/persist_store` by default.
+Option `cache_tokens` (**yes**/no) allows to control if Oauth tokens are cached on file system, or generated for each request.
+The command `config flush_tokens` deletes all existing tokens.
+Tokens are kept on disk for a maximum of 30 minutes (`TOKEN_CACHE_EXPIRY_SEC`) and garbage collected after that.
+Tokens that can be refreshed are refreshed. Else tokens are re-generated if expired.
 
 ### <a id="configfile"></a>Configuration file
 
@@ -2023,10 +2027,16 @@ You can test with:
 <%=cmd%> aoc user profile show
 ```
 
-Optionally, it is possible to create a new organization-specific "integration".
+Optionally, it is possible to create a new organization-specific "integration", i.e. client application identification.
 For this, specify the option: `--use-generic-client=no`.
 
 This will guide you through the steps to create.
+
+If the wizard does not detect the application but you know the application, you can force it using option `value`:
+
+```bash
+<%=cmd%> config wizard --value=aoc
+```
 
 ### <a id="aocmanual"></a>Configuration: using manual setup
 
@@ -4037,6 +4047,7 @@ So, it evolved into <%=tool%>:
   * change: (break) option `cipher` in transfer spec must have hyphen
   * change: (break) renamed option `log_passwords` to `log_secrets`
   * change: (break) removed plugin `shares2` as products is now EOL
+  * fix: After AoC version update, wizard did not detect AoC properly
 
 * 4.6.0
 
@@ -4485,7 +4496,7 @@ Cause: `ascp` >= 4.x checks fingerprint of highest server host key, including EC
 
 Workaround on client side: To ignore the certificate (SSH fingerprint) add option on client side (this option can also be added permanently to the config file):
 
-```bash
+```json
 --ts=@json:'{"sshfp":null}'
 ```
 
@@ -4517,10 +4528,7 @@ One can also [create one's own plugin](#createownplugin).
 ## Miscellaneous
 
 * replace rest and oauth classes with ruby standard gems:
-
-  * oauth
   * <https://github.com/rest-client/rest-client>
-
-* use Thor or other standard Ruby CLI manager
-
-* easier use with <https://github.com/pmq20/ruby-packer> (rubyc)
+  * <https://github.com/oauth-xx/oauth2>
+* use gem Thor <http://whatisthor.com/> (or other standard Ruby CLI manager)
+* Package with <https://github.com/pmq20/ruby-packer> (rubyc)

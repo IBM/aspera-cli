@@ -45,7 +45,7 @@ noderestart:
 
 # default download folder for Connect Client (used to cleanup and avoid confirmation from connect when overwrite)
 DIR_CONNECT_DOWNLOAD=$(HOME)/Downloads
-PKG_TEST_TITLE=Test Pkg $(shell LANG=C date)
+TIMESTAMP=$(shell LANG=C date)
 
 # folder where flag files for integration tests are generated
 T=$(DIR_TMP)t/
@@ -196,13 +196,13 @@ $(T)fx_psnd: $(T).exists
 	set -x&&\
 	faspex_username=$$($(EXE_NOMAN) conf id tst_faspex get username)&&\
 	email_internal_user=$$($(EXE_NOMAN) conf id misc get email_internal)&&\
-	$(EXE_MAN) faspex package send --delivery-info=@json:'{"title":"$(PKG_TEST_TITLE)","recipients":["'"$${email_internal_user}"'","'"$${faspex_username}"'"]}' $(CF_LOCAL_SAMPLE_FILEPATH)
+	$(EXE_MAN) faspex package send --delivery-info=@json:'{"title":"Test Package $(TIMESTAMP)","recipients":["'"$${email_internal_user}"'","'"$${faspex_username}"'"]}' $(CF_LOCAL_SAMPLE_FILEPATH)
 	@touch $@
 	@sleep 8
 $(T)fx_prs: $(T)fx_psnd
 	@echo $@
 	set -x&&package_id=$$($(EXE_MAN) faspex package list --fields=package_id --format=csv --display=data --query=@json:'{"max":1}')&&\
-	$(EXE_MAN) faspex package recv --to-folder=$(DIR_TMP). "$${package_id}"
+	$(EXE_MAN) faspex package recv "$${package_id}" --to-folder=$(DIR_TMP).
 	set -x&&package_id=$$($(EXE_MAN) faspex package list --box=sent --fields=package_id --format=csv --display=data --query=@json:'{"max":1}')&&\
 	$(EXE_MAN) faspex package recv "$${package_id}" --to-folder=$(DIR_TMP). --box=sent
 	@touch $@
@@ -223,13 +223,13 @@ $(T)fx_prall: $(T).exists
 $(T)fx_pslu: $(T).exists
 	@echo $@
 	set -x&&faspex_publink_send_to_fxuser=$$($(EXE_NOMAN) conf id misc get faspex_publink_send_to_fxuser)&&\
-	$(EXE_MAN) faspex package send --link="$${faspex_publink_send_to_fxuser}" --delivery-info=@json:'{"title":"$(PKG_TEST_TITLE)"}' $(CF_LOCAL_SAMPLE_FILEPATH)
+	$(EXE_MAN) faspex package send --link="$${faspex_publink_send_to_fxuser}" --delivery-info=@json:'{"title":"Test Package $(TIMESTAMP)"}' $(CF_LOCAL_SAMPLE_FILEPATH)
 	@touch $@
 $(T)fx_psld: $(T).exists
 	@echo $@
 	set -x&&\
 	faspex_publink_send_to_dropbox=$$($(EXE_NOMAN) conf id misc get faspex_publink_send_to_dropbox)&&\
-	$(EXE_MAN) faspex package send --link="$${faspex_publink_send_to_dropbox}" --delivery-info=@json:'{"title":"$(PKG_TEST_TITLE)"}' $(CF_LOCAL_SAMPLE_FILEPATH)
+	$(EXE_MAN) faspex package send --link="$${faspex_publink_send_to_dropbox}" --delivery-info=@json:'{"title":"Test Package $(TIMESTAMP)"}' $(CF_LOCAL_SAMPLE_FILEPATH)
 	@touch $@
 $(T)fx_storage: $(T).exists
 	@echo $@
@@ -253,15 +253,15 @@ $(T)fx_db1: $(T).exists
 	$(EXE_MAN) faspex dropbox list --recipient="*$${faspex_dbx}"
 	set -x&&\
 	faspex_dbx=$$($(EXE_NOMAN) conf id misc get faspex_dbx)&&\
-	$(EXE_MAN) faspex package send --delivery-info=@json:'{"title":"$(PKG_TEST_TITLE)","recipients":["*'"$${faspex_dbx}"'"]}' $(CF_LOCAL_SAMPLE_FILEPATH)&&\
+	$(EXE_MAN) faspex package send --delivery-info=@json:'{"title":"Test Package $(TIMESTAMP)","recipients":["*'"$${faspex_dbx}"'"]}' $(CF_LOCAL_SAMPLE_FILEPATH)&&\
 	pkgid=$$($(EXE_MAN) faspex package list --recipient="*$${faspex_dbx}" --format=csv --fields=package_id --query=@json:'{"max":1}')&&\
-	$(EXE_MAN) faspex package recv $${pkgid} --recipient="*$${faspex_dbx}"
+	$(EXE_MAN) faspex package recv $${pkgid} --recipient="*$${faspex_dbx}" --to-folder=$(DIR_TMP).
 	$(EXE_MAN) faspex dropbox list --recipient="*$${faspex_wkg}"
 	set -x&&\
 	faspex_wkg=$$($(EXE_NOMAN) conf id misc get faspex_wkg)&&\
-	$(EXE_MAN) faspex package send --delivery-info=@json:'{"title":"$(PKG_TEST_TITLE)","recipients":["*'"$${faspex_wkg}"'"]}' $(CF_LOCAL_SAMPLE_FILEPATH)&&\
+	$(EXE_MAN) faspex package send --delivery-info=@json:'{"title":"Test Package $(TIMESTAMP)","recipients":["*'"$${faspex_wkg}"'"]}' $(CF_LOCAL_SAMPLE_FILEPATH)&&\
 	pkgid=$$($(EXE_MAN) faspex package list --recipient="*$${faspex_wkg}" --format=csv --fields=package_id --query=@json:'{"max":1}')&&\
-	$(EXE_MAN) faspex package recv $${pkgid} --recipient="*$${faspex_wkg}"
+	$(EXE_MAN) faspex package recv $${pkgid} --recipient="*$${faspex_wkg}" --to-folder=$(DIR_TMP).
 	@touch $@
 tfaspex: $(T)fx_plst $(T)fx_psnd $(T)fx_prs $(T)fx_pri $(T)fx_prl $(T)fx_pslu $(T)fx_psld $(T)fx_storage $(T)fx_prall $(T)fx_nagios $(T)fx_v4 $(T)fx_db1
 
@@ -465,8 +465,8 @@ $(T)aocp1: $(T).exists
 	set -x&&\
 	email_internal_user=$$($(EXE_NOMAN) conf id misc get email_internal)&&\
 	email_external_user=$$($(EXE_NOMAN) conf id misc get email_external)&&\
-	$(EXE_MAN) aoc packages send --value=@json:'{"name":"$(PKG_TEST_TITLE)","recipients":["'"$${email_internal_user}"'"],"note":"my note"}' $(CF_LOCAL_SAMPLE_FILEPATH)&&\
-	$(EXE_MAN) aoc packages send --value=@json:'{"name":"$(PKG_TEST_TITLE)","recipients":["'"$${email_external_user}"'"]}' --new-user-option=@json:'{"package_contact":true}' $(CF_LOCAL_SAMPLE_FILEPATH)
+	$(EXE_MAN) aoc packages send --value=@json:'{"name":"Test Package $(TIMESTAMP)","recipients":["'"$${email_internal_user}"'"],"note":"my note"}' $(CF_LOCAL_SAMPLE_FILEPATH)&&\
+	$(EXE_MAN) aoc packages send --value=@json:'{"name":"Test Package $(TIMESTAMP)","recipients":["'"$${email_external_user}"'"]}' --new-user-option=@json:'{"package_contact":true}' $(CF_LOCAL_SAMPLE_FILEPATH)
 	@touch $@
 $(T)aocp2: $(T).exists
 	@echo $@
@@ -491,30 +491,30 @@ $(T)aocp6: $(T).exists
 	@echo $@
 	set -x&&\
 	aoc_publink_send_shd_inbox=$$($(EXE_NOMAN) conf id misc get aoc_publink_send_shd_inbox)&&\
-	$(EXE_MAN) aoc packages send -N --value=@json:'{"name":"$(PKG_TEST_TITLE)"}' $(CF_LOCAL_SAMPLE_FILEPATH) --link=$${aoc_publink_send_shd_inbox}
+	$(EXE_MAN) aoc packages send -N --value=@json:'{"name":"Test Package $(TIMESTAMP)"}' $(CF_LOCAL_SAMPLE_FILEPATH) --link=$${aoc_publink_send_shd_inbox}
 	@touch $@
 $(T)aocp7: $(T).exists
 	@echo $@
 	set -x&&\
 	aoc_publink_send_aoc_user=$$($(EXE_NOMAN) conf id misc get aoc_publink_send_aoc_user)&&\
 	aoc_publink_send_use_pass=$$($(EXE_NOMAN) conf id misc get aoc_publink_send_use_pass)&&\
-	$(EXE_MAN) aoc packages send -N --value=@json:'{"name":"$(PKG_TEST_TITLE)"}' $(CF_LOCAL_SAMPLE_FILEPATH) --link=$${aoc_publink_send_aoc_user} --password=$${aoc_publink_send_use_pass}
+	$(EXE_MAN) aoc packages send -N --value=@json:'{"name":"Test Package $(TIMESTAMP)"}' $(CF_LOCAL_SAMPLE_FILEPATH) --link=$${aoc_publink_send_aoc_user} --password=$${aoc_publink_send_use_pass}
 	@touch $@
 $(T)aocp8: $(T).exists
 	@echo $@
 	set -x&&\
 	aoc_shbx_ws=$$($(EXE_NOMAN) conf id misc get aoc_shbx_ws)&&\
 	aoc_shbx_name=$$($(EXE_NOMAN) conf id misc get aoc_shbx_name)&&\
-	$(EXE_MAN) aoc packages send --workspace="$${aoc_shbx_ws}" --value=@json:'{"name":"$(PKG_TEST_TITLE)","recipients":["'"$${aoc_shbx_name}"'"]}' $(CF_LOCAL_SAMPLE_FILEPATH)
+	$(EXE_MAN) aoc packages send --workspace="$${aoc_shbx_ws}" --value=@json:'{"name":"Test Package $(TIMESTAMP)","recipients":["'"$${aoc_shbx_name}"'"]}' $(CF_LOCAL_SAMPLE_FILEPATH)
 	set -x&&\
 	aoc_shbx_ws=$$($(EXE_NOMAN) conf id misc get aoc_shbx_ws)&&\
 	aoc_shbx_name=$$($(EXE_NOMAN) conf id misc get aoc_shbx_meta)&&\
-	$(EXE_MAN) aoc packages send --workspace="$${aoc_shbx_ws}" --value=@json:'{"name":"$(PKG_TEST_TITLE)","recipients":["'"$${aoc_shbx_name}"'"],"metadata":[{"input_type":"single-text","name":"Project Id","values":["123"]},{"input_type":"single-dropdown","name":"Type","values":["Opt2"]},{"input_type":"multiple-checkbox","name":"CheckThose","values":["Check1","Check2"]},{"input_type":"date","name":"Optional Date","values":["2021-01-13T15:02:00.000Z"]}]}' $(CF_LOCAL_SAMPLE_FILEPATH)
+	$(EXE_MAN) aoc packages send --workspace="$${aoc_shbx_ws}" --value=@json:'{"name":"Test Package $(TIMESTAMP)","recipients":["'"$${aoc_shbx_name}"'"],"metadata":[{"input_type":"single-text","name":"Project Id","values":["123"]},{"input_type":"single-dropdown","name":"Type","values":["Opt2"]},{"input_type":"multiple-checkbox","name":"CheckThose","values":["Check1","Check2"]},{"input_type":"date","name":"Optional Date","values":["2021-01-13T15:02:00.000Z"]}]}' $(CF_LOCAL_SAMPLE_FILEPATH)
 	@touch $@
 	set -x&&\
 	aoc_shbx_ws=$$($(EXE_NOMAN) conf id misc get aoc_shbx_ws)&&\
 	aoc_shbx_name=$$($(EXE_NOMAN) conf id misc get aoc_shbx_meta)&&\
-	$(EXE_MAN) aoc packages send --workspace="$${aoc_shbx_ws}" --value=@json:'{"name":"$(PKG_TEST_TITLE)","recipients":["'"$${aoc_shbx_name}"'"],"metadata":{"Project Id":"456","Type":"Opt2","CheckThose":["Check1","Check2"],"Optional Date":"2021-01-13T15:02:00.000Z"}}' $(CF_LOCAL_SAMPLE_FILEPATH)
+	$(EXE_MAN) aoc packages send --workspace="$${aoc_shbx_ws}" --value=@json:'{"name":"Test Package $(TIMESTAMP)","recipients":["'"$${aoc_shbx_name}"'"],"metadata":{"Project Id":"456","Type":"Opt2","CheckThose":["Check1","Check2"],"Optional Date":"2021-01-13T15:02:00.000Z"}}' $(CF_LOCAL_SAMPLE_FILEPATH)
 	@touch $@
 $(T)aocp9: $(T).exists
 	@echo $@
