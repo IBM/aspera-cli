@@ -122,7 +122,7 @@ module Aspera
           when 'local'
             shell_executor=LocalExecutor.new
           else
-            raise CliError,'Only ssh scheme is supported in url' if !server_uri.scheme.eql?('ssh')
+            Log.log.error("Only ssh scheme is supported in url, not #{server_uri.scheme}. Assuming SSH.") if !server_uri.scheme.eql?('ssh')
           end
 
           # get command and set aliases
