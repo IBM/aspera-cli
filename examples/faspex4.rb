@@ -1,5 +1,5 @@
-# frozen_string_literal: true
 #!/usr/bin/env ruby
+# frozen_string_literal: true
 # find Faspex API here: https://developer.ibm.com/apis/catalog/?search=faspex
 # this example makes use of class Aspera::Rest for REST calls, alternatively class RestClient of gem rest-client could be used
 # this example makes use of class Aspera::Fasp::AgentDirect for transfers, alternatively the official "Transfer SDK" could be used

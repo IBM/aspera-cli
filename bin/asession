@@ -1,4 +1,5 @@
 #!/usr/bin/env ruby
+# frozen_string_literal: true
 # Laurent Martin/2017
 $LOAD_PATH.unshift(File.dirname(__FILE__)+"/../lib")
 require 'aspera/fasp/agent_direct'

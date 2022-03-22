@@ -1,5 +1,5 @@
-# frozen_string_literal: true
 #!/usr/bin/env ruby
+# frozen_string_literal: true
 # Example: transfer a file using one of the provided transfer agents
 # location of ascp can be specified with env var "ascp"
 # temp folder can be specified with env var "tmp"

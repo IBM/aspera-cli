@@ -1,5 +1,5 @@
-# frozen_string_literal: true
 #!/usr/bin/env ruby
+# frozen_string_literal: true
 require 'aspera/aoc'
 require 'aspera/log'
 
