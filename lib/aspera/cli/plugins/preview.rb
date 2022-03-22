@@ -228,26 +228,27 @@ module Aspera
           Main.result_transfer(transfer.start(tspec,{src: :node_gen4}))
         end
 
-        def get_infos_local(gen_infos,entry,local_entry_preview_dir)
+        def get_infos_local(gen_infos,entry)
           local_original_filepath=File.join(@local_storage_root,entry['path'])
           original_mtime=File.mtime(local_original_filepath)
           # out
-          local_entry_preview_dir.replace(File.join(@local_preview_folder, entry_preview_folder_name(entry)))
+          local_entry_preview_dir=File.join(@local_preview_folder, entry_preview_folder_name(entry))
           gen_infos.each do |gen_info|
             gen_info[:src]=local_original_filepath
             gen_info[:dst]=File.join(local_entry_preview_dir, gen_info[:base_dest])
             gen_info[:preview_exist]=File.exist?(gen_info[:dst])
             gen_info[:preview_newer_than_original] = (gen_info[:preview_exist] and (File.mtime(gen_info[:dst])>original_mtime))
           end
+          return local_entry_preview_dir
         end
 
-        def get_infos_remote(gen_infos,entry,local_entry_preview_dir)
+        def get_infos_remote(gen_infos,entry)
           #Log.log.debug(">>>> get_infos_remote #{entry}".red)
           # store source directly here
           local_original_filepath=File.join(@tmp_folder,entry['name'])
           #original_mtime=DateTime.parse(entry['modified_time'])
           # out: where previews are generated
-          local_entry_preview_dir.replace(File.join(@tmp_folder,entry_preview_folder_name(entry)))
+          local_entry_preview_dir=File.join(@tmp_folder,entry_preview_folder_name(entry))
           file_info=@api_node.read("files/#{entry['id']}")[:data]
           #TODO: this does not work because previews is hidden in api (gen4)
           #this_preview_folder_entries=get_folder_entries(@previews_folder_entry['id'],{name: @entry_preview_folder_name})
@@ -260,6 +261,7 @@ module Aspera
             # TODO: get change time and compare, useful ?
             gen_info[:preview_newer_than_original] = gen_info[:preview_exist]
           end
+          return local_entry_preview_dir
         end
 
         # defined by node api
@@ -275,9 +277,6 @@ module Aspera
         # generate preview files for one folder entry (file) if necessary
         # entry must contain "parent_file_id" if remote.
         def generate_preview(entry)
-          #Log.log.debug(">>>> #{entry}".red)
-          # folder where previews will be generated for this particular entry
-          local_entry_preview_dir=''
           # prepare generic information
           gen_infos=@preview_formats_to_generate.map do |preview_format|
             {
@@ -287,11 +286,8 @@ module Aspera
           end
           # lets gather some infos on possibly existing previews
           # it depends if files access locally or remotely
-          if @access_remote
-            get_infos_remote(gen_infos,entry,local_entry_preview_dir)
-          else # direct local file system access
-            get_infos_local(gen_infos,entry,local_entry_preview_dir)
-          end
+          # folder where previews will be generated for this particular entry
+          local_entry_preview_dir=@access_remote ? get_infos_remote(gen_infos,entry) : get_infos_local(gen_infos,entry)
           # here we have the status on preview files
           # let's find if they need generation
           gen_infos.select! do |gen_info|
@@ -341,7 +337,7 @@ module Aspera
             @api_node.read("files/#{entry['id']}")
           end
         rescue StandardError => e
-          Log.log.error(e.message.to_s)
+          Log.log.error("Ignore: #{e.message}")
           Log.log.debug(e.backtrace.join("\n").red)
         end # generate_preview
 

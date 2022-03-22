@@ -78,11 +78,11 @@ module Aspera
             case result[:type]
             when :object_list
               result[:data].each do |item|
-                item[column].replace(item[column][path_prefix.length..-1]) if item[column].start_with?(path_prefix)
+                item[column]=item[column][path_prefix.length..-1] if item[column].start_with?(path_prefix)
               end
             when :single_object
               item=result[:data]
-              item[column].replace(item[column][path_prefix.length..-1]) if item[column].start_with?(path_prefix)
+              item[column]=item[column][path_prefix.length..-1] if item[column].start_with?(path_prefix)
             end
           end
           return result

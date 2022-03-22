@@ -24,7 +24,7 @@ module Aspera
         # this could be refined, as , for instance, on macos, temp folder is already user specific
         @file_list_folder=TempFileManager.instance.new_file_path_global('asession_filelists')
         @param_description_cache=nil
-        # @return normaiwed description of transfer spec parameters
+        # @return normalized description of transfer spec parameters, direct from yaml
         def description
           return @param_description_cache unless @param_description_cache.nil?
           # config file in same folder with same name as this source
@@ -32,11 +32,10 @@ module Aspera
           Aspera::CommandLineBuilder.normalize_description(@param_description_cache)
         end
 
-        # @return a table suitable to display a manual
+        # @return a table suitable to display in manual
         def man_table
           result=[]
-          description.keys.map do |k|
-            i=description[k]
+          description.each do |k,i|
             param={name: k, type: [i[:accepted_types]].flatten.join(','),description: i[:desc]}
             SUPPORTED_AGENTS.each do |a|
               param[a.to_s[0].to_sym]=i[:tragents].nil? || i[:tragents].include?(a) ? 'Y' : ''
@@ -50,7 +49,7 @@ module Aspera
             else ''
             end
             if i.has_key?(:enum)
-              param[:description] << "\nAllowed values: #{i[:enum].join(', ')}"
+              param[:description] += "\nAllowed values: #{i[:enum].join(', ')}"
             end
             result.push(param)
           end
