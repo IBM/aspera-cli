@@ -75,7 +75,16 @@ module Aspera
           server_transfer_spec={'remote_host'=>server_uri.hostname}
           shell_executor=nil
           case server_uri.scheme
-          when 'ssh'
+          when 'local'
+            shell_executor=LocalExecutor.new
+          when 'https'
+            raise 'ERROR: transfer spec with token required' unless transfer.option_transfer_spec['token'].is_a?(String)
+            server_transfer_spec.merge!({
+              'wss_enabled'=>true,
+              'wss_port'   =>server_uri.port
+            })
+          else # when 'ssh'
+            Log.log.error("Scheme #{server_uri.scheme} not supported. Assuming SSH.") if !server_uri.scheme.eql?('ssh')
             if options.get_option(:username,:optional).nil?
               options.set_option(:username,Aspera::Fasp::TransferSpec::ACCESS_KEY_TRANSFER_USER)
               Log.log.info("Using default transfer user: #{Aspera::Fasp::TransferSpec::ACCESS_KEY_TRANSFER_USER}")
@@ -113,16 +122,6 @@ module Aspera
             cred_set=true if transfer.option_transfer_spec['token'].is_a?(String)
             raise 'either password, key , or transfer spec token must be provided' if !cred_set
             shell_executor=Ssh.new(server_transfer_spec['remote_host'],server_transfer_spec['remote_user'],ssh_options)
-          when 'https'
-            raise 'ERROR: transfer spec with token required' unless transfer.option_transfer_spec['token'].is_a?(String)
-            server_transfer_spec.merge!({
-              'wss_enabled'=>true,
-              'wss_port'   =>server_uri.port
-            })
-          when 'local'
-            shell_executor=LocalExecutor.new
-          else
-            Log.log.error("Only ssh scheme is supported in url, not #{server_uri.scheme}. Assuming SSH.") if !server_uri.scheme.eql?('ssh')
           end
 
           # get command and set aliases
