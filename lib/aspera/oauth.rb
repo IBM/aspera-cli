@@ -74,11 +74,13 @@ module Aspera
         persist_mgr.garbage_collect(PERSIST_CATEGORY_TOKEN,nil)
       end
 
+      # register a bearer token decoder, mainly to inspect expiry date
       def register_decoder(method)
         @decoders||=[]
         @decoders.push(method)
       end
 
+      # decode token using all registered decoders
       def decode_token(token)
         @decoders.each do |decoder|
           result=decoder.call(token) rescue nil
@@ -87,42 +89,90 @@ module Aspera
         return nil
       end
 
+      # register a token creation method, specify using field :crtype in constructor
       def register_token_creator(id, method)
         raise 'error' unless id.is_a?(Symbol) && method.is_a?(Proc)
         @handlers[id]=method
       end
 
+      # @return one of the registered creators for the given create type
       def token_creator(id)
         raise "token create type unknown: #{id}/#{id.class}" unless @handlers.has_key?(id)
         @handlers[id]
       end
 
+      # list of identifiers foundn in creation parameters that can be used to uniquely identify the token
       def id_elements
         return @id_elements
       end
     end # self
 
-    # seems to be quite standard token encoding (RFC?)
+    # JSON Web Signature (JWS) compact serialization: https://datatracker.ietf.org/doc/html/rfc7515
     register_decoder lambda { |token| parts=token.split('.'); raise 'not aoc token' unless parts.length.eql?(3); JSON.parse(Base64.decode64(parts[1]))}
+
+    # generic token creation, parameters are provided in :generic
+    register_token_creator :generic,lambda { |oauth|
+      return oauth.create_token(oauth.params[:generic])
+    }
+
+    # Authentication using Web browser
+    register_token_creator :web,lambda { |oauth|
+      callback_verif=SecureRandom.uuid # used to check later
+      login_page_url=Rest.build_uri("#{oauth.params[:base_url]}/#{oauth.params[:web][:path_authorize]}",optional_scope_client_id({response_type: 'code', redirect_uri: oauth.params[:web][:redirect_uri], state: callback_verif}))
+      # here, we need a human to authorize on a web page
+      Log.log.info("login_page_url=#{login_page_url}".bg_red.gray)
+      # start a web server to receive request code
+      webserver=WebAuth.new(oauth.params[:web][:redirect_uri])
+      # start browser on login page
+      OpenApplication.instance.uri(login_page_url)
+      # wait for code in request
+      received_params=webserver.received_request
+      raise 'state does not match' if !callback_verif.eql?(received_params['state'])
+      # exchange code for token
+      return oauth.create_token(oauth.optional_scope_client_id({grant_type: 'authorization_code', code: received_params['code'], redirect_uri: oauth.params[:web][:redirect_uri]},add_secret: true))
+    }
+
+    # Authentication using private key
+    register_token_creator :jwt,lambda { |oauth|
+      # https://tools.ietf.org/html/rfc7523
+      # https://tools.ietf.org/html/rfc7519
+      require 'jwt'
+      seconds_since_epoch=Time.new.to_i
+      Log.log.info("seconds=#{seconds_since_epoch}")
+      raise 'missing JWT payload' unless oauth.params[:jwt][:payload].is_a?(Hash)
+      jwt_payload = {
+        exp: seconds_since_epoch+JWT_EXPIRY_OFFSET_SEC, # expiration time
+        nbf: seconds_since_epoch-JWT_NOTBEFORE_OFFSET_SEC, # not before
+        iat: seconds_since_epoch, # issued at
+        jti: SecureRandom.uuid # JWT id
+      }.merge(oauth.params[:jwt][:payload])
+      Log.log.debug("JWT jwt_payload=[#{jwt_payload}]")
+      rsa_private=oauth.params[:jwt][:private_key_obj] # type: OpenSSL::PKey::RSA
+      Log.log.debug("private=[#{rsa_private}]")
+      assertion = JWT.encode(jwt_payload, rsa_private, 'RS256', oauth.params[:jwt][:headers]||{})
+      Log.log.debug("assertion=[#{assertion}]")
+      return oauth.create_token(oauth.optional_scope_client_id({grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer', assertion: assertion}))
+    }
 
     attr_reader :params, :token_auth_api
 
     private
 
     # [M]=mandatory [D]=has default value [0]=accept nil
-    # :base_url            [M]
+    # :base_url            [M]  URL of authentication API
     # :auth
     # :crtype              [M]  :generic, :web, :jwt, custom
     # :client_id           [0]
     # :client_secret       [0]
     # :scope               [0]
-    # :path_token          [D]
-    # :token_field         [D]
+    # :path_token          [D]  API end point to create a token
+    # :token_field         [D]  field in result that contains the token
     # :jwt:private_key_obj [M] for type :jwt
     # :jwt:payload         [M] for type :jwt
     # :jwt:headers         [0] for type :jwt
     # :web:redirect_uri    [M] for type :web
     # :web:path_authorize  [D] for type :web
+    # :generic             [M] for type :generic
     def initialize(a_params)
       Log.log.debug("auth=#{a_params}")
       # replace default values
@@ -138,57 +188,6 @@ module Aspera
       @token_auth_api=Rest.new(rest_params)
     end
 
-    def create_token(www_params)
-      return @token_auth_api.call({
-        operation:       'POST',
-        subpath:         @params[:path_token],
-        headers:         {'Accept'=>'application/json'},
-        www_body_params: www_params})
-    end
-
-    def create_token_generic
-      return create_token(@params[:generic])
-    end
-
-    # Web browser based Auth
-    def create_token_web
-      callback_verif=SecureRandom.uuid # used to check later
-      login_page_url=Rest.build_uri("#{@params[:base_url]}/#{@params[:web][:path_authorize]}",optional_scope_client_id({response_type: 'code', redirect_uri: @params[:web][:redirect_uri], state: callback_verif}))
-      # here, we need a human to authorize on a web page
-      Log.log.info("login_page_url=#{login_page_url}".bg_red.gray)
-      # start a web server to receive request code
-      webserver=WebAuth.new(@params[:web][:redirect_uri])
-      # start browser on login page
-      OpenApplication.instance.uri(login_page_url)
-      # wait for code in request
-      received_params=webserver.received_request
-      raise 'state does not match' if !callback_verif.eql?(received_params['state'])
-      # exchange code for token
-      return create_token(optional_scope_client_id({grant_type: 'authorization_code', code: received_params['code'], redirect_uri: @params[:web][:redirect_uri]},add_secret: true))
-    end
-
-    # private key based Auth
-    def create_token_jwt
-      # https://tools.ietf.org/html/rfc7523
-      # https://tools.ietf.org/html/rfc7519
-      require 'jwt'
-      seconds_since_epoch=Time.new.to_i
-      Log.log.info("seconds=#{seconds_since_epoch}")
-      raise 'missing jwt payload' unless @params[:jwt][:payload].is_a?(Hash)
-      jwt_payload = {
-        exp: seconds_since_epoch+JWT_EXPIRY_OFFSET_SEC, # expiration time
-        nbf: seconds_since_epoch-JWT_NOTBEFORE_OFFSET_SEC, # not before
-        iat: seconds_since_epoch, # issued at
-        jti: SecureRandom.uuid # JWT id
-      }.merge(@params[:jwt][:payload])
-      Log.log.debug("JWT jwt_payload=[#{jwt_payload}]")
-      rsa_private=@params[:jwt][:private_key_obj] # type: OpenSSL::PKey::RSA
-      Log.log.debug("private=[#{rsa_private}]")
-      assertion = JWT.encode(jwt_payload, rsa_private, 'RS256', @params[:jwt][:headers]||{})
-      Log.log.debug("assertion=[#{assertion}]")
-      return create_token(optional_scope_client_id({grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer', assertion: assertion}))
-    end
-
     # @return unique identifier of token
     # TODO: external handlers shall provide unique identifiers
     def token_cache_id
@@ -202,14 +201,24 @@ module Aspera
       return IdGenerator.from_list(parts)
     end
 
+    public
+
+    # helper method to create token as per RFC
+    def create_token(www_params)
+      return @token_auth_api.call({
+        operation:       'POST',
+        subpath:         @params[:path_token],
+        headers:         {'Accept'=>'application/json'},
+        www_body_params: www_params})
+    end
+
+    # helper method
     def optional_scope_client_id(call_params, add_secret: false)
       call_params[:scope] = @params[:scope] unless @params[:scope].nil?
       call_params[:client_id] = @params[:client_id] unless @params[:client_id].nil?
       call_params[:client_secret] = @params[:client_secret] if add_secret && !@params[:client_id].nil?
       return call_params
     end
-
-    public
 
     # Oauth v2 token generation
     # @param use_refresh_token set to true to force refresh or re-generation (if previous failed)
@@ -231,6 +240,7 @@ module Aspera
           if    decoded_token['expires_at'].is_a?(String) then DateTime.parse(decoded_token['expires_at']).to_time
           elsif decoded_token['exp'].is_a?(Integer)       then Time.at(decoded_token['exp'])
           end
+          # force refresh if we see a token too close from expiration
           use_refresh_token=true if expires_at_sec.is_a?(Time) && (expires_at_sec-Time.now) < TOKEN_EXPIRATION_GUARD_SEC
           Log.log.debug("Expiration: #{expires_at_sec} / #{use_refresh_token}")
         end
@@ -262,16 +272,9 @@ module Aspera
         end
       end
 
-      # no cache
+      # no cache, nor refresh: generate a token
       if token_data.nil?
-        resp=
-        case @params[:crtype]
-        when :generic then create_token_generic
-        when :web then     create_token_web
-        when :jwt then     create_token_jwt
-        else               self.class.token_creator(@params[:crtype]).call(self)
-        end
-        # TODO: test return code ?
+        resp=self.class.token_creator(@params[:crtype]).call(self)
         json_data=resp[:http].body
         token_data=JSON.parse(json_data)
         self.class.persist_mgr.put(token_id,json_data)
