@@ -19,9 +19,10 @@ module Aspera
         class << self
           def detect(base_url)
             api=Rest.new({base_url: base_url})
-            if URI.parse(base_url).host.include?(Aspera::AoC::PROD_DOMAIN) ||
-              api.call({operation: 'GET', redirect_max: 1, headers: {'Accept'=>'text/html'}})[:http].body.include?(Aspera::AoC::PRODUCT_NAME)
-              return {product: :aoc,version: 'unknown'}
+            # either in standard domain, or product name in page
+            if URI.parse(base_url).host.end_with?(Aspera::AoC::PROD_DOMAIN) ||
+                api.call({operation: 'GET', redirect_max: 1, headers: {'Accept'=>'text/html'}})[:http].body.include?(Aspera::AoC::PRODUCT_NAME)
+              return {product: :aoc,version: 'SaaS' }
             end
             return nil
           end
