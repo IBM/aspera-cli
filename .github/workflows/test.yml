@@ -33,3 +33,10 @@ jobs:
         CF_HSTS_SSH_URL: "${{ secrets.CF_HSTS_SSH_URL }}"
         CF_HSTS_SSH_USER: "${{ secrets.CF_HSTS_SSH_USER }}"
         CF_HSTS_SSH_PASS: "${{ secrets.CF_HSTS_SSH_PASS }}"
+
+    - name: Run ascli test
+      run: bundle exec ascli server br /
+      env:
+        ASCLI_URL: "${{ secrets.CF_HSTS_SSH_URL }}"
+        ASCLI_USERNAME: "${{ secrets.CF_HSTS_SSH_USER }}"
+        ASCLI_PASSWORD: "${{ secrets.CF_HSTS_SSH_PASS }}"
