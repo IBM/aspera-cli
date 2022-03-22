@@ -796,16 +796,18 @@ module Aspera
             instance_url=options.get_option(:url,:mandatory)
             # allow user to tell the preset name
             preset_name=options.get_option(:id,:optional)
-            appli=identify_plugin_for_url(instance_url)
+            # allow user to specify type of application
+            application=options.get_option(:value,:optional)
+            application=application.nil? ? identify_plugin_for_url(instance_url)[:product] : application.to_sym
             plugin_name='<replace per app>'
             test_args='<replace per app>'
-            case appli[:product]
+            case application
             when :aoc
               self.format.display_status('Detected: Aspera on Cloud'.bold)
               plugin_name=AOC_COMMAND_CURRENT
               organization=AoC.parse_url(instance_url).first
               # if not defined by user, generate name
-              preset_name=[appli[:product],organization].join('_') if preset_name.nil?
+              preset_name=[application,organization].join('_') if preset_name.nil?
               self.format.display_status("Preparing preset: #{preset_name}")
               # init defaults if necessary
               @config_presets[CONF_PRESET_DEFAULT]||={}
@@ -903,7 +905,7 @@ module Aspera
               end
               test_args="#{plugin_name} user profile show"
             else
-              raise CliBadArgument,"Supports only: aoc. Detected: #{appli}"
+              raise CliBadArgument,"Supports only: aoc. Detected: #{application}"
             end # product
             if option_default
               self.format.display_status("Setting config preset as default for #{plugin_name}")
