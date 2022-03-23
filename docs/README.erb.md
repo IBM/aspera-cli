@@ -4034,6 +4034,9 @@ So, it evolved into <%=tool%>:
 ## Changes (Release notes)
 
 * <%=gemspec.version.to_s%>
+  *
+
+* 4.7.0
 
   * new: option to specify font used to generate image of text file in `preview`
   * new: #66 improvement for content protection (support standard transfer spec options for direct agent)
