@@ -75,7 +75,7 @@ module Aspera
         @option_table_style=':.:'
         @option_flat_hash=true
         @option_transpose_single=true
-        @option_show_secrets=true
+        @option_show_secrets=false
         opt_mgr.set_obj_attr(:format,self,:option_format)
         opt_mgr.set_obj_attr(:display,self,:option_display)
         opt_mgr.set_obj_attr(:fields,self,:option_fields)
