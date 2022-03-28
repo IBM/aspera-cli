@@ -227,7 +227,7 @@ module Aspera
             return
           when :other_struct # no table
             # :other_struct is any other type of structure
-            display_message(:data,PP.pp(res_data,''))
+            display_message(:data,PP.pp(res_data,+''))
             return
           else
             raise "unknown data type: #{results[:type]}"
