@@ -6,7 +6,7 @@ require 'resolv'
 module URI
   class Generic
     # save original method that finds proxy in URI::Generic, it uses env var http_proxy
-    alias :find_proxy_orig find_proxy
+    alias_method :find_proxy_orig, :find_proxy
     def self.register_proxy_finder(&block)
       # overload the method
       define_method(:find_proxy) {|envars=ENV| yield(to_s) || find_proxy_orig(envars)}

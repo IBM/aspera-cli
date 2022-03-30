@@ -151,7 +151,7 @@ fields: ['id','portable_id','name','published_status','published_revision_id','l
               expected = self.options.get_option(:result,:optional)
               unless expected.nil?
                 result[:type] = :status
-                fields = expected.split(":")
+                fields = expected.split(':')
                 raise "Expects: work_step:result_name format, but got #{expected}" if fields.length != 2
                 call_params['explicit_output_step'] = fields[0]
                 call_params['explicit_output_variable'] = fields[1]

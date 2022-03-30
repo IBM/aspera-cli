@@ -23,7 +23,11 @@ module Aspera
             return nil
           end
         end
-        SAMPLE_SOAP_CALL = '<?xml version="1.0" encoding="UTF-8"?><soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:typ="urn:Aspera:XML:FASPSessionNET:2009/11:Types"><soapenv:Header></soapenv:Header><soapenv:Body><typ:GetSessionInfoRequest><SessionFilter><SessionStatus>running</SessionStatus></SessionFilter></typ:GetSessionInfoRequest></soapenv:Body></soapenv:Envelope>'
+        SAMPLE_SOAP_CALL = '<?xml version="1.0" encoding="UTF-8"?>'\
+          '<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:typ="urn:Aspera:XML:FASPSessionNET:2009/11:Types">'\
+          '<soapenv:Header></soapenv:Header>'\
+          '<soapenv:Body><typ:GetSessionInfoRequest><SessionFilter><SessionStatus>running</SessionStatus></SessionFilter></typ:GetSessionInfoRequest></soapenv:Body>'\
+          '</soapenv:Envelope>'
         SEARCH_REMOVE_FIELDS=%w[basename permissions]
         private_constant :SAMPLE_SOAP_CALL,:SEARCH_REMOVE_FIELDS
 

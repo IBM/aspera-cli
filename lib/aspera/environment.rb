@@ -11,7 +11,7 @@ module Aspera
     OS_LINUX = :linux
     OS_AIX = :aix
     OS_LIST = [OS_WINDOWS,OS_X,OS_LINUX,OS_AIX].freeze
-    CPU_X86_64 = :x86_64 # rubocop:disable Naming/VariableNumber
+    CPU_X86_64 = :x86_64
     CPU_PPC64 = :ppc64
     CPU_PPC64LE = :ppc64le
     CPU_S390 = :s390

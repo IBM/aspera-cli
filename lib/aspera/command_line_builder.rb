@@ -6,34 +6,39 @@ module Aspera
   # process_param is called repeatedly with all known parameters
   # add_env_args is called to get resulting param list and env var (also checks that all params were used)
   class CommandLineBuilder
-    # transform yes/no to true/false
-    def self.yes_to_true(value)
-      case value
-      when 'yes' then return true
-      when 'no' then return false
+    # parameter with onne of those tags is an ascp command line option with --
+    CLTYPE_OPTIONS=%i[opt_without_arg opt_with_arg]
+    class<<self
+      # transform yes/no to true/false
+      def yes_to_true(value)
+        case value
+        when 'yes' then return true
+        when 'no' then return false
+        end
+        raise "unsupported value: #{value}"
       end
-      raise "unsupported value: #{value}"
-    end
 
-    # Called by provider of definition before constructor of this class so that params_definition has all mandatory fields
-    def self.normalize_description(d)
-      d.each do |param_name,options|
-        raise "Expecting Hash, but have #{options.class} in #{param_name}" unless options.is_a?(Hash)
-        #options[:accepted_types]=:bool if options[:cltype].eql?(:envvar) and !options.has_key?(:accepted_types)
-        # by default : not mandatory
-        options[:mandatory] ||= false
-        options[:desc] ||= ''
-        # by default : string, unless it's without arg
-        if !options.has_key?(:accepted_types)
-          options[:accepted_types] = options[:cltype].eql?(:opt_without_arg) ? :bool : :string
-        end
-        # single type is placed in array
-        options[:accepted_types] = [options[:accepted_types]] unless options[:accepted_types].is_a?(Array)
-        if !options.has_key?(:clswitch) && options.has_key?(:cltype) && [:opt_without_arg,:opt_with_arg].include?(options[:cltype])
-          options[:clswitch] = '--' + param_name.to_s.tr('_','-')
+      # Called by provider of definition before constructor of this class so that params_definition has all mandatory fields
+      def normalize_description(d)
+        d.each do |param_name,options|
+          raise "Expecting Hash, but have #{options.class} in #{param_name}" unless options.is_a?(Hash)
+          #options[:accepted_types]=:bool if options[:cltype].eql?(:envvar) and !options.has_key?(:accepted_types)
+          # by default : not mandatory
+          options[:mandatory] ||= false
+          options[:desc] ||= ''
+          # by default : string, unless it's without arg
+          if !options.has_key?(:accepted_types)
+            options[:accepted_types] = options[:cltype].eql?(:opt_without_arg) ? :bool : :string
+          end
+          # single type is placed in array
+          options[:accepted_types] = [options[:accepted_types]] unless options[:accepted_types].is_a?(Array)
+          # add default switch name if not present
+          if !options.has_key?(:clswitch) && options.has_key?(:cltype) && CLTYPE_OPTIONS.include?(options[:cltype])
+            options[:clswitch] = '--' + param_name.to_s.tr('_','-')
+          end
         end
       end
-    end
+  end
 
     private
 
@@ -111,7 +116,8 @@ module Aspera
         else raise "INTERNAL: unexpected value: #{s}"
         end
       end.flatten
-      raise Fasp::Error,"#{param_name} is : #{parameter_value.class} (#{parameter_value}), shall be #{options[:accepted_types]}, " unless parameter_value.nil? || expected_classes.include?(parameter_value.class)
+      raise Fasp::Error,"#{param_name} is : #{parameter_value.class} (#{parameter_value}), shall be #{options[:accepted_types]}, " \
+        unless parameter_value.nil? || expected_classes.include?(parameter_value.class)
       @used_param_names.push(param_name) unless action.eql?(:defer)
 
       # process only non-nil values

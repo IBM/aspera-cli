@@ -65,7 +65,7 @@ module Aspera
       end
 
       # backward compatibility in sample program
-      alias folder= sdk_folder=
+      alias_method :folder=, :sdk_folder=
 
       # @return the path to folder where SDK is installed
       def sdk_folder
@@ -146,7 +146,14 @@ module Aspera
           File.chmod(0400,file)
         when :aspera_license
           file = File.join(sdk_folder,'aspera-license')
-          File.write(file,Base64.strict_encode64("#{Zlib::Inflate.inflate(DataRepository.instance.data(6))}==SIGNATURE==\n#{Base64.strict_encode64(DataRepository.instance.data(7))}")) unless File.exist?(file)
+          unless File.exist?(file)
+            clear=[
+              Zlib::Inflate.inflate(DataRepository.instance.data(6)),
+              "==SIGNATURE==\n",
+              Base64.strict_encode64(DataRepository.instance.data(7))
+            ]
+            File.write(file,Base64.strict_encode64(clear.join))
+          end
           File.chmod(0400,file)
         when :aspera_conf
           file = File.join(sdk_folder,'aspera.conf')

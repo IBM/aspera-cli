@@ -650,11 +650,11 @@ module Aspera
         end
 
         # legacy actions available globally
-        PRESET_GBL_ACTIONS = [:list,:overview].freeze
+        PRESET_GBL_ACTIONS = %i[list overview].freeze
         # require existing preset
-        PRESET_EXST_ACTIONS = [:show,:delete,:get,:unset].freeze
+        PRESET_EXST_ACTIONS = %i[show delete get unset].freeze
         # require id
-        PRESET_INSTANCE_ACTIONS = [PRESET_EXST_ACTIONS,:initialize,:update,:ask,:set].flatten.freeze
+        PRESET_INSTANCE_ACTIONS = [PRESET_EXST_ACTIONS,%i[initialize update ask set]].flatten.freeze
         PRESET_ALL_ACTIONS = [PRESET_GBL_ACTIONS,PRESET_INSTANCE_ACTIONS].flatten.freeze
 
         def execute_file_action(action,config_name)
@@ -731,8 +731,8 @@ module Aspera
           end
         end
 
-        ACTIONS = [PRESET_GBL_ACTIONS,:id,:preset,:open,:documentation,:genkey,:gem,:plugin,:flush_tokens,:echo,:wizard,:export_to_cli,:detect,:coffee,:ascp,:email_test,
-                 :smtp_settings,:proxy_check,:folder,:file,:check_update,:initdemo,:vault].flatten.freeze
+        ACTIONS = [PRESET_GBL_ACTIONS,%i[id preset open documentation genkey gem plugin flush_tokens echo wizard export_to_cli detect coffee
+                                         ascp email_test smtp_settings proxy_check folder file check_update initdemo vault]].flatten.freeze
 
         # "config" plugin
         def execute_action
@@ -1118,7 +1118,9 @@ module Aspera
           @config_presets[CONF_PRESET_DEFAULT].has_key?(plugin_sym.to_s)
             default_config_name = @config_presets[CONF_PRESET_DEFAULT][plugin_sym.to_s]
             if !@config_presets.has_key?(default_config_name)
-              Log.log.error("Default config name [#{default_config_name}] specified for plugin [#{plugin_sym}], but it does not exist in config file.\nPlease fix the issue: either create preset with one parameter (#{@info[:name]} config id #{default_config_name} init @json:'{}') or remove default (#{@info[:name]} config id default remove #{plugin_sym}).")
+              Log.log.error("Default config name [#{default_config_name}] specified for plugin [#{plugin_sym}], but it does not exist in config file.\n"\
+                'Please fix the issue: either create preset with one parameter: '\
+                "(#{@info[:name]} config id #{default_config_name} init @json:'{}') or remove default (#{@info[:name]} config id default remove #{plugin_sym}).")
             end
             raise CliError,"Config name [#{default_config_name}] must be a hash, check config file." if !@config_presets[default_config_name].is_a?(Hash)
             return default_config_name

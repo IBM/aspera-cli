@@ -41,7 +41,7 @@ class String
       end_code =
       if code >= 10 then 0
       elsif code.eql?(1) then 22
-      else code + 20
+      else 20 + code # rubocop:disable Lint/ElseLayout
       end
       end_seq = vtcmd(end_code)
       define_method(name){"#{begin_seq}#{self}#{end_seq}"}

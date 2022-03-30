@@ -6,14 +6,14 @@ module Aspera
     # also settable by command line.
     class Options
       # types of generation for video files
-      VIDEO_CONVERSION_METHODS = [:reencode,:blend,:clips]
-      VIDEO_THUMBNAIL_METHODS = [:fixed,:animated]
+      VIDEO_CONVERSION_METHODS = %i[reencode blend clips]
+      VIDEO_THUMBNAIL_METHODS = %i[fixed animated]
       # options used in generator
       # for scaling see: https://trac.ffmpeg.org/wiki/Scaling
       # iw/ih : input width or height
       # -x : keep aspect ratio, having value a multiple of x
       DESCRIPTIONS = [
-        { name: :max_size,             default: 1 << 24,              description: 'maximum size (in bytes) of preview file' },
+        { name: :max_size,             default: 1 << 24,            description: 'maximum size (in bytes) of preview file' },
         { name: :thumb_vid_scale,      default: "-1:'min(ih,100)'", description: 'png: video: size (ffmpeg scale argument)' },
         { name: :thumb_vid_fraction,   default: 0.1,                description: 'png: video: position of snapshot' },
         { name: :thumb_img_size,       default: 800,                description: 'png: non-video: height (and width)' },

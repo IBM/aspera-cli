@@ -77,7 +77,7 @@ module Aspera
         require "aspera/fasp/agent_#{agent_type}"
         agent_options = @opt_mgr.get_option(:transfer_info,:optional)
         raise CliBadArgument,"the transfer agent configuration shall be Hash, not #{agent_options.class} (#{agent_options}), "\
-          "use either @json:<json> or @preset:<parameter set name>" unless [Hash,NilClass].include?(agent_options.class)
+          'use either @json:<json> or @preset:<parameter set name>' unless [Hash,NilClass].include?(agent_options.class)
         # special case
         if agent_type.eql?(:node) && agent_options.nil?
           param_set_name = @config.get_plugin_default_config_name(:node)

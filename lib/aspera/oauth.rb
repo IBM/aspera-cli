@@ -64,7 +64,7 @@ module Aspera
           Log.log.debug('Not using persistency') # (use Aspera::Oauth.persist_mgr=Aspera::PersistencyFolder.new)
           # create NULL persistency class
           @persist = Class.new do
-            def get(_x);nil;end;def delete(_x);nil;end;def put(_x,_y);nil;end;def garbage_collect(_x,_y);nil;end # rubocop:disable Layout/EmptyLineBetweenDefs
+            def get(_x);nil;end;def delete(_x);nil;end;def put(_x,_y);nil;end;def garbage_collect(_x,_y);nil;end
           end.new
         end
         return @persist
@@ -119,7 +119,8 @@ module Aspera
     # Authentication using Web browser
     register_token_creator :web,lambda { |oauth|
       callback_verif = SecureRandom.uuid # used to check later
-      login_page_url = Rest.build_uri("#{oauth.params[:base_url]}/#{oauth.params[:web][:path_authorize]}",optional_scope_client_id({response_type: 'code', redirect_uri: oauth.params[:web][:redirect_uri], state: callback_verif}))
+      login_page_url = Rest.build_uri("#{oauth.params[:base_url]}/#{oauth.params[:web][:path_authorize]}",
+        optional_scope_client_id({response_type: 'code', redirect_uri: oauth.params[:web][:redirect_uri], state: callback_verif}))
       # here, we need a human to authorize on a web page
       Log.log.info("login_page_url=#{login_page_url}".bg_red.gray)
       # start a web server to receive request code

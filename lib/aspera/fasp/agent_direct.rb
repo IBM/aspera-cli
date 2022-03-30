@@ -193,7 +193,14 @@ module Aspera
           # add management port
           ascp_arguments.unshift('-M', mgt_sock.addr[1].to_s)
           # start ascp in sub process
-          Log.log.debug("execute: #{env_args[:env].map{|k,v| "#{k}=#{Shellwords.shellescape(v)}"}.join(' ')} #{Shellwords.shellescape(ascp_path)} #{ascp_arguments.map{|a|Shellwords.shellescape(a)}.join(' ')}")
+          Log.log.debug do
+            'execute: '+
+            env_args[:env].map{|k,v| "#{k}=#{Shellwords.shellescape(v)}"}.join(' ')+
+            ' '+
+            Shellwords.shellescape(ascp_path)+
+            ' '+
+            ascp_arguments.map{|a|Shellwords.shellescape(a)}.join(' ')
+          end
           # start process
           ascp_pid = Process.spawn(env_args[:env],[ascp_path,ascp_path],*ascp_arguments)
           # in parent, wait for connection to socket max 3 seconds
