@@ -38,4 +38,6 @@ Style/BarePercentLiterals:
   EnforcedStyle: percent_q
 Style/TrailingCommaInArrayLiteral:
   EnforcedStyleForMultiline: no_comma
+Style/DateTime:
+  Enabled: false
 
