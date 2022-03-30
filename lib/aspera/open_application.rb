@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 require 'aspera/log'
 require 'aspera/environment'
 require 'rbconfig'
@@ -26,7 +27,7 @@ module Aspera
       when Aspera::Environment::OS_X
         return system('open',uri.to_s)
       when Aspera::Environment::OS_WINDOWS
-        return system('start explorer "'+uri.to_s+'"')
+        return system('start explorer "' + uri.to_s + '"')
       when Aspera::Environment::OS_LINUX
         return system("xdg-open '#{uri}'")
       else
@@ -37,7 +38,7 @@ module Aspera
     attr_accessor :url_method
 
     def initialize
-      @url_method=self.class.default_gui_mode
+      @url_method = self.class.default_gui_mode
     end
 
     # this is non blocking
@@ -48,9 +49,9 @@ module Aspera
       when :text
         case the_url.to_s
         when /^http/
-          puts "USER ACTION: please enter this url in a browser:\n"+the_url.to_s.red()+"\n"
+          puts "USER ACTION: please enter this url in a browser:\n" + the_url.to_s.red() + "\n"
         else
-          puts "USER ACTION: open this:\n"+the_url.to_s.red()+"\n"
+          puts "USER ACTION: open this:\n" + the_url.to_s.red() + "\n"
         end
       else
         raise StandardError,"unsupported url open method: #{@url_method}"

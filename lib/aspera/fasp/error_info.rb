@@ -1,19 +1,20 @@
 # frozen_string_literal: true
+
 module Aspera
   module Fasp
     # from https://www.google.com/search?q=FASP+error+codes
     # Note that the fact that an error is retryable is not internally defined by protocol, it's client responsibility
     ERROR_INFO = {
       # id   retryable      mnemo                       message                                              additional info
-      1 =>  { r: false, c: 'FASP_PROTO',                 m: 'Generic fasp(tm) protocol error',                a: 'fasp(tm) error'},
-      2 =>  { r: false, c: 'ASCP',                       m: 'Generic SCP error',                              a: 'ASCP error'},
-      3 =>  { r: false, c: 'AMBIGUOUS_TARGET',           m: 'Target incorrectly specified',                   a: 'Ambiguous target'},
-      4 =>  { r: false, c: 'NO_SUCH_FILE',               m: 'No such file or directory',                      a: 'No such file or directory'},
-      5 =>  { r: false, c: 'NO_PERMS',                   m: 'Insufficient permission to read or write',       a: 'Insufficient permissions'},
-      6 =>  { r: false, c: 'NOT_DIR',                    m: 'Target is not a directory',                      a: 'Target must be a directory'},
-      7 =>  { r: false, c: 'IS_DIR',                     m: 'File is a directory - expected regular file',    a: 'Expected regular file'},
-      8 =>  { r: false, c: 'USAGE',                      m: 'Incorrect usage of scp command',                 a: 'Incorrect usage of Aspera scp command'},
-      9 =>  { r: false, c: 'LIC_DUP',                    m: 'Duplicate license',                              a: 'Duplicate license'},
+      1  => { r: false, c: 'FASP_PROTO',                 m: 'Generic fasp(tm) protocol error',                a: 'fasp(tm) error'},
+      2  => { r: false, c: 'ASCP',                       m: 'Generic SCP error',                              a: 'ASCP error'},
+      3  => { r: false, c: 'AMBIGUOUS_TARGET',           m: 'Target incorrectly specified',                   a: 'Ambiguous target'},
+      4  => { r: false, c: 'NO_SUCH_FILE',               m: 'No such file or directory',                      a: 'No such file or directory'},
+      5  => { r: false, c: 'NO_PERMS',                   m: 'Insufficient permission to read or write',       a: 'Insufficient permissions'},
+      6  => { r: false, c: 'NOT_DIR',                    m: 'Target is not a directory',                      a: 'Target must be a directory'},
+      7  => { r: false, c: 'IS_DIR',                     m: 'File is a directory - expected regular file',    a: 'Expected regular file'},
+      8  => { r: false, c: 'USAGE',                      m: 'Incorrect usage of scp command',                 a: 'Incorrect usage of Aspera scp command'},
+      9  => { r: false, c: 'LIC_DUP',                    m: 'Duplicate license',                              a: 'Duplicate license'},
       10 => { r: false, c: 'LIC_RATE_EXCEEDED',          m: 'Rate exceeds the cap imposed by license',        a: 'Rate exceeds cap imposed by license'},
       11 => { r: false, c: 'INTERNAL_ERROR',             m: 'Internal error (unexpected error)',              a: 'Internal error'},
       12 => { r: true,  c: 'TRANSFER_ERROR',             m: 'Error establishing control connection',          a: 'Error establishing SSH connection (check SSH port and firewall)'},

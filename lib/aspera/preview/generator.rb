@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 require 'open3'
 require 'aspera/preview/options'
 require 'aspera/preview/utils'
@@ -9,7 +10,7 @@ module Aspera
     # generate one preview file for one format for one file at a time
     class Generator
       # values for preview_format : output format
-      PREVIEW_FORMATS=[:png,:mp4]
+      PREVIEW_FORMATS = [:png,:mp4]
 
       # CLI needs to know conversion type to know if need skip it
       attr_reader :conversion_type
@@ -27,25 +28,25 @@ module Aspera
       # the conversion video->mp4 is implemented in methods: convert_video_to_mp4_using_<video_conversion>
       #  -> conversion method is one of Generator::VIDEO_CONVERSION_METHODS
       def initialize(options,src,dst,main_temp_dir,api_mime_type)
-        @options=options
-        @source_file_path=src
-        @destination_file_path=dst
-        @temp_folder=File.join(main_temp_dir,@source_file_path.split('/').last.gsub(/\s/, '_').gsub(/\W/, ''))
+        @options = options
+        @source_file_path = src
+        @destination_file_path = dst
+        @temp_folder = File.join(main_temp_dir,@source_file_path.split('/').last.gsub(/\s/, '_').gsub(/\W/, ''))
         # extract preview format from extension of target file
-        @preview_format_symb=File.extname(@destination_file_path).gsub(/^\./,'').to_sym
-        @conversion_type=FileTypes.instance.conversion_type(@source_file_path,api_mime_type)
+        @preview_format_symb = File.extname(@destination_file_path).gsub(/^\./,'').to_sym
+        @conversion_type = FileTypes.instance.conversion_type(@source_file_path,api_mime_type)
       end
 
       # name of processing method in this object
       # combination of: conversion type and output format (and video_conversion for video)
       def processing_method_symb
-        name="convert_#{@conversion_type}_to_#{@preview_format_symb}"
+        name = "convert_#{@conversion_type}_to_#{@preview_format_symb}"
         if @conversion_type.eql?(:video)
           case @preview_format_symb
           when :mp4
-            name="#{name}_using_#{@options.video_conversion}"
+            name = "#{name}_using_#{@options.video_conversion}"
           when :png
-            name="#{name}_using_#{@options.video_png_conv}"
+            name = "#{name}_using_#{@options.video_png_conv}"
           end
         end
         Log.log.debug("method: #{name}")
@@ -62,19 +63,19 @@ module Aspera
       # create preview as specified in constructor
       def generate
         raise 'could not detect type of file' if @conversion_type.nil?
-        method_symb=processing_method_symb
+        method_symb = processing_method_symb
         Log.log.info("#{@source_file_path}->#{@destination_file_path} (#{method_symb})")
         begin
           send(method_symb)
           # check that generated size does not exceed maximum
-          result_size=File.size(@destination_file_path)
+          result_size = File.size(@destination_file_path)
           if result_size > @options.max_size
             Log.log.warn("preview size exceeds maximum #{result_size} > #{@options.max_size}")
           end
         rescue StandardError => e
           Log.log.error("Ignoging: #{e.message.to_s}")
           Log.log.debug(e.backtrace.join("\n").red)
-          FileUtils.cp(File.expand_path(@preview_format_symb.eql?(:mp4)?'video_error.png':'image_error.png',File.dirname(__FILE__)),@destination_file_path)
+          FileUtils.cp(File.expand_path(@preview_format_symb.eql?(:mp4) ? 'video_error.png' : 'image_error.png',File.dirname(__FILE__)),@destination_file_path)
         ensure
           FileUtils.rm_rf(@temp_folder)
         end
@@ -95,7 +96,7 @@ module Aspera
       # @param index of part (start at 1)
       def get_offset(duration, start_offset, total_count, index)
         raise 'duration must be Float' unless duration.is_a?(Float)
-        return start_offset + ((index-1)*(duration - start_offset) / total_count)
+        return start_offset + ((index - 1) * (duration - start_offset) / total_count)
       end
 
       def convert_video_to_mp4_using_blend
@@ -105,7 +106,7 @@ module Aspera
         last_keyframe = nil
         current_index = 1
         1.upto(p_keyframecount) do |i|
-          offset_seconds=get_offset(p_duration,p_start_offset,p_keyframecount,i)
+          offset_seconds = get_offset(p_duration,p_start_offset,p_keyframecount,i)
           Utils.video_dump_frame(@source_file_path, offset_seconds, @options.video_scale, this_tmpdir, current_index)
           Utils.video_dupe_frame(this_tmpdir, current_index, @options.blend_pauseframes)
           Utils.video_blend_frames(this_tmpdir,last_keyframe, current_index) unless last_keyframe.nil?
@@ -131,14 +132,14 @@ module Aspera
         filelist = File.join(this_tmpdir,'clip_files.txt')
         File.open(filelist, 'w+') do |f|
           1.upto(@options.clips_count.to_i) do |i|
-            offset_seconds=get_offset(p_duration,@options.video_start_sec.to_i,@options.clips_count.to_i,i)
-            tmpfilename=format('clip%04d.mp4',i)
+            offset_seconds = get_offset(p_duration,@options.video_start_sec.to_i,@options.clips_count.to_i,i)
+            tmpfilename = format('clip%04d.mp4',i)
             Utils.ffmpeg(
             in_f: @source_file_path,
-            in_p: ['-ss',0.9*offset_seconds],
+            in_p: ['-ss',0.9 * offset_seconds],
             out_f: File.join(this_tmpdir,tmpfilename),
             out_p: [
-              '-ss',0.1*offset_seconds,
+              '-ss',0.1 * offset_seconds,
               '-t',@options.clips_length,
               '-filter:v',"scale=#{@options.video_scale}",
               '-codec:a','libmp3lame'])
@@ -178,7 +179,7 @@ module Aspera
       def convert_video_to_png_using_fixed
         Utils.video_dump_frame(
         @source_file_path,
-        Utils.video_get_duration(@source_file_path)*@options.thumb_vid_fraction,
+        Utils.video_get_duration(@source_file_path) * @options.thumb_vid_fraction,
         @options.thumb_vid_scale,
         @destination_file_path)
       end
@@ -203,7 +204,7 @@ module Aspera
       end
 
       def convert_office_to_png
-        tmp_pdf_file=File.join(this_tmpdir,File.basename(@source_file_path,File.extname(@source_file_path))+'.pdf')
+        tmp_pdf_file = File.join(this_tmpdir,File.basename(@source_file_path,File.extname(@source_file_path)) + '.pdf')
         Utils.external_command(:unoconv,[
           '-f','pdf',
           '-o',tmp_pdf_file,
@@ -212,7 +213,7 @@ module Aspera
       end
 
       def convert_pdf_to_png(source_file_path=nil)
-        source_file_path||=@source_file_path
+        source_file_path ||= @source_file_path
         Utils.external_command(:convert,[
           '-size',"x#{@options.thumb_img_size}",
           '-background','white',
@@ -236,7 +237,7 @@ module Aspera
       # text to png
       def convert_plaintext_to_png
         # get 100 first lines of text file
-        first_lines=File.open(@source_file_path){|f|100.times.map{f.readline rescue ''}.join}
+        first_lines = File.open(@source_file_path){|f|Array.new(100){f.readline rescue ''}.join}
         Utils.external_command(:convert,[
           '-size',"#{@options.thumb_img_size}x#{@options.thumb_img_size}",
           'xc:white', # define canvas with background color (xc, or canvas) of preceding size

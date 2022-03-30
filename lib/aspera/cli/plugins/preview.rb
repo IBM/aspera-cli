@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 require 'aspera/cli/basic_auth_plugin'
 require 'aspera/preview/generator'
 require 'aspera/preview/options'
@@ -18,17 +19,17 @@ module Aspera
     module Plugins
       class Preview < BasicAuthPlugin
         # special tag to identify transfers related to generator
-        PREV_GEN_TAG='preview_generator'
+        PREV_GEN_TAG = 'preview_generator'
         # defined by node API: suffix for folder containing previews
-        PREVIEW_FOLDER_SUFFIX='.asp-preview'
+        PREVIEW_FOLDER_SUFFIX = '.asp-preview'
         # basename of preview files
-        PREVIEW_BASENAME='preview'
+        PREVIEW_BASENAME = 'preview'
         # subfolder in system tmp folder
-        TMP_DIR_PREFIX='prev_tmp'
-        DEFAULT_PREVIEWS_FOLDER='previews'
-        AK_MARKER_FILE='.aspera_access_key'
-        LOCAL_STORAGE_PCVL='file:///'
-        LOG_LIMITER_SEC=30.0
+        TMP_DIR_PREFIX = 'prev_tmp'
+        DEFAULT_PREVIEWS_FOLDER = 'previews'
+        AK_MARKER_FILE = '.aspera_access_key'
+        LOCAL_STORAGE_PCVL = 'file:///'
+        LOG_LIMITER_SEC = 30.0
         private_constant :PREV_GEN_TAG, :PREVIEW_FOLDER_SUFFIX, :PREVIEW_BASENAME, :TMP_DIR_PREFIX, :DEFAULT_PREVIEWS_FOLDER, :LOCAL_STORAGE_PCVL, :AK_MARKER_FILE, :LOG_LIMITER_SEC
 
         # option_skip_format has special accessors
@@ -36,14 +37,14 @@ module Aspera
         attr_accessor :option_folder_reset_cache, :option_skip_folders, :option_overwrite, :option_file_access
         def initialize(env)
           super(env)
-          @skip_types=[]
-          @default_transfer_spec=nil
+          @skip_types = []
+          @default_transfer_spec = nil
           # by default generate all supported formats (clone, as altered by options)
-          @preview_formats_to_generate=Aspera::Preview::Generator::PREVIEW_FORMATS.clone
+          @preview_formats_to_generate = Aspera::Preview::Generator::PREVIEW_FORMATS.clone
           # options for generation
-          @gen_options=Aspera::Preview::Options.new
+          @gen_options = Aspera::Preview::Options.new
           # used to trigger periodic processing
-          @periodic=TimerLimiter.new(LOG_LIMITER_SEC)
+          @periodic = TimerLimiter.new(LOG_LIMITER_SEC)
           # link CLI options to gen_info attributes
           options.set_obj_attr(:skip_format,self,:option_skip_format,[]) # no skip
           options.set_obj_attr(:folder_reset_cache,self,:option_folder_reset_cache,:no)
@@ -72,7 +73,7 @@ module Aspera
             options.set_obj_attr(opt[:name],@gen_options,opt[:name],opt[:default])
             if opt.has_key?(:values)
               options.add_opt_list(opt[:name],opt[:values],opt[:description])
-            elsif [:yes,:no].include?(opt[:default])
+            elsif Cli::Manager::BOOLEAN_SIMPLE.include?(opt[:default])
               options.add_opt_boolean(opt[:name],opt[:description])
             else
               options.add_opt_simple(opt[:name],opt[:description])
@@ -81,15 +82,15 @@ module Aspera
 
           options.parse_options!
           raise 'skip_folder shall be an Array, use @json:[...]' unless @option_skip_folders.is_a?(Array)
-          @tmp_folder=File.join(options.get_option(:temp_folder,:mandatory),"#{TMP_DIR_PREFIX}.#{SecureRandom.uuid}")
+          @tmp_folder = File.join(options.get_option(:temp_folder,:mandatory),"#{TMP_DIR_PREFIX}.#{SecureRandom.uuid}")
           FileUtils.mkdir_p(@tmp_folder)
           Log.log.debug("tmpdir: #{@tmp_folder}")
         end
 
         def option_skip_types=(value)
-          @skip_types=[]
+          @skip_types = []
           value.split(',').each do |v|
-            s=v.to_sym
+            s = v.to_sym
             raise "not supported: #{v}" unless Aspera::Preview::FileTypes::CONVERSION_TYPES.include?(s)
             @skip_types.push(s)
           end
@@ -110,8 +111,8 @@ module Aspera
         # /files/id/files is normally cached in redis, but we can discard the cache
         # but /files/id is not cached
         def get_folder_entries(file_id,request_args=nil)
-          headers={'Accept'=>'application/json'}
-          headers.merge!({'X-Aspera-Cache-Control'=>'no-cache'}) if @option_folder_reset_cache.eql?(:header)
+          headers = {'Accept' => 'application/json'}
+          headers['X-Aspera-Cache-Control'] = 'no-cache' if @option_folder_reset_cache.eql?(:header)
           return @api_node.call({operation: 'GET',subpath: "files/#{file_id}/files",headers: headers,url_params: request_args})[:data]
           #return @api_node.read("files/#{file_id}/files",request_args)[:data]
         end
@@ -119,14 +120,14 @@ module Aspera
         # old version based on folders
         # @param iteration_persistency can be nil
         def process_trevents(iteration_persistency)
-          events_filter={
-            'access_key'=>@access_key_self['id'],
-            'type'=>'download.ended'
+          events_filter = {
+            'access_key' => @access_key_self['id'],
+            'type'       => 'download.ended'
           }
           # optionally add iteration token from persistency
-          events_filter['iteration_token']=iteration_persistency.data.first unless iteration_persistency.nil?
+          events_filter['iteration_token'] = iteration_persistency.data.first unless iteration_persistency.nil?
           begin
-            events=@api_node.read('events',events_filter)[:data]
+            events = @api_node.read('events',events_filter)[:data]
           rescue RestCallError => e
             if e.message.include?('Invalid iteration_token')
               Log.log.warn("Retrying without iteration token: #{e}")
@@ -141,10 +142,10 @@ module Aspera
             event['data']['status'].eql?('completed') &&
             event['data']['error_code'].eql?(0) &&
             event['data'].dig('tags','aspera',PREV_GEN_TAG).nil?
-              folder_id=event.dig('data','tags','aspera','node','file_id')
-              folder_id||=event.dig('data','file_id')
+              folder_id = event.dig('data','tags','aspera','node','file_id')
+              folder_id ||= event.dig('data','file_id')
               if !folder_id.nil?
-                folder_entry=@api_node.read("files/#{folder_id}")[:data] rescue nil
+                folder_entry = @api_node.read("files/#{folder_id}")[:data] rescue nil
                 scan_folder_files(folder_entry) unless folder_entry.nil?
               end
             end
@@ -153,7 +154,7 @@ module Aspera
             Log.log.info("Processed event #{event['id']}")
             # save checkpoint to avoid losing processing in case of error
             if !iteration_persistency.nil?
-              iteration_persistency.data[0]=event['id'].to_s
+              iteration_persistency.data[0] = event['id'].to_s
               iteration_persistency.save
             end
           end
@@ -162,21 +163,21 @@ module Aspera
         # requests recent events on node api and process newly modified folders
         def process_events(iteration_persistency)
           # get new file creation by access key (TODO: what if file already existed?)
-          events_filter={
-            'access_key'=>@access_key_self['id'],
-            'type'=>'file.*'
+          events_filter = {
+            'access_key' => @access_key_self['id'],
+            'type'       => 'file.*'
           }
           # optionally add iteration token from persistency
-          events_filter['iteration_token']=iteration_persistency.data.first unless iteration_persistency.nil?
-          events=@api_node.read('events',events_filter)[:data]
+          events_filter['iteration_token'] = iteration_persistency.data.first unless iteration_persistency.nil?
+          events = @api_node.read('events',events_filter)[:data]
           return if events.empty?
           events.each do |event|
             # process only files
             if event.dig('data','type').eql?('file')
-              file_entry=@api_node.read("files/#{event['data']['id']}")[:data] rescue nil
+              file_entry = @api_node.read("files/#{event['data']['id']}")[:data] rescue nil
               if !file_entry.nil? &&
               @option_skip_folders.select{|d|file_entry['path'].start_with?(d)}.empty?
-                file_entry['parent_file_id']=event['data']['parent_file_id']
+                file_entry['parent_file_id'] = event['data']['parent_file_id']
                 if event['types'].include?('file.deleted')
                   Log.log.error('TODO'.red)
                 end
@@ -190,7 +191,7 @@ module Aspera
             Log.log.info("Processing event #{event['id']}")
             # save checkpoint to avoid losing processing in case of error
             if !iteration_persistency.nil?
-              iteration_persistency.data[0]=event['id'].to_s
+              iteration_persistency.data[0] = event['id'].to_s
               iteration_persistency.save
             end
           end
@@ -200,44 +201,44 @@ module Aspera
           raise 'error' if destination.nil? && direction.eql?(Fasp::TransferSpec::DIRECTION_RECEIVE)
           if @default_transfer_spec.nil?
             # make a dummy call to get some default transfer parameters
-            res=@api_node.create('files/upload_setup',{'transfer_requests'=>[{'transfer_request'=>{'paths'=>[{}],'destination_root'=>'/'}}]})
-            template_ts=res[:data]['transfer_specs'].first['transfer_spec']
+            res = @api_node.create('files/upload_setup',{'transfer_requests' => [{'transfer_request' => {'paths' => [{}],'destination_root' => '/'}}]})
+            template_ts = res[:data]['transfer_specs'].first['transfer_spec']
             # get ports, anyway that should be 33001 for both. add remote_user ?
-            @default_transfer_spec=['ssh_port','fasp_port'].each_with_object({}){|e,h|h[e]=template_ts[e];}
+            @default_transfer_spec = ['ssh_port','fasp_port'].each_with_object({}){|e,h|h[e] = template_ts[e];}
             if !@default_transfer_spec['remote_user'].eql?(Aspera::Fasp::TransferSpec::ACCESS_KEY_TRANSFER_USER)
               Log.log.warn('remote_user shall be xfer')
-              @default_transfer_spec['remote_user']=Aspera::Fasp::TransferSpec::ACCESS_KEY_TRANSFER_USER
+              @default_transfer_spec['remote_user'] = Aspera::Fasp::TransferSpec::ACCESS_KEY_TRANSFER_USER
             end
             Aspera::Node.set_ak_basic_token(@default_transfer_spec,@access_key_self['id'],options.get_option(:password,:mandatory))
             # note: we use the same address for ascp than for node api instead of the one from upload_setup
             # TODO: configurable ? useful ?
-            @default_transfer_spec['remote_host']=@transfer_server_address
+            @default_transfer_spec['remote_host'] = @transfer_server_address
           end
-          tspec=@default_transfer_spec.merge({
-            'direction'  => direction,
-            'paths'      => [{'source'=>source_filename}],
-            'tags'       => { 'aspera' => {
-            PREV_GEN_TAG   => true,
-            'node'         => {
-            'access_key'     => @access_key_self['id'],
-            'file_id'        => folder_id }}}
+          tspec = @default_transfer_spec.merge({
+            'direction' => direction,
+            'paths'     => [{'source' => source_filename}],
+            'tags'      => { 'aspera' => {
+            PREV_GEN_TAG => true,
+            'node'       => {
+            'access_key' => @access_key_self['id'],
+            'file_id'    => folder_id }}}
           })
           # force destination
           # tspec['destination_root']=destination
-          transfer.option_transfer_spec_deep_merge({'destination_root'=>destination})
+          transfer.option_transfer_spec_deep_merge({'destination_root' => destination})
           Main.result_transfer(transfer.start(tspec,{src: :node_gen4}))
         end
 
         def get_infos_local(gen_infos,entry)
-          local_original_filepath=File.join(@local_storage_root,entry['path'])
-          original_mtime=File.mtime(local_original_filepath)
+          local_original_filepath = File.join(@local_storage_root,entry['path'])
+          original_mtime = File.mtime(local_original_filepath)
           # out
-          local_entry_preview_dir=File.join(@local_preview_folder, entry_preview_folder_name(entry))
+          local_entry_preview_dir = File.join(@local_preview_folder, entry_preview_folder_name(entry))
           gen_infos.each do |gen_info|
-            gen_info[:src]=local_original_filepath
-            gen_info[:dst]=File.join(local_entry_preview_dir, gen_info[:base_dest])
-            gen_info[:preview_exist]=File.exist?(gen_info[:dst])
-            gen_info[:preview_newer_than_original] = (gen_info[:preview_exist] and (File.mtime(gen_info[:dst])>original_mtime))
+            gen_info[:src] = local_original_filepath
+            gen_info[:dst] = File.join(local_entry_preview_dir, gen_info[:base_dest])
+            gen_info[:preview_exist] = File.exist?(gen_info[:dst])
+            gen_info[:preview_newer_than_original] = (gen_info[:preview_exist] && (File.mtime(gen_info[:dst]) > original_mtime))
           end
           return local_entry_preview_dir
         end
@@ -245,19 +246,19 @@ module Aspera
         def get_infos_remote(gen_infos,entry)
           #Log.log.debug(">>>> get_infos_remote #{entry}".red)
           # store source directly here
-          local_original_filepath=File.join(@tmp_folder,entry['name'])
+          local_original_filepath = File.join(@tmp_folder,entry['name'])
           #original_mtime=DateTime.parse(entry['modified_time'])
           # out: where previews are generated
-          local_entry_preview_dir=File.join(@tmp_folder,entry_preview_folder_name(entry))
-          file_info=@api_node.read("files/#{entry['id']}")[:data]
+          local_entry_preview_dir = File.join(@tmp_folder,entry_preview_folder_name(entry))
+          file_info = @api_node.read("files/#{entry['id']}")[:data]
           #TODO: this does not work because previews is hidden in api (gen4)
           #this_preview_folder_entries=get_folder_entries(@previews_folder_entry['id'],{name: @entry_preview_folder_name})
           # TODO: use gen3 api to list files and get date
           gen_infos.each do |gen_info|
-            gen_info[:src]=local_original_filepath
-            gen_info[:dst]=File.join(local_entry_preview_dir, gen_info[:base_dest])
+            gen_info[:src] = local_original_filepath
+            gen_info[:dst] = File.join(local_entry_preview_dir, gen_info[:base_dest])
             # TODO: use this_preview_folder_entries (but it's hidden)
-            gen_info[:preview_exist]=file_info.has_key?('preview')
+            gen_info[:preview_exist] = file_info.has_key?('preview')
             # TODO: get change time and compare, useful ?
             gen_info[:preview_newer_than_original] = gen_info[:preview_exist]
           end
@@ -270,7 +271,7 @@ module Aspera
         end
 
         def preview_filename(preview_format,filename=nil)
-          filename||=PREVIEW_BASENAME
+          filename ||= PREVIEW_BASENAME
           return "#{filename}.#{preview_format}"
         end
 
@@ -278,16 +279,16 @@ module Aspera
         # entry must contain "parent_file_id" if remote.
         def generate_preview(entry)
           # prepare generic information
-          gen_infos=@preview_formats_to_generate.map do |preview_format|
+          gen_infos = @preview_formats_to_generate.map do |preview_format|
             {
-              preview_format:  preview_format,
-              base_dest:       preview_filename(preview_format)
+              preview_format: preview_format,
+              base_dest:      preview_filename(preview_format)
             }
           end
           # lets gather some infos on possibly existing previews
           # it depends if files access locally or remotely
           # folder where previews will be generated for this particular entry
-          local_entry_preview_dir=@access_remote ? get_infos_remote(gen_infos,entry) : get_infos_local(gen_infos,entry)
+          local_entry_preview_dir = @access_remote ? get_infos_remote(gen_infos,entry) : get_infos_local(gen_infos,entry)
           # here we have the status on preview files
           # let's find if they need generation
           gen_infos.select! do |gen_info|
@@ -305,7 +306,7 @@ module Aspera
               end
             end
             # need generator for further checks
-            gen_info[:generator]=Aspera::Preview::Generator.new(@gen_options,gen_info[:src],gen_info[:dst],@tmp_folder,entry['content_type'])
+            gen_info[:generator] = Aspera::Preview::Generator.new(@gen_options,gen_info[:src],gen_info[:dst],@tmp_folder,entry['content_type'])
             # get conversion_type (if known) and check if supported
             next false unless gen_info[:generator].supported?
             # shall we skip it ?
@@ -346,19 +347,19 @@ module Aspera
         def scan_folder_files(top_entry,scan_start=nil)
           if !scan_start.nil?
             # canonical path: start with / and ends with /
-            scan_start='/'+scan_start.split('/').reject(&:empty?).join('/')
-            scan_start="#{scan_start}/" #unless scan_start.end_with?('/')
+            scan_start = '/' + scan_start.split('/').reject(&:empty?).join('/')
+            scan_start = "#{scan_start}/" #unless scan_start.end_with?('/')
           end
-          filter_block=Aspera::Node.file_matcher(options.get_option(:value,:optional))
+          filter_block = Aspera::Node.file_matcher(options.get_option(:value,:optional))
           Log.log.debug("scan: #{top_entry} : #{scan_start}".green)
           # don't use recursive call, use list instead
-          entries_to_process=[top_entry]
+          entries_to_process = [top_entry]
           while !entries_to_process.empty?
-            entry=entries_to_process.shift
+            entry = entries_to_process.shift
             # process this entry only if it is within the scan_start
-            entry_path_with_slash=entry['path']
+            entry_path_with_slash = entry['path']
             Log.log.info("processing entry #{entry_path_with_slash}") if @periodic.trigger?
-            entry_path_with_slash="#{entry_path_with_slash}/" unless entry_path_with_slash.end_with?('/')
+            entry_path_with_slash = "#{entry_path_with_slash}/" unless entry_path_with_slash.end_with?('/')
             if !scan_start.nil? && !scan_start.start_with?(entry_path_with_slash) && !entry_path_with_slash.start_with?(scan_start)
               Log.log.debug("#{entry['path']} folder (skip start)".bg_red)
               next
@@ -380,14 +381,14 @@ module Aspera
                 else
                   Log.log.debug("#{entry['path']} folder".green)
                   # get folder content
-                  folder_entries=get_folder_entries(entry['id'])
+                  folder_entries = get_folder_entries(entry['id'])
                   # process all items in current folder
                   folder_entries.each do |folder_entry|
                     # add path for older versions of ES
                     if !folder_entry.has_key?('path')
-                      folder_entry['path']=entry_path_with_slash+folder_entry['name']
+                      folder_entry['path'] = entry_path_with_slash + folder_entry['name']
                     end
-                    folder_entry['parent_file_id']=entry['id']
+                    folder_entry['parent_file_id'] = entry['id']
                     entries_to_process.push(folder_entry)
                   end
                 end
@@ -400,44 +401,44 @@ module Aspera
           end
         end
 
-        ACTIONS=[:scan,:events,:trevents,:check,:test]
+        ACTIONS = [:scan,:events,:trevents,:check,:test]
 
         def execute_action
-          command=options.get_next_command(ACTIONS)
+          command = options.get_next_command(ACTIONS)
           unless [:check,:test].include?(command)
             # this will use node api
-            @api_node=basic_auth_api
-            @transfer_server_address=URI.parse(@api_node.params[:base_url]).host
+            @api_node = basic_auth_api
+            @transfer_server_address = URI.parse(@api_node.params[:base_url]).host
             # get current access key
-            @access_key_self=@api_node.read('access_keys/self')[:data]
+            @access_key_self = @api_node.read('access_keys/self')[:data]
             # TODO: check events is activated here:
             # note that docroot is good to look at as well
-            node_info=@api_node.read('info')[:data]
+            node_info = @api_node.read('info')[:data]
             Log.log.debug("root: #{node_info['docroot']}")
-            @access_remote=@option_file_access.eql?(:remote)
+            @access_remote = @option_file_access.eql?(:remote)
             Log.log.debug("remote: #{@access_remote}")
             Log.log.debug("access key info: #{@access_key_self}")
             #TODO: can the previews folder parameter be read from node api ?
-            @option_skip_folders.push('/'+@option_previews_folder)
+            @option_skip_folders.push('/' + @option_previews_folder)
             if @access_remote
               # note the filter "name", it's why we take the first one
-              @previews_folder_entry=get_folder_entries(@access_key_self['root_file_id'],{name: @option_previews_folder}).first
+              @previews_folder_entry = get_folder_entries(@access_key_self['root_file_id'],{name: @option_previews_folder}).first
               raise CliError,"Folder #{@option_previews_folder} does not exist on node. Please create it in the storage root, or specify an alternate name." if @previews_folder_entry.nil?
             else
               raise 'only local storage allowed in this mode' unless @access_key_self['storage']['type'].eql?('local')
-              @local_storage_root=@access_key_self['storage']['path']
+              @local_storage_root = @access_key_self['storage']['path']
               #TODO: option to override @local_storage_root='xxx'
-              @local_storage_root=@local_storage_root[LOCAL_STORAGE_PCVL.length..-1] if @local_storage_root.start_with?(LOCAL_STORAGE_PCVL)
+              @local_storage_root = @local_storage_root[LOCAL_STORAGE_PCVL.length..-1] if @local_storage_root.start_with?(LOCAL_STORAGE_PCVL)
               #TODO: windows could have "C:" ?
               raise "not local storage: #{@local_storage_root}" unless @local_storage_root.start_with?('/')
               raise CliError,"Local storage root folder #{@local_storage_root} does not exist." unless File.directory?(@local_storage_root)
-              @local_preview_folder=File.join(@local_storage_root,@option_previews_folder)
+              @local_preview_folder = File.join(@local_storage_root,@option_previews_folder)
               raise CliError,"Folder #{@local_preview_folder} does not exist locally. Please create it, or specify an alternate name." unless File.directory?(@local_preview_folder)
               # protection to avoid clash of file id for two different access keys
-              marker_file=File.join(@local_preview_folder,AK_MARKER_FILE)
+              marker_file = File.join(@local_preview_folder,AK_MARKER_FILE)
               Log.log.debug("marker file: #{marker_file}")
               if File.exist?(marker_file)
-                ak=File.read(marker_file)
+                ak = File.read(marker_file)
                 raise "mismatch access key in #{marker_file}: contains #{ak}, using #{@access_key_self['id']}" unless @access_key_self['id'].eql?(ak)
               else
                 File.write(marker_file,@access_key_self['id'])
@@ -447,10 +448,10 @@ module Aspera
           Aspera::Preview::FileTypes.instance.use_mimemagic = options.get_option(:mimemagic,:mandatory)
           case command
           when :scan
-            scan_path=options.get_option(:scan_path,:optional)
-            scan_id=options.get_option(:scan_id,:optional)
+            scan_path = options.get_option(:scan_path,:optional)
+            scan_id = options.get_option(:scan_id,:optional)
             # by default start at root
-            folder_info=
+            folder_info =
             if scan_id.nil?
               { 'id'   => @access_key_self['root_file_id'],
                 'name' => '/',
@@ -462,9 +463,9 @@ module Aspera
             scan_folder_files(folder_info,scan_path)
             return Main.result_status('scan finished')
           when :events,:trevents
-            iteration_persistency=nil
+            iteration_persistency = nil
             if options.get_option(:once_only,:mandatory)
-              iteration_persistency=PersistencyActionOnce.new(
+              iteration_persistency = PersistencyActionOnce.new(
               manager: @agents[:persistency],
               data:    [],
               id:      IdGenerator.from_list(['preview_iteration',command.to_s,options.get_option(:url,:mandatory),options.get_option(:username,:mandatory)]))
@@ -478,8 +479,8 @@ module Aspera
           when :test
             format = options.get_next_argument('format',Aspera::Preview::Generator::PREVIEW_FORMATS)
             source = options.get_next_argument('source file')
-            dest=preview_filename(format,options.get_option(:case,:optional))
-            g=Aspera::Preview::Generator.new(@gen_options,source,dest,@tmp_folder,nil)
+            dest = preview_filename(format,options.get_option(:case,:optional))
+            g = Aspera::Preview::Generator.new(@gen_options,source,dest,@tmp_folder,nil)
             raise "cannot find file type for #{source}" if g.conversion_type.nil?
             raise "out format #{format} not supported" unless g.supported?
             g.generate

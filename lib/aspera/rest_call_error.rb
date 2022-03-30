@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 module Aspera
   # raised on error after REST call
   class RestCallError < StandardError

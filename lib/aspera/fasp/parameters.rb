@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 require 'aspera/log'
 require 'aspera/command_line_builder'
 require 'aspera/temp_file_manager'
@@ -14,37 +15,37 @@ module Aspera
     # translate transfer specification to ascp parameter list
     class Parameters
       # Agents shown in manual for parameters (sub list)
-      SUPPORTED_AGENTS=[:direct,:node,:connect]
+      SUPPORTED_AGENTS = [:direct,:node,:connect]
       # Short names of columns in manual
-      SUPPORTED_AGENTS_SHORT=SUPPORTED_AGENTS.map{|a|a.to_s[0].to_sym}
+      SUPPORTED_AGENTS_SHORT = SUPPORTED_AGENTS.map{|a|a.to_s[0].to_sym}
 
       class << self
         # Temp folder for file lists, must contain only file lists
         # because of garbage collection takes any file there
         # this could be refined, as , for instance, on macos, temp folder is already user specific
-        @file_list_folder=TempFileManager.instance.new_file_path_global('asession_filelists')
-        @param_description_cache=nil
+        @file_list_folder = TempFileManager.instance.new_file_path_global('asession_filelists')
+        @param_description_cache = nil
         # @return normalized description of transfer spec parameters, direct from yaml
         def description
           return @param_description_cache unless @param_description_cache.nil?
           # config file in same folder with same name as this source
-          @param_description_cache=YAML.load_file("#{__FILE__[0..-3]}yaml")
+          @param_description_cache = YAML.load_file("#{__FILE__[0..-3]}yaml")
           Aspera::CommandLineBuilder.normalize_description(@param_description_cache)
         end
 
         # @return a table suitable to display in manual
         def man_table
-          result=[]
+          result = []
           description.each do |k,i|
-            param={name: k, type: [i[:accepted_types]].flatten.join(','),description: i[:desc]}
+            param = {name: k, type: [i[:accepted_types]].flatten.join(','),description: i[:desc]}
             SUPPORTED_AGENTS.each do |a|
-              param[a.to_s[0].to_sym]=i[:tragents].nil? || i[:tragents].include?(a) ? 'Y' : ''
+              param[a.to_s[0].to_sym] = i[:tragents].nil? || i[:tragents].include?(a) ? 'Y' : ''
             end
             # only keep lines that are usable in supported agents
             next if SUPPORTED_AGENTS_SHORT.inject(true){|m,j|m && param[j].empty?}
-            param[:cli]=
+            param[:cli] =
             case i[:cltype]
-            when :envvar then 'env:'+i[:clvarname]
+            when :envvar then 'env:' + i[:clvarname]
             when :opt_without_arg,:opt_with_arg then i[:clswitch]
             else ''
             end
@@ -66,7 +67,7 @@ module Aspera
         def clconv_base64(v); Base64.strict_encode64(v); end
 
         def ts_has_file_list(ts)
-          ts.has_key?('EX_ascp_args') and ts['EX_ascp_args'].is_a?(Array) and ['--file-list','--file-pair-list'].any?{|i|ts['EX_ascp_args'].include?(i)}
+          ts.has_key?('EX_ascp_args') && ts['EX_ascp_args'].is_a?(Array) && ['--file-list','--file-pair-list'].any?{|i|ts['EX_ascp_args'].include?(i)}
         end
 
         def ts_to_env_args(transfer_spec,options)
@@ -75,7 +76,7 @@ module Aspera
 
         # temp file list files are created here
         def file_list_folder=(v)
-          @file_list_folder=v
+          @file_list_folder = v
           return if @file_list_folder.nil?
           FileUtils.mkdir_p(@file_list_folder)
           TempFileManager.instance.cleanup_expired(@file_list_folder)
@@ -87,18 +88,18 @@ module Aspera
 
       # @param options [Hash] key: :wss: bool
       def initialize(job_spec,options)
-        @job_spec=job_spec
-        @options=options
-        @builder=Aspera::CommandLineBuilder.new(@job_spec,self.class.description)
+        @job_spec = job_spec
+        @options = options
+        @builder = Aspera::CommandLineBuilder.new(@job_spec,self.class.description)
         Log.log.debug("agent options: #{@options}")
       end
 
       # translate transfer spec to env vars and command line arguments for ascp
       # NOTE: parameters starting with "EX_" (extended) are not standard
       def ascp_args
-        env_args={
-          args: [],
-          env: {},
+        env_args = {
+          args:         [],
+          env:          {},
           ascp_version: :ascp
         }
         # some ssh credentials are required to avoid interactive password input
@@ -117,12 +118,12 @@ module Aspera
           @builder.add_command_line_options(['--ws-connect'])
           # TODO: option to give order ssh,ws (legacy http is implied bu ssh)
           # quel bordel:
-          @job_spec['ssh_port']=@builder.process_param('wss_port',:get_value)
+          @job_spec['ssh_port'] = @builder.process_param('wss_port',:get_value)
           @job_spec.delete('fasp_port')
           @job_spec.delete('EX_ssh_key_paths')
           @job_spec.delete('sshfp')
           # set location for CA bundle to be the one of Ruby, see env var SSL_CERT_FILE / SSL_CERT_DIR
-          @job_spec['EX_ssh_key_paths']=[OpenSSL::X509::DEFAULT_CERT_FILE]
+          @job_spec['EX_ssh_key_paths'] = [OpenSSL::X509::DEFAULT_CERT_FILE]
           Log.log.debug('CA certs: EX_ssh_key_paths <- DEFAULT_CERT_FILE from openssl')
         else
           # remove unused parameter (avoid warning)
@@ -141,12 +142,12 @@ module Aspera
           @builder.add_command_line_options(['--dest64'])
         end
         # paths is mandatory, unless ...
-        file_list_provided=self.class.ts_has_file_list(@job_spec)
-        @builder.params_definition['paths'][:mandatory]=!@job_spec.has_key?('keepalive') and !file_list_provided
-        paths_array=@builder.process_param('paths',:get_value)
+        file_list_provided = self.class.ts_has_file_list(@job_spec)
+        (@builder.params_definition['paths'][:mandatory] = !@job_spec.has_key?('keepalive')) && !file_list_provided
+        paths_array = @builder.process_param('paths',:get_value)
         if file_list_provided && !paths_array.nil?
           Log.log.warn('file list provided both in transfer spec and ascp file list. Keeping file list only.')
-          paths_array=nil
+          paths_array = nil
         end
         if !paths_array.nil?
           # it's an array
@@ -157,25 +158,25 @@ module Aspera
             Log.log.debug('placing source file list on command line (no file list file)')
             @builder.add_command_line_options(paths_array.map{|i|i['source']})
           else
-            file_list_file=@builder.process_param('EX_file_list',:get_value)
+            file_list_file = @builder.process_param('EX_file_list',:get_value)
             if !file_list_file.nil?
-              option='--file-list'
+              option = '--file-list'
             else
-              file_list_file=@builder.process_param('EX_file_pair_list',:get_value)
+              file_list_file = @builder.process_param('EX_file_pair_list',:get_value)
               if !file_list_file.nil?
-                option='--file-pair-list'
+                option = '--file-pair-list'
               else
                 # safer option: file list
                 # if there is destination in paths, then use filepairlist
                 # TODO: well, we test only the first one, but anyway it shall be consistent
                 if paths_array.first.has_key?('destination')
-                  option='--file-pair-list'
-                  lines=paths_array.each_with_object([]){|e,m|m.push(e['source'],e['destination']);}
+                  option = '--file-pair-list'
+                  lines = paths_array.each_with_object([]){|e,m|m.push(e['source'],e['destination']);}
                 else
-                  option='--file-list'
-                  lines=paths_array.map{|i|i['source']}
+                  option = '--file-list'
+                  lines = paths_array.map{|i|i['source']}
                 end
-                file_list_file=Aspera::TempFileManager.instance.new_file_path_in_folder(self.class.file_list_folder)
+                file_list_file = Aspera::TempFileManager.instance.new_file_path_in_folder(self.class.file_list_folder)
                 File.write(file_list_file, lines.join("\n"))
                 Log.log.debug{"#{option}=\n#{File.read(file_list_file)}".red}
               end

@@ -1,12 +1,13 @@
 # frozen_string_literal: true
+
 require_relative 'lib/aspera/cli/version'
 require_relative 'lib/aspera/cli/info'
 
 # expected extension of gemspec file
-GEMSPEC_EXT='.gemspec'
+GEMSPEC_EXT = '.gemspec'
 Gem::Specification.new do |spec|
   # get location of this file (shall be in project root)
-  gemspec_file=File.expand_path(__FILE__)
+  gemspec_file = File.expand_path(__FILE__)
   raise "Error: this file extension must be '#{GEMSPEC_EXT}'" unless gemspec_file.end_with?(GEMSPEC_EXT)
   raise "This file shall be named: #{Aspera::Cli::GEM_NAME}#{GEMSPEC_EXT}" unless Aspera::Cli::GEM_NAME.eql?(File.basename(gemspec_file,GEMSPEC_EXT).downcase)
   # the base name of this file shall be the gem name
@@ -29,7 +30,7 @@ Gem::Specification.new do |spec|
   spec.require_paths = ['lib']
   spec.bindir        = 'bin'
   # list git files from specified location in root folder of project (this gemspec is in project root folder)
-  spec.files=Dir.chdir(File.dirname(gemspec_file)){%x(git ls-files -z lib bin examples README.md docs/*.conf).split("\x0")}
+  spec.files = Dir.chdir(File.dirname(gemspec_file)){%x(git ls-files -z lib bin examples README.md docs/*.conf).split("\x0")}
   # specify executable names: must be after lines defining: spec.bindir and spec.files
   spec.executables = spec.files.grep(%r{^#{spec.bindir}}){|f|File.basename(f)}
   spec.required_ruby_version = '>= 2.4'
@@ -53,4 +54,8 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency('rspec', '~> 3.0')
   spec.add_development_dependency('rubocop', '~> 1.12')
   spec.add_development_dependency('rubocop-ast', '~> 1.4')
+  spec.add_development_dependency('rubocop-performance', '~> 1.12')
+  spec.add_development_dependency('rubocop-shopify', '~> 2.3')
+  spec.add_development_dependency('simplecov', '~> 0.18')
+  spec.add_development_dependency('solargraph', '~> 0.44')
 end

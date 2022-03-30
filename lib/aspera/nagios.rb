@@ -1,25 +1,26 @@
 # frozen_string_literal: true
+
 require 'date'
 
 module Aspera
   class Nagios
     # nagios levels
-    LEVELS=[:ok,:warning,:critical,:unknown,:dependent]
-    ADD_PREFIX='add_'
+    LEVELS = [:ok,:warning,:critical,:unknown,:dependent]
+    ADD_PREFIX = 'add_'
     # date offset levels
-    DATE_WARN_OFFSET=2
-    DATE_CRIT_OFFSET=5
+    DATE_WARN_OFFSET = 2
+    DATE_CRIT_OFFSET = 5
     private_constant :LEVELS,:ADD_PREFIX,:DATE_WARN_OFFSET,:DATE_CRIT_OFFSET
 
     # add methods to add nagios error levels, each take component name and message
     LEVELS.each_index do |code|
-      name="#{ADD_PREFIX}#{LEVELS[code]}".to_sym
+      name = "#{ADD_PREFIX}#{LEVELS[code]}".to_sym
       define_method(name){|comp,msg|@data.push({code: code,comp: comp,msg: msg})}
     end
 
     attr_reader :data
     def initialize
-      @data=[]
+      @data = []
     end
 
     # comparte remote time with local time
@@ -27,9 +28,9 @@ module Aspera
       # check date if specified : 2015-10-13T07:32:01Z
       rtime = DateTime.strptime(remote_date)
       diff_time = (rtime - DateTime.now).abs
-      diff_disp=diff_time.round(-2)
+      diff_disp = diff_time.round(-2)
       Log.log.debug("DATE: #{remote_date} #{rtime} diff=#{diff_disp}")
-      msg="offset #{diff_disp} sec"
+      msg = "offset #{diff_disp} sec"
       if diff_time >= DATE_CRIT_OFFSET
         add_critical(component,msg)
       elsif diff_time >= DATE_WARN_OFFSET
@@ -47,7 +48,7 @@ module Aspera
     # translate for display
     def result
       raise 'missing result' if @data.empty?
-      {type: :object_list,data: @data.map{|i|{'status'=>LEVELS[i[:code]].to_s,'component'=>i[:comp],'message'=>i[:msg]}}}
+      {type: :object_list,data: @data.map{|i|{'status' => LEVELS[i[:code]].to_s,'component' => i[:comp],'message' => i[:msg]}}}
     end
 
     # process results of a analysis and display status and exit with code
@@ -58,11 +59,11 @@ module Aspera
       # keep only errors in case of problem, other ok are assumed so
       data = res_errors unless res_errors.empty?
       # first is most critical
-      data.sort!{|a,b|LEVELS.index(a['status'].to_sym)<=>LEVELS.index(b['status'].to_sym)}
+      data.sort!{|a,b|LEVELS.index(a['status'].to_sym) <=> LEVELS.index(b['status'].to_sym)}
       # build message: if multiple components: concatenate
       #message = data.map{|i|"#{i['component']}:#{i['message']}"}.join(', ').gsub("\n",' ')
-      message = data.map{|i|i['component']}.uniq.map{|comp|comp+':'+data.select{|d|d['component'].eql?(comp)}.map{|d|d['message']}.join(',')}.join(', ').gsub("\n",' ')
-      status=data.first['status'].upcase
+      message = data.map{|i|i['component']}.uniq.map{|comp|comp + ':' + data.select{|d|d['component'].eql?(comp)}.map{|d|d['message']}.join(',')}.join(', ').tr("\n",' ')
+      status = data.first['status'].upcase
       # display status for nagios
       puts("#{status} - [#{message}]\n")
       # provide exit code to nagios

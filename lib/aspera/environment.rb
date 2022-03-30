@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 require 'aspera/log'
 require 'rbconfig'
 
@@ -9,14 +10,14 @@ module Aspera
     OS_X = :osx
     OS_LINUX = :linux
     OS_AIX = :aix
-    OS_LIST=[OS_WINDOWS,OS_X,OS_LINUX,OS_AIX].freeze
-    CPU_X86_64=:x86_64 # rubocop:disable Naming/VariableNumber
-    CPU_PPC64=:ppc64
-    CPU_PPC64LE=:ppc64le
-    CPU_S390=:s390
-    CPU_LIST=[CPU_X86_64,CPU_PPC64,CPU_PPC64LE,CPU_S390].freeze
+    OS_LIST = [OS_WINDOWS,OS_X,OS_LINUX,OS_AIX].freeze
+    CPU_X86_64 = :x86_64 # rubocop:disable Naming/VariableNumber
+    CPU_PPC64 = :ppc64
+    CPU_PPC64LE = :ppc64le
+    CPU_S390 = :s390
+    CPU_LIST = [CPU_X86_64,CPU_PPC64,CPU_PPC64LE,CPU_S390].freeze
 
-    class<<self
+    class << self
       def ruby_version
         return RbConfig::CONFIG['RUBY_PROGRAM_VERSION']
       end
@@ -63,7 +64,7 @@ module Aspera
       # so, tell Ruby the right way
       def fix_home
         return unless os.eql?(OS_WINDOWS) && ENV.has_key?('USERPROFILE') && Dir.exist?(ENV['USERPROFILE'])
-        ENV['HOME']=ENV['USERPROFILE']
+        ENV['HOME'] = ENV['USERPROFILE']
         Log.log.debug("Windows: set home to USERPROFILE: #{ENV['HOME']}")
       end
     end

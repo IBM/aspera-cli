@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 module Aspera
   module Cli
     # name of command line tool, also used as foldername where config is stored
@@ -12,6 +13,6 @@ module Aspera
     # for example currently minimum version is 2.4 in gemspec, but future minimum will be 2.5
     # set to currenmt minimum if there is no deprecation
     # the actual current minimum required version is in gemspec at required_ruby_version
-    RUBY_FUTURE_MINIMUM_VERSION='2.5'
+    RUBY_FUTURE_MINIMUM_VERSION = '2.5'
   end
 end

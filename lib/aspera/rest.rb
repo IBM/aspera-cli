@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 require 'aspera/log'
 require 'aspera/oauth'
 require 'aspera/rest_error_analyzer'
@@ -30,40 +31,40 @@ module Aspera
   # and error are analyzed in RestErrorAnalyzer
   class Rest
     # global settings also valid for any subclass
-    @@global={ # rubocop:disable Style/ClassVars
-      debug: false,
+    @@global = { # rubocop:disable Style/ClassVars
+      debug:                   false,
       # true if https ignore certificate
-      insecure: false,
-      user_agent: 'Ruby',
+      insecure:                false,
+      user_agent:              'Ruby',
       download_partial_suffix: '.http_partial',
       # a lambda which takes the Net::HTTP as arg, use this to change parameters
-      session_cb: nil
+      session_cb:              nil
     }
 
-    class<<self
+    class << self
       # define accessors
       @@global.keys.each do |p|
         define_method(p){@@global[p]}
-        define_method("#{p}="){|val|Log.log.debug("#{p} => #{val}".red);@@global[p]=val}
+        define_method("#{p}="){|val|Log.log.debug("#{p} => #{val}".red);@@global[p] = val}
       end
 
       def basic_creds(user,pass); return "Basic #{Base64.strict_encode64("#{user}:#{pass}")}";end
 
       # build URI from URL and parameters and check it is http or https
       def build_uri(url,params=nil)
-        uri=URI.parse(url)
+        uri = URI.parse(url)
         raise 'REST endpoint shall be http(s)' unless ['http','https'].include?(uri.scheme)
         if !params.nil?
           # support array url params, there is no standard. Either p[]=1&p[]=2, or p=1&p=2
           if params.is_a?(Hash)
-            orig=params
-            params=[]
+            orig = params
+            params = []
             orig.each do |k,v|
               case v
               when Array
-                suffix=v.first.eql?('[]') ? v.shift : ''
+                suffix = v.first.eql?('[]') ? v.shift : ''
                 v.each do |e|
-                  params.push([k+suffix,e])
+                  params.push([k + suffix,e])
                 end
               else
                 params.push([k,v])
@@ -71,7 +72,7 @@ module Aspera
             end
           end
           # CGI.unescape to transform back %5D into []
-          uri.query=CGI.unescape(URI.encode_www_form(params))
+          uri.query = CGI.unescape(URI.encode_www_form(params))
         end
         return uri
       end
@@ -82,9 +83,9 @@ module Aspera
     # create and start keep alive connection on demand
     def http_session
       if @http_session.nil?
-        uri=self.class.build_uri(@params[:base_url])
+        uri = self.class.build_uri(@params[:base_url])
         # this honors http_proxy env var
-        @http_session=Net::HTTP.new(uri.host, uri.port)
+        @http_session = Net::HTTP.new(uri.host, uri.port)
         @http_session.use_ssl = uri.scheme.eql?('https')
         @http_session.verify_mode = OpenSSL::SSL::VERIFY_NONE if self.class.insecure
         @http_session.set_debug_output($stdout) if self.class.debug
@@ -103,7 +104,7 @@ module Aspera
     def oauth
       if @oauth.nil?
         raise 'ERROR: no OAuth defined' unless @params[:auth][:type].eql?(:oauth2)
-        @oauth=Oauth.new(@params[:auth])
+        @oauth = Oauth.new(@params[:auth])
       end
       return @oauth
     end
@@ -112,15 +113,15 @@ module Aspera
     def initialize(a_rest_params)
       raise 'ERROR: expecting Hash' unless a_rest_params.is_a?(Hash)
       raise 'ERROR: expecting base_url' unless a_rest_params[:base_url].is_a?(String)
-      @params=a_rest_params.clone
+      @params = a_rest_params.clone
       Log.dump('REST params',@params)
       # base url without trailing slashes (note: string may be frozen)
-      @params[:base_url]=@params[:base_url].gsub(/\/+$/,'')
-      @http_session=nil
+      @params[:base_url] = @params[:base_url].gsub(/\/+$/,'')
+      @http_session = nil
       # default is no auth
-      @params[:auth]||={type: :none}
-      @params[:not_auth_codes]||=['401']
-      @oauth=nil
+      @params[:auth] ||= {type: :none}
+      @params[:not_auth_codes] ||= ['401']
+      @oauth = nil
       Log.dump('REST params(2)',@params)
     end
 
@@ -132,28 +133,28 @@ module Aspera
     def build_request(call_data)
       # TODO: shall we percent encode subpath (spaces) test with access key delete with space in id
       # URI.escape()
-      uri=self.class.build_uri("#{call_data[:base_url]}#{['','/'].include?(call_data[:subpath]) ? '' : '/'}#{call_data[:subpath]}",call_data[:url_params])
+      uri = self.class.build_uri("#{call_data[:base_url]}#{['','/'].include?(call_data[:subpath]) ? '' : '/'}#{call_data[:subpath]}",call_data[:url_params])
       Log.log.debug("URI=#{uri}")
       begin
         # instanciate request object based on string name
-        req=Net::HTTP.const_get(call_data[:operation].capitalize).new(uri)
+        req = Net::HTTP.const_get(call_data[:operation].capitalize).new(uri)
       rescue NameError
         raise "unsupported operation : #{call_data[:operation]}"
       end
       if call_data.has_key?(:json_params) && !call_data[:json_params].nil?
-        req.body=JSON.generate(call_data[:json_params])
+        req.body = JSON.generate(call_data[:json_params])
         Log.dump('body JSON data',call_data[:json_params])
         #Log.log.debug("body JSON data=#{JSON.pretty_generate(call_data[:json_params])}")
         req['Content-Type'] = 'application/json'
         #call_data[:headers]['Accept']='application/json'
       end
       if call_data.has_key?(:www_body_params)
-        req.body=URI.encode_www_form(call_data[:www_body_params])
+        req.body = URI.encode_www_form(call_data[:www_body_params])
         Log.log.debug("body www data=#{req.body.chomp}")
         req['Content-Type'] = 'application/x-www-form-urlencoded'
       end
       if call_data.has_key?(:text_body_params)
-        req.body=call_data[:text_body_params]
+        req.body = call_data[:text_body_params]
         Log.log.debug("body data=#{req.body.chomp}")
       end
       # set headers
@@ -190,12 +191,12 @@ module Aspera
     # :*          [:oauth2] see Oauth class
     def call(call_data)
       raise "Hash call parameter is required (#{call_data.class})" unless call_data.is_a?(Hash)
-      call_data[:subpath]='' if call_data[:subpath].nil?
+      call_data[:subpath] = '' if call_data[:subpath].nil?
       Log.log.debug("accessing #{call_data[:subpath]}".red.bold.bg_green)
-      call_data[:headers]||={}
+      call_data[:headers] ||= {}
       call_data[:headers]['User-Agent'] ||= self.class.user_agent
       # defaults from @params are overriden by call data
-      call_data=@params.deep_merge(call_data)
+      call_data = @params.deep_merge(call_data)
       case call_data[:auth][:type]
       when :none
         # no auth
@@ -203,60 +204,60 @@ module Aspera
         Log.log.debug('using Basic auth')
         # done in build_req
       when :oauth2
-        call_data[:headers]['Authorization']=oauth_token unless call_data[:headers].has_key?('Authorization')
+        call_data[:headers]['Authorization'] = oauth_token unless call_data[:headers].has_key?('Authorization')
       when :url
-        call_data[:url_params]||={}
+        call_data[:url_params] ||= {}
         call_data[:auth][:url_creds].each do |key, value|
-          call_data[:url_params][key]=value
+          call_data[:url_params][key] = value
         end
       else raise "unsupported auth type: [#{call_data[:auth][:type]}]"
       end
-      req=build_request(call_data)
+      req = build_request(call_data)
       Log.log.debug("call_data = #{call_data}")
-      result={http: nil}
+      result = {http: nil}
       # start a block to be able to retry the actual HTTP request
       begin
         # we try the call, and will retry only if oauth, as we can, first with refresh, and then re-auth if refresh is bad
         oauth_tries ||= 2
-        tries_remain_redirect||=call_data[:redirect_max].nil? ? 0 : call_data[:redirect_max].to_i
+        tries_remain_redirect ||= call_data[:redirect_max].nil? ? 0 : call_data[:redirect_max].to_i
         Log.log.debug('send request')
         # make http request (pipelined)
         http_session.request(req) do |response|
           result[:http] = response
           if !call_data[:save_to_file].nil? && result[:http].code.to_s.start_with?('2')
-            total_size=result[:http]['Content-Length'].to_i
-            progress=ProgressBar.create(
+            total_size = result[:http]['Content-Length'].to_i
+            progress = ProgressBar.create(
             format:     '%a %B %p%% %r KB/sec %e',
-            rate_scale: lambda{|rate|rate/1024},
+            rate_scale: lambda{|rate|rate / 1024},
             title:      'progress',
             total:      total_size)
             Log.log.debug('before write file')
-            target_file=call_data[:save_to_file]
+            target_file = call_data[:save_to_file]
             # override user's path to path in header
-            if !response['Content-Disposition'].nil? && (m=response['Content-Disposition'].match(/filename="([^"]+)"/))
-              target_file=File.join(File.dirname(target_file),m[1])
+            if !response['Content-Disposition'].nil? && (m = response['Content-Disposition'].match(/filename="([^"]+)"/))
+              target_file = File.join(File.dirname(target_file),m[1])
             end
             # download with temp filename
-            target_file_tmp="#{target_file}#{self.class.download_partial_suffix}"
+            target_file_tmp = "#{target_file}#{self.class.download_partial_suffix}"
             Log.log.debug("saving to: #{target_file}")
             File.open(target_file_tmp, 'wb') do |file|
               result[:http].read_body do |fragment|
                 file.write(fragment)
-                new_process=progress.progress+fragment.length
+                new_process = progress.progress + fragment.length
                 new_process = total_size if new_process > total_size
-                progress.progress=new_process
+                progress.progress = new_process
               end
             end
             # rename at the end
             File.rename(target_file_tmp, target_file)
-            progress=nil
+            progress = nil
           end # save_to_file
         end
         # sometimes there is a UTF8 char (e.g. (c) )
         result[:http].body.force_encoding('UTF-8') if result[:http].body.is_a?(String)
         Log.log.debug("result: body=#{result[:http].body}")
-        result_mime=(result[:http]['Content-Type']||'text/plain').split(';').first
-        result[:data]=case result_mime
+        result_mime = (result[:http]['Content-Type'] || 'text/plain').split(';').first
+        result[:data] = case result_mime
         when 'application/json','application/vnd.api+json'
           JSON.parse(result[:http].body) rescue nil
         else #when 'text/plain'
@@ -270,11 +271,11 @@ module Aspera
         if call_data[:not_auth_codes].include?(result[:http].code.to_s) && call_data[:auth][:type].eql?(:oauth2)
           begin
             # try to use refresh token
-            req['Authorization']=oauth_token(force_refresh: true)
+            req['Authorization'] = oauth_token(force_refresh: true)
           rescue RestCallError => e
             Log.log.error('refresh failed'.bg_red)
             # regenerate a brand new token
-            req['Authorization']=oauth_token
+            req['Authorization'] = oauth_token
           end
           Log.log.debug("using new token=#{call_data[:headers]['Authorization']}")
           retry unless (oauth_tries -= 1).zero?
@@ -282,14 +283,14 @@ module Aspera
         # moved ?
         raise e unless e.response.is_a?(Net::HTTPRedirection)
         if tries_remain_redirect.positive?
-          tries_remain_redirect-=1
+          tries_remain_redirect -= 1
           Log.log.info("URL is moved: #{e.response['location']}")
-          current_uri=URI.parse(call_data[:base_url])
-          redir_uri=URI.parse(e.response['location'])
-          call_data[:base_url]=e.response['location']
-          call_data[:subpath]=''
+          current_uri = URI.parse(call_data[:base_url])
+          redir_uri = URI.parse(e.response['location'])
+          call_data[:base_url] = e.response['location']
+          call_data[:subpath] = ''
           if current_uri.host.eql?(redir_uri.host) && current_uri.port.eql?(redir_uri.port)
-            req=build_request(call_data)
+            req = build_request(call_data)
             retry
           else
             # change host
@@ -312,23 +313,23 @@ module Aspera
 
     # @param encoding : one of: :json_params, :url_params
     def create(subpath,params,encoding=:json_params)
-      return call({operation: 'POST',subpath: subpath,headers: {'Accept'=>'application/json'},encoding=>params})
+      return call({operation: 'POST',subpath: subpath,headers: {'Accept' => 'application/json'},encoding => params})
     end
 
     def read(subpath,args=nil)
-      return call({operation: 'GET',subpath: subpath,headers: {'Accept'=>'application/json'},url_params: args})
+      return call({operation: 'GET',subpath: subpath,headers: {'Accept' => 'application/json'},url_params: args})
     end
 
     def update(subpath,params)
-      return call({operation: 'PUT',subpath: subpath,headers: {'Accept'=>'application/json'},json_params: params})
+      return call({operation: 'PUT',subpath: subpath,headers: {'Accept' => 'application/json'},json_params: params})
     end
 
     def delete(subpath)
-      return call({operation: 'DELETE',subpath: subpath,headers: {'Accept'=>'application/json'}})
+      return call({operation: 'DELETE',subpath: subpath,headers: {'Accept' => 'application/json'}})
     end
 
     def cancel(subpath)
-      return call({operation: 'CANCEL',subpath: subpath,headers: {'Accept'=>'application/json'}})
+      return call({operation: 'CANCEL',subpath: subpath,headers: {'Accept' => 'application/json'}})
     end
   end
 end #module Aspera

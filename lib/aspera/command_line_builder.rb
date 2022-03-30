@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 module Aspera
   # helper class to build command line from a parameter list (key-value hash)
   # constructor takes hash: { 'param1':'value1', ...}
@@ -20,16 +21,16 @@ module Aspera
         raise "Expecting Hash, but have #{options.class} in #{param_name}" unless options.is_a?(Hash)
         #options[:accepted_types]=:bool if options[:cltype].eql?(:envvar) and !options.has_key?(:accepted_types)
         # by default : not mandatory
-        options[:mandatory]||=false
-        options[:desc]||=''
+        options[:mandatory] ||= false
+        options[:desc] ||= ''
         # by default : string, unless it's without arg
         if !options.has_key?(:accepted_types)
-          options[:accepted_types]=options[:cltype].eql?(:opt_without_arg) ? :bool : :string
+          options[:accepted_types] = options[:cltype].eql?(:opt_without_arg) ? :bool : :string
         end
         # single type is placed in array
-        options[:accepted_types]=[options[:accepted_types]] unless options[:accepted_types].is_a?(Array)
+        options[:accepted_types] = [options[:accepted_types]] unless options[:accepted_types].is_a?(Array)
         if !options.has_key?(:clswitch) && options.has_key?(:cltype) && [:opt_without_arg,:opt_with_arg].include?(options[:cltype])
-          options[:clswitch]='--'+param_name.to_s.gsub('_','-')
+          options[:clswitch] = '--' + param_name.to_s.tr('_','-')
         end
       end
     end
@@ -47,11 +48,11 @@ module Aspera
 
     # @param param_hash
     def initialize(param_hash,params_definition)
-      @param_hash=param_hash # keep reference so that it can be modified by caller before calling `process_params`
-      @params_definition=params_definition
-      @result_env={}
-      @result_args=[]
-      @used_param_names=[]
+      @param_hash = param_hash # keep reference so that it can be modified by caller before calling `process_params`
+      @params_definition = params_definition
+      @result_env = {}
+      @result_args = []
+      @used_param_names = []
     end
 
     def warn_unrecognized_params
@@ -86,21 +87,21 @@ module Aspera
     # @param action : type of processing: ignore getvalue envvar opt_without_arg opt_with_arg defer
     # @param options : options for type
     def process_param(param_name,action=nil)
-      options=@params_definition[param_name]
+      options = @params_definition[param_name]
       # should not happen
       if options.nil?
         Log.log.warn("Unknown parameter #{param_name}")
         return
       end
-      action=options[:cltype] if action.nil?
+      action = options[:cltype] if action.nil?
       # check mandatory parameter (nil is valid value)
       raise Fasp::Error, "Missing mandatory parameter: #{param_name}" if options[:mandatory] && !@param_hash.has_key?(param_name)
-      parameter_value=@param_hash[param_name]
+      parameter_value = @param_hash[param_name]
 
       #parameter_value=options[:default] if parameter_value.nil? and options.has_key?(:default)
 
       # Check parameter type
-      expected_classes=options[:accepted_types].map do |s|
+      expected_classes = options[:accepted_types].map do |s|
         case s
         when :string then String
         when :array then Array
@@ -123,15 +124,15 @@ module Aspera
       case options[:clconvert]
       when Hash
         # translate using conversion table
-        new_value=options[:clconvert][parameter_value]
+        new_value = options[:clconvert][parameter_value]
         raise "unsupported value: #{parameter_value}, expect: #{options[:clconvert].keys.join(', ')}" if new_value.nil?
-        parameter_value=new_value
+        parameter_value = new_value
       when String
         # :clconvert has name of class and encoding method
-        convclass,convmethod=options[:clconvert].split('.')
-        newvalue=Kernel.const_get(convclass).send(convmethod,parameter_value)
+        convclass,convmethod = options[:clconvert].split('.')
+        newvalue = Kernel.const_get(convclass).send(convmethod,parameter_value)
         raise Fasp::Error, "unsupported #{param_name}: #{parameter_value}" if newvalue.nil?
-        parameter_value=newvalue
+        parameter_value = newvalue
       when NilClass
       else raise "not expected type for clconvert #{options[:clconvert].class} for #{param_name}"
       end
@@ -145,17 +146,17 @@ module Aspera
         # define ascp parameter in env var from transfer spec
         @result_env[env_name(param_name,options)] = parameter_value
       when :opt_without_arg # if present and true : just add option without value
-        add_param=false
+        add_param = false
         case parameter_value
         when false then nil # nothing to put on command line, no creation by default
-        when true then add_param=true
+        when true then add_param = true
         else raise Fasp::Error, "unsupported #{param_name}: #{parameter_value}"
         end
-        add_param= !add_param if options[:add_on_false]
+        add_param = !add_param if options[:add_on_false]
         add_command_line_options([options[:clswitch]]) if add_param
       when :opt_with_arg # transform into command line option with value
         #parameter_value=parameter_value.to_s if parameter_value.is_a?(Integer)
-        parameter_value=[parameter_value] unless parameter_value.is_a?(Array)
+        parameter_value = [parameter_value] unless parameter_value.is_a?(Array)
         # if transfer_spec value is an array, applies option many times
         parameter_value.each{|v|add_command_line_options([options[:clswitch],v])}
       when NilClass

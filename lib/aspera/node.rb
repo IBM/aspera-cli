@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 require 'aspera/fasp/transfer_spec'
 require 'aspera/rest'
 require 'aspera/oauth'
@@ -10,17 +11,17 @@ module Aspera
   # Provides additional functions using node API.
   class Node < Rest
     # permissions
-    ACCESS_LEVELS=%w[delete list mkdir preview read rename write].freeze
+    ACCESS_LEVELS = %w[delete list mkdir preview read rename write].freeze
     # prefix for ruby code for filter
-    MATCH_EXEC_PREFIX='exec:'
+    MATCH_EXEC_PREFIX = 'exec:'
 
     # register node special token decoder
     Oauth.register_decoder(lambda{|token|JSON.parse(Zlib::Inflate.inflate(Base64.decode64(token)).partition('==SIGNATURE==').first)})
 
-    class<<self
+    class << self
       def set_ak_basic_token(ts,ak,secret)
         Log.log.warn("Expected transfer user: #{Fasp::TransferSpec::ACCESS_KEY_TRANSFER_USER}, but have #{ts['remote_user']}") unless ts['remote_user'].eql?(Fasp::TransferSpec::ACCESS_KEY_TRANSFER_USER)
-        ts['token']="Basic #{Base64.strict_encode64("#{ak}:#{secret}")}"
+        ts['token'] = "Basic #{Base64.strict_encode64("#{ak}:#{secret}")}"
       end
 
       def empty_binding
@@ -32,7 +33,7 @@ module Aspera
       # if prefix: ruby code
       # if filder is nil, then always match
       def file_matcher(match_expression)
-        match_expression||="#{MATCH_EXEC_PREFIX}true"
+        match_expression ||= "#{MATCH_EXEC_PREFIX}true"
         if match_expression.start_with?(MATCH_EXEC_PREFIX)
           return eval("lambda{|f|#{match_expression[MATCH_EXEC_PREFIX.length..-1]}}", empty_binding, __FILE__, __LINE__)
         end
@@ -60,7 +61,7 @@ module Aspera
       raise "processor must have #{opt[:method]}" unless processor.respond_to?(opt[:method])
       Log.log.debug("crawl #{opt}")
       #top_info=read("files/#{opt[:top_file_id]}")[:data]
-      folders_to_explore=[{id: opt[:top_file_id], relpath: opt[:top_file_path]}]
+      folders_to_explore = [{id: opt[:top_file_id], relpath: opt[:top_file_path]}]
       Log.dump(:folders_to_explore,folders_to_explore)
       while !folders_to_explore.empty?
         current_item = folders_to_explore.shift
@@ -74,7 +75,7 @@ module Aspera
         end
         Log.dump(:folder_contents,folder_contents)
         folder_contents.each do |entry|
-          relative_path=File.join(current_item[:relpath],entry['name'])
+          relative_path = File.join(current_item[:relpath],entry['name'])
           Log.log.debug("looking #{relative_path}".bg_green)
           # entry type is file, folder or link
           if processor.send(opt[:method],entry,relative_path) && entry['type'].eql?('folder')

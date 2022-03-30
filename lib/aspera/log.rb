@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 require 'aspera/colors'
 require 'logger'
 require 'pp'
@@ -9,13 +10,13 @@ module Aspera
   # Singleton object for logging
   class Log
     # display string for hidden secrets
-    HIDDEN_PASSWORD='🔑'
+    HIDDEN_PASSWORD = '🔑'
     private_constant :HIDDEN_PASSWORD
     include Singleton
     # class methods
     class << self
       # levels are :debug,:info,:warn,:error,fatal,:unknown
-      def levels; Logger::Severity.constants.sort{|a,b|Logger::Severity.const_get(a)<=>Logger::Severity.const_get(b)}.map{|c|c.downcase.to_sym};end
+      def levels; Logger::Severity.constants.sort{|a,b|Logger::Severity.const_get(a) <=> Logger::Severity.const_get(b)}.map{|c|c.downcase.to_sym};end
 
       # where logs are sent to
       def logtypes; [:stderr,:stdout,:syslog];end
@@ -28,7 +29,7 @@ module Aspera
       # @param format either pp or json format
       def dump(name,object,format=:json)
         log.debug() do
-          result=
+          result =
           case format
           when :json
             JSON.pretty_generate(object) rescue PP.pp(object,'')
@@ -48,7 +49,7 @@ module Aspera
 
     # set log level of underlying logger given symbol level
     def level=(new_level)
-      @logger.level=Logger::Severity.const_get(new_level.to_sym.upcase)
+      @logger.level = Logger::Severity.const_get(new_level.to_sym.upcase)
     end
 
     # get symbol of debug level of underlying logger
@@ -62,9 +63,9 @@ module Aspera
 
     # change underlying logger, but keep log level
     def logger_type=(new_logtype)
-      current_severity_integer=@logger.level unless @logger.nil?
-      current_severity_integer=ENV['AS_LOG_LEVEL'] if current_severity_integer.nil? && ENV.has_key?('AS_LOG_LEVEL')
-      current_severity_integer=Logger::Severity::WARN if current_severity_integer.nil?
+      current_severity_integer = @logger.level unless @logger.nil?
+      current_severity_integer = ENV['AS_LOG_LEVEL'] if current_severity_integer.nil? && ENV.has_key?('AS_LOG_LEVEL')
+      current_severity_integer = Logger::Severity::WARN if current_severity_integer.nil?
       case new_logtype
       when :stderr
         @logger = Logger.new($stderr)
@@ -76,13 +77,13 @@ module Aspera
       else
         raise "unknown log type: #{new_logtype.class} #{new_logtype}"
       end
-      @logger.level=current_severity_integer
-      @logger_type=new_logtype
+      @logger.level = current_severity_integer
+      @logger_type = new_logtype
       original_formatter = @logger.formatter || Logger::Formatter.new
       # update formatter with password hiding, note that @log_secrets may be set AFTER this init is done, so it's done at runtime
-      @logger.formatter=lambda do |severity, datetime, progname, msg|
+      @logger.formatter = lambda do |severity, datetime, progname, msg|
         if msg.is_a?(String) && !@log_secrets
-          msg=msg
+          msg = msg
           .gsub(/(["':][^"]*(password|secret|private_key)[^"]*["']?[=>: ]+")([^"]+)(")/){"#{Regexp.last_match(1)}#{HIDDEN_PASSWORD}#{Regexp.last_match(4)}"}
           .gsub(/("[^"]*(secret)[^"]*"=>{)([^}]+)(})/){"#{Regexp.last_match(1)}#{HIDDEN_PASSWORD}#{Regexp.last_match(4)}"}
           .gsub(/((secrets)={)([^}]+)(})/){"#{Regexp.last_match(1)}#{HIDDEN_PASSWORD}#{Regexp.last_match(4)}"}
@@ -95,11 +96,11 @@ module Aspera
     private
 
     def initialize
-      @logger=nil
-      @program_name='aspera'
-      @log_secrets=false
+      @logger = nil
+      @program_name = 'aspera'
+      @log_secrets = false
       # this sets @logger and @logger_type (self needed to call method instead of local var)
-      self.logger_type=:stderr
+      self.logger_type = :stderr
       raise 'error logger shall be defined' if @logger.nil?
     end
   end

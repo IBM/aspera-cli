@@ -1,82 +1,85 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
+
 # Laurent Martin/2017
-$LOAD_PATH.unshift(File.dirname(__FILE__)+"/../lib")
+$LOAD_PATH.unshift(File.dirname(__FILE__) + '/../lib')
 require 'aspera/fasp/agent_direct'
 require 'aspera/cli/listener/line_dump'
 require 'aspera/cli/extended_value'
 require 'aspera/log'
 require 'json'
 # extended transfer spec parameter to change log level
-TS_LOGLEVEL='EX_loglevel'
+TS_LOGLEVEL = 'EX_loglevel'
 # by default go to /tmp/username.filelist
-TS_TMP_FILELIST_FOLDER='EX_file_list_folder'
+TS_TMP_FILELIST_FOLDER = 'EX_file_list_folder'
+
+SAMPLE_DEMO='"remote_host":"demo.asperasoft.com","remote_user":"asperaweb","ssh_port":33001,"remote_password":"demoaspera"'
 
 def assert_usage(assertion,errmsg)
   return if assertion
-  STDERR.puts('ERROR: '.red.blink+errmsg) if errmsg
-  STDERR.puts('USAGE')
-  STDERR.puts('    asession')
-  STDERR.puts('    asession -h|--help')
-  STDERR.puts('    asession <transfer spec extended value>')
-  STDERR.puts('    ')
-  STDERR.puts('    If no argument is provided, default will be used: @json:@stdin')
-  STDERR.puts('    -h, --help display this message')
-  STDERR.puts('    <transfer spec extended value> a JSON value for transfer_spec, using the prefix: @json:')
-  STDERR.puts('    The value can be either:')
-  STDERR.puts("       the JSON description itself, e.g. @json:'{\"xx\":\"yy\",...}'")
-  STDERR.puts('       @json:@stdin, if the JSON is provided from stdin')
-  STDERR.puts('       @json:@file:<path>, if the JSON is provided from a file')
-  STDERR.puts('    Asynchronous commands can be provided on STDIN, examples:')
-  STDERR.puts('       {"type":"START","source":"/aspera-test-dir-tiny/200KB.2"}')
-  STDERR.puts('       {"type":"START","source":"xx","destination":"yy"}')
-  STDERR.puts('       {"type":"DONE"}')
-  STDERR.puts('Note: debug information can be placed on STDERR, using the "'+TS_LOGLEVEL+'" parameter in transfer spec (debug=0)')
-  STDERR.puts('EXAMPLES')
-  STDERR.puts(%q(    asession @json:'{"remote_host":"demo.asperasoft.com","remote_user":"asperaweb","ssh_port":33001,"remote_password":"demoaspera","direction":"receive","destination_root":"./test.dir","paths":[{"source":"/aspera-test-dir-tiny/200KB.1"}]}'))
-  STDERR.puts(%q(    echo '{"remote_host":...}'|asession @json:@stdin))
+  $stderr.puts('ERROR: '.red.blink + errmsg) if errmsg
+  $stderr.puts('USAGE')
+  $stderr.puts('    asession')
+  $stderr.puts('    asession -h|--help')
+  $stderr.puts('    asession <transfer spec extended value>')
+  $stderr.puts('    ')
+  $stderr.puts('    If no argument is provided, default will be used: @json:@stdin')
+  $stderr.puts('    -h, --help display this message')
+  $stderr.puts('    <transfer spec extended value> a JSON value for transfer_spec, using the prefix: @json:')
+  $stderr.puts('    The value can be either:')
+  $stderr.puts("       the JSON description itself, e.g. @json:'{\"xx\":\"yy\",...}'")
+  $stderr.puts('       @json:@stdin, if the JSON is provided from stdin')
+  $stderr.puts('       @json:@file:<path>, if the JSON is provided from a file')
+  $stderr.puts('    Asynchronous commands can be provided on STDIN, examples:')
+  $stderr.puts('       {"type":"START","source":"/aspera-test-dir-tiny/200KB.2"}')
+  $stderr.puts('       {"type":"START","source":"xx","destination":"yy"}')
+  $stderr.puts('       {"type":"DONE"}')
+  $stderr.puts('Note: debug information can be placed on STDERR, using the "' + TS_LOGLEVEL + '" parameter in transfer spec (debug=0)')
+  $stderr.puts('EXAMPLES')
+  $stderr.puts(%q(    asession @json:'{#{SAMPLE_DEMO},"direction":"receive","destination_root":"./test.dir","paths":[{"source":"/aspera-test-dir-tiny/200KB.1"}]}'))
+  $stderr.puts(%q(    echo '{"remote_host":...}'|asession @json:@stdin))
   Process.exit(1)
 end
 
-parameter_source_err_msg=' (argument), did you specify: "@json:" ?'
+parameter_source_err_msg = ' (argument), did you specify: "@json:" ?'
 # by default assume JSON input on stdin if no argument
 if ARGV.empty?
   ARGV.push('@json:@stdin')
-  parameter_source_err_msg=' (JSON on stdin)'
+  parameter_source_err_msg = ' (JSON on stdin)'
 end
 # anyway expect only one argument: session information
 assert_usage(ARGV.length.eql?(1),'exactly one argument is expected')
 assert_usage(!['-h','--help'].include?(ARGV.first),nil)
 # parse transfer spec
 begin
-  transfer_spec_arg=ARGV.pop
-  transfer_spec=Aspera::Cli::ExtendedValue.instance.evaluate(transfer_spec_arg)
-rescue => e
+  transfer_spec_arg = ARGV.pop
+  transfer_spec = Aspera::Cli::ExtendedValue.instance.evaluate(transfer_spec_arg)
+rescue
   assert_usage(false,"Cannot extract transfer spec from: #{transfer_spec_arg}")
 end
 # ensure right type
 assert_usage(transfer_spec.is_a?(Hash),"the value must be a hash table#{parameter_source_err_msg}")
 # additional debug capability
 if transfer_spec.has_key?(TS_LOGLEVEL)
-  Aspera::Log.instance.level=transfer_spec[TS_LOGLEVEL]
+  Aspera::Log.instance.level = transfer_spec[TS_LOGLEVEL]
   transfer_spec.delete(TS_LOGLEVEL)
 end
 # possibly override temp folder
 if transfer_spec.has_key?(TS_TMP_FILELIST_FOLDER)
-  Aspera::Fasp::Parameters.file_list_folder=transfer_spec[TS_TMP_FILELIST_FOLDER]
+  Aspera::Fasp::Parameters.file_list_folder = transfer_spec[TS_TMP_FILELIST_FOLDER]
   transfer_spec.delete(TS_TMP_FILELIST_FOLDER)
 end
 # get local agent (ascp), disable ascp output on stdout to not mix with JSON events
-client=Aspera::Fasp::AgentDirect.new({quiet: true})
+client = Aspera::Fasp::AgentDirect.new({quiet: true})
 # display JSON instead of legacy Lines
 client.add_listener(Aspera::Cli::Listener::LineDump.new)
 # start transfer (asynchronous)
-job_id=client.start_transfer(transfer_spec)
+job_id = client.start_transfer(transfer_spec)
 # async commands
 Thread.new do
   begin
     loop do
-      data=JSON.parse(STDIN.gets)
+      data = JSON.parse($stdin.gets)
       client.send_command(job_id,0,data)
     end
   rescue

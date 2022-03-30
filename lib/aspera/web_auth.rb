@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 require 'webrick'
 require 'webrick/https'
 
@@ -8,7 +9,7 @@ module Aspera
     def initialize(server,application) # additional args get here
       Log.log.debug('WebAuthServlet initialize')
       super(server)
-      @app=application
+      @app = application
     end
 
     def service(request, response)
@@ -17,12 +18,12 @@ module Aspera
       raise WEBrick::HTTPStatus::NotFound,"unexpected path: #{request.path}" unless request.path.eql?(@app.expected_path)
       # acquire lock and signal change
       @app.mutex.synchronize do
-        @app.query=request.query
+        @app.query = request.query
         @app.cond.signal
       end
-      response.status=200
+      response.status = 200
       response.content_type = 'text/html'
-      response.body='<html><head><title>Ok</title></head><body><h1>Thank you !</h1><p>You can close this window.</p></body></html>'
+      response.body = '<html><head><title>Ok</title></head><body><h1>Thank you !</h1><p>You can close this window.</p></body></html>'
       return nil
     end
   end # WebAuthServlet
@@ -53,12 +54,12 @@ module Aspera
     attr_writer :query
     # @param endpoint_url [String] e.g. 'https://127.0.0.1:12345'
     def initialize(endpoint_url)
-      uri=URI.parse(endpoint_url)
+      uri = URI.parse(endpoint_url)
       # parameters for servlet
-      @query=nil
-      @mutex=Mutex.new
-      @cond=ConditionVariable.new
-      @expected_path=uri.path.empty? ? '/' : uri.path
+      @query = nil
+      @mutex = Mutex.new
+      @cond = ConditionVariable.new
+      @expected_path = uri.path.empty? ? '/' : uri.path
       # see https://www.rubydoc.info/stdlib/webrick/WEBrick/Config
       webrick_options = {
         BindAddress: uri.host,
@@ -70,7 +71,7 @@ module Aspera
       when 'http'
         Log.log.debug('HTTP mode')
       when 'https'
-        webrick_options[:SSLEnable]=true
+        webrick_options[:SSLEnable] = true
         webrick_options[:SSLVerifyClient] = OpenSSL::SSL::VERIFY_NONE
         # a- automatic certificate generation
         webrick_options[:SSLCertName] = [['CN',WEBrick::Utils.getservername]]
@@ -101,7 +102,7 @@ module Aspera
       @mutex.synchronize{@cond.wait(@mutex)}
       # tell server thread to stop
       @server.shutdown
-      @server=nil
+      @server = nil
       return @query
     end
   end

@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 require 'English'
 require 'aspera/cli/plugin'
 require 'aspera/sync'
@@ -17,16 +18,16 @@ module Aspera
           options.parse_options!
         end
 
-        ACTIONS=[:start, :admin]
+        ACTIONS = [:start, :admin]
 
         def execute_action
-          command=options.get_next_command(ACTIONS)
+          command = options.get_next_command(ACTIONS)
           case command
           when :start
-            env_args=Aspera::Sync.new(options.get_option(:parameters,:mandatory)).compute_args
-            async_bin='async'
+            env_args = Aspera::Sync.new(options.get_option(:parameters,:mandatory)).compute_args
+            async_bin = 'async'
             Log.log.debug("execute: #{env_args[:env].map{|k,v| "#{k}=\"#{v}\""}.join(' ')} \"#{async_bin}\" \"#{env_args[:args].join('" "')}\"")
-            res=system(env_args[:env],[async_bin,async_bin],*env_args[:args])
+            res = system(env_args[:env],[async_bin,async_bin],*env_args[:args])
             Log.log.debug("result=#{res}")
             case res
             when true then return Main.result_success
@@ -35,22 +36,22 @@ module Aspera
             else raise 'internal error: unspecified case'
             end
           when :admin
-            p=options.get_option(:parameters,:mandatory)
-            n=options.get_option(:session_name,:optional)
-            cmdline=['asyncadmin','--quiet']
-            session=n.nil? ? p['sessions'].first : p['sessions'].select{|s|s['name'].eql?(n)}.first
-            cmdline.push('--name='+session['name'])
+            p = options.get_option(:parameters,:mandatory)
+            n = options.get_option(:session_name,:optional)
+            cmdline = ['asyncadmin','--quiet']
+            session = n.nil? ? p['sessions'].first : p['sessions'].find{|s|s['name'].eql?(n)}
+            cmdline.push('--name=' + session['name'])
             if session.has_key?('local_db_dir')
-              cmdline.push('--local-db-dir='+session['local_db_dir'])
+              cmdline.push('--local-db-dir=' + session['local_db_dir'])
             else
-              cmdline.push('--local-dir='+session['local_dir'])
+              cmdline.push('--local-dir=' + session['local_dir'])
             end
-            command2=options.get_next_command([:status])
+            command2 = options.get_next_command([:status])
             case command2
             when :status
               stdout, stderr, status = Open3.capture3(*cmdline)
               Log.log.debug("status=#{status}, stderr=#{stderr}")
-              items=stdout.split("\n").each_with_object({}){|l,m|i=l.split(/:  */);m[i.first.lstrip]=i.last.lstrip;}
+              items = stdout.split("\n").each_with_object({}){|l,m|i = l.split(/:  */);m[i.first.lstrip] = i.last.lstrip;}
               return {type: :single_object,data: items}
             else raise 'error'
             end # command

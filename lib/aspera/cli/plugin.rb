@@ -1,43 +1,44 @@
 # frozen_string_literal: true
+
 module Aspera
   module Cli
     # base class for plugins modules
     class Plugin
       # operation without id
-      GLOBAL_OPS=[:create,:list].freeze
+      GLOBAL_OPS = [:create,:list].freeze
       # operation on specific instance
-      INSTANCE_OPS=[:modify,:delete,:show].freeze
-      ALL_OPS=[GLOBAL_OPS,INSTANCE_OPS].flatten.freeze
+      INSTANCE_OPS = [:modify,:delete,:show].freeze
+      ALL_OPS = [GLOBAL_OPS,INSTANCE_OPS].flatten.freeze
       # max number of items for list command
-      MAX_ITEMS='max'
+      MAX_ITEMS = 'max'
       # max number of pages for list command
-      MAX_PAGES='pmax'
+      MAX_PAGES = 'pmax'
 
       # global for inherited classes
-      @@options_created=false # rubocop:disable Style/ClassVars
+      @@options_created = false # rubocop:disable Style/ClassVars
 
       def initialize(env)
-        @agents=env
+        @agents = env
         raise StandardError,"execute_action shall be redefined by subclass #{self.class}" unless respond_to?(:execute_action)
         raise StandardError,'ACTIONS shall be redefined by subclass' unless self.class.constants.include?(:ACTIONS)
         unless env[:skip_option_header]
-          options.parser.separator ''
-          options.parser.separator "COMMAND: #{self.class.name.split('::').last.downcase}"
-          options.parser.separator "SUBCOMMANDS: #{self.class.const_get(:ACTIONS).map(&:to_s).join(' ')}"
-          options.parser.separator 'OPTIONS:'
+          options.parser.separator('')
+          options.parser.separator("COMMAND: #{self.class.name.split('::').last.downcase}")
+          options.parser.separator("SUBCOMMANDS: #{self.class.const_get(:ACTIONS).map(&:to_s).join(' ')}")
+          options.parser.separator('OPTIONS:')
         end
         return if @@options_created
         options.add_opt_simple(:value,'extended value for create, update, list filter')
         options.add_opt_simple(:property,'name of property to set')
         options.add_opt_simple(:id,"resource identifier (#{INSTANCE_OPS.join(',')})")
         options.parse_options!
-        @@options_created=true # rubocop:disable Style/ClassVars
+        @@options_created = true # rubocop:disable Style/ClassVars
       end
 
       # must be called AFTER the instance action
       def instance_identifier
-        res_id=options.get_option(:id)
-        res_id=options.get_next_argument('identifier') if res_id.nil?
+        res_id = options.get_option(:id)
+        res_id = options.get_next_argument('identifier') if res_id.nil?
         return res_id
       end
 
@@ -50,20 +51,20 @@ module Aspera
       def entity_command(command,rest_api,res_class_path,display_fields: nil,id_default: nil,use_subkey: false)
         if INSTANCE_OPS.include?(command)
           begin
-            one_res_id=instance_identifier()
+            one_res_id = instance_identifier()
           rescue StandardError => e
             raise e if id_default.nil?
-            one_res_id=id_default
+            one_res_id = id_default
           end
-          one_res_path="#{res_class_path}/#{one_res_id}"
+          one_res_path = "#{res_class_path}/#{one_res_id}"
         end
         # parameters mandatory for create/modify
         if [:create,:modify].include?(command)
-          parameters=options.get_option(:value,:mandatory)
+          parameters = options.get_option(:value,:mandatory)
         end
         # parameters optional for list
         if [:list].include?(command)
-          parameters=options.get_option(:value,:optional)
+          parameters = options.get_option(:value,:optional)
         end
         case command
         when :create
@@ -71,17 +72,17 @@ module Aspera
         when :show
           return {type: :single_object, data: rest_api.read(one_res_path)[:data], fields: display_fields}
         when :list
-          resp=rest_api.read(res_class_path,parameters)
-          data=resp[:data]
+          resp = rest_api.read(res_class_path,parameters)
+          data = resp[:data]
           # TODO: not generic : which application is this for ?
           if resp[:http]['Content-Type'].start_with?('application/vnd.api+json')
-            data=data[res_class_path]
+            data = data[res_class_path]
           end
-          data=data[res_class_path] if use_subkey
+          data = data[res_class_path] if use_subkey
           return {type: :object_list, data: data, fields: display_fields}
         when :modify
-          property=options.get_option(:property,:optional)
-          parameters={property => parameters} unless property.nil?
+          property = options.get_option(:property,:optional)
+          parameters = {property => parameters} unless property.nil?
           rest_api.update(one_res_path,parameters)
           return Main.result_status('modified')
         when :delete
@@ -95,7 +96,7 @@ module Aspera
       # implement generic rest operations on given resource path
       def entity_action(rest_api,res_class_path,**opts)
         #res_name=res_class_path.gsub(%r{^.*/},'').gsub(%r{s$},'').gsub('_',' ')
-        command=options.get_next_command(ALL_OPS)
+        command = options.get_next_command(ALL_OPS)
         return entity_command(command,rest_api,res_class_path,**opts)
       end
 

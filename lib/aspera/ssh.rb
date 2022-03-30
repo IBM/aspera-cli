@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 require 'net/ssh'
 
 # Hack: deactivate ed25519 and ecdsa private keys from ssh identities, as it usually hurts
@@ -16,29 +17,29 @@ module Aspera
     # see: https://net-ssh.github.io/net-ssh/classes/Net/SSH.html#method-c-start
     def initialize(host,username,ssh_options)
       Log.log.debug("ssh:#{username}@#{host}")
-      @host=host
-      @username=username
-      @ssh_options=ssh_options
-      @ssh_options[:logger]=Log.log
+      @host = host
+      @username = username
+      @ssh_options = ssh_options
+      @ssh_options[:logger] = Log.log
     end
 
     def execute(cmd,input=nil)
       if cmd.is_a?(Array)
         # concatenate arguments, enclose in double quotes
-        cmd=cmd.map{|v|%Q("#{v}")}.join(' ')
+        cmd = cmd.map{|v|%Q("#{v}")}.join(' ')
       end
       Log.log.debug("cmd=#{cmd}")
       response = []
       Net::SSH.start(@host, @username, @ssh_options) do |session|
-        ssh_channel=session.open_channel do |channel|
+        ssh_channel = session.open_channel do |channel|
           # prepare stdout processing
           channel.on_data{|_chan,data|response.push(data)}
           # prepare stderr processing, stderr if type = 1
           channel.on_extended_data do |_chan, _type, data|
-            errormsg="#{cmd}: [#{data.chomp}]"
+            errormsg = "#{cmd}: [#{data.chomp}]"
             # Happens when windows user hasn't logged in and created home account.
             if data.include?('Could not chdir to home directory')
-              errormsg+="\nHint: home not created in Windows?"
+              errormsg += "\nHint: home not created in Windows?"
             end
             raise errormsg
           end

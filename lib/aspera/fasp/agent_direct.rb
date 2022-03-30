@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 require 'English'
 require 'aspera/fasp/agent_base'
 require 'aspera/fasp/error'
@@ -37,17 +38,17 @@ module Aspera
         job_options[:resumer] ||= @resume_policy
         job_options[:job_id] ||= SecureRandom.uuid
         # clone transfer spec because we modify it (first level keys)
-        transfer_spec=transfer_spec.clone
+        transfer_spec = transfer_spec.clone
         # if there is aspera tags
         if transfer_spec['tags'].is_a?(Hash) && transfer_spec['tags']['aspera'].is_a?(Hash)
           # TODO: what is this for ? only on local ascp ?
           # NOTE: important: transfer id must be unique: generate random id
           # using a non unique id results in discard of tags in AoC, and a package is never finalized
           # all sessions in a multi-session transfer must have the same xfer_id (see admin manual)
-          transfer_spec['tags']['aspera']['xfer_id']||=SecureRandom.uuid
+          transfer_spec['tags']['aspera']['xfer_id'] ||= SecureRandom.uuid
           Log.log.debug("xfer id=#{transfer_spec['xfer_id']}")
           # TODO: useful ? node only ?
-          transfer_spec['tags']['aspera']['xfer_retry']||=3600
+          transfer_spec['tags']['aspera']['xfer_retry'] ||= 3600
         end
         Log.dump('ts',transfer_spec)
 
@@ -61,9 +62,9 @@ module Aspera
 
         # Compute this before using transfer spec because it potentially modifies the transfer spec
         # (even if the var is not used in single session)
-        multi_session_info=nil
+        multi_session_info = nil
         if transfer_spec.has_key?('multi_session')
-          multi_session_info={
+          multi_session_info = {
             count: transfer_spec['multi_session'].to_i
           }
           # Managed by multi-session, so delete from transfer spec
@@ -76,7 +77,7 @@ module Aspera
             multi_session_info = nil
           elsif @options[:multi_incr_udp] # multi_session_info[:count] > 0
             # if option not true: keep default udp port for all sessions
-            multi_session_info[:udp_base]=transfer_spec.has_key?('fasp_port') ? transfer_spec['fasp_port'] : TransferSpec::UDP_PORT
+            multi_session_info[:udp_base] = transfer_spec.has_key?('fasp_port') ? transfer_spec['fasp_port'] : TransferSpec::UDP_PORT
             # delete from original transfer spec, as we will increment values
             transfer_spec.delete('fasp_port')
             # override if specified, else use default value
@@ -84,7 +85,7 @@ module Aspera
         end
 
         # compute known args
-        env_args=Parameters.ts_to_env_args(transfer_spec,wss: @options[:wss])
+        env_args = Parameters.ts_to_env_args(transfer_spec,wss: @options[:wss])
 
         # add fallback cert and key as arguments if needed
         if ['1','force'].include?(transfer_spec['http_fallback'])
@@ -95,19 +96,19 @@ module Aspera
         env_args[:args].unshift('-q') if @options[:quiet]
 
         # transfer job can be multi session
-        xfer_job={
-          id:             job_options[:job_id],
-          sessions:       [] # all sessions as below
+        xfer_job = {
+          id:       job_options[:job_id],
+          sessions: [] # all sessions as below
         }
 
         # generic session information
-        session={
-          thread:    nil,         # Thread object monitoring management port, not nil when pushed to :sessions
-          error:     nil,         # exception if failed
-          io:        nil,         # management port server socket
-          id:        nil,         # SessionId from INIT message in mgt port
-          env_args:  env_args,    # env vars and args to ascp (from transfer spec)
-          options:   job_options  # [Hash]
+        session = {
+          thread:   nil,         # Thread object monitoring management port, not nil when pushed to :sessions
+          error:    nil,         # exception if failed
+          io:       nil,         # management port server socket
+          id:       nil,         # SessionId from INIT message in mgt port
+          env_args: env_args,    # env vars and args to ascp (from transfer spec)
+          options:  job_options  # [Hash]
         }
 
         if multi_session_info.nil?
@@ -121,12 +122,12 @@ module Aspera
             # do not delay the first session
             sleep(@options[:spawn_delay_sec]) unless i.eql?(1)
             # do deep copy (each thread has its own copy because it is modified here below and in thread)
-            this_session=session.clone()
-            this_session[:env_args]=this_session[:env_args].clone()
-            this_session[:env_args][:args]=this_session[:env_args][:args].clone()
+            this_session = session.clone()
+            this_session[:env_args] = this_session[:env_args].clone()
+            this_session[:env_args][:args] = this_session[:env_args][:args].clone()
             this_session[:env_args][:args].unshift("-C#{i}:#{multi_session_info[:count]}")
             # option: increment (default as per ascp manual) or not (cluster on other side ?)
-            this_session[:env_args][:args].unshift('-O',(multi_session_info[:udp_base]+i-1).to_s) if @options[:multi_incr_udp]
+            this_session[:env_args][:args].unshift('-O',(multi_session_info[:udp_base] + i - 1).to_s) if @options[:multi_incr_udp]
             this_session[:thread] = Thread.new(this_session) {|s|transfer_thread_entry(s)}
             xfer_job[:sessions].push(this_session)
           end
@@ -134,7 +135,7 @@ module Aspera
         Log.log.debug('started session thread(s)')
 
         # add job to list of jobs
-        @jobs[job_options[:job_id]]=xfer_job
+        @jobs[job_options[:job_id]] = xfer_job
         Log.log.debug("jobs: #{@jobs.keys.count}")
 
         return job_options[:job_id]
@@ -145,7 +146,7 @@ module Aspera
       def wait_for_transfers_completion
         Log.log.debug('wait_for_transfers_completion')
         # set to non-nil to exit loop
-        result=[]
+        result = []
         @jobs.each do |_id,job|
           job[:sessions].each do |session|
             Log.log.debug("join #{session[:thread]}")
@@ -176,11 +177,11 @@ module Aspera
         raise 'env_args must be Hash' unless env_args.is_a?(Hash)
         raise 'session must be Hash' unless session.is_a?(Hash)
         # by default we assume an exception will be raised (for ensure block)
-        exception_raised=true
+        exception_raised = true
         begin
           Log.log.debug("env_args=#{env_args.inspect}")
           # get location of ascp executable
-          ascp_path=@mutex.synchronize do
+          ascp_path = @mutex.synchronize do
             Fasp::Installation.instance.path(env_args[:ascp_version])
           end
           # (optional) check it exists
@@ -188,7 +189,7 @@ module Aspera
           # open random local TCP port for listening for ascp management
           mgt_sock = TCPServer.new('127.0.0.1',0)
           # clone arguments as we eed to modify with mgt port
-          ascp_arguments=env_args[:args].clone
+          ascp_arguments = env_args[:args].clone
           # add management port
           ascp_arguments.unshift('-M', mgt_sock.addr[1].to_s)
           # start ascp in sub process
@@ -198,7 +199,7 @@ module Aspera
           # in parent, wait for connection to socket max 3 seconds
           Log.log.debug("before accept for pid (#{ascp_pid})")
           # init management socket
-          ascp_mgt_io=nil
+          ascp_mgt_io = nil
           Timeout.timeout(@options[:spawn_timeout_sec]) do
             ascp_mgt_io = mgt_sock.accept
             # management messages include file names which may be utf8
@@ -207,20 +208,20 @@ module Aspera
             ascp_mgt_io.set_encoding(Encoding::UTF_8)
           end
           Log.log.debug("after accept (#{ascp_mgt_io})")
-          session[:io]=ascp_mgt_io
+          session[:io] = ascp_mgt_io
           # exact text for event, with \n
-          current_event_text=''
+          current_event_text = ''
           # parsed event (hash)
-          current_event_data=nil
+          current_event_data = nil
           # this is the last full status
-          last_status_event=nil
+          last_status_event = nil
           # read management port
           loop do
             # TODO: timeout here ?
             line = ascp_mgt_io.gets
             # nil when ascp process exits
             break if line.nil?
-            current_event_text+=line
+            current_event_text += line
             line.chomp!
             Log.log.debug("line=[#{line}]")
             case line
@@ -234,11 +235,11 @@ module Aspera
             when ''
               # empty line is separator to end event information
               raise 'unexpected empty line' if current_event_data.nil?
-              current_event_data[AgentBase::LISTENER_SESSION_ID_B]=ascp_pid
+              current_event_data[AgentBase::LISTENER_SESSION_ID_B] = ascp_pid
               notify_listeners(current_event_text,current_event_data)
               case current_event_data['Type']
               when 'INIT'
-                session[:id]=current_event_data['SessionId']
+                session[:id] = current_event_data['SessionId']
                 Log.log.debug("session id: #{session[:id]}")
               when 'DONE','ERROR'
                 # TODO: check if this is always the last event
@@ -253,15 +254,15 @@ module Aspera
             case last_status_event['Type']
             when 'DONE'
               # all went well
-              exception_raised=false
+              exception_raised = false
             when 'ERROR'
               Log.log.error("code: #{last_status_event['Code']}")
-              if last_status_event['Description'] =~ /bearer token/i
+              if /bearer token/i.match?(last_status_event['Description'])
                 Log.log.error('need to regenerate token'.red)
                 if session[:options].is_a?(Hash) && session[:options].has_key?(:regenerate_token)
                   # regenerate token here, expired, or error on it
                   # Note: in multi-session, each session will have a different one.
-                  env_args[:env]['ASPERA_SCP_TOKEN']=session[:options][:regenerate_token].call(true)
+                  env_args[:env]['ASPERA_SCP_TOKEN'] = session[:options][:regenerate_token].call(true)
                 end
               end
               raise Fasp::Error.new(last_status_event['Description'],last_status_event['Code'].to_i)
@@ -269,7 +270,7 @@ module Aspera
               raise "unexpected last event type: #{last_status_event['Type']}"
             end
           else
-            exception_raised=false
+            exception_raised = false
             Log.log.debug('no status read from ascp mgt port')
           end
         rescue SystemCallError => e
@@ -284,11 +285,11 @@ module Aspera
           unless ascp_pid.nil?
             # "wait" for process to avoid zombie
             Process.wait(ascp_pid)
-            status=$CHILD_STATUS
-            ascp_pid=nil
+            status = $CHILD_STATUS
+            ascp_pid = nil
             session.delete(:io)
             if !status.success?
-              message="ascp failed with code #{status.exitstatus}"
+              message = "ascp failed with code #{status.exitstatus}"
               # raise error only if there was not already an exception
               raise Fasp::Error, message unless exception_raised
               # else just debug, as main exception is already here
@@ -305,13 +306,13 @@ module Aspera
       # {'type'=>'START','source'=>_path_,'destination'=>_path_}
       # {'type'=>'DONE'}
       def send_command(job_id,session_index,data)
-        job=@jobs[job_id]
+        job = @jobs[job_id]
         raise 'no such job' if job.nil?
-        session=job[:sessions][session_index]
+        session = job[:sessions][session_index]
         raise 'no such session' if session.nil?
         Log.log.debug("command: #{data}")
         # build command
-        command=data.
+        command = data.
         keys.
         map{|k|"#{k.capitalize}: #{data[k]}"}.
         unshift('FASPMGR 2').
@@ -326,20 +327,20 @@ module Aspera
       def initialize(options=nil)
         super()
         # all transfer jobs, key = SecureRandom.uuid, protected by mutex, condvar on change
-        @jobs={}
+        @jobs = {}
         # mutex protects global data accessed by threads
-        @mutex=Mutex.new
+        @mutex = Mutex.new
         # set default options and override if specified
-        @options=DEFAULT_OPTIONS.clone
+        @options = DEFAULT_OPTIONS.clone
         if !options.nil?
           raise "expecting Hash (or nil), but have #{options.class}" unless options.is_a?(Hash)
           options.each do |k,v|
             raise "Unknown local agent parameter: #{k}, expect one of #{DEFAULT_OPTIONS.keys.map(&:to_s).join(',')}" unless DEFAULT_OPTIONS.has_key?(k)
-            @options[k]=v
+            @options[k] = v
           end
         end
         Log.log.debug("local options= #{options}")
-        @resume_policy=ResumePolicy.new(@options[:resume].symbolize_keys)
+        @resume_policy = ResumePolicy.new(@options[:resume].symbolize_keys)
       end
 
       # transfer thread entry
@@ -347,7 +348,7 @@ module Aspera
       def transfer_thread_entry(session)
         begin
           # set name for logging
-          Thread.current[:name]='transfer'
+          Thread.current[:name] = 'transfer'
           Log.log.debug("ENTER (#{Thread.current[:name]})")
           # start transfer with selected resumer policy
           session[:options][:resumer].process do
@@ -355,7 +356,7 @@ module Aspera
           end
           Log.log.debug('transfer ok'.bg_green)
         rescue StandardError => e
-          session[:error]=e
+          session[:error] = e
           Log.log.error("Transfer thread error: #{e.class}:\n#{e.message}:\n#{e.backtrace.join("\n")}".red) if Log.instance.level.eql?(:debug)
         end
         Log.log.debug("EXIT (#{Thread.current[:name]})")

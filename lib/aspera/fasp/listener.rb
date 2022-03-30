@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 module Aspera
   module Fasp
     # imlement this class to get transfer events

@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 require 'json'
 require 'aspera/log'
 
@@ -19,15 +20,15 @@ module Aspera
       raise 'mandatory :data' if options[:data].nil?
       raise 'mandatory :id (String)' unless options[:id].is_a?(String)
       raise 'mandatory 1 element in :id' unless options[:id].length >= 1
-      @manager=options[:manager]
-      @persisted_object=options[:data]
-      @object_id=options[:id]
+      @manager = options[:manager]
+      @persisted_object = options[:data]
+      @object_id = options[:id]
       # by default , at save time, file is deleted if data is nil
-      @delete_condition=options[:delete] || lambda{|d|d.empty?}
-      @persist_format=options[:format] || lambda {|h| JSON.generate(h)}
-      persist_parse=options[:parse] || lambda {|t| JSON.parse(t)}
-      persist_merge=options[:merge] || lambda {|current,file| current.concat(file).uniq rescue current}
-      value=@manager.get(@object_id)
+      @delete_condition = options[:delete] || lambda{|d|d.empty?}
+      @persist_format = options[:format] || lambda {|h| JSON.generate(h)}
+      persist_parse = options[:parse] || lambda {|t| JSON.parse(t)}
+      persist_merge = options[:merge] || lambda {|current,file| current.concat(file).uniq rescue current}
+      value = @manager.get(@object_id)
       persist_merge.call(@persisted_object,persist_parse.call(value)) unless value.nil?
     end
 

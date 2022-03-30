@@ -1,7 +1,19 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
+
 require 'rubygems'
-$LOAD_PATH.unshift(File.realpath(File.dirname(File.realpath(__FILE__))+'/../lib'))
+$LOAD_PATH.unshift(File.realpath(File.dirname(File.realpath(__FILE__)) + '/../lib'))
+if ENV.has_key?('COV_TEST_NAME')
+  require 'simplecov'
+  SimpleCov.command_name(ENV['COV_TEST_NAME'])
+  SimpleCov.start
+  SimpleCov.at_exit do
+    original_file_descriptor = $stdout
+    $stdout.reopen('/dev/null')
+    SimpleCov.result.format!
+    $stdout.reopen(original_file_descriptor)
+  end
+end
 require 'aspera/cli/main'
 require 'aspera/environment'
 Encoding.default_internal = Encoding::UTF_8

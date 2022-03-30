@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 require 'aspera/log'
 require 'aspera/rest_call_error'
 require 'singleton'
@@ -11,8 +12,8 @@ module Aspera
     # the singleton object is registered with application specific handlers
     def initialize
       # list of handlers
-      @error_handlers=[]
-      @log_file=nil
+      @error_handlers = []
+      @log_file = nil
       add_handler('Type Generic') do |type,call_context|
         if !call_context[:response].code.start_with?('2')
           # add generic information
@@ -25,7 +26,7 @@ module Aspera
     # Analyzes REST call response and raises a RestCallError exception
     # if HTTP result code is not 2XX
     def raise_on_error(req,res)
-      call_context={
+      call_context = {
         messages: [],
         request:  req,
         response: res[:http],
@@ -60,14 +61,14 @@ module Aspera
     def add_simple_handler(name,*args)
       add_handler(name) do |type,call_context|
         # need to clone because we modify and same array is used subsequently
-        path=args.clone
+        path = args.clone
         #Log.log.debug("path=#{path}")
         # if last in path is boolean it tells if the error is only with http error code or always
-        always=[true, false].include?(path.last) ? path.pop : false
+        always = [true, false].include?(path.last) ? path.pop : false
         if call_context[:data].is_a?(Hash) && (!call_context[:response].code.start_with?('2') || always)
-          msg_key=path.pop
+          msg_key = path.pop
           # dig and find sub entry corresponding to path in deep hash
-          error_struct=path.inject(call_context[:data]) { |subhash, key| subhash.respond_to?(:keys) ? subhash[key] : nil }
+          error_struct = path.inject(call_context[:data]) { |subhash, key| subhash.respond_to?(:keys) ? subhash[key] : nil }
           if error_struct.is_a?(Hash) && error_struct[msg_key].is_a?(String)
             RestErrorAnalyzer.add_error(call_context,type,error_struct[msg_key])
             error_struct.each do |k,v|
@@ -86,7 +87,7 @@ module Aspera
     # @param msg one error message  to add to list
     def self.add_error(call_context,type,msg)
       call_context[:messages].push(msg)
-      logfile=instance.log_file
+      logfile = instance.log_file
       # log error for further analysis (file must exist to activate)
       return if logfile.nil? || !File.exist?(logfile)
       File.open(logfile,'a+') do |f|

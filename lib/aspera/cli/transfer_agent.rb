@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 require 'aspera/fasp/transfer_spec'
 require 'aspera/cli/listener/logger'
 require 'aspera/cli/listener/progress_multi'
@@ -10,10 +11,10 @@ module Aspera
     # provides CLI options to select one of the transfer agents (FASP/ascp client)
     class TransferAgent
       # special value for --sources : read file list from arguments
-      FILE_LIST_FROM_ARGS='@args'
+      FILE_LIST_FROM_ARGS = '@args'
       # special value for --sources : read file list from transfer spec (--ts)
-      FILE_LIST_FROM_TRANSFER_SPEC='@ts'
-      DEFAULT_TRANSFER_NOTIF_TMPL=<<~END_OF_TEMPLATE
+      FILE_LIST_FROM_TRANSFER_SPEC = '@ts'
+      DEFAULT_TRANSFER_NOTIF_TMPL = <<~END_OF_TEMPLATE
         From: <%=from_name%> <<%=from_email%>>
         To: <<%=to%>>
         Subject: <%=subject%>
@@ -24,19 +25,19 @@ module Aspera
       END_OF_TEMPLATE
       #% (formating bug in eclipse)
       private_constant :FILE_LIST_FROM_ARGS,:FILE_LIST_FROM_TRANSFER_SPEC,:DEFAULT_TRANSFER_NOTIF_TMPL
-      TRANSFER_AGENTS=[:direct,:node,:connect,:httpgw,:trsdk]
+      TRANSFER_AGENTS = [:direct,:node,:connect,:httpgw,:trsdk]
 
       # @param env external objects: option manager, config file manager
       def initialize(opt_mgr,config)
-        @opt_mgr=opt_mgr
-        @config=config
+        @opt_mgr = opt_mgr
+        @config = config
         # command line can override transfer spec
-        @transfer_spec_cmdline={'create_dir'=>true}
+        @transfer_spec_cmdline = {'create_dir' => true}
         # the currently selected transfer agent
-        @agent=nil
-        @progress_listener=Listener::ProgressMulti.new
+        @agent = nil
+        @progress_listener = Listener::ProgressMulti.new
         # source/destination pair, like "paths" of transfer spec
-        @transfer_paths=nil
+        @transfer_paths = nil
         @opt_mgr.set_obj_attr(:ts,self,:option_transfer_spec)
         @opt_mgr.add_opt_simple(:ts,"override transfer spec values (Hash, use @json: prefix), current=#{@opt_mgr.get_option(:ts,:optional)}")
         @opt_mgr.add_opt_simple(:local_resume,"set resume policy (Hash, use @json: prefix), current=#{@opt_mgr.get_option(:local_resume,:optional)}")
@@ -60,7 +61,7 @@ module Aspera
       def option_transfer_spec_deep_merge(ts); @transfer_spec_cmdline.deep_merge!(ts); end
 
       def agent_instance=(instance)
-        @agent=instance
+        @agent = instance
         @agent.add_listener(Listener::Logger.new)
         # use local progress bar if asked so, or if native and non local ascp (because only local ascp has native progress bar)
         if @opt_mgr.get_option(:progress,:mandatory).eql?(:multi) ||
@@ -72,25 +73,25 @@ module Aspera
       # analyze options and create new agent if not already created or set
       def set_agent_by_options
         return nil unless @agent.nil?
-        agent_type=@opt_mgr.get_option(:transfer,:mandatory)
+        agent_type = @opt_mgr.get_option(:transfer,:mandatory)
         require "aspera/fasp/agent_#{agent_type}"
-        agent_options=@opt_mgr.get_option(:transfer_info,:optional)
+        agent_options = @opt_mgr.get_option(:transfer_info,:optional)
         raise CliBadArgument,"the transfer agent configuration shall be Hash, not #{agent_options.class} (#{agent_options}), use either @json:<json> or @preset:<parameter set name>" unless [Hash,NilClass].include?(agent_options.class)
         # special case
         if agent_type.eql?(:node) && agent_options.nil?
-          param_set_name=@config.get_plugin_default_config_name(:node)
-          raise CliBadArgument,"No default node configured, Please specify --#{:transfer_info.to_s.gsub('_','-')}" if param_set_name.nil?
-          agent_options=@config.preset_by_name(param_set_name)
+          param_set_name = @config.get_plugin_default_config_name(:node)
+          raise CliBadArgument,"No default node configured, Please specify --#{:transfer_info.to_s.tr('_','-')}" if param_set_name.nil?
+          agent_options = @config.preset_by_name(param_set_name)
         end
         # special case
         if agent_type.eql?(:direct) && @opt_mgr.get_option(:progress,:mandatory).eql?(:native)
-          agent_options={} if agent_options.nil?
-          agent_options[:quiet]=false
+          agent_options = {} if agent_options.nil?
+          agent_options[:quiet] = false
         end
-        agent_options=agent_options.symbolize_keys if agent_options.is_a?(Hash)
+        agent_options = agent_options.symbolize_keys if agent_options.is_a?(Hash)
         # get agent instance
-        new_agent=Kernel.const_get("Aspera::Fasp::Agent#{agent_type.capitalize}").new(agent_options)
-        self.agent_instance=new_agent
+        new_agent = Kernel.const_get("Aspera::Fasp::Agent#{agent_type.capitalize}").new(agent_options)
+        self.agent_instance = new_agent
         return nil
       end
 
@@ -98,14 +99,14 @@ module Aspera
       # sets default if needed
       # param: 'send' or 'receive'
       def destination_folder(direction)
-        dest_folder=@opt_mgr.get_option(:to_folder,:optional)
+        dest_folder = @opt_mgr.get_option(:to_folder,:optional)
         return File.expand_path(dest_folder) unless dest_folder.nil?
-        dest_folder=@transfer_spec_cmdline['destination_root']
+        dest_folder = @transfer_spec_cmdline['destination_root']
         return dest_folder unless dest_folder.nil?
         # default: / on remote, . on local
         case direction.to_s
-        when Fasp::TransferSpec::DIRECTION_SEND then dest_folder='/'
-        when Fasp::TransferSpec::DIRECTION_RECEIVE then dest_folder='.'
+        when Fasp::TransferSpec::DIRECTION_SEND then dest_folder = '/'
+        when Fasp::TransferSpec::DIRECTION_RECEIVE then dest_folder = '.'
         else raise "wrong direction: #{direction}"
         end
         return dest_folder
@@ -119,18 +120,18 @@ module Aspera
         # return cache if set
         return @transfer_paths unless @transfer_paths.nil?
         # start with lower priority : get paths from transfer spec on command line
-        @transfer_paths=@transfer_spec_cmdline['paths'] if @transfer_spec_cmdline.has_key?('paths')
+        @transfer_paths = @transfer_spec_cmdline['paths'] if @transfer_spec_cmdline.has_key?('paths')
         # is there a source list option ?
-        file_list=@opt_mgr.get_option(:sources,:optional)
+        file_list = @opt_mgr.get_option(:sources,:optional)
         case file_list
         when nil,FILE_LIST_FROM_ARGS
           Log.log.debug('getting file list as parameters')
           # get remaining arguments
-          file_list=@opt_mgr.get_next_argument('source file list',:multiple)
+          file_list = @opt_mgr.get_next_argument('source file list',:multiple)
           raise CliBadArgument,"specify at least one file on command line or use --sources=#{FILE_LIST_FROM_TRANSFER_SPEC} to use transfer spec" if !file_list.is_a?(Array) || file_list.empty?
         when FILE_LIST_FROM_TRANSFER_SPEC
           Log.log.debug('assume list provided in transfer spec')
-          special_case_direct_with_list=@opt_mgr.get_option(:transfer,:mandatory).eql?(:direct) and Fasp::Parameters.ts_has_file_list(@transfer_spec_cmdline)
+          (special_case_direct_with_list = @opt_mgr.get_option(:transfer,:mandatory).eql?(:direct)) && Fasp::Parameters.ts_has_file_list(@transfer_spec_cmdline)
           raise CliBadArgument,'transfer spec on command line must have sources' if @transfer_paths.nil? && !special_case_direct_with_list
           # here we assume check of sources is made in transfer agent
           return @transfer_paths
@@ -147,10 +148,10 @@ module Aspera
         case @opt_mgr.get_option(:src_type,:mandatory)
         when :list
           # when providing a list, just specify source
-          @transfer_paths=file_list.map{|i|{'source'=>i}}
+          @transfer_paths = file_list.map{|i|{'source' => i}}
         when :pair
           raise CliBadArgument,"When using pair, provide an even number of paths: #{file_list.length}" unless file_list.length.even?
-          @transfer_paths=file_list.each_slice(2).to_a.map{|s,d|{'source'=>s,'destination'=>d}}
+          @transfer_paths = file_list.each_slice(2).to_a.map{|s,d|{'source' => s,'destination' => d}}
         else raise 'Unsupported src_type'
         end
         Log.log.debug("paths=#{@transfer_paths}")
@@ -170,12 +171,12 @@ module Aspera
         case transfer_spec['direction']
         when Fasp::TransferSpec::DIRECTION_RECEIVE
           # init default if required in any case
-          @transfer_spec_cmdline['destination_root']||=destination_folder(transfer_spec['direction'])
+          @transfer_spec_cmdline['destination_root'] ||= destination_folder(transfer_spec['direction'])
         when Fasp::TransferSpec::DIRECTION_SEND
           case tr_opts[:src]
           when :direct
             # init default if required
-            @transfer_spec_cmdline['destination_root']||=destination_folder(transfer_spec['direction'])
+            @transfer_spec_cmdline['destination_root'] ||= destination_folder(transfer_spec['direction'])
           when :node_gen3
             # in that case, destination is set in return by application (API/upload_setup)
             # but to_folder was used in initial API call
@@ -191,7 +192,7 @@ module Aspera
         tr_opts.delete(:src)
 
         # update command line paths, unless destination already has one
-        @transfer_spec_cmdline['paths']=transfer_spec['paths'] || ts_source_paths
+        @transfer_spec_cmdline['paths'] = transfer_spec['paths'] || ts_source_paths
 
         transfer_spec.merge!(@transfer_spec_cmdline)
         # create transfer agent
@@ -199,7 +200,7 @@ module Aspera
         Log.log.debug("transfer agent is a #{@agent.class}")
         @agent.start_transfer(transfer_spec,tr_opts)
         # list of : :success or error message
-        result=@agent.wait_for_transfers_completion
+        result = @agent.wait_for_transfers_completion
         @progress_listener.reset
         Fasp::AgentBase.validate_status_list(result)
         send_email_transfer_notification(transfer_spec,result)
@@ -208,12 +209,12 @@ module Aspera
 
       def send_email_transfer_notification(transfer_spec,statuses)
         return if @opt_mgr.get_option(:notif_to,:optional).nil?
-        global_status=self.class.session_status(statuses)
-        email_vars={
+        global_status = self.class.session_status(statuses)
+        email_vars = {
           global_transfer_status: global_status,
-          subject: "ascli transfer: #{global_status}",
-          body: "Transfer is: #{global_status}",
-          ts: transfer_spec
+          subject:                "ascli transfer: #{global_status}",
+          body:                   "Transfer is: #{global_status}",
+          ts:                     transfer_spec
         }
         @config.send_email_template(email_vars,DEFAULT_TRANSFER_NOTIF_TMPL)
       end
@@ -221,7 +222,7 @@ module Aspera
       # @return :success if all sessions statuses returned by "start" are success
       # else return the first error exception object
       def self.session_status(statuses)
-        error_statuses=statuses.reject{|i|i.eql?(:success)}
+        error_statuses = statuses.reject{|i|i.eql?(:success)}
         return :success if error_statuses.empty?
         return error_statuses.first
       end

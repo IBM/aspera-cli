@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 require 'singleton'
 require 'aspera/log'
 
@@ -7,22 +8,22 @@ module Aspera
     # implements a simple resume policy
     class ResumePolicy
       # list of supported parameters and default values
-      DEFAULTS={
-        iter_max:       7,
-        sleep_initial:  2,
-        sleep_factor:   2,
-        sleep_max:      60
+      DEFAULTS = {
+        iter_max:      7,
+        sleep_initial: 2,
+        sleep_factor:  2,
+        sleep_max:     60
       }
 
       # @param params see DEFAULTS
       def initialize(params=nil)
-        @parameters=DEFAULTS.clone
+        @parameters = DEFAULTS.clone
         if !params.nil?
           raise "expecting Hash (or nil), but have #{params.class}" unless params.is_a?(Hash)
           params.each do |k,v|
             raise "unknown resume parameter: #{k}, expect one of #{DEFAULTS.keys.map(&:to_s).join(',')}" unless DEFAULTS.has_key?(k)
             raise "#{k} must be Integer" unless v.is_a?(Integer)
-            @parameters[k]=v
+            @parameters[k] = v
           end
         end
         Log.log.debug("resume params=#{@parameters}")
@@ -39,7 +40,7 @@ module Aspera
         loop do
           Log.log.debug('transfer starting');
           begin
-            block.call
+            yield
             break
           rescue Fasp::Error => e
             Log.log.warn("An error occured: #{e.message}");
@@ -57,7 +58,7 @@ module Aspera
           end
 
           # take this retry in account
-          remaining_resumes-=1
+          remaining_resumes -= 1
           Log.log.warn("resuming in  #{sleep_seconds} seconds (retry left:#{remaining_resumes})");
 
           # wait a bit before retrying, maybe network condition will be better

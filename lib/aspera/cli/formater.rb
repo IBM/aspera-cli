@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 require 'terminal-table'
 require 'yaml'
 require 'pp'
@@ -7,24 +8,25 @@ module Aspera
   module Cli
     # Take care of output
     class Formater
-      FIELDS_ALL='ALL'
-      FIELDS_DEFAULT='DEF'
+      FIELDS_ALL = 'ALL'
+      FIELDS_DEFAULT = 'DEF'
       # supported output formats
-      DISPLAY_FORMATS=%i[table ruby json jsonpp yaml csv nagios]
+      DISPLAY_FORMATS = %i[table ruby json jsonpp yaml csv nagios]
       # user output levels
-      DISPLAY_LEVELS=[:info,:data,:error]
-      CSV_RECORD_SEPARATOR="\n"
-      CSV_FIELD_SEPARATOR=','
-      HIDDEN_PASSWORD='🔑'
-      SECRET_KEYWORDS=%w[password secret private_key]
+      DISPLAY_LEVELS = [:info,:data,:error]
+      CSV_RECORD_SEPARATOR = "\n"
+      CSV_FIELD_SEPARATOR = ','
+      HIDDEN_PASSWORD = '🔑'
+      SECRET_KEYWORDS = %w[password secret private_key]
+      KEYS_NOT_HIDDEN = %w[show_secrets log_secrets]
 
       private_constant :FIELDS_ALL,:FIELDS_DEFAULT,:DISPLAY_FORMATS,:DISPLAY_LEVELS,:CSV_RECORD_SEPARATOR,:CSV_FIELD_SEPARATOR,:HIDDEN_PASSWORD
 
-      class<<self
+      class << self
         # @param source [Hash] hash to modify
         # @param keep_last [bool]
         def flatten_object(source,keep_last)
-          newval={}
+          newval = {}
           flatten_sub_hash_rec(source,keep_last,'',newval)
           source.clear
           source.merge!(newval)
@@ -37,14 +39,14 @@ module Aspera
         # @param dest [Hash] new hash flattened
         def flatten_sub_hash_rec(source,keep_last,prefix,dest)
           #is_simple_hash=source.is_a?(Hash) and source.values.inject(true){|m,v| xxx=!v.respond_to?(:each) and m;puts("->#{xxx}>#{v.respond_to?(:each)} #{v}-");xxx}
-          is_simple_hash=false
+          is_simple_hash = false
           Log.log.debug("(#{keep_last})[#{is_simple_hash}] -#{source.values}- \n-#{source}-")
           return source if keep_last && is_simple_hash
           source.each do |k,v|
             if v.is_a?(Hash) && (!keep_last || !is_simple_hash)
-              flatten_sub_hash_rec(v,keep_last,prefix+k.to_s+'.',dest)
+              flatten_sub_hash_rec(v,keep_last,prefix + k.to_s + '.',dest)
             else
-              dest[prefix+k.to_s]=v
+              dest[prefix + k.to_s] = v
             end
           end
           return nil
@@ -54,10 +56,10 @@ module Aspera
         # {"param" => [{"name"=>"foo","value"=>"bar"}]} will be expanded to {"param.foo" : "bar"}
         def flatten_name_value_list(hash)
           hash.keys.each do |k|
-            v=hash[k]
+            v = hash[k]
             next unless v.is_a?(Array) && v.map(&:class).uniq.eql?([Hash]) && v.map(&:keys).flatten.sort.uniq.eql?(['name', 'value'])
             v.each do |pair|
-              hash["#{k}.#{pair['name']}"]=pair['value']
+              hash["#{k}.#{pair['name']}"] = pair['value']
             end
             hash.delete(k)
           end
@@ -68,14 +70,14 @@ module Aspera
 
       # adds options but does not parse
       def initialize(opt_mgr)
-        @option_format=:table
-        @option_display=:info
-        @option_fields=FIELDS_DEFAULT
-        @option_select=nil
-        @option_table_style=':.:'
-        @option_flat_hash=true
-        @option_transpose_single=true
-        @option_show_secrets=false
+        @option_format = :table
+        @option_display = :info
+        @option_fields = FIELDS_DEFAULT
+        @option_select = nil
+        @option_table_style = ':.:'
+        @option_flat_hash = true
+        @option_transpose_single = true
+        @option_show_secrets = false
         opt_mgr.set_obj_attr(:format,self,:option_format)
         opt_mgr.set_obj_attr(:display,self,:option_display)
         opt_mgr.set_obj_attr(:fields,self,:option_fields)
@@ -112,7 +114,7 @@ module Aspera
         unless results[:fields].nil?
           raise "internal error: [fields] must be Array, not #{results[:fields].class}" unless results[:fields].is_a?(Array)
           if results[:fields].first.eql?(:all_but) && !table_rows_hash_val.empty?
-            filter=results[:fields][1..-1]
+            filter = results[:fields][1..-1]
             return table_rows_hash_val.first.keys.reject{|i|filter.include?(i)}
           end
           return results[:fields]
@@ -124,7 +126,7 @@ module Aspera
       def result_all_fields(_results,table_rows_hash_val)
         raise 'internal error: must be array' unless table_rows_hash_val.is_a?(Array)
         # get the list of all column names used in all lines, not just frst one, as all lines may have different columns
-        return table_rows_hash_val.each_with_object({}){|v,m|v.keys.each{|c|m[c]=true};}.keys
+        return table_rows_hash_val.each_with_object({}){|v,m|v.keys.each{|c|m[c] = true};}.keys
       end
 
       def deep_remove_secret(obj)
@@ -133,9 +135,9 @@ module Aspera
         when Array then obj.each{|i|deep_remove_secret(i)}
         when Hash
           obj.keys.each do |k|
-            next if %w[show_secrets log_secrets].any?{|kw|kw.eql?(k)}
+            next if KEYS_NOT_HIDDEN.any?{|kw|kw.eql?(k)}
             if k.is_a?(String) && SECRET_KEYWORDS.any?{|kw|k.include?(kw)}
-              obj[k]=HIDDEN_PASSWORD
+              obj[k] = HIDDEN_PASSWORD
             elsif obj[k].is_a?(Hash)
               deep_remove_secret(obj[k])
             end
@@ -148,10 +150,10 @@ module Aspera
         raise "INTERNAL ERROR, result must be Hash (got: #{results.class}: #{results})" unless results.is_a?(Hash)
         raise 'INTERNAL ERROR, result must have type' unless results.has_key?(:type)
         raise 'INTERNAL ERROR, result must have data' unless results.has_key?(:data) || [:empty,:nothing].include?(results[:type])
-        res_data=results[:data]
+        res_data = results[:data]
         deep_remove_secret(res_data)
         # comma separated list in string format
-        user_asked_fields_list_str=@option_fields
+        user_asked_fields_list_str = @option_fields
         case @option_format
         when :nagios
           Nagios.process(res_data)
@@ -165,21 +167,21 @@ module Aspera
           display_message(:data,res_data.to_yaml)
         when :table,:csv
           if !@option_transpose_single && results[:type].eql?(:single_object)
-            results[:type]=:object_list
-            res_data=[res_data]
+            results[:type] = :object_list
+            res_data = [res_data]
           end
           case results[:type]
           when :object_list # goes to table display
             raise "internal error: unexpected type: #{res_data.class}, expecting Array" unless res_data.is_a?(Array)
             # :object_list is an array of hash tables, where key=colum name
             table_rows_hash_val = res_data
-            final_table_columns=nil
+            final_table_columns = nil
             if @option_flat_hash
               table_rows_hash_val.each do |obj|
                 self.class.flatten_object(obj,results[:option_expand_last])
               end
             end
-            final_table_columns=
+            final_table_columns =
             case user_asked_fields_list_str
             when FIELDS_DEFAULT then result_default_fields(results,table_rows_hash_val)
             when FIELDS_ALL then     result_all_fields(results,table_rows_hash_val)
@@ -200,17 +202,17 @@ module Aspera
               self.class.flatten_object(res_data,results[:option_expand_last])
               self.class.flatten_name_value_list(res_data)
             end
-            asked_fields=
+            asked_fields =
             case user_asked_fields_list_str
-            when FIELDS_DEFAULT then results[:fields]||res_data.keys
+            when FIELDS_DEFAULT then results[:fields] || res_data.keys
             when FIELDS_ALL then     res_data.keys
             else user_asked_fields_list_str.split(',')
             end
-            table_rows_hash_val=asked_fields.map { |i| { final_table_columns.first => i, final_table_columns.last => res_data[i] } }
+            table_rows_hash_val = asked_fields.map { |i| { final_table_columns.first => i, final_table_columns.last => res_data[i] } }
           when :value_list # goes to table display
             # :value_list is a simple array of values, name of column provided in the :name
             final_table_columns = [results[:name]]
-            table_rows_hash_val=res_data.map { |i| { results[:name] => i } }
+            table_rows_hash_val = res_data.map { |i| { results[:name] => i } }
           when :empty # no table
             display_message(:info,'empty')
             return
@@ -239,18 +241,18 @@ module Aspera
             return
           end
           # convert to string with special function. here table_rows_hash_val is an array of hash
-          table_rows_hash_val=results[:textify].call(table_rows_hash_val) if results.has_key?(:textify)
-          unless @option_select.nil? || (@option_select.respond_to?('empty?') && @option_select.empty?)
+          table_rows_hash_val = results[:textify].call(table_rows_hash_val) if results.has_key?(:textify)
+          unless @option_select.nil? || (@option_select.respond_to?(:empty?) && @option_select.empty?)
             raise CliBadArgument,"expecting hash for select, have #{@option_select.class}: #{@option_select}" unless @option_select.is_a?(Hash)
             @option_select.each{|k,v|table_rows_hash_val.select!{|i|i[k].eql?(v)}}
           end
           # convert data to string, and keep only display fields
-          final_table_rows=table_rows_hash_val.map { |r| final_table_columns.map { |c| r[c].to_s } }
+          final_table_rows = table_rows_hash_val.map { |r| final_table_columns.map { |c| r[c].to_s } }
           # here : final_table_columns : list of column names
           # here: final_table_rows : array of list of value
           case @option_format
           when :table
-            style=@option_table_style.chars
+            style = @option_table_style.chars
             # display the table !
             #display_message(:data,Text::Table.new(
             #head:  final_table_columns,

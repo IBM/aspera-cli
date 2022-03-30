@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 # for older rubies
 unless Hash.method_defined?(:dig)
   class Hash
@@ -12,11 +13,11 @@ end
 
 class ::Hash
   def deep_merge(second)
-    merge(second){|_key,v1,v2|Hash===v1&&Hash===v2 ? v1.deep_merge(v2) : v2}
+    merge(second){|_key,v1,v2|Hash === v1 && Hash === v2 ? v1.deep_merge(v2) : v2}
   end
 
   def deep_merge!(second)
-    merge!(second){|_key,v1,v2|Hash===v1&&Hash===v2 ? v1.deep_merge!(v2) : v2}
+    merge!(second){|_key,v1,v2|Hash === v1 && Hash === v2 ? v1.deep_merge!(v2) : v2}
   end
 end
 

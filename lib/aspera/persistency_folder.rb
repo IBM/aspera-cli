@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 require 'fileutils'
 require 'aspera/log'
 
@@ -7,11 +8,11 @@ require 'aspera/log'
 module Aspera
   # Persist data on file system
   class PersistencyFolder
-    FILE_SUFFIX='.txt'
+    FILE_SUFFIX = '.txt'
     private_constant :FILE_SUFFIX
     def initialize(folder)
-      @cache={}
-      @folder=folder
+      @cache = {}
+      @folder = folder
       Log.log.debug("persistency folder: #{@folder}")
     end
 
@@ -21,11 +22,11 @@ module Aspera
       if @cache.has_key?(object_id)
         Log.log.debug('got from memory cache')
       else
-        persist_filepath=id_to_filepath(object_id)
+        persist_filepath = id_to_filepath(object_id)
         Log.log.debug("persistency = #{persist_filepath}")
         if File.exist?(persist_filepath)
           Log.log.debug('got from file cache')
-          @cache[object_id]=File.read(persist_filepath)
+          @cache[object_id] = File.read(persist_filepath)
         end
       end
       return @cache[object_id]
@@ -33,21 +34,21 @@ module Aspera
 
     def put(object_id,value)
       raise 'value: only String supported' unless value.is_a?(String)
-      persist_filepath=id_to_filepath(object_id)
+      persist_filepath = id_to_filepath(object_id)
       Log.log.debug("persistency saving: #{persist_filepath}")
       File.write(persist_filepath,value)
-      @cache[object_id]=value
+      @cache[object_id] = value
     end
 
     def delete(object_id)
-      persist_filepath=id_to_filepath(object_id)
+      persist_filepath = id_to_filepath(object_id)
       Log.log.debug("persistency deleting: #{persist_filepath}")
       File.delete(persist_filepath) if File.exist?(persist_filepath)
       @cache.delete(object_id)
     end
 
     def garbage_collect(persist_category,max_age_seconds=nil)
-      garbage_files=Dir[File.join(@folder,persist_category+'*'+FILE_SUFFIX)]
+      garbage_files = Dir[File.join(@folder,persist_category + '*' + FILE_SUFFIX)]
       if !max_age_seconds.nil?
         current_time = Time.now
         garbage_files.select! { |filepath| (current_time - File.stat(filepath).mtime).to_i > max_age_seconds}

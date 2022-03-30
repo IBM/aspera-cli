@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 require 'aspera/fasp/agent_base'
 require 'aspera/fasp/installation'
 require 'json'
@@ -16,11 +17,11 @@ module Aspera
       def initialize(user_opts)
         raise "expecting Hash (or nil), but have #{user_opts.class}" unless user_opts.nil? || user_opts.is_a?(Hash)
         # set default options and override if specified
-        options=DEFAULT_OPTIONS.clone
+        options = DEFAULT_OPTIONS.clone
         if !user_opts.nil?
           user_opts.each do |k,v|
             raise "Unknown local agent parameter: #{k}, expect one of #{DEFAULT_OPTIONS.keys.map(&:to_s).join(',')}" unless DEFAULT_OPTIONS.has_key?(k)
-            options[k]=v
+            options[k] = v
           end
         end
         Log.log.debug("options= #{options}")
@@ -35,14 +36,14 @@ module Aspera
         rescue GRPC::Unavailable
           Log.log.warn('no daemon present, starting daemon...')
           # location of daemon binary
-          bin_folder=File.realpath(File.join(Installation.instance.sdk_ruby_folder,'..'))
+          bin_folder = File.realpath(File.join(Installation.instance.sdk_ruby_folder,'..'))
           # config file and logs are created in same folder
           conf_file = File.join(bin_folder,'sdk.conf')
           log_base = File.join(bin_folder,'transferd')
           # create a config file for daemon
           config = {
-            address: options[:address],
-            port:    options[:port],
+            address:      options[:address],
+            port:         options[:port],
             fasp_runtime: {
             use_embedded: false,
             user_defined: {
@@ -73,7 +74,7 @@ module Aspera
       end
 
       def wait_for_transfers_completion
-        started=false
+        started = false
         # monitor transfer status
         @transfer_client.monitor_transfers(Transfersdk::RegistrationRequest.new(transferId: [@transfer_id])) do |response|
           Log.dump(:response, response.to_h)
@@ -82,7 +83,7 @@ module Aspera
           when :RUNNING
             if !started && !response.sessionInfo.preTransferBytes.eql?(0)
               notify_begin(@transfer_id,response.sessionInfo.preTransferBytes)
-              started=true
+              started = true
             elsif started
               notify_progress(@transfer_id,response.transferInfo.bytesTransferred)
             end

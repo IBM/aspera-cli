@@ -1,11 +1,12 @@
 # frozen_string_literal: true
+
 require 'openssl'
 
 module Aspera
   module Keychain
     class SimpleCipher
       def initialize(key)
-        @key=Digest::SHA1.hexdigest(key)[0..23]
+        @key = Digest::SHA1.hexdigest(key)[0..23]
         @cipher = OpenSSL::Cipher.new('DES-EDE3-CBC')
       end
 
@@ -26,44 +27,44 @@ module Aspera
 
     # Manage secrets in a simple Hash
     class EncryptedHash
-      SEPARATOR='%'
+      SEPARATOR = '%'
       private_constant :SEPARATOR
       def initialize(values)
         raise 'values shall be Hash' unless values.is_a?(Hash)
-        @all_secrets=values
+        @all_secrets = values
       end
 
       def set(options)
         raise 'options shall be Hash' unless options.is_a?(Hash)
-        unsupported=options.keys-[:username,:url,:secret,:description]
+        unsupported = options.keys - [:username,:url,:secret,:description]
         raise "unsupported options: #{unsupported}" unless unsupported.empty?
-        username=options[:username]
+        username = options[:username]
         raise 'options shall have username' if username.nil?
-        url=options[:url]
+        url = options[:url]
         raise 'options shall have username' if url.nil?
-        secret=options[:secret]
+        secret = options[:secret]
         raise 'options shall have secret' if secret.nil?
-        key=[url,username].join(SEPARATOR)
+        key = [url,username].join(SEPARATOR)
         raise "secret #{key} already exist, delete first" if @all_secrets.has_key?(key)
-        obj={username: username, url: url, secret: SimpleCipher.new(key).encrypt(secret)}
-        obj[:description]=options[:description] if options.has_key?(:description)
-        @all_secrets[key]=obj
+        obj = {username: username, url: url, secret: SimpleCipher.new(key).encrypt(secret)}
+        obj[:description] = options[:description] if options.has_key?(:description)
+        @all_secrets[key] = obj
         nil
       end
 
       def list
-        result=[]
+        result = []
         @all_secrets.each do |k,v|
           case v
           when String
-            o={username: k, url: '', description: ''}
+            o = {username: k, url: '', description: ''}
           when Hash
-            o=v.clone
+            o = v.clone
             o.delete(:secret)
-            o[:description]||=''
+            o[:description] ||= ''
           else raise 'error'
           end
-          o[:description]=v[:description] if v.is_a?(Hash) && v[:description].is_a?(String)
+          o[:description] = v[:description] if v.is_a?(Hash) && v[:description].is_a?(String)
           result.push(o)
         end
         return result
@@ -71,47 +72,49 @@ module Aspera
 
       def delete(options)
         raise 'options shall be Hash' unless options.is_a?(Hash)
-        unsupported=options.keys-[:username,:url]
+        unsupported = options.keys - [:username,:url]
         raise "unsupported options: #{unsupported}" unless unsupported.empty?
-        username=options[:username]
+        username = options[:username]
         raise 'options shall have username' if username.nil?
-        url=options[:url]
-        key=nil
+        url = options[:url]
+        key = nil
         if !url.nil?
-          extk=[url,username].join(SEPARATOR)
-          key=extk if @all_secrets.has_key?(extk)
+          extk = [url,username].join(SEPARATOR)
+          key = extk if @all_secrets.has_key?(extk)
         end
         # backward compatibility: TODO: remove in future ? (make url mandatory ?)
-        key=username if key.nil? && @all_secrets.has_key?(username)
+        key = username if key.nil? && @all_secrets.has_key?(username)
         raise 'no such secret' if key.nil?
         @all_secrets.delete(key)
       end
 
       def get(options)
         raise 'options shall be Hash' unless options.is_a?(Hash)
-        unsupported=options.keys-[:username,:url]
+        unsupported = options.keys - [:username,:url]
         raise "unsupported options: #{unsupported}" unless unsupported.empty?
-        username=options[:username]
+        username = options[:username]
         raise 'options shall have username' if username.nil?
-        url=options[:url]
-        val=nil
+        url = options[:url]
+        val = nil
         if !url.nil?
-          val=@all_secrets[[url,username].join(SEPARATOR)]
+          val = @all_secrets[[url,username].join(SEPARATOR)]
         end
         # backward compatibility: TODO: remove in future ? (make url mandatory ?)
         if val.nil?
-          val=@all_secrets[username]
+          val = @all_secrets[username]
         end
-        result=options.clone
+        result = options.clone
         case val
         when NilClass
           raise 'no such secret'
         when String
-          result.merge!({secret: val, description: ''})
+          result[:secret] = val
+          result[:description] = ''
         when Hash
-          key=[url,username].join(SEPARATOR)
-          plain=SimpleCipher.new(key).decrypt(val[:secret])
-          result.merge!({secret: plain, description: val[:description]})
+          key = [url,username].join(SEPARATOR)
+          plain = SimpleCipher.new(key).decrypt(val[:secret])
+          result[:secret] = plain
+          result[:description] = val[:description]
         else raise 'error'
         end
         return result

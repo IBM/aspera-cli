@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 require 'aspera/rest_error_analyzer'
 require 'aspera/log'
 
@@ -27,11 +28,11 @@ module Aspera
       # call to upload_setup and download_setup of node api
       RestErrorAnalyzer.instance.add_handler('T8:node: *_setup') do |type,call_context|
         if call_context[:data].is_a?(Hash)
-          d_t_s=call_context[:data]['transfer_specs']
+          d_t_s = call_context[:data]['transfer_specs']
           if d_t_s.is_a?(Array)
             d_t_s.each do |res|
               #r_err=res['transfer_spec']['error']
-              r_err=res['error']
+              r_err = res['error']
               if r_err.is_a?(Hash)
                 RestErrorAnalyzer.add_error(call_context,type,"#{r_err['code']}: #{r_err['reason']}: #{r_err['user_message']}")
               end
@@ -43,10 +44,10 @@ module Aspera
       RestErrorAnalyzer.instance.add_simple_handler('T10:faspex v4','user_message')
       RestErrorAnalyzer.instance.add_handler('bss graphql') do |type,call_context|
         if call_context[:data].is_a?(Hash)
-          d_t_s=call_context[:data]['errors']
+          d_t_s = call_context[:data]['errors']
           if d_t_s.is_a?(Array)
             d_t_s.each do |res|
-              r_err=res['message']
+              r_err = res['message']
               if r_err.is_a?(String)
                 RestErrorAnalyzer.add_error(call_context,type,r_err)
               end
