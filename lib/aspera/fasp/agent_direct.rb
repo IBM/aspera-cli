@@ -313,11 +313,11 @@ module Aspera
         Log.log.debug("command: #{data}")
         # build command
         command = data.
-        keys.
-        map{|k|"#{k.capitalize}: #{data[k]}"}.
-        unshift('FASPMGR 2').
-        push('','').
-        join("\n")
+          keys.
+          map{|k|"#{k.capitalize}: #{data[k]}"}.
+          unshift('FASPMGR 2').
+          push('','').
+          join("\n")
         session[:io].puts(command)
       end
 

@@ -43,7 +43,7 @@ module Aspera
           @url_token_data = nil
           @api_aoc = nil
           options.add_opt_list(:auth,Oauth::STD_AUTH_TYPES,'OAuth type of authentication')
-          options.add_opt_list(:operation,[:push,:pull],'client operation for transfers')
+          options.add_opt_list(:operation, %i[push pull],'client operation for transfers')
           options.add_opt_simple(:client_id,'OAuth API client identifier in application')
           options.add_opt_simple(:client_secret,'OAuth API client passcode')
           options.add_opt_simple(:redirect_uri,'OAuth API client redirect URI')
@@ -85,7 +85,7 @@ module Aspera
           return transfer.start(*aoc_api.tr_spec(app,direction,node_file,ts_add))
         end
 
-        NODE4_COMMANDS = [:browse, :find, :mkdir, :rename, :delete, :upload, :download, :transfer, :http_node_download, :v3, :file, :bearer_token_node, :node_info].freeze
+        NODE4_COMMANDS = %i[browse find mkdir rename delete upload download transfer http_node_download v3 file bearer_token_node node_info].freeze
 
         def execute_node_gen4_command(command_repo,top_node_file)
           case command_repo
@@ -210,7 +210,10 @@ module Aspera
             file_name = source_paths.first['source']
             node_file = aoc_api.resolve_node_file(top_node_file,File.join(source_folder,file_name))
             node_api = aoc_api.get_node_api(node_file[:node_info])
-            node_api.call({operation: 'GET',subpath: "files/#{node_file[:file_id]}/content",save_to_file: File.join(transfer.destination_folder(Fasp::TransferSpec::DIRECTION_RECEIVE),file_name)})
+            node_api.call(
+              operation: 'GET',
+              subpath: "files/#{node_file[:file_id]}/content",
+              save_to_file: File.join(transfer.destination_folder(Fasp::TransferSpec::DIRECTION_RECEIVE),file_name))
             return Main.result_status("downloaded: #{file_name}")
           when :v3
             # Note: other common actions are unauthorized with user scope
@@ -279,11 +282,11 @@ module Aspera
           end # command_repo
           raise 'ERR'
         end # execute_node_gen4_command
-
+        AOC_PARAMS_COPY=%i[link url auth client_id client_secret scope redirect_uri private_key username password].freeze
         # build constructor option list for AoC based on options of CLI
         def aoc_params(subpath)
           # copy command line options to args
-          opt = [:link,:url,:auth,:client_id,:client_secret,:scope,:redirect_uri,:private_key,:username,:password].each_with_object({}){|i,m|m[i] = options.get_option(i,:optional);}
+          opt = AOC_PARAMS_COPY.each_with_object({}){|i,m|m[i] = options.get_option(i,:optional);}
           opt[:subpath] = subpath
           return opt
         end
@@ -415,7 +418,11 @@ module Aspera
                 raise "no such shared inbox in workspace #{@workspace_name}" unless entity_type.eql?('contacts')
                 full_recipient_info = aoc_api.create('contacts',{'current_workspace_id' => @workspace_id,'email' => short_recipient_info}.merge(new_user_option))[:data]
               end
-              short_recipient_info = entity_type.eql?('dropboxes') ? {'id' => full_recipient_info['id'],'type' => 'dropbox'} : {'id' => full_recipient_info['source_id'],'type' => full_recipient_info['source_type']}
+              short_recipient_info = if entity_type.eql?('dropboxes')
+                {'id' => full_recipient_info['id'],'type' => 'dropbox'}
+              else
+                {'id' => full_recipient_info['source_id'],'type' => full_recipient_info['source_type']}
+              end
             else # unexpected extended value, must be String or Hash
               raise "#{recipient_list_field} item must be a String (email, shared inbox) or Hash (id,type)"
             end # type of recipient info
@@ -460,8 +467,11 @@ module Aspera
         end
 
         def assert_public_link_types(expected)
-          raise CliBadArgument,"public link type is #{@url_token_data['purpose']} but action requires one of #{expected.join(',')}" unless expected.include?(@url_token_data['purpose'])
+          raise CliBadArgument,"public link type is #{@url_token_data['purpose']} but action requires one of #{expected.join(',')}" \
+          unless expected.include?(@url_token_data['purpose'])
         end
+        KNOWN_AOC_RES=%i[self organization user group client contact dropbox node operation package saml_configuration
+                         workspace dropbox_membership short_link workspace_membership application client_registration_token client_access_key kms_profile].freeze
 
         # Call aoc_api.read with same parameters.
         # Use paging if necessary to get all results
@@ -498,10 +508,10 @@ module Aspera
         def execute_admin_action
           # upgrade scope to admin
           aoc_api.oauth.params[:scope] = AoC::SCOPE_FILES_ADMIN
-          command_admin = options.get_next_command([:ats, :resource, :usage_reports, :analytics, :subscription, :auth_providers])
+          command_admin = options.get_next_command(%i[ats resource usage_reports analytics subscription auth_providers])
           case command_admin
           when :auth_providers
-            command_auth_prov = options.get_next_command([:list, :update])
+            command_auth_prov = options.get_next_command(%i[list update])
             case command_auth_prov
             when :list
               providers = aoc_api.read('admin/auth_providers')[:data]
@@ -573,7 +583,7 @@ module Aspera
               base_url: aoc_api.params[:base_url].gsub('/api/v1','') + '/analytics/v2',
               auth:     {scope: AoC::SCOPE_FILES_ADMIN_USER}
             }))
-            command_analytics = options.get_next_command([:application_events, :transfers])
+            command_analytics = options.get_next_command(%i[application_events transfers])
             case command_analytics
             when :application_events
               event_type = command_analytics.to_s
@@ -616,9 +626,7 @@ module Aspera
               return {type: :object_list,data: events}
             end
           when :resource
-            resource_type = options.get_next_argument('resource',
-[:self,:organization,:user,:group,:client,:contact,:dropbox,:node,:operation,:package,:saml_configuration, :workspace, :dropbox_membership,:short_link,:workspace_membership,
- :application,:client_registration_token,:client_access_key,:kms_profile])
+            resource_type = options.get_next_argument('resource',KNOWN_AOC_RES)
             # get path on API, resource type is singular, but api is plural
             resource_class_path =
             case resource_type
@@ -631,13 +639,13 @@ module Aspera
             else resource_type.to_s + 's'
             end
             # build list of supported operations
-            singleton_object = [:self,:organization].include?(resource_type)
-            global_operations = [:create,:list]
-            supported_operations = [:show,:modify]
+            singleton_object = %i[self organization].include?(resource_type)
+            global_operations =  %i[create list]
+            supported_operations = %i[show modify]
             supported_operations.push(:delete,*global_operations) unless singleton_object
             supported_operations.push(:v4,:v3) if resource_type.eql?(:node)
             supported_operations.push(:set_pub_key) if resource_type.eql?(:client)
-            supported_operations.push(:shared_folders,:shared_create) if [:node,:workspace].include?(resource_type)
+            supported_operations.push(:shared_folders,:shared_create) if %i[node workspace].include?(resource_type)
             command = options.get_next_command(supported_operations)
             # require identifier for non global commands
             if !singleton_object && !global_operations.include?(command)
@@ -755,7 +763,7 @@ module Aspera
         end
 
         # must be public
-        ACTIONS = [:reminder, :servers, :bearer_token, :organization, :tier_restrictions, :user, :packages, :files, :admin, :automation, :gateway].freeze
+        ACTIONS = %i[reminder servers bearer_token organization tier_restrictions user packages files admin automation gateway].freeze
 
         def execute_action
           command = options.get_next_command(ACTIONS)
@@ -774,11 +782,11 @@ module Aspera
           when :tier_restrictions
             return { type: :single_object, data: aoc_api.read('tier_restrictions')[:data] }
           when :user
-            case options.get_next_command([:workspaces,:profile])
+            case options.get_next_command(%i[workspaces profile])
             # when :settings
             # return {type: :object_list,data: aoc_api.read('client_settings/')[:data]}
             when :workspaces
-              case options.get_next_command([:list,:current])
+              case options.get_next_command(%i[list current])
               when :list
                 return {type: :object_list,data: aoc_api.read('workspaces')[:data],fields: ['id','name']}
               when :current
@@ -786,7 +794,7 @@ module Aspera
                 return { type: :single_object, data: @workspace_data }
               end
             when :profile
-              case options.get_next_command([:show,:modify])
+              case options.get_next_command(%i[show modify])
               when :show
                 return { type: :single_object, data: aoc_api.user_info }
               when :modify
@@ -796,9 +804,9 @@ module Aspera
             end
           when :packages
             set_workspace_info if @url_token_data.nil?
-            case options.get_next_command([:shared_inboxes, :send, :recv, :list, :show, :delete])
+            case options.get_next_command(%i[shared_inboxes send recv list show delete])
             when :shared_inboxes
-              case options.get_next_command([:list, :show])
+              case options.get_next_command(%i[list show])
               when :list
                 query = option_url_query(nil)
                 if query.nil?
@@ -863,7 +871,12 @@ module Aspera
               end
               if ids_to_download.eql?(VAL_ALL)
                 # get list of packages in inbox
-                package_info = aoc_api.read('packages',{'archived' => false,'exclude_dropbox_packages' => true,'has_content' => true,'received' => true,'workspace_id' => @workspace_id})[:data]
+                package_info = aoc_api.read('packages',{
+                          'archived' => false,
+                          'exclude_dropbox_packages' => true,
+                          'has_content' => true,
+                          'received' => true,
+                          'workspace_id' => @workspace_id})[:data]
                 # remove from list the ones already downloaded
                 ids_to_download = package_info.map{|e|e['id']}
                 # array here
@@ -990,7 +1003,7 @@ module Aspera
             automation_rest_params = aoc_api.params.clone
             automation_rest_params[:base_url].gsub!('/api/','/automation/')
             automation_api = Rest.new(automation_rest_params)
-            command_automation = options.get_next_command([:workflows, :instances])
+            command_automation = options.get_next_command(%i[workflows instances])
             case command_automation
             when :instances
               return entity_action(@api_aoc,'workflow_instances')
@@ -1006,7 +1019,7 @@ module Aspera
               when :action
                 #TODO: not complete
                 wf_id = instance_identifier()
-                wf_action_cmd = options.get_next_command([:list,:create,:show])
+                wf_action_cmd = options.get_next_command(%i[list create show])
                 Log.log.warn("Not implemented: #{wf_action_cmd}")
                 step = automation_api.create('steps',{'workflow_id' => wf_id})[:data]
                 automation_api.update("workflows/#{wf_id}",{'step_order' => [step['id']]})
@@ -1028,7 +1041,8 @@ module Aspera
           raise 'internal error: command shall return'
         end
 
-        private :aoc_params,:set_workspace_info,:set_home_node_file,:do_bulk_operation,:resolve_package_recipients,:option_url_query,:assert_public_link_types,:execute_admin_action
+        private :aoc_params,:set_workspace_info,:set_home_node_file,:do_bulk_operation,:resolve_package_recipients,:option_url_query,:assert_public_link_types,
+:execute_admin_action
         private_constant :VAL_ALL,:NODE4_COMMANDS, :ID_AK_ADMIN
       end # AoC
     end # Plugins

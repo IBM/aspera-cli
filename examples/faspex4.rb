@@ -55,7 +55,11 @@ api_v3.read('me')
 file_to_send = File.join(tmpdir,'myfile.bin')
 File.write(file_to_send, 'sample data')
 # package creation parameters
-package_create_params = {'delivery' => {'title' => 'test package','recipients' => ['aspera.user1@gmail.com'],'sources' => [{'paths' => [file_to_send]}]}}
+package_create_params = {'delivery' => {
+  'title'      => 'test package',
+  'recipients' => ['aspera.user1@gmail.com'],
+  'sources'    => [{'paths' => [file_to_send]}]
+  }}
 pkg_created = api_v3.create('send',package_create_params)[:data]
 # get transfer specification (normally: only one)
 transfer_spec = pkg_created['xfer_sessions'].first

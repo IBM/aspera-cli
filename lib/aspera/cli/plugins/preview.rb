@@ -30,7 +30,8 @@ module Aspera
         AK_MARKER_FILE = '.aspera_access_key'
         LOCAL_STORAGE_PCVL = 'file:///'
         LOG_LIMITER_SEC = 30.0
-        private_constant :PREV_GEN_TAG, :PREVIEW_FOLDER_SUFFIX, :PREVIEW_BASENAME, :TMP_DIR_PREFIX, :DEFAULT_PREVIEWS_FOLDER, :LOCAL_STORAGE_PCVL, :AK_MARKER_FILE, :LOG_LIMITER_SEC
+        private_constant :PREV_GEN_TAG, :PREVIEW_FOLDER_SUFFIX, :PREVIEW_BASENAME, :TMP_DIR_PREFIX, :DEFAULT_PREVIEWS_FOLDER,
+         :LOCAL_STORAGE_PCVL, :AK_MARKER_FILE, :LOG_LIMITER_SEC
 
         # option_skip_format has special accessors
         attr_accessor :option_previews_folder
@@ -423,7 +424,8 @@ module Aspera
             if @access_remote
               # note the filter "name", it's why we take the first one
               @previews_folder_entry = get_folder_entries(@access_key_self['root_file_id'],{name: @option_previews_folder}).first
-              raise CliError,"Folder #{@option_previews_folder} does not exist on node. Please create it in the storage root, or specify an alternate name." if @previews_folder_entry.nil?
+              raise CliError,"Folder #{@option_previews_folder} does not exist on node. "\
+                'Please create it in the storage root, or specify an alternate name.' if @previews_folder_entry.nil?
             else
               raise 'only local storage allowed in this mode' unless @access_key_self['storage']['type'].eql?('local')
               @local_storage_root = @access_key_self['storage']['path']
@@ -433,7 +435,8 @@ module Aspera
               raise "not local storage: #{@local_storage_root}" unless @local_storage_root.start_with?('/')
               raise CliError,"Local storage root folder #{@local_storage_root} does not exist." unless File.directory?(@local_storage_root)
               @local_preview_folder = File.join(@local_storage_root,@option_previews_folder)
-              raise CliError,"Folder #{@local_preview_folder} does not exist locally. Please create it, or specify an alternate name." unless File.directory?(@local_preview_folder)
+              raise CliError,"Folder #{@local_preview_folder} does not exist locally. "\
+                'Please create it, or specify an alternate name.' unless File.directory?(@local_preview_folder)
               # protection to avoid clash of file id for two different access keys
               marker_file = File.join(@local_preview_folder,AK_MARKER_FILE)
               Log.log.debug("marker file: #{marker_file}")
@@ -447,21 +450,21 @@ module Aspera
           end
           Aspera::Preview::FileTypes.instance.use_mimemagic = options.get_option(:mimemagic,:mandatory)
           case command
-          when :scan
-            scan_path = options.get_option(:scan_path,:optional)
-            scan_id = options.get_option(:scan_id,:optional)
-            # by default start at root
-            folder_info =
-            if scan_id.nil?
-              { 'id'   => @access_key_self['root_file_id'],
-                'name' => '/',
-                'type' => 'folder',
-                'path' => '/' }
-            else
-              @api_node.read("files/#{scan_id}")[:data]
-            end
-            scan_folder_files(folder_info,scan_path)
-            return Main.result_status('scan finished')
+    when :scan
+      scan_path = options.get_option(:scan_path,:optional)
+      scan_id = options.get_option(:scan_id,:optional)
+      # by default start at root
+      folder_info =
+      if scan_id.nil?
+        { 'id'   => @access_key_self['root_file_id'],
+          'name' => '/',
+          'type' => 'folder',
+          'path' => '/' }
+      else
+        @api_node.read("files/#{scan_id}")[:data]
+      end
+      scan_folder_files(folder_info,scan_path)
+      return Main.result_status('scan finished')
           when :events,:trevents
             iteration_persistency = nil
             if options.get_option(:once_only,:mandatory)

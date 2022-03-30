@@ -45,7 +45,10 @@ module Aspera
       # for info, second overrides first, so restore it
       case result.keys.length;when 0 then result = system_info;when 1 then result = result[result.keys.first];else raise 'error';end
       # raise error as exception
-      raise Error.new(result[:errno],result[:errstr],action_sym,args) if result.is_a?(Hash) && (result.keys.sort == TYPES_DESCR[:error][:fields].map{|i|i[:name]}.sort)
+      raise Error.new(result[:errno],result[:errstr],action_sym,
+args) if result.is_a?(Hash) && (result.keys.sort == TYPES_DESCR[:error][:fields].map do |i|
+  i[:name]
+end.sort)
       return result
     end # execute_single
 
@@ -63,20 +66,29 @@ module Aspera
     # key = name of type
     TYPES_DESCR = {
       result: {decode: :field_list,
-               fields: [{name: :file,is_a: :stat},{name: :dir,is_a: :stat,special: :substruct},{name: :size,is_a: :size},{name: :error,is_a: :error},{name: :info,is_a: :info},
-         {name: :success,is_a: nil,special: :return_true},{name: :exit,is_a: nil},{name: :df,is_a: :mnt,special: :restart_on_first},{name: :md5sum,is_a: :md5sum}]},
+               fields: [{name: :file,is_a: :stat},{name: :dir,is_a: :stat,special: :substruct},{name: :size,is_a: :size},{name: :error,is_a: :error},
+                        {name: :info,is_a: :info},{name: :success,is_a: nil,special: :return_true},{name: :exit,is_a: nil},
+                        {name: :df,is_a: :mnt,special: :restart_on_first},{name: :md5sum,is_a: :md5sum}]},
       stat:   {decode: :field_list,
-               fields: [{name: :name,is_a: :zstr},{name: :size,is_a: :int64},{name: :mode,is_a: :int32,check: nil},{name: :zmode,is_a: :zstr},{name: :uid,is_a: :int32,check: nil},
-         {name: :zuid,is_a: :zstr},{name: :gid,is_a: :int32,check: nil},{name: :zgid,is_a: :zstr},{name: :ctime,is_a: :epoch},{name: :zctime,is_a: :zstr},{name: :mtime,is_a: :epoch},{name: :zmtime,is_a: :zstr},{name: :atime,is_a: :epoch},{name: :zatime,is_a: :zstr},{name: :symlink,is_a: :zstr},{name: :errno,is_a: :int32},{name: :errstr,is_a: :zstr}]},
+               fields: [{name: :name,is_a: :zstr},{name: :size,is_a: :int64},{name: :mode,is_a: :int32,check: nil},{name: :zmode,is_a: :zstr},
+                        {name: :uid,is_a: :int32,check: nil},{name: :zuid,is_a: :zstr},{name: :gid,is_a: :int32,check: nil},{name: :zgid,is_a: :zstr},
+                        {name: :ctime,is_a: :epoch},{name: :zctime,is_a: :zstr},{name: :mtime,is_a: :epoch},{name: :zmtime,is_a: :zstr},
+                        {name: :atime,is_a: :epoch},{name: :zatime,is_a: :zstr},{name: :symlink,is_a: :zstr},{name: :errno,is_a: :int32},
+                        {name: :errstr,is_a: :zstr}]},
       info:   {decode: :field_list,
-               fields: [{name: :platform,is_a: :zstr},{name: :version,is_a: :zstr},{name: :lang,is_a: :zstr},{name: :territory,is_a: :zstr},{name: :codeset,is_a: :zstr},
-         {name: :lc_ctype,is_a: :zstr},{name: :lc_numeric,is_a: :zstr},{name: :lc_time,is_a: :zstr},{name: :lc_all,is_a: :zstr},{name: :dev,is_a: :zstr,special: :multiple},{name: :browse_caps,is_a: :zstr},{name: :protocol,is_a: :zstr}]},
+               fields: [{name: :platform,is_a: :zstr},{name: :version,is_a: :zstr},{name: :lang,is_a: :zstr},{name: :territory,is_a: :zstr},
+                        {name: :codeset,is_a: :zstr},{name: :lc_ctype,is_a: :zstr},{name: :lc_numeric,is_a: :zstr},{name: :lc_time,is_a: :zstr},
+                        {name: :lc_all,is_a: :zstr},{name: :dev,is_a: :zstr,special: :multiple},{name: :browse_caps,is_a: :zstr},
+                        {name: :protocol,is_a: :zstr}]},
       size:   {decode: :field_list,
-               fields: [{name: :size,is_a: :int64},{name: :fcount,is_a: :int32},{name: :dcount,is_a: :int32},{name: :failed_fcount,is_a: :int32},{name: :failed_dcount,is_a: :int32}]},
-      error:  {decode: :field_list,fields: [{name: :errno,is_a: :int32},{name: :errstr,is_a: :zstr}]},
+               fields: [{name: :size,is_a: :int64},{name: :fcount,is_a: :int32},{name: :dcount,is_a: :int32},{name: :failed_fcount,is_a: :int32},
+                        {name: :failed_dcount,is_a: :int32}]},
+      error:  {decode: :field_list,
+               fields: [{name: :errno,is_a: :int32},{name: :errstr,is_a: :zstr}]},
       mnt:    {decode: :field_list,
-               fields: [{name: :fs,is_a: :zstr},{name: :dir,is_a: :zstr},{name: :is_a,is_a: :zstr},{name: :total,is_a: :int64},{name: :used,is_a: :int64},{name: :free,is_a: :int64},
-         {name: :fcount,is_a: :int64},{name: :errno,is_a: :int32},{name: :errstr,is_a: :zstr}]},
+               fields: [{name: :fs,is_a: :zstr},{name: :dir,is_a: :zstr},{name: :is_a,is_a: :zstr},{name: :total,is_a: :int64},
+                        {name: :used,is_a: :int64},{name: :free,is_a: :int64},{name: :fcount,is_a: :int64},{name: :errno,is_a: :int32},
+                        {name: :errstr,is_a: :zstr}]},
       md5sum: {decode: :field_list,fields: [{name: :md5sum,is_a: :zstr}]},
       int8:   {decode: :base,unpack: 'C',size: 1},
       int32:  {decode: :base,unpack: 'L>',size: 4},

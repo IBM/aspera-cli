@@ -815,8 +815,10 @@ module Aspera
               option_override = options.get_option(:override,:mandatory)
               option_default = options.get_option(:default,:mandatory)
               Log.log.error("override=#{option_override} -> #{option_override.class}")
-              raise CliError,"A default configuration already exists for plugin '#{plugin_name}' (use --override=yes or --default=no)" if !option_override && option_default && @config_presets[CONF_PRESET_DEFAULT].has_key?(plugin_name)
-              raise CliError,"Preset already exists: #{preset_name}  (use --override=yes or --id=<name>)" if !option_override && @config_presets.has_key?(preset_name)
+              raise CliError,"A default configuration already exists for plugin '#{plugin_name}' (use --override=yes or --default=no)" \
+                if !option_override && option_default && @config_presets[CONF_PRESET_DEFAULT].has_key?(plugin_name)
+              raise CliError,"Preset already exists: #{preset_name}  (use --override=yes or --id=<name>)" \
+                if !option_override && @config_presets.has_key?(preset_name)
               # lets see if path to priv key is provided
               private_key_path = options.get_option(:pkeypath,:optional)
               # give a chance to provide

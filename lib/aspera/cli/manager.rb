@@ -178,7 +178,8 @@ module Aspera
       def declare_option(option_symbol,type)
         Log.log.debug("declare_option: #{option_symbol}: #{type}: skip=#{@declared_options.has_key?(option_symbol)}".green)
         if @declared_options.has_key?(option_symbol)
-          raise "INTERNAL ERROR: option #{option_symbol} already declared. only accessor can be redeclared and ignored" unless @declared_options[option_symbol][:type].eql?(:accessor)
+          raise "INTERNAL ERROR: option #{option_symbol} already declared. only accessor can be redeclared and ignored" \
+          unless @declared_options[option_symbol][:type].eql?(:accessor)
           return
         end
         @declared_options[option_symbol] = {type: type}

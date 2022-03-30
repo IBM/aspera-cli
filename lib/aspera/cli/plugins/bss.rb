@@ -48,7 +48,9 @@ module Aspera
               id = instance_identifier()
               request = {
                 'variables' => {'id' => id},
-                'query'     => "query($id: ID!) {#{object}(id: $id) { #{all_fields('bssSubscriptions')} roleAssignments(uniqueSubjectId: true) { id subjectId } instances { id state planId serviceId ssmSubscriptionId entitlement { id } aocOrganization { id subdomainName name status tier urlId trialExpiresAt users(organizationAdmin: true) { id name email atsAdmin subscriptionAdmin } } } } }"
+                'query'     => "query($id: ID!) {#{object}(id: $id) { #{all_fields('bssSubscriptions')} roleAssignments(uniqueSubjectId: true) { id subjectId } "\
+                  "instances { id state planId serviceId ssmSubscriptionId entitlement { id } aocOrganization { id subdomainName name status tier urlId trialExpiresAt "\
+                  "users(organizationAdmin: true) { id name email atsAdmin subscriptionAdmin } } } } }"
               }
               result = @api_bss.create('graphql',request)[:data]['data'][object].first
               result.delete('instances')

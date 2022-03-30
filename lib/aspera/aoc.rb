@@ -37,7 +37,8 @@ module Aspera
     # minimum fields for user info if retrieval fails
     USER_INFO_FIELDS_MIN = ['name','email','id','default_workspace_id','organization_id']
 
-    private_constant :MAX_REDIRECT,:GLOBAL_CLIENT_APPS,:DATA_REPO_INDEX_START,:COOKIE_PREFIX,:PUBLIC_LINK_PATHS,:JWT_AUDIENCE,:OAUTH_API_SUBPATH,:USER_INFO_FIELDS_MIN
+    private_constant :MAX_REDIRECT,:GLOBAL_CLIENT_APPS,:DATA_REPO_INDEX_START,:COOKIE_PREFIX,:PUBLIC_LINK_PATHS,:JWT_AUDIENCE,
+    :OAUTH_API_SUBPATH,:USER_INFO_FIELDS_MIN
 
     # various API scopes supported
     SCOPE_FILES_SELF = 'self'
@@ -310,7 +311,9 @@ module Aspera
         end
       else
         # retrieve values from API
-        std_t_spec = node_api.create('files/download_setup',{transfer_requests: [{ transfer_request: {paths: [{'source' => '/'}] } }] })[:data]['transfer_specs'].first['transfer_spec']
+        std_t_spec = node_api.create('files/download_setup',
+          {transfer_requests: [{ transfer_request: {paths: [{'source' => '/'}] } }] }
+        )[:data]['transfer_specs'].first['transfer_spec']
         ['remote_host','remote_user','ssh_port','fasp_port'].each {|i| transfer_spec[i] = std_t_spec[i]}
       end
       # add caller provided transfer spec
@@ -456,7 +459,7 @@ module Aspera
         icase_matches = matching_items.select{|i|i['name'].casecmp?(entity_name)}
         case icase_matches.length
         when 1 then return icase_matches.first
-        when 0 then raise %Q(#{entity_type}: multiple case insensitive partial match for: "#{entity_name}": #{matching_items.map{|i|i['name']}} but no case insensitive full match. Please be more specific or give exact name.)
+        when 0 then raise %Q(#{entity_type}: multiple case insensitive partial match for: "#{entity_name}": #{matching_items.map{|i|i['name']}} but no case insensitive full match. Please be more specific or give exact name.) # rubocop:disable Layout/LineLength
         else raise "Two entities cannot have the same case insensitive name: #{icase_matches.map{|i|i['name']}}"
         end
       end

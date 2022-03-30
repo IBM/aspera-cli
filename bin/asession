@@ -14,7 +14,7 @@ TS_LOGLEVEL = 'EX_loglevel'
 TS_TMP_FILELIST_FOLDER = 'EX_file_list_folder'
 
 SAMPLE_DEMO='"remote_host":"demo.asperasoft.com","remote_user":"asperaweb","ssh_port":33001,"remote_password":"demoaspera"'
-
+SAMPLE_DEMO2='"direction":"receive","destination_root":"./test.dir"'
 def assert_usage(assertion,errmsg)
   return if assertion
   $stderr.puts('ERROR: '.red.blink + errmsg) if errmsg
@@ -34,9 +34,9 @@ def assert_usage(assertion,errmsg)
   $stderr.puts('       {"type":"START","source":"/aspera-test-dir-tiny/200KB.2"}')
   $stderr.puts('       {"type":"START","source":"xx","destination":"yy"}')
   $stderr.puts('       {"type":"DONE"}')
-  $stderr.puts('Note: debug information can be placed on STDERR, using the "' + TS_LOGLEVEL + '" parameter in transfer spec (debug=0)')
+  $stderr.puts(%Q(Note: debug information can be placed on STDERR, using the "#{TS_LOGLEVEL}" parameter in transfer spec (debug=0)))
   $stderr.puts('EXAMPLES')
-  $stderr.puts(%q(    asession @json:'{#{SAMPLE_DEMO},"direction":"receive","destination_root":"./test.dir","paths":[{"source":"/aspera-test-dir-tiny/200KB.1"}]}'))
+  $stderr.puts(%Q(    asession @json:'{#{SAMPLE_DEMO},#{SAMPLE_DEMO2},"paths":[{"source":"/aspera-test-dir-tiny/200KB.1"}]}'))
   $stderr.puts(%q(    echo '{"remote_host":...}'|asession @json:@stdin))
   Process.exit(1)
 end

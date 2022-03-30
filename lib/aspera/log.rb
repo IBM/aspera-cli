@@ -84,10 +84,10 @@ module Aspera
       @logger.formatter = lambda do |severity, datetime, progname, msg|
         if msg.is_a?(String) && !@log_secrets
           msg = msg
-          .gsub(/(["':][^"]*(password|secret|private_key)[^"]*["']?[=>: ]+")([^"]+)(")/){"#{Regexp.last_match(1)}#{HIDDEN_PASSWORD}#{Regexp.last_match(4)}"}
-          .gsub(/("[^"]*(secret)[^"]*"=>{)([^}]+)(})/){"#{Regexp.last_match(1)}#{HIDDEN_PASSWORD}#{Regexp.last_match(4)}"}
-          .gsub(/((secrets)={)([^}]+)(})/){"#{Regexp.last_match(1)}#{HIDDEN_PASSWORD}#{Regexp.last_match(4)}"}
-          .gsub(/--+BEGIN[A-Z ]+KEY--+.+--+END[A-Z ]+KEY--+/m){HIDDEN_PASSWORD}
+            .gsub(/(["':][^"]*(password|secret|private_key)[^"]*["']?[=>: ]+")([^"]+)(")/){"#{Regexp.last_match(1)}#{HIDDEN_PASSWORD}#{Regexp.last_match(4)}"}
+            .gsub(/("[^"]*(secret)[^"]*"=>{)([^}]+)(})/){"#{Regexp.last_match(1)}#{HIDDEN_PASSWORD}#{Regexp.last_match(4)}"}
+            .gsub(/((secrets)={)([^}]+)(})/){"#{Regexp.last_match(1)}#{HIDDEN_PASSWORD}#{Regexp.last_match(4)}"}
+            .gsub(/--+BEGIN[A-Z ]+KEY--+.+--+END[A-Z ]+KEY--+/m){HIDDEN_PASSWORD}
         end
         original_formatter.call(severity, datetime, progname, msg)
       end

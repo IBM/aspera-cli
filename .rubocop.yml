@@ -6,11 +6,14 @@ inherit_from: .rubocop_todo.yml
 
 AllCops:
   NewCops: enable
+  Exclude:
+    - local/**/*
 Naming/MethodName:
   Enabled: false
 Naming/FileName:
   Exclude:
-    - aspera-cli.gemspec
+    - "**/*.gemspec"
+    - "**/*_spec.rb"
 Style/StringLiterals:
   EnforcedStyle: single_quotes
 Style/StringLiteralsInInterpolation:
@@ -31,5 +34,8 @@ Metrics/ParameterLists:
   Max: 6
 Metrics/BlockNesting:
   Max: 5
-
+Style/BarePercentLiterals:
+  EnforcedStyle: percent_q
+Style/TrailingCommaInArrayLiteral:
+  EnforcedStyleForMultiline: no_comma
 

@@ -20,10 +20,10 @@ module Aspera
         return event.keys.each_with_object({}) do |e,h|
           # capital_to_snake_case
           new_name = e.
-            gsub(/([a-z\d])([A-Z])/,'\1_\2').
-            gsub(/([a-z\d])(usec)$/,'\1_\2').
-            gsub(/([A-Z]+)([A-Z][a-z])/,'\1_\2').
-            downcase
+              gsub(/([a-z\d])([A-Z])/,'\1_\2').
+              gsub(/([a-z\d])(usec)$/,'\1_\2').
+              gsub(/([A-Z]+)([A-Z][a-z])/,'\1_\2').
+              downcase
           value = event[e]
           value = value.to_i if INTEGER_FIELDS.include?(e)
           value = value.eql?('Yes') if BOOLEAN_FIELDS.include?(e)

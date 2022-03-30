@@ -100,7 +100,8 @@ module Aspera
         early_debug_setup(argv)
         # compare $0 with expected name
         current_prog_name = File.basename($PROGRAM_NAME)
-        @plugin_env[:formater].display_message(:error,"#{'WARNING'.bg_red.blink.gray} Please use '#{PROGRAM_NAME}' instead of '#{current_prog_name}'") unless current_prog_name.eql?(PROGRAM_NAME)
+        @plugin_env[:formater].display_message(:error,"#{'WARNING'.bg_red.blink.gray} Please use '#{PROGRAM_NAME}' instead of '#{current_prog_name}'") \
+          unless current_prog_name.eql?(PROGRAM_NAME)
         @option_help = false
         @bash_completion = false
         @option_show_config = false
@@ -335,7 +336,8 @@ module Aspera
           @plugin_env[:formater].display_message(:error,"#{ERROR_FLASH} #{exception_info[:t]}: #{exception_info[:e].message}")
           @plugin_env[:formater].display_message(:error,'Use option -h to get help.') if exception_info[:usage]
           if exception_info[:e].is_a?(Fasp::Error) && exception_info[:e].message.eql?('Remote host is not who we expected')
-            @plugin_env[:formater].display_message(:error,"For this specific error, refer to:\n#{SRC_URL}#error-remote-host-is-not-who-we-expected\nAdd this to arguments:\n--ts=@json:'{\"sshfp\":null}'")
+            @plugin_env[:formater].display_message(:error,"For this specific error, refer to:\n"\
+              "#{SRC_URL}#error-remote-host-is-not-who-we-expected\nAdd this to arguments:\n--ts=@json:'{\"sshfp\":null}'")
           end
         end
         # 2- processing of command not processed (due to exception or bad command line)

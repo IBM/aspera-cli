@@ -34,7 +34,7 @@ demo_executor = Aspera::Ssh.new(ssh_url.host,params[:user],{password: params[:pa
 # to use a local executor, set PATH_FOLDER_MAIN to the main folder
 #PATH_FOLDER_MAIN='/local/data'
 #demo_executor=LocalExecutor.new
-TEST_RUN_ID = (rand(1000)).to_s
+TEST_RUN_ID = rand(1000).to_s
 PATH_FOLDER_TINY = File.join(PATH_FOLDER_MAIN,'aspera-test-dir-tiny')
 PATH_FOLDER_DEST = File.join(PATH_FOLDER_MAIN,'Upload')
 PATH_FOLDER_NEW = File.join(PATH_FOLDER_DEST,"newfolder-#{TEST_RUN_ID}")
