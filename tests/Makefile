@@ -25,6 +25,7 @@ clean::
 
 # setup local environment on Macos for preview generation testing
 setupprev:
+	sudo systemsetup -setremotelogin on
 	-sudo asnodeadmin -d -u $$($(EXE_NOMAN) conf id tst_node_preview get username)
 	sudo asnodeadmin -a -u $$($(EXE_NOMAN) conf id tst_node_preview get username) -p $$($(EXE_NOMAN) conf id tst_node_preview get password) -x xfer --acl-set admin,impersonation
 	sudo asconfigurator -x "user;user_name,xfer;file_restriction,|*;token_encryption_key,$$(base64 < /dev/urandom|head -c32);absolute,AS_NULL"
