@@ -312,11 +312,13 @@ rvm version
 
 #### Windows: Installer
 
-Install Latest stable Ruby using [https://rubyinstaller.org/](https://rubyinstaller.org/) :
+Install Latest stable Ruby:
 
-* Go to "Downloads".
-* Select the Ruby 2 version "without devkit", x64 corresponding to the one recommended "with devkit". Devkit is not needed.
-* At the end of the installer uncheck the box to skip the installation of "MSys2": not needed.
+* Navigate to [https://rubyinstaller.org/](https://rubyinstaller.org/) &rarr; **Downloads**.
+* Download the latest Ruby installer **with devkit**. (Msys2 is needed to install some native extensions, such as grpc)
+* Execute the installer which installs by default in: `RubyVV-x64` (VV is the version number)
+* At the end of the installation procedure execute the Msys2 installer (ridk install) and select option 3 (msys and mingw)
+* Install the "mime info" file as specified in [this section](#mimeinfo).
 
 #### macOS: pre-installed or `brew`
 
@@ -778,14 +780,14 @@ Note that `@incps:@json:'{"incps":["config"]}'` or `@incps:@ruby:'{"incps"=>["co
 
 ### <a id="native"></a>Structured Value
 
-Some options and parameters expect a _Structured Value_, i.e. a value more complex than a simple string. This is usually a Hash table or an Array, which could also contain sub structures.
+Some options and parameters expect a [Extended Value](#extended), i.e. a value more complex than a simple string. This is usually a Hash table or an Array, which could also contain sub structures.
 
-For instance, a <%=trspec%> is expected to be a _Structured Value_.
+For instance, a <%=trspec%> is expected to be a [Extended Value](#extended).
 
 Structured values shall be described using the [Extended Value Syntax](#extended).
-A convenient way to specify a _Structured Value_ is to use the `@json:` decoder, and describe the value in JSON format. The `@ruby:` decoder can also be used. For an array of hash tables, the `@csvt:` decoder can be used.
+A convenient way to specify a [Extended Value](#extended) is to use the `@json:` decoder, and describe the value in JSON format. The `@ruby:` decoder can also be used. For an array of hash tables, the `@csvt:` decoder can be used.
 
-It is also possible to provide a _Structured Value_ in a file using `@json:@file:<path>`
+It is also possible to provide a [Extended Value](#extended) in a file using `@json:@file:<path>`
 
 ### <a id="conffolder"></a>Configuration and Persistency Folder
 
@@ -893,7 +895,6 @@ Older format for commands are still supported:
 <%=cmd%> config over
 <%=cmd%> config list
 ```
-
 
 #### <a id="lprtconf"></a>Special <%=prstt%>: config
 
@@ -1109,6 +1110,8 @@ Then secrets can be manipulated using commands:
 Secrets must be uniquely identified by `url` and `username`. An optional description can be provided using option `value`.
 
 #### Legacy config file format
+
+THIS FORMAT WILL BE DEPRECATED
 
 The value provided can be a Hash, where keys are usernames (or access key id), and values are the associated password or secrets in clear.
 
@@ -1341,7 +1344,7 @@ The PAC file will be used for any HTTP/HTTPS/REST connection, but not other (e.g
 
 The PAC file can be tested with command: `config proxy_check`. Example, using command line option:
 
-```
+```bash
 <%=cmd%> conf proxy_check --fpac='function FindProxyForURL(url, host) {return "PROXY proxy.example.com:1234;DIRECT";}' http://example.com
 PROXY proxy.example.com:1234;DIRECT
 ```
@@ -1579,7 +1582,7 @@ Like any other option, `transfer_info` can get its value from a pre-configured <
 
 If `transfer_info` is not specified and a default node has been configured (name in `node` for section `default`) then this node is used by default.
 
-If the `password` value begins with `Bearer ` then the `username` is expected to be an access key and the parameter `root_id` is mandatory and specifies the root file id on the node. It can be either the access key's root file id, or any authorized file id underneath it.
+If the `password` value begins with `Bearer` then the `username` is expected to be an access key and the parameter `root_id` is mandatory and specifies the root file id on the node. It can be either the access key's root file id, or any authorized file id underneath it.
 
 #### <a id="agt_httpgw"></a>HTTP Gateway
 
@@ -1598,6 +1601,19 @@ Note that the gateway only supports transfers authorized with a token.
 Another possibility is to use the Transfer SDK daemon (asperatransferd).
 
 By default it will listen on local port `55002` on `127.0.0.1`.
+
+The gem `grpc` was removed from dependencies, as it requires compilation of a native part. So, to use the Transfer SDK you should install this gem:
+
+```bash
+gem install grpc
+```
+
+On Windows the compilation may fail for various reasons (3.1.1):
+
+* `cannot find -lx64-ucrt-ruby310`
+   &rarr; copy the file `[Ruby main dir]\lib\libx64-ucrt-ruby310.dll.a` to `[Ruby main dir]\lib\libx64-ucrt-ruby310.a` (remove the dll extension)
+* `conflicting types for 'gettimeofday'`
+  &rarr; edit the file `[Ruby main dir]/include/ruby-[version]/ruby/win32.h` and change the signature of `gettimeofday` to `gettimeofday(struct timeval *, void *)` ,i.e. change `struct timezone` to `void`
 
 ### <a id="transferspec"></a>Transfer Specification
 
@@ -2119,7 +2135,7 @@ If you are not using the built-in client_id and secret, JWT needs to be authoriz
 
 * Graphically
 
-  * Open a web browser, log to your instance: https://myorg.ibmaspera.com/
+  * Open a web browser, log to your instance: `https://myorg.ibmaspera.com/`
   * Go to Apps&rarr;Admin&rarr;Organization&rarr;Integrations
   * Click on the previously created application
   * select tab : "JSON Web Token Auth"
@@ -2156,7 +2172,7 @@ The public key must be assigned to your user. This can be done in two manners:
 
 Open the previously generated public key located here: `$HOME/.aspera/<%=cmd%>/my_private_key.pub`
 
-* Open a web browser, log to your instance: https://myorg.ibmaspera.com/
+* Open a web browser, log to your instance: `https://myorg.ibmaspera.com/`
 * Click on the user's icon (top right)
 * Select "Account Settings"
 * Paste the *Public Key* in the "Public Key" section
@@ -3117,7 +3133,7 @@ updated
 
 Scenario: Access to a "Shares on Demand" (SHOD) server on AWS is provided by a partner.
 We need to transfer files from this third party SHOD instance into our Azure BLOB storage.
-Simply create an "Aspera Transfer Service" instance (https://ts.asperasoft.com), which provides access to the node API.
+Simply create an "Aspera Transfer Service" instance, which provides access to the node API.
 Then create a configuration for the "SHOD" instance in the configuration file: in section "shares", a configuration named: awsshod.
 Create another configuration for the Azure ATS instance: in section "node", named azureats.
 Then execute the following command:
@@ -3180,7 +3196,7 @@ For web method, create an API client in Faspex without JWT:
 
 * Navigate to the web UI: Admin &rarr; Configurations &rarr; API Clients &rarr; Create
 * Do not Activate JWT
-* enter https://127.0.0.1:8888 in the redirect URI
+* enter `https://127.0.0.1:8888` in the redirect URI
 * Click on Create Button
 * Take note of Client Id
 
@@ -3370,7 +3386,7 @@ There are two possibilities to provide credentials. If you already have the endp
 If you have those parameters already, then following options shall be provided:
 
 * `bucket` bucket name
-* `endpoint` storage endpoint url, e.g. https://s3.hkg02.cloud-object-storage.appdomain.cloud
+* `endpoint` storage endpoint url, e.g. `https://s3.hkg02.cloud-object-storage.appdomain.cloud`
 * `apikey` API Key
 * `crn` resource instance id
 
@@ -3464,6 +3480,34 @@ Several parameters can be used to tune several aspects:
 * methods for detection of new files needing generation
 * methods for generation of video preview
 * parameters for video handling
+
+### <a id="mimeinfo"></a>Additional installation: mime info
+
+If the `mimemagic` gem complains about missing mime info:
+
+* Windows:
+
+  * Download the file: <https://gitlab.freedesktop.org/xdg/shared-mime-info/-/raw/master/data/freedesktop.org.xml.in>
+  * Place this file in the root of Ruby (or elsewhere): `C:\RubyVV-x64\freedesktop.org.xml.in`
+  * Set a global variable using `SystemPropertiesAdvanced.exe` or using `cmd` (replace VV with version) to the exact path of this file:
+
+  ```cmd
+  SETX FREEDESKTOP_MIME_TYPES_PATH C:\RubyVV-x64\freedesktop.org.xml.in
+  ```
+
+  * Close the `cmd` and restart a new one if needed to get refreshed env vars
+
+* Linux:
+
+```bash
+yum install shared-mime-info
+```
+
+* macOS:
+
+```bash
+brew install shared-mime-info
+```
 
 ### Aspera Server configuration
 
@@ -3738,7 +3782,7 @@ The `smtp` option is a hash table (extended value) with the following fields:
 <tr><td>`from_name`</td><td>same as email</td><td>John Wayne</td><td>display name of sender</td></tr>
 </table>
 
-### Example of configuration:
+### Example of configuration
 
 ```bash
 <%=cmd%> config preset set smtp_google server smtp.google.com
@@ -3932,7 +3976,7 @@ Note: parameters may be saved in a <%=prst%> and used with `-P`.
 
 #### Scheduling
 
-Once <%=tool%> parameters are defined, run the command using the OS native scheduler, e.g. every minutes, or 5 minutes, etc... Refer to section [_Scheduling_](#_scheduling_).
+Once <%=tool%> parameters are defined, run the command using the OS native scheduler, e.g. every minutes, or 5 minutes, etc... Refer to section [Scheduling](#scheduling).
 
 ### Example: upload folder
 

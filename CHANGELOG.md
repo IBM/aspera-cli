@@ -1,7 +1,10 @@
 # Changes (Release notes)
 
 * Current Development
-  *
+  * change: (break) removed dependency on gem `grpc` which is used only for the `trsdk` transfer agent. Users can install the gem manually if needed.
+  * change: (break) hash vault keys are stringinstead of symbol
+  * cleanup with rubocop
+  * change: default is now to hide secrets on command output. Set option `show_secrets` to reveal secrets.
 
 * 4.7.0
 
@@ -96,7 +99,8 @@
 
 * 4.1.0
 
-  * fix: remove keys from transfer spec and command line when not needed 	* fix: default to create_dir:true so that sending single file to a folder does not rename file if folder does not exist
+  * fix: remove keys from transfer spec and command line when not needed
+  * fix: default to create_dir:true so that sending single file to a folder does not rename file if folder does not exist
   * new: update documentation with regard to offline and docker installation
   * new: renamed command `nagios_check` to `health`
   * new: agent `http_gw` now supports upload
@@ -242,8 +246,8 @@
 
 * 0.10.4
 
- 	* new options for AoC : `secrets`
- 	* ACLI-533 temp file list folder to use file lists is set by default, and used by asession
+  * new options for AoC : `secrets`
+  * ACLI-533 temp file list folder to use file lists is set by default, and used by asession
 
 * 0.10.3
 
@@ -362,7 +366,6 @@
 
   * Breaking change: @stdin is now @stdin:
   * support of ATS for IBM Cloud, removed old version based on aspera id
-
 
 * 0.9.10
 

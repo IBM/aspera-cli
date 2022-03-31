@@ -36,10 +36,10 @@ Gem::Specification.new do |spec|
   # specify executable names: must be after lines defining: spec.bindir and spec.files
   spec.executables = spec.files.grep(%r{^#{spec.bindir}}){|f|File.basename(f)}
   spec.required_ruby_version = '>= 2.4'
+  # dependency gems for runtime
   spec.add_runtime_dependency('execjs', '~> 2.0')
-  spec.add_runtime_dependency('grpc', '~> 1.0')
   spec.add_runtime_dependency('jwt', '~> 2.0')
-  spec.add_runtime_dependency('mimemagic', '~> 0.3')
+  spec.add_runtime_dependency('mimemagic', '~> 0.3')  # for preview
   spec.add_runtime_dependency('net-smtp', '>=0.1', '<0.4')
   spec.add_runtime_dependency('net-ssh', '~> 6.0')
   spec.add_runtime_dependency('ruby-progressbar', '~> 1.0')
@@ -51,6 +51,9 @@ Gem::Specification.new do |spec|
   spec.add_runtime_dependency('websocket', '~> 1.2')
   spec.add_runtime_dependency('websocket-client-simple', '~> 0.3')
   spec.add_runtime_dependency('xml-simple', '~> 1.0')
+  # optional dependency gems for runtime that can cause problems (native part to compile) but seldom used
+  spec.add_development_dependency('grpc', '~> 1.0') # for transferSDK
+  # development gems
   spec.add_development_dependency('bundler', '~> 2.0')
   spec.add_development_dependency('rake', '~> 13.0')
   spec.add_development_dependency('rspec', '~> 3.0')
