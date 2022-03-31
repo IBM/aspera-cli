@@ -3,6 +3,7 @@
 require 'aspera/cli/basic_auth_plugin'
 require 'aspera/cli/extended_value'
 require 'aspera/cli/version'
+require 'aspera/cli/formater'
 require 'aspera/fasp/installation'
 require 'aspera/fasp/parameters'
 require 'aspera/fasp/transfer_spec'
@@ -268,16 +269,6 @@ module Aspera
           def plugin_class(plugin_name_sym)
             # Module.nesting[2] is Aspera::Cli::Plugins
             return Object.const_get("#{module_full_name}::#{plugin_name_sym.to_s.capitalize}")
-          end
-
-          def flatten_all_config(t)
-            r = []
-            t.each do |k,v|
-              v.each do |kk,vv|
-                r.push({'config' => k,'parameter' => kk,'value' => vv})
-              end
-            end
-            return r
           end
         end
 
@@ -667,7 +658,7 @@ module Aspera
           when :list
             return {type: :value_list, data: @config_presets.keys, name: 'name'}
           when :overview
-            return {type: :object_list, data: self.class.flatten_all_config(@config_presets)}
+            return {type: :object_list, data: Formater.flatten_config_overview(@config_presets)}
           when :show
             raise "no such config: #{config_name}" if selected_preset.nil?
             return {type: :single_object, data: selected_preset}
