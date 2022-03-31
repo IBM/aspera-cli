@@ -28,3 +28,11 @@ unless Hash.method_defined?(:symbolize_keys)
     end
   end
 end
+
+unless Hash.method_defined?(:stringify_keys)
+  class Hash
+    def stringify_keys
+      return each_with_object({}){|(k,v),memo| memo[k.to_s] = v }
+    end
+  end
+end
