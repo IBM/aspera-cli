@@ -5,6 +5,7 @@ inherit_gem:
 inherit_from: .rubocop_todo.yml
 
 AllCops:
+  SuggestExtensions: false
   NewCops: enable
   Exclude:
     - local/**/*

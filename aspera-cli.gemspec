@@ -39,7 +39,7 @@ Gem::Specification.new do |spec|
   # dependency gems for runtime
   spec.add_runtime_dependency('execjs', '~> 2.0')
   spec.add_runtime_dependency('jwt', '~> 2.0')
-  spec.add_runtime_dependency('mimemagic', '~> 0.3')  # for preview
+  spec.add_runtime_dependency('mimemagic', '~> 0.3') # for preview
   spec.add_runtime_dependency('net-smtp', '>=0.1', '<0.4')
   spec.add_runtime_dependency('net-ssh', '~> 6.0')
   spec.add_runtime_dependency('ruby-progressbar', '~> 1.0')
