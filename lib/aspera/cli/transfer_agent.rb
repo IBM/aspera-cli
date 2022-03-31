@@ -74,6 +74,7 @@ module Aspera
       def set_agent_by_options
         return nil unless @agent.nil?
         agent_type = @opt_mgr.get_option(:transfer,:mandatory)
+        # agent plugin is loaded on demand to avoid loading unnecessary dependencies
         require "aspera/fasp/agent_#{agent_type}"
         agent_options = @opt_mgr.get_option(:transfer_info,:optional)
         raise CliBadArgument,"the transfer agent configuration shall be Hash, not #{agent_options.class} (#{agent_options}), "\
