@@ -38,8 +38,12 @@ module Aspera
 
         class << self
           def detect(base_url)
-            api = Rest.new({base_url: base_url})
-            result = api.call({operation: 'POST',subpath: 'aspera/faspex',headers: {'Accept' => 'application/xrds+xml'},text_body_params: ''})
+            api = Rest.new(base_url: base_url)
+            result = api.call(
+              operation:        'POST',
+              subpath:          'aspera/faspex',
+              headers:          {'Accept' => 'application/xrds+xml', 'Content-type' => 'text/plain'},
+              text_body_params: '')
             # 4.x
             if result[:http].body.start_with?('<?xml')
               res_s = XmlSimple.xml_in(result[:http].body, {'ForceArray' => false})
