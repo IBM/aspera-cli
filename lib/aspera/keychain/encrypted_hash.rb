@@ -62,7 +62,7 @@ module Aspera
 
       def list
         result = []
-        legacy_detected=true
+        legacy_detected=false
         @all_secrets.each do |name,value|
           normal = # normalized version
           case value
@@ -77,7 +77,7 @@ module Aspera
           Log.log.error("wrongs keys in secret hash: #{extraneous_keys.map(&:to_s).join(',')}") unless extraneous_keys.empty?
           result.push(normal)
         end
-        Log.log.warn('Legacy vault format detected in config file, please refer to documentation to convert to new format.')
+        Log.log.warn('Legacy vault format detected in config file, please refer to documentation to convert to new format.') if legacy_detected
         return result
       end
 
