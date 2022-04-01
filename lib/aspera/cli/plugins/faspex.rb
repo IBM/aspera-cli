@@ -26,15 +26,15 @@ module Aspera
         # added field in result that identifies the package
         PACKAGE_MATCH_FIELD = 'package_id'
         # list of supported atoms
-        ATOM_MAILBOXES = [:inbox, :archive, :sent]
+        ATOM_MAILBOXES = %i[inbox archive sent].freeze
         # allowed parameters for inbox.atom
-        ATOM_PARAMS = ['page', 'count', 'startIndex']
+        ATOM_PARAMS = %w[page count startIndex].freeze
         # with special parameters (from Plugin class) : max and pmax
         ATOM_EXT_PARAMS = ATOM_PARAMS + [MAX_ITEMS, MAX_PAGES]
         # sub path in url for public link delivery
         PUB_LINK_EXTERNAL_MATCH = 'external_deliveries/'
-        private_constant :KEY_NODE,:KEY_PATH,:VAL_ALL,:PACKAGE_MATCH_FIELD,:ATOM_MAILBOXES,
-        :ATOM_PARAMS,:ATOM_EXT_PARAMS,:PUB_LINK_EXTERNAL_MATCH
+        private_constant :KEY_NODE,:KEY_PATH,:VAL_ALL,:PACKAGE_MATCH_FIELD,:ATOM_MAILBOXES,:ATOM_PARAMS,
+        :ATOM_EXT_PARAMS,:PUB_LINK_EXTERNAL_MATCH
 
         class << self
           def detect(base_url)
