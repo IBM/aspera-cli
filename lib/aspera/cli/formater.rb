@@ -10,12 +10,12 @@ module Aspera
     class Formater
       FIELDS_ALL = 'ALL'
       FIELDS_DEFAULT = 'DEF'
-      # supported output formats
-      DISPLAY_FORMATS = %i[table ruby json jsonpp yaml csv nagios]
-      # user output levels
-      DISPLAY_LEVELS = [:info,:data,:error]
       CSV_RECORD_SEPARATOR = "\n"
       CSV_FIELD_SEPARATOR = ','
+      # supported output formats
+      DISPLAY_FORMATS = %i[table ruby json jsonpp yaml csv nagios].freeze
+      # user output levels
+      DISPLAY_LEVELS = %i[info data error].freeze
       HIDDEN_PASSWORD = '🔑'
       SECRET_KEYWORDS = %w[password secret private_key].freeze
       KEYS_NOT_HIDDEN = %w[show_secrets log_secrets].freeze
@@ -146,7 +146,7 @@ module Aspera
       end
 
       def deep_remove_secret(obj)
-        return if @option_show_secrets
+        return if @option_show_secrets || @option_display.eql?(:data)
         case obj
         when Array
           if !obj.empty? && obj.first.is_a?(Hash) && obj.first.keys.sort.eql?(CONF_OVERVIEW_KEYS)
