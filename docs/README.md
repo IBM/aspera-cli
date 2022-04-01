@@ -10,4 +10,3 @@ docs/README.erb.md contains the following macros:
 * `<%=opprst%>` option preset
 * `<%=prst%>` link to preset section, name and link to preset
 * `<%=prstt%>` preset in title
-

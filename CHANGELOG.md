@@ -39,15 +39,15 @@
 
 * 4.5.0
 
-  * new: support transfer agent: [Transfer SDK](#agt_trsdk)
-  * new: support [http socket options](#http_options)
+  * new: support transfer agent: [Transfer SDK](README.md#agt_trsdk)
+  * new: support [http socket options](README.md#http_options)
   * new: logs hide passwords and secrets, option `log_passwords` to enable logging secrets
   * new: `config vault` supports encrypted passwords, also macos keychain
   * new: `config preset` command for consistency with id
   * new: identifier can be provided using either option `id` or directly after the command, e.g. `delete 123` is the same as `delete --id=123`
-  * change: when using wss, use [ruby's CA certs](#certificates)
+  * change: when using wss, use [ruby's CA certs](README.md#certificates)
   * change: unexpected parameter makes exit code not zero
-  * change: (break) options `id` and `name` cannot be specified at the same time anymore, use [positional identifer or name selection](#res_select)
+  * change: (break) options `id` and `name` cannot be specified at the same time anymore, use [positional identifer or name selection](README.md#res_select)
   * change: (break) `aoc admin res node` does not take workspace main node as default node if no `id` specified.
   * change: (break): `orchestrator workflow status` requires id, and supports special id `ALL`
   * fix: various smaller fixes and renaming of some internal classes (transfer agents and few other)
@@ -64,7 +64,7 @@
 
 * 4.3.0
 
-  * new: parameter `multi_incr_udp` for option `transfer_info`: control if UDP port is incremented when multi-session is used on [`direct`](#agt_direct) transfer agent.
+  * new: parameter `multi_incr_udp` for option `transfer_info`: control if UDP port is incremented when multi-session is used on [`direct`](README.md#agt_direct) transfer agent.
   * new: command `aoc files node_info` to get node information for a given folder in the Files application of AoC. Allows cross-org or cross-workspace transfers.
 
 * 4.2.2
@@ -89,13 +89,13 @@
   * new: command `aoc remind` to receive organization membership by email
   * new: in `preview` option `value` to filter out on file name
   * new: `initdemo` to initialize for demo server
-  * new: [`direct`](#agt_direct) transfer agent options: `spawn_timeout_sec` and `spawn_delay_sec`
+  * new: [`direct`](README.md#agt_direct) transfer agent options: `spawn_timeout_sec` and `spawn_delay_sec`
   * fix: on Windows `conf ascp use` expects ascp.exe
   * fix: (break) multi_session_threshold is Integer, not String
   * fix: `conf ascp install` renames sdk folder if it already exists (leftover shared lib may make fail)
   * fix: removed replace_illegal_chars from default aspera.conf causing "Error creating illegal char conversion table"
   * change: (break) `aoc apiinfo` is removed, use `aoc servers` to provide the list of cloud systems
-  * change: (break) parameters for resume in `transfer-info` for [`direct`](#agt_direct) are now in sub-key `"resume"`
+  * change: (break) parameters for resume in `transfer-info` for [`direct`](README.md#agt_direct) are now in sub-key `"resume"`
 
 * 4.1.0
 
@@ -153,8 +153,8 @@
   * allow bulk delete in `aspera files` with option `bulk=yes`
   * fix getting connect versions
   * added section for Aix
-  * support all ciphers for [`direct`](#agt_direct) agent (including gcm, etc..)
-  * added transfer spec param `apply_local_docroot` for [`direct`](#agt_direct)
+  * support all ciphers for [`direct`](README.md#agt_direct) agent (including gcm, etc..)
+  * added transfer spec param `apply_local_docroot` for [`direct`](README.md#agt_direct)
 
 * 0.11.4
 
@@ -205,7 +205,7 @@
 * 0.10.12
 
   * added support for AoC node registration keys
-  * replaced option : `local_resume` with `transfer_info` for agent [`direct`](#agt_direct)
+  * replaced option : `local_resume` with `transfer_info` for agent [`direct`](README.md#agt_direct)
   * Transfer agent is no more a Singleton instance, but only one is used in CLI
   * `@incps` : new extended value modifier
   * ATS: no more provides access keys secrets: now user must provide it
@@ -386,7 +386,7 @@
 
 * 0.9.7
 
-  * homogeneous <%=trspec%> for `node` and [`direct`](#agt_direct) transfer agents
+  * homogeneous <%=trspec%> for `node` and [`direct`](README.md#agt_direct) transfer agents
   * preview persistency goes to unique file by default
   * catch mxf extension in preview as video
   * Faspex: possibility to download all packages by specifying id=ALL

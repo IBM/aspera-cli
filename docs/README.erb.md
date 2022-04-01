@@ -19,6 +19,8 @@ Minimum required Ruby <%=ruby_version%>.
 [Aspera APIs on IBM developer](https://developer.ibm.com/?size=30&q=aspera&DWContentType[0]=APIs)
 [Link 2](https://developer.ibm.com/apis/catalog/?search=aspera)
 
+Release notes: see [CHANGELOG.md](CHANGELOG.md)
+
 ## <a id="when_to_use"></a>When to use and when not to use
 
 <%=tool%> is designed to be used as a command line tool to:

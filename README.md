@@ -19,6 +19,8 @@ Minimum required Ruby version: >= 2.4. Deprecation notice: the minimum will be 2
 [Aspera APIs on IBM developer](https://developer.ibm.com/?size=30&q=aspera&DWContentType[0]=APIs)
 [Link 2](https://developer.ibm.com/apis/catalog/?search=aspera)
 
+Release notes: see [CHANGELOG.md](CHANGELOG.md)
+
 ## <a id="when_to_use"></a>When to use and when not to use
 
 `ascli` is designed to be used as a command line tool to:
@@ -312,11 +314,13 @@ rvm version
 
 #### Windows: Installer
 
-Install Latest stable Ruby using [https://rubyinstaller.org/](https://rubyinstaller.org/) :
+Install Latest stable Ruby:
 
-* Go to "Downloads".
-* Select the Ruby 2 version "without devkit", x64 corresponding to the one recommended "with devkit". Devkit is not needed.
-* At the end of the installer uncheck the box to skip the installation of "MSys2": not needed.
+* Navigate to [https://rubyinstaller.org/](https://rubyinstaller.org/) &rarr; **Downloads**.
+* Download the latest Ruby installer **with devkit**. (Msys2 is needed to install some native extensions, such as grpc)
+* Execute the installer which installs by default in: `RubyVV-x64` (VV is the version number)
+* At the end of the installation procedure execute the Msys2 installer (ridk install) and select option 3 (msys and mingw)
+* Install the "mime info" file as specified in [this section](#mimeinfo).
 
 #### macOS: pre-installed or `brew`
 
@@ -339,17 +343,17 @@ If your Linux distribution provides a standard ruby package, you can use it prov
 Example:
 
 ```bash
-yum install -y ruby rubygems ruby-json
+yum install -y ruby ruby-devel rubygems ruby-json
+```
+
+```bash
+apt install -y ruby ruby-dev rubygems ruby-json
 ```
 
 One can cleanup the whole yum-installed ruby environment like this to uninstall:
 
 ```bash
 gem uninstall $(ls $(gem env gemdir)/gems/|sed -e 's/-[^-]*$//'|sort -u)
-```
-
-```bash
-yum remove -y ruby ruby-libs
 ```
 
 #### Other Unixes (AIX)
@@ -778,14 +782,14 @@ Note that `@incps:@json:'{"incps":["config"]}'` or `@incps:@ruby:'{"incps"=>["co
 
 ### <a id="native"></a>Structured Value
 
-Some options and parameters expect a _Structured Value_, i.e. a value more complex than a simple string. This is usually a Hash table or an Array, which could also contain sub structures.
+Some options and parameters expect a [Extended Value](#extended), i.e. a value more complex than a simple string. This is usually a Hash table or an Array, which could also contain sub structures.
 
-For instance, a [*transfer-spec*](#transferspec) is expected to be a _Structured Value_.
+For instance, a [*transfer-spec*](#transferspec) is expected to be a [Extended Value](#extended).
 
 Structured values shall be described using the [Extended Value Syntax](#extended).
-A convenient way to specify a _Structured Value_ is to use the `@json:` decoder, and describe the value in JSON format. The `@ruby:` decoder can also be used. For an array of hash tables, the `@csvt:` decoder can be used.
+A convenient way to specify a [Extended Value](#extended) is to use the `@json:` decoder, and describe the value in JSON format. The `@ruby:` decoder can also be used. For an array of hash tables, the `@csvt:` decoder can be used.
 
-It is also possible to provide a _Structured Value_ in a file using `@json:@file:<path>`
+It is also possible to provide a [Extended Value](#extended) in a file using `@json:@file:<path>`
 
 ### <a id="conffolder"></a>Configuration and Persistency Folder
 
@@ -893,7 +897,6 @@ ascli config id <name> set|delete|show|initialize|update
 ascli config over
 ascli config list
 ```
-
 
 #### <a id="lprtconf"></a>Special Option preset: config
 
@@ -1109,6 +1112,8 @@ Then secrets can be manipulated using commands:
 Secrets must be uniquely identified by `url` and `username`. An optional description can be provided using option `value`.
 
 #### Legacy config file format
+
+THIS FORMAT WILL BE DEPRECATED
 
 The value provided can be a Hash, where keys are usernames (or access key id), and values are the associated password or secrets in clear.
 
@@ -1341,7 +1346,7 @@ The PAC file will be used for any HTTP/HTTPS/REST connection, but not other (e.g
 
 The PAC file can be tested with command: `config proxy_check`. Example, using command line option:
 
-```
+```bash
 ascli conf proxy_check --fpac='function FindProxyForURL(url, host) {return "PROXY proxy.example.com:1234;DIRECT";}' http://example.com
 PROXY proxy.example.com:1234;DIRECT
 ```
@@ -1579,7 +1584,7 @@ Like any other option, `transfer_info` can get its value from a pre-configured [
 
 If `transfer_info` is not specified and a default node has been configured (name in `node` for section `default`) then this node is used by default.
 
-If the `password` value begins with `Bearer ` then the `username` is expected to be an access key and the parameter `root_id` is mandatory and specifies the root file id on the node. It can be either the access key's root file id, or any authorized file id underneath it.
+If the `password` value begins with `Bearer` then the `username` is expected to be an access key and the parameter `root_id` is mandatory and specifies the root file id on the node. It can be either the access key's root file id, or any authorized file id underneath it.
 
 #### <a id="agt_httpgw"></a>HTTP Gateway
 
@@ -1598,6 +1603,19 @@ Note that the gateway only supports transfers authorized with a token.
 Another possibility is to use the Transfer SDK daemon (asperatransferd).
 
 By default it will listen on local port `55002` on `127.0.0.1`.
+
+The gem `grpc` was removed from dependencies, as it requires compilation of a native part. So, to use the Transfer SDK you should install this gem:
+
+```bash
+gem install grpc
+```
+
+On Windows the compilation may fail for various reasons (3.1.1):
+
+* `cannot find -lx64-ucrt-ruby310`
+   &rarr; copy the file `[Ruby main dir]\lib\libx64-ucrt-ruby310.dll.a` to `[Ruby main dir]\lib\libx64-ucrt-ruby310.a` (remove the dll extension)
+* `conflicting types for 'gettimeofday'`
+  &rarr; edit the file `[Ruby main dir]/include/ruby-[version]/ruby/win32.h` and change the signature of `gettimeofday` to `gettimeofday(struct timeval *, void *)` ,i.e. change `struct timezone` to `void`
 
 ### <a id="transferspec"></a>Transfer Specification
 
@@ -2289,7 +2307,7 @@ OPTIONS: global
         --table-style=VALUE          table display style
         --flat-hash=ENUM             display hash values as additional keys: [yes], no
         --transpose-single=ENUM      single object fields output vertically: [yes], no
-        --show-secrets=ENUM          show secrets on command output: [yes], no
+        --show-secrets=ENUM          show secrets on command output: yes, [no]
     -h, --help                       Show this message.
         --bash-comp                  generate bash completion for command
         --show-config                Display parameters used for the provided action.
@@ -2654,7 +2672,7 @@ If you are not using the built-in client_id and secret, JWT needs to be authoriz
 
 * Graphically
 
-  * Open a web browser, log to your instance: https://myorg.ibmaspera.com/
+  * Open a web browser, log to your instance: `https://myorg.ibmaspera.com/`
   * Go to Apps&rarr;Admin&rarr;Organization&rarr;Integrations
   * Click on the previously created application
   * select tab : "JSON Web Token Auth"
@@ -2691,7 +2709,7 @@ The public key must be assigned to your user. This can be done in two manners:
 
 Open the previously generated public key located here: `$HOME/.aspera/ascli/my_private_key.pub`
 
-* Open a web browser, log to your instance: https://myorg.ibmaspera.com/
+* Open a web browser, log to your instance: `https://myorg.ibmaspera.com/`
 * Click on the user's icon (top right)
 * Select "Account Settings"
 * Paste the *Public Key* in the "Public Key" section
@@ -3652,7 +3670,7 @@ updated
 
 Scenario: Access to a "Shares on Demand" (SHOD) server on AWS is provided by a partner.
 We need to transfer files from this third party SHOD instance into our Azure BLOB storage.
-Simply create an "Aspera Transfer Service" instance (https://ts.asperasoft.com), which provides access to the node API.
+Simply create an "Aspera Transfer Service" instance, which provides access to the node API.
 Then create a configuration for the "SHOD" instance in the configuration file: in section "shares", a configuration named: awsshod.
 Create another configuration for the Azure ATS instance: in section "node", named azureats.
 Then execute the following command:
@@ -3715,7 +3733,7 @@ For web method, create an API client in Faspex without JWT:
 
 * Navigate to the web UI: Admin &rarr; Configurations &rarr; API Clients &rarr; Create
 * Do not Activate JWT
-* enter https://127.0.0.1:8888 in the redirect URI
+* enter `https://127.0.0.1:8888` in the redirect URI
 * Click on Create Button
 * Take note of Client Id
 
@@ -3905,7 +3923,7 @@ There are two possibilities to provide credentials. If you already have the endp
 If you have those parameters already, then following options shall be provided:
 
 * `bucket` bucket name
-* `endpoint` storage endpoint url, e.g. https://s3.hkg02.cloud-object-storage.appdomain.cloud
+* `endpoint` storage endpoint url, e.g. `https://s3.hkg02.cloud-object-storage.appdomain.cloud`
 * `apikey` API Key
 * `crn` resource instance id
 
@@ -3999,6 +4017,34 @@ Several parameters can be used to tune several aspects:
 * methods for detection of new files needing generation
 * methods for generation of video preview
 * parameters for video handling
+
+### <a id="mimeinfo"></a>Additional installation: mime info
+
+If the `mimemagic` gem complains about missing mime info:
+
+* Windows:
+
+  * Download the file: <https://gitlab.freedesktop.org/xdg/shared-mime-info/-/raw/master/data/freedesktop.org.xml.in>
+  * Place this file in the root of Ruby (or elsewhere): `C:\RubyVV-x64\freedesktop.org.xml.in`
+  * Set a global variable using `SystemPropertiesAdvanced.exe` or using `cmd` (replace VV with version) to the exact path of this file:
+
+  ```cmd
+  SETX FREEDESKTOP_MIME_TYPES_PATH C:\RubyVV-x64\freedesktop.org.xml.in
+  ```
+
+  * Close the `cmd` and restart a new one if needed to get refreshed env vars
+
+* Linux:
+
+```bash
+yum install shared-mime-info
+```
+
+* macOS:
+
+```bash
+brew install shared-mime-info
+```
 
 ### Aspera Server configuration
 
@@ -4273,7 +4319,7 @@ The `smtp` option is a hash table (extended value) with the following fields:
 <tr><td>`from_name`</td><td>same as email</td><td>John Wayne</td><td>display name of sender</td></tr>
 </table>
 
-### Example of configuration:
+### Example of configuration
 
 ```bash
 ascli config preset set smtp_google server smtp.google.com
@@ -4487,7 +4533,7 @@ Note: parameters may be saved in a [option preset](#lprt) and used with `-P`.
 
 #### Scheduling
 
-Once `ascli` parameters are defined, run the command using the OS native scheduler, e.g. every minutes, or 5 minutes, etc... Refer to section [_Scheduling_](#_scheduling_).
+Once `ascli` parameters are defined, run the command using the OS native scheduler, e.g. every minutes, or 5 minutes, etc... Refer to section [Scheduling](#scheduling).
 
 ### Example: upload folder
 
@@ -4586,469 +4632,9 @@ So, it evolved into `ascli`:
 * supports transfers with multiple [Transfer Agents](#agents), that&apos;s why transfer parameters moved from ascp command line to [*transfer-spec*](#transferspec) (more reliable , more standard)
 * `ruby` is consistent with other Aspera products
 
-## Changes (Release notes)
-
-* 4.8.0.pre
-  *
-
-* 4.7.0
-
-  * new: option to specify font used to generate image of text file in `preview`
-  * new: #66 improvement for content protection (support standard transfer spec options for direct agent)
-  * new: option `fpac` is now applicable to all ruby based HTTP connections, i.e. API calls
-  * new: option `show_secrets` to reveal secrets in command output
-  * new: added and updated commands for Faspex 5
-  * new: option `cache_tokens`
-  * new: Faspex4 dropbox packages can now be received by id
-  * change: (break) command `conf gem path` replaces `conf gem_path`
-  * change: (break) option `fpac` expects a value instead of URL
-  * change: (break) option `cipher` in transfer spec must have hyphen
-  * change: (break) renamed option `log_passwords` to `log_secrets`
-  * change: (break) removed plugin `shares2` as products is now EOL
-  * fix: After AoC version update, wizard did not detect AoC properly
-
-* 4.6.0
-
-  * new: command `conf plugin create`
-  * new: global option `plugin_folder`
-  * new: global option `transpose_single`
-  * new: simplified metadata passing for shared inbox package creation in AoC
-  * change: (break) command `aoc packages shared_inboxes list` replaces `aoc user shared_inboxes`
-  * change: (break) command `aoc user profile` replaces `aoc user info`
-  * change: (break) command `aoc user workspaces list` replaces `aoc user workspaces`
-  * change: (break) command `aoc user workspaces current` replaces `aoc workspace`
-  * change: (break) command `conf plugin list` replaces `conf plugins`
-  * change: (break) command `conf connect` simplified
-  * fix: #60 ascli executable was not installed by default in 4.5.0
-  * fix: add password hiding case in logs
-
-* 4.5.0
-
-  * new: support transfer agent: [Transfer SDK](#agt_trsdk)
-  * new: support [http socket options](#http_options)
-  * new: logs hide passwords and secrets, option `log_passwords` to enable logging secrets
-  * new: `config vault` supports encrypted passwords, also macos keychain
-  * new: `config preset` command for consistency with id
-  * new: identifier can be provided using either option `id` or directly after the command, e.g. `delete 123` is the same as `delete --id=123`
-  * change: when using wss, use [ruby's CA certs](#certificates)
-  * change: unexpected parameter makes exit code not zero
-  * change: (break) options `id` and `name` cannot be specified at the same time anymore, use [positional identifer or name selection](#res_select)
-  * change: (break) `aoc admin res node` does not take workspace main node as default node if no `id` specified.
-  * change: (break): `orchestrator workflow status` requires id, and supports special id `ALL`
-  * fix: various smaller fixes and renaming of some internal classes (transfer agents and few other)
-
-* 4.4.0
-
-  * new: `aoc packages list` add possibility to add filter with option `query`
-  * new: `aoc admin res xxx list` now get all items by default #50
-  * new: `preset` option can specify name or hash value
-  * new: `node` plugin accepts bearer token and access key as credential
-  * new: `node` option `token_type` allows using basic token in addition to aspera type.
-  * change: `server`: option `username` not mandatory anymore: xfer user is by default. If transfer spec token is provided, password or keys are optional, and bypass keys are used by default.
-  * change: (break) resource `apps_new` of `aoc` replaced with `application` (more clear)
-
-* 4.3.0
-
-  * new: parameter `multi_incr_udp` for option `transfer_info`: control if UDP port is incremented when multi-session is used on [`direct`](#agt_direct) transfer agent.
-  * new: command `aoc files node_info` to get node information for a given folder in the Files application of AoC. Allows cross-org or cross-workspace transfers.
-
-* 4.2.2
-
-  * new: `faspex package list` retrieves the whole list, not just first page
-  * new: support web based auth to aoc and faspex 5 using HTTPS, new dependency on gem `webrick`
-  * new: the error "Remote host is not who we expected" displays a special remediation message
-  * new: `conf ascp spec` displays supported transfer spec
-  * new: options `notif_to` and `notif_template` to send email notifications on transfer (and other events)
-  * fix: space character in `faspe:` url are precent encoded if needed
-  * fix: `preview scan`: if file_id is unknown, ignore and continue scan
-  * change: for commands that potentially execute several transfers (`package recv --id=ALL`), if one transfer fails then `ascli` exits with code 1 (instead of zero=success)
-  * change: (break) option `notify` or `aoc` replaced with `notif_to` and `notif_template`
-
-* 4.2.1
-
-  * new: command `faspex package recv` supports link of type: `faspe:`
-  * new: command `faspex package recv` supports option `recipient` to specify dropbox with leading `*`
-
-* 4.2.0
-
-  * new: command `aoc remind` to receive organization membership by email
-  * new: in `preview` option `value` to filter out on file name
-  * new: `initdemo` to initialize for demo server
-  * new: [`direct`](#agt_direct) transfer agent options: `spawn_timeout_sec` and `spawn_delay_sec`
-  * fix: on Windows `conf ascp use` expects ascp.exe
-  * fix: (break) multi_session_threshold is Integer, not String
-  * fix: `conf ascp install` renames sdk folder if it already exists (leftover shared lib may make fail)
-  * fix: removed replace_illegal_chars from default aspera.conf causing "Error creating illegal char conversion table"
-  * change: (break) `aoc apiinfo` is removed, use `aoc servers` to provide the list of cloud systems
-  * change: (break) parameters for resume in `transfer-info` for [`direct`](#agt_direct) are now in sub-key `"resume"`
-
-* 4.1.0
-
-  * fix: remove keys from transfer spec and command line when not needed 	* fix: default to create_dir:true so that sending single file to a folder does not rename file if folder does not exist
-  * new: update documentation with regard to offline and docker installation
-  * new: renamed command `nagios_check` to `health`
-  * new: agent `http_gw` now supports upload
-  * new: added option `sdk_url` to install SDK from local file for offline install
-  * new: check new gem version periodically
-  * new: the --fields= option, support -_fieldname_ to remove a field from default fields
-  * new: Oauth tokens are discarded automatically after 30 minutes (useful for COS delegated refresh tokens)
-  * new: mimemagic is now optional, needs manual install for `preview`, compatible with version 0.4.x
-  * new: AoC a password can be provided for a public link
-  * new: `conf doc` take an optional parameter to go to a section
-  * new: initial support for Faspex 5 Beta 1
-
-* 4.0.0
-
-  * now available as open source at [https://github.com/IBM/aspera-cli](https://github.com/IBM/aspera-cli) with general cleanup
-  * changed default tool name from `mlia` to `ascli`
-  * changed `aspera` command to `aoc`
-  * changed gem name from `asperalm` to `aspera-cli`
-  * changed module name from `Asperalm` to `Aspera`
-  * removed command `folder` in `preview`, merged to `scan`
-  * persistency files go to sub folder instead of main folder
-  * added possibility to install SDK: `config ascp install`
-
-* 0.11.8
-
-  * Simplified to use `unoconv` instead of bare `libreoffice` for office conversion, as `unoconv` does not require a X server (previously using Xvfb
-
-* 0.11.7
-
-  * rework on rest call error handling
-  * use option `display` with value `data` to remove out of extraneous information
-  * fixed option `lock_port` not working
-  * generate special icon if preview failed
-  * possibility to choose transfer progress bar type with option `progress`
-  * AoC package creation now output package id
-
-* 0.11.6
-
-  * orchestrator : added more choice in auth type
-  * preview: cleanup in generator (removed and renamed parameters)
-  * preview: better documentation
-  * preview: animated thumbnails for video (option: `video_png_conv=animated`)
-  * preview: new event trigger: `trevents` (`events` seems broken)
-  * preview: unique tmp folder to avoid clash of multiple instances
-  * repo: added template for secrets used for testing
-
-* 0.11.5
-
-  * added option `default_ports` for AoC (see manual)
-  * allow bulk delete in `aspera files` with option `bulk=yes`
-  * fix getting connect versions
-  * added section for Aix
-  * support all ciphers for [`direct`](#agt_direct) agent (including gcm, etc..)
-  * added transfer spec param `apply_local_docroot` for [`direct`](#agt_direct)
-
-* 0.11.4
-
-  * possibility to give shared inbox name when sending a package (else use id and type)
-
-* 0.11.3
-
-  * minor fixes on multi-session: avoid exception on progress bar
-
-* 0.11.2
-
-  * fixes on multi-session: progress bat and transfer spec param for "direct"
-
-* 0.11.1
-
-  * enhanced short_link creation commands (see examples)
-
-* 0.11
-
-  * add transfer spec option (agent `direct` only) to provide file list directly to ascp: `EX_file_list`.
-
-* 0.10.18
-
-  * new option in. `server` : `ssh_options`
-
-* 0.10.17
-
-  * fixed problem on `server` for option `ssh_keys`, now accepts both single value and list.
-  * new modifier: `@list:<separator>val1<separator>...`
-
-* 0.10.16
-
-  * added list of shared inboxes in workspace (or global), use `--query=@json:'{}'`
-
-* 0.10.15
-
-  * in case of command line error, display the error cause first, and non-parsed argument second
-  * AoC : Activity / Analytics
-
-* 0.10.14
-
-  * added missing bss plugin
-
-* 0.10.13
-
-  * added Faspex5 (use option `value` to give API arguments)
-
-* 0.10.12
-
-  * added support for AoC node registration keys
-  * replaced option : `local_resume` with `transfer_info` for agent [`direct`](#agt_direct)
-  * Transfer agent is no more a Singleton instance, but only one is used in CLI
-  * `@incps` : new extended value modifier
-  * ATS: no more provides access keys secrets: now user must provide it
-  * begin work on "aoc" transfer agent
-
-* 0.10.11
-
-  * minor refactor and fixes
-
-* 0.10.10
-
-  * fix on documentation
-
-* 0.10.9.1
-
-  * add total number of items for AoC resource list
-  * better gem version dependency (and fixes to support Ruby 2.0.0)
-  * removed aoc search_nodes
-
-* 0.10.8
-
-  * removed option: `fasp_proxy`, use pseudo transfer spec parameter: `EX_fasp_proxy_url`
-  * removed option: `http_proxy`, use pseudo transfer spec parameter: `EX_http_proxy_url`
-  * several other changes..
-
-* 0.10.7
-
-  * fix: ascli fails when username cannot be computed on Linux.
-
-* 0.10.6
-
-  * FaspManager: transfer spec `authentication` no more needed for local transfer to use Aspera public keys. public keys will be used if there is a token and no key or password is provided.
-  * gem version requirements made more open
-
-* 0.10.5
-
-  * fix faspex package receive command not working
-
-* 0.10.4
-
- 	* new options for AoC : `secrets`
- 	* ACLI-533 temp file list folder to use file lists is set by default, and used by asession
-
-* 0.10.3
-
-  * included user name in oauth bearer token cache for AoC when JWT is used.
-
-* 0.10.2
-
-  * updated `search_nodes` to be more generic, so it can search not only on access key, but also other queries.
-  * added doc for "cargo" like actions
-  * added doc for multi-session
-
-* 0.10.1
-
-  * AoC and node v4 "browse" works now on non-folder items: file, link
-  * initial support for AoC automation (do not use yet)
-
-* 0.10
-
-  * support for transfer using IBM Cloud Object Storage
-  * improved `find` action using arbitrary expressions
-
-* 0.9.36
-
-  * added option to specify file pair lists
-
-* 0.9.35
-
-  * updated plugin `preview` , changed parameter names, added documentation
-  * fix in `ats` plugin : instance id needed in request header
-
-* 0.9.34
-
-  * parser "@preset" can be used again in option "transfer_info"
-  * some documentation re-organizing
-
-* 0.9.33
-
-  * new command to display basic token of node
-  * new command to display bearer token of node in AoC
-  * the --fields= option, support +_fieldname_ to add a field to default fields
-  * many small changes
-
-* 0.9.32
-
-  * all Faspex public links are now supported
-  * removed faspex operation recv_publink
-  * replaced with option `link` (consistent with AoC)
-
-* 0.9.31
-
-  * added more support for public link: receive and send package, to user or dropbox and files view.
-  * delete expired file lists
-  * changed text table gem from text-table to terminal-table because it supports multiline values
-
-* 0.9.27
-
-  * basic email support with SMTP
-  * basic proxy auto config support
-
-* 0.9.26
-
-  * table display with --fields=ALL now includes all column names from all lines, not only first one
-  * unprocessed argument shows error even if there is an error beforehand
-
-* 0.9.25
-
-  * the option `value` of command `find`, to filter on name, is not optional
-  * `find` now also reports all types (file, folder, link)
-  * `find` now is able to report all fields (type, size, etc...)
-
-* 0.9.24
-
-  * fix bug where AoC node to node transfer did not work
-  * fix bug on error if ED25519 private key is defined in .ssh
-
-* 0.9.23
-
-  * defined REST error handlers, more error conditions detected
-  * commands to select specific ascp location
-
-* 0.9.21
-
-  * supports simplified wizard using global client
-  * only ascp binary is required, other SDK (keys) files are now generated
-
-* 0.9.20
-
-  * improved wizard (prepare for AoC global client id)
-  * preview generator: addedoption : --skip-format=&lt;png,mp4&gt;
-  * removed outdated pictures from this doc
-
-* 0.9.19
-
-  * added command aspera bearer --scope=xx
-
-* 0.9.18
-
-  * enhanced aspera admin events to support query
-
-* 0.9.16
-
-  * AoC transfers are now reported in activity app
-  * new interface for Rest class authentication (keep backward compatibility)
-
-* 0.9.15
-
-  * new feature: "find" command in aspera files
-  * sample code for transfer API
-
-* 0.9.12
-
-  * add nagios commands
-  * support of ATS for IBM Cloud, removed old version based on aspera id
-
-* 0.9.11
-
-  * Breaking change: @stdin is now @stdin:
-  * support of ATS for IBM Cloud, removed old version based on aspera id
-
-
-* 0.9.10
-
-  * Breaking change: parameter transfer-node becomes more generic: transfer-info
-  * Display SaaS storage usage with command: aspera admin res node --id=nn info
-  * cleaner way of specifying source file list for transfers
-  * Breaking change: replaced download_mode option with http_download action
-
-* 0.9.9
-
-  * Breaking change: "aspera package send" parameter deprecated, use the --value option instead with "recipients" value. See example.
-  * Now supports "cargo" for Aspera on Cloud (automatic package download)
-
-* 0.9.8
-
-  * Faspex: use option once_only set to yes to enable cargo like function. id=NEW deprecated.
-  * AoC: share to share transfer with command "transfer"
-
-* 0.9.7
-
-  * homogeneous [*transfer-spec*](#transferspec) for `node` and [`direct`](#agt_direct) transfer agents
-  * preview persistency goes to unique file by default
-  * catch mxf extension in preview as video
-  * Faspex: possibility to download all packages by specifying id=ALL
-  * Faspex: to come: cargo-like function to download only new packages with id=NEW
-
-* 0.9.6
-
-  * Breaking change: `@param:`is now `@preset:` and is generic
-  * AoC: added command to display current workspace information
-
-* 0.9.5
-
-  * new parameter: new_user_option used to choose between public_link and invite of external users.
-  * fixed bug in wizard, and wizard uses now product detection
-
-* 0.9.4
-
-  * Breaking change: onCloud file list follow --source convention as well (plus specific case for download when first path is source folder, and other are source file names).
-  * AoC Package send supports external users
-  * new command to export AoC config to Aspera CLI config
-
-* 0.9.3
-
-  * REST error message show host and code
-  * option for quiet display
-  * modified transfer interface and allow token re-generation on error
-  * async add admin command
-  * async add db parameters
-  * Breaking change: new option "sources" to specify files to transfer
-
-* 0.9.2
-
-  * Breaking change: changed AoC package creation to match API, see AoC section
-
-* 0.9.1
-
-  * Breaking change: changed faspex package creation to match API, see Faspex section
-
-* 0.9
-
-  * Renamed the CLI from aslmcli to `ascli`
-  * Automatic rename and conversion of former config folder from aslmcli to `ascli`
-
-* 0.7.6
-
-  * add "sync" plugin
-
-* 0.7
-
-  * Breaking change: AoC package recv take option if for package instead of argument.
-  * Breaking change: Rest class and Oauth class changed init parameters
-  * AoC: receive package from public link
-  * select by col value on output
-  * added rename (AoC, node)
-
-* 0.6.19
-
-  * change: (break) ats server list provisioned &rarr; ats cluster list
-  * change: (break) ats server list clouds &rarr; ats cluster clouds
-  * change: (break) ats server list instance --cloud=x --region=y &rarr; ats cluster show --cloud=x --region=y
-  * change: (break) ats server id xxx &rarr; ats cluster show --id=xxx
-  * change: (break) ats subscriptions &rarr; ats credential subscriptions
-  * change: (break) ats api_key repository list &rarr; ats credential cache list
-  * change: (break) ats api_key list &rarr; ats credential list
-  * change: (break) ats access_key id xxx &rarr; ats access_key --id=xxx
-
-* 0.6.18
-
-  * some commands take now --id option instead of id command.
-
-* 0.6.15
-
-  * Breaking change: "files" application renamed to "aspera" (for "Aspera on Cloud"). "repository" renamed to "files". Default is automatically reset, e.g. in config files and change key "files" to "aspera" in [option preset](#lprt) "default".
-
 ## Common problems
 
-### Error "Remote host is not who we expected"
+### Error: "Remote host is not who we expected"
 
 Cause: `ascp` >= 4.x checks fingerprint of highest server host key, including ECDSA. `ascp` < 4.0 (3.9.6 and earlier) support only to RSA level (and ignore ECDSA presented by server). `aspera.conf` supports a single fingerprint.
 
@@ -5061,6 +4647,13 @@ Workaround on client side: To ignore the certificate (SSH fingerprint) add optio
 Workaround on server side: Either remove the fingerprint from `aspera.conf`, or keep only RSA host keys in `sshd_config`.
 
 References: ES-1944 in release notes of 4.1 and to [HSTS admin manual section "Configuring Transfer Server Authentication With a Host-Key Fingerprint"](https://www.ibm.com/docs/en/ahts/4.2?topic=upgrades-configuring-ssh-server).
+
+### Error "can't find header files for ruby"
+
+Some Ruby gems dependencies require compilation of native parts (C).
+This also requires Ruby header files.
+If Ruby was installed as a Linux Packages, then also install ruby dev elopment package:
+`ruby-dev` ir `ruby-devel`, depending on distribution.
 
 ### ED255519 key not supported
 
@@ -5083,7 +4676,7 @@ You can also contribute to this open source project.
 
 One can also [create one's own plugin](#createownplugin).
 
-## Miscellaneous
+## Long Term Implementation and delivery improvements
 
 * replace rest and oauth classes with ruby standard gems:
   * <https://github.com/rest-client/rest-client>
