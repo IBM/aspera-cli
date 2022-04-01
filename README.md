@@ -678,12 +678,12 @@ Output messages are categorized in 3 types:
 
 The option `display` controls the level of output:
 
-* `info` displays all messages
+* `info` displays all messages: `info`, `data`, and `error`
 * `data` display `data` and `error` messages
 * `error` display only error messages.
 
-By default, secrets are shown on output.
-To hide secrets from results, set option `show_secrets` to `no`.
+By default, secrets are removed from output: option `show_secrets` defaults to `no`, unless `display` is `data`, to allows piping results.
+To hide secrets from output, set option `show_secrets` to `no`.
 
 #### Selection of output object properties
 
@@ -2136,9 +2136,12 @@ ascli cos node access_key show self
 ascli cos node download testfile.bin --to-folder=.
 ascli cos node info
 ascli cos node upload testfile.bin
+ascli faspex address_book
 ascli faspex dropbox list --recipient="*my_faspex_dbx"
 ascli faspex dropbox list --recipient="*my_faspex_wkg"
 ascli faspex health
+ascli faspex login_methods
+ascli faspex me
 ascli faspex package list
 ascli faspex package list --box=sent --fields=package_id --format=csv --display=data --query=@json:'{"max":1}'
 ascli faspex package list --fields=package_id --format=csv --display=data --query=@json:'{"max":1}'
@@ -2155,7 +2158,9 @@ ascli faspex package send --delivery-info=@json:'{"title":"Important files deliv
 ascli faspex package send --delivery-info=@json:'{"title":"Important files delivery","recipients":["my_email_internal_user","my_faspex_username"]}' testfile.bin
 ascli faspex package send --link="my_faspex_publink_send_to_dropbox" --delivery-info=@json:'{"title":"Important files delivery"}' testfile.bin
 ascli faspex package send --link="my_faspex_publink_send_to_fxuser" --delivery-info=@json:'{"title":"Important files delivery"}' testfile.bin
-ascli faspex source name "Server Files" node br /
+ascli faspex source list
+ascli faspex source name "my_source_name" info
+ascli faspex source name "my_source_name" node br /
 ascli faspex v4 dmembership list
 ascli faspex v4 dropbox list
 ascli faspex v4 metadata_profile list

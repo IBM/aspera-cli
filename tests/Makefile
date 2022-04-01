@@ -47,7 +47,7 @@ noderestart:
 ###########
 # Coverage
 clean::
-	rm -fr $(DIR_TOP)Coverage
+	rm -fr $(DIR_TOP)coverage
 	rm -f $(DIR_TOP)simplecov.log
 
 # default download folder for Connect Client (used to cleanup and avoid confirmation from connect when overwrite)
@@ -890,7 +890,7 @@ $(T)conf_over: $(T).exists
 	@touch $@
 $(T)conf_vault: $(T).exists
 	$(EXETESTC) config vault init --value=config
-	$(EXETESTC) config vault set --url=https://example.com --username=toto --value="my prefered secret" mysecret
+	$(EXETESTC) config vault set --url=https://example.com --username=toto --value="my prefered secret" 12345678
 	$(EXETESTC) config vault list
 	$(EXETESTC) config vault get --url=https://example.com --username=toto
 	$(EXETESTC) config vault delete --url=https://example.com --username=toto

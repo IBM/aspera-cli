@@ -8,7 +8,7 @@ GEM_ROOT=File.realpath(File.join(File.dirname(File.realpath(__FILE__)),'..'))
 if ENV.has_key?('COV_DIR')
   require 'simplecov'
   SimpleCov.root(GEM_ROOT)
-  #SimpleCov.coverage_dir(ENV['COV_DIR'])
+  SimpleCov.enable_for_subprocesses
   SimpleCov.command_name(SecureRandom.uuid)
   SimpleCov.at_exit do
     original_file_descriptor = $stdout

@@ -678,12 +678,12 @@ Output messages are categorized in 3 types:
 
 The option `display` controls the level of output:
 
-* `info` displays all messages
+* `info` displays all messages: `info`, `data`, and `error`
 * `data` display `data` and `error` messages
 * `error` display only error messages.
 
-By default, secrets are shown on output.
-To hide secrets from results, set option `show_secrets` to `no`.
+By default, secrets are removed from output: option `show_secrets` defaults to `no`, unless `display` is `data`, to allows piping results.
+To hide secrets from output, set option `show_secrets` to `no`.
 
 #### Selection of output object properties
 
