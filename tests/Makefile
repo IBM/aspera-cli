@@ -44,6 +44,12 @@ noderestart:
 	sudo launchctl stop com.aspera.asperanoded
 	sudo launchctl start com.aspera.asperanoded
 
+###########
+# Coverage
+clean::
+	rm -fr $(DIR_TOP)Coverage
+	rm -f $(DIR_TOP)simplecov.log
+
 # default download folder for Connect Client (used to cleanup and avoid confirmation from connect when overwrite)
 DIR_CONNECT_DOWNLOAD=$(HOME)/Downloads
 TIMESTAMP=$(shell LANG=C date)
@@ -234,11 +240,18 @@ $(T)fx_psld: $(T).exists
 	@touch $@
 $(T)fx_storage: $(T).exists
 	@echo $@
-	$(EXE_MAN) faspex source name "Server Files" node br /
+	$(EXE_MAN) faspex source list
+	set -x&&\
+	source_name=$$($(EXE_NOMAN) conf id misc get faspex_src)&&\
+	$(EXE_MAN) faspex source name "$${source_name}" info&&\
+	$(EXE_MAN) faspex source name "$${source_name}" node br /
 	@touch $@
 $(T)fx_nagios: $(T).exists
 	@echo $@
 	$(EXE_MAN) faspex health
+	$(EXE_MAN) faspex me
+	$(EXE_MAN) faspex address_book
+	$(EXE_MAN) faspex login_methods
 	@touch $@
 $(T)fx_v4: $(T).exists
 	@echo $@

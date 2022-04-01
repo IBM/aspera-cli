@@ -5,6 +5,7 @@
 /Gemfile.lock
 /_yardoc/
 /coverage/
+simplecov.log
 /doc/
 /docs/Manual*.html
 /docs/Manual*.pdf
