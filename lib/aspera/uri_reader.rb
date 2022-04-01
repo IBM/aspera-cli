@@ -1,28 +1,24 @@
 # frozen_string_literal: true
 
 require 'uri'
-require 'net/http'
-require 'net/https'
+require 'aspera/rest'
 
 module Aspera
   module UriReader
     # read some content from some URI, support file: , http: and https: schemes
-    def self.read(proxy_pac_uri)
-      proxy_uri = URI.parse(proxy_pac_uri)
+    def self.read(uri_to_read)
+      proxy_uri = URI.parse(uri_to_read)
       case proxy_uri.scheme
-      when 'http'
-        return Net::HTTP.start(proxy_uri.host, proxy_uri.port){|http|http.get(proxy_uri.path)}.body
-      when 'https'
-        return Net::HTTPS.start(proxy_uri.host, proxy_uri.port){|http|http.get(proxy_uri.path)}.body
-      when 'file'
+      when 'http','https'
+        return Rest.new(base_url: uri_to_read,redirect_max: 5).call(operation: 'GET', subpath: '', headers: {'Accept' => 'text/plain'})[:data]
+      when 'file',NilClass
         local_file_path = proxy_uri.path
         raise 'URL shall have a path, check syntax' if local_file_path.nil?
         local_file_path = File.expand_path(local_file_path.gsub(/^\//,'')) if /^\/(~|.|..)\//.match?(local_file_path)
         return File.read(local_file_path)
-      when ''
-        return File.read(proxy_uri)
+      else
+        raise "unknown scheme: [#{proxy_uri.scheme}] for [#{uri_to_read}]"
       end
-      raise "no scheme: [#{proxy_uri.scheme}] for [#{proxy_pac_uri}]"
     end
   end
 end

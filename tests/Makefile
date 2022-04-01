@@ -820,6 +820,7 @@ $(T)co7: $(T).exists
 	@touch $@
 $(T)co8: $(T).exists
 	@echo $@
+	-rm -fr $$HOME/.aspera/ascli/sdk*
 	$(EXE_MAN) config ascp install
 	@touch $@
 tcon: $(T)co1 $(T)co2 $(T)co3 $(T)co4 $(T)co5 $(T)co6 $(T)co7 $(T)co8
@@ -966,7 +967,15 @@ $(T)conf_doc: $(T).exists
 	$(EXE_MAN) config doc
 	$(EXE_MAN) config doc transfer-parameters
 	@touch $@
-tconf: $(T)conf_id_1 $(T)conf_id_2 $(T)conf_id_3 $(T)conf_id_4 $(T)conf_id_5 $(T)conf_id_6 $(T)conf_open $(T)conf_list $(T)conf_over $(T)conf_vault $(T)conf_help $(T)conf_open_err $(T)conf_plugins $(T)conf_export $(T)conf_wizard_org $(T)conf_wizard_gen $(T)conf_detect $(T)conf_genkey $(T)conf_smtp $(T)conf_pac $(T)conf_check_gem $(T)conf_doc
+$(T)conf_echo: $(T).exists
+	@echo $@
+	$(EXE_MAN) config echo 'hello'
+	$(EXE_MAN) config echo @uri:/etc/hosts
+	$(EXE_MAN) config echo @uri:file:/etc/hosts
+	$(EXE_MAN) config echo @uri:http://www.ibm.com
+	$(EXE_MAN) config echo @uri:https://www.ibm.com
+	@touch $@
+tconf: $(T)conf_id_1 $(T)conf_id_2 $(T)conf_id_3 $(T)conf_id_4 $(T)conf_id_5 $(T)conf_id_6 $(T)conf_open $(T)conf_list $(T)conf_over $(T)conf_vault $(T)conf_help $(T)conf_open_err $(T)conf_plugins $(T)conf_export $(T)conf_wizard_org $(T)conf_wizard_gen $(T)conf_detect $(T)conf_genkey $(T)conf_smtp $(T)conf_pac $(T)conf_check_gem $(T)conf_doc $(T)conf_echo
 
 $(T)shar2_1: $(T).exists
 	@echo $@
