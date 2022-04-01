@@ -53,7 +53,7 @@ module Aspera
       # build URI from URL and parameters and check it is http or https
       def build_uri(url,params=nil)
         uri = URI.parse(url)
-        raise 'REST endpoint shall be http(s)' unless ['http','https'].include?(uri.scheme)
+        raise "REST endpoint shall be http/s not #{uri.scheme}" unless ['http','https'].include?(uri.scheme)
         if !params.nil?
           # support array url params, there is no standard. Either p[]=1&p[]=2, or p=1&p=2
           if params.is_a?(Hash)
@@ -284,10 +284,12 @@ module Aspera
         raise e unless e.response.is_a?(Net::HTTPRedirection)
         if tries_remain_redirect.positive?
           tries_remain_redirect -= 1
-          Log.log.info("URL is moved: #{e.response['location']}")
           current_uri = URI.parse(call_data[:base_url])
-          redir_uri = URI.parse(e.response['location'])
-          call_data[:base_url] = e.response['location']
+          new_url=e.response['location']
+          new_url="#{current_uri.scheme}:#{new_url}" unless new_url.start_with?('http')
+          Log.log.info("URL is moved: #{new_url}")
+          redir_uri = URI.parse(new_url)
+          call_data[:base_url] = new_url
           call_data[:subpath] = ''
           if current_uri.host.eql?(redir_uri.host) && current_uri.port.eql?(redir_uri.port)
             req = build_request(call_data)
