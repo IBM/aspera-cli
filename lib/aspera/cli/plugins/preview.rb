@@ -450,21 +450,21 @@ module Aspera
           end
           Aspera::Preview::FileTypes.instance.use_mimemagic = options.get_option(:mimemagic,:mandatory)
           case command
-    when :scan
-      scan_path = options.get_option(:scan_path,:optional)
-      scan_id = options.get_option(:scan_id,:optional)
-      # by default start at root
-      folder_info =
-      if scan_id.nil?
-        { 'id'   => @access_key_self['root_file_id'],
-          'name' => '/',
-          'type' => 'folder',
-          'path' => '/' }
-      else
-        @api_node.read("files/#{scan_id}")[:data]
-      end
-      scan_folder_files(folder_info,scan_path)
-      return Main.result_status('scan finished')
+          when :scan
+            scan_path = options.get_option(:scan_path,:optional)
+            scan_id = options.get_option(:scan_id,:optional)
+            # by default start at root
+            folder_info =
+            if scan_id.nil?
+              { 'id'   => @access_key_self['root_file_id'],
+                'name' => '/',
+                'type' => 'folder',
+                'path' => '/' }
+            else
+              @api_node.read("files/#{scan_id}")[:data]
+            end
+            scan_folder_files(folder_info,scan_path)
+            return Main.result_status('scan finished')
           when :events,:trevents
             iteration_persistency = nil
             if options.get_option(:once_only,:mandatory)
