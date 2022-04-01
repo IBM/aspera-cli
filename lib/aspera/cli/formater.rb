@@ -71,9 +71,9 @@ module Aspera
           end
         end
 
-        def flatten_config_overview(t)
+        def flatten_config_overview(conffile)
           r = []
-          t.each do |config,preset|
+          conffile.each do |config,preset|
             preset.each do |parameter,value|
               r.push(CONF_OVERVIEW_KEYS.zip([config,parameter,value]).to_h)
             end
@@ -149,7 +149,7 @@ module Aspera
         return if @option_show_secrets
         case obj
         when Array
-          if !obj.empty? && obj.first.keys.sort.eql?(CONF_OVERVIEW_KEYS)
+          if !obj.empty? && obj.first.is_a?(Hash) && obj.first.keys.sort.eql?(CONF_OVERVIEW_KEYS)
             obj.each do |i|
               i['value']=HIDDEN_PASSWORD if self.class.secret?(i['parameter'])
             end
