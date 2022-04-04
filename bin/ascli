@@ -5,12 +5,12 @@ require 'rubygems'
 require 'securerandom'
 GEM_ROOT=File.realpath(File.join(File.dirname(File.realpath(__FILE__)),'..'))
 # coverage for tests
-if ENV.has_key?('COV_DIR')
+if ENV.has_key?('ENABLE_COVERAGE')
   require 'simplecov'
   SimpleCov.root(GEM_ROOT)
   SimpleCov.enable_for_subprocesses
-  # keep cache data for 1 hour (must be longer that time to run the whole test suite)
-  SimpleCov.merge_timeout(3600)
+  # keep cache data for 1 day (must be longer that time to run the whole test suite)
+  SimpleCov.merge_timeout(86400)
   SimpleCov.command_name(SecureRandom.uuid)
   SimpleCov.at_exit do
     original_file_descriptor = $stdout
