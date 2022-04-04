@@ -17,6 +17,7 @@ clean::
 	rm -f $(DIR_TOP).gems_checked
 	cd $(DIR_DOC) && make clean
 	cd $(DIR_TST) && make clean
+	rm -f Gemfile.lock
 # ensure required ruby gems are installed
 $(DIR_TOP).gems_checked: Gemfile
 	bundle install
@@ -47,18 +48,6 @@ yank:
 
 ##################################
 # GIT
-GIT_TAG_VERSION_PREFIX='v_'
-GIT_TAG_CURRENT=$(GIT_TAG_VERSION_PREFIX)$(GEMVERSION)
-
-dotag:
-	git tag -a $(GIT_TAG_CURRENT) -m "gem version $(GEMVERSION) pushed"
-deltag:
-	git tag --delete $(GIT_TAG_CURRENT)
-commit:
-	git commit -a
-# eq to: git push origin master
-push:
-	git push
 changes:
 	@latest_tag=$$(git describe --tags --abbrev=0);\
 	echo "Changes since [$$latest_tag]";\
