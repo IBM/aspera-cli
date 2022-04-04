@@ -21,6 +21,8 @@ Minimum required Ruby <%=ruby_version%>.
 
 Release notes: see [CHANGELOG.md](CHANGELOG.md)
 
+[![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/5861/badge)](https://bestpractices.coreinfrastructure.org/projects/5861)
+
 ## <a id="when_to_use"></a>When to use and when not to use
 
 <%=tool%> is designed to be used as a command line tool to:

@@ -1,4 +1,4 @@
-FROM ruby:2.7.2
+FROM ruby:3.1.1
 ARG gemfile
 ARG appdir=/usr/src/app
 WORKDIR $appdir
@@ -7,7 +7,7 @@ COPY $gemfile aspera-cli.gem
 RUN mkdir $appdir/config
 RUN mkdir /transfer
 RUN gem install aspera-cli.gem
-RUN gem install mimemagic
+RUN gem install grpc
 # download ascp
 RUN ascli conf ascp install
 # create key files

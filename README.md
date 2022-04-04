@@ -21,6 +21,8 @@ Minimum required Ruby version: >= 2.4. Deprecation notice: the minimum will be 2
 
 Release notes: see [CHANGELOG.md](CHANGELOG.md)
 
+[![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/5861/badge)](https://bestpractices.coreinfrastructure.org/projects/5861)
+
 ## <a id="when_to_use"></a>When to use and when not to use
 
 `ascli` is designed to be used as a command line tool to:
@@ -2121,6 +2123,11 @@ ascli config detect --url=https://my_aoc_org.ibmaspera.com
 ascli config detect --url=my_faspex_url
 ascli config doc
 ascli config doc transfer-parameters
+ascli config echo 'hello'
+ascli config echo @uri:/etc/hosts
+ascli config echo @uri:file:/etc/hosts
+ascli config echo @uri:http://www.ibm.com
+ascli config echo @uri:https://www.ibm.com
 ascli config email_test --notif-to=my_recipient_email
 ascli config export
 ascli config genkey mykey
@@ -2253,6 +2260,10 @@ ascli server upload --src-type=pair testfile.bin folder_1/with_options --ts=@jso
 ascli server upload --to-folder=folder_1/target_hot --lock-port=12345 --ts=@json:'{"EX_ascp_args":["--remove-after-transfer","--remove-empty-directories","--exclude-newer-than=-8","--src-base","source_hot"]}' source_hot
 ascli server upload testfile.bin --to-folder=NEW_SERVER_FOLDER --ts=@json:'{"multi_session":3,"multi_session_threshold":1,"resume_policy":"none","target_rate_kbps":1500}' --transfer-info=@json:'{"spawn_delay_sec":2.5}' --progress=multi
 ascli shares admin share list
+ascli shares admin share user_permissions 9
+ascli shares admin user app_authorizations 1
+ascli shares admin user list
+ascli shares admin user share_permissions 1
 ascli shares repository browse /
 ascli shares repository delete my_shares_upload/testfile.bin
 ascli shares repository download --to-folder=. my_shares_upload/testfile.bin

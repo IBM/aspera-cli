@@ -1,6 +1,6 @@
 # Contributing
 
-## Reporting Issues
+## Reporting Issues and Vulnerabilities
 
 You can report issues at <https://github.com/IBM/aspera-cli/issues>
 
@@ -35,9 +35,26 @@ If you want to contribute, please:
 
 ## Running Individual Tests
 
+First, a testing environment must be created:
+
+```bash
+mkdir local
+cp docs/test_env.conf local/.
+```
+
+Fill `local/test_env.conf` with system URLs and credentials for tests.
+
 This project uses a Makefile for tests:
 
 ```bash
 cd tests
 make
+```
+
+When new commands are added to the CLI, new tests shall be added to the test suite.
+
+## Coverage
+
+```bash
+ENABLE_COVERAGE=1 make test
 ```
