@@ -43,33 +43,31 @@ module Aspera
             command = options.get_next_command([:user,:share])
             case command
             when :user
-              command = options.get_next_command([:list,:id])
+              command = options.get_next_command(%i[list app_authorizations share_permissions])
+              user_id = instance_identifier() if %i[app_authorizations share_permissions].include?(command)
               case command
               when :list
-                return {type: :object_list,data: api_shares_admin.read('data/users')[:data],fields: ['username','email','directory_user','urn']}
-              when :id
-                res_id = options.get_next_argument('user id')
-                command = options.get_next_command([:app_authorizations,:authorize_share])
-                case command
-                when :app_authorizations
-                  return {type: :single_object,data: api_shares_admin.read("data/users/#{res_id}/app_authorizations")[:data]}
-                when :share
-                  share_name = options.get_next_argument('share name')
-                  all_shares = api_shares_admin.read('data/shares')[:data]
-                  share_id = all_shares.find{|s| s['name'].eql?(share_name)}['id']
-                  return {type: :single_object,data: api_shares_admin.create("data/shares/#{share_id}/user_permissions")[:data]}
-                end
+                return {type: :object_list,data: api_shares_admin.read('data/users')[:data],fields: %w[id username email directory_user urn]}
+              when :app_authorizations
+                return {type: :single_object,data: api_shares_admin.read("data/users/#{user_id}/app_authorizations")[:data]}
+              when :share_permissions
+                #share_name = options.get_next_argument('share name')
+                #all_shares = api_shares_admin.read('data/shares')[:data]
+                #share_id = all_shares.find{|s| s['name'].eql?(share_name)}['id']
+                return {type: :object_list,data: api_shares_admin.read("data/users/#{user_id}/share_permissions")[:data]}
               end
             when :share
-              command = options.get_next_command([:list,:name])
+              command = options.get_next_command(%i[list user_permissions])
+              share_id = instance_identifier() if %i[user_permissions].include?(command)
               all_shares = api_shares_admin.read('data/shares')[:data]
               case command
               when :list
-                return {type: :object_list,data: all_shares,fields: ['id','name','status','status_message']}
-              when :name
-                share_name = options.get_next_argument('share name')
-                share_id = all_shares.find{|s| s['name'].eql?(share_name)}['id']
-                raise "NOT IMPLEMENTED: #{share_name} #{share_id}"
+                return {type: :object_list,data: all_shares,fields: %w[id name status status_message]}
+              when :user_permissions
+                #share_name = options.get_next_argument('share name')
+                #share_id = all_shares.find{|s| s['name'].eql?(share_name)}['id']
+                #raise "NOT IMPLEMENTED: #{share_name} #{share_id}"
+                return {type: :object_list,data: api_shares_admin.read("data/shares/#{share_id}/user_permissions")[:data]}
               end
             end
           end

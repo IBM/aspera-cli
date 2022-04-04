@@ -77,6 +77,11 @@ tunit: $(T)unit
 $(T)shadm: $(T).exists
 	@echo $@
 	$(EXE_MAN) shares admin share list
+	$(EXE_MAN) shares admin user list
+	$(EXE_MAN) shares admin user app_authorizations 1
+	$(EXE_MAN) shares admin user share_permissions 1
+	$(EXE_MAN) shares admin share list
+	$(EXE_MAN) shares admin share user_permissions 9
 	@touch $@
 $(T)sh1: $(T).exists
 	@echo $@
