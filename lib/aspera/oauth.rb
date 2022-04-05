@@ -120,7 +120,7 @@ module Aspera
     register_token_creator :web,lambda { |oauth|
       callback_verif = SecureRandom.uuid # used to check later
       login_page_url = Rest.build_uri("#{oauth.params[:base_url]}/#{oauth.params[:web][:path_authorize]}",
-        optional_scope_client_id({response_type: 'code', redirect_uri: oauth.params[:web][:redirect_uri], state: callback_verif}))
+        oauth.optional_scope_client_id({response_type: 'code', redirect_uri: oauth.params[:web][:redirect_uri], state: callback_verif}))
       # here, we need a human to authorize on a web page
       Log.log.info("login_page_url=#{login_page_url}".bg_red.gray)
       # start a web server to receive request code
