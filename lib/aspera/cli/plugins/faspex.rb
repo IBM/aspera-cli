@@ -302,7 +302,7 @@ module Aspera
                   id:      IdGenerator.from_list(['faspex_recv',options.get_option(:url,:mandatory),options.get_option(:username,:mandatory),options.get_option(:box,:mandatory).to_s]))
                 end
                 # get command line parameters
-                delivid = instance_identifier()
+                delivid = instance_identifier
                 raise 'empty id' if delivid.empty?
                 recipient = options.get_option(:recipient,:optional)
                 if delivid.eql?(VAL_ALL)
@@ -447,7 +447,7 @@ module Aspera
               return entity_action(api_v4,'metadata_profiles')
             when :package
               pkg_box_type = options.get_next_command([:users])
-              pkg_box_id = instance_identifier()
+              pkg_box_id = instance_identifier
               return entity_action(api_v4,"#{pkg_box_type}/#{pkg_box_id}/packages")
             end
           when :address_book

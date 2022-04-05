@@ -118,7 +118,7 @@ module Aspera
         Rest.user_agent = PROGRAM_NAME
         Rest.session_cb = lambda{|http|self.http_parameters = http}
         # declare and parse global options
-        init_global_options()
+        init_global_options
         # the Config plugin adds the @preset parser, so declare before TransferAgent which may use it
         @plugin_env[:config] = Plugins::Config.new(@plugin_env, gem: GEM_NAME, name: PROGRAM_NAME, help: DOC_URL, version: Aspera::Cli::VERSION)
         # the TransferAgent plugin may use the @preset parser

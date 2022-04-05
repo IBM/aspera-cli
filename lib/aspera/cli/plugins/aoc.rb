@@ -228,7 +228,7 @@ module Aspera
             if !file_path.nil?
               aoc_api.resolve_node_file(top_node_file,file_path) # TODO: allow follow link ?
             else
-              {node_info: top_node_file[:node_info],file_id: instance_identifier()}
+              {node_info: top_node_file[:node_info],file_id: instance_identifier}
             end
             node_api = aoc_api.get_node_api(node_file[:node_info])
             case command_node_file
@@ -435,8 +435,7 @@ module Aspera
 
         def normalize_metadata(pkg_data)
           case pkg_data['metadata']
-          when NilClass then return
-          when Array then return
+          when Array,NilClass then return
           when Hash
             api_meta = []
             pkg_data['metadata'].each do |k,v|
@@ -596,7 +595,7 @@ module Aspera
               case filter_resource
               when 'organizations' then aoc_api.user_info['organization_id']
               when 'users' then aoc_api.user_info['id']
-              when 'nodes' then aoc_api.user_info['id']
+              when 'nodes' then aoc_api.user_info['id'] # TODO: consistent ? # rubocop:disable Lint/DuplicateBranch
               else raise 'organizations or users for option --name'
               end
               filter = options.get_option(:query,:optional) || {}
@@ -860,7 +859,7 @@ module Aspera
                 options.set_option(:id,@url_token_data['data']['package_id'])
               end
               # scalar here
-              ids_to_download = instance_identifier()
+              ids_to_download = instance_identifier
               skip_ids_data = []
               skip_ids_persistency = nil
               if options.get_option(:once_only,:mandatory)
@@ -918,7 +917,7 @@ module Aspera
               packages = aoc_api.read('packages',query)[:data]
               return {type: :object_list,data: packages,fields: ['id','name','bytes_transferred']}
             when :delete
-              list_or_one = instance_identifier()
+              list_or_one = instance_identifier
               return do_bulk_operation(list_or_one,'deleted') do |id|
                 raise 'expecting String identifier' unless id.is_a?(String) || id.is_a?(Integer)
                 aoc_api.delete("packages/#{id}")[:data]
@@ -1013,12 +1012,12 @@ module Aspera
               when *Plugin::ALL_OPS
                 return entity_command(wf_command,automation_api,'workflows',id_default: :id)
               when :launch
-                wf_id = instance_identifier()
+                wf_id = instance_identifier
                 data = automation_api.create("workflows/#{wf_id}/launch",{})[:data]
                 return {type: :single_object,data: data}
               when :action
                 #TODO: not complete
-                wf_id = instance_identifier()
+                wf_id = instance_identifier
                 wf_action_cmd = options.get_next_command(%i[list create show])
                 Log.log.warn("Not implemented: #{wf_action_cmd}")
                 step = automation_api.create('steps',{'workflow_id' => wf_id})[:data]

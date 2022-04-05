@@ -45,7 +45,7 @@ module Aspera
               # give fields to keep order
               return {type: :object_list, data: result['data'][object],fields: FIELDS['bssSubscriptions']}
             when :show
-              id = instance_identifier()
+              id = instance_identifier
               request = {
                 'variables' => {'id' => id},
                 'query'     => "query($id: ID!) {#{object}(id: $id) { #{all_fields('bssSubscriptions')} roleAssignments(uniqueSubjectId: true) { id subjectId } "\
@@ -56,7 +56,7 @@ module Aspera
               result.delete('instances')
               return {type: :single_object, data: result}
             when :instances
-              id = instance_identifier()
+              id = instance_identifier
               request = {
                 'variables' => {'id' => id},
                 'query'     => "query($id: ID!) {#{object}(id: $id) { aocOrganization { id subdomainName name status tier urlId trialExpiresAt } } } }"

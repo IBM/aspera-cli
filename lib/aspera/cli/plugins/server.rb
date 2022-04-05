@@ -223,15 +223,10 @@ module Aspera
             begin
               result = ascmd.send(:execute_single,command,args)
               case command
-              when :mkdir then  return Main.result_success
-              when :mv then     return Main.result_success
-              when :cp then     return Main.result_success
-              when :rm then     return Main.result_success
-              when :ls then     return {type: :object_list,data: key_symb_to_str_list(result),fields: ['zmode','zuid','zgid','size','mtime','name']}
-              when :info then   return {type: :single_object,data: key_symb_to_str_single(result)}
-              when :df then     return {type: :object_list,data: key_symb_to_str_list(result)}
-              when :du then     return {type: :single_object,data: key_symb_to_str_single(result)}
-              when :md5sum then return {type: :single_object,data: key_symb_to_str_single(result)}
+              when :mkdir,:mv,:cp,:rm then return Main.result_success
+              when :ls                then return {type: :object_list,data: key_symb_to_str_list(result),fields: %w[zmode zuid zgid size mtime name]}
+              when :df                then return {type: :object_list,data: key_symb_to_str_list(result)}
+              when :du,:md5sum,:info  then return {type: :single_object,data: key_symb_to_str_single(result)}
               end
             rescue Aspera::AsCmd::Error => e
               raise CliBadArgument,e.extended_message

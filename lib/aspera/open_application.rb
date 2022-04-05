@@ -49,9 +49,9 @@ module Aspera
       when :text
         case the_url.to_s
         when /^http/
-          puts "USER ACTION: please enter this url in a browser:\n" + the_url.to_s.red() + "\n"
+          puts "USER ACTION: please enter this url in a browser:\n" + the_url.to_s.red + "\n"
         else
-          puts "USER ACTION: open this:\n" + the_url.to_s.red() + "\n"
+          puts "USER ACTION: open this:\n" + the_url.to_s.red + "\n"
         end
       else
         raise StandardError,"unsupported url open method: #{@url_method}"

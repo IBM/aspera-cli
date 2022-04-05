@@ -122,9 +122,9 @@ module Aspera
             # do not delay the first session
             sleep(@options[:spawn_delay_sec]) unless i.eql?(1)
             # do deep copy (each thread has its own copy because it is modified here below and in thread)
-            this_session = session.clone()
-            this_session[:env_args] = this_session[:env_args].clone()
-            this_session[:env_args][:args] = this_session[:env_args][:args].clone()
+            this_session = session.clone
+            this_session[:env_args] = this_session[:env_args].clone
+            this_session[:env_args][:args] = this_session[:env_args][:args].clone
             this_session[:env_args][:args].unshift("-C#{i}:#{multi_session_info[:count]}")
             # option: increment (default as per ascp manual) or not (cluster on other side ?)
             this_session[:env_args][:args].unshift('-O',(multi_session_info[:udp_base] + i - 1).to_s) if @options[:multi_incr_udp]

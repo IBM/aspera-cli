@@ -207,7 +207,7 @@ module Aspera
       end
 
       if aoc_auth_p[:client_id].nil?
-        aoc_auth_p[:client_id],aoc_auth_p[:client_secret] = self.class.get_client_info()
+        aoc_auth_p[:client_id],aoc_auth_p[:client_secret] = self.class.get_client_info
       end
 
       # fill other auth parameters based on Oauth method

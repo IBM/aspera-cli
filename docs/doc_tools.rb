@@ -109,7 +109,7 @@ def include_commands
   File.open(@env[:TEST_MAKEFILE]) do |f|
     f.each_line do |line|
       next unless line.include?('$(EXE_MAN')
-      line = line.chomp()
+      line = line.chomp
       # replace command name
       line = line.gsub(/^.*\$\(EXE_MAN.?\)/,cmd)
       # replace makefile macros

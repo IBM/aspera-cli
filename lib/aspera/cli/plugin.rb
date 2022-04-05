@@ -51,7 +51,7 @@ module Aspera
       def entity_command(command,rest_api,res_class_path,display_fields: nil,id_default: nil,use_subkey: false)
         if INSTANCE_OPS.include?(command)
           begin
-            one_res_id = instance_identifier()
+            one_res_id = instance_identifier
           rescue StandardError => e
             raise e if id_default.nil?
             one_res_id = id_default

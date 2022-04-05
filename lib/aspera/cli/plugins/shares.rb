@@ -44,7 +44,7 @@ module Aspera
             case command
             when :user
               command = options.get_next_command(%i[list app_authorizations share_permissions])
-              user_id = instance_identifier() if %i[app_authorizations share_permissions].include?(command)
+              user_id = instance_identifier if %i[app_authorizations share_permissions].include?(command)
               case command
               when :list
                 return {type: :object_list,data: api_shares_admin.read('data/users')[:data],fields: %w[id username email directory_user urn]}
@@ -58,7 +58,7 @@ module Aspera
               end
             when :share
               command = options.get_next_command(%i[list user_permissions])
-              share_id = instance_identifier() if %i[user_permissions].include?(command)
+              share_id = instance_identifier if %i[user_permissions].include?(command)
               all_shares = api_shares_admin.read('data/shares')[:data]
               case command
               when :list

@@ -397,7 +397,7 @@ module Aspera
             if !file_path.nil?
               aoc_api.resolve_node_file(top_node_file,file_path) # TODO: allow follow link ?
             else
-              {node_info: top_node_file[:node_info],file_id: instance_identifier()}
+              {node_info: top_node_file[:node_info],file_id: instance_identifier}
             end
             node_api = aoc_api.get_node_api(node_file[:node_info])
             case command_node_file
@@ -457,7 +457,7 @@ module Aspera
           unless command.eql?(:list)
             asyncname = options.get_option(:sync_name,:optional)
             if asyncname.nil?
-              asyncid = instance_identifier()
+              asyncid = instance_identifier
               if asyncid.eql?('ALL') && [:show,:delete].include?(command)
                 asyncids = @api_node.read('async/list')[:data]['sync_ids']
               else
@@ -531,7 +531,7 @@ module Aspera
           command ||= options.get_next_command(ACTIONS)
           case command
           when *COMMON_ACTIONS then return execute_simple_common(command,prefix_path)
-          when :async then return execute_async()
+          when :async then return execute_async
           when :stream
             command = options.get_next_command([:list, :create, :show, :modify, :cancel])
             case command
@@ -560,7 +560,7 @@ module Aspera
             command = options.get_next_command([:list, :cancel, :show])
             res_class_path = 'ops/transfers'
             if [:cancel, :show].include?(command)
-              one_res_id = instance_identifier()
+              one_res_id = instance_identifier
               one_res_path = "#{res_class_path}/#{one_res_id}"
             end
             case command
@@ -588,7 +588,7 @@ module Aspera
           when :service
             command = options.get_next_command([:list, :create, :delete])
             if [:delete].include?(command)
-              svcid = instance_identifier()
+              svcid = instance_identifier
             end
             case command
             when :list
@@ -607,7 +607,7 @@ module Aspera
             res_class_path = 'v3/watchfolders'
             command = options.get_next_command([:create, :list, :show, :modify, :delete, :state])
             if [:show,:modify,:delete,:state].include?(command)
-              one_res_id = instance_identifier()
+              one_res_id = instance_identifier
               one_res_path = "#{res_class_path}/#{one_res_id}"
             end
             # hum, to avoid: Unable to convert 2016_09_14 configuration

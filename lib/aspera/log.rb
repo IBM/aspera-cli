@@ -28,7 +28,7 @@ module Aspera
       # @param name string or symbol
       # @param format either pp or json format
       def dump(name,object,format=:json)
-        log.debug() do
+        log.debug do
           result =
           case format
           when :json

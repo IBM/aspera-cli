@@ -650,7 +650,7 @@ module Aspera
 
         def execute_file_action(action,config_name)
           action = options.get_next_command(PRESET_ALL_ACTIONS) if action.nil?
-          config_name = instance_identifier() if config_name.nil? && PRESET_INSTANCE_ACTIONS.include?(action)
+          config_name = instance_identifier if config_name.nil? && PRESET_INSTANCE_ACTIONS.include?(action)
           # those operations require existing option
           raise "no such preset: #{config_name}" if PRESET_EXST_ACTIONS.include?(action) && !@config_presets.has_key?(config_name)
           selected_preset = @config_presets[config_name]
@@ -933,7 +933,7 @@ module Aspera
             new_conf['clientId'] = options.get_option(:client_id,:optional)
             new_conf['clientSecret'] = options.get_option(:client_secret,:optional)
             if new_conf['clientId'].nil?
-              new_conf['clientId'],new_conf['clientSecret'] = AoC.get_client_info()
+              new_conf['clientId'],new_conf['clientSecret'] = AoC.get_client_info
             end
             entry = data['AoCAccounts'].find{|i|i['organization'].eql?(organization)}
             if entry.nil?

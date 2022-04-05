@@ -71,7 +71,7 @@ module Aspera
         end
 
         def ts_to_env_args(transfer_spec,options)
-          return Parameters.new(transfer_spec,options).ascp_args()
+          return Parameters.new(transfer_spec,options).ascp_args
         end
 
         # temp file list files are created here
