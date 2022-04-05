@@ -5,7 +5,7 @@ require 'date'
 module Aspera
   class Nagios
     # nagios levels
-    LEVELS = [:ok,:warning,:critical,:unknown,:dependent]
+    LEVELS = %i[ok warning critical unknown dependent].freeze
     ADD_PREFIX = 'add_'
     # date offset levels
     DATE_WARN_OFFSET = 2

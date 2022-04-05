@@ -15,7 +15,7 @@ module Aspera
         options.add_opt_simple(:password,"user's password")
         options.parse_options!
       end
-      ACTIONS = []
+      ACTIONS = [].freeze
 
       def execute_action
         raise 'do not execute action on this generic plugin'

@@ -32,7 +32,7 @@ class String
     bg_magenta:    45,
     bg_cyan:       46,
     bg_gray:       47
-  }
+  }.freeze
   private_constant :VTSTYLES
   # defines methods to String, one per entry in VTSTYLES
   VTSTYLES.each do |name,code|

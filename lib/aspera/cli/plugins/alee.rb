@@ -7,7 +7,7 @@ module Aspera
   module Cli
     module Plugins
       class Alee < BasicAuthPlugin
-        ACTIONS = [:entitlement]
+        ACTIONS = %i[entitlement].freeze
 
         def execute_action
           command = options.get_next_command(ACTIONS)

@@ -19,7 +19,7 @@ module Aspera
           options.parse_options!
         end
 
-        ACTIONS = [:transfer,:health]
+        ACTIONS = %i[transfer health].freeze
 
         def execute_action
           api_console = basic_auth_api('api')

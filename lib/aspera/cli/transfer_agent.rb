@@ -25,7 +25,7 @@ module Aspera
       END_OF_TEMPLATE
       #% (formating bug in eclipse)
       private_constant :FILE_LIST_FROM_ARGS,:FILE_LIST_FROM_TRANSFER_SPEC,:DEFAULT_TRANSFER_NOTIF_TMPL
-      TRANSFER_AGENTS = [:direct,:node,:connect,:httpgw,:trsdk]
+      TRANSFER_AGENTS = %i[direct node connect httpgw trsdk].freeze
 
       # @param env external objects: option manager, config file manager
       def initialize(opt_mgr,config)

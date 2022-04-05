@@ -402,7 +402,7 @@ module Aspera
           end
         end
 
-        ACTIONS = [:scan,:events,:trevents,:check,:test]
+        ACTIONS = %i[scan events trevents check test].freeze
 
         def execute_action
           command = options.get_next_command(ACTIONS)

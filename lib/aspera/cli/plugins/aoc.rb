@@ -326,7 +326,7 @@ module Aspera
             when 1
               @workspace_id = wss.first['id']
             else
-              raise 'unexpected case'
+              raise 'multiple match for workspace'
             end
           end
           @workspace_data = aoc_api.read("workspaces/#{@workspace_id}")[:data]
@@ -349,7 +349,7 @@ module Aspera
           end
           home_node_id ||= @workspace_data['home_node_id'] || @workspace_data['node_id']
           home_file_id ||= @workspace_data['home_file_id']
-          raise 'node_id must be defined' if home_node_id.to_s.empty?
+          raise 'Cannot get users home node id' if home_node_id.to_s.empty?
           @home_node_file = {
             node_info: aoc_api.read("nodes/#{home_node_id}")[:data],
             file_id:   home_file_id

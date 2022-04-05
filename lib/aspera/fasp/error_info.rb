@@ -72,6 +72,6 @@ module Aspera
       64 => { r: false, c: 'CANNOT_RENAME_PARTIAL_FILES',m: 'Can\'t rename a partial file',                   a: 'Can\'t rename a partial file.'},
       65 => { r: false, c: 'CIPHER_NON_COMPAT_FIPS',     m: 'Can\'t use this cipher with FIPS mode enabled',  a: 'Can\'t use this cipher with FIPS mode enabled'},
       66 => { r: false, c: 'PEER_REQUIRES_FIPS',         m: 'Peer rejects cipher due to FIPS mode enabled on peer', a: 'Peer rejects cipher due to FIPS mode enabled on peer'}
-    }
+    }.freeze
   end
 end

@@ -15,7 +15,7 @@ module Aspera
     # translate transfer specification to ascp parameter list
     class Parameters
       # Agents shown in manual for parameters (sub list)
-      SUPPORTED_AGENTS = [:direct,:node,:connect]
+      SUPPORTED_AGENTS = %i[direct node connect].freeze
       # Short names of columns in manual
       SUPPORTED_AGENTS_SHORT = SUPPORTED_AGENTS.map{|a|a.to_s[0].to_sym}
 

@@ -6,8 +6,8 @@ module Aspera
     # also settable by command line.
     class Options
       # types of generation for video files
-      VIDEO_CONVERSION_METHODS = %i[reencode blend clips]
-      VIDEO_THUMBNAIL_METHODS = %i[fixed animated]
+      VIDEO_CONVERSION_METHODS = %i[reencode blend clips].freeze
+      VIDEO_THUMBNAIL_METHODS = %i[fixed animated].freeze
       # options used in generator
       # for scaling see: https://trac.ffmpeg.org/wiki/Scaling
       # iw/ih : input width or height
@@ -28,7 +28,7 @@ module Aspera
         { name: :blend_fps,            default: 15,                 description: 'mp4: blend: frame per second' },
         { name: :clips_count,          default: 5,                  description: 'mp4: clips: number of clips' },
         { name: :clips_length,         default: 5,                  description: 'mp4: clips: length in seconds of each clips' }
-      ]
+      ].freeze
       # add accessors
       DESCRIPTIONS.each do |opt|
         attr_accessor opt[:name]

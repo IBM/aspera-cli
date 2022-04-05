@@ -11,7 +11,7 @@ module Aspera
       'watchd'              => { cltype: :opt_with_arg, accepted_types: :string},
       'apply_local_docroot' => { cltype: :opt_without_arg},
       'quiet'               => { cltype: :opt_without_arg}
-    }
+    }.freeze
     SESSION_PARAMS =
     {
       'name'                       => { cltype: :opt_with_arg, accepted_types: :string},
@@ -44,7 +44,7 @@ module Aspera
       'cookie'                     => { cltype: :envvar, clvarname: 'ASPERA_SCP_COOKIE'},
       'token'                      => { cltype: :envvar, clvarname: 'ASPERA_SCP_TOKEN'},
       'license'                    => { cltype: :envvar, clvarname: 'ASPERA_SCP_LICENSE'}
-    }
+    }.freeze
 
     Aspera::CommandLineBuilder.normalize_description(INSTANCE_PARAMS)
     Aspera::CommandLineBuilder.normalize_description(SESSION_PARAMS)
@@ -55,7 +55,7 @@ module Aspera
       @sync_params = sync_params
     end
 
-    MANDATORY_KEYS = ['instance','sessions']
+    MANDATORY_KEYS = %w[instance sessions].freeze
 
     def compute_args
       raise StandardError,'parameter must be Hash' unless @sync_params.is_a?(Hash)

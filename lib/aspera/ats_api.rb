@@ -14,7 +14,7 @@ module Aspera
       limelight: 'Limelight',
       rackspace: 'Rackspace',
       softlayer: 'IBM Cloud'
-    }
+    }.freeze
 
     private_constant :CLOUD_NAME
 

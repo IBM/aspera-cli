@@ -19,7 +19,7 @@ module Aspera
           options.add_opt_simple(:region,'IBM Cloud Object storage region')
         end
 
-        ACTIONS = [:node]
+        ACTIONS = %i[node].freeze
 
         def execute_action
           command = options.get_next_command(ACTIONS)

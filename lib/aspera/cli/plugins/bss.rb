@@ -6,11 +6,11 @@ module Aspera
   module Cli
     module Plugins
       class Bss < BasicAuthPlugin
-        ACTIONS = [:subscription]
+        ACTIONS = %i[subscription].freeze
 
         FIELDS = {
           'bssSubscriptions' => %w[id name termVolumeGb termMonths trial startDate endDate plan renewalType chargeAgreementNumber customerName]
-        }
+        }.freeze
 
         def initialize(env)
           super(env)

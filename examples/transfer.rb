@@ -19,7 +19,7 @@ DEMO_CONFIG = [
   'ssh://asperaweb@eudemo.asperademo.com:33001',
   'https://node_asperaweb@eudemo.asperademo.com:9092',
   'demoaspera'
-]
+].freeze
 
 ##############################################################
 # generic initialisation : configuration of FaspManager

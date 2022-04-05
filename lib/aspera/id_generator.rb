@@ -5,7 +5,7 @@ require 'uri'
 module Aspera
   class IdGenerator
     ID_SEPARATOR = '_'
-    WINDOWS_PROTECTED_CHAR = %r{[/:"<>\\*?]}
+    WINDOWS_PROTECTED_CHAR = %r{[/:"<>\\*?]}.freeze
     PROTECTED_CHAR_REPLACE = '_'
     private_constant :ID_SEPARATOR,:PROTECTED_CHAR_REPLACE,:WINDOWS_PROTECTED_CHAR
     def self.from_list(object_id)

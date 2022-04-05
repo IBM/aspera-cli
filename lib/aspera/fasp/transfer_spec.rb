@@ -14,7 +14,7 @@ module Aspera
         'remote_user' => ACCESS_KEY_TRANSFER_USER,
         'ssh_port'    => SSH_PORT,
         'fasp_port'   => UDP_PORT
-      }
+      }.freeze
       # define constants for enums of parameters: <paramater>_<enum>, e.g. CIPHER_AES_128
       Aspera::Fasp::Parameters.description.each do |k,v|
         next unless v[:enum].is_a?(Array)

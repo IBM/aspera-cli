@@ -13,7 +13,7 @@ module Aspera
         sleep_initial: 2,
         sleep_factor:  2,
         sleep_max:     60
-      }
+      }.freeze
 
       # @param params see DEFAULTS
       def initialize(params=nil)

@@ -9,13 +9,7 @@ module Aspera
     class FileTypes
       include Singleton
       # values for conversion_type : input format
-      CONVERSION_TYPES = [
-        :image,
-        :office,
-        :pdf,
-        :plaintext,
-        :video
-      ]
+      CONVERSION_TYPES = %i[image office pdf plaintext video].freeze
 
       # define how files are processed based on mime type
       SUPPORTED_MIME_TYPES = {
@@ -122,7 +116,7 @@ module Aspera
         'video/x-matroska'                                                          => :video,
         'video/x-mng'                                                               => :image,
         'video/x-ms-wmv'                                                            => :video,
-        'video/x-msvideo'                                                           => :video}
+        'video/x-msvideo'                                                           => :video}.freeze
 
       # this is a way to add support for extensions that are otherwise not known by node api (mime type)
       SUPPORTED_EXTENSIONS = {
@@ -272,7 +266,7 @@ module Aspera
         'ycbcr'        => :image,
         'ycbcra'       => :image,
         'yuv'          => :image,
-        'zabw'         => :office}
+        'zabw'         => :office}.freeze
 
       private_constant :SUPPORTED_MIME_TYPES, :SUPPORTED_EXTENSIONS
 

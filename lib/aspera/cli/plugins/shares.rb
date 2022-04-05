@@ -26,7 +26,7 @@ module Aspera
         #          super(env)
         #        end
 
-        ACTIONS = [:repository,:admin]
+        ACTIONS = %i[repository admin].freeze
 
         def execute_action
           command = options.get_next_command(ACTIONS)

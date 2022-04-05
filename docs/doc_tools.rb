@@ -102,7 +102,7 @@ REPLACEMENTS = {
   'EMAIL_ADDR'             => 'internal.user@example.com',
   'CF_'                    => '',
   '$@'                     => 'test'
-}
+}.freeze
 
 def include_commands
   commands = []
@@ -133,7 +133,7 @@ def include_commands
   return commands.sort.uniq.join("\n")
 end
 
-KEPT_GLOBAL_SECTIONS=%w[config default]
+KEPT_GLOBAL_SECTIONS=%w[config default].freeze
 
 # main function to generate config file with secrets
 def generate_generic_conf

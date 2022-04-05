@@ -25,17 +25,17 @@ module Aspera
     # to avoid infinite loop in pub link redirection
     MAX_REDIRECT = 10
     # Well-known AoC globals client apps
-    GLOBAL_CLIENT_APPS = ['aspera.global-cli-client','aspera.drive']
+    GLOBAL_CLIENT_APPS = %w[aspera.global-cli-client aspera.drive].freeze
     # index offset in data repository of client app
     DATA_REPO_INDEX_START = 4
     # cookie prefix so that console can decode identity
     COOKIE_PREFIX = 'aspera.aoc'
     # path in URL of public links
-    PUBLIC_LINK_PATHS = ['/packages/public/receive','/packages/public/send','/files/public']
+    PUBLIC_LINK_PATHS = %w[/packages/public/receive /packages/public/send /files/public].freeze
     JWT_AUDIENCE = 'https://api.asperafiles.com/api/v1/oauth2/token'
     OAUTH_API_SUBPATH = 'api/v1/oauth2'
     # minimum fields for user info if retrieval fails
-    USER_INFO_FIELDS_MIN = ['name','email','id','default_workspace_id','organization_id']
+    USER_INFO_FIELDS_MIN = %w[name email id default_workspace_id organization_id].freeze
 
     private_constant :MAX_REDIRECT,:GLOBAL_CLIENT_APPS,:DATA_REPO_INDEX_START,:COOKIE_PREFIX,:PUBLIC_LINK_PATHS,:JWT_AUDIENCE,
     :OAUTH_API_SUBPATH,:USER_INFO_FIELDS_MIN

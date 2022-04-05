@@ -10,7 +10,7 @@ module Aspera
       DEFAULT_OPTIONS = {
         address: '127.0.0.1',
         port:    55_002
-      }
+      }.freeze
       private_constant :DEFAULT_OPTIONS
 
       # options come from transfer_info

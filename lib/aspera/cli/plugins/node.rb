@@ -28,7 +28,7 @@ module Aspera
           '<soapenv:Header></soapenv:Header>'\
           '<soapenv:Body><typ:GetSessionInfoRequest><SessionFilter><SessionStatus>running</SessionStatus></SessionFilter></typ:GetSessionInfoRequest></soapenv:Body>'\
           '</soapenv:Envelope>'
-        SEARCH_REMOVE_FIELDS=%w[basename permissions]
+        SEARCH_REMOVE_FIELDS=%w[basename permissions].freeze
         private_constant :SAMPLE_SOAP_CALL,:SEARCH_REMOVE_FIELDS
 
         def initialize(env)
@@ -117,9 +117,9 @@ module Aspera
           raise StandardError,'expect: nil, String or Array'
         end
 
-        SIMPLE_ACTIONS = [:health,:events, :space, :info, :license, :mkdir, :mklink, :mkfile, :rename, :delete, :search]
+        SIMPLE_ACTIONS = %i[health events space info license mkdir mklink mkfile rename delete search].freeze
 
-        COMMON_ACTIONS = [:browse, :upload, :download, :api_details].concat(SIMPLE_ACTIONS)
+        COMMON_ACTIONS = %i[browse upload download api_details].concat(SIMPLE_ACTIONS).freeze
 
         # common API to node and Shares
         # prefix_path is used to list remote sources in Faspex
@@ -136,8 +136,11 @@ module Aspera
               nagios.add_critical('node api',e.to_s)
             end
             begin
-              @api_node.call({ operation: 'POST', subpath: 'services/soap/Transfer-201210',
-headers: {'Content-Type' => 'text/xml;charset=UTF-8','SOAPAction' => 'FASPSessionNET-200911#GetSessionInfo'}, text_body_params: SAMPLE_SOAP_CALL})[:http].body
+              @api_node.call(
+                operation: 'POST',
+                subpath: 'services/soap/Transfer-201210',
+                headers: {'Content-Type' => 'text/xml;charset=UTF-8','SOAPAction' => 'FASPSessionNET-200911#GetSessionInfo'},
+                text_body_params: SAMPLE_SOAP_CALL)[:http].body
               nagios.add_ok('central','accessible by node')
             rescue StandardError => e
               nagios.add_critical('central',e.to_s)
@@ -264,7 +267,7 @@ headers: {'Content-Type' => 'text/xml;charset=UTF-8','SOAPAction' => 'FASPSessio
           end
         end
 
-        NODE4_COMMANDS = [:browse, :find, :mkdir, :rename, :delete, :upload, :download, :transfer, :http_node_download, :file, :bearer_token_node, :node_info].freeze
+        NODE4_COMMANDS = %i[browse find mkdir rename delete upload download transfer http_node_download file bearer_token_node node_info].freeze
 
         def execute_node_gen4_command(command_repo)
           #@api_node

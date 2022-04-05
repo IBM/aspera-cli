@@ -205,7 +205,7 @@ module Aspera
           end
         end
 
-        ACTIONS = [:cluster, :access_key,:api_key, :aws_trust_policy]
+        ACTIONS = %i[cluster access_key api_key aws_trust_policy].freeze
 
         # called for legacy and AoC
         def execute_action_gen(ats_api_arg)

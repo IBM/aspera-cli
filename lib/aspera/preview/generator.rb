@@ -10,7 +10,7 @@ module Aspera
     # generate one preview file for one format for one file at a time
     class Generator
       # values for preview_format : output format
-      PREVIEW_FORMATS = [:png,:mp4]
+      PREVIEW_FORMATS = %i[png mp4].freeze
 
       # CLI needs to know conversion type to know if need skip it
       attr_reader :conversion_type

@@ -29,7 +29,7 @@ module Aspera
     # Manage secrets in a simple Hash
     class EncryptedHash
       SEPARATOR = '%'
-      ACCEPTED_KEYS = %i[username url secret description]
+      ACCEPTED_KEYS = %i[username url secret description].freeze
       private_constant :SEPARATOR
       attr_reader :legacy_detected
       def initialize(values)

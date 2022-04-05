@@ -25,7 +25,7 @@ module Aspera
         multi_incr_udp:    true,
         resume:            {},
         quiet:             true # by default no interactive progress bar
-      }
+      }.freeze
       private_constant :DEFAULT_OPTIONS
 
       # start ascp transfer (non blocking), single or multi-session

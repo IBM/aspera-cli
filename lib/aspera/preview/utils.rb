@@ -14,7 +14,7 @@ module Aspera
       # shell exit code when command is not found
       BASH_EXIT_NOT_FOUND = 127
       # external binaries used
-      EXPERNAL_TOOLS = [:ffmpeg,:ffprobe,:convert,:composite,:optipng,:unoconv]
+      EXPERNAL_TOOLS = %i[ffmpeg ffprobe convert composite optipng unoconv].freeze
       TMPFMT = 'img%04d.jpg'
       private_constant :BASH_SPECIAL_CHARACTERS,:BASH_EXIT_NOT_FOUND,:EXPERNAL_TOOLS,:TMPFMT
 

@@ -123,7 +123,7 @@ module Aspera
       end
 
       # all ascp files (in SDK)
-      FILES = [:ascp,:ascp4,:ssh_bypass_key_dsa,:ssh_bypass_key_rsa,:aspera_license,:aspera_conf,:fallback_cert,:fallback_key]
+      FILES = %i[ascp ascp4 ssh_bypass_key_dsa ssh_bypass_key_rsa aspera_license aspera_conf fallback_cert fallback_key].freeze
 
       # get path of one resource file of currently activated product
       # keys and certs are generated locally... (they are well known values, arch. independant)

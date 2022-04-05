@@ -18,7 +18,7 @@ module Aspera
           options.parse_options!
         end
 
-        ACTIONS = [:start, :admin]
+        ACTIONS = %i[start admin].freeze
 
         def execute_action
           command = options.get_next_command(ACTIONS)
