@@ -338,7 +338,7 @@ module Aspera
         # mutex protects global data accessed by threads
         @mutex = Mutex.new
         # set default options and override if specified
-        @options = DEFAULT_OPTIONS.clone
+        @options = DEFAULT_OPTIONS.dup
         if !options.nil?
           raise "expecting Hash (or nil), but have #{options.class}" unless options.is_a?(Hash)
           options.each do |k,v|

@@ -209,7 +209,7 @@ module Aspera
 
         # called for legacy and AoC
         def execute_action_gen(ats_api_arg)
-          actions = ACTIONS
+          actions = ACTIONS.dup
           actions.delete(:api_key) unless ats_api_arg.nil?
           command = options.get_next_command(actions)
           @ats_api_pub_v1_cache = ats_api_arg

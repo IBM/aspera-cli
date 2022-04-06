@@ -180,7 +180,7 @@ module Aspera
     def initialize(a_params)
       Log.log.debug("auth=#{a_params}")
       # replace default values
-      @params = DEFAULT_CREATE_PARAMS.clone.deep_merge(a_params)
+      @params = DEFAULT_CREATE_PARAMS.deep_merge(a_params)
       if @params.has_key?(:redirect_uri)
         uri = URI.parse(@params[:web][:redirect_uri])
         raise 'redirect_uri scheme must be http or https' unless ['http','https'].include?(uri.scheme)

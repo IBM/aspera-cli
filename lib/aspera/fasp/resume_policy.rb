@@ -17,7 +17,7 @@ module Aspera
 
       # @param params see DEFAULTS
       def initialize(params=nil)
-        @parameters = DEFAULTS.clone
+        @parameters = DEFAULTS.dup
         if !params.nil?
           raise "expecting Hash (or nil), but have #{params.class}" unless params.is_a?(Hash)
           params.each do |k,v|

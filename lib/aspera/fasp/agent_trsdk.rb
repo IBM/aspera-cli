@@ -17,7 +17,7 @@ module Aspera
       def initialize(user_opts)
         raise "expecting Hash (or nil), but have #{user_opts.class}" unless user_opts.nil? || user_opts.is_a?(Hash)
         # set default options and override if specified
-        options = DEFAULT_OPTIONS.clone
+        options = DEFAULT_OPTIONS.dup
         user_opts&.each do |k,v|
           raise "Unknown local agent parameter: #{k}, expect one of #{DEFAULT_OPTIONS.keys.map(&:to_s).join(',')}" unless DEFAULT_OPTIONS.has_key?(k)
           options[k] = v

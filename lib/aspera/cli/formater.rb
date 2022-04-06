@@ -29,34 +29,6 @@ module Aspera
           keyword.is_a?(String) && SECRET_KEYWORDS.any?{|kw|keyword.include?(kw)}
         end
 
-        # @param source [Hash] hash to modify
-        # @param keep_last [bool]
-        def flatten_object(source,keep_last)
-          newval = {}
-          flatten_sub_hash_rec(source,keep_last,'',newval)
-          source.clear
-          source.merge!(newval)
-        end
-
-        # recursive function to modify a hash
-        # @param source [Hash] to be modified
-        # @param keep_last [bool] truer if last level is not
-        # @param prefix [String] true if last level is not
-        # @param dest [Hash] new hash flattened
-        def flatten_sub_hash_rec(source,keep_last,prefix,dest)
-          is_simple_hash = false
-          Log.log.debug("(#{keep_last})[#{is_simple_hash}] -#{source.values}- \n-#{source}-")
-          return source if keep_last && is_simple_hash
-          source.each do |k,v|
-            if v.is_a?(Hash) && (!keep_last || !is_simple_hash)
-              flatten_sub_hash_rec(v,keep_last,prefix + k.to_s + '.',dest)
-            else
-              dest[prefix + k.to_s] = v
-            end
-          end
-          return nil
-        end
-
         # special for Aspera on Cloud display node
         # {"param" => [{"name"=>"foo","value"=>"bar"}]} will be expanded to {"param.foo" : "bar"}
         def flatten_name_value_list(hash)
@@ -79,7 +51,29 @@ module Aspera
           end
           return r
         end
-    end
+
+        def is_simple_hash?(h)
+          !(h.values.any?{|v|[Hash,Array].any?{|c|v.is_a?(c)}})
+        end
+
+        # recursive function to modify a hash
+        # @param source [Hash] to be modified
+        # @param expand_last [bool] truer if last level is not
+        # @param result [Hash] new hash flattened
+        # @param prefix [String] true if last level is not
+        def flattened_object(source,result: {},prefix:'',expand_last: false)
+          Log.log.debug("(#{expand_last})[#{is_simple_hash?(source)}] -#{source.values}- \n-#{source}-")
+          source.each do |k,v|
+            if v.is_a?(Hash) && ! (expand_last && is_simple_hash?(v))
+              flattened_object(v,result: result,prefix: prefix + k.to_s + '.',expand_last: expand_last)
+            else
+              result[prefix + k.to_s] = v
+            end
+          end
+          return result
+        end
+
+      end
 
       attr_accessor :option_flat_hash,:option_transpose_single,:option_format,:option_display,:option_fields,:option_table_style,
                     :option_select,:option_show_secrets
@@ -200,9 +194,7 @@ module Aspera
             table_rows_hash_val = res_data
             final_table_columns = nil
             if @option_flat_hash
-              table_rows_hash_val.each do |obj|
-                self.class.flatten_object(obj,results[:option_expand_last])
-              end
+              table_rows_hash_val.map!{|obj|self.class.flattened_object(obj,expand_last: results[:option_expand_last])}
             end
             final_table_columns =
             case user_asked_fields_list_str
@@ -222,7 +214,7 @@ module Aspera
             raise "internal error: expecting Hash: got #{res_data.class}: #{res_data}" unless res_data.is_a?(Hash)
             final_table_columns = results[:columns] || ['key','value']
             if @option_flat_hash
-              self.class.flatten_object(res_data,results[:option_expand_last])
+              res_data=self.class.flattened_object(res_data,expand_last: results[:option_expand_last])
               self.class.flatten_name_value_list(res_data)
             end
             asked_fields =

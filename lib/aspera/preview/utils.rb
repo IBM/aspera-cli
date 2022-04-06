@@ -27,9 +27,10 @@ module Aspera
 
         # check that external tools can be executed
         def check_tools(skip_types=[])
-          EXPERNAL_TOOLS.delete(:unoconv) if skip_types.include?(:office)
+          tools_to_check=EXPERNAL_TOOLS.dup
+          tools_to_check.delete(:unoconv) if skip_types.include?(:office)
           # Check for binaries
-          EXPERNAL_TOOLS.each do |command_symb|
+          tools_to_check.each do |command_symb|
             external_command(command_symb,['-h'])
           end
         end
