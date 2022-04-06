@@ -388,7 +388,10 @@ module Aspera
             file_name = source_paths.first['source']
             node_file = aoc_api.resolve_node_file(top_node_file,File.join(source_folder,file_name))
             node_api = aoc_api.get_node_api(node_file[:node_info])
-            node_api.call({operation: 'GET',subpath: "files/#{node_file[:file_id]}/content",save_to_file: File.join(transfer.destination_folder(Fasp::TransferSpec::DIRECTION_RECEIVE),file_name)})
+            node_api.call(
+              operation: 'GET',
+              subpath: "files/#{node_file[:file_id]}/content",
+              save_to_file: File.join(transfer.destination_folder(Fasp::TransferSpec::DIRECTION_RECEIVE),file_name))
             return Main.result_status("downloaded: #{file_name}")
           when :file
             command_node_file = options.get_next_command([:show,:permission,:modify])
@@ -509,7 +512,11 @@ module Aspera
               skip_ids_persistency = PersistencyActionOnce.new(
               manager: @agents[:persistency],
               data:    iteration_data,
-              id:      IdGenerator.from_list(['sync_files',options.get_option(:url,:mandatory),options.get_option(:username,:mandatory),asyncid]))
+              id:      IdGenerator.from_list([
+                'sync_files',
+                options.get_option(:url,:mandatory),
+                options.get_option(:username,:mandatory),
+                asyncid]))
               unless iteration_data.first.nil?
                 data.select!{|l| l['fnid'].to_i > iteration_data.first}
               end
@@ -525,7 +532,7 @@ module Aspera
           end
         end
 
-        ACTIONS = [:postprocess,:stream, :transfer, :cleanup, :forward, :access_key, :watch_folder, :service, :async, :central, :asperabrowser, :basic_token].concat(COMMON_ACTIONS)
+        ACTIONS = %i[postprocess stream transfer cleanup forward access_key watch_folder service async central asperabrowser basic_token].concat(COMMON_ACTIONS).freeze
 
         def execute_action(command=nil,prefix_path=nil)
           command ||= options.get_next_command(ACTIONS)
@@ -567,7 +574,11 @@ module Aspera
             when :list
               # could use ? subpath: 'transfers'
               resp = @api_node.read(res_class_path,options.get_option(:value,:optional))
-              return { type: :object_list, data: resp[:data],fields: ['id','status','start_spec.direction','start_spec.remote_user','start_spec.remote_host','start_spec.destination_path']}
+              return {
+                type: :object_list,
+                data: resp[:data],
+                fields: %w[id status start_spec.direction start_spec.remote_user start_spec.remote_host start_spec.destination_path]
+              }
             when :cancel
               resp = @api_node.cancel(one_res_path)
               return { type: :other_struct, data: resp[:data] }

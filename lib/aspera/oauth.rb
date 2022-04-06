@@ -120,7 +120,7 @@ module Aspera
     register_token_creator :web,lambda { |oauth|
       callback_verif = SecureRandom.uuid # used to check later
       login_page_url = Rest.build_uri("#{oauth.params[:base_url]}/#{oauth.params[:web][:path_authorize]}",
-        oauth.optional_scope_client_id({response_type: 'code', redirect_uri: oauth.params[:web][:redirect_uri], state: callback_verif}))
+        oauth.optional_scope_client_id.merge(response_type: 'code', redirect_uri: oauth.params[:web][:redirect_uri], state: callback_verif))
       # here, we need a human to authorize on a web page
       Log.log.info("login_page_url=#{login_page_url}".bg_red.gray)
       # start a web server to receive request code
@@ -131,9 +131,11 @@ module Aspera
       received_params = webserver.received_request
       raise 'state does not match' if !callback_verif.eql?(received_params['state'])
       # exchange code for token
-      return oauth.create_token(oauth.optional_scope_client_id({grant_type: 'authorization_code', code: received_params['code'], redirect_uri: oauth.params[:web][:redirect_uri]},add_secret: true))
+      return oauth.create_token(oauth.optional_scope_client_id(add_secret: true).merge(
+        grant_type:   'authorization_code',
+        code:         received_params['code'],
+        redirect_uri: oauth.params[:web][:redirect_uri]))
     }
-
     # Authentication using private key
     register_token_creator :jwt,lambda { |oauth|
       # https://tools.ietf.org/html/rfc7523
@@ -153,7 +155,7 @@ module Aspera
       Log.log.debug("private=[#{rsa_private}]")
       assertion = JWT.encode(jwt_payload, rsa_private, 'RS256', oauth.params[:jwt][:headers] || {})
       Log.log.debug("assertion=[#{assertion}]")
-      return oauth.create_token(oauth.optional_scope_client_id({grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer', assertion: assertion}))
+      return oauth.create_token(oauth.optional_scope_client_id.merge(grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer', assertion: assertion))
     }
 
     attr_reader :params, :token_auth_api
@@ -214,8 +216,9 @@ module Aspera
         www_body_params: www_params})
     end
 
-    # helper method
-    def optional_scope_client_id(call_params, add_secret: false)
+    # @return Hash with optional parameters
+    def optional_scope_client_id(add_secret: false)
+      call_params={}
       call_params[:scope] = @params[:scope] unless @params[:scope].nil?
       call_params[:client_id] = @params[:client_id] unless @params[:client_id].nil?
       call_params[:client_secret] = @params[:client_secret] if add_secret && !@params[:client_id].nil?
@@ -262,7 +265,7 @@ module Aspera
           Log.log.info("refresh=[#{refresh_token}]".bg_green)
           # try to refresh
           # note: AoC admin token has no refresh, and lives by default 1800secs
-          resp = create_token(optional_scope_client_id({grant_type: 'refresh_token',refresh_token: refresh_token}))
+          resp = create_token(optional_scope_client_id.merge(grant_type: 'refresh_token',refresh_token: refresh_token))
           if resp[:http].code.start_with?('2')
             # save only if success
             json_data = resp[:http].body

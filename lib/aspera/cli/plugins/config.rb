@@ -173,9 +173,15 @@ module Aspera
             '0'
           end
           if Gem::Version.new(Environment.ruby_version) < Gem::Version.new(RUBY_FUTURE_MINIMUM_VERSION)
-            Log.log.warn("Note that a future version will require Ruby version #{RUBY_FUTURE_MINIMUM_VERSION} at minimum, you are using #{Environment.ruby_version}")
+            Log.log.warn("Note that a future version will require Ruby version #{RUBY_FUTURE_MINIMUM_VERSION} at minimum, "\
+              "you are using #{Environment.ruby_version}")
           end
-          return {name: @info[:gem], current: Aspera::Cli::VERSION, latest: latest_version, need_update: Gem::Version.new(Aspera::Cli::VERSION) < Gem::Version.new(latest_version)}
+          return {
+            name: @info[:gem],
+            current: Aspera::Cli::VERSION,
+            latest: latest_version,
+            need_update: Gem::Version.new(Aspera::Cli::VERSION) < Gem::Version.new(latest_version)
+          }
         end
 
         def periodic_check_newer_gem_version
@@ -205,7 +211,8 @@ module Aspera
           check_date_persist.save
           # compare this version and the one on internet
           check_data = check_gem_version
-          Log.log.warn("A new version is available: #{check_data[:latest]}. You have #{check_data[:current]}. Upgrade with: gem update #{check_data[:name]}") if check_data[:need_update]
+          Log.log.warn("A new version is available: #{check_data[:latest]}. "\
+            "You have #{check_data[:current]}. Upgrade with: gem update #{check_data[:name]}") if check_data[:need_update]
         end
 
         # retrieve structure from cloud (CDN) with all versions available
@@ -629,7 +636,11 @@ module Aspera
             v = Fasp::Installation.instance.install_sdk(options.get_option(:sdk_url,:mandatory))
             return Main.result_status("Installed version #{v}")
           when :spec
-            return {type: :object_list, data: Fasp::Parameters.man_table, fields: ['name','type',Fasp::Parameters::SUPPORTED_AGENTS_SHORT.map(&:to_s),'description'].flatten}
+            return {
+              type: :object_list,
+              data: Fasp::Parameters.man_table,
+              fields: ['name','type',Fasp::Parameters::SUPPORTED_AGENTS_SHORT.map(&:to_s),'description'].flatten
+            }
           when :errors
             error_data = []
             Fasp::ERROR_INFO.each_pair do |code,prop|
@@ -981,13 +992,17 @@ module Aspera
               Log.log.warn("Demo server preset already present: #{DEMO_SERVER_PRESET}")
             else
               Log.log.info("Creating Demo server preset: #{DEMO_SERVER_PRESET}")
-              @config_presets[DEMO_SERVER_PRESET] =
-{'url' => 'ssh://' + DEMO + '.asperasoft.com:33001','username' => AOC_COMMAND_V2,'ssAP'.downcase.reverse + 'drow'.reverse => DEMO + AOC_COMMAND_V2}
+              @config_presets[DEMO_SERVER_PRESET] = {
+                'url' => 'ssh://' + DEMO + '.asperasoft.com:33001',
+                'username' => AOC_COMMAND_V2,
+                'ssAP'.downcase.reverse + 'drow'.reverse => DEMO + AOC_COMMAND_V2
+              }
             end
             @config_presets[CONF_PRESET_DEFAULT] ||= {}
             if @config_presets[CONF_PRESET_DEFAULT].has_key?(SERVER_COMMAND)
               Log.log.warn("Server default preset already set to: #{@config_presets[CONF_PRESET_DEFAULT][SERVER_COMMAND]}")
-              Log.log.warn("Use #{DEMO_SERVER_PRESET} for demo: -P#{DEMO_SERVER_PRESET}") unless DEMO_SERVER_PRESET.eql?(@config_presets[CONF_PRESET_DEFAULT][SERVER_COMMAND])
+              Log.log.warn("Use #{DEMO_SERVER_PRESET} for demo: -P#{DEMO_SERVER_PRESET}") unless
+                DEMO_SERVER_PRESET.eql?(@config_presets[CONF_PRESET_DEFAULT][SERVER_COMMAND])
             else
               @config_presets[CONF_PRESET_DEFAULT][SERVER_COMMAND] = DEMO_SERVER_PRESET
               Log.log.info("Setting server default preset to : #{DEMO_SERVER_PRESET}")

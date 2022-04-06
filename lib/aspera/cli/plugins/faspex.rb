@@ -222,7 +222,11 @@ module Aspera
           # Hum, as this does not always work (only user, but not dropbox), we get the javascript and need hack
           #pkg_created=api_public_link.create(create_path,package_create_params)[:data]
           # so extract data from javascript
-          pkgdatares = api_public_link.call({operation: 'POST',subpath: create_path,json_params: package_create_params,headers: {'Accept' => 'text/javascript'}})[:http].body
+          pkgdatares = api_public_link.call({
+            operation: 'POST',
+            subpath: create_path,
+            json_params: package_create_params,
+            headers: {'Accept' => 'text/javascript'}})[:http].body
           # get args of function call
           pkgdatares.delete!("\n") # one line
           pkgdatares.gsub!(/^[^"]+\("\{/,'{') # delete header
@@ -255,7 +259,12 @@ module Aspera
             command_pkg = options.get_next_command([:send, :recv, :list])
             case command_pkg
             when :list
-              return {type: :object_list,data: mailbox_filtered_entries,fields: [PACKAGE_MATCH_FIELD,'title','items'], textify: lambda {|table_data|Faspex.textify_package_list(table_data)} }
+              return {
+                type: :object_list,
+                data: mailbox_filtered_entries,
+                fields: [PACKAGE_MATCH_FIELD,'title','items'],
+                textify: lambda {|table_data|Faspex.textify_package_list(table_data)}
+              }
             when :send
               delivery_info = options.get_option(:delivery_info,:mandatory)
               raise CliBadArgument,'delivery_info must be hash, refer to doc' unless delivery_info.is_a?(Hash)
@@ -273,7 +282,12 @@ module Aspera
                   source_id = self.class.get_source_id(source_list,source_name)
                   first_source['id'] = source_id
                 end
-                pkg_created = api_v3.call({operation: 'POST',subpath: 'send',json_params: package_create_params,headers: {'Accept' => 'application/json'}})[:data]
+                pkg_created = api_v3.call({
+                  operation: 'POST',
+                  subpath: 'send',
+                  json_params: package_create_params,
+                  headers: {'Accept' => 'application/json'}
+                })[:data]
                 if !source_name.nil?
                   # no transfer spec if remote source
                   return {data: [pkg_created['links']['status']],type: :value_list,name: 'link'}
@@ -299,7 +313,12 @@ module Aspera
                   skip_ids_persistency = PersistencyActionOnce.new(
                   manager: @agents[:persistency],
                   data:    skip_ids_data,
-                  id:      IdGenerator.from_list(['faspex_recv',options.get_option(:url,:mandatory),options.get_option(:username,:mandatory),options.get_option(:box,:mandatory).to_s]))
+                  id:      IdGenerator.from_list([
+                    'faspex_recv',
+                    options.get_option(:url,:mandatory),
+                    options.get_option(:username,:mandatory),
+                    options.get_option(:box,:mandatory).to_s
+                  ]))
                 end
                 # get command line parameters
                 delivid = instance_identifier
@@ -334,7 +353,11 @@ module Aspera
                 end
                 # Note: unauthenticated API (authorization is in url params)
                 api_public_link = Rest.new({base_url: link_data[:base_url]})
-                pkgdatares = api_public_link.call({operation: 'GET',subpath: link_data[:subpath],url_params: {passcode: link_data[:query]['passcode']}, headers: {'Accept' => 'application/xml'}})
+                pkgdatares = api_public_link.call(
+                  operation: 'GET',
+                  subpath: link_data[:subpath],
+                  url_params: {passcode: link_data[:query]['passcode']},
+                  headers: {'Accept' => 'application/xml'})
                 if !pkgdatares[:http].body.start_with?('<?xml ')
                   OpenApplication.instance.uri(link_url)
                   raise CliError, 'no such package'
@@ -356,7 +379,8 @@ module Aspera
                   # NOTE: only external users have token in faspe: link !
                   if !transfer_spec.has_key?('token')
                     sanitized = id_uri[:uri].gsub('&','&amp;')
-                    xmlpayload = %Q(<?xml version="1.0" encoding="UTF-8"?><url-list xmlns="http://schemas.asperasoft.com/xml/url-list"><url href="#{sanitized}"/></url-list>)
+                    xmlpayload =
+                    %Q(<?xml version="1.0" encoding="UTF-8"?><url-list xmlns="http://schemas.asperasoft.com/xml/url-list"><url href="#{sanitized}"/></url-list>)
                     transfer_spec['token'] = api_v3.call({
                       operation:        'POST',
                       subpath:          'issue-token?direction=down',
@@ -451,7 +475,12 @@ module Aspera
               return entity_action(api_v4,"#{pkg_box_type}/#{pkg_box_id}/packages")
             end
           when :address_book
-            result = api_v3.call({operation: 'GET',subpath: 'address-book',headers: {'Accept' => 'application/json'},url_params: {'format' => 'json','count' => 100_000}})[:data]
+            result = api_v3.call(
+              operation: 'GET',
+              subpath: 'address-book',
+              headers: {'Accept' => 'application/json'},
+              url_params: {'format' => 'json','count' => 100_000}
+            )[:data]
             self.format.display_status("users: #{result['itemsPerPage']}/#{result['totalResults']}, start:#{result['startIndex']}")
             users = result['entry']
             # add missing entries

@@ -44,7 +44,6 @@ module Aspera
         # @param prefix [String] true if last level is not
         # @param dest [Hash] new hash flattened
         def flatten_sub_hash_rec(source,keep_last,prefix,dest)
-          #is_simple_hash=source.is_a?(Hash) and source.values.inject(true){|m,v| xxx=!v.respond_to?(:each) and m;puts("->#{xxx}>#{v.respond_to?(:each)} #{v}-");xxx}
           is_simple_hash = false
           Log.log.debug("(#{keep_last})[#{is_simple_hash}] -#{source.values}- \n-#{source}-")
           return source if keep_last && is_simple_hash
@@ -82,7 +81,8 @@ module Aspera
         end
     end
 
-      attr_accessor :option_flat_hash,:option_transpose_single,:option_format,:option_display,:option_fields,:option_table_style,:option_select,:option_show_secrets
+      attr_accessor :option_flat_hash,:option_transpose_single,:option_format,:option_display,:option_fields,:option_table_style,
+                    :option_select,:option_show_secrets
 
       # adds options but does not parse
       def initialize(opt_mgr)

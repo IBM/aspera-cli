@@ -42,7 +42,9 @@ module Aspera
         </default>
         </CONF>
       END_OF_CONFIG_FILE
-      private_constant :PRODUCT_CONNECT,:PRODUCT_CLI_V1,:PRODUCT_DRIVE,:PRODUCT_ENTSRV,:EXT_RUBY_PROTOBUF,:RB_SDK_FOLDER,:ONE_YEAR_SECONDS,:DEFAULT_ASPERA_CONF
+      DUMMY_CERT_INFO='/C=US/ST=California/L=Emeryville/O=Aspera Inc./OU=Corporate/CN=Aspera Inc./emailAddress=info@asperasoft.com'
+      private_constant :PRODUCT_CONNECT,:PRODUCT_CLI_V1,:PRODUCT_DRIVE,:PRODUCT_ENTSRV,:EXT_RUBY_PROTOBUF,:RB_SDK_FOLDER,:ONE_YEAR_SECONDS,
+        :DEFAULT_ASPERA_CONF,:DUMMY_CERT_INFO
       # set ascp executable path
       def ascp_path=(v)
         @path_to_ascp = v
@@ -167,7 +169,7 @@ module Aspera
             # create new self signed certificate for http fallback
             private_key = OpenSSL::PKey::RSA.new(1024)
             cert = OpenSSL::X509::Certificate.new
-            cert.subject = cert.issuer = OpenSSL::X509::Name.parse('/C=US/ST=California/L=Emeryville/O=Aspera Inc./OU=Corporate/CN=Aspera Inc./emailAddress=info@asperasoft.com')
+            cert.subject = cert.issuer = OpenSSL::X509::Name.parse(DUMMY_CERT_INFO)
             cert.not_before = Time.now
             cert.not_after = Time.now + ONE_YEAR_SECONDS
             cert.public_key = private_key.public_key

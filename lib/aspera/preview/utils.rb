@@ -121,11 +121,6 @@ module Aspera
           out_p: ['-frames:v',1,'-filter:v',"scale=#{scale}"])
           return output_file
         end
-
-        def unused_message_to_png(_message)
-          # convert -size 400x  -background '#666666' -fill '#ffffff'  -interword-spacing 10 -kerning 4 -pointsize 10 -gravity West -size x22 label:"Lorem dolor sit amet" -flatten xxx.png
-          external_command(:convert,[])
-        end
       end
     end # Options
   end # Preview

@@ -130,7 +130,8 @@ module Aspera
           Log.log.debug('getting file list as parameters')
           # get remaining arguments
           file_list = @opt_mgr.get_next_argument('source file list',:multiple)
-          raise CliBadArgument,"specify at least one file on command line or use --sources=#{FILE_LIST_FROM_TRANSFER_SPEC} to use transfer spec" if !file_list.is_a?(Array) || file_list.empty?
+          raise CliBadArgument,'specify at least one file on command line or use '\
+            "--sources=#{FILE_LIST_FROM_TRANSFER_SPEC} to use transfer spec" if !file_list.is_a?(Array) || file_list.empty?
         when FILE_LIST_FROM_TRANSFER_SPEC
           Log.log.debug('assume list provided in transfer spec')
           (special_case_direct_with_list = @opt_mgr.get_option(:transfer,:mandatory).eql?(:direct)) && Fasp::Parameters.ts_has_file_list(@transfer_spec_cmdline)

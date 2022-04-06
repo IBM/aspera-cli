@@ -59,7 +59,8 @@ module Aspera
 
     def compute_args
       raise StandardError,'parameter must be Hash' unless @sync_params.is_a?(Hash)
-      raise StandardError,"parameter hash must have at least 'sessions', and optionally 'instance' keys." unless @sync_params.keys.push('instance').uniq.sort.eql?(MANDATORY_KEYS)
+      raise StandardError,"parameter hash must have at least 'sessions', and optionally 'instance' keys." unless
+        @sync_params.keys.push('instance').uniq.sort.eql?(MANDATORY_KEYS)
       raise StandardError,'sessions key must be Array' unless @sync_params['sessions'].is_a?(Array)
       raise StandardError,'sessions key must has at least one element (hash)' unless @sync_params['sessions'].first.is_a?(Hash)
 

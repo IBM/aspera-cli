@@ -197,7 +197,9 @@ module Aspera
                 result = {}
                 lines.each do |line|
                   Log.log.debug(line.to_s)
-                  data = line.split(',').map{|i|i.gsub(/^"/,'').gsub(/"$/,'')}.map{|i|case i;when 'AS_NULL' then nil;when 'true' then true;when 'false' then false;else i;end}
+                  data = line.split(',').
+                    map{|i|i.gsub(/^"/,'').gsub(/"$/,'')}.
+                    map{|i|case i;when 'AS_NULL' then nil;when 'true' then true;when 'false' then false;else i;end}
                   Log.log.debug(data.to_s)
                   section = data.shift
                   datapart = result[section] ||= {}

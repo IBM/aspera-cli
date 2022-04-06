@@ -63,7 +63,12 @@ module Aspera
             received += 1
           else
             message.chomp!
-            error = message.start_with?('"') && message.end_with?('"') ? JSON.parse(Base64.strict_decode64(message.chomp[1..-2]))['message'] : "expecting quotes in [#{message}]"
+            error =
+            if message.start_with?('"') && message.end_with?('"')
+              JSON.parse(Base64.strict_decode64(message.chomp[1..-2]))['message']
+            else
+              "expecting quotes in [#{message}]"
+            end
           end
         end
         ws.on(:error) do |e|
