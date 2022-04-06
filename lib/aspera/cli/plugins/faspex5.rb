@@ -137,7 +137,7 @@ module Aspera
                 # skip only if all sessions completed
                 skip_ids_data.push(pkgid) if TransferAgent.session_status(statuses).eql?(:success)
               end
-              skip_ids_persistency.save unless skip_ids_persistency.nil?
+              skip_ids_persistency&.save
               return Main.result_transfer_multiple(result_transfer)
             end # case package
           when :admin

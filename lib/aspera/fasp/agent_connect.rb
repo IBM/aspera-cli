@@ -91,14 +91,14 @@ module Aspera
               when 'running'
                 #puts "running: sessions:#{trdata['sessions'].length}, #{trdata['sessions'].map{|i| i['bytes_transferred']}.join(',')}"
                 if !started && (trdata['bytes_expected'] != 0)
-                  spinner.success unless spinner.nil?
+                  spinner&.success
                   notify_begin(@connect_settings['app_id'],trdata['bytes_expected'])
                   started = true
                 else
                   notify_progress(@connect_settings['app_id'],trdata['bytes_written'])
                 end
               when 'failed'
-                spinner.error unless spinner.nil?
+                spinner&.error
                 raise Fasp::Error, trdata['error_desc']
               else
                 raise Fasp::Error, "unknown status: #{trdata['status']}: #{trdata['error_desc']}"

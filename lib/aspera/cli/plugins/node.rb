@@ -523,7 +523,7 @@ module Aspera
               iteration_data[0] = data.last['fnid'].to_i unless data.empty?
             end
             return Main.result_empty if data.empty?
-            skip_ids_persistency.save unless skip_ids_persistency.nil?
+            skip_ids_persistency&.save
             return { type: :object_list, data: data, name: 'id' }
           when :counters
             resp = @api_node.create('async/counters',pdata)[:data]['sync_counters'].first[asyncid].last

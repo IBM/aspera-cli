@@ -18,12 +18,10 @@ module Aspera
         raise "expecting Hash (or nil), but have #{user_opts.class}" unless user_opts.nil? || user_opts.is_a?(Hash)
         # set default options and override if specified
         options = DEFAULT_OPTIONS.clone
-        if !user_opts.nil?
-          user_opts.each do |k,v|
+        user_opts&.each do |k,v|
             raise "Unknown local agent parameter: #{k}, expect one of #{DEFAULT_OPTIONS.keys.map(&:to_s).join(',')}" unless DEFAULT_OPTIONS.has_key?(k)
             options[k] = v
           end
-        end
         Log.log.debug("options= #{options}")
         super()
         # load and create SDK stub

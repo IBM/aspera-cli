@@ -616,7 +616,7 @@ module Aspera
                 filter['stop_time'] = stop_datetime
               end
               events = analytics_api.read("#{filter_resource}/#{filter_id}/#{event_type}",option_url_query(filter))[:data][event_type]
-              startdate_persistency.save unless startdate_persistency.nil?
+              startdate_persistency&.save
               if !options.get_option(:notif_to,:optional).nil?
                 events.each do |tr_event|
                   config.send_email_template({ev: tr_event})
@@ -896,7 +896,7 @@ module Aspera
                 # update skip list only if all transfer sessions completed
                 if TransferAgent.session_status(statuses).eql?(:success)
                   skip_ids_data.push(package_id)
-                  skip_ids_persistency.save unless skip_ids_persistency.nil?
+                  skip_ids_persistency&.save
                 end
               end
               return Main.result_transfer_multiple(result_transfer)
