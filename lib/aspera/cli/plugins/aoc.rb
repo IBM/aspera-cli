@@ -359,7 +359,8 @@ module Aspera
           return nil
         end
 
-        def do_bulk_operation(ids_or_one,success_msg,id_result='id',&do_action)
+        def do_bulk_operation(ids_or_one,success_msg,id_result='id')
+          raise 'missing block' unless block_given?
           ids_or_one = [ids_or_one] unless options.get_option(:bulk)
           raise 'expecting Array' unless ids_or_one.is_a?(Array)
           result_list = []

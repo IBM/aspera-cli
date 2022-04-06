@@ -358,7 +358,7 @@ module Aspera
           Thread.current[:name] = 'transfer'
           Log.log.debug("ENTER (#{Thread.current[:name]})")
           # start transfer with selected resumer policy
-          session[:options][:resumer].process do
+          session[:options][:resumer].execute_with_resume do
             start_transfer_with_args_env(session[:env_args],session)
           end
           Log.log.debug('transfer ok'.bg_green)

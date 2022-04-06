@@ -38,10 +38,10 @@ class String
   VTSTYLES.each do |name,code|
     if $stderr.tty?
       begin_seq = vtcmd(code)
-      end_code =
-      if code >= 10 then 0
-      elsif code.eql?(1) then 22
-      else 20 + code # rubocop:disable Lint/ElseLayout
+      end_code = 0 # by default reset all
+      if code <= 7 then 20 + code
+      elsif code <= 37 then 39
+      elsif code <= 47 then 49
       end
       end_seq = vtcmd(end_code)
       define_method(name){"#{begin_seq}#{self}#{end_seq}"}

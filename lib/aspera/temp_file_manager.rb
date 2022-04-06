@@ -37,7 +37,8 @@ module Aspera
 
     # same as above but in global temp folder
     def new_file_path_global(base_name)
-      username = begin
+      username =
+      begin
         Etc.getlogin || Etc.getpwuid(Process.uid).name || 'unknown_user'
       rescue StandardError
         'unknown_user'

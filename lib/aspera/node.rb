@@ -68,7 +68,8 @@ module Aspera
         current_item = folders_to_explore.shift
         Log.log.debug("searching #{current_item[:relpath]}".bg_green)
         # get folder content
-        folder_contents = begin
+        folder_contents =
+        begin
           read("files/#{current_item[:id]}/files")[:data]
         rescue StandardError => e
           Log.log.warn("#{current_item[:relpath]}: #{e.class} #{e.message}")

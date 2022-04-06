@@ -19,9 +19,9 @@ module Aspera
         # set default options and override if specified
         options = DEFAULT_OPTIONS.clone
         user_opts&.each do |k,v|
-            raise "Unknown local agent parameter: #{k}, expect one of #{DEFAULT_OPTIONS.keys.map(&:to_s).join(',')}" unless DEFAULT_OPTIONS.has_key?(k)
-            options[k] = v
-          end
+          raise "Unknown local agent parameter: #{k}, expect one of #{DEFAULT_OPTIONS.keys.map(&:to_s).join(',')}" unless DEFAULT_OPTIONS.has_key?(k)
+          options[k] = v
+        end
         Log.log.debug("options= #{options}")
         super()
         # load and create SDK stub

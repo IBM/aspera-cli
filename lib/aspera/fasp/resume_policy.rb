@@ -31,7 +31,8 @@ module Aspera
 
       # calls block a number of times (resumes) until success or limit reached
       # this is re-entrant, one resumer can handle multiple transfers in //
-      def process(&block)
+      def execute_with_resume
+        raise 'block manndatory' unless block_given?
         # maximum of retry
         remaining_resumes = @parameters[:iter_max]
         sleep_seconds = @parameters[:sleep_initial]
@@ -40,6 +41,7 @@ module Aspera
         loop do
           Log.log.debug('transfer starting');
           begin
+            # call provided block
             yield
             break
           rescue Fasp::Error => e

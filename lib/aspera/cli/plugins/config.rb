@@ -166,7 +166,8 @@ module Aspera
         end
 
         def check_gem_version
-          latest_version = begin
+          latest_version =
+          begin
             Rest.new(base_url: 'https://rubygems.org/api/v1').read("versions/#{@info[:gem]}/latest.json")[:data]['version']
           rescue StandardError
             Log.log.warn('Could not retrieve latest gem version on rubygems.')
@@ -198,7 +199,8 @@ module Aspera
           id:      'version_last_check')
           # get persisted date or nil
           current_date = Date.today
-          last_check_days = begin
+          last_check_days =
+          begin
             current_date - Date.strptime(last_check_array.first, '%Y/%m/%d')
           rescue StandardError
             # negative value will force check
