@@ -110,7 +110,7 @@ module Aspera
 
         # get path arguments from command line, and add prefix
         def get_next_arg_add_prefix(path_prefix,name,number=:single)
-          thepath = options.get_next_argument(name,number)
+          thepath = options.get_next_argument(name,expected: number)
           return thepath if path_prefix.nil?
           return File.join(path_prefix,thepath) if thepath.is_a?(String)
           return thepath.map {|p| File.join(path_prefix,p)} if thepath.is_a?(Array)
@@ -229,15 +229,16 @@ module Aspera
             token_type = :aspera if token_type.nil?
             case token_type
             when :aspera,:hybrid
-              transfer_paths =
-              case command
-              when :upload then[{ destination: transfer.destination_folder('send') }]
-              when :download then transfer.ts_source_paths
-              end
+              # empty transfer spec for authorization request
+              request_transfer_spec={}
+              # set requested paths depending on direction
+              request_transfer_spec[:paths] = command.eql?(:download) ? transfer.ts_source_paths : [{ destination: transfer.destination_folder('send') }]
+              # add fixed parameters if any (for COS)
+              request_transfer_spec.deep_merge!(@add_request_param)
+              # prepare payload for single request
+              setup_payload={transfer_requests: [{transfer_request: request_transfer_spec}]}
               # only one request, so only one answer
-              transfer_spec = @api_node.create("files/#{command}_setup",{ transfer_requests: [{ transfer_request: {
-                paths: transfer_paths
-                }.deep_merge(@add_request_param) }] })[:data]['transfer_specs'].first['transfer_spec']
+              transfer_spec = @api_node.create("files/#{command}_setup",setup_payload)[:data]['transfer_specs'].first['transfer_spec']
               # delete this part, as the returned value contains only destination, and not sources
               transfer_spec.delete('paths') if command.eql?(:upload)
             when :basic

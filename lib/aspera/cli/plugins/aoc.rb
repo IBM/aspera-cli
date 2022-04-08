@@ -626,7 +626,7 @@ module Aspera
               return {type: :object_list,data: events}
             end
           when :resource
-            resource_type = options.get_next_argument('resource',KNOWN_AOC_RES)
+            resource_type = options.get_next_argument('resource',expected: KNOWN_AOC_RES)
             # get path on API, resource type is singular, but api is plural
             resource_class_path =
             case resource_type
@@ -636,7 +636,7 @@ module Aspera
             when :application then 'admin/apps_new'
             when :dropbox then resource_type.to_s + 'es'
             when :kms_profile then "integrations/#{resource_type}s"
-            else resource_type.to_s + 's'
+            else "#{resource_type}s"
             end
             # build list of supported operations
             singleton_object = %i[self organization].include?(resource_type)
@@ -645,7 +645,7 @@ module Aspera
             supported_operations.push(:delete,*global_operations) unless singleton_object
             supported_operations.push(:v4,:v3) if resource_type.eql?(:node)
             supported_operations.push(:set_pub_key) if resource_type.eql?(:client)
-            supported_operations.push(:shared_folders,:shared_create) if %i[node workspace].include?(resource_type)
+            supported_operations.push(:shared_folder) if resource_type.eql?(:workspace)
             command = options.get_next_command(supported_operations)
             # require identifier for non global commands
             if !singleton_object && !global_operations.include?(command)
@@ -709,52 +709,54 @@ module Aspera
               ak_data = api_node.call({operation: 'GET',subpath: "access_keys/#{res_data['access_key']}",headers: {'Accept' => 'application/json'}})[:data]
               command_repo = options.get_next_command(NODE4_COMMANDS)
               return execute_node_gen4_command(command_repo,{node_info: res_data, file_id: ak_data['root_file_id']})
-            when :shared_folders
-              read_params =
-              case resource_type
-              when :workspace then{'access_id' => "#{ID_AK_ADMIN}_WS_#{res_id}",'access_type' => 'user'}
-              when :node then{'include' => ['[]','access_level','permission_count'],'created_by_id' => ID_AK_ADMIN}
-              else raise 'error'
-              end
-              res_data = aoc_api.read("#{resource_instance_path}/permissions",read_params)[:data]
-              fields =
-              case resource_type
-              when :node then['id','file_id','file.path','access_type']
-              when :workspace then['id','node_id','file_id','node_name','file.path','tags.aspera.files.workspace.share_as']
-              else raise "unexpected resource type #{resource_type}"
-              end
-              return { type: :object_list, data: res_data, fields: fields}
-            when :shared_create
-              # TODO: finish implementation
-              folder_path = options.get_next_argument('folder path in node')
-              user_create_data = options.get_next_argument('creation data (Hash)')
-              res_data = aoc_api.read(resource_instance_path)[:data]
-              node_file = aoc_api.resolve_node_file({node_info: res_data, file_id: ak_data['root_file_id']},folder_path)
-
-              #node_api=aoc_api.get_node_api(node_file[:node_info])
-              #file_info = node_api.read("files/#{node_file[:file_id]}")[:data]
-
-              access_id = "#{ID_AK_ADMIN}_WS_#{@workspace_id}"
-              create_data = {
-                'file_id'       => node_file[:file_id],
-                'access_type'   => 'user',
-                'access_id'     => access_id,
-                'access_levels' => ['list','read','write','delete','mkdir','rename','preview'],
-                'tags'          => {'aspera' => {'files' => {'workspace' => {
-                'id'                => @workspace_id,
-                'workspace_name'    => @workspace_name,
-                'share_as'          => File.basename(folder_path),
-                'user_name'         => aoc_api.user_info['name'],
-                'shared_by_user_id' => aoc_api.user_info['id'],
-                'shared_by_name'    => aoc_api.user_info['name'],
-                'shared_by_email'   => aoc_api.user_info['email'],
-                'shared_with_name'  => access_id,
-                'access_key'        => node_file[:node_info]['access_key'],
-                'node'              => node_file[:node_info]['name']}
+            when :shared_folder
+              command_shared = options.get_next_command(%i[list create member delete])
+              # generic permission created for each shared folder
+              access_id = "#{ID_AK_ADMIN}_WS_#{res_id}"
+              case command_shared
+              when :list
+                query=options.get_option(:query,:optional)
+                query={'admin' => true, 'access_id' => access_id, 'access_type' => 'user'} if query.nil?
+                res_data = aoc_api.read("#{resource_instance_path}/permissions",query)[:data]
+                return { type: :object_list, data: res_data, fields: %w[id node_id file_id node_name file.path tags.aspera.files.workspace.share_as access_id]}
+              when :member
+                #https://sedemo.ibmaspera.com/api/v1/node/8669/permissions_and_members/3270?inherited=false&aspera-node-basic=8669&admin=true&page=1&per_page=25
+              when :delete
+                aoc_api.delete("#{resource_class_path}/#{one_id}")
+              when :create
+                # workspace information
+                ws_info = aoc_api.read(resource_instance_path)[:data]
+                shared_create_data = options.get_next_argument('creation data',type: Hash)
+                # node is either provided by user, or by default the one of workspace
+                node_id = shared_create_data.has_key?('node_id') ? shared_create_data['node_id'] : ws_info['node_id']
+                # remove from creation data if present, as it is not a standard argument
+                shared_create_data.delete('node_id')
+                raise 'missing node information: path' unless shared_create_data.has_key?('path')
+                folder_path=shared_create_data['path']
+                shared_create_data.delete('path')
+                node_file={node_info: aoc_api.read("nodes/#{node_id}")[:data], file_id: 1}
+                node_file = aoc_api.resolve_node_file(node_file,folder_path)
+                access_id = "#{ID_AK_ADMIN}_WS_#{ws_info['id']}"
+                # use can specify: tags.aspera.files.workspace.share_as  to  File.basename(folder_path)
+                default_create_data = {
+                  'file_id'       => node_file[:file_id],
+                  'access_type'   => 'user',
+                  'access_id'     => access_id,
+                  'access_levels' => ['list','read','write','delete','mkdir','rename','preview'],
+                  'tags'          => {'aspera' => {'files' => {'workspace' => {
+                  'id'                => ws_info['id'],
+                  'workspace_name'    => ws_info['name'],
+                  'user_name'         => aoc_api.user_info['name'],
+                  'shared_by_user_id' => aoc_api.user_info['id'],
+                  'shared_by_name'    => aoc_api.user_info['name'],
+                  'shared_by_email'   => aoc_api.user_info['email'],
+                  'shared_with_name'  => access_id,
+                  'access_key'        => node_file[:node_info]['access_key'],
+                  'node'              => node_file[:node_info]['name']}
                 }}}}
-              create_data.deep_merge!(user_create_data)
-              Log.dump(:data,create_data)
-              raise :ERROR
+                shared_create_data = default_create_data.deep_merge(default_create_data) # ?aspera-node-basic=#{node_id}&aspera-node-prefer-basic=#{node_id}
+                return { type: :single_object, data: aoc_api.create("node/#{node_id}/permissions",shared_create_data)}
+              end
             else raise 'unknown command'
             end
           when :usage_reports

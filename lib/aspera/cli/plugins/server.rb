@@ -182,7 +182,7 @@ module Aspera
             if !prefix.nil?
               realcmd = "#{prefix}#{realcmd}"
             end
-            args = options.get_next_argument("#{realcmd} arguments",:multiple)
+            args = options.get_next_argument("#{realcmd} arguments",expected: :multiple)
             result = shell_executor.execute(args.unshift(realcmd))
             case command
             when :ctl
@@ -220,7 +220,7 @@ module Aspera
           when :download
             return Main.result_transfer(transfer.start(server_transfer_spec.merge('direction' => Fasp::TransferSpec::DIRECTION_RECEIVE),{src: :direct}))
           when *Aspera::AsCmd::OPERATIONS
-            args = options.get_next_argument('ascmd command arguments',:multiple,:optional)
+            args = options.get_next_argument('ascmd command arguments',expected: :multiple,mandatory: false)
             ascmd = Aspera::AsCmd.new(shell_executor)
             begin
               result = ascmd.send(:execute_single,command,args)

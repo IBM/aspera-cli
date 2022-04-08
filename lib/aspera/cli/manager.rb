@@ -142,15 +142,20 @@ module Aspera
         Log.log.debug("add_cmd_line_options:commands/args=#{@unprocessed_cmd_line_arguments},options=#{@unprocessed_cmd_line_options}".red)
       end
 
-      def get_next_command(command_list); return get_next_argument('command',command_list); end
+      def get_next_command(command_list); return get_next_argument('command',expected: command_list); end
 
       # @param expected is
       #    - Array of allowed value (single value)
       #    - :multiple for remaining values
       #    - :single for a single unconstrained value
-      # @param is_type : :mandatory or :optional
+      # @param mandatory true/false
+      # @param type expected class for result
       # @return value, list or nil
-      def get_next_argument(descr,expected=:single,is_type=:mandatory)
+      def get_next_argument(descr,expected: :single,mandatory: true, type: nil)
+        unless type.nil?
+          raise 'internal: type must be a Class' unless type.is_a?(Class)
+          descr="#{descr} (#{type})"
+        end
         result = nil
         if !@unprocessed_cmd_line_arguments.empty?
           # there are values
@@ -166,11 +171,12 @@ module Aspera
           else
             result = self.class.get_from_list(@unprocessed_cmd_line_arguments.shift,descr,expected)
           end
-        elsif is_type.eql?(:mandatory)
+        elsif mandatory
           # no value provided
-          result = get_interactive(:argument,descr,expected)
+          result = get_interactive(:argument,descr,expected: expected)
         end
         Log.log.debug("#{descr}=#{result}")
+        raise "argument shall be #{type.name}" unless type.nil? || result.is_a?(type)
         return result
       end
 
@@ -244,7 +250,7 @@ module Aspera
             if @declared_options.has_key?(option_symbol) && @declared_options[option_symbol].has_key?(:values)
               expected = @declared_options[option_symbol][:values]
             end
-            result = get_interactive(:option,option_symbol.to_s,expected)
+            result = get_interactive(:option,option_symbol.to_s,expected: expected)
             set_option(option_symbol,result,'interactive')
           end
         end
@@ -390,7 +396,7 @@ module Aspera
         return $stdin.gets.chomp
       end
 
-      def get_interactive(type,descr,expected=:single)
+      def get_interactive(type,descr,expected: :single)
         if !@ask_missing_mandatory
           raise CliBadArgument,self.class.bad_arg_message_multi("missing: #{descr}",expected) if expected.is_a?(Array)
           raise CliBadArgument,"missing argument (#{expected}): #{descr}"

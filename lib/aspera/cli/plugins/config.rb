@@ -726,7 +726,7 @@ module Aspera
           when :ask
             options.ask_missing_mandatory = :yes
             @config_presets[config_name] ||= {}
-            options.get_next_argument('option names',:multiple).each do |optionname|
+            options.get_next_argument('option names',expected: :multiple).each do |optionname|
               option_value = options.get_interactive(:option,optionname)
               @config_presets[config_name][optionname] = option_value
             end
@@ -752,7 +752,7 @@ module Aspera
             OpenApplication.instance.uri(@option_config_file.to_s) #file://
             return Main.result_nothing
           when :documentation
-            section = options.get_next_argument('private key file path',:single,:optional)
+            section = options.get_next_argument('private key file path',mandatory: false)
             section = '#' + section unless section.nil?
             OpenApplication.instance.uri("#{@info[:help]}#{section}")
             return Main.result_nothing
@@ -773,8 +773,8 @@ module Aspera
             when :list
               return {type: :object_list, data: @plugins.keys.map { |i| { 'plugin' => i.to_s, 'path' => @plugins[i][:source] } }, fields: ['plugin','path']}
             when :create
-              plugin_name = options.get_next_argument('name',:single,:mandatory).downcase
-              plugin_folder = options.get_next_argument('folder',:single,:optional) || File.join(@main_folder,ASPERA_PLUGINS_FOLDERNAME)
+              plugin_name = options.get_next_argument('name',expected: :single).downcase
+              plugin_folder = options.get_next_argument('folder',expected: :single,mandatory: false) || File.join(@main_folder,ASPERA_PLUGINS_FOLDERNAME)
               plugin_file = File.join(plugin_folder,"#{plugin_name}.rb")
               content = <<~END_OF_PLUGIN_CODE
                 require 'aspera/cli/plugin'

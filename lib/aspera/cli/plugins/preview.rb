@@ -480,7 +480,7 @@ module Aspera
             Aspera::Preview::Utils.check_tools(@skip_types)
             return Main.result_status('tools validated')
           when :test
-            format = options.get_next_argument('format',Aspera::Preview::Generator::PREVIEW_FORMATS)
+            format = options.get_next_argument('format',expected: Aspera::Preview::Generator::PREVIEW_FORMATS)
             source = options.get_next_argument('source file')
             dest = preview_filename(format,options.get_option(:case,:optional))
             g = Aspera::Preview::Generator.new(@gen_options,source,dest,@tmp_folder,nil)
