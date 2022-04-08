@@ -342,7 +342,18 @@ brew install ruby
 
 If your Linux distribution provides a standard ruby package, you can use it provided that the version is compatible (check at beginning of section).
 
-Example:
+Example: Centos 8 Stream
+
+```bash
+yum install make automake gcc gcc-c++ kernel-devel
+yum install redhat-rpm-config
+dnf module reset ruby
+dnf module enable ruby:3.0
+dnf module -y install ruby:3.0/common
+gem install aspera-cli
+```
+
+Other examples:
 
 ```bash
 yum install -y ruby ruby-devel rubygems ruby-json

@@ -342,7 +342,18 @@ brew install ruby
 
 If your Linux distribution provides a standard ruby package, you can use it provided that the version is compatible (check at beginning of section).
 
-Example:
+Example: Centos 8 Stream
+
+```bash
+yum install make automake gcc gcc-c++ kernel-devel
+yum install redhat-rpm-config
+dnf module reset ruby
+dnf module enable ruby:3.0
+dnf module -y install ruby:3.0/common
+gem install aspera-cli
+```
+
+Other examples:
 
 ```bash
 yum install -y ruby ruby-devel rubygems ruby-json
@@ -2185,7 +2196,7 @@ ascli faspex5 admin res shared_inboxes list
 ascli faspex5 admin res workgroups list
 ascli faspex5 package list --value=@json:'{"mailbox":"inbox","state":["released"]}'
 ascli faspex5 package receive "my_package_id" --to-folder=.
-ascli faspex5 package send --value=@json:'{"title":"test title","recipients":[{"name":"my_f5_user"}]}' testfile.bin
+ascli faspex5 package send --value=@json:'{"title":"test title","recipients":[{"name":"my_f5_user"}],"metadata":{"text_test":"abc","test":"01/01/01"}}' testfile.bin
 ascli mycommand --plugin-folder=T
 ascli node -N -Ptst_node_preview access_key create --value=@json:'{"id":"aoc_1","storage":{"type":"local","path":"/"}}'
 ascli node -N -Ptst_node_preview access_key delete aoc_1
@@ -2496,9 +2507,9 @@ OPTIONS:
         --file-access=ENUM           how to read and write files in repository: [local], remote
         --max-size=VALUE             maximum size (in bytes) of preview file
         --thumb-vid-scale=VALUE      png: video: size (ffmpeg scale argument)
-        --thumb-vid-fraction=VALUE   png: video: position of snapshot
+        --thumb-vid-fraction=VALUE   png: video: time percent position of snapshot
         --thumb-img-size=VALUE       png: non-video: height (and width)
-        --thumb-text-font=VALUE      png: plaintext: font to render text with image magick convert, list with: identify -list font
+        --thumb-text-font=VALUE      png: plaintext: font to render text with imagemagick convert (identify -list font)
         --video-conversion=ENUM      mp4: method for preview generation: [reencode], blend, clips
         --video-png-conv=ENUM        mp4: method for thumbnail generation: [fixed], animated
         --video-start-sec=VALUE      mp4: start offset (seconds) of video preview
