@@ -14,7 +14,7 @@ module Aspera
       @api_key = api_key
       s3_api = Aspera::Rest.new({
         base_url:       storage_endpoint,
-        not_auth_codes: ['401','403'], # error codes when not authorized
+        not_auth_codes: %w[401 403], # error codes when not authorized
         headers:        {'ibm-service-instance-id' => instance_id},
         auth:           {
         type:     :oauth2,

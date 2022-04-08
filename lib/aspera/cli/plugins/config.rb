@@ -556,7 +556,7 @@ module Aspera
           end
           case command
           when :list
-            return {type: :object_list, data: connect_versions, fields: ['id','title','version']}
+            return {type: :object_list, data: connect_versions, fields: %w[id title version]}
           when :info # shows files used
             one_res.delete('links')
             return {type: :single_object, data: one_res}
@@ -627,7 +627,7 @@ module Aspera
             command = options.get_next_command([:list,:use])
             case command
             when :list
-              return {type: :object_list, data: Fasp::Installation.instance.installed_products, fields: ['name','app_root']}
+              return {type: :object_list, data: Fasp::Installation.instance.installed_products, fields: %w[name app_root]}
             when :use
               default_product = options.get_next_argument('product name')
               Fasp::Installation.instance.use_ascp_from_product(default_product)
@@ -771,7 +771,7 @@ module Aspera
           when :plugin
             case options.get_next_command([:list,:create])
             when :list
-              return {type: :object_list, data: @plugins.keys.map { |i| { 'plugin' => i.to_s, 'path' => @plugins[i][:source] } }, fields: ['plugin','path']}
+              return {type: :object_list, data: @plugins.keys.map { |i| { 'plugin' => i.to_s, 'path' => @plugins[i][:source] } }, fields: %w[plugin path]}
             when :create
               plugin_name = options.get_next_argument('name',expected: :single).downcase
               plugin_folder = options.get_next_argument('folder',expected: :single,mandatory: false) || File.join(@main_folder,ASPERA_PLUGINS_FOLDERNAME)

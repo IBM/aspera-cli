@@ -34,7 +34,7 @@ module Aspera
         def flatten_name_value_list(hash)
           hash.keys.each do |k|
             v = hash[k]
-            next unless v.is_a?(Array) && v.map(&:class).uniq.eql?([Hash]) && v.map(&:keys).flatten.sort.uniq.eql?(['name', 'value'])
+            next unless v.is_a?(Array) && v.map(&:class).uniq.eql?([Hash]) && v.map(&:keys).flatten.sort.uniq.eql?(%w[name value])
             v.each do |pair|
               hash["#{k}.#{pair['name']}"] = pair['value']
             end
@@ -211,7 +211,7 @@ module Aspera
           when :single_object # goes to table display
             # :single_object is a simple hash table  (can be nested)
             raise "internal error: expecting Hash: got #{res_data.class}: #{res_data}" unless res_data.is_a?(Hash)
-            final_table_columns = results[:columns] || ['key','value']
+            final_table_columns = results[:columns] || %w[key value]
             if @option_flat_hash
               res_data=self.class.flattened_object(res_data,expand_last: results[:option_expand_last])
               self.class.flatten_name_value_list(res_data)

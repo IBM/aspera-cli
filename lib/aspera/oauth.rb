@@ -183,7 +183,7 @@ module Aspera
       @params = DEFAULT_CREATE_PARAMS.deep_merge(a_params)
       if @params.has_key?(:redirect_uri)
         uri = URI.parse(@params[:web][:redirect_uri])
-        raise 'redirect_uri scheme must be http or https' unless ['http','https'].include?(uri.scheme)
+        raise 'redirect_uri scheme must be http or https' unless %w[http https].include?(uri.scheme)
         raise 'redirect_uri must have a port' if uri.port.nil?
         # TODO: we could check that host is localhost or local address
       end

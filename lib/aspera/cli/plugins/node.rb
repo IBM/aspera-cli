@@ -151,7 +151,7 @@ module Aspera
             return { type: :object_list, data: events}
           when :info
             node_info = @api_node.read('info')[:data]
-            return { type: :single_object, data: node_info, textify: lambda { |table_data| c_textify_bool_list_result(table_data,['capabilities','settings'])}}
+            return { type: :single_object, data: node_info, textify: lambda { |table_data| c_textify_bool_list_result(table_data,%w[capabilities settings])}}
           when :license # requires: asnodeadmin -mu <node user> --acl-add=internal --internal
             node_license = @api_node.read('license')[:data]
             if node_license['failure'].is_a?(String) && node_license['failure'].include?('ACL')
@@ -295,7 +295,7 @@ module Aspera
             else
               items = [file_info]
             end
-            return {type: :object_list,data: items,fields: ['name','type','recursive_size','size','modified_time','access_level']}
+            return {type: :object_list,data: items,fields: %w[name type recursive_size size modified_time access_level]}
           when :find
             thepath = options.get_next_argument('path')
             node_file = aoc_api.resolve_node_file(top_node_file,thepath)
@@ -485,7 +485,7 @@ module Aspera
           when :show
             resp = @api_node.create('async/summary',pdata)[:data]['sync_summaries']
             return Main.result_empty if resp.empty?
-            return { type: :object_list, data: resp, fields: ['snid','name','local_dir','remote_dir'] } if asyncid.eql?('ALL')
+            return { type: :object_list, data: resp, fields: %w[snid name local_dir remote_dir] } if asyncid.eql?('ALL')
             return { type: :single_object, data: resp.first }
           when :delete
             resp = @api_node.create('async/delete',pdata)[:data]
@@ -545,7 +545,7 @@ module Aspera
             case command
             when :list
               resp = @api_node.read('ops/transfers',options.get_option(:value,:optional))
-              return { type: :object_list, data: resp[:data], fields: ['id','status'] } # TODO: useful?
+              return { type: :object_list, data: resp[:data], fields: %w[id status] } # TODO: useful?
             when :create
               resp = @api_node.create('streams',options.get_option(:value,:mandatory))
               return { type: :single_object, data: resp[:data] }
@@ -657,7 +657,7 @@ module Aspera
                 request_data.deep_merge!({'validation' => validation}) unless validation.nil?
                 resp = @api_node.create('services/rest/transfers/v1/sessions',request_data)
                 return { type: :object_list, data: resp[:data]['session_info_result']['session_info'],
-fields: ['session_uuid','status','transport','direction','bytes_transferred']}
+fields: %w[session_uuid status transport direction bytes_transferred]}
               end
             when :file
               command = options.get_next_command([:list, :modify])
@@ -667,7 +667,7 @@ fields: ['session_uuid','status','transport','direction','bytes_transferred']}
                 resp = @api_node.create('services/rest/transfers/v1/files',request_data)[:data]
                 resp = JSON.parse(resp) if resp.is_a?(String)
                 Log.dump(:resp,resp)
-                return { type: :object_list, data: resp['file_transfer_info_result']['file_transfer_info'], fields: ['session_uuid','file_id','status','path']}
+                return { type: :object_list, data: resp['file_transfer_info_result']['file_transfer_info'], fields: %w[session_uuid file_id status path]}
               when :modify
                 request_data.deep_merge!(validation) unless validation.nil?
                 @api_node.update('services/rest/transfers/v1/files',request_data)

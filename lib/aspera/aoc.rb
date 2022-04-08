@@ -314,7 +314,7 @@ module Aspera
         std_t_spec = node_api.create('files/download_setup',
           {transfer_requests: [{ transfer_request: {paths: [{'source' => '/'}] } }] }
         )[:data]['transfer_specs'].first['transfer_spec']
-        ['remote_host','remote_user','ssh_port','fasp_port'].each {|i| transfer_spec[i] = std_t_spec[i]}
+        %w[remote_host remote_user ssh_port fasp_port].each {|i| transfer_spec[i] = std_t_spec[i]}
       end
       # add caller provided transfer spec
       transfer_spec.deep_merge!(ts_add)

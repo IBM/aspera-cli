@@ -134,9 +134,9 @@ module Aspera
           command = options.get_next_command([:clouds, :list, :show])
           case command
           when :clouds
-            return {type: :single_object, data: @ats_api_pub.cloud_names, columns: ['id','name']}
+            return {type: :single_object, data: @ats_api_pub.cloud_names, columns: %w[id name]}
           when :list
-            return {type: :object_list, data: @ats_api_pub.all_servers, fields: ['id','cloud','region']}
+            return {type: :object_list, data: @ats_api_pub.all_servers, fields: %w[id cloud region]}
           when :show
             if options.get_option(:cloud,:optional) || options.get_option(:region,:optional)
               server_data = server_by_cloud_region

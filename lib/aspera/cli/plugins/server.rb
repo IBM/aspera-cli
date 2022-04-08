@@ -137,7 +137,7 @@ module Aspera
               # will not work with aspshell, requires Linux/bash
               procs = shell_executor.execute('ps -A -o comm').split("\n")
               Log.log.debug("found: #{procs}")
-              ['asperanoded','asperaredisd'].each do |name|
+              %w[asperanoded asperaredisd].each do |name|
                 nagios.add_critical('general',"missing process #{name}") unless procs.include?(name)
               end
               nagios.add_ok('daemons','ok') if nagios.data.empty?
@@ -211,7 +211,7 @@ module Aspera
                   datapart['default'] = data.pop
                   datapart['value'] = data.pop
                 end
-                return {type: :single_object,data: result,fields: ['section','name','value','default'],option_expand_last: true}
+                return {type: :single_object,data: result,fields: %w[section name value default],option_expand_last: true}
               end
             end
             return Main.result_status(result)

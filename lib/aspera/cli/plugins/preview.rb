@@ -205,7 +205,7 @@ module Aspera
             res = @api_node.create('files/upload_setup',{'transfer_requests' => [{'transfer_request' => {'paths' => [{}],'destination_root' => '/'}}]})
             template_ts = res[:data]['transfer_specs'].first['transfer_spec']
             # get ports, anyway that should be 33001 for both. add remote_user ?
-            @default_transfer_spec = ['ssh_port','fasp_port'].each_with_object({}){|e,h|h[e] = template_ts[e];}
+            @default_transfer_spec = %w[ssh_port fasp_port].each_with_object({}){|e,h|h[e] = template_ts[e];}
             if !@default_transfer_spec['remote_user'].eql?(Aspera::Fasp::TransferSpec::ACCESS_KEY_TRANSFER_USER)
               Log.log.warn('remote_user shall be xfer')
               @default_transfer_spec['remote_user'] = Aspera::Fasp::TransferSpec::ACCESS_KEY_TRANSFER_USER

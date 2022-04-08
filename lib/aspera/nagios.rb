@@ -54,7 +54,7 @@ module Aspera
     # process results of a analysis and display status and exit with code
     def self.process(data)
       raise 'INTERNAL ERROR, result must be list and not empty' unless data.is_a?(Array) && !data.empty?
-      ['status','component','message'].each{|c|raise "INTERNAL ERROR, result must have #{c}" unless data.first.has_key?(c)}
+      %w[status component message].each{|c|raise "INTERNAL ERROR, result must have #{c}" unless data.first.has_key?(c)}
       res_errors = data.reject{|s|s['status'].eql?('ok')}
       # keep only errors in case of problem, other ok are assumed so
       data = res_errors unless res_errors.empty?

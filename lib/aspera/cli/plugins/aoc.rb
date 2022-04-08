@@ -116,7 +116,7 @@ module Aspera
             else
               items = [file_info]
             end
-            return {type: :object_list,data: items,fields: ['name','type','recursive_size','size','modified_time','access_level']}
+            return {type: :object_list,data: items,fields: %w[name type recursive_size size modified_time access_level]}
           when :find
             thepath = options.get_next_argument('path')
             node_file = aoc_api.resolve_node_file(top_node_file,thepath)
@@ -408,7 +408,7 @@ module Aspera
           package_data[recipient_list_field].each do |short_recipient_info|
             case short_recipient_info
             when Hash # native api information, check keys
-              raise "#{recipient_list_field} element shall have fields: id and type" unless short_recipient_info.keys.sort.eql?(['id','type'])
+              raise "#{recipient_list_field} element shall have fields: id and type" unless short_recipient_info.keys.sort.eql?(%w[id type])
             when String # need to resolve name to type/id
               # email: user, else dropbox
               entity_type = short_recipient_info.include?('@') ? 'contacts' : 'dropboxes'
@@ -672,7 +672,7 @@ module Aspera
                                      default_fields.push('app_type','app_name','available','direct_authorizations_allowed','workspace_authorizations_allowed')
               when :client,:client_access_key,:dropbox,:group,:package,:saml_configuration,:workspace then default_fields.push('name')
               when :client_registration_token then default_fields.push('value','data.client_subject_scopes','created_at')
-              when :contact then default_fields = ['email','name','source_id','source_type']
+              when :contact then default_fields = %w[email name source_id source_type]
               when :node then default_fields.push('name','host','access_key')
               when :operation then default_fields = nil
               when :short_link then default_fields.push('short_url','data.url_token_data.purpose')
@@ -742,7 +742,7 @@ module Aspera
                   'file_id'       => node_file[:file_id],
                   'access_type'   => 'user',
                   'access_id'     => access_id,
-                  'access_levels' => ['list','read','write','delete','mkdir','rename','preview'],
+                  'access_levels' => %w[list read write delete mkdir rename preview],
                   'tags'          => {'aspera' => {'files' => {'workspace' => {
                   'id'                => ws_info['id'],
                   'workspace_name'    => ws_info['name'],
@@ -790,7 +790,7 @@ module Aspera
             when :workspaces
               case options.get_next_command(%i[list current])
               when :list
-                return {type: :object_list,data: aoc_api.read('workspaces')[:data],fields: ['id','name']}
+                return {type: :object_list,data: aoc_api.read('workspaces')[:data],fields: %w[id name]}
               when :current
                 set_workspace_info
                 return { type: :single_object, data: @workspace_data }
@@ -823,7 +823,7 @@ module Aspera
               raise CliBadArgument,'value must be hash, refer to doc' unless package_data.is_a?(Hash)
 
               if !@url_token_data.nil?
-                assert_public_link_types(['send_package_to_user','send_package_to_dropbox'])
+                assert_public_link_types(%w[send_package_to_user send_package_to_dropbox])
                 box_type = @url_token_data['purpose'].split('_').last
                 package_data['recipients'] = [{'id' => @url_token_data['data']["#{box_type}_id"],'type' => box_type}]
                 @workspace_id = @url_token_data['data']['workspace_id']
@@ -918,7 +918,7 @@ module Aspera
               raise 'option must be Hash' unless query.is_a?(Hash)
               query['workspace_id'] ||= @workspace_id
               packages = aoc_api.read('packages',query)[:data]
-              return {type: :object_list,data: packages,fields: ['id','name','bytes_transferred']}
+              return {type: :object_list,data: packages,fields: %w[id name bytes_transferred]}
             when :delete
               list_or_one = instance_identifier
               return do_bulk_operation(list_or_one,'deleted') do |id|

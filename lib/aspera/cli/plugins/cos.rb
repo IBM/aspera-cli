@@ -37,7 +37,7 @@ module Aspera
             else
               # check necessary contents
               raise CliBadArgument,'service_credentials must be a Hash' unless service_credentials.is_a?(Hash)
-              ['apikey','resource_instance_id','endpoints'].each do |field|
+              %w[apikey resource_instance_id endpoints].each do |field|
                 raise CliBadArgument,"service_credentials must have a field: #{field}" unless service_credentials.has_key?(field)
               end
               Aspera::Log.dump('service_credentials',service_credentials)

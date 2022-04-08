@@ -56,7 +56,7 @@ module Aspera
                   'from' => options.get_option(:filter_from,:mandatory),
                   'to'   => options.get_option(:filter_to,:mandatory)
                   })[:data],
-                        fields: ['id','contact','name','status']}
+                        fields: %w[id contact name status]}
               end
             end
           end

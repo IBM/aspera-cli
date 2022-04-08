@@ -452,21 +452,21 @@ module Aspera
             case command_pkg
             when :list
               dropbox_list = api_v3.call({operation: 'GET',subpath: 'dropboxes',headers: {'Accept' => 'application/json'}})[:data]
-              return {type: :object_list, data: dropbox_list['items'], fields: ['name','id','description','can_read','can_write']}
+              return {type: :object_list, data: dropbox_list['items'], fields: %w[name id description can_read can_write]}
             end
           when :v4
             command = options.get_next_command([:package,:dropbox, :dmembership, :workgroup,:wmembership,:user,:metadata_profile])
             case command
             when :dropbox
-              return entity_action(api_v4,'admin/dropboxes',display_fields: ['id','e_wg_name','e_wg_desc','created_at'])
+              return entity_action(api_v4,'admin/dropboxes',display_fields: %w[id e_wg_name e_wg_desc created_at])
             when :dmembership
               return entity_action(api_v4,'dropbox_memberships')
             when :workgroup
-              return entity_action(api_v4,'admin/workgroups',display_fields: ['id','e_wg_name','e_wg_desc','created_at'])
+              return entity_action(api_v4,'admin/workgroups',display_fields: %w[id e_wg_name e_wg_desc created_at])
             when :wmembership
               return entity_action(api_v4,'workgroup_memberships')
             when :user
-              return entity_action(api_v4,'users',display_fields: ['id','name','first_name','last_name'])
+              return entity_action(api_v4,'users',display_fields: %w[id name first_name last_name])
             when :metadata_profile
               return entity_action(api_v4,'metadata_profiles')
             when :package

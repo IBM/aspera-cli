@@ -53,7 +53,7 @@ module Aspera
       # build URI from URL and parameters and check it is http or https
       def build_uri(url,params=nil)
         uri = URI.parse(url)
-        raise "REST endpoint shall be http/s not #{uri.scheme}" unless ['http','https'].include?(uri.scheme)
+        raise "REST endpoint shall be http/s not #{uri.scheme}" unless %w[http https].include?(uri.scheme)
         if !params.nil?
           # support array url params, there is no standard. Either p[]=1&p[]=2, or p=1&p=2
           if params.is_a?(Hash)

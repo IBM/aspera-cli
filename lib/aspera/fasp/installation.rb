@@ -386,7 +386,7 @@ module Aspera
       # @param type rsa or dsa
       # @param id in repository 1 for dsa, 2 for rsa
       def get_key(type,id)
-        hf = ['begin','end'].map{|t|"-----#{t} #{type} private key-----".upcase}
+        hf = %w[begin end].map{|t|"-----#{t} #{type} private key-----".upcase}
         bin = Base64.strict_encode64(DataRepository.instance.data(id))
         # validate valie and generate key in connonical format
         OpenSSL::PKey.const_get(type.upcase).send(:new,hf.insert(1,bin).join("\n")).to_pem
