@@ -52,7 +52,7 @@ module Aspera
           return r
         end
 
-        def is_simple_hash?(h)
+        def simple_hash?(h)
           !(h.values.any?{|v|[Hash,Array].any?{|c|v.is_a?(c)}})
         end
 
@@ -61,10 +61,10 @@ module Aspera
         # @param expand_last [bool] truer if last level is not
         # @param result [Hash] new hash flattened
         # @param prefix [String] true if last level is not
-        def flattened_object(source,result: {},prefix:'',expand_last: false)
-          Log.log.debug("(#{expand_last})[#{is_simple_hash?(source)}] -#{source.values}- \n-#{source}-")
+        def flattened_object(source,result: {},prefix: '',expand_last: false)
+          Log.log.debug("(#{expand_last})[#{simple_hash?(source)}] -#{source.values}- \n-#{source}-")
           source.each do |k,v|
-            if v.is_a?(Hash) && ! (expand_last && is_simple_hash?(v))
+            if v.is_a?(Hash) && !(expand_last && simple_hash?(v))
               flattened_object(v,result: result,prefix: prefix + k.to_s + '.',expand_last: expand_last)
             else
               result[prefix + k.to_s] = v
@@ -72,7 +72,6 @@ module Aspera
           end
           return result
         end
-
       end
 
       attr_accessor :option_flat_hash,:option_transpose_single,:option_format,:option_display,:option_fields,:option_table_style,

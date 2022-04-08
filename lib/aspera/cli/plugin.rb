@@ -5,9 +5,9 @@ module Aspera
     # base class for plugins modules
     class Plugin
       # operation without id
-      GLOBAL_OPS = [:create,:list].freeze
+      GLOBAL_OPS = %i[create list].freeze
       # operation on specific instance
-      INSTANCE_OPS = [:modify,:delete,:show].freeze
+      INSTANCE_OPS = %i[modify delete show].freeze
       ALL_OPS = [GLOBAL_OPS,INSTANCE_OPS].flatten.freeze
       # max number of items for list command
       MAX_ITEMS = 'max'
@@ -40,6 +40,11 @@ module Aspera
         res_id = options.get_option(:id)
         res_id = options.get_next_argument('identifier') if res_id.nil?
         return res_id
+      end
+
+      # TODO
+      def get_next_id_command(instance_ops: INSTANCE_OPS,global_ops: GLOBAL_OPS)
+        return get_next_argument('command',expected: command_list)
       end
 
       # @param command [Symbol] command to execute: create show list modify delete
