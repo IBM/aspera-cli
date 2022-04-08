@@ -1128,7 +1128,7 @@ $(T)f5_p1: $(T).exists
 	@echo $@
 	set -x&&\
 	f5_user=$$($(EXE_NOMAN) conf id tst_faspex5 get username)&&\
-	$(EXE_MAN) faspex5 package send --value=@json:'{"title":"test title","recipients":[{"name":"'"$${f5_user}"'"}]}' $(CF_LOCAL_SAMPLE_FILEPATH)
+	$(EXE_MAN) faspex5 package send --value=@json:'{"title":"test title","recipients":[{"name":"'"$${f5_user}"'"}],"metadata":{"text_test":"abc","test":"01/01/01"}}' $(CF_LOCAL_SAMPLE_FILEPATH)
 	@touch $@
 $(T)f5_p2: $(T).exists
 	@echo $@
