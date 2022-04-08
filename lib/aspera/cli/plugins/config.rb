@@ -178,9 +178,9 @@ module Aspera
               "you are using #{Environment.ruby_version}")
           end
           return {
-            name: @info[:gem],
-            current: Aspera::Cli::VERSION,
-            latest: latest_version,
+            name:        @info[:gem],
+            current:     Aspera::Cli::VERSION,
+            latest:      latest_version,
             need_update: Gem::Version.new(Aspera::Cli::VERSION) < Gem::Version.new(latest_version)
           }
         end
@@ -639,8 +639,8 @@ module Aspera
             return Main.result_status("Installed version #{v}")
           when :spec
             return {
-              type: :object_list,
-              data: Fasp::Parameters.man_table,
+              type:   :object_list,
+              data:   Fasp::Parameters.man_table,
               fields: ['name','type',Fasp::Parameters::SUPPORTED_AGENTS_SHORT.map(&:to_s),'description'].flatten
             }
           when :errors
@@ -995,8 +995,8 @@ module Aspera
             else
               Log.log.info("Creating Demo server preset: #{DEMO_SERVER_PRESET}")
               @config_presets[DEMO_SERVER_PRESET] = {
-                'url' => 'ssh://' + DEMO + '.asperasoft.com:33001',
-                'username' => AOC_COMMAND_V2,
+                'url'                                    => 'ssh://' + DEMO + '.asperasoft.com:33001',
+                'username'                               => AOC_COMMAND_V2,
                 'ssAP'.downcase.reverse + 'drow'.reverse => DEMO + AOC_COMMAND_V2
               }
             end

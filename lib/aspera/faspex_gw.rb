@@ -48,8 +48,10 @@ module Aspera
             "no such unique user: #{recipient_email} / #{user_lookup}" unless !user_lookup.nil? && user_lookup.length.eql?(1)
 
           recipient_user_info = user_lookup.first
-          files_pkg_recipients.push({ 'id' => recipient_user_info['source_id'],
-'type' => recipient_user_info['source_type'] })
+          files_pkg_recipients.push({
+            'id'   => recipient_user_info['source_id'],
+            'type' => recipient_user_info['source_type']
+          })
         end
 
         #  create a new package with one file

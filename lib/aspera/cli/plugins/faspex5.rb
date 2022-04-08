@@ -92,8 +92,8 @@ module Aspera
             when :list
               parameters = options.get_option(:value,:optional)
               return {
-                type: :object_list,
-                data: @api_v5.read('packages',parameters)[:data]['packages'],
+                type:   :object_list,
+                data:   @api_v5.read('packages',parameters)[:data]['packages'],
                 fields: %w[id title release_date total_bytes total_files created_time state]
               }
             when :show

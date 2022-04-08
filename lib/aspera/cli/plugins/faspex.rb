@@ -223,10 +223,10 @@ module Aspera
           #pkg_created=api_public_link.create(create_path,package_create_params)[:data]
           # so extract data from javascript
           pkgdatares = api_public_link.call({
-            operation: 'POST',
-            subpath: create_path,
+            operation:   'POST',
+            subpath:     create_path,
             json_params: package_create_params,
-            headers: {'Accept' => 'text/javascript'}})[:http].body
+            headers:     {'Accept' => 'text/javascript'}})[:http].body
           # get args of function call
           pkgdatares.delete!("\n") # one line
           pkgdatares.gsub!(/^[^"]+\("\{/,'{') # delete header
@@ -260,9 +260,9 @@ module Aspera
             case command_pkg
             when :list
               return {
-                type: :object_list,
-                data: mailbox_filtered_entries,
-                fields: [PACKAGE_MATCH_FIELD,'title','items'],
+                type:    :object_list,
+                data:    mailbox_filtered_entries,
+                fields:  [PACKAGE_MATCH_FIELD,'title','items'],
                 textify: lambda {|table_data|Faspex.textify_package_list(table_data)}
               }
             when :send
@@ -283,10 +283,10 @@ module Aspera
                   first_source['id'] = source_id
                 end
                 pkg_created = api_v3.call({
-                  operation: 'POST',
-                  subpath: 'send',
+                  operation:   'POST',
+                  subpath:     'send',
                   json_params: package_create_params,
-                  headers: {'Accept' => 'application/json'}
+                  headers:     {'Accept' => 'application/json'}
                 })[:data]
                 if !source_name.nil?
                   # no transfer spec if remote source

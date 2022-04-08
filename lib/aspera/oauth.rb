@@ -64,7 +64,7 @@ module Aspera
           Log.log.debug('Not using persistency') # (use Aspera::Oauth.persist_mgr=Aspera::PersistencyFolder.new)
           # create NULL persistency class
           @persist = Class.new do
-            def get(_x);nil;end;def delete(_x);nil;end;def put(_x,_y);nil;end;def garbage_collect(_x,_y);nil;end # rubocop:disable Layout/EmptyLineBetweenDefs
+            def get(_x);nil;end;def delete(_x);nil;end;def put(_x,_y);nil;end;def garbage_collect(_x,_y);nil;end
           end.new
         end
         return @persist

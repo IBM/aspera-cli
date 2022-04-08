@@ -874,11 +874,11 @@ module Aspera
               if ids_to_download.eql?(VAL_ALL)
                 # get list of packages in inbox
                 package_info = aoc_api.read('packages',{
-                          'archived' => false,
-                          'exclude_dropbox_packages' => true,
-                          'has_content' => true,
-                          'received' => true,
-                          'workspace_id' => @workspace_id})[:data]
+                  'archived'                 => false,
+                  'exclude_dropbox_packages' => true,
+                  'has_content'              => true,
+                  'received'                 => true,
+                  'workspace_id'             => @workspace_id})[:data]
                 # remove from list the ones already downloaded
                 ids_to_download = package_info.map{|e|e['id']}
                 # array here

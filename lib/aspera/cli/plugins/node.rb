@@ -576,8 +576,8 @@ module Aspera
               # could use ? subpath: 'transfers'
               resp = @api_node.read(res_class_path,options.get_option(:value,:optional))
               return {
-                type: :object_list,
-                data: resp[:data],
+                type:   :object_list,
+                data:   resp[:data],
                 fields: %w[id status start_spec.direction start_spec.remote_user start_spec.remote_host start_spec.destination_path]
               }
             when :cancel
