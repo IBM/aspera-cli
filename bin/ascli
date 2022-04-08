@@ -8,7 +8,7 @@ GEM_ROOT=File.realpath(File.join(File.dirname(File.realpath(__FILE__)),'..'))
 if ENV.has_key?('ENABLE_COVERAGE')
   require 'simplecov'
   SimpleCov.root(GEM_ROOT)
-  SimpleCov.enable_for_subprocesses
+  SimpleCov.enable_for_subprocesses if SimpleCov.respond_to?(:enable_for_subprocesses)
   # keep cache data for 1 day (must be longer that time to run the whole test suite)
   SimpleCov.merge_timeout(86400)
   SimpleCov.command_name(SecureRandom.uuid)
