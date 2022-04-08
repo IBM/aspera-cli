@@ -35,10 +35,10 @@ module Aspera
             end
             return nagios.result
           when :transfer
-            command = options.get_next_command([:current, :smart])
+            command = options.get_next_command(%i[current smart])
             case command
             when :smart
-              command = options.get_next_command([:list,:submit])
+              command = options.get_next_command(%i[list submit])
               case command
               when :list
                 return {type: :object_list,data: api_console.read('smart_transfers')[:data]}

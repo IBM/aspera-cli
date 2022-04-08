@@ -38,7 +38,7 @@ module Aspera
           options.add_opt_simple(:validator,'identifier of validator (optional for central)')
           options.add_opt_simple(:asperabrowserurl,'URL for simple aspera web ui')
           options.add_opt_simple(:sync_name,'sync name')
-          options.add_opt_list(:token_type,[:aspera,:basic,:hybrid],'Type of token used for transfers')
+          options.add_opt_list(:token_type,%i[aspera basic hybrid],'Type of token used for transfers')
           options.set_option(:asperabrowserurl,'https://asperabrowser.mybluemix.net')
           options.set_option(:token_type,:aspera)
           options.parse_options!
@@ -259,7 +259,7 @@ module Aspera
               }.deep_merge(@add_request_param)
             else raise "ERROR: token_type #{tt}"
             end
-            if [:basic,:hybrid].include?(token_type)
+            if %i[basic hybrid].include?(token_type)
               Aspera::Node.set_ak_basic_token(transfer_spec,@api_node.params[:auth][:username],@api_node.params[:auth][:password])
             end
             return Main.result_transfer(transfer.start(transfer_spec,{ src: :node_gen3}))
@@ -395,7 +395,7 @@ module Aspera
               save_to_file: File.join(transfer.destination_folder(Fasp::TransferSpec::DIRECTION_RECEIVE),file_name))
             return Main.result_status("downloaded: #{file_name}")
           when :file
-            command_node_file = options.get_next_command([:show,:permission,:modify])
+            command_node_file = options.get_next_command(%i[show permission modify])
             file_path = options.get_option(:path,:optional)
             node_file =
             if !file_path.nil?
@@ -413,7 +413,7 @@ module Aspera
               res = node_api.update("files/#{node_file[:file_id]}",update_param)[:data]
               return {type: :single_object,data: res}
             when :permission
-              command_perm = options.get_next_command([:list,:create])
+              command_perm = options.get_next_command(%i[list create])
               case command_perm
               when :list
                 # generic options : TODO: as arg ? option_url_query
@@ -457,12 +457,12 @@ module Aspera
         end # execute_node_gen4_command
 
         def execute_async
-          command = options.get_next_command([:list,:delete,:files,:show,:counters,:bandwidth])
+          command = options.get_next_command(%i[list delete files show counters bandwidth])
           unless command.eql?(:list)
             asyncname = options.get_option(:sync_name,:optional)
             if asyncname.nil?
               asyncid = instance_identifier
-              if asyncid.eql?('ALL') && [:show,:delete].include?(command)
+              if asyncid.eql?('ALL') && %i[show delete].include?(command)
                 asyncids = @api_node.read('async/list')[:data]['sync_ids']
               else
                 Integer(asyncid) # must be integer
@@ -541,7 +541,7 @@ module Aspera
           when *COMMON_ACTIONS then return execute_simple_common(command,prefix_path)
           when :async then return execute_async
           when :stream
-            command = options.get_next_command([:list, :create, :show, :modify, :cancel])
+            command = options.get_next_command(%i[list create show modify cancel])
             case command
             when :list
               resp = @api_node.read('ops/transfers',options.get_option(:value,:optional))
@@ -565,9 +565,9 @@ module Aspera
               raise 'error'
             end
           when :transfer
-            command = options.get_next_command([:list, :cancel, :show])
+            command = options.get_next_command(%i[list cancel show])
             res_class_path = 'ops/transfers'
-            if [:cancel, :show].include?(command)
+            if %i[cancel show].include?(command)
               one_res_id = instance_identifier
               one_res_path = "#{res_class_path}/#{one_res_id}"
             end
@@ -598,7 +598,7 @@ module Aspera
               return execute_node_gen4_command(command_repo)
             end
           when :service
-            command = options.get_next_command([:list, :create, :delete])
+            command = options.get_next_command(%i[list create delete])
             if [:delete].include?(command)
               svcid = instance_identifier
             end
@@ -617,8 +617,8 @@ module Aspera
             end
           when :watch_folder
             res_class_path = 'v3/watchfolders'
-            command = options.get_next_command([:create, :list, :show, :modify, :delete, :state])
-            if [:show,:modify,:delete,:state].include?(command)
+            command = options.get_next_command(%i[create list show modify delete state])
+            if %i[show modify delete state].include?(command)
               one_res_id = instance_identifier
               one_res_path = "#{res_class_path}/#{one_res_id}"
             end
@@ -644,7 +644,7 @@ module Aspera
               return { type: :single_object, data: @api_node.read("#{one_res_path}/state")[:data] }
             end
           when :central
-            command = options.get_next_command([:session,:file])
+            command = options.get_next_command(%i[session file])
             validator_id = options.get_option(:validator)
             validation = {'validator_id' => validator_id} unless validator_id.nil?
             request_data = options.get_option(:value,:optional)
@@ -660,7 +660,7 @@ module Aspera
 fields: %w[session_uuid status transport direction bytes_transferred]}
               end
             when :file
-              command = options.get_next_command([:list, :modify])
+              command = options.get_next_command(%i[list modify])
               case command
               when :list
                 request_data.deep_merge!({'validation' => validation}) unless validation.nil?

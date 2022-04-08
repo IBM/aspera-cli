@@ -31,7 +31,7 @@ module Aspera
           command = options.get_next_command(ACTIONS)
           case command
           when :subscription
-            command = options.get_next_command([:find,:show, :instances])
+            command = options.get_next_command(%i[find show instances])
             object = 'bssSubscriptions'
             case command
             when :find

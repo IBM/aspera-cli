@@ -12,8 +12,8 @@ module Aspera
           options.add_opt_simple(:params,'parameters hash table, use @json:{"param":"value"}')
           options.add_opt_simple(:result,"specify result value as: 'work step:parameter'")
           options.add_opt_boolean(:synchronous,'work step:parameter expected as result')
-          options.add_opt_list(:ret_style,[:header,:arg,:ext],'how return type is requested in api')
-          options.add_opt_list(:auth_style,[:arg_pass,:head_basic,:apikey],'authentication type')
+          options.add_opt_list(:ret_style,%i[header arg ext],'how return type is requested in api')
+          options.add_opt_list(:auth_style,%i[arg_pass head_basic apikey],'authentication type')
           options.set_option(:params,{})
           options.set_option(:synchronous,:no)
           options.set_option(:ret_style,:arg)
@@ -21,7 +21,7 @@ module Aspera
           options.parse_options!
         end
 
-        ACTIONS = [:info, :workflow, :plugins, :processes].freeze
+        ACTIONS = %i[info workflow plugins processes].freeze
 
         # for JSON format: add extension ".json" or add url parameter: format=json or Accept: application/json
         # id can be: a parameter id=x, or at the end of url /id, for workflows: work_order[workflow_id]=wf_id
@@ -111,7 +111,7 @@ module Aspera
             result = call_ao('plugin_version')[:data]
             return {type: :object_list,data: result['Plugin']}
           when :workflow
-            command = options.get_next_command([:list, :status, :inputs, :details, :start, :export])
+            command = options.get_next_command(%i[list status inputs details start export])
             unless [:list].include?(command)
               wf_id = instance_identifier
             end

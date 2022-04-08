@@ -14,7 +14,7 @@ module Aspera
       attr_writer :options
       def initialize(options)
         raise 'node specification must be Hash' unless options.is_a?(Hash)
-        [:url,:username,:password].each { |k| raise "missing parameter [#{k}] in node specification: #{options}" unless options.has_key?(k) }
+        %i[url username password].each { |k| raise "missing parameter [#{k}] in node specification: #{options}" unless options.has_key?(k) }
         super()
         # root id is required for access key
         @root_id = options[:root_id]

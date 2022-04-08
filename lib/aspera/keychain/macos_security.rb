@@ -47,7 +47,7 @@ module Aspera
 
       def set(options)
         raise 'options shall be Hash' unless options.is_a?(Hash)
-        unsupported = options.keys - [:username,:url,:secret,:description]
+        unsupported = options.keys - %i[username url secret description]
         raise "unsupported options: #{unsupported}" unless unsupported.empty?
         username = options[:username]
         raise 'options shall have username' if username.nil?
@@ -60,7 +60,7 @@ module Aspera
 
       def get(options)
         raise 'options shall be Hash' unless options.is_a?(Hash)
-        unsupported = options.keys - [:username,:url]
+        unsupported = options.keys - %i[username url]
         raise "unsupported options: #{unsupported}" unless unsupported.empty?
         username = options[:username]
         raise 'options shall have username' if username.nil?
@@ -80,7 +80,7 @@ module Aspera
 
       def delete(options)
         raise 'options shall be Hash' unless options.is_a?(Hash)
-        unsupported = options.keys - [:username,:url]
+        unsupported = options.keys - %i[username url]
         raise "unsupported options: #{unsupported}" unless unsupported.empty?
         username = options[:username]
         raise 'options shall have username' if username.nil?

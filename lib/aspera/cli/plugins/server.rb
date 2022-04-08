@@ -68,7 +68,7 @@ module Aspera
           return result
         end
 
-        ACTIONS = [:health,:nodeadmin,:userdata,:configurator,:ctl,:download,:upload,:browse,:delete,:rename].concat(Aspera::AsCmd::OPERATIONS)
+        ACTIONS = %i[health nodeadmin userdata configurator ctl download upload browse delete rename].concat(Aspera::AsCmd::OPERATIONS)
 
         def execute_action
           server_uri = URI.parse(options.get_option(:url,:mandatory))
@@ -131,7 +131,7 @@ module Aspera
           case command
           when :health
             nagios = Nagios.new
-            command_nagios = options.get_next_command([:app_services, :transfer, :asctlstatus])
+            command_nagios = options.get_next_command(%i[app_services transfer asctlstatus])
             case command_nagios
             when :app_services
               # will not work with aspshell, requires Linux/bash

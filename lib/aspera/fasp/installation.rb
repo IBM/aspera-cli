@@ -215,7 +215,7 @@ module Aspera
       end
 
       def bypass_keys
-        return [:ssh_bypass_key_dsa,:ssh_bypass_key_rsa].map{|i|Installation.instance.path(i)}
+        return %i[ssh_bypass_key_dsa ssh_bypass_key_rsa].map{|i|Installation.instance.path(i)}
       end
 
       # use in plugin `config`

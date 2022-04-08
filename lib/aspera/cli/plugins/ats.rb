@@ -42,10 +42,10 @@ module Aspera
         end
 
         def execute_action_access_key
-          commands = [:create,:list,:show,:modify,:delete,:node,:cluster,:entitlement]
+          commands = %i[create list show modify delete node cluster entitlement]
           command = options.get_next_command(commands)
           # those dont require access key id
-          access_key_id = instance_identifier unless [:create,:list].include?(command)
+          access_key_id = instance_identifier unless %i[create list].include?(command)
           case command
           when :create
             params = options.get_option(:params,:optional) || {}
@@ -131,7 +131,7 @@ module Aspera
         end
 
         def execute_action_cluster_pub
-          command = options.get_next_command([:clouds, :list, :show])
+          command = options.get_next_command(%i[clouds list show])
           case command
           when :clouds
             return {type: :single_object, data: @ats_api_pub.cloud_names, columns: %w[id name]}
@@ -166,8 +166,8 @@ module Aspera
         end
 
         def execute_action_api_key
-          command = options.get_next_command([:instances, :create, :list, :show, :delete])
-          if [:show,:delete].include?(command)
+          command = options.get_next_command(%i[instances create list show delete])
+          if %i[show delete].include?(command)
             concerned_id = instance_identifier
           end
           rest_add_header = {}

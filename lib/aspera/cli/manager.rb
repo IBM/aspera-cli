@@ -46,7 +46,7 @@ module Aspera
       # boolean options are set to true/false from the following values
       TRUE_VALUES = [:yes,true].freeze
       BOOLEAN_VALUES = [TRUE_VALUES,:no,false].flatten.freeze
-      BOOLEAN_SIMPLE = [:yes,:no].freeze
+      BOOLEAN_SIMPLE = %i[yes no].freeze
       # option name separator on command line
       OPTION_SEP_LINE = '-'
       # option name separator in code (symbol)

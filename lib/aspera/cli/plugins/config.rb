@@ -81,7 +81,7 @@ module Aspera
         :PRESET_DIG_SEPARATOR
         def initialize(env,params)
           raise 'env and params must be Hash' unless env.is_a?(Hash) && params.is_a?(Hash)
-          raise 'missing param' unless [:name,:help,:version,:gem].sort.eql?(params.keys.sort)
+          raise 'missing param' unless %i[name help version gem].sort.eql?(params.keys.sort)
           super(env)
           @info = params
           @main_folder = default_app_main_folder
@@ -548,8 +548,8 @@ module Aspera
         end
 
         def execute_connect_action
-          command = options.get_next_command([:list,:info,:version])
-          if [:info,:version].include?(command)
+          command = options.get_next_command(%i[list info version])
+          if %i[info version].include?(command)
             connect_id = options.get_next_argument('id or title')
             one_res = connect_versions.find{|i|i['id'].eql?(connect_id) || i['title'].eql?(connect_id)}
             raise CliNoSuchId.new(:connect,connect_id) if one_res.nil?
@@ -562,8 +562,8 @@ module Aspera
             return {type: :single_object, data: one_res}
           when :version # shows files used
             all_links = one_res['links']
-            command = options.get_next_command([:list,:download,:open])
-            if [:download,:open].include?(command)
+            command = options.get_next_command(%i[list download open])
+            if %i[download open].include?(command)
               link_title = options.get_next_argument('title or rel')
               one_link = all_links.find {|i| i['title'].eql?(link_title) || i['rel'].eql?(link_title)}
               raise 'no such value' if one_link.nil?
@@ -587,7 +587,7 @@ module Aspera
         end
 
         def execute_action_ascp
-          command = options.get_next_command([:connect,:use,:show,:products,:info,:install,:spec,:errors])
+          command = options.get_next_command(%i[connect use show products info install spec errors])
           case command
           when :connect
             return execute_connect_action
@@ -624,7 +624,7 @@ module Aspera
             data['keypass'] = Fasp::Installation.instance.bypass_pass
             return {type: :single_object, data: data}
           when :products
-            command = options.get_next_command([:list,:use])
+            command = options.get_next_command(%i[list use])
             case command
             when :list
               return {type: :object_list, data: Fasp::Installation.instance.installed_products, fields: %w[name app_root]}
@@ -769,7 +769,7 @@ module Aspera
             deleted_files = Oauth.flush_tokens
             return {type: :value_list, data: deleted_files, name: 'file'}
           when :plugin
-            case options.get_next_command([:list,:create])
+            case options.get_next_command(%i[list create])
             when :list
               return {type: :object_list, data: @plugins.keys.map { |i| { 'plugin' => i.to_s, 'path' => @plugins[i][:source] } }, fields: %w[plugin path]}
             when :create
@@ -906,7 +906,7 @@ module Aspera
                 :private_key.to_s => '@file:' + private_key_path
               }
               # set only if non nil
-              [:client_id,:client_secret].each do |s|
+              %i[client_id client_secret].each do |s|
                 o = options.get_option(s)
                 @config_presets[preset_name][s.to_s] = o unless o.nil?
               end
@@ -968,7 +968,7 @@ module Aspera
           when :ascp
             execute_action_ascp
           when :gem
-            case options.get_next_command([:path,:version,:name])
+            case options.get_next_command(%i[path version name])
             when :path then return Main.result_status(self.class.gem_src_root)
             when :version then return Main.result_status(Aspera::Cli::VERSION)
             when :name then return Main.result_status(@info[:gem])
@@ -1012,7 +1012,7 @@ module Aspera
             save_presets_to_config_file
             return Main.result_status('Done')
           when :vault
-            command = options.get_next_command([:init,:list,:get,:set,:delete])
+            command = options.get_next_command(%i[init list get set delete])
             case command
             when :init
               type = options.get_option(:value,:optional)
@@ -1067,7 +1067,7 @@ module Aspera
           smtp[:from_name] ||= smtp[:from_email].gsub(/@.*$/,'').gsub(/[^a-zA-Z]/,' ').capitalize if smtp.has_key?(:username)
           smtp[:domain] ||= smtp[:from_email].gsub(/^.*@/,'') if smtp.has_key?(:from_email)
           # check minimum required
-          [:server,:port,:domain].each do |n|
+          %i[server port domain].each do |n|
             raise "Missing smtp parameter: #{n}" unless smtp.has_key?(n)
           end
           Log.log.debug("smtp=#{smtp}")
@@ -1085,7 +1085,7 @@ module Aspera
           mail_conf = email_settings
           vars[:from_name] ||= mail_conf[:from_name]
           vars[:from_email] ||= mail_conf[:from_email]
-          [:from_name,:from_email].each do |n|
+          %i[from_name from_email].each do |n|
             raise "Missing email parameter: #{n}" unless vars.has_key?(n)
           end
           start_options = [mail_conf[:domain]]

@@ -55,7 +55,7 @@ module Aspera
           options.set_obj_attr(:overwrite,self,:option_overwrite,:mtime)
           options.set_obj_attr(:file_access,self,:option_file_access,:local)
           options.add_opt_list(:skip_format,Aspera::Preview::Generator::PREVIEW_FORMATS,'skip this preview format (multiple possible)')
-          options.add_opt_list(:folder_reset_cache,[:no,:header,:read],'force detection of generated preview by refresh cache')
+          options.add_opt_list(:folder_reset_cache,%i[no header read],'force detection of generated preview by refresh cache')
           options.add_opt_simple(:skip_types,'skip types in comma separated list')
           options.add_opt_simple(:previews_folder,'preview folder in storage root')
           options.add_opt_simple(:temp_folder,'path to temp folder')
@@ -64,8 +64,8 @@ module Aspera
           options.add_opt_simple(:scan_path,'subpath in folder id to start scan in (default=/)')
           options.add_opt_simple(:scan_id,'forder id in storage to start scan in, default is access key main folder id')
           options.add_opt_boolean(:mimemagic,'use Mime type detection of gem mimemagic')
-          options.add_opt_list(:overwrite,[:always,:never,:mtime],'when to overwrite result file')
-          options.add_opt_list(:file_access,[:local,:remote],'how to read and write files in repository')
+          options.add_opt_list(:overwrite,%i[always never mtime],'when to overwrite result file')
+          options.add_opt_list(:file_access,%i[local remote],'how to read and write files in repository')
           options.set_option(:temp_folder,Dir.tmpdir)
           options.set_option(:mimemagic,false)
 
@@ -406,7 +406,7 @@ module Aspera
 
         def execute_action
           command = options.get_next_command(ACTIONS)
-          unless [:check,:test].include?(command)
+          unless %i[check test].include?(command)
             # this will use node api
             @api_node = basic_auth_api
             @transfer_server_address = URI.parse(@api_node.params[:base_url]).host

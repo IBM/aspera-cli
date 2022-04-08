@@ -22,7 +22,7 @@ module Aspera
     }.freeze
 
     # OAuth methods supported by default
-    STD_AUTH_TYPES = [:web, :jwt].freeze
+    STD_AUTH_TYPES = %i[web jwt].freeze
 
     # remove 5 minutes to account for time offset (TODO: configurable?)
     JWT_NOTBEFORE_OFFSET_SEC = 300
@@ -43,13 +43,13 @@ module Aspera
     # token unique identifiers from oauth parameters
     @id_elements = [
       [:crtype],
-      [:generic,:grant_type],
-      [:jwt,:payload,:sub],
-      [:auth,:username],
-      [:aoc_pub_link,:json,:url_token],
-      [:generic,:apikey],
+      %i[generic grant_type],
+      %i[jwt payload sub],
+      %i[auth username],
+      %i[aoc_pub_link json url_token],
+      %i[generic apikey],
       [:scope],
-      [:generic,:response_type]
+      %i[generic response_type]
     ]
 
     class << self

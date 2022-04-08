@@ -64,7 +64,7 @@ module Aspera
           one_res_path = "#{res_class_path}/#{one_res_id}"
         end
         # parameters mandatory for create/modify
-        if [:create,:modify].include?(command)
+        if %i[create modify].include?(command)
           parameters = options.get_option(:value,:mandatory)
         end
         # parameters optional for list

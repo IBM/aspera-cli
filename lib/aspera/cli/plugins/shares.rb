@@ -40,7 +40,7 @@ module Aspera
             end
           when :admin
             api_shares_admin = basic_auth_api('api/v1')
-            command = options.get_next_command([:user,:share])
+            command = options.get_next_command(%i[user share])
             case command
             when :user
               command = options.get_next_command(%i[list app_authorizations share_permissions])

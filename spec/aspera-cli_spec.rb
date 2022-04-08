@@ -20,7 +20,7 @@ end
 
 # check required env vars
 params = {}
-[:url,:user,:pass].each do |p|
+%i[url user pass].each do |p|
   env = "CF_HSTS_SSH_#{p.to_s.upcase}"
   params[p] = ENV[env]
   raise "missing env var: #{env}" unless params[p].is_a?(String)

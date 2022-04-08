@@ -80,14 +80,14 @@ module Aspera
           end
         end
 
-        ACTIONS = [:package, :admin].freeze
+        ACTIONS = %i[package admin].freeze
 
         def execute_action
           set_api
           command = options.get_next_command(ACTIONS)
           case command
           when :package
-            command = options.get_next_command([:list,:show,:send,:receive])
+            command = options.get_next_command(%i[list show send receive])
             case command
             when :list
               parameters = options.get_option(:value,:optional)
@@ -143,7 +143,7 @@ module Aspera
           when :admin
             case options.get_next_command([:resource])
             when :resource
-              res_type = options.get_next_command([:accounts, :contacts, :jobs, :workgroups, :shared_inboxes, :nodes, :oauth_clients, :registrations, :saml_configs])
+              res_type = options.get_next_command(%i[accounts contacts jobs workgroups shared_inboxes nodes oauth_clients registrations saml_configs])
               res_path = res_type.to_s
               display_fields =
               case res_type

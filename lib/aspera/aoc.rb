@@ -357,7 +357,7 @@ module Aspera
     # @return split values
     def check_get_node_file(node_file)
       raise "node_file must be Hash (got #{node_file.class})" unless node_file.is_a?(Hash)
-      raise 'node_file must have 2 keys: :file_id and :node_info' unless node_file.keys.sort.eql?([:file_id,:node_info])
+      raise 'node_file must have 2 keys: :file_id and :node_info' unless node_file.keys.sort.eql?(%i[file_id node_info])
       node_info = node_file[:node_info]
       file_id = node_file[:file_id]
       raise "node_info must be Hash  (got #{node_info.class}: #{node_info})" unless node_info.is_a?(Hash)

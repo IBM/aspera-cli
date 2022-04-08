@@ -73,7 +73,7 @@ module Aspera
           ]
           a[:in_p] ||= []
           a[:out_p] ||= []
-          raise "wrong params (#{a.keys.sort})" unless [:gl_p, :in_f, :in_p, :out_f, :out_p].eql?(a.keys.sort)
+          raise "wrong params (#{a.keys.sort})" unless %i[gl_p in_f in_p out_f out_p].eql?(a.keys.sort)
           external_command(:ffmpeg,[a[:gl_p],a[:in_p],'-i',a[:in_f],a[:out_p],a[:out_f]].flatten)
         end
 

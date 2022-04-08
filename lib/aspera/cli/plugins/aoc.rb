@@ -222,7 +222,7 @@ module Aspera
             node_api = aoc_api.get_node_api(top_node_file[:node_info])
             return Node.new(@agents.merge(skip_basic_auth_options: true, node_api: node_api)).execute_action(command_legacy)
           when :file
-            command_node_file = options.get_next_command([:show,:permission,:modify])
+            command_node_file = options.get_next_command(%i[show permission modify])
             file_path = options.get_option(:path,:optional)
             node_file =
             if !file_path.nil?
@@ -240,7 +240,7 @@ module Aspera
               res = node_api.update("files/#{node_file[:file_id]}",update_param)[:data]
               return {type: :single_object,data: res}
             when :permission
-              command_perm = options.get_next_command([:list,:create])
+              command_perm = options.get_next_command(%i[list create])
               case command_perm
               when :list
                 # generic options : TODO: as arg ? option_url_query

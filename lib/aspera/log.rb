@@ -19,7 +19,7 @@ module Aspera
       def levels; Logger::Severity.constants.sort{|a,b|Logger::Severity.const_get(a) <=> Logger::Severity.const_get(b)}.map{|c|c.downcase.to_sym};end
 
       # where logs are sent to
-      def logtypes; [:stderr,:stdout,:syslog];end
+      def logtypes; %i[stderr stdout syslog];end
 
       # get the logger object of singleton
       def log; instance.logger;end

@@ -241,7 +241,7 @@ module Aspera
           return pkgdatares.first
         end
 
-        ACTIONS = [:health,:package, :source, :me, :dropbox, :v4, :address_book, :login_methods].freeze
+        ACTIONS = %i[health package source me dropbox v4 address_book login_methods].freeze
 
         def execute_action
           command = options.get_next_command(ACTIONS)
@@ -256,7 +256,7 @@ module Aspera
             end
             return nagios.result
           when :package
-            command_pkg = options.get_next_command([:send, :recv, :list])
+            command_pkg = options.get_next_command(%i[send recv list])
             case command_pkg
             when :list
               return {
@@ -398,7 +398,7 @@ module Aspera
               return Main.result_transfer_multiple(result_transfer)
             end
           when :source
-            command_source = options.get_next_command([:list, :id, :name])
+            command_source = options.get_next_command(%i[list id name])
             source_list = api_v3.call({operation: 'GET',subpath: 'source_shares',headers: {'Accept' => 'application/json'}})[:data]['items']
             case command_source
             when :list
@@ -426,7 +426,7 @@ module Aspera
               end
               source_info = source_hash[source_name]
               Log.log.debug("source_info: #{source_info}")
-              command_node = options.get_next_command([:info, :node])
+              command_node = options.get_next_command(%i[info node])
               case command_node
               when :info
                 return {data: source_info,type: :single_object}
@@ -455,7 +455,7 @@ module Aspera
               return {type: :object_list, data: dropbox_list['items'], fields: %w[name id description can_read can_write]}
             end
           when :v4
-            command = options.get_next_command([:package,:dropbox, :dmembership, :workgroup,:wmembership,:user,:metadata_profile])
+            command = options.get_next_command(%i[package dropbox dmembership workgroup wmembership user metadata_profile])
             case command
             when :dropbox
               return entity_action(api_v4,'admin/dropboxes',display_fields: %w[id e_wg_name e_wg_desc created_at])

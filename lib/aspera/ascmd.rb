@@ -9,7 +9,7 @@ module Aspera
   # Note: "ls" can take filters: as_ls -f *.txt -f *.bin /
   class AsCmd
     # list of supported actions
-    OPERATIONS = [:ls,:rm,:mv,:du,:info,:mkdir,:cp,:df,:md5sum].freeze
+    OPERATIONS = %i[ls rm mv du info mkdir cp df md5sum].freeze
 
     #  @param command_executor [Object] provides the "execute" method, taking a command to execute, and stdin to feed to it, typically: ssh or local
     def initialize(command_executor)

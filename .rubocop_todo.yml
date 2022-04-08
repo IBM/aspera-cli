@@ -48,7 +48,8 @@ Style/WordArray:
 Style/RescueModifier:
   Enabled: false
 Style/SymbolArray:
-  Enabled: false
+  Enabled: true
+  EnforcedStyle: percent
 Style/IfUnlessModifier:
   Enabled: false
 Style/PreferredHashMethods:

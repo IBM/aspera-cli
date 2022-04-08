@@ -44,9 +44,9 @@ module Aspera
         @opt_mgr.add_opt_simple(:to_folder,'destination folder for downloaded files')
         @opt_mgr.add_opt_simple(:sources,'list of source files (see doc)')
         @opt_mgr.add_opt_simple(:transfer_info,'parameters for transfer agent')
-        @opt_mgr.add_opt_list(:src_type,[:list,:pair],'type of file list')
+        @opt_mgr.add_opt_list(:src_type,%i[list pair],'type of file list')
         @opt_mgr.add_opt_list(:transfer,TRANSFER_AGENTS,'type of transfer agent')
-        @opt_mgr.add_opt_list(:progress,[:none,:native,:multi],'type of progress bar')
+        @opt_mgr.add_opt_list(:progress,%i[none native multi],'type of progress bar')
         @opt_mgr.set_option(:transfer,:direct)
         @opt_mgr.set_option(:src_type,:list)
         @opt_mgr.set_option(:progress,:native) # use native ascp progress bar as it is more reliable

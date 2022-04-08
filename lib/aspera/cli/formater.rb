@@ -165,7 +165,7 @@ module Aspera
       def display_results(results)
         raise "INTERNAL ERROR, result must be Hash (got: #{results.class}: #{results})" unless results.is_a?(Hash)
         raise 'INTERNAL ERROR, result must have type' unless results.has_key?(:type)
-        raise 'INTERNAL ERROR, result must have data' unless results.has_key?(:data) || [:empty,:nothing].include?(results[:type])
+        raise 'INTERNAL ERROR, result must have data' unless results.has_key?(:data) || %i[empty nothing].include?(results[:type])
         res_data = results[:data]
         deep_remove_secret(res_data)
         # comma separated list in string format
