@@ -64,11 +64,11 @@ module Aspera
           else
             message.chomp!
             error =
-            if message.start_with?('"') && message.end_with?('"')
-              JSON.parse(Base64.strict_decode64(message.chomp[1..-2]))['message']
-            else
-              "expecting quotes in [#{message}]"
-            end
+              if message.start_with?('"') && message.end_with?('"')
+                JSON.parse(Base64.strict_decode64(message.chomp[1..-2]))['message']
+              else
+                "expecting quotes in [#{message}]"
+              end
           end
         end
         ws.on(:error) do |e|
@@ -156,13 +156,13 @@ module Aspera
         creation = @gw_api.create('download',{'transfer_spec' => transfer_spec})[:data]
         transfer_uuid = creation['url'].split('/').last
         file_dest =
-        if transfer_spec['zip_required'] || transfer_spec['paths'].length > 1
-          # it is a zip file if zip is required or there is more than 1 file
-          transfer_spec['download_name'] + '.zip'
-        else
-          # it is a plain file if we don't require zip and there is only one file
-          File.basename(transfer_spec['paths'].first['source'])
-        end
+          if transfer_spec['zip_required'] || transfer_spec['paths'].length > 1
+            # it is a zip file if zip is required or there is more than 1 file
+            transfer_spec['download_name'] + '.zip'
+          else
+            # it is a plain file if we don't require zip and there is only one file
+            File.basename(transfer_spec['paths'].first['source'])
+          end
         file_dest = File.join(transfer_spec['destination_root'],file_dest)
         @gw_api.call({operation: 'GET',subpath: "download/#{transfer_uuid}",save_to_file: file_dest})
       end

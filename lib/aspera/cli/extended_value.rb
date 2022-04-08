@@ -38,21 +38,21 @@ module Aspera
       def initialize
         @handlers = {
           decoder: {
-          base64: lambda{|v|Base64.decode64(v)},
-          json:   lambda{|v|JSON.parse(v)},
-          zlib:   lambda{|v|Zlib::Inflate.inflate(v)},
-          ruby:   lambda{|v|eval(v)},
-          csvt:   lambda{|v|ExtendedValue.decode_csvt(v)},
-          lines:  lambda{|v|v.split("\n")},
-          list:   lambda{|v|v[1..-1].split(v[0])}
+            base64: lambda{|v|Base64.decode64(v)},
+            json:   lambda{|v|JSON.parse(v)},
+            zlib:   lambda{|v|Zlib::Inflate.inflate(v)},
+            ruby:   lambda{|v|eval(v)},
+            csvt:   lambda{|v|ExtendedValue.decode_csvt(v)},
+            lines:  lambda{|v|v.split("\n")},
+            list:   lambda{|v|v[1..-1].split(v[0])}
           },
           reader:  {
-          val:   lambda{|v|v},
-          file:  lambda{|v|File.read(File.expand_path(v))},
-          path:  lambda{|v|File.expand_path(v)},
-          env:   lambda{|v|ENV[v]},
-          uri:   lambda{|v|UriReader.read(v)},
-          stdin: lambda{|v|raise 'no value allowed for stdin' unless v.empty?;$stdin.read}
+            val:   lambda{|v|v},
+            file:  lambda{|v|File.read(File.expand_path(v))},
+            path:  lambda{|v|File.expand_path(v)},
+            env:   lambda{|v|ENV[v]},
+            uri:   lambda{|v|UriReader.read(v)},
+            stdin: lambda{|v|raise 'no value allowed for stdin' unless v.empty?;$stdin.read}
           }
           # other handlers can be set using set_handler, e.g. preset is reader in config plugin
         }

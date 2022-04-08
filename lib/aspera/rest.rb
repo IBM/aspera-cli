@@ -227,10 +227,10 @@ module Aspera
           if !call_data[:save_to_file].nil? && result[:http].code.to_s.start_with?('2')
             total_size = result[:http]['Content-Length'].to_i
             progress = ProgressBar.create(
-            format:     '%a %B %p%% %r KB/sec %e',
-            rate_scale: lambda{|rate|rate / 1024},
-            title:      'progress',
-            total:      total_size)
+              format:     '%a %B %p%% %r KB/sec %e',
+              rate_scale: lambda{|rate|rate / 1024},
+              title:      'progress',
+              total:      total_size)
             Log.log.debug('before write file')
             target_file = call_data[:save_to_file]
             # override user's path to path in header

@@ -21,10 +21,10 @@ module Aspera
           when 'NOTIFICATION'
             if data.has_key?('PreTransferBytes')
               @progress = ProgressBar.create(
-              format:      '%a %B %p%% %r Mbps %e',
-              rate_scale:  lambda{|rate|rate / BYTE_PER_MEGABIT},
-              title:       'progress',
-              total:       data['PreTransferBytes'].to_i)
+                format:      '%a %B %p%% %r Mbps %e',
+                rate_scale:  lambda{|rate|rate / BYTE_PER_MEGABIT},
+                title:       'progress',
+                total:       data['PreTransferBytes'].to_i)
             end
           when 'STOP'
             # stop event when one file is completed

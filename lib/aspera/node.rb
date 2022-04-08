@@ -69,12 +69,12 @@ module Aspera
         Log.log.debug("searching #{current_item[:relpath]}".bg_green)
         # get folder content
         folder_contents =
-        begin
-          read("files/#{current_item[:id]}/files")[:data]
-        rescue StandardError => e
-          Log.log.warn("#{current_item[:relpath]}: #{e.class} #{e.message}")
-          []
-        end
+          begin
+            read("files/#{current_item[:id]}/files")[:data]
+          rescue StandardError => e
+            Log.log.warn("#{current_item[:relpath]}: #{e.class} #{e.message}")
+            []
+          end
         Log.dump(:folder_contents,folder_contents)
         folder_contents.each do |entry|
           relative_path = File.join(current_item[:relpath],entry['name'])

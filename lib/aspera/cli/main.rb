@@ -279,11 +279,11 @@ module Aspera
           generate_bash_completion if @bash_completion
           @plugin_env[:config].periodic_check_newer_gem_version
           command_sym =
-          if @option_show_config && @opt_mgr.command_or_arg_empty?
-            Plugins::Config::CONF_PLUGIN_SYM
-          else
-            @opt_mgr.get_next_command(@plugin_env[:config].plugins.keys.dup.unshift(:help))
-          end
+            if @option_show_config && @opt_mgr.command_or_arg_empty?
+              Plugins::Config::CONF_PLUGIN_SYM
+            else
+              @opt_mgr.get_next_command(@plugin_env[:config].plugins.keys.dup.unshift(:help))
+            end
           # command will not be executed, but we need manual
           @opt_mgr.fail_on_missing_mandatory = false if @option_help || @option_show_config
           # main plugin is not dynamically instanciated

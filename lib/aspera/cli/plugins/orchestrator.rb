@@ -78,8 +78,8 @@ module Aspera
             rest_params[:auth] = {
               type:      :url,
               url_creds: {
-              'login'    => options.get_option(:username,:mandatory),
-              'password' => options.get_option(:password,:mandatory) }}
+                'login'    => options.get_option(:username,:mandatory),
+                'password' => options.get_option(:password,:mandatory) }}
           when :head_basic
             rest_params[:auth] = {
               type:     :basic,

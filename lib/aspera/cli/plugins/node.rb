@@ -44,21 +44,21 @@ module Aspera
           options.parse_options!
           return if env[:man_only]
           @api_node =
-          if env.has_key?(:node_api)
-            env[:node_api]
-          elsif options.get_option(:password,:mandatory).start_with?('Bearer ')
-            # info is provided like node_info of aoc
-            Rest.new({
-              base_url: options.get_option(:url,:mandatory),
-              headers:  {
-              'Authorization'      => options.get_option(:password,:mandatory),
-              'X-Aspera-AccessKey' => options.get_option(:username,:mandatory)
-              }
-            })
-          else
-            # this is normal case
-            basic_auth_api
-          end
+            if env.has_key?(:node_api)
+              env[:node_api]
+            elsif options.get_option(:password,:mandatory).start_with?('Bearer ')
+              # info is provided like node_info of aoc
+              Rest.new({
+                base_url: options.get_option(:url,:mandatory),
+                headers:  {
+                  'Authorization'      => options.get_option(:password,:mandatory),
+                  'X-Aspera-AccessKey' => options.get_option(:username,:mandatory)
+                }
+              })
+            else
+              # this is normal case
+              basic_auth_api
+            end
         end
 
         def c_textify_browse(table_data)
@@ -245,11 +245,11 @@ module Aspera
               raise 'shall have auth' unless @api_node.params[:auth].is_a?(Hash)
               raise 'shall be basic auth' unless @api_node.params[:auth][:type].eql?(:basic)
               ts_direction =
-              case command
-              when :upload then Fasp::TransferSpec::DIRECTION_SEND
-              when :download then Fasp::TransferSpec::DIRECTION_RECEIVE
-              else raise 'Error: need upload or download'
-              end
+                case command
+                when :upload then Fasp::TransferSpec::DIRECTION_SEND
+                when :download then Fasp::TransferSpec::DIRECTION_RECEIVE
+                else raise 'Error: need upload or download'
+                end
               transfer_spec = {
                 'remote_host'      => URI.parse(@api_node.params[:base_url]).host,
                 'remote_user'      => Aspera::Fasp::TransferSpec::ACCESS_KEY_TRANSFER_USER,
@@ -282,7 +282,7 @@ module Aspera
               username: node_file[:node_info]['access_key'],
               password: node_api.oauth_token,
               root_id:  node_file[:file_id]
-              }}
+            }}
           when :browse
             thepath = options.get_next_argument('path')
             node_file = aoc_api.resolve_node_file(top_node_file,thepath)
@@ -398,11 +398,11 @@ module Aspera
             command_node_file = options.get_next_command(%i[show permission modify])
             file_path = options.get_option(:path,:optional)
             node_file =
-            if !file_path.nil?
-              aoc_api.resolve_node_file(top_node_file,file_path) # TODO: allow follow link ?
-            else
-              {node_info: top_node_file[:node_info],file_id: instance_identifier}
-            end
+              if !file_path.nil?
+                aoc_api.resolve_node_file(top_node_file,file_path) # TODO: allow follow link ?
+              else
+                {node_info: top_node_file[:node_info],file_id: instance_identifier}
+              end
             node_api = aoc_api.get_node_api(node_file[:node_info])
             case command_node_file
             when :show
@@ -437,15 +437,15 @@ module Aspera
                   'access_id'     => access_id, # id of user or group
                   'access_levels' => Aspera::Node::ACCESS_LEVELS,
                   'tags'          => {'aspera' => {'files' => {'workspace' => {
-                  'id'                => @workspace_id,
-                  'workspace_name'    => @workspace_name,
-                  'user_name'         => aoc_api.user_info['name'],
-                  'shared_by_user_id' => aoc_api.user_info['id'],
-                  'shared_by_name'    => aoc_api.user_info['name'],
-                  'shared_by_email'   => aoc_api.user_info['email'],
-                  'shared_with_name'  => access_id,
-                  'access_key'        => node_file[:node_info]['access_key'],
-                  'node'              => node_file[:node_info]['name']}}}}}
+                    'id'                => @workspace_id,
+                    'workspace_name'    => @workspace_name,
+                    'user_name'         => aoc_api.user_info['name'],
+                    'shared_by_user_id' => aoc_api.user_info['id'],
+                    'shared_by_name'    => aoc_api.user_info['name'],
+                    'shared_by_email'   => aoc_api.user_info['email'],
+                    'shared_with_name'  => access_id,
+                    'access_key'        => node_file[:node_info]['access_key'],
+                    'node'              => node_file[:node_info]['name']}}}}}
                 item = node_api.create('permissions',params)[:data]
                 return {type: :single_object,data: item}
               else raise "internal error:shall not reach here (#{command_perm})"
@@ -511,13 +511,13 @@ module Aspera
             skip_ids_persistency = nil
             if options.get_option(:once_only,:mandatory)
               skip_ids_persistency = PersistencyActionOnce.new(
-              manager: @agents[:persistency],
-              data:    iteration_data,
-              id:      IdGenerator.from_list([
-                'sync_files',
-                options.get_option(:url,:mandatory),
-                options.get_option(:username,:mandatory),
-                asyncid]))
+                manager: @agents[:persistency],
+                data:    iteration_data,
+                id:      IdGenerator.from_list([
+                  'sync_files',
+                  options.get_option(:url,:mandatory),
+                  options.get_option(:username,:mandatory),
+                  asyncid]))
               unless iteration_data.first.nil?
                 data.select!{|l| l['fnid'].to_i > iteration_data.first}
               end

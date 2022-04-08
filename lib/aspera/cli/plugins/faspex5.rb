@@ -51,31 +51,31 @@ module Aspera
             @api_v5 = Rest.new({
               base_url: faxpex5_api_v5_url,
               auth:     {
-              type:      :oauth2,
-              base_url:  @faxpex5_api_auth_url,
-              crtype:    :web,
-              client_id: options.get_option(:client_id,:mandatory),
-              web:       {redirect_uri: options.get_option(:redirect_uri,:mandatory)}
+                type:      :oauth2,
+                base_url:  @faxpex5_api_auth_url,
+                crtype:    :web,
+                client_id: options.get_option(:client_id,:mandatory),
+                web:       {redirect_uri: options.get_option(:redirect_uri,:mandatory)}
               }})
           when :jwt
             app_client_id = options.get_option(:client_id,:mandatory)
             @api_v5 = Rest.new({
               base_url: faxpex5_api_v5_url,
               auth:     {
-              type:      :oauth2,
-              base_url:  @faxpex5_api_auth_url,
-              crtype:    :jwt,
-              client_id: app_client_id,
-              jwt:       {
-                payload:         {
-                  iss: app_client_id,    # issuer
-                  aud: app_client_id,    # audience TODO: ???
-                  sub: "user:#{options.get_option(:username,:mandatory)}" # subject also "client:#{app_client_id}" + auth user/pass
-                },
-                #auth:                {type: :basic, options.get_option(:username,:mandatory), options.get_option(:password,:mandatory),
-                private_key_obj: OpenSSL::PKey::RSA.new(options.get_option(:private_key,:mandatory)),
-                headers:         {typ: 'JWT'}
-              }
+                type:      :oauth2,
+                base_url:  @faxpex5_api_auth_url,
+                crtype:    :jwt,
+                client_id: app_client_id,
+                jwt:       {
+                  payload:         {
+                    iss: app_client_id,    # issuer
+                    aud: app_client_id,    # audience TODO: ???
+                    sub: "user:#{options.get_option(:username,:mandatory)}" # subject also "client:#{app_client_id}" + auth user/pass
+                  },
+                  #auth:                {type: :basic, options.get_option(:username,:mandatory), options.get_option(:password,:mandatory),
+                  private_key_obj: OpenSSL::PKey::RSA.new(options.get_option(:private_key,:mandatory)),
+                  headers:         {typ: 'JWT'}
+                }
               }})
           end
         end
@@ -115,9 +115,9 @@ module Aspera
               if options.get_option(:once_only,:mandatory)
                 # read ids from persistency
                 skip_ids_persistency = PersistencyActionOnce.new(
-                manager: @agents[:persistency],
-                data:    skip_ids_data,
-                id:      IdGenerator.from_list(['faspex_recv',options.get_option(:url,:mandatory),options.get_option(:username,:mandatory),pkg_type]))
+                  manager: @agents[:persistency],
+                  data:    skip_ids_data,
+                  id:      IdGenerator.from_list(['faspex_recv',options.get_option(:url,:mandatory),options.get_option(:username,:mandatory),pkg_type]))
               end
               if pack_id.eql?(VAL_ALL)
                 # TODO: if packages have same name, they will overwrite
@@ -146,10 +146,10 @@ module Aspera
               res_type = options.get_next_command(%i[accounts contacts jobs workgroups shared_inboxes nodes oauth_clients registrations saml_configs])
               res_path = res_type.to_s
               display_fields =
-              case res_type
-              when :accounts then [:all_but,'user_profile_data_attributes']
-              when :oauth_clients then [:all_but,'public_key']
-              end
+                case res_type
+                when :accounts then [:all_but,'user_profile_data_attributes']
+                when :oauth_clients then [:all_but,'public_key']
+                end
               adm_api = @api_v5
               if res_type.eql?(:oauth_clients)
                 adm_api = Rest.new(@api_v5.params.merge({base_url: @faxpex5_api_auth_url}))

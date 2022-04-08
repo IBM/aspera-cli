@@ -116,14 +116,14 @@ module Aspera
           current_index = last_keyframe + 1 + @options.blend_transframes
         end
         Utils.ffmpeg(
-        in_f: Utils.ffmpeg_fmt(this_tmpdir),
-        in_p: ['-framerate',@options.blend_fps],
-        out_f: @destination_file_path,
-        out_p: [
-          '-filter:v',"scale='trunc(iw/2)*2:trunc(ih/2)*2'",
-          '-codec:v','libx264',
-          '-r',30,
-          '-pix_fmt','yuv420p'])
+          in_f: Utils.ffmpeg_fmt(this_tmpdir),
+          in_p: ['-framerate',@options.blend_fps],
+          out_f: @destination_file_path,
+          out_p: [
+            '-filter:v',"scale='trunc(iw/2)*2:trunc(ih/2)*2'",
+            '-codec:v','libx264',
+            '-r',30,
+            '-pix_fmt','yuv420p'])
       end
 
       # generate n clips starting at offset
@@ -135,53 +135,53 @@ module Aspera
             offset_seconds = get_offset(p_duration,@options.video_start_sec.to_i,@options.clips_count.to_i,i)
             tmpfilename = format('clip%04d.mp4',i)
             Utils.ffmpeg(
-            in_f: @source_file_path,
-            in_p: ['-ss',0.9 * offset_seconds],
-            out_f: File.join(this_tmpdir,tmpfilename),
-            out_p: [
-              '-ss',0.1 * offset_seconds,
-              '-t',@options.clips_length,
-              '-filter:v',"scale=#{@options.video_scale}",
-              '-codec:a','libmp3lame'])
+              in_f: @source_file_path,
+              in_p: ['-ss',0.9 * offset_seconds],
+              out_f: File.join(this_tmpdir,tmpfilename),
+              out_p: [
+                '-ss',0.1 * offset_seconds,
+                '-t',@options.clips_length,
+                '-filter:v',"scale=#{@options.video_scale}",
+                '-codec:a','libmp3lame'])
             f.puts("file '#{tmpfilename}'")
           end
         end
         # concat clips
         Utils.ffmpeg(
-        in_f: filelist,
-        in_p: ['-f','concat'],
-        out_f: @destination_file_path,
-        out_p: ['-codec','copy'])
+          in_f: filelist,
+          in_p: ['-f','concat'],
+          out_f: @destination_file_path,
+          out_p: ['-codec','copy'])
       end
 
       # do a simple reencoding
       def convert_video_to_mp4_using_reencode
         Utils.ffmpeg(
-        in_f: @source_file_path,
-        out_f: @destination_file_path,
-        out_p: [
-          '-t','60',
-          '-codec:v','libx264',
-          '-profile:v','high',
-          '-pix_fmt','yuv420p',
-          '-preset','slow',
-          '-b:v','500k',
-          '-maxrate','500k',
-          '-bufsize','1000k',
-          '-filter:v',"scale=#{@options.video_scale}",
-          '-threads','0',
-          '-codec:a','libmp3lame',
-          '-ac','2',
-          '-b:a','128k',
-          '-movflags','faststart'])
+          in_f: @source_file_path,
+          out_f: @destination_file_path,
+          out_p: [
+            '-t','60',
+            '-codec:v','libx264',
+            '-profile:v','high',
+            '-pix_fmt','yuv420p',
+            '-preset','slow',
+            '-b:v','500k',
+            '-maxrate','500k',
+            '-bufsize','1000k',
+            '-filter:v',"scale=#{@options.video_scale}",
+            '-threads','0',
+            '-codec:a','libmp3lame',
+            '-ac','2',
+            '-b:a','128k',
+            '-movflags','faststart'])
       end
 
       def convert_video_to_png_using_fixed
         Utils.video_dump_frame(
-        @source_file_path,
-        Utils.video_get_duration(@source_file_path) * @options.thumb_vid_fraction,
-        @options.thumb_vid_scale,
-        @destination_file_path)
+          @source_file_path,
+          Utils.video_get_duration(@source_file_path) * @options.thumb_vid_fraction,
+          @options.thumb_vid_scale,
+          @destination_file_path)
       end
 
       # https://trac.ffmpeg.org/wiki/SponsoringPrograms/GSoC/2015#AnimatedPortableNetworkGraphicsAPNG
@@ -190,17 +190,17 @@ module Aspera
       # ffmpeg  output.png
       def convert_video_to_png_using_animated
         Utils.ffmpeg(
-        in_f: @source_file_path,
-        in_p: [
-          '-ss',10, # seek to input position
-          '-t',20 # max seconds
-        ],
-        out_f: @destination_file_path,
-        out_p: [
-          '-vf','fps=5,scale=120:-1:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse',
-          '-loop',0,
-          '-f','gif'
-        ])
+          in_f: @source_file_path,
+          in_p: [
+            '-ss',10, # seek to input position
+            '-t',20 # max seconds
+          ],
+          out_f: @destination_file_path,
+          out_p: [
+            '-vf','fps=5,scale=120:-1:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse',
+            '-loop',0,
+            '-f','gif'
+          ])
       end
 
       def convert_office_to_png

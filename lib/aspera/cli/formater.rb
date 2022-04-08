@@ -75,7 +75,7 @@ module Aspera
       end
 
       attr_accessor :option_flat_hash,:option_transpose_single,:option_format,:option_display,:option_fields,:option_table_style,
-                    :option_select,:option_show_secrets
+        :option_select,:option_show_secrets
 
       # adds options but does not parse
       def initialize(opt_mgr)
@@ -196,18 +196,18 @@ module Aspera
               table_rows_hash_val.map!{|obj|self.class.flattened_object(obj,expand_last: results[:option_expand_last])}
             end
             final_table_columns =
-            case user_asked_fields_list_str
-            when FIELDS_DEFAULT then result_default_fields(results,table_rows_hash_val)
-            when FIELDS_ALL then     result_all_fields(results,table_rows_hash_val)
-            else
-              if user_asked_fields_list_str.start_with?('+')
-                result_default_fields(results,table_rows_hash_val).push(*user_asked_fields_list_str.gsub(/^\+/,'').split(','))
-              elsif user_asked_fields_list_str.start_with?('-')
-                result_default_fields(results,table_rows_hash_val).reject{|i| user_asked_fields_list_str.gsub(/^-/,'').split(',').include?(i)}
+              case user_asked_fields_list_str
+              when FIELDS_DEFAULT then result_default_fields(results,table_rows_hash_val)
+              when FIELDS_ALL then     result_all_fields(results,table_rows_hash_val)
               else
-                user_asked_fields_list_str.split(',')
+                if user_asked_fields_list_str.start_with?('+')
+                  result_default_fields(results,table_rows_hash_val).push(*user_asked_fields_list_str.gsub(/^\+/,'').split(','))
+                elsif user_asked_fields_list_str.start_with?('-')
+                  result_default_fields(results,table_rows_hash_val).reject{|i| user_asked_fields_list_str.gsub(/^-/,'').split(',').include?(i)}
+                else
+                  user_asked_fields_list_str.split(',')
+                end
               end
-            end
           when :single_object # goes to table display
             # :single_object is a simple hash table  (can be nested)
             raise "internal error: expecting Hash: got #{res_data.class}: #{res_data}" unless res_data.is_a?(Hash)
@@ -217,11 +217,11 @@ module Aspera
               self.class.flatten_name_value_list(res_data)
             end
             asked_fields =
-            case user_asked_fields_list_str
-            when FIELDS_DEFAULT then results[:fields] || res_data.keys
-            when FIELDS_ALL then     res_data.keys
-            else user_asked_fields_list_str.split(',')
-            end
+              case user_asked_fields_list_str
+              when FIELDS_DEFAULT then results[:fields] || res_data.keys
+              when FIELDS_ALL then     res_data.keys
+              else user_asked_fields_list_str.split(',')
+              end
             table_rows_hash_val = asked_fields.map { |i| { final_table_columns.first => i, final_table_columns.last => res_data[i] } }
           when :value_list # goes to table display
             # :value_list is a simple array of values, name of column provided in the :name
@@ -275,11 +275,11 @@ module Aspera
             #vertical_boundary:      style[1],
             #boundary_intersection:  style[2]))
             display_message(:data,Terminal::Table.new(
-            headings:  final_table_columns,
-            rows:      final_table_rows,
-            border_x:  style[0],
-            border_y:  style[1],
-            border_i:  style[2]))
+              headings:  final_table_columns,
+              rows:      final_table_rows,
+              border_x:  style[0],
+              border_y:  style[1],
+              border_i:  style[2]))
           when :csv
             display_message(:data,final_table_rows.map{|t| t.join(CSV_FIELD_SEPARATOR)}.join(CSV_RECORD_SEPARATOR))
           end

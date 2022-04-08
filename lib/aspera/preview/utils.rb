@@ -116,10 +116,10 @@ module Aspera
         def video_dump_frame(input_file, offset_seconds, scale, output_file, index=nil)
           output_file = get_tmp_num_filepath(output_file,index) unless index.nil?
           ffmpeg(
-          in_f: input_file,
-          in_p: ['-ss',offset_seconds],
-          out_f: output_file,
-          out_p: ['-frames:v',1,'-filter:v',"scale=#{scale}"])
+            in_f: input_file,
+            in_p: ['-ss',offset_seconds],
+            out_f: output_file,
+            out_p: ['-frames:v',1,'-filter:v',"scale=#{scale}"])
           return output_file
         end
       end

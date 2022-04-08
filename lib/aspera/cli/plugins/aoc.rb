@@ -103,7 +103,7 @@ module Aspera
               username: node_file[:node_info]['access_key'],
               password: node_api.oauth_token,
               root_id:  node_file[:file_id]
-              }}
+            }}
           when :browse
             thepath = options.get_next_argument('path')
             node_file = aoc_api.resolve_node_file(top_node_file,thepath)
@@ -225,11 +225,11 @@ module Aspera
             command_node_file = options.get_next_command(%i[show permission modify])
             file_path = options.get_option(:path,:optional)
             node_file =
-            if !file_path.nil?
-              aoc_api.resolve_node_file(top_node_file,file_path) # TODO: allow follow link ?
-            else
-              {node_info: top_node_file[:node_info],file_id: instance_identifier}
-            end
+              if !file_path.nil?
+                aoc_api.resolve_node_file(top_node_file,file_path) # TODO: allow follow link ?
+              else
+                {node_info: top_node_file[:node_info],file_id: instance_identifier}
+              end
             node_api = aoc_api.get_node_api(node_file[:node_info])
             case command_node_file
             when :show
@@ -264,15 +264,15 @@ module Aspera
                   'access_id'     => access_id, # id of user or group
                   'access_levels' => Aspera::Node::ACCESS_LEVELS,
                   'tags'          => {'aspera' => {'files' => {'workspace' => {
-                  'id'                => @workspace_id,
-                  'workspace_name'    => @workspace_name,
-                  'user_name'         => aoc_api.user_info['name'],
-                  'shared_by_user_id' => aoc_api.user_info['id'],
-                  'shared_by_name'    => aoc_api.user_info['name'],
-                  'shared_by_email'   => aoc_api.user_info['email'],
-                  'shared_with_name'  => access_id,
-                  'access_key'        => node_file[:node_info]['access_key'],
-                  'node'              => node_file[:node_info]['name']}}}}}
+                    'id'                => @workspace_id,
+                    'workspace_name'    => @workspace_name,
+                    'user_name'         => aoc_api.user_info['name'],
+                    'shared_by_user_id' => aoc_api.user_info['id'],
+                    'shared_by_name'    => aoc_api.user_info['name'],
+                    'shared_by_email'   => aoc_api.user_info['email'],
+                    'shared_with_name'  => access_id,
+                    'access_key'        => node_file[:node_info]['access_key'],
+                    'node'              => node_file[:node_info]['name']}}}}}
                 item = node_api.create('permissions',params)[:data]
                 return {type: :single_object,data: item}
               else raise "internal error:shall not reach here (#{command_perm})"
@@ -605,9 +605,9 @@ module Aspera
               if options.get_option(:once_only,:mandatory)
                 saved_date = []
                 startdate_persistency = PersistencyActionOnce.new(
-                manager: @agents[:persistency],
-                data: saved_date,
-                ids: IdGenerator.from_list(['aoc_ana_date',options.get_option(:url,:mandatory),@workspace_name].push(filter_resource,filter_id)))
+                  manager: @agents[:persistency],
+                  data: saved_date,
+                  ids: IdGenerator.from_list(['aoc_ana_date',options.get_option(:url,:mandatory),@workspace_name].push(filter_resource,filter_id)))
                 start_datetime = saved_date.first
                 stop_datetime = Time.now.utc.strftime('%FT%T.%LZ')
                 #Log.log().error("start: #{start_datetime}")
@@ -629,15 +629,15 @@ module Aspera
             resource_type = options.get_next_argument('resource',expected: KNOWN_AOC_RES)
             # get path on API, resource type is singular, but api is plural
             resource_class_path =
-            case resource_type
-            # special cases: singleton, in admin, with x
-            when :self,:organization then resource_type
-            when :client_registration_token,:client_access_key then "admin/#{resource_type}s"
-            when :application then 'admin/apps_new'
-            when :dropbox then resource_type.to_s + 'es'
-            when :kms_profile then "integrations/#{resource_type}s"
-            else "#{resource_type}s"
-            end
+              case resource_type
+              # special cases: singleton, in admin, with x
+              when :self,:organization then resource_type
+              when :client_registration_token,:client_access_key then "admin/#{resource_type}s"
+              when :application then 'admin/apps_new'
+              when :dropbox then resource_type.to_s + 'es'
+              when :kms_profile then "integrations/#{resource_type}s"
+              else "#{resource_type}s"
+              end
             # build list of supported operations
             singleton_object = %i[self organization].include?(resource_type)
             global_operations =  %i[create list]
@@ -744,15 +744,15 @@ module Aspera
                   'access_id'     => access_id,
                   'access_levels' => %w[list read write delete mkdir rename preview],
                   'tags'          => {'aspera' => {'files' => {'workspace' => {
-                  'id'                => ws_info['id'],
-                  'workspace_name'    => ws_info['name'],
-                  'user_name'         => aoc_api.user_info['name'],
-                  'shared_by_user_id' => aoc_api.user_info['id'],
-                  'shared_by_name'    => aoc_api.user_info['name'],
-                  'shared_by_email'   => aoc_api.user_info['email'],
-                  'shared_with_name'  => access_id,
-                  'access_key'        => node_file[:node_info]['access_key'],
-                  'node'              => node_file[:node_info]['name']}
+                    'id'                => ws_info['id'],
+                    'workspace_name'    => ws_info['name'],
+                    'user_name'         => aoc_api.user_info['name'],
+                    'shared_by_user_id' => aoc_api.user_info['id'],
+                    'shared_by_name'    => aoc_api.user_info['name'],
+                    'shared_by_email'   => aoc_api.user_info['email'],
+                    'shared_with_name'  => access_id,
+                    'access_key'        => node_file[:node_info]['access_key'],
+                    'node'              => node_file[:node_info]['name']}
                 }}}}
                 shared_create_data = default_create_data.deep_merge(default_create_data) # ?aspera-node-basic=#{node_id}&aspera-node-prefer-basic=#{node_id}
                 return { type: :single_object, data: aoc_api.create("node/#{node_id}/permissions",shared_create_data)}
@@ -867,9 +867,9 @@ module Aspera
               skip_ids_persistency = nil
               if options.get_option(:once_only,:mandatory)
                 skip_ids_persistency = PersistencyActionOnce.new(
-                manager: @agents[:persistency],
-                data: skip_ids_data,
-                id: IdGenerator.from_list(['aoc_recv',options.get_option(:url,:mandatory),@workspace_id].push(*@persist_ids)))
+                  manager: @agents[:persistency],
+                  data: skip_ids_data,
+                  id: IdGenerator.from_list(['aoc_recv',options.get_option(:url,:mandatory),@workspace_id].push(*@persist_ids)))
               end
               if ids_to_download.eql?(VAL_ALL)
                 # get list of packages in inbox
@@ -962,8 +962,8 @@ module Aspera
                   value_option['data'] = {
                     aoc:            true,
                     url_token_data: {
-                    data:    create_params,
-                    purpose: 'view_shared_file'
+                      data:    create_params,
+                      purpose: 'view_shared_file'
                     }
                   }
                   value_option['user_selected_name'] = nil
@@ -983,14 +983,14 @@ module Aspera
                   'access_id'     => result[:data]['resource_id'],
                   'access_levels' => access_levels,
                   'tags'          => {
-                  'url_token'        => true,
-                  'workspace_id'     => @workspace_id,
-                  'workspace_name'   => @workspace_name,
-                  'folder_name'      => 'my folder',
-                  'created_by_name'  => aoc_api.user_info['name'],
-                  'created_by_email' => aoc_api.user_info['email'],
-                  'access_key'       => node_file[:node_info]['access_key'],
-                  'node'             => node_file[:node_info]['host']
+                    'url_token'        => true,
+                    'workspace_id'     => @workspace_id,
+                    'workspace_name'   => @workspace_name,
+                    'folder_name'      => 'my folder',
+                    'created_by_name'  => aoc_api.user_info['name'],
+                    'created_by_email' => aoc_api.user_info['email'],
+                    'access_key'       => node_file[:node_info]['access_key'],
+                    'node'             => node_file[:node_info]['host']
                   }
                 }
                 node_api.create("permissions?file_id=#{node_file[:file_id]}",perm_data)
@@ -1044,7 +1044,7 @@ module Aspera
         end
 
         private :aoc_params,:set_workspace_info,:set_home_node_file,:do_bulk_operation,:resolve_package_recipients,:option_url_query,:assert_public_link_types,
-:execute_admin_action
+          :execute_admin_action
         private_constant :VAL_ALL,:NODE4_COMMANDS, :ID_AK_ADMIN
       end # AoC
     end # Plugins

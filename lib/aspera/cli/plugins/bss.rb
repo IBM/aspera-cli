@@ -25,8 +25,8 @@ module Aspera
           if @api_bss.nil?
             key = options.get_option(:password,:mandatory)
             @api_bss = Rest.new(
-            base_url: 'https://dashboard.bss.asperasoft.com/platform',
-            headers: {cookie: "_dashboard_key=#{key}"})
+              base_url: 'https://dashboard.bss.asperasoft.com/platform',
+              headers: {cookie: "_dashboard_key=#{key}"})
           end
           command = options.get_next_command(ACTIONS)
           case command

@@ -38,11 +38,11 @@ module Aspera
     # same as above but in global temp folder
     def new_file_path_global(base_name)
       username =
-      begin
-        Etc.getlogin || Etc.getpwuid(Process.uid).name || 'unknown_user'
-      rescue StandardError
-        'unknown_user'
-      end
+        begin
+          Etc.getlogin || Etc.getpwuid(Process.uid).name || 'unknown_user'
+        rescue StandardError
+          'unknown_user'
+        end
       new_file_path_in_folder(Etc.systmpdir, base_name + '_' + username + '_')
     end
 

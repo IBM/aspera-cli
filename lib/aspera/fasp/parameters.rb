@@ -44,11 +44,11 @@ module Aspera
             # only keep lines that are usable in supported agents
             next if SUPPORTED_AGENTS_SHORT.inject(true){|m,j|m && param[j].empty?}
             param[:cli] =
-            case i[:cltype]
-            when :envvar then 'env:' + i[:clvarname]
-            when :opt_without_arg,:opt_with_arg then i[:clswitch]
-            else ''
-            end
+              case i[:cltype]
+              when :envvar then 'env:' + i[:clvarname]
+              when :opt_without_arg,:opt_with_arg then i[:clswitch]
+              else ''
+              end
             if i.has_key?(:enum)
               param[:description] += "\nAllowed values: #{i[:enum].join(', ')}"
             end

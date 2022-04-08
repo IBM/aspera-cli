@@ -7,7 +7,7 @@ Metrics/AbcSize:
 Layout/DotPosition:
   Enabled: false
 Layout/AssignmentIndentation:
-  Enabled: false
+  Enabled: true
 Layout/SpaceAfterComma:
   Enabled: false
 Layout/SpaceAroundOperators:
@@ -25,13 +25,13 @@ Layout/EmptyLinesAroundAttributeAccessor:
 Layout/LeadingCommentSpace:
   Enabled: false
 Layout/FirstHashElementIndentation:
-  Enabled: false
+  Enabled: true
 Layout/EmptyLineAfterGuardClause:
   Enabled: false
 Layout/HashAlignment:
   Enabled: true
 Layout/CaseIndentation:
-  Enabled: false
+  Enabled: true
 Layout/MultilineHashBraceLayout:
   Enabled: false
 Layout/SpaceAfterSemicolon:
@@ -39,7 +39,7 @@ Layout/SpaceAfterSemicolon:
 Layout/MultilineMethodCallBraceLayout:
   Enabled: false
 Layout/FirstArgumentIndentation:
-  Enabled: false
+  Enabled: true
 Layout/MultilineArrayBraceLayout:
   Enabled: false
 Style/WordArray:
@@ -81,7 +81,7 @@ Style/RedundantBegin:
 Layout/SpaceAroundEqualsInParameterDefault:
   Enabled: false
 Layout/ArgumentAlignment:
-  Enabled: false
+  Enabled: true
 Layout/MultilineOperationIndentation:
   Enabled: false
 Style/Documentation:

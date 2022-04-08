@@ -242,9 +242,9 @@ module Aspera
         Log.dump('decoded_token',decoded_token) unless decoded_token.nil?
         if decoded_token.is_a?(Hash)
           expires_at_sec =
-          if    decoded_token['expires_at'].is_a?(String) then DateTime.parse(decoded_token['expires_at']).to_time
-          elsif decoded_token['exp'].is_a?(Integer)       then Time.at(decoded_token['exp'])
-          end
+            if    decoded_token['expires_at'].is_a?(String) then DateTime.parse(decoded_token['expires_at']).to_time
+            elsif decoded_token['exp'].is_a?(Integer)       then Time.at(decoded_token['exp'])
+            end
           # force refresh if we see a token too close from expiration
           use_refresh_token = true if expires_at_sec.is_a?(Time) && (expires_at_sec - Time.now) < TOKEN_EXPIRATION_GUARD_SEC
           Log.log.debug("Expiration: #{expires_at_sec} / #{use_refresh_token}")

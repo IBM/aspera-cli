@@ -41,10 +41,10 @@ module Aspera
         def event_enhanced(data)
           if @progress_bar.nil?
             @progress_bar = ProgressBar.create(
-            format:      '%t %a %B %p%% %r Mbps %e',
-            rate_scale:  lambda{|rate|rate / BYTE_PER_MEGABIT},
-            title:       '',
-            total:       nil)
+              format:      '%t %a %B %p%% %r Mbps %e',
+              rate_scale:  lambda{|rate|rate / BYTE_PER_MEGABIT},
+              title:       '',
+              total:       nil)
           end
           if !data.has_key?(Fasp::AgentBase::LISTENER_SESSION_ID_S)
             Log.log.error("Internal error: no #{Fasp::AgentBase::LISTENER_SESSION_ID_S} in event: #{data}")

@@ -51,12 +51,13 @@ module Aspera
               command = options.get_next_command([:list])
               case command
               when :list
-                return {type:   :object_list,
-                        data:   api_console.read('transfers',{
-                  'from' => options.get_option(:filter_from,:mandatory),
-                  'to'   => options.get_option(:filter_to,:mandatory)
+                return {
+                  type:   :object_list,
+                  data:   api_console.read('transfers',{
+                    'from' => options.get_option(:filter_from,:mandatory),
+                    'to'   => options.get_option(:filter_to,:mandatory)
                   })[:data],
-                        fields: %w[id contact name status]}
+                  fields: %w[id contact name status]}
               end
             end
           end

@@ -99,9 +99,9 @@ raise "Error(s) occured: #{errors.join(',')}" if !errors.empty?
 node_api = Aspera::Rest.new({
   base_url: DEMO_CONFIG[1],
   auth:     {
-  type:     :basic,
-  username: URI.parse(DEMO_CONFIG[1]).user,
-  password: DEMO_CONFIG[2]
+    type:     :basic,
+    username: URI.parse(DEMO_CONFIG[1]).user,
+    password: DEMO_CONFIG[2]
   }})
 # define sample file(s) and destination folder
 sources = ["#{tmpdir}/sample_file.txt"]

@@ -40,9 +40,9 @@ Aspera::Rest.insecure = true
 api_v3 = Aspera::Rest.new({
   base_url: faspex_url,
   auth:     {
-  type:     :basic,
-  username: faspex_user,
-  password: faspex_pass
+    type:     :basic,
+    username: faspex_user,
+    password: faspex_pass
   }})
 
 # very simple api call
@@ -59,7 +59,7 @@ package_create_params = {'delivery' => {
   'title'      => 'test package',
   'recipients' => ['aspera.user1@gmail.com'],
   'sources'    => [{'paths' => [file_to_send]}]
-  }}
+}}
 pkg_created = api_v3.create('send',package_create_params)[:data]
 # get transfer specification (normally: only one)
 transfer_spec = pkg_created['xfer_sessions'].first
@@ -88,7 +88,7 @@ api_v4 = Aspera::Rest.new({
     crtype:   :generic,
     generic:  {grant_type: 'password'},
     scope:    'admin'
-    }})
+  }})
 
 # Use it. Note that Faspex 4 API v4 is totally different from Faspex 4 v3 APIs, see ref on line 2
 Aspera::Log.dump('users',api_v4.read('users')[:data])

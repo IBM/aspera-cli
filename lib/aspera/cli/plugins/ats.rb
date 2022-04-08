@@ -35,9 +35,9 @@ module Aspera
           @ats_api_pub_v1_cache = Rest.new({
             base_url: AtsApi.base_url + '/pub/v1',
             auth:     {
-            type:     :basic,
-            username: options.get_option(:ats_key,:mandatory),
-            password: options.get_option(:ats_secret,:mandatory)}
+              type:     :basic,
+              username: options.get_option(:ats_key,:mandatory),
+              password: options.get_option(:ats_secret,:mandatory)}
           })
         end
 
@@ -109,9 +109,9 @@ module Aspera
             api_node = Rest.new({
               base_url: base_url,
               auth:     {
-              type:     :basic,
-              username: access_key_id,
-              password: @agents[:config].get_secret(url: base_url,username: access_key_id)
+                type:     :basic,
+                username: access_key_id,
+                password: @agents[:config].get_secret(url: base_url,username: access_key_id)
               }})
             command = options.get_next_command(Node::COMMON_ACTIONS)
             return Node.new(@agents.merge(skip_basic_auth_options: true, node_api: api_node)).execute_action(command)
@@ -120,9 +120,9 @@ module Aspera
             rest_params = {
               base_url: base_url,
               auth:     {
-              type:     :basic,
-              username: access_key_id,
-              password: @agents[:config].get_secret(url: base_url, username: access_key_id)
+                type:     :basic,
+                username: access_key_id,
+                password: @agents[:config].get_secret(url: base_url, username: access_key_id)
               }}
             api_ak_auth = Rest.new(rest_params)
             return {type: :single_object, data: api_ak_auth.read('servers')[:data]}
@@ -154,15 +154,15 @@ module Aspera
             base_url: AtsApi.base_url + '/v2',
             headers:  rest_add_headers,
             auth:     {
-            type:     :oauth2,
-            base_url: 'https://iam.bluemix.net/identity',
-            #does not work:  base_url:    'https://iam.cloud.ibm.com/identity',
-            crtype:   :generic,
-            generic:  {
-              grant_type:    'urn:ibm:params:oauth:grant-type:apikey',
-              response_type: 'cloud_iam',
-              apikey:        options.get_option(:ibm_api_key,:mandatory)
-          }}})
+              type:     :oauth2,
+              base_url: 'https://iam.bluemix.net/identity',
+              #does not work:  base_url:    'https://iam.cloud.ibm.com/identity',
+              crtype:   :generic,
+              generic:  {
+                grant_type:    'urn:ibm:params:oauth:grant-type:apikey',
+                response_type: 'cloud_iam',
+                apikey:        options.get_option(:ibm_api_key,:mandatory)
+              }}})
         end
 
         def execute_action_api_key

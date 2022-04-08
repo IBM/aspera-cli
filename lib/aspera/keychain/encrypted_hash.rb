@@ -65,13 +65,13 @@ module Aspera
         legacy_detected=false
         @all_secrets.each do |name,value|
           normal = # normalized version
-          case value
-          when String
-            legacy_detected=true
-            {username: name, url: '', secret: value}
-          when Hash then value.symbolize_keys
-          else raise 'error secret must be String (legacy) or Hash (new)'
-          end
+            case value
+            when String
+              legacy_detected=true
+              {username: name, url: '', secret: value}
+            when Hash then value.symbolize_keys
+            else raise 'error secret must be String (legacy) or Hash (new)'
+            end
           normal[:description] = '' unless normal.has_key?(:description)
           extraneous_keys=normal.keys - ACCEPTED_KEYS
           Log.log.error("wrongs keys in secret hash: #{extraneous_keys.map(&:to_s).join(',')}") unless extraneous_keys.empty?

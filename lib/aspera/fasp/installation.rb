@@ -335,50 +335,50 @@ module Aspera
       def product_locations
         case Aspera::Environment.os
         when Aspera::Environment::OS_WINDOWS; return [{
-            expected: PRODUCT_CONNECT,
-            app_root: File.join(ENV['LOCALAPPDATA'],'Programs','Aspera','Aspera Connect'),
-            log_root: File.join(ENV['LOCALAPPDATA'],'Aspera','Aspera Connect','var','log'),
-            run_root: File.join(ENV['LOCALAPPDATA'],'Aspera','Aspera Connect')
-            },{
-            expected: PRODUCT_CLI_V1,
-            app_root: File.join('C:','Program Files','Aspera','cli'),
-            log_root: File.join('C:','Program Files','Aspera','cli','var','log')
-            },{
-            expected: PRODUCT_ENTSRV,
-            app_root: File.join('C:','Program Files','Aspera','Enterprise Server'),
-            log_root: File.join('C:','Program Files','Aspera','Enterprise Server','var','log')
-            }]
+          expected: PRODUCT_CONNECT,
+          app_root: File.join(ENV['LOCALAPPDATA'],'Programs','Aspera','Aspera Connect'),
+          log_root: File.join(ENV['LOCALAPPDATA'],'Aspera','Aspera Connect','var','log'),
+          run_root: File.join(ENV['LOCALAPPDATA'],'Aspera','Aspera Connect')
+        },{
+          expected: PRODUCT_CLI_V1,
+          app_root: File.join('C:','Program Files','Aspera','cli'),
+          log_root: File.join('C:','Program Files','Aspera','cli','var','log')
+        },{
+          expected: PRODUCT_ENTSRV,
+          app_root: File.join('C:','Program Files','Aspera','Enterprise Server'),
+          log_root: File.join('C:','Program Files','Aspera','Enterprise Server','var','log')
+        }]
         when Aspera::Environment::OS_X; return [{
-            expected: PRODUCT_CONNECT,
-            app_root: File.join(Dir.home,'Applications','Aspera Connect.app'),
-            log_root: File.join(Dir.home,'Library','Logs','Aspera_Connect'),
-            run_root: File.join(Dir.home,'Library','Application Support','Aspera','Aspera Connect'),
-            sub_bin:  File.join('Contents','Resources')
-            },{
-            expected: PRODUCT_CLI_V1,
-            app_root: File.join(Dir.home,'Applications','Aspera CLI'),
-            log_root: File.join(Dir.home,'Library','Logs','Aspera')
-            },{
-            expected: PRODUCT_ENTSRV,
-            app_root: File.join('','Library','Aspera'),
-            log_root: File.join(Dir.home,'Library','Logs','Aspera')
-            },{
-            expected: PRODUCT_DRIVE,
-            app_root: File.join('','Applications','Aspera Drive.app'),
-            log_root: File.join(Dir.home,'Library','Logs','Aspera_Drive'),
-            sub_bin:  File.join('Contents','Resources')
-            }]
+          expected: PRODUCT_CONNECT,
+          app_root: File.join(Dir.home,'Applications','Aspera Connect.app'),
+          log_root: File.join(Dir.home,'Library','Logs','Aspera_Connect'),
+          run_root: File.join(Dir.home,'Library','Application Support','Aspera','Aspera Connect'),
+          sub_bin:  File.join('Contents','Resources')
+        },{
+          expected: PRODUCT_CLI_V1,
+          app_root: File.join(Dir.home,'Applications','Aspera CLI'),
+          log_root: File.join(Dir.home,'Library','Logs','Aspera')
+        },{
+          expected: PRODUCT_ENTSRV,
+          app_root: File.join('','Library','Aspera'),
+          log_root: File.join(Dir.home,'Library','Logs','Aspera')
+        },{
+          expected: PRODUCT_DRIVE,
+          app_root: File.join('','Applications','Aspera Drive.app'),
+          log_root: File.join(Dir.home,'Library','Logs','Aspera_Drive'),
+          sub_bin:  File.join('Contents','Resources')
+        }]
         else; return [{ # other: Linux and Unix family
-            expected: PRODUCT_CONNECT,
-            app_root: File.join(Dir.home,'.aspera','connect'),
-            run_root: File.join(Dir.home,'.aspera','connect')
-            },{
-            expected: PRODUCT_CLI_V1,
-            app_root: File.join(Dir.home,'.aspera','cli')
-            },{
-            expected: PRODUCT_ENTSRV,
-            app_root: File.join('','opt','aspera')
-            }]
+          expected: PRODUCT_CONNECT,
+          app_root: File.join(Dir.home,'.aspera','connect'),
+          run_root: File.join(Dir.home,'.aspera','connect')
+        },{
+          expected: PRODUCT_CLI_V1,
+          app_root: File.join(Dir.home,'.aspera','cli')
+        },{
+          expected: PRODUCT_ENTSRV,
+          app_root: File.join('','opt','aspera')
+        }]
         end
       end
 

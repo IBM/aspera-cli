@@ -34,7 +34,7 @@ module Aspera
         # sub path in url for public link delivery
         PUB_LINK_EXTERNAL_MATCH = 'external_deliveries/'
         private_constant :KEY_NODE,:KEY_PATH,:VAL_ALL,:PACKAGE_MATCH_FIELD,:ATOM_MAILBOXES,:ATOM_PARAMS,
-        :ATOM_EXT_PARAMS,:PUB_LINK_EXTERNAL_MATCH
+          :ATOM_EXT_PARAMS,:PUB_LINK_EXTERNAL_MATCH
 
         class << self
           def detect(base_url)
@@ -127,12 +127,12 @@ module Aspera
             @api_v4 = Rest.new({
               base_url: faspex_api_base + '/api',
               auth:     {
-              type:     :oauth2,
-              base_url: faspex_api_base + '/auth/oauth2',
-              auth:     {type: :basic, username: options.get_option(:username,:mandatory), password: options.get_option(:password,:mandatory)},
-              crtype:   :generic,
-              generic:  {grant_type: 'password'},
-              scope:    'admin'
+                type:     :oauth2,
+                base_url: faspex_api_base + '/auth/oauth2',
+                auth:     {type: :basic, username: options.get_option(:username,:mandatory), password: options.get_option(:password,:mandatory)},
+                crtype:   :generic,
+                generic:  {grant_type: 'password'},
+                scope:    'admin'
               }})
           end
           return @api_v4
@@ -173,13 +173,13 @@ module Aspera
             # results will be sorted in reverse id
             items.reverse_each do |package|
               package[PACKAGE_MATCH_FIELD] =
-              case mailbox
-              when :inbox,:archive
-                recipient = package['to'].find{|i|recipient_names.include?(i['name'].first)}
-                recipient.nil? ? nil : recipient['recipient_delivery_id'].first
-              else # :sent
-                package['delivery_id'].first
-              end
+                case mailbox
+                when :inbox,:archive
+                  recipient = package['to'].find{|i|recipient_names.include?(i['name'].first)}
+                  recipient.nil? ? nil : recipient['recipient_delivery_id'].first
+                else # :sent
+                  package['delivery_id'].first
+                end
               # if we look for a specific package
               stop_condition = true if !stop_at_id.nil? && stop_at_id.eql?(package[PACKAGE_MATCH_FIELD])
               # keep only those for the specified recipient,
@@ -311,14 +311,14 @@ module Aspera
               when nil # usual case: no link
                 if options.get_option(:once_only,:mandatory)
                   skip_ids_persistency = PersistencyActionOnce.new(
-                  manager: @agents[:persistency],
-                  data:    skip_ids_data,
-                  id:      IdGenerator.from_list([
-                    'faspex_recv',
-                    options.get_option(:url,:mandatory),
-                    options.get_option(:username,:mandatory),
-                    options.get_option(:box,:mandatory).to_s
-                  ]))
+                    manager: @agents[:persistency],
+                    data:    skip_ids_data,
+                    id:      IdGenerator.from_list([
+                      'faspex_recv',
+                      options.get_option(:url,:mandatory),
+                      options.get_option(:username,:mandatory),
+                      options.get_option(:box,:mandatory).to_s
+                    ]))
                 end
                 # get command line parameters
                 delivid = instance_identifier
@@ -336,10 +336,10 @@ module Aspera
                 else
                   # TODO: delivery id is the right one if package was receive by workgroup
                   endpoint =
-                  case options.get_option(:box,:mandatory)
-                  when :inbox,:archive then'received'
-                  when :sent then 'sent'
-                  end
+                    case options.get_option(:box,:mandatory)
+                    when :inbox,:archive then'received'
+                    when :sent then 'sent'
+                    end
                   entry_xml = api_v3.call({operation: 'GET',subpath: "#{endpoint}/#{delivid}",headers: {'Accept' => 'application/xml'}})[:http].body
                   package_entry = XmlSimple.xml_in(entry_xml, {'ForceArray' => true})
                   pkg_id_uri = [{id: delivid,uri: self.class.get_fasp_uri_from_entry(package_entry)}]
@@ -380,7 +380,7 @@ module Aspera
                   if !transfer_spec.has_key?('token')
                     sanitized = id_uri[:uri].gsub('&','&amp;')
                     xmlpayload =
-                    %Q(<?xml version="1.0" encoding="UTF-8"?><url-list xmlns="http://schemas.asperasoft.com/xml/url-list"><url href="#{sanitized}"/></url-list>)
+                      %Q(<?xml version="1.0" encoding="UTF-8"?><url-list xmlns="http://schemas.asperasoft.com/xml/url-list"><url href="#{sanitized}"/></url-list>)
                     transfer_spec['token'] = api_v3.call({
                       operation:        'POST',
                       subpath:          'issue-token?direction=down',
@@ -437,9 +437,9 @@ module Aspera
                 api_node = Rest.new({
                   base_url: node_config['url'],
                   auth:     {
-                  type:     :basic,
-                  username: node_config['username'],
-                  password: node_config['password']}})
+                    type:     :basic,
+                    username: node_config['username'],
+                    password: node_config['password']}})
                 command = options.get_next_command(Node::COMMON_ACTIONS)
                 return Node.new(@agents.merge(skip_basic_auth_options: true, node_api: api_node)).execute_action(command,source_info[KEY_PATH])
               end

@@ -30,14 +30,14 @@ module Aspera
       def dump(name,object,format=:json)
         log.debug do
           result =
-          case format
-          when :json
-            JSON.pretty_generate(object) rescue PP.pp(object,'')
-          when :ruby
-            PP.pp(object,'')
-          else
-            raise 'wrong parameter, expect pp or json'
-          end
+            case format
+            when :json
+              JSON.pretty_generate(object) rescue PP.pp(object,'')
+            when :ruby
+              PP.pp(object,'')
+            else
+              raise 'wrong parameter, expect pp or json'
+            end
           "#{name.to_s.green} (#{format})=\n#{result}"
         end
       end

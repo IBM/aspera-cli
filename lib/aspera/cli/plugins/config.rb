@@ -74,11 +74,11 @@ module Aspera
         DEFAULT_PRIV_KEY_FILENAME = 'aspera_aoc_key' # pragma: allowlist secret
         DEFAULT_PRIVKEY_LENGTH = 4096
         private_constant :DEFAULT_CONFIG_FILENAME,:CONF_PRESET_CONFIG,:CONF_PRESET_VERSION,:CONF_PRESET_DEFAULT,
-        :CONF_PRESET_GLOBAL,:PROGRAM_NAME_V1,:PROGRAM_NAME_V2,:DEFAULT_REDIRECT,:ASPERA_PLUGINS_FOLDERNAME,
-        :RUBY_FILE_EXT,:AOC_COMMAND_V1,:AOC_COMMAND_V2,:AOC_COMMAND_V3,:AOC_COMMAND_CURRENT,:DEMO,
-        :TRANSFER_SDK_ARCHIVE_URL,:AOC_PATH_API_CLIENTS,:DEMO_SERVER_PRESET,:EMAIL_TEST_TEMPLATE,:EXTV_INCLUDE_PRESETS,
-        :EXTV_PRESET,:DEFAULT_CHECK_NEW_VERSION_DAYS,:DEFAULT_PRIV_KEY_FILENAME,:SERVER_COMMAND,:CONF_PRESET_SECRETS,
-        :PRESET_DIG_SEPARATOR
+          :CONF_PRESET_GLOBAL,:PROGRAM_NAME_V1,:PROGRAM_NAME_V2,:DEFAULT_REDIRECT,:ASPERA_PLUGINS_FOLDERNAME,
+          :RUBY_FILE_EXT,:AOC_COMMAND_V1,:AOC_COMMAND_V2,:AOC_COMMAND_V3,:AOC_COMMAND_CURRENT,:DEMO,
+          :TRANSFER_SDK_ARCHIVE_URL,:AOC_PATH_API_CLIENTS,:DEMO_SERVER_PRESET,:EMAIL_TEST_TEMPLATE,:EXTV_INCLUDE_PRESETS,
+          :EXTV_PRESET,:DEFAULT_CHECK_NEW_VERSION_DAYS,:DEFAULT_PRIV_KEY_FILENAME,:SERVER_COMMAND,:CONF_PRESET_SECRETS,
+          :PRESET_DIG_SEPARATOR
         def initialize(env,params)
           raise 'env and params must be Hash' unless env.is_a?(Hash) && params.is_a?(Hash)
           raise 'missing param' unless %i[name help version gem].sort.eql?(params.keys.sort)
@@ -167,12 +167,12 @@ module Aspera
 
         def check_gem_version
           latest_version =
-          begin
-            Rest.new(base_url: 'https://rubygems.org/api/v1').read("versions/#{@info[:gem]}/latest.json")[:data]['version']
-          rescue StandardError
-            Log.log.warn('Could not retrieve latest gem version on rubygems.')
-            '0'
-          end
+            begin
+              Rest.new(base_url: 'https://rubygems.org/api/v1').read("versions/#{@info[:gem]}/latest.json")[:data]['version']
+            rescue StandardError
+              Log.log.warn('Could not retrieve latest gem version on rubygems.')
+              '0'
+            end
           if Gem::Version.new(Environment.ruby_version) < Gem::Version.new(RUBY_FUTURE_MINIMUM_VERSION)
             Log.log.warn("Note that a future version will require Ruby version #{RUBY_FUTURE_MINIMUM_VERSION} at minimum, "\
               "you are using #{Environment.ruby_version}")
@@ -194,18 +194,18 @@ module Aspera
           # get last date from persistency
           last_check_array = []
           check_date_persist = PersistencyActionOnce.new(
-          manager: persistency,
-          data:    last_check_array,
-          id:      'version_last_check')
+            manager: persistency,
+            data:    last_check_array,
+            id:      'version_last_check')
           # get persisted date or nil
           current_date = Date.today
           last_check_days =
-          begin
-            current_date - Date.strptime(last_check_array.first, '%Y/%m/%d')
-          rescue StandardError
-            # negative value will force check
-            -1
-          end
+            begin
+              current_date - Date.strptime(last_check_array.first, '%Y/%m/%d')
+            rescue StandardError
+              # negative value will force check
+              -1
+            end
           Log.log.debug("days elapsed: #{last_check_days}")
           return if last_check_days < delay_days
           # generate timestamp

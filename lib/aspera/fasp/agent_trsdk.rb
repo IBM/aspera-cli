@@ -43,11 +43,11 @@ module Aspera
             address:      options[:address],
             port:         options[:port],
             fasp_runtime: {
-            use_embedded: false,
-            user_defined: {
-            bin: bin_folder,
-            etc: bin_folder
-            }
+              use_embedded: false,
+              user_defined: {
+                bin: bin_folder,
+                etc: bin_folder
+              }
             }
           }
           File.write(conf_file,config.to_json)
@@ -61,9 +61,9 @@ module Aspera
       def start_transfer(transfer_spec,_options=nil)
         # create a transfer request
         transfer_request = Transfersdk::TransferRequest.new(
-        transferType: Transfersdk::TransferType::FILE_REGULAR, # transfer type (file/stream)
-        config: Transfersdk::TransferConfig.new, # transfer configuration
-        transferSpec: transfer_spec.to_json) # transfer definition
+          transferType: Transfersdk::TransferType::FILE_REGULAR, # transfer type (file/stream)
+          config: Transfersdk::TransferConfig.new, # transfer configuration
+          transferSpec: transfer_spec.to_json) # transfer definition
         # send start transfer request to the transfer manager daemon
         start_transfer_response = @transfer_client.start_transfer(transfer_request)
         Log.log.debug("start transfer response #{start_transfer_response}")

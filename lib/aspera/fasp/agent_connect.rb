@@ -42,8 +42,12 @@ module Aspera
         if transfer_spec['direction'] == 'send'
           Log.log.warn("Connect requires upload selection using GUI, ignoring #{transfer_spec['paths']}".red)
           transfer_spec.delete('paths')
-          resdata = @connect_api.create('windows/select-open-file-dialog/',
-{'aspera_connect_settings' => @connect_settings,'title' => 'Select Files','suggestedName' => '','allowMultipleSelection' => true,'allowedFileTypes' => ''})[:data]
+          resdata = @connect_api.create('windows/select-open-file-dialog/',{
+            'aspera_connect_settings' => @connect_settings,
+            'title'                   => 'Select Files',
+            'suggestedName'           => '',
+            'allowMultipleSelection'  => true,
+            'allowedFileTypes'        => ''})[:data]
           transfer_spec['paths'] = resdata['dataTransfer']['files'].map { |i| {'source' => i['name']}}
         end
         @request_id = SecureRandom.uuid
@@ -52,11 +56,11 @@ module Aspera
         transfer_spec['authentication'] = 'token' if transfer_spec.has_key?('token')
         connect_transfer_args = {
           'aspera_connect_settings' => @connect_settings.merge({
-          'request_id'    => @request_id,
-          'allow_dialogs' => true
+            'request_id'    => @request_id,
+            'allow_dialogs' => true
           }),
           'transfer_specs'          => [{
-          'transfer_spec' => transfer_spec
+            'transfer_spec' => transfer_spec
           }]}
         # asynchronous anyway
         res = @connect_api.create('transfers/start',connect_transfer_args)[:data]

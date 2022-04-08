@@ -31,7 +31,7 @@ module Aspera
         LOCAL_STORAGE_PCVL = 'file:///'
         LOG_LIMITER_SEC = 30.0
         private_constant :PREV_GEN_TAG, :PREVIEW_FOLDER_SUFFIX, :PREVIEW_BASENAME, :TMP_DIR_PREFIX, :DEFAULT_PREVIEWS_FOLDER,
-         :LOCAL_STORAGE_PCVL, :AK_MARKER_FILE, :LOG_LIMITER_SEC
+          :LOCAL_STORAGE_PCVL, :AK_MARKER_FILE, :LOG_LIMITER_SEC
 
         # option_skip_format has special accessors
         attr_accessor :option_previews_folder
@@ -219,10 +219,10 @@ module Aspera
             'direction' => direction,
             'paths'     => [{'source' => source_filename}],
             'tags'      => { 'aspera' => {
-            PREV_GEN_TAG => true,
-            'node'       => {
-            'access_key' => @access_key_self['id'],
-            'file_id'    => folder_id }}}
+              PREV_GEN_TAG => true,
+              'node'       => {
+                'access_key' => @access_key_self['id'],
+                'file_id'    => folder_id }}}
           })
           # force destination
           # tspec['destination_root']=destination
@@ -455,23 +455,23 @@ module Aspera
             scan_id = options.get_option(:scan_id,:optional)
             # by default start at root
             folder_info =
-            if scan_id.nil?
-              { 'id'   => @access_key_self['root_file_id'],
-                'name' => '/',
-                'type' => 'folder',
-                'path' => '/' }
-            else
-              @api_node.read("files/#{scan_id}")[:data]
-            end
+              if scan_id.nil?
+                { 'id'   => @access_key_self['root_file_id'],
+                  'name' => '/',
+                  'type' => 'folder',
+                  'path' => '/' }
+              else
+                @api_node.read("files/#{scan_id}")[:data]
+              end
             scan_folder_files(folder_info,scan_path)
             return Main.result_status('scan finished')
           when :events,:trevents
             iteration_persistency = nil
             if options.get_option(:once_only,:mandatory)
               iteration_persistency = PersistencyActionOnce.new(
-              manager: @agents[:persistency],
-              data:    [],
-              id:      IdGenerator.from_list(['preview_iteration',command.to_s,options.get_option(:url,:mandatory),options.get_option(:username,:mandatory)]))
+                manager: @agents[:persistency],
+                data:    [],
+                id:      IdGenerator.from_list(['preview_iteration',command.to_s,options.get_option(:url,:mandatory),options.get_option(:username,:mandatory)]))
             end
             # call processing method specified by command line command
             send("process_#{command}",iteration_persistency)

@@ -9,11 +9,11 @@ require 'base64'
 
 Aspera::Oauth.register_token_creator(:aoc_pub_link,lambda{|o|
   o.token_auth_api.call({
-  operation:   'POST',
-  subpath:     o.params[:path_token],
-  headers:     {'Accept' => 'application/json'},
-  json_params: o.params[:aoc_pub_link][:json],
-  url_params:  o.params[:aoc_pub_link][:url].merge(scope: o.params[:scope]) # scope is here because it changes over time (node)
+    operation:   'POST',
+    subpath:     o.params[:path_token],
+    headers:     {'Accept' => 'application/json'},
+    json_params: o.params[:aoc_pub_link][:json],
+    url_params:  o.params[:aoc_pub_link][:url].merge(scope: o.params[:scope]) # scope is here because it changes over time (node)
   })
 })
 
@@ -38,7 +38,7 @@ module Aspera
     USER_INFO_FIELDS_MIN = %w[name email id default_workspace_id organization_id].freeze
 
     private_constant :MAX_REDIRECT,:GLOBAL_CLIENT_APPS,:DATA_REPO_INDEX_START,:COOKIE_PREFIX,:PUBLIC_LINK_PATHS,:JWT_AUDIENCE,
-    :OAUTH_API_SUBPATH,:USER_INFO_FIELDS_MIN
+      :OAUTH_API_SUBPATH,:USER_INFO_FIELDS_MIN
 
     # various API scopes supported
     SCOPE_FILES_SELF = 'self'
@@ -139,29 +139,29 @@ module Aspera
           'package_id'        => package_info['id'],
           'package_name'      => package_info['name'],
           'package_operation' => operation
-          }}}}
+        }}}}
       end
 
       # add details to show in analytics
       def analytics_ts(app,direction,ws_id,ws_name)
         # translate transfer to operation
         operation =
-        case direction
-        when Fasp::TransferSpec::DIRECTION_SEND then    'upload'
-        when Fasp::TransferSpec::DIRECTION_RECEIVE then 'download'
-        else raise "ERROR: unexpected value: #{direction}"
-        end
+          case direction
+          when Fasp::TransferSpec::DIRECTION_SEND then    'upload'
+          when Fasp::TransferSpec::DIRECTION_RECEIVE then 'download'
+          else raise "ERROR: unexpected value: #{direction}"
+          end
 
         return {
           'tags' => {
-          'aspera' => {
-          'usage_id' => "aspera.files.workspace.#{ws_id}", # activity tracking
-          'files'    => {
-          'files_transfer_action' => "#{operation}_#{app.gsub(/s$/,'')}",
-          'workspace_name'        => ws_name, # activity tracking
-          'workspace_id'          => ws_id
-          }
-          }
+            'aspera' => {
+              'usage_id' => "aspera.files.workspace.#{ws_id}", # activity tracking
+              'files'    => {
+                'files_transfer_action' => "#{operation}_#{app.gsub(/s$/,'')}",
+                'workspace_name'        => ws_name, # activity tracking
+                'workspace_id'          => ws_id
+              }
+            }
           }
         }
       end
@@ -253,12 +253,12 @@ module Aspera
       if @user_info.nil?
         # get our user's default information
         @user_info =
-        begin
-          read('self')[:data]
-        rescue StandardError => e
-          Log.log.debug("ignoring error: #{e}")
-          {}
-        end
+          begin
+            read('self')[:data]
+          rescue StandardError => e
+            Log.log.debug("ignoring error: #{e}")
+            {}
+          end
         USER_INFO_FIELDS_MIN.each{|f|@user_info[f] = 'unknown' if @user_info[f].nil?}
       end
       return @user_info
@@ -286,17 +286,17 @@ module Aspera
         'direction' => direction,
         'token'     => token_generation_lambda.call(false), # first time, use cache
         'tags'      => {
-        'aspera' => {
-        'app'   => app,
-        'files' => {
-        'node_id' => node_file[:node_info]['id']
-        }, # files
-        'node'  => {
-        'access_key' => node_file[:node_info]['access_key'],
-        #'file_id'           => ts_add['source_root_id']
-        'file_id'    => node_file[:file_id]
-        } # node
-        } # aspera
+          'aspera' => {
+            'app'   => app,
+            'files' => {
+              'node_id' => node_file[:node_info]['id']
+            }, # files
+            'node'  => {
+              'access_key' => node_file[:node_info]['access_key'],
+              #'file_id'           => ts_add['source_root_id']
+              'file_id'    => node_file[:file_id]
+            } # node
+          } # aspera
         } # tags
       }
       # add remote host info

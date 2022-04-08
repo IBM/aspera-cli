@@ -28,9 +28,9 @@ module Aspera
         return Rest.new({
           base_url: api_url,
           auth:     {
-          type:     :basic,
-          username: options.get_option(:username,:mandatory),
-          password: options.get_option(:password,:mandatory)
+            type:     :basic,
+            username: options.get_option(:username,:mandatory),
+            password: options.get_option(:password,:mandatory)
           }})
       end
     end # BasicAuthPlugin
