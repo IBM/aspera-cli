@@ -110,7 +110,7 @@ module Aspera
             node_api = aoc_api.get_node_api(node_file[:node_info])
             file_info = node_api.read("files/#{node_file[:file_id]}")[:data]
             if file_info['type'].eql?('folder')
-              result = node_api.read("files/#{node_file[:file_id]}/files",options.get_option(:value,:optional))
+              result = node_api.read("files/#{node_file[:file_id]}/files",options.get_option(:value))
               items = result[:data]
               self.format.display_status("Items: #{result[:data].length}/#{result[:http]['X-Total-Count']}")
             else
@@ -120,7 +120,7 @@ module Aspera
           when :find
             thepath = options.get_next_argument('path')
             node_file = aoc_api.resolve_node_file(top_node_file,thepath)
-            test_block = Aspera::Node.file_matcher(options.get_option(:value,:optional))
+            test_block = Aspera::Node.file_matcher(options.get_option(:value))
             return {type: :object_list,data: aoc_api.find_files(node_file,test_block),fields: ['path']}
           when :mkdir
             thepath = options.get_next_argument('path')
@@ -152,15 +152,15 @@ module Aspera
             # in same workspace
             server_home_node_file = client_home_node_file = top_node_file
             # default is push
-            case options.get_option(:operation,:mandatory)
+            case options.get_option(:operation,is_type: :mandatory)
             when :push
               client_tr_oper = Fasp::TransferSpec::DIRECTION_SEND
-              client_folder = options.get_option(:from_folder,:mandatory)
+              client_folder = options.get_option(:from_folder,is_type: :mandatory)
               server_folder = transfer.destination_folder(client_tr_oper)
             when :pull
               client_tr_oper = Fasp::TransferSpec::DIRECTION_RECEIVE
               client_folder = transfer.destination_folder(client_tr_oper)
-              server_folder = options.get_option(:from_folder,:mandatory)
+              server_folder = options.get_option(:from_folder,is_type: :mandatory)
             end
             client_node_file = aoc_api.resolve_node_file(client_home_node_file,client_folder)
             server_node_file = aoc_api.resolve_node_file(server_home_node_file,server_folder)
@@ -223,7 +223,7 @@ module Aspera
             return Node.new(@agents.merge(skip_basic_auth_options: true, node_api: node_api)).execute_action(command_legacy)
           when :file
             command_node_file = options.get_next_command(%i[show permission modify])
-            file_path = options.get_option(:path,:optional)
+            file_path = options.get_option(:path)
             node_file =
               if !file_path.nil?
                 aoc_api.resolve_node_file(top_node_file,file_path) # TODO: allow follow link ?
@@ -286,7 +286,7 @@ module Aspera
         # build constructor option list for AoC based on options of CLI
         def aoc_params(subpath)
           # copy command line options to args
-          opt = AOC_PARAMS_COPY.each_with_object({}){|i,m|m[i] = options.get_option(i,:optional);}
+          opt = AOC_PARAMS_COPY.each_with_object({}){|i,m|m[i] = options.get_option(i);}
           opt[:subpath] = subpath
           return opt
         end
@@ -308,7 +308,7 @@ module Aspera
             @persist_ids = [] # TODO : @url_token_data['id'] ?
           end
 
-          ws_name = options.get_option(:workspace,:optional)
+          ws_name = options.get_option(:workspace)
           if ws_name.nil?
             Log.log.debug('using default workspace'.green)
             if @default_workspace_id.eql?(nil)
@@ -402,7 +402,7 @@ module Aspera
         def resolve_package_recipients(package_data,recipient_list_field)
           return unless package_data.has_key?(recipient_list_field)
           raise CliBadArgument,"#{recipient_list_field} must be an Array" unless package_data[recipient_list_field].is_a?(Array)
-          new_user_option = options.get_option(:new_user_option,:mandatory)
+          new_user_option = options.get_option(:new_user_option,is_type: :mandatory)
           # list with resolved elements
           resolved_list = []
           package_data[recipient_list_field].each do |short_recipient_info|
@@ -454,7 +454,7 @@ module Aspera
 
         # private
         def option_url_query(default)
-          query = options.get_option(:query,:optional)
+          query = options.get_option(:query)
           query = default if query.nil?
           Log.log.debug("Query=#{query}".bg_red)
           begin
@@ -591,23 +591,23 @@ module Aspera
               return {type: :object_list,data: events}
             when :transfers
               event_type = command_analytics.to_s
-              filter_resource = options.get_option(:name,:optional) || 'organizations'
-              filter_id = options.get_option(:id,:optional) ||
+              filter_resource = options.get_option(:name) || 'organizations'
+              filter_id = options.get_option(:id) ||
               case filter_resource
               when 'organizations' then aoc_api.user_info['organization_id']
               when 'users' then aoc_api.user_info['id']
               when 'nodes' then aoc_api.user_info['id'] # TODO: consistent ? # rubocop:disable Lint/DuplicateBranch
               else raise 'organizations or users for option --name'
               end
-              filter = options.get_option(:query,:optional) || {}
+              filter = options.get_option(:query) || {}
               raise 'query must be Hash' unless filter.is_a?(Hash)
               filter['limit'] ||= 100
-              if options.get_option(:once_only,:mandatory)
+              if options.get_option(:once_only,is_type: :mandatory)
                 saved_date = []
                 startdate_persistency = PersistencyActionOnce.new(
                   manager: @agents[:persistency],
                   data: saved_date,
-                  ids: IdGenerator.from_list(['aoc_ana_date',options.get_option(:url,:mandatory),@workspace_name].push(filter_resource,filter_id)))
+                  ids: IdGenerator.from_list(['aoc_ana_date',options.get_option(:url,is_type: :mandatory),@workspace_name].push(filter_resource,filter_id)))
                 start_datetime = saved_date.first
                 stop_datetime = Time.now.utc.strftime('%FT%T.%LZ')
                 #Log.log().error("start: #{start_datetime}")
@@ -618,7 +618,7 @@ module Aspera
               end
               events = analytics_api.read("#{filter_resource}/#{filter_id}/#{event_type}",option_url_query(filter))[:data][event_type]
               startdate_persistency&.save
-              if !options.get_option(:notif_to,:optional).nil?
+              if !options.get_option(:notif_to).nil?
                 events.each do |tr_event|
                   config.send_email_template({ev: tr_event})
                 end
@@ -710,19 +710,43 @@ module Aspera
               command_repo = options.get_next_command(NODE4_COMMANDS)
               return execute_node_gen4_command(command_repo,{node_info: res_data, file_id: ak_data['root_file_id']})
             when :shared_folder
+              # inside a workspace
               command_shared = options.get_next_command(%i[list create member delete])
+              core_api=Rest.new(aoc_api.params.merge(base_url: aoc_api.params[:base_url].gsub('/api.','/sedemo.')))
+              puts ">>>> #{core_api.params}"
               # generic permission created for each shared folder
               access_id = "#{ID_AK_ADMIN}_WS_#{res_id}"
               case command_shared
               when :list
-                query=options.get_option(:query,:optional)
+                query=options.get_option(:query)
                 query={'admin' => true, 'access_id' => access_id, 'access_type' => 'user'} if query.nil?
                 res_data = aoc_api.read("#{resource_instance_path}/permissions",query)[:data]
                 return { type: :object_list, data: res_data, fields: %w[id node_id file_id node_name file.path tags.aspera.files.workspace.share_as access_id]}
               when :member
                 #https://sedemo.ibmaspera.com/api/v1/node/8669/permissions_and_members/3270?inherited=false&aspera-node-basic=8669&admin=true&page=1&per_page=25
               when :delete
-                aoc_api.delete("#{resource_class_path}/#{one_id}")
+                shared_id=instance_identifier
+                all_shared=aoc_api.read("#{resource_instance_path}/permissions",query)[:data].select{|i|i['id'].eql?(shared_id)}
+                raise 'no such shared folder id' if all_shared.empty?
+                raise 'error' unless all_shared.length.eql?(1)
+                shared_info=all_shared.first
+                #return { type: :single_object, data: shared_info}
+                node_id=shared_info['node_id']
+                core_api.call(
+                  operation: 'DELETE',
+                  subpath: "node/#{node_id}/permissions",
+                  headers: {
+                    'Accept'             => 'application/json',
+                    'aspera-node-auth'   => ENV['V1'],
+                    'aspera-node-tokens' => ENV['V2']
+                  },
+                  url_params: {
+                    'ids'                      => shared_id,
+                    'aspera-node-basic'        => node_id,
+                    'aspera-node-prefer-basic' => node_id
+                  }
+                )
+                return Main.result_success
               when :create
                 # workspace information
                 ws_info = aoc_api.read(resource_instance_path)[:data]
@@ -772,7 +796,7 @@ module Aspera
           case command
           when :reminder
             # send an email reminder with list of orgs
-            user_email = options.get_option(:username,:mandatory)
+            user_email = options.get_option(:username,is_type: :mandatory)
             Rest.new(base_url: "#{AoC.api_base_url}/#{AoC::API_V1}").create('organization_reminders',{email: user_email})[:data]
             return Main.result_status("List of organizations user is member of, has been sent by e-mail to #{user_email}")
           when :servers
@@ -819,7 +843,7 @@ module Aspera
                 return {type: :single_object,data: aoc_api.read(get_resource_path_from_args('dropboxes'),query)[:data]}
               end
             when :send
-              package_data = options.get_option(:value,:mandatory)
+              package_data = options.get_option(:value,is_type: :mandatory)
               raise CliBadArgument,'value must be hash, refer to doc' unless package_data.is_a?(Hash)
 
               if !@url_token_data.nil?
@@ -865,11 +889,11 @@ module Aspera
               ids_to_download = instance_identifier
               skip_ids_data = []
               skip_ids_persistency = nil
-              if options.get_option(:once_only,:mandatory)
+              if options.get_option(:once_only,is_type: :mandatory)
                 skip_ids_persistency = PersistencyActionOnce.new(
                   manager: @agents[:persistency],
                   data: skip_ids_data,
-                  id: IdGenerator.from_list(['aoc_recv',options.get_option(:url,:mandatory),@workspace_id].push(*@persist_ids)))
+                  id: IdGenerator.from_list(['aoc_recv',options.get_option(:url,is_type: :mandatory),@workspace_id].push(*@persist_ids)))
               end
               if ids_to_download.eql?(VAL_ALL)
                 # get list of packages in inbox
@@ -934,8 +958,8 @@ module Aspera
             case command_repo
             when *NODE4_COMMANDS then return execute_node_gen4_command(command_repo,@home_node_file)
             when :short_link
-              folder_dest = options.get_option(:to_folder,:optional)
-              value_option = options.get_option(:value,:optional)
+              folder_dest = options.get_option(:to_folder)
+              value_option = options.get_option(:value)
               case value_option
               when 'public'  then value_option = {'purpose' => 'token_auth_redirection'}
               when 'private' then value_option = {'purpose' => 'shared_folder_auth_link'}

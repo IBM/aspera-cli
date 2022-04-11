@@ -81,13 +81,13 @@ module Aspera
       end
 
       # base API url depends on domain, which could be "qa.xxx"
-      def api_base_url(api_domain=PROD_DOMAIN)
-        return "https://api.#{api_domain}"
+      def api_base_url(organization: 'api', api_domain: PROD_DOMAIN)
+        return "https://#{organization}.#{api_domain}"
       end
 
       def metering_api(entitlement_id,customer_id,api_domain=PROD_DOMAIN)
         return Rest.new({
-          base_url: "#{api_base_url(api_domain)}/metering/v1",
+          base_url: "#{api_base_url(api_domain: api_domain)}/metering/v1",
           headers:  {'X-Aspera-Entitlement-Authorization' => Rest.basic_creds(entitlement_id,customer_id)}
         })
       end
@@ -191,7 +191,7 @@ module Aspera
       # get org name and domain from url
       organization,instance_domain = self.class.parse_url(opt[:url])
       # this is the base API url
-      api_url_base = self.class.api_base_url(instance_domain)
+      api_url_base = self.class.api_base_url(api_domain: instance_domain)
       # API URL, including subpath (version ...)
       aoc_rest_p[:base_url] = "#{api_url_base}/#{opt[:subpath]}"
       # base auth URL
