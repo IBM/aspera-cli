@@ -83,7 +83,7 @@ module Aspera
 
           options.parse_options!
           raise 'skip_folder shall be an Array, use @json:[...]' unless @option_skip_folders.is_a?(Array)
-          @tmp_folder = File.join(options.get_option(:temp_folder,:mandatory),"#{TMP_DIR_PREFIX}.#{SecureRandom.uuid}")
+          @tmp_folder = File.join(options.get_option(:temp_folder,is_type: :mandatory),"#{TMP_DIR_PREFIX}.#{SecureRandom.uuid}")
           FileUtils.mkdir_p(@tmp_folder)
           Log.log.debug("tmpdir: #{@tmp_folder}")
         end
@@ -210,7 +210,7 @@ module Aspera
               Log.log.warn('remote_user shall be xfer')
               @default_transfer_spec['remote_user'] = Aspera::Fasp::TransferSpec::ACCESS_KEY_TRANSFER_USER
             end
-            Aspera::Node.set_ak_basic_token(@default_transfer_spec,@access_key_self['id'],options.get_option(:password,:mandatory))
+            Aspera::Node.set_ak_basic_token(@default_transfer_spec,@access_key_self['id'],options.get_option(:password,is_type: :mandatory))
             # note: we use the same address for ascp than for node api instead of the one from upload_setup
             # TODO: configurable ? useful ?
             @default_transfer_spec['remote_host'] = @transfer_server_address
@@ -351,7 +351,7 @@ module Aspera
             scan_start = '/' + scan_start.split('/').reject(&:empty?).join('/')
             scan_start = "#{scan_start}/" #unless scan_start.end_with?('/')
           end
-          filter_block = Aspera::Node.file_matcher(options.get_option(:value,:optional))
+          filter_block = Aspera::Node.file_matcher(options.get_option(:value))
           Log.log.debug("scan: #{top_entry} : #{scan_start}".green)
           # don't use recursive call, use list instead
           entries_to_process = [top_entry]
@@ -448,11 +448,11 @@ module Aspera
               end
             end
           end
-          Aspera::Preview::FileTypes.instance.use_mimemagic = options.get_option(:mimemagic,:mandatory)
+          Aspera::Preview::FileTypes.instance.use_mimemagic = options.get_option(:mimemagic,is_type: :mandatory)
           case command
           when :scan
-            scan_path = options.get_option(:scan_path,:optional)
-            scan_id = options.get_option(:scan_id,:optional)
+            scan_path = options.get_option(:scan_path)
+            scan_id = options.get_option(:scan_id)
             # by default start at root
             folder_info =
               if scan_id.nil?
@@ -467,11 +467,11 @@ module Aspera
             return Main.result_status('scan finished')
           when :events,:trevents
             iteration_persistency = nil
-            if options.get_option(:once_only,:mandatory)
+            if options.get_option(:once_only,is_type: :mandatory)
               iteration_persistency = PersistencyActionOnce.new(
                 manager: @agents[:persistency],
                 data:    [],
-                id:      IdGenerator.from_list(['preview_iteration',command.to_s,options.get_option(:url,:mandatory),options.get_option(:username,:mandatory)]))
+                id:      IdGenerator.from_list(['preview_iteration',command.to_s,options.get_option(:url,is_type: :mandatory),options.get_option(:username,is_type: :mandatory)]))
             end
             # call processing method specified by command line command
             send("process_#{command}",iteration_persistency)
@@ -482,7 +482,7 @@ module Aspera
           when :test
             format = options.get_next_argument('format',expected: Aspera::Preview::Generator::PREVIEW_FORMATS)
             source = options.get_next_argument('source file')
-            dest = preview_filename(format,options.get_option(:case,:optional))
+            dest = preview_filename(format,options.get_option(:case))
             g = Aspera::Preview::Generator.new(@gen_options,source,dest,@tmp_folder,nil)
             raise "cannot find file type for #{source}" if g.conversion_type.nil?
             raise "out format #{format} not supported" unless g.supported?

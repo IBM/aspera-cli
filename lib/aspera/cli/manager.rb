@@ -85,7 +85,7 @@ module Aspera
       attr_accessor :ask_missing_mandatory, :ask_missing_optional
       attr_writer :fail_on_missing_mandatory
 
-      def initialize(program_name,argv=nil)
+      def initialize(program_name,argv: nil)
         # command line values not starting with '-'
         @unprocessed_cmd_line_arguments = []
         # command line values starting with '-'
@@ -224,7 +224,7 @@ module Aspera
       # get an option value by name
       # either return value or call handler, can return nil
       # ask interactively if requested/required
-      def get_option(option_symbol,is_type=:optional)
+      def get_option(option_symbol,is_type: :optional)
         result = nil
         if @declared_options.has_key?(option_symbol)
           case @declared_options[option_symbol][:type]
@@ -258,7 +258,7 @@ module Aspera
       end
 
       # param must be hash
-      def add_option_preset(preset_hash,op=:push)
+      def add_option_preset(preset_hash,op: :push)
         Log.log.debug("add_option_preset=#{preset_hash}")
         raise "internal error: setting default with no hash: #{preset_hash.class}" if !preset_hash.is_a?(Hash)
         # incremental override
@@ -285,6 +285,9 @@ module Aspera
 
       def add_opt_boolean(option_symbol,help,*on_args)
         add_opt_list(option_symbol,BOOLEAN_VALUES,help,*on_args)
+        # if default was defined for obj, it may still be enum (yes/no) instead of boolean
+        default_value=get_option(option_symbol)
+        set_option(option_symbol,default_value,'opt boolean') unless default_value.nil?
       end
 
       # define an option with open values

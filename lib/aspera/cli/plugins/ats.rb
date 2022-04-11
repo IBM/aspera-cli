@@ -24,8 +24,8 @@ module Aspera
 
         def server_by_cloud_region
           # todo: provide list ?
-          cloud = options.get_option(:cloud,:mandatory).upcase
-          region = options.get_option(:region,:mandatory)
+          cloud = options.get_option(:cloud,is_type: :mandatory).upcase
+          region = options.get_option(:region,is_type: :mandatory)
           return @ats_api_pub.read("servers/#{cloud}/#{region}")[:data]
         end
 
@@ -36,8 +36,8 @@ module Aspera
             base_url: AtsApi.base_url + '/pub/v1',
             auth:     {
               type:     :basic,
-              username: options.get_option(:ats_key,:mandatory),
-              password: options.get_option(:ats_secret,:mandatory)}
+              username: options.get_option(:ats_key,is_type: :mandatory),
+              password: options.get_option(:ats_secret,is_type: :mandatory)}
           })
         end
 
@@ -48,7 +48,7 @@ module Aspera
           access_key_id = instance_identifier unless %i[create list].include?(command)
           case command
           when :create
-            params = options.get_option(:params,:optional) || {}
+            params = options.get_option(:params) || {}
             server_data = nil
             # if transfer_server_id not provided, get it from command line options
             if !params.has_key?('transfer_server_id')
@@ -83,14 +83,14 @@ module Aspera
             return {type: :single_object, data: res[:data]}
             # TODO : action : modify, with "PUT"
           when :list
-            params = options.get_option(:params,:optional) || {'offset' => 0,'max_results' => 1000}
+            params = options.get_option(:params) || {'offset' => 0,'max_results' => 1000}
             res = ats_api_pub_v1.read('access_keys',params)
             return {type: :object_list, data: res[:data]['data'], fields: ['name','id','created.at','modified.at']}
           when :show
             res = ats_api_pub_v1.read("access_keys/#{access_key_id}")
             return {type: :single_object, data: res[:data]}
           when :modify
-            params = options.get_option(:value,:mandatory)
+            params = options.get_option(:value,is_type: :mandatory)
             params['id'] = access_key_id
             ats_api_pub_v1.update("access_keys/#{access_key_id}",params)
             return Main.result_status('modified')
@@ -138,7 +138,7 @@ module Aspera
           when :list
             return {type: :object_list, data: @ats_api_pub.all_servers, fields: %w[id cloud region]}
           when :show
-            if options.get_option(:cloud,:optional) || options.get_option(:region,:optional)
+            if options.get_option(:cloud) || options.get_option(:region,:optional)
               server_data = server_by_cloud_region
             else
               server_id = instance_identifier
@@ -161,7 +161,7 @@ module Aspera
               generic:  {
                 grant_type:    'urn:ibm:params:oauth:grant-type:apikey',
                 response_type: 'cloud_iam',
-                apikey:        options.get_option(:ibm_api_key,:mandatory)
+                apikey:        options.get_option(:ibm_api_key,is_type: :mandatory)
               }}})
         end
 
@@ -172,7 +172,7 @@ module Aspera
           end
           rest_add_header = {}
           if !command.eql?(:instances)
-            instance = options.get_option(:instance,:optional)
+            instance = options.get_option(:instance)
             #Log.log.error("1>>#{instance}".red)
             if instance.nil?
               # Take the first Aspera on Cloud transfer service instance ID if not provided by user
@@ -189,7 +189,7 @@ module Aspera
             Log.log.warn("more instances remaining: #{instances['remaining']}") unless instances['remaining'].to_i.eql?(0)
             return {type: :value_list, data: instances['data'], name: 'instance'}
           when :create
-            create_value = options.get_option(:value,:optional) || {}
+            create_value = options.get_option(:value) || {}
             created_key = ats_ibm_api.create('api_keys',create_value)[:data]
             return {type: :single_object, data: created_key}
           when :list # list known api keys in ATS (this require an api_key ...)
@@ -223,7 +223,7 @@ module Aspera
           when :api_key # manage credential to access ATS API
             return execute_action_api_key
           when :aws_trust_policy
-            res = ats_api_pub_v1.read('aws/trustpolicy',{region: options.get_option(:region,:mandatory)})[:data]
+            res = ats_api_pub_v1.read('aws/trustpolicy',{region: options.get_option(:region,is_type: :mandatory)})[:data]
             return {type: :single_object, data: res}
           else raise 'ERROR'
           end

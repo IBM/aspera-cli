@@ -123,13 +123,13 @@ module Aspera
 
         def api_v4
           if @api_v4.nil?
-            faspex_api_base = options.get_option(:url,:mandatory)
+            faspex_api_base = options.get_option(:url,is_type: :mandatory)
             @api_v4 = Rest.new({
               base_url: faspex_api_base + '/api',
               auth:     {
                 type:     :oauth2,
                 base_url: faspex_api_base + '/auth/oauth2',
-                auth:     {type: :basic, username: options.get_option(:username,:mandatory), password: options.get_option(:password,:mandatory)},
+                auth:     {type: :basic, username: options.get_option(:username,is_type: :mandatory), password: options.get_option(:password,is_type: :mandatory)},
                 crtype:   :generic,
                 generic:  {grant_type: 'password'},
                 scope:    'admin'
@@ -140,13 +140,13 @@ module Aspera
 
         # query supports : {"startIndex":10,"count":1,"page":109,"max":2,"pmax":1}
         def mailbox_filtered_entries(stop_at_id: nil)
-          recipient_names = [options.get_option(:recipient,:optional) || options.get_option(:username,:mandatory)]
+          recipient_names = [options.get_option(:recipient) || options.get_option(:username,is_type: :mandatory)]
           # some workgroup messages have no star in recipient name
           recipient_names.push(recipient_names.first[1..-1]) if recipient_names.first.start_with?('*')
           # mailbox is in ATOM_MAILBOXES
-          mailbox = options.get_option(:box,:mandatory)
+          mailbox = options.get_option(:box,is_type: :mandatory)
           # parameters
-          mailbox_query = options.get_option(:query,:optional)
+          mailbox_query = options.get_option(:query)
           max_items = nil
           max_pages = nil
           result = []
@@ -266,17 +266,17 @@ module Aspera
                 textify: lambda {|table_data|Faspex.textify_package_list(table_data)}
               }
             when :send
-              delivery_info = options.get_option(:delivery_info,:mandatory)
+              delivery_info = options.get_option(:delivery_info,is_type: :mandatory)
               raise CliBadArgument,'delivery_info must be hash, refer to doc' unless delivery_info.is_a?(Hash)
               # actual parameter to faspex API
               package_create_params = {'delivery' => delivery_info}
-              public_link_url = options.get_option(:link,:optional)
+              public_link_url = options.get_option(:link)
               if public_link_url.nil?
                 # authenticated user
                 delivery_info['sources'] ||= [{'paths' => []}]
                 first_source = delivery_info['sources'].first
                 first_source['paths'].push(*transfer.ts_source_paths.map{|i|i['source']})
-                source_name = options.get_option(:source_name,:optional)
+                source_name = options.get_option(:source_name)
                 if !source_name.nil?
                   source_list = api_v3.call({operation: 'GET',subpath: 'source_shares',headers: {'Accept' => 'application/json'}})[:data]['items']
                   source_id = self.class.get_source_id(source_list,source_name)
@@ -302,28 +302,28 @@ module Aspera
               #Log.dump('transfer_spec',transfer_spec)
               return Main.result_transfer(transfer.start(transfer_spec,{src: :node_gen3}))
             when :recv
-              link_url = options.get_option(:link,:optional)
+              link_url = options.get_option(:link)
               # list of faspex ID/URI to download
               pkg_id_uri = nil
               skip_ids_data = []
               skip_ids_persistency = nil
               case link_url
               when nil # usual case: no link
-                if options.get_option(:once_only,:mandatory)
+                if options.get_option(:once_only,is_type: :mandatory)
                   skip_ids_persistency = PersistencyActionOnce.new(
                     manager: @agents[:persistency],
                     data:    skip_ids_data,
                     id:      IdGenerator.from_list([
                       'faspex_recv',
-                      options.get_option(:url,:mandatory),
-                      options.get_option(:username,:mandatory),
-                      options.get_option(:box,:mandatory).to_s
+                      options.get_option(:url,is_type: :mandatory),
+                      options.get_option(:username,is_type: :mandatory),
+                      options.get_option(:box,is_type: :mandatory).to_s
                     ]))
                 end
                 # get command line parameters
                 delivid = instance_identifier
                 raise 'empty id' if delivid.empty?
-                recipient = options.get_option(:recipient,:optional)
+                recipient = options.get_option(:recipient)
                 if delivid.eql?(VAL_ALL)
                   pkg_id_uri = mailbox_filtered_entries.map{|i|{id: i[PACKAGE_MATCH_FIELD],uri: self.class.get_fasp_uri_from_entry(i, raise_no_link: false)}}
                   # TODO : remove ids from skip not present in inbox to avoid growing too big
@@ -336,7 +336,7 @@ module Aspera
                 else
                   # TODO: delivery id is the right one if package was receive by workgroup
                   endpoint =
-                    case options.get_option(:box,:mandatory)
+                    case options.get_option(:box,is_type: :mandatory)
                     when :inbox,:archive then'received'
                     when :sent then 'sent'
                     end
@@ -412,7 +412,7 @@ module Aspera
               # get id and name
               source_name = source_ids.first['name']
               #source_id=source_ids.first['id']
-              source_hash = options.get_option(:storage,:mandatory)
+              source_hash = options.get_option(:storage,is_type: :mandatory)
               # check value of option
               raise CliError,'storage option must be a Hash' unless source_hash.is_a?(Hash)
               source_hash.each do |name,storage|

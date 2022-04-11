@@ -65,11 +65,11 @@ module Aspera
         end
         # parameters mandatory for create/modify
         if %i[create modify].include?(command)
-          parameters = options.get_option(:value,:mandatory)
+          parameters = options.get_option(:value,is_type: :mandatory)
         end
         # parameters optional for list
         if [:list].include?(command)
-          parameters = options.get_option(:value,:optional)
+          parameters = options.get_option(:value)
         end
         case command
         when :create
@@ -86,7 +86,7 @@ module Aspera
           data = data[res_class_path] if use_subkey
           return {type: :object_list, data: data, fields: display_fields}
         when :modify
-          property = options.get_option(:property,:optional)
+          property = options.get_option(:property)
           parameters = {property => parameters} unless property.nil?
           rest_api.update(one_res_path,parameters)
           return Main.result_status('modified')

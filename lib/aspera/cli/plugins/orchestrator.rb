@@ -49,7 +49,7 @@ module Aspera
           call_args[:subpath] = "#{opt[:prefix]}/#{call_args[:subpath]}" unless opt[:prefix].nil?
           # specify id if necessary
           call_args[:subpath] = "#{call_args[:subpath]}/#{opt[:id]}" if opt.has_key?(:id)
-          call_type = options.get_option(:ret_style,:mandatory)
+          call_type = options.get_option(:ret_style,is_type: :mandatory)
           call_type = opt[:ret_style] if opt.has_key?(:ret_style)
           format = 'json'
           format = opt[:format] if opt.has_key?(:format)
@@ -72,19 +72,19 @@ module Aspera
         end
 
         def execute_action
-          rest_params = {base_url: options.get_option(:url,:mandatory)}
-          case options.get_option(:auth_style,:mandatory)
+          rest_params = {base_url: options.get_option(:url,is_type: :mandatory)}
+          case options.get_option(:auth_style,is_type: :mandatory)
           when :arg_pass
             rest_params[:auth] = {
               type:      :url,
               url_creds: {
-                'login'    => options.get_option(:username,:mandatory),
-                'password' => options.get_option(:password,:mandatory) }}
+                'login'    => options.get_option(:username,is_type: :mandatory),
+                'password' => options.get_option(:password,is_type: :mandatory) }}
           when :head_basic
             rest_params[:auth] = {
               type:     :basic,
-              username: options.get_option(:username,:mandatory),
-              password: options.get_option(:password,:mandatory) }
+              username: options.get_option(:username,is_type: :mandatory),
+              password: options.get_option(:password,is_type: :mandatory) }
           when :apikey
             raise 'Not implemented'
           end
@@ -142,13 +142,13 @@ fields: %w[id portable_id name published_status published_revision_id latest_rev
               call_params = {format: :json}
               override_accept = nil
               # set external parameters if any
-              self.options.get_option(:params,:mandatory).each do |name,value|
+              self.options.get_option(:params,is_type: :mandatory).each do |name,value|
                 call_params["external_parameters[#{name}]"] = value
               end
               # synchronous call ?
-              call_params['synchronous'] = true if self.options.get_option(:synchronous,:mandatory)
+              call_params['synchronous'] = true if self.options.get_option(:synchronous,is_type: :mandatory)
               # expected result for synchro call ?
-              expected = self.options.get_option(:result,:optional)
+              expected = self.options.get_option(:result)
               unless expected.nil?
                 result[:type] = :status
                 fields = expected.split(':')

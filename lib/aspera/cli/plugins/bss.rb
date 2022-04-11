@@ -23,7 +23,7 @@ module Aspera
 
         def execute_action
           if @api_bss.nil?
-            key = options.get_option(:password,:mandatory)
+            key = options.get_option(:password,is_type: :mandatory)
             @api_bss = Rest.new(
               base_url: 'https://dashboard.bss.asperasoft.com/platform',
               headers: {cookie: "_dashboard_key=#{key}"})
@@ -35,8 +35,8 @@ module Aspera
             object = 'bssSubscriptions'
             case command
             when :find
-              query = options.get_option(:query,:mandatory) # AOC_ORGANIZATION_QUERY AOC_USER_EMAIL
-              value = options.get_option(:value,:mandatory)
+              query = options.get_option(:query,is_type: :mandatory) # AOC_ORGANIZATION_QUERY AOC_USER_EMAIL
+              value = options.get_option(:value,is_type: :mandatory)
               request = {
                 'variables' => {'filter' => {'key' => query,'value' => value}},
                 'query'     => "query($filter: BssSubscriptionFilter!) {#{object}(filter: $filter) { #{all_fields('bssSubscriptions')} } }"

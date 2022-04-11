@@ -46,13 +46,13 @@ module Aspera
           @api_node =
             if env.has_key?(:node_api)
               env[:node_api]
-            elsif options.get_option(:password,:mandatory).start_with?('Bearer ')
+            elsif options.get_option(:password,is_type: :mandatory).start_with?('Bearer ')
               # info is provided like node_info of aoc
               Rest.new({
-                base_url: options.get_option(:url,:mandatory),
+                base_url: options.get_option(:url,is_type: :mandatory),
                 headers:  {
-                  'Authorization'      => options.get_option(:password,:mandatory),
-                  'X-Aspera-AccessKey' => options.get_option(:username,:mandatory)
+                  'Authorization'      => options.get_option(:password,is_type: :mandatory),
+                  'X-Aspera-AccessKey' => options.get_option(:username,is_type: :mandatory)
                 }
               })
             else
@@ -147,7 +147,7 @@ module Aspera
             end
             return nagios.result
           when :events
-            events = @api_node.read('events',options.get_option(:value,:optional))[:data]
+            events = @api_node.read('events',options.get_option(:value))[:data]
             return { type: :object_list, data: events}
           when :info
             node_info = @api_node.read('info')[:data]
@@ -165,7 +165,7 @@ module Aspera
           when :search
             search_root = get_next_arg_add_prefix(prefix_path,'search root')
             parameters = {'path' => search_root}
-            other_options = options.get_option(:value,:optional)
+            other_options = options.get_option(:value)
             parameters.merge!(other_options) unless other_options.nil?
             resp = @api_node.create('files/search',parameters)
             result = { type: :object_list, data: resp[:data]['items']}
@@ -208,7 +208,7 @@ module Aspera
           when :browse
             thepath = get_next_arg_add_prefix(prefix_path,'path')
             query = { path: thepath}
-            additional_query = options.get_option(:query,:optional)
+            additional_query = options.get_option(:query)
             query.merge!(additional_query) unless additional_query.nil?
             send_result = @api_node.create('files/browse', query)[:data]
             #example: send_result={'items'=>[{'file'=>"filename1","permissions"=>[{'name'=>'read'},{'name'=>'write'}]}]}
@@ -224,7 +224,7 @@ module Aspera
             end
             return c_result_remove_prefix_path(result,'path',prefix_path)
           when :upload,:download
-            token_type = options.get_option(:token_type,:optional)
+            token_type = options.get_option(:token_type)
             # nil if Shares 1.x
             token_type = :aspera if token_type.nil?
             case token_type
@@ -289,7 +289,7 @@ module Aspera
             node_api = aoc_api.get_node_api(node_file[:node_info])
             file_info = node_api.read("files/#{node_file[:file_id]}")[:data]
             if file_info['type'].eql?('folder')
-              result = node_api.read("files/#{node_file[:file_id]}/files",options.get_option(:value,:optional))
+              result = node_api.read("files/#{node_file[:file_id]}/files",options.get_option(:value))
               items = result[:data]
               self.format.display_status("Items: #{result[:data].length}/#{result[:http]['X-Total-Count']}")
             else
@@ -299,7 +299,7 @@ module Aspera
           when :find
             thepath = options.get_next_argument('path')
             node_file = aoc_api.resolve_node_file(top_node_file,thepath)
-            test_block = Aspera::Node.file_matcher(options.get_option(:value,:optional))
+            test_block = Aspera::Node.file_matcher(options.get_option(:value))
             return {type: :object_list,data: aoc_api.find_files(node_file,test_block),fields: ['path']}
           when :mkdir
             thepath = options.get_next_argument('path')
@@ -331,15 +331,15 @@ module Aspera
             # in same workspace
             server_home_node_file = client_home_node_file = top_node_file
             # default is push
-            case options.get_option(:operation,:mandatory)
+            case options.get_option(:operation,is_type: :mandatory)
             when :push
               client_tr_oper = Fasp::TransferSpec::DIRECTION_SEND
-              client_folder = options.get_option(:from_folder,:mandatory)
+              client_folder = options.get_option(:from_folder,is_type: :mandatory)
               server_folder = transfer.destination_folder(client_tr_oper)
             when :pull
               client_tr_oper = Fasp::TransferSpec::DIRECTION_RECEIVE
               client_folder = transfer.destination_folder(client_tr_oper)
-              server_folder = options.get_option(:from_folder,:mandatory)
+              server_folder = options.get_option(:from_folder,is_type: :mandatory)
             end
             client_node_file = aoc_api.resolve_node_file(client_home_node_file,client_folder)
             server_node_file = aoc_api.resolve_node_file(server_home_node_file,server_folder)
@@ -396,7 +396,7 @@ module Aspera
             return Main.result_status("downloaded: #{file_name}")
           when :file
             command_node_file = options.get_next_command(%i[show permission modify])
-            file_path = options.get_option(:path,:optional)
+            file_path = options.get_option(:path)
             node_file =
               if !file_path.nil?
                 aoc_api.resolve_node_file(top_node_file,file_path) # TODO: allow follow link ?
@@ -459,7 +459,7 @@ module Aspera
         def execute_async
           command = options.get_next_command(%i[list delete files show counters bandwidth])
           unless command.eql?(:list)
-            asyncname = options.get_option(:sync_name,:optional)
+            asyncname = options.get_option(:sync_name)
             if asyncname.nil?
               asyncid = instance_identifier
               if asyncid.eql?('ALL') && %i[show delete].include?(command)
@@ -502,21 +502,21 @@ module Aspera
             # filename str
             # skip int
             # status int
-            filter = options.get_option(:value,:optional)
+            filter = options.get_option(:value)
             pdata.merge!(filter) unless filter.nil?
             resp = @api_node.create('async/files',pdata)[:data]
             data = resp['sync_files']
             data = data.first[asyncid] unless data.empty?
             iteration_data = []
             skip_ids_persistency = nil
-            if options.get_option(:once_only,:mandatory)
+            if options.get_option(:once_only,is_type: :mandatory)
               skip_ids_persistency = PersistencyActionOnce.new(
                 manager: @agents[:persistency],
                 data:    iteration_data,
                 id:      IdGenerator.from_list([
                   'sync_files',
-                  options.get_option(:url,:mandatory),
-                  options.get_option(:username,:mandatory),
+                  options.get_option(:url,is_type: :mandatory),
+                  options.get_option(:username,is_type: :mandatory),
                   asyncid]))
               unless iteration_data.first.nil?
                 data.select!{|l| l['fnid'].to_i > iteration_data.first}
@@ -544,10 +544,10 @@ module Aspera
             command = options.get_next_command(%i[list create show modify cancel])
             case command
             when :list
-              resp = @api_node.read('ops/transfers',options.get_option(:value,:optional))
+              resp = @api_node.read('ops/transfers',options.get_option(:value))
               return { type: :object_list, data: resp[:data], fields: %w[id status] } # TODO: useful?
             when :create
-              resp = @api_node.create('streams',options.get_option(:value,:mandatory))
+              resp = @api_node.create('streams',options.get_option(:value,is_type: :mandatory))
               return { type: :single_object, data: resp[:data] }
             when :show
               trid = options.get_next_argument('transfer id')
@@ -555,7 +555,7 @@ module Aspera
               return { type: :other_struct, data: resp[:data] }
             when :modify
               trid = options.get_next_argument('transfer id')
-              resp = @api_node.update('streams/' + trid,options.get_option(:value,:mandatory))
+              resp = @api_node.update('streams/' + trid,options.get_option(:value,is_type: :mandatory))
               return { type: :other_struct, data: resp[:data] }
             when :cancel
               trid = options.get_next_argument('transfer id')
@@ -574,7 +574,7 @@ module Aspera
             case command
             when :list
               # could use ? subpath: 'transfers'
-              resp = @api_node.read(res_class_path,options.get_option(:value,:optional))
+              resp = @api_node.read(res_class_path,options.get_option(:value))
               return {
                 type:   :object_list,
                 data:   resp[:data],
@@ -627,15 +627,15 @@ module Aspera
             @api_node.params[:headers]['X-aspera-WF-version'] = '2017_10_23'
             case command
             when :create
-              resp = @api_node.create(res_class_path,options.get_option(:value,:mandatory))
+              resp = @api_node.create(res_class_path,options.get_option(:value,is_type: :mandatory))
               return Main.result_status("#{resp[:data]['id']} created")
             when :list
-              resp = @api_node.read(res_class_path,options.get_option(:value,:optional))
+              resp = @api_node.read(res_class_path,options.get_option(:value))
               return { type: :value_list, data: resp[:data]['ids'], name: 'id' }
             when :show
               return { type: :single_object, data: @api_node.read(one_res_path)[:data]}
             when :modify
-              @api_node.update(one_res_path,options.get_option(:value,:mandatory))
+              @api_node.update(one_res_path,options.get_option(:value,is_type: :mandatory))
               return Main.result_status("#{one_res_id} updated")
             when :delete
               @api_node.delete(one_res_path)
@@ -647,7 +647,7 @@ module Aspera
             command = options.get_next_command(%i[session file])
             validator_id = options.get_option(:validator)
             validation = {'validator_id' => validator_id} unless validator_id.nil?
-            request_data = options.get_option(:value,:optional)
+            request_data = options.get_option(:value)
             request_data ||= {}
             case command
             when :session
@@ -676,16 +676,16 @@ fields: %w[session_uuid status transport direction bytes_transferred]}
             end
           when :asperabrowser
             browse_params = {
-              'nodeUser' => options.get_option(:username,:mandatory),
-              'nodePW'   => options.get_option(:password,:mandatory),
-              'nodeURL'  => options.get_option(:url,:mandatory)
+              'nodeUser' => options.get_option(:username,is_type: :mandatory),
+              'nodePW'   => options.get_option(:password,is_type: :mandatory),
+              'nodeURL'  => options.get_option(:url,is_type: :mandatory)
             }
             # encode parameters so that it looks good in url
             encoded_params = Base64.strict_encode64(Zlib::Deflate.deflate(JSON.generate(browse_params))).gsub(/=+$/, '').tr('+/', '-_').reverse
             OpenApplication.instance.uri(options.get_option(:asperabrowserurl) + '?goto=' + encoded_params)
             return Main.result_status('done')
           when :basic_token
-            return Main.result_status('Basic ' + Base64.strict_encode64("#{options.get_option(:username,:mandatory)}:#{options.get_option(:password,:mandatory)}"))
+            return Main.result_status(Rest.basic_creds(options.get_option(:username,is_type: :mandatory),options.get_option(:password,is_type: :mandatory)))
           end # case command
           raise 'ERROR: shall not reach this line'
         end # execute_action

@@ -24,7 +24,7 @@ module Aspera
           command = options.get_next_command(ACTIONS)
           case command
           when :start
-            env_args = Aspera::Sync.new(options.get_option(:parameters,:mandatory)).compute_args
+            env_args = Aspera::Sync.new(options.get_option(:parameters,is_type: :mandatory)).compute_args
             async_bin = 'async'
             Log.log.debug("execute: #{env_args[:env].map{|k,v| "#{k}=\"#{v}\""}.join(' ')} \"#{async_bin}\" \"#{env_args[:args].join('" "')}\"")
             res = system(env_args[:env],[async_bin,async_bin],*env_args[:args])
@@ -36,8 +36,8 @@ module Aspera
             else raise 'internal error: unspecified case'
             end
           when :admin
-            p = options.get_option(:parameters,:mandatory)
-            n = options.get_option(:session_name,:optional)
+            p = options.get_option(:parameters,is_type: :mandatory)
+            n = options.get_option(:session_name)
             cmdline = ['asyncadmin','--quiet']
             session = n.nil? ? p['sessions'].first : p['sessions'].find{|s|s['name'].eql?(n)}
             cmdline.push('--name=' + session['name'])

@@ -71,7 +71,7 @@ module Aspera
         ACTIONS = %i[health nodeadmin userdata configurator ctl download upload browse delete rename].concat(Aspera::AsCmd::OPERATIONS)
 
         def execute_action
-          server_uri = URI.parse(options.get_option(:url,:mandatory))
+          server_uri = URI.parse(options.get_option(:url,is_type: :mandatory))
           Log.log.debug("URI : #{server_uri}, port=#{server_uri.port}, scheme:#{server_uri.scheme}")
           server_transfer_spec = {'remote_host' => server_uri.hostname}
           shell_executor = nil
@@ -84,25 +84,25 @@ module Aspera
             server_transfer_spec['wss_port'] = server_uri.port
           else # when 'ssh'
             Log.log.error("Scheme #{server_uri.scheme} not supported. Assuming SSH.") if !server_uri.scheme.eql?('ssh')
-            if options.get_option(:username,:optional).nil?
+            if options.get_option(:username).nil?
               options.set_option(:username,Aspera::Fasp::TransferSpec::ACCESS_KEY_TRANSFER_USER)
               Log.log.info("Using default transfer user: #{Aspera::Fasp::TransferSpec::ACCESS_KEY_TRANSFER_USER}")
             end
-            server_transfer_spec['remote_user'] = options.get_option(:username,:mandatory)
-            ssh_options = options.get_option(:ssh_options,:optional)
+            server_transfer_spec['remote_user'] = options.get_option(:username,is_type: :mandatory)
+            ssh_options = options.get_option(:ssh_options)
             raise 'expecting a Hash for ssh_options' unless ssh_options.is_a?(Hash)
             if !server_uri.port.nil?
               ssh_options[:port] = server_uri.port
               server_transfer_spec['ssh_port'] = server_uri.port
             end
             cred_set = false
-            password = options.get_option(:password,:optional)
+            password = options.get_option(:password)
             if !password.nil?
               ssh_options[:password] = password
               server_transfer_spec['remote_password'] = password
               cred_set = true
             end
-            ssh_keys = options.get_option(:ssh_keys,:optional)
+            ssh_keys = options.get_option(:ssh_keys)
             if !ssh_keys.nil?
               raise 'expecting single value or array for ssh_keys' unless ssh_keys.is_a?(Array) || ssh_keys.is_a?(String)
               ssh_keys = [ssh_keys] if ssh_keys.is_a?(String)
@@ -162,7 +162,7 @@ module Aspera
               end
             when :asctlstatus
               realcmd = 'asctl'
-              prefix = options.get_option(:cmd_prefix,:optional)
+              prefix = options.get_option(:cmd_prefix)
               realcmd = "#{prefix}#{realcmd} all:status" unless prefix.nil?
               result = shell_executor.execute(realcmd.split)
               data = asctl_parse(result)
@@ -178,7 +178,7 @@ module Aspera
             return nagios.result
           when :nodeadmin,:userdata,:configurator,:ctl
             realcmd = 'as' + command.to_s
-            prefix = options.get_option(:cmd_prefix,:optional)
+            prefix = options.get_option(:cmd_prefix)
             if !prefix.nil?
               realcmd = "#{prefix}#{realcmd}"
             end

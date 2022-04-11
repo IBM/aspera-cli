@@ -142,7 +142,7 @@ module Aspera
           options.set_option(:sdk_folder,File.join(@main_folder,'sdk'))
           options.set_option(:override,:no)
           options.parse_options!
-          pac_script = options.get_option(:fpac,:optional)
+          pac_script = options.get_option(:fpac)
           # create PAC executor
           @pac_exec = Aspera::ProxyAutoConfig.new(pac_script).register_uri_generic unless pac_script.nil?
         end
@@ -187,7 +187,7 @@ module Aspera
 
         def periodic_check_newer_gem_version
           # get verification period
-          delay_days = options.get_option(:version_check_days,:mandatory)
+          delay_days = options.get_option(:version_check_days,is_type: :mandatory)
           Log.log.info("check days: #{delay_days}")
           # check only if not zero day
           return if delay_days.eql?(0)
@@ -241,7 +241,7 @@ module Aspera
         def add_plugin_default_preset(plugin_name_sym)
           default_config_name = get_plugin_default_config_name(plugin_name_sym)
           Log.log.debug("add_plugin_default_preset:#{plugin_name_sym}:#{default_config_name}")
-          options.add_option_preset(preset_by_name(default_config_name),:unshift) unless default_config_name.nil?
+          options.add_option_preset(preset_by_name(default_config_name),op: :unshift) unless default_config_name.nil?
           return nil
         end
 
@@ -635,7 +635,7 @@ module Aspera
               return Main.result_status("Saved to default global preset #{preset_name}")
             end
           when :install
-            v = Fasp::Installation.instance.install_sdk(options.get_option(:sdk_url,:mandatory))
+            v = Fasp::Installation.instance.install_sdk(options.get_option(:sdk_url,is_type: :mandatory))
             return Main.result_status("Installed version #{v}")
           when :spec
             return {
@@ -798,11 +798,11 @@ module Aspera
             # register url option
             BasicAuthPlugin.new(@agents.merge(skip_option_header: true))
             # get from option, or ask
-            instance_url = options.get_option(:url,:mandatory)
+            instance_url = options.get_option(:url,is_type: :mandatory)
             # allow user to tell the preset name
-            preset_name = options.get_option(:id,:optional)
+            preset_name = options.get_option(:id)
             # allow user to specify type of application
-            application = options.get_option(:value,:optional)
+            application = options.get_option(:value)
             application = application.nil? ? identify_plugin_for_url(instance_url)[:product] : application.to_sym
             plugin_name = '<replace per app>'
             test_args = '<replace per app>'
@@ -816,19 +816,19 @@ module Aspera
               self.format.display_status("Preparing preset: #{preset_name}")
               # init defaults if necessary
               @config_presets[CONF_PRESET_DEFAULT] ||= {}
-              option_override = options.get_option(:override,:mandatory)
-              option_default = options.get_option(:default,:mandatory)
+              option_override = options.get_option(:override,is_type: :mandatory)
+              option_default = options.get_option(:default,is_type: :mandatory)
               Log.log.error("override=#{option_override} -> #{option_override.class}")
               raise CliError,"A default configuration already exists for plugin '#{plugin_name}' (use --override=yes or --default=no)" \
                 if !option_override && option_default && @config_presets[CONF_PRESET_DEFAULT].has_key?(plugin_name)
               raise CliError,"Preset already exists: #{preset_name}  (use --override=yes or --id=<name>)" \
                 if !option_override && @config_presets.has_key?(preset_name)
               # lets see if path to priv key is provided
-              private_key_path = options.get_option(:pkeypath,:optional)
+              private_key_path = options.get_option(:pkeypath)
               # give a chance to provide
               if private_key_path.nil?
                 self.format.display_status('Please provide path to your private RSA key, or empty to generate one:')
-                private_key_path = options.get_option(:pkeypath,:mandatory).to_s
+                private_key_path = options.get_option(:pkeypath,is_type: :mandatory).to_s
               end
               # else generate path
               if private_key_path.empty?
@@ -846,7 +846,7 @@ module Aspera
               # declare command line options for AoC
               require 'aspera/cli/plugins/aoc'
               # make username mandatory for jwt, this triggers interactive input
-              options.get_option(:username,:mandatory)
+              options.get_option(:username,is_type: :mandatory)
               # instanciate AoC plugin, so that command line options are known
               aoc_api = self.class.plugin_class(plugin_name).new(@agents.merge({skip_basic_auth_options: true, private_key_path: private_key_path})).aoc_api
               auto_set_pub_key = false
@@ -865,7 +865,7 @@ module Aspera
                 end
               else
                 self.format.display_status('Using organization specific client_id.')
-                if options.get_option(:client_id,:optional).nil? || options.get_option(:client_secret,:optional).nil?
+                if options.get_option(:client_id).nil? || options.get_option(:client_secret,:optional).nil?
                   self.format.display_status('Please login to your Aspera on Cloud instance.'.red)
                   self.format.display_status('Go to: Apps->Admin->Organization->Integrations')
                   self.format.display_status('Create or check if there is an existing integration named:')
@@ -876,8 +876,8 @@ module Aspera
                   self.format.display_status('Please enter:'.red)
                 end
                 OpenApplication.instance.uri("#{instance_url}/#{AOC_PATH_API_CLIENTS}")
-                options.get_option(:client_id,:mandatory)
-                options.get_option(:client_secret,:mandatory)
+                options.get_option(:client_id,is_type: :mandatory)
+                options.get_option(:client_secret,is_type: :mandatory)
                 use_browser_authentication = true
               end
               if use_browser_authentication
@@ -930,21 +930,21 @@ module Aspera
             add_plugin_default_preset(AOC_COMMAND_V3.to_sym)
             # instanciate AoC plugin
             self.class.plugin_class(AOC_COMMAND_CURRENT).new(@agents) # TODO: is this line needed ? get options ?
-            url = options.get_option(:url,:mandatory)
+            url = options.get_option(:url,is_type: :mandatory)
             cli_conf_file = Fasp::Installation.instance.cli_conf_file
             data = JSON.parse(File.read(cli_conf_file))
             organization,instance_domain = AoC.parse_url(url)
             key_basename = 'org_' + organization + '.pem'
             key_file = File.join(File.dirname(File.dirname(cli_conf_file)),'etc',key_basename)
-            File.write(key_file,options.get_option(:private_key,:mandatory))
+            File.write(key_file,options.get_option(:private_key,is_type: :mandatory))
             new_conf = {
               'organization'       => organization,
               'hostname'           => [organization,instance_domain].join('.'),
               'privateKeyFilename' => key_basename,
-              'username'           => options.get_option(:username,:mandatory)
+              'username'           => options.get_option(:username,is_type: :mandatory)
             }
-            new_conf['clientId'] = options.get_option(:client_id,:optional)
-            new_conf['clientSecret'] = options.get_option(:client_secret,:optional)
+            new_conf['clientId'] = options.get_option(:client_id)
+            new_conf['clientSecret'] = options.get_option(:client_secret)
             if new_conf['clientId'].nil?
               new_conf['clientId'],new_conf['clientSecret'] = AoC.get_client_info
             end
@@ -961,7 +961,7 @@ module Aspera
           when :detect
             # need url / username
             BasicAuthPlugin.new(@agents)
-            return {type: :single_object, data: identify_plugin_for_url(options.get_option(:url,:mandatory))}
+            return {type: :single_object, data: identify_plugin_for_url(options.get_option(:url,is_type: :mandatory))}
           when :coffee
             OpenApplication.instance.uri('https://enjoyjava.com/wp-content/uploads/2018/01/How-to-make-strong-coffee.jpg')
             return Main.result_nothing
@@ -984,7 +984,7 @@ module Aspera
             return {type: :single_object, data: email_settings}
           when :proxy_check
             # ensure fpac was provided
-            options.get_option(:fpac,:mandatory)
+            options.get_option(:fpac,is_type: :mandatory)
             server_url = options.get_next_argument('server url')
             return Main.result_status(@pac_exec.find_proxy_for_url(server_url))
           when :check_update
@@ -1015,7 +1015,7 @@ module Aspera
             command = options.get_next_command(%i[init list get set delete])
             case command
             when :init
-              type = options.get_option(:value,:optional)
+              type = options.get_option(:value)
               case type
               when 'config',NilClass
                 raise 'default secrets already exists' if @config_presets.has_key?(CONF_PRESET_SECRETS)
@@ -1029,9 +1029,9 @@ module Aspera
             when :set
               # register url option
               BasicAuthPlugin.new(@agents.merge(skip_option_header: true))
-              username = options.get_option(:username,:mandatory)
-              url = options.get_option(:url,:mandatory)
-              description = options.get_option(:value,:optional)
+              username = options.get_option(:username,is_type: :mandatory)
+              url = options.get_option(:url,is_type: :mandatory)
+              description = options.get_option(:value)
               secret = options.get_next_argument('secret')
               vault.set(username: username, url: url, description: description, secret: secret)
               save_presets_to_config_file if vault.is_a?(Keychain::EncryptedHash)
@@ -1039,15 +1039,15 @@ module Aspera
             when :get
               # register url option
               BasicAuthPlugin.new(@agents.merge(skip_option_header: true))
-              username = options.get_option(:username,:mandatory)
-              url = options.get_option(:url,:optional)
+              username = options.get_option(:username,is_type: :mandatory)
+              url = options.get_option(:url)
               result = vault.get(username: username, url: url)
               return {type: :single_object, data: result}
             when :delete
               # register url option
               BasicAuthPlugin.new(@agents.merge(skip_option_header: true))
-              username = options.get_option(:username,:mandatory)
-              url = options.get_option(:url,:optional)
+              username = options.get_option(:username,is_type: :mandatory)
+              url = options.get_option(:url)
               vault.delete(username: username, url: url)
               return Main.result_status('Done')
             end
@@ -1057,7 +1057,7 @@ module Aspera
 
         # @return email server setting with defaults if not defined
         def email_settings
-          smtp = options.get_option(:smtp,:mandatory)
+          smtp = options.get_option(:smtp,is_type: :mandatory)
           # change string keys into symbol keys
           smtp = smtp.keys.each_with_object({}){|v,m|m[v.to_sym] = smtp[v];}
           # defaults
@@ -1080,7 +1080,7 @@ module Aspera
         end
 
         def send_email_template(vars,email_template_default=nil)
-          vars[:to] ||= options.get_option(:notif_to,:mandatory)
+          vars[:to] ||= options.get_option(:notif_to,is_type: :mandatory)
           notif_template = options.get_option(:notif_template,email_template_default.nil? ? :mandatory : :optional) || email_template_default
           mail_conf = email_settings
           vars[:from_name] ||= mail_conf[:from_name]
@@ -1138,7 +1138,7 @@ module Aspera
 
         def vault
           if @vault.nil?
-            vault_info = options.get_option(:secrets,:optional)
+            vault_info = options.get_option(:secrets)
             case vault_info
             when Hash
               @vault = Keychain::EncryptedHash.new(vault_info)
@@ -1164,7 +1164,7 @@ module Aspera
         def get_secret(options)
           raise 'options shall be Hash' unless options.is_a?(Hash)
           raise 'options shall have username' unless options.has_key?(:username)
-          secret = self.options.get_option(:secret,:optional)
+          secret = self.options.get_option(:secret)
           if secret.nil?
             secret = vault.get(options) rescue nil
             # mandatory by default
