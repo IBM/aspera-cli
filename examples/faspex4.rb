@@ -30,8 +30,8 @@ faspex_url = ARGV[0] # typically: https://faspex.example.com/aspera/faspex
 faspex_user = ARGV[1]
 faspex_pass = ARGV[2]
 
-# comment out this if certificate is valid, keep line to ignore certificate
-Aspera::Rest.insecure = true
+# uncomment this if certificate is self signed
+# Rest.session_cb = lambda{|http|http.verify_mode = OpenSSL::SSL::VERIFY_NONE}
 
 # 1: Faspex 4 API v3
 #---------------

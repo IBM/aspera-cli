@@ -20,12 +20,15 @@ module Aspera
   module Cli
     # The main CLI class
     class Main
-      # prefix to display error messages
+      # prefix to display error messages in user messages (terminal)
       ERROR_FLASH = 'ERROR:'.bg_red.gray.blink.freeze
       private_constant :ERROR_FLASH
 
       # store transfer result using this key and use result_transfer_multiple
       STATUS_FIELD = 'status'
+
+      # for testing only
+      SELF_SIGNED_CERT = OpenSSL::SSL.const_get(:enon_yfirev.to_s.upcase.reverse)
 
       class << self
         # expect some list, but nothing to display
@@ -78,7 +81,11 @@ module Aspera
       # called everytime a new REST HTTP session is opened
       # @param http [Net::HTTP] the newly created http session object
       def http_parameters=(http)
-        http.verify_mode = OpenSSL::SSL::VERIFY_NONE if @option_insecure
+        if @option_insecure
+          Log.log.error(">>> #{@option_insecure}")
+          @plugin_env[:formater].display_message(:error,"#{ERROR_FLASH} only for tests, do not use in production #{http.inspect}")
+          http.verify_mode = SELF_SIGNED_CERT
+        end
         http.set_debug_output($stdout) if @option_rest_debug
         raise 'http_options expects Hash' unless @option_http_options.is_a?(Hash)
 
@@ -112,7 +119,7 @@ module Aspera
         # environment provided to plugin for various capabilities
         @plugin_env = {}
         # give command line arguments to option manager
-        @plugin_env[:options] = @opt_mgr = Manager.new(PROGRAM_NAME,argv)
+        @plugin_env[:options] = @opt_mgr = Manager.new(PROGRAM_NAME,argv: argv)
         # formatter adds options
         @plugin_env[:formater] = Formater.new(@plugin_env[:options])
         Rest.user_agent = PROGRAM_NAME
@@ -305,7 +312,7 @@ module Aspera
             execute_command = false
           end
           # locking for single execution (only after "per plugin" option, in case lock port is there)
-          lock_port = @opt_mgr.get_option(:lock_port,:optional)
+          lock_port = @opt_mgr.get_option(:lock_port)
           if !lock_port.nil?
             begin
               # no need to close later, will be freed on process exit. must save in member else it is garbage collected

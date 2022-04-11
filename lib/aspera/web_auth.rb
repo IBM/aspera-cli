@@ -72,7 +72,6 @@ module Aspera
         Log.log.debug('HTTP mode')
       when 'https'
         webrick_options[:SSLEnable] = true
-        webrick_options[:SSLVerifyClient] = OpenSSL::SSL::VERIFY_NONE
         # a- automatic certificate generation
         webrick_options[:SSLCertName] = [['CN',WEBrick::Utils.getservername]]
         # b- generate self signed cert

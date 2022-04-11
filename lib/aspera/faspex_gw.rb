@@ -155,11 +155,10 @@ module Aspera
 
     def initialize(a_aoc_api_user, a_workspace_id)
       webrick_options = {
-        Port:            9443,
-        Logger:          Log.log,
-        SSLEnable:       true,
-        SSLVerifyClient: OpenSSL::SSL::VERIFY_NONE,
-        SSLCertName:     [['CN', WEBrick::Utils.getservername]]
+        Port:        9443,
+        Logger:      Log.log,
+        SSLEnable:   true,
+        SSLCertName: [['CN', WEBrick::Utils.getservername]]
       }
       Log.log.info("Server started on port #{webrick_options[:Port]}")
       @server = WEBrick::HTTPServer.new(webrick_options)

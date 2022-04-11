@@ -34,7 +34,6 @@ module Aspera
     @@global = { # rubocop:disable Style/ClassVars
       debug:                   false,
       # true if https ignore certificate
-      insecure:                false,
       user_agent:              'Ruby',
       download_partial_suffix: '.http_partial',
       # a lambda which takes the Net::HTTP as arg, use this to change parameters
@@ -87,7 +86,6 @@ module Aspera
         # this honors http_proxy env var
         @http_session = Net::HTTP.new(uri.host, uri.port)
         @http_session.use_ssl = uri.scheme.eql?('https')
-        @http_session.verify_mode = OpenSSL::SSL::VERIFY_NONE if self.class.insecure
         @http_session.set_debug_output($stdout) if self.class.debug
         # set http options in callback, such as timeout and cert. verification
         self.class.session_cb&.call(@http_session)
