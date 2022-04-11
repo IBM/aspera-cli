@@ -129,7 +129,7 @@ module Aspera
       OpenApplication.instance.uri(login_page_url)
       # wait for code in request
       received_params = webserver.received_request
-      raise 'state does not match' if !callback_verif.eql?(received_params['state'])
+      raise 'state does not match' unless callback_verif.eql?(received_params['state'])
       # exchange code for token
       return oauth.create_token(oauth.optional_scope_client_id(add_secret: true).merge(
         grant_type:   'authorization_code',

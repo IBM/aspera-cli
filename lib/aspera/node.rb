@@ -22,7 +22,7 @@ module Aspera
       def set_ak_basic_token(ts,ak,secret)
         Log.log.warn("Expected transfer user: #{Fasp::TransferSpec::ACCESS_KEY_TRANSFER_USER}, "\
           "but have #{ts['remote_user']}") unless ts['remote_user'].eql?(Fasp::TransferSpec::ACCESS_KEY_TRANSFER_USER)
-        ts['token'] = "Basic #{Base64.strict_encode64("#{ak}:#{secret}")}"
+        ts['token'] = Rest.basic_creds(ak,secret)
       end
 
       def empty_binding

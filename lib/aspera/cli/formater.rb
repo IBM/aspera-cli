@@ -16,6 +16,7 @@ module Aspera
       DISPLAY_FORMATS = %i[table ruby json jsonpp yaml csv nagios].freeze
       # user output levels
       DISPLAY_LEVELS = %i[info data error].freeze
+      # passwords and secrets are hidden with this string
       HIDDEN_PASSWORD = '🔑'
       SECRET_KEYWORDS = %w[password secret private_key].freeze
       KEYS_NOT_HIDDEN = %w[show_secrets log_secrets].freeze
@@ -106,10 +107,13 @@ module Aspera
       end
 
       # main output method
+      # data: for requested data, not displayed if level==error
+      # info: additional info, displayed if level==info
+      # error: always displayed on stderr
       def display_message(message_level,message)
         case message_level
-        when :info then $stdout.puts(message) if @option_display.eql?(:info)
         when :data then $stdout.puts(message) unless @option_display.eql?(:error)
+        when :info then $stdout.puts(message) if @option_display.eql?(:info)
         when :error then $stderr.puts(message)
         else raise "wrong message_level:#{message_level}"
         end
