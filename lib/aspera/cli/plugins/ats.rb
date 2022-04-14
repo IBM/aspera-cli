@@ -138,7 +138,7 @@ module Aspera
           when :list
             return {type: :object_list, data: @ats_api_pub.all_servers, fields: %w[id cloud region]}
           when :show
-            if options.get_option(:cloud) || options.get_option(:region,:optional)
+            if options.get_option(:cloud) || options.get_option(:region,is_type: :optional)
               server_data = server_by_cloud_region
             else
               server_id = instance_identifier

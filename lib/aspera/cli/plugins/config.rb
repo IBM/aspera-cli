@@ -865,7 +865,7 @@ module Aspera
                 end
               else
                 self.format.display_status('Using organization specific client_id.')
-                if options.get_option(:client_id).nil? || options.get_option(:client_secret,:optional).nil?
+                if options.get_option(:client_id).nil? || options.get_option(:client_secret,is_type: :optional).nil?
                   self.format.display_status('Please login to your Aspera on Cloud instance.'.red)
                   self.format.display_status('Go to: Apps->Admin->Organization->Integrations')
                   self.format.display_status('Create or check if there is an existing integration named:')
@@ -1081,7 +1081,7 @@ module Aspera
 
         def send_email_template(vars,email_template_default=nil)
           vars[:to] ||= options.get_option(:notif_to,is_type: :mandatory)
-          notif_template = options.get_option(:notif_template,email_template_default.nil? ? :mandatory : :optional) || email_template_default
+          notif_template = options.get_option(:notif_template,is_type: email_template_default.nil? ? :mandatory : :optional) || email_template_default
           mail_conf = email_settings
           vars[:from_name] ||= mail_conf[:from_name]
           vars[:from_email] ||= mail_conf[:from_email]
