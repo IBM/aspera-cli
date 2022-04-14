@@ -22,7 +22,8 @@ module Aspera
     class Main
       # prefix to display error messages in user messages (terminal)
       ERROR_FLASH = 'ERROR:'.bg_red.gray.blink.freeze
-      private_constant :ERROR_FLASH
+      WARNING_FLASH = 'WARNING:'.bg_red.gray.blink.freeze
+      private_constant :ERROR_FLASH,:WARNING_FLASH
 
       # store transfer result using this key and use result_transfer_multiple
       STATUS_FIELD = 'status'
@@ -82,8 +83,8 @@ module Aspera
       # @param http [Net::HTTP] the newly created http session object
       def http_parameters=(http)
         if @option_insecure
-          Log.log.error(">>> #{@option_insecure}")
-          @plugin_env[:formater].display_message(:error,"#{ERROR_FLASH} only for tests, do not use in production #{http.inspect}")
+          url=http.inspect.gsub(/^[^ ]* /,'https://').gsub(/ [^ ]*$/,'')
+          @plugin_env[:formater].display_message(:error,"#{WARNING_FLASH} ignoring certificate for: #{url}. Only for tests, do not use in production.")
           http.verify_mode = SELF_SIGNED_CERT
         end
         http.set_debug_output($stdout) if @option_rest_debug
