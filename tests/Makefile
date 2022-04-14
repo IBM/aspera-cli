@@ -1128,7 +1128,7 @@ $(T)f5_p1: $(T).exists
 	@echo $@
 	set -x&&\
 	f5_user=$$($(EXE_NOMAN) conf id tst_faspex5 get username)&&\
-	$(EXE_MAN) faspex5 package send --value=@json:'{"title":"test title","recipients":[{"name":"'"$${f5_user}"'"}],"metadata":{"text_test":"abc","test":"01/01/01"}}' $(CF_LOCAL_SAMPLE_FILEPATH)
+	$(EXE_MAN) faspex5 package send --value=@json:'{"title":"test title","recipients":[{"name":"'"$${f5_user}"'"}],"metadata":{"datetest":"01/01/01"}}' $(CF_LOCAL_SAMPLE_FILEPATH) --ts=@json:'{"content_protection_password":"abc123_yo"}'
 	@touch $@
 $(T)f5_p2: $(T).exists
 	@echo $@
@@ -1137,7 +1137,7 @@ $(T)f5_p2: $(T).exists
 $(T)f5_p3: $(T).exists
 	@echo $@
 	set -x&&package_id=$$($(EXE_NOMAN) faspex5 pack list --value=@json:'{"mailbox":"inbox","state":["released"],"limit":1}' --fields=id --format=csv --display=data)&&\
-	$(EXE_MAN) faspex5 package receive "$${package_id}" --to-folder=$(DIR_TMP).
+	$(EXE_MAN) faspex5 package receive "$${package_id}" --to-folder=$(DIR_TMP).  --ts=@json:'{"content_protection_password":"abc123_yo"}'
 	@touch $@
 $(T)f5_a1: $(T).exists
 	@echo $@

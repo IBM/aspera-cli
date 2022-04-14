@@ -2195,8 +2195,8 @@ ascli faspex5 admin res saml_configs list
 ascli faspex5 admin res shared_inboxes list
 ascli faspex5 admin res workgroups list
 ascli faspex5 package list --value=@json:'{"mailbox":"inbox","state":["released"]}'
-ascli faspex5 package receive "my_package_id" --to-folder=.
-ascli faspex5 package send --value=@json:'{"title":"test title","recipients":[{"name":"my_f5_user"}],"metadata":{"text_test":"abc","test":"01/01/01"}}' testfile.bin
+ascli faspex5 package receive "my_package_id" --to-folder=.  --ts=@json:'{"content_protection_password":"abc123_yo"}'
+ascli faspex5 package send --value=@json:'{"title":"test title","recipients":[{"name":"my_f5_user"}],"metadata":{"datetest":"01/01/01"}}' testfile.bin --ts=@json:'{"content_protection_password":"abc123_yo"}'
 ascli mycommand --plugin-folder=T
 ascli node -N -Ptst_node_preview access_key create --value=@json:'{"id":"aoc_1","storage":{"type":"local","path":"/"}}'
 ascli node -N -Ptst_node_preview access_key delete aoc_1
