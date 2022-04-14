@@ -471,7 +471,12 @@ module Aspera
               iteration_persistency = PersistencyActionOnce.new(
                 manager: @agents[:persistency],
                 data:    [],
-                id:      IdGenerator.from_list(['preview_iteration',command.to_s,options.get_option(:url,is_type: :mandatory),options.get_option(:username,is_type: :mandatory)]))
+                id:      IdGenerator.from_list([
+                  'preview_iteration',
+                  command.to_s,
+                  options.get_option(:url,is_type: :mandatory),
+                  options.get_option(:username,is_type: :mandatory)
+                ]))
             end
             # call processing method specified by command line command
             send("process_#{command}",iteration_persistency)
