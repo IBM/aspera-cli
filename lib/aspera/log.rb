@@ -32,9 +32,9 @@ module Aspera
           result =
             case format
             when :json
-              JSON.pretty_generate(object) rescue PP.pp(object,'')
+              JSON.pretty_generate(object) rescue PP.pp(object,+'')
             when :ruby
-              PP.pp(object,'')
+              PP.pp(object,+'')
             else
               raise 'wrong parameter, expect pp or json'
             end

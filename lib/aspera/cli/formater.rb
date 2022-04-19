@@ -178,7 +178,7 @@ module Aspera
         when :nagios
           Nagios.process(res_data)
         when :ruby
-          display_message(:data,PP.pp(res_data,''))
+          display_message(:data,PP.pp(res_data,+''))
         when :json
           display_message(:data,JSON.generate(res_data))
         when :jsonpp
