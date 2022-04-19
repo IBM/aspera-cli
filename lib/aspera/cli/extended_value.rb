@@ -16,7 +16,7 @@ module Aspera
 
       class << self
         # decode comma separated table text
-        def self.decode_csvt(value)
+        def decode_csvt(value)
           col_titles = nil
           hasharray = []
           CSV.parse(value).each do |values|
