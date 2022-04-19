@@ -796,7 +796,7 @@ module Aspera
             # interactive mode
             options.ask_missing_mandatory = true
             # register url option
-            BasicAuthPlugin.new(@agents.merge(skip_option_header: true))
+            BasicAuthPlugin.register_options(@agents)
             # get from option, or ask
             instance_url = options.get_option(:url,is_type: :mandatory)
             # allow user to tell the preset name
@@ -960,7 +960,7 @@ module Aspera
             return Main.result_status("Updated: #{cli_conf_file}")
           when :detect
             # need url / username
-            BasicAuthPlugin.new(@agents)
+            BasicAuthPlugin.register_options(@agents)
             return {type: :single_object, data: identify_plugin_for_url(options.get_option(:url,is_type: :mandatory))}
           when :coffee
             OpenApplication.instance.uri('https://enjoyjava.com/wp-content/uploads/2018/01/How-to-make-strong-coffee.jpg')
@@ -1028,7 +1028,7 @@ module Aspera
               return {type: :object_list, data: vault.list}
             when :set
               # register url option
-              BasicAuthPlugin.new(@agents.merge(skip_option_header: true))
+              BasicAuthPlugin.register_options(@agents)
               username = options.get_option(:username,is_type: :mandatory)
               url = options.get_option(:url,is_type: :mandatory)
               description = options.get_option(:value)
@@ -1038,14 +1038,14 @@ module Aspera
               return Main.result_status('Done')
             when :get
               # register url option
-              BasicAuthPlugin.new(@agents.merge(skip_option_header: true))
+              BasicAuthPlugin.register_options(@agents)
               username = options.get_option(:username,is_type: :mandatory)
               url = options.get_option(:url)
               result = vault.get(username: username, url: url)
               return {type: :single_object, data: result}
             when :delete
               # register url option
-              BasicAuthPlugin.new(@agents.merge(skip_option_header: true))
+              BasicAuthPlugin.register_options(@agents)
               username = options.get_option(:username,is_type: :mandatory)
               url = options.get_option(:url)
               vault.delete(username: username, url: url)

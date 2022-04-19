@@ -19,14 +19,13 @@ module Aspera
 
       def initialize(env)
         @agents = env
-        raise StandardError,"execute_action shall be redefined by subclass #{self.class}" unless respond_to?(:execute_action)
+        # check presence in descendant of mandatory method and constant
+        raise StandardError,"missing method 'execute_action' in #{self.class}" unless respond_to?(:execute_action)
         raise StandardError,'ACTIONS shall be redefined by subclass' unless self.class.constants.include?(:ACTIONS)
-        unless env[:skip_option_header]
-          options.parser.separator('')
-          options.parser.separator("COMMAND: #{self.class.name.split('::').last.downcase}")
-          options.parser.separator("SUBCOMMANDS: #{self.class.const_get(:ACTIONS).map(&:to_s).join(' ')}")
-          options.parser.separator('OPTIONS:')
-        end
+        options.parser.separator('')
+        options.parser.separator("COMMAND: #{self.class.name.split('::').last.downcase}")
+        options.parser.separator("SUBCOMMANDS: #{self.class.const_get(:ACTIONS).map(&:to_s).join(' ')}")
+        options.parser.separator('OPTIONS:')
         return if @@options_created
         options.add_opt_simple(:value,'extended value for create, update, list filter')
         options.add_opt_simple(:property,'name of property to set')

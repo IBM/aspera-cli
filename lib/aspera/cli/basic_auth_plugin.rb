@@ -7,18 +7,19 @@ module Aspera
   module Cli
     # base class for applications supporting basic authentication
     class BasicAuthPlugin < Plugin
+      class << self
+        def register_options(env)
+          env[:options].add_opt_simple(:url,'URL of application, e.g. https://org.asperafiles.com')
+          env[:options].add_opt_simple(:username,'username to log in')
+          env[:options].add_opt_simple(:password,"user's password")
+          env[:options].parse_options!
+        end
+      end
+
       def initialize(env)
         super(env)
         return if env[:skip_basic_auth_options]
-        options.add_opt_simple(:url,'URL of application, e.g. https://org.asperafiles.com')
-        options.add_opt_simple(:username,'username to log in')
-        options.add_opt_simple(:password,"user's password")
-        options.parse_options!
-      end
-      ACTIONS = [].freeze
-
-      def execute_action
-        raise 'do not execute action on this generic plugin'
+        self.class.register_options(env)
       end
 
       # returns a Rest object with basic auth
