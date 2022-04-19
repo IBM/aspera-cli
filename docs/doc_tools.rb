@@ -126,6 +126,8 @@ def include_commands
       line = line.gsub(/\$\$\{([a-z_0-9]+)\}/,'my_\1')
       # de-dup dollar in regex
       line = line.gsub('$$','$')
+      # hidden parameters to make test work
+      line = line.gsub(/OPTST_[A-Z0-5]+/,'')
       REPLACEMENTS.each_pair{|k,v|line = line.gsub(k,v)}
       commands.push(line)
     end
