@@ -552,6 +552,19 @@ Refer to sections: [Usage](#usage) and [Sample Commands](#commands).
 
 Not all `ascli` features are fully documented here, the user may explore commands on the command line.
 
+### `ascp` command line
+
+If you want to use `ascp` directly as a command line, refer to IBM Aspera documentation of either [Desktop Client](https://www.ibm.com/docs/en/asdc), [Endpoint](https://www.ibm.com/docs/en/ahte) or [Transfer Server](https://www.ibm.com/docs/en/ahts) where [a section on `ascp` can be found](https://www.ibm.com/docs/en/ahts/4.4?topic=linux-ascp-transferring-from-command-line).
+
+Using `ascli` with plugin `server` for command line gives advantages over ascp:
+
+* automatic resume on error
+* configuration file
+* choice of transfer agents
+* integrated support of multi-session
+
+Moreover all `ascp` options are supported either through transfer spec parameters and with the possibility to provide `ascp` arguments directly when the `direct` agent is used (`EX_ascp_args`).
+
 ### Arguments : Commands and options
 
 Arguments are the units of command line, as parsed by the shell, typically separated by spaces (and called "argv").
@@ -1538,12 +1551,12 @@ will effectively push files to the related server from the agent node.
 #### <a id="agt_direct"></a>Direct
 
 The `direct` agent directly executes a local ascp.
-This is the default for `ascli`.
-This is equivalent to specifying `--transfer=direct`.
-`ascli` will detect locally installed Aspera products, including SDK.
+This is the default agent for `ascli`.
+This is equivalent to option `--transfer=direct`.
+`ascli` will detect locally installed Aspera products, including SDK, and use `ascp` from that component.
 Refer to section [FASP](#client).
 
-The `transfer-info` accepts the following optional parameters to control multi-session, WSS
+The `transfer_info` option accepts the following optional parameters to control multi-session, Web Socket Session and Resume policy:
 
 <table>
 <tr><th>Name</th><th>Type</th><th>Description</th></tr>
@@ -1558,7 +1571,7 @@ The `transfer-info` accepts the following optional parameters to control multi-s
 <tr><td>resume.sleep_max</td><td>int</td><td>Resume<br/>Default: 60</td></tr>
 </table>
 
-Resume: In case of transfer interruption, the agent will resume a transfer up to `iter_max` time.
+In case of transfer interruption, the agent will **resume** a transfer up to `iter_max` time.
 Sleep between iterations is:
 
 ```bash
@@ -1566,11 +1579,16 @@ max( sleep_max , sleep_initial * sleep_factor ^ (iter_index-1) )
 ```
 
 Some transfer errors are considered "retryable" (e.g. timeout) and some other not (e.g. wrong password).
+The list of known protocol errors and retry level can be listed:
+
+```bash
+ascli config ascp errors
+```
 
 Examples:
 
 ```javascript
-ascli ... --transfer-info=@json:'{"wss":true,"resume":{"iter_max":10}}'
+ascli ... --transfer-info=@json:'{"wss":true,"resume":{"iter_max":20}}'
 ascli ... --transfer-info=@json:'{"spawn_delay_sec":2.5,"multi_incr_udp":false}'
 ```
 
@@ -2048,12 +2066,12 @@ ascli aoc admin res self show
 ascli aoc admin res short_link list
 ascli aoc admin res user list
 ascli aoc admin res workspace_membership list
-ascli aoc admin resource node --name=my_aoc_node1_name --secret=my_aoc_node1_secret v3 access_key create --value=@json:'{"id":"testsub1","storage":{"path":"/folder1"}}'
-ascli aoc admin resource node --name=my_aoc_node1_name --secret=my_aoc_node1_secret v3 events
-ascli aoc admin resource node --name=my_aoc_node1_name --secret=my_aoc_node1_secret v4 browse /
-ascli aoc admin resource node --name=my_aoc_node1_name --secret=my_aoc_node1_secret v4 delete /folder1
-ascli aoc admin resource node --name=my_aoc_node1_name --secret=my_aoc_node1_secret v4 mkdir /folder1
-ascli aoc admin resource node v3 name my_aoc_node1_name --secret=my_aoc_node1_secret access_key delete testsub1
+ascli aoc admin resource node --name=my_aoc_ak_name --secret=my_aoc_ak_secret v3 access_key create --value=@json:'{"id":"testsub1","storage":{"path":"/folder1"}}'
+ascli aoc admin resource node --name=my_aoc_ak_name --secret=my_aoc_ak_secret v3 events
+ascli aoc admin resource node --name=my_aoc_ak_name --secret=my_aoc_ak_secret v4 browse /
+ascli aoc admin resource node --name=my_aoc_ak_name --secret=my_aoc_ak_secret v4 delete /folder1
+ascli aoc admin resource node --name=my_aoc_ak_name --secret=my_aoc_ak_secret v4 mkdir /folder1
+ascli aoc admin resource node v3 name my_aoc_ak_name --secret=my_aoc_ak_secret access_key delete testsub1
 ascli aoc admin resource workspace list
 ascli aoc admin resource workspace_membership list --fields=ALL --query=@json:'{"page":1,"per_page":50,"embed":"member","inherited":false,"workspace_id":11363,"sort":"name"}'
 ascli aoc automation workflow action my_wf_id create --value=@json:'{"name":"toto"}'
@@ -2115,6 +2133,9 @@ ascli ats cluster clouds
 ascli ats cluster list
 ascli ats cluster show --cloud=aws --region=eu-west-1
 ascli ats cluster show 1f412ae7-869a-445c-9c05-02ad16813be2
+ascli conf echo @csvt:@stdin:
+ascli conf echo @lines:@stdin:
+ascli conf echo @zlib:@stdin:
 ascli conf flush_tokens
 ascli conf wiz --url=https://my_aoc_org.ibmaspera.com --config-file=SAMPLE_CONFIG_FILE --pkeypath= --username=my_aoc_user_email --test-mode=yes
 ascli conf wiz --url=https://my_aoc_org.ibmaspera.com --config-file=SAMPLE_CONFIG_FILE --pkeypath= --username=my_aoc_user_email --test-mode=yes --use-generic-client=yes
@@ -2132,13 +2153,18 @@ ascli config ascp spec
 ascli config check_update
 ascli config detect --url=https://my_aoc_org.ibmaspera.com
 ascli config detect --url=my_faspex_url
+ascli config detect --url=my_node_url
 ascli config doc
 ascli config doc transfer-parameters
 ascli config echo 'hello'
+ascli config echo @base64:SGVsbG8gV29ybGQK
+ascli config echo @env:USER
+ascli config echo @list:,1,2,3
 ascli config echo @uri:/etc/hosts
 ascli config echo @uri:file:/etc/hosts
 ascli config echo @uri:http://www.ibm.com
 ascli config echo @uri:https://www.ibm.com
+ascli config echo @val:@file:yo
 ascli config email_test --notif-to=my_recipient_email
 ascli config export
 ascli config genkey mykey
@@ -2196,10 +2222,11 @@ ascli faspex5 admin res shared_inboxes list
 ascli faspex5 admin res workgroups list
 ascli faspex5 package list --value=@json:'{"mailbox":"inbox","state":["released"]}'
 ascli faspex5 package receive "my_package_id" --to-folder=.  --ts=@json:'{"content_protection_password":"abc123_yo"}'
-ascli faspex5 package send --value=@json:'{"title":"test title","recipients":[{"name":"my_f5_user"}],"metadata":{"datetest":"01/01/01"}}' testfile.bin --ts=@json:'{"content_protection_password":"abc123_yo"}'
+ascli faspex5 package send --value=@json:'{"title":"test title","recipients":[{"name":"my_f5_user"}]}' testfile.bin --ts=@json:'{"content_protection_password":"_content_prot_here_"}'
 ascli mycommand --plugin-folder=T
 ascli node -N -Ptst_node_preview access_key create --value=@json:'{"id":"aoc_1","storage":{"type":"local","path":"/"}}'
 ascli node -N -Ptst_node_preview access_key delete aoc_1
+ascli node api_details
 ascli node async bandwidth 1
 ascli node async counters 1
 ascli node async files 1
@@ -2208,23 +2235,34 @@ ascli node async show 1
 ascli node async show ALL
 ascli node basic_token
 ascli node browse / -r
+ascli node delete /todelete
+ascli node delete @list:,/todelete,/tdlink,/delfile
 ascli node delete folder_1/10MB.1
 ascli node delete testfile.bin
 ascli node download testfile.bin --to-folder=.
 ascli node download testfile.bin --to-folder=. --token-type=hybrid
 ascli node health
 ascli node info --fpac='function FindProxyForURL(url,host){return "DIRECT"}'
+ascli node license
+ascli node mkdir /todelete
+ascli node mkfile /delfile1 "hello world"
+ascli node mklink /todelete /tdlink
+ascli node rename / delfile1 delfile
 ascli node search / --value=@json:'{"sort":"mtime"}'
 ascli node service create @json:'{"id":"service1","type":"WATCHD","run_as":{"user":"user1"}}'
 ascli node service delete service1
 ascli node service list
+ascli node space /
 ascli node transfer list --value=@json:'{"active_only":true}'
 ascli node upload --to-folder="folder_1" --sources=@ts --ts=@json:'{"paths":[{"source":"/aspera-test-dir-small/10MB.1"}],"precalculate_job_size":true}' --transfer=node --transfer-info=@json:'{"url":"my_node_url","username":"my_node_user","password":"my_node_pass"}'
+ascli node upload --username=my_ak_name --password=my_ak_secret testfile.bin --token-type=basic
 ascli node upload testfile.bin --to-folder=folder_1 --ts=@json:'{"target_rate_cap_kbps":10000}'
 ascli node upload testfile.bin --to-folder=folder_1 --ts=@json:'{"target_rate_cap_kbps":10000}' --token-type=hybrid
 ascli orchestrator info
 ascli orchestrator plugins
 ascli orchestrator processes
+ascli orchestrator workflow details my_orch_workflow_id
+ascli orchestrator workflow export my_orch_workflow_id
 ascli orchestrator workflow inputs my_orch_workflow_id
 ascli orchestrator workflow list
 ascli orchestrator workflow start my_orch_workflow_id --params=@json:'{"Param":"world !"}'
@@ -2243,6 +2281,7 @@ ascli preview test --case=test png my_file_mxf --video-png-conv=animated --log-l
 ascli preview test --case=test png my_file_mxf --video-png-conv=fixed --log-level=debug
 ascli preview test --case=test png my_file_pdf --log-level=debug
 ascli preview trevents --once-only=yes --skip-types=office --log-level=info
+ascli server -N -Ptst_hstsfaspex_ssh -Plocal_user configurator get_node_data
 ascli server -N -Ptst_hstsfaspex_ssh -Plocal_user ctl all:status
 ascli server -N -Ptst_hstsfaspex_ssh -Plocal_user health app_services --format=nagios
 ascli server -N -Ptst_hstsfaspex_ssh -Plocal_user health asctlstatus --format=nagios --cmd-prefix='sudo '

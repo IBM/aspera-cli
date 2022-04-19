@@ -552,6 +552,19 @@ Refer to sections: [Usage](#usage) and [Sample Commands](#commands).
 
 Not all <%=tool%> features are fully documented here, the user may explore commands on the command line.
 
+### `ascp` command line
+
+If you want to use `ascp` directly as a command line, refer to IBM Aspera documentation of either [Desktop Client](https://www.ibm.com/docs/en/asdc), [Endpoint](https://www.ibm.com/docs/en/ahte) or [Transfer Server](https://www.ibm.com/docs/en/ahts) where [a section on `ascp` can be found](https://www.ibm.com/docs/en/ahts/4.4?topic=linux-ascp-transferring-from-command-line).
+
+Using `ascli` with plugin `server` for command line gives advantages over ascp:
+
+* automatic resume on error
+* configuration file
+* choice of transfer agents
+* integrated support of multi-session
+
+Moreover all `ascp` options are supported either through transfer spec parameters and with the possibility to provide `ascp` arguments directly when the `direct` agent is used (`EX_ascp_args`).
+
 ### Arguments : Commands and options
 
 Arguments are the units of command line, as parsed by the shell, typically separated by spaces (and called "argv").
@@ -1538,12 +1551,12 @@ will effectively push files to the related server from the agent node.
 #### <a id="agt_direct"></a>Direct
 
 The `direct` agent directly executes a local ascp.
-This is the default for <%=tool%>.
-This is equivalent to specifying `--transfer=direct`.
-<%=tool%> will detect locally installed Aspera products, including SDK.
+This is the default agent for <%=tool%>.
+This is equivalent to option `--transfer=direct`.
+<%=tool%> will detect locally installed Aspera products, including SDK, and use `ascp` from that component.
 Refer to section [FASP](#client).
 
-The `transfer-info` accepts the following optional parameters to control multi-session, WSS
+The `transfer_info` option accepts the following optional parameters to control multi-session, Web Socket Session and Resume policy:
 
 <table>
 <tr><th>Name</th><th>Type</th><th>Description</th></tr>
@@ -1558,7 +1571,7 @@ The `transfer-info` accepts the following optional parameters to control multi-s
 <tr><td>resume.sleep_max</td><td>int</td><td>Resume<br/>Default: 60</td></tr>
 </table>
 
-Resume: In case of transfer interruption, the agent will resume a transfer up to `iter_max` time.
+In case of transfer interruption, the agent will **resume** a transfer up to `iter_max` time.
 Sleep between iterations is:
 
 ```bash
@@ -1566,11 +1579,16 @@ max( sleep_max , sleep_initial * sleep_factor ^ (iter_index-1) )
 ```
 
 Some transfer errors are considered "retryable" (e.g. timeout) and some other not (e.g. wrong password).
+The list of known protocol errors and retry level can be listed:
+
+```bash
+<%=cmd%> config ascp errors
+```
 
 Examples:
 
 ```javascript
-<%=cmd%> ... --transfer-info=@json:'{"wss":true,"resume":{"iter_max":10}}'
+<%=cmd%> ... --transfer-info=@json:'{"wss":true,"resume":{"iter_max":20}}'
 <%=cmd%> ... --transfer-info=@json:'{"spawn_delay_sec":2.5,"multi_incr_udp":false}'
 ```
 
