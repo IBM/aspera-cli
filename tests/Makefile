@@ -56,11 +56,12 @@ TIMESTAMP=$(shell LANG=C date)
 
 # folder where flag files for integration tests are generated
 T=$(DIR_TMP)t/
-
-$(T).exists: $(DIR_TMP).exists
+$(T): $(DIR_TMP).exists
 	mkdir -p $(T)
+$(CF_LOCAL_SAMPLE_FILEPATH): $(T)
 	#dd if=/dev/urandom of=$(CF_LOCAL_SAMPLE_FILEPATH) count=10 bs=1m
 	echo 'This is a small test file' > $(CF_LOCAL_SAMPLE_FILEPATH)
+$(T).exists: $(CF_LOCAL_SAMPLE_FILEPATH)
 	touch $@
 clean::
 	rm -f $(CF_LOCAL_SAMPLE_FILEPATH)
@@ -184,6 +185,7 @@ $(T)serv_nagios_webapp: $(T).exists
 $(T)serv3: $(T).exists
 	@echo $@
 	$(EXE_MAN) server -N -Ptst_hstsfaspex_ssh -Plocal_user ctl all:status
+	$(EXE_MAN) server -N -Ptst_hstsfaspex_ssh -Plocal_user configurator get_node_data
 	@touch $@
 $(T)serv_key: $(T).exists
 	@echo $@
@@ -304,8 +306,17 @@ tconsole: $(T)cons1 $(T)cons2 $(T)cons3
 $(T)nd1: $(T).exists
 	@echo $@
 	$(EXE_MAN) node info --fpac='function FindProxyForURL(url,host){return "DIRECT"}'
+	$(EXE_MAN) node license
+	$(EXE_MAN) node api_details
 	$(EXE_MAN) node browse / -r
 	$(EXE_MAN) node search / --value=@json:'{"sort":"mtime"}'
+	$(EXE_MAN) node space /
+	-$(EXE_MAN) node delete /todelete
+	$(EXE_MAN) node mkdir /todelete
+	$(EXE_MAN) node mklink /todelete /tdlink
+	$(EXE_MAN) node mkfile /delfile1 "hello world"
+	$(EXE_MAN) node rename / delfile1 delfile
+	$(EXE_MAN) node delete @list:,/todelete,/tdlink,/delfile
 	@touch $@
 $(T)nd2: $(T).exists
 	@echo $@
@@ -350,11 +361,18 @@ $(T)nd7: $(T).exists
 	@echo $@
 	$(EXE_MAN) node basic_token
 	@touch $@
+$(T)nd8: $(T).exists
+	@echo $@
+	set -x&&\
+	ak_name=$$($(EXE_NOMAN) conf id misc get aoc_ak_name)&&\
+	ak_secret=$$($(EXE_NOMAN) conf id misc get aoc_ak_secret)&&\
+	$(EXE_MAN) node upload --username=$${ak_name} --password=$${ak_secret} $(CF_LOCAL_SAMPLE_FILEPATH) --token-type=basic
+	@touch $@
 $(T)nd_nagios: $(T).exists
 	@echo $@
 	$(EXE_MAN) node health
 	@touch $@
-tnode: $(T)nd1 $(T)nd2 $(T)nd_2_nd_xfer $(T)nd4 $(T)nd5 $(T)nd6 $(T)nd7 $(T)nd_nagios
+tnode: $(T)nd1 $(T)nd2 $(T)nd_2_nd_xfer $(T)nd4 $(T)nd5 $(T)nd6 $(T)nd7 $(T)nd8 $(T)nd_nagios
 
 $(T)aocg1: $(T).exists
 	@echo $@
@@ -549,27 +567,27 @@ $(T)aoc8: $(T).exists
 	@touch $@
 $(T)aoc9: $(T).exists
 	@echo $@
-	$(EXE_MAN) aoc admin resource node --name=@preset:misc.aoc_node1_name --secret=@preset:misc.aoc_node1_secret v3 events
+	$(EXE_MAN) aoc admin resource node --name=@preset:misc.aoc_ak_name --secret=@preset:misc.aoc_ak_secret v3 events
 	@touch $@
 $(T)aoc11: $(T).exists
 	@echo $@
-	$(EXE_MAN) aoc admin resource node --name=@preset:misc.aoc_node1_name --secret=@preset:misc.aoc_node1_secret v3 access_key create --value=@json:'{"id":"testsub1","storage":{"path":"/folder1"}}'
+	$(EXE_MAN) aoc admin resource node --name=@preset:misc.aoc_ak_name --secret=@preset:misc.aoc_ak_secret v3 access_key create --value=@json:'{"id":"testsub1","storage":{"path":"/folder1"}}'
 	@touch $@
 $(T)aoc12: $(T).exists
 	@echo $@
-	$(EXE_MAN) aoc admin resource node v3 name @preset:misc.aoc_node1_name --secret=@preset:misc.aoc_node1_secret access_key delete testsub1
+	$(EXE_MAN) aoc admin resource node v3 name @preset:misc.aoc_ak_name --secret=@preset:misc.aoc_ak_secret access_key delete testsub1
 	@touch $@
 $(T)aoc9b: $(T).exists
 	@echo $@
-	$(EXE_MAN) aoc admin resource node --name=@preset:misc.aoc_node1_name --secret=@preset:misc.aoc_node1_secret v4 browse /
+	$(EXE_MAN) aoc admin resource node --name=@preset:misc.aoc_ak_name --secret=@preset:misc.aoc_ak_secret v4 browse /
 	@touch $@
 $(T)aoc10: $(T).exists
 	@echo $@
-	$(EXE_MAN) aoc admin resource node --name=@preset:misc.aoc_node1_name --secret=@preset:misc.aoc_node1_secret v4 mkdir /folder1
+	$(EXE_MAN) aoc admin resource node --name=@preset:misc.aoc_ak_name --secret=@preset:misc.aoc_ak_secret v4 mkdir /folder1
 	@touch $@
 $(T)aoc13: $(T).exists
 	@echo $@
-	$(EXE_MAN) aoc admin resource node --name=@preset:misc.aoc_node1_name --secret=@preset:misc.aoc_node1_secret v4 delete /folder1
+	$(EXE_MAN) aoc admin resource node --name=@preset:misc.aoc_ak_name --secret=@preset:misc.aoc_ak_secret v4 delete /folder1
 	@touch $@
 $(T)aoc14: $(T).exists
 	@echo $@
@@ -721,8 +739,13 @@ $(T)o9: $(T).exists
 	@echo $@
 	$(EXE_MAN) orchestrator processes
 	@touch $@
+$(T)o10: $(T).exists
+	@echo $@
+	$(EXE_MAN) orchestrator workflow details @preset:misc.orch_workflow_id
+	$(EXE_MAN) orchestrator workflow export @preset:misc.orch_workflow_id
+	@touch $@
 
-torc: $(T)o1 $(T)o2 $(T)o3 $(T)o4 $(T)o5 $(T)o6 $(T)o7 $(T)o8 $(T)o9
+torc: $(T)o1 $(T)o2 $(T)o3 $(T)o4 $(T)o5 $(T)o6 $(T)o7 $(T)o8 $(T)o9 $(T)o10
 
 $(T)at4: $(T).exists
 	@echo $@
@@ -946,8 +969,10 @@ $(T)conf_detect: $(T).exists
 	set -x&&\
 	aoc_org=$$($(EXE_NOMAN) conf id misc get aoc_org)&&\
 	faspex_url=$$($(EXE_NOMAN) conf id tst_faspex get url)&&\
+	node_url=$$($(EXE_NOMAN) conf id tst_node get url)&&\
 	$(EXE_MAN) config detect --url=https://$${aoc_org}.ibmaspera.com&&\
-	$(EXE_MAN) config detect --url=$${faspex_url}
+	$(EXE_MAN) config detect --url=$${faspex_url}&&\
+	$(EXE_MAN) config detect --url=$${node_url}
 	@touch $@
 $(T)conf_genkey: $(T).exists
 	@echo $@
@@ -979,6 +1004,13 @@ $(T)conf_echo: $(T).exists
 	$(EXE_MAN) config echo @uri:file:/etc/hosts
 	$(EXE_MAN) config echo @uri:http://www.ibm.com
 	$(EXE_MAN) config echo @uri:https://www.ibm.com
+	$(EXE_MAN) config echo @base64:SGVsbG8gV29ybGQK
+	$(EXE_MAN) config echo @list:,1,2,3
+	$(EXE_MAN) config echo @env:USER
+	$(EXE_MAN) config echo @val:@file:yo
+	echo $$'1\n2\n3'|$(EXE_MAN) conf echo @lines:@stdin:
+	echo $$'t1,t2,t3\na,b,d\nd,e,f'|$(EXE_MAN) conf echo @csvt:@stdin:
+	ruby -rzlib -e'puts Zlib::Deflate.deflate("Hello World")'|$(EXE_MAN) conf echo @zlib:@stdin:
 	@touch $@
 tconf: $(T)conf_id_1 $(T)conf_id_2 $(T)conf_id_3 $(T)conf_id_4 $(T)conf_id_5 $(T)conf_id_6 $(T)conf_open $(T)conf_list $(T)conf_over $(T)conf_vault $(T)conf_help $(T)conf_open_err $(T)conf_plugins $(T)conf_export $(T)conf_wizard_org $(T)conf_wizard_gen $(T)conf_detect $(T)conf_genkey $(T)conf_smtp $(T)conf_pac $(T)conf_check_gem $(T)conf_doc $(T)conf_echo
 
@@ -1123,12 +1155,13 @@ $(T)tcos: $(T).exists
 	$(EXE_MAN) cos node download $(CF_LOCAL_SAMPLE_FILENAME) --to-folder=$(DIR_TMP).
 	@touch $@
 tcos: $(T)tcos
-
+#OPTST_F5META=,"metadata":{"datetest":"01/01/01"}
+OPTST_F5META=
 $(T)f5_p1: $(T).exists
 	@echo $@
 	set -x&&\
 	f5_user=$$($(EXE_NOMAN) conf id tst_faspex5 get username)&&\
-	$(EXE_MAN) faspex5 package send --value=@json:'{"title":"test title","recipients":[{"name":"'"$${f5_user}"'"}],"metadata":{"datetest":"01/01/01"}}' $(CF_LOCAL_SAMPLE_FILEPATH) --ts=@json:'{"content_protection_password":"abc123_yo"}'
+	$(EXE_MAN) faspex5 package send --value=@json:'{"title":"test title","recipients":[{"name":"'"$${f5_user}"'"}]$(OPTST_F5META)}' $(CF_LOCAL_SAMPLE_FILEPATH) --ts=@json:'{"content_protection_password":"_content_prot_here_"}'
 	@touch $@
 $(T)f5_p2: $(T).exists
 	@echo $@

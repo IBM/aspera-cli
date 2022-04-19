@@ -14,7 +14,8 @@ module Aspera
       class Server < BasicAuthPlugin
         class LocalExecutor
           def execute(cmd,_input=nil)
-            %x(#{cmd})
+            Log.log.debug("Executing: #{cmd}")
+            %x(#{cmd.join(' ')})
           end
         end
 
@@ -68,7 +69,35 @@ module Aspera
           return result
         end
 
-        ACTIONS = %i[health nodeadmin userdata configurator ctl download upload browse delete rename].concat(Aspera::AsCmd::OPERATIONS)
+        def asconfigurator_parse(result)
+          lines = result.split("\n")
+          # not windows
+          Log.log.debug(%x(type asconfigurator))
+          status=lines.shift
+          case status
+          when 'success'
+            result = []
+            lines.each do |line|
+              Log.log.debug(line.to_s)
+              # normalize values
+              data = line.
+                gsub(/^"/,'').
+                gsub(/,""$/,',"AS_EMPTY"').
+                gsub(/"$/,'').
+                split('","').
+                map{|i|case i;when 'AS_NULL' then nil;when 'AS_EMPTY' then '';when 'true' then true;when 'false' then false;else i;end}
+              data.insert(1,'') if data.length.eql?(4)
+              titles=%w[level section parameter value default]
+              result.push(titles.each_with_object({}){|t,o|o[t]=data.shift})
+            end
+            return result
+          when 'failure'
+            raise lines.join("\n")
+          else raise "Unexpected: #{status}"
+          end
+        end
+
+        ACTIONS = %i[health nodeadmin userdata configurator ctl download upload browse delete rename].concat(Aspera::AsCmd::OPERATIONS).freeze
 
         def execute_action
           server_uri = URI.parse(options.get_option(:url,is_type: :mandatory))
@@ -177,42 +206,18 @@ module Aspera
             end
             return nagios.result
           when :nodeadmin,:userdata,:configurator,:ctl
-            realcmd = 'as' + command.to_s
+            realcmd = "as#{command}"
             prefix = options.get_option(:cmd_prefix)
-            if !prefix.nil?
-              realcmd = "#{prefix}#{realcmd}"
-            end
+            realcmd = "#{prefix}#{realcmd}" unless prefix.nil?
             args = options.get_next_argument("#{realcmd} arguments",expected: :multiple)
+            args.unshift('-x') if command.eql?(:configurator)
             result = shell_executor.execute(args.unshift(realcmd))
             case command
             when :ctl
               return {type: :object_list,data: asctl_parse(result)}
             when :configurator
-              lines = result.split("\n")
-              # not windows
-              Log.log.debug(%x(type asconfigurator))
-              result = lines
-              if lines.first.eql?('success')
-                lines.shift
-                result = {}
-                lines.each do |line|
-                  Log.log.debug(line.to_s)
-                  data = line.split(',').
-                    map{|i|i.gsub(/^"/,'').gsub(/"$/,'')}.
-                    map{|i|case i;when 'AS_NULL' then nil;when 'true' then true;when 'false' then false;else i;end}
-                  Log.log.debug(data.to_s)
-                  section = data.shift
-                  datapart = result[section] ||= {}
-                  if section.eql?('user')
-                    name = data.shift
-                    datapart = datapart[name] ||= {}
-                  end
-                  datapart = datapart[data.shift] = {}
-                  datapart['default'] = data.pop
-                  datapart['value'] = data.pop
-                end
-                return {type: :single_object,data: result,fields: %w[section name value default],option_expand_last: true}
-              end
+              result=asconfigurator_parse(result)
+              return {type: :object_list,data: result} # ,option_expand_last: true
             end
             return Main.result_status(result)
           when :upload
