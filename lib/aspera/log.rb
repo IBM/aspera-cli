@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'aspera/colors'
+require 'aspera/secret_hider'
 require 'logger'
 require 'pp'
 require 'json'
@@ -9,9 +10,6 @@ require 'singleton'
 module Aspera
   # Singleton object for logging
   class Log
-    # display string for hidden secrets
-    HIDDEN_PASSWORD = '🔑'
-    private_constant :HIDDEN_PASSWORD
     include Singleton
     # class methods
     class << self
@@ -41,11 +39,19 @@ module Aspera
           "#{name.to_s.green} (#{format})=\n#{result}"
         end
       end
+
+      def capture_stderr
+        real_stderr = $stderr
+        $stderr = StringIO.new
+        yield
+        log.debug($stderr.string)
+      ensure
+        $stderr = real_stderr
+      end
     end # class
 
     attr_reader :logger_type, :logger
     attr_writer :program_name
-    attr_accessor :log_secrets
 
     # set log level of underlying logger given symbol level
     def level=(new_level)
@@ -79,18 +85,8 @@ module Aspera
       end
       @logger.level = current_severity_integer
       @logger_type = new_logtype
-      original_formatter = @logger.formatter || Logger::Formatter.new
-      # update formatter with password hiding, note that @log_secrets may be set AFTER this init is done, so it's done at runtime
-      @logger.formatter = lambda do |severity, datetime, progname, msg|
-        if msg.is_a?(String) && !@log_secrets
-          msg = msg
-            .gsub(/(["':][^"]*(password|secret|private_key)[^"]*["']?[=>: ]+")([^"]+)(")/){"#{Regexp.last_match(1)}#{HIDDEN_PASSWORD}#{Regexp.last_match(4)}"}
-            .gsub(/("[^"]*(secret)[^"]*"=>{)([^}]+)(})/){"#{Regexp.last_match(1)}#{HIDDEN_PASSWORD}#{Regexp.last_match(4)}"}
-            .gsub(/((secrets)={)([^}]+)(})/){"#{Regexp.last_match(1)}#{HIDDEN_PASSWORD}#{Regexp.last_match(4)}"}
-            .gsub(/--+BEGIN[A-Z ]+KEY--+.+--+END[A-Z ]+KEY--+/m){HIDDEN_PASSWORD}
-        end
-        original_formatter.call(severity, datetime, progname, msg)
-      end
+      # update formatter with password hiding
+      @logger.formatter = SecretHider.log_formatter(@logger.formatter)
     end
 
     private
@@ -98,7 +94,6 @@ module Aspera
     def initialize
       @logger = nil
       @program_name = 'aspera'
-      @log_secrets = false
       # this sets @logger and @logger_type (self needed to call method instead of local var)
       self.logger_type = :stderr
       raise 'error logger shall be defined' if @logger.nil?

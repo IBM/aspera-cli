@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'aspera/secret_hider'
 require 'terminal-table'
 require 'yaml'
 require 'pp'
@@ -16,20 +17,12 @@ module Aspera
       DISPLAY_FORMATS = %i[table ruby json jsonpp yaml csv nagios].freeze
       # user output levels
       DISPLAY_LEVELS = %i[info data error].freeze
-      # passwords and secrets are hidden with this string
-      HIDDEN_PASSWORD = '🔑'
-      SECRET_KEYWORDS = %w[password secret private_key].freeze
-      KEYS_NOT_HIDDEN = %w[show_secrets log_secrets].freeze
       CONF_OVERVIEW_KEYS=%w[config parameter value].freeze
 
-      private_constant :FIELDS_ALL,:FIELDS_DEFAULT,:DISPLAY_FORMATS,:DISPLAY_LEVELS,:CSV_RECORD_SEPARATOR,:CSV_FIELD_SEPARATOR,:HIDDEN_PASSWORD
+      private_constant :FIELDS_ALL,:FIELDS_DEFAULT,:DISPLAY_FORMATS,:DISPLAY_LEVELS,:CSV_RECORD_SEPARATOR,:CSV_FIELD_SEPARATOR,
+        :CONF_OVERVIEW_KEYS
 
       class << self
-        def secret?(keyword)
-          keyword=keyword.to_s if keyword.is_a?(Symbol)
-          keyword.is_a?(String) && SECRET_KEYWORDS.any?{|kw|keyword.include?(kw)}
-        end
-
         # special for Aspera on Cloud display node
         # {"param" => [{"name"=>"foo","value"=>"bar"}]} will be expanded to {"param.foo" : "bar"}
         def flatten_name_value_list(hash)
@@ -142,36 +135,13 @@ module Aspera
         return table_rows_hash_val.each_with_object({}){|v,m|v.keys.each{|c|m[c] = true};}.keys
       end
 
-      def deep_remove_secret(obj)
-        return if @option_show_secrets || @option_display.eql?(:data)
-        case obj
-        when Array
-          if !obj.empty? && obj.first.is_a?(Hash) && obj.first.keys.sort.eql?(CONF_OVERVIEW_KEYS)
-            obj.each do |i|
-              i['value']=HIDDEN_PASSWORD if self.class.secret?(i['parameter'])
-            end
-          else
-            obj.each{|i|deep_remove_secret(i)}
-          end
-        when Hash
-          obj.keys.each do |k|
-            next if KEYS_NOT_HIDDEN.any?{|kw|kw.eql?(k)}
-            if self.class.secret?(k)
-              obj[k] = HIDDEN_PASSWORD
-            elsif obj[k].is_a?(Hash)
-              deep_remove_secret(obj[k])
-            end
-          end
-        end
-      end
-
       # this method displays the results, especially the table format
       def display_results(results)
         raise "INTERNAL ERROR, result must be Hash (got: #{results.class}: #{results})" unless results.is_a?(Hash)
         raise 'INTERNAL ERROR, result must have type' unless results.has_key?(:type)
         raise 'INTERNAL ERROR, result must have data' unless results.has_key?(:data) || %i[empty nothing].include?(results[:type])
         res_data = results[:data]
-        deep_remove_secret(res_data)
+        SecretHider.deep_remove_secret(res_data) unless @option_show_secrets || @option_display.eql?(:data)
         # comma separated list in string format
         user_asked_fields_list_str = @option_fields
         case @option_format

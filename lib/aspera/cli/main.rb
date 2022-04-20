@@ -15,6 +15,7 @@ require 'aspera/log'
 require 'aspera/rest'
 require 'aspera/nagios'
 require 'aspera/colors'
+require 'aspera/secret_hider'
 
 module Aspera
   module Cli
@@ -192,7 +193,7 @@ module Aspera
         @opt_mgr.set_obj_attr(:insecure,self,:option_insecure,:no)
         @opt_mgr.set_obj_attr(:ui,self,:option_ui)
         @opt_mgr.set_obj_attr(:http_options,self,:option_http_options)
-        @opt_mgr.set_obj_attr(:log_secrets,Log.instance,:log_secrets)
+        @opt_mgr.set_obj_attr(:log_secrets,SecretHider,:log_secrets)
         @opt_mgr.set_obj_attr(:cache_tokens,self,:option_cache_tokens)
         @opt_mgr.add_opt_list(:ui,OpenApplication.user_interfaces,'method to start browser')
         @opt_mgr.add_opt_list(:log_level,Log.levels,'Log level')
