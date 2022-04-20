@@ -56,12 +56,11 @@ TIMESTAMP=$(shell LANG=C date)
 
 # folder where flag files for integration tests are generated
 T=$(DIR_TMP)t/
-$(T): $(DIR_TMP).exists
-	mkdir -p $(T)
-$(CF_LOCAL_SAMPLE_FILEPATH): $(T)
+# all test cases depend on this
+$(T).exists:
 	#dd if=/dev/urandom of=$(CF_LOCAL_SAMPLE_FILEPATH) count=10 bs=1m
 	echo 'This is a small test file' > $(CF_LOCAL_SAMPLE_FILEPATH)
-$(T).exists: $(CF_LOCAL_SAMPLE_FILEPATH)
+	mkdir -p $(T)
 	touch $@
 clean::
 	rm -f $(CF_LOCAL_SAMPLE_FILEPATH)
