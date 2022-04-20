@@ -57,7 +57,7 @@ TIMESTAMP=$(shell LANG=C date)
 # folder where flag files for integration tests are generated
 T=$(DIR_TMP)t/
 # all test cases depend on this
-$(T).exists:
+$(T).exists: $(DIR_TMP).exists
 	#dd if=/dev/urandom of=$(CF_LOCAL_SAMPLE_FILEPATH) count=10 bs=1m
 	echo 'This is a small test file' > $(CF_LOCAL_SAMPLE_FILEPATH)
 	mkdir -p $(T)
