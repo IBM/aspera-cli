@@ -1172,39 +1172,56 @@ ascli conf vault get --username=access_key1
 
 ### <a id="private_key"></a>Private Key
 
-Some applications allow the user to be authenticated using a private key (Server, AoC, Faspex5...).
-It consists in generating a private key, or using a previouly generated key.
+Some applications allow the user to be authenticated using a private key (Server, AoC, Faspex5, ...).
+It consists in using a pair of keys: the private key and its associated public key.
 The same key can be used for multiple applications.
-Technically, a private key contains the public key, which can be extracted.
-Currently, only private key not protected by a passphrase are supported.
-(TODO: add passphrase protection as option for aspera apps).
+Technically, a private key contains the public key, which can be extracted from it.
+The private key can be protected by a passphrase or not.
+If the key is protected by a passphrase, then it will be prompted.
+(some plugins support option `passphrase`)
 
 Several methods can be used to generate a key pair:
 
-* `ascli`
-
-The generated key is of type RSA 4096 bit. For convenience, the public key is also extracted.
+The following commands use this variable:
 
 ```bash
-ascli config genkey ~/.aspera/ascli/my_private_key
+PRIVKEYFILE=~/.aspera/ascli/my_private_key
+```
+
+* `ascli`
+
+The generated key is of type RSA, by default: 4096 bit.
+For convenience, the public key is also extracted with extension `.pub`.
+The key is not passphrase protected.
+
+```bash
+ascli config genkey ${PRIVKEYFILE} 4096
 ```
 
 * `ssh-keygen`
 
+Both private and public keys are generated, option `-N` is for passphrase.
+
 ```bash
-ssh-keygen -t rsa -f ~/.aspera/ascli/my_private_key -N ''
+ssh-keygen -t rsa -b 4096 -N '' -f ${PRIVKEYFILE}
 ```
 
 * `openssl`
 
-openssl is sometimes compiled to support option `-nodes` (no DES, i.e. no passphrase, e.g. on macOS). To generate a privatekey pait without passphrase the following shall work on any system:
+openssl is sometimes compiled to support option `-nodes` (no DES, i.e. no passphrase, e.g. on macOS).
+To generate a private key pair without passphrase the following can be used on any system:
 
 ```bash
-APIKEY=~/.aspera/ascli/my_private_key
-openssl genrsa -passout pass:dummypassword -out ${APIKEY}.protected 2048
-openssl rsa -passin pass:dummypassword -in ${APIKEY}.protected -out ${APIKEY}
-openssl rsa -pubout -in ${APIKEY} -out ${APIKEY}.pub
-rm -f ${APIKEY}.protected
+openssl genrsa -passout pass:dummypassword -out ${PRIVKEYFILE}.protected 4096
+openssl rsa -passin pass:dummypassword -in ${PRIVKEYFILE}.protected -out ${PRIVKEYFILE}
+openssl rsa -pubout -in ${PRIVKEYFILE} -out ${PRIVKEYFILE}.pub
+rm -f ${PRIVKEYFILE}.protected
+```
+
+To change (or add) the passphrase for a key do:
+
+```bash
+openssl rsa -des3 -in old_file -out new_file
 ```
 
 ### <a id="certificates"></a>SSL CA certificate bundle
@@ -1770,7 +1787,9 @@ providing a file list directly to ascp:
 --sources=@ts --ts=@json:'{"paths":[{"source":"dummy"}],"EX_ascp_args":["--file-list","myfilelist"]}'
 ```
 
-This method avoids creating a copy of the file list, but has drawbacks: it applies *only* to the [`direct`](#agt_direct) transfer agent (i.e. bare ascp) and not for Aspera on Cloud. One must specify a dummy list in the [*transfer-spec*](#transferspec), which will be overridden by the bare ascp command line provided. (TODO) In next version, dummy source paths can be removed.
+This method avoids creating a copy of the file list, but has drawbacks: it applies *only* to the [`direct`](#agt_direct) transfer agent (i.e. local `ascp`) and not for Aspera on Cloud.
+One must specify a dummy list in the [*transfer-spec*](#transferspec), which will be overridden by the `ascp` command line provided.
+(TODO) In next version, dummy source paths can be removed.
 
 In case the file list is provided on the command line i.e. using `--sources=@args` or `--sources=<Array>` (but not `--sources=@ts`), then the list of files will be used either as a simple file list or a file pair list depending on the value of the option: `src_type`:
 
@@ -2496,9 +2515,10 @@ OPTIONS:
         --password=VALUE             user's password
         --client-id=VALUE            OAuth client identifier
         --client-secret=VALUE        OAuth client secret
-        --redirect-uri=VALUE         OAuth redirect URI
+        --redirect-uri=VALUE         OAuth redirect URI for web authentication
         --auth=ENUM                  OAuth type of authentication: web, jwt, boot
-        --private-key=VALUE          Oauth RSA private key PEM value for JWT (prefix file path with @val:@file:)
+        --private-key=VALUE          RSA private key PEM value for Oauth JWT (prefix file path with @file:)
+        --passphrase=VALUE           RSA private key passphrase
 
 
 COMMAND: cos
@@ -2730,7 +2750,7 @@ Note: Default `auth` method is `web` and default `redirect_uri` is `http://local
 For a Browser-less, Private Key-based authentication, use the following steps.
 
 In order to use JWT for Aspera on Cloud API client authentication,
-a [private/public key pair](#private_key) must be used (without passphrase)
+a [private/public key pair](#private_key) must be used.
 
 ##### API Client JWT activation
 
@@ -3773,47 +3793,47 @@ The API is listed in [Faspex 5 API Reference](https://developer.ibm.com/apis/cat
 
 This is the preferred method to use.
 
-For JWT, create an API client in Faspex with JWT support:
+For `jwt`, create an API client in Faspex with JWT support:
 
-* Identify a private key, if you don't have any refer to section [Private Key](#private_key)
+* Select a private key file: if you don't have any refer to section [Private Key](#private_key)
 * Navigate to the web UI: Admin &rarr; Configurations &rarr; API Clients &rarr; Create
 * Activate JWT
 * Paste public key in the appropriate section
 * Click on Create Button
-* Take note of Client Id and Secret
+* Take note of Client Id (and Client Secret, but not used in current version)
 
-Then use options:
+Then use these options:
 
 ```text
 --auth=jwt
 --client-id=xxx
 --client-secret=xxx
 --username=xxx
---password=xxx
---private-key=@file:../path/to/key.pem
+--private-key=@file:.../path/to/key.pem
 ```
 
 #### Faspex 5 using web browser
 
-For web method, create an API client in Faspex without JWT:
+For `web` method, create an API client in Faspex without JWT:
 
 * Navigate to the web UI: Admin &rarr; Configurations &rarr; API Clients &rarr; Create
 * Do not Activate JWT
 * enter `https://127.0.0.1:8888` in the redirect URI
 * Click on Create Button
-* Take note of Client Id
+* Take note of Client Id (and Client Secret, but not used in current version)
 
 Then use options:
 
 ```text
 --auth=web
 --client-id=xxx
+--client-secret=xxx
 --redirect-uri=https://127.0.0.1:8888
 ```
 
 #### Faspex 5 using bootstrap
 
-For boot method: (will be removed in future)
+For `boot` method: (will be removed in future)
 
 * open a browser
 * start developer mode
@@ -4736,9 +4756,7 @@ You may either install the suggested Gems, or remove your ed25519 key from your 
 
 ## BUGS, FEATURES, CONTRIBUTION
 
-For issues reports or feature requests use the Github repository and issues.
-
-You can also contribute to this open source project.
+Refer to [BUGS.md](BUGS.md) and [CONTRIBUTING.md](CONTRIBUTING.md).
 
 One can also [create one's own plugin](#createownplugin).
 

@@ -179,7 +179,7 @@ module Aspera
     # :save_to_file (filepath) default: nil
     # :return_error (bool) default: nil
     # :redirect_max (int) default: 0
-    # :not_auth_codes (array)
+    # :not_auth_codes (array) codes that trigger a refresh/regeneration of bearer token
     # ----
     # authentication (:auth) :
     # :type (:none, :basic, :oauth2, :url)
