@@ -141,7 +141,9 @@ module Aspera
         raise 'INTERNAL ERROR, result must have type' unless results.has_key?(:type)
         raise 'INTERNAL ERROR, result must have data' unless results.has_key?(:data) || %i[empty nothing].include?(results[:type])
         res_data = results[:data]
-        SecretHider.deep_remove_secret(res_data) unless @option_show_secrets || @option_display.eql?(:data)
+        # for config overvuew, it is name and value
+        is_config_overview = res_data.is_a?(Array) && !res_data.empty? && res_data.first.is_a?(Hash) && res_data.first.keys.sort.eql?(CONF_OVERVIEW_KEYS)
+        SecretHider.deep_remove_secret(res_data, is_name_value: is_config_overview) unless @option_show_secrets || @option_display.eql?(:data)
         # comma separated list in string format
         user_asked_fields_list_str = @option_fields
         case @option_format

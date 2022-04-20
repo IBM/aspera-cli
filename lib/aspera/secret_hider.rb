@@ -34,10 +34,10 @@ module Aspera
         keyword.is_a?(String) && SECRET_KEYWORDS.any?{|kw|keyword.include?(kw)} && value.is_a?(String)
       end
 
-      def deep_remove_secret(obj)
+      def deep_remove_secret(obj,is_name_value: false)
         case obj
         when Array
-          if !obj.empty? && obj.first.is_a?(Hash) && obj.first.keys.sort.eql?(CONF_OVERVIEW_KEYS)
+          if is_name_value
             obj.each do |i|
               i['value']=HIDDEN_PASSWORD if secret?(i['parameter'],i['value'])
             end
