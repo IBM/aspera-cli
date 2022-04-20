@@ -28,9 +28,10 @@ module Aspera
           super(env)
           options.add_opt_simple(:client_id,'OAuth client identifier')
           options.add_opt_simple(:client_secret,'OAuth client secret')
-          options.add_opt_simple(:redirect_uri,'OAuth redirect URI')
+          options.add_opt_simple(:redirect_uri,'OAuth redirect URI for web authentication')
           options.add_opt_list(:auth,[Oauth::STD_AUTH_TYPES,:boot].flatten,'OAuth type of authentication')
-          options.add_opt_simple(:private_key,'Oauth RSA private key PEM value for JWT (prefix file path with @val:@file:)')
+          options.add_opt_simple(:private_key,'RSA private key PEM value for Oauth JWT (prefix file path with @file:)')
+          options.add_opt_simple(:passphrase,'RSA private key passphrase')
           options.set_option(:auth,:jwt)
           options.parse_options!
         end
@@ -73,7 +74,7 @@ module Aspera
                     sub: "user:#{options.get_option(:username,is_type: :mandatory)}" # subject also "client:#{app_client_id}" + auth user/pass
                   },
                   #auth:                {type: :basic, options.get_option(:username,is_type: :mandatory), options.get_option(:password,is_type: :mandatory),
-                  private_key_obj: OpenSSL::PKey::RSA.new(options.get_option(:private_key,is_type: :mandatory)),
+                  private_key_obj: OpenSSL::PKey::RSA.new(options.get_option(:private_key,is_type: :mandatory),options.get_option(:passphrase)),
                   headers:         {typ: 'JWT'}
                 }
               }})
