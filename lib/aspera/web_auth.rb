@@ -2,6 +2,7 @@
 
 require 'webrick'
 require 'webrick/https'
+require 'stringio'
 
 module Aspera
   # servlet called on callback: it records the callback request
@@ -65,7 +66,7 @@ module Aspera
         BindAddress: uri.host,
         Port:        uri.port,
         Logger:      Log.log,
-        AccessLog:   [[self, WEBrick::AccessLog::COMMON_LOG_FORMAT]] # see "<<" below
+        AccessLog:   [[self, WEBrick::AccessLog::COMMON_LOG_FORMAT]] # replace default access log to call local method "<<" below
       }
       case uri.scheme
       when 'http'
@@ -82,12 +83,13 @@ module Aspera
         #webrick_options[:SSLPrivateKey]  = OpenSSL::PKey::RSA.new(File.read('.../myserver.key'))
         #webrick_options[:SSLCertificate] = OpenSSL::X509::Certificate.new(File.read('.../myserver.crt'))
       end
-      @server = WEBrick::HTTPServer.new(webrick_options)
+      # self signed certificate generates characters on STDERR, see create_self_signed_cert in webrick/ssl.rb
+      Log.capture_stderr { @server = WEBrick::HTTPServer.new(webrick_options) }
       @server.mount(@expected_path, WebAuthServlet, self) # additional args provided to constructor
       Thread.new { @server.start }
     end
 
-    # log web server access
+    # log web server access ( option AccessLog )
     def <<(access_log)
       Log.log.debug{"webrick log #{access_log.chomp}"}
     end
