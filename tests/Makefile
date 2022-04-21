@@ -7,7 +7,7 @@ DIR_TOP=../
 include $(DIR_TOP)common.make
 
 all:: $(TEST_CONF_FILE_PATH) tunit tshares tfaspex tconsole tnode taoc tfasp tsync torc tcon tnsync tconf tprev tats tsample tcos tf5
-# tshares2 tnagios
+# tnagios
 
 # "EXE_MAN" and "EXE_NOMAN" are used to call the tool in the testing environment
 # "EXE_MAN" is used to generate sample commands in documentation (see in docs/Makefile)
@@ -1012,28 +1012,6 @@ $(T)conf_echo: $(T).exists
 	ruby -rzlib -e'puts Zlib::Deflate.deflate("Hello World")'|$(EXE_MAN) conf echo @zlib:@stdin:
 	@touch $@
 tconf: $(T)conf_id_1 $(T)conf_id_2 $(T)conf_id_3 $(T)conf_id_4 $(T)conf_id_5 $(T)conf_id_6 $(T)conf_open $(T)conf_list $(T)conf_over $(T)conf_vault $(T)conf_help $(T)conf_open_err $(T)conf_plugins $(T)conf_export $(T)conf_wizard_org $(T)conf_wizard_gen $(T)conf_detect $(T)conf_genkey $(T)conf_smtp $(T)conf_pac $(T)conf_check_gem $(T)conf_doc $(T)conf_echo
-
-$(T)shar2_1: $(T).exists
-	@echo $@
-	$(EXE_MAN) shares2 appinfo
-	@touch $@
-$(T)shar2_2: $(T).exists
-	@echo $@
-	$(EXE_MAN) shares2 userinfo
-	@touch $@
-$(T)shar2_3: $(T).exists
-	@echo $@
-	$(EXE_MAN) shares2 repository browse /
-	@touch $@
-$(T)shar2_4: $(T).exists
-	@echo $@
-	$(EXE_MAN) shares2 organization list
-	@touch $@
-$(T)shar2_5: $(T).exists
-	@echo $@
-	$(EXE_MAN) shares2 project list --organization=Sport
-	@touch $@
-tshares2: $(T)shar2_1 $(T)shar2_2 $(T)shar2_3 $(T)shar2_4 $(T)shar2_5
 
 $(T)prev_check: $(T).exists
 	@echo $@
