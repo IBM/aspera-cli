@@ -548,7 +548,7 @@ Basic usage is displayed by executing:
 <%=cmd%> -h
 ```
 
-Refer to sections: [Usage](#usage) and [Sample Commands](#commands).
+Refer to sections: [Usage](#usage).
 
 Not all <%=tool%> features are fully documented here, the user may explore commands on the command line.
 
@@ -957,6 +957,12 @@ Plugin `config` (not to be confused with <%=prstt%> config) is used to configure
 When <%=tool%> starts, it looks for the `default` <%=prstt%> and if there is a value for `config`, if so, it loads the option values for any plugin used.
 
 If no global default is set by the user, the tool will use `global_common_defaults` when setting global parameters (e.g. `conf ascp use`)
+
+Sample commands
+
+```bash
+<%=include_commands_for_plugin('config')%>
+```
 
 #### Format of file
 
@@ -2046,15 +2052,6 @@ Examples:
 <%=cmd%> server upload "faux:///mydir?file=testfile&count=1m&size=0&inc=2&seq=sequential" --to-folder=/Upload
 ```
 
-### <a id="commands"></a>Sample Commands
-
-A non complete list of commands used in unit tests:
-
-```bash
-<%=include_commands%>
-...and more
-```
-
 ### <a id="usage"></a>Usage
 
 ```bash
@@ -2906,6 +2903,12 @@ cat my_file_list.txt|while read path;do echo <%=cmd%> aoc admin res node --name=
 cat my_file_list.txt | <%=cmd%> aoc admin res node --name='my node name' --secret='_secret_here_' v3 delete @lines:@stdin:
 ```
 
+### AoC sample commands
+
+```bash
+<%=include_commands_for_plugin('aoc')%>
+```
+
 ## <a id="ats"></a>Plugin: Aspera Transfer Service
 
 ATS is usable either :
@@ -3020,11 +3023,23 @@ for k in $(<%=cmd%> ats access_key list --field=id --format=csv);do <%=cmd%> ats
 
 The parameters provided to ATS for access key creation are the ones of [ATS API](https://developer.ibm.com/apis/catalog?search=%22aspera%20ats%22) for the `POST /access_keys` endpoint.
 
+### ATS sample commands
+
+```bash
+<%=include_commands_for_plugin('ats')%>
+```
+
 ## Plugin: IBM Aspera High Speed Transfer Server (transfer)
 
 This plugin uses SSH as a session protocol (using commands `ascp` and `ascmd`) and does not use the node API.
 It is the legacy way of accessing an Aspera Server, often used for server to server transfers.
 Modern mode is to use the node API and transfer tokens.
+
+### Server sample commands
+
+```bash
+<%=include_commands_for_plugin('server')%>
+```
 
 ### Authentication
 
@@ -3202,6 +3217,12 @@ This will get transfer information from the SHOD instance and tell the Azure ATS
 <%=cmd%> node access_key create --value=@json:'{"id":"eudemo-sedemo","secret":"mystrongsecret","storage":{"type":"local","path":"/data/asperafiles"}}'
 ```
 
+### Node sample commands
+
+```bash
+<%=include_commands_for_plugin('node')%>
+```
+
 ## Plugin: IBM Aspera Faspex5
 
 This is currently in beta, limited operations are supported.
@@ -3273,6 +3294,12 @@ Use it as password and use `--auth=boot`.
 
 ```bash
 <%=cmd%> conf id f5boot update --url=https://localhost/aspera/faspex --auth=boot --password=ABC.DEF.GHI...
+```
+
+### Faspex 5 sample commands
+
+```bash
+<%=include_commands_for_plugin('faspex5')%>
 ```
 
 ## Plugin: IBM Aspera Faspex (4.x)
@@ -3421,9 +3448,37 @@ cargo client, or drive. Refer to the [same section](#aoccargo) in the Aspera on 
 <%=cmd%> faspex packages recv --id=ALL --once-only=yes --lock-port=12345
 ```
 
+### Faspex 4 sample commands
+
+```bash
+<%=include_commands_for_plugin('faspex')%>
+```
+
 ## Plugin: IBM Aspera Shares
 
 Aspera Shares supports the "node API" for the file transfer part. (Shares 1 and 2)
+
+### Shares 1 sample commands
+
+```bash
+<%=include_commands_for_plugin('shares')%>
+```
+
+## Plugin: Console
+
+### Console sample commands
+
+```bash
+<%=include_commands_for_plugin('console')%>
+```
+
+## Plugin: Orchestrator
+
+### Orchestrator sample commands
+
+```bash
+<%=include_commands_for_plugin('orchestrator')%>
+```
 
 ## Plugin: IBM Cloud Object Storage
 
@@ -3518,10 +3573,22 @@ A subset of `node` plugin operations are supported, basically node API:
 
 Note: we generate a dummy file `sample1G` of size 2GB using the `faux` PVCL (man ascp and section above), but you can of course send a real file by specifying a real file instead.
 
+### COS sample commands
+
+```bash
+<%=include_commands_for_plugin('cos')%>
+```
+
 ## Plugin: IBM Aspera Sync
 
 A basic plugin to start an "async" using <%=tool%>.
 The main advantage is the possibility to start from ma configuration file, using <%=tool%> standard options.
+
+### Sync sample commands
+
+```bash
+<%=include_commands_for_plugin('sync')%>
+```
 
 ## Plugin: Preview
 
@@ -3816,6 +3883,12 @@ If the preview generator is run on a system that has direct access to the file s
 are directly written to the storage.
 
 If the preview generator does not have access to files on the file system (it is remote, no mount, or is an object storage), then the original file is first downloaded, then the result is uploaded, use method `remote`.
+
+### Preview sample commands
+
+```bash
+<%=include_commands_for_plugin('preview')%>
+```
 
 ## SMTP for email notifications
 

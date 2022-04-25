@@ -91,48 +91,71 @@ def include_asession
 end
 
 # various replacements from commands in test makefile
-REPLACEMENTS = {
-  '@preset:misc.'          => 'my_',
-  'LOCAL_SAMPLE_FILENAME'  => 'testfile.bin',
-  'LOCAL_SAMPLE_FILEPATH'  => 'testfile.bin',
-  'HSTS_UPLOADED_FILE'     => 'testfile.bin',
-  'HSTS_FOLDER_UPLOAD'     => 'folder_1',
-  'Test Package TIMESTAMP' => 'Important files delivery',
-  'AOC_EXTERNAL_EMAIL'     => 'external.user@example.com',
-  'EMAIL_ADDR'             => 'internal.user@example.com',
-  'CF_'                    => '',
-  '$@'                     => 'test'
-}.freeze
+REPLACEMENTS = [
+  # replace command name
+  [/^.*\$\(EXE_MAN.?\) +/,''],
+  # replace makefile macros
+  [/\$\(([^)]*)\)/,'\1'],
+  # remove multi command mark
+  [/\)?&&\\$/,''],
+  # remove redirection
+  [/ [>|] .*$/,''],
+  # remove folder macro
+  [/DIR_[A-Z]+/,''],
+  # replace shell vars in JSON
+  [/'"\$\$\{([a-z_0-9]+)\}"'/,'my_\1'],
+  # replace shell vars in shell
+  [/\$\$\{([a-z_0-9]+)\}/,'my_\1'],
+  # de-dup dollar in regex
+  ['$$','$'],
+  # hidden parameters to make test work
+  [/OPTST_[A-Z0-5]+/,''],
+  ['@preset:misc.','my_'],
+  ['LOCAL_SAMPLE_FILENAME','testfile.bin'],
+  ['LOCAL_SAMPLE_FILEPATH','testfile.bin'],
+  ['HSTS_UPLOADED_FILE','testfile.bin'],
+  %w[HSTS_FOLDER_UPLOAD folder_1],
+  ['Test Package TIMESTAMP','Important files delivery'],
+  ['AOC_EXTERNAL_EMAIL','external.user@example.com'],
+  ['EMAIL_ADDR','internal.user@example.com'],
+  ['CF_',''],
+  ['$@','test']
+].freeze
+
+def all_test_commands_by_plugin
+  if $commands.nil?
+    commands = {}
+    File.open(@env[:TEST_MAKEFILE]) do |f|
+      f.each_line do |line|
+        next unless line.match?(/\$\(EXE_MAN.?\) +/)
+        line = line.chomp
+        REPLACEMENTS.each{|r|line = line.gsub(r.first,r.last)}
+        # plugin name shall be the first argument: command
+        plugin=line.split(/ +/).first
+        commands[plugin]||=[]
+        commands[plugin].push(line)
+      end
+    end
+    commands.keys.each do |plugin|
+      commands[plugin]=commands[plugin].sort.uniq
+    end
+    $commands=commands
+  end
+  return $commands
+end
+
+def include_commands_for_plugin(plugin_name)
+  commands=all_test_commands_by_plugin[plugin_name.to_s]
+  all_test_commands_by_plugin.delete(plugin_name.to_s)
+  return commands.join("\n")
+end
 
 def include_commands
-  commands = []
-  File.open(@env[:TEST_MAKEFILE]) do |f|
-    f.each_line do |line|
-      next unless line.include?('$(EXE_MAN')
-      line = line.chomp
-      # replace command name
-      line = line.gsub(/^.*\$\(EXE_MAN.?\)/,cmd)
-      # replace makefile macros
-      line = line.gsub(/\$\(([^)]*)\)/,'\1')
-      # remove multi command mark
-      line = line.gsub(/\)?&&\\$/,'')
-      # remove redirection
-      line = line.gsub(/ [>|] .*$/,'')
-      # remove folder macro
-      line = line.gsub(/DIR_[A-Z]+/,'')
-      # replace shell vars in JSON
-      line = line.gsub(/'"\$\$\{([a-z_0-9]+)\}"'/,'my_\1')
-      # replace shell vars in shell
-      line = line.gsub(/\$\$\{([a-z_0-9]+)\}/,'my_\1')
-      # de-dup dollar in regex
-      line = line.gsub('$$','$')
-      # hidden parameters to make test work
-      line = line.gsub(/OPTST_[A-Z0-5]+/,'')
-      REPLACEMENTS.each_pair{|k,v|line = line.gsub(k,v)}
-      commands.push(line)
-    end
+  all=[]
+  all_test_commands_by_plugin.each do |_k,v|
+    all.concat(v)
   end
-  return commands.sort.uniq.join("\n")
+  return all.join("\n")
 end
 
 KEPT_GLOBAL_SECTIONS=%w[config default].freeze
@@ -156,4 +179,8 @@ def generate_doc
     raise "Missing arg: #{var}" if @env[var].nil?
   end
   puts ERB.new(File.read(@env[:TEMPLATE])).result(Kernel.binding)
+  if !all_test_commands_by_plugin.empty?
+    $stderr.puts("those plugins not included in doc #{all_test_commands_by_plugin.keys}".red)
+    raise 'Remediate: remove from doc using EXE_NOMAN or add section in doc'
+  end
 end
