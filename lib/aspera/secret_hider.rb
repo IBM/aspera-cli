@@ -7,8 +7,19 @@ module Aspera
   class SecretHider
     # display string for hidden secrets
     HIDDEN_PASSWORD = '🔑'
-    # passwords and secrets are hidden with this string
+    # keys in hash that contain secrets
     SECRET_KEYWORDS = %w[password secret private_key passphrase].freeze
+    # regex that define namec captures :begin and :end
+    REGEX_LOG_REPLACES=[
+      # replace values in logs with rendered JSON
+      /(?<begin>["':][^"]*(#{SECRET_KEYWORDS.join('|')})[^"]*["']?[=>: ]+")[^"]+(?<end>")/,
+      # option "secret"
+      /(?<begin>"[^"]*(secret)[^"]*"=>{)[^}]+(?<end>})/,
+      # option "secrets"
+      /(?<begin>(secrets)={)[^}]+(?<end>})/,
+      # private key values
+      /(?<begin>--+BEGIN .+ KEY--+)[[:ascii:]]+?(?<end>--+?END .+ KEY--+)/
+    ].freeze
     private_constant :HIDDEN_PASSWORD,:SECRET_KEYWORDS
     @log_secrets = false
     class << self
@@ -18,11 +29,9 @@ module Aspera
         # note that @log_secrets may be set AFTER this init is done, so it's done at runtime
         return lambda do |severity, datetime, progname, msg|
           if msg.is_a?(String) && !@log_secrets
-            msg = msg
-                .gsub(/(["':][^"]*(password|secret|private_key)[^"]*["']?[=>: ]+")([^"]+)(")/){"#{Regexp.last_match(1)}#{HIDDEN_PASSWORD}#{Regexp.last_match(4)}"}
-                .gsub(/("[^"]*(secret)[^"]*"=>{)([^}]+)(})/){"#{Regexp.last_match(1)}#{HIDDEN_PASSWORD}#{Regexp.last_match(4)}"}
-                .gsub(/((secrets)={)([^}]+)(})/){"#{Regexp.last_match(1)}#{HIDDEN_PASSWORD}#{Regexp.last_match(4)}"}
-                .gsub(/--+BEGIN[A-Z ]+KEY--+.+--+END[A-Z ]+KEY--+/m){HIDDEN_PASSWORD}
+            REGEX_LOG_REPLACES.each do |regx|
+              msg = msg.gsub(regx){"#{Regexp.last_match(:begin)}#{HIDDEN_PASSWORD}#{Regexp.last_match(:end)}"}
+            end
           end
           original_formatter.call(severity, datetime, progname, msg)
         end
