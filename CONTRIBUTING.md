@@ -58,3 +58,37 @@ When new commands are added to the CLI, new tests shall be added to the test sui
 ```bash
 ENABLE_COVERAGE=1 make test
 ```
+
+## Build
+
+By default the gem is built signed: `make`.
+The appropriate signing key is required, and its path must be set to env var `SIGNING_KEY`.
+It is possible to build a non-signed version: `make gem`
+
+### Security
+
+Refer to: <https://guides.rubygems.org/security/>
+
+The gem is signed with the public certificate found in `certs` and secret key (obviously, kept secret).
+
+To build the signed gem:
+
+```bash
+SIGNING_KEY=/path/to/signing_key.pem make
+```
+
+To activate gem signature verification on installation:
+
+* Add the certificate to gem trusted certificates:
+
+```bash
+curl https://raw.githubusercontent.com/IBM/aspera-cli/main/certs/aspera-cli-public-cert.pem -so aspera-cli-certificate.pem
+gem cert --add aspera-cli-certificate.pem
+rm aspera-cli-certificate.pem
+```
+
+* then install the gem with `HighSecurity` or `MediumSecurity`:
+
+```bash
+gem install -P HighSecurity aspera-cli
+```

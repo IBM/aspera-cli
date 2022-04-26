@@ -7,7 +7,7 @@ DIR_TOP=
 
 include $(DIR_TOP)common.make
 
-all:: gem doc
+all:: signedgem
 doc: $(DIR_TOP).gems_checked
 	cd $(DIR_DOC) && make
 test: gem $(DIR_TOP).gems_checked
@@ -27,17 +27,26 @@ $(DIR_TOP).gems_checked: Gemfile
 # Gem build
 PATH_GEMFILE=$(DIR_TOP)$(GEMNAME)-$(GEMVERSION).gem
 gem: $(PATH_GEMFILE)
+# check that the signing key is present
+gem_check_signing_key:
+	@echo "Checking env var: SIGNING_KEY"
+	@if test -z "$$SIGNING_KEY";then echo "Error: Missing env var SIGNING_KEY" 1>&2;exit 1;fi
+gem_check_signature:
+	tar tf $(PATH_GEMFILE)|grep '\.gz\.sig$$'
+	@echo "Ok: gem is signed"
+# force rebuild of gem and sign it
+signedgem: gemclean gem_check_signing_key gem gem_check_signature
 # gem file is generated in top folder
-$(PATH_GEMFILE):
+$(PATH_GEMFILE): doc
 	gem build $(GEMNAME)
-clean::
+gemclean:
 	rm -f $(PATH_GEMFILE)
 install: $(PATH_GEMFILE)
 	gem install $(PATH_GEMFILE)
-cleanupgems:
-	gem uninstall -a -x $$(gem list|cut -f 1 -d' '|egrep -v 'rdoc|psych|rake|openssl|json|io-console|bigdecimal')
 installdeps:
 	bundle install
+clean:: gemclean
+
 ##################################
 # Gem publish
 gempush: all dotag
