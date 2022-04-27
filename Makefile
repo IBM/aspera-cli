@@ -7,10 +7,10 @@ DIR_TOP=
 
 include $(DIR_TOP)common.make
 
-all:: signedgem
+all:: signed_gem
 doc: $(DIR_TOP).gems_checked
 	cd $(DIR_DOC) && make
-test: gem $(DIR_TOP).gems_checked
+test: unsigned_gem $(DIR_TOP).gems_checked
 	cd $(DIR_TST) && make
 clean::
 	rm -fr $(DIR_TMP)
@@ -26,19 +26,19 @@ $(DIR_TOP).gems_checked: Gemfile
 ##################################
 # Gem build
 PATH_GEMFILE=$(DIR_TOP)$(GEMNAME)-$(GEMVERSION).gem
-gem: $(PATH_GEMFILE)
+# gem file is generated in top folder
+$(PATH_GEMFILE): doc
+	gem build $(GEMNAME)
 # check that the signing key is present
 gem_check_signing_key:
 	@echo "Checking env var: SIGNING_KEY"
 	@if test -z "$$SIGNING_KEY";then echo "Error: Missing env var SIGNING_KEY" 1>&2;exit 1;fi
-gem_check_signature:
-	tar tf $(PATH_GEMFILE)|grep '\.gz\.sig$$'
+# force rebuild of gem and sign it, then check signature
+signed_gem: gemclean gem_check_signing_key $(PATH_GEMFILE)
+	@tar tf $(PATH_GEMFILE)|grep '\.gz\.sig$$'
 	@echo "Ok: gem is signed"
-# force rebuild of gem and sign it
-signedgem: gemclean gem_check_signing_key gem gem_check_signature
-# gem file is generated in top folder
-$(PATH_GEMFILE): doc
-	gem build $(GEMNAME)
+# build gem without signature for development and test
+unsigned_gem: $(PATH_GEMFILE)
 gemclean:
 	rm -f $(PATH_GEMFILE)
 install: $(PATH_GEMFILE)
@@ -49,11 +49,12 @@ clean:: gemclean
 
 ##################################
 # Gem publish
-gempush: all dotag
+release: all
 	gem push $(PATH_GEMFILE)
+version:
+	@echo $(GEMVERSION)
 # in case of big problem on released gem version, it can be deleted from rubygems
-yank:
-	gem yank aspera -v $(GEMVERSION)
+# gem yank -v $(GEMVERSION) $(GEMNAME) 
 
 ##################################
 # GIT

@@ -26,7 +26,8 @@ EXETESTB=$(DIR_BIN)$(EXENAME)
 
 GEMNAME=$(shell $(EXETESTB) conf gem name)
 GEMSPEC=$(DIR_TOP)$(GEMNAME).gemspec
-GEMVERSION=$(shell $(EXETESTB) conf gem version)
+#GEMVERSION=$(shell $(EXETESTB) conf gem version)
+GEMVERSION=$(shell sed -n "s/.*'\([^']*\)'.*/\1/p" $(DIR_LIB)aspera/cli/version.rb)
 
 all::
 

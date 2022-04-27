@@ -55,6 +55,8 @@ When new commands are added to the CLI, new tests shall be added to the test sui
 
 ## Coverage
 
+A coverage report can be generated in folder `coverage` using gem `SimpleCov`. Enable coverage monitoring using env var `ENABLE_COVERAGE`.
+
 ```bash
 ENABLE_COVERAGE=1 make test
 ```
@@ -63,13 +65,13 @@ ENABLE_COVERAGE=1 make test
 
 By default the gem is built signed: `make`.
 The appropriate signing key is required, and its path must be set to env var `SIGNING_KEY`.
-It is possible to build a non-signed version: `make gem`
+It is possible to build a non-signed version for development purpose: `make unsigned_gem`.
 
-### Security
+### Gem Signature
 
 Refer to: <https://guides.rubygems.org/security/>
 
-The gem is signed with the public certificate found in `certs` and secret key (obviously, kept secret).
+The gem is signed with the public certificate found in `certs` and a secret key (kept secret by maintainer).
 
 To build the signed gem:
 
@@ -77,7 +79,7 @@ To build the signed gem:
 SIGNING_KEY=/path/to/signing_key.pem make
 ```
 
-To activate gem signature verification on installation:
+The user can activate gem signature verification on installation:
 
 * Add the certificate to gem trusted certificates:
 
@@ -87,7 +89,7 @@ gem cert --add aspera-cli-certificate.pem
 rm aspera-cli-certificate.pem
 ```
 
-* then install the gem with `HighSecurity` or `MediumSecurity`:
+* Install the gem with `HighSecurity` or `MediumSecurity`: this will succeed only of the gem is trusted.
 
 ```bash
 gem install -P HighSecurity aspera-cli
