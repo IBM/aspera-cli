@@ -1304,13 +1304,34 @@ Aspera on Cloud relies on Oauth, refer to the [Aspera on Cloud](#aoc) section.
 
 ### Logging, Debugging
 
-The gem is equipped with traces. By default logging level is `warn`.
-To increase debug level, use parameter `log_level` (e.g. using command line `--log-level=xx`, env var `<%=evp%>LOG_LEVEL`, or parameter in con file).
+The gem is equipped with traces, mainly for debugging and learning APIs.
+By default logging level is `warn` and the output channel is `stderr`.
+To increase debug level, use parameter `log_level` (e.g. using command line `--log-level=xx`, env var `<%=evp%>LOG_LEVEL`, or a parameter in the configuration file).
 
-It is also possible to activate traces before initialization using env var `AS_LOG_LEVEL`.
+It is also possible to activate traces before log facility initialization using env var `<%=evp%>LOG_LEVEL`.
 
 By default passwords and secrets are removed from logs.
 Use option `log_secrets` set to `yes` to reveal secrets in logs.
+
+Available loggers: `stdout`, `stderr`, `syslog`.
+
+Available levels: `debug`, `info`, `warn`, `error`.
+
+Examples:
+
+* display debugging log on `stdout`:
+
+```bash
+ascli conf over --log-level=debug --logger=stdout
+```
+
+* log errors to `syslog`:
+
+```bash
+ascli conf over --log-level=error --logger=syslog
+```
+
+When <%=tool%> is used interactively in a shell, the shell itself will usually log executed commands in the history file.
 
 ### Learning Aspera Product APIs (REST)
 
