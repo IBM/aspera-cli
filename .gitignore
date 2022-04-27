@@ -18,7 +18,7 @@ simplecov.log
 # rspec failure tracking
 .rspec_status
 # contains private secrets:
-/local/
+/local
 .*_checked
 .project
 .settings
