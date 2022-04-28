@@ -2,6 +2,7 @@
 
 require 'aspera/cli/plugins/config'
 require 'aspera/uri_reader'
+require 'aspera/environment'
 require 'json'
 require 'base64'
 require 'zlib'
@@ -41,7 +42,7 @@ module Aspera
             base64: lambda{|v|Base64.decode64(v)},
             json:   lambda{|v|JSON.parse(v)},
             zlib:   lambda{|v|Zlib::Inflate.inflate(v)},
-            ruby:   lambda{|v|eval(v)},
+            ruby:   lambda{|v|Environment.secure_eval(v)},
             csvt:   lambda{|v|ExtendedValue.decode_csvt(v)},
             lines:  lambda{|v|v.split("\n")},
             list:   lambda{|v|v[1..-1].split(v[0])}

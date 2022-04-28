@@ -43,7 +43,8 @@ module Aspera
             end
             raise errormsg
           end
-          channel.exec(cmd){|_ch,_success|channel.send_data(input) unless input.nil?}
+          # send commannd to SSH channel (execute)
+          channel.send('cexe'.reverse,cmd){|_ch,_success|channel.send_data(input) unless input.nil?}
         end
         # wait for channel to finish (command exit)
         ssh_channel.wait

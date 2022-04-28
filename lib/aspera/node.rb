@@ -4,6 +4,7 @@ require 'aspera/fasp/transfer_spec'
 require 'aspera/rest'
 require 'aspera/oauth'
 require 'aspera/log'
+require 'aspera/environment'
 require 'zlib'
 require 'base64'
 
@@ -25,10 +26,6 @@ module Aspera
         ts['token'] = Rest.basic_creds(ak,secret)
       end
 
-      def empty_binding
-        return Kernel.binding
-      end
-
       # for access keys: provide expression to match entry in folder
       # if no prefix: regex
       # if prefix: ruby code
@@ -36,7 +33,7 @@ module Aspera
       def file_matcher(match_expression)
         match_expression ||= "#{MATCH_EXEC_PREFIX}true"
         if match_expression.start_with?(MATCH_EXEC_PREFIX)
-          return eval("lambda{|f|#{match_expression[MATCH_EXEC_PREFIX.length..-1]}}", empty_binding, __FILE__, __LINE__)
+          return Environment.secure_eval("lambda{|f|#{match_expression[MATCH_EXEC_PREFIX.length..-1]}}")
         end
         return lambda{|f|f['name'].match(/#{match_expression}/)}
       end

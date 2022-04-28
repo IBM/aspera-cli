@@ -67,6 +67,15 @@ module Aspera
         ENV['HOME'] = ENV['USERPROFILE']
         Log.log.debug("Windows: set home to USERPROFILE: #{ENV['HOME']}")
       end
+
+      def empty_binding
+        return Kernel.binding
+      end
+
+      # secure execution of Ruby code
+      def secure_eval(code)
+        Kernel.send('lave'.reverse,code,empty_binding, __FILE__, __LINE__)
+      end
     end
   end
 end
