@@ -118,9 +118,9 @@ module Aspera
 
     # Authentication using Web browser
     register_token_creator :web,lambda { |oauth|
-      callback_verif = SecureRandom.uuid # used to check later
+      verification_code = SecureRandom.uuid # used to check later
       login_page_url = Rest.build_uri("#{oauth.params[:base_url]}/#{oauth.params[:web][:path_authorize]}",
-        oauth.optional_scope_client_id.merge(response_type: 'code', redirect_uri: oauth.params[:web][:redirect_uri], state: callback_verif))
+        oauth.optional_scope_client_id.merge(response_type: 'code', redirect_uri: oauth.params[:web][:redirect_uri], state: verification_code))
       # here, we need a human to authorize on a web page
       Log.log.info("login_page_url=#{login_page_url}".bg_red.gray)
       # start a web server to receive request code
@@ -129,7 +129,7 @@ module Aspera
       OpenApplication.instance.uri(login_page_url)
       # wait for code in request
       received_params = webserver.received_request
-      raise 'state does not match' unless callback_verif.eql?(received_params['state'])
+      raise 'state does not match' unless verification_code.eql?(received_params['state'])
       # exchange code for token
       return oauth.create_token(oauth.optional_scope_client_id(add_secret: true).merge(
         grant_type:   'authorization_code',

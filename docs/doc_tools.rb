@@ -45,8 +45,8 @@ def spec_table
   Aspera::Fasp::Parameters::SUPPORTED_AGENTS_SHORT.each do |c|
     r << '<th>' << c.to_s.upcase << '</th>'
   end
-  r << '<th>Description</th></tr>'
-  Aspera::Fasp::Parameters.man_table.each do |p|
+  r << '<th>Description</th></tr>' << "\n"
+  Aspera::Fasp::Parameters.man_table.sort{|a,b|a[:name]<=>b[:name]}.each do |p|
     p[:description] += (p[:description].empty? ? '' : "\n") + '(' + p[:cli] + ')' unless p[:cli].to_s.empty?
     p.delete(:cli)
     p.keys.each{|c|p[c] = '&nbsp;' if p[c].to_s.empty?}
@@ -56,7 +56,7 @@ def spec_table
     Aspera::Fasp::Parameters::SUPPORTED_AGENTS_SHORT.each do |c|
       r << '<td>' << p[c] << '</td>'
     end
-    r << '<td>' << p[:description] << '</td></tr>'
+    r << '<td>' << p[:description] << '</td></tr>' << "\n"
   end
   r << '</table>'
   return r.join

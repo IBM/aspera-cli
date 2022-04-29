@@ -27,10 +27,12 @@ module Aspera
         @param_description_cache = nil
         # @return normalized description of transfer spec parameters, direct from yaml
         def description
-          return @param_description_cache unless @param_description_cache.nil?
-          # config file in same folder with same name as this source
-          @param_description_cache = YAML.load_file("#{__FILE__[0..-3]}yaml")
-          Aspera::CommandLineBuilder.normalize_description(@param_description_cache)
+          if @param_description_cache.nil?
+            # config file in same folder with same name as this source
+            description_from_yaml=YAML.load_file("#{__FILE__[0..-3]}yaml")
+            @param_description_cache = Aspera::CommandLineBuilder.normalize_description(description_from_yaml)
+          end
+          return @param_description_cache
         end
 
         # @return a table suitable to display in manual
