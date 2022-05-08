@@ -556,7 +556,7 @@ Not all <%=tool%> features are fully documented here, the user may explore comma
 
 If you want to use `ascp` directly as a command line, refer to IBM Aspera documentation of either [Desktop Client](https://www.ibm.com/docs/en/asdc), [Endpoint](https://www.ibm.com/docs/en/ahte) or [Transfer Server](https://www.ibm.com/docs/en/ahts) where [a section on `ascp` can be found](https://www.ibm.com/docs/en/ahts/4.4?topic=linux-ascp-transferring-from-command-line).
 
-Using `ascli` with plugin `server` for command line gives advantages over ascp:
+Using <%=tool%> with plugin `server` for command line gives advantages over ascp:
 
 * automatic resume on error
 * configuration file
@@ -1269,7 +1269,7 @@ Available plugins can be found using command:
 By default plugins are looked-up in folders specifed by (multi-value) option `plugin_folder`:
 
 ```javascript
-ascli --show-config --select=@json:'{"key":"plugin_folder"}'
+<%=cmd%> --show-config --select=@json:'{"key":"plugin_folder"}'
 ```
 
 You can create the skeleton of a new plugin like this:
@@ -1322,13 +1322,13 @@ Examples:
 * display debugging log on `stdout`:
 
 ```bash
-ascli conf over --log-level=debug --logger=stdout
+<%=cmd%> conf over --log-level=debug --logger=stdout
 ```
 
 * log errors to `syslog`:
 
 ```bash
-ascli conf over --log-level=error --logger=syslog
+<%=cmd%> conf over --log-level=error --logger=syslog
 ```
 
 When <%=tool%> is used interactively in a shell, the shell itself will usually log executed commands in the history file.
@@ -1447,7 +1447,7 @@ The `config` plugin also allows specification for the use of a local FASP client
 ```
 
 ```output
-/Users/laurent/.aspera/ascli/sdk/ascp
+/Users/laurent/.aspera/<%=cmd%>/sdk/ascp
 ```
 
 ```bash
@@ -1458,7 +1458,7 @@ The `config` plugin also allows specification for the use of a local FASP client
 +--------------------+-----------------------------------------------------------+
 | key                | value                                                     |
 +--------------------+-----------------------------------------------------------+
-| ascp               | /Users/laurent/.aspera/ascli/sdk/ascp                     |
+| ascp               | /Users/laurent/.aspera/<%=cmd%>/sdk/ascp                     |
 ...
 ```
 
@@ -1485,12 +1485,12 @@ Saved to default global preset global_common_defaults
 Windows:
 
 ```bash
-<%=cmd%> config ascp use C:\Users\admin\.aspera\ascli\sdk\ascp.exe
+<%=cmd%> config ascp use C:\Users\admin\.aspera\<%=cmd%>\sdk\ascp.exe
 ```
 
 ```output
 ascp version: 4.0.0.182279
-Updated: global_common_defaults: ascp_path <- C:\Users\admin\.aspera\ascli\sdk\ascp.exe
+Updated: global_common_defaults: ascp_path <- C:\Users\admin\.aspera\<%=cmd%>\sdk\ascp.exe
 Saved to default global preset global_common_defaults
 ```
 
@@ -1932,7 +1932,7 @@ Usually the OS native scheduler already provides some sort of protection against
 * Linux cron can leverage the utility [`flock`](https://linux.die.net/man/1/flock) to do the same:
 
 ```bash
-/usr/bin/flock -w 0 /var/cron.lock ascli ...
+/usr/bin/flock -w 0 /var/cron.lock <%=cmd%> ...
 ```
 
 <%=tool%> natively supports a locking mechanism with option `lock_port`.
@@ -2678,6 +2678,44 @@ e- Add members to second workspace
 
 ```javascript
 <%=cmd%> aoc admin res user list --fields=email --select=@json:'{"member_of_any_workspace":false}'
+```
+
+#### Example: create a group, add to workspace and add user to group
+
+* Create the group and take note of `id`
+
+```bash
+<%=cmd%> aoc admin res group create @json:'{"name":"group 1","description":"my super group"}'
+```
+
+Group: `11111`
+
+* Get the workspace id
+
+```bash
+<%=cmd%> aoc admin res workspace list --query=@json:'{"q":"myworkspace"}' --fields=id --format=csv --display=data
+```
+
+Workspace: 22222
+
+* Add group to workspace
+
+```bash
+<%=cmd%> aoc admin res workspace_membership create @json:'{"workspace_id":22222,"member_type":"user","member_id":11111}'
+```
+
+* Get a user's id
+
+```bash
+<%=cmd%> aoc admin res user list --query=@json:'{"q":"manu.macron@example.com"}' --fields=id --format=csv --display=data
+```
+
+User: 33333
+
+* Add user to group
+
+```bash
+<%=cmd%> aoc admin res group_membership create @json:'{"group_id":11111,"member_type":"user","member_id":33333}'
 ```
 
 #### Example: Perform a multi Gbps transfer between two remote shared folders

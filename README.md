@@ -3077,6 +3077,44 @@ ascli aoc admin res user list --fields=email --query=@json:'{"q":"last_login_at:
 ascli aoc admin res user list --fields=email --select=@json:'{"member_of_any_workspace":false}'
 ```
 
+#### Example: create a group, add to workspace and add user to group
+
+* Create the group and take note of `id`
+
+```bash
+ascli aoc admin res group create @json:'{"name":"group 1","description":"my super group"}'
+```
+
+Group: `11111`
+
+* Get the workspace id
+
+```bash
+ascli aoc admin res workspace list --query=@json:'{"q":"myworkspace"}' --fields=id --format=csv --display=data
+```
+
+Workspace: 22222
+
+* Add group to workspace
+
+```bash
+ascli aoc admin res workspace_membership create @json:'{"workspace_id":22222,"member_type":"user","member_id":11111}'
+```
+
+* Get a user's id
+
+```bash
+ascli aoc admin res user list --query=@json:'{"q":"manu.macron@example.com"}' --fields=id --format=csv --display=data
+```
+
+User: 33333
+
+* Add user to group
+
+```bash
+ascli aoc admin res group_membership create @json:'{"group_id":11111,"member_type":"user","member_id":33333}'
+```
+
 #### Example: Perform a multi Gbps transfer between two remote shared folders
 
 In this example, a user has access to a workspace where two shared folders are located on different sites, e.g. different cloud regions.
