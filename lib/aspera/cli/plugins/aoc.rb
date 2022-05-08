@@ -31,6 +31,10 @@ module Aspera
         # special value for package id
         VAL_ALL = 'ALL'
         ID_AK_ADMIN = 'ASPERA_ACCESS_KEY_ADMIN'
+        KNOWN_AOC_RES=%i[
+          self organization user group group_membership client contact dropbox node operation package saml_configuration
+          workspace workspace_membership dropbox_membership short_link application client_registration_token client_access_key
+          kms_profile].freeze
 
         def initialize(env)
           super(env)
@@ -470,8 +474,6 @@ module Aspera
           raise CliBadArgument,"public link type is #{@url_token_data['purpose']} but action requires one of #{expected.join(',')}" \
           unless expected.include?(@url_token_data['purpose'])
         end
-        KNOWN_AOC_RES=%i[self organization user group client contact dropbox node operation package saml_configuration
-                         workspace dropbox_membership short_link workspace_membership application client_registration_token client_access_key kms_profile].freeze
 
         # Call aoc_api.read with same parameters.
         # Use paging if necessary to get all results
@@ -677,6 +679,7 @@ module Aspera
               when :operation then default_fields = nil
               when :short_link then default_fields.push('short_url','data.url_token_data.purpose')
               when :user then default_fields.push('name','email')
+              when :group_membership then default_fields.push(*%w[group_id member_type member_id])
               end
               item_list,total_count = read_with_paging(resource_class_path,option_url_query(default_query))
               count_msg = "Items: #{item_list.length}/#{total_count}"

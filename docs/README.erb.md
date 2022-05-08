@@ -2376,6 +2376,50 @@ To execute an action on a specific resource, select it using one of those method
 * provide option `id` : `aoc admin res node show --id=123`
 * provide option `name` : `aoc admin res node show --name=abc`
 
+#### <a id="res_create"></a>Creating a resource
+
+New resources (users, groups, workspaces, etc..) can be created using a command like:
+
+```bash
+<%=cmd%> aoc admin res create <resource type> @json:'{<...parameters...>}'
+```
+
+Some of the API endpoints are described [here](https://developer.ibm.com/apis/catalog?search=%22aspera%20on%20cloud%20api%22). Sadly, not all.
+
+Nevertheless, it is possible to guess the structure of the creation value by simply dumping an existing resource, and use the same parameters for the creation.
+
+```bash
+<%=cmd%> aoc admin res group show 12345 --format=json
+```
+
+```json
+{"created_at":"2018-07-24T21:46:39.000Z","description":null,"id":"12345","manager":false,"name":"A8Demo WS1","owner":false,"queued_operation_count":0,"running_operation_count":0,"stopped_operation_count":0,"updated_at":"2018-07-24T21:46:39.000Z","saml_group":false,"saml_group_dn":null,"system_group":true,"system_group_type":"workspace_members"}
+```
+
+Remove the parameters that are either obviously added by the system: `id`, `created_at`, `updated_at` or optional.
+
+And then craft your command:
+
+```bash
+<%=cmd%> aoc admin res group create @json:'{"description":"test to delete","name":"test 1 to delete","saml_group":false}'
+```
+
+If the command returns an error, example:
+
+```output
++----+-----------------------------------------------------------------------------------+
+| id | status                                                                            |
++----+-----------------------------------------------------------------------------------+
+|    | found unpermitted parameters: :manager, :owner, :system_group, :system_group_type |
+|    | code: unpermitted_parameters                                                      |
+|    | request_id: b0f45d5b-c00a-4711-acef-72b633f8a6ea                                  |
+|    | api.ibmaspera.com 422 Unprocessable Entity                                        |
++----+-----------------------------------------------------------------------------------+```
+
+Well, remove the offending parameters and try again.
+
+Note that some properties that are shown in the web UI, such as membership, are not listed directly in the resource, but instead another resource is created to link a user and its group: `group_membership`
+
 #### Access Key secrets
 
 In order to access some administrative actions on "nodes" (in fact, access keys), the associated secret is required.

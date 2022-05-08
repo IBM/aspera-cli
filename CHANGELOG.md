@@ -1,6 +1,7 @@
 # Changes (Release notes)
 
 * Current Development
+  * new: add resource group_membership
   * change: (break) removed dependency on gem `grpc` which is used only for the `trsdk` transfer agent. Users can install the gem manually if needed.
   * change: (break) hash vault keys are stringinstead of symbol
   * cleanup with rubocop
@@ -76,7 +77,7 @@
   * new: options `notif_to` and `notif_template` to send email notifications on transfer (and other events)
   * fix: space character in `faspe:` url are precent encoded if needed
   * fix: `preview scan`: if file_id is unknown, ignore and continue scan
-  * change: for commands that potentially execute several transfers (`package recv --id=ALL`), if one transfer fails then <%=tool%> exits with code 1 (instead of zero=success)
+  * change: for commands that potentially execute several transfers (`package recv --id=ALL`), if one transfer fails then ascli exits with code 1 (instead of zero=success)
   * change: (break) option `notify` or `aoc` replaced with `notif_to` and `notif_template`
 
 * 4.2.1
@@ -115,7 +116,7 @@
 
 * 4.0.0
 
-  * now available as open source at [<%=gemspec.homepage%>](<%=gemspec.homepage%>) with general cleanup
+  * now available as open source (github) with general cleanup
   * changed default tool name from `mlia` to `ascli`
   * changed `aspera` command to `aoc`
   * changed gem name from `asperalm` to `aspera-cli`
@@ -233,7 +234,7 @@
 
 * 0.10.7
 
-  * fix: <%=cmd%> fails when username cannot be computed on Linux.
+  * fix: ascli fails when username cannot be computed on Linux.
 
 * 0.10.6
 
@@ -386,7 +387,7 @@
 
 * 0.9.7
 
-  * homogeneous <%=trspec%> for `node` and [`direct`](README.md#agt_direct) transfer agents
+  * homogeneous transfer spec for `node` and [`direct`](README.md#agt_direct) transfer agents
   * preview persistency goes to unique file by default
   * catch mxf extension in preview as video
   * Faspex: possibility to download all packages by specifying id=ALL
@@ -427,8 +428,8 @@
 
 * 0.9
 
-  * Renamed the CLI from aslmcli to <%=tool%>
-  * Automatic rename and conversion of former config folder from aslmcli to <%=tool%>
+  * Renamed the CLI from aslmcli to ascli
+  * Automatic rename and conversion of former config folder from aslmcli to ascli
 
 * 0.7.6
 
@@ -459,4 +460,4 @@
 
 * 0.6.15
 
-  * Breaking change: "files" application renamed to "aspera" (for "Aspera on Cloud"). "repository" renamed to "files". Default is automatically reset, e.g. in config files and change key "files" to "aspera" in <%=prst%> "default".
+  * Breaking change: "files" application renamed to "aspera" (for "Aspera on Cloud"). "repository" renamed to "files". Default is automatically reset, e.g. in config files and change key "files" to "aspera" in preset "default".
