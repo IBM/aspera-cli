@@ -680,6 +680,7 @@ module Aspera
               when :short_link then default_fields.push('short_url','data.url_token_data.purpose')
               when :user then default_fields.push('name','email')
               when :group_membership then default_fields.push(*%w[group_id member_type member_id])
+              when :workspace_membership then default_fields.push(*%w[workspace_id member_type member_id])
               end
               item_list,total_count = read_with_paging(resource_class_path,option_url_query(default_query))
               count_msg = "Items: #{item_list.length}/#{total_count}"
