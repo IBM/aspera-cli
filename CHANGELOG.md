@@ -1,11 +1,15 @@
 # Changes (Release notes)
 
-* Current Development
-  * new: add resource group_membership
+* Next version
+
+  * new: #76 add resource group_membership in aoc
+  * new: #75 gem is signed
   * change: (break) removed dependency on gem `grpc` which is used only for the `trsdk` transfer agent. Users can install the gem manually if needed.
   * change: (break) hash vault keys are stringinstead of symbol
-  * cleanup with rubocop
+  * change: cleanup with rubocop, all strings are immutable now by default, list contants are frozen
+  * change: removed Hash.dig implemetation because it is by default in Ruby >= 2.3
   * change: default is now to hide secrets on command output. Set option `show_secrets` to reveal secrets.
+  * change: option `insecure` displays a warning
 
 * 4.7.0
 
