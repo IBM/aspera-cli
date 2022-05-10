@@ -441,7 +441,7 @@ module Aspera
               marker_file = File.join(@local_preview_folder,AK_MARKER_FILE)
               Log.log.debug("marker file: #{marker_file}")
               if File.exist?(marker_file)
-                ak = File.read(marker_file)
+                ak = File.read(marker_file).chomp
                 raise "mismatch access key in #{marker_file}: contains #{ak}, using #{@access_key_self['id']}" unless @access_key_self['id'].eql?(ak)
               else
                 File.write(marker_file,@access_key_self['id'])
