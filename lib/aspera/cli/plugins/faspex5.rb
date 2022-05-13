@@ -104,6 +104,7 @@ module Aspera
               parameters = options.get_option(:value,is_type: :mandatory)
               raise CliBadArgument,'value must be hash, refer to API' unless parameters.is_a?(Hash)
               package = @api_v5.create('packages',parameters)[:data]
+              # TODO: option to send from remote source
               transfer_spec = @api_v5.create("packages/#{package['id']}/transfer_spec/upload",{transfer_type: TRANSFER_CONNECT})[:data]
               transfer_spec.delete('authentication')
               return Main.result_transfer(transfer.start(transfer_spec,{src: :node_gen3}))
