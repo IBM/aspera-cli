@@ -3695,41 +3695,13 @@ The main advantage is the possibility to start from ma configuration file, using
 
 ## Plugin: Preview
 
-The `preview` generates "previews" of graphical files, i.e. thumbnails (office, images, video) and video previews on storage for use primarily in the Aspera on Cloud application.
-This is based on the "node API" of Aspera HSTS when using Access Keys only inside it's "storage root".
+The `preview` generates thumbnails (office, images, video) and video previews on storage for use primarily in the Aspera on Cloud application.
+It uses the **node API** of Aspera HSTS and requires use of Access Keys and it's **storage root**.
 Several parameters can be used to tune several aspects:
 
-* methods for detection of new files needing generation
-* methods for generation of video preview
-* parameters for video handling
-
-### <a id="mimeinfo"></a>Additional installation: mime info
-
-If the `mimemagic` gem complains about missing mime info:
-
-* Windows:
-
-  * Download the file: <https://gitlab.freedesktop.org/xdg/shared-mime-info/-/raw/master/data/freedesktop.org.xml.in>
-  * Place this file in the root of Ruby (or elsewhere): `C:\RubyVV-x64\freedesktop.org.xml.in`
-  * Set a global variable using `SystemPropertiesAdvanced.exe` or using `cmd` (replace VV with version) to the exact path of this file:
-
-  ```cmd
-  SETX FREEDESKTOP_MIME_TYPES_PATH C:\RubyVV-x64\freedesktop.org.xml.in
-  ```
-
-  * Close the `cmd` and restart a new one if needed to get refreshed env vars
-
-* Linux:
-
-```bash
-yum install shared-mime-info
-```
-
-* macOS:
-
-```bash
-brew install shared-mime-info
-```
+* Methods for detection of new files needing generation
+* Methods for generation of video preview
+* Parameters for video handling
 
 ### Aspera Server configuration
 
@@ -3968,13 +3940,48 @@ The mp4 video preview file is only for category `video`
 
 File type is primarily based on file extension detected by the node API and translated info a mime type returned by the node API.
 
-The tool can also locally detect the mime type using option `mimemagic`.
+### mimemagic
 
-To use it, set option `mimemagic` to `yes`: `--mimemagic=yes`
+By default, the Mime type used for conversion is the one returned by the node API, based on file name extension.
 
-If not used, Mime type used for conversion is the one provided by the node API.
+It is also possible to detect the mime type using option `mimemagic`.
+To use it, set option `mimemagic` to `yes`: `--mimemagic=yes`.
 
-If used, the `preview` command will first analyze the file content using mimemagic, and if no match, will try by extension.
+This requires to manually install the mimemagic gem: `gem install mimemagic`.
+
+In this case the `preview` command will first analyze the file content using mimemagic, and if no match, will try by extension.
+
+If the `mimemagic` gem complains about missing mime info file:
+
+* any OS:
+
+  * Examine the error message
+  * Download the file: <https://gitlab.freedesktop.org/xdg/shared-mime-info/-/raw/master/data/freedesktop.org.xml.in>
+  * move and rename this file to one of the locations expected by mimemagic as specified in the error message
+
+* Windows:
+
+  * Download the file: <https://gitlab.freedesktop.org/xdg/shared-mime-info/-/raw/master/data/freedesktop.org.xml.in>
+  * Place this file in the root of Ruby (or elsewhere): `C:\RubyVV-x64\freedesktop.org.xml.in`
+  * Set a global variable using `SystemPropertiesAdvanced.exe` or using `cmd` (replace `VV` with version) to the exact path of this file:
+
+  ```cmd
+  SETX FREEDESKTOP_MIME_TYPES_PATH C:\RubyVV-x64\freedesktop.org.xml.in
+  ```
+
+  * Close the `cmd` and restart a new one if needed to get refreshed env vars
+
+* Linux:
+
+```bash
+yum install shared-mime-info
+```
+
+* macOS:
+
+```bash
+brew install shared-mime-info
+```
 
 ### Access to original files and preview creation
 
