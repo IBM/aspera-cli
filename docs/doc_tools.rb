@@ -119,7 +119,8 @@ REPLACEMENTS = [
   ['AOC_EXTERNAL_EMAIL','external.user@example.com'],
   ['EMAIL_ADDR','internal.user@example.com'],
   ['CF_',''],
-  ['$@','test']
+  ['$@','test'],
+  ['my_f5_meta','']
 ].freeze
 
 def all_test_commands_by_plugin
