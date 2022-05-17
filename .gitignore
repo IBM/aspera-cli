@@ -22,3 +22,4 @@ simplecov.log
 .*_checked
 .project
 .settings
+/.vscode/
