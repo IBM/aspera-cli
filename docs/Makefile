@@ -17,7 +17,7 @@ doc: all
 
 # generate template configuration file for tests, remove own secrets
 $(TMPL_CONF_FILE_PATH): $(TEST_CONF_FILE_PATH)
-	ruby -I . -I $(DIR_LIB) -r doc_tools -e generate_generic_conf $(TEST_CONF_FILE_PATH) > $@
+	ruby -I . -I $(DIR_LIB). -r doc_tools -e generate_generic_conf $(TEST_CONF_FILE_PATH) > $@
 
 $(MANUAL_PDF): $(DIR_TOP)README.md
 	pandoc --number-sections --shift-heading-level-by=-1 --resource-path=. --toc -o $(MANUAL_HTML) $(DIR_TOP)README.md
@@ -26,7 +26,7 @@ $(MANUAL_PDF): $(DIR_TOP)README.md
 # regenerate always, as it depends on sources
 .PHONY: $(DIR_TOP)README.md
 $(DIR_TOP)README.md: $(DIR_DOC)README.erb.md $(DIR_DOC)doc_tools.rb
-	ruby -I . -I $(DIR_LIB) -r doc_tools -e generate_doc $(DIR_DOC)README.erb.md $(EXETESTB) $(DIR_BIN)/asession $(DIR_TST)Makefile $(GEMSPEC) > $@
+	ruby -I . -I $(DIR_LIB). -r doc_tools -e generate_doc $(DIR_DOC)README.erb.md $(EXETESTB) $(DIR_BIN)/asession $(DIR_TST)Makefile $(GEMSPEC) > $@
 
 clean::
 	rm -f $(MANUAL_PDF) $(MANUAL_HTML)
@@ -36,8 +36,7 @@ clean::
 # on mac: `gem install xumlidot pry` and `brew install graphviz`
 uml: $(DIR_DOC)uml.png
 $(DIR_DOC)uml.png:
-	xumlidot --dot --no-composition $(DIR_LIB) > $(DIR_DOC)uml.dot
+	xumlidot --dot --no-composition $(DIR_LIB). > $(DIR_DOC)uml.dot
 	dot -Tpng $(DIR_DOC)uml.dot > $(DIR_DOC)uml.png
 clean::
 	rm -f $(DIR_DOC)uml.dot $(DIR_DOC)uml.png
-
