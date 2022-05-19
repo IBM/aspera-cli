@@ -386,14 +386,8 @@ module Aspera
       # @param type rsa or dsa
       # @param id in repository 1 for dsa, 2 for rsa
       def get_key(type,id)
-        # PEM header/footer
-        mark='-'*5
-        hf = %w[begin end].map{|pos|(mark+[pos,type,'private key'].join(' ')+mark).upcase}
-        # build PEM
-        pem = hf.insert(1,Base64.encode64(DataRepository.instance.data(id)).chomp).join("\n")
-        Log.dump(:pem,pem)
-        # validate value and generate key in canonical format
-        OpenSSL::PKey.const_get(type.upcase).new(pem).to_pem
+        # generate PEM from DER
+        OpenSSL::PKey.const_get(type.upcase).new(DataRepository.instance.data(id)).to_pem
       end
     end # Installation
   end

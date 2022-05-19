@@ -967,8 +967,8 @@ config ascp connect version 'Aspera Connect for Windows' download 'Windows Insta
 config ascp connect version 'Aspera Connect for Windows' list
 config ascp connect version 'Aspera Connect for Windows' open documentation
 config ascp errors
-config ascp info
-config ascp install
+config ascp info --sdk-folder=Tsdk_test_dir
+config ascp install --sdk-folder=Tsdk_test_dir
 config ascp products list
 config ascp show
 config ascp spec

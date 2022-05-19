@@ -843,12 +843,12 @@ $(T)co6: $(T).exists
 	@touch $@
 $(T)co7: $(T).exists
 	@echo $@
-	$(EXE_MAN) config ascp info
+	-rm -fr $(T)sdk_test_dir
+	$(EXE_MAN) config ascp install --sdk-folder=$(T)sdk_test_dir
 	@touch $@
-$(T)co8: $(T).exists
+$(T)co8: $(T)co7
 	@echo $@
-	-rm -fr $$HOME/.aspera/ascli/sdk*
-	$(EXE_MAN) config ascp install
+	$(EXE_MAN) config ascp info --sdk-folder=$(T)sdk_test_dir
 	@touch $@
 tcon: $(T)co1 $(T)co2 $(T)co3 $(T)co4 $(T)co5 $(T)co6 $(T)co7 $(T)co8
 
