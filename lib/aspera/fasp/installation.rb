@@ -43,8 +43,8 @@ module Aspera
         </CONF>
       END_OF_CONFIG_FILE
       DUMMY_CERT_INFO='/C=US/ST=California/L=Emeryville/O=Aspera Inc./OU=Corporate/CN=Aspera Inc./emailAddress=info@asperasoft.com'
-      private_constant :PRODUCT_CONNECT,:PRODUCT_CLI_V1,:PRODUCT_DRIVE,:PRODUCT_ENTSRV,:EXT_RUBY_PROTOBUF,:RB_SDK_FOLDER,:ONE_YEAR_SECONDS,
-        :DEFAULT_ASPERA_CONF,:DUMMY_CERT_INFO
+      private_constant :PRODUCT_CONNECT,:PRODUCT_CLI_V1,:PRODUCT_DRIVE,:PRODUCT_ENTSRV,:EXT_RUBY_PROTOBUF,:RB_SDK_FOLDER,
+        :ONE_YEAR_SECONDS,:DEFAULT_ASPERA_CONF,:DUMMY_CERT_INFO
       # set ascp executable path
       def ascp_path=(v)
         @path_to_ascp = v
@@ -386,10 +386,14 @@ module Aspera
       # @param type rsa or dsa
       # @param id in repository 1 for dsa, 2 for rsa
       def get_key(type,id)
-        hf = %w[begin end].map{|t|"-----#{t} #{type} private key-----".upcase}
-        bin = Base64.strict_encode64(DataRepository.instance.data(id))
-        # validate valie and generate key in connonical format
-        OpenSSL::PKey.const_get(type.upcase).send(:new,hf.insert(1,bin).join("\n")).to_pem
+        # PEM header/footer
+        mark='-'*5
+        hf = %w[begin end].map{|pos|(mark+[pos,type,'private key'].join(' ')+mark).upcase}
+        # build PEM
+        pem = hf.insert(1,Base64.encode64(DataRepository.instance.data(id)).chomp).join("\n")
+        Log.dump(:pem,pem)
+        # validate value and generate key in canonical format
+        OpenSSL::PKey.const_get(type.upcase).new(pem).to_pem
       end
     end # Installation
   end
