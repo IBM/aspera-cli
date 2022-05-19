@@ -21,7 +21,7 @@ module Aspera
           options.parse_options!
         end
 
-        ACTIONS = %i[info workflow plugins processes].freeze
+        ACTIONS = %i[health info workflow plugins processes].freeze
 
         # for JSON format: add extension ".json" or add url parameter: format=json or Accept: application/json
         # id can be: a parameter id=x, or at the end of url /id, for workflows: work_order[workflow_id]=wf_id
@@ -68,6 +68,7 @@ module Aspera
           end
           result = @api_orch.call(call_args)
           result[:data] = XmlSimple.xml_in(result[:http].body, opt[:xml_opt] || {'ForceArray' => true}) if format.eql?('xml')
+          Log.dump(:data,result[:data])
           return result
         end
 
@@ -93,19 +94,23 @@ module Aspera
 
           command1 = options.get_next_command(ACTIONS)
           case command1
+          when :health
+            nagios = Nagios.new
+            begin
+              info = call_ao('remote_node_ping',format: 'xml', xml_opt: {'ForceArray' => false})[:data]
+              nagios.add_ok('api','accessible')
+              nagios.check_product_version('api','orchestrator', info['orchestrator-version'])
+            rescue StandardError => e
+              nagios.add_critical('node api',e.to_s)
+            end
+            return nagios.result
           when :info
-            result = call_ao('remote_node_ping',format: 'xml', xml_opt: {'ForceArray' => false})
-            return {type: :single_object,data: result[:data]}
-            #            result=call_ao('workflows',prefix: nil,format: nil)
-            #            version='unknown'
-            #            if m=result[:http].body.match(/\(Orchestrator v([1-9]+\.[\.0-9a-f\-]+)\)/)
-            #              version=m[1]
-            #            end
-            #            return {type: :single_object,data: {'version'=>version}}
+            result = call_ao('remote_node_ping',format: 'xml', xml_opt: {'ForceArray' => false})[:data]
+            return {type: :single_object,data: result}
           when :processes
             # TODO: Jira ? API has only XML format
-            result = call_ao('processes_status',format: 'xml')
-            return {type: :object_list,data: result[:data]['process']}
+            result = call_ao('processes_status',format: 'xml')[:data]
+            return {type: :object_list,data: result['process']}
           when :plugins
             # TODO: Jira ? only json format on url
             result = call_ao('plugin_version')[:data]
