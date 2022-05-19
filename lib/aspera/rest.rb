@@ -270,17 +270,17 @@ module Aspera
           begin
             # try to use refresh token
             req['Authorization'] = oauth_token(force_refresh: true)
-          rescue RestCallError => e
+          rescue RestCallError => e_tok
+            e = e_tok
             Log.log.error('refresh failed'.bg_red)
             # regenerate a brand new token
-            req['Authorization'] = oauth_token
+            req['Authorization'] = oauth_token(use_cache: false)
           end
           Log.log.debug("using new token=#{call_data[:headers]['Authorization']}")
           retry unless (oauth_tries -= 1).zero?
         end # if oauth
         # moved ?
-        raise e unless e.response.is_a?(Net::HTTPRedirection)
-        if tries_remain_redirect.positive?
+        if e.response.is_a?(Net::HTTPRedirection) and tries_remain_redirect.positive?
           tries_remain_redirect -= 1
           current_uri = URI.parse(call_data[:base_url])
           new_url=e.response['location']
@@ -297,8 +297,6 @@ module Aspera
             Log.log.info("Redirect changes host: #{current_uri.host} -> #{redir_uri.host}")
             return self.class.new(call_data).call(call_data)
           end
-        else
-          raise e unless call_data[:return_error]
         end
         # raise exception if could not retry and not return error in result
         raise e unless call_data[:return_error]
