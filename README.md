@@ -2291,7 +2291,7 @@ OPTIONS:
 
 
 COMMAND: shares
-SUBCOMMANDS: repository admin
+SUBCOMMANDS: health repository admin
 OPTIONS:
         --url=VALUE                  URL of application, e.g. https://org.asperafiles.com
         --username=VALUE             username to log in
@@ -2311,7 +2311,7 @@ OPTIONS:
 
 
 COMMAND: orchestrator
-SUBCOMMANDS: info workflow plugins processes
+SUBCOMMANDS: health info workflow plugins processes
 OPTIONS:
         --url=VALUE                  URL of application, e.g. https://org.asperafiles.com
         --username=VALUE             username to log in
@@ -3667,18 +3667,20 @@ server upload testfile.bin --to-folder=NEW_SERVER_FOLDER --ts=@json:'{"multi_ses
 
 ### Authentication
 
-Both password and SSH keys auth are supported.
+If SSH is the session control protocol (i.e. not WSS), then following session authentication methods are supported:
+
+* SSH password
+* SSH keys (Multiple SSH key paths can be provided.)
 
 If username is not provided, the default transfer user `xfer` is used.
 
-If no SSH password or key is provided, and a token is provided in transfer spec, then standard bypass keys are used:
+If no SSH password or key is provided and a transfer token is provided in transfer spec (option `ts`), then standard SSH bypass keys are used. Example:
 
 ```javascript
 ascli server --url=ssh://... --ts=@json:'{"token":"Basic abc123"}'
 ```
 
-Multiple SSH key paths can be provided.
-The value of the parameter `ssh_keys` can be a single value or an array.
+The value of the option `ssh_keys` can be a single value or an array.
 Each value is a path to a private key and is expanded (`~` is replaced with the user's home folder).
 
 Examples:
