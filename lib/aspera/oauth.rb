@@ -227,12 +227,12 @@ module Aspera
 
     # Oauth v2 token generation
     # @param use_refresh_token set to true to force refresh or re-generation (if previous failed)
-    def get_authorization(use_refresh_token: false)
+    def get_authorization(use_refresh_token: false, use_cache: true)
       # generate token unique identifier for persistency (memory/disk cache)
       token_id = token_cache_id
 
       # get token_data from cache (or nil), token_data is what is returned by /token
-      token_data = self.class.persist_mgr.get(token_id)
+      token_data = self.class.persist_mgr.get(token_id) if use_cache
       token_data = JSON.parse(token_data) unless token_data.nil?
       # Optional optimization: check if node token is expired  basd on decoded content then force refresh if close enough
       # might help in case the transfer agent cannot refresh himself
