@@ -39,7 +39,7 @@ module Aspera
                 call(
                 operation: 'GET',
                 subpath: 'ping',
-                headers: {'content-type':'application/json'},
+                headers: {'content-type': 'application/json'},
                 return_error: true)
               nagios.add_ok('shares api','accessible')
             rescue StandardError => e

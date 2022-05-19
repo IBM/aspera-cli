@@ -280,7 +280,7 @@ module Aspera
           retry unless (oauth_tries -= 1).zero?
         end # if oauth
         # moved ?
-        if e.response.is_a?(Net::HTTPRedirection) and tries_remain_redirect.positive?
+        if e.response.is_a?(Net::HTTPRedirection) && tries_remain_redirect.positive?
           tries_remain_redirect -= 1
           current_uri = URI.parse(call_data[:base_url])
           new_url=e.response['location']

@@ -714,7 +714,7 @@ module Aspera
               command_repo = options.get_next_command(NODE4_COMMANDS)
               return execute_node_gen4_command(command_repo,{node_info: res_data, file_id: ak_data['root_file_id']})
             when :shared_folder
-              Log.log.warn("ATTENTION: under development")
+              Log.log.warn('ATTENTION: under development')
               # inside a workspace
               command_shared = options.get_next_command(%i[list create member delete])
               core_api=Rest.new(aoc_api.params.merge(base_url: aoc_api.params[:base_url].gsub('/api.','/sedemo.')))
@@ -736,7 +736,7 @@ module Aspera
                 shared_info=all_shared.first
                 #return { type: :single_object, data: shared_info}
                 node_id=shared_info['node_id']
-                Log.log.warn("ATTENTION: under dev: user vars: V1 and V2")
+                Log.log.warn('ATTENTION: under dev: user vars: V1 and V2')
                 core_api.call(
                   operation: 'DELETE',
                   subpath: "node/#{node_id}/permissions",

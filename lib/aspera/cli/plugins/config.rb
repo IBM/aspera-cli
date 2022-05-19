@@ -602,11 +602,11 @@ module Aspera
           when :info # shows files used
             data = Fasp::Installation::FILES.each_with_object({}) do |v,m|
               m[v.to_s] =
-              begin
-                Fasp::Installation.instance.path(v)
-              rescue => e
-                e.message
-              end
+                begin
+                  Fasp::Installation.instance.path(v)
+                rescue => e
+                  e.message
+                end
             end
             # read PATHs from ascp directly, and pvcl modules as well
             Open3.popen3(Fasp::Installation.instance.path(:ascp),'-DDL-') do |_stdin, _stdout, stderr, thread|
