@@ -145,8 +145,13 @@ module Aspera
           when :admin
             case options.get_next_command([:resource])
             when :resource
-              res_type = options.get_next_command(%i[accounts contacts jobs workgroups shared_inboxes nodes oauth_clients registrations saml_configs])
-              res_path = res_type.to_s
+              res_type = options.get_next_command(%i[accounts contacts jobs workgroups shared_inboxes nodes oauth_clients registrations saml_configs metadata_profiles])
+              res_path = list_key = res_type.to_s
+              case res_type
+              when :metadata_profiles 
+                res_path='configuration/metadata_profiles'
+                list_key='profiles'
+              end
               display_fields =
                 case res_type
                 when :accounts then [:all_but,'user_profile_data_attributes']
@@ -156,7 +161,7 @@ module Aspera
               if res_type.eql?(:oauth_clients)
                 adm_api = Rest.new(@api_v5.params.merge({base_url: @faxpex5_api_auth_url}))
               end
-              return entity_action(adm_api,res_path,use_subkey: true, display_fields: display_fields)
+              return entity_action(adm_api,res_path,item_list_key: list_key, display_fields: display_fields)
             end
           end # case command
         end # action

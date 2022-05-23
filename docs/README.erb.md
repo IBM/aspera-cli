@@ -3407,6 +3407,26 @@ Use it as password and use `--auth=boot`.
 <%=include_commands_for_plugin('faspex5')%>
 ```
 
+### Faspex 5 other examples
+
+* List all shared inboxes
+
+```json
+ascli faspex5 admin res shared list --value=@json:'{"all":true}' --fields=id,name
+```
+
+* Create Metadata profile
+
+```json
+ascli faspex5 admin res metadata_profiles create --value=@json:'{"name":"the profile","default":false,"title":{"max_length":200,"illegal_chars":[]},"note":{"max_length":400,"illegal_chars":[],"enabled":false},"fields":[{"ordering":0,"name":"field1","type":"text_area","require":true,"illegal_chars":[],"max_length":100},{"ordering":1,"name":"fff2","type":"option_list","require":false,"choices":["opt1","opt2"]}]}'
+```
+
+* Create a Shared inbox with specific metadata profile
+
+```json
+ascli faspex5 admin res shared create --value=@json:'{"name":"the shared inbox","metadata_profile_id":1}'
+```
+
 ## Plugin: IBM Aspera Faspex (4.x)
 
 Notes:

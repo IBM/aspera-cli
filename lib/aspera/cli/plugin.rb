@@ -51,8 +51,8 @@ module Aspera
       # @param res_class_path [String] sub path in URL to resource relative to base url
       # @param display_fields [Array] fields to display by default
       # @param id_default [String] default identifier to use for existing entity commands (show, modify)
-      # @param use_subkey [bool] true if the result is in a subkey of the json
-      def entity_command(command,rest_api,res_class_path,display_fields: nil,id_default: nil,use_subkey: false)
+      # @param item_list_key [String] result is in a subkey of the json
+      def entity_command(command,rest_api,res_class_path,display_fields: nil,id_default: nil,item_list_key: false)
         if INSTANCE_OPS.include?(command)
           begin
             one_res_id = instance_identifier
@@ -82,7 +82,16 @@ module Aspera
           if resp[:http]['Content-Type'].start_with?('application/vnd.api+json')
             data = data[res_class_path]
           end
-          data = data[res_class_path] if use_subkey
+          if item_list_key
+            item_list=data[item_list_key]
+            total_count=data['total_count']
+            if !total_count.nil?
+              count_msg = "Items: #{item_list.length}/#{total_count}"
+              count_msg = count_msg.bg_red unless item_list.length.eql?(total_count.to_i)
+              self.format.display_status(count_msg)
+            end
+            data = item_list
+          end
           return {type: :object_list, data: data, fields: display_fields}
         when :modify
           property = options.get_option(:property)

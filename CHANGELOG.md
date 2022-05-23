@@ -2,7 +2,8 @@
 
 * Next version
 
-  * new: #76 add resource `group_membership` in aoc
+  * new: #76 add resource `group_membership` in `aoc`
+  * new: add resource `metadata_profile` in `faspex5`
   * new: #75 gem is signed
   * change: (break) removed dependency on gem `grpc` which is used only for the `trsdk` transfer agent. Users can install the gem manually if needed.
   * change: (break) hash vault keys are string instead of symbol
