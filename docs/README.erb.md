@@ -319,7 +319,7 @@ rvm version
 Install Latest stable Ruby:
 
 * Navigate to [https://rubyinstaller.org/](https://rubyinstaller.org/) &rarr; **Downloads**.
-* Download the latest Ruby installer **with devkit**. (Msys2 is needed to install some native extensions, such as grpc)
+* Download the latest Ruby installer **with devkit**. (Msys2 is needed to install some native extensions, such as `grpc`)
 * Execute the installer which installs by default in: `RubyVV-x64` (VV is the version number)
 * At the end of the installation procedure execute the Msys2 installer (ridk install) and select option 3 (msys and mingw)
 * Install the "mime info" file as specified in [this section](#mimeinfo).

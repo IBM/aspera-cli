@@ -806,139 +806,34 @@ module Aspera
             options.ask_missing_mandatory = true
             # register url option
             BasicAuthPlugin.register_options(@agents)
+            params={}
             # get from option, or ask
-            instance_url = options.get_option(:url,is_type: :mandatory)
+            params[:instance_url] = options.get_option(:url,is_type: :mandatory)
             # allow user to tell the preset name
-            preset_name = options.get_option(:id)
+            params[:preset_name] = options.get_option(:id)
             # allow user to specify type of application
-            application = options.get_option(:value)
-            application = application.nil? ? identify_plugin_for_url(instance_url)[:product] : application.to_sym
-            plugin_name = '<replace per app>'
-            test_args = '<replace per app>'
-            case application
+            params[:application] = options.get_option(:value)
+            params[:application] = params[:application].nil? ? identify_plugin_for_url(params[:instance_url])[:product] : params[:application].to_sym
+            params[:plugin_name]=params[:application]
+            params[:test_args] = '<replace per app>'
+            case params[:application]
             when :faspex5
-              self.format.display_status('Detected: Faspex v5'.bold)
-              plugin_name=application
-              # if not defined by user, generate name
-              preset_name = [application,URI.parse(instance_url).host.gsub(/[^a-z0-9.]/,'').split('.')].flatten.join('_') if preset_name.nil?
-              raise "under construction #{preset_name}"
+              wizard_faspex5(params)
             when :aoc
-              self.format.display_status('Detected: Aspera on Cloud'.bold)
-              plugin_name = AOC_COMMAND_CURRENT
-              organization = AoC.parse_url(instance_url).first
-              # if not defined by user, generate name
-              preset_name = [application,organization].join('_') if preset_name.nil?
-              self.format.display_status("Preparing preset: #{preset_name}")
-              # init defaults if necessary
-              @config_presets[CONF_PRESET_DEFAULT] ||= {}
-              option_override = options.get_option(:override,is_type: :mandatory)
-              option_default = options.get_option(:default,is_type: :mandatory)
-              Log.log.error("override=#{option_override} -> #{option_override.class}")
-              raise CliError,"A default configuration already exists for plugin '#{plugin_name}' (use --override=yes or --default=no)" \
-                if !option_override && option_default && @config_presets[CONF_PRESET_DEFAULT].has_key?(plugin_name)
-              raise CliError,"Preset already exists: #{preset_name}  (use --override=yes or --id=<name>)" \
-                if !option_override && @config_presets.has_key?(preset_name)
-              # lets see if path to priv key is provided
-              private_key_path = options.get_option(:pkeypath)
-              # give a chance to provide
-              if private_key_path.nil?
-                self.format.display_status('Please provide path to your private RSA key, or empty to generate one:')
-                private_key_path = options.get_option(:pkeypath,is_type: :mandatory).to_s
-              end
-              # else generate path
-              if private_key_path.empty?
-                private_key_path = File.join(@main_folder,DEFAULT_PRIV_KEY_FILENAME)
-              end
-              if File.exist?(private_key_path)
-                self.format.display_status('Using existing key:')
-              else
-                self.format.display_status("Generating #{DEFAULT_PRIVKEY_LENGTH} bit RSA key...")
-                generate_rsa_private_key(private_key_path,DEFAULT_PRIVKEY_LENGTH)
-                self.format.display_status('Created:')
-              end
-              self.format.display_status(private_key_path)
-              pub_key_pem = OpenSSL::PKey::RSA.new(File.read(private_key_path)).public_key.to_s
-              # declare command line options for AoC
-              require 'aspera/cli/plugins/aoc'
-              # make username mandatory for jwt, this triggers interactive input
-              options.get_option(:username,is_type: :mandatory)
-              # instanciate AoC plugin, so that command line options are known
-              aoc_api = self.class.plugin_class(plugin_name).new(@agents.merge({skip_basic_auth_options: true, private_key_path: private_key_path})).aoc_api
-              auto_set_pub_key = false
-              auto_set_jwt = false
-              use_browser_authentication = false
-              if options.get_option(:use_generic_client)
-                self.format.display_status('Using global client_id.')
-                self.format.display_status('Please Login to your Aspera on Cloud instance.'.red)
-                self.format.display_status('Navigate to your "Account Settings"'.red)
-                self.format.display_status('Check or update the value of "Public Key" to be:'.red.blink)
-                self.format.display_status(pub_key_pem.to_s)
-                if !options.get_option(:test_mode)
-                  self.format.display_status('Once updated or validated, press enter.')
-                  OpenApplication.instance.uri(instance_url)
-                  $stdin.gets
-                end
-              else
-                self.format.display_status('Using organization specific client_id.')
-                if options.get_option(:client_id).nil? || options.get_option(:client_secret,is_type: :optional).nil?
-                  self.format.display_status('Please login to your Aspera on Cloud instance.'.red)
-                  self.format.display_status('Go to: Apps->Admin->Organization->Integrations')
-                  self.format.display_status('Create or check if there is an existing integration named:')
-                  self.format.display_status("- name: #{@info[:name]}")
-                  self.format.display_status("- redirect uri: #{DEFAULT_REDIRECT}")
-                  self.format.display_status('- origin: localhost')
-                  self.format.display_status('Once created or identified,')
-                  self.format.display_status('Please enter:'.red)
-                end
-                OpenApplication.instance.uri("#{instance_url}/#{AOC_PATH_API_CLIENTS}")
-                options.get_option(:client_id,is_type: :mandatory)
-                options.get_option(:client_secret,is_type: :mandatory)
-                use_browser_authentication = true
-              end
-              if use_browser_authentication
-                self.format.display_status('We will use web authentication to bootstrap.')
-                auto_set_pub_key = true
-                auto_set_jwt = true
-                aoc_api.oauth.gparams[:crtype] = :web
-                aoc_api.oauth.gparams[:scope] = AoC::SCOPE_FILES_ADMIN
-                aoc_api.oauth.sparams[:redirect_uri] = DEFAULT_REDIRECT
-              end
-              myself = aoc_api.read('self')[:data]
-              if auto_set_pub_key
-                raise CliError,'Public key is already set in profile (use --override=yes)' unless myself['public_key'].empty? || option_override
-                self.format.display_status('Updating profile with new key')
-                aoc_api.update("users/#{myself['id']}",{'public_key' => pub_key_pem})
-              end
-              if auto_set_jwt
-                self.format.display_status('Enabling JWT for client')
-                aoc_api.update("clients/#{options.get_option(:client_id)}",{'jwt_grant_enabled' => true,'explicit_authorization_required' => false})
-              end
-              self.format.display_status("Creating new config preset: #{preset_name}")
-              @config_presets[preset_name] = {
-                :url.to_s         => options.get_option(:url),
-                :username.to_s    => myself['email'],
-                :auth.to_s        => :jwt.to_s,
-                :private_key.to_s => '@file:' + private_key_path
-              }
-              # set only if non nil
-              %i[client_id client_secret].each do |s|
-                o = options.get_option(s)
-                @config_presets[preset_name][s.to_s] = o unless o.nil?
-              end
-              test_args = "#{plugin_name} user profile show"
+              wizard_aoc(params)
             else
-              raise CliBadArgument,"Supports only: aoc. Detected: #{application}"
+              raise CliBadArgument,"Supports only: aoc. Detected: #{params[:application]}"
             end # product
-            if option_default
-              self.format.display_status("Setting config preset as default for #{plugin_name}")
-              @config_presets[CONF_PRESET_DEFAULT][plugin_name] = preset_name
+            if params[:option_default]
+              self.format.display_status("Setting config preset as default for #{params[:plugin_name]}")
+              @config_presets[CONF_PRESET_DEFAULT][params[:plugin_name]] = params[:preset_name]
             else
-              test_args = "-P#{preset_name} #{test_args}"
+              params[:test_args] = "-P#{params[:preset_name]} #{params[:test_args]}"
             end
             self.format.display_status('Saving config file.')
             save_presets_to_config_file
-            return Main.result_status("Done.\nYou can test with:\n#{@info[:name]} #{test_args}")
-          when :export_to_cli
+            return Main.result_status("Done.\nYou can test with:\n#{@info[:name]} #{params[:test_args]}")
+          when :export_to_cli # this method shall be deprecated in the future: it was used to export configuration to "aspera.exe" CLI
             self.format.display_status('Exporting: Aspera on Cloud')
             require 'aspera/cli/plugins/aoc'
             # need url / username
@@ -1186,6 +1081,168 @@ module Aspera
             raise "please provide secret for #{options[:username]}" if secret.nil? && (options[:mandatory].nil? || options[:mandatory])
           end
           return secret
+        end
+
+        def wizard_aoc(params)
+          self.format.display_status('Detected: Aspera on Cloud'.bold)
+          params[:plugin_name] = AOC_COMMAND_CURRENT
+          organization = AoC.parse_url(params[:instance_url]).first
+          # if not defined by user, generate name
+          params[:preset_name] = [params[:application],organization].join('_') if params[:preset_name].nil?
+          self.format.display_status("Preparing preset: #{params[:preset_name]}")
+          # init defaults if necessary
+          @config_presets[CONF_PRESET_DEFAULT] ||= {}
+          option_override = options.get_option(:override,is_type: :mandatory)
+          params[:option_default] = options.get_option(:default,is_type: :mandatory)
+          Log.log.error("override=#{option_override} -> #{option_override.class}")
+          raise CliError,"A default configuration already exists for plugin '#{params[:plugin_name]}' (use --override=yes or --default=no)" \
+            if !option_override && params[:option_default] && @config_presets[CONF_PRESET_DEFAULT].has_key?(params[:plugin_name])
+          raise CliError,"Preset already exists: #{params[:preset_name]}  (use --override=yes or --id=<name>)" \
+            if !option_override && @config_presets.has_key?(params[:preset_name])
+          # lets see if path to priv key is provided
+          private_key_path = options.get_option(:pkeypath)
+          # give a chance to provide
+          if private_key_path.nil?
+            self.format.display_status('Please provide path to your private RSA key, or empty to generate one:')
+            private_key_path = options.get_option(:pkeypath,is_type: :mandatory).to_s
+          end
+          # else generate path
+          if private_key_path.empty?
+            private_key_path = File.join(@main_folder,DEFAULT_PRIV_KEY_FILENAME)
+          end
+          if File.exist?(private_key_path)
+            self.format.display_status('Using existing key:')
+          else
+            self.format.display_status("Generating #{DEFAULT_PRIVKEY_LENGTH} bit RSA key...")
+            generate_rsa_private_key(private_key_path,DEFAULT_PRIVKEY_LENGTH)
+            self.format.display_status('Created:')
+          end
+          self.format.display_status(private_key_path)
+          pub_key_pem = OpenSSL::PKey::RSA.new(File.read(private_key_path)).public_key.to_s
+          # declare command line options for AoC
+          require 'aspera/cli/plugins/aoc'
+          # make username mandatory for jwt, this triggers interactive input
+          options.get_option(:username,is_type: :mandatory)
+          # instanciate AoC plugin, so that command line options are known
+          aoc_api = self.class.plugin_class(params[:plugin_name]).new(@agents.merge({skip_basic_auth_options: true, private_key_path: private_key_path})).aoc_api
+          auto_set_pub_key = false
+          auto_set_jwt = false
+          use_browser_authentication = false
+          if options.get_option(:use_generic_client)
+            self.format.display_status('Using global client_id.')
+            self.format.display_status('Please Login to your Aspera on Cloud instance.'.red)
+            self.format.display_status('Navigate to your "Account Settings"'.red)
+            self.format.display_status('Check or update the value of "Public Key" to be:'.red.blink)
+            self.format.display_status(pub_key_pem.to_s)
+            if !options.get_option(:test_mode)
+              self.format.display_status('Once updated or validated, press enter.')
+              OpenApplication.instance.uri(params[:instance_url])
+              $stdin.gets
+            end
+          else
+            self.format.display_status('Using organization specific client_id.')
+            if options.get_option(:client_id).nil? || options.get_option(:client_secret,is_type: :optional).nil?
+              self.format.display_status('Please login to your Aspera on Cloud instance.'.red)
+              self.format.display_status('Go to: Apps->Admin->Organization->Integrations')
+              self.format.display_status('Create or check if there is an existing integration named:')
+              self.format.display_status("- name: #{@info[:name]}")
+              self.format.display_status("- redirect uri: #{DEFAULT_REDIRECT}")
+              self.format.display_status('- origin: localhost')
+              self.format.display_status('Once created or identified,')
+              self.format.display_status('Please enter:'.red)
+            end
+            OpenApplication.instance.uri("#{params[:instance_url]}/#{AOC_PATH_API_CLIENTS}")
+            options.get_option(:client_id,is_type: :mandatory)
+            options.get_option(:client_secret,is_type: :mandatory)
+            use_browser_authentication = true
+          end
+          if use_browser_authentication
+            self.format.display_status('We will use web authentication to bootstrap.')
+            auto_set_pub_key = true
+            auto_set_jwt = true
+            aoc_api.oauth.gparams[:crtype] = :web
+            aoc_api.oauth.gparams[:scope] = AoC::SCOPE_FILES_ADMIN
+            aoc_api.oauth.sparams[:redirect_uri] = DEFAULT_REDIRECT
+          end
+          myself = aoc_api.read('self')[:data]
+          if auto_set_pub_key
+            raise CliError,'Public key is already set in profile (use --override=yes)' unless myself['public_key'].empty? || option_override
+            self.format.display_status('Updating profile with new key')
+            aoc_api.update("users/#{myself['id']}",{'public_key' => pub_key_pem})
+          end
+          if auto_set_jwt
+            self.format.display_status('Enabling JWT for client')
+            aoc_api.update("clients/#{options.get_option(:client_id)}",{'jwt_grant_enabled' => true,'explicit_authorization_required' => false})
+          end
+          self.format.display_status("Creating new config preset: #{params[:preset_name]}")
+          @config_presets[params[:preset_name]] = {
+            :url.to_s         => options.get_option(:url),
+            :username.to_s    => myself['email'],
+            :auth.to_s        => :jwt.to_s,
+            :private_key.to_s => '@file:' + private_key_path
+          }
+          # set only if non nil
+          %i[client_id client_secret].each do |s|
+            o = options.get_option(s)
+            @config_presets[params[:preset_name]][s.to_s] = o unless o.nil?
+          end
+          params[:test_args] = "#{params[:plugin_name]} user profile show"
+        end
+
+        def wizard_faspex5(params)
+          self.format.display_status('Detected: Faspex v5'.bold)
+          # if not defined by user, generate name
+          params[:preset_name] = [params[:application],URI.parse(params[:instance_url]).host.gsub(/[^a-z0-9.]/,'').split('.')].flatten.join('_') if params[:preset_name].nil?
+          self.format.display_status("Preparing preset: #{params[:preset_name]}")
+          # init defaults if necessary
+          @config_presets[CONF_PRESET_DEFAULT] ||= {}
+          option_override = options.get_option(:override,is_type: :mandatory)
+          params[:option_default] = options.get_option(:default,is_type: :mandatory)
+          Log.log.error("override=#{option_override} -> #{option_override.class}")
+          raise CliError,"A default configuration already exists for plugin '#{params[:plugin_name]}' (use --override=yes or --default=no)" \
+            if !option_override && params[:option_default] && @config_presets[CONF_PRESET_DEFAULT].has_key?(params[:plugin_name])
+          raise CliError,"Preset already exists: #{params[:preset_name]}  (use --override=yes or --id=<name>)" \
+            if !option_override && @config_presets.has_key?(params[:preset_name])
+          # lets see if path to priv key is provided
+          private_key_path = options.get_option(:pkeypath)
+          # give a chance to provide
+          if private_key_path.nil?
+            self.format.display_status('Please provide path to your private RSA key, or empty to generate one:')
+            private_key_path = options.get_option(:pkeypath,is_type: :mandatory).to_s
+          end
+          # else generate path
+          if private_key_path.empty?
+            private_key_path = File.join(@main_folder,DEFAULT_PRIV_KEY_FILENAME)
+          end
+          if File.exist?(private_key_path)
+            self.format.display_status('Using existing key:')
+          else
+            self.format.display_status("Generating #{DEFAULT_PRIVKEY_LENGTH} bit RSA key...")
+            generate_rsa_private_key(private_key_path,DEFAULT_PRIVKEY_LENGTH)
+            self.format.display_status('Created:')
+          end
+          self.format.display_status(private_key_path)
+          pub_key_pem = OpenSSL::PKey::RSA.new(File.read(private_key_path)).public_key.to_s
+          # declare command line options for AoC
+          require 'aspera/cli/plugins/faspex5'
+          self.class.plugin_class(params[:plugin_name]).new(@agents.merge({skip_basic_auth_options: true}))
+          self.format.display_status('Please login to Faspex 5.'.red)
+          OpenApplication.instance.uri(params[:instance_url])
+          self.format.display_status('Navigate to: 𓃑  → Admin → Configurations → API clients')
+          self.format.display_status('Create a client with:')
+          self.format.display_status('- JWT enabled')
+          self.format.display_status('- The following public key:')
+          self.format.display_status(pub_key_pem.to_s)
+          self.format.display_status('Once created, copy the following parameters:')
+          @config_presets[params[:preset_name]] = {
+            :url.to_s           => options.get_option(:url),
+            :username.to_s      => options.get_option(:username),
+            :auth.to_s          => :jwt.to_s,
+            :private_key.to_s   => '@file:' + private_key_path,
+            :client_id.to_s     => options.get_option(:client_id,is_type: :mandatory),
+            :client_secret.to_s => options.get_option(:client_secret,is_type: :mandatory)
+          }
+          params[:test_args] = "#{params[:plugin_name]} user profile show"
         end
       end
     end

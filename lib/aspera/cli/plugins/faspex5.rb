@@ -11,7 +11,7 @@ module Aspera
       class Faspex5 < BasicAuthPlugin
         class << self
           def detect(base_url)
-            api = Rest.new({base_url: base_url})
+            api = Rest.new(base_url: base_url, redirect_max: 1)
             result = api.read('api/v5/configuration/ping')
             if result[:http].code.start_with?('2') && result[:http].body.strip.empty?
               return {version: '5'}
@@ -81,12 +81,23 @@ module Aspera
           end
         end
 
-        ACTIONS = %i[package admin].freeze
+        ACTIONS = %i[package admin user].freeze
 
         def execute_action
           set_api
           command = options.get_next_command(ACTIONS)
           case command
+          when :user
+            case options.get_next_command(%i[profile])
+            when :profile
+              case options.get_next_command(%i[show modify])
+              when :show
+                return { type: :single_object, data: @api_v5.read('account/preferences')[:data] }
+              when :modify
+                @api_v5.update('account/preferences',options.get_next_argument('modified parameters (Hash)'))
+                return Main.result_status('modified')
+              end
+            end
           when :package
             command = options.get_next_command(%i[list show send receive])
             case command
