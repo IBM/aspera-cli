@@ -85,7 +85,10 @@ module Aspera
       def http_parameters=(http)
         if @option_insecure
           url=http.inspect.gsub(/^[^ ]* /,'https://').gsub(/ [^ ]*$/,'')
-          @plugin_env[:formater].display_message(:error,"#{WARNING_FLASH} ignoring certificate for: #{url}. Only for tests, do not use in production.")
+          if !@ssl_warned_urls.include?(url)
+            @plugin_env[:formater].display_message(:error,"#{WARNING_FLASH} ignoring certificate for: #{url}. Only for tests, do not use in production.")
+            @ssl_warned_urls.push(url)
+          end
           http.verify_mode = SELF_SIGNED_CERT
         end
         http.set_debug_output($stdout) if @option_rest_debug
@@ -118,6 +121,7 @@ module Aspera
         @option_rest_debug = false
         @option_cache_tokens = true
         @option_http_options = {}
+        @ssl_warned_urls=[]
         # environment provided to plugin for various capabilities
         @plugin_env = {}
         # give command line arguments to option manager
