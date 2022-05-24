@@ -10,7 +10,7 @@ module Aspera
     private_constant :ID_SEPARATOR,:PROTECTED_CHAR_REPLACE,:WINDOWS_PROTECTED_CHAR
     def self.from_list(object_id)
       if object_id.is_a?(Array)
-        object_id = object_id.reject(&:nil?).map do |i|
+        object_id = object_id.compact.map do |i|
           i.is_a?(String) && i.start_with?('https://') ? URI.parse(i).host : i.to_s
         end.join(ID_SEPARATOR)
       end
