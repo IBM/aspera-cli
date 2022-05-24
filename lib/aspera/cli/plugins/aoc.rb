@@ -509,7 +509,7 @@ module Aspera
 
         def execute_admin_action
           # upgrade scope to admin
-          aoc_api.oauth.params[:scope] = AoC::SCOPE_FILES_ADMIN
+          aoc_api.oauth.gparams[:scope] = AoC::SCOPE_FILES_ADMIN
           command_admin = options.get_next_command(%i[ats resource usage_reports analytics subscription auth_providers])
           case command_admin
           when :auth_providers

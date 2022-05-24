@@ -8,13 +8,15 @@ require 'aspera/fasp/transfer_spec'
 require 'base64'
 
 Aspera::Oauth.register_token_creator(:aoc_pub_link,lambda{|o|
-  o.token_auth_api.call({
+  o.api.call({
     operation:   'POST',
-    subpath:     o.params[:path_token],
+    subpath:     o.gparams[:path_token],
     headers:     {'Accept' => 'application/json'},
-    json_params: o.params[:aoc_pub_link][:json],
-    url_params:  o.params[:aoc_pub_link][:url].merge(scope: o.params[:scope]) # scope is here because it changes over time (node)
+    json_params: o.sparams[:json],
+    url_params:  o.sparams[:url].merge(scope: o.gparams[:scope]) # scope is here because it changes over time (node)
   })
+},lambda { |oauth|
+  return [oauth.sparams.dig(:json,:url_token)]
 })
 
 module Aspera

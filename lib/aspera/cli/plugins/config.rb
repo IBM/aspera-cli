@@ -526,8 +526,11 @@ module Aspera
             # first try : direct
             begin
               detection_info = c.detect(current_url)
+            rescue OpenSSL::SSL::SSLError => e
+              Log.log.warn(e.message)
+              Log.log.warn('Use option --insecure=yes to ignore certificate') if e.message.include?('cert')
             rescue StandardError => e
-              Log.log.debug("Cannot detect #{plugin_name_sym} : #{e.message}")
+              Log.log.debug("Cannot detect #{plugin_name_sym} : #{e.class}/#{e.message}")
             end
             # second try : is there a redirect ?
             if detection_info.nil?
@@ -813,6 +816,12 @@ module Aspera
             plugin_name = '<replace per app>'
             test_args = '<replace per app>'
             case application
+            when :faspex5
+              self.format.display_status('Detected: Faspex v5'.bold)
+              plugin_name=application
+              # if not defined by user, generate name
+              preset_name = [application,URI.parse(instance_url).host.gsub(/[^a-z0-9.]/,'').split('.')].flatten.join('_') if preset_name.nil?
+              raise "under construction #{preset_name}"
             when :aoc
               self.format.display_status('Detected: Aspera on Cloud'.bold)
               plugin_name = AOC_COMMAND_CURRENT
@@ -890,9 +899,9 @@ module Aspera
                 self.format.display_status('We will use web authentication to bootstrap.')
                 auto_set_pub_key = true
                 auto_set_jwt = true
-                aoc_api.oauth.params[:crtype] = :web
-                aoc_api.oauth.params[:web][:redirect_uri] = DEFAULT_REDIRECT
-                aoc_api.oauth.params[:scope] = AoC::SCOPE_FILES_ADMIN
+                aoc_api.oauth.gparams[:crtype] = :web
+                aoc_api.oauth.gparams[:scope] = AoC::SCOPE_FILES_ADMIN
+                aoc_api.oauth.sparams[:redirect_uri] = DEFAULT_REDIRECT
               end
               myself = aoc_api.read('self')[:data]
               if auto_set_pub_key

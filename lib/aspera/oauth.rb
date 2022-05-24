@@ -30,27 +30,19 @@ module Aspera
     JWT_EXPIRY_OFFSET_SEC = 3600
     # tokens older than 30 minutes will be discarded from cache
     TOKEN_CACHE_EXPIRY_SEC = 1800
-    # a prefix for persistency of tokens (garbage collect)
-    PERSIST_CATEGORY_TOKEN = 'token'
+    # tokens valid for less than this duration will be regenerated
     TOKEN_EXPIRATION_GUARD_SEC = 120
+    # a prefix for persistency of tokens (simplify garbage collect)
+    PERSIST_CATEGORY_TOKEN = 'token'
 
     private_constant :JWT_NOTBEFORE_OFFSET_SEC,:JWT_EXPIRY_OFFSET_SEC,:TOKEN_CACHE_EXPIRY_SEC,:PERSIST_CATEGORY_TOKEN,:TOKEN_EXPIRATION_GUARD_SEC
 
     # persistency manager
     @persist = nil
     # token creation methods
-    @handlers = {}
+    @create_handlers = {}
     # token unique identifiers from oauth parameters
-    @id_elements = [
-      [:crtype],
-      %i[generic grant_type],
-      %i[jwt payload sub],
-      %i[auth username],
-      %i[aoc_pub_link json url_token],
-      %i[generic apikey],
-      [:scope],
-      %i[generic response_type]
-    ]
+    @id_handlers = {}
 
     class << self
       def persist_mgr=(manager)
@@ -90,21 +82,26 @@ module Aspera
         return nil
       end
 
-      # register a token creation method, specify using field :crtype in constructor
-      def register_token_creator(id, method)
-        raise 'error' unless id.is_a?(Symbol) && method.is_a?(Proc)
-        @handlers[id] = method
+      # register a token creation method
+      # @param id creation type from field :crtype in constructor
+      # @param lambda_create called to create token
+      # @param id_create called to generate unique id for token, for cache
+      def register_token_creator(id, lambda_create, id_create)
+        raise 'error' unless id.is_a?(Symbol) && lambda_create.is_a?(Proc) && id_create.is_a?(Proc)
+        @create_handlers[id] = lambda_create
+        @id_handlers[id] = id_create
       end
 
       # @return one of the registered creators for the given create type
       def token_creator(id)
-        raise "token create type unknown: #{id}/#{id.class}" unless @handlers.has_key?(id)
-        @handlers[id]
+        raise "token create type unknown: #{id}/#{id.class}" unless @create_handlers.has_key?(id)
+        @create_handlers[id]
       end
 
       # list of identifiers foundn in creation parameters that can be used to uniquely identify the token
-      def id_elements
-        return @id_elements
+      def id_creator(id)
+        raise "id create type unknown: #{id}/#{id.class}" unless @id_handlers.has_key?(id)
+        @id_handlers[id]
       end
     end # self
 
@@ -113,18 +110,24 @@ module Aspera
 
     # generic token creation, parameters are provided in :generic
     register_token_creator :generic,lambda { |oauth|
-      return oauth.create_token(oauth.params[:generic])
+      return oauth.create_token(oauth.sparams)
+    },lambda { |oauth|
+      return [
+        oauth.sparams[:grant_type]&.split(':')&.last,
+        oauth.sparams[:apikey],
+        oauth.sparams[:response_type]
+      ]
     }
 
     # Authentication using Web browser
     register_token_creator :web,lambda { |oauth|
       verification_code = SecureRandom.uuid # used to check later
-      login_page_url = Rest.build_uri("#{oauth.params[:base_url]}/#{oauth.params[:web][:path_authorize]}",
-        oauth.optional_scope_client_id.merge(response_type: 'code', redirect_uri: oauth.params[:web][:redirect_uri], state: verification_code))
+      login_page_url = Rest.build_uri("#{oauth.api[:base_url]}/#{oauth.sparams[:path_authorize]}",
+        oauth.optional_scope_client_id.merge(response_type: 'code', redirect_uri: oauth.sparams[:redirect_uri], state: verification_code))
       # here, we need a human to authorize on a web page
       Log.log.info("login_page_url=#{login_page_url}".bg_red.gray)
       # start a web server to receive request code
-      webserver = WebAuth.new(oauth.params[:web][:redirect_uri])
+      webserver = WebAuth.new(oauth.sparams[:redirect_uri])
       # start browser on login page
       OpenApplication.instance.uri(login_page_url)
       # wait for code in request
@@ -134,8 +137,11 @@ module Aspera
       return oauth.create_token(oauth.optional_scope_client_id(add_secret: true).merge(
         grant_type:   'authorization_code',
         code:         received_params['code'],
-        redirect_uri: oauth.params[:web][:redirect_uri]))
+        redirect_uri: oauth.sparams[:redirect_uri]))
+    },lambda { |_oauth|
+      return []
     }
+
     # Authentication using private key
     register_token_creator :jwt,lambda { |oauth|
       # https://tools.ietf.org/html/rfc7523
@@ -143,22 +149,24 @@ module Aspera
       require 'jwt'
       seconds_since_epoch = Time.new.to_i
       Log.log.info("seconds=#{seconds_since_epoch}")
-      raise 'missing JWT payload' unless oauth.params[:jwt][:payload].is_a?(Hash)
+      raise 'missing JWT payload' unless oauth.sparams[:payload].is_a?(Hash)
       jwt_payload = {
         exp: seconds_since_epoch + JWT_EXPIRY_OFFSET_SEC, # expiration time
         nbf: seconds_since_epoch - JWT_NOTBEFORE_OFFSET_SEC, # not before
         iat: seconds_since_epoch, # issued at
         jti: SecureRandom.uuid # JWT id
-      }.merge(oauth.params[:jwt][:payload])
+      }.merge(oauth.sparams[:payload])
       Log.log.debug("JWT jwt_payload=[#{jwt_payload}]")
-      rsa_private = oauth.params[:jwt][:private_key_obj] # type: OpenSSL::PKey::RSA
+      rsa_private = oauth.sparams[:private_key_obj] # type: OpenSSL::PKey::RSA
       Log.log.debug("private=[#{rsa_private}]")
-      assertion = JWT.encode(jwt_payload, rsa_private, 'RS256', oauth.params[:jwt][:headers] || {})
+      assertion = JWT.encode(jwt_payload, rsa_private, 'RS256', oauth.sparams[:headers] || {})
       Log.log.debug("assertion=[#{assertion}]")
       return oauth.create_token(oauth.optional_scope_client_id.merge(grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer', assertion: assertion))
+    },lambda { |oauth|
+      return [oauth.sparams.dig(:payload,:sub)]
     }
 
-    attr_reader :params, :token_auth_api
+    attr_reader :gparams, :sparams, :api
 
     private
 
@@ -180,48 +188,48 @@ module Aspera
     def initialize(a_params)
       Log.log.debug("auth=#{a_params}")
       # replace default values
-      @params = DEFAULT_CREATE_PARAMS.deep_merge(a_params)
-      if @params.has_key?(:redirect_uri)
-        uri = URI.parse(@params[:web][:redirect_uri])
+      @gparams = DEFAULT_CREATE_PARAMS.deep_merge(a_params)
+      # check that type is known
+      self.class.token_creator(@gparams[:crtype])
+      # specific parameters for the creation type
+      @sparams=@gparams[@gparams[:crtype]]
+      if @gparams[:crtype].eql?(:web) && @sparams.has_key?(:redirect_uri)
+        uri = URI.parse(@sparams[:redirect_uri])
         raise 'redirect_uri scheme must be http or https' unless %w[http https].include?(uri.scheme)
         raise 'redirect_uri must have a port' if uri.port.nil?
         # TODO: we could check that host is localhost or local address
       end
-      rest_params = {base_url: @params[:base_url]}
+      rest_params = {
+        base_url:     @gparams[:base_url],
+        redirect_max: 2
+      }
       rest_params[:auth] = a_params[:auth] if a_params.has_key?(:auth)
-      @token_auth_api = Rest.new(rest_params)
-    end
-
-    # @return unique identifier of token
-    # TODO: external handlers shall provide unique identifiers
-    def token_cache_id
-      parts = [PERSIST_CATEGORY_TOKEN,@params[:base_url]]
-      # add some of the parameters that uniquely identify the token
-      self.class.id_elements.each do |p|
-        identifier = @params.dig(*p)
-        identifier = identifier.split(':').last if identifier.is_a?(String) && p.last.eql?(:grant_type)
-        parts.push(identifier) unless identifier.nil?
-      end
-      return IdGenerator.from_list(parts)
+      @api = Rest.new(rest_params)
+      # if needed use from api
+      @gparams.delete(:base_url)
+      @gparams.delete(:auth)
+      @gparams.delete(@gparams[:crtype])
+      Log.dump(:gparams,@gparams)
+      Log.dump(:sparams,@sparams)
     end
 
     public
 
     # helper method to create token as per RFC
     def create_token(www_params)
-      return @token_auth_api.call({
+      return @api.call({
         operation:       'POST',
-        subpath:         @params[:path_token],
+        subpath:         @gparams[:path_token],
         headers:         {'Accept' => 'application/json'},
         www_body_params: www_params})
     end
 
-    # @return Hash with optional parameters
+    # @return Hash with optional general parameters
     def optional_scope_client_id(add_secret: false)
       call_params={}
-      call_params[:scope] = @params[:scope] unless @params[:scope].nil?
-      call_params[:client_id] = @params[:client_id] unless @params[:client_id].nil?
-      call_params[:client_secret] = @params[:client_secret] if add_secret && !@params[:client_id].nil?
+      call_params[:scope] = @gparams[:scope] unless @gparams[:scope].nil?
+      call_params[:client_id] = @gparams[:client_id] unless @gparams[:client_id].nil?
+      call_params[:client_secret] = @gparams[:client_secret] if add_secret && !@gparams[:client_id].nil?
       return call_params
     end
 
@@ -229,7 +237,14 @@ module Aspera
     # @param use_refresh_token set to true to force refresh or re-generation (if previous failed)
     def get_authorization(use_refresh_token: false, use_cache: true)
       # generate token unique identifier for persistency (memory/disk cache)
-      token_id = token_cache_id
+      token_id = IdGenerator.from_list([
+        PERSIST_CATEGORY_TOKEN,
+        @api.params[:base_url],
+        @gparams[:crtype],
+        self.class.id_creator(@gparams[:crtype]).call(self), # array, so we flatten later
+        @gparams[:scope],
+        @api.params.dig(%i[auth username])
+      ].flatten)
 
       # get token_data from cache (or nil), token_data is what is returned by /token
       token_data = self.class.persist_mgr.get(token_id) if use_cache
@@ -238,7 +253,7 @@ module Aspera
       # might help in case the transfer agent cannot refresh himself
       # `direct` agent is equipped with refresh code
       if !use_refresh_token && !token_data.nil?
-        decoded_token = self.class.decode_token(token_data[@params[:token_field]])
+        decoded_token = self.class.decode_token(token_data[@gparams[:token_field]])
         Log.dump('decoded_token',decoded_token) unless decoded_token.nil?
         if decoded_token.is_a?(Hash)
           expires_at_sec =
@@ -279,14 +294,14 @@ module Aspera
 
       # no cache, nor refresh: generate a token
       if token_data.nil?
-        resp = self.class.token_creator(@params[:crtype]).call(self)
+        resp = self.class.token_creator(@gparams[:crtype]).call(self)
         json_data = resp[:http].body
         token_data = JSON.parse(json_data)
         self.class.persist_mgr.put(token_id,json_data)
       end # if ! in_cache
-      raise "API error: No such field in answer: #{@params[:token_field]}" unless token_data.has_key?(@params[:token_field])
+      raise "API error: No such field in answer: #{@gparams[:token_field]}" unless token_data.has_key?(@gparams[:token_field])
       # ok we shall have a token here
-      return 'Bearer ' + token_data[@params[:token_field]]
+      return 'Bearer ' + token_data[@gparams[:token_field]]
     end
   end # OAuth
 end # Aspera
