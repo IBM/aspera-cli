@@ -16,8 +16,8 @@ module Aspera
   # https://tools.ietf.org/html/rfc6749
   class Oauth
     DEFAULT_CREATE_PARAMS = {
-      token_field: 'access_token', # field with token in result
       path_token:  'token', # default endpoint for /token to generate token
+      token_field: 'access_token', # field with token in result of call to path_token
       web:         {path_authorize: 'authorize'} # default endpoint for /authorize, used for code exchange
     }.freeze
 
@@ -87,20 +87,20 @@ module Aspera
       # @param lambda_create called to create token
       # @param id_create called to generate unique id for token, for cache
       def register_token_creator(id, lambda_create, id_create)
-        raise 'error' unless id.is_a?(Symbol) && lambda_create.is_a?(Proc) && id_create.is_a?(Proc)
+        raise 'ERROR: requites Symbol and 2 lambdas' unless id.is_a?(Symbol) && lambda_create.is_a?(Proc) && id_create.is_a?(Proc)
         @create_handlers[id] = lambda_create
         @id_handlers[id] = id_create
       end
 
       # @return one of the registered creators for the given create type
       def token_creator(id)
-        raise "token create type unknown: #{id}/#{id.class}" unless @create_handlers.has_key?(id)
+        raise "token creator type unknown: #{id}/#{id.class}" unless @create_handlers.has_key?(id)
         @create_handlers[id]
       end
 
       # list of identifiers foundn in creation parameters that can be used to uniquely identify the token
       def id_creator(id)
-        raise "id create type unknown: #{id}/#{id.class}" unless @id_handlers.has_key?(id)
+        raise "id creator type unknown: #{id}/#{id.class}" unless @id_handlers.has_key?(id)
         @id_handlers[id]
       end
     end # self
