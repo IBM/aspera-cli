@@ -89,7 +89,7 @@ module Aspera
           return transfer.start(*aoc_api.tr_spec(app,direction,node_file,ts_add))
         end
 
-        NODE4_COMMANDS = %i[browse find mkdir rename delete upload download transfer http_node_download v3 file bearer_token_node node_info].freeze
+        NODE4_COMMANDS = %i[bearer_token_node node_info browse find mkdir rename delete upload download transfer http_node_download v3 file].freeze
 
         def execute_node_gen4_command(command_repo,top_node_file)
           case command_repo
@@ -277,6 +277,7 @@ module Aspera
                     'shared_with_name'  => access_id,
                     'access_key'        => node_file[:node_info]['access_key'],
                     'node'              => node_file[:node_info]['name']}}}}}
+                #node_api = aoc_api.get_node_api(node_file[:node_info])
                 item = node_api.create('permissions',params)[:data]
                 return {type: :single_object,data: item}
               else raise "internal error:shall not reach here (#{command_perm})"
@@ -284,7 +285,7 @@ module Aspera
             else raise "internal error:shall not reach here (#{command_node_file})"
             end
           end # command_repo
-          raise 'ERR'
+          raise 'internal error:shall not reach here'
         end # execute_node_gen4_command
         AOC_PARAMS_COPY=%i[link url auth client_id client_secret scope redirect_uri private_key username password].freeze
         # build constructor option list for AoC based on options of CLI
@@ -760,11 +761,15 @@ module Aspera
                 node_id = shared_create_data.has_key?('node_id') ? shared_create_data['node_id'] : ws_info['node_id']
                 # remove from creation data if present, as it is not a standard argument
                 shared_create_data.delete('node_id')
+                # get optional link_name
+                opt_link_name=shared_create_data['link_name']
+                shared_create_data.delete('link_name')
                 raise 'missing node information: path' unless shared_create_data.has_key?('path')
                 folder_path=shared_create_data['path']
                 shared_create_data.delete('path')
                 node_file={node_info: aoc_api.read("nodes/#{node_id}")[:data], file_id: 1}
                 node_file = aoc_api.resolve_node_file(node_file,folder_path)
+                node_api = aoc_api.get_node_api(node_file[:node_info])
                 access_id = "#{ID_AK_ADMIN}_WS_#{ws_info['id']}"
                 # use can specify: tags.aspera.files.workspace.share_as  to  File.basename(folder_path)
                 default_create_data = {
@@ -784,7 +789,19 @@ module Aspera
                     'node'              => node_file[:node_info]['name']}
                 }}}}
                 shared_create_data = default_create_data.deep_merge(default_create_data) # ?aspera-node-basic=#{node_id}&aspera-node-prefer-basic=#{node_id}
-                return { type: :single_object, data: aoc_api.create("node/#{node_id}/permissions",shared_create_data)}
+                created_data = node_api.create('permissions',shared_create_data)[:data]
+                #created_data=aoc_api.create("node/#{node_id}/permissions",shared_create_data)[:data]
+                # TODO: send event
+                event_creation={
+                  'types'        => ['permission.created'],
+                  'node_id'      => node_file[:node_info]['id'],
+                  'workspace_id' => ws_info['id'],
+                  'data'         => created_data # Response from previous step
+                }
+                #(optional). The name of the folder to be displayed to the destination user. Use it if its value is different from the "share_as" field.
+                event_creation['link_name']=opt_link_name unless opt_link_name.nil?
+                aoc_api.create('events',event_creation)
+                return { type: :single_object, data: created_data}
               end
             else raise 'unknown command'
             end
