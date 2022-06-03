@@ -200,11 +200,9 @@ An internet connection is required for the installation. If you don't have inter
 
 ### Docker container
 
-Use this method only if you know what you do, else use the standard recommended method as described here above.
+This method installs a docker image that contains: Ruby, <%=tool%> and the FASP SDK.
 
-This method installs a docker image that contains: Ruby, <%=tool%> and the FASP sdk.
-
-The image is: [https://hub.docker.com/r/martinlaurent/ascli](https://hub.docker.com/r/martinlaurent/ascli)
+The image is: <https://hub.docker.com/r/martinlaurent/ascli>. It is built from this [Dockerfile](Dockerfile).
 
 Ensure that you have Docker installed.
 
@@ -212,10 +210,16 @@ Ensure that you have Docker installed.
 docker --version
 ```
 
-Download the wrapping script:
+An example of wrapping script is provided: `dascli`. If you have installed <%=tool%>, the script `dascli` can be found:
 
 ```bash
-curl -o <%=cmd%> https://raw.githubusercontent.com/IBM/aspera-cli/develop/bin/dascli
+cp $(ascli conf gem path)/../examples/dascli <%=cmd%>
+```
+
+Alternatively [download from the GIT repo](https://raw.githubusercontent.com/IBM/aspera-cli/main/examples/dascli) :
+
+```bash
+curl -o <%=cmd%> https://raw.githubusercontent.com/IBM/aspera-cli/main/examples/dascli
 ```
 
 ```bash
@@ -228,14 +232,13 @@ Install the container image:
 ./<%=cmd%> install
 ```
 
-Start using it !
+Note that <%=cmd%> is run in the container, so transfers are also executed in the container (not calling host, like for the regular <%=cmd%>).
 
-Note that the tool is run in the container, so transfers are also executed in the container, not calling host.
-
-The wrapping script maps the container folder `/usr/src/app/config` to configuration folder `$HOME/.aspera/<%=cmd%>` on host.
+The wrapping script maps the folder `/usr/src/app/config` in the container to configuration folder `$HOME/.aspera/<%=cmd%>` on host.
+This allows having persistent configuration.
 
 To transfer to/from the native host, you will need to map a volume in docker or use the config folder (already mapped).
-To add local storage as a volume edit the script: <%=tool%> and add a `--volume` stanza.
+To add local storage as a volume edit the script: <%=tool%> and add a `--volume` stanza near the existing one.
 
 ### <a id="ruby"></a>Ruby
 
