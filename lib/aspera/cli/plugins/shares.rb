@@ -37,10 +37,10 @@ module Aspera
               Rest.
                 new(base_url: options.get_option(:url,is_type: :mandatory)+'/node_api').
                 call(
-                operation: 'GET',
-                subpath: 'ping',
-                headers: {'content-type': 'application/json'},
-                return_error: true)
+                  operation: 'GET',
+                  subpath: 'ping',
+                  headers: {'content-type': 'application/json'},
+                  return_error: true)
               nagios.add_ok('shares api','accessible')
             rescue StandardError => e
               nagios.add_critical('node api',e.to_s)

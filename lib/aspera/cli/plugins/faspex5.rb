@@ -159,7 +159,7 @@ module Aspera
               res_type = options.get_next_command(%i[accounts contacts jobs workgroups shared_inboxes nodes oauth_clients registrations saml_configs metadata_profiles])
               res_path = list_key = res_type.to_s
               case res_type
-              when :metadata_profiles 
+              when :metadata_profiles
                 res_path='configuration/metadata_profiles'
                 list_key='profiles'
               end
