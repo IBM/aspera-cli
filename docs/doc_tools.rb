@@ -46,7 +46,7 @@ def spec_table
     r << '<th>' << c.to_s.upcase << '</th>'
   end
   r << '<th>Description</th></tr>' << "\n"
-  Aspera::Fasp::Parameters.man_table.sort{|a,b|a[:name]<=>b[:name]}.each do |p|
+  Aspera::Fasp::Parameters.man_table.sort_by { |a| a[:name] }.each do |p|
     p[:description] += (p[:description].empty? ? '' : "\n") + '(' + p[:cli] + ')' unless p[:cli].to_s.empty?
     p.delete(:cli)
     p.keys.each{|c|p[c] = '&nbsp;' if p[c].to_s.empty?}
@@ -124,7 +124,7 @@ REPLACEMENTS = [
 ].freeze
 
 def all_test_commands_by_plugin
-  if $commands.nil?
+  if @commands.nil?
     commands = {}
     File.open(@env[:TEST_MAKEFILE]) do |f|
       f.each_line do |line|
@@ -140,9 +140,9 @@ def all_test_commands_by_plugin
     commands.keys.each do |plugin|
       commands[plugin]=commands[plugin].sort.uniq
     end
-    $commands=commands
+    @commands=commands
   end
-  return $commands
+  return @commands
 end
 
 def include_commands_for_plugin(plugin_name)

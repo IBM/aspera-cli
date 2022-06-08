@@ -1191,8 +1191,9 @@ module Aspera
 
         def wizard_faspex5(params)
           self.format.display_status('Detected: Faspex v5'.bold)
-          # if not defined by user, generate name
-          params[:preset_name] = [params[:application],URI.parse(params[:instance_url]).host.gsub(/[^a-z0-9.]/,'').split('.')].flatten.join('_') if params[:preset_name].nil?
+          # if not defined by user, generate unique name
+          params[:preset_name] = [params[:application],URI.parse(params[:instance_url]).host.gsub(/[^a-z0-9.]/,'').split('.')].flatten.join('_') \
+            if params[:preset_name].nil?
           self.format.display_status("Preparing preset: #{params[:preset_name]}")
           # init defaults if necessary
           @config_presets[CONF_PRESET_DEFAULT] ||= {}
