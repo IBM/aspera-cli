@@ -441,7 +441,7 @@ module Aspera
 
         def normalize_metadata(pkg_data)
           case pkg_data['metadata']
-          when Array,NilClass then return
+          when Array,NilClass # no action
           when Hash
             api_meta = []
             pkg_data['metadata'].each do |k,v|
@@ -454,7 +454,38 @@ module Aspera
             pkg_data['metadata'] = api_meta
           else raise "metadata field if not of expected type: #{pkg_meta.class}"
           end
-          nil
+          return nil
+        end
+
+        # Check metadata: remove when done server side
+        def validate_metadata(pkg_data)
+          return unless pkg_data['recipients'].is_a?(Array) &&
+          pkg_data['recipients'].first.is_a?(Hash) &&
+          pkg_data['recipients'].first.has_key?('type') &&
+          pkg_data['recipients'].first['type'].eql?('dropbox')
+
+          shbx_kid = pkg_data['recipients'].first['id'] # || raise 'missing shared inbox identifier'
+          meta_schema = aoc_api.read("dropboxes/#{shbx_kid}")[:data]['metadata_schema']
+          if meta_schema.nil?
+            raise 'no metadata in shared inbox' unless meta_schema.nil?
+            return
+          end
+          pkg_meta = pkg_data['metadata']
+          raise "package requires metadata: #{meta_schema}" unless pkg_data.has_key?('metadata')
+          raise 'metadata must be an Array' unless pkg_meta.is_a?(Array)
+          Log.dump(:metadata,pkg_meta)
+          pkg_meta.each do |field|
+            raise 'metadata field must be Hash' unless field.is_a?(Hash)
+            raise 'metadata field must have name' unless field.has_key?('name')
+            raise 'metadata field must have values' unless field.has_key?('values')
+            raise 'metadata values must be an Array' unless field['values'].is_a?(Array)
+            raise "unknown metadata field: #{field['name']}" if meta_schema.select{|i|i['name'].eql?(field['name'])}.empty?
+          end
+          meta_schema.each do |field|
+            provided=pkg_meta.select{|i|i['name'].eql?(field['name'])}
+            raise "only one field with name #{field['name']} allowed" if provided.count > 1
+            raise "missing mandatory field: #{field['name']}" if field['required'] && provided.empty?
+          end
         end
 
         # private
@@ -711,9 +742,9 @@ module Aspera
               res_data = aoc_api.read(resource_instance_path)[:data]
               api_node = aoc_api.get_node_api(res_data)
               return Node.new(@agents.merge(skip_basic_auth_options: true, node_api: api_node)).execute_action if command.eql?(:v3)
-              ak_data = api_node.call({operation: 'GET',subpath: "access_keys/#{res_data['access_key']}",headers: {'Accept' => 'application/json'}})[:data]
+              ak_root_file_id = api_node.read("access_keys/#{res_data['access_key']}")[:data]['root_file_id']
               command_repo = options.get_next_command(NODE4_COMMANDS)
-              return execute_node_gen4_command(command_repo,{node_info: res_data, file_id: ak_data['root_file_id']})
+              return execute_node_gen4_command(command_repo,{node_info: res_data, file_id: ak_root_file_id})
             when :shared_folder
               Log.log.warn('ATTENTION: under development')
               # inside a workspace
@@ -884,6 +915,7 @@ module Aspera
               resolve_package_recipients(package_data,'recipients')
               resolve_package_recipients(package_data,'bcc_recipients')
               normalize_metadata(package_data)
+              validate_metadata(package_data)
 
               #  create a new package container
               package_info = aoc_api.create('packages',package_data)[:data]
