@@ -6,9 +6,29 @@ require 'xmlsimple'
 
 module Aspera
   class CosNode < Rest
-    attr_reader :add_ts
+    class << self
+      def parameters_from_svc_creds(service_credentials,bucket_region)
+        # check necessary contents
+        raise 'service_credentials must be a Hash' unless service_credentials.is_a?(Hash)
+        %w[apikey resource_instance_id endpoints].each do |field|
+          raise "service_credentials must have a field: #{field}" unless service_credentials.has_key?(field)
+        end
+        Aspera::Log.dump('service_credentials',service_credentials)
+        # read endpoints from service provided in service credentials
+        endpoints = Aspera::Rest.new({base_url: service_credentials['endpoints']}).read('')[:data]
+        Aspera::Log.dump('endpoints',endpoints)
+        storage_endpoint = endpoints.dig('service-endpoints','regional',bucket_region,'public',bucket_region)
+        raise "no such region: #{bucket_region}" if storage_endpoint.nil?
+        return {
+          instance_id:      service_credentials['resource_instance_id'],
+          service_api_key:  service_credentials['apikey'],
+          storage_endpoint: "https://#{storage_endpoint}"
+        }
+      end
+    end
     IBM_CLOUD_TOKEN_URL = 'https://iam.cloud.ibm.com/identity'
     TOKEN_FIELD = 'delegated_refresh_token'
+    attr_reader :add_ts
     def initialize(bucket_name,storage_endpoint,instance_id,api_key,auth_url=IBM_CLOUD_TOKEN_URL)
       @auth_url = auth_url
       @api_key = api_key
@@ -62,7 +82,7 @@ module Aspera
           apikey:              @api_key,
           receiver_client_ids: 'aspera_ats'
         }})
-      # get delagated token to be placed in rest call header and in transfer tags
+      # get delegated token to be placed in rest call header and in transfer tags
       @add_ts['tags']['aspera']['node']['storage_credentials']['token'][TOKEN_FIELD] = delegated_oauth.get_authorization.gsub(/^Bearer /,'')
       @params[:headers] = {'X-Aspera-Storage-Credentials' => JSON.generate(@add_ts['tags']['aspera']['node']['storage_credentials'])}
     end

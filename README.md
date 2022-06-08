@@ -2197,37 +2197,37 @@ ascli server upload "faux:///mydir?file=testfile&count=1m&size=0&inc=2&seq=seque
 
 ### <a id="usage"></a>Usage
 
-```bash
+```text
 ascli -h
 NAME
-	ascli -- a command line tool for Aspera Applications (v4.8.0.pre)
+        ascli -- a command line tool for Aspera Applications (v4.8.0.pre)
 
 SYNOPSIS
-	ascli COMMANDS [OPTIONS] [ARGS]
+        ascli COMMANDS [OPTIONS] [ARGS]
 
 DESCRIPTION
-	Use Aspera application to perform operations on command line.
-	Documentation and examples: https://rubygems.org/gems/aspera-cli
-	execute: ascli conf doc
-	or visit: https://www.rubydoc.info/gems/aspera-cli
-	source repo: https://github.com/IBM/aspera-cli
+        Use Aspera application to perform operations on command line.
+        Documentation and examples: https://rubygems.org/gems/aspera-cli
+        execute: ascli conf doc
+        or visit: https://www.rubydoc.info/gems/aspera-cli
+        source repo: https://github.com/IBM/aspera-cli
 
 ENVIRONMENT VARIABLES
-	ASCLI_HOME config folder, default: $HOME/.aspera/ascli
-	Any option can be set as an environment variable, refer to the manual
+        ASCLI_HOME config folder, default: $HOME/.aspera/ascli
+        Any option can be set as an environment variable, refer to the manual
 
 COMMANDS
-	To list first level commands, execute: ascli
-	Note that commands can be written shortened (provided it is unique).
+        To list first level commands, execute: ascli
+        Note that commands can be written shortened (provided it is unique).
 
 OPTIONS
-	Options begin with a '-' (minus), and value is provided on command line.
-	Special values are supported beginning with special prefix @pfx:, where pfx is one of:
-	base64, json, zlib, ruby, csvt, lines, list, incps, val, file, path, env, uri, stdin, preset
-	Dates format is 'DD-MM-YY HH:MM:SS', or 'now' or '-<num>h'
+        Options begin with a '-' (minus), and value is provided on command line.
+        Special values are supported beginning with special prefix @pfx:, where pfx is one of:
+        base64, json, zlib, ruby, csvt, lines, list, incps, val, file, path, env, uri, stdin, preset
+        Dates format is 'DD-MM-YY HH:MM:SS', or 'now' or '-<num>h'
 
 ARGS
-	Some commands require mandatory arguments, e.g. a path.
+        Some commands require mandatory arguments, e.g. a path.
 
 OPTIONS: global
         --interactive=ENUM           use interactive input of missing params: yes, [no]
@@ -2371,12 +2371,13 @@ OPTIONS:
 COMMAND: cos
 SUBCOMMANDS: node
 OPTIONS:
-        --bucket=VALUE               IBM Cloud Object Storage bucket name
-        --endpoint=VALUE             storage endpoint url
-        --apikey=VALUE               storage API key
-        --crn=VALUE                  ressource instance id
+        --bucket=VALUE               Bucket name
+        --endpoint=VALUE             Storage endpoint url
+        --apikey=VALUE               Storage API key
+        --crn=VALUE                  Ressource instance id
         --service-credentials=VALUE  IBM Cloud service credentials (Hash)
-        --region=VALUE               IBM Cloud Object storage region
+        --region=VALUE               Storage region
+        --identity=VALUE             Authentication url (https://iam.cloud.ibm.com/identity)
 
 
 COMMAND: faspex
@@ -2493,7 +2494,7 @@ It is recommended to use the wizard to set it up, but manual configuration is al
 
 `ascli` provides a configuration wizard. Here is a sample invocation :
 
-```bash
+```text
 ascli config wizard
 option: url> https://myorg.ibmaspera.com
 Detected: Aspera on Cloud

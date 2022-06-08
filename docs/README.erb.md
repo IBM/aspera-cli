@@ -2078,7 +2078,7 @@ Examples:
 
 ### <a id="usage"></a>Usage
 
-```bash
+```text
 <%=cmd%> -h
 <%=include_usage%>
 
@@ -2096,7 +2096,7 @@ It is recommended to use the wizard to set it up, but manual configuration is al
 
 <%=tool%> provides a configuration wizard. Here is a sample invocation :
 
-```bash
+```text
 <%=cmd%> config wizard
 option: url> https://myorg.ibmaspera.com
 Detected: Aspera on Cloud
