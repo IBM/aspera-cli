@@ -169,7 +169,7 @@ module Aspera
       end
     end # static methods
 
-    # @param :link,:url,:auth,:client_id,:client_secret,:scope,:redirect_uri,:private_key,:username,:subpath,:password (for pub link)
+    # @param :link,:url,:auth,:client_id,:client_secret,:scope,:redirect_uri,:private_key,:passphrase,:username,:subpath,:password (for pub link)
     def initialize(opt)
       raise ArgumentError,'Missing mandatory option: scope' if opt[:scope].nil?
 
@@ -221,7 +221,7 @@ module Aspera
         raise ArgumentError,'Missing mandatory option: private_key' if opt[:private_key].nil?
         raise ArgumentError,'Missing mandatory option: username' if opt[:username].nil?
         aoc_auth_p[:jwt] = {
-          private_key_obj: OpenSSL::PKey::RSA.new(opt[:private_key]),
+          private_key_obj: OpenSSL::PKey::RSA.new(opt[:private_key],opt[:passphrase]),
           payload:         {
             iss: aoc_auth_p[:client_id],  # issuer
             sub: opt[:username],          # subject

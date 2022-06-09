@@ -52,6 +52,7 @@ module Aspera
           options.add_opt_simple(:client_secret,'OAuth API client passcode')
           options.add_opt_simple(:redirect_uri,'OAuth API client redirect URI')
           options.add_opt_simple(:private_key,'OAuth JWT RSA private key PEM value (prefix file path with @val:@file:)')
+          options.add_opt_simple(:passphrase,'RSA private key passphrase')
           options.add_opt_simple(:workspace,'name of workspace')
           options.add_opt_simple(:name,'resource name')
           options.add_opt_simple(:path,'file or folder path')
@@ -287,11 +288,11 @@ module Aspera
           end # command_repo
           raise 'internal error:shall not reach here'
         end # execute_node_gen4_command
-        AOC_PARAMS_COPY=%i[link url auth client_id client_secret scope redirect_uri private_key username password].freeze
+        AOC_PARAMS_COPY=%i[link url auth client_id client_secret scope redirect_uri private_key passphrase username password].freeze
         # build constructor option list for AoC based on options of CLI
         def aoc_params(subpath)
           # copy command line options to args
-          opt = AOC_PARAMS_COPY.each_with_object({}){|i,m|m[i] = options.get_option(i);}
+          opt = AOC_PARAMS_COPY.each_with_object({}){|i,m|m[i] = options.get_option(i)}
           opt[:subpath] = subpath
           return opt
         end

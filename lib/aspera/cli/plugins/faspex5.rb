@@ -30,7 +30,7 @@ module Aspera
           options.add_opt_simple(:client_secret,'OAuth client secret')
           options.add_opt_simple(:redirect_uri,'OAuth redirect URI for web authentication')
           options.add_opt_list(:auth,[Oauth::STD_AUTH_TYPES,:boot].flatten,'OAuth type of authentication')
-          options.add_opt_simple(:private_key,'RSA private key PEM value for Oauth JWT (prefix file path with @file:)')
+          options.add_opt_simple(:private_key,'OAuth JWT RSA private key PEM value (prefix file path with @val:@file:)')
           options.add_opt_simple(:passphrase,'RSA private key passphrase')
           options.set_option(:auth,:jwt)
           options.parse_options!
