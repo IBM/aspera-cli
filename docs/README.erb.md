@@ -1320,6 +1320,8 @@ Available loggers: `stdout`, `stderr`, `syslog`.
 
 Available levels: `debug`, `info`, `warn`, `error`.
 
+Note that when using the `direct` agent (`ascp`), additional transfer logs can be activated using `ascp` option `EX_ascp_args`, see [`direct`](#agt_direct).
+
 Examples:
 
 * display debugging log on `stdout`:
@@ -1638,6 +1640,14 @@ Examples:
 <%=cmd%> ... --transfer-info=@json:'{"wss":true,"resume":{"iter_max":20}}'
 <%=cmd%> ... --transfer-info=@json:'{"spawn_delay_sec":2.5,"multi_incr_udp":false}'
 ```
+
+Note that the `direct` agent supports additional `transfer_spec` parameters starting with `EX_` (extended).
+In particular the field, `EX_ascp_args` which is a list of additional command line options to `ascp`.
+
+This can be useful to activate logging using option `-L` of ascp.
+For example the option `--ts=@json:'{"EX_ascp_args":["-DDL-"]}'` will activate debug level 2 for `ascp` (`DD`), and display those logs on the terminal (`-`).
+This is useful if the transfer fails.
+To store ascp logs in file `aspera-scp-transfer.log` in a folder, use `--ts=@json:'{"EX_ascp_args":["-L","/path/to/folder"]}'`.
 
 #### <a id="agt_connect"></a>IBM Aspera Connect Client GUI
 
@@ -2305,6 +2315,27 @@ Once client has been registered and <%=prst%> created: <%=tool%> can be used:
 ```output
 Current Workspace: Default Workspace (default)
 empty
+```
+
+### Calling AoC APIs from command line
+
+The command `ascli aoc bearer` can be used to generate an OAuth token suitable to call any AoC API (use the `scope` option to change the scope, default is `user:all`).
+This can be useful when a command is not yet available.
+
+Example:
+
+```bash
+curl -s -H "Authorization: $(ascli aoc bearer_token)" 'https://api.ibmaspera.com/api/v1/group_memberships?embed[]=dropbox&embed[]=workspace'|jq -r '.[]|(.workspace.name + " -> " + .dropbox.name)'
+```
+
+It is also possible to get the bearer token for node, as user or as admin using:
+
+```bash
+ascli aoc files bearer_token_node /
+```
+
+```bash
+ascli aoc admin res node v4 1234 --secret=_ak_secret_here_ bearer_token_node /
 ```
 
 ### Administration

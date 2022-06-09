@@ -51,7 +51,7 @@ module Aspera
           options.add_opt_simple(:client_id,'OAuth API client identifier in application')
           options.add_opt_simple(:client_secret,'OAuth API client passcode')
           options.add_opt_simple(:redirect_uri,'OAuth API client redirect URI')
-          options.add_opt_simple(:private_key,'OAuth JWT RSA private key PEM value (prefix file path with @val:@file:)')
+          options.add_opt_simple(:private_key,'OAuth JWT RSA private key PEM value (prefix file path with @file:)')
           options.add_opt_simple(:passphrase,'RSA private key passphrase')
           options.add_opt_simple(:workspace,'name of workspace')
           options.add_opt_simple(:name,'resource name')

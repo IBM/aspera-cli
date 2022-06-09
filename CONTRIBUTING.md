@@ -33,7 +33,7 @@ If you want to contribute, please:
 * **Bonus Points** go out to anyone who also updates `CHANGELOG.md` :)
 * Send a pull request on GitHub.
 
-## Running Individual Tests
+## Running Tests
 
 First, a testing environment must be created:
 
@@ -94,3 +94,13 @@ rm aspera-cli-certificate.pem
 ```bash
 gem install -P HighSecurity aspera-cli
 ```
+
+## Docker image build
+
+### on MacOS using ubuntu multipass
+
+Install [multipass](https://multipass.run/docs) with [brew](https://multipass.run/docs/installing-on-macos#heading--use-brew):
+
+[Initialize the docker environment](https://multipass.run/docs/docker-tutorial).
+
+Make sure the ubuntu user in container is part of the docker group.
