@@ -3,6 +3,7 @@
 require 'aspera/cli/basic_auth_plugin'
 require 'aspera/persistency_action_once'
 require 'aspera/id_generator'
+require 'aspera/nagios'
 require 'securerandom'
 
 module Aspera
@@ -37,9 +38,9 @@ module Aspera
         end
 
         def set_api
-          faxpex5_api_base_url = options.get_option(:url,is_type: :mandatory)
-          faxpex5_api_v5_url = "#{faxpex5_api_base_url}/api/v5"
-          @faxpex5_api_auth_url = "#{faxpex5_api_base_url}/auth"
+          @faxpex5_api_base_url = options.get_option(:url,is_type: :mandatory).gsub(%r{/+$},'')
+          @faxpex5_api_auth_url = "#{@faxpex5_api_base_url}/auth"
+          faxpex5_api_v5_url = "#{@faxpex5_api_base_url}/api/v5"
           case options.get_option(:auth,is_type: :mandatory)
           when :boot
             # the password here is the token copied directly from browser in developer mode
@@ -81,12 +82,23 @@ module Aspera
           end
         end
 
-        ACTIONS = %i[package admin user].freeze
+        ACTIONS = %i[health package admin user].freeze
 
         def execute_action
           set_api
           command = options.get_next_command(ACTIONS)
           case command
+          when :health
+            nagios = Nagios.new
+            begin
+              result=Rest.new(base_url: @faxpex5_api_base_url).read('health')[:data]
+              result.each do |k,v|
+                nagios.add_ok(k,v.to_s)
+              end
+            rescue StandardError => e
+              nagios.add_critical('faspex api',e.to_s)
+            end
+            return nagios.result
           when :user
             case options.get_next_command(%i[profile])
             when :profile
