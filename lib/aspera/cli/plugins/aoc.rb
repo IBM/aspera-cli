@@ -324,7 +324,13 @@ module Aspera
             when NilClass then nil
             else raise CliError,'unexpected value type for workspace'
             end
-          @workspace_info = ws_id.nil? ? { 'id' => :undefined, 'name' => :undefined } : aoc_api.read("workspaces/#{ws_id}")[:data]
+          @workspace_info =
+            begin
+              aoc_api.read("workspaces/#{ws_id}")[:data]
+            rescue Aspera::RestCallError => e
+              Log.log.debug(e.message)
+              { 'id' => :undefined, 'name' => :undefined }
+            end
           Log.dump(:workspace_data,@workspace_info)
           # display workspace
           self.format.display_status("Current Workspace: #{@workspace_info['name'].to_s.red}#{@workspace_info['id'] == default_workspace_id ? ' (default)' : ''}")
