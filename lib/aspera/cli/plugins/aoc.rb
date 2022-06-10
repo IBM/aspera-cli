@@ -38,9 +38,7 @@ module Aspera
 
         def initialize(env)
           super(env)
-          @default_workspace_id = nil
-          @workspace_name = nil
-          @workspace_id = nil
+          @workspace_info = nil
           @persist_ids = nil
           @home_node_file = nil
           @api_aoc = nil
@@ -62,13 +60,16 @@ module Aspera
           options.add_opt_simple(:scope,'OAuth scope for AoC API calls')
           options.add_opt_boolean(:bulk,'bulk operation')
           options.add_opt_boolean(:default_ports,'use standard FASP ports or get from node api')
+          options.add_opt_boolean(:validate_metadata,'validate shared inbox metadata')
           options.set_option(:bulk,:no)
           options.set_option(:default_ports,:yes)
+          options.set_option(:validate_metadata,:yes)
           options.set_option(:new_user_option,{'package_contact' => true})
           options.set_option(:operation,:push)
           options.set_option(:auth,:jwt)
           options.set_option(:scope,AoC::SCOPE_FILES_USER)
           options.set_option(:private_key,'@file:' + env[:private_key_path]) if env[:private_key_path].is_a?(String)
+          options.set_option(:workspace,:default)
           options.parse_options!
           AoC.use_standard_ports = options.get_option(:default_ports)
           return if env[:man_only]
@@ -85,7 +86,7 @@ module Aspera
 
         # starts transfer using transfer agent
         def transfer_start(app,direction,node_file,ts_add)
-          ts_add.deep_merge!(AoC.analytics_ts(app,direction,@workspace_id,@workspace_name))
+          ts_add.deep_merge!(AoC.analytics_ts(app,direction,@workspace_info['id'],@workspace_info['name']))
           ts_add.deep_merge!(aoc_api.console_ts(app))
           return transfer.start(*aoc_api.tr_spec(app,direction,node_file,ts_add))
         end
@@ -261,7 +262,7 @@ module Aspera
               when :create
                 #create_param=self.options.get_next_argument('creation data (Hash)')
                 set_workspace_info
-                access_id = "#{ID_AK_ADMIN}_WS_#{@workspace_id}"
+                access_id = "#{ID_AK_ADMIN}_WS_#{@workspace_info['id']}"
                 node_file[:node_info]
                 params = {
                   'file_id'       => node_file[:file_id], # mandatory
@@ -269,8 +270,8 @@ module Aspera
                   'access_id'     => access_id, # id of user or group
                   'access_levels' => Aspera::Node::ACCESS_LEVELS,
                   'tags'          => {'aspera' => {'files' => {'workspace' => {
-                    'id'                => @workspace_id,
-                    'workspace_name'    => @workspace_name,
+                    'id'                => @workspace_info['id'],
+                    'workspace_name'    => @workspace_info['name'],
                     'user_name'         => aoc_api.user_info['name'],
                     'shared_by_user_id' => aoc_api.user_info['id'],
                     'shared_by_name'    => aoc_api.user_info['name'],
@@ -299,50 +300,34 @@ module Aspera
 
         # initialize apis and authentication
         # set:
-        # @default_workspace_id
-        # @workspace_name
-        # @workspace_id
+        # @workspace_info
         # @persist_ids
         # returns nil
         def set_workspace_info
           @url_token_data = aoc_api.url_token_data
           if @url_token_data.nil?
-            @default_workspace_id = aoc_api.user_info['default_workspace_id']
+            default_workspace_id = aoc_api.user_info['default_workspace_id']
             @persist_ids = [aoc_api.user_info['id']]
           else
-            @default_workspace_id = @url_token_data['data']['workspace_id']
+            default_workspace_id = @url_token_data['data']['workspace_id']
             @persist_ids = [] # TODO : @url_token_data['id'] ?
           end
 
           ws_name = options.get_option(:workspace)
-          if ws_name.nil?
-            Log.log.debug('using default workspace'.green)
-            if @default_workspace_id.eql?(nil)
-              raise CliError,'no default workspace defined for user, please specify workspace'
+          ws_id =
+            case ws_name
+            when :default
+              Log.log.debug('Using default workspace'.green)
+              raise CliError,'No default workspace defined for user, please specify workspace' if default_workspace_id.nil?
+              default_workspace_id
+            when String then aoc_api.lookup_entity_by_name('workspaces',ws_name)['id']
+            when NilClass then nil
+            else raise CliError,'unexpected value type for workspace'
             end
-            # get default workspace
-            @workspace_id = @default_workspace_id
-          else
-            # lookup another workspace
-            wss = aoc_api.read('workspaces',{'q' => ws_name})[:data]
-            wss = wss.select { |i| i['name'].eql?(ws_name) }
-            case wss.length
-            when 0
-              raise CliBadArgument,"no such workspace: #{ws_name}"
-            when 1
-              @workspace_id = wss.first['id']
-            else
-              raise 'multiple match for workspace'
-            end
-          end
-          @workspace_data = aoc_api.read("workspaces/#{@workspace_id}")[:data]
-          Log.log.debug("workspace_id=#{@workspace_id},@workspace_data=#{@workspace_data}".red)
-
-          @workspace_name ||= @workspace_data['name']
-          Log.log.info('current workspace is ' + @workspace_name.red)
-
+          @workspace_info = ws_id.nil? ? { 'id' => :undefined, 'name' => :undefined } : aoc_api.read("workspaces/#{ws_id}")[:data]
+          Log.dump(:workspace_data,@workspace_info)
           # display workspace
-          self.format.display_status("Current Workspace: #{@workspace_name.red}#{@workspace_id == @default_workspace_id ? ' (default)' : ''}")
+          self.format.display_status("Current Workspace: #{@workspace_info['name'].to_s.red}#{@workspace_info['id'] == default_workspace_id ? ' (default)' : ''}")
           return nil
         end
 
@@ -353,8 +338,8 @@ module Aspera
             home_node_id = @url_token_data['data']['node_id']
             home_file_id = @url_token_data['data']['file_id']
           end
-          home_node_id ||= @workspace_data['home_node_id'] || @workspace_data['node_id']
-          home_file_id ||= @workspace_data['home_file_id']
+          home_node_id ||= @workspace_info['home_node_id'] || @workspace_info['node_id']
+          home_file_id ||= @workspace_info['home_file_id']
           raise 'Cannot get users home node id' if home_node_id.to_s.empty?
           @home_node_file = {
             node_info: aoc_api.read("nodes/#{home_node_id}")[:data],
@@ -419,11 +404,11 @@ module Aspera
               # email: user, else dropbox
               entity_type = short_recipient_info.include?('@') ? 'contacts' : 'dropboxes'
               begin
-                full_recipient_info = aoc_api.lookup_entity_by_name(entity_type,short_recipient_info,{'current_workspace_id' => @workspace_id})
+                full_recipient_info = aoc_api.lookup_entity_by_name(entity_type,short_recipient_info,{'current_workspace_id' => @workspace_info['id']})
               rescue RuntimeError => e
-                raise e unless e.message.eql?('not found')
-                raise "no such shared inbox in workspace #{@workspace_name}" unless entity_type.eql?('contacts')
-                full_recipient_info = aoc_api.create('contacts',{'current_workspace_id' => @workspace_id,'email' => short_recipient_info}.merge(new_user_option))[:data]
+                raise e unless e.message.start_with?(Aspera::AoC::ENTITY_NOT_FOUND)
+                raise "no such shared inbox in workspace #{@workspace_info['name']}" unless entity_type.eql?('contacts')
+                full_recipient_info = aoc_api.create('contacts',{'current_workspace_id' => @workspace_info['id'],'email' => short_recipient_info}.merge(new_user_option))[:data]
               end
               short_recipient_info = if entity_type.eql?('dropboxes')
                 {'id' => full_recipient_info['id'],'type' => 'dropbox'}
@@ -458,17 +443,19 @@ module Aspera
           return nil
         end
 
-        # Check metadata: remove when done server side
+        # Check metadata: remove when validation is done server side
         def validate_metadata(pkg_data)
-          return unless pkg_data['recipients'].is_a?(Array) &&
-          pkg_data['recipients'].first.is_a?(Hash) &&
-          pkg_data['recipients'].first.has_key?('type') &&
-          pkg_data['recipients'].first['type'].eql?('dropbox')
+          # validate only for shared inboxes
+          return unless
+            pkg_data['recipients'].is_a?(Array) &&
+            pkg_data['recipients'].first.is_a?(Hash) &&
+            pkg_data['recipients'].first.has_key?('type') &&
+            pkg_data['recipients'].first['type'].eql?('dropbox')
 
-          shbx_kid = pkg_data['recipients'].first['id'] # || raise 'missing shared inbox identifier'
+          shbx_kid = pkg_data['recipients'].first['id']
           meta_schema = aoc_api.read("dropboxes/#{shbx_kid}")[:data]['metadata_schema']
-          if meta_schema.nil?
-            raise 'no metadata in shared inbox' unless meta_schema.nil?
+          if meta_schema.nil? || meta_schema.empty?
+            Log.log.debug('no metadata in shared inbox')
             return
           end
           pkg_meta = pkg_data['metadata']
@@ -642,7 +629,7 @@ module Aspera
                 startdate_persistency = PersistencyActionOnce.new(
                   manager: @agents[:persistency],
                   data: saved_date,
-                  ids: IdGenerator.from_list(['aoc_ana_date',options.get_option(:url,is_type: :mandatory),@workspace_name].push(filter_resource,filter_id)))
+                  ids: IdGenerator.from_list(['aoc_ana_date',options.get_option(:url,is_type: :mandatory),@workspace_info['name']].push(filter_resource,filter_id)))
                 start_datetime = saved_date.first
                 stop_datetime = Time.now.utc.strftime('%FT%T.%LZ')
                 #Log.log().error("start: #{start_datetime}")
@@ -838,7 +825,7 @@ module Aspera
             else raise 'unknown command'
             end
           when :usage_reports
-            return {type: :object_list,data: aoc_api.read('usage_reports',{workspace_id: @workspace_id})[:data]}
+            return {type: :object_list,data: aoc_api.read('usage_reports',{workspace_id: @workspace_info['id']})[:data]}
           end
         end
 
@@ -871,7 +858,7 @@ module Aspera
                 return {type: :object_list,data: aoc_api.read('workspaces')[:data],fields: %w[id name]}
               when :current
                 set_workspace_info
-                return { type: :single_object, data: @workspace_data }
+                return { type: :single_object, data: @workspace_info }
               end
             when :profile
               case options.get_next_command(%i[show modify])
@@ -890,7 +877,8 @@ module Aspera
               when :list
                 query = option_url_query(nil)
                 if query.nil?
-                  query = {'embed[]' => 'dropbox','workspace_id' => @workspace_id,'aggregate_permissions_by_dropbox' => true,'sort' => 'dropbox_name'}
+                  query = {'embed[]' => 'dropbox','aggregate_permissions_by_dropbox' => true,'sort' => 'dropbox_name'}
+                  query['workspace_id']=@workspace_info['id'] unless @workspace_info['id'].eql?(:undefined)
                 end
                 return {type: :object_list,data: aoc_api.read('dropbox_memberships',query)[:data],fields: ['dropbox_id','dropbox.name']}
               when :show
@@ -904,10 +892,10 @@ module Aspera
                 assert_public_link_types(%w[send_package_to_user send_package_to_dropbox])
                 box_type = @url_token_data['purpose'].split('_').last
                 package_data['recipients'] = [{'id' => @url_token_data['data']["#{box_type}_id"],'type' => box_type}]
-                @workspace_id = @url_token_data['data']['workspace_id']
+                @workspace_info['id'] = @url_token_data['data']['workspace_id']
               end
 
-              package_data['workspace_id'] = @workspace_id
+              package_data['workspace_id'] = @workspace_info['id']
 
               # list of files to include in package, optional
               #package_data['file_names']=self.transfer.ts_source_paths.map{|i|File.basename(i['source'])}
@@ -916,7 +904,7 @@ module Aspera
               resolve_package_recipients(package_data,'recipients')
               resolve_package_recipients(package_data,'bcc_recipients')
               normalize_metadata(package_data)
-              validate_metadata(package_data)
+              validate_metadata(package_data) if options.get_option(:validate_metadata)
 
               #  create a new package container
               package_info = aoc_api.create('packages',package_data)[:data]
@@ -948,7 +936,7 @@ module Aspera
                 skip_ids_persistency = PersistencyActionOnce.new(
                   manager: @agents[:persistency],
                   data: skip_ids_data,
-                  id: IdGenerator.from_list(['aoc_recv',options.get_option(:url,is_type: :mandatory),@workspace_id].push(*@persist_ids)))
+                  id: IdGenerator.from_list(['aoc_recv',options.get_option(:url,is_type: :mandatory),@workspace_info['id']].push(*@persist_ids)))
               end
               if ids_to_download.eql?(VAL_ALL)
                 # get list of packages in inbox
@@ -957,7 +945,7 @@ module Aspera
                   'exclude_dropbox_packages' => true,
                   'has_content'              => true,
                   'received'                 => true,
-                  'workspace_id'             => @workspace_id})[:data]
+                  'workspace_id'             => @workspace_info['id']})[:data]
                 # remove from list the ones already downloaded
                 ids_to_download = package_info.map{|e|e['id']}
                 # array here
@@ -987,6 +975,7 @@ module Aspera
               package_info = aoc_api.read("packages/#{package_id}")[:data]
               return { type: :single_object, data: package_info }
             when :list
+              display_fields=%w[id name bytes_transferred]
               query = option_url_query({'archived' => false,'exclude_dropbox_packages' => true,'has_content' => true,'received' => true})
               if query.has_key?('dropbox_name')
                 # convenience: specify name instead of id
@@ -995,9 +984,13 @@ module Aspera
                 query.delete('dropbox_name')
               end
               raise 'option must be Hash' unless query.is_a?(Hash)
-              query['workspace_id'] ||= @workspace_id
+              if @workspace_info['id'].eql?(:undefined)
+                display_fields.push('workspace_id')
+              else
+                query['workspace_id'] ||= @workspace_info['id']
+              end
               packages = aoc_api.read('packages',query)[:data]
-              return {type: :object_list,data: packages,fields: %w[id name bytes_transferred]}
+              return {type: :object_list,data: packages,fields: display_fields}
             when :delete
               list_or_one = instance_identifier
               return do_bulk_operation(list_or_one,'deleted') do |id|
@@ -1028,7 +1021,7 @@ module Aspera
                 create_params = {
                   file_id:      node_file[:file_id],
                   node_id:      node_file[:node_info]['id'],
-                  workspace_id: @workspace_id
+                  workspace_id: @workspace_info['id']
                 }
               end
               if !value_option.nil? && !create_params.nil?
@@ -1063,8 +1056,8 @@ module Aspera
                   'access_levels' => access_levels,
                   'tags'          => {
                     'url_token'        => true,
-                    'workspace_id'     => @workspace_id,
-                    'workspace_name'   => @workspace_name,
+                    'workspace_id'     => @workspace_info['id'],
+                    'workspace_name'   => @workspace_info['name'],
                     'folder_name'      => 'my folder',
                     'created_by_name'  => aoc_api.user_info['name'],
                     'created_by_email' => aoc_api.user_info['email'],
@@ -1115,7 +1108,7 @@ module Aspera
           when :gateway
             set_workspace_info
             require 'aspera/faspex_gw'
-            FaspexGW.new(@api_aoc,@workspace_id).start_server
+            FaspexGW.new(@api_aoc,@workspace_info['id']).start_server
           else
             raise "internal error: #{command}"
           end # action

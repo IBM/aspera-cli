@@ -54,6 +54,8 @@ module Aspera
     FILES_APP = 'files'
     PACKAGES_APP = 'packages'
     API_V1 = 'api/v1'
+    # error message when entity not found
+    ENTITY_NOT_FOUND = 'No such'
 
     # class instance variable, access with accessors on class
     @use_standard_ports = true
@@ -454,7 +456,7 @@ module Aspera
       matching_items = read(entity_type,options.merge({'q' => entity_name}))[:data]
       case matching_items.length
       when 1 then return matching_items.first
-      when 0 then raise 'not found'
+      when 0 then raise %Q{#{ENTITY_NOT_FOUND} #{entity_type}: "#{entity_name}"}
       else
         # multiple case insensitive partial matches, try case insensitive full match
         # (anyway AoC does not allow creation of 2 entities with same case insensitive name)
