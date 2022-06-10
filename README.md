@@ -2374,7 +2374,7 @@ OPTIONS:
         --client-secret=VALUE        OAuth client secret
         --redirect-uri=VALUE         OAuth redirect URI for web authentication
         --auth=ENUM                  OAuth type of authentication: web, jwt, boot
-        --private-key=VALUE          OAuth JWT RSA private key PEM value (prefix file path with @val:@file:)
+        --private-key=VALUE          OAuth JWT RSA private key PEM value (prefix file path with @file:)
         --passphrase=VALUE           RSA private key passphrase
 
 
@@ -2457,7 +2457,7 @@ OPTIONS:
         --client-id=VALUE            OAuth API client identifier in application
         --client-secret=VALUE        OAuth API client passcode
         --redirect-uri=VALUE         OAuth API client redirect URI
-        --private-key=VALUE          OAuth JWT RSA private key PEM value (prefix file path with @val:@file:)
+        --private-key=VALUE          OAuth JWT RSA private key PEM value (prefix file path with @file:)
         --passphrase=VALUE           RSA private key passphrase
         --workspace=VALUE            name of workspace
         --name=VALUE                 resource name
@@ -2468,6 +2468,7 @@ OPTIONS:
         --scope=VALUE                OAuth scope for AoC API calls
         --bulk=ENUM                  bulk operation: yes, [no]
         --default-ports=ENUM         use standard FASP ports or get from node api: yes, [no]
+        --validate-metadata=ENUM     validate shared inbox metadata: yes, [no]
 
 
 COMMAND: server
