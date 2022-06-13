@@ -2365,7 +2365,7 @@ OPTIONS:
 
 
 COMMAND: faspex5
-SUBCOMMANDS: package admin user
+SUBCOMMANDS: health package admin user
 OPTIONS:
         --url=VALUE                  URL of application, e.g. https://org.asperafiles.com
         --username=VALUE             username to log in
@@ -3885,6 +3885,8 @@ ascli node access_key create --value=@json:'{"id":"eudemo-sedemo","secret":"myst
 ```bash
 node -N -Ptst_node_preview access_key create --value=@json:'{"id":"aoc_1","storage":{"type":"local","path":"/"}}'
 node -N -Ptst_node_preview access_key delete aoc_1
+node access_key do my_aoc_ak_name br
+node access_key list
 node api_details
 node async bandwidth 1
 node async counters 1
@@ -3914,7 +3916,7 @@ node service list
 node space /
 node transfer list --value=@json:'{"active_only":true}'
 node upload --to-folder="folder_1" --sources=@ts --ts=@json:'{"paths":[{"source":"/aspera-test-dir-small/10MB.1"}],"precalculate_job_size":true}' --transfer=node --transfer-info=@json:'{"url":"my_node_url","username":"my_node_user","password":"my_node_pass"}'
-node upload --username=my_ak_name --password=my_ak_secret testfile.bin --token-type=basic
+node upload --username=my_aoc_ak_name --password=my_aoc_ak_secret testfile.bin --token-type=basic
 node upload testfile.bin --to-folder=folder_1 --ts=@json:'{"target_rate_cap_kbps":10000}'
 node upload testfile.bin --to-folder=folder_1 --ts=@json:'{"target_rate_cap_kbps":10000}' --token-type=hybrid
 ```
@@ -4004,6 +4006,7 @@ faspex5 admin res registrations list
 faspex5 admin res saml_configs list
 faspex5 admin res shared_inboxes list
 faspex5 admin res workgroups list
+faspex5 health
 faspex5 package list --value=@json:'{"mailbox":"inbox","state":["released"]}'
 faspex5 package receive "my_package_id" --to-folder=.  --ts=@json:'{"content_protection_password":"abc123_yo"}'
 faspex5 package send --value=@json:'{"title":"test title","recipients":[{"name":"my_f5_user"}]}' testfile.bin --ts=@json:'{"content_protection_password":"_content_prot_here_"}'

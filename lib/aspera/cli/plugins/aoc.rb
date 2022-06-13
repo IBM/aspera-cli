@@ -898,6 +898,7 @@ module Aspera
                 assert_public_link_types(%w[send_package_to_user send_package_to_dropbox])
                 box_type = @url_token_data['purpose'].split('_').last
                 package_data['recipients'] = [{'id' => @url_token_data['data']["#{box_type}_id"],'type' => box_type}]
+                # TODO: probably this line is not needed
                 @workspace_info['id'] = @url_token_data['data']['workspace_id']
               end
 

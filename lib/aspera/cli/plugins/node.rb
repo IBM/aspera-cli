@@ -33,7 +33,7 @@ module Aspera
 
         def initialize(env)
           super(env)
-          # this is added to some requests , for instance to add tags (COS)
+          # this is added to transfer spec, for instance to add tags (COS)
           @add_request_param = env[:add_request_param] || {}
           options.add_opt_simple(:validator,'identifier of validator (optional for central)')
           options.add_opt_simple(:asperabrowserurl,'URL for simple aspera web ui')
@@ -565,10 +565,15 @@ module Aspera
             when *Plugin::ALL_OPS then return entity_command(ak_command,@api_node,'access_keys',id_default: 'self')
             when :do
               access_key = options.get_next_argument('access key id')
-              executor=access_key.eql?('self') ? self : self.class.new
               ak_info=@api_node.read("access_keys/#{access_key}")[:data]
+              # change API if needed
+              if !access_key.eql?('self')
+                secret=config.vault.get(username: access_key)[:secret] #, url: @api_node.params[:base_url] : TODO: better handle vault
+                @api_node.params[:username]=access_key
+                @api_node.params[:password]=secret
+              end
               command_repo = options.get_next_command(NODE4_COMMANDS)
-              return executor.execute_node_gen4_command(command_repo,ak_info['root_file_id'])
+              return execute_node_gen4_command(command_repo,ak_info['root_file_id'])
             end
           when :service
             command = options.get_next_command(%i[list create delete])

@@ -117,7 +117,7 @@ module Aspera
         result = options.clone
         case info
         when NilClass
-          raise 'no such secret'
+          raise "no such secret: #{options[:url]} #{username}"
         when String
           result[:secret] = info
           result[:description] = ''

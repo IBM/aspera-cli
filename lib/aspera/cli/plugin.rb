@@ -14,10 +14,14 @@ module Aspera
       # max number of pages for list command
       MAX_PAGES = 'pmax'
 
+      #AGENTS=%i[options transfer config formater persistency].freeze
+
       # global for inherited classes
       @@options_created = false # rubocop:disable Style/ClassVars
 
       def initialize(env)
+        raise 'must be Hash' unless env.is_a?(Hash)
+        #env.each_key {|k| raise "wrong agent key #{k}" unless AGENTS.include?(k)}
         @agents = env
         # check presence in descendant of mandatory method and constant
         raise StandardError,"missing method 'execute_action' in #{self.class}" unless respond_to?(:execute_action)

@@ -362,16 +362,18 @@ $(T)nd7: $(T).exists
 	@touch $@
 $(T)nd8: $(T).exists
 	@echo $@
-	set -x&&\
-	ak_name=$$($(EXE_NOMAN) config preset get misc aoc_ak_name)&&\
-	ak_secret=$$($(EXE_NOMAN) config preset get misc aoc_ak_secret)&&\
-	$(EXE_MAN) node upload --username=$${ak_name} --password=$${ak_secret} $(CF_LOCAL_SAMPLE_FILEPATH) --token-type=basic
+	$(EXE_MAN) node upload --username=@preset:misc.aoc_ak_name --password=@preset:misc.aoc_ak_secret $(CF_LOCAL_SAMPLE_FILEPATH) --token-type=basic
 	@touch $@
 $(T)nd_nagios: $(T).exists
 	@echo $@
 	$(EXE_MAN) node health
 	@touch $@
-tnode: $(T)nd1 $(T)nd2 $(T)nd_2_nd_xfer $(T)nd4 $(T)nd5 $(T)nd6 $(T)nd7 $(T)nd8 $(T)nd_nagios
+$(T)nd_ak: $(T).exists
+	@echo $@
+	$(EXE_MAN) node access_key list
+	$(EXE_MAN) node access_key do @preset:misc.aoc_ak_name br
+	@touch $@
+tnode: $(T)nd1 $(T)nd2 $(T)nd_2_nd_xfer $(T)nd4 $(T)nd5 $(T)nd6 $(T)nd7 $(T)nd8 $(T)nd_nagios $(T)nd_ak
 
 $(T)aocg1: $(T).exists
 	@echo $@
