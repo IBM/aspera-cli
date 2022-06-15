@@ -24,11 +24,9 @@ jobs:
         touch $HOME/.gem/credentials
         chmod 0600 $HOME/.gem/credentials
         printf -- "---\n:rubygems_api_key: ${RUBYGEMS_API_KEY}\n" > $HOME/.gem/credentials
-        printf -- ${PRIVATE_KEY_PEM} > ${SIGNING_KEY}
+        printf -- "${{ secrets.PRIVATE_KEY_PEM }}" > $HOME/.gem/signing_key.pem
 
-        gem build *.gemspec
+        SIGNING_KEY=$HOME/.gem/signing_key.pem gem build *.gemspec
         gem push *.gem
       env:
         RUBYGEMS_API_KEY: "${{ secrets.RUBYGEMS_API_KEY }}"
-        PRIVATE_KEY_PEM: "${{ secrets.PRIVATE_KEY_PEM }}"
-        SIGNING_KEY: $HOME/.gem/signing_key.pem
