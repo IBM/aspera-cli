@@ -2,7 +2,7 @@
 
 [comment1]: # (Do not edit this README.md, edit docs/README.erb.md, for details, read docs/README.md)
 
-Version : 4.8.0.pre
+Version : 4.8.0
 
 Laurent/2016-2022
 
@@ -22,6 +22,12 @@ Minimum required Ruby version: >= 2.4. Deprecation notice: the minimum will be 2
 Release notes: see [CHANGELOG.md](CHANGELOG.md)
 
 [![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/5861/badge)](https://bestpractices.coreinfrastructure.org/projects/5861)
+
+## BUGS, FEATURES, CONTRIBUTION
+
+Refer to [BUGS.md](BUGS.md) and [CONTRIBUTING.md](CONTRIBUTING.md).
+
+One can also [create one's own plugin](#createownplugin).
 
 ## <a id="when_to_use"></a>When to use and when not to use
 
@@ -93,7 +99,7 @@ ascli --version
 ```
 
 ```bash
-4.8.0.pre
+4.8.0
 ```
 
 ### First use
@@ -332,7 +338,7 @@ Install Latest stable Ruby:
 macOS 10.13+ (High Sierra) comes with a recent Ruby. So you can use it directly. You will need to install aspera-cli using `sudo` :
 
 ```bash
-sudo gem install aspera-cli --pre
+sudo gem install aspera-cli
 ```
 
 Alternatively, if you use [Homebrew](https://brew.sh/) already you can install Ruby with it:
@@ -413,7 +419,7 @@ Note that using jruby the startup time is longer than the native ruby, but trans
 Once you have Ruby and rights to install gems: Install the gem and its dependencies:
 
 ```bash
-gem install aspera-cli --pre
+gem install aspera-cli
 ```
 
 To upgrade to the latest version:
@@ -2210,7 +2216,7 @@ ascli server upload "faux:///mydir?file=testfile&count=1m&size=0&inc=2&seq=seque
 ```text
 ascli -h
 NAME
-        ascli -- a command line tool for Aspera Applications (v4.8.0.pre)
+        ascli -- a command line tool for Aspera Applications (v4.8.0)
 
 SYNOPSIS
         ascli COMMANDS [OPTIONS] [ARGS]
@@ -5064,17 +5070,3 @@ OpenSSH keys only supported if ED25519 is available
 
 Which meant that you do not have ruby support for ED25519 SSH keys.
 You may either install the suggested Gems, or remove your ed25519 key from your `.ssh` folder to solve the issue.
-
-## BUGS, FEATURES, CONTRIBUTION
-
-Refer to [BUGS.md](BUGS.md) and [CONTRIBUTING.md](CONTRIBUTING.md).
-
-One can also [create one's own plugin](#createownplugin).
-
-## Long Term Implementation and delivery improvements
-
-* replace rest and oauth classes with ruby standard gems:
-  * <https://github.com/rest-client/rest-client>
-  * <https://github.com/oauth-xx/oauth2>
-* use gem Thor <http://whatisthor.com/> (or other standard Ruby CLI manager)
-* Package with <https://github.com/pmq20/ruby-packer> (rubyc)
