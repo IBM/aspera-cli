@@ -23,6 +23,12 @@ Release notes: see [CHANGELOG.md](CHANGELOG.md)
 
 [![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/5861/badge)](https://bestpractices.coreinfrastructure.org/projects/5861)
 
+## BUGS, FEATURES, CONTRIBUTION
+
+Refer to [BUGS.md](BUGS.md) and [CONTRIBUTING.md](CONTRIBUTING.md).
+
+One can also [create one's own plugin](#createownplugin).
+
 ## <a id="when_to_use"></a>When to use and when not to use
 
 <%=tool%> is designed to be used as a command line tool to:
@@ -4405,17 +4411,3 @@ OpenSSH keys only supported if ED25519 is available
 
 Which meant that you do not have ruby support for ED25519 SSH keys.
 You may either install the suggested Gems, or remove your ed25519 key from your `.ssh` folder to solve the issue.
-
-## BUGS, FEATURES, CONTRIBUTION
-
-Refer to [BUGS.md](BUGS.md) and [CONTRIBUTING.md](CONTRIBUTING.md).
-
-One can also [create one's own plugin](#createownplugin).
-
-## Long Term Implementation and delivery improvements
-
-* replace rest and oauth classes with ruby standard gems:
-  * <https://github.com/rest-client/rest-client>
-  * <https://github.com/oauth-xx/oauth2>
-* use gem Thor <http://whatisthor.com/> (or other standard Ruby CLI manager)
-* Package with <https://github.com/pmq20/ruby-packer> (rubyc)

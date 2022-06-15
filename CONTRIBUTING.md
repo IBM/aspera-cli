@@ -32,6 +32,7 @@ If you want to contribute, please:
 * Add tests for it. This is important so I don't break it in a future version unintentionally.
 * **Bonus Points** go out to anyone who also updates `CHANGELOG.md` :)
 * Send a pull request on GitHub.
+* run Rubocop to comply for coding standards
 
 ## Running Tests
 
@@ -65,7 +66,7 @@ ENABLE_COVERAGE=1 make test
 
 By default the gem is built signed: `make`.
 The appropriate signing key is required, and its path must be set to env var `SIGNING_KEY`.
-It is possible to build a non-signed version for development purpose: `make unsigned_gem`.
+It is also possible to build a non-signed version for development purpose: `make unsigned_gem`.
 
 ### Gem Signature
 
@@ -104,3 +105,11 @@ Install [multipass](https://multipass.run/docs) with [brew](https://multipass.ru
 [Initialize the docker environment](https://multipass.run/docs/docker-tutorial).
 
 Make sure the ubuntu user in container is part of the docker group.
+
+## Long Term Implementation and delivery improvements
+
+* replace rest and oauth classes with ruby standard gems:
+  * <https://github.com/rest-client/rest-client>
+  * <https://github.com/oauth-xx/oauth2>
+* use gem Thor <http://whatisthor.com/> (or other standard Ruby CLI manager)
+* Package with <https://github.com/pmq20/ruby-packer> (rubyc)
