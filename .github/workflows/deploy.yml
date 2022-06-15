@@ -12,10 +12,10 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - name: Set up Ruby 2.6
+    - name: Set up Ruby 2.7
       uses: actions/setup-ruby@v1
       with:
-        ruby-version: 2.6.x
+        ruby-version: 2.7.x
 
     - name: Publish to RubyGems
       if: contains(github.ref, 'refs/tags/v')
@@ -24,7 +24,11 @@ jobs:
         touch $HOME/.gem/credentials
         chmod 0600 $HOME/.gem/credentials
         printf -- "---\n:rubygems_api_key: ${RUBYGEMS_API_KEY}\n" > $HOME/.gem/credentials
+        printf -- ${PRIVATE_KEY_PEM} > ${SIGNING_KEY}
+
         gem build *.gemspec
         gem push *.gem
       env:
         RUBYGEMS_API_KEY: "${{ secrets.RUBYGEMS_API_KEY }}"
+        PRIVATE_KEY_PEM: "${{ secrets.PRIVATE_KEY_PEM }}"
+        SIGNING_KEY: $HOME/.gem/signing_key.pem
