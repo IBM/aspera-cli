@@ -1,6 +1,6 @@
 # Changes (Release notes)
 
-* Next version
+* 4.8.0
 
   * new: #76 add resource `group_membership` in `aoc`
   * new: add resource `metadata_profile` in `faspex5`
