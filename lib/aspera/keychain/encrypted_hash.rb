@@ -117,17 +117,17 @@ module Aspera
         result = options.clone
         case info
         when NilClass
-          raise "no such secret: #{options[:url]} #{username}"
+          raise "no such secret: [#{url}|#{username}] in #{@all_secrets.keys.join(',')}"
         when String
           result[:secret] = info
           result[:description] = ''
         when Hash
           info=info.symbolize_keys
           key = identifier(options)
-          plain = SimpleCipher.new(key).decrypt(info[:secret])
+          plain = SimpleCipher.new(key).decrypt(info[:secret]) rescue info[:secret]
           result[:secret] = plain
           result[:description] = info[:description]
-        else raise 'error'
+        else raise "#{info.class} is not an expected type"
         end
         return result
       end
