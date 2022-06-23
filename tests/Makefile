@@ -371,7 +371,7 @@ $(T)nd_nagios: $(T).exists
 $(T)nd_ak: $(T).exists
 	@echo $@
 	$(EXE_MAN) node access_key list
-	$(EXE_MAN) node access_key do @preset:misc.aoc_ak_name br
+	$(EXE_MAN) node access_key do @preset:misc.aoc_ak_name br /
 	@touch $@
 tnode: $(T)nd1 $(T)nd2 $(T)nd_2_nd_xfer $(T)nd4 $(T)nd5 $(T)nd6 $(T)nd7 $(T)nd8 $(T)nd_nagios $(T)nd_ak
 

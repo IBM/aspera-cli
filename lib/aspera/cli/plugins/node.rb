@@ -569,8 +569,8 @@ module Aspera
               # change API if needed
               if !access_key.eql?('self')
                 secret=config.vault.get(username: access_key)[:secret] #, url: @api_node.params[:base_url] : TODO: better handle vault
-                @api_node.params[:username]=access_key
-                @api_node.params[:password]=secret
+                @api_node.params[:auth][:username]=access_key
+                @api_node.params[:auth][:password]=secret
               end
               command_repo = options.get_next_command(NODE4_COMMANDS)
               return execute_node_gen4_command(command_repo,ak_info['root_file_id'])
