@@ -14,6 +14,7 @@ module Aspera
       FILE_LIST_FROM_ARGS = '@args'
       # special value for --sources : read file list from transfer spec (--ts)
       FILE_LIST_FROM_TRANSFER_SPEC = '@ts'
+      FILE_LIST_OPTIONS=[FILE_LIST_FROM_ARGS,FILE_LIST_FROM_TRANSFER_SPEC,'Array'].freeze
       DEFAULT_TRANSFER_NOTIF_TMPL = <<~END_OF_TEMPLATE
         From: <%=from_name%> <<%=from_email%>>
         To: <<%=to%>>
@@ -24,7 +25,8 @@ module Aspera
         <%=ts.to_yaml%>
       END_OF_TEMPLATE
       #% (formating bug in eclipse)
-      private_constant :FILE_LIST_FROM_ARGS,:FILE_LIST_FROM_TRANSFER_SPEC,:DEFAULT_TRANSFER_NOTIF_TMPL
+      private_constant :FILE_LIST_FROM_ARGS,:FILE_LIST_FROM_TRANSFER_SPEC,:FILE_LIST_OPTIONS,
+        :DEFAULT_TRANSFER_NOTIF_TMPL
       TRANSFER_AGENTS = %i[direct node connect httpgw trsdk].freeze
 
       # @param env external objects: option manager, config file manager
@@ -41,11 +43,11 @@ module Aspera
         @opt_mgr.set_obj_attr(:ts,self,:option_transfer_spec)
         @opt_mgr.add_opt_simple(:ts,"override transfer spec values (Hash, use @json: prefix), current=#{@opt_mgr.get_option(:ts)}")
         @opt_mgr.add_opt_simple(:local_resume,"set resume policy (Hash, use @json: prefix), current=#{@opt_mgr.get_option(:local_resume)}")
-        @opt_mgr.add_opt_simple(:to_folder,'destination folder for downloaded files')
-        @opt_mgr.add_opt_simple(:sources,'list of source files (see doc)')
-        @opt_mgr.add_opt_simple(:transfer_info,'parameters for transfer agent')
+        @opt_mgr.add_opt_simple(:to_folder,'destination folder for transfered files')
+        @opt_mgr.add_opt_simple(:sources,"how list of transfered files is provided (#{FILE_LIST_OPTIONS.join(',')})")
         @opt_mgr.add_opt_list(:src_type,%i[list pair],'type of file list')
         @opt_mgr.add_opt_list(:transfer,TRANSFER_AGENTS,'type of transfer agent')
+        @opt_mgr.add_opt_simple(:transfer_info,'parameters for transfer agent')
         @opt_mgr.add_opt_list(:progress,%i[none native multi],'type of progress bar')
         @opt_mgr.set_option(:transfer,:direct)
         @opt_mgr.set_option(:src_type,:list)
