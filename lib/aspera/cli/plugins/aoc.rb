@@ -346,7 +346,7 @@ module Aspera
           end
           home_node_id ||= @workspace_info['home_node_id'] || @workspace_info['node_id']
           home_file_id ||= @workspace_info['home_file_id']
-          raise 'Cannot get users home node id' if home_node_id.to_s.empty?
+          raise "Cannot get user's home node id, check your default workspace or specify one" if home_node_id.to_s.empty?
           @home_node_file = {
             node_info: aoc_api.read("nodes/#{home_node_id}")[:data],
             file_id:   home_file_id
