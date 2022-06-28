@@ -2279,6 +2279,7 @@ OPTIONS:
         --value=VALUE                extended value for create, update, list filter
         --property=VALUE             name of property to set
         --id=VALUE                   resource identifier (modify,delete,show)
+        --bulk=ENUM                  Bulk operation (only some): yes, [no]
         --config-file=VALUE          read parameters from file in YAML format, current=/usershome/.aspera/ascli/config.yaml
     -N, --no-default                 do not load default configuration for plugin
         --override=ENUM              Wizard: override existing value: yes, [no]
@@ -2301,11 +2302,11 @@ OPTIONS:
         --plugin-folder=VALUE        folder where to find additional plugins
         --ts=VALUE                   override transfer spec values (Hash, use @json: prefix), current={"create_dir"=>true}
         --local-resume=VALUE         set resume policy (Hash, use @json: prefix), current=
-        --to-folder=VALUE            destination folder for downloaded files
-        --sources=VALUE              list of source files (see doc)
-        --transfer-info=VALUE        parameters for transfer agent
+        --to-folder=VALUE            destination folder for transfered files
+        --sources=VALUE              how list of transfered files is provided (@args,@ts,Array)
         --src-type=ENUM              type of file list: list, pair
         --transfer=ENUM              type of transfer agent: direct, node, connect, httpgw, trsdk
+        --transfer-info=VALUE        parameters for transfer agent
         --progress=ENUM              type of progress bar: none, native, multi
 
 
@@ -2472,7 +2473,6 @@ OPTIONS:
         --new-user-option=VALUE      new user creation option
         --from-folder=VALUE          share to share source folder
         --scope=VALUE                OAuth scope for AoC API calls
-        --bulk=ENUM                  bulk operation: yes, [no]
         --default-ports=ENUM         use standard FASP ports or get from node api: yes, [no]
         --validate-metadata=ENUM     validate shared inbox metadata: yes, [no]
 
@@ -2501,6 +2501,12 @@ OPTIONS:
 ```
 
 Note that actions and parameter values can be written in short form.
+
+### Bulk creation and deletion of resources
+
+Bulk creation and deletion of resources are possible using option `bulk` (yes,no(default)).
+In that case, the operation expects an Array of Hash instead of a simple Hash using the [Extended Value Syntax](#extended).
+This option is available only for some of the resources: if you need it: try and see if the entities you try to create or delete support this option.
 
 ## <a id="aoc"></a>Plugin: Aspera on Cloud
 
@@ -2749,11 +2755,6 @@ ascli aoc admin res node v4 1234 --secret=_ak_secret_here_ bearer_token_node /
 The `admin` command allows several administrative tasks (and require admin privilege).
 
 It allows actions (create, update, delete) on "resources": users, group, nodes, workspace, etc... with the `admin resource` command.
-
-#### Bulk creation and deletion of resource
-
-Bulk creation and deletion of resources are possible using option `bulk` (yes,no(default)).
-In that case, the operation expects an Array of Hash instead of a simple Hash using the [Extended Value Syntax](#extended).
 
 #### Listing resources
 
@@ -3891,7 +3892,7 @@ ascli node access_key create --value=@json:'{"id":"eudemo-sedemo","secret":"myst
 ```bash
 node -N -Ptst_node_preview access_key create --value=@json:'{"id":"aoc_1","storage":{"type":"local","path":"/"}}'
 node -N -Ptst_node_preview access_key delete aoc_1
-node access_key do my_aoc_ak_name br
+node access_key do my_aoc_ak_name br /
 node access_key list
 node api_details
 node async bandwidth 1

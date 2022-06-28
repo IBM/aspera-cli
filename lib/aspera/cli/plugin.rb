@@ -34,6 +34,8 @@ module Aspera
         options.add_opt_simple(:value,'extended value for create, update, list filter')
         options.add_opt_simple(:property,'name of property to set')
         options.add_opt_simple(:id,"resource identifier (#{INSTANCE_OPS.join(',')})")
+        options.add_opt_boolean(:bulk,'Bulk operation (only some)')
+        options.set_option(:bulk,:no)
         options.parse_options!
         @@options_created = true # rubocop:disable Style/ClassVars
       end
@@ -48,6 +50,38 @@ module Aspera
       # TODO
       def get_next_id_command(instance_ops: INSTANCE_OPS,global_ops: GLOBAL_OPS)
         return get_next_argument('command',expected: command_list)
+      end
+
+      # For create and delete operations: execute one actin or multiple if bulk is yes
+      # @param params either single id or hash, or array for bulk
+      # @param success_msg deleted or created
+      def do_bulk_operation(single_or_array,success_msg,id_result: 'id',fields: :default)
+        raise 'programming error: missing block' unless block_given?
+        params = options.get_option(:bulk) ? single_or_array : [single_or_array]
+        raise 'expecting Array for bulk operation' unless params.is_a?(Array)
+        Log.dump(:bulk_create,params)
+        result_list = []
+        params.each do |param|
+          # init for delete
+          result = {id_result => param}
+          begin
+            # execute custom code
+            res = yield(param)
+            # if block returns a hash, let's use this (create)
+            result = res if param.is_a?(Hash)
+            result['status'] = success_msg
+          rescue StandardError => e
+            result['status'] = e.to_s
+          end
+          result_list.push(result)
+        end
+        display_fields = [id_result,'status']
+        if options.get_option(:bulk)
+          return {type: :object_list,data: result_list,fields: display_fields}
+        else
+          display_fields = fields unless fields.eql?(:default)
+          return {type: :single_object,data: result_list.first,fields: display_fields}
+        end
       end
 
       # @param command [Symbol] command to execute: create show list modify delete
@@ -76,7 +110,15 @@ module Aspera
         end
         case command
         when :create
-          return {type: :single_object, data: rest_api.create(res_class_path,parameters)[:data], fields: display_fields}
+          return do_bulk_operation(parameters,'created',fields: display_fields) do |params|
+            raise 'expecting Hash' unless params.is_a?(Hash)
+            rest_api.create(res_class_path,params)[:data]
+          end
+        when :delete
+          return do_bulk_operation(one_res_id,'deleted') do |one_id|
+            rest_api.delete("#{res_class_path}/#{one_id}")
+            {'id' => one_id}
+          end
         when :show
           return {type: :single_object, data: rest_api.read(one_res_path)[:data], fields: display_fields}
         when :list
@@ -102,9 +144,6 @@ module Aspera
           parameters = {property => parameters} unless property.nil?
           rest_api.update(one_res_path,parameters)
           return Main.result_status('modified')
-        when :delete
-          rest_api.delete(one_res_path)
-          return Main.result_status('deleted')
         else
           raise "unknown action: #{command}"
         end

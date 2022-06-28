@@ -58,10 +58,8 @@ module Aspera
           options.add_opt_simple(:new_user_option,'new user creation option')
           options.add_opt_simple(:from_folder,'share to share source folder')
           options.add_opt_simple(:scope,'OAuth scope for AoC API calls')
-          options.add_opt_boolean(:bulk,'bulk operation')
           options.add_opt_boolean(:default_ports,'use standard FASP ports or get from node api')
           options.add_opt_boolean(:validate_metadata,'validate shared inbox metadata')
-          options.set_option(:bulk,:no)
           options.set_option(:default_ports,:yes)
           options.set_option(:validate_metadata,:yes)
           options.set_option(:new_user_option,{'package_contact' => true})
@@ -145,7 +143,7 @@ module Aspera
             return Main.result_status("renamed #{thepath} to #{newname}")
           when :delete
             thepath = options.get_next_argument('path')
-            return do_bulk_operation(thepath,'deleted','path') do |l_path|
+            return do_bulk_operation(thepath,'deleted',id_result: 'path') do |l_path|
               raise "expecting String (path), got #{l_path.class.name} (#{l_path})" unless l_path.is_a?(String)
               node_file = aoc_api.resolve_node_file(top_node_file,l_path)
               node_api = aoc_api.get_node_api(node_file[:node_info])
@@ -354,25 +352,6 @@ module Aspera
           aoc_api.check_get_node_file(@home_node_file)
 
           return nil
-        end
-
-        def do_bulk_operation(ids_or_one,success_msg,id_result='id')
-          raise 'missing block' unless block_given?
-          ids_or_one = [ids_or_one] unless options.get_option(:bulk)
-          raise 'expecting Array' unless ids_or_one.is_a?(Array)
-          result_list = []
-          ids_or_one.each do |id|
-            one = {id_result => id}
-            begin
-              res = yield(id)
-              one = res if id.is_a?(Hash) # if block returns a has, let's use this
-              one['status'] = success_msg
-            rescue StandardError => e
-              one['status'] = e.to_s
-            end
-            result_list.push(one)
-          end
-          return {type: :object_list,data: result_list,fields: [id_result,'status']}
         end
 
         # get identifier or name from command line
@@ -688,7 +667,7 @@ module Aspera
               # TODO: report inconsistency: creation url is !=, and does not return id.
               resource_class_path = 'admin/client_registration/token' if resource_class_path.eql?('admin/client_registration_tokens')
               list_or_one = options.get_next_argument('creation data (Hash)')
-              return do_bulk_operation(list_or_one,'created',id_result) do |params|
+              return do_bulk_operation(list_or_one,'created',id_result: id_result) do |params|
                 raise 'expecting Hash' unless params.is_a?(Hash)
                 aoc_api.create(resource_class_path,params)[:data]
               end

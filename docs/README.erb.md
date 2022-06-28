@@ -2102,6 +2102,12 @@ Examples:
 
 Note that actions and parameter values can be written in short form.
 
+### Bulk creation and deletion of resources
+
+Bulk creation and deletion of resources are possible using option `bulk` (yes,no(default)).
+In that case, the operation expects an Array of Hash instead of a simple Hash using the [Extended Value Syntax](#extended).
+This option is available only for some of the resources: if you need it: try and see if the entities you try to create or delete support this option.
+
 ## <a id="aoc"></a>Plugin: Aspera on Cloud
 
 Aspera on Cloud uses the more advanced Oauth v2 mechanism for authentication (HTTP Basic authentication is not supported).
@@ -2349,11 +2355,6 @@ ascli aoc admin res node v4 1234 --secret=_ak_secret_here_ bearer_token_node /
 The `admin` command allows several administrative tasks (and require admin privilege).
 
 It allows actions (create, update, delete) on "resources": users, group, nodes, workspace, etc... with the `admin resource` command.
-
-#### Bulk creation and deletion of resource
-
-Bulk creation and deletion of resources are possible using option `bulk` (yes,no(default)).
-In that case, the operation expects an Array of Hash instead of a simple Hash using the [Extended Value Syntax](#extended).
 
 #### Listing resources
 
