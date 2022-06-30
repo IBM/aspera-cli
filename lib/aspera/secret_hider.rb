@@ -13,6 +13,8 @@ module Aspera
     REGEX_LOG_REPLACES=[
       # replace values in logs with rendered JSON
       /(?<begin>["':][^"]*(#{SECRET_KEYWORDS.join('|')})[^"]*["']?[=>: ]+")[^"]+(?<end>")/,
+      # replace values in logs from CLI manager get/set options
+      /(?<begin>[sg]et (#{SECRET_KEYWORDS.join('|')})=).*(?<end>)/,
       # option "secret"
       /(?<begin>"[^"]*(secret)[^"]*"=>{)[^}]+(?<end>})/,
       # option "secrets"

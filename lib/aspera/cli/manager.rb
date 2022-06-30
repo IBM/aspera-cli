@@ -210,7 +210,7 @@ module Aspera
         end
         value = ExtendedValue.instance.evaluate(value)
         value = Manager.enum_to_bool(value) if @declared_options[option_symbol][:values].eql?(BOOLEAN_VALUES)
-        Log.log.debug("set #{option_symbol}=#{value} (#{@declared_options[option_symbol][:type]}) : #{where}")
+        Log.log.debug("(#{@declared_options[option_symbol][:type]}/#{where}) set #{option_symbol}=#{value}")
         case @declared_options[option_symbol][:type]
         when :accessor
           @declared_options[option_symbol][:accessor].value = value
@@ -235,7 +235,7 @@ module Aspera
           else
             raise 'unknown type'
           end
-          Log.log.debug("get #{option_symbol} (#{@declared_options[option_symbol][:type]}) : #{result}")
+          Log.log.debug("(#{@declared_options[option_symbol][:type]}) get #{option_symbol}=#{result}")
         end
         # do not fail for manual generation if option mandatory but not set
         result = '' if result.nil? && !@fail_on_missing_mandatory
