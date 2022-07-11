@@ -240,6 +240,8 @@ module Aspera
       # extracts ascp binary for current system architecture
       # @return ascp version (from execution)
       def install_sdk(sdk_url)
+        # SDK is organized by architecture, check this first, in case architecture is not supported
+        arch_filter = "#{Environment.architecture}/"
         require 'zip'
         sdk_zip_path = File.join(Dir.tmpdir,'sdk.zip')
         if sdk_url.start_with?('file:')
@@ -255,8 +257,6 @@ module Aspera
           File.rename(sdk_folder,"#{sdk_folder}.#{Time.now.strftime('%Y%m%d%H%M%S')}")
           # TODO: delete old archives ?
         end
-        # SDK is organized by architecture
-        arch_filter = "#{Environment.architecture}/"
         # extract files from archive
         Zip::File.open(sdk_zip_path) do |zip_file|
           zip_file.each do |entry|
