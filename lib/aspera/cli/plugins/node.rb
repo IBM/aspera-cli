@@ -274,6 +274,7 @@ module Aspera
         # @return {.api,.file_id}
         def resolve_api_fid(id, path)
           # TODO: implement
+          Log.log.debug("TODO #{path}")
           return {api: @api_node, file_id: id}
         end
 

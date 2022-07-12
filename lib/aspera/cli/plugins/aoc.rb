@@ -374,7 +374,12 @@ module Aspera
           return "#{resource_class_path}/#{get_resource_id_from_args(resource_class_path)}"
         end
 
-        # package creation params can give just email, and full hash is created
+        # Normalize package creation recipient lists as expected by AoC API
+        # AoC expects {type: , id: }, but ascli allows providing either the native values or just a name
+        # in that case, the name is resolved and replaced with {type: , id: }
+        # @param package_data The whole package creation payload
+        # @param recipient_list_field The field in structure, i.e. recipients or bcc_recipients
+        # @return nil package_data is modified
         def resolve_package_recipients(package_data,recipient_list_field)
           return unless package_data.has_key?(recipient_list_field)
           raise CliBadArgument,"#{recipient_list_field} must be an Array" unless package_data[recipient_list_field].is_a?(Array)
@@ -393,7 +398,9 @@ module Aspera
               rescue RuntimeError => e
                 raise e unless e.message.start_with?(Aspera::AoC::ENTITY_NOT_FOUND)
                 raise "no such shared inbox in workspace #{@workspace_info['name']}" unless entity_type.eql?('contacts')
-                full_recipient_info = aoc_api.create('contacts',{'current_workspace_id' => @workspace_info['id'],'email' => short_recipient_info}.merge(new_user_option))[:data]
+                full_recipient_info = aoc_api.create('contacts',{
+                  'current_workspace_id' => @workspace_info['id'],
+                  'email'                => short_recipient_info}.merge(new_user_option))[:data]
               end
               short_recipient_info = if entity_type.eql?('dropboxes')
                 {'id' => full_recipient_info['id'],'type' => 'dropbox'}
@@ -408,6 +415,7 @@ module Aspera
           end
           # replace with resolved elements
           package_data[recipient_list_field] = resolved_list
+          return nil
         end
 
         def normalize_metadata(pkg_data)

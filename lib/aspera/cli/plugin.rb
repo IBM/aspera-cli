@@ -4,9 +4,9 @@ module Aspera
   module Cli
     # base class for plugins modules
     class Plugin
-      # operation without id
+      # operations without id
       GLOBAL_OPS = %i[create list].freeze
-      # operation on specific instance
+      # operations with id
       INSTANCE_OPS = %i[modify delete show].freeze
       ALL_OPS = [GLOBAL_OPS,INSTANCE_OPS].flatten.freeze
       # max number of items for list command
@@ -48,9 +48,9 @@ module Aspera
       end
 
       # TODO
-      def get_next_id_command(instance_ops: INSTANCE_OPS,global_ops: GLOBAL_OPS)
-        return get_next_argument('command',expected: command_list)
-      end
+      #def get_next_id_command(instance_ops: INSTANCE_OPS,global_ops: GLOBAL_OPS)
+      #  return get_next_argument('command',expected: command_list)
+      #end
 
       # For create and delete operations: execute one actin or multiple if bulk is yes
       # @param params either single id or hash, or array for bulk
@@ -90,6 +90,7 @@ module Aspera
       # @param display_fields [Array] fields to display by default
       # @param id_default [String] default identifier to use for existing entity commands (show, modify)
       # @param item_list_key [String] result is in a subkey of the json
+      # @return result suitable for CLI result
       def entity_command(command,rest_api,res_class_path,display_fields: nil,id_default: nil,item_list_key: false)
         if INSTANCE_OPS.include?(command)
           begin
@@ -156,7 +157,7 @@ module Aspera
         return entity_command(command,rest_api,res_class_path,**opts)
       end
 
-      # shortcuts for plugin environment
+      # shortcuts helpers for plugin environment
       def options; return @agents[:options];end
 
       def transfer; return @agents[:transfer];end
