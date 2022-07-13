@@ -1840,9 +1840,10 @@ Fields with EX_ prefix are extensions to transfer agent [`direct`](#agt_direct).
 <tr><td>min_rate_cap_kbps</td><td>int</td><td>Y</td><td>Y</td><td>Y</td><td>&nbsp;</td></tr>
 <tr><td>min_rate_kbps</td><td>int</td><td>Y</td><td>Y</td><td>Y</td><td>Set the minimum transfer rate in kilobits per second.<br/>(-m)</td></tr>
 <tr><td>move_after_transfer</td><td>string</td><td>Y</td><td>Y</td><td>Y</td><td>(--move-after-transfer)</td></tr>
-<tr><td>multi_session</td><td>int</td><td>Y</td><td>Y</td><td>Y</td><td>Use multi-session transfer. max 128.<br/> Each participant on one host needs an independent UDP (-O) port.<br/> Large files are split between sessions only when transferring with resume_policy=none.</td></tr>
+<tr><td>multi_session</td><td>int</td><td>Y</td><td>Y</td><td>Y</td><td>Use multi-session transfer. max 128.<br/>Each participant on one host needs an independent UDP (-O) port.<br/>Large files are split between sessions only when transferring with resume_policy=none.<br/></td></tr>
 <tr><td>multi_session_threshold</td><td>int</td><td>Y</td><td>Y</td><td>&nbsp;</td><td>Split files across multiple ascp sessions if their size in bytes is greater than or equal to the specified value. (0=no file is split)<br/>(--multi-session-threshold)</td></tr>
 <tr><td>overwrite</td><td>string</td><td>Y</td><td>Y</td><td>Y</td><td>Overwrite destination files with the source files of the same name.<br/>Allowed values: never, always, diff, older, diff+older<br/>(--overwrite)</td></tr>
+<tr><td>password</td><td>string</td><td>&nbsp;</td><td>Y</td><td>&nbsp;</td><td>Password for local Windows user when transfer user associated with node api user is not the same as the one running asperanoded. Allows impersonating the transfer user and have access to resources (e.g. network shares). Windows only, node api only.</td></tr>
 <tr><td>paths</td><td>array</td><td>Y</td><td>Y</td><td>Y</td><td>Array of path to the source (required) and a path to the destination (optional).</td></tr>
 <tr><td>precalculate_job_size</td><td>bool</td><td>Y</td><td>Y</td><td>Y</td><td>Specifies whether to precalculate the job size.<br/>(--precalculate-job-size)</td></tr>
 <tr><td>preserve_access_time</td><td>bool</td><td>Y</td><td>Y</td><td>Y</td><td>(--preserve-access-time)</td></tr>
@@ -2470,7 +2471,7 @@ OPTIONS:
         --name=VALUE                 resource name
         --path=VALUE                 file or folder path
         --link=VALUE                 public link to shared resource
-        --new-user-option=VALUE      new user creation option
+        --new-user-option=VALUE      new user creation option for unknown package recipients
         --from-folder=VALUE          share to share source folder
         --scope=VALUE                OAuth scope for AoC API calls
         --default-ports=ENUM         use standard FASP ports or get from node api: yes, [no]

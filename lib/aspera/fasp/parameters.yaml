@@ -49,7 +49,13 @@ create_dir:
   :cltype: :opt_without_arg
   :clswitch: "-d"
 delete_before_transfer:
-  :desc: "Before transfer, delete files that exist at the destination but not at the source. The source and destination arguments must be directories that have matching names. Objects on the destination that have the same name but different type or size as objects on the source are not deleted."
+  :desc: >-
+    Before transfer, delete files that exist at the destination but not at the source.
+    The source and destination arguments must be directories that have matching names.
+    Objects on the destination that have the same name but different type or size as objects
+    on the source are not deleted.
+
+
   :cltype: :opt_without_arg
 delete_source: # duplicate of remove_after_transfer ?
   :desc: Remove SRC files after transfer success
@@ -140,9 +146,12 @@ https_fallback_port:
 move_after_transfer:
   :cltype: :opt_with_arg
 multi_session:
-  :desc: "Use multi-session transfer. max 128.\n
-Each participant on one host needs an independent UDP (-O) port.\n
-Large files are split between sessions only when transferring with resume_policy=none."
+  :desc: |
+    Use multi-session transfer. max 128.
+    Each participant on one host needs an independent UDP (-O) port.
+    Large files are split between sessions only when transferring with resume_policy=none.
+
+
   :accepted_types: :int
   :cltype: :ignore
   :clswitch: "-C"
@@ -163,6 +172,19 @@ overwrite:
   - older
   - diff+older
   :cltype: :opt_with_arg
+password:
+  :desc: >-
+    Password for local Windows user when transfer user associated with node api user is not the same
+    as the one running asperanoded.
+    Allows impersonating the transfer user and have access to resources (e.g. network shares).
+    Windows only, node api only.
+
+
+  :required: false
+  :accepted_types: :string
+  :cltype: :ignore
+  :tragents:
+  - :node
 paths:
   :desc: Array of path to the source (required) and a path to the destination (optional).
   :required: true
