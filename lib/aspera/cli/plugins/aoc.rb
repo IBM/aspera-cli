@@ -55,7 +55,7 @@ module Aspera
           options.add_opt_simple(:name,'resource name')
           options.add_opt_simple(:path,'file or folder path')
           options.add_opt_simple(:link,'public link to shared resource')
-          options.add_opt_simple(:new_user_option,'new user creation option')
+          options.add_opt_simple(:new_user_option,'new user creation option for unknown package recipients')
           options.add_opt_simple(:from_folder,'share to share source folder')
           options.add_opt_simple(:scope,'OAuth scope for AoC API calls')
           options.add_opt_boolean(:default_ports,'use standard FASP ports or get from node api')
@@ -388,16 +388,18 @@ module Aspera
           resolved_list = []
           package_data[recipient_list_field].each do |short_recipient_info|
             case short_recipient_info
-            when Hash # native api information, check keys
+            when Hash # native API information, check keys
               raise "#{recipient_list_field} element shall have fields: id and type" unless short_recipient_info.keys.sort.eql?(%w[id type])
-            when String # need to resolve name to type/id
+            when String # CLI helper: need to resolve provided name to type/id
               # email: user, else dropbox
               entity_type = short_recipient_info.include?('@') ? 'contacts' : 'dropboxes'
               begin
                 full_recipient_info = aoc_api.lookup_entity_by_name(entity_type,short_recipient_info,{'current_workspace_id' => @workspace_info['id']})
               rescue RuntimeError => e
                 raise e unless e.message.start_with?(Aspera::AoC::ENTITY_NOT_FOUND)
-                raise "no such shared inbox in workspace #{@workspace_info['name']}" unless entity_type.eql?('contacts')
+                # dropboxes cannot be created on the fly
+                raise "no such shared inbox in workspace #{@workspace_info['name']}" if entity_type.eql?('dropboxes')
+                # unknown user: create it as external user
                 full_recipient_info = aoc_api.create('contacts',{
                   'current_workspace_id' => @workspace_info['id'],
                   'email'                => short_recipient_info}.merge(new_user_option))[:data]
