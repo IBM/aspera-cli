@@ -58,7 +58,7 @@ module Aspera
             command = options.get_next_command(%i[user share])
             case command
             when :user
-              command = options.get_next_command(%i[list app_authorizations share_permissions])
+              command = options.get_next_command(%i[list app_authorizations share_permissions saml_import ldap_import])
               user_id = instance_identifier if %i[app_authorizations share_permissions].include?(command)
               case command
               when :list
@@ -70,6 +70,18 @@ module Aspera
                 #all_shares = api_shares_admin.read('data/shares')[:data]
                 #share_id = all_shares.find{|s| s['name'].eql?(share_name)}['id']
                 return {type: :object_list,data: api_shares_admin.read("data/users/#{user_id}/share_permissions")[:data]}
+              when :saml_import
+                parameters = options.get_option(:value)
+                return do_bulk_operation(parameters,'created') do |params|
+                  raise 'expecting Hash' unless params.is_a?(Hash)
+                  api_shares_admin.create('data/saml_users/import',params)[:data]
+                end
+              when :ldap_import
+                parameters = options.get_option(:value)
+                return do_bulk_operation(parameters,'created') do |params|
+                  raise 'expecting Hash' unless params.is_a?(Hash)
+                  api_shares_admin.create('data/ldap_users',params)[:data]
+                end
               end
             when :share
               command = options.get_next_command(%i[list user_permissions])
