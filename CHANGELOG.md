@@ -1,5 +1,12 @@
 # Changes (Release notes)
 
+* next version
+
+  * new: shares: import of SAML users and LDAP users
+  * new: M1 apple silicon support SDK install (uses x86 ascp)
+  * new: support bulk operation more globally (create/delete), not all ops , though
+  * fix: `node do` command fixed
+
 * 4.8.0
 
   * new: #76 add resource `group_membership` in `aoc`
