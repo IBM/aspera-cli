@@ -10,18 +10,29 @@ class ::Hash
   end
 end
 
-unless Hash.method_defined?(:symbolize_keys)
+# in 2.5
+unless Hash.method_defined?(:transform_keys)
   class Hash
-    def symbolize_keys
-      return each_with_object({}){|(k,v),memo| memo[k.to_sym] = v; }
+    def transform_keys
+      return each_with_object({}){|(k,v),memo| memo[yield(k)] = v }
     end
   end
 end
 
+# rails
+unless Hash.method_defined?(:symbolize_keys)
+  class Hash
+    def symbolize_keys
+      return transform_keys{|k|k.to_sym}
+    end
+  end
+end
+
+# rails
 unless Hash.method_defined?(:stringify_keys)
   class Hash
     def stringify_keys
-      return each_with_object({}){|(k,v),memo| memo[k.to_s] = v }
+      return transform_keys{|k|k.to_s}
     end
   end
 end

@@ -26,6 +26,9 @@ module Aspera
         #          super(env)
         #        end
 
+        SAML_IMPORT_MANDATORY=%w[id name_id].freeze
+        SAML_IMPORT_ALLOWED=[SAML_IMPORT_MANDATORY,%w[email given_name surname]].flatten.freeze
+
         ACTIONS = %i[health repository admin].freeze
 
         def execute_action
@@ -72,15 +75,20 @@ module Aspera
                 return {type: :object_list,data: api_shares_admin.read("data/users/#{user_id}/share_permissions")[:data]}
               when :saml_import
                 parameters = options.get_option(:value)
-                return do_bulk_operation(parameters,'created') do |params|
-                  raise 'expecting Hash' unless params.is_a?(Hash)
-                  api_shares_admin.create('data/saml_users/import',params)[:data]
+                return do_bulk_operation(parameters,'created') do |user_params|
+                  user_params=user_params.transform_keys{|k|k.gsub(/\s+/,'_').downcase}
+                  raise 'expecting Hash' unless user_params.is_a?(Hash)
+                  SAML_IMPORT_MANDATORY.each{|p|raise "missing mandatory field: #{p}" if user_params[p].nil?}
+                  user_params.keys.each do |p|
+                    raise "unsupported field: #{p}, use: #{SAML_IMPORT_ALLOWED.join(',')}" unless SAML_IMPORT_ALLOWED.include?(p)
+                  end
+                  api_shares_admin.create('data/saml_users/import',user_params)[:data]
                 end
               when :ldap_import
                 parameters = options.get_option(:value)
-                return do_bulk_operation(parameters,'created') do |params|
-                  raise 'expecting Hash' unless params.is_a?(Hash)
-                  api_shares_admin.create('data/ldap_users',params)[:data]
+                return do_bulk_operation(parameters,'created') do |user_name|
+                  raise 'expecting string (user name), have #{user_params.class}' unless user_params.is_a?(String)
+                  api_shares_admin.create('data/ldap_users',{'user'=>user_name})[:data]
                 end
               end
             when :share
