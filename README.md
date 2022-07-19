@@ -3725,8 +3725,8 @@ If no SSH password or key is provided and a transfer token is provided in transf
 ascli server --url=ssh://... --ts=@json:'{"token":"Basic abc123"}'
 ```
 
-The value of the option `ssh_keys` can be a single value or an array.
-Each value is a path to a private key and is expanded (`~` is replaced with the user's home folder).
+The value of the `ssh_keys` option can be a single value or an array.
+Each value is a **path** to a private key and is expanded (`~` is replaced with the user's home folder).
 
 Examples:
 
@@ -3736,8 +3736,10 @@ ascli server --ssh-keys=@list:,~/.ssh/id_rsa
 ascli server --ssh-keys=@json:'["~/.ssh/id_rsa"]'
 ```
 
-The underlying ssh library `net::ssh` provides several options that may be used depending on environment.
-By default the ssh library expect that an ssh-agent is running.
+For non-transfer related command (browse, delete), the ruby SSH client library `Net::SSH` is used and provides several options settable using option `ssh_options`.
+For a list of SSH client options, refer to the ruby documentation of [Net::SSH](http://net-ssh.github.io/net-ssh/Net/SSH.html).
+
+By default the SSH library expect that a local ssh-agent is running.
 
 On Linux, if you get an error message such as:
 
@@ -3751,12 +3753,12 @@ or on Windows:
 ERROR -- net.ssh.authentication.agent: could not connect to ssh-agent: pageant process not running
 ```
 
-This means that you don't have such an ssh agent running, then:
+This means that you don't have such an SSH agent running, then:
 
 * check env var: `SSH_AGENT_SOCK`
-* check if the ssh key is protected with a passphrase
+* check if the SSH key is protected with a passphrase (then, use the `passphrase` SSH option)
 * [check the manual](https://net-ssh.github.io/ssh/v1/chapter-2.html#s2)
-* To disable use of `ssh-agent`, use the option `ssh_option` like this:
+* To disable the use of `ssh-agent`, use the option `ssh_options` like this:
 
 ```bash
 ascli server --ssh-options=@ruby:'{use_agent: false}' ...

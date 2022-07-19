@@ -120,6 +120,7 @@ module Aspera
             server_transfer_spec['remote_user'] = options.get_option(:username,is_type: :mandatory)
             ssh_options = options.get_option(:ssh_options)
             raise 'expecting a Hash for ssh_options' unless ssh_options.is_a?(Hash)
+            ssh_options = ssh_options.symbolize_keys
             if !server_uri.port.nil?
               ssh_options[:port] = server_uri.port
               server_transfer_spec['ssh_port'] = server_uri.port

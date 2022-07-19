@@ -17,6 +17,7 @@ module Aspera
     # see: https://net-ssh.github.io/net-ssh/classes/Net/SSH.html#method-c-start
     def initialize(host,username,ssh_options)
       Log.log.debug("ssh:#{username}@#{host}")
+      Log.log.debug("ssh_options:#{ssh_options}")
       @host = host
       @username = username
       @ssh_options = ssh_options
