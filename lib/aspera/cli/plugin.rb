@@ -59,6 +59,7 @@ module Aspera
         raise 'programming error: missing block' unless block_given?
         params = options.get_option(:bulk) ? single_or_array : [single_or_array]
         raise 'expecting Array for bulk operation' unless params.is_a?(Array)
+        Log.log.warn('Empty list given for bulk operation') if params.empty?
         Log.dump(:bulk_create,params)
         result_list = []
         params.each do |param|

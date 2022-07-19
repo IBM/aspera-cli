@@ -30,6 +30,7 @@ module Aspera
               hasharray.push(entry)
             end
           end
+          Log.log.warn('Titled CSV file without any line') if hasharray.empty?
           return hasharray
         end
       end
