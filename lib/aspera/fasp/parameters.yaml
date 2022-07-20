@@ -49,7 +49,7 @@ create_dir:
   :cltype: :opt_without_arg
   :clswitch: "-d"
 delete_before_transfer:
-  :desc: >-
+  :desc: |-
     Before transfer, delete files that exist at the destination but not at the source.
     The source and destination arguments must be directories that have matching names.
     Objects on the destination that have the same name but different type or size as objects
@@ -144,6 +144,7 @@ https_fallback_port:
   :cltype: :opt_with_arg
   :clswitch: "-t"
 move_after_transfer:
+  :desc: The relative path to which the files will be moved after the transfer at the source side.
   :cltype: :opt_with_arg
 multi_session:
   :desc: |
@@ -156,7 +157,11 @@ multi_session:
   :cltype: :ignore
   :clswitch: "-C"
 multi_session_threshold:
-  :desc: Split files across multiple ascp sessions if their size in bytes is greater than or equal to the specified value. (0=no file is split)
+  :desc: |-
+    Split files across multiple ascp sessions if their size in bytes is greater than or equal to the specified value.
+    (0=no file is split)
+
+
   :accepted_types: :int
   :tragents:
   - :direct
@@ -173,9 +178,8 @@ overwrite:
   - diff+older
   :cltype: :opt_with_arg
 password:
-  :desc: >-
-    Password for local Windows user when transfer user associated with node api user is not the same
-    as the one running asperanoded.
+  :desc: |-
+    Password for local Windows user when transfer user associated with node api user is not the same as the one running asperanoded.
     Allows impersonating the transfer user and have access to resources (e.g. network shares).
     Windows only, node api only.
 
@@ -255,10 +259,13 @@ remove_skipped:
   - :node
   :cltype: :opt_without_arg
 proxy:
-  :desc: "Specify the address of the Aspera high-speed proxy server.\n
-dnat(s)://[user[:password]@]server:port\n
-Default ports for DNAT and DNATS protocols are 9091 and 9092.\n
-Password, if specified here, overrides the value of environment variable ASPERA_PROXY_PASS."
+  :desc: |-
+    Specify the address of the Aspera high-speed proxy server.
+    dnat(s)://[user[:password]@]server:port
+    Default ports for DNAT and DNATS protocols are 9091 and 9092.
+    Password, if specified here, overrides the value of environment variable ASPERA_PROXY_PASS.
+
+
   :tragents:
   - :direct
   - :sdk
@@ -301,9 +308,12 @@ ssh_port:
   :cltype: :opt_with_arg
   :clswitch: "-P"
 ssh_private_key:
-  :desc: "Private key used for SSH authentication.\n
-   Shall look like: -----BEGIN RSA PRIV4TE KEY-----\\nMII...\n
-   Note the JSON encoding: \\n for newlines."
+  :desc: |-
+    Private key used for SSH authentication.
+    Shall look like: -----BEGIN RSA PRIV4TE KEY-----\nMII...
+    Note the JSON encoding: \n for newlines.
+
+
   :tragents:
   - :direct
   - :sdk
@@ -377,8 +387,11 @@ use_system_ssh:
   :cltype: :ignore
   :clswitch: "-SSH"
 source_root:
-  :desc: "Path to be prepended to each source path.\n
-This is either a conventional path or it can be a URI but only if there is no root defined."
+  :desc: |-
+    Path to be prepended to each source path.
+    This is either a conventional path or it can be a URI but only if there is no root defined.
+
+
   :cltype: :opt_with_arg
   :clswitch: "--source-prefix64"
   :clconvert: Aspera::Fasp::Parameters.clconv_base64
@@ -399,6 +412,20 @@ apply_local_docroot:
   - :direct
   - :sdk
   :cltype: :opt_without_arg
+src_base:
+  :desc: |-
+    Specify the prefix to be stripped off from each source object.
+    The remaining portion of the source path is kept intact at the destination.
+    Special care must be taken when used with cloud storage.
+
+
+  :tragents:
+  - :direct
+  - :node
+  - :sdk
+  :cltype: :opt_with_arg
+  :clswitch: "--src-base64"
+  :clconvert: Aspera::Fasp::Parameters.clconv_base64
 preserve_acls:
   :desc: "Preserve access control lists."
   :enum:
@@ -468,8 +495,11 @@ EX_at_rest_password:
   :cltype: :envvar
   :clvarname: ASPERA_SCP_FILEPASS
 EX_proxy_password:
-  :desc: "Password used for Aspera proxy server authentication.\n
-May be overridden by password in URL EX_fasp_proxy_url."
+  :desc: |-
+    Password used for Aspera proxy server authentication.
+    May be overridden by password in URL EX_fasp_proxy_url.
+
+
   :tragents:
   - :direct
   :cltype: :envvar

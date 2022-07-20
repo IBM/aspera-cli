@@ -19,6 +19,8 @@ module Aspera
       # Short names of columns in manual
       SUPPORTED_AGENTS_SHORT = SUPPORTED_AGENTS.map{|a|a.to_s[0].to_sym}
 
+      private_constant :SUPPORTED_AGENTS
+
       class << self
         # Temp folder for file lists, must contain only file lists
         # because of garbage collection takes any file there
@@ -40,6 +42,7 @@ module Aspera
           result = []
           description.each do |k,i|
             param = {name: k, type: [i[:accepted_types]].flatten.join(','),description: i[:desc]}
+            # add flags for supported agents in doc
             SUPPORTED_AGENTS.each do |a|
               param[a.to_s[0].to_sym] = i[:tragents].nil? || i[:tragents].include?(a) ? 'Y' : ''
             end
