@@ -46,7 +46,7 @@ module Aspera
       def secret?(keyword,value)
         keyword=keyword.to_s if keyword.is_a?(Symbol)
         # only Strings can be secrets, not booleans, or hash, arrays
-        keyword.is_a?(String) && SECRET_KEYWORDS.any?{|kw|keyword.include?(kw)} && value.is_a?(String)
+        keyword.is_a?(String) && ALL_SECRETS.any?{|kw|keyword.include?(kw)} && value.is_a?(String)
       end
 
       def deep_remove_secret(obj,is_name_value: false)
