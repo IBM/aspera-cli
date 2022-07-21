@@ -16,6 +16,7 @@ require 'aspera/rest'
 require 'aspera/nagios'
 require 'aspera/colors'
 require 'aspera/secret_hider'
+require 'net/ssh'
 
 module Aspera
   module Cli
@@ -266,12 +267,12 @@ module Aspera
       # early debug for parser
       # Note: does not accept shortcuts
       def early_debug_setup(argv)
-        Log.instance.program_name = PROGRAM_NAME
+        Aspera::Log.instance.program_name = PROGRAM_NAME
         argv.each do |arg|
           case arg
           when '--' then break
-          when /^--log-level=(.*)/ then Log.instance.level = Regexp.last_match(1).to_sym
-          when /^--logger=(.*)/ then Log.instance.logger_type = Regexp.last_match(1).to_sym
+          when /^--log-level=(.*)/ then Aspera::Log.instance.level = Regexp.last_match(1).to_sym
+          when /^--logger=(.*)/ then Aspera::Log.instance.logger_type = Regexp.last_match(1).to_sym
           end
         end
       end
@@ -334,19 +335,21 @@ module Aspera
           @plugin_env[:formater].display_results(command_plugin.execute_action) if execute_command
           # finish
           @plugin_env[:transfer].shutdown
-        rescue CliBadArgument => e;          exception_info = {e: e,t: 'Argument',usage: true}
-        rescue CliNoSuchId => e;             exception_info = {e: e,t: 'Identifier'}
-        rescue CliError => e;                exception_info = {e: e,t: 'Tool',usage: true}
-        rescue Fasp::Error => e;             exception_info = {e: e,t: 'FASP(ascp)'}
-        rescue Aspera::RestCallError => e;   exception_info = {e: e,t: 'Rest'}
-        rescue SocketError => e;             exception_info = {e: e,t: 'Network'}
-        rescue StandardError => e;           exception_info = {e: e,t: 'Other',debug: true}
-        rescue Interrupt => e;               exception_info = {e: e,t: 'Interruption',debug: true}
+        rescue Net::SSH::AuthenticationFailed => e; exception_info = {e: e,t: 'SSH',security: true}
+        rescue CliBadArgument => e;                 exception_info = {e: e,t: 'Argument',usage: true}
+        rescue CliNoSuchId => e;                    exception_info = {e: e,t: 'Identifier'}
+        rescue CliError => e;                       exception_info = {e: e,t: 'Tool',usage: true}
+        rescue Fasp::Error => e;                    exception_info = {e: e,t: 'FASP(ascp)'}
+        rescue Aspera::RestCallError => e;          exception_info = {e: e,t: 'Rest'}
+        rescue SocketError => e;                    exception_info = {e: e,t: 'Network'}
+        rescue StandardError => e;                  exception_info = {e: e,t: 'Other',debug: true}
+        rescue Interrupt => e;                      exception_info = {e: e,t: 'Interruption',debug: true}
         end
         # cleanup file list files
         TempFileManager.instance.cleanup
         # 1- processing of error condition
         unless exception_info.nil?
+          Log.log.warn(exception_info[:e].message) if Aspera::Log.instance.logger_type.eql?(:syslog) && exception_info[:security]
           @plugin_env[:formater].display_message(:error,"#{ERROR_FLASH} #{exception_info[:t]}: #{exception_info[:e].message}")
           @plugin_env[:formater].display_message(:error,'Use option -h to get help.') if exception_info[:usage]
           if exception_info[:e].is_a?(Fasp::Error) && exception_info[:e].message.eql?('Remote host is not who we expected')

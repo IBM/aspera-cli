@@ -79,7 +79,7 @@ module Aspera
         @logger = Logger.new($stdout)
       when :syslog
         require 'syslog/logger'
-        @logger = Syslog::Logger.new(@program_name)
+        @logger = Syslog::Logger.new(@program_name, Syslog::LOG_LOCAL2)
       else
         raise "unknown log type: #{new_logtype.class} #{new_logtype}"
       end
