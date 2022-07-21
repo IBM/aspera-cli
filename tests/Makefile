@@ -942,7 +942,7 @@ $(T)conf_plugins: $(T).exists
 	@touch $@
 $(T)conf_export: $(T).exists
 	@echo $@
-	$(EXE_MAN) config export
+	-$(EXE_MAN) config export
 	@touch $@
 SAMPLE_CONFIG_FILE=$(DIR_TMP)tmp_config.yml
 $(T)conf_wizard_org: $(T).exists
