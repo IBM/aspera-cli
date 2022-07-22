@@ -3540,7 +3540,8 @@ if `id` is set to `ALL`, then all packages are downloaded, and if option `once_o
 
 ### Sending a Package
 
-The command is `faspex package send`. Package information (title, note, metadata, options) is provided in option `delivery_info`. (Refer to Faspex API).
+The command is `faspex package send`. Package information (title, note, metadata, options) is provided in option `delivery_info`.
+The contents of `delivery_info` is directly the contents of the `send` v3 [API of Faspex 4](https://developer.ibm.com/apis/catalog/aspera--aspera-faspex-client-sdk/API%20v.3:%20Send%20Packages), consult it for extended supported parameters.
 
 Example:
 
