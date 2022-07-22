@@ -5,7 +5,10 @@
   * new: shares: import of SAML users and LDAP users
   * new: M1 apple silicon support SDK install (uses x86 ascp)
   * new: support bulk operation more globally (create/delete), not all ops , though
+  * new: added missing transfer spec parameters, e.g. `src_base`, `password`
+  * new: improved documentation on faspex and aoc package send
   * fix: `node do` command fixed
+  * fix: improved secret hiding from logs
 
 * 4.8.0
 
