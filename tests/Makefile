@@ -25,7 +25,13 @@ clean::
 
 # setup local environment on Macos for preview generation testing
 setupprev:
-	sudo systemsetup -setremotelogin on
+	test -d /Users/xfer || sudo /usr/sbin/sysadminctl -addUser xfer
+	sudo mkdir -p /Users/xfer/docroot/previews /Users/xfer/.ssh
+	sudo cp /Library/Aspera/var/aspera_tokenauth_id_rsa.pub /Users/xfer/.ssh/authorized_keys
+	sudo chown -R xfer: /Users/xfer/docroot /Users/xfer/.ssh
+	sudo chmod go-rwx /Users/xfer/.ssh
+	sudo chmod -R +a "$$(whoami) allow write" /Users/xfer/docroot
+	-sudo systemsetup -setremotelogin on
 	-sudo asnodeadmin -d -u $$($(EXE_NOMAN) config preset get tst_node_preview username)
 	sudo asnodeadmin -a -u $$($(EXE_NOMAN) config preset get tst_node_preview username) -p $$($(EXE_NOMAN) config preset get tst_node_preview password) -x xfer --acl-set admin,impersonation
 	sudo asconfigurator -x "user;user_name,xfer;file_restriction,|*;token_encryption_key,$$(base64 < /dev/urandom|head -c32);absolute,AS_NULL"
