@@ -3331,6 +3331,31 @@ shbxid=$(ascli aoc packages shared_inboxes show name 'My Shared Inbox' --format=
 ascli aoc packages list --query=@json:'{"dropbox_id":"'$shbxid'","archived":false,"received":true,"has_content":true,"exclude_dropbox_packages":false,"include_draft":false,"sort":"-received_at"}'
 ```
 
+#### Example: Send a package with files from the Files app
+
+Find files in Files app:
+
+```bash
+ascli aoc files browse /src_folder
+```
+
+```bash
++------------------------------+--------+----------------+--------------+----------------------+--------------+
+| name                         | type   | recursive_size | size         | modified_time        | access_level |
++------------------------------+--------+----------------+--------------+----------------------+--------------+
+| sample_video                 | link   |                |              | 2020-11-29T22:49:09Z | edit         |
+| 100G                         | file   |                | 107374182400 | 2021-04-21T18:19:25Z | edit         |
+| 10M.dat                      | file   |                | 10485760     | 2021-05-18T08:22:39Z | edit         |
+| Test.pdf                     | file   |                | 1265103      | 2022-06-16T12:49:55Z | edit         |
++------------------------------+--------+----------------+--------------+----------------------+--------------+
+```
+
+Let's send a package with the file `10M.dat` from subfolder /src_folder in a package:
+
+```bash
+ascli aoc files node_info /src_folder --format=json --display=data | ascli aoc package send --value=@json:'{"name":"test","recipients":["laurent.martin.aspera@fr.ibm.com"]}' 10M.dat --transfer=node --transfer-info=@json:@stdin:
+```
+
 #### <a id="aoccargo"></a>Receive new packages only (Cargo)
 
 It is possible to automatically download new packages, like using Aspera Cargo:
