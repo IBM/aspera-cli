@@ -38,5 +38,6 @@ uml: $(DIR_DOC)uml.png
 $(DIR_DOC)uml.png:
 	xumlidot --dot --no-composition $(DIR_LIB). > $(DIR_DOC)uml.dot
 	dot -Tpng $(DIR_DOC)uml.dot > $(DIR_DOC)uml.png
+	rm -f $(DIR_DOC)uml.dot
 clean::
-	rm -f $(DIR_DOC)uml.dot $(DIR_DOC)uml.png
+	rm -f $(DIR_DOC)uml.dot
