@@ -89,7 +89,8 @@ module Aspera
           return transfer.start(*aoc_api.tr_spec(app,direction,node_file,ts_add))
         end
 
-        NODE4_COMMANDS = %i[bearer_token_node node_info browse find mkdir rename delete upload download transfer http_node_download v3 file].freeze
+        NODE4_CMD_PATH = %i[bearer_token_node node_info browse find]
+        NODE4_COMMANDS = [NODE4_CMD_PATH,%i[mkdir rename delete upload download transfer http_node_download v3 file]].flatten.freeze
 
         def execute_node_gen4_command(command_repo,top_node_file)
           case command_repo
@@ -492,6 +493,7 @@ module Aspera
 
         # Call aoc_api.read with same parameters.
         # Use paging if necessary to get all results
+        # @return {list: , total: }
         def read_with_paging(resource_class_path,base_query)
           raise 'Query must be Hash' unless base_query.is_a?(Hash)
           # set default large page if user does not specify own parameters. AoC Caps to 1000 anyway
@@ -519,7 +521,7 @@ module Aspera
             break if !max_pages.nil? && page_count > max_pages
             break if !max_items.nil? && item_list.count > max_items
           end
-          return item_list,total_count
+          return {list: item_list,total: total_count}
         end
 
         def execute_admin_action
@@ -697,11 +699,11 @@ module Aspera
               when :group_membership then default_fields.push(*%w[group_id member_type member_id])
               when :workspace_membership then default_fields.push(*%w[workspace_id member_type member_id])
               end
-              item_list,total_count = read_with_paging(resource_class_path,option_url_query(default_query))
-              count_msg = "Items: #{item_list.length}/#{total_count}"
-              count_msg = count_msg.bg_red unless item_list.length.eql?(total_count.to_i)
+              items = read_with_paging(resource_class_path,option_url_query(default_query))
+              count_msg = "Items: #{items[:list].length}/#{items[:total]}"
+              count_msg = count_msg.bg_red unless items[:list].length.eql?(items[:total].to_i)
               self.format.display_status(count_msg)
-              return {type: :object_list,data: item_list,fields: default_fields}
+              return {type: :object_list,data: items[:list],fields: default_fields}
             when :show
               object = aoc_api.read(resource_instance_path)[:data]
               fields = object.keys.reject{|k|k.eql?('certificate')}
@@ -866,7 +868,8 @@ module Aspera
             end
           when :packages
             set_workspace_info if @url_token_data.nil?
-            case options.get_next_command(%i[shared_inboxes send recv list show delete])
+            package_command = options.get_next_command([%i[shared_inboxes send recv list show delete],NODE4_CMD_PATH].flatten)
+            case package_command
             when :shared_inboxes
               case options.get_next_command(%i[list show])
               when :list
@@ -993,6 +996,15 @@ module Aspera
                 raise 'expecting String identifier' unless id.is_a?(String) || id.is_a?(Integer)
                 aoc_api.delete("packages/#{id}")[:data]
               end
+            when *NODE4_CMD_PATH
+              package_id = options.get_next_argument('package ID')
+              #path = options.get_next_argument('path', mandatory: false) || '/'
+              package_info = aoc_api.read("packages/#{package_id}")[:data]
+              package_node_file = {
+                node_info: aoc_api.read("nodes/#{package_info['node_id']}")[:data],
+                file_id:   package_info['file_id']
+              }
+              return execute_node_gen4_command(package_command,package_node_file)
             end
           when :files
             # get workspace related information

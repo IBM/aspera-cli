@@ -519,7 +519,8 @@ $(T)aocp2: $(T).exists
 $(T)aocp3: $(T).exists
 	@echo $@
 	set -x&&package_id=$$($(EXE_NOMAN) aoc packages list --format=csv --fields=id --display=data|head -n 1)&&\
-	$(EXE_MAN) aoc packages recv "$${package_id}" --to-folder=$(DIR_TMP).
+	$(EXE_MAN) aoc packages recv "$${package_id}" --to-folder=$(DIR_TMP).&&\
+	$(EXE_MAN) aoc packages browse "$${package_id}" /contents
 	@touch $@
 $(T)aocp4: $(T).exists
 	@echo $@

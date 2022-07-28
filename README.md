@@ -3546,6 +3546,7 @@ aoc files upload Test.pdf --transfer=node --transfer-info=@json:@stdin:
 aoc files v3 info
 aoc org -N --link=my_aoc_publink_recv_from_aocuser
 aoc organization
+aoc packages browse "my_package_id" /contents
 aoc packages list
 aoc packages list --query=@json:'{"dropbox_name":"my_aoc_shbx_name","sort":"-received_at","archived":false,"received":true,"has_content":true,"exclude_dropbox_packages":false}'
 aoc packages recv "my_package_id" --to-folder=.
