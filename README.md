@@ -58,33 +58,12 @@ Using APIs (application REST API and transfer SDK) will prove to be easier to de
 
 For scripting and ad'hoc command line operations, `ascli` is perfect.
 
-## <a id="parsing"></a>Notations, Shell and Command line parsing
+## Notations, Shell, Examples
 
 In examples, command line operations are shown using a shell such: `bash` or `zsh`.
 
 Command line parameters in examples beginning with `my_`, like `my_param_value` are user-provided value and not fixed value commands.
 
-`ascli` is typically executed in a shell, either interactively or in a script. `ascli` receives its arguments from this shell.
-
-On Linux and Unix environments, this is typically a POSIX shell (bash, zsh, ksh, sh). In this environment shell command line parsing applies before `ascli` (Ruby) is executed, e.g. [bash shell operation](https://www.gnu.org/software/bash/manual/bash.html#Shell-Operation). Ruby receives a list parameters and gives it to `ascli`. So special character handling (quotes, spaces, env vars, ...) is done in the shell.
-
-On Windows, `cmd.exe` is typically used. Windows process creation does not receive the list of arguments but just the whole line. It's up to the program to parse arguments. Ruby follows the Microsoft C/C++ parameter parsing rules.
-
-* [Windows: How Command Line Parameters Are Parsed](https://daviddeley.com/autohotkey/parameters/parameters.htm#RUBY)
-* [Understand Quoting and Escaping of Windows Command Line Arguments](http://www.windowsinspired.com/understanding-the-command-line-string-and-arguments-received-by-a-windows-program/)
-
-In case of doubt of argument values after parsing test like this:
-
-```bash
-ascli conf echo "Hello World" arg2 3
-```
-
-```bash
-"Hello World"
-ERROR: Argument: unprocessed values: ["arg2", "3"]
-```
-
-`echo` displays the value of the first argument using ruby syntax (strings get double quotes) after command line parsing (shell) and extended value parsing (`ascli`), next command line arguments are shown in the error message.
 
 ## Quick Start
 
@@ -573,6 +552,167 @@ Using `ascli` with plugin `server` for command line gives advantages over ascp:
 * integrated support of multi-session
 
 Moreover all `ascp` options are supported either through transfer spec parameters and with the possibility to provide `ascp` arguments directly when the `direct` agent is used (`EX_ascp_args`).
+
+### <a id="parsing"></a>Command line parsing, Special Characters
+
+`ascli` is typically executed in a shell, either interactively or in a script.
+`ascli` receives its arguments from this shell (through Operating System).
+
+#### Linux, Unix, Macos
+
+On Linux and Unix environments, this is typically a POSIX shell (bash, zsh, ksh, sh).
+In this environment the shell parses the command line, possibly replacing variables, etc...
+see [bash shell operation](https://www.gnu.org/software/bash/manual/bash.html#Shell-Operation).
+Then it builds a list of arguments and then `ascli` (Ruby) is executed.
+Ruby receives a list parameters from shell and gives it to `ascli`.
+So special character handling (quotes, spaces, env vars, ...) is first done in the shell.
+
+#### Windows
+
+On Windows, `cmd.exe` is typically used.
+Windows process creation does not receive the list of arguments but just the whole line.
+It's up to the program to parse arguments. Ruby follows the Microsoft C/C++ parameter parsing rules.
+
+* [Windows: How Command Line Parameters Are Parsed](https://daviddeley.com/autohotkey/parameters/parameters.htm#RUBY)
+* [Understand Quoting and Escaping of Windows Command Line Arguments](http://www.windowsinspired.com/understanding-the-command-line-string-and-arguments-received-by-a-windows-program/)
+
+#### Extended Values (JSON, Ruby, ...)
+
+Some of the CLI parameters are expected to be [Extended Values](#extended), i.e. not a simple strings, but a complex structure (Hash, Array).
+Typically, the `@json:` modifier is used, it expects a JSON string. JSON itself has some special syntax: for example `"` is used to denote strings.
+
+#### Testing
+
+In case of doubt of argument values after parsing, one can test using command `config echo`:
+
+`config echo` takes exactly **one** [Extended Values](#extended) argument: unprocessed command line arguments are shown in the error message.
+
+`config echo` displays the value of the first argument using Ruby syntax: it surrounds a string with `"` and add `\` before special characters.
+Note that it gets its value after shell command line parsing and `ascli` extended value parsing.
+
+#### Examples
+
+In the following example (POSIX shell, sich as `bash`), several commands may be provided when equivalent.
+For all example, most of special character handling is not specific to `ascli`: It depoends on the underlying syntax: shell , JSON, etc...
+
+* Simple string
+
+```bash
+ascli conf echo "Hello World"
+ascli conf echo 'Hello World'
+ascli conf echo Hello\ World
+```
+
+Double quotes are processed by the shell to create a single string argument.
+For POSIX shells, single quotes can also be used in this case, or protext the special character ` ` (space) with a backslash.
+
+```ruby
+"Hello World"
+```
+
+* Extra arguments not processed
+
+```bash
+ascli conf echo 1 2 3
+```
+
+The shell parses three arguments (as strings), so the additional two arguments generate an error.
+
+```bash
+"1"
+ERROR: Argument: unprocessed values: ["2", "3"]
+```
+
+* Using shell variable
+
+```bash
+MYVAR="Hello World"
+ascli conf echo @json:'{"title":"'$MYVAR'"}'
+ascli conf echo @json:{\"title\":\"$MYVAR\"}
+```
+
+```ruby
+{"title"=>"Hello World"}
+```
+
+To be evaluated by shell, the shell variable must not be in single quotes.
+Neverthtless, even if the variable contains spaces it makes only one argument because word parsing is made beforehand by shell. 
+
+* double quote in JSON string
+
+```bash
+ascli conf echo @json:'"\""'
+ascli conf echo @json:\"\\\"\"
+ascli conf echo @ruby:\'\"\'
+```
+
+```ruby
+"\""
+```
+
+Double quote in JSON is a little tricky because `"` is special both for the shell and JSON.
+Both allows to protect it by preceding with a backslash.
+But only the shell allows protection using single quote.
+Here a single quote or a backslash protects the double quote to avoid shell processing, and then an additional `\` is added to protect the `"` for JSON. But as `\` is also shell special, then it is protected by another `\`.
+Here we wanted to use JSON parsing, but such simple string (one double quote) can also be obtained with:
+
+```bash
+ascli conf echo \"
+ascli conf echo '"'
+```
+
+Note also that the double quote is displayed prefixed with a `\` because it is also a ruby special character.
+(and enclosed in two `"` because it is a string displayed with ruby syntax)
+
+* shell and JSON or Ruby special characters in extended value
+
+```bash
+ascli conf echo @json:{\"title\":\"Test\ \\\"\ \'\ \&\ \\\\\"}
+ascli conf echo @json:'{"title":"Test \" '\'' & \\"}'
+ascli conf echo @ruby:"{'title'=>%q{Test \" ' & \\\\}}"
+```
+
+```ruby
+{"title"=>"Test \" ' & \\"}
+```
+
+Here the correct JSON is:
+
+```json
+{"title":"Test \" ' & \\"}
+```
+
+Both `"` and `\` are JSON special characters and must be protect with `\` for JSON.
+
+Or, using Ruby syntax (using extended single quote notation `%q`):
+
+```ruby
+{'title'=>%q{Test " ' & \\}}
+```
+
+Then, any shell special characters must be protected, either using preceding `\` for each character to protect, or by enclosing in single quote.
+
+* extended value using special characters in environmental variables or files
+
+Note that the extended value `@ruby:` modifier allows any ruby code in expression, including reading from file or env var:
+
+Create a file `title.txt` (and env var) that contains exactly the text required: `Test " ' & \` using an editor or with shell:
+
+```bash
+export MYTITLE='Test " '\'' & \'
+echo -n $MYTITLE > title.txt
+```
+
+```bash
+ascli conf echo @ruby:"{'title'=>File.read('title.txt')}"
+ascli conf echo @ruby:"{'title'=>ENV['MYTITLE']}"
+```
+
+```ruby
+{"title"=>"Test \" ' & \\"}
+```
+
+Here we use ruby syntax to create the extended value of type Hash. Actual values are read either from a plain text file or an environment variable. In those cases, there is no character to protect because values are not parsed by the shell, or JSON or even Ruby.
 
 ### Arguments : Commands and options
 
