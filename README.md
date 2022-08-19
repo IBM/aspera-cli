@@ -558,7 +558,7 @@ Moreover all `ascp` options are supported either through transfer spec parameter
 `ascli` is typically executed in a shell, either interactively or in a script.
 `ascli` receives its arguments from this shell (through Operating System).
 
-#### Linux, Unix, Macos
+#### Shell parsing for Linux, Unix, Macos
 
 On Linux and Unix environments, this is typically a POSIX shell (bash, zsh, ksh, sh).
 In this environment the shell parses the command line, possibly replacing variables, etc...
@@ -567,7 +567,7 @@ Then it builds a list of arguments and then `ascli` (Ruby) is executed.
 Ruby receives a list parameters from shell and gives it to `ascli`.
 So special character handling (quotes, spaces, env vars, ...) is first done in the shell.
 
-#### Windows
+#### Shell parsing for Windows
 
 On Windows, `cmd.exe` is typically used.
 Windows process creation does not receive the list of arguments but just the whole line.
@@ -581,138 +581,162 @@ It's up to the program to parse arguments. Ruby follows the Microsoft C/C++ para
 Some of the CLI parameters are expected to be [Extended Values](#extended), i.e. not a simple strings, but a complex structure (Hash, Array).
 Typically, the `@json:` modifier is used, it expects a JSON string. JSON itself has some special syntax: for example `"` is used to denote strings.
 
-#### Testing
+#### Testing Extended Values
 
-In case of doubt of argument values after parsing, one can test using command `config echo`:
+In case of doubt of argument values after parsing, one can test using command `config echo`. `config echo` takes exactly **one** argument which can use the [Extended Value](#extended) syntax. Unprocessed command line arguments are shown in the error message.
 
-`config echo` takes exactly **one** [Extended Values](#extended) argument: unprocessed command line arguments are shown in the error message.
-
-`config echo` displays the value of the first argument using Ruby syntax: it surrounds a string with `"` and add `\` before special characters.
-Note that it gets its value after shell command line parsing and `ascli` extended value parsing.
-
-#### Examples
-
-In the following example (POSIX shell, sich as `bash`), several commands may be provided when equivalent.
-For all example, most of special character handling is not specific to `ascli`: It depoends on the underlying syntax: shell , JSON, etc...
-
-* Simple string
-
-```bash
-ascli conf echo "Hello World"
-ascli conf echo 'Hello World'
-ascli conf echo Hello\ World
-```
-
-Double quotes are processed by the shell to create a single string argument.
-For POSIX shells, single quotes can also be used in this case, or protext the special character ` ` (space) with a backslash.
-
-```ruby
-"Hello World"
-```
-
-* Extra arguments not processed
+Example: The shell parses three arguments (as strings: `1`, `2` and `3`), so the additional two arguments are not processed by the `echo` command.
 
 ```bash
 ascli conf echo 1 2 3
 ```
-
-The shell parses three arguments (as strings), so the additional two arguments generate an error.
 
 ```bash
 "1"
 ERROR: Argument: unprocessed values: ["2", "3"]
 ```
 
-* Using shell variable
+`config echo` displays the value of the first argument using Ruby syntax: it surrounds a string with `"` and add `\` before special characters.
+Note that it gets its value after shell command line parsing and `ascli` extended value parsing.
+
+In the following examples (using a POSIX shell, such as `bash`), several sample commands are provided when equivalent.
+For all example, most of special character handling is not specific to `ascli`: It depoends on the underlying syntax: shell , JSON, etc...
+Depending on the case, a different `format` is used to display the actual value.
+
+For example, in the simple string `Hello World`, the space character is special for the shell, so it must be escaped so that a single value is represented.
+
+Double quotes are processed by the shell to create a single string argument.
+For POSIX shells, single quotes can also be used in this case, or protext the special character ` ` (space) with a backslash.
+
+```bash
+ascli conf echo "Hello World" --format=text
+ascli conf echo 'Hello World' --format=text
+ascli conf echo Hello\ World --format=text
+```
+
+```output
+Hello World
+```
+
+#### Using a shell variable, parsed by shell, in an extended value
+
+To be evaluated by shell, the shell variable must not be in single quotes.
+Note we use a simple variable here: the variable is not necessarily an environment variable.
+Even if the variable contains spaces it makes only one argument to `ascli` because word parsing is made before variable expansion by shell. 
 
 ```bash
 MYVAR="Hello World"
-ascli conf echo @json:'{"title":"'$MYVAR'"}'
-ascli conf echo @json:{\"title\":\"$MYVAR\"}
+ascli conf echo @json:'{"title":"'$MYVAR'"}' --format=json
+ascli conf echo @json:{\"title\":\"$MYVAR\"} --format=json
 ```
 
-```ruby
-{"title"=>"Hello World"}
+```json
+{"title":"Hello World"}
 ```
 
-To be evaluated by shell, the shell variable must not be in single quotes.
-Neverthtless, even if the variable contains spaces it makes only one argument because word parsing is made beforehand by shell. 
+#### Double quote in strings in command line
 
-* double quote in JSON string
-
-```bash
-ascli conf echo @json:'"\""'
-ascli conf echo @json:\"\\\"\"
-ascli conf echo @ruby:\'\"\'
-```
-
-```ruby
-"\""
-```
-
-Double quote in JSON is a little tricky because `"` is special both for the shell and JSON.
-Both allows to protect it by preceding with a backslash.
-But only the shell allows protection using single quote.
-Here a single quote or a backslash protects the double quote to avoid shell processing, and then an additional `\` is added to protect the `"` for JSON. But as `\` is also shell special, then it is protected by another `\`.
-Here we wanted to use JSON parsing, but such simple string (one double quote) can also be obtained with:
+Double quote is a shell special character.
+Like any shell special character, it can be protected either by preceding with a backslash or by enclosing in a single quote.
 
 ```bash
 ascli conf echo \"
 ascli conf echo '"'
 ```
 
-Note also that the double quote is displayed prefixed with a `\` because it is also a ruby special character.
-(and enclosed in two `"` because it is a string displayed with ruby syntax)
+```output
+"
+```
 
-* shell and JSON or Ruby special characters in extended value
+Double quote in JSON is a little tricky because `"` is special both for the shell and JSON. Both shell and JSON syntax allow to protect `"`, but only the shell allows protection using single quote.
 
 ```bash
-ascli conf echo @json:{\"title\":\"Test\ \\\"\ \'\ \&\ \\\\\"}
-ascli conf echo @json:'{"title":"Test \" '\'' & \\"}'
-ascli conf echo @ruby:"{'title'=>%q{Test \" ' & \\\\}}"
+ascli conf echo @json:'"\""' --format=text
+ascli conf echo @json:\"\\\"\" --format=text
+ascli conf echo @ruby:\'\"\' --format=text
 ```
 
-```ruby
-{"title"=>"Test \" ' & \\"}
+```output
+"
 ```
 
-Here the correct JSON is:
+Here a single quote or a backslash protects the double quote to avoid shell processing, and then an additional `\` is added to protect the `"` for JSON. But as `\` is also shell special, then it is protected by another `\`.
+  
+#### Shell and JSON or Ruby special characters in extended value
+
+Construction of values with special characters is done like this:
+
+* First select a syntax to represent the extended value, e.g. JSON or Ruby
+
+* Write the expression using this syntax, for example, using JSON:
 
 ```json
 {"title":"Test \" ' & \\"}
 ```
 
-Both `"` and `\` are JSON special characters and must be protect with `\` for JSON.
-
-Or, using Ruby syntax (using extended single quote notation `%q`):
+or using Ruby:
 
 ```ruby
+{"title"=>"Test \" ' & \\"}
 {'title'=>%q{Test " ' & \\}}
 ```
 
-Then, any shell special characters must be protected, either using preceding `\` for each character to protect, or by enclosing in single quote.
+Both `"` and `\` are special characters for JSON and Ruby and can be protected with `\` (unless Ruby's extended single quote notation `%q` is used).
+  
+* Then, since the value will be evaluated by shell, any shell special characters must be protected, either using preceding `\` for each character to protect, or by enclosing in single quote:
 
-* extended value using special characters in environmental variables or files
+```bash
+ascli conf echo @json:{\"title\":\"Test\ \\\"\ \'\ \&\ \\\\\"} --format=json
+ascli conf echo @json:'{"title":"Test \" '\'' & \\"}' --format=json
+ascli conf echo @ruby:"{'title'=>%q{Test \" ' & \\\\}}" --format=json
+```
 
-Note that the extended value `@ruby:` modifier allows any ruby code in expression, including reading from file or env var:
+```json
+{"title":"Test \" ' & \\"}
+```
 
-Create a file `title.txt` (and env var) that contains exactly the text required: `Test " ' & \` using an editor or with shell:
+#### Reading special characters interractively
+
+If `ascli` is used interractively (a user typing on terminal), it is easy to require the user to type values:
+
+```bash
+ascli conf echo @ruby:"{'title'=>gets.chomp}" --format=json
+```
+
+`gets` is Ruby's method of terminal input (terminated by `\n`), and `chomp` removes the trailing `\n`.
+
+#### Extended value using special characters read from environmental variables or files
+
+Using a text editor or shell: create a file `title.txt` (and env var) that contains exactly the text required: `Test " ' & \` :
 
 ```bash
 export MYTITLE='Test " '\'' & \'
 echo -n $MYTITLE > title.txt
 ```
 
+Using those values will not require any escaping of characters since values do not go through shell or JSON parsing.
+
+If the value is to be assigned directly to an option of ascli, then you can directly use the content of the file or env var using the `@file:` or `@env:` readers:
+
 ```bash
-ascli conf echo @ruby:"{'title'=>File.read('title.txt')}"
-ascli conf echo @ruby:"{'title'=>ENV['MYTITLE']}"
+ascli conf echo @file:title.txt --format=text
+ascli conf echo @env:MYTITLE --format=text
 ```
 
-```ruby
-{"title"=>"Test \" ' & \\"}
+```output
+Test " ' & \
 ```
 
-Here we use ruby syntax to create the extended value of type Hash. Actual values are read either from a plain text file or an environment variable. In those cases, there is no character to protect because values are not parsed by the shell, or JSON or even Ruby.
+If the value to be used is in a more complex structure, then the `@ruby:` modifier can be used: it allows any ruby code in expression, including reading from file or env var. In those cases, there is no character to protect because values are not parsed by the shell, or JSON or even Ruby.
+
+```bash
+ascli conf echo @ruby:"{'title'=>File.read('title.txt')}" --format=json
+ascli conf echo @ruby:"{'title'=>ENV['MYTITLE']}" --format=json
+```
+
+```json
+{"title":"Test \" ' & \\"}
+```
 
 ### Arguments : Commands and options
 
@@ -817,6 +841,7 @@ If transposition of single object is not desired, use option: `transpose_single`
 
 The style of output can be set using the `format` parameter, supporting:
 
+* `text` : Value as String
 * `table` : Text table
 * `ruby` : Ruby code
 * `json` : JSON code
@@ -2160,13 +2185,13 @@ activating CSEAR consists in using transfer spec parameters:
 
 Example: parameter to download a faspex package and decrypt on the fly
 
-```json
+```javascript
 --ts=@json:'{"content_protection":"decrypt","content_protection_password":"_pass_here_"}'
 ```
 
 Note that up to version 4.6.0, the following parameters should be used for agent `direct`:
 
-```json
+```javascript
 --ts=@json:'{"EX_ascp_args":["--file-crypt=decrypt"],"EX_at_rest_password":"_secret_here_"}'
 ```
 
@@ -2390,7 +2415,7 @@ ARGS
 OPTIONS: global
         --interactive=ENUM           use interactive input of missing params: yes, [no]
         --ask-options=ENUM           ask even optional options: yes, [no]
-        --format=ENUM                output format: [table], ruby, json, jsonpp, yaml, csv, nagios
+        --format=ENUM                output format: text, nagios, ruby, json, jsonpp, yaml, [table], csv
         --display=ENUM               output only some information: [info], data, error
         --fields=VALUE               comma separated list of fields, or ALL, or DEF
         --select=VALUE               select only some items in lists, extended value: hash (column, value)
@@ -3196,7 +3221,7 @@ ascli aoc admin res workspace_membership list --fields=member_type,manager,membe
 :.............:.........:..................................:
 ```
 
-other query parameters:
+Other query parameters:
 
 ```javascript
 {"workspace_membership_through":true,"include_indirect":true}
@@ -3370,37 +3395,42 @@ ascli aoc admin res client list --fields=id --format=csv|ascli aoc admin res cli
 +-----+---------+
 ```
 
-#### Example: Create a node
+#### Example: Create a Node
 
 AoC nodes as actually composed with two related entities:
 
 * An access key created on the Transfer Server (HSTS/ATS)
 * a `node` resource in the AoC application.
 
-The web UI allows creation of both entities in one shot but not the CLI for more flexibility.
-Note that when selecting "Use existing access key" in the web UI, this actually skips access key creation.
+The web UI allows creation of both entities in one shot.
+For more flexibility, `ascli` allows this in two separate steps.
+Note that when selecting "Use existing access key" in the web UI, this actually skips access key creation (first step).
 
 So, for example, the creation of a node using ATS in IBM Cloud looks like (see other example in this manual):
 
-* create the access key on ATS
+* Create the access key on ATS
 
-```javascript
-ascli aoc admin ats access_key create --cloud=softlayer --region=eu-de --params=@json:'{"storage":{"type":"ibm-s3","bucket":"mybucket","credentials":{"access_key_id":"mykey","secret_access_key":"mysecret"},"path":"/"}}'
-```
+  The creation options are the ones of ATS API, refer to the [section on ATS](#ats_params) for more details and examples.
 
-Take a note of the randomly generated `id` and `secret`.
+  ```javascript
+  ascli aoc admin ats access_key create --cloud=softlayer --region=eu-de --params=@json:'{"storage":{"type":"ibm-s3","bucket":"mybucket","credentials":{"access_key_id":"mykey","secret_access_key":"mysecret"},"path":"/"}}'
+  ```
 
-* Retrieve the ATS node address
+  Once executed, the access key `id` and `secret`, randomly generated by the node api, is displayed: take note of it as the secrets will not be disclosed again.
 
-```bash
-ascli aoc admin ats cluster show --cloud=softlayer --region=eu-de --fields=transfer_setup_url --format=csv --transpose-single=no
-```
+* Create the AoC node entity
 
-* Create the node entity
+  First, Retrieve the ATS node address
 
-```javascript
-ascli aoc admin res node create @json:'{"name":"myname","access_key":"*accesskeyid*","ats_access_key":true,"ats_storage_type":"ibm-s3","url":"https://ats-sl-fra-all.aspera.io"}'
-```
+  ```bash
+  ascli aoc admin ats cluster show --cloud=softlayer --region=eu-de --fields=transfer_setup_url --format=csv --transpose-single=no
+  ```
+
+  Then use the returned address for the `url` key to actually create the AoC Node entity:
+
+  ```javascript
+  ascli aoc admin res node create @json:'{"name":"myname","access_key":"*accesskeyid*","ats_access_key":true,"ats_storage_type":"ibm-s3","url":"https://ats-sl-fra-all.aspera.io"}'
+  ```
 
 Creation of a node with a self-managed node is similar, but the command `aoc admin ats access_key create` is replaced with `node access_key create` on the private node itself.
 
@@ -3782,6 +3812,10 @@ ascli ats api_key create
 +--------+----------------------------------------------+
 ascli config preset update my_ibm_ats --ats-key=ats_XXXXXXXXXXXXXXXXXXXXXXXX --ats-secret=YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY
 ```
+
+### <a id="ats_params"></a>ATS Access key creation parameters
+
+When creating an ATS access key, the option `params` must contain an extended value with the creation parameters. Those asre directly the parameters expected by the [ATS API](https://developer.ibm.com/apis/catalog?search=%22Aspera%20ATS%20API%22).
 
 ### Misc. Examples
 
@@ -4193,19 +4227,19 @@ faspex5 package send --value=@json:'{"title":"test title","recipients":[{"name":
 
 * List all shared inboxes
 
-```json
+```javascript
 ascli faspex5 admin res shared list --value=@json:'{"all":true}' --fields=id,name
 ```
 
 * Create Metadata profile
 
-```json
+```javascript
 ascli faspex5 admin res metadata_profiles create --value=@json:'{"name":"the profile","default":false,"title":{"max_length":200,"illegal_chars":[]},"note":{"max_length":400,"illegal_chars":[],"enabled":false},"fields":[{"ordering":0,"name":"field1","type":"text_area","require":true,"illegal_chars":[],"max_length":100},{"ordering":1,"name":"fff2","type":"option_list","require":false,"choices":["opt1","opt2"]}]}'
 ```
 
 * Create a Shared inbox with specific metadata profile
 
-```json
+```javascript
 ascli faspex5 admin res shared create --value=@json:'{"name":"the shared inbox","metadata_profile_id":1}'
 ```
 
@@ -5215,7 +5249,7 @@ Cause: `ascp` >= 4.x checks fingerprint of highest server host key, including EC
 
 Workaround on client side: To ignore the certificate (SSH fingerprint) add option on client side (this option can also be added permanently to the config file):
 
-```json
+```javascript
 --ts=@json:'{"sshfp":null}'
 ```
 
