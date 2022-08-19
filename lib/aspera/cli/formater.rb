@@ -14,7 +14,7 @@ module Aspera
       CSV_RECORD_SEPARATOR = "\n"
       CSV_FIELD_SEPARATOR = ','
       # supported output formats
-      DISPLAY_FORMATS = %i[table ruby json jsonpp yaml csv nagios].freeze
+      DISPLAY_FORMATS = %i[text nagios ruby json jsonpp yaml table csv].freeze
       # user output levels
       DISPLAY_LEVELS = %i[info data error].freeze
       CONF_OVERVIEW_KEYS=%w[config parameter value].freeze
@@ -147,6 +147,8 @@ module Aspera
         # comma separated list in string format
         user_asked_fields_list_str = @option_fields
         case @option_format
+        when :text
+          display_message(:data,res_data.to_s)
         when :nagios
           Nagios.process(res_data)
         when :ruby
