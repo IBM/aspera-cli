@@ -773,6 +773,7 @@ module Aspera
             result = {type: :other_struct, data: options.get_next_argument('value')}
             # special for csv
             result[:type] = :object_list if result[:data].is_a?(Array) && result[:data].first.is_a?(Hash)
+            result[:type] = :single_object if result[:data].is_a?(Hash)
             return result
           when :flush_tokens
             deleted_files = Oauth.flush_tokens
