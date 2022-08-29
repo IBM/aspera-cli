@@ -1857,6 +1857,8 @@ For example the option `--ts=@json:'{"EX_ascp_args":["-DDL-"]}'` will activate d
 This is useful if the transfer fails.
 To store ascp logs in file `aspera-scp-transfer.log` in a folder, use `--ts=@json:'{"EX_ascp_args":["-L","/path/to/folder"]}'`.
 
+> Implementation note: when transfer agent [`direct`](#agt_direct) is used, the list of files to transfer is provided to `ascp` using either `--file-list` or `--file-pair-list` and a file list (or pair) file generated in a temporary folder. (unless `--file-list` or `--file-pair-list` is provided in option `ts` in `EX_ascp_args`).
+
 #### <a id="agt_connect"></a>IBM Aspera Connect Client GUI
 
 By specifying option: `--transfer=connect`, `ascli` will start transfers using the locally installed Aspera Connect Client. There are no option for `transfer_info`.
@@ -2065,87 +2067,111 @@ The option `to_folder` provides an equivalent and convenient way to change this 
 
 #### List of files for transfers
 
-When uploading, downloading or sending files, the user must specify the list of files to transfer. The option to specify the list of files is `sources`, the default value is `@args`, which means: take remain non used arguments (not starting with `-` as list of files.
-So, by default, the list of files to transfer will be simply specified on the command line:
+When uploading, downloading or sending files, the user must specify the list of files to transfer.
 
-```bash
-ascli server upload ~/mysample.file secondfile
-```
+By default the list of files to transfer is simply provided on the command line.
+The list of (source) files to transfer is specified by (extended value) option `sources` (default: `@args`).
+Also, depending on value of option `src_type` (default: `list`), the list is either simply the list of source files, or a combined source/destination list (see below).
 
-This is equivalent to:
+In `ascli`, all transfer parameters, including file list, are kept in [*transfer-spec*](#transferspec) so that execution of a transfer is independent of the transfer agent (direct, connect, node, transfer sdk...).
+So, eventually, the list of files to transfer is provided to the transfer agent using the [*transfer-spec*](#transferspec) field: `"paths"` which is a list (array) of pairs of `"source"` (mandatory) and `"destination"` (optional).
+The `sources` and `src_type` provide convenient ways to populate the transfer spec.
 
-```bash
-ascli server upload --sources=@args ~/mysample.file secondfile
-```
+Possible values for option `sources` are:
 
-More advanced options are provided to adapt to various cases. In fact, list of files to transfer are normally conveyed using the [*transfer-spec*](#transferspec) using the field: "paths" which is a list (array) of pairs of "source" (mandatory) and "destination" (optional).
+* `@args` : (default) the list of files (or file pair) is directly provided on the command line (after commands): unused arguments (not starting with `-`) are considered as source files.
+So, by default, the list of files to transfer will be simply specified on the command line. Example:
 
-Note that this is different from the "ascp" command line. The paradigm used by `ascli` is:
-all transfer parameters are kept in [*transfer-spec*](#transferspec) so that execution of a transfer is independent of the transfer agent. Note that other IBM Aspera interfaces use this: connect, node, transfer sdk.
+  ```bash
+  ascli server upload ~/first.file secondfile
+  ```
 
-For ease of use and flexibility, the list of files to transfer is specified by the option `sources`. Accepted values are:
+  This is equivalent to (with default values):
 
-* `@args` : (default value) the list of files is directly provided at the end of the command line (see at the beginning of this section).
+  ```bash
+  ascli server upload --sources=@args --src-type=list ~/mysample.file secondfile
+  ```
 
-* an [Extended Value](#extended) holding an *Array of String*. Examples:
+* an [Extended Value](#extended) with type **Array of String**
 
-```javascript
---sources=@json:'["file1","file2"]'
-```
+  > Note: extended values can be tested with the command `conf echo`
 
-```bash
---sources=@lines:@stdin:
-```
+  Examples:
 
-```ruby
---sources=@ruby:'File.read("myfilelist").split("\n")'
-```
+  * Provide file list with file using extended value
 
-* `@ts` : the user provides the list of files directly in the `ts` option, in its `paths` field. Example:
+    ```ruby
+    --sources=@lines:@file:myfilelist.txt
+    ```
 
-```javascript
---sources=@ts --ts=@json:'{"paths":[{"source":"file1"},{"source":"file2"}]}'
-```
+  * Provide file list with JSON array
 
-providing a file list directly to ascp:
+    ```javascript
+    --sources=@json:'["file1","file2"]'
+    ```
 
-```javascript
-... --sources=@ts --ts=@json:'{"paths":[],"EX_file_list":"filelist.txt"}'
-```
+  * Provide file list from input
 
-* Not recommended: It is possible to specify bare ascp arguments using the pseudo [*transfer-spec*](#transferspec) parameter `EX_ascp_args`.
+    ```bash
+    --sources=@lines:@stdin:
+    ```
 
-```javascript
---sources=@ts --ts=@json:'{"paths":[{"source":"dummy"}],"EX_ascp_args":["--file-list","myfilelist"]}'
-```
+  * Provide file list with file using ruby
 
-This method avoids creating a copy of the file list, but has drawbacks: it applies *only* to the [`direct`](#agt_direct) transfer agent (i.e. local `ascp`) and not for Aspera on Cloud.
-One must specify a dummy list in the [*transfer-spec*](#transferspec), which will be overridden by the `ascp` command line provided.
-(TODO) In next version, dummy source paths can be removed.
+    ```ruby
+    --sources=@ruby:'File.read("myfilelist.txt").split("\n")'
+    ```
 
-In case the file list is provided on the command line i.e. using `--sources=@args` or `--sources=<Array>` (but not `--sources=@ts`), then the list of files will be used either as a simple file list or a file pair list depending on the value of the option: `src_type`:
+* `@ts` : the user provides the list of files directly in the `ts` option, in its `paths` field.
+Examples:
 
-* `list` : (default) the path of destination is the same as source
-* `pair` : in that case, the first element is the first source, the second element is the first destination, and so on.
+  * Provide file list with transfer spec
 
-Example:
+  ```javascript
+  --sources=@ts --ts=@json:'{"paths":[{"source":"file1"},{"source":"file2"}]}'
+  ```
+
+  * Providing file list directly to ascp using the pseudo [*transfer-spec*](#transferspec) parameter `EX_file_list` (works only with `direct` agent)
+
+  ```javascript
+  ... --sources=@ts --ts=@json:'{"paths":[],"EX_file_list":"filelist.txt"}'
+  ```
+
+  * Provide file list with `ascp` arguments using the pseudo [*transfer-spec*](#transferspec) parameter `EX_ascp_args` (works only with `direct` agent)
+
+  ```javascript
+  --sources=@ts --ts=@json:'{"paths":[{"source":"dummy"}],"EX_ascp_args":["--file-list","myfilelist"]}'
+  ```
+
+  This method avoids creating a copy of the file list, but has drawbacks: it applies *only* to the [`direct`](#agt_direct) transfer agent (i.e. local `ascp`) and not for Aspera on Cloud.
+  One must specify a dummy list in the [*transfer-spec*](#transferspec), which will be overridden by the `ascp` command line provided.
+  (TODO) In next version, dummy source paths can be removed.
+
+The option `src_type` allows specifying if the list specified in option `sources` is a simple file list or if it is a file pair list.
+
+> Note: Option `src_type` is not used if option `sources` is set to `@ts`
+
+Supported values for `src_type` are:
+
+* `list` : (default) the path of destination is the same as source and each entry is a source file path
+* `pair` : the first element is the first source, the second element is the first destination, and so on.
+
+Example: Source file `200KB.1` is renamed `sample1` on destination:
 
 ```bash
 ascli server upload --src-type=pair ~/Documents/Samples/200KB.1 /Upload/sample1
 ```
 
-Internally, when transfer agent [`direct`](#agt_direct) is used, a temporary file list (or pair) file is generated and provided to ascp, unless `--file-list` or `--file-pair-list` is provided in `ts` in `EX_ascp_args`.
+Note the special case when the source files are located on "Aspera on Cloud" (i.e. using access keys and the `file id` API):
 
-Note the special case when the source files are located on "Aspera on Cloud", i.e. using access keys and the `file id` API:
-
-* All files must be in the same source folder.
+* All source files must be in the same source folder.
 * If there is a single file : specify the full path
 * For multiple files, specify the source folder as first item in the list followed by the list of file names.
 
 Source files are located on "Aspera on cloud", when :
 
-* the server is Aspera on Cloud, and making a download / recv
-* the agent is Aspera on Cloud, and making an upload / send
+* the server is Aspera on Cloud, and executing a download or recv
+* the agent is Aspera on Cloud, and executing an upload or send
 
 #### <a id="multisession"></a>Support of multi-session
 
