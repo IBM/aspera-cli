@@ -131,6 +131,15 @@ $(T)serv_upload: $(T)serv_mkdir
 	$(EXE_MAN) server upload --sources=@ts --ts=@json:'{"paths":[{"source":"$(CF_LOCAL_SAMPLE_FILEPATH)","destination":"$(NEW_SERVER_FOLDER)/othername"}]}'
 	$(EXE_MAN) server upload --src-type=pair $(CF_LOCAL_SAMPLE_FILEPATH) $(CF_HSTS_FOLDER_UPLOAD)/with_options --ts=@json:'{"cipher":"aes-192-gcm","content_protection":"encrypt","content_protection_password":"_secret_here_","cookie":"biscuit","create_dir":true,"delete_before_transfer":false,"delete_source":false,"exclude_newer_than":1,"exclude_older_than":10000,"fasp_port":33001,"http_fallback":false,"multi_session":0,"overwrite":"diff+older","precalculate_job_size":true,"preserve_access_time":true,"preserve_creation_time":true,"rate_policy":"fair","resume_policy":"sparse_csum","symlink_policy":"follow"}'
 	@touch $@
+$(T)serv_upload_ex: $(T)serv_mkdir
+	echo $(CF_LOCAL_SAMPLE_FILEPATH) > $(DIR_TMP)filelist.txt
+	echo $(CF_LOCAL_SAMPLE_FILEPATH) > $(DIR_TMP)filepairlist.txt
+	echo $(NEW_SERVER_FOLDER)/othername >> $(DIR_TMP)filepairlist.txt
+	$(EXE_MAN) server upload --sources=@ts --ts=@json:'{"EX_file_list":"'"$(DIR_TMP)filelist.txt"'"}' --to-folder=$(NEW_SERVER_FOLDER)
+	$(EXE_MAN) server upload --sources=@ts --ts=@json:'{"EX_file_pair_list":"'"$(DIR_TMP)filepairlist.txt"'"}'
+	$(EXE_MAN) server upload --sources=@ts --ts=@json:'{"EX_ascp_args":["--file-list","'"$(DIR_TMP)filelist.txt"'"]}' --to-folder=$(NEW_SERVER_FOLDER) 
+	$(EXE_MAN) server upload --sources=@ts --ts=@json:'{"EX_ascp_args":["--file-pair-list","'"$(DIR_TMP)filepairlist.txt"'"]}'
+	@touch $@
 $(T)serv_md5: $(T)serv_upload
 	@echo $@
 	$(EXE_MAN) server md5sum $(NEW_SERVER_FOLDER)/$(CF_LOCAL_SAMPLE_FILENAME)
@@ -204,7 +213,7 @@ $(T)asession: $(T).exists
 	$(DIR_BIN)asession @json:'{"remote_host":"'"$${remote_host}"'","remote_user":"'"$${remote_user}"'","ssh_port":'$${remote_port}',"remote_password":"'"$${remote_pass}"'","direction":"receive","destination_root":"$(DIR_TMP).","paths":[{"source":"/aspera-test-dir-tiny/200KB.1"}]}'
 	@touch $@
 
-tfasp: $(T)serv_browse $(T)serv_mkdir $(T)serv_upload $(T)serv_md5 $(T)serv_down_lcl $(T)serv_down_from_node $(T)serv_cp $(T)serv_mv $(T)serv_delete $(T)serv_cleanup1 $(T)serv_info $(T)serv_du $(T)serv_df $(T)asession $(T)serv_nodeadmin $(T)serv_nagios_hsts $(T)serv_nagios_webapp $(T)serv_nagios_transfer $(T)serv3 $(T)serv_key
+tfasp: $(T)serv_browse $(T)serv_mkdir $(T)serv_upload $(T)serv_upload_ex $(T)serv_md5 $(T)serv_down_lcl $(T)serv_down_from_node $(T)serv_cp $(T)serv_mv $(T)serv_delete $(T)serv_cleanup1 $(T)serv_info $(T)serv_du $(T)serv_df $(T)asession $(T)serv_nodeadmin $(T)serv_nagios_hsts $(T)serv_nagios_webapp $(T)serv_nagios_transfer $(T)serv3 $(T)serv_key
 
 $(T)fx_plst: $(T).exists
 	@echo $@

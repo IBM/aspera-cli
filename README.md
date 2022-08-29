@@ -1859,6 +1859,26 @@ To store ascp logs in file `aspera-scp-transfer.log` in a folder, use `--ts=@jso
 
 > Implementation note: when transfer agent [`direct`](#agt_direct) is used, the list of files to transfer is provided to `ascp` using either `--file-list` or `--file-pair-list` and a file list (or pair) file generated in a temporary folder. (unless `--file-list` or `--file-pair-list` is provided in option `ts` in `EX_ascp_args`).
 
+In addition to standard methods described in section [File List](#file_list), it is possible to specify the list of file using those additional methods:
+
+* Using the pseudo [*transfer-spec*](#transferspec) parameter `EX_file_list`
+
+```javascript
+--sources=@ts --ts=@json:'{"EX_file_list":"filelist.txt"}'
+```
+
+* Using the pseudo [*transfer-spec*](#transferspec) parameter `EX_ascp_args`
+
+```javascript
+--sources=@ts --ts=@json:'{"EX_ascp_args":["--file-list","myfilelist"]}'
+```
+
+> File lists is shown here, there are also similar options for file pair lists.
+
+> Those 2 additional methods avoid the creation of a copy of the file list: if the standard options `--sources=@lines:@file:... --src-type=...` are used, then the file is list read and parsed, and a new file list is created in a temporary folder.
+
+> Those methods have limitations: they apply **only** to the [`direct`](#agt_direct) transfer agent (i.e. local `ascp`) and not for Aspera on Cloud.
+
 #### <a id="agt_connect"></a>IBM Aspera Connect Client GUI
 
 By specifying option: `--transfer=connect`, `ascli` will start transfers using the locally installed Aspera Connect Client. There are no option for `transfer_info`.
@@ -1869,6 +1889,7 @@ By specifying option: `--transfer=node`, the CLI will start transfers in an Aspe
 Transfer Server using the Node API, either on a local or remote node.
 Parameters provided in option `transfer_info` are:
 
+<table>
 <tr><th>Name</th><th>Type</th><th>Description</th></tr>
 <tr><td>url</td><td>string</td><td>URL of the node API</br>Mandatory</td></tr>
 <tr><td>username</td><td>string</td><td>node api user or access key</br>Mandatory</td></tr>
@@ -2065,17 +2086,18 @@ As such, it can be modified with option: `--ts=@json:'{"destination_root":"<path
 The option `to_folder` provides an equivalent and convenient way to change this parameter:
 `--to-folder=<path>` .
 
-#### List of files for transfers
+#### <a id="file_list"></a>List of files for transfers
 
 When uploading, downloading or sending files, the user must specify the list of files to transfer.
 
 By default the list of files to transfer is simply provided on the command line.
-The list of (source) files to transfer is specified by (extended value) option `sources` (default: `@args`).
-Also, depending on value of option `src_type` (default: `list`), the list is either simply the list of source files, or a combined source/destination list (see below).
 
-In `ascli`, all transfer parameters, including file list, are kept in [*transfer-spec*](#transferspec) so that execution of a transfer is independent of the transfer agent (direct, connect, node, transfer sdk...).
+The list of (source) files to transfer is specified by (extended value) option `sources` (default: `@args`).
+The list is either simply the list of source files, or a combined source/destination list (see below) depending on value of option `src_type` (default: `list`).
+
+In `ascli`, all transfer parameters, including file list, are provided to the transfer agent in a [*transfer-spec*](#transferspec) so that execution of a transfer is independent of the transfer agent (direct, connect, node, transfer sdk...).
 So, eventually, the list of files to transfer is provided to the transfer agent using the [*transfer-spec*](#transferspec) field: `"paths"` which is a list (array) of pairs of `"source"` (mandatory) and `"destination"` (optional).
-The `sources` and `src_type` provide convenient ways to populate the transfer spec.
+The `sources` and `src_type` options provide convenient ways to populate the transfer spec with the source file list.
 
 Possible values for option `sources` are:
 
@@ -2086,7 +2108,7 @@ So, by default, the list of files to transfer will be simply specified on the co
   ascli server upload ~/first.file secondfile
   ```
 
-  This is equivalent to (with default values):
+  This is the same as (with default values):
 
   ```bash
   ascli server upload --sources=@args --src-type=list ~/mysample.file secondfile
@@ -2098,54 +2120,47 @@ So, by default, the list of files to transfer will be simply specified on the co
 
   Examples:
 
-  * Provide file list with file using extended value
+  * Using extended value
+
+    Create the file list:
+
+    ```bash
+    echo ~/mysample.file > myfilelist.txt
+    echo secondfile >> myfilelist.txt
+    ```
+
+    Use the file list: one path per line:
 
     ```ruby
     --sources=@lines:@file:myfilelist.txt
     ```
 
-  * Provide file list with JSON array
+  * Using JSON array
 
     ```javascript
     --sources=@json:'["file1","file2"]'
     ```
 
-  * Provide file list from input
+  * Using STDIN, one path per line
 
     ```bash
     --sources=@lines:@stdin:
     ```
 
-  * Provide file list with file using ruby
+  * Using ruby code (one path per line in file)
 
     ```ruby
     --sources=@ruby:'File.read("myfilelist.txt").split("\n")'
     ```
 
-* `@ts` : the user provides the list of files directly in the `ts` option, in its `paths` field.
+* `@ts` : the user provides the list of files directly in the `paths` field of transfer spec (option `ts`).
 Examples:
 
-  * Provide file list with transfer spec
+  * Using transfer spec
 
   ```javascript
   --sources=@ts --ts=@json:'{"paths":[{"source":"file1"},{"source":"file2"}]}'
   ```
-
-  * Providing file list directly to ascp using the pseudo [*transfer-spec*](#transferspec) parameter `EX_file_list` (works only with `direct` agent)
-
-  ```javascript
-  ... --sources=@ts --ts=@json:'{"paths":[],"EX_file_list":"filelist.txt"}'
-  ```
-
-  * Provide file list with `ascp` arguments using the pseudo [*transfer-spec*](#transferspec) parameter `EX_ascp_args` (works only with `direct` agent)
-
-  ```javascript
-  --sources=@ts --ts=@json:'{"paths":[{"source":"dummy"}],"EX_ascp_args":["--file-list","myfilelist"]}'
-  ```
-
-  This method avoids creating a copy of the file list, but has drawbacks: it applies *only* to the [`direct`](#agt_direct) transfer agent (i.e. local `ascp`) and not for Aspera on Cloud.
-  One must specify a dummy list in the [*transfer-spec*](#transferspec), which will be overridden by the `ascp` command line provided.
-  (TODO) In next version, dummy source paths can be removed.
 
 The option `src_type` allows specifying if the list specified in option `sources` is a simple file list or if it is a file pair list.
 
@@ -2162,16 +2177,7 @@ Example: Source file `200KB.1` is renamed `sample1` on destination:
 ascli server upload --src-type=pair ~/Documents/Samples/200KB.1 /Upload/sample1
 ```
 
-Note the special case when the source files are located on "Aspera on Cloud" (i.e. using access keys and the `file id` API):
-
-* All source files must be in the same source folder.
-* If there is a single file : specify the full path
-* For multiple files, specify the source folder as first item in the list followed by the list of file names.
-
-Source files are located on "Aspera on cloud", when :
-
-* the server is Aspera on Cloud, and executing a download or recv
-* the agent is Aspera on Cloud, and executing an upload or send
+> Note there are some specific rules to specify file list when using "Aspera on Cloud", refer to the AoC plugin section.
 
 #### <a id="multisession"></a>Support of multi-session
 
@@ -2744,7 +2750,7 @@ ascli config wizard --value=aoc
 
 ### <a id="aocmanual"></a>Configuration: using manual setup
 
-If you used the wizard (recommended): skip this section.
+> If you used the wizard (recommended): skip this section.
 
 #### Configuration details
 
@@ -3460,6 +3466,25 @@ So, for example, the creation of a node using ATS in IBM Cloud looks like (see o
 
 Creation of a node with a self-managed node is similar, but the command `aoc admin ats access_key create` is replaced with `node access_key create` on the private node itself.
 
+### List of files to transfer
+
+Source files are provided as a list with the `sources` option. Refer to section [File list](#file_list)
+
+Note the special case when the source files are located on "Aspera on Cloud" (i.e. using access keys and the `file id` API).
+
+Source files are located on "Aspera on cloud", when :
+
+* the server is Aspera on Cloud, and executing a download or recv
+* the agent is Aspera on Cloud, and executing an upload or send
+
+In this case:
+
+* If there is a single file : specify the full path
+* Else, if there are multiple files:
+  * All source files must be in the same source folder
+  * Specify the source folder as first item in the list
+  * followed by the list of file names.
+
 ### Packages
 
 The webmail-like application.
@@ -3576,10 +3601,7 @@ Folder sharing app.
 
 #### Download Files
 
-Download of files is straightforward with a specific syntax for the `aoc files download` action: Like other commands the source file list is provided as  a list with the `sources` option. Nevertheless, consider this:
-
-* if only one source is provided, it is downloaded
-* if multiple sources must be downloaded, then the first in list is the path of the source folder, and the remaining items are the file names in this folder (without path).
+Download of files is straightforward using command: `aoc files download`
 
 #### Shared folders
 
@@ -3929,6 +3951,10 @@ server md5sum NEW_SERVER_FOLDER/testfile.bin
 server mkdir NEW_SERVER_FOLDER --logger=stdout
 server mkdir folder_1/target_hot
 server mv folder_1/200KB.2 folder_1/to.delete
+server upload --sources=@ts --ts=@json:'{"EX_ascp_args":["--file-list","'"filelist.txt"'"]}' --to-folder=NEW_SERVER_FOLDER 
+server upload --sources=@ts --ts=@json:'{"EX_ascp_args":["--file-pair-list","'"filepairlist.txt"'"]}'
+server upload --sources=@ts --ts=@json:'{"EX_file_list":"'"filelist.txt"'"}' --to-folder=NEW_SERVER_FOLDER
+server upload --sources=@ts --ts=@json:'{"EX_file_pair_list":"'"filepairlist.txt"'"}'
 server upload --sources=@ts --ts=@json:'{"paths":[{"source":"testfile.bin","destination":"NEW_SERVER_FOLDER/othername"}]}'
 server upload --src-type=pair --sources=@json:'["testfile.bin","NEW_SERVER_FOLDER/othername"]'
 server upload --src-type=pair testfile.bin NEW_SERVER_FOLDER/othername --notif-to=my_recipient_email
@@ -3937,7 +3963,7 @@ server upload --to-folder=folder_1/target_hot --lock-port=12345 --ts=@json:'{"EX
 server upload testfile.bin --to-folder=NEW_SERVER_FOLDER --ts=@json:'{"multi_session":3,"multi_session_threshold":1,"resume_policy":"none","target_rate_kbps":1500}' --transfer-info=@json:'{"spawn_delay_sec":2.5}' --progress=multi
 ```
 
-### Authentication
+### Authentication on Server with SSH session
 
 If SSH is the session control protocol (i.e. not WSS), then following session authentication methods are supported:
 
@@ -3951,6 +3977,8 @@ If no SSH password or key is provided and a transfer token is provided in transf
 ```javascript
 ascli server --url=ssh://... --ts=@json:'{"token":"Basic abc123"}'
 ```
+
+> Note: If you need to use the Aspera public keys, then specify an empty token: `--ts=@json:'{"token":""}'` : Aspera public SSH keys will be used, but the protocol will ignore the empty token.
 
 The value of the `ssh_keys` option can be a single value or an array.
 Each value is a **path** to a private key and is expanded (`~` is replaced with the user's home folder).
@@ -5027,8 +5055,7 @@ Transfer is: <%=global_transfer_status%>
 
 ## Tool: `asession`
 
-This gem comes with a second executable tool providing a simplified standardized interface
-to start a FASP session: `asession`.
+This gem comes with a second executable tool providing a simplified standardized interface to start a FASP session: `asession`.
 
 It aims at simplifying the startup of a FASP session from a programmatic stand point as formatting a [*transfer-spec*](#transferspec) is:
 
@@ -5042,7 +5069,7 @@ This makes it easy to integrate with any language provided that one can spawn a 
 
 The tool expect one single argument: a [*transfer-spec*](#transferspec).
 
-If not argument is provided, it assumes a value of: `@json:@stdin:`, i.e. a JSON formatted [*transfer-spec*](#transferspec) on stdin.
+If no argument is provided, it assumes a value of: `@json:@stdin:`, i.e. a JSON formatted [*transfer-spec*](#transferspec) on stdin.
 
 Note that if JSON is the format, one has to specify `@json:` to tell the tool to decode the hash using JSON.
 
@@ -5059,18 +5086,24 @@ Note that in addition, many "EX_" [*transfer-spec*](#transferspec) parameters ar
 
 <table>
 <tr><th>feature/tool</th><th>asession</th><th>ascp</th><th>FaspManager</th><th>Transfer SDK</th></tr>
-<tr><td>language integration</td><td>any</td><td>any</td><td>C/C++<br/>C#/.net<br/>Go<br/>Python<br/>java<br/></td><td>any</td></tr>
-<tr><td>additional components to ascp</td><td>Ruby<br/>Aspera</td><td>-</td><td>library<br/>(headers)</td><td>daemon</td></tr>
+<tr><td>language integration</td><td>any</td><td>any</td><td>C/C++<br/>C#/.net<br/>Go<br/>Python<br/>java<br/></td><td>many</td></tr>
+<tr><td>required additional components to ascp</td><td>Ruby<br/>Aspera</td><td>-</td><td>library<br/>(headers)</td><td>daemon</td></tr>
 <tr><td>startup</td><td>JSON on stdin<br/>(standard APIs:<br/>JSON.generate<br/>Process.spawn)</td><td>command line arguments</td><td>API</td><td>daemon</td></tr>
 <tr><td>events</td><td>JSON on stdout</td><td>none by default<br/>or need to open management port<br/>and proprietary text syntax</td><td>callback</td><td>callback</td></tr>
-<tr><td>platforms</td><td>any with ruby and ascp</td><td>any with ascp</td><td>any with ascp</td><td>any with ascp and transferdaemon</td></tr></table>
+<tr><td>platforms</td><td>any with ruby and ascp</td><td>any with ascp (and SDK if compiled)</td><td>any with ascp</td><td>any with ascp and transfer daemon</td></tr></table>
 
 ### Simple session
 
-```javascript
-MY_TSPEC='{"remote_host":"demo.asperasoft.com","remote_user":"asperaweb","ssh_port":33001,"remote_password":"_pass_here_","direction":"receive","destination_root":"./test.dir","paths":[{"source":"/aspera-test-dir-tiny/200KB.1"}],"resume_level":"none"}'
+Create a file `session.json` with:
 
-echo "${MY_TSPEC}"|asession
+```json
+{"remote_host":"demo.asperasoft.com","remote_user":"asperaweb","ssh_port":33001,"remote_password":"_pass_here_","direction":"receive","destination_root":"./test.dir","paths":[{"source":"/aspera-test-dir-tiny/200KB.1"}],"resume_level":"none"}
+````
+
+Then start the session:
+
+```
+asession < session.json
 ```
 
 ### Asynchronous commands and Persistent session
