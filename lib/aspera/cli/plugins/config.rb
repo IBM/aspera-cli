@@ -251,7 +251,9 @@ module Aspera
           require 'openssl'
           priv_key = OpenSSL::PKey::RSA.new(length)
           File.write(private_key_path,priv_key.to_s)
+          File.chmod(0400,private_key_path)
           File.write(private_key_path + '.pub',priv_key.public_key.to_s)
+          File.chmod(0400,private_key_path + '.pub')
           nil
         end
 
@@ -1021,8 +1023,10 @@ module Aspera
         def save_presets_to_config_file
           raise 'no configuration loaded' if @config_presets.nil?
           FileUtils.mkdir_p(@main_folder) unless Dir.exist?(@main_folder)
+          File.chmod(0700,@main_folder)
           Log.log.debug("Writing #{@option_config_file}")
           File.write(@option_config_file,@config_presets.to_yaml)
+          File.chmod(0600,@option_config_file)
         end
 
         # returns [String] name if config_presets has default

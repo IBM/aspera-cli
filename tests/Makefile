@@ -993,6 +993,7 @@ $(T)conf_detect: $(T).exists
 	@touch $@
 $(T)conf_genkey: $(T).exists
 	@echo $@
+	rm -f $(DIR_TMP)mykey $(DIR_TMP)mykey.pub
 	$(EXE_MAN) config genkey $(DIR_TMP)mykey
 	@touch $@
 $(T)conf_smtp: $(T).exists
