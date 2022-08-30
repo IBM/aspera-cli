@@ -1112,25 +1112,37 @@ $(T)sync1: $(T).exists
 	$(EXE_MAN) sync start --parameters=@json:'{"sessions":[{"name":"test","reset":true,"remote_dir":"/sync_test","local_dir":"$(DIR_TMP)contents","host":"'"$${remote_host}"'","tcp_port":33001,"user":"'"$${remote_user}"'","private_key_path":"'"$${local_user_key}"'"}]}'
 	@touch $@
 tsync: $(T)sync1
-$(T)sdk1: $(T).exists
+$(T)sdk_server: $(T).exists
 	@echo $@
-	tmp=$(DIR_TMP). ruby -I $(DIR_LIB). $(DIR_TOP)examples/transfer.rb
+	set -x&&\
+	url=$$($(EXE_NOMAN) config preset get tst_server url)&&\
+	user=$$($(EXE_NOMAN) config preset get tst_server username)&&\
+	pass=$$($(EXE_NOMAN) config preset get tst_server password)&&\
+	tmp=$(DIR_TMP). PASSWORD=$${pass} ruby -I $(DIR_LIB). $(DIR_TOP)examples/server.rb $${url} $${user}
 	@touch $@
-$(T)sdk2: $(T).exists
+$(T)sdk_node: $(T).exists
+	@echo $@
+	set -x&&\
+	url=$$($(EXE_NOMAN) config preset get tst_node url)&&\
+	user=$$($(EXE_NOMAN) config preset get tst_node username)&&\
+	pass=$$($(EXE_NOMAN) config preset get tst_node password)&&\
+	tmp=$(DIR_TMP). PASSWORD=$${pass} ruby -I $(DIR_LIB). $(DIR_TOP)examples/node.rb $${url} $${user}
+	@touch $@
+$(T)sdk_aoc: $(T).exists
 	@echo $@
 	set -x&&url=$$($(EXE_NOMAN) config preset get tst_aoc1 url)&&\
 	user=$$($(EXE_NOMAN) config preset get tst_aoc1 username)&&\
 	keypath=$$($(EXE_NOMAN) config preset get tst_aoc1 private_key)&&\
 	tmp=$(DIR_TMP). ruby -I $(DIR_LIB). $(DIR_TOP)examples/aoc.rb $${url} $${user} "$${keypath}"
 	@touch $@
-$(T)sdk3: $(T).exists
+$(T)sdk_faspex4: $(T).exists
 	@echo $@
 	set -x&&url=$$($(EXE_NOMAN) config preset get tst_faspex url)&&\
 	user=$$($(EXE_NOMAN) config preset get tst_faspex username)&&\
 	pass=$$($(EXE_NOMAN) config preset get tst_faspex password)&&\
 	tmp=$(DIR_TMP). ruby -I $(DIR_LIB). $(DIR_TOP)examples/faspex4.rb $${url} $${user} $${pass}
 	@touch $@
-tsample: $(T)sdk1 $(T)sdk2 $(T)sdk3
+tsample: $(T)sdk_server $(T)sdk_node $(T)sdk_aoc $(T)sdk_faspex4
 
 $(T)tcos: $(T).exists
 	@echo $@

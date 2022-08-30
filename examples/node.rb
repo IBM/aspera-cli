@@ -15,12 +15,12 @@ require 'tmpdir'
 
 tmpdir = ENV['tmp'] || Dir.tmpdir || '.'
 
-raise 'Usage: PASSWORD=<password> $0 ssh://<address>:<port> <transfer user>' unless ARGV.length.eql?(2) && ENV.has_key?('PASSWORD')
+raise 'Usage: PASSWORD=<password> $0 https://<address>:<port> <node user>' unless ARGV.length.eql?(2) && ENV.has_key?('PASSWORD')
 
-# example : ssh://asperaweb@eudemo.asperademo.com:33001
-server_uri = URI.parse(ARGV.shift)
-server_user = ARGV.shift
-server_pass = ENV['PASSWORD']
+# example : https://node_asperaweb@eudemo.asperademo.com:9092
+node_uri = URI.parse(ARGV.shift)
+node_user = ARGV.shift
+node_pass = ENV['PASSWORD']
 
 ##############################################################
 # generic initialisation : configuration of FaspManager
@@ -64,30 +64,33 @@ end
 transfer_agent.add_listener(MyListener.new)
 
 ##############################################################
-# first example: download by SSH credentials
+# Upload with node authorization
 
-# manually build teansfer spec
-transfer_spec = {
-  'remote_host'      => server_uri.host,
-  'ssh_port'         => server_uri.port,
-  'remote_user'      => server_user,
-  'remote_password'  => server_pass,
-  'direction'        => 'receive',
-  'destination_root' => tmpdir,
-  'paths'            => [{'source' => 'aspera-test-dir-tiny/200KB.1'}]
-}
-# start transfer in separate thread
-# method returns as soon as transfer thread is created
-# it des not wait for completion, or even for session startup
+# create rest client for Node API on a public demo system, using public demo credentials
+node_api = Aspera::Rest.new({
+  base_url: node_uri.to_s,
+  auth:     {
+    type:     :basic,
+    username: node_user,
+    password: node_pass
+  }})
+# define sample file(s) and destination folder
+sources = ["#{tmpdir}/sample_file.txt"]
+destination = '/Upload'
+# create sample file(s)
+sources.each{|p|File.write(p,'Hello World!')}
+# request transfer authorization to node for a single transfer (This is a node api v3 call)
+send_result = node_api.create('files/upload_setup',{ transfer_requests: [{ transfer_request: { paths: [{ destination: destination }] } }] })[:data]
+# we normally have only one transfer spec in list, so just get the first transfer_spec
+transfer_spec = send_result['transfer_specs'].first['transfer_spec']
+# add list of files to upload
+transfer_spec['paths'] = sources.map{|p|{'source' => p}}
+# set authentication type to "token" (will trigger use of bypass SSH key)
+transfer_spec['authentication'] = 'token'
+# from here : same as example 1
 transfer_agent.start_transfer(transfer_spec)
-
-# optional: helper method: wait for completion of transfers
-# here we started a single transfer session (no multisession parameter)
-# get array of status, one for each session (so, a single value array)
-# each status is either :success or "error message"
+# optional: wait for transfer completion helper function to get events
 transfer_result = transfer_agent.wait_for_transfers_completion
-$stdout.puts(JSON.generate(transfer_result))
-# get list of errors only
 errors = transfer_result.reject{|i|i.eql?(:success)}
 # the transfer was not success, as there is at least one error
 raise "Error(s) occured: #{errors.join(',')}" if !errors.empty?
