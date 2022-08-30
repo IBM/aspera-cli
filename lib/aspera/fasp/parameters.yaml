@@ -489,7 +489,7 @@ remove_empty_source_directory:
   - :sdk
   :cltype: :opt_without_arg
 EX_at_rest_password:
-  :desc: "Passphrase used for at rest encryption or decryption. Prefer to use standard: content_protection_password"
+  :desc: "DEPRECATED: Prefer to use standard parameter: content_protection_password"
   :tragents:
   - :direct
   :cltype: :envvar
