@@ -160,6 +160,7 @@ def include_commands
 end
 
 KEPT_GLOBAL_SECTIONS=%w[config default].freeze
+REMOVED_OPTIONS=%w[insecure].freeze
 
 # main function to generate config file with secrets
 def generate_generic_conf
@@ -167,7 +168,7 @@ def generate_generic_conf
   local_config = ARGV.first
   raise 'missing argument: local config file' if local_config.nil?
   YAML.load_file(local_config).each do |k,v|
-    n[k] = KEPT_GLOBAL_SECTIONS.include?(k) ? v : v.keys.each_with_object({}){|i,m|m[i] = 'your value here'}
+    n[k] = KEPT_GLOBAL_SECTIONS.include?(k) ? v : v.keys.reject{|k|REMOVED_OPTIONS.include?(k)}.each_with_object({}){|i,m|m[i] = 'your value here'}
   end
   puts(n.to_yaml)
 end
