@@ -139,28 +139,20 @@ module Aspera
         when :transferd
           file = transferd_filepath
         when :ssh_bypass_key_dsa
-          file = File.join(sdk_folder,'aspera_bypass_dsa.pem')
-          File.write(file,get_key('dsa',1)) unless File.exist?(file)
-          File.chmod(0400,file)
+          file=Environment.write_file_restricted(File.join(sdk_folder,'aspera_bypass_dsa.pem')) {get_key('dsa',1)}
         when :ssh_bypass_key_rsa
-          file = File.join(sdk_folder,'aspera_bypass_rsa.pem')
-          File.write(file,get_key('rsa',2)) unless File.exist?(file)
-          File.chmod(0400,file)
+          file=Environment.write_file_restricted(File.join(sdk_folder,'aspera_bypass_rsa.pem')) {get_key('rsa',2)}
         when :aspera_license
-          file = File.join(sdk_folder,'aspera-license')
-          unless File.exist?(file)
+          file=Environment.write_file_restricted(File.join(sdk_folder,'aspera-license')) do
             clear=[
               Zlib::Inflate.inflate(DataRepository.instance.data(6)),
               "==SIGNATURE==\n",
               Base64.strict_encode64(DataRepository.instance.data(7))
             ]
-            File.write(file,Base64.strict_encode64(clear.join))
+            Base64.strict_encode64(clear.join)
           end
-          File.chmod(0400,file)
         when :aspera_conf
-          file = File.join(sdk_folder,'aspera.conf')
-          File.write(file,DEFAULT_ASPERA_CONF) unless File.exist?(file)
-          File.chmod(0400,file)
+          file=Environment.write_file_restricted(File.join(sdk_folder,'aspera.conf')) {DEFAULT_ASPERA_CONF}
         when :fallback_cert,:fallback_key
           file_key = File.join(sdk_folder,'aspera_fallback_key.pem')
           file_cert = File.join(sdk_folder,'aspera_fallback_cert.pem')
@@ -176,10 +168,8 @@ module Aspera
             cert.serial = 0x0
             cert.version = 2
             cert.sign(private_key, OpenSSL::Digest.new('SHA1'))
-            File.write(file_key,private_key.to_pem)
-            File.write(file_cert,cert.to_pem)
-            File.chmod(0400,file_key)
-            File.chmod(0400,file_cert)
+            Environment.write_file_restricted(file_key, force: true) {private_key.to_pem}
+            Environment.write_file_restricted(file_cert, force: true) {cert.to_pem}
           end
           file = k.eql?(:fallback_cert) ? file_cert : file_key
         else

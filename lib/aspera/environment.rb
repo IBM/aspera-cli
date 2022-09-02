@@ -78,6 +78,17 @@ module Aspera
       def secure_eval(code)
         Kernel.send('lave'.reverse,code,empty_binding, __FILE__, __LINE__)
       end
+
+      # value is provided in block
+      def write_file_restricted(path,force: false)
+        raise 'coding error, missing content block' unless block_given?
+        if force || !File.exist?(path) 
+          File.unlink(path) rescue nil # Windows may give error
+          File.write(path,yield)
+          File.chmod(0400,path)
+        end
+        return path
+      end
     end
   end
 end
