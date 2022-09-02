@@ -1990,7 +1990,7 @@ Fields with EX_ prefix are extensions to transfer agent [`direct`](#agt_direct).
 
 <table><tr><th>Field</th><th>Type</th><th>D</th><th>N</th><th>C</th><th>Description</th></tr>
 <tr><td>EX_ascp_args</td><td>array</td><td>Y</td><td>&nbsp;</td><td>&nbsp;</td><td>Add native command line arguments to ascp</td></tr>
-<tr><td>EX_at_rest_password</td><td>string</td><td>Y</td><td>&nbsp;</td><td>&nbsp;</td><td>Passphrase used for at rest encryption or decryption. Prefer to use standard: content_protection_password<br/>(env:ASPERA_SCP_FILEPASS)</td></tr>
+<tr><td>EX_at_rest_password</td><td>string</td><td>Y</td><td>&nbsp;</td><td>&nbsp;</td><td>DEPRECATED: Prefer to use standard parameter: content_protection_password<br/>(env:ASPERA_SCP_FILEPASS)</td></tr>
 <tr><td>EX_file_list</td><td>string</td><td>Y</td><td>&nbsp;</td><td>&nbsp;</td><td>source file list</td></tr>
 <tr><td>EX_file_pair_list</td><td>string</td><td>Y</td><td>&nbsp;</td><td>&nbsp;</td><td>source file pair list</td></tr>
 <tr><td>EX_http_proxy_url</td><td>string</td><td>Y</td><td>&nbsp;</td><td>&nbsp;</td><td>Specify the proxy server address used by HTTP Fallback<br/>(-x)</td></tr>
