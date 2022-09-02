@@ -15,6 +15,15 @@ module Aspera
       EXPECTED_METHODS = %i[text struct enhanced].freeze
       private_constant :INTEGER_FIELDS,:BOOLEAN_FIELDS,:EXPECTED_METHODS
 
+      class << self
+        # This checks the validity of the value returned by wait_for_transfers_completion
+        # it must be a list of :success or exception
+        def validate_status_list(statuses)
+          raise "internal error: bad statuses type: #{statuses.class}" unless statuses.is_a?(Array)
+          raise "internal error: bad statuses content: #{statuses}" unless statuses.select{|i|!i.eql?(:success) && !i.is_a?(StandardError)}.empty?
+        end
+      end
+
       private
 
       # translates legacy event into enhanced (JSON) event
@@ -72,13 +81,6 @@ module Aspera
         raise "expect one of #{EXPECTED_METHODS}" if EXPECTED_METHODS.inject(0){|m,e|m += listener.respond_to?("event_#{e}") ? 1 : 0;m}.eql?(0)
         @listeners.push(listener)
         self
-      end
-
-      # This checks the validity of the value returned by wait_for_transfers_completion
-      # it must be a list of :success or exception
-      def self.validate_status_list(statuses)
-        raise "internal error: bad statuses type: #{statuses.class}" unless statuses.is_a?(Array)
-        raise "internal error: bad statuses content: #{statuses}" unless statuses.select{|i|!i.eql?(:success) && !i.is_a?(StandardError)}.empty?
       end
 
       # the following methods must be implemented by subclass:

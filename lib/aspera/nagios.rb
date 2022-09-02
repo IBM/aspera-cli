@@ -18,6 +18,32 @@ module Aspera
       define_method(name){|comp,msg|@data.push({code: code,comp: comp,msg: msg})}
     end
 
+    class << self
+      # process results of a analysis and display status and exit with code
+      def process(data)
+        raise 'INTERNAL ERROR, result must be list and not empty' unless data.is_a?(Array) && !data.empty?
+        %w[status component message].each{|c|raise "INTERNAL ERROR, result must have #{c}" unless data.first.has_key?(c)}
+        res_errors = data.reject{|s|s['status'].eql?('ok')}
+        # keep only errors in case of problem, other ok are assumed so
+        data = res_errors unless res_errors.empty?
+        # first is most critical
+        data.sort!{|a,b|LEVELS.index(a['status'].to_sym) <=> LEVELS.index(b['status'].to_sym)}
+        # build message: if multiple components: concatenate
+        #message = data.map{|i|"#{i['component']}:#{i['message']}"}.join(', ').gsub("\n",' ')
+        message = data.
+          map{|i|i['component']}.
+          uniq.
+          map{|comp|comp + ':' + data.select{|d|d['component'].eql?(comp)}.map{|d|d['message']}.join(',')}.
+          join(', ').
+          tr("\n",' ')
+        status = data.first['status'].upcase
+        # display status for nagios
+        puts("#{status} - [#{message}]\n")
+        # provide exit code to nagios
+        Process.exit(LEVELS.index(data.first['status'].to_sym))
+      end
+    end
+
     attr_reader :data
     def initialize
       @data = []
@@ -49,25 +75,6 @@ module Aspera
     def result
       raise 'missing result' if @data.empty?
       {type: :object_list,data: @data.map{|i|{'status' => LEVELS[i[:code]].to_s,'component' => i[:comp],'message' => i[:msg]}}}
-    end
-
-    # process results of a analysis and display status and exit with code
-    def self.process(data)
-      raise 'INTERNAL ERROR, result must be list and not empty' unless data.is_a?(Array) && !data.empty?
-      %w[status component message].each{|c|raise "INTERNAL ERROR, result must have #{c}" unless data.first.has_key?(c)}
-      res_errors = data.reject{|s|s['status'].eql?('ok')}
-      # keep only errors in case of problem, other ok are assumed so
-      data = res_errors unless res_errors.empty?
-      # first is most critical
-      data.sort!{|a,b|LEVELS.index(a['status'].to_sym) <=> LEVELS.index(b['status'].to_sym)}
-      # build message: if multiple components: concatenate
-      #message = data.map{|i|"#{i['component']}:#{i['message']}"}.join(', ').gsub("\n",' ')
-      message = data.map{|i|i['component']}.uniq.map{|comp|comp + ':' + data.select{|d|d['component'].eql?(comp)}.map{|d|d['message']}.join(',')}.join(', ').tr("\n",' ')
-      status = data.first['status'].upcase
-      # display status for nagios
-      puts("#{status} - [#{message}]\n")
-      # provide exit code to nagios
-      Process.exit(LEVELS.index(data.first['status'].to_sym))
     end
   end
 end

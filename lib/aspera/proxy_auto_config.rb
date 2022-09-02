@@ -7,10 +7,12 @@ module URI
   class Generic
     # save original method that finds proxy in URI::Generic, it uses env var http_proxy
     alias_method :find_proxy_orig, :find_proxy
-    def self.register_proxy_finder
-      raise 'mandatory block missing' unless Kernel.block_given?
-      # overload the method in URI : call user's provided block and fallback to original method
-      define_method(:find_proxy) {|envars=ENV| yield(to_s) || find_proxy_orig(envars)}
+    class << self
+      def register_proxy_finder
+        raise 'mandatory block missing' unless Kernel.block_given?
+        # overload the method in URI : call user's provided block and fallback to original method
+        define_method(:find_proxy) {|envars=ENV| yield(to_s) || find_proxy_orig(envars)}
+      end
     end
   end
 end

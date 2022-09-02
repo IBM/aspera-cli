@@ -171,7 +171,7 @@ module Aspera
               option = '--file-pair-list'
             elsif !ts_paths_array.nil?
               # option 3: in TS, it is an array
-              if ! self.class.file_list_folder.nil?
+              if !self.class.file_list_folder.nil?
                 # safer option: generate a file list file if there is storage defined for it
                 # if there is destination in paths, then use filepairlist
                 # TODO: well, we test only the first one, but anyway it shall be consistent

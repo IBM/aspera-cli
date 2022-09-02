@@ -80,19 +80,21 @@ module Aspera
       end
     end # add_simple_handler
 
-    # used by handler to add an error description to list of errors
-    # for logging and tracing : collect error descriptions (create file to activate)
-    # @param call_context a Hash containing the result call_context, provided to handler
-    # @param type a string describing type of exception, for logging purpose
-    # @param msg one error message  to add to list
-    def self.add_error(call_context,type,msg)
-      call_context[:messages].push(msg)
-      logfile = instance.log_file
-      # log error for further analysis (file must exist to activate)
-      return if logfile.nil? || !File.exist?(logfile)
-      File.open(logfile,'a+') do |f|
-        f.write("\n=#{type}=====\n#{call_context[:request].method} #{call_context[:request].path}\n#{call_context[:response].code}\n"\
-          "#{JSON.generate(call_context[:data])}\n#{call_context[:messages].join("\n")}")
+    class << self
+      # used by handler to add an error description to list of errors
+      # for logging and tracing : collect error descriptions (create file to activate)
+      # @param call_context a Hash containing the result call_context, provided to handler
+      # @param type a string describing type of exception, for logging purpose
+      # @param msg one error message  to add to list
+      def add_error(call_context,type,msg)
+        call_context[:messages].push(msg)
+        logfile = instance.log_file
+        # log error for further analysis (file must exist to activate)
+        return if logfile.nil? || !File.exist?(logfile)
+        File.open(logfile,'a+') do |f|
+          f.write("\n=#{type}=====\n#{call_context[:request].method} #{call_context[:request].path}\n#{call_context[:response].code}\n"\
+            "#{JSON.generate(call_context[:data])}\n#{call_context[:messages].join("\n")}")
+        end
       end
     end
   end

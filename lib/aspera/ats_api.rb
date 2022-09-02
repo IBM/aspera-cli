@@ -18,7 +18,9 @@ module Aspera
 
     private_constant :CLOUD_NAME
 
-    def self.base_url;'https://ats.aspera.io';end
+    class << self
+      def base_url;'https://ats.aspera.io';end
+    end
 
     def initialize
       super({base_url: AtsApi.base_url + '/pub/v1'})

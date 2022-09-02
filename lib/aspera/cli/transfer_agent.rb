@@ -29,6 +29,16 @@ module Aspera
         :DEFAULT_TRANSFER_NOTIF_TMPL
       TRANSFER_AGENTS = %i[direct node connect httpgw trsdk].freeze
 
+      class << self
+        # @return :success if all sessions statuses returned by "start" are success
+        # else return the first error exception object
+        def session_status(statuses)
+          error_statuses = statuses.reject{|i|i.eql?(:success)}
+          return :success if error_statuses.empty?
+          return error_statuses.first
+        end
+      end
+
       # @param env external objects: option manager, config file manager
       def initialize(opt_mgr,config)
         @opt_mgr = opt_mgr
@@ -137,7 +147,9 @@ module Aspera
             "--sources=#{FILE_LIST_FROM_TRANSFER_SPEC} to use transfer spec" if !file_list.is_a?(Array) || file_list.empty?
         when FILE_LIST_FROM_TRANSFER_SPEC
           Log.log.debug('assume list provided in transfer spec')
-          (special_case_direct_with_list = @opt_mgr.get_option(:transfer,is_type: :mandatory).eql?(:direct)) && Fasp::Parameters.ts_has_ascp_file_list(@transfer_spec_cmdline)
+          special_case_direct_with_list =
+            @opt_mgr.get_option(:transfer,is_type: :mandatory).eql?(:direct) &&
+            Fasp::Parameters.ts_has_ascp_file_list(@transfer_spec_cmdline)
           raise CliBadArgument,'transfer spec on command line must have sources' if @transfer_paths.nil? && !special_case_direct_with_list
           # here we assume check of sources is made in transfer agent
           return @transfer_paths
@@ -223,14 +235,6 @@ module Aspera
           ts:                     transfer_spec
         }
         @config.send_email_template(email_vars,DEFAULT_TRANSFER_NOTIF_TMPL)
-      end
-
-      # @return :success if all sessions statuses returned by "start" are success
-      # else return the first error exception object
-      def self.session_status(statuses)
-        error_statuses = statuses.reject{|i|i.eql?(:success)}
-        return :success if error_statuses.empty?
-        return error_statuses.first
       end
 
       # shut down if agent requires it

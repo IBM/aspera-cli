@@ -11,27 +11,29 @@ module Aspera
   # if method is "graphical", then the URL will be opened with the default browser.
   class OpenApplication
     include Singleton
-    # User Interfaces
-    def self.user_interfaces; %i[text graphical]; end
+    class << self
+      # User Interfaces
+      def user_interfaces; %i[text graphical]; end
 
-    def self.default_gui_mode
-      return :graphical if [Aspera::Environment::OS_WINDOWS,Aspera::Environment::OS_X].include?(Aspera::Environment.os)
-      # unix family
-      return :graphical if ENV.has_key?('DISPLAY') && !ENV['DISPLAY'].empty?
-      return :text
-    end
+      def default_gui_mode
+        return :graphical if [Aspera::Environment::OS_WINDOWS,Aspera::Environment::OS_X].include?(Aspera::Environment.os)
+        # unix family
+        return :graphical if ENV.has_key?('DISPLAY') && !ENV['DISPLAY'].empty?
+        return :text
+      end
 
-    # command must be non blocking
-    def self.uri_graphical(uri)
-      case Aspera::Environment.os
-      when Aspera::Environment::OS_X
-        return system('open',uri.to_s)
-      when Aspera::Environment::OS_WINDOWS
-        return system('start explorer "' + uri.to_s + '"')
-      when Aspera::Environment::OS_LINUX
-        return system("xdg-open '#{uri}'")
-      else
-        raise "no graphical open method for #{Aspera::Environment.os}"
+      # command must be non blocking
+      def uri_graphical(uri)
+        case Aspera::Environment.os
+        when Aspera::Environment::OS_X
+          return system('open',uri.to_s)
+        when Aspera::Environment::OS_WINDOWS
+          return system('start explorer "' + uri.to_s + '"')
+        when Aspera::Environment::OS_LINUX
+          return system("xdg-open '#{uri}'")
+        else
+          raise "no graphical open method for #{Aspera::Environment.os}"
+        end
       end
     end
 
