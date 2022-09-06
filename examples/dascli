@@ -3,10 +3,8 @@
 # by default take latest version
 : ${version:=latest}
 imgtag=$image:$version
-# same location as in Dockerfile: generic top folder for apps
-appdir=/usr/src/app
 # same location as in Dockerfile: main config folder for ascli in container
-ascli_home_container=${appdir}/config
+ascli_home_container=/home/cliuser/.aspera/ascli
 # convenience: special argument to install the image
 case "$1" in install) docker pull $imgtag; exit 0; esac
 # set default location for config folder on host if necessary
@@ -20,7 +18,6 @@ exec docker run \
 --rm \
 --tty \
 --interactive \
---env ASCLI_HOME="$ascli_home_container" \
 --volume "$ASCLI_HOME:$ascli_home_container" \
 $imgtag \
 ascli "$@"
