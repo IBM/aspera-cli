@@ -326,9 +326,6 @@ module Aspera
                 recipient = options.get_option(:recipient)
                 if delivid.eql?(VAL_ALL)
                   pkg_id_uri = mailbox_filtered_entries.map{|i|{id: i[PACKAGE_MATCH_FIELD],uri: self.class.get_fasp_uri_from_entry(i, raise_no_link: false)}}
-                  # TODO : remove ids from skip not present in inbox to avoid growing too big
-                  # skip_ids_data.select!{|id|pkg_id_uri.select{|p|p[:id].eql?(id)}}
-                  pkg_id_uri.reject!{|i|skip_ids_data.include?(i[:id])}
                 elsif !recipient.nil? && recipient.start_with?('*')
                   found_package_link = mailbox_filtered_entries(stop_at_id: delivid).find{|p|p[PACKAGE_MATCH_FIELD].eql?(delivid)}['link'].first['href']
                   raise 'Not Found. Dropbox and Workgroup packages can use the link option with faspe:' if found_package_link.nil?
@@ -367,8 +364,12 @@ module Aspera
                 transfer_uri = self.class.get_fasp_uri_from_entry(package_entry)
                 pkg_id_uri = [{id: package_entry['id'],uri: transfer_uri}]
               end # public link
+              # prune packages already downloaded
+              # TODO : remove ids from skip not present in inbox to avoid growing too big
+              # skip_ids_data.select!{|id|pkg_id_uri.select{|p|p[:id].eql?(id)}}
+              pkg_id_uri.reject!{|i|skip_ids_data.include?(i[:id])}
               Log.dump(:pkg_id_uri,pkg_id_uri)
-              return Main.result_status('no package') if pkg_id_uri.empty?
+              return Main.result_status('no new package') if pkg_id_uri.empty?
               result_transfer = []
               pkg_id_uri.each do |id_uri|
                 if id_uri[:uri].nil?
