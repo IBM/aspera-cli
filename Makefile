@@ -12,6 +12,7 @@ doc:
 	cd $(DIR_DOC) && make
 test: unsigned_gem
 	cd $(DIR_TST) && make
+fulltest: doc test
 clean::
 	rm -fr $(DIR_TMP)
 	cd $(DIR_DOC) && make clean
