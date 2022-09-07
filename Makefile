@@ -7,27 +7,22 @@ DIR_TOP=
 
 include $(DIR_TOP)common.make
 
-all:: signed_gem
-doc: $(DIR_TOP).gems_checked
+all:: doc signed_gem
+doc:
 	cd $(DIR_DOC) && make
-test: unsigned_gem $(DIR_TOP).gems_checked
+test: unsigned_gem
 	cd $(DIR_TST) && make
 clean::
 	rm -fr $(DIR_TMP)
-	rm -f $(DIR_TOP).gems_checked
 	cd $(DIR_DOC) && make clean
 	cd $(DIR_TST) && make clean
 	rm -f Gemfile.lock
-# ensure required ruby gems are installed
-$(DIR_TOP).gems_checked: Gemfile
-	bundle install
-	touch $@
 
 ##################################
 # Gem build
-PATH_GEMFILE=$(DIR_TOP)$(GEMNAME)-$(GEMVERSION).gem
+PATH_GEMFILE=$(DIR_TOP)$(GEMNAME)-$(GEMVERS).gem
 # gem file is generated in top folder
-$(PATH_GEMFILE): doc
+$(PATH_GEMFILE): $(DIR_TOP).gems_checked
 	gem build $(GEMNAME)
 # check that the signing key is present
 gem_check_signing_key:
@@ -52,9 +47,9 @@ clean:: gemclean
 release: all
 	gem push $(PATH_GEMFILE)
 version:
-	@echo $(GEMVERSION)
+	@echo $(GEMVERS)
 # in case of big problem on released gem version, it can be deleted from rubygems
-# gem yank -v $(GEMVERSION) $(GEMNAME) 
+# gem yank -v $(GEMVERS) $(GEMNAME) 
 
 ##################################
 # GIT
@@ -66,12 +61,12 @@ changes:
 ##################################
 # Docker image
 DOCKER_REPO=martinlaurent/ascli
-DOCKER_TAG_VERSION=$(DOCKER_REPO):$(GEMVERSION)
+DOCKER_TAG_VERSION=$(DOCKER_REPO):$(GEMVERS)
 DOCKER_TAG_LATEST=$(DOCKER_REPO):latest
 docker: $(PATH_GEMFILE)
 	docker build --build-arg gemfile=$(PATH_GEMFILE) --tag $(DOCKER_TAG_VERSION) --tag $(DOCKER_TAG_LATEST) $(DIR_TOP).
 dockertest:
-	docker run --tty --interactive --rm aspera-cli ascli -h
+	docker run --tty --interactive --rm $(DOCKER_TAG_LATEST) ascli -h
 dpush:
 	docker push $(DOCKER_TAG_VERSION)
 	docker push $(DOCKER_TAG_LATEST)

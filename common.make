@@ -24,10 +24,11 @@ EXENAME=ascli
 # else use EXE_MAN or EXE_NOMAN
 EXETESTB=$(DIR_BIN)$(EXENAME)
 
-GEMNAME=$(shell $(EXETESTB) conf gem name)
 GEMSPEC=$(DIR_TOP)$(GEMNAME).gemspec
-#GEMVERSION=$(shell $(EXETESTB) conf gem version)
-GEMVERSION=$(shell sed -n "s/.*'\([^']*\)'.*/\1/p" $(DIR_LIB)aspera/cli/version.rb)
+#GEMNAME=$(shell $(EXETESTB) conf gem name)
+#GEMVERS=$(shell $(EXETESTB) conf gem version)
+GEMNAME=$(shell sed -n "s/\s*GEM_NAME = '\([^']*\)'.*/\1/p" $(DIR_LIB)aspera/cli/info.rb)
+GEMVERS=$(shell sed -n "s/.*'\([^']*\)'.*/\1/p" $(DIR_LIB)aspera/cli/version.rb)
 
 all::
 
@@ -40,3 +41,9 @@ $(TEST_CONF_FILE_PATH):
 	mkdir -p $(DIR_PRIV)
 	cp $(TMPL_CONF_FILE_PATH) $(TEST_CONF_FILE_PATH)
 	@echo "\033[0;32mAn empty configuration file is created:\n$$(realpath $(TEST_CONF_FILE_PATH))\nIt needs to be filled to run tests.\033[0;39m"
+# ensure required ruby gems are installed
+$(DIR_TOP).gems_checked: $(DIR_TOP)Gemfile
+	cd $(DIR_TOP). && bundle install
+	touch $@
+clean::
+	rm -f $(DIR_TOP).gems_checked

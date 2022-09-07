@@ -6,12 +6,12 @@ include $(DIR_TOP)common.make
 # "make" shall be executed inside the folder containing this makefile
 DIR_DOC=
 
-MANUAL_BASE=$(DIR_DOC)Manual_$(EXENAME)_$(GEMVERSION)
+MANUAL_BASE=$(DIR_DOC)Manual_$(EXENAME)_$(GEMVERS)
 MANUAL_PDF=$(MANUAL_BASE).pdf
 MANUAL_HTML=$(MANUAL_BASE).html
 
 # main target to build doc
-all:: $(MANUAL_PDF) $(TMPL_CONF_FILE_PATH)
+all:: $(DIR_TOP).gems_checked $(MANUAL_PDF) $(TMPL_CONF_FILE_PATH)
 
 doc: all
 

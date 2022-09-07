@@ -6,7 +6,7 @@ DIR_TOP=../
 
 include $(DIR_TOP)common.make
 
-all:: $(TEST_CONF_FILE_PATH) tunit tshares tfaspex tconsole tnode taoc tfasp tsync torc tcon tnsync tconf tprev tats tsample tcos tf5
+all:: $(DIR_TOP).gems_checked $(TEST_CONF_FILE_PATH) tunit tshares tfaspex tconsole tnode taoc tfasp tsync torc tcon tnsync tconf tprev tats tsample tcos tf5
 # tnagios
 
 # "EXE_MAN" and "EXE_NOMAN" are used to call the tool in the testing environment
