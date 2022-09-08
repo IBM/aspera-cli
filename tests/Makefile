@@ -6,8 +6,8 @@ DIR_TOP=../
 
 include $(DIR_TOP)common.make
 
-all:: $(DIR_TOP).gems_checked $(TEST_CONF_FILE_PATH) tunit tshares tfaspex tconsole tnode taoc tfasp tsync torc tcon tnsync tconf tprev tats tsample tcos tf5
-# tnagios
+all:: $(DIR_TOP).gems_checked $(TEST_CONF_FILE_PATH) tunit tshares tfaspex tconsole tnode taoc tserver tsvradm tsync torc tcon tnsync tconf tprev tats tsample tcos tf5
+# tnagios: already included
 
 # "EXE_MAN" and "EXE_NOMAN" are used to call the tool in the testing environment
 # "EXE_MAN" is used to generate sample commands in documentation (see in docs/Makefile)
@@ -180,26 +180,9 @@ $(T)serv_df: $(T).exists
 	@echo $@
 	$(EXE_MAN) server df
 	@touch $@
-$(T)serv_nodeadmin: $(T).exists
-	@echo $@
-	$(EXE_MAN) server -N -Ptst_hstsfaspex_ssh -Plocal_user nodeadmin -- -l
-	@touch $@
 $(T)serv_nagios_transfer: $(T).exists
 	@echo $@
 	$(EXE_MAN) server health transfer --to-folder=$(CF_HSTS_FOLDER_UPLOAD) --format=nagios 
-	@touch $@
-$(T)serv_nagios_hsts: $(T).exists
-	@echo $@
-	$(EXE_MAN) server -N -Ptst_hstsfaspex_ssh -Plocal_user health app_services --format=nagios
-	@touch $@
-$(T)serv_nagios_webapp: $(T).exists
-	@echo $@
-	$(EXE_MAN) server -N -Ptst_hstsfaspex_ssh -Plocal_user health asctlstatus --format=nagios --cmd-prefix='sudo '
-	@touch $@
-$(T)serv3: $(T).exists
-	@echo $@
-	$(EXE_MAN) server -N -Ptst_hstsfaspex_ssh -Plocal_user ctl all:status
-	$(EXE_MAN) server -N -Ptst_hstsfaspex_ssh -Plocal_user configurator get_node_data
 	@touch $@
 $(T)serv_key: $(T).exists
 	@echo $@
@@ -212,8 +195,26 @@ $(T)asession: $(T).exists
 	remote_pass=$$($(EXE_NOMAN) config preset get tst_server password)&&\
 	$(DIR_BIN)asession @json:'{"remote_host":"'"$${remote_host}"'","remote_user":"'"$${remote_user}"'","ssh_port":'$${remote_port}',"remote_password":"'"$${remote_pass}"'","direction":"receive","destination_root":"$(DIR_TMP).","paths":[{"source":"/aspera-test-dir-tiny/200KB.1"}]}'
 	@touch $@
+tserver: $(T)serv_browse $(T)serv_mkdir $(T)serv_upload $(T)serv_upload_ex $(T)serv_md5 $(T)serv_down_lcl $(T)serv_down_from_node $(T)serv_cp $(T)serv_mv $(T)serv_delete $(T)serv_cleanup1 $(T)serv_info $(T)serv_du $(T)serv_df $(T)asession $(T)serv_nagios_transfer $(T)serv_key
 
-tfasp: $(T)serv_browse $(T)serv_mkdir $(T)serv_upload $(T)serv_upload_ex $(T)serv_md5 $(T)serv_down_lcl $(T)serv_down_from_node $(T)serv_cp $(T)serv_mv $(T)serv_delete $(T)serv_cleanup1 $(T)serv_info $(T)serv_du $(T)serv_df $(T)asession $(T)serv_nodeadmin $(T)serv_nagios_hsts $(T)serv_nagios_webapp $(T)serv_nagios_transfer $(T)serv3 $(T)serv_key
+$(T)sadm_nodeadmin: $(T).exists
+	@echo $@
+	$(EXE_MAN) svradm -N -Ptst_hstsfaspex_ssh -Plocal_user nodeadmin -- -l
+	@touch $@
+$(T)sadm_nagios_hsts: $(T).exists
+	@echo $@
+	$(EXE_MAN) svradm -N -Ptst_hstsfaspex_ssh -Plocal_user health app_services --format=nagios
+	@touch $@
+$(T)sadm_nagios_webapp: $(T).exists
+	@echo $@
+	$(EXE_MAN) svradm -N -Ptst_hstsfaspex_ssh -Plocal_user health asctlstatus --format=nagios --cmd-prefix='sudo '
+	@touch $@
+$(T)sadm_ctor: $(T).exists
+	@echo $@
+	$(EXE_MAN) svradm -N -Ptst_hstsfaspex_ssh -Plocal_user ctl all:status
+	$(EXE_MAN) svradm -N -Ptst_hstsfaspex_ssh -Plocal_user configurator get_node_data
+	@touch $@
+tsvradm: $(T)sadm_nodeadmin $(T)sadm_nagios_hsts $(T)sadm_nagios_webapp $(T)sadm_ctor
 
 $(T)fx_plst: $(T).exists
 	@echo $@
@@ -1196,7 +1197,7 @@ $(T)f5_a1: $(T).exists
 
 tf5: $(T)f5_p1 $(T)f5_p2 $(T)f5_p3 $(T)f5_a1
 
-tnagios: $(T)fx_nagios $(T)serv_nagios_hsts $(T)serv_nagios_transfer $(T)nd_nagios
+tnagios: $(T)fx_nagios $(T)sadm_nagios_hsts $(T)serv_nagios_transfer $(T)nd_nagios
 
 $(T)fxgw: $(T).exists
 	@echo $@

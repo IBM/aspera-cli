@@ -21,83 +21,18 @@ module Aspera
 
         def initialize(env)
           super(env)
-          options.add_opt_simple(:ssh_keys,'ssh key path list (Array or single)')
-          options.add_opt_simple(:ssh_options,'ssh options (Hash)')
-          options.add_opt_simple(:cmd_prefix,'prefix to add for as cmd execution, e.g. sudo or /opt/aspera/bin ')
+          options.add_opt_simple(:ssh_keys,'SSH key path list (Array or single)')
+          options.add_opt_simple(:ssh_options,'SSH options (Hash)')
           options.set_option(:ssh_keys,[])
           options.set_option(:ssh_options,{})
           options.parse_options!
         end
 
-        def key_symb_to_str_single(source)
-          return source.each_with_object({}){|(k,v),memo| memo[k.to_s] = v; }
-        end
-
         def key_symb_to_str_list(source)
-          return source.map{|o| key_symb_to_str_single(o)}
+          return source.map{|o|o.stringify_keys}
         end
 
-        def asctl_parse(text)
-          # normal separator
-          r = /:\s*/
-          result = []
-          text.split("\n").each do |line|
-            # console: missing space
-            line.gsub!(/(SessionDataCollector)/,'\1 ')
-            # orchestrator
-            line.gsub!(/ with pid:.*/,'')
-            line.gsub!(/ is /,': ')
-            items = line.split(r)
-            next unless items.length.eql?(2)
-            state = {'process' => items.first,'state' => items.last}
-            # console
-            state['state'].gsub!(/\.+$/,'')
-            # console
-            state['process'].gsub!(/^.+::/,'')
-            # faspex
-            state['process'].gsub!(/^Faspex /,'')
-            # faspex
-            state['process'].gsub!(/ Background/,'')
-            state['process'].gsub!(/serving orchestrator on port /,'')
-            # console
-            r = /\s+/ if state['process'].eql?('Console')
-            # orchestrator
-            state['process'].gsub!(/^  -> /,'')
-            state['process'].gsub!(/ Process/,'')
-            result.push(state)
-          end
-          return result
-        end
-
-        def asconfigurator_parse(result)
-          lines = result.split("\n")
-          # not windows
-          Log.log.debug(%x(type asconfigurator))
-          status=lines.shift
-          case status
-          when 'success'
-            result = []
-            lines.each do |line|
-              Log.log.debug(line.to_s)
-              # normalize values
-              data = line.
-                gsub(/^"/,'').
-                gsub(/,""$/,',"AS_EMPTY"').
-                gsub(/"$/,'').
-                split('","').
-                map{|i|case i;when 'AS_NULL' then nil;when 'AS_EMPTY' then '';when 'true' then true;when 'false' then false;else i;end}
-              data.insert(1,'') if data.length.eql?(4)
-              titles=%w[level section parameter value default]
-              result.push(titles.each_with_object({}){|t,o|o[t]=data.shift})
-            end
-            return result
-          when 'failure'
-            raise lines.join("\n")
-          else raise "Unexpected: #{status}"
-          end
-        end
-
-        ACTIONS = %i[health nodeadmin userdata configurator ctl download upload browse delete rename].concat(Aspera::AsCmd::OPERATIONS).freeze
+        ACTIONS = %i[health download upload browse delete rename].concat(Aspera::AsCmd::OPERATIONS).freeze
 
         def execute_action
           server_uri = URI.parse(options.get_option(:url,is_type: :mandatory))
@@ -161,17 +96,8 @@ module Aspera
           case command
           when :health
             nagios = Nagios.new
-            command_nagios = options.get_next_command(%i[app_services transfer asctlstatus])
+            command_nagios = options.get_next_command(%i[transfer])
             case command_nagios
-            when :app_services
-              # will not work with aspshell, requires Linux/bash
-              procs = shell_executor.execute('ps -A -o comm').split("\n")
-              Log.log.debug("found: #{procs}")
-              %w[asperanoded asperaredisd].each do |name|
-                nagios.add_critical('general',"missing process #{name}") unless procs.include?(name)
-              end
-              nagios.add_ok('daemons','ok') if nagios.data.empty?
-              return nagios.result
             when :transfer
               file = Tempfile.new('transfer_test')
               filepath = file.path
@@ -190,37 +116,9 @@ module Aspera
               else
                 nagios.add_critical('transfer',statuses.reject{|i|i.eql?(:success)}.first.to_s)
               end
-            when :asctlstatus
-              realcmd = 'asctl'
-              prefix = options.get_option(:cmd_prefix)
-              realcmd = "#{prefix}#{realcmd} all:status" unless prefix.nil?
-              result = shell_executor.execute(realcmd.split)
-              data = asctl_parse(result)
-              data.each do |i|
-                if i['state'].eql?('running')
-                  nagios.add_ok(i['process'],i['state'])
-                else
-                  nagios.add_critical(i['process'],i['state'])
-                end
-              end
             else raise 'ERROR'
             end
             return nagios.result
-          when :nodeadmin,:userdata,:configurator,:ctl
-            realcmd = "as#{command}"
-            prefix = options.get_option(:cmd_prefix)
-            realcmd = "#{prefix}#{realcmd}" unless prefix.nil?
-            args = options.get_next_argument("#{realcmd} arguments",expected: :multiple)
-            args.unshift('-x') if command.eql?(:configurator)
-            result = shell_executor.execute(args.unshift(realcmd))
-            case command
-            when :ctl
-              return {type: :object_list,data: asctl_parse(result)}
-            when :configurator
-              result=asconfigurator_parse(result)
-              return {type: :object_list,data: result} # ,option_expand_last: true
-            end
-            return Main.result_status(result)
           when :upload
             return Main.result_transfer(transfer.start(server_transfer_spec.merge('direction' => Fasp::TransferSpec::DIRECTION_SEND),{src: :direct}))
           when :download
@@ -234,7 +132,7 @@ module Aspera
               when :mkdir,:mv,:cp,:rm then return Main.result_success
               when :ls                then return {type: :object_list,data: key_symb_to_str_list(result),fields: %w[zmode zuid zgid size mtime name]}
               when :df                then return {type: :object_list,data: key_symb_to_str_list(result)}
-              when :du,:md5sum,:info  then return {type: :single_object,data: key_symb_to_str_single(result)}
+              when :du,:md5sum,:info  then return {type: :single_object,data: result.stringify_keys}
               end
             rescue Aspera::AsCmd::Error => e
               raise CliBadArgument,e.extended_message
