@@ -9,6 +9,13 @@ include $(DIR_TOP)common.make
 all:: $(DIR_TOP).gems_checked $(TEST_CONF_FILE_PATH) tunit tshares tfaspex tconsole tnode taoc tserver tsvradm tsync torc tcon tnsync tconf tprev tats tsample tcos tf5
 # tnagios: already included
 
+# default download folder for Connect Client (used to cleanup and avoid confirmation from connect when overwrite)
+DIR_CONNECT_DOWNLOAD=$(HOME)/Downloads
+TIMESTAMP=$(shell LANG=C date)
+
+# folder where flag files for integration tests are generated
+T=$(DIR_TMP)t/
+
 # "EXE_MAN" and "EXE_NOMAN" are used to call the tool in the testing environment
 # "EXE_MAN" is used to generate sample commands in documentation (see in docs/Makefile)
 EXE_MAN=$(EXETESTB) --warnings --config-file=$(TEST_CONF_FILE_PATH)
@@ -20,35 +27,9 @@ CF_LOCAL_SAMPLE_FILEPATH=$(DIR_TMP)$(CF_LOCAL_SAMPLE_FILENAME)
 CF_HSTS_FOLDER_UPLOAD := $(shell $(EXE_NOMAN) config preset get misc upload_folder 2> /dev/null || echo error)
 CF_HSTS_UPLOADED_FILE=$(CF_HSTS_FOLDER_UPLOAD)/$(CF_LOCAL_SAMPLE_FILENAME)
 
+# flush cached tokens
 clean::
 	$(EXE_NOMAN) config flush
-
-# setup local environment on Macos for preview generation testing
-setupprev:
-	test -d /Users/xfer || sudo /usr/sbin/sysadminctl -addUser xfer
-	sudo mkdir -p /Users/xfer/docroot/previews /Users/xfer/.ssh
-	sudo cp /Library/Aspera/var/aspera_tokenauth_id_rsa.pub /Users/xfer/.ssh/authorized_keys
-	sudo chown -R xfer: /Users/xfer/docroot /Users/xfer/.ssh
-	sudo chmod go-rwx /Users/xfer/.ssh
-	sudo chmod -R +a "$$(whoami) allow write" /Users/xfer/docroot
-	-sudo systemsetup -setremotelogin on
-	-sudo asnodeadmin -d -u $$($(EXE_NOMAN) config preset get tst_node_preview username)
-	sudo asnodeadmin -a -u $$($(EXE_NOMAN) config preset get tst_node_preview username) -p $$($(EXE_NOMAN) config preset get tst_node_preview password) -x xfer --acl-set admin,impersonation
-	sudo asconfigurator -x "user;user_name,xfer;file_restriction,|*;token_encryption_key,$$(base64 < /dev/urandom|head -c32);absolute,AS_NULL"
-	sudo asconfigurator -x "server;activity_logging,true;activity_event_logging,true;ssh_port,22"
-	-sudo launchctl load  /Library/LaunchDaemons/com.aspera.asperanoded.plist
-	if test $$(id -u asperadaemon) -ne $$(stat -f "%u" /Library/Logs/Aspera); then \
-	  echo Fixing right;sudo chown asperadaemon: /Library/Logs/Aspera;\
-	fi
-	sudo launchctl stop com.aspera.asperanoded&&sleep 5
-	sudo launchctl start com.aspera.asperanoded
-	while ! $(EXE_NOMAN) node -N -Ptst_node_preview info;do echo waiting..;sleep 2;done
-	-$(EXE_NOMAN) node -N -Ptst_node_preview access_key delete $$($(EXE_NOMAN) config preset get tst_ak_preview username)
-	$(EXE_NOMAN) node -N -Ptst_node_preview access_key create --value=@json:'{"id":"'$$($(EXE_NOMAN) config preset get tst_ak_preview username)'","name":"the test key","secret":"'$$($(EXE_NOMAN) config preset get tst_ak_preview password)'","storage":{"type":"local", "path":"/Users/xfer/docroot"}}'
-	rm -f ~/.aspera/$(EXENAME)/persist_store/preview_iteration_transfer_localhost_testkey.txt
-noderestart:
-	sudo launchctl stop com.aspera.asperanoded
-	sudo launchctl start com.aspera.asperanoded
 
 ###########
 # Coverage
@@ -56,12 +37,9 @@ clean::
 	rm -fr $(DIR_TOP)coverage
 	rm -f $(DIR_TOP)simplecov.log
 
-# default download folder for Connect Client (used to cleanup and avoid confirmation from connect when overwrite)
-DIR_CONNECT_DOWNLOAD=$(HOME)/Downloads
-TIMESTAMP=$(shell LANG=C date)
+###########
+# Tests
 
-# folder where flag files for integration tests are generated
-T=$(DIR_TMP)t/
 # all test cases depend on this
 $(T).exists: $(DIR_TMP).exists
 	#dd if=/dev/urandom of=$(CF_LOCAL_SAMPLE_FILEPATH) count=10 bs=1m
@@ -199,20 +177,20 @@ tserver: $(T)serv_browse $(T)serv_mkdir $(T)serv_upload $(T)serv_upload_ex $(T)s
 
 $(T)sadm_nodeadmin: $(T).exists
 	@echo $@
-	$(EXE_MAN) svradm -N -Ptst_hstsfaspex_ssh -Plocal_user nodeadmin -- -l
+	$(EXE_NOMAN) svradm -N -Ptst_hstsfaspex_ssh -Plocal_user nodeadmin -- -l
 	@touch $@
 $(T)sadm_nagios_hsts: $(T).exists
 	@echo $@
-	$(EXE_MAN) svradm -N -Ptst_hstsfaspex_ssh -Plocal_user health app_services --format=nagios
+	$(EXE_NOMAN) svradm -N -Ptst_hstsfaspex_ssh -Plocal_user health app_services --format=nagios
 	@touch $@
 $(T)sadm_nagios_webapp: $(T).exists
 	@echo $@
-	$(EXE_MAN) svradm -N -Ptst_hstsfaspex_ssh -Plocal_user health asctlstatus --format=nagios --cmd-prefix='sudo '
+	$(EXE_NOMAN) svradm -N -Ptst_hstsfaspex_ssh -Plocal_user health asctlstatus --format=nagios --cmd-prefix='sudo '
 	@touch $@
 $(T)sadm_ctor: $(T).exists
 	@echo $@
-	$(EXE_MAN) svradm -N -Ptst_hstsfaspex_ssh -Plocal_user ctl all:status
-	$(EXE_MAN) svradm -N -Ptst_hstsfaspex_ssh -Plocal_user configurator get_node_data
+	$(EXE_NOMAN) svradm -N -Ptst_hstsfaspex_ssh -Plocal_user ctl all:status
+	$(EXE_NOMAN) svradm -N -Ptst_hstsfaspex_ssh -Plocal_user configurator get_node_data
 	@touch $@
 tsvradm: $(T)sadm_nodeadmin $(T)sadm_nagios_hsts $(T)sadm_nagios_webapp $(T)sadm_ctor
 
