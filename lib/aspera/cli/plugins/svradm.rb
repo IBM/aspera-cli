@@ -91,7 +91,6 @@ module Aspera
         def execute_action
           server_uri = URI.parse(options.get_option(:url,is_type: :mandatory))
           Log.log.debug("URI : #{server_uri}, port=#{server_uri.port}, scheme:#{server_uri.scheme}")
-          server_transfer_spec = {'remote_host' => }
           shell_executor = nil
           case server_uri.scheme
           when 'local'
