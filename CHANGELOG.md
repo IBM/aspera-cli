@@ -9,6 +9,10 @@
   * new: improved documentation on faspex and aoc package send
   * fix: `node do` command fixed
   * fix: improved secret hiding from logs
+  * change: (break) removed rarely commands nodeadmin, configuration, userdata, ctl from plugin `server`
+    as well as option `cmd_prefix`
+  * change: `ascli` runs as user `cliuser` instead of `root` in container
+  * change: default access right for config folder is now user only, including private keys
 
 * 4.8.0
 
