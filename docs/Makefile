@@ -2,7 +2,7 @@
 # Documentation
 
 DIR_TOP=../
-include $(DIR_TOP)common.make
+include $(DIR_TOP)common.mak
 # "make" shall be executed inside the folder containing this makefile
 DIR_DOC=
 

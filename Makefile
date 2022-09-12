@@ -5,7 +5,7 @@
 # alternatively : $(shell dirname "$(realpath $(firstword $(MAKEFILE_LIST)))")/
 DIR_TOP=
 
-include $(DIR_TOP)common.make
+include $(DIR_TOP)common.mak
 
 all:: doc signed_gem
 doc:

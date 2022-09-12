@@ -4,7 +4,7 @@
 # root folder is one level up
 DIR_TOP=../
 
-include $(DIR_TOP)common.make
+include $(DIR_TOP)common.mak
 
 all:: $(DIR_TOP).gems_checked $(TEST_CONF_FILE_PATH) tunit tshares tfaspex tconsole tnode taoc tserver tsync torc tcon tnsync tconf tprev tats tsample tcos tf5
 # tnagios: already included

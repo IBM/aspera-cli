@@ -31,12 +31,12 @@ all::
 
 #GEMNAME=$(shell $(EXETESTB) conf gem name)
 #GEMVERS=$(shell $(EXETESTB) conf gem version)
-$(DIR_TOP)nameversion.make: $(DIR_LIB)aspera/cli/info.rb $(DIR_LIB)aspera/cli/version.rb
+$(DIR_TOP)nameversion.mak: $(DIR_LIB)aspera/cli/info.rb $(DIR_LIB)aspera/cli/version.rb
 	sed -n "s/.*GEM_NAME = '\([^']*\)'.*/GEMNAME=\1/p" $(DIR_LIB)aspera/cli/info.rb > $@
 	sed -n "s/.*'\([^']*\)'.*/GEMVERS=\1/p" $(DIR_LIB)aspera/cli/version.rb >> $@
-include $(DIR_TOP)nameversion.make
+include $(DIR_TOP)nameversion.mak
 clean::
-	rm -f $(DIR_TOP)nameversion.make
+	rm -f $(DIR_TOP)nameversion.mak
 
 clean::
 
