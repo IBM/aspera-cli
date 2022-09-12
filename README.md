@@ -2517,17 +2517,6 @@ OPTIONS:
         --password=VALUE             user's password
 
 
-COMMAND: svradm
-SUBCOMMANDS: nodeadmin userdata configurator ctl health
-OPTIONS:
-        --url=VALUE                  URL of application, e.g. https://org.asperafiles.com
-        --username=VALUE             username to log in
-        --password=VALUE             user's password
-        --ssh-keys=VALUE             ssh key path list (Array or single)
-        --ssh-options=VALUE          ssh options (Hash)
-        --cmd-prefix=VALUE           prefix to add for as cmd execution, e.g. sudo or /opt/aspera/bin 
-
-
 COMMAND: node
 SUBCOMMANDS: postprocess stream transfer cleanup forward access_key watch_folder service async central asperabrowser basic_token browse upload download api_details health events space info license mkdir mklink mkfile rename delete search
 OPTIONS:
