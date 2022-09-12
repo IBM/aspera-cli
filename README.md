@@ -2517,6 +2517,17 @@ OPTIONS:
         --password=VALUE             user's password
 
 
+COMMAND: svradm
+SUBCOMMANDS: nodeadmin userdata configurator ctl health
+OPTIONS:
+        --url=VALUE                  URL of application, e.g. https://org.asperafiles.com
+        --username=VALUE             username to log in
+        --password=VALUE             user's password
+        --ssh-keys=VALUE             ssh key path list (Array or single)
+        --ssh-options=VALUE          ssh options (Hash)
+        --cmd-prefix=VALUE           prefix to add for as cmd execution, e.g. sudo or /opt/aspera/bin 
+
+
 COMMAND: node
 SUBCOMMANDS: postprocess stream transfer cleanup forward access_key watch_folder service async central asperabrowser basic_token browse upload download api_details health events space info license mkdir mklink mkfile rename delete search
 OPTIONS:
@@ -2677,14 +2688,13 @@ OPTIONS:
 
 
 COMMAND: server
-SUBCOMMANDS: health nodeadmin userdata configurator ctl download upload browse delete rename ls rm mv du info mkdir cp df md5sum
+SUBCOMMANDS: health download upload browse delete rename ls rm mv du info mkdir cp df md5sum
 OPTIONS:
         --url=VALUE                  URL of application, e.g. https://org.asperafiles.com
         --username=VALUE             username to log in
         --password=VALUE             user's password
-        --ssh-keys=VALUE             ssh key path list (Array or single)
-        --ssh-options=VALUE          ssh options (Hash)
-        --cmd-prefix=VALUE           prefix to add for as cmd execution, e.g. sudo or /opt/aspera/bin 
+        --ssh-keys=VALUE             SSH key path list (Array or single)
+        --ssh-options=VALUE          SSH options (Hash)
 
 
 COMMAND: console
@@ -3929,11 +3939,6 @@ Modern mode is to use the node API and transfer tokens.
 ### Server sample commands
 
 ```bash
-server -N -Ptst_hstsfaspex_ssh -Plocal_user configurator get_node_data
-server -N -Ptst_hstsfaspex_ssh -Plocal_user ctl all:status
-server -N -Ptst_hstsfaspex_ssh -Plocal_user health app_services --format=nagios
-server -N -Ptst_hstsfaspex_ssh -Plocal_user health asctlstatus --format=nagios --cmd-prefix='sudo '
-server -N -Ptst_hstsfaspex_ssh -Plocal_user nodeadmin -- -l
 server -N -Ptst_server_bykey -Plocal_user br /
 server browse /
 server browse folder_1/target_hot
