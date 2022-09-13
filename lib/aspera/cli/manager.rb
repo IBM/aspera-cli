@@ -56,7 +56,7 @@ module Aspera
 
       class << self
         def enum_to_bool(enum)
-          raise "Value not valid for boolean: #{enum}/#{enum.class}" unless BOOLEAN_VALUES.include?(enum)
+          raise "Value not valid for boolean: [#{enum}]/#{enum.class}" unless BOOLEAN_VALUES.include?(enum)
           return TRUE_VALUES.include?(enum)
         end
 
@@ -238,7 +238,7 @@ module Aspera
           Log.log.debug("(#{@declared_options[option_symbol][:type]}) get #{option_symbol}=#{result}")
         end
         # do not fail for manual generation if option mandatory but not set
-        result = '' if result.nil? && !@fail_on_missing_mandatory
+        result = '' if result.nil? && is_type.eql?(:mandatory) && !@fail_on_missing_mandatory
         #Log.log.debug("interactive=#{@ask_missing_mandatory}")
         if result.nil?
           if !@ask_missing_mandatory
