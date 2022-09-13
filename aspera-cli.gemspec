@@ -37,6 +37,7 @@ Gem::Specification.new do |spec|
   spec.executables = spec.files.grep(%r{^#{spec.bindir}}){|f|File.basename(f)}
   spec.cert_chain  = ['certs/aspera-cli-public-cert.pem']
   spec.signing_key = File.expand_path(ENV.fetch('SIGNING_KEY')) if ENV.has_key?('SIGNING_KEY')
+  # see also Aspera::Cli::RUBY_FUTURE_MINIMUM_VERSION
   spec.required_ruby_version = '>= 2.4'
   # dependency gems for runtime
   spec.add_runtime_dependency('execjs', '~> 2.0')

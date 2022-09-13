@@ -29,7 +29,7 @@ module Aspera
         end
 
         def key_symb_to_str_list(source)
-          return source.map{|o|o.stringify_keys}
+          return source.map(&:stringify_keys)
         end
 
         ACTIONS = %i[health download upload browse delete rename].concat(Aspera::AsCmd::OPERATIONS).freeze

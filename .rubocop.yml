@@ -9,6 +9,7 @@ AllCops:
   NewCops: enable
   Exclude:
     - local/**/*
+    - tmp/**/*
 Naming/MethodName:
   Enabled: false
 Naming/FileName:

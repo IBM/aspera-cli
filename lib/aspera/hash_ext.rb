@@ -14,7 +14,8 @@ end
 unless Hash.method_defined?(:transform_keys)
   class Hash
     def transform_keys
-      return each_with_object({}){|(k,v),memo| memo[yield(k)] = v }
+      return each_with_object({}){|(k,v),memo|memo[yield(k)]=v} if block_given?
+      raise 'missing block'
     end
   end
 end
@@ -23,7 +24,7 @@ end
 unless Hash.method_defined?(:symbolize_keys)
   class Hash
     def symbolize_keys
-      return transform_keys{|k|k.to_sym}
+      return transform_keys(&:to_sym)
     end
   end
 end
@@ -32,7 +33,7 @@ end
 unless Hash.method_defined?(:stringify_keys)
   class Hash
     def stringify_keys
-      return transform_keys{|k|k.to_s}
+      return transform_keys(&:to_s)
     end
   end
 end

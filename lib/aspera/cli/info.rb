@@ -11,7 +11,7 @@ module Aspera
     SRC_URL  = 'https://github.com/IBM/aspera-cli'
     # set this to warn in advance when minimum required ruby version will increase
     # for example currently minimum version is 2.4 in gemspec, but future minimum will be 2.5
-    # set to currenmt minimum if there is no deprecation
+    # set to current minimum if there is no deprecation
     # the actual current minimum required version is in gemspec at required_ruby_version
     RUBY_FUTURE_MINIMUM_VERSION = '2.5'
   end

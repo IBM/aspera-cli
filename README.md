@@ -3748,6 +3748,8 @@ aoc files browse /
 aoc files browse / -N --link=my_aoc_publink_folder
 aoc files delete /testsrc
 aoc files download --transfer=connect /200KB.1
+aoc files file permission --path=/ascli_test list
+aoc files file show --path=/200KB.1
 aoc files file show my_file_id
 aoc files find / --value='\.partial$'
 aoc files http_node_download --to-folder=. /200KB.1
