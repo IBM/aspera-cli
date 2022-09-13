@@ -450,6 +450,8 @@ $(T)aocffid: $(T).exists
 	set -x&&\
 	file_id=$$($(EXE_NOMAN) aoc files br /200KB.1 --fields=id --format=csv --display=data)&&\
 	$(EXE_MAN) aoc files file show $${file_id}
+	$(EXE_MAN) aoc files file show --path=/200KB.1
+	$(EXE_MAN) aoc files file permission --path=/ascli_test list
 	@touch $@
 $(T)aocfpub: $(T).exists
 	@echo $@

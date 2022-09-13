@@ -231,8 +231,10 @@ module Aspera
             file_path = options.get_option(:path)
             node_file =
               if !file_path.nil?
+                # directly returns node_file info
                 aoc_api.resolve_node_file(top_node_file,file_path) # TODO: allow follow link ?
               else
+                # build node_file info from next argument on command line
                 {node_info: top_node_file[:node_info],file_id: instance_identifier}
               end
             node_api = aoc_api.get_node_api(node_file[:node_info])
