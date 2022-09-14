@@ -3604,19 +3604,43 @@ Download of files is straightforward using command: `aoc files download`
 
 #### Shared folders
 
-* list shared folders in node
+Shared folder by users are managed through **permissions**.
+For creation, parameters are the same as for node api [permissions](https://developer.ibm.com/apis/catalog/aspera--aspera-node-api/api/API--aspera--node-api#post960739960).
+`ascli` expects the same payload for creation, but it will automatically populated required tags if needed.
+Also, the pseudo key `with` is added: it will lookup the name in the contacts and fill the proper type and id.
+The pseudo parameter `link_name` allows changing default "shared as" name.
+
+* List permissions on a shared folder as user
+
+```bash
+ascli aoc files file --path=/shared_folder_test1 perm list
+```
+
+* Share a personal folder with other users
+
+```bash
+ascli aoc files file --path=/shared_folder_test1 perm create @json:'{"with":"laurent"}'
+```
+
+* Revoke shared access
+
+```bash
+ascli aoc files file --path=/shared_folder_test1 perm delete 6161
+```
+
+* List shared folders in node
 
 ```bash
 ascli aoc admin res node --id=8669 shared_folders
 ```
 
-* list shared folders in workspace
+* List shared folders in workspace
 
 ```bash
 ascli aoc admin res workspace --id=10818 shared_folders
 ```
 
-* list members of shared folder
+* List members of shared folder
 
 ```bash
 ascli aoc admin res node --id=8669 v4 perm 82 show

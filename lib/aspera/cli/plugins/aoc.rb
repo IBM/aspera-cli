@@ -247,7 +247,7 @@ module Aspera
               res = node_api.update("files/#{node_file[:file_id]}",update_param)[:data]
               return {type: :single_object,data: res}
             when :permission
-              command_perm = options.get_next_command(%i[list create])
+              command_perm = options.get_next_command(%i[list create delete])
               case command_perm
               when :list
                 # generic options : TODO: as arg ? option_url_query
@@ -260,15 +260,20 @@ module Aspera
                 end
                 items = node_api.read('permissions',list_options)[:data]
                 return {type: :object_list,data: items}
+              when :delete
+                perm_id=instance_identifier
+                return do_bulk_operation(perm_id,'deleted') do |one_id|
+                  node_api.delete("permissions/#{perm_id}")
+                  {'id' => one_id}
+                end
+                #node_api.delete("permissions/#{perm_id}")
               when :create
-                #create_param=self.options.get_next_argument('creation data (Hash)')
-                set_workspace_info
-                access_id = "#{ID_AK_ADMIN}_WS_#{@workspace_info['id']}"
-                node_file[:node_info]
-                params = {
+                create_param=options.get_next_argument('creation data (Hash)')
+                #access_id = "#{ID_AK_ADMIN}_WS_#{@workspace_info['id']}"
+                default_params = {
                   'file_id'       => node_file[:file_id], # mandatory
-                  'access_type'   => 'user', # mandatory: user or group
-                  'access_id'     => access_id, # id of user or group
+                  #'access_type'   => 'user', # mandatory: user or group
+                  #'access_id'     => access_id, # id of user or group
                   'access_levels' => Aspera::Node::ACCESS_LEVELS,
                   'tags'          => {'aspera' => {'files' => {'workspace' => {
                     'id'                => @workspace_info['id'],
@@ -277,12 +282,39 @@ module Aspera
                     'shared_by_user_id' => aoc_api.user_info['id'],
                     'shared_by_name'    => aoc_api.user_info['name'],
                     'shared_by_email'   => aoc_api.user_info['email'],
-                    'shared_with_name'  => access_id,
+                    #'shared_with_name'  => access_id,
                     'access_key'        => node_file[:node_info]['access_key'],
                     'node'              => node_file[:node_info]['name']}}}}}
+                create_param = default_params.deep_merge(create_param)
+                if create_param.has_key?('with')
+                  contact_info = aoc_api.lookup_entity_by_name(
+                    'contacts',
+                    create_param['with'],
+                    {'current_workspace_id' => @workspace_info['id'],'context'=> 'share_folder'})
+                  create_param.delete('with')
+                  create_param['access_type']=contact_info['source_type']
+                  create_param['access_id']=contact_info['source_id']
+                  create_param['tags']['aspera']['files']['workspace']['shared_with_name']=contact_info['email']
+                end
+                opt_link_name=nil
+                if create_param.has_key?('link_name')
+                  opt_link_name=create_param['link_name']
+                  create_param.delete('link_name')
+                end
+                # for admin type:
+                #node_file[:node_info]
                 #node_api = aoc_api.get_node_api(node_file[:node_info])
-                item = node_api.create('permissions',params)[:data]
-                return {type: :single_object,data: item}
+                created_data = node_api.create('permissions',create_param)[:data]
+                event_creation={
+                  'types'        => ['permission.created'],
+                  'node_id'      => node_file[:node_info]['id'],
+                  'workspace_id' => @workspace_info['id'],
+                  'data'         => created_data # Response from previous step
+                }
+                #(optional). The name of the folder to be displayed to the destination user. Use it if its value is different from the "share_as" field.
+                event_creation['link_name']=opt_link_name unless opt_link_name.nil?
+                aoc_api.create('events',event_creation)
+                return { type: :single_object, data: created_data}
               else raise "internal error:shall not reach here (#{command_perm})"
               end
             else raise "internal error:shall not reach here (#{command_node_file})"
@@ -733,9 +765,9 @@ module Aspera
               command_repo = options.get_next_command(NODE4_COMMANDS)
               return execute_node_gen4_command(command_repo,{node_info: res_data, file_id: ak_root_file_id})
             when :shared_folder
-              Log.log.warn('ATTENTION: under development')
+              Log.log.warn('ATTENTION: alpha, under development, do not use')
               # inside a workspace
-              command_shared = options.get_next_command(%i[list create member delete])
+              command_shared = options.get_next_command(%i[list create delete]) # member
               core_api=Rest.new(aoc_api.params.merge(base_url: aoc_api.params[:base_url].gsub('/api.','/sedemo.')))
               # generic permission created for each shared folder
               access_id = "#{ID_AK_ADMIN}_WS_#{res_id}"
@@ -780,7 +812,7 @@ module Aspera
                 # remove from creation data if present, as it is not a standard argument
                 shared_create_data.delete('node_id')
                 # get optional link_name
-                opt_link_name=shared_create_data['link_name']
+                #opt_link_name=shared_create_data['link_name']
                 shared_create_data.delete('link_name')
                 raise 'missing node information: path' unless shared_create_data.has_key?('path')
                 folder_path=shared_create_data['path']
@@ -808,6 +840,7 @@ module Aspera
                 }}}}
                 shared_create_data = default_create_data.deep_merge(default_create_data) # ?aspera-node-basic=#{node_id}&aspera-node-prefer-basic=#{node_id}
                 created_data = node_api.create('permissions',shared_create_data)[:data]
+                # new API:
                 #created_data=aoc_api.create("node/#{node_id}/permissions",shared_create_data)[:data]
                 # TODO: send event
                 event_creation={
@@ -817,7 +850,7 @@ module Aspera
                   'data'         => created_data # Response from previous step
                 }
                 #(optional). The name of the folder to be displayed to the destination user. Use it if its value is different from the "share_as" field.
-                event_creation['link_name']=opt_link_name unless opt_link_name.nil?
+                #event_creation['link_name']=opt_link_name unless opt_link_name.nil?
                 aoc_api.create('events',event_creation)
                 return { type: :single_object, data: created_data}
               end
