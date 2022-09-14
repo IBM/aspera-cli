@@ -316,7 +316,8 @@ module Aspera
         end
       else
         # retrieve values from API
-        std_t_spec = node_api.create('files/download_setup',
+        std_t_spec = node_api.create(
+          'files/download_setup',
           {transfer_requests: [{ transfer_request: {paths: [{'source' => '/'}] } }] }
         )[:data]['transfer_specs'].first['transfer_spec']
         %w[remote_host remote_user ssh_port fasp_port].each {|i| transfer_spec[i] = std_t_spec[i]}

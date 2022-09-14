@@ -42,3 +42,7 @@ Style/TrailingCommaInArrayLiteral:
   EnforcedStyleForMultiline: no_comma
 Style/DateTime:
   Enabled: false
+Style/TrailingCommaInArguments:
+  Enabled: false
+Lint/RedundantCopDisableDirective:
+  Enabled: false
