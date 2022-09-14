@@ -1,6 +1,6 @@
 # Changes (Release notes)
 
-* next version
+* 4.9.0
 
   * new: shares: import of SAML users and LDAP users
   * new: M1 apple silicon support SDK install (uses x86 ascp)
