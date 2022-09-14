@@ -6,6 +6,7 @@ require 'aspera/hash_ext'
 require 'aspera/data_repository'
 require 'aspera/fasp/transfer_spec'
 require 'base64'
+require 'cgi'
 
 Aspera::Oauth.register_token_creator(:aoc_pub_link,lambda{|o|
   o.api.call({
@@ -453,7 +454,7 @@ module Aspera
     # @param options additional search options
     def lookup_entity_by_name(entity_type,entity_name,options={})
       # returns entities whose name contains value (case insensitive)
-      matching_items = read(entity_type,options.merge({'q' => entity_name}))[:data]
+      matching_items = read(entity_type,options.merge({'q' => CGI.escape(entity_name)}))[:data]
       case matching_items.length
       when 1 then return matching_items.first
       when 0 then raise %Q{#{ENTITY_NOT_FOUND} #{entity_type}: "#{entity_name}"}
