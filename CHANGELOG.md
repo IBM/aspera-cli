@@ -1,5 +1,8 @@
 # Changes (Release notes)
 
+* 4.10.0
+  *
+
 * 4.9.0
 
   * new: shares: import of SAML users and LDAP users
