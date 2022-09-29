@@ -74,7 +74,7 @@ Aspera::Log.dump('job_id',job_id)
 result = transfer_client.wait_for_transfers_completion
 #  notify of any transfer error
 result.reject{|i|i.eql?(:success)}.each do |e|
-  Aspera::Log.log.error("A transfer error occured: #{e.message}")
+  Aspera::Log.log.error("A transfer error occurred: #{e.message}")
 end
 
 # 3: Faspex 4 API v4

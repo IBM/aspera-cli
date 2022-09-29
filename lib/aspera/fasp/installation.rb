@@ -219,7 +219,7 @@ module Aspera
         return nil unless File.exist?(exe_path)
         exe_version = nil
         cmd_out = %x("#{exe_path}" #{vers_arg})
-        raise "An error occured when testing #{ascp_filename}: #{cmd_out}" unless $CHILD_STATUS == 0
+        raise "An error occurred when testing #{ascp_filename}: #{cmd_out}" unless $CHILD_STATUS == 0
         # get version from ascp, only after full extract, as windows requires DLLs (SSL/TLS/etc...)
         m = cmd_out.match(/ version ([0-9.]+)/)
         exe_version = m[1] unless m.nil?

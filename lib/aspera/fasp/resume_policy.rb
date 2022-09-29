@@ -45,7 +45,7 @@ module Aspera
             yield
             break
           rescue Fasp::Error => e
-            Log.log.warn("An error occured: #{e.message}");
+            Log.log.warn("An error occurred: #{e.message}");
             # failure in ascp
             if e.retryable?
               # exit if we exceed the max number of retry

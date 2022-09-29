@@ -90,4 +90,4 @@ $stdout.puts(JSON.generate(transfer_result))
 # get list of errors only
 errors = transfer_result.reject{|i|i.eql?(:success)}
 # the transfer was not success, as there is at least one error
-raise "Error(s) occured: #{errors.join(',')}" if !errors.empty?
+raise "Error(s) occurred: #{errors.join(',')}" if !errors.empty?

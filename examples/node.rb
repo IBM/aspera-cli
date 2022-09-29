@@ -93,4 +93,4 @@ transfer_agent.start_transfer(transfer_spec)
 transfer_result = transfer_agent.wait_for_transfers_completion
 errors = transfer_result.reject{|i|i.eql?(:success)}
 # the transfer was not success, as there is at least one error
-raise "Error(s) occured: #{errors.join(',')}" if !errors.empty?
+raise "Error(s) occurred: #{errors.join(',')}" if !errors.empty?

@@ -397,7 +397,7 @@ module Aspera
                 Log.log.warn("unknown entry type: #{entry['type']}")
               end
             rescue StandardError => e
-              Log.log.warn("An error occured: #{e}, ignoring")
+              Log.log.warn("An error occurred: #{e}, ignoring")
             end
           end
         end
