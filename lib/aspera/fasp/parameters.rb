@@ -51,7 +51,19 @@ module Aspera
             param[:cli] =
               case i[:cltype]
               when :envvar then 'env:' + i[:clvarname]
-              when :opt_without_arg,:opt_with_arg then i[:clswitch]
+              when :opt_without_arg then i[:clswitch]
+              when :opt_with_arg
+                values=if i.has_key?(:enum)
+                  ['enum']
+                elsif i[:accepted_types].is_a?(Array)
+                  i[:accepted_types]
+                elsif !i[:accepted_types].nil?
+                  [i[:accepted_types]]
+                else
+                  raise "error: #{param}"
+                end.map{|n|"{#{n}}"}.join('|')
+                conv=i.has_key?(:clconvert) ? '(conversion)' : ''
+                "#{i[:clswitch]} #{conv}#{values}"
               else ''
               end
             if i.has_key?(:enum)

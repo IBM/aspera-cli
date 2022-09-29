@@ -4,7 +4,7 @@
 # enum      : set with list of values for enum types accepted in transfer spec
 # tragents  : supported agents (for doc only)
 # required  : optional, default: false
-# cltype    : ascp: type of parameter
+# cltype    : ascp: type of parameter: :opt_with_arg,:opt_without_arg,:envvar,:defer,:ignore,
 # clswitch  : ascp: switch for ascp command line
 # clconvert : ascp: transform value: either a Hash with conversion values, or name of class
 # clvarname : ascp: name of env var
@@ -144,8 +144,11 @@ https_fallback_port:
   :cltype: :opt_with_arg
   :clswitch: "-t"
 move_after_transfer:
-  :desc: The relative path to which the files will be moved after the transfer at the source side.
+  :desc: The relative path to which the files will be moved after the transfer at the source side. Available as of 3.8.0.
   :cltype: :opt_with_arg
+  :tragents:
+  - :direct
+  - :node
 multi_session:
   :desc: |
     Use multi-session transfer. max 128.

@@ -2076,10 +2076,9 @@ Multi-session is directly supported by the node daemon.
 --ts=@json:'{"multi_session":5,"multi_session_threshold":1,"resume_policy":"none"}'
 ```
 
-Note: resume policy of "attr" may cause problems. "none" or "sparse_csum"
-shall be preferred.
+Note: `resume_policy` set to `attr` may cause problems: `none` or `sparse_csum` shall be preferred.
 
-Multi-session spawn is done by <%=tool%>.
+<%=tool%> starts multiple `ascp` for Multi-session using `direct` agent.
 
 When multi-session is used, one separate UDP port is used per session (refer to `ascp` manual page).
 
@@ -4514,7 +4513,8 @@ asession -h
 
 ### Requirements
 
-<%=tool%> maybe used as a simple hot folder engine. A hot folder being defined as a tool that:
+<%=tool%> maybe used as a simple hot folder engine.
+A hot folder being defined as a tool that:
 
 * locally (or remotely) detects new files in a top folder
 * send detected files to a remote (respectively, local) repository
@@ -4536,35 +4536,45 @@ The general idea is to rely on :
 
 Interesting ascp features are found in its arguments: (see ascp manual):
 
-* `ascp` already takes care of sending only "new" files: option `-k 1,2,3`, or transfer_spec: `resume_policy`
-* `ascp` has some options to remove or move files after transfer: `--remove-after-transfer`, `--move-after-transfer`, `--remove-empty-directories`
-* `ascp` has an option to send only files not modified since the last X seconds: `--exclude-newer-than` (--exclude-older-than)
-* `--src-base` if top level folder name shall not be created on destination
+* `ascp` already takes care of sending only "new" files: option `-k 1,2,3` (`resume_policy`)
+* `ascp` has some options to remove or move files after transfer: `--remove-after-transfer`, `--move-after-transfer`, `--remove-empty-directories` (`remove_after_transfer`, `move_after_transfer`, `remove_empty_directories`)
+* `ascp` has an option to send only files not modified since the last X seconds: `--exclude-newer-than`, `--exclude-older-than` (`exclude_newer_than`,`exclude_older_than`)
+* `--src-base` (`src_base`) if top level folder name shall not be created on destination
 
 Note that:
 
-* <%=tool%> takes transfer parameters exclusively as a transfer_spec, with `--ts` parameter.
-* most, but not all native ascp arguments are available as standard transfer_spec parameters
-* native ascp arguments can be provided with the <%=trspec%> parameter: EX_ascp_args (array), only for the [`direct`](#agt_direct) transfer agent (not connect or node)
+* <%=tool%> takes transfer parameters exclusively as a <%=trspec%>, with `--ts` parameter.
+* most, but not all, native `ascp` arguments are available as standard <%=trspec%> parameters
+* native ascp arguments can be provided with the <%=trspec%> parameter: `EX_ascp_args` (array), only for the [`direct`](#agt_direct) transfer agent (not others, like connect or node)
 
 #### server side and configuration
 
-Virtually any transfer on a "repository" on a regular basis might emulate a hot folder. Note that file detection is not based on events (inotify, etc...), but on a stateless scan on source side.
+Virtually any transfer on a "repository" on a regular basis might emulate a hot folder.
+> file detection is not based on events (inotify, etc...), but on a simple folder scan on source side.
 
-Note: parameters may be saved in a <%=prst%> and used with `-P`.
+> parameters may be saved in a <%=prst%> and used with `-P`.
 
 #### Scheduling
 
-Once <%=tool%> parameters are defined, run the command using the OS native scheduler, e.g. every minutes, or 5 minutes, etc... Refer to section [Scheduling](#scheduling).
+Once <%=tool%> parameters are defined, run the command using the OS native scheduler, e.g. every minutes, or 5 minutes, etc...
+Refer to section [Scheduling](#scheduling). (on use of option `lock_port`)
 
-### Example: upload folder
+### Example: upload hot folder
 
 ```javascript
-<%=cmd%> server upload source_hot --to-folder=/Upload/target_hot --lock-port=12345 --ts=@json:'{"EX_ascp_args":["--remove-after-transfer","--remove-empty-directories","--exclude-newer-than=-8","--src-base","source_hot"]}'
+<%=cmd%> server upload source_hot --to-folder=/Upload/target_hot --lock-port=12345 --ts=@json:'{"remove_after_transfer":true,"remove_empty_directories":true,"exclude_newer_than:-8,"src_base":"source_hot"}'
 ```
 
-The local folder (here, relative path: source_hot) is sent (upload) to basic fasp server, source files are deleted after transfer. growing files will be sent only once they don't grow anymore (based on an 8-second cooloff period). If a transfer takes more than the execution period, then the subsequent execution is skipped (lock-port).
+The local folder (here, relative path: `source_hot`) is sent (upload) to an aspera server.
+Source files are deleted after transfer.
+Growing files will be sent only once they don't grow anymore (based on an 8-second cooloff period).
+If a transfer takes more than the execution period, then the subsequent execution is skipped (`lock_port`) preventing multiple concurrent runs.
 
+### Example: unidirectional synchronization
+
+```javascript
+<%=cmd%> server upload source_sync --to-folder=/Upload/target_sync --lock-port=12345 --ts=@json:'{"resume_policy":"sparse_csum","exclude_newer_than:-8,"src_base":"source_sync"}'
+```
 ## Health check and Nagios
 
 Most plugin provide a `health` command that will check the health status of the application. Example:

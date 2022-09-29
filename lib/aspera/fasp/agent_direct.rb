@@ -272,6 +272,10 @@ module Aspera
                   env_args[:env]['ASPERA_SCP_TOKEN'] = session[:options][:regenerate_token].call(true)
                 end
               end
+              # cannot resolve address
+              #if last_status_event['Code'].to_i.eql?(14)
+              #  Log.log.warn("host: #{}")
+              #end
               raise Fasp::Error.new(last_status_event['Description'],last_status_event['Code'].to_i)
             else # case
               raise "unexpected last event type: #{last_status_event['Type']}"
