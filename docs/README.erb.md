@@ -1870,7 +1870,16 @@ If the `password` value begins with `Bearer` then the `username` is expected to 
 
 #### <a id="agt_httpgw"></a>HTTP Gateway
 
-If it possible to send using a HTTP gateway, in case FASP is not allowed. `transfer_info` shall have a single mandatory parameter: `url`.
+If it possible to send using a HTTP gateway, in case FASP is not allowed.
+
+Parameters provided in option `transfer_info` are:
+
+<table>
+<tr><th>Name</th><th>Type</th><th>Description</th></tr>
+<tr><td>url</td><td>string</td><td>URL of the HTTP GW</br>Mandatory</td></tr>
+<tr><td>upload_bar_refresh_sec</td><td>float</td><td>Refresh rate for upload progress bar</td></tr>
+<tr><td>upload_chunksize</td><td>int</td><td>Size in bytes of chunks for upload</td></tr>
+</table>
 
 Example:
 
@@ -1878,7 +1887,7 @@ Example:
 <%=cmd%> faspex package recv --id=323 --transfer=httpgw --transfer-info=@json:'{"url":"https://asperagw.example.com:9443/aspera/http-gwy/v1"}'
 ```
 
-Note that the gateway only supports transfers authorized with a token.
+> The gateway only supports transfers authorized with a token.
 
 #### <a id="agt_trsdk"></a>Transfer SDK
 

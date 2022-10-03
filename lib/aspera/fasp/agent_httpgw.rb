@@ -16,12 +16,16 @@ module Aspera
     # start a transfer using Aspera HTTP Gateway, using web socket session
     class AgentHttpgw < AgentBase
       # message returned by HTTP GW in case of success
-      OK_MESSAGE = 'end upload'
-      # refresh rate for progress
-      UPLOAD_REFRESH_SEC = 0.5
-      private_constant :OK_MESSAGE,:UPLOAD_REFRESH_SEC
+      MSG_END_UPLOAD = 'end upload'
+      MSG_END_SLICE = 'end_slice_upload'
+      DEFAULT_OPTIONS = {
+        url:                    nil,
+        upload_chunksize:       64_000,
+        upload_bar_refresh_sec: 0.5
+      }.freeze
+      private_constant :DEFAULT_OPTIONS,:MSG_END_UPLOAD,:MSG_END_SLICE
       # send message on http gw web socket
-      def ws_send(ws,type,data)
+      def ws_snd_json(ws,type,data)
         ws.send(JSON.generate({type => data}))
       end
 
@@ -48,31 +52,32 @@ module Aspera
           # save so that we can actually read the file later
           source_paths.push(full_src_filepath)
         end
-
+        # identify this session uniquely
         session_id = SecureRandom.uuid
         ws = ::WebSocket::Client::Simple::Client.new
         # error message if any in callback
-        error = nil
+        current_error = nil
         # number of files totally sent
         received = 0
         # setup callbacks on websocket
         ws.on(:message) do |msg|
           Log.log.info("ws: message: #{msg.data}")
           message = msg.data
-          if message.eql?(OK_MESSAGE)
+          if message.eql?(MSG_END_UPLOAD)
             received += 1
+          elsif message.eql?(MSG_END_SLICE)
           else
             message.chomp!
-            error =
+            current_error =
               if message.start_with?('"') && message.end_with?('"')
                 JSON.parse(Base64.strict_decode64(message.chomp[1..-2]))['message']
               else
-                "expecting quotes in [#{message}]"
+                "unknown message from gateway: [#{message}]"
               end
           end
         end
         ws.on(:error) do |e|
-          error = e
+          current_error = e
         end
         ws.on(:open) do
           Log.log.info('ws: open')
@@ -80,10 +85,16 @@ module Aspera
         ws.on(:close) do
           Log.log.info('ws: close')
         end
+        # web socket endpoint
+        ws_url = "#{@gw_api.params[:base_url]}/v1/upload"
+        # use base64 encoding if gateway does not support v2
+        use_base64_encoding = @api_info['endpoints'].select{|i|i.include?('/v2/upload')}.empty?
+        ws_url.gsub!('/v1/','/v2/') unless use_base64_encoding
+        Log.log.debug("base64: #{use_base64_encoding}, url: #{ws_url}")
         # open web socket to end point
-        ws.connect("#{@gw_api.params[:base_url]}/upload")
+        ws.connect(ws_url)
         # async wait ready
-        while !ws.open? && error.nil?
+        while !ws.open? && current_error.nil?
           Log.log.info('ws: wait')
           sleep(0.2)
         end
@@ -91,7 +102,7 @@ module Aspera
         notify_begin(session_id,total_size)
         # first step send transfer spec
         Log.dump(:ws_spec,transfer_spec)
-        ws_send(ws,:transfer_spec,transfer_spec)
+        ws_snd_json(ws,:transfer_spec,transfer_spec)
         # current file index
         file_index = 0
         # aggregate size sent
@@ -104,32 +115,38 @@ module Aspera
           file_size = item['file_size']
           file_name = File.basename(item[item['destination'].nil? ? 'source' : 'destination'])
           # compute total number of slices
-          numslices = 1 + ((file_size - 1) / @upload_chunksize)
+          numslices = 1 + ((file_size - 1) / @options[:upload_chunksize])
           File.open(source_paths[file_index]) do |file|
             # current slice index
             slicenum = 0
             while !file.eof?
-              data = file.read(@upload_chunksize)
+              data = file.read(@options[:upload_chunksize])
               slice_data = {
                 name:         file_name,
                 type:         file_mime_type,
                 size:         file_size,
-                data:         Base64.strict_encode64(data),
                 slice:        slicenum,
                 total_slices: numslices,
                 fileIndex:    file_index
               }
+              #Log.dump(:slice_data,slice_data) #if slicenum.eql?(0)
+              if use_base64_encoding
+                slice_data[:data] = Base64.strict_encode64(data)
+                ws_snd_json(ws,:slice_upload, slice_data)
+              else
+                ws_snd_json(ws,:slice_upload, slice_data) if slicenum.eql?(0)
+                ws.send(data)
+                ws_snd_json(ws,:slice_upload, slice_data) if slicenum.eql?(numslices-1)
+              end
               # log without data
-              Log.dump(:slide_data,slice_data.keys.each_with_object({}){|i,m|m[i] = i.eql?(:data) ? 'base64 data' : slice_data[i];}) if slicenum.eql?(0)
-              ws_send(ws,:slice_upload, slice_data)
               sent_bytes += data.length
               currenttime = Time.now
-              if lastevent.nil? || ((currenttime - lastevent) > UPLOAD_REFRESH_SEC)
+              if lastevent.nil? || ((currenttime - lastevent) > @options[:upload_bar_refresh_sec])
                 notify_progress(session_id,sent_bytes)
                 lastevent = currenttime
               end
               slicenum += 1
-              raise error unless error.nil?
+              raise current_error unless current_error.nil?
             end
           end
           file_index += 1
@@ -153,7 +170,7 @@ module Aspera
           end
           transfer_spec['download_name'] = dname
         end
-        creation = @gw_api.create('download',{'transfer_spec' => transfer_spec})[:data]
+        creation = @gw_api.create('v1/download',{'transfer_spec' => transfer_spec})[:data]
         transfer_uuid = creation['url'].split('/').last
         file_dest =
           if transfer_spec['zip_required'] || transfer_spec['paths'].length > 1
@@ -164,7 +181,7 @@ module Aspera
             File.basename(transfer_spec['paths'].first['source'])
           end
         file_dest = File.join(transfer_spec['destination_root'],file_dest)
-        @gw_api.call({operation: 'GET',subpath: "download/#{transfer_uuid}",save_to_file: file_dest})
+        @gw_api.call({operation: 'GET',subpath: "v1/download/#{transfer_uuid}",save_to_file: file_dest})
       end
 
       # start FASP transfer based on transfer spec (hash table)
@@ -200,15 +217,24 @@ module Aspera
 
       private
 
-      def initialize(params)
-        raise 'params must be Hash' unless params.is_a?(Hash)
-        params = params.symbolize_keys
-        raise 'must have only one param: url' unless params.keys.eql?([:url])
+      def initialize(options)
+        options = options.symbolize_keys
+        # set default options and override if specified
+        @options = DEFAULT_OPTIONS.dup
+        raise "httpgw agent parameters: expecting Hash, but have #{options.class}" unless options.is_a?(Hash)
+        options.each do |k,v|
+          raise "httpgw agent parameter: Unknown: #{k}, expect one of #{DEFAULT_OPTIONS.keys.map(&:to_s).join(',')}" unless DEFAULT_OPTIONS.has_key?(k)
+          @options[k] = v
+        end
+        Log.log.debug("local options= #{options}")
+
+        raise 'missing param: url' if @options[:url].nil?
+        # remove /v1 from end
+        @options[:url].gsub(%r{/v1/*$},'')
         super()
-        @gw_api = Rest.new({base_url: params[:url]})
-        api_info = @gw_api.read('info')[:data]
-        Log.log.info(api_info.to_s)
-        @upload_chunksize = 128_000 # TODO: configurable ?
+        @gw_api = Rest.new({base_url: @options[:url]})
+        @api_info = @gw_api.read('v1/info')[:data]
+        Log.log.info(@api_info.to_s)
       end
     end # AgentHttpgw
   end
