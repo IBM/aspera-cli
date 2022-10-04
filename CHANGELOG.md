@@ -1,6 +1,7 @@
 # Changes (Release notes)
 
 * 4.10.0
+
   * new: httpgw transfer agent: support api v2 and new options
 
 * 4.9.0
