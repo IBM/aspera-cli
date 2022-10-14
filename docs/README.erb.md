@@ -247,17 +247,13 @@ Use this method which provides more flexibility.
 
 Install "rvm": follow [https://rvm.io/](https://rvm.io/) :
 
-Install the 2 keys
-
-```bash
-gpg2 --keyserver hkp://pool.sks-keyservers.net --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3 7D2BAF1CF37B13E2069D6956105BD0E739499BDB
-```
-
 Execute the shell/curl command. As regular user, it install in the user's home: `~/.rvm` .
 
 ```bash
 \curl -sSL https://get.rvm.io | bash -s stable
 ```
+
+Follow on-screen instructions to install keys, and then re-execute the command.
 
 If you keep the same terminal (not needed if re-login):
 
@@ -308,10 +304,9 @@ Install Latest stable Ruby:
 
 * Navigate to [https://rubyinstaller.org/](https://rubyinstaller.org/) &rarr; **Downloads**.
 * Download the latest Ruby installer **with devkit**. (Msys2 is needed to install some native extensions, such as `grpc`)
-* Execute the installer which installs by default in: `RubyVV-x64` (VV is the version number)
-* At the end of the installation procedure execute the Msys2 installer (ridk install) and select option 3 (msys and mingw)
-* Install the "mime info" file as specified in [this section](#mimeinfo).
-
+* Execute the installer which installs by default in: `C:\RubyVV-x64` (VV is the version number)
+* At the end of the installation procedure, the Msys2 installer is automatically executed, select option 3 (msys and mingw)
+* for the installation of 
 #### macOS: pre-installed or `brew`
 
 macOS 10.13+ (High Sierra) comes with a recent Ruby. So you can use it directly. You will need to install <%=gemspec.name%> using `sudo` :

@@ -1144,6 +1144,7 @@ $(T)f5_p3: $(T).exists
 $(T)f5_a1: $(T).exists
 	@echo $@
 	$(EXE_MAN) faspex5 health
+	$(EXE_MAN) faspex5 bearer_token
 	$(EXE_MAN) faspex5 admin res accounts list
 	$(EXE_MAN) faspex5 admin res contacts list
 	$(EXE_MAN) faspex5 admin res jobs list

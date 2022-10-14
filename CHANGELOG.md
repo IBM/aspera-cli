@@ -3,6 +3,7 @@
 * 4.10.0
 
   * new: httpgw transfer agent: support api v2 and new options
+  * new: faspex5: get bearer token
 
 * 4.9.0
 

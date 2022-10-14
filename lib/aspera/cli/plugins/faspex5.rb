@@ -82,7 +82,7 @@ module Aspera
           end
         end
 
-        ACTIONS = %i[health package admin user].freeze
+        ACTIONS = %i[health user bearer_token package admin].freeze
 
         def execute_action
           set_api
@@ -110,6 +110,8 @@ module Aspera
                 return Main.result_status('modified')
               end
             end
+          when :bearer_token
+            return {type: :text,data: @api_v5.oauth_token}
           when :package
             command = options.get_next_command(%i[list show send receive])
             case command

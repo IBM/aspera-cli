@@ -247,17 +247,13 @@ Use this method which provides more flexibility.
 
 Install "rvm": follow [https://rvm.io/](https://rvm.io/) :
 
-Install the 2 keys
-
-```bash
-gpg2 --keyserver hkp://pool.sks-keyservers.net --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3 7D2BAF1CF37B13E2069D6956105BD0E739499BDB
-```
-
 Execute the shell/curl command. As regular user, it install in the user's home: `~/.rvm` .
 
 ```bash
 \curl -sSL https://get.rvm.io | bash -s stable
 ```
+
+Follow on-screen instructions to install keys, and then re-execute the command.
 
 If you keep the same terminal (not needed if re-login):
 
@@ -308,10 +304,9 @@ Install Latest stable Ruby:
 
 * Navigate to [https://rubyinstaller.org/](https://rubyinstaller.org/) &rarr; **Downloads**.
 * Download the latest Ruby installer **with devkit**. (Msys2 is needed to install some native extensions, such as `grpc`)
-* Execute the installer which installs by default in: `RubyVV-x64` (VV is the version number)
-* At the end of the installation procedure execute the Msys2 installer (ridk install) and select option 3 (msys and mingw)
-* Install the "mime info" file as specified in [this section](#mimeinfo).
-
+* Execute the installer which installs by default in: `C:\RubyVV-x64` (VV is the version number)
+* At the end of the installation procedure, the Msys2 installer is automatically executed, select option 3 (msys and mingw)
+* for the installation of 
 #### macOS: pre-installed or `brew`
 
 macOS 10.13+ (High Sierra) comes with a recent Ruby. So you can use it directly. You will need to install aspera-cli using `sudo` :
@@ -2579,7 +2574,7 @@ OPTIONS:
 
 
 COMMAND: faspex5
-SUBCOMMANDS: health package admin user
+SUBCOMMANDS: health user bearer_token package admin
 OPTIONS:
         --url=VALUE                  URL of application, e.g. https://org.asperafiles.com
         --username=VALUE             username to log in
@@ -2682,26 +2677,10 @@ OPTIONS:
         --scope=VALUE                OAuth scope for AoC API calls
         --default-ports=ENUM         use standard FASP ports or get from node api: yes, [no]
         --validate-metadata=ENUM     validate shared inbox metadata: yes, [no]
-
-
-COMMAND: server
-SUBCOMMANDS: health download upload browse delete rename ls rm mv du info mkdir cp df md5sum
-OPTIONS:
-        --url=VALUE                  URL of application, e.g. https://org.asperafiles.com
-        --username=VALUE             username to log in
-        --password=VALUE             user's password
-        --ssh-keys=VALUE             SSH key path list (Array or single)
-        --ssh-options=VALUE          SSH options (Hash)
-
-
-COMMAND: console
-SUBCOMMANDS: transfer health
-OPTIONS:
-        --url=VALUE                  URL of application, e.g. https://org.asperafiles.com
-        --username=VALUE             username to log in
-        --password=VALUE             user's password
-        --filter-from=DATE           only after date
-        --filter-to=DATE             only before date
+E, [2022-10-14T12:45:22.016566 #18436] ERROR -- : Default config name [demoserver] specified for plugin [server], but it does not exist in config file.
+Please fix the issue: either create preset with one parameter: (ascli config id demoserver init @json:'{}') or remove default (ascli config id default remove server).
+ERROR: Tool: Config name [demoserver] must be a hash, check config file.
+Use option -h to get help.
 
 
 ```
@@ -4299,6 +4278,7 @@ faspex5 admin res registrations list
 faspex5 admin res saml_configs list
 faspex5 admin res shared_inboxes list
 faspex5 admin res workgroups list
+faspex5 bearer_token
 faspex5 health
 faspex5 package list --value=@json:'{"mailbox":"inbox","state":["released"]}'
 faspex5 package receive "my_package_id" --to-folder=.  --ts=@json:'{"content_protection_password":"abc123_yo"}'
