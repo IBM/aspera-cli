@@ -217,17 +217,15 @@ module Aspera
 
       private
 
-      def initialize(options)
-        options = options.symbolize_keys
+      def initialize(opts)
+        Log.log.debug("local options= #{opts}")
         # set default options and override if specified
         @options = DEFAULT_OPTIONS.dup
-        raise "httpgw agent parameters: expecting Hash, but have #{options.class}" unless options.is_a?(Hash)
-        options.each do |k,v|
+        raise "httpgw agent parameters (transfer_info): expecting Hash, but have #{opts.class}" unless opts.is_a?(Hash)
+        opts.symbolize_keys.each do |k,v|
           raise "httpgw agent parameter: Unknown: #{k}, expect one of #{DEFAULT_OPTIONS.keys.map(&:to_s).join(',')}" unless DEFAULT_OPTIONS.has_key?(k)
           @options[k] = v
         end
-        Log.log.debug("local options= #{options}")
-
         raise 'missing param: url' if @options[:url].nil?
         # remove /v1 from end
         @options[:url].gsub(%r{/v1/*$},'')

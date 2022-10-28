@@ -1,4 +1,4 @@
-FROM ruby:3.1.1
+FROM ruby:3.1.2
 # argument for build: location of gem file
 ARG gemfile
 # install gem from local build and optional gems
