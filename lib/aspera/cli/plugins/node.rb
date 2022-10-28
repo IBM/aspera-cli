@@ -545,7 +545,9 @@ module Aspera
             case command
             when :list
               # could use ? subpath: 'transfers'
-              resp = @api_node.read(res_class_path,options.get_option(:value))
+              query=options.get_option(:value) || options.get_option(:query)
+              raise 'Query must be a Hash' unless query.nil? || query.is_a?(Hash)
+              resp = @api_node.read(res_class_path,query)
               return {
                 type:   :object_list,
                 data:   resp[:data],
