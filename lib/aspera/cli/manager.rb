@@ -44,15 +44,17 @@ module Aspera
     # resolves on extended value syntax
     class Manager
       # boolean options are set to true/false from the following values
-      TRUE_VALUES = [:yes,true].freeze
-      BOOLEAN_VALUES = [TRUE_VALUES,:no,false].flatten.freeze
-      BOOLEAN_SIMPLE = %i[yes no].freeze
+      BOOLEAN_SIMPLE = %i[no yes].freeze
+      FALSE_VALUES = [BOOLEAN_SIMPLE.first,false].freeze
+      TRUE_VALUES = [BOOLEAN_SIMPLE.last,true].freeze
+      BOOLEAN_VALUES = [TRUE_VALUES,FALSE_VALUES].flatten.freeze
+
       # option name separator on command line
       OPTION_SEP_LINE = '-'
       # option name separator in code (symbol)
       OPTION_SEP_NAME = '_'
 
-      private_constant :TRUE_VALUES,:BOOLEAN_VALUES,:OPTION_SEP_LINE,:OPTION_SEP_NAME
+      private_constant :FALSE_VALUES,:TRUE_VALUES,:BOOLEAN_VALUES,:OPTION_SEP_LINE,:OPTION_SEP_NAME
 
       class << self
         def enum_to_bool(enum)
