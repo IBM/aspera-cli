@@ -23,6 +23,7 @@ module Aspera
         upload_chunksize:       64_000,
         upload_bar_refresh_sec: 0.5
       }.freeze
+      DEFAULT_BASE_PATH='/aspera/http-gwy';
       private_constant :DEFAULT_OPTIONS,:MSG_END_UPLOAD,:MSG_END_SLICE
       # send message on http gw web socket
       def ws_snd_json(ws,type,data)
