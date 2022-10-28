@@ -187,7 +187,8 @@ An internet connection is required for the installation. If you don't have inter
 
 This method installs a docker image that contains: Ruby, <%=tool%> and the FASP SDK.
 
-The image is: <https://hub.docker.com/r/martinlaurent/ascli>. It is built from this [Dockerfile](Dockerfile).
+The image is: <https://hub.docker.com/r/martinlaurent/ascli>.
+It is built from this [Dockerfile](Dockerfile).
 
 Ensure that you have Docker installed.
 
@@ -195,13 +196,7 @@ Ensure that you have Docker installed.
 docker --version
 ```
 
-An example of wrapping script is provided: `dascli`. If you have installed <%=tool%>, the script `dascli` can be found:
-
-```bash
-cp $(ascli conf gem path)/../examples/dascli <%=cmd%>
-```
-
-Alternatively [download from the GIT repo](https://raw.githubusercontent.com/IBM/aspera-cli/main/examples/dascli) :
+Download the script [`dascli`](../examples/dascli) from [the GIT repo](https://raw.githubusercontent.com/IBM/aspera-cli/main/examples/dascli) :
 
 ```bash
 curl -o <%=cmd%> https://raw.githubusercontent.com/IBM/aspera-cli/main/examples/dascli
@@ -211,7 +206,13 @@ curl -o <%=cmd%> https://raw.githubusercontent.com/IBM/aspera-cli/main/examples/
 chmod a+x <%=cmd%>
 ```
 
-Install the container image:
+If you have installed <%=tool%>, the script `dascli` can also be found:
+
+```bash
+cp $(ascli conf gem path)/../examples/dascli <%=cmd%>
+```
+
+Once you have the base script: install the container image:
 
 ```bash
 ./<%=cmd%> install
@@ -219,11 +220,20 @@ Install the container image:
 
 Note that <%=cmd%> is run in the container, so transfers are also executed in the container (not calling host, like for the regular <%=cmd%>).
 
-The wrapping script maps the folder `/usr/src/app/config` in the container to configuration folder `$HOME/.aspera/<%=cmd%>` on host.
+The wrapping script maps the folder  `$HOME/.aspera/<%=cmd%>` on host to `/home/cliuser/.aspera/ascli` in the container.
 This allows having persistent configuration.
 
-To transfer to/from the native host, you will need to map a volume in docker or use the config folder (already mapped).
-To add local storage as a volume edit the script: <%=tool%> and add a `--volume` stanza near the existing one.
+To transfer to/from the host, you will need to map a volume in docker or use the config folder (already mapped).
+To add local storage as a volume, you can use the env var `docker_args`:
+
+```bash
+docker_args='--volume /Users:/Users' ascli 
+```
+
+Other env vars that can override values:
+
+- `image` , by default: `martinlaurent/ascli`
+- `version` , by default: `latest`
 
 ### <a id="ruby"></a>Ruby
 

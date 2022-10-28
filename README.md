@@ -187,7 +187,8 @@ An internet connection is required for the installation. If you don't have inter
 
 This method installs a docker image that contains: Ruby, `ascli` and the FASP SDK.
 
-The image is: <https://hub.docker.com/r/martinlaurent/ascli>. It is built from this [Dockerfile](Dockerfile).
+The image is: <https://hub.docker.com/r/martinlaurent/ascli>.
+It is built from this [Dockerfile](Dockerfile).
 
 Ensure that you have Docker installed.
 
@@ -195,13 +196,7 @@ Ensure that you have Docker installed.
 docker --version
 ```
 
-An example of wrapping script is provided: `dascli`. If you have installed `ascli`, the script `dascli` can be found:
-
-```bash
-cp $(ascli conf gem path)/../examples/dascli ascli
-```
-
-Alternatively [download from the GIT repo](https://raw.githubusercontent.com/IBM/aspera-cli/main/examples/dascli) :
+Download the script [`dascli`](../examples/dascli) from [the GIT repo](https://raw.githubusercontent.com/IBM/aspera-cli/main/examples/dascli) :
 
 ```bash
 curl -o ascli https://raw.githubusercontent.com/IBM/aspera-cli/main/examples/dascli
@@ -211,7 +206,13 @@ curl -o ascli https://raw.githubusercontent.com/IBM/aspera-cli/main/examples/das
 chmod a+x ascli
 ```
 
-Install the container image:
+If you have installed `ascli`, the script `dascli` can also be found:
+
+```bash
+cp $(ascli conf gem path)/../examples/dascli ascli
+```
+
+Once you have the base script: install the container image:
 
 ```bash
 ./ascli install
@@ -219,11 +220,20 @@ Install the container image:
 
 Note that ascli is run in the container, so transfers are also executed in the container (not calling host, like for the regular ascli).
 
-The wrapping script maps the folder `/usr/src/app/config` in the container to configuration folder `$HOME/.aspera/ascli` on host.
+The wrapping script maps the folder  `$HOME/.aspera/ascli` on host to `/home/cliuser/.aspera/ascli` in the container.
 This allows having persistent configuration.
 
-To transfer to/from the native host, you will need to map a volume in docker or use the config folder (already mapped).
-To add local storage as a volume edit the script: `ascli` and add a `--volume` stanza near the existing one.
+To transfer to/from the host, you will need to map a volume in docker or use the config folder (already mapped).
+To add local storage as a volume, you can use the env var `docker_args`:
+
+```bash
+docker_args='--volume /Users:/Users' ascli 
+```
+
+Other env vars that can override values:
+
+- `image` , by default: `martinlaurent/ascli`
+- `version` , by default: `latest`
 
 ### <a id="ruby"></a>Ruby
 
@@ -2448,16 +2458,16 @@ ARGS
         Some commands require mandatory arguments, e.g. a path.
 
 OPTIONS: global
-        --interactive=ENUM           use interactive input of missing params: yes, [no]
-        --ask-options=ENUM           ask even optional options: yes, [no]
+        --interactive=ENUM           use interactive input of missing params: [no], yes
+        --ask-options=ENUM           ask even optional options: [no], yes
         --format=ENUM                output format: text, nagios, ruby, json, jsonpp, yaml, [table], csv
         --display=ENUM               output only some information: [info], data, error
         --fields=VALUE               comma separated list of fields, or ALL, or DEF
         --select=VALUE               select only some items in lists, extended value: hash (column, value)
         --table-style=VALUE          table display style
-        --flat-hash=ENUM             display hash values as additional keys: [yes], no
-        --transpose-single=ENUM      single object fields output vertically: [yes], no
-        --show-secrets=ENUM          show secrets on command output: yes, [no]
+        --flat-hash=ENUM             display hash values as additional keys: no, [yes]
+        --transpose-single=ENUM      single object fields output vertically: no, [yes]
+        --show-secrets=ENUM          show secrets on command output: [no], yes
     -h, --help                       Show this message.
         --bash-comp                  generate bash completion for command
         --show-config                Display parameters used for the provided action.
@@ -2470,10 +2480,10 @@ OPTIONS: global
         --lock-port=VALUE            prevent dual execution of a command, e.g. in cron
         --query=VALUE                additional filter for API calls (extended value) (some commands)
         --http-options=VALUE         options for http socket (extended value)
-        --insecure=ENUM              do not validate HTTPS certificate: [yes], no
-        --once-only=ENUM             process only new items (some commands): yes, [no]
-        --log-secrets=ENUM           show passwords in logs: yes, [no]
-        --cache-tokens=ENUM          save and reuse Oauth tokens: [yes], no
+        --insecure=ENUM              do not validate HTTPS certificate: no, [yes]
+        --once-only=ENUM             process only new items (some commands): [no], yes
+        --log-secrets=ENUM           show passwords in logs: [no], yes
+        --cache-tokens=ENUM          save and reuse Oauth tokens: no, [yes]
 
 COMMAND: config
 SUBCOMMANDS: list overview id preset open documentation genkey gem plugin flush_tokens echo wizard export_to_cli detect coffee ascp email_test smtp_settings proxy_check folder file check_update initdemo vault
@@ -2481,13 +2491,13 @@ OPTIONS:
         --value=VALUE                extended value for create, update, list filter
         --property=VALUE             name of property to set
         --id=VALUE                   resource identifier (modify,delete,show)
-        --bulk=ENUM                  Bulk operation (only some): yes, [no]
+        --bulk=ENUM                  Bulk operation (only some): [no], yes
         --config-file=VALUE          read parameters from file in YAML format, current=/usershome/.aspera/ascli/config.yaml
     -N, --no-default                 do not load default configuration for plugin
-        --override=ENUM              Wizard: override existing value: yes, [no]
-        --use-generic-client=ENUM    Wizard: AoC: use global or org specific jwt client id: yes, [no]
-        --default=ENUM               Wizard: set as default configuration for specified plugin (also: update): yes, [no]
-        --test-mode=ENUM             Wizard: skip private key check step: yes, [no]
+        --override=ENUM              Wizard: override existing value: [no], yes
+        --use-generic-client=ENUM    Wizard: AoC: use global or org specific jwt client id: [no], yes
+        --default=ENUM               Wizard: set as default configuration for specified plugin (also: update): [no], yes
+        --test-mode=ENUM             Wizard: skip private key check step: [no], yes
     -P, --presetVALUE                load the named option preset from current config file
         --pkeypath=VALUE             Wizard: path to private key for JWT
         --ascp-path=VALUE            path to ascp
@@ -2540,7 +2550,7 @@ OPTIONS:
         --password=VALUE             user's password
         --params=VALUE               parameters hash table, use @json:{"param":"value"}
         --result=VALUE               specify result value as: 'work step:parameter'
-        --synchronous=ENUM           work step:parameter expected as result: yes, [no]
+        --synchronous=ENUM           work step:parameter expected as result: [no], yes
         --ret-style=ENUM             how return type is requested in api: header, arg, ext
         --auth-style=ENUM            authentication type: arg_pass, head_basic, apikey
 
@@ -2628,7 +2638,7 @@ OPTIONS:
         --case=VALUE                 basename of output for for test
         --scan-path=VALUE            subpath in folder id to start scan in (default=/)
         --scan-id=VALUE              forder id in storage to start scan in, default is access key main folder id
-        --mimemagic=ENUM             use Mime type detection of gem mimemagic: yes, [no]
+        --mimemagic=ENUM             use Mime type detection of gem mimemagic: [no], yes
         --overwrite=ENUM             when to overwrite result file: always, never, [mtime]
         --file-access=ENUM           how to read and write files in repository: [local], remote
         --max-size=VALUE             maximum size (in bytes) of preview file
@@ -2675,12 +2685,28 @@ OPTIONS:
         --new-user-option=VALUE      new user creation option for unknown package recipients
         --from-folder=VALUE          share to share source folder
         --scope=VALUE                OAuth scope for AoC API calls
-        --default-ports=ENUM         use standard FASP ports or get from node api: yes, [no]
-        --validate-metadata=ENUM     validate shared inbox metadata: yes, [no]
-E, [2022-10-14T12:45:22.016566 #18436] ERROR -- : Default config name [demoserver] specified for plugin [server], but it does not exist in config file.
-Please fix the issue: either create preset with one parameter: (ascli config id demoserver init @json:'{}') or remove default (ascli config id default remove server).
-ERROR: Tool: Config name [demoserver] must be a hash, check config file.
-Use option -h to get help.
+        --default-ports=ENUM         use standard FASP ports or get from node api: [no], yes
+        --validate-metadata=ENUM     validate shared inbox metadata: [no], yes
+
+
+COMMAND: server
+SUBCOMMANDS: health download upload browse delete rename ls rm mv du info mkdir cp df md5sum
+OPTIONS:
+        --url=VALUE                  URL of application, e.g. https://org.asperafiles.com
+        --username=VALUE             username to log in
+        --password=VALUE             user's password
+        --ssh-keys=VALUE             SSH key path list (Array or single)
+        --ssh-options=VALUE          SSH options (Hash)
+
+
+COMMAND: console
+SUBCOMMANDS: transfer health
+OPTIONS:
+        --url=VALUE                  URL of application, e.g. https://org.asperafiles.com
+        --username=VALUE             username to log in
+        --password=VALUE             user's password
+        --filter-from=DATE           only after date
+        --filter-to=DATE             only before date
 
 
 ```
@@ -4157,8 +4183,11 @@ ascli node access_key create --value=@json:'{"id":"eudemo-sedemo","secret":"myst
 ```bash
 node -N -Ptst_node_preview access_key create --value=@json:'{"id":"aoc_1","storage":{"type":"local","path":"/"}}'
 node -N -Ptst_node_preview access_key delete aoc_1
-node access_key do my_aoc_ak_name br /
-node access_key list
+node -Pnode_srv access_key do my_aoc_ak_name br /
+node -Pnode_srv access_key list
+node -Pnode_srv service create @json:'{"id":"service1","type":"WATCHD","run_as":{"user":"user1"}}'
+node -Pnode_srv service delete service1
+node -Pnode_srv service list
 node api_details
 node async bandwidth 1
 node async counters 1
@@ -4182,9 +4211,6 @@ node mkfile /delfile1 "hello world"
 node mklink /todelete /tdlink
 node rename / delfile1 delfile
 node search / --value=@json:'{"sort":"mtime"}'
-node service create @json:'{"id":"service1","type":"WATCHD","run_as":{"user":"user1"}}'
-node service delete service1
-node service list
 node space /
 node transfer list --value=@json:'{"active_only":true}'
 node upload --to-folder="folder_1" --sources=@ts --ts=@json:'{"paths":[{"source":"/aspera-test-dir-small/10MB.1"}],"precalculate_job_size":true}' --transfer=node --transfer-info=@json:'{"url":"my_node_url","username":"my_node_user","password":"my_node_pass"}'
@@ -4496,16 +4522,16 @@ Aspera Shares supports the "node API" for the file transfer part. (Shares 1 and 
 
 ```bash
 shares admin share list
-shares admin share user_permissions 9
+shares admin share user_permissions 1
 shares admin user app_authorizations 1
 shares admin user list
 shares admin user share_permissions 1
 shares repository browse /
 shares repository delete my_shares_upload/testfile.bin
 shares repository download --to-folder=. my_shares_upload/testfile.bin
-shares repository download --to-folder=. my_shares_upload/testfile.bin --transfer=httpgw --transfer-info=@json:'{"url":"https://my_http_gw_fqdn/aspera/http-gwy/v1"}'
+shares repository download --to-folder=. my_shares_upload/testfile.bin --transfer=httpgw --transfer-info=@json:'{"url":"https://my_http_gw_fqdn/aspera/http-gwy"}'
 shares repository upload --to-folder=my_shares_upload testfile.bin
-shares repository upload --to-folder=my_shares_upload testfile.bin --transfer=httpgw --transfer-info=@json:'{"url":"https://my_http_gw_fqdn/aspera/http-gwy/v1"}'
+shares repository upload --to-folder=my_shares_upload testfile.bin --transfer=httpgw --transfer-info=@json:'{"url":"https://my_http_gw_fqdn/aspera/http-gwy"}'
 ```
 
 ## Plugin: Console
