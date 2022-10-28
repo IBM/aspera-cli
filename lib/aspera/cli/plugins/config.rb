@@ -251,9 +251,9 @@ module Aspera
           require 'openssl'
           priv_key = OpenSSL::PKey::RSA.new(length)
           File.write(private_key_path,priv_key.to_s)
-          File.chmod(0400,private_key_path)
           File.write(private_key_path + '.pub',priv_key.public_key.to_s)
-          File.chmod(0400,private_key_path + '.pub')
+          Environment.restrict_file_access(private_key_path)
+          Environment.restrict_file_access(private_key_path + '.pub')
           nil
         end
 
@@ -479,11 +479,14 @@ module Aspera
             Log.log.error('YAML error in config file')
             raise e
           rescue StandardError => e
-            Log.log.debug("-> #{e}")
-            new_name = "#{@option_config_file}.pre#{@info[:version]}.manual_conversion_needed"
-            File.rename(@option_config_file,new_name)
-            Log.log.warn("Renamed config file to #{new_name}.")
-            Log.log.warn('Manual Conversion is required. Next time, a new empty file will be created.')
+            Log.log.debug("-> #{e.class.name} : #{e}")
+            if File.exist?(@option_config_file)
+              # then there is a problem with that file.
+              new_name = "#{@option_config_file}.pre#{@info[:version]}.manual_conversion_needed"
+              File.rename(@option_config_file,new_name)
+              Log.log.warn("Renamed config file to #{new_name}.")
+              Log.log.warn('Manual Conversion is required. Next time, a new empty file will be created.')
+            end
             raise CliError,e.to_s
           end
         end
@@ -1023,10 +1026,10 @@ module Aspera
         def save_presets_to_config_file
           raise 'no configuration loaded' if @config_presets.nil?
           FileUtils.mkdir_p(@main_folder) unless Dir.exist?(@main_folder)
-          File.chmod(0700,@main_folder)
           Log.log.debug("Writing #{@option_config_file}")
           File.write(@option_config_file,@config_presets.to_yaml)
-          File.chmod(0600,@option_config_file)
+          Environment.restrict_file_access(@main_folder)
+          Environment.restrict_file_access(@option_config_file)
         end
 
         # returns [String] name if config_presets has default

@@ -269,12 +269,12 @@ module Aspera
         path(:aspera_conf)
         ascp_path = File.join(sdk_folder,ascp_filename)
         raise "No #{ascp_filename} found in SDK archive" unless File.exist?(ascp_path)
-        FileUtils.chmod(0755,ascp_path)
-        FileUtils.chmod(0755,ascp_path.gsub('ascp','ascp4'))
+        Environment.restrict_file_access(ascp_path, mode: 0755)
+        Environment.restrict_file_access(ascp_path.gsub('ascp','ascp4'), mode: 0755)
         ascp_version = get_ascp_version(File.join(sdk_folder,ascp_filename))
         trd_path = transferd_filepath
         Log.log.warn("No #{trd_path} in SDK archive") unless File.exist?(trd_path)
-        FileUtils.chmod(0755,trd_path) if File.exist?(trd_path)
+        Environment.restrict_file_access(trd_path, mode: 0755) if File.exist?(trd_path)
         transferd_version = get_exe_version(trd_path,'version')
         sdk_version = transferd_version || ascp_version
         File.write(File.join(sdk_folder,PRODUCT_INFO),"<product><name>IBM Aspera SDK</name><version>#{sdk_version}</version></product>")

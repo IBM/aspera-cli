@@ -2,6 +2,7 @@
 
 require 'fileutils'
 require 'aspera/log'
+require 'aspera/environment'
 
 # search: persistency_folder PersistencyFolder
 
@@ -38,7 +39,7 @@ module Aspera
       Log.log.debug("persistency saving: #{persist_filepath}")
       File.delete(persist_filepath) if File.exist?(persist_filepath)
       File.write(persist_filepath,value)
-      File.chmod(0400,persist_filepath)
+      Environment.restrict_file_access(persist_filepath)
       @cache[object_id] = value
     end
 
@@ -68,7 +69,7 @@ module Aspera
     def id_to_filepath(object_id)
       raise 'object_id: only String supported' unless object_id.is_a?(String)
       FileUtils.mkdir_p(@folder)
-      File.chmod(0700,@folder)
+      Environment.restrict_file_access(@folder)
       return File.join(@folder,"#{object_id}#{FILE_SUFFIX}")
       #.gsub(/[^a-z]+/,FILE_FIELD_SEPARATOR)
     end

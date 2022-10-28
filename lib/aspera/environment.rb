@@ -85,9 +85,27 @@ module Aspera
         if force || !File.exist?(path)
           File.unlink(path) rescue nil # Windows may give error
           File.write(path,yield)
-          File.chmod(0400,path)
+          restrict_file_access(path)
         end
         return path
+      end
+
+      def restrict_file_access(path,mode: nil)
+        begin
+          if mode.nil?
+            # or FileUtils ?
+            if File.file?(path)
+              mode=0600
+            elsif File.directory?(path)
+              mode=0700
+            else
+              Log.log.debug("No restriction can be set for #{path}");
+            end
+          end
+          File.chmod(mode,path) unless mode.nil?
+        rescue => e
+          Log.log.warn(e.message)
+        end
       end
     end
   end
