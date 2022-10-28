@@ -64,10 +64,10 @@ changes:
 DOCKER_REPO=martinlaurent/ascli
 DOCKER_TAG_VERSION=$(DOCKER_REPO):$(GEMVERS)
 DOCKER_TAG_LATEST=$(DOCKER_REPO):latest
-$(DIR_TOP)sdk.zip:
-	curl -L https://ibm.biz/aspera_transfer_sdk -o $(DIR_TOP)sdk.zip
-docker: $(PATH_GEMFILE) $(DIR_TOP)sdk.zip
-	docker build --build-arg gemfile=$(PATH_GEMFILE) --build-arg sdkfile=$(DIR_TOP)sdk.zip --tag $(DOCKER_TAG_VERSION) --tag $(DOCKER_TAG_LATEST) $(DIR_TOP).
+$(DIR_TMP)sdk.zip: $(DIR_TMP).exists
+	curl -L https://ibm.biz/aspera_transfer_sdk -o $(DIR_TMP)sdk.zip
+docker: $(PATH_GEMFILE) $(DIR_TMP)sdk.zip
+	docker build --build-arg gemfile=$(PATH_GEMFILE) --build-arg sdkfile=$(DIR_TMP)sdk.zip --tag $(DOCKER_TAG_VERSION) --tag $(DOCKER_TAG_LATEST) $(DIR_TOP).
 dockertest:
 	docker run --tty --interactive --rm $(DOCKER_TAG_LATEST) ascli -h
 dpush:
