@@ -65,7 +65,7 @@ $(T)shadm: $(T).exists
 	$(EXE_MAN) shares admin user app_authorizations 1
 	$(EXE_MAN) shares admin user share_permissions 1
 	$(EXE_MAN) shares admin share list
-	$(EXE_MAN) shares admin share user_permissions 9
+	$(EXE_MAN) shares admin share user_permissions 1
 	@touch $@
 $(T)sh1: $(T).exists
 	@echo $@
@@ -84,8 +84,8 @@ $(T)sh3: $(T).exists
 	set -x&&\
 	shares_upload=$$($(EXE_NOMAN) config preset get misc shares_upload)&&\
 	http_gw_fqdn=$$($(EXE_NOMAN) config preset get misc http_gw_fqdn_port)&&\
-	$(EXE_MAN) shares repository upload --to-folder=$${shares_upload} $(CF_LOCAL_SAMPLE_FILEPATH) --transfer=httpgw --transfer-info=@json:'{"url":"https://'"$${http_gw_fqdn}"'/aspera/http-gwy/v1"}'&&\
-	$(EXE_MAN) shares repository download --to-folder=$(DIR_TMP). $${shares_upload}/$(CF_LOCAL_SAMPLE_FILENAME) --transfer=httpgw --transfer-info=@json:'{"url":"https://'"$${http_gw_fqdn}"'/aspera/http-gwy/v1"}'&&\
+	$(EXE_MAN) shares repository upload --to-folder=$${shares_upload} $(CF_LOCAL_SAMPLE_FILEPATH) --transfer=httpgw --transfer-info=@json:'{"url":"https://'"$${http_gw_fqdn}"'/aspera/http-gwy"}'&&\
+	$(EXE_MAN) shares repository download --to-folder=$(DIR_TMP). $${shares_upload}/$(CF_LOCAL_SAMPLE_FILENAME) --transfer=httpgw --transfer-info=@json:'{"url":"https://'"$${http_gw_fqdn}"'/aspera/http-gwy"}'&&\
 	$(EXE_MAN) shares repository delete $${shares_upload}/$(CF_LOCAL_SAMPLE_FILENAME)
 	@touch $@
 tshares: $(T)shadm $(T)sh1 $(T)sh2 $(T)sh3
