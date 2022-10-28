@@ -1,8 +1,13 @@
 #!/usr/bin/env bash
+# set env var image to specify another docker image
+# set env var version to specify another image version
+# set env var docker_args to add options to docker run
 : ${image:=martinlaurent/ascli}
 # by default take latest version
 : ${version:=latest}
 imgtag=$image:$version
+# transform var into array
+add_dock_args=( $docker_args )
 # same location as in Dockerfile: main config folder for ascli in container
 ascli_home_container=/home/cliuser/.aspera/ascli
 # convenience: special argument to install the image
@@ -19,5 +24,6 @@ exec docker run \
 --tty \
 --interactive \
 --volume "$ASCLI_HOME:$ascli_home_container" \
+"${add_dock_args[@]}" \
 $imgtag \
 ascli "$@"
