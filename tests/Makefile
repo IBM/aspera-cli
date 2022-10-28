@@ -302,7 +302,8 @@ $(T)nd2: $(T).exists
 	@touch $@
 $(T)nd_2_nd_xfer: $(T).exists
 	@echo $@
-	set -x&&node_url=$$($(EXE_NOMAN) config preset get tst_node url)&&\
+	set -x&&\
+	node_url=$$($(EXE_NOMAN) config preset get tst_node url)&&\
 	node_user=$$($(EXE_NOMAN) config preset get tst_node username)&&\
 	node_pass=$$($(EXE_NOMAN) config preset get tst_node password)&&\
 	$(EXE_MAN) node upload --to-folder="$(CF_HSTS_FOLDER_UPLOAD)" --sources=@ts --ts=@json:'{"paths":[{"source":"/aspera-test-dir-small/10MB.1"}],"precalculate_job_size":true}' --transfer=node --transfer-info=@json:'{"url":"'"$${node_url}"'","username":"'"$${node_user}"'","password":"'"$${node_pass}"'"}'
@@ -310,15 +311,15 @@ $(T)nd_2_nd_xfer: $(T).exists
 	@touch $@
 $(T)nd4: $(T).exists
 	@echo $@
-	$(EXE_MAN) node service create @json:'{"id":"service1","type":"WATCHD","run_as":{"user":"user1"}}'
-	$(EXE_MAN) node service list
+	$(EXE_MAN) node -Pnode_srv service create @json:'{"id":"service1","type":"WATCHD","run_as":{"user":"user1"}}'
+	$(EXE_MAN) node -Pnode_srv service list
 	@echo "waiting a little...";sleep 2
-	$(EXE_MAN) node service delete service1
-	$(EXE_MAN) node service list
+	$(EXE_MAN) node -Pnode_srv service delete service1
+	$(EXE_MAN) node -Pnode_srv service list
 	@echo "waiting a little...";sleep 5
-	$(EXE_MAN) node service list
+	$(EXE_MAN) node -Pnode_srv service list
 	@echo "waiting a little...";sleep 5
-	$(EXE_MAN) node service list
+	$(EXE_MAN) node -Pnode_srv service list
 	@touch $@
 # test creation of access key
 $(T)nd5: $(T).exists
@@ -345,8 +346,8 @@ $(T)nd_nagios: $(T).exists
 	@touch $@
 $(T)nd_ak: $(T).exists
 	@echo $@
-	$(EXE_MAN) node access_key list
-	$(EXE_MAN) node access_key do @preset:misc.aoc_ak_name br /
+	$(EXE_MAN) node -Pnode_srv access_key list
+	$(EXE_MAN) node -Pnode_srv access_key do @preset:misc.aoc_ak_name br /
 	@touch $@
 tnode: $(T)nd1 $(T)nd2 $(T)nd_2_nd_xfer $(T)nd4 $(T)nd5 $(T)nd6 $(T)nd7 $(T)nd8 $(T)nd_nagios $(T)nd_ak
 
