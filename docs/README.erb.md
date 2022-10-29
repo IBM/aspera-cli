@@ -206,20 +206,17 @@ curl -o <%=cmd%> https://raw.githubusercontent.com/IBM/aspera-cli/main/examples/
 chmod a+x <%=cmd%>
 ```
 
-If you have installed <%=tool%>, the script `dascli` can also be found:
+> If you have installed <%=tool%>, the script `dascli` can also be found: `cp $(ascli conf gem path)/../examples/dascli <%=cmd%>`
+
+The config folder must be writable from the container, so the easiest way is to make it world readable and writable, for example:
 
 ```bash
-cp $(ascli conf gem path)/../examples/dascli <%=cmd%>
-```
-
-Once you have the base script: install the container image:
-
-```bash
-./<%=cmd%> install
+export ASCLI_HOME=$HOME/.ascliconf
+mkdir -p $ASCLI_HOME
+chmod -R 777 $ASCLI_HOME
 ```
 
 Note that <%=cmd%> is run inside the container, so transfers are also executed inside the container and do not have access to host storage by default.
-
 The wrapping script maps the folder  `$HOME/.aspera/<%=cmd%>` on host to `/home/cliuser/.aspera/<%=cmd%>` in the container.
 This allows having persistent configuration on the host.
 
@@ -235,12 +232,23 @@ Other env vars that can override values:
 - `image` , by default: `martinlaurent/ascli`
 - `version` , by default: `latest`
 
-The config folder must be writable from the container, so the easiest way is to make it world readable and writable, for example:
+Example of use:
 
 ```bash
+curl -o ascli https://raw.githubusercontent.com/IBM/aspera-cli/main/examples/dascli
+chmod a+x ascli
 export ASCLI_HOME=$HOME/.ascliconf
 mkdir -p $ASCLI_HOME
 chmod -R 777 $ASCLI_HOME
+export xferdir=$HOME/xferdir
+mkdir -p $xferdir
+chmod -R 777 $xferdir
+export docker_args="--volume $xferdir:/xferfolder"
+
+./ascli conf init
+
+touch $xferdir/samplefile
+./ascli server upload /xferfolder/samplefile --to-folder=/Upload
 ```
 
 ### <a id="ruby"></a>Ruby

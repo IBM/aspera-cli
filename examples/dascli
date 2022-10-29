@@ -11,8 +11,6 @@
 add_dock_args=( $docker_args )
 # same location as in Dockerfile: main config folder for ascli in container
 ascli_home_container=/home/cliuser/.aspera/ascli
-# convenience: special argument to install the image
-case "$1" in install) docker pull $imgtag; exit 0; esac
 # set default location for config folder on host if necessary
 : ${ASCLI_HOME:=$HOME/.aspera/ascli}
 if test ! -d $ASCLI_HOME;then
