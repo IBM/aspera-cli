@@ -198,39 +198,24 @@ docker --version
 
 Download the script [`dascli`](../examples/dascli) from [the GIT repo](https://raw.githubusercontent.com/IBM/aspera-cli/main/examples/dascli) :
 
-```bash
-curl -o <%=cmd%> https://raw.githubusercontent.com/IBM/aspera-cli/main/examples/dascli
-```
-
-```bash
-chmod a+x <%=cmd%>
-```
-
 > If you have installed <%=tool%>, the script `dascli` can also be found: `cp $(ascli conf gem path)/../examples/dascli <%=cmd%>`
 
-The config folder must be writable from the container, so the easiest way is to make it world readable and writable, for example:
-
-```bash
-export ASCLI_HOME=$HOME/.ascliconf
-mkdir -p $ASCLI_HOME
-chmod -R 777 $ASCLI_HOME
-```
-
 Note that <%=cmd%> is run inside the container, so transfers are also executed inside the container and do not have access to host storage by default.
-The wrapping script maps the folder  `$HOME/.aspera/<%=cmd%>` on host to `/home/cliuser/.aspera/<%=cmd%>` in the container.
+
+Some environment variables can be set to alter the behaviour of the script:
+
+| env var     | description                        | default                  | example                  |
+|-------------|------------------------------------|--------------------------|--------------------------|
+| ASCLI_HOME  | configuration folder (persistency) | `$HOME/.aspera/<%=cmd%>` | `$HOME/.ascliconfig`     |
+| docker_args | additional options to `docker`     | &lt;empty&gt;            | `--volume /Users:/Users` |
+| image       | container image name               | martinlaurent/ascli      |                          |
+| version     | container image version            | latest                   | `4.8.0.pre`              |
+
+The wrapping script maps the folder `$ASCLI_HOME` on host to `/home/cliuser/.aspera/<%=cmd%>` in the container.
+(value expected in the container).
 This allows having persistent configuration on the host.
 
-To transfer to/from the host, you will need to map a volume in docker or use the config folder (already mapped).
 To add local storage as a volume, you can use the env var `docker_args`:
-
-```bash
-export docker_args='--volume /Users:/Users' 
-```
-
-Other env vars that can override values:
-
-- `image` , by default: `martinlaurent/ascli`
-- `version` , by default: `latest`
 
 Example of use:
 
@@ -250,6 +235,8 @@ export docker_args="--volume $xferdir:/xferfolder"
 touch $xferdir/samplefile
 ./ascli server upload /xferfolder/samplefile --to-folder=/Upload
 ```
+
+> The local file (`samplefile`) is specified relative to storage view from container (`/xferfolder`) mapped to the host folder `$HOME/xferdir`
 
 ### <a id="ruby"></a>Ruby
 
