@@ -190,7 +190,7 @@ This method installs a docker image that contains: Ruby, `ascli` and the FASP SD
 The image is: <https://hub.docker.com/r/martinlaurent/ascli>.
 It is built from this [Dockerfile](Dockerfile).
 
-Ensure that you have Docker installed.
+Ensure that you have `docker` (or `podman`) installed.
 
 ```bash
 docker --version
@@ -218,22 +218,30 @@ Once you have the base script: install the container image:
 ./ascli install
 ```
 
-Note that ascli is run in the container, so transfers are also executed in the container (not calling host, like for the regular ascli).
+Note that ascli is run inside the container, so transfers are also executed inside the container and do not have access to host storage by default.
 
 The wrapping script maps the folder  `$HOME/.aspera/ascli` on host to `/home/cliuser/.aspera/ascli` in the container.
-This allows having persistent configuration.
+This allows having persistent configuration on the host.
 
 To transfer to/from the host, you will need to map a volume in docker or use the config folder (already mapped).
 To add local storage as a volume, you can use the env var `docker_args`:
 
 ```bash
-docker_args='--volume /Users:/Users' ascli 
+export docker_args='--volume /Users:/Users' 
 ```
 
 Other env vars that can override values:
 
 - `image` , by default: `martinlaurent/ascli`
 - `version` , by default: `latest`
+
+The config folder must be writable from the container, so the easiest way is to make it world readable and writable, for example:
+
+```bash
+export ASCLI_HOME=$HOME/.ascliconf
+mkdir -p $ASCLI_HOME
+chmod -R 777 $ASCLI_HOME
+```
 
 ### <a id="ruby"></a>Ruby
 
@@ -2492,7 +2500,7 @@ OPTIONS:
         --property=VALUE             name of property to set
         --id=VALUE                   resource identifier (modify,delete,show)
         --bulk=ENUM                  Bulk operation (only some): [no], yes
-        --config-file=VALUE          read parameters from file in YAML format, current=/usershome/.aspera/ascli/config.yaml
+        --config-file=VALUE          read parameters from file in YAML format, current=/Users/laurent/.ascliconf/config.yaml
     -N, --no-default                 do not load default configuration for plugin
         --override=ENUM              Wizard: override existing value: [no], yes
         --use-generic-client=ENUM    Wizard: AoC: use global or org specific jwt client id: [no], yes

@@ -5,7 +5,8 @@
 : ${image:=martinlaurent/ascli}
 # by default take latest version
 : ${version:=latest}
-imgtag=$image:$version
+: ${docker:=docker}
+: ${imgtag=$image:$version}
 # transform var into array
 add_dock_args=( $docker_args )
 # same location as in Dockerfile: main config folder for ascli in container
@@ -19,7 +20,7 @@ if test ! -d $ASCLI_HOME;then
 	# create it if necessary to allow mounting the volume in container
 	mkdir -p "$ASCLI_HOME"
 fi
-exec docker run \
+exec $docker run \
 --rm \
 --tty \
 --interactive \
