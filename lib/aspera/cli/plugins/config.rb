@@ -624,7 +624,8 @@ module Aspera
                 last_line = line
                 case line
                 when %r{^DBG Path ([^ ]+) (dir|file) +: (.*)$} then data[Regexp.last_match(1)] = Regexp.last_match(3)
-                when %r{^DBG Added module group:"([^"]+)" name:"([^"]+)", version:"([^"]+)" interface:"([^"]+)"$} then data[Regexp.last_match(2)] = Regexp.last_match(4)
+                when %r{^DBG Added module group:"([^"]+)" name:"([^"]+)", version:"([^"]+)" interface:"([^"]+)"$}
+                  data[Regexp.last_match(2)] = "#{Regexp.last_match(4)} #{Regexp.last_match(1)} v#{Regexp.last_match(3)}"
                 when %r{^DBG License result \(/license/(\S+)\): (.+)$} then data[Regexp.last_match(1)] = Regexp.last_match(2)
                 when %r{^LOG (.+) version ([0-9.]+)$} then data['product_name'] = Regexp.last_match(1);data['product_version'] = Regexp.last_match(2)
                 when %r{^LOG Initializing FASP version ([^,]+),} then data['ascp_version'] = Regexp.last_match(1)
