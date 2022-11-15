@@ -35,7 +35,9 @@ module Aspera
         options.add_opt_simple(:property,'name of property to set')
         options.add_opt_simple(:id,"resource identifier (#{INSTANCE_OPS.join(',')})")
         options.add_opt_boolean(:bulk,'Bulk operation (only some)')
+        options.add_opt_boolean(:bfail,'Bulk operation error handling')
         options.set_option(:bulk,:no)
+        options.set_option(:bfail,:yes)
         options.parse_options!
         @@options_created = true # rubocop:disable Style/ClassVars
       end
@@ -72,6 +74,7 @@ module Aspera
             result = res if param.is_a?(Hash)
             result['status'] = success_msg
           rescue StandardError => e
+            raise e if options.get_option(:bfail)
             result['status'] = e.to_s
           end
           result_list.push(result)
@@ -140,7 +143,8 @@ module Aspera
             end
             data = item_list
           end
-          return {type: :object_list, data: data, fields: display_fields}
+          return {type: :object_list, data: data, fields: display_fields} if data.empty? || data.first.is_a?(Hash)
+          return {type: :value_list, data: data, name: 'id'}
         when :modify
           property = options.get_option(:property)
           parameters = {property => parameters} unless property.nil?
