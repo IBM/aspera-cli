@@ -33,23 +33,22 @@ One can also [create one's own plugin](#createownplugin).
 
 <%=tool%> is designed to be used as a command line tool to:
 
-* execute commands on Aspera products
-* transfer to/from Aspera products
+* Execute commands remotely on Aspera products
+* Transfer to/from Aspera products
 
 So it is designed for:
 
-* Interactive operations on a text terminal (typically, VT100 compatible)
-* Batch operations in (shell) scripts (e.g. cron job)
+* Interactive operations on a text terminal (typically, VT100 compatible), e.g. for maintenance
+* Scripting, e.g. batch operations in (shell) scripts (e.g. cron job)
 
 <%=tool%> can be seen as a command line tool integrating:
 
-* a configuration file (config.yaml)
-* advanced command line options
+* A configuration file (config.yaml)
+* Advanced command line options
 * cURL (for REST calls)
 * Aspera transfer (ascp)
 
-One might be tempted to use it as an integration element, e.g. by building a command line programmatically, and then executing it. It is generally not a good idea.
-For such integration cases, e.g. performing operations and transfer to aspera products, it is preferred to use [Aspera APIs](https://ibm.biz/aspera_api):
+If the need is to perform operations programmatically in languages such as: C, Go, Python, nodejs, ... then it is better to directly use [Aspera APIs](https://ibm.biz/aspera_api)
 
 * Product APIs (REST) : e.g. AoC, Faspex, node
 * Transfer SDK : with gRPC interface and language stubs (C, C++, Python, .NET/C#, java, ruby, etc...)
@@ -1368,13 +1367,15 @@ The private key can be protected by a passphrase or not.
 If the key is protected by a passphrase, then it will be prompted.
 (some plugins support option `passphrase`)
 
-Several methods can be used to generate a key pair:
-
-The following commands use this variable:
+The following commands use the shell variable `PRIVKEYFILE`.
+Set it to the desired safe location of the private key.
+Typically, in `$HOME/.ssh` or `$HOME/.aspera/<%=cmd%>`:
 
 ```bash
 PRIVKEYFILE=~/.aspera/<%=cmd%>/my_private_key
 ```
+
+Several methods can be used to generate a key pair:
 
 * <%=tool%>
 
@@ -1391,18 +1392,25 @@ The key is not passphrase protected.
 Both private and public keys are generated, option `-N` is for passphrase.
 
 ```bash
-ssh-keygen -t rsa -b 4096 -N '' -f ${PRIVKEYFILE}
+ssh-keygen -t rsa -b 4096 -m PEM -N '' -f ${PRIVKEYFILE}
 ```
 
 * `openssl`
 
-openssl is sometimes compiled to support option `-nodes` (no DES, i.e. no passphrase, e.g. on macOS).
-To generate a private key pair without passphrase the following can be used on any system:
+To generate a private key pair with a passphrase the following can be used on any system:
 
 ```bash
-openssl genrsa -passout pass:dummypassword -out ${PRIVKEYFILE}.protected 4096
-openssl rsa -passin pass:dummypassword -in ${PRIVKEYFILE}.protected -out ${PRIVKEYFILE}
+openssl genrsa -passout pass:_passphrase_here_ -out ${PRIVKEYFILE}.protected 4096
 openssl rsa -pubout -in ${PRIVKEYFILE} -out ${PRIVKEYFILE}.pub
+```
+
+`openssl` is sometimes compiled to support option `-nodes` (no DES, i.e. no passphrase, e.g. on macOS).
+In that case, add option `-nodes` instead of `-passout pass:_passphrase_here_` to generate a key without passphrase.
+
+If option `-nodes` is not available, the passphrase can be removed using this method:
+
+```bash
+openssl rsa -passin pass:_passphrase_here_ -in ${PRIVKEYFILE}.protected -out ${PRIVKEYFILE}
 rm -f ${PRIVKEYFILE}.protected
 ```
 
@@ -3662,13 +3670,7 @@ This will get transfer information from the SHOD instance and tell the Azure ATS
 
 ## Plugin: IBM Aspera Faspex5
 
-This is currently in beta, limited operations are supported.
-
-This was tested with version Beta 5.
-
-The API is listed in [Faspex 5 API Reference](https://developer.ibm.com/apis/catalog/?search=faspex) under "IBM Aspera Faspex API".
-
-### Faspex 5 authentication
+IBM Aspera's newer self-managed application.
 
 3 authentication methods are supported:
 
@@ -3676,16 +3678,16 @@ The API is listed in [Faspex 5 API Reference](https://developer.ibm.com/apis/cat
 * web
 * boot
 
-#### Faspex 5 using JWT
+### Faspex 5 JWT authentication
 
-This is the preferred method to use.
+This is the **recomended** method to use.
 
 For `jwt`, create an API client in Faspex with JWT support:
 
 * Select a private key file: if you don't have any refer to section [Private Key](#private_key)
 * Navigate to the web UI: Admin &rarr; Configurations &rarr; API Clients &rarr; Create
 * Activate JWT
-* Paste public key in the appropriate section
+* Paste **public** key in the appropriate section
 * Click on Create Button
 * Take note of Client Id (and Client Secret, but not used in current version)
 
@@ -3693,19 +3695,21 @@ Then use these options:
 
 ```text
 --auth=jwt
---client-id=xxx
---client-secret=xxx
---username=xxx
+--client-id=_client_id_here_
+--client-secret=_secret_here_
+--username=_username_here_
 --private-key=@file:.../path/to/key.pem
 ```
 
-#### Faspex 5 using web browser
+> The `private_key` option must contain the PEM value of the private key which can be read from a file using the modifier: `@file:`, e.g. `@file:/path/to/key.pem`.
+
+### Faspex 5 web authentication
 
 For `web` method, create an API client in Faspex without JWT:
 
 * Navigate to the web UI: Admin &rarr; Configurations &rarr; API Clients &rarr; Create
 * Do not Activate JWT
-* enter `https://127.0.0.1:8888` in the redirect URI
+* Set **Redirect URI** to `https://127.0.0.1:8888`
 * Click on Create Button
 * Take note of Client Id (and Client Secret, but not used in current version)
 
@@ -3713,33 +3717,39 @@ Then use options:
 
 ```text
 --auth=web
---client-id=xxx
---client-secret=xxx
+--client-id=_client_id_here_
+--client-secret=_secret_here_
 --redirect-uri=https://127.0.0.1:8888
 ```
 
-#### Faspex 5 using bootstrap
+### Faspex 5 bootstrap authentication
 
 For `boot` method: (will be removed in future)
 
-* open a browser
-* start developer mode
-* login to faspex 5
-* find the first API call with `Authorization` token, and copy it (kind of base64 long string)
+* Open a Web Browser
+* Start developer mode
+* Login to Faspex 5
+* Find the first API call with `Authorization` header, and copy the value of the token (series of base64 values with dots)
 
-Use it as password and use `--auth=boot`.
+Use this token as password and use `--auth=boot`.
 
 ```bash
-<%=cmd%> conf id f5boot update --url=https://localhost/aspera/faspex --auth=boot --password=ABC.DEF.GHI...
+<%=cmd%> conf id f5boot update --url=https://localhost/aspera/faspex --auth=boot --password=_token_here_
 ```
 
 ### Faspex 5 sample commands
+
+Most commands are directly REST API calls.
+Parameters to commandsa are carried through option `value`, as extended value.
+Usually using JSON format with prefix `@json:`.
+
+> The API is listed in [Faspex 5 API Reference](https://developer.ibm.com/apis/catalog?search="faspex+5") under **IBM Aspera Faspex API**.
 
 ```bash
 <%=include_commands_for_plugin('faspex5')%>
 ```
 
-### Faspex 5 other examples
+Other examples:
 
 * List all shared inboxes
 
