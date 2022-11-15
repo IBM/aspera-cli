@@ -87,7 +87,7 @@ module Aspera
         if @option_insecure
           url=http.inspect.gsub(/^[^ ]* /,'https://').gsub(/ [^ ]*$/,'')
           if !@ssl_warned_urls.include?(url)
-            @plugin_env[:formater].display_message(:error,"#{WARNING_FLASH} ignoring certificate for: #{url}. Only for tests, do not use in production.")
+            @plugin_env[:formater].display_message(:error,"#{WARNING_FLASH} ignoring certificate for: #{url}. Do not use unsafe certificates in production.")
             @ssl_warned_urls.push(url)
           end
           http.verify_mode = SELF_SIGNED_CERT
