@@ -56,7 +56,7 @@ module Aspera
           # extract elements from anonymous faspex link
           def get_link_data(publink)
             publink_uri = URI.parse(publink)
-            raise CliBadArgument, 'public link does not match Faspex format' unless (m = publink_uri.path.match(/^(.*)\/(external.*)$/))
+            raise CliBadArgument, 'Public link does not match Faspex format' unless (m = publink_uri.path.match(/^(.*)\/(external.*)$/))
             base = m[1]
             subpath = m[2]
             port_add = publink_uri.port.eql?(publink_uri.default_port) ? '' : ":#{publink_uri.port}"
@@ -236,7 +236,7 @@ module Aspera
           begin
             pkgdatares = JSON.parse("[#{pkgdatares}]")
           rescue JSON::ParserError # => e
-            raise 'Link not valid'
+            raise 'Unexpected response: missing metadata ?'
           end
           return pkgdatares.first
         end
@@ -357,7 +357,7 @@ module Aspera
                   headers: {'Accept' => 'application/xml'})
                 if !pkgdatares[:http].body.start_with?('<?xml ')
                   OpenApplication.instance.uri(link_url)
-                  raise CliError, 'no such package'
+                  raise CliError, 'Unexpected response: package not found ?'
                 end
                 package_entry = XmlSimple.xml_in(pkgdatares[:http].body, {'ForceArray' => false})
                 Log.dump(:package_entry,package_entry)

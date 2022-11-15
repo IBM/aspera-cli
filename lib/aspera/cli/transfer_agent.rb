@@ -234,7 +234,7 @@ module Aspera
           body:                   "Transfer is: #{global_status}",
           ts:                     transfer_spec
         }
-        @config.send_email_template(email_vars,DEFAULT_TRANSFER_NOTIF_TMPL)
+        @config.send_email_template(email_template_default: DEFAULT_TRANSFER_NOTIF_TMPL, values: email_vars)
       end
 
       # shut down if agent requires it

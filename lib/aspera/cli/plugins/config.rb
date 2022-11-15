@@ -62,9 +62,9 @@ module Aspera
         EMAIL_TEST_TEMPLATE = <<~END_OF_TEMPLATE
           From: <%=from_name%> <<%=from_email%>>
           To: <<%=to%>>
-          Subject: Amelia email test
+          Subject: aspera-cli email test
 
-          It worked !
+          This email was sent to test ascli.
         END_OF_TEMPLATE
         # special extended values
         EXTV_INCLUDE_PRESETS = :incps
@@ -895,7 +895,7 @@ module Aspera
           when :file
             return Main.result_status(@option_config_file)
           when :email_test
-            send_email_template({},EMAIL_TEST_TEMPLATE)
+            send_email_template(email_template_default: EMAIL_TEST_TEMPLATE)
             return Main.result_nothing
           when :smtp_settings
             return {type: :single_object, data: email_settings}
@@ -996,21 +996,21 @@ module Aspera
           Kernel.binding
         end
 
-        def send_email_template(vars,email_template_default=nil)
-          vars[:to] ||= options.get_option(:notif_to,is_type: :mandatory)
+        def send_email_template(email_template_default: nil, values: {})
+          values[:to] ||= options.get_option(:notif_to,is_type: :mandatory)
           notif_template = options.get_option(:notif_template,is_type: email_template_default.nil? ? :mandatory : :optional) || email_template_default
           mail_conf = email_settings
-          vars[:from_name] ||= mail_conf[:from_name]
-          vars[:from_email] ||= mail_conf[:from_email]
+          values[:from_name] ||= mail_conf[:from_name]
+          values[:from_email] ||= mail_conf[:from_email]
           %i[from_name from_email].each do |n|
-            raise "Missing email parameter: #{n}" unless vars.has_key?(n)
+            raise "Missing email parameter: #{n}" unless values.has_key?(n)
           end
           start_options = [mail_conf[:domain]]
           start_options.push(mail_conf[:username],mail_conf[:password],:login) if mail_conf.has_key?(:username) && mail_conf.has_key?(:password)
-          # create a binding with only variables defined in vars
+          # create a binding with only variables defined in values
           template_binding = empty_binding
           # add variables to binding
-          vars.each do |k,v|
+          values.each do |k,v|
             raise "key (#{k.class}) must be Symbol" unless k.is_a?(Symbol)
             template_binding.local_variable_set(k,v)
           end
@@ -1020,7 +1020,7 @@ module Aspera
           smtp = Net::SMTP.new(mail_conf[:server], mail_conf[:port])
           smtp.enable_starttls if mail_conf[:tls]
           smtp.start(*start_options) do |smtp_session|
-            smtp_session.send_message(msg_with_headers, vars[:from_email], vars[:to])
+            smtp_session.send_message(msg_with_headers, values[:from_email], values[:to])
           end
         end
 

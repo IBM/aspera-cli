@@ -673,7 +673,7 @@ module Aspera
               startdate_persistency&.save
               if !options.get_option(:notif_to).nil?
                 events.each do |tr_event|
-                  config.send_email_template({ev: tr_event})
+                  config.send_email_template(values: {ev: tr_event})
                 end
               end
               return {type: :object_list,data: events}
