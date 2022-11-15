@@ -14,7 +14,7 @@ Ruby Gem: [https://rubygems.org/gems/aspera-cli](https://rubygems.org/gems/asper
 
 Ruby Doc: [https://www.rubydoc.info/gems/aspera-cli](https://www.rubydoc.info/gems/aspera-cli)
 
-Minimum required Ruby version: >= 2.4. Deprecation notice: the minimum will be 2.5 in a future version.
+Minimum required Ruby version: >= 2.4. Deprecation notice: the minimum will be 2.7 in a future version.
 
 [Aspera APIs on IBM developer](https://developer.ibm.com/?size=30&q=aspera&DWContentType[0]=APIs)
 [Link 2](https://developer.ibm.com/apis/catalog/?search=aspera)
@@ -174,7 +174,7 @@ It is possible to install *either* directly on the host operating system (Linux,
 
 The direct installation is recommended and consists in installing:
 
-* [Ruby](#ruby) (version: >= 2.4. Deprecation notice: the minimum will be 2.5 in a future version)
+* [Ruby](#ruby) (version: >= 2.4. Deprecation notice: the minimum will be 2.7 in a future version)
 * [aspera-cli](#the_gem)
 * [Aspera SDK (ascp)](#fasp_prot)
 
@@ -243,7 +243,7 @@ Use this method to install on the native host.
 
 A ruby interpreter is required to run the tool or to use the gem and tool.
 
-Required Ruby version: >= 2.4. Deprecation notice: the minimum will be 2.5 in a future version.
+Required Ruby version: >= 2.4. Deprecation notice: the minimum will be 2.7 in a future version.
 
 *Ruby can be installed using any method* : rpm, yum, dnf, rvm, brew, windows installer, ... .
 
@@ -251,7 +251,7 @@ Refer to the following sections for a proposed method for specific operating sys
 
 The recommended installation method is `rvm` for systems with "bash-like" shell (Linux, macOS, Windows with cygwin, etc...).
 If the generic install is not suitable (e.g. Windows, no cygwin), you can use one of OS-specific install method.
-If you have a simpler better way to install Ruby : use it ! (version: >= 2.4. Deprecation notice: the minimum will be 2.5 in a future version)
+If you have a simpler better way to install Ruby : use it ! (version: >= 2.4. Deprecation notice: the minimum will be 2.7 in a future version)
 
 #### Generic: RVM: single user installation (not root)
 
@@ -2503,6 +2503,7 @@ OPTIONS:
         --property=VALUE             name of property to set
         --id=VALUE                   resource identifier (modify,delete,show)
         --bulk=ENUM                  Bulk operation (only some): [no], yes
+        --bfail=ENUM                 Bulk operation error handling: [no], yes
         --config-file=VALUE          read parameters from file in YAML format, current=/usershome/.aspera/ascli/config.yaml
     -N, --no-default                 do not load default configuration for plugin
         --override=ENUM              Wizard: override existing value: [no], yes
@@ -2542,7 +2543,7 @@ OPTIONS:
 
 
 COMMAND: node
-SUBCOMMANDS: postprocess stream transfer cleanup forward access_key watch_folder service async central asperabrowser basic_token browse upload download api_details health events space info license mkdir mklink mkfile rename delete search
+SUBCOMMANDS: postprocess stream transfer cleanup forward access_key watch_folder service async sync central asperabrowser basic_token browse upload download api_details health events space info license mkdir mklink mkfile rename delete search
 OPTIONS:
         --url=VALUE                  URL of application, e.g. https://org.asperafiles.com
         --username=VALUE             username to log in
@@ -4223,6 +4224,17 @@ node mklink /todelete /tdlink
 node rename / delfile1 delfile
 node search / --value=@json:'{"sort":"mtime"}'
 node space /
+node sync bandwidth my_syncid
+node sync counters my_syncid
+node sync create --value=@json:'{"configuration":{"name":"sync1","local":{"path":"my_local_path"},"remote":{"host":"my_host","port":my_port,"user":"my_username","pass":"my_password","path":"my_remote_path"}}}'
+node sync delete my_syncid
+node sync files my_syncid
+node sync list
+node sync show my_syncid
+node sync start my_syncid
+node sync state my_syncid
+node sync stop my_syncid
+node sync summary my_syncid
 node transfer list --value=@json:'{"active_only":true}'
 node upload --to-folder="folder_1" --sources=@ts --ts=@json:'{"paths":[{"source":"/aspera-test-dir-small/10MB.1"}],"precalculate_job_size":true}' --transfer=node --transfer-info=@json:'{"url":"my_node_url","username":"my_node_user","password":"my_node_pass"}'
 node upload --username=my_aoc_ak_name --password=my_aoc_ak_secret testfile.bin --token-type=basic

@@ -427,6 +427,7 @@ module Aspera
           raise 'ERR'
         end # execute_node_gen4_command
 
+        # This is older API
         def execute_async
           command = options.get_next_command(%i[list delete files show counters bandwidth])
           unless command.eql?(:list)
@@ -504,13 +505,27 @@ module Aspera
           end
         end
 
-        ACTIONS = %i[postprocess stream transfer cleanup forward access_key watch_folder service async central asperabrowser basic_token].concat(COMMON_ACTIONS).freeze
+        ACTIONS = %i[postprocess stream transfer cleanup forward access_key watch_folder service async sync central asperabrowser
+                     basic_token].concat(COMMON_ACTIONS).freeze
 
         def execute_action(command=nil,prefix_path=nil)
           command ||= options.get_next_command(ACTIONS)
           case command
           when *COMMON_ACTIONS then return execute_simple_common(command,prefix_path)
           when :async then return execute_async
+          when :sync
+            sync_command = options.get_next_command([Plugin::ALL_OPS,%i[bandwidth counters files start state stop summary]].flatten-%i[modify])
+            case sync_command
+            when *Plugin::ALL_OPS then return entity_command(sync_command,@api_node,'asyncs',item_list_key: 'ids')
+            else
+              parameters = options.get_option(:value)
+              asyncs_id=instance_identifier
+              if %i[start stop].include?(sync_command)
+                @api_node.create("asyncs/#{asyncs_id}/#{sync_command}",parameters)
+                return Main.result_status('ok')
+              end
+              return { type: :single_object, data: @api_node.read("asyncs/#{asyncs_id}/#{sync_command}",parameters)[:data] }
+            end
           when :stream
             command = options.get_next_command(%i[list create show modify cancel])
             case command
@@ -637,8 +652,11 @@ module Aspera
               when :list
                 request_data.deep_merge!({'validation' => validation}) unless validation.nil?
                 resp = @api_node.create('services/rest/transfers/v1/sessions',request_data)
-                return { type: :object_list, data: resp[:data]['session_info_result']['session_info'],
-fields: %w[session_uuid status transport direction bytes_transferred]}
+                return {
+                  type:   :object_list,
+                  data:   resp[:data]['session_info_result']['session_info'],
+                  fields: %w[session_uuid status transport direction bytes_transferred]
+                }
               end
             when :file
               command = options.get_next_command(%i[list modify])

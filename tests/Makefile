@@ -6,7 +6,7 @@ DIR_TOP=../
 
 include $(DIR_TOP)common.mak
 
-all:: $(DIR_TOP).gems_checked $(TEST_CONF_FILE_PATH) tunit tshares tfaspex tconsole tnode taoc tserver tsync torc tcon tnsync tconf tprev tats tsample tcos tf5
+all:: $(DIR_TOP).gems_checked $(TEST_CONF_FILE_PATH) tunit tshares tfaspex tconsole tnode taoc tserver tsync torc tcon tnsync tnsyncs tconf tprev tats tsample tcos tf5
 # tnagios: already included
 
 # default download folder for Connect Client (used to cleanup and avoid confirmation from connect when overwrite)
@@ -856,6 +856,35 @@ $(T)sy5: $(T).exists
 	$(EXE_MAN) node async files 1
 	@touch $@
 tnsync: $(T)sy1 $(T)sy2 $(T)sy3 $(T)sy4 $(T)sy5
+
+$(T)sync_create: $(T).exists
+	@echo $@
+	set -x&&\
+	local_path=$$($(EXE_NOMAN) config preset get sync local_path)&&\
+	remote_path=$$($(EXE_NOMAN) config preset get sync remote_path)&&\
+	hostport=$$($(EXE_NOMAN) config preset get tst_server url|cut -f3 -d/)&&\
+	host=$${hostport%:*}&&\
+	port=$${hostport#*:}&&\
+	username=$$($(EXE_NOMAN) config preset get tst_server username)&&\
+	password=$$($(EXE_NOMAN) config preset get tst_server password)&&\
+	$(EXE_MAN) node sync create --value=@json:'{"configuration":{"name":"sync1","local":{"path":"'"$${local_path}"'"},"remote":{"host":"'"$${host}"'","port":'"$${port}"',"user":"'"$${username}"'","pass":"'"$${password}"'","path":"'"$${remote_path}"'"}}}'
+	$(EXE_MAN) node sync list
+	@touch $@
+$(T)sync_other: $(T).exists
+	@echo $@
+	set -x&&\
+	syncid=$$($(EXE_NOMAN) node sync list --format=csv|tail -n1)&&\
+	$(EXE_MAN) node sync start $${syncid}&&\
+	$(EXE_MAN) node sync show $${syncid}&&\
+	$(EXE_MAN) node sync bandwidth $${syncid}&&\
+	$(EXE_MAN) node sync counters $${syncid}&&\
+	$(EXE_MAN) node sync files $${syncid}&&\
+	$(EXE_MAN) node sync state $${syncid}&&\
+	$(EXE_MAN) node sync stop $${syncid}&&\
+	$(EXE_MAN) node sync summary $${syncid}&&\
+	$(EXE_MAN) node sync delete $${syncid}
+	@touch $@
+tnsyncs: $(T)sync_create $(T)sync_other
 
 TEST_CONFIG=$(DIR_TMP)sample.conf
 EXETESTC=$(EXETESTB) --config-file=$(TEST_CONFIG)
