@@ -262,11 +262,12 @@ tfaspex: $(T)fx_plst $(T)fx_psnd $(T)fx_prs $(T)fx_pri $(T)fx_prl $(T)fx_pslu $(
 
 $(T)cons1: $(T).exists
 	@echo $@
-	$(EXE_MAN) console transfer current list 
+	$(EXE_MAN) console health
+	$(EXE_MAN) console transfer current list
 	@touch $@
 $(T)cons2: $(T).exists
 	@echo $@
-	$(EXE_MAN) console transfer smart list 
+	$(EXE_MAN) console transfer smart list
 	@touch $@
 $(T)cons3: $(T).exists
 	@echo $@
