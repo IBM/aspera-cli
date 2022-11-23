@@ -82,12 +82,14 @@ module Aspera
           end
         end
 
-        ACTIONS = %i[health user bearer_token package admin].freeze
+        ACTIONS = %i[health version user bearer_token package admin].freeze
 
         def execute_action
           set_api
           command = options.get_next_command(ACTIONS)
           case command
+          when :version
+            return { type: :single_object, data: @api_v5.read('version')[:data] }
           when :health
             nagios = Nagios.new
             begin
