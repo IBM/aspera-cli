@@ -52,13 +52,15 @@ END_OF_JAVASCRIPT
 
     public
 
+    attr_writer :proxy_user,:proxy_pass
+
     # @param proxy_auto_config the proxy auto config script to be evaluated
     def initialize(proxy_auto_config)
       # user provided javascript with FindProxyForURL function
       @proxy_auto_config = proxy_auto_config
       # avoid multiple execution, this does not support load balancing
       @cache = {}
-      @pac_functions = nil
+      @proxy_user=@proxy_pass=@pac_functions = nil
     end
 
     def register_uri_generic
@@ -106,23 +108,28 @@ END_OF_JAVASCRIPT
         case parts.shift
         when 'DIRECT'
           raise 'DIRECT has no param' unless parts.empty?
+          Log.log.debug('ignoring proxy DIRECT')
         when 'PROXY'
           addr_port = parts.shift
           raise 'PROXY shall have one param' unless addr_port.is_a?(String) && parts.empty?
           begin
             # PAC proxy addresses are <host>:<port>
             if /:[0-9]+$/.match?(addr_port)
-              # we want to return URIs, so add dummy scheme
-              uri_list.push(URI.parse("proxy://#{addr_port}"))
+              uri=URI.parse("proxy://#{addr_port}")
+              # ruby v>2.6 allows
+              uri.user=@proxy_user
+              uri.password=@proxy_pass
+              uri_list.push(uri)
             else
               Log.log.warn("PAC: PROXY must be <address>:<port>, ignoring #{addr_port}")
             end
-          rescue StandardError
-            Log.log.warn("PAC: cannot parse #{addr_port}")
+          rescue StandardError => e
+            Log.log.warn("PAC: cannot parse #{addr_port} #{e}")
           end
         else Log.log.warn("PAC: ignoring proxy type #{parts.first}: not supported")
         end
       end
+      Log.log.debug("Proxies: #{uri_list}")
       return uri_list
     end
   end

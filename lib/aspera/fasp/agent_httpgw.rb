@@ -5,20 +5,14 @@ require 'aspera/fasp/transfer_spec'
 require 'aspera/log'
 require 'aspera/rest'
 require 'securerandom'
+require 'websocket'
 require 'base64'
 require 'json'
-require 'websocket'
-require 'net/http'
 
 # ref: https://api.ibm.com/explorer/catalog/aspera/product/ibm-aspera/api/http-gateway-api/doc/guides-toc
 # https://developer.ibm.com/apis/catalog?search=%22aspera%20http%22
 module Aspera
   module Fasp
-    # we need access to the underlying BufferedIO
-    class WSHTTP < Net::HTTP
-      attr_reader :socket
-    end
-
     # start a transfer using Aspera HTTP Gateway, using web socket session for uploads
     class AgentHttpgw < AgentBase
       # message returned by HTTP GW in case of success
@@ -73,24 +67,16 @@ module Aspera
         # identify this session uniquely
         session_id = SecureRandom.uuid
         @slice_uploads=0
-
         # web socket endpoint: by default use v2 (newer gateways), without base64 encoding
-        upload_endpoint = V2_UPLOAD
-        use_base64_encoding = false
-        # is the latest supported?
-        if !@api_info['endpoints'].any?{|i|i.include?(upload_endpoint)}
-          # revert to old api
-          upload_endpoint=V1_UPLOAD
-          use_base64_encoding = true
-        end
-        Log.log.debug("base64: #{use_base64_encoding}, endpoint: #{upload_endpoint}")
-
-        # open web socket to end point
-        url="#{@gw_api.params[:base_url]}#{upload_endpoint}"
-
-        uri = URI.parse(url)
-        http_socket = WSHTTP.start(uri.host,uri.port,use_ssl: uri.scheme.eql?('https'))
-        @ws_io = http_socket.socket
+        upload_api_version = V2_UPLOAD
+        # is the latest supported? else revert to old api
+        upload_api_version=V1_UPLOAD unless @api_info['endpoints'].any?{|i|i.include?(upload_api_version)}
+        Log.log.debug{"api version: #{upload_api_version}"}
+        url=File.join(@gw_api.params[:base_url],upload_api_version)
+        #uri = URI.parse(url)
+        # open web socket to end point (equivalent to Net::HTTP.start)
+        http_socket = Rest.start_http_session(url)
+        @ws_io = http_socket.instance_variable_get(:@socket)
         #@ws_io.debug_output = Log.log
         @ws_handshake = ::WebSocket::Handshake::Client.new(url: url, headers: {})
         @ws_io.write(@ws_handshake.to_s)
@@ -98,17 +84,18 @@ module Aspera
         @ws_handshake << @ws_io.readuntil("\r\n\r\n")
         raise 'Error in websocket handshake' unless @ws_handshake.finished?
         Log.log.debug('ws: handshake success')
-
+        # data shared between main thread and read thread
         shared_info={
           read_exception: nil, # error message if any in callback
           end_uploads:    0 # number of files totally sent
+          #mutex: Mutex.new
+          #cond_var: ConditionVariable.new
         }
-        #mutex = Mutex.new
-        #cond_var = ConditionVariable.new
+        # start read thread
         ws_read_thread = Thread.new do
-          frame = ::WebSocket::Frame::Incoming::Client.new
           Log.log.debug('ws: thread: started')
-          while true
+          frame = ::WebSocket::Frame::Incoming::Client.new
+          loop do
             begin
               frame << @ws_io.readuntil("\n")
               while (msg = frame.next)
@@ -172,7 +159,7 @@ module Aspera
                   fileIndex:    file_index
                 }
                 #Log.dump(:slice_data,slice_data) #if slicenum.eql?(0)
-                if use_base64_encoding
+                if upload_api_version.eql?(V1_UPLOAD)
                   slice_data[:data] = Base64.strict_encode64(data)
                   ws_snd_json(slice_upload: slice_data)
                 else
@@ -181,7 +168,6 @@ module Aspera
                   Log.log.debug{"ws: sent buffer: #{file_index} / #{slicenum}"}
                   ws_snd_json(slice_upload: slice_data) if slicenum.eql?(numslices-1)
                 end
-                # log without data
                 sent_bytes += data.length
                 currenttime = Time.now
                 if last_progress_time.nil? || ((currenttime - last_progress_time) > @options[:upload_bar_refresh_sec])

@@ -126,6 +126,7 @@ module Aspera
           options.add_opt_simple(:use_product,'use ascp from specified product')
           options.add_opt_simple(:smtp,'smtp configuration (extended value: hash)')
           options.add_opt_simple(:fpac,'proxy auto configuration script')
+          options.add_opt_simple(:proxy_credentials,'http proxy credentials: user:pass')
           options.add_opt_simple(:secret,'default secret')
           options.add_opt_simple(:secrets,'secret vault')
           options.add_opt_simple(:sdk_url,'URL to get SDK')
@@ -145,6 +146,13 @@ module Aspera
           pac_script = options.get_option(:fpac)
           # create PAC executor
           @pac_exec = Aspera::ProxyAutoConfig.new(pac_script).register_uri_generic unless pac_script.nil?
+          proxy_creds=options.get_option(:proxy_credentials)
+          if !proxy_creds.nil?
+            raise CliBadArgument,'proxy credentials shall be an array (#{proxy_creds.class})' unless proxy_creds.is_a?(Array)
+            raise CliBadArgument,'proxy credentials shall have two elements (#{proxy_creds.length})' unless proxy_creds.length.eql?(2)
+            @pac_exec.proxy_user=Rest.proxy_user=proxy_creds[0]
+            @pac_exec.proxy_pass=Rest.proxy_pass=proxy_creds[1]
+          end
         end
 
         # env var name to override the app's main folder
