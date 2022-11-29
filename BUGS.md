@@ -1,6 +1,6 @@
-# Reporting bugs
+# Reporting bugs and security vulnerabilities
 
-Report bug, including vulnerability issues following this.
+Report bug, including vulnerability issues following this:
 
 Please, make sure to include the following information:
 
@@ -10,3 +10,11 @@ Please, make sure to include the following information:
 * Any other relevant information.
 
 [Use Github (Public Issue Reporting)](https://github.com/IBM/aspera-cli/issues)
+
+
+## Security Policy
+
+| Version | Supported          |
+| ------- | ------------------ |
+| 4.x     | :white_check_mark: |
+| < 4.0   | :x:                |
