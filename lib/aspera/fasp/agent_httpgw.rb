@@ -4,16 +4,22 @@ require 'aspera/fasp/agent_base'
 require 'aspera/fasp/transfer_spec'
 require 'aspera/log'
 require 'aspera/rest'
-require 'websocket-client-simple'
 require 'securerandom'
 require 'base64'
 require 'json'
+require 'websocket'
+require 'net/http'
 
 # ref: https://api.ibm.com/explorer/catalog/aspera/product/ibm-aspera/api/http-gateway-api/doc/guides-toc
 # https://developer.ibm.com/apis/catalog?search=%22aspera%20http%22
 module Aspera
   module Fasp
-    # start a transfer using Aspera HTTP Gateway, using web socket session
+    # we need access to the underlying BufferedIO
+    class WSHTTP < Net::HTTP
+      attr_reader :socket
+    end
+
+    # start a transfer using Aspera HTTP Gateway, using web socket session for uploads
     class AgentHttpgw < AgentBase
       # message returned by HTTP GW in case of success
       MSG_END_UPLOAD = 'end upload'
@@ -23,11 +29,22 @@ module Aspera
         upload_chunksize:       64_000,
         upload_bar_refresh_sec: 0.5
       }.freeze
-      DEFAULT_BASE_PATH='/aspera/http-gwy';
-      private_constant :DEFAULT_OPTIONS,:MSG_END_UPLOAD,:MSG_END_SLICE
+      DEFAULT_BASE_PATH='/aspera/http-gwy'
+      # upload endpoints
+      V1_UPLOAD='/v1/upload'
+      V2_UPLOAD='/v2/upload'
+      private_constant :DEFAULT_OPTIONS,:MSG_END_UPLOAD,:MSG_END_SLICE,:V1_UPLOAD,:V2_UPLOAD
+
       # send message on http gw web socket
-      def ws_snd_json(ws,type,data)
-        ws.send(JSON.generate({type => data}))
+      def ws_snd_json(data)
+        @slice_uploads += 1 if data.has_key?(:slice_upload)
+        Log.log.debug{JSON.generate(data)}
+        ws_send(JSON.generate(data))
+      end
+
+      def ws_send(data, type: :text)
+        frame = ::WebSocket::Frame::Outgoing::Client.new(data: data, type: type, version: @ws_handshake.version)
+        @ws_io.write(frame.to_s)
       end
 
       def upload(transfer_spec)
@@ -55,104 +72,135 @@ module Aspera
         end
         # identify this session uniquely
         session_id = SecureRandom.uuid
-        ws = ::WebSocket::Client::Simple::Client.new
-        # error message if any in callback
-        current_error = nil
-        # number of files totally sent
-        received = 0
-        # setup callbacks on websocket
-        ws.on(:message) do |msg|
-          Log.log.info("ws: message: #{msg.data}")
-          message = msg.data
-          if message.eql?(MSG_END_UPLOAD)
-            received += 1
-          elsif message.eql?(MSG_END_SLICE)
-          else
-            message.chomp!
-            current_error =
-              if message.start_with?('"') && message.end_with?('"')
-                JSON.parse(Base64.strict_decode64(message.chomp[1..-2]))['message']
-              else
-                "unknown message from gateway: [#{message}]"
-              end
-          end
+        @slice_uploads=0
+
+        # web socket endpoint: by default use v2 (newer gateways), without base64 encoding
+        upload_endpoint = V2_UPLOAD
+        use_base64_encoding = false
+        # is the latest supported?
+        if !@api_info['endpoints'].any?{|i|i.include?(upload_endpoint)}
+          # revert to old api
+          upload_endpoint=V1_UPLOAD
+          use_base64_encoding = true
         end
-        ws.on(:error) do |e|
-          current_error = e
-        end
-        ws.on(:open) do
-          Log.log.info('ws: open')
-        end
-        ws.on(:close) do
-          Log.log.info('ws: close')
-        end
-        # web socket endpoint
-        ws_url = "#{@gw_api.params[:base_url]}/v1/upload"
-        # use base64 encoding if gateway does not support v2
-        use_base64_encoding = @api_info['endpoints'].select{|i|i.include?('/v2/upload')}.empty?
-        ws_url.gsub!('/v1/','/v2/') unless use_base64_encoding
-        Log.log.debug("base64: #{use_base64_encoding}, url: #{ws_url}")
+        Log.log.debug("base64: #{use_base64_encoding}, endpoint: #{upload_endpoint}")
+
         # open web socket to end point
-        ws.connect(ws_url)
-        # async wait ready
-        while !ws.open? && current_error.nil?
-          Log.log.info('ws: wait')
-          sleep(0.2)
+        url="#{@gw_api.params[:base_url]}#{upload_endpoint}"
+
+        uri = URI.parse(url)
+        http_socket = WSHTTP.start(uri.host,uri.port,use_ssl: uri.scheme.eql?('https'))
+        @ws_io = http_socket.socket
+        #@ws_io.debug_output = Log.log
+        @ws_handshake = ::WebSocket::Handshake::Client.new(url: url, headers: {})
+        @ws_io.write(@ws_handshake.to_s)
+        sleep(0.1)
+        @ws_handshake << @ws_io.readuntil("\r\n\r\n")
+        raise 'Error in websocket handshake' unless @ws_handshake.finished?
+        Log.log.debug('ws: handshake success')
+
+        shared_info={
+          read_exception: nil, # error message if any in callback
+          end_uploads:    0 # number of files totally sent
+        }
+        #mutex = Mutex.new
+        #cond_var = ConditionVariable.new
+        ws_read_thread = Thread.new do
+          frame = ::WebSocket::Frame::Incoming::Client.new
+          Log.log.debug('ws: thread: started')
+          while true
+            begin
+              frame << @ws_io.readuntil("\n")
+              while (msg = frame.next)
+                Log.log.debug("ws: thread: message: #{msg.data} #{shared_info[:end_uploads]}")
+                message = msg.data
+                if message.eql?(MSG_END_UPLOAD)
+                  shared_info[:end_uploads] += 1
+                elsif message.eql?(MSG_END_SLICE)
+                else
+                  message.chomp!
+                  error_message =
+                    if message.start_with?('"') && message.end_with?('"')
+                      JSON.parse(Base64.strict_decode64(message.chomp[1..-2]))['message']
+                    elsif message.start_with?('{') && message.end_with?('}')
+                      JSON.parse(message)['message']
+                    else
+                      "unknown message from gateway: [#{message}]"
+                    end
+                  raise error_message
+                end
+              end
+            rescue => e
+              shared_info[:read_exception] = e unless e.is_a?(EOFError)
+              break
+            end
+          end
+          Log.log.debug("ws: thread: stopping #{shared_info[:read_exception]} #{shared_info[:read_exception].class}")
         end
         # notify progress bar
         notify_begin(session_id,total_size)
         # first step send transfer spec
         Log.dump(:ws_spec,transfer_spec)
-        ws_snd_json(ws,:transfer_spec,transfer_spec)
+        ws_snd_json(transfer_spec: transfer_spec)
         # current file index
         file_index = 0
         # aggregate size sent
         sent_bytes = 0
         # last progress event
-        lastevent = nil
-        transfer_spec['paths'].each do |item|
-          # TODO: get mime type?
-          file_mime_type = ''
-          file_size = item['file_size']
-          file_name = File.basename(item[item['destination'].nil? ? 'source' : 'destination'])
-          # compute total number of slices
-          numslices = 1 + ((file_size - 1) / @options[:upload_chunksize])
-          File.open(source_paths[file_index]) do |file|
-            # current slice index
-            slicenum = 0
-            while !file.eof?
-              data = file.read(@options[:upload_chunksize])
-              slice_data = {
-                name:         file_name,
-                type:         file_mime_type,
-                size:         file_size,
-                slice:        slicenum,
-                total_slices: numslices,
-                fileIndex:    file_index
-              }
-              #Log.dump(:slice_data,slice_data) #if slicenum.eql?(0)
-              if use_base64_encoding
-                slice_data[:data] = Base64.strict_encode64(data)
-                ws_snd_json(ws,:slice_upload, slice_data)
-              else
-                ws_snd_json(ws,:slice_upload, slice_data) if slicenum.eql?(0)
-                ws.send(data)
-                ws_snd_json(ws,:slice_upload, slice_data) if slicenum.eql?(numslices-1)
+        last_progress_time = nil
+        begin
+          transfer_spec['paths'].each do |item|
+            # TODO: get mime type?
+            file_mime_type = ''
+            file_size = item['file_size']
+            file_name = File.basename(item[item['destination'].nil? ? 'source' : 'destination'])
+            # compute total number of slices
+            numslices = 1 + ((file_size - 1) / @options[:upload_chunksize])
+            File.open(source_paths[file_index]) do |file|
+              # current slice index
+              slicenum = 0
+              while !file.eof?
+                # interrupt main thread if read thread failed
+                raise shared_info[:read_exception] unless shared_info[:read_exception].nil?
+                data = file.read(@options[:upload_chunksize])
+                slice_data = {
+                  name:         file_name,
+                  type:         file_mime_type,
+                  size:         file_size,
+                  slice:        slicenum,
+                  total_slices: numslices,
+                  fileIndex:    file_index
+                }
+                #Log.dump(:slice_data,slice_data) #if slicenum.eql?(0)
+                if use_base64_encoding
+                  slice_data[:data] = Base64.strict_encode64(data)
+                  ws_snd_json(slice_upload: slice_data)
+                else
+                  ws_snd_json(slice_upload: slice_data) if slicenum.eql?(0)
+                  ws_send(data,type: :binary)
+                  Log.log.debug{"ws: sent buffer: #{file_index} / #{slicenum}"}
+                  ws_snd_json(slice_upload: slice_data) if slicenum.eql?(numslices-1)
+                end
+                # log without data
+                sent_bytes += data.length
+                currenttime = Time.now
+                if last_progress_time.nil? || ((currenttime - last_progress_time) > @options[:upload_bar_refresh_sec])
+                  notify_progress(session_id,sent_bytes)
+                  last_progress_time = currenttime
+                end
+                slicenum += 1
               end
-              # log without data
-              sent_bytes += data.length
-              currenttime = Time.now
-              if lastevent.nil? || ((currenttime - lastevent) > @options[:upload_bar_refresh_sec])
-                notify_progress(session_id,sent_bytes)
-                lastevent = currenttime
-              end
-              slicenum += 1
-              raise current_error unless current_error.nil?
             end
+            file_index += 1
           end
-          file_index += 1
         end
-        ws.close
+        Log.log.debug('Finished upload')
+        ws_read_thread.join
+        Log.log.debug{"result: #{shared_info[:end_uploads]} / #{@slice_uploads}"}
+        ws_send(nil, type: :close) unless @ws_io.nil?
+        @ws_io = nil
+        http_socket&.finish
+        notify_progress(session_id,sent_bytes)
         notify_end(session_id)
       end
 

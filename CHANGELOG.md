@@ -2,8 +2,9 @@
 
 * 4.10.0
 
-  * new: httpgw transfer agent: support api v2 and new options
+  * new: httpgw transfer agent: support api v2, support transfer through http proxy
   * new: faspex5: get bearer token
+  * updates: for docker container version
 
 * 4.9.0
 

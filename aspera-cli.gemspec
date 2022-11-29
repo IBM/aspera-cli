@@ -51,7 +51,6 @@ Gem::Specification.new do |spec|
   spec.add_runtime_dependency('tty-spinner', '~> 0.9')
   spec.add_runtime_dependency('webrick', '~> 1.7')
   spec.add_runtime_dependency('websocket', '~> 1.2')
-  spec.add_runtime_dependency('websocket-client-simple', '~> 0.3')
   spec.add_runtime_dependency('xml-simple', '~> 1.0')
   # optional dependency gems for runtime that can cause problems (native part to compile) but seldom used
   spec.add_development_dependency('grpc', '~> 1.0') # for transferSDK
