@@ -2596,7 +2596,7 @@ OPTIONS:
 
 
 COMMAND: faspex5
-SUBCOMMANDS: health user bearer_token package admin
+SUBCOMMANDS: health version user bearer_token package admin
 OPTIONS:
         --url=VALUE                  URL of application, e.g. https://org.asperafiles.com
         --username=VALUE             username to log in
