@@ -39,8 +39,6 @@ gemclean:
 	rm -f $(PATH_GEMFILE)
 install: $(PATH_GEMFILE)
 	gem install $(PATH_GEMFILE)
-installdeps:
-	bundle install
 clean:: gemclean
 
 ##################################
