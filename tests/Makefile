@@ -29,7 +29,7 @@ CF_HSTS_UPLOADED_FILE=$(CF_HSTS_FOLDER_UPLOAD)/$(CF_LOCAL_SAMPLE_FILENAME)
 
 # flush cached tokens
 clean::
-	$(EXE_NOMAN) config flush
+	-$(EXE_NOMAN) config flush
 
 ###########
 # Coverage
