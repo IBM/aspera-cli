@@ -77,7 +77,7 @@ module Aspera
           if @api_aoc.nil?
             @api_aoc = AoC.new(aoc_params(AoC::API_V1))
             # add keychain for access key secrets
-            @api_aoc.key_chain = @agents[:config]
+            @api_aoc.secret_finder = @agents[:config]
           end
           return @api_aoc
         end

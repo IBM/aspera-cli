@@ -179,7 +179,7 @@ module Aspera
       # access key secrets are provided out of band to get node api access
       # key: access key
       # value: associated secret
-      @key_chain = nil
+      @secret_finder = nil
       @user_info = nil
 
       # init rest params
@@ -247,10 +247,10 @@ module Aspera
       return read('url_tokens')[:data].first
     end
 
-    def key_chain=(keychain)
-      raise 'keychain already set' unless @key_chain.nil?
-      raise 'keychain must have get_secret' unless keychain.respond_to?(:get_secret)
-      @key_chain = keychain
+    def secret_finder=(secret_finder)
+      raise 'secret finder already set' unless @secret_finder.nil?
+      raise 'secret finder must have lookup_secret' unless secret_finder.respond_to?(:lookup_secret)
+      @secret_finder = secret_finder
     end
 
     # cached user information
@@ -340,7 +340,7 @@ module Aspera
     def get_node_api(node_info, scope: SCOPE_NODE_USER, use_secret: true)
       raise 'internal error' unless node_info.is_a?(Hash) && node_info.has_key?('url') && node_info.has_key?('access_key')
       # get optional secret unless :use_secret is false
-      ak_secret = @key_chain.get_secret(url: node_info['url'], username: node_info['access_key'], mandatory: false) if use_secret && !@key_chain.nil?
+      ak_secret = @secret_finder.lookup_secret(url: node_info['url'], username: node_info['access_key'], mandatory: false) if use_secret && !@secret_finder.nil?
       raise "There must be at least one of: 'secret' or 'scope' for access key #{node_info['access_key']}" if ak_secret.nil? && scope.nil?
       node_rest_params = {base_url: node_info['url']}
       # if secret is available

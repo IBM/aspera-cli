@@ -103,7 +103,7 @@ module Aspera
           options.set_obj_attr(:config_file,self,:option_config_file)
           options.add_opt_simple(:config_file,"read parameters from file in YAML format, current=#{@option_config_file}")
           options.parse_options!
-          # read correct file
+          # read correct file (set @config_presets)
           read_config_file
           # add preset handler (needed for smtp)
           ExtendedValue.instance.set_handler(EXTV_PRESET,:reader,lambda{|v|preset_by_name(v)})
@@ -679,35 +679,35 @@ module Aspera
         end
 
         # legacy actions available globally
-        PRESET_GBL_ACTIONS = %i[list overview].freeze
+        PRESET_GBL_ACTIONS = %i[list overview lookup].freeze
         # require existing preset
         PRESET_EXST_ACTIONS = %i[show delete get unset].freeze
         # require id
         PRESET_INSTANCE_ACTIONS = [PRESET_EXST_ACTIONS,%i[initialize update ask set]].flatten.freeze
         PRESET_ALL_ACTIONS = [PRESET_GBL_ACTIONS,PRESET_INSTANCE_ACTIONS].flatten.freeze
 
-        def execute_file_action(action,config_name)
+        def execute_preset(action: nil,name: nil)
           action = options.get_next_command(PRESET_ALL_ACTIONS) if action.nil?
-          config_name = instance_identifier if config_name.nil? && PRESET_INSTANCE_ACTIONS.include?(action)
+          name = instance_identifier if name.nil? && PRESET_INSTANCE_ACTIONS.include?(action)
           # those operations require existing option
-          raise "no such preset: #{config_name}" if PRESET_EXST_ACTIONS.include?(action) && !@config_presets.has_key?(config_name)
-          selected_preset = @config_presets[config_name]
+          raise "no such preset: #{name}" if PRESET_EXST_ACTIONS.include?(action) && !@config_presets.has_key?(name)
+          selected_preset = @config_presets[name]
           case action
           when :list
             return {type: :value_list, data: @config_presets.keys, name: 'name'}
           when :overview
             return {type: :object_list, data: Formater.flatten_config_overview(@config_presets)}
           when :show
-            raise "no such config: #{config_name}" if selected_preset.nil?
+            raise "no such config: #{name}" if selected_preset.nil?
             return {type: :single_object, data: selected_preset}
           when :delete
-            @config_presets.delete(config_name)
+            @config_presets.delete(name)
             save_presets_to_config_file
-            return Main.result_status("Deleted: #{config_name}")
+            return Main.result_status("Deleted: #{name}")
           when :get
             param_name = options.get_next_argument('parameter name')
             value = selected_preset[param_name]
-            raise "no such option in preset #{config_name} : #{param_name}" if value.nil?
+            raise "no such option in preset #{name} : #{param_name}" if value.nil?
             case value
             when Numeric,String then return {type: :text, data: ExtendedValue.instance.evaluate(value.to_s)}
             end
@@ -716,47 +716,54 @@ module Aspera
             param_name = options.get_next_argument('parameter name')
             selected_preset.delete(param_name)
             save_presets_to_config_file
-            return Main.result_status("Removed: #{config_name}: #{param_name}")
+            return Main.result_status("Removed: #{name}: #{param_name}")
           when :set
             param_name = options.get_next_argument('parameter name')
             param_value = options.get_next_argument('parameter value')
-            if !@config_presets.has_key?(config_name)
-              Log.log.debug("no such config name: #{config_name}, initializing")
-              selected_preset = @config_presets[config_name] = {}
+            if !@config_presets.has_key?(name)
+              Log.log.debug("no such config name: #{name}, initializing")
+              selected_preset = @config_presets[name] = {}
             end
             if selected_preset.has_key?(param_name)
               Log.log.warn("overwriting value: #{selected_preset[param_name]}")
             end
             selected_preset[param_name] = param_value
             save_presets_to_config_file
-            return Main.result_status("Updated: #{config_name}: #{param_name} <- #{param_value}")
+            return Main.result_status("Updated: #{name}: #{param_name} <- #{param_value}")
           when :initialize
             config_value = options.get_next_argument('extended value (Hash)')
-            if @config_presets.has_key?(config_name)
-              Log.log.warn("configuration already exists: #{config_name}, overwriting")
+            if @config_presets.has_key?(name)
+              Log.log.warn("configuration already exists: #{name}, overwriting")
             end
-            @config_presets[config_name] = config_value
+            @config_presets[name] = config_value
             save_presets_to_config_file
             return Main.result_status("Modified: #{@option_config_file}")
           when :update
             #  get unprocessed options
             theopts = options.get_options_table
             Log.log.debug("opts=#{theopts}")
-            @config_presets[config_name] ||= {}
-            @config_presets[config_name].merge!(theopts)
+            @config_presets[name] ||= {}
+            @config_presets[name].merge!(theopts)
             # fix bug in 4.4 (creating key "true" in "default" preset)
             @config_presets[CONF_PRESET_DEFAULT].delete(true) if @config_presets[CONF_PRESET_DEFAULT].is_a?(Hash)
             save_presets_to_config_file
-            return Main.result_status("Updated: #{config_name}")
+            return Main.result_status("Updated: #{name}")
           when :ask
             options.ask_missing_mandatory = :yes
-            @config_presets[config_name] ||= {}
+            @config_presets[name] ||= {}
             options.get_next_argument('option names',expected: :multiple).each do |optionname|
               option_value = options.get_interactive(:option,optionname)
-              @config_presets[config_name][optionname] = option_value
+              @config_presets[name][optionname] = option_value
             end
             save_presets_to_config_file
-            return Main.result_status("Updated: #{config_name}")
+            return Main.result_status("Updated: #{name}")
+          when :lookup
+            BasicAuthPlugin.register_options(@agents)
+            url=options.get_option(:url,is_type: :mandatory)
+            user=options.get_option(:username,is_type: :mandatory)
+            result=lookup_preset(url: url, username: user)
+            raise 'no such config found' if result.nil?
+            return {type: :single_object, data: result}
           end
         end
 
@@ -768,11 +775,14 @@ module Aspera
           action = options.get_next_command(ACTIONS)
           case action
           when *PRESET_GBL_ACTIONS # older syntax
-            return execute_file_action(action,nil)
+            Log.log.warn("This syntax is deprecated, use command: preset #{action}")
+            return execute_preset(action: action)
           when :id # older syntax
-            return execute_file_action(nil,options.get_next_argument('config name'))
+            identifier=options.get_next_argument('config name')
+            Log.log.warn("This syntax is deprecated, use command: preset <verb> #{identifier}")
+            return execute_preset(name: identifier)
           when :preset # newer syntax
-            return execute_file_action(nil,nil)
+            return execute_preset
           when :open
             OpenApplication.instance.uri(@option_config_file.to_s) #file://
             return Main.result_nothing
@@ -1092,14 +1102,29 @@ module Aspera
           @vault
         end
 
-        def get_secret(options)
-          raise 'options shall be Hash' unless options.is_a?(Hash)
-          raise 'options shall have username' unless options.has_key?(:username)
-          secret = self.options.get_option(:secret)
+        def canonical_url(url)
+          url.gsub(%r{/+$},'').gsub(%r{^(https://[^/]+):443$},'\1')
+        end
+
+        def lookup_preset(url:, username:)
+          # remove extra info to maximize match
+          url=canonical_url(url)
+          Log.log.debug("lookup secret for #{username}@#{url}")
+          @config_presets.each do |_k,v|
+            next unless v.is_a?(Hash)
+            conf_url=v['url'].is_a?(String) ? canonical_url(v['url']) : nil
+            return v if conf_url.eql?(url) && v['username'].eql?(username)
+          end
+          nil
+        end
+
+        def lookup_secret(url:, username:, mandatory: false)
+          secret = options.get_option(:secret)
           if secret.nil?
-            secret = vault.get(options) rescue nil
-            # mandatory by default
-            raise "please provide secret for #{options[:username]}" if secret.nil? && (options[:mandatory].nil? || options[:mandatory])
+            conf=lookup_preset(url: url, username: username)
+            Log.log.debug{"found #{conf}"}
+            secret=conf['password'] if conf.is_a?(Hash)
+            raise "please provide secret for #{username}" if secret.nil? && mandatory
           end
           return secret
         end

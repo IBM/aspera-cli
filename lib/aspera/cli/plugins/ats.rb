@@ -111,7 +111,7 @@ module Aspera
               auth:     {
                 type:     :basic,
                 username: access_key_id,
-                password: @agents[:config].get_secret(url: base_url,username: access_key_id)
+                password: @agents[:config].lookup_secret(url: base_url, username: access_key_id)
               }})
             command = options.get_next_command(Node::COMMON_ACTIONS)
             return Node.new(@agents.merge(skip_basic_auth_options: true, node_api: api_node)).execute_action(command)
@@ -122,7 +122,7 @@ module Aspera
               auth:     {
                 type:     :basic,
                 username: access_key_id,
-                password: @agents[:config].get_secret(url: base_url, username: access_key_id)
+                password: @agents[:config].lookup_secret(url: base_url, username: access_key_id)
               }}
             api_ak_auth = Rest.new(rest_params)
             return {type: :single_object, data: api_ak_auth.read('servers')[:data]}

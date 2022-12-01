@@ -197,7 +197,7 @@ docker --version
 
 Download the script [`dascli`](../examples/dascli) from [the GIT repo](https://raw.githubusercontent.com/IBM/aspera-cli/main/examples/dascli) :
 
-> If you have installed <%=tool%>, the script `dascli` can also be found: `cp $(ascli conf gem path)/../examples/dascli <%=cmd%>`
+> If you have installed <%=tool%>, the script `dascli` can also be found: `cp $(<%=cmd%> conf gem path)/../examples/dascli <%=cmd%>`
 
 Note that <%=cmd%> is run inside the container, so transfers are also executed inside the container and do not have access to host storage by default.
 
@@ -219,8 +219,8 @@ To add local storage as a volume, you can use the env var `docker_args`:
 Example of use:
 
 ```bash
-curl -o ascli https://raw.githubusercontent.com/IBM/aspera-cli/main/examples/dascli
-chmod a+x ascli
+curl -o <%=cmd%> https://raw.githubusercontent.com/IBM/aspera-cli/main/examples/dascli
+chmod a+x <%=cmd%>
 export <%=evp%>_HOME=$HOME/.ascliconf
 mkdir -p $<%=evp%>_HOME
 chmod -R 777 $<%=evp%>_HOME
@@ -229,10 +229,10 @@ mkdir -p $xferdir
 chmod -R 777 $xferdir
 export docker_args="--volume $xferdir:/xferfolder"
 
-./ascli conf init
+./<%=cmd%> conf init
 
 touch $xferdir/samplefile
-./ascli server upload /xferfolder/samplefile --to-folder=/Upload
+./<%=cmd%> server upload /xferfolder/samplefile --to-folder=/Upload
 ```
 
 > The local file (`samplefile`) is specified relative to storage view from container (`/xferfolder`) mapped to the host folder `$HOME/xferdir`
@@ -707,7 +707,7 @@ Both `"` and `\` are special characters for JSON and Ruby and can be protected w
 If <%=tool%> is used interractively (a user typing on terminal), it is easy to require the user to type values:
 
 ```bash
-ascli conf echo @ruby:"{'title'=>gets.chomp}" --format=json
+<%=cmd%> conf echo @ruby:"{'title'=>gets.chomp}" --format=json
 ```
 
 `gets` is Ruby's method of terminal input (terminated by `\n`), and `chomp` removes the trailing `\n`.
@@ -1305,7 +1305,7 @@ The vault is used with options `vault` and `vault_password`.
 `vault` defines the vault to be used and shall be a Hash, example:
 
 ```json
-{"type":"system","name":"ascli"}
+{"type":"system","name":"<%=cmd%>"}
 ```
 
 `vault_password` specifies the password for the vault.
@@ -1349,7 +1349,7 @@ Then secrets can be manipulated using commands:
 - `delete`
 
 ```bash
-ascli conf vault create mylabel @json:'{"password":"__value_here__","description":"for this account"}'
+<%=cmd%> conf vault create mylabel @json:'{"password":"__value_here__","description":"for this account"}'
 ```
 
 #### <a id="config_finder"></a>Configuration Finder
@@ -1357,6 +1357,24 @@ ascli conf vault create mylabel @json:'{"password":"__value_here__","description
 When a secret is needed by a sub command, the command can search for existing configurations in the config file.
 
 The lookup is done by comparing the service URL and username (or access key).
+
+#### Securing passwords and secrets
+
+A passwords can be saved in clear in a <%=prst%> together with other account information (URL, username, etc...).
+Example:
+
+```bash
+<%=tool%> conf preset update myconf --url=... --username=... --password=...
+```
+
+For a more secure storage one can do:
+
+```bash
+<%=tool%> conf preset update myconf --url=... --username=... --password=@val:@vault:myconf.password
+<%=tool%> conf vault create myconf @json:'{"password":"__value_here__"}'
+```
+
+> Note: use `@val:` in front of `@vault:` so that the extended value is not evaluated.
 
 ### <a id="private_key"></a>Private Key
 
@@ -2578,23 +2596,23 @@ empty
 
 ### Calling AoC APIs from command line
 
-The command `ascli aoc bearer` can be used to generate an OAuth token suitable to call any AoC API (use the `scope` option to change the scope, default is `user:all`).
+The command `<%=cmd%> aoc bearer` can be used to generate an OAuth token suitable to call any AoC API (use the `scope` option to change the scope, default is `user:all`).
 This can be useful when a command is not yet available.
 
 Example:
 
 ```bash
-curl -s -H "Authorization: $(ascli aoc bearer_token)" 'https://api.ibmaspera.com/api/v1/group_memberships?embed[]=dropbox&embed[]=workspace'|jq -r '.[]|(.workspace.name + " -> " + .dropbox.name)'
+curl -s -H "Authorization: $(<%=cmd%> aoc bearer_token)" 'https://api.ibmaspera.com/api/v1/group_memberships?embed[]=dropbox&embed[]=workspace'|jq -r '.[]|(.workspace.name + " -> " + .dropbox.name)'
 ```
 
 It is also possible to get the bearer token for node, as user or as admin using:
 
 ```bash
-ascli aoc files bearer_token_node /
+<%=cmd%> aoc files bearer_token_node /
 ```
 
 ```bash
-ascli aoc admin res node v4 1234 --secret=_ak_secret_here_ bearer_token_node /
+<%=cmd%> aoc admin res node v4 1234 --secret=_ak_secret_here_ bearer_token_node /
 ```
 
 ### Administration
@@ -3783,19 +3801,19 @@ Other examples:
 - List all shared inboxes
 
 ```javascript
-ascli faspex5 admin res shared list --value=@json:'{"all":true}' --fields=id,name
+<%=cmd%> faspex5 admin res shared list --value=@json:'{"all":true}' --fields=id,name
 ```
 
 - Create Metadata profile
 
 ```javascript
-ascli faspex5 admin res metadata_profiles create --value=@json:'{"name":"the profile","default":false,"title":{"max_length":200,"illegal_chars":[]},"note":{"max_length":400,"illegal_chars":[],"enabled":false},"fields":[{"ordering":0,"name":"field1","type":"text_area","require":true,"illegal_chars":[],"max_length":100},{"ordering":1,"name":"fff2","type":"option_list","require":false,"choices":["opt1","opt2"]}]}'
+<%=cmd%> faspex5 admin res metadata_profiles create --value=@json:'{"name":"the profile","default":false,"title":{"max_length":200,"illegal_chars":[]},"note":{"max_length":400,"illegal_chars":[],"enabled":false},"fields":[{"ordering":0,"name":"field1","type":"text_area","require":true,"illegal_chars":[],"max_length":100},{"ordering":1,"name":"fff2","type":"option_list","require":false,"choices":["opt1","opt2"]}]}'
 ```
 
 - Create a Shared inbox with specific metadata profile
 
 ```javascript
-ascli faspex5 admin res shared create --value=@json:'{"name":"the shared inbox","metadata_profile_id":1}'
+<%=cmd%> faspex5 admin res shared create --value=@json:'{"name":"the shared inbox","metadata_profile_id":1}'
 ```
 
 ## Plugin: IBM Aspera Faspex (4.x)

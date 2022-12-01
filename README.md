@@ -1395,6 +1395,24 @@ When a secret is needed by a sub command, the command can search for existing co
 
 The lookup is done by comparing the service URL and username (or access key).
 
+#### Securing passwords and secrets
+
+A passwords can be saved in clear in a [option preset](#lprt) together with other account information (URL, username, etc...).
+Example:
+
+```bash
+`ascli` conf preset update myconf --url=... --username=... --password=...
+```
+
+For a more secure storage one can do:
+
+```bash
+`ascli` conf preset update myconf --url=... --username=... --password=@val:@vault:myconf.password
+`ascli` conf vault create myconf @json:'{"password":"__value_here__"}'
+```
+
+> Note: use `@val:` in front of `@vault:` so that the extended value is not evaluated.
+
 ### <a id="private_key"></a>Private Key
 
 Some applications allow the user to be authenticated using a private key (Server, AoC, Faspex5, ...).
@@ -2523,7 +2541,7 @@ OPTIONS: global
         --cache-tokens=ENUM          save and reuse Oauth tokens: no, [yes]
 
 COMMAND: config
-SUBCOMMANDS: list overview id preset open documentation genkey gem plugin flush_tokens echo wizard export_to_cli detect coffee ascp email_test smtp_settings proxy_check folder file check_update initdemo vault
+SUBCOMMANDS: list overview lookup id preset open documentation genkey gem plugin flush_tokens echo wizard export_to_cli detect coffee ascp email_test smtp_settings proxy_check folder file check_update initdemo vault
 OPTIONS:
         --value=VALUE                extended value for create, update, list filter
         --property=VALUE             name of property to set

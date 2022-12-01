@@ -586,7 +586,7 @@ module Aspera
               ak_info=@api_node.read("access_keys/#{access_key}")[:data]
               # change API if needed
               if !access_key.eql?('self')
-                secret=config.vault.get(username: access_key)[:secret] #, url: @api_node.params[:base_url] : TODO: better handle vault
+                secret=config.lookup_secret(url: @api_node.params[:base_url], username: access_key, mandatory: true)
                 @api_node.params[:auth][:username]=access_key
                 @api_node.params[:auth][:password]=secret
               end
