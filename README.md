@@ -205,12 +205,12 @@ Some environment variables can be set to alter the behaviour of the script:
 
 | env var     | description                        | default                  | example                  |
 |-------------|------------------------------------|--------------------------|--------------------------|
-| ASCLI_HOME  | configuration folder (persistency) | `$HOME/.aspera/ascli` | `$HOME/.ascliconfig`     |
+| ASCLI__HOME  | configuration folder (persistency) | `$HOME/.aspera/ascli` | `$HOME/.ascliconfig`     |
 | docker_args | additional options to `docker`     | &lt;empty&gt;            | `--volume /Users:/Users` |
 | image       | container image name               | martinlaurent/ascli      |                          |
 | version     | container image version            | latest                   | `4.8.0.pre`              |
 
-The wrapping script maps the folder `$ASCLI_HOME` on host to `/home/cliuser/.aspera/ascli` in the container.
+The wrapping script maps the folder `$ASCLI__HOME` on host to `/home/cliuser/.aspera/ascli` in the container.
 (value expected in the container).
 This allows having persistent configuration on the host.
 
@@ -221,9 +221,9 @@ Example of use:
 ```bash
 curl -o ascli https://raw.githubusercontent.com/IBM/aspera-cli/main/examples/dascli
 chmod a+x ascli
-export ASCLI_HOME=$HOME/.ascliconf
-mkdir -p $ASCLI_HOME
-chmod -R 777 $ASCLI_HOME
+export ASCLI__HOME=$HOME/.ascliconf
+mkdir -p $ASCLI__HOME
+chmod -R 777 $ASCLI__HOME
 export xferdir=$HOME/xferdir
 mkdir -p $xferdir
 chmod -R 777 $xferdir
@@ -1333,66 +1333,67 @@ ascli shares repo browse /
 
 ### <a id="vault"></a>Secret Vault
 
-When a secret or password is needed, it is possible to store in the secret vault.
+Password and secrets are command options.
+They can be provided on command line, env vars, files etc.
+A more secure option is to retrieve values from a secret vault.
 
-By default the vault is defined using option `secrets`, which can be stored in the configuration file.
+The vault is used with options `vault` and `vault_password`.
 
-#### Using system keychain
+`vault` defines the vault to be used and shall be a Hash, example:
 
-Only on macOS.
+```json
+{"type":"system","name":"ascli"}
+```
 
-It is possible to store secrets in macOS keychain (only read supported currently).
+`vault_password` specifies the password for the vault.
+Although it can be specified on command line, for security reason you can hide the value.
+For example it can be specified on command line like this:
 
-Set option `secrets` to value `system` to use the default keychain or use value `system:[name]` to use a custom keychain.
+```bash
+export ASCLI_VAULT_PASSWORD
+read -s ASCLI_VAULT_PASSWORD
+```
 
-#### Modern config file format: encrypted in config file
+#### Vault: System keychain
 
-It is possible to store and use secrets encrypted.
+> **macOS only**
+
+It is possible to manage secrets in macOS keychain (only read supported currently).
+
+```json
+--vault=@json:'{"type":"system","name":"ascli"}'
+```
+
+#### Vault: Encrypted file
+
+It is possible to store and use secrets encrypted in a file.
+
+```json
+--vault=@json:'{"type":"file","name":"vault.bin"}'
+```
+
+`name` is the file path, absolute or relative to the config folder `ASCLI__HOME`.
+
+#### Vault: Operations
+
 For this use the `config vault` command.
-
-The vault can be initialized with `config vault init`
 
 Then secrets can be manipulated using commands:
 
-- `set`
-- `get`
+- `create`
+- `show`
 - `list`
 - `delete`
 
-Secrets must be uniquely identified by `url` and `username`. An optional description can be provided using option `value`.
-
-#### Legacy config file format
-
-THIS FORMAT WILL BE DEPRECATED
-
-The value provided can be a Hash, where keys are usernames (or access key id), and values are the associated password or secrets in clear.
-
-For example, choose a repository name, for example `my_secrets`, and populate it like this:
-
 ```bash
-ascli conf id my_secrets set 'access_key1' 'secret1'
-
-ascli conf id my_secrets set 'access_key2' 'secret2'
-
-ascli conf id default get config
-
-cli_default
+ascli conf vault create mylabel @json:'{"password":"__value_here__","description":"for this account"}'
 ```
 
-Here above, one has already set a `config` global preset to preset `cli_default` (refer to earlier in documentation).
-So the repository can be read by default like this (note the prefix `@val:` to avoid the evaluation of prefix `@preset:`):
+#### <a id="config_finder"></a>Configuration Finder
 
-```bash
-ascli conf id cli_default set secrets @val:@preset:my_secrets
-```
+When a secret is needed by a sub command, the command can search for existing configurations in the config file.
 
-A secret repository can always be selected at runtime using `--secrets=@preset:xxxx`, or `--secrets=@json:'{"accesskey1":"secret1"}'`
-
-To test if a secret can be found use:
-
-```bash
-ascli conf vault get --username=access_key1
-```
+The lookup is done by comparing the service URL and username (or access key).
 
 ### <a id="private_key"></a>Private Key
 
@@ -2487,7 +2488,7 @@ COMMANDS
 OPTIONS
         Options begin with a '-' (minus), and value is provided on command line.
         Special values are supported beginning with special prefix @pfx:, where pfx is one of:
-        base64, json, zlib, ruby, csvt, lines, list, incps, val, file, path, env, uri, stdin, preset
+        base64, json, zlib, ruby, csvt, lines, list, incps, vault, val, file, path, env, uri, stdin, preset
         Dates format is 'DD-MM-YY HH:MM:SS', or 'now' or '-<num>h'
 
 ARGS
@@ -2537,19 +2538,20 @@ OPTIONS:
         --test-mode=ENUM             Wizard: skip private key check step: [no], yes
     -P, --presetVALUE                load the named option preset from current config file
         --pkeypath=VALUE             Wizard: path to private key for JWT
-        --ascp-path=VALUE            path to ascp
-        --use-product=VALUE          use ascp from specified product
-        --smtp=VALUE                 smtp configuration (extended value: hash)
-        --fpac=VALUE                 proxy auto configuration script
-        --proxy-credentials=VALUE    http proxy credentials: user:pass
-        --secret=VALUE               default secret
-        --secrets=VALUE              secret vault
+        --ascp-path=VALUE            Path to ascp
+        --use-product=VALUE          Use ascp from specified product
+        --smtp=VALUE                 SMTP configuration (extended value: hash)
+        --fpac=VALUE                 Proxy auto configuration script
+        --proxy-credentials=VALUE    HTTP proxy credentials (Array with user and password)
+        --secret=VALUE               Secret for access keys
+        --vault=VALUE                Vault for secrets
+        --vault-password=VALUE       Vault password
         --sdk-url=VALUE              URL to get SDK
         --sdk-folder=VALUE           SDK folder path
-        --notif-to=VALUE             email recipient for notification of transfers
-        --notif-template=VALUE       email ERB template for notification of transfers
-        --version-check-days=VALUE   period in days to check new version (zero to disable)
-        --plugin-folder=VALUE        folder where to find additional plugins
+        --notif-to=VALUE             Email recipient for notification of transfers
+        --notif-template=VALUE       Email ERB template for notification of transfers
+        --version-check-days=VALUE   Period in days to check new version (zero to disable)
+        --plugin-folder=VALUE        Folder where to find additional plugins
         --ts=VALUE                   override transfer spec values (Hash, use @json: prefix), current={"create_dir"=>true}
         --local-resume=VALUE         set resume policy (Hash, use @json: prefix), current=
         --to-folder=VALUE            destination folder for transfered files
@@ -3105,6 +3107,7 @@ If the command returns an error, example:
 |    | request_id: b0f45d5b-c00a-4711-acef-72b633f8a6ea                                  |
 |    | api.ibmaspera.com 422 Unprocessable Entity                                        |
 +----+-----------------------------------------------------------------------------------+```
+```
 
 Well, remove the offending parameters and try again.
 
@@ -3112,15 +3115,15 @@ Note that some properties that are shown in the web UI, such as membership, are 
 
 #### Access Key secrets
 
-In order to access some administrative actions on "nodes" (in fact, access keys), the associated secret is required.
-It is usually provided using the `secret` option.
+In order to access some administrative actions on **nodes** (in fact, access keys), the associated secret is required.
+The secret is provided using the `secret` option.
 For example in a command like:
 
 ```bash
 ascli aoc admin res node --id=123 --secret="secret1" v3 info
 ```
 
-It is also possible to provide a set of secrets used on a regular basis using the [secret vault](#vault).
+It is also possible to store secrets in the [secret vault](#vault) and then automatically find the related secret using the [config finder](#config_finder).
 
 #### Activity
 
@@ -3498,7 +3501,9 @@ So, for example, the creation of a node using ATS in IBM Cloud looks like (see o
   ascli aoc admin ats access_key create --cloud=softlayer --region=eu-de --params=@json:'{"storage":{"type":"ibm-s3","bucket":"mybucket","credentials":{"access_key_id":"mykey","secret_access_key":"mysecret"},"path":"/"}}'
   ```
 
-  Once executed, the access key `id` and `secret`, randomly generated by the node api, is displayed: take note of it as the secrets will not be disclosed again.
+  Once executed, the access key `id` and `secret`, randomly generated by the node api, is displayed.
+  
+  > Note: Once returned by the API, the secret will not be available anymore, so store this preciously. ATS secrets can only be reset by asking to IBM support.
 
 - Create the AoC node entity
 

@@ -3,6 +3,7 @@
 require 'aspera/fasp/transfer_spec'
 require 'aspera/cli/listener/logger'
 require 'aspera/cli/listener/progress_multi'
+require 'aspera/cli/info'
 
 module Aspera
   module Cli
@@ -230,7 +231,7 @@ module Aspera
         global_status = self.class.session_status(statuses)
         email_vars = {
           global_transfer_status: global_status,
-          subject:                "ascli transfer: #{global_status}",
+          subject:                "#{PROGRAM_NAME} transfer: #{global_status}",
           body:                   "Transfer is: #{global_status}",
           ts:                     transfer_spec
         }

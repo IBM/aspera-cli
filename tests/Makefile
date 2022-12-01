@@ -928,11 +928,19 @@ $(T)conf_over: $(T).exists
 	$(EXETESTC) config ascp use /usr/bin/ascp
 	@touch $@
 $(T)conf_vault: $(T).exists
-	$(EXETESTC) config vault init --value=config
-	$(EXETESTC) config vault set --url=https://example.com --username=toto --value="my prefered secret" 12345678
-	$(EXETESTC) config vault list
-	$(EXETESTC) config vault get --url=https://example.com --username=toto
-	$(EXETESTC) config vault delete --url=https://example.com --username=toto
+	set -x;\
+	vault_file=$(DIR_TMP)/sample_vault.bin;\
+	rm -f $$vault_file;\
+	export ASCLI_VAULT_PASSWORD=_simple_one_;\
+	export ASCLI_VAULT=@json:'{"type":"file","name":"'"$${vault_file}"'"}';\
+	$(EXETESTC) config vault create mylabel @json:'{"password":"_something_","description":"super"}';\
+	$(EXETESTC) config vault list;\
+	$(EXETESTC) config vault show mylabel;\
+	new_pass=_other_one_;\
+	$(EXETESTC) config vault password $${new_pass};\
+	export ASCLI_VAULT_PASSWORD=$${new_pass};\
+	$(EXETESTC) config vault list;\
+	$(EXETESTC) config vault delete mylabel
 	@touch $@
 $(T)conf_help: $(T).exists
 	@echo $@

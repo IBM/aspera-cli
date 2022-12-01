@@ -4,6 +4,7 @@ require 'aspera/cli/basic_auth_plugin'
 require 'aspera/cli/extended_value'
 require 'aspera/cli/version'
 require 'aspera/cli/formater'
+require 'aspera/cli/info'
 require 'aspera/fasp/installation'
 require 'aspera/fasp/parameters'
 require 'aspera/fasp/transfer_spec'
@@ -37,7 +38,6 @@ module Aspera
         CONF_PRESET_VERSION = 'version'
         CONF_PRESET_DEFAULT = 'default'
         CONF_PRESET_GLOBAL = 'global_common_defaults'
-        CONF_PRESET_SECRETS = 'default_secrets' # pragma: allowlist secret
         CONF_PLUGIN_SYM = :config # Plugins::Config.name.split('::').last.downcase.to_sym
         CONF_GLOBAL_SYM = :config
         # old tool name
@@ -62,13 +62,14 @@ module Aspera
         EMAIL_TEST_TEMPLATE = <<~END_OF_TEMPLATE
           From: <%=from_name%> <<%=from_email%>>
           To: <<%=to%>>
-          Subject: aspera-cli email test
+          Subject: #{GEM_NAME} email test
 
-          This email was sent to test ascli.
+          This email was sent to test #{PROGRAM_NAME}.
         END_OF_TEMPLATE
         # special extended values
         EXTV_INCLUDE_PRESETS = :incps
         EXTV_PRESET = :preset
+        EXTV_VAULT = :vault
         PRESET_DIG_SEPARATOR = '.'
         DEFAULT_CHECK_NEW_VERSION_DAYS = 7
         DEFAULT_PRIV_KEY_FILENAME = 'aspera_aoc_key' # pragma: allowlist secret
@@ -77,7 +78,7 @@ module Aspera
           :CONF_PRESET_GLOBAL,:PROGRAM_NAME_V1,:PROGRAM_NAME_V2,:DEFAULT_REDIRECT,:ASPERA_PLUGINS_FOLDERNAME,
           :RUBY_FILE_EXT,:AOC_COMMAND_V1,:AOC_COMMAND_V2,:AOC_COMMAND_V3,:AOC_COMMAND_CURRENT,:DEMO,
           :TRANSFER_SDK_ARCHIVE_URL,:AOC_PATH_API_CLIENTS,:DEMO_SERVER_PRESET,:EMAIL_TEST_TEMPLATE,:EXTV_INCLUDE_PRESETS,
-          :EXTV_PRESET,:DEFAULT_CHECK_NEW_VERSION_DAYS,:DEFAULT_PRIV_KEY_FILENAME,:SERVER_COMMAND,:CONF_PRESET_SECRETS,
+          :EXTV_PRESET,:EXTV_VAULT,:DEFAULT_CHECK_NEW_VERSION_DAYS,:DEFAULT_PRIV_KEY_FILENAME,:SERVER_COMMAND,
           :PRESET_DIG_SEPARATOR
         def initialize(env,params)
           raise 'env and params must be Hash' unless env.is_a?(Hash) && params.is_a?(Hash)
@@ -107,6 +108,7 @@ module Aspera
           # add preset handler (needed for smtp)
           ExtendedValue.instance.set_handler(EXTV_PRESET,:reader,lambda{|v|preset_by_name(v)})
           ExtendedValue.instance.set_handler(EXTV_INCLUDE_PRESETS,:decoder,lambda{|v|expanded_with_preset_includes(v)})
+          ExtendedValue.instance.set_handler(EXTV_VAULT,:decoder,lambda{|v|vault_value(v)})
           # load defaults before it can be overriden
           add_plugin_default_preset(CONF_GLOBAL_SYM)
           options.parse_options!
@@ -122,19 +124,20 @@ module Aspera
           options.add_opt_boolean(:test_mode,'Wizard: skip private key check step')
           options.add_opt_simple(:preset,'-PVALUE','load the named option preset from current config file')
           options.add_opt_simple(:pkeypath,'Wizard: path to private key for JWT')
-          options.add_opt_simple(:ascp_path,'path to ascp')
-          options.add_opt_simple(:use_product,'use ascp from specified product')
-          options.add_opt_simple(:smtp,'smtp configuration (extended value: hash)')
-          options.add_opt_simple(:fpac,'proxy auto configuration script')
-          options.add_opt_simple(:proxy_credentials,'http proxy credentials: user:pass')
-          options.add_opt_simple(:secret,'default secret')
-          options.add_opt_simple(:secrets,'secret vault')
+          options.add_opt_simple(:ascp_path,'Path to ascp')
+          options.add_opt_simple(:use_product,'Use ascp from specified product')
+          options.add_opt_simple(:smtp,'SMTP configuration (extended value: hash)')
+          options.add_opt_simple(:fpac,'Proxy auto configuration script')
+          options.add_opt_simple(:proxy_credentials,'HTTP proxy credentials (Array with user and password)')
+          options.add_opt_simple(:secret,'Secret for access keys')
+          options.add_opt_simple(:vault,'Vault for secrets')
+          options.add_opt_simple(:vault_password,'Vault password')
           options.add_opt_simple(:sdk_url,'URL to get SDK')
           options.add_opt_simple(:sdk_folder,'SDK folder path')
-          options.add_opt_simple(:notif_to,'email recipient for notification of transfers')
-          options.add_opt_simple(:notif_template,'email ERB template for notification of transfers')
-          options.add_opt_simple(:version_check_days,Integer,'period in days to check new version (zero to disable)')
-          options.add_opt_simple(:plugin_folder,'folder where to find additional plugins')
+          options.add_opt_simple(:notif_to,'Email recipient for notification of transfers')
+          options.add_opt_simple(:notif_template,'Email ERB template for notification of transfers')
+          options.add_opt_simple(:version_check_days,Integer,'Period in days to check new version (zero to disable)')
+          options.add_opt_simple(:plugin_folder,'Folder where to find additional plugins')
           options.set_option(:use_generic_client,true)
           options.set_option(:test_mode,false)
           options.set_option(:default,true)
@@ -936,46 +939,7 @@ module Aspera
             end
             save_presets_to_config_file
             return Main.result_status('Done')
-          when :vault
-            command = options.get_next_command(%i[init list get set delete])
-            case command
-            when :init
-              type = options.get_option(:value)
-              case type
-              when 'config',NilClass
-                raise 'default secrets already exists' if @config_presets.has_key?(CONF_PRESET_SECRETS)
-                @config_presets[CONF_PRESET_SECRETS] = {}
-                set_global_default(:secrets,"@preset:#{CONF_PRESET_SECRETS}")
-              else raise 'no such vault type'
-              end
-              return Main.result_status('Done')
-            when :list
-              return {type: :object_list, data: vault.list}
-            when :set
-              # register url option
-              BasicAuthPlugin.register_options(@agents)
-              username = options.get_option(:username,is_type: :mandatory)
-              url = options.get_option(:url,is_type: :mandatory)
-              description = options.get_option(:value)
-              secret = options.get_next_argument('secret')
-              vault.set(username: username, url: url, description: description, secret: secret)
-              save_presets_to_config_file if vault.is_a?(Keychain::EncryptedHash)
-              return Main.result_status('Done')
-            when :get
-              # register url option
-              BasicAuthPlugin.register_options(@agents)
-              username = options.get_option(:username,is_type: :mandatory)
-              url = options.get_option(:url)
-              result = vault.get(username: username, url: url)
-              return {type: :single_object, data: result}
-            when :delete
-              # register url option
-              BasicAuthPlugin.register_options(@agents)
-              username = options.get_option(:username,is_type: :mandatory)
-              url = options.get_option(:url)
-              vault.delete(username: username, url: url)
-              return Main.result_status('Done')
-            end
+          when :vault then execute_vault
           else raise 'INTERNAL ERROR: wrong case'
           end
         end
@@ -1063,25 +1027,65 @@ module Aspera
           return nil
         end # get_plugin_default_config_name
 
+        ALLOWED_KEYS=%i[password username description].freeze
+        def execute_vault
+          command = options.get_next_command(%i[list show create delete password])
+          case command
+          when :list
+            return {type: :object_list, data: vault.list}
+          when :show
+            return {type: :single_object, data: vault.get(label: options.get_next_argument('label'))}
+          when :create
+            label=options.get_next_argument('label')
+            info=options.get_next_argument('info Hash')
+            raise 'info must be Hash' unless info.is_a?(Hash)
+            info=info.symbolize_keys
+            info[:label]=label
+            vault.set(info)
+            return Main.result_status('Password added')
+          when :delete
+            vault.delete(label: options.get_next_argument('label'))
+            return Main.result_status('Password deleted')
+          when :password
+            raise 'Vault does not support password change' unless vault.respond_to?(:password=)
+            new_password=options.get_next_argument('new_password')
+            vault.password=new_password
+            vault.save
+            return Main.result_status('Password updated')
+          end
+        end
+
+        def vault_value(name)
+          m=name.match(/^(.+)\.(.+)$/)
+          raise 'vault name shall match <name>.<param>' if m.nil?
+          info=vault.get(label: m[1])
+          #raise "no such vault entry: #{m[1]}" if info.nil?
+          value=info[m[2].to_sym]
+          raise "no such entry value: #{m[2]}" if value.nil?
+          return value
+        end
+
         def vault
           if @vault.nil?
-            vault_info = options.get_option(:secrets)
-            case vault_info
-            when Hash
-              @vault = Keychain::EncryptedHash.new(vault_info)
-            when /^system/
-              name = vault_info.start_with?('system:') ? vault_info[7..-1] : nil
+            vault_info = options.get_option(:vault) || {'type'=>'file','name'=>'vault.bin'}
+            vault_password = options.get_option(:vault_password,is_type: :mandatory)
+            raise 'vault must be Hash' unless vault_info.is_a?(Hash)
+            vault_type = vault_info['type'] || 'file'
+            vault_name = vault_info['name'] || (vault_type.eql?('file') ? 'vault.bin' : PROGRAM_NAME)
+            case vault_type
+            when 'file'
+              vault_path=vault_name
+              @vault = Keychain::EncryptedHash.new(vault_path,vault_password)
+            when 'system'
               case Environment.os
               when Environment::OS_X
-                @vault = Keychain::MacosSecurity.new(name)
+                @vault = Keychain::MacosSystem.new(vault_name,vault_password)
               when Environment::OS_WINDOWS,Environment::OS_LINUX,Environment::OS_AIX
                 raise 'not implemented'
-              else raise 'Error'
+              else raise 'Error, OS not supported'
               end
-            when NilClass
-              # keep nil
             else
-              raise CliBadArgument,'secrets shall be Hash'
+              raise CliBadArgument,"Unknown vault type: #{vault_type}"
             end
           end
           raise 'No vault defined' if @vault.nil?

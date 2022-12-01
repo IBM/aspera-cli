@@ -5,6 +5,7 @@
   * new: httpgw transfer agent: support api v2, support transfer through http proxy, including proxy password
   * new: faspex5: get bearer token
   * updates: for docker container version
+  * break: option `secrets` is renamed to `vault`
 
 * 4.9.0
 

@@ -1,134 +1,72 @@
 # frozen_string_literal: true
 
 require 'aspera/hash_ext'
-require 'openssl'
+require 'symmetric_encryption/core'
+require 'yaml'
 
 module Aspera
   module Keychain
-    class SimpleCipher
-      def initialize(key)
-        @key = Digest::SHA1.hexdigest(key+('*'*23))[0..23]
-        @cipher = OpenSSL::Cipher.new('DES-EDE3-CBC')
-      end
-
-      def encrypt(value)
-        @cipher.encrypt
-        @cipher.key = @key
-        s = @cipher.update(value) + @cipher.final
-        s.unpack1('H*')
-      end
-
-      def decrypt(value)
-        @cipher.decrypt
-        @cipher.key = @key
-        s = [value].pack('H*').unpack('C*').pack('c*')
-        @cipher.update(s) + @cipher.final
-      end
-    end
-
     # Manage secrets in a simple Hash
     class EncryptedHash
-      SEPARATOR = '%'
-      ACCEPTED_KEYS = %i[username url secret description].freeze
-      private_constant :SEPARATOR
-      attr_reader :legacy_detected
-      def initialize(values)
-        raise 'values shall be Hash' unless values.is_a?(Hash)
-        @all_secrets = values
+      CIPHER_NAME='aes-256-cbc'
+      ACCEPTED_KEYS = %i[label username password url description].freeze
+      def initialize(path,current_password)
+        @path=path
+        self.password=current_password
+        raise 'path to vault file shall be String' unless @path.is_a?(String)
+        @all_secrets=File.exist?(@path) ? YAML.load_stream(@cipher.decrypt(File.read(@path))).first : {}
       end
 
-      def identifier(options)
-        return options[:username] if options[:url].to_s.empty?
-        %i[url username].map{|s|options[s]}.join(SEPARATOR)
+      def password=(new_password)
+        key_bytes=CIPHER_NAME.split('-')[1].to_i/8
+        # derive key from passphrase
+        key="#{new_password}#{"\x0"*key_bytes}"[0..(key_bytes-1)]
+        Log.log.debug("key=[#{key}],#{key.length}")
+        SymmetricEncryption.cipher=@cipher = SymmetricEncryption::Cipher.new(cipher_name: CIPHER_NAME,key: key,encoding: :none)
+      end
+
+      def save
+        File.write(@path, @cipher.encrypt(YAML.dump(@all_secrets)),encoding: 'BINARY')
       end
 
       def set(options)
         raise 'options shall be Hash' unless options.is_a?(Hash)
         unsupported = options.keys - ACCEPTED_KEYS
         raise "unsupported options: #{unsupported}" unless unsupported.empty?
-        username = options[:username]
-        raise 'options shall have username' if username.nil?
-        url = options[:url]
-        raise 'options shall have username' if url.nil?
-        secret = options[:secret]
-        raise 'options shall have secret' if secret.nil?
-        key = identifier(options)
-        raise "secret #{key} already exist, delete first" if @all_secrets.has_key?(key)
-        obj = {username: username, url: url, secret: SimpleCipher.new(key).encrypt(secret)}
-        obj[:description] = options[:description] if options.has_key?(:description)
-        @all_secrets[key] = obj.stringify_keys
-        nil
+        label = options.delete(:label)
+        raise "secret #{label} already exist, delete first" if @all_secrets.has_key?(label)
+        @all_secrets[label] = options.symbolize_keys
+        save
       end
 
       def list
         result = []
-        legacy_detected=false
-        @all_secrets.each do |name,value|
-          normal = # normalized version
-            case value
-            when String
-              legacy_detected=true
-              {username: name, url: '', secret: value}
-            when Hash then value.symbolize_keys
-            else raise 'error secret must be String (legacy) or Hash (new)'
-            end
-          normal[:description] = '' unless normal.has_key?(:description)
-          extraneous_keys=normal.keys - ACCEPTED_KEYS
-          Log.log.error("wrongs keys in secret hash: #{extraneous_keys.map(&:to_s).join(',')}") unless extraneous_keys.empty?
+        @all_secrets.each do |label,values|
+          normal = values.symbolize_keys
+          normal[:label] = label
+          ACCEPTED_KEYS.each{|k|normal[k] = '' unless normal.has_key?(k)}
           result.push(normal)
         end
-        Log.log.warn('Legacy vault format detected in config file, please refer to documentation to convert to new format.') if legacy_detected
         return result
       end
 
       def delete(options)
         raise 'options shall be Hash' unless options.is_a?(Hash)
-        unsupported = options.keys - %i[username url]
+        unsupported = options.keys - %i[label]
         raise "unsupported options: #{unsupported}" unless unsupported.empty?
-        username = options[:username]
-        raise 'options shall have username' if username.nil?
-        url = options[:url]
-        key = nil
-        if !url.nil?
-          extk = identifier(options)
-          key = extk if @all_secrets.has_key?(extk)
-        end
-        # backward compatibility: TODO: remove in future ? (make url mandatory ?)
-        key = username if key.nil? && @all_secrets.has_key?(username)
-        raise 'no such secret' if key.nil?
-        @all_secrets.delete(key)
+        label=options[:label]
+        @all_secrets.delete(label)
+        save
       end
 
       def get(options)
         raise 'options shall be Hash' unless options.is_a?(Hash)
-        unsupported = options.keys - %i[username url]
+        unsupported = options.keys - %i[label]
         raise "unsupported options: #{unsupported}" unless unsupported.empty?
-        username = options[:username]
-        raise 'options shall have username' if username.nil?
-        url = options[:url]
-        info = nil
-        if !url.nil?
-          info = @all_secrets[identifier(options)]
-        end
-        # backward compatibility: TODO: remove in future ? (make url mandatory ?)
-        if info.nil?
-          info = @all_secrets[username]
-        end
-        result = options.clone
-        case info
-        when NilClass
-          raise "no such secret: [#{url}|#{username}] in #{@all_secrets.keys.join(',')}"
-        when String
-          result[:secret] = info
-          result[:description] = ''
-        when Hash
-          info=info.symbolize_keys
-          key = identifier(options)
-          plain = SimpleCipher.new(key).decrypt(info[:secret]) rescue info[:secret]
-          result[:secret] = plain
-          result[:description] = info[:description]
-        else raise "#{info.class} is not an expected type"
-        end
+        label=options[:label]
+        result = @all_secrets[label].clone
+        raise "no such entry #{label}" if result.nil?
+        result[:label]=label
         return result
       end
     end
