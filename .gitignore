@@ -24,3 +24,4 @@ simplecov.log
 .settings
 /.vscode/
 nameversion.mak
+/vendor

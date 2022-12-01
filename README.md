@@ -2,7 +2,7 @@
 
 [comment1]: # (Do not edit this README.md, edit docs/README.erb.md, for details, read docs/README.md)
 
-Version : 4.10.0
+Version : 4.11.0
 
 Laurent/2016-2022
 
@@ -77,7 +77,7 @@ ascli --version
 ```
 
 ```bash
-4.10.0
+4.11.0
 ```
 
 ### First use
@@ -2465,7 +2465,7 @@ ascli server upload "faux:///mydir?file=testfile&count=1m&size=0&inc=2&seq=seque
 ```text
 ascli -h
 NAME
-        ascli -- a command line tool for Aspera Applications (v4.10.0)
+        ascli -- a command line tool for Aspera Applications (v4.11.0)
 
 SYNOPSIS
         ascli COMMANDS [OPTIONS] [ARGS]
