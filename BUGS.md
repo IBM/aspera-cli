@@ -16,5 +16,5 @@ Please, make sure to include the following information:
 
 | Version | Supported          |
 | ------- | ------------------ |
-| 4.x     | :white_check_mark: |
+| >= 4.0  | :white_check_mark: |
 | < 4.0   | :x:                |
