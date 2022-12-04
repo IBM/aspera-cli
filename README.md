@@ -2,7 +2,7 @@
 
 [comment1]: # (Do not edit this README.md, edit docs/README.erb.md, for details, read docs/README.md)
 
-Version : 4.11.0
+Version : 4.10.1
 
 Laurent/2016-2022
 
@@ -77,7 +77,7 @@ ascli --version
 ```
 
 ```bash
-4.11.0
+4.10.1
 ```
 
 ### First use
@@ -184,7 +184,7 @@ An internet connection is required for the installation. If you don't have inter
 
 ### Docker container
 
-This method installs a docker image that contains: Ruby, `ascli` and the FASP SDK.
+This method installs a docker image that contains: Ruby, `ascli` and the Aspera Transfer SDK.
 
 The image is: <https://hub.docker.com/r/martinlaurent/ascli>.
 It is built from this [Dockerfile](Dockerfile).
@@ -197,20 +197,20 @@ docker --version
 
 Download the script [`dascli`](../examples/dascli) from [the GIT repo](https://raw.githubusercontent.com/IBM/aspera-cli/main/examples/dascli) :
 
-> If you have installed `ascli`, the script `dascli` can also be found: `cp $(ascli conf gem path)/../examples/dascli ascli`
+> Note: If you have installed `ascli`, the script `dascli` can also be found: `cp $(ascli conf gem path)/../examples/dascli ascli`
 
 Note that ascli is run inside the container, so transfers are also executed inside the container and do not have access to host storage by default.
 
-Some environment variables can be set to alter the behaviour of the script:
+Some environment variables can be set to adapt the behaviour of the script:
 
-| env var     | description                        | default                  | example                  |
-|-------------|------------------------------------|--------------------------|--------------------------|
-| ASCLI__HOME  | configuration folder (persistency) | `$HOME/.aspera/ascli` | `$HOME/.ascliconfig`     |
-| docker_args | additional options to `docker`     | &lt;empty&gt;            | `--volume /Users:/Users` |
-| image       | container image name               | martinlaurent/ascli      |                          |
-| version     | container image version            | latest                   | `4.8.0.pre`              |
+| env var      | description                        | default                  | example                  |
+|--------------|------------------------------------|--------------------------|--------------------------|
+| ASCLI_HOME | configuration folder (persistency) | `$HOME/.aspera/ascli` | `$HOME/.ascliconfig`     |
+| docker_args  | additional options to `docker`     | &lt;empty&gt;            | `--volume /Users:/Users` |
+| image        | container image name               | martinlaurent/ascli      |                          |
+| version      | container image version            | latest                   | `4.8.0.pre`              |
 
-The wrapping script maps the folder `$ASCLI__HOME` on host to `/home/cliuser/.aspera/ascli` in the container.
+The wrapping script maps the folder `$ASCLI_HOME` on host to `/home/cliuser/.aspera/ascli` in the container.
 (value expected in the container).
 This allows having persistent configuration on the host.
 
@@ -221,9 +221,7 @@ Example of use:
 ```bash
 curl -o ascli https://raw.githubusercontent.com/IBM/aspera-cli/main/examples/dascli
 chmod a+x ascli
-export ASCLI__HOME=$HOME/.ascliconf
-mkdir -p $ASCLI__HOME
-chmod -R 777 $ASCLI__HOME
+export ASCLI_HOME=$HOME/.ascli
 export xferdir=$HOME/xferdir
 mkdir -p $xferdir
 chmod -R 777 $xferdir
@@ -235,7 +233,7 @@ touch $xferdir/samplefile
 ./ascli server upload /xferfolder/samplefile --to-folder=/Upload
 ```
 
-> The local file (`samplefile`) is specified relative to storage view from container (`/xferfolder`) mapped to the host folder `$HOME/xferdir`
+> Note: The local file (`samplefile`) is specified relative to storage view from container (`/xferfolder`) mapped to the host folder `$HOME/xferdir`
 
 ### <a id="ruby"></a>Ruby
 
@@ -1356,7 +1354,7 @@ read -s ASCLI_VAULT_PASSWORD
 
 #### Vault: System keychain
 
-> **macOS only**
+> Note: **macOS only**
 
 It is possible to manage secrets in macOS keychain (only read supported currently).
 
@@ -1372,7 +1370,7 @@ It is possible to store and use secrets encrypted in a file.
 --vault=@json:'{"type":"file","name":"vault.bin"}'
 ```
 
-`name` is the file path, absolute or relative to the config folder `ASCLI__HOME`.
+`name` is the file path, absolute or relative to the config folder `ASCLI_HOME`.
 
 #### Vault: Operations
 
@@ -1916,7 +1914,7 @@ For example the option `--ts=@json:'{"EX_ascp_args":["-DDL-"]}'` will activate d
 This is useful if the transfer fails.
 To store ascp logs in file `aspera-scp-transfer.log` in a folder, use `--ts=@json:'{"EX_ascp_args":["-L","/path/to/folder"]}'`.
 
-> Implementation note: when transfer agent [`direct`](#agt_direct) is used, the list of files to transfer is provided to `ascp` using either `--file-list` or `--file-pair-list` and a file list (or pair) file generated in a temporary folder. (unless `--file-list` or `--file-pair-list` is provided in option `ts` in `EX_ascp_args`).
+> Note: Implementation note: when transfer agent [`direct`](#agt_direct) is used, the list of files to transfer is provided to `ascp` using either `--file-list` or `--file-pair-list` and a file list (or pair) file generated in a temporary folder. (unless `--file-list` or `--file-pair-list` is provided in option `ts` in `EX_ascp_args`).
 
 In addition to standard methods described in section [File List](#file_list), it is possible to specify the list of file using those additional methods:
 
@@ -1932,11 +1930,11 @@ In addition to standard methods described in section [File List](#file_list), it
 --sources=@ts --ts=@json:'{"EX_ascp_args":["--file-list","myfilelist"]}'
 ```
 
-> File lists is shown here, there are also similar options for file pair lists.
+> Note: File lists is shown here, there are also similar options for file pair lists.
 
-> Those 2 additional methods avoid the creation of a copy of the file list: if the standard options `--sources=@lines:@file:... --src-type=...` are used, then the file is list read and parsed, and a new file list is created in a temporary folder.
+> Note: Those 2 additional methods avoid the creation of a copy of the file list: if the standard options `--sources=@lines:@file:... --src-type=...` are used, then the file is list read and parsed, and a new file list is created in a temporary folder.
 
-> Those methods have limitations: they apply **only** to the [`direct`](#agt_direct) transfer agent (i.e. local `ascp`) and not for Aspera on Cloud.
+> Note: Those methods have limitations: they apply **only** to the [`direct`](#agt_direct) transfer agent (i.e. local `ascp`) and not for Aspera on Cloud.
 
 #### <a id="agt_connect"></a>IBM Aspera Connect Client GUI
 
@@ -1983,7 +1981,7 @@ Example:
 ascli faspex package recv --id=323 --transfer=httpgw --transfer-info=@json:'{"url":"https://asperagw.example.com:9443/aspera/http-gwy/v1"}'
 ```
 
-> The gateway only supports transfers authorized with a token.
+> Note: The gateway only supports transfers authorized with a token.
 
 #### <a id="agt_trsdk"></a>Transfer SDK
 
@@ -2246,7 +2244,7 @@ Example: Source file `200KB.1` is renamed `sample1` on destination:
 ascli server upload --src-type=pair ~/Documents/Samples/200KB.1 /Upload/sample1
 ```
 
-> Note there are some specific rules to specify file list when using "Aspera on Cloud", refer to the AoC plugin section.
+> Note: There are some specific rules to specify a file list when using **Aspera on Cloud**, refer to the AoC plugin section.
 
 #### <a id="multisession"></a>Support of multi-session
 
@@ -2483,7 +2481,7 @@ ascli server upload "faux:///mydir?file=testfile&count=1m&size=0&inc=2&seq=seque
 ```text
 ascli -h
 NAME
-        ascli -- a command line tool for Aspera Applications (v4.11.0)
+        ascli -- a command line tool for Aspera Applications (v4.10.1)
 
 SYNOPSIS
         ascli COMMANDS [OPTIONS] [ARGS]
@@ -2541,14 +2539,14 @@ OPTIONS: global
         --cache-tokens=ENUM          save and reuse Oauth tokens: no, [yes]
 
 COMMAND: config
-SUBCOMMANDS: list overview lookup id preset open documentation genkey gem plugin flush_tokens echo wizard export_to_cli detect coffee ascp email_test smtp_settings proxy_check folder file check_update initdemo vault
+SUBCOMMANDS: list overview lookup secure id preset open documentation genkey gem plugin flush_tokens echo wizard export_to_cli detect coffee ascp email_test smtp_settings proxy_check folder file check_update initdemo vault
 OPTIONS:
         --value=VALUE                extended value for create, update, list filter
         --property=VALUE             name of property to set
         --id=VALUE                   resource identifier (modify,delete,show)
         --bulk=ENUM                  Bulk operation (only some): [no], yes
         --bfail=ENUM                 Bulk operation error handling: [no], yes
-        --config-file=VALUE          read parameters from file in YAML format, current=/usershome/.aspera/ascli/config.yaml
+        --config-file=VALUE          read parameters from file in YAML format, current=/Users/laurent/.ascli/config.yaml
     -N, --no-default                 do not load default configuration for plugin
         --override=ENUM              Wizard: override existing value: [no], yes
         --use-generic-client=ENUM    Wizard: AoC: use global or org specific jwt client id: [no], yes
@@ -2820,7 +2818,7 @@ ascli config wizard --value=aoc
 
 ### <a id="aocmanual"></a>Configuration: using manual setup
 
-> If you used the wizard (recommended): skip this section.
+> Note: If you used the wizard (recommended): skip this section.
 
 #### Configuration details
 
@@ -4324,7 +4322,7 @@ Then use these options:
 --private-key=@file:.../path/to/key.pem
 ```
 
-> The `private_key` option must contain the PEM value of the private key which can be read from a file using the modifier: `@file:`, e.g. `@file:/path/to/key.pem`.
+> Note: The `private_key` option must contain the PEM value of the private key which can be read from a file using the modifier: `@file:`, e.g. `@file:/path/to/key.pem`.
 
 ### Faspex 5 web authentication
 
@@ -4366,7 +4364,7 @@ Most commands are directly REST API calls.
 Parameters to commandsa are carried through option `value`, as extended value.
 Usually using JSON format with prefix `@json:`.
 
-> The API is listed in [Faspex 5 API Reference](https://developer.ibm.com/apis/catalog?search="faspex+5") under **IBM Aspera Faspex API**.
+> Note: The API is listed in [Faspex 5 API Reference](https://developer.ibm.com/apis/catalog?search="faspex+5") under **IBM Aspera Faspex API**.
 
 ```bash
 faspex5 admin res accounts list
@@ -5302,9 +5300,10 @@ Note that:
 #### server side and configuration
 
 Virtually any transfer on a "repository" on a regular basis might emulate a hot folder.
-> file detection is not based on events (inotify, etc...), but on a simple folder scan on source side.
 
-> parameters may be saved in a [option preset](#lprt) and used with `-P`.
+> Note: file detection is not based on events (inotify, etc...), but on a simple folder scan on source side.
+
+> Note: parameters may be saved in a [option preset](#lprt) and used with `-P`.
 
 #### Scheduling
 
