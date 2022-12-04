@@ -679,7 +679,7 @@ module Aspera
         end
 
         # legacy actions available globally
-        PRESET_GBL_ACTIONS = %i[list overview lookup].freeze
+        PRESET_GBL_ACTIONS = %i[list overview lookup secure].freeze
         # require existing preset
         PRESET_EXST_ACTIONS = %i[show delete get unset].freeze
         # require id
@@ -764,6 +764,31 @@ module Aspera
             result=lookup_preset(url: url, username: user)
             raise 'no such config found' if result.nil?
             return {type: :single_object, data: result}
+          when :secure
+            identifier=options.get_next_argument('config name',mandatory: false)
+            preset_names = identifier.nil? ? @config_presets.keys : [identifier]
+            secret_keywords=%w[password secret].freeze
+            preset_names.each do |pset_name|
+              preset=@config_presets[pset_name]
+              next unless preset.is_a?(Hash)
+              preset.keys.each do |option_name|
+                secret_keywords.each do |keyword|
+                  next unless option_name.end_with?(keyword)
+                  vault_label=pset_name
+                  incr=0
+                  while !vault.get(label: vault_label, exception: false).nil?
+                    vault_label="#{pset_name}#{incr}"
+                    incr+=1
+                  end
+                  to_set={label: vault_label, password: preset[option_name]}
+                  puts "need to encode #{pset_name}.#{option_name} -> #{vault_label} -> #{to_set}"
+                  #to_copy=%i[]
+                  vault.set(to_set)
+                  preset[option_name]="@vault:#{vault_label}.password"
+                end
+              end
+            end
+            return Main.result_status('Secrets secured in vault: Make sure to save the vault password securely.')
           end
         end
 
@@ -1084,7 +1109,7 @@ module Aspera
             vault_name = vault_info['name'] || (vault_type.eql?('file') ? 'vault.bin' : PROGRAM_NAME)
             case vault_type
             when 'file'
-              vault_path=vault_name
+              vault_path=File.absolute_path?(vault_name) ? vault_name : File.join(@main_folder,vault_name)
               @vault = Keychain::EncryptedHash.new(vault_path,vault_password)
             when 'system'
               case Environment.os

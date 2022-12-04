@@ -9,7 +9,7 @@ module Aspera
     # Manage secrets in a simple Hash
     class EncryptedHash
       CIPHER_NAME='aes-256-cbc'
-      ACCEPTED_KEYS = %i[label username password url description].freeze
+      CONTENT_KEYS = %i[label username password url description].freeze
       def initialize(path,current_password)
         @path=path
         self.password=current_password
@@ -31,7 +31,8 @@ module Aspera
 
       def set(options)
         raise 'options shall be Hash' unless options.is_a?(Hash)
-        unsupported = options.keys - ACCEPTED_KEYS
+        unsupported = options.keys - CONTENT_KEYS
+        options.values.each {|v| raise 'value must be String' unless v.is_a?(String)}
         raise "unsupported options: #{unsupported}" unless unsupported.empty?
         label = options.delete(:label)
         raise "secret #{label} already exist, delete first" if @all_secrets.has_key?(label)
@@ -44,29 +45,21 @@ module Aspera
         @all_secrets.each do |label,values|
           normal = values.symbolize_keys
           normal[:label] = label
-          ACCEPTED_KEYS.each{|k|normal[k] = '' unless normal.has_key?(k)}
+          CONTENT_KEYS.each{|k|normal[k] = '' unless normal.has_key?(k)}
           result.push(normal)
         end
         return result
       end
 
-      def delete(options)
-        raise 'options shall be Hash' unless options.is_a?(Hash)
-        unsupported = options.keys - %i[label]
-        raise "unsupported options: #{unsupported}" unless unsupported.empty?
-        label=options[:label]
+      def delete(label:)
         @all_secrets.delete(label)
         save
       end
 
-      def get(options)
-        raise 'options shall be Hash' unless options.is_a?(Hash)
-        unsupported = options.keys - %i[label]
-        raise "unsupported options: #{unsupported}" unless unsupported.empty?
-        label=options[:label]
-        result = @all_secrets[label].clone
-        raise "no such entry #{label}" if result.nil?
-        result[:label]=label
+      def get(label:, exception: true)
+        raise "Label not found: #{label}" unless @all_secrets.has_key?(label) || !exception
+        result=@all_secrets[label].clone
+        result[:label]=label if result.is_a?(Hash)
         return result
       end
     end
