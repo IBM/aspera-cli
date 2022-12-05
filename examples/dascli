@@ -27,4 +27,4 @@ exec $docker run \
 --volume "$ASCLI_HOME:$ascli_home_container" \
 "${add_dock_args[@]}" \
 $imgtag \
-ascli "$@"
+"$@"
