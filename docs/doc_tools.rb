@@ -34,6 +34,9 @@ def trspec;'[*transfer-spec*](#transferspec)';end
 # in title
 def prstt;opprst.capitalize;end
 
+# container image in dockerhub
+def containerimage;'martinlaurent/ascli';end
+
 def gemspec;Gem::Specification.load(@env[:GEMSPEC]) || raise("error loading #{@env[:GEMSPEC]}");end
 
 def geminstadd;/\.[^0-9]/.match?(gemspec.version.to_s) ? ' --pre' : '';end
@@ -46,7 +49,7 @@ def spec_table
     r << '<th>' << c.to_s.upcase << '</th>'
   end
   r << '<th>Description</th></tr>' << "\n"
-  Aspera::Fasp::Parameters.man_table.sort_by { |a| a[:name] }.each do |p|
+  Aspera::Fasp::Parameters.man_table(to_text: false).sort_by { |a| a[:name] }.each do |p|
     p[:description] += (p[:description].empty? ? '' : "\n") + '(' + p[:cli] + ')' unless p[:cli].to_s.empty?
     p.delete(:cli)
     p.keys.each{|c|p[c] = '&nbsp;' if p[c].to_s.empty?}

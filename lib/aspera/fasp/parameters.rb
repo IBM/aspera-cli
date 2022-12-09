@@ -38,7 +38,7 @@ module Aspera
         end
 
         # @return a table suitable to display in manual
-        def man_table
+        def man_table(to_text: true)
           result = []
           description.each do |k,i|
             param = {name: k, type: [i[:accepted_types]].flatten.join(','),description: i[:desc]}
@@ -69,6 +69,7 @@ module Aspera
             if i.has_key?(:enum)
               param[:description] += "\nAllowed values: #{i[:enum].join(', ')}"
             end
+            param[:description]=param[:description].gsub('&sol;','/') if to_text
             result.push(param)
           end
           return result

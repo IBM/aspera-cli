@@ -11,7 +11,7 @@ MANUAL_PDF=$(MANUAL_BASE).pdf
 MANUAL_HTML=$(MANUAL_BASE).html
 
 # main target to build doc
-all:: $(DIR_TOP).gems_checked $(MANUAL_PDF) $(TMPL_CONF_FILE_PATH)
+all:: $(DIR_TOP).gems_checked $(MANUAL_PDF) $(MANUAL_HTML) $(TMPL_CONF_FILE_PATH)
 
 doc: all
 
@@ -19,9 +19,11 @@ doc: all
 $(TMPL_CONF_FILE_PATH): $(TEST_CONF_FILE_PATH)
 	ruby -I . -I $(DIR_LIB). -r doc_tools -e generate_generic_conf $(TEST_CONF_FILE_PATH) > $@
 
+#wkhtmltopdf toc $(MANUAL_HTML) $@
 $(MANUAL_PDF): $(DIR_TOP)README.md
-	pandoc --number-sections --shift-heading-level-by=-1 --resource-path=. --toc -o $(MANUAL_HTML) $(DIR_TOP)README.md
-	wkhtmltopdf toc $(MANUAL_HTML) $@
+	pandoc --number-sections --shift-heading-level-by=-1 --resource-path=. --toc -o $@ --pdf-engine=xelatex -V geometry:margin=15mm -V mainfont:Arial -V urlcolor:blue $(DIR_TOP)README.md
+$(MANUAL_HTML): $(DIR_TOP)README.md
+	pandoc --number-sections --shift-heading-level-by=-1 --resource-path=. --toc -o $@ $(DIR_TOP)README.md
 
 # regenerate always, as it depends on sources
 .PHONY: $(DIR_TOP)README.md

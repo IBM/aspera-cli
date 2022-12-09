@@ -313,8 +313,8 @@ ssh_port:
 ssh_private_key:
   :desc: |-
     Private key used for SSH authentication.
-    Shall look like: -----BEGIN RSA PRIV4TE KEY-----\nMII...
-    Note the JSON encoding: \n for newlines.
+    Shall look like: -----BEGIN RSA PRIV4TE KEY-----&sol;nMII...
+    Note the JSON encoding: &sol;n for newlines.
 
 
   :tragents:

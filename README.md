@@ -184,18 +184,38 @@ An internet connection is required for the installation. If you don't have inter
 
 ### Docker container
 
-`ascli` is made available as a container.
-It is built from this [Dockerfile](Dockerfile).
 The image is: [martinlaurent/ascli](https://hub.docker.com/r/martinlaurent/ascli).
 The container contains: Ruby, `ascli` and the Aspera Transfer SDK.
-
 To use the container, ensure that you have `docker` (or `podman`) installed.
 
 ```bash
 docker --version
 ```
 
-The simplest use is to execute the image like this: (add `ascli` commands and options at the end of the command line, e.g. `-v` to display the version)
+**Wanna start quickly ?** With an interactive shell ? Execute this:
+
+```bash
+docker run --tty --interactive --entrypoint bash martinlaurent/ascli:latest
+```
+
+Then, execute individual `ascli` commands such as:
+
+```bash
+ascli conf init
+ascli conf preset overview
+ascli conf ascp info
+ascli server ls /
+```
+
+That is simple, but there are limitations:
+
+- Everything happens in the container
+- Any generated file in the container will be lost on container (shell) exit. Including configuration files and downloaded files.
+- No possibility to upload files located on the host system
+
+The container image is built from this [Dockerfile](Dockerfile): the entry point is `ascli` and the default command is `help`.
+
+The container can also be execute for individual commands like this: (add `ascli` commands and options at the end of the command line, e.g. `-v` to display the version)
 
 ```bash
 docker run --rm --tty --interactive martinlaurent/ascli:latest
@@ -207,6 +227,8 @@ For more convenience, you may define a shell alias:
 alias ascli='docker run --rm --tty --interactive martinlaurent/ascli:latest'
 ```
 
+Then, you can execute the container like a local command:
+
 ```bash
 ascli -v
 ```
@@ -217,15 +239,16 @@ ascli -v
 
 In order to keep persistency of configuration on the host,
 you should mount your user's config folder to the container.
-To enable write access, a possibility is to run as `root` in the container, and restore the default configuration folder to `/home/cliuser/.aspera/ascli`. Add options:
+To enable write access, a possibility is to run as `root` in the container (and set the default configuration folder to `/home/cliuser/.aspera/ascli`).
+Add options:
 
 ```bash
 --user root --env ASCLI_HOME=/home/cliuser/.aspera/ascli --volume $HOME/.aspera/ascli:/home/cliuser/.aspera/ascli
 ```
 
-> Note: if you are using a `podman machine`, make sure that the folder is also shared between the VM and the host, so that sharing is: container &rarr; VM &rarr; Host
+> Note: if you are using a `podman machine`, e.g. on Macos , make sure that the folder is also shared between the VM and the host, so that sharing is: container &rarr; VM &rarr; Host: `podman machine init ... --volume="/Users:/Users"`
 
-If you prefer to keep a running container with a shell and `ascli` available,
+As shown in the quick start, if you prefer to keep a running container with a shell and `ascli` available,
 you can change the entry point, add option:
 
 ```bash
@@ -236,7 +259,7 @@ You may also probably want that files downloaded in the container are in fact pl
 In this case you need also to mount the shared transfer folder:
 
 ```bash
---volume $HOME/xferdir:/xferfolder
+--volume $HOME/xferdir:/xferfiles
 ```
 
 > Note: ascli is run inside the container, so transfers are also executed inside the container and do not have access to host storage by default.
@@ -244,20 +267,22 @@ In this case you need also to mount the shared transfer folder:
 And if you want all the above, simply use all the options:
 
 ```bash
-alias asclishell="docker run --rm --tty --interactive --user root --env ASCLI_HOME=/home/cliuser/.aspera/ascli --volume $HOME/.aspera/ascli:/home/cliuser/.aspera/ascli --volume $HOME/xferdir:/xferfolder --entrypoint bash martinlaurent/ascli:latest"
+alias asclish="docker run --rm --tty --interactive --user root --env ASCLI_HOME=/home/cliuser/.aspera/ascli --volume $HOME/.aspera/ascli:/home/cliuser/.aspera/ascli --volume $HOME/xferdir:/xferfiles --entrypoint bash martinlaurent/ascli:latest"
 ```
 
 ```bash
 export xferdir=$HOME/xferdir
 mkdir -p $xferdir
 chmod -R 777 $xferdir
+mkdir -p $HOME/.aspera/ascli
+asclish
 ```
 
 A convenience sample script is also provided: download the script [`dascli`](../examples/dascli) from [the GIT repo](https://raw.githubusercontent.com/IBM/aspera-cli/main/examples/dascli) :
 
 > Note: If you have installed `ascli`, the script `dascli` can also be found: `cp $(ascli conf gem path)/../examples/dascli ascli`
 
-Some environment variables can be set to adapt the behaviour of the script:
+Some environment variables can be set for this script to adapt its behaviour:
 
 | env var      | description                        | default                  | example                  |
 |--------------|------------------------------------|--------------------------|--------------------------|
@@ -277,19 +302,18 @@ Example of use:
 ```bash
 curl -o ascli https://raw.githubusercontent.com/IBM/aspera-cli/main/examples/dascli
 chmod a+x ascli
-export ASCLI_HOME=$HOME/.ascli
 export xferdir=$HOME/xferdir
 mkdir -p $xferdir
 chmod -R 777 $xferdir
-export docker_args="--volume $xferdir:/xferfolder"
+export docker_args="--volume $xferdir:/xferfiles"
 
 ./ascli conf init
 
-touch $xferdir/samplefile
-./ascli server upload /xferfolder/samplefile --to-folder=/Upload
+echo 'Local file to transfer' > $xferdir/samplefile.txt
+./ascli server upload /xferfiles/samplefile.txt --to-folder=/Upload
 ```
 
-> Note: The local file (`samplefile`) is specified relative to storage view from container (`/xferfolder`) mapped to the host folder `$HOME/xferdir`
+> Note: The local file (`samplefile.txt`) is specified relative to storage view from container (`/xferfiles`) mapped to the host folder `$HOME/xferdir`
 
 ### <a id="ruby"></a>Ruby
 
@@ -2182,7 +2206,7 @@ Fields with EX_ prefix are extensions to transfer agent [`direct`](#agt_direct).
 <tr><td>source_root_id</td><td>string</td><td>&nbsp;</td><td>Y</td><td>&nbsp;</td><td>The file ID of the source root directory. Required when using Bearer token auth for the source node.</td></tr>
 <tr><td>src_base</td><td>string</td><td>Y</td><td>Y</td><td>&nbsp;</td><td>Specify the prefix to be stripped off from each source object.<br/>The remaining portion of the source path is kept intact at the destination.<br/>Special care must be taken when used with cloud storage.<br/>(--src-base64 (conversion){string})</td></tr>
 <tr><td>ssh_port</td><td>int</td><td>Y</td><td>Y</td><td>Y</td><td>Specifies SSH (TCP) port. Default: local:22, other:33001<br/>(-P {int})</td></tr>
-<tr><td>ssh_private_key</td><td>string</td><td>Y</td><td>&nbsp;</td><td>&nbsp;</td><td>Private key used for SSH authentication.<br/>Shall look like: -----BEGIN RSA PRIV4TE KEY-----\nMII...<br/>Note the JSON encoding: \n for newlines.<br/>(env:ASPERA_SCP_KEY)</td></tr>
+<tr><td>ssh_private_key</td><td>string</td><td>Y</td><td>&nbsp;</td><td>&nbsp;</td><td>Private key used for SSH authentication.<br/>Shall look like: -----BEGIN RSA PRIV4TE KEY-----&sol;nMII...<br/>Note the JSON encoding: &sol;n for newlines.<br/>(env:ASPERA_SCP_KEY)</td></tr>
 <tr><td>ssh_private_key_passphrase</td><td>string</td><td>Y</td><td>&nbsp;</td><td>&nbsp;</td><td>The passphrase associated with the transfer user's SSH private key. Available as of 3.7.2.<br/>(env:ASPERA_SCP_PASS)</td></tr>
 <tr><td>sshfp</td><td>string</td><td>Y</td><td>Y</td><td>Y</td><td>Check it against server SSH host key fingerprint<br/>(--check-sshfp {string})</td></tr>
 <tr><td>symlink_policy</td><td>string</td><td>Y</td><td>Y</td><td>Y</td><td>Handle source side symbolic links<br/>Allowed values: follow, copy, copy+force, skip<br/>(--symbolic-links {enum})</td></tr>

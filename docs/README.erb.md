@@ -184,31 +184,53 @@ An internet connection is required for the installation. If you don't have inter
 
 ### Docker container
 
-<%=tool%> is made available as a container.
-It is built from this [Dockerfile](Dockerfile).
-The image is: [martinlaurent/ascli](https://hub.docker.com/r/martinlaurent/ascli).
+The image is: [<%=containerimage%>](https://hub.docker.com/r/<%=containerimage%>).
 The container contains: Ruby, <%=tool%> and the Aspera Transfer SDK.
-
 To use the container, ensure that you have `docker` (or `podman`) installed.
 
 ```bash
 docker --version
 ```
 
-The simplest use is to execute the image like this: (add <%=tool%> commands and options at the end of the command line, e.g. `-v` to display the version)
+**Wanna start quickly ?** With an interactive shell ? Execute this:
 
 ```bash
-docker run --rm --tty --interactive martinlaurent/ascli:latest
+docker run --tty --interactive --entrypoint bash <%=containerimage%>:latest
+```
+
+Then, execute individual <%=tool%> commands such as:
+
+```bash
+<%=cmd%> conf init
+<%=cmd%> conf preset overview
+<%=cmd%> conf ascp info
+<%=cmd%> server ls /
+```
+
+That is simple, but there are limitations:
+
+- Everything happens in the container
+- Any generated file in the container will be lost on container (shell) exit. Including configuration files and downloaded files.
+- No possibility to upload files located on the host system
+
+The container image is built from this [Dockerfile](Dockerfile): the entry point is <%=tool%> and the default command is `help`.
+
+The container can also be execute for individual commands like this: (add <%=tool%> commands and options at the end of the command line, e.g. `-v` to display the version)
+
+```bash
+docker run --rm --tty --interactive <%=containerimage%>:latest
 ```
 
 For more convenience, you may define a shell alias:
 
 ```bash
-alias ascli='docker run --rm --tty --interactive martinlaurent/ascli:latest'
+alias <%=cmd%>='docker run --rm --tty --interactive <%=containerimage%>:latest'
 ```
 
+Then, you can execute the container like a local command:
+
 ```bash
-ascli -v
+<%=cmd%> -v
 ```
 
 ```text
@@ -217,15 +239,16 @@ ascli -v
 
 In order to keep persistency of configuration on the host,
 you should mount your user's config folder to the container.
-To enable write access, a possibility is to run as `root` in the container, and restore the default configuration folder to `/home/cliuser/.aspera/ascli`. Add options:
+To enable write access, a possibility is to run as `root` in the container (and set the default configuration folder to `/home/cliuser/.aspera/<%=cmd%>`).
+Add options:
 
 ```bash
---user root --env ASCLI_HOME=/home/cliuser/.aspera/ascli --volume $HOME/.aspera/ascli:/home/cliuser/.aspera/ascli
+--user root --env <%=evp%>HOME=/home/cliuser/.aspera/<%=cmd%> --volume $HOME/.aspera/<%=cmd%>:/home/cliuser/.aspera/<%=cmd%>
 ```
 
-> Note: if you are using a `podman machine`, make sure that the folder is also shared between the VM and the host, so that sharing is: container &rarr; VM &rarr; Host
+> Note: if you are using a `podman machine`, e.g. on Macos , make sure that the folder is also shared between the VM and the host, so that sharing is: container &rarr; VM &rarr; Host: `podman machine init ... --volume="/Users:/Users"`
 
-If you prefer to keep a running container with a shell and <%=tool%> available,
+As shown in the quick start, if you prefer to keep a running container with a shell and <%=tool%> available,
 you can change the entry point, add option:
 
 ```bash
@@ -236,7 +259,7 @@ You may also probably want that files downloaded in the container are in fact pl
 In this case you need also to mount the shared transfer folder:
 
 ```bash
---volume $HOME/xferdir:/xferfolder
+--volume $HOME/xferdir:/xferfiles
 ```
 
 > Note: <%=cmd%> is run inside the container, so transfers are also executed inside the container and do not have access to host storage by default.
@@ -244,26 +267,28 @@ In this case you need also to mount the shared transfer folder:
 And if you want all the above, simply use all the options:
 
 ```bash
-alias asclishell="docker run --rm --tty --interactive --user root --env ASCLI_HOME=/home/cliuser/.aspera/ascli --volume $HOME/.aspera/ascli:/home/cliuser/.aspera/ascli --volume $HOME/xferdir:/xferfolder --entrypoint bash martinlaurent/ascli:latest"
+alias <%=cmd%>sh="docker run --rm --tty --interactive --user root --env <%=evp%>HOME=/home/cliuser/.aspera/<%=cmd%> --volume $HOME/.aspera/<%=cmd%>:/home/cliuser/.aspera/<%=cmd%> --volume $HOME/xferdir:/xferfiles --entrypoint bash <%=containerimage%>:latest"
 ```
 
 ```bash
 export xferdir=$HOME/xferdir
 mkdir -p $xferdir
 chmod -R 777 $xferdir
+mkdir -p $HOME/.aspera/<%=cmd%>
+<%=cmd%>sh
 ```
 
-A convenience sample script is also provided: download the script [`dascli`](../examples/dascli) from [the GIT repo](https://raw.githubusercontent.com/IBM/aspera-cli/main/examples/dascli) :
+A convenience sample script is also provided: download the script [`d<%=cmd%>`](../examples/d<%=cmd%>) from [the GIT repo](https://raw.githubusercontent.com/IBM/aspera-cli/main/examples/d<%=cmd%>) :
 
-> Note: If you have installed <%=tool%>, the script `dascli` can also be found: `cp $(<%=cmd%> conf gem path)/../examples/dascli <%=cmd%>`
+> Note: If you have installed <%=tool%>, the script `d<%=cmd%>` can also be found: `cp $(<%=cmd%> conf gem path)/../examples/d<%=cmd%> <%=cmd%>`
 
-Some environment variables can be set to adapt the behaviour of the script:
+Some environment variables can be set for this script to adapt its behaviour:
 
 | env var      | description                        | default                  | example                  |
 |--------------|------------------------------------|--------------------------|--------------------------|
-| <%=evp%>HOME | configuration folder (persistency) | `$HOME/.aspera/<%=cmd%>` | `$HOME/.ascliconfig`     |
+| <%=evp%>HOME | configuration folder (persistency) | `$HOME/.aspera/<%=cmd%>` | `$HOME/.<%=cmd%>config`     |
 | docker_args  | additional options to `docker`     | &lt;empty&gt;            | `--volume /Users:/Users` |
-| image        | container image name               | martinlaurent/ascli      |                          |
+| image        | container image name               | <%=containerimage%>      |                          |
 | version      | container image version            | latest                   | `4.8.0.pre`              |
 
 The wrapping script maps the folder `$<%=evp%>HOME` on host to `/home/cliuser/.aspera/<%=cmd%>` in the container.
@@ -275,21 +300,20 @@ To add local storage as a volume, you can use the env var `docker_args`:
 Example of use:
 
 ```bash
-curl -o <%=cmd%> https://raw.githubusercontent.com/IBM/aspera-cli/main/examples/dascli
+curl -o <%=cmd%> https://raw.githubusercontent.com/IBM/aspera-cli/main/examples/d<%=cmd%>
 chmod a+x <%=cmd%>
-export <%=evp%>HOME=$HOME/.ascli
 export xferdir=$HOME/xferdir
 mkdir -p $xferdir
 chmod -R 777 $xferdir
-export docker_args="--volume $xferdir:/xferfolder"
+export docker_args="--volume $xferdir:/xferfiles"
 
 ./<%=cmd%> conf init
 
-touch $xferdir/samplefile
-./<%=cmd%> server upload /xferfolder/samplefile --to-folder=/Upload
+echo 'Local file to transfer' > $xferdir/samplefile.txt
+./<%=cmd%> server upload /xferfiles/samplefile.txt --to-folder=/Upload
 ```
 
-> Note: The local file (`samplefile`) is specified relative to storage view from container (`/xferfolder`) mapped to the host folder `$HOME/xferdir`
+> Note: The local file (`samplefile.txt`) is specified relative to storage view from container (`/xferfiles`) mapped to the host folder `$HOME/xferdir`
 
 ### <a id="ruby"></a>Ruby
 
