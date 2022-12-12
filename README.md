@@ -46,7 +46,7 @@ So it is designed for:
 - A configuration file (config.yaml)
 - Advanced command line options
 - cURL (for REST calls)
-- Aspera transfer (ascp)
+- Aspera transfer (`ascp`)
 
 If the need is to perform operations programmatically in languages such as: C, Go, Python, nodejs, ... then it is better to directly use [Aspera APIs](https://ibm.biz/aspera_api)
 
@@ -176,7 +176,7 @@ The direct installation is recommended and consists in installing:
 
 - [Ruby](#ruby) (version: >= 2.4. Deprecation notice: the minimum will be 2.7 in a future version)
 - [aspera-cli](#the_gem)
-- [Aspera SDK (ascp)](#fasp_prot)
+- [Aspera SDK (`ascp`)](#fasp_prot)
 
 The following sections provide information on the various installation methods.
 
@@ -476,7 +476,7 @@ If you already have a Java JVM on your system (`java`), it is possible to use `j
 
 <https://www.jruby.org/download>
 
-Note that using jruby the startup time is longer than the native ruby, but transfer speed is not impacted (executed by `ascp` binary).
+> Note: Using jruby the startup time is longer than the native ruby, but the transfer speed is not impacted (executed by `ascp` binary).
 
 ### <a id="the_gem"></a>`aspera-cli` gem
 
@@ -505,7 +505,7 @@ ascli conf check_update
 Most file transfers will be done using the FASP protocol, using `ascp`.
 Only two additional files are required to perform an Aspera Transfer, which are part of Aspera SDK:
 
-- ascp
+- `ascp`
 - aspera-license (in same folder, or ../etc)
 
 This can be installed either be installing an Aspera transfer software, or using an embedded command:
@@ -545,7 +545,8 @@ Use of a local client ([`direct`](#agt_direct) transfer agent) is one of them, b
 
 ### <a id="offline_install"></a>Installation in air gapped environment
 
-Note that currently no pre-packaged version exist yet.
+> Note: no pre-packaged version exists.
+
 A method to build one is provided here:
 
 The procedure:
@@ -606,7 +607,7 @@ The `aspera-cli` Gem provides a command line interface (CLI) which interacts wit
 - Supports most Aspera server products (on-premise and SaaS)
 - Any command line options (products URL, credentials or any option) can be provided on command line, in configuration file, in env var, in files
 - Supports Commands, Option values and Parameters shortcuts
-- FASP [Transfer Agents](#agents) can be: local ascp, or Connect Client, or any transfer node
+- FASP [Transfer Agents](#agents) can be: local `ascp`, or Connect Client, or any transfer node
 - Transfer parameters can be altered by modification of [*transfer-spec*](#transferspec), this includes requiring multi-session
 - Allows transfers from products to products, essentially at node level (using the node transfer agent)
 - Supports FaspStream creation (using Node API)
@@ -629,7 +630,7 @@ Not all `ascli` features are fully documented here, the user may explore command
 
 If you want to use `ascp` directly as a command line, refer to IBM Aspera documentation of either [Desktop Client](https://www.ibm.com/docs/en/asdc), [Endpoint](https://www.ibm.com/docs/en/ahte) or [Transfer Server](https://www.ibm.com/docs/en/ahts) where [a section on `ascp` can be found](https://www.ibm.com/docs/en/ahts/4.4?topic=linux-ascp-transferring-from-command-line).
 
-Using `ascli` with plugin `server` for command line gives advantages over ascp:
+Using `ascli` with plugin `server` for command line gives advantages over `ascp`:
 
 - automatic resume on error
 - configuration file
@@ -682,7 +683,8 @@ ERROR: Argument: unprocessed values: ["2", "3"]
 ```
 
 `config echo` displays the value of the first argument using Ruby syntax: it surrounds a string with `"` and add `\` before special characters.
-Note that it gets its value after shell command line parsing and `ascli` extended value parsing.
+
+> Note: It gets its value after shell command line parsing and `ascli` extended value parsing.
 
 In the following examples (using a POSIX shell, such as `bash`), several sample commands are provided when equivalent.
 For all example, most of special character handling is not specific to `ascli`: It depoends on the underlying syntax: shell , JSON, etc...
@@ -706,8 +708,9 @@ Hello World
 #### Using a shell variable, parsed by shell, in an extended value
 
 To be evaluated by shell, the shell variable must not be in single quotes.
-Note we use a simple variable here: the variable is not necessarily an environment variable.
 Even if the variable contains spaces it makes only one argument to `ascli` because word parsing is made before variable expansion by shell. 
+
+> Note: we use a simple variable here: the variable is not necessarily an environment variable.
 
 ```bash
 MYVAR="Hello World"
@@ -865,7 +868,7 @@ ascli config echo -- --sample
 "--sample"
 ```
 
-Note that here, `--sample` is taken as an argument, and not as an option, due to `--`.
+> Note: Here, `--sample` is taken as an argument, and not as an option, due to `--`.
 
 Options can be optional or mandatory, with or without (hardcoded) default value. Options can be placed anywhere on command line and evaluated in order.
 
@@ -951,7 +954,7 @@ ascli aoc admin res user list --fields=name,email,ats_admin --query=@json:'{"sor
 :...............................:..................................:...........:
 ```
 
-Note that `select` filters selected elements from the result of API calls, while the `query` parameters gives filtering parameters to the API when listing elements.
+> Note: `select` filters selected elements from the result of API calls, while the `query` parameters gives filtering parameters to the API when listing elements.
 
 #### Verbosity of output
 
@@ -1063,7 +1066,7 @@ ascli config echo @incps:@json:'{"hello":true,"incps":["config"]}'
 {"version"=>"0.9", "hello"=>true}
 ```
 
-Note that `@incps:@json:'{"incps":["config"]}'` or `@incps:@ruby:'{"incps"=>["config"]}'` is equivalent to: `@preset:config`
+> Note: `@incps:@json:'{"incps":["config"]}'` or `@incps:@ruby:'{"incps"=>["config"]}'` are equivalent to: `@preset:config`
 
 ### <a id="native"></a>Structured Value
 
@@ -1193,7 +1196,7 @@ This preset name is reserved and contains an array of key-value , where the key 
 
 When a plugin is invoked, the preset associated with the name of the plugin is loaded, unless the option --no-default (or -N) is used.
 
-Note that special plugin name: `config` can be associated with a preset that is loaded initially, typically used for default values.
+> Note: Special plugin name: `config` can be associated with a preset that is loaded initially, typically used for default values.
 
 Operations on this preset are done using regular `config` operations:
 
@@ -1209,9 +1212,9 @@ ascli config preset get default _plugin_name_
 "_default_preset_for_plugin_"
 ```
 
-#### <a id="lplugconf"></a>Special Plugin: config
+#### <a id="config"></a>Plugin: `config`: CLI Configuration
 
-Plugin `config` (not to be confused with Option preset config) is used to configure `ascli` but it also contains global options.
+Plugin `config` is used to configure `ascli` and also contains global options.
 
 When `ascli` starts, it looks for the `default` Option preset and if there is a value for `config`, if so, it loads the option values for any plugin used.
 
@@ -1641,7 +1644,7 @@ Available loggers: `stdout`, `stderr`, `syslog`.
 
 Available levels: `debug`, `info`, `warn`, `error`.
 
-Note that when using the `direct` agent (`ascp`), additional transfer logs can be activated using `ascp` option `EX_ascp_args`, see [`direct`](#agt_direct).
+> Note: When using the `direct` agent (`ascp`), additional transfer logs can be activated using `ascp` option `EX_ascp_args`, see [`direct`](#agt_direct).
 
 Examples:
 
@@ -1785,7 +1788,7 @@ To specify a FASP proxy (forward), set the [*transfer-spec*](#transferspec) para
 
 The `config` plugin also allows specification for the use of a local FASP client. It provides the following commands for `ascp` subcommand:
 
-- `show` : shows the path of ascp used
+- `show` : shows the path of `ascp` used
 - `use` : list,download connect client versions available on internet
 - `products` : list Aspera transfer products available locally
 - `connect` : list,download connect client versions available on internet
@@ -1814,9 +1817,9 @@ ascli config ascp info
 
 #### Selection of `ascp` location for [`direct`](#agt_direct) agent
 
-By default, `ascli` uses any found local product with ascp, including SDK.
+By default, `ascli` uses any found local product with `ascp`, including SDK.
 
-To temporarily use an alternate ascp path use option `ascp_path` (`--ascp-path=`)
+To temporarily use an alternate `ascp` path use option `ascp_path` (`--ascp-path=`)
 
 For a permanent change, the command `config ascp use` sets the same parameter for the global default.
 
@@ -1867,11 +1870,11 @@ ascli config ascp products list
 
 #### Selection of local client for `ascp` for [`direct`](#agt_direct) agent
 
-If no ascp is selected, this is equivalent to using option: `--use-product=FIRST`.
+If no `ascp` is selected, this is equivalent to using option: `--use-product=FIRST`.
 
-Using the option use_product finds the ascp binary of the selected product.
+Using the option use_product finds the `ascp` binary of the selected product.
 
-To permanently use the ascp of a product:
+To permanently use the `ascp` of a product:
 
 ```bash
 ascli config ascp products use 'Aspera Connect'
@@ -1936,15 +1939,15 @@ There are currently 3 agents:
 - [`httpgw`](#agt_httpgw) : use of an Aspera HTTP Gateway
 - [`trsdk`](#agt_trsdk) : use of Aspera Transfer SDK
 
-Note that all transfer operation are seen from the point of view of the agent.
-For instance, a node agent making an "upload", or "package send" operation,
+> Note: All transfer operations are seen from the point of view of the agent.
+For example, a node agent executing an "upload", or "package send" operation
 will effectively push files to the related server from the agent node.
 
-`ascli` standardizes on the use of a [*transfer-spec*](#transferspec) instead of *raw* ascp options to provide parameters for a transfer session, as a common method for those three Transfer Agents.
+`ascli` standardizes on the use of a [*transfer-spec*](#transferspec) instead of *native* `ascp` options to provide parameters for a transfer session, as a common method for those three Transfer Agents.
 
 #### <a id="agt_direct"></a>Direct
 
-The `direct` agent directly executes a local ascp.
+The `direct` agent directly executes a local `ascp`.
 This is the default agent for `ascli`.
 This is equivalent to option `--transfer=direct`.
 `ascli` will detect locally installed Aspera products, including SDK, and use `ascp` from that component.
@@ -1955,7 +1958,7 @@ The `transfer_info` option accepts the following optional parameters to control 
 <table>
 <tr><th>Name</th><th>Type</th><th>Description</th></tr>
 <tr><td>wss</td><td>Bool</td><td>Web Socket Session<br/>Enable use of web socket session in case it is available<br/>Default: false</td></tr>
-<tr><td>spawn_timeout_sec</td><td>Float</td><td>Multi session<br/>Verification time that ascp is running<br/>Default: 3</td></tr>
+<tr><td>spawn_timeout_sec</td><td>Float</td><td>Multi session<br/>Verification time that `ascp` is running<br/>Default: 3</td></tr>
 <tr><td>spawn_delay_sec</td><td>Float</td><td>Multi session<br/>Delay between startup of sessions<br/>Default: 2</td></tr>
 <tr><td>multi_incr_udp</td><td>Bool</td><td>Multi Session<br/>Increment UDP port on multi-session<br/>If true, each session will have a different UDP port starting at `fasp_port` (or default 33001)<br/>Else, each session will use `fasp_port` (or `ascp` default)<br/>Default: true</td></tr>
 <tr><td>resume</td><td>Hash</td><td>Resume<br/>parameters<br/>See below</td></tr>
@@ -1986,13 +1989,13 @@ ascli ... --transfer-info=@json:'{"wss":true,"resume":{"iter_max":20}}'
 ascli ... --transfer-info=@json:'{"spawn_delay_sec":2.5,"multi_incr_udp":false}'
 ```
 
-Note that the `direct` agent supports additional `transfer_spec` parameters starting with `EX_` (extended).
+> Note: The `direct` agent supports additional `transfer_spec` parameters starting with `EX_` (extended).
 In particular the field, `EX_ascp_args` which is a list of additional command line options to `ascp`.
 
-This can be useful to activate logging using option `-L` of ascp.
+This can be useful to activate logging using option `-L` of `ascp`.
 For example the option `--ts=@json:'{"EX_ascp_args":["-DDL-"]}'` will activate debug level 2 for `ascp` (`DD`), and display those logs on the terminal (`-`).
 This is useful if the transfer fails.
-To store ascp logs in file `aspera-scp-transfer.log` in a folder, use `--ts=@json:'{"EX_ascp_args":["-L","/path/to/folder"]}'`.
+To store `ascp` logs in file `aspera-scp-transfer.log` in a folder, use `--ts=@json:'{"EX_ascp_args":["-L","/path/to/folder"]}'`.
 
 > Note: Implementation note: when transfer agent [`direct`](#agt_direct) is used, the list of files to transfer is provided to `ascp` using either `--file-list` or `--file-pair-list` and a file list (or pair) file generated in a temporary folder. (unless `--file-list` or `--file-pair-list` is provided in option `ts` in `EX_ascp_args`).
 
@@ -2098,7 +2101,7 @@ is described in a [*transfer-spec*](#transferspec) (Transfer Specification), suc
 
 If needed, it is possible to modify or add any of the supported [*transfer-spec*](#transferspec) parameter using the `ts` option. The `ts` option accepts a [Structured Value](#native) containing one or several [*transfer-spec*](#transferspec) parameters. Multiple `ts` options on command line are cumulative.
 
-It is possible to specify ascp options when the `transfer` option is set to [`direct`](#agt_direct) using the special [*transfer-spec*](#transferspec) parameter: `EX_ascp_args`. Example: `--ts=@json:'{"EX_ascp_args":["-l","100m"]}'`. This is especially useful for ascp command line parameters not supported yet in the transfer spec.
+It is possible to specify `ascp` options when the `transfer` option is set to [`direct`](#agt_direct) using the special [*transfer-spec*](#transferspec) parameter: `EX_ascp_args`. Example: `--ts=@json:'{"EX_ascp_args":["-l","100m"]}'`. This is especially useful for `ascp` command line parameters not supported yet in the transfer spec.
 
 The use of a [*transfer-spec*](#transferspec) instead of `ascp` parameters has the advantage of:
 
@@ -2328,7 +2331,7 @@ ascli server upload --src-type=pair ~/Documents/Samples/200KB.1 /Upload/sample1
 
 #### <a id="multisession"></a>Support of multi-session
 
-Multi session, i.e. starting a transfer of a file set using multiple sessions (one ascp process per session) is supported on "direct" and "node" agents, not yet on connect.
+Multi session, i.e. starting a transfer of a file set using multiple sessions (one `ascp` process per session) is supported on "direct" and "node" agents, not yet on connect.
 
 - when agent=node :
 
@@ -2367,7 +2370,7 @@ Example: parameter to download a faspex package and decrypt on the fly
 --ts=@json:'{"content_protection":"decrypt","content_protection_password":"_pass_here_"}'
 ```
 
-Note that up to version 4.6.0, the following parameters should be used for agent `direct`:
+> Note: Up to version `ascli` 4.6.0, the following parameters should be used for agent `direct`:
 
 ```javascript
 --ts=@json:'{"EX_ascp_args":["--file-crypt=decrypt"],"EX_at_rest_password":"_secret_here_"}'
@@ -2826,7 +2829,7 @@ OPTIONS:
 
 
 COMMAND: server
-SUBCOMMANDS: health download upload browse delete rename ls rm mv du info mkdir cp df md5sum
+SUBCOMMANDS: upload download health ls rm mv du info mkdir cp df md5sum browse delete rename
 OPTIONS:
         --url=VALUE                  URL of application, e.g. https://org.asperafiles.com
         --username=VALUE             username to log in
@@ -2847,7 +2850,7 @@ OPTIONS:
 
 ```
 
-Note that actions and parameter values can be written in short form.
+> Note: commands and parameter values can be written in short form.
 
 ### Bulk creation and deletion of resources
 
@@ -2855,7 +2858,7 @@ Bulk creation and deletion of resources are possible using option `bulk` (yes,no
 In that case, the operation expects an Array of Hash instead of a simple Hash using the [Extended Value Syntax](#extended).
 This option is available only for some of the resources: if you need it: try and see if the entities you try to create or delete support this option.
 
-## <a id="aoc"></a>Plugin: Aspera on Cloud
+## <a id="aoc"></a>Plugin: `aoc`: IBM Aspera on Cloud
 
 Aspera on Cloud uses the more advanced Oauth v2 mechanism for authentication (HTTP Basic authentication is not supported).
 
@@ -3151,7 +3154,7 @@ ascli aoc admin res user list --query=@json:'{"member_of_any_workspace":false,"s
 
 Refer to the AoC API for full list of query parameters, or use the browser in developer mode with the web UI.
 
-Note the option `select` can also be used to further refine selection, refer to [section earlier](#option_select).
+> Note: The option `select` can also be used to further refine selection, refer to [section earlier](#option_select).
 
 #### <a id="res_select"></a>Selecting a resource
 
@@ -3207,7 +3210,7 @@ If the command returns an error, example:
 
 Well, remove the offending parameters and try again.
 
-Note that some properties that are shown in the web UI, such as membership, are not listed directly in the resource, but instead another resource is created to link a user and its group: `group_membership`
+> Note: Some properties that are shown in the web UI, such as membership, are not listed directly in the resource, but instead another resource is created to link a user and its group: `group_membership`
 
 #### Access Key secrets
 
@@ -3263,7 +3266,7 @@ Options:
 - `query` filter (on API call)
 - `notify` send an email as specified by template, this could be places in a file with the `@file` modifier.
 
-Note this must not be executed in less than 5 minutes because the analytics interface accepts only a period of time between 5 minutes and 6 months. The period is [date of previous execution]..[now].
+> Note: This must not be executed in less than 5 minutes because the analytics interface accepts only a period of time between 5 minutes and 6 months. The period is [date of previous execution]..[now].
 
 #### Transfer: Using specific transfer ports
 
@@ -3585,7 +3588,8 @@ AoC nodes as actually composed with two related entities:
 
 The web UI allows creation of both entities in one shot.
 For more flexibility, `ascli` allows this in two separate steps.
-Note that when selecting "Use existing access key" in the web UI, this actually skips access key creation (first step).
+
+> Note: When selecting "Use existing access key" in the web UI, this actually skips access key creation (first step).
 
 So, for example, the creation of a node using ATS in IBM Cloud looks like (see other example in this manual):
 
@@ -3619,9 +3623,10 @@ Creation of a node with a self-managed node is similar, but the command `aoc adm
 
 ### List of files to transfer
 
-Source files are provided as a list with the `sources` option. Refer to section [File list](#file_list)
+Source files are provided as a list with the `sources` option.
+Refer to section [File list](#file_list)
 
-Note the special case when the source files are located on "Aspera on Cloud" (i.e. using access keys and the `file id` API).
+> Note: A special case is when the source files are located on **Aspera on Cloud** (i.e. using access keys and the `file id` API).
 
 Source files are located on "Aspera on cloud", when :
 
@@ -3960,7 +3965,7 @@ aoc user workspaces current
 aoc user workspaces list
 ```
 
-## <a id="ats"></a>Plugin: Aspera Transfer Service
+## <a id="ats"></a>Plugin: `ats`: IBM Aspera Transfer Service
 
 ATS is usable either :
 
@@ -4097,11 +4102,14 @@ ats cluster show --cloud=aws --region=eu-west-1
 ats cluster show 1f412ae7-869a-445c-9c05-02ad16813be2
 ```
 
-## Plugin: IBM Aspera High Speed Transfer Server (transfer)
+## <a id="server"></a>Plugin: `server`: IBM Aspera High Speed Transfer Server (SSH)
 
-This plugin uses SSH as a session protocol (using commands `ascp` and `ascmd`) and does not use the node API.
+The `server` plugin is used for operations on Aspera HSTS using SSH authentication.
 It is the legacy way of accessing an Aspera Server, often used for server to server transfers.
-Modern mode is to use the node API and transfer tokens.
+An SSH session is established, authenticated with either a password or an SSH private key,
+then commands `ascp` (for transfers) and `ascmd` (for file operations) are executed.
+
+> Note: The URL to be provided is usually: `ssh://_server_address_:33001`
 
 ### Server sample commands
 
@@ -4193,7 +4201,16 @@ ascli server --ssh-options=@ruby:'{use_agent: false}' ...
 
 This can also be set as default using a global preset.
 
-### Example
+### Special endpoints for `server`
+
+URL schemes `local` and `https` are also supported, mainly for testing purpose.
+
+- `local` will execute `ascmd` locally, instead of using a SSH cnnection.
+- `https` will use Web Socket Session: This requires the use of a transfer token. For example a `Basic` token can be used.
+
+As, most of the time, SSH is used, if an `http` scheme is provided without token, the plugin will fallback to SSH and port 33001.
+
+### Examples: `server`
 
 One can test the `server` application using the well known demo server:
 
@@ -4205,7 +4222,7 @@ ascli server download /aspera-test-dir-large/200MB
 
 `initdemo` creates a [option preset](#lprt) `demoserver` and set it as default for plugin `server`.
 
-## Plugin: IBM Aspera High Speed Transfer Server (node)
+## <a id="node"></a>Plugin: `node`: IBM Aspera High Speed Transfer Server Node
 
 This plugin gives access to capabilities provided by HSTS node API.
 
@@ -4225,15 +4242,15 @@ For transfers, it is possible to control how transfer is authorized using option
 
 ```javascript
 {
-  "remote_host": address of node url,
+  "remote_host": "<address of node url>",
   "remote_user": "xfer",
   "ssh_port": 33001,
   "token": "Basic <base 64 encoded user/pass>",
-  "direction": send/receive
+  "direction": "[send|receive]"
 }
 ```
 
-Note that the port is assumed to be the default SSH port `33001` and transfer user is assumed to be `xfer`.
+> Note: the port is assumed to be the default Aspera SSH port `33001` and transfer user is assumed to be `xfer`.
 
 ### Central
 
@@ -4369,7 +4386,7 @@ node upload testfile.bin --to-folder=folder_1 --ts=@json:'{"target_rate_cap_kbps
 node upload testfile.bin --to-folder=folder_1 --ts=@json:'{"target_rate_cap_kbps":10000}' --token-type=hybrid
 ```
 
-## Plugin: IBM Aspera Faspex5
+## <a id="faspex5"></a>Plugin: `faspex5`: IBM Aspera Faspex v5
 
 IBM Aspera's newer self-managed application.
 
@@ -4483,7 +4500,7 @@ ascli faspex5 admin res metadata_profiles create --value=@json:'{"name":"the pro
 ascli faspex5 admin res shared create --value=@json:'{"name":"the shared inbox","metadata_profile_id":1}'
 ```
 
-## Plugin: IBM Aspera Faspex (4.x)
+## <a id="faspex"></a>Plugin: `faspex`: IBM Aspera Faspex v4
 
 Notes:
 
@@ -4666,7 +4683,7 @@ faspex v4 wmembership list
 faspex v4 workgroup list
 ```
 
-## Plugin: IBM Aspera Shares
+## <a id="shares"></a>Plugin: `shares`: IBM Aspera Shares v1
 
 Aspera Shares supports the "node API" for the file transfer part. (Shares 1 and 2)
 
@@ -4686,7 +4703,7 @@ shares repository upload --to-folder=my_shares_upload testfile.bin
 shares repository upload --to-folder=my_shares_upload testfile.bin --transfer=httpgw --transfer-info=@json:'{"url":"https://my_http_gw_fqdn/aspera/http-gwy"}'
 ```
 
-## Plugin: Console
+## <a id="console"></a>Plugin: `console`: IBM Aspera Console
 
 ### Console sample commands
 
@@ -4697,7 +4714,7 @@ console transfer smart list
 console transfer smart sub my_job_id @json:'{"source":{"paths":["my_file_name"]},"source_type":"user_selected"}'
 ```
 
-## Plugin: Orchestrator
+## <a id="orchestrator"></a>Plugin: `orchestrator`:IBM Aspera Orchestrator
 
 ### Orchestrator sample commands
 
@@ -4715,7 +4732,7 @@ orchestrator workflow status ALL
 orchestrator workflow status my_orch_workflow_id
 ```
 
-## Plugin: IBM Cloud Object Storage
+## <a id="cos"></a>Plugin: `cos`: IBM Cloud Object Storage
 
 The IBM Cloud Object Storage provides the possibility to execute transfers using FASP.
 It uses the same transfer service as Aspera on Cloud, called Aspera Transfer Service (ATS).
@@ -4806,7 +4823,7 @@ ascli cos node info
 ascli cos node upload 'faux:///sample1G?1g'
 ```
 
-Note: we generate a dummy file `sample1G` of size 2GB using the `faux` PVCL (man ascp and section above), but you can of course send a real file by specifying a real file instead.
+Note: we generate a dummy file `sample1G` of size 2GB using the `faux` PVCL (man `ascp` and section above), but you can of course send a real file by specifying a real file instead.
 
 ### COS sample commands
 
@@ -4819,7 +4836,7 @@ cos node info
 cos node upload testfile.bin
 ```
 
-## Plugin: IBM Aspera Sync
+## <a id="async"></a>Plugin: `async`: IBM Aspera Sync
 
 A basic plugin to start an "async" using `ascli`.
 The main advantage is the possibility to start from ma configuration file, using `ascli` standard options.
@@ -4830,7 +4847,7 @@ The main advantage is the possibility to start from ma configuration file, using
 sync start --parameters=@json:'{"sessions":[{"name":"test","reset":true,"remote_dir":"/sync_test","local_dir":"contents","host":"my_remote_host","tcp_port":33001,"user":"my_remote_user","private_key_path":"my_local_user_key"}]}'
 ```
 
-## Plugin: Preview
+## <a id="preview"></a>Plugin: `preview`: Preview generator for AoC
 
 The `preview` generates thumbnails (office, images, video) and video previews on storage for use primarily in the Aspera on Cloud application.
 It uses the **node API** of Aspera HSTS and requires use of Access Keys and it's **storage root**.
@@ -4942,7 +4959,7 @@ The preview generator is run as a user, preferably a regular user (not root). Wh
 
 Like any `ascli` commands, parameters can be passed on command line or using a configuration [option preset](#lprt).  The configuration file must be created with the same user used to run so that it is properly used on runtime.
 
-Note that the `xfer` user has a special protected shell: `aspshell`, so changing identity requires specification of alternate shell:
+The `xfer` user has a special protected shell: `aspshell`, so changing identity requires specification of alternate shell:
 
 ```bash
 su -s /bin/bash - xfer
@@ -5012,7 +5029,7 @@ crontab<<EOF
 EOF
 ```
 
-Note that the logging options are kept in the cronfile instead of conf file to allow execution on command line with output on command line.
+> Note: The logging options are kept here in the cronfile instead of conf file to allow execution on command line with output on command line.
 
 ### Candidate detection for creation or update (or deletion)
 
@@ -5258,26 +5275,26 @@ The tool expect one single argument: a [*transfer-spec*](#transferspec).
 
 If no argument is provided, it assumes a value of: `@json:@stdin:`, i.e. a JSON formatted [*transfer-spec*](#transferspec) on stdin.
 
-Note that if JSON is the format, one has to specify `@json:` to tell the tool to decode the hash using JSON.
+> Note: If JSON is the format, specify `@json:` to tell `ascli` to decode the hash using JSON syntax.
 
 During execution, it generates all low level events, one per line, in JSON format on stdout.
 
-Note that there are special "extended" [*transfer-spec*](#transferspec) parameters supported by `asession`:
+There are special "extended" [*transfer-spec*](#transferspec) parameters supported by `asession`:
 
 - `EX_loglevel` to change log level of the tool
 - `EX_file_list_folder` to set the folder used to store (exclusively, because of garbage collection) generated file lists. By default it is `[system tmp folder]/[username]_asession_filelists`
 
-Note that in addition, many "EX_" [*transfer-spec*](#transferspec) parameters are supported for the [`direct`](#agt_direct) transfer agent (used by `asession`), refer to section [*transfer-spec*](#transferspec).
+> Note: In addition, many "EX_" [*transfer-spec*](#transferspec) parameters are supported for the [`direct`](#agt_direct) transfer agent (used by `asession`), refer to section [*transfer-spec*](#transferspec).
 
 ### Comparison of interfaces
 
 <table>
-<tr><th>feature/tool</th><th>asession</th><th>ascp</th><th>FaspManager</th><th>Transfer SDK</th></tr>
+<tr><th>feature/tool</th><th>asession</th><th>`ascp`</th><th>FaspManager</th><th>Transfer SDK</th></tr>
 <tr><td>language integration</td><td>any</td><td>any</td><td>C/C++<br/>C#/.net<br/>Go<br/>Python<br/>java<br/></td><td>many</td></tr>
-<tr><td>required additional components to ascp</td><td>Ruby<br/>Aspera</td><td>-</td><td>library<br/>(headers)</td><td>daemon</td></tr>
+<tr><td>required additional components to `ascp`</td><td>Ruby<br/>Aspera</td><td>-</td><td>library<br/>(headers)</td><td>daemon</td></tr>
 <tr><td>startup</td><td>JSON on stdin<br/>(standard APIs:<br/>JSON.generate<br/>Process.spawn)</td><td>command line arguments</td><td>API</td><td>daemon</td></tr>
 <tr><td>events</td><td>JSON on stdout</td><td>none by default<br/>or need to open management port<br/>and proprietary text syntax</td><td>callback</td><td>callback</td></tr>
-<tr><td>platforms</td><td>any with ruby and ascp</td><td>any with ascp (and SDK if compiled)</td><td>any with ascp</td><td>any with ascp and transfer daemon</td></tr></table>
+<tr><td>platforms</td><td>any with ruby and `ascp`</td><td>any with `ascp` (and SDK if compiled)</td><td>any with `ascp`</td><td>any with `ascp` and transfer daemon</td></tr></table>
 
 ### Simple session
 
@@ -5295,7 +5312,7 @@ asession < session.json
 
 ### Asynchronous commands and Persistent session
 
-`asession` also supports asynchronous commands (on the management port). Instead of the traditional text protocol as described in ascp manual, the format for commands is: one single line per command, formatted in JSON, where parameters shall be "snake" style, for example: `LongParameter` -&gt; `long_parameter`
+`asession` also supports asynchronous commands (on the management port). Instead of the traditional text protocol as described in `ascp` manual, the format for commands is: one single line per command, formatted in JSON, where parameters shall be "snake" style, for example: `LongParameter` -&gt; `long_parameter`
 
 This is particularly useful for a persistent session ( with the [*transfer-spec*](#transferspec) parameter: `"keepalive":true` )
 
@@ -5362,9 +5379,9 @@ The general idea is to rely on :
 - take advantage of `ascli` configuration capabilities and server side knowledge
 - the OS scheduler for reliability and continuous operation
 
-#### ascp features
+#### `ascp` features
 
-Interesting ascp features are found in its arguments: (see ascp manual):
+Interesting `ascp` features are found in its arguments: (see `ascp` manual):
 
 - `ascp` already takes care of sending only "new" files: option `-k 1,2,3` (`resume_policy`)
 - `ascp` has some options to remove or move files after transfer: `--remove-after-transfer`, `--move-after-transfer`, `--remove-empty-directories` (`remove_after_transfer`, `move_after_transfer`, `remove_empty_directories`)
@@ -5375,7 +5392,7 @@ Note that:
 
 - `ascli` takes transfer parameters exclusively as a [*transfer-spec*](#transferspec), with `--ts` parameter.
 - most, but not all, native `ascp` arguments are available as standard [*transfer-spec*](#transferspec) parameters
-- native ascp arguments can be provided with the [*transfer-spec*](#transferspec) parameter: `EX_ascp_args` (array), only for the [`direct`](#agt_direct) transfer agent (not others, like connect or node)
+- native `ascp` arguments can be provided with the [*transfer-spec*](#transferspec) parameter: `EX_ascp_args` (array), only for the [`direct`](#agt_direct) transfer agent (not others, like connect or node)
 
 #### server side and configuration
 
@@ -5485,7 +5502,7 @@ See <CHANGELOG.md>
 
 ## History
 
-When I joined Aspera, there was only one CLI: `ascp`, which is the implementation of the FASP protocol, but there was no CLI to access the various existing products (Server, Faspex, Shares). Once, Serban (founder) provided a shell script able to create a Faspex Package using Faspex REST API. Since all products relate to file transfers using FASP (ascp), I thought it would be interesting to have a unified CLI for transfers using FASP. Also, because there was already the `ascp` tool, I thought of an extended tool : `eascp.pl` which was accepting all `ascp` options for transfer but was also able to transfer to Faspex and Shares (destination was a kind of URI for the applications).
+When I joined Aspera, there was only one CLI: `ascp`, which is the implementation of the FASP protocol, but there was no CLI to access the various existing products (Server, Faspex, Shares). Once, Serban (founder) provided a shell script able to create a Faspex Package using Faspex REST API. Since all products relate to file transfers using FASP (`ascp`), I thought it would be interesting to have a unified CLI for transfers using FASP. Also, because there was already the `ascp` tool, I thought of an extended tool : `eascp.pl` which was accepting all `ascp` options for transfer but was also able to transfer to Faspex and Shares (destination was a kind of URI for the applications).
 
 There were a few pitfalls:
 
@@ -5496,7 +5513,7 @@ So, it evolved into `ascli`:
 
 - portable: works on platforms supporting `ruby` (and `ascp`)
 - easy to install with the `gem` utility
-- supports transfers with multiple [Transfer Agents](#agents), that&apos;s why transfer parameters moved from ascp command line to [*transfer-spec*](#transferspec) (more reliable , more standard)
+- supports transfers with multiple [Transfer Agents](#agents), that&apos;s why transfer parameters moved from `ascp` command line to [*transfer-spec*](#transferspec) (more reliable , more standard)
 - `ruby` is consistent with other Aspera products
 
 ## Common problems
