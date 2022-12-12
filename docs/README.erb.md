@@ -2,6 +2,8 @@
 
 [comment1]: # (Do not edit this README.md, edit docs/README.erb.md, for details, read docs/README.md)
 
+##
+
 Version : <%=gemspec.version.to_s%>
 
 Laurent/2016-<%=Time.new.year%>
@@ -127,7 +129,7 @@ updated: myserver
 ```
 
 ```output
-updated: default&rarr;server to myserver
+updated: default &rarr; server to myserver
 ```
 
 ```bash
@@ -158,7 +160,7 @@ updated: default&rarr;server to myserver
 ```
 
 ```output
-Time: 00:00:02 ========================================================================================================== 100% 100 Mbps Time: 00:00:00
+Time: 00:00:02 =========================================================== 100% 100 Mbps Time: 00:00:00
 complete
 ```
 
@@ -246,7 +248,7 @@ Add options:
 --user root --env <%=evp%>HOME=/home/cliuser/.aspera/<%=cmd%> --volume $HOME/.aspera/<%=cmd%>:/home/cliuser/.aspera/<%=cmd%>
 ```
 
-> Note: if you are using a `podman machine`, e.g. on Macos , make sure that the folder is also shared between the VM and the host, so that sharing is: container &rarr; VM &rarr; Host: `podman machine init ... --volume="/Users:/Users"`
+> **Note:** if you are using a `podman machine`, e.g. on Macos , make sure that the folder is also shared between the VM and the host, so that sharing is: container &rarr; VM &rarr; Host: `podman machine init ... --volume="/Users:/Users"`
 
 As shown in the quick start, if you prefer to keep a running container with a shell and <%=tool%> available,
 you can change the entry point, add option:
@@ -262,7 +264,7 @@ In this case you need also to mount the shared transfer folder:
 --volume $HOME/xferdir:/xferfiles
 ```
 
-> Note: <%=cmd%> is run inside the container, so transfers are also executed inside the container and do not have access to host storage by default.
+> **Note:** <%=cmd%> is run inside the container, so transfers are also executed inside the container and do not have access to host storage by default.
 
 And if you want all the above, simply use all the options:
 
@@ -280,7 +282,7 @@ mkdir -p $HOME/.aspera/<%=cmd%>
 
 A convenience sample script is also provided: download the script [`d<%=cmd%>`](../examples/d<%=cmd%>) from [the GIT repo](https://raw.githubusercontent.com/IBM/aspera-cli/main/examples/d<%=cmd%>) :
 
-> Note: If you have installed <%=tool%>, the script `d<%=cmd%>` can also be found: `cp $(<%=cmd%> conf gem path)/../examples/d<%=cmd%> <%=cmd%>`
+> **Note:** If you have installed <%=tool%>, the script `d<%=cmd%>` can also be found: `cp $(<%=cmd%> conf gem path)/../examples/d<%=cmd%> <%=cmd%>`
 
 Some environment variables can be set for this script to adapt its behaviour:
 
@@ -313,7 +315,7 @@ echo 'Local file to transfer' > $xferdir/samplefile.txt
 ./<%=cmd%> server upload /xferfiles/samplefile.txt --to-folder=/Upload
 ```
 
-> Note: The local file (`samplefile.txt`) is specified relative to storage view from container (`/xferfiles`) mapped to the host folder `$HOME/xferdir`
+> **Note:** The local file (`samplefile.txt`) is specified relative to storage view from container (`/xferfiles`) mapped to the host folder `$HOME/xferdir`
 
 ### <a id="ruby"></a>Ruby
 
@@ -476,7 +478,7 @@ If you already have a Java JVM on your system (`java`), it is possible to use `j
 
 <https://www.jruby.org/download>
 
-> Note: Using jruby the startup time is longer than the native ruby, but the transfer speed is not impacted (executed by `ascp` binary).
+> **Note:** Using jruby the startup time is longer than the native ruby, but the transfer speed is not impacted (executed by `ascp` binary).
 
 ### <a id="the_gem"></a>`<%=gemspec.name%>` gem
 
@@ -545,7 +547,7 @@ Use of a local client ([`direct`](#agt_direct) transfer agent) is one of them, b
 
 ### <a id="offline_install"></a>Installation in air gapped environment
 
-> Note: no pre-packaged version exists.
+> **Note:** no pre-packaged version is provided.
 
 A method to build one is provided here:
 
@@ -684,7 +686,7 @@ ERROR: Argument: unprocessed values: ["2", "3"]
 
 `config echo` displays the value of the first argument using Ruby syntax: it surrounds a string with `"` and add `\` before special characters.
 
-> Note: It gets its value after shell command line parsing and <%=tool%> extended value parsing.
+> **Note:** It gets its value after shell command line parsing and <%=tool%> extended value parsing.
 
 In the following examples (using a POSIX shell, such as `bash`), several sample commands are provided when equivalent.
 For all example, most of special character handling is not specific to <%=tool%>: It depoends on the underlying syntax: shell , JSON, etc...
@@ -710,7 +712,7 @@ Hello World
 To be evaluated by shell, the shell variable must not be in single quotes.
 Even if the variable contains spaces it makes only one argument to <%=tool%> because word parsing is made before variable expansion by shell. 
 
-> Note: we use a simple variable here: the variable is not necessarily an environment variable.
+> **Note:** we use a simple variable here: the variable is not necessarily an environment variable.
 
 ```bash
 MYVAR="Hello World"
@@ -868,7 +870,7 @@ Exceptions:
 "--sample"
 ```
 
-> Note: Here, `--sample` is taken as an argument, and not as an option, due to `--`.
+> **Note:** Here, `--sample` is taken as an argument, and not as an option, due to `--`.
 
 Options can be optional or mandatory, with or without (hardcoded) default value. Options can be placed anywhere on command line and evaluated in order.
 
@@ -954,7 +956,7 @@ Table output can be filtered using the `select` parameter. Example:
 :...............................:..................................:...........:
 ```
 
-> Note: `select` filters selected elements from the result of API calls, while the `query` parameters gives filtering parameters to the API when listing elements.
+> **Note:** `select` filters selected elements from the result of API calls, while the `query` parameters gives filtering parameters to the API when listing elements.
 
 #### Verbosity of output
 
@@ -1066,7 +1068,7 @@ Example: create a hash and include values from preset named "config" of config f
 {"version"=>"0.9", "hello"=>true}
 ```
 
-> Note: `@incps:@json:'{"incps":["config"]}'` or `@incps:@ruby:'{"incps"=>["config"]}'` are equivalent to: `@preset:config`
+> **Note:** `@incps:@json:'{"incps":["config"]}'` or `@incps:@ruby:'{"incps"=>["config"]}'` are equivalent to: `@preset:config`
 
 ### <a id="native"></a>Structured Value
 
@@ -1196,7 +1198,7 @@ This preset name is reserved and contains an array of key-value , where the key 
 
 When a plugin is invoked, the preset associated with the name of the plugin is loaded, unless the option --no-default (or -N) is used.
 
-> Note: Special plugin name: `config` can be associated with a preset that is loaded initially, typically used for default values.
+> **Note:** Special plugin name: `config` can be associated with a preset that is loaded initially, typically used for default values.
 
 Operations on this preset are done using regular `config` operations:
 
@@ -1400,7 +1402,7 @@ read -s <%=evp%>VAULT_PASSWORD
 
 #### Vault: System keychain
 
-> Note: **macOS only**
+> **Note:** **macOS only**
 
 It is possible to manage secrets in macOS keychain (only read supported currently).
 
@@ -1455,7 +1457,7 @@ For a more secure storage one can do:
 <%=tool%> conf vault create myconf @json:'{"password":"__value_here__"}'
 ```
 
-> Note: use `@val:` in front of `@vault:` so that the extended value is not evaluated.
+> **Note:** use `@val:` in front of `@vault:` so that the extended value is not evaluated.
 
 ### <a id="private_key"></a>Private Key
 
@@ -1607,7 +1609,7 @@ Available loggers: `stdout`, `stderr`, `syslog`.
 
 Available levels: `debug`, `info`, `warn`, `error`.
 
-> Note: When using the `direct` agent (`ascp`), additional transfer logs can be activated using `ascp` option `EX_ascp_args`, see [`direct`](#agt_direct).
+> **Note:** When using the `direct` agent (`ascp`), additional transfer logs can be activated using `ascp` option `EX_ascp_args`, see [`direct`](#agt_direct).
 
 Examples:
 
@@ -1687,7 +1689,7 @@ There are two possibilities to define an HTTP proxy to be used when Ruby HTTP is
 The `http_proxy` environment variable (**lower case**, preferred) can be set to the URL of the proxy, e.g. `http://myproxy.org.net:3128`.
 Refer to [Ruby findproxy](https://rubyapi.org/3.0/o/uri/generic#method-i-find_proxy).
 
-> Note: Ruby expects a URL and `myproxy.org.net:3128` alone is **not** accepted.
+> **Note:** Ruby expects a URL and `myproxy.org.net:3128` alone is **not** accepted.
 
 ```bash
 export http_proxy=http://proxy.example.com:3128
@@ -1883,7 +1885,7 @@ saved to default global preset /Users/laurent/Applications/Aspera Connect.app/Co
 ```
 
 ```output
-Time: 00:00:02 ======================================================================= 100% 27766 KB/sec Time: 00:00:02
+Time: 00:00:02 =========================================================== 100% 27766 KB/sec Time: 00:00:02
 Downloaded: IBMAsperaConnectInstaller-3.11.2.63.dmg
 ```
 
@@ -1902,7 +1904,7 @@ There are currently 3 agents:
 - [`httpgw`](#agt_httpgw) : use of an Aspera HTTP Gateway
 - [`trsdk`](#agt_trsdk) : use of Aspera Transfer SDK
 
-> Note: All transfer operations are seen from the point of view of the agent.
+> **Note:** All transfer operations are seen from the point of view of the agent.
 For example, a node agent executing an "upload", or "package send" operation
 will effectively push files to the related server from the agent node.
 
@@ -1918,18 +1920,17 @@ Refer to section [FASP](#client).
 
 The `transfer_info` option accepts the following optional parameters to control multi-session, Web Socket Session and Resume policy:
 
-<table>
-<tr><th>Name</th><th>Type</th><th>Description</th></tr>
-<tr><td>wss</td><td>Bool</td><td>Web Socket Session<br/>Enable use of web socket session in case it is available<br/>Default: false</td></tr>
-<tr><td>spawn_timeout_sec</td><td>Float</td><td>Multi session<br/>Verification time that `ascp` is running<br/>Default: 3</td></tr>
-<tr><td>spawn_delay_sec</td><td>Float</td><td>Multi session<br/>Delay between startup of sessions<br/>Default: 2</td></tr>
-<tr><td>multi_incr_udp</td><td>Bool</td><td>Multi Session<br/>Increment UDP port on multi-session<br/>If true, each session will have a different UDP port starting at `fasp_port` (or default 33001)<br/>Else, each session will use `fasp_port` (or `ascp` default)<br/>Default: true</td></tr>
-<tr><td>resume</td><td>Hash</td><td>Resume<br/>parameters<br/>See below</td></tr>
-<tr><td>resume.iter_max</td><td>int</td><td>Resume<br/>Max number of retry on error<br/>Default: 7</td></tr>
-<tr><td>resume.sleep_initial</td><td>int</td><td>Resume<br/>First Sleep before retry<br/>Default: 2</td></tr>
-<tr><td>resume.sleep_factor</td><td>int</td><td>Resume<br/>Multiplier of sleep period between attempts<br/>Default: 2</td></tr>
-<tr><td>resume.sleep_max</td><td>int</td><td>Resume<br/>Default: 60</td></tr>
-</table>
+| Name | Type | Description |
+|------|------|-------------|
+| wss | Bool | Web Socket Session<br/>Enable use of web socket session in case it is available<br/>Default: false |
+| spawn_timeout_sec | Float | Multi session<br/>Verification time that `ascp` is running<br/>Default: 3 |
+| spawn_delay_sec | Float | Multi session<br/>Delay between startup of sessions<br/>Default: 2 |
+| multi_incr_udp | Bool | Multi Session<br/>Increment UDP port on multi-session<br/>If true, each session will have a different UDP port starting at `fasp_port` (or default 33001)<br/>Else, each session will use `fasp_port` (or `ascp` default)<br/>Default: true |
+| resume | Hash | Resume<br/>parameters<br/>See below |
+| resume.iter_max | int | Resume<br/>Max number of retry on error<br/>Default: 7 |
+| resume.sleep_initial | int | Resume<br/>First Sleep before retry<br/>Default: 2 |
+| resume.sleep_factor | int | Resume<br/>Multiplier of sleep period between attempts<br/>Default: 2 |
+| resume.sleep_max | int | Resume<br/>Default: 60 |
 
 In case of transfer interruption, the agent will **resume** a transfer up to `iter_max` time.
 Sleep between iterations is:
@@ -1952,7 +1953,7 @@ Examples:
 <%=cmd%> ... --transfer-info=@json:'{"spawn_delay_sec":2.5,"multi_incr_udp":false}'
 ```
 
-> Note: The `direct` agent supports additional `transfer_spec` parameters starting with `EX_` (extended).
+> **Note:** The `direct` agent supports additional `transfer_spec` parameters starting with `EX_` (extended).
 In particular the field, `EX_ascp_args` which is a list of additional command line options to `ascp`.
 
 This can be useful to activate logging using option `-L` of `ascp`.
@@ -1960,7 +1961,7 @@ For example the option `--ts=@json:'{"EX_ascp_args":["-DDL-"]}'` will activate d
 This is useful if the transfer fails.
 To store `ascp` logs in file `aspera-scp-transfer.log` in a folder, use `--ts=@json:'{"EX_ascp_args":["-L","/path/to/folder"]}'`.
 
-> Note: Implementation note: when transfer agent [`direct`](#agt_direct) is used, the list of files to transfer is provided to `ascp` using either `--file-list` or `--file-pair-list` and a file list (or pair) file generated in a temporary folder. (unless `--file-list` or `--file-pair-list` is provided in option `ts` in `EX_ascp_args`).
+> **Note:** Implementation note: when transfer agent [`direct`](#agt_direct) is used, the list of files to transfer is provided to `ascp` using either `--file-list` or `--file-pair-list` and a file list (or pair) file generated in a temporary folder. (unless `--file-list` or `--file-pair-list` is provided in option `ts` in `EX_ascp_args`).
 
 In addition to standard methods described in section [File List](#file_list), it is possible to specify the list of file using those additional methods:
 
@@ -1976,11 +1977,11 @@ In addition to standard methods described in section [File List](#file_list), it
 --sources=@ts --ts=@json:'{"EX_ascp_args":["--file-list","myfilelist"]}'
 ```
 
-> Note: File lists is shown here, there are also similar options for file pair lists.
+> **Note:** File lists is shown here, there are also similar options for file pair lists.
 
-> Note: Those 2 additional methods avoid the creation of a copy of the file list: if the standard options `--sources=@lines:@file:... --src-type=...` are used, then the file is list read and parsed, and a new file list is created in a temporary folder.
+> **Note:** Those 2 additional methods avoid the creation of a copy of the file list: if the standard options `--sources=@lines:@file:... --src-type=...` are used, then the file is list read and parsed, and a new file list is created in a temporary folder.
 
-> Note: Those methods have limitations: they apply **only** to the [`direct`](#agt_direct) transfer agent (i.e. local `ascp`) and not for Aspera on Cloud.
+> **Note:** Those methods have limitations: they apply **only** to the [`direct`](#agt_direct) transfer agent (i.e. local `ascp`) and not for Aspera on Cloud.
 
 #### <a id="agt_connect"></a>IBM Aspera Connect Client GUI
 
@@ -1992,13 +1993,12 @@ By specifying option: `--transfer=node`, the CLI will start transfers in an Aspe
 Transfer Server using the Node API, either on a local or remote node.
 Parameters provided in option `transfer_info` are:
 
-<table>
-<tr><th>Name</th><th>Type</th><th>Description</th></tr>
-<tr><td>url</td><td>string</td><td>URL of the node API</br>Mandatory</td></tr>
-<tr><td>username</td><td>string</td><td>node api user or access key</br>Mandatory</td></tr>
-<tr><td>password</td><td>string</td><td>password, secret or bearer token</br>Mandatory</td></tr>
-<tr><td>root_id</td><td>string</td><td>password or secret</br>Mandatory only for bearer token</td></tr>
-</table>
+| Name | Type | Description |
+|------|------|-------------|
+| url | string | URL of the node API</br>Mandatory |
+| username | string | node api user or access key</br>Mandatory |
+| password | string | password, secret or bearer token</br>Mandatory |
+| root_id | string | password or secret</br>Mandatory only for bearer token |
 
 Like any other option, `transfer_info` can get its value from a pre-configured <%=prst%> :
 `--transfer-info=@preset:<psetname>` or be specified using the extended value syntax :
@@ -2014,12 +2014,11 @@ If it possible to send using a HTTP gateway, in case FASP is not allowed.
 
 Parameters provided in option `transfer_info` are:
 
-<table>
-<tr><th>Name</th><th>Type</th><th>Description</th></tr>
-<tr><td>url</td><td>string</td><td>URL of the HTTP GW</br>Mandatory</td></tr>
-<tr><td>upload_bar_refresh_sec</td><td>float</td><td>Refresh rate for upload progress bar</td></tr>
-<tr><td>upload_chunksize</td><td>int</td><td>Size in bytes of chunks for upload</td></tr>
-</table>
+| Name | Type | Description |
+|------|------|-------------|
+| url | string | URL of the HTTP GW</br>Mandatory |
+| upload_bar_refresh_sec | float | Refresh rate for upload progress bar |
+| upload_chunksize | int | Size in bytes of chunks for upload |
 
 Example:
 
@@ -2027,7 +2026,7 @@ Example:
 <%=cmd%> faspex package recv --id=323 --transfer=httpgw --transfer-info=@json:'{"url":"https://asperagw.example.com:9443/aspera/http-gwy/v1"}'
 ```
 
-> Note: The gateway only supports transfers authorized with a token.
+> **Note:** The gateway only supports transfers authorized with a token.
 
 #### <a id="agt_trsdk"></a>Transfer SDK
 
@@ -2080,8 +2079,8 @@ All standard <%=trspec%> parameters can be specified.
 
 References:
 
-- [Aspera Node API Documentation](https://developer.ibm.com/apis/catalog?search=%22aspera%20node%20api%22)&rarr;/opt/transfers
-- [Aspera Transfer SDK Documentation](https://developer.ibm.com/apis/catalog?search=%22aspera%20transfer%20sdk%22)&rarr;Guides&rarr;API Ref&rarr;Transfer Spec V1
+- [Aspera Node API Documentation](https://developer.ibm.com/apis/catalog?search=%22aspera%20node%20api%22) &rarr; /opt/transfers
+- [Aspera Transfer SDK Documentation](https://developer.ibm.com/apis/catalog?search=%22aspera%20transfer%20sdk%22) &rarr; Guides &rarr; API Ref &rarr; Transfer Spec V1
 - [Aspera Connect SDK](https://d3gcli72yxqn2z.cloudfront.net/connect/v4/asperaweb-4.js) &rarr; search `The parameters for starting a transfer.`
 
 Parameters can be displayed with commands:
@@ -2145,7 +2144,7 @@ So, by default, the list of files to transfer will be simply specified on the co
 
 - an [Extended Value](#extended) with type **Array of String**
 
-  > Note: extended values can be tested with the command `conf echo`
+  > **Note:** extended values can be tested with the command `conf echo`
 
   Examples:
 
@@ -2193,7 +2192,7 @@ Examples:
 
 The option `src_type` allows specifying if the list specified in option `sources` is a simple file list or if it is a file pair list.
 
-> Note: Option `src_type` is not used if option `sources` is set to `@ts`
+> **Note:** Option `src_type` is not used if option `sources` is set to `@ts`
 
 Supported values for `src_type` are:
 
@@ -2206,7 +2205,7 @@ Example: Source file `200KB.1` is renamed `sample1` on destination:
 <%=cmd%> server upload --src-type=pair ~/Documents/Samples/200KB.1 /Upload/sample1
 ```
 
-> Note: There are some specific rules to specify a file list when using **Aspera on Cloud**, refer to the AoC plugin section.
+> **Note:** There are some specific rules to specify a file list when using **Aspera on Cloud**, refer to the AoC plugin section.
 
 #### <a id="multisession"></a>Support of multi-session
 
@@ -2249,7 +2248,7 @@ Example: parameter to download a faspex package and decrypt on the fly
 --ts=@json:'{"content_protection":"decrypt","content_protection_password":"_pass_here_"}'
 ```
 
-> Note: Up to version <%=tool%> 4.6.0, the following parameters should be used for agent `direct`:
+> **Note:** Up to version <%=tool%> 4.6.0, the following parameters should be used for agent `direct`:
 
 ```javascript
 --ts=@json:'{"EX_ascp_args":["--file-crypt=decrypt"],"EX_at_rest_password":"_secret_here_"}'
@@ -2446,7 +2445,7 @@ Examples:
 
 ```
 
-> Note: commands and parameter values can be written in short form.
+> **Note:** commands and parameter values can be written in short form.
 
 ### Bulk creation and deletion of resources
 
@@ -2497,7 +2496,7 @@ If the wizard does not detect the application but you know the application, you 
 
 ### <a id="aocmanual"></a>Configuration: using manual setup
 
-> Note: If you used the wizard (recommended): skip this section.
+> **Note:** If you used the wizard (recommended): skip this section.
 
 #### Configuration details
 
@@ -2521,12 +2520,12 @@ If you use the built-in client_id and client_secret, skip this and do not set th
 
 Else you can use a specific OAuth API client_id, the first step is to declare <%=tool%> in Aspera on Cloud using the admin interface.
 
-(official documentation: <https://ibmaspera.com/help/admin/organization/registering_an_api_client> ).
+([AoC documentation: Registering an API Client](https://ibmaspera.com/help/admin/organization/registering_an_api_client) ).
 
 Let's start by a registration with web based authentication (auth=web):
 
 - Open a web browser, log to your instance: e.g. `https://myorg.ibmaspera.com/`
-- Go to Apps&rarr;Admin&rarr;Organization&rarr;Integrations
+- Go to Apps &rarr; Admin &rarr; Organization &rarr; Integrations
 - Click "Create New"
   - Client Name: <%=tool%>
   - Redirect URIs: `http://localhost:12345`
@@ -2577,7 +2576,7 @@ If you are not using the built-in client_id and secret, JWT needs to be authoriz
 - Graphically
 
   - Open a web browser, log to your instance: `https://myorg.ibmaspera.com/`
-  - Go to Apps&rarr;Admin&rarr;Organization&rarr;Integrations
+  - Go to Apps &rarr; Admin &rarr; Organization &rarr; Integrations
   - Click on the previously created application
   - select tab : "JSON Web Token Auth"
   - Modify options if necessary, for instance: activate both options in section "Settings"
@@ -2750,7 +2749,7 @@ Examples:
 
 Refer to the AoC API for full list of query parameters, or use the browser in developer mode with the web UI.
 
-> Note: The option `select` can also be used to further refine selection, refer to [section earlier](#option_select).
+> **Note:** The option `select` can also be used to further refine selection, refer to [section earlier](#option_select).
 
 #### <a id="res_select"></a>Selecting a resource
 
@@ -2806,7 +2805,7 @@ If the command returns an error, example:
 
 Well, remove the offending parameters and try again.
 
-> Note: Some properties that are shown in the web UI, such as membership, are not listed directly in the resource, but instead another resource is created to link a user and its group: `group_membership`
+> **Note:** Some properties that are shown in the web UI, such as membership, are not listed directly in the resource, but instead another resource is created to link a user and its group: `group_membership`
 
 #### Access Key secrets
 
@@ -2862,7 +2861,7 @@ Options:
 - `query` filter (on API call)
 - `notify` send an email as specified by template, this could be places in a file with the `@file` modifier.
 
-> Note: This must not be executed in less than 5 minutes because the analytics interface accepts only a period of time between 5 minutes and 6 months. The period is [date of previous execution]..[now].
+> **Note:** This must not be executed in less than 5 minutes because the analytics interface accepts only a period of time between 5 minutes and 6 months. The period is [date of previous execution]..[now].
 
 #### Transfer: Using specific transfer ports
 
@@ -3185,7 +3184,7 @@ AoC nodes as actually composed with two related entities:
 The web UI allows creation of both entities in one shot.
 For more flexibility, <%=tool%> allows this in two separate steps.
 
-> Note: When selecting "Use existing access key" in the web UI, this actually skips access key creation (first step).
+> **Note:** When selecting "Use existing access key" in the web UI, this actually skips access key creation (first step).
 
 So, for example, the creation of a node using ATS in IBM Cloud looks like (see other example in this manual):
 
@@ -3199,7 +3198,7 @@ So, for example, the creation of a node using ATS in IBM Cloud looks like (see o
 
   Once executed, the access key `id` and `secret`, randomly generated by the node api, is displayed.
   
-  > Note: Once returned by the API, the secret will not be available anymore, so store this preciously. ATS secrets can only be reset by asking to IBM support.
+  > **Note:** Once returned by the API, the secret will not be available anymore, so store this preciously. ATS secrets can only be reset by asking to IBM support.
 
 - Create the AoC node entity
 
@@ -3222,7 +3221,7 @@ Creation of a node with a self-managed node is similar, but the command `aoc adm
 Source files are provided as a list with the `sources` option.
 Refer to section [File list](#file_list)
 
-> Note: A special case is when the source files are located on **Aspera on Cloud** (i.e. using access keys and the `file id` API).
+> **Note:** A special case is when the source files are located on **Aspera on Cloud** (i.e. using access keys and the `file id` API).
 
 Source files are located on "Aspera on cloud", when :
 
@@ -3605,7 +3604,7 @@ It is the legacy way of accessing an Aspera Server, often used for server to ser
 An SSH session is established, authenticated with either a password or an SSH private key,
 then commands `ascp` (for transfers) and `ascmd` (for file operations) are executed.
 
-> Note: The URL to be provided is usually: `ssh://_server_address_:33001`
+> **Note:** The URL to be provided is usually: `ssh://_server_address_:33001`
 
 ### Server sample commands
 
@@ -3615,20 +3614,21 @@ then commands `ascp` (for transfers) and `ascmd` (for file operations) are execu
 
 ### Authentication on Server with SSH session
 
-If SSH is the session control protocol (i.e. not WSS), then following session authentication methods are supported:
+If SSH is the session protocol (by default i.e. not WSS), then following session authentication methods are supported:
 
-- SSH password
-- SSH keys (Multiple SSH key paths can be provided.)
+- `password`: SSH password
+- `ssh_keys`: SSH keys (Multiple SSH key paths can be provided.)
 
-If username is not provided, the default transfer user `xfer` is used.
+If `username` is not provided then the default transfer user `xfer` is used.
 
-If no SSH password or key is provided and a transfer token is provided in transfer spec (option `ts`), then standard SSH bypass keys are used. Example:
+If no SSH password or key is provided and a transfer token is provided in transfer spec (option `ts`), then standard SSH bypass keys are used.
+Example:
 
-```javascript
-<%=cmd%> server --url=ssh://... --ts=@json:'{"token":"Basic abc123"}'
+```bash
+<%=cmd%> server --url=ssh://_server_address_:33001 ... --ts=@json:'{"token":"Basic abc123"}'
 ```
 
-> Note: If you need to use the Aspera public keys, then specify an empty token: `--ts=@json:'{"token":""}'` : Aspera public SSH keys will be used, but the protocol will ignore the empty token.
+> **Note:** If you need to use the Aspera public keys, then specify an empty token: `--ts=@json:'{"token":""}'` : Aspera public SSH keys will be used, but the protocol will ignore the empty token.
 
 The value of the `ssh_keys` option can be a single value or an array.
 Each value is a **path** to a private key and is expanded (`~` is replaced with the user's home folder).
@@ -3641,7 +3641,7 @@ Examples:
 <%=cmd%> server --ssh-keys=@json:'["~/.ssh/id_rsa"]'
 ```
 
-For non-transfer related command (browse, delete), the ruby SSH client library `Net::SSH` is used and provides several options settable using option `ssh_options`.
+For file operation command (browse, delete), the ruby SSH client library `Net::SSH` is used and provides several options settable using option `ssh_options`.
 For a list of SSH client options, refer to the ruby documentation of [Net::SSH](http://net-ssh.github.io/net-ssh/Net/SSH.html).
 
 By default the SSH library expect that a local ssh-agent is running.
@@ -3660,8 +3660,8 @@ ERROR -- net.ssh.authentication.agent: could not connect to ssh-agent: pageant p
 
 This means that you don't have such an SSH agent running, then:
 
-- check env var: `SSH_AGENT_SOCK`
-- check if the SSH key is protected with a passphrase (then, use the `passphrase` SSH option)
+- Check env var: `SSH_AGENT_SOCK`
+- Check if the SSH key is protected with a passphrase (then, use the `passphrase` SSH option)
 - [check the manual](https://net-ssh.github.io/ssh/v1/chapter-2.html#s2)
 - To disable the use of `ssh-agent`, use the option `ssh_options` like this:
 
@@ -3671,9 +3671,10 @@ This means that you don't have such an SSH agent running, then:
 
 This can also be set as default using a global preset.
 
-### Special endpoints for `server`
+### Other session channels for `server`
 
 URL schemes `local` and `https` are also supported, mainly for testing purpose.
+(`--url=local:` , `--url=https://...`)
 
 - `local` will execute `ascmd` locally, instead of using a SSH cnnection.
 - `https` will use Web Socket Session: This requires the use of a transfer token. For example a `Basic` token can be used.
@@ -3720,7 +3721,7 @@ For transfers, it is possible to control how transfer is authorized using option
 }
 ```
 
-> Note: the port is assumed to be the default Aspera SSH port `33001` and transfer user is assumed to be `xfer`.
+> **Note:** the port is assumed to be the default Aspera SSH port `33001` and transfer user is assumed to be `xfer`.
 
 ### Central
 
@@ -3843,7 +3844,7 @@ Then use these options:
 --private-key=@file:.../path/to/key.pem
 ```
 
-> Note: The `private_key` option must contain the PEM value of the private key which can be read from a file using the modifier: `@file:`, e.g. `@file:/path/to/key.pem`.
+> **Note:** The `private_key` option must contain the PEM value of the private key which can be read from a file using the modifier: `@file:`, e.g. `@file:/path/to/key.pem`.
 
 ### Faspex 5 web authentication
 
@@ -3885,7 +3886,7 @@ Most commands are directly REST API calls.
 Parameters to commandsa are carried through option `value`, as extended value.
 Usually using JSON format with prefix `@json:`.
 
-> Note: The API is listed in [Faspex 5 API Reference](https://developer.ibm.com/apis/catalog?search="faspex+5") under **IBM Aspera Faspex API**.
+> **Note:** The API is listed in [Faspex 5 API Reference](https://developer.ibm.com/apis/catalog?search="faspex+5") under **IBM Aspera Faspex API**.
 
 ```bash
 <%=include_commands_for_plugin('faspex5')%>
@@ -4382,7 +4383,7 @@ crontab<<EOF
 EOF
 ```
 
-> Note: The logging options are kept here in the cronfile instead of conf file to allow execution on command line with output on command line.
+> **Note:** The logging options are kept here in the cronfile instead of conf file to allow execution on command line with output on command line.
 
 ### Candidate detection for creation or update (or deletion)
 
@@ -4463,12 +4464,12 @@ If the `mimemagic` gem complains about missing mime info file:
 - any OS:
 
   - Examine the error message
-  - Download the file: <https://gitlab.freedesktop.org/xdg/shared-mime-info/-/raw/master/data/freedesktop.org.xml.in>
+  - Download the file: [freedesktop.org.xml.in](https://gitlab.freedesktop.org/xdg/shared-mime-info/-/raw/master/data/freedesktop.org.xml.in)
   - move and rename this file to one of the locations expected by mimemagic as specified in the error message
 
 - Windows:
 
-  - Download the file: <https://gitlab.freedesktop.org/xdg/shared-mime-info/-/raw/master/data/freedesktop.org.xml.in>
+  - Download the file: [freedesktop.org.xml.in](https://gitlab.freedesktop.org/xdg/shared-mime-info/-/raw/master/data/freedesktop.org.xml.in)
   - Place this file in the root of Ruby (or elsewhere): `C:\RubyVV-x64\freedesktop.org.xml.in`
   - Set a global variable using `SystemPropertiesAdvanced.exe` or using `cmd` (replace `VV` with version) to the exact path of this file:
 
@@ -4512,17 +4513,17 @@ If the preview generator does not have access to files on the file system (it is
 Aspera CLI can send email, for that setup SMTP configuration. This is done with option `smtp`.
 
 The `smtp` option is a hash table (extended value) with the following fields:
-<table>
-<tr><th>field</th><th>default</th><th>example</th><th>description</th></tr>
-<tr><td>`server`</td><td>-</td><td>smtp.gmail.com</td><td>SMTP server address</td></tr>
-<tr><td>`tls`</td><td>true</td><td>false</td><td>use of TLS</td></tr>
-<tr><td>`port`</td><td>587 for tls<br/>25 else</td><td>587</td><td>port for service</td></tr>
-<tr><td>`domain`</td><td>domain of server</td><td>gmail.com</td><td>email domain of user</td></tr>
-<tr><td>`username`</td><td>-</td><td>john@example.com</td><td>user to authenticate on SMTP server, leave empty for open auth.</td></tr>
-<tr><td>`password`</td><td>-</td><td>MyP@ssword</td><td>password for above username</td></tr>
-<tr><td>`from_email`</td><td>username if defined</td><td>laurent.martin.l@gmail.com</td><td>address used if received replies</td></tr>
-<tr><td>`from_name`</td><td>same as email</td><td>John Wayne</td><td>display name of sender</td></tr>
-</table>
+
+| field | default | example | description |
+|-------|---------|---------|-------------|
+| `server` | - | smtp.gmail.com | SMTP server address |
+| `tls` | true | false | use of TLS |
+| `port` | 587 for tls<br/>25 else | 587 | port for service |
+| `domain` | domain of server | gmail.com | email domain of user |
+| `username` | - | john@example.com | user to authenticate on SMTP server, leave empty for open auth. |
+| `password` | - | MyP@ssword | password for above username |
+| `from_email` | username if defined | laurent.martin.l@gmail.com | address used if received replies |
+| `from_name` | same as email | John Wayne | display name of sender |
 
 ### Example of configuration
 
@@ -4559,9 +4560,9 @@ The template is the full SMTP message, including headers.
 
 The following variables are defined by default:
 
-- from_name
-- from_email
-- to
+- `from_name`
+- `from_email`
+- `to`
 
 Other variables are defined depending on context.
 
@@ -4617,7 +4618,7 @@ The tool expect one single argument: a <%=trspec%>.
 
 If no argument is provided, it assumes a value of: `@json:@stdin:`, i.e. a JSON formatted <%=trspec%> on stdin.
 
-> Note: If JSON is the format, specify `@json:` to tell <%=tool%> to decode the hash using JSON syntax.
+> **Note:** If JSON is the format, specify `@json:` to tell <%=tool%> to decode the hash using JSON syntax.
 
 During execution, it generates all low level events, one per line, in JSON format on stdout.
 
@@ -4626,17 +4627,17 @@ There are special "extended" <%=trspec%> parameters supported by `asession`:
 - `EX_loglevel` to change log level of the tool
 - `EX_file_list_folder` to set the folder used to store (exclusively, because of garbage collection) generated file lists. By default it is `[system tmp folder]/[username]_asession_filelists`
 
-> Note: In addition, many "EX_" <%=trspec%> parameters are supported for the [`direct`](#agt_direct) transfer agent (used by `asession`), refer to section <%=trspec%>.
+> **Note:** In addition, many "EX_" <%=trspec%> parameters are supported for the [`direct`](#agt_direct) transfer agent (used by `asession`), refer to section <%=trspec%>.
 
 ### Comparison of interfaces
 
-<table>
-<tr><th>feature/tool</th><th>asession</th><th>`ascp`</th><th>FaspManager</th><th>Transfer SDK</th></tr>
-<tr><td>language integration</td><td>any</td><td>any</td><td>C/C++<br/>C#/.net<br/>Go<br/>Python<br/>java<br/></td><td>many</td></tr>
-<tr><td>required additional components to `ascp`</td><td>Ruby<br/>Aspera</td><td>-</td><td>library<br/>(headers)</td><td>daemon</td></tr>
-<tr><td>startup</td><td>JSON on stdin<br/>(standard APIs:<br/>JSON.generate<br/>Process.spawn)</td><td>command line arguments</td><td>API</td><td>daemon</td></tr>
-<tr><td>events</td><td>JSON on stdout</td><td>none by default<br/>or need to open management port<br/>and proprietary text syntax</td><td>callback</td><td>callback</td></tr>
-<tr><td>platforms</td><td>any with ruby and `ascp`</td><td>any with `ascp` (and SDK if compiled)</td><td>any with `ascp`</td><td>any with `ascp` and transfer daemon</td></tr></table>
+| feature/tool | asession | `ascp` | FaspManager | Transfer SDK |
+|--------------|----------|--------|-------------|--------------|
+| language integration | any | any | C/C++<br/>C#/.net<br/>Go<br/>Python<br/>java<br/> | many |
+| required additional components to `ascp` | Ruby<br/>Aspera | - | library<br/>(headers) | daemon |
+| startup | JSON on stdin<br/>(standard APIs:<br/>JSON.generate<br/>Process.spawn) | command line arguments | API | daemon |
+| events | JSON on stdout | none by default<br/>or need to open management port<br/>and proprietary text syntax | callback | callback |
+| platforms | any with ruby and `ascp` | any with `ascp` (and SDK if compiled) | any with `ascp` | any with `ascp` and transfer daemon |
 
 ### Simple session
 
@@ -4720,9 +4721,9 @@ Note that:
 
 Virtually any transfer on a "repository" on a regular basis might emulate a hot folder.
 
-> Note: file detection is not based on events (inotify, etc...), but on a simple folder scan on source side.
+> **Note:** file detection is not based on events (inotify, etc...), but on a simple folder scan on source side.
 
-> Note: parameters may be saved in a <%=prst%> and used with `-P`.
+> **Note:** parameters may be saved in a <%=prst%> and used with `-P`.
 
 #### Scheduling
 
@@ -4820,7 +4821,7 @@ aoc.read('self')
 
 ## Changes (Release notes)
 
-See <CHANGELOG.md>
+See [CHANGELOG.md](CHANGELOG.md)
 
 ## History
 

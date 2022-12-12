@@ -20,8 +20,14 @@ $(TMPL_CONF_FILE_PATH): $(TEST_CONF_FILE_PATH)
 	ruby -I . -I $(DIR_LIB). -r doc_tools -e generate_generic_conf $(TEST_CONF_FILE_PATH) > $@
 
 #wkhtmltopdf toc $(MANUAL_HTML) $@
-$(MANUAL_PDF): $(DIR_TOP)README.md
-	pandoc --number-sections --shift-heading-level-by=-1 --resource-path=. --toc -o $@ --pdf-engine=xelatex -V geometry:margin=15mm -V mainfont:Arial -V urlcolor:blue $(DIR_TOP)README.md
+# +pipe_tables
+$(MANUAL_PDF): $(DIR_TOP)README.md $(DIR_TMP).exists
+	pandoc --standalone --from=gfm --to=pdf --pdf-engine=xelatex --toc --number-sections \
+	  --shift-heading-level-by=-1 --resource-path=. \
+	  --variable=include-before:'\newpage' --variable=documentclass:report \
+	  --variable=date:$$(date '+%Y/%m/%d') --variable=author:'Laurent MARTIN' \
+	  --variable=mainfont:Arial --variable=urlcolor:blue --variable=geometry:margin=15mm \
+	  -o $@ $(DIR_TOP)README.md
 $(MANUAL_HTML): $(DIR_TOP)README.md
 	pandoc --number-sections --shift-heading-level-by=-1 --resource-path=. --toc -o $@ $(DIR_TOP)README.md
 
