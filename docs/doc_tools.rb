@@ -44,24 +44,25 @@ def geminstadd;/\.[^0-9]/.match?(gemspec.version.to_s) ? ' --pre' : '';end
 # transfer spec description generation
 def spec_table
   r = []
-  r << '<table><tr><th>Field</th><th>Type</th>'
+  r << '| Field | Type |'
   Aspera::Fasp::Parameters::SUPPORTED_AGENTS_SHORT.each do |c|
-    r << '<th>' << c.to_s.upcase << '</th>'
+    r << ' ' << c.to_s.upcase << ' |'
   end
-  r << '<th>Description</th></tr>' << "\n"
+  r << ' Description |' << "\n"
+  r << r.join.gsub(/[^\|\n]/,'-')
   Aspera::Fasp::Parameters.man_table(to_text: false).sort_by { |a| a[:name] }.each do |p|
     p[:description] += (p[:description].empty? ? '' : "\n") + '(' + p[:cli] + ')' unless p[:cli].to_s.empty?
     p.delete(:cli)
     p.keys.each{|c|p[c] = '&nbsp;' if p[c].to_s.empty?}
     p[:description] = p[:description].gsub("\n",'<br/>')
     p[:type] = p[:type].gsub(',','<br/>')
-    r << '<tr><td>' << p[:name] << '</td><td>' << p[:type] << '</td>'
+    r << '| ' << p[:name] << ' | ' << p[:type] << ' |'
     Aspera::Fasp::Parameters::SUPPORTED_AGENTS_SHORT.each do |c|
-      r << '<td>' << p[c] << '</td>'
+      r << ' ' << p[c] << ' |'
     end
-    r << '<td>' << p[:description] << '</td></tr>' << "\n"
+    r << ' ' << p[:description] << ' |' << "\n"
   end
-  r << '</table>'
+  r << "\n"
   return r.join
 end
 
@@ -75,7 +76,7 @@ end
 def ruby_version
   message = "version: #{gemspec.required_ruby_version}"
   unless ruby_minimum_version.eql?(Aspera::Cli::RUBY_FUTURE_MINIMUM_VERSION)
-    message += ". Deprecation notice: the minimum will be #{Aspera::Cli::RUBY_FUTURE_MINIMUM_VERSION} in a future version"
+    message += ".\n\n> **Deprecation notice**: the minimum will be #{Aspera::Cli::RUBY_FUTURE_MINIMUM_VERSION} in a future version"
   end
   return message
 end
