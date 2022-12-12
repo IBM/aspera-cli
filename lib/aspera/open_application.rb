@@ -12,8 +12,9 @@ module Aspera
   class OpenApplication
     include Singleton
     class << self
+      USER_INTERFACES=%i[text graphical].freeze
       # User Interfaces
-      def user_interfaces; %i[text graphical]; end
+      def user_interfaces; USER_INTERFACES; end
 
       def default_gui_mode
         return :graphical if [Aspera::Environment::OS_WINDOWS,Aspera::Environment::OS_X].include?(Aspera::Environment.os)
@@ -25,12 +26,9 @@ module Aspera
       # command must be non blocking
       def uri_graphical(uri)
         case Aspera::Environment.os
-        when Aspera::Environment::OS_X
-          return system('open',uri.to_s)
-        when Aspera::Environment::OS_WINDOWS
-          return system('start explorer "' + uri.to_s + '"')
-        when Aspera::Environment::OS_LINUX
-          return system("xdg-open '#{uri}'")
+        when Aspera::Environment::OS_X       then return system('open',uri.to_s)
+        when Aspera::Environment::OS_WINDOWS then return system('start','explorer','"'+uri.to_s+'"')
+        when Aspera::Environment::OS_LINUX   then return system('xdg-open',uri.to_s)
         else
           raise "no graphical open method for #{Aspera::Environment.os}"
         end
