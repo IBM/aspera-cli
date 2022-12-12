@@ -35,6 +35,8 @@ $(DIR_TOP)nameversion.mak: $(DIR_LIB)aspera/cli/info.rb $(DIR_LIB)aspera/cli/ver
 	sed -n "s/.*GEM_NAME = '\([^']*\)'.*/GEMNAME=\1/p" $(DIR_LIB)aspera/cli/info.rb > $@
 	sed -n "s/.*'\([^']*\)'.*/GEMVERS=\1/p" $(DIR_LIB)aspera/cli/version.rb >> $@
 include $(DIR_TOP)nameversion.mak
+PATH_GEMFILE=$(DIR_TOP)$(GEMNAME)-$(GEMVERS).gem
+# gem file is generated in top folder
 clean::
 	rm -f $(DIR_TOP)nameversion.mak
 

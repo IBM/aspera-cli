@@ -21,8 +21,6 @@ clean::
 
 ##################################
 # Gem build
-PATH_GEMFILE=$(DIR_TOP)$(GEMNAME)-$(GEMVERS).gem
-# gem file is generated in top folder
 $(PATH_GEMFILE): $(DIR_TOP).gems_checked
 	gem build $(GEMNAME)
 # check that the signing key is present
