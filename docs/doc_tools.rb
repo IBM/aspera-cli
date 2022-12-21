@@ -166,12 +166,13 @@ end
 KEPT_GLOBAL_SECTIONS=%w[config default].freeze
 REMOVED_OPTIONS=%w[insecure].freeze
 
-# main function to generate config file with secrets
+# main function to generate template configuration file for tests
 def generate_generic_conf
   n = {}
   local_config = ARGV.first
   raise 'missing argument: local config file' if local_config.nil?
   YAML.load_file(local_config).each do |k,v|
+    next if k.start_with?('nt_') # no template
     n[k] = KEPT_GLOBAL_SECTIONS.include?(k) ? v : v.keys.reject{|l|REMOVED_OPTIONS.include?(l)}.each_with_object({}){|i,m|m[i] = 'your value here'}
   end
   puts(n.to_yaml)

@@ -2411,9 +2411,13 @@ Example: parameter to download a faspex package and decrypt on the fly
 --ts=@json:'{"precalculate_job_size":true}'
 ```
 
-### <a id="scheduling"></a>Lock for exclusive execution
+### <a id="scheduling"></a>Scheduling
 
-In some conditions, it may be desirable to ensure that `ascli` is not executed several times in parallel.
+It is useful to configure automated scheduled execution.
+
+#### <a id="locking"></a>Locking for exclusive execution
+
+It is also useful to ensure that `ascli` is not executed several times in parallel.
 
 For instance when `ascli` is executed automatically on a schedule basis, one generally desire that a new execution is not started if a previous execution is still running because an on-going operation may last longer than the scheduling period:
 
@@ -2446,6 +2450,18 @@ The first instance will sleep 30 seconds, the second one will immediately exit l
 ```bash
 WARN -- : Another instance is already running (Address already in use - bind(2) for "127.0.0.1" port 12345).
 ```
+
+#### <a id="scheduler"></a>Scheduler
+
+`ascli` does not provide an internal scheduler.
+
+Instead, use the service provided by the Operating system:
+
+- Windows: [Task Scheduler](https://docs.microsoft.com/en-us/windows/win32/taskschd/task-scheduler-start-page)
+- Linux/Unix: [cron](https://www.man7.org/linux/man-pages/man5/crontab.5.html)
+- etc...
+
+Linux also provides `anacron`, if tasks are hourly or daily.
 
 ### "Proven&ccedil;ale"
 
@@ -3754,11 +3770,7 @@ ascli aoc packages recv --id=ALL --once-only=yes --lock-port=12345
 - `--once-only=yes` keeps memory of any downloaded package in persistency files located in the configuration folder
 - `--lock-port=12345` ensures that only one instance is started at the same time, to avoid running two downloads in parallel
 
-Typically, one would execute this command on a regular basis, using the method of your choice:
-
-- Windows: [Task Scheduler](https://docs.microsoft.com/en-us/windows/win32/taskschd/task-scheduler-start-page)
-- Linux/Unix: [cron](https://www.man7.org/linux/man-pages/man5/crontab.5.html)
-- etc...
+Typically, one would execute this command on a regular basis, using the method of your choice: see [Scheduler](#scheduler).
 
 ### Files
 
@@ -4993,11 +5005,11 @@ This shall list the contents of the storage root of the access key.
 
 ### Execution
 
-The tool intentionally supports only a "one shot" mode (no infinite loop) in order to avoid having a hanging process or using too many resources (calling REST api too quickly during the scan or event method).
-It needs to be run on a regular basis to create or update preview files. For that use your best
-reliable scheduler. For instance use "CRON" on Linux or Task Scheduler on Windows.
+The tool intentionally supports only a **one shot** mode (no infinite loop) in order to avoid having a hanging process or using too many resources (calling REST api too quickly during the scan or event method).
+It needs to be run on a regular basis to create or update preview files.
+For that use your best reliable scheduler, see [Scheduling](#scheduling).
 
-Typically, for "Access key" access, the system/transfer is `xfer`. So, in order to be consistent have generate the appropriate access rights, the generation process should be run as user `xfer`.
+Typically, for **Access key** access, the system/transfer is `xfer`. So, in order to be consistent have generate the appropriate access rights, the generation process should be run as user `xfer`.
 
 Lets do a one shot test, using the configuration previously created:
 
@@ -5013,12 +5025,12 @@ On subsequent run it reads this file and check that previews are generated for t
 
 ### Configuration for Execution in scheduler
 
-Here is an example of configuration for use with cron on Linux.
-Adapt the scripts to your own preference.
+Here is an example of configuration for use with `cron` on Linux.
+Adapt the scripts to your own needs.
 
 We assume here that a configuration preset was created as shown previously.
 
-Lets first setup a script that will be used in the scheduler and sets up the environment.
+Lets first setup a script that will be used in the scheduler and set up the environment.
 
 Example of startup script `cron_ascli`, which sets the Ruby environment and adds some timeout protection:
 
@@ -5420,7 +5432,7 @@ Refer to section [Scheduling](#scheduling). (on use of option `lock_port`)
 
 ### Example: upload hot folder
 
-```javascript
+```bash
 ascli server upload source_hot --to-folder=/Upload/target_hot --lock-port=12345 --ts=@json:'{"remove_after_transfer":true,"remove_empty_directories":true,"exclude_newer_than:-8,"src_base":"source_hot"}'
 ```
 
@@ -5429,11 +5441,25 @@ Source files are deleted after transfer.
 Growing files will be sent only once they don't grow anymore (based on an 8-second cooloff period).
 If a transfer takes more than the execution period, then the subsequent execution is skipped (`lock_port`) preventing multiple concurrent runs.
 
-### Example: unidirectional synchronization
+### Example: unidirectional synchronization (upload) to server
 
-```javascript
-ascli server upload source_sync --to-folder=/Upload/target_sync --lock-port=12345 --ts=@json:'{"resume_policy":"sparse_csum","exclude_newer_than:-8,"src_base":"source_sync"}'
+```bash
+ascli server upload source_sync --to-folder=/Upload/target_sync --lock-port=12345 --ts=@json:'{"resume_policy":"sparse_csum","exclude_newer_than":-8,"src_base":"source_sync"}'
 ```
+
+This can also be used with other folder-based applications: Aspera on Cloud, Shares, Node:
+
+### Example: unidirectional synchronization (download) from Aspera on Cloud Files
+
+```bash
+ascli aoc files download . --to-folder=. --lock-port=12345 --progress=none --display=data \
+--ts=@json:'{"resume_policy":"sparse_csum","target_rate_kbps":50000,"exclude_newer_than":-8,"delete_before_transfer":true}'
+```
+
+> Note: option `delete_before_transfer` will delete files locally, if they are not present on remote side.
+
+> Note: options `progress` and `display` limit output for headless operation (e.g. cron job)
+
 ## Health check and Nagios
 
 Most plugin provide a `health` command that will check the health status of the application. Example:
