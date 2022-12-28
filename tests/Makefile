@@ -101,7 +101,7 @@ $(T)serv_mkdir: $(T).exists
 	@touch $@
 $(T)serv_upload: $(T)serv_mkdir
 	@echo $@
-	$(EXE_MAN) server upload $(CF_LOCAL_SAMPLE_FILEPATH) --to-folder=$(NEW_SERVER_FOLDER) --ts=@json:'{"multi_session":3,"multi_session_threshold":1,"resume_policy":"none","target_rate_kbps":1500}' --transfer-info=@json:'{"spawn_delay_sec":2.5}' --progress=multi
+	$(EXE_MAN) server upload $(CF_LOCAL_SAMPLE_FILEPATH) --to-folder=$(NEW_SERVER_FOLDER) --ts=@json:'{"multi_session":3,"multi_session_threshold":1,"resume_policy":"none","target_rate_kbps":1500}' --transfer-info=@json:'{"spawn_delay_sec":2.5,"multi_incr_udp":false}' --progress=multi
 	set -x&&\
 	recipient_email=$$($(EXE_NOMAN) config preset get misc email_external)&&\
 	$(EXE_MAN) server upload --src-type=pair $(CF_LOCAL_SAMPLE_FILEPATH) $(NEW_SERVER_FOLDER)/othername --notif-to=$${recipient_email}
@@ -929,7 +929,7 @@ $(T)conf_over: $(T).exists
 	@touch $@
 $(T)conf_vault: $(T).exists
 	set -x;\
-	vault_file=$(DIR_TMP)/sample_vault.bin;\
+	vault_file=$$(cd $(DIR_TMP);pwd -P)/sample_vault.bin;\
 	rm -f $$vault_file;\
 	export ASCLI_VAULT_PASSWORD=_simple_one_;\
 	export ASCLI_VAULT=@json:'{"type":"file","name":"'"$${vault_file}"'"}';\
