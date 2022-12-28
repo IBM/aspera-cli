@@ -424,16 +424,16 @@ module Aspera
           return false
         end
       else
-        Log.log.warn("unknown element type: #{entry['type']}")
+        Log.log.warn("Unknown element type: #{entry['type']}")
       end
       # continue to dig folder
       return true
     end
 
-    # @return Array(node_info,file_id)   for the given path
+    # Finds the actual node where files are located, supports links to secondary nodes
     # @param top_node_file       Array    [root node,file id]
     # @param element_path_string String   path of element
-    # supports links to secondary nodes
+    # @return Array(node_info,file_id)   for the given path
     def resolve_node_file(top_node_file, element_path_string)
       top_node_info,top_file_id = check_get_node_file(top_node_file)
       path_elements = element_path_string.split(PATH_SEPARATOR).reject(&:empty?)
@@ -441,6 +441,7 @@ module Aspera
       if path_elements.empty?
         result[:file_id] = top_file_id
       else
+        # init result state
         @resolve_state = {path: path_elements, result: result}
         get_node_api(top_node_info).crawl(self,{method: :process_resolve_node_file, top_file_id: top_file_id})
         not_found = @resolve_state[:path]

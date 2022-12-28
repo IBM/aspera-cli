@@ -3360,11 +3360,24 @@ Typically, one would execute this command on a regular basis, using the method o
 
 ### Files
 
-Folder sharing app.
+The Files application presents a **Home** folder to users in a given workspace.
+Files located here are either user's files, or shared folders.
 
 #### Download Files
 
-Download of files is straightforward using command: `aoc files download`
+The general download command is:
+
+```bash
+<%=cmd%> aoc files download <source folder path> <source filename 1> ...
+```
+
+I.e. the first argument is the source folder, and the following arguments are the source file names in this folder.
+
+If a single file or folder is to be downloaded, then a single argument can be provided.
+
+```bash
+<%=cmd%> aoc files download <single file path>
+```
 
 #### Shared folders
 

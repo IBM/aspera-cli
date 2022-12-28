@@ -189,16 +189,31 @@ module Aspera
             add_ts = {'tags' => {'aspera' => {'files' => {'parentCwd' => "#{node_file[:node_info]['id']}:#{node_file[:file_id]}"}}}}
             return Main.result_transfer(transfer_start(AoC::FILES_APP,Fasp::TransferSpec::DIRECTION_SEND,node_file,add_ts))
           when :download
+            # get all source paths from command line
             source_paths = transfer.ts_source_paths
-            # special case for AoC : all files must be in same folder
+            # special case for AoC : all files must be in same folder, so the first one is the source folder
             source_folder = source_paths.shift['source']
+            node_file = aoc_api.resolve_node_file(top_node_file,source_folder)
             # if a single file: split into folder and path
             if source_paths.empty?
-              source_folder = source_folder.split(AoC::PATH_SEPARATOR)
-              source_paths = [{'source' => source_folder.pop}]
-              source_folder = source_folder.join(AoC::PATH_SEPARATOR)
+              node_api = aoc_api.get_node_api(node_file[:node_info])
+              file_info = node_api.read("files/#{node_file[:file_id]}")[:data]
+              case file_info['type']
+              when 'file'
+                # if the single source is a file, we need to split into folder path and filename
+                src_dir_elements = source_folder.split(AoC::PATH_SEPARATOR)
+                # filename is the last one
+                source_paths = [{'source' => src_dir_elements.pop}]
+                # source folder is what remains
+                source_folder = src_dir_elements.join(AoC::PATH_SEPARATOR)
+                node_file = aoc_api.resolve_node_file(top_node_file,source_folder)
+              when 'link','folder'
+                # single source is 'folder' or 'link'
+                source_paths = [{'source' => '.'}]
+              else
+                raise "Unknown source type: #{file_info['type']}"
+              end
             end
-            node_file = aoc_api.resolve_node_file(top_node_file,source_folder)
             # override paths with just filename
             add_ts = {'tags' => {'aspera' => {'files' => {'parentCwd' => "#{node_file[:node_info]['id']}:#{node_file[:file_id]}"}}}}
             add_ts['paths'] = source_paths
