@@ -31,12 +31,8 @@ module Aspera
       # start ascp transfer (non blocking), single or multi-session
       # job information added to @jobs
       # @param transfer_spec [Hash] aspera transfer specification
-      # @param options [Hash] :resumer, :regenerate_token
-      def start_transfer(transfer_spec,options={})
-        raise 'option: must be hash (or nil)' unless options.is_a?(Hash)
-        job_options = options.clone
-        job_options[:resumer] ||= @resume_policy
-        job_options[:job_id] ||= SecureRandom.uuid
+      def start_transfer(transfer_spec)
+        the_job_id = SecureRandom.uuid
         # clone transfer spec because we modify it (first level keys)
         transfer_spec = transfer_spec.clone
         # if there is aspera tags
@@ -97,7 +93,7 @@ module Aspera
 
         # transfer job can be multi session
         xfer_job = {
-          id:       job_options[:job_id],
+          id:       the_job_id,
           sessions: [] # all sessions as below
         }
 
@@ -107,8 +103,7 @@ module Aspera
           error:    nil,         # exception if failed
           io:       nil,         # management port server socket
           id:       nil,         # SessionId from INIT message in mgt port
-          env_args: env_args,    # env vars and args to ascp (from transfer spec)
-          options:  job_options  # [Hash]
+          env_args: env_args     # env vars and args to ascp (from transfer spec)
         }
 
         if multi_session_info.nil?
@@ -135,10 +130,10 @@ module Aspera
         Log.log.debug('started session thread(s)')
 
         # add job to list of jobs
-        @jobs[job_options[:job_id]] = xfer_job
+        @jobs[the_job_id] = xfer_job
         Log.log.debug("jobs: #{@jobs.keys.count}")
 
-        return job_options[:job_id]
+        return the_job_id
       end # start_transfer
 
       # wait for completion of all jobs started
@@ -266,10 +261,10 @@ module Aspera
               Log.log.error("code: #{last_status_event['Code']}")
               if /bearer token/i.match?(last_status_event['Description'])
                 Log.log.error('need to regenerate token'.red)
-                if session[:options].is_a?(Hash) && session[:options].has_key?(:regenerate_token)
+                if !@token_regenerator.nil?
                   # regenerate token here, expired, or error on it
                   # Note: in multi-session, each session will have a different one.
-                  env_args[:env]['ASPERA_SCP_TOKEN'] = session[:options][:regenerate_token].call(true)
+                  env_args[:env]['ASPERA_SCP_TOKEN'] = @token_regenerator.call(true)
                 end
               end
               # cannot resolve address
@@ -332,6 +327,8 @@ module Aspera
         session[:io].puts(command)
       end
 
+      attr_writer :token_regenerator
+
       private
 
       # @param options : keys(symbol): see DEFAULT_OPTIONS
@@ -352,6 +349,7 @@ module Aspera
         end
         Log.log.debug("local options= #{options}")
         @resume_policy = ResumePolicy.new(@options[:resume].symbolize_keys)
+        @token_regenerator = nil
       end
 
       # transfer thread entry
@@ -362,7 +360,7 @@ module Aspera
           Thread.current[:name] = 'transfer'
           Log.log.debug("ENTER (#{Thread.current[:name]})")
           # start transfer with selected resumer policy
-          session[:options][:resumer].execute_with_resume do
+          @resume_policy.execute_with_resume do
             start_transfer_with_args_env(session[:env_args],session)
           end
           Log.log.debug('transfer ok'.bg_green)

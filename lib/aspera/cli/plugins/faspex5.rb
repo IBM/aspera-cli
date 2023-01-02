@@ -134,7 +134,7 @@ module Aspera
               # TODO: option to send from remote source
               transfer_spec = @api_v5.create("packages/#{package['id']}/transfer_spec/upload",{transfer_type: TRANSFER_CONNECT})[:data]
               transfer_spec.delete('authentication')
-              return Main.result_transfer(transfer.start(transfer_spec,{src: :node_gen3}))
+              return Main.result_transfer(transfer.start(transfer_spec,:node_gen3))
             when :receive
               pkg_type = 'received'
               pack_id = instance_identifier
@@ -161,7 +161,7 @@ module Aspera
                 # TODO: allow from sent as well ?
                 transfer_spec = @api_v5.create("packages/#{pkgid}/transfer_spec/download",{transfer_type: TRANSFER_CONNECT, type: pkg_type})[:data]
                 transfer_spec.delete('authentication')
-                statuses = transfer.start(transfer_spec,{src: :node_gen3})
+                statuses = transfer.start(transfer_spec,:node_gen3)
                 result_transfer.push({'package' => pkgid,Main::STATUS_FIELD => statuses})
                 # skip only if all sessions completed
                 skip_ids_data.push(pkgid) if TransferAgent.session_status(statuses).eql?(:success)

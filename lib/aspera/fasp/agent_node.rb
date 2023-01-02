@@ -54,7 +54,7 @@ module Aspera
       end
 
       # generic method
-      def start_transfer(transfer_spec,_options=nil)
+      def start_transfer(transfer_spec)
         # add root id if access key
         if !@root_id.nil?
           case transfer_spec['direction']

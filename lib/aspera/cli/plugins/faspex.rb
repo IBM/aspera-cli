@@ -300,7 +300,7 @@ module Aspera
                 transfer_spec = send_publink_to_ts(public_link_url,package_create_params)
               end
               #Log.dump('transfer_spec',transfer_spec)
-              return Main.result_transfer(transfer.start(transfer_spec,{src: :node_gen3}))
+              return Main.result_transfer(transfer.start(transfer_spec,:node_gen3))
             when :recv
               link_url = options.get_option(:link)
               # list of faspex ID/URI to download
@@ -389,7 +389,7 @@ module Aspera
                       text_body_params: xmlpayload})[:http].body
                   end
                   transfer_spec['direction'] = Fasp::TransferSpec::DIRECTION_RECEIVE
-                  statuses = transfer.start(transfer_spec,{src: :node_gen3})
+                  statuses = transfer.start(transfer_spec,:node_gen3)
                 end
                 result_transfer.push({'package' => id_uri[:id],Main::STATUS_FIELD => statuses})
                 # skip only if all sessions completed

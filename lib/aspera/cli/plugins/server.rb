@@ -133,7 +133,7 @@ module Aspera
                 'resume_policy' => 'none',
                 'paths'         => [{'source' => filepath,'destination' => '.fasping'}]
               })
-              statuses = transfer.start(probe_ts,{src: :direct})
+              statuses = transfer.start(probe_ts,:direct)
               file.unlink
               if TransferAgent.session_status(statuses).eql?(:success)
                 nagios.add_ok('transfer','ok')
@@ -144,9 +144,9 @@ module Aspera
             end
             return nagios.result
           when :upload
-            return Main.result_transfer(transfer.start(server_transfer_spec.merge('direction' => Fasp::TransferSpec::DIRECTION_SEND),{src: :direct}))
+            return Main.result_transfer(transfer.start(server_transfer_spec.merge('direction' => Fasp::TransferSpec::DIRECTION_SEND),:direct))
           when :download
-            return Main.result_transfer(transfer.start(server_transfer_spec.merge('direction' => Fasp::TransferSpec::DIRECTION_RECEIVE),{src: :direct}))
+            return Main.result_transfer(transfer.start(server_transfer_spec.merge('direction' => Fasp::TransferSpec::DIRECTION_RECEIVE),:direct))
           when *Aspera::AsCmd::OPERATIONS
             args = options.get_next_argument('ascmd command arguments',expected: :multiple,mandatory: false)
             ascmd = Aspera::AsCmd.new(shell_executor)

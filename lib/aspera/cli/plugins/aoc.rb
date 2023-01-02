@@ -86,7 +86,8 @@ module Aspera
         def transfer_start(app,direction,node_file,ts_add)
           ts_add.deep_merge!(AoC.analytics_ts(app,direction,@workspace_info['id'],@workspace_info['name']))
           ts_add.deep_merge!(aoc_api.console_ts(app))
-          return transfer.start(*aoc_api.tr_spec(app,direction,node_file,ts_add))
+          info=aoc_api.tr_spec(app,direction,node_file,ts_add)
+          return transfer.start(info[:ts],:node_gen4,token_generator: info[:regenerate_token])
         end
 
         NODE4_CMD_PATH = %i[bearer_token_node node_info browse find]

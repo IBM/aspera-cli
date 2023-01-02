@@ -58,7 +58,7 @@ module Aspera
         end
       end
 
-      def start_transfer(transfer_spec,_options=nil)
+      def start_transfer(transfer_spec)
         # create a transfer request
         transfer_request = Transfersdk::TransferRequest.new(
           transferType: Transfersdk::TransferType::FILE_REGULAR, # transfer type (file/stream)

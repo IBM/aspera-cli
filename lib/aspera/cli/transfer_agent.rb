@@ -179,20 +179,18 @@ module Aspera
 
       # start a transfer and wait for completion, plugins shall use this method
       # @param transfer_spec
-      # @param tr_opts specific options for the transfer_agent
-      # tr_opts[:src] specifies how destination_root is set (how transfer spec was generated)
-      # other options are carried to specific agent
-      def start(transfer_spec,tr_opts)
+      # @param tr_type specifies how destination_root is set (how transfer spec was generated)
+      def start(transfer_spec,tr_type,token_generator: nil)
         # check parameters
         raise 'transfer_spec must be hash' unless transfer_spec.is_a?(Hash)
-        raise 'tr_opts must be hash' unless tr_opts.is_a?(Hash)
+        raise "tr_type must be Symbol (#{tr_type.class})" unless tr_type.is_a?(Symbol)
         # process :src option
         case transfer_spec['direction']
         when Fasp::TransferSpec::DIRECTION_RECEIVE
           # init default if required in any case
           @transfer_spec_cmdline['destination_root'] ||= destination_folder(transfer_spec['direction'])
         when Fasp::TransferSpec::DIRECTION_SEND
-          case tr_opts[:src]
+          case tr_type
           when :direct
             # init default if required
             @transfer_spec_cmdline['destination_root'] ||= destination_folder(transfer_spec['direction'])
@@ -203,21 +201,19 @@ module Aspera
           when :node_gen4
             @transfer_spec_cmdline.delete('destination_root') if @transfer_spec_cmdline.has_key?('destination_root_id')
           else
-            raise StandardError,"InternalError: unsupported value: #{tr_opts[:src]}"
+            raise StandardError,"InternalError: unsupported value: #{tr_type}"
           end
         end
-
-        # only used here
-        tr_opts.delete(:src)
-
         # update command line paths, unless destination already has one
         @transfer_spec_cmdline['paths'] = transfer_spec['paths'] || ts_source_paths
-
         transfer_spec.merge!(@transfer_spec_cmdline)
+        # remove values that are nil (user wants to delete)
+        transfer_spec.delete_if { |_key, value| value.nil? }
         # create transfer agent
         set_agent_by_options
         Log.log.debug("transfer agent is a #{@agent.class}")
-        @agent.start_transfer(transfer_spec,tr_opts)
+        @agent.token_regenerator=token_generator if @agent.respond_to?(:token_regenerator=)
+        @agent.start_transfer(transfer_spec)
         # list of : :success or error message
         result = @agent.wait_for_transfers_completion
         @progress_listener.reset

@@ -325,11 +325,10 @@ module Aspera
       # add caller provided transfer spec
       transfer_spec.deep_merge!(ts_add)
       # additional information for transfer agent
-      source_and_token_generator = {
-        src:              :node_gen4,
+      return {
+        ts:               transfer_spec,
         regenerate_token: token_generation_lambda
       }
-      return transfer_spec,source_and_token_generator
     end
 
     # returns a node API for access key

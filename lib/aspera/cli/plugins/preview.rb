@@ -227,7 +227,7 @@ module Aspera
           # force destination
           # tspec['destination_root']=destination
           transfer.option_transfer_spec_deep_merge({'destination_root' => destination})
-          Main.result_transfer(transfer.start(tspec,{src: :node_gen4}))
+          Main.result_transfer(transfer.start(tspec,:node_gen4))
         end
 
         def get_infos_local(gen_infos,entry)

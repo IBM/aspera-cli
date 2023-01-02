@@ -122,7 +122,7 @@ module Aspera
               break
             end
           end
-          Log.log.debug("ws: thread: stopping #{shared_info[:read_exception]} #{shared_info[:read_exception].class}")
+          Log.log.debug("ws: thread: stopping (exc=#{shared_info[:read_exception]},cls=#{shared_info[:read_exception].class})")
         end
         # notify progress bar
         notify_begin(session_id,total_size)
@@ -142,13 +142,11 @@ module Aspera
             file_size = item['file_size']
             file_name = File.basename(item[item['destination'].nil? ? 'source' : 'destination'])
             # compute total number of slices
-            numslices = 1 + ((file_size - 1) / @options[:upload_chunksize])
+            numslices = ((file_size - 1) / @options[:upload_chunksize])+1
             File.open(source_paths[file_index]) do |file|
               # current slice index
               slicenum = 0
               while !file.eof?
-                # interrupt main thread if read thread failed
-                raise shared_info[:read_exception] unless shared_info[:read_exception].nil?
                 data = file.read(@options[:upload_chunksize])
                 slice_data = {
                   name:         file_name,
@@ -159,14 +157,21 @@ module Aspera
                   fileIndex:    file_index
                 }
                 #Log.dump(:slice_data,slice_data) #if slicenum.eql?(0)
-                if upload_api_version.eql?(V1_UPLOAD)
-                  slice_data[:data] = Base64.strict_encode64(data)
-                  ws_snd_json(slice_upload: slice_data)
-                else
-                  ws_snd_json(slice_upload: slice_data) if slicenum.eql?(0)
-                  ws_send(data,type: :binary)
-                  Log.log.debug{"ws: sent buffer: #{file_index} / #{slicenum}"}
-                  ws_snd_json(slice_upload: slice_data) if slicenum.eql?(numslices-1)
+                # interrupt main thread if read thread failed
+                raise shared_info[:read_exception] unless shared_info[:read_exception].nil?
+                begin
+                  if upload_api_version.eql?(V1_UPLOAD)
+                    slice_data[:data] = Base64.strict_encode64(data)
+                    ws_snd_json(slice_upload: slice_data)
+                  else
+                    ws_snd_json(slice_upload: slice_data) if slicenum.eql?(0)
+                    ws_send(data,type: :binary)
+                    Log.log.debug{"ws: sent buffer: #{file_index} / #{slicenum}"}
+                    ws_snd_json(slice_upload: slice_data) if slicenum.eql?(numslices-1)
+                  end
+                rescue Errno::EPIPE => e
+                  raise shared_info[:read_exception] unless shared_info[:read_exception].nil?
+                  raise e
                 end
                 sent_bytes += data.length
                 currenttime = Time.now
@@ -222,9 +227,8 @@ module Aspera
       # start FASP transfer based on transfer spec (hash table)
       # note that it is asynchronous
       # HTTP download only supports file list
-      def start_transfer(transfer_spec,options={})
+      def start_transfer(transfer_spec)
         raise 'GW URL must be set' if @gw_api.nil?
-        raise 'option: must be hash (or nil)' unless options.is_a?(Hash)
         raise 'paths: must be Array' unless transfer_spec['paths'].is_a?(Array)
         raise 'only token based transfer is supported in GW' unless transfer_spec['token'].is_a?(String)
         Log.dump(:user_spec,transfer_spec)
